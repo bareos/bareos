@@ -34,59 +34,17 @@
 #  include "cats/bvfs.h"
 #  include "lib/edit.h"
 
+#  include <unordered_set>
+
 #  define dbglevel 10
 #  define dbglevel_sql 15
 
-#  define NITEMS 50000
 class pathid_cache {
- private:
-  hlink* nodes;
-  int nb_node;
-  int max_node;
-  alist<hlink*>* table_node;
-  htable* cache_ppathid;
+  std::unordered_set<uint64_t> cache;
 
  public:
-  pathid_cache()
-  {
-    hlink link;
-    cache_ppathid = (htable*)malloc(sizeof(htable));
-    cache_ppathid->init(&link, &link, NITEMS);
-    max_node = NITEMS;
-    nodes = (hlink*)malloc(max_node * sizeof(hlink));
-    nb_node = 0;
-    table_node = new alist<hlink*>(5, owned_by_alist);
-    table_node->append(nodes);
-  }
-
-  hlink* get_hlink()
-  {
-    if (++nb_node >= max_node) {
-      nb_node = 0;
-      nodes = (hlink*)malloc(max_node * sizeof(hlink));
-      table_node->append(nodes);
-    }
-    return nodes + nb_node;
-  }
-
-  bool lookup(char* pathid) { return (cache_ppathid->lookup(pathid) != NULL); }
-
-  void insert(char* pathid)
-  {
-    hlink* h = get_hlink();
-    cache_ppathid->insert(pathid, h);
-  }
-
-  ~pathid_cache()
-  {
-    cache_ppathid->destroy();
-    free(cache_ppathid);
-    delete table_node;
-  }
-
- private:
-  pathid_cache(const pathid_cache&);            /* prohibit pass by value */
-  pathid_cache& operator=(const pathid_cache&); /* prohibit class assignment*/
+  void insert(uint64_t id) { cache.emplace(id); }
+  bool lookup(uint64_t id) const { return cache.find(id) != cache.end(); }
 };
 
 // Generic path handlers used for database queries.
@@ -112,12 +70,10 @@ void BareosDb::BuildPathHierarchy(JobControlRecord* jcr,
                                   char* org_pathid,
                                   char* new_path)
 {
-  char pathid[50];
-  AttributesDbRecord parent;
+  uint64_t pathid = str_to_int64(org_pathid);
   char* bkp = path;
 
   Dmsg1(dbglevel, "BuildPathHierarchy(%s)\n", new_path);
-  bstrncpy(pathid, org_pathid, sizeof(pathid));
 
   /*
    * Does the ppathid exist for this? use a memory cache ...
@@ -133,7 +89,8 @@ void BareosDb::BuildPathHierarchy(JobControlRecord* jcr,
        */
       goto bail_out;
     } else {
-      Mmsg(cmd, "SELECT PPathId FROM PathHierarchy WHERE PathId = %s", pathid);
+      Mmsg(cmd, "SELECT PPathId FROM PathHierarchy WHERE PathId = %llu",
+           pathid);
 
       if (!QUERY_DB(jcr, cmd)) { goto bail_out; /* Query failed, just leave */ }
 
@@ -149,17 +106,18 @@ void BareosDb::BuildPathHierarchy(JobControlRecord* jcr,
         path = bvfs_parent_dir(new_path);
         pnl = strlen(path);
 
+        AttributesDbRecord parent;
         if (!CreatePathRecord(jcr, &parent)) { goto bail_out; }
         ppathid_cache.insert(pathid);
 
         Mmsg(cmd,
-             "INSERT INTO PathHierarchy (PathId, PPathId) VALUES (%s,%lld)",
+             "INSERT INTO PathHierarchy (PathId, PPathId) VALUES (%llu,%llu)",
              pathid, (uint64_t)parent.PathId);
         if (!INSERT_DB(jcr, cmd)) {
           goto bail_out; /* Can't insert the record, just leave */
         }
 
-        edit_uint64(parent.PathId, pathid);
+        pathid = parent.PathId;
         /* continue with parent directory */
         new_path = path;
       }
