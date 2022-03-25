@@ -52,6 +52,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: new login screen background and adapted logo to support Ukraine  [PR #1122]
 - console: multicolumn output: fill columns first [PR #1072]
 - cats: include only jobtypes in `list jobtotals` that write data to volumes [PR #1135]
+- jstreegrid: remove handling of IE < 8 using navigator interface to avoid warnings in chrome [PR #1140]
 
 ### Deprecated
 
