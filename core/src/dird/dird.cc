@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -183,24 +183,26 @@ static void usage()
   fprintf(
       stderr,
       _("Usage: bareos-dir [options]\n"
-        "        -c <path>   use <path> as configuration file or directory\n"
-        "        -d <nn>     set debug level to <nn>\n"
-        "        -dt         print timestamp in debug output\n"
-        "        -f          run in foreground (for debugging)\n"
-        "        -g <group>  run as group <group>\n"
-        "        -m          print kaboom output (for debugging)\n"
+        "        -c <path>              use <path> as configuration file or "
+        "directory\n"
+        "        -d <nn>                set debug level to <nn>\n"
+        "        -dt                    print timestamp in debug output\n"
+        "        -f                     run in foreground (for debugging)\n"
+        "        -g <group>             run as group <group>\n"
+        "        -m                     print kaboom output (for debugging)\n"
 #if !defined(HAVE_WIN32)
-        "        -p <file>   full path to pidfile (default: none)\n"
+        "        -p <file>              full path to pidfile (default: none)\n"
 #endif
-        "        -r <job>    run <job> now\n"
-        "        -s          no signals (for debugging)\n"
-        "        -t          test - read configuration and exit\n"
-        "        -u <user>   run as user <user>\n"
-        "        -v          verbose user messages\n"
-        "        -xc         print configuration and exit\n"
-        "        -xs         print configuration file schema in JSON format "
-        "and exit\n"
-        "        -?          print this message.\n"
+        "        -r <job>               run <job> now\n"
+        "        -s                     no signals (for debugging)\n"
+        "        -t                     test - read configuration and exit\n"
+        "        -u <user>              run as user <user>\n"
+        "        -v                     verbose user messages\n"
+        "        -xc[resource[=<name>]]   print all or specific configuration "
+        "resources and exit\n"
+        "        -xs                    print configuration schema in JSON "
+        "format and exit\n"
+        "        -?                     print this message\n"
         "\n"));
 
   exit(1);
@@ -222,6 +224,8 @@ int main(int argc, char* argv[])
   cat_op mode;
   bool no_signals = false;
   bool export_config = false;
+  std::string export_config_resourcetype;
+  std::string export_config_resourcename;
   bool export_config_schema = false;
   char* uid = nullptr;
   char* gid = nullptr;
@@ -303,6 +307,17 @@ int main(int argc, char* argv[])
           export_config_schema = true;
         } else if (*optarg == 'c') {
           export_config = true;
+          // erase first char ('c')
+          std::string export_config_parameter = std::string(optarg).erase(0, 1);
+          size_t splitpos = export_config_parameter.find('=');
+          if (splitpos == export_config_parameter.npos) {
+            export_config_resourcetype = export_config_parameter;
+          } else {
+            export_config_resourcetype
+                = export_config_parameter.substr(0, splitpos);
+            export_config_resourcename
+                = export_config_parameter.substr(splitpos + 1);
+          }
         } else {
           usage();
         }
@@ -365,9 +380,13 @@ int main(int argc, char* argv[])
   my_config->ParseConfig();
 
   if (export_config) {
-    my_config->DumpResources(PrintMessage, nullptr);
-
-    TerminateDird(0);
+    int rc = 0;
+    if (!my_config->DumpResources(PrintMessage, nullptr,
+                                  export_config_resourcetype,
+                                  export_config_resourcename)) {
+      rc = 1;
+    }
+    TerminateDird(rc);
     return 0;
   }
 

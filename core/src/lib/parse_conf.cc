@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -316,40 +316,31 @@ bool ConfigurationParser::AppendToResourcesChain(BareosResource* new_resource,
   return true;
 }
 
-int ConfigurationParser::GetResourceTableIndex(int resource_type)
+int ConfigurationParser::GetResourceTableIndex(const char* resource_type_name)
 {
-  int rindex = -1;
-
-  if ((resource_type >= r_first_) && (resource_type <= r_last_)) {
-    rindex = resource_type = r_first_;
+  for (int i = 0; resources_[i].name; i++) {
+    if (Bstrcasecmp(resources_[i].name, resource_type_name)) { return i; }
   }
 
-  return rindex;
+  return -1;
 }
 
-ResourceTable* ConfigurationParser::GetResourceTable(int resource_type)
+int ConfigurationParser::GetResourceCode(const char* resource_type_name)
 {
-  ResourceTable* result = nullptr;
-  int rindex = GetResourceTableIndex(resource_type);
+  for (int i = 0; resources_[i].name; i++) {
+    if (Bstrcasecmp(resources_[i].name, resource_type_name)) {
+      return resources_[i].rcode;
+    }
+  }
 
-  if (rindex >= 0) { result = &resources_[rindex]; }
-
-  return result;
+  return 0;
 }
 
 ResourceTable* ConfigurationParser::GetResourceTable(
     const char* resource_type_name)
 {
-  ResourceTable* result = nullptr;
-  int i;
-
-  for (i = 0; resources_[i].name; i++) {
-    if (Bstrcasecmp(resources_[i].name, resource_type_name)) {
-      result = &resources_[i];
-    }
-  }
-
-  return result;
+  int res_table_index = GetResourceTableIndex(resource_type_name);
+  return &resources_[res_table_index];
 }
 
 int ConfigurationParser::GetResourceItemIndex(ResourceItem* resource_items_,
@@ -573,6 +564,37 @@ bool ConfigurationParser::RemoveResource(int rcode, const char* name)
 
   // Resource with this name not found
   return false;
+}
+
+bool ConfigurationParser::DumpResources(bool sendit(void* sock,
+                                                    const char* fmt,
+                                                    ...),
+                                        void* sock,
+                                        const std::string& res_type_name,
+                                        const std::string& res_name,
+                                        bool hide_sensitive_data)
+{
+  bool result = false;
+  if (res_type_name.empty()) {
+    DumpResources(sendit, sock, hide_sensitive_data);
+    result = true;
+  } else {
+    int res_type = GetResourceCode(res_type_name.c_str());
+    if (res_type > 0) {
+      BareosResource* res = nullptr;
+      if (res_name.empty()) {
+        // No name, dump all resources of specified type
+        res = GetNextRes(res_type, nullptr);
+      } else {
+        // Dump a single resource with specified name
+        res = GetResWithName(res_type, res_name.c_str());
+        res_type = -res_type;
+      }
+      if (res) { result = true; }
+      DumpResourceCb_(res_type, res, sendit, sock, hide_sensitive_data, false);
+    }
+  }
+  return result;
 }
 
 void ConfigurationParser::DumpResources(bool sendit(void* sock,

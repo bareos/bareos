@@ -264,11 +264,15 @@ class ConfigurationParser {
                     std::function<void()> ResourceSpecificInitializer);
   bool AppendToResourcesChain(BareosResource* new_resource, int rcode);
   bool RemoveResource(int rcode, const char* name);
+  bool DumpResources(bool sendit(void* sock, const char* fmt, ...),
+                     void* sock,
+                     const std::string& res_type_name,
+                     const std::string& res_name,
+                     bool hide_sensitive_data = false);
   void DumpResources(bool sendit(void* sock, const char* fmt, ...),
                      void* sock,
                      bool hide_sensitive_data = false);
   int GetResourceCode(const char* resource_type);
-  ResourceTable* GetResourceTable(int resource_type);
   ResourceTable* GetResourceTable(const char* resource_type_name);
   int GetResourceItemIndex(ResourceItem* res_table, const char* item);
   ResourceItem* GetResourceItem(ResourceItem* res_table, const char* item);
@@ -354,7 +358,7 @@ class ConfigurationParser {
                      const char* config_filename);
   bool GetConfigIncludePath(PoolMem& full_path, const char* config_dir);
   bool FindConfigPath(PoolMem& full_path);
-  int GetResourceTableIndex(int resource_type);
+  int GetResourceTableIndex(const char* resource_type_name);
   void StoreMsgs(LEX* lc, ResourceItem* item, int index, int pass);
   void StoreName(LEX* lc, ResourceItem* item, int index, int pass);
   void StoreStrname(LEX* lc, ResourceItem* item, int index, int pass);
