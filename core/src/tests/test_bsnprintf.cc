@@ -95,30 +95,6 @@ TEST(bsnprintf, char)
   EXPECT_EQ(Bsnprintf(dest, 100, "%%"), 1);
   EXPECT_STREQ(dest, "%");
 
-  // unsupported w
-  EXPECT_EQ(Bsnprintf(dest, 100, "%w%xyz"), 3);
-  EXPECT_STREQ(dest, "xyz");
-
-  // invalid ! (ignored)
-  EXPECT_EQ(Bsnprintf(dest, 100, "%!xyz"), 3);
-  EXPECT_STREQ(dest, "xyz");
-}
-
-TEST(bsnprintf, pointer)
-{
-  char dest[100];
-  void* null = nullptr;
-  void* ones = reinterpret_cast<void*>(UINTPTR_MAX);
-
-  EXPECT_EQ(Bsnprintf(dest, 100, "%p", null), 1);
-  EXPECT_STREQ(dest, "0");
-  if constexpr (sizeof(void*) == 4) {
-    EXPECT_EQ(Bsnprintf(dest, 100, "%p", ones), 8);
-    EXPECT_STREQ(dest, "ffffffff");
-  } else {
-    EXPECT_EQ(Bsnprintf(dest, 100, "%p", ones), 16);
-    EXPECT_STREQ(dest, "ffffffffffffffff");
-  }
 }
 
 TEST(bsnprintf, integers)
