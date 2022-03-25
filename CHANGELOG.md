@@ -40,6 +40,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - dir: fix crash when there are no jobs to consolidate [PR #1131]
 - webui: get volume and pool params from query instead of route [PR #1139]
 - FreeBSD packages: add missing ddl/update 2171_2192 and 2192_2210 files [PR #1147]
+- Fix director connects to client while `Connection From Director To Client` is disabled. [PR #1099]
 
 ### Changed
 - Qmsg: in case of syslog logging use adapted log priority instead of always LOG_ERR [PR #1134]
