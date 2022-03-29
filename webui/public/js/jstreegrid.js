@@ -232,15 +232,6 @@
 				this.uniq = Math.ceil(Math.random()*1000);
 				this.rootid = container.attr("id");
 
-				var msie = /msie/.test(navigator.userAgent.toLowerCase());
-				if (msie) {
-					var version = parseFloat(navigator.appVersion.split("MSIE")[1]);
-					if (version < 8) {
-						gs.defaultConf.display = "inline";
-						gs.defaultConf.zoom = "1";
-					}
-				}
-
 				// set up the classes we need
 				if (!styled) {
 					styled = true;
