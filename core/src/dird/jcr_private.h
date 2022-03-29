@@ -24,11 +24,14 @@
 #ifndef BAREOS_DIRD_JCR_PRIVATE_H_
 #define BAREOS_DIRD_JCR_PRIVATE_H_
 
+#include <iostream>
 #include "cats/cats.h"
 #include "dird/client_connection_handshake_mode.h"
 #include "dird/job_trigger.h"
 
 typedef struct s_tree_root TREE_ROOT;
+
+class ResHeadContainer;
 
 namespace directordaemon {
 class JobResource;
@@ -93,9 +96,14 @@ struct Resources {
 };
 
 struct JobControlRecordPrivate {
-  JobControlRecordPrivate() {
+  JobControlRecordPrivate( std::shared_ptr<ResHeadContainer> res_head_container) {
+    job_res_head_container_ = res_head_container;
     RestoreJobId = 0; MigrateJobId = 0; VerifyJobId = 0;
   }
+  ~JobControlRecordPrivate() {
+    job_res_head_container_ = nullptr;
+  }
+  std::shared_ptr<ResHeadContainer> job_res_head_container_;
   pthread_t SD_msg_chan{};        /**< Message channel thread id */
   bool SD_msg_chan_started{};     /**< Message channel thread started */
   pthread_cond_t term_wait = PTHREAD_COND_INITIALIZER;      /**< Wait for job termination */
