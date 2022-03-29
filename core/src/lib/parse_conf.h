@@ -41,7 +41,7 @@
 struct ResourceItem;
 class ConfigParserStateMachine;
 class ConfigurationParser;
-
+class ResHeadContainer;
 /* For storing name_addr items in res_items table */
 
 /* using offsetof on non-standard-layout types is conditionally supported. As
@@ -217,8 +217,11 @@ class ConfigurationParser {
   int32_t r_own_;                /* own resource type */
   BareosResource* own_resource_; /* Pointer to own resource */
   ResourceTable*
-      resource_definitions_;   /* Pointer to table of permitted resources */
-  BareosResource** res_head_;  /* Pointer to defined resources */
+      resource_definitions_; /* Pointer to table of permitted resources */
+ private:
+  BareosResource** res_head_; /* Pointer to defined resources */
+ public:
+  std::shared_ptr<ResHeadContainer> res_head_container_;
   mutable brwlock_t res_lock_; /* Resource lock */
 
   SaveResourceCb_t SaveResourceCb_;
@@ -412,6 +415,35 @@ class ConfigurationParser {
   void SetResourceDefaultsParserPass1(ResourceItem* item);
   void SetResourceDefaultsParserPass2(ResourceItem* item);
 };
+
+struct ResHeadContainer {
+  BareosResource** res_head_;
+  ConfigurationParser* config_;
+  ResHeadContainer(ConfigurationParser* config, BareosResource** res_head)
+  {
+    res_head_ = res_head;
+    config_ = config;
+    printf("ResHeadContainer::ResHeadContainer : res_head_ is at %p\n",
+           res_head_);
+  }
+
+  ~ResHeadContainer()
+  {
+    int num = config_->r_num_;
+    for (int j = 0; j < num; j++) {
+      config_->FreeResourceCb_(res_head_[j], j);
+      res_head_[j] = nullptr;
+    }
+    printf("ResHeadContainer::~ResHeadContainer : feeing restable  at %p\n",
+           res_head_);
+    // free(res_head_);
+    printf("ResHeadContainer::~ResHeadContainer : freed restable  at %p\n",
+           res_head_);
+    // Dmsg0(100, "ResHeadContainer::~ResHeadContainer : freed restable  at
+    // %p\n", res_head_);
+  }
+};
+
 
 bool PrintMessage(void* sock, const char* fmt, ...);
 bool IsTlsConfigured(TlsResource* tls_resource);

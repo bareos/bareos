@@ -617,7 +617,7 @@ bool DoReloadConfig()
     int num_rcodes = my_config->r_num_;
     for (int i = 0; i < num_rcodes; i++) {
       // restore original config
-      my_config->res_head_[i] = prev_config.res_table[i];
+      my_config->res_head_container_->res_head_[i] = prev_config.res_table[i];
     }
 
     // me is changed above by CheckResources()

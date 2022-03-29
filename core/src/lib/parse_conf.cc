@@ -150,16 +150,19 @@ ConfigurationParser::ConfigurationParser(
   SaveResourceCb_ = SaveResourceCb;
   DumpResourceCb_ = DumpResourceCb;
   FreeResourceCb_ = FreeResourceCb;
+  res_head_container_.reset(new ResHeadContainer(this, res_head_));
 }
 
 ConfigurationParser::~ConfigurationParser()
 {
+#if 0
   if (res_head_) {
     for (int i = 0; i <= r_num_ - 1; i++) {
       if (res_head_[i]) { FreeResourceCb_(res_head_[i], i); }
       res_head_[i] = nullptr;
     }
   }
+#endif
 }
 
 void ConfigurationParser::InitializeQualifiedResourceNameTypeConverter(
