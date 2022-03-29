@@ -6,6 +6,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ## [Unreleased]
 
 ### Fixed
+- webui: get volume and pool params from query instead of route [PR #1144]
 
 ### Changed
 - cats: include only jobtypes in list jobtotals that write data to volumes [PR #1136]
