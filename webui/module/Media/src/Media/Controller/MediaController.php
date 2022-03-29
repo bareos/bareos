@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2022 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -130,7 +130,7 @@ class MediaController extends AbstractActionController
       );
     }
 
-    $volumename = $this->params()->fromRoute('id');
+    $volumename = $this->params()->fromQuery('volume');
 
     return new ViewModel(array(
       'volume' => $volumename,

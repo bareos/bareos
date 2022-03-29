@@ -8,6 +8,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Changed
 - jstreegrid: remove handling of IE < 8 using navigator interface to avoid warnings in chrome [PR #1142]
 
+### Fixed
+- webui: get volume and pool params from query instead of route [PR #1145]
+
 ## [20.0.6] - 2022-03-14
 
 ### Breaking Changes

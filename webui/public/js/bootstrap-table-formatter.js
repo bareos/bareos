@@ -3,7 +3,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2020-2021 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2020-2022 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -506,11 +506,11 @@ function formatAutochangerStatus(value) {
 }
 
 function formatPoolName(value, basePath) {
-   return '<a href="' + basePath + '/pool/details/' + value + '">' + value + '</a>';
+   return '<a href="' + basePath + '/pool/details/?pool=' + value + '">' + value + '</a>';
 }
 
 function formatVolumeName(value, basePath) {
-   return '<a href="' + basePath + '/media/details/' + value + '">' + value + '</a>';
+   return '<a href="' + basePath + '/media/details/?volume=' + value + '">' + value + '</a>';
 }
 
 function clientsActionButtonsFormatter(value, row, index, basePath) {
