@@ -53,13 +53,13 @@ namespace directordaemon {
 JobControlRecord* new_control_jcr(const char* base_name, int job_type)
 {
   JobControlRecord* jcr;
-
   jcr = NewDirectorJcr();
 
-  /*
-   * The job and defaults are not really used, but we set them up to ensure that
-   * everything is correctly initialized.
-   */
+  // exclude JT_SYSTEM job from shared config counting
+  if (job_type == JT_SYSTEM) { jcr->impl->job_res_head_container_ = nullptr; }
+
+  /* The job and defaults are not really used, but we set them up to ensure that
+   * everything is correctly initialized. */
   LockRes(my_config);
   jcr->impl->res.job = (JobResource*)my_config->GetNextRes(R_JOB, NULL);
   SetJcrDefaults(jcr, jcr->impl->res.job);

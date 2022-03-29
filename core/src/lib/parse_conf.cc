@@ -150,6 +150,11 @@ ConfigurationParser::ConfigurationParser(
   SaveResourceCb_ = SaveResourceCb;
   DumpResourceCb_ = DumpResourceCb;
   FreeResourceCb_ = FreeResourceCb;
+  ResetResHeadContainer();
+}
+
+void ConfigurationParser::ResetResHeadContainer()
+{
   res_head_container_.reset(new ResHeadContainer(this, res_head_));
 }
 
@@ -289,13 +294,13 @@ bool ConfigurationParser::AppendToResourcesChain(BareosResource* new_resource,
     return false;
   }
 
-  if (!res_head_[rindex]) {
-    res_head_[rindex] = new_resource;
+  if (!res_head_container_->res_head_[rindex]) {
+    res_head_container_->res_head_[rindex] = new_resource;
     Dmsg3(900, "Inserting first %s res: %s index=%d\n", ResToStr(rcode),
           new_resource->resource_name_, rindex);
   } else {  // append
     BareosResource* last = nullptr;
-    BareosResource* current = res_head_[rindex];
+    BareosResource* current = res_head_container_->res_head_[rindex];
     do {
       if (bstrcmp(current->resource_name_, new_resource->resource_name_)) {
         Emsg2(M_ERROR, 0,
@@ -523,7 +528,8 @@ BareosResource** ConfigurationParser::CopyResourceTable()
       = (BareosResource**)malloc(num * sizeof(BareosResource*));
 
   for (int i = 0; i < num; i++) {
-    res[i] = res_head_[i];
+    res[i] = res_head_container_->res_head_[i];
+    res_head_container_->res_head_[i] = nullptr;
     res_head_[i] = nullptr;
   }
 
@@ -544,13 +550,14 @@ bool ConfigurationParser::RemoveResource(int rcode, const char* name)
    * resource_definitions must be added. If it is referenced, don't remove it.
    */
   last = nullptr;
-  for (BareosResource* res = res_head_[rindex]; res; res = res->next_) {
+  for (BareosResource* res = res_head_container_->res_head_[rindex]; res;
+       res = res->next_) {
     if (bstrcmp(res->resource_name_, name)) {
       if (!last) {
         Dmsg2(900,
               _("removing resource %s, name=%s (first resource in list)\n"),
               ResToStr(rcode), name);
-        res_head_[rindex] = res->next_;
+        res_head_container_->res_head_[rindex] = res->next_;
       } else {
         Dmsg2(900, _("removing resource %s, name=%s\n"), ResToStr(rcode), name);
         last->next_ = res->next_;
@@ -604,9 +611,9 @@ void ConfigurationParser::DumpResources(bool sendit(void* sock,
                                         bool hide_sensitive_data)
 {
   for (int i = 0; i <= r_num_ - 1; i++) {
-    if (res_head_[i]) {
-      DumpResourceCb_(i, res_head_[i], sendit, sock, hide_sensitive_data,
-                      false);
+    if (res_head_container_->res_head_[i]) {
+      DumpResourceCb_(i, res_head_container_->res_head_[i], sendit, sock,
+                      hide_sensitive_data, false);
     }
   }
 }

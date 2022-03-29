@@ -248,6 +248,7 @@ class ConfigurationParser {
                       FreeResourceCb_t FreeResourceCb);
 
   ~ConfigurationParser();
+  void ResetResHeadContainer();
 
   bool IsUsingConfigIncludeDir() const { return use_config_include_dir_; }
   bool ParseConfig();
