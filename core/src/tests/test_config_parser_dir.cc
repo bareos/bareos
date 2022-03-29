@@ -48,7 +48,6 @@ TEST(ConfigParser_Dir, bareos_configparser_tests)
 
   TermMsg(); /* Terminate message handler */
 }
-
 TEST(ConfigParser_Dir, runscript_test)
 {
   OSDependentInit();
@@ -242,6 +241,5 @@ TEST(ConfigParser_Dir, CFG_TYPE_TIME)
 {
   test_config_directive_type(test_CFG_TYPE_TIME);
 }
-
 
 }  // namespace directordaemon
