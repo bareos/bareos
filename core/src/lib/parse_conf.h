@@ -423,8 +423,8 @@ struct ResHeadContainer {
   {
     res_head_ = res_head;
     config_ = config;
-    printf("ResHeadContainer::ResHeadContainer : res_head_ is at %p\n",
-           res_head_);
+    Dmsg1(100, "ResHeadContainer::ResHeadContainer : res_head_ is at %p\n",
+          res_head_);
   }
 
   ~ResHeadContainer()
@@ -434,13 +434,8 @@ struct ResHeadContainer {
       config_->FreeResourceCb_(res_head_[j], j);
       res_head_[j] = nullptr;
     }
-    printf("ResHeadContainer::~ResHeadContainer : feeing restable  at %p\n",
-           res_head_);
-    // free(res_head_);
-    printf("ResHeadContainer::~ResHeadContainer : freed restable  at %p\n",
-           res_head_);
-    // Dmsg0(100, "ResHeadContainer::~ResHeadContainer : freed restable  at
-    // %p\n", res_head_);
+    Dmsg1(100, "ResHeadContainer::~ResHeadContainer : freed restable  at %p\n",
+          res_head_);
   }
 };
 
