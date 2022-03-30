@@ -38,6 +38,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: fix restore file tree rendering [PR #1127]
 - dir: fix crash when there are no jobs to consolidate [PR #1131]
 - webui: get volume and pool params from query instead of route [PR #1139]
+- FreeBSD packages: add missing ddl/update 2171_2192 and 2192_2210 files [PR #1147]
 
 ### Changed
 - webui: remove an unnecessary .bvfs_get_jobids and buildSubtree() call [PR #1050]
@@ -85,6 +86,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1038]: https://github.com/bareos/bareos/pull/1038
 [PR #1040]: https://github.com/bareos/bareos/pull/1040
 [PR #1041]: https://github.com/bareos/bareos/pull/1041
+[PR #1042]: https://github.com/bareos/bareos/pull/1042
 [PR #1043]: https://github.com/bareos/bareos/pull/1043
 [PR #1046]: https://github.com/bareos/bareos/pull/1046
 [PR #1047]: https://github.com/bareos/bareos/pull/1047
@@ -117,4 +119,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1122]: https://github.com/bareos/bareos/pull/1122
 [PR #1127]: https://github.com/bareos/bareos/pull/1127
 [PR #1131]: https://github.com/bareos/bareos/pull/1131
+[PR #1135]: https://github.com/bareos/bareos/pull/1135
+[PR #1139]: https://github.com/bareos/bareos/pull/1139
+[PR #1140]: https://github.com/bareos/bareos/pull/1140
+[PR #1147]: https://github.com/bareos/bareos/pull/1147
 [unreleased]: https://github.com/bareos/bareos/tree/master
