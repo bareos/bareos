@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -475,8 +475,8 @@ int BareosDb::ListResult(void* vctx, int nb_col, char** row)
           if (type == VERT_LIST) {
             if (col_len > max_len) { max_len = col_len; }
           } else {
-            if (SqlFieldIsNumeric(field->type)
-                && (int)field->max_length > 0) { /* fixup for commas */
+            if (SqlFieldIsNumeric(field->type) && (int)field->max_length > 0
+                && strcmp(field->name, "jobid") != 0) { /* fixup for commas */
               field->max_length += (field->max_length - 1) / 3;
             }
             if (col_len < (int)field->max_length) {
@@ -565,7 +565,8 @@ int BareosDb::ListResult(void* vctx, int nb_col, char** row)
         if (row[i] == NULL) {
           value.bsprintf(" %-*s |", max_len, "NULL");
         } else if (SqlFieldIsNumeric(field->type) && !jcr->gui
-                   && IsAnInteger(row[i])) {
+                   && IsAnInteger(row[i])
+                   && strcmp(field->name, "jobid") != 0) {
           value.bsprintf(" %*s |", max_len, add_commas(row[i], ewc));
         } else {
           value.bsprintf(" %-*s |", max_len, row[i]);
@@ -594,8 +595,12 @@ int BareosDb::ListResult(void* vctx, int nb_col, char** row)
         } else if (SqlFieldIsNumeric(field->type) && !jcr->gui
                    && IsAnInteger(row[i])) {
           key.bsprintf(" %*s: ", max_len, field->name);
-          value.bsprintf("%s\n", add_commas(row[i], ewc));
-        } else {
+          if (strcmp(field->name, "jobid") != 0) {
+            value.bsprintf("%s\n", add_commas(row[i], ewc));
+          } else {
+            value.bsprintf("%s\n", row[i]);
+          }
+
           key.bsprintf(" %*s: ", max_len, field->name);
           value.bsprintf("%s\n", row[i]);
         }
@@ -677,8 +682,8 @@ int BareosDb::ListResult(JobControlRecord* jcr,
         if (type == VERT_LIST) {
           if (col_len > max_len) { max_len = col_len; }
         } else {
-          if (SqlFieldIsNumeric(field->type)
-              && (int)field->max_length > 0) { /* fixup for commas */
+          if (SqlFieldIsNumeric(field->type) && (int)field->max_length > 0
+              && strcmp(field->name, "jobid") != 0) { /* fixup for commas */
             field->max_length += (field->max_length - 1) / 3;
           }
           if (col_len < (int)field->max_length) { col_len = field->max_length; }
@@ -766,6 +771,7 @@ int BareosDb::ListResult(JobControlRecord* jcr,
         send->ObjectStart();
         SqlFieldSeek(0);
         send->Decoration("|");
+
         for (int i = 0; i < num_fields; i++) {
           field = SqlFetchField();
           if (!field) { break; }
@@ -781,7 +787,12 @@ int BareosDb::ListResult(JobControlRecord* jcr,
             value.bsprintf(" %-*s |", max_len, "NULL");
           } else if (SqlFieldIsNumeric(field->type) && !jcr->gui
                      && IsAnInteger(row[i])) {
-            value.bsprintf(" %*s |", max_len, add_commas(row[i], ewc));
+            if (strcmp(field->name, "jobid") != 0) {
+              value.bsprintf(" %*s |", max_len, add_commas(row[i], ewc));
+            } else {
+              value.bsprintf(" %*s |", max_len, row[i]);
+            }
+
           } else {
             value.bsprintf(" %-*s |", max_len, row[i]);
           }
@@ -818,7 +829,12 @@ int BareosDb::ListResult(JobControlRecord* jcr,
           } else if (SqlFieldIsNumeric(field->type) && !jcr->gui
                      && IsAnInteger(row[i])) {
             key.bsprintf(" %*s: ", max_len, field->name);
-            value.bsprintf("%s\n", add_commas(row[i], ewc));
+            if (strcmp(field->name, "jobid") != 0) {
+              value.bsprintf("%s\n", add_commas(row[i], ewc));
+            } else {
+              value.bsprintf("%s\n", row[i]);
+            }
+
           } else {
             key.bsprintf(" %*s: ", max_len, field->name);
             value.bsprintf("%s\n", row[i]);
