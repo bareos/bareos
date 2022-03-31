@@ -77,6 +77,8 @@ static bool trace = false;
 #endif
 static bool hangup = false;
 
+static int MessageTypeToLogPriority(int message_type);
+
 /*
  * Walk back in a string from end looking for a
  * path separator.
@@ -745,40 +747,8 @@ void DispatchMessage(JobControlRecord* jcr,
            * Dispatch based on our internal message type to a matching syslog
            * one.
            */
-          switch (type) {
-            case M_ERROR:
-            case M_ERROR_TERM:
-              SendToSyslog(d->syslog_facility_ | LOG_ERR, msg);
-              break;
-            case M_ABORT:
-            case M_FATAL:
-              SendToSyslog(d->syslog_facility_ | LOG_CRIT, msg);
-              break;
-            case M_WARNING:
-              SendToSyslog(d->syslog_facility_ | LOG_WARNING, msg);
-              break;
-            case M_DEBUG:
-              SendToSyslog(d->syslog_facility_ | LOG_DEBUG, msg);
-              break;
-            case M_INFO:
-            case M_NOTSAVED:
-            case M_RESTORED:
-            case M_SAVED:
-            case M_SKIPPED:
-            case M_TERM:
-              SendToSyslog(d->syslog_facility_ | LOG_INFO, msg);
-              break;
-            case M_ALERT:
-            case M_AUDIT:
-            case M_MOUNT:
-            case M_SECURITY:
-            case M_VOLMGMT:
-              SendToSyslog(d->syslog_facility_ | LOG_NOTICE, msg);
-              break;
-            default:
-              SendToSyslog(d->syslog_facility_ | LOG_ERR, msg);
-              break;
-          }
+          SendToSyslog(d->syslog_facility_ | MessageTypeToLogPriority(type),
+                       msg);
           break;
         case MessageDestinationCode::kOperator:
           Dmsg1(850, "OPERATOR for following msg: %s\n", msg);
@@ -1534,51 +1504,38 @@ int Mmsg(std::vector<char>& msgbuf, const char* fmt, ...)
 // convert bareos message type to syslog log priority
 static int MessageTypeToLogPriority(int message_type)
 {
-  {
-    switch (message_type) {
-      case M_ABORT:
-        return LOG_EMERG;
-      case M_TERM:
-        return LOG_EMERG;
+  switch (message_type) {
+    case M_ERROR:
+    case M_ERROR_TERM:
+      return LOG_ERR;
 
-      case M_DEBUG:
-        return LOG_DEBUG;
-      case M_FATAL:
-        return LOG_ALERT;
+    case M_ABORT:
+    case M_FATAL:
+      return LOG_CRIT;
 
-      case M_ERROR:
-        return LOG_ERR;
-      case M_ERROR_TERM:
-        return LOG_ERR;
+    case M_WARNING:
+      return LOG_WARNING;
 
-      case M_WARNING:
-        return LOG_WARNING;
+    case M_DEBUG:
+      return LOG_DEBUG;
 
-      case M_INFO:
-        return LOG_INFO;
-      case M_SAVED:
-        return LOG_INFO;
-      case M_NOTSAVED:
-        return LOG_INFO;
-      case M_SKIPPED:
-        return LOG_INFO;
-      case M_MOUNT:
-        return LOG_INFO;
+    case M_INFO:
+    case M_NOTSAVED:
+    case M_RESTORED:
+    case M_SAVED:
+    case M_SKIPPED:
+    case M_TERM:
+      return LOG_INFO;
 
-      case M_RESTORED:
-        return LOG_INFO;
-      case M_SECURITY:
-        return LOG_INFO;
-      case M_ALERT:
-        return LOG_INFO;
-      case M_VOLMGMT:
-        return LOG_INFO;
-      case M_AUDIT:
-        return LOG_INFO;
+    case M_ALERT:
+    case M_AUDIT:
+    case M_MOUNT:
+    case M_SECURITY:
+    case M_VOLMGMT:
+      return LOG_NOTICE;
 
-      default:
-        return LOG_ERR;
-    }
+    default:
+      return LOG_ERR;
   }
 }
 
