@@ -508,6 +508,7 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
                               const char* clientname,
                               int jobstatus,
                               int joblevel,
+                              int jobtype,
                               const char* volumename,
                               const char* poolname,
                               utime_t since_time,
@@ -544,6 +545,11 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
 
   if (joblevel) {
     temp.bsprintf("AND Job.Level = '%c' ", joblevel);
+    PmStrcat(selection, temp.c_str());
+  }
+
+  if (jobtype) {
+    temp.bsprintf("AND Job.Type = '%c' ", jobtype);
     PmStrcat(selection, temp.c_str());
   }
 

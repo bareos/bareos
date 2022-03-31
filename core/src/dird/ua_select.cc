@@ -994,7 +994,7 @@ PoolResource* get_pool_resource(UaContext* ua)
 // List all jobs and ask user to select one
 int SelectJobDbr(UaContext* ua, JobDbRecord* jr)
 {
-  ua->db->ListJobRecords(ua->jcr, jr, "", NULL, 0, 0, NULL, NULL, 0, 0, 0,
+  ua->db->ListJobRecords(ua->jcr, jr, "", NULL, 0, 0, 0, NULL, NULL, 0, 0, 0,
                          ua->send, HORZ_LIST);
   if (!GetPint(ua, _("Enter the JobId to select: "))) { return 0; }
 
@@ -1888,40 +1888,56 @@ bail_out:
   return false;
 }
 
-bool GetUserJobTypeSelection(UaContext* ua, int* jobtype)
+static int GetParsedJobType(std::string jobtype_argument)
 {
   int i;
-  char job_type[MAX_NAME_LENGTH];
+  int return_jobtype = -1;
+  if (jobtype_argument.size() == 1) {
+    for (i = 0; jobtypes[i].job_type; i++) {
+      if (jobtype_argument[0] == static_cast<char>(jobtypes[i].job_type)) {
+        break;
+      }
+    }
+  } else {
+    for (i = 0; jobtypes[i].type_name; i++) {
+      if (jobtypes[i].type_name == jobtype_argument) { break; }
+    }
+  }
+  if (jobtypes[i].type_name) { return_jobtype = jobtypes[i].job_type; }
 
-  /* set returning jobtype to invalid */
-  *jobtype = -1;
+  return return_jobtype;
+}
+
+bool GetUserJobTypeSelection(UaContext* ua, int& jobtype, bool ask_user)
+{
+  int i;
+  char jobtype_argument[MAX_NAME_LENGTH];
 
   if ((i = FindArgWithValue(ua, NT_("jobtype"))) >= 0) {
-    bstrncpy(job_type, ua->argv[i], sizeof(job_type));
-  } else {
-    StartPrompt(ua, _("Jobtype to prune:\n"));
+    bstrncpy(jobtype_argument, ua->argv[i], sizeof(jobtype_argument));
+  } else if (ask_user) {
+    StartPrompt(ua, _("Jobtype:\n"));
     for (i = 0; jobtypes[i].type_name; i++) {
       AddPrompt(ua, jobtypes[i].type_name);
     }
 
-    if (DoPrompt(ua, _("JobType"), _("Select Job Type"), job_type,
-                 sizeof(job_type))
+    if (DoPrompt(ua, _("JobType"), _("Select Job Type"), jobtype_argument,
+                 sizeof(jobtype_argument))
         < 0) {
       return false;
     }
+  } else {
+    return true;
   }
 
-  for (i = 0; jobtypes[i].type_name; i++) {
-    if (Bstrcasecmp(jobtypes[i].type_name, job_type)) { break; }
-  }
+  int parsed_jobtype = GetParsedJobType(jobtype_argument);
 
-  if (!jobtypes[i].type_name) {
-    ua->WarningMsg(_("Illegal jobtype %s.\n"), job_type);
+  if (parsed_jobtype == -1) {
+    ua->WarningMsg(_("Illegal jobtype %s.\n"), jobtype_argument);
     return false;
   }
 
-  *jobtype = jobtypes[i].job_type;
-
+  jobtype = parsed_jobtype;
   return true;
 }
 

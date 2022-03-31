@@ -690,11 +690,19 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     return false;
   }
 
+  // jobtype=X
+  int jobtype = 0;
+  if (!GetUserJobTypeSelection(ua, jobtype, false)) {
+    ua->ErrorMsg(_("invalid jobtype parameter\n"));
+    return false;
+  }
+
   ListCmdOptions optionslist(ua);
 
   char* volumename = nullptr;
   char* poolname = nullptr;
   int jobid;
+
   // Select what to do based on the first argument.
   if ((Bstrcasecmp(ua->argk[1], NT_("jobs")) && (ua->argv[1] == NULL))
       || ((Bstrcasecmp(ua->argk[1], NT_("job"))
@@ -748,9 +756,9 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     SetQueryRange(query_range, ua, &jr);
 
     ua->db->ListJobRecords(ua->jcr, &jr, query_range.c_str(), clientname,
-                           jobstatus, joblevel, volumename, poolname, schedtime,
-                           optionslist.last, optionslist.count, ua->send,
-                           llist);
+                           jobstatus, joblevel, jobtype, volumename, poolname,
+                           schedtime, optionslist.last, optionslist.count,
+                           ua->send, llist);
   } else if (Bstrcasecmp(ua->argk[1], NT_("jobtotals"))) {
     // List JOBTOTALS
     ua->db->ListJobTotals(ua->jcr, &jr, ua->send);
@@ -799,9 +807,9 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
         SetQueryRange(query_range, ua, &jr);
 
         ua->db->ListJobRecords(ua->jcr, &jr, query_range.c_str(), clientname,
-                               jobstatus, joblevel, volumename, poolname,
-                               schedtime, optionslist.last, optionslist.count,
-                               ua->send, llist);
+                               jobstatus, joblevel, jobtype, volumename,
+                               poolname, schedtime, optionslist.last,
+                               optionslist.count, ua->send, llist);
       }
     }
   } else if (Bstrcasecmp(ua->argk[1], NT_("basefiles"))) {
