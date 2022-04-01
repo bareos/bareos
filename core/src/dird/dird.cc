@@ -557,9 +557,10 @@ bool DoReloadConfig()
 
   DbSqlPoolFlush();
 
-  BareosResource** saved_res_table = my_config->CopyResourceTable();
-
+  my_config->BackupResourceTable();
+  my_config->ClearResourceTables();
   Dmsg0(100, "Reloading config file\n");
+
 
   my_config->err_type_ = M_ERROR;
   my_config->ClearWarnings();
@@ -577,27 +578,22 @@ bool DoReloadConfig()
 
     // remove our reference to current config so it will be freed when last job
     // owning it finishes
-    my_config->ResetResHeadContainer();
-    free(saved_res_table);
-    StartStatisticsThread();
+    my_config->ResetResHeadContainerPrevious();
 
+    StartStatisticsThread();
 
   } else {  // parse config failed
     Jmsg(nullptr, M_ERROR, 0, _("Please correct the configuration in %s\n"),
          my_config->get_base_config_path().c_str());
     Jmsg(nullptr, M_ERROR, 0, _("Resetting to previous configuration.\n"));
 
-    int num_rcodes = my_config->r_num_;
-    for (int i = 0; i < num_rcodes; i++) {
-      // restore original config
-      my_config->res_head_container_->res_head_[i] = saved_res_table[i];
-      //    my_config->res_head_[i] = res_table[i];
-    }
-    free(saved_res_table);
-
+    my_config->RestoreResourceTable();
     // me is changed above by CheckResources()
     me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
+    assert(me);
     my_config->own_resource_ = me;
+
+    StartStatisticsThread();
   }
 
   UnlockRes(my_config);

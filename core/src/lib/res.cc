@@ -96,7 +96,7 @@ BareosResource* ConfigurationParser::GetResWithName(int rcode,
 
   if (lock) { LockRes(this); }
 
-  res = res_head_[rindex];
+  res = res_head_container_->res_head_[rindex];
   while (res) {
     if (bstrcmp(res->resource_name_, name)) { break; }
     res = res->next_;
@@ -119,7 +119,7 @@ BareosResource* ConfigurationParser::GetNextRes(int rcode,
   int rindex = rcode;
 
   if (res == NULL) {
-    nres = res_head_[rindex];
+    nres = res_head_container_->res_head_[rindex];
   } else {
     nres = res->next_;
   }

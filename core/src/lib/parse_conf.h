@@ -177,7 +177,8 @@ typedef void(INIT_RES_HANDLER)(ResourceItem* item, int pass);
 typedef void(STORE_RES_HANDLER)(LEX* lc,
                                 ResourceItem* item,
                                 int index,
-                                int pass);
+                                int pass,
+                                BareosResource** res_head);
 typedef void(PRINT_RES_HANDLER)(ResourceItem& item,
                                 OutputFormatterResource& send,
                                 bool hide_sensitive_data,
@@ -211,10 +212,8 @@ class ConfigurationParser {
   BareosResource* own_resource_; /* Pointer to own resource */
   ResourceTable*
       resource_definitions_; /* Pointer to table of permitted resources */
- private:
-  BareosResource** res_head_; /* Pointer to defined resources */
- public:
   std::shared_ptr<ResHeadContainer> res_head_container_;
+  //  std::shared_ptr<ResHeadContainer> res_head_container_previous_;
   mutable brwlock_t res_lock_; /* Resource lock */
 
   SaveResourceCb_t SaveResourceCb_;
@@ -231,7 +230,6 @@ class ConfigurationParser {
                       int32_t err_type,
                       int32_t r_num,
                       ResourceTable* resources,
-                      BareosResource** res_head,
                       const char* config_default_filename,
                       const char* config_include_dir,
                       void (*ParseConfigBeforeCb)(ConfigurationParser&),
@@ -241,7 +239,9 @@ class ConfigurationParser {
                       FreeResourceCb_t FreeResourceCb);
 
   ~ConfigurationParser();
-  void ResetResHeadContainer();
+  void ResetResHeadContainerPrevious();
+  void RestorePreviousConfig();
+  void ClearResourceTables();
 
   bool IsUsingConfigIncludeDir() const { return use_config_include_dir_; }
   bool ParseConfig();
@@ -251,7 +251,8 @@ class ConfigurationParser {
                        LEX_WARNING_HANDLER* scan_warning = nullptr);
   const std::string& get_base_config_path() const { return used_config_path_; }
   void FreeResources();
-  BareosResource** CopyResourceTable();
+  bool BackupResourceTable();
+  bool RestoreResourceTable();
   void InitResource(int rcode,
                     ResourceItem items[],
                     int pass,
@@ -409,10 +410,14 @@ class ConfigurationParser {
 struct ResHeadContainer {
   BareosResource** res_head_;
   ConfigurationParser* config_;
-  ResHeadContainer(ConfigurationParser* config, BareosResource** res_head)
+
+  ResHeadContainer(ConfigurationParser* config)
   {
-    res_head_ = res_head;
     config_ = config;
+    int num = config_->r_num_;
+    res_head_ = (BareosResource**)malloc(num * sizeof(BareosResource*));
+
+    for (int i = 0; i < num; i++) { res_head_[i] = nullptr; }
     Dmsg1(100, "ResHeadContainer::ResHeadContainer : res_head_ is at %p\n",
           res_head_);
   }
@@ -426,6 +431,7 @@ struct ResHeadContainer {
     }
     Dmsg1(100, "ResHeadContainer::~ResHeadContainer : freed restable  at %p\n",
           res_head_);
+    free(res_head_);
   }
 };
 

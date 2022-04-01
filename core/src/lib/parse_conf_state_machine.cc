@@ -144,7 +144,8 @@ ConfigParserStateMachine::ScanResource(int token)
                                       parser_pass_number_)) {
           if (my_config_.store_res_) {
             my_config_.store_res_(lexical_parser_, item, resource_item_index,
-                                  parser_pass_number_);
+                                  parser_pass_number_,
+                                  my_config_.res_head_container_->res_head_);
           }
         }
       } else {
@@ -280,8 +281,9 @@ void ConfigParserStateMachine::DumpResourcesAfterSecondPass()
 {
   if (debug_level >= 900 && parser_pass_number_ == 2) {
     for (int i = 0; i <= my_config_.r_num_ - 1; i++) {
-      my_config_.DumpResourceCb_(i, my_config_.res_head_[i], PrintMessage,
-                                 nullptr, false, false);
+      my_config_.DumpResourceCb_(i,
+                                 my_config_.res_head_container_->res_head_[i],
+                                 PrintMessage, nullptr, false, false);
     }
   }
 }
