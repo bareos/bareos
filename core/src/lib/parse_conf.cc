@@ -96,7 +96,8 @@ ConfigurationParser::ConfigurationParser()
     , r_own_(0)
     , own_resource_(nullptr)
     , resource_definitions_(0)
-    , res_head_(nullptr)
+    /* , res_head_(nullptr) */
+    /* , res_head_backup_(nullptr) */
     , SaveResourceCb_(nullptr)
     , DumpResourceCb_(nullptr)
     , FreeResourceCb_(nullptr)
@@ -117,7 +118,6 @@ ConfigurationParser::ConfigurationParser(
     int32_t err_type,
     int32_t r_num,
     ResourceTable* resource_definitions,
-    BareosResource** res_head,
     const char* config_default_filename,
     const char* config_include_dir,
     void (*ParseConfigBeforeCb)(ConfigurationParser&),
@@ -138,7 +138,7 @@ ConfigurationParser::ConfigurationParser(
   err_type_ = err_type;
   r_num_ = r_num;
   resource_definitions_ = resource_definitions;
-  res_head_ = res_head;
+  res_head_container_.reset(new ResHeadContainer(this));
   config_default_filename_
       = config_default_filename == nullptr ? "" : config_default_filename;
   config_include_dir_ = config_include_dir == nullptr ? "" : config_include_dir;
@@ -150,13 +150,20 @@ ConfigurationParser::ConfigurationParser(
   SaveResourceCb_ = SaveResourceCb;
   DumpResourceCb_ = DumpResourceCb;
   FreeResourceCb_ = FreeResourceCb;
-  ResetResHeadContainer();
 }
 
-void ConfigurationParser::ResetResHeadContainer()
+// remove our shared pointer to previous configuration so that it will be freed
+// when last job owning is done
+void ConfigurationParser::ResetResHeadContainerPrevious()
 {
-  res_head_container_.reset(new ResHeadContainer(this, res_head_));
+  // res_head_container_previous_ = nullptr;
 }
+
+void ConfigurationParser::RestorePreviousConfig()
+{
+  // res_head_container_ = std::move(res_head_container_previous_);
+}
+
 
 ConfigurationParser::~ConfigurationParser()
 {
@@ -214,6 +221,10 @@ bool ConfigurationParser::ParseConfig()
   bool success = ParseConfigFile(config_path.c_str(), nullptr, scan_error_,
                                  scan_warning_);
   if (success && ParseConfigReadyCb_) { ParseConfigReadyCb_(*this); }
+  /* if (success) { */
+  /*   res_head_container_previous_ = std::move(res_head_container_); */
+  /*   res_head_container_.reset(new ResHeadContainer(this)); */
+  /* } */
   return success;
 }
 
@@ -521,19 +532,23 @@ bool ConfigurationParser::FindConfigPath(PoolMem& full_path)
   return found;
 }
 
-BareosResource** ConfigurationParser::CopyResourceTable()
+
+void ConfigurationParser::ClearResourceTables()
 {
-  int num = r_num_;
-  BareosResource** res
-      = (BareosResource**)malloc(num * sizeof(BareosResource*));
+  /* int num = r_num_; */
+  /* for (int i = 0; i < num; i++) { */
+  /*   res_head_container_->res_head_[i] = nullptr; */
+  /*   res_head_[i] = nullptr; */
+  /* } */
+}
 
-  for (int i = 0; i < num; i++) {
-    res[i] = res_head_container_->res_head_[i];
-    res_head_container_->res_head_[i] = nullptr;
-    res_head_[i] = nullptr;
-  }
-
-  return res;
+// restore the previously saved  res_head_backup_ to res_head_
+bool ConfigurationParser::RestoreResourceTable() { return true; }
+// copy the current resource table to res_head_backup_
+bool ConfigurationParser::BackupResourceTable()
+{
+  // res_head_container_previous_.reset(res_head_container_.get());
+  return true;
 }
 
 bool ConfigurationParser::RemoveResource(int rcode, const char* name)

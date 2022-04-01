@@ -77,8 +77,8 @@ extern struct s_kw RunFields[];
  * types. Note, these should be unique for each
  * daemon though not a requirement.
  */
-static BareosResource* sres_head[R_NUM];
-static BareosResource** res_head = sres_head;
+/* static BareosResource* sres_head[R_NUM]; */
+/* static BareosResource** res_head = sres_head; */
 static PoolMem* configure_usage_string = NULL;
 
 extern void StoreInc(LEX* lc, ResourceItem* item, int index, int pass);
@@ -2529,7 +2529,11 @@ static void StoreActiononpurge(LEX* lc, ResourceItem* item, int index, int pass)
  * first reference. The details of the resource are obtained
  * later from the SD.
  */
-static void StoreDevice(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreDevice(LEX* lc,
+                        ResourceItem* item,
+                        int index,
+                        int pass,
+                        BareosResource** res_head)
 {
   int rindex = R_DEVICE;
 
@@ -2572,7 +2576,11 @@ static void StoreDevice(LEX* lc, ResourceItem* item, int index, int pass)
 }
 
 // Store Migration/Copy type
-static void StoreMigtype(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreMigtype(LEX* lc,
+                         ResourceItem* item,
+                         int index,
+                         int pass,
+                         BareosResource** res_head)
 {
   LexGetToken(lc, BCT_NAME);
   // Store the type both in pass 1 and pass 2
@@ -3204,7 +3212,11 @@ static void InitResourceCb(ResourceItem* item, int pass)
  * callback function for parse_config
  * See ../lib/parse_conf.c, function ParseConfig, for more generic handling.
  */
-static void ParseConfigCb(LEX* lc, ResourceItem* item, int index, int pass)
+static void ParseConfigCb(LEX* lc,
+                          ResourceItem* item,
+                          int index,
+                          int pass,
+                          BareosResource** res_head)
 {
   switch (item->type) {
     case CFG_TYPE_AUTOPASSWORD:
@@ -3223,7 +3235,7 @@ static void ParseConfigCb(LEX* lc, ResourceItem* item, int index, int pass)
       StoreAuthtype(lc, item, index, pass);
       break;
     case CFG_TYPE_DEVICE:
-      StoreDevice(lc, item, index, pass);
+      StoreDevice(lc, item, index, pass, res_head);
       break;
     case CFG_TYPE_JOBTYPE:
       StoreJobtype(lc, item, index, pass);
@@ -3244,7 +3256,7 @@ static void ParseConfigCb(LEX* lc, ResourceItem* item, int index, int pass)
       StoreRunscript(lc, item, index, pass);
       break;
     case CFG_TYPE_MIGTYPE:
-      StoreMigtype(lc, item, index, pass);
+      StoreMigtype(lc, item, index, pass, res_head);
       break;
     case CFG_TYPE_INCEXC:
       StoreInc(lc, item, index, pass);
@@ -3681,7 +3693,7 @@ ConfigurationParser* InitDirConfig(const char* configfile, int exit_code)
 {
   ConfigurationParser* config = new ConfigurationParser(
       configfile, nullptr, nullptr, InitResourceCb, ParseConfigCb,
-      PrintConfigCb, exit_code, R_NUM, resources, res_head,
+      PrintConfigCb, exit_code, R_NUM, resources,
       default_config_filename.c_str(), "bareos-dir.d", ConfigBeforeCallback,
       ConfigReadyCallback, SaveResource, DumpResource, FreeResource);
   if (config) { config->r_own_ = R_DIRECTOR; }
