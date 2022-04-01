@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -199,8 +199,6 @@ bool PruneCmd(UaContext* ua, const char* cmd)
 
       return true;
     case 1: { /* prune jobs */
-      int jobtype = -1;
-
       if (!(client = get_client_resource(ua))) { return false; }
 
       if ((FindArgWithValue(ua, NT_("pool")) >= 0)
@@ -211,10 +209,11 @@ bool PruneCmd(UaContext* ua, const char* cmd)
       }
 
       // Ask what jobtype to prune.
-      if (!GetUserSingleJobTypeSelection(ua, jobtype, true)) { return false; }
+      std::vector<char> jobtype{};
+      if (!GetUserJobTypeListSelection(ua, jobtype, true)) { return false; }
 
       // Verify that result jobtype is valid (this should always be the case).
-      if (jobtype < 0) { return false; }
+      if (jobtype.empty()) { return false; }
 
       // Pool Job Retention takes precedence over client Job Retention
       if (pool && pool->JobRetention > 0) {
@@ -830,14 +829,12 @@ bail_out:
 bool PruneJobs(UaContext* ua,
                ClientResource* client,
                PoolResource* pool,
-               int JobType)
+               std::vector<char> JobTypes)
 {
-  switch (JobType) {
-    case JT_BACKUP:
-      return PruneBackupJobs(ua, client, pool);
-    default:
-      return true;
+  for (const auto& type : JobTypes) {
+    if (type == JT_BACKUP) return PruneBackupJobs(ua, client, pool);
   }
+  return true;
 }
 
 // Prune a given Volume

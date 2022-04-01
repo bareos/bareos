@@ -1138,13 +1138,21 @@ std::vector<std::string> split_string(const std::string& str, char delim)
   return parts;
 }
 
-
 std::string CreateDelimitedStringForSqlQueries(
-    const std::vector<std::string>& elements,
+    const std::vector<char>& elements,
     char delim)
 {
+  std::string empty_list{"''"};
   std::string result{};
-  for (const auto& element : elements) { result += "'" + element + "',"; }
-  result.pop_back();
-  return result;
+  if (!elements.empty()) {
+    for (const auto& element : elements) {
+      result += "'";
+      result += element;
+      result += "'";
+      result += delim;
+    }
+    result.pop_back();
+    return result;
+  }
+  return empty_list;
 }

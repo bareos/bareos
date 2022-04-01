@@ -1,7 +1,7 @@
 /**
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -306,4 +306,32 @@ TEST(Filedaemon, evaluate_jobcommand_wrong_format_test)
   EXPECT_FALSE(eval.EvaluationSuccesful());
   EXPECT_EQ(eval.protocol_version_,
             filedaemon::JobCommand::ProtocolVersion::kVersionUndefinded);
+}
+
+TEST(StringManipulation,
+     DelimitedSting_PrintsEmptySingleElementWhenNoElementIsGiven)
+{
+  std::vector<char> jobtypes{};
+
+  std::string result = CreateDelimitedStringForSqlQueries(jobtypes, ',');
+
+  EXPECT_STREQ(result.c_str(), "''");
+}
+
+TEST(StringManipulation, DelimitedSting_PrintsCorrectSingleCharacter)
+{
+  std::vector<char> jobtypes{65};
+
+  std::string result = CreateDelimitedStringForSqlQueries(jobtypes, ',');
+
+  EXPECT_STREQ(result.c_str(), "'A'");
+}
+
+TEST(StringManipulation, DelimitedString_PrintsCorrectMultipleCharacters)
+{
+  std::vector<char> jobtypes{65, 66, 67, 68, 69, 70};
+
+  std::string result = CreateDelimitedStringForSqlQueries(jobtypes, ',');
+
+  EXPECT_STREQ(result.c_str(), "'A','B','C','D','E','F'");
 }

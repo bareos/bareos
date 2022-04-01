@@ -32,6 +32,7 @@
 
 #  include "cats.h"
 #  include "lib/edit.h"
+#  include "lib/util.h"
 
 /* -----------------------------------------------------------------------
  *
@@ -508,7 +509,7 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
                               const char* clientname,
                               int jobstatus,
                               int joblevel,
-                              std::string jobtype,
+                              std::vector<char> jobtypes,
                               const char* volumename,
                               const char* poolname,
                               utime_t since_time,
@@ -548,8 +549,9 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
     PmStrcat(selection, temp.c_str());
   }
 
-  if (!jobtype.empty()) {
-    temp.bsprintf("AND Job.Type in (%s) ", jobtype.c_str());
+  if (!jobtypes.empty()) {
+    std::string types = CreateDelimitedStringForSqlQueries(jobtypes, ',');
+    temp.bsprintf("AND Job.Type in (%s) ", types.c_str());
     PmStrcat(selection, temp.c_str());
   }
 

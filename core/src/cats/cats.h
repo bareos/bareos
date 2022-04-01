@@ -791,7 +791,7 @@ class BareosDb : public BareosDbQueryEnum {
                       const char* clientname,
                       int jobstatus,
                       int joblevel,
-                      std::string jobtype,
+                      std::vector<char> jobtypes,
                       const char* volumename,
                       const char* poolname,
                       utime_t since_time,
