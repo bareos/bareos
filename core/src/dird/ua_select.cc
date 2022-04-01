@@ -1908,7 +1908,7 @@ static int GetParsedJobType(std::string jobtype_argument)
   return return_jobtype;
 }
 
-bool GetUserJobTypeSelection(UaContext* ua, int& jobtype, bool ask_user)
+bool GetUserSingleJobTypeSelection(UaContext* ua, int& jobtype, bool ask_user)
 {
   int i;
   char jobtype_argument[MAX_NAME_LENGTH];
@@ -1938,6 +1938,51 @@ bool GetUserJobTypeSelection(UaContext* ua, int& jobtype, bool ask_user)
   }
 
   jobtype = parsed_jobtype;
+  return true;
+}
+
+bool GetUserJobTypeListSelection(UaContext* ua,
+                                 std::string& jobtype,
+                                 bool ask_user)
+{
+  int i;
+  char jobtype_argument[MAX_NAME_LENGTH];
+
+  if ((i = FindArgWithValue(ua, NT_("jobtype"))) >= 0) {
+    bstrncpy(jobtype_argument, ua->argv[i], sizeof(jobtype_argument));
+  } else if (ask_user) {
+    StartPrompt(ua, _("Jobtype:\n"));
+    for (i = 0; jobtypes[i].type_name; i++) {
+      AddPrompt(ua, jobtypes[i].type_name);
+    }
+
+    if (DoPrompt(ua, _("JobType"), _("Select Job Type"), jobtype_argument,
+                 sizeof(jobtype_argument))
+        < 0) {
+      return false;
+    }
+  } else {
+    return true;
+  }
+
+  char delimiter = ',';
+  std::vector<std::string> split_jobtypes;
+  if (strchr(jobtype_argument, delimiter) != NULL) {
+    split_jobtypes = split_string(jobtype_argument, delimiter);
+  } else {
+    split_jobtypes.push_back(jobtype_argument);
+  }
+
+  for (auto& split_jobtype : split_jobtypes) {
+    int type = GetParsedJobType(split_jobtype);
+    if (type == -1) {
+      ua->WarningMsg(_("Illegal jobtype %s.\n"), split_jobtype.c_str());
+      return false;
+    }
+    split_jobtype = type;
+  }
+
+  jobtype = CreateDelimitedStringForSqlQueries(split_jobtypes, delimiter);
   return true;
 }
 

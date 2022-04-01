@@ -508,7 +508,7 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
                               const char* clientname,
                               int jobstatus,
                               int joblevel,
-                              int jobtype,
+                              std::string jobtype,
                               const char* volumename,
                               const char* poolname,
                               utime_t since_time,
@@ -548,8 +548,8 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
     PmStrcat(selection, temp.c_str());
   }
 
-  if (jobtype) {
-    temp.bsprintf("AND Job.Type = '%c' ", jobtype);
+  if (!jobtype.empty()) {
+    temp.bsprintf("AND Job.Type in (%s) ", jobtype.c_str());
     PmStrcat(selection, temp.c_str());
   }
 

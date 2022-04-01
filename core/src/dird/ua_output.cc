@@ -691,8 +691,8 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
   }
 
   // jobtype=X
-  int jobtype = 0;
-  if (!GetUserJobTypeSelection(ua, jobtype, false)) {
+  std::string jobtype{};
+  if (!GetUserJobTypeListSelection(ua, jobtype, false)) {
     ua->ErrorMsg(_("invalid jobtype parameter\n"));
     return false;
   }

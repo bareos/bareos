@@ -211,7 +211,7 @@ bool PruneCmd(UaContext* ua, const char* cmd)
       }
 
       // Ask what jobtype to prune.
-      if (!GetUserJobTypeSelection(ua, jobtype, true)) { return false; }
+      if (!GetUserSingleJobTypeSelection(ua, jobtype, true)) { return false; }
 
       // Verify that result jobtype is valid (this should always be the case).
       if (jobtype < 0) { return false; }

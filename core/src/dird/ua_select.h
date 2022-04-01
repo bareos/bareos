@@ -89,7 +89,8 @@ bool GetUserSlotList(UaContext* ua,
                      char* slot_list,
                      const char* argument,
                      int num_slots);
-bool GetUserJobTypeSelection(UaContext* ua, int &jobtype, bool ask_user);
+bool GetUserSingleJobTypeSelection(UaContext* ua, int &jobtype, bool ask_user);
+bool GetUserJobTypeListSelection(UaContext* ua, std::string &jobtype, bool ask_user);
 bool GetUserJobStatusSelection(UaContext* ua, int* jobstatus);
 bool GetUserJobLevelSelection(UaContext* ua, int* joblevel);
 
