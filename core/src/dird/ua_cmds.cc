@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -343,10 +343,11 @@ static struct ua_cmdstruct commands[] = {
          "fileset [ jobid=<jobid> ] | fileset [ ujobid=<complete_name> ] |\n"
          "fileset [ filesetid=<filesetid> ] | fileset [ jobid=<jobid> ] |\n"
          "jobs [job=<job-name>] [client=<client-name>] [jobstatus=<status>] "
-         "[joblevel=<joblevel>] [volume=<volumename>] [days=<number>] "
-         "[hours=<number>] [last] [count] |\n"
+         "[jobtype=<jobtype>] [joblevel=<joblevel>] [volume=<volumename>] "
+         "[days=<number>] [hours=<number>] [last] [count] |\n"
          "job=<job-name> [client=<client-name>] [jobstatus=<status>] "
-         "[volume=<volumename>] [days=<number>] [hours=<number>] |\n"
+         "[jobtype=<jobtype>] [volume=<volumename>] [days=<number>] "
+         "[hours=<number>] |\n"
          "jobid=<jobid> | ujobid=<complete_name> |\n"
          "joblog jobid=<jobid> | joblog ujobid=<complete_name> |\n"
          "jobmedia jobid=<jobid> | jobmedia ujobid=<complete_name> |\n"
@@ -379,11 +380,11 @@ static struct ua_cmdstruct commands[] = {
          "fileset jobid=<jobid> | fileset ujobid=<complete_name> |\n"
          "fileset [ filesetid=<filesetid> ] | fileset [ jobid=<jobid> ] |\n"
          "jobs [job=<job-name>] [client=<client-name>] [jobstatus=<status>] "
-         "[volume=<volumename>] [days=<number>] [hours=<number>] [last] "
-         "[count] |\n"
+         "[jobtype=<jobtype>][volume=<volumename>] [days=<number>] "
+         "[hours=<number>] [last] [count] |\n"
          "job=<job-name> [client=<client-name>] [jobstatus=<status>] "
-         "[joblevel=<joblevel>] [volume=<volumename>] [days=<number>] "
-         "[hours=<number>] |\n"
+         "[jobtype=<jobtype>] [joblevel=<joblevel>] [volume=<volumename>] "
+         "[days=<number>] [hours=<number>] |\n"
          "jobid=<jobid> | ujobid=<complete_name> |\n"
          "joblog jobid=<jobid> [count] | joblog ujobid=<complete_name> [count] "
          "|\n"
