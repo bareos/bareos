@@ -1,7 +1,7 @@
 #
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -59,6 +59,8 @@ class PythonBareosListCommandTest(bareos_unittest.Base):
         )
 
         director.call("run job=backup-bareos-fd yes")
+        director.call("wait")
+        director.call("restore client=bareos-fd fileset=SelfTest select all done yes")
         director.call("wait")
 
         # Regular list jobs
@@ -129,22 +131,13 @@ class PythonBareosListCommandTest(bareos_unittest.Base):
         # Long list with options
 
         result = director.call("llist jobs current")
-        self.assertNotEqual(
-            result["jobs"][0],
-            "",
-        )
+        self.assertTrue(result["jobs"])
 
         result = director.call("llist jobs enable")
-        self.assertNotEqual(
-            result["jobs"][0],
-            "",
-        )
+        self.assertTrue(result["jobs"])
 
         result = director.call("llist jobs last")
-        self.assertNotEqual(
-            result["jobs"][0],
-            "",
-        )
+        self.assertTrue(result["jobs"])
 
         expected_long_list_last_keys = [
             "jobid",
@@ -184,16 +177,10 @@ class PythonBareosListCommandTest(bareos_unittest.Base):
         )
 
         result = director.call("llist jobs last current")
-        self.assertNotEqual(
-            result["jobs"][0],
-            "",
-        )
+        self.assertTrue(result["jobs"])
 
         result = director.call("llist jobs last current enable")
-        self.assertNotEqual(
-            result["jobs"][0],
-            "",
-        )
+        self.assertTrue(result["jobs"])
 
         # Counting jobs
         result = director.call("list jobs count")
@@ -245,6 +232,31 @@ class PythonBareosListCommandTest(bareos_unittest.Base):
             result["jobs"][0]["count"],
             "",
         )
+
+        # list jobs jobstatus=X
+        result = director.call("list jobs jobstatus=T")
+        self.assertTrue(result["jobs"])
+        for job in result["jobs"]:
+            self.assertTrue(job["jobstatus"], "T")
+
+        result = director.call("list jobs jobstatus=R")
+        self.assertFalse(result["jobs"])
+
+        # list jobs jobtype=X
+        result = director.call("list jobs jobtype=B")
+        self.assertTrue(result["jobs"])
+        for job in result["jobs"]:
+            self.assertEqual(job["type"], "B")
+
+        result = director.call("list jobs jobtype=Backup")
+        self.assertTrue(result["jobs"])
+        for job in result["jobs"]:
+            self.assertEqual(job["type"], "B")
+
+        result = director.call("list jobs jobtype=B,R")
+        self.assertTrue(result["jobs"])
+        for job in result["jobs"]:
+            self.assertTrue(job["type"] == "B" or job["type"] == "R")
 
     def test_list_media(self):
         """
