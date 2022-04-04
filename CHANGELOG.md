@@ -55,6 +55,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - console: multicolumn output: fill columns first [PR #1072]
 - cats: include only jobtypes in `list jobtotals` that write data to volumes [PR #1135]
 - jstreegrid: remove handling of IE < 8 using navigator interface to avoid warnings in chrome [PR #1140]
+- `bvfs_update` now uses `unordered_map` instead of `htable` for the pathid cache [PR #1138]
 
 ### Deprecated
 
