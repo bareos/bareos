@@ -12,6 +12,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Changed
 - cats: include only jobtypes in list jobtotals that write data to volumes [PR #1136]
 - jstreegrid: remove handling of IE < 8 using navigator interface to avoid warnings in chrome [PR #1141]
+- `bvfs_update` now uses `unordered_map` instead of `htable` for the pathid cache [PR #1146]
 
 ## [21.1.2] - 2022-03-17
 
