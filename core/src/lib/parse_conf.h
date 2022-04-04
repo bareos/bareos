@@ -408,7 +408,8 @@ class ConfigurationParser {
   void SetResourceDefaultsParserPass2(ResourceItem* item);
 };
 
-struct ResHeadContainer {
+class ResHeadContainer {
+ public:
   BareosResource** res_head_ = nullptr;
   ConfigurationParser* config_ = nullptr;
 
