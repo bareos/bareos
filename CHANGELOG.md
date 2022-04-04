@@ -18,6 +18,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - tests: simplify test coverage analysis [PR #1010]
 - webui: analytics module: show stored data per jobname in treemap [PR #1082]
 - webui: add pool column to volume lists [PR #1120]
+- dird: console: add `jobtype` parameter to `(l)list jobs` [PR #1149]
 
 ### Fixed
 - NDMP_BAREOS: support autoxflate plugin [PR #1013]
