@@ -49,6 +49,7 @@ wait
 @exec "sh -c 'touch ${tmp}/data/weird-files/file-3'"
 run job=$JobName level=Incremental yes
 wait
+messages
 END_OF_DATA
 run_bareos "$@"
 
@@ -118,24 +119,21 @@ run_bconsole
 stop_bareos
 
 check_job_canceled
-if ! grep "purged JobIds 1,2,3 as they were consolidated into Job 6" "$tmp"/log1.out; then
-  echo "consolidation did not work. Check $tmp/log1.out" >&2
-  estat=1
-fi
 
-if ! grep "purging empty jobids 7,8,9" "$tmp"/log2.out; then
-  echo "Removing of empty jobs did not work. Check $tmp/log2.out" >&2
-  estat=1
-fi
+expect_grep "purged JobIds 1,2,3 as they were consolidated into Job 6" \
+            "$tmp"/log1.out \
+            "consolidation of expected jobs did not happen."
 
-if ! grep "purging empty jobids 12" "$tmp"/log3.out; then
-  echo "Removing of empty jobs did not work. Check $tmp/log3.out" >&2
-  estat=1
-fi
+expect_grep "purging empty jobids 7,8,9" \
+            "$tmp"/log2.out \
+            "Removal of expected empty jobs was not successful."
 
-if ! grep "purged JobIds 6,4,11 as they were consolidated into Job 15" "$tmp"/log3.out; then
-  echo "consolidation did not work. Check $tmp/log3.out" >&2
-  estat=1
-fi
+expect_grep "purging empty jobids 12" \
+            "$tmp"/log3.out \
+            "Removal of expected empty jobs was not successful"
+
+expect_grep "purged JobIds 6,4,11 as they were consolidated into Job 15" \
+            "$tmp"/log3.out \
+            "consolidation of expected jobs did not happen."
 
 end_test
