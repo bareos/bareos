@@ -523,7 +523,7 @@ bool ConfigurationParser::FindConfigPath(PoolMem& full_path)
 // when last job owning is done
 void ConfigurationParser::ReleasePreviousResourceTable()
 {
-  Dmsg1(0, "ConfigurationParser::ReleasePreviousResourceTable: %p\n",
+  Dmsg1(10, "ConfigurationParser::ReleasePreviousResourceTable: %p\n",
         res_head_container_previous_->res_head_);
   res_head_container_previous_ = nullptr;
 }
@@ -551,10 +551,10 @@ void ConfigurationParser::ClearResourceTables()
 bool ConfigurationParser::RestoreResourceTable()
 {
   std::swap(res_head_container_, res_head_container_previous_);
-  Dmsg1(0, "ConfigurationParser::RestoreResourceTable: %p -> %p\n",
+  Dmsg1(10, "ConfigurationParser::RestoreResourceTable: %p -> %p\n",
         res_head_container_previous_->res_head_,
         res_head_container_->res_head_);
-  Dmsg1(0, "ConfigurationParser::RestoreResourceTable: release %p\n",
+  Dmsg1(10, "ConfigurationParser::RestoreResourceTable: release %p\n",
         res_head_container_previous_->res_head_);
   res_head_container_previous_ = nullptr;
   return true;

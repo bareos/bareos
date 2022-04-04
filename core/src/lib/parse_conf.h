@@ -431,13 +431,13 @@ class ResHeadContainer {
     res_head_ = (BareosResource**)malloc(num * sizeof(BareosResource*));
 
     for (int i = 0; i < num; i++) { res_head_[i] = nullptr; }
-    Dmsg1(0, "ResHeadContainer::ResHeadContainer : res_head_ is at %p\n",
+    Dmsg1(10, "ResHeadContainer::ResHeadContainer : res_head_ is at %p\n",
           res_head_);
   }
 
   ~ResHeadContainer()
   {
-    Dmsg1(0, "ResHeadContainer::~ResHeadContainer : freeing res_head at %p\n",
+    Dmsg1(10, "ResHeadContainer::~ResHeadContainer : freeing res_head at %p\n",
           res_head_);
     int num = config_->r_num_;
     for (int j = 0; j < num; j++) {
