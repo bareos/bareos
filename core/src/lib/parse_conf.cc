@@ -207,10 +207,6 @@ bool ConfigurationParser::ParseConfig()
   bool success = ParseConfigFile(config_path.c_str(), nullptr, scan_error_,
                                  scan_warning_);
   if (success && ParseConfigReadyCb_) { ParseConfigReadyCb_(*this); }
-  /* if (success) { */
-  /*   res_head_container_previous_ = std::move(res_head_container_); */
-  /*   res_head_container_.reset(new ResHeadContainer(this)); */
-  /* } */
   return success;
 }
 
@@ -518,54 +514,33 @@ bool ConfigurationParser::FindConfigPath(PoolMem& full_path)
   return found;
 }
 
-
 // remove our shared pointer to previous configuration so that it will be freed
-// when last job owning is done
+// when last job also owning finishes
 void ConfigurationParser::ReleasePreviousResourceTable()
 {
   Dmsg1(10, "ConfigurationParser::ReleasePreviousResourceTable: %p\n",
-        res_head_container_previous_->res_head_);
-  res_head_container_previous_ = nullptr;
+        res_head_container_backup_->res_head_);
+  res_head_container_backup_ = nullptr;
 }
 
-#if 0
-void ConfigurationParser::RestorePreviousConfig()
+// swap the previously saved res_head_previous_ with res_head_
+// and release the res_head_previous_
+void ConfigurationParser::RestoreResourceTable()
 {
-  //  res_head_container_ = std::move(res_head_container_previous_);
-}
-
-#endif
-
-#if 0
-void ConfigurationParser::ClearResourceTables()
-{
-  /* int num = r_num_; */
-  /* for (int i = 0; i < num; i++) { */
-  /*   res_head_container_->res_head_[i] = nullptr; */
-  /*   res_head_[i] = nullptr; */
-  /* } */
-}
-#endif
-
-// restore the previously saved  res_head_backup_ to res_head_
-bool ConfigurationParser::RestoreResourceTable()
-{
-  std::swap(res_head_container_, res_head_container_previous_);
+  std::swap(res_head_container_, res_head_container_backup_);
   Dmsg1(10, "ConfigurationParser::RestoreResourceTable: %p -> %p\n",
-        res_head_container_previous_->res_head_,
-        res_head_container_->res_head_);
+        res_head_container_backup_->res_head_, res_head_container_->res_head_);
   Dmsg1(10, "ConfigurationParser::RestoreResourceTable: release %p\n",
-        res_head_container_previous_->res_head_);
-  res_head_container_previous_ = nullptr;
-  return true;
+        res_head_container_backup_->res_head_);
+  res_head_container_backup_ = nullptr;
 }
+
 // copy the current resource table to res_head_backup_
-// and create a new res_head_container_
-bool ConfigurationParser::BackupResourceTable()
+// and create a new empty res_head_container_
+void ConfigurationParser::BackupResourceTable()
 {
-  std::swap(res_head_container_, res_head_container_previous_);
+  std::swap(res_head_container_, res_head_container_backup_);
   res_head_container_.reset(new ResHeadContainer(this));
-  return true;
 }
 
 bool ConfigurationParser::RemoveResource(int rcode, const char* name)

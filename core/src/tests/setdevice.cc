@@ -34,6 +34,11 @@
 #include "include/job_types.h"
 #include "lib/output_formatter.h"
 
+#include "lib/parse_conf.h"
+#include "dird/dird_globals.h"
+#include "dird/dird_conf.h"
+
+
 #include <array>
 
 namespace directordaemon {
@@ -60,6 +65,11 @@ static bool sprintit(void* ctx, const char* fmt, ...)
 
 TEST(setdevice, scan_command_line)
 {
+  OSDependentInit();
+  std::string path_to_config_file = std::string(
+      RELATIVE_PROJECT_SOURCE_DIR "/configs/bareos-configparser-tests");
+  my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
+
   std::unique_ptr<JobControlRecord, decltype(&Test_FreeJcr)> jcr(
       NewDirectorJcr(), &Test_FreeJcr);
 
