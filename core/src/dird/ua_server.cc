@@ -56,7 +56,9 @@ JobControlRecord* new_control_jcr(const char* base_name, int job_type)
   jcr = NewDirectorJcr();
 
   // exclude JT_SYSTEM job from shared config counting
-  if (job_type == JT_SYSTEM) { jcr->impl->job_res_head_container_ = nullptr; }
+  if (job_type == JT_SYSTEM) {
+    jcr->impl->job_config_resources_container_ = nullptr;
+  }
 
   /* The job and defaults are not really used, but we set them up to ensure that
    * everything is correctly initialized. */

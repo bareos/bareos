@@ -1628,10 +1628,11 @@ void GetJobStorage(UnifiedStorageResource* store,
 JobControlRecord* NewDirectorJcr()
 {
   JobControlRecord* jcr = new_jcr(DirdFreeJcr);
-  jcr->impl = new JobControlRecordPrivate(my_config->res_head_container_);
-  Dmsg1(10, "NewDirectorJcr(): res_head_ is at %p %s\n",
-        my_config->res_head_container_->res_head_,
-        my_config->res_head_container_->TimeStampAsString().c_str());
+  jcr->impl
+      = new JobControlRecordPrivate(my_config->config_resources_container_);
+  Dmsg1(10, "NewDirectorJcr(): configuration_resources_ is at %p %s\n",
+        my_config->config_resources_container_->configuration_resources_,
+        my_config->config_resources_container_->TimeStampAsString().c_str());
   return jcr;
 }
 

@@ -35,9 +35,6 @@
 
 namespace console {
 
-/* static BareosResource* sres_head[R_NUM]; */
-/* static BareosResource** res_head = sres_head; */
-
 static bool SaveResource(int type, ResourceItem* items, int pass);
 static void FreeResource(BareosResource* sres, int type);
 static void DumpResource(int type,

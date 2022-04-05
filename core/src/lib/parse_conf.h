@@ -178,7 +178,7 @@ typedef void(STORE_RES_HANDLER)(LEX* lc,
                                 ResourceItem* item,
                                 int index,
                                 int pass,
-                                BareosResource** res_head);
+                                BareosResource** configuration_resources);
 typedef void(PRINT_RES_HANDLER)(ResourceItem& item,
                                 OutputFormatterResource& send,
                                 bool hide_sensitive_data,
@@ -212,8 +212,8 @@ class ConfigurationParser {
   BareosResource* own_resource_; /* Pointer to own resource */
   ResourceTable*
       resource_definitions_; /* Pointer to table of permitted resources */
-  std::shared_ptr<ResHeadContainer> res_head_container_;
-  std::shared_ptr<ResHeadContainer> res_head_container_backup_;
+  std::shared_ptr<ResHeadContainer> config_resources_container_;
+  std::shared_ptr<ResHeadContainer> config_resources_container_backup_;
   mutable brwlock_t res_lock_; /* Resource lock */
 
   SaveResourceCb_t SaveResourceCb_;
@@ -422,30 +422,32 @@ static std::string TPAsString(const std::chrono::system_clock::time_point& tp)
 class ResHeadContainer {
  public:
   std::chrono::time_point<std::chrono::system_clock> timestamp_{};
-  BareosResource** res_head_ = nullptr;
+  BareosResource** configuration_resources_ = nullptr;
   ConfigurationParser* config_ = nullptr;
 
   ResHeadContainer(ConfigurationParser* config)
   {
     config_ = config;
     int num = config_->r_num_;
-    res_head_ = (BareosResource**)malloc(num * sizeof(BareosResource*));
+    configuration_resources_
+        = (BareosResource**)malloc(num * sizeof(BareosResource*));
 
-    for (int i = 0; i < num; i++) { res_head_[i] = nullptr; }
-    Dmsg1(10, "ResHeadContainer: new res_head_ %p\n", res_head_);
+    for (int i = 0; i < num; i++) { configuration_resources_[i] = nullptr; }
+    Dmsg1(10, "ResHeadContainer: new configuration_resources_ %p\n",
+          configuration_resources_);
   }
 
   ~ResHeadContainer()
   {
-    Dmsg1(10, "ResHeadContainer freeing %p %s\n", res_head_,
+    Dmsg1(10, "ResHeadContainer freeing %p %s\n", configuration_resources_,
           TPAsString(timestamp_).c_str());
     int num = config_->r_num_;
     for (int j = 0; j < num; j++) {
-      config_->FreeResourceCb_(res_head_[j], j);
-      res_head_[j] = nullptr;
+      config_->FreeResourceCb_(configuration_resources_[j], j);
+      configuration_resources_[j] = nullptr;
     }
-    free(res_head_);
-    res_head_ = nullptr;
+    free(configuration_resources_);
+    configuration_resources_ = nullptr;
   }
 
   std::string TimeStampAsString() { return TPAsString(timestamp_); }

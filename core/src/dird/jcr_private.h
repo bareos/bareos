@@ -96,14 +96,14 @@ struct Resources {
 };
 
 struct JobControlRecordPrivate {
-  JobControlRecordPrivate( std::shared_ptr<ResHeadContainer> res_head_container) {
-    job_res_head_container_ = res_head_container;
+  JobControlRecordPrivate( std::shared_ptr<ResHeadContainer> configuration_resources_container) {
+    job_config_resources_container_ = configuration_resources_container;
     RestoreJobId = 0; MigrateJobId = 0; VerifyJobId = 0;
   }
   ~JobControlRecordPrivate() {
-    job_res_head_container_ = nullptr;
+    job_config_resources_container_ = nullptr;
   }
-  std::shared_ptr<ResHeadContainer> job_res_head_container_;
+  std::shared_ptr<ResHeadContainer> job_config_resources_container_;
   pthread_t SD_msg_chan{};        /**< Message channel thread id */
   bool SD_msg_chan_started{};     /**< Message channel thread started */
   pthread_cond_t term_wait = PTHREAD_COND_INITIALIZER;      /**< Wait for job termination */
