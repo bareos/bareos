@@ -536,6 +536,43 @@ class JobController extends AbstractActionController
     }
   }
 
+  public function rerunAction()
+  {
+    $this->RequestURIPlugin()->setRequestURI();
+
+    if(!$this->SessionTimeoutPlugin()->isValid()) {
+      return $this->redirect()->toRoute(
+        'auth',
+        array(
+          'action' => 'login'
+        ),
+        array(
+          'query' => array(
+            'req' => $this->RequestURIPlugin()->getRequestURI(),
+            'dird' => $_SESSION['bareos']['director']
+          )
+        )
+      );
+    }
+
+    $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
+    $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
+      $module_config['console_commands']['Job']['optional']
+    );
+    if(count($invalid_commands) > 0 && in_array('rerun', $invalid_commands)) {
+      $this->acl_alert = true;
+      return new ViewModel(
+        array(
+          'acl_alert' => $this->acl_alert,
+          'invalid_commands' => 'rerun'
+        )
+      );
+    }
+
+    return new ViewModel();
+
+  }
+
   public function timelineAction()
   {
     $this->RequestURIPlugin()->setRequestURI();
@@ -568,8 +605,6 @@ class JobController extends AbstractActionController
         )
       );
     }
-
-    $this->bsock = $this->getServiceLocator()->get('director');
 
     return new ViewModel();
   }
@@ -679,7 +714,36 @@ class JobController extends AbstractActionController
         echo $e->getMessage();
       }
     }
-    elseif($data="job-timeline") {
+    elseif($data == "jobs-to-rerun") {
+      try {
+        $result = $this->getJobModel()->getJobsToRerun($this->bsock, $period, null);
+      }
+      catch(Exception $e) {
+        echo $e->getMessages();
+      }
+    }
+    elseif($data == "job-rerun") {
+      try {
+        $result = [];
+        $j = explode(",", $jobs);
+        foreach($j as $job) {
+          array_push($result, $this->getJobModel()->rerunJob($this->bsock, $job));
+        }
+      }
+      catch(Exception $e) {
+        echo $e->getMessage();
+      }
+
+      $response = $this->getResponse();
+      $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
+
+      if(isset($result)) {
+        $response->setContent(JSON::encode($result));
+      }
+
+      return $response;
+    }
+    elseif($data == "job-timeline") {
       try {
         $result = [];
         $j = explode(",", $jobs);
