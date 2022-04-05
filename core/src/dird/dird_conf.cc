@@ -77,8 +77,6 @@ extern struct s_kw RunFields[];
  * types. Note, these should be unique for each
  * daemon though not a requirement.
  */
-/* static BareosResource* sres_head[R_NUM]; */
-/* static BareosResource** res_head = sres_head; */
 static PoolMem* configure_usage_string = NULL;
 
 extern void StoreInc(LEX* lc, ResourceItem* item, int index, int pass);
@@ -2533,24 +2531,25 @@ static void StoreDevice(LEX* lc,
                         ResourceItem* item,
                         int index,
                         int pass,
-                        BareosResource** res_head)
+                        BareosResource** configuration_resources)
 {
   int rindex = R_DEVICE;
 
   if (pass == 1) {
     LexGetToken(lc, BCT_NAME);
-    if (!res_head[rindex]) {
+    if (!configuration_resources[rindex]) {
       DeviceResource* device_resource = new DeviceResource;
       device_resource->rcode_ = R_DEVICE;
       device_resource->resource_name_ = strdup(lc->str);
-      res_head[rindex] = device_resource; /* store first entry */
+      configuration_resources[rindex] = device_resource; /* store first entry */
       Dmsg3(900, "Inserting first %s res: %s index=%d\n",
             my_config->ResToStr(R_DEVICE), device_resource->resource_name_,
             rindex);
     } else {
       bool found = false;
       BareosResource* next;
-      for (next = res_head[rindex]; next->next_; next = next->next_) {
+      for (next = configuration_resources[rindex]; next->next_;
+           next = next->next_) {
         if (bstrcmp(next->resource_name_, lc->str)) {
           found = true;  // already defined
           break;
@@ -2580,7 +2579,7 @@ static void StoreMigtype(LEX* lc,
                          ResourceItem* item,
                          int index,
                          int pass,
-                         BareosResource** res_head)
+                         BareosResource** configuration_resources)
 {
   LexGetToken(lc, BCT_NAME);
   // Store the type both in pass 1 and pass 2
@@ -3216,7 +3215,7 @@ static void ParseConfigCb(LEX* lc,
                           ResourceItem* item,
                           int index,
                           int pass,
-                          BareosResource** res_head)
+                          BareosResource** configuration_resources)
 {
   switch (item->type) {
     case CFG_TYPE_AUTOPASSWORD:
@@ -3235,7 +3234,7 @@ static void ParseConfigCb(LEX* lc,
       StoreAuthtype(lc, item, index, pass);
       break;
     case CFG_TYPE_DEVICE:
-      StoreDevice(lc, item, index, pass, res_head);
+      StoreDevice(lc, item, index, pass, configuration_resources);
       break;
     case CFG_TYPE_JOBTYPE:
       StoreJobtype(lc, item, index, pass);
@@ -3256,7 +3255,7 @@ static void ParseConfigCb(LEX* lc,
       StoreRunscript(lc, item, index, pass);
       break;
     case CFG_TYPE_MIGTYPE:
-      StoreMigtype(lc, item, index, pass, res_head);
+      StoreMigtype(lc, item, index, pass, configuration_resources);
       break;
     case CFG_TYPE_INCEXC:
       StoreInc(lc, item, index, pass);

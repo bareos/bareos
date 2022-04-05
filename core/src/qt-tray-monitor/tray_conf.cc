@@ -55,9 +55,6 @@
 
 static const std::string default_config_filename("tray-monitor.conf");
 
-/* static BareosResource* sres_head[R_NUM]; */
-/* static BareosResource** res_head = sres_head; */
-
 static bool SaveResource(int type, ResourceItem* items, int pass);
 static void FreeResource(BareosResource* sres, int type);
 static void DumpResource(int type,
@@ -166,7 +163,7 @@ static ResourceItem con_font_items[] = {
  * NOTE!!! keep it in the same order as the R_codes
  *   or eliminate all resource_definitions[rindex].name
  *
- *  name items rcode res_head
+ *  name items rcode configuration_resources
  */
 static ResourceTable resource_definitions[] = {
   {"Monitor", "Monitors", mon_items, R_MONITOR, sizeof(MonitorResource),

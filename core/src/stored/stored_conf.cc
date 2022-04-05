@@ -48,9 +48,6 @@
 
 namespace storagedaemon {
 
-/* static BareosResource* sres_head[R_NUM]; */
-/* static BareosResource** res_head = sres_head; */
-
 static void FreeResource(BareosResource* sres, int type);
 static bool SaveResource(int type, ResourceItem* items, int pass);
 static void DumpResource(int type,
@@ -446,7 +443,7 @@ static void ParseConfigCb(LEX* lc,
                           ResourceItem* item,
                           int index,
                           int pass,
-                          BareosResource** res_head)
+                          BareosResource** configuration_resources)
 {
   switch (item->type) {
     case CFG_TYPE_AUTOPASSWORD:

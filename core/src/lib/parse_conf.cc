@@ -96,8 +96,6 @@ ConfigurationParser::ConfigurationParser()
     , r_own_(0)
     , own_resource_(nullptr)
     , resource_definitions_(0)
-    /* , res_head_(nullptr) */
-    /* , res_head_backup_(nullptr) */
     , SaveResourceCb_(nullptr)
     , DumpResourceCb_(nullptr)
     , FreeResourceCb_(nullptr)
@@ -138,7 +136,7 @@ ConfigurationParser::ConfigurationParser(
   err_type_ = err_type;
   r_num_ = r_num;
   resource_definitions_ = resource_definitions;
-  res_head_container_.reset(new ResHeadContainer(this));
+  config_resources_container_.reset(new ResHeadContainer(this));
   config_default_filename_
       = config_default_filename == nullptr ? "" : config_default_filename;
   config_include_dir_ = config_include_dir == nullptr ? "" : config_include_dir;
@@ -151,17 +149,7 @@ ConfigurationParser::ConfigurationParser(
   DumpResourceCb_ = DumpResourceCb;
   FreeResourceCb_ = FreeResourceCb;
 }
-ConfigurationParser::~ConfigurationParser()
-{
-#if 0
-  if (res_head_) {
-    for (int i = 0; i <= r_num_ - 1; i++) {
-      if (res_head_[i]) { FreeResourceCb_(res_head_[i], i); }
-      res_head_[i] = nullptr;
-    }
-  }
-#endif
-}
+ConfigurationParser::~ConfigurationParser() {}
 
 void ConfigurationParser::InitializeQualifiedResourceNameTypeConverter(
     const std::map<int, std::string>& map)
@@ -208,7 +196,7 @@ bool ConfigurationParser::ParseConfig()
                                  scan_warning_);
   if (success && ParseConfigReadyCb_) { ParseConfigReadyCb_(*this); }
 
-  res_head_container_->timestamp_ = std::chrono::system_clock::now();
+  config_resources_container_->timestamp_ = std::chrono::system_clock::now();
 
   return success;
 }
@@ -290,13 +278,15 @@ bool ConfigurationParser::AppendToResourcesChain(BareosResource* new_resource,
     return false;
   }
 
-  if (!res_head_container_->res_head_[rindex]) {
-    res_head_container_->res_head_[rindex] = new_resource;
+  if (!config_resources_container_->configuration_resources_[rindex]) {
+    config_resources_container_->configuration_resources_[rindex]
+        = new_resource;
     Dmsg3(900, "Inserting first %s res: %s index=%d\n", ResToStr(rcode),
           new_resource->resource_name_, rindex);
   } else {  // append
     BareosResource* last = nullptr;
-    BareosResource* current = res_head_container_->res_head_[rindex];
+    BareosResource* current
+        = config_resources_container_->configuration_resources_[rindex];
     do {
       if (bstrcmp(current->resource_name_, new_resource->resource_name_)) {
         Emsg2(M_ERROR, 0,
@@ -521,23 +511,23 @@ bool ConfigurationParser::FindConfigPath(PoolMem& full_path)
 // when last job also owning finishes
 void ConfigurationParser::ReleasePreviousResourceTable()
 {
-  res_head_container_backup_ = nullptr;
+  config_resources_container_backup_ = nullptr;
 }
 
-// swap the previously saved res_head_previous_ with res_head_
-// and release the res_head_previous_
+// swap the previously saved configuration_resources_previous_ with
+// configuration_resources_ and release the configuration_resources_previous_
 void ConfigurationParser::RestoreResourceTable()
 {
-  std::swap(res_head_container_, res_head_container_backup_);
-  res_head_container_backup_ = nullptr;
+  std::swap(config_resources_container_, config_resources_container_backup_);
+  config_resources_container_backup_ = nullptr;
 }
 
-// copy the current resource table to res_head_backup_
-// and create a new empty res_head_container_
+// copy the current resource table to configuration_resources_backup_
+// and create a new empty config_resources_container_
 void ConfigurationParser::BackupResourceTable()
 {
-  std::swap(res_head_container_, res_head_container_backup_);
-  res_head_container_.reset(new ResHeadContainer(this));
+  std::swap(config_resources_container_, config_resources_container_backup_);
+  config_resources_container_.reset(new ResHeadContainer(this));
 }
 
 bool ConfigurationParser::RemoveResource(int rcode, const char* name)
@@ -554,14 +544,16 @@ bool ConfigurationParser::RemoveResource(int rcode, const char* name)
    * resource_definitions must be added. If it is referenced, don't remove it.
    */
   last = nullptr;
-  for (BareosResource* res = res_head_container_->res_head_[rindex]; res;
-       res = res->next_) {
+  for (BareosResource* res
+       = config_resources_container_->configuration_resources_[rindex];
+       res; res = res->next_) {
     if (bstrcmp(res->resource_name_, name)) {
       if (!last) {
         Dmsg2(900,
               _("removing resource %s, name=%s (first resource in list)\n"),
               ResToStr(rcode), name);
-        res_head_container_->res_head_[rindex] = res->next_;
+        config_resources_container_->configuration_resources_[rindex]
+            = res->next_;
       } else {
         Dmsg2(900, _("removing resource %s, name=%s\n"), ResToStr(rcode), name);
         last->next_ = res->next_;
@@ -615,9 +607,10 @@ void ConfigurationParser::DumpResources(bool sendit(void* sock,
                                         bool hide_sensitive_data)
 {
   for (int i = 0; i <= r_num_ - 1; i++) {
-    if (res_head_container_->res_head_[i]) {
-      DumpResourceCb_(i, res_head_container_->res_head_[i], sendit, sock,
-                      hide_sensitive_data, false);
+    if (config_resources_container_->configuration_resources_[i]) {
+      DumpResourceCb_(i,
+                      config_resources_container_->configuration_resources_[i],
+                      sendit, sock, hide_sensitive_data, false);
     }
   }
 }
