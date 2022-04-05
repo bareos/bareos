@@ -41,6 +41,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - FreeBSD packages: add missing ddl/update 2171_2192 and 2192_2210 files [PR #1147]
 
 ### Changed
+- Qmsg: in case of syslog logging use adapted log priority instead of always LOG_ERR [PR #1134]
 - webui: remove an unnecessary .bvfs_get_jobids and buildSubtree() call [PR #1050]
 - git: set merge strategy for CHANGELOG.md to union [PR #1062]
 - webui: add timeline chart by jobs [PR #1059]
