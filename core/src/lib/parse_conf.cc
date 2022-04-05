@@ -136,7 +136,7 @@ ConfigurationParser::ConfigurationParser(
   err_type_ = err_type;
   r_num_ = r_num;
   resource_definitions_ = resource_definitions;
-  config_resources_container_.reset(new ResHeadContainer(this));
+  config_resources_container_.reset(new ConfigResourcesContainer(this));
   config_default_filename_
       = config_default_filename == nullptr ? "" : config_default_filename;
   config_include_dir_ = config_include_dir == nullptr ? "" : config_include_dir;
@@ -527,7 +527,7 @@ void ConfigurationParser::RestoreResourceTable()
 void ConfigurationParser::BackupResourceTable()
 {
   std::swap(config_resources_container_, config_resources_container_backup_);
-  config_resources_container_.reset(new ResHeadContainer(this));
+  config_resources_container_.reset(new ConfigResourcesContainer(this));
 }
 
 bool ConfigurationParser::RemoveResource(int rcode, const char* name)

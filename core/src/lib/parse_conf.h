@@ -41,7 +41,7 @@
 struct ResourceItem;
 class ConfigParserStateMachine;
 class ConfigurationParser;
-class ResHeadContainer;
+class ConfigResourcesContainer;
 /* For storing name_addr items in res_items table */
 
 /* using offsetof on non-standard-layout types is conditionally supported. As
@@ -219,8 +219,8 @@ class ConfigurationParser {
   BareosResource* own_resource_; /* Pointer to own resource */
   ResourceTable*
       resource_definitions_; /* Pointer to table of permitted resources */
-  std::shared_ptr<ResHeadContainer> config_resources_container_;
-  std::shared_ptr<ResHeadContainer> config_resources_container_backup_;
+  std::shared_ptr<ConfigResourcesContainer> config_resources_container_;
+  std::shared_ptr<ConfigResourcesContainer> config_resources_container_backup_;
   mutable brwlock_t res_lock_; /* Resource lock */
 
   SaveResourceCb_t SaveResourceCb_;
@@ -430,13 +430,13 @@ static std::string TPAsString(const std::chrono::system_clock::time_point& tp)
   return ts;
 }
 
-class ResHeadContainer {
+class ConfigResourcesContainer {
  public:
   std::chrono::time_point<std::chrono::system_clock> timestamp_{};
   BareosResource** configuration_resources_ = nullptr;
   ConfigurationParser* config_ = nullptr;
 
-  ResHeadContainer(ConfigurationParser* config)
+  ConfigResourcesContainer(ConfigurationParser* config)
   {
     config_ = config;
     int num = config_->r_num_;
@@ -444,14 +444,14 @@ class ResHeadContainer {
         = (BareosResource**)malloc(num * sizeof(BareosResource*));
 
     for (int i = 0; i < num; i++) { configuration_resources_[i] = nullptr; }
-    Dmsg1(10, "ResHeadContainer: new configuration_resources_ %p\n",
+    Dmsg1(10, "ConfigResourcesContainer: new configuration_resources_ %p\n",
           configuration_resources_);
   }
 
-  ~ResHeadContainer()
+  ~ConfigResourcesContainer()
   {
-    Dmsg1(10, "ResHeadContainer freeing %p %s\n", configuration_resources_,
-          TPAsString(timestamp_).c_str());
+    Dmsg1(10, "ConfigResourcesContainer freeing %p %s\n",
+          configuration_resources_, TPAsString(timestamp_).c_str());
     int num = config_->r_num_;
     for (int j = 0; j < num; j++) {
       config_->FreeResourceCb_(configuration_resources_[j], j);
