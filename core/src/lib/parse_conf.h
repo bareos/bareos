@@ -418,8 +418,21 @@ class ConfigurationParser {
   void SetResourceDefaultsParserPass2(ResourceItem* item);
 };
 
+
+static std::string TPAsString(const std::chrono::system_clock::time_point& tp)
+{
+  std::time_t t = std::chrono::system_clock::to_time_t(tp);
+  char str[100];
+  if (!std::strftime(str, sizeof(str), "%F_%H:%M:%S", std::localtime(&t))) {
+    return std::string("strftime error");
+  }
+  std::string ts = str;
+  return ts;
+}
+
 class ResHeadContainer {
  public:
+  std::chrono::time_point<std::chrono::system_clock> timestamp_{};
   BareosResource** res_head_ = nullptr;
   ConfigurationParser* config_ = nullptr;
 
@@ -430,14 +443,13 @@ class ResHeadContainer {
     res_head_ = (BareosResource**)malloc(num * sizeof(BareosResource*));
 
     for (int i = 0; i < num; i++) { res_head_[i] = nullptr; }
-    Dmsg1(10, "ResHeadContainer::ResHeadContainer : res_head_ is at %p\n",
-          res_head_);
+    Dmsg1(10, "ResHeadContainer: new res_head_ %p\n", res_head_);
   }
 
   ~ResHeadContainer()
   {
-    Dmsg1(10, "ResHeadContainer::~ResHeadContainer : freeing res_head at %p\n",
-          res_head_);
+    Dmsg1(10, "ResHeadContainer freeing %p %s\n", res_head_,
+          TPAsString(timestamp_).c_str());
     int num = config_->r_num_;
     for (int j = 0; j < num; j++) {
       config_->FreeResourceCb_(res_head_[j], j);
@@ -446,6 +458,8 @@ class ResHeadContainer {
     free(res_head_);
     res_head_ = nullptr;
   }
+
+  std::string TimeStampAsString() { return TPAsString(timestamp_); }
 };
 
 

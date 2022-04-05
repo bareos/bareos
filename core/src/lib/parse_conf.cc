@@ -207,6 +207,9 @@ bool ConfigurationParser::ParseConfig()
   bool success = ParseConfigFile(config_path.c_str(), nullptr, scan_error_,
                                  scan_warning_);
   if (success && ParseConfigReadyCb_) { ParseConfigReadyCb_(*this); }
+
+  res_head_container_->timestamp_ = std::chrono::system_clock::now();
+
   return success;
 }
 
@@ -518,8 +521,6 @@ bool ConfigurationParser::FindConfigPath(PoolMem& full_path)
 // when last job also owning finishes
 void ConfigurationParser::ReleasePreviousResourceTable()
 {
-  Dmsg1(10, "ConfigurationParser::ReleasePreviousResourceTable: %p\n",
-        res_head_container_backup_->res_head_);
   res_head_container_backup_ = nullptr;
 }
 
@@ -528,10 +529,6 @@ void ConfigurationParser::ReleasePreviousResourceTable()
 void ConfigurationParser::RestoreResourceTable()
 {
   std::swap(res_head_container_, res_head_container_backup_);
-  Dmsg1(10, "ConfigurationParser::RestoreResourceTable: %p -> %p\n",
-        res_head_container_backup_->res_head_, res_head_container_->res_head_);
-  Dmsg1(10, "ConfigurationParser::RestoreResourceTable: release %p\n",
-        res_head_container_backup_->res_head_);
   res_head_container_backup_ = nullptr;
 }
 

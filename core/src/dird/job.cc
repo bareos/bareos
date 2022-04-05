@@ -1628,8 +1628,9 @@ JobControlRecord* NewDirectorJcr()
 {
   JobControlRecord* jcr = new_jcr(DirdFreeJcr);
   jcr->impl = new JobControlRecordPrivate(my_config->res_head_container_);
-  Dmsg1(10, "NewDirectorJcr(): res_head_ is at %p\n",
-        my_config->res_head_container_->res_head_);
+  Dmsg1(10, "NewDirectorJcr(): res_head_ is at %p %s\n",
+        my_config->res_head_container_->res_head_,
+        my_config->res_head_container_->TimeStampAsString().c_str());
   return jcr;
 }
 
