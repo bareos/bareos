@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -76,6 +76,8 @@ static bool trace = true;
 static bool trace = false;
 #endif
 static bool hangup = false;
+
+static int MessageTypeToLogPriority(int message_type);
 
 /*
  * Walk back in a string from end looking for a
@@ -745,40 +747,8 @@ void DispatchMessage(JobControlRecord* jcr,
            * Dispatch based on our internal message type to a matching syslog
            * one.
            */
-          switch (type) {
-            case M_ERROR:
-            case M_ERROR_TERM:
-              SendToSyslog(d->syslog_facility_ | LOG_ERR, msg);
-              break;
-            case M_ABORT:
-            case M_FATAL:
-              SendToSyslog(d->syslog_facility_ | LOG_CRIT, msg);
-              break;
-            case M_WARNING:
-              SendToSyslog(d->syslog_facility_ | LOG_WARNING, msg);
-              break;
-            case M_DEBUG:
-              SendToSyslog(d->syslog_facility_ | LOG_DEBUG, msg);
-              break;
-            case M_INFO:
-            case M_NOTSAVED:
-            case M_RESTORED:
-            case M_SAVED:
-            case M_SKIPPED:
-            case M_TERM:
-              SendToSyslog(d->syslog_facility_ | LOG_INFO, msg);
-              break;
-            case M_ALERT:
-            case M_AUDIT:
-            case M_MOUNT:
-            case M_SECURITY:
-            case M_VOLMGMT:
-              SendToSyslog(d->syslog_facility_ | LOG_NOTICE, msg);
-              break;
-            default:
-              SendToSyslog(d->syslog_facility_ | LOG_ERR, msg);
-              break;
-          }
+          SendToSyslog(d->syslog_facility_ | MessageTypeToLogPriority(type),
+                       msg);
           break;
         case MessageDestinationCode::kOperator:
           Dmsg1(850, "OPERATOR for following msg: %s\n", msg);
@@ -1530,6 +1500,44 @@ int Mmsg(std::vector<char>& msgbuf, const char* fmt, ...)
   }
 }
 
+// convert bareos message type to syslog log priority
+static int MessageTypeToLogPriority(int message_type)
+{
+  switch (message_type) {
+    case M_ERROR:
+    case M_ERROR_TERM:
+      return LOG_ERR;
+
+    case M_ABORT:
+    case M_FATAL:
+      return LOG_CRIT;
+
+    case M_WARNING:
+      return LOG_WARNING;
+
+    case M_DEBUG:
+      return LOG_DEBUG;
+
+    case M_INFO:
+    case M_NOTSAVED:
+    case M_RESTORED:
+    case M_SAVED:
+    case M_SKIPPED:
+    case M_TERM:
+      return LOG_INFO;
+
+    case M_ALERT:
+    case M_AUDIT:
+    case M_MOUNT:
+    case M_SECURITY:
+    case M_VOLMGMT:
+      return LOG_NOTICE;
+
+    default:
+      return LOG_ERR;
+  }
+}
+
 /*
  * We queue messages rather than print them directly. This
  * is generally used in low level routines (msg handler, bnet)
@@ -1567,7 +1575,7 @@ void Qmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
 
   // If no jcr  or no JobId or no queue or dequeuing send to syslog
   if (!jcr || !jcr->JobId || !jcr->msg_queue || jcr->dequeuing_msgs) {
-    syslog(LOG_DAEMON | LOG_ERR, "%s", item->msg_);
+    syslog(LOG_DAEMON | MessageTypeToLogPriority(type), "%s", item->msg_);
     free(item->msg_);
     item->msg_ = nullptr;
     free(item);
