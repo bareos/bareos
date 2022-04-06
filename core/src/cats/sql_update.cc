@@ -111,13 +111,11 @@ bool BareosDb::UpdateJobStartRecord(JobControlRecord* jcr, JobDbRecord* jr)
   return UPDATE_DB(jcr, cmd) > 0;
 }
 
-bool BareosDb::UpdateRunningJobRecord(JobControlRecord* jcr,
-                                      uint32_t jobfiles,
-                                      uint64_t jobbbytes)
+bool BareosDb::UpdateRunningJobRecord(JobControlRecord* jcr)
 {
   DbLocker _{this};
   Mmsg(cmd, "UPDATE Job SET JobBytes=%llu,JobFiles=%lu WHERE JobId=%lu",
-       jobbbytes, jobfiles, jcr->JobId);
+       jcr->JobBytes, jcr->JobFiles, jcr->JobId);
 
   return UPDATE_DB(jcr, cmd) > 0;
 }
@@ -172,25 +170,20 @@ bool BareosDb::UpdateJobEndRecord(JobControlRecord* jcr, JobDbRecord* jr)
 
   JobTDate = ttime;
 
-  std::string command
-      = "UPDATE Job SET JobStatus='%c',Level='%c',EndTime='%s',"
-        "ClientId=%lu,ReadBytes=%s,JobErrors=%lu,"
-        "VolSessionId=%lu,VolSessionTime=%lu,"
-        "PoolId=%lu,FileSetId=%lu,JobTDate=%s,"
-        "RealEndTime='%s',PriorJobId=%s,HasBase=%u,PurgedFiles=%u";
-  if (jr->JobFiles > 0) {
-    command += ",JobBytes=" + std::to_string(jr->JobBytes);
-    command += ",JobFiles=" + std::to_string(jr->JobFiles);
-  }
-  command.append(" WHERE JobId=%s");
-
   DbLocker _{this};
 
-  Mmsg(cmd, command.c_str(), (char)(jr->JobStatus), (char)(jr->JobLevel), dt,
-       jr->ClientId, edit_uint64(jr->ReadBytes, ed4), jr->JobErrors,
-       jr->VolSessionId, jr->VolSessionTime, jr->PoolId, jr->FileSetId,
-       edit_uint64(JobTDate, ed2), rdt, PriorJobId, jr->HasBase,
-       jr->PurgedFiles, edit_int64(jr->JobId, ed3));
+  Mmsg(
+      cmd,
+      "UPDATE Job SET JobStatus='%c',Level='%c',EndTime='%s',"
+      "ClientId=%u,JobBytes=%s,ReadBytes=%s,JobFiles=%u,JobErrors=%u,"
+      "VolSessionId=%u,"
+      "VolSessionTime=%u,PoolId=%u,FileSetId=%u,JobTDate=%s,"
+      "RealEndTime='%s',PriorJobId=%s,HasBase=%u,PurgedFiles=%u WHERE JobId=%s",
+      (char)(jr->JobStatus), (char)(jr->JobLevel), dt, jr->ClientId,
+      edit_uint64(jr->JobBytes, ed1), edit_uint64(jr->ReadBytes, ed4),
+      jr->JobFiles, jr->JobErrors, jr->VolSessionId, jr->VolSessionTime,
+      jr->PoolId, jr->FileSetId, edit_uint64(JobTDate, ed2), rdt, PriorJobId,
+      jr->HasBase, jr->PurgedFiles, edit_int64(jr->JobId, ed3));
 
   return UPDATE_DB(jcr, cmd) > 0;
 }

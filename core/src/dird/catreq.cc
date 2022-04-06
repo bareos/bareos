@@ -362,8 +362,10 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
              == 3) {
     Dmsg0(0, "Updating job record\n");
 
-    if (!jcr->db->UpdateRunningJobRecord(jcr, update_jobfiles,
-                                         update_jobbytes)) {
+    jcr->JobFiles = update_jobfiles;
+    jcr->JobBytes = update_jobbytes;
+
+    if (!jcr->db->UpdateRunningJobRecord(jcr)) {
       Jmsg(jcr, M_FATAL, 0, _("Catalog error updating Job record. %s\n"),
            jcr->db->strerror());
       bs->fsend(_("1992 Update job record error\n"));

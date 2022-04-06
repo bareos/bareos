@@ -33,6 +33,7 @@ class ProcessedFileData {
  public:
   explicit ProcessedFileData(DeviceRecord* record);
   DeviceRecord GetData();
+
  private:
   uint32_t volsessionid_{0};
   uint32_t volsessiontime_{0};
@@ -50,7 +51,10 @@ class ProcessedFile {
   void SendAttributesToDirector(JobControlRecord* jcr);
   void AddAttribute(DeviceRecord* record);
   int32_t GetFileIndex() { return fileindex_; }
-  const std::vector<ProcessedFileData>& GetAttributes() const { return attributes_; }
+  const std::vector<ProcessedFileData>& GetAttributes() const
+  {
+    return attributes_;
+  }
 
  private:
   int32_t fileindex_{-1};
