@@ -1,7 +1,7 @@
 #
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -60,6 +60,8 @@ class PythonBareosListCommandTest(bareos_unittest.Base):
 
         director.call("run job=backup-bareos-fd yes")
         director.call("wait")
+        director.call("restore client=bareos-fd fileset=SelfTest select all done yes")
+        director.call("wait")
 
         # Regular list jobs
         result = director.call("list jobs")
@@ -76,9 +78,12 @@ class PythonBareosListCommandTest(bareos_unittest.Base):
             "jobbytes",
             "jobstatus",
         ]
+        resultkeys = list(result["jobs"][0].keys())
+        resultkeys.sort()
+        expected_list_keys.sort()
         self.assertEqual(
-            list(result["jobs"][0].keys()).sort(),
-            expected_list_keys.sort(),
+            resultkeys,
+            expected_list_keys,
         )
         reg = re.compile("..:..:..")
         self.assertTrue(re.match(reg, result["jobs"][0]["duration"]))
@@ -114,30 +119,25 @@ class PythonBareosListCommandTest(bareos_unittest.Base):
             "filesetid",
             "fileset",
         ]
+        resultkeys = list(result["jobs"][0].keys())
+
+        resultkeys.sort()
+        expected_long_list_keys.sort()
         self.assertEqual(
-            list(result["jobs"][0].keys()).sort(),
-            expected_long_list_keys.sort(),
+            resultkeys,
+            expected_long_list_keys,
         )
 
         # Long list with options
 
         result = director.call("llist jobs current")
-        self.assertNotEqual(
-            result["jobs"][0],
-            "",
-        )
+        self.assertTrue(result["jobs"])
 
         result = director.call("llist jobs enable")
-        self.assertNotEqual(
-            result["jobs"][0],
-            "",
-        )
+        self.assertTrue(result["jobs"])
 
         result = director.call("llist jobs last")
-        self.assertNotEqual(
-            result["jobs"][0],
-            "",
-        )
+        self.assertTrue(result["jobs"])
 
         expected_long_list_last_keys = [
             "jobid",
@@ -167,22 +167,20 @@ class PythonBareosListCommandTest(bareos_unittest.Base):
             "filesetid",
             "fileset",
         ]
+        resultkeys = list(result["jobs"][0].keys())
+
+        resultkeys.sort()
+        expected_long_list_last_keys.sort()
         self.assertEqual(
-            list(result["jobs"][0].keys()).sort(),
-            expected_long_list_last_keys.sort(),
+            resultkeys,
+            expected_long_list_last_keys,
         )
 
         result = director.call("llist jobs last current")
-        self.assertNotEqual(
-            result["jobs"][0],
-            "",
-        )
+        self.assertTrue(result["jobs"])
 
         result = director.call("llist jobs last current enable")
-        self.assertNotEqual(
-            result["jobs"][0],
-            "",
-        )
+        self.assertTrue(result["jobs"])
 
         # Counting jobs
         result = director.call("list jobs count")
@@ -235,6 +233,31 @@ class PythonBareosListCommandTest(bareos_unittest.Base):
             "",
         )
 
+        # list jobs jobstatus=X
+        result = director.call("list jobs jobstatus=T")
+        self.assertTrue(result["jobs"])
+        for job in result["jobs"]:
+            self.assertTrue(job["jobstatus"], "T")
+
+        result = director.call("list jobs jobstatus=R")
+        self.assertFalse(result["jobs"])
+
+        # list jobs jobtype=X
+        result = director.call("list jobs jobtype=B")
+        self.assertTrue(result["jobs"])
+        for job in result["jobs"]:
+            self.assertEqual(job["type"], "B")
+
+        result = director.call("list jobs jobtype=Backup")
+        self.assertTrue(result["jobs"])
+        for job in result["jobs"]:
+            self.assertEqual(job["type"], "B")
+
+        result = director.call("list jobs jobtype=B,R")
+        self.assertTrue(result["jobs"])
+        for job in result["jobs"]:
+            self.assertTrue(job["type"] == "B" or job["type"] == "R")
+
     def test_list_media(self):
         """
         verifying `list media` and `llist media ...` outputs correct data
@@ -272,9 +295,13 @@ class PythonBareosListCommandTest(bareos_unittest.Base):
             "lastwritten",
             "storage",
         ]
+        resultkeys = list(result["volumes"]["full"][0].keys())
+
+        resultkeys.sort()
+        expected_list_media_keys.sort()
         self.assertEqual(
-            list(result["volumes"]["full"][0].keys()).sort(),
-            expected_list_media_keys.sort(),
+            resultkeys,
+            expected_list_media_keys,
         )
 
         # check expected behavior when asking for specific volume by name
@@ -338,7 +365,7 @@ class PythonBareosListCommandTest(bareos_unittest.Base):
         director.call("wait")
 
         result = director.call("list pool")
-        expected_list_media_keys = [
+        expected_list_pool_keys = [
             "poolid",
             "name",
             "numvols",
@@ -346,9 +373,14 @@ class PythonBareosListCommandTest(bareos_unittest.Base):
             "pooltype",
             "labelformat",
         ]
+
+        resultkeys = list(result["pools"][0].keys())
+
+        resultkeys.sort()
+        expected_list_pool_keys.sort()
         self.assertEqual(
-            list(result["pools"][0].keys()).sort(),
-            expected_list_media_keys.sort(),
+            resultkeys,
+            expected_list_pool_keys,
         )
 
         # check expected behavior when asking for specific volume by name
@@ -359,7 +391,7 @@ class PythonBareosListCommandTest(bareos_unittest.Base):
         )
 
         result = director.call("llist pool")
-        expected_list_media_keys = [
+        expected_long_list_pool_keys = [
             "poolid",
             "name",
             "numvols",
@@ -380,9 +412,13 @@ class PythonBareosListCommandTest(bareos_unittest.Base):
             "recyclepoolid",
             "labeltype",
         ]
+        resultkeys = list(result["pools"][0].keys())
+
+        resultkeys.sort()
+        expected_long_list_pool_keys.sort()
         self.assertEqual(
-            list(result["pools"][0].keys()).sort(),
-            expected_list_media_keys.sort(),
+            resultkeys,
+            expected_long_list_pool_keys,
         )
 
         # check expected behavior when asking for specific volume by name

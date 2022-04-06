@@ -994,8 +994,8 @@ PoolResource* get_pool_resource(UaContext* ua)
 // List all jobs and ask user to select one
 int SelectJobDbr(UaContext* ua, JobDbRecord* jr)
 {
-  ua->db->ListJobRecords(ua->jcr, jr, "", NULL, 0, 0, NULL, NULL, 0, 0, 0,
-                         ua->send, HORZ_LIST);
+  ua->db->ListJobRecords(ua->jcr, jr, "", NULL, 0, 0, std::vector<char>{}, NULL,
+                         NULL, 0, 0, 0, ua->send, HORZ_LIST);
   if (!GetPint(ua, _("Enter the JobId to select: "))) { return 0; }
 
   jr->JobId = ua->int64_val;
@@ -1888,39 +1888,66 @@ bail_out:
   return false;
 }
 
-bool GetUserJobTypeSelection(UaContext* ua, int* jobtype)
+static int GetParsedJobType(std::string jobtype_argument)
 {
   int i;
-  char job_type[MAX_NAME_LENGTH];
-
-  /* set returning jobtype to invalid */
-  *jobtype = -1;
-
-  if ((i = FindArgWithValue(ua, NT_("jobtype"))) >= 0) {
-    bstrncpy(job_type, ua->argv[i], sizeof(job_type));
+  int return_jobtype = -1;
+  if (jobtype_argument.size() == 1) {
+    for (i = 0; jobtypes[i].job_type; i++) {
+      if (jobtype_argument[0] == static_cast<char>(jobtypes[i].job_type)) {
+        break;
+      }
+    }
   } else {
-    StartPrompt(ua, _("Jobtype to prune:\n"));
     for (i = 0; jobtypes[i].type_name; i++) {
+      if (jobtypes[i].type_name == jobtype_argument) { break; }
+    }
+  }
+  if (jobtypes[i].type_name) { return_jobtype = jobtypes[i].job_type; }
+
+  return return_jobtype;
+}
+
+bool GetUserJobTypeListSelection(UaContext* ua,
+                                 std::vector<char>& passed_jobtypes,
+                                 bool ask_user)
+{
+  char jobtype_argument[MAX_NAME_LENGTH];
+  int argument;
+
+  if ((argument = FindArgWithValue(ua, NT_("jobtype"))) >= 0) {
+    bstrncpy(jobtype_argument, ua->argv[argument], sizeof(jobtype_argument));
+  } else if (ask_user) {
+    StartPrompt(ua, _("Jobtype:\n"));
+    for (int i = 0; jobtypes[i].type_name; i++) {
       AddPrompt(ua, jobtypes[i].type_name);
     }
 
-    if (DoPrompt(ua, _("JobType"), _("Select Job Type"), job_type,
-                 sizeof(job_type))
+    if (DoPrompt(ua, _("JobType"), _("Select Job Type"), jobtype_argument,
+                 sizeof(jobtype_argument))
         < 0) {
       return false;
     }
+  } else {
+    return true;
   }
 
-  for (i = 0; jobtypes[i].type_name; i++) {
-    if (Bstrcasecmp(jobtypes[i].type_name, job_type)) { break; }
+  char delimiter = ',';
+  std::vector<std::string> split_jobtypes;
+  if (strchr(jobtype_argument, delimiter) != nullptr) {
+    split_jobtypes = split_string(jobtype_argument, delimiter);
+  } else {
+    split_jobtypes.push_back(jobtype_argument);
   }
 
-  if (!jobtypes[i].type_name) {
-    ua->WarningMsg(_("Illegal jobtype %s.\n"), job_type);
-    return false;
+  for (auto& jobtype : split_jobtypes) {
+    int type = GetParsedJobType(jobtype);
+    if (type == -1) {
+      ua->WarningMsg(_("Illegal jobtype %s\n"), jobtype.c_str());
+      return false;
+    }
+    passed_jobtypes.push_back(type);
   }
-
-  *jobtype = jobtypes[i].job_type;
 
   return true;
 }

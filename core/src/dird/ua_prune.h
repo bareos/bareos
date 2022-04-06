@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,7 +32,7 @@ bool PruneFiles(UaContext* ua, ClientResource* client, PoolResource* pool);
 bool PruneJobs(UaContext* ua,
                ClientResource* client,
                PoolResource* pool,
-               int JobType);
+               std::vector<char> JobTypes);
 bool PruneVolume(UaContext* ua, MediaDbRecord* mr);
 int JobDeleteHandler(void* ctx, int num_fields, char** row);
 int DelCountHandler(void* ctx, int num_fields, char** row);

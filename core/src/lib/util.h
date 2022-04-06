@@ -78,4 +78,8 @@ void StringToLowerCase(std::string& out, const std::string& in);
 bool pm_append(void* pm_string, const char* fmt, ...);
 std::vector<std::string> split_string(const std::string& str, char delim);
 
+std::string CreateDelimitedStringForSqlQueries(
+    const std::vector<char>& elements,
+    char delim);
+
 #endif  // BAREOS_LIB_UTIL_H_

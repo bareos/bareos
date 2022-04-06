@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -58,8 +58,10 @@ void DoAutoprune(JobControlRecord* jcr)
   client = jcr->impl->res.client;
   pool = jcr->impl->res.pool;
 
+  std::vector<char> jobtypes;
+  jobtypes.push_back(jcr->getJobType());
   if (job->PruneJobs || client->AutoPrune) {
-    PruneJobs(ua, client, pool, jcr->getJobType());
+    PruneJobs(ua, client, pool, jobtypes);
     pruned = true;
   } else {
     pruned = false;
