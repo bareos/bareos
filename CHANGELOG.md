@@ -25,6 +25,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
   - bareos-contrib-tools
 - systemtest py3plug-fd-contrib-mysql_dump [PR #768]
 - systemtest py*plug-fd-contrib-bareos_tasks_mysql [PR #768]
+- webui: introduce rerun of multiple jobs at once [PR #1109]
 
 ### Fixed
 - NDMP_BAREOS: support autoxflate plugin [PR #1013]
@@ -55,7 +56,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: remove an unnecessary .bvfs_get_jobids and buildSubtree() call [PR #1050]
 - git: set merge strategy for CHANGELOG.md to union [PR #1062]
 - webui: add timeline chart by jobs [PR #1059]
-- stored: enable labeling of tapes in drives even if `autoselect=no` [PR #1021] 
+- stored: enable labeling of tapes in drives even if `autoselect=no` [PR #1021]
 - dir, stored: start statistics threads only if needed [PR #1040]
 - gitignore: cleanup .gitignore files [PR #1067]
 - webui: update jstree from v3.3.8 to v3.3.12 [PR #1088]
