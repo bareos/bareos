@@ -127,7 +127,7 @@ static bool connect_outbound_to_file_daemon(JobControlRecord* jcr,
   utime_t heart_beat;
 
   if (!IsConnectingToClientAllowed(jcr)) {
-    Dmsg1(120, "connecting to client \"%s\" is not allowed.\n",
+    Dmsg1(120, "Connection to client \"%s\" is not allowed.\n",
           jcr->impl->res.client->resource_name_);
     return false;
   }
@@ -227,6 +227,11 @@ bool ConnectToFileDaemon(JobControlRecord* jcr,
                          bool verbose,
                          UaContext* ua)
 {
+  if (!IsConnectingToClientAllowed(jcr) && !IsConnectFromClientAllowed(jcr)) {
+    Emsg1(M_WARNING, 0, _("Connecting to %s is not allowed.\n"),
+          jcr->impl->res.client->resource_name_);
+    return false;
+  }
   bool success = false;
   bool tcp_connect_failed = false;
   int connect_tries
@@ -1328,8 +1333,7 @@ void* HandleFiledConnection(ConnectionPool* connections,
 
   if (!IsConnectFromClientAllowed(client_resource)) {
     Emsg1(M_WARNING, 0,
-          "Client \"%s\" tries to connect, "
-          "but does not have the required permission.\n",
+          "Connection from client \"%s\" to director is not allowed.\n",
           client_name);
     return NULL;
   }

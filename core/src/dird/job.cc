@@ -402,7 +402,7 @@ bool UseWaitingClient(JobControlRecord* jcr, int timeout)
   ConnectionPool* connections = get_client_connections();
 
   if (!IsConnectFromClientAllowed(jcr)) {
-    Dmsg1(120, "Client Initiated Connection from \"%s\" is not allowed.\n",
+    Dmsg1(120, "Connection from client \"%s\" to director is not allowed.\n",
           jcr->impl->res.client->resource_name_);
   } else {
     connection

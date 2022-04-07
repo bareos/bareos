@@ -24,10 +24,10 @@
 
 #if defined(HAVE_MINGW)
 #  include "include/bareos.h"
-#  include "gtest/gtest.h"
-#else
-#  include "gtest/gtest.h"
 #endif
+
+#include "gtest/gtest.h"
+#include "gmock/gmock.h"
 
 #include "lib/parse_conf.h"
 

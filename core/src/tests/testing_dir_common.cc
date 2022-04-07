@@ -49,7 +49,6 @@ PConfigParser DirectorPrepareResources(const std::string& path_to_config)
   EXPECT_TRUE(parse_director_config_ok) << "Could not parse director config";
   if (!parse_director_config_ok) { return nullptr; }
 
-  Dmsg0(200, "Start UA server\n");
   directordaemon::me
       = (directordaemon::DirectorResource*)director_config->GetNextRes(
           directordaemon::R_DIRECTOR, nullptr);
