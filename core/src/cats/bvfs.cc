@@ -278,7 +278,7 @@ void BareosDb::BvfsUpdateCache(JobControlRecord* jcr)
   Mmsg(cmd,
        "SELECT JobId from Job "
        "WHERE HasCache = 0 "
-       "AND Type IN ('B') AND JobStatus IN ('T', 'W', 'f', 'A') "
+       "AND Type IN ('B','A','a') AND JobStatus IN ('T', 'W', 'f', 'A') "
        "ORDER BY JobId");
   SqlQuery(cmd, DbListHandler, &jobids_list);
 
