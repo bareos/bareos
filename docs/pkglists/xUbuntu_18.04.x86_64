@@ -5,6 +5,9 @@ amd64/bareos
 amd64/bareos-bconsole
 amd64/bareos-client
 amd64/bareos-common
+amd64/bareos-contrib-director-python-plugins
+amd64/bareos-contrib-filedaemon-python-plugins
+amd64/bareos-contrib-tools
 amd64/bareos-database-common
 amd64/bareos-database-postgresql
 amd64/bareos-database-tools

@@ -19,6 +19,12 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: analytics module: show stored data per jobname in treemap [PR #1082]
 - webui: add pool column to volume lists [PR #1120]
 - dird: console: add `jobtype` parameter to `(l)list jobs` [PR #1149]
+- contrib: add support for building and packaging [PR #768]:
+  - bareos-contrib-director-python-plugins
+  - bareos-contrib-filedaemon-python-plugins
+  - bareos-contrib-tools
+- systemtest py3plug-fd-contrib-mysql_dump [PR #768]
+- systemtest py*plug-fd-contrib-bareos_tasks_mysql [PR #768]
 
 ### Fixed
 - NDMP_BAREOS: support autoxflate plugin [PR #1013]
@@ -42,6 +48,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - FreeBSD packages: add missing ddl/update 2171_2192 and 2192_2210 files [PR #1147]
 
 ### Changed
+- contrib: rename Python modules to satisfy PEP8 [PR #768]
+- contrib: adapt to Python interface of Bareos >= 20 [PR #768]
 - Qmsg: in case of syslog logging use adapted log priority instead of always LOG_ERR [PR #1134]
 - webui: remove an unnecessary .bvfs_get_jobids and buildSubtree() call [PR #1050]
 - git: set merge strategy for CHANGELOG.md to union [PR #1062]

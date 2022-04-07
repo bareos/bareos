@@ -236,6 +236,13 @@ print_debug()
    fi
 }
 
+printf_debug()
+{
+   if is_debug; then
+     printf "$@" >&2
+   fi
+}
+
 write_stdin_to_file()
 {
   FILE="$1"
@@ -508,6 +515,27 @@ kill_process() {
   fi
 }
 
+waitpid()
+{
+    # loop until the process no longer exists, or it's a zombie.
+    local PID=$1
+    local RC=1
+    printf_debug "waiting for pid %s " "$PID"
+    local command=""
+    command=$(ps -p $PID -o command=) || true
+    printf_debug "(%s) " "$command"
+    while s=$(ps -p $PID -o s=) && [[ "$s" && "$s" != 'Z' ]]; do
+        printf_debug "."
+        sleep 1
+    done
+    if [ -z "$s" ]; then
+        printf_debug " OK"
+        RC=0
+    fi
+    printf_debug "\n"
+    return $RC
+}
+
 stop_bareos()
 {
   if [ "$fd_pid" -gt 0 ]; then
@@ -675,6 +703,10 @@ check_log()
          -e "Encoding error for database" \
          -e "^Could not find Client" \
          -e "ERR=" \
+         -e "JobStatus=.*Error" \
+         -e "jobstatus: E" \
+         -e "jobstatus: e" \
+         -e "jobstatus: f" \
          "$LOG"
    then
       bstat=1
@@ -682,7 +714,7 @@ check_log()
 
    if grep \
          -e "^  Termination: .*Restore Error" \
-         -e "^  Termination: *Restore OK -- warning " \
+         -e "^  Termination: *Restore OK -- warning" \
          -e "^  Termination: .*Verify Differences" \
          "$LOG"
    then

@@ -6,6 +6,9 @@ i386/bareos-bconsole
 i386/bareos-client
 i386/bareos-common
 i386/bareos-database-common
+i386/bareos-contrib-director-python-plugins
+i386/bareos-contrib-filedaemon-python-plugins
+i386/bareos-contrib-tools
 i386/bareos-database-postgresql
 i386/bareos-database-tools
 i386/bareos-dbg

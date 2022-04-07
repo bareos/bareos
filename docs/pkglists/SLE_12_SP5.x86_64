@@ -28,6 +28,9 @@ x86_64/bareos
 x86_64/bareos-bconsole
 x86_64/bareos-client
 x86_64/bareos-common
+x86_64/bareos-contrib-director-python-plugins
+x86_64/bareos-contrib-filedaemon-python-plugins
+x86_64/bareos-contrib-tools
 x86_64/bareos-database-common
 x86_64/bareos-database-postgresql
 x86_64/bareos-database-tools
