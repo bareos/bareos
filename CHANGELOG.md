@@ -11,6 +11,12 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Fixed
 - webui: get volume and pool params from query instead of route [PR #1145]
 
+### Security
+- webui: update moment.js to version 2.29.2 [PR #1157] [CVE-2022-24785](https://github.com/advisories/GHSA-8hfj-j24r-96c4)
+  - webui is NOT affected
+  - webui does NOT use the npm server
+  - webui does NOT use a user-provided locale string to directly switch moment locale
+
 ## [20.0.6] - 2022-03-14
 
 ### Breaking Changes
