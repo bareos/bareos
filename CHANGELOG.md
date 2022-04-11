@@ -76,6 +76,10 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: update jquery from v3.2.0 to v3.6.0 [PR #1083]
 - dird: check authorization on PAM login [PR #1115] [CVE-2022-24755](https://github.com/bareos/bareos/security/advisories/GHSA-4979-8ffj-4q26)
 - dird: fix memory leak on failed PAM login [PR #1115] [CVE-2022-24756](https://github.com/bareos/bareos/security/advisories/GHSA-jh55-4wgw-xc9j)
+- webui: update moment.js to version 2.29.2 [PR #1155] [CVE-2022-24785](https://github.com/advisories/GHSA-8hfj-j24r-96c4)
+  - webui is NOT affected
+  - webui does NOT use the npm server
+  - webui does NOT use a user-provided locale string to directly switch moment locale
 
 ### Documentation
 
