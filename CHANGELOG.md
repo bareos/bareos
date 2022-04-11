@@ -11,6 +11,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Changed
 - jstreegrid: remove handling of IE < 8 using navigator interface to avoid warnings in chrome [PR #1143]
 
+### Security
+- webui: update moment.js to version 2.29.2 [PR #1158] [CVE-2022-24785](https://github.com/advisories/GHSA-8hfj-j24r-96c4)
+  - webui is NOT affected
+  - webui does NOT use the npm server
+  - webui does NOT use a user-provided locale string to directly switch moment locale
+
 ## [19.2.12] - 2022-03-14
 
 ### Breaking Changes
