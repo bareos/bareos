@@ -119,11 +119,6 @@ bool DoConsolidate(JobControlRecord* jcr)
 
   foreach_res (job, R_JOB) {
     if (job->AlwaysIncremental) {
-      db_list_ctx jobids_ctx;
-      int32_t incrementals_total;
-      int32_t incrementals_to_consolidate;
-      int32_t max_incrementals_to_consolidate;
-
       Jmsg(jcr, M_INFO, 0, _("Looking at always incremental job %s\n"),
            job->resource_name_);
 
@@ -148,10 +143,10 @@ bool DoConsolidate(JobControlRecord* jcr)
       }
 
       // First determine the number of total incrementals
-      jcr->db->AccurateGetJobids(jcr, &jcr->impl->jr, &jobids_ctx);
-      incrementals_total = jobids_ctx.size() - 1;
+      db_list_ctx all_jobids_ctx;
+      jcr->db->AccurateGetJobids(jcr, &jcr->impl->jr, &all_jobids_ctx);
       Dmsg1(10, "unlimited jobids list:  %s.\n",
-            jobids_ctx.GetAsString().c_str());
+            all_jobids_ctx.GetAsString().c_str());
 
       /*
        * If we are doing always incremental, we need to limit the search to
@@ -173,17 +168,22 @@ bool DoConsolidate(JobControlRecord* jcr)
               jcr->impl->jr.FileSetId, sdt);
       }
 
+      db_list_ctx jobids_ctx;
       jcr->db->AccurateGetJobids(jcr, &jcr->impl->jr, &jobids_ctx);
       Dmsg1(10, "consolidate candidates:  %s.\n",
             jobids_ctx.GetAsString().c_str());
 
-      db_list_ctx zero_file_jobs = jcr->db->FilterZeroFileJobs(jobids_ctx);
+      const db_list_ctx zero_file_jobs
+          = jcr->db->FilterZeroFileJobs(jobids_ctx);
       if (zero_file_jobs.size() > 0) {
         Jmsg(jcr, M_INFO, 0, "%s: purging empty jobids %s\n",
              job->resource_name_, zero_file_jobs.Join(", ").c_str());
         jcr->db->PurgeJobs(zero_file_jobs.GetAsString().c_str());
       }
-      incrementals_total = jobids_ctx.size() - 1;
+
+      // all jobs - any empty jobs - the full backup
+      const int32_t incrementals_total
+          = all_jobids_ctx.size() - zero_file_jobs.size() - 1;
       /**
        * Consolidation of zero or one job does not make sense, we leave it
        * like it is
@@ -200,31 +200,31 @@ bool DoConsolidate(JobControlRecord* jcr)
        * Calculate limit for query. We specify how many incrementals should be
        * left. the limit is total number of incrementals - number required - 1
        */
-      max_incrementals_to_consolidate
+      const int32_t max_incrementals_to_consolidate
           = incrementals_total - job->AlwaysIncrementalKeepNumber;
 
       Dmsg2(10, "Incrementals found/required. (%d/%d).\n", incrementals_total,
             job->AlwaysIncrementalKeepNumber);
-      if ((max_incrementals_to_consolidate + 1) > 1) {
-        jcr->impl->jr.limit = max_incrementals_to_consolidate + 1;
-        Dmsg3(10, "total: %d, to_consolidate: %d, limit: %d.\n",
-              incrementals_total, max_incrementals_to_consolidate,
-              jcr->impl->jr.limit);
-        jobids_ctx.clear();
-        jcr->db->AccurateGetJobids(jcr, &jcr->impl->jr, &jobids_ctx);
-        incrementals_to_consolidate = jobids_ctx.size() - 1;
-        Dmsg2(10, "%d consolidate ids after limit: %s.\n", jobids_ctx.size(),
-              jobids_ctx.GetAsString().c_str());
-        if (incrementals_to_consolidate < 1) {
-          Jmsg(jcr, M_INFO, 0,
-               _("%s: After limited query: less incrementals than required, "
-                 "not consolidating\n"),
-               job->resource_name_);
-          continue;
-        }
-      } else {
+      if (max_incrementals_to_consolidate == 0) {
         Jmsg(jcr, M_INFO, 0,
              _("%s: less incrementals than required, not consolidating\n"),
+             job->resource_name_);
+        continue;
+      }
+
+      jcr->impl->jr.limit = max_incrementals_to_consolidate + 1;
+      Dmsg3(10, "total: %d, to_consolidate: %d, limit: %d.\n",
+            incrementals_total, max_incrementals_to_consolidate,
+            jcr->impl->jr.limit);
+      jobids_ctx.clear();
+      jcr->db->AccurateGetJobids(jcr, &jcr->impl->jr, &jobids_ctx);
+      const int32_t incrementals_to_consolidate = jobids_ctx.size() - 1;
+      Dmsg2(10, "%d consolidate ids after limit: %s.\n", jobids_ctx.size(),
+            jobids_ctx.GetAsString().c_str());
+      if (incrementals_to_consolidate < 1) {
+        Jmsg(jcr, M_INFO, 0,
+             _("%s: After limited query: less incrementals than required, "
+               "not consolidating\n"),
              job->resource_name_);
         continue;
       }
