@@ -20,45 +20,39 @@
 */
 #if defined(HAVE_MINGW)
 #  include "include/bareos.h"
-#  include "gtest/gtest.h"
-#else
-#  include "gtest/gtest.h"
-#  include "gmock/gmock.h"
 #endif
+
+#include "gtest/gtest.h"
 
 #include "stored/append.h"
 
-
-class AppendProcessedFileTest : public testing::Test {
- public:
-  int32_t arbitrary_index{1};
-  storagedaemon::ProcessedFile file{};
-  void SetUp() override
-  {
-    file = storagedaemon::ProcessedFile{arbitrary_index};
-  }
-};
-
-TEST_F(AppendProcessedFileTest, ProcessedFileIsEmptyOnInitialization)
+TEST(AppendProcessedFileTest, ProcessedFileIsEmptyOnInitialization)
 {
-  file = storagedaemon::ProcessedFile{20};
+  storagedaemon::ProcessedFile file{20};
   EXPECT_EQ(file.GetFileIndex(), 20);
   EXPECT_TRUE(file.GetAttributes().empty());
 }
 
-TEST_F(AppendProcessedFileTest, AddDeviceRecordCopiesDataContentNotPointer)
+TEST(AppendProcessedFileTest, AddDeviceRecordCopiesDataContentNotPointer)
 {
   POOLMEM* test_msg = GetPoolMemory(PM_MESSAGE);
-  PmStrcpy(test_msg, "a random message");
+  PmStrcpy(test_msg, "data\0more data");
 
   storagedaemon::DeviceRecord dr;
+  dr.data_len = 14;
   dr.data = test_msg;
-  dr.data_len = strlen(test_msg) - 1;
+
+  int32_t arbitrary_index{1234};
+  storagedaemon::ProcessedFile file{arbitrary_index};
   file.AddAttribute(&dr);
 
   EXPECT_FALSE(file.GetAttributes().empty());
-  EXPECT_NE(file.GetAttributes().front().data, dr.data);
-  EXPECT_EQ(*file.GetAttributes().front().data, *dr.data);
+
+  storagedaemon::ProcessedFileData processedfiledata
+      = file.GetAttributes().front();
+
+  EXPECT_NE(processedfiledata.GetData().data, dr.data);
+  EXPECT_EQ(memcmp(processedfiledata.GetData().data, dr.data, dr.data_len), 0);
 
   FreePoolMemory(test_msg);
 }

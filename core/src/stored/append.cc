@@ -50,57 +50,47 @@ static char OK_replicate[] = "3000 OK replicate data\n";
 
 void PossibleIncompleteJob(JobControlRecord* jcr, int32_t last_file_index) {}
 
-ProcessedFile::~ProcessedFile()
+
+ProcessedFileData::ProcessedFileData(DeviceRecord* record)
+    : volsessionid_(record->VolSessionId)
+    , volsessiontime_(record->VolSessionTime)
+    , fileindex_(record->FileIndex)
+    , stream_(record->Stream)
+    , data_len_(record->data_len)
+    , data_(record->data, record->data + record->data_len)
 {
-  for (auto devicerecord : attributes_) { FreeMemory(devicerecord.data); }
 }
 
-ProcessedFile::ProcessedFile(const ProcessedFile& other)
-    : fileindex_(other.fileindex_)
+DeviceRecord ProcessedFileData::GetData()
 {
-  for (auto device : other.attributes_) { this->AddAttribute(&device); }
+  DeviceRecord devicerecord{};
+  devicerecord.VolSessionId = volsessionid_;
+  devicerecord.VolSessionTime = volsessiontime_;
+  devicerecord.FileIndex = fileindex_;
+  devicerecord.Stream = stream_;
+  devicerecord.data_len = data_len_;
+  devicerecord.data = data_.data();
+
+  return devicerecord;
 }
 
-ProcessedFile& ProcessedFile::operator=(const ProcessedFile& other)
+ProcessedFile::ProcessedFile(int32_t fileindex) : fileindex_(fileindex) {}
+
+void ProcessedFile::SendAttributesToDirector(JobControlRecord* jcr)
 {
-  this->fileindex_ = other.fileindex_;
-  for (auto device : other.attributes_) { this->AddAttribute(&device); }
-
-  return *this;
-}
-
-ProcessedFile::ProcessedFile(ProcessedFile&& other)
-    : fileindex_(other.fileindex_), attributes_(std::move(other.attributes_))
-{
-  other.fileindex_ = 0;
-}
-
-ProcessedFile& ProcessedFile::operator=(ProcessedFile&& other)
-{
-  this->fileindex_ = other.fileindex_;
-  this->attributes_ = std::move(other.attributes_);
-
-  other.fileindex_ = 0;
-
-  return *this;
-}
-
-void ProcessedFile::SendAttributesToDirector(JobControlRecord* jcr) const
-{
-  for (auto attribute : attributes_) { SendAttrsToDir(jcr, &attribute); }
+  for_each(attributes_.begin(), attributes_.end(),
+           [&jcr](ProcessedFileData& attribute) {
+             DeviceRecord devicerecord = attribute.GetData();
+             SendAttrsToDir(jcr, &devicerecord);
+           });
 }
 
 void ProcessedFile::AddAttribute(DeviceRecord* record)
 {
-  DeviceRecord devicerecord_copy{*record};
-
-  // get a copy of the data rather than a pointer to the previous data
-  devicerecord_copy.data = GetMemory(record->data_len);
-  PmMemcpy(devicerecord_copy.data, record->data, record->data_len);
-  attributes_.push_back(devicerecord_copy);
+  attributes_.emplace_back(ProcessedFileData(record));
 }
 
-static bool IsAttribute(DeviceRecord* record)
+bool IsAttribute(DeviceRecord* record)
 {
   return record->maskedStream == STREAM_UNIX_ATTRIBUTES
          || record->maskedStream == STREAM_UNIX_ATTRIBUTES_EX
@@ -158,9 +148,9 @@ static void SaveFullyProcessedFiles(JobControlRecord* jcr,
                                     std::vector<ProcessedFile>& processed_files)
 {
   if (!processed_files.empty()) {
-    for (const auto& file : processed_files) {
-      file.SendAttributesToDirector(jcr);
-    }
+    for_each(
+        processed_files.begin(), processed_files.end(),
+        [&jcr](ProcessedFile& file) { file.SendAttributesToDirector(jcr); });
     jcr->JobFiles = processed_files.back().GetFileIndex();
     processed_files.clear();
   }
@@ -453,7 +443,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       ok = false;
     } else {
       // Send attributes of the final partial block of the session
-      processed_files.push_back(file_currently_processed);
+      processed_files.push_back(std::move(file_currently_processed));
       SaveFullyProcessedFiles(jcr, processed_files);
     }
   }
