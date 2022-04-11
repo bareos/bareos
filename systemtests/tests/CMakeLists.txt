@@ -18,7 +18,7 @@
 #   02110-1301, USA.
 
 add_subdirectory(acl)
-add_subdirectory(ai-consolidate-ignore-duplicate-job)
+add_subdirectory(always-incremental-consolidate)
 add_subdirectory(autochanger)
 add_subdirectory(bareos)
 add_subdirectory(bareos-acl)
