@@ -200,17 +200,17 @@ bool DoConsolidate(JobControlRecord* jcr)
        * Calculate limit for query. We specify how many incrementals should be
        * left. the limit is total number of incrementals - number required - 1
        */
-      const int32_t max_incrementals_to_consolidate
-          = incrementals_total - job->AlwaysIncrementalKeepNumber;
-
       Dmsg2(10, "Incrementals found/required. (%d/%d).\n", incrementals_total,
             job->AlwaysIncrementalKeepNumber);
-      if (max_incrementals_to_consolidate == 0) {
+      if (incrementals_total <= job->AlwaysIncrementalKeepNumber) {
         Jmsg(jcr, M_INFO, 0,
              _("%s: less incrementals than required, not consolidating\n"),
              job->resource_name_);
         continue;
       }
+
+      const int32_t max_incrementals_to_consolidate
+          = incrementals_total - job->AlwaysIncrementalKeepNumber;
 
       jcr->impl->jr.limit = max_incrementals_to_consolidate + 1;
       Dmsg3(10, "total: %d, to_consolidate: %d, limit: %d.\n",
