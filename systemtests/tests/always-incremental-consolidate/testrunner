@@ -138,6 +138,7 @@ messages
 .bvfs_lsdirs jobid=16 path=
 .bvfs_update
 .bvfs_lsdirs jobid=16 path=
+.bvfs_versions jobid=16 path=${tmp}/data/weird-files/ client=bareos-fd fname=normalfile
 wait
 messages
 quit
@@ -166,5 +167,9 @@ expect_grep "purged JobIds 6,4,11 as they were consolidated into Job 15" \
 expect_grep "0	0	A A A A A A A A A A A A A A	/" \
             "$tmp"/virtualfull.out \
             "bvfs_update did not take into consideration VirtualFull Archive."
+
+expect_grep "43xzp14Dk2Gvm+cKgszDNQ	AI-Longterm" \
+            "$tmp"/virtualfull.out \
+            ".bvfs_versions did not find a file backup up by a VirtualFull Archive."
 
 end_test
