@@ -524,9 +524,9 @@ void Bvfs::GetAllFileVersions(DBId_t pathid,
         client);
 
   if (see_copies) {
-    Mmsg(filter, " AND Job.Type IN ('C', 'B') ");
+    Mmsg(filter, " AND Job.Type IN ('C', 'B', 'A', 'a') ");
   } else {
-    Mmsg(filter, " AND Job.Type = 'B' ");
+    Mmsg(filter, " AND Job.Type IN ('B', 'A', 'a') ");
   }
 
   db->EscapeString(jcr, fname_esc, fname, strlen(fname));
