@@ -15,6 +15,12 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - `bvfs_update` now uses `unordered_map` instead of `htable` for the pathid cache [PR #1146]
 - Qmsg: in case of syslog logging use adapted log priority instead of always LOG_ERR [PR #1150]
 
+### Security
+- webui: update moment.js to version 2.29.2 [PR #1156] [CVE-2022-24785](https://github.com/advisories/GHSA-8hfj-j24r-96c4)
+  - webui is NOT affected
+  - webui does NOT use the npm server
+  - webui does NOT use a user-provided locale string to directly switch moment locale
+
 ## [21.1.2] - 2022-03-17
 
 ### Fixed
