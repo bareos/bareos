@@ -8,8 +8,8 @@ LOGFILE=/tmp/bareos-setup.log
 
 initialize_bareos(){
 		echo "$PKGNAME: initializing bareos configuration, logs to ${LOGFILE}"
-		/usr/lib/bareos/scripts/bareos-config initialize_local_hostname  >>${LOGFILE} 2>&1 || echo "initialize_local_hostname failed"
-		/usr/lib/bareos/scripts/bareos-config initialize_passwords       >>${LOGFILE} 2>&1 || echo "initialize_passwords failed"
+		/usr/local/lib/bareos/scripts/bareos-config initialize_local_hostname  >>${LOGFILE} 2>&1 || echo "initialize_local_hostname failed"
+		/usr/local/lib/bareos/scripts/bareos-config initialize_passwords       >>${LOGFILE} 2>&1 || echo "initialize_passwords failed"
 }
 
 case "$MODE" in

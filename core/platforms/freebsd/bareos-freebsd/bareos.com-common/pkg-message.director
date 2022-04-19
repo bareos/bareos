@@ -3,9 +3,9 @@ Thank you for installing the Bareos director!
 
 please run the following commands to setup the bareos databases:
 
-su postgres -c /usr/lib/bareos/scripts/create_bareos_database
-su postgres -c /usr/lib/bareos/scripts/make_bareos_tables
-su postgres -c /usr/lib/bareos/scripts/grant_bareos_privileges
+su postgres -c /usr/local/lib/bareos/scripts/create_bareos_database
+su postgres -c /usr/local/lib/bareos/scripts/make_bareos_tables
+su postgres -c /usr/local/lib/bareos/scripts/grant_bareos_privileges
 
 
 enable the service by running the following commands:
