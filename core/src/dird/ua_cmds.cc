@@ -1510,13 +1510,11 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
   AddPrompt(ua, _("Client"));
   AddPrompt(ua, _("All"));
 
-  //Ask the user if tracing is wished
+  // Ask the user if tracing is wished
   const int trace = DoPrompt(ua, "", _("Select tracing mode: 1 on, 0 off"), NULL, 0)));
-  if (trace == 0 || trace == 1) {
-	trace_flag = trace;
-  }
+  if (trace == 0 || trace == 1) { trace_flag = trace; }
 
-  //Ask the user which debug level is wished
+  // Ask the user which debug level is wished
   switch (
       DoPrompt(ua, "", _("Select daemon type to set debug level"), NULL, 0)) {
     case 0:
