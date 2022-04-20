@@ -61,14 +61,14 @@ Example:
      Name = "option"
      Include {
        Options {
-         Signature = MD5 # calculate md5 checksum per file
+         Signature = MD5
          Plugin = "python3"
                   ":module_path=/usr/lib/bareos/plugins"
-                  ":module_name=bareos-fd-file-interact"
+                  ":module_name=bareos_option_example"
        }
        File = "/etc"
        File = "/usr/lib/bareos/plugins"
      }
    }
 
-This plugin bareos-fd-file-interact from https://github.com/bareos/bareos/tree/master/contrib/fd-plugins/options-plugin-sample has a method that is called before and after each file that goes into the backup, it can be used as a template for whatever plugin wants to interact with files before or after backup.
+This plugin from https://github.com/bareos/bareos/tree/master/contrib/fd-plugins/bareos_option_example has a method that is called before and after each file that goes into the backup, it can be used as a template for whatever plugin wants to interact with files before or after backup.

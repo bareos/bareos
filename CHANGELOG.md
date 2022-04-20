@@ -92,7 +92,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - improve action Python plugin documentation, by removing File in Fileset example [PR #1079]
 - improve Mysql - PostgreSQL howto [PR #1093] fixing [BUG #1429]
 - clarifies Sphinx bareos-extension parallel_read_safe status to False [PR #1037]
+- fix incorrect link in contrib PythonFdPlugin [BUG #1450] [PR #1065]
 
+[PR #768]: https://github.com/bareos/bareos/pull/768
 [PR #1010]: https://github.com/bareos/bareos/pull/1010
 [PR #1013]: https://github.com/bareos/bareos/pull/1013
 [PR #1015]: https://github.com/bareos/bareos/pull/1015
@@ -101,6 +103,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1031]: https://github.com/bareos/bareos/pull/1031
 [PR #1033]: https://github.com/bareos/bareos/pull/1033
 [PR #1035]: https://github.com/bareos/bareos/pull/1035
+[PR #1037]: https://github.com/bareos/bareos/pull/1037
 [PR #1038]: https://github.com/bareos/bareos/pull/1038
 [PR #1040]: https://github.com/bareos/bareos/pull/1040
 [PR #1041]: https://github.com/bareos/bareos/pull/1041
@@ -117,6 +120,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1059]: https://github.com/bareos/bareos/pull/1059
 [PR #1060]: https://github.com/bareos/bareos/pull/1060
 [PR #1062]: https://github.com/bareos/bareos/pull/1062
+[PR #1065]: https://github.com/bareos/bareos/pull/1065
 [PR #1067]: https://github.com/bareos/bareos/pull/1067
 [PR #1070]: https://github.com/bareos/bareos/pull/1070
 [PR #1072]: https://github.com/bareos/bareos/pull/1072
@@ -130,15 +134,21 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1093]: https://github.com/bareos/bareos/pull/1093
 [PR #1097]: https://github.com/bareos/bareos/pull/1097
 [PR #1098]: https://github.com/bareos/bareos/pull/1098
+[PR #1099]: https://github.com/bareos/bareos/pull/1099
 [PR #1106]: https://github.com/bareos/bareos/pull/1106
+[PR #1109]: https://github.com/bareos/bareos/pull/1109
 [PR #1110]: https://github.com/bareos/bareos/pull/1110
 [PR #1115]: https://github.com/bareos/bareos/pull/1115
 [PR #1120]: https://github.com/bareos/bareos/pull/1120
 [PR #1122]: https://github.com/bareos/bareos/pull/1122
 [PR #1127]: https://github.com/bareos/bareos/pull/1127
 [PR #1131]: https://github.com/bareos/bareos/pull/1131
+[PR #1134]: https://github.com/bareos/bareos/pull/1134
 [PR #1135]: https://github.com/bareos/bareos/pull/1135
+[PR #1138]: https://github.com/bareos/bareos/pull/1138
 [PR #1139]: https://github.com/bareos/bareos/pull/1139
 [PR #1140]: https://github.com/bareos/bareos/pull/1140
 [PR #1147]: https://github.com/bareos/bareos/pull/1147
+[PR #1149]: https://github.com/bareos/bareos/pull/1149
+[PR #1155]: https://github.com/bareos/bareos/pull/1155
 [unreleased]: https://github.com/bareos/bareos/tree/master
