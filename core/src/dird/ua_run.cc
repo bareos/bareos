@@ -213,7 +213,6 @@ bail_out:
 bool reRunCmd(UaContext* ua, const char* cmd)
 {
   if (!OpenClientDb(ua)) { return true; }
-
   // Determine what cmdline arguments are given.
 
   bool since_jobid_given = false; /* Was since_jobid given? */
@@ -276,57 +275,51 @@ bool reRunCmd(UaContext* ua, const char* cmd)
       schedtime = now - secs_in_hour * hours; /* Hours in the past */
     }
 
-    // Job Query Start
     char dt[MAX_TIME_LENGTH];
     bstrutime(dt, sizeof(dt), schedtime);
 
-    PoolMem query(PM_MESSAGE);
-    char ed1[50];
-    char ed2[50];
+    std::string select{"SELECT JobId FROM Job WHERE JobStatus = 'f'"};
     if (since_jobid_given) {
       if (until_jobid_given) {
-        Mmsg(query,
-             "SELECT JobId FROM Job WHERE JobStatus = 'f' AND JobId >= %s AND "
-             "JobId <= %s ORDER BY JobId",
-             edit_int64(since_jobid, ed1), edit_int64(until_jobid, ed2));
+        select += " AND JobId >= " + std::to_string(since_jobid)
+                  + " AND JobId <= " + std::to_string(until_jobid);
       } else {
-        Mmsg(query,
-             "SELECT JobId FROM Job WHERE JobStatus = 'f' AND JobId >= %s "
-             "ORDER BY JobId",
-             edit_int64(since_jobid, ed1));
+        select += " AND JobId >= " + std::to_string(since_jobid);
       }
 
     } else {
-      Mmsg(query,
-           "SELECT JobId FROM Job WHERE JobStatus = 'f' AND SchedTime > '%s' "
-           "ORDER BY JobId",
-           dt);
+      select += " AND SchedTime > '" + std::string(dt) + "'";
     }
+    select += " ORDER BY JobId";
 
     dbid_list ids;
+    PoolMem query(PM_MESSAGE);
+    Mmsg(query, select.c_str());
     ua->db->GetQueryDbids(ua->jcr, query, ids);
 
-    ua->SendMsg("The following ids were selected for rerun:\n");
-    for (int i = 0; i < ids.num_ids; i++) {
-      if (i > 0) {
-        ua->SendMsg(",%d", ids.DBId[i]);
-      } else {
-        ua->SendMsg("%d", ids.DBId[i]);
+    if (!ids.size()) {
+      ua->SendMsg("No jobids with the specified options were found.\n");
+    } else {
+      ua->SendMsg("The following ids were selected for rerun:\n");
+      for (int i = 0; i < ids.num_ids; i++) {
+        if (i > 0) {
+          ua->SendMsg(",%d", ids.DBId[i]);
+        } else {
+          ua->SendMsg("%d", ids.DBId[i]);
+        }
       }
-    }
-    ua->SendMsg("\n");
+      ua->SendMsg("\n");
 
-    if (!yes
-        && (!GetYesno(ua, _("rerun these jobids? (yes/no): "))
-            || !ua->pint32_val)) {
-      return false;
-    }
-    // Job Query End
-
-    // Loop over all selected JobIds.
-    for (int i = 0; i < ids.num_ids; i++) {
-      JobId = ids.DBId[i];
-      if (!reRunJob(ua, JobId, yes, now)) { return false; }
+      if (!yes
+          && (!GetYesno(ua, _("rerun these jobids? (yes/no): "))
+              || !ua->pint32_val)) {
+        return false;
+      }
+      // Loop over all selected JobIds.
+      for (int i = 0; i < ids.num_ids; i++) {
+        JobId = ids.DBId[i];
+        if (!reRunJob(ua, JobId, yes, now)) { return false; }
+      }
     }
   } else {
     JobId = str_to_int64(ua->argv[j]);
