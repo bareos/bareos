@@ -21,6 +21,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
   - webui does NOT use the npm server
   - webui does NOT use a user-provided locale string to directly switch moment locale
 
+### Documentation
+- backport fix incorrect link in contrib PythonFdPlugin [BUG #1450] [PR #1167]
+
 ## [21.1.2] - 2022-03-17
 
 ### Fixed
