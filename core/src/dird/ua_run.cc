@@ -259,19 +259,19 @@ bool reRunCmd(UaContext* ua, const char* cmd)
 
   if (j < 0 && !timeframe && !since_jobid_given) {
     ua->SendMsg("Please specify jobid, since_jobid, hours or days\n");
-    goto bail_out;
+    return false;
   }
 
   if (j >= 0 && since_jobid_given) {
     ua->SendMsg(
         "Please specify either jobid or since_jobid (and optionally "
         "until_jobid)\n");
-    goto bail_out;
+    return false;
   }
 
   if (j >= 0 && timeframe) {
     ua->SendMsg("Please specify either jobid or timeframe\n");
-    goto bail_out;
+    return false;
   }
 
   if (timeframe || since_jobid_given) {
@@ -323,24 +323,21 @@ bool reRunCmd(UaContext* ua, const char* cmd)
     if (!yes
         && (!GetYesno(ua, _("rerun these jobids? (yes/no): "))
             || !ua->pint32_val)) {
-      goto bail_out;
+      return false;
     }
     // Job Query End
 
     // Loop over all selected JobIds.
     for (i = 0; i < ids.num_ids; i++) {
       JobId = ids.DBId[i];
-      if (!reRunJob(ua, JobId, yes, now)) { goto bail_out; }
+      if (!reRunJob(ua, JobId, yes, now)) { return false; }
     }
   } else {
     JobId = str_to_int64(ua->argv[j]);
-    if (!reRunJob(ua, JobId, yes, now)) { goto bail_out; }
+    if (!reRunJob(ua, JobId, yes, now)) { return false; }
   }
 
   return true;
-
-bail_out:
-  return false;
 }
 
 /**
