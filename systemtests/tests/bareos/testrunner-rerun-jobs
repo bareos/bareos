@@ -1,0 +1,57 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# Run a simple backup
+#   then restore it.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+rerun_log=$tmp/rerun.out
+JobName=backup-bareos-fd
+
+rm -f $rerun_log
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $rerun_log
+setdebug level=100 storage=File
+run job=$JobName yes
+run job=$JobName yes
+wait
+rerun jobid=1 yes
+wait
+rerun jobid=2,3 yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+expect_grep "rerunning jobid 1" \
+            "$rerun_log" \
+            "Job was not rerun."
+
+expect_grep "rerunning jobid 2" \
+            "$rerun_log" \
+            "Comma separated jobs were not correctly rerun."
+
+expect_grep "rerunning jobid 3" \
+            "$rerun_log" \
+            "Comma separated jobs were not correctly rerun."
+
+
+end_test
