@@ -260,21 +260,22 @@ RerunArguments GetRerunCmdlineArguments(UaContext* ua)
   return rerunarguments;
 }
 
+static time_t ConvertDaysHoursToSecs(const RerunArguments& rerunargs,
+                                     utime_t now)
+{
+  const int secs_in_day = 86400;
+  const int secs_in_hour = 3600;
+  time_t schedtime
+      = now - (rerunargs.days * secs_in_day + rerunargs.hours * secs_in_hour);
+  return schedtime;
+}
+
 static std::string PrepareRerunSqlQuery(UaContext* ua,
-                                        RerunArguments rerunargs,
+                                        const RerunArguments& rerunargs,
                                         utime_t now)
 {
-  time_t schedtime = now;
-  if (rerunargs.days > 0) {
-    const int secs_in_day = 86400;
-    schedtime = now - secs_in_day * rerunargs.days; /* Days in the past */
-  }
-  if (rerunargs.hours > 0) {
-    const int secs_in_hour = 3600;
-    schedtime = now - secs_in_hour * rerunargs.hours; /* Hours in the past */
-  }
-
   char dt[MAX_TIME_LENGTH];
+  time_t schedtime = ConvertDaysHoursToSecs(rerunargs, now);
   bstrutime(dt, sizeof(dt), schedtime);
 
   std::string select{"SELECT JobId FROM Job WHERE JobStatus = 'f'"};
