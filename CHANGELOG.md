@@ -54,6 +54,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: add timeline chart by jobs [PR #1063]
 - webui: analytics module: show stored data per jobname in treemap [PR #1116]
 - webui: add pool column to volume lists [PR #1125]
+- cats: make `.bvfs_update` and `.bvfs_versions` take archive jobs into consideration [PR #1164]
 
 ### Changed
 - webui: add timeline chart by jobs [PR #1063]
