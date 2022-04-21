@@ -203,6 +203,59 @@ static inline bool reRunJob(UaContext* ua, JobId_t JobId, bool yes, utime_t now)
 bail_out:
   return false;
 }
+struct RerunArguments {
+  int since_jobid = 0;
+  int until_jobid = 0;
+  int days = 0;
+  int hours = 0;
+  bool yes = false;
+  JobId_t JobId;
+  bool parsingerror = false;
+};
+
+static RerunArguments GetRerunCmdlineArguments(UaContext* ua)
+{
+  RerunArguments rerunarguments{};
+  // Determine what cmdline arguments are given.
+
+  int s = FindArgWithValue(ua, NT_("since_jobid"));
+  if (s > 0) { rerunarguments.since_jobid = str_to_int64(ua->argv[s]); }
+
+  int u = FindArgWithValue(ua, NT_("until_jobid"));
+  if (u > 0) { rerunarguments.until_jobid = str_to_int64(ua->argv[u]); }
+
+  int d = FindArgWithValue(ua, NT_("days"));
+  if (d > 0) { rerunarguments.days = str_to_int64(ua->argv[d]); }
+
+  int h = FindArgWithValue(ua, NT_("hours"));
+  if (h > 0) { rerunarguments.hours = str_to_int64(ua->argv[h]); }
+
+  if (FindArg(ua, NT_("yes")) > 0) { rerunarguments.yes = true; }
+
+  int j = FindArgWithValue(ua, NT_("jobid"));
+  if (j < 0 && !(rerunarguments.days || rerunarguments.hours)
+      && !rerunarguments.since_jobid) {
+    ua->SendMsg("Please specify jobid, since_jobid, hours or days\n");
+    rerunarguments.parsingerror = true;
+    return rerunarguments;
+  }
+  if (j >= 0) { rerunarguments.JobId = str_to_int64(ua->argv[j]); }
+  if (j >= 0 && rerunarguments.since_jobid) {
+    ua->SendMsg(
+        "Please specify either jobid or since_jobid (and optionally "
+        "until_jobid)\n");
+    rerunarguments.parsingerror = true;
+    return rerunarguments;
+  }
+
+  if (j >= 0 && (rerunarguments.days || rerunarguments.hours)) {
+    ua->SendMsg("Please specify either jobid or a timeframe\n");
+    rerunarguments.parsingerror = true;
+    return rerunarguments;
+  }
+
+  return rerunarguments;
+}
 
 /**
  * Rerun a job selection.
@@ -215,68 +268,32 @@ bool reRunCmd(UaContext* ua, const char* cmd)
   if (!OpenClientDb(ua)) { return true; }
   // Determine what cmdline arguments are given.
 
-  int s = FindArgWithValue(ua, NT_("since_jobid"));
-  int since_jobid = 0;
-  if (s > 0) { since_jobid = str_to_int64(ua->argv[s]); }
+  RerunArguments rerunargs = GetRerunCmdlineArguments(ua);
 
-  int u = FindArgWithValue(ua, NT_("until_jobid"));
-  int until_jobid = 0;
-  if (u > 0) { until_jobid = str_to_int64(ua->argv[u]); }
-
-  bool timeframe = false; /* Should the selection happen based on timeframe? */
-  int d = FindArgWithValue(ua, NT_("days"));
-  int h = FindArgWithValue(ua, NT_("hours"));
-  if (d > 0 || h > 0) { timeframe = true; }
-
-  bool yes = false; /* Was "yes" given on cmdline?*/
-  if (FindArg(ua, NT_("yes")) > 0) { yes = true; }
-
-  int j = FindArgWithValue(ua, NT_("jobid"));
-  if (j < 0 && !timeframe && !since_jobid) {
-    ua->SendMsg("Please specify jobid, since_jobid, hours or days\n");
-    return false;
-  }
-
-  if (j >= 0 && since_jobid) {
-    ua->SendMsg(
-        "Please specify either jobid or since_jobid (and optionally "
-        "until_jobid)\n");
-    return false;
-  }
-
-  if (j >= 0 && timeframe) {
-    ua->SendMsg("Please specify either jobid or timeframe\n");
-    return false;
-  }
+  if (rerunargs.parsingerror) { return false; }
 
   utime_t now = (utime_t)time(NULL);
-  int days = 0;
-  int hours = 0;
-  JobId_t JobId;
-  time_t schedtime;
-  if (timeframe || since_jobid) {
-    schedtime = now;
-    if (d > 0) {
+  if ((rerunargs.days || rerunargs.hours) || rerunargs.since_jobid) {
+    time_t schedtime = now;
+    if (rerunargs.days > 0) {
       const int secs_in_day = 86400;
-      days = str_to_int64(ua->argv[d]);
-      schedtime = now - secs_in_day * days; /* Days in the past */
+      schedtime = now - secs_in_day * rerunargs.days; /* Days in the past */
     }
-    if (h > 0) {
+    if (rerunargs.hours > 0) {
       const int secs_in_hour = 3600;
-      hours = str_to_int64(ua->argv[h]);
-      schedtime = now - secs_in_hour * hours; /* Hours in the past */
+      schedtime = now - secs_in_hour * rerunargs.hours; /* Hours in the past */
     }
 
     char dt[MAX_TIME_LENGTH];
     bstrutime(dt, sizeof(dt), schedtime);
 
     std::string select{"SELECT JobId FROM Job WHERE JobStatus = 'f'"};
-    if (since_jobid) {
-      if (until_jobid) {
-        select += " AND JobId >= " + std::to_string(since_jobid)
-                  + " AND JobId <= " + std::to_string(until_jobid);
+    if (rerunargs.since_jobid) {
+      if (rerunargs.until_jobid) {
+        select += " AND JobId >= " + std::to_string(rerunargs.since_jobid)
+                  + " AND JobId <= " + std::to_string(rerunargs.until_jobid);
       } else {
-        select += " AND JobId >= " + std::to_string(since_jobid);
+        select += " AND JobId >= " + std::to_string(rerunargs.since_jobid);
       }
 
     } else {
@@ -302,20 +319,21 @@ bool reRunCmd(UaContext* ua, const char* cmd)
       }
       ua->SendMsg("\n");
 
-      if (!yes
+      if (!rerunargs.yes
           && (!GetYesno(ua, _("rerun these jobids? (yes/no): "))
               || !ua->pint32_val)) {
         return false;
       }
       // Loop over all selected JobIds.
       for (int i = 0; i < ids.num_ids; i++) {
-        JobId = ids.DBId[i];
-        if (!reRunJob(ua, JobId, yes, now)) { return false; }
+        rerunargs.JobId = ids.DBId[i];
+        if (!reRunJob(ua, rerunargs.JobId, rerunargs.yes, now)) {
+          return false;
+        }
       }
     }
   } else {
-    JobId = str_to_int64(ua->argv[j]);
-    if (!reRunJob(ua, JobId, yes, now)) { return false; }
+    if (!reRunJob(ua, rerunargs.JobId, rerunargs.yes, now)) { return false; }
   }
 
   return true;
