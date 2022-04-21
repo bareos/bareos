@@ -215,21 +215,13 @@ bool reRunCmd(UaContext* ua, const char* cmd)
   if (!OpenClientDb(ua)) { return true; }
   // Determine what cmdline arguments are given.
 
-  bool since_jobid_given = false; /* Was since_jobid given? */
   int s = FindArgWithValue(ua, NT_("since_jobid"));
   int since_jobid = 0;
-  if (s > 0) {
-    since_jobid = str_to_int64(ua->argv[s]);
-    since_jobid_given = true;
-  }
+  if (s > 0) { since_jobid = str_to_int64(ua->argv[s]); }
 
-  bool until_jobid_given = false; /* Was until_jobid given? */
   int u = FindArgWithValue(ua, NT_("until_jobid"));
   int until_jobid = 0;
-  if (u > 0) {
-    until_jobid = str_to_int64(ua->argv[u]);
-    until_jobid_given = true;
-  }
+  if (u > 0) { until_jobid = str_to_int64(ua->argv[u]); }
 
   bool timeframe = false; /* Should the selection happen based on timeframe? */
   int d = FindArgWithValue(ua, NT_("days"));
@@ -240,12 +232,12 @@ bool reRunCmd(UaContext* ua, const char* cmd)
   if (FindArg(ua, NT_("yes")) > 0) { yes = true; }
 
   int j = FindArgWithValue(ua, NT_("jobid"));
-  if (j < 0 && !timeframe && !since_jobid_given) {
+  if (j < 0 && !timeframe && !since_jobid) {
     ua->SendMsg("Please specify jobid, since_jobid, hours or days\n");
     return false;
   }
 
-  if (j >= 0 && since_jobid_given) {
+  if (j >= 0 && since_jobid) {
     ua->SendMsg(
         "Please specify either jobid or since_jobid (and optionally "
         "until_jobid)\n");
@@ -262,7 +254,7 @@ bool reRunCmd(UaContext* ua, const char* cmd)
   int hours = 0;
   JobId_t JobId;
   time_t schedtime;
-  if (timeframe || since_jobid_given) {
+  if (timeframe || since_jobid) {
     schedtime = now;
     if (d > 0) {
       const int secs_in_day = 86400;
@@ -279,8 +271,8 @@ bool reRunCmd(UaContext* ua, const char* cmd)
     bstrutime(dt, sizeof(dt), schedtime);
 
     std::string select{"SELECT JobId FROM Job WHERE JobStatus = 'f'"};
-    if (since_jobid_given) {
-      if (until_jobid_given) {
+    if (since_jobid) {
+      if (until_jobid) {
         select += " AND JobId >= " + std::to_string(since_jobid)
                   + " AND JobId <= " + std::to_string(until_jobid);
       } else {
