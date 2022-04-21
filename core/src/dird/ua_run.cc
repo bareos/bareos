@@ -257,6 +257,40 @@ static RerunArguments GetRerunCmdlineArguments(UaContext* ua)
   return rerunarguments;
 }
 
+static std::string PrepareRerunSqlQuery(UaContext* ua,
+                                        RerunArguments rerunargs,
+                                        utime_t now)
+{
+  time_t schedtime = now;
+  if (rerunargs.days > 0) {
+    const int secs_in_day = 86400;
+    schedtime = now - secs_in_day * rerunargs.days; /* Days in the past */
+  }
+  if (rerunargs.hours > 0) {
+    const int secs_in_hour = 3600;
+    schedtime = now - secs_in_hour * rerunargs.hours; /* Hours in the past */
+  }
+
+  char dt[MAX_TIME_LENGTH];
+  bstrutime(dt, sizeof(dt), schedtime);
+
+  std::string select{"SELECT JobId FROM Job WHERE JobStatus = 'f'"};
+  if (rerunargs.since_jobid) {
+    if (rerunargs.until_jobid) {
+      select += " AND JobId >= " + std::to_string(rerunargs.since_jobid)
+                + " AND JobId <= " + std::to_string(rerunargs.until_jobid);
+    } else {
+      select += " AND JobId >= " + std::to_string(rerunargs.since_jobid);
+    }
+
+  } else {
+    select += " AND SchedTime > '" + std::string(dt) + "'";
+  }
+  select += " ORDER BY JobId";
+
+  return select;
+}
+
 /**
  * Rerun a job selection.
  *
@@ -274,32 +308,7 @@ bool reRunCmd(UaContext* ua, const char* cmd)
 
   utime_t now = (utime_t)time(NULL);
   if ((rerunargs.days || rerunargs.hours) || rerunargs.since_jobid) {
-    time_t schedtime = now;
-    if (rerunargs.days > 0) {
-      const int secs_in_day = 86400;
-      schedtime = now - secs_in_day * rerunargs.days; /* Days in the past */
-    }
-    if (rerunargs.hours > 0) {
-      const int secs_in_hour = 3600;
-      schedtime = now - secs_in_hour * rerunargs.hours; /* Hours in the past */
-    }
-
-    char dt[MAX_TIME_LENGTH];
-    bstrutime(dt, sizeof(dt), schedtime);
-
-    std::string select{"SELECT JobId FROM Job WHERE JobStatus = 'f'"};
-    if (rerunargs.since_jobid) {
-      if (rerunargs.until_jobid) {
-        select += " AND JobId >= " + std::to_string(rerunargs.since_jobid)
-                  + " AND JobId <= " + std::to_string(rerunargs.until_jobid);
-      } else {
-        select += " AND JobId >= " + std::to_string(rerunargs.since_jobid);
-      }
-
-    } else {
-      select += " AND SchedTime > '" + std::string(dt) + "'";
-    }
-    select += " ORDER BY JobId";
+    std::string select = PrepareRerunSqlQuery(ua, rerunargs, now);
 
     dbid_list ids;
     PoolMem query(PM_MESSAGE);
