@@ -76,7 +76,7 @@ static inline bool reRunJob(UaContext* ua, JobId_t JobId, bool yes, utime_t now)
     Jmsg(ua->jcr, M_WARNING, 0,
          _("Error getting Job record for Job rerun: ERR=%s\n"),
          ua->db->strerror());
-    goto bail_out;
+    return false;
   }
 
   // Only perform rerun on JobTypes where it makes sense.
@@ -105,7 +105,7 @@ static inline bool reRunJob(UaContext* ua, JobId_t JobId, bool yes, utime_t now)
       Jmsg(ua->jcr, M_WARNING, 0,
            _("Error getting Client record for Job rerun: ERR=%s\n"),
            ua->db->strerror());
-      goto bail_out;
+      return false;
     }
     Mmsg(cmdline, " client=\"%s\"", cr.Name);
     PmStrcat(ua->cmd, cmdline);
@@ -119,7 +119,7 @@ static inline bool reRunJob(UaContext* ua, JobId_t JobId, bool yes, utime_t now)
       Jmsg(ua->jcr, M_WARNING, 0,
            _("Error getting Pool record for Job rerun: ERR=%s\n"),
            ua->db->strerror());
-      goto bail_out;
+      return false;
     }
 
     // Source pool.
@@ -183,7 +183,7 @@ static inline bool reRunJob(UaContext* ua, JobId_t JobId, bool yes, utime_t now)
       Jmsg(ua->jcr, M_WARNING, 0,
            _("Error getting FileSet record for Job rerun: ERR=%s\n"),
            ua->db->strerror());
-      goto bail_out;
+      return false;
     }
     Mmsg(cmdline, " fileset=\"%s\"", fs.FileSet);
     PmStrcat(ua->cmd, cmdline);
@@ -199,17 +199,15 @@ static inline bool reRunJob(UaContext* ua, JobId_t JobId, bool yes, utime_t now)
 
   ParseUaArgs(ua);
   return RunCmd(ua, ua->cmd);
-
-bail_out:
-  return false;
 }
+
 struct RerunArguments {
   int since_jobid = 0;
   int until_jobid = 0;
   int days = 0;
   int hours = 0;
   bool yes = false;
-  JobId_t JobId;
+  std::vector<JobId_t> JobIds;
   bool parsingerror = false;
 };
 
@@ -803,15 +801,14 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
         }
         break;
       case -1: /* error or cancel */
-        goto bail_out;
+        return -1;
       default:
         goto try_again;
     }
-    goto bail_out;
+    return -1;
   }
   return 1;
 
-bail_out:
   return -1;
 
 try_again:
