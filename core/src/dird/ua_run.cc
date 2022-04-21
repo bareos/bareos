@@ -212,51 +212,35 @@ bail_out:
  */
 bool reRunCmd(UaContext* ua, const char* cmd)
 {
-  int i, j, d, h, s, u;
-  int days = 0;
-  int hours = 0;
-  int since_jobid = 0;
-  int until_jobid = 0;
-  JobId_t JobId;
-  dbid_list ids;
-  PoolMem query(PM_MESSAGE);
-  utime_t now;
-  time_t schedtime;
-  char dt[MAX_TIME_LENGTH];
-  char ed1[50];
-  char ed2[50];
-  bool yes = false;       /* Was "yes" given on cmdline*/
-  bool timeframe = false; /* Should the selection happen based on timeframe? */
-  bool since_jobid_given = false; /* Was since_jobid given? */
-  bool until_jobid_given = false; /* Was until_jobid given? */
-  const int secs_in_day = 86400;
-  const int secs_in_hour = 3600;
-
   if (!OpenClientDb(ua)) { return true; }
 
-  now = (utime_t)time(NULL);
-
   // Determine what cmdline arguments are given.
-  j = FindArgWithValue(ua, NT_("jobid"));
-  d = FindArgWithValue(ua, NT_("days"));
-  h = FindArgWithValue(ua, NT_("hours"));
-  s = FindArgWithValue(ua, NT_("since_jobid"));
-  u = FindArgWithValue(ua, NT_("until_jobid"));
 
+  bool since_jobid_given = false; /* Was since_jobid given? */
+  int s = FindArgWithValue(ua, NT_("since_jobid"));
+  int since_jobid = 0;
   if (s > 0) {
     since_jobid = str_to_int64(ua->argv[s]);
     since_jobid_given = true;
   }
 
+  bool until_jobid_given = false; /* Was until_jobid given? */
+  int u = FindArgWithValue(ua, NT_("until_jobid"));
+  int until_jobid = 0;
   if (u > 0) {
     until_jobid = str_to_int64(ua->argv[u]);
     until_jobid_given = true;
   }
 
+  bool timeframe = false; /* Should the selection happen based on timeframe? */
+  int d = FindArgWithValue(ua, NT_("days"));
+  int h = FindArgWithValue(ua, NT_("hours"));
   if (d > 0 || h > 0) { timeframe = true; }
 
+  bool yes = false; /* Was "yes" given on cmdline?*/
   if (FindArg(ua, NT_("yes")) > 0) { yes = true; }
 
+  int j = FindArgWithValue(ua, NT_("jobid"));
   if (j < 0 && !timeframe && !since_jobid_given) {
     ua->SendMsg("Please specify jobid, since_jobid, hours or days\n");
     return false;
@@ -274,20 +258,31 @@ bool reRunCmd(UaContext* ua, const char* cmd)
     return false;
   }
 
+  utime_t now = (utime_t)time(NULL);
+  int days = 0;
+  int hours = 0;
+  JobId_t JobId;
+  time_t schedtime;
   if (timeframe || since_jobid_given) {
     schedtime = now;
     if (d > 0) {
+      const int secs_in_day = 86400;
       days = str_to_int64(ua->argv[d]);
       schedtime = now - secs_in_day * days; /* Days in the past */
     }
     if (h > 0) {
+      const int secs_in_hour = 3600;
       hours = str_to_int64(ua->argv[h]);
       schedtime = now - secs_in_hour * hours; /* Hours in the past */
     }
 
     // Job Query Start
+    char dt[MAX_TIME_LENGTH];
     bstrutime(dt, sizeof(dt), schedtime);
 
+    PoolMem query(PM_MESSAGE);
+    char ed1[50];
+    char ed2[50];
     if (since_jobid_given) {
       if (until_jobid_given) {
         Mmsg(query,
@@ -308,10 +303,11 @@ bool reRunCmd(UaContext* ua, const char* cmd)
            dt);
     }
 
+    dbid_list ids;
     ua->db->GetQueryDbids(ua->jcr, query, ids);
 
     ua->SendMsg("The following ids were selected for rerun:\n");
-    for (i = 0; i < ids.num_ids; i++) {
+    for (int i = 0; i < ids.num_ids; i++) {
       if (i > 0) {
         ua->SendMsg(",%d", ids.DBId[i]);
       } else {
@@ -328,7 +324,7 @@ bool reRunCmd(UaContext* ua, const char* cmd)
     // Job Query End
 
     // Loop over all selected JobIds.
-    for (i = 0; i < ids.num_ids; i++) {
+    for (int i = 0; i < ids.num_ids; i++) {
       JobId = ids.DBId[i];
       if (!reRunJob(ua, JobId, yes, now)) { return false; }
     }
