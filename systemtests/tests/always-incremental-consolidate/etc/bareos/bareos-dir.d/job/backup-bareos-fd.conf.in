@@ -7,4 +7,8 @@ Job {
   AlwaysIncrementalJobRetention = 1 seconds
   AlwaysIncrementalKeepNumber = 1
   AlwaysIncrementalMaxFullAge = 1 seconds
+  Run Script {
+        command = "sleep 2"
+        Runs When = Before
+  }
 }

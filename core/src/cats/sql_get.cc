@@ -1398,10 +1398,10 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
 
   // Build a jobid list ie: 1,2,3,4
   if (jr->limit) {
-    Mmsg(query, "SELECT JobId FROM btemp3%s ORDER by JobTDate LIMIT %d", jobid,
-         jr->limit);
+    Mmsg(query, "SELECT JobId FROM btemp3%s ORDER by JobTDate ASC LIMIT %d",
+         jobid, jr->limit);
   } else {
-    Mmsg(query, "SELECT JobId FROM btemp3%s ORDER by JobTDate", jobid);
+    Mmsg(query, "SELECT JobId FROM btemp3%s ORDER by JobTDate ASC", jobid);
   }
   SqlQueryWithHandler(query.c_str(), DbListHandler, jobids);
   Dmsg1(1, "db_accurate_get_jobids=%s\n", jobids->GetAsString().c_str());
