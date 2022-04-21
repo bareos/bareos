@@ -9,6 +9,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - when using PAM Bareos will now check authorization, too. If authorization is not configured, login will fail. See [updated documentation](https://docs.bareos.org/TasksAndConcepts/PAM.html#configuration) on how to proceed [PR #1115].
 
 ### Added
+- dird: add command line feature to print specific resources [PR #1153]
 - Python plugins: add default module_path to search path [PR #1038]
 - dird: extend the list command to be able to query volumes and pools by ID [PR #1041]
 - docs: Add chapter for mariabackup db plugin [PR #1016]
@@ -152,5 +153,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1140]: https://github.com/bareos/bareos/pull/1140
 [PR #1147]: https://github.com/bareos/bareos/pull/1147
 [PR #1149]: https://github.com/bareos/bareos/pull/1149
+[PR #1152]: https://github.com/bareos/bareos/pull/1152
+[PR #1153]: https://github.com/bareos/bareos/pull/1153
 [PR #1155]: https://github.com/bareos/bareos/pull/1155
 [unreleased]: https://github.com/bareos/bareos/tree/master
