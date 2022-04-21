@@ -27,6 +27,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - systemtest py3plug-fd-contrib-mysql_dump [PR #768]
 - systemtest py*plug-fd-contrib-bareos_tasks_mysql [PR #768]
 - webui: introduce rerun of multiple jobs at once [PR #1109]
+- dird: console: add the ability to rerun multiple commas separated jobids [PR #1170]
 
 ### Fixed
 - NDMP_BAREOS: support autoxflate plugin [PR #1013]
