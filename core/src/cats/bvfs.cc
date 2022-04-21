@@ -277,7 +277,7 @@ void BareosDb::BvfsUpdateCache(JobControlRecord* jcr)
   Mmsg(cmd,
        "SELECT JobId from Job "
        "WHERE HasCache = 0 "
-       "AND Type IN ('B') AND JobStatus IN ('T', 'W', 'f', 'A') "
+       "AND Type IN ('B','A','a') AND JobStatus IN ('T', 'W', 'f', 'A') "
        "ORDER BY JobId");
   SqlQuery(cmd, DbListHandler, &jobids_list);
 
@@ -524,9 +524,9 @@ void Bvfs::GetAllFileVersions(DBId_t pathid,
         client);
 
   if (see_copies) {
-    Mmsg(filter, " AND Job.Type IN ('C', 'B') ");
+    Mmsg(filter, " AND Job.Type IN ('C', 'B', 'A', 'a') ");
   } else {
-    Mmsg(filter, " AND Job.Type = 'B' ");
+    Mmsg(filter, " AND Job.Type IN ('B', 'A', 'a') ");
   }
 
   db->EscapeString(jcr, fname_esc, fname, strlen(fname));
