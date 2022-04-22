@@ -466,13 +466,22 @@ if(NOT client-only)
 endif() # NOT client-only
 
 if(NOT client-only)
-  bareos_add_test(select_functions LINK_LIBRARIES dird_objects bareosfind bareossql GTest::gtest_main)
+  bareos_add_test(
+    select_functions LINK_LIBRARIES dird_objects bareosfind bareossql
+                                    GTest::gtest_main
+  )
 endif() # NOT client-only
 
 if(NOT client-only)
   bareos_add_test(
-    dir_fd_connection
-    LINK_LIBRARIES testing_common dird_objects bareos bareossql bareosfind
-                   GTest::gtest_main
+    dir_fd_connection LINK_LIBRARIES testing_common dird_objects bareos
+                                     bareossql bareosfind GTest::gtest_main
+  )
+endif() # NOT client-only
+
+if(NOT client-only)
+  bareos_add_test(
+    configure LINK_LIBRARIES testing_common dird_objects bareosfind bareossql
+                             GTest::gtest_main
   )
 endif() # NOT client-only
