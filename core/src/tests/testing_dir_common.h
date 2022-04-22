@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef TESTING_DIR_COMMON_H
-#define TESTING_DIR_COMMON_H
+#ifndef BAREOS_TESTS_TESTING_DIR_COMMON_H_
+#define BAREOS_TESTS_TESTING_DIR_COMMON_H_
 
 #include "testing_common.h"
 
@@ -31,4 +31,4 @@ void InitDirGlobals();
 
 PConfigParser DirectorPrepareResources(const std::string& path_to_config);
 
-#endif  // TESTING_DIR_COMMON_H
+#endif  // BAREOS_TESTS_TESTING_DIR_COMMON_H_
