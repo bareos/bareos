@@ -53,6 +53,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Fix `always-incremental-consolidate` systemtest sporadic fails, and rename it. [PR #1154]
 - packaging: FreeBSD place all scripts into "normal" location /usr/local/lib/bareos/scripts [PR #1163]
 - [Issue #1445] adding quotes to director name when using `configure export`[PR #1171]
+- [BUG #1445] adding quotes to director name when using `configure export`. [PR #1171]
 
 ### Changed
 - contrib: rename Python modules to satisfy PEP8 [PR #768]
@@ -157,5 +158,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1149]: https://github.com/bareos/bareos/pull/1149
 [PR #1152]: https://github.com/bareos/bareos/pull/1152
 [PR #1153]: https://github.com/bareos/bareos/pull/1153
+[PR #1154]: https://github.com/bareos/bareos/pull/1154
 [PR #1155]: https://github.com/bareos/bareos/pull/1155
+[PR #1171]: https://github.com/bareos/bareos/pull/1171
 [unreleased]: https://github.com/bareos/bareos/tree/master
