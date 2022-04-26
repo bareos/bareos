@@ -129,7 +129,6 @@ add_library(testing_common STATIC ${COMMON_SRC})
 
 target_link_libraries(testing_common PRIVATE ${LINK_LIBRARIES})
 
-
 if(HAVE_BIG_ENDIAN)
   set_tests_properties(gtest:statefile.read PROPERTIES DISABLED TRUE)
   set_tests_properties(gtest:statefile.write PROPERTIES DISABLED TRUE)
@@ -144,7 +143,7 @@ if(HAVE_BIG_ENDIAN)
   )
 endif()
 
-#Keep alphabetically ordered
+# Keep alphabetically ordered
 if(NOT client-only)
   bareos_add_test(
     addresses_and_ports
@@ -156,9 +155,7 @@ if(NOT client-only)
     LINK_LIBRARIES bareos dird_objects bareosfind bareossql
                    $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
   )
-  bareos_add_test(
-    bool_string LINK_LIBRARIES bareos GTest::gtest_main
-  )
+  bareos_add_test(bool_string LINK_LIBRARIES bareos GTest::gtest_main)
   bareos_add_test(
     bsock_test_connection_setup
     ADDITIONAL_SOURCES ${SSL_UNIT_TEST_FILES}
@@ -206,14 +203,17 @@ if(NOT client-only)
     LINK_LIBRARIES bareos dird_objects bareosfind bareossql
                    $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
   )
-  bareos_add_test(
-    multiplied_device_test LINK_LIBRARIES ${LINK_LIBRARIES}
-  )
+  bareos_add_test(multiplied_device_test LINK_LIBRARIES ${LINK_LIBRARIES})
   bareos_add_test(
     ndmp_address_translate_test
     ADDITIONAL_SOURCES ../dird/ndmp_slot2elemaddr.cc
     LINK_LIBRARIES ${LINK_LIBRARIES}
   )
+
+  bareos_add_test(
+    runjob LINK_LIBRARIES dird_objects bareosfind bareossql GTest::gtest_main
+  )
+
   bareos_add_test(
     run_on_incoming_connect_interval
     LINK_LIBRARIES dird_objects bareos bareosfind bareossql
@@ -232,9 +232,7 @@ if(NOT client-only)
     scheduler_job_item_queue LINK_LIBRARIES dird_objects bareos bareosfind
                                             bareossql GTest::gtest_main
   )
-  bareos_add_test(
-    sd_backend LINK_LIBRARIES ${LINK_LIBRARIES}
-  )
+  bareos_add_test(sd_backend LINK_LIBRARIES ${LINK_LIBRARIES})
   if(TARGET droplet)
     target_compile_definitions(sd_backend PRIVATE HAVE_DROPLET)
   endif()
@@ -263,9 +261,7 @@ if(NOT client-only)
     LINK_LIBRARIES bareos dird_objects bareosfind bareossql
                    $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
   )
-  bareos_add_test(
-    sort_stringvector LINK_LIBRARIES bareos GTest::gtest_main
-  )
+  bareos_add_test(sort_stringvector LINK_LIBRARIES bareos GTest::gtest_main)
   bareos_add_test(
     test_config_parser_dir LINK_LIBRARIES dird_objects bareos bareosfind
                                           bareossql GTest::gtest_main
@@ -320,9 +316,7 @@ if(HAVE_EXECINFO_H
    AND HAVE_BACKTRACE
    AND HAVE_BACKTRACE_SYMBOLS
 )
-  bareos_add_test(
-    test_backtrace LINK_LIBRARIES bareos GTest::gtest_main
-  )
+  bareos_add_test(test_backtrace LINK_LIBRARIES bareos GTest::gtest_main)
   # Backtrace doesn't work correctly when ASan is enabled, do we shouldn't test
   # in that case
   if(CMAKE_CXX_FLAGS MATCHES "-fsanitize=address")
@@ -342,9 +336,7 @@ if(NOT HAVE_WIN32 AND NOT client-only)
     LINK_LIBRARIES ${LINK_LIBRARIES}
     COMPILE_DEFINITIONS -DCERTDIR=\"${CERTDIR}\"
   )
-  bareos_add_test(
-    watchdog_timer LINK_LIBRARIES bareos GTest::gtest_main
-  )
+  bareos_add_test(watchdog_timer LINK_LIBRARIES bareos GTest::gtest_main)
 endif() # NOT HAVE_WIN32 AND NOT client-only
 
 if(ENABLE_BCONSOLE)
@@ -354,34 +346,25 @@ if(ENABLE_BCONSOLE)
   )
 endif()
 
-#Keep alphabetically ordered
+# Keep alphabetically ordered
 bareos_add_test(
   cram_md5
   LINK_LIBRARIES bareos Threads::Threads GTest::gtest_main
   ADDITIONAL_SOURCES bareos_test_sockets.cc
 )
 
-bareos_add_test(
-  job_control_record LINK_LIBRARIES bareos GTest::gtest_main
-)
+bareos_add_test(job_control_record LINK_LIBRARIES bareos GTest::gtest_main)
 
-bareos_add_test(
-  test_acl_entry_syntax LINK_LIBRARIES bareos GTest::gtest_main
-)
+bareos_add_test(test_acl_entry_syntax LINK_LIBRARIES bareos GTest::gtest_main)
 
-bareos_add_test(
-  test_bsnprintf LINK_LIBRARIES bareos GTest::gtest_main
-)
+bareos_add_test(test_bsnprintf LINK_LIBRARIES bareos GTest::gtest_main)
 
 bareos_add_test(
   test_config_parser_fd LINK_LIBRARIES fd_objects bareos bareosfind
                                        GTest::gtest_main
 )
 
-
-bareos_add_test(
-  test_edit LINK_LIBRARIES bareos GTest::gtest_main
-)
+bareos_add_test(test_edit LINK_LIBRARIES bareos GTest::gtest_main)
 
 bareos_add_test(
   test_fd_plugins
@@ -390,17 +373,11 @@ bareos_add_test(
   LINK_LIBRARIES bareos bareosfind GTest::gtest_main
 )
 
-bareos_add_test(
-  test_is_name_valid LINK_LIBRARIES bareos GTest::gtest_main
-)
+bareos_add_test(test_is_name_valid LINK_LIBRARIES bareos GTest::gtest_main)
 
-bareos_add_test(
-  test_poolmem LINK_LIBRARIES bareos GTest::gtest_main
-)
+bareos_add_test(test_poolmem LINK_LIBRARIES bareos GTest::gtest_main)
 
-bareos_add_test(
-  test_output_formatter LINK_LIBRARIES GTest::gtest_main bareos
-)
+bareos_add_test(test_output_formatter LINK_LIBRARIES GTest::gtest_main bareos)
 
 bareos_add_test(
   statefile
@@ -409,9 +386,7 @@ bareos_add_test(
                       TEST_ORIGINAL_FILE_DIR=\"${TEST_ORIGINAL_FILE_DIR}\"
 )
 
-bareos_add_test(
-  thread_list LINK_LIBRARIES bareos GTest::gtest_main
-)
+bareos_add_test(thread_list LINK_LIBRARIES bareos GTest::gtest_main)
 set_tests_properties(
   gtest:thread_list.thread_list_startup_and_shutdown PROPERTIES LABELS broken
 )
@@ -420,12 +395,6 @@ bareos_add_test(
   thread_specific_data LINK_LIBRARIES bareos Threads::Threads GTest::gtest_main
 )
 
-bareos_add_test(
-  timer_thread LINK_LIBRARIES bareos GTest::gtest_main
-)
+bareos_add_test(timer_thread LINK_LIBRARIES bareos GTest::gtest_main)
 
-bareos_add_test(
-  version_strings LINK_LIBRARIES bareos GTest::gtest_main
-)
-
-  bareos_add_test(runjob LINK_LIBRARIES dird_objects bareosfind bareossql GTest::gtest_main)
+bareos_add_test(version_strings LINK_LIBRARIES bareos GTest::gtest_main)
