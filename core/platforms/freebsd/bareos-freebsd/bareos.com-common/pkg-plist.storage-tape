@@ -1,7 +1,7 @@
 
 lib/libbareossd-gentape.so
 lib/libbareossd-tape.so
-/usr/lib/bareos/scripts/mtx-changer
+lib/bareos/scripts/mtx-changer
 @sample  %%ETCDIR%%/mtx-changer.conf.sample
 man/man8/bscrypto.8.gz
 man/man8/btape.8.gz

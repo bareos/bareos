@@ -11,7 +11,7 @@
 @sample(bareos,bareos,0640) %%ETCDIR%%/bareos-sd.d/messages/Standard.conf.sample
 @sample(bareos,bareos,0640) %%ETCDIR%%/bareos-sd.d/storage/bareos-sd.conf.sample
 sbin/bareos-sd
-/usr/lib/bareos/scripts/disk-changer
+lib/bareos/scripts/disk-changer
 lib/bareos/plugins/autoxflate-sd.so
 man/man8/bareos-sd.8.gz
 @dir(bareos,bareos,0775) /var/lib/bareos/storage

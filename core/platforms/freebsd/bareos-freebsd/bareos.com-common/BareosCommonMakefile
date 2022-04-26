@@ -92,7 +92,7 @@ CMAKE_ARGS+= -DCMAKE_VERBOSE_MAKEFILE=ON \
   -Dlibdir=/usr/local/lib \
   -Darchivedir=/var/lib/bareos/storage \
   -Dbackenddir=/usr/local/lib \
-  -Dscriptdir=/usr/lib/bareos/scripts \
+  -Dscriptdir=/usr/local/lib/bareos/scripts \
   -Dworkingdir=/var/lib/bareos \
   -Dplugindir=/usr/local/lib/bareos/plugins \
   -Dbsrdir=/var/lib/bareos \
