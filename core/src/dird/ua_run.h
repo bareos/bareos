@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,6 +26,17 @@
 
 namespace directordaemon {
 
+struct RerunArguments {
+  int since_jobid = 0;
+  int until_jobid = 0;
+  int days = 0;
+  int hours = 0;
+  bool yes = false;
+  std::vector<JobId_t> JobIds;
+  bool parsingerror = false;
+};
+
+RerunArguments GetRerunCmdlineArguments(UaContext* ua);
 bool reRunCmd(UaContext* ua, const char* cmd);
 bool RunCmd(UaContext* ua, const char* cmd);
 int DoRunCmd(UaContext* ua, const char* cmd);

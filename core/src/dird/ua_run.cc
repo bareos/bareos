@@ -2,7 +2,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -38,6 +38,7 @@
 #include "lib/berrno.h"
 #include "lib/edit.h"
 #include "lib/keyword_table_s.h"
+#include "lib/util.h"
 
 namespace directordaemon {
 
@@ -201,17 +202,7 @@ static inline bool reRunJob(UaContext* ua, JobId_t JobId, bool yes, utime_t now)
   return RunCmd(ua, ua->cmd);
 }
 
-struct RerunArguments {
-  int since_jobid = 0;
-  int until_jobid = 0;
-  int days = 0;
-  int hours = 0;
-  bool yes = false;
-  std::vector<JobId_t> JobIds;
-  bool parsingerror = false;
-};
-
-static RerunArguments GetRerunCmdlineArguments(UaContext* ua)
+RerunArguments GetRerunCmdlineArguments(UaContext* ua)
 {
   RerunArguments rerunarguments{};
   // Determine what cmdline arguments are given.
@@ -237,7 +228,21 @@ static RerunArguments GetRerunCmdlineArguments(UaContext* ua)
     rerunarguments.parsingerror = true;
     return rerunarguments;
   }
-  if (j >= 0) { rerunarguments.JobId = str_to_int64(ua->argv[j]); }
+  if (j >= 0) {
+    char delimiter = ',';
+    std::vector<std::string> parsed_jobids
+        = split_string(ua->argv[j], delimiter);
+    for (const auto& jobid : parsed_jobids) {
+      if (Is_a_number(jobid.c_str())) {
+        rerunarguments.JobIds.push_back(str_to_int64(jobid.c_str()));
+      } else {
+        ua->SendMsg("Specified jobid \"%s\" is not valid\n", jobid.c_str());
+        rerunarguments.JobIds.clear();
+        rerunarguments.parsingerror = true;
+        return rerunarguments;
+      }
+    }
+  }
   if (j >= 0 && rerunarguments.since_jobid) {
     ua->SendMsg(
         "Please specify either jobid or since_jobid (and optionally "
@@ -333,14 +338,16 @@ bool reRunCmd(UaContext* ua, const char* cmd)
       }
       // Loop over all selected JobIds.
       for (int i = 0; i < ids.num_ids; i++) {
-        rerunargs.JobId = ids.DBId[i];
-        if (!reRunJob(ua, rerunargs.JobId, rerunargs.yes, now)) {
-          return false;
-        }
+        rerunargs.JobIds.push_back(ids.DBId[i]);
+      }
+      for (const auto& jobid : rerunargs.JobIds) {
+        if (!reRunJob(ua, jobid, rerunargs.yes, now)) { return false; }
       }
     }
   } else {
-    if (!reRunJob(ua, rerunargs.JobId, rerunargs.yes, now)) { return false; }
+    for (const auto& jobid : rerunargs.JobIds) {
+      if (!reRunJob(ua, jobid, rerunargs.yes, now)) { return false; }
+    }
   }
 
   return true;
@@ -1399,9 +1406,9 @@ static bool DisplayJobParameters(UaContext* ua,
         const char* Name;
         if (jcr->impl->res.verify_job) {
           Name = jcr->impl->res.verify_job->resource_name_;
-        } else if (jcr->impl
-                       ->RestoreJobId) { /* Display job name if jobid requested
-                                          */
+        } else if (jcr->impl->RestoreJobId) { /* Display job name if jobid
+                                               * requested
+                                               */
           jr.JobId = jcr->impl->RestoreJobId;
           if (!ua->db->GetJobRecord(jcr, &jr)) {
             ua->ErrorMsg(
