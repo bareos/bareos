@@ -19,19 +19,18 @@
    02110-1301, USA.
 */
 
-#ifndef TESTING_COMMON_H
-#define TESTING_COMMON_H
+#ifndef BAREOS_TESTS_TESTING_COMMON_H_
+#define BAREOS_TESTS_TESTING_COMMON_H_
 
 #if defined(HAVE_MINGW)
 #  include "include/bareos.h"
 #endif
 
 #include "gtest/gtest.h"
-#include "gmock/gmock.h"
 
 #include "lib/parse_conf.h"
 
 typedef std::unique_ptr<ConfigurationParser> PConfigParser;
 
 
-#endif  // TESTING_COMMON_H
+#endif  // BAREOS_TESTS_TESTING_COMMON_H_

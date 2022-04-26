@@ -40,9 +40,9 @@ PConfigParser StoragePrepareResources(const std::string& path_to_config)
   EXPECT_NE(storage_config.get(), nullptr);
   if (!storage_config) { return nullptr; }
 
-  bool parse_director_config_ok = storage_config->ParseConfig();
-  EXPECT_TRUE(parse_director_config_ok) << "Could not parse storage config";
-  if (!parse_director_config_ok) { return nullptr; }
+  bool parse_storage_config_ok = storage_config->ParseConfig();
+  EXPECT_TRUE(parse_storage_config_ok) << "Could not parse storage config";
+  if (!parse_storage_config_ok) { return nullptr; }
 
   Dmsg0(200, "Start UA server\n");
   storagedaemon::me

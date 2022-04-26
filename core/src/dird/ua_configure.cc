@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2015-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -232,7 +232,9 @@ static inline bool ConfigureCreateFdResourceString(UaContext* ua,
   password = &client->password_;
 
   resource.strcat("Director {\n");
-  config_add_directive(NULL, NULL, "Name", me->resource_name_, resource);
+
+  Mmsg(temp, "\"%s\"", me->resource_name_);
+  config_add_directive(NULL, NULL, "Name", temp.c_str(), resource);
 
   switch (password->encoding) {
     case p_encoding_clear:
