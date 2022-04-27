@@ -789,7 +789,7 @@ class BareosDb : public BareosDbQueryEnum {
                       JobDbRecord* jr,
                       const char* range,
                       const char* clientname,
-                      int jobstatus,
+                      std::vector<char> jobstatusarray,
                       int joblevel,
                       std::vector<char> jobtypes,
                       const char* volumename,

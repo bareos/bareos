@@ -27,14 +27,13 @@
 #  include "include/bareos.h"
 #endif
 
+#include <unordered_map>
+
 #include "dird/ua_select.h"
 #include "dird/ua.h"
 #include "include/jcr.h"
 #include "dird/dird_conf.h"
 #include "include/job_types.h"
-#include "lib/util.h"
-
-#include <string>
 
 namespace directordaemon {
 bool DoReloadConfig() { return false; }
@@ -214,7 +213,7 @@ class JobStatusSelection : public testing::Test {
 
   JobControlRecord jcr{};
   directordaemon::UaContext* ua{nullptr};
-  std::unordered_map<char, std::string> jobstatuses{
+  std::unordered_map<char, std::string> allowed_jobstatuses{
       {JS_Terminated, "terminated"}, {JS_Warnings, "warnings"},
       {JS_Canceled, "canceled"},     {JS_Running, "running"},
       {JS_ErrorTerminated, "error"}, {JS_FatalError, "fatal"}};
@@ -239,7 +238,7 @@ TEST_F(JobStatusSelection, ErrorWhenJobtatusArgumentSpecifiedButNoneGiven)
 
 TEST_F(JobStatusSelection, ReturnOnlyOneJobStatusIfOnlyOneIsEntered)
 {
-  for (const auto& jobstatus : jobstatuses) {
+  for (const auto& jobstatus : allowed_jobstatuses) {
     std::vector<char> jobstatuslist{};
     std::string argument{jobstatus.first};
     FakeListJobStatusCommand(argument);
@@ -251,7 +250,7 @@ TEST_F(JobStatusSelection, ReturnOnlyOneJobStatusIfOnlyOneIsEntered)
 TEST_F(JobStatusSelection,
        ReturnOnlyOneShortJobStatusIfOnlyOneLongJobStatusIsEntered)
 {
-  for (const auto& jobstatus : jobstatuses) {
+  for (const auto& jobstatus : allowed_jobstatuses) {
     std::vector<char> jobstatuslist{};
     std::string argument{jobstatus.second};
     FakeListJobStatusCommand(argument);
@@ -280,13 +279,13 @@ TEST_F(JobStatusSelection,
 }
 
 TEST_F(JobStatusSelection,
-       ReturnMultipleParsedJobStatusIfMultipleParsedAndUnparsedEntered)
+       ReturnMultipleShortJobStatusIfMultipleLongAndShortJobstatusesEntered)
 {
   std::vector<char> jobstatuslist{};
   std::vector<char> expectedJobStatusList{};
   std::string argumentForMultipleLongAndShortJobstatus;
   int i = 0;
-  for (const auto& jobstatus : jobstatuses) {
+  for (const auto& jobstatus : allowed_jobstatuses) {
     if (i % 2 == 0) {
       argumentForMultipleLongAndShortJobstatus
           += jobstatus.first;  // short jobstatus
@@ -304,23 +303,4 @@ TEST_F(JobStatusSelection,
   FakeListJobStatusCommand(argumentForMultipleLongAndShortJobstatus);
   EXPECT_TRUE(GetUserJobStatusSelection(ua, jobstatuslist));
   EXPECT_EQ(jobstatuslist, expectedJobStatusList);
-}
-
-
-TEST_F(JobStatusSelection, ReturnSelectJobsWithCorrectJobStatusArgumentString)
-{  // takes in ['A','T','E'..] returns : "'A','T','E',..] for sql query
-  std::vector<char> jobStatusInputArray{};
-  std::string expectedJobStatusesString;
-  for (const auto& jobstatus : jobstatuses) {
-    jobStatusInputArray.push_back(jobstatus.first);
-    expectedJobStatusesString += "'";
-    expectedJobStatusesString.push_back(jobstatus.first);
-    expectedJobStatusesString += "',";
-  }
-  expectedJobStatusesString.pop_back();
-
-  std::string jobStatusString
-      = CreateDelimitedStringForSqlQueries(jobStatusInputArray, ',');
-
-  EXPECT_EQ(jobStatusString, expectedJobStatusesString);
 }

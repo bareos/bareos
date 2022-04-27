@@ -994,8 +994,9 @@ PoolResource* get_pool_resource(UaContext* ua)
 // List all jobs and ask user to select one
 int SelectJobDbr(UaContext* ua, JobDbRecord* jr)
 {
-  ua->db->ListJobRecords(ua->jcr, jr, "", NULL, 0, 0, std::vector<char>{}, NULL,
-                         NULL, 0, 0, 0, ua->send, HORZ_LIST);
+  ua->db->ListJobRecords(ua->jcr, jr, "", NULL, std::vector<char>{}, 0,
+                         std::vector<char>{}, NULL, NULL, 0, 0, 0, ua->send,
+                         HORZ_LIST);
   if (!GetPint(ua, _("Enter the JobId to select: "))) { return 0; }
 
   jr->JobId = ua->int64_val;
@@ -1952,28 +1953,37 @@ bool GetUserJobTypeListSelection(UaContext* ua,
   return true;
 }
 
-bool GetUserJobStatusSelection(UaContext* ua, int* jobstatus)
+bool GetUserJobStatusSelection(UaContext* ua, std::vector<char>& jobstatuslist)
 {
   int i;
 
   if ((i = FindArgWithValue(ua, NT_("jobstatus"))) >= 0) {
-    if (strlen(ua->argv[i]) == 1 && ua->argv[i][0] >= 'A'
-        && ua->argv[i][0] <= 'z') {
-      *jobstatus = ua->argv[i][0];
-    } else if (Bstrcasecmp(ua->argv[i], "terminated")) {
-      *jobstatus = JS_Terminated;
-    } else if (Bstrcasecmp(ua->argv[i], "warnings")) {
-      *jobstatus = JS_Warnings;
-    } else if (Bstrcasecmp(ua->argv[i], "canceled")) {
-      *jobstatus = JS_Canceled;
-    } else if (Bstrcasecmp(ua->argv[i], "running")) {
-      *jobstatus = JS_Running;
-    } else if (Bstrcasecmp(ua->argv[i], "error")) {
-      *jobstatus = JS_ErrorTerminated;
-    } else if (Bstrcasecmp(ua->argv[i], "fatal")) {
-      *jobstatus = JS_FatalError;
+    if (strlen(ua->argv[i]) > 0) {
+      std::vector<std::string> jobstatusinput_list;
+      jobstatusinput_list = split_string(ua->argv[i], ',');
+
+      for (auto& jobstatus : jobstatusinput_list) {
+        if (strlen(jobstatus.c_str()) == 1 && jobstatus.c_str()[0] >= 'A'
+            && jobstatus.c_str()[0] <= 'z') {
+          jobstatuslist.push_back(jobstatus[0]);
+        } else if (Bstrcasecmp(jobstatus.c_str(), "terminated")) {
+          jobstatuslist.push_back(JS_Terminated);
+        } else if (Bstrcasecmp(jobstatus.c_str(), "warnings")) {
+          jobstatuslist.push_back(JS_Warnings);
+        } else if (Bstrcasecmp(jobstatus.c_str(), "canceled")) {
+          jobstatuslist.push_back(JS_Canceled);
+        } else if (Bstrcasecmp(jobstatus.c_str(), "running")) {
+          jobstatuslist.push_back(JS_Running);
+        } else if (Bstrcasecmp(jobstatus.c_str(), "error")) {
+          jobstatuslist.push_back(JS_ErrorTerminated);
+        } else if (Bstrcasecmp(jobstatus.c_str(), "fatal")) {
+          jobstatuslist.push_back(JS_FatalError);
+        } else {
+          /* invalid jobstatus */
+          return false;
+        }
+      }
     } else {
-      /* invalid jobstatus */
       return false;
     }
   }

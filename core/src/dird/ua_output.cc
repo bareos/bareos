@@ -676,9 +676,9 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
   }
 
 
-  // jobstatus=X
-  int jobstatus = 0;
-  if (!GetUserJobStatusSelection(ua, &jobstatus)) {
+  // jobstatus=X,Y,Z....
+  std::vector<char> jobstatuslist;
+  if (!GetUserJobStatusSelection(ua, jobstatuslist)) {
     ua->ErrorMsg(_("invalid jobstatus parameter\n"));
     return false;
   }
@@ -756,9 +756,9 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     SetQueryRange(query_range, ua, &jr);
 
     ua->db->ListJobRecords(ua->jcr, &jr, query_range.c_str(), clientname,
-                           jobstatus, joblevel, jobtypes, volumename, poolname,
-                           schedtime, optionslist.last, optionslist.count,
-                           ua->send, llist);
+                           jobstatuslist, joblevel, jobtypes, volumename,
+                           poolname, schedtime, optionslist.last,
+                           optionslist.count, ua->send, llist);
   } else if (Bstrcasecmp(ua->argk[1], NT_("jobtotals"))) {
     // List JOBTOTALS
     ua->db->ListJobTotals(ua->jcr, &jr, ua->send);
@@ -807,7 +807,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
         SetQueryRange(query_range, ua, &jr);
 
         ua->db->ListJobRecords(ua->jcr, &jr, query_range.c_str(), clientname,
-                               jobstatus, joblevel, jobtypes, volumename,
+                               jobstatuslist, joblevel, jobtypes, volumename,
                                poolname, schedtime, optionslist.last,
                                optionslist.count, ua->send, llist);
       }
