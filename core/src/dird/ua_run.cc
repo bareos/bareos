@@ -2,7 +2,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -38,6 +38,7 @@
 #include "lib/berrno.h"
 #include "lib/edit.h"
 #include "lib/keyword_table_s.h"
+#include "lib/util.h"
 
 namespace directordaemon {
 
@@ -76,7 +77,7 @@ static inline bool reRunJob(UaContext* ua, JobId_t JobId, bool yes, utime_t now)
     Jmsg(ua->jcr, M_WARNING, 0,
          _("Error getting Job record for Job rerun: ERR=%s\n"),
          ua->db->strerror());
-    goto bail_out;
+    return false;
   }
 
   // Only perform rerun on JobTypes where it makes sense.
@@ -105,7 +106,7 @@ static inline bool reRunJob(UaContext* ua, JobId_t JobId, bool yes, utime_t now)
       Jmsg(ua->jcr, M_WARNING, 0,
            _("Error getting Client record for Job rerun: ERR=%s\n"),
            ua->db->strerror());
-      goto bail_out;
+      return false;
     }
     Mmsg(cmdline, " client=\"%s\"", cr.Name);
     PmStrcat(ua->cmd, cmdline);
@@ -119,7 +120,7 @@ static inline bool reRunJob(UaContext* ua, JobId_t JobId, bool yes, utime_t now)
       Jmsg(ua->jcr, M_WARNING, 0,
            _("Error getting Pool record for Job rerun: ERR=%s\n"),
            ua->db->strerror());
-      goto bail_out;
+      return false;
     }
 
     // Source pool.
@@ -183,7 +184,7 @@ static inline bool reRunJob(UaContext* ua, JobId_t JobId, bool yes, utime_t now)
       Jmsg(ua->jcr, M_WARNING, 0,
            _("Error getting FileSet record for Job rerun: ERR=%s\n"),
            ua->db->strerror());
-      goto bail_out;
+      return false;
     }
     Mmsg(cmdline, " fileset=\"%s\"", fs.FileSet);
     PmStrcat(ua->cmd, cmdline);
@@ -199,9 +200,99 @@ static inline bool reRunJob(UaContext* ua, JobId_t JobId, bool yes, utime_t now)
 
   ParseUaArgs(ua);
   return RunCmd(ua, ua->cmd);
+}
 
-bail_out:
-  return false;
+RerunArguments GetRerunCmdlineArguments(UaContext* ua)
+{
+  RerunArguments rerunarguments{};
+  // Determine what cmdline arguments are given.
+
+  int s = FindArgWithValue(ua, NT_("since_jobid"));
+  if (s > 0) { rerunarguments.since_jobid = str_to_int64(ua->argv[s]); }
+
+  int u = FindArgWithValue(ua, NT_("until_jobid"));
+  if (u > 0) { rerunarguments.until_jobid = str_to_int64(ua->argv[u]); }
+
+  int d = FindArgWithValue(ua, NT_("days"));
+  if (d > 0) { rerunarguments.days = str_to_int64(ua->argv[d]); }
+
+  int h = FindArgWithValue(ua, NT_("hours"));
+  if (h > 0) { rerunarguments.hours = str_to_int64(ua->argv[h]); }
+
+  if (FindArg(ua, NT_("yes")) > 0) { rerunarguments.yes = true; }
+
+  int j = FindArgWithValue(ua, NT_("jobid"));
+  if (j < 0 && !(rerunarguments.days || rerunarguments.hours)
+      && !rerunarguments.since_jobid) {
+    ua->SendMsg("Please specify jobid, since_jobid, hours or days\n");
+    rerunarguments.parsingerror = true;
+    return rerunarguments;
+  }
+  if (j >= 0) {
+    char delimiter = ',';
+    std::vector<std::string> parsed_jobids
+        = split_string(ua->argv[j], delimiter);
+    for (const auto& jobid : parsed_jobids) {
+      if (Is_a_number(jobid.c_str())) {
+        rerunarguments.JobIds.push_back(str_to_int64(jobid.c_str()));
+      } else {
+        ua->SendMsg("Specified jobid \"%s\" is not valid\n", jobid.c_str());
+        rerunarguments.JobIds.clear();
+        rerunarguments.parsingerror = true;
+        return rerunarguments;
+      }
+    }
+  }
+  if (j >= 0 && rerunarguments.since_jobid) {
+    ua->SendMsg(
+        "Please specify either jobid or since_jobid (and optionally "
+        "until_jobid)\n");
+    rerunarguments.parsingerror = true;
+    return rerunarguments;
+  }
+
+  if (j >= 0 && (rerunarguments.days || rerunarguments.hours)) {
+    ua->SendMsg("Please specify either jobid or a timeframe\n");
+    rerunarguments.parsingerror = true;
+    return rerunarguments;
+  }
+
+  return rerunarguments;
+}
+
+static time_t ConvertDaysHoursToSecs(const RerunArguments& rerunargs,
+                                     utime_t now)
+{
+  const int secs_in_day = 86400;
+  const int secs_in_hour = 3600;
+  time_t schedtime
+      = now - (rerunargs.days * secs_in_day + rerunargs.hours * secs_in_hour);
+  return schedtime;
+}
+
+static std::string PrepareRerunSqlQuery(UaContext* ua,
+                                        const RerunArguments& rerunargs,
+                                        utime_t now)
+{
+  char dt[MAX_TIME_LENGTH];
+  time_t schedtime = ConvertDaysHoursToSecs(rerunargs, now);
+  bstrutime(dt, sizeof(dt), schedtime);
+
+  std::string select{"SELECT JobId FROM Job WHERE JobStatus = 'f'"};
+  if (rerunargs.since_jobid) {
+    if (rerunargs.until_jobid) {
+      select += " AND JobId >= " + std::to_string(rerunargs.since_jobid)
+                + " AND JobId <= " + std::to_string(rerunargs.until_jobid);
+    } else {
+      select += " AND JobId >= " + std::to_string(rerunargs.since_jobid);
+    }
+
+  } else {
+    select += " AND SchedTime > '" + std::string(dt) + "'";
+  }
+  select += " ORDER BY JobId";
+
+  return select;
 }
 
 /**
@@ -212,135 +303,55 @@ bail_out:
  */
 bool reRunCmd(UaContext* ua, const char* cmd)
 {
-  int i, j, d, h, s, u;
-  int days = 0;
-  int hours = 0;
-  int since_jobid = 0;
-  int until_jobid = 0;
-  JobId_t JobId;
-  dbid_list ids;
-  PoolMem query(PM_MESSAGE);
-  utime_t now;
-  time_t schedtime;
-  char dt[MAX_TIME_LENGTH];
-  char ed1[50];
-  char ed2[50];
-  bool yes = false;       /* Was "yes" given on cmdline*/
-  bool timeframe = false; /* Should the selection happen based on timeframe? */
-  bool since_jobid_given = false; /* Was since_jobid given? */
-  bool until_jobid_given = false; /* Was until_jobid given? */
-  const int secs_in_day = 86400;
-  const int secs_in_hour = 3600;
-
   if (!OpenClientDb(ua)) { return true; }
-
-  now = (utime_t)time(NULL);
-
   // Determine what cmdline arguments are given.
-  j = FindArgWithValue(ua, NT_("jobid"));
-  d = FindArgWithValue(ua, NT_("days"));
-  h = FindArgWithValue(ua, NT_("hours"));
-  s = FindArgWithValue(ua, NT_("since_jobid"));
-  u = FindArgWithValue(ua, NT_("until_jobid"));
 
-  if (s > 0) {
-    since_jobid = str_to_int64(ua->argv[s]);
-    since_jobid_given = true;
-  }
+  RerunArguments rerunargs = GetRerunCmdlineArguments(ua);
 
-  if (u > 0) {
-    until_jobid = str_to_int64(ua->argv[u]);
-    until_jobid_given = true;
-  }
+  if (rerunargs.parsingerror) { return false; }
 
-  if (d > 0 || h > 0) { timeframe = true; }
+  utime_t now = (utime_t)time(NULL);
+  if ((rerunargs.days || rerunargs.hours) || rerunargs.since_jobid) {
+    std::string select = PrepareRerunSqlQuery(ua, rerunargs, now);
 
-  if (FindArg(ua, NT_("yes")) > 0) { yes = true; }
-
-  if (j < 0 && !timeframe && !since_jobid_given) {
-    ua->SendMsg("Please specify jobid, since_jobid, hours or days\n");
-    goto bail_out;
-  }
-
-  if (j >= 0 && since_jobid_given) {
-    ua->SendMsg(
-        "Please specify either jobid or since_jobid (and optionally "
-        "until_jobid)\n");
-    goto bail_out;
-  }
-
-  if (j >= 0 && timeframe) {
-    ua->SendMsg("Please specify either jobid or timeframe\n");
-    goto bail_out;
-  }
-
-  if (timeframe || since_jobid_given) {
-    schedtime = now;
-    if (d > 0) {
-      days = str_to_int64(ua->argv[d]);
-      schedtime = now - secs_in_day * days; /* Days in the past */
-    }
-    if (h > 0) {
-      hours = str_to_int64(ua->argv[h]);
-      schedtime = now - secs_in_hour * hours; /* Hours in the past */
-    }
-
-    // Job Query Start
-    bstrutime(dt, sizeof(dt), schedtime);
-
-    if (since_jobid_given) {
-      if (until_jobid_given) {
-        Mmsg(query,
-             "SELECT JobId FROM Job WHERE JobStatus = 'f' AND JobId >= %s AND "
-             "JobId <= %s ORDER BY JobId",
-             edit_int64(since_jobid, ed1), edit_int64(until_jobid, ed2));
-      } else {
-        Mmsg(query,
-             "SELECT JobId FROM Job WHERE JobStatus = 'f' AND JobId >= %s "
-             "ORDER BY JobId",
-             edit_int64(since_jobid, ed1));
-      }
-
-    } else {
-      Mmsg(query,
-           "SELECT JobId FROM Job WHERE JobStatus = 'f' AND SchedTime > '%s' "
-           "ORDER BY JobId",
-           dt);
-    }
-
+    dbid_list ids;
+    PoolMem query(PM_MESSAGE);
+    Mmsg(query, select.c_str());
     ua->db->GetQueryDbids(ua->jcr, query, ids);
 
-    ua->SendMsg("The following ids were selected for rerun:\n");
-    for (i = 0; i < ids.num_ids; i++) {
-      if (i > 0) {
-        ua->SendMsg(",%d", ids.DBId[i]);
-      } else {
-        ua->SendMsg("%d", ids.DBId[i]);
+    if (!ids.size()) {
+      ua->SendMsg("No jobids with the specified options were found.\n");
+    } else {
+      ua->SendMsg("The following ids were selected for rerun:\n");
+      for (int i = 0; i < ids.num_ids; i++) {
+        if (i > 0) {
+          ua->SendMsg(",%d", ids.DBId[i]);
+        } else {
+          ua->SendMsg("%d", ids.DBId[i]);
+        }
+      }
+      ua->SendMsg("\n");
+
+      if (!rerunargs.yes
+          && (!GetYesno(ua, _("rerun these jobids? (yes/no): "))
+              || !ua->pint32_val)) {
+        return false;
+      }
+      // Loop over all selected JobIds.
+      for (int i = 0; i < ids.num_ids; i++) {
+        rerunargs.JobIds.push_back(ids.DBId[i]);
+      }
+      for (const auto& jobid : rerunargs.JobIds) {
+        if (!reRunJob(ua, jobid, rerunargs.yes, now)) { return false; }
       }
     }
-    ua->SendMsg("\n");
-
-    if (!yes
-        && (!GetYesno(ua, _("rerun these jobids? (yes/no): "))
-            || !ua->pint32_val)) {
-      goto bail_out;
-    }
-    // Job Query End
-
-    // Loop over all selected JobIds.
-    for (i = 0; i < ids.num_ids; i++) {
-      JobId = ids.DBId[i];
-      if (!reRunJob(ua, JobId, yes, now)) { goto bail_out; }
-    }
   } else {
-    JobId = str_to_int64(ua->argv[j]);
-    if (!reRunJob(ua, JobId, yes, now)) { goto bail_out; }
+    for (const auto& jobid : rerunargs.JobIds) {
+      if (!reRunJob(ua, jobid, rerunargs.yes, now)) { return false; }
+    }
   }
 
   return true;
-
-bail_out:
-  return false;
 }
 
 /**
@@ -798,15 +809,14 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
         }
         break;
       case -1: /* error or cancel */
-        goto bail_out;
+        return -1;
       default:
         goto try_again;
     }
-    goto bail_out;
+    return -1;
   }
   return 1;
 
-bail_out:
   return -1;
 
 try_again:
@@ -1397,9 +1407,9 @@ static bool DisplayJobParameters(UaContext* ua,
         const char* Name;
         if (jcr->impl->res.verify_job) {
           Name = jcr->impl->res.verify_job->resource_name_;
-        } else if (jcr->impl
-                       ->RestoreJobId) { /* Display job name if jobid requested
-                                          */
+        } else if (jcr->impl->RestoreJobId) { /* Display job name if jobid
+                                               * requested
+                                               */
           jr.JobId = jcr->impl->RestoreJobId;
           if (!ua->db->GetJobRecord(jcr, &jr)) {
             ua->ErrorMsg(
