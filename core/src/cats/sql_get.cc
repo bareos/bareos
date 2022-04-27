@@ -1302,7 +1302,7 @@ db_list_ctx BareosDb::FilterZeroFileJobs(db_list_ctx& jobids)
   if (jobids.empty()) { return {}; }
 
   std::string query{"SELECT JobId FROM Job WHERE JobFiles = 0 AND JobId IN ("};
-  query += jobids.Join(",") + ")";
+  query += jobids.Join(",") + ") ORDER BY JobId";
 
   db_list_ctx zero_file_jobs;
   if (!SqlQueryWithHandler(query.c_str(), DbListHandler, &zero_file_jobs)) {
