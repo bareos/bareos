@@ -33,6 +33,8 @@ setup_data
 
 start_test
 
+start_bareos
+
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null
 messages
@@ -51,7 +53,7 @@ run job=$JobName level=Incremental yes
 wait
 messages
 END_OF_DATA
-run_bareos "$@"
+run_bconsole
 
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out $tmp/log1.out
@@ -66,7 +68,7 @@ messages
 wait
 quit
 END_OF_DATA
-run_bareos "$@"
+run_bconsole
 
 # Consolidating zero-file incremental backups
 
@@ -86,7 +88,7 @@ wait
 messages
 quit
 END_OF_DATA
-run_bareos "$@"
+run_bconsole
 
 # Consolidating a zero-file job in the middle of incremental backups
 
@@ -116,7 +118,32 @@ END_OF_DATA
 
 run_bconsole
 
-stop_bareos
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+wait
+@$out $tmp/virtualfull.out
+run job=VirtualLongtermFull yes
+wait
+@exec "sh -c 'touch ${tmp}/data/weird-files/file-13'"
+run job=$JobName level=Incremental yes
+wait
+@exec "sh -c 'touch ${tmp}/data/weird-files/file-14'"
+run job=$JobName level=Incremental yes
+wait
+@exec "sh -c 'touch ${tmp}/data/weird-files/file-15'"
+run job=$JobName level=Incremental yes
+wait
+messages
+.bvfs_lsdirs jobid=16 path=
+.bvfs_update
+.bvfs_lsdirs jobid=16 path=
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
 
 check_job_canceled
 
@@ -135,5 +162,9 @@ expect_grep "purging empty jobids 12" \
 expect_grep "purged JobIds 6,4,11 as they were consolidated into Job 15" \
             "$tmp"/log3.out \
             "consolidation of expected jobs did not happen."
+
+expect_grep "0	0	A A A A A A A A A A A A A A	/" \
+            "$tmp"/virtualfull.out \
+            "bvfs_update did not take into consideration VirtualFull Archive."
 
 end_test
