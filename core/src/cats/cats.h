@@ -432,8 +432,8 @@ class db_list_ctx : public BStringList {
   void add(const char* str) { Append(str); }
   void add(JobId_t id) { push_back(std::to_string(id)); }
 
-  std::string GetAsString() { return Join(','); }
-  uint64_t GetFrontAsInteger()
+  std::string GetAsString() const { return Join(','); }
+  uint64_t GetFrontAsInteger() const
   {
     try {
       return std::stoull(at(0));

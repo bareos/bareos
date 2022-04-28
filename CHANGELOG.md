@@ -54,6 +54,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Fix `always-incremental-consolidate` systemtest sporadic fails, and rename it. [PR #1154]
 - packaging: FreeBSD place all scripts into "normal" location /usr/local/lib/bareos/scripts [PR #1163]
 - [BUG #1445] adding quotes to director name when using `configure export`. [PR #1171]
+- FreeBSD packages: add missing ddl/update 2171_2192 and 2192_2210 files [PR #1147]
+- Fix director connects to client while `Connection From Director To Client` is disabled. [PR #1099]
+- dir: miscalculation when using `always incremental keep number` [PR #1159]
 
 ### Changed
 - contrib: rename Python modules to satisfy PEP8 [PR #768]
