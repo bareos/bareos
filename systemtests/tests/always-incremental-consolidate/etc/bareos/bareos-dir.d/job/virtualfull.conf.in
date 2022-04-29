@@ -1,0 +1,17 @@
+Job {
+  Name = "VirtualLongtermFull"
+  Client = bareos-fd
+  FileSet = SelfTest
+  Type = Backup
+  Level = VirtualFull
+  Pool = AI-Consolidated
+  Messages = Standard
+
+  Priority = 13                 # run after  Consolidate
+  Run Script {
+        console = "update jobid=%i jobtype=A"
+        Runs When = After
+        Runs On Client = No
+        Runs On Failure = No
+  }
+}
