@@ -33,6 +33,8 @@ setup_data
 
 start_test
 
+start_bareos
+
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null
 messages
@@ -49,8 +51,9 @@ wait
 @exec "sh -c 'touch ${tmp}/data/weird-files/file-3'"
 run job=$JobName level=Incremental yes
 wait
+messages
 END_OF_DATA
-run_bareos "$@"
+run_bconsole
 
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out $tmp/log1.out
@@ -65,7 +68,7 @@ messages
 wait
 quit
 END_OF_DATA
-run_bareos "$@"
+run_bconsole
 
 # Consolidating zero-file incremental backups
 
@@ -85,7 +88,7 @@ wait
 messages
 quit
 END_OF_DATA
-run_bareos "$@"
+run_bconsole
 
 # Consolidating a zero-file job in the middle of incremental backups
 
@@ -115,27 +118,58 @@ END_OF_DATA
 
 run_bconsole
 
-stop_bareos
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+wait
+@$out $tmp/virtualfull.out
+run job=VirtualLongtermFull yes
+wait
+@exec "sh -c 'touch ${tmp}/data/weird-files/file-13'"
+run job=$JobName level=Incremental yes
+wait
+@exec "sh -c 'touch ${tmp}/data/weird-files/file-14'"
+run job=$JobName level=Incremental yes
+wait
+@exec "sh -c 'touch ${tmp}/data/weird-files/file-15'"
+run job=$JobName level=Incremental yes
+wait
+messages
+.bvfs_lsdirs jobid=16 path=
+.bvfs_update
+.bvfs_lsdirs jobid=16 path=
+.bvfs_versions jobid=16 path=${tmp}/data/weird-files/ client=bareos-fd fname=normalfile
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
 
 check_job_canceled
-if ! grep "purged JobIds 1,2,3 as they were consolidated into Job 6" "$tmp"/log1.out; then
-  echo "consolidation did not work. Check $tmp/log1.out" >&2
-  estat=1
-fi
 
-if ! grep "purging empty jobids 7,8,9" "$tmp"/log2.out; then
-  echo "Removing of empty jobs did not work. Check $tmp/log2.out" >&2
-  estat=1
-fi
+expect_grep "purged JobIds 1,2,3 as they were consolidated into Job 6" \
+            "$tmp"/log1.out \
+            "consolidation of expected jobs did not happen."
 
-if ! grep "purging empty jobids 12" "$tmp"/log3.out; then
-  echo "Removing of empty jobs did not work. Check $tmp/log3.out" >&2
-  estat=1
-fi
+expect_grep "purging empty jobids 7,8,9" \
+            "$tmp"/log2.out \
+            "Removal of expected empty jobs was not successful."
 
-if ! grep "purged JobIds 6,4,11 as they were consolidated into Job 15" "$tmp"/log3.out; then
-  echo "consolidation did not work. Check $tmp/log3.out" >&2
-  estat=1
-fi
+expect_grep "purging empty jobids 12" \
+            "$tmp"/log3.out \
+            "Removal of expected empty jobs was not successful"
+
+expect_grep "purged JobIds 6,4,11 as they were consolidated into Job 15" \
+            "$tmp"/log3.out \
+            "consolidation of expected jobs did not happen."
+
+expect_grep "0	0	A A A A A A A A A A A A A A	/" \
+            "$tmp"/virtualfull.out \
+            "bvfs_update did not take into consideration VirtualFull Archive."
+
+expect_grep "43xzp14Dk2Gvm+cKgszDNQ	AI-Longterm" \
+            "$tmp"/virtualfull.out \
+            ".bvfs_versions did not find a file backup up by a VirtualFull Archive."
 
 end_test
