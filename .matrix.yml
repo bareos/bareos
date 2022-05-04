@@ -18,6 +18,17 @@ OS:
           - bareos
 
   xUbuntu:
+    "22.04":
+      TYPE: deb
+      IMAGE: "ubuntu22.04"
+      ARCH:
+        - x86_64
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-webui
+           - bareos-vmware
+           - python-bareos
     "20.04":
       TYPE: deb
       IMAGE: "ubuntu20.04"
