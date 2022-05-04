@@ -77,9 +77,9 @@
 /* idempotence symbol used in my style header file.                           */
 
 #ifndef DONE_STYLE
-
 typedef unsigned long ulong;
-typedef unsigned bool;
+#include "stdbool.h"
+//typedef unsigned  bool;
 typedef unsigned char* p_ubyte_;
 
 #  ifndef TRUE

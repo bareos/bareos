@@ -98,6 +98,9 @@ add_library(
   src/backend/posix/replyparser.c
 )
 
+# openssl 3.0
+target_compile_options(droplet PUBLIC -Wno-deprecated-declarations)
+
 target_include_directories(
   droplet PUBLIC include ${LIBXML2_INCLUDE_DIR} ${JSONC_INCLUDE_DIRS}
                  ${OPENSSL_INCLUDE_DIR}
