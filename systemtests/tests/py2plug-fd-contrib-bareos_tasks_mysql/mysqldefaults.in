@@ -8,3 +8,5 @@ socket=@dbHost@/mysql.sock
 datadir=@PROJECT_BINARY_DIR@/tests/@TEST_NAME@/mysql/data
 # Write test-local pid file
 pid-file=@PROJECT_BINARY_DIR@/tests/@TEST_NAME@/mysql/mysqld.pid
+# Workaround for Ubuntu 22
+innodb-use-native-aio = OFF
