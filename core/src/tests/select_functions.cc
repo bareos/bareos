@@ -27,6 +27,8 @@
 #  include "include/bareos.h"
 #endif
 
+#include <unordered_map>
+
 #include "dird/ua_select.h"
 #include "dird/ua.h"
 #include "include/jcr.h"
@@ -189,4 +191,116 @@ TEST_F(JobTypeSelection, NonPermittedJobtypesAreNotParsed)
   FakeListJobTypeCommand(argument);
   EXPECT_FALSE(GetUserJobTypeListSelection(ua, jobtypelist, false));
   EXPECT_TRUE(jobtypelist.empty());
+}
+
+
+// Unit Tests for Job status argument
+
+
+class JobStatusSelection : public testing::Test {
+ protected:
+  void SetUp() override { ua = directordaemon::new_ua_context(&jcr); }
+
+  void TearDown() override { FreeUaContext(ua); }
+  void FakeListCommand(directordaemon::UaContext* ua, std::string arguments)
+  {
+    FakeCmd(ua, "list jobs " + arguments);
+  }
+  void FakeListJobStatusCommand(std::string argument_value)
+  {
+    FakeCmd(ua, "list jobs jobstatus=" + argument_value);
+  }
+
+  JobControlRecord jcr{};
+  directordaemon::UaContext* ua{nullptr};
+  std::unordered_map<char, std::string> allowed_jobstatuses{
+      {JS_Terminated, "terminated"}, {JS_Warnings, "warnings"},
+      {JS_Canceled, "canceled"},     {JS_Running, "running"},
+      {JS_ErrorTerminated, "error"}, {JS_FatalError, "fatal"}};
+};
+
+
+TEST_F(JobStatusSelection, NothingHappensWhenJobstatusNotSpecified)
+{
+  std::vector<char> jobstatuslist{};
+  FakeListCommand(ua, "");
+  EXPECT_TRUE(GetUserJobStatusSelection(ua, jobstatuslist));
+  EXPECT_TRUE(jobstatuslist.empty());
+}
+
+TEST_F(JobStatusSelection, ErrorWhenJobtatusArgumentSpecifiedButNoneGiven)
+{
+  std::vector<char> jobstatuslist{};
+  FakeListJobStatusCommand("");
+  EXPECT_FALSE(GetUserJobStatusSelection(ua, jobstatuslist));
+  EXPECT_TRUE(jobstatuslist.empty());
+}
+
+TEST_F(JobStatusSelection, ReturnOnlyOneJobStatusIfOnlyOneIsEntered)
+{
+  for (const auto& jobstatus : allowed_jobstatuses) {
+    std::vector<char> jobstatuslist{};
+    std::string argument{jobstatus.first};
+    FakeListJobStatusCommand(argument);
+    EXPECT_TRUE(GetUserJobStatusSelection(ua, jobstatuslist));
+    EXPECT_EQ(jobstatuslist[0], jobstatus.first);
+  }
+}
+
+TEST_F(JobStatusSelection,
+       ReturnOnlyOneShortJobStatusIfOnlyOneLongJobStatusIsEntered)
+{
+  for (const auto& jobstatus : allowed_jobstatuses) {
+    std::vector<char> jobstatuslist{};
+    std::string argument{jobstatus.second};
+    FakeListJobStatusCommand(argument);
+    EXPECT_TRUE(GetUserJobStatusSelection(ua, jobstatuslist));
+    EXPECT_EQ(jobstatuslist[0], jobstatus.first);
+  }
+}
+
+TEST_F(JobStatusSelection,
+       ReturnMultipleShortJobStatusIfMultipleLongJobStatusesEntered)
+{
+  std::vector<char> jobstatuslist{};
+  std::vector<char> expectedJobStatusList{};
+  std::string argumentForMultipleLongJobstatus;
+  for (const auto& jobstatus : allowed_jobstatuses) {
+    argumentForMultipleLongJobstatus += jobstatus.second;
+    argumentForMultipleLongJobstatus += ',';
+
+    expectedJobStatusList.push_back(jobstatus.first);
+  }
+  argumentForMultipleLongJobstatus.pop_back();
+
+  FakeListJobStatusCommand(argumentForMultipleLongJobstatus);
+  EXPECT_TRUE(GetUserJobStatusSelection(ua, jobstatuslist));
+  EXPECT_EQ(jobstatuslist, expectedJobStatusList);
+}
+
+TEST_F(JobStatusSelection,
+       ReturnMultipleShortJobStatusIfMultipleLongAndShortJobstatusesEntered)
+{
+  std::vector<char> jobstatuslist{};
+  std::vector<char> expectedJobStatusList{};
+  std::string argumentForMultipleLongAndShortJobstatus;
+  int i = 0;
+  for (const auto& jobstatus : allowed_jobstatuses) {
+    if (i % 2 == 0) {
+      argumentForMultipleLongAndShortJobstatus
+          += jobstatus.first;  // short jobstatus
+    } else {
+      argumentForMultipleLongAndShortJobstatus
+          += jobstatus.second;  // long jobstatus
+    }
+    argumentForMultipleLongAndShortJobstatus += ',';
+
+    expectedJobStatusList.push_back(jobstatus.first);
+    i++;
+  }
+  argumentForMultipleLongAndShortJobstatus.pop_back();
+
+  FakeListJobStatusCommand(argumentForMultipleLongAndShortJobstatus);
+  EXPECT_TRUE(GetUserJobStatusSelection(ua, jobstatuslist));
+  EXPECT_EQ(jobstatuslist, expectedJobStatusList);
 }

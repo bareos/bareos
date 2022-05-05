@@ -92,7 +92,7 @@ bool GetUserSlotList(UaContext* ua,
 bool GetUserJobTypeListSelection(UaContext* ua,
                                  std::vector<char>& passed_jobtypes,
                                  bool ask_user);
-bool GetUserJobStatusSelection(UaContext* ua, int* jobstatus);
+bool GetUserJobStatusSelection(UaContext* ua, std::vector<char>& jobstatus);
 bool GetUserJobLevelSelection(UaContext* ua, int* joblevel);
 
 int FindArgKeyword(UaContext* ua, const char** list);
