@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2021-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2021-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -43,18 +43,22 @@ static bRC PyLoadModule(PluginContext* plugin_ctx, void* value)
   PyObject *sysPath, *mPath, *pName, *pFunc;
 
   /* See if we already setup the python search path.  */
-  if (!plugin_priv_ctx->python_path_set) {
+  if (!plugin_priv_ctx->python_default_path_is_set) {
     sysPath = PySys_GetObject((char*)"path");
     mPath = PyUnicode_FromString(PYTHON_MODULE_PATH);
     PyList_Insert(sysPath, 0, mPath);
     Py_DECREF(mPath);
+    plugin_priv_ctx->python_default_path_is_set = true;
+  }
+  if (!plugin_priv_ctx->python_path_is_set) {
     /* Extend the Python search path with the given module_path.  */
     if (plugin_priv_ctx->module_path) {
+      sysPath = PySys_GetObject((char*)"path");
       mPath = PyUnicode_FromString(plugin_priv_ctx->module_path);
       PyList_Insert(sysPath, 0, mPath);
       Py_DECREF(mPath);
+      plugin_priv_ctx->python_path_is_set = true;
     }
-    plugin_priv_ctx->python_path_set = true;
   }
 
   /* Try to load the Python module by name. */

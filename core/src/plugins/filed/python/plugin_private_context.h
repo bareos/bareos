@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,21 +23,22 @@
 #define BAREOS_PLUGINS_FILED_PYTHON_PLUGIN_PRIVATE_CONTEXT_H_
 
 struct plugin_private_context {
-  int32_t backup_level; /* Backup level e.g. Full/Differential/Incremental */
-  utime_t since;        /* Since time for Differential/Incremental */
-  bool python_loaded;   /* Plugin has python module loaded ? */
-  bool python_path_set; /* Python plugin search path is set ? */
-  char* plugin_options; /* Plugin Option string */
-  char* module_path;    /* Plugin Module Path */
-  char* module_name;    /* Plugin Module Name */
-  char* fname;          /* Next filename to save */
-  char* link;           /* Target symlink points to */
-  char* object_name;    /* Restore Object Name */
-  char* object;         /* Restore Object Content */
+  int32_t backup_level;  // Backup level e.g. Full/Differential/Incremental
+  utime_t since;         // Since time for Differential/Incremental
+  bool python_loaded;    // Plugin has python module loaded?
+  bool python_default_path_is_set;  // Python plugin default search path is set?
+  bool python_path_is_set;          // Python plugin search path is set?
+  char* plugin_options;             // Plugin Option string
+  char* module_path;                // Plugin Module Path
+  char* module_name;                // Plugin Module Name
+  char* fname;                      // Next filename to save
+  char* link;                       // Target symlink points to
+  char* object_name;                // Restore Object Name
+  char* object;                     // Restore Object Content
   PyThreadState*
-      interpreter;   /* Python interpreter for this instance of the plugin */
-  PyObject* pModule; /* Python Module entry point */
-  PyObject* pyModuleFunctionsDict; /* Python Dictionary */
+      interpreter;    // Python interpreter for this instance of the plugin
+  PyObject* pModule;  // Python Module entry point
+  PyObject* pyModuleFunctionsDict;  // Python Dictionary
 };
 
 
