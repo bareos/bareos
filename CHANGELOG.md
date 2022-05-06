@@ -9,6 +9,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: get volume and pool params from query instead of route [PR #1144]
 - FreeBSD packages: add missing ddl/update 2171_2192 and 2192_2210 files [PR #1148]
 - [Issue #1445] adding quotes to director name when using `configure export`[PR #1173]
+- dir: miscalculation when using `always incremental keep number` [PR #1160]
 
 ### Changed
 - cats: include only jobtypes in list jobtotals that write data to volumes [PR #1136]
