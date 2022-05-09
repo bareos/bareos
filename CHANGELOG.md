@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and since Bareos version 20 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [21.1.3] - 2022-05-09
 
 ### Fixed
 - webui: get volume and pool params from query instead of route [PR #1144]
@@ -338,6 +338,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [21.1.0]: https://github.com/bareos/bareos/releases/tag/Release%2F21.1.0
 [21.1.1]: https://github.com/bareos/bareos/releases/tag/Release%2F21.1.1
 [21.1.2]: https://github.com/bareos/bareos/releases/tag/Release%2F21.1.2
+[21.1.3]: https://github.com/bareos/bareos/releases/tag/Release%2F21.1.3
 [Issue #579]: https://bugs.bareos.org/view.php?id=579
 [Issue #847]: https://bugs.bareos.org/view.php?id=847
 [Issue #871]: https://bugs.bareos.org/view.php?id=871
@@ -547,4 +548,3 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1167]: https://github.com/bareos/bareos/pull/1167
 [PR #1173]: https://github.com/bareos/bareos/pull/1173
 [PR #1175]: https://github.com/bareos/bareos/pull/1175
-[unreleased]: https://github.com/bareos/bareos/tree/master
