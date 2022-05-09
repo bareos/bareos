@@ -24,7 +24,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
   - webui does NOT use a user-provided locale string to directly switch moment locale
 
 ### Documentation
-- backport fix incorrect link in contrib PythonFdPlugin [BUG #1450] [PR #1167]
+- backport fix incorrect link in contrib PythonFdPlugin [Issue #1450] [PR #1167]
 
 ## [21.1.2] - 2022-03-17
 
@@ -355,6 +355,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [Issue #1334]: https://bugs.bareos.org/view.php?id=1334
 [Issue #1369]: https://bugs.bareos.org/view.php?id=1369
 [Issue #1374]: https://bugs.bareos.org/view.php?id=1374
+[Issue #1445]: https://bugs.bareos.org/view.php?id=1445
+[Issue #1450]: https://bugs.bareos.org/view.php?id=1450
 [PR #552]: https://github.com/bareos/bareos/pull/552
 [PR #694]: https://github.com/bareos/bareos/pull/694
 [PR #700]: https://github.com/bareos/bareos/pull/700
@@ -517,6 +519,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1088]: https://github.com/bareos/bareos/pull/1088
 [PR #1089]: https://github.com/bareos/bareos/pull/1089
 [PR #1090]: https://github.com/bareos/bareos/pull/1090
+[PR #1094]: https://github.com/bareos/bareos/pull/1094
 [PR #1095]: https://github.com/bareos/bareos/pull/1095
 [PR #1096]: https://github.com/bareos/bareos/pull/1096
 [PR #1100]: https://github.com/bareos/bareos/pull/1100
@@ -531,5 +534,17 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1125]: https://github.com/bareos/bareos/pull/1125
 [PR #1128]: https://github.com/bareos/bareos/pull/1128
 [PR #1132]: https://github.com/bareos/bareos/pull/1132
-[PR #1090]: https://github.com/bareos/bareos/pull/1090
+[PR #1133]: https://github.com/bareos/bareos/pull/1133
+[PR #1136]: https://github.com/bareos/bareos/pull/1136
+[PR #1141]: https://github.com/bareos/bareos/pull/1141
+[PR #1144]: https://github.com/bareos/bareos/pull/1144
+[PR #1146]: https://github.com/bareos/bareos/pull/1146
+[PR #1148]: https://github.com/bareos/bareos/pull/1148
+[PR #1150]: https://github.com/bareos/bareos/pull/1150
+[PR #1156]: https://github.com/bareos/bareos/pull/1156
+[PR #1160]: https://github.com/bareos/bareos/pull/1160
+[PR #1164]: https://github.com/bareos/bareos/pull/1164
+[PR #1167]: https://github.com/bareos/bareos/pull/1167
+[PR #1173]: https://github.com/bareos/bareos/pull/1173
+[PR #1175]: https://github.com/bareos/bareos/pull/1175
 [unreleased]: https://github.com/bareos/bareos/tree/master
