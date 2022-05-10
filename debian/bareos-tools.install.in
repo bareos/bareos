@@ -2,6 +2,7 @@
 /usr/bin/bwild
 /usr/sbin/bcopy
 /usr/sbin/bextract
+/usr/sbin/testfind
 /usr/sbin/bls
 /usr/sbin/bregex
 /usr/sbin/bwild

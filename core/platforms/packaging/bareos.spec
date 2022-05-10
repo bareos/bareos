@@ -1484,6 +1484,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{_sbindir}/bcopy
 %{_sbindir}/bextract
 %{_sbindir}/bls
+%{_sbindir}/testfind
 %{_sbindir}/bregex
 %{_sbindir}/bwild
 %{_sbindir}/bpluginfo
