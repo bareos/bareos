@@ -146,6 +146,9 @@ switchWal
 switchWalTimeout
    Timeout in seconds to wait for WAL archiving after WAL switch, default 60 seconds.
 
+role
+   Set the role used after login, before the first sql call. Default: *None*
+
 
 
 Restore with the PostgreSQL Plugin

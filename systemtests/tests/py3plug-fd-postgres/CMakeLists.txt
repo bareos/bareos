@@ -17,13 +17,6 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-if(TARGET python-fd)
-  message(
-    "disabling py2plug-fd-postgres, Python2 not supported for this plugin"
-  )
-  create_systemtest(${SYSTEMTEST_PREFIX} "py2plug-fd-postgres" DISABLED)
-endif()
-
 if(TARGET python3-fd)
   check_pymodule_available(3 pg8000)
   check_pymodule_available(3 dateutil)
