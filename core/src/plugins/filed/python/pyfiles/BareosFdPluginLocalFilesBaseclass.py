@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2020 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2022 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -90,6 +90,7 @@ class BareosFdPluginLocalFilesBaseclass(BareosFdPluginBaseclass):  # noqa
                 bareosfd.M_ERROR,
                 'Could net get stat-info for file %s: "%s"' % (self.file_to_backup, e),
             )
+
         # As of Bareos 19.2.7 attribute names in bareosfd.StatPacket differ from os.stat
         # In this case we have to translate names
         # For future releases consistent names are planned, allowing to assign the
@@ -105,9 +106,9 @@ class BareosFdPluginLocalFilesBaseclass(BareosFdPluginBaseclass):  # noqa
         mystatp.st_uid = statp.st_uid
         mystatp.st_gid = statp.st_gid
         mystatp.st_size = statp.st_size
-        mystatp.st_atime = statp.st_atime
-        mystatp.st_mtime = statp.st_mtime
-        mystatp.st_ctime = statp.st_ctime
+        mystatp.st_atime = int(statp.st_atime)
+        mystatp.st_mtime = int(statp.st_mtime)
+        mystatp.st_ctime = int(statp.st_ctime)
         # bareosfd.JobMessage( bareosfd.M_ERROR, '\nmystatp: %s\nstatp: %s\n' % (mystatp,statp))
 
         savepkt.fname = self.file_to_backup
