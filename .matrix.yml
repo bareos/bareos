@@ -1,8 +1,6 @@
 JENKINS_TESTTYPES:
-  - bareos-client-only
-  - bareos-postgresql
+  - bareos-client-only+bareos-universal-client+bareos-postgresql
   - univention-bareos
-  - bareos-universal-client
 
 OS:
   ULC_deb:
