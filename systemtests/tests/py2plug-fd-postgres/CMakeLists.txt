@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -33,10 +33,6 @@ if(TARGET python3-fd)
      AND (${Python3_VERSION_MINOR} LESS 10)
   )
     create_systemtest(${SYSTEMTEST_PREFIX} "py3plug-fd-postgres")
-    # fails because of psycopg2
-    set_tests_properties(
-      "${SYSTEMTEST_PREFIX}py3plug-fd-postgres" PROPERTIES LABELS "broken"
-    )
   else()
     create_systemtest(${SYSTEMTEST_PREFIX} "py3plug-fd-postgres" DISABLED)
   endif()
