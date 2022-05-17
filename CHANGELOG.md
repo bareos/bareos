@@ -7,6 +7,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Breaking Changes
 - when using PAM Bareos will now check authorization, too. If authorization is not configured, login will fail. See [updated documentation](https://docs.bareos.org/TasksAndConcepts/PAM.html#configuration) on how to proceed [PR #1115].
+- Bareos 22 removes perl make_catalog_backup.pl in favor of an improved make_catalog_backup shell script. There is a compatibility-wrapper, but that only supports simple cases. If you applied changes to BackupCatalog Job, you should immediately migrate to use make_catalog_backup. See [catalog documentation](https://docs.bareos.org/TasksAndConcepts/CatalogMaintenance.html#backing-up-your-bareos-database) [PR #1081]
 
 ### Added
 - dird: add command line feature to print specific resources [PR #1153]
@@ -84,6 +85,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - dird: console: changed list jobs jobstatus argument to accept comma separated value [PR #1169]
 
 ### Deprecated
+- make_catalog_backup.pl is now a shell wrapper script which will remove in version 23.
 
 ### Removed
 

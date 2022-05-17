@@ -3,7 +3,7 @@
 # BAREOS® - Backup Archiving REcovery Open Sourced
 #
 # Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-# Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+# Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -20,10 +20,10 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 #
-# This routine makes the appropriately configured
-# Bareos tables for PostgreSQL, Ingres, MySQL, or SQLite.
+# This routine makes the appropriately configured Bareos tables.
 #
-
+set -e
+set -u
 #
 # Source the Bareos config functions.
 #
@@ -31,121 +31,40 @@
 # change to root dir
 cd /
 
+. "@scriptdir@"/bareos-config-lib.sh
 
-. @scriptdir@/bareos-config-lib.sh
-
-db_name="${db_name:-`get_database_name @db_name@`}"
-db_user="${db_user:-`get_database_user @db_user@`}"
-db_version=`get_database_version`
-bareos_sql_ddl=`get_database_ddl_dir`
+db_name="${db_name:-$(get_database_name @db_name@)}"
+db_user="${db_user:-$(get_database_user @db_user@)}"
+bareos_sql_ddl="$(get_database_ddl_dir)"
 temp_sql_schema="/tmp/creates.sql.$$"
-default_db_type=`get_database_driver_default`
-working_dir=`get_working_dir`
 
-#
-# See if the first argument is a valid backend name.
-# If so the user overrides the default database backend.
-#
 if [ $# -gt 0 ]; then
-   case $1 in
-      sqlite3)
-         db_type=$1
-         shift
-         ;;
-      mysql)
-         db_type=$1
-         shift
-         ;;
-      postgresql)
-         db_type=$1
-         shift
-         ;;
-      *)
-         ;;
-   esac
+  handle_database_scripts_command_line_parameter $*
 fi
+# Below this line no additional parameters is allowed in command ($*)
+info "Making ${db_name} tables"
 
-#
-# If no new db_type is gives use the default db_type.
-#
-if [ -z "${db_type}" ]; then
-   db_type="${default_db_type}"
-fi
+sql_definitions="${bareos_sql_ddl}/creates/postgresql.sql"
 
-echo "Making ${db_type} tables"
-
-case ${db_type} in
-   sqlite3)
-      sql_definitions="${bareos_sql_ddl}/creates/sqlite3.sql"
-      ;;
-   mysql)
-      sql_definitions="${bareos_sql_ddl}/creates/mysql.sql"
-      ;;
-   postgresql)
-      sql_definitions="${bareos_sql_ddl}/creates/postgresql.sql"
-      ;;
-   *)
-      echo "Unknown database type $1"
-      exit 1
-      ;;
-esac
-
-if [ ! -z "${sql_definitions}" ]; then
-   if [ ! -f ${sql_definitions} ]; then
-      echo "Unable to open database table definitions in file ${sql_definitions}"
+if [ -n "${sql_definitions}" ]; then
+   if [ ! -f "${sql_definitions}" ]; then
+      error "Unable to open database table definitions in file ${sql_definitions}"
       exit 1
    fi
-
-   get_translated_sql_file ${sql_definitions} > ${temp_sql_schema}
-   if [ $? != 0 ]; then
-        echo "Failed to translate SQL definitions in ${sql_definitions}"
+   if ! get_translated_sql_file "${sql_definitions}" > "${temp_sql_schema}"
+   then
+        error "Failed to translate SQL definitions in ${sql_definitions}"
         exit 1
    fi
 fi
 
-bindir=`get_database_utility_path ${db_type}`
-if [ ! -z "${bindir}" ]; then
-   PATH="$bindir:$PATH"
+retval=0
+PGOPTIONS='--client-min-messages=warning' psql -f "${temp_sql_schema}" -d "${db_name}" || retval=$?
+if [ $retval -eq 0 ]; then
+   info "Creation ${db_name} tables succeeded."
+else
+   error "Creation ${db_name} tables failed."
 fi
-
-case ${db_type} in
-   sqlite3)
-      if [ -n "$BAREOS_TEST_RUNNING" ]; then
-         sqlite3 $* ${working_dir}/${db_name}.db < ${temp_sql_schema}
-         chmod 640 ${working_dir}/${db_name}.db
-         retval=0
-      else
-         echo "The SQLite database backend is deprecated. Please use PostgreSQL instead."
-         echo "Creation of Bareos SQLite tables aborted."
-         retval=1
-      fi
-      ;;
-   mysql)
-      if [ -n "$BAREOS_TEST_RUNNING" ]; then
-         mysql $* --database=${db_name} -f < ${temp_sql_schema}
-         retval=$?
-         if test $retval = 0; then
-            echo "Creation of Bareos MySQL tables succeeded."
-         else
-            echo "Creation of Bareos MySQL tables failed."
-         fi
-      else
-         echo "The MySQL database backend is deprecated. Please use PostgreSQL instead."
-         echo "Creation of Bareos MySQL tables aborted."
-         retval=1
-      fi
-      ;;
-   postgresql)
-      PGOPTIONS='--client-min-messages=warning' psql -f ${temp_sql_schema} -d ${db_name} $*
-      retval=$?
-      if test $retval = 0; then
-         echo "Creation of Bareos PostgreSQL tables succeeded."
-      else
-         echo "Creation of Bareos PostgreSQL tables failed."
-      fi
-      ;;
-esac
-
-rm -f ${temp_sql_schema}
+rm -f "${temp_sql_schema}"
 
 exit ${retval}

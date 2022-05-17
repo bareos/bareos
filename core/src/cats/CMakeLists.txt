@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -81,8 +81,8 @@ install(
         grant_bareos_privileges
         drop_bareos_tables
         drop_bareos_database
-        make_catalog_backup.pl
         make_catalog_backup
+        make_catalog_backup.pl
         delete_catalog_backup
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
               WORLD_READ WORLD_EXECUTE

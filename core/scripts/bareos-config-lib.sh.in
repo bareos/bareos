@@ -21,7 +21,7 @@ BAREOS_SCRIPTS_DIR="${BAREOS_SCRIPTS_DIR:-@scriptdir@}"
 BAREOS_CONFIG_LIB=${BAREOS_SCRIPTS_DIR}/bareos-config-lib.sh
 BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-@confdir@}
 BAREOS_SBIN_DIR=${BAREOS_SBIN_DIR:-@sbindir@}
-DBCHECK="${BAREOS_SBIN_DIR}/bareos-dbcheck -c ${BAREOS_CONFIG_DIR} -B"
+BAREOS_DIRECTOR_BINARY=${BAREOS_DIRECTOR_BINARY:-${BAREOS_SBIN_DIR}/bareos-dir}
 AWK="@AWK@"
 
 SEC_GROUPS="tape disk"
@@ -39,10 +39,7 @@ DAEMON_GROUP="$DIRECTOR_DAEMON_GROUP"
 DB_NAME="${db_name:-@db_name@}"
 DB_VERSION="${BDB_VERSION:-@BDB_VERSION@}"
 SQL_DDL_DIR="${SQL_DDL_DIR:-@scriptdir@/ddl}"
-SQLITE_BINDIR="@SQLITE_BINDIR@"
-MYSQL_BINDIR="@MYSQL_BINDIR@"
 POSTGRESQL_BINDIR="@POSTGRESQL_BINDIR@"
-INGRES_BINDIR="@INGRES_BINDIR@"
 
 PASSWORD_SUBST="\
 XXX_REPLACE_WITH_DIRECTOR_PASSWORD_XXX \
@@ -53,7 +50,7 @@ XXX_REPLACE_WITH_CLIENT_MONITOR_PASSWORD_XXX \
 XXX_REPLACE_WITH_STORAGE_MONITOR_PASSWORD_XXX \
 "
 
-os_type=`uname -s`
+os_type=$(uname -s)
 
 is_function()
 {
@@ -75,19 +72,48 @@ is_function()
 #     fi
 # }
 
+contains() {
+    haystack="$1"
+    needle="$2"
+    if [ "${haystack#*"$needle"}" != "$haystack" ];then
+        return 0    # $needle is in $haystack
+    else
+        return 1    # $needle is not in $haystack
+    fi
+}
+
 info()
 {
-    echo "Info: $@" >&2
+    echo "Info: $*" >&2
 }
 
 warn()
 {
-    echo "Warning: $@" >&2
+    echo "Warning: $*" >&2
 }
 
 error()
 {
-    echo "Error: $@" >&2
+    echo "Error: $*" >&2
+}
+
+handle_database_scripts_command_line_parameter()
+{
+    # Check if some parameters are given, try to detect old usage with db_type
+    if [ $# -gt 0 ]; then
+        force=${1-}
+        if [ "${force}" = "-f" ]; then
+           export FORCE="yes"
+           shift || true
+        fi
+        db_type=${1-}
+        if [ "${db_type}" = "postgresql" ];then
+            warn "Parameter db_type is no more needed"
+        elif [ -n "$db_type" ];then
+            error "db_type ${db_type} is no more supported, only postgresql"
+            exit 1
+        fi
+    fi
 }
 
 get_config_lib_file()
@@ -157,81 +183,40 @@ get_database_version_by_release()
 {
     param="$1"
 
-    # get release from parameter by stripping everthing after the "-".
+    # get release from parameter by stripping everything after the "-".
     # Example parameter: 13.2.2-926.1
-    release=`echo "$param" | sed 's/-.*//'`
+    release=$(echo "${param}" | sed 's/-.*//')
     if [ -z "$release" ]; then
-        error "failed to get database version for release $param"
+        error "failed to get database version for release ${param}"
         return 1
     fi
 
-    MAP=${SQL_DDL_DIR}/versions.map
-    if [ ! -r "$MAP" ]; then
-        error "failed to read Bareos database versions map file $MAP"
+    MAP="${SQL_DDL_DIR}/versions.map"
+    if [ ! -r "${MAP}" ]; then
+        error "failed to read Bareos database versions map file ${MAP}"
         return 1
     fi
 
     MARKER=0
-    VERSIONS=`cat "$MAP"; echo "$release=$MARKER"`
+    VERSIONS=$(cat "${MAP}"; echo "$release=${MARKER}")
 
     # add marker to list,
     # sort the list reverse, assuming versions x.y.z  and lines x.y.z=db_version,
     # get entry one line after marker
-    db_version=`printf "$VERSIONS" | sort -t. -k 1,1rn -k 2,2rn -k 3,3rn | sed -r -n "/[0-9.]+.*=$MARKER$/{ N; s/(.*)=(.*)\n(.*)=(.*)/\4/p }"`
+    db_version=$(printf "%s" "${VERSIONS}" | sort -t. -k 1,1rn -k 2,2rn -k 3,3rn | sed -r -n "/[0-9.]+.*=$MARKER$/{ N; s/(.*)=(.*)\n(.*)=(.*)/\4/p }")
 
-    if [ -z "$db_version" ]; then
-        db_version=`sed -n "s/^default=//p" $MAP`
-        if [ "$db_version" ]; then
-            warn "no database version defined for release $release ($param). Using default version: $db_version"
+    if [ -z "${db_version}" ]; then
+        db_version=$(sed -n "s/^default=//p" "${MAP}")
+        if [ "${db_version}" ]; then
+            warn "no database version defined for release ${release} (${param}). Using default version: ${db_version}"
         else
-            error "neither found database version for release $release ($param), nor found default database version in map file $MAP"
+            error "neither found database version for release ${release} (${param}), nor found default database version in map file ${MAP}"
             return 1
         fi
     fi
 
-    echo "$db_version"
+    echo "${db_version}"
     return
-}
-
-get_database_utility_path()
-{
-    db_type="${1-}"
-
-    case ${db_type} in
-        sqlite3)
-            utility="sqlite3"
-            bindir="${SQLITE_BINDIR}"
-            ;;
-        mysql)
-            utility="mysql"
-            bindir="${MYSQL_BINDIR}"
-            ;;
-        postgresql)
-            utility="psql"
-            pg_config --bindir > /dev/null 2>&1
-            if [ $? = 0 ]; then
-                bindir=`pg_config --bindir`
-            else
-                bindir="${POSTGRESQL_BINDIR}"
-            fi
-            ;;
-        ingres)
-            utility="sql"
-            bindir="${INGRES_BINDIR}"
-            ;;
-        *)
-            ;;
-    esac
-
-    #
-    # First see if the utility is already on the path
-    #
-    which ${utility} > /dev/null 2>&1
-    if [ $? = 0 ]; then
-        echo ""
-    else
-        echo "${bindir}"
-    fi
 }
 
 _scsicrypto_cmds="bareos-sd bcopy bextract bls bscan bscrypto btape"
@@ -242,7 +227,7 @@ check_scsicrypto_capabilities()
       error "check_scsicrypto_capabilities() is not supported on this platform"
       return 1
   fi
-  if ( [ "$(command -v getcap)" = "" ] || [ "$(command -v setcap)" = "" ] ); then
+  if [ "$(command -v getcap)" = "" ] || [ "$(command -v setcap)" = "" ]; then
       error "getcap and setcap commands are mandatory"
       return 1
   fi
@@ -318,8 +303,6 @@ unset_scsicrypto_capabilities()
   rm -f "${_scsicrypto_config_file}"
 }
 
-
-[ ${os_type} = Linux ] && \
 setup_sd_user()
 {
     #
@@ -329,8 +312,12 @@ setup_sd_user()
     # normally, storage-daemon user
     # is already installed by the package preinstall script.
     #
+    if [ "${os_type}" != "Linux" ];then
+        error "setup_sd_user() is not supported on this platform"
+        return 1
+    fi
 
-    getent group ${STORAGE_DAEMON_GROUP} > /dev/null || groupadd -r ${STORAGE_DAEMON_GROUP}
+    getent group "${STORAGE_DAEMON_GROUP}" > /dev/null || groupadd -r "${STORAGE_DAEMON_GROUP}"
 
     #
     # If the user doesn't exist create a new one otherwise modify it to have the wanted secondary groups.
@@ -340,13 +327,13 @@ setup_sd_user()
         return 0
     fi
 
-    if getent passwd ${STORAGE_DAEMON_USER} > /dev/null; then
+    if getent passwd "${STORAGE_DAEMON_USER}" > /dev/null; then
         if [ "${STORAGE_DAEMON_USER}" != "root" ]; then
             #
             # Build a list of all groups the user is already in.
             #
             ADD_GROUPS=""
-            CUR_ADD_GROUPS=`id -Gn ${STORAGE_DAEMON_USER}`
+            CUR_ADD_GROUPS=$(id -Gn "${STORAGE_DAEMON_USER}")
             for sec_group in ${CUR_ADD_GROUPS}; do
                 [ -z "${USERMOD_CMDLINE}" ] && USERMOD_CMDLINE="usermod -G ${sec_group}" || USERMOD_CMDLINE="${USERMOD_CMDLINE},${sec_group}"
             done
@@ -355,15 +342,15 @@ setup_sd_user()
             # See what secondary groups exist for the SD user to be added to.
             #
             for sec_group in ${SEC_GROUPS}; do
-                if getent group ${sec_group} >/dev/null; then
+                if getent group "${sec_group}" >/dev/null; then
                     found=0
                     for group in ${CUR_ADD_GROUPS}; do
-                        if [ ${group} = ${sec_group} ]; then
+                        if [ "${group}" = "${sec_group}" ]; then
                             found=1
                         fi
                     done
 
-                    if [ ${found} = 0 ]; then
+                    if [ "${found}" = "0" ]; then
                         [ -z "${ADD_GROUPS}" ] && ADD_GROUPS="${sec_group}" || ADD_GROUPS="${ADD_GROUPS} ${sec_group}"
                         [ -z "${USERMOD_CMDLINE}" ] && USERMOD_CMDLINE="usermod -G ${sec_group}" || USERMOD_CMDLINE="${USERMOD_CMDLINE},${sec_group}"
                     fi
@@ -374,15 +361,15 @@ setup_sd_user()
             # If the user was already created before,
             # Make sure the correct primary group is set otherwise fix it.
             #
-            if [ "`id -gn ${STORAGE_DAEMON_USER}`" != "${STORAGE_DAEMON_GROUP}" ]; then
-                usermod -g ${STORAGE_DAEMON_GROUP} ${STORAGE_DAEMON_USER} || warn "failed to add groups ${STORAGE_DAEMON_GROUP} to ${STORAGE_DAEMON_USER}"
+            if [ "$(id -gn "${STORAGE_DAEMON_USER}")" != "${STORAGE_DAEMON_GROUP}" ]; then
+                usermod -g "${STORAGE_DAEMON_GROUP}" "${STORAGE_DAEMON_USER}" || warn "failed to add groups ${STORAGE_DAEMON_GROUP} to ${STORAGE_DAEMON_USER}"
             fi
 
             #
             # Add the storage_daemon_user to additional groups (if needed)
             #
             if [ -n "${ADD_GROUPS}" ]; then
-                ${USERMOD_CMDLINE} ${STORAGE_DAEMON_USER} || warn "failed: ${USERMOD_CMDLINE} ${STORAGE_DAEMON_USER}"
+                "${USERMOD_CMDLINE}" "${STORAGE_DAEMON_USER}" || warn "failed: ${USERMOD_CMDLINE} ${STORAGE_DAEMON_USER}"
             fi
         fi
     else
@@ -392,7 +379,7 @@ setup_sd_user()
         #
         NEW_ADD_GROUPS=""
         for sec_group in ${SEC_GROUPS}; do
-            if getent group ${sec_group}; then
+            if getent group "${sec_group}"; then
                 [ -z "${NEW_ADD_GROUPS}" ] && NEW_ADD_GROUPS="-G ${sec_group}" || NEW_ADD_GROUPS="${NEW_ADD_GROUPS},${sec_group}"
             fi
         done
@@ -400,15 +387,8 @@ setup_sd_user()
         #
         # Create a new storage_daemon_user
         #
-        useradd -r --comment "bareos" --home ${BAREOS_WORKING_DIR} -g ${STORAGE_DAEMON_GROUP} ${NEW_ADD_GROUPS} --shell /bin/false ${STORAGE_DAEMON_USER} || warn "failed to create user ${STORAGE_DAEMON_USER}"
+        useradd -r --comment "bareos" --home "${BAREOS_WORKING_DIR}" -g "${STORAGE_DAEMON_GROUP}" "${NEW_ADD_GROUPS}" --shell /bin/false "${STORAGE_DAEMON_USER}" || warn "failed to create user ${STORAGE_DAEMON_USER}"
     fi
-}
-
-[ ${os_type} != Linux ] && \
-setup_sd_user()
-{
-   echo "setup_sd_user() is not supported on this platform"
-   exit 1
 }
 
 get_config_path()
@@ -449,69 +429,42 @@ get_config_path2()
     fi
 }
 
-
-has_config()
-{
-    # configuration component (either file or bareos-dir, ...)
-    COMPONENT="${1}"
-
-    if ! CONFIG_PATH=`get_config_path "${COMPONENT}" 2>/dev/null`; then
-        return 1
-    fi
-
-    if [ -d "${CONFIG_PATH}" ]; then
-        # Check if config files exist.
-        # There should a least be 2 configuration files.
-        # bareos-dir:
-        #   It could be, that only the file MyCatalog.conf exists,
-        #   (created by bareos-database-common) but no other files.
-        #   In this case, it counts as not configured.
-        [ `echo ${CONFIG_PATH}/*/*.conf | wc -l` -gt 2 ]
-        return $?
-    fi
-
-    # config file exists
-    return 0
-}
-
 deploy_config()
 {
-   local RC=1
+   RC=1
    ARGS=$#
    SOURCE=${1:-}
    DEST=${2:-}
    COMPONENT=${3:-}
 
-   [ -d "$SOURCE" ] || return 1
-   [ -n "$DEST" ] || return 1
+   [ -d "${SOURCE}" ] || return 1
+   [ -n "${DEST}" ] || return 1
 
    if [ $ARGS -eq 2 ]; then
-      deploy_config2 "$SOURCE" "$DEST"
-      RC=$?
+      deploy_config2 "${SOURCE}" "${DEST}" || RC=$?
    elif [ $ARGS -eq 3 ]; then
-      deploy_config3 "$SOURCE" "$DEST" "$COMPONENT"
-      RC=$?
+      deploy_config3 "${SOURCE}" "${DEST}" "${COMPONENT}" || RC=$?
    fi
 
    if [ $RC -eq 0 ]; then
       initialize_local_hostname
       initialize_passwords
-      if [ "${DAEMON_USER}" -a "${DAEMON_GROUP}" ]; then
-         chown -R ${DAEMON_USER}:${DAEMON_GROUP} "$DEST"
+      if [ "${DAEMON_USER}" ] && [ "${DAEMON_GROUP}" ]; then
+         chown -R "${DAEMON_USER}":"${DAEMON_GROUP}" "${DEST}"
       fi
       # chmod ... X: set x on directories, but not on files.
       if [ "$os_type" = "Darwin" ]; then
          # MacOS users from the "admin" group should be able to change the configuration files.
-         chgrp -R admin "$DEST"
-         chmod -R ug=rwX,o= "$DEST"
+         chgrp -R admin "${DEST}"
+         chmod -R ug=rwX,o= "${DEST}"
       else
-         chmod -R u=rwX,g=rX,o= "$DEST"
+         # This also changes permissions of .rndpwd from 0400 to 0640
+         chmod -R u=rwX,g=rX,o= "${DEST}"
       fi
    fi
 
    return $RC
 }
-
 
 deploy_config2()
 {
@@ -527,11 +480,11 @@ deploy_config2()
    SOURCE=${1:-}
    DEST=${2:-}
 
-   local RC=1
+   RC=1
 
-   [ -d "$SOURCE" ] || return 1
-   if ! [ -e "$DEST" ]; then
-      mkdir -p "$DEST"
+   [ -d "${SOURCE}" ] || return 1
+   if ! [ -e "${DEST}" ]; then
+      mkdir -p "${DEST}"
    fi
 
    #
@@ -540,8 +493,8 @@ deploy_config2()
    # On MacOS, only single letter cp options are available.
    #
    #OUT=`cp --verbose --recursive --no-clobber "$SOURCE/." "$DEST/."`
-   OUT=`cp -v -r -n "$SOURCE/." "$DEST/."`
-   if [ "$OUT" ]; then
+   OUT="$(cp -v -r -n "${SOURCE}/." "${DEST}/.")"
+   if [ "${OUT}" ]; then
       RC=0
    fi
 
@@ -559,29 +512,27 @@ deploy_config3()
    #   1: otherwise (on error or if no new config files are available)
    #
 
-   local RC=1
+   RC=1
 
    SOURCE=${1:-}
    DEST=${2:-}
    COMPONENT=${3:-}
 
-   [ -d "$SOURCE" ] || return 1
-   if ! [ -e "$DEST" ]; then
-      mkdir -p "$DEST"
+   [ -d "${SOURCE}" ] || return 1
+   if ! [ -e "${DEST}" ]; then
+      mkdir -p "${DEST}"
    fi
 
-   if ! SOURCE_CONFIG_PATH=`get_config_path2 "${SOURCE}" "${COMPONENT}"`; then
+   if ! SOURCE_CONFIG_PATH="$(get_config_path2 "${SOURCE}" "${COMPONENT}")"; then
       return 1
    fi
 
    if [ -d "${SOURCE_CONFIG_PATH}" ]; then
-      deploy_config2 "${SOURCE_CONFIG_PATH}" "${DEST}/${COMPONENT}.d/"
-      RC=$?
+      deploy_config2 "${SOURCE_CONFIG_PATH}" "${DEST}/${COMPONENT}.d/" || RC=$?
    else
       DEST_CONFIG_PATH="${DEST}/${COMPONENT}.conf"
       if [ ! -f "${DEST_CONFIG_PATH}" ]; then
-         cp ${SOURCE_CONFIG_PATH} ${DEST_CONFIG_PATH}
-         RC=$?
+         cp "${SOURCE_CONFIG_PATH}" "${DEST_CONFIG_PATH}" || RC=$?
       fi
    fi
 
@@ -608,20 +559,18 @@ get_config_param()
    if [ ! -r "${CFG_FILE}" ]; then
       warn "failed to get parameter ${SECTION} ${NAME} ${PARAM}: can't read ${CFG_FILE}"
       # if default value is given, return it anyway
-      [ "$DEFAULT" ] && echo "$DEFAULT"
+      [ "${DEFAULT}" ] && echo "${DEFAULT}"
       return 1
    fi
 
    # get parameter from configuration file
-   VALUE=`egrep -i "^[ 	]*${PARAM}[ 	]*=" ${CFG_FILE} |\
+   VALUE="$(grep -Ei "^[ 	]*${PARAM}[ 	]*=" "${CFG_FILE}" |\
       cut -d'=' -f2 | \
-      sed -e 's/[ 	]*"//' -e 's/"//'`
-   [ "$VALUE" ] || VALUE="$DEFAULT"
+      sed -e 's/[ 	]*"//' -e 's/"//')"
+   [ "${VALUE}" ] || VALUE="${DEFAULT}"
    echo "$VALUE"
 }
 
-
-[ ${os_type} = Linux ] && \
 set_config_param()
 {
     #
@@ -651,7 +600,7 @@ set_config_param()
     # value to set
     VALUE="${5}"
 
-    if ! CONFIG_PATH=`get_config_path "${COMPONENT}"`; then
+    if ! CONFIG_PATH=$(get_config_path "${COMPONENT}"); then
         return 1
     fi
 
@@ -664,13 +613,16 @@ set_config_param()
     return
 }
 
-[ ${os_type} = Linux ] && \
 set_config_param_in_directory()
 {
+    if [ "${os_type}" != "Linux" ];then
+        error "set_config_param_in_directory() is not supported on this platform"
+        return 1
+    fi
     # configuration file
     DIRECTORY="${1}"
     # section / resource type
-    SECTION=`echo "${2}" | tr '[:upper:]' '[:lower:]'`
+    SECTION=$(echo "${2}" | tr '[:upper:]' '[:lower:]')
     # name of the section, currently ignored
     NAME="${3}"
     # parameter to set in the config file
@@ -691,9 +643,13 @@ set_config_param_in_directory()
     return $?
 }
 
-[ ${os_type} = Linux ] && \
 set_config_param_in_file()
 {
+    if [ "${os_type}" != "Linux" ];then
+        error "set_config_param() is not supported on this platform"
+        return 1
+    fi
+
     # configuration file
     FILE="${1}"
     # section / resource type
@@ -710,8 +666,8 @@ set_config_param_in_file()
         return 1
     fi
 
-    TEMP=`mktemp`
-    $AWK -v SECTION="$SECTION" -v NAME="$NAME" -v PARAM="$PARAM" -v VALUE="$VALUE" '
+    TEMP="$(mktemp)"
+    $AWK -v SECTION="${SECTION}" -v NAME="${NAME}" -v PARAM="${PARAM}" -v VALUE="${VALUE}" '
   BEGIN {
     IGNORECASE = 1;
     FS = "=";
@@ -758,80 +714,73 @@ set_config_param_in_file()
   printed == 1 {
     printed = 0
   }
-    ' "$FILE" > "$TEMP"
+    ' "${FILE}" > "${TEMP}"
     if [ $? -ne 0 ]; then
         warn "failed to set parameter ${SECTION} ${NAME} ${PARAM} = ${VALUE}: replace failed"
-        rm "$TEMP"
+        rm -f "${TEMP}"
         return 1
     fi
 
-    chown --reference="${FILE}" "$TEMP"
-    chmod --reference="${FILE}" "$TEMP"
+    chown --reference="${FILE}" "${TEMP}"
+    chmod --reference="${FILE}" "${TEMP}"
 
-    mv "$TEMP" "$FILE"
-    if [ $? != 0 ]; then
-        warn "failed to set parameter ${SECTION} ${NAME} ${PARAM} = ${VALUE}: replacing $FILE failed"
-        rm -f "$TEMP"
+    if ! mv "${TEMP}" "${FILE}"
+    then
+        warn "failed to set parameter ${SECTION} ${NAME} ${PARAM} = ${VALUE}: replacing ${FILE} failed"
+        rm -f "${TEMP}"
         return 1
     fi
 }
-
-[ ${os_type} != Linux ] && \
-set_config_param()
-{
-   echo "set_config_param() is not supported on this platform"
-   exit 1
-}
-
 
 get_database_param()
 {
     PARAM="${1-}"
     DEFAULT="${2-}"
+    VALUE=""
+    CATALOG="${CATALOG:-MyCatalog}"
 
-    # use || to prevent errors
-    rc=0
-    temp_log="/tmp/bareos-config.$$.log"
-    DBCHECK_OUTPUT=`$DBCHECK 2>> $temp_log` || rc=$?
-    if [ $rc != 0 ]; then
-        echo "${DBCHECK_OUTPUT}" >> $temp_log
-        echo "Error: executing $DBCHECK" >> $temp_log
-        echo "" >> $temp_log
-
-        # if default value is given, return it anyway
-        if [ -n "$DEFAULT" ]; then
-            #info "unable to get \"${PARAM}\" from config, using default value \"${DEFAULT}\". Check $temp_log"
-            echo "$DEFAULT"
+    # Check if PARAM is valid
+    case "${PARAM}" in
+        "dbdriver")
+            echo "postgresql"
+            return 0
+            ;;
+        "dbaddress")
+            ;;
+        "dbsocket")
+            ;;
+        "dbport")
+            ;;
+        "dbname")
+            ;;
+        "dbuser")
+            ;;
+        "dbpassword")
+            ;;
+        *)
+            if [ -n "${DEFAULT}" ]; then
+                echo "${DEFAULT}"
+            fi
+            return 0
+            ;;
+    esac
+    # Retrieve PARAM line in configuration section output
+    # Beware we can be called before bareos-dir is installed on system (Debian like)
+    if [ -x "${BAREOS_DIRECTOR_BINARY}" ];then
+        CONFIG=$(${BAREOS_DIRECTOR_BINARY} -c "${BAREOS_CONFIG_DIR}" -xcCatalog="$CATALOG")
+        if ! VALUE="$(get_config_line_parameter "${CONFIG}" "${PARAM}")"
+        then
+            # if default value is given, return it anyway
+            if [ -n "${DEFAULT}" ]; then
+                VALUE="${DEFAULT}"
+            fi
         fi
-        #else
-        #    info "unable to get \"${PARAM}\" from config, this is usually not an error. Check $temp_log"
-        #fi
-
-
-        return 1
+    else
+        warn "${BAREOS_DIRECTOR_BINARY} not found"
     fi
-
-    # if $temp_log exists, but have only size 0, remove it.
-    if [ -f $temp_log -a ! -s $temp_log ]; then
-        rm $temp_log
-    fi
-
-    # DBCHECK gets the database parameter from the Director config file in a standard format,
-    # however, it writes "db_name" (like the environment variables)
-    # instead of "dbname" like in the config file.
-    # Replace "db_" by "db" to be compatible with the config file.
-    VALUE=`echo "$DBCHECK_OUTPUT" | sed "s/^db_/db/" | sed -n "s/^${PARAM}=//p"`
-
-    [ -z "$VALUE" ] && VALUE="$DEFAULT"
-    echo "$VALUE"
-    return $rc
-}
-
-get_database_driver()
-{
-    DEFAULT="${1-}"
-    get_database_param "dbdriver" "$DEFAULT" | grep -v "XXX_REPLACE_WITH_DATABASE_DRIVER_XXX"
-    return $?
+    [ -z "${VALUE}" ] && VALUE="${DEFAULT}"
+    echo "${VALUE}"
+    return 0
 }
 
 get_database_name()
@@ -855,40 +804,30 @@ get_database_password()
     return $?
 }
 
-get_databases_installed()
+get_config_line_parameter()
 {
-    # manually check different backends, to get the correct order
-    [ -f ${SQL_DDL_DIR}/creates/postgresql.sql ] && echo "postgresql"
-    [ -f ${SQL_DDL_DIR}/creates/mysql.sql ] && echo "mysql"
-    [ -f ${SQL_DDL_DIR}/creates/sqlite3.sql ] && echo "sqlite3"
-    return 0
+    CONFIG_RESOURCE_SECTION="$1"
+    CONFIG_PARAM="$2"
+    #For POSIX compliance use only *
+    printf "%s" "${CONFIG_RESOURCE_SECTION}" | sed -n -e "s/[[:space:]]*${CONFIG_PARAM}[[:space:]]*=[[:space:]]*[\"]*\([^\"]*\)[\"]*[[:space:]]*$/\1/ip"
 }
 
-get_database_driver_default()
+set_postgresql_environment_variables()
 {
-    if [ -n "$DBTYPE" ]; then
-      DBDRIVER=$DBTYPE;
-    else
-      DBDRIVER=`get_database_driver`
+    CATALOG="${1:-MyCatalog}"
+
+    if ! CONFIG=$(${BAREOS_DIRECTOR_BINARY} -c "${BAREOS_CONFIG_DIR}" -xcCatalog="${CATALOG}"); then
+        error "Failed to get configuration of catalog $CATALOG"
+        error "${CONFIG}"
+        return 1
     fi
 
-
-    if [ -z "$DBDRIVER" ]; then
-        DBDRIVER=`get_databases_installed | head -n 1`
-    fi
-
-    if [ -z "$DBDRIVER" ]; then
-        # fallback and first choice
-        DBDRIVER="postgresql"
-    fi
-
-    echo "$DBDRIVER"
-}
-
-initialize_database_driver()
-{
-    DBDRIVER=`get_database_driver_default`
-    replace "XXX_REPLACE_WITH_DATABASE_DRIVER_XXX" "${DBDRIVER}"
+    export PGHOST="$(get_config_line_parameter "${CONFIG}" DbAddress)"
+    export PGPORT="$(get_config_line_parameter "${CONFIG}" DbPort)"
+    export PGSOCKET="$(get_config_line_parameter "${CONFIG}" DbSocket)"
+    export PGDATABASE="$(get_config_line_parameter "${CONFIG}" DbName)"
+    export PGUSER="$(get_config_line_parameter "${CONFIG}" DbUser)"
+    export PGPASSWORD="$(get_config_line_parameter "${CONFIG}" DbPassword)"
 }
 
 is_template_sql_file()
@@ -899,8 +838,9 @@ is_template_sql_file()
         return 1
     fi
 
-    egrep '@DB_NAME@|@DB_USER@|@DB_PASS@|@DB_VERSION@' ${input_file} > /dev/null 2>&1
-    if [ $? != 0 ]; then
+
+    if ! grep -E "@DB_NAME@|@DB_USER@|@DB_PASS@|@DB_VERSION@" "${input_file}" > /dev/null 2>&1
+    then
         # no variables found in file, this file is not a template.
         return 0
     else
@@ -920,50 +860,35 @@ get_translated_sql_file()
         return 1
     fi
 
-    if [ ! -f ${input_file} ]; then
+    if [ ! -f "${input_file}" ]; then
         return 2
     fi
 
-    db_type="${db_type:-`get_database_driver_default`}"
-    db_name="${db_name:-`get_database_name @db_name@`}"
-    db_user="${db_user:-`get_database_user @db_user@`}"
+    db_name="${db_name:-$(get_database_name @db_name@)}"
+    db_user="${db_user:-$(get_database_user @db_user@)}"
     # if $db_password is defined but empty, an empty password will be used ("-" instead of ":-")
-    db_password="${db_password-`get_database_password @db_password@`}"
-    db_version=`get_database_version`
-
-    echo "$db_password" | grep '#' > /dev/null 2>&1
-    if [ $? = 0 ]; then
-        error "database passwords containing # are not supported."
+    db_password="${db_password-$(get_database_password @db_password@)}"
+    db_version=$(get_database_version)
+    # Try to find a separator character (for sed) not used in db_password.
+    sep=""
+    candidates="# , / % + - _ * ; = ° § :"
+    for sep in ${candidates}; do
+      contains "${db_password}" "${sep}" || break
+      if [ "${sep}" = ":" ]; then
+        error "Not able to find a free separator for sed not contained in your password"
         return 3
+      fi
+    done
+
+    if [ "${db_password}" != "" ]; then
+        db_password="PASSWORD '${db_password}'"
     fi
 
-    case ${db_type} in
-        sqlite3)
-            ;;
-        mysql)
-            if [ "$db_password" != "" ]; then
-                pass="IDENTIFIED BY '$db_password'"
-            fi
-            ;;
-        postgresql)
-            if [ "$db_password" != "" ]; then
-                pass="PASSWORD '$db_password'"
-            fi
-            ;;
-        ingres)
-            if [ "$db_password" != "" ]; then
-                pass="WITH PASSWORD = '$db_password'"
-            fi
-            ;;
-        *)
-            ;;
-    esac
-
-    sed -e "s#@DB_NAME@#${db_name}#" \
-        -e "s#@DB_USER@#${db_user}#" \
-        -e "s#@DB_PASS@#${pass}#" \
-        -e "s#@DB_VERSION@#${db_version}#" \
-        ${input_file}
+    sed -e "s${sep}@DB_NAME@${sep}${db_name}${sep}" \
+        -e "s${sep}@DB_USER@${sep}${db_user}${sep}" \
+        -e "s${sep}@DB_PASS@${sep}${db_password}${sep}" \
+        -e "s${sep}@DB_VERSION@${sep}${db_version}${sep}" \
+        "${input_file}"
 }
 
 get_database_grant_privileges()
@@ -974,10 +899,10 @@ get_database_grant_privileges()
     # If requested, this user can be limited to read-only database access.
 
     #db_name="$1"
-    db_type="${1:-${db_type:-`get_database_driver_default`}}"
     db_user="${2-}"
     db_password="${3-}"
-    case "$4" in
+    privileges="${4-}"
+    case "${privileges}" in
         "")
             # full access
             privileges=""
@@ -991,30 +916,14 @@ get_database_grant_privileges()
             ;;
     esac
 
-    case ${db_type} in
-        sqlite3)
-            ;;
-        mysql)
-            sql_definitions="${SQL_DDL_DIR}/grants/mysql${privileges}.sql"
-            ;;
-        postgresql)
-            sql_definitions="${SQL_DDL_DIR}/grants/postgresql${privileges}.sql"
-            ;;
-        ingres)
-            sql_definitions="${SQL_DDL_DIR}/grants/ingres${privileges}.sql"
-            ;;
-        *)
-            echo "Unknown database type $1"
-            return 1
-            ;;
-    esac
+    sql_definitions="${SQL_DDL_DIR}/grants/postgresql${privileges}.sql"
 
-    if [ ! -z "${sql_definitions}" ]; then
-        if [ ! -f ${sql_definitions} ]; then
+    if [ -n "${sql_definitions}" ]; then
+        if [ ! -f "${sql_definitions}" ]; then
             echo "Unable to open database table definitions in file ${sql_definitions}"
             return 1
         fi
-        get_translated_sql_file ${sql_definitions}
+        get_translated_sql_file "${sql_definitions}"
     fi
 
     return
@@ -1028,15 +937,13 @@ translate_sql_files()
     SOURCE_DIR=${1:-$SQL_DDL_DIR}
     DEST_DIR=${2:-"@working_dir@/ddl"}
 
-    db_type="${db_type:-`get_database_driver_default`}"
-
-    for i in `find "$SOURCE_DIR" -name "${db_type}*.sql" -print | cut -d'/' -f2-`; do
-        dest_file=${DEST_DIR}/$i
-        mkdir -p `dirname $dest_file`
-        get_translated_sql_file ${SOURCE_DIR}/$i > $dest_file
+    for i in $(find "$SOURCE_DIR" -name "postgresql*.sql" -print | cut -d'/' -f2-); do
+        dest_file="${DEST_DIR}/${i}"
+        mkdir -p "$(dirname "${dest_file}")"
         # in case of errors, remove file
-        if [ $? != 0 ]; then
-            rm -f $dest_file
+        if ! get_translated_sql_file "${SOURCE_DIR}/${i}" > "${dest_file}"
+        then
+            rm -f "${dest_file}"
         fi
     done
 }
@@ -1051,18 +958,22 @@ apply_dbconfig_settings()
     . /etc/dbconfig-common/bareos-database-common.conf
 
     # check if dbconfig is enabled
-    [ $dbc_install = 'true' ] && [ $dbc_upgrade = 'true' ] || return 0
+    [ "${dbc_install}" = "true" ] && [ "${dbc_upgrade}" = "true" ] || return 0
 
-    if [ -n "$dbc_dbuser" ]; then
-        set_config_param "bareos-dir" "Catalog" "MyCatalog" "dbuser" "$dbc_dbuser"
+    if [ -n "${dbc_dbserver}" ]; then
+        set_config_param "bareos-dir" "Catalog" "MyCatalog" "dbaddress" "${dbc_dbserver}"
     fi
 
-    if [ -n "$dbc_dbname" ]; then
-        set_config_param "bareos-dir" "Catalog" "MyCatalog" "dbname" "$dbc_dbname"
+    if [ -n "${dbc_dbuser}" ]; then
+        set_config_param "bareos-dir" "Catalog" "MyCatalog" "dbuser" "${dbc_dbuser}"
     fi
 
-    if [ "$dbc_authmethod_user" != "ident" ] && [ "$dbc_dbpass" ]; then
-        set_config_param "bareos-dir" "Catalog" "MyCatalog" "dbpassword" "$dbc_dbpass"
+    if [ -n "${dbc_dbname}" ]; then
+        set_config_param "bareos-dir" "Catalog" "MyCatalog" "dbname" "${dbc_dbname}"
+    fi
+
+    if [ "${dbc_authmethod_user}" != "ident" ] && [ "${dbc_dbpass}" ]; then
+        set_config_param "bareos-dir" "Catalog" "MyCatalog" "dbpassword" "${dbc_dbpass}"
     fi
 }
 
@@ -1070,16 +981,16 @@ get_local_hostname()
 {
     # put actual short hostname in configuration files
     # try to get short hostname
-    hname=`hostname -s`
-    if [ -z "$hname" ]; then
+    hname=$(hostname -s)
+    if [ -z "${hname}" ]; then
         # try to get long hostname
-        hname=`hostname|sed 's/\..*//g'`
-        if [ -z "$hname" ]; then
+        hname=$(hostname|sed 's/\..*//g')
+        if [ -z "${hname}" ]; then
             # set to "localhost"
             hname='localhost'
         fi
     fi
-    echo "$hname"
+    echo "${hname}"
 }
 
 replace()
@@ -1091,16 +1002,22 @@ replace()
     SEARCH="$1"
     REPLACE="$2"
 
-    for file in `grep -l ${SEARCH} ${BAREOS_CONFIG_DIR}/*.conf ${BAREOS_CONFIG_DIR}/bareos-*.d/*/*.conf ${BAREOS_CONFIG_DIR}/tray-monitor.d/*/*.conf 2>/dev/null`; do
-        if [ -f "$file" ]; then
+    grep -l "${SEARCH}" "${BAREOS_CONFIG_DIR}"/*.conf "${BAREOS_CONFIG_DIR}"/bareos-*.d/*/*.conf "${BAREOS_CONFIG_DIR}"/tray-monitor.d/*/*.conf 2>/dev/null | while read -r file
+    do
+        if [ -f "${file}" ]; then
             if grep "${SEARCH}" "$file"; then
                 # do a log-message only if file will be changed, not always
-                echo "replacing '${SEARCH}' with '${REPLACE}' in $file"
-                if [ "$os_type" = "Darwin" -o "$os_type" = "FreeBSD" ]; then
-                     sed -i '' "s#${SEARCH}#${REPLACE}#g" "${file}"
+                if grep "_PASSWORD_XXX" "${SEARCH}"; then
+                  info "replacing '${SEARCH}' in ${file}"
                 else
-                     sed -i'' "s#${SEARCH}#${REPLACE}#g" "${file}"
+                  info "replacing '${SEARCH}' with '${REPLACE}' in ${file}"
                 fi
+                if [ "$os_type" = "Darwin" ] || [ "$os_type" = "FreeBSD" ]; then
+                     inplace=" ''"
+                else
+                     inplace=""
+                fi
+                sed -i${inplace} "s#${SEARCH}#${REPLACE}#g" "${file}"
             fi
         fi
     done
@@ -1112,59 +1029,33 @@ initialize_local_hostname()
     #
     # Replace all XXX_REPLACE_WITH_LOCAL_HOSTNAME by the local hostname.
     #
-    hname=`get_local_hostname`
-    #replace "XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX-dir" "${hname}-dir"
-    replace "XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX-fd" "${hname}-fd"
-    #replace "XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX-sd" "${hname}-sd"
-    #replace "XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX-mon" "${hname}-mon"
+    hname=$(get_local_hostname)
     replace "XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" "${hname}"
 }
 
-replace_password()
-{
-    if [ $# -ne 2 ]; then
-        return 1
-    fi
-
-    SEARCH="$1"
-    REPLACE="$2"
-
-    for file in `grep -l ${SEARCH} ${BAREOS_CONFIG_DIR}/*.conf ${BAREOS_CONFIG_DIR}/bareos-*.d/*/*.conf ${BAREOS_CONFIG_DIR}/tray-monitor.d/*/*.conf 2>/dev/null`; do
-        echo "replacing '${SEARCH}' in $file"
-        if [ "$os_type" = "Darwin" -o "$os_type" = "FreeBSD" ]; then
-           sed -i '' "s#${SEARCH}#${REPLACE}#g" "${file}"
-        else
-           sed -i'' "s#${SEARCH}#${REPLACE}#g" "${file}"
-        fi
-        # following "sed -i" would work for GNU sed as well as BSD/Mac sed.
-        # However, it creates a backup file.
-        #sed -i.installer_backup "s#${SEARCH}#${REPLACE}#g" ${file}
-    done
-    return 0
-}
 
 initialize_passwords()
 {
     #
     # See if we need to generate a set of random passwords.
     #
-    if [ ! -f ${BAREOS_CONFIG_DIR}/.rndpwd ]; then
+    if [ ! -f "${BAREOS_CONFIG_DIR}"/.rndpwd ]; then
         for string in ${PASSWORD_SUBST}
         do
-           pass=`RANDFILE=/dev/urandom openssl rand -base64 33`
-           echo "${string}=${pass}" >> ${BAREOS_CONFIG_DIR}/.rndpwd
+           pass="$(RANDFILE=/dev/urandom openssl rand -base64 33)"
+           echo "${string}=${pass}" >> "${BAREOS_CONFIG_DIR}"/.rndpwd
         done
-        chmod 400 ${BAREOS_CONFIG_DIR}/.rndpwd
+        chmod 400 "${BAREOS_CONFIG_DIR}"/.rndpwd
     fi
 
     # Source the passwords
-    . ${BAREOS_CONFIG_DIR}/.rndpwd
+    . "${BAREOS_CONFIG_DIR}"/.rndpwd
 
     for string in ${PASSWORD_SUBST}
     do
         eval "pass=\${$string}"
-        if [ ! -z "${pass}" ]; then
-            replace_password "${string}" "${pass}"
+        if [ -n "${pass}" ]; then
+            replace "${string}" "${pass}"
         fi
     done
 }
@@ -1172,7 +1063,5 @@ initialize_passwords()
 init()
 {
     initialize_local_hostname
-    #initialize_director_hostname
     initialize_passwords
-    #initialize_database_driver
 }

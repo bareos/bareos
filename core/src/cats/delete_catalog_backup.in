@@ -3,7 +3,7 @@
 # BAREOS® - Backup Archiving REcovery Open Sourced
 #
 # Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-# Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+# Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -22,13 +22,24 @@
 #
 # This script deletes a catalog dump
 #
+set -u
+set -e
 
 #
 # Source the Bareos config functions.
 #
-. @scriptdir@/bareos-config-lib.sh
+. "@scriptdir@"/bareos-config-lib.sh
 
-db_name="${db_name:-@db_name@}"
-working_dir=`get_working_dir`
+if [ $# -ne 1 ]; then
+    warn "Script signature has changed: usage $0 CatalogName; using default MyCatalog"
+fi
 
-rm -f ${working_dir}/${db_name}.sql
+catalog="${1:-MyCatalog}"
+
+set_postgresql_environment_variables "${catalog}"
+working_dir="$(get_working_dir)"
+DUMP="${working_dir}/${PGDATABASE}.sql"
+
+cd "${working_dir}"
+rm -f "${DUMP}"
+exit $?
