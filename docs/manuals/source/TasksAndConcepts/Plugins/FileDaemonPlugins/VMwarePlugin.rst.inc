@@ -369,11 +369,11 @@ Restore to local VMDK File
 :index:`\ <single: VMware Plugin; VMDK files>`\
 
 Since :sinceVersion:`15.2.3: VMware Plugin: restore to VMDK files` it is possible to restore to local VMDK files. That means, instead of directly restoring a disk that belongs to the VM, the restore creates VMDK disk image files on the filesystem of the system that runs the |fd|. As the VM that the backup was taken from is not affected by this, it can remain switched on while restoring to local VMDK. Such a restored VMDK file can then be uploaded to a
-|vsphere| datastore or accessed by tools like `guestfish <http://libguestfs.org/guestfish.1.html>`_ to extract single files.
+|vsphere| datastore or accessed by tools like `guestfish <https://libguestfs.org/guestfish.1.html>`_ to extract single files.
 
 For restoring to local VMDK, the plugin option :strong:`localvmdk=yes` must be passed. The following example shows how to perform such a restore using :command:`bconsole`:
 
-.. code-block:: shell-session
+.. code-block:: bconsole
    :caption: Example restore to local VMDK
 
    *<input>restore</input>
@@ -472,24 +472,18 @@ For restoring to local VMDK, the plugin option :strong:`localvmdk=yes` must be p
    OK to run? (yes/mod/no): <input>yes</input>
    Job queued. JobId=639
 
-Note: Since Bareos :sinceVersion:`15.2.3: Add additional python plugin options` it is sufficient to add Python plugin options, e.g. by
+Note: Since Bareos :sinceVersion:`15.2.3: Add additional python plugin options`
+it is sufficient to add Python plugin options, e.g. by
 
-:strong:`python:localvmdk=yes`
+.. code-block:: bareosconfig
+
+   python:localvmdk=yes
 
 Before, all Python plugin must be repeated and the additional be added, like:
 
 .. code-block:: bareosconfig
-   :caption: /etc/bareos/vmware-plugin.ini
 
-   "python"
-   ":module_name=bareos-fd-vmware"
-   ":dc=dass5"
-   ":folder=/"
-   ":vmname=stephand-test02"
-   ":vcserver=virtualcenter5.dass-it"
-   ":vcuser=bakadm@vsphere.local"
-   ":vcpass=Bak.Adm-1234"
-   ":localvmdk=yes"
+   "python:module_name=bareos-fd-vmware:dc=dass5:folder=/:vmname=stephand-test02:vcserver=virtualcenter5.dass-it:vcuser=bakadm@vsphere.local:vcpass=Bak.Adm-1234:localvmdk=yes"
 
 After the restore process has finished, the restored VMDK files can be found under \path{/tmp/bareos-restores/}:
 
@@ -516,7 +510,7 @@ Debugging in case of problems
 If the backup or restore fails, it is possible to get verbose information by adding
 the plugin option :strong:`vadp_dumper_verbose=yes`
 
-.. code-block:: shell-session
+.. code-block:: bareosconfig
    :caption: debug vadp_dumper
 
        Plugin = "python"

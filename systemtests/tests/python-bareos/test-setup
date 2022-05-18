@@ -16,6 +16,10 @@ export TestName="$(get_test_name "$0")"
 # Fill ${BackupDirectory} with data.
 setup_data
 
+# Create a list of paths to backup,
+# containing only simple file types.
+echo "${BackupDirectory}/build" >"$tmp/file-list-simple"
+
 bin/bareos start
 
 print_debug "$(bin/bconsole <<< "status dir")"
