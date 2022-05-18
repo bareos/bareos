@@ -69,6 +69,7 @@ static const int debuglevel = 150;
   "  stopatmark=<log sequence number specification>:\n"     \
   "  stopat=<timestamp>\n"                                  \
   "  getconfigurationtimeout=<timeout-seconds>\n"           \
+  "  copyonly=<yes|no>\n"                                   \
   "  \n"                                                    \
   " examples:\n"                                            \
   "  timestamp: 'Apr 15, 2020 12:00 AM'\n"                  \
@@ -132,6 +133,7 @@ struct plugin_ctx {
   bool DoNoRecovery;
   bool ForceReplace;
   bool RecoverAfterRestore;
+  bool CopyOnly;
   char* plugin_options;
   char* filename;
   char* server_address;
@@ -177,7 +179,8 @@ enum plugin_argument_type
   argument_stopatmark,
   argument_stopat,
   argument_getoptions,
-  argument_get_configuration_timeout
+  argument_get_configuration_timeout,
+  argument_copyonly
 };
 
 struct plugin_argument {
@@ -198,6 +201,7 @@ static plugin_argument plugin_arguments[]
        {"stopatmark", argument_stopatmark},
        {"stopat", argument_stopat},
        {"getconfigurationtimeout", argument_get_configuration_timeout},  // sec
+       {"copyonly", argument_copyonly},
        {NULL, argument_none}};
 
 #ifdef __cplusplus
@@ -408,9 +412,9 @@ static bRC startBackupFile(PluginContext* ctx, struct save_pkt* sp)
            p_ctx->database, dt);
       break;
     default:
-      Jmsg(ctx, M_FATAL, "Unsuported backup level (%c).\n",
+      Jmsg(ctx, M_FATAL, "Unsupported backup level (%c).\n",
            p_ctx->backup_level);
-      Dmsg(ctx, debuglevel, "Unsuported backup level (%c).\n",
+      Dmsg(ctx, debuglevel, "Unsupported backup level (%c).\n",
            p_ctx->backup_level);
       return bRC_Error;
   }
@@ -614,6 +618,9 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
             break;
           case argument_get_configuration_timeout:
             uint32_destination = &p_ctx->get_configuration_timeout;
+            break;
+          case argument_copyonly:
+            bool_destination = &p_ctx->CopyOnly;
             break;
           default:
             break;
@@ -987,7 +994,7 @@ static void SetAdoConnectString(PluginContext* ctx)
 
 /**
  * Generate a valid connect string and the backup command we should execute
- * in the separate database controling thread.
+ * in the separate database controlling thread.
  */
 static inline void PerformAdoBackup(PluginContext* ctx)
 {
@@ -995,7 +1002,7 @@ static inline void PerformAdoBackup(PluginContext* ctx)
   PoolMem ado_connect_string(PM_NAME), ado_query(PM_NAME);
   POOLMEM* vdsname;
 
-  // If no explicit instance name given usedthe DEFAULT_INSTANCE name.
+  // If no explicit instance name given used the DEFAULT_INSTANCE name.
   if (!p_ctx->instance) { p_ctx->instance = strdup(DEFAULT_INSTANCE); }
 
   SetAdoConnectString(ctx);
@@ -1021,9 +1028,9 @@ static inline void PerformAdoBackup(PluginContext* ctx)
     default:
       Mmsg(ado_query,
            "BACKUP DATABASE [%s] TO VIRTUAL_DEVICE='%s' WITH BLOCKSIZE=%d, "
-           "BUFFERCOUNT=%d, MAXTRANSFERSIZE=%d",
+           "BUFFERCOUNT=%d, MAXTRANSFERSIZE=%d %s",
            p_ctx->database, vdsname, DEFAULT_BLOCKSIZE, DEFAULT_BUFFERS,
-           DEFAULT_BLOCKSIZE);
+           DEFAULT_BLOCKSIZE, p_ctx->CopyOnly ? ", COPY_ONLY" : "");
       break;
   }
 
@@ -1603,7 +1610,7 @@ bail_out:
   return bRC_Error;
 }
 
-// See if we need to do any postprocessing after the restore.
+// See if we need to do any post processing after the restore.
 static bRC end_restore_job(PluginContext* ctx, void* value)
 {
   bRC retval = bRC_OK;
