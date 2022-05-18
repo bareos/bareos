@@ -46,13 +46,15 @@ Build-Depends: acl-dev,
  zlib1g-dev,
  systemd,
  dh-systemd <buster> <stretch> <xenial> <bionic>,
- librados-dev <bullseye> <buster> <stretch> <xenial> <bionic>,
- libradosstriper-dev <bullseye> <buster> <stretch> <xenial> <bionic>,
- libcephfs-dev <bullseye> <buster> <stretch> <xenial> <bionic>,
- glusterfs-common <bullseye> <buster> <stretch> <xenial> <bionic>,
+ librados-dev <bullseye> <buster> <stretch> <xenial> <bionic> <focal> <jammy>,
+ libradosstriper-dev <bullseye> <buster> <stretch> <xenial> <bionic> <focal> <jammy>,
+ libcephfs-dev <bullseye> <buster> <stretch> <xenial> <bionic> <focal> <jammy>,
  ucslint <univention>,
  univention-config-dev <univention>,
  wget <univention>
+# required for bareos-storage-glusterfs and bareos-filedaemon-glusterfs-plugin
+# glusterfs-common <bullseye> <buster> <stretch> <xenial> <bionic> <focal> <jammy>,
+# libglusterfs-dev <bullseye> <buster> <focal> <jammy>,
 Build-Conflicts: python2.2-dev, python2.3, python2.4, qt3-dev-tools, libqt4-dev
 Standards-Version: 3.9.6
 Vcs-Git: git://github.com/bareos/bareos.git -b master
@@ -275,7 +277,7 @@ Package:        bareos-director-python2-plugin
 Architecture:   any
 Section:        python
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Depends:        bareos-common (= ${binary:Version}), bareos-director-python-plugins-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
 Provides:       bareos-director-python-plugin (= ${binary:Version})
 Replaces:       bareos-director-python-plugin
 Conflicts:      bareos-director-python-plugin
@@ -290,7 +292,7 @@ Package:        bareos-director-python3-plugin
 Architecture:   any
 Section:        python
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Depends:        bareos-common (= ${binary:Version}), bareos-director-python-plugins-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
 Provides:       bareos-director-python-plugin (= ${binary:Version})
 Replaces:       bareos-director-python-plugin
 Conflicts:      bareos-director-python-plugin
@@ -312,6 +314,18 @@ Description: Backup Archiving Recovery Open Sourced - director Python plugin com
  .
  This package provides common files for both Python 2 and Python 3 director plugins.
 
+Package:        bareos-contrib-director-python-plugins
+Architecture:   any
+Section:        python
+Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
+Depends:        bareos-common (= ${binary:Version}), bareos-director-python-plugin (= ${binary:Version}), ${misc:Depends}
+Recommends:     bareos-director-python3-plugin
+Description: Backup Archiving Recovery Open Sourced - contributed Director plugins
+ Bareos is a set of programs to manage backup, recovery and verification of
+ data across a network of computers of different kinds.
+ .
+ This package provides additional Bareos Director Python plugins, not part of the Bareos project.
+
 
 Package:        bareos-filedaemon-ceph-plugin
 Architecture:   linux-any
@@ -328,11 +342,11 @@ Package:        bareos-filedaemon-python2-plugin
 Architecture:   any
 Section:        python
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}, bareos-filedaemon-python-plugins-common
+Depends:        bareos-common (= ${binary:Version}), bareos-filedaemon-python-plugins-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
 Recommends:     python-dateutil
 Provides:       bareos-filedaemon-python-plugin (= ${binary:Version})
 Replaces:       bareos-filedaemon-python-plugin
-Conflicts:      bareos-filedaemon-python-plugin (< 20.0.0)
+Conflicts:      bareos-filedaemon-python-plugin (<< 20.0.0)
 Description: Backup Archiving Recovery Open Sourced - file daemon Python plugin
  Bareos is a set of programs to manage backup, recovery and verification of
  data across a network of computers of different kinds.
@@ -344,11 +358,11 @@ Package:        bareos-filedaemon-python3-plugin
 Architecture:   any
 Section:        python
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}, bareos-filedaemon-python-plugins-common
+Depends:        bareos-common (= ${binary:Version}), bareos-filedaemon-python-plugins-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
 Recommends:     python3-dateutil
 Provides:       bareos-filedaemon-python-plugin (= ${binary:Version})
 Replaces:       bareos-filedaemon-python-plugin
-Conflicts:      bareos-filedaemon-python-plugin (< 20.0.0)
+Conflicts:      bareos-filedaemon-python-plugin (<< 20.0.0)
 Description: Backup Archiving Recovery Open Sourced - file daemon Python plugin
  Bareos is a set of programs to manage backup, recovery and verification of
  data across a network of computers of different kinds.
@@ -426,6 +440,18 @@ Description: Backup Archiving Recovery Open Sourced - file daemon Apache Libclou
  .
  This package provides the Apache Libcloud Python plugin for the filedaemon.
 
+Package:        bareos-contrib-filedaemon-python-plugins
+Architecture:   any
+Section:        python
+Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
+Depends:        bareos-common (= ${binary:Version}), bareos-filedaemon-python-plugin (= ${binary:Version}), ${misc:Depends}
+Recommends:     bareos-filedaemon-python3-plugin
+Description: Backup Archiving Recovery Open Sourced - contributed File Daemon plugins
+ Bareos is a set of programs to manage backup, recovery and verification of
+ data across a network of computers of different kinds.
+ .
+ This package provides additional File Daemon Python plugins, not part of the Bareos project.
+
 
 Package:        bareos-storage-ceph
 Architecture:   linux-any
@@ -453,7 +479,7 @@ Package:        bareos-storage-python2-plugin
 Architecture:   any
 Section:        python
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Depends:        bareos-common (= ${binary:Version}), bareos-storage-python-plugins-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
 Provides:       bareos-storage-python-plugin (= ${binary:Version})
 Replaces:       bareos-storage-python-plugin
 Conflicts:      bareos-storage-python-plugin
@@ -468,7 +494,7 @@ Package:        bareos-storage-python3-plugin
 Architecture:   any
 Section:        python
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Depends:        bareos-common (= ${binary:Version}), bareos-storage-python-plugins-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
 Provides:       bareos-storage-python-plugin (= ${binary:Version})
 Replaces:       bareos-storage-python-plugin
 Conflicts:      bareos-storage-python-plugin
@@ -510,16 +536,15 @@ Description: Backup Archiving Recovery Open Sourced - tray monitor
 
 Package: bareos-webui
 Architecture: all
-Depends: apache2 | httpd, libapache2-mod-php | libapache2-mod-php5 | libapache2-mod-php7 | php | php5 | php7 | php-cgi,
-   php-common | php5-common | php7-common,
-   php-date | php5-date | php7-date,
-   php-intl | php5-intl | php7-intl,
-   php-json | php5-json | php7-json,
-   php-curl | php5-curl | php7-curl,
-   php-gettext | php5-gettext | php7-gettext | php7.4-gettext,
+Depends: apache2 | httpd,
+   libapache2-mod-php (>= 7.0),
+   php-date,
+   php-intl,
+   php-json,
+   php-curl,
    ${misc:Depends}
 Description: Backup Archiving Recovery Open Sourced - webui
- This package contains the webui.
+ This package contains the Bareos WebUI.
 
 
 Package:        bareos-contrib-tools
@@ -533,3 +558,5 @@ Description: Backup Archiving Recovery Open Sourced - contributed tools
  data across a network of computers of different kinds.
  .
  This package provides some additional tools, not part of the Bareos project.
+
+
