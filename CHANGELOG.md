@@ -83,9 +83,10 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - `bvfs_update` now uses `unordered_map` instead of `htable` for the pathid cache [PR #1138]
 - cats: filtered zero file jobs list is now sorted [PR #1172]
 - dird: console: changed list jobs jobstatus argument to accept comma separated value [PR #1169]
+- cats: management scripts remove db_driver support [PR #1081]
 
 ### Deprecated
-- make_catalog_backup.pl is now a shell wrapper script which will remove in version 23.
+- make_catalog_backup.pl is now a shell wrapper script which will be removed in version 23.
 
 ### Removed
 
@@ -141,6 +142,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1070]: https://github.com/bareos/bareos/pull/1070
 [PR #1072]: https://github.com/bareos/bareos/pull/1072
 [PR #1079]: https://github.com/bareos/bareos/pull/1079
+[PR #1081]: https://github.com/bareos/bareos/pull/1081
 [PR #1082]: https://github.com/bareos/bareos/pull/1082
 [PR #1083]: https://github.com/bareos/bareos/pull/1083
 [PR #1087]: https://github.com/bareos/bareos/pull/1087
@@ -178,4 +180,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1172]: https://github.com/bareos/bareos/pull/1172
 [PR #1177]: https://github.com/bareos/bareos/pull/1177
 [PR #1183]: https://github.com/bareos/bareos/pull/1183
+[PR #1170]: https://github.com/bareos/bareos/pull/1170
+[PR #1171]: https://github.com/bareos/bareos/pull/1171
+[PR #1172]: https://github.com/bareos/bareos/pull/1172
 [unreleased]: https://github.com/bareos/bareos/tree/master
