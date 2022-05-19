@@ -29,7 +29,7 @@
 %define python2_build_requires python-rpm-macros python2-rpm-macros python-devel python-setuptools
 %endif
 
-%if 0%{?fedora} >= 35 || 0%{?suse_version} >= 1550
+%if 0%{?fedora} >= 35 || 0%{?suse_version} >= 1550 || 0%{?rhel_version} >= 900
 %define skip_python2 1
 %endif
 
