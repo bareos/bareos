@@ -1,7 +1,7 @@
 Package: bareos-webui
 Architecture: all
 Depends: apache2 | httpd,
-   libapache2-mod-php,
+   libapache2-mod-php (>= 7.0),
    php-date,
    php-intl,
    php-json,
