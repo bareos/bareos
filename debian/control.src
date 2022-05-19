@@ -38,13 +38,15 @@ Build-Depends: acl-dev,
  zlib1g-dev,
  systemd,
  dh-systemd <buster> <stretch> <xenial> <bionic>,
- librados-dev <bullseye> <buster> <stretch> <xenial> <bionic>,
- libradosstriper-dev <bullseye> <buster> <stretch> <xenial> <bionic>,
- libcephfs-dev <bullseye> <buster> <stretch> <xenial> <bionic>,
- glusterfs-common <bullseye> <buster> <stretch> <xenial> <bionic>,
+ librados-dev <bullseye> <buster> <stretch> <xenial> <bionic> <focal> <jammy>,
+ libradosstriper-dev <bullseye> <buster> <stretch> <xenial> <bionic> <focal> <jammy>,
+ libcephfs-dev <bullseye> <buster> <stretch> <xenial> <bionic> <focal> <jammy>,
  ucslint <univention>,
  univention-config-dev <univention>,
  wget <univention>
+# required for bareos-storage-glusterfs and bareos-filedaemon-glusterfs-plugin
+# glusterfs-common <bullseye> <buster> <stretch> <xenial> <bionic> <focal> <jammy>,
+# libglusterfs-dev <bullseye> <buster> <focal> <jammy>,
 Build-Conflicts: python2.2-dev, python2.3, python2.4, qt3-dev-tools, libqt4-dev
 Standards-Version: 3.9.6
 Vcs-Git: git://github.com/bareos/bareos.git -b master
