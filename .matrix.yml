@@ -210,6 +210,16 @@ OS:
            - python-bareos
 
   EL:
+    "9":
+      TYPE: rpm
+      IMAGE: centos9
+      ARCH:
+      - x86_64
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-vmware
+           - python-bareos
     "8":
       TYPE: rpm
       IMAGE: rocky8
