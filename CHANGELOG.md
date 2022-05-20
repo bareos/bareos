@@ -5,6 +5,17 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Fixed
+- debian: fix package dependencies for webui and Ceph [PR #1184]
+
+### Changed
+
+### Security
+
+### Documentation
+
+
+
 ## [21.1.3] - 2022-05-09
 
 ### Fixed
@@ -550,4 +561,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1167]: https://github.com/bareos/bareos/pull/1167
 [PR #1173]: https://github.com/bareos/bareos/pull/1173
 [PR #1175]: https://github.com/bareos/bareos/pull/1175
+[PR #1184]: https://github.com/bareos/bareos/pull/1184
 [unreleased]: https://github.com/bareos/bareos/tree/master
