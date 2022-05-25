@@ -3,7 +3,7 @@ set -e
 set -o pipefail
 set -u
 #
-# Run a backup and cancel it.
+# Kill the daemons while running a backup.
 # Check that metadata is still saved with checkpoints.
 #
 TestName="$(basename "$(pwd)")"
@@ -17,7 +17,9 @@ export TestName
 
 start_test
 
-for daemon in "sd" "fd" "dir"; do
+slowjob="slow-backup-bareos-fd"
+
+for daemon in "dir" "sd" "fd"; do
 
     backup_log=$tmp/kill-$daemon-backup-checkpoints.out
     restore_log=$tmp/kill-$daemon-restore-checkpoints.out
@@ -25,8 +27,6 @@ for daemon in "sd" "fd" "dir"; do
 
     rm -f $backup_log
     rm -f $restore_log
-
-    slowjob="slow-backup-bareos-fd"
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
@@ -38,29 +38,29 @@ END_OF_DATA
 
     run_bconsole
 
-    sleep 10
+    sleep 17
 
     slowjobid=$(grep 'Job queued. JobId=' $backup_log | sed -n -e 's/^.*JobId=//p')
 
     if [ $daemon == "fd" ]; then
-        fd_pid=$(pidof ${BAREOS_FILEDAEMON_BINARY})
         echo "Killing the FD"
-        kill -KILL "$fd_pid"
+        pkill -KILL -f "${BAREOS_FILEDAEMON_BINARY}"
+        sleep 3
         ${rscripts}/bareos-ctl-fd start
     fi
 
     if [ $daemon == "sd" ]; then
 
-        sd_pid=$(pidof ${BAREOS_STORAGEDAEMON_BINARY})
         echo "Killing the SD"
-        kill -KILL "$sd_pid"
+        pkill -KILL -f "${BAREOS_STORAGEDAEMON_BINARY}"
+        sleep 3
         ${rscripts}/bareos-ctl-sd start
     fi
     if [ $daemon == "dir" ]; then
 
-        dir_pid=$(pidof ${BAREOS_DIRECTOR_BINARY})
         echo "Killing the DIR"
-        kill -KILL "$dir_pid"
+        pkill -KILL -f "${BAREOS_DIRECTOR_BINARY}"
+        sleep 3
         ${rscripts}/bareos-ctl-dir start
     fi
 
@@ -77,46 +77,10 @@ END_OF_DATA
 
     run_bconsole
 
-    # Check that a timed checkpoint was triggered
-    if ! grep "Doing timed backup checkpoint. Next checkpoint in 3 seconds" "$backup_log"; then
-      echo "Timed checkpoint was not triggered on time!" >&2
-      estat=1
-    fi
-
-    if ! grep "Volume changed, doing checkpoint:" "$backup_log"; then
-        echo "Checkpoint was not triggered on volume changes!" >&2
-        estat=1
-    fi
-
     # Check that the restore works fine
-    if ! grep "Termination:            Restore OK" "$restore_log" ; then
-      echo "Restore job did not go well!" >&2
-      estat=1
-    fi
-
-    # Check that part of the files were written despite the kill
-
-    if [ $daemon != "dir" ]; then
-        # When dir dies, it cannot generate a report, and thus cannot extract data from it.
-        NumberOfBackedUpFiles=$(grep 'FD Files Written:       ' $backup_log | sed -n -e 's/^.*Written:       //p')
-
-        if [ $NumberOfBackedUpFiles -le 0 ]; then
-          echo "Checkpoint files were not correctly saved! Number of backed up files: ${NumberOfBackedUpFiles}" >&2
-          estat=1
-        fi
-
-        # Certain systems do not support multiple types for find (-type f,l)
-        NumberOfFilesRestored=$(find $restore_directory/$tmp -type f | wc -l)
-        NumberOfLinksRestored=$(find $restore_directory/$tmp -type l | wc -l)
-        NumberOfDirectoriesRestored=$(find $restore_directory/$tmp -type d | wc -l)
-        RestoredItems=$(expr $NumberOfFilesRestored + $NumberOfLinksRestored + $NumberOfDirectoriesRestored)
-
-        # Check that the restored files are actually there
-        if [ ${RestoredItems} -lt ${NumberOfBackedUpFiles} ]; then
-          echo "Actual restored items count not met. Items (files, links, directories) found = ${RestoredItems} , backed up files = ${NumberOfBackedUpFiles}" >&2
-          estat=1
-        fi
-    fi
+    expect_grep "Termination:            Restore OK" \
+                "$restore_log" \
+                "Restore job did not go well!"
 
 done #end for
 

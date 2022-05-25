@@ -3,7 +3,7 @@ set -e
 set -o pipefail
 set -u
 #
-# Run a backup and cancel it.
+# Stop the daemons while running backup.
 # Check that metadata is still saved with checkpoints.
 #
 TestName="$(basename "$(pwd)")"
@@ -35,7 +35,7 @@ END_OF_DATA
 
 run_bconsole
 
-sleep 10
+sleep 14
 
 slowjobid=$(grep 'Job queued. JobId=' $backup_log | sed -n -e 's/^.*JobId=//p')
 
@@ -56,29 +56,26 @@ END_OF_DATA
 run_bconsole
 
 # Check that a timed checkpoint was triggered
-if ! grep "Doing timed backup checkpoint. Next checkpoint in 3 seconds" "$backup_log"; then
-  echo "Timed checkpoint was not triggered on time!" >&2
-  estat=1
-fi
+expect_grep "Doing timed backup checkpoint. Next checkpoint in 3 seconds" \
+            "$backup_log" \
+            "Timed checkpoint was not triggered on time!"
 
-if ! grep "Volume changed, doing checkpoint:" "$backup_log"; then
-    echo "Checkpoint was not triggered on volume changes!" >&2
-    estat=1
-fi
+expect_grep "Volume changed, doing checkpoint:" \
+            "$backup_log" \
+            "Checkpoint was not triggered on volume changes!"
 
 NumberOfBackedUpFiles=$(grep 'FD Files Written:       ' $backup_log | sed -n -e 's/^.*Written:       //p')
 
-# Check that part of the files were written despite the cancel
+# Check that part of the files were written despite the stop
 if [ $NumberOfBackedUpFiles -le 0 ]; then
   echo "Checkpoint files were not correctly saved! Number of backed up files: ${NumberOfBackedUpFiles}" >&2
   estat=1
 fi
 
 # Check that the restore works fine
-if ! grep "Termination:            Restore OK" "$restore_log" ; then
-  echo "Restore job did not go well!" >&2
-  estat=1
-fi
+expect_grep "Termination:            Restore OK" \
+            "$restore_log"\
+            "Restore job did not go well!"
 
 # Certain systems do not support multiple types for find (-type f,l)
 NumberOfFilesRestored=$(find $tmp/checkpoint-restores/$tmp -type f | wc -l)
