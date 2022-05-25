@@ -625,15 +625,13 @@ get_out:
   return true;
 }
 
-bool StorageDaemonDeviceControlRecord::DirAskToUpdateFileList(
-    JobControlRecord* jcr)
+bool StorageDaemonDeviceControlRecord::DirAskToUpdateFileList()
 {
   BareosSocket* dir = jcr->dir_bsock;
   return dir->fsend(Update_filelist, jcr->Job);
 }
 
-bool StorageDaemonDeviceControlRecord::DirAskToUpdateJobRecord(
-    JobControlRecord* jcr)
+bool StorageDaemonDeviceControlRecord::DirAskToUpdateJobRecord()
 {
   BareosSocket* dir = jcr->dir_bsock;
   return dir->fsend(Update_jobrecord, jcr->Job, jcr->JobFiles, jcr->JobBytes);

@@ -37,8 +37,8 @@ class StorageDaemonDeviceControlRecord : public DeviceControlRecord {
   bool DirAskSysopToMountVolume(int mode) override;
   bool DirAskSysopToCreateAppendableVolume() override;
   bool DirGetVolumeInfo(enum get_vol_info_rw writing) override;
-  bool DirAskToUpdateFileList(JobControlRecord* jcr) override;
-  bool DirAskToUpdateJobRecord(JobControlRecord* jcr) override;
+  bool DirAskToUpdateFileList() override;
+  bool DirAskToUpdateJobRecord() override;
   DeviceControlRecord* get_new_spooling_dcr() override;
 };
 

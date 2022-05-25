@@ -101,7 +101,7 @@ bool IsAttribute(DeviceRecord* record)
 static void UpdateFileList(JobControlRecord* jcr)
 {
   Dmsg0(100, _("... update file list\n"));
-  jcr->impl->dcr->DirAskToUpdateFileList(jcr);
+  jcr->impl->dcr->DirAskToUpdateFileList();
 }
 
 static void UpdateJobmediaRecord(JobControlRecord* jcr)
@@ -114,7 +114,7 @@ static void UpdateJobrecord(JobControlRecord* jcr)
 {
   Dmsg2(100, _("... update job record: %llu bytes %lu files\n"), jcr->JobBytes,
         jcr->JobFiles);
-  jcr->impl->dcr->DirAskToUpdateJobRecord(jcr);
+  jcr->impl->dcr->DirAskToUpdateJobRecord();
 }
 
 void DoBackupCheckpoint(JobControlRecord* jcr)
@@ -371,10 +371,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       if (me->checkpoint_interval) {
         if (jcr->impl->dcr->VolMediaId != current_volumeid) {
           Jmsg0(jcr, M_INFO, 0, _("Volume changed, doing checkpoint:\n"));
-          // During a volume change, the jobmedia table gets updated, so
-          // no need to do it again here
-          UpdateFileList(jcr);
-          UpdateJobrecord(jcr);
+          DoBackupCheckpoint(jcr);
           current_volumeid = jcr->impl->dcr->VolMediaId;
         } else {
           next_checkpoint_time = DoTimedCheckpoint(jcr, next_checkpoint_time,
@@ -445,7 +442,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       }
       jcr->setJobStatus(JS_ErrorTerminated);
       ok = false;
-    } else {
+    } else if (ok && !jcr->IsJobCanceled()) {
       // Send attributes of the final partial block of the session
       processed_files.push_back(std::move(file_currently_processed));
       SaveFullyProcessedFiles(jcr, processed_files);
