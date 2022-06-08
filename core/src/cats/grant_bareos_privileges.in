@@ -23,13 +23,13 @@
 # shell script to grant privileges to the bareos database
 set -e
 set -u
-#
-# Source the Bareos config functions.
-#
 
 # change to root dir
 cd /
 
+#
+# Source the Bareos config functions.
+#
 . "@scriptdir@"/bareos-config-lib.sh
 
 db_name="${db_name:-$(get_database_name @db_name@)}"

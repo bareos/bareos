@@ -36,10 +36,8 @@ DIRECTOR_DAEMON_GROUP="${BAREOS_DIR_GROUP:-@dir_group@}"
 DAEMON_USER="$DIRECTOR_DAEMON_USER"
 DAEMON_GROUP="$DIRECTOR_DAEMON_GROUP"
 
-DB_NAME="${db_name:-@db_name@}"
 DB_VERSION="${BDB_VERSION:-@BDB_VERSION@}"
 SQL_DDL_DIR="${SQL_DDL_DIR:-@scriptdir@/ddl}"
-POSTGRESQL_BINDIR="@POSTGRESQL_BINDIR@"
 
 PASSWORD_SUBST="\
 XXX_REPLACE_WITH_DIRECTOR_PASSWORD_XXX \
@@ -75,7 +73,7 @@ is_function()
 contains() {
     haystack="$1"
     needle="$2"
-    if [ "${haystack#*"$needle"}" != "$haystack" ];then
+    if [ "${haystack#*"$needle"}" != "$haystack" ]; then
         return 0    # $needle is in $haystack
     else
         return 1    # $needle is not in $haystack
@@ -431,7 +429,6 @@ get_config_path2()
 
 deploy_config()
 {
-   RC=1
    ARGS=$#
    SOURCE=${1:-}
    DEST=${2:-}
@@ -440,10 +437,13 @@ deploy_config()
    [ -d "${SOURCE}" ] || return 1
    [ -n "${DEST}" ] || return 1
 
+   RC=0
    if [ $ARGS -eq 2 ]; then
       deploy_config2 "${SOURCE}" "${DEST}" || RC=$?
    elif [ $ARGS -eq 3 ]; then
       deploy_config3 "${SOURCE}" "${DEST}" "${COMPONENT}" || RC=$?
+   else
+      RC=1
    fi
 
    if [ $RC -eq 0 ]; then
@@ -512,8 +512,6 @@ deploy_config3()
    #   1: otherwise (on error or if no new config files are available)
    #
 
-   RC=1
-
    SOURCE=${1:-}
    DEST=${2:-}
    COMPONENT=${3:-}
@@ -527,6 +525,7 @@ deploy_config3()
       return 1
    fi
 
+   RC=0
    if [ -d "${SOURCE_CONFIG_PATH}" ]; then
       deploy_config2 "${SOURCE_CONFIG_PATH}" "${DEST}/${COMPONENT}.d/" || RC=$?
    else
@@ -639,8 +638,9 @@ set_config_param_in_directory()
     if ! [ -f "${FILE}" ]; then
         printf "%s {\n  Name = %s\n}\n" "${SECTION}" "${NAME}" > "${FILE}"
     fi
-    set_config_param_in_file "${FILE}" "${SECTION}" "${NAME}" "${PARAM}" "${VALUE}"
-    return $?
+    RC=0
+    set_config_param_in_file "${FILE}" "${SECTION}" "${NAME}" "${PARAM}" "${VALUE}" || RC=$?
+    return ${RC}
 }
 
 set_config_param_in_file()
@@ -667,6 +667,7 @@ set_config_param_in_file()
     fi
 
     TEMP="$(mktemp)"
+    RC=0
     $AWK -v SECTION="${SECTION}" -v NAME="${NAME}" -v PARAM="${PARAM}" -v VALUE="${VALUE}" '
   BEGIN {
     IGNORECASE = 1;
@@ -714,8 +715,8 @@ set_config_param_in_file()
   printed == 1 {
     printed = 0
   }
-    ' "${FILE}" > "${TEMP}"
-    if [ $? -ne 0 ]; then
+    ' "${FILE}" > "${TEMP}" || RC=$?
+    if [ ${RC} -ne 0 ]; then
         warn "failed to set parameter ${SECTION} ${NAME} ${PARAM} = ${VALUE}: replace failed"
         rm -f "${TEMP}"
         return 1
@@ -724,8 +725,7 @@ set_config_param_in_file()
     chown --reference="${FILE}" "${TEMP}"
     chmod --reference="${FILE}" "${TEMP}"
 
-    if ! mv "${TEMP}" "${FILE}"
-    then
+    if ! mv "${TEMP}" "${FILE}"; then
         warn "failed to set parameter ${SECTION} ${NAME} ${PARAM} = ${VALUE}: replacing ${FILE} failed"
         rm -f "${TEMP}"
         return 1
@@ -786,22 +786,25 @@ get_database_param()
 get_database_name()
 {
     DEFAULT="${1-}"
-    get_database_param "dbname" "$DEFAULT"
-    return $?
+    RC=0
+    get_database_param "dbname" "$DEFAULT" || RC=$?
+    return ${RC}
 }
 
 get_database_user()
 {
     DEFAULT="${1-}"
-    get_database_param "dbuser" "$DEFAULT"
-    return $?
+    RC=0
+    get_database_param "dbuser" "$DEFAULT" || RC=$?
+    return ${RC}
 }
 
 get_database_password()
 {
     DEFAULT="${1-}"
-    get_database_param "dbpassword" "$DEFAULT"
-    return $?
+    RC=0
+    get_database_param "dbpassword" "$DEFAULT" || RC=$?
+    return ${RC}
 }
 
 get_config_line_parameter()
@@ -849,6 +852,23 @@ is_template_sql_file()
     fi
 }
 
+get_unused_separator()
+{
+    # Try to find a separator character (for sed)
+    # not used in source string.
+
+    source="${1:-}"
+    sep=""
+    candidates="# , / % + - _ ; = ° §"
+    for sep in ${candidates}; do
+      if ! contains "${source}" "${sep}"; then
+        printf "%s" "${sep}"
+        return 0
+      fi
+    done
+    return 1
+}
+
 get_translated_sql_file()
 {
     # replaces variables in a SQL DDL file
@@ -870,15 +890,12 @@ get_translated_sql_file()
     db_password="${db_password-$(get_database_password @db_password@)}"
     db_version=$(get_database_version)
     # Try to find a separator character (for sed) not used in db_password.
-    sep=""
-    candidates="# , / % + - _ * ; = ° § :"
-    for sep in ${candidates}; do
-      contains "${db_password}" "${sep}" || break
-      if [ "${sep}" = ":" ]; then
-        error "Not able to find a free separator for sed not contained in your password"
-        return 3
-      fi
-    done
+    RC=0
+    sep="$(get_unused_separator)" || RC=$?
+    if [ ${RC} -ne 0 ]; then
+      error "Not able to find a free separator for sed not used in your password"
+      return 3
+    fi
 
     if [ "${db_password}" != "" ]; then
         db_password="PASSWORD '${db_password}'"

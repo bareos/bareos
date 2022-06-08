@@ -80,14 +80,13 @@ if [ -n "$(psql -q -d "${db_name}" -t -c "\dt+")" ];then
 fi
 
 print_debug "Restore the database \"${db_name}\" with sql dump"
-if ! psql -q -d "${db_name}" -f "${CATALOG_BACKUP_FILE}"
-then
+if ! psql -q -d "${db_name}" -f "${CATALOG_BACKUP_FILE}"; then
     print_debug "The restore psql command failed on \"${db_name}\" "
     estat=2
     end_test
 fi
 
-if [ -z "$(psql -q -d "${db_name}" -t -c "\dt+")" ];then
+if [ -z "$(psql -q -d "${db_name}" -t -c "\dt+")" ]; then
     print_debug "There not enough tables restored on \"${db_name}\" test failed"
     estat=3
     end_test
