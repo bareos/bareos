@@ -58,8 +58,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 option(ENABLE_SANITIZERS "Build with ASan/LSan/UBSan enabled" OFF)
 if(ENABLE_SANITIZERS)
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=undefined -fsanitize=address -fno-sanitize-recover")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=undefined -fsanitize=address -fno-sanitize-recover")
+    set(CMAKE_CXX_FLAGS
+        "${CMAKE_CXX_FLAGS} -fsanitize=undefined -fsanitize=address -fno-sanitize-recover"
+    )
+    set(CMAKE_C_FLAGS
+        "${CMAKE_C_FLAGS} -fsanitize=undefined -fsanitize=address -fno-sanitize-recover"
+    )
   else()
     message(
       FATAL_ERROR
@@ -444,7 +448,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   # c++17 removed register keyword
   set(Python2_CCSHARED -Wno-register)
 
-  set(Python2_SITELIB ${plugindir})
+  set(Python2_SITEARCH ${plugindir})
   set(Python3_SITEARCH ${plugindir})
 endif()
 

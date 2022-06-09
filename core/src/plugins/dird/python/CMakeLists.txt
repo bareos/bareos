@@ -26,7 +26,9 @@ if(Python2_FOUND)
   install(TARGETS python-dir DESTINATION ${plugindir})
   target_link_libraries(python-dir ${Python2_LIBRARIES} bareos)
   target_include_directories(python-dir PUBLIC ${Python2_INCLUDE_DIRS})
-  target_compile_definitions(python-dir PUBLIC PY2MODDIR=\"${Python2_SITELIB}\")
+  target_compile_definitions(
+    python-dir PUBLIC PY2MODDIR=\"${Python2_SITEARCH}\"
+  )
   target_compile_options(python-dir PUBLIC ${Python2_CCSHARED})
   add_dependencies(python-dir bareosdir-python2-module)
 
@@ -39,7 +41,7 @@ endif()
 
 if(Python2_FOUND)
   add_library(bareosdir-python2-module MODULE module/bareosdir.cc)
-  install(TARGETS bareosdir-python2-module DESTINATION ${Python2_SITELIB})
+  install(TARGETS bareosdir-python2-module DESTINATION ${Python2_SITEARCH})
   set_target_properties(
     bareosdir-python2-module
     PROPERTIES PREFIX ""
