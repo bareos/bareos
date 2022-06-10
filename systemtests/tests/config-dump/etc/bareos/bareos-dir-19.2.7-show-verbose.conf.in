@@ -184,8 +184,8 @@ Job {
   # RescheduleTimes = 5
   Priority = 11
   # AllowMixedPriority = no
-  run before job = "/usr/lib/bareos/scripts/make_catalog_backup.pl MyCatalog"
-  run after job = "/usr/lib/bareos/scripts/delete_catalog_backup"
+  run before job = "/usr/lib/bareos/scripts/make_catalog_backup MyCatalog"
+  run after job = "/usr/lib/bareos/scripts/delete_catalog_backup MyCatalog"
   # Accurate = no
   # AllowDuplicateJobs = yes
   # AllowHigherDuplicates = yes
@@ -276,7 +276,7 @@ Catalog {
   DbPassword = "@db_password@"
   DbUser = "@db_user@"
   DbName = "@db_name@"
-  DbDriver = "XXX_REPLACE_WITH_DATABASE_DRIVER_XXX"
+  # DbDriver = "XXX_REPLACE_WITH_DATABASE_DRIVER_XXX"
   # MultipleConnections = no
   # DisableBatchInsert = no
   # Reconnect = no

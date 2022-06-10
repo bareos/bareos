@@ -180,7 +180,6 @@ BuildRequires: glibc
 BuildRequires: glibc-devel
 BuildRequires: ncurses-devel
 BuildRequires: pam-devel
-BuildRequires: perl
 BuildRequires: pkgconfig
 BuildRequires: python-rpm-macros
 BuildRequires: readline-devel

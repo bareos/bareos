@@ -1,7 +1,7 @@
 #!/bin/sh
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2014-2015 Bareos GmbH & Co. KG
+#   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -34,19 +34,8 @@ else
 
     #dbc_dbserver=
     #dbc_dbport=
-    dbname=`get_database_name @db_name@`
-    dbuser=`get_database_user @db_user@`
-    dbpass=`get_database_password`
-    case "`get_database_driver`" in
-        postgresql)
-            dbtype="pgsql"
-            ;;
-        mysql)
-            dbtype="mysql"
-            ;;
-        sqlite3)
-            dbtype="sqlite3"
-            basepath="`get_working_dir`"
-            ;;
-    esac
+    dbname=$(get_database_name @db_name@)
+    dbuser=$(get_database_user @db_user@)
+    dbpass=$(get_database_password)
+    dbtype="pgsql"
 fi

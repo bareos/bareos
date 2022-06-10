@@ -1,12 +1,30 @@
 #!/bin/sh
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
 
-LIB=@scriptdir@/bareos-config-lib.sh
+LIB="@scriptdir@/bareos-config-lib.sh"
 
-if ! [ -r "$LIB" ]; then
-    echo "failed to read library $LIB"
+if ! [ -r "${LIB}" ]; then
+    echo "failed to read library ${LIB}"
     exit 1
 fi
-. $LIB
+. "${LIB}"
 
 usage()
 {
@@ -29,7 +47,7 @@ args=$#
 # to use its functions
 if [ $args -ge 1 ]; then
     # executes given arguments
-    if is_function $1; then
+    if is_function "$1"; then
         "$@"
     else
         echo "failed to execute $*. Not found."

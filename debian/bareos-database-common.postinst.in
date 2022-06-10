@@ -39,7 +39,7 @@ if [ -r @scriptdir@/bareos-config-lib.sh ]; then
         if [ "$param2" ]; then
             case "$param1" in
                 configure|reconfigure)
-                    param2=`get_database_version_by_release "$param2"`
+                    param2=$(get_database_version_by_release "$param2")
                     ;;
                 *)
                     ;;
@@ -56,9 +56,6 @@ if [ -r @scriptdir@/bareos-config-lib.sh ]; then
         dbc_pgsql_createdb_encoding="SQL_ASCII"
         dbc_pgsql_createdb_collate="C"
         dbc_pgsql_createdb_ctype="C"
-
-        # dbc_dbfile_owner: only required for sqlite3
-        dbc_dbfile_owner=`get_user_dir`:`get_group_dir`
 
         # While substitution on install is supported
         # by all recent versions of dbconfig

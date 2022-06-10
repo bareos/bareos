@@ -3,7 +3,9 @@
 Using Tape Drives without Autochanger
 =====================================
 
-:index:`\ <single: Strategy; Backup>`\  :index:`\ <single: Backup Strategies>`\
+.. index
+   single: Strategy; Backup
+   single: Backup Strategies
 
 Although Recycling and Backing Up to Disk Volume have been discussed in previous chapters, this chapter is meant to give you an overall view of possible backup strategies and to explain their advantages and disadvantages.
 
@@ -14,7 +16,9 @@ Although Recycling and Backing Up to Disk Volume have been discussed in previous
 Simple One Tape Backup
 ----------------------
 
-:index:`\ <single: Backup; One Tape>`\  :index:`\ <single: One Tape Backup>`\
+.. index::
+   single: Backup; One Tape
+   single: One Tape Backup
 
 Probably the simplest strategy is to back everything up to a single tape and insert a new (or recycled) tape when it fills and Bareos requests a new one.
 
@@ -50,7 +54,8 @@ Using this strategy, one typically does a Full backup once a week followed by da
 Manually Changing Tapes
 -----------------------
 
-:index:`\ <single: Tape; Manually Changing>`\
+.. index::
+   single: Tape; Manually Changing
 
 If you use the strategy presented above, Bareos will ask you to change the tape, and you will unmount it and then remount it when you have inserted the new tape.
 
@@ -102,7 +107,9 @@ If you do not wish to interact with Bareos to change each tape, there are severa
 Daily Tape Rotation
 -------------------
 
-:index:`\ <single: Rotation; Daily Tape>`\  :index:`\ <single: Daily Tape Rotation>`\
+.. index::
+   single: Rotation; Daily Tape
+   single: Daily Tape Rotation
 
 This scheme is quite different from the one mentioned above in that a Full backup is done to a different tape every day of the week. Generally, the backup will cycle continuously through five or six tapes each week. Variations are to use a different tape each Friday, and possibly at the beginning of the month. Thus if backups are done Monday through Friday only, you need only five tapes, and by having two Friday tapes, you need a total of six tapes. Many sites run this way, or using
 modifications of it based on two week cycles or longer.
@@ -182,20 +189,21 @@ For example, his bareos-dir.conf file looks like the following:
    # Backup the catalog database (after the nightly save)
    Job {
      Name = "BackupCatalog"
-     Type = Backup
-     Client = ServerName
-     FileSet = "Catalog"
+     Client = client-fd
+     JobDefs = "DefaultJob"
+     Level = Full
+     FileSet="Catalog"
      Schedule = "WeeklyCycleAfterBackup"
-     Storage = Tape
-     Messages = Standard
-     Pool = Default
      # This creates an ASCII copy of the catalog
-     # WARNING!!! Passing the password via the command line is insecure.
-     # see comments in make_catalog_backup for details.
-     RunBeforeJob = "/usr/lib/bareos/make_catalog_backup -u bareos"
-     # This deletes the copy of the catalog, and ejects the tape
-     RunAfterJob  = "/etc/bareos/end_of_backup.sh"
-     Write Bootstrap = "/var/lib/bareos/BackupCatalog.bsr"
+     # Arguments to make_catalog_backup are:
+     #  make_catalog_backup <catalog-name>
+     RunBeforeJob = "/usr/lib/bareos/scripts/make_catalog_backup MyCatalog"
+     # This deletes the copy of the catalog
+     RunAfterJob  = "/usr/lib/bareos/scripts/delete_catalog_backup MyCatalog"
+     # This sends the bootstrap via mail for disaster recovery.
+     # Should be sent to another system, please change recipient accordingly
+     Write Bootstrap = "|/usr/sbin/bsmtp -h localhost -f \"\(Bareos\) \" -s \"Bootstrap for Job %j\" root@localhost"
+     Priority = 11                   # run after main backup
      Max Start Delay = 22h
    }
    # Standard Restore template, changed by Console program

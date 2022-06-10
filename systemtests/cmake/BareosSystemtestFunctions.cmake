@@ -54,9 +54,9 @@ macro(create_systemtests_directory)
   configurefilestosystemtest("core" "scripts" "bareos-ctl-funcs" @ONLY "")
   configurefilestosystemtest("core" "scripts" "btraceback.gdb" @ONLY "")
 
-  configurefilestosystemtest("core/src/cats" "ddl" "*" @ONLY "")
-  configurefilestosystemtest("core/src" "cats" "*.in" @ONLY "")
-  configurefilestosystemtest("core/src" "cats" "*_bareos_*" @ONLY "")
+  configurefilestosystemtest("core/src/cats" "scripts/ddl" "*" @ONLY "ddl")
+  configurefilestosystemtest("core/src" "scripts" "*_catalog_*" @ONLY "cats")
+  configurefilestosystemtest("core/src" "scripts" "*_bareos_*" @ONLY "cats")
 
   configurefilestosystemtest("core/src" "console" "*.in" @ONLY "")
 
@@ -66,18 +66,6 @@ macro(create_systemtests_directory)
   file(MAKE_DIRECTORY ${scripts})
   file(MAKE_DIRECTORY ${working})
   file(MAKE_DIRECTORY ${archivedir})
-
-  file(REMOVE_RECURSE ${scripts}/ddl)
-  file(RENAME ${PROJECT_BINARY_DIR}/ddl ${scripts}/ddl)
-
-  file(GLOB ALL_FILES "${CMAKE_BINARY_DIR}/systemtests/cats/*_bareos_*")
-  foreach(CURRENT_FILE ${ALL_FILES})
-    string(REPLACE "${CMAKE_BINARY_DIR}/systemtests/cats/" "" TARGET_FILE
-                   ${CURRENT_FILE}
-    )
-    file(RENAME ${CURRENT_FILE} ${scripts}/${TARGET_FILE})
-    # MESSAGE(STATUS "moved  ${scripts}/${TARGET_FILE}")
-  endforeach()
 endmacro()
 
 # create a variable BINARY_NAME_TO_TEST for each binary name bareos-dir ->

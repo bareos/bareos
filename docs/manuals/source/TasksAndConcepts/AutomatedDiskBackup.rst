@@ -191,11 +191,11 @@ The Director’s configuration file is as follows:
      FileSet="Catalog"
      Schedule = "WeeklyCycleAfterBackup"
      # This creates an ASCII copy of the catalog
-     # Arguments to make_catalog_backup.pl are:
-     #  make_catalog_backup.pl <catalog-name>
-     RunBeforeJob = "/usr/lib/bareos/scripts/make_catalog_backup.pl MyCatalog"
+     # Arguments to make_catalog_backup are:
+     #  make_catalog_backup <catalog-name>
+     RunBeforeJob = "/usr/lib/bareos/scripts/make_catalog_backup MyCatalog"
      # This deletes the copy of the catalog
-     RunAfterJob  = "/usr/lib/bareos/scripts/delete_catalog_backup"
+     RunAfterJob  = "/usr/lib/bareos/scripts/delete_catalog_backup MyCatalog"
      # This sends the bootstrap via mail for disaster recovery.
      # Should be sent to another system, please change recipient accordingly
      Write Bootstrap = "|/usr/sbin/bsmtp -h localhost -f \"\(Bareos\) \" -s \"Bootstrap for Job %j\" root@localhost"

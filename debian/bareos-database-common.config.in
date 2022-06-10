@@ -14,16 +14,9 @@ if [ -r @scriptdir@/bareos-config-lib.sh ]; then
 
         dbc_debug=1
         # prevent errors by using || true
-        dbc_dbname=`get_database_name bareos` || true
-        dbc_dbuser=`get_database_user bareos` || true
-
-        # convert Bareos databases types into dbconfig_dbtypes
-        dbc_dbtypes=""
-        DB_INSTALLED=`get_databases_installed`
-        if echo "$DB_INSTALLED" | grep -q postgresql; then dbc_dbtypes="${dbc_dbtypes}pgsql, "; fi
-        # remove trailing ,
-        dbc_dbtypes=`echo ${dbc_dbtypes} | sed 's/, *$//'`
-
+        dbc_dbname=@db_name@ || true
+        dbc_dbuser=@db_user@ || true
+        dbc_dbtypes="pgsql"
         # action
         if [ $# -gt 0 ]; then
             param1="$1"
@@ -42,7 +35,7 @@ if [ -r @scriptdir@/bareos-config-lib.sh ]; then
         if [ "$param2" ]; then
             case "$param1" in
                 configure|reconfigure)
-                    param2=`get_database_version_by_release "$param2"`
+                    param2=$(get_database_version_by_release "$param2")
 
                     # dbconfig is available since Bareos version >= 14.1.0.
                     if dpkg --compare-versions "$param2_orig" lt "14.1.0"; then
@@ -50,7 +43,7 @@ if [ -r @scriptdir@/bareos-config-lib.sh ]; then
                         dbc_first_version="2003"
                         dbc_load_include="sh:/usr/lib/bareos/scripts/set_dbconfig_vars.sh"
                         # empty passwords require special treatment, see below
-                        bareos_database_password=`get_database_password` || true
+                        bareos_database_password=$(get_database_password) || true
                         # if password is given, set authmethod to password,
                         # otherwise postgresql configuration will stay at default "ident" method.
                         if [ "${bareos_database_password}" ]; then

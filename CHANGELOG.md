@@ -7,6 +7,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Breaking Changes
 - when using PAM Bareos will now check authorization, too. If authorization is not configured, login will fail. See [updated documentation](https://docs.bareos.org/TasksAndConcepts/PAM.html#configuration) on how to proceed [PR #1115].
+- Bareos 22 removes perl make_catalog_backup.pl in favor of an improved make_catalog_backup shell script. There is a compatibility-wrapper, but that only supports simple cases. If you applied changes to BackupCatalog Job, you should immediately migrate to use make_catalog_backup. See [catalog documentation](https://docs.bareos.org/TasksAndConcepts/CatalogMaintenance.html#backing-up-your-bareos-database) [PR #1081]
 
 ### Added
 - dird: add command line feature to print specific resources [PR #1153]
@@ -82,8 +83,10 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - `bvfs_update` now uses `unordered_map` instead of `htable` for the pathid cache [PR #1138]
 - cats: filtered zero file jobs list is now sorted [PR #1172]
 - dird: console: changed list jobs jobstatus argument to accept comma separated value [PR #1169]
+- cats: management scripts remove db_driver support [PR #1081]
 
 ### Deprecated
+- make_catalog_backup.pl is now a shell wrapper script which will be removed in version 23.
 
 ### Removed
 
@@ -139,6 +142,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1070]: https://github.com/bareos/bareos/pull/1070
 [PR #1072]: https://github.com/bareos/bareos/pull/1072
 [PR #1079]: https://github.com/bareos/bareos/pull/1079
+[PR #1081]: https://github.com/bareos/bareos/pull/1081
 [PR #1082]: https://github.com/bareos/bareos/pull/1082
 [PR #1083]: https://github.com/bareos/bareos/pull/1083
 [PR #1087]: https://github.com/bareos/bareos/pull/1087
@@ -176,4 +180,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1172]: https://github.com/bareos/bareos/pull/1172
 [PR #1177]: https://github.com/bareos/bareos/pull/1177
 [PR #1183]: https://github.com/bareos/bareos/pull/1183
+[PR #1170]: https://github.com/bareos/bareos/pull/1170
+[PR #1171]: https://github.com/bareos/bareos/pull/1171
+[PR #1172]: https://github.com/bareos/bareos/pull/1172
 [unreleased]: https://github.com/bareos/bareos/tree/master

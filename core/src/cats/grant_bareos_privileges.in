@@ -3,7 +3,7 @@
 # BAREOS® - Backup Archiving REcovery Open Sourced
 #
 # Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-# Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+# Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -21,100 +21,44 @@
 # 02110-1301, USA.
 #
 # shell script to grant privileges to the bareos database
-# for PostgreSQL, Ingres, MySQL, or SQLite.
-#
-
-#
-# Source the Bareos config functions.
-#
+set -e
+set -u
 
 # change to root dir
 cd /
 
+#
+# Source the Bareos config functions.
+#
+. "@scriptdir@"/bareos-config-lib.sh
 
-. @scriptdir@/bareos-config-lib.sh
-
-db_name="${db_name:-`get_database_name @db_name@`}"
-db_user="${db_user:-`get_database_user @db_user@`}"
+db_name="${db_name:-$(get_database_name @db_name@)}"
+db_user="${db_user:-$(get_database_user @db_user@)}"
 # if $db_password is defined but empty, an empty password will be used ("-" instead of ":-")
-db_password="${db_password-`get_database_password @db_password@`}"
-db_version=`get_database_version`
-bareos_sql_ddl=`get_database_ddl_dir`
+db_password="${db_password-$(get_database_password @db_password@)}"
 temp_sql_grants="/tmp/grants.sql.$$"
-default_db_type=`get_database_driver_default`
 
-#
-# See if the first argument is a valid backend name.
-# If so the user overrides the default database backend.
-#
 if [ $# -gt 0 ]; then
-   case $1 in
-      sqlite3)
-         db_type=$1
-         shift
-         ;;
-      mysql)
-         db_type=$1
-         shift
-         ;;
-      postgresql)
-         db_type=$1
-         shift
-         ;;
-      *)
-         ;;
-   esac
+  handle_database_scripts_command_line_parameter $*
 fi
+# Below this line no additional parameters is allowed in command ($*)
+info "Granting ${db_name} tables"
 
-#
-# If no new db_type is gives use the default db_type.
-#
-if [ -z "${db_type}" ]; then
-   db_type="${default_db_type}"
-fi
 
-echo "Granting ${db_type} tables"
-
-get_database_grant_privileges "${db_type}" "${db_user}" "${db_password}" > ${temp_sql_grants}
-if [ $? != 0 ]; then
-    echo "Error creating privileges."
+if ! get_database_grant_privileges "postgresql" "${db_user}" "${db_password}" > "${temp_sql_grants}"
+then
+    error "Error creating privileges."
     exit 1
 fi
 
-bindir=`get_database_utility_path ${db_type}`
-if [ ! -z "${bindir}" ]; then
-   PATH="$bindir:$PATH"
-fi
-
-case ${db_type} in
-   sqlite3)
-      #
-      # Nothing to do for SQLite3
-      #
-      retval=0
-      ;;
-   mysql)
-      mysql $* -f < ${temp_sql_grants}
-
-      retval=$?
-      ;;
-   postgresql)
-      PGOPTIONS='--client-min-messages=warning' psql -f ${temp_sql_grants} -d ${db_name} $*
-
-      retval=$?
-      ;;
-   *)
-      echo "Unknown database type $1"
-      exit 1
-      ;;
-esac
-
-rm -f ${temp_sql_grants}
-
-if [ "${retval}" = 0 ]; then
-   echo "Privileges for user ${db_user} granted ON database ${db_name}."
+retval=0
+PGOPTIONS='--client-min-messages=warning' psql -f "${temp_sql_grants}" -d "${db_name}" || retval=$?
+if [ ${retval} -eq 0 ]; then
+   info "Privileges for user ${db_user} granted ON database ${db_name}."
 else
-   echo "Error creating privileges."
+   error "Error creating privileges."
 fi
+
+rm -f "${temp_sql_grants}"
 
 exit ${retval}

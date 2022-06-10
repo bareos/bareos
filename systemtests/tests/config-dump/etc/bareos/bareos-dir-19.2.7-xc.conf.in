@@ -61,7 +61,7 @@ Job {
   JobDefs = "DefaultJob"
   WriteBootstrap = "|/usr/bin/bsmtp -h localhost -f \"\(Bareos\) \" -s \"Bootstrap for Job %j\" root"
   Priority = 11
-  run before job = "/usr/lib/bareos/scripts/make_catalog_backup.pl MyCatalog"
+  run before job = "/usr/lib/bareos/scripts/make_catalog_backup MyCatalog"
   run after job = "/usr/lib/bareos/scripts/delete_catalog_backup"
 }
 
@@ -78,7 +78,7 @@ Catalog {
   DbPassword = "@db_password@"
   DbUser = "@db_user@"
   DbName = "@db_name@"
-  DbDriver = "XXX_REPLACE_WITH_DATABASE_DRIVER_XXX"
+  # DbDriver = "XXX_REPLACE_WITH_DATABASE_DRIVER_XXX"
 }
 
 Schedule {

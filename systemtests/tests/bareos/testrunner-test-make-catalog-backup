@@ -1,0 +1,117 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# Run one time the BackupCatalog default configuration job.
+# Restore the dump, drop all tables, then restore them.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=BackupCatalog
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+# cleanup previous restore
+if [ -d "${tmp}/bareos-restores/" ];then
+  rm -rvf "${tmp}/bareos-restores"
+fi
+
+rm -f "${tmp}/testout1.txt"
+rm -f "${tmp}/testout2.txt"
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+setdebug level=100 storage=File
+run job=$JobName yes
+status director
+status client
+status storage=File
+wait
+messages
+@#
+@# now do a restore
+@#
+@$out $tmp/log2.out
+wait
+messages
+restore client=bareos-fd fileset=Catalog where=$tmp/bareos-restores select all done yes
+wait
+messages
+.api 2
+@$out ${tmp}/testout1.txt
+list filesets
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File
+check_two_logs
+
+CATALOG_BACKUP_FILE="${tmp}/bareos-restores/${working}/${db_name}.sql"
+
+if ! [ -r "${CATALOG_BACKUP_FILE}" ]; then
+    set_error "Failed to find Catalog backup file '${CATALOG_BACKUP_FILE}'."
+    end_test
+fi
+
+stop_bareos
+
+# Check diff file can't be done as delete_backup_catalog has cleaned up everything.
+
+OLDVERSIONID="$(psql -q -d "${db_name}" -t -c "select max(versionid) from version;")"
+
+print_debug "Deleting tables in database \"${db_name}\" "
+"${scripts}/drop_bareos_tables" "${DBTYPE}" >/dev/null 2>&1
+
+# Check if the drop remove all tables
+if [ -n "$(psql -q -d "${db_name}" -t -c "\dt+")" ];then
+    print_debug "There's still tables on \"${db_name}\" the rest of the test is invalid"
+    estat=1
+    end_test
+fi
+
+print_debug "Restore the database \"${db_name}\" with sql dump"
+if ! psql -q -d "${db_name}" -f "${CATALOG_BACKUP_FILE}"; then
+    print_debug "The restore psql command failed on \"${db_name}\" "
+    estat=2
+    end_test
+fi
+
+if [ -z "$(psql -q -d "${db_name}" -t -c "\dt+")" ]; then
+    print_debug "There not enough tables restored on \"${db_name}\" test failed"
+    estat=3
+    end_test
+fi
+
+NEWVERSIONID="$(psql -q -d "${db_name}" -t -c "select max(versionid) from version;")"
+print_debug "Compare Old version ${OLDVERSIONID} to ${NEWVERSIONID}"
+
+if [ "$OLDVERSIONID" -ne "$NEWVERSIONID" ]; then
+    print_debug "VERSIONID differs on \"${db_name}\" $OLDVERSIONID versus $NEWVERSIONID"
+    estat=4
+fi
+
+#
+# start Bareos and run a command to compare the output.
+#
+cat <<END_OF_DATA >"$tmp/bconcmds"
+.api 2
+@$out ${tmp}/testout2.txt
+list filesets
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File
+
+diff "${tmp}/testout1.txt" "${tmp}/testout2.txt"
+
+end_test
