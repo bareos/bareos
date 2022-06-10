@@ -29,7 +29,7 @@ if(Python2_FOUND)
   )
   target_link_libraries(python-fd ${Python2_LIBRARIES} bareos)
   target_include_directories(python-fd PUBLIC ${Python2_INCLUDE_DIRS})
-  target_compile_definitions(python-fd PUBLIC PY2MODDIR=\"${Python2_SITELIB}\")
+  target_compile_definitions(python-fd PUBLIC PY2MODDIR=\"${Python2_SITEARCH}\")
   target_compile_options(python-fd PUBLIC ${Python2_CCSHARED})
   add_dependencies(bareos-fd python-fd)
   add_dependencies(python-fd bareosfd-python2-module)
@@ -47,7 +47,9 @@ if(Python3_FOUND)
   )
   target_link_libraries(python3-fd ${Python3_LIBRARIES} bareos)
   target_include_directories(python3-fd PUBLIC ${Python3_INCLUDE_DIRS})
-  target_compile_definitions(python3-fd PUBLIC PY3MODDIR=\"${Python3_SITELIB}\")
+  target_compile_definitions(
+    python3-fd PUBLIC PY3MODDIR=\"${Python3_SITEARCH}\"
+  )
   add_dependencies(bareos-fd python3-fd)
   add_dependencies(python3-fd bareosfd-python3-module)
 endif()
@@ -101,7 +103,7 @@ endif()
 
 if(Python2_FOUND)
   add_library(bareosfd-python2-module MODULE module/bareosfd.cc)
-  install(TARGETS bareosfd-python2-module DESTINATION ${Python2_SITELIB})
+  install(TARGETS bareosfd-python2-module DESTINATION ${Python2_SITEARCH})
   set_target_properties(
     bareosfd-python2-module
     PROPERTIES PREFIX ""
@@ -136,7 +138,7 @@ endif()
 
 if(Python3_FOUND)
   add_library(bareosfd-python3-module MODULE module/bareosfd.cc)
-  install(TARGETS bareosfd-python3-module DESTINATION ${Python3_SITELIB})
+  install(TARGETS bareosfd-python3-module DESTINATION ${Python3_SITEARCH})
   set_target_properties(
     bareosfd-python3-module
     PROPERTIES PREFIX ""

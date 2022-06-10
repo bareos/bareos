@@ -1564,12 +1564,12 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %files filedaemon-python2-plugin
 %defattr(-, root, root)
 %{plugin_dir}/python-fd.so
-%{python2_sitelib}/bareosfd*.so
+%{python2_sitearch}/bareosfd*.so
 
 %files filedaemon-python3-plugin
 %defattr(-, root, root)
 %{plugin_dir}/python3-fd.so
-%{python3_sitelib}/bareosfd*.so
+%{python3_sitearch}/bareosfd*.so
 
 %files filedaemon-python-plugins-common
 %{plugin_dir}/bareos-fd-local-fileset.py*
@@ -1623,12 +1623,12 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %files director-python2-plugin
 %defattr(-, root, root)
 %{plugin_dir}/python-dir.so
-%{python2_sitelib}/bareosdir*.so
+%{python2_sitearch}/bareosdir*.so
 
 %files director-python3-plugin
 %defattr(-, root, root)
 %{plugin_dir}/python3-dir.so
-%{python3_sitelib}/bareosdir*.so
+%{python3_sitearch}/bareosdir*.so
 
 %files director-python-plugins-common
 %{plugin_dir}/BareosDirPluginBaseclass.py*
@@ -1638,12 +1638,12 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %files storage-python2-plugin
 %defattr(-, root, root)
 %{plugin_dir}/python-sd.so
-%{python2_sitelib}/bareossd*.so
+%{python2_sitearch}/bareossd*.so
 
 %files storage-python3-plugin
 %defattr(-, root, root)
 %{plugin_dir}/python3-sd.so
-%{python3_sitelib}/bareossd*.so
+%{python3_sitearch}/bareossd*.so
 
 %files storage-python-plugins-common
 %{plugin_dir}/BareosSdPluginBaseclass.py*

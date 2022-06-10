@@ -31,6 +31,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - dird: console: add the ability to rerun multiple commas separated jobids [PR #1170]
 
 ### Fixed
+- python plugins: store architecture specific modules in sitearch (instead of sitelib) [PR #698]
 - debian: fix package dependencies for webui and Ceph [PR #1183]
 - Python plugins: fix handling of additional pluginoptions parameter [PR #1177]
 - NDMP_BAREOS: support autoxflate plugin [PR #1013]
