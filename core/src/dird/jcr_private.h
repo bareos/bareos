@@ -24,7 +24,6 @@
 #ifndef BAREOS_DIRD_JCR_PRIVATE_H_
 #define BAREOS_DIRD_JCR_PRIVATE_H_
 
-#include <iostream>
 #include "cats/cats.h"
 #include "dird/client_connection_handshake_mode.h"
 #include "dird/job_trigger.h"
