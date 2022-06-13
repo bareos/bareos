@@ -2575,11 +2575,7 @@ static void StoreDevice(LEX* lc,
 }
 
 // Store Migration/Copy type
-static void StoreMigtype(LEX* lc,
-                         ResourceItem* item,
-                         int index,
-                         int pass,
-                         BareosResource** configuration_resources)
+static void StoreMigtype(LEX* lc, ResourceItem* item, int index)
 {
   LexGetToken(lc, BCT_NAME);
   // Store the type both in pass 1 and pass 2
@@ -3255,7 +3251,7 @@ static void ParseConfigCb(LEX* lc,
       StoreRunscript(lc, item, index, pass);
       break;
     case CFG_TYPE_MIGTYPE:
-      StoreMigtype(lc, item, index, pass, configuration_resources);
+      StoreMigtype(lc, item, index);
       break;
     case CFG_TYPE_INCEXC:
       StoreInc(lc, item, index, pass);
