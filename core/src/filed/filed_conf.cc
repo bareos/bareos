@@ -229,7 +229,7 @@ static void ParseConfigCb(LEX* lc,
                           ResourceItem* item,
                           int index,
                           int pass,
-                          BareosResource** configuration_resources)
+                          BareosResource**)
 {
   switch (item->type) {
     case CFG_TYPE_CIPHER:
