@@ -149,7 +149,6 @@ ConfigurationParser::ConfigurationParser(
   DumpResourceCb_ = DumpResourceCb;
   FreeResourceCb_ = FreeResourceCb;
 }
-ConfigurationParser::~ConfigurationParser() {}
 
 void ConfigurationParser::InitializeQualifiedResourceNameTypeConverter(
     const std::map<int, std::string>& map)
