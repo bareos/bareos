@@ -166,7 +166,6 @@ static void FreeResource(BareosResource* res, int type)
 
 static bool SaveResource(int type, ResourceItem* items, int pass)
 {
-  int rindex = type;
   int i;
   int error = 0;
 
@@ -176,7 +175,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
       if (!BitIsSet(i, (*items[i].allocated_resource)->item_present_)) {
         Emsg2(M_ABORT, 0,
               _("%s item is required in %s resource, but not found.\n"),
-              items[i].name, resources[rindex].name);
+              items[i].name, resources[type].name);
       }
     }
   }
@@ -225,7 +224,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
 
   if (!error) {
     BareosResource* new_resource = nullptr;
-    switch (resources[rindex].rcode) {
+    switch (resources[type].rcode) {
       case R_DIRECTOR: {
         new_resource = res_dir;
         res_dir = nullptr;
@@ -238,7 +237,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
       }
       default:
         Emsg1(M_ERROR_TERM, 0, "Unknown resource type: %d\n",
-              resources[rindex].rcode);
+              resources[type].rcode);
         return false;
     }
     error = my_config->AppendToResourcesChain(new_resource, type) ? 0 : 1;

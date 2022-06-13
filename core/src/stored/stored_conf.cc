@@ -709,11 +709,10 @@ static void DumpResource(int type,
 
 static bool SaveResource(int type, ResourceItem* items, int pass)
 {
-  int rindex = type;
   int i;
   int error = 0;
 
-  BareosResource* allocated_resource = *resources[rindex].allocated_resource_;
+  BareosResource* allocated_resource = *resources[type].allocated_resource_;
   if (pass == 2 && !allocated_resource->Validate()) { return false; }
 
   // Ensure that all required items are present
@@ -722,13 +721,13 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
       if (!BitIsSet(i, (*items[i].allocated_resource)->item_present_)) {
         Emsg2(M_ERROR_TERM, 0,
               _("\"%s\" item is required in \"%s\" resource, but not found.\n"),
-              items[i].name, resources[rindex].name);
+              items[i].name, resources[type].name);
       }
     }
 
     if (i >= MAX_RES_ITEMS) {
       Emsg1(M_ERROR_TERM, 0, _("Too many items in \"%s\" resource\n"),
-            resources[rindex].name);
+            resources[type].name);
     }
   }
 
@@ -821,7 +820,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
 
   if (!error) {
     BareosResource* new_resource = nullptr;
-    switch (resources[rindex].rcode) {
+    switch (resources[type].rcode) {
       case R_DIRECTOR:
         new_resource = res_dir;
         res_dir = nullptr;
