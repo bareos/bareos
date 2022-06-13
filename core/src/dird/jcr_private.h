@@ -99,9 +99,6 @@ struct JobControlRecordPrivate {
   JobControlRecordPrivate( std::shared_ptr<ConfigResourcesContainer> configuration_resources_container) : job_config_resources_container_(configuration_resources_container) {
     RestoreJobId = 0; MigrateJobId = 0; VerifyJobId = 0;
   }
-  ~JobControlRecordPrivate() {
-    job_config_resources_container_ = nullptr;
-  }
   std::shared_ptr<ConfigResourcesContainer> job_config_resources_container_;
   pthread_t SD_msg_chan{};        /**< Message channel thread id */
   bool SD_msg_chan_started{};     /**< Message channel thread started */
