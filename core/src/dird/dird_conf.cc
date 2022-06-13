@@ -4007,8 +4007,7 @@ static void FreeResource(BareosResource* res, int type)
  */
 static bool SaveResource(int type, ResourceItem* items, int pass)
 {
-  int rindex = type;
-  BareosResource* allocated_resource = *resources[rindex].allocated_resource_;
+  BareosResource* allocated_resource = *resources[type].allocated_resource_;
 
   switch (type) {
     case R_DIRECTOR: {
@@ -4038,7 +4037,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
         if (!BitIsSet(0, allocated_resource->item_present_)) {
           Emsg2(M_ERROR, 0,
                 _("%s item is required in %s resource, but not found.\n"),
-                items[0].name, resources[rindex].name);
+                items[0].name, resources[type].name);
           return false;
         }
       }

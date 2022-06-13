@@ -272,7 +272,6 @@ static void FreeResource(BareosResource* res, int type)
  */
 static bool SaveResource(int type, ResourceItem* items, int pass)
 {
-  int rindex = type;
   int i;
   int error = 0;
 
@@ -282,13 +281,13 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
       if (!BitIsSet(i, (*items[i].allocated_resource)->item_present_)) {
         Emsg2(M_ERROR_TERM, 0,
               _("%s item is required in %s resource, but not found.\n"),
-              items[i].name, resource_definitions[rindex].name);
+              items[i].name, resource_definitions[type].name);
       }
     }
     /* If this triggers, take a look at lib/parse_conf.h */
     if (i >= MAX_RES_ITEMS) {
       Emsg1(M_ERROR_TERM, 0, _("Too many items in %s resource\n"),
-            resource_definitions[rindex].name);
+            resource_definitions[type].name);
     }
   }
 
