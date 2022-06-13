@@ -123,13 +123,18 @@ BuildRequires: devtoolset-8-gcc
 BuildRequires: devtoolset-8-gcc-c++
 %endif
 
-%if 0%{?sle_version} >= 150300 || 0%{?suse_version} > 1500
+%if 0%{?sle_version} == 150400
+BuildRequires: gcc11
+BuildRequires: gcc11-c++
+%else
+  %if 0%{?sle_version} == 150300 || 0%{?suse_version} > 1500
 BuildRequires: gcc10
 BuildRequires: gcc10-c++
-%else
-  %if 0%{?suse_version}
+  %else
+    %if 0%{?suse_version}
 BuildRequires: gcc9
 BuildRequires: gcc9-c++
+    %endif
   %endif
 %endif
 
@@ -963,18 +968,18 @@ source /opt/rh/devtoolset-8/enable
 %endif
 
 # use modern compiler on suse
-%if 0%{?sle_version} >= 150300 || 0%{?suse_version} > 1500
-
-type gcc-10 && CC=gcc-10 && export CC
-type g++-10 && CXX=g++-10 && export CXX
-
-type gcc-11 && CC=gcc-11 && export CC
-type g++-11 && CXX=g++-11 && export CXX
-
+%if 0%{?sle_version} == 150400
+CC=gcc-11  ; export CC
+CXX=g++-11 ; export CXX
 %else
-  %if 0%{?suse_version}
+  %if 0%{?sle_version} == 150300 || 0%{?suse_version} > 1500
+CC=gcc-10  ; export CC
+CXX=g++-10 ; export CXX
+  %else
+    %if 0%{?suse_version}
 CC=gcc-9  ; export CC
 CXX=g++-9 ; export CXX
+    %endif
   %endif
 %endif
 
