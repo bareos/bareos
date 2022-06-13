@@ -756,15 +756,10 @@ start_again:
 static void DoDirectorStatus(UaContext* ua)
 {
   ListDirStatusHeader(ua);
-
   ListScheduledJobs(ua);
-
   ListRunningJobs(ua);
-
   ListTerminatedJobs(ua);
-
   ListConnectedClients(ua);
-
   ua->SendMsg("====\n");
 }
 
