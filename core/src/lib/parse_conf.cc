@@ -534,7 +534,8 @@ void ConfigurationParser::RestoreResourceTable()
 void ConfigurationParser::BackupResourceTable()
 {
   config_resources_container_backup_ = config_resources_container_;
-  config_resources_container_ = make_shared<ConfigResourcesContainer>(this);
+  config_resources_container_
+      = std::make_shared<ConfigResourcesContainer>(this);
 }
 
 bool ConfigurationParser::RemoveResource(int rcode, const char* name)
