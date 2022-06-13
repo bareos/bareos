@@ -933,9 +933,14 @@ source /opt/rh/devtoolset-8/enable
 %endif
 
 # use modern compiler on suse
-%if 0%{?sle_version} >= 150300
-CC=gcc-10  ; export CC
-CXX=g++-10 ; export CXX
+%if 0%{?sle_version} >= 150300 || 0%{?suse_version} > 1500
+
+type gcc-10 && CC=gcc-10 && export CC
+type g++-10 && CXX=g++-10 && export CXX
+
+type gcc-11 && CC=gcc-11 && export CC
+type g++-11 && CXX=g++-11 && export CXX
+
 %else
   %if 0%{?suse_version}
 CC=gcc-9  ; export CC
