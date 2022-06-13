@@ -84,27 +84,8 @@ bool PrintMessage(void* sock, const char* fmt, ...)
   return true;
 }
 
-ConfigurationParser::ConfigurationParser()
-    : scan_error_(nullptr)
-    , scan_warning_(nullptr)
-    , init_res_(nullptr)
-    , store_res_(nullptr)
-    , print_res_(nullptr)
-    , err_type_(0)
-    , omit_defaults_(false)
-    , r_num_(0)
-    , r_own_(0)
-    , own_resource_(nullptr)
-    , resource_definitions_(0)
-    , SaveResourceCb_(nullptr)
-    , DumpResourceCb_(nullptr)
-    , FreeResourceCb_(nullptr)
-    , use_config_include_dir_(false)
-    , ParseConfigReadyCb_(nullptr)
-    , parser_first_run_(true)
-{
-  return;
-}
+ConfigurationParser::ConfigurationParser() = default;
+ConfigurationParser::~ConfigurationParser() = default;
 
 ConfigurationParser::ConfigurationParser(
     const char* cf,

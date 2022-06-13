@@ -193,32 +193,32 @@ class ConfigurationParser {
   friend class ConfigParserStateMachine;
 
  public:
-  std::string cf_;                    /* Config file parameter */
-  LEX_ERROR_HANDLER* scan_error_;     /* Error handler if non-null */
-  LEX_WARNING_HANDLER* scan_warning_; /* Warning handler if non-null */
-  INIT_RES_HANDLER*
-      init_res_; /* Init resource handler for non default types if non-null */
-  STORE_RES_HANDLER*
-      store_res_; /* Store resource handler for non default types if non-null */
-  PRINT_RES_HANDLER*
-      print_res_; /* Print resource handler for non default types if non-null */
+  std::string cf_;                             /* Config file parameter */
+  LEX_ERROR_HANDLER* scan_error_{nullptr};     /* Error handler if non-null */
+  LEX_WARNING_HANDLER* scan_warning_{nullptr}; /* Warning handler if non-null */
+  INIT_RES_HANDLER* init_res_{
+      nullptr}; /* Init resource handler for non default types if non-null */
+  STORE_RES_HANDLER* store_res_{
+      nullptr}; /* Store resource handler for non default types if non-null */
+  PRINT_RES_HANDLER* print_res_{
+      nullptr}; /* Print resource handler for non default types if non-null */
 
-  int32_t err_type_;   /* The way to Terminate on failure */
-  bool omit_defaults_; /* Omit config variables with default values when dumping
-                          the config */
+  int32_t err_type_{0};       /* The way to Terminate on failure */
+  bool omit_defaults_{false}; /* Omit config variables with default values when
+                          dumping the config */
 
-  int32_t r_num_;                /* number of daemon resource types */
-  int32_t r_own_;                /* own resource type */
-  BareosResource* own_resource_; /* Pointer to own resource */
-  ResourceTable*
-      resource_definitions_; /* Pointer to table of permitted resources */
+  int32_t r_num_{0};                      /* number of daemon resource types */
+  int32_t r_own_{0};                      /* own resource type */
+  BareosResource* own_resource_{nullptr}; /* Pointer to own resource */
+  ResourceTable* resource_definitions_{
+      0}; /* Pointer to table of permitted resources */
   std::shared_ptr<ConfigResourcesContainer> config_resources_container_;
   std::shared_ptr<ConfigResourcesContainer> config_resources_container_backup_;
   mutable brwlock_t res_lock_; /* Resource lock */
 
-  SaveResourceCb_t SaveResourceCb_;
-  DumpResourceCb_t DumpResourceCb_;
-  FreeResourceCb_t FreeResourceCb_;
+  SaveResourceCb_t SaveResourceCb_{nullptr};
+  DumpResourceCb_t DumpResourceCb_{nullptr};
+  FreeResourceCb_t FreeResourceCb_{nullptr};
 
   ConfigurationParser();
   ConfigurationParser(const char* cf,
@@ -329,17 +329,17 @@ class ConfigurationParser {
                                            used, if no filename is given */
   std::string config_dir_; /* base directory of configuration files */
   std::string
-      config_include_dir_;      /* rel. path to the config include directory
-                                    (bareos-dir.d, bareos-sd.d, bareos-fd.d, ...) */
-  bool use_config_include_dir_; /* Use the config include directory */
+      config_include_dir_; /* rel. path to the config include directory
+                               (bareos-dir.d, bareos-sd.d, bareos-fd.d, ...) */
+  bool use_config_include_dir_{false}; /* Use the config include directory */
   std::string config_include_naming_format_; /* Format string for file paths of
                                                 resources */
   std::string used_config_path_;             /* Config file that is used. */
   std::unique_ptr<QualifiedResourceNameTypeConverter>
       qualified_resource_name_type_converter_;
-  ParseConfigBeforeCb_t ParseConfigBeforeCb_;
-  ParseConfigReadyCb_t ParseConfigReadyCb_;
-  bool parser_first_run_;
+  ParseConfigBeforeCb_t ParseConfigBeforeCb_{nullptr};
+  ParseConfigReadyCb_t ParseConfigReadyCb_{nullptr};
+  bool parser_first_run_{true};
   BStringList warnings_;
 
 
