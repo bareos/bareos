@@ -216,7 +216,7 @@ BuildRequires: python2-devel >= 2.6
 BuildRequires: python3-devel >= 3.4
   %endif
 
-  %if 0%{?centos_version} == 900 || 0%{?rhel_version} == 900
+  %if 0%{?centos_version} == 900 || 0%{?rhel_version} == 900 || 0%{?sle_version} >= 150400
 BuildRequires: python3-devel >= 3.4
 %define python2_available 0
   %endif
