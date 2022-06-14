@@ -421,11 +421,12 @@ class ConfigurationParser {
 
 
 class ConfigResourcesContainer {
- public:
+ private:
   std::chrono::time_point<std::chrono::system_clock> timestamp_{};
-  BareosResource** configuration_resources_ = nullptr;
   ConfigurationParser* config_ = nullptr;
 
+ public:
+  BareosResource** configuration_resources_ = nullptr;
   ConfigResourcesContainer(ConfigurationParser* config)
   {
     config_ = config;
@@ -450,7 +451,7 @@ class ConfigResourcesContainer {
     free(configuration_resources_);
     configuration_resources_ = nullptr;
   }
-
+  void SetTimestampToNow() { timestamp_ = std::chrono::system_clock::now(); }
   std::string TimeStampAsString() { return TPAsString(timestamp_); }
 };
 

@@ -176,7 +176,7 @@ bool ConfigurationParser::ParseConfig()
                                  scan_warning_);
   if (success && ParseConfigReadyCb_) { ParseConfigReadyCb_(*this); }
 
-  config_resources_container_->timestamp_ = std::chrono::system_clock::now();
+  config_resources_container_->SetTimestampToNow();
 
   return success;
 }
