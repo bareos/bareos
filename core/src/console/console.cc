@@ -639,7 +639,15 @@ int GetCmd(FILE* input, const char* prompt, BareosSocket* sock, int sec)
   if (sock->message_length) { do_history++; }
 
   if (!next) {
-    if (do_history) { add_history(line); }
+    if (do_history) {
+      auto last_history_item = history_get(history_length);
+      if (!last_history_item || strcmp(last_history_item->line, line) != 0) {
+        if (history_length == history_max_entries) {
+          remove_history(history_base);
+        }
+        add_history(line);
+      }
+    }
     free(line); /* allocated by readline() malloc */
     line = NULL;
   }

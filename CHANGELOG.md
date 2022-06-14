@@ -85,6 +85,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - cats: filtered zero file jobs list is now sorted [PR #1172]
 - dird: console: changed list jobs jobstatus argument to accept comma separated value [PR #1169]
 - cats: management scripts remove db_driver support [PR #1081]
+- bconsole: multiple identical successive commands are only added to history once [PR #1162]
 
 ### Deprecated
 - make_catalog_backup.pl is now a shell wrapper script which will be removed in version 23.
