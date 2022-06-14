@@ -228,7 +228,7 @@ BuildRequires: qt-devel
 BuildRequires: python2-devel >= 2.6
 BuildRequires: python3-devel >= 3.4
   %endif
-  %if 0%{?fedora} >= 35 || 0%{?suse_version} >= 1550 || 0%{?rhel_version} >= 900 || 0%{?sle_version} >= 150400
+  %if 0%{?suse_version} >= 1550 || 0%{?rhel_version} >= 900 || 0%{?sle_version} >= 150400
 BuildRequires: python3-devel >= 3.4
 %define python2_available 0
   %endif
