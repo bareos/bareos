@@ -34,6 +34,7 @@
 #include "lib/parse_conf.h"
 #include "lib/keyword_table_s.h"
 #include "lib/message_destination_info.h"
+#include "lib/util.h"
 
 #include <functional>
 #include <memory>
@@ -407,18 +408,6 @@ class ConfigurationParser {
   void SetResourceDefaultsParserPass2(ResourceItem* item);
 };
 
-
-static std::string TPAsString(const std::chrono::system_clock::time_point& tp)
-{
-  std::time_t t = std::chrono::system_clock::to_time_t(tp);
-  char str[100];
-  if (!std::strftime(str, sizeof(str), "%Y-%m-%d_%H:%M:%S",
-                     std::localtime(&t))) {
-    return std::string("strftime error");
-  }
-  std::string ts = str;
-  return ts;
-}
 
 class ConfigResourcesContainer {
  public:
