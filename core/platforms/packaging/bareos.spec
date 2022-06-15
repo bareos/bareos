@@ -1,7 +1,7 @@
 #
 # spec file for package bareos
 # Copyright (c) 2011-2012 Bruno Friedmann (Ioda-Net) and Philipp Storz (dass IT)
-#               2013-2021 Bareos GmbH & Co KG
+#               2013-2022 Bareos GmbH & Co KG
 #
 
 Name: 		bareos
@@ -222,21 +222,14 @@ BuildRequires: qt-devel
 %endif
 %endif
 
-
 %if 0%{?python_plugins}
-  %if 0%{?centos_version} == 800 || 0%{?rhel_version} == 800
-BuildRequires: python2-devel >= 2.6
-BuildRequires: python3-devel >= 3.4
-  %endif
-  %if 0%{?suse_version} >= 1550 || 0%{?rhel_version} >= 900 || 0%{?sle_version} >= 150400
-BuildRequires: python3-devel >= 3.4
+  %if 0%{?fedora} >= 36 || 0%{?rhel_version} >= 900 || 0%{?suse_version} >= 1550 || 0%{?sle_version} >= 150400
 %define python2_available 0
   %endif
-
-  %if !0%{?centos_version} == 900 && !0%{?rhel_version} == 900 && !0%{?centos_version} == 800 && !0%{?rhel_version} == 800
-BuildRequires: python-devel >= 2.6
+ %if 0%{python2_available}
+BuildRequires: python2-devel >= 2.6
+ %endif
 BuildRequires: python3-devel >= 3.4
-  %endif
 %endif
 
 %if 0%{?suse_version}
