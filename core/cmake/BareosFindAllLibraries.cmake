@@ -23,6 +23,8 @@ if(${SYSTEMD_FOUND})
 endif()
 
 option(ENABLE_PYTHON "Enable Python support" ON)
+option(ENABLE_PYTHON2 "Enable Python2 support" ON)
+
 if(NOT ENABLE_PYTHON)
   set(HAVE_PYTHON 0)
   set(Python2_FOUND 0)
@@ -42,7 +44,9 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
   set(Python3_FOUND 0)
 
 else()
-  find_package(Python2 COMPONENTS Interpreter Development)
+  if(ENABLE_PYTHON2)
+    find_package(Python2 COMPONENTS Interpreter Development)
+  endif()
   find_package(Python3 COMPONENTS Interpreter Development)
 
   set(Python3_VERSION_MAJOR
