@@ -1020,7 +1020,10 @@ cmake  .. \
   -Dincludes=yes \
   -Ddefault_db_backend="XXX_REPLACE_WITH_DATABASE_DRIVER_XXX" \
   -Dwebuiconfdir=%{_sysconfdir}/bareos-webui \
-  -DVERSION_STRING=%version
+  -DVERSION_STRING=%version \
+  %if !0%{python2_available}
+  -DENABLE_PYTHON2=no \
+  %endif
 
 #Add flags
 %__make CFLAGS="$RPM_OPT_FLAGS" CXXFLAGS="$RPM_OPT_FLAGS" %{?_smp_mflags};
