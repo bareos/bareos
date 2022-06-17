@@ -46,6 +46,8 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
 else()
   if(ENABLE_PYTHON2)
     find_package(Python2 COMPONENTS Interpreter Development)
+  else()
+    set(Python2_FOUND 0)
   endif()
   find_package(Python3 COMPONENTS Interpreter Development)
 
