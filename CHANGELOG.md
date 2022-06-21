@@ -87,6 +87,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - cats: management scripts remove db_driver support [PR #1081]
 - bconsole: multiple identical successive commands are only added to history once [PR #1162]
 - build: Now use solaris 11.4-11.4.42.0.0.111.0 [PR #1189]
+- bconsole: removed commas from jobid attribute in list jobs and llist jobs outputs [PR #1126]
 
 ### Deprecated
 - make_catalog_backup.pl is now a shell wrapper script which will be removed in version 23.
@@ -114,6 +115,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - clarifies Sphinx bareos-extension parallel_read_safe status to False [PR #1037]
 - fix incorrect link in contrib PythonFdPlugin [BUG #1450] [PR #1065]
 
+[PR #698]: https://github.com/bareos/bareos/pull/698
 [PR #768]: https://github.com/bareos/bareos/pull/768
 [PR #1010]: https://github.com/bareos/bareos/pull/1010
 [PR #1013]: https://github.com/bareos/bareos/pull/1013
@@ -162,6 +164,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1115]: https://github.com/bareos/bareos/pull/1115
 [PR #1120]: https://github.com/bareos/bareos/pull/1120
 [PR #1122]: https://github.com/bareos/bareos/pull/1122
+[PR #1126]: https://github.com/bareos/bareos/pull/1126
 [PR #1127]: https://github.com/bareos/bareos/pull/1127
 [PR #1131]: https://github.com/bareos/bareos/pull/1131
 [PR #1134]: https://github.com/bareos/bareos/pull/1134
@@ -176,6 +179,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1154]: https://github.com/bareos/bareos/pull/1154
 [PR #1155]: https://github.com/bareos/bareos/pull/1155
 [PR #1159]: https://github.com/bareos/bareos/pull/1159
+[PR #1162]: https://github.com/bareos/bareos/pull/1162
 [PR #1163]: https://github.com/bareos/bareos/pull/1163
 [PR #1169]: https://github.com/bareos/bareos/pull/1169
 [PR #1170]: https://github.com/bareos/bareos/pull/1170
@@ -183,7 +187,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1172]: https://github.com/bareos/bareos/pull/1172
 [PR #1177]: https://github.com/bareos/bareos/pull/1177
 [PR #1183]: https://github.com/bareos/bareos/pull/1183
-[PR #1170]: https://github.com/bareos/bareos/pull/1170
-[PR #1171]: https://github.com/bareos/bareos/pull/1171
-[PR #1172]: https://github.com/bareos/bareos/pull/1172
+[PR #1185]: https://github.com/bareos/bareos/pull/1185
+[PR #1189]: https://github.com/bareos/bareos/pull/1189
 [unreleased]: https://github.com/bareos/bareos/tree/master
