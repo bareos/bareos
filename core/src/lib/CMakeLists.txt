@@ -138,7 +138,6 @@ else()
   list(APPEND BAREOS_SRCS osinfo.cc)
 endif()
 
-
 add_library(bareos SHARED ${BAREOS_SRCS} $<TARGET_OBJECTS:version-obj>)
 
 # openssl 3.0
