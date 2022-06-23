@@ -116,6 +116,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - improve Mysql - PostgreSQL howto [PR #1093] fixing [BUG #1429]
 - clarifies Sphinx bareos-extension parallel_read_safe status to False [PR #1037]
 - fix incorrect link in contrib PythonFdPlugin [BUG #1450] [PR #1065]
+- clarifies CheckFileChanges option not intended to be used with plugin [BUG #1452][PR #1180]
 
 [PR #698]: https://github.com/bareos/bareos/pull/698
 [PR #768]: https://github.com/bareos/bareos/pull/768
