@@ -1556,7 +1556,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %files filedaemon-python2-plugin
 %defattr(-, root, root)
 %{plugin_dir}/python-fd.so
-%{python2_sitearch}/bareosfd*.so
+%{python2_sitelib}/bareosfd*.so
   %endif
 %files filedaemon-python3-plugin
 %defattr(-, root, root)
@@ -1616,7 +1616,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %files director-python2-plugin
 %defattr(-, root, root)
 %{plugin_dir}/python-dir.so
-%{python2_sitearch}/bareosdir*.so
+%{python2_sitelib}/bareosdir*.so
   %endif
 %files director-python3-plugin
 %defattr(-, root, root)
@@ -1632,7 +1632,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %files storage-python2-plugin
 %defattr(-, root, root)
 %{plugin_dir}/python-sd.so
-%{python2_sitearch}/bareossd*.so
+%{python2_sitelib}/bareossd*.so
   %endif
 %files storage-python3-plugin
 %defattr(-, root, root)
