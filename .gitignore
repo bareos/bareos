@@ -201,3 +201,5 @@ debian/bareos-universal-client.install
 debian/bareos-universal-client.postinst
 debian/bareos-universal-client.preinst
 debian/univention-bareos.postinst
+.vscode
+julian_note.txt
