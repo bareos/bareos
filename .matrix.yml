@@ -21,6 +21,17 @@ OS:
           - bareos
 
   xUbuntu:
+    "22.04":
+      TYPE: deb
+      IMAGE: "ubuntu22.04"
+      ARCH:
+        - x86_64
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-webui
+           - bareos-vmware
+           - python-bareos
     "20.04":
       TYPE: deb
       IMAGE: "ubuntu20.04"
@@ -46,6 +57,16 @@ OS:
            - python-bareos
 
   openSUSE:
+    "Leap_15.4":
+      TYPE: rpm
+      IMAGE: opensuse-leap154
+      ARCH:
+      - x86_64
+      PROJECTPACKAGES:
+       x86_64:
+          - bareos
+          - python-bareos
+
     "Leap_15.3":
       TYPE: rpm
       IMAGE: opensuse-leap153
@@ -131,6 +152,15 @@ OS:
            - python-bareos
 
   Fedora:
+    "36":
+      TYPE: rpm
+      IMAGE: fedora36
+      ARCH:
+      - x86_64
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - python-bareos
     "35":
       TYPE: rpm
       IMAGE: fedora35
@@ -190,6 +220,16 @@ OS:
            - python-bareos
 
   EL:
+    "9":
+      TYPE: rpm
+      IMAGE: centos9
+      ARCH:
+      - x86_64
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-vmware
+           - python-bareos
     "8":
       TYPE: rpm
       IMAGE: rocky8

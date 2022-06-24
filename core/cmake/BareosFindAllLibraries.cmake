@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -23,6 +23,8 @@ if(${SYSTEMD_FOUND})
 endif()
 
 option(ENABLE_PYTHON "Enable Python support" ON)
+option(ENABLE_PYTHON2 "Enable Python2 support" ON)
+
 if(NOT ENABLE_PYTHON)
   set(HAVE_PYTHON 0)
   set(Python2_FOUND 0)
@@ -42,7 +44,11 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
   set(Python3_FOUND 0)
 
 else()
-  find_package(Python2 COMPONENTS Interpreter Development)
+  if(ENABLE_PYTHON2)
+    find_package(Python2 COMPONENTS Interpreter Development)
+  else()
+    set(Python2_FOUND 0)
+  endif()
   find_package(Python3 COMPONENTS Interpreter Development)
 
   set(Python3_VERSION_MAJOR

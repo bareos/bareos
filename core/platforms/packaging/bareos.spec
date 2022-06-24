@@ -1,7 +1,7 @@
 #
 # spec file for package bareos
 # Copyright (c) 2011-2012 Bruno Friedmann (Ioda-Net) and Philipp Storz (dass IT)
-#               2013-2021 Bareos GmbH & Co KG
+#               2013-2022 Bareos GmbH & Co KG
 #
 
 Name: 		bareos
@@ -45,6 +45,8 @@ Vendor: 	The Bareos Team
 %define install_suse_fw 0
 %define systemd_support 0
 %define python_plugins 1
+%define python2_available 1
+%define contrib 1
 
 # cmake build directory
 %define CMAKE_BUILDDIR       cmake-build
@@ -128,13 +130,18 @@ BuildRequires: devtoolset-8-gcc
 BuildRequires: devtoolset-8-gcc-c++
 %endif
 
-%if 0%{?sle_version} >= 150300
+%if 0%{?sle_version} == 150400
+BuildRequires: gcc11
+BuildRequires: gcc11-c++
+%else
+  %if 0%{?sle_version} == 150300 || 0%{?suse_version} > 1500
 BuildRequires: gcc10
 BuildRequires: gcc10-c++
-%else
-  %if 0%{?suse_version}
+  %else
+    %if 0%{?suse_version}
 BuildRequires: gcc9
 BuildRequires: gcc9-c++
+    %endif
   %endif
 %endif
 
@@ -161,7 +168,7 @@ BuildRequires: librados-devel
 BuildRequires: librados2-devel
 BuildRequires: libcephfs1-devel
     %else
-      %if 0%{?rhel} == 8
+      %if 0%{?rhel} == 8 || 0%{?rhel} == 9
 BuildRequires: librados-devel
 BuildRequires: libradosstriper-devel
 BuildRequires: libcephfs-devel
@@ -215,15 +222,14 @@ BuildRequires: qt-devel
 %endif
 %endif
 
-
 %if 0%{?python_plugins}
-%if 0%{?centos_version} >= 800 || 0%{?rhel_version} >= 800 || 0%{?fedora} >= 31
+  %if 0%{?fedora} >= 36 || 0%{?rhel_version} >= 900 || 0%{?suse_version} >= 1550 || 0%{?sle_version} >= 150400
+%define python2_available 0
+  %endif
+ %if 0%{python2_available}
 BuildRequires: python2-devel >= 2.6
+ %endif
 BuildRequires: python3-devel >= 3.4
-%else
-BuildRequires: python-devel >= 2.6
-BuildRequires: python3-devel >= 3.4
-%endif
 %endif
 
 %if 0%{?suse_version}
@@ -254,7 +260,9 @@ BuildRequires: passwd
 # Some magic to be able to determine what platform we are running on.
 %if 0%{?rhel_version} || 0%{?centos_version} || 0%{?fedora_version}
 
+%if 0%{?centos_version} < 900
 BuildRequires: redhat-lsb
+%endif
 
 # older versions require additional release packages
 %if 0%{?rhel_version}   && 0%{?rhel_version} <= 600
@@ -467,6 +475,7 @@ Provides:   %{name}-tray-monitor-qt
 %endif
 
 %if 0%{?python_plugins}
+  %if 0%{?python2_available}
 %package    director-python2-plugin
 Summary:    Python plugin for Bareos Director daemon
 Group:      Productivity/Archiving/Backup
@@ -474,7 +483,7 @@ Requires:   bareos-director = %{version}
 Requires:   bareos-director-python-plugins-common = %{version}
 Provides:   bareos-director-python-plugin
 Obsoletes:  bareos-director-python-plugin <= %{version}
-
+  %endif
 %package    director-python3-plugin
 Summary:    Python plugin for Bareos Director daemon
 Group:      Productivity/Archiving/Backup
@@ -489,6 +498,7 @@ Group:      Productivity/Archiving/Backup
 Requires:   bareos-director = %{version}
 
 
+  %if 0%{?python2_available}
 %package    filedaemon-python2-plugin
 Summary:    Python plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
@@ -496,7 +506,7 @@ Requires:   bareos-filedaemon = %{version}
 Requires:   bareos-filedaemon-python-plugins-common = %{version}
 Provides:   bareos-filedaemon-python-plugin
 Obsoletes:  bareos-filedaemon-python-plugin <= %{version}
-
+  %endif
 %package    filedaemon-python3-plugin
 Summary:    Python plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
@@ -549,6 +559,7 @@ Requires:   bareos-filedaemon = %{version}
 Requires:   bareos-filedaemon-python-plugin = %{version}
 
 
+  %if 0%{?python2_available}
 %package    storage-python2-plugin
 Summary:    Python plugin for Bareos Storage daemon
 Group:      Productivity/Archiving/Backup
@@ -556,7 +567,7 @@ Requires:   bareos-storage = %{version}
 Requires:   bareos-storage-python-plugins-common = %{version}
 Provides:   bareos-storage-python-plugin
 Obsoletes:  bareos-storage-python-plugin <= %{version}
-
+  %endif
 %package    storage-python3-plugin
 Summary:    Python plugin for Bareos Storage daemon
 Group:      Productivity/Archiving/Backup
@@ -610,11 +621,13 @@ Keeps bareos/plugins/vmware_plugin subdirectory, which have been used in Bareos 
 
 # VMware Plugin END
 %endif
+
+  %if 0%{python2_available}
 %description director-python2-plugin
 %{dscr}
 
 This package contains the python plugin for the director daemon
-
+  %endif
 %description director-python3-plugin
 %{dscr}
 
@@ -625,11 +638,12 @@ This package contains the python 3 plugin for the director daemon
 
 This package contains the common files for the python 2 and python 3 director plugins.
 
+  %if 0%{python2_available}
 %description filedaemon-python2-plugin
 %{dscr}
 
 This package contains the python plugin for the file daemon
-
+  %endif
 %description filedaemon-python3-plugin
 %{dscr}
 
@@ -671,11 +685,12 @@ This package contains the Percona python plugin for the file daemon
 This package contains the Mariabackup python plugin for the file daemon
 
 
+  %if 0%{python2_available}
 %description storage-python2-plugin
 %{dscr}
 
 This package contains the python plugin for the storage daemon
-
+  %endif
 %description storage-python3-plugin
 %{dscr}
 
@@ -770,7 +785,7 @@ BuildRequires: httpd-devel
 %define _apache_conf_dir /etc/httpd/conf.d/
 %define www_daemon_user  apache
 %define www_daemon_group apache
-%if 0%{?fedora_version} >= 33
+%if 0%{?fedora_version} >= 33 || 0%{?rhel_version} >= 900
 Requires:   php-fpm
 %else
 Requires:   mod_php
@@ -915,13 +930,18 @@ source /opt/rh/devtoolset-8/enable
 %endif
 
 # use modern compiler on suse
-%if 0%{?sle_version} >= 150300
+%if 0%{?sle_version} == 150400
+CC=gcc-11  ; export CC
+CXX=g++-11 ; export CXX
+%else
+  %if 0%{?sle_version} == 150300 || 0%{?suse_version} > 1500
 CC=gcc-10  ; export CC
 CXX=g++-10 ; export CXX
-%else
-  %if 0%{?suse_version}
+  %else
+    %if 0%{?suse_version}
 CC=gcc-9  ; export CC
 CXX=g++-9 ; export CXX
+    %endif
   %endif
 %endif
 
@@ -1000,7 +1020,10 @@ cmake  .. \
   -Dincludes=yes \
   -Ddefault_db_backend="XXX_REPLACE_WITH_DATABASE_DRIVER_XXX" \
   -Dwebuiconfdir=%{_sysconfdir}/bareos-webui \
-  -DVERSION_STRING=%version
+  -DVERSION_STRING=%version \
+  %if !0%{python2_available}
+  -DENABLE_PYTHON2=no \
+  %endif
 
 #Add flags
 %__make CFLAGS="$RPM_OPT_FLAGS" CXXFLAGS="$RPM_OPT_FLAGS" %{?_smp_mflags};
@@ -1529,11 +1552,12 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %endif
 
 %if 0%{?python_plugins}
+  %if 0%{python2_available}
 %files filedaemon-python2-plugin
 %defattr(-, root, root)
 %{plugin_dir}/python-fd.so
 %{python2_sitelib}/bareosfd*.so
-
+  %endif
 %files filedaemon-python3-plugin
 %defattr(-, root, root)
 %{plugin_dir}/python3-fd.so
@@ -1588,11 +1612,12 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{plugin_dir}/BareosFdPluginMariabackup.py*
 
 
+  %if 0%{python2_available}
 %files director-python2-plugin
 %defattr(-, root, root)
 %{plugin_dir}/python-dir.so
 %{python2_sitelib}/bareosdir*.so
-
+  %endif
 %files director-python3-plugin
 %defattr(-, root, root)
 %{plugin_dir}/python3-dir.so
@@ -1603,11 +1628,12 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{plugin_dir}/bareos-dir-class-plugin.py*
 %{plugin_dir}/BareosDirWrapper.py*
 
+  %if 0%{python2_available}
 %files storage-python2-plugin
 %defattr(-, root, root)
-%{plugin_dir}/python*-sd.so
+%{plugin_dir}/python-sd.so
 %{python2_sitelib}/bareossd*.so
-
+  %endif
 %files storage-python3-plugin
 %defattr(-, root, root)
 %{plugin_dir}/python3-sd.so

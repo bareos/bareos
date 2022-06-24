@@ -8,6 +8,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Fixed
 - debian: fix package dependencies for webui and Ceph [PR #1184]
 
+### Added
+- build: Add support for Ubuntu 22.04, Fedora 36, EL 9, openSUSE 15.4 [PR #1191]
+
 ### Changed
 
 ### Security
