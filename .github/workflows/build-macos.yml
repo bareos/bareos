@@ -1,0 +1,82 @@
+name: Build Bareos Client on MacOS
+
+on:
+  workflow_dispatch:
+    inputs:
+      jenkins_id:
+        description: 'Id on the Jenkins server'
+        type: string
+        required: true
+        default: 'jid'
+      bareos_version:
+        description: 'Bareos version to build'
+        type: string
+        required: true
+  # Push is only required initially,
+  # otherwise the workflow is unknown and not callable by the REST API.
+  push:
+    paths:
+      - .github/workflows/build-macos.yml
+
+env:
+  target_dir: "${{ github.workspace }}/BUILD_RESULTS/MacOS"
+
+jobs:
+  build:
+    name: Build and test MacOS
+    runs-on: macos-12
+
+    steps:
+    - name: Check input variables
+      run: |
+        if [ -z "${{ inputs.bareos_version }}" ]; then
+            echo "::error ::Missing parameter 'bareos_version'"
+            exit 1
+        fi
+
+    - name: "Checkout source"
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: "Checkout tags"
+      # for get-version.sh, an unshallow git checkout with tags is needed.
+      run:  git fetch --tag
+
+    - name: Install dependencies
+      run: |
+        brew install jansson
+
+    - name: Build pkg
+      run: |
+        mkdir cmake-build
+        cd cmake-build
+        export CXXFLAGS="-I/usr/local/include"
+        cmake .. -Dclient-only=yes -DVERSION_STRING="${{ inputs.bareos_version }}"
+        make package VERBOSE=1
+        ls -la ./*.pkg
+        mkdir -p "${{ env.target_dir }}"
+        mv ./*.pkg "${{ env.target_dir }}"
+
+    - name: Ctest
+      run: |
+        cd cmake-build
+        # check if we are modern enough
+        if [ -f "../core/src/tests/bsock_mock.h" ]; then
+            result=0
+            ctest --repeat until-pass:5 -V -S CTestScript.cmake || result=$?
+            if [ $result -eq 1 ]; then
+                echo "ctest result $result is expected and OK"
+            elif [ $result -eq 0 ]; then
+                echo "ctest result $result is expected and OK"
+            else
+                echo "ctest result $result is not 1 or 0, ERROR"
+            fi
+        fi
+
+    - name: Upload pkg
+      uses: actions/upload-artifact@v3
+      with:
+        name: MacOS
+        path: ${{ env.target_dir }}/*.pkg
+        retention-days: 1
