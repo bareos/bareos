@@ -77,6 +77,16 @@ OS:
           - bareos
           - python-bareos
 
+    "Leap_15.2":
+      TYPE: rpm
+      IMAGE: opensuse-leap152
+      ARCH:
+      - x86_64
+      PROJECTPACKAGES:
+       x86_64:
+          - bareos
+          - python-bareos
+
   Univention:
     "4.4":
       TYPE: deb
@@ -154,6 +164,15 @@ OS:
     "35":
       TYPE: rpm
       IMAGE: fedora35
+      ARCH:
+      - x86_64
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - python-bareos
+    "34":
+      TYPE: rpm
+      IMAGE: fedora34
       ARCH:
       - x86_64
       PROJECTPACKAGES:
