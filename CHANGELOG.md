@@ -7,6 +7,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Changed
 - jstreegrid: remove handling of IE < 8 using navigator interface to avoid warnings in chrome [PR #1142]
+- doc: clarifies CheckFileChanges option not intended to be used with plugin [BUG #1452] [PR #1196]
 
 ### Fixed
 - webui: get volume and pool params from query instead of route [PR #1145]

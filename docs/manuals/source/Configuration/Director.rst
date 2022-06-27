@@ -1071,6 +1071,7 @@ The directives within an Options resource may be one of the following:
 .. config:option:: dir/fileset/include/options/MtimeOnly
 
    :type: yes|no
+   :default: no
 
    If enabled, tells the Client that the selection of files during
    Incremental and Differential backups should based only on the st\_mtime
@@ -1103,6 +1104,8 @@ The directives within an Options resource may be one of the following:
 .. config:option:: dir/fileset/include/options/CheckFileChanges
 
    :type: yes|no
+   :default: no
+
 
    If enabled, the Client will check size, age of each file after
    their backup to see if they have changed during backup. If time
@@ -1113,7 +1116,11 @@ The directives within an Options resource may be one of the following:
 
       zog-fd: Client1.2007-03-31_09.46.21 Error: /tmp/test mtime changed during backup.
 
-   In general, it is recommended to use this option.
+   
+   .. note::
+
+      This option is intended to be used :config:option:`dir/fileset/include/File` resources. 
+      Using it with :config:option:`dir/fileset/include/Plugin` filesets will generate warnings during backup.
 
 .. config:option:: dir/fileset/include/options/HardLinks
 
