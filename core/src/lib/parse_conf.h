@@ -214,7 +214,6 @@ class ConfigurationParser {
   ResourceTable* resource_definitions_{
       0}; /* Pointer to table of permitted resources */
   std::shared_ptr<ConfigResourcesContainer> config_resources_container_;
-  std::shared_ptr<ConfigResourcesContainer> config_resources_container_backup_;
   mutable brwlock_t res_lock_; /* Resource lock */
 
   SaveResourceCb_t SaveResourceCb_{nullptr};
@@ -250,9 +249,8 @@ class ConfigurationParser {
   const std::string& get_base_config_path() const { return used_config_path_; }
   void FreeResources();
 
-  void ReleasePreviousResourceTable();
-  void BackupResourceTable();
-  void RestoreResourceTable();
+  std::shared_ptr<ConfigResourcesContainer> BackupResourceTable();
+  void RestoreResourceTable(std::shared_ptr<ConfigResourcesContainer>&&);
 
   void InitResource(int rcode,
                     ResourceItem items[],

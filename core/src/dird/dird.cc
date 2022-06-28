@@ -556,7 +556,7 @@ bool DoReloadConfig()
 
   DbSqlPoolFlush();
 
-  my_config->BackupResourceTable();
+  auto backup_table = my_config->BackupResourceTable();
   Dmsg0(100, "Reloading config file\n");
 
 
@@ -574,7 +574,6 @@ bool DoReloadConfig()
     SetWorkingDirectory(me->working_directory);
     Dmsg0(10, "Director's configuration file reread successfully.\n");
     Dmsg0(10, "Releasing previous configuration resource table.\n");
-    my_config->ReleasePreviousResourceTable();
 
     StartStatisticsThread();
 
@@ -583,7 +582,7 @@ bool DoReloadConfig()
          my_config->get_base_config_path().c_str());
 
     Jmsg(nullptr, M_ERROR, 0, _("Resetting to previous configuration.\n"));
-    my_config->RestoreResourceTable();
+    my_config->RestoreResourceTable(std::move(backup_table));
     // me is changed above by CheckResources()
     me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
     assert(me);
