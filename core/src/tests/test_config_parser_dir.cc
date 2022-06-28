@@ -41,13 +41,13 @@ TEST(ConfigParser_Dir, bareos_configparser_tests)
   my_config->ParseConfig();
   my_config->DumpResources(PrintMessage, NULL);
 
-  my_config->BackupResourceTable();
+  auto backup = my_config->BackupResourceTable();
 
   my_config->ParseConfig();
   me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
   my_config->own_resource_ = me;
   ASSERT_NE(nullptr, me);
-  my_config->RestoreResourceTable();
+  my_config->RestoreResourceTable(std::move(backup));
   ASSERT_NE(nullptr, me);
   my_config->ParseConfig();
   me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);

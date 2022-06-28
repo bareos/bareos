@@ -487,28 +487,24 @@ bool ConfigurationParser::FindConfigPath(PoolMem& full_path)
   return found;
 }
 
-// remove our shared pointer to previous configuration so that it will be freed
-// when last job also owning finishes
-void ConfigurationParser::ReleasePreviousResourceTable()
-{
-  config_resources_container_backup_ = nullptr;
-}
-
 // swap the previously saved configuration_resources_previous_ with
 // configuration_resources_ and release the configuration_resources_previous_
-void ConfigurationParser::RestoreResourceTable()
+void ConfigurationParser::RestoreResourceTable(
+    std::shared_ptr<ConfigResourcesContainer>&& backup_table)
 {
-  std::swap(config_resources_container_, config_resources_container_backup_);
-  config_resources_container_backup_ = nullptr;
+  std::swap(config_resources_container_, backup_table);
+  backup_table.reset();
 }
 
 // copy the current resource table to configuration_resources_backup_
 // and create a new empty config_resources_container_
-void ConfigurationParser::BackupResourceTable()
+std::shared_ptr<ConfigResourcesContainer>
+ConfigurationParser::BackupResourceTable()
 {
-  config_resources_container_backup_ = config_resources_container_;
+  auto backup_table = config_resources_container_;
   config_resources_container_
       = std::make_shared<ConfigResourcesContainer>(this);
+  return backup_table;
 }
 
 bool ConfigurationParser::RemoveResource(int rcode, const char* name)
