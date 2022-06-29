@@ -1,0 +1,9 @@
+Client {
+  Name = bareos-fd
+  Description = "Client resource of the Director itself."
+  Address = @hostname@
+  Password = "@fd_password@"          # password for FileDaemon
+  FD PORT = @fd_port@
+  TLS Enable = yes
+  TLS Require = yes
+}
