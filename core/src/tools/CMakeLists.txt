@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -36,7 +36,7 @@ if(HAVE_WIN32)
   list(APPEND BREGEXSRCS ../win32/tools/bregexres.rc)
 endif()
 add_executable(bregex ${BREGEXSRCS})
-target_link_libraries(bregex bareos bareosfind)
+target_link_libraries(bregex bareos bareosfind CLI11::CLI11)
 
 set(BWILDSRCS bwild.cc)
 if(HAVE_WIN32)
