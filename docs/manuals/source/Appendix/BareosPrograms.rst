@@ -1291,11 +1291,15 @@ To run it, use:
 
 ::
 
-   Usage: bwild [-d debug_level] -f <data-file>
-          -f          specify file of data to be matched
-          -l          suppress line numbers
-          -n          print lines that do not match
-          -?          print this message.
+   Usage: bwild [OPTIONS]
+
+   Options:
+     -h,--help                             Print this help message and exit
+     -d,--debug-level <level>              Set debug level to <level>.
+     -f,--filename TEXT REQUIRED           Specify file or data to be matched.
+     -i,--ignore-case                      Use case insensitive match.
+     -l,--suppress-linenumbers             Suppress line numbers.
+     -n,--not-match                        Print line that do not match.
 
 The <data-file> is a filename that contains lines of data to be matched (or not) against one or more patterns. When the program is run, it will prompt you for a wild-card pattern, then apply it one line at a time against the data in the file. Each line that matches will be printed preceded by its line number. You will then be prompted again for another pattern.
 

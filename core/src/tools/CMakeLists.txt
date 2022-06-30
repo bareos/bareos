@@ -43,7 +43,7 @@ if(HAVE_WIN32)
   list(APPEND BWILDSRCS ../win32/tools/bwildres.rc)
 endif()
 add_executable(bwild ${BWILDSRCS})
-target_link_libraries(bwild bareos)
+target_link_libraries(bwild bareos CLI11::CLI11)
 
 add_executable(bscrypto bscrypto.cc)
 target_link_libraries(bscrypto bareos)
