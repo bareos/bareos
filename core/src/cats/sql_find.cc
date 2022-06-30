@@ -356,6 +356,26 @@ bool BareosDb::FindLastJobid(JobControlRecord* jcr,
 }
 
 /**
+ * @brief BareosDb::FindJobById
+ * @param jcr
+ * @param id id of job to look for
+ * @return returns true if job exists in db, false if not
+ */
+bool BareosDb::FindJobById(JobControlRecord* jcr, std::string id)
+{
+  std::string query = "SELECT JobId FROM Job WHERE JobId=" + id;
+  Dmsg1(100, "Query: %s\n", query.c_str());
+  if (!QUERY_DB(jcr, query.c_str())) { return false; }
+  if (SqlFetchRow() == NULL) {
+    Mmsg1(errmsg, _("No Job found with id: %d.\n"), id.c_str());
+    SqlFreeResult();
+    return false;
+  } else {
+    return true;
+  }
+}
+
+/**
  * Search a comma separated list of unwanted volume names and see if given
  * VolumeName is on it.
  */

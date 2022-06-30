@@ -683,6 +683,7 @@ class BareosDb : public BareosDbQueryEnum {
                         POOLMEM*& stime,
                         char* job);
   bool FindLastJobid(JobControlRecord* jcr, const char* Name, JobDbRecord* jr);
+  bool FindJobById(JobControlRecord* jcr, const std::string id);
   int FindNextVolume(JobControlRecord* jcr,
                      int index,
                      bool InChanger,
