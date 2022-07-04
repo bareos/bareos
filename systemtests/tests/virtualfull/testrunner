@@ -133,7 +133,7 @@ if ! grep -q "Fatal error: Could not create bootstrap file" "$tmp/log4.out"; the
   estat=1
 fi
 
-if ! grep -q "Termination:.*Backup Error" "$tmp/log5.out"; then
+if ! grep -q "JobId 2 not found in catalog." "$tmp/log5.out"; then
   echo "Consolidating missing jobids did not fail as expected" >&2
   cat "$tmp/log5.out"
   estat=1
