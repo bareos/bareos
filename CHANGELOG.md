@@ -25,11 +25,12 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
   - bareos-contrib-director-python-plugins
   - bareos-contrib-filedaemon-python-plugins
   - bareos-contrib-tools
-- systemtest py3plug-fd-contrib-mysql_dump [PR #768]
-- systemtest py*plug-fd-contrib-bareos_tasks_mysql [PR #768]
+- tests: py3plug-fd-contrib-mysql_dump [PR #768]
+- tests: py*plug-fd-contrib-bareos_tasks_mysql [PR #768]
 - webui: introduce rerun of multiple jobs at once [PR #1109]
 - dird: console: add the ability to rerun multiple commas separated jobids [PR #1170]
 - build: Add support for Ubuntu 22.04, Fedora 36, EL 9, openSUSE 15.4 [PR #1179]
+- tests: skip mysql tests if root [PR #1197]
 
 ### Fixed
 - python plugins: store architecture specific modules in sitearch (instead of sitelib) [PR #698]
