@@ -1036,6 +1036,16 @@ if ! grep -q "${expected_result}" "${target_file}"; then
 fi
 }
 
+# Used by mysqltest 
+skip_if_root()
+{
+USER=$(whoami)
+if [ "$USER" == "root"  ]; then
+ echo "${TestName} test skipped: test cannot be run as user root."
+ exit 77;
+fi
+}
+
 REGRESS_DEBUG=${REGRESS_DEBUG:-0}
 if test "x${REGRESS_DEBUG}" = "x1"; then
    set_debug 1

@@ -10,11 +10,6 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-if [ "$USER" == "root"  ]; then
- echo "This test cannot be run as user root."
- exit 1;
-fi
-
 JobName=backup-bareos-fd
 #shellcheck source=../environment.in
 . ./environment
@@ -23,6 +18,8 @@ MYSQL_CLIENT="${MYSQL_CLIENT_BINARY} --defaults-file=mysqldefaults"
 JobName=backup-bareos-fd
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
+skip_if_root
+
 #shellcheck source=../scripts/mysql.sh
 . "${rscripts}"/mysql.sh
 "${rscripts}"/cleanup

@@ -9,11 +9,6 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-if [ "$USER" == "root"  ]; then
- echo "This test cannot be run as user root."
- exit 1;
-fi
-
 #shellcheck source=../environment.in
 . ./environment
 
@@ -23,6 +18,9 @@ RESTORE_DIR="$tmp/bareos-restores/@MYSQL/"
 
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
+
+skip_if_root
+
 #shellcheck source=../scripts/mysql.sh
 . "${rscripts}"/mysql.sh
 "${rscripts}"/cleanup
