@@ -63,7 +63,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Fix director connects to client while `Connection From Director To Client` is disabled. [PR #1099]
 - dir: miscalculation when using `always incremental keep number` [PR #1159]
 - Windows Installer: made 'Director PotsgreSQL Backend Support' checked by default if 'Full PostgreSQL' installation selected. [PR #1185]
-
+- SQL: queries: fix sql queries to handle negative job duration value [PR 1198]
 ### Changed
 - contrib: rename Python modules to satisfy PEP8 [PR #768]
 - contrib: adapt to Python interface of Bareos >= 20 [PR #768]
