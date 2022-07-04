@@ -7,9 +7,9 @@
 SELECT DISTINCT Job.JobId,Job.Name, Client.Name as Client,
 Job.StartTime,
 CASE
-  WHEN Job.endtime IS NOT NULL THEN Job.endtime - Job.starttime
-  ELSE CURRENT_TIMESTAMP(0) - Job.starttime
-  END as Duration,
+    WHEN Job.endtime IS NOT NULL AND Job.endtime >= Job.starttime THEN Job.endtime - Job.starttime
+    ELSE CURRENT_TIMESTAMP(0) - Job.starttime
+    END as Duration,
 Job.Type,Job.Level,Job.JobFiles,Job.JobBytes,Job.JobStatus
 FROM Job
 LEFT JOIN Client ON Client.ClientId=Job.ClientId

@@ -6,9 +6,9 @@ SELECT DISTINCT Job.JobId, Job.Job, Job.Name, Job.PurgedFiles, Job.Type, Job.Lev
 Job.ClientId, Client.Name as Client, Job.JobStatus, Job.SchedTime, Job.StartTime,
 Job.EndTime, Job.RealEndTime,
 CASE
-  WHEN Job.endtime IS NOT NULL THEN Job.endtime - Job.starttime
-  ELSE CURRENT_TIMESTAMP(0) - Job.starttime
-  END as Duration,
+    WHEN Job.endtime IS NOT NULL AND Job.endtime >= Job.starttime THEN Job.endtime - Job.starttime
+    ELSE CURRENT_TIMESTAMP(0) - Job.starttime
+    END as Duration,
 Job.JobTDate, Job.VolSessionId, Job.VolSessionTime,
 Job.JobFiles, Job.JobBytes, Job.JobErrors, Job.JobMissingFiles, Job.PoolId,
 Pool.Name as PoolName, Job.PriorJobId, Job.FileSetId, FileSet.FileSet
