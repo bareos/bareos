@@ -19,7 +19,9 @@
    02110-1301, USA.
 */
 
+#include "lib/bnet_network_dump_private.h"
 #include "cli.h"
+#include "lib/bnet_network_dump.h"
 #include "lib/version.h"
 #include "lib/message.h"
 
@@ -55,4 +57,20 @@ void AddDebugOptions(CLI::App& app)
 void AddVerboseOption(CLI::App& app)
 {
   app.add_flag("-v,--verbose", verbose, "Verbose user messages.");
+}
+
+void AddNetworkDebuggingOption(CLI::App& app)
+{
+  app.add_flag("--zp,--plantuml-mode", BnetDumpPrivate::plantuml_mode_,
+               "Activate plant UML.")
+      ->group("");  // add it to empty group to hide the option from help
+
+  app.add_option("--zs,--set-dump-stack-level-amount",
+                 BnetDumpPrivate::stack_level_amount_,
+                 "Set stack level amount.")
+      ->group("");  // add it to empty group to hide the option from help
+
+  app.add_option("--zf,--set-dump-filename", BnetDumpPrivate::filename_,
+                 "Set file name.")
+      ->group("");  // add it to empty group to hide the option from help
 }

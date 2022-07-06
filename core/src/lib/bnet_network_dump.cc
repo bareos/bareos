@@ -55,22 +55,6 @@ void BnetDump::SetDestinationQualifiedName(
   impl_->destination_qualified_name_ = destination_qualified_name;
 }
 
-bool BnetDump::EvaluateCommandLineArgs(const char* cmdline_optarg)
-{
-  if (strlen(cmdline_optarg) == 1) {
-    if (*cmdline_optarg == 'p') { BnetDumpPrivate::plantuml_mode_ = true; }
-  } else if (std::isdigit(cmdline_optarg[0]) || cmdline_optarg[0] == '-') {
-    try {
-      BnetDumpPrivate::stack_level_amount_ = std::stoi(cmdline_optarg);
-    } catch (const std::exception& e) {
-      return false;
-    }
-  } else if (!BnetDumpPrivate::SetFilename(cmdline_optarg)) {
-    return false;
-  }
-  return true;
-}
-
 void BnetDump::DumpMessageAndStacktraceToFile(const char* ptr, int nbytes) const
 {
   if (!impl_->output_file_.is_open()) { return; }

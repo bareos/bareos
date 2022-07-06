@@ -293,15 +293,7 @@ int main(int argc, char* argv[])
                 "Print configuration schema in JSON format and exit.")
       ->excludes(xc);
 
-  dir_app.add_option(
-      "-z,--network-debugging",
-      [](std::vector<std::string> val) {
-        if (!BnetDump::EvaluateCommandLineArgs(val.front().c_str())) {
-          exit(1);
-        }
-        return true;
-      },
-      "Switch network debugging on.");
+  AddNetworkDebuggingOption(dir_app);
 
   CLI11_PARSE(dir_app, argc, argv);
 

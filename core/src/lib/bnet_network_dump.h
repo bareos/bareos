@@ -29,7 +29,6 @@ class BnetDumpPrivate;
 class BnetDump {
  public:
   static std::unique_ptr<BnetDump> Create(std::string own_qualified_name);
-  static bool EvaluateCommandLineArgs(const char* cmdline_optarg);
 
   void SetDestinationQualifiedName(std::string destination_qualified_name);
   void DumpMessageAndStacktraceToFile(const char* ptr, int nbytes) const;

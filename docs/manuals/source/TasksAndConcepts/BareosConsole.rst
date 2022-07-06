@@ -52,7 +52,6 @@ The console program can be run with the following options:
       --xc,--export-config Excludes: --xs
                                             Print all configuration resources and exit
       --xs,--export-schema Excludes: --xc   Print configuration schema in JSON format and exit
-      -z,--network-debugging                Switch network debugging on
 
 After launching the Console program (bconsole), it will prompt you for the next command with an asterisk (*). Generally, for all commands, you can simply enter the command name and the Console program will prompt you for the necessary arguments. Alternatively, in most cases, you may enter the command followed by arguments. The general format is:
 
