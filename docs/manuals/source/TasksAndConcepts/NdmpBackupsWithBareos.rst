@@ -14,7 +14,7 @@ NDMP
 
 -  is widely used by storage product vendors and OS vendors like NetApp, Isilon, EMC, Oracle.
 
--  information is available at http://www.ndmp.org/.
+-  information is available at https://www.snia.org/ndmp.
 
 -  version is currently (2016) NDMP Version 4.
 
@@ -529,7 +529,7 @@ UPDATE
 Example NDMP Fileset to backup a subset of a NDMP filesystem
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-The following fileset is intended to backup all files and directories matching :file:`/ifs/home/users/a*`. It has been tested against Isilon OneFS 7.2.0.1. See `Isilon OneFS 7.2.0 CLI Administration Guide <https://www.emc.com/collateral/TechnicalDocument/docu56048.pdf>`_, section quote{NDMP environment variables} for details about the supported NDMP environment variables. Excludes are not used in this example.
+The following fileset is intended to backup all files and directories matching :file:`/ifs/home/users/a*`. It has been tested against Isilon OneFS 7.2.0.1. See `Isilon OneFS Administration Guide <https://www.delltechnologies.com/asset/en-us/products/storage/technical-support/isilon-quick-reference-guide-for-administrators.pdf>`_, section quote{NDMP environment variables} for details about the supported NDMP environment variables. Excludes are not used in this example.
 
 .. code-block:: bareosconfig
    :caption: NDMP Fileset Isilon Include/Exclude

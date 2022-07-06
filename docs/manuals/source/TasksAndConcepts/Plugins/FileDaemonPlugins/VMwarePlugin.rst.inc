@@ -51,7 +51,7 @@ Requirements
 
 As the Plugin is based on the |vsphere| Storage APIs for Data Protection, which requires at least a |vsphere| Essentials License. It is tested against |vsphere| Storage APIs for Data Protection of |vmware| 7.0.1. It does not work with standalone unlicensed |vmware| ESXi\ |trade|.
 
-Since Bareos :sinceVersion:`21.0.0: VMware Plugin: VDDK 7.0.1` the plugin is using the Virtual Disk Development Kit (VDDK) 7.0.1, as of the VDDK 7.0 release notes, it should be compatible with vSphere 7.0 and the next major release (except new features) and backward compatible with vSphere 6.5 and 6.7, see VDDK release notes at https://code.vmware.com/web/sdk/7.0/vddk for details.
+Since Bareos :sinceVersion:`21.0.0: VMware Plugin: VDDK 7.0.1` the plugin is using the Virtual Disk Development Kit (VDDK) 7.0.1, as of the VDDK 7.0 release notes, it should be compatible with vSphere 7.0 and the next major release (except new features) and backward compatible with vSphere 6.5 and 6.7, see VDDK release notes at https://developer.vmware.com/web/sdk/7.0/vddk for details.
 
 This plugin requires the pyVmomi module. Since Bareos :sinceVersion:`21.0.0: VMware Plugin: pyVmomi` the package **bareos-vmware-plugin** no longer includes a dependency on a pyVmomi package, because some Linux distributions don't provide current versions. Consequently, pyVmomi must be either installed by using :command:`pip install pyvmomi` or by manually installing a distribution provided pyVmomi package.
 
@@ -69,9 +69,9 @@ When using the vCenter appliance with embedded SSO, a user account usually has t
 
 For more details regarding users and permissions in vSphere see
 
--  http://pubs.vmware.com/vsphere-55/topic/com.vmware.vsphere.security.doc/GUID-72BFF98C-C530-4C50-BF31-B5779D2A4BBB.html and
+-  https://pubs.vmware.com/vsphere-55/topic/com.vmware.vsphere.security.doc/GUID-72BFF98C-C530-4C50-BF31-B5779D2A4BBB.html and
 
--  http://pubs.vmware.com/vsphere-55/topic/com.vmware.vsphere.security.doc/GUID-5372F580-5C23-4E9C-8A4E-EF1B4DD9033E.html
+-  https://pubs.vmware.com/vsphere-55/topic/com.vmware.vsphere.security.doc/GUID-5372F580-5C23-4E9C-8A4E-EF1B4DD9033E.html
 
 Make sure to add or enable the following settings in your |fd| configuration:
 
@@ -174,7 +174,7 @@ For ease of use (but less secure) when the :command:`vcthumbprint` is not given,
 
 Also since :sinceVersion:`17.2.4: VMware Plugin: transport=nbdssl` another optional plugin option has been added that can be used for trying to force a given transport method. Normally, when no transport method is given, VDDK will negotiate available transport methods and select the best one. For a description of transport methods, see
 
-https://code.vmware.com/doc/preview?id=4076#/doc/vddkDataStruct.5.5.html
+https://developer.vmware.com/docs/4076/virtual-disk-development-kit-programming-guide/doc/vddkDataStruct.5.5.html
 
 When the plugin runs in a VMware virtual machine which has access to datastore where the virtual disks to be backed up reside, VDDK will use the hotadd transport method. On a physical server without SAN access, it will use the NBD transport method, hotadd transport is not available in this case.
 
@@ -307,7 +307,7 @@ Backup
 
 Before running the first backup, CBT (Changed Block Tracking) must be enabled for the VMs to be backed up.
 
-As of http://kb.vmware.com/kb/2075984 manually enabling CBT is currently not working properly. The API however works properly. To enable CBT use the Script :command:`vmware_cbt_tool.py`, it is packaged in the bareos-vmware-plugin package:
+As of https://kb.vmware.com/s/article/2075984 manually enabling CBT is currently not working properly. The API however works properly. To enable CBT use the Script :command:`vmware_cbt_tool.py`, it is packaged in the bareos-vmware-plugin package:
 
 .. code-block:: shell-session
    :caption: usage of vmware\_cbt\_tool.py

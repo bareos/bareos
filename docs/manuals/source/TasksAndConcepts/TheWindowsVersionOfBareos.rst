@@ -24,7 +24,7 @@ Windows Installation
 :index:`\ <single: Installation; Windows>`
 :index:`\ <single: Windows; File Daemon; Installation>`
 
-Normally, you will install the Windows version of Bareos from the binaries. The **winbareos** binary packages are provided under http://download.bareos.org/bareos/release/latest/windows. Additionally, there are `OPSI <http://www.opsi.org>`_ packages available under http://download.bareos.org/bareos/release/latest/windows/opsi.
+Normally, you will install the Windows version of Bareos from the binaries. The **winbareos** binary packages are provided in the :file:`windows` directory of the current Bareos release directory. For Bareos 21 it is https://download.bareos.org/bareos/release/21/windows/. Additionally, there are `OPSI <https://www.opsi.org>`_ packages available in the :file:`windows/opsi/` directory (Bareos 21: https://download.bareos.org/bareos/release/21/windows/opsi/).
 
 This install is standard Windows .exe that runs an install wizard using the NSIS Free Software installer, so if you have already installed Windows software, it should be very familiar to you. Providing you do not already have Bareos installed, the installer installs the binaries and dlls in :file:`C:\\Program Files\\Bareos` and the configuration files in :file:`C:\\ProgramData\\Bareos` (for Windows XP and older:
 :file:`C:\\Documents and Settings\\All Users\\Application Data\\Bareos`).
@@ -161,7 +161,7 @@ Antivirus Program
 If you are not using the portable option, and you have :config:option:`dir/fileset/EnableVss`\  (Volume Shadow Copy) enabled in the |dir| and you experience problems with Bareos not being able to open files, it is most likely that you are running an antivirus program that blocks Bareos from doing certain operations. In this case, disable the antivirus program and try another backup. If it succeeds, either get a different (better) antivirus program or use
 something like :config:option:`dir/job/ClientRunBeforeJob`\ /:config:option:`dir/job/ClientRunBeforeJob`\  to turn off the antivirus program while the backup is running.
 
-If turning off anti-virus software does not resolve your VSS problems, you might have to turn on VSS debugging. The following link describes how to do this: http://support.microsoft.com/kb/887013/en-us.
+If turning off anti-virus software does not resolve your VSS problems, you might have to turn on VSS debugging. The following link describes how to do this: https://docs.microsoft.com/en-US/troubleshoot/windows-server/backup-and-storage/enable-debug-tracing-features-vss.
 
 Enable Debuggging
 ~~~~~~~~~~~~~~~~~
@@ -334,7 +334,7 @@ The JobLog will then show the following informational line:
 
    Fileset has autoexclude disabled, ignoring FilesNotToBackup Registry key
 
-For more details about the Windows registry key see http://msdn.microsoft.com/en-us/library/windows/desktop/bb891959%28v=vs.85%29.aspx#filesnottobackup.
+For more details about the Windows registry key see https://docs.microsoft.com/en-us/windows/win32/backup/registry-keys-for-backup-and-restore?#filesnottobackup.
 
 Windows dedup support
 ~~~~~~~~~~~~~~~~~~~~~
@@ -551,7 +551,7 @@ Windows Ownership and Permissions Problems
 :index:`\ <single: Windows; Ownership and Permissions Problems>`
 
 If you restore files backed up from Windows to an alternate directory, Bareos may need to create some higher level directories that were not saved (or restored). In this case, the File daemon will create them under the SYSTEM account because that is the account that Bareos runs under as a service and with full access permission. However, there may be cases where you have problems accessing those files even if you run as administrator. In principle, Microsoft supplies you with the way to cease
-the ownership of those files and thus change the permissions. However, a much better solution to working with and changing Win32 permissions is the program SetACL, which can be found at `http://setacl.sourceforge.net/ <http://setacl.sourceforge.net/>`_.
+the ownership of those files and thus change the permissions. However, a much better solution to working with and changing Win32 permissions is the program SetACL, which can be found at `https://helgeklein.com/setacl/ <https://helgeklein.com/setacl/>`_.
 
 If you have not installed Bareos while running as Administrator and if Bareos is not running as a Process with the userid (User Name) SYSTEM, then it is very unlikely that it will have sufficient permission to access all your files.
 

@@ -14,7 +14,7 @@ Basically this means we want you to create pull requests against our master bran
 We will then build and review the code, request changes as required and eventually merge the pull request.
 You may need to rebase and force-push during the review-phase as master is a moving target.
 
-.. _Github Flow: https://help.github.com/en/articles/github-flow
+.. _Github Flow: https://docs.github.com/en/get-started/quickstart/github-flow
 
 Releases and Backporting
 ------------------------

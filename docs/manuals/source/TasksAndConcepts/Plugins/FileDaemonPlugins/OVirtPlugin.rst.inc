@@ -472,5 +472,5 @@ following Plugin Option must be entered:
 Anything else from the restore dialogue is the same.
 
 This will create disk image files that could be examined for example by using
-the **guestfish** tool (see http://libguestfs.org/guestfish.1.html). This tool
+the **guestfish** tool (see https://libguestfs.org/guestfish.1.html). This tool
 can also be used to extract single files from the disk image.
