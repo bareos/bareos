@@ -238,15 +238,16 @@ class PythonBareosListCommandTest(bareos_unittest.Base):
         self.assertTrue(result["jobs"])
         for job in result["jobs"]:
             self.assertTrue(job["jobstatus"], "T")
-
-        # run RestoreFiles with a non existant jobId so it fails
-        director.call("run job=RestoreFiles jobid=999999 yes")
+            
+        # running a job a canceling
+        director.call("run job=backup-bareos-fd yes")
+        director.call("cancel job=backup-bareos-fd yes")
 
         # list jobs jobstatus=X,Y,z
-        result = director.call("list jobs jobstatus=T,f")
+        result = director.call("list jobs jobstatus=T,A")
         self.assertTrue(result["jobs"])
         for job in result["jobs"]:
-            self.assertTrue(job["jobstatus"] == "T" or job["jobstatus"] == "f")
+            self.assertTrue(job["jobstatus"] == "T" or job["jobstatus"] == "A")
 
         result = director.call("list jobs jobstatus=R")
         self.assertFalse(result["jobs"])

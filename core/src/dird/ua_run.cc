@@ -358,7 +358,7 @@ bool reRunCmd(UaContext* ua, const char* cmd)
  * For Backup and Verify Jobs
  *     run [job=]<job-name> level=<level-name>
  *
- * For Restore Jobs
+ *  Jobs
  *     run <job-name>
  *
  * Returns: 0 on error
@@ -1478,6 +1478,13 @@ static bool DisplayJobParameters(UaContext* ua,
           if (!GetPint(ua, _("Please enter a JobId for restore: "))) {
             return false;
           }
+          std::string jobIdInput = std::to_string(ua->int64_val);
+          if (!ua->db->FindJobById(jcr, jobIdInput)) {
+            ua->SendMsg("JobId %s not found in catalog. \n",
+                        jobIdInput.c_str());
+            return false;
+          }
+
           jcr->impl->RestoreJobId = ua->int64_val;
         }
       }
@@ -1792,14 +1799,23 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
             rc.job_name = ua->argv[i];
             kw_ok = true;
             break;
-          case 1: /* JobId */
+          case 1: /* JobId */ {
             if (rc.jid && !rc.mod) {
               ua->SendMsg(_("JobId specified twice.\n"));
               return false;
             }
             rc.jid = ua->argv[i];
+            std::vector jobIdList = split_string(rc.jid, ',');
+            for (const auto& jobId : jobIdList) {
+              if (!ua->db->FindJobById(ua->jcr, jobId)) {
+                ua->SendMsg("JobId %s not found in catalog. \n", jobId.c_str());
+                return false;
+              }
+            }
+
             kw_ok = true;
             break;
+          }
           case 2: /* client */
           case 3: /* fd */
             if (rc.client_name) {
