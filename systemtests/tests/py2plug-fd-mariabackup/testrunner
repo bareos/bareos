@@ -10,15 +10,12 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-if [ "$USER" == "root"  ]; then
- echo "This test cannot be run as user root."
- exit 1;
-fi
-
 #shellcheck source=../environment.in
 . ./environment
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
+
+skip_if_root
 
 JobName=backup-bareos-fd
 MARIABACKUP="${MARIABACKUP_BINARY} --defaults-file=mysqldefaults"
