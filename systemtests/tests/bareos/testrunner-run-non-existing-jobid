@@ -1,0 +1,41 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+
+# Run a job with a non existing jobid
+TestName="$(basename "$(pwd)")"
+export TestName
+
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+run_log=$tmp/run.out
+JobName=RestoreFiles
+
+rm -f $run_log
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $run_log
+setdebug level=100 storage=File
+run job=$JobName jobid=999999 yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+expect_grep "JobId 999999 not found in catalog." \
+            "$run_log" \
+            "The run command accepted a jobid that does not exist in the database."
+
+end_test
