@@ -10,6 +10,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Bareos 22 removes perl make_catalog_backup.pl in favor of an improved make_catalog_backup shell script. There is a compatibility-wrapper, but that only supports simple cases. If you applied changes to BackupCatalog Job, you should immediately migrate to use make_catalog_backup. See [catalog documentation](https://docs.bareos.org/TasksAndConcepts/CatalogMaintenance.html#backing-up-your-bareos-database) [PR #1081]
 
 ### Added
+- github-actions: add workflow to build MacOS packages [PR #1192]
 - dird: add command line feature to print specific resources [PR #1153]
 - Python plugins: add default module_path to search path [PR #1038]
 - dird: extend the list command to be able to query volumes and pools by ID [PR #1041]
@@ -189,7 +190,11 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1171]: https://github.com/bareos/bareos/pull/1171
 [PR #1172]: https://github.com/bareos/bareos/pull/1172
 [PR #1177]: https://github.com/bareos/bareos/pull/1177
+[PR #1179]: https://github.com/bareos/bareos/pull/1179
+[PR #1180]: https://github.com/bareos/bareos/pull/1180
 [PR #1183]: https://github.com/bareos/bareos/pull/1183
 [PR #1185]: https://github.com/bareos/bareos/pull/1185
 [PR #1189]: https://github.com/bareos/bareos/pull/1189
+[PR #1192]: https://github.com/bareos/bareos/pull/1192
+[PR #1193]: https://github.com/bareos/bareos/pull/1193
 [unreleased]: https://github.com/bareos/bareos/tree/master
