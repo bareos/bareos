@@ -181,6 +181,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - fix a bug in a date function that leads to errors on the 31st day of a month [PR #782]
 - fix config-dump systemtest [PR #736]
 - fix systemtests daemon control scripts [PR #762]
+- SQL: queries: fix sql queries to handle negative job duration value [PR #1201]
 
 
 ### Added
