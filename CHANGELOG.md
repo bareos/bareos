@@ -115,6 +115,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - console: aborting job run if jobid doesn't exist in catalog [PR #1188]
 - daemons: changed daemon CLI arguments parsing [PR #1187]
 - config parser: Refactor config reloading by using shared pointers instead of callbacks [PR #1151]
+- daemons: changed daemon CLI arguments parsing [PR #1187]
+- console: aborting job run if jobid doesn't exist in catalog [PR #1188]
 
 ### Deprecated
 - make_catalog_backup.pl is now a shell wrapper script which will be removed in version 23.
@@ -150,6 +152,10 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - remove deprecated Rados & ceph references from documentation [PR #1216]
 - improve Wild(*) section with links to example [PR #1228]
 - add example to selection type = sql query [PR #1229]
+- dir-job-RescheduleTimes remove wrong default sentence [PR #1203]
+- FreeBSD install create /usr/local/etc/pkg/repos directory [PR #1203]
+- update Appendix/HardwareSizing DB size with new numbers and formulas [BUG #1477][PR #1203]
+- reorganize installation chapter [PR #1203]
 
 [PR #698]: https://github.com/bareos/bareos/pull/698
 [PR #768]: https://github.com/bareos/bareos/pull/768
@@ -236,6 +242,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1197]: https://github.com/bareos/bareos/pull/1197
 [PR #1198]: https://github.com/bareos/bareos/pull/1198
 [PR #1200]: https://github.com/bareos/bareos/pull/1200
+[PR #1203]: https://github.com/bareos/bareos/pull/1203
 [PR #1204]: https://github.com/bareos/bareos/pull/1204
 [PR #1205]: https://github.com/bareos/bareos/pull/1205
 [PR #1206]: https://github.com/bareos/bareos/pull/1206
