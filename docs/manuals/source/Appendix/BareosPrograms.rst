@@ -874,17 +874,22 @@ The physical device name must be specified on the command line, and this same de
 
 .. code-block:: shell-session
 
-   Usage: btape <options> <device_name>
-          -b <file>     specify bootstrap file
-          -c <file>     set configuration file to file
-          -D <director> specify a director name specified in the Storage
-                        configuration file for the Key Encryption Key selection
-          -d <nn>       set debug level to nn
-          -dt           print timestamp in debug output
-          -p            proceed inspite of I/O errors
-          -s            turn off signals
-          -v            be verbose
-          -?            print this message.
+    Usage: btape [OPTIONS] archive_name
+
+    Positionals:
+      archive_name REQUIRED                 Specify device name.
+
+    Options:
+      -h,--help                             Print this help message and exit
+      -b,--parse-bootstrap <file>           Specify a bootstrap file.
+      -c,--config <path>                    Use <path> as configuration file or directory.
+      -D,--director <director>              Specify a director name specified in the storage.
+                                            Configuration file for the Key Encryption Key selection.
+      -d,--debug-level <level>              Set debug level to <level>.
+      --dt,--debug-timestamps               Print timestamp in debug output.
+      -p,--proceed-io                       Proceed inspite of IO errors
+      -s,--no-signals [0]                   Turn off signals.
+      -v,--verbose                          Verbose user messages.
 
 Using btape to Verify your Tape Drive
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

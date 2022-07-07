@@ -454,9 +454,9 @@ run_bconsole()
 run_btape()
 {
    if test "$debug" -eq 1 ; then
-     "${bin}/btape" -c "${conf}" tape < "${tmp}/bconcmds" | tee "${tmp}/log1.out"
+     "${bin}/btape" -c "${conf}" tape < "${tmp}/bconcmds" | tee "${tmp}/btape.out"
    else
-     "${bin}/btape" -c "${conf}" tape < "${tmp}/bconcmds" >"${tmp}/log1.out" 2>&1
+     "${bin}/btape" -c "${conf}" tape < "${tmp}/bconcmds" >"${tmp}/btape.out" 2>&1
    fi
 }
 

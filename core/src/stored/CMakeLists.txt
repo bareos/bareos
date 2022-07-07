@@ -242,7 +242,7 @@ add_executable(bscan ${BSCANSRCS})
 target_link_libraries(bscan PRIVATE bareos bareossd bareosfind bareossql)
 
 add_executable(btape ${BTAPESRCS})
-target_link_libraries(btape PRIVATE bareossd bareos)
+target_link_libraries(btape PRIVATE bareossd bareos CLI11::CLI11)
 
 add_executable(bcopy ${BCOPYSRCS})
 
