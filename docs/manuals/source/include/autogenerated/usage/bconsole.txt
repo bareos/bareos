@@ -1,0 +1,46 @@
+Usage: bconsole [OPTIONS]
+
+Options:
+    -h,-?,--help
+        Print this help message and exit. 
+
+    --version
+        Display program version information and exit 
+
+    -c,--config <path>:PATH(existing)
+        Use <path> as configuration file or directory 
+
+    -D,--director <director>
+        Specify director. 
+
+    -d,--debug-level <level>:NONNEGATIVE
+        Set debug level to <level>. 
+
+    --dt,--debug-timestamps
+        Print timestamps in debug output. 
+
+    -l,--list-directors
+        List defined Directors. 
+
+    -p,--pam-credentials-filename <path>:FILE
+        PAM Credentials file. 
+
+    -o
+        Force sending pam credentials unencrypted. 
+
+    -s,--no-signals
+        No signals (for debugging) 
+
+    -t,--test-config
+        Test - read configuration and exit 
+
+    -u,--timeout <seconds>:POSITIVE
+        Set command execution timeout to <seconds>. 
+
+    --xc,--export-config
+        Excludes: --xs
+        Print configuration resources and exit 
+
+    --xs,--export-schema
+        Excludes: --xc
+        Print configuration schema in JSON format and exit 

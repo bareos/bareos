@@ -1,0 +1,57 @@
+Usage: bls [OPTIONS] device-names...
+
+Positionals:
+    device-names   ...
+        REQUIRED
+        Specify the input device name (either as name of a Bareos Storage 
+        Daemon Device resource or identical to the Archive Device in a Bareos 
+        Storage Daemon Device resource). 
+
+
+Options:
+    -h,-?,--help
+        Print this help message and exit. 
+
+    --version
+        Display program version information and exit 
+
+    -b,--parse-bootstrap <file>:FILE
+        Specify a bootstrap file. 
+
+    -c,--config <path>:PATH(existing)
+        Use <path> as configuration file or directory. 
+
+    -D,--director <director>
+        Specify a director name found in the storage. Configuration file for 
+        the Key Encryption Key selection. 
+
+    -d,--debug-level <level>:NONNEGATIVE
+        Set debug level to <level>. 
+
+    --dt,--debug-timestamps
+        Print timestamps in debug output. 
+
+    -e,--exclude <file>
+        Exclude list. 
+
+    -i,--include-list <file>
+        Include list. 
+
+    -j,--list-jobs
+        List jobs. 
+
+    -k,--list-blocks
+        List blocks. If neither -j or -k specified, list saved files. 
+
+    -L,--dump-labels
+        Dump labels. 
+
+    -p,--ignore-errors
+        Proceed inspite of IO errors. 
+
+    -v,--verbose
+        Default: 0
+        Verbose user messages. 
+
+    -V,--volumes <vol1|vol2|...>
+        Volume names (separated by |) 
