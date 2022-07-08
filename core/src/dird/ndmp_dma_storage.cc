@@ -735,7 +735,7 @@ std::string reserve_ndmp_tapedevice_for_job(StorageResource* store,
 {
   JobId_t jobid = jcr->JobId;
   std::string returnvalue;
-  P(store->runtime_storage_status->ndmp_deviceinfo_lock);
+  lock_mutex(store->runtime_storage_status->ndmp_deviceinfo_lock);
 
   if (!store->runtime_storage_status->ndmp_deviceinfo.empty()) {
     for (auto devinfo = store->runtime_storage_status->ndmp_deviceinfo.begin();
@@ -755,7 +755,7 @@ std::string reserve_ndmp_tapedevice_for_job(StorageResource* store,
       }
     }
   }
-  V(store->runtime_storage_status->ndmp_deviceinfo_lock);
+  unlock_mutex(store->runtime_storage_status->ndmp_deviceinfo_lock);
   return returnvalue;
 }
 
@@ -765,7 +765,7 @@ bool unreserve_ndmp_tapedevice_for_job(StorageResource* store,
 {
   JobId_t jobid = jcr->JobId;
   bool retval = false;
-  P(store->runtime_storage_status->ndmp_deviceinfo_lock);
+  lock_mutex(store->runtime_storage_status->ndmp_deviceinfo_lock);
 
   if (!store->runtime_storage_status->ndmp_deviceinfo.empty()) {
     for (auto devinfo = store->runtime_storage_status->ndmp_deviceinfo.begin();
@@ -781,7 +781,7 @@ bool unreserve_ndmp_tapedevice_for_job(StorageResource* store,
       }
     }
   }
-  V(store->runtime_storage_status->ndmp_deviceinfo_lock);
+  unlock_mutex(store->runtime_storage_status->ndmp_deviceinfo_lock);
   return retval;
 }
 
@@ -1011,15 +1011,15 @@ static bool ndmp_native_update_runtime_storage_status(JobControlRecord* jcr,
 {
   bool retval = true;
 
-  P(store->runtime_storage_status->changer_lock);
+  lock_mutex(store->runtime_storage_status->changer_lock);
   if (!do_ndmp_native_query_tape_and_robot_agents(jcr, store)) {
     retval = false;
   }
-  V(store->runtime_storage_status->changer_lock);
+  unlock_mutex(store->runtime_storage_status->changer_lock);
 
-  P(store->runtime_storage_status->changer_lock);
+  lock_mutex(store->runtime_storage_status->changer_lock);
   if (!NdmpUpdateStorageMappings(jcr, store)) { retval = false; }
-  V(store->runtime_storage_status->changer_lock);
+  unlock_mutex(store->runtime_storage_status->changer_lock);
 
   return retval;
 }

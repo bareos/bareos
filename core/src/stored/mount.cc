@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -84,7 +84,7 @@ bool DeviceControlRecord::MountNextWriteVolume()
 
   InitDeviceWaitTimers(dcr);
 
-  P(mount_mutex);
+  lock_mutex(mount_mutex);
 
   /*
    * Attempt to mount the next volume. If something non-fatal goes
@@ -98,13 +98,13 @@ mount_next_vol:
   if (retry++ > 4) {
     // Last ditch effort before giving up, force operator to respond
     VolCatInfo.Slot = 0;
-    V(mount_mutex);
+    unlock_mutex(mount_mutex);
     if (!dcr->DirAskSysopToMountVolume(ST_APPENDREADY)) {
       Jmsg(jcr, M_FATAL, 0, _("Too many errors trying to mount device %s.\n"),
            dev->print_name());
       goto no_lock_bail_out;
     }
-    P(mount_mutex);
+    lock_mutex(mount_mutex);
     Dmsg1(150, "Continue after dir_ask_sysop_to_mount. must_load=%d\n",
           dev->must_load());
   }
@@ -211,13 +211,13 @@ mount_next_vol:
   Dmsg2(250, "Ask=%d autochanger=%d\n", ask, autochanger);
 
   if (ask) {
-    V(mount_mutex);
+    unlock_mutex(mount_mutex);
     dcr->setVolCatInfo(false); /* out of date when Vols unlocked */
     if (!dcr->DirAskSysopToMountVolume(ST_APPENDREADY)) {
       Dmsg0(150, "Error return ask_sysop ...\n");
       goto no_lock_bail_out;
     }
-    P(mount_mutex);
+    lock_mutex(mount_mutex);
   }
 
   if (JobCanceled(jcr)) { goto bail_out; }
@@ -355,11 +355,11 @@ read_volume:
   Dmsg1(150, "set APPEND, normal return from MountNextWriteVolume. dev=%s\n",
         dev->print_name());
 
-  V(mount_mutex);
+  unlock_mutex(mount_mutex);
   return true;
 
 bail_out:
-  V(mount_mutex);
+  unlock_mutex(mount_mutex);
 
 no_lock_bail_out:
   return false;
@@ -395,12 +395,12 @@ bool DeviceControlRecord::find_a_volume()
       while (!dcr->DirFindNextAppendableVolume()) {
         Dmsg0(200, "not dir_find_next\n");
         if (JobCanceled(jcr)) { return false; }
-        V(mount_mutex);
+        unlock_mutex(mount_mutex);
         if (!dcr->DirAskSysopToCreateAppendableVolume()) {
-          P(mount_mutex);
+          lock_mutex(mount_mutex);
           return false;
         }
-        P(mount_mutex);
+        lock_mutex(mount_mutex);
         if (JobCanceled(jcr)) { return false; }
         Dmsg0(150, "Again dir_find_next_append...\n");
       }

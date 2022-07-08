@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1635,9 +1635,9 @@ openssl_create_dynamic_mutex(const char* file, int line)
     int line)
 {
   if (mode & CRYPTO_LOCK) {
-    P(dynlock->mutex);
+    lock_mutex(dynlock->mutex);
   } else {
-    V(dynlock->mutex);
+    unlock_mutex(dynlock->mutex);
   }
 }
 
@@ -1664,9 +1664,9 @@ openssl_create_dynamic_mutex(const char* file, int line)
                                                          int line)
 {
   if (mode & CRYPTO_LOCK) {
-    P(mutexes[i]);
+    lock_mutex(mutexes[i]);
   } else {
-    V(mutexes[i]);
+    unlock_mutex(mutexes[i]);
   }
 }
 #  endif

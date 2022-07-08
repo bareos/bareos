@@ -146,7 +146,7 @@ bool BareosDbSqlite::OpenDatabase(JobControlRecord* jcr)
   int errstat;
   int retry = 0;
 
-  P(mutex);
+  lock_mutex(mutex);
   if (connected_) {
     retval = true;
     goto bail_out;
@@ -207,14 +207,14 @@ bool BareosDbSqlite::OpenDatabase(JobControlRecord* jcr)
   retval = true;
 
 bail_out:
-  V(mutex);
+  unlock_mutex(mutex);
   return retval;
 }
 
 void BareosDbSqlite::CloseDatabase(JobControlRecord* jcr)
 {
   if (connected_) { EndTransaction(jcr); }
-  P(mutex);
+  lock_mutex(mutex);
   ref_count_--;
   if (ref_count_ == 0) {
     if (connected_) { SqlFreeResult(); }
@@ -237,7 +237,7 @@ void BareosDbSqlite::CloseDatabase(JobControlRecord* jcr)
       db_list = NULL;
     }
   }
-  V(mutex);
+  unlock_mutex(mutex);
 }
 
 bool BareosDbSqlite::ValidateConnection(void)
@@ -660,7 +660,7 @@ BareosDb* db_init_database(JobControlRecord* jcr,
 {
   BareosDbSqlite* mdb = NULL;
 
-  P(mutex); /* lock DB queue */
+  lock_mutex(mutex); /* lock DB queue */
 
   // Look to see if DB already open
   if (db_list && !mult_db_connections && !need_private) {
@@ -681,7 +681,7 @@ BareosDb* db_init_database(JobControlRecord* jcr,
                            need_private);
 
 bail_out:
-  V(mutex);
+  unlock_mutex(mutex);
   return mdb;
 }
 

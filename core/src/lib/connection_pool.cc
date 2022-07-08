@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -127,10 +127,10 @@ bool ConnectionPool::add(Connection* connection)
 {
   cleanup();
   Dmsg1(120, "add connection: %s\n", connection->name());
-  P(add_mutex_);
+  lock_mutex(add_mutex_);
   connections_->append(connection);
   pthread_cond_broadcast(&add_cond_var_);
-  V(add_mutex_);
+  unlock_mutex(add_mutex_);
   return true;
 }
 
@@ -188,9 +188,9 @@ int ConnectionPool::WaitForNewConnection(timespec& timeout)
 {
   int errstat;
 
-  P(add_mutex_);
+  lock_mutex(add_mutex_);
   errstat = pthread_cond_timedwait(&add_cond_var_, &add_mutex_, &timeout);
-  V(add_mutex_);
+  unlock_mutex(add_mutex_);
   if (errstat == 0) {
     Dmsg0(120, "new connection available.\n");
   } else if (errstat == ETIMEDOUT) {

@@ -185,7 +185,7 @@ bool BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
   int errstat;
   char buf[10], *port;
 
-  P(mutex);
+  lock_mutex(mutex);
   if (connected_) {
     retval = true;
     goto bail_out;
@@ -254,14 +254,14 @@ bool BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
   retval = true;
 
 bail_out:
-  V(mutex);
+  unlock_mutex(mutex);
   return retval;
 }
 
 void BareosDbPostgresql::CloseDatabase(JobControlRecord* jcr)
 {
   if (connected_) { EndTransaction(jcr); }
-  P(mutex);
+  lock_mutex(mutex);
   ref_count_--;
   if (ref_count_ == 0) {
     if (connected_) { SqlFreeResult(); }
@@ -289,7 +289,7 @@ void BareosDbPostgresql::CloseDatabase(JobControlRecord* jcr)
       db_list = NULL;
     }
   }
-  V(mutex);
+  unlock_mutex(mutex);
 }
 
 bool BareosDbPostgresql::ValidateConnection(void)
@@ -939,7 +939,7 @@ BareosDb* db_init_database(JobControlRecord* jcr,
     Jmsg(jcr, M_FATAL, 0, _("A user name for PostgreSQL must be supplied.\n"));
     return NULL;
   }
-  P(mutex); /* lock DB queue */
+  lock_mutex(mutex); /* lock DB queue */
 
   // Look to see if DB already open
   if (db_list && !mult_db_connections && !need_private) {
@@ -960,7 +960,7 @@ BareosDb* db_init_database(JobControlRecord* jcr,
                                try_reconnect, exit_on_fatal, need_private);
 
 bail_out:
-  V(mutex);
+  unlock_mutex(mutex);
   return mdb;
 }
 

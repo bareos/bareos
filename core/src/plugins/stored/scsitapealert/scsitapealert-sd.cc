@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2013 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -195,9 +195,9 @@ static bRC handle_tapealert_readout(void* value)
 
   Dmsg1(debuglevel, "scsitapealert-sd: checking for tapealerts on device %s\n",
         dev->archive_device_string);
-  P(tapealert_operation_mutex);
+  lock_mutex(tapealert_operation_mutex);
   GetTapealertFlags(dev->fd, dev->archive_device_string, &flags);
-  V(tapealert_operation_mutex);
+  unlock_mutex(tapealert_operation_mutex);
 
   Dmsg1(debuglevel,
         "scsitapealert-sd: checking for tapealerts on device %s DONE\n",

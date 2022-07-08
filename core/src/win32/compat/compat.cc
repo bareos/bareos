@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -84,7 +84,7 @@ bool InitializeComSecurity()
   HRESULT hr;
   bool retval = false;
 
-  P(com_security_mutex);
+  lock_mutex(com_security_mutex);
   if (com_security_initialized) {
     retval = true;
     goto bail_out;
@@ -112,7 +112,7 @@ bool InitializeComSecurity()
   retval = true;
 
 bail_out:
-  V(com_security_mutex);
+  unlock_mutex(com_security_mutex);
   return retval;
 }
 
@@ -162,16 +162,16 @@ bool SetVSSPathConvert(t_pVSSPathConvert pPathConvert,
   int status;
   thread_vss_path_convert* tvpc = NULL;
 
-  P(tsd_mutex);
+  lock_mutex(tsd_mutex);
   if (!pc_tsd_initialized) {
     status = pthread_key_create(&path_conversion_key, VSSPathConvertCleanup);
     if (status != 0) {
-      V(tsd_mutex);
+      unlock_mutex(tsd_mutex);
       goto bail_out;
     }
     pc_tsd_initialized = true;
   }
-  V(tsd_mutex);
+  unlock_mutex(tsd_mutex);
 
   tvpc = (thread_vss_path_convert*)pthread_getspecific(path_conversion_key);
   if (!tvpc) {
@@ -200,11 +200,11 @@ static thread_vss_path_convert* Win32GetPathConvert()
 {
   thread_vss_path_convert* tvpc = NULL;
 
-  P(tsd_mutex);
+  lock_mutex(tsd_mutex);
   if (pc_tsd_initialized) {
     tvpc = (thread_vss_path_convert*)pthread_getspecific(path_conversion_key);
   }
-  V(tsd_mutex);
+  unlock_mutex(tsd_mutex);
 
   return tvpc;
 }
@@ -229,16 +229,16 @@ static thread_conversion_cache* Win32ConvInitCache()
   int status;
   thread_conversion_cache* tcc = NULL;
 
-  P(tsd_mutex);
+  lock_mutex(tsd_mutex);
   if (!cc_tsd_initialized) {
     status = pthread_key_create(&conversion_cache_key, Win32ConvCleanupCache);
     if (status != 0) {
-      V(tsd_mutex);
+      unlock_mutex(tsd_mutex);
       goto bail_out;
     }
     cc_tsd_initialized = true;
   }
-  V(tsd_mutex);
+  unlock_mutex(tsd_mutex);
 
   // Create a new cache.
   tcc = (thread_conversion_cache*)malloc(sizeof(thread_conversion_cache));
@@ -269,18 +269,18 @@ static thread_conversion_cache* Win32GetCache()
 {
   thread_conversion_cache* tcc = NULL;
 
-  P(tsd_mutex);
+  lock_mutex(tsd_mutex);
   if (cc_tsd_initialized) {
     tcc = (thread_conversion_cache*)pthread_getspecific(conversion_cache_key);
   }
-  V(tsd_mutex);
+  unlock_mutex(tsd_mutex);
 
   return tcc;
 }
 
 void Win32TSDCleanup()
 {
-  P(tsd_mutex);
+  lock_mutex(tsd_mutex);
   if (pc_tsd_initialized) {
     pthread_key_delete(path_conversion_key);
     pc_tsd_initialized = false;
@@ -290,7 +290,7 @@ void Win32TSDCleanup()
     pthread_key_delete(conversion_cache_key);
     cc_tsd_initialized = false;
   }
-  V(tsd_mutex);
+  unlock_mutex(tsd_mutex);
 }
 
 // Special flag used to enable or disable Bacula compatible win32 encoding.

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1318,11 +1318,11 @@ static bool BootstrapCmd(JobControlRecord* jcr)
   FILE* bs;
 
   FreeBootstrap(jcr);
-  P(bsr_mutex);
+  lock_mutex(bsr_mutex);
   bsr_uniq++;
   Mmsg(fname, "%s/%s.%s.%d.bootstrap", me->working_directory,
        me->resource_name_, jcr->Job, bsr_uniq);
-  V(bsr_mutex);
+  unlock_mutex(bsr_mutex);
   Dmsg1(400, "bootstrap=%s\n", fname);
   jcr->RestoreBootstrap = fname;
   bs = fopen(fname, "a+b"); /* create file */

@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -250,9 +250,9 @@ static void MakeUniqueRestoreFilename(UaContext* ua, PoolMem& fname)
     Mmsg(fname, "%s", ua->argv[i]);
     jcr->impl->unlink_bsr = false;
   } else {
-    P(mutex);
+    lock_mutex(mutex);
     uniq++;
-    V(mutex);
+    unlock_mutex(mutex);
     Mmsg(fname, "%s/%s.restore.%u.bsr", working_directory, my_name, uniq);
     jcr->impl->unlink_bsr = true;
   }

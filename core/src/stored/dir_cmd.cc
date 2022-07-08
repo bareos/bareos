@@ -30,7 +30,7 @@
  * subcommands that are handled
  * in job.c.
  *
- * N.B. in this file, in general we must use P(dev->mutex) rather
+ * N.B. in this file, in general we must use lock_mutex(dev->mutex) rather
  * than dev->r_lock() so that we can examine the blocked
  * state rather than blocking ourselves because a Job
  * thread has the device blocked. In some "safe" cases,
@@ -347,8 +347,8 @@ static bool die_cmd(JobControlRecord* jcr)
 
   if (strstr(dir->msg, "deadlock")) {
     Pmsg0(000, "I have been requested to deadlock ...\n");
-    P(m);
-    P(m);
+    lock_mutex(m);
+    lock_mutex(m);
   }
 
   Pmsg1(000, "I have been requested to die ... (%s)\n", dir->msg);
@@ -1296,11 +1296,11 @@ static inline bool GetBootstrapFile(JobControlRecord* jcr, BareosSocket* sock)
     SecureErase(jcr, jcr->RestoreBootstrap);
     FreePoolMemory(jcr->RestoreBootstrap);
   }
-  P(bsr_mutex);
+  lock_mutex(bsr_mutex);
   bsr_uniq++;
   Mmsg(fname, "%s/%s.%s.%d.bootstrap", me->working_directory,
        me->resource_name_, jcr->Job, bsr_uniq);
-  V(bsr_mutex);
+  unlock_mutex(bsr_mutex);
   Dmsg1(400, "bootstrap=%s\n", fname);
   jcr->RestoreBootstrap = fname;
   bs = fopen(fname, "a+b"); /* create file */

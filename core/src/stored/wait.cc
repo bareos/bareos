@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -231,7 +231,7 @@ bool WaitForDevice(JobControlRecord* jcr, int& retries)
   char ed1[50];
 
   Dmsg0(debuglevel, "Enter WaitForDevice\n");
-  P(device_release_mutex);
+  lock_mutex(device_release_mutex);
 
   if (++retries % 5 == 0) {
     /* Print message every 5 minutes */
@@ -250,7 +250,7 @@ bool WaitForDevice(JobControlRecord* jcr, int& retries)
                                   &timeout);
   Dmsg1(debuglevel, "Wokeup from sleep on device status=%d\n", status);
 
-  V(device_release_mutex);
+  unlock_mutex(device_release_mutex);
   Dmsg1(debuglevel, "Return from wait_device ok=%d\n", ok);
   return ok;
 }

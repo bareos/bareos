@@ -133,9 +133,9 @@ void UpdateDeviceTapealert(const char* devname, uint64_t flags, utime_t now)
     *dev_stats = empty_device_statistics;
 
     bstrncpy(dev_stats->DevName, devname, sizeof(dev_stats->DevName));
-    P(mutex);
+    lock_mutex(mutex);
     device_statistics->append(dev_stats);
-    V(mutex);
+    unlock_mutex(mutex);
   }
 
   // Add a new tapealert message.
@@ -151,9 +151,9 @@ void UpdateDeviceTapealert(const char* devname, uint64_t flags, utime_t now)
     dev_stats->device_tapealerts = new dlist<device_tapealert_item>();
   }
 
-  P(mutex);
+  lock_mutex(mutex);
   dev_stats->device_tapealerts->append(tape_alert);
-  V(mutex);
+  unlock_mutex(mutex);
 
   Dmsg3(200, "New stats [%lld]: Device %s TapeAlert %llu\n",
         tape_alert->timestamp, dev_stats->DevName, tape_alert->flags);
@@ -196,9 +196,9 @@ static inline void UpdateDeviceStatistics(const char* devname,
     *dev_stats = empty_device_statistics;
 
     bstrncpy(dev_stats->DevName, devname, sizeof(dev_stats->DevName));
-    P(mutex);
+    lock_mutex(mutex);
     device_statistics->append(dev_stats);
-    V(mutex);
+    unlock_mutex(mutex);
   }
 
   // Add a new set of statistics.
@@ -226,10 +226,10 @@ static inline void UpdateDeviceStatistics(const char* devname,
     dev_stats->device_statistics = new dlist<device_statistic_item>();
   }
 
-  P(mutex);
+  lock_mutex(mutex);
   dev_stats->cached = dev_stat;
   dev_stats->device_statistics->append(dev_stat);
-  V(mutex);
+  unlock_mutex(mutex);
 
   Dmsg5(200,
         "New stats [%lld]: Device %s Read %llu, Write %llu, Spoolsize %llu,\n",
@@ -280,9 +280,9 @@ void UpdateJobStatistics(JobControlRecord* jcr, utime_t now)
     *job_stats = empty_job_statistics;
 
     job_stats->JobId = jcr->JobId;
-    P(mutex);
+    lock_mutex(mutex);
     job_statistics->append(job_stats);
-    V(mutex);
+    unlock_mutex(mutex);
   }
 
   // Add a new set of statistics.
@@ -304,10 +304,10 @@ void UpdateJobStatistics(JobControlRecord* jcr, utime_t now)
     job_stats->job_statistics = new dlist<jobstatistic_item>();
   }
 
-  P(mutex);
+  lock_mutex(mutex);
   job_stats->cached = job_stat;
   job_stats->job_statistics->append(job_stat);
-  V(mutex);
+  unlock_mutex(mutex);
 
   Dmsg5(
       200,
@@ -321,7 +321,7 @@ static inline void cleanup_cached_statistics()
   device_statistics_t* dev_stats;
   job_statistics_t* job_stats;
 
-  P(mutex);
+  lock_mutex(mutex);
   if (device_statistics) {
     foreach_dlist (dev_stats, device_statistics) {
       dev_stats->device_statistics->destroy();
@@ -341,7 +341,7 @@ static inline void cleanup_cached_statistics()
     job_statistics->destroy();
     job_statistics = NULL;
   }
-  V(mutex);
+  unlock_mutex(mutex);
 }
 
 // Entry point for a separate statistics thread.
@@ -391,9 +391,9 @@ extern "C" void* statistics_thread_runner(void* arg)
     timeout.tv_nsec = tv.tv_usec * 1000;
     timeout.tv_sec = tv.tv_sec + me->stats_collect_interval;
 
-    P(mutex);
+    lock_mutex(mutex);
     pthread_cond_timedwait(&wait_for_next_run, &mutex, &timeout);
-    V(mutex);
+    unlock_mutex(mutex);
   }
 
   // Cleanup the cached statistics.
@@ -484,7 +484,7 @@ bool StatsCmd(JobControlRecord* jcr)
             dir->fsend(msg.c_str());
           }
 
-          P(mutex);
+          lock_mutex(mutex);
           // If this is the last one on the list leave it for comparison.
           if (!next_dev_stat) {
             dev_stat->collected = true;
@@ -493,7 +493,7 @@ bool StatsCmd(JobControlRecord* jcr)
 
             if (dev_stats->cached == dev_stat) { dev_stats->cached = NULL; }
           }
-          V(mutex);
+          unlock_mutex(mutex);
           dev_stat = next_dev_stat;
         }
       }
@@ -511,9 +511,9 @@ bool StatsCmd(JobControlRecord* jcr)
           dir->fsend(msg.c_str());
 
           next_tape_alert = dev_stats->device_tapealerts->next(tape_alert);
-          P(mutex);
+          lock_mutex(mutex);
           dev_stats->device_tapealerts->remove(tape_alert);
-          V(mutex);
+          unlock_mutex(mutex);
           tape_alert = next_tape_alert;
         }
       }
@@ -544,7 +544,7 @@ bool StatsCmd(JobControlRecord* jcr)
             dir->fsend(msg.c_str());
           }
 
-          P(mutex);
+          lock_mutex(mutex);
           // If this is the last one on the list leave it for comparison.
           if (!next_job_stat) {
             job_stat->collected = true;
@@ -552,7 +552,7 @@ bool StatsCmd(JobControlRecord* jcr)
             job_stats->job_statistics->remove(job_stat);
             if (job_stats->cached == job_stat) { job_stats->cached = NULL; }
           }
-          V(mutex);
+          unlock_mutex(mutex);
           job_stat = next_job_stat;
         }
       }
@@ -570,10 +570,10 @@ bool StatsCmd(JobControlRecord* jcr)
       endeach_jcr(jcr);
 
       if (!found) {
-        P(mutex);
+        lock_mutex(mutex);
         Dmsg1(200, "Removing jobid %d from job_statistics\n", job_stats->JobId);
         job_statistics->remove(job_stats);
-        V(mutex);
+        unlock_mutex(mutex);
       }
 
       job_stats = next_job_stats;

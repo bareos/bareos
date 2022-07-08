@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2015-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -127,9 +127,9 @@ bool BeginDataSpool(DeviceControlRecord* dcr)
     if (status) {
       dcr->spooling = true;
       Jmsg(dcr->jcr, M_INFO, 0, _("Spooling data ...\n"));
-      P(mutex);
+      lock_mutex(mutex);
       spool_stats.data_jobs++;
-      V(mutex);
+      unlock_mutex(mutex);
     }
   }
 
@@ -216,7 +216,7 @@ static bool CloseDataSpoolFile(DeviceControlRecord* dcr, bool end_of_spool)
   Dmsg1(100, "Deleted spool file: %s\n", name);
   FreePoolMemory(name);
 
-  P(mutex);
+  lock_mutex(mutex);
   spool_stats.data_jobs--;
   if (end_of_spool) { spool_stats.total_data_jobs++; }
   if (spool_stats.data_size < dcr->job_spool_size) {
@@ -224,12 +224,12 @@ static bool CloseDataSpoolFile(DeviceControlRecord* dcr, bool end_of_spool)
   } else {
     spool_stats.data_size -= dcr->job_spool_size;
   }
-  V(mutex);
+  unlock_mutex(mutex);
 
-  P(dcr->dev->spool_mutex);
+  lock_mutex(dcr->dev->spool_mutex);
   dcr->dev->spool_size -= dcr->job_spool_size;
   dcr->job_spool_size = 0;
-  V(dcr->dev->spool_mutex);
+  unlock_mutex(dcr->dev->spool_mutex);
 
   return true;
 }
@@ -394,17 +394,17 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
       // Note, try continuing despite ftruncate problem
     }
 
-    P(mutex);
+    lock_mutex(mutex);
     if (spool_stats.data_size < dcr->job_spool_size) {
       spool_stats.data_size = 0;
     } else {
       spool_stats.data_size -= dcr->job_spool_size;
     }
-    V(mutex);
-    P(dcr->dev->spool_mutex);
+    unlock_mutex(mutex);
+    lock_mutex(dcr->dev->spool_mutex);
     dcr->dev->spool_size -= dcr->job_spool_size;
     dcr->job_spool_size = 0; /* zap size in input dcr */
-    V(dcr->dev->spool_mutex);
+    unlock_mutex(dcr->dev->spool_mutex);
   }
 
   /*
@@ -512,7 +512,7 @@ bool WriteBlockToSpoolFile(DeviceControlRecord* dcr)
 
   hlen = sizeof(spool_hdr);
   wlen = block->binbuf;
-  P(dcr->dev->spool_mutex);
+  lock_mutex(dcr->dev->spool_mutex);
   dcr->job_spool_size += hlen + wlen;
   dcr->dev->spool_size += hlen + wlen;
   if ((dcr->max_job_spool_size > 0
@@ -521,13 +521,13 @@ bool WriteBlockToSpoolFile(DeviceControlRecord* dcr)
           && dcr->dev->spool_size >= dcr->dev->max_spool_size)) {
     despool = true;
   }
-  V(dcr->dev->spool_mutex);
-  P(mutex);
+  unlock_mutex(dcr->dev->spool_mutex);
+  lock_mutex(mutex);
   spool_stats.data_size += hlen + wlen;
   if (spool_stats.data_size > spool_stats.max_data_size) {
     spool_stats.max_data_size = spool_stats.data_size;
   }
-  V(mutex);
+  unlock_mutex(mutex);
   if (despool) {
     char ec1[30], ec2[30];
     if (dcr->max_job_spool_size > 0) {
@@ -549,10 +549,10 @@ bool WriteBlockToSpoolFile(DeviceControlRecord* dcr)
       return false;
     }
     /* Despooling cleared these variables so reset them */
-    P(dcr->dev->spool_mutex);
+    lock_mutex(dcr->dev->spool_mutex);
     dcr->job_spool_size += hlen + wlen;
     dcr->dev->spool_size += hlen + wlen;
-    V(dcr->dev->spool_mutex);
+    unlock_mutex(dcr->dev->spool_mutex);
     Jmsg(dcr->jcr, M_INFO, 0, _("Spooling data again ...\n"));
   }
 
@@ -704,7 +704,7 @@ bool DiscardAttributeSpool(JobControlRecord* jcr)
 
 static void UpdateAttrSpoolSize(ssize_t size)
 {
-  P(mutex);
+  lock_mutex(mutex);
   if (size > 0) {
     if ((spool_stats.attr_size - size) > 0) {
       spool_stats.attr_size -= size;
@@ -712,7 +712,7 @@ static void UpdateAttrSpoolSize(ssize_t size)
       spool_stats.attr_size = 0;
     }
   }
-  V(mutex);
+  unlock_mutex(mutex);
 }
 
 static void MakeUniqueSpoolFilename(JobControlRecord* jcr,
@@ -799,12 +799,12 @@ bool CommitAttributeSpool(JobControlRecord* jcr)
       goto bail_out;
     }
 
-    P(mutex);
+    lock_mutex(mutex);
     if (spool_stats.attr_size + size > spool_stats.max_attr_size) {
       spool_stats.max_attr_size = spool_stats.attr_size + size;
     }
     spool_stats.attr_size += size;
-    V(mutex);
+    unlock_mutex(mutex);
 
     jcr->sendJobStatus(JS_AttrDespooling);
     Jmsg(jcr, M_INFO, 0,
@@ -842,9 +842,9 @@ static bool OpenAttrSpoolFile(JobControlRecord* jcr, BareosSocket* bs)
     return false;
   }
 
-  P(mutex);
+  lock_mutex(mutex);
   spool_stats.attr_jobs++;
-  V(mutex);
+  unlock_mutex(mutex);
 
   FreePoolMemory(name);
 
@@ -862,10 +862,10 @@ static bool CloseAttrSpoolFile(JobControlRecord* jcr, BareosSocket* bs)
 
   name = GetPoolMemory(PM_MESSAGE);
 
-  P(mutex);
+  lock_mutex(mutex);
   spool_stats.attr_jobs--;
   spool_stats.total_attr_jobs++;
-  V(mutex);
+  unlock_mutex(mutex);
 
   MakeUniqueSpoolFilename(jcr, name, bs->fd_);
 

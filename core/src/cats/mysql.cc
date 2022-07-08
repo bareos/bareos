@@ -146,7 +146,7 @@ bool BareosDbMysql::OpenDatabase(JobControlRecord* jcr)
   my_bool reconnect = 1;
 #  endif
 
-  P(mutex);
+  lock_mutex(mutex);
   if (connected_) {
     retval = true;
     goto bail_out;
@@ -214,14 +214,14 @@ bool BareosDbMysql::OpenDatabase(JobControlRecord* jcr)
   retval = true;
 
 bail_out:
-  V(mutex);
+  unlock_mutex(mutex);
   return retval;
 }
 
 void BareosDbMysql::CloseDatabase(JobControlRecord* jcr)
 {
   if (connected_) { EndTransaction(jcr); }
-  P(mutex);
+  lock_mutex(mutex);
   ref_count_--;
   Dmsg3(100, "closedb ref=%d connected=%d db=%p\n", ref_count_, connected_,
         db_handle_);
@@ -253,7 +253,7 @@ void BareosDbMysql::CloseDatabase(JobControlRecord* jcr)
       db_list = NULL;
     }
   }
-  V(mutex);
+  unlock_mutex(mutex);
 }
 
 bool BareosDbMysql::ValidateConnection(void)
@@ -673,7 +673,7 @@ BareosDb* db_init_database(JobControlRecord* jcr,
     Jmsg(jcr, M_FATAL, 0, _("A user name for MySQL must be supplied.\n"));
     return NULL;
   }
-  P(mutex); /* lock DB queue */
+  lock_mutex(mutex); /* lock DB queue */
 
   // Look to see if DB already open
   if (db_list && !mult_db_connections && !need_private) {
@@ -694,7 +694,7 @@ BareosDb* db_init_database(JobControlRecord* jcr,
                           need_private);
 
 bail_out:
-  V(mutex);
+  unlock_mutex(mutex);
   return mdb;
 }
 

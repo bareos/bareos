@@ -138,7 +138,7 @@ void WriteCryptoCache(const char* cache_file)
   if (!cached_crypto_keys) { return; }
 
   // Lock the cache.
-  P(crypto_cache_lock);
+  lock_mutex(crypto_cache_lock);
 
   SecureErase(NULL, cache_file);
   if ((fd = open(cache_file, O_CREAT | O_WRONLY | O_BINARY, 0640)) < 0) {
@@ -175,7 +175,7 @@ bail_out:
 
   if (!ok) { SecureErase(NULL, cache_file); }
 
-  V(crypto_cache_lock);
+  unlock_mutex(crypto_cache_lock);
 }
 
 void WriteCryptoCache(const char* dir, const char* progname, int port)
@@ -203,7 +203,7 @@ bool UpdateCryptoCache(const char* VolumeName, const char* EncryptionKey)
   crypto_cache_entry_t* next_cce;
 
   // Lock the cache.
-  P(crypto_cache_lock);
+  lock_mutex(crypto_cache_lock);
 
   // See if there are any cached encryption keys.
   if (!cached_crypto_keys) {
@@ -258,7 +258,7 @@ bool UpdateCryptoCache(const char* VolumeName, const char* EncryptionKey)
     }
   }
 
-  V(crypto_cache_lock);
+  unlock_mutex(crypto_cache_lock);
   return retval;
 }
 
@@ -273,16 +273,16 @@ char* lookup_crypto_cache_entry(const char* VolumeName)
   if (!cached_crypto_keys) { return NULL; }
 
   // Lock the cache.
-  P(crypto_cache_lock);
+  lock_mutex(crypto_cache_lock);
 
   foreach_dlist (cce, cached_crypto_keys) {
     if (bstrcmp(cce->VolumeName, VolumeName)) {
-      V(crypto_cache_lock);
+      unlock_mutex(crypto_cache_lock);
       return strdup(cce->EncryptionKey);
     }
   }
 
-  V(crypto_cache_lock);
+  unlock_mutex(crypto_cache_lock);
   return NULL;
 }
 
@@ -298,7 +298,7 @@ void DumpCryptoCache(int fd)
   if (!cached_crypto_keys) { return; }
 
   // Lock the cache.
-  P(crypto_cache_lock);
+  lock_mutex(crypto_cache_lock);
 
   // See how long the biggest volumename and key are.
   max_vol_length = strlen(_("Volumename"));
@@ -332,7 +332,7 @@ void DumpCryptoCache(int fd)
     }
   }
 
-  V(crypto_cache_lock);
+  unlock_mutex(crypto_cache_lock);
 }
 
 // Reset all entries in the cache to the current time.
@@ -346,13 +346,13 @@ void ResetCryptoCache(void)
   now = time(NULL);
 
   // Lock the cache.
-  P(crypto_cache_lock);
+  lock_mutex(crypto_cache_lock);
 
   foreach_dlist (cce, cached_crypto_keys) {
     cce->added = now;
   }
 
-  V(crypto_cache_lock);
+  unlock_mutex(crypto_cache_lock);
 }
 
 // Flush the date from the internal cache.
@@ -361,11 +361,11 @@ void FlushCryptoCache(void)
   if (!cached_crypto_keys) { return; }
 
   // Lock the cache.
-  P(crypto_cache_lock);
+  lock_mutex(crypto_cache_lock);
 
   cached_crypto_keys->destroy();
   delete cached_crypto_keys;
   cached_crypto_keys = NULL;
 
-  V(crypto_cache_lock);
+  unlock_mutex(crypto_cache_lock);
 }

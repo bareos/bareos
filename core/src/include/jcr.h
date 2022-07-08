@@ -94,8 +94,8 @@ class JobControlRecord {
   JobControlRecord& operator=(const JobControlRecord& other) = delete;
   JobControlRecord& operator=(const JobControlRecord&& other) = delete;
 
-  void lock() { P(mutex); }
-  void unlock() { V(mutex); }
+  void lock() { lock_mutex(mutex); }
+  void unlock() { unlock_mutex(mutex); }
   void IncUseCount(void)
   {
     lock();

@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2013 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -765,7 +765,7 @@ static void AttachDcrToDev(DeviceControlRecord* dcr)
   Device* dev;
   JobControlRecord* jcr;
 
-  P(dcr->mutex_);
+  lock_mutex(dcr->mutex_);
   dev = dcr->dev;
   jcr = dcr->jcr;
   if (jcr) Dmsg1(500, "JobId=%u enter AttachDcrToDev\n", (uint32_t)jcr->JobId);
@@ -779,7 +779,7 @@ static void AttachDcrToDev(DeviceControlRecord* dcr)
     dev->Unlock();
     dcr->attached_to_dev = true;
   }
-  V(dcr->mutex_);
+  unlock_mutex(dcr->mutex_);
 }
 
 // DeviceControlRecord is locked before calling this routine
@@ -811,9 +811,9 @@ static void LockedDetachDcrFromDev(DeviceControlRecord* dcr)
 
 static void DetachDcrFromDev(DeviceControlRecord* dcr)
 {
-  P(dcr->mutex_);
+  lock_mutex(dcr->mutex_);
   LockedDetachDcrFromDev(dcr);
-  V(dcr->mutex_);
+  unlock_mutex(dcr->mutex_);
 }
 
 /**
@@ -824,7 +824,7 @@ void FreeDeviceControlRecord(DeviceControlRecord* dcr)
 {
   JobControlRecord* jcr;
 
-  P(dcr->mutex_);
+  lock_mutex(dcr->mutex_);
   jcr = dcr->jcr;
 
   LockedDetachDcrFromDev(dcr);
@@ -837,7 +837,7 @@ void FreeDeviceControlRecord(DeviceControlRecord* dcr)
 
   if (jcr && jcr->impl->read_dcr == dcr) { jcr->impl->read_dcr = NULL; }
 
-  V(dcr->mutex_);
+  unlock_mutex(dcr->mutex_);
 
   pthread_mutex_destroy(&dcr->mutex_);
   pthread_mutex_destroy(&dcr->r_mutex);

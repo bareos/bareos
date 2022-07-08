@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1455,7 +1455,7 @@ void CreateUniqueJobName(JobControlRecord* jcr, const char* base_name)
   /* Guarantee unique start time -- maximum one per second, and
    * thus unique Job Name
    */
-  P(mutex); /* lock creation of jobs */
+  lock_mutex(mutex); /* lock creation of jobs */
   seq++;
   if (seq > 59) { /* wrap as if it is seconds */
     seq = 0;
@@ -1466,7 +1466,7 @@ void CreateUniqueJobName(JobControlRecord* jcr, const char* base_name)
   }
   lseq = seq;
   last_start_time = now;
-  V(mutex); /* allow creation of jobs */
+  unlock_mutex(mutex); /* allow creation of jobs */
   jcr->start_time = now;
 
   /*

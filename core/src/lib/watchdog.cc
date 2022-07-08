@@ -107,9 +107,9 @@ int StartWatchdog(void)
  */
 static void ping_watchdog()
 {
-  P(timer_mutex);
+  lock_mutex(timer_mutex);
   pthread_cond_signal(&timer);
-  V(timer_mutex);
+  unlock_mutex(timer_mutex);
   Bmicrosleep(0, 100);
 }
 
@@ -300,9 +300,9 @@ extern "C" void* watchdog_thread(void* arg)
 
     Dmsg1(1900, "pthread_cond_timedwait %d\n", timeout.tv_sec - tv.tv_sec);
     /* Note, this unlocks mutex during the sleep */
-    P(timer_mutex);
+    lock_mutex(timer_mutex);
     pthread_cond_timedwait(&timer, &timer_mutex, &timeout);
-    V(timer_mutex);
+    unlock_mutex(timer_mutex);
   }
 
   Dmsg0(800, "NicB-reworked watchdog thread exited\n");

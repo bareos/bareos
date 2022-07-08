@@ -1583,9 +1583,9 @@ void Qmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
     free(item);
   } else {
     // Queue message for later sending
-    P(jcr->msg_queue_mutex);
+    lock_mutex(jcr->msg_queue_mutex);
     jcr->msg_queue->append(item);
-    V(jcr->msg_queue_mutex);
+    unlock_mutex(jcr->msg_queue_mutex);
   }
 }
 
@@ -1596,7 +1596,7 @@ void DequeueMessages(JobControlRecord* jcr)
 
   if (!jcr->msg_queue) { return; }
 
-  P(jcr->msg_queue_mutex);
+  lock_mutex(jcr->msg_queue_mutex);
   jcr->dequeuing_msgs = true;
   foreach_dlist (item, jcr->msg_queue) {
     Jmsg(jcr, item->type_, item->mtime_, "%s", item->msg_);
@@ -1607,7 +1607,7 @@ void DequeueMessages(JobControlRecord* jcr)
   // Remove messages just sent
   jcr->msg_queue->destroy();
   jcr->dequeuing_msgs = false;
-  V(jcr->msg_queue_mutex);
+  unlock_mutex(jcr->msg_queue_mutex);
 }
 
 /*

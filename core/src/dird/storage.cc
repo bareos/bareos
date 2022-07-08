@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -568,7 +568,7 @@ changer_vol_list_t* get_vol_list_from_storage(UaContext* ua,
   dlist<vol_list_t>* contents = NULL;
   changer_vol_list_t* vol_list = NULL;
 
-  P(store->runtime_storage_status->changer_lock);
+  lock_mutex(store->runtime_storage_status->changer_lock);
 
   if (listall) {
     type = VOL_LIST_ALL;
@@ -646,7 +646,7 @@ changer_vol_list_t* get_vol_list_from_storage(UaContext* ua,
   }
 
 bail_out:
-  V(store->runtime_storage_status->changer_lock);
+  unlock_mutex(store->runtime_storage_status->changer_lock);
 
   return vol_list;
 }
@@ -660,7 +660,7 @@ slot_number_t GetNumSlots(UaContext* ua, StorageResource* store)
     return store->runtime_storage_status->slots;
   }
 
-  P(store->runtime_storage_status->changer_lock);
+  lock_mutex(store->runtime_storage_status->changer_lock);
 
   switch (store->Protocol) {
     case APT_NATIVE:
@@ -677,7 +677,7 @@ slot_number_t GetNumSlots(UaContext* ua, StorageResource* store)
 
   store->runtime_storage_status->slots = slots;
 
-  V(store->runtime_storage_status->changer_lock);
+  unlock_mutex(store->runtime_storage_status->changer_lock);
 
   return slots;
 }
@@ -691,7 +691,7 @@ slot_number_t GetNumDrives(UaContext* ua, StorageResource* store)
     return store->runtime_storage_status->drives;
   }
 
-  P(store->runtime_storage_status->changer_lock);
+  lock_mutex(store->runtime_storage_status->changer_lock);
 
   switch (store->Protocol) {
     case APT_NATIVE:
@@ -708,7 +708,7 @@ slot_number_t GetNumDrives(UaContext* ua, StorageResource* store)
 
   store->runtime_storage_status->drives = drives;
 
-  V(store->runtime_storage_status->changer_lock);
+  unlock_mutex(store->runtime_storage_status->changer_lock);
 
   return drives;
 }
@@ -720,7 +720,7 @@ bool transfer_volume(UaContext* ua,
 {
   bool retval = false;
 
-  P(store->runtime_storage_status->changer_lock);
+  lock_mutex(store->runtime_storage_status->changer_lock);
 
   switch (store->Protocol) {
     case APT_NATIVE:
@@ -735,7 +735,7 @@ bool transfer_volume(UaContext* ua,
       break;
   }
 
-  V(store->runtime_storage_status->changer_lock);
+  unlock_mutex(store->runtime_storage_status->changer_lock);
 
   return retval;
 }
@@ -748,7 +748,7 @@ bool DoAutochangerVolumeOperation(UaContext* ua,
 {
   bool retval = false;
 
-  P(store->runtime_storage_status->changer_lock);
+  lock_mutex(store->runtime_storage_status->changer_lock);
 
   switch (store->Protocol) {
     case APT_NATIVE:
@@ -765,7 +765,7 @@ bool DoAutochangerVolumeOperation(UaContext* ua,
       break;
   }
 
-  V(store->runtime_storage_status->changer_lock);
+  unlock_mutex(store->runtime_storage_status->changer_lock);
 
   return retval;
 }
@@ -800,7 +800,7 @@ vol_list_t* vol_is_loaded_in_drive(StorageResource* store,
  */
 void StorageReleaseVolList(StorageResource* store, changer_vol_list_t* vol_list)
 {
-  P(store->runtime_storage_status->changer_lock);
+  lock_mutex(store->runtime_storage_status->changer_lock);
 
   Dmsg0(100, "Releasing volume list\n");
 
@@ -819,13 +819,13 @@ void StorageReleaseVolList(StorageResource* store, changer_vol_list_t* vol_list)
     }
   }
 
-  V(store->runtime_storage_status->changer_lock);
+  unlock_mutex(store->runtime_storage_status->changer_lock);
 }
 
 // Destroy the volume list returned from get_vol_list_from_storage()
 void StorageFreeVolList(StorageResource* store, changer_vol_list_t* vol_list)
 {
-  P(store->runtime_storage_status->changer_lock);
+  lock_mutex(store->runtime_storage_status->changer_lock);
 
   Dmsg1(100, "Freeing volume list at %p\n", vol_list);
 
@@ -836,7 +836,7 @@ void StorageFreeVolList(StorageResource* store, changer_vol_list_t* vol_list)
     store->runtime_storage_status->vol_list = NULL;
   }
 
-  V(store->runtime_storage_status->changer_lock);
+  unlock_mutex(store->runtime_storage_status->changer_lock);
 }
 
 /**
@@ -846,7 +846,7 @@ void StorageFreeVolList(StorageResource* store, changer_vol_list_t* vol_list)
  */
 void InvalidateVolList(StorageResource* store)
 {
-  P(store->runtime_storage_status->changer_lock);
+  lock_mutex(store->runtime_storage_status->changer_lock);
 
   if (store->runtime_storage_status->vol_list) {
     Dmsg1(100, "Invalidating volume list at %p\n",
@@ -864,7 +864,7 @@ void InvalidateVolList(StorageResource* store)
     }
   }
 
-  V(store->runtime_storage_status->changer_lock);
+  unlock_mutex(store->runtime_storage_status->changer_lock);
 }
 
 

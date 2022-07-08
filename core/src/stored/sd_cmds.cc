@@ -2,7 +2,7 @@
    BAREOS - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -221,7 +221,7 @@ bool DoListenRun(JobControlRecord* jcr)
    * Wait for the Storage daemon to contact us to start the Job, when he does,
    * we will be released.
    */
-  P(mutex);
+  lock_mutex(mutex);
   while (!jcr->authenticated && !JobCanceled(jcr)) {
     errstat = pthread_cond_wait(&jcr->impl->job_start_wait, &mutex);
     if (errstat == EINVAL || errstat == EPERM) { break; }
@@ -229,7 +229,7 @@ bool DoListenRun(JobControlRecord* jcr)
   }
   Dmsg3(50, "Auth=%d canceled=%d errstat=%d\n", jcr->authenticated,
         JobCanceled(jcr), errstat);
-  V(mutex);
+  unlock_mutex(mutex);
 
   if (!jcr->authenticated || !jcr->store_bsock) {
     Dmsg2(800, "Auth fail or cancel for jid=%d %p\n", jcr->JobId, jcr);

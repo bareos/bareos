@@ -696,7 +696,7 @@ bool DropletDevice::initialize()
   dpl_status_t status;
 
   // Initialize the droplet library when its not done previously.
-  P(mutex);
+  lock_mutex(mutex);
   if (droplet_reference_count == 0) {
     dpl_set_log_func(DropletDeviceLogfunc);
 
@@ -705,12 +705,12 @@ bool DropletDevice::initialize()
       case DPL_SUCCESS:
         break;
       default:
-        V(mutex);
+        unlock_mutex(mutex);
         goto bail_out;
     }
   }
   droplet_reference_count++;
-  V(mutex);
+  unlock_mutex(mutex);
 
   if (!configstring_) {
     int len;
@@ -1019,10 +1019,10 @@ DropletDevice::~DropletDevice()
 
   if (configstring_) { free(configstring_); }
 
-  P(mutex);
+  lock_mutex(mutex);
   droplet_reference_count--;
   if (droplet_reference_count == 0) { dpl_free(); }
-  V(mutex);
+  unlock_mutex(mutex);
 }
 
 class Backend : public BackendInterface {
