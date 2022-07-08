@@ -187,6 +187,7 @@ add_executable(bareos-dbcheck ${DBCHKSRCS})
 
 target_link_libraries(
   bareos-dbcheck PRIVATE bareossql bareos bareosfind ${OPENSSL_LIBRARIES}
+                         CLI11::CLI11
 )
 
 # is not built by default

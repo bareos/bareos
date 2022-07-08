@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,6 +27,7 @@
 #include "cats/cats.h"
 #include "cats/cats_backends.h"
 #include "lib/runscript.h"
+#include "lib/cli.h"
 #include "dird/dird_conf.h"
 #include "dird/dird_globals.h"
 #include "lib/edit.h"
@@ -101,29 +102,6 @@ static struct dbcheck_cmdstruct commands[] = {
 
 const int number_commands
     = (sizeof(commands) / sizeof(struct dbcheck_cmdstruct));
-
-
-static void usage()
-{
-  kBareosVersionStrings.PrintCopyrightWithFsfAndPlanets(stderr, 2002);
-  fprintf(stderr,
-          "Usage: bareos-dbcheck [ options ] <working-directory> "
-          "<bareos-database> <user> <password> [<dbhost>] [<dbport>]\n"
-          "       -b                batch mode\n"
-          "       -B                print catalog configuration and exit\n"
-          "       -c  <config>      Director configuration filename or "
-          "configuration directory (e.g. /etc/bareos)\n"
-          "       -C  <catalog>     catalog name in the director configuration "
-          "file\n"
-          "       -d  <nnn>         set debug level to <nnn>\n"
-          "       -dt               print a timestamp in debug output\n"
-          "       -D  <driver name> exists for backwards compatibility and is "
-          "ignored\n"
-          "       -f                fix inconsistencies\n"
-          "       -v                verbose\n"
-          "       -?                print this message\n\n");
-  exit(1);
-}
 
 // helper functions
 
@@ -812,18 +790,6 @@ static void do_interactive_mode()
 // main
 int main(int argc, char* argv[])
 {
-  int ch;
-  const char* db_driver = "postgresql";
-  const char *user, *password, *db_name, *dbhost;
-  int dbport = 0;
-  bool print_catalog = false;
-  char* configfile = nullptr;
-  char* catalogname = nullptr;
-  char* endptr;
-#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-  std::vector<std::string> backend_directories;
-#endif
-
   setlocale(LC_ALL, "");
   tzset();
   bindtextdomain("bareos", LOCALEDIR);
@@ -832,82 +798,108 @@ int main(int argc, char* argv[])
   MyNameIs(argc, argv, "dbcheck");
   InitMsg(nullptr, nullptr); /* setup message handler */
 
+  OSDependentInit();
+
   memset(&id_list, 0, sizeof(id_list));
   memset(&name_list, 0, sizeof(name_list));
 
-  while ((ch = getopt(argc, argv, "bc:C:D:d:fvBt?")) != -1) {
-    switch (ch) {
-      case 'B':
-        print_catalog = true; /* get catalog information from config */
-        break;
-      case 'b': /* batch */
-        batch = true;
-        break;
-      case 'C': /* CatalogName */
-        catalogname = optarg;
-        break;
-      case 'c': /* configfile */
-        configfile = optarg;
-        break;
+  CLI::App dbcheck_app;
+  InitCLIApp(dbcheck_app, "The Bareos Database Checker.", 2002);
 
-      case 'D':
-        /* ignored */
-        break;
-      case 'd': /* debug level */
-        if (*optarg == 't') {
-          dbg_timestamp = true;
-        } else {
-          debug_level = atoi(optarg);
-          if (debug_level <= 0) { debug_level = 1; }
-        }
-        break;
-      case 'f': /* fix inconsistencies */
-        fix = true;
-        break;
-      case 'v':
-        verbose++;
-        break;
-      case '?':
-      default:
-        usage();
-    }
-  }
-  argc -= optind;
-  argv += optind;
+  std::string configfile;
+  auto config_arg = dbcheck_app
+                        .add_option("-c,--config", configfile,
+                                    "Use <path> as Director configuration "
+                                    "filename or configuration directory.")
+                        ->check(CLI::ExistingPath)
+                        ->type_name("<path>");
 
-  OSDependentInit();
+  bool print_catalog = false;
+  dbcheck_app.add_flag("-B,--print-catalog", print_catalog,
+                       "Print catalog configuration and exit.");
 
-  if (configfile || (argc == 0)) {
+  dbcheck_app.add_flag("-b,--batch", batch, "Batch mode.");
+
+  std::string catalogname;
+  dbcheck_app
+      .add_option("-C,--catalog", catalogname,
+                  "Catalog name in the director configuration file.")
+      ->type_name("<catalog>");
+
+  std::string driver_name;
+  dbcheck_app.add_option("-D,--driver", driver_name,
+                         "Exists for backwards compatibility and is ignored.");
+
+  AddDebugOptions(dbcheck_app);
+
+  dbcheck_app.add_flag("-f,--fix", fix, "Fix inconsistencies.");
+
+  AddVerboseOption(dbcheck_app);
+
+  auto manual_args
+      = dbcheck_app
+            .add_option_group("Manual credentials",
+                              "Setting database credentials manually. Can only "
+                              "be used when no configuration is given.")
+            ->excludes(config_arg);
+
+  std::string workingdir;
+  manual_args->add_option("working_directory", workingdir,
+                          "Path to working directory.");
+
+  std::string db_name = "bareos";
+  manual_args->add_option("database_name", db_name, "Database name.");
+
+  std::string user = db_name;
+  manual_args->add_option("user", user, "Database user name.");
+
+  std::string password = "";
+  manual_args->add_option("password", password, "Database password.");
+
+  std::string dbhost = "";
+  manual_args->add_option("host", dbhost, "Database host.");
+
+  int dbport = 0;
+  manual_args->add_option("port", dbport, "Database port")
+      ->check(CLI::PositiveNumber);
+
+  CLI11_PARSE(dbcheck_app, argc, argv);
+
+  const char* db_driver = "postgresql";
+#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
+  std::vector<std::string> backend_directories;
+#endif
+
+  if (!configfile.empty() || manual_args->count_all() == 0) {
     CatalogResource* catalog = nullptr;
     int found = 0;
-    if (argc > 0) {
-      Pmsg0(0, _("Warning skipping the additional parameters for working "
-                 "directory/dbname/user/password/host.\n"));
-    }
-    my_config = InitDirConfig(configfile, M_ERROR_TERM);
+
+    my_config = InitDirConfig(configfile.c_str(), M_ERROR_TERM);
     my_config->ParseConfig();
     LockRes(my_config);
     foreach_res (catalog, R_CATALOG) {
-      if (catalogname && bstrcmp(catalog->resource_name_, catalogname)) {
+      if (!catalogname.empty()
+          && bstrcmp(catalog->resource_name_, catalogname.c_str())) {
         ++found;
         break;
-      } else if (!catalogname) {  // stop on first if no catalogname is given
+      } else if (catalogname
+                     .empty()) {  // stop on first if no catalogname is given
         ++found;
         break;
       }
     }
     UnlockRes(my_config);
     if (!found) {
-      if (catalogname) {
+      if (!catalogname.empty()) {
         Pmsg2(0,
               _("Error can not find the Catalog name[%s] in the given config "
                 "file [%s]\n"),
-              catalogname, configfile);
+              catalogname.c_str(), configfile.c_str());
       } else {
         Pmsg1(0,
               _("Error there is no Catalog section in the given config file "
                 "[%s]\n"),
-              configfile);
+              configfile.c_str());
       }
       exit(1);
     } else {
@@ -934,54 +926,13 @@ int main(int argc, char* argv[])
       db_name = catalog->db_name;
       user = catalog->db_user;
       password = catalog->db_password.value;
-      dbhost = catalog->db_address;
+      if (catalog->db_address) { dbhost = catalog->db_address; }
       db_driver = catalog->db_driver;
-      if (dbhost && dbhost[0] == 0) { dbhost = nullptr; }
+      if (!dbhost.empty() && dbhost[0] == 0) { dbhost = ""; }
       dbport = catalog->db_port;
     }
   } else {
-    if (argc > 6) {
-      Pmsg0(0, _("Wrong number of arguments.\n"));
-      usage();
-    }
-
-    // This is needed by SQLite to find the db
-    working_directory = argv[0];
-    db_name = "bareos";
-    user = db_name;
-    password = "";
-    dbhost = nullptr;
-
-    if (argc == 2) {
-      db_name = argv[1];
-      user = db_name;
-    } else if (argc == 3) {
-      db_name = argv[1];
-      user = argv[2];
-    } else if (argc == 4) {
-      db_name = argv[1];
-      user = argv[2];
-      password = argv[3];
-    } else if (argc == 5) {
-      db_name = argv[1];
-      user = argv[2];
-      password = argv[3];
-      dbhost = argv[4];
-    } else if (argc == 6) {
-      db_name = argv[1];
-      user = argv[2];
-      password = argv[3];
-      dbhost = argv[4];
-      errno = 0;
-      dbport = strtol(argv[5], &endptr, 10);
-      if (*endptr != '\0') {
-        Pmsg0(0, _("Database port must be a numeric value.\n"));
-        exit(1);
-      } else if (errno == ERANGE) {
-        Pmsg0(0, _("Database port must be a int value.\n"));
-        exit(1);
-      }
-    }
+    working_directory = workingdir.c_str();
 
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
     backend_directories.emplace_back(backend_directory);
@@ -990,8 +941,9 @@ int main(int argc, char* argv[])
   }
 
   // Open database
-  db = db_init_database(nullptr, db_driver, db_name, user, password, dbhost,
-                        dbport, nullptr, false, false, false, false);
+  db = db_init_database(nullptr, db_driver, db_name.c_str(), user.c_str(),
+                        password.c_str(), dbhost.c_str(), dbport, nullptr,
+                        false, false, false, false);
   if (!db->OpenDatabase(nullptr)) {
     Emsg1(M_FATAL, 0, "%s", db->strerror());
     return 1;

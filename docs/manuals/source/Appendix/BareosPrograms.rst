@@ -1112,17 +1112,29 @@ If not, problems of reading the Bareos configuration or accessing the database c
 
 .. code-block:: shell-session
 
-   Usage: bareos-dbcheck [-c config ] [-B] [-C catalog name] [-d debug level] [-D driver name] <working-directory> <bareos-database> <user> <password> [<dbhost>] [<dbport>]
-          -b                batch mode
-          -C                catalog name in the director conf file
-          -c                Director configuration filename or configuration directory (e.g. /etc/bareos)
-          -B                print catalog configuration and exit
-          -d <nn>           set debug level to <nn>
-          -dt               print a timestamp in debug output
-          -D <driver name>  exists for backwards compatibility and is ignored
-          -f                fix inconsistencies
-          -v                verbose
-          -?                print this message
+    Usage: bareos-dbcheck [OPTIONS]
+
+    Options:
+      -h,--help                             Print this help message and exit
+      -c,--config <path>                    Use <path> as Director configuration filename or configuration directory.
+      -B,--print-catalog Needs: --config-file
+                                            Print catalog configuration and exit.
+      -b,--batch                            Batch mode.
+      -C,--catalog <catalog>                Catalog name in the director configuration file.
+      -D,--driver TEXT                      Exists for backwards compatibility and is ignored.
+      -d,--debug-level <level>              Set debug level to <level>.
+      --dt,--debug-timestamps                Print timestamp in debug output.
+      -f,--fix                              Fix inconsistencies.
+      -v,--verbose                          Verbose user messages.
+    [Option Group: Manual credentials]
+      Setting database credentials manually. Can only be used when no configuration is given.
+      Positionals:
+        working_directory                     Path to working directory.
+        database_name                         Database name.
+        user                                  Database user name.
+        password                              Database password.
+        host                                  Database host.
+        port INT:POSITIVE                     Database port
 
 When using the default configuration paths, it is not necessary to specify any options. Optionally, as Bareos supports loading its database backend dynamically you may specify the right database driver to use using the :strong:`-D` option.
 
