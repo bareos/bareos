@@ -233,7 +233,7 @@ if(HAVE_NDMP)
 endif()
 
 add_executable(bls ${BLSSRCS})
-target_link_libraries(bls PRIVATE bareos bareossd bareosfind)
+target_link_libraries(bls PRIVATE bareos bareossd bareosfind CLI11::CLI11)
 
 add_executable(bextract ${BEXTRACTSRS})
 target_link_libraries(bextract PRIVATE bareossd bareosfind bareos CLI11::CLI11)

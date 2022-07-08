@@ -241,23 +241,30 @@ bls
 
 .. code-block:: shell-session
 
-   Usage: bls [options] <device-name>
-          -b <file>       specify a bootstrap file
-          -c <file>       specify a Storage configuration file
-          -D <director>   specify a director name specified in the Storage
-                          configuration file for the Key Encryption Key selection
-          -d <nn>         set debug level to <nn>
-          -dt             print timestamp in debug output
-          -e <file>       exclude list
-          -i <file>       include list
-          -j              list jobs
-          -k              list blocks
-       (no j or k option) list saved files
-          -L              dump label
-          -p              proceed inspite of errors
-          -v              be verbose
-          -V              specify Volume names (separated by |)
-          -?              print this message
+    Usage: bls [OPTIONS] device-names...
+
+    Positionals:
+      device-names REQUIRED                 Specify the input device names (either as name of a Bareos
+                                            Storage Daemon Device resource or identical to the Archive
+                                            Device in a Bareos Storage Daemon Device resource.
+
+    Options:
+      -h,--help                             Print this help message and exit
+      -b,--parse-bootstrap <file>           Specify a bootstrap file.
+      -c,--config <path>                    Use <path> as configuration file or directory.
+      -D,--director <director>              Specify a director name found in the storage.
+                                            Configuration file for the Key Encryption Key selection.
+      -d,--debug-level <level>              Set debug level to <level>.
+      --dt,--debug-timestamps               Print timestamp in debug output.
+      -e,--exclude <file>                   Exclude list.
+      -i,--include-list <file>              Include list.
+      -j,--list-jobs                        List jobs.
+      -k,--list-blocks                      List blocks.
+                                            If neither -j or -k specified, list saved files.
+      -L,--dump-labels                      Dump labels.
+      -p,--ignore-errors                    Proceed inspite of IO errors.
+      -v,--verbose                          Verbose user messages.
+      -V,--volumes <vol1|vol2|...>          Volume names (separated by |)
 
 Normally if no options are specified, :command:`bls` will produce the equivalent output to the :command:`ls -l` command for each volume.
 
@@ -848,10 +855,6 @@ wish to be able to use the Volume with the Console restore command, for example,
       -w,--working-directory                Specify working directory (default is /tmp).
 
 By using a bootstrap file, you can copy parts of a Bareos archive file to another archive.
-
-One of the objectives of this program is to be able to recover as much data as possible from a damaged tape. However, the current version does not yet have this feature.
-
-As this is a new program, any feedback on its use would be appreciated. In addition, I only have a single tape drive, so I have never been able to test this program with two tape drives.
 
 
 .. _btape:
