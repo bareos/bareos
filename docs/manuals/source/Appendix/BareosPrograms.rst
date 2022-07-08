@@ -819,19 +819,27 @@ wish to be able to use the Volume with the Console restore command, for example,
 
 .. code-block:: shell-session
 
-   Usage: bcopy [-d debug_level] <input-archive> <output-archive>
-          -b bootstrap    specify a bootstrap file
-          -c <file>       specify configuration file
-          -D <director>   specify a director name specified in the Storage
-                          configuration file for the Key Encryption Key selection
-          -dnn            set debug level to nn
-          -dt             print timestamp in debug output
-          -i              specify input Volume names (separated by |)
-          -o              specify output Volume names (separated by |)
-          -p              proceed inspite of I/O errors
-          -v              verbose
-          -w dir          specify working directory (default /tmp)
-          -?              print this message
+    Usage: bcopy [OPTIONS] input-archive ouput-archive
+
+    Positionals:
+      input-archive REQUIRED                Specify input archive names.
+      ouput-archive REQUIRED                Specify output archive names.
+
+    Options:
+      -h,--help                             Print this help message and exit
+      -b,--parse-bootstrap <bootstrap>      Specify a bootstrap file.
+      -c,--config <path>                    Use <path> as configuration file or directory.
+      -D,--director <director>              Specify a director name specified in the storage.
+                                            Configuration file for the Key Encryption Key selection.
+      -d,--debug-level <level>              Set debug level to <level>.
+      --dt,--debug-timestamps               Print timestamp in debug output.
+      -i,--input-volumes <vol1|vol2|...>
+                                            Specify input Volume names (separated by |).
+      -o,--output-volumes <vol1|vol2|...>
+                                            Specify output Volume names (separated by |).
+      -p,--ignore-errors                    Proceed inspite of errors.
+      -v,--verbose                          Verbose user messages.
+      -w,--working-directory                Specify working directory (default is /tmp).
 
 By using a bootstrap file, you can copy parts of a Bareos archive file to another archive.
 

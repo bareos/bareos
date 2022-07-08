@@ -246,7 +246,7 @@ target_link_libraries(btape PRIVATE bareossd bareos)
 
 add_executable(bcopy ${BCOPYSRCS})
 
-target_link_libraries(bcopy PRIVATE bareossd bareos)
+target_link_libraries(bcopy PRIVATE bareossd bareos CLI11::CLI11)
 
 install(TARGETS bareossd DESTINATION ${libdir})
 
