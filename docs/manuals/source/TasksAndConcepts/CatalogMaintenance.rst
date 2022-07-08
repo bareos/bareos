@@ -102,7 +102,7 @@ To view and test the currently configured settings, use following commands:
 .. code-block:: shell-session
    :caption: Show current database configuration
 
-   /usr/sbin/bareos-dir -xcCatalog=MyCatalog
+   /usr/sbin/bareos-dir --xc Catalog MyCatalog
    Catalog {
       Name = "MyCatalog"
       DbPassword = YourPassword
@@ -283,7 +283,7 @@ Set the PostgreSQL server IP as :config:option:`dir/catalog/DbAddress`\  in :ref
 .. code-block:: shell-session
    :caption: Show current database configuration
 
-   /usr/sbin/bareos-dir -xcCatalog=MyCatalog
+   /usr/sbin/bareos-dir --xc Catalog MyCatalog
    Catalog {
       Name = "MyCatalog"
       DbAddress = bareos-database.example.com

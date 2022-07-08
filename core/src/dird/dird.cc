@@ -47,6 +47,7 @@
 #include "lib/thread_specific_data.h"
 #include "lib/util.h"
 #include "lib/watchdog.h"
+#include "lib/cli.h"
 
 #ifndef HAVE_REGEX_H
 #  include "lib/bregex.h"
@@ -90,7 +91,6 @@ void StoreMigtype(LEX* lc, ResourceItem* item, int index, int pass);
 void InitDeviceResources();
 
 static char* runjob = nullptr;
-static bool background = true;
 static bool test_config = false;
 struct resource_table_reference;
 static alist<resource_table_reference*>* reload_table = nullptr;
@@ -177,38 +177,6 @@ static bool DirDbLogInsert(JobControlRecord* jcr,
   return jcr->db->SqlQuery(query.c_str());
 }
 
-static void usage()
-{
-  kBareosVersionStrings.PrintCopyrightWithFsfAndPlanets(stderr, 2000);
-  fprintf(
-      stderr,
-      _("Usage: bareos-dir [options]\n"
-        "        -c <path>              use <path> as configuration file or "
-        "directory\n"
-        "        -d <nn>                set debug level to <nn>\n"
-        "        -dt                    print timestamp in debug output\n"
-        "        -f                     run in foreground (for debugging)\n"
-        "        -g <group>             run as group <group>\n"
-        "        -m                     print kaboom output (for debugging)\n"
-#if !defined(HAVE_WIN32)
-        "        -p <file>              full path to pidfile (default: none)\n"
-#endif
-        "        -r <job>               run <job> now\n"
-        "        -s                     no signals (for debugging)\n"
-        "        -t                     test - read configuration and exit\n"
-        "        -u <user>              run as user <user>\n"
-        "        -v                     verbose user messages\n"
-        "        -xc[resource[=<name>]]   print all or specific configuration "
-        "resources and exit\n"
-        "        -xs                    print configuration schema in JSON "
-        "format and exit\n"
-        "        -?                     print this message\n"
-        "\n"));
-
-  exit(1);
-}
-
-
 /*********************************************************************
  *
  *         Main BAREOS Director Server program
@@ -220,16 +188,6 @@ static void usage()
 
 int main(int argc, char* argv[])
 {
-  int ch;
-  cat_op mode;
-  bool no_signals = false;
-  bool export_config = false;
-  std::string export_config_resourcetype;
-  std::string export_config_resourcename;
-  bool export_config_schema = false;
-  char* uid = nullptr;
-  char* gid = nullptr;
-
   setlocale(LC_ALL, "");
   tzset();
   bindtextdomain("bareos", LOCALEDIR);
@@ -242,121 +200,116 @@ int main(int argc, char* argv[])
 
   console_command = RunConsoleCommand;
 
-#if HAVE_WIN32
-  std::string allowed_parameters("c:d:fg:mr:stu:vx:z:?");
+  CLI::App dir_app;
+  InitCLIApp(dir_app, "The Bareos Director Daemon.", 2000);
+
+  dir_app
+      .add_option(
+          "-c,--config",
+          [](std::vector<std::string> val) {
+            if (configfile != nullptr) { free(configfile); }
+            configfile = strdup(val.front().c_str());
+            return true;
+          },
+          "Use <path> as configuration file or directory.")
+      ->check(CLI::ExistingPath)
+      ->type_name("<path>");
+
+  AddDebugOptions(dir_app);
+
+  bool foreground = false;
+  CLI::Option* foreground_option
+      = dir_app.add_flag("-f,--foreground", foreground, "Run in foreground.");
+
+  char* gid = nullptr;
+  dir_app.add_option("-g,--group", gid, "Run as group <group>.")
+      ->type_name("<group>");
+
+  dir_app.add_flag("-m,--print-kaboom", prt_kaboom,
+                   "Print kaboom output (for debugging).");
+
+  auto testconfig_option = dir_app.add_flag(
+      "-t,--test-config", test_config, "Test - read configuration and exit.");
+
+#if !defined(HAVE_WIN32)
+  dir_app
+      .add_option("-p,--pid-file", pidfile_path,
+                  "Full path to pidfile (default: none).")
+      ->excludes(foreground_option)
+      ->excludes(testconfig_option)
+      ->type_name("<file>");
 #else
-  std::string allowed_parameters("c:d:fg:mr:p:stu:vx:z:?");
+  // to silence unused variable error on windows
+  (void)testconfig_option;
+  (void)foreground_option;
 #endif
 
-  while ((ch = getopt(argc, argv, allowed_parameters.c_str())) != -1) {
-    switch (ch) {
-      case 'c': /* specify config file */
-        if (configfile != nullptr) { free(configfile); }
-        configfile = strdup(optarg);
-        break;
+  dir_app
+      .add_option(
+          "-r,--run-job",
+          [](std::vector<std::string> val) {
+            if (runjob != nullptr) { free(runjob); }
+            runjob = strdup(val.front().c_str());
+            return true;
+          },
+          "Run specified job <job> now.")
+      ->type_name("<job>");
 
-      case 'd': /* set debug level */
-        if (*optarg == 't') {
-          dbg_timestamp = true;
-        } else {
-          debug_level = atoi(optarg);
-          if (debug_level <= 0) { debug_level = 1; }
+  bool no_signals = false;
+  dir_app.add_flag("-s,--no-signals", no_signals,
+                   "No signals (for debugging).");
+
+  char* uid = nullptr;
+  dir_app.add_option("-u,--user", uid, "Run as given user <user>.")
+      ->type_name("<user>");
+
+  AddVerboseOption(dir_app);
+
+  bool export_config = false;
+  std::string export_config_resourcetype;
+  std::string export_config_resourcename;
+  CLI::Option* xc
+      = dir_app
+            .add_option(
+                "--xc,--export-config",
+                [&export_config, &export_config_resourcetype,
+                 &export_config_resourcename](std::vector<std::string> val) {
+                  export_config = true;
+                  if (val.size() >= 1) {
+                    export_config_resourcetype = val[0];
+                    if (val.size() >= 2) {
+                      export_config_resourcename = val[1];
+                    }
+                  }
+                  return true;
+                },
+                "Print all or specific configuration resources and exit.")
+            ->type_name("[<resource_type> [<name>]]")
+            ->expected(0, 2);
+
+  bool export_config_schema = false;
+  dir_app
+      .add_flag("--xs,--export-schema", export_config_schema,
+                "Print configuration schema in JSON format and exit.")
+      ->excludes(xc);
+
+  dir_app.add_option(
+      "-z,--network-debugging",
+      [](std::vector<std::string> val) {
+        if (!BnetDump::EvaluateCommandLineArgs(val.front().c_str())) {
+          exit(1);
         }
-        Dmsg1(10, "Debug level = %d\n", debug_level);
-        break;
+        return true;
+      },
+      "Switch network debugging on.");
 
-      case 'f': /* run in foreground */
-        background = false;
-        break;
-
-      case 'g': /* set group id */
-        gid = optarg;
-        break;
-
-      case 'm': /* print kaboom output */
-        prt_kaboom = true;
-        break;
-
-      case 'p':
-        pidfile_path = strdup(optarg);
-        break;
-
-      case 'r': /* run job */
-        if (runjob != nullptr) { free(runjob); }
-        if (optarg) { runjob = strdup(optarg); }
-        break;
-
-      case 's': /* turn off signals */
-        no_signals = true;
-        break;
-
-      case 't': /* test config */
-        test_config = true;
-        break;
-
-      case 'u': /* set uid */
-        uid = optarg;
-        break;
-
-      case 'v': /* verbose */
-        verbose++;
-        break;
-
-      case 'x': /* export configuration/schema and exit */
-        if (*optarg == 's') {
-          export_config_schema = true;
-        } else if (*optarg == 'c') {
-          export_config = true;
-          // erase first char ('c')
-          std::string export_config_parameter = std::string(optarg).erase(0, 1);
-          size_t splitpos = export_config_parameter.find('=');
-          if (splitpos == export_config_parameter.npos) {
-            export_config_resourcetype = export_config_parameter;
-          } else {
-            export_config_resourcetype
-                = export_config_parameter.substr(0, splitpos);
-            export_config_resourcename
-                = export_config_parameter.substr(splitpos + 1);
-          }
-        } else {
-          usage();
-        }
-        break;
-
-      case 'z': /* switch network debugging on */
-        if (!BnetDump::EvaluateCommandLineArgs(optarg)) { exit(1); }
-        break;
-
-      case '?':
-      default:
-        usage();
-        break;
-    }
-  }
-  argc -= optind;
-  argv += optind;
-
-  if (!background && pidfile_path) {
-    Emsg0(M_WARNING, 0,
-          "Options -p and -f cannot be used together. You cannot create a "
-          "pid file when in foreground mode.\n");
-
-    exit(0);
-  }
+  CLI11_PARSE(dir_app, argc, argv);
 
   if (!no_signals) { InitSignals(TerminateDird); }
 
-  if (argc) {
-    if (configfile != nullptr) { free(configfile); }
-    configfile = strdup(*argv);
-    argc--;
-    argv++;
-  }
-  if (argc) { usage(); }
-
   int pidfile_fd = -1;
 #if !defined(HAVE_WIN32)
-  if (!test_config && background && pidfile_path) {
+  if (!test_config && !foreground && pidfile_path) {
     pidfile_fd = CreatePidFile("bareos-dir", pidfile_path);
   }
 #endif
@@ -365,10 +318,10 @@ int main(int argc, char* argv[])
     drop(uid, gid, false); /* reduce privileges if requested */
   }
 
+  my_config = InitDirConfig(configfile, M_ERROR_TERM);
   if (export_config_schema) {
     PoolMem buffer;
 
-    my_config = InitDirConfig(configfile, M_ERROR_TERM);
     PrintConfigSchemaJson(buffer);
     printf("%s\n", buffer.c_str());
 
@@ -376,7 +329,6 @@ int main(int argc, char* argv[])
     return 0;
   }
 
-  my_config = InitDirConfig(configfile, M_ERROR_TERM);
   my_config->ParseConfig();
 
   if (export_config) {
@@ -400,7 +352,7 @@ int main(int argc, char* argv[])
   }
 
   if (!test_config) { /* we don't need to do this block in test mode */
-    if (background) {
+    if (!foreground) {
       daemon_start("bareos-dir", pidfile_fd, pidfile_path);
       InitStackDump(); /* grab new pid */
     }
@@ -431,8 +383,9 @@ int main(int argc, char* argv[])
 #endif
   LoadDirPlugins(me->plugin_directory, me->plugin_names);
 
+
   // If we are in testing mode, we don't try to fix the catalog
-  mode = (test_config) ? CHECK_CONNECTION : UPDATE_AND_FIX;
+  cat_op mode = (test_config) ? CHECK_CONNECTION : UPDATE_AND_FIX;
 
   if (!CheckCatalog(mode)) {
     Jmsg((JobControlRecord*)nullptr, M_ERROR_TERM, 0,

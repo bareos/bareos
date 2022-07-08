@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -57,15 +57,15 @@ void BnetDump::SetDestinationQualifiedName(
 
 bool BnetDump::EvaluateCommandLineArgs(const char* cmdline_optarg)
 {
-  if (strlen(optarg) == 1) {
-    if (*optarg == 'p') { BnetDumpPrivate::plantuml_mode_ = true; }
-  } else if (std::isdigit(optarg[0]) || optarg[0] == '-') {
+  if (strlen(cmdline_optarg) == 1) {
+    if (*cmdline_optarg == 'p') { BnetDumpPrivate::plantuml_mode_ = true; }
+  } else if (std::isdigit(cmdline_optarg[0]) || cmdline_optarg[0] == '-') {
     try {
-      BnetDumpPrivate::stack_level_amount_ = std::stoi(optarg);
+      BnetDumpPrivate::stack_level_amount_ = std::stoi(cmdline_optarg);
     } catch (const std::exception& e) {
       return false;
     }
-  } else if (!BnetDumpPrivate::SetFilename(optarg)) {
+  } else if (!BnetDumpPrivate::SetFilename(cmdline_optarg)) {
     return false;
   }
   return true;

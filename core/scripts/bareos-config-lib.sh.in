@@ -580,13 +580,13 @@ set_config_param()
     # - multiple directives in one line,
     #   separated by ";"
     #   (could by handled by RS="\n|;", but this could cause problems with other lines)
-    #   Possible workaround: get expanded config by "bareos-* -xc"
+    #   Possible workaround: get expanded config by "bareos-* --xc"
     # - "}" must be the only character in a line
     # - between "{" and the first directive must be a line break
     # - Name directive must come before directive to modify,
     #   preferably Name is the first directive of a resource
     # - does not handle includes ("@" and include scripts)
-    #   Possible workaround: get expanded config by "bareos-* -xc"
+    #   Possible workaround: get expanded config by "bareos-* --xc"
 
     # configuration component (either file or bareos-dir, ...)
     COMPONENT="${1}"
@@ -767,7 +767,7 @@ get_database_param()
     # Retrieve PARAM line in configuration section output
     # Beware we can be called before bareos-dir is installed on system (Debian like)
     if [ -x "${BAREOS_DIRECTOR_BINARY}" ];then
-        CONFIG=$(${BAREOS_DIRECTOR_BINARY} -c "${BAREOS_CONFIG_DIR}" -xcCatalog="$CATALOG")
+        CONFIG=$(${BAREOS_DIRECTOR_BINARY} -c "${BAREOS_CONFIG_DIR}" --xc Catalog "$CATALOG")
         if ! VALUE="$(get_config_line_parameter "${CONFIG}" "${PARAM}")"
         then
             # if default value is given, return it anyway
@@ -819,7 +819,7 @@ set_postgresql_environment_variables()
 {
     CATALOG="${1:-MyCatalog}"
 
-    if ! CONFIG=$(${BAREOS_DIRECTOR_BINARY} -c "${BAREOS_CONFIG_DIR}" -xcCatalog="${CATALOG}"); then
+    if ! CONFIG=$(${BAREOS_DIRECTOR_BINARY} -c "${BAREOS_CONFIG_DIR}" --xc Catalog "${CATALOG}"); then
         error "Failed to get configuration of catalog $CATALOG"
         error "${CONFIG}"
         return 1

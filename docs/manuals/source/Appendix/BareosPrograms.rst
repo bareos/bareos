@@ -16,37 +16,40 @@ Daemon Command Line Options
 
 Each of the three daemons (Director, File, Storage) accepts a small set of options on the command line. In general, each of the daemons as well as the Console program accepts the following options:
 
--c <path>
+-c,\--config <path>
    Define the file or directory to use for the configuration. See :ref:`section-ConfigurationPathLayout`.
 
--d nnn
+-d,\--debug-level nnn
    Set the debug level to nnn. Generally anything between 50 and 200 is reasonable. The higher the number, the more output is produced. The output is written to standard output. The debug level can also be set during runtime, see section :ref:`bconsole: setdebug <bcommandSetdebug>`.
 
--f
+\--dt,\--debug-timestamps
+   Print timestamp in debug output.
+
+-f,\--foreground
    Run the daemon in the foreground. This option is needed to run the daemon under the debugger.
 
--g <group>
+-g,\--group <group>
    Run the daemon under this group. This must be a group name, not a GID.
 
--s
+-s,\--no-signals
    Do not trap signals. This option is needed to run the daemon under the debugger.
 
--t
+-t,\--test-config
    Read the configuration file and print any error messages, then immediately exit. Useful for syntax testing of new configuration files.
 
--u <user>
+-u,\--user <user>
    Run the daemon as this user. This must be a user name, not a UID.
 
--v
+-v,\--verbose
    Be more verbose or more complete in printing error and informational messages.
 
--xc
+\--xc,\--export-configuration
    Print the current configuration and exit.
 
--xs
+\--xs,\--export-schema
    Print configuration schema in JSON format and exit.
 
--?
+-h,\--help,-?
    Print the version and list of options.
 
 .. _command-bareos-dir:
