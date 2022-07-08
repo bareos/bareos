@@ -24,6 +24,106 @@
 #include "lib/bnet_network_dump.h"
 #include "lib/version.h"
 #include "lib/message.h"
+#include <regex>
+
+class BareosCliFormatter : public CLI::Formatter {
+ public:
+  std::string make_option_opts(const CLI::Option* opt) const override
+  {
+    std::stringstream out;
+
+    if (!opt->get_option_text().empty()) {
+      out << " " << opt->get_option_text();
+    } else {
+      if (opt->get_type_size() != 0) {
+        if (!opt->get_type_name().empty()) {
+          out << " " << get_label(opt->get_type_name());
+        }
+        if (opt->get_expected_max() == CLI::detail::expected_max_vector_size) {
+          out << " ...";
+        } else if (opt->get_expected_min() > 1) {
+          out << " x " << opt->get_expected();
+        }
+        if (!opt->get_default_str().empty()) {
+          out << "\n" << indent << indent;
+          out << "Default: " << opt->get_default_str();
+        }
+        if (opt->get_required()) {
+          out << "\n" << indent << indent;
+          out << get_label("REQUIRED");
+        }
+      }
+      if (!opt->get_envname().empty()) {
+        out << "\n" << indent << indent;
+        out << get_label("Env") << ": " << opt->get_envname();
+      }
+      if (!opt->get_needs().empty()) {
+        out << "\n" << indent << indent;
+        out << get_label("Needs") << ":";
+        for (const CLI::Option* op : opt->get_needs())
+          out << " " << op->get_name();
+      }
+      if (!opt->get_excludes().empty()) {
+        out << "\n" << indent << indent;
+        out << get_label("Excludes") << ":";
+        for (const CLI::Option* op : opt->get_excludes())
+          out << " " << op->get_name();
+      }
+    }
+    return out.str();
+  }
+
+  std::string make_option(const CLI::Option* opt,
+                          bool is_positional) const override
+  {
+    std::stringstream out;
+
+    std::string name = make_option_name(opt, is_positional);
+    // remove option values from string, eg.
+    //    -s{false},--no-signals{false}
+    // => -s,--no-signals
+    name = std::regex_replace(name, std::regex("\\{[^}]*\\}"), "");
+    out << indent << name;
+
+    out << make_option_opts(opt);
+    out << std::endl;
+
+    std::string description = make_option_desc(opt);
+    if (!description.empty()) {
+      format_paragraph(out, description, indent + indent);
+    }
+    out << std::endl;
+
+    return out.str();
+  }
+
+ protected:
+  std::string indent = std::string("    ");
+  std::size_t max_line_length = 79;
+
+  std::ostream& format_paragraph(std::ostream& out,
+                                 const std::string& text,
+                                 const std::string& indent) const
+  {
+    std::istringstream text_iss(text);
+
+    std::string word;
+    unsigned characters_written = indent.size();
+
+    out << indent;
+    while (text_iss >> word) {
+      if (word.size() + characters_written > max_line_length) {
+        out << "\n";
+        out << indent;
+        characters_written = indent.size();
+      }
+      out << word << " ";
+      characters_written += word.size() + 1;
+    }
+    out << std::endl;
+    return out;
+  }
+};
 
 void InitCLIApp(CLI::App& app, std::string description, int fsfyear)
 {
@@ -38,7 +138,7 @@ void InitCLIApp(CLI::App& app, std::string description, int fsfyear)
   app.description(description);
   app.set_help_flag("-h,--help,-?", "Print this help message and exit.");
   app.set_version_flag("--version", kBareosVersionStrings.Full);
-  app.get_formatter()->column_width(40);
+  app.formatter(std::make_shared<BareosCliFormatter>());
 #ifdef HAVE_WIN32
   app.allow_windows_style_options();
 #endif
