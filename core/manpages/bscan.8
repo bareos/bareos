@@ -35,67 +35,67 @@ without needed an up to date catalog.
 .SH OPTIONS
 A summary of options is included below.
 .TP
-.B \-?
+.B \-h,--help,-?
 Show version and usage of program.
 .TP
-.BI \-B\  drivername
+.BI \-B,--dbdriver\  drivername
 Specify the database driver name (default NULL) <postgresql|mysql|sqlite3>.
 .TP
-.BI \-b\  bootstrap
+.BI \-b,--parse-bootstrap\  bootstrap
 Specify a bootstrap file.
 .TP
-.BI \-c\  path
+.BI \-c,--config\  path
 Specify the Storage configuration file or directory to use.
 .TP
-.BI \-d\  nn
+.BI \-d,--debug-level\  nn
 Set debug level to \fInn\fP.
 .TP
-.BI \-dt
+.BI \-dt,--debug-timestamps
 Print timestamp in debug output.
 .TP
-.BI \-D\  director
+.BI \-D.--director\  director
 Specify a director name specified in the storage daemon configuration file for the Key Encryption Key selection.
 .TP
-.BI \-a\  directory
+.BI \-a,--backend-directory\  directory
 Specify the database backend directory
 .TP
-.B \-m
+.B \-m,--update-volume-info
 Update media info in database.
 .TP
-.BI \-n\  name
+.BI \-n,--dbname\  name
 Specify the database name (default: \fIbareos\fP)
 .TP
-.BI \-u\  username
+.BI \-u,--dbuser\  username
 Specify database username (default: \fIbareos\fP)
 .TP
-.BI \-P\  password
+.BI \-P,--dbpassword\  password
 Specify database password (default: \fInone\fP)
 .TP
-.BI \-h\  host
+.BI \-o,--dbhost\  host
 Specify database host (default: \fINULL\fP)
 .TP
-.BI \-t\  port
+.BI \-t,--dbport\  port
 Specify database port (default: 0)
 .TP
-.B \-p
+.B \-p,--proceed-io
 Proceed in spite of I/O errors.
 .TP
-.B \-r
+.B \-r,--list-records
 List records.
 .TP
-.B \-s
+.B \-s,--update-db
 Synchronize or store in database.
 .TP
-.B \-S
+.B \-S,--show-progress
 Show scan progress periodically.
 .TP
-.B \-v
+.B \-v,--verbose
 Verbose output mode.
 .TP
-.BI \-V\  volume
+.BI \-V,--volumes\  volumes
 Specify volume names (separated by '|')
 .TP
-.BI \-w\  directory
+.BI \-w,--working-directory\  directory
 Specify working directory (default from configuration file)
 .SH SEE ALSO
 .BR bls (8),

@@ -625,28 +625,34 @@ It is called:
 
 .. code-block:: shell-session
 
-   Usage: bscan [options] <Bareos-archive>
-          -B <driver name>  exists for backwards compatibility and is ignored
-          -b bootstrap      specify a bootstrap file
-          -c <file>         specify configuration file
-          -d <nn>           set debug level to nn
-          -dt               print timestamp in debug output
-          -m                update media info in database
-          -D <director>     specify a director name specified in the Storage
-                            configuration file for the Key Encryption Key selection
-          -n <name>         specify the database name (default Bareos)
-          -u <user>         specify database user name (default Bareos)
-          -P <password>     specify database password (default none)
-          -h <host>         specify database host (default NULL)
-          -t <port>         specify database port (default 0)
-          -p                proceed inspite of I/O errors
-          -r                list records
-          -s                synchronize or store in database
-          -S                show scan progress periodically
-          -v                verbose
-          -V <Volumes>      specify Volume names (separated by |)
-          -w <dir>          specify working directory (default from conf file)
-          -?                print this message
+    Usage: bscan [OPTIONS] device_name
+
+    Positionals:
+      device_name REQUIRED             Specify device name.
+
+    Options:
+      -h,--help                             Print this help message and exit
+      -a,--backend-directory <directory>    Specify a directory from where Bareos backends can be loaded.
+      -B,--dbdriver <dbdriver>              Exists for backwards compatibility and is ignored.
+      -b,--parse-bootstrap <bootstrap>      Specify a bootstrap file
+      -c,--config <path>                    Use <path> as configuration file or directory
+      -D,--director <director>              Specify a director name specified in the storage.
+                                            Configuration file for the Key Encryption Key selection.
+      -d,--debug-level <level>              Set debug level to <level>.
+      --dt,--debug-timestamps                Print timestamp in debug output.
+      -n,--dbname <name>                    Specify database name (default: bareos).
+      -o,--dbhost <host>                    Specify database host (default: none).
+      -P,--dbpassword <password>            Specify database password (default: none).
+      -t,--dbport <port>                    Specify database port (default: 0).
+      -u,--dbuser <user>                    Specify database user name (default: bareos).
+      -m,--update-volume-info               Update media info in database.
+      -p,--proceed-io                       Proceed inspite of IO errors
+      -r,--list-records                     List records.
+      -S,--show-progress                    Show scan progress periodically.
+      -s,--update-db                        Synchronize or store in database.
+      -V,--volumes <vol1|vol2|...>          Specify volume names (separated by |).
+      -v,--verbose                          Verbose user messages.
+      -w,--working-directory <directory>    specify working directory.
 
 If you have provided security on your database, you may need to supply either the database name (-b option), the user name (-u option), and/or the password (-p) options.
 

@@ -44,6 +44,7 @@
 #include "stored/mount.h"
 #include "stored/read_record.h"
 #include "lib/attribs.h"
+#include "lib/cli.h"
 #include "lib/edit.h"
 #include "lib/parse_bsr.h"
 #include "lib/bsignal.h"
@@ -94,10 +95,10 @@ static bool UpdateDigestRecord(BareosDb* db,
                                int type);
 
 /* Local variables */
-static Device* dev = NULL;
+static Device* dev = nullptr;
 static BareosDb* db;
 static JobControlRecord* bjcr; /* jcr for bscan */
-static BootStrapRecord* bsr = NULL;
+static BootStrapRecord* bsr = nullptr;
 static MediaDbRecord mr;
 static PoolDbRecord pr;
 static JobDbRecord jr;
@@ -112,14 +113,6 @@ static Attributes* attr;
 
 static time_t lasttime = 0;
 
-static const char* backend_directory = PATH_BAREOS_BACKENDDIR;
-static const char* db_driver = "postgresql";
-static const char* db_name = "bareos";
-static const char* db_user = "bareos";
-static const char* db_password = "";
-static const char* db_host = NULL;
-static int db_port = 0;
-static const char* wd = NULL;
 static bool update_db = false;
 static bool update_vol_info = false;
 static bool list_records = false;
@@ -134,54 +127,8 @@ static int num_media = 0;
 static int num_files = 0;
 static int num_restoreobjects = 0;
 
-static void usage()
-{
-  kBareosVersionStrings.PrintCopyrightWithFsfAndPlanets(stderr, 2001);
-  fprintf(
-      stderr,
-      _("Usage: bscan [ options ] <device-name>\n"
-        "       -B <driver name>  exists for backwards compatibility and is "
-        "ignored\n"
-        "       -b <bootstrap>    specify a bootstrap file\n"
-        "       -c <path>         specify a Storage configuration file or "
-        "directory\n"
-        "       -d <nnn>          set debug level to <nnn>\n"
-        "       -dt               print timestamp in debug output\n"
-        "       -m                update media info in database\n"
-        "       -D <director>     specify a director name specified in the "
-        "storage daemon\n"
-        "                         configuration file for the Key Encryption "
-        "Key selection\n"
-        "       -a <directory>    specify the database backend directory "
-        "(default %s)\n"
-        "       -n <name>         specify the database name (default bareos)\n"
-        "       -u <user>         specify database user name (default bareos)\n"
-        "       -P <password>     specify database password (default none)\n"
-        "       -h <host>         specify database host (default NULL)\n"
-        "       -t <port>         specify database port (default 0)\n"
-        "       -p                proceed inspite of I/O errors\n"
-        "       -r                list records\n"
-        "       -s                synchronize or store in database\n"
-        "       -S                show scan progress periodically\n"
-        "       -v                verbose\n"
-        "       -V <Volumes>      specify Volume names (separated by |)\n"
-        "       -w <directory>    specify working directory (default from "
-        "configuration file)\n"
-        "       -?                print this message\n\n"
-        "example:\n"
-        "bscan -V Full-0001 FileStorage\n"),
-      backend_directory);
-  exit(1);
-}
-
 int main(int argc, char* argv[])
 {
-  int ch;
-  struct stat stat_buf;
-  char* VolumeName = NULL;
-  char* DirectorName = NULL;
-  DirectorResource* director = NULL;
-  DeviceControlRecord* dcr;
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
   std::vector<std::string> backend_directories;
 #endif
@@ -197,116 +144,129 @@ int main(int argc, char* argv[])
 
   OSDependentInit();
 
-  while ((ch = getopt(argc, argv, "a:B:b:c:d:D:h:p:mn:pP:q:rsSt:u:vV:w:?"))
-         != -1) {
-    switch (ch) {
-      case 'a':
-        backend_directory = optarg;
-        break;
+  CLI::App bscan_app;
+  InitCLIApp(bscan_app, "The Bareos Database Scan tool.", 2001);
 
-      case 'B':
-        break;
+  std::string backend_directory = PATH_BAREOS_BACKENDDIR;
+  bscan_app
+      .add_option(
+          "-a,--backend-directory", backend_directory,
+          "Specify a directory from where Bareos backends can be loaded.")
+      ->type_name("<directory>");
 
-      case 'b':
-        bsr = libbareos::parse_bsr(NULL, optarg);
-        break;
+  std::string ignored_B;
+  bscan_app
+      .add_option("-B,--dbdriver", ignored_B,
+                  "Exists for backwards compatibility and is ignored.")
+      ->type_name("<dbdriver>");
 
-      case 'c': /* specify config file */
-        if (configfile != NULL) { free(configfile); }
-        configfile = strdup(optarg);
-        break;
+  bscan_app
+      .add_option(
+          "-b,--parse-bootstrap",
+          [](std::vector<std::string> vals) {
+            bsr = libbareos::parse_bsr(nullptr, vals.front().data());
+            return true;
+          },
+          "Specify a bootstrap file")
+      ->check(CLI::ExistingFile)
+      ->type_name("<bootstrap>");
 
-      case 'D': /* specify director name */
-        if (DirectorName != NULL) { free(DirectorName); }
-        DirectorName = strdup(optarg);
-        break;
+  bscan_app
+      .add_option(
+          "-c,--config",
+          [](std::vector<std::string> val) {
+            if (configfile != nullptr) { free(configfile); }
+            configfile = strdup(val.front().c_str());
+            return true;
+          },
+          "Use <path> as configuration file or directory")
+      ->check(CLI::ExistingPath)
+      ->type_name("<path>");
 
-      case 'd': /* debug level */
-        if (*optarg == 't') {
-          dbg_timestamp = true;
-        } else {
-          debug_level = atoi(optarg);
-          if (debug_level <= 0) { debug_level = 1; }
-        }
-        break;
+  std::string DirectorName;
+  bscan_app
+      .add_option("-D,--director", DirectorName,
+                  "Specify a director name specified in the storage.\n"
+                  "Configuration file for the Key Encryption Key selection.")
+      ->type_name("<director>");
 
-      case 'h':
-        db_host = optarg;
-        break;
+  AddDebugOptions(bscan_app);
 
-      case 't':
-        db_port = atoi(optarg);
-        break;
+  std::string db_name = "bareos";
+  bscan_app.add_option("-n,--dbname", db_name, "Specify database name.")
+      ->type_name("<name>")
+      ->capture_default_str();
 
-      case 'm':
-        update_vol_info = true;
-        break;
+  std::string db_host;
+  bscan_app.add_option("-o,--dbhost", db_host, "Specify database host.")
+      ->type_name("<host>");
 
-      case 'n':
-        db_name = optarg;
-        break;
+  std::string db_password = "";
+  bscan_app
+      .add_option("-P,--dbpassword", db_password, "Specify database password.")
+      ->type_name("<password>");
 
-      case 'P':
-        db_password = optarg;
-        break;
+  int db_port = 0;
+  bscan_app.add_option("-t,--dbport", db_port, "Specify database port.")
+      ->type_name("<port>");
 
-      case 'p':
-        forge_on = true;
-        break;
+  std::string db_user = "bareos";
+  bscan_app.add_option("-u,--dbuser", db_user, "Specify database user name.")
+      ->type_name("<user>")
+      ->capture_default_str();
 
-      case 'r':
-        list_records = true;
-        break;
+  bscan_app.add_flag("-m,--update-volume-info", update_vol_info,
+                     "Update media info in database.");
 
-      case 'S':
-        showProgress = true;
-        break;
+  bscan_app.add_flag("-p,--proceed-io", forge_on,
+                     "Proceed inspite of IO errors");
 
-      case 's':
-        update_db = true;
-        break;
+  bscan_app.add_flag("-r,--list-records", list_records, "List records.");
 
-      case 'u':
-        db_user = optarg;
-        break;
+  bscan_app.add_flag("-S,--show-progress", showProgress,
+                     "Show scan progress periodically.");
 
-      case 'V': /* Volume name */
-        VolumeName = optarg;
-        break;
+  bscan_app.add_flag("-s,--update-db", update_db,
+                     "Synchronize or store in database.");
 
-      case 'v':
-        verbose++;
-        break;
+  std::string volumes;
+  bscan_app
+      .add_option("-V,--volumes", volumes,
+                  "Specify volume names (separated by |).")
+      ->type_name("<vol1|vol2|...>");
 
-      case 'w':
-        wd = optarg;
-        break;
+  AddVerboseOption(bscan_app);
 
-      case '?':
-      default:
-        usage();
-    }
-  }
-  argc -= optind;
-  argv += optind;
+  std::string work_dir;
+  bscan_app
+      .add_option("-w,--working-directory", work_dir,
+                  "Specify working directory.")
+      ->type_name("<directory>");
 
-  if (argc != 1) {
-    Pmsg0(0, _("Wrong number of arguments: \n"));
-    usage();
-  }
+  std::string device_name;
+  bscan_app
+      .add_option("device_name", device_name,
+                  "Specify the input device name (either as name of a Bareos "
+                  "Storage Daemon Device resource or identical to the Archive "
+                  "Device in a Bareos Storage Daemon Device resource).")
+      ->required()
+      ->type_name(" ");
+
+  CLI11_PARSE(bscan_app, argc, argv);
 
   my_config = InitSdConfig(configfile, M_ERROR_TERM);
   ParseSdConfig(configfile, M_ERROR_TERM);
 
-  if (DirectorName) {
+  DirectorResource* director = nullptr;
+  if (!DirectorName.empty()) {
     foreach_res (director, R_DIRECTOR) {
-      if (bstrcmp(director->resource_name_, DirectorName)) { break; }
+      if (bstrcmp(director->resource_name_, DirectorName.c_str())) { break; }
     }
     if (!director) {
-      Emsg2(
-          M_ERROR_TERM, 0,
-          _("No Director resource named %s defined in %s. Cannot continue.\n"),
-          DirectorName, configfile);
+      Emsg2(M_ERROR_TERM, 0,
+            _("No Director resource named %s defined in %s. Cannot "
+              "continue.\n"),
+            DirectorName.c_str(), configfile);
     }
   }
 
@@ -315,9 +275,10 @@ int main(int argc, char* argv[])
   ReadCryptoCache(me->working_directory, "bareos-sd",
                   GetFirstPortHostOrder(me->SDaddrs));
 
-  /* Check if -w option given, otherwise use resource for working directory */
-  if (wd) {
-    working_directory = wd;
+  /* Check if -w option given, otherwise use resource for working directory
+   */
+  if (!work_dir.empty()) {
+    working_directory = work_dir.c_str();
   } else if (!me->working_directory) {
     Emsg1(M_ERROR_TERM, 0,
           _("No Working Directory defined in %s. Cannot continue.\n"),
@@ -327,6 +288,7 @@ int main(int argc, char* argv[])
   }
 
   /* Check that working directory is good */
+  struct stat stat_buf;
   if (stat(working_directory, &stat_buf) != 0) {
     Emsg1(M_ERROR_TERM, 0,
           _("Working Directory: %s not found. Cannot continue.\n"),
@@ -338,8 +300,9 @@ int main(int argc, char* argv[])
           working_directory);
   }
 
-  dcr = new DeviceControlRecord;
-  bjcr = SetupJcr("bscan", argv[0], bsr, director, dcr, VolumeName, true);
+  DeviceControlRecord* dcr = new DeviceControlRecord;
+  bjcr = SetupJcr("bscan", device_name.data(), bsr, director, dcr,
+                  volumes.data(), true);
   if (!bjcr) { exit(1); }
   dev = bjcr->impl->read_dcr->dev;
 
@@ -357,15 +320,18 @@ int main(int argc, char* argv[])
   DbSetBackendDirs(backend_directories);
 #endif
 
-  db = db_init_database(NULL, db_driver, db_name, db_user, db_password, db_host,
-                        db_port, NULL, false, false, false, false);
-  if (db == NULL) {
+  std::string db_driver = "postgresql";
+  db = db_init_database(nullptr, db_driver.c_str(), db_name.c_str(),
+                        db_user.c_str(), db_password.c_str(), db_host.c_str(),
+                        db_port, nullptr, false, false, false, false);
+  if (db == nullptr) {
     Emsg0(M_ERROR_TERM, 0, _("Could not init Bareos database\n"));
   }
-  if (!db->OpenDatabase(NULL)) { Emsg0(M_ERROR_TERM, 0, db->strerror()); }
+  if (!db->OpenDatabase(nullptr)) { Emsg0(M_ERROR_TERM, 0, db->strerror()); }
   Dmsg0(200, "Database opened\n");
   if (verbose) {
-    Pmsg2(000, _("Using Database: %s, User: %s\n"), db_name, db_user);
+    Pmsg2(000, _("Using Database: %s, User: %s\n"), db_name.c_str(),
+          db_user.c_str());
   }
 
   do_scan();
