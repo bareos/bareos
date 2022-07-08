@@ -490,21 +490,27 @@ It is called:
 
 .. code-block:: shell-session
 
-   Usage: bextract <options> <bareos-archive-device-name> <directory-to-store-files>
-          -b <file>       specify a bootstrap file
-          -c <file>       specify a Storage configuration file
-          -D <director>   specify a director name specified in the Storage
-                          configuration file for the Key Encryption Key selection
-          -d <nn>         set debug level to <nn>
-          -dt             print timestamp in debug output
-          -e <file>       exclude list
-          -i <file>       include list
-          -p              proceed inspite of I/O errors
-          -v              verbose
-          -V <volumes>    specify Volume names (separated by |)
-          -?              print this message
+    Usage: bextract [OPTIONS] bareos-archive-device-name target-directory
 
-where device-name is the Archive Device (raw device name or full filename) of the device to be read, and directory-to-store-files is a path prefix to prepend to all the files restored.
+    Positionals:
+      bareos-archive-device-name REQUIRED   Specify input archive names.
+      target-directory REQUIRED             Specify directory where to store files.
+
+    Options:
+      -h,--help                             Print this help message and exit
+      -b,--parse-bootstrap <file>           Specify a bootstrap file.
+      -c,--config <path>                    Use <path> as configuration file or directory.
+      -D,--director <director>              Specify a director name specified in the storage.
+                                            Configuration file for the Key Encryption Key selection.
+      -d,--debug-level <level>              Set debug level to <level>.
+      --dt,--debug-timestamps               Print timestamp in debug output.
+      -e,--exclude <file>                   Exclude list.
+      -i,--include-list <file>              Include list.
+      -p,--ignore-errors                    Proceed inspite of IO errors.
+      -v,--verbose                          Verbose user messages.
+      -V,--volumes <vol1|vol2|...>          Volume names (separated by |).
+
+where bareos-archive-device-name is the Archive Device (raw device name or full filename) of the device to be read, and target-directory is a path prefix to prepend to all the files restored.
 
 
 
