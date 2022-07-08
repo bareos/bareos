@@ -22,43 +22,52 @@ network backup system and a tape drive/autochanger or filesystem where
 the backups will be stored.
 .SH OPTIONS
 .TP
-.BI \-c\  path
+.BI \-c,--config\  path
 Specify the configuration file or directory to use.
 .TP
-.BI \-d\  nn
+.BI \-d,--debug-level\  nn
 Set debug level to \fInn\fP.
 .TP
-.BI \-dt
+.BI \--dt,--debug-timestamps
 Print timestamp in debug output.
 .TP
-.BI \-f
+.BI \-f,--foreground
 Run in foreground (for debugging).
 .TP
-.BI \-g\  group
+.BI \-g,--group\  group
 Set the group/gid to run as.
 .TP
-.BI \-i
+.BI \-i,--ignore-io-errors
 Ignore I/O errors.
 .TP
-.BI \-m
+.BI \-m,--print-kaboom
 Print kaboom output (for debugging)
 .TP
-.BI \-p\  path
+.BI \-p,--pid-file\  path
 Specify the full path to the pidfile.
 .TP
-.BI \-s
+.BI \-s,--no-signals
 No signals (for debugging).
 .TP
-.B \-t
+.B \-t,--test-config
 Test the configuration file and report errors.
 .TP
-.BI \-u\  user
+.BI \-u,--user\  user
 Set the username/uid to run as.
 .TP
-.BI \-v
+.BI \-v,--verbose
 Set verbose mode.
 .TP
-.B \-?
+.BI \--xc,--export-config
+Print configuration and exit.
+.TP
+.BI \--xs,--export-schema
+Print configuration schema in JSON format and exit.
+.TP
+.BI \-z,--network-debugging
+Switch network debugging on.
+.TP
+.B \-h,--help,-?
 Show version and usage of program.
 .SH SEE ALSO
 .BR bareos\-dir (8),

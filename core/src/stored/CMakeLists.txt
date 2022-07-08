@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -133,8 +133,8 @@ set(SDSRCS
 )
 
 if(HAVE_WIN32)
-  list(APPEND SDSRCS stored.cc ../win32/generic/main.cc
-       ../win32/generic/service.cc ../win32/stored/storedres.rc
+  list(APPEND SDSRCS ../win32/generic/main.cc ../win32/generic/service.cc
+       ../win32/stored/storedres.rc
   )
 endif()
 
@@ -220,6 +220,7 @@ add_executable(bareos-sd stored.cc)
 
 target_link_libraries(
   bareos-sd PRIVATE stored_objects bareos bareossd bareosfind Threads::Threads
+                    CLI11::CLI11
 )
 
 if(HAVE_WIN32)
