@@ -729,7 +729,7 @@ If your are not using the :ref:`section-SubdirectoryConfigurationScheme`, make s
 .. code-block:: shell-session
    :caption: show how bareos-fd would read the current configuration files
 
-   bareos-fd -xc
+   bareos-fd --export-config
 
 After modifying the file, you have to restart the |fd|:
 
