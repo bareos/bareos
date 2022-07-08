@@ -16,3 +16,4 @@ webui/public/css/*.min.*
 webui/public/css/bootstrap*.css.map
 systemtests/tests/bareos/expected/status-subscriptions.txt
 systemtests/tests/bareos/expected/status-subscriptions-detail.txt
+third-party/
