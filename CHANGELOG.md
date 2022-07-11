@@ -44,7 +44,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - core/platform: Adding Bareos firewalld service xml files [PR #1237]
 - dird: Added `FS Type = vfat` in LinuxAll.conf for UEFI partition [PR #1236]
 - bareos tools: reintegrate testfind binary [PR #1176]
-- fd: add support for role switching on PostgreSQL add-on [BUG #4607]
+- fd: add support for role switching on PostgreSQL add-on [BUG #4607] [PR #1178]
 
 ### Fixed
 - dird: RunScript fixes [PR #1217]
@@ -239,6 +239,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1172]: https://github.com/bareos/bareos/pull/1172
 [PR #1176]: https://github.com/bareos/bareos/pull/1176
 [PR #1177]: https://github.com/bareos/bareos/pull/1177
+[PR #1178]: https://github.com/bareos/bareos/pull/1178
 [PR #1179]: https://github.com/bareos/bareos/pull/1179
 [PR #1180]: https://github.com/bareos/bareos/pull/1180
 [PR #1181]: https://github.com/bareos/bareos/pull/1181
