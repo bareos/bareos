@@ -48,6 +48,7 @@ set(BAREOS_SRCS
     btime.cc
     btimers.cc
     cbuf.cc
+    cli.cc
     connection_pool.cc
     cram_md5.cc
     crypto.cc
@@ -155,9 +156,11 @@ target_compile_definitions(
 set_target_properties(version-obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 target_link_libraries(
-  bareos PRIVATE bareosfastlz ${OPENSSL_LIBRARIES} Threads::Threads
-                 ${ZLIB_LIBRARIES} ${LZO2_LIBRARIES} ${CAM_LIBRARIES}
+  bareos
+  PRIVATE bareosfastlz ${OPENSSL_LIBRARIES} Threads::Threads ${ZLIB_LIBRARIES}
+          ${LZO2_LIBRARIES} ${CAM_LIBRARIES} CLI11::CLI11
 )
+
 if(ENABLE_CAPABILITY)
   target_link_libraries(bareos PRIVATE ${CAP_LIBRARIES})
 endif()
