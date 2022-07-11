@@ -37,7 +37,6 @@
 #include "lib/berrno.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
-#include "include/make_unique.h"
 
 #include <algorithm>
 

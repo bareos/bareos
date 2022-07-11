@@ -22,7 +22,6 @@
 #include "include/bareos.h"
 #include "bnet_network_dump.h"
 #include "bnet_network_dump_private.h"
-#include "include/make_unique.h"
 
 std::unique_ptr<BnetDump> BnetDump::Create(std::string own_qualified_name)
 {

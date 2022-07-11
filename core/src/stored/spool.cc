@@ -39,8 +39,6 @@
 #include "lib/util.h"
 #include "include/jcr.h"
 
-#include "include/make_unique.h"
-
 namespace storagedaemon {
 
 /* Forward referenced subroutines */

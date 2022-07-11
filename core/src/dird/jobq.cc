@@ -456,7 +456,7 @@ extern "C" void* jobq_server(void* arg)
       jcr->impl->SDJobStatus = 0;
       unlock_mutex(jq->mutex); /* release internal lock */
       FreeJcr(jcr);
-      free(je);          /* release job entry */
+      free(je);              /* release job entry */
       lock_mutex(jq->mutex); /* reacquire job queue lock */
     }
 

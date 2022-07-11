@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,7 +28,6 @@
 #include "lib/ascii_control_characters.h"
 #include "lib/bstringlist.h"
 #include "lib/qualified_resource_name_type_converter.h"
-#include "include/make_unique.h"
 
 #include <algorithm>
 

@@ -50,7 +50,6 @@
 #include "dird/vbackup.h"
 #include "lib/edit.h"
 #include "lib/util.h"
-#include "include/make_unique.h"
 #include "cats/sql.h"
 
 #include <algorithm>

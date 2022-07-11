@@ -31,7 +31,6 @@
 
 #  include "stored/stored.h"
 #  include "sd_backends.h"
-#  include "include/make_unique.h"
 
 #  include <cstdlib>
 #  include <dlfcn.h>

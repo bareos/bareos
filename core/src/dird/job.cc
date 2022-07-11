@@ -70,7 +70,6 @@
 #include "lib/tree.h"
 #include "lib/util.h"
 #include "lib/watchdog.h"
-#include "include/make_unique.h"
 #include "include/protocol_types.h"
 
 namespace directordaemon {

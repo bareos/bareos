@@ -170,7 +170,6 @@ Don'ts
 avoid ``new``
   Starting with C++11 there are smart pointers like ``shared_ptr`` and ``unique_ptr``.
   To create a ``shared_ptr`` you should use ``make_shared()`` from the standard library.
-  We provide a backport of C++14's ``make_unique()`` in ``include/make_unique.h`` to create a ``unique_ptr``.
   If possible use ``unique_ptr`` instead of ``shared_ptr``.
 
 avoid ``delete``

@@ -40,7 +40,6 @@
 #include "dird/scheduler_time_adapter.h"
 #include "include/bareos.h"
 #include "include/jcr.h"
-#include "include/make_unique.h"
 #include "lib/parse_conf.h"
 
 #include <algorithm>

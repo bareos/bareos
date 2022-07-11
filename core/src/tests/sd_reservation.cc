@@ -52,7 +52,6 @@
 #endif
 
 #include "bsock_mock.h"
-#include "include/make_unique.h"
 
 using ::testing::Assign;
 using ::testing::DoAll;

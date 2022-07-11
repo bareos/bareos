@@ -34,7 +34,6 @@
 #  include "gtest/gtest.h"
 #  include "include/bareos.h"
 #endif
-#include "include/make_unique.h"
 #include "lib/dlist.h"
 
 #include <memory>

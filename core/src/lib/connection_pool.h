@@ -26,7 +26,7 @@
  */
 
 #ifndef BAREOS_LIB_CONNECTION_POOL_H_
-#  define BAREOS_LIB_CONNECTION_POOL_H_
+#define BAREOS_LIB_CONNECTION_POOL_H_
 
 template <typename T> class alist;
 class BareosSocket;
