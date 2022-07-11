@@ -31,21 +31,28 @@ The console program can be run with the following options:
 .. code-block:: shell-session
    :caption: bconsole command line options
 
-   root@host:~# bconsole -?
-   Usage: bconsole [-s] [-c config_file] [-d debug_level]
-          -D <dir>    select a Director
-          -l          list Directors defined
-          -c <path>   specify configuration file or directory
-          -p <file>   specify pam credentials file
-          -o          send pam credentials over unencrypted connection
-          -d <nn>     set debug level to <nn>
-          -dt         print timestamp in debug output
-          -s          no signals
-          -u <nn>     set command execution timeout to <nn> seconds
-          -t          test - read configuration and exit
-          -xc         print configuration and exit
-          -xs         print configuration file schema in JSON format and exit
-          -?          print this message.
+   root@host:~# bconsole -h
+   Usage: bconsole [OPTIONS] [configuration]
+
+    Positionals:
+      configuration <path>                  Use <path> as configuration file or directory
+
+    Options:
+      -h,--help                             Print this help message and exit
+      -c,--config <path>                    Use <path> as configuration file or directory
+      -D,--director <director>              Specify director.
+      -d,--debug-level <level>              Set debug level to <level>.
+      --dt,--debug-timestamps                Print timestamp in debug output.
+      -l,--list-directors                   List defined Directors.
+      -p,--pam-credentials-filename <path>  PAM Credentials file.
+      -o                                    Force sending pam credentials unencrypted.
+      -s,--no-signals                       No signals (for debugging)
+      -t,--test-config                      Test - read configuration and exit
+      -u,--timeout <seconds>                Set command execution timeout to <seconds>.
+      --xc,--export-config Excludes: --xs
+                                            Print all configuration resources and exit
+      --xs,--export-schema Excludes: --xc   Print configuration schema in JSON format and exit
+      -z,--network-debugging                Switch network debugging on
 
 After launching the Console program (bconsole), it will prompt you for the next command with an asterisk (*). Generally, for all commands, you can simply enter the command name and the Console program will prompt you for the necessary arguments. Alternatively, in most cases, you may enter the command followed by arguments. The general format is:
 

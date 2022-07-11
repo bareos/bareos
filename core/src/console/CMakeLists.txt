@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -36,7 +36,9 @@ add_executable(bconsole console.cc)
 add_library(console_objects STATIC ${BCONSSRCS})
 
 target_link_libraries(console_objects PRIVATE bareos)
-target_link_libraries(bconsole PRIVATE console_objects ${Readline_LIBRARY})
+target_link_libraries(
+  bconsole PRIVATE console_objects ${Readline_LIBRARY} CLI11::CLI11
+)
 
 install(
   TARGETS bconsole
