@@ -135,6 +135,14 @@ if(${docs-only})
   set(DOCS_ALL ALL) # this enables "make docs" by just typing "make"
 endif()
 
+add_custom_target(
+  docs-check-urls
+  COMMAND ${SPHINX_COMMAND} -M linkcheck "${SPHINX_SOURCE_DIR}" "${SPHINX_BUILDDIR}"
+  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+  COMMENT
+    "Check if the URLs used in the documentation are still valid targets."
+)
+
 # target: docs ######
 add_custom_target(
   docs
