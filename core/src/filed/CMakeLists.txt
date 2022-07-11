@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -87,7 +87,9 @@ if(HAVE_WIN32)
   target_compile_definitions(bareos-fd PRIVATE ${FD_COMPILE_DEFINITIONS})
 endif()
 
-target_link_libraries(bareos-fd PRIVATE fd_objects ${BAREOS_FD_LIBRARIES})
+target_link_libraries(
+  bareos-fd PRIVATE fd_objects ${BAREOS_FD_LIBRARIES} CLI11::CLI11
+)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set_target_properties(

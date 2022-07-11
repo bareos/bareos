@@ -1,0 +1,56 @@
+Usage: bareos-sd [OPTIONS]
+
+Options:
+    -h,-?,--help
+        Print this help message and exit. 
+
+    --version
+        Display program version information and exit 
+
+    -c,--config <path>:PATH(existing)
+        Use <path> as configuration file or directory. 
+
+    -d,--debug-level <level>:NONNEGATIVE
+        Set debug level to <level>. 
+
+    --dt,--debug-timestamps
+        Print timestamps in debug output. 
+
+    -f,--foreground
+        Excludes: --pid-file
+        Run in foreground (for debugging). 
+
+    -g,--group <group>
+        Run as group 
+
+    -m,--print-kaboom
+        Print kaboom output (for debugging). 
+
+    -i,--ignore-io-errors
+        Ignore IO errors. 
+
+    -t,--test-config
+        Excludes: --pid-file
+        Test - read configuration and exit. 
+
+    -p,--pid-file <file>
+        Excludes: --foreground --test-config
+        Full path to pidfile (default: none) 
+
+    -s,--no-signals
+        No signals (for debugging). 
+
+    -u,--user <user>
+        Run as given user 
+
+    -v,--verbose
+        Default: 0
+        Verbose user messages. 
+
+    --xc,--export-config
+        Excludes: --xs
+        Print all configuration resources and exit. 
+
+    --xs,--export-schema
+        Excludes: --xc
+        Print configuration schema in JSON format and exit. 

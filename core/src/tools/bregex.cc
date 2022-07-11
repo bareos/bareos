@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2006 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,6 +26,7 @@
  */
 
 #include "include/bareos.h"
+#include "lib/cli.h"
 
 #ifndef HAVE_REGEX_H
 #  include "lib/bregex.h"
@@ -33,80 +34,43 @@
 #  include <regex.h>
 #endif
 
-
-static void usage()
-{
-  fprintf(stderr,
-          "\n"
-          "Usage: bregex [-d debug_level] -f <data-file>\n"
-          "       -f          specify file of data to be matched\n"
-          "       -l          suppress line numbers\n"
-          "       -n          print lines that do not match\n"
-          "       -d <nn>     set debug level to <nn>\n"
-          "       -dt         print timestamp in debug output\n"
-          "       -?          print this message.\n"
-          "\n\n");
-
-  exit(1);
-}
-
-
 int main(int argc, char* const* argv)
 {
-  regex_t preg{};
-  char prbuf[500];
-  char* fname = NULL;
-  int rc, ch;
-  char data[1000];
-  char pat[500];
-  FILE* fd;
-  bool match_only = true;
-  int lineno;
-  bool no_linenos = false;
-
-
   setlocale(LC_ALL, "");
   tzset();
   bindtextdomain("bareos", LOCALEDIR);
   textdomain("bareos");
 
-  while ((ch = getopt(argc, argv, "d:f:nl?")) != -1) {
-    switch (ch) {
-      case 'd': /* set debug level */
-        if (*optarg == 't') {
-          dbg_timestamp = true;
-        } else {
-          debug_level = atoi(optarg);
-          if (debug_level <= 0) { debug_level = 1; }
-        }
-        break;
+  CLI::App bregex_app;
+  InitCLIApp(bregex_app, "The Bareos Regular Expression tool.");
 
-      case 'f': /* data */
-        fname = optarg;
-        break;
+  AddDebugOptions(bregex_app);
 
-      case 'l':
-        no_linenos = true;
-        break;
+  std::string fname{};
+  bregex_app
+      .add_option("-f,--filename", fname, "Specify file or data to be matched.")
+      ->required();
 
-      case 'n':
-        match_only = false;
-        break;
+  bool no_linenos = false;
+  bregex_app.add_flag("-l,--suppress-linenumbers", no_linenos,
+                      "Suppress line numbers.");
 
-      case '?':
-      default:
-        usage();
-    }
-  }
-  argc -= optind;
-  argv += optind;
+  bool match_only = true;
+  bregex_app.add_flag(
+      "-n,--not-match", [&match_only](bool val) { match_only = false; },
+      "Print line that do not match.");
 
-  if (!fname) {
-    printf("A data file must be specified.\n");
-    usage();
-  }
+  CLI11_PARSE(bregex_app, argc, argv);
 
   OSDependentInit();
+
+  regex_t preg{};
+  char prbuf[500];
+  char data[1000];
+  char pat[500];
+  FILE* fd;
+  int rc;
+  int lineno;
 
   for (;;) {
     printf("Enter regex pattern: ");
@@ -119,9 +83,9 @@ int main(int argc, char* const* argv)
       printf("Regex compile error: %s\n", prbuf);
       continue;
     }
-    fd = fopen(fname, "r");
+    fd = fopen(fname.c_str(), "r");
     if (!fd) {
-      printf(_("Could not open data file: %s\n"), fname);
+      printf(_("Could not open data file: %s\n"), fname.c_str());
       exit(1);
     }
     lineno = 0;

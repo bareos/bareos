@@ -433,7 +433,7 @@ void FlushMntentCache(void)
   mntent_cache_entry_t* mce;
 
   // Lock the cache.
-  P(mntent_cache_lock);
+  lock_mutex(mntent_cache_lock);
 
   if (mntent_cache_entries) {
     previous_cache_hit = NULL;
@@ -445,7 +445,7 @@ void FlushMntentCache(void)
     mntent_cache_entries = NULL;
   }
 
-  V(mntent_cache_lock);
+  unlock_mutex(mntent_cache_lock);
 }
 
 /**
@@ -455,7 +455,7 @@ void FlushMntentCache(void)
 void ReleaseMntentMapping(mntent_cache_entry_t* mce)
 {
   // Lock the cache.
-  P(mntent_cache_lock);
+  lock_mutex(mntent_cache_lock);
 
   mce->reference_count--;
 
@@ -465,7 +465,7 @@ void ReleaseMntentMapping(mntent_cache_entry_t* mce)
     free(mce);
   }
 
-  V(mntent_cache_lock);
+  unlock_mutex(mntent_cache_lock);
 }
 
 // Find a mapping in the cache.
@@ -475,7 +475,7 @@ mntent_cache_entry_t* find_mntent_mapping(uint32_t dev)
   time_t now;
 
   // Lock the cache.
-  P(mntent_cache_lock);
+  lock_mutex(mntent_cache_lock);
 
   // Shortcut when we get a request for the same device again.
   if (previous_cache_hit && previous_cache_hit->dev == dev) {
@@ -527,6 +527,6 @@ mntent_cache_entry_t* find_mntent_mapping(uint32_t dev)
   }
 
 ok_out:
-  V(mntent_cache_lock);
+  unlock_mutex(mntent_cache_lock);
   return mce;
 }

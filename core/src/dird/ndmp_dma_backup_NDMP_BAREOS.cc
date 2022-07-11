@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -284,9 +284,9 @@ bool DoNdmpBackup(JobControlRecord* jcr)
        */
       if (jcr->store_bsock && cnt > 0) {
         jcr->store_bsock->fsend("nextrun");
-        P(mutex);
+        lock_mutex(mutex);
         pthread_cond_wait(&jcr->impl->nextrun_ready, &mutex);
-        V(mutex);
+        unlock_mutex(mutex);
       }
 
       /*

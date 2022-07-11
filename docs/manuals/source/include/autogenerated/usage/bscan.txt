@@ -1,0 +1,80 @@
+Usage: bscan [OPTIONS] device_name
+
+Positionals:
+    device_name  
+        REQUIRED
+        Specify the input device name (either as name of a Bareos Storage 
+        Daemon Device resource or identical to the Archive Device in a Bareos 
+        Storage Daemon Device resource). 
+
+
+Options:
+    -h,-?,--help
+        Print this help message and exit. 
+
+    --version
+        Display program version information and exit 
+
+    -a,--backend-directory <directory>
+        Specify a directory from where Bareos backends can be loaded. 
+
+    -B,--dbdriver <dbdriver>
+        Exists for backwards compatibility and is ignored. 
+
+    -b,--parse-bootstrap <bootstrap>:FILE
+        Specify a bootstrap file 
+
+    -c,--config <path>:PATH(existing)
+        Use <path> as configuration file or directory 
+
+    -D,--director <director>
+        Specify a director name specified in the storage. Configuration file 
+        for the Key Encryption Key selection. 
+
+    -d,--debug-level <level>:NONNEGATIVE
+        Set debug level to <level>. 
+
+    --dt,--debug-timestamps
+        Print timestamps in debug output. 
+
+    -n,--dbname <name>
+        Default: bareos
+        Specify database name. 
+
+    -o,--dbhost <host>
+        Specify database host. 
+
+    -P,--dbpassword <password>
+        Specify database password. 
+
+    -t,--dbport <port>
+        Specify database port. 
+
+    -u,--dbuser <user>
+        Default: bareos
+        Specify database user name. 
+
+    -m,--update-volume-info
+        Update media info in database. 
+
+    -p,--proceed-io
+        Proceed inspite of IO errors 
+
+    -r,--list-records
+        List records. 
+
+    -S,--show-progress
+        Show scan progress periodically. 
+
+    -s,--update-db
+        Synchronize or store in database. 
+
+    -V,--volumes <vol1|vol2|...>
+        Specify volume names (separated by |). 
+
+    -v,--verbose
+        Default: 0
+        Verbose user messages. 
+
+    -w,--working-directory <directory>
+        Specify working directory. 

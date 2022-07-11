@@ -1,0 +1,77 @@
+Usage: btape [OPTIONS] bareos-archive-device-name
+
+Positionals:
+    bareos-archive-device-name  
+        REQUIRED
+        Specify the input device name (either as name of a Bareos Storage 
+        Daemon Device resource or identical to the Archive Device in a Bareos 
+        Storage Daemon Device resource). 
+
+
+Options:
+    -h,-?,--help
+        Print this help message and exit. 
+
+    --version
+        Display program version information and exit 
+
+    -b,--parse-bootstrap <file>:FILE
+        Specify a bootstrap file. 
+
+    -c,--config <path>:PATH(existing)
+        Specify a configuration file or directory. 
+
+    -D,--director <director>
+        Specify a director name specified in the storage. Configuration file 
+        for the Key Encryption Key selection. 
+
+    -d,--debug-level <level>:NONNEGATIVE
+        Set debug level to <level>. 
+
+    --dt,--debug-timestamps
+        Print timestamps in debug output. 
+
+    -p,--proceed-io
+        Proceed inspite of IO errors 
+
+    -s,--no-signals
+        Turn off signals. 
+
+    -v,--verbose
+        Default: 0
+        Verbose user messages. 
+
+[Option Group: Interactive commands]
+  Interactive commands:
+    Command    Description
+    =======    ===========
+    autochanger test autochanger
+    bsf        backspace file
+    bsr        backspace record
+    cap        list device capabilities
+    clear      clear tape errors
+    eod        go to end of Bareos data for append
+    eom        go to the physical end of medium
+    fill       fill tape, write onto second volume
+    unfill     read filled tape
+    fsf        forward space a file
+    fsr        forward space a record
+    help       print this command
+    label      write a Bareos label to the tape
+    load       load a tape
+    quit       quit btape
+    rawfill    use write() to fill tape
+    readlabel  read and print the Bareos tape label
+    rectest    test record handling functions
+    rewind     rewind the tape
+    scan       read() tape block by block to EOT and report
+    scanblocks Bareos read block by block to EOT and report
+    speed      [file_size=n(GB)|nb_file=3|skip_zero|skip_random|skip_raw|skip_block] report drive speed
+    status     print tape status
+    test       General test Bareos tape functions
+    weof       write an EOF on the tape
+    wr         write a single Bareos block
+    rr         read a single record
+    rb         read a single Bareos block
+    qfill      quick fill command
+  

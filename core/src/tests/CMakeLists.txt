@@ -167,6 +167,9 @@ if(NOT client-only)
                    $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
     SKIP_GTEST
   )
+
+  bareos_add_test(cli_test LINK_LIBRARIES bareos CLI11::CLI11 GTest::gtest_main)
+
   bareos_add_test(
     configure LINK_LIBRARIES testing_common dird_objects bareosfind bareossql
                              GTest::gtest_main

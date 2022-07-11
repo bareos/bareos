@@ -1,0 +1,26 @@
+Usage: bpluginfo [OPTIONS] plugin_file.so
+
+Positionals:
+    plugin_file.so TEXT
+        REQUIRED
+        Plugin file. 
+
+
+Options:
+    -h,-?,--help
+        Print this help message and exit. 
+
+    --version
+        Display program version information and exit 
+
+    -a,--api <api>:NONNEGATIVE
+        bareos api version (default :1). 
+
+    -f,--list-functions
+        list plugin functions information only. 
+
+    -i,--list-headers
+        list plugin header information only. 
+
+    -v,--verbose
+        Verbose. 

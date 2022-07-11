@@ -8,6 +8,12 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Breaking Changes
 - when using PAM Bareos will now check authorization, too. If authorization is not configured, login will fail. See [updated documentation](https://docs.bareos.org/TasksAndConcepts/PAM.html#configuration) on how to proceed [PR #1115].
 - Bareos 22 removes perl make_catalog_backup.pl in favor of an improved make_catalog_backup shell script. There is a compatibility-wrapper, but that only supports simple cases. If you applied changes to BackupCatalog Job, you should immediately migrate to use make_catalog_backup. See [catalog documentation](https://docs.bareos.org/TasksAndConcepts/CatalogMaintenance.html#backing-up-your-bareos-database) [PR #1081]
+- Bareos changed the way its binaries parse CLI arguments. Four existing options changed as a result:
+    - `-xc` -> `--xc` to export all configuration at once.
+    - `-xc[resource[=<name>]]` -> `--xc [resource [ressource-name]]` to export a specific resource.
+    - `-xs` -> `--xs` to export configuration JSON schema.
+    - `-dt` -> `--dt` to print the debug timestamp.
+  The rest of the options stay the same. [PR #1187]
 
 ### Added
 - github-actions: add workflow to build MacOS packages [PR #1192]
@@ -94,6 +100,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - bconsole: removed commas from jobid attribute in list jobs and llist jobs outputs [PR #1126]
 - testing: matrix.yml: run multiple tests sequentially [PR #1193]
 - console: aborting job run if jobid doesn't exist in catalog [PR 1188]
+- daemons: changed daemon CLI arguments parsing [PR #1187]
 
 ### Deprecated
 - make_catalog_backup.pl is now a shell wrapper script which will be removed in version 23.

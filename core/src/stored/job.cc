@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -193,7 +193,7 @@ bool DoJobRun(JobControlRecord* jcr)
    * when he does, we will be released, unless the 30 minutes
    * expires.
    */
-  P(mutex);
+  lock_mutex(mutex);
   while (!jcr->authenticated && !JobCanceled(jcr)) {
     errstat
         = pthread_cond_timedwait(&jcr->impl->job_start_wait, &mutex, &timeout);
@@ -204,7 +204,7 @@ bool DoJobRun(JobControlRecord* jcr)
   }
   Dmsg3(50, "Auth=%d canceled=%d errstat=%d\n", jcr->authenticated,
         JobCanceled(jcr), errstat);
-  V(mutex);
+  unlock_mutex(mutex);
   Dmsg2(800, "Auth fail or cancel for jid=%d %p\n", jcr->JobId, jcr);
 
   memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
@@ -221,9 +221,9 @@ bool DoJobRun(JobControlRecord* jcr)
          * we just hang on a conditional variable.
          */
         Dmsg2(800, "Wait for end job jid=%d %p\n", jcr->JobId, jcr);
-        P(mutex);
+        lock_mutex(mutex);
         pthread_cond_wait(&jcr->impl->job_end_wait, &mutex);
-        V(mutex);
+        unlock_mutex(mutex);
       }
       Dmsg2(800, "Done jid=%d %p\n", jcr->JobId, jcr);
 
@@ -285,7 +285,7 @@ bool nextRunCmd(JobControlRecord* jcr)
             (int)(timeout.tv_sec - time(NULL)), jcr->sd_auth_key);
       Dmsg2(800, "Wait FD for jid=%d %p\n", jcr->JobId, jcr);
 
-      P(mutex);
+      lock_mutex(mutex);
       while (!jcr->authenticated && !JobCanceled(jcr)) {
         errstat = pthread_cond_timedwait(&jcr->impl->job_start_wait, &mutex,
                                          &timeout);
@@ -296,7 +296,7 @@ bool nextRunCmd(JobControlRecord* jcr)
       }
       Dmsg3(50, "Auth=%d canceled=%d errstat=%d\n", jcr->authenticated,
             JobCanceled(jcr), errstat);
-      V(mutex);
+      unlock_mutex(mutex);
       Dmsg2(800, "Auth fail or cancel for jid=%d %p\n", jcr->JobId, jcr);
 
       if (jcr->authenticated && !JobCanceled(jcr)) {
@@ -310,9 +310,9 @@ bool nextRunCmd(JobControlRecord* jcr)
          * we just hang on a conditional variable.
          */
         Dmsg2(800, "Wait for end job jid=%d %p\n", jcr->JobId, jcr);
-        P(mutex);
+        lock_mutex(mutex);
         pthread_cond_wait(&jcr->impl->job_end_wait, &mutex);
-        V(mutex);
+        unlock_mutex(mutex);
       }
       Dmsg2(800, "Done jid=%d %p\n", jcr->JobId, jcr);
 

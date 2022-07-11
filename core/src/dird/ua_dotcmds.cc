@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -839,8 +839,8 @@ bool DotAdminCmds(UaContext* ua, const char* cmd)
     if (strncmp(remote_cmd, ".die", 4) == 0) {
       if (do_deadlock) {
         ua->SendMsg(_("The Director will generate a deadlock.\n"));
-        P(mutex);
-        P(mutex);
+        lock_mutex(mutex);
+        lock_mutex(mutex);
       }
       ua->SendMsg(_("The Director will segment fault.\n"));
       a = jcr->JobId;    /* ref NULL pointer */

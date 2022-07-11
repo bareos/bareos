@@ -38,6 +38,7 @@
 #include "lib/bnet_network_dump.h"
 #include "lib/bsock_tcp.h"
 #include "lib/bstringlist.h"
+#include "lib/cli.h"
 #include "lib/qualified_resource_name_type_converter.h"
 #include "lib/watchdog.h"
 #include <stdio.h>
@@ -105,32 +106,6 @@ static int EolCmd(FILE* input, BareosSocket* UA_sock);
 #else
 #  include <regex.h>
 #endif
-
-static void usage()
-{
-  kBareosVersionStrings.PrintCopyrightWithFsfAndPlanets(stderr, 2000);
-  fprintf(
-      stderr,
-      _("Usage: bconsole [-s] [-c config_file] [-d debug_level]\n"
-        "        -D <dir>    select a Director\n"
-        "        -l          list defined Directors\n"
-        "        -c <path>   specify configuration file or directory\n"
-#if defined(HAVE_PAM)
-        "        -p <file>   specify pam credentials file\n"
-        "                    (first line: username, second line: password)\n"
-        "        -o          send pam credentials over unencrypted connection\n"
-#endif
-        "        -d <nn>     set debug level to <nn>\n"
-        "        -dt         print timestamp in debug output\n"
-        "        -s          no signals\n"
-        "        -u <nn>     set command execution timeout to <nn> seconds\n"
-        "        -t          test - read configuration and exit\n"
-        "        -xc         print configuration and exit\n"
-        "        -xs         print configuration file schema in JSON format "
-        "and exit\n"
-        "        -?          print this message.\n"
-        "\n"));
-}
 
 extern "C" void GotSigstop(int sig) { stop = true; }
 
@@ -861,15 +836,6 @@ static bool ExaminePamAuthentication(
 
 int main(int argc, char* argv[])
 {
-  int ch;
-  char* director = NULL;
-  bool list_directors = false;
-  bool no_signals = false;
-  bool test_config = false;
-  bool export_config = false;
-  bool export_config_schema = false;
-  PoolMem history_file;
-
   setlocale(LC_ALL, "");
   tzset();
   bindtextdomain("bareos", LOCALEDIR);
@@ -881,86 +847,96 @@ int main(int argc, char* argv[])
   working_directory = "/tmp";
   args = GetPoolMemory(PM_FNAME);
 
-  while ((ch = getopt(argc, argv, program_arguments.c_str())) != -1) {
-    switch (ch) {
-      case 'D': /* Director */
-        if (director) { free(director); }
-        director = strdup(optarg);
-        break;
+  CLI::App console_app;
+  InitCLIApp(console_app, "The Bareos Console.", 2000);
 
-      case 'l':
+  console_app
+      .add_option(
+          "-c,--config",
+          [](std::vector<std::string> val) {
+            if (configfile != nullptr) { free(configfile); }
+            configfile = strdup(val.front().c_str());
+            return true;
+          },
+          "Use <path> as configuration file or directory")
+      ->check(CLI::ExistingPath)
+      ->type_name("<path>");
+
+  char* director = nullptr;
+  console_app
+      .add_option(
+          "-D,--director",
+          [&director](std::vector<std::string> val) {
+            if (director != nullptr) { free(director); }
+            director = strdup(val.front().c_str());
+            return true;
+          },
+          "Specify director.")
+      ->type_name("<director>");
+
+  AddDebugOptions(console_app);
+
+  bool list_directors = false;
+  bool test_config = false;
+  console_app.add_flag(
+      "-l,--list-directors",
+      [&list_directors, &test_config](bool val) {
         list_directors = true;
         test_config = true;
-        break;
-
-      case 'c': /* configuration file */
-        if (configfile != NULL) { free(configfile); }
-        configfile = strdup(optarg);
-        break;
-
-      case 'd':
-        if (*optarg == 't') {
-          dbg_timestamp = true;
-        } else {
-          debug_level = atoi(optarg);
-          if (debug_level <= 0) { debug_level = 1; }
-        }
-        break;
+      },
+      "List defined Directors.");
 
 #if defined(HAVE_PAM)
-      case 'p':
-        pam_credentials_filename = optarg;
-        if (pam_credentials_filename.empty()) {
-          Emsg0(M_ERROR_TERM, 0, _("No filename given for -p.\n"));
-          usage();
-        } else {
-          if (FILE* f = fopen(pam_credentials_filename.c_str(), "r+")) {
-            use_pam_credentials_file = true;
-            fclose(f);
-          } else { /* file cannot be opened, i.e. does not exist */
-            Emsg0(M_ERROR_TERM, 0, _("Could not open file for -p.\n"));
-          }
-        }
-        break;
+  console_app
+      .add_option(
+          "-p,--pam-credentials-filename",
+          [](std::vector<std::string> val) {
+            pam_credentials_filename = val.front();
+            if (FILE* f = fopen(pam_credentials_filename.c_str(), "r+")) {
+              use_pam_credentials_file = true;
+              fclose(f);
+            } else { /* file cannot be opened, i.e. does not exist */
+              Emsg0(M_ERROR_TERM, 0, _("Could not open file for -p.\n"));
+            }
 
-      case 'o':
-        force_send_pam_credentials_unencrypted = true;
-        break;
+            return true;
+          },
+          "PAM Credentials file.")
+      ->check(CLI::ExistingFile)
+      ->type_name("<path>");
+
+  console_app.add_flag("-o", force_send_pam_credentials_unencrypted,
+                       "Force sending pam credentials unencrypted.");
+
 #endif /* HAVE_PAM */
 
-      case 's': /* turn off signals */
-        no_signals = true;
-        break;
+  bool no_signals = false;
+  console_app.add_flag("-s,--no-signals", no_signals,
+                       "No signals (for debugging)");
 
-      case 't':
-        test_config = true;
-        break;
+  console_app.add_flag("-t,--test-config", test_config,
+                       "Test - read configuration and exit");
 
-      case 'u':
-        timeout = atoi(optarg);
-        break;
+  console_app
+      .add_option("-u,--timeout", timeout,
+                  "Set command execution timeout to <seconds>.")
+      ->type_name("<seconds>")
+      ->check(CLI::PositiveNumber);
 
-      case 'x': /* export configuration/schema and exit */
-        if (*optarg == 's') {
-          export_config_schema = true;
-        } else if (*optarg == 'c') {
-          export_config = true;
-        } else {
-          usage();
-        }
-        break;
-      case 'z': /* switch network debugging on */
-        if (!BnetDump::EvaluateCommandLineArgs(optarg)) { exit(1); }
-        break;
+  bool export_config = false;
+  CLI::Option* xc
+      = console_app.add_flag("--xc,--export-config", export_config,
+                             "Print configuration resources and exit");
 
-      case '?':
-      default:
-        usage();
-        exit(1);
-    }
-  }
-  argc -= optind;
-  argv += optind;
+  bool export_config_schema = false;
+  console_app
+      .add_flag("--xs,--export-schema", export_config_schema,
+                "Print configuration schema in JSON format and exit")
+      ->excludes(xc);
+
+  AddNetworkDebuggingOption(console_app);
+
+  CLI11_PARSE(console_app, argc, argv);
 
   if (!no_signals) { InitSignals(TerminateConsole); }
 
@@ -975,11 +951,6 @@ int main(int argc, char* argv[])
 #endif
 
   OSDependentInit();
-
-  if (argc) {
-    usage();
-    exit(1);
-  }
 
   if (export_config_schema) {
     PoolMem buffer;
@@ -1124,6 +1095,7 @@ int main(int argc, char* argv[])
     }
   }
 
+  PoolMem history_file;
   if (me && me->history_file) {
     PmStrcpy(history_file, me->history_file);
     ConsoleInitHistory(history_file.c_str());

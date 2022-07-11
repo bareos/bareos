@@ -1243,9 +1243,9 @@ extern "C" void* ndmp_thread_server(void* arg)
         }
 
         // See who client is. i.e. who connected to us.
-        P(mutex);
+        lock_mutex(mutex);
         SockaddrToAscii(&cli_addr, buf, sizeof(buf));
-        V(mutex);
+        unlock_mutex(mutex);
 
         struct ndmp_session_handle* new_handle;
         new_handle = (struct ndmp_session_handle*)malloc(

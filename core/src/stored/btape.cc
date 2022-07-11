@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -48,6 +48,7 @@
 #include "stored/sd_backends.h"
 #include "lib/address_conf.h"
 #include "lib/berrno.h"
+#include "lib/cli.h"
 #include "lib/edit.h"
 #include "lib/bsignal.h"
 #include "lib/recent_job_results_list.h"
@@ -132,7 +133,7 @@ static int argc;
 static int quickie_count = 0;
 static uint64_t write_count = 0;
 static BootStrapRecord* bsr = NULL;
-static int signals = TRUE;
+static bool signals = true;
 static bool ok;
 static int stop = 0;
 static uint64_t vol_size;
@@ -164,7 +165,7 @@ static int vol_num = 0;
 
 static JobControlRecord* jcr = NULL;
 
-static void usage();
+static std::string Generate_interactive_commands_help();
 static void TerminateBtape(int sig);
 int GetCmd(const char* prompt);
 
@@ -176,13 +177,6 @@ int GetCmd(const char* prompt);
  */
 int main(int margc, char* margv[])
 {
-  int ch, i;
-  uint32_t x32, y32;
-  uint64_t x64, y64;
-  char buf[1'000];
-  char* DirectorName = NULL;
-  DirectorResource* director = NULL;
-
   setlocale(LC_ALL, "");
   tzset();
   bindtextdomain("bareos", LOCALEDIR);
@@ -205,18 +199,24 @@ int main(int margc, char* margv[])
             "should be 8 or more !!!!!\n\n\n"),
           sizeof(boffset_t));
   }
-  x32 = 123456789;
+
+  uint32_t x32 = 123456789;
+  uint32_t y32;
+  char buf[1'000];
   Bsnprintf(buf, sizeof(buf), "%u", x32);
-  i = bsscanf(buf, "%lu", &y32);
+  int i = bsscanf(buf, "%lu", &y32);
   if (i != 1 || x32 != y32) {
     Pmsg3(-1, _("32 bit printf/scanf problem. i=%d x32=%u y32=%u\n"), i, x32,
           y32);
     exit(1);
   }
-  x64 = 123456789;
+
+  uint64_t x64 = 123456789;
   x64 = x64 << 32;
   x64 += 123456789;
   Bsnprintf(buf, sizeof(buf), "%llu", x64);
+
+  uint64_t y64;
   i = bsscanf(buf, "%llu", &y64);
   if (i != 1 || x64 != y64) {
     Pmsg3(-1, _("64 bit printf/scanf problem. i=%d x64=%llu y64=%llu\n"), i,
@@ -224,80 +224,91 @@ int main(int margc, char* margv[])
     exit(1);
   }
 
-  printf(_("Tape block granularity is %d bytes.\n"), TAPE_BSIZE);
-
   working_directory = "/tmp";
   MyNameIs(margc, margv, "btape");
   InitMsg(NULL, NULL);
 
   OSDependentInit();
 
-  while ((ch = getopt(margc, margv, "b:c:D:d:psv?")) != -1) {
-    switch (ch) {
-      case 'b': /* bootstrap file */
-        bsr = libbareos::parse_bsr(NULL, optarg);
-        //       DumpBsr(bsr, true);
-        break;
+  CLI::App btape_app;
+  InitCLIApp(btape_app, "The Bareos Tape Manipulation tool.", 2000);
 
-      case 'c': /* specify config file */
-        if (configfile != NULL) { free(configfile); }
-        configfile = strdup(optarg);
-        break;
+  btape_app
+      .add_option(
+          "-b,--parse-bootstrap",
+          [](std::vector<std::string> vals) {
+            bsr = libbareos::parse_bsr(nullptr, vals.front().data());
+            return true;
+          },
+          "Specify a bootstrap file.")
+      ->check(CLI::ExistingFile)
+      ->type_name("<file>");
 
-      case 'D': /* specify director name */
-        if (DirectorName != NULL) { free(DirectorName); }
-        DirectorName = strdup(optarg);
-        break;
+  btape_app
+      .add_option(
+          "-c,--config",
+          [](std::vector<std::string> val) {
+            if (configfile != nullptr) { free(configfile); }
+            configfile = strdup(val.front().c_str());
+            return true;
+          },
+          "Specify a configuration file or directory.")
+      ->check(CLI::ExistingPath)
+      ->type_name("<path>");
 
-      case 'd': /* set debug level */
-        if (*optarg == 't') {
-          dbg_timestamp = true;
-        } else {
-          debug_level = atoi(optarg);
-          if (debug_level <= 0) { debug_level = 1; }
-        }
-        break;
+  std::string DirectorName;
+  btape_app
+      .add_option("-D,--director", DirectorName,
+                  "Specify a director name specified in the storage.\n"
+                  "Configuration file for the Key Encryption Key selection.")
+      ->type_name("<director>");
 
-      case 'p':
-        forge_on = true;
-        break;
+  AddDebugOptions(btape_app);
 
-      case 's':
-        signals = false;
-        break;
+  btape_app.add_flag("-p,--proceed-io", forge_on,
+                     "Proceed inspite of IO errors");
 
-      case 'v':
-        verbose++;
-        break;
+  btape_app.add_flag("-s{false},--no-signals{false}", signals,
+                     "Turn off signals.");
 
-      case '?':
-      default:
-        HelpCmd();
-        exit(0);
-    }
-  }
-  margc -= optind;
-  margv += optind;
+  AddVerboseOption(btape_app);
+
+  std::string archive_name;
+  btape_app
+      .add_option("bareos-archive-device-name", archive_name,
+                  "Specify the input device name (either as name of a Bareos "
+                  "Storage Daemon Device resource or identical to the Archive "
+                  "Device in a Bareos Storage Daemon Device resource).")
+      ->required()
+      ->type_name(" ");
+
+  btape_app.add_option_group("Interactive commands",
+                             Generate_interactive_commands_help());
+
+  CLI11_PARSE(btape_app, margc, margv)
+
+  printf(_("Tape block granularity is %d bytes.\n"), TAPE_BSIZE);
 
   cmd = GetPoolMemory(PM_FNAME);
   args = GetPoolMemory(PM_FNAME);
 
   if (signals) { InitSignals(TerminateBtape); }
 
-  daemon_start_time = time(NULL);
+  daemon_start_time = time(nullptr);
 
   my_config = InitSdConfig(configfile, M_ERROR_TERM);
   ParseSdConfig(configfile, M_ERROR_TERM);
 
-  if (DirectorName) {
+  DirectorResource* director = nullptr;
+  if (!DirectorName.empty()) {
     foreach_res (director, R_DIRECTOR) {
-      if (bstrcmp(director->resource_name_, DirectorName)) { break; }
+      if (bstrcmp(director->resource_name_, DirectorName.c_str())) { break; }
     }
     if (!director) {
       Emsg2(M_ERROR_TERM, 0,
             _("No Director resource named %s defined in %s. Cannot "
               "continue.\n"),
-            DirectorName, configfile);
+            DirectorName.c_str(), configfile);
     }
   }
 
@@ -306,19 +317,8 @@ int main(int margc, char* margv[])
   ReadCryptoCache(me->working_directory, "bareos-sd",
                   GetFirstPortHostOrder(me->SDaddrs));
 
-  /* See if we can open a device */
-  if (margc == 0) {
-    Pmsg0(000, _("No archive name specified.\n"));
-    usage();
-    exit(1);
-  } else if (margc != 1) {
-    Pmsg0(000, _("Improper number of arguments specified.\n"));
-    usage();
-    exit(1);
-  }
-
   dcr = new BTAPE_DCR;
-  jcr = SetupJcr("btape", margv[0], bsr, director, dcr, NULL,
+  jcr = SetupJcr("btape", archive_name.data(), bsr, director, dcr, NULL,
                  false); /* write device */
   if (!jcr) { exit(1); }
 
@@ -327,7 +327,6 @@ int main(int margc, char* margv[])
 
   if (!dev->IsTape()) {
     Pmsg0(000, _("btape only works with tape storage.\n"));
-    usage();
     exit(1);
   }
 
@@ -2856,37 +2855,24 @@ static void do_tape_cmds()
   }
 }
 
-static void HelpCmd()
+static std::string Generate_interactive_commands_help()
 {
-  unsigned int i;
-  usage();
-  printf(_("Interactive commands:\n"));
-  printf(_("  Command    Description\n  =======    ===========\n"));
-  for (i = 0; i < comsize; i++)
-    printf("  %-10s %s\n", commands[i].key, commands[i].help);
-  printf("\n");
+  std::string output{
+      "Interactive commands:\n"
+      "  Command    Description\n  =======    ===========\n"};
+  char tmp[1024];
+  for (unsigned int i = 0; i < comsize; i++) {
+    sprintf(tmp, "  %-10s %s\n", commands[i].key, commands[i].help);
+    output += tmp;
+  }
+
+  output += "\n";
+  return output;
 }
 
-static void usage()
+static void HelpCmd()
 {
-  kBareosVersionStrings.PrintCopyrightWithFsfAndPlanets(stderr, 2000);
-  fprintf(
-      stderr,
-      _("Usage: btape <options> <device_name>\n"
-        "       -b <file>     specify bootstrap file\n"
-        "       -c <path>     specify Storage configuration file or "
-        "directory\n"
-        "       -D <director> specify a director name specified in the "
-        "Storage\n"
-        "                     configuration file for the Key Encryption Key "
-        "selection\n"
-        "       -d <nn>       set debug level to <nn>\n"
-        "       -dt           print timestamp in debug output\n"
-        "       -p            proceed inspite of I/O errors\n"
-        "       -s            turn off signals\n"
-        "       -v            be verbose\n"
-        "       -?            print this message.\n"
-        "\n"));
+  printf("%s", Generate_interactive_commands_help().c_str());
 }
 
 /**

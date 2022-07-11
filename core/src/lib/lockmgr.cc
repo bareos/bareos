@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2008-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,20 +23,20 @@
 #include "include/bareos.h"
 #include "lib/berrno.h"
 
-void Lmgr_p(pthread_mutex_t* m)
+void lock_mutex(pthread_mutex_t& m)
 {
   int errstat;
-  if ((errstat = pthread_mutex_lock(m))) {
+  if ((errstat = pthread_mutex_lock(&m))) {
     BErrNo be;
     e_msg(__FILE__, __LINE__, M_ABORT, 0, _("Mutex lock failure. ERR=%s\n"),
           be.bstrerror(errstat));
   }
 }
 
-void Lmgr_v(pthread_mutex_t* m)
+void unlock_mutex(pthread_mutex_t& m)
 {
   int errstat;
-  if ((errstat = pthread_mutex_unlock(m))) {
+  if ((errstat = pthread_mutex_unlock(&m))) {
     BErrNo be;
     e_msg(__FILE__, __LINE__, M_ABORT, 0, _("Mutex unlock failure. ERR=%s\n"),
           be.bstrerror(errstat));

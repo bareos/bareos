@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -313,13 +313,13 @@ static bRC do_set_scsi_encryption_key(void* value)
     Dmsg0(debuglevel, "scsicrypto-sd: Could not GetVolumeEncryptionKey!\n");
 
     // Check if encryption key is needed for reading this volume.
-    P(crypto_operation_mutex);
+    lock_mutex(crypto_operation_mutex);
     if (!NeedScsiCryptoKey(dev->fd, dev->archive_device_string, true)) {
-      V(crypto_operation_mutex);
+      unlock_mutex(crypto_operation_mutex);
       Dmsg0(debuglevel, "scsicrypto-sd: No encryption key needed!\n");
       return bRC_OK;
     }
-    V(crypto_operation_mutex);
+    unlock_mutex(crypto_operation_mutex);
 
     return bRC_Error;
   }
@@ -367,13 +367,13 @@ static bRC do_set_scsi_encryption_key(void* value)
 
   Dmsg1(debuglevel, "scsicrypto-sd: Loading new crypto key %s\n", VolEncrKey);
 
-  P(crypto_operation_mutex);
+  lock_mutex(crypto_operation_mutex);
   if (SetScsiEncryptionKey(dev->fd, dev->archive_device_string, VolEncrKey)) {
     dev->SetCryptoEnabled();
-    V(crypto_operation_mutex);
+    unlock_mutex(crypto_operation_mutex);
     return bRC_OK;
   } else {
-    V(crypto_operation_mutex);
+    unlock_mutex(crypto_operation_mutex);
     return bRC_Error;
   }
 }
@@ -405,7 +405,7 @@ static bRC do_clear_scsi_encryption_key(void* value)
   // See if device_resource supports hardware encryption.
   if (!device_resource->drive_crypto_enabled) { return bRC_OK; }
 
-  P(crypto_operation_mutex);
+  lock_mutex(crypto_operation_mutex);
   /*
    * See if we need to query the drive or use the tracked encryption status of
    * the stored.
@@ -420,17 +420,17 @@ static bRC do_clear_scsi_encryption_key(void* value)
     Dmsg0(debuglevel, "scsicrypto-sd: Clearing crypto key\n");
     if (ClearScsiEncryptionKey(dev->fd, dev->archive_device_string)) {
       dev->ClearCryptoEnabled();
-      V(crypto_operation_mutex);
+      unlock_mutex(crypto_operation_mutex);
       return bRC_OK;
     } else {
-      V(crypto_operation_mutex);
+      unlock_mutex(crypto_operation_mutex);
       return bRC_Error;
     }
   } else {
     Dmsg0(debuglevel,
           "scsicrypto-sd: Not clearing crypto key because encryption is "
           "currently not enabled on drive\n");
-    V(crypto_operation_mutex);
+    unlock_mutex(crypto_operation_mutex);
     return bRC_OK;
   }
 }
@@ -466,13 +466,13 @@ static bRC handle_read_error(void* value)
          * the volume.
          */
         if (device_resource->query_crypto_status) {
-          P(crypto_operation_mutex);
+          lock_mutex(crypto_operation_mutex);
           if (NeedScsiCryptoKey(dev->fd, dev->archive_device_string, false)) {
             decryption_needed = true;
           } else {
             decryption_needed = false;
           }
-          V(crypto_operation_mutex);
+          unlock_mutex(crypto_operation_mutex);
         } else {
           decryption_needed = dev->IsCryptoEnabled();
         }
@@ -510,11 +510,11 @@ static bRC send_device_encryption_status(void* value)
 
   // See if drive crypto is enabled.
   if (dst->device_resource->drive_crypto_enabled) {
-    P(crypto_operation_mutex);
+    lock_mutex(crypto_operation_mutex);
     dst->status_length = GetScsiDriveEncryptionStatus(
         dst->device_resource->dev->fd,
         dst->device_resource->dev->archive_device_string, dst->status, 4);
-    V(crypto_operation_mutex);
+    unlock_mutex(crypto_operation_mutex);
   }
   return bRC_OK;
 }
@@ -529,11 +529,11 @@ static bRC send_volume_encryption_status(void* value)
 
   // See if drive crypto is enabled.
   if (dst->device_resource->drive_crypto_enabled) {
-    P(crypto_operation_mutex);
+    lock_mutex(crypto_operation_mutex);
     dst->status_length = GetScsiVolumeEncryptionStatus(
         dst->device_resource->dev->fd,
         dst->device_resource->dev->archive_device_string, dst->status, 4);
-    V(crypto_operation_mutex);
+    unlock_mutex(crypto_operation_mutex);
   }
   return bRC_OK;
 }

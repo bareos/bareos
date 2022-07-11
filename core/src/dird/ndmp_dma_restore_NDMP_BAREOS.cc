@@ -525,9 +525,9 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
          */
         if (jcr->store_bsock && cnt > 0) {
           jcr->store_bsock->fsend("nextrun");
-          P(mutex);
+          lock_mutex(mutex);
           pthread_cond_wait(&jcr->impl->nextrun_ready, &mutex);
-          V(mutex);
+          unlock_mutex(mutex);
         }
 
         /*

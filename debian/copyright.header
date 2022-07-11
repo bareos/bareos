@@ -12,10 +12,10 @@ Comment: BAREOS is a fork of the Bacula source code.
   The name BAREOS is a registered trademark of Bareos GmbH & Co. KG
 
 
-Files: core/* docs/manuals/source/* regress/*
+Files: core/* docs/manuals/source/*
 Copyright: 2000-2012 Free Software Foundation Europe e.V.
            2011-2012 Planets Communications B.V.
-           2013-2021 Bareos GmbH & Co. KG
+           2013-2022 Bareos GmbH & Co. KG
 License: Bareos
     This is basically AGPL-3.0 with Bacula and other exceptions.
     This section is the reformated version of

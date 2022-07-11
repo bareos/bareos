@@ -3,7 +3,7 @@
 
    Copyright (C) 2006-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,9 +32,11 @@
  * - API version
  * - Enabled functions, etc.
  */
+
 #include "include/bareos.h"
 #include "filed/fd_plugins.h"
 #include "dird/dir_plugins.h"
+#include "lib/cli.h"
 #include "stored/sd_plugins.h"
 #include "assert_macro.h"
 #ifndef __WIN32__
@@ -173,21 +175,6 @@ void bareosFree(void* ctx, const char* file, int line, void* mem)
   FREE(mem);
 };
 
-// displays a short help
-void PrintHelp(int argc, char* argv[])
-{
-  printf(
-      "\n"
-      "Usage: bpluginfo [options] <plugin_file.so>\n"
-      "       -v          verbose\n"
-      "       -i          list plugin header information only (default)\n"
-      "       -f          list plugin functions information only\n"
-      "       -a <api>    bareos api version (default %d)\n"
-      "       -h          help screen\n"
-      "\n",
-      DEFAULT_API_VERSION);
-}
-
 /* allocates and resets a main program data variable */
 progdata* allocpdata(void)
 {
@@ -225,44 +212,38 @@ void Freepdata(progdata* pdata)
  */
 void ParseArgs(progdata* pdata, int argc, char* argv[])
 {
-  int ch;
+  CLI::App bpluginfo_app;
+  InitCLIApp(bpluginfo_app, "The Bareos Plugin Info tool.");
+
+  bpluginfo_app
+      .add_option("-a,--api", pdata->bapiversion,
+                  "bareos api version (default :"
+                      + std::to_string(DEFAULT_API_VERSION) + ").")
+      ->check(CLI::NonNegativeNumber)
+      ->type_name("<api>");
+
+  bpluginfo_app.add_flag("-f,--list-functions", pdata->listfunc,
+                         "list plugin functions information only.");
+
+  bpluginfo_app.add_flag("-i,--list-headers", pdata->listinfo,
+                         "list plugin header information only.");
+
+  bpluginfo_app.add_flag("-v,--verbose", pdata->verbose, "Verbose.");
+
+  std::string plugin_file{};
+  bpluginfo_app.add_option("plugin_file.so", plugin_file, "Plugin file.")
+      ->required();
+
+  try {
+    (bpluginfo_app).parse((argc), (argv));
+  } catch (const CLI::ParseError& e) {
+    exit((bpluginfo_app).exit(e));
+  }
+
   char* dirtmp;
   char* progdir;
-
-  while ((ch = getopt(argc, argv, "a:fiv")) != -1) {
-    switch (ch) {
-      case 'a':
-        pdata->bapiversion = atoi(optarg);
-        break;
-
-      case 'f':
-        pdata->listfunc = true;
-        break;
-
-      case 'i':
-        pdata->listinfo = true;
-        break;
-
-      case 'v':
-        pdata->verbose = true;
-        break;
-
-      case '?':
-      default:
-        PrintHelp(argc, argv);
-        exit(0);
-    }
-  }
-  argc -= optind;
-  argv += optind;
-
-  if (argc < 1) {
-    PrintHelp(argc, argv);
-    exit(0);
-  }
-
   if (!pdata->pluginfile) {
-    if (argv[0][0] != '/') {
+    if (plugin_file[0] != '/') {
       dirtmp = MALLOC(PATH_MAX);
       ASSERT_MEMORY(dirtmp);
       progdir = MALLOC(PATH_MAX);
@@ -270,18 +251,18 @@ void ParseArgs(progdata* pdata, int argc, char* argv[])
       dirtmp = getcwd(dirtmp, PATH_MAX);
 
       strcat(dirtmp, "/");
-      strcat(dirtmp, argv[0]);
+      strcat(dirtmp, plugin_file.c_str());
 
       if (realpath(dirtmp, progdir) == NULL) {
         // Error in resolving path
         FREE(progdir);
-        progdir = strdup(argv[0]);
+        progdir = strdup(plugin_file.c_str());
       }
       pdata->pluginfile = strdup(progdir);
       FREE(dirtmp);
       FREE(progdir);
     } else {
-      pdata->pluginfile = strdup(argv[0]);
+      pdata->pluginfile = strdup(plugin_file.c_str());
     }
   }
 }

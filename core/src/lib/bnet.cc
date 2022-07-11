@@ -343,7 +343,7 @@ static const char* resolv_host(int family, const char* host, dlist* addr_list)
   char** p;
   IPADDR* addr;
 
-  P(ip_mutex); /* gethostbyname() is not thread safe */
+  lock_mutex(ip_mutex); /* gethostbyname() is not thread safe */
 #  ifdef HAVE_GETHOSTBYNAME2
   if ((hp = gethostbyname2(host, family)) == NULL) {
 #  else
@@ -351,7 +351,7 @@ static const char* resolv_host(int family, const char* host, dlist* addr_list)
 #  endif
     /* may be the strerror give not the right result -:( */
     errmsg = gethost_strerror();
-    V(ip_mutex);
+    unlock_mutex(ip_mutex);
     return errmsg;
   } else {
     for (p = hp->h_addr_list; *p != 0; p++) {
@@ -371,7 +371,7 @@ static const char* resolv_host(int family, const char* host, dlist* addr_list)
       }
       addr_list->append(addr);
     }
-    V(ip_mutex);
+    unlock_mutex(ip_mutex);
   }
   return NULL;
 }

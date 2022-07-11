@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,6 +31,7 @@
 #include "filed/filed_globals.h"
 #include "filed/dir_cmd.h"
 #include "filed/socket_server.h"
+#include "lib/cli.h"
 #include "lib/mntent_cache.h"
 #include "lib/daemon.h"
 #include "lib/bnet_network_dump.h"
@@ -50,40 +51,7 @@ extern bool PrintMessage(void* sock, const char* fmt, ...);
 /* Forward referenced functions */
 static bool CheckResources();
 
-static bool foreground = false;
 static char* pidfile_path = nullptr;
-
-static void usage()
-{
-  kBareosVersionStrings.PrintCopyrightWithFsfAndPlanets(stderr, 2000);
-  fprintf(
-      stderr,
-      _("Usage: bareos-fd [options]\n"
-        "        -b          backup only mode\n"
-        "        -c <path>   use <path> as configuration file or directory\n"
-        "        -d <nn>     set debug level to <nn>\n"
-        "        -dt         print timestamp in debug output\n"
-        "        -f          run in foreground (for debugging)\n"
-        "        -g <group>  run as group <group>\n"
-        "        -k          keep readall capabilities\n"
-        "        -m          print kaboom output (for debugging)\n"
-#if !defined(HAVE_WIN32)
-        "        -p <file>   full path to pidfile (default: none)\n"
-#endif
-        "        -r          restore only mode\n"
-        "        -s          no signals (for debugging)\n"
-        "        -t          test configuration file and exit\n"
-        "        -u <user>   run as user <user>\n"
-        "        -v          verbose user messages\n"
-        "        -xc         print configuration and exit\n"
-        "        -xs         print configuration file schema in JSON format "
-        "and exit\n"
-        "        -?          print this message.\n"
-        "\n"));
-
-  exit(1);
-}
-
 
 /*********************************************************************
  *
@@ -96,14 +64,6 @@ static void usage()
 
 int main(int argc, char* argv[])
 {
-  int ch;
-  bool test_config = false;
-  bool export_config = false;
-  bool export_config_schema = false;
-  bool keep_readall_caps = false;
-  char* uid = nullptr;
-  char* gid = nullptr;
-
   setlocale(LC_ALL, "");
   tzset();
   bindtextdomain("bareos", LOCALEDIR);
@@ -114,110 +74,82 @@ int main(int argc, char* argv[])
   InitMsg(nullptr, nullptr);
   daemon_start_time = time(nullptr);
 
-#if HAVE_WIN32
-  std::string allowed_parameters("bc:d:fg:kmrstu:vx:z:?");
+  CLI::App fd_app;
+  InitCLIApp(fd_app, "The Bareos File Daemon.", 2000);
+
+  fd_app.add_flag("-b,--backup-only", backup_only_mode, "Backup only mode.");
+
+  fd_app
+      .add_option(
+          "-c,--config",
+          [](std::vector<std::string> val) {
+            if (configfile != nullptr) { free(configfile); }
+            configfile = strdup(val.front().c_str());
+            return true;
+          },
+          "Use <path> as configuration file or directory.")
+      ->check(CLI::ExistingPath)
+      ->type_name("<path>");
+
+  AddDebugOptions(fd_app);
+
+  bool foreground = false;
+  CLI::Option* foreground_option = fd_app.add_flag(
+      "-f,--foreground", foreground, "Run in foreground (for debugging).");
+
+  char* gid = nullptr;
+  fd_app.add_option("-g,--group", gid, "Run as group <group>")
+      ->type_name("<group>");
+
+  bool keep_readall_caps = false;
+  fd_app.add_flag("-k,--keep-readall", keep_readall_caps,
+                  "Keep readall capabilities.");
+
+
+  fd_app.add_flag("-m,--print-kaboom", prt_kaboom,
+                  "Print kaboom output (for debugging)");
+
+  bool test_config = false;
+  auto testconfig_option = fd_app.add_flag(
+      "-t,--test-config", test_config, "Test - read configuration and exit.");
+
+#if !defined(HAVE_WIN32)
+  fd_app
+      .add_option("-p,--pid-file", pidfile_path,
+                  "Full path to pidfile (default: none)")
+      ->excludes(foreground_option)
+      ->excludes(testconfig_option)
+      ->type_name("<file>");
 #else
-  std::string allowed_parameters("bc:d:fg:kmrp:stu:vx:z:?");
+  // to silence unused variable error on windows
+  (void)testconfig_option;
+  (void)foreground_option;
 #endif
 
-  while ((ch = getopt(argc, argv, allowed_parameters.c_str())) != -1) {
-    switch (ch) {
-      case 'b':
-        backup_only_mode = true;
-        break;
+  fd_app.add_flag("-r,--restore-only", restore_only_mode, "Restore only mode.");
 
-      case 'c': /* configuration file */
-        if (configfile != nullptr) { free(configfile); }
-        configfile = strdup(optarg);
-        break;
+  fd_app.add_flag("-s,--no-signals", no_signals, "No signals (for debugging).");
 
-      case 'd': /* debug level */
-        if (*optarg == 't') {
-          dbg_timestamp = true;
-        } else {
-          debug_level = atoi(optarg);
-          if (debug_level <= 0) { debug_level = 1; }
-        }
-        break;
+  char* uid = nullptr;
+  fd_app.add_option("-u,--user", uid, "Run as given user <user>")
+      ->type_name("<user>");
 
-      case 'f': /* run in foreground */
-        foreground = true;
-        break;
+  AddVerboseOption(fd_app);
 
-      case 'g': /* set group */
-        gid = optarg;
-        break;
+  bool export_config = false;
+  CLI::Option* xc = fd_app.add_flag("--xc,--export-config", export_config,
+                                    "Print configuration resources and exit.");
 
-      case 'k':
-        keep_readall_caps = true;
-        break;
 
-      case 'm': /* print kaboom output */
-        prt_kaboom = true;
-        break;
+  bool export_config_schema = false;
+  fd_app
+      .add_flag("--xs,--export-schema", export_config_schema,
+                "Print configuration schema in JSON format and exit")
+      ->excludes(xc);
 
-      case 'p':
-        pidfile_path = strdup(optarg);
-        break;
+  AddNetworkDebuggingOption(fd_app);
 
-      case 'r':
-        restore_only_mode = true;
-        break;
-
-      case 's':
-        no_signals = true;
-        break;
-
-      case 't':
-        test_config = true;
-        break;
-
-      case 'u': /* set userid */
-        uid = optarg;
-        break;
-
-      case 'v': /* verbose */
-        verbose++;
-        break;
-
-      case 'x': /* export configuration/schema and exit */
-        if (*optarg == 's') {
-          export_config_schema = true;
-        } else if (*optarg == 'c') {
-          export_config = true;
-        } else {
-          usage();
-        }
-        break;
-
-      case 'z': /* switch network debugging on */
-        if (!BnetDump::EvaluateCommandLineArgs(optarg)) { exit(1); }
-        break;
-
-      case '?':
-      default:
-        usage();
-        break;
-    }
-  }
-  argc -= optind;
-  argv += optind;
-
-  if (foreground && pidfile_path) {
-    Emsg0(M_WARNING, 0,
-          "Options -p and -f cannot be used together. You cannot create a "
-          "pid file when in foreground mode.\n");
-
-    exit(0);
-  }
-
-  if (argc) {
-    if (configfile != nullptr) free(configfile);
-    configfile = strdup(*argv);
-    argc--;
-    argv++;
-  }
-  if (argc) { usage(); }
+  CLI11_PARSE(fd_app, argc, argv);
 
   if (!uid && keep_readall_caps) {
     Emsg0(M_ERROR_TERM, 0, _("-k option has no meaning without -u option.\n"));

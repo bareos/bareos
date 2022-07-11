@@ -1,0 +1,55 @@
+Usage: bcopy [OPTIONS] input-archive ouput-archive
+
+Positionals:
+    input-archive  
+        REQUIRED
+        Specify the input device name (either as name of a Bareos Storage 
+        Daemon Device resource or identical to the Archive Device in a Bareos 
+        Storage Daemon Device resource). 
+
+    ouput-archive  
+        REQUIRED
+        Specify the output device name (either as name of a Bareos Storage 
+        Daemon Device resource or identical to the Archive Device in a Bareos 
+        Storage Daemon Device resource). 
+
+
+Options:
+    -h,-?,--help
+        Print this help message and exit. 
+
+    --version
+        Display program version information and exit 
+
+    -b,--parse-bootstrap <bootstrap>:FILE
+        Specify a bootstrap file. 
+
+    -c,--config <path>:PATH(existing)
+        Use <path> as configuration file or directory. 
+
+    -D,--director <director>
+        Specify a director name specified in the storage. Configuration file 
+        for the Key Encryption Key selection. 
+
+    -d,--debug-level <level>:NONNEGATIVE
+        Set debug level to <level>. 
+
+    --dt,--debug-timestamps
+        Print timestamps in debug output. 
+
+    -i,--input-volumes <vol1|vol2|...>
+        specify input Volume names (separated by |) 
+
+    -o,--output-volumes <vol1|vol2|...>
+        specify output Volume names (separated by |) 
+
+    -p,--ignore-errors
+        Proceed inspite of errors. 
+
+    -v,--verbose
+        Default: 0
+        Verbose user messages. 
+
+    -w,--working-directory <directory>
+        Default: /tmp
+        specify working directory. 

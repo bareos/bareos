@@ -44,6 +44,7 @@
 #include "lib/address_conf.h"
 #include "lib/attribs.h"
 #include "lib/berrno.h"
+#include "lib/cli.h"
 #include "lib/edit.h"
 #include "lib/bsignal.h"
 #include "lib/parse_bsr.h"
@@ -56,7 +57,10 @@ extern bool ParseSdConfig(const char* configfile, int exit_code);
 
 using namespace storagedaemon;
 
-static void DoExtract(char* devname);
+static void DoExtract(char* devname,
+                      std::string VolumeName,
+                      BootStrapRecord* bsr,
+                      DirectorResource* director);
 static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec);
 
 static Device* dev = NULL;
@@ -64,7 +68,6 @@ static DeviceControlRecord* dcr;
 static BareosWinFilePacket bfd;
 static JobControlRecord* jcr;
 static FindFilesPacket* ff;
-static BootStrapRecord* bsr = NULL;
 static bool extract = false;
 static int non_support_data = 0;
 static long total = 0;
@@ -73,9 +76,6 @@ static char* where;
 static uint32_t num_files = 0;
 static int prog_name_msg = 0;
 static int win32_data_msg = 0;
-static char* VolumeName = NULL;
-static char* DirectorName = NULL;
-static DirectorResource* director = NULL;
 
 static AclData acl_data;
 static XattrData xattr_data;
@@ -85,37 +85,9 @@ static char* wbuf;            /* write buffer address */
 static uint32_t wsize;        /* write size */
 static uint64_t fileAddr = 0; /* file write address */
 
-static void usage()
-{
-  kBareosVersionStrings.PrintCopyrightWithFsfAndPlanets(stderr, 2000);
-  fprintf(stderr,
-          _("Usage: bextract <options> <bareos-archive-device-name> "
-            "<directory-to-store-files>\n"
-            "       -b <file>       specify a bootstrap file\n"
-            "       -c <path>       specify a Storage configuration file or "
-            "directory\n"
-            "       -D <director>   specify a director name specified in the "
-            "Storage\n"
-            "                       configuration file for the Key Encryption "
-            "Key selection\n"
-            "       -d <nn>         set debug level to <nn>\n"
-            "       -dt             print timestamp in debug output\n"
-            "       -e <file>       exclude list\n"
-            "       -i <file>       include list\n"
-            "       -p              proceed inspite of I/O errors\n"
-            "       -v              verbose\n"
-            "       -V <volumes>    specify Volume names (separated by |)\n"
-            "       -?              print this message\n\n"));
-  exit(1);
-}
 
 int main(int argc, char* argv[])
 {
-  int ch;
-  FILE* fd;
-  char line[1000];
-  bool got_inc = false;
-
   setlocale(LC_ALL, "");
   tzset();
   bindtextdomain("bareos", LOCALEDIR);
@@ -131,94 +103,128 @@ int main(int argc, char* argv[])
   ff = init_find_files();
   binit(&bfd);
 
-  while ((ch = getopt(argc, argv, "b:c:D:d:e:i:pvV:?")) != -1) {
-    switch (ch) {
-      case 'b': /* bootstrap file */
-        bsr = libbareos::parse_bsr(NULL, optarg);
-        //       DumpBsr(bsr, true);
-        break;
+  CLI::App bextract_app;
+  InitCLIApp(bextract_app, "The Bareos Extraction tool.", 2000);
 
-      case 'c': /* specify config file */
-        if (configfile != NULL) { free(configfile); }
-        configfile = strdup(optarg);
-        break;
+  BootStrapRecord* bsr = nullptr;
+  bextract_app
+      .add_option(
+          "-b,--parse-bootstrap",
+          [&bsr](std::vector<std::string> vals) {
+            bsr = libbareos::parse_bsr(NULL, vals.front().data());
+            return true;
+          },
+          "Specify a bootstrap file.")
+      ->check(CLI::ExistingFile)
+      ->type_name("<file>");
 
-      case 'D': /* specify director name */
-        if (DirectorName != NULL) { free(DirectorName); }
-        DirectorName = strdup(optarg);
-        break;
+  bextract_app
+      .add_option(
+          "-c,--config",
+          [](std::vector<std::string> val) {
+            if (configfile != nullptr) { free(configfile); }
+            configfile = strdup(val.front().c_str());
+            return true;
+          },
+          "Use <path> as configuration file or directory.")
+      ->check(CLI::ExistingPath)
+      ->type_name("<path>");
 
-      case 'd': /* debug level */
-        if (*optarg == 't') {
-          dbg_timestamp = true;
-        } else {
-          debug_level = atoi(optarg);
-          if (debug_level <= 0) { debug_level = 1; }
-        }
-        break;
+  char* DirectorName = NULL;
+  bextract_app
+      .add_option(
+          "-D,--director",
+          [&DirectorName](std::vector<std::string> val) {
+            if (DirectorName != nullptr) { free(DirectorName); }
+            DirectorName = strdup(val.front().c_str());
+            return true;
+          },
+          "Specify a director name specified in the storage.\n"
+          "Configuration file for the Key Encryption Key selection.")
+      ->type_name("<director>");
 
-      case 'e': /* exclude list */
-        if ((fd = fopen(optarg, "rb")) == NULL) {
-          BErrNo be;
-          Pmsg2(0, _("Could not open exclude file: %s, ERR=%s\n"), optarg,
-                be.bstrerror());
-          exit(1);
-        }
-        while (fgets(line, sizeof(line), fd) != NULL) {
-          StripTrailingJunk(line);
-          Dmsg1(900, "add_exclude %s\n", line);
-          AddFnameToExcludeList(ff, line);
-        }
-        fclose(fd);
-        break;
+  AddDebugOptions(bextract_app);
 
-      case 'i': /* include list */
-        if ((fd = fopen(optarg, "rb")) == NULL) {
-          BErrNo be;
-          Pmsg2(0, _("Could not open include file: %s, ERR=%s\n"), optarg,
-                be.bstrerror());
-          exit(1);
-        }
-        while (fgets(line, sizeof(line), fd) != NULL) {
-          StripTrailingJunk(line);
-          Dmsg1(900, "add_include %s\n", line);
-          AddFnameToIncludeList(ff, 0, line);
-        }
-        fclose(fd);
-        got_inc = true;
-        break;
+  FILE* fd;
+  char line[1000];
+  bextract_app
+      .add_option(
+          "-e,--exclude",
+          [&line, &fd](std::vector<std::string> val) {
+            if ((fd = fopen(val.front().c_str(), "rb")) == NULL) {
+              BErrNo be;
+              Pmsg2(0, _("Could not open exclude file: %s, ERR=%s\n"), optarg,
+                    be.bstrerror());
+              exit(1);
+            }
+            while (fgets(line, sizeof(line), fd) != NULL) {
+              StripTrailingJunk(line);
+              Dmsg1(900, "add_exclude %s\n", line);
+              AddFnameToExcludeList(ff, line);
+            }
+            fclose(fd);
+            return true;
+          },
+          "Exclude list.")
+      ->type_name("<file>");
 
-      case 'p':
-        forge_on = true;
-        break;
+  bool got_inc = false;
 
-      case 'v':
-        verbose++;
-        break;
+  bextract_app
+      .add_option(
+          "-i,--include-list",
+          [&line, &fd, &got_inc](std::vector<std::string> val) {
+            if ((fd = fopen(optarg, "rb")) == NULL) {
+              BErrNo be;
+              Pmsg2(0, _("Could not open include file: %s, ERR=%s\n"), optarg,
+                    be.bstrerror());
+              exit(1);
+            }
+            while (fgets(line, sizeof(line), fd) != NULL) {
+              StripTrailingJunk(line);
+              Dmsg1(900, "add_include %s\n", line);
+              AddFnameToIncludeList(ff, 0, line);
+            }
+            fclose(fd);
+            got_inc = true;
+            return true;
+          },
+          "Include list.")
+      ->type_name("<file>");
 
-      case 'V': /* Volume name */
-        VolumeName = optarg;
-        break;
+  bextract_app.add_flag("-p,--ignore-errors", forge_on,
+                        "Proceed inspite of IO errors.");
 
-      case '?':
-      default:
-        usage();
+  AddVerboseOption(bextract_app);
 
-    } /* end switch */
-  }   /* end while */
-  argc -= optind;
-  argv += optind;
+  std::string VolumeNames;
+  bextract_app
+      .add_option("-V,--volumes", VolumeNames, "Volume names (separated by |).")
+      ->type_name("<vol1|vol2|...>");
 
-  if (argc != 2) {
-    Pmsg0(0,
-          _("Wrong number of arguments. Make sure the last two parameters are "
-            "<bareos-archive-device-name> <directory-to-store-files>\n"));
-    usage();
-  }
+  std::string archive_device_name;
+  bextract_app
+      .add_option("bareos-archive-device-name", archive_device_name,
+                  "Specify the input device name (either as name of a Bareos "
+                  "Storage Daemon Device resource or identical to the Archive "
+                  "Device in a Bareos Storage Daemon Device resource).")
+      ->required()
+      ->type_name(" ");
+
+  std::string directory_to_store_files;
+  bextract_app
+      .add_option("target-directory", directory_to_store_files,
+                  "Specify directory where to store files.")
+      ->required()
+      ->type_name(" ");
+
+
+  CLI11_PARSE(bextract_app, argc, argv);
 
   my_config = InitSdConfig(configfile, M_ERROR_TERM);
   ParseSdConfig(configfile, M_ERROR_TERM);
 
+  static DirectorResource* director = nullptr;
   if (DirectorName) {
     foreach_res (director, R_DIRECTOR) {
       if (bstrcmp(director->resource_name_, DirectorName)) { break; }
@@ -240,8 +246,8 @@ int main(int argc, char* argv[])
     AddFnameToIncludeList(ff, 0, "/"); /*   include everything */
   }
 
-  where = argv[1];
-  DoExtract(argv[0]);
+  where = directory_to_store_files.data();
+  DoExtract(archive_device_name.data(), VolumeNames, bsr, director);
 
   if (bsr) { libbareos::FreeBsr(bsr); }
   if (prog_name_msg) {
@@ -382,7 +388,10 @@ static void ClosePreviousStream(void)
   SetAttributes(jcr, attr, &bfd);
 }
 
-static void DoExtract(char* devname)
+static void DoExtract(char* devname,
+                      std::string VolumeName,
+                      BootStrapRecord* bsr,
+                      DirectorResource* director)
 {
   struct stat statp;
   uint32_t decompress_buf_size;
@@ -390,7 +399,7 @@ static void DoExtract(char* devname)
   EnableBackupPrivileges(NULL, 1);
 
   dcr = new DeviceControlRecord;
-  jcr = SetupJcr("bextract", devname, bsr, director, dcr, VolumeName,
+  jcr = SetupJcr("bextract", devname, bsr, director, dcr, VolumeName.c_str(),
                  true); /* read device */
   if (!jcr) { exit(1); }
   dev = jcr->impl->read_dcr->dev;

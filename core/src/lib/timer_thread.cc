@@ -24,7 +24,6 @@
 #include "lib/timer_thread.h"
 #include "include/jcr.h"
 #include "lib/thread_specific_data.h"
-#include "include/make_unique.h"
 
 #include <atomic>
 #include <algorithm>
@@ -32,6 +31,7 @@
 #include <chrono>
 #include <condition_variable>
 #include <mutex>
+#include <memory>
 #include <thread>
 
 namespace TimerThread {

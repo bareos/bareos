@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -478,9 +478,9 @@ void WaitForStorageDaemonTermination(JobControlRecord* jcr)
     timeout.tv_nsec = 0;
     timeout.tv_sec = tv.tv_sec + 5; /* wait 5 seconds */
     Dmsg0(400, "I'm waiting for message thread termination.\n");
-    P(mutex);
+    lock_mutex(mutex);
     pthread_cond_timedwait(&jcr->impl->term_wait, &mutex, &timeout);
-    V(mutex);
+    unlock_mutex(mutex);
     if (jcr->IsCanceled()) {
       if (jcr->impl->SD_msg_chan_started) {
         jcr->store_bsock->SetTimedOut();

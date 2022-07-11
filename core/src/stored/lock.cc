@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -74,8 +74,8 @@ namespace storagedaemon {
  *
  * Functions:
  *
- * Device::Lock()   does P(mutex_)     (in dev.h)
- * Device::Unlock() does V(mutex_)
+ * Device::Lock()   does lock_mutex(mutex_)     (in dev.h)
+ * Device::Unlock() does unlock_mutex(mutex_)
  *
  * Device::rLock(locked) allows locking the device when this thread
  *                       already has the device blocked.
@@ -141,46 +141,46 @@ void Device::dunblock(bool locked)
 // Multiple rLock implementation
 void DeviceControlRecord::mLock(bool locked)
 {
-  P(r_mutex);
+  lock_mutex(r_mutex);
   if (IsDevLocked()) {
-    V(r_mutex);
+    unlock_mutex(r_mutex);
     return;
   }
   dev->rLock(locked);
   IncDevLock();
-  V(r_mutex);
+  unlock_mutex(r_mutex);
   return;
 }
 
 // Multiple rUnlock implementation
 void DeviceControlRecord::mUnlock()
 {
-  P(r_mutex);
+  lock_mutex(r_mutex);
   if (!IsDevLocked()) {
-    V(r_mutex);
+    unlock_mutex(r_mutex);
     Emsg1(M_ABORT, 0, "Call on dcr mUnlock when not locked\n");
   }
   DecDevLock();
   // When the count goes to zero, unlock it
   if (!IsDevLocked()) { dev->rUnlock(); }
-  V(r_mutex);
+  unlock_mutex(r_mutex);
   return;
 }
 
 // Device locks N.B.
 void Device::rUnlock() { Unlock(); }
 
-void Device::Lock() { P(mutex_); }
+void Device::Lock() { lock_mutex(mutex_); }
 
-void Device::Unlock() { V(mutex_); }
+void Device::Unlock() { unlock_mutex(mutex_); }
 
-void Device::Lock_acquire() { P(acquire_mutex); }
+void Device::Lock_acquire() { lock_mutex(acquire_mutex); }
 
-void Device::Unlock_acquire() { V(acquire_mutex); }
+void Device::Unlock_acquire() { unlock_mutex(acquire_mutex); }
 
-void Device::Lock_read_acquire() { P(read_acquire_mutex); }
+void Device::Lock_read_acquire() { lock_mutex(read_acquire_mutex); }
 
-void Device::Unlock_read_acquire() { V(read_acquire_mutex); }
+void Device::Unlock_read_acquire() { unlock_mutex(read_acquire_mutex); }
 
 // Main device access control
 int Device::InitMutex() { return pthread_mutex_init(&mutex_, NULL); }

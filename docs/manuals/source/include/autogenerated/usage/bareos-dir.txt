@@ -1,0 +1,56 @@
+Usage: bareos-dir [OPTIONS]
+
+Options:
+    -h,-?,--help
+        Print this help message and exit. 
+
+    --version
+        Display program version information and exit 
+
+    -c,--config <path>:PATH(existing)
+        Use <path> as configuration file or directory. 
+
+    -d,--debug-level <level>:NONNEGATIVE
+        Set debug level to <level>. 
+
+    --dt,--debug-timestamps
+        Print timestamps in debug output. 
+
+    -f,--foreground
+        Excludes: --pid-file
+        Run in foreground. 
+
+    -g,--group <group>
+        Run as group <group>. 
+
+    -m,--print-kaboom
+        Print kaboom output (for debugging). 
+
+    -t,--test-config
+        Excludes: --pid-file
+        Test - read configuration and exit. 
+
+    -p,--pid-file <file>
+        Excludes: --foreground --test-config
+        Full path to pidfile (default: none). 
+
+    -r,--run-job <job>
+        Run specified job <job> now. 
+
+    -s,--no-signals
+        No signals (for debugging). 
+
+    -u,--user <user>
+        Run as given user <user>. 
+
+    -v,--verbose
+        Default: 0
+        Verbose user messages. 
+
+    --xc,--export-config [<resource_type> [<name>]]
+        Excludes: --xs
+        Print all or specific configuration resources and exit. 
+
+    --xs,--export-schema
+        Excludes: --xc
+        Print configuration schema in JSON format and exit. 

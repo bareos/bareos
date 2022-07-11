@@ -219,9 +219,9 @@ bool ChunkedDevice::SetInflightChunk(chunk_io_request* request)
 
   fd = ::open(inflight_file.c_str(), O_CREAT | O_EXCL | O_WRONLY, 0640);
   if (fd >= 0) {
-    P(mutex);
+    lock_mutex(mutex);
     inflight_chunks_++;
-    V(mutex);
+    unlock_mutex(mutex);
     ::close(fd);
   } else {
     return false;
@@ -249,9 +249,9 @@ void ChunkedDevice::ClearInflightChunk(chunk_io_request* request)
     ::unlink(inflight_file.c_str());
   }
 
-  P(mutex);
+  lock_mutex(mutex);
   inflight_chunks_--;
-  V(mutex);
+  unlock_mutex(mutex);
 }
 
 // Check if a certain chunk is inflight to the backing store.
@@ -274,9 +274,9 @@ int ChunkedDevice::NrInflightChunks()
 {
   int retval = 0;
 
-  P(mutex);
+  lock_mutex(mutex);
   retval = inflight_chunks_;
-  V(mutex);
+  unlock_mutex(mutex);
 
   return retval;
 }

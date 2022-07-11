@@ -20,9 +20,9 @@ start_test
 
 run_bareos "$@"
 
-echo "status conf" | bin/bconsole -c etc/bareos/bconsole-acl-none.conf > ${logdir}/acl-none.log
-echo "status conf" | bin/bconsole -c etc/bareos/bconsole-acl-status.conf > ${logdir}/acl-status.log
-echo "status conf" | bin/bconsole -c etc/bareos/bconsole-acl-status-conf.conf > ${logdir}/acl-status-conf.log
+echo "status conf" | "${BAREOS_BCONSOLE_BINARY}" -c etc/bareos/bconsole-acl-none.conf > ${logdir}/acl-none.log
+echo "status conf" | "${BAREOS_BCONSOLE_BINARY}" -c etc/bareos/bconsole-acl-status.conf > ${logdir}/acl-status.log
+echo "status conf" | "${BAREOS_BCONSOLE_BINARY}" -c etc/bareos/bconsole-acl-status-conf.conf > ${logdir}/acl-status-conf.log
 
 export estat=0
 

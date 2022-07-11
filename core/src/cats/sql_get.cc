@@ -38,7 +38,6 @@
 #  include "sql.h"
 #  include "lib/edit.h"
 #  include "lib/volume_session_info.h"
-#  include "include/make_unique.h"
 
 /* -----------------------------------------------------------------------
  *

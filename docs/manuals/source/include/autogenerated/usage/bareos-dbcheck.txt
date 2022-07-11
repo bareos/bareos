@@ -1,0 +1,53 @@
+Usage: bareos-dbcheck [OPTIONS]
+
+Options:
+    -h,-?,--help
+        Print this help message and exit. 
+
+    --version
+        Display program version information and exit 
+
+    -c,--config <path>:PATH(existing)
+        Use <path> as Director configuration filename or configuration 
+        directory. 
+
+    -B,--print-catalog
+        Print catalog configuration and exit. 
+
+    -b,--batch
+        Batch mode. 
+
+    -C,--catalog <catalog>
+        Catalog name in the director configuration file. 
+
+    -D,--driver TEXT
+        Exists for backwards compatibility and is ignored. 
+
+    -d,--debug-level <level>:NONNEGATIVE
+        Set debug level to <level>. 
+
+    --dt,--debug-timestamps
+        Print timestamps in debug output. 
+
+    -f,--fix
+        Fix inconsistencies. 
+
+    -v,--verbose
+        Default: 0
+        Verbose user messages. 
+
+[Option Group: Manual credentials]
+  Setting database credentials manually. Can only be used when no configuration is given.
+  Positionals:
+      working_directory TEXT
+          Path to working directory. 
+      database_name TEXT
+          Database name. 
+      user TEXT
+          Database user name. 
+      password TEXT
+          Database password. 
+      host TEXT
+          Database host. 
+      port INT:POSITIVE
+          Database port 

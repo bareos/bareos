@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -169,7 +169,7 @@ bool StorageDaemonDeviceControlRecord::DirGetVolumeInfo(
   bool ok;
   BareosSocket* dir = jcr->dir_bsock;
 
-  P(vol_info_mutex);
+  lock_mutex(vol_info_mutex);
   setVolCatName(VolumeName);
   BashSpaces(getVolCatName());
   dir->fsend(Get_Vol_Info, jcr->Job, getVolCatName(),
@@ -177,7 +177,7 @@ bool StorageDaemonDeviceControlRecord::DirGetVolumeInfo(
   Dmsg1(debuglevel, ">dird %s", dir->msg);
   UnbashSpaces(getVolCatName());
   ok = DoGetVolumeInfo(this);
-  V(vol_info_mutex);
+  unlock_mutex(vol_info_mutex);
 
   return ok;
 }
@@ -208,7 +208,7 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
    * drive, so we continue looking for a not in use Volume.
    */
   LockVolumes();
-  P(vol_info_mutex);
+  lock_mutex(vol_info_mutex);
   ClearFoundInUse();
 
   PmStrcpy(unwanted_volumes, "");
@@ -258,7 +258,7 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
   VolumeName[0] = 0;
 
 get_out:
-  V(vol_info_mutex);
+  unlock_mutex(vol_info_mutex);
   UnlockVolumes();
 
   return retval;
@@ -290,7 +290,7 @@ bool StorageDaemonDeviceControlRecord::DirUpdateVolumeInfo(
   }
 
   // Lock during Volume update
-  P(vol_info_mutex);
+  lock_mutex(vol_info_mutex);
   Dmsg1(debuglevel, "Update cat VolBytes=%lld\n", vol->VolCatBytes);
 
   // Just labeled or relabeled the tape
@@ -330,7 +330,7 @@ bool StorageDaemonDeviceControlRecord::DirUpdateVolumeInfo(
   }
 
 bail_out:
-  V(vol_info_mutex);
+  unlock_mutex(vol_info_mutex);
   return ok;
 }
 

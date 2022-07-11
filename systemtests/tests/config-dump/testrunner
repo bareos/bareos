@@ -68,7 +68,7 @@ dump_config()
     DESC="dump_config ${configfile} ext=${ext}"
     print_debug "*** start $DESC"
 
-    "${BAREOS_DIRECTOR_BINARY}" -c "${configfile}" -xc > $tmp/bareos-dir-xc-${ext}.conf
+    "${BAREOS_DIRECTOR_BINARY}" -c "${configfile}" --xc > $tmp/bareos-dir-xc-${ext}.conf
 
     start_bareos_dir -c "${configfile}"
 
@@ -129,39 +129,43 @@ compare_export_config()
 {
     configfile="$1"
     comparefile="$2"
-    directorparameter="$3"
+    ressource="$3"
+    ressourcename="${4-}"
 
     if ! [ -e "${configfile}" ]; then
         set_error "Director config file \"${configfile}\" does not exist."
         exit 1
     fi
 
-    DESC="compare_export_config ${configfile} compare=${comparefile} parameter=${directorparameter}"
+    outputfileextension=$(echo "$ressource-$ressourcename")
+
+    DESC="compare_export_config ${configfile} compare=${comparefile} parameter1=${ressource} parameter2=${ressourcename}"
     print_debug "*** start $DESC"
 
-    "${BAREOS_DIRECTOR_BINARY}" -c "${configfile}" -xc"${directorparameter}" > $tmp/bareos-dir-xc-${directorparameter}.conf
+    "${BAREOS_DIRECTOR_BINARY}" -c "${configfile}" --xc "${ressource}" "${ressourcename}" > $tmp/bareos-dir-xc-${outputfileextension}.conf
 
     print_debug "*** end   $DESC"
 
-    diff_files "${comparefile}" "$tmp/bareos-dir-xc-${directorparameter}.conf"
+    diff_files "${comparefile}" "$tmp/bareos-dir-xc-${outputfileextension}.conf"
 }
 
 bareos_dir_failing()
 {
     configfile="$1"
-    directorparameter="$2"
+    ressource="$2"
+    ressourcename="${3-}"
 
     if ! [ -e "${configfile}" ]; then
         set_error "Director config file \"${configfile}\" does not exist."
         exit 1
     fi
 
-    DESC="bareos_dir_failing ${configfile} parameter=${directorparameter}"
+    DESC="bareos_dir_failing ${configfile} parameter1=${ressource} parameter2=${ressourcename}"
     print_debug "*** start $DESC"
 
-    if OUT=$("${BAREOS_DIRECTOR_BINARY}" -c "${configfile}" -xc"${directorparameter}"); then
+    if OUT=$("${BAREOS_DIRECTOR_BINARY}" -c "${configfile}" --xc "${ressource}" "${ressourcename}"); then
         echo "${OUT}"
-        set_error "Starting Director with -xc"${directorparameter}" should fail."
+        set_error "Starting Director with --xc "${ressource} ${ressourcename}" should fail."
         exit 1
     fi
 
@@ -185,7 +189,7 @@ JobName=backup-bareos-fd
 start_test
 
 # bareos-dir-19.2.7-xc.conf:
-# output of bareos-dir -xc (manually adapted)
+# output of bareos-dir --xc (manually adapted)
 # from a default installation of version 19.2.7
 dump_config "${conf}/bareos-dir-19.2.7-xc.conf" "1"
 
@@ -224,9 +228,11 @@ diff_files "${tmp}/bareos-dir-show-verbose-full1.conf" "$tmp/bareos-dir-show-ver
 # export all resources of a type
 compare_export_config "${conf}/bareos-dir-19.2.7-xc.conf" "etc/compare/Console.conf" "console"
 # export single resource
-compare_export_config "${conf}/bareos-dir-19.2.7-xc.conf" "etc/compare/Console-admin.conf" "console=admin"
+compare_export_config "${conf}/bareos-dir-19.2.7-xc.conf" "etc/compare/Console-admin.conf" "console" "admin"
+# resource type with spaces instead of seperate resource name
+bareos_dir_failing "${conf}/bareos-dir-19.2.7-xc.conf" "console admin"
 # try export non-existing resource
-bareos_dir_failing "${conf}/bareos-dir-19.2.7-xc.conf" "console=DOESNOTEXIST"
+bareos_dir_failing "${conf}/bareos-dir-19.2.7-xc.conf" "console" "DOESNOTEXIST"
 # try export non-existing resource type
 bareos_dir_failing "${conf}/bareos-dir-19.2.7-xc.conf" "DOESNOTEXIST"
 # export unused (empty) resource type

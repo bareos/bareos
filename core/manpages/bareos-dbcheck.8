@@ -36,39 +36,39 @@ Jobs that you have removed, it could be useful.
 .SH OPTIONS
 A summary of options is included below.
 .TP
-.B \-?
+.B \-h,--help,-?
 Show version and usage of program.
 .TP
-.BI \-b
+.BI \-b,--batch
 If specified, dbcheck will run in batch mode, and it will proceed to examine
 and fix (if \-f is set) all programmed inconsistency checks. By default,
 dbcheck will enter interactive mode (see below).
 .TP
-.BI \-B
+.BI \-B,--print-catalog
 print catalog configuration and exit.
 .TP
-.BI \-c\  config
+.BI \-c,--config\  config
 If the \-c option is given with the Director's configuration, there is no need to
 enter any of the command line arguments, in particular the working directory
 as dbcheck will read them from the configuration.
 .TP
-.BI \-C\  catalog
+.BI \-C,--catalog\  catalog
 catalog name in the director configuration.
 .TP
-.BI \-d\  nnn
+.BI \-d,--debug-level\  nnn
 set debug level to \fInnn\fP.
 .TP
-.BI \-dt
+.BI \--dt,--debug-timestamps
 print timestamp in debug output.
 .TP
-.BI \-D\ drivername
+.BI \-D,--driver\ drivername
 Specify the database driver name (default NULL) <postgresql|mysql|sqlite3>.
 .TP
-.BI \-f
+.BI \-f,--fix
 If specified, dbcheck will repair (fix) the inconsistencies it finds.
 Otherwise, it will report only.
 .TP
-.BI \-v
+.BI \-v,--verbose
 Set verbose mode.
 .SH INTERACTIVE MODE
 In interactive mode dbcheck will prompt with the following:

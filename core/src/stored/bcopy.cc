@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -38,6 +38,7 @@
 #include "stored/mount.h"
 #include "stored/read_record.h"
 #include "lib/address_conf.h"
+#include "lib/cli.h"
 #include "lib/bsignal.h"
 #include "lib/parse_bsr.h"
 #include "lib/parse_conf.h"
@@ -62,48 +63,14 @@ static Device* out_dev = NULL;
 static JobControlRecord* in_jcr;  /* input jcr */
 static JobControlRecord* out_jcr; /* output jcr */
 static BootStrapRecord* bsr = NULL;
-static const char* wd = "/tmp";
 static bool list_records = false;
 static uint32_t records = 0;
 static uint32_t jobs = 0;
 static DeviceBlock* out_block;
 static Session_Label sessrec;
 
-static void usage()
-{
-  kBareosVersionStrings.PrintCopyrightWithFsfAndPlanets(stderr, 2002);
-  fprintf(
-      stderr,
-      _("Usage: bcopy [-d debug_level] <input-archive> <output-archive>\n"
-        "       -b bootstrap    specify a bootstrap file\n"
-        "       -c <path>       specify a Storage configuration file or "
-        "directory\n"
-        "       -D <director>   specify a director name specified in the "
-        "Storage\n"
-        "                       configuration file for the Key Encryption Key "
-        "selection\n"
-        "       -d <nn>         set debug level to <nn>\n"
-        "       -dt             print timestamp in debug output\n"
-        "       -i              specify input Volume names (separated by |)\n"
-        "       -o              specify output Volume names (separated by |)\n"
-        "       -p              proceed inspite of errors\n"
-        "       -v              verbose\n"
-        "       -w <dir>        specify working directory (default /tmp)\n"
-        "       -?              print this message\n\n"));
-  exit(1);
-}
-
 int main(int argc, char* argv[])
 {
-  int ch;
-  bool ok;
-  char* iVolumeName = NULL;
-  char* oVolumeName = NULL;
-  char* DirectorName = NULL;
-  DirectorResource* director = NULL;
-  bool ignore_label_errors = false;
-  DeviceControlRecord *in_dcr, *out_dcr;
-
   setlocale(LC_ALL, "");
   tzset();
   bindtextdomain("bareos", LOCALEDIR);
@@ -111,74 +78,109 @@ int main(int argc, char* argv[])
   InitStackDump();
 
   MyNameIs(argc, argv, "bcopy");
-  InitMsg(NULL, NULL);
+  InitMsg(nullptr, nullptr);
 
-  while ((ch = getopt(argc, argv, "b:c:D:d:i:o:pvw:?")) != -1) {
-    switch (ch) {
-      case 'b':
-        bsr = libbareos::parse_bsr(NULL, optarg);
-        break;
+  CLI::App bcopy_app;
+  InitCLIApp(bcopy_app, "The Bareos Volume Copy tool.", 2002);
 
-      case 'c': /* specify config file */
-        if (configfile != NULL) { free(configfile); }
-        configfile = strdup(optarg);
-        break;
+  bcopy_app
+      .add_option(
+          "-b,--parse-bootstrap",
+          [](std::vector<std::string> vals) {
+            bsr = libbareos::parse_bsr(nullptr, vals.front().data());
+            return true;
+          },
+          "Specify a bootstrap file.")
+      ->check(CLI::ExistingFile)
+      ->type_name("<bootstrap>");
 
-      case 'D': /* specify director name */
-        if (DirectorName != NULL) { free(DirectorName); }
-        DirectorName = strdup(optarg);
-        break;
+  bcopy_app
+      .add_option(
+          "-c,--config",
+          [](std::vector<std::string> val) {
+            if (configfile != nullptr) { free(configfile); }
+            configfile = strdup(val.front().c_str());
+            return true;
+          },
+          "Use <path> as configuration file or directory.")
+      ->check(CLI::ExistingPath)
+      ->type_name("<path>");
 
-      case 'd': /* debug level */
-        if (*optarg == 't') {
-          dbg_timestamp = true;
-        } else {
-          debug_level = atoi(optarg);
-          if (debug_level <= 0) { debug_level = 1; }
-        }
-        break;
+  char* DirectorName = NULL;
+  bcopy_app
+      .add_option(
+          "-D,--director",
+          [&DirectorName](std::vector<std::string> val) {
+            if (DirectorName != nullptr) { free(DirectorName); }
+            DirectorName = strdup(val.front().c_str());
+            return true;
+          },
+          "Specify a director name specified in the storage. "
+          "Configuration file for the Key Encryption Key selection.")
+      ->type_name("<director>");
 
-      case 'i': /* input Volume name */
-        iVolumeName = optarg;
-        break;
+  AddDebugOptions(bcopy_app);
 
-      case 'o': /* output Volume name */
-        oVolumeName = optarg;
-        break;
+  char* inputVolumes = nullptr;
+  bcopy_app
+      .add_option("-i,--input-volumes", inputVolumes,
+                  "specify input Volume names (separated by |)")
+      ->type_name("<vol1|vol2|...>");
 
-      case 'p':
+  char* outputVolumes = nullptr;
+  bcopy_app
+      .add_option("-o,--output-volumes", outputVolumes,
+                  "specify output Volume names (separated by |)")
+      ->type_name("<vol1|vol2|...>");
+
+  bool ignore_label_errors = false;
+  bcopy_app.add_flag(
+      "-p,--ignore-errors",
+      [&ignore_label_errors](bool val) {
         ignore_label_errors = true;
         forge_on = true;
-        break;
+      },
+      "Proceed inspite of errors.");
 
-      case 'v':
-        verbose++;
-        break;
+  AddVerboseOption(bcopy_app);
 
-      case 'w':
-        wd = optarg;
-        break;
+  std::string work_dir = "/tmp";
+  bcopy_app
+      .add_option("-w,--working-directory", work_dir,
+                  "specify working directory.")
+      ->type_name("<directory>")
+      ->capture_default_str();
 
-      case '?':
-      default:
-        usage();
-    }
-  }
-  argc -= optind;
-  argv += optind;
+  std::string input_archive;
+  bcopy_app
+      .add_option("input-archive", input_archive,
+                  "Specify the input device name "
+                  "(either as name of a Bareos Storage Daemon Device resource "
+                  "or identical to the "
+                  "Archive Device in a Bareos Storage Daemon Device resource).")
+      ->required()
+      ->type_name(" ");
 
-  if (argc != 2) {
-    Pmsg0(0, _("Wrong number of arguments: \n"));
-    usage();
-  }
+  std::string output_archive;
+  bcopy_app
+      .add_option("ouput-archive", output_archive,
+                  "Specify the output device name "
+                  "(either as name of a Bareos Storage Daemon Device resource "
+                  "or identical to the "
+                  "Archive Device in a Bareos Storage Daemon Device resource).")
+      ->required()
+      ->type_name(" ");
+
+  CLI11_PARSE(bcopy_app, argc, argv);
 
   OSDependentInit();
 
-  working_directory = wd;
+  working_directory = work_dir.c_str();
 
   my_config = InitSdConfig(configfile, M_ERROR_TERM);
   ParseSdConfig(configfile, M_ERROR_TERM);
 
+  DirectorResource* director = NULL;
   if (DirectorName) {
     foreach_res (director, R_DIRECTOR) {
       if (bstrcmp(director->resource_name_, DirectorName)) { break; }
@@ -199,9 +201,9 @@ int main(int argc, char* argv[])
   // Setup and acquire input device for reading
   Dmsg0(100, "About to setup input jcr\n");
 
-  in_dcr = new DeviceControlRecord;
-  in_jcr = SetupJcr("bcopy", argv[0], bsr, director, in_dcr, iVolumeName,
-                    true); /* read device */
+  DeviceControlRecord* in_dcr = new DeviceControlRecord;
+  in_jcr = SetupJcr("bcopy", input_archive.data(), bsr, director, in_dcr,
+                    inputVolumes, true); /* read device */
   if (!in_jcr) { exit(1); }
 
   in_jcr->impl->ignore_label_errors = ignore_label_errors;
@@ -212,9 +214,9 @@ int main(int argc, char* argv[])
   // Setup output device for writing
   Dmsg0(100, "About to setup output jcr\n");
 
-  out_dcr = new DeviceControlRecord;
-  out_jcr = SetupJcr("bcopy", argv[1], bsr, director, out_dcr, oVolumeName,
-                     false); /* write device */
+  DeviceControlRecord* out_dcr = new DeviceControlRecord;
+  out_jcr = SetupJcr("bcopy", output_archive.data(), bsr, director, out_dcr,
+                     outputVolumes, false); /* write device */
   if (!out_jcr) { exit(1); }
 
   out_dev = out_jcr->impl->dcr->dev;
@@ -236,7 +238,7 @@ int main(int argc, char* argv[])
   }
   out_block = out_jcr->impl->dcr->block;
 
-  ok = ReadRecords(in_jcr->impl->dcr, RecordCb, MountNextReadVolume);
+  bool ok = ReadRecords(in_jcr->impl->dcr, RecordCb, MountNextReadVolume);
 
   if (ok || out_dev->CanWrite()) {
     if (!out_jcr->impl->dcr->WriteBlockToDevice()) {

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2013 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -74,19 +74,19 @@ class VolumeReservationItem {
 
   void InitMutex() { pthread_mutex_init(&mutex_, NULL); }
   void DestroyMutex() { pthread_mutex_destroy(&mutex_); }
-  void Lock() { P(mutex_); }
-  void Unlock() { V(mutex_); }
+  void Lock() { lock_mutex(mutex_); }
+  void Unlock() { unlock_mutex(mutex_); }
   void IncUseCount(void)
   {
-    P(mutex_);
+    lock_mutex(mutex_);
     use_count_++;
-    V(mutex_);
+    unlock_mutex(mutex_);
   }
   void DecUseCount(void)
   {
-    P(mutex_);
+    lock_mutex(mutex_);
     use_count_--;
-    V(mutex_);
+    unlock_mutex(mutex_);
   }
   int32_t UseCount() const { return use_count_; }
   bool IsSwapping() const { return swapping_; }

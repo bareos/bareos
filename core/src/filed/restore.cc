@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -44,7 +44,6 @@
 #include "lib/bsock.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
-#include "include/make_unique.h"
 
 #ifdef HAVE_WIN32
 #  include "win32/findlib/win32.h"

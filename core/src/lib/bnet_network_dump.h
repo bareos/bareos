@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,7 +29,6 @@ class BnetDumpPrivate;
 class BnetDump {
  public:
   static std::unique_ptr<BnetDump> Create(std::string own_qualified_name);
-  static bool EvaluateCommandLineArgs(const char* cmdline_optarg);
 
   void SetDestinationQualifiedName(std::string destination_qualified_name);
   void DumpMessageAndStacktraceToFile(const char* ptr, int nbytes) const;

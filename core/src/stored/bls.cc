@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -44,6 +44,7 @@
 #include "lib/address_conf.h"
 #include "lib/attribs.h"
 #include "lib/bsignal.h"
+#include "lib/cli.h"
 #include "lib/parse_bsr.h"
 #include "include/jcr.h"
 #include "lib/parse_conf.h"
@@ -66,8 +67,6 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec);
 static Device* dev;
 static DeviceControlRecord* dcr;
 static bool dump_label = false;
-static bool list_blocks = false;
-static bool list_jobs = false;
 static DeviceRecord* rec;
 static JobControlRecord* jcr;
 static Session_Label sessrec;
@@ -77,43 +76,8 @@ static Attributes* attr;
 static FindFilesPacket* ff;
 static BootStrapRecord* bsr = NULL;
 
-static void usage()
-{
-  kBareosVersionStrings.PrintCopyrightWithFsfAndPlanets(stderr, 2000);
-  fprintf(
-      stderr,
-      _("Usage: bls [options] <device-name>\n"
-        "       -b <file>       specify a bootstrap file\n"
-        "       -c <path>       specify a Storage configuration file or "
-        "directory\n"
-        "       -D <director>   specify a director name specified in the "
-        "Storage\n"
-        "                       configuration file for the Key Encryption Key "
-        "selection\n"
-        "       -d <nn>         set debug level to <nn>\n"
-        "       -dt             print timestamp in debug output\n"
-        "       -e <file>       exclude list\n"
-        "       -i <file>       include list\n"
-        "       -j              list jobs\n"
-        "       -k              list blocks\n"
-        "    (no j or k option) list saved files\n"
-        "       -L              dump label\n"
-        "       -p              proceed inspite of errors\n"
-        "       -v              be verbose (can be specified multiple times)\n"
-        "       -V              specify Volume names (separated by |)\n"
-        "       -?              print this message\n\n"));
-  exit(1);
-}
-
 int main(int argc, char* argv[])
 {
-  int i, ch;
-  FILE* fd;
-  char line[1000];
-  char* VolumeName = NULL;
-  char* bsrName = NULL;
-  char* DirectorName = NULL;
-  bool ignore_label_errors = false;
   DirectorResource* director = NULL;
 
   setlocale(LC_ALL, "");
@@ -130,99 +94,124 @@ int main(int argc, char* argv[])
 
   ff = init_find_files();
 
-  while ((ch = getopt(argc, argv, "b:c:D:d:e:i:jkLpvV:?")) != -1) {
-    switch (ch) {
-      case 'b':
-        bsrName = optarg;
-        break;
+  CLI::App bls_app;
+  InitCLIApp(bls_app, "The Bareos ls tool.", 2000);
 
-      case 'c': /* specify config file */
-        if (configfile != NULL) { free(configfile); }
-        configfile = strdup(optarg);
-        break;
+  std::string bsrName;
+  bls_app
+      .add_option("-b,--parse-bootstrap", bsrName, "Specify a bootstrap file.")
+      ->check(CLI::ExistingFile)
+      ->type_name("<file>");
 
-      case 'D': /* specify director name */
-        if (DirectorName != NULL) { free(DirectorName); }
-        DirectorName = strdup(optarg);
-        break;
+  bls_app
+      .add_option(
+          "-c,--config",
+          [](std::vector<std::string> val) {
+            if (configfile != nullptr) { free(configfile); }
+            configfile = strdup(val.front().c_str());
+            return true;
+          },
+          "Use <path> as configuration file or directory.")
+      ->check(CLI::ExistingPath)
+      ->type_name("<path>");
 
-      case 'd': /* debug level */
-        if (*optarg == 't') {
-          dbg_timestamp = true;
-        } else {
-          debug_level = atoi(optarg);
-          if (debug_level <= 0) { debug_level = 1; }
-        }
-        break;
+  char* DirectorName = nullptr;
+  bls_app
+      .add_option(
+          "-D,--director",
+          [&DirectorName](std::vector<std::string> val) {
+            if (DirectorName != nullptr) { free(DirectorName); }
+            DirectorName = strdup(val.front().c_str());
+            return true;
+          },
+          "Specify a director name found in the storage.\n"
+          "Configuration file for the Key Encryption Key selection.")
+      ->type_name("<director>");
 
-      case 'e': /* exclude list */
-        if ((fd = fopen(optarg, "rb")) == NULL) {
-          BErrNo be;
-          Pmsg2(0, _("Could not open exclude file: %s, ERR=%s\n"), optarg,
-                be.bstrerror());
-          exit(1);
-        }
-        while (fgets(line, sizeof(line), fd) != NULL) {
-          StripTrailingJunk(line);
-          Dmsg1(100, "add_exclude %s\n", line);
-          AddFnameToExcludeList(ff, line);
-        }
-        fclose(fd);
-        break;
+  AddDebugOptions(bls_app);
 
-      case 'i': /* include list */
-        if ((fd = fopen(optarg, "rb")) == NULL) {
-          BErrNo be;
-          Pmsg2(0, _("Could not open include file: %s, ERR=%s\n"), optarg,
-                be.bstrerror());
-          exit(1);
-        }
-        while (fgets(line, sizeof(line), fd) != NULL) {
-          StripTrailingJunk(line);
-          Dmsg1(100, "add_include %s\n", line);
-          AddFnameToIncludeList(ff, 0, line);
-        }
-        fclose(fd);
-        break;
+  FILE* fd;
+  char line[1000];
+  bls_app
+      .add_option(
+          "-e,--exclude",
+          [&line, &fd](std::vector<std::string> val) {
+            if ((fd = fopen(val.front().c_str(), "rb")) == NULL) {
+              BErrNo be;
+              Pmsg2(0, _("Could not open exclude file: %s, ERR=%s\n"), optarg,
+                    be.bstrerror());
+              exit(1);
+            }
+            while (fgets(line, sizeof(line), fd) != NULL) {
+              StripTrailingJunk(line);
+              Dmsg1(100, "add_exclude %s\n", line);
+              AddFnameToExcludeList(ff, line);
+            }
+            fclose(fd);
+            return true;
+          },
+          "Exclude list.")
+      ->type_name("<file>");
 
-      case 'j':
-        list_jobs = true;
-        break;
+  bls_app
+      .add_option(
+          "-i,--include-list",
+          [&line, &fd](std::vector<std::string> val) {
+            if ((fd = fopen(optarg, "rb")) == NULL) {
+              BErrNo be;
+              Pmsg2(0, _("Could not open include file: %s, ERR=%s\n"), optarg,
+                    be.bstrerror());
+              exit(1);
+            }
+            while (fgets(line, sizeof(line), fd) != NULL) {
+              StripTrailingJunk(line);
+              Dmsg1(100, "add_include %s\n", line);
+              AddFnameToIncludeList(ff, 0, line);
+            }
+            fclose(fd);
+            return true;
+          },
+          "Include list.")
+      ->type_name("<file>");
 
-      case 'k':
-        list_blocks = true;
-        break;
+  bool list_jobs = false;
+  bls_app.add_flag("-j,--list-jobs", list_jobs, "List jobs.");
 
-      case 'L':
-        dump_label = true;
-        break;
+  bool list_blocks = false;
+  bls_app.add_flag("-k,--list-blocks", list_blocks,
+                   "List blocks.\n"
+                   "If neither -j or -k specified, list saved files.");
 
-      case 'p':
+  bls_app.add_flag("-L,--dump-labels", dump_label, "Dump labels.");
+
+
+  bool ignore_label_errors = false;
+  bls_app.add_flag(
+      "-p,--ignore-errors",
+      [&ignore_label_errors](bool val) {
         ignore_label_errors = true;
         forge_on = true;
-        break;
+      },
+      "Proceed inspite of IO errors.");
 
-      case 'v':
-        verbose++;
-        break;
+  AddVerboseOption(bls_app);
 
-      case 'V': /* Volume name */
-        VolumeName = optarg;
-        break;
+  std::string VolumeNames;
+  bls_app
+      .add_option("-V,--volumes", VolumeNames, "Volume names (separated by |)")
+      ->type_name("<vol1|vol2|...>");
 
-      case '?':
-      default:
-        usage();
+  std::vector<std::string> device_names;
+  bls_app
+      .add_option("device-names", device_names,
+                  "Specify the input device name "
+                  "(either as name of a Bareos Storage Daemon Device resource "
+                  "or identical to the "
+                  "Archive Device in a Bareos Storage Daemon Device resource).")
+      ->required()
+      ->type_name(" ");
 
-    } /* end switch */
-  }   /* end while */
-  argc -= optind;
-  argv += optind;
-
-  if (!argc) {
-    Pmsg0(0, _("No archive name specified\n"));
-    usage();
-  }
+  CLI11_PARSE(bls_app, argc, argv);
 
   my_config = InitSdConfig(configfile, M_ERROR_TERM);
   ParseSdConfig(configfile, M_ERROR_TERM);
@@ -246,10 +235,13 @@ int main(int argc, char* argv[])
 
   if (ff->included_files_list == NULL) { AddFnameToIncludeList(ff, 0, "/"); }
 
-  for (i = 0; i < argc; i++) {
-    if (bsrName) { bsr = libbareos::parse_bsr(NULL, bsrName); }
+
+  for (std::string device : device_names) {
+    if (!bsrName.empty()) {
+      bsr = libbareos::parse_bsr(nullptr, bsrName.data());
+    }
     dcr = new DeviceControlRecord;
-    jcr = SetupJcr("bls", argv[i], bsr, director, dcr, VolumeName,
+    jcr = SetupJcr("bls", device.data(), bsr, director, dcr, VolumeNames.data(),
                    true); /* read device */
     if (!jcr) { exit(1); }
     jcr->impl->ignore_label_errors = ignore_label_errors;
@@ -270,11 +262,11 @@ int main(int argc, char* argv[])
     }
 
     if (list_blocks) {
-      DoBlocks(argv[i]);
+      DoBlocks(device.data());
     } else if (list_jobs) {
-      do_jobs(argv[i]);
+      do_jobs(device.data());
     } else {
-      do_ls(argv[i]);
+      do_ls(device.data());
     }
     do_close(jcr);
   }

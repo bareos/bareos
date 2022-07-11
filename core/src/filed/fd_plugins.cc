@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -2162,7 +2162,7 @@ static bRC bareosGetInstanceCount(PluginContext* ctx, int* ret)
 
   if (!IsCtxGood(ctx, jcr, bctx)) { goto bail_out; }
 
-  P(mutex);
+  lock_mutex(mutex);
 
   cnt = 0;
   foreach_jcr (njcr) {
@@ -2174,7 +2174,7 @@ static bRC bareosGetInstanceCount(PluginContext* ctx, int* ret)
   }
   endeach_jcr(njcr);
 
-  V(mutex);
+  unlock_mutex(mutex);
 
   *ret = cnt;
   retval = bRC_OK;

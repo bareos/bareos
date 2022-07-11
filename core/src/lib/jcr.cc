@@ -74,9 +74,9 @@ static pthread_mutex_t job_start_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static char Job_status[] = "Status Job=%s JobStatus=%d\n";
 
-void LockJobs() { P(job_start_mutex); }
+void LockJobs() { lock_mutex(job_start_mutex); }
 
-void UnlockJobs() { V(job_start_mutex); }
+void UnlockJobs() { unlock_mutex(job_start_mutex); }
 
 /*
  * Get an ASCII representation of the Operation being performed as an english

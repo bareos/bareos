@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -133,8 +133,8 @@ set(SDSRCS
 )
 
 if(HAVE_WIN32)
-  list(APPEND SDSRCS stored.cc ../win32/generic/main.cc
-       ../win32/generic/service.cc ../win32/stored/storedres.rc
+  list(APPEND SDSRCS ../win32/generic/main.cc ../win32/generic/service.cc
+       ../win32/stored/storedres.rc
   )
 endif()
 
@@ -220,6 +220,7 @@ add_executable(bareos-sd stored.cc)
 
 target_link_libraries(
   bareos-sd PRIVATE stored_objects bareos bareossd bareosfind Threads::Threads
+                    CLI11::CLI11
 )
 
 if(HAVE_WIN32)
@@ -232,20 +233,22 @@ if(HAVE_NDMP)
 endif()
 
 add_executable(bls ${BLSSRCS})
-target_link_libraries(bls PRIVATE bareos bareossd bareosfind)
+target_link_libraries(bls PRIVATE bareos bareossd bareosfind CLI11::CLI11)
 
 add_executable(bextract ${BEXTRACTSRS})
-target_link_libraries(bextract PRIVATE bareossd bareosfind bareos)
+target_link_libraries(bextract PRIVATE bareossd bareosfind bareos CLI11::CLI11)
 
 add_executable(bscan ${BSCANSRCS})
-target_link_libraries(bscan PRIVATE bareos bareossd bareosfind bareossql)
+target_link_libraries(
+  bscan PRIVATE bareos bareossd bareosfind bareossql CLI11::CLI11
+)
 
 add_executable(btape ${BTAPESRCS})
-target_link_libraries(btape PRIVATE bareossd bareos)
+target_link_libraries(btape PRIVATE bareossd bareos CLI11::CLI11)
 
 add_executable(bcopy ${BCOPYSRCS})
 
-target_link_libraries(bcopy PRIVATE bareossd bareos)
+target_link_libraries(bcopy PRIVATE bareossd bareos CLI11::CLI11)
 
 install(TARGETS bareossd DESTINATION ${libdir})
 

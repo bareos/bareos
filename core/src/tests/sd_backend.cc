@@ -49,8 +49,6 @@
 #  include "stored/sd_backends.h"
 #endif
 
-#include "include/make_unique.h"
-
 using namespace storagedaemon;
 
 namespace storagedaemon {

@@ -1,0 +1,24 @@
+Usage: bregex [OPTIONS]
+
+Options:
+    -h,-?,--help
+        Print this help message and exit. 
+
+    --version
+        Display program version information and exit 
+
+    -d,--debug-level <level>:NONNEGATIVE
+        Set debug level to <level>. 
+
+    --dt,--debug-timestamps
+        Print timestamps in debug output. 
+
+    -f,--filename TEXT
+        REQUIRED
+        Specify file or data to be matched. 
+
+    -l,--suppress-linenumbers
+        Suppress line numbers. 
+
+    -n,--not-match
+        Print line that do not match. 

@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -34,6 +34,7 @@
 #include "monitoritemthread.h"
 #include "lib/bsignal.h"
 #include "lib/parse_conf.h"
+#include "lib/cli.h"
 
 ConfigurationParser* my_config = nullptr;
 
@@ -42,91 +43,46 @@ ConfigurationParser* my_config = nullptr;
  * - QCoreApplication for tests when no GUI must be used */
 static QCoreApplication* app = nullptr;
 
-static void usage()
-{
-  std::vector<char> copyright(1024);
-  kBareosVersionStrings.FormatCopyrightWithFsfAndPlanets(
-      copyright.data(), copyright.size(), 2004);
-  QString out
-      = QString(_("%1"
-                  "Usage: tray-monitor [options]\n"
-                  "        -c <path>   use <path> as configuration file or "
-                  "directory\n"
-                  "        -d <nn>     set debug level to <nn>\n"
-                  "        -dt         print timestamp in debug output\n"
-                  "        -t          test - read configuration and exit\n"
-                  "        -rc         test - do connection test\n"
-                  "        -xc         print configuration and exit\n"
-                  "        -xs         print configuration file schema in JSON "
-                  "format "
-                  "and exit\n"
-                  "        -?          print this message.\n"
-                  "\n"))
-            .arg(copyright.data());
-
-#if HAVE_WIN32
-  QMessageBox::information(0, "Help", out);
-#else
-  fprintf(stderr, "%s", out.toUtf8().data());
-#endif
-}
-
 static void ParseCommandLine(int argc, char* argv[], cl_opts& cl)
 {
-  int ch;
-  while ((ch = getopt(argc, argv, "bc:d:th?f:r:s:x:")) != -1) {
-    switch (ch) {
-      case 'c': /* configuration file */
-        if (cl.configfile_) { free(static_cast<void*>(cl.configfile_)); }
-        cl.configfile_ = strdup(optarg);
-        break;
+  CLI::App tray_monitor_app;
+  InitCLIApp(tray_monitor_app, "The Bareos Tray Monitor.", 2004);
 
-      case 'd':
-        if (*optarg == 't') {
-          dbg_timestamp = true;
-        } else {
-          debug_level = atoi(optarg);
-          if (debug_level <= 0) { debug_level = 1; }
-        }
-        break;
+  tray_monitor_app
+      .add_option(
+          "-c,--config",
+          [&cl](std::vector<std::string> val) {
+            if (cl.configfile_) { free(static_cast<void*>(cl.configfile_)); }
+            cl.configfile_ = strdup(val.front().c_str());
+            return true;
+          },
+          "Use <path> as configuration file or directory.")
+      ->check(CLI::ExistingPath)
+      ->type_name("<path>");
 
-      case 't':
-        cl.test_config_only_ = true;
-        break;
+  AddDebugOptions(tray_monitor_app);
 
-      case 'x': /* export configuration/schema and exit */
-        if (*optarg == 's') {
-          cl.export_config_schema_ = true;
-        } else if (*optarg == 'c') {
-          cl.export_config_ = true;
-        } else {
-          usage();
-          exit(1);
-        }
-        break;
+  tray_monitor_app.add_flag("-t,--test-config", cl.test_config_only_,
+                            "Test - read configuration and exit.");
 
-      case 'r':
-        if ((*optarg) == 'c') {
-          cl.do_connection_test_only_ = true;
-        } else {
-          usage();
-          exit(1);
-        }
-        break;
+  CLI::Option* xc
+      = tray_monitor_app.add_flag("--xc,--export-config", cl.export_config_,
+                                  "Print configuration resources and exit.");
 
-      case 'h':
-      case '?':
-      default:
-        usage();
-        exit(1);
-    }
-  }
-  argc -= optind;
-  // argv += optind;
 
-  if (argc) {
-    usage();
-    exit(1);
+  tray_monitor_app
+      .add_flag("--xs,--export-schema", cl.export_config_schema_,
+                "Print configuration schema in JSON format and exit.")
+      ->excludes(xc);
+
+  tray_monitor_app.add_flag("--rc,--test-connection",
+                            cl.do_connection_test_only_,
+                            "Test connection only.");
+
+  try {
+    (tray_monitor_app).parse((argc), (argv));
+  } catch (const CLI::ParseError& e) {
+    exit((tray_monitor_app).exit(e));
   }
 }
 

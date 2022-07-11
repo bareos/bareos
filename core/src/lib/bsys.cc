@@ -181,9 +181,9 @@ int Bmicrosleep(int32_t sec, int32_t usec)
   Dmsg2(200, "pthread_cond_timedwait sec=%lld usec=%d\n", sec, usec);
 
   // Note, this unlocks mutex during the sleep
-  P(timer_mutex);
+  lock_mutex(timer_mutex);
   status = pthread_cond_timedwait(&timer, &timer_mutex, &timeout);
-  V(timer_mutex);
+  unlock_mutex(timer_mutex);
 
   return status;
 }
@@ -364,10 +364,10 @@ struct tm* localtime_r(const time_t* timep, struct tm* tm)
   static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
   struct tm *ltm,
 
-      P(mutex);
+      lock_mutex(mutex);
   ltm = localtime(timep);
   if (ltm) { memcpy(tm, ltm, sizeof(struct tm)); }
-  V(mutex);
+  unlock_mutex(mutex);
   return ltm ? tm : NULL;
 }
 #endif /* HAVE_LOCALTIME_R */
@@ -382,7 +382,7 @@ int Readdir_r(DIR* dirp, struct dirent* entry, struct dirent** result)
   struct dirent* ndir;
   int status;
 
-  P(mutex);
+  lock_mutex(mutex);
   errno = 0;
   ndir = readdir(dirp);
   status = errno;
@@ -393,7 +393,7 @@ int Readdir_r(DIR* dirp, struct dirent* entry, struct dirent** result)
   } else {
     *result = NULL;
   }
-  V(mutex);
+  unlock_mutex(mutex);
   return status;
 }
 #  endif
@@ -405,7 +405,7 @@ int b_strerror(int errnum, char* buf, size_t bufsiz)
   int status = 0;
   const char* msg;
 
-  P(mutex);
+  lock_mutex(mutex);
 
   msg = strerror(errnum);
   if (!msg) {
@@ -413,7 +413,7 @@ int b_strerror(int errnum, char* buf, size_t bufsiz)
     status = -1;
   }
   bstrncpy(buf, msg, bufsiz);
-  V(mutex);
+  unlock_mutex(mutex);
   return status;
 }
 

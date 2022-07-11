@@ -111,9 +111,9 @@ static inline void wait_for_next_run()
   timeout.tv_nsec = tv.tv_usec * 1000;
   timeout.tv_sec = tv.tv_sec + me->stats_collect_interval;
 
-  P(mutex);
+  lock_mutex(mutex);
   pthread_cond_timedwait(&wait_for_next_run_cond, &mutex, &timeout);
-  V(mutex);
+  unlock_mutex(mutex);
 }
 
 extern "C" void* statistics_thread(void* arg)

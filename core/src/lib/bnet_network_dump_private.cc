@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,18 +19,12 @@
    02110-1301, USA.
 */
 
-#include "include/bareos.h"
 #include "bnet_network_dump_private.h"
 
-#include "include/make_unique.h"
-#include "lib/ascii_control_characters.h"
 #include "lib/backtrace.h"
-#include "lib/bareos_resource.h"
 #include "lib/bnet.h"
-#include "lib/bsock.h"
 #include "lib/bsock_tcp.h"
 #include "lib/bstringlist.h"
-#include "lib/qualified_resource_name_type_converter.h"
 
 #include <cassert>
 #include <algorithm>

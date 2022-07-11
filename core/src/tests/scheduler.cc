@@ -34,7 +34,6 @@
 #include "dird/dird_conf.h"
 #define DIRECTOR_DAEMON
 #include "include/jcr.h"
-#include "include/make_unique.h"
 #include "lib/parse_conf.h"
 #include "tests/scheduler_time_source.h"
 #include "dird/scheduler_system_time_source.h"

@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -158,7 +158,9 @@ target_link_libraries(
 add_executable(bareos-dir)
 target_sources(bareos-dir PRIVATE dird.cc)
 
-target_link_libraries(bareos-dir PRIVATE dird_objects bareossql bareosfind)
+target_link_libraries(
+  bareos-dir PRIVATE dird_objects bareossql bareosfind CLI11::CLI11
+)
 
 if(HAVE_WIN32)
   target_sources(
@@ -185,6 +187,7 @@ add_executable(bareos-dbcheck ${DBCHKSRCS})
 
 target_link_libraries(
   bareos-dbcheck PRIVATE bareossql bareos bareosfind ${OPENSSL_LIBRARIES}
+                         CLI11::CLI11
 )
 
 # is not built by default

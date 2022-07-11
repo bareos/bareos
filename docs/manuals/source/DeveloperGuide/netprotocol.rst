@@ -113,7 +113,7 @@ It returns:
 
 -  >0: number of bytes read
 -  0: on end of file
--  -1: on hard end of file (i.e. network connection close)
+-  -1: on hard end of file (i.e. network connection close)
 -  -2: on error
 
 It should be noted that bnet_recv() is a blocking read.
@@ -155,7 +155,7 @@ Becoming a Server
 
 The bnet_open() and bnet_close() routines described above are used on
 the client side to establish a connection and terminate a connection
-with the server. To become a server (i.e. wait for a connection from a
+with the server. To become a server (i.e. wait for a connection from a
 client), use the routine **bnet_thread_server**. The calling sequence is
 a bit complicated, please refer to the code in bnet_server.c and the
 code at the beginning of each daemon as examples of how to call it.
@@ -259,10 +259,10 @@ Developers who want to debug the message flow can use the network dump feature. 
    :caption: Network Dump Command Line Options
 
    Usage: [bconsole|bareos-dir|bareos-fd|bareos-sd]
-          -z <filename>    name and path of the dumpfile
+          --zf <filename>    name and path of the dumpfile
                            (setting this switches on the network dump)
-          -zp              use the plantuml notation
-          -z <stackdepth>  for additional stacktrace, stackdepth=-1: print all frames,
+          --zp              use the plantuml notation
+          --zs <stackdepth>  for additional stacktrace, stackdepth=-1: print all frames,
                                                       stackdepth=n:  print up to n frames
 
 .. _DeveloperGuideNetworkSequenceDiagrams:

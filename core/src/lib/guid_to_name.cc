@@ -98,12 +98,12 @@ static void GetUidname(uid_t uid, guitem* item)
 {
 #ifndef HAVE_WIN32
   struct passwd* pwbuf;
-  P(mutex);
+  lock_mutex(mutex);
   pwbuf = getpwuid(uid);
   if (pwbuf != NULL && !bstrcmp(pwbuf->pw_name, "????????")) {
     item->name = strdup(pwbuf->pw_name);
   }
-  V(mutex);
+  unlock_mutex(mutex);
 #endif
 }
 
@@ -111,12 +111,12 @@ static void GetGidname(gid_t gid, guitem* item)
 {
 #ifndef HAVE_WIN32
   struct group* grbuf;
-  P(mutex);
+  lock_mutex(mutex);
   grbuf = getgrgid(gid);
   if (grbuf != NULL && !bstrcmp(grbuf->gr_name, "????????")) {
     item->name = strdup(grbuf->gr_name);
   }
-  V(mutex);
+  unlock_mutex(mutex);
 #endif
 }
 

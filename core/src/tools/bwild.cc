@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2006 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,87 +26,58 @@
  */
 
 #include "include/bareos.h"
+#include "lib/cli.h"
 #include "lib/fnmatch.h"
-
-static void usage()
-{
-  fprintf(stderr,
-          "\n"
-          "Usage: bwild [-d debug_level] -f <data-file>\n"
-          "       -f          specify file of data to be matched\n"
-          "       -i          use case insenitive match\n"
-          "       -l          suppress line numbers\n"
-          "       -n          print lines that do not match\n"
-          "       -?          print this message.\n"
-          "\n\n");
-
-  exit(1);
-}
 
 int main(int argc, char* const* argv)
 {
-  char* fname = NULL;
-  int rc, ch;
-  char data[1000];
-  char pat[500];
-  FILE* fd;
-  bool match_only = true;
-  int lineno;
-  bool no_linenos = false;
-  int ic = 0;
-
-
   setlocale(LC_ALL, "");
   tzset();
   bindtextdomain("bareos", LOCALEDIR);
   textdomain("bareos");
 
-  while ((ch = getopt(argc, argv, "d:f:in?")) != -1) {
-    switch (ch) {
-      case 'd': /* set debug level */
-        debug_level = atoi(optarg);
-        if (debug_level <= 0) { debug_level = 1; }
-        break;
+  CLI::App bwild_app;
+  InitCLIApp(bwild_app, "The Bareos Wildcard tool.");
 
-      case 'f': /* data */
-        fname = optarg;
-        break;
+  AddDebugOptions(bwild_app);
 
-      case 'i': /* ignore case */
-        ic = FNM_CASEFOLD;
-        break;
+  std::string fname{};
+  bwild_app
+      .add_option("-f,--filename", fname, "Specify file or data to be matched.")
+      ->required();
 
-      case 'l':
-        no_linenos = true;
-        break;
+  int ic = 0;
+  bwild_app.add_flag(
+      "-i,--ignore-case", [&ic](bool val) { ic = FNM_CASEFOLD; },
+      "Use case insensitive match.");
 
-      case 'n':
-        match_only = false;
-        break;
+  bool no_linenos = false;
+  bwild_app.add_flag("-l,--suppress-linenumbers", no_linenos,
+                     "Suppress line numbers.");
 
-      case '?':
-      default:
-        usage();
-    }
-  }
-  argc -= optind;
-  argv += optind;
+  bool match_only = true;
+  bwild_app.add_flag(
+      "-n,--not-match", [&match_only](bool val) { match_only = false; },
+      "Print line that do not match.");
 
-  if (!fname) {
-    printf("A data file must be specified.\n");
-    usage();
-  }
+  CLI11_PARSE(bwild_app, argc, argv);
 
   OSDependentInit();
+
+  char data[1000];
+  char pat[500];
+  FILE* fd;
+  int lineno;
+  int rc;
 
   for (;;) {
     printf("Enter a wild-card: ");
     if (fgets(pat, sizeof(pat) - 1, stdin) == NULL) { break; }
     StripTrailingNewline(pat);
     if (pat[0] == 0) { exit(0); }
-    fd = fopen(fname, "r");
+    fd = fopen(fname.c_str(), "r");
     if (!fd) {
-      printf(_("Could not open data file: %s\n"), fname);
+      printf(_("Could not open data file: %s\n"), fname.c_str());
       exit(1);
     }
     lineno = 0;
