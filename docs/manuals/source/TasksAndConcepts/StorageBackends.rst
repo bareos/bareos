@@ -333,7 +333,7 @@ GFAPI Storage Backend
 
 **GFAPI** (GlusterFS)
 
-A GlusterFS Storage can be used as Storage backend of Bareos. Prerequistes are a working GlusterFS storage system and the package **bareos-storage-glusterfs**. See http://www.gluster.org/ for more information regarding GlusterFS installation and configuration and specifically `https://docs.gluster.org/en/latest/Administrator-Guide/Bareos/ <https://docs.gluster.org/en/latest/Administrator-Guide/Bareos/>`__ for Bareos integration. You can use following snippet to
+A GlusterFS Storage can be used as Storage backend of Bareos. Prerequistes are a working GlusterFS storage system and the package **bareos-storage-glusterfs**. See https://www.gluster.org/ for more information regarding GlusterFS installation and configuration and specifically `https://docs.gluster.org/en/latest/Administrator-Guide/Bareos/ <https://docs.gluster.org/en/latest/Administrator-Guide/Bareos/>`__ for Bareos integration. You can use following snippet to
 configure it as storage device:
 
 
@@ -356,7 +356,7 @@ Rados Storage Backend
 
 **Rados** (Ceph Object Store)
 
-Here you configure the Ceph object store, which is accessed by the SD using the Rados library. Prerequistes are a working Ceph object store and the package **bareos-storage-ceph**. See http://ceph.com for more information regarding Ceph installation and configuration. Assuming that you have an object store with name :file:`poolname` and your Ceph access is configured in :file:`/etc/ceph/ceph.conf`, you can use following snippet to configure it as
+Here you configure the Ceph object store, which is accessed by the SD using the Rados library. Prerequistes are a working Ceph object store and the package **bareos-storage-ceph**. See https://ceph.com/en/ for more information regarding Ceph installation and configuration. Assuming that you have an object store with name :file:`poolname` and your Ceph access is configured in :file:`/etc/ceph/ceph.conf`, you can use following snippet to configure it as
 storage device:
 
 .. literalinclude:: /include/config/SdDeviceDeviceOptionsRados1.conf

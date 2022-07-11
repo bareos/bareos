@@ -18,7 +18,7 @@ Additionally, the following table gives an overview on the available package ver
    CentOS, current, v12.4, v12.4, v12.4
    Debian, current, v12.4, v12.4, v12.4
    Fedora, current, v12.4, v12.4, v12.4
-   Gentoo :index:`\ <single: Platform; Gentoo>`\ , `X <https://packages.gentoo.org/package/app-backup/bareos>`__,     `X <https://packages.gentoo.org/package/app-backup/bareos>`__, `X <https://packages.gentoo.org/package/app-backup/bareos>`__
+   Gentoo :index:`\ <single: Platform; Gentoo>`\ , `X <https://packages.gentoo.org/packages/app-backup/bareos>`__,     `X <https://packages.gentoo.org/packages/app-backup/bareos>`__, `X <https://packages.gentoo.org/packages/app-backup/bareos>`__
    openSUSE, current, v12.4, v12.4, v12.4
    RHEL,     current, v12.4, v12.4, v12.4
    SLES,     current, v12.4, v12.4, v12.4
@@ -126,7 +126,7 @@ The Bareos version for the Univention App Center integraties into the Univention
 Preamble
 ^^^^^^^^
 
-The `Univention Corporate Server <http://www.univention.de/>`_ is an enterprise Linux distribution based on Debian. It consists of an integrated management system for the centralised administration of servers, computer workplaces, users and their rights as well as a wide range of server applications. It also includes an Unvention App Center for the easy installation and management of extensions and appliances.
+The `Univention Corporate Server <https://www.univention.de/>`_ is an enterprise Linux distribution based on Debian. It consists of an integrated management system for the centralised administration of servers, computer workplaces, users and their rights as well as a wide range of server applications. It also includes an Unvention App Center for the easy installation and management of extensions and appliances.
 
 Bareos is part of the `App Center <https://www.univention.de/produkte/univention-app-center/app-katalog/bareos/>`_ and therefore an Univention environment can easily be extended to provide backup functionality for the Univention servers as well as for the connected client systems. Using the Univention Management Console (UMC), you can also create backup jobs for client computers (Windows or Linux systems), without the need of editing configuration files.
 
@@ -383,7 +383,7 @@ Alternatively you can also set those UCR variables via commandline.
    File: /etc/bareos/...
    [ ok ] Reloading Bareos Director: bareos-dir.
 
-When your login credentials are set, you can login into Bareos Webui by following the entry in your Administration UCS Overview or directly via https://<UCS_SERVER>/bareos-webui/.
+When your login credentials are set, you can login into Bareos Webui by following the entry in your Administration UCS Overview or directly via https://UCS_SERVER/bareos-webui/.
 
 .. image:: /include/images/univention-ucs-overview-administration.*
    :width: 80.0%

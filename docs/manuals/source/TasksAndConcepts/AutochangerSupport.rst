@@ -505,7 +505,7 @@ Tapespeed and blocksizes
 :index:`\ <single: Tape; speed>`
 :index:`\ <single: Blocksize; optimize>`
 
-The `Bareos Whitepaper Tape Speed Tuning <http://www.bareos.org/en/Whitepapers/articles/Speed_Tuning_of_Tape_Drives.html>`_ shows that the two parameters :strong:`Maximum File Size`\  and :strong:`Maximum Block Size`\  of the device have significant influence on the tape speed.
+The `Bareos Whitepaper Tape Speed Tuning <https://www.bareos.com/whitepapers/optimizing-the-tape-speed.pdf>`_ shows that the two parameters :strong:`Maximum File Size`\  and :strong:`Maximum Block Size`\  of the device have significant influence on the tape speed.
 
 While it is no problem to change the :config:option:`sd/device/MaximumFileSize`\  parameter, unfortunately it is not possible to change the :config:option:`sd/device/MaximumBlockSize`\  parameter, because the previously written tapes would become unreadable in the new setup. It would require that the :config:option:`sd/device/MaximumBlockSize`\  parameter is switched back to the old value to be able to read the old volumes, but of
 course then the new volumes would be unreadable.

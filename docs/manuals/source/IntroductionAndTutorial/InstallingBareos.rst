@@ -36,7 +36,7 @@ This will start a very basic Bareos installation which will regularly backup a d
 Decide about the Bareos release to use
 --------------------------------------
 
-You’ll find Bareos binary package repositories at https://download.bareos.org/. The stable releases are available at https://download.bareos.org/bareos/release/.
+You’ll find Bareos binary package repositories at https://download.bareos.org/bareos/. The stable releases are available at https://download.bareos.org/bareos/release/.
 
 The public key to verify the repository is also in repository directory (:file:`Release.key` for Debian based distributions, :file:`repodata/repomd.xml.key` for RPM based distributions).
 

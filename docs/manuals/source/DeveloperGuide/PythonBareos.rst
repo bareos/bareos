@@ -25,7 +25,7 @@ Example:
    >>> print(directorconsole.call('help').decode("utf-8"))
 
 If you want to create a command line tool, the examples in
-https://github.com/bareos/bareos/blob/master/python-bareos/bin/ might be useful.
+https://github.com/bareos/bareos/tree/master/python-bareos/bin might be useful.
 
 
 

@@ -78,7 +78,7 @@ To get a trusted certificate (CA or Certificate Authority signed certificate), y
 
 Bareos is known to work well with RSA certificates.
 
-You can use programs like `xca <http://xca.sourceforge.net/>`_ or TinyCA to easily manage your own CA with a Graphical User Interface.
+You can use programs like `xca <https://github.com/chris2511/xca/>`_ or TinyCA to easily manage your own CA with a Graphical User Interface.
 
 Example TLS Configuration Files
 -------------------------------

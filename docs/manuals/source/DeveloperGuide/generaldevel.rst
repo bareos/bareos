@@ -45,7 +45,7 @@ Also, include the Bareos copyright notice that can be found in every source file
 Bug Database
 ------------
 
-We have a bug database which is at https://bugs.bareos.org.
+We have a bug database which is at https://bugs.bareos.org/.
 
 The first thing is if you want to take over a bug, rather than just make
 a note, you should assign the bug to yourself. This helps other
@@ -83,7 +83,7 @@ If the user has not properly filled in most of the important fields (platform, O
 The same applies to a support request (we answer only bugs), you might give the user a tip, but please politely refer him to the manual, the `bareos-users`_ mailing list and maybe the `commercial support`_.
 
 .. _bareos-users:       https://groups.google.com/forum/#!forum/bareos-users
-.. _commercial support: https://www.bareos.com/en/Support.html
+.. _commercial support: https://www.bareos.com/product/support/
 
 Reporting security issues
 ~~~~~~~~~~~~~~~~~~~~~~~~~

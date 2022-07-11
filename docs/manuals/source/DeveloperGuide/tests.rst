@@ -13,7 +13,7 @@ Adding a new C++ Test
 ~~~~~~~~~~~~~~~~~~~~~
 To add a new test, you create your sourcefiles in ``core/src/tests`` and register the test in ``CMakeLists.txt`` in that directory. The easiest way is to copy an existing test sourcefile and the related lines in ``core/src/CMakeLists.txt``.
 
-For general advice on how to use the Google Test framework see this documentation: `Googletest Primer <https://github.com/google/googletest/blob/master/docs/primer.md>`_
+For general advice on how to use the Google Test framework see this documentation: `Googletest Primer <https://github.com/google/googletest/blob/main/docs/primer.md>`_
 
 Adding tests in general
 ~~~~~~~~~~~~~~~~~~~~~~~

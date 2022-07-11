@@ -228,7 +228,7 @@ Valid values for the highlighting language are:
   * ``rest``
   * ``c``
   * ... and any other `lexer alias that Pygments supports
-    <http://pygments.org/docs/lexers/>`_.
+    <https://pygments.org/docs/lexers/>`_.
 
 If the text resides in a seperate file, use::
 
@@ -658,7 +658,7 @@ In general, images should be stored as SVG.
 Table
 -----
 
-Sphinx offers multiple methods to create tables, see https://www.sphinx-doc.org/en/2.0/usage/restructuredtext/basics.html#tables\ .
+Sphinx offers multiple methods to create tables, see https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html#tables\ .
 
 Choose whatever sucks least.
 

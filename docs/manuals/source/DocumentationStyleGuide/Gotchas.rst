@@ -74,6 +74,6 @@ toctree
 ------------
 
 Don't use the ``:options:`` role, as this tries to refers to a option definition, which we don't have.
-Also, as we document different programs, using option would require to prefix it with the program name, see https://www.sphinx-doc.org/en/1.7/domains.html#directive-program.
+Also, as we document different programs, using option would require to prefix it with the program name, see https://www.sphinx-doc.org/en/master/usage/restructuredtext/domains.html#directive-program.
 
 This only applies to ``:options:`` without domain. We do you ``:config:option:`` in :ref:`DocumentationStyleGuide/BareosSpecificFormatting/BareosConfiguration:Bareos Configuration`.

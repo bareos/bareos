@@ -232,7 +232,7 @@ differs from API mode 1 in several aspects:
 
 -  JSON output
 -  The JSON output is in the format of JSON-RPC 2.0 responce objects
-   (http://www.jsonrpc.org/specification#response_object). This should
+   (https://www.jsonrpc.org/specification#response_object). This should
    make it easier to implement a full JSON-RPC service later.
 -  No user interaction inside a command (meaning: if not all parameters
    are given to a :bcommand:`run` command, the command fails).
@@ -405,7 +405,7 @@ Example of a JSON-RPC Error Response
 ''''''''''''''''''''''''''''''''''''
 
 Example of a JSON-RPC Error Response
-(http://www.jsonrpc.org/specification#error_object):
+(https://www.jsonrpc.org/specification#error_object):
 
 .. code-block:: bconsole
 

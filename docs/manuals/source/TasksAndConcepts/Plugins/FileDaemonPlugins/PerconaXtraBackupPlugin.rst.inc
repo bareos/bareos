@@ -30,7 +30,7 @@ Incremental backups only work for INNODB tables, when using MYISAM, only full ba
 Prerequisites of percona XtraBackup Plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Install the XtraBackup tool from Percona. Documentation and packages are available here: https://www.percona.com/software/mysql-database/percona-XtraBackup. The plugin was successfully tested with XtraBackup versions 2.3.5 and 2.4.4.
+Install the XtraBackup tool from Percona. Documentation and packages are available here: https://www.percona.com/software/mysql-database/percona-xtrabackup. The plugin was successfully tested with XtraBackup versions 2.3.5 and 2.4.4.
 
 For authentication the :file:`.mycnf` file of the user running the |fd| is used. Before proceeding, make sure that XtraBackup can connect to the database and create backups.
 
@@ -110,7 +110,7 @@ This example shows the restore tree for restore job with ID 351. First subdirect
 
 Next line is the first incremental job with ID 335, starting at LSN 10129154 until 10142295. The third line is the 2nd incremental job with ID 338.
 
-To further prepare the restored files, use the :command:`XtraBackup --prepare` command. Read https://www.percona.com/doc/percona-xtrabackup/2.4/backup_scenarios/incremental_backup.html for more information.
+To further prepare the restored files, use the :command:`XtraBackup --prepare` command. For more information read https://docs.percona.com/percona-xtrabackup/2.4/backup_scenarios/incremental_backup.html.
 
 
 Troubleshooting

@@ -180,7 +180,7 @@ author = "Bareos GmbH & Co. KG"
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -298,6 +298,55 @@ latex_documents = [
     )
 ]
 
+# -- Options for the linkcheck builder ------------------------------------
+
+linkcheck_allowed_redirects = {
+    # All HTTP redirections from the source URI to the canonical URI will be treated as "working".
+    r'https://bareos\.org/.*': r'https://bareos\.com/.*',
+    r'http://www\.bareos\.org': r'https://www\.bareos\.com/.*',
+    r'http://www\.bareos\.org/.*': r'https://www\.bareos\.com/.*',
+    r'https://www\.bareos\.org/.*': r'https://www\.bareos\.com/.*',
+    r'https://www\.bareos\.com/whitepapers/.*': r'https://www\.bareos\.com/.*',
+    r'https://bugs\.bareos\.org/.*': r'https://bugs\.bareos\.org/my_view_page\.php',
+    r'https://download\.bareos\.org': r'https://download\.bareos\.org/bareos',
+    r'https://download\.bareos\.com': r'https://download\.bareos\.com/bareos',
+}
+linkcheck_request_headers = {
+#    "https://www.sphinx-doc.org/": {
+#        "Accept": "text/html",
+#        "Accept-Encoding": "utf-8",
+#    },
+    "*": {
+        "Accept": "text/html,application/xhtml+xml",
+    }
+}
+linkcheck_retries = 2   # default 1
+linkcheck_timeout = 10  # default 300
+linkcheck_workers = 2   # default 5
+linkcheck_anchors = True
+linkcheck_ignore = [
+    r'\.\./*',
+    r'http://localhost:*/',
+    r'https://\w+:\d+/bareos-webui/',
+    'https://UCS_SERVER/bareos-webui/',
+    'http://HOSTNAME/bareos-webui',
+    'http://localhost:9100',
+    'http://bareos:9100',
+    'http://bucket.s3_server/object',
+    'http://127.0.0.1:8000/docs',
+    'http://127.0.0.1:8000/redoc',
+    'https://pubs.vmware.com/vsphere-55/topic/com.vmware.vsphere.security.doc/*',
+    r'https://github\.com/bareos/bareos/pull/\d+', 
+    'https://www.glusterfs.org',                     #failing too often
+    'https://www.sphinx-doc.org/en/1.7/intro.html#',
+]
+#linkcheck_auth = [
+#  ('https://foo\.yourcompany\.com/.+', ('johndoe', 'secret')),
+#  ('https://.+\.yourcompany\.com/.+', HTTPDigestAuth(...)),
+#]
+linkcheck_rate_limit_timeout = 300.00
+# ignore all links in documents located in a subfolder named 'legacy'
+#linkcheck_exclude_documents = [r'.*/legacy/.*']
 
 # -- Options for manual page output ---------------------------------------
 

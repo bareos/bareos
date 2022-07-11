@@ -138,7 +138,7 @@ If this works on your system can be verified by
    su - postgres
    psql
 
-If your database is configured to require a password, this must be defined in the file `:file:`~/.pgpass` <https://postgresql.org/docs/current/static/libpq-pgpass.html>`_ in the following syntax: :strong:`HOST:PORT:DATABASE:USER:PASSWORD`, e.g.
+If your database is configured to require a password, this must be defined in the file `:file:`~/.pgpass` <https://www.postgresql.org/docs/current/libpq-pgpass.html>`_ in the following syntax: :strong:`HOST:PORT:DATABASE:USER:PASSWORD`, e.g.
 
 .. code-block:: cfg
    :caption: PostgreSQL access credentials
@@ -476,7 +476,7 @@ Depending on the size of your database, this will take more or less time and a f
 
 Except from special cases PostgreSQL does not need to be dumped/restored to keep the database efficient. A normal process of vacuuming will prevent the database from getting too large. If you want to fine-tweak the database storage, commands such as VACUUM, VACUUM FULL, REINDEX, and CLUSTER exist specifically to keep you from having to do a dump/restore.
 
-More details on this subject can be found in the PostgreSQL documentation. The page https://www.postgresql.org/docs/ contains links to the documentation for all PostgreSQL versions. The section *Routine Vacuuming* explains how VACUUM works and why it is required, see http://www.postgresql.org/docs/current/static/routine-vacuuming.html for the current PostgreSQL version.
+More details on this subject can be found in the PostgreSQL documentation. The page https://www.postgresql.org/docs/ contains links to the documentation for all PostgreSQL versions. The section *Routine Vacuuming* explains how VACUUM works and why it is required, see https://www.postgresql.org/docs/current/routine-vacuuming.html for the current PostgreSQL version.
 
 .. _PostgresSize:
 
@@ -498,7 +498,7 @@ The reason for autovacuuming not being triggered is then probably the default se
 
 In essence, this means that a VACUUM is only triggered when 20% of table size are obsolete. Consequently, the larger the table is, the less frequently VACUUM will be triggered by autovacuum. This make sense because vacuuming has a performance impact. While it is possible to override the autovacuum parameters on a table-by-table basis, it can then still be triggered at any time.
 
-To learn more details about autovacuum see https://www.postgresql.org/docs/current/static/routine-vacuuming.html#AUTOVACUUM
+To learn more details about autovacuum see https://www.postgresql.org/docs/current/routine-vacuuming.html#AUTOVACUUM
 
 The following example shows how to configure running VACUUM on the file table by using an admin-job in Bareos. The job will be scheduled to run at a time that should not run in parallel with normal backup jobs, here by scheduling it to run after the BackupCatalog job.
 

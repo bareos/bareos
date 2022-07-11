@@ -4,7 +4,7 @@ Issues tracked on Mantis
 bugs.bareos.org
 ---------------
 
-If you want to reference an issue that is tracked on https://bugs.bareos.org, the following formatting should be used:
+If you want to reference an issue that is tracked on https://bugs.bareos.org/, the following formatting should be used:
 
 .. literalinclude:: /DocumentationStyleGuide/example/mantis-issue.rst.inc
    :language: none

@@ -15,7 +15,7 @@ For the test-environment, we use the minimal defines required to run the tests.
 When interested in the cmake defines for the Bareos production packages,
 please refer to the corresponding build descriptions:
 
-  * Debian Packages: `debian/rules <https://github.com/bareos/bareos/blob/master/core/debian/rules>`__
+  * Debian Packages: `debian/rules <https://github.com/bareos/bareos/blob/master/debian/rules>`__
   * RPM Packages: `core/platforms/packaging/bareos.spec <https://github.com/bareos/bareos/blob/master/core/platforms/packaging/bareos.spec>`__
 
 
