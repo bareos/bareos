@@ -159,6 +159,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - improve troubleshooting and debugging chapter [PR #1233]
 - mssql: after PITR restore, a full backup is required [PR #1235]
 - mssql add a warning in case of pitr to run another backup full or diff afterwards [PR #1235]
+- docs: Added Developer FAQ section with first question. [PR #1202]
 
 [PR #698]: https://github.com/bareos/bareos/pull/698
 [PR #768]: https://github.com/bareos/bareos/pull/768
