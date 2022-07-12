@@ -31,3 +31,4 @@ Developer Guide
    DeveloperGuide/Python.rst
    DeveloperGuide/PythonBareos.rst
    DeveloperGuide/Webui.rst
+   DeveloperGuide/developerFaq.rst
