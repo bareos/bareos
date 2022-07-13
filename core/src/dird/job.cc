@@ -1476,6 +1476,10 @@ void CreateUniqueJobName(JobControlRecord* jcr, const char* base_name)
   bstrftime(dt, sizeof(dt), jcr->start_time, "%Y-%m-%d_%H.%M.%S");
 
   len = strlen(dt) + 5; /* dt + .%02d EOS */
+
+  const int R_JOB_prefix_length_psk_identity = 6;
+  len += R_JOB_prefix_length_psk_identity;  // Anticipating "R_JOB^" prefix
+                                            // addition for psk identity
   bstrncpy(name, base_name, sizeof(name));
   name[sizeof(name) - len] = 0; /* truncate if too long */
   Bsnprintf(jcr->Job, sizeof(jcr->Job), "%s.%s_%02d", name, dt,
