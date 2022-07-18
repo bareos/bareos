@@ -101,6 +101,15 @@ OS:
 
 
   SLE:
+    "15_SP4":
+      TYPE: rpm
+      IMAGE: sle154
+      ARCH:
+      - x86_64
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - python-bareos
     "15_SP3":
       TYPE: rpm
       IMAGE: sle153
