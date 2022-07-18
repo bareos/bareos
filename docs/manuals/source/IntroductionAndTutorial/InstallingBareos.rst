@@ -36,7 +36,8 @@ This will start a very basic Bareos installation which will regularly backup a d
 Decide about the Bareos release to use
 --------------------------------------
 
-You’ll find Bareos binary package repositories at https://download.bareos.org/bareos/. The stable releases are available at https://download.bareos.org/bareos/release/.
+You’ll find Bareos stable release binaries packages repositories at https://download.bareos.org/bareos/release.
+For those who have a valid subscription contract, the repositories are located at https://download.bareos.org/bareos/release/.
 
 The public key to verify the repository is also in repository directory (:file:`Release.key` for Debian based distributions, :file:`repodata/repomd.xml.key` for RPM based distributions).
 
@@ -56,8 +57,11 @@ The package **bareos** is only a meta package which contains dependencies on the
 
 The following code snippets are shell scripts that can be used as orientation how to download the package repositories and install bareos. The release version number for **bareos** and the corresponding Linux distribution have to be updated for your needs, respectively.
 
-**See** https://download.bareos.org/bareos/release/ **for applicable releases and distributions.**
+**See** https://download.bareos.org/bareos/release/ or https://download.bareos.com/bareos/release/ (subscription only) **for applicable releases and distributions.**
 See :ref:`section-UniversalLinuxClient` if your distribution is not present.
+
+To use the following code snippet if you have a subscription, you can declare your credentials
+
 
 Install on RedHat based Linux Distributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -75,7 +79,7 @@ Bareos :sinceVersion:`15.2.0: requires: jansson` requires the Jansson library pa
 On RHEL 7 it is available through the RHEL Server Optional channel.
 
 The EL_8 repository is intended for RHEL 8 derivates,
-like AlmaLinux, CentOS Stream, Oracle and Rocky Linux.
+like AlmaLinux, CentOS Stream, Oracle and Rocky Linux. Same rules apply for EL_9.
 
 
 .. code-block:: sh
@@ -83,23 +87,32 @@ like AlmaLinux, CentOS Stream, Oracle and Rocky Linux.
 
    #!/bin/sh
 
+   # Declare your credentials for subscription if you have
+   # USER=info_at_domain.sample
+   # PASSWORD=Super#Encrypted/Password
+
    # See https://download.bareos.org/bareos/release/
+   # or https://download.bareos.com/bareos/release/
    # for applicable releases and distributions
 
-   DIST=EL_8
+   DIST=EL_9
    # or
+   # DIST=RHEL_9
    # DIST=RHEL_8
+   # DIST=EL_9
+   # DIST=EL_8
    # DIST=RHEL_7
    # DIST=CentOS_7
+   # DIST=Fedora_36
    # DIST=Fedora_35
-   # DIST=Fedora_34
-
 
    RELEASE=release/21
    # RELEASE=experimental/nightly
 
    # add the Bareos repository
    URL=https://download.bareos.org/bareos/$RELEASE/$DIST
+   # or https://${USER}:${PASSWORD}@download.bareos.com/bareos/$RELEASE/$DIST
+
    wget -O /etc/yum.repos.d/bareos.repo $URL/bareos.repo
 
    # install Bareos packages
@@ -121,15 +134,20 @@ SUSE Linux Enterprise Server (SLES), openSUSE
 
    #!/bin/sh
 
+   # Declare your credentials for subscription if you have
+   # USER=info_at_domain.sample
+   # PASSWORD=Super#Encrypted/Password
+
    # See https://download.bareos.org/bareos/release/
+   # or https://download.bareos.com/bareos/release/
    # for applicable releases and distributions
 
-   DIST=SLE_15_SP3
+   DIST=SLE_15_SP4
    # or
-   # DIST=SLE_15_SP2
+   # DIST=SLE_15_SP3
    # DIST=SLE_12_SP5
+   # DIST=openSUSE_Leap_15.4
    # DIST=openSUSE_Leap_15.3
-   # DIST=openSUSE_Leap_15.2
 
    RELEASE=release/21
    # or
@@ -137,6 +155,7 @@ SUSE Linux Enterprise Server (SLES), openSUSE
 
    # add the Bareos repository
    URL=https://download.bareos.org/bareos/$RELEASE/$DIST
+   # or https://${USER}:${PASSWORD}@download.bareos.com/bareos/$RELEASE/$DIST
    zypper addrepo --refresh $URL/bareos.repo
 
    # install Bareos packages
@@ -161,13 +180,18 @@ Bareos :sinceVersion:`15.2.0: requires: jansson` requires the Jansson library pa
 
    #!/bin/sh
 
+   # Declare your credentials for subscription if you have
+   # USER=info_at_domain.sample
+   # PASSWORD=Super#Encrypted/Password
+
    # See https://download.bareos.org/bareos/release/
+   # or https://download.bareos.com/bareos/release/
    # for applicable releases and distributions
 
    DIST=Debian_11
    # or
    # DIST=Debian_10
-   # DIST=Debian_9.0
+   # DIST=xUbuntu_22.04
    # DIST=xUbuntu_20.04
    # DIST=xUbuntu_18.04
 
@@ -175,7 +199,9 @@ Bareos :sinceVersion:`15.2.0: requires: jansson` requires the Jansson library pa
    # or
    # RELEASE=experimental/nightly
 
+   # declare the Bareos repository
    URL=https://download.bareos.org/bareos/$RELEASE/$DIST
+   # or URL=https://${USER}:${PASSWORD}@download.bareos.com/bareos/$RELEASE/$DIST
 
    # add the Bareos repository
    wget -O /etc/apt/sources.list.d/bareos.list $URL/bareos.list
@@ -183,11 +209,16 @@ Bareos :sinceVersion:`15.2.0: requires: jansson` requires the Jansson library pa
    # add package key
    wget -q $URL/Release.key -O- | apt-key add -
 
+   # Alternate version without obsoleted apt-key usage
+   # wget -q $URL/Release.key -O- | gpg --dearmor -o /etc/keyrings.d/bareos.gpg
+   # sed -i -e 's#deb #deb [signed-by=/etc/keyrings.d/bareos.gpg] #' /etc/apt/sources.list.d/bareos.list
+
    # install Bareos packages
    apt-get update
    apt-get install bareos bareos-database-postgresql
 
 If you use the versions of Bareos directly integrated into the distributions, please note that there are some differences, see :ref:`section-DebianOrgLimitations`.
+
 
 
 .. _section-FreeBSD:
@@ -203,7 +234,12 @@ Install on FreeBSD based Distributions
 
    #!/bin/sh
 
+   # Declare your credentials for subscription if you have
+   # USER=info_at_domain.sample
+   # PASSWORD=Super#Encrypted/Password
+
    # See https://download.bareos.org/bareos/release/
+   # or https://download.bareos.com/bareos/release/
    # for applicable releases and distributions
 
    DIST=FreeBSD_13.0
@@ -214,7 +250,9 @@ Install on FreeBSD based Distributions
    # or
    # RELEASE=experimental/nightly
 
+   # add the Bareos repository
    URL=https://download.bareos.org/bareos/$RELEASE/$DIST
+   # or https://${USER}:${PASSWORD}@download.bareos.com/bareos/$RELEASE/$DIST
 
    # add the Bareos repository
    mkdir -p /usr/local/etc/pkg/repos
@@ -239,7 +277,7 @@ Install on FreeBSD based Distributions
    service bareos-sd start
    service bareos-fd start
 
-   
+
 .. _section-Solaris:
 
 Install on Oracle Solaris
@@ -307,7 +345,7 @@ The bareos filedaemon service on solaris is now ready for use.
 Install on Univention Corporate Server
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Bareos offers additional functionality and integration into an Univention Corporate Server environment. Please follow the intructions in :ref:`section-UniventionCorporateServer`.
+Bareos offers additional functionality and integration into an Univention Corporate Server environment. Please follow the instructions in :ref:`section-UniventionCorporateServer`.
 
 If you are not interested in this additional functionality, the commands described in :ref:`section-InstallBareosPackagesDebian` will also work for Univention Corporate Servers.
 
@@ -330,17 +368,10 @@ Since Bareos :sinceVersion:`14.2.0: dbconfig-common (Debian)` the Debian (and Ub
 Follow the instructions during install to configure it according to your needs.
 
 .. image:: /include/images/dbconfig-1-enable.*
-   :width: 45.0%
-
-.. image:: /include/images/dbconfig-2-select-database-type.*
-   :width: 45.0%
-
-
+   :width: 80.0%
 
 
 If you decide not to use **dbconfig-common** (selecting :strong:`<No>` on the initial dialog), follow the instructions for :ref:`section-CreateDatabaseOtherDistributions`.
-
-The selectable database backends depend on the **bareos-database-*** packages installed.
 
 For details see :ref:`section-dbconfig`.
 
@@ -371,7 +402,7 @@ Start the daemons
    systemctl start bareos-sd
    systemctl start bareos-fd
 
-Please remark, the Bareos Daemons need to have access to the ports 9101-9103.
+Please remark, the Bareos Daemons need to have access to the TCP ports 9101-9103.
 
 Now you should be able to log in to the director using the bconsole.
 
