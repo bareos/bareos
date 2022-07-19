@@ -206,7 +206,12 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1180]: https://github.com/bareos/bareos/pull/1180
 [PR #1183]: https://github.com/bareos/bareos/pull/1183
 [PR #1185]: https://github.com/bareos/bareos/pull/1185
+[PR #1187]: https://github.com/bareos/bareos/pull/1187
 [PR #1189]: https://github.com/bareos/bareos/pull/1189
 [PR #1192]: https://github.com/bareos/bareos/pull/1192
 [PR #1193]: https://github.com/bareos/bareos/pull/1193
+[PR #1197]: https://github.com/bareos/bareos/pull/1197
+[PR #1198]: https://github.com/bareos/bareos/pull/1198
+[PR #1200]: https://github.com/bareos/bareos/pull/1200
+[PR #1204]: https://github.com/bareos/bareos/pull/1204
 [unreleased]: https://github.com/bareos/bareos/tree/master
