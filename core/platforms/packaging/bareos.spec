@@ -233,7 +233,6 @@ BuildRequires: python3-devel >= 3.4
 
 BuildRequires: distribution-release
 BuildRequires: pwdutils
-BuildRequires: tcpd-devel
 BuildRequires: update-desktop-files
 BuildRequires: pkgconfig(libxml-2.0)
 BuildRequires: pkgconfig(json-c)
