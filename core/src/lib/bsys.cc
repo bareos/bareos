@@ -553,10 +553,10 @@ void WritePidFile(int pidfile_fd,
 #endif
 
 // Delete the pid file if we created it
-int DeletePidFile(const char* pidfile_path)
+int DeletePidFile(std::string pidfile_path)
 {
 #if !defined(HAVE_WIN32)
-  if (pidfile_path) { unlink(pidfile_path); }
+  if (!pidfile_path.empty()) { unlink(pidfile_path.c_str()); }
 #endif
   return 1;
 }

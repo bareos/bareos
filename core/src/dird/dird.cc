@@ -95,7 +95,7 @@ static bool test_config = false;
 struct resource_table_reference;
 static alist<resource_table_reference*>* reload_table = nullptr;
 
-static char* pidfile_path = nullptr;
+static std::string pidfile_path;
 
 /* Globals Imported */
 extern ResourceItem job_items[];
@@ -297,8 +297,8 @@ int main(int argc, char* argv[])
 
   int pidfile_fd = -1;
 #if !defined(HAVE_WIN32)
-  if (!test_config && !foreground && pidfile_path) {
-    pidfile_fd = CreatePidFile("bareos-dir", pidfile_path);
+  if (!test_config && !foreground && !pidfile_path.empty()) {
+    pidfile_fd = CreatePidFile("bareos-dir", pidfile_path.c_str());
   }
 #endif
   // See if we want to drop privs.

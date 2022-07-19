@@ -83,7 +83,7 @@ static void CleanUpOldFiles();
 extern "C" void* device_initialization(void* arg);
 
 /* Global static variables */
-static char* pidfile_path = nullptr;
+static std::string pidfile_path;
 
 
 /*********************************************************************
@@ -193,8 +193,8 @@ int main(int argc, char* argv[])
 
   int pidfile_fd = -1;
 #if !defined(HAVE_WIN32)
-  if (!foreground && !test_config && pidfile_path) {
-    pidfile_fd = CreatePidFile("bareos-sd", pidfile_path);
+  if (!foreground && !test_config && !pidfile_path.empty()) {
+    pidfile_fd = CreatePidFile("bareos-sd", pidfile_path.c_str());
   }
 #endif
 

@@ -21,6 +21,6 @@
 #ifndef BAREOS_LIB_DAEMON_H_
 #define BAREOS_LIB_DAEMON_H_
 
-void daemon_start(const char* progname, int pidfile_fd, char* pidfilepath);
+void daemon_start(const char* progname, int pidfile_fd, std::string pidfilepath);
 
 #endif  // BAREOS_LIB_DAEMON_H_
