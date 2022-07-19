@@ -142,7 +142,9 @@ void InitCLIApp(CLI::App& app, std::string description, int fsfyear)
 #ifdef HAVE_WIN32
   app.allow_windows_style_options();
 #endif
+  app.failure_message(CLI::FailureMessage::help);
 }
+
 
 void AddDebugOptions(CLI::App& app)
 {
