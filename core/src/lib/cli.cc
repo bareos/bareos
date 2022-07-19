@@ -180,5 +180,6 @@ void AddUserAndGroupOptions(CLI::App& app,
                             std::string& group)
 {
   app.add_option("-u,--user", user, "Run as given user")->type_name("<user>");
-  app.add_option("-g,--group", group, "Run as group")->type_name("<group>");
+  app.add_option("-g,--group", group, "Run as given group")
+      ->type_name("<group>");
 }

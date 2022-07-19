@@ -20,8 +20,11 @@ Options:
         Excludes: --pid-file
         Run in foreground. 
 
+    -u,--user <user>
+        Run as given user 
+
     -g,--group <group>
-        Run as group <group>. 
+        Run as given group 
 
     -m,--print-kaboom
         Print kaboom output (for debugging). 
@@ -39,9 +42,6 @@ Options:
 
     -s,--no-signals
         No signals (for debugging). 
-
-    -u,--user <user>
-        Run as given user <user>. 
 
     -v,--verbose
         Default: 0

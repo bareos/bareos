@@ -23,8 +23,11 @@ Options:
         Excludes: --pid-file
         Run in foreground (for debugging). 
 
+    -u,--user <user>
+        Run as given user 
+
     -g,--group <group>
-        Run as group <group> 
+        Run as given group 
 
     -k,--keep-readall
         Keep readall capabilities. 
@@ -45,9 +48,6 @@ Options:
 
     -s,--no-signals
         No signals (for debugging). 
-
-    -u,--user <user>
-        Run as given user <user> 
 
     -v,--verbose
         Default: 0
