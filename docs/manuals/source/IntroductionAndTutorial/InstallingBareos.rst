@@ -210,6 +210,7 @@ Bareos :sinceVersion:`15.2.0: requires: jansson` requires the Jansson library pa
    wget -q $URL/Release.key -O- | apt-key add -
 
    # Alternate version without obsoleted apt-key usage
+   # mkdir -p /etc/keyrings.d
    # wget -q $URL/Release.key -O- | gpg --dearmor -o /etc/keyrings.d/bareos.gpg
    # sed -i -e 's#deb #deb [signed-by=/etc/keyrings.d/bareos.gpg] #' /etc/apt/sources.list.d/bareos.list
 
