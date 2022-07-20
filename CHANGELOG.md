@@ -38,6 +38,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - dird: console: add the ability to rerun multiple commas separated jobids [PR #1170]
 - build: Add support for Ubuntu 22.04, Fedora 36, EL 9, openSUSE 15.4 [PR #1179]
 - tests: skip mysql tests if root [PR #1197]
+- build: Add support for SLE_15_SP4 [PR #1205]
 
 ### Fixed
 - python plugins: store architecture specific modules in sitearch (instead of sitelib) [PR #698]
