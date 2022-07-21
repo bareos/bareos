@@ -183,7 +183,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - fix config-dump systemtest [PR #736]
 - fix systemtests daemon control scripts [PR #762]
 - SQL: queries: fix sql queries to handle negative job duration value [PR #1201]
-
+- dird: fix TLS-PSK credential not found error with very long job names [PR #1208]
 
 ### Added
 - plugin: added mariabackup python plugin, added systemtest for mariabackup and updated systemtest for percona-xtrabackup [PR #967]
