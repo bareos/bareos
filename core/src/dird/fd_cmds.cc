@@ -198,6 +198,7 @@ static void SendInfoSuccess(JobControlRecord* jcr, UaContext* ua)
   switch (jcr->impl->connection_handshake_try_) {
     case ClientConnectionHandshakeMode::kTlsFirst:
       m += " Handshake: Immediate TLS,";
+      add_newline_in_joblog = true;
       break;
     case ClientConnectionHandshakeMode::kCleartextFirst:
       m += " Handshake: Cleartext,";
