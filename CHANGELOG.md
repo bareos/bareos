@@ -72,7 +72,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Fix director connects to client while `Connection From Director To Client` is disabled. [PR #1099]
 - dir: miscalculation when using `always incremental keep number` [PR #1159]
 - Windows Installer: made 'Director PotsgreSQL Backend Support' checked by default if 'Full PostgreSQL' installation selected. [PR #1185]
-- SQL: queries: fix sql queries to handle negative job duration value [PR 1198]
+- SQL: queries: fix sql queries to handle negative job duration value [PR #1198]
+- dird: fix TLS-PSK credential not found error with very long job names [PR #1204]
 
 ### Changed
 - contrib: rename Python modules to satisfy PEP8 [PR #768]
@@ -206,7 +207,12 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1180]: https://github.com/bareos/bareos/pull/1180
 [PR #1183]: https://github.com/bareos/bareos/pull/1183
 [PR #1185]: https://github.com/bareos/bareos/pull/1185
+[PR #1187]: https://github.com/bareos/bareos/pull/1187
 [PR #1189]: https://github.com/bareos/bareos/pull/1189
 [PR #1192]: https://github.com/bareos/bareos/pull/1192
 [PR #1193]: https://github.com/bareos/bareos/pull/1193
+[PR #1197]: https://github.com/bareos/bareos/pull/1197
+[PR #1198]: https://github.com/bareos/bareos/pull/1198
+[PR #1200]: https://github.com/bareos/bareos/pull/1200
+[PR #1204]: https://github.com/bareos/bareos/pull/1204
 [unreleased]: https://github.com/bareos/bareos/tree/master
