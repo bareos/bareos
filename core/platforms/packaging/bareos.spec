@@ -241,7 +241,6 @@ BuildRequires: python3-devel >= 3.4
 
 BuildRequires: distribution-release
 BuildRequires: pwdutils
-BuildRequires: tcpd-devel
 BuildRequires: update-desktop-files
 
 %if 0%{?suse_version} > 1010

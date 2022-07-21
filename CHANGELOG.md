@@ -10,6 +10,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Added
 - build: Add support for Ubuntu 22.04, Fedora 36, EL 9, openSUSE 15.4 [PR #1191]
+- build: Add support for SLE_15_SP4 [PR #1207]
 
 ### Changed
 - doc: clarifies CheckFileChanges option not intended to be used with plugin [BUG #1452][PR #1195]
