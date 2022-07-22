@@ -44,14 +44,20 @@ TEST(ConfigParser_Dir, bareos_configparser_tests)
   my_config->DumpResources(PrintMessage, NULL);
 
   auto backup = my_config->BackupResourceTable();
-
   my_config->ParseConfig();
+
   me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
   my_config->own_resource_ = me;
   ASSERT_NE(nullptr, me);
   my_config->RestoreResourceTable(std::move(backup));
   ASSERT_NE(nullptr, me);
+
+  // If a config already exists, BackupResourceTable() needs to be called before
+  // ParseConfig(), otherwise memory of the existing config is not freed
+  // completely
+  auto backup2 = my_config->BackupResourceTable();
   my_config->ParseConfig();
+
   me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
   my_config->own_resource_ = me;
   assert(me);
