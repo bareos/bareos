@@ -1,0 +1,48 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# Run jobs with Name exceeding 104 char length so jobname got truncated
+# while adding the 24 char suffix .2022-06-30_12:12:12_12
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+JobName=backup_data_longname_butalways_welldispatched-FROM-work_AND_work_-BLINDClusterPopTreePlatformXXLargeEnough
+long_name_log=$tmp/long_name_log.out
+
+# Run immediately the job before anything else so tls-psk cache is empty
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $long_name_log
+setdebug level=1000 client=bareos-fd trace=1
+setdebug level=1000 storage=File trace=1
+run job=$JobName yes
+status director
+status client
+status storage=File
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+expect_grep "Backup OK" \
+            "$long_name_log" \
+            "Job with long name failed."
+
+check_for_zombie_jobs storage=File
+
+end_test
