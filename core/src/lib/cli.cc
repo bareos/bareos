@@ -174,3 +174,11 @@ void AddNetworkDebuggingOption(CLI::App& app)
                  "Set file name.")
       ->group("");  // add it to empty group to hide the option from help
 }
+
+void AddUserAndGroupOptions(CLI::App& app,
+                            std::string& user,
+                            std::string& group)
+{
+  app.add_option("-u,--user", user, "Run as given user")->type_name("<user>");
+  app.add_option("-g,--group", group, "Run as group")->type_name("<group>");
+}
