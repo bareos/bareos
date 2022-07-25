@@ -449,9 +449,8 @@ int main(int argc, char* argv[])
   if (runjob) {
     JobControlRecord* jcr = PrepareJobToRun(runjob);
     if (jcr) { ExecuteJob(jcr); }
-  } else {
-    Scheduler::GetMainScheduler().Run();
   }
+  Scheduler::GetMainScheduler().Run();
 
   TerminateDird(0);
   return 0;
