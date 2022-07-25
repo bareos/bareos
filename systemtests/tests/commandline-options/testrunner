@@ -1,0 +1,105 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
+
+
+# Fill ${BackupDirectory} with data.
+setup_data
+
+# With this test we try to summon some of the forgotten options that are not
+# used in other systemtests.
+
+jobname=backup-bareos-fd
+
+start_test
+
+#Testing that -u and -g do not cause problems
+"${rscripts}"/bareos-ctl-dir start "-u randomuser -g randomgroup -d 100"
+"${rscripts}"/bareos-ctl-dir stop
+
+
+#Testing the creation and deletion of pid files with -p
+pid_file="${tmp}"/pid_file.out
+
+# Director
+
+"${rscripts}"/bareos-ctl-dir start "-p ${pid_file} -d 100" && sleep 5
+
+if [ ! -s "${pid_file}" ]; then
+    echo "Pid file was not written."
+    estat=1
+fi
+
+"${rscripts}"/bareos-ctl-dir stop
+
+if [ -s "${pid_file}" ]; then
+    echo "Pid file was not removed."
+    estat=2
+fi
+
+# Client
+
+"${rscripts}"/bareos-ctl-fd start "-p ${pid_file} -d 100" && sleep 5
+
+if [ ! -s "${pid_file}" ]; then
+    echo "Pid file was not written."
+    estat=3
+fi
+
+"${rscripts}"/bareos-ctl-fd stop
+
+if [ -s "${pid_file}" ]; then
+    echo "Pid file was not removed."
+    estat=4
+fi
+
+# Storage
+
+"${rscripts}"/bareos-ctl-sd start "-p ${pid_file} -d 100"  && sleep 5
+
+if [ ! -s "${pid_file}" ]; then
+    echo "Pid file was not written."
+    estat=5
+fi
+
+"${rscripts}"/bareos-ctl-sd stop
+
+if [ -s "${pid_file}" ]; then
+    echo "Pid file was not removed."
+    estat=6
+fi
+
+
+# Testing -r,--run-job
+runjob_log=$tmp/runjob_log.out
+
+"${rscripts}"/bareos-ctl-sd start
+"${rscripts}"/bareos-ctl-fd start
+"${rscripts}"/bareos-ctl-dir start "-r $jobname"
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $runjob_log
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+expect_grep "Backup OK" \
+            "$runjob_log" \
+            "Run job option (-r) was not successfully run."
+
+end_test

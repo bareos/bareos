@@ -1,0 +1,7 @@
+Console {
+  Name = bareos-mon
+  Description = "Restricted console used by tray-monitor to get the status of the director."
+  Password = "@mon_dir_password@"
+  CommandACL = status, .status
+  JobACL = *all*
+}
