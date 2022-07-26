@@ -75,6 +75,8 @@ static void ParseCommandLine(int argc, char* argv[], cl_opts& cl)
                 "Print configuration schema in JSON format and exit.")
       ->excludes(xc);
 
+  AddDeprecatedExportOptionsHelp(tray_monitor_app);
+
   tray_monitor_app.add_flag("--rc,--test-connection",
                             cl.do_connection_test_only_,
                             "Test connection only.");

@@ -13,7 +13,7 @@ Options:
     -D,--director <director>
         Specify director. 
 
-    -d,--debug-level <level>:NONNEGATIVE
+    -d,--debug-level <level>
         Set debug level to <level>. 
 
     --dt,--debug-timestamps

@@ -686,13 +686,9 @@ static bool SelectDirector(const char* director,
 
   LockRes(console::my_config);
   numdir = 0;
-  foreach_res (director_resource_tmp, R_DIRECTOR) {
-    numdir++;
-  }
+  foreach_res (director_resource_tmp, R_DIRECTOR) { numdir++; }
   numcon = 0;
-  foreach_res (console_resource_tmp, R_CONSOLE) {
-    numcon++;
-  }
+  foreach_res (console_resource_tmp, R_CONSOLE) { numcon++; }
   UnlockRes(my_config);
 
   if (numdir == 1) { /* No choose */
@@ -934,6 +930,8 @@ int main(int argc, char* argv[])
                 "Print configuration schema in JSON format and exit")
       ->excludes(xc);
 
+  AddDeprecatedExportOptionsHelp(console_app);
+
   AddNetworkDebuggingOption(console_app);
 
   CLI11_PARSE(console_app, argc, argv);
@@ -1150,9 +1148,7 @@ static int CheckResources()
   LockRes(my_config);
 
   numdir = 0;
-  foreach_res (director, R_DIRECTOR) {
-    numdir++;
-  }
+  foreach_res (director, R_DIRECTOR) { numdir++; }
 
   if (numdir == 0) {
     const std::string& configfile = my_config->get_base_config_path();

@@ -143,6 +143,8 @@ int main(int argc, char* argv[])
                 "Print configuration schema in JSON format and exit")
       ->excludes(xc);
 
+  AddDeprecatedExportOptionsHelp(fd_app);
+
   AddNetworkDebuggingOption(fd_app);
 
   CLI11_PARSE(fd_app, argc, argv);

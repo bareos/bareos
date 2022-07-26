@@ -25,7 +25,7 @@ Options:
         Specify a director name found in the storage. Configuration file for 
         the Key Encryption Key selection. 
 
-    -d,--debug-level <level>:NONNEGATIVE
+    -d,--debug-level <level>
         Set debug level to <level>. 
 
     --dt,--debug-timestamps

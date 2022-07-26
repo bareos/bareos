@@ -7,7 +7,7 @@ Options:
     --version
         Display program version information and exit 
 
-    -d,--debug-level <level>:NONNEGATIVE
+    -d,--debug-level <level>
         Set debug level to <level>. 
 
     --dt,--debug-timestamps
