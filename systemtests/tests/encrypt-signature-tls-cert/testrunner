@@ -19,6 +19,8 @@ JobName=backup-bareos-fd
 "${rscripts}"/cleanup
 "${rscripts}"/setup
 
+
+
 # Fill ${BackupDirectory} with data.
 setup_data
 
@@ -31,16 +33,18 @@ messages
 setdebug level=100 storage=File
 label volume=TestVolume001 storage=File pool=Full
 run job=$JobName yes
-wait
 status director
 status client
 status storage=File
+wait
 messages
 @#
 @# now do a restore
 @#
 @$out $tmp/log2.out
-restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done yes
+wait
+restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done
+yes
 wait
 messages
 quit
