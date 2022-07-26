@@ -88,8 +88,8 @@ like AlmaLinux, CentOS Stream, Oracle and Rocky Linux. Same rules apply for EL_9
    #!/bin/sh
 
    # Declare your credentials for subscription if you have
-   # USER=info_at_domain.sample
-   # PASSWORD=Super#Encrypted/Password
+   # BAREOS_USER=info_at_domain.example
+   # BAREOS_PASSWORD=Super#Encrypted/Password
 
    # See https://download.bareos.org/bareos/release/
    # or https://download.bareos.com/bareos/release/
@@ -135,8 +135,8 @@ SUSE Linux Enterprise Server (SLES), openSUSE
    #!/bin/sh
 
    # Declare your credentials for subscription if you have
-   # USER=info_at_domain.sample
-   # PASSWORD=Super#Encrypted/Password
+   # BAREOS_USER=info_at_domain.tld
+   # BAREOS_PASSWORD=Super#Encrypted/Password
 
    # See https://download.bareos.org/bareos/release/
    # or https://download.bareos.com/bareos/release/
@@ -181,11 +181,22 @@ Bareos :sinceVersion:`15.2.0: requires: jansson` requires the Jansson library pa
    #!/bin/sh
 
    # Declare your credentials for subscription if you have
-   # USER=info_at_domain.sample
-   # PASSWORD=Super#Encrypted/Password
+   # BAREOS_USER=info_at_domain.tld
+   # BAREOS_PASSWORD=Super#Encrypted/Password
 
-   # See https://download.bareos.org/bareos/release/
-   # or https://download.bareos.com/bareos/release/
+   # Choose repository to use
+   REPOSITORY=download.bareos.org
+   # REPOSITORY=download.bareos.com
+
+   # Subscriber only Setup credentials for apt auth
+   #cat <<EOF>/etc/apt/auth.conf.d/bareos.conf
+   #machine ${REPOSITORY} login ${BAREOS_USER} password ${BAREOS_PASSWORD}
+   #EOF
+   #chmod 0600 /etc/apt/auth.conf.d/bareos.conf
+   ## Copy the credentials to /root/.netrc for wget usage
+   #cat /etc/apt/auth.conf.d/bareos.conf >> /root/.netrc
+
+   # See ${REPOSITORY}/bareos/release
    # for applicable releases and distributions
 
    DIST=Debian_11
@@ -200,19 +211,16 @@ Bareos :sinceVersion:`15.2.0: requires: jansson` requires the Jansson library pa
    # RELEASE=experimental/nightly
 
    # declare the Bareos repository
-   URL=https://download.bareos.org/bareos/$RELEASE/$DIST
-   # or URL=https://${USER}:${PASSWORD}@download.bareos.com/bareos/$RELEASE/$DIST
+   URL=https://${REPOSITORY}/bareos/$RELEASE/$DIST
 
    # add the Bareos repository
-   wget -O /etc/apt/sources.list.d/bareos.list $URL/bareos.list
+   cat <<EOF>/etc/apt/sources.list.d/bareos.list
+   deb [signed-by=/etc/keyrings.d/bareos.gpg] ${URL} /
+   EOF
 
    # add package key
-   wget -q $URL/Release.key -O- | apt-key add -
-
-   # Alternate version without obsoleted apt-key usage
-   # mkdir -p /etc/keyrings.d
-   # wget -q $URL/Release.key -O- | gpg --dearmor -o /etc/keyrings.d/bareos.gpg
-   # sed -i -e 's#deb #deb [signed-by=/etc/keyrings.d/bareos.gpg] #' /etc/apt/sources.list.d/bareos.list
+   mkdir -p /etc/keyrings.d
+   wget -q $URL/Release.key -O- | gpg --dearmor -o /etc/keyrings.d/bareos.gpg
 
    # install Bareos packages
    apt-get update
