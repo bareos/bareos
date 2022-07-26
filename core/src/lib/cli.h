@@ -29,7 +29,7 @@ void InitCLIApp(CLI::App& app, std::string description, int fsfyear = 0);
 void AddDebugOptions(CLI::App& app);
 void AddVerboseOption(CLI::App& app);
 void AddNetworkDebuggingOption(CLI::App& app);
-void AddUserAndGroupOptions(CLI::App& app, std::string &uid, std::string &gid);
+void AddUserAndGroupOptions(CLI::App& app, std::string& uid, std::string& gid);
 void AddDeprecatedExportOptionsHelp(CLI::App& app);
 
 #endif  // BAREOS_LIB_CLI_H_
