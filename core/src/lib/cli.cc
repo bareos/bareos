@@ -24,6 +24,7 @@
 #include "lib/bnet_network_dump.h"
 #include "lib/version.h"
 #include "lib/message.h"
+#include "lib/edit.h"
 #include <regex>
 
 class BareosCliFormatter : public CLI::Formatter {
@@ -142,12 +143,44 @@ void InitCLIApp(CLI::App& app, std::string description, int fsfyear)
 #ifdef HAVE_WIN32
   app.allow_windows_style_options();
 #endif
+  app.failure_message(CLI::FailureMessage::help);
+}
+
+void AddDeprecatedExportOptionsHelp(CLI::App& app)
+{
+  app.add_option(
+         "-x",
+         [&app](std::vector<std::string> vals) {
+           app.failure_message(CLI::FailureMessage::simple);
+           throw CLI::ParseError(
+               "The -xc and -xs options have changed.\n"
+               "Use --xc and --xs as given in the help.",
+               CLI::ExitCodes::OptionNotFound);
+           return false;
+         },
+         "For deprecated -xs and -xc flags.")
+      ->group("");
 }
 
 void AddDebugOptions(CLI::App& app)
 {
-  app.add_option("-d,--debug-level", debug_level, "Set debug level to <level>.")
-      ->check(CLI::NonNegativeNumber)
+  app.add_option(
+         "-d,--debug-level",
+         [&app](std::vector<std::string> vals) {
+           if (Is_a_number(vals.front().c_str())) {
+             debug_level = stoi(vals.front());
+             return true;
+           } else if (vals.front() == "t") {
+             app.failure_message(CLI::FailureMessage::simple);
+             throw CLI::ParseError(
+                 "The -dt option has changed.\n"
+                 "Use --dt as given in the help.",
+                 CLI::ExitCodes::OptionNotFound);
+           }
+           return false;
+         },
+         "Set debug level to <level>.")
+      ->take_all()
       ->type_name("<level>");
 
   app.add_flag("--dt,--debug-timestamps", dbg_timestamp,
@@ -173,4 +206,16 @@ void AddNetworkDebuggingOption(CLI::App& app)
   app.add_option("--zf,--set-dump-filename", BnetDumpPrivate::filename_,
                  "Set file name.")
       ->group("");  // add it to empty group to hide the option from help
+}
+
+void AddUserAndGroupOptions(CLI::App& app,
+                            std::string& user,
+                            std::string& group)
+{
+  app.add_option("-u,--user", user,
+                 "Run as given user (requires starting as root)")
+      ->type_name("<user>");
+  app.add_option("-g,--group", group,
+                 "Run as given group (requires starting as root)")
+      ->type_name("<group>");
 }

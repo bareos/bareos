@@ -55,14 +55,12 @@ if [ -n "$libasan" ]; then
 fi
 
 output=/dev/null
-BAREOS_DIR_OPTIONS=""
 if is_debug; then
     export PAM_WRAPPER_DEBUGLEVEL=4
-    BAREOS_DIR_OPTIONS="-d 200"
     output=/dev/stdout
-    LD_PRELOAD="${preload_libs}" "${BAREOS_DIRECTOR_BINARY}" -c "${conf}" -f "${BAREOS_DIR_OPTIONS}" >$output 2>&1 &
+    LD_PRELOAD="${preload_libs}" "${BAREOS_DIRECTOR_BINARY}" -c "${conf}" -f -d 200 >$output 2>&1 &
 else
-    LD_PRELOAD="${preload_libs}" "${BAREOS_DIRECTOR_BINARY}" -c "${conf}" -f                       >$output 2>&1 &
+    LD_PRELOAD="${preload_libs}" "${BAREOS_DIRECTOR_BINARY}" -c "${conf}" -f        >$output 2>&1 &
 fi
 
 sleep 1

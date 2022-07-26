@@ -108,6 +108,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - make_catalog_backup.pl is now a shell wrapper script which will be removed in version 23.
 
 ### Removed
+- removed the `-r` run job option. [PR #1206]
 
 ### Security
 - webui: update jquery from v3.2.0 to v3.6.0 [PR #1083]

@@ -23,7 +23,7 @@ Options:
     -D,--driver TEXT
         Exists for backwards compatibility and is ignored. 
 
-    -d,--debug-level <level>:NONNEGATIVE
+    -d,--debug-level <level>
         Set debug level to <level>. 
 
     --dt,--debug-timestamps

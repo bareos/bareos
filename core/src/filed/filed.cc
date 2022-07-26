@@ -51,7 +51,7 @@ extern bool PrintMessage(void* sock, const char* fmt, ...);
 /* Forward referenced functions */
 static bool CheckResources();
 
-static char* pidfile_path = nullptr;
+static std::string pidfile_path{};
 
 /*********************************************************************
  *
@@ -97,9 +97,9 @@ int main(int argc, char* argv[])
   CLI::Option* foreground_option = fd_app.add_flag(
       "-f,--foreground", foreground, "Run in foreground (for debugging).");
 
-  char* gid = nullptr;
-  fd_app.add_option("-g,--group", gid, "Run as group <group>")
-      ->type_name("<group>");
+  std::string user;
+  std::string group;
+  AddUserAndGroupOptions(fd_app, user, group);
 
   bool keep_readall_caps = false;
   fd_app.add_flag("-k,--keep-readall", keep_readall_caps,
@@ -130,10 +130,6 @@ int main(int argc, char* argv[])
 
   fd_app.add_flag("-s,--no-signals", no_signals, "No signals (for debugging).");
 
-  char* uid = nullptr;
-  fd_app.add_option("-u,--user", uid, "Run as given user <user>")
-      ->type_name("<user>");
-
   AddVerboseOption(fd_app);
 
   bool export_config = false;
@@ -147,23 +143,37 @@ int main(int argc, char* argv[])
                 "Print configuration schema in JSON format and exit")
       ->excludes(xc);
 
+  AddDeprecatedExportOptionsHelp(fd_app);
+
   AddNetworkDebuggingOption(fd_app);
 
   CLI11_PARSE(fd_app, argc, argv);
 
-  if (!uid && keep_readall_caps) {
+  if (user.empty() && keep_readall_caps) {
     Emsg0(M_ERROR_TERM, 0, _("-k option has no meaning without -u option.\n"));
   }
 
   int pidfile_fd = -1;
 #if !defined(HAVE_WIN32)
-  if (!foreground && !test_config && pidfile_path) {
-    pidfile_fd = CreatePidFile("bareos-fd", pidfile_path);
+  if (!foreground && !test_config && !pidfile_path.empty()) {
+    pidfile_fd = CreatePidFile("bareos-fd", pidfile_path.c_str());
   }
 #endif
 
   // See if we want to drop privs.
-  if (geteuid() == 0) { drop(uid, gid, keep_readall_caps); }
+  char* uid = nullptr;
+  if (!user.empty()) { uid = user.data(); }
+
+  char* gid = nullptr;
+  if (!group.empty()) { gid = group.data(); }
+
+  if (geteuid() == 0) {
+    drop(uid, gid, keep_readall_caps);
+  } else if (uid || gid) {
+    Emsg2(M_ERROR_TERM, 0,
+          _("The commandline options indicate to run as specified user/group, "
+            "but program was not started with required root privileges.\n"));
+  }
 
   if (!no_signals) {
     InitSignals(TerminateFiled);

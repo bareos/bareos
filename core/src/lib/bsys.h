@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -45,7 +45,7 @@ int CreatePidFile(const char* progname, const char* pidfile_path);
 void WritePidFile(int pidfile_fd,
                   const char* pidfile_path,
                   const char* progname);
-int DeletePidFile(const char* pidfile_path);
+int DeletePidFile(std::string pidfile_path);
 void drop(char* uid, char* gid, bool keep_readall_caps);
 int Bmicrosleep(int32_t sec, int32_t usec);
 char* bfgets(char* s, int size, FILE* fd);

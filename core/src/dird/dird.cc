@@ -76,7 +76,6 @@ static bool CheckResources();
 static bool InitializeSqlPooling(void);
 static void CleanUpOldFiles();
 static bool InitSighandlerSighup();
-static JobControlRecord* PrepareJobToRun(const char* job_name);
 
 /* Exported subroutines */
 extern bool ParseDirConfig(const char* configfile, int exit_code);
@@ -90,12 +89,11 @@ void StoreReplace(LEX* lc, ResourceItem* item, int index, int pass);
 void StoreMigtype(LEX* lc, ResourceItem* item, int index, int pass);
 void InitDeviceResources();
 
-static char* runjob = nullptr;
 static bool test_config = false;
 struct resource_table_reference;
 static alist<resource_table_reference*>* reload_table = nullptr;
 
-static char* pidfile_path = nullptr;
+static std::string pidfile_path;
 
 /* Globals Imported */
 extern ResourceItem job_items[];
@@ -221,9 +219,9 @@ int main(int argc, char* argv[])
   CLI::Option* foreground_option
       = dir_app.add_flag("-f,--foreground", foreground, "Run in foreground.");
 
-  char* gid = nullptr;
-  dir_app.add_option("-g,--group", gid, "Run as group <group>.")
-      ->type_name("<group>");
+  std::string user;
+  std::string group;
+  AddUserAndGroupOptions(dir_app, user, group);
 
   dir_app.add_flag("-m,--print-kaboom", prt_kaboom,
                    "Print kaboom output (for debugging).");
@@ -244,24 +242,9 @@ int main(int argc, char* argv[])
   (void)foreground_option;
 #endif
 
-  dir_app
-      .add_option(
-          "-r,--run-job",
-          [](std::vector<std::string> val) {
-            if (runjob != nullptr) { free(runjob); }
-            runjob = strdup(val.front().c_str());
-            return true;
-          },
-          "Run specified job <job> now.")
-      ->type_name("<job>");
-
   bool no_signals = false;
   dir_app.add_flag("-s,--no-signals", no_signals,
                    "No signals (for debugging).");
-
-  char* uid = nullptr;
-  dir_app.add_option("-u,--user", uid, "Run as given user <user>.")
-      ->type_name("<user>");
 
   AddVerboseOption(dir_app);
 
@@ -293,6 +276,8 @@ int main(int argc, char* argv[])
                 "Print configuration schema in JSON format and exit.")
       ->excludes(xc);
 
+  AddDeprecatedExportOptionsHelp(dir_app);
+
   AddNetworkDebuggingOption(dir_app);
 
   CLI11_PARSE(dir_app, argc, argv);
@@ -301,13 +286,23 @@ int main(int argc, char* argv[])
 
   int pidfile_fd = -1;
 #if !defined(HAVE_WIN32)
-  if (!test_config && !foreground && pidfile_path) {
-    pidfile_fd = CreatePidFile("bareos-dir", pidfile_path);
+  if (!test_config && !foreground && !pidfile_path.empty()) {
+    pidfile_fd = CreatePidFile("bareos-dir", pidfile_path.c_str());
   }
 #endif
   // See if we want to drop privs.
+  char* uid = nullptr;
+  if (!user.empty()) { uid = user.data(); }
+
+  char* gid = nullptr;
+  if (!group.empty()) { gid = group.data(); }
+
   if (geteuid() == 0) {
     drop(uid, gid, false); /* reduce privileges if requested */
+  } else if (uid || gid) {
+    Emsg2(M_ERROR_TERM, 0,
+          _("The commandline options indicate to run as specified user/group, "
+            "but program was not started with required root privileges.\n"));
   }
 
   my_config = InitDirConfig(configfile, M_ERROR_TERM);
@@ -438,12 +433,7 @@ int main(int argc, char* argv[])
 
   Dmsg0(200, "wait for next job\n");
 
-  if (runjob) {
-    JobControlRecord* jcr = PrepareJobToRun(runjob);
-    if (jcr) { ExecuteJob(jcr); }
-  } else {
-    Scheduler::GetMainScheduler().Run();
-  }
+  Scheduler::GetMainScheduler().Run();
 
   TerminateDird(0);
   return 0;
@@ -485,7 +475,6 @@ static
   Scheduler::GetMainScheduler().Terminate();
   TermJobServer();
 
-  if (runjob) { free(runjob); }
   if (configfile != nullptr) { free(configfile); }
   if (my_config) {
     delete my_config;
@@ -868,20 +857,6 @@ static bool InitializeSqlPooling(void)
 
 bail_out:
   return retval;
-}
-
-static JobControlRecord* PrepareJobToRun(const char* job_name)
-{
-  JobResource* job
-      = static_cast<JobResource*>(my_config->GetResWithName(R_JOB, job_name));
-  if (!job) {
-    Emsg1(M_ERROR, 0, _("Job %s not found\n"), job_name);
-    return nullptr;
-  }
-  Dmsg1(5, "Found job_name %s\n", job_name);
-  JobControlRecord* jcr = NewDirectorJcr();
-  SetJcrDefaults(jcr, job);
-  return jcr;
 }
 
 static void CleanUpOldFiles()

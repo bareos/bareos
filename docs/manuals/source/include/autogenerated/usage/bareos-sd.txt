@@ -10,7 +10,7 @@ Options:
     -c,--config <path>:PATH(existing)
         Use <path> as configuration file or directory. 
 
-    -d,--debug-level <level>:NONNEGATIVE
+    -d,--debug-level <level>
         Set debug level to <level>. 
 
     --dt,--debug-timestamps
@@ -20,8 +20,11 @@ Options:
         Excludes: --pid-file
         Run in foreground (for debugging). 
 
+    -u,--user <user>
+        Run as given user (requires starting as root) 
+
     -g,--group <group>
-        Run as group 
+        Run as given group (requires starting as root) 
 
     -m,--print-kaboom
         Print kaboom output (for debugging). 
@@ -39,9 +42,6 @@ Options:
 
     -s,--no-signals
         No signals (for debugging). 
-
-    -u,--user <user>
-        Run as given user 
 
     -v,--verbose
         Default: 0
