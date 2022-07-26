@@ -37,9 +37,6 @@ Options:
         Excludes: --foreground --test-config
         Full path to pidfile (default: none). 
 
-    -r,--run-job <job>
-        Run specified job <job> now. 
-
     -s,--no-signals
         No signals (for debugging). 
 

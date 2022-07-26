@@ -14,7 +14,6 @@ export TestName
 "${rscripts}"/cleanup
 "${rscripts}"/setup
 
-
 # Fill ${BackupDirectory} with data.
 setup_data
 
@@ -80,26 +79,5 @@ if [ -s "${pid_file}" ]; then
     echo "Pid file was not removed."
     estat=6
 fi
-
-
-# Testing -r,--run-job
-runjob_log=$tmp/runjob_log.out
-
-"${rscripts}"/bareos-ctl-sd start
-"${rscripts}"/bareos-ctl-fd start
-"${rscripts}"/bareos-ctl-dir start "-r $jobname"
-
-cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out $runjob_log
-wait
-messages
-quit
-END_OF_DATA
-
-run_bconsole
-
-expect_grep "Backup OK" \
-            "$runjob_log" \
-            "Run job option (-r) was not successfully run."
 
 end_test
