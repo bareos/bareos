@@ -74,6 +74,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Windows Installer: made 'Director PotsgreSQL Backend Support' checked by default if 'Full PostgreSQL' installation selected. [PR #1185]
 - SQL: queries: fix sql queries to handle negative job duration value [PR #1198]
 - dird: fix TLS-PSK credential not found error with very long job names [PR #1204]
+- dird: Add missing newline to job message for TLS handshake [PR #1209]
 
 ### Changed
 - contrib: rename Python modules to satisfy PEP8 [PR #768]
@@ -215,4 +216,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1198]: https://github.com/bareos/bareos/pull/1198
 [PR #1200]: https://github.com/bareos/bareos/pull/1200
 [PR #1204]: https://github.com/bareos/bareos/pull/1204
+[PR #1205]: https://github.com/bareos/bareos/pull/1205
+[PR #1209]: https://github.com/bareos/bareos/pull/1209
 [unreleased]: https://github.com/bareos/bareos/tree/master
