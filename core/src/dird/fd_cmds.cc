@@ -197,7 +197,6 @@ static void SendInfoSuccess(JobControlRecord* jcr, UaContext* ua)
   switch (jcr->impl->connection_handshake_try_) {
     case ClientConnectionHandshakeMode::kTlsFirst:
       m += " Handshake: Immediate TLS,";
-      add_newline_in_joblog = true;
       break;
     case ClientConnectionHandshakeMode::kCleartextFirst:
       m += " Handshake: Cleartext,";
@@ -212,7 +211,7 @@ static void SendInfoSuccess(JobControlRecord* jcr, UaContext* ua)
     std::replace(m1.begin(), m1.end(), '\r', ' ');
     std::replace(m1.begin(), m1.end(), '\v', ' ');
     std::replace(m1.begin(), m1.end(), ',', ' ');
-    m1 += std::string("\n"); 
+    m1 += std::string("\n");
     Jmsg(jcr, M_INFO, 0, m1.c_str());
   }
   if (ua) { /* only whith console connection */
