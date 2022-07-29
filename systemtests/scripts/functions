@@ -495,6 +495,16 @@ run_bscan_db()
   run_bscan -n "$db_name" -u "$db_user" -P "$db_password" "$@"
 }
 
+run_bcopy()
+{
+   print_debug "bcopyning with ${BAREOS_BCOPY_BINARY}"
+   if test "$debug" -eq 1 ; then
+      "${BAREOS_BCOPY_BINARY}" -c "${conf}" "$@" </dev/null | tee "${tmp}/bcopy.out"
+   else
+      "${BAREOS_BCOPY_BINARY}" -c "${conf}" "$@" </dev/null 2>&1 >"${tmp}/bcopy.out"
+   fi
+}
+
 kill_process() {
   if [ "$1" -gt 0 ] && kill -0 "$1" 2>/dev/null; then
     kill -TERM "$1"
