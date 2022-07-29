@@ -242,11 +242,12 @@ int main(int argc, char* argv[])
 
   Pmsg2(000, _("%u Jobs copied. %u records copied.\n"), jobs, records);
 
-  delete in_dev;
-  delete out_dev;
 
   FreeJcr(in_jcr);
   FreeJcr(out_jcr);
+
+  delete in_dev;
+  delete out_dev;
 
   return 0;
 }

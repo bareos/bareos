@@ -33,6 +33,7 @@ messages
 @$out $tmp/log1.out
 setdebug level=100 storage=File
 label volume=TestVolume001 storage=File pool=Full
+label volume=TestVolume002 storage=File pool=Full
 run job=$JobName yes
 status director
 status client
@@ -124,6 +125,27 @@ if [ "$my_jobid_records" -ne "$total_jobid_records" ]; then
   exit 1
 fi
 
+# use bcopy to copy the job and extract it afterwards to verify copy is verbatim
+# TestVolume 002 is the target volume for the copy operation
+run_bcopy -v -i TestVolume001  -o TestVolume002  FileStorage FileStorage2
+
+rm -rf "$tmp/bareos-restores"
+mkdir -p  "$tmp/bareos-restores"
+run_bextract -vv -V TestVolume002 FileStorage2 "$tmp/bareos-restores"
+ret=$?
+
+if [ $ret -ne 0 ]; then
+  echo "bextract exit code: $ret"
+  stop_bareos
+  exit $ret
+else
+  find "$tmp/bareos-restores"
+  check_restore_diff "${BackupDirectory}" # check extracted files
+  mv "$tmp/bareos-restores" "$tmp/bextract-restores" # move extracted files away
+  mkdir -p  "$tmp/bareos-restores"
+fi
+
+
 cat <<END_OF_DATA >"$tmp/bconcmds2"
 @#
 @# now do a restore
@@ -139,7 +161,10 @@ END_OF_DATA
 
 run_bconsole "$tmp/bconcmds2"
 
-run_bcopy -v -i TestVolume001  -o TestVolume002  FileStorage FileStorage2
+
+
+
+
 
 check_for_zombie_jobs storage=File
 

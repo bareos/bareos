@@ -497,9 +497,9 @@ run_bscan_db()
 
 run_bcopy()
 {
-   print_debug "bcopyning with ${BAREOS_BCOPY_BINARY}"
+   print_debug "bcopying with ${BAREOS_BCOPY_BINARY}"
    if test "$debug" -eq 1 ; then
-      "${BAREOS_BCOPY_BINARY}" -c "${conf}" "$@" </dev/null | tee "${tmp}/bcopy.out"
+      "${BAREOS_BCOPY_BINARY}" -c "${conf}" -d 500 "$@" </dev/null | tee "${tmp}/bcopy.out"
    else
       "${BAREOS_BCOPY_BINARY}" -c "${conf}" "$@" </dev/null 2>&1 >"${tmp}/bcopy.out"
    fi
