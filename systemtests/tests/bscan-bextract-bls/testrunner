@@ -138,6 +138,9 @@ quit
 END_OF_DATA
 
 run_bconsole "$tmp/bconcmds2"
+
+run_bcopy -v -i TestVolume001  -o TestVolume002  FileStorage FileStorage2
+
 check_for_zombie_jobs storage=File
 
 stop_bareos
