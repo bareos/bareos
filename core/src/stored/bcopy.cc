@@ -94,15 +94,10 @@ int main(int argc, char* argv[])
       ->check(CLI::ExistingFile)
       ->type_name("<bootstrap>");
 
+  std::string configfile;
   bcopy_app
-      .add_option(
-          "-c,--config",
-          [](std::vector<std::string> val) {
-            if (configfile != nullptr) { free(configfile); }
-            configfile = strdup(val.front().c_str());
-            return true;
-          },
-          "Use <path> as configuration file or directory.")
+      .add_option("-c,--config", configfile,
+                  "Use <path> as configuration file or directory.")
       ->check(CLI::ExistingPath)
       ->type_name("<path>");
 
@@ -171,8 +166,8 @@ int main(int argc, char* argv[])
 
   working_directory = work_dir.c_str();
 
-  my_config = InitSdConfig(configfile, M_ERROR_TERM);
-  ParseSdConfig(configfile, M_ERROR_TERM);
+  my_config = InitSdConfig(configfile.c_str(), M_ERROR_TERM);
+  ParseSdConfig(configfile.c_str(), M_ERROR_TERM);
 
   DirectorResource* director = nullptr;
   if (!DirectorName.empty()) {
@@ -183,7 +178,7 @@ int main(int argc, char* argv[])
       Emsg2(
           M_ERROR_TERM, 0,
           _("No Director resource named %s defined in %s. Cannot continue.\n"),
-          DirectorName, configfile);
+          DirectorName.c_str(), configfile.c_str());
     }
   }
 
