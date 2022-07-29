@@ -35,7 +35,7 @@ while "${SUDO}" mount | grep "${tmp}/data" >/dev/null 2>&1; do
 done
 }
 
-
+trap umount_glusterfs EXIT
 
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions

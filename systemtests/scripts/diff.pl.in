@@ -52,7 +52,7 @@ my $md5 = Digest::MD5->new;
 
 my $dir = getcwd;
 
-chdir($src) or die "ERROR: Can't access to $src";
+chdir($src) or die "ERROR: Can't access to $src : $!";
 $hash = \%src_attr;
 find(\&wanted_src, '.');
 
@@ -63,7 +63,7 @@ if ($wattr) {
 
 chdir ($dir);
 
-chdir($dst) or die "ERROR: Can't access to $dst";
+chdir($dst) or die "ERROR: Can't access to $dst : $!";
 $hash = \%dst_attr;
 find(\&wanted_src, '.');
 
