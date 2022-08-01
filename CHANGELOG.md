@@ -14,6 +14,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Changed
 - doc: clarifies CheckFileChanges option not intended to be used with plugin [BUG #1452][PR #1195]
+- config parser: Refactor config reloading by using shared pointers instead of callbacks [PR #1214]
 
 ### Security
 
