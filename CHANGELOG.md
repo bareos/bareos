@@ -18,7 +18,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Security
 
 ### Documentation
-
+- doc: backport FIPS section in security [PR #1212]
 
 
 ## [21.1.3] - 2022-05-09
