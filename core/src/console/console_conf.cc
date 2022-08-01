@@ -35,8 +35,8 @@
 
 namespace console {
 
-static BareosResource* sres_head[R_NUM];
-static BareosResource** res_head = sres_head;
+/* static BareosResource* sres_head[R_NUM]; */
+/* static BareosResource** res_head = sres_head; */
 
 static bool SaveResource(int type, ResourceItem* items, int pass);
 static void FreeResource(BareosResource* sres, int type);
@@ -262,7 +262,7 @@ ConfigurationParser* InitConsConfig(const char* configfile, int exit_code)
 {
   ConfigurationParser* config = new ConfigurationParser(
       configfile, nullptr, nullptr, nullptr, nullptr, nullptr, exit_code, R_NUM,
-      resources, res_head, default_config_filename.c_str(), "bconsole.d",
+      resources, default_config_filename.c_str(), "bconsole.d",
       ConfigBeforeCallback, ConfigReadyCallback, SaveResource, DumpResource,
       FreeResource);
   if (config) { config->r_own_ = R_CONSOLE; }

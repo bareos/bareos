@@ -168,9 +168,9 @@ int main(int argc, char* argv[])
   CLI::Option* foreground_option
       = dir_app.add_flag("-f,--foreground", foreground, "Run in foreground.");
 
-  std::string user;
-  std::string group;
-  AddUserAndGroupOptions(dir_app, user, group);
+  char* gid = nullptr;
+  dir_app.add_option("-g,--group", gid, "Run as group <group>.")
+      ->type_name("<group>");
 
   dir_app.add_flag("-m,--print-kaboom", prt_kaboom,
                    "Print kaboom output (for debugging).");
@@ -194,6 +194,10 @@ int main(int argc, char* argv[])
   bool no_signals = false;
   dir_app.add_flag("-s,--no-signals", no_signals,
                    "No signals (for debugging).");
+
+  char* uid = nullptr;
+  dir_app.add_option("-u,--user", uid, "Run as given user <user>.")
+      ->type_name("<user>");
 
   AddVerboseOption(dir_app);
 
@@ -239,19 +243,8 @@ int main(int argc, char* argv[])
     pidfile_fd = CreatePidFile("bareos-dir", pidfile_path.c_str());
   }
 #endif
-  // See if we want to drop privs.
-  char* uid = nullptr;
-  if (!user.empty()) { uid = user.data(); }
-
-  char* gid = nullptr;
-  if (!group.empty()) { gid = group.data(); }
-
   if (geteuid() == 0) {
-    drop(uid, gid, false); /* reduce privileges if requested */
-  } else if (uid || gid) {
-    Emsg2(M_ERROR_TERM, 0,
-          _("The commandline options indicate to run as specified user/group, "
-            "but program was not started with required root privileges.\n"));
+    drop(uid, gid, false);  // reduce privileges if requested
   }
 
   my_config = InitDirConfig(configfile, M_ERROR_TERM);
@@ -509,7 +502,6 @@ bool DoReloadConfig()
   DbSqlPoolFlush();
 
   my_config->BackupResourceTable();
-  my_config->ClearResourceTables();
   Dmsg0(100, "Reloading config file\n");
 
 
@@ -525,19 +517,17 @@ bool DoReloadConfig()
     reloaded = true;
 
     SetWorkingDirectory(me->working_directory);
-    Dmsg0(10, "Director's configuration file reread.\n");
-
-    // remove our reference to current config so it will be freed when last job
-    // owning it finishes
-    my_config->ResetResHeadContainerPrevious();
+    Dmsg0(10, "Director's configuration file reread successfully.\n");
+    Dmsg0(10, "Releasing previous configuration resource table.\n");
+    my_config->ReleasePreviousResourceTable();
 
     StartStatisticsThread();
 
   } else {  // parse config failed
     Jmsg(nullptr, M_ERROR, 0, _("Please correct the configuration in %s\n"),
          my_config->get_base_config_path().c_str());
-    Jmsg(nullptr, M_ERROR, 0, _("Resetting to previous configuration.\n"));
 
+    Jmsg(nullptr, M_ERROR, 0, _("Resetting to previous configuration.\n"));
     my_config->RestoreResourceTable();
     // me is changed above by CheckResources()
     me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);

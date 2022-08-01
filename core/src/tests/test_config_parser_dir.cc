@@ -35,7 +35,6 @@ namespace directordaemon {
 TEST(ConfigParser_Dir, bareos_configparser_tests)
 {
   OSDependentInit();
-
   std::string path_to_config_file = std::string(
       RELATIVE_PROJECT_SOURCE_DIR "/configs/bareos-configparser-tests");
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
@@ -43,14 +42,11 @@ TEST(ConfigParser_Dir, bareos_configparser_tests)
   my_config->DumpResources(PrintMessage, NULL);
 
   ASSERT_EQ(true, my_config->BackupResourceTable());
+
   my_config->ParseConfig();
   me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
   my_config->own_resource_ = me;
-
   ASSERT_NE(nullptr, me);
-  my_config->DumpResources(PrintMessage, NULL);
-  ASSERT_NE(nullptr, me);
-
   ASSERT_EQ(true, my_config->RestoreResourceTable());
   ASSERT_NE(nullptr, me);
   my_config->ParseConfig();
@@ -61,11 +57,9 @@ TEST(ConfigParser_Dir, bareos_configparser_tests)
   ASSERT_NE(nullptr, me);
   my_config->DumpResources(PrintMessage, NULL);
   ASSERT_NE(nullptr, me);
-
   delete my_config;
 }
 
-#if 0
 TEST(ConfigParser_Dir, runscript_test)
 {
   OSDependentInit();
@@ -159,9 +153,9 @@ void test_CFG_TYPE_STR_VECTOR_OF_DIRS(DirectorResource* me)
    *  but this is later overwritten in the Director Daemon with ".".
    *  Therefore we skip this test.
    */
-#  if !defined(HAVE_WIN32)
+#if !defined(HAVE_WIN32)
   EXPECT_EQ(me->backend_directories.at(0), PATH_BAREOS_BACKENDDIR);
-#  endif
+#endif
 }
 
 TEST(ConfigParser_Dir, CFG_TYPE_STR_VECTOR_OF_DIRS)
@@ -253,5 +247,4 @@ TEST(ConfigParser_Dir, CFG_TYPE_TIME)
 {
   test_config_directive_type(test_CFG_TYPE_TIME);
 }
-#endif
 }  // namespace directordaemon
