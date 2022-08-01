@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -194,17 +194,15 @@ static void SendInfoSuccess(JobControlRecord* jcr, UaContext* ua)
       == ClientConnectionHandshakeMode::kUndefined) {
     m += "\r\v";
   }
-  bool add_newline_in_joblog = false;
   switch (jcr->impl->connection_handshake_try_) {
     case ClientConnectionHandshakeMode::kTlsFirst:
       m += " Handshake: Immediate TLS,";
       break;
     case ClientConnectionHandshakeMode::kCleartextFirst:
       m += " Handshake: Cleartext,";
-      add_newline_in_joblog = true;
       break;
     default:
-      m += " unknown mode\n";
+      m += " Handshake: Unknown mode";
       break;
   }
 
@@ -213,7 +211,7 @@ static void SendInfoSuccess(JobControlRecord* jcr, UaContext* ua)
     std::replace(m1.begin(), m1.end(), '\r', ' ');
     std::replace(m1.begin(), m1.end(), '\v', ' ');
     std::replace(m1.begin(), m1.end(), ',', ' ');
-    if (add_newline_in_joblog) { m1 += std::string("\n"); }
+    m1 += std::string("\n");
     Jmsg(jcr, M_INFO, 0, m1.c_str());
   }
   if (ua) { /* only whith console connection */
