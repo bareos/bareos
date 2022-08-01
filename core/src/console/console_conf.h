@@ -44,7 +44,7 @@ enum
 {
   R_CONSOLE = 0,
   R_DIRECTOR,
-  R_NUM  /* number of entries */
+  R_NUM /* number of entries */
 };
 
 enum
