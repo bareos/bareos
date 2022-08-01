@@ -294,9 +294,8 @@ int main(int argc, char* argv[])
     pidfile_fd = CreatePidFile("bareos-dir", pidfile_path);
   }
 #endif
-  // See if we want to drop privs.
   if (geteuid() == 0) {
-    drop(uid, gid, false); /* reduce privileges if requested */
+    drop(uid, gid, false);  // reduce privileges if requested
   }
 
   if (export_config_schema) {
@@ -558,7 +557,6 @@ bool DoReloadConfig()
   DbSqlPoolFlush();
 
   my_config->BackupResourceTable();
-  my_config->ClearResourceTables();
   Dmsg0(100, "Reloading config file\n");
 
 
@@ -574,19 +572,17 @@ bool DoReloadConfig()
     reloaded = true;
 
     SetWorkingDirectory(me->working_directory);
-    Dmsg0(10, "Director's configuration file reread.\n");
-
-    // remove our reference to current config so it will be freed when last job
-    // owning it finishes
-    my_config->ResetResHeadContainerPrevious();
+    Dmsg0(10, "Director's configuration file reread successfully.\n");
+    Dmsg0(10, "Releasing previous configuration resource table.\n");
+    my_config->ReleasePreviousResourceTable();
 
     StartStatisticsThread();
 
   } else {  // parse config failed
     Jmsg(nullptr, M_ERROR, 0, _("Please correct the configuration in %s\n"),
          my_config->get_base_config_path().c_str());
-    Jmsg(nullptr, M_ERROR, 0, _("Resetting to previous configuration.\n"));
 
+    Jmsg(nullptr, M_ERROR, 0, _("Resetting to previous configuration.\n"));
     my_config->RestoreResourceTable();
     // me is changed above by CheckResources()
     me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);

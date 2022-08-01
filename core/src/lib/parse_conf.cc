@@ -151,20 +151,6 @@ ConfigurationParser::ConfigurationParser(
   DumpResourceCb_ = DumpResourceCb;
   FreeResourceCb_ = FreeResourceCb;
 }
-
-// remove our shared pointer to previous configuration so that it will be freed
-// when last job owning is done
-void ConfigurationParser::ResetResHeadContainerPrevious()
-{
-  // res_head_container_previous_ = nullptr;
-}
-
-void ConfigurationParser::RestorePreviousConfig()
-{
-  // res_head_container_ = std::move(res_head_container_previous_);
-}
-
-
 ConfigurationParser::~ConfigurationParser()
 {
 #if 0
@@ -540,6 +526,24 @@ bool ConfigurationParser::FindConfigPath(PoolMem& full_path)
 }
 
 
+// remove our shared pointer to previous configuration so that it will be freed
+// when last job owning is done
+void ConfigurationParser::ReleasePreviousResourceTable()
+{
+  Dmsg1(0, "ConfigurationParser::ReleasePreviousResourceTable: %p\n",
+        res_head_container_previous_->res_head_);
+  res_head_container_previous_ = nullptr;
+}
+
+#if 0
+void ConfigurationParser::RestorePreviousConfig()
+{
+  //  res_head_container_ = std::move(res_head_container_previous_);
+}
+
+#endif
+
+#if 0
 void ConfigurationParser::ClearResourceTables()
 {
   /* int num = r_num_; */
@@ -548,13 +552,26 @@ void ConfigurationParser::ClearResourceTables()
   /*   res_head_[i] = nullptr; */
   /* } */
 }
+#endif
 
 // restore the previously saved  res_head_backup_ to res_head_
-bool ConfigurationParser::RestoreResourceTable() { return true; }
+bool ConfigurationParser::RestoreResourceTable()
+{
+  std::swap(res_head_container_, res_head_container_previous_);
+  Dmsg1(0, "ConfigurationParser::RestoreResourceTable: %p -> %p\n",
+        res_head_container_previous_->res_head_,
+        res_head_container_->res_head_);
+  Dmsg1(0, "ConfigurationParser::RestoreResourceTable: release %p\n",
+        res_head_container_previous_->res_head_);
+  res_head_container_previous_ = nullptr;
+  return true;
+}
 // copy the current resource table to res_head_backup_
+// and create a new res_head_container_
 bool ConfigurationParser::BackupResourceTable()
 {
-  // res_head_container_previous_.reset(res_head_container_.get());
+  std::swap(res_head_container_, res_head_container_previous_);
+  res_head_container_.reset(new ResHeadContainer(this));
   return true;
 }
 

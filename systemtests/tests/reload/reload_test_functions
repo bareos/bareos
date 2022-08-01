@@ -36,6 +36,7 @@ create_console_command_file() {
   if [ ! -f "$bconsole_command_file" ]; then
   cat > "$bconsole_command_file" <<EOF
 @$out "$console_logfile"
+setdebug director level=10 trace=1
 reload
 messages
 EOF

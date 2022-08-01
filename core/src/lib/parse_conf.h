@@ -213,7 +213,7 @@ class ConfigurationParser {
   ResourceTable*
       resource_definitions_; /* Pointer to table of permitted resources */
   std::shared_ptr<ResHeadContainer> res_head_container_;
-  //  std::shared_ptr<ResHeadContainer> res_head_container_previous_;
+  std::shared_ptr<ResHeadContainer> res_head_container_previous_;
   mutable brwlock_t res_lock_; /* Resource lock */
 
   SaveResourceCb_t SaveResourceCb_;
@@ -239,9 +239,6 @@ class ConfigurationParser {
                       FreeResourceCb_t FreeResourceCb);
 
   ~ConfigurationParser();
-  void ResetResHeadContainerPrevious();
-  void RestorePreviousConfig();
-  void ClearResourceTables();
 
   bool IsUsingConfigIncludeDir() const { return use_config_include_dir_; }
   bool ParseConfig();
@@ -251,8 +248,12 @@ class ConfigurationParser {
                        LEX_WARNING_HANDLER* scan_warning = nullptr);
   const std::string& get_base_config_path() const { return used_config_path_; }
   void FreeResources();
+
+  void ReleasePreviousResourceTable();
+  void RestorePreviousConfig();
   bool BackupResourceTable();
   bool RestoreResourceTable();
+
   void InitResource(int rcode,
                     ResourceItem items[],
                     int pass,
@@ -408,8 +409,8 @@ class ConfigurationParser {
 };
 
 struct ResHeadContainer {
-  BareosResource** res_head_;
-  ConfigurationParser* config_;
+  BareosResource** res_head_ = nullptr;
+  ConfigurationParser* config_ = nullptr;
 
   ResHeadContainer(ConfigurationParser* config)
   {
@@ -418,20 +419,21 @@ struct ResHeadContainer {
     res_head_ = (BareosResource**)malloc(num * sizeof(BareosResource*));
 
     for (int i = 0; i < num; i++) { res_head_[i] = nullptr; }
-    Dmsg1(100, "ResHeadContainer::ResHeadContainer : res_head_ is at %p\n",
+    Dmsg1(0, "ResHeadContainer::ResHeadContainer : res_head_ is at %p\n",
           res_head_);
   }
 
   ~ResHeadContainer()
   {
+    Dmsg1(0, "ResHeadContainer::~ResHeadContainer : freeing res_head at %p\n",
+          res_head_);
     int num = config_->r_num_;
     for (int j = 0; j < num; j++) {
       config_->FreeResourceCb_(res_head_[j], j);
       res_head_[j] = nullptr;
     }
-    Dmsg1(100, "ResHeadContainer::~ResHeadContainer : freed restable  at %p\n",
-          res_head_);
     free(res_head_);
+    res_head_ = nullptr;
   }
 };
 

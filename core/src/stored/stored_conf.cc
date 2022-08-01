@@ -48,8 +48,8 @@
 
 namespace storagedaemon {
 
-static BareosResource* sres_head[R_NUM];
-static BareosResource** res_head = sres_head;
+/* static BareosResource* sres_head[R_NUM]; */
+/* static BareosResource** res_head = sres_head; */
 
 static void FreeResource(BareosResource* sres, int type);
 static bool SaveResource(int type, ResourceItem* items, int pass);
@@ -442,7 +442,11 @@ static void InitResourceCb(ResourceItem* item, int pass)
   }
 }
 
-static void ParseConfigCb(LEX* lc, ResourceItem* item, int index, int pass)
+static void ParseConfigCb(LEX* lc,
+                          ResourceItem* item,
+                          int index,
+                          int pass,
+                          BareosResource** res_head)
 {
   switch (item->type) {
     case CFG_TYPE_AUTOPASSWORD:
@@ -562,7 +566,7 @@ ConfigurationParser* InitSdConfig(const char* configfile, int exit_code)
 {
   ConfigurationParser* config = new ConfigurationParser(
       configfile, nullptr, nullptr, InitResourceCb, ParseConfigCb, nullptr,
-      exit_code, R_NUM, resources, res_head, default_config_filename.c_str(),
+      exit_code, R_NUM, resources, default_config_filename.c_str(),
       "bareos-sd.d", ConfigBeforeCallback, ConfigReadyCallback, SaveResource,
       DumpResource, FreeResource);
   if (config) { config->r_own_ = R_STORAGE; }
