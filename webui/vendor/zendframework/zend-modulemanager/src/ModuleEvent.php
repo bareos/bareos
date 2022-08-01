@@ -14,6 +14,8 @@ use Zend\EventManager\Event;
 /**
  * Custom event for use with module manager
  * Composes Module objects
+ *
+ * @method ModuleManager getTarget
  */
 class ModuleEvent extends Event
 {

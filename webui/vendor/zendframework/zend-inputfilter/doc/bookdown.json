@@ -1,0 +1,9 @@
+{
+    "title": "Zend\\Input-filter",
+    "target": "html/",
+    "content": [
+        "book/zend.input-filter.intro.md",
+        "book/zend.input-filter.specs.md",
+        "book/zend.input-filter.file-input.md"
+    ]
+}

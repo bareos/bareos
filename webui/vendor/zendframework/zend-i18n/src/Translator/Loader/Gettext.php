@@ -112,7 +112,7 @@ class Gettext extends AbstractFileLoader
             $translationStringSize   = $translationStringTable[$sizeKey];
             $translationStringOffset = $translationStringTable[$offsetKey];
 
-            $originalString = array('');
+            $originalString = [''];
             if ($originalStringSize > 0) {
                 fseek($this->file, $originalStringOffset);
                 $originalString = explode("\0", fread($this->file, $originalStringSize));
@@ -137,9 +137,9 @@ class Gettext extends AbstractFileLoader
                 }
             }
         }
-
+/*
         // Read header entries
-        if ($textDomain->offsetExists('')) {
+        if (array_key_exists('', $textDomain)) {
             $rawHeaders = explode("\n", trim($textDomain['']));
 
             foreach ($rawHeaders as $rawHeader) {
@@ -152,7 +152,7 @@ class Gettext extends AbstractFileLoader
 
             unset($textDomain['']);
         }
-
+*/
         fclose($this->file);
 
         return $textDomain;

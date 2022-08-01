@@ -9,7 +9,7 @@
 
 namespace Zend\Navigation\Service;
 
-use Zend\ServiceManager\ServiceLocatorInterface;
+use Interop\Container\ContainerInterface;
 
 /**
  * Constructed factory to set pages during construction.
@@ -30,13 +30,13 @@ class ConstructedNavigationFactory extends AbstractNavigationFactory
     }
 
     /**
-     * @param ServiceLocatorInterface $serviceLocator
+     * @param ContainerInterface $container
      * @return array|null|\Zend\Config\Config
      */
-    public function getPages(ServiceLocatorInterface $serviceLocator)
+    public function getPages(ContainerInterface $container)
     {
         if (null === $this->pages) {
-            $this->pages = $this->preparePages($serviceLocator, $this->getPagesFromConfig($this->config));
+            $this->pages = $this->preparePages($container, $this->getPagesFromConfig($this->config));
         }
         return $this->pages;
     }

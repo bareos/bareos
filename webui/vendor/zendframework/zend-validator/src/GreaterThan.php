@@ -22,17 +22,17 @@ class GreaterThan extends AbstractValidator
      *
      * @var array
      */
-    protected $messageTemplates = array(
+    protected $messageTemplates = [
         self::NOT_GREATER => "The input is not greater than '%min%'",
-        self::NOT_GREATER_INCLUSIVE => "The input is not greater or equal than '%min%'"
-    );
+        self::NOT_GREATER_INCLUSIVE => "The input is not greater than or equal to '%min%'"
+    ];
 
     /**
      * @var array
      */
-    protected $messageVariables = array(
+    protected $messageVariables = [
         'min' => 'min'
-    );
+    ];
 
     /**
      * Minimum value
@@ -62,22 +62,22 @@ class GreaterThan extends AbstractValidator
         if ($options instanceof Traversable) {
             $options = ArrayUtils::iteratorToArray($options);
         }
-        if (!is_array($options)) {
+        if (! is_array($options)) {
             $options = func_get_args();
             $temp['min'] = array_shift($options);
 
-            if (!empty($options)) {
+            if (! empty($options)) {
                 $temp['inclusive'] = array_shift($options);
             }
 
             $options = $temp;
         }
 
-        if (!array_key_exists('min', $options)) {
+        if (! array_key_exists('min', $options)) {
             throw new Exception\InvalidArgumentException("Missing option 'min'");
         }
 
-        if (!array_key_exists('inclusive', $options)) {
+        if (! array_key_exists('inclusive', $options)) {
             $options['inclusive'] = false;
         }
 

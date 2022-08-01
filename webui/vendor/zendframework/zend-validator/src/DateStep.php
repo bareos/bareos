@@ -24,12 +24,12 @@ class DateStep extends Date
     /**
      * @var array
      */
-    protected $messageTemplates = array(
+    protected $messageTemplates = [
         self::INVALID      => "Invalid type given. String, integer, array or DateTime expected",
         self::INVALID_DATE => "The input does not appear to be a valid date",
         self::FALSEFORMAT  => "The input does not fit the date format '%format%'",
         self::NOT_STEP     => "The input is not a valid step",
-    );
+    ];
 
     /**
      * Optional base date value
@@ -59,30 +59,30 @@ class DateStep extends Date
      *
      * @param array $options
      */
-    public function __construct($options = array())
+    public function __construct($options = [])
     {
         if ($options instanceof Traversable) {
             $options = ArrayUtils::iteratorToArray($options);
-        } elseif (!is_array($options)) {
+        } elseif (! is_array($options)) {
             $options = func_get_args();
             $temp['baseValue'] = array_shift($options);
-            if (!empty($options)) {
+            if (! empty($options)) {
                 $temp['step'] = array_shift($options);
             }
-            if (!empty($options)) {
+            if (! empty($options)) {
                 $temp['format'] = array_shift($options);
             }
-            if (!empty($options)) {
+            if (! empty($options)) {
                 $temp['timezone'] = array_shift($options);
             }
 
             $options = $temp;
         }
 
-        if (!isset($options['step'])) {
+        if (! isset($options['step'])) {
             $options['step'] = new DateInterval('P1D');
         }
-        if (!isset($options['timezone'])) {
+        if (! isset($options['timezone'])) {
             $options['timezone'] = new DateTimeZone(date_default_timezone_get());
         }
 
@@ -194,7 +194,7 @@ class DateStep extends Date
      */
     public function isValid($value)
     {
-        if (!parent::isValid($value)) {
+        if (! parent::isValid($value)) {
             return false;
         }
 
@@ -212,7 +212,7 @@ class DateStep extends Date
         $intervalParts = explode('|', $step->format('%y|%m|%d|%h|%i|%s'));
         $partCounts    = array_count_values($intervalParts);
 
-        $unitKeys = array('years', 'months', 'days', 'hours', 'minutes', 'seconds');
+        $unitKeys = ['years', 'months', 'days', 'hours', 'minutes', 'seconds'];
         $intervalParts = array_combine($unitKeys, $intervalParts);
 
         // Get absolute time difference to avoid special cases of missing/added time
@@ -235,7 +235,7 @@ class DateStep extends Date
             }
 
             // Check date units
-            if (in_array($intervalUnit, array('years', 'months', 'days'))) {
+            if (in_array($intervalUnit, ['years', 'months', 'days'])) {
                 switch ($intervalUnit) {
                     case 'years':
                         if (0 == $diffParts['months'] && 0 == $diffParts['days']
@@ -273,7 +273,7 @@ class DateStep extends Date
             }
 
             // Check time units
-            if (in_array($intervalUnit, array('hours', 'minutes', 'seconds'))) {
+            if (in_array($intervalUnit, ['hours', 'minutes', 'seconds'])) {
                 // Simple test if $stepValue is 1.
                 if (1 == $stepValue) {
                     if ('hours' === $intervalUnit
@@ -421,7 +421,7 @@ class DateStep extends Date
             $minSteps               = floor($minSteps / $requiredStepIterations);
         }
 
-        return array($minSteps, $minSteps ? $requiredStepIterations : 0);
+        return [$minSteps, $minSteps ? $requiredStepIterations : 0];
     }
 
     /**

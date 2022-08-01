@@ -14,24 +14,24 @@ use Zend\Stdlib\ArrayUtils;
 
 class NotEmpty extends AbstractValidator
 {
-    const BOOLEAN       = 0x001;
-    const INTEGER       = 0x002;
-    const FLOAT         = 0x004;
-    const STRING        = 0x008;
-    const ZERO          = 0x010;
-    const EMPTY_ARRAY   = 0x020;
-    const NULL          = 0x040;
-    const PHP           = 0x07F;
-    const SPACE         = 0x080;
-    const OBJECT        = 0x100;
-    const OBJECT_STRING = 0x200;
-    const OBJECT_COUNT  = 0x400;
-    const ALL           = 0x7FF;
+    const BOOLEAN       = 0b000000000001;
+    const INTEGER       = 0b000000000010;
+    const FLOAT         = 0b000000000100;
+    const STRING        = 0b000000001000;
+    const ZERO          = 0b000000010000;
+    const EMPTY_ARRAY   = 0b000000100000;
+    const NULL          = 0b000001000000;
+    const PHP           = 0b000001111111;
+    const SPACE         = 0b000010000000;
+    const OBJECT        = 0b000100000000;
+    const OBJECT_STRING = 0b001000000000;
+    const OBJECT_COUNT  = 0b010000000000;
+    const ALL           = 0b011111111111;
 
     const INVALID  = 'notEmptyInvalid';
     const IS_EMPTY = 'isEmpty';
 
-    protected $constants = array(
+    protected $constants = [
         self::BOOLEAN       => 'boolean',
         self::INTEGER       => 'integer',
         self::FLOAT         => 'float',
@@ -45,36 +45,36 @@ class NotEmpty extends AbstractValidator
         self::OBJECT_STRING => 'objectstring',
         self::OBJECT_COUNT  => 'objectcount',
         self::ALL           => 'all',
-    );
+    ];
 
     /**
      * Default value for types; value = 0b000111101001
      *
      * @var array
      */
-    protected $defaultType = array(
+    protected $defaultType = [
         self::OBJECT,
         self::SPACE,
         self::NULL,
         self::EMPTY_ARRAY,
         self::STRING,
         self::BOOLEAN
-    );
+    ];
 
     /**
      * @var array
      */
-    protected $messageTemplates = array(
+    protected $messageTemplates = [
         self::IS_EMPTY => "Value is required and can't be empty",
         self::INVALID  => "Invalid type given. String, integer, float, boolean or array expected",
-    );
+    ];
 
     /**
      * Options for this validator
      *
      * @var array
      */
-    protected $options = array();
+    protected $options = [];
 
     /**
      * Constructor
@@ -83,36 +83,25 @@ class NotEmpty extends AbstractValidator
      */
     public function __construct($options = null)
     {
-        $this->setType($this->defaultType);
-
         if ($options instanceof Traversable) {
             $options = ArrayUtils::iteratorToArray($options);
         }
 
-        if (!is_array($options)) {
+        if (! is_array($options)) {
             $options = func_get_args();
-            $temp    = array();
-            if (!empty($options)) {
+            $temp    = [];
+            if (! empty($options)) {
                 $temp['type'] = array_shift($options);
             }
 
             $options = $temp;
         }
 
-        if (is_array($options)) {
-            if (!array_key_exists('type', $options)) {
-                $detected = 0;
-                $found    = false;
-                foreach ($options as $option) {
-                    if (in_array($option, $this->constants, true)) {
-                        $found = true;
-                        $detected += array_search($option, $this->constants);
-                    }
-                }
-
-                if ($found) {
-                    $options['type'] = $detected;
-                }
+        if (! isset($options['type'])) {
+            if (($type = $this->calculateTypeValue($options)) != 0) {
+                $options['type'] = $type;
+            } else {
+                $options['type'] = $this->defaultType;
             }
         }
 
@@ -148,14 +137,14 @@ class NotEmpty extends AbstractValidator
             foreach ($type as $value) {
                 if (is_int($value)) {
                     $detected |= $value;
-                } elseif (in_array($value, $this->constants)) {
-                    $detected |= array_search($value, $this->constants);
+                } elseif (in_array($value, $this->constants, true)) {
+                    $detected |= array_search($value, $this->constants, true);
                 }
             }
 
             $type = $detected;
-        } elseif (is_string($type) && in_array($type, $this->constants)) {
-            $type = array_search($type, $this->constants);
+        } elseif (is_string($type) && in_array($type, $this->constants, true)) {
+            $type = array_search($type, $this->constants, true);
         }
 
         return $type;
@@ -172,7 +161,7 @@ class NotEmpty extends AbstractValidator
     {
         $type = $this->calculateTypeValue($type);
 
-        if (!is_int($type) || ($type < 0) || ($type > self::ALL)) {
+        if (! is_int($type) || ($type < 0) || ($type > self::ALL)) {
             throw new Exception\InvalidArgumentException('Unknown type');
         }
 
@@ -189,8 +178,8 @@ class NotEmpty extends AbstractValidator
      */
     public function isValid($value)
     {
-        if ($value !== null && !is_string($value) && !is_int($value) && !is_float($value) &&
-            !is_bool($value) && !is_array($value) && !is_object($value)
+        if ($value !== null && ! is_string($value) && ! is_int($value) && ! is_float($value) &&
+            ! is_bool($value) && ! is_array($value) && ! is_object($value)
         ) {
             $this->error(self::INVALID);
             return false;
@@ -214,7 +203,7 @@ class NotEmpty extends AbstractValidator
         if ($type & self::OBJECT_STRING) {
             $object = true;
 
-            if ((is_object($value) && (!method_exists($value, '__toString'))) ||
+            if ((is_object($value) && (! method_exists($value, '__toString'))) ||
                 (is_object($value) && (method_exists($value, '__toString')) && (((string) $value) == ""))) {
                 $this->error(self::IS_EMPTY);
                 return false;
@@ -250,7 +239,7 @@ class NotEmpty extends AbstractValidator
 
         // EMPTY_ARRAY (array())
         if ($type & self::EMPTY_ARRAY) {
-            if (is_array($value) && ($value == array())) {
+            if (is_array($value) && ($value == [])) {
                 $this->error(self::IS_EMPTY);
                 return false;
             }

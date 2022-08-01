@@ -13,32 +13,36 @@
         }
     },
     "require": {
-        "php": ">=5.3.23",
-        "zendframework/zend-stdlib": "~2.4.0",
-        "zendframework/zend-servicemanager": "~2.4.0",
-        "zendframework/zend-serializer": "~2.4.0",
-        "zendframework/zend-eventmanager": "~2.4.0"
+        "php": "^5.5 || ^7.0",
+        "zendframework/zend-stdlib": "^2.7 || ^3.0",
+        "zendframework/zend-servicemanager": "^2.7.5 || ^3.0.3",
+        "zendframework/zend-eventmanager": "^2.6.2 || ^3.0"
     },
     "require-dev": {
-        "zendframework/zend-session": "~2.4.0",
+        "zendframework/zend-serializer": "^2.6",
+        "zendframework/zend-session": "^2.5",
         "fabpot/php-cs-fixer": "1.7.*",
-        "satooshi/php-coveralls": "dev-master",
         "phpunit/PHPUnit": "~4.0"
     },
     "suggest": {
         "zendframework/zend-serializer": "Zend\\Serializer component",
         "zendframework/zend-session": "Zend\\Session component",
-        "ext-apc": "APC >= 3.1.6 to use the APC storage adapter",
+        "ext-apcu": "APCU, to use the APC storage adapter",
         "ext-dba": "DBA, to use the DBA storage adapter",
+        "ext-memcache": "Memcache >= 2.0.0 to use the Memcache storage adapter",
         "ext-memcached": "Memcached >= 1.0.0 to use the Memcached storage adapter",
         "ext-mongo": "Mongo, to use MongoDb storage adapter",
+        "ext-redis": "Redis, to use Redis storage adapter",
         "ext-wincache": "WinCache, to use the WinCache storage adapter",
+        "ext-xcache": "XCache, to use the XCache storage adapter",
         "mongofill/mongofill": "Alternative to ext-mongo - a pure PHP implementation designed as a drop in replacement"
     },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
     "extra": {
         "branch-alias": {
-            "dev-master": "2.4-dev",
-            "dev-develop": "2.5-dev"
+            "dev-master": "2.6-dev",
+            "dev-develop": "2.7-dev"
         }
     },
     "autoload-dev": {

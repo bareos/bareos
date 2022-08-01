@@ -1,0 +1,10 @@
+﻿<?xml version="1.0"?>
+<ruleset name="Zend Framework coding standard">
+    <rule ref="./vendor/zendframework/zend-coding-standard/ruleset.xml"/>
+
+    <!-- Paths to check -->
+    <file>src</file>
+    <file>test</file>
+    <!-- Needs to get excluded due it executing code AND declaring symbols -->
+    <exclude-pattern>/src/ValidatorChain.php</exclude-pattern>
+</ruleset>

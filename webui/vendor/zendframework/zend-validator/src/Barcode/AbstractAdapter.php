@@ -15,12 +15,12 @@ abstract class AbstractAdapter implements AdapterInterface
      * Allowed options for this adapter
      * @var array
      */
-    protected $options = array(
+    protected $options = [
         'length'     => null,   // Allowed barcode lengths, integer, array, string
         'characters' => null,   // Allowed barcode characters
         'checksum'   => null,   // Callback to checksum function
         'useChecksum' => true,  // Is a checksum value included?, boolean
-    );
+    ];
 
     /**
      * Checks the length of a barcode
@@ -30,7 +30,7 @@ abstract class AbstractAdapter implements AdapterInterface
      */
     public function hasValidLength($value)
     {
-        if (!is_string($value)) {
+        if (! is_string($value)) {
             return false;
         }
 
@@ -70,7 +70,7 @@ abstract class AbstractAdapter implements AdapterInterface
      */
     public function hasValidCharacters($value)
     {
-        if (!is_string($value)) {
+        if (! is_string($value)) {
             return false;
         }
 
@@ -102,7 +102,7 @@ abstract class AbstractAdapter implements AdapterInterface
     public function hasValidChecksum($value)
     {
         $checksum = $this->getChecksum();
-        if (!empty($checksum)) {
+        if (! empty($checksum)) {
             if (method_exists($this, $checksum)) {
                 return $this->$checksum($value);
             }

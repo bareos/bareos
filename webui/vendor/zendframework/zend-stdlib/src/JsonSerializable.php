@@ -9,20 +9,6 @@
 
 namespace Zend\Stdlib;
 
-if (PHP_VERSION_ID < 50400) {
-    class_alias(
-        'Zend\Stdlib\JsonSerializable\PhpLegacyCompatibility',
-        'JsonSerializable'
-    );
-}
-
-/**
- * Polyfill for JsonSerializable
- *
- * JsonSerializable was introduced in PHP 5.4.0.
- *
- * @see http://php.net/manual/class.jsonserializable.php
- */
 interface JsonSerializable extends \JsonSerializable
 {
 }

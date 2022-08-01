@@ -52,7 +52,7 @@ class MvcEvent extends Event
     protected $router;
 
     /**
-     * @var Router\RouteMatch
+     * @var null|Router\RouteMatch
      */
     protected $routeMatch;
 
@@ -110,7 +110,7 @@ class MvcEvent extends Event
     /**
      * Get route match
      *
-     * @return Router\RouteMatch
+     * @return null|Router\RouteMatch
      */
     public function getRouteMatch()
     {

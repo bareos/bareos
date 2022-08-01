@@ -33,10 +33,10 @@ class Loc extends AbstractValidator
      *
      * @var array
      */
-    protected $messageTemplates = array(
+    protected $messageTemplates = [
         self::NOT_VALID => "The input is not a valid sitemap location",
         self::INVALID   => "Invalid type given. String expected",
-    );
+    ];
 
     /**
      * Validates if a string is valid as a sitemap location
@@ -48,14 +48,14 @@ class Loc extends AbstractValidator
      */
     public function isValid($value)
     {
-        if (!is_string($value)) {
+        if (! is_string($value)) {
             $this->error(self::INVALID);
             return false;
         }
 
         $this->setValue($value);
         $uri = Uri\UriFactory::factory($value);
-        if (!$uri->isValid()) {
+        if (! $uri->isValid()) {
             $this->error(self::NOT_VALID);
             return false;
         }

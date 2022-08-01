@@ -3,7 +3,7 @@
  * Zend Framework (http://framework.zend.com/)
  *
  * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright Copyright (c) 2005-2016 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
 
@@ -234,8 +234,8 @@ class AdapterOptions extends AbstractOptions
     protected function triggerOptionEvent($optionName, $optionValue)
     {
         if ($this->adapter instanceof EventsCapableInterface) {
-            $event = new Event('option', $this->adapter, new ArrayObject(array($optionName => $optionValue)));
-            $this->adapter->getEventManager()->trigger($event);
+            $event = new Event('option', $this->adapter, new ArrayObject([$optionName => $optionValue]));
+            $this->adapter->getEventManager()->triggerEvent($event);
         }
     }
 

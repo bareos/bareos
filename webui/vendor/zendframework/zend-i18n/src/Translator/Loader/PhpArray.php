@@ -49,7 +49,7 @@ class PhpArray extends AbstractFileLoader
 
         $textDomain = new TextDomain($messages);
 
-        if ($textDomain->offsetExists('')) {
+        if (array_key_exists('', $textDomain)) {
             if (isset($textDomain['']['plural_forms'])) {
                 $textDomain->setPluralRule(
                     PluralRule::fromString($textDomain['']['plural_forms'])
