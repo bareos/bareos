@@ -93,4 +93,207 @@ Windows:
 
 Our tests with the :command:`sdelete` command was not successful, as :command:`sdelete` seems to stay active in the background.
 
-\appendix
+
+.. _section-FIPS:
+
+FIPS Mode
+---------
+
+The acronym :strong:`FIPS` stands for **Federal Information Processing Standards** and defines among others, security requirements for cryptography modules.
+
+Some `Enterprise grade` distributions like RHEL or SLES can be run in FIPS mode, which then enforces the standards defined by `FIPS`.
+
+To run Bareos on an OS that is running in `FIPS` mode, some adjustment need to be made so that Bareos only uses algorithms and protocols that are available in the `FIPS` mode.
+
+
+RedHat RHEL 8
+^^^^^^^^^^^^^
+
+For RedHat RHEL 8 follow the editor instructions located at:
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/security_hardening/assembly_installing-a-rhel-8-system-with-fips-mode-enabled_security-hardening
+
+For RedHat RHEL 9 follow the editor instructions located at:
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html/security_hardening/assembly_installing-the-system-in-fips-mode_security-hardening
+
+The above test procedure should work out of the box, and Bareos daemons should select only FIPS approved protocols.
+
+
+SUSE Linux Enterprise 15
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+To install and activate FIPS mode under SLES you have to follow the documentation located at
+https://documentation.suse.com/sles/15-SP4/html/SLES-all/cha-security-fips.html
+
+At writing time, by default we will have to add some more configurations.
+A good idea is to check with the test procedure below before doing manual changes, maybe
+the default configuration has been fixed since then.
+
+If the test procedure result in a FAILED connection you will have to do the following operations.
+
+Create a file `/etc/ssl/openssl.fips` with this content:
+
+.. code-block:: ini
+   :caption: openssl.fips config file
+
+   # /etc/ssl/openssl.fips
+   # Coming for RHEL 8 fips enabled mode
+   openssl_conf = default_modules
+
+   [ default_modules ]
+   ssl_conf = ssl_module
+
+   [ ssl_module ]
+   system_default = crypto_policy
+
+   [ crypto_policy ]
+   CipherString = @SECLEVEL=2:kEECDH:kEDH:kPSK:kDHEPSK:kECDHEPSK:-kRSA:-aDSS:-CHACHA20-POLY1305:-3DES:!DES:!RC4:!RC2:!IDEA:-SEED:!eNULL:!aNULL:!MD5:-SHA384:-CAMELLIA:-ARIA:-AESCCM8
+   Ciphersuites = TLS_AES_256_GCM_SHA384:TLS_AES_128_GCM_SHA256:TLS_AES_128_CCM_SHA256
+   MinProtocol = TLSv1.2
+   MaxProtocol = TLSv1.3
+   SignatureAlgorithms = ECDSA+SHA256:ECDSA+SHA384:ECDSA+SHA512:rsa_pss_pss_sha256:rsa_pss_rsae_sha256:rsa_pss_pss_sha384:rsa_pss_rsae_sha384:rsa_pss_pss_sha512:rsa_pss_rsae_sha512:RSA+SHA256:RSA+SHA384:RSA+SHA512:ECDSA+SHA224:RSA+SHA224
+
+Then edit the `/etc/ssl/openssl.conf` and use the instruction on top to include the previous prepared openssl.fips file.
+
+.. code-block:: ini
+   :caption: openssl.conf config file
+
+   .include /etc/ssl/openssl.fips
+
+Once done, openSUSE/SLE system binaries using OpenSSL will by default used only FIPS validated mechanism.
+
+
+FIPS Test procedure
+^^^^^^^^^^^^^^^^^^^
+
+An enabled `FIPS` computer can be checked with the following procedure
+
+1. Ensure fips_enabled is on
+
+.. code-block:: shell-session
+   :caption: Check FIPS enabled
+
+   sysctl -a | grep fips
+
+
+**crypto.fips_enabled = 0** shows that fips is not running. If **crypto.fips_enabled = 1**, then fips is running.
+to enable it refer to OS documentation (mostly adding fips=1 on boot line)
+
+
+2. Run openssl server part
+
+.. code-block:: shell-session
+   :caption: run openssl server fips
+
+   OPENSSL_FORCE_FIPS_MODE=1 openssl s_server -tls1_3 -nocert -psk 1234567890
+
+
+3. Run openssl client part
+
+.. code-block:: shell-session
+   :caption: run openssl client fips
+
+   OPENSSL_FORCE_FIPS_MODE=1 openssl s_client -tls1_3 -psk 1234567890
+
+
+4. Expected result, connection is established with a FIPS-140 2 compatible mechanism.
+
+.. code-block:: shell-session
+   :caption: validated FIPS session
+
+   server
+   Using default temp DH parameters
+   ACCEPT
+   -----BEGIN SSL SESSION PARAMETERS-----
+   MHICAQECAgMEBAITAQQgE1lsBGi7miykHRTXHy8vDoXUX0MgjtawEn1KSTk7bwoE
+   IJLA8nOUxpX1M1wliy9H27NOVT/WXEG6wfY2FmKWdOeeoQYCBGFe6tiiBAICATCk
+   BgQEAQAAAKUDAgEBrgYCBGAN6gQ=
+   -----END SSL SESSION PARAMETERS-----
+   Shared ciphers:TLS_AES_256_GCM_SHA384:TLS_AES_128_GCM_SHA256:TLS_AES_128_CCM_SHA256
+   Supported Elliptic Groups: P-256:P-521:P-384
+   Shared Elliptic groups: P-256:P-521:P-384
+   CIPHER is TLS_AES_128_GCM_SHA256
+   Reused session-id
+   Secure Renegotiation IS supported
+   ERROR
+   shutting down SSL
+   CONNECTION CLOSED
+
+
+   client
+   CONNECTED(00000003)
+   ---
+   no peer certificate available
+   ---
+   No client certificate CA names sent
+   Server Temp Key: ECDH, P-256, 256 bits
+   ---
+   SSL handshake has read 258 bytes and written 384 bytes
+   Verification: OK
+   ---
+   Reused, TLSv1.3, Cipher is TLS_AES_128_GCM_SHA256
+   Secure Renegotiation IS NOT supported
+   Compression: NONE
+   Expansion: NONE
+   No ALPN negotiated
+   Early data was not sent
+   Verify return code: 0 (ok)
+   ---
+   ---
+   Post-Handshake New Session Ticket arrived:
+   SSL-Session:
+      Protocol  : TLSv1.3
+      Cipher    : TLS_AES_128_GCM_SHA256
+      Session-ID: 0A2B486C5B7D9DC18546161DE8A8DE2457A260C2038B15EA18C826B0F6186B9A
+      Session-ID-ctx:
+      Resumption PSK: 92C0F27394C695F5335C258B2F47DBB34E553FD65C41BAC1F63616629674E79E
+      PSK identity: None
+      PSK identity hint: None
+      SRP username: None
+      TLS session ticket lifetime hint: 304 (seconds)
+      TLS session ticket:
+      0000 - 19 af 09 90 78 d2 23 5d-41 b9 60 b8 b5 3a 20 e4   ....x.#]A.`..: .
+      0010 - f9 d1 e5 84 ca e0 71 7f-31 b2 c9 78 ae ff de a0   ......q.1..x....
+      0020 - 99 45 59 bf 8f bc 8d 65-25 42 7c 0b 37 6c 87 f5   .EY....e%B|.7l..
+      0030 - f3 6e c7 6d 72 60 1e 69-b1 80 61 78 57 51 95 45   .n.mr`.i..axWQ.E
+      0040 - 89 2b b9 c6 cc 3d 1b bd-bf af cb 3c ab f1 4b 70   .+...=.....<..Kp
+      0050 - 6e 4c e2 6c 12 fc 4d 95-a9 24 7e 66 9e 4e 39 1a   nL.l..M..$~f.N9.
+      0060 - 7e 22 76 d5 c1 24 c9 24-7d b7 35 52 13 66 28 73   ~"v..$.$}.5R.f(s
+      0070 - b3 72 68 e8 7a 91 a9 7f-9b 75 fb e3 5b 54 9d 06   .rh.z....u..[T..
+      0080 - 79 de 6e 2e 35 79 dd 20-ed ab cf f0 0a da 11 a1   y.n.5y. ........
+      0090 - 41 a0 50 28 63 c2 cc 4e-21 68 35 f3 80 ec 6f 94   A.P(c..N!h5...o.
+      00a0 - 65 98 6d cc 8c 1f 16 a4-5b b0 ae 98 f2 8e f8 91   e.m.....[.......
+      00b0 - d4 a0 3a e3 c5 fe 56 cf-40 b8 b2 42 3c 8e fe 98   ..:...V.@..B<...
+
+      Start Time: 1633610456
+      Timeout   : 304 (sec)
+      Verify return code: 1 (unspecified certificate verification error)
+      Extended master secret: no
+      Max Early Data: 0
+   ---
+   read R BLOCK
+
+Fileset Signature Algorithm
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The default signature algorithm to verify the integrity of the files is `MD5`.
+As all MD5 related function are disabled in `FIPS` mode, Bareos emits errors
+like the following when trying to calculate MD5 siguatures on a FIPS system:
+
+.. code-block::
+
+   Warning: MD5 digest digest initialization failed
+   Error: OpenSSL digest initialization failed: ERR=error:060800C8:digital envelope routines:EVP_DigestInit_ex:disabled for FIPS
+
+To solve this problem, the **Signature** option in your fileset to be changed to something stronger than MD5 or SHA1, for example **SHA256**:
+
+.. code-block:: bareosconfig
+
+   FileSet {
+      Name = "File"
+      Description = "Backup FIPS MODE"
+      Include {
+         Options {
+            Signature = "SHA256"
+   ...
+
+With these modifications, Bareos can be run on a FIPS enabled Operating System.
