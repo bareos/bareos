@@ -21,6 +21,37 @@ The feature overview for a release are shown at the :ref:`genindex` of this docu
 Bareos-19.2
 -----------
 
+.. _bareos-19213-releasenotes:
+
+.. _bareos-19.2.13:
+
+Bareos-19.2.13
+~~~~~~~~~~~~~~
+
+General Information
+^^^^^^^^^^^^^^^^^^^
+.. list-table:: Bareos 19.2.13 Release Information
+   :header-rows: 0
+   :widths: auto
+
+   * - **Release Date**
+     - 2022-08-04
+   * - **Database Version**
+     - 2192
+   * - **URL**
+     - https://download.bareos.com/bareos/release/19.2/
+
+Changed
+^^^^^^^
+* jstreegrid: remove handling of IE < 8 using navigator interface to avoid warnings in chrome [PR #1143]
+
+Security
+^^^^^^^^
+* webui: update moment.js to version 2.29.2 [PR #1158] [CVE-2022-24785](https://github.com/advisories/GHSA-8hfj-j24r-96c4)
+* webui is NOT affected
+* webui does NOT use the npm server
+* webui does NOT use a user-provided locale string to directly switch moment locale
+
 .. _bareos-19212-releasenotes:
 
 .. _bareos-19.2.12:
