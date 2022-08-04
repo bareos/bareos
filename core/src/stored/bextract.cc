@@ -63,7 +63,7 @@ static void DoExtract(char* devname,
                       DirectorResource* director);
 static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec);
 
-static Device* dev = NULL;
+static Device* dev = nullptr;
 static DeviceControlRecord* dcr;
 static BareosWinFilePacket bfd;
 static JobControlRecord* jcr;
@@ -79,7 +79,7 @@ static int win32_data_msg = 0;
 
 static AclData acl_data;
 static XattrData xattr_data;
-static alist<DelayedDataStream*>* delayed_streams = NULL;
+static alist<DelayedDataStream*>* delayed_streams = nullptr;
 
 static char* wbuf;            /* write buffer address */
 static uint32_t wsize;        /* write size */
@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
 
   working_directory = "/tmp";
   MyNameIs(argc, argv, "bextract");
-  InitMsg(NULL, NULL); /* setup message handler */
+  InitMsg(nullptr, nullptr); /* setup message handler */
 
   OSDependentInit();
 
@@ -111,7 +111,7 @@ int main(int argc, char* argv[])
       .add_option(
           "-b,--parse-bootstrap",
           [&bsr](std::vector<std::string> vals) {
-            bsr = libbareos::parse_bsr(NULL, vals.front().data());
+            bsr = libbareos::parse_bsr(nullptr, vals.front().data());
             return true;
           },
           "Specify a bootstrap file.")
@@ -145,13 +145,13 @@ int main(int argc, char* argv[])
       .add_option(
           "-e,--exclude",
           [&line, &fd](std::vector<std::string> val) {
-            if ((fd = fopen(val.front().c_str(), "rb")) == NULL) {
+            if ((fd = fopen(val.front().c_str(), "rb")) == nullptr) {
               BErrNo be;
               Pmsg2(0, _("Could not open exclude file: %s, ERR=%s\n"), optarg,
                     be.bstrerror());
               exit(1);
             }
-            while (fgets(line, sizeof(line), fd) != NULL) {
+            while (fgets(line, sizeof(line), fd) != nullptr) {
               StripTrailingJunk(line);
               Dmsg1(900, "add_exclude %s\n", line);
               AddFnameToExcludeList(ff, line);
@@ -168,13 +168,13 @@ int main(int argc, char* argv[])
       .add_option(
           "-i,--include-list",
           [&line, &fd, &got_inc](std::vector<std::string> val) {
-            if ((fd = fopen(optarg, "rb")) == NULL) {
+            if ((fd = fopen(optarg, "rb")) == nullptr) {
               BErrNo be;
               Pmsg2(0, _("Could not open include file: %s, ERR=%s\n"), optarg,
                     be.bstrerror());
               exit(1);
             }
-            while (fgets(line, sizeof(line), fd) != NULL) {
+            while (fgets(line, sizeof(line), fd) != nullptr) {
               StripTrailingJunk(line);
               Dmsg1(900, "add_include %s\n", line);
               AddFnameToIncludeList(ff, 0, line);
@@ -388,7 +388,7 @@ static void DoExtract(char* devname,
   struct stat statp;
   uint32_t decompress_buf_size;
 
-  EnableBackupPrivileges(NULL, 1);
+  EnableBackupPrivileges(nullptr, 1);
 
   dcr = new DeviceControlRecord;
   jcr = SetupJcr("bextract", devname, bsr, director, dcr, VolumeName,

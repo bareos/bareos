@@ -74,11 +74,11 @@ static uint32_t num_files = 0;
 static Attributes* attr;
 
 static FindFilesPacket* ff;
-static BootStrapRecord* bsr = NULL;
+static BootStrapRecord* bsr = nullptr;
 
 int main(int argc, char* argv[])
 {
-  DirectorResource* director = NULL;
+  DirectorResource* director = nullptr;
 
   setlocale(LC_ALL, "");
   tzset();
@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
 
   working_directory = "/tmp";
   MyNameIs(argc, argv, "bls");
-  InitMsg(NULL, NULL); /* initialize message handler */
+  InitMsg(nullptr, nullptr); /* initialize message handler */
 
   OSDependentInit();
 
@@ -130,13 +130,13 @@ int main(int argc, char* argv[])
       .add_option(
           "-e,--exclude",
           [&line, &fd](std::vector<std::string> val) {
-            if ((fd = fopen(val.front().c_str(), "rb")) == NULL) {
+            if ((fd = fopen(val.front().c_str(), "rb")) == nullptr) {
               BErrNo be;
               Pmsg2(0, _("Could not open exclude file: %s, ERR=%s\n"), optarg,
                     be.bstrerror());
               exit(1);
             }
-            while (fgets(line, sizeof(line), fd) != NULL) {
+            while (fgets(line, sizeof(line), fd) != nullptr) {
               StripTrailingJunk(line);
               Dmsg1(100, "add_exclude %s\n", line);
               AddFnameToExcludeList(ff, line);
@@ -151,13 +151,13 @@ int main(int argc, char* argv[])
       .add_option(
           "-i,--include-list",
           [&line, &fd](std::vector<std::string> val) {
-            if ((fd = fopen(optarg, "rb")) == NULL) {
+            if ((fd = fopen(optarg, "rb")) == nullptr) {
               BErrNo be;
               Pmsg2(0, _("Could not open include file: %s, ERR=%s\n"), optarg,
                     be.bstrerror());
               exit(1);
             }
-            while (fgets(line, sizeof(line), fd) != NULL) {
+            while (fgets(line, sizeof(line), fd) != nullptr) {
               StripTrailingJunk(line);
               Dmsg1(100, "add_include %s\n", line);
               AddFnameToIncludeList(ff, 0, line);
@@ -227,7 +227,7 @@ int main(int argc, char* argv[])
   ReadCryptoCache(me->working_directory, "bareos-sd",
                   GetFirstPortHostOrder(me->SDaddrs));
 
-  if (ff->included_files_list == NULL) { AddFnameToIncludeList(ff, 0, "/"); }
+  if (ff->included_files_list == nullptr) { AddFnameToIncludeList(ff, 0, "/"); }
 
 
   for (std::string device : device_names) {

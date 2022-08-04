@@ -132,7 +132,7 @@ static int argc;
 
 static int quickie_count = 0;
 static uint64_t write_count = 0;
-static BootStrapRecord* bsr = NULL;
+static BootStrapRecord* bsr = nullptr;
 static bool signals = true;
 static bool ok;
 static int stop = 0;
@@ -146,11 +146,11 @@ static uint32_t eot_block;
 static uint32_t eot_block_len;
 static uint32_t eot_FileIndex;
 static int dumped = 0;
-static DeviceBlock* last_block1 = NULL;
-static DeviceBlock* last_block2 = NULL;
-static DeviceBlock* last_block = NULL;
-static DeviceBlock* this_block = NULL;
-static DeviceBlock* first_block = NULL;
+static DeviceBlock* last_block1 = nullptr;
+static DeviceBlock* last_block2 = nullptr;
+static DeviceBlock* last_block = nullptr;
+static DeviceBlock* this_block = nullptr;
+static DeviceBlock* first_block = nullptr;
 static uint32_t last_file1 = 0;
 static uint32_t last_file2 = 0;
 static uint32_t last_file = 0;
@@ -160,10 +160,10 @@ static uint32_t last_block_num = 0;
 static uint32_t BlockNumber = 0;
 static bool simple = true;
 
-static const char* volumename = NULL;
+static const char* volumename = nullptr;
 static int vol_num = 0;
 
-static JobControlRecord* jcr = NULL;
+static JobControlRecord* jcr = nullptr;
 
 static std::string Generate_interactive_commands_help();
 static void TerminateBtape(int sig);
@@ -226,7 +226,7 @@ int main(int margc, char* margv[])
 
   working_directory = "/tmp";
   MyNameIs(margc, margv, "btape");
-  InitMsg(NULL, NULL);
+  InitMsg(nullptr, nullptr);
 
   OSDependentInit();
 
@@ -341,16 +341,16 @@ int main(int margc, char* margv[])
 static void TerminateBtape(int status)
 {
   FreeJcr(jcr);
-  jcr = NULL;
+  jcr = nullptr;
 
   if (args) {
     FreePoolMemory(args);
-    args = NULL;
+    args = nullptr;
   }
 
   if (cmd) {
     FreePoolMemory(cmd);
-    cmd = NULL;
+    cmd = nullptr;
   }
 
   if (bsr) { libbareos::FreeBsr(bsr); }
@@ -367,12 +367,12 @@ static void TerminateBtape(int status)
 
   if (my_config) {
     delete my_config;
-    my_config = NULL;
+    my_config = nullptr;
   }
 
   if (this_block) {
     FreeBlock(this_block);
-    this_block = NULL;
+    this_block = nullptr;
   }
 
   StopWatchdog();
@@ -413,7 +413,7 @@ static void PrintSpeed(uint64_t bytes)
   char ec1[50], ec2[50];
   uint64_t rate;
 
-  now = time(NULL);
+  now = time(nullptr);
   now -= jcr->run_time;
   if (now <= 0) { now = 1; /* don't divide by zero */ }
 
@@ -444,7 +444,7 @@ static void FillBuffer(fill_mode_t mode, char* buf, uint32_t len)
         close(fd);
       } else {
         uint32_t* p = (uint32_t*)buf;
-        srandom(time(NULL));
+        srandom(time(nullptr));
         for (uint32_t i = 0; i < len / sizeof(uint32_t); i++) {
           p[i] = random();
         }
@@ -2209,7 +2209,7 @@ static void fillcmd()
       /* Every 5000 blocks (approx 322MB) report where we are.
        */
       if ((block->BlockNumber % 5000) == 0) {
-        now = time(NULL);
+        now = time(nullptr);
         now -= jcr->run_time;
         if (now <= 0) { now = 1; /* prevent divide error */ }
         rate = dev->VolCatInfo.VolCatBytes / now;
@@ -2221,7 +2221,7 @@ static void fillcmd()
       /* Every X blocks (dev->max_file_size) write an EOF.
        */
       if ((block->BlockNumber % write_eof) == 0) {
-        now = time(NULL);
+        now = time(nullptr);
         bstrftime(buf1, sizeof(buf1), now, "%H:%M:%S");
         Pmsg1(-1, _("%s Flush block, write EOF\n"), buf1);
         FlushBlock(block, 0);
@@ -2306,7 +2306,7 @@ static void fillcmd()
     ok = false;
   }
 
-  now = time(NULL);
+  now = time(nullptr);
   bstrftime(buf1, sizeof(buf1), now, "%H:%M:%S");
 
   if (ok) {
@@ -2379,7 +2379,7 @@ static void unfillcmd()
     return;
   }
   if (!do_unfill()) { exit_code = 1; }
-  this_block = NULL;
+  this_block = nullptr;
 }
 
 /**
@@ -2408,19 +2408,19 @@ static bool do_unfill()
   file_index = 0;
   if (last_block) {
     FreeBlock(last_block);
-    last_block = NULL;
+    last_block = nullptr;
   }
   last_block_num = last_block_num1;
   last_file = last_file1;
   last_block = last_block1;
 
   FreeRestoreVolumeList(jcr);
-  jcr->impl->read_session.bsr = NULL;
+  jcr->impl->read_session.bsr = nullptr;
   bstrncpy(dcr->VolumeName, "TestVolume1|TestVolume2", sizeof(dcr->VolumeName));
   CreateRestoreVolumeList(jcr);
-  if (jcr->impl->VolList != NULL) {
+  if (jcr->impl->VolList != nullptr) {
     jcr->impl->VolList->Slot = 1;
-    if (jcr->impl->VolList->next != NULL) {
+    if (jcr->impl->VolList->next != nullptr) {
       jcr->impl->VolList->next->Slot = 2;
     }
   }
@@ -2431,7 +2431,7 @@ static bool do_unfill()
     /* Multiple Volume tape */
     /* Close device so user can use autochanger if desired */
     if (dev->HasCap(CAP_OFFLINEUNMOUNT)) { dev->offline(); }
-    autochanger = AutoloadDevice(dcr, 1, NULL);
+    autochanger = AutoloadDevice(dcr, 1, nullptr);
     if (autochanger != 1) {
       Pmsg1(100, "Autochanger returned: %d\n", autochanger);
       dev->close(dcr);
@@ -2495,7 +2495,7 @@ static bool do_unfill()
 
   SetVolumeName("TestVolume2", 2);
 
-  autochanger = AutoloadDevice(dcr, 1, NULL);
+  autochanger = AutoloadDevice(dcr, 1, nullptr);
   if (autochanger != 1) {
     Pmsg1(100, "Autochanger returned: %d\n", autochanger);
     dev->close(dcr);
@@ -2551,10 +2551,10 @@ bail_out:
   FreeBlock(last_block2);
   FreeBlock(first_block);
 
-  last_block1 = NULL;
-  last_block2 = NULL;
-  last_block = NULL;
-  first_block = NULL;
+  last_block1 = nullptr;
+  last_block2 = nullptr;
+  last_block = nullptr;
+  first_block = nullptr;
 
   return rc;
 }
@@ -2654,7 +2654,7 @@ static int FlushBlock(DeviceBlock* block, int dump)
       eot_FileIndex = file_index;
       stop = 1;
     }
-    now = time(NULL);
+    now = time(nullptr);
     now -= jcr->run_time;
     if (now <= 0) { now = 1; /* don't divide by zero */ }
     rate = dev->VolCatInfo.VolCatBytes / now;
@@ -2953,7 +2953,7 @@ bool BTAPE_DCR::DirAskSysopToCreateAppendableVolume()
   }
   /* Close device so user can use autochanger if desired */
   if (dev->HasCap(CAP_OFFLINEUNMOUNT)) { dev->offline(); }
-  autochanger = AutoloadDevice(this, 1, NULL);
+  autochanger = AutoloadDevice(this, 1, nullptr);
   if (autochanger != 1) {
     Pmsg1(100, "Autochanger returned: %d\n", autochanger);
     fprintf(stderr,
@@ -2964,7 +2964,7 @@ bool BTAPE_DCR::DirAskSysopToCreateAppendableVolume()
     Pmsg0(000, "\n");
   }
   labelcmd();
-  volumename = NULL;
+  volumename = nullptr;
   BlockNumber = 0;
 
   return true;
@@ -2986,7 +2986,7 @@ static bool MyMountNextReadVolume(DeviceControlRecord* dcr)
   VolumeUnused(dcr); /* release current volume */
   if (LastBlock != block->BlockNumber) { VolBytes += block->block_len; }
   LastBlock = block->BlockNumber;
-  now = time(NULL);
+  now = time(nullptr);
   now -= jcr->run_time;
   if (now <= 0) { now = 1; }
   rate = VolBytes / now;
