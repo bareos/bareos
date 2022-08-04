@@ -6,7 +6,7 @@ file when a release is made.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
-## [Unreleased]
+## [19.2.13] - 2022-08-04
 
 ### Changed
 - jstreegrid: remove handling of IE < 8 using navigator interface to avoid warnings in chrome [PR #1143]
@@ -37,10 +37,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - dird: fix memory leak on failed PAM login [PR #1121] [CVE-2022-24756](https://github.com/bareos/bareos/security/advisories/GHSA-jh55-4wgw-xc9j)
 
 [19.2.12]: https://github.com/bareos/bareos/releases/tag/Release%2F19.2.12
+[19.2.13]: https://github.com/bareos/bareos/releases/tag/Release%2F19.2.13
 [PR #1002]: https://github.com/bareos/bareos/pull/1002
 [PR #1086]: https://github.com/bareos/bareos/pull/1086
 [PR #1121]: https://github.com/bareos/bareos/pull/1121
 [PR #1124]: https://github.com/bareos/bareos/pull/1124
 [PR #1143]: https://github.com/bareos/bareos/pull/1143
 [PR #1158]: https://github.com/bareos/bareos/pull/1158
-[unreleased]: https://github.com/bareos/bareos/tree/master
