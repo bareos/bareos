@@ -115,17 +115,11 @@ int main(int argc, char* argv[])
       ->check(CLI::ExistingPath)
       ->type_name("<path>");
 
-  char* DirectorName = nullptr;
+  std::string DirectorName{};
   bls_app
-      .add_option(
-          "-D,--director",
-          [&DirectorName](std::vector<std::string> val) {
-            if (DirectorName != nullptr) { free(DirectorName); }
-            DirectorName = strdup(val.front().c_str());
-            return true;
-          },
-          "Specify a director name found in the storage.\n"
-          "Configuration file for the Key Encryption Key selection.")
+      .add_option("-D,--director", DirectorName,
+                  "Specify a director name found in the storage.\n"
+                  "Configuration file for the Key Encryption Key selection.")
       ->type_name("<director>");
 
   AddDebugOptions(bls_app);
@@ -216,15 +210,15 @@ int main(int argc, char* argv[])
   my_config = InitSdConfig(configfile, M_ERROR_TERM);
   ParseSdConfig(configfile, M_ERROR_TERM);
 
-  if (DirectorName) {
+  if (!DirectorName.empty()) {
     foreach_res (director, R_DIRECTOR) {
-      if (bstrcmp(director->resource_name_, DirectorName)) { break; }
+      if (bstrcmp(director->resource_name_, DirectorName.c_str())) { break; }
     }
     if (!director) {
       Emsg2(
           M_ERROR_TERM, 0,
           _("No Director resource named %s defined in %s. Cannot continue.\n"),
-          DirectorName, configfile);
+          DirectorName.c_str(), configfile);
     }
   }
 
