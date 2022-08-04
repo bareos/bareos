@@ -168,9 +168,9 @@ int main(int argc, char* argv[])
   CLI::Option* foreground_option
       = dir_app.add_flag("-f,--foreground", foreground, "Run in foreground.");
 
-  char* gid = nullptr;
-  dir_app.add_option("-g,--group", gid, "Run as group <group>.")
-      ->type_name("<group>");
+  std::string user;
+  std::string group;
+  AddUserAndGroupOptions(dir_app, user, group);
 
   dir_app.add_flag("-m,--print-kaboom", prt_kaboom,
                    "Print kaboom output (for debugging).");
@@ -194,10 +194,6 @@ int main(int argc, char* argv[])
   bool no_signals = false;
   dir_app.add_flag("-s,--no-signals", no_signals,
                    "No signals (for debugging).");
-
-  char* uid = nullptr;
-  dir_app.add_option("-u,--user", uid, "Run as given user <user>.")
-      ->type_name("<user>");
 
   AddVerboseOption(dir_app);
 
@@ -243,8 +239,19 @@ int main(int argc, char* argv[])
     pidfile_fd = CreatePidFile("bareos-dir", pidfile_path.c_str());
   }
 #endif
+  // See if we want to drop privs.
+  char* uid = nullptr;
+  if (!user.empty()) { uid = user.data(); }
+
+  char* gid = nullptr;
+  if (!group.empty()) { gid = group.data(); }
+
   if (geteuid() == 0) {
     drop(uid, gid, false);  // reduce privileges if requested
+  } else if (uid || gid) {
+    Emsg2(M_ERROR_TERM, 0,
+          _("The commandline options indicate to run as specified user/group, "
+            "but program was not started with required root privileges.\n"));
   }
 
   my_config = InitDirConfig(configfile, M_ERROR_TERM);
