@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2007 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -44,19 +44,18 @@ static const std::string default_config_filename("bareos-fd.conf");
 // Resource codes -- they must be sequential for indexing
 enum
 {
-  R_DIRECTOR = 1001,
+  R_DIRECTOR = 0,
   R_CLIENT,
   R_MSGS,
   R_STORAGE,
   R_JOB,
-  R_FIRST = R_DIRECTOR,
-  R_LAST = R_JOB /* keep this updated */
+  R_NUM /* number of entires */
 };
 
 // Some resource attributes
 enum
 {
-  R_NAME = 1020,
+  R_NAME = 0,
   R_ADDRESS,
   R_PASSWORD,
   R_TYPE

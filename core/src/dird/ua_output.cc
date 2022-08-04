@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -178,16 +178,19 @@ static void ShowDisabledSchedules(UaContext* ua)
 // Enter with Resources locked
 static void ShowAll(UaContext* ua, bool hide_sensitive_data, bool verbose)
 {
-  for (int j = my_config->r_first_; j <= my_config->r_last_; j++) {
+  for (int j = 0; j <= my_config->r_num_ - 1; j++) {
     switch (j) {
       case R_DEVICE:
         // Skip R_DEVICE since it is really not used or updated
         continue;
       default:
-        if (my_config->res_head_[j - my_config->r_first_]) {
-          my_config->DumpResourceCb_(
-              j, my_config->res_head_[j - my_config->r_first_], bsendmsg, ua,
-              hide_sensitive_data, verbose);
+        if (my_config->config_resources_container_
+                ->configuration_resources_[j]) {
+          my_config->DumpResourceCb_(j,
+                                     my_config->config_resources_container_
+                                         ->configuration_resources_[j],
+                                     bsendmsg, ua, hide_sensitive_data,
+                                     verbose);
         }
         break;
     }
@@ -264,7 +267,8 @@ bool show_cmd(UaContext* ua, const char* cmd)
                          len)) {
           type = show_cmd_available_resources[j].type;
           if (type > 0) {
-            res = my_config->res_head_[type - my_config->r_first_];
+            res = my_config->config_resources_container_
+                      ->configuration_resources_[type];
           } else {
             res = NULL;
           }

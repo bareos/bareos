@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -40,21 +40,20 @@ extern ConfigurationParser* my_config;
 
 enum Rescode
 {
-  R_UNKNOWN = 0,
-  R_MONITOR = 1001,
+  R_MONITOR = 0,
   R_DIRECTOR,
   R_CLIENT,
   R_STORAGE,
   R_CONSOLE,
   R_CONSOLE_FONT,
-  R_FIRST = R_MONITOR,
-  R_LAST = R_CONSOLE_FONT /* keep this updated */
+  R_NUM, /* keep this updated */
+  R_UNKNOWN = 0xff
 };
 
 // Some resource attributes
 enum
 {
-  R_NAME = 1020,
+  R_NAME = 0,
   R_ADDRESS,
   R_PASSWORD,
   R_TYPE,

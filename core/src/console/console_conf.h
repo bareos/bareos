@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -42,15 +42,14 @@ static const std::string default_config_filename("bconsole.conf");
 
 enum
 {
-  R_CONSOLE = 1001,
+  R_CONSOLE = 0,
   R_DIRECTOR,
-  R_FIRST = R_CONSOLE,
-  R_LAST = R_DIRECTOR /* Keep this updated */
+  R_NUM /* number of entries */
 };
 
 enum
 {
-  R_NAME = 1020,
+  R_NAME = 0,
   R_ADDRESS,
   R_PASSWORD,
   R_TYPE,

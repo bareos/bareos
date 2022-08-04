@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -34,6 +34,7 @@
 #include "lib/parse_conf.h"
 #include "lib/keyword_table_s.h"
 #include "lib/message_destination_info.h"
+#include "lib/util.h"
 
 #include <functional>
 #include <memory>
@@ -41,7 +42,7 @@
 struct ResourceItem;
 class ConfigParserStateMachine;
 class ConfigurationParser;
-
+class ConfigResourcesContainer;
 /* For storing name_addr items in res_items table */
 /* clang-format off */
 #define ITEM(c, m) ((std::size_t)&c->m), reinterpret_cast<BareosResource**>(&c)
@@ -177,7 +178,8 @@ typedef void(INIT_RES_HANDLER)(ResourceItem* item, int pass);
 typedef void(STORE_RES_HANDLER)(LEX* lc,
                                 ResourceItem* item,
                                 int index,
-                                int pass);
+                                int pass,
+                                BareosResource** configuration_resources);
 typedef void(PRINT_RES_HANDLER)(ResourceItem& item,
                                 OutputFormatterResource& send,
                                 bool hide_sensitive_data,
@@ -192,33 +194,31 @@ class ConfigurationParser {
   friend class ConfigParserStateMachine;
 
  public:
-  std::string cf_;                    /* Config file parameter */
-  LEX_ERROR_HANDLER* scan_error_;     /* Error handler if non-null */
-  LEX_WARNING_HANDLER* scan_warning_; /* Warning handler if non-null */
-  INIT_RES_HANDLER*
-      init_res_; /* Init resource handler for non default types if non-null */
-  STORE_RES_HANDLER*
-      store_res_; /* Store resource handler for non default types if non-null */
-  PRINT_RES_HANDLER*
-      print_res_; /* Print resource handler for non default types if non-null */
+  std::string cf_;                             /* Config file parameter */
+  LEX_ERROR_HANDLER* scan_error_{nullptr};     /* Error handler if non-null */
+  LEX_WARNING_HANDLER* scan_warning_{nullptr}; /* Warning handler if non-null */
+  INIT_RES_HANDLER* init_res_{
+      nullptr}; /* Init resource handler for non default types if non-null */
+  STORE_RES_HANDLER* store_res_{
+      nullptr}; /* Store resource handler for non default types if non-null */
+  PRINT_RES_HANDLER* print_res_{
+      nullptr}; /* Print resource handler for non default types if non-null */
 
-  int32_t err_type_; /* The way to Terminate on failure */
-  // void* res_all_;        /* Pointer to res_all buffer */
-  // int32_t res_all_size_; /* Length of buffer */
-  bool omit_defaults_; /* Omit config variables with default values when dumping
-                          the config */
+  int32_t err_type_{0};       /* The way to Terminate on failure */
+  bool omit_defaults_{false}; /* Omit config variables with default values when
+                          dumping the config */
 
-  int32_t r_first_;              /* First daemon resource type */
-  int32_t r_last_;               /* Last daemon resource type */
-  int32_t r_own_;                /* own resource type */
-  BareosResource* own_resource_; /* Pointer to own resource */
-  ResourceTable* resources_;     /* Pointer to table of permitted resources */
-  BareosResource** res_head_;    /* Pointer to defined resources */
-  mutable brwlock_t res_lock_;   /* Resource lock */
+  int32_t r_num_{0};                      /* number of daemon resource types */
+  int32_t r_own_{0};                      /* own resource type */
+  BareosResource* own_resource_{nullptr}; /* Pointer to own resource */
+  ResourceTable* resource_definitions_{
+      0}; /* Pointer to table of permitted resources */
+  std::shared_ptr<ConfigResourcesContainer> config_resources_container_;
+  mutable brwlock_t res_lock_; /* Resource lock */
 
-  SaveResourceCb_t SaveResourceCb_;
-  DumpResourceCb_t DumpResourceCb_;
-  FreeResourceCb_t FreeResourceCb_;
+  SaveResourceCb_t SaveResourceCb_{nullptr};
+  DumpResourceCb_t DumpResourceCb_{nullptr};
+  FreeResourceCb_t FreeResourceCb_{nullptr};
 
   ConfigurationParser();
   ConfigurationParser(const char* cf,
@@ -228,10 +228,8 @@ class ConfigurationParser {
                       STORE_RES_HANDLER* StoreRes,
                       PRINT_RES_HANDLER* print_res,
                       int32_t err_type,
-                      int32_t r_first,
-                      int32_t r_last,
+                      int32_t r_num,
                       ResourceTable* resources,
-                      BareosResource** res_head,
                       const char* config_default_filename,
                       const char* config_include_dir,
                       void (*ParseConfigBeforeCb)(ConfigurationParser&),
@@ -250,7 +248,10 @@ class ConfigurationParser {
                        LEX_WARNING_HANDLER* scan_warning = nullptr);
   const std::string& get_base_config_path() const { return used_config_path_; }
   void FreeResources();
-  BareosResource** SaveResources();
+
+  std::shared_ptr<ConfigResourcesContainer> BackupResourceTable();
+  void RestoreResourceTable(std::shared_ptr<ConfigResourcesContainer>&&);
+
   void InitResource(int rcode,
                     ResourceItem items[],
                     int pass,
@@ -327,17 +328,17 @@ class ConfigurationParser {
                                            used, if no filename is given */
   std::string config_dir_; /* base directory of configuration files */
   std::string
-      config_include_dir_;      /* rel. path to the config include directory
-                                    (bareos-dir.d, bareos-sd.d, bareos-fd.d, ...) */
-  bool use_config_include_dir_; /* Use the config include directory */
+      config_include_dir_; /* rel. path to the config include directory
+                               (bareos-dir.d, bareos-sd.d, bareos-fd.d, ...) */
+  bool use_config_include_dir_{false}; /* Use the config include directory */
   std::string config_include_naming_format_; /* Format string for file paths of
                                                 resources */
   std::string used_config_path_;             /* Config file that is used. */
   std::unique_ptr<QualifiedResourceNameTypeConverter>
       qualified_resource_name_type_converter_;
-  ParseConfigBeforeCb_t ParseConfigBeforeCb_;
-  ParseConfigReadyCb_t ParseConfigReadyCb_;
-  bool parser_first_run_;
+  ParseConfigBeforeCb_t ParseConfigBeforeCb_{nullptr};
+  ParseConfigReadyCb_t ParseConfigReadyCb_{nullptr};
+  bool parser_first_run_{true};
   BStringList warnings_;
 
 
@@ -404,6 +405,43 @@ class ConfigurationParser {
   void SetResourceDefaultsParserPass1(ResourceItem* item);
   void SetResourceDefaultsParserPass2(ResourceItem* item);
 };
+
+
+class ConfigResourcesContainer {
+ private:
+  std::chrono::time_point<std::chrono::system_clock> timestamp_{};
+  ConfigurationParser* config_ = nullptr;
+
+ public:
+  BareosResource** configuration_resources_ = nullptr;
+  ConfigResourcesContainer(ConfigurationParser* config)
+  {
+    config_ = config;
+    int num = config_->r_num_;
+    configuration_resources_
+        = (BareosResource**)malloc(num * sizeof(BareosResource*));
+
+    for (int i = 0; i < num; i++) { configuration_resources_[i] = nullptr; }
+    Dmsg1(10, "ConfigResourcesContainer: new configuration_resources_ %p\n",
+          configuration_resources_);
+  }
+
+  ~ConfigResourcesContainer()
+  {
+    Dmsg1(10, "ConfigResourcesContainer freeing %p %s\n",
+          configuration_resources_, TPAsString(timestamp_).c_str());
+    int num = config_->r_num_;
+    for (int j = 0; j < num; j++) {
+      config_->FreeResourceCb_(configuration_resources_[j], j);
+      configuration_resources_[j] = nullptr;
+    }
+    free(configuration_resources_);
+    configuration_resources_ = nullptr;
+  }
+  void SetTimestampToNow() { timestamp_ = std::chrono::system_clock::now(); }
+  std::string TimeStampAsString() { return TPAsString(timestamp_); }
+};
+
 
 bool PrintMessage(void* sock, const char* fmt, ...);
 bool IsTlsConfigured(TlsResource* tls_resource);

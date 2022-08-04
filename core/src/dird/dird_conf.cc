@@ -77,8 +77,6 @@ extern struct s_kw RunFields[];
  * types. Note, these should be unique for each
  * daemon though not a requirement.
  */
-static BareosResource* sres_head[R_LAST - R_FIRST + 1];
-static BareosResource** res_head = sres_head;
 static PoolMem* configure_usage_string = NULL;
 
 extern void StoreInc(LEX* lc, ResourceItem* item, int index, int pass);
@@ -812,7 +810,7 @@ json_t* json_datatype(const int type, ResourceItem items[])
 bool PrintConfigSchemaJson(PoolMem& buffer)
 {
   DatatypeName* datatype;
-  ResourceTable* resources = my_config->resources_;
+  ResourceTable* resources = my_config->resource_definitions_;
 
   json_t* json = json_object();
   json_object_set_new(json, "format-version", json_integer(2));
@@ -826,7 +824,7 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
   json_object_set(resource, "bareos-dir", bareos_dir);
 
   for (int r = 0; resources[r].name; r++) {
-    ResourceTable resource = my_config->resources_[r];
+    ResourceTable resource = my_config->resource_definitions_[r];
     json_object_set(bareos_dir, resource.name, json_items(resource.items));
   }
 
@@ -2529,24 +2527,29 @@ static void StoreActiononpurge(LEX* lc, ResourceItem* item, int index, int pass)
  * first reference. The details of the resource are obtained
  * later from the SD.
  */
-static void StoreDevice(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreDevice(LEX* lc,
+                        ResourceItem* item,
+                        int index,
+                        int pass,
+                        BareosResource** configuration_resources)
 {
-  int rindex = R_DEVICE - R_FIRST;
+  int rindex = R_DEVICE;
 
   if (pass == 1) {
     LexGetToken(lc, BCT_NAME);
-    if (!res_head[rindex]) {
+    if (!configuration_resources[rindex]) {
       DeviceResource* device_resource = new DeviceResource;
       device_resource->rcode_ = R_DEVICE;
       device_resource->resource_name_ = strdup(lc->str);
-      res_head[rindex] = device_resource; /* store first entry */
+      configuration_resources[rindex] = device_resource; /* store first entry */
       Dmsg3(900, "Inserting first %s res: %s index=%d\n",
             my_config->ResToStr(R_DEVICE), device_resource->resource_name_,
             rindex);
     } else {
       bool found = false;
       BareosResource* next;
-      for (next = res_head[rindex]; next->next_; next = next->next_) {
+      for (next = configuration_resources[rindex]; next->next_;
+           next = next->next_) {
         if (bstrcmp(next->resource_name_, lc->str)) {
           found = true;  // already defined
           break;
@@ -2572,7 +2575,7 @@ static void StoreDevice(LEX* lc, ResourceItem* item, int index, int pass)
 }
 
 // Store Migration/Copy type
-static void StoreMigtype(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreMigtype(LEX* lc, ResourceItem* item, int index)
 {
   LexGetToken(lc, BCT_NAME);
   // Store the type both in pass 1 and pass 2
@@ -3204,7 +3207,11 @@ static void InitResourceCb(ResourceItem* item, int pass)
  * callback function for parse_config
  * See ../lib/parse_conf.c, function ParseConfig, for more generic handling.
  */
-static void ParseConfigCb(LEX* lc, ResourceItem* item, int index, int pass)
+static void ParseConfigCb(LEX* lc,
+                          ResourceItem* item,
+                          int index,
+                          int pass,
+                          BareosResource** configuration_resources)
 {
   switch (item->type) {
     case CFG_TYPE_AUTOPASSWORD:
@@ -3223,7 +3230,7 @@ static void ParseConfigCb(LEX* lc, ResourceItem* item, int index, int pass)
       StoreAuthtype(lc, item, index, pass);
       break;
     case CFG_TYPE_DEVICE:
-      StoreDevice(lc, item, index, pass);
+      StoreDevice(lc, item, index, pass, configuration_resources);
       break;
     case CFG_TYPE_JOBTYPE:
       StoreJobtype(lc, item, index, pass);
@@ -3244,7 +3251,7 @@ static void ParseConfigCb(LEX* lc, ResourceItem* item, int index, int pass)
       StoreRunscript(lc, item, index, pass);
       break;
     case CFG_TYPE_MIGTYPE:
-      StoreMigtype(lc, item, index, pass);
+      StoreMigtype(lc, item, index);
       break;
     case CFG_TYPE_INCEXC:
       StoreInc(lc, item, index, pass);
@@ -3669,7 +3676,7 @@ static void CreateAndAddUserAgentConsoleResource(ConfigurationParser& my_config)
   c->tls_enable_ = true;
   c->resource_name_ = strdup("*UserAgent*");
   c->description_ = strdup("root console definition");
-  c->rcode_ = 1013;
+  c->rcode_ = R_CONSOLE;
   c->rcode_str_ = "R_CONSOLE";
   c->refcnt_ = 1;
   c->internal_ = true;
@@ -3681,7 +3688,7 @@ ConfigurationParser* InitDirConfig(const char* configfile, int exit_code)
 {
   ConfigurationParser* config = new ConfigurationParser(
       configfile, nullptr, nullptr, InitResourceCb, ParseConfigCb,
-      PrintConfigCb, exit_code, R_FIRST, R_LAST, resources, res_head,
+      PrintConfigCb, exit_code, R_NUM, resources,
       default_config_filename.c_str(), "bareos-dir.d", ConfigBeforeCallback,
       ConfigReadyCallback, SaveResource, DumpResource, FreeResource);
   if (config) { config->r_own_ = R_DIRECTOR; }
@@ -3996,8 +4003,7 @@ static void FreeResource(BareosResource* res, int type)
  */
 static bool SaveResource(int type, ResourceItem* items, int pass)
 {
-  int rindex = type - R_FIRST;
-  BareosResource* allocated_resource = *resources[rindex].allocated_resource_;
+  BareosResource* allocated_resource = *resources[type].allocated_resource_;
 
   switch (type) {
     case R_DIRECTOR: {
@@ -4027,7 +4033,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
         if (!BitIsSet(0, allocated_resource->item_present_)) {
           Emsg2(M_ERROR, 0,
                 _("%s item is required in %s resource, but not found.\n"),
-                items[0].name, resources[rindex].name);
+                items[0].name, resources[type].name);
           return false;
         }
       }

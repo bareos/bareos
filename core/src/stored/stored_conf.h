@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -46,21 +46,20 @@ static const std::string default_config_filename("bareos-sd.conf");
 // Resource codes -- they must be sequential for indexing
 enum
 {
-  R_DIRECTOR = 3001,
+  R_DIRECTOR = 0,
   R_NDMP,
   R_STORAGE,
   R_DEVICE,
   R_MSGS,
   R_AUTOCHANGER,
-  R_JOB, /* needed for Job name conversion */
-  R_FIRST = R_DIRECTOR,
-  R_LAST = R_JOB,  /* keep this updated */
+  R_JOB,           // needed for Job name conversion
+  R_NUM,           // number of entires
   R_CLIENT = 0xff  // dummy for bsock printing
 };
 
 enum
 {
-  R_NAME = 3020,
+  R_NAME = 0,
   R_ADDRESS,
   R_PASSWORD,
   R_TYPE,

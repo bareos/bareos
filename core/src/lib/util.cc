@@ -1137,3 +1137,15 @@ std::vector<std::string> split_string(const std::string& str, char delim)
   while (std::getline(ss, part, delim)) { parts.push_back(part); }
   return parts;
 }
+
+std::string TPAsString(const std::chrono::system_clock::time_point& tp)
+{
+  std::time_t t = std::chrono::system_clock::to_time_t(tp);
+  char str[100];
+  if (!std::strftime(str, sizeof(str), "%Y-%m-%d_%H:%M:%S",
+                     std::localtime(&t))) {
+    return std::string("strftime error");
+  }
+  std::string ts = str;
+  return ts;
+}

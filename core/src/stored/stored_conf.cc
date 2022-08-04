@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -47,9 +47,6 @@
 #include "include/jcr.h"
 
 namespace storagedaemon {
-
-static BareosResource* sres_head[R_LAST - R_FIRST + 1];
-static BareosResource** res_head = sres_head;
 
 static void FreeResource(BareosResource* sres, int type);
 static bool SaveResource(int type, ResourceItem* items, int pass);
@@ -442,7 +439,11 @@ static void InitResourceCb(ResourceItem* item, int pass)
   }
 }
 
-static void ParseConfigCb(LEX* lc, ResourceItem* item, int index, int pass)
+static void ParseConfigCb(LEX* lc,
+                          ResourceItem* item,
+                          int index,
+                          int pass,
+                          BareosResource** configuration_resources)
 {
   switch (item->type) {
     case CFG_TYPE_AUTOPASSWORD:
@@ -562,9 +563,9 @@ ConfigurationParser* InitSdConfig(const char* configfile, int exit_code)
 {
   ConfigurationParser* config = new ConfigurationParser(
       configfile, nullptr, nullptr, InitResourceCb, ParseConfigCb, nullptr,
-      exit_code, R_FIRST, R_LAST, resources, res_head,
-      default_config_filename.c_str(), "bareos-sd.d", ConfigBeforeCallback,
-      ConfigReadyCallback, SaveResource, DumpResource, FreeResource);
+      exit_code, R_NUM, resources, default_config_filename.c_str(),
+      "bareos-sd.d", ConfigBeforeCallback, ConfigReadyCallback, SaveResource,
+      DumpResource, FreeResource);
   if (config) { config->r_own_ = R_STORAGE; }
   return config;
 }
@@ -597,7 +598,7 @@ bool ParseSdConfig(const char* configfile, int exit_code)
 #ifdef HAVE_JANSSON
 bool PrintConfigSchemaJson(PoolMem& buffer)
 {
-  ResourceTable* resources = my_config->resources_;
+  ResourceTable* resources = my_config->resource_definitions_;
 
   json_t* json = json_object();
   json_object_set_new(json, "format-version", json_integer(2));
@@ -611,7 +612,7 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
   json_object_set(resource, "bareos-sd", bareos_sd);
 
   for (int r = 0; resources[r].name; r++) {
-    ResourceTable resource = my_config->resources_[r];
+    ResourceTable resource = my_config->resource_definitions_[r];
     json_object_set(bareos_sd, resource.name, json_items(resource.items));
   }
 
@@ -708,11 +709,10 @@ static void DumpResource(int type,
 
 static bool SaveResource(int type, ResourceItem* items, int pass)
 {
-  int rindex = type - R_FIRST;
   int i;
   int error = 0;
 
-  BareosResource* allocated_resource = *resources[rindex].allocated_resource_;
+  BareosResource* allocated_resource = *resources[type].allocated_resource_;
   if (pass == 2 && !allocated_resource->Validate()) { return false; }
 
   // Ensure that all required items are present
@@ -721,13 +721,13 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
       if (!BitIsSet(i, (*items[i].allocated_resource)->item_present_)) {
         Emsg2(M_ERROR_TERM, 0,
               _("\"%s\" item is required in \"%s\" resource, but not found.\n"),
-              items[i].name, resources[rindex].name);
+              items[i].name, resources[type].name);
       }
     }
 
     if (i >= MAX_RES_ITEMS) {
       Emsg1(M_ERROR_TERM, 0, _("Too many items in \"%s\" resource\n"),
-            resources[rindex].name);
+            resources[type].name);
     }
   }
 
@@ -820,7 +820,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
 
   if (!error) {
     BareosResource* new_resource = nullptr;
-    switch (resources[rindex].rcode) {
+    switch (resources[type].rcode) {
       case R_DIRECTOR:
         new_resource = res_dir;
         res_dir = nullptr;

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -41,9 +41,30 @@ TEST(ConfigParser_Dir, bareos_configparser_tests)
       RELATIVE_PROJECT_SOURCE_DIR "/configs/bareos-configparser-tests");
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   my_config->ParseConfig();
-
   my_config->DumpResources(PrintMessage, NULL);
 
+  auto backup = my_config->BackupResourceTable();
+  my_config->ParseConfig();
+
+  me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
+  my_config->own_resource_ = me;
+  ASSERT_NE(nullptr, me);
+  my_config->RestoreResourceTable(std::move(backup));
+  ASSERT_NE(nullptr, me);
+
+  // If a config already exists, BackupResourceTable() needs to be called before
+  // ParseConfig(), otherwise memory of the existing config is not freed
+  // completely
+  auto backup2 = my_config->BackupResourceTable();
+  my_config->ParseConfig();
+
+  me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
+  my_config->own_resource_ = me;
+  assert(me);
+
+  ASSERT_NE(nullptr, me);
+  my_config->DumpResources(PrintMessage, NULL);
+  ASSERT_NE(nullptr, me);
   delete my_config;
 
   TermMsg(); /* Terminate message handler */
@@ -242,6 +263,4 @@ TEST(ConfigParser_Dir, CFG_TYPE_TIME)
 {
   test_config_directive_type(test_CFG_TYPE_TIME);
 }
-
-
 }  // namespace directordaemon
