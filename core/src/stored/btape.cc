@@ -318,7 +318,7 @@ int main(int margc, char* margv[])
                   GetFirstPortHostOrder(me->SDaddrs));
 
   dcr = new BTAPE_DCR;
-  jcr = SetupJcr("btape", archive_name.data(), bsr, director, dcr, NULL,
+  jcr = SetupJcr("btape", archive_name.data(), bsr, director, dcr, "",
                  false); /* write device */
   if (!jcr) { exit(1); }
 

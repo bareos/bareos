@@ -101,7 +101,7 @@ int main(int argc, char* argv[])
       ->check(CLI::ExistingPath)
       ->type_name("<path>");
 
-  std::string DirectorName;
+  std::string DirectorName{};
   bcopy_app
       .add_option("-D,--director", DirectorName,
                   "Specify a director name specified in the storage. "
@@ -192,7 +192,7 @@ int main(int argc, char* argv[])
 
   DeviceControlRecord* in_dcr = new DeviceControlRecord;
   in_jcr = SetupJcr("bcopy", input_archive.data(), bsr, director, in_dcr,
-                    inputVolumes.c_str(), true); /* read device */
+                    inputVolumes, true); /* read device */
   if (!in_jcr) { exit(1); }
 
   in_jcr->impl->ignore_label_errors = ignore_label_errors;
@@ -205,7 +205,7 @@ int main(int argc, char* argv[])
 
   DeviceControlRecord* out_dcr = new DeviceControlRecord;
   out_jcr = SetupJcr("bcopy", output_archive.data(), bsr, director, out_dcr,
-                     outputVolumes.c_str(), false); /* write device */
+                     outputVolumes, false); /* write device */
   if (!out_jcr) { exit(1); }
 
   out_dev = out_jcr->impl->dcr->dev;

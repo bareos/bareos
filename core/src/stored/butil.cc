@@ -50,7 +50,7 @@ namespace storagedaemon {
 static bool setup_to_access_device(DeviceControlRecord* dcr,
                                    JobControlRecord* jcr,
                                    char* dev_name,
-                                   const char* VolumeName,
+                                   const std::string& VolumeName,
                                    bool readonly);
 static DeviceResource* find_device_res(char* archive_device_string,
                                        bool readonly);
@@ -100,7 +100,7 @@ JobControlRecord* SetupJcr(const char* name,
                            BootStrapRecord* bsr,
                            DirectorResource* director,
                            DeviceControlRecord* dcr,
-                           const char* VolumeName,
+                           const std::string& VolumeName,
                            bool readonly)
 {
   JobControlRecord* jcr = SetupDummyJcr(name, bsr, director);
@@ -112,8 +112,8 @@ JobControlRecord* SetupJcr(const char* name,
     return NULL;
   }
 
-  if (!bsr && VolumeName) {
-    bstrncpy(dcr->VolumeName, VolumeName, sizeof(dcr->VolumeName));
+  if (!bsr && !VolumeName.empty()) {
+    bstrncpy(dcr->VolumeName, VolumeName.c_str(), sizeof(dcr->VolumeName));
   }
 
   bstrncpy(dcr->pool_name, "Default", sizeof(dcr->pool_name));
@@ -130,7 +130,7 @@ JobControlRecord* SetupJcr(const char* name,
 static bool setup_to_access_device(DeviceControlRecord* dcr,
                                    JobControlRecord* jcr,
                                    char* dev_name,
-                                   const char* VolumeName,
+                                   const std::string& VolumeName,
                                    bool readonly)
 {
   Device* dev;
@@ -144,9 +144,9 @@ static bool setup_to_access_device(DeviceControlRecord* dcr,
    * If no volume name already given and no bsr, and it is a file,
    * try getting name from Filename
    */
-  if (VolumeName) {
-    bstrncpy(VolName, VolumeName, sizeof(VolName));
-    if (strlen(VolumeName) >= MAX_NAME_LENGTH) {
+  if (!VolumeName.empty()) {
+    bstrncpy(VolName, VolumeName.c_str(), sizeof(VolName));
+    if (VolumeName.size() >= MAX_NAME_LENGTH) {
       Jmsg0(jcr, M_ERROR, 0,
             _("Volume name or names is too long. Please use a .bsr file.\n"));
     }

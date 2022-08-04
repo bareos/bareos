@@ -41,7 +41,7 @@ JobControlRecord* SetupJcr(const char* name,
                            BootStrapRecord* bsr,
                            DirectorResource* director,
                            DeviceControlRecord* dcr,
-                           const char* VolumeName,
+                           const std::string& VolumeName,
                            bool readonly);
 void DisplayTapeErrorStatus(JobControlRecord* jcr, Device* dev);
 

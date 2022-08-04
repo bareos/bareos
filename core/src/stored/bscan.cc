@@ -301,8 +301,8 @@ int main(int argc, char* argv[])
   }
 
   DeviceControlRecord* dcr = new DeviceControlRecord;
-  bjcr = SetupJcr("bscan", device_name.data(), bsr, director, dcr,
-                  volumes.data(), true);
+  bjcr = SetupJcr("bscan", device_name.data(), bsr, director, dcr, volumes,
+                  true);
   if (!bjcr) { exit(1); }
   dev = bjcr->impl->read_dcr->dev;
 

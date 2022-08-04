@@ -241,7 +241,7 @@ int main(int argc, char* argv[])
       bsr = libbareos::parse_bsr(nullptr, bsrName.data());
     }
     dcr = new DeviceControlRecord;
-    jcr = SetupJcr("bls", device.data(), bsr, director, dcr, VolumeNames.data(),
+    jcr = SetupJcr("bls", device.data(), bsr, director, dcr, VolumeNames,
                    true); /* read device */
     if (!jcr) { exit(1); }
     jcr->impl->ignore_label_errors = ignore_label_errors;

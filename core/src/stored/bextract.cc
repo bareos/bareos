@@ -399,7 +399,7 @@ static void DoExtract(char* devname,
   EnableBackupPrivileges(NULL, 1);
 
   dcr = new DeviceControlRecord;
-  jcr = SetupJcr("bextract", devname, bsr, director, dcr, VolumeName.c_str(),
+  jcr = SetupJcr("bextract", devname, bsr, director, dcr, VolumeName,
                  true); /* read device */
   if (!jcr) { exit(1); }
   dev = jcr->impl->read_dcr->dev;
