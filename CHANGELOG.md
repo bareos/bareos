@@ -6,6 +6,8 @@ file when a release is made.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
+## [Unreleased]
+
 ## [19.2.13] - 2022-08-04
 
 ### Changed
@@ -44,3 +46,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 [PR #1124]: https://github.com/bareos/bareos/pull/1124
 [PR #1143]: https://github.com/bareos/bareos/pull/1143
 [PR #1158]: https://github.com/bareos/bareos/pull/1158
+[unreleased]: https://github.com/bareos/bareos/tree/master
