@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and since Bareos version 20 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [20.0.7] - 2022-08-05
 
 ### Changed
 - jstreegrid: remove handling of IE < 8 using navigator interface to avoid warnings in chrome [PR #1142]
@@ -291,6 +291,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [20.0.4]: https://github.com/bareos/bareos/releases/tag/Release%2F20.0.4
 [20.0.5]: https://github.com/bareos/bareos/releases/tag/Release%2F20.0.5
 [20.0.6]: https://github.com/bareos/bareos/releases/tag/Release%2F20.0.6
+[20.0.7]: https://github.com/bareos/bareos/releases/tag/Release%2F20.0.7
 [Issue #579]: https://bugs.bareos.org/view.php?id=579
 [Issue #871]: https://bugs.bareos.org/view.php?id=871
 [Issue #971]: https://bugs.bareos.org/view.php?id=971
@@ -515,4 +516,3 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1145]: https://github.com/bareos/bareos/pull/1145
 [PR #1157]: https://github.com/bareos/bareos/pull/1157
 [PR #1196]: https://github.com/bareos/bareos/pull/1196
-[unreleased]: https://github.com/bareos/bareos/tree/master
