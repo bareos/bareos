@@ -121,6 +121,24 @@ END_OF_DATA
 
 run_bconsole
 
+# Pruning jobs
+
+job_pruning_log="$tmp"/job_pruning_log.out
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $job_pruning_log
+run job=$JobName Level=Full yes
+run job=$JobName Level=Full yes
+wait
+@sleep 2
+prune jobs yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
 check_for_zombie_jobs storage=File
 stop_bareos
 
@@ -177,5 +195,15 @@ if ! grep -F 'Volume "TestVolumeIncremental" contains no jobs after pruning.' $t
   grep 'Volume.*contains no jobs after pruning.' $tmp/log3.out >&2 || :
   estat=1
 fi
+
+#job pruning
+
+expect_grep "Purging the following JobIds: 3,8,10" \
+            "$job_pruning_log" \
+            "job pruning went wrong"
+
+expect_grep "Pruned 3 Jobs for client bareos-fd from catalog." \
+            "$job_pruning_log" \
+            "job pruning went wrong"
 
 end_test
