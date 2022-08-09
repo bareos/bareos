@@ -26,8 +26,11 @@ The by far **biggest table** in the Bareos catalog database is the **file** tabl
 Typically this is about **90-95%** of the database's total size.
 The **size of the file table** depends on the number of files that are stored and the average length of a filename (without path).
 
-Roughly :math:`\frac{1}{3}` of the file table size is consumed by its **indexes**.
-To have optimum performance, the **memory available** for the Bareos catalog database should be at least the **size of the file table indexes**.
+Roughly 40% of the file table size is consumed by its **indexes**.
+
+The other noticeable table is **path** with its indexes. The amount of space used is roughly :math:`\frac{1}{10}` of the **file** table.
+
+To have optimum performance, the **memory available** for the Bareos catalog database should be at least the **size of the file and path table indexes**.
 
 Database size estimation
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -36,31 +39,41 @@ Depending on the number of files and the average length of filenames, the **data
 
 To **calculate the number of files** in the DB, the number of files being backed up from all systems needs to be multiplied by the number of times that they will be kept in the database.
 
-The **amount of data per file** in the DB, depends on the size of filenames that are being backed up, but we have analyzed some real-world examples and found that values between **250 and 350 bytes per row** are usual.
+The **amount of data per file or path** in the DB, depends on the size of filenames or path length that are being backed up, but we have analyzed some real-world examples and found that values between **250 and 350 bytes per row** are usual.
 
-So the calculation of the size of the file table can be approximated with the following formula:
+The size of the path indexes is around 60% of the table size.
+
+So the calculation of the size of the file and path tables can be approximated with the following formula:
 
 .. math::
    \begin{split}
-   s &= n_f \cdot n_b \cdot 300 \frac{\mbox{bytes}}{\mbox{row}} \\
+   s &= n_f \times n_b \times 300 \frac{\mbox{bytes}}{\mbox{row}} \\
+   p &= \frac{s}{10} \\
    s &: \mbox{storage required for file table} \\
    n_f &: \mbox{number of files in a (full) backup} \\
    n_b &: \mbox{number of (full) backups} \\
+   p &: \mbox{storage required for path table} \\
    \end{split}
 
-*Example:* If **200.000 files** are backed up during a full backup, a full backup is run **every week** and the retention of the backups is **4 weeks**, the total amount of files would be
+*Example:* If **2.000.000 files** are backed up during a full backup, a full backup is run **every week** and the retention of the backups is **4 weeks**, the total amount of files would be
 
 .. math::
    \begin{split}
-   n_f &= 200.000\ \mbox{Files} \\
+   n_f &= 2.000.000\ \mbox{Files} \\
    n_b &= 4\ \mbox{Full Backups} \\
-   s &= n_f \cdot n_b \cdot 300 \frac{\mbox{bytes}}{\mbox{row}} \\
-     &= 200.000\ \mbox{Files} \cdot 4\ \mbox{Full Backups} \cdot 300 \frac{\mbox{bytes}}{\mbox{row}} \\
-     &= 240.000.000\ \mbox{bytes} \\
-     &= 240\ \mbox{GB} \\
+   s &= n_f \times n_b \times 300 \frac{\mbox{bytes}}{\mbox{row}} \\
+     &= 2.000.000\ \mbox{Files} \times 4\ \mbox{Full Backups} \times 300 \frac{\mbox{bytes}}{\mbox{row}} \\
+     &= 2.400.000.000\ \mbox{bytes} \\
+     &= 2.4\ \mbox{GB} \\
+     \ \ \\
+   p &= \frac{\mbox{s}}{10} \\
+     &= \frac{2.400}{10}\ \mbox{MB} \\
+     &= 240\ \mbox{MB} \\
    \end{split}
 
-About :math:`\frac{1}{3}` of the DB Size should be available as RAM, so about 80 GB.
+About 40% of the File and 60% of path table size should be available as RAM, so about 1GB.
+
+PostgreSQL for its vacuum operation need also disk space to be able to rewrite the table. And you should also consider to have enough free space to allow creation of temporary tables used during certain operations. Heavy consolidation job can take several gigabytes of temporary space.
 
 
 CPU considerations
