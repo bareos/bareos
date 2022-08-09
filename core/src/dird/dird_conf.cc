@@ -1373,7 +1373,7 @@ static void PrintConfigRunscript(OutputFormatterResource& send,
 
       // Default: runsonclient = yes
       if (runscript->target.empty()) {
-        send.KeyBool("RunsOnClient", runscript->target.empty(), inherited);
+        send.KeyBool("RunsOnClient", false, inherited);
       }
 
       send.SubResourceEnd(NULL, inherited, "}\n");
