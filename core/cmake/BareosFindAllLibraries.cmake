@@ -175,9 +175,6 @@ elseif(
   )
 endif()
 
-bareosfindlibraryandheaders("rados" "rados/librados.h" "")
-bareosfindlibraryandheaders("radosstriper" "radosstriper/libradosstriper.h" "")
-bareosfindlibraryandheaders("cephfs" "cephfs/libcephfs.h" "")
 bareosfindlibraryandheaders("pthread" "pthread.h" "")
 bareosfindlibraryandheaders("cap" "sys/capability.h" "")
 bareosfindlibraryandheaders("gfapi" "glusterfs/api/glfs.h" "")

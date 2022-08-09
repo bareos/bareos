@@ -93,11 +93,12 @@ struct BackendDeviceLibraryDescriptor {
   void FlushDevice() { backend_interface->FlushDevice(); }
 };
 
-const std::map<DeviceType, const char*> device_type_to_name_mapping = {
-    {DeviceType::B_FIFO_DEV, "fifo"},    {DeviceType::B_TAPE_DEV, "tape"},
-    {DeviceType::B_GFAPI_DEV, "gfapi"},  {DeviceType::B_DROPLET_DEV, "droplet"},
-    {DeviceType::B_RADOS_DEV, "rados"},  {DeviceType::B_CEPHFS_DEV, "cephfs"},
-    {DeviceType::B_UNKNOWN_DEV, nullptr}};
+const std::map<DeviceType, const char*> device_type_to_name_mapping
+    = {{DeviceType::B_FIFO_DEV, "fifo"},
+       {DeviceType::B_TAPE_DEV, "tape"},
+       {DeviceType::B_GFAPI_DEV, "gfapi"},
+       {DeviceType::B_DROPLET_DEV, "droplet"},
+       {DeviceType::B_UNKNOWN_DEV, nullptr}};
 
 static std::vector<std::unique_ptr<BackendDeviceLibraryDescriptor>>
     loaded_backends;

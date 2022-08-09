@@ -41,7 +41,6 @@ Vendor: 	The Bareos Team
 %define glusterfs 0
 %define droplet 1
 %define have_git 1
-%define ceph 0
 %define install_suse_fw 0
 %define systemd_support 0
 %define python_plugins 1
@@ -83,10 +82,6 @@ BuildRequires: libtirpc-devel
 %endif
 
 
-%if 0%{?sle_version} >= 120000
-%define ceph 1
-%endif
-
 #
 # RedHat (CentOS, Fedora, RHEL) specific settings
 #
@@ -108,14 +103,6 @@ BuildRequires: libtirpc-devel
 %define systemd_support 1
 %endif
 
-
-%if 0%{?rhel_version} >= 700 && !0%{?centos_version}
-%define ceph 1
-%endif
-
-%if 0%{?centos} >= 8
-%define ceph 1
-%endif
 
 # use Developer Toolset 8 compiler as standard is too old
 %if 0%{?centos_version} == 700 || 0%{?rhel_version} == 700
@@ -149,27 +136,6 @@ BuildRequires: systemd-rpm-macros
 
 %if 0%{?glusterfs}
 BuildRequires: glusterfs-devel glusterfs-api-devel
-%endif
-
-%if 0%{?ceph}
-  %if 0%{?sle_version} >= 120200
-BuildRequires: libcephfs-devel
-BuildRequires: librados-devel
-  %else
-# the rhel macro is set in docker, but not in obs
-    %if 0%{?rhel} == 7
-BuildRequires: librados2-devel
-BuildRequires: libcephfs1-devel
-    %else
-      %if 0%{?rhel} == 8 || 0%{?rhel} == 9
-BuildRequires: librados-devel
-BuildRequires: libradosstriper-devel
-BuildRequires: libcephfs-devel
-      %else
-BuildRequires: ceph-devel
-      %endif
-    %endif
-  %endif
 %endif
 
 %if 0%{?have_git}
@@ -382,14 +348,6 @@ Group:      Productivity/Archiving/Backup
 Requires:   %{name}-common  = %{version}
 Requires:   %{name}-storage = %{version}
 Requires:   glusterfs
-%endif
-
-%if 0%{?ceph}
-%package    storage-ceph
-Summary:    CEPH support for the Bareos Storage daemon
-Group:      Productivity/Archiving/Backup
-Requires:   %{name}-common  = %{version}
-Requires:   %{name}-storage = %{version}
 %endif
 
 %package    storage-tape
@@ -709,19 +667,6 @@ This package contains the GlusterFS plugin for the file daemon
 
 %endif
 
-%if 0%{?ceph}
-%package    filedaemon-ceph-plugin
-Summary:    CEPH plugin for Bareos File daemon
-Group:      Productivity/Archiving/Backup
-Requires:   bareos-filedaemon = %{version}
-
-%description filedaemon-ceph-plugin
-%{dscr}
-
-This package contains the CEPH plugins for the file daemon
-
-%endif
-
 %package webui
 Summary:       Bareos Web User Interface
 Group:         Productivity/Archiving/Backup
@@ -872,13 +817,6 @@ This package contains the Storage backend for Object Storage (through libdroplet
 %{dscr}
 
 This package contains the Storage backend for GlusterFS.
-%endif
-
-%if 0%{?ceph}
-%description storage-ceph
-%{dscr}
-
-This package contains the Storage backend for CEPH.
 %endif
 
 %description storage-fifo
@@ -1402,15 +1340,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %attr(0640, %{storage_daemon_user}, %{daemon_group})  %{_sysconfdir}/%{name}/bareos-sd.d/device/GlusterStorage.conf.example
 %endif
 
-%if 0%{?ceph}
-%files storage-ceph
-%defattr(-, root, root)
-%{backend_dir}/libbareossd-rados*.so
-%{backend_dir}/libbareossd-cephfs*.so
-%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/storage/Rados.conf.example
-%attr(0640, %{storage_daemon_user}, %{daemon_group})  %{_sysconfdir}/%{name}/bareos-sd.d/device/RadosStorage.conf.example
-%endif
-
 # not client_only
 %endif
 
@@ -1685,18 +1614,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/job/RestoreGFAPI.conf.example
 %endif
 
-%if 0%{?ceph}
-%files filedaemon-ceph-plugin
-%{plugin_dir}/cephfs-fd.so
-%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/fileset/plugin-cephfs.conf.example
-%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/job/BackupCephfs.conf.example
-%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/job/RestoreCephfs.conf.example
-%{plugin_dir}/rados-fd.so
-%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/fileset/plugin-rados.conf.example
-%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/job/BackupRados.conf.example
-%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/job/RestoreRados.conf.example
-%endif
-
 %if 0%{?contrib}
 
 %files       contrib-tools
@@ -1895,15 +1812,6 @@ a2enmod php5 &> /dev/null || true
 %posttrans_restore_file /etc/%{name}/bareos-sd.conf
 
 
-%if 0%{?ceph}
-%post storage-ceph
-%post_backup_file /etc/%{name}/bareos-sd.d/device-ceph-rados.conf
-
-%posttrans storage-ceph
-%posttrans_restore_file /etc/%{name}/bareos-sd.d/device-ceph-rados.conf
-%endif
-
-
 %post storage-fifo
 %post_backup_file /etc/%{name}/bareos-sd.d/device-fifo.conf
 
@@ -1932,17 +1840,6 @@ a2enmod php5 &> /dev/null || true
 
 %posttrans filedaemon
 %posttrans_restore_file /etc/%{name}/bareos-fd.conf
-
-
-%if 0%{?ceph}
-%post filedaemon-ceph-plugin
-%post_backup_file /etc/%{name}/bareos-dir.d/plugin-cephfs.conf
-%post_backup_file /etc/%{name}/bareos-dir.d/plugin-rados.conf
-
-%posttrans filedaemon-ceph-plugin
-%posttrans_restore_file /etc/%{name}/bareos-dir.d/plugin-cephfs.conf
-%posttrans_restore_file /etc/%{name}/bareos-dir.d/plugin-rados.conf
-%endif
 
 
 %if 0%{?python_plugins}

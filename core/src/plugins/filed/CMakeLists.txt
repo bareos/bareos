@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -70,26 +70,6 @@ if(HAVE_WIN32)
     COMPONENT filedaemon
   )
   target_link_libraries(mssqlvdi-fd bareos)
-endif()
-
-if(${HAVE_CEPHFS})
-  add_library(cephfs-fd MODULE cephfs/cephfs-fd.cc)
-  set_target_properties(cephfs-fd PROPERTIES PREFIX "")
-  install(
-    TARGETS cephfs-fd
-    DESTINATION ${plugindir}
-    COMPONENT filedaemon
-  )
-endif()
-
-if(${HAVE_CEPH_RADOS})
-  add_library(rados-fd MODULE rados/rados-fd.cc)
-  set_target_properties(rados-fd PROPERTIES PREFIX "")
-  install(
-    TARGETS rados-fd
-    DESTINATION ${plugindir}
-    COMPONENT filedaemon
-  )
 endif()
 
 if(NOT HAVE_WIN32)
