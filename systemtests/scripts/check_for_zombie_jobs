@@ -7,6 +7,9 @@
 # shellcheck source=../environment.in
 . ./environment
 
+# shellcheck source= ./functions
+. "${rscripts}"/functions
+
 # check_for_zombie_jobs storage=STORAGE [client=localhost-fd]
 
 if [ $# = 2 ] ; then

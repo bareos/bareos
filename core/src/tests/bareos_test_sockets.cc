@@ -118,8 +118,16 @@ static int create_listening_server_socket(int port)
     perror("setsockopt");
     return -5;
   }
-
-  if (listen(listen_file_descriptor, 3) < 0) {
+  int listenresult = -1;
+  for (int i = 0; i < 6; i++) {
+    listenresult = listen(listen_file_descriptor, 3);
+    if (listenresult == 0) {
+      break;
+    } else {
+      std::this_thread::sleep_for(std::chrono::seconds(2));
+    }
+  }
+  if (listenresult < 0) {
     perror("listen");
     return -6;
   }
