@@ -41,6 +41,10 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - build: Add support for SLE_15_SP4 [PR #1205]
 
 ### Fixed
+- dird: RunScript fixes [PR #1217]
+  - fix show command output for RunScript RunsOnClient 
+  - fix show verbose for RunScripts
+  - execute console runscripts only on the Director
 - python plugins: store architecture specific modules in sitearch (instead of sitelib) [PR #698]
 - debian: fix package dependencies for webui and Ceph [PR #1183]
 - Python plugins: fix handling of additional pluginoptions parameter [PR #1177]
@@ -210,6 +214,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1177]: https://github.com/bareos/bareos/pull/1177
 [PR #1179]: https://github.com/bareos/bareos/pull/1179
 [PR #1180]: https://github.com/bareos/bareos/pull/1180
+[PR #1181]: https://github.com/bareos/bareos/pull/1181
 [PR #1183]: https://github.com/bareos/bareos/pull/1183
 [PR #1185]: https://github.com/bareos/bareos/pull/1185
 [PR #1187]: https://github.com/bareos/bareos/pull/1187
@@ -221,5 +226,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1200]: https://github.com/bareos/bareos/pull/1200
 [PR #1204]: https://github.com/bareos/bareos/pull/1204
 [PR #1205]: https://github.com/bareos/bareos/pull/1205
+[PR #1206]: https://github.com/bareos/bareos/pull/1206
 [PR #1209]: https://github.com/bareos/bareos/pull/1209
+[PR #1217]: https://github.com/bareos/bareos/pull/1217
 [unreleased]: https://github.com/bareos/bareos/tree/master
