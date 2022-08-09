@@ -18,9 +18,6 @@ A Bareos Storage Daemon can use various storage backends:
 **GFAPI** (GlusterFS)
    is used to access a GlusterFS storage.
 
-**Rados** (Ceph Object Store)
-   is used to access a Ceph object store (deprecated since Bareos 20.0.0)
-
 
 .. _SdBackendDroplet:
 
@@ -172,11 +169,6 @@ An example for AWS S3 could look like this:
 
 More arguments and the SSL parameters can be found in the documentation of the droplet library: \externalReferenceDropletDocConfigurationFile
 
-CEPH Object Gateway S3
-^^^^^^^^^^^^^^^^^^^^^^
-
-Please note, that there is also the :ref:`SdBackendRados` backend, which is deprecated since Bareos 20.0.0. Please use the **Droplet** (S3) backend, instead.
-
 While parameters have been explained in the :ref:`section-DropletAwsS3` section, this gives an example about how to backup to a CEPH Object Gateway S3.
 
 .. code-block:: bareosconfig
@@ -309,7 +301,7 @@ Requesting the device status only resturn a unspecific error:
 Workaround:
 '''''''''''
 
--  Wait until bucket is available a permanet hostname. This can take up to 24 hours.
+-  Wait until bucket is available a permanent hostname. This can take up to 24 hours.
 
 -  Configure the AWS location into the profiles host entry. For the AWS location :file:`eu-central-1`, change ``host = s3.amazonaws.com`` into ``host = s3.eu-central-1.amazonaws.com``:
 
@@ -347,21 +339,3 @@ Adapt server and volume name to your environment.
 
 :sinceVersion:`15.2.0: GlusterFS Storage`
 
-.. _SdBackendRados:
-
-Rados Storage Backend
----------------------
-
-.. deprecated:: 20.0.0
-
-**Rados** (Ceph Object Store)
-
-Here you configure the Ceph object store, which is accessed by the SD using the Rados library. Prerequistes are a working Ceph object store and the package **bareos-storage-ceph**. See https://ceph.com/en/ for more information regarding Ceph installation and configuration. Assuming that you have an object store with name :file:`poolname` and your Ceph access is configured in :file:`/etc/ceph/ceph.conf`, you can use following snippet to configure it as
-storage device:
-
-.. literalinclude:: /include/config/SdDeviceDeviceOptionsRados1.conf
-   :language: bareosconfig
-
-
-
-:sinceVersion:`15.2.0: Ceph Storage`
