@@ -1,7 +1,7 @@
 #!/bin/bash
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -196,6 +196,12 @@ the commits, tags and branch pointers before you push!
 For a major release you should be on the release-branch, not the master
 branch. While you can move around branch pointers later, it is a lot
 easier to branch first.
+
+Verify the documentation external links by calling:
+* sphinx-build -M linkcheck docs/manuals/source out/ -j2
+or (outside the docbuild container):
+* make docs-check-urls
+
 EOT
 
 if ! confirm "Do you want to proceed?"; then
