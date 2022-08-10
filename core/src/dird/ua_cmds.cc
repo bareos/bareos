@@ -565,7 +565,7 @@ static struct ua_cmdstruct commands[] = {
          "[timeout=<number>]"),
      false, false},
     {NT_("whoami"), WhoAmICmd,
-     _("Print the user name associated with this console"), NT_(""), false,
+     _("Print the user name associated with this console"), NT_(""), true,
      false}};
 
 #define comsize ((int)(sizeof(commands) / sizeof(struct ua_cmdstruct)))
