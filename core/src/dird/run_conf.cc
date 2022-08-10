@@ -547,9 +547,9 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
             have_woy = true;
           }
           // Set the bits according to the modulo specification.
-          for (i = 0; i < 54; i++) {
+          for (i = 0; i < 53; i++) {
             if (i % code2 == 0) {
-              SetBit(i + code - 1, res_run.date_time_bitfield.woy);
+              SetBit(i + code, res_run.date_time_bitfield.woy);
             }
           }
         } else {
