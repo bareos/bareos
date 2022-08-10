@@ -338,4 +338,3 @@ configure it as storage device:
 Adapt server and volume name to your environment.
 
 :sinceVersion:`15.2.0: GlusterFS Storage`
-
