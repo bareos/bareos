@@ -152,7 +152,12 @@ class PythonBareosJsonRunScriptTest(bareos_unittest.Json):
 
         jobname = "backup-bareos-fd-runscript-console-client"
         level = None
-        expected_log = ": ClientBeforeJob: jobname={}".format(jobname)
+        expected_logs = [
+            ': console command: run BeforeJob "whoami"',
+            ': console command: run BeforeJob "version"',
+            ': console command: run BeforeJob "list jobid=',
+            ": ClientBeforeJob: jobname={}".format(jobname),
+        ]
 
         director_root = bareos.bsock.DirectorConsoleJson(
             address=self.director_address,
@@ -169,12 +174,12 @@ class PythonBareosJsonRunScriptTest(bareos_unittest.Json):
         # },
 
         jobId = self.run_job_and_search_joblog(
-            director_root, jobname, level, expected_log
+            director_root, jobname, level, expected_logs
         )
 
     def test_backup_runscript_console_server(self):
         """
-        Run a job which contains a runscript.
+        Run a job which contains a console runscript.
         Check the JobLog if the runscript worked as expected.
         """
         logger = logging.getLogger()

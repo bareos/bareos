@@ -3105,9 +3105,12 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
       script->command = cmd.command_;
       script->cmd_type = cmd.code_;
 
-      // each runscript object have a copy of target
+      // each shell runscript object have a copy of target.
+      // console runscripts are always executed on the Director.
       script->target.clear();
-      script->SetTarget(res_runscript->target);
+      if (!res_runscript->target.empty() && (script->cmd_type == SHELL_CMD)) {
+          script->SetTarget(res_runscript->target);
+      }
 
       script->short_form = false;
 
