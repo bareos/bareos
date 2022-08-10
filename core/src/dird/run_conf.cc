@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -550,9 +550,9 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
             have_woy = true;
           }
           // Set the bits according to the modulo specification.
-          for (i = 0; i < 54; i++) {
+          for (i = 0; i < 53; i++) {
             if (i % code2 == 0) {
-              SetBit(i + code - 1, res_run->date_time_bitfield.woy);
+              SetBit(i + code, res_run->date_time_bitfield.woy);
             }
           }
         } else {
