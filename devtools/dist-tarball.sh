@@ -97,7 +97,7 @@ if [ -n "${changed_files}" ]; then
 fi
 
 # get version of Bareos to name tarball and directory
-version="$("$cmake" -P get_version.cmake | sed -e 's/^-- //')"
+version="$("$cmake" -P get_version.cmake | sed -e 's/^-- //' | sed -e 's/-pre/~pre/g')"
 # get timestamp of latest commit to use as mtime for all files in tarball
 timestamp="$("$git" show --quiet --date='format-local:%Y-%m-%d %H:%M:%S' --format='%cd')"
 
