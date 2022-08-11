@@ -102,8 +102,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - build: Now use solaris 11.4-11.4.42.0.0.111.0 [PR #1189]
 - bconsole: removed commas from jobid attribute in list jobs and llist jobs outputs [PR #1126]
 - testing: matrix.yml: run multiple tests sequentially [PR #1193]
-- console: aborting job run if jobid doesn't exist in catalog [PR 1188]
+- console: aborting job run if jobid doesn't exist in catalog [PR #1188]
 - daemons: changed daemon CLI arguments parsing [PR #1187]
+- config parser: Refactor config reloading by using shared pointers instead of callbacks [PR #1151]
 
 ### Deprecated
 - make_catalog_backup.pl is now a shell wrapper script which will be removed in version 23.

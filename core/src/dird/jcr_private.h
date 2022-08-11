@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,6 +29,8 @@
 #include "dird/job_trigger.h"
 
 typedef struct s_tree_root TREE_ROOT;
+
+class ConfigResourcesContainer;
 
 namespace directordaemon {
 class JobResource;
@@ -93,9 +95,10 @@ struct Resources {
 };
 
 struct JobControlRecordPrivate {
-  JobControlRecordPrivate() {
+  JobControlRecordPrivate( std::shared_ptr<ConfigResourcesContainer> configuration_resources_container) : job_config_resources_container_(configuration_resources_container) {
     RestoreJobId = 0; MigrateJobId = 0; VerifyJobId = 0;
   }
+  std::shared_ptr<ConfigResourcesContainer> job_config_resources_container_;
   pthread_t SD_msg_chan{};        /**< Message channel thread id */
   bool SD_msg_chan_started{};     /**< Message channel thread started */
   pthread_cond_t term_wait = PTHREAD_COND_INITIALIZER;      /**< Wait for job termination */

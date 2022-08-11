@@ -35,14 +35,34 @@ namespace directordaemon {
 TEST(ConfigParser_Dir, bareos_configparser_tests)
 {
   OSDependentInit();
-
   std::string path_to_config_file = std::string(
       RELATIVE_PROJECT_SOURCE_DIR "/configs/bareos-configparser-tests");
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   my_config->ParseConfig();
-
   my_config->DumpResources(PrintMessage, NULL);
 
+  auto backup = my_config->BackupResourceTable();
+  my_config->ParseConfig();
+
+  me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
+  my_config->own_resource_ = me;
+  ASSERT_NE(nullptr, me);
+  my_config->RestoreResourceTable(std::move(backup));
+  ASSERT_NE(nullptr, me);
+
+  // If a config already exists, BackupResourceTable() needs to be called before
+  // ParseConfig(), otherwise memory of the existing config is not freed
+  // completely
+  auto backup2 = my_config->BackupResourceTable();
+  my_config->ParseConfig();
+
+  me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
+  my_config->own_resource_ = me;
+  assert(me);
+
+  ASSERT_NE(nullptr, me);
+  my_config->DumpResources(PrintMessage, NULL);
+  ASSERT_NE(nullptr, me);
   delete my_config;
 }
 
@@ -233,6 +253,4 @@ TEST(ConfigParser_Dir, CFG_TYPE_TIME)
 {
   test_config_directive_type(test_CFG_TYPE_TIME);
 }
-
-
 }  // namespace directordaemon

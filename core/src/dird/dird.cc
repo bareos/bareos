@@ -90,63 +90,12 @@ void StoreMigtype(LEX* lc, ResourceItem* item, int index, int pass);
 void InitDeviceResources();
 
 static bool test_config = false;
-struct resource_table_reference;
-static alist<resource_table_reference*>* reload_table = nullptr;
 
 static std::string pidfile_path;
 
 /* Globals Imported */
 extern ResourceItem job_items[];
 
-struct resource_table_reference {
-  int JobCount;
-  BareosResource** res_table;
-};
-
-static void FreeSavedResources(resource_table_reference* table)
-{
-  int num = my_config->r_last_ - my_config->r_first_ + 1;
-
-  if (!table->res_table) { return; }
-
-  for (int j = 0; j < num; j++) {
-    my_config->FreeResourceCb_(table->res_table[j], my_config->r_first_ + j);
-  }
-  free(table->res_table);
-}
-
-/**
- * Called here at the end of every job that was hooked decrementing the active
- * JobCount. When it goes to zero, no one is using the associated resource
- * table, so free it.
- */
-static void ReloadJobEndCb(JobControlRecord* jcr, void* ctx)
-{
-  int i;
-  resource_table_reference* table;
-
-  LockJobs();
-  LockRes(my_config);
-
-  foreach_alist_index (i, table, reload_table) {
-    if (table == (resource_table_reference*)ctx) {
-      if (table->JobCount) {
-        table->JobCount--;
-        if (table->JobCount == 0) {
-          Dmsg1(100, "Last reference to old configuration table: %#010x\n",
-                table);
-          FreeSavedResources(table);
-          reload_table->remove(i);
-          free(table);
-          break;
-        }
-      }
-    }
-  }
-
-  UnlockRes(my_config);
-  UnlockJobs();
-}
 
 /**
  * This allows the message handler to operate on the database by using a pointer
@@ -298,7 +247,7 @@ int main(int argc, char* argv[])
   if (!group.empty()) { gid = group.data(); }
 
   if (geteuid() == 0) {
-    drop(uid, gid, false); /* reduce privileges if requested */
+    drop(uid, gid, false);  // reduce privileges if requested
   } else if (uid || gid) {
     Emsg2(M_ERROR_TERM, 0,
           _("The commandline options indicate to run as specified user/group, "
@@ -540,7 +489,7 @@ bool DoReloadConfig()
 {
   static bool is_reloading = false;
   bool reloaded = false;
-  resource_table_reference prev_config;
+
 
   if (is_reloading) {
     /*
@@ -559,75 +508,41 @@ bool DoReloadConfig()
 
   DbSqlPoolFlush();
 
-  prev_config.res_table = my_config->SaveResources();
-  prev_config.JobCount = 0;
-
+  auto backup_table = my_config->BackupResourceTable();
   Dmsg0(100, "Reloading config file\n");
+
 
   my_config->err_type_ = M_ERROR;
   my_config->ClearWarnings();
   bool ok = my_config->ParseConfig();
 
-  if (!ok || !CheckResources() || !CheckCatalog(UPDATE_CATALOG)
-      || !InitializeSqlPooling()) {
-    Jmsg(nullptr, M_ERROR, 0, _("Please correct the configuration in %s\n"),
-         my_config->get_base_config_path().c_str());
-    Jmsg(nullptr, M_ERROR, 0, _("Resetting to previous configuration.\n"));
-
-    resource_table_reference temp_config;
-    temp_config.res_table = my_config->SaveResources();
-
-    int num_rcodes = my_config->r_last_ - my_config->r_first_ + 1;
-    for (int i = 0; i < num_rcodes; i++) {
-      // restore original config
-      my_config->res_head_[i] = prev_config.res_table[i];
-    }
-
-    // me is changed above by CheckResources()
-    me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
-    my_config->own_resource_ = me;
-
-    FreeSavedResources(&temp_config);
-    goto bail_out;
-
-  } else {  // parse config ok
-
-    JobControlRecord* jcr;
-    int num_running_jobs = 0;
-    resource_table_reference* new_table = nullptr;
-
+  // parse config successful
+  if (ok && CheckResources() && CheckCatalog(UPDATE_CATALOG)
+      && InitializeSqlPooling()) {
     Scheduler::GetMainScheduler().ClearQueue();
-    foreach_jcr (jcr) {
-      if (jcr->getJobType() != JT_SYSTEM) {
-        if (!new_table) {
-          new_table = (resource_table_reference*)malloc(
-              sizeof(resource_table_reference));
-          memcpy(new_table, &prev_config, sizeof(resource_table_reference));
-        }
-        new_table->JobCount++;
-        RegisterJobEndCallback(jcr, ReloadJobEndCb, (void*)new_table);
-        num_running_jobs++;
-      }
-    }
-    endeach_jcr(jcr);
+
     reloaded = true;
 
     SetWorkingDirectory(me->working_directory);
-    Dmsg0(10, "Director's configuration file reread.\n");
+    Dmsg0(10, "Director's configuration file reread successfully.\n");
+    Dmsg0(10, "Releasing previous configuration resource table.\n");
 
-    if (num_running_jobs > 0) {
-      if (!reload_table) {
-        reload_table
-            = new alist<resource_table_reference*>(10, not_owned_by_alist);
-      }
-      reload_table->push(new_table);
-    } else {  // no jobs running
-      FreeSavedResources(&prev_config);
-    }
+    StartStatisticsThread();
+
+  } else {  // parse config failed
+    Jmsg(nullptr, M_ERROR, 0, _("Please correct the configuration in %s\n"),
+         my_config->get_base_config_path().c_str());
+
+    Jmsg(nullptr, M_ERROR, 0, _("Resetting to previous configuration.\n"));
+    my_config->RestoreResourceTable(std::move(backup_table));
+    // me is changed above by CheckResources()
+    me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
+    assert(me);
+    my_config->own_resource_ = me;
+
     StartStatisticsThread();
   }
 
-bail_out:
   UnlockRes(my_config);
   UnlockJobs();
   is_reloading = false;

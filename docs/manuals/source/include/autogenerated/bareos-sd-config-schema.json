@@ -245,7 +245,7 @@
         },
         "Messages": {
           "datatype": "RES",
-          "code": 3005,
+          "code": 4,
           "equals": true
         },
         "SdConnectTimeout": {
@@ -946,7 +946,7 @@
         },
         "Device": {
           "datatype": "RESOURCE_LIST",
-          "code": 3004,
+          "code": 3,
           "equals": true,
           "required": true
         },

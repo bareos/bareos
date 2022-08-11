@@ -22,6 +22,7 @@
 #define BAREOS_LIB_UTIL_H_
 
 #include <sys/stat.h>
+#include <chrono>
 
 #include "lib/ascii_control_characters.h"
 #include "lib/message.h"
@@ -81,5 +82,7 @@ std::vector<std::string> split_string(const std::string& str, char delim);
 std::string CreateDelimitedStringForSqlQueries(
     const std::vector<char>& elements,
     char delim);
+
+std::string TPAsString(const std::chrono::system_clock::time_point& tp);
 
 #endif  // BAREOS_LIB_UTIL_H_

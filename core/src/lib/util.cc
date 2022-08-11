@@ -1156,3 +1156,15 @@ std::string CreateDelimitedStringForSqlQueries(
   }
   return empty_list;
 }
+
+std::string TPAsString(const std::chrono::system_clock::time_point& tp)
+{
+  std::time_t t = std::chrono::system_clock::to_time_t(tp);
+  char str[100];
+  if (!std::strftime(str, sizeof(str), "%Y-%m-%d_%H:%M:%S",
+                     std::localtime(&t))) {
+    return std::string("strftime error");
+  }
+  std::string ts = str;
+  return ts;
+}
