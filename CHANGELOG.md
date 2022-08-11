@@ -135,6 +135,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - clarifies CheckFileChanges option not intended to be used with plugin [BUG #1452][PR #1180]
 - Fix broken links with sphinx linkcheck [PR #1200]
 - add Security FIPS section [PR #1181]
+- add instruction to run sphinx linkcheck before release [PR #1218]
 
 [PR #698]: https://github.com/bareos/bareos/pull/698
 [PR #768]: https://github.com/bareos/bareos/pull/768
