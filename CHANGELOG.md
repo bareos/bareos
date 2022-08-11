@@ -48,6 +48,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
   - fix show command output for RunScript RunsOnClient
   - fix show verbose for RunScripts
   - execute console runscripts only on the Director
+- VMware file daemon plugin: fix restore with localvmdk=yes requires an API connection to vCenter [PR #1219]
 - python plugins: store architecture specific modules in sitearch (instead of sitelib) [PR #698]
 - debian: fix package dependencies for webui and Ceph [PR #1183]
 - Python plugins: fix handling of additional pluginoptions parameter [PR #1177]
