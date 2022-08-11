@@ -75,6 +75,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - SQL: queries: fix sql queries to handle negative job duration value [PR #1198]
 - dird: fix TLS-PSK credential not found error with very long job names [PR #1204]
 - dird: Add missing newline to job message for TLS handshake [PR #1209]
+- devtools/dist-tarball.sh: fix name if version contains "~pre" [PR #1221]
 
 ### Changed
 - contrib: rename Python modules to satisfy PEP8 [PR #768]
