@@ -56,6 +56,8 @@
 
 #include "dird/dbcheck_utils.h"
 
+#include "dird/reload.h"
+
 namespace directordaemon {
 
 /* Imported subroutines */
