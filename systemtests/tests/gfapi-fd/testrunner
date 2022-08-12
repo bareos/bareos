@@ -136,7 +136,6 @@ quit
 END_OF_DATA_RESTORE
 run_bareos "$@"
 check_for_zombie_jobs storage=File
-stop_bareos
 
 check_two_logs
 ln -s  "${tmp}" "${tmp}/bareos-restores"

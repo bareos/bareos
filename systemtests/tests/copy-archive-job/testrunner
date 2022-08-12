@@ -58,7 +58,6 @@ END_OF_DATA
 
 run_bareos "$@"
 check_for_zombie_jobs storage=File
-stop_bareos
 
 check_sd_files_written $tmp/log2.out
 check_sd_files_written $tmp/log3.out

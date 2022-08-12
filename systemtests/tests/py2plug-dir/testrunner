@@ -53,7 +53,6 @@ END_OF_DATA
 
 run_bareos "$@"
 check_for_zombie_jobs storage=File
-stop_bareos
 
 for i in bDirEventJobStart bDirEventJobInit bDirEventJobRun bDirEventJobEnd; do
   if ! grep -q "$i" ${tmp}/test-plugin1.log; then

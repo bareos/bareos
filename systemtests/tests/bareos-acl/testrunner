@@ -42,6 +42,4 @@ grep -q "status conf: is an invalid command" ${logdir}/acl-status.log || \
 grep -q "eprecated configuration settings detected" ${logdir}/acl-status-conf.log || \
   set_error "acl-status-conf.log"
 
-stop_bareos
-
 end_test

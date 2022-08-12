@@ -51,7 +51,6 @@ END_OF_DATA
 
 run_bareos "$@"
 check_for_zombie_jobs storage=File
-stop_bareos
 
 check_two_logs
 check_restore_diff ${BackupDirectory}
