@@ -29,8 +29,71 @@
 #include "lib/parse_conf.h"
 #include "dird/dird_globals.h"
 #include "dird/dird_conf.h"
+#include "lib/output_formatter_resource.h"
 
 namespace directordaemon {
+bool DoReloadConfig() { return false; }
+}  // namespace directordaemon
+
+namespace directordaemon {
+
+static std::string sprintoutput{};
+
+bool sprintit(void* ctx, const char* fmt, ...)
+{
+  va_list arg_ptr;
+  PoolMem msg;
+
+  va_start(arg_ptr, fmt);
+  msg.Bvsprintf(fmt, arg_ptr);
+  va_end(arg_ptr);
+
+  sprintoutput += msg.c_str();
+  return true;
+}
+
+TEST(ConfigParser_Dir, ParseSchedulerOddEvenDaysCorrectly)
+{
+  OSDependentInit();
+
+  std::string path_to_config_file = std::string(
+      RELATIVE_PROJECT_SOURCE_DIR "/configs/bareos-configparser-tests");
+  my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
+  my_config->ParseConfig();
+
+  ScheduleResource* even_schedule
+      = (directordaemon::ScheduleResource*)my_config->GetResWithName(
+          R_SCHEDULE, "Even Weeks");
+
+  ScheduleResource* odd_schedule
+      = (directordaemon::ScheduleResource*)my_config->GetResWithName(
+          R_SCHEDULE, "Odd Weeks");
+
+  OutputFormatter output_formatter
+      = OutputFormatter(sprintit, nullptr, nullptr, nullptr);
+  OutputFormatterResource send = OutputFormatterResource(&output_formatter);
+
+  even_schedule->PrintConfig(send, *my_config);
+  odd_schedule->PrintConfig(send, *my_config);
+
+
+  std::string expected_output{
+      "Schedule {\n"
+      "  Name = \"Even Weeks\"\n "
+      " Run = Fri "
+      "w00,w02,w04,w06,w08,w10,w12,w14,w16,w18,w20,w22,w24,w26,w28,w30,w32,w34,"
+      "w36,w38,w40,w42,w44,w46,w48,w50,w52 at 23:10\n"
+      "}\n\n"
+      "Schedule {\n"
+      "  Name = \"Odd Weeks\"\n"
+      "  Run = Sun "
+      "w01,w03,w05,w07,w09,w11,w13,w15,w17,w19,w21,w23,w25,w27,w29,w31,w33,w35,"
+      "w37,w39,w41,w43,w45,w47,w49,w51,w53 at 23:10\n"
+      "}\n\n"};
+
+
+  EXPECT_EQ(sprintoutput, expected_output);
+}
 
 TEST(ConfigParser_Dir, bareos_configparser_tests)
 {
