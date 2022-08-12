@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Check for zombie jobs (not terminated).
 # Also scan logs for ERROR messages
