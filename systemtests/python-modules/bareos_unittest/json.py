@@ -78,7 +78,7 @@ class Json(PythonBareosBase):
                 ),
             )
 
-    def wait_job(self, director, jobId):
+    def wait_job(self, director, jobId, expected_status=u"OK"):
         result = director.call("wait jobid={}".format(jobId))
         # "result": {
         #    "job": {
@@ -88,7 +88,7 @@ class Json(PythonBareosBase):
         #    "exitstatus": 0
         #    }
         # }
-        self.assertEqual(result["job"]["jobstatuslong"], u"OK")
+        self.assertEqual(result["job"]["jobstatuslong"], expected_status)
 
     def run_job(self, director, jobname, level=None, wait=False):
         logger = logging.getLogger()
