@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,8 +28,9 @@
 
 #include "bareos_test_sockets.h"
 #include "tests/bsock_test.h"
-
 #include "lib/bsock_tcp.h"
+
+#include <thread>
 
 #if HAVE_WIN32
 #  include <cstdlib>
@@ -78,9 +79,21 @@ static int create_listening_server_socket(int port)
   address.sin_family = AF_INET;
   address.sin_addr.s_addr = INADDR_ANY;
   address.sin_port = htons(port);
-  if (bind(listen_file_descriptor, (struct sockaddr*)&address, sizeof(address))
-      < 0) {
-    perror("bind failed");
+
+  int bindresult = -1;
+  for (int i = 0; i < 6; i++) {
+    bindresult = bind(listen_file_descriptor, (struct sockaddr*)&address,
+                      sizeof(address));
+    if (bindresult == 0) {
+      break;
+    } else {
+      std::this_thread::sleep_for(std::chrono::seconds(2));
+    }
+  }
+  std::string errormessage{"bind failed for port "};
+  errormessage.append(std::to_string(port));
+  if (bindresult < 0) {
+    perror(errormessage.c_str());
     return -4;
   }
 
