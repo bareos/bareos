@@ -1,32 +1,30 @@
 The RunScript directive behaves like a resource in that it requires opening and closing braces around a number of directives that make up the body of the runscript.
 
-The specified Command (see below for details) is run as an external program prior or after the current Job. This is optional. By default, the program is executed on the Client side like in ``ClientRunXXXJob``.
+**Command** options specifies commands to run as an external program prior or after the current job.
 
-**Console** options are special commands that are sent to the director instead of the OS. At this time, console command outputs are redirected to log with the jobid 0.
+**Console** options are special commands that are sent to the |dir| instead of the OS.
+Console command outputs are redirected to log with the jobid 0.
 
-You can use following console command: ``delete``, ``disable``, ``enable``, ``estimate``, ``list``, ``llist``, ``memory``, ``prune``, ``purge``, ``release``, ``reload``, ``status``, ``setdebug``, ``show``, ``time``, ``trace``, ``update``, ``version``, ``.client``, ``.jobs``, ``.pool``, ``.storage``. See :ref:`section-bconsole` for more information. You need to specify needed information on command line, nothing will be prompted. Example:
+You can use following console command: ``delete``, ``disable``, ``enable``, ``estimate``, ``list``, ``llist``, ``memory``, ``prune``, ``purge``, ``release``, ``reload``, ``status``, ``setdebug``, ``show``, ``time``, ``trace``, ``update``, ``version``, ``whoami``, ``.client``, ``.jobs``, ``.pool``, ``.storage``.
+See :ref:`section-bconsole` for more information. You need to specify needed information on command line, nothing will be prompted. Example:
 
-
-
-   .. literalinclude:: /include/config/DirJobRunScript1.conf
-      :language: bareosconfig
-
-
+.. literalinclude:: /include/config/DirJobRunScript1.conf
+   :language: bareosconfig
 
 You can specify more than one Command/Console option per RunScript.
 
-You can use following options may be specified in the body of the runscript:
+You can use following options may be specified in the body of the RunScript:
 
 .. csv-table::
    :header: Options, Value,          Description
 
    Runs On Success  , **Yes** \| No, run if JobStatus is successful
    Runs On Failure  , Yes \| **No**, run if JobStatus isn’t successful
-   Runs On Client   , **Yes** \| No, run command on client
+   Runs On Client   , **Yes** \| No, run a command on client (only for external commands - not console commands)
    Runs When        , **Never** \| ``Before``\  \| ``After``\  \| ``Always``\  \| ``AfterVSS``\ , When to run
    Fail Job On Error, **Yes** \| No,  Fail job if script returns something different from 0
-   Command          ,              ,  External command
-   Console          ,              ,  Console command
+   Command          ,              ,  External command (optional)
+   Console          ,              ,  Console command (optional)
 
 Any output sent by the command to standard output will be included in the Bareos job report. The command string must be a valid program name or name of a shell script.
 
@@ -34,13 +32,13 @@ Any output sent by the command to standard output will be included in the Bareos
 
 .. warning::
 
-      The command string is parsed then fed to the OS,
-      which means that the path will be searched to execute your specified
-      command, but there is no shell interpretation. As a consequence, if you
-      invoke complicated commands or want any shell features such as redirection
-      or piping, you must call a shell script and do it inside that script.
-      Alternatively, it is possible to use :command:`sh -c '...'` in the command
-      definition to force shell interpretation, see example below.
+   The command string is parsed then fed to the OS,
+   which means that the path will be searched to execute your specified
+   command, but there is no shell interpretation. As a consequence, if you
+   invoke complicated commands or want any shell features such as redirection
+   or piping, you must call a shell script and do it inside that script.
+   Alternatively, it is possible to use :command:`sh -c '...'` in the command
+   definition to force shell interpretation, see example below.
 
 Before executing the specified command, Bareos performs character substitution of the following characters:
 
@@ -54,41 +52,37 @@ Before executing the specified command, Bareos performs character substitution o
 %B Job Bytes in human readable format
 %c Client’s name
 %d Daemon’s name (Such as host-dir or host-fd)
-%D Director’s name (Also valid on file daemon)
+%D Director’s name (also valid on a |fd|)
 %e Job Exit Status
-%f Job FileSet (Only on director side)
+%f Job FileSet (only on director side)
 %F Job Files
 %h Client address
 %i Job Id
 %j Unique Job Id
 %l Job Level
 %n Job name
-%p Pool name (Only on director side)
+%p Pool name (only on director side)
 %P Daemon PID
 %s Since time
 %t Job type (Backup, ...)
-%v Read Volume name(s) (Only on director side)
-%V Write Volume name(s) (Only on director side)
-%w Storage name (Only on director side)
+%v Read Volume name(s) (only on director side)
+%V Write Volume name(s) (only on director side)
+%w Storage name (only on director side)
 %x Spooling enabled? ("yes" or "no")
 == ============================================
 
+Some character substitutions are not available in all situations.
 
+The Job Exit Status code %e edits the following values:
 
-Some character substitutions are not available in all situations. The Job Exit Status code %e edits the following values:
-
-:index:`\ <single: Exit Status>`\
+.. index::
+   single: Exit Status
 
 -  OK
-
 -  Error
-
 -  Fatal Error
-
 -  Canceled
-
 -  Differences
-
 -  Unknown term code
 
 Thus if you edit it on a command line, you will need to enclose it within some sort of quotes.
@@ -112,7 +106,10 @@ Examples:
 
 
 
-Special Windows Considerations :index:`\ <single: Windows; Run Script>`\
+**Special Windows Considerations**
+
+.. index::
+   single: Windows; Run Script
 
 You can run scripts just after snapshots initializations with *AfterVSS* keyword.
 
@@ -139,9 +136,9 @@ The special characters |configCharsToQuote| will need to be quoted, if they are 
 
 If someone is logged in, a blank "command" window running the commands will be present during the execution of the command.
 
-Some Suggestions from Phil Stracchino for running on Win32 machines with the native Win32 File daemon:
+Some Suggestions from Phil Stracchino for running on Win32 machines with the native Win32 |fd|:
 
-#. You might want the ClientRunBeforeJob directive to specify a .bat file which runs the actual client-side commands, rather than trying to run (for example) regedit /e directly.
+#. You might want the ClientRunBeforeJob directive to specify a .bat file which runs the actual client-side commands, rather than trying to run (for example) :command:`regedit /e` directly.
 
 #. The batch file should explicitly ’exit 0’ on successful completion.
 
@@ -157,8 +154,11 @@ For Win32, please note that there are certain limitations:
 
 ``Client Run Before Job = "C:/Program Files/Bareos/bin/pre-exec.bat"``
 
-Lines like the above do not work because there are limitations of cmd.exe that is used to execute the command. Bareos prefixes the string you supply with :command:`cmd.exe /c`. To test that your command works you should type :command:`cmd /c "C:/Program Files/test.exe"` at a cmd prompt and see what happens. Once the command is correct insert a backslash (\) before each double quote ("), and then put quotes around the whole thing when putting it in the director’s .conf
-file. You either need to have only one set of quotes or else use the short name and don’t put quotes around the command path.
+Lines like the above do not work because there are limitations of :command:`cmd.exe` that is used to execute the command.
+Bareos prefixes the string you supply with :command:`cmd.exe /c`.
+To test that your command works you should type :command:`cmd /c "C:/Program Files/test.exe"` at a cmd prompt and see what happens.
+Once the command is correct insert a backslash (\) before each double quote ("), and then put quotes around the whole thing when putting it in the |dir| configuration file.
+You either need to have only one set of quotes or else use the short name and don’t put quotes around the command path.
 
 Below is the output from cmd’s help as it relates to the command line passed to the /c option.
 
