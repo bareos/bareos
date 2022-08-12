@@ -4,7 +4,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and since Bareos version 20 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-## Fixed
+
+### Fixed
+- dird: RunScript fixes [PR #1222]
+  - fix show command output for RunScript RunsOnClient
+  - fix show verbose for RunScripts
+  - execute console runscripts only on the Director
 - devtools/dist-tarball.sh: fix name if version contains "~pre" [PR #1220]
 
 ## [21.1.4] - 2022-08-05
