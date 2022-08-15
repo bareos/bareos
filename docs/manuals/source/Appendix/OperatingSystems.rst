@@ -20,11 +20,10 @@ Additionally, the following table gives an overview on the available package ver
    Fedora, current, v12.4, v12.4, v12.4
    Gentoo :index:`\ <single: Platform; Gentoo>`\ , `X <https://packages.gentoo.org/packages/app-backup/bareos>`__,     `X <https://packages.gentoo.org/packages/app-backup/bareos>`__, `X <https://packages.gentoo.org/packages/app-backup/bareos>`__
    openSUSE, current, v12.4, v12.4, v12.4
-   RHEL,     current, v12.4, v12.4, v12.4
-   SLES,     current, v12.4, v12.4, v12.4
-   Ubuntu,   current, v12.4, v12.4, v12.4
-   Universal Linux Client,  openSSL 1.1, v21.0, v21.0, v21.0
-
+   (RH)EL, current, v12.4, v12.4, v12.4
+   SLES, current, v12.4, v12.4, v12.4
+   Ubuntu, current, v12.4, v12.4, v12.4
+   Universal Linux Client, openSSL 1.1, v21.0, v21.0, v21.0
 
    :ref:`Univention Corporate Linux <section-UniventionCorporateServer>`, App Center, v12.4, v12.4, v12.4
 

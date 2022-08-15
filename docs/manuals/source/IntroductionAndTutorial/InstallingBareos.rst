@@ -36,8 +36,8 @@ This will start a very basic Bareos installation which will regularly backup a d
 Decide about the Bareos release to use
 --------------------------------------
 
-You’ll find Bareos stable release binaries packages repositories at https://download.bareos.org/bareos/release.
-For those who have a valid subscription contract, the repositories are located at https://download.bareos.org/bareos/release/.
+You’ll find Bareos stable release binaries packages repositories at https://download.bareos.org/bareos/release/.
+For those who have a valid subscription contract, the repositories are located at https://download.bareos.com/bareos/release/.
 
 The public key to verify the repository is also in repository directory (:file:`Release.key` for Debian based distributions, :file:`repodata/repomd.xml.key` for RPM based distributions).
 
@@ -97,9 +97,7 @@ like AlmaLinux, CentOS Stream, Oracle and Rocky Linux. Same rules apply for EL_9
 
    DIST=EL_9
    # or
-   # DIST=RHEL_9
    # DIST=RHEL_8
-   # DIST=EL_9
    # DIST=EL_8
    # DIST=RHEL_7
    # DIST=CentOS_7
