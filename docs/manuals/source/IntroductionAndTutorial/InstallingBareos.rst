@@ -229,29 +229,18 @@ Bareos :sinceVersion:`15.2.0: requires: jansson` requires the Jansson library pa
 If you use the versions of Bareos directly integrated into the distributions, please note that there are some differences, see :ref:`section-DebianOrgLimitations`.
 
 .. _section-DebianOrg:
+.. _section-DebianOrgLimitations:
 
 Debian.org / Ubuntu Universe
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`\ <single: Platform; Debian; Debian.org>`
-:index:`\ <single: Platform; Debian; 8> <11`
-:index:`\ <single: Platform; Ubuntu; Universe>`
-:index:`\ <single: Platform; Ubuntu; Universe; 15.04> <22.04`
+.. index::
+   single: Platform; Debian; Debian.org
+   single: Platform; Ubuntu; Universe
 
-The distributions of Debian >= 8 but < 11 include a version of Bareos. Ubuntu Universe >= 15.04 < 22.04 does also include these packages.
+Some Debian releases (8-10) include an old version of Bareos (Bareos <= 16.2). Some releases of Ubuntu Universe did also include these packages.
 
-In the further text, these version will be named **Bareos (Debian.org)** (also for the Ubuntu Universe version, as this is based on the Debian version).
-
-.. _section-DebianOrgLimitations:
-
-Limitations of the Debian.org/Ubuntu Universe version of Bareos
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
--  Debian.org does not include the libfastlz compression library and therefore the Bareos (Debian.org) packages do not offer the fileset options :strong:`compression=LZFAST`, :strong:`compression=LZ4` and :strong:`compression=LZ4HC`.
-
--  Debian.org does not include the **bareos-webui** package.
-
-The latest available version available was 16.2.
+These packages have some limitations and are outdated. Nowadays, they shouldn't be used.
 
 .. _section-FreeBSD:
 
