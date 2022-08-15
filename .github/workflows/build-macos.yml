@@ -73,10 +73,11 @@ jobs:
                 echo "ctest result $result is not 1 or 0, ERROR"
             fi
         fi
+        mv ./Testing "${{ env.target_dir }}"
 
     - name: Upload pkg
       uses: actions/upload-artifact@v3
       with:
         name: MacOS
-        path: ${{ env.target_dir }}/*.pkg
+        path: ${{ env.target_dir }}
         retention-days: 1
