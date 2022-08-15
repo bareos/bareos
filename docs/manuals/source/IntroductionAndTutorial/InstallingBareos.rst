@@ -893,9 +893,9 @@ Here the files intended for the target systems are generated under :file:`/etc/b
 .. _section-WindowsInstallation:
 
 Install on Windows
-~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~
 
-Please consult the dedicated page :ref:`Windows:Installation`.
+See chapter :ref:`Windows:Installation`.
 
 
 .. _section-UniversalLinuxClient:
