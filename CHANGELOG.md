@@ -150,6 +150,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - remove deprecated Rados & ceph references from documentation [PR #1216]
 - improve Wild(*) section with links to example [PR #1228]
 - add example to selection type = sql query [PR #1229]
+- dir-job-RescheduleTimes remove wrong default sentence [PR #1225]
 
 [PR #698]: https://github.com/bareos/bareos/pull/698
 [PR #768]: https://github.com/bareos/bareos/pull/768
@@ -240,10 +241,15 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1205]: https://github.com/bareos/bareos/pull/1205
 [PR #1206]: https://github.com/bareos/bareos/pull/1206
 [PR #1209]: https://github.com/bareos/bareos/pull/1209
+[PR #1210]: https://github.com/bareos/bareos/pull/1210
+[PR #1211]: https://github.com/bareos/bareos/pull/1211
+[PR #1216]: https://github.com/bareos/bareos/pull/1216
 [PR #1217]: https://github.com/bareos/bareos/pull/1217
 [PR #1218]: https://github.com/bareos/bareos/pull/1218
 [PR #1221]: https://github.com/bareos/bareos/pull/1221
+[PR #1225]: https://github.com/bareos/bareos/pull/1225
 [PR #1226]: https://github.com/bareos/bareos/pull/1226
-[PR #1216]: https://github.com/bareos/bareos/pull/1216
+[PR #1227]: https://github.com/bareos/bareos/pull/1227
 [PR #1228]: https://github.com/bareos/bareos/pull/1228
+[PR #1229]: https://github.com/bareos/bareos/pull/1229
 [unreleased]: https://github.com/bareos/bareos/tree/master
