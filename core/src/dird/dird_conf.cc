@@ -1289,7 +1289,8 @@ char* CatalogResource::display(POOLMEM* dst)
 
 static void PrintConfigRunscript(OutputFormatterResource& send,
                                  ResourceItem& item,
-                                 bool inherited)
+                                 bool inherited,
+                                 bool verbose)
 {
   if (!Bstrcasecmp(item.name, "runscript")) { return; }
 
@@ -1302,38 +1303,53 @@ static void PrintConfigRunscript(OutputFormatterResource& send,
   foreach_alist (runscript, list) {
     std::string esc = EscapeString(runscript->command.c_str());
 
+    bool print_as_comment = inherited;
+
     // do not print if inherited by a JobDef
-    if (runscript->from_jobdef) { continue; }
+    if (runscript->from_jobdef) {
+      if (verbose) {
+        print_as_comment = true;
+      } else {
+        continue;
+      }
+    }
 
     if (runscript->short_form) {
-      send.SubResourceStart(NULL, inherited, "");
+      send.SubResourceStart(NULL, print_as_comment, "");
 
       if (runscript->when == SCRIPT_Before && /* runbeforejob */
           runscript->target.empty()) {
-        send.KeyQuotedString("RunBeforeJob", esc.c_str(), inherited);
+        send.KeyQuotedString("RunBeforeJob", esc.c_str(), print_as_comment);
       } else if (runscript->when == SCRIPT_After && /* runafterjob */
                  runscript->on_success && !runscript->on_failure
                  && !runscript->fail_on_error && runscript->target.empty()) {
-        send.KeyQuotedString("RunAfterJob", esc.c_str(), inherited);
+        send.KeyQuotedString("RunAfterJob", esc.c_str(), print_as_comment);
       } else if (runscript->when == SCRIPT_After && /* client run after job */
                  runscript->on_success && !runscript->on_failure
                  && !runscript->fail_on_error && !runscript->target.empty()) {
-        send.KeyQuotedString("ClientRunAfterJob", esc.c_str(), inherited);
+        send.KeyQuotedString("ClientRunAfterJob", esc.c_str(),
+                             print_as_comment);
       } else if (runscript->when == SCRIPT_Before && /* client run before job */
                  !runscript->target.empty()) {
-        send.KeyQuotedString("ClientRunBeforeJob", esc.c_str(), inherited);
+        send.KeyQuotedString("ClientRunBeforeJob", esc.c_str(),
+                             print_as_comment);
       } else if (runscript->when == SCRIPT_After && /* run after failed job */
                  runscript->on_failure && !runscript->on_success
                  && !runscript->fail_on_error && runscript->target.empty()) {
-        send.KeyQuotedString("RunAfterFailedJob", esc.c_str(), inherited);
+        send.KeyQuotedString("RunAfterFailedJob", esc.c_str(),
+                             print_as_comment);
       }
-      send.SubResourceEnd(NULL, inherited, "");
+      send.SubResourceEnd(NULL, print_as_comment, "");
     } else {
-      send.SubResourceStart(NULL, inherited, "RunScript {\n");
+      send.SubResourceStart(NULL, print_as_comment, "RunScript {\n");
 
+      bool command_runscript = true;
       char* cmdstring = (char*)"Command"; /* '|' */
-      if (runscript->cmd_type == '@') { cmdstring = (char*)"Console"; }
-      send.KeyQuotedString(cmdstring, esc.c_str(), inherited);
+      if (runscript->cmd_type == CONSOLE_CMD) {
+        cmdstring = (char*)"Console";
+        command_runscript = false;
+      }
+      send.KeyQuotedString(cmdstring, esc.c_str(), print_as_comment);
 
       // Default: never
       char* when = (char*)"never";
@@ -1353,30 +1369,44 @@ static void PrintConfigRunscript(OutputFormatterResource& send,
       }
 
       if (!Bstrcasecmp(when, "never")) { /* suppress default value */
-        send.KeyQuotedString("RunsWhen", when, inherited);
+        send.KeyQuotedString("RunsWhen", when, print_as_comment);
+      } else if (verbose) {
+        send.KeyQuotedString("RunsWhen", when, true);
       }
 
       // Default: fail_on_error = true
       if (!runscript->fail_on_error) {
-        send.KeyBool("FailJobOnError", runscript->fail_on_error, inherited);
+        send.KeyBool("FailJobOnError", runscript->fail_on_error,
+                     print_as_comment);
+      } else if (verbose) {
+        send.KeyBool("FailJobOnError", runscript->fail_on_error, true);
       }
 
       // Default: on_success = true
       if (!runscript->on_success) {
-        send.KeyBool("RunsOnSuccess", runscript->on_success, inherited);
+        send.KeyBool("RunsOnSuccess", runscript->on_success, print_as_comment);
+      } else if (verbose) {
+        send.KeyBool("RunsOnSuccess", runscript->on_success, true);
       }
 
       // Default: on_failure = false
       if (runscript->on_failure) {
-        send.KeyBool("RunsOnFailure", runscript->on_failure, inherited);
+        send.KeyBool("RunsOnFailure", runscript->on_failure, print_as_comment);
+      } else if (verbose) {
+        send.KeyBool("RunsOnFailure", runscript->on_failure, true);
       }
 
-      // Default: runsonclient = yes
-      if (runscript->target.empty()) {
-        send.KeyBool("RunsOnClient", runscript->target.empty(), inherited);
+      if (command_runscript) {
+        // Default: runsonclient = yes
+        bool runsonclient = !runscript->target.empty();
+        if (!runsonclient) {
+          send.KeyBool("RunsOnClient", false, print_as_comment);
+        } else if (verbose) {
+          send.KeyBool("RunsOnClient", true, true);
+        }
       }
 
-      send.SubResourceEnd(NULL, inherited, "}\n");
+      send.SubResourceEnd(NULL, print_as_comment, "}\n");
     }
   }
 
@@ -3075,9 +3105,12 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
       script->command = cmd.command_;
       script->cmd_type = cmd.code_;
 
-      // each runscript object have a copy of target
+      // each shell runscript object have a copy of target.
+      // console runscripts are always executed on the Director.
       script->target.clear();
-      script->SetTarget(res_runscript->target);
+      if (!res_runscript->target.empty() && (script->cmd_type == SHELL_CMD)) {
+          script->SetTarget(res_runscript->target);
+      }
 
       script->short_form = false;
 
@@ -3457,7 +3490,7 @@ static void PrintConfigCb(ResourceItem& item,
     }
     case CFG_TYPE_RUNSCRIPT:
       Dmsg0(200, "CFG_TYPE_RUNSCRIPT\n");
-      PrintConfigRunscript(send, item, inherited);
+      PrintConfigRunscript(send, item, inherited, verbose);
       break;
     case CFG_TYPE_SHRTRUNSCRIPT:
       /*

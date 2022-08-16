@@ -1,0 +1,21 @@
+Job {
+  Name = "backup-bareos-fd-runscript-console-client"
+  Description = "Run console runscripts on the Director and a script command on the client"
+  JobDefs = "DefaultJob"
+  Type = Backup
+  RunScript {
+    RunsWhen = Before
+    Runs On Failure = Yes
+    Runs On Client = Yes
+    #Runs On Client = No
+    FailJobOnError = Yes
+    # %d    Daemon’s name (Such as host-dir or host-fd)
+    # %n    Job name
+    # %t    Job type (Backup, …)
+    # %i    Job Id
+    Console = "whoami"
+    Console = "version"
+    Console = "list jobid=%i"
+    Command = "@PROJECT_BINARY_DIR@/tests/@TEST_NAME@/write.sh @working_dir@/jobid-%i-runscript.log 'daemon=%d' 'jobname=%n' 'jobtype=%t' 'jobid=%i'"
+  }
+}

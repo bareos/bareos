@@ -1,7 +1,7 @@
 #
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -140,6 +140,77 @@ class PythonBareosJsonRunScriptTest(bareos_unittest.Json):
             director_root, jobname, level, expected_logs
         )
 
+    def test_backup_runscript_console_client(self):
+        """
+        Run a job which contains a runscript.
+        Check the JobLog if the runscript worked as expected.
+        """
+        logger = logging.getLogger()
+
+        username = self.get_operator_username()
+        password = self.get_operator_password(username)
+
+        jobname = "backup-bareos-fd-runscript-console-client"
+        level = None
+        expected_logs = [
+            ': console command: run BeforeJob "whoami"',
+            ': console command: run BeforeJob "version"',
+            ': console command: run BeforeJob "list jobid=',
+            ": ClientBeforeJob: jobname={}".format(jobname),
+        ]
+
+        director_root = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+            **self.director_extra_options
+        )
+
+        # Example log entry:
+        # {
+        #    "time": "2019-12-02 00:07:34",
+        #    "logtext": "bareos-dir JobId 76: ClientBeforeJob: jobname=admin-runscript-server\n"
+        # },
+
+        jobId = self.run_job_and_search_joblog(
+            director_root, jobname, level, expected_logs
+        )
+
+    def test_backup_runscript_console_server(self):
+        """
+        Run a job which contains a console runscript.
+        Check the JobLog if the runscript worked as expected.
+        """
+        logger = logging.getLogger()
+
+        username = self.get_operator_username()
+        password = self.get_operator_password(username)
+
+        jobname = "backup-bareos-fd-runscript-console-server"
+        level = None
+        expected_logs = [
+            'console command: run BeforeJob "version"',
+        ]
+
+        director_root = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+            **self.director_extra_options
+        )
+
+        # Example log entry:
+        # {
+        #    "time": "2019-12-02 00:07:34",
+        #    "logtext": "bareos-dir JobId 76: BeforeJob: jobname=admin-runscript-server\n"
+        # },
+
+        jobId = self.run_job_and_search_joblog(
+            director_root, jobname, level, expected_logs
+        )
+
     def test_admin_runscript_server(self):
         """
         Run a job which contains a runscript.
@@ -175,6 +246,134 @@ class PythonBareosJsonRunScriptTest(bareos_unittest.Json):
         jobId = self.run_job_and_search_joblog(
             director_root, jobname, level, expected_logs
         )
+
+    def test_admin_runscript_console_server_defaults(self):
+        """
+        Run a job which contains a console runscript.
+        Check the JobLog if the runscript worked as expected.
+        """
+        logger = logging.getLogger()
+
+        username = self.get_operator_username()
+        password = self.get_operator_password(username)
+
+        jobname = "admin-runscript-console-server-defaults"
+        level = None
+        expected_logs = [
+            ': console command: run BeforeJob "whoami"',
+            ': console command: run BeforeJob "version"',
+            ': console command: run BeforeJob "list jobid=',
+        ]
+
+        director_root = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+            **self.director_extra_options
+        )
+
+        # Example log entry:
+        # {
+        #   "time": "2022-08-10 13:14:20",
+        #   "logtext": "bareos-dir JobId 3: console command: run BeforeJob \"whoami\"\n"
+        # },
+        # {
+        #   "time": "2022-08-10 13:14:20",
+        #   "logtext": "bareos-dir JobId 3: console command: run BeforeJob \"version\"\n"
+        # },
+        # {
+        #   "time": "2022-08-10 13:14:20",
+        #   "logtext": "bareos-dir JobId 3: console command: run BeforeJob \"list jobid=3\"\n"
+        # },
+
+        jobId = self.run_job_and_search_joblog(
+            director_root, jobname, level, expected_logs
+        )
+
+    def test_admin_runscript_console_server(self):
+        """
+        Run a job which contains a console runscript.
+        Check the JobLog if the runscript worked as expected.
+        """
+        logger = logging.getLogger()
+
+        username = self.get_operator_username()
+        password = self.get_operator_password(username)
+
+        jobname = "admin-runscript-console-server"
+        level = None
+        expected_logs = [
+            ': console command: run BeforeJob "whoami"',
+            ': console command: run BeforeJob "version"',
+            ': console command: run BeforeJob "list jobid=',
+        ]
+
+        director_root = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+            **self.director_extra_options
+        )
+
+        # Example log entry:
+        # {
+        #   "time": "2022-08-10 13:14:20",
+        #   "logtext": "bareos-dir JobId 3: console command: run BeforeJob \"whoami\"\n"
+        # },
+        # {
+        #   "time": "2022-08-10 13:14:20",
+        #   "logtext": "bareos-dir JobId 3: console command: run BeforeJob \"version\"\n"
+        # },
+        # {
+        #   "time": "2022-08-10 13:14:20",
+        #   "logtext": "bareos-dir JobId 3: console command: run BeforeJob \"list jobid=3\"\n"
+        # },
+
+        jobId = self.run_job_and_search_joblog(
+            director_root, jobname, level, expected_logs
+        )
+
+    def test_admin_runscript_console_server_invalid(self):
+        """
+        Run a job which contains an invalid console runscript
+        (containing the invalid command "INVALID").
+        Check the JobLog if the runscript worked as expected.
+        """
+        logger = logging.getLogger()
+
+        username = self.get_operator_username()
+        password = self.get_operator_password(username)
+
+        jobname = "admin-runscript-console-server-invalid"
+        level = None
+        expected_logs = [
+            ': console command: run BeforeJob "list jobid=',
+            ': console command: run BeforeJob "INVALID"',
+        ]
+
+        director_root = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+            **self.director_extra_options
+        )
+
+        # Example log entry:
+        # {
+        #   "time": "2022-08-10 13:21:21",
+        #   "logtext": "bareos-dir JobId 6: console command: run BeforeJob \"list jobid=6\"\n"
+        # },
+        # {
+        #   "time": "2022-08-10 13:21:21",
+        #   "logtext": "bareos-dir JobId 6: console command: run BeforeJob \"INVALID\"\n"
+        # },
+
+        jobId = self.run_job(director_root, jobname, level)
+        self.wait_job(director_root, jobId, expected_status=u"Error")
+        self.search_joblog(director_root, jobId, expected_logs)
 
     def test_admin_runscript_client(self):
         """

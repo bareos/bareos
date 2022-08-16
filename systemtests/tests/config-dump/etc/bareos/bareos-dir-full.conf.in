@@ -263,6 +263,111 @@ JobDefs {
   # RunOnIncomingConnectInterval = 0
 }
 
+JobDefs {
+  Name = "JobDefWithRunScripts"
+  # Description = 
+  Type = Backup
+  # Protocol = Native
+  # BackupFormat = "Native"
+  Level = Differential
+  Messages = "Standard"
+  Storage = "File"
+  Pool = "Incremental"
+  FullBackupPool = "Full"
+  # VirtualFullBackupPool = ""
+  IncrementalBackupPool = "Incremental"
+  DifferentialBackupPool = "Differential"
+  # NextPool = ""
+  Client = "bareos-fd"
+  FileSet = "SelfTest"
+  Schedule = "WeeklyCycle"
+  # JobToVerify = ""
+  # Catalog = ""
+  # JobDefs = ""
+  # Run = 
+  # Where = 
+  # RegexWhere = 
+  # StripPrefix = 
+  # AddPrefix = 
+  # AddSuffix = 
+  # Bootstrap = 
+  WriteBootstrap = "/var/lib/bareos/%c.bsr"
+  # WriteVerifyList = 
+  # Replace = Always
+  # MaximumBandwidth = 0
+  # MaxRunSchedTime = 0
+  # MaxRunTime = 0
+  # FullMaxRuntime = 0
+  # IncrementalMaxRuntime = 0
+  # DifferentialMaxRuntime = 0
+  # MaxWaitTime = 0
+  # MaxStartDelay = 0
+  # MaxFullInterval = 0
+  # MaxVirtualFullInterval = 0
+  # MaxDiffInterval = 0
+  # PrefixLinks = No
+  # PruneJobs = No
+  # PruneFiles = No
+  # PruneVolumes = No
+  # PurgeMigrationJob = No
+  # Enabled = Yes
+  # SpoolAttributes = No
+  # SpoolData = No
+  # SpoolSize = 0
+  # RerunFailedLevels = No
+  # PreferMountedVolumes = Yes
+  # MaximumConcurrentJobs = 1
+  # RescheduleOnError = No
+  # RescheduleInterval = 30 minutes 
+  # RescheduleTimes = 5
+  # Priority = 10
+  # AllowMixedPriority = No
+  # SelectionPattern = 
+  ClientRunBeforeJob = "/tmp/JobDefClientRunBeforeJob1.sh"
+  ClientRunBeforeJob = "/tmp/JobDefClientRunBeforeJob2.sh"
+  ClientRunAfterJob = "/tmp/JobDefClientRunAfterJob1"
+  ClientRunAfterJob = "/tmp/JobDefClientRunAfterJob2"
+  RunBeforeJob = "/tmp/JobDefRunBeforeJob1.sh"
+  RunBeforeJob = "/tmp/JobDefRunBeforeJob2.sh"
+  RunAfterJob = "/tmp/JobDefRunAfterJob1"
+  RunAfterJob = "/tmp/JobDefRunAfterJob2"
+  RunScript {
+    Command = "/tmp/JobDefRunScriptCommandBeforeOnClient.sh"
+    RunsWhen = "before"
+    # FailJobOnError = Yes
+    # RunsOnSuccess = Yes
+    # RunsOnFailure = No
+    # RunsOnClient = Yes
+  }
+  RunScript {
+    Command = "/tmp/JobDefRunScriptCommandBeforeNotOnClient.sh"
+    RunsWhen = "before"
+    # FailJobOnError = Yes
+    # RunsOnSuccess = Yes
+    # RunsOnFailure = No
+    RunsOnClient = No
+  }
+  # Accurate = No
+  # AllowDuplicateJobs = Yes
+  # AllowHigherDuplicates = Yes
+  # CancelLowerLevelDuplicates = No
+  # CancelQueuedDuplicates = No
+  # CancelRunningDuplicates = No
+  # SaveFileHistory = Yes
+  # FileHistorySize = 9 m 549 k 640
+  # FdPluginOptions = 
+  # SdPluginOptions = 
+  # DirPluginOptions = 
+  # Base = 
+  # MaxConcurrentCopies = 100
+  # AlwaysIncremental = No
+  # AlwaysIncrementalJobRetention = 0
+  # AlwaysIncrementalKeepNumber = 0
+  # AlwaysIncrementalMaxFullAge = 0
+  # MaxFullConsolidations = 0
+  # RunOnIncomingConnectInterval = 0
+}
+
 Job {
   Name = "job-min-DefaultJob"
   # Description =
@@ -492,6 +597,9 @@ Job {
     Command = "/etc/init.d/apache stop"
     RunsWhen = "before"
     FailJobOnError = No
+    # RunsOnSuccess = Yes
+    # RunsOnFailure = No
+    # RunsOnClient = Yes
   }
   Accurate = Yes
   AllowDuplicateJobs = No
@@ -742,23 +850,68 @@ Job {
   # Priority = 10
   # AllowMixedPriority = No
   # SelectionPattern =
+  ClientRunBeforeJob = "/tmp/ClientRunBeforeJob1.sh"
+  ClientRunBeforeJob = "/tmp/ClientRunBeforeJob2.sh"
+  ClientRunAfterJob = "/tmp/ClientRunAfterJob1"
+  ClientRunAfterJob = "/tmp/ClientRunAfterJob2"
   RunBeforeJob = "/tmp/RunBeforeJob1.sh"
   RunBeforeJob = "/tmp/RunBeforeJob2.sh"
   RunAfterJob = "/tmp/RunAfterJob1"
   RunAfterJob = "/tmp/RunAfterJob2"
   RunScript {
+    Command = "/tmp/RunScriptNever.sh"
+    # RunsWhen = "never"
+    # FailJobOnError = Yes
+    # RunsOnSuccess = Yes
+    # RunsOnFailure = No
+    # RunsOnClient = Yes
+  }
+  RunScript {
     Command = "/tmp/RunScript1.sh"
     RunsWhen = "before"
     FailJobOnError = No
+    # RunsOnSuccess = Yes
+    # RunsOnFailure = No
+    # RunsOnClient = Yes
   }
   RunScript {
     Command = "/tmp/RunScript21.sh"
     RunsWhen = "after"
     FailJobOnError = No
+    # RunsOnSuccess = Yes
+    # RunsOnFailure = No
+    # RunsOnClient = Yes
   }
   RunScript {
     Command = "/tmp/RunScript22.sh"
     RunsWhen = "before"
+    # FailJobOnError = Yes
+    # RunsOnSuccess = Yes
+    # RunsOnFailure = No
+    # RunsOnClient = Yes
+  }
+  RunScript {
+    Command = "/tmp/RunScriptCommandBeforeOnClient.sh"
+    RunsWhen = "before"
+    # FailJobOnError = Yes
+    # RunsOnSuccess = Yes
+    # RunsOnFailure = No
+    # RunsOnClient = Yes
+  }
+  RunScript {
+    Command = "/tmp/RunScriptCommandBeforeNotOnClient.sh"
+    RunsWhen = "before"
+    # FailJobOnError = Yes
+    # RunsOnSuccess = Yes
+    # RunsOnFailure = No
+    RunsOnClient = No
+  }
+  RunScript {
+    Console = "help"
+    RunsWhen = "before"
+    # FailJobOnError = Yes
+    # RunsOnSuccess = Yes
+    # RunsOnFailure = No
   }
   # Accurate = No
   # AllowDuplicateJobs = Yes
@@ -847,6 +1000,9 @@ Job {
     Command = "/tmp/RunScript3.sh"
     RunsWhen = "before"
     FailJobOnError = No
+    # RunsOnSuccess = Yes
+    # RunsOnFailure = No
+    # RunsOnClient = Yes
   }
   RunAfterJob = "/tmp/RunAfterJob4"
   RunBeforeJob = "/tmp/RunBeforeJob5.sh"
@@ -854,10 +1010,17 @@ Job {
     Command = "/tmp/RunScript6.sh"
     RunsWhen = "before"
     FailJobOnError = No
+    # RunsOnSuccess = Yes
+    # RunsOnFailure = No
+    # RunsOnClient = Yes
   }
   RunScript {
     Command = "/tmp/RunScript7.sh"
     RunsWhen = "before"
+    # FailJobOnError = Yes
+    # RunsOnSuccess = Yes
+    # RunsOnFailure = No
+    # RunsOnClient = Yes
   }
   # Accurate = No
   # AllowDuplicateJobs = Yes
@@ -871,6 +1034,232 @@ Job {
   # SdPluginOptions =
   # DirPluginOptions =
   # Base =
+  # MaxConcurrentCopies = 100
+  # AlwaysIncremental = No
+  # AlwaysIncrementalJobRetention = 0
+  # AlwaysIncrementalKeepNumber = 0
+  # AlwaysIncrementalMaxFullAge = 0
+  # MaxFullConsolidations = 0
+  # RunOnIncomingConnectInterval = 0
+}
+
+Job {
+  Name = "job-only-with-jobdefs-runscripts"
+  # Description = 
+  # Type = Backup
+  # Protocol = Native
+  # BackupFormat = "Native"
+  # Level = Differential
+  # Messages = "Standard"
+  # Storage = "File"
+  # Pool = "Incremental"
+  # FullBackupPool = "Full"
+  # VirtualFullBackupPool = ""
+  # IncrementalBackupPool = "Incremental"
+  # DifferentialBackupPool = "Differential"
+  # NextPool = ""
+  # Client = "bareos-fd"
+  # FileSet = "SelfTest"
+  # Schedule = "WeeklyCycle"
+  # JobToVerify = ""
+  # Catalog = ""
+  JobDefs = "JobDefWithRunScripts"
+  # Run = 
+  # Where = 
+  # RegexWhere = 
+  # StripPrefix = 
+  # AddPrefix = 
+  # AddSuffix = 
+  # Bootstrap = 
+  # WriteBootstrap = "/var/lib/bareos/%c.bsr"
+  # WriteVerifyList = 
+  # Replace = Always
+  # MaximumBandwidth = 0
+  # MaxRunSchedTime = 0
+  # MaxRunTime = 0
+  # FullMaxRuntime = 0
+  # IncrementalMaxRuntime = 0
+  # DifferentialMaxRuntime = 0
+  # MaxWaitTime = 0
+  # MaxStartDelay = 0
+  # MaxFullInterval = 0
+  # MaxVirtualFullInterval = 0
+  # MaxDiffInterval = 0
+  # PrefixLinks = No
+  # PruneJobs = No
+  # PruneFiles = No
+  # PruneVolumes = No
+  # PurgeMigrationJob = No
+  # Enabled = Yes
+  # SpoolAttributes = No
+  # SpoolData = No
+  # SpoolSize = 0
+  # RerunFailedLevels = No
+  # PreferMountedVolumes = Yes
+  # MaximumConcurrentJobs = 1
+  # RescheduleOnError = No
+  # RescheduleInterval = 30 minutes 
+  # RescheduleTimes = 5
+  # Priority = 10
+  # AllowMixedPriority = No
+  # SelectionPattern = 
+  # ClientRunBeforeJob = "/tmp/JobDefClientRunBeforeJob1.sh"
+  # ClientRunBeforeJob = "/tmp/JobDefClientRunBeforeJob2.sh"
+  # ClientRunAfterJob = "/tmp/JobDefClientRunAfterJob1"
+  # ClientRunAfterJob = "/tmp/JobDefClientRunAfterJob2"
+  # RunBeforeJob = "/tmp/JobDefRunBeforeJob1.sh"
+  # RunBeforeJob = "/tmp/JobDefRunBeforeJob2.sh"
+  # RunAfterJob = "/tmp/JobDefRunAfterJob1"
+  # RunAfterJob = "/tmp/JobDefRunAfterJob2"
+  # RunScript {
+    # Command = "/tmp/JobDefRunScriptCommandBeforeOnClient.sh"
+    # RunsWhen = "before"
+    # FailJobOnError = Yes
+    # RunsOnSuccess = Yes
+    # RunsOnFailure = No
+    # RunsOnClient = Yes
+  # }
+  # RunScript {
+    # Command = "/tmp/JobDefRunScriptCommandBeforeNotOnClient.sh"
+    # RunsWhen = "before"
+    # FailJobOnError = Yes
+    # RunsOnSuccess = Yes
+    # RunsOnFailure = No
+    # RunsOnClient = No
+  # }
+  # Accurate = No
+  # AllowDuplicateJobs = Yes
+  # AllowHigherDuplicates = Yes
+  # CancelLowerLevelDuplicates = No
+  # CancelQueuedDuplicates = No
+  # CancelRunningDuplicates = No
+  # SaveFileHistory = Yes
+  # FileHistorySize = 9 m 549 k 640
+  # FdPluginOptions = 
+  # SdPluginOptions = 
+  # DirPluginOptions = 
+  # Base = 
+  # MaxConcurrentCopies = 100
+  # AlwaysIncremental = No
+  # AlwaysIncrementalJobRetention = 0
+  # AlwaysIncrementalKeepNumber = 0
+  # AlwaysIncrementalMaxFullAge = 0
+  # MaxFullConsolidations = 0
+  # RunOnIncomingConnectInterval = 0
+}
+
+Job {
+  Name = "job-with-jobdefs-runscripts"
+  # Description = 
+  # Type = Backup
+  # Protocol = Native
+  # BackupFormat = "Native"
+  # Level = Differential
+  # Messages = "Standard"
+  # Storage = "File"
+  # Pool = "Incremental"
+  # FullBackupPool = "Full"
+  # VirtualFullBackupPool = ""
+  # IncrementalBackupPool = "Incremental"
+  # DifferentialBackupPool = "Differential"
+  # NextPool = ""
+  # Client = "bareos-fd"
+  # FileSet = "SelfTest"
+  # Schedule = "WeeklyCycle"
+  # JobToVerify = ""
+  # Catalog = ""
+  JobDefs = "JobDefWithRunScripts"
+  # Run = 
+  # Where = 
+  # RegexWhere = 
+  # StripPrefix = 
+  # AddPrefix = 
+  # AddSuffix = 
+  # Bootstrap = 
+  # WriteBootstrap = "/var/lib/bareos/%c.bsr"
+  # WriteVerifyList = 
+  # Replace = Always
+  # MaximumBandwidth = 0
+  # MaxRunSchedTime = 0
+  # MaxRunTime = 0
+  # FullMaxRuntime = 0
+  # IncrementalMaxRuntime = 0
+  # DifferentialMaxRuntime = 0
+  # MaxWaitTime = 0
+  # MaxStartDelay = 0
+  # MaxFullInterval = 0
+  # MaxVirtualFullInterval = 0
+  # MaxDiffInterval = 0
+  # PrefixLinks = No
+  # PruneJobs = No
+  # PruneFiles = No
+  # PruneVolumes = No
+  # PurgeMigrationJob = No
+  # Enabled = Yes
+  # SpoolAttributes = No
+  # SpoolData = No
+  # SpoolSize = 0
+  # RerunFailedLevels = No
+  # PreferMountedVolumes = Yes
+  # MaximumConcurrentJobs = 1
+  # RescheduleOnError = No
+  # RescheduleInterval = 30 minutes 
+  # RescheduleTimes = 5
+  # Priority = 10
+  # AllowMixedPriority = No
+  # SelectionPattern = 
+  RunScript {
+    Command = "/tmp/RunScriptCommandBeforeOnClient.sh"
+    RunsWhen = "before"
+    # FailJobOnError = Yes
+    # RunsOnSuccess = Yes
+    # RunsOnFailure = No
+    # RunsOnClient = Yes
+  }
+  RunScript {
+    Command = "/tmp/RunScriptCommandBeforeNotOnClient.sh"
+    RunsWhen = "before"
+    # FailJobOnError = Yes
+    # RunsOnSuccess = Yes
+    # RunsOnFailure = No
+    RunsOnClient = No
+  }
+  # ClientRunBeforeJob = "/tmp/JobDefClientRunBeforeJob1.sh"
+  # ClientRunBeforeJob = "/tmp/JobDefClientRunBeforeJob2.sh"
+  # ClientRunAfterJob = "/tmp/JobDefClientRunAfterJob1"
+  # ClientRunAfterJob = "/tmp/JobDefClientRunAfterJob2"
+  # RunBeforeJob = "/tmp/JobDefRunBeforeJob1.sh"
+  # RunBeforeJob = "/tmp/JobDefRunBeforeJob2.sh"
+  # RunAfterJob = "/tmp/JobDefRunAfterJob1"
+  # RunAfterJob = "/tmp/JobDefRunAfterJob2"
+  # RunScript {
+    # Command = "/tmp/JobDefRunScriptCommandBeforeOnClient.sh"
+    # RunsWhen = "before"
+    # FailJobOnError = Yes
+    # RunsOnSuccess = Yes
+    # RunsOnFailure = No
+    # RunsOnClient = Yes
+  # }
+  # RunScript {
+    # Command = "/tmp/JobDefRunScriptCommandBeforeNotOnClient.sh"
+    # RunsWhen = "before"
+    # FailJobOnError = Yes
+    # RunsOnSuccess = Yes
+    # RunsOnFailure = No
+    # RunsOnClient = No
+  # }
+  # Accurate = No
+  # AllowDuplicateJobs = Yes
+  # AllowHigherDuplicates = Yes
+  # CancelLowerLevelDuplicates = No
+  # CancelQueuedDuplicates = No
+  # CancelRunningDuplicates = No
+  # SaveFileHistory = Yes
+  # FileHistorySize = 9 m 549 k 640
+  # FdPluginOptions = 
+  # SdPluginOptions = 
+  # DirPluginOptions = 
+  # Base = 
   # MaxConcurrentCopies = 100
   # AlwaysIncremental = No
   # AlwaysIncrementalJobRetention = 0
