@@ -39,7 +39,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - build: Add support for Ubuntu 22.04, Fedora 36, EL 9, openSUSE 15.4 [PR #1179]
 - tests: skip mysql tests if root [PR #1197]
 - build: Add support for SLE_15_SP4 [PR #1205]
-- libcloud plugin: allow to configure the storage provider [PR #1174]
+- libcloud plugin: allow to configure the storage provider [PR #1226]
 
 ### Fixed
 - dird: RunScript fixes [PR #1217]
@@ -203,6 +203,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1140]: https://github.com/bareos/bareos/pull/1140
 [PR #1147]: https://github.com/bareos/bareos/pull/1147
 [PR #1149]: https://github.com/bareos/bareos/pull/1149
+[PR #1151]: https://github.com/bareos/bareos/pull/1151
 [PR #1152]: https://github.com/bareos/bareos/pull/1152
 [PR #1153]: https://github.com/bareos/bareos/pull/1153
 [PR #1154]: https://github.com/bareos/bareos/pull/1154
@@ -221,6 +222,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1183]: https://github.com/bareos/bareos/pull/1183
 [PR #1185]: https://github.com/bareos/bareos/pull/1185
 [PR #1187]: https://github.com/bareos/bareos/pull/1187
+[PR #1188]: https://github.com/bareos/bareos/pull/1188
 [PR #1189]: https://github.com/bareos/bareos/pull/1189
 [PR #1192]: https://github.com/bareos/bareos/pull/1192
 [PR #1193]: https://github.com/bareos/bareos/pull/1193
@@ -232,4 +234,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1206]: https://github.com/bareos/bareos/pull/1206
 [PR #1209]: https://github.com/bareos/bareos/pull/1209
 [PR #1217]: https://github.com/bareos/bareos/pull/1217
+[PR #1218]: https://github.com/bareos/bareos/pull/1218
+[PR #1221]: https://github.com/bareos/bareos/pull/1221
+[PR #1226]: https://github.com/bareos/bareos/pull/1226
 [unreleased]: https://github.com/bareos/bareos/tree/master
