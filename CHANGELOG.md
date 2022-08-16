@@ -149,6 +149,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - FreeBSD install create /usr/local/etc/pkg/repos directory [PR #1227]
 - remove deprecated Rados & ceph references from documentation [PR #1216]
 - improve Wild(*) section with links to example [PR #1228]
+- add example to selection type = sql query [PR #1229]
 
 [PR #698]: https://github.com/bareos/bareos/pull/698
 [PR #768]: https://github.com/bareos/bareos/pull/768
