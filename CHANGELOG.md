@@ -153,6 +153,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - improve Wild(*) section with links to example [PR #1228]
 - add example to selection type = sql query [PR #1229]
 - dir-job-RescheduleTimes remove wrong default sentence [PR #1225]
+- update Appendix/HardwareSizing DB size with new numbers and formulas [BUG #1477][PR #1231]
 
 [PR #698]: https://github.com/bareos/bareos/pull/698
 [PR #768]: https://github.com/bareos/bareos/pull/768
@@ -256,4 +257,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1229]: https://github.com/bareos/bareos/pull/1229
 [PR #1236]: https://github.com/bareos/bareos/pull/1236
 [PR #1237]: https://github.com/bareos/bareos/pull/1237
+[PR #1216]: https://github.com/bareos/bareos/pull/1216
+[PR #1231]: https://github.com/bareos/bareos/pull/1231
 [unreleased]: https://github.com/bareos/bareos/tree/master
