@@ -10,6 +10,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
   - fix show command output for RunScript RunsOnClient
   - fix show verbose for RunScripts
   - execute console runscripts only on the Director
+## Fixed
+- github-actions: add workflow to build MacOS packages [PR #1223]
 - devtools/dist-tarball.sh: fix name if version contains "~pre" [PR #1220]
 
 ## [21.1.4] - 2022-08-05
