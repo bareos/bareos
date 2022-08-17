@@ -95,12 +95,14 @@ If you want to report a security-related problem, please take a look at our `sec
 Memory Leaks
 ------------
 
-Use standard C++11 resource management (RAII and smart pointers) to prevent memory leaks in general. If you need to detect memory leaks, you can just use ``valgrind`` to do so.
+Use standard C++17 resource management (RAII and smart pointers) to prevent memory leaks in general. If you need to detect memory leaks, you can just use ``valgrind`` to do so.
+
+We also use sanitizers to detect memory leaks. To enable them, ensure you install ``libasan``, ``libubsan``, and ``libtsan`` and then enable sanitizers in the cmake arguments with ``-DENABLE_SANITIZERS=YES``.
 
 Guiding Principles
 ------------------
 
-All new code should be written in modern C++11 following the `Google C++ Style Guide`_ and the `C++ Core Guidelines`_.
+All new code should be written in modern C++17 following the `Google C++ Style Guide`_ and the `C++ Core Guidelines`_.
 
 We like simple rather than complex code, but complex code is still better than complicated code.
 
@@ -145,7 +147,7 @@ Use ``//`` for single-line comments.
 Do's
 ----
 
-- write modern C++11
+- write modern C++17
 - prefer simple code
 - write unit tests for your code
 - use RAII_ whenever possible
@@ -177,9 +179,6 @@ avoid ``delete``
 
 don't transfer ownership of heap memory without move semantics
   No returning of raw pointers where the caller is supposed to free the resource.
-
-don't use C++14 or later
-  Currently we support platforms where the newest available compiler supports only C++11.
 
 don't use C string functions
   If you can, use ``std::string`` and don't rely on C string functions.
