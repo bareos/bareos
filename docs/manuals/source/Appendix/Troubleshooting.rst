@@ -123,13 +123,13 @@ then test your multiple concurrent backup including restore testing before you p
 
 When using random access media as backup space (e.g. disk), you should also read the chapter about :ref:`ConcurrentDiskJobs`.
 
-Below is a super stripped down :file:`bareos-dir.conf` file showing you the four places where the the file must be modified to allow the same job :config:option:`Dir/Job = NightlySave`\  to run up to four times concurrently. The change to the Job resource is not necessary if you want different Jobs to run at the same time, which is the normal case.
+Below is a super stripped down |dir| configuration showing you the four places where that must be modified to allow the same job :config:option:`Dir/Job = NightlySave`\  to run up to four times concurrently. The change to the Job resource is not necessary if you want different Jobs to run at the same time, which is the normal case.
 
 .. code-block:: bareosconfig
    :caption: Concurrent Jobs Example
 
    #
-   # Bareos Director Configuration file -- bareos-dir.conf
+   # Bareos Director Configuration /etc/bareos/bareos-dir.d/*
    #
    Director {
      Name = bareos-dir
@@ -218,7 +218,7 @@ Do not proceed to the next item until you have succeeded with the previous one.
 #. Make sure you have a valid and correct Device resource corresponding to your drive. For Linux users, generally, the default one works. For FreeBSD users, there are two possible Device configurations (see below). For other drives and/or OSes, you will need to first ensure that your system tape modes are properly setup (see below), then possibly modify you Device resource depending on the output from the btape program (next item). When doing this, you should consult the
    :ref:`Storage Daemon Configuration <StoredConfChapter>` of this manual.
 
-#. If you are using a Fiber Channel to connect your tape drive to Bareos, please be sure to disable any caching in the NSR (network storage router, which is a Fiber Channel to SCSI converter).
+#. If you are using a Fibre Channel to connect your tape drive to Bareos, please be sure to disable any caching in the NSR (network storage router, which is a Fibre Channel to SCSI converter).
 
 #. Run the btape test command:
 
