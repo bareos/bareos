@@ -217,6 +217,7 @@ Install on FreeBSD based Distributions
    URL=https://download.bareos.org/bareos/$RELEASE/$DIST
 
    # add the Bareos repository
+   mkdir -p /usr/local/etc/pkg/repos
    cd /usr/local/etc/pkg/repos
    wget -q $URL/bareos.conf
 
