@@ -702,7 +702,7 @@ static bool PruneBackupJobs(UaContext* ua,
        "INSERT INTO DelCandidates "
        "SELECT JobId,PurgedFiles,FileSetId,JobFiles,JobStatus "
        "FROM Job %s " /* JOIN Pool/Client */
-       "WHERE Type IN ('B', 'C', 'M', 'V',  'D', 'R', 'c', 'm', 'g') "
+       "WHERE Type NOT IN ('A') "
        " %s ", /* Pool/Client + JobTDate */
        sql_from.c_str(), sql_where.c_str());
 
