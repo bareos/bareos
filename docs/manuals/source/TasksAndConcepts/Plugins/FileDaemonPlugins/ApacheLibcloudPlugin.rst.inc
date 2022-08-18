@@ -125,7 +125,7 @@ tls
    Use Transport encryption, if supported by the backend
 
 provider
-   The provider string, currently only 'S3'
+   The provider string, 'S3' being the default if not specified
 
 username
    The username to use for backups
