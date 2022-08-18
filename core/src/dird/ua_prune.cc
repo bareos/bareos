@@ -653,21 +653,9 @@ static int JobSelectHandler(void* ctx, int num_fields, char** row)
  *
  * For Restore Jobs there are no restrictions.
  */
-static bool PruneBackupJobs(UaContext* ua,
-                            ClientResource* client,
-                            PoolResource* pool)
+bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
 {
-  PoolMem query(PM_MESSAGE);
-  PoolMem sql_where(PM_MESSAGE);
-  PoolMem sql_from(PM_MESSAGE);
   utime_t period;
-  char ed1[50];
-  alist<JobId_t*>* jobids_check = NULL;
-  struct accurate_check_ctx* elt = nullptr;
-  db_list_ctx jobids, tempids;
-  JobDbRecord jr;
-  del_ctx del;
-
   if (pool && pool->JobRetention > 0) {
     period = pool->JobRetention;
   } else if (client) {
@@ -676,20 +664,27 @@ static bool PruneBackupJobs(UaContext* ua,
     return false;
   }
 
+  PoolMem sql_where(PM_MESSAGE);
+  PoolMem sql_from(PM_MESSAGE);
   DbLocker _{ua->db};
   if (!prune_set_filter(ua, client, pool, period, &sql_from, &sql_where)) {
-    goto bail_out;
+    return true;
   }
 
   // Drop any previous temporary tables still there
   DropTempTables(ua);
 
   // Create temp tables and indicies
-  if (!CreateTempTables(ua)) { goto bail_out; }
+  if (!CreateTempTables(ua)) {
+    DropTempTables(ua);
+    return true;
+  }
 
+  char ed1[50];
   edit_utime(period, ed1, sizeof(ed1));
   ua->SendMsg(_("Begin pruning Jobs older than %s.\n"), ed1);
 
+  del_ctx del;
   del.max_ids = 100;
   del.JobId = (JobId_t*)malloc(sizeof(JobId_t) * del.max_ids);
   del.PurgedFiles = (char*)malloc(del.max_ids);
@@ -698,6 +693,8 @@ static bool PruneBackupJobs(UaContext* ua,
    * Select all files that are older than the JobRetention period
    * and add them into the "DeletionCandidates" table.
    */
+
+  PoolMem query(PM_MESSAGE);
   Mmsg(query,
        "INSERT INTO DelCandidates "
        "SELECT JobId,PurgedFiles,FileSetId,JobFiles,JobStatus "
@@ -709,7 +706,10 @@ static bool PruneBackupJobs(UaContext* ua,
   Dmsg1(050, "select sql=%s\n", query.c_str());
   if (!ua->db->SqlQuery(query.c_str())) {
     if (ua->verbose) { ua->ErrorMsg("%s", ua->db->strerror()); }
-    goto bail_out;
+    DropTempTables(ua);
+    if (del.JobId) { free(del.JobId); }
+    if (del.PurgedFiles) { free(del.PurgedFiles); }
+    return true;
   }
 
   /*
@@ -717,7 +717,8 @@ static bool PruneBackupJobs(UaContext* ua,
    * able to restore files. (ie, last full, last diff, last incrs)
    * Note: The DISTINCT could be more useful if we don't get FileSetId
    */
-  jobids_check = new alist<JobId_t*>(10, owned_by_alist);
+
+  alist<JobId_t*> jobids_check(10, owned_by_alist);
   Mmsg(query,
        "SELECT DISTINCT Job.Name, FileSet, Client.Name, Job.FileSetId, "
        "Job.ClientId, Job.Type "
@@ -734,7 +735,7 @@ static bool PruneBackupJobs(UaContext* ua,
    * in the configuration file. Interesting ClientId/FileSetId will be
    * added to jobids_check.
    */
-  if (!ua->db->SqlQuery(query.c_str(), JobSelectHandler, jobids_check)) {
+  if (!ua->db->SqlQuery(query.c_str(), JobSelectHandler, &jobids_check)) {
     ua->ErrorMsg("%s", ua->db->strerror());
   }
 
@@ -745,8 +746,13 @@ static bool PruneBackupJobs(UaContext* ua,
    */
 
   // To find useful jobs, we do like an incremental
+  JobDbRecord jr;
   jr.JobLevel = L_INCREMENTAL;
-  foreach_alist (elt, jobids_check) {
+
+  struct accurate_check_ctx* elt = nullptr;
+  db_list_ctx jobids;
+  db_list_ctx tempids;
+  foreach_alist (elt, &jobids_check) {
     jr.ClientId = elt->ClientId; /* should be always the same */
     jr.FileSetId = elt->FileSetId;
     ua->db->AccurateGetJobids(ua->jcr, &jr, &tempids);
@@ -787,7 +793,11 @@ static bool PruneBackupJobs(UaContext* ua,
 
     if (!ua->db->SqlQuery(query.c_str())) {
       ua->ErrorMsg("%s", ua->db->strerror());
-      goto bail_out;  // Don't continue if the list isn't clean
+      // Don't continue if the list isn't clean
+      DropTempTables(ua);
+      if (del.JobId) { free(del.JobId); }
+      if (del.PurgedFiles) { free(del.PurgedFiles); }
+      return true;
     }
     Dmsg1(60, "jobids to exclude = %s\n", jobids.GetAsString().c_str());
   }
@@ -810,18 +820,10 @@ static bool PruneBackupJobs(UaContext* ua,
     ua->InfoMsg(_("No Jobs found to prune.\n"));
   }
 
-bail_out:
   DropTempTables(ua);
   if (del.JobId) { free(del.JobId); }
   if (del.PurgedFiles) { free(del.PurgedFiles); }
-  if (jobids_check) { delete jobids_check; }
-  return 1;
-}
-
-// Dispatch to the right prune jobs function.
-bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
-{
-  return PruneBackupJobs(ua, client, pool);
+  return true;
 }
 
 // Prune a given Volume
