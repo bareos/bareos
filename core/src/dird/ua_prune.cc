@@ -718,7 +718,8 @@ bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
    * Note: The DISTINCT could be more useful if we don't get FileSetId
    */
 
-  alist<JobId_t*> jobids_check(10, owned_by_alist);
+  std::unique_ptr<alist<JobId_t*>> jobids_check
+      = std::make_unique<alist<JobId_t*>>(10, owned_by_alist);
   Mmsg(query,
        "SELECT DISTINCT Job.Name, FileSet, Client.Name, Job.FileSetId, "
        "Job.ClientId, Job.Type "
@@ -735,7 +736,7 @@ bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
    * in the configuration file. Interesting ClientId/FileSetId will be
    * added to jobids_check.
    */
-  if (!ua->db->SqlQuery(query.c_str(), JobSelectHandler, &jobids_check)) {
+  if (!ua->db->SqlQuery(query.c_str(), JobSelectHandler, jobids_check.get())) {
     ua->ErrorMsg("%s", ua->db->strerror());
   }
 
@@ -752,7 +753,7 @@ bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
   struct accurate_check_ctx* elt = nullptr;
   db_list_ctx jobids;
   db_list_ctx tempids;
-  foreach_alist (elt, &jobids_check) {
+  foreach_alist (elt, jobids_check) {
     jr.ClientId = elt->ClientId; /* should be always the same */
     jr.FileSetId = elt->FileSetId;
     ua->db->AccurateGetJobids(ua->jcr, &jr, &tempids);
