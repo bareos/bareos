@@ -506,14 +506,9 @@ static bool prune_set_filter(UaContext* ua,
  */
 bool PruneFiles(UaContext* ua, ClientResource* client, PoolResource* pool)
 {
-  del_ctx del;
-  struct s_count_ctx cnt;
-  PoolMem query(PM_MESSAGE);
-  PoolMem sql_where(PM_MESSAGE);
-  PoolMem sql_from(PM_MESSAGE);
-  utime_t period;
   char ed1[50];
 
+  utime_t period;
   if (pool && pool->FileRetention > 0) {
     period = pool->FileRetention;
 
@@ -526,27 +521,33 @@ bool PruneFiles(UaContext* ua, ClientResource* client, PoolResource* pool)
 
   DbLocker _{ua->db};
   /* Specify JobTDate and Pool.Name= and/or Client.Name= in the query */
+  PoolMem sql_where(PM_MESSAGE);
+  PoolMem sql_from(PM_MESSAGE);
   if (!prune_set_filter(ua, client, pool, period, &sql_from, &sql_where)) {
-    goto bail_out;
+    return true;
   }
 
   ua->SendMsg(_("Begin pruning Files.\n"));
   /* Select Jobs -- for counting */
+  PoolMem query(PM_MESSAGE);
   Mmsg(query, "SELECT COUNT(1) FROM Job %s WHERE PurgedFiles=0 %s",
        sql_from.c_str(), sql_where.c_str());
   Dmsg1(050, "select sql=%s\n", query.c_str());
+
+  struct s_count_ctx cnt;
   cnt.count = 0;
   if (!ua->db->SqlQuery(query.c_str(), DelCountHandler, (void*)&cnt)) {
     ua->ErrorMsg("%s", ua->db->strerror());
     Dmsg0(050, "Count failed\n");
-    goto bail_out;
+    return true;
   }
 
   if (cnt.count == 0) {
     if (ua->verbose) { ua->WarningMsg(_("No Files found to prune.\n")); }
-    goto bail_out;
+    return true;
   }
 
+  del_ctx del;
   if (cnt.count < MAX_DEL_LIST_LEN) {
     del.max_ids = cnt.count + 1;
   } else {
@@ -568,9 +569,8 @@ bool PruneFiles(UaContext* ua, ClientResource* client, PoolResource* pool)
   ua->InfoMsg(_("Pruned Files from %s Jobs for client %s from catalog.\n"), ed1,
               client->resource_name_);
 
-bail_out:
   if (del.JobId) { free(del.JobId); }
-  return 1;
+  return true;
 }
 
 static void DropTempTables(UaContext* ua)
