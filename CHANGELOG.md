@@ -122,6 +122,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - config parser: Refactor config reloading by using shared pointers instead of callbacks [PR #1151]
 - tests: remove unused config files [PR #1247]
 - dird: fix config reload and unit tests dependency issue [PR #1161]
+- pruning: `prune jobs` doesn't ask for jobtypes anymore, and prunes all jobtypes except Archives (`A`) [PR #1215] 
 
 ### Deprecated
 - make_catalog_backup.pl is now a shell wrapper script which will be removed in version 23.
