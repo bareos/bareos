@@ -672,7 +672,7 @@ static bool PruneBackupJobs(UaContext* ua,
     period = pool->JobRetention;
   } else if (client) {
     period = client->JobRetention;
-  } else { /* should specify at least pool or client */
+  } else {  // should specify at least pool or client
     return false;
   }
 
@@ -681,10 +681,10 @@ static bool PruneBackupJobs(UaContext* ua,
     goto bail_out;
   }
 
-  /* Drop any previous temporary tables still there */
+  // Drop any previous temporary tables still there
   DropTempTables(ua);
 
-  /* Create temp tables and indicies */
+  // Create temp tables and indicies
   if (!CreateTempTables(ua)) { goto bail_out; }
 
   edit_utime(period, ed1, sizeof(ed1));
@@ -775,24 +775,24 @@ static bool PruneBackupJobs(UaContext* ua,
   if (!jobids.empty()) {
     Dmsg1(60, "jobids to exclude before basejobs = %s\n",
           jobids.GetAsString().c_str());
-    /* We also need to exclude all basejobs used */
+    // We also need to exclude all basejobs used
     ua->db->GetUsedBaseJobids(ua->jcr, jobids.GetAsString().c_str(), &jobids);
 
-    /* Removing useful jobs from the DelCandidates list */
+    // Removing useful jobs from the DelCandidates list
     Mmsg(query,
          "DELETE FROM DelCandidates "
-         "WHERE JobId IN (%s) " /* JobId used in accurate */
-         "AND JobFiles!=0",     /* Discard when JobFiles=0 */
+         "WHERE JobId IN (%s) "  // JobId used in accurate
+         "AND JobFiles!=0",      // Discard when JobFiles=0
          jobids.GetAsString().c_str());
 
     if (!ua->db->SqlQuery(query.c_str())) {
       ua->ErrorMsg("%s", ua->db->strerror());
-      goto bail_out; /* Don't continue if the list isn't clean */
+      goto bail_out;  // Don't continue if the list isn't clean
     }
     Dmsg1(60, "jobids to exclude = %s\n", jobids.GetAsString().c_str());
   }
 
-  /* We use DISTINCT because we can have two times the same job */
+  // We use DISTINCT because we can have two times the same job
   Mmsg(query,
        "SELECT DISTINCT DelCandidates.JobId,DelCandidates.PurgedFiles "
        "FROM DelCandidates");
