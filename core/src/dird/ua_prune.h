@@ -37,7 +37,7 @@ int DelCountHandler(void* ctx, int num_fields, char** row);
 int FileDeleteHandler(void* ctx, int num_fields, char** row);
 int GetPruneListForVolume(UaContext* ua,
                           MediaDbRecord* mr,
-                          std::vector<JobId_t>& del);
+                          std::vector<JobId_t>& prune_list);
 int ExcludeRunningJobsFromList(std::vector<JobId_t>& prune_list);
 
 } /* namespace directordaemon */
