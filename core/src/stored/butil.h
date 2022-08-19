@@ -2,7 +2,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -41,7 +41,7 @@ JobControlRecord* SetupJcr(const char* name,
                            BootStrapRecord* bsr,
                            DirectorResource* director,
                            DeviceControlRecord* dcr,
-                           const char* VolumeName,
+                           const std::string& VolumeName,
                            bool readonly);
 void DisplayTapeErrorStatus(JobControlRecord* jcr, Device* dev);
 

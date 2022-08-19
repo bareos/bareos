@@ -74,11 +74,11 @@ static uint32_t num_files = 0;
 static Attributes* attr;
 
 static FindFilesPacket* ff;
-static BootStrapRecord* bsr = NULL;
+static BootStrapRecord* bsr = nullptr;
 
 int main(int argc, char* argv[])
 {
-  DirectorResource* director = NULL;
+  DirectorResource* director = nullptr;
 
   setlocale(LC_ALL, "");
   tzset();
@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
 
   working_directory = "/tmp";
   MyNameIs(argc, argv, "bls");
-  InitMsg(NULL, NULL); /* initialize message handler */
+  InitMsg(nullptr, nullptr); /* initialize message handler */
 
   OSDependentInit();
 
@@ -115,17 +115,11 @@ int main(int argc, char* argv[])
       ->check(CLI::ExistingPath)
       ->type_name("<path>");
 
-  char* DirectorName = nullptr;
+  std::string DirectorName{};
   bls_app
-      .add_option(
-          "-D,--director",
-          [&DirectorName](std::vector<std::string> val) {
-            if (DirectorName != nullptr) { free(DirectorName); }
-            DirectorName = strdup(val.front().c_str());
-            return true;
-          },
-          "Specify a director name found in the storage.\n"
-          "Configuration file for the Key Encryption Key selection.")
+      .add_option("-D,--director", DirectorName,
+                  "Specify a director name found in the storage.\n"
+                  "Configuration file for the Key Encryption Key selection.")
       ->type_name("<director>");
 
   AddDebugOptions(bls_app);
@@ -136,13 +130,13 @@ int main(int argc, char* argv[])
       .add_option(
           "-e,--exclude",
           [&line, &fd](std::vector<std::string> val) {
-            if ((fd = fopen(val.front().c_str(), "rb")) == NULL) {
+            if ((fd = fopen(val.front().c_str(), "rb")) == nullptr) {
               BErrNo be;
               Pmsg2(0, _("Could not open exclude file: %s, ERR=%s\n"), optarg,
                     be.bstrerror());
               exit(1);
             }
-            while (fgets(line, sizeof(line), fd) != NULL) {
+            while (fgets(line, sizeof(line), fd) != nullptr) {
               StripTrailingJunk(line);
               Dmsg1(100, "add_exclude %s\n", line);
               AddFnameToExcludeList(ff, line);
@@ -157,13 +151,13 @@ int main(int argc, char* argv[])
       .add_option(
           "-i,--include-list",
           [&line, &fd](std::vector<std::string> val) {
-            if ((fd = fopen(optarg, "rb")) == NULL) {
+            if ((fd = fopen(optarg, "rb")) == nullptr) {
               BErrNo be;
               Pmsg2(0, _("Could not open include file: %s, ERR=%s\n"), optarg,
                     be.bstrerror());
               exit(1);
             }
-            while (fgets(line, sizeof(line), fd) != NULL) {
+            while (fgets(line, sizeof(line), fd) != nullptr) {
               StripTrailingJunk(line);
               Dmsg1(100, "add_include %s\n", line);
               AddFnameToIncludeList(ff, 0, line);
@@ -216,15 +210,15 @@ int main(int argc, char* argv[])
   my_config = InitSdConfig(configfile, M_ERROR_TERM);
   ParseSdConfig(configfile, M_ERROR_TERM);
 
-  if (DirectorName) {
+  if (!DirectorName.empty()) {
     foreach_res (director, R_DIRECTOR) {
-      if (bstrcmp(director->resource_name_, DirectorName)) { break; }
+      if (bstrcmp(director->resource_name_, DirectorName.c_str())) { break; }
     }
     if (!director) {
       Emsg2(
           M_ERROR_TERM, 0,
           _("No Director resource named %s defined in %s. Cannot continue.\n"),
-          DirectorName, configfile);
+          DirectorName.c_str(), configfile);
     }
   }
 
@@ -233,7 +227,7 @@ int main(int argc, char* argv[])
   ReadCryptoCache(me->working_directory, "bareos-sd",
                   GetFirstPortHostOrder(me->SDaddrs));
 
-  if (ff->included_files_list == NULL) { AddFnameToIncludeList(ff, 0, "/"); }
+  if (ff->included_files_list == nullptr) { AddFnameToIncludeList(ff, 0, "/"); }
 
 
   for (std::string device : device_names) {
@@ -241,7 +235,7 @@ int main(int argc, char* argv[])
       bsr = libbareos::parse_bsr(nullptr, bsrName.data());
     }
     dcr = new DeviceControlRecord;
-    jcr = SetupJcr("bls", device.data(), bsr, director, dcr, VolumeNames.data(),
+    jcr = SetupJcr("bls", device.data(), bsr, director, dcr, VolumeNames,
                    true); /* read device */
     if (!jcr) { exit(1); }
     jcr->impl->ignore_label_errors = ignore_label_errors;

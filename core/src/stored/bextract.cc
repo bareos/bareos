@@ -63,7 +63,7 @@ static void DoExtract(char* devname,
                       DirectorResource* director);
 static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec);
 
-static Device* dev = NULL;
+static Device* dev = nullptr;
 static DeviceControlRecord* dcr;
 static BareosWinFilePacket bfd;
 static JobControlRecord* jcr;
@@ -79,7 +79,7 @@ static int win32_data_msg = 0;
 
 static AclData acl_data;
 static XattrData xattr_data;
-static alist<DelayedDataStream*>* delayed_streams = NULL;
+static alist<DelayedDataStream*>* delayed_streams = nullptr;
 
 static char* wbuf;            /* write buffer address */
 static uint32_t wsize;        /* write size */
@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
 
   working_directory = "/tmp";
   MyNameIs(argc, argv, "bextract");
-  InitMsg(NULL, NULL); /* setup message handler */
+  InitMsg(nullptr, nullptr); /* setup message handler */
 
   OSDependentInit();
 
@@ -111,7 +111,7 @@ int main(int argc, char* argv[])
       .add_option(
           "-b,--parse-bootstrap",
           [&bsr](std::vector<std::string> vals) {
-            bsr = libbareos::parse_bsr(NULL, vals.front().data());
+            bsr = libbareos::parse_bsr(nullptr, vals.front().data());
             return true;
           },
           "Specify a bootstrap file.")
@@ -130,17 +130,11 @@ int main(int argc, char* argv[])
       ->check(CLI::ExistingPath)
       ->type_name("<path>");
 
-  char* DirectorName = NULL;
+  std::string DirectorName{};
   bextract_app
-      .add_option(
-          "-D,--director",
-          [&DirectorName](std::vector<std::string> val) {
-            if (DirectorName != nullptr) { free(DirectorName); }
-            DirectorName = strdup(val.front().c_str());
-            return true;
-          },
-          "Specify a director name specified in the storage.\n"
-          "Configuration file for the Key Encryption Key selection.")
+      .add_option("-D,--director", DirectorName,
+                  "Specify a director name specified in the storage.\n"
+                  "Configuration file for the Key Encryption Key selection.")
       ->type_name("<director>");
 
   AddDebugOptions(bextract_app);
@@ -151,13 +145,13 @@ int main(int argc, char* argv[])
       .add_option(
           "-e,--exclude",
           [&line, &fd](std::vector<std::string> val) {
-            if ((fd = fopen(val.front().c_str(), "rb")) == NULL) {
+            if ((fd = fopen(val.front().c_str(), "rb")) == nullptr) {
               BErrNo be;
               Pmsg2(0, _("Could not open exclude file: %s, ERR=%s\n"), optarg,
                     be.bstrerror());
               exit(1);
             }
-            while (fgets(line, sizeof(line), fd) != NULL) {
+            while (fgets(line, sizeof(line), fd) != nullptr) {
               StripTrailingJunk(line);
               Dmsg1(900, "add_exclude %s\n", line);
               AddFnameToExcludeList(ff, line);
@@ -174,13 +168,13 @@ int main(int argc, char* argv[])
       .add_option(
           "-i,--include-list",
           [&line, &fd, &got_inc](std::vector<std::string> val) {
-            if ((fd = fopen(optarg, "rb")) == NULL) {
+            if ((fd = fopen(optarg, "rb")) == nullptr) {
               BErrNo be;
               Pmsg2(0, _("Could not open include file: %s, ERR=%s\n"), optarg,
                     be.bstrerror());
               exit(1);
             }
-            while (fgets(line, sizeof(line), fd) != NULL) {
+            while (fgets(line, sizeof(line), fd) != nullptr) {
               StripTrailingJunk(line);
               Dmsg1(900, "add_include %s\n", line);
               AddFnameToIncludeList(ff, 0, line);
@@ -225,15 +219,15 @@ int main(int argc, char* argv[])
   ParseSdConfig(configfile, M_ERROR_TERM);
 
   static DirectorResource* director = nullptr;
-  if (DirectorName) {
+  if (!DirectorName.empty()) {
     foreach_res (director, R_DIRECTOR) {
-      if (bstrcmp(director->resource_name_, DirectorName)) { break; }
+      if (bstrcmp(director->resource_name_, DirectorName.c_str())) { break; }
     }
     if (!director) {
       Emsg2(
           M_ERROR_TERM, 0,
           _("No Director resource named %s defined in %s. Cannot continue.\n"),
-          DirectorName, configfile);
+          DirectorName.c_str(), configfile);
     }
   }
 
@@ -271,9 +265,7 @@ static inline void DropDelayedDataStreams()
 
   if (!delayed_streams || delayed_streams->empty()) { return; }
 
-  foreach_alist (dds, delayed_streams) {
-    free(dds->content);
-  }
+  foreach_alist (dds, delayed_streams) { free(dds->content); }
 
   delayed_streams->destroy();
 }
@@ -396,10 +388,10 @@ static void DoExtract(char* devname,
   struct stat statp;
   uint32_t decompress_buf_size;
 
-  EnableBackupPrivileges(NULL, 1);
+  EnableBackupPrivileges(nullptr, 1);
 
   dcr = new DeviceControlRecord;
-  jcr = SetupJcr("bextract", devname, bsr, director, dcr, VolumeName.c_str(),
+  jcr = SetupJcr("bextract", devname, bsr, director, dcr, VolumeName,
                  true); /* read device */
   if (!jcr) { exit(1); }
   dev = jcr->impl->read_dcr->dev;

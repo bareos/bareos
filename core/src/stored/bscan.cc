@@ -140,7 +140,7 @@ int main(int argc, char* argv[])
   InitStackDump();
 
   MyNameIs(argc, argv, "bscan");
-  InitMsg(NULL, NULL);
+  InitMsg(nullptr, nullptr);
 
   OSDependentInit();
 
@@ -301,8 +301,8 @@ int main(int argc, char* argv[])
   }
 
   DeviceControlRecord* dcr = new DeviceControlRecord;
-  bjcr = SetupJcr("bscan", device_name.data(), bsr, director, dcr,
-                  volumes.data(), true);
+  bjcr = SetupJcr("bscan", device_name.data(), bsr, director, dcr, volumes,
+                  true);
   if (!bjcr) { exit(1); }
   dev = bjcr->impl->read_dcr->dev;
 
@@ -981,26 +981,26 @@ static void BscanFreeJcr(JobControlRecord* jcr)
     Dmsg0(200, "Close File bsock\n");
     jcr->file_bsock->close();
     delete jcr->file_bsock;
-    jcr->file_bsock = NULL;
+    jcr->file_bsock = nullptr;
   }
 
   if (jcr->store_bsock) {
     Dmsg0(200, "Close Store bsock\n");
     jcr->store_bsock->close();
     delete jcr->store_bsock;
-    jcr->store_bsock = NULL;
+    jcr->store_bsock = nullptr;
   }
 
   if (jcr->RestoreBootstrap) { free(jcr->RestoreBootstrap); }
 
   if (jcr->impl->dcr) {
     FreeDeviceControlRecord(jcr->impl->dcr);
-    jcr->impl->dcr = NULL;
+    jcr->impl->dcr = nullptr;
   }
 
   if (jcr->impl->read_dcr) {
     FreeDeviceControlRecord(jcr->impl->read_dcr);
-    jcr->impl->read_dcr = NULL;
+    jcr->impl->read_dcr = nullptr;
   }
 
   if (jcr->impl) {
@@ -1436,7 +1436,7 @@ static JobControlRecord* create_jcr(JobDbRecord* jr,
   jobjcr->VolSessionTime = rec->VolSessionTime;
   jobjcr->ClientId = jr->ClientId;
   jobjcr->impl->dcr = jobjcr->impl->read_dcr = new DeviceControlRecord;
-  SetupNewDcrDevice(jobjcr, jobjcr->impl->dcr, dev, NULL);
+  SetupNewDcrDevice(jobjcr, jobjcr->impl->dcr, dev, nullptr);
 
   return jobjcr;
 }

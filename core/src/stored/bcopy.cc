@@ -58,16 +58,16 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec);
 
 
 /* Global variables */
-static Device* in_dev = NULL;
-static Device* out_dev = NULL;
-static JobControlRecord* in_jcr;  /* input jcr */
-static JobControlRecord* out_jcr; /* output jcr */
-static BootStrapRecord* bsr = NULL;
-static bool list_records = false;
-static uint32_t records = 0;
-static uint32_t jobs = 0;
-static DeviceBlock* out_block;
-static Session_Label sessrec;
+static Device* in_dev{};
+static Device* out_dev{};
+static JobControlRecord* in_jcr{};  /* input jcr */
+static JobControlRecord* out_jcr{}; /* output jcr */
+static BootStrapRecord* bsr{};
+static bool list_records{};
+static uint32_t records{};
+static uint32_t jobs{};
+static DeviceBlock* out_block{};
+static Session_Label sessrec{};
 
 int main(int argc, char* argv[])
 {
@@ -94,40 +94,29 @@ int main(int argc, char* argv[])
       ->check(CLI::ExistingFile)
       ->type_name("<bootstrap>");
 
+  std::string configfile;
   bcopy_app
-      .add_option(
-          "-c,--config",
-          [](std::vector<std::string> val) {
-            if (configfile != nullptr) { free(configfile); }
-            configfile = strdup(val.front().c_str());
-            return true;
-          },
-          "Use <path> as configuration file or directory.")
+      .add_option("-c,--config", configfile,
+                  "Use <path> as configuration file or directory.")
       ->check(CLI::ExistingPath)
       ->type_name("<path>");
 
-  char* DirectorName = NULL;
+  std::string DirectorName{};
   bcopy_app
-      .add_option(
-          "-D,--director",
-          [&DirectorName](std::vector<std::string> val) {
-            if (DirectorName != nullptr) { free(DirectorName); }
-            DirectorName = strdup(val.front().c_str());
-            return true;
-          },
-          "Specify a director name specified in the storage. "
-          "Configuration file for the Key Encryption Key selection.")
+      .add_option("-D,--director", DirectorName,
+                  "Specify a director name specified in the storage. "
+                  "Configuration file for the Key Encryption Key selection.")
       ->type_name("<director>");
 
   AddDebugOptions(bcopy_app);
 
-  char* inputVolumes = nullptr;
+  std::string inputVolumes{};
   bcopy_app
       .add_option("-i,--input-volumes", inputVolumes,
                   "specify input Volume names (separated by |)")
       ->type_name("<vol1|vol2|...>");
 
-  char* outputVolumes = nullptr;
+  std::string outputVolumes{};
   bcopy_app
       .add_option("-o,--output-volumes", outputVolumes,
                   "specify output Volume names (separated by |)")
@@ -163,7 +152,7 @@ int main(int argc, char* argv[])
 
   std::string output_archive;
   bcopy_app
-      .add_option("ouput-archive", output_archive,
+      .add_option("output-archive", output_archive,
                   "Specify the output device name "
                   "(either as name of a Bareos Storage Daemon Device resource "
                   "or identical to the "
@@ -177,19 +166,19 @@ int main(int argc, char* argv[])
 
   working_directory = work_dir.c_str();
 
-  my_config = InitSdConfig(configfile, M_ERROR_TERM);
-  ParseSdConfig(configfile, M_ERROR_TERM);
+  my_config = InitSdConfig(configfile.c_str(), M_ERROR_TERM);
+  ParseSdConfig(configfile.c_str(), M_ERROR_TERM);
 
-  DirectorResource* director = NULL;
-  if (DirectorName) {
+  DirectorResource* director = nullptr;
+  if (!DirectorName.empty()) {
     foreach_res (director, R_DIRECTOR) {
-      if (bstrcmp(director->resource_name_, DirectorName)) { break; }
+      if (bstrcmp(director->resource_name_, DirectorName.c_str())) { break; }
     }
     if (!director) {
       Emsg2(
           M_ERROR_TERM, 0,
           _("No Director resource named %s defined in %s. Cannot continue.\n"),
-          DirectorName, configfile);
+          DirectorName.c_str(), configfile.c_str());
     }
   }
 
@@ -248,11 +237,12 @@ int main(int argc, char* argv[])
 
   Pmsg2(000, _("%u Jobs copied. %u records copied.\n"), jobs, records);
 
-  delete in_dev;
-  delete out_dev;
 
   FreeJcr(in_jcr);
   FreeJcr(out_jcr);
+
+  delete in_dev;
+  delete out_dev;
 
   return 0;
 }
@@ -267,10 +257,7 @@ static bool RecordCb(DeviceControlRecord* in_dcr, DeviceRecord* rec)
           rec->VolSessionId, rec->VolSessionTime, rec->FileIndex, rec->Stream,
           rec->data_len);
   }
-  /*
-   * Check for Start or End of Session Record
-   *
-   */
+  // Check for Start or End of Session Record
   if (rec->FileIndex < 0) {
     GetSessionRecord(in_dcr->dev, rec, &sessrec);
 

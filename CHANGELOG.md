@@ -84,6 +84,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - dird: Add missing newline to job message for TLS handshake [PR #1209]
 - devtools/dist-tarball.sh: fix name if version contains "~pre" [PR #1221]
 - dird: fix odd-even weeks parsing bug in schedule [PR #1210]
+- bcopy: fix crash in bcopy when using certain cli arguments [PR #1211]
 
 ### Changed
 - contrib: rename Python modules to satisfy PEP8 [PR #768]
