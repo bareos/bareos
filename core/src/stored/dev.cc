@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -89,12 +89,6 @@
 #  ifdef HAVE_BAREOSSD_DROPLET_DEVICE
 #    include "backends/chunked_device.h"
 #    include "backends/droplet_device.h"
-#  endif
-#  ifdef HAVE_RADOS
-#    include "backends/rados_device.h"
-#  endif
-#  ifdef HAVE_CEPHFS
-#    include "backends/cephfs_device.h"
 #  endif
 #  include "backends/generic_tape_device.h"
 #  ifdef HAVE_WIN32
@@ -191,16 +185,6 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
 #  ifdef HAVE_BAREOSSD_DROPLET_DEVICE
     case DeviceType::B_DROPLET_DEV:
       dev = new DropletDevice;
-      break;
-#  endif
-#  ifdef HAVE_RADOS
-    case DeviceType::B_RADOS_DEV:
-      dev = new rados_device;
-      break;
-#  endif
-#  ifdef HAVE_CEPHFS
-    case DeviceType::B_CEPHFS_DEV:
-      dev = new cephfs_device;
       break;
 #  endif
 #  ifdef HAVE_WIN32

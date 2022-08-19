@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -56,9 +56,6 @@ else()
     list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-director-python-plugins-common")
   endif()
 
-  if(HAVE_CEPHFS)
-    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-filedaemon-ceph-plugin")
-  endif()
   if(HAVE_GLUSTERFS)
     list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-filedaemon-glusterfs-plugin")
   endif()
@@ -74,9 +71,6 @@ else()
     )
   endif()
 
-  if(NOT client-only AND HAVE_CEPHFS)
-    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-storage-ceph")
-  endif()
   if(NOT client-only AND TARGET droplet)
     list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-storage-droplet")
   endif()

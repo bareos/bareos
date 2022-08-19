@@ -3,7 +3,7 @@
 
    Copyright (C) 2012-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -111,12 +111,6 @@ extern char win_os[];
 
 // Big Endian
 #cmakedefine HAVE_BIG_ENDIAN @HAVE_BIG_ENDIAN@
-
-// Define to 1 if you have cephfs lib
-#cmakedefine HAVE_CEPHFS @HAVE_CEPHFS@
-
-// Define to 1 if you have cephfs/ceph_stat_x.h header
-#cmakedefine HAVE_CEPH_STATX @HAVE_CEPH_STATX@
 
 // Define to 1 if you have the `chflags' function
 #cmakedefine HAVE_CHFLAGS @HAVE_CHFLAGS@
@@ -402,18 +396,6 @@ extern char win_os[];
 
 // Define to 1 if python support should be enabled
 #cmakedefine HAVE_PYTHON @HAVE_PYTHON@
-
-// Define to 1 if you have rados lib
-#cmakedefine HAVE_RADOS @HAVE_RADOS@
-
-// Define to 1 if you have support for RADOS namespaces
-#cmakedefine HAVE_RADOS_NAMESPACES @HAVE_RADOS_NAMESPACES@
-
-// Define to 1 if you have support for RADOS NObject List API
-#cmakedefine HAVE_RADOS_NOBJECTS_LIST @HAVE_RADOS_NOBJECTS_LIST@
-
-// Define to 1 if you have radosstriper lib
-#cmakedefine HAVE_RADOS_STRIPER @HAVE_RADOS_STRIPER@
 
 // Define to 1 if you have the `readdir_r' function
 #cmakedefine HAVE_READDIR_R @HAVE_READDIR_R@

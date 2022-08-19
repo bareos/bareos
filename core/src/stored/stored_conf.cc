@@ -260,8 +260,6 @@ static s_dvt_kw device_types[]
        /* compatibility: object have been renamed to droplet */
        {"object", DeviceType::B_DROPLET_DEV},
        {"droplet", DeviceType::B_DROPLET_DEV},
-       {"rados", DeviceType::B_RADOS_DEV},
-       {"cephfs", DeviceType::B_CEPHFS_DEV},
        {nullptr, DeviceType::B_UNKNOWN_DEV}};
 
 struct s_io_kw {

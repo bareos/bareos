@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -19,18 +19,6 @@
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 list(APPEND CMAKE_INSTALL_RPATH ${backenddir})
-
-if(${HAVE_CEPHFS})
-  add_library(bareossd-cephfs MODULE cephfs_device.cc)
-  install(TARGETS bareossd-cephfs DESTINATION ${backenddir})
-  target_link_libraries(bareossd-cephfs ${CEPHFS_LIBRARIES})
-endif()
-
-if(${HAVE_CEPH_RADOS})
-  add_library(bareossd-rados MODULE rados_device.cc)
-  install(TARGETS bareossd-rados DESTINATION ${backenddir})
-  target_link_libraries(bareossd-rados ${RADOS_LIBRARIES})
-endif()
 
 if(${HAVE_GLUSTERFS})
   add_library(bareossd-gfapi MODULE gfapi_device.cc)

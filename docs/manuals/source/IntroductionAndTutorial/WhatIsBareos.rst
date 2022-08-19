@@ -101,41 +101,48 @@ Bareos :sinceVersion:`20.0.0: Semantic Versioning` follows `Semantic Versioning 
 Bareos Packages
 ---------------
 
-Following Bareos Linux packages are available (release 17.2.4):
+Following Bareos Linux packages are available (release 22.0.0~dev):
 
-==================================== =========================================================================
-**Package Name**                     **Description**
-==================================== =========================================================================
-bareos                               Backup Archiving REcovery Open Sourced - metapackage
-bareos-bconsole                      Bareos administration console (CLI)
-bareos-client                        Bareos client Meta-All-In-One package
-bareos-common                        Common files, required by multiple Bareos packages
-bareos-database-common               Generic abstraction libs and files to connect to a database
-bareos-database-postgresql           Libs and tools for postgresql catalog
-bareos-database-tools                Bareos CLI tools with database dependencies (bareos-dbcheck, bscan)
-bareos-director                      Bareos Director daemon
-bareos-director-python-plugin        Python plugin for Bareos Director daemon
-bareos-filedaemon                    Bareos File daemon (backup and restore client)
-bareos-filedaemon-ceph-plugin        CEPH plugin for Bareos File daemon
-bareos-filedaemon-glusterfs-plugin   GlusterFS plugin for Bareos File daemon
-bareos-filedaemon-ldap-python-plugin LDAP Python plugin for Bareos File daemon
-bareos-filedaemon-python-plugin      Python plugin for Bareos File daemon
-bareos-storage                       Bareos Storage daemon
-bareos-storage-ceph                  CEPH support for the Bareos Storage daemon
-bareos-storage-droplet               Object Storage support (through libdroplet) for the Bareos Storage daemon
-bareos-storage-fifo                  FIFO support for the Bareos Storage backend
-bareos-storage-glusterfs             GlusterFS support for the Bareos Storage daemon
-bareos-storage-python-plugin         Python plugin for Bareos Storage daemon
-bareos-storage-tape                  Tape support for the Bareos Storage daemon
-bareos-tools                         Bareos CLI tools (bcopy, bextract, bls, bregex, bwild)
-bareos-traymonitor                   Bareos Tray Monitor (QT)
-bareos-vadp-dumper                   VADP Dumper - vStorage APIs for Data Protection Dumper program
-bareos-vmware-plugin                 Bareos VMware plugin
-bareos-vmware-plugin-compat          Bareos VMware plugin compatibility
-bareos-vmware-vix-disklib            VMware vix disklib distributable libraries
-bareos-webui                         Bareos Web User Interface
-python-bareos                        Backup Archiving REcovery Open Sourced - Python module
-==================================== =========================================================================
+================================================== =========================================================================
+**Package Name**                                   **Description**
+================================================== =========================================================================
+bareos                                             Backup Archiving REcovery Open Sourced - metapackage
+bareos-bconsole                                    Bareos administration console (CLI)
+bareos-client                                      Bareos client Meta-All-In-One package
+bareos-common                                      Common files, required by multiple Bareos packages
+bareos-database-common                             Generic abstraction libs and files to connect to a database
+bareos-database-postgresql                         Libs and tools for postgresql catalog
+bareos-database-tools                              Bareos CLI tools with database dependencies (bareos-dbcheck, bscan)
+bareos-director                                    Bareos Director daemon
+bareos-director-python-plugins-common              Common Python plugins for Bareos Director daemon
+bareos-director-python3-plugin                     Python3 plugin for Bareos Director daemon
+bareos-filedaemon                                  Bareos File daemon (backup and restore client)
+bareos-filedaemon-glusterfs-plugin                 GlusterFS plugin for Bareos File daemon
+bareos-filedaemon-ldap-python-plugin               LDAP Python plugin for Bareos File daemon
+bareos-filedaemon-libcloud-python-plugin           Apache libcloud CEPH plugin for Bareos File daemon
+bareos-filedaemon-mariabackup-python-plugin        Mariabackup python plugin for File daemon
+bareos-filedaemon-ovirt-python-plugin              oVirt python plugin for Bareos File daemon
+bareos-filedaemon-percona-xtrabackup-python-plugin Perconna xtrabackup python plugin for Bareos File daemon
+bareos-filedaemon-postgresql-python-plugin         PostgreSQL python plugin for Bareos File daemon
+bareos-filedaemon-python-plugins-common            Common Python plugins for Bareos File daemon
+bareos-filedaemon-python3-plugin                   Python 3 plugin for Bareos File daemon
+bareos-storage                                     Bareos Storage daemon
+bareos-storage-droplet                             Object Storage support (through libdroplet) for the Bareos Storage daemon
+bareos-storage-fifo                                FIFO support for the Bareos Storage backend
+bareos-storage-glusterfs                           GlusterFS support for the Bareos Storage daemon
+bareos-storage-python-plugins-common               Common Python plugins for Bareos Storage daemon
+bareos-storage-python3-plugin                      Python3 plugin for Bareos Storage daemon
+bareos-storage-tape                                Tape support for the Bareos Storage daemon
+bareos-tools                                       Bareos CLI tools (bcopy, bextract, bls, bregex, bwild)
+bareos-traymonitor                                 Bareos Tray Monitor (QT)
+bareos-vadp-dumper                                 VADP Dumper - vStorage APIs for Data Protection Dumper program
+bareos-vmware-plugin                               Bareos VMware plugin
+bareos-vmware-plugin-compat                        Bareos VMware plugin compatibility
+bareos-vmware-vix-disklib                          VMware vix disklib distributable libraries
+bareos-webui                                       Bareos Web User Interface
+python3-bareos                                     Backup Archiving REcovery Open Sourced - Python3 module
+================================================== =========================================================================
+
 
 Not all packages (especially optional backends and plugins) are available on all platforms.
 

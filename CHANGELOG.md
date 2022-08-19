@@ -14,6 +14,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
     - `-xs` -> `--xs` to export configuration JSON schema.
     - `-dt` -> `--dt` to print the debug timestamp.
   The rest of the options stay the same. [PR #1187]
+- Previously deprecated rados/ceph backend and cephfs plugin have been removed. Use the droplet backend to store into ceph via S3, and backup cephfs filesystems by backing up a mount point.
+    - packages bareos-storage-ceph and bareos-filedaemon-ceph-plugin if previously installed need to be removed manually.
 
 ### Added
 - github-actions: add workflow to build MacOS packages [PR #1192]
@@ -118,6 +120,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Removed
 - removed the `-r` run job option. [PR #1206]
+- removed ceph/rados backend and filedaemon plugin [PR #1216]
 
 ### Security
 - webui: update jquery from v3.2.0 to v3.6.0 [PR #1083]
@@ -129,7 +132,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
   - webui does NOT use a user-provided locale string to directly switch moment locale
 
 ### Documentation
-
 - cleanup update section [PR #1054]
 - clarifies MySQL catalog migration process [PR #1054]
 - split `Howtos.rst` file into one file per section [PR #1054]
@@ -140,10 +142,11 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - clarifies Sphinx bareos-extension parallel_read_safe status to False [PR #1037]
 - fix incorrect link in contrib PythonFdPlugin [BUG #1450] [PR #1065]
 - clarifies CheckFileChanges option not intended to be used with plugin [BUG #1452][PR #1180]
-- Fix broken links with sphinx linkcheck [PR #1200]
+- fix broken links with sphinx linkcheck [PR #1200]
 - add Security FIPS section [PR #1181]
 - add instruction to run sphinx linkcheck before release [PR #1218]
 - FreeBSD install create /usr/local/etc/pkg/repos directory [PR #1227]
+- remove deprecated Rados & ceph references from documentation [PR #1216]
 
 [PR #698]: https://github.com/bareos/bareos/pull/698
 [PR #768]: https://github.com/bareos/bareos/pull/768
@@ -238,4 +241,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1218]: https://github.com/bareos/bareos/pull/1218
 [PR #1221]: https://github.com/bareos/bareos/pull/1221
 [PR #1226]: https://github.com/bareos/bareos/pull/1226
+[PR #1216]: https://github.com/bareos/bareos/pull/1216
 [unreleased]: https://github.com/bareos/bareos/tree/master

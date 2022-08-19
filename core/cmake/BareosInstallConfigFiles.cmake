@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -149,9 +149,9 @@ macro(BareosInstallConfigFiles CONFDIR CONFIGBASEDIRECTORY PLUGINS BACKENDS
   foreach(PLUGIN ${PLUGINS})
     message(STATUS "install config files for PLUGIN ${PLUGIN}")
 
-    # if plugin has -, conf.d directory is: python-ovirt ->
-    # python/ovirt/python-ovirt-conf.d else it is : cephfs ->
-    # cephfs/cephfs-conf.d
+    # clang-format off if plugin has - in name, conf.d directory is:
+    # python-ovirt -> python/ovirt/python-ovirt-conf.d else it is: vmware ->
+    # vmmare/vmmare-conf.d clang-format on
 
     string(REPLACE "-" "/" PLUGINPATH "${PLUGIN}")
     string(APPEND PLUGINPATH "/" ${PLUGIN} "-conf.d")

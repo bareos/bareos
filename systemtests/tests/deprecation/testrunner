@@ -54,8 +54,4 @@ if [ "$DBTYPE" = mysql ] || [ "$DBTYPE" = sqlite3 ]; then
     | grep "Deprecated DB driver ${DBTYPE} for Catalog MyCatalog"
 fi
 
-echo "Checking rados backend deprecation"
-invoke_sd -t -v 2>&1 \
-  | grep "The Rados Storage Backend Device is deprecated"
-
 end_test

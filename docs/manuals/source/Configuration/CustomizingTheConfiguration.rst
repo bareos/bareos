@@ -525,7 +525,7 @@ When parsing the resource directives, Bareos classifies the data according to th
    Action to perform on Purge, mostly **truncate**.
 
 
-   
+
 .. config:datatype:: ADDRESS
 
    Is either a domain name or an IP address specified as a dotted quadruple in string or an IP version 6 address specified as a colon separated syntax (::) or quoted string format. This directive only permits a single address to be specified. The :strong:`Port` must be specifically separated. If multiple :strong:`Addresses` are needed, please assess if it is also possible to specify :config:datatype:`ADDRESSES` (plural).
@@ -631,7 +631,7 @@ When parsing the resource directives, Bareos classifies the data according to th
 
    :values: **Native** | **NDMPV2** | **NDMPV3** | **NDMPV4**
    :see: :config:datatype:`PROTOCOL_TYPE`
-   
+
    Either select the native Bareos protocol or a NDMP protocol.
 
 
@@ -690,7 +690,7 @@ When parsing the resource directives, Bareos classifies the data according to th
 
 .. config:datatype:: DEVICE_TYPE
 
-   The following values are allowed: `Tape`, `File`, `FIFO`, `GFAPI`,  `Rados` (Ceph Object Store)  deprecated :sinceVersion:`20.0.0: Rados`, `Droplet` :sinceVersion:`17.2.7: libdroplet`.
+   The following values are allowed: `Tape`, `File`, `FIFO`, `GFAPI`, `Droplet` :sinceVersion:`17.2.7: libdroplet`.
 
    See :config:option:`sd/device/DeviceType`.
 
@@ -709,7 +709,7 @@ When parsing the resource directives, Bareos classifies the data according to th
    A list of directories.
 
 
-   
+
 .. config:datatype:: DIRECTORY_OR_COMMAND
 
    A directory, and or a command using substitution.
@@ -802,7 +802,7 @@ When parsing the resource directives, Bareos classifies the data according to th
 
    :values: 0 - 65535
    :quotes: no
-   
+
    A positive 16 bit unsigned integer value.
 
    Don’t use quotes around the number, see :ref:`section-Quotes`.
@@ -810,9 +810,9 @@ When parsing the resource directives, Bareos classifies the data according to th
 
 .. config:datatype:: PINT32
 
-   :values: 0 - 4294967295 
+   :values: 0 - 4294967295
    :quotes: no
-   
+
    A positive 32 bit unsigned integer value.
 
    Don’t use quotes around the number, see :ref:`section-Quotes`.
@@ -1035,11 +1035,11 @@ When parsing the resource directives, Bareos classifies the data according to th
    .. code-block:: bareosconfig
 
       1 week 2 days 3 hours 10 mins
-      
+
    or
-      
+
    .. code-block:: bareosconfig
-   
+
       1 month 2 days 30 sec
 
 

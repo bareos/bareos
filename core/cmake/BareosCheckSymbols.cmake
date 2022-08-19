@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -35,16 +35,6 @@ endif()
 
 check_symbol_exists(poll poll.h HAVE_POLL)
 
-cmake_push_check_state()
-set(CMAKE_REQUIRED_LIBRARIES ${RADOS_LIBRARIES})
-check_symbol_exists(
-  rados_ioctx_set_namespace rados/librados.h HAVE_RADOS_NAMESPACES
-)
-check_symbol_exists(
-  rados_nobjects_list_open rados/librados.h HAVE_RADOS_NOBJECTS_LIST
-)
-cmake_pop_check_state()
-
 if(HAVE_GLUSTERFS_API_GLFS_H)
   cmake_push_check_state()
   set(CMAKE_REQUIRED_LIBRARIES ${GFAPI_LIBRARIES})
@@ -59,6 +49,5 @@ int main(void)
 "
     GLFS_FTRUNCATE_HAS_FOUR_ARGS
   )
-
+  cmake_pop_check_state()
 endif()
-cmake_pop_check_state()
