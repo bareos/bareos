@@ -149,12 +149,9 @@ macro(BareosInstallConfigFiles CONFDIR CONFIGBASEDIRECTORY PLUGINS BACKENDS
   foreach(PLUGIN ${PLUGINS})
     message(STATUS "install config files for PLUGIN ${PLUGIN}")
 
-#clang-format off
-    # if plugin has - in name, conf.d directory is:
-    # python-ovirt -> python/ovirt/python-ovirt-conf.d
-    # else it is:
-    # vmware -> vmmare/vmmare-conf.d
-#clang-format on
+    # clang-format off if plugin has - in name, conf.d directory is:
+    # python-ovirt -> python/ovirt/python-ovirt-conf.d else it is: vmware ->
+    # vmmare/vmmare-conf.d clang-format on
 
     string(REPLACE "-" "/" PLUGINPATH "${PLUGIN}")
     string(APPEND PLUGINPATH "/" ${PLUGIN} "-conf.d")
