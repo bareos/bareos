@@ -58,10 +58,8 @@ void DoAutoprune(JobControlRecord* jcr)
   client = jcr->impl->res.client;
   pool = jcr->impl->res.pool;
 
-  std::vector<char> jobtypes;
-  jobtypes.push_back(jcr->getJobType());
   if (job->PruneJobs || client->AutoPrune) {
-    PruneJobs(ua, client, pool, jobtypes);
+    PruneJobs(ua, client, pool);
     pruned = true;
   } else {
     pruned = false;

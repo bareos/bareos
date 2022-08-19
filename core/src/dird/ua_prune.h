@@ -29,10 +29,7 @@ namespace directordaemon {
 struct del_ctx;
 
 bool PruneFiles(UaContext* ua, ClientResource* client, PoolResource* pool);
-bool PruneJobs(UaContext* ua,
-               ClientResource* client,
-               PoolResource* pool,
-               std::vector<char> JobTypes);
+bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool);
 bool PruneVolume(UaContext* ua, MediaDbRecord* mr);
 int JobDeleteHandler(void* ctx, int num_fields, char** row);
 int DelCountHandler(void* ctx, int num_fields, char** row);

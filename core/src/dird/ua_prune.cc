@@ -208,13 +208,6 @@ bool PruneCmd(UaContext* ua, const char* cmd)
         pool = NULL;
       }
 
-      // Ask what jobtype to prune.
-      std::vector<char> jobtype{};
-      if (!GetUserJobTypeListSelection(ua, jobtype, true)) { return false; }
-
-      // Verify that result jobtype is valid (this should always be the case).
-      if (jobtype.empty()) { return false; }
-
       // Pool Job Retention takes precedence over client Job Retention
       if (pool && pool->JobRetention > 0) {
         if (!ConfirmRetention(ua, &pool->JobRetention, "Job")) { return false; }
@@ -222,7 +215,7 @@ bool PruneCmd(UaContext* ua, const char* cmd)
         return false;
       }
 
-      return PruneJobs(ua, client, pool, jobtype);
+      return PruneJobs(ua, client, pool);
     }
     case 2: /* prune volume */
       if (FindArg(ua, "all") >= 0) {
@@ -826,15 +819,9 @@ bail_out:
 }
 
 // Dispatch to the right prune jobs function.
-bool PruneJobs(UaContext* ua,
-               ClientResource* client,
-               PoolResource* pool,
-               std::vector<char> JobTypes)
+bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
 {
-  for (const auto& type : JobTypes) {
-    if (type == JT_BACKUP) return PruneBackupJobs(ua, client, pool);
-  }
-  return true;
+  return PruneBackupJobs(ua, client, pool);
 }
 
 // Prune a given Volume
