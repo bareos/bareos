@@ -30,10 +30,11 @@
 
 #include "lib/edit.h"
 
-POOLMEM* msg = GetPoolMemory(PM_FNAME);
 
 TEST(is_name_valid, is_name_valid)
 {
+  std::string msg{};
+
   EXPECT_EQ(true, IsNameValid("STRING_CONTAINING_ALLOWED_CHARS :.-_/", msg));
   EXPECT_EQ(true, IsNameValid("A name_has_space_at_second_place"));
   EXPECT_EQ(true, IsNameValid("name_has_space_as_second_last Z"));
@@ -42,24 +43,24 @@ TEST(is_name_valid, is_name_valid)
   EXPECT_EQ(true, IsNameValid(string_maximum_length.c_str(), msg));
 
   EXPECT_EQ(false, IsNameValid("illegalch@racter", msg));
-  EXPECT_STREQ("Illegal character \"@\" in name.\n", msg);
+  EXPECT_STREQ("Illegal character \"@\" in name.\n", msg.c_str());
 
   EXPECT_EQ(false, IsNameValid("", msg));
-  EXPECT_STREQ("Name must be at least one character long.\n", msg);
+  EXPECT_STREQ("Name must be at least one character long.\n", msg.c_str());
 
   EXPECT_EQ(false, IsNameValid(nullptr, msg));
-  EXPECT_STREQ("Empty name not allowed.\n", msg);
+  EXPECT_STREQ("Empty name not allowed.\n", msg.c_str());
 
   EXPECT_EQ(false, IsNameValid(" name_starts_with_space", msg));
-  EXPECT_STREQ("Name cannot start with space.\n", msg);
+  EXPECT_STREQ("Name cannot start with space.\n", msg.c_str());
 
   EXPECT_EQ(false, IsNameValid("name_ends_with_space ", msg));
-  EXPECT_STREQ("Name cannot end with space.\n", msg);
+  EXPECT_STREQ("Name cannot end with space.\n", msg.c_str());
 
   EXPECT_EQ(false, IsNameValid(" ", msg));
-  EXPECT_STREQ("Name cannot start with space.\n", msg);
+  EXPECT_STREQ("Name cannot start with space.\n", msg.c_str());
 
   std::string string_too_long(MAX_NAME_LENGTH, '.');
   EXPECT_EQ(false, IsNameValid(string_too_long.c_str(), msg));
-  EXPECT_STREQ("Name too long.\n", msg);
+  EXPECT_STREQ("Name too long.\n", msg.c_str());
 }

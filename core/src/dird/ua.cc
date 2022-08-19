@@ -38,7 +38,6 @@ UaContext::UaContext(bool console_connected)
     , user_acl(nullptr)
     , cmd(nullptr)
     , args(nullptr)
-    , errmsg(nullptr)
     , guid(nullptr)
     , argc(0)
     , prompt(nullptr)
@@ -81,7 +80,6 @@ UaContext* new_ua_context(JobControlRecord* jcr)
   ua->db = jcr->db;
   ua->cmd = GetPoolMemory(PM_FNAME);
   ua->args = GetPoolMemory(PM_FNAME);
-  ua->errmsg = GetPoolMemory(PM_FNAME);
   ua->verbose = true;
   ua->automount = true;
   ua->send = new OutputFormatter(sprintit, ua, filterit, ua);
@@ -93,7 +91,6 @@ void FreeUaContext(UaContext* ua)
   if (ua->guid) { FreeGuidList(ua->guid); }
   if (ua->cmd) { FreePoolMemory(ua->cmd); }
   if (ua->args) { FreePoolMemory(ua->args); }
-  if (ua->errmsg) { FreePoolMemory(ua->errmsg); }
   if (ua->prompt) {
     for (int i = 0; i < ua->num_prompts; ++i) {
       if (ua->prompt[i]) { free(ua->prompt[i]); }

@@ -397,7 +397,7 @@ static bool GetClientName(UaContext* ua, RestoreContext* rx)
     if (i < 0) { i = FindArgWithValue(ua, NT_("backupclient")); }
     if (i >= 0) {
       if (!IsNameValid(ua->argv[i], ua->errmsg)) {
-        ua->ErrorMsg("%s argument: %s", ua->argk[i], ua->errmsg);
+        ua->ErrorMsg("%s argument: %s", ua->argk[i], ua->errmsg.c_str());
         return false;
       }
       bstrncpy(cr.Name, ua->argv[i], sizeof(cr.Name));
@@ -424,7 +424,7 @@ static bool GetRestoreClientName(UaContext* ua, RestoreContext& rx)
   i = FindArgWithValue(ua, NT_("restoreclient"));
   if (i >= 0) {
     if (!IsNameValid(ua->argv[i], ua->errmsg)) {
-      ua->ErrorMsg("%s argument: %s", ua->argk[i], ua->errmsg);
+      ua->ErrorMsg("%s argument: %s", ua->argk[i], ua->errmsg.c_str());
       return false;
     }
     if (!ua->GetClientResWithName(ua->argv[i])) {
@@ -1278,7 +1278,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
       i = -1;
     }
   } else if (i >= 0) { /* name is invalid */
-    ua->ErrorMsg(_("FileSet argument: %s\n"), ua->errmsg);
+    ua->ErrorMsg(_("FileSet argument: %s\n"), ua->errmsg.c_str());
   }
 
   if (i < 0) { /* fileset not found */
