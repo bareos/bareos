@@ -34,8 +34,8 @@ bool PruneVolume(UaContext* ua, MediaDbRecord* mr);
 int JobDeleteHandler(void* ctx, int num_fields, char** row);
 int DelCountHandler(void* ctx, int num_fields, char** row);
 int FileDeleteHandler(void* ctx, int num_fields, char** row);
-int GetPruneListForVolume(UaContext* ua, MediaDbRecord* mr, del_ctx* del);
-int ExcludeRunningJobsFromList(del_ctx* prune_list);
+int GetPruneListForVolume(UaContext* ua, MediaDbRecord* mr, std::vector<JobId_t> &del);
+int ExcludeRunningJobsFromList(std::vector<JobId_t> &prune_list);
 
 } /* namespace directordaemon */
 #endif  // BAREOS_DIRD_UA_PRUNE_H_

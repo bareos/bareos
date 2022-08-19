@@ -55,11 +55,6 @@ struct s_count_ctx {
 
 #define MAX_DEL_LIST_LEN 2'000'000
 
-struct del_ctx {
-  std::vector<JobId_t> JobIds_to_delete{}; /**< array of JobIds */
-  std::vector<char> PurgedFiles{};         /**< Array of PurgedFile flags */
-};
-
 /* Flags for FindNextVolumeForAppend() */
 enum : bool
 {

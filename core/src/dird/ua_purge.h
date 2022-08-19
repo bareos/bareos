@@ -32,8 +32,8 @@ void PurgeFilesFromVolume(UaContext* ua, MediaDbRecord* mr);
 bool PurgeJobsFromVolume(UaContext* ua, MediaDbRecord* mr, bool force = false);
 void PurgeFilesFromJobs(UaContext* ua, const char* jobs);
 void PurgeJobsFromCatalog(UaContext* ua, const char* jobs);
-void PurgeJobListFromCatalog(UaContext* ua, del_ctx& del);
-void PurgeFilesFromJobList(UaContext* ua, del_ctx& del);
+void PurgeJobListFromCatalog(UaContext* ua, std::vector<JobId_t>& del);
+void PurgeFilesFromJobList(UaContext* ua, std::vector<JobId_t>& del);
 
 } /* namespace directordaemon */
 #endif  // BAREOS_DIRD_UA_PURGE_H_

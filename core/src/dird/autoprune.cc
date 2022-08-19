@@ -88,7 +88,7 @@ void PruneVolumes(JobControlRecord* jcr,
   int count;
   UaContext* ua;
   dbid_list ids;
-  del_ctx prune_list;
+  std::vector<JobId_t> prune_list;
   PoolMem query(PM_MESSAGE);
   char ed1[50], ed2[100], ed3[50];
 
@@ -173,11 +173,11 @@ void PruneVolumes(JobControlRecord* jcr,
     if (bstrcmp(lmr.VolStatus, "Full") || bstrcmp(lmr.VolStatus, "Used")) {
       Dmsg2(100, "Add prune list MediaId=%d Volume %s\n", (int)lmr.MediaId,
             lmr.VolumeName);
-      count = GetPruneListForVolume(ua, &lmr, &prune_list);
+      count = GetPruneListForVolume(ua, &lmr, prune_list);
       Dmsg1(100, "Num pruned = %d\n", count);
       if (count != 0) {
         PurgeJobListFromCatalog(ua, prune_list);
-        prune_list.JobIds_to_delete.clear(); /* reset count */
+        prune_list.clear(); /* reset count */
       }
       if (!IsVolumePurged(ua, &lmr)) {
         Dmsg1(050, "Vol=%s not pruned\n", lmr.VolumeName);
