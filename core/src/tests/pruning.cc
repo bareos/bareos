@@ -24,9 +24,11 @@
 #include "include/jcr.h"
 #include "dird/job.h"
 #include "dird/ua_prune.h"
+#include "dird/ua_purge.h"
 
 TEST(Pruning, ExcludeRunningJobsFromList)
 {
+  InitDirGlobals();
   std::string path_to_config
       = std::string(RELATIVE_PROJECT_SOURCE_DIR "/configs/pruning/");
   PConfigParser director_config(DirectorPrepareResources(path_to_config));
@@ -39,11 +41,33 @@ TEST(Pruning, ExcludeRunningJobsFromList)
   JobControlRecord* jcr3 = directordaemon::NewDirectorJcr();
   jcr3->JobId = 3;
 
-  std::vector<JobId_t> pruninglist{1, 2, 3, 4, 5};
+  std::vector<JobId_t> pruninglist{0, 0, 1, 2, 3, 4, 5};
   int NumJobsToBePruned
       = directordaemon::ExcludeRunningJobsFromList(pruninglist);
 
   EXPECT_EQ(NumJobsToBePruned, 2);
   EXPECT_EQ(pruninglist[0], 4);
   EXPECT_EQ(pruninglist[1], 5);
+}
+
+TEST(Pruning, TransformJobidsTobedeleted)
+{
+  InitDirGlobals();
+  std::string path_to_config
+      = std::string(RELATIVE_PROJECT_SOURCE_DIR "/configs/pruning/");
+  PConfigParser director_config(DirectorPrepareResources(path_to_config));
+  if (!director_config) { return; }
+
+  JobControlRecord* jcr1 = directordaemon::NewDirectorJcr();
+  jcr1->JobId = 1;
+
+  directordaemon::UaContext* ua = directordaemon::new_ua_context(jcr1);
+  std::vector<JobId_t> pruninglist{0, 1, 2, 0, 3, 4, 5};
+  std::string jobids_to_delete
+      = directordaemon::PrepareJobidsTobedeleted(ua, pruninglist);
+
+  EXPECT_EQ(jobids_to_delete, "2,3,4,5");
+  EXPECT_EQ(pruninglist.size(), 4);
+
+  FreeUaContext(ua);
 }

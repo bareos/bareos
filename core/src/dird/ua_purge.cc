@@ -314,8 +314,7 @@ void PurgeFilesFromJobs(UaContext* ua, const char* jobs)
   ua->db->PurgeFiles(jobs);
 }
 
-static std::string TransformJobidsTobedeleted(UaContext* ua,
-                                              std::vector<JobId_t>& del)
+std::string PrepareJobidsTobedeleted(UaContext* ua, std::vector<JobId_t>& del)
 {
   std::sort(del.begin(), del.end());
 
@@ -340,7 +339,7 @@ void PurgeJobListFromCatalog(UaContext* ua, std::vector<JobId_t>& del)
 {
   Dmsg1(150, "num_ids=%d\n", del.size());
 
-  std::string jobids_to_delete = TransformJobidsTobedeleted(ua, del);
+  std::string jobids_to_delete = PrepareJobidsTobedeleted(ua, del);
   ua->SendMsg(_("Purging the following JobIds: %s\n"),
               jobids_to_delete.c_str());
   PurgeJobsFromCatalog(ua, jobids_to_delete.c_str());
@@ -352,7 +351,7 @@ void PurgeJobListFromCatalog(UaContext* ua, std::vector<JobId_t>& del)
  */
 void PurgeFilesFromJobList(UaContext* ua, std::vector<JobId_t>& del)
 {
-  std::string jobids_to_delete = TransformJobidsTobedeleted(ua, del);
+  std::string jobids_to_delete = PrepareJobidsTobedeleted(ua, del);
 
   PurgeFilesFromJobs(ua, jobids_to_delete.c_str());
 }
