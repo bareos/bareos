@@ -98,9 +98,6 @@ void PruneVolumes(JobControlRecord* jcr,
     return;
   }
 
-  prune_list.max_ids = 10000;
-  prune_list.JobId = (JobId_t*)malloc(sizeof(JobId_t) * prune_list.max_ids);
-
   ua = new_ua_context(jcr);
   DbLocker _{jcr->db};
 
@@ -180,7 +177,7 @@ void PruneVolumes(JobControlRecord* jcr,
       Dmsg1(100, "Num pruned = %d\n", count);
       if (count != 0) {
         PurgeJobListFromCatalog(ua, prune_list);
-        prune_list.num_ids = 0; /* reset count */
+        prune_list.JobIds_to_delete.clear(); /* reset count */
       }
       if (!IsVolumePurged(ua, &lmr)) {
         Dmsg1(050, "Vol=%s not pruned\n", lmr.VolumeName);
@@ -227,7 +224,6 @@ void PruneVolumes(JobControlRecord* jcr,
 bail_out:
   Dmsg0(100, "Leave prune volumes\n");
   FreeUaContext(ua);
-  if (prune_list.JobId) { free(prune_list.JobId); }
   return;
 }
 } /* namespace directordaemon */

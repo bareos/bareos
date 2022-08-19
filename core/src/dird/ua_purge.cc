@@ -241,23 +241,21 @@ static bool PurgeFilesFromClient(UaContext* ua, ClientResource* client)
   bstrncpy(cr.Name, client->resource_name_, sizeof(cr.Name));
   if (!ua->db->CreateClientRecord(ua->jcr, &cr)) { return false; }
 
-  del.max_ids = 1000;
-  del.JobId = (JobId_t*)malloc(sizeof(JobId_t) * del.max_ids);
-
   ua->InfoMsg(_("Begin purging files for Client \"%s\"\n"), cr.Name);
 
   Mmsg(query, select_jobsfiles_from_client, edit_int64(cr.ClientId, ed1));
   Dmsg1(050, "select sql=%s\n", query.c_str());
   ua->db->SqlQuery(query.c_str(), FileDeleteHandler, (void*)&del);
 
-  if (del.num_ids == 0) {
+  if (del.JobIds_to_delete.empty()) {
     ua->WarningMsg(
         _("No Files found for client %s to purge from %s catalog.\n"),
         client->resource_name_, client->catalog->resource_name_);
   } else {
     ua->InfoMsg(
         _("Found Files in %d Jobs for client \"%s\" in catalog \"%s\".\n"),
-        del.num_ids, client->resource_name_, client->catalog->resource_name_);
+        del.JobIds_to_delete.size(), client->resource_name_,
+        client->catalog->resource_name_);
     if (!GetConfirmation(ua, "Purge (yes/no)? ")) {
       ua->InfoMsg(_("Purge canceled.\n"));
     } else {
@@ -265,7 +263,6 @@ static bool PurgeFilesFromClient(UaContext* ua, ClientResource* client)
     }
   }
 
-  if (del.JobId) { free(del.JobId); }
   return true;
 }
 
@@ -288,22 +285,18 @@ static bool PurgeJobsFromClient(UaContext* ua, ClientResource* client)
   bstrncpy(cr.Name, client->resource_name_, sizeof(cr.Name));
   if (!ua->db->CreateClientRecord(ua->jcr, &cr)) { return false; }
 
-  del.max_ids = 1000;
-  del.JobId = (JobId_t*)malloc(sizeof(JobId_t) * del.max_ids);
-  del.PurgedFiles = (char*)malloc(del.max_ids);
-
   ua->InfoMsg(_("Begin purging jobs from Client \"%s\"\n"), cr.Name);
 
   Mmsg(query, select_jobs_from_client, edit_int64(cr.ClientId, ed1));
   Dmsg1(150, "select sql=%s\n", query.c_str());
   ua->db->SqlQuery(query.c_str(), JobDeleteHandler, (void*)&del);
 
-  if (del.num_ids == 0) {
+  if (del.JobIds_to_delete.empty()) {
     ua->WarningMsg(_("No Jobs found for client %s to purge from %s catalog.\n"),
                    client->resource_name_, client->catalog->resource_name_);
   } else {
     ua->InfoMsg(_("Found %d Jobs for client \"%s\" in catalog \"%s\".\n"),
-                del.num_ids, client->resource_name_,
+                del.JobIds_to_delete.size(), client->resource_name_,
                 client->catalog->resource_name_);
     if (!GetConfirmation(ua, "Purge (yes/no)? ")) {
       ua->InfoMsg(_("Purge canceled.\n"));
@@ -312,8 +305,6 @@ static bool PurgeJobsFromClient(UaContext* ua, ClientResource* client)
     }
   }
 
-  if (del.JobId) { free(del.JobId); }
-  if (del.PurgedFiles) { free(del.PurgedFiles); }
   return true;
 }
 
@@ -324,38 +315,37 @@ void PurgeFilesFromJobs(UaContext* ua, const char* jobs)
   ua->db->PurgeFiles(jobs);
 }
 
+static std::string TransformJobidsTobedeleted(UaContext* ua, del_ctx& del)
+{
+  std::sort(del.JobIds_to_delete.begin(), del.JobIds_to_delete.end());
+
+  del.JobIds_to_delete.erase(
+      std::remove_if(del.JobIds_to_delete.begin(), del.JobIds_to_delete.end(),
+                     [&ua](const JobId_t& jobid) {
+                       return ua->jcr->JobId == jobid || jobid == 0;
+                     }),
+      del.JobIds_to_delete.end());
+
+  BStringList jobids{};
+  std::transform(del.JobIds_to_delete.begin(), del.JobIds_to_delete.end(),
+                 std::back_inserter(jobids),
+                 [](JobId_t jobid) { return std::to_string(jobid); });
+
+  return jobids.Join(',');
+}
+
 /**
  * Delete jobs (all records) from the catalog in groups of 1000
  *  at a time.
  */
 void PurgeJobListFromCatalog(UaContext* ua, del_ctx& del)
 {
-  for (int i = 0; del.num_ids;) {
-    std::vector<JobId_t> jobid_list{};
-    Dmsg1(150, "num_ids=%d\n", del.num_ids);
-    for (int j = 0; j < 1000 && del.num_ids > 0; j++) {
-      del.num_ids--;
-      if (del.JobId[i] == 0 || ua->jcr->JobId == del.JobId[i]) {
-        Dmsg2(150, "skip JobId[%d]=%llu\n", i, del.JobId[i]);
-        ++i;
-        continue;
-      }
-      jobid_list.push_back(del.JobId[i]);
-      Dmsg1(150, "Add id=%llu\n", del.JobId[i]);
-      ++i;
-      ++del.num_del;
-    }
-    Dmsg1(150, "num_ids=%d\n", del.num_ids);
-    std::sort(jobid_list.begin(), jobid_list.end());
-    BStringList jobids{};
-    std::transform(jobid_list.begin(), jobid_list.end(),
-                   std::back_inserter(jobids),
-                   [](JobId_t jobid) { return std::to_string(jobid); });
+  Dmsg1(150, "num_ids=%d\n", del.JobIds_to_delete.size());
 
-    ua->SendMsg(_("Purging the following JobIds: %s\n"),
-                jobids.Join(',').c_str());
-    PurgeJobsFromCatalog(ua, jobids.Join(',').c_str());
-  }
+  std::string jobids_to_delete = TransformJobidsTobedeleted(ua, del);
+  ua->SendMsg(_("Purging the following JobIds: %s\n"),
+              jobids_to_delete.c_str());
+  PurgeJobsFromCatalog(ua, jobids_to_delete.c_str());
 }
 
 /**
@@ -364,28 +354,9 @@ void PurgeJobListFromCatalog(UaContext* ua, del_ctx& del)
  */
 void PurgeFilesFromJobList(UaContext* ua, del_ctx& del)
 {
-  PoolMem jobids(PM_MESSAGE);
-  char ed1[50];
-  /*
-   * OK, now we have the list of JobId's to be pruned, send them
-   *   off to be deleted batched 1000 at a time.
-   */
-  for (int i = 0; del.num_ids;) {
-    PmStrcat(jobids, "");
-    for (int j = 0; j < 1000 && del.num_ids > 0; j++) {
-      del.num_ids--;
-      if (del.JobId[i] == 0 || ua->jcr->JobId == del.JobId[i]) {
-        Dmsg2(150, "skip JobId[%d]=%d\n", i, (int)del.JobId[i]);
-        i++;
-        continue;
-      }
-      if (*jobids.c_str() != 0) { PmStrcat(jobids, ","); }
-      PmStrcat(jobids, edit_int64(del.JobId[i++], ed1));
-      Dmsg1(150, "Add id=%s\n", ed1);
-      del.num_del++;
-    }
-    PurgeFilesFromJobs(ua, jobids.c_str());
-  }
+  std::string jobids_to_delete = TransformJobidsTobedeleted(ua, del);
+
+  PurgeFilesFromJobs(ua, jobids_to_delete.c_str());
 }
 
 /**

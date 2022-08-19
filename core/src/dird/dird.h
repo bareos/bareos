@@ -53,15 +53,11 @@ struct s_count_ctx {
   int count{};
 };
 
-#define MAX_DEL_LIST_LEN 2000000
+#define MAX_DEL_LIST_LEN 2'000'000
 
 struct del_ctx {
-  JobId_t* JobId{nullptr};    /**< array of JobIds */
-  char* PurgedFiles{nullptr}; /**< Array of PurgedFile flags */
-  int num_ids{0};             /**< ids stored */
-  int max_ids{0};             /**< size of array */
-  int num_del{0};             /**< number deleted */
-  int tot_ids{0};             /**< total to process */
+  std::vector<JobId_t> JobIds_to_delete{}; /**< array of JobIds */
+  std::vector<char> PurgedFiles{};         /**< Array of PurgedFile flags */
 };
 
 /* Flags for FindNextVolumeForAppend() */

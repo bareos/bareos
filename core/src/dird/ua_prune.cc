@@ -45,7 +45,6 @@ namespace directordaemon {
 /* Forward referenced functions */
 static bool PruneDirectory(UaContext* ua, ClientResource* client);
 static bool PruneStats(UaContext* ua, utime_t retention);
-static bool GrowDelList(del_ctx* del);
 
 // Called here to count entries to be deleted
 int DelCountHandler(void* ctx, int num_fields, char** row)
@@ -72,21 +71,20 @@ int JobDeleteHandler(void* ctx, int num_fields, char** row)
 {
   del_ctx* del = static_cast<del_ctx*>(ctx);
 
-  if (!GrowDelList(del)) { return 1; }
-  del->JobId[del->num_ids] = (JobId_t)str_to_int64(row[0]);
-  Dmsg2(60, "JobDeleteHandler row=%d val=%d\n", del->num_ids,
-        del->JobId[del->num_ids]);
-  del->PurgedFiles[del->num_ids++] = (char)str_to_int64(row[1]);
+  if (del->JobIds_to_delete.size() == MAX_DEL_LIST_LEN) { return 1; }
+
+  del->JobIds_to_delete.push_back(static_cast<JobId_t>(str_to_int64(row[0])));
+  Dmsg2(60, "JobDeleteHandler row=%d val=%d\n", del->JobIds_to_delete.size(),
+        del->JobIds_to_delete.back());
+  del->PurgedFiles.push_back(static_cast<char>(str_to_int64(row[1])));
   return 0;
 }
 
 int FileDeleteHandler(void* ctx, int num_fields, char** row)
 {
   del_ctx* del = static_cast<del_ctx*>(ctx);
-
-  if (!GrowDelList(del)) { return 1; }
-  del->JobId[del->num_ids++] = (JobId_t)str_to_int64(row[0]);
-  // Dmsg2(150, "row=%d val=%d\n", del->num_ids-1, del->JobId[del->num_ids-1]);
+  if (del->JobIds_to_delete.size() == MAX_DEL_LIST_LEN) { return 1; }
+  del->JobIds_to_delete.push_back(static_cast<JobId_t>(str_to_int64(row[0])));
   return 0;
 }
 
@@ -548,14 +546,6 @@ bool PruneFiles(UaContext* ua, ClientResource* client, PoolResource* pool)
   }
 
   del_ctx del;
-  if (cnt.count < MAX_DEL_LIST_LEN) {
-    del.max_ids = cnt.count + 1;
-  } else {
-    del.max_ids = MAX_DEL_LIST_LEN;
-  }
-  del.tot_ids = 0;
-
-  del.JobId = (JobId_t*)malloc(sizeof(JobId_t) * del.max_ids);
 
   /* Now process same set but making a delete list */
   Mmsg(query, "SELECT JobId FROM Job %s WHERE PurgedFiles=0 %s",
@@ -565,11 +555,10 @@ bool PruneFiles(UaContext* ua, ClientResource* client, PoolResource* pool)
 
   PurgeFilesFromJobList(ua, del);
 
-  edit_uint64_with_commas(del.num_del, ed1);
+  edit_uint64_with_commas(del.JobIds_to_delete.size(), ed1);
   ua->InfoMsg(_("Pruned Files from %s Jobs for client %s from catalog.\n"), ed1,
               client->resource_name_);
 
-  if (del.JobId) { free(del.JobId); }
   return true;
 }
 
@@ -591,19 +580,6 @@ static bool CreateTempTables(UaContext* ua)
     ua->ErrorMsg("%s", ua->db->strerror());
     Dmsg0(050, "create DelInx1 index failed\n");
     return false;
-  }
-
-  return true;
-}
-
-static bool GrowDelList(del_ctx* del)
-{
-  if (del->num_ids == MAX_DEL_LIST_LEN) { return false; }
-
-  if (del->num_ids == del->max_ids) {
-    del->max_ids = (del->max_ids * 3) / 2;
-    del->JobId = (JobId_t*)realloc(del->JobId, sizeof(JobId_t) * del->max_ids);
-    del->PurgedFiles = (char*)realloc(del->PurgedFiles, del->max_ids);
   }
 
   return true;
@@ -684,11 +660,6 @@ bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
   edit_utime(period, ed1, sizeof(ed1));
   ua->SendMsg(_("Begin pruning Jobs older than %s.\n"), ed1);
 
-  del_ctx del;
-  del.max_ids = 100;
-  del.JobId = (JobId_t*)malloc(sizeof(JobId_t) * del.max_ids);
-  del.PurgedFiles = (char*)malloc(del.max_ids);
-
   /*
    * Select all files that are older than the JobRetention period
    * and add them into the "DeletionCandidates" table.
@@ -707,8 +678,6 @@ bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
   if (!ua->db->SqlQuery(query.c_str())) {
     if (ua->verbose) { ua->ErrorMsg("%s", ua->db->strerror()); }
     DropTempTables(ua);
-    if (del.JobId) { free(del.JobId); }
-    if (del.PurgedFiles) { free(del.PurgedFiles); }
     return true;
   }
 
@@ -796,8 +765,6 @@ bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
       ua->ErrorMsg("%s", ua->db->strerror());
       // Don't continue if the list isn't clean
       DropTempTables(ua);
-      if (del.JobId) { free(del.JobId); }
-      if (del.PurgedFiles) { free(del.PurgedFiles); }
       return true;
     }
     Dmsg1(60, "jobids to exclude = %s\n", jobids.GetAsString().c_str());
@@ -807,39 +774,35 @@ bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
   Mmsg(query,
        "SELECT DISTINCT DelCandidates.JobId,DelCandidates.PurgedFiles "
        "FROM DelCandidates");
+
+  del_ctx del;
   if (!ua->db->SqlQuery(query.c_str(), JobDeleteHandler, (void*)&del)) {
     ua->ErrorMsg("%s", ua->db->strerror());
   }
 
   PurgeJobListFromCatalog(ua, del);
 
-  if (del.num_del > 0) {
-    ua->InfoMsg(_("Pruned %d %s for client %s from catalog.\n"), del.num_del,
-                del.num_del == 1 ? _("Job") : _("Jobs"),
-                client->resource_name_);
+  if (del.JobIds_to_delete.size() > 0) {
+    ua->InfoMsg(
+        _("Pruned %d %s for client %s from catalog.\n"), del.JobIds_to_delete.size(),
+        del.JobIds_to_delete.size() == 1 ? _("Job") : _("Jobs"), client->resource_name_);
   } else if (ua->verbose) {
     ua->InfoMsg(_("No Jobs found to prune.\n"));
   }
 
   DropTempTables(ua);
-  if (del.JobId) { free(del.JobId); }
-  if (del.PurgedFiles) { free(del.PurgedFiles); }
   return true;
 }
 
 // Prune a given Volume
 bool PruneVolume(UaContext* ua, MediaDbRecord* mr)
 {
-  PoolMem query(PM_MESSAGE);
   del_ctx del;
   bool VolumeIsNowEmtpy = false;
 
   if (mr->Enabled == VOL_ARCHIVED) {
     return false; /* Cannot prune archived volumes */
   }
-
-  del.max_ids = 10000;
-  del.JobId = (JobId_t*)malloc(sizeof(JobId_t) * del.max_ids);
 
   DbLocker _{ua->db};
 
@@ -872,7 +835,6 @@ bool PruneVolume(UaContext* ua, MediaDbRecord* mr)
         mr->VolumeName, mr->VolStatus);
   }
 
-  if (del.JobId) { free(del.JobId); }
   return VolumeIsNowEmtpy;
 }
 
@@ -927,23 +889,22 @@ int ExcludeRunningJobsFromList(del_ctx* prune_list)
   int count = 0;
   JobControlRecord* jcr;
   bool skip;
-  int i;
 
   /* Do not prune any job currently running */
-  for (i = 0; i < prune_list->num_ids; i++) {
+  for (auto it = prune_list->JobIds_to_delete.begin(); it != prune_list->JobIds_to_delete.end();
+       it++) {
     skip = false;
     foreach_jcr (jcr) {
-      if (jcr->JobId == prune_list->JobId[i]) {
-        Dmsg2(050, "skip running job JobId[%d]=%d\n", i,
-              (int)prune_list->JobId[i]);
-        prune_list->JobId[i] = 0;
+      if (jcr->JobId == *it) {
+        Dmsg2(050, "skip running job JobId=%llu\n", *it);
+        prune_list->JobIds_to_delete.erase(it--);
         skip = true;
         break;
       }
     }
     endeach_jcr(jcr);
     if (skip) { continue; /* don't increment count */ }
-    Dmsg2(050, "accept JobId[%d]=%d\n", i, (int)prune_list->JobId[i]);
+    Dmsg2(050, "accept JobId=%llu\n", *it);
     count++;
   }
   return count;
