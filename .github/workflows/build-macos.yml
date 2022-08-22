@@ -33,7 +33,7 @@ jobs:
         mkdir cmake-build
         cd cmake-build
         export CXXFLAGS="-I/usr/local/include"
-        cmake .. -Dclient-only=yes -DVERSION_STRING="${{ inputs.bareos_version }}"
+        cmake .. -Dclient-only=yes
         make package VERBOSE=1
         ls -la ./*.pkg
         mkdir -p "${{ env.target_dir }}"
