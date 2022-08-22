@@ -3,7 +3,7 @@ name: Build Bareos Client on MacOS
 on:
   push:
     branches:
-      - macbuild-of*
+      - macbuild*
 
 env:
   target_dir: "${{ github.workspace }}/BUILD_RESULTS/MacOS"
