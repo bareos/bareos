@@ -14,12 +14,6 @@ jobs:
     runs-on: macos-12
 
     steps:
-    - name: Check input variables
-      run: |
-        if [ -z "${{ inputs.bareos_version }}" ]; then
-            echo "::error ::Missing parameter 'bareos_version'"
-            exit 1
-        fi
 
     - name: "Checkout source"
       uses: actions/checkout@v2
