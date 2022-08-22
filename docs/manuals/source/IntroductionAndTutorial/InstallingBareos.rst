@@ -60,9 +60,6 @@ The following code snippets are shell scripts that can be used as orientation ho
 **See** https://download.bareos.org/bareos/release/ or https://download.bareos.com/bareos/release/ (subscription only) **for applicable releases and distributions.**
 See :ref:`section-UniversalLinuxClient` if your distribution is not present.
 
-To use the following code snippet if you have a subscription, you can declare your credentials
-
-
 Install on RedHat based Linux Distributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -88,8 +85,8 @@ like AlmaLinux, CentOS Stream, Oracle and Rocky Linux. Same rules apply for EL_9
    #!/bin/sh
 
    # Declare your credentials for subscription if you have
-   # BAREOS_USER=info_at_domain.example
-   # BAREOS_PASSWORD=Super#Encrypted/Password
+   # BAREOS_USER="youraccount_at_example.com"
+   # BAREOS_PASSWORD="YourSecretPassword"
 
    # See https://download.bareos.org/bareos/release/
    # or https://download.bareos.com/bareos/release/
@@ -271,7 +268,8 @@ Install on FreeBSD based Distributions
 
    # add the Bareos repository
    URL=https://download.bareos.org/bareos/$RELEASE/$DIST
-   # or https://${USER}:${PASSWORD}@download.bareos.com/bareos/$RELEASE/$DIST
+   # or 
+   # URL=https://${BAREOS_USER}:${BAREOS_PASSWORD}@download.bareos.com/bareos/$RELEASE/$DIST
 
    # add the Bareos repository
    mkdir -p /usr/local/etc/pkg/repos

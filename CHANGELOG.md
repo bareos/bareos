@@ -116,7 +116,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - daemons: changed daemon CLI arguments parsing [PR #1187]
 - config parser: Refactor config reloading by using shared pointers instead of callbacks [PR #1151]
 - daemons: changed daemon CLI arguments parsing [PR #1187]
-- console: aborting job run if jobid doesn't exist in catalog [PR #1188]
 
 ### Deprecated
 - make_catalog_backup.pl is now a shell wrapper script which will be removed in version 23.
