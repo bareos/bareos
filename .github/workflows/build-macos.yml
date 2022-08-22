@@ -1,6 +1,7 @@
 name: Build Bareos Client on MacOS
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - macbuild*
