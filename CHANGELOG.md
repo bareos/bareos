@@ -155,6 +155,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - dir-job-RescheduleTimes remove wrong default sentence [PR #1225]
 - update Appendix/HardwareSizing DB size with new numbers and formulas [BUG #1477][PR #1231]
 - add description to fileset signature sha256 and sha512 parameter [PR #1230]
+- improve troubleshooting and debugging chapter [PR #1233]
 
 [PR #698]: https://github.com/bareos/bareos/pull/698
 [PR #768]: https://github.com/bareos/bareos/pull/768
@@ -260,4 +261,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1237]: https://github.com/bareos/bareos/pull/1237
 [PR #1216]: https://github.com/bareos/bareos/pull/1216
 [PR #1231]: https://github.com/bareos/bareos/pull/1231
+[PR #1233]: https://github.com/bareos/bareos/pull/1233
 [unreleased]: https://github.com/bareos/bareos/tree/master
