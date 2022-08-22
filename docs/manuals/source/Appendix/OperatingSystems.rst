@@ -30,9 +30,9 @@ Additionally, the following table gives an overview on the available package ver
 
    :strong:`MS Windows`
    :ref:`MS Windows <section-windows>` 32bit, 10/8/7, v12.4, v15.2, v15.2
-                                           , 2008/Vista/2003/XP, v12.4–v14.2
-   :ref:`MS Windows <section-windows>` 64bit, 10/8/2012/7, v12.4, v15.2, v15.2
-                                            , 2008/Vista, v12.4–v14.2
+                                           , 2008/8/2003/XP, v12.4–v14.2
+   :ref:`MS Windows <section-windows>` 64bit, 11/2022/2019/2016/10, v12.4, v15.2, v15.2
+                                            , 8/2012/7/2008/Vista, v12.4–v14.2
 
    :strong:`Mac OS`
    :ref:`Mac OS X/Darwin <section-macosx>`, v14.2
