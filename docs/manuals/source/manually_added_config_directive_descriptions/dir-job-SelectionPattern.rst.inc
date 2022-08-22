@@ -5,3 +5,9 @@ For the OldestVolume and SmallestVolume, this Selection pattern is not used (ign
 For the Client, Volume, and Job keywords, this pattern must be a valid regular expression that will filter the appropriate item names found in the Pool.
 
 For the SQLQuery keyword, this pattern must be a valid :command:`SELECT` SQL statement that returns JobIds.
+
+Example:
+
+.. literalinclude:: /include/config/DirSelectionPatterns-sql1.conf
+   :language: bareosconfig
+
