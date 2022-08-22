@@ -148,6 +148,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - add instruction to run sphinx linkcheck before release [PR #1218]
 - FreeBSD install create /usr/local/etc/pkg/repos directory [PR #1227]
 - remove deprecated Rados & ceph references from documentation [PR #1216]
+- improve Wild(*) section with links to example [PR #1228]
 
 [PR #698]: https://github.com/bareos/bareos/pull/698
 [PR #768]: https://github.com/bareos/bareos/pull/768
@@ -243,4 +244,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1221]: https://github.com/bareos/bareos/pull/1221
 [PR #1226]: https://github.com/bareos/bareos/pull/1226
 [PR #1216]: https://github.com/bareos/bareos/pull/1216
+[PR #1228]: https://github.com/bareos/bareos/pull/1228
 [unreleased]: https://github.com/bareos/bareos/tree/master
