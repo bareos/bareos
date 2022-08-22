@@ -1,22 +1,9 @@
 name: Build Bareos Client on MacOS
 
 on:
-  workflow_dispatch:
-    inputs:
-      jenkins_id:
-        description: 'Id on the Jenkins server'
-        type: string
-        required: true
-        default: 'jid'
-      bareos_version:
-        description: 'Bareos version to build'
-        type: string
-        required: true
-  # Push is only required initially,
-  # otherwise the workflow is unknown and not callable by the REST API.
   push:
-    paths:
-      - .github/workflows/build-macos.yml
+    branches:
+      - test-mac-buil*
 
 env:
   target_dir: "${{ github.workspace }}/BUILD_RESULTS/MacOS"
