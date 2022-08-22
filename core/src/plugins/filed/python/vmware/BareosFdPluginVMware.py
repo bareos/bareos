@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2020 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2022 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -224,7 +224,10 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 mandatory_options += self.mandatory_options_vmname
 
         if self.options.get("localvmdk") == "yes":
-            mandatory_options = list(set(mandatory_options) - set(["vcserver", "vcuser", "vcpass", "folder", "dc", "vmname"]))
+            mandatory_options = list(
+                set(mandatory_options)
+                - set(["vcserver", "vcuser", "vcpass", "folder", "dc", "vmname"])
+            )
 
         for option in mandatory_options:
             if option not in self.options:
@@ -262,7 +265,10 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 % (option, StringCodec.encode(self.options[option])),
             )
 
-        if not self.options.get("localvmdk") == "yes" and "vcthumbprint" not in self.options:
+        if (
+            not self.options.get("localvmdk") == "yes"
+            and "vcthumbprint" not in self.options
+        ):
             # if vcthumbprint is not given in options, retrieve it
             if not self.vadp.retrieve_vcthumbprint():
                 return bareosfd.bRC_Error
@@ -383,7 +389,10 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         if check_option_bRC != bareosfd.bRC_OK:
             return check_option_bRC
 
-        if not self.options.get("localvmdk") == "yes" and not self.vadp.connect_vmware():
+        if (
+            not self.options.get("localvmdk") == "yes"
+            and not self.vadp.connect_vmware()
+        ):
             return bareosfd.bRC_Error
 
         return self.vadp.prepare_vm_restore()
