@@ -156,6 +156,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - update Appendix/HardwareSizing DB size with new numbers and formulas [BUG #1477][PR #1231]
 - add description to fileset signature sha256 and sha512 parameter [PR #1230]
 - improve troubleshooting and debugging chapter [PR #1233]
+- mssql: after PITR restore, a full backup is required [PR #1235]
 
 [PR #698]: https://github.com/bareos/bareos/pull/698
 [PR #768]: https://github.com/bareos/bareos/pull/768
