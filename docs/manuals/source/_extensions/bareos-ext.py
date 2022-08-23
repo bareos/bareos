@@ -31,6 +31,7 @@ from sphinx.util.docfields import Field
 from docutils import nodes
 from pprint import pformat
 import re
+from bareos_urls import BareosUrls
 
 # import logging
 
@@ -694,6 +695,37 @@ def sinceVersion():
     return role
 
 
+def downloadUrls():
+    def role(name, rawtext, text, lineno, inliner, options={}, content=[]):
+
+        urls = BareosUrls()
+
+        distribution = ""
+        if text.lower() != "none" and text != ".":
+            distribution = text
+
+        download_bareos_org_url = urls.get_download_bareos_org_url(distribution)
+        download_bareos_com_url = urls.get_download_bareos_com_url(distribution)
+
+        org_url = nodes.reference(
+            rawtext, download_bareos_org_url, refuri=download_bareos_org_url, **options
+        )
+
+        if download_bareos_com_url is not None:
+            text_or = nodes.Text(" or ")
+            com_url = nodes.reference(
+                rawtext,
+                download_bareos_com_url,
+                refuri=download_bareos_com_url,
+                **options
+            )
+            return [org_url, text_or, com_url], []
+        else:
+            return [org_url], []
+
+    return role
+
+
 def setup(app):
     # logging.basicConfig(filename="/tmp/build/sphinx-bareos.log", level=logging.DEBUG)
     # logger = logging.getLogger(__name__)
@@ -703,13 +735,10 @@ def setup(app):
     app.add_role("bcommand", bcommand())
     app.add_role("os", os())
     app.add_role("sinceversion", sinceVersion())
+    app.add_role("downloadurls", downloadUrls())
     app.add_role(
         "mantis", autolink("https://bugs.bareos.org/view.php?id={}", "Issue #{}")
     )
 
     # identifies the version of our extension
-    return {
-        "version": "0.4",
-        "parallel_read_safe": False,
-        "parallel_write_safe": True
-    }
+    return {"version": "0.4", "parallel_read_safe": False, "parallel_write_safe": True}

@@ -9,5 +9,5 @@ Bareos Specific Formatting
    /DocumentationStyleGuide/BareosSpecificFormatting/Bconsole.rst
    /DocumentationStyleGuide/BareosSpecificFormatting/BareosLogging.rst
    /DocumentationStyleGuide/BareosSpecificFormatting/Limitation.rst
-   /DocumentationStyleGuide/BareosSpecificFormatting/Issue.rst
+   /DocumentationStyleGuide/BareosSpecificFormatting/Links.rst
    /DocumentationStyleGuide/BareosSpecificFormatting/Release.rst

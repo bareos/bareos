@@ -261,6 +261,7 @@ Output:
 
 .. include:: /DocumentationStyleGuide/example/urls.rst.inc
 
+There are also some roles for specific links targets, see :ref:`documentationstyleguide/bareosspecificformatting/links`.
 
 Internal links
 ~~~~~~~~~~~~~~
