@@ -196,6 +196,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - fix systemtests daemon control scripts [PR #762]
 - SQL: queries: fix sql queries to handle negative job duration value [PR #1201]
 - dird: fix TLS-PSK credential not found error with very long job names [PR #1208]
+- dird: fix odd-even weeks parsing bug in schedule [PR #1232]
 
 ### Added
 - plugin: added mariabackup python plugin, added systemtest for mariabackup and updated systemtest for percona-xtrabackup [PR #967]
@@ -588,4 +589,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1208]: https://github.com/bareos/bareos/pull/1208
 [PR #1212]: https://github.com/bareos/bareos/pull/1212
 [PR #1214]: https://github.com/bareos/bareos/pull/1214
+[PR #1220]: https://github.com/bareos/bareos/pull/1220
+[PR #1222]: https://github.com/bareos/bareos/pull/1222
+[PR #1232]: https://github.com/bareos/bareos/pull/1232
 [unreleased]: https://github.com/bareos/bareos/tree/master
