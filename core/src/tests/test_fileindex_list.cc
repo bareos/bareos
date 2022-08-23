@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -38,10 +38,6 @@ using namespace std::chrono;
 using namespace directordaemon;
 using namespace std;
 
-namespace directordaemon {
-bool DoReloadConfig() { return false; }
-}  // namespace directordaemon
-
 enum
 {
   kJobId_1 = 1,
@@ -67,8 +63,7 @@ TEST(fileindex_list, add_filendexes)
   EXPECT_EQ(bsr.next->fi->GetRanges().size(), 2);
 }
 
-template <typename F>
-static void TimedLambda(const char* name, F func)
+template <typename F> static void TimedLambda(const char* name, F func)
 {
   auto start_time = std::chrono::high_resolution_clock::now();
   func();

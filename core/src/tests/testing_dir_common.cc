@@ -21,10 +21,6 @@
 
 #include "testing_dir_common.h"
 
-namespace directordaemon {
-bool DoReloadConfig() { return false; }
-}  // namespace directordaemon
-
 void InitDirGlobals()
 {
   OSDependentInit();

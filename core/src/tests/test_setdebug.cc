@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,10 +35,6 @@
 
 using namespace std;
 using namespace directordaemon;
-
-namespace directordaemon {
-bool DoReloadConfig() { return false; }
-}  // namespace directordaemon
 
 class SetdebugTest : public ::testing::Test {
  protected:

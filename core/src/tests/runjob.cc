@@ -31,10 +31,6 @@
 #include "include/jcr.h"
 #include "dird/ua_run.h"
 
-namespace directordaemon {
-bool DoReloadConfig() { return false; }
-}  // namespace directordaemon
-
 void FakeCmd(directordaemon::UaContext* ua, std::string cmd)
 {
   std::string command = cmd;

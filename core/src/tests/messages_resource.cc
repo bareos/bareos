@@ -42,10 +42,6 @@
 using directordaemon::InitDirConfig;
 using directordaemon::my_config;
 
-namespace directordaemon {
-bool DoReloadConfig() { return false; }
-}  // namespace directordaemon
-
 class LogFiles {
  public:
   static FILE* Open(const std::string& dir, std::string filename)

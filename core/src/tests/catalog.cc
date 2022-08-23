@@ -37,10 +37,6 @@
 #include <string>
 #include <vector>
 
-namespace directordaemon {
-bool DoReloadConfig() { return false; }
-}  // namespace directordaemon
-
 using directordaemon::InitDirConfig;
 using directordaemon::my_config;
 
