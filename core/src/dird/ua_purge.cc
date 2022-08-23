@@ -314,40 +314,42 @@ void PurgeFilesFromJobs(UaContext* ua, const char* jobs)
   ua->db->PurgeFiles(jobs);
 }
 
-std::string PrepareJobidsTobedeleted(UaContext* ua, std::vector<JobId_t>& del)
+std::string PrepareJobidsTobedeleted(UaContext* ua,
+                                     std::vector<JobId_t>& deletion_list)
 {
-  std::sort(del.begin(), del.end());
+  std::sort(deletion_list.begin(), deletion_list.end());
 
-  del.erase(std::remove_if(del.begin(), del.end(),
-                           [&ua](const JobId_t& jobid) {
-                             return ua->jcr->JobId == jobid || jobid == 0;
-                           }),
-            del.end());
+  deletion_list.erase(std::remove_if(deletion_list.begin(), deletion_list.end(),
+                                     [&ua](const JobId_t& jobid) {
+                                       return ua->jcr->JobId == jobid
+                                              || jobid == 0;
+                                     }),
+                      deletion_list.end());
 
   BStringList jobids{};
-  std::transform(del.begin(), del.end(), std::back_inserter(jobids),
+  std::transform(deletion_list.begin(), deletion_list.end(),
+                 std::back_inserter(jobids),
                  [](JobId_t jobid) { return std::to_string(jobid); });
 
   return jobids.Join(',');
 }
 
 /**
- * Delete jobs (all records) from the catalog in groups of 1000
- *  at a time.
+ * Delete given jobids (all records) from the catalog.
  */
-void PurgeJobListFromCatalog(UaContext* ua, std::vector<JobId_t>& del)
+void PurgeJobListFromCatalog(UaContext* ua, std::vector<JobId_t>& deletion_list)
 {
-  Dmsg1(150, "num_ids=%d\n", del.size());
+  Dmsg1(150, "num_ids=%d\n", deletion_list.size());
 
-  std::string jobids_to_delete = PrepareJobidsTobedeleted(ua, del);
-  ua->SendMsg(_("Purging the following JobIds: %s\n"),
-              jobids_to_delete.c_str());
-  PurgeJobsFromCatalog(ua, jobids_to_delete.c_str());
+  std::string jobids_to_delete_string
+      = PrepareJobidsTobedeleted(ua, deletion_list);
+  ua->SendMsg(_("Purging the following %d JobIds: %s\n"), deletion_list.size(),
+              jobids_to_delete_string.c_str());
+  PurgeJobsFromCatalog(ua, jobids_to_delete_string.c_str());
 }
 
 /**
- * Delete files from a list of jobs in groups of 1000
- *  at a time.
+ * Delete files of given list of jobids
  */
 void PurgeFilesFromJobList(UaContext* ua, std::vector<JobId_t>& del)
 {

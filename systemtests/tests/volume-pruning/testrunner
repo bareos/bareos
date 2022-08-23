@@ -144,7 +144,7 @@ stop_bareos
 
 check_two_logs
 
-if ! grep "Purging the following JobIds: 1,2" "$tmp"/log2.out; then
+if ! grep "Purging the following 2 JobIds: 1,2" "$tmp"/log2.out; then
   echo "'Purging the following JobIds: 1,2' not found in $tmp/log2.out" >&2
   grep 'Purging the' "$tmp"/log2.out >&2 || :
   estat=1
@@ -158,7 +158,7 @@ fi
 
 ## prune all volumes checks
 
-if ! grep "Purging the following JobIds: 4,5" "$tmp"/log3.out; then
+if ! grep "Purging the following 2 JobIds: 4,5" "$tmp"/log3.out; then
   echo "'Purging the following JobIds: 4,5' not found in $tmp/log3.out" >&2
   grep 'Purging the' "$tmp"/log3.out >&2 || :
   estat=1
@@ -170,7 +170,7 @@ if ! grep -F 'Volume "TestVolume002" contains no jobs after pruning.' $tmp/log3.
   estat=1
 fi
 
-if ! grep "Purging the following JobIds: 6,7" "$tmp"/log3.out; then
+if ! grep "Purging the following 2 JobIds: 6,7" "$tmp"/log3.out; then
   echo "'Purging the following JobIds: 6,7' not found in $tmp/log3.out" >&2
   grep 'Purging the' "$tmp"/log3.out >&2 || :
   estat=1
@@ -184,7 +184,7 @@ fi
 
 # Prune all volumes of specific pool
 
-if ! grep "Purging the following JobIds: 9" "$tmp"/log4.out; then
+if ! grep "Purging the following 1 JobIds: 9" "$tmp"/log4.out; then
   echo "'Purging the following JobIds: 9' not found in $tmp/log4.out" >&2
   grep 'Purging the' "$tmp"/log3.out >&2 || :
   estat=1

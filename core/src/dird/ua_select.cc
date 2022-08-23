@@ -870,7 +870,7 @@ bool SelectMediaDbrByName(UaContext* ua,
   if (IsNameValid(volumename, err)) {
     bstrncpy(mr->VolumeName, volumename, sizeof(mr->VolumeName));
   } else {
-    strncpy(err.data(), ua->db->strerror(), err.size());
+    err = ua->db->strerror();
     return false;
   }
 
@@ -924,7 +924,7 @@ bool SelectMediaDbr(UaContext* ua, MediaDbRecord* mr)
 
 
   if (!ua->db->GetMediaRecord(ua->jcr, mr)) {
-    strncpy(err.data(), ua->db->strerror(), err.size());
+    err = ua->db->strerror();
     goto bail_out;
   }
   retval = true;
