@@ -154,38 +154,54 @@ Debian / Ubuntu
    single: Platform; Debian
    single: Platform; Ubuntu
 
+Adding an Debian/Ubuntu repository requires multiple steps:
+
+* Storing the Bareos signature key of the repository.
+* Storing the Bareos repository configuration file in :file:`/etc/apt/sources.list.d/`, which references to the repository server a the local key file.
+* If you're a Bareos subscription customer, you also need your login credentials for https://download.bareos.com/ in :file:`/etc/apt/auth.conf.d/`.
+
+To simplify this, the each Debian/Ubuntu repository on https://download.bareos.org/ and https://download.bareos.com/ contain a script named :file:`add_bareos_repository.sh`.
+
+Download the :file:`add_bareos_repository.sh` script
+matching the requested Bareos release
+and the distribution of the target system.
+
+Copy the script onto the target system and execute it with a shell (:command:`sh`) as root (e.g. using :command:`sudo`),
+or manually perform the steps that are documented in the script.
+
+For example the script URL for bareos-21 and Debian 11 is:
+
+* https://download.bareos.org/bareos/release/21/Debian_11/add_bareos_repository.sh
+* or for Bareos subscription customers:
+
+   * https://download.bareos.com/bareos/release/21/Debian_11/add_bareos_repository.sh
+   * .. note::
+
+        To download :file:`add_bareos_repository.sh` you must authenticate against https://download.bareos.com. If this is inconvenient, you can alternatively download :file:`add_bareos_repository_template.sh` and replace ``BAREOS_USERNAME`` and ``BAREOS_PASSWORD`` in there manually.
+
+The :file:`add_bareos_repository.sh` script will:
+
+* Create a Bareos signature key file :file:`/etc/apt/keyrings/bareos-keyring.gpg`.
+* Create the Bareos repository configuration file :file:`/etc/apt/sources.list.d/bareos.sources`
+
+   * This file refers to the Bareos repository on the download server and to the local :file:`/etc/apt/keyrings/bareos-keyring.gpg` file.
+
+* If using https://download.bareos.com, it stores your credentials in :file:`/etc/apt/auth.conf.d/download_bareos_com.conf` file.
+
 .. code-block:: sh
    :caption: Shell example script for Bareos installation on Debian / Ubuntu
 
    #!/bin/sh
 
-   # See https://download.bareos.org/bareos/release/
-   # for applicable releases and distributions
+   # download the matching add_bareos_repository.sh script from
+   # https://download.bareos.org/bareos/release/
+   # or https://download.bareos.com/bareos/release/
 
-   DIST=Debian_11
-   # or
-   # DIST=Debian_10
-   # DIST=Debian_9.0
-   # DIST=xUbuntu_20.04
-   # DIST=xUbuntu_18.04
-
-   RELEASE=release/21
-   # or
-   # RELEASE=experimental/nightly
-
-   URL=https://download.bareos.org/bareos/$RELEASE/$DIST
-
-   # add the Bareos repository
-   wget -O /etc/apt/sources.list.d/bareos.list $URL/bareos.list
-
-   # add package key
-   wget -q $URL/Release.key -O- | apt-key add -
+   sudo sh ./add_bareos_repository.sh
 
    # install Bareos packages
-   apt-get update
-   apt-get install bareos bareos-database-postgresql
-
-If you use the versions of Bareos directly integrated into the distributions, please note that there are some differences, see :ref:`section-DebianOrgLimitations`.
+   sudo apt-get update
+   sudo apt-get install bareos
 
 
 .. _section-FreeBSD:
