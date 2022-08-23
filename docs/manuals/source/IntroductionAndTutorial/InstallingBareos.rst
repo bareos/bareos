@@ -204,6 +204,29 @@ The :file:`add_bareos_repository.sh` script will:
    sudo apt-get install bareos
 
 
+Only Install the Bareos Client
+''''''''''''''''''''''''''''''
+
+If only the Bareos client should get installed,
+the procedure is very similar.
+Get the :file:`add_bareos_repository.sh`
+matching the requested Bareos release
+and the distribution of the target system
+from https://download.bareos.org/ or https://download.bareos.com/
+and execute it on the target system:
+
+.. code-block:: sh
+   :caption: Shell example script for installing a Bareos client on Debian / Ubuntu
+
+   sudo sh ./add_bareos_repository.sh
+   sudo apt-get update
+   sudo apt-get install bareos-filedaemon
+   # or for the bareos-filedaemon and additional client tools:
+   # sudo apt-get install bareos-client
+
+To configure the client, follow the instructions in :ref:`section-AddAClient`.
+
+
 .. _section-FreeBSD:
 
 Install on FreeBSD based Distributions
