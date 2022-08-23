@@ -154,8 +154,6 @@ Debian / Ubuntu
    single: Platform; Debian
    single: Platform; Ubuntu
 
-Bareos :sinceVersion:`15.2.0: requires: jansson` requires the Jansson library package. On Ubuntu is it available in Ubuntu Universe. In Debian, is it included in the main repository.
-
 .. code-block:: sh
    :caption: Shell example script for Bareos installation on Debian / Ubuntu
 
