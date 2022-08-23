@@ -165,10 +165,11 @@ const char *BareosDbMysql::query_definitions[] = {
 
 /* 0011_sel_JobMedia */
 "SELECT DISTINCT JobMedia.JobId "
-  "FROM JobMedia, Job "
- "WHERE MediaId      = %s "
+   "FROM JobMedia, Job "
+   "WHERE MediaId      = %s "
    "AND Job.JobId    = JobMedia.JobId "
    "AND Job.JobTDate < %s "
+   "ORDER BY JobId "
 ,
 
 /* 0012_drop_deltabs.mysql */

@@ -56,15 +56,6 @@ static bool PurgeJobsFromClient(UaContext* ua, ClientResource* client);
 static bool PurgeQuotaFromClient(UaContext* ua, ClientResource* client);
 static bool ActionOnPurgeCmd(UaContext* ua, const char* cmd);
 
-static const char* select_jobsfiles_from_client
-    = "SELECT JobId FROM Job "
-      "WHERE ClientId=%s "
-      "AND PurgedFiles=0";
-
-static const char* select_jobs_from_client
-    = "SELECT JobId, PurgedFiles FROM Job "
-      "WHERE ClientId=%s";
-
 /**
  * Purge records from database
  *
@@ -243,7 +234,13 @@ static bool PurgeFilesFromClient(UaContext* ua, ClientResource* client)
 
   ua->InfoMsg(_("Begin purging files for Client \"%s\"\n"), cr.Name);
 
-  Mmsg(query, select_jobsfiles_from_client, edit_int64(cr.ClientId, ed1));
+  const std::string select_jobIds_from_client
+      = "SELECT JobId FROM Job "
+        "WHERE ClientId=%s "
+        "AND PurgedFiles=0 "
+        "ORDER BY JobId";
+
+  Mmsg(query, select_jobIds_from_client.c_str(), edit_int64(cr.ClientId, ed1));
   Dmsg1(050, "select sql=%s\n", query.c_str());
   ua->db->SqlQuery(query.c_str(), FileDeleteHandler, (void*)&del);
 
@@ -286,7 +283,12 @@ static bool PurgeJobsFromClient(UaContext* ua, ClientResource* client)
 
   ua->InfoMsg(_("Begin purging jobs from Client \"%s\"\n"), cr.Name);
 
-  Mmsg(query, select_jobs_from_client, edit_int64(cr.ClientId, ed1));
+  const std::string select_jobs_from_client
+      = "SELECT JobId, PurgedFiles FROM Job "
+        "WHERE ClientId=%s "
+        "ORDER BY JobId";
+
+  Mmsg(query, select_jobs_from_client.c_str(), edit_int64(cr.ClientId, ed1));
   Dmsg1(150, "select sql=%s\n", query.c_str());
   ua->db->SqlQuery(query.c_str(), JobDeleteHandler, (void*)&del);
 
@@ -317,8 +319,6 @@ void PurgeFilesFromJobs(UaContext* ua, const char* jobs)
 std::string PrepareJobidsTobedeleted(UaContext* ua,
                                      std::vector<JobId_t>& deletion_list)
 {
-  std::sort(deletion_list.begin(), deletion_list.end());
-
   deletion_list.erase(std::remove_if(deletion_list.begin(), deletion_list.end(),
                                      [&ua](const JobId_t& jobid) {
                                        return ua->jcr->JobId == jobid

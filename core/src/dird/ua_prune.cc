@@ -547,7 +547,7 @@ bool PruneFiles(UaContext* ua, ClientResource* client, PoolResource* pool)
   std::vector<JobId_t> prune_list;
 
   /* Now process same set but making a delete list */
-  Mmsg(query, "SELECT JobId FROM Job %s WHERE PurgedFiles=0 %s",
+  Mmsg(query, "SELECT JobId FROM Job %s WHERE PurgedFiles=0 %s ORDER BY JobId",
        sql_from.c_str(), sql_where.c_str());
   Dmsg1(050, "select sql=%s\n", query.c_str());
   ua->db->SqlQuery(query.c_str(), FileDeleteHandler, (void*)&prune_list);
@@ -771,8 +771,8 @@ bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
 
   // We use DISTINCT because we can have two times the same job
   Mmsg(query,
-       "SELECT DISTINCT DelCandidates.JobId,DelCandidates.PurgedFiles "
-       "FROM DelCandidates");
+       "SELECT DISTINCT DelCandidates.JobId "
+       "FROM DelCandidates ORDER BY JobId");
 
   std::vector<JobId_t> prune_list;
   if (!ua->db->SqlQuery(query.c_str(), JobDeleteHandler, (void*)&prune_list)) {
@@ -887,9 +887,7 @@ int ExcludeRunningJobsFromList(std::vector<JobId_t>& prune_list)
 {
   JobControlRecord* jcr;
 
-
   /* Do not prune any job currently running */
-
   foreach_jcr (jcr) {
     prune_list.erase(std::remove_if(prune_list.begin(), prune_list.end(),
                                     [&jcr](const JobId_t& jobid) {
