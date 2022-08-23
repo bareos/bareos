@@ -139,6 +139,23 @@ END_OF_DATA
 
 run_bconsole
 
+# Pruning files
+
+file_pruning_log="$tmp"/file_pruning_log.out
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $file_pruning_log
+prune files yes
+wait
+restore jobid=11
+no
+
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
 check_for_zombie_jobs storage=File
 stop_bareos
 
@@ -198,12 +215,22 @@ fi
 
 #job pruning
 
-expect_grep "Purging the following JobIds: 3,8,10" \
+expect_grep "Purging the following 3 JobIds: 3,8,10" \
             "$job_pruning_log" \
             "job pruning went wrong"
 
 expect_grep "Pruned 3 Jobs for client bareos-fd from catalog." \
             "$job_pruning_log" \
             "job pruning went wrong"
+
+#file pruning
+
+expect_grep "Pruned Files from 1 Jobs" \
+            "$file_pruning_log" \
+            "file pruning went wrong"
+
+expect_grep "Most likely your retention policy pruned the files." \
+            "$file_pruning_log" \
+            "file pruning went wrong"
 
 end_test
