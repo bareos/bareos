@@ -10,7 +10,10 @@ Of all the configuration files needed to run Bareos, the Director’s is the mos
 
 For a general discussion of configuration files and resources including the recognized data types see :ref:`ConfigureChapter`.
 
-:index:`\ <single: Types; Director Resource>`\  :index:`\ <single: Director; Resource Types>`\  :index:`\ <single: Resource Types>`\
+.. index::
+   single: Types; Director Resource
+   single: Director; Resource Types
+   single: Resource Types
 
 Everything revolves around a job and is tied to a job in one way or another.
 
@@ -1391,8 +1394,8 @@ The directives within an Options resource may be one of the following:
    This option allows you to select files and directories by the
    filesystem type.  Example filesystem-type names are:
 
-   ext2, jfs, ntfs, proc, reiserfs, xfs, usbdevfs, sysfs, smbfs,
-   iso9660.
+   btrfs, ext2, ext3, ext4, jfs, ntfs, proc, reiserfs, xfs, nfs, vfat,
+   usbdevfs, sysfs, smbfs, iso9660.
 
    You may have multiple Fstype directives, and thus permit matching
    of multiple filesystem types within a single Options resource.  If

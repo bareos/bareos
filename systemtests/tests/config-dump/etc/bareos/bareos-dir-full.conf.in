@@ -1391,6 +1391,7 @@ FileSet {
       FsType = "ext4"
       FsType = "reiserfs"
       FsType = "jfs"
+      FsType = "vfat"
       FsType = "xfs"
       FsType = "zfs"
     }

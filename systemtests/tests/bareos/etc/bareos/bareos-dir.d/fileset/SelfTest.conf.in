@@ -13,6 +13,7 @@ FileSet {
       fstype = xfs
       fstype = zfs
       fstype = btrfs
+      fstype = vfat
     }
    #File = "@sbindir@"
     File=<@tmpdir@/file-list
