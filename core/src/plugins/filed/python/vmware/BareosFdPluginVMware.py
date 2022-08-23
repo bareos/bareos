@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2020 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2022 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -223,6 +223,12 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             if "uuid" not in self.options:
                 mandatory_options += self.mandatory_options_vmname
 
+        if self.options.get("localvmdk") == "yes":
+            mandatory_options = list(
+                set(mandatory_options)
+                - set(["vcserver", "vcuser", "vcpass", "folder", "dc", "vmname"])
+            )
+
         for option in mandatory_options:
             if option not in self.options:
                 bareosfd.DebugMessage(100, "Option '%s' not defined.\n" % (option))
@@ -259,7 +265,10 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 % (option, StringCodec.encode(self.options[option])),
             )
 
-        if "vcthumbprint" not in self.options:
+        if (
+            not self.options.get("localvmdk") == "yes"
+            and "vcthumbprint" not in self.options
+        ):
             # if vcthumbprint is not given in options, retrieve it
             if not self.vadp.retrieve_vcthumbprint():
                 return bareosfd.bRC_Error
@@ -380,7 +389,10 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         if check_option_bRC != bareosfd.bRC_OK:
             return check_option_bRC
 
-        if not self.vadp.connect_vmware():
+        if (
+            not self.options.get("localvmdk") == "yes"
+            and not self.vadp.connect_vmware()
+        ):
             return bareosfd.bRC_Error
 
         return self.vadp.prepare_vm_restore()
@@ -852,13 +864,19 @@ class BareosVADPWrapper(object):
         # the Disconnect Method does not close the tcp connection
         # is that so intentionally?
         # However, explicitly closing it works like this:
-        self.si._stub.DropConnections()
-        self.si = None
-        self.log = None
+        if self.si is not None:
+            self.si._stub.DropConnections()
+            self.si = None
+            self.log = None
 
     def keepalive(self):
         # Prevent from vSphere API timeout by calling CurrentTime() every
         # 10min (600s) to keep alive the connection and session
+
+        # ignore keepalive if there is no connection to the API
+        if self.si is None:
+            return
+
         if int(time.time()) - self.si_last_keepalive > 600:
             self.si.CurrentTime()
             self.si_last_keepalive = int(time.time())
