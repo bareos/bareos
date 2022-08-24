@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<service>
+  <short>Bareos File daemon (bareos-fd)</short>
+  <description>This option allows a Bareos director or console to connect to the local Bareos file daemon.</description>
+  <port protocol="tcp" port="9102"/>
+</service>
