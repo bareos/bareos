@@ -2,22 +2,9 @@ name: Build Bareos Client on MacOS
 
 on:
   workflow_dispatch:
-    inputs:
-      jenkins_id:
-        description: 'Id on the Jenkins server'
-        type: string
-        required: true
-        default: 'jid'
-      bareos_version:
-        description: 'Bareos version to build'
-        type: string
-        required: true
-  # Push is only required initially,
-  # otherwise the workflow is unknown and not callable by the REST API.
   push:
-    paths:
-      - .github/workflows/build-macos.yml
-
+    branches:
+      - macbuild-of*
 env:
   target_dir: "${{ github.workspace }}/BUILD_RESULTS/MacOS"
 
@@ -27,12 +14,6 @@ jobs:
     runs-on: macos-12
 
     steps:
-    - name: Check input variables
-      run: |
-        if [ -z "${{ inputs.bareos_version }}" ]; then
-            echo "::error ::Missing parameter 'bareos_version'"
-            exit 1
-        fi
 
     - name: "Checkout source"
       uses: actions/checkout@v2
@@ -52,7 +33,7 @@ jobs:
         mkdir cmake-build
         cd cmake-build
         export CXXFLAGS="-I/usr/local/include"
-        cmake .. -Dclient-only=yes -DVERSION_STRING="${{ inputs.bareos_version }}"
+        cmake .. -Dclient-only=yes
         make package VERBOSE=1
         ls -la ./*.pkg
         mkdir -p "${{ env.target_dir }}"
