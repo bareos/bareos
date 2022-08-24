@@ -49,7 +49,7 @@ echo "test with ${BAREOS_WEBUI_PROFILE} profile:" >"$tmp/selenium.out" 2>&1
 #@PYTHON@ @CMAKE_SOURCE_DIR@/webui/tests/selenium/webui-selenium-test.py -v "SeleniumTest.test_${BAREOS_WEBUI_TESTNAME}" | tee "$tmp/selenium.out" 2>&1
 if ! @PYTHON@ @CMAKE_SOURCE_DIR@/webui/tests/selenium/webui-selenium-test.py -v "SeleniumTest.test_${BAREOS_WEBUI_TESTNAME}" >>"$tmp/selenium.out" 2>&1; then
 
-    set_error "$(cat "$tmp/selenium.out")"
+    set_error "$(cat "$tmp/selenium.out" "$tmp/php.out")"
 
 fi
 
