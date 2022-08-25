@@ -594,8 +594,9 @@ struct accurate_check_ctx {
 // row: Job.Name, FileSet, Client.Name, FileSetId, ClientId, Type
 static int JobSelectHandler(void* ctx, int num_fields, char** row)
 {
-  alist<accurate_check_ctx*>* lst = (alist<accurate_check_ctx*>*)ctx;
-  struct accurate_check_ctx* res;
+  std::vector<accurate_check_ctx>* lst
+      = static_cast<std::vector<accurate_check_ctx>*>(ctx);
+  accurate_check_ctx res{};
   ASSERT(num_fields == 6);
 
   // If this job doesn't exist anymore in the configuration, delete it.
@@ -610,10 +611,9 @@ static int JobSelectHandler(void* ctx, int num_fields, char** row)
   // Don't compute accurate things for Verify jobs
   if (*row[5] == 'V') { return 0; }
 
-  res = (struct accurate_check_ctx*)malloc(sizeof(struct accurate_check_ctx));
-  res->FileSetId = str_to_int64(row[3]);
-  res->ClientId = str_to_int64(row[4]);
-  lst->append(res);
+  res.FileSetId = str_to_int64(row[3]);
+  res.ClientId = str_to_int64(row[4]);
+  lst->emplace_back(res);
 
   return 0;
 }
@@ -688,7 +688,7 @@ bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
    * Note: The DISTINCT could be more useful if we don't get FileSetId
    */
 
-  alist<accurate_check_ctx*> accurate_job_check(10, owned_by_alist);
+  std::vector<accurate_check_ctx> accurate_job_check;
   Mmsg(query,
        "SELECT DISTINCT Job.Name, FileSet, Client.Name, Job.FileSetId, "
        "Job.ClientId, Job.Type "
@@ -719,13 +719,11 @@ bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
   JobDbRecord jr;
   jr.JobLevel = L_INCREMENTAL;
 
-  struct accurate_check_ctx* elt = nullptr;
   db_list_ctx jobids;
   db_list_ctx tempids;
-  foreach_alist_no_null_check(elt, &accurate_job_check)
-  {
-    jr.ClientId = elt->ClientId; /* should be always the same */
-    jr.FileSetId = elt->FileSetId;
+  for (auto elt : accurate_job_check) {
+    jr.ClientId = elt.ClientId; /* should be always the same */
+    jr.FileSetId = elt.FileSetId;
     ua->db->AccurateGetJobids(ua->jcr, &jr, &tempids);
     jobids.add(tempids);
   }
