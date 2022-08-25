@@ -533,7 +533,8 @@ bool PruneFiles(UaContext* ua, ClientResource* client, PoolResource* pool)
 
   struct s_count_ctx cnt;
   cnt.count = 0;
-  if (!ua->db->SqlQuery(query.c_str(), DelCountHandler, (void*)&cnt)) {
+  if (!ua->db->SqlQuery(query.c_str(), DelCountHandler,
+                        static_cast<void*>(&cnt))) {
     ua->ErrorMsg("%s", ua->db->strerror());
     Dmsg0(050, "Count failed\n");
     return true;
@@ -550,7 +551,8 @@ bool PruneFiles(UaContext* ua, ClientResource* client, PoolResource* pool)
   Mmsg(query, "SELECT JobId FROM Job %s WHERE PurgedFiles=0 %s ORDER BY JobId",
        sql_from.c_str(), sql_where.c_str());
   Dmsg1(050, "select sql=%s\n", query.c_str());
-  ua->db->SqlQuery(query.c_str(), FileDeleteHandler, (void*)&prune_list);
+  ua->db->SqlQuery(query.c_str(), FileDeleteHandler,
+                   static_cast<void*>(&prune_list));
 
   PurgeFilesFromJobList(ua, prune_list);
 
@@ -775,7 +777,8 @@ bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
        "FROM DelCandidates ORDER BY JobId");
 
   std::vector<JobId_t> prune_list;
-  if (!ua->db->SqlQuery(query.c_str(), JobDeleteHandler, (void*)&prune_list)) {
+  if (!ua->db->SqlQuery(query.c_str(), JobDeleteHandler,
+                        static_cast<void*>(&prune_list))) {
     ua->ErrorMsg("%s", ua->db->strerror());
   }
 
@@ -861,7 +864,8 @@ int GetPruneListForVolume(UaContext* ua,
   Dmsg1(050, "Query=%s\n", query.c_str());
 
 
-  if (!ua->db->SqlQuery(query.c_str(), FileDeleteHandler, (void*)&prune_list)) {
+  if (!ua->db->SqlQuery(query.c_str(), FileDeleteHandler,
+                        static_cast<void*>(&prune_list))) {
     if (ua->verbose) { ua->ErrorMsg("%s", ua->db->strerror()); }
     Dmsg0(050, "Count failed\n");
     return 0;

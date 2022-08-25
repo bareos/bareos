@@ -242,7 +242,7 @@ static bool PurgeFilesFromClient(UaContext* ua, ClientResource* client)
 
   Mmsg(query, select_jobIds_from_client.c_str(), edit_int64(cr.ClientId, ed1));
   Dmsg1(050, "select sql=%s\n", query.c_str());
-  ua->db->SqlQuery(query.c_str(), FileDeleteHandler, (void*)&del);
+  ua->db->SqlQuery(query.c_str(), FileDeleteHandler, static_cast<void*>(&del));
 
   if (del.empty()) {
     ua->WarningMsg(
@@ -290,7 +290,7 @@ static bool PurgeJobsFromClient(UaContext* ua, ClientResource* client)
 
   Mmsg(query, select_jobs_from_client.c_str(), edit_int64(cr.ClientId, ed1));
   Dmsg1(150, "select sql=%s\n", query.c_str());
-  ua->db->SqlQuery(query.c_str(), JobDeleteHandler, (void*)&del);
+  ua->db->SqlQuery(query.c_str(), JobDeleteHandler, static_cast<void*>(&del));
 
   if (del.empty()) {
     ua->WarningMsg(_("No Jobs found for client %s to purge from %s catalog.\n"),
@@ -492,7 +492,8 @@ bool IsVolumePurged(UaContext* ua, MediaDbRecord* mr, bool force)
   cnt.count = 0;
   Mmsg(query, "SELECT 1 FROM JobMedia WHERE MediaId=%s LIMIT 1",
        edit_int64(mr->MediaId, ed1));
-  if (!ua->db->SqlQuery(query.c_str(), DelCountHandler, (void*)&cnt)) {
+  if (!ua->db->SqlQuery(query.c_str(), DelCountHandler,
+                        static_cast<void*>(&cnt))) {
     ua->ErrorMsg("%s", ua->db->strerror());
     Dmsg0(050, "Count failed\n");
     goto bail_out;
