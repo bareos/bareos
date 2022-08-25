@@ -594,9 +594,6 @@ struct accurate_check_ctx {
 // row: Job.Name, FileSet, Client.Name, FileSetId, ClientId, Type
 static int JobSelectHandler(void* ctx, int num_fields, char** row)
 {
-  std::vector<accurate_check_ctx>* lst
-      = static_cast<std::vector<accurate_check_ctx>*>(ctx);
-  accurate_check_ctx res{};
   ASSERT(num_fields == 6);
 
   // If this job doesn't exist anymore in the configuration, delete it.
@@ -611,6 +608,9 @@ static int JobSelectHandler(void* ctx, int num_fields, char** row)
   // Don't compute accurate things for Verify jobs
   if (*row[5] == 'V') { return 0; }
 
+  std::vector<accurate_check_ctx>* lst
+      = static_cast<std::vector<accurate_check_ctx>*>(ctx);
+  accurate_check_ctx res{};
   res.FileSetId = str_to_int64(row[3]);
   res.ClientId = str_to_int64(row[4]);
   lst->emplace_back(res);
