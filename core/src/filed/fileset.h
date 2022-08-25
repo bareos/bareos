@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,10 +22,12 @@
 #ifndef BAREOS_FILED_FILESET_H_
 #define BAREOS_FILED_FILESET_H_
 
+#include "findlib/find.h"
+
 namespace filedaemon {
 
 bool InitFileset(JobControlRecord* jcr);
-void AddFileToFileset(JobControlRecord* jcr, const char* fname, bool IsFile);
+void AddFileToFileset(JobControlRecord* jcr, const char* fname, bool IsFile,findFILESET* fileset);
 findIncludeExcludeItem* get_incexe(JobControlRecord* jcr);
 void SetIncexe(JobControlRecord* jcr, findIncludeExcludeItem* incexe);
 int AddRegexToFileset(JobControlRecord* jcr, const char* item, int type);

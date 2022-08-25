@@ -1168,3 +1168,17 @@ std::string TPAsString(const std::chrono::system_clock::time_point& tp)
   std::string ts = str;
   return ts;
 }
+
+regex_t* StringToRegex(const char* input)
+{
+  regex_t* output;
+  int regCompare;
+
+  output = (regex_t*)malloc(sizeof(regex_t));
+  regCompare = regcomp(output, input, REG_EXTENDED);
+  if (regCompare != 0) {
+    regfree(output);
+    free(output);
+  }
+  return output;
+}
