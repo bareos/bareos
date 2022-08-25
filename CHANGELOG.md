@@ -42,6 +42,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - tests: skip mysql tests if root [PR #1197]
 - build: Add support for SLE_15_SP4 [PR #1205]
 - libcloud plugin: allow to configure the storage provider [PR #1226]
+- core/platform: Adding Bareos firewalld service xml files [PR #1237]
 
 ### Fixed
 - dird: RunScript fixes [PR #1217]
