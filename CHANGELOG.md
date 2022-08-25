@@ -18,7 +18,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
     - packages bareos-storage-ceph and bareos-filedaemon-ceph-plugin if previously installed need to be removed manually.
 
 ### Added
-- github-actions: add workflow to build MacOS packages [PR #1192]
 - dird: add command line feature to print specific resources [PR #1153]
 - Python plugins: add default module_path to search path [PR #1038]
 - dird: extend the list command to be able to query volumes and pools by ID [PR #1041]
@@ -233,7 +232,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1187]: https://github.com/bareos/bareos/pull/1187
 [PR #1188]: https://github.com/bareos/bareos/pull/1188
 [PR #1189]: https://github.com/bareos/bareos/pull/1189
-[PR #1192]: https://github.com/bareos/bareos/pull/1192
 [PR #1193]: https://github.com/bareos/bareos/pull/1193
 [PR #1197]: https://github.com/bareos/bareos/pull/1197
 [PR #1198]: https://github.com/bareos/bareos/pull/1198
