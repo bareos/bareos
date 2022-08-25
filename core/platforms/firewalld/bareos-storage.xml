@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<service>
+  <short>Bareos Storage Daemon (bareos-sd)</short>
+  <description>This option allows Bareos Director and File Daemons to connect to the local Bareos Storage Daemon to send/receive data and manage volumes.</description>
+  <port protocol="tcp" port="9103"/>
+</service>

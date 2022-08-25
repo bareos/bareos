@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<service>
+  <short>Bareos Director Daemon (bareos-dir)</short>
+  <description>This option allows connections to a local Bareos Director. These connections are typically initiated by Bareos consoles (bconsole). Bareos WebUI and Bareos File Daemon (when using Client Initiated Connections).</description>
+  <port protocol="tcp" port="9101"/>
+</service>
