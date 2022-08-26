@@ -55,7 +55,6 @@ core/platforms/suse/bareos-sd
 core/platforms/systemd/bareos-dir.service
 core/platforms/systemd/bareos-fd.service
 core/platforms/systemd/bareos-sd.service
-core/platforms/univention/AppCenter/univention-bareos.ini
 core/platforms/univention/conffiles/etc/apt/sources.list.d/60_bareos.list
 core/scripts/bareos
 core/scripts/bareos-config
