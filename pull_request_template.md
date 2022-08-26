@@ -1,5 +1,7 @@
 ### Thank you for contributing to the Bareos Project!
 
+**Backport of PR #0000 to bareos-2x** (remove this line, if it no backport)
+
 #### Please check
 
 - [ ] Short description and the purpose of this PR is present _above this paragraph_
@@ -19,9 +21,10 @@ If you have any questions or problems, please give a comment in the PR.
 ##### General
 - [ ] PR name is meaningful
 - [ ] Purpose of the PR is understood
-- [ ] Separate commit for this PR in the CHANGELOG.md, PR number referenced is same
 - [ ] Commit descriptions are understandable and well formatted
-- [ ] If backport: add original PR number and target branch at top of this file: **Backport of PR#000 to bareos-2x**
+- [ ] Check backport line
+- [ ] Is the PR title usable as CHANGELOG entry?
+- [ ] Separate commit for CHANGELOG.md ("update CHANGELOG.md"). The PR number is correct.
 
 ##### Source code quality
 
@@ -30,7 +33,6 @@ If you have any questions or problems, please give a comment in the PR.
 - [ ] Code comments are correct (logically and spelling)
 - [ ] Required documentation changes are present and part of the PR
 - [ ] `bareos-check-sources --since-merge` does not report any problems
-- [ ] `git status` should not report modifications in the source tree after building and testing
 
 ##### Tests
 
