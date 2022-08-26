@@ -6,13 +6,44 @@ Git Workflow
 Getting new code or changes into Bareos
 ---------------------------------------
 All new code should be targeted at our master branch.
-There are no exceptions, so even if you fix a bug in an ancient release, you fix it in master.
+There are no exceptions, so even if you fix a bug in an ancient release,
+you fix it in master.
 You can then backport your changes to an older release.
 The Git workflow we use is `Github Flow`_.
 
-Basically this means we want you to create pull requests against our master branch.
-We will then build and review the code, request changes as required and eventually merge the pull request.
-You may need to rebase and force-push during the review-phase as master is a moving target.
+Basically this means we want you to create pull requests (PR) against our master branch.
+The pull request title will later be used as a line to the CHANGELOG file.
+We will then build and review the code,
+request changes as required and eventually merge the pull request.
+
+During the review-phase
+only additional commits and normal-pushes (avoid force pushes) should be used
+if not otherwise agreed with the reviewer.
+After the pull request is approved, a final rebase and squashing of commits can and should be done.
+
+Also note, that a conversation started by a reviewer should also be resolved by the reviewer.
+
+To summarize:
+
+* You: create a PR.
+
+  * The PR title should be usable as CHANGELOG entry.
+
+* Bareos Dev team: will assign a reviewer to the PR.
+* Reviewer: review phase:
+
+  * until Reviewer is satisfied:
+
+    * Reviewer: reviews the PR, make suggestions (with comments, sometimes with additional commits).
+    * You: address the suggestions by additional commits (or comments).
+
+* When the reviewer is satisfied with the changes, often a final step is required:
+
+  * You: rebase the git branch and cleanup (squash) the commits.
+  * You (or the Reviewer): create a separate commit for the CHANGELOG entry, see :ref:`section-Changelog`.
+
+* Reviewer: approves the PR and someone from Bareos will merge it.
+
 
 .. _Github Flow: https://help.github.com/en/articles/github-flow
 
@@ -79,3 +110,21 @@ It should be wrapped at 72 chars and can consist of multiple paragraphs separate
   - bugfix info for the bugtracker
   - imperative language
   - hard limit of 72 characters in the long description
+
+.. _section-Changelog:
+
+CHANGELOG
+---------
+
+Each pull-request (PR) should add an entry in the https://github.com/bareos/bareos/blob/master/CHANGELOG.md file of your branch.
+The title of the PR should be usable as the CHANGELOG entry.
+
+The entry in the CHANGELOG.md file should
+
+* be in a separate commit.
+* refers to the PR.
+* be added at the bottom of the relevant section.
+
+The commit message should be: ``update CHANGELOG.md``
+
+Normally the CHANGELOG commit will be added as the last step in the review process to minimize the number of conflicts.
