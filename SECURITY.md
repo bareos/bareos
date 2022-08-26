@@ -5,9 +5,10 @@
 | Version | GitHub Sources     | Binary Packages    |
 | ------- | ------------------ |------------------- |
 | master  | :heavy_check_mark: | :heavy_check_mark: |
+| 21.x.y  | :heavy_check_mark: | :white_check_mark: |
 | 20.x.y  | :heavy_check_mark: | :white_check_mark: |
 | 19.2.x  | :heavy_check_mark: | :white_check_mark: |
-| 18.2.x  | :heavy_check_mark: | :white_check_mark: |
+| 18.2.x  | :x:                | :x:                |
 | 17.2.x  | :x:                | :x:                |
 | 16.2.x  | :x:                | :x:                |
 | 15.2.x  | :x:                | :x:                |
