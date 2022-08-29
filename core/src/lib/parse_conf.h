@@ -353,10 +353,11 @@ class ConfigurationParser {
   BStringList warnings_;
 
 
-  public:
-    static const char* GetDefaultConfigDir();
-  private :
-   bool GetConfigFile(PoolMem& full_path,
+ public:
+  static const char* GetDefaultConfigDir();
+
+ private:
+  bool GetConfigFile(PoolMem& full_path,
                      const char* config_dir,
                      const char* config_filename);
   bool GetConfigIncludePath(PoolMem& full_path, const char* config_dir);

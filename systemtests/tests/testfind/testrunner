@@ -29,6 +29,3 @@ expect_grep "Total files    : 1" \
 expect_grep "Max file length: 4" \
             "$testfind_log" \
             "Max file length is incorrect."
-
-
-

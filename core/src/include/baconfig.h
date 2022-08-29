@@ -536,8 +536,7 @@ int Getdomainname(char* name, int len);
 
 #if defined(HAVE_WIN32)
 //   Windows
-#  define DEFAULT_CONFIGDIR \
-    "C:\\Documents and Settings\\All Users\\Bareos"
+#  define DEFAULT_CONFIGDIR "C:\\Documents and Settings\\All Users\\Bareos"
 #  define PathSeparator '\\'
 
 inline bool IsPathSeparator(int ch) { return ch == '/' || ch == '\\'; }

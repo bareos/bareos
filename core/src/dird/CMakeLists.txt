@@ -192,22 +192,22 @@ target_link_libraries(
 
 # is not built by default
 if(NOT client-only)
-add_executable(testfind ${TSTFNDSRCS})
-target_link_libraries(
-  testfind
-  dird_objects
-  fd_objects
-  bareos
-  bareosfind
-  bareossql
-  jansson
-  ${OPENSSL_LIBRARIES}
-  ${ACL_LIBRARIES}
-  ${CAP_LIBRARIES}
-  ${LZO_LIBRARIES}
-)
+  add_executable(testfind ${TSTFNDSRCS})
+  target_link_libraries(
+    testfind
+    dird_objects
+    fd_objects
+    bareos
+    bareosfind
+    bareossql
+    jansson
+    ${OPENSSL_LIBRARIES}
+    ${ACL_LIBRARIES}
+    ${CAP_LIBRARIES}
+    ${LZO_LIBRARIES}
+  )
 endif()
-install(TARGETS  bareos-dir bareos-dbcheck testfind DESTINATION "${sbindir}")
+install(TARGETS bareos-dir bareos-dbcheck testfind DESTINATION "${sbindir}")
 
 install(FILES query.sql DESTINATION "${scriptdir}")
 
