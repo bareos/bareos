@@ -135,6 +135,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
   - webui does NOT use a user-provided locale string to directly switch moment locale
 
 ### Documentation
+- Univention Corporate Server (UCS) has no longer extended integration, just normal Linux integration [PR #1242]
 - cleanup update section [PR #1054]
 - clarifies MySQL catalog migration process [PR #1054]
 - split `Howtos.rst` file into one file per section [PR #1054]
