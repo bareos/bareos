@@ -42,6 +42,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - build: Add support for SLE_15_SP4 [PR #1205]
 - libcloud plugin: allow to configure the storage provider [PR #1226]
 - core/platform: Adding Bareos firewalld service xml files [PR #1237]
+- dird: Added `FS Type = vfat` in LinuxAll.conf for UEFI partition [PR #1236]
 
 ### Fixed
 - dird: RunScript fixes [PR #1217]
@@ -246,10 +247,13 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1216]: https://github.com/bareos/bareos/pull/1216
 [PR #1217]: https://github.com/bareos/bareos/pull/1217
 [PR #1218]: https://github.com/bareos/bareos/pull/1218
+[PR #1219]: https://github.com/bareos/bareos/pull/1219
 [PR #1221]: https://github.com/bareos/bareos/pull/1221
 [PR #1225]: https://github.com/bareos/bareos/pull/1225
 [PR #1226]: https://github.com/bareos/bareos/pull/1226
 [PR #1227]: https://github.com/bareos/bareos/pull/1227
 [PR #1228]: https://github.com/bareos/bareos/pull/1228
 [PR #1229]: https://github.com/bareos/bareos/pull/1229
+[PR #1236]: https://github.com/bareos/bareos/pull/1236
+[PR #1237]: https://github.com/bareos/bareos/pull/1237
 [unreleased]: https://github.com/bareos/bareos/tree/master
