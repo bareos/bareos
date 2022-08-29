@@ -205,23 +205,6 @@ struct idpkt {
   uint32_t count;
 };
 
-/**
- * See if two storage definitions point to the same Storage Daemon.
- *
- * We compare:
- *  - address
- *  - SDport
- *  - password
- */
-static inline bool IsSameStorageDaemon(StorageResource* read_storage,
-                                       StorageResource* write_storage)
-{
-  return read_storage->SDport == write_storage->SDport
-         && Bstrcasecmp(read_storage->address, write_storage->address)
-         && Bstrcasecmp(read_storage->password_.value,
-                        write_storage->password_.value);
-}
-
 bool SetMigrationWstorage(JobControlRecord* jcr,
                           PoolResource* pool,
                           PoolResource* next_pool,

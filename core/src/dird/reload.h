@@ -26,6 +26,7 @@
 #include "include/jcr.h"
 #include "dird/dird_conf.h"
 #include "dird_globals.h"
+#include "dird/storage.h"
 #include "lib/parse_conf.h"
 #include "dird/stats.h"
 #include "cats/cats.h"

@@ -25,22 +25,6 @@
 
 namespace directordaemon {
 
-/*
- * See if two storage definitions point to the same Storage Daemon.
- *
- * We compare:
- *  - address
- *  - SDport
- *  - password
- */
-static inline bool IsSameStorageDaemon(StorageResource* store1,
-                                       StorageResource* store2)
-{
-  return store1->SDport == store2->SDport
-         && Bstrcasecmp(store1->address, store2->address)
-         && Bstrcasecmp(store1->password_.value, store2->password_.value);
-}
-
 /**
  * Make a quick check to see that we have all the
  * resources needed.

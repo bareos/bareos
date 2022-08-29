@@ -23,6 +23,7 @@
 #define BAREOS_DIRD_STORAGE_H_
 
 #include "ndmp/smc.h"
+#include "dird/dird.h"
 
 template <typename T> class alist;
 
@@ -82,6 +83,7 @@ slot_number_t GetBareosSlotNumberByElementAddress(
     smc_element_address_assignment* smc_elem_aa,
     slot_type_t slot_type,
     slot_number_t element_addr);
-
+bool IsSameStorageDaemon(StorageResource* read_storage,
+                         StorageResource* write_storage);
 } /* namespace directordaemon */
 #endif  // BAREOS_DIRD_STORAGE_H_
