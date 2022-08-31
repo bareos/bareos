@@ -1030,8 +1030,7 @@ static bool MountCmd(JobControlRecord* jcr)
           } else {
             dir->fsend(
                 _("3905 Device %s open but no Bareos volume is mounted.\n"
-                  "If this is not a blank tape, try unmounting and "
-                  "remounting "
+                  "If this is not a blank tape, try unmounting and remounting "
                   "the Volume.\n"),
                 dev->print_name());
           }
