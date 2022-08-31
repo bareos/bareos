@@ -1,6 +1,0 @@
-Console {
-  Name = bareos-mon
-  Password = "@mon_dir_password@"
-  CommandACL = status, .status
-  JobACL = *all*
-}
