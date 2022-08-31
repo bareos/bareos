@@ -1,14 +1,13 @@
-.. _developer-guide-faq:
-
 Developer FAQ
 =============
 
 How to run a job that automatically fails?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 I want to run a job that automatically fails to simulate failing jobs.
 
 To do so, you can use the directive :config:option:`dir/job/ClientRunBeforeJob`.
-This directive launches a script on the client-side ( file daemon ) before running the job.
+This directive launches a script on the client-side (file daemon) by default before running the job.
 set the script to be “/bin/false”
 
 .. code-block:: bareosconfig
@@ -41,15 +40,17 @@ or, if you want a job to work properly but fail at the end (e.g: simulate a full
 I have changes that affect tapes and autochangers, how can I test them?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In order to test tapes, we use mhvtl to simulate the presence of tape and autochanger devices.
+In order to test tapes, we use :command:`mhvtl` to simulate the presence of tape and autochanger devices.
 
 Documentation is available at https://www.mhvtl.com/
 
-First you need to clone the mhvtl repository from https://github.com/markh794/mhvtl.git.
+Some distributions, like openSUSE, offer mhvtl packages that you can download and install using your package manager.
+Otherwise you need to clone the mhvtl repository from https://github.com/markh794/mhvtl.git.
 Then you should compile and install the mhvtl kernel module
 
 .. code-block:: shell-session
 
+   $ git clone https://github.com/markh794/mhvtl.git
    $ cd mhvtl/kernel
    $ make
    $ sudo make install
@@ -67,13 +68,11 @@ Now that mhvtl is installed, you can enable and start the mhvtl services
 
 .. code-block:: shell-session
 
-   $ sudo systemctl enable mhvtl-load-modules.service
-   $ sudo systemctl start mhvtl-load-modules.service
-   $ sudo systemctl enable mhvtl.target
-   $ sudo systemctl start mhvtl.target
+   $ sudo systemctl enable --now mhvtl-load-modules.service
+   $ sudo systemctl enable --now mhvtl.target
 
 
-In order to check if your installation was done correctly, you can run :command:`lsscsi` (install it if you don't have it) or :command:`ls` in :file:`/dev/tape/by-id` which should give you somehting similar to the following output
+In order to check if your installation was done correctly, you can run :command:`lsscsi` (install it if you don't have it) or :command:`ls /dev/tape/by-id` which should give you something similar to the following output
 
 .. code-block:: shell-session
 
@@ -102,8 +101,7 @@ In order to check if your installation was done correctly, you can run :command:
    scsi-350223344ab000900      scsi-XYZZY_A2               scsi-XYZZY_B3
    scsi-350223344ab000900-nst  scsi-XYZZY_A2-nst           scsi-XYZZY_B3-nst
 
-Now that the installtion is done, you will have to let bareos know that you are building tape and autochanger tests.
-To do so, you'll have to add the needed devices as cmake parameters to your exisiting cmake configuration:
+Now that the installation is done, you will have to let bareos know that you are building tape and autochanger tests by adding the needed devices as cmake parameters to your exisiting cmake configuration:
 
 .. code-block:: shell-session
 
@@ -112,8 +110,8 @@ To do so, you'll have to add the needed devices as cmake parameters to your exis
 
 The selected devices are the ones used in our tests.
 
-In case of missing devices or other incoherences, a reboot of the machine can solve most of your issues.
+A machine reboot can solve most of issues like missing devices or other incoherences.
 
-In case you update your kernel and kernel headers, you will have to rebuild and reinstall mhvtl, otherwise mhvtl will not work properly and bareos would not build.
+For **any update** of kernel and kernel headers, you will have to rebuild and reinstall mhvtl, otherwise mhvtl kernel module loading will fail, :command:`mhvtl` will not work properly and bareos will not build.
 
-In certain rare cases, after an mhvtl update (pulling new changes and building), certain tape names change and cause tests to fail. You should keep an eye on those. If such a thing happens, you can check :file:`/etc/mhvtl/device.conf` and modify the device names when necessary.
+:command:`mhvtl` updates in certain rare cases can change tape names causing tests to fail. In that case, check :file:`/etc/mhvtl/device.conf` and modify the device names accordingly.
