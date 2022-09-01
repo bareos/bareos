@@ -1,0 +1,11 @@
+FileSet {
+  Name = "Catalog"
+  Description = "Backup the catalog dump and Bareos configuration files."
+  Include {
+    Options {
+      signature = MD5
+    }
+    File = "@regressdir@/working/regress.sql" # database dump
+    File = "@regressdir@/bin"                   # configuration
+  }
+}

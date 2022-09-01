@@ -1,0 +1,9 @@
+Messages {
+  Name = Daemon
+  Description = "Message delivery for daemon messages (no job)."
+  mailcommand = "@regressdir@/bin/bsmtp -h localhost -f \"\(Bareos\) \<%r\>\" -s \"Bareos daemon message\" %r"
+  mail = my-name@domain.com = all, !skipped, !audit # (#02)
+  console = all, !skipped, !saved, !audit
+  append = "@regressdir@/working/bareos.log" = all, !skipped, !audit
+  append = "@regressdir@/working/bareos-audit.log" = audit
+}

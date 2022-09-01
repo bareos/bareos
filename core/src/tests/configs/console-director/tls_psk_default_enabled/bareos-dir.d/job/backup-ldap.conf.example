@@ -1,0 +1,6 @@
+Job {
+  Name = "backup-ldap"
+  JobDefs = "DefaultJob"
+  FileSet = "plugin-ldap"
+  # Client = "ldaphost-fd"
+}
