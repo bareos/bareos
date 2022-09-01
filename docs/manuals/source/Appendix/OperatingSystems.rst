@@ -115,24 +115,39 @@ Feature overview:
 
 .. _section-UniventionCorporateServer:
 
-Univention Corporate Server
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Univention Corporate Server >= 5
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. index::
    single: Platform; Univention Corporate Server
 
-The Bareos version for the Univention App Center integraties into the Univention Enterprise Linux environment, making it easy to backup all the systems managed by the central Univention Corporate Server.
+The `Univention Corporate Server (UCS) <https://www.univention.com/>`_ is an enterprise Linux distribution based on Debian.
+
+For UCS releases < 5.0, Bareos offers extended integration into UCS and provides its software also via the `App Center <https://www.univention.com/products/univention-app-center/app-catalog/bareos/>`_.
+With version 5.0 of the UCS App Center the method of integration changed requiring commercially not reasonable efforts for deep integration.
+
+Bareos continues to support UCS with the same functionality as the other Linux distributions.
+
+During the build process, Bareos Debian 10 packages are automatically tested on an UCS 5.0 system. Only packages that passes this acceptance test, will get released by the Bareos project.
+
+.. note::
+
+   While Bareos offers a software repository for UCS >= 5,
+   this repository is identical with the corresponding Debian repository.
+   The included APT sources file will also refer to the Debian repository.
+
+
+Univention Corporate Server 4.x
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Preamble
 ^^^^^^^^
 
 The `Univention Corporate Server <http://www.univention.de/>`_ is an enterprise Linux distribution based on Debian. It consists of an integrated management system for the centralised administration of servers, computer workplaces, users and their rights as well as a wide range of server applications. It also includes an Unvention App Center for the easy installation and management of extensions and appliances.
 
-Bareos is part of the `App Center <https://www.univention.de/produkte/univention-app-center/app-katalog/bareos/>`_ and therefore an Univention environment can easily be extended to provide backup functionality for the Univention servers as well as for the connected client systems. Using the Univention Management Console (UMC), you can also create backup jobs for client computers (Windows or Linux systems), without the need of editing configuration files.
+Bareos <= 21 is part of the `App Center <https://www.univention.com/products/univention-app-center/app-catalog/bareos/>`_ and therefore an Univention environment (UCS < 5) can easily be extended to provide backup functionality for the Univention servers as well as for the connected client systems. Using the Univention Management Console (UMC), you can also create backup jobs for client computers (Windows or Linux systems), without the need of editing configuration files.
 
 The Bareos Univention App is shipped with a default configuration for the director daemon and the storage daemon.
-
-
 
 .. warning::
 
