@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 set -o pipefail
 set -u
 #
@@ -34,7 +33,38 @@ END_OF_DATA
 
 run_bconsole
 
-sleep 14
+timeout=0
+timed_checkpoint=""
+volume_checkpoint=""
+
+while [[ ${timeout} -lt 20 ]] && [[ -z $timed_checkpoint || -z $volume_checkpoint ]]
+do
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $backup_log
+messages
+quit
+END_OF_DATA
+
+    run_bconsole
+
+    timed_checkpoint=$(grep -m 1 'Doing timed backup checkpoint. Next checkpoint in 3 seconds' $backup_log)
+    volume_checkpoint=$(grep -m 1 'Volume changed, doing checkpoint:' "$backup_log")
+    sleep 1
+    ((++timeout))
+done
+
+# Check that a timed checkpoint was triggered
+if [[ -z $timed_checkpoint ]]; then
+    echo "Timed checkpoint was not triggered!"
+    estat=1;
+fi
+
+# Check that a checkpoint happened on a volume change
+if [[ -z $volume_checkpoint ]]; then
+    echo "Checkpoint was not triggered on volume changes!"
+    estat=2;
+fi
+
 
 slowjobid=$(grep 'Job queued. JobId=' $backup_log | sed -n -e 's/^.*JobId=//p')
 
@@ -51,15 +81,6 @@ quit
 END_OF_DATA
 
 run_bconsole
-
-# Check that a timed checkpoint was triggered
-expect_grep "Doing timed backup checkpoint. Next checkpoint in 3 seconds" \
-            "$backup_log" \
-            "Timed checkpoint was not triggered on time!"
-
-expect_grep "Volume changed, doing checkpoint:" \
-            "$backup_log" \
-            "Checkpoint was not triggered on volume changes!"
 
 # Check that a cancel was triggered
 expect_grep "Termination:            Backup Canceled" \
