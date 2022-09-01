@@ -87,8 +87,8 @@ static void StopScheduler(std::chrono::milliseconds timeout)
 
 TEST_F(SchedulerTest, terminate)
 {
-  std::string path_to_config_file = std::string(
-      RELATIVE_PROJECT_SOURCE_DIR "/configs/scheduler/scheduler-hourly");
+  std::string path_to_config_file
+      = std::string(RELATIVE_PROJECT_SOURCE_DIR "/configs/scheduler-hourly");
 
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   ASSERT_TRUE(my_config);
@@ -179,8 +179,8 @@ TEST_F(SchedulerTest, hourly)
 {
   if (debug) { std::cout << "Start test" << std::endl; }
 
-  std::string path_to_config_file{std::string(
-      RELATIVE_PROJECT_SOURCE_DIR "/configs/scheduler/scheduler-hourly")};
+  std::string path_to_config_file{
+      std::string(RELATIVE_PROJECT_SOURCE_DIR "/configs/scheduler-hourly")};
 
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   ASSERT_TRUE(my_config);
@@ -288,16 +288,14 @@ enum
 TEST_F(SchedulerTest, on_time)
 {
   std::vector<uint8_t> wdays{kMonday, kMonday, kMonday};
-  TestWithConfig(RELATIVE_PROJECT_SOURCE_DIR
-                 "/configs/scheduler/scheduler-on-time",
+  TestWithConfig(RELATIVE_PROJECT_SOURCE_DIR "/configs/scheduler-on-time",
                  wdays);
 }
 
 TEST_F(SchedulerTest, on_time_noday)
 {
   std::vector<uint8_t> wdays{kThursday, kFriday, kSaturday};
-  TestWithConfig(RELATIVE_PROJECT_SOURCE_DIR
-                 "/configs/scheduler/scheduler-on-time-noday",
+  TestWithConfig(RELATIVE_PROJECT_SOURCE_DIR "/configs/scheduler-on-time-noday",
                  wdays);
 }
 
@@ -305,7 +303,7 @@ TEST_F(SchedulerTest, on_time_noday_noclient)
 {
   std::vector<uint8_t> wdays{kThursday, kFriday, kSaturday};
   TestWithConfig(RELATIVE_PROJECT_SOURCE_DIR
-                 "/configs/scheduler/scheduler-on-time-noday-noclient",
+                 "/configs/scheduler-on-time-noday-noclient",
                  wdays);
 }
 
