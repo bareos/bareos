@@ -325,7 +325,7 @@ What is Implemented
 
    -  Configurable :ref:`Data (on Volume) encryption <DataEncryption>` on a Client by Client basis.
 
-   -  Computation of MD5 or SHA1 signatures of the file data if requested.
+   -  Computation of MD5 or SHA1, SHA2 (256,512) signatures of the file data if requested.
 
 -  Restore Features
 

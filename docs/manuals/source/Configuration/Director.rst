@@ -715,10 +715,13 @@ The directives within an Options resource may be one of the following:
    It is strongly recommend to use signatures for your backups.
    Note, only one type of signature can be computed per file.
 
+   You have to find the right balance between speed and security. Todays CPUs have often special instructions that can calculate checksums very fast. So if in doubt, testing the speed of the different signatures in your environment will show what is the fastest algorithm.
+   For example the MD5 message-digest algorithm is a cryptographically broken but, it is still suitable for other non-cryptographic purposes (like calculating a checksum to avoid unintended data change as used by Bareos here) and may be preferred due to lower computational requirements than more recent SHA algorithms.
+
    MD5
            :index:`\ <single: MD5>`
            :index:`\ <single: signature; MD5>`
-           An MD5 signature will be computed for each files saved.  Adding this
+           An MD5 signature (128 bits) will be computed for each files saved.  Adding this
            option generates about 5\% extra overhead for each file saved.  In
            addition to the additional CPU time, the MD5 signature adds 16 more
            bytes per file to your catalog.
@@ -726,21 +729,28 @@ The directives within an Options resource may be one of the following:
    SHA1
            :index:`\ <single: SHA1>`
            :index:`\ <single: signature; SHA1>`
-           An SHA1 signature will be computed for each files saved.
-           The SHA1 algorithm is
-           purported to be some what slower than the MD5 algorithm, but at the same
-           time is significantly better from a cryptographic point of view (i.e.
-           much fewer collisions).
+           An SHA1 (160 bits) signature will be computed for each files saved.
+           The SHA1 algorithm is purported to be some what slower than the MD5
+           algorithm, but at the same time is significantly better from a cryptographic
+           point of view (i.e. much fewer collisions).
            The SHA1 signature requires adds 20 bytes per file to your catalog.
 
    SHA256
            :index:`\ <single: SHA256>`
            :index:`\ <single: signature; SHA256>`
+           An SHA256 signature (256 bits) will be computed for each files saved.
+           The SHA256 algorithm is purported to be slower than the SHA1 algorithm, but
+           at the same time is significantly better from a cryptographic point of view
+           (i.e. no collisions found).
+           The SHA256 signature requires adds 32 bytes per file to your catalog.
 
    SHA512
            :index:`\ <single: SHA512>`
            :index:`\ <single: signature; SHA512>`
-
+           An SHA512 signature (512 bits) will be computed for each files saved.
+           This is the slowest algorithm and is equivalent in terms of cryptographic
+           value than SHA256.
+           The SHA512 signature requires adds 64 bytes per file to your catalog.
 
 
 .. config:option:: dir/fileset/include/options/BaseJob
@@ -1118,10 +1128,10 @@ The directives within an Options resource may be one of the following:
 
       zog-fd: Client1.2007-03-31_09.46.21 Error: /tmp/test mtime changed during backup.
 
-   
+
    .. note::
 
-      This option is intended to be used :config:option:`dir/fileset/include/File` resources. 
+      This option is intended to be used :config:option:`dir/fileset/include/File` resources.
       Using it with :config:option:`dir/fileset/include/Plugin` filesets will generate warnings during backup.
 
 .. config:option:: dir/fileset/include/options/HardLinks
@@ -1155,11 +1165,15 @@ The directives within an Options resource may be one of the following:
    in turn until the first one that matches.  Note, if you exclude a
    directory, no files or directories below it will be matched.
 
+   It is recommended to enclose the string in double quotes.
+
    You may want to test your expressions prior to running your
    backup by using the :ref:`bwild` program.
    You can also test your full FileSet definition by using
    the :ref:`estimate <estimate>` command.
-   It is recommended to enclose the string in double quotes.
+
+   An example of excluding with the WildFile option is presented
+   at :ref:`FileSetExamples`
 
 
 .. config:option:: dir/fileset/include/options/WildDir
@@ -1181,6 +1195,10 @@ The directives within an Options resource may be one of the following:
    backup by using the :ref:`bwild` program.
    You can also test your full FileSet definition by using
    the :ref:`estimate <estimate>` command.
+
+   An example of excluding with the WildFile option is presented
+   at :ref:`FileSetExamples`
+
 
 .. config:option:: dir/fileset/include/options/WildFile
 
@@ -1206,8 +1224,10 @@ The directives within an Options resource may be one of the following:
    backup by using the :ref:`bwild` program.
    You can also test your full FileSet definition by using
    the :ref:`estimate <estimate>` command.
-   An example of excluding with the WildFile option on Win32 machines is
-   presented below.
+
+   An example of excluding with the WildFile option is presented
+   at :ref:`FileSetExamples`
+
 
 .. _FileRegex:
 
@@ -1218,7 +1238,7 @@ The directives within an Options resource may be one of the following:
    Specifies a POSIX extended regular expression to be applied to the
    filenames and directory names, which include the full path.  If :strong:`
    Exclude` is not enabled, the regex will select which files are to be
-   included.  If :strong:`Exclude=yes` is specified, the regex will select
+   included. If :config:option:`dir/fileset/include/options/Exclude = yes` is specified, the regex will select
    which files are to be excluded.  Multiple regex directives may be
    specified within an Options resource, and they will be applied in turn
    until the first one that matches.  Note, if you exclude a directory, no
@@ -1531,6 +1551,7 @@ The directives within an Options resource may be one of the following:
    to the remote NDMP Data Agent.
 
 
+.. _FilesetExamples:
 
 FileSet Examples
 ~~~~~~~~~~~~~~~~
@@ -1690,8 +1711,8 @@ To accomplish what we want, we must explicitly exclude all other files. We do th
 
 The "trick" here was to add a RegexFile expression that matches all files. It does not match directory names, so all directories in /myfile will be backed up (the directory entry) and any \*.Z and \*.gz files contained in them. If you know that certain directories do not contain any \*.Z or \*.gz files and you do not want the directory entries backed up, you will need to explicitly exclude those directories. Backing up a directory entries is not very expensive.
 
-Bareos uses the system regex library and some of them are different on different OSes. The above has been reported not to work on FreeBSD. This can be tested by using the :bcommand:`estimate job=job-name
-listing` command in the console and adapting the RegexFile expression appropriately.
+Bareos uses the system regex library and some of them are different on different OSes.
+This can be tested by using the :bcommand:`estimate job=job-name listing` command in the console and adapting the RegexFile expression appropriately.
 
 Please be aware that allowing Bareos to traverse or change file systems can be very dangerous. For example, with the following:
 
@@ -1774,7 +1795,7 @@ Firstly, Bareos walks over the filesystem depth-first starting from the File = l
 
 Secondly, each directory and file is compared to the Options clauses in the order they appear in the FileSet. When a match is found, no further clauses are compared and the directory or file is either included or excluded.
 
-The FileSet resource definition below implements this by including specifc directories and files and excluding everything else.
+The FileSet resource definition below implements this by including specific directories and files and excluding everything else.
 
 .. code-block:: bareosconfig
    :caption: Include/Exclude example
@@ -1852,7 +1873,7 @@ For exclude lists to work correctly on Windows, you must observe the following r
 
 -  If you are using the old Exclude syntax (noted below), you may not specify a drive letter in the exclude. The new syntax noted above should work fine including driver letters.
 
-Thanks to Thiago Lima for summarizing the above items for us. If you are having difficulties getting includes or excludes to work, you might want to try using the estimate job=xxx listing command documented in the :ref:`Console chapter <estimate>` of this manual.
+Thanks to Thiago Lima for summarizing the above items for us. If you are having difficulties getting includes or excludes to work, you might want to try using the :bcommand:`estimate job=job-name listing` command documented in the :ref:`section-ConsoleCommands` section of this manual.
 
 On Win32 systems, if you move a directory or file or rename a file into the set of files being backed up, and a Full backup has already been made, Bareos will not know there are new files to be saved during an Incremental or Differential backup (blame Microsoft, not us). To avoid this problem, please copy any new directory or files into the backup area. If you do not have enough disk to copy the directory or files, move them, but then initiate a Full backup.
 
@@ -1861,7 +1882,7 @@ Example Fileset for Windows
 
 :index:`\ <single: FileSet; Windows Example>`\  :index:`\ <single: Windows; FileSet; Example>`\
 
-The following example demostrates a Windows FileSet. It backups all data from all fixed drives and only excludes some Windows temporary data.
+The following example demonstrates a Windows FileSet. It backups all data from all fixed drives and only excludes some Windows temporary data.
 
 .. code-block:: bareosconfig
    :caption: Windows All Drives FileSet

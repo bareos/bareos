@@ -3,8 +3,9 @@
 Backup Of Third Party Databases
 -------------------------------
 
-:index:`\ <single: Backup; of Third Party Databases>`
-:index:`\ <single: Database; Backup Of Third Party>`
+.. index::
+   single: Backup; of Third Party Databases
+   single: Database; Backup Of Third Party
 
 If you are running a database in production mode on your machine, Bareos will happily backup the files, but if the database is in use while Bareos is reading it, you may back it up in an unstable state.
 
@@ -53,6 +54,13 @@ If you like to use the MSSQL-Plugin to backing up your Databases you need to con
       | The user have to be a backupoperator and dbowner of the database which you like to backup.
 
 There is no difference for the rights and roles between using a systemaccount (trusted security method) or a extra backup user (standard security method). Please keep in mind if you use the trusted security method you have to use the same system account like the bareos-filedeamon runs on.
+
+-  PITR Point in time restore
+
+   .. warning::
+
+      Doing a PITR (Point In Time Restore) will break the backup chain. After the restore a Full job **must be** run afterwards to obtain a clean backup chain.
+
 
 .. _MssqlPluginInstallation:
 
