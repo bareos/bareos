@@ -3,6 +3,7 @@ bin/bregex
 bin/bwild
 sbin/bcopy
 sbin/bextract
+sbin/testfind
 sbin/bls
 sbin/bregex
 sbin/bwild

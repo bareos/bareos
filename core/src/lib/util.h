@@ -24,6 +24,12 @@
 #include <sys/stat.h>
 #include <chrono>
 
+#if defined(HAVE_WIN32)
+#  include "bregex.h"
+#else
+#  include <regex.h>
+#endif
+
 #include "lib/ascii_control_characters.h"
 #include "lib/message.h"
 
@@ -84,5 +90,6 @@ std::string CreateDelimitedStringForSqlQueries(
     char delim);
 
 std::string TPAsString(const std::chrono::system_clock::time_point& tp);
+regex_t* StringToRegex(const char* input);
 
 #endif  // BAREOS_LIB_UTIL_H_

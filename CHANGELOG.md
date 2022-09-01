@@ -43,6 +43,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - libcloud plugin: allow to configure the storage provider [PR #1226]
 - core/platform: Adding Bareos firewalld service xml files [PR #1237]
 - dird: Added `FS Type = vfat` in LinuxAll.conf for UEFI partition [PR #1236]
+- bareos tools: reintegrate testfind binary [PR #1176]
 
 ### Fixed
 - dird: RunScript fixes [PR #1217]

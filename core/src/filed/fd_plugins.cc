@@ -2288,7 +2288,7 @@ static bRC bareosAddExclude(PluginContext* ctx, const char* fname)
   // Set the Exclude context
   SetIncexe(jcr, bctx->exclude);
 
-  AddFileToFileset(jcr, fname, true);
+  AddFileToFileset(jcr, fname, true, jcr->impl->ff->fileset);
 
   // Restore the current context
   SetIncexe(jcr, old);
@@ -2321,7 +2321,7 @@ static bRC bareosAddInclude(PluginContext* ctx, const char* fname)
   if (!bctx->include) { bctx->include = old; }
 
   SetIncexe(jcr, bctx->include);
-  AddFileToFileset(jcr, fname, true);
+  AddFileToFileset(jcr, fname, true, jcr->impl->ff->fileset);
 
   // Restore the current context
   SetIncexe(jcr, old);

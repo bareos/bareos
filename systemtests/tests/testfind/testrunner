@@ -1,0 +1,31 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# Run a simple backup
+#   then restore it.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+testfind_log=$tmp/testfind.out
+
+rm -f $testfind_log
+
+./sbin/testfind-testfind -c etc/bareos > $testfind_log
+
+expect_grep "Total files    : 1" \
+            "$testfind_log" \
+            "Number of files is incorrect."
+
+expect_grep "Max file length: 4" \
+            "$testfind_log" \
+            "Max file length is incorrect."
