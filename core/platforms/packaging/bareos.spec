@@ -46,6 +46,7 @@ Vendor: 	The Bareos Team
 %define python_plugins 1
 %define python2_available 1
 %define contrib 1
+%define webui 1
 
 # cmake build directory
 %define CMAKE_BUILDDIR       cmake-build
@@ -103,6 +104,9 @@ BuildRequires: libtirpc-devel
 %define systemd_support 1
 %endif
 
+%if 0%{?rhel_version} == 700 || 0%{?centos_version} == 700
+%define webui 0
+%endif
 
 # use Developer Toolset 8 compiler as standard is too old
 %if 0%{?centos_version} == 700 || 0%{?rhel_version} == 700
@@ -667,14 +671,12 @@ This package contains the GlusterFS plugin for the file daemon
 
 %endif
 
+%if 0%{?webui}
 %package webui
 Summary:       Bareos Web User Interface
 Group:         Productivity/Archiving/Backup
 
-# ZendFramework 2.4 says it required php >= 5.3.23.
-# However, it works on SLES 11 with php 5.3.17
-# while it does not work with php 5.3.3 (RHEL6).
-Requires: php >= 5.3.17
+Requires: php >= 7.0.0
 
 Requires: php-bz2
 Requires: php-ctype
@@ -735,6 +737,7 @@ Requires:   httpd
 %{dscr}
 
 This package contains the webui (Bareos Web User Interface).
+%endif
 
 %if 0%{?contrib}
 
@@ -986,6 +989,9 @@ cmake  .. \
 %endif
   -Dincludes=yes \
   -Ddefault_db_backend="XXX_REPLACE_WITH_DATABASE_DRIVER_XXX" \
+%if !0%{?webui}
+  -DENABLE_WEBUI=no \
+%endif
   -Dwebuiconfdir=%{_sysconfdir}/bareos-webui \
   -DVERSION_STRING=%version \
   %if !0%{python2_available}
@@ -1139,6 +1145,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %defattr(-, root, root)
 %{_docdir}/%{name}/README.bareos
 
+%if 0%{?webui}
 %files webui
 %defattr(-,root,root,-)
 %doc webui/README.md webui/LICENSE
@@ -1154,6 +1161,8 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %config %attr(644,root,root) /etc/bareos/bareos-dir.d/profile/webui-limited.conf.example
 %config(noreplace) %attr(644,root,root) /etc/bareos/bareos-dir.d/profile/webui-readonly.conf
 %config(noreplace) %{_apache_conf_dir}/bareos-webui.conf
+%endif
+
 %files client
 %defattr(-, root, root)
 %dir %{_docdir}/%{name}
@@ -1756,7 +1765,7 @@ if [ -f "%{_sysconfdir}/%{name}/.enable-cap_sys_rawio" ]; then \
 fi\
 %nil
 
-
+%if 0%{?webui}
 %post webui
 %if 0%{?suse_version} >= 1110
 a2enmod setenv &> /dev/null || true
@@ -1775,7 +1784,7 @@ fi
 %else
 a2enmod php5 &> /dev/null || true
 %endif
-
+%endif
 
 %post director
 %post_backup_file /etc/%{name}/bareos-dir.conf
