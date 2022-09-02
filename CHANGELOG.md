@@ -134,6 +134,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
   - webui is NOT affected
   - webui does NOT use the npm server
   - webui does NOT use a user-provided locale string to directly switch moment locale
+- webui: Fix URL rewrite vulnerability in zend-http component [PR #1213] [No known CVE](https://github.com/advisories/GHSA-f6p5-76fp-m248)
 
 ### Documentation
 - Univention Corporate Server (UCS) has no longer extended integration, just normal Linux integration [PR #1242]
