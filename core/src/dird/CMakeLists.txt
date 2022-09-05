@@ -128,7 +128,9 @@ set(DBCHKSRCS dbcheck.cc dbcheck_utils.cc dird_conf.cc dird_globals.cc
 )
 
 if(compiler_will_warn_of_unused_but_set_variable)
-  set_source_files_properties(catreq.cc PROPERTIES COMPILE_FLAGS -Wno-unused-but-set-variable)
+  set_source_files_properties(
+    catreq.cc PROPERTIES COMPILE_FLAGS -Wno-unused-but-set-variable
+  )
 endif()
 
 if(HAVE_WIN32)
