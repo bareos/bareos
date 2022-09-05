@@ -310,6 +310,7 @@ linkcheck_allowed_redirects = {
     r'https://bugs\.bareos\.org/.*': r'https://bugs\.bareos\.org/my_view_page\.php',
     r'https://download\.bareos\.org': r'https://download\.bareos\.org/bareos',
     r'https://download\.bareos\.com': r'https://download\.bareos\.com/bareos',
+    r'https://github.com/markh794/mhvtl.git': r'https://github.com/markh794/mhvtl',
 }
 linkcheck_request_headers = {
 #    "https://www.sphinx-doc.org/": {
