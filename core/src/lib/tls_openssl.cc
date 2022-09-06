@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -76,7 +76,9 @@ void TlsOpenSsl::SetTlsPskServerContext(ConfigurationParser* config)
   } else if (!config) {
     Dmsg0(50, "Could not prepare TLS_PSK SERVER callback (no config)\n");
   } else {
-    Dmsg0(50, "Preparing TLS_PSK SERVER callback\n");
+    // keep a shared_ptr to the current config, so a reload won't
+    // free the memory we're going to use in the private context
+    d_->config_table_ = config->GetResourcesTable();
     SSL_CTX_set_ex_data(
         d_->openssl_ctx_,
         TlsOpenSslPrivate::SslCtxExDataIndex::kConfigurationParserPtr,

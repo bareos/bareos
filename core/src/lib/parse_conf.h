@@ -249,6 +249,7 @@ class ConfigurationParser {
   const std::string& get_base_config_path() const { return used_config_path_; }
   void FreeResources();
 
+  std::shared_ptr<ConfigResourcesContainer> GetResourcesTable();
   std::shared_ptr<ConfigResourcesContainer> BackupResourceTable();
   void RestoreResourceTable(std::shared_ptr<ConfigResourcesContainer>&&);
 
