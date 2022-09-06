@@ -201,6 +201,14 @@ if(${docs-build-json})
   )
 
   add_custom_command(
+    OUTPUT ${USAGE_DIR}/bsmtp.txt
+    COMMAND bsmtp --help >/dev/null
+    COMMAND ${PROJECT_SOURCE_DIR}/scripts/get-usage.sh $<TARGET_FILE:bsmtp>
+            ${USAGE_DIR}
+    DEPENDS bsmtp
+  )
+
+  add_custom_command(
     OUTPUT ${USAGE_DIR}/btape.txt
     COMMAND btape --help >/dev/null
     COMMAND ${PROJECT_SOURCE_DIR}/scripts/get-usage.sh $<TARGET_FILE:btape>
@@ -228,6 +236,7 @@ if(${docs-build-json})
       ${USAGE_DIR}/bpluginfo.txt
       ${USAGE_DIR}/bregex.txt
       ${USAGE_DIR}/bscan.txt
+      ${USAGE_DIR}/bsmtp.txt
       ${USAGE_DIR}/btape.txt
       ${USAGE_DIR}/bwild.txt
   )

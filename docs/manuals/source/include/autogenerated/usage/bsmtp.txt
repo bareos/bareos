@@ -1,0 +1,15 @@
+Usage: bsmtp [-f from] [-h mailhost] [-s subject] [-c copy] [recipient ...]
+       -4          forces bsmtp to use IPv4 addresses only.
+       -6          forces bsmtp to use IPv6 addresses only.
+       -8          set charset to UTF-8
+       -a          use any ip protocol for address resolution
+       -c          set the Cc: field
+       -d <nn>     set debug level to <nn>
+       -dt         print a timestamp in debug output
+       -f          set the From: field
+       -h          use mailhost:port as the SMTP server
+       -s          set the Subject: field
+       -r          set the Reply-To: field
+       -l          set the maximum number of lines to send (default: unlimited)
+       -?          print this message.
+
