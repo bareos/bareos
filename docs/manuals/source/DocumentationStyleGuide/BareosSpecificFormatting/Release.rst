@@ -53,37 +53,3 @@ Note
   * https://www.sphinx-doc.org/en/master/usage/restructuredtext/directives.html#directive-deprecated
 
 Until defined otherwise, you should use ``:sinceVersion:`` instead of these.
-
-
-URLs
-----
-
-Release URL - Bareos.org
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-If you want to display the release download URL from the Bareos.org site, the following formatting should be used:
-
-.. \newcommand{\releaseUrlDownloadBareosOrg}[1]{%
-   \url{http://download.bareos.org/bareos/release/#1/}%
-   }
-
-   Post Conversion Changes
-   ${PERL} 's#\\releaseUrlDownloadBareosOrg\{(.*?)\}#//http://download.bareos.org/bareos/release/\1/#g' ${DESTFILE}
-
-http://download.bareos.org/bareos/release/18.2/
-
-
-Release URL - Bareos.com
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-If you want to display the release download URL from the Bareos.com site, the following formatting should be used:
-
-.. \newcommand{\releaseUrlDownloadBareosOrg}[1]{%
-   \url{http://download.bareos.org/bareos/release/#1/}%
-   }
-
-   Post Conversion Changes
-   ${PERL} 's#\\releaseUrlDownloadBareosCom\{(.*?)\}#//https://download.bareos.com/bareos/release/\1/#g' ${DESTFILE}
-
-
-https://download.bareos.com/bareos/release/18.2/

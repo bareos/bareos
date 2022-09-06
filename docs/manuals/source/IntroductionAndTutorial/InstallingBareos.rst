@@ -154,40 +154,77 @@ Debian / Ubuntu
    single: Platform; Debian
    single: Platform; Ubuntu
 
-Bareos :sinceVersion:`15.2.0: requires: jansson` requires the Jansson library package. On Ubuntu is it available in Ubuntu Universe. In Debian, is it included in the main repository.
+Adding an Debian/Ubuntu repository requires multiple steps:
+
+* Storing the Bareos signature key of the repository.
+* Storing the Bareos repository configuration file in :file:`/etc/apt/sources.list.d/`, which references to the repository server a the local key file.
+* If you're a Bareos subscription customer, you also need your login credentials for https://download.bareos.com/ in :file:`/etc/apt/auth.conf.d/`.
+
+To simplify this, the each Debian/Ubuntu repository on https://download.bareos.org/ and https://download.bareos.com/ contain a script named :file:`add_bareos_repositories.sh`.
+
+Download the :file:`add_bareos_repositories.sh` script
+matching the requested Bareos release
+and the distribution of the target system.
+
+Copy the script onto the target system and execute it with a shell (:command:`sh`) as root (e.g. using :command:`sudo`),
+or manually perform the steps that are documented in the script.
+
+For example the script URL for bareos-21 and Debian 11 is:
+
+* https://download.bareos.org/bareos/release/21/Debian_11/add_bareos_repositories.sh
+* or for Bareos subscription customers:
+
+   * https://download.bareos.com/bareos/release/21/Debian_11/add_bareos_repositories.sh
+   * .. note::
+
+        To download :file:`add_bareos_repositories.sh` you must authenticate against https://download.bareos.com. If this is inconvenient, you can alternatively download :file:`add_bareos_repository_template.sh` and replace ``BAREOS_USERNAME`` and ``BAREOS_PASSWORD`` in there manually.
+
+The :file:`add_bareos_repositories.sh` script will:
+
+* Create a Bareos signature key file :file:`/etc/apt/keyrings/bareos-keyring.gpg`.
+* Create the Bareos repository configuration file :file:`/etc/apt/sources.list.d/bareos.sources`
+
+   * This file refers to the Bareos repository on the download server and to the local :file:`/etc/apt/keyrings/bareos-keyring.gpg` file.
+
+* If using https://download.bareos.com, it stores your credentials in :file:`/etc/apt/auth.conf.d/download_bareos_com.conf` file.
 
 .. code-block:: sh
    :caption: Shell example script for Bareos installation on Debian / Ubuntu
 
    #!/bin/sh
 
-   # See https://download.bareos.org/bareos/release/
-   # for applicable releases and distributions
+   # download the matching add_bareos_repositories.sh script from
+   # https://download.bareos.org/bareos/release/
+   # or https://download.bareos.com/bareos/release/
 
-   DIST=Debian_11
-   # or
-   # DIST=Debian_10
-   # DIST=Debian_9.0
-   # DIST=xUbuntu_20.04
-   # DIST=xUbuntu_18.04
-
-   RELEASE=release/21
-   # or
-   # RELEASE=experimental/nightly
-
-   URL=https://download.bareos.org/bareos/$RELEASE/$DIST
-
-   # add the Bareos repository
-   wget -O /etc/apt/sources.list.d/bareos.list $URL/bareos.list
-
-   # add package key
-   wget -q $URL/Release.key -O- | apt-key add -
+   sudo sh ./add_bareos_repositories.sh
 
    # install Bareos packages
-   apt-get update
-   apt-get install bareos bareos-database-postgresql
+   sudo apt-get update
+   sudo apt-get install bareos
 
-If you use the versions of Bareos directly integrated into the distributions, please note that there are some differences, see :ref:`section-DebianOrgLimitations`.
+
+Only Install the Bareos Client
+''''''''''''''''''''''''''''''
+
+If only the Bareos client should get installed,
+the procedure is very similar.
+Get the :file:`add_bareos_repositories.sh`
+matching the requested Bareos release
+and the distribution of the target system
+from https://download.bareos.org/ or https://download.bareos.com/
+and execute it on the target system:
+
+.. code-block:: sh
+   :caption: Shell example script for installing a Bareos client on Debian / Ubuntu
+
+   sudo sh ./add_bareos_repositories.sh
+   sudo apt-get update
+   sudo apt-get install bareos-filedaemon
+   # or for the bareos-filedaemon and additional client tools:
+   # sudo apt-get install bareos-client
+
+To configure the client, follow the instructions in :ref:`section-AddAClient`.
 
 
 .. _section-FreeBSD:

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -302,52 +302,52 @@ latex_documents = [
 
 linkcheck_allowed_redirects = {
     # All HTTP redirections from the source URI to the canonical URI will be treated as "working".
-    r'https://bareos\.org/.*': r'https://bareos\.com/.*',
-    r'http://www\.bareos\.org': r'https://www\.bareos\.com/.*',
-    r'http://www\.bareos\.org/.*': r'https://www\.bareos\.com/.*',
-    r'https://www\.bareos\.org/.*': r'https://www\.bareos\.com/.*',
-    r'https://www\.bareos\.com/whitepapers/.*': r'https://www\.bareos\.com/.*',
-    r'https://bugs\.bareos\.org/.*': r'https://bugs\.bareos\.org/my_view_page\.php',
-    r'https://download\.bareos\.org': r'https://download\.bareos\.org/bareos',
-    r'https://download\.bareos\.com': r'https://download\.bareos\.com/bareos',
-    r'https://github.com/markh794/mhvtl.git': r'https://github.com/markh794/mhvtl',
+    r"https://bareos\.org/.*": r"https://bareos\.com/.*",
+    r"http://www\.bareos\.org": r"https://www\.bareos\.com/.*",
+    r"http://www\.bareos\.org/.*": r"https://www\.bareos\.com/.*",
+    r"https://www\.bareos\.org/.*": r"https://www\.bareos\.com/.*",
+    r"https://www\.bareos\.com/whitepapers/.*": r"https://www\.bareos\.com/.*",
+    r"https://bugs\.bareos\.org/.*": r"https://bugs\.bareos\.org/my_view_page\.php",
+    r"https://download\.bareos\.org": r"https://download\.bareos\.org/bareos",
+    r"https://download\.bareos\.com": r"https://download\.bareos\.com/bareos",
+    r"https://github.com/markh794/mhvtl.git": r"https://github.com/markh794/mhvtl",
 }
 linkcheck_request_headers = {
-#    "https://www.sphinx-doc.org/": {
-#        "Accept": "text/html",
-#        "Accept-Encoding": "utf-8",
-#    },
+    #    "https://www.sphinx-doc.org/": {
+    #        "Accept": "text/html",
+    #        "Accept-Encoding": "utf-8",
+    #    },
     "*": {
         "Accept": "text/html,application/xhtml+xml",
     }
 }
-linkcheck_retries = 2   # default 1
+linkcheck_retries = 2  # default 1
 linkcheck_timeout = 10  # default 300
-linkcheck_workers = 2   # default 5
+linkcheck_workers = 2  # default 5
 linkcheck_anchors = True
 linkcheck_ignore = [
-    r'\.\./*',
-    r'http://localhost:*/',
-    r'https://\w+:\d+/bareos-webui/',
-    'https://UCS_SERVER/bareos-webui/',
-    'http://HOSTNAME/bareos-webui',
-    'http://localhost:9100',
-    'http://bareos:9100',
-    'http://bucket.s3_server/object',
-    'http://127.0.0.1:8000/docs',
-    'http://127.0.0.1:8000/redoc',
-    'https://pubs.vmware.com/vsphere-55/topic/com.vmware.vsphere.security.doc/*',
-    r'https://github\.com/bareos/bareos/pull/\d+', 
-    'https://www.glusterfs.org',                     #failing too often
-    'https://www.sphinx-doc.org/en/1.7/intro.html#',
+    r"\.\./*",
+    r"http://localhost:*/",
+    r"https://\w+:\d+/bareos-webui/",
+    "https://UCS_SERVER/bareos-webui/",
+    "http://HOSTNAME/bareos-webui",
+    "http://localhost:9100",
+    "http://bareos:9100",
+    "http://bucket.s3_server/object",
+    "http://127.0.0.1:8000/docs",
+    "http://127.0.0.1:8000/redoc",
+    "https://pubs.vmware.com/vsphere-55/topic/com.vmware.vsphere.security.doc/*",
+    r"https://github\.com/bareos/bareos/pull/\d+",
+    "https://www.glusterfs.org",  # failing too often
+    "https://www.sphinx-doc.org/en/1.7/intro.html#",
 ]
-#linkcheck_auth = [
+# linkcheck_auth = [
 #  ('https://foo\.yourcompany\.com/.+', ('johndoe', 'secret')),
 #  ('https://.+\.yourcompany\.com/.+', HTTPDigestAuth(...)),
-#]
+# ]
 linkcheck_rate_limit_timeout = 300.00
 # ignore all links in documents located in a subfolder named 'legacy'
-#linkcheck_exclude_documents = [r'.*/legacy/.*']
+# linkcheck_exclude_documents = [r'.*/legacy/.*']
 
 # -- Options for manual page output ---------------------------------------
 
@@ -412,6 +412,8 @@ lexers["bareosconfig"] = BareosConfigLexer()
 lexers["bconsole"] = BareosConsoleLexer()
 lexers["bareoslog"] = BareosLogLexer()
 lexers["bareosmessage"] = BareosMessageLexer()
+lexers["sh"] = BareosShellLexer()
+lexers["shell-session"] = BareosShellSessionLexer()
 
 
 # generate rst.inc files from json files

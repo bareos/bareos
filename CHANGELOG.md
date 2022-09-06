@@ -161,6 +161,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - mssql: after PITR restore, a full backup is required [PR #1235]
 - mssql add a warning in case of pitr to run another backup full or diff afterwards [PR #1235]
 - docs: Added Developer FAQ section with first question. [PR #1202]
+- describe Debian installation based on add_bareos_repositories.sh [PR #1238]
 
 [PR #698]: https://github.com/bareos/bareos/pull/698
 [PR #768]: https://github.com/bareos/bareos/pull/768
@@ -233,6 +234,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1170]: https://github.com/bareos/bareos/pull/1170
 [PR #1171]: https://github.com/bareos/bareos/pull/1171
 [PR #1172]: https://github.com/bareos/bareos/pull/1172
+[PR #1176]: https://github.com/bareos/bareos/pull/1176
 [PR #1177]: https://github.com/bareos/bareos/pull/1177
 [PR #1179]: https://github.com/bareos/bareos/pull/1179
 [PR #1180]: https://github.com/bareos/bareos/pull/1180
@@ -269,5 +271,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1235]: https://github.com/bareos/bareos/pull/1235
 [PR #1236]: https://github.com/bareos/bareos/pull/1236
 [PR #1237]: https://github.com/bareos/bareos/pull/1237
+[PR #1238]: https://github.com/bareos/bareos/pull/1238
 [PR #1242]: https://github.com/bareos/bareos/pull/1242
 [unreleased]: https://github.com/bareos/bareos/tree/master

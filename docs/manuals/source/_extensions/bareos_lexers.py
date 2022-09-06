@@ -1,6 +1,6 @@
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -18,8 +18,9 @@
 #   02110-1301, USA.
 
 from pygments.lexer import RegexLexer, inherit, bygroups
-from pygments.lexers.shell import BashLexer
+from pygments.lexers.shell import BashLexer, BashSessionLexer
 from pygments.token import *
+from bareos_urls import BareosUrls
 
 #
 # http://pygments.org/docs/lexerdevelopment/
@@ -27,12 +28,15 @@ from pygments.token import *
 #
 
 # Test:
-#  cat consolidate.cfg | pygmentize -l extensions/bareos_lexers.py:BareosConfigLexer -x
+#  cat consolidate.cfg | pygmentize -l _extensions/bareos_lexers.py:BareosConfigLexer -x
 #
 
 
 class BareosBaseLexer(BashLexer):
     name = "BareosBase"
+
+    def downloadurl_callback(lexer, match):
+        yield match.start(), Generic.Headline, BareosUrls().get_download_bareos_org_url()
 
     tokens = {
         "root": [
@@ -40,9 +44,17 @@ class BareosBaseLexer(BashLexer):
             # (r'(<input>)(.*)(</input>)', bygroups(None, Generic.Strong, None)),
             (r"(<input>)(.*)(</input>)", bygroups(None, Generic.Heading, None)),
             (r"(<strong>)(.*)(</strong>)", bygroups(None, Generic.Strong, None)),
+            (r"(<downloadurl>)", downloadurl_callback),
             inherit,
         ]
     }
+
+
+class BareosShellLexer(BareosBaseLexer):
+    name = "ShellBareos"
+    aliases = ["sh"]
+
+    tokens = {"root": [inherit]}
 
 
 class BareosConfigLexer(BareosBaseLexer):
@@ -75,3 +87,13 @@ class BareosMessageLexer(BareosBaseLexer):
     # filenames = ['*.log']
 
     tokens = {"root": [inherit]}
+
+
+class BareosShellSessionLexer(BashSessionLexer):
+    name = "BareosShellSession"
+    aliases = ["shell-session"]
+
+    def get_tokens_unprocessed(self, text):
+        url = BareosUrls().get_download_bareos_org_url()
+        text = text.replace("<downloadurl>", url)
+        return super(BareosShellSessionLexer, self).get_tokens_unprocessed(text)
