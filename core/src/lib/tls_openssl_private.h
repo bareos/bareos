@@ -68,9 +68,9 @@ class TlsOpenSslPrivate {
                                     unsigned int max_psk_len);
 
   /* each TCP connection has its own SSL_CTX object and SSL object */
-  SSL* openssl_;
-  SSL_CTX* openssl_ctx_;
-  SSL_CONF_CTX* openssl_conf_ctx_;
+  SSL* openssl_{};
+  SSL_CTX* openssl_ctx_{};
+  SSL_CONF_CTX* openssl_conf_ctx_{};
 
   /* PskCredentials lookup map for all connections */
   static std::map<const SSL_CTX*, PskCredentials> psk_client_credentials_;
@@ -84,18 +84,19 @@ class TlsOpenSslPrivate {
   std::string protocol_;
 
   /* cert attributes */
-  int tcp_file_descriptor_;
+  int tcp_file_descriptor_{};
   std::string ca_certfile_;
   std::string ca_certdir_;
   std::string crlfile_;
   std::string certfile_;
   std::string keyfile_;
-  CRYPTO_PEM_PASSWD_CB* pem_callback_;
-  void* pem_userdata_;
+  CRYPTO_PEM_PASSWD_CB* pem_callback_{};
+  void* pem_userdata_{};
   std::string dhfile_;
   std::string cipherlist_;
-  bool verify_peer_;
-  /* *************** */
+  bool verify_peer_{};
+  std::shared_ptr<ConfigResourcesContainer>
+      config_table_{};  // config table being used
 };
 
 #endif  // BAREOS_LIB_TLS_OPENSSL_PRIVATE_H_

@@ -54,13 +54,6 @@ const std::string TlsOpenSslPrivate::tls_default_ciphers_{
 
 
 TlsOpenSslPrivate::TlsOpenSslPrivate()
-    : openssl_(nullptr)
-    , openssl_ctx_(nullptr)
-    , openssl_conf_ctx_(nullptr)
-    , tcp_file_descriptor_(0)
-    , pem_callback_(nullptr)
-    , pem_userdata_(nullptr)
-    , verify_peer_(false)
 {
   Dmsg0(100, "Construct TlsOpenSslPrivate\n");
 

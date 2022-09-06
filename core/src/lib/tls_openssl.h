@@ -27,6 +27,7 @@
 #include <memory>
 
 class TlsOpenSslPrivate;
+class ConfigResourcesContainer;
 
 class TlsOpenSsl : public Tls {
  public:
