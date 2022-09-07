@@ -16,6 +16,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
   The rest of the options stay the same. [PR #1187]
 - Previously deprecated rados/ceph backend and cephfs plugin have been removed. Use the droplet backend to store into ceph via S3, and backup cephfs filesystems by backing up a mount point.
     - packages bareos-storage-ceph and bareos-filedaemon-ceph-plugin if previously installed need to be removed manually.
+- Bareos 22 removes bareos-webui support for RHEL 7 and CentOS 7
 
 ### Added
 - dird: add command line feature to print specific resources [PR #1153]
