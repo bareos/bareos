@@ -85,6 +85,7 @@ static int create_listening_server_socket(int port)
     bindresult = bind(listen_file_descriptor, (struct sockaddr*)&address,
                       sizeof(address));
     if (bindresult == 0) {
+      std::cout << "bind successful after " << i + 1 << " tries" << std::endl;
       break;
     } else {
       std::this_thread::sleep_for(std::chrono::seconds(2));
@@ -122,6 +123,7 @@ static int create_listening_server_socket(int port)
   for (int i = 0; i < 6; i++) {
     listenresult = listen(listen_file_descriptor, 3);
     if (listenresult == 0) {
+      std::cout << "listen successful after " << i + 1 << " tries" << std::endl;
       break;
     } else {
       std::this_thread::sleep_for(std::chrono::seconds(2));
