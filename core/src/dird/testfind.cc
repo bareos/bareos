@@ -146,7 +146,9 @@ int main(int argc, char* const* argv)
 
   MessagesResource* msg;
 
-  foreach_res (msg, R_MSGS) { InitMsg(NULL, msg); }
+  foreach_res (msg, R_MSGS) {
+    InitMsg(NULL, msg);
+  }
 
   jcr = NewDirectorJcr();  // Ueb: null
   jcr->impl->res.fileset
