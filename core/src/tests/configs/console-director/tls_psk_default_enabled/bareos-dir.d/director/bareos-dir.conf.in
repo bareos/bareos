@@ -3,7 +3,6 @@ Director {                            # define myself
   QueryFile = "@regressdir@/bin/query.sql"
   Maximum Concurrent Jobs = 10
   Password = "bareos"         # Console password
-  Messages = Daemon
   Auditing = yes
   DirPort = 32661
 
