@@ -49,10 +49,6 @@
 
 using namespace directordaemon;
 
-namespace directordaemon {
-bool DoReloadConfig() { return false; }
-}  // namespace directordaemon
-
 class SimulatedTimeAdapter : public SchedulerTimeAdapter {
  public:
   SimulatedTimeAdapter()

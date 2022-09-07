@@ -32,10 +32,6 @@
 #include "lib/output_formatter_resource.h"
 
 namespace directordaemon {
-bool DoReloadConfig() { return false; }
-}  // namespace directordaemon
-
-namespace directordaemon {
 
 static std::string sprintoutput{};
 

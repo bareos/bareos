@@ -33,10 +33,6 @@
 
 using namespace directordaemon;
 
-namespace directordaemon {
-bool DoReloadConfig() { return false; }
-}  // namespace directordaemon
-
 int FakeCdCmd(UaContext* ua, TreeContext* tree, std::string path)
 {
   std::string command = "cd " + path;

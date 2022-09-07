@@ -49,10 +49,6 @@
 #include <thread>
 #include <vector>
 
-namespace directordaemon {
-bool DoReloadConfig() { return false; }
-}  // namespace directordaemon
-
 using directordaemon::GetAllJobResourcesByClientName;
 using directordaemon::InitDirConfig;
 using directordaemon::JobResource;

@@ -31,10 +31,6 @@
 
 using namespace directordaemon;
 
-namespace directordaemon {
-bool DoReloadConfig() { return false; }
-}  // namespace directordaemon
-
 class PromptsFormatting : public ::testing::Test {
  protected:
   void SetUp() override { ua = new_ua_context(&jcr); }

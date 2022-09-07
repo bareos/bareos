@@ -42,10 +42,6 @@
 #  error "NOT DEFINED: HAVE_DYNAMIC_CATS_BACKENDS"
 #endif
 
-namespace directordaemon {
-bool DoReloadConfig() { return false; }
-}  // namespace directordaemon
-
 class DbCopy {
  public:
   explicit DbCopy(int argc, char** argv)

@@ -71,6 +71,7 @@ set(DIRD_OBJECTS_SRCS
     run_hour_validator.cc
     socket_server.cc
     recycle.cc
+    reload.cc
     restore.cc
     run_conf.cc
     run_on_incoming_connect_interval.cc

@@ -35,10 +35,6 @@
 #include "dird/dird_conf.h"
 #include "include/job_types.h"
 
-namespace directordaemon {
-bool DoReloadConfig() { return false; }
-}  // namespace directordaemon
-
 void FakeCmd(directordaemon::UaContext* ua, std::string cmd)
 {
   std::string command = cmd;

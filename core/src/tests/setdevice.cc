@@ -41,10 +41,6 @@
 
 #include <array>
 
-namespace directordaemon {
-bool DoReloadConfig() { return false; }
-}  // namespace directordaemon
-
 using namespace directordaemon;
 
 static void Test_FreeJcr(JobControlRecord* jcr) { FreeJcr(jcr); }

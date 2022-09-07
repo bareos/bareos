@@ -45,10 +45,6 @@
 #  define isatty(fd) (fd == 0)
 #endif
 
-namespace directordaemon {
-bool DoReloadConfig() { return false; }
-}  // namespace directordaemon
-
 using namespace directordaemon;
 
 /* Dummy functions */

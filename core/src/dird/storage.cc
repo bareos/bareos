@@ -30,7 +30,6 @@
  */
 
 #include "include/bareos.h"
-#include "dird/dird.h"
 #include "dird/dird_globals.h"
 #include "dird/jcr_private.h"
 #include "dird/sd_cmds.h"
@@ -49,6 +48,22 @@ namespace directordaemon {
 
 /* Forward referenced functions */
 
+/**
+ * See if two storage definitions point to the same Storage Daemon.
+ *
+ * We compare:
+ *  - address
+ *  - SDport
+ *  - password
+ */
+bool IsSameStorageDaemon(StorageResource* read_storage,
+                         StorageResource* write_storage)
+{
+  return read_storage->SDport == write_storage->SDport
+         && Bstrcasecmp(read_storage->address, write_storage->address)
+         && Bstrcasecmp(read_storage->password_.value,
+                        write_storage->password_.value);
+}
 // Copy the storage definitions from an alist to the JobControlRecord
 void CopyRwstorage(JobControlRecord* jcr,
                    alist<StorageResource*>* storage,
