@@ -3,6 +3,14 @@ JENKINS_TESTTYPES:
   - univention-bareos
 
 OS:
+  Sanitize:
+    "F37":
+      TYPE: scripted
+      IMAGE: fedora37
+      BUILD_SCRIPT: bareos/devtools/build-and-test-with-sanitize.sh
+      FINISH_SCRIPT: CD/sanitize/finish-sanitize.sh
+      ARCH:
+        - x86_64
   ULC_deb:
     "OpenSSL_1.1":
       TYPE: scripted
@@ -11,9 +19,6 @@ OS:
       FINISH_SCRIPT: CD/deb/finish-ulc.sh
       ARCH:
         - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-          - bareos
 
   xUbuntu:
     "22.04":
@@ -220,28 +225,19 @@ OS:
       TYPE: freebsd
       ARCH:
         - amd64
-      PROJECTPACKAGES:
-        amd64:
-           - bareos-freebsd
 
   MacOS:
     "10.13.6":
       TYPE: macos
       ARCH:
         - x64
-      PROJECTPACKAGES:
-        x64:
+
   Solaris:
     "11.4":
       TYPE: solaris
       ARCH:
         - i386
         - sparc
-      PROJECTPACKAGES:
-        i386:
-           - bareos
-        sparc:
-           - bareos
 
   win:
     cross:
@@ -251,13 +247,6 @@ OS:
         - win-64-release
       ARCH:
        - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - mingw-debugsrc
-           - mingw32-winbareos
-           - mingw64-winbareos
-           - winbareos-nsi
-           - winbareos-opsi
       WINVERSIONS:
          - windows-10-32
          - windows-10-64
