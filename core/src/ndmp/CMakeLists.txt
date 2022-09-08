@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -32,6 +32,10 @@ if(${HAVE_LINUX_OS})
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHAVE_LINUX_OS")
 elseif(${HAVE_SUN_OS})
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHAVE_SUN_OS")
+endif()
+
+if(compiler_will_warn_of_unused_but_set_variable)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-but-set-variable")
 endif()
 
 set(RPC_GEN_FILES

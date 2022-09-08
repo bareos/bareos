@@ -284,6 +284,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
   include_directories(/usr/local/include)
   link_directories(/usr/local/lib)
   link_libraries(intl)
+  check_cxx_compiler_flag(-Wunused-but-set-variable compiler_will_warn_of_unused_but_set_variable)
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
