@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -151,6 +151,10 @@ set(NDMP_AGENT_SRCS
 )
 
 set(NDMP_HELPER_SRCS md5c.c ndmos.c smc_api.c smc_parse.c smc_pp.c wraplib.c)
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
+  set_source_files_properties(smc_api.c PROPERTIES COMPILE_FLAGS -Wno-unused-but-set-variable)
+endif()
 
 set(NDMJOB_SRCS
     ndmjob_args.c ndmjob_fhdb.c ndmjob_job.c ndmjob_main.c ndmjob_main_util.c
