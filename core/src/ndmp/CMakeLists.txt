@@ -153,7 +153,7 @@ set(NDMP_AGENT_SRCS
 set(NDMP_HELPER_SRCS md5c.c ndmos.c smc_api.c smc_parse.c smc_pp.c wraplib.c)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
-  set_source_files_properties(smc_api.c PROPERTIES COMPILE_FLAGS -Wno-unused-but-set-variable)
+  set_source_files_properties(NDMP_HELPER_SRCS PROPERTIES COMPILE_FLAGS -Wno-unused-but-set-variable)
 endif()
 
 set(NDMJOB_SRCS
