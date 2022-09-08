@@ -34,7 +34,7 @@ elseif(${HAVE_SUN_OS})
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHAVE_SUN_OS")
 endif()
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
+if(compiler_will_warn_of_unused_but_set_variable)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-but-set-variable")
 endif()
 
