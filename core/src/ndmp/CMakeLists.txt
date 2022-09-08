@@ -34,6 +34,10 @@ elseif(${HAVE_SUN_OS})
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHAVE_SUN_OS")
 endif()
 
+if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-but-set-variable")
+endif()
+
 set(RPC_GEN_FILES
     ndmp0.h
     ndmp0_xdr.c
@@ -151,10 +155,6 @@ set(NDMP_AGENT_SRCS
 )
 
 set(NDMP_HELPER_SRCS md5c.c ndmos.c smc_api.c smc_parse.c smc_pp.c wraplib.c)
-
-if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
-  set_source_files_properties(NDMP_HELPER_SRCS PROPERTIES COMPILE_FLAGS -Wno-unused-but-set-variable)
-endif()
 
 set(NDMJOB_SRCS
     ndmjob_args.c ndmjob_fhdb.c ndmjob_job.c ndmjob_main.c ndmjob_main_util.c
