@@ -4,9 +4,9 @@ set -o pipefail
 set -u
 # This systemtest tests the plugin functionality
 # of the Bareos FD by using the supplied module
-#   bareos-fd-postgres
+# bareos-fd-postgres
 #
-# The module will backup a postgresql databaseome.
+# The module will backup a postgresql database.
 #
 
 TestName="$(basename "$(pwd)")"
@@ -50,15 +50,16 @@ cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null
 messages
 @$out $tmp/log1.out
-setdebug level=100 storage=File
 label volume=TestVolume001 storage=File pool=Full
+setdebug level=100 trace=1 timestamp=1 client=bareos-fd
 run job=$JobName yes
+wait
+setdebug level=0 client=bareos-fd
 status director
 status client
 status storage=File
 wait
 messages
-quit
 END_OF_DATA
 
 run_bareos "$@"
@@ -77,7 +78,6 @@ END_OF_DATA
 run_bconsole
 # run another Incr without db changes - should result in empty backup job (only restore object)
 run_bconsole
-
 
 # Now stop database and try a restore
 pushd database/ > /dev/null

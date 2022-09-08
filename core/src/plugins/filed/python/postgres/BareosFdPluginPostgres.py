@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2021 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2022 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -183,6 +183,11 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
                     self.dbuser, database=self.dbname, host=self.dbHost
                 )
 
+            if "role" in self.options:
+                self.dbCon.run("SET ROLE {0}".format(self.options["role"]))
+                bareosfd.DebugMessage(
+                    100, "SQL role switched to {0}\n".format(self.options["role"])
+                )
             result = self.dbCon.run("SELECT current_setting('server_version_num')")
             self.pgVersion = int(result[0][0])
             # WARNING: JobMessages cause fatal errors at this stage
