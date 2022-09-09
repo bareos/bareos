@@ -166,6 +166,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - docs: Added Developer FAQ section with first question. [PR #1202]
 - describe Debian installation based on add_bareos_repositories.sh [PR #1238]
 - update Pull Request workflow description [PR #1243]
+- docs: improve operating system table [PR #1254]
 
 [PR #698]: https://github.com/bareos/bareos/pull/698
 [PR #768]: https://github.com/bareos/bareos/pull/768
