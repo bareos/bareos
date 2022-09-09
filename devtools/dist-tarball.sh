@@ -123,7 +123,7 @@ fi
 (echo -ne 'cmake/BareosVersion.cmake\0'; "$git" ls-files -z) | \
 "$sort" -u -z | \
 "$tar" "${args[@]}" -cf - --files-from - | \
-"$xz" -c -6 > "${archive_file}"
+"$xz" --threads=0 -c -6 > "${archive_file}"
 
 echo -n "Wrote tarball: "
 "${list_file_cmd[@]}" "${archive_file}"
