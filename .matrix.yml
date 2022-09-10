@@ -295,7 +295,7 @@ OS:
       PROJECTPACKAGES:
         amd64:
            - bareos-freebsd
-    "13.0":
+    "13.1":
       TYPE: freebsd
       ARCH:
         - amd64
@@ -342,4 +342,3 @@ OS:
       WINVERSIONS:
          - windows-10-32
          - windows-10-64
-
