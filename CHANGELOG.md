@@ -5,6 +5,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Changed
+- build: switch from FreeBSD 13.0 to 13.1 [PR #1256]
+
 ### Fixed
 - dird: RunScript fixes [PR #1222]
   - fix show command output for RunScript RunsOnClient
