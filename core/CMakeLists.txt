@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -284,6 +284,9 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
   include_directories(/usr/local/include)
   link_directories(/usr/local/lib)
   link_libraries(intl)
+  check_cxx_compiler_flag(
+    -Wunused-but-set-variable compiler_will_warn_of_unused_but_set_variable
+  )
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
