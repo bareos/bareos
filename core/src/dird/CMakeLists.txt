@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -127,7 +127,9 @@ set(DBCHKSRCS dbcheck.cc dbcheck_utils.cc dird_conf.cc dird_globals.cc
 )
 
 if(compiler_will_warn_of_unused_but_set_variable)
-  set_source_files_properties(catreq.cc PROPERTIES COMPILE_FLAGS -Wno-unused-but-set-variable)
+  set_source_files_properties(
+    catreq.cc PROPERTIES COMPILE_FLAGS -Wno-unused-but-set-variable
+  )
 endif()
 
 if(HAVE_WIN32)
