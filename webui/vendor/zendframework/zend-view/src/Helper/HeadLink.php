@@ -35,7 +35,7 @@ class HeadLink extends Placeholder\Container\AbstractStandalone
      *
      * @var string[]
      */
-    protected $itemKeys = array(
+    protected $itemKeys = [
         'charset',
         'href',
         'hreflang',
@@ -46,8 +46,9 @@ class HeadLink extends Placeholder\Container\AbstractStandalone
         'sizes',
         'type',
         'title',
-        'extras'
-    );
+        'extras',
+        'itemprop'
+    ];
 
     /**
      * Registry key for placeholder
@@ -80,7 +81,7 @@ class HeadLink extends Placeholder\Container\AbstractStandalone
      */
     public function headLink(array $attributes = null, $placement = Placeholder\Container\AbstractContainer::APPEND)
     {
-        return call_user_func_array(array($this, '__invoke'), func_get_args());
+        return call_user_func_array([$this, '__invoke'], func_get_args());
     }
 
     /**
@@ -340,7 +341,7 @@ class HeadLink extends Placeholder\Container\AbstractStandalone
                 ? $this->getWhitespace($indent)
                 : $this->getIndent();
 
-        $items = array();
+        $items = [];
         $this->getContainer()->ksort();
         foreach ($this as $item) {
             $items[] = $this->itemToString($item);
@@ -374,6 +375,8 @@ class HeadLink extends Placeholder\Container\AbstractStandalone
         $conditionalStylesheet = false;
         $href                  = array_shift($args);
 
+        $extras = [];
+
         if ($this->isDuplicateStylesheet($href)) {
             return false;
         }
@@ -394,8 +397,6 @@ class HeadLink extends Placeholder\Container\AbstractStandalone
                 $conditionalStylesheet = null;
             }
         }
-
-        $extras = [];
 
         if (0 < count($args) && is_array($args[0])) {
             $extras = array_shift($args);
@@ -445,8 +446,6 @@ class HeadLink extends Placeholder\Container\AbstractStandalone
         $type  = array_shift($args);
         $title = array_shift($args);
 
-        $extras = [];
-
         if (0 < count($args) && is_array($args[0])) {
             $extras = array_shift($args);
             $extras = (array) $extras;
@@ -459,6 +458,8 @@ class HeadLink extends Placeholder\Container\AbstractStandalone
         $href  = (string) $href;
         $type  = (string) $type;
         $title = (string) $title;
+
+        $extras = [];
 
         $attributes = compact('rel', 'href', 'type', 'title', 'extras');
 

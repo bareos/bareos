@@ -1,10 +1,8 @@
 <?php
 /**
- * Zend Framework (http://framework.zend.com/)
- *
- * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
- * @license   http://framework.zend.com/license/new-bsd New BSD License
+ * @see       https://github.com/zendframework/zend-http for the canonical source repository
+ * @copyright Copyright (c) 2005-2017 Zend Technologies USA Inc. (http://www.zend.com)
+ * @license   https://github.com/zendframework/zend-http/blob/master/LICENSE.md New BSD License
  */
 
 namespace Zend\Http;
@@ -27,7 +25,7 @@ class ClientStatic
      */
     protected static function getStaticClient($options = null)
     {
-        if (!isset(static::$client) || $options !== null) {
+        if (! isset(static::$client) || $options !== null) {
             static::$client = new Client(null, $options);
         }
         return static::$client;
@@ -43,25 +41,25 @@ class ClientStatic
      * @param  array|Traversable $clientOptions
      * @return Response|bool
      */
-    public static function get($url, $query = array(), $headers = array(), $body = null, $clientOptions = null)
+    public static function get($url, $query = [], $headers = [], $body = null, $clientOptions = null)
     {
         if (empty($url)) {
             return false;
         }
 
-        $request= new Request();
+        $request = new Request();
         $request->setUri($url);
         $request->setMethod(Request::METHOD_GET);
 
-        if (!empty($query) && is_array($query)) {
+        if (! empty($query) && is_array($query)) {
             $request->getQuery()->fromArray($query);
         }
 
-        if (!empty($headers) && is_array($headers)) {
+        if (! empty($headers) && is_array($headers)) {
             $request->getHeaders()->addHeaders($headers);
         }
 
-        if (!empty($body)) {
+        if (! empty($body)) {
             $request->setContent($body);
         }
 
@@ -79,31 +77,31 @@ class ClientStatic
      * @throws Exception\InvalidArgumentException
      * @return Response|bool
      */
-    public static function post($url, $params, $headers = array(), $body = null, $clientOptions = null)
+    public static function post($url, $params, $headers = [], $body = null, $clientOptions = null)
     {
         if (empty($url)) {
             return false;
         }
 
-        $request= new Request();
+        $request = new Request();
         $request->setUri($url);
         $request->setMethod(Request::METHOD_POST);
 
-        if (!empty($params) && is_array($params)) {
+        if (! empty($params) && is_array($params)) {
             $request->getPost()->fromArray($params);
         } else {
             throw new Exception\InvalidArgumentException('The array of post parameters is empty');
         }
 
-        if (!isset($headers['Content-Type'])) {
+        if (! isset($headers['Content-Type'])) {
             $headers['Content-Type'] = Client::ENC_URLENCODED;
         }
 
-        if (!empty($headers) && is_array($headers)) {
+        if (! empty($headers) && is_array($headers)) {
             $request->getHeaders()->addHeaders($headers);
         }
 
-        if (!empty($body)) {
+        if (! empty($body)) {
             $request->setContent($body);
         }
 

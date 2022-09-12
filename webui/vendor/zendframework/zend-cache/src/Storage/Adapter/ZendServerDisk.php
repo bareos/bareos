@@ -3,7 +3,7 @@
  * Zend Framework (http://framework.zend.com/)
  *
  * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright Copyright (c) 2005-2016 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
 
@@ -35,7 +35,7 @@ class ZendServerDisk extends AbstractZendServer implements
      * @param  null|array|\Traversable|AdapterOptions $options
      * @throws Exception\ExtensionNotLoadedException
      */
-    public function __construct($options = array())
+    public function __construct($options = [])
     {
         if (!function_exists('zend_disk_cache_store')) {
             throw new Exception\ExtensionNotLoadedException("Missing 'zend_disk_cache_*' functions");

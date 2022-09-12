@@ -29,7 +29,7 @@ class FormAnnotationBuilderFactory implements FactoryInterface
         //setup a form factory which can use custom form elements
         $annotationBuilder = new AnnotationBuilder();
         $formElementManager = $serviceLocator->get('FormElementManager');
-        $formElementManager->injectFactory($annotationBuilder);
+        $formElementManager->injectFactory($annotationBuilder, $serviceLocator);
 
         $config = $serviceLocator->get('Config');
         if (isset($config['form_annotation_builder'])) {

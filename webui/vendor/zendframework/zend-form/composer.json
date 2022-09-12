@@ -13,27 +13,29 @@
         }
     },
     "require": {
-        "php": ">=5.3.23",
-        "zendframework/zend-inputfilter": "~2.4.0",
-        "zendframework/zend-stdlib": "~2.4.0"
+        "php": ">=5.5",
+        "zendframework/zend-inputfilter": "~2.5",
+        "zendframework/zend-hydrator": "~1.0",
+        "zendframework/zend-stdlib": "~2.7"
     },
     "require-dev": {
-        "zendframework/zend-captcha": "~2.4.0",
-        "zendframework/zend-code": "~2.4.0",
-        "zendframework/zend-eventmanager": "~2.4.0",
-        "zendframework/zend-filter": "~2.4.0",
-        "zendframework/zend-i18n": "~2.4.0",
-        "zendframework/zend-servicemanager": "~2.4.0",
-        "zendframework/zend-validator": "~2.4.0",
-        "zendframework/zend-view": "~2.4.0",
-        "zendframework/zendservice-recaptcha": "~2.0",
+        "doctrine/annotations": "~1.0",
+        "zendframework/zend-cache": "~2.5",
+        "zendframework/zend-captcha": "~2.5",
+        "zendframework/zend-code": "~2.5",
+        "zendframework/zend-di": "~2.5",
+        "zendframework/zend-eventmanager": "~2.5",
+        "zendframework/zend-filter": "~2.5",
+        "zendframework/zend-i18n": "~2.5",
+        "zendframework/zend-mvc": "~2.5",
+        "zendframework/zend-servicemanager": "~2.5",
+        "zendframework/zend-session": "~2.5",
+        "zendframework/zend-text": "~2.5",
+        "zendframework/zend-validator": "~2.5",
+        "zendframework/zend-view": "~2.5",
+        "zendframework/zendservice-recaptcha": "*",
         "fabpot/php-cs-fixer": "1.7.*",
-        "satooshi/php-coveralls": "dev-master",
-        "phpunit/PHPUnit": "~4.0",
-        "zendframework/zend-text": "~2.4.0",
-        "zendframework/zend-cache": "~2.4.0",
-        "ircmaxell/random-lib": "^1.1",
-        "zendframework/zend-session": "~2.4.0"
+        "phpunit/PHPUnit": "~4.0"
     },
     "suggest": {
         "zendframework/zend-captcha": "Zend\\Captcha component",
@@ -46,10 +48,12 @@
         "zendframework/zend-view": "Zend\\View component",
         "zendframework/zendservice-recaptcha": "ZendService\\ReCaptcha component"
     },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
     "extra": {
         "branch-alias": {
-            "dev-master": "2.4-dev",
-            "dev-develop": "2.5-dev"
+            "dev-master": "2.6-dev",
+            "dev-develop": "2.7-dev"
         }
     },
     "autoload-dev": {

@@ -1,5 +1,8 @@
 # zend-mvc
 
+[![Build Status](https://secure.travis-ci.org/zendframework/zend-mvc.svg?branch=master)](https://secure.travis-ci.org/zendframework/zend-mvc)
+[![Coverage Status](https://coveralls.io/repos/zendframework/zend-mvc/badge.svg?branch=master)](https://coveralls.io/r/zendframework/zend-mvc?branch=master)
+
 `Zend\Mvc` is a brand new MVC implementation designed from the ground up for
 Zend Framework 2, focusing on performance and flexibility.
 

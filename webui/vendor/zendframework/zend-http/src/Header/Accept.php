@@ -1,10 +1,8 @@
 <?php
 /**
- * Zend Framework (http://framework.zend.com/)
- *
- * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
- * @license   http://framework.zend.com/license/new-bsd New BSD License
+ * @see       https://github.com/zendframework/zend-http for the canonical source repository
+ * @copyright Copyright (c) 2005-2017 Zend Technologies USA Inc. (http://www.zend.com)
+ * @license   https://github.com/zendframework/zend-http/blob/master/LICENSE.md New BSD License
  */
 
 namespace Zend\Http\Header;
@@ -51,7 +49,7 @@ class Accept extends AbstractAccept
      * @param  array $params
      * @return Accept
      */
-    public function addMediaType($type, $priority = 1, array $params = array())
+    public function addMediaType($type, $priority = 1, array $params = [])
     {
         return $this->addType($type, $priority, $params);
     }
@@ -103,7 +101,7 @@ class Accept extends AbstractAccept
             $subtype = trim(substr($subtype, 0, $pos));
         }
 
-        $aggregated = array(
+        $aggregated = [
             'typeString' => trim($fieldValuePart),
             'type'       => $type,
             'subtype'    => $subtype,
@@ -112,7 +110,7 @@ class Accept extends AbstractAccept
             'priority'   => isset($params['q']) ? $params['q'] : 1,
             'params'     => $params,
             'raw'        => trim($raw),
-        );
+        ];
 
         return new FieldValuePart\AcceptFieldValuePart((object) $aggregated);
     }

@@ -34,7 +34,7 @@ class UploadFile extends AbstractValidator
     /**
      * @var array Error message templates
      */
-    protected $messageTemplates = array(
+    protected $messageTemplates = [
         self::INI_SIZE       => "File exceeds the defined ini size",
         self::FORM_SIZE      => "File exceeds the defined form size",
         self::PARTIAL        => "File was only partially uploaded",
@@ -45,7 +45,7 @@ class UploadFile extends AbstractValidator
         self::ATTACK         => "File was illegally uploaded. This could be a possible attack",
         self::FILE_NOT_FOUND => "File was not found",
         self::UNKNOWN        => "Unknown error while uploading file",
-    );
+    ];
 
     /**
      * Returns true if and only if the file was uploaded without errors
@@ -57,7 +57,7 @@ class UploadFile extends AbstractValidator
     public function isValid($value)
     {
         if (is_array($value)) {
-            if (!isset($value['tmp_name']) || !isset($value['name']) || !isset($value['error'])) {
+            if (! isset($value['tmp_name']) || ! isset($value['name']) || ! isset($value['error'])) {
                 throw new Exception\InvalidArgumentException(
                     'Value array must be in $_FILES format'
                 );

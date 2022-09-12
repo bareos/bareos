@@ -3,7 +3,7 @@
  * Zend Framework (http://framework.zend.com/)
  *
  * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright Copyright (c) 2005-2016 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
 
@@ -158,7 +158,7 @@ class Capabilities
     public function __construct(
         StorageInterface $storage,
         stdClass $marker,
-        array $capabilities = array(),
+        array $capabilities = [],
         Capabilities $baseCapabilities = null
     ) {
         $this->storage = $storage;
@@ -187,7 +187,7 @@ class Capabilities
      */
     public function getSupportedDatatypes()
     {
-        return $this->getCapability('supportedDatatypes', array(
+        return $this->getCapability('supportedDatatypes', [
             'NULL'     => false,
             'boolean'  => false,
             'integer'  => false,
@@ -196,7 +196,7 @@ class Capabilities
             'array'    => false,
             'object'   => false,
             'resource' => false,
-        ));
+        ]);
     }
 
     /**
@@ -209,7 +209,7 @@ class Capabilities
      */
     public function setSupportedDatatypes(stdClass $marker, array $datatypes)
     {
-        $allTypes = array(
+        $allTypes = [
             'array',
             'boolean',
             'double',
@@ -218,7 +218,7 @@ class Capabilities
             'object',
             'resource',
             'string',
-        );
+        ];
 
         // check/normalize datatype values
         foreach ($datatypes as $type => &$toType) {
@@ -252,7 +252,7 @@ class Capabilities
      */
     public function getSupportedMetadata()
     {
-        return $this->getCapability('supportedMetadata', array());
+        return $this->getCapability('supportedMetadata', []);
     }
 
     /**
@@ -530,9 +530,9 @@ class Capabilities
 
             // trigger event
             if ($this->storage instanceof EventsCapableInterface) {
-                $this->storage->getEventManager()->trigger('capability', $this->storage, new ArrayObject(array(
+                $this->storage->getEventManager()->trigger('capability', $this->storage, new ArrayObject([
                     $property => $value
-                )));
+                ]));
             }
         }
 

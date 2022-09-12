@@ -14,7 +14,7 @@ class ArrayInput extends Input
     /**
      * @var array
      */
-    protected $value = array();
+    protected $value = [];
 
     /**
      * @param  array $value
@@ -36,7 +36,7 @@ class ArrayInput extends Input
      */
     public function resetValue()
     {
-        $this->value = array();
+        $this->value = [];
         $this->hasValue = false;
         return $this;
     }
@@ -47,7 +47,7 @@ class ArrayInput extends Input
     public function getValue()
     {
         $filter = $this->getFilterChain();
-        $result = array();
+        $result = [];
         foreach ($this->value as $key => $value) {
             $result[$key] = $filter->filter($value);
         }
@@ -83,7 +83,7 @@ class ArrayInput extends Input
         $values    = $this->getValue();
         $result    = true;
         foreach ($values as $value) {
-            $empty = ($value === null || $value === '' || $value === array());
+            $empty = ($value === null || $value === '' || $value === []);
             if ($empty && !$this->isRequired() && !$this->continueIfEmpty()) {
                 $result = true;
                 continue;

@@ -10,7 +10,6 @@
 namespace Zend\View\Helper;
 
 use Zend\Navigation\AbstractContainer;
-use Zend\ServiceManager\ServiceLocatorAwareInterface;
 use Zend\View\Exception;
 use Zend\View\Helper\Navigation\AbstractHelper as AbstractNavigationHelper;
 use Zend\View\Helper\Navigation\HelperInterface as NavigationHelper;
@@ -40,7 +39,7 @@ class Navigation extends AbstractNavigationHelper
      *
      * @var array
      */
-    protected $injected = array();
+    protected $injected = [];
 
     /**
      * Whether ACL should be injected when proxying
@@ -107,12 +106,12 @@ class Navigation extends AbstractNavigationHelper
      * @throws \Zend\Navigation\Exception\ExceptionInterface  if method does not exist in container
      * @return mixed                      returns what the proxied call returns
      */
-    public function __call($method, array $arguments = array())
+    public function __call($method, array $arguments = [])
     {
         // check if call should proxy to another helper
         $helper = $this->findHelper($method, false);
         if ($helper) {
-            if ($helper instanceof ServiceLocatorAwareInterface && $this->getServiceLocator()) {
+            if (method_exists($helper, 'setServiceLocator') && $this->getServiceLocator()) {
                 $helper->setServiceLocator($this->getServiceLocator());
             }
             return call_user_func_array($helper, $arguments);
@@ -323,7 +322,7 @@ class Navigation extends AbstractNavigationHelper
     public function getPluginManager()
     {
         if (null === $this->plugins) {
-            $this->setPluginManager(new Navigation\PluginManager());
+            $this->setPluginManager(new Navigation\PluginManager($this->getServiceLocator()));
         }
 
         return $this->plugins;

@@ -1,0 +1,22 @@
+docs_dir: doc/book
+site_dir: doc/html
+pages:
+    - index.md
+    - Intro: intro.md
+    - Reference:
+      - 'Console Adapters': adapter.md
+      - 'Console Prompts': prompts.md
+      - Routes: routes.md
+    - 'MVC Integration':
+        - 'MVC Routing': mvc/routing.md
+        - 'Console-Aware Modules': mvc/modules.md
+        - 'Console-Aware Controllers': mvc/controllers.md
+    - Getopt:
+        - Introduction: getopt/intro.md
+        - 'Declaring Rules': getopt/rules.md
+        - 'Fetching Options and Arguments': getopt/fetching.md
+        - Configuration: getopt/configuration.md
+site_name: zend-console
+site_description: Zend\Console
+repo_url: 'https://github.com/zendframework/zend-console'
+copyright: 'Copyright (c) 2016 <a href="http://www.zend.com/">Zend Technologies USA Inc.</a>'

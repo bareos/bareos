@@ -157,7 +157,7 @@ class Windows extends Virtual
             return '';
         }
 
-        return trim($output, "\r\n");
+        return trim(implode('', $output), "\r\n");
     }
 
     /**

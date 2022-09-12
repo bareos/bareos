@@ -10,6 +10,7 @@
 namespace Zend\InputFilter;
 
 use Zend\Filter\FilterChain;
+use Zend\ServiceManager\AbstractPluginManager;
 use Zend\Validator\NotEmpty;
 use Zend\Validator\ValidatorChain;
 
@@ -387,7 +388,7 @@ class Input implements
     {
         $value           = $this->getValue();
         $hasValue        = $this->hasValue();
-        $empty           = ($value === null || $value === '' || $value === array());
+        $empty           = ($value === null || $value === '' || $value === []);
         $required        = $this->isRequired();
         $allowEmpty      = $this->allowEmpty();
         $continueIfEmpty = $this->continueIfEmpty();
@@ -444,7 +445,7 @@ class Input implements
         }
 
         if ($this->hasFallback()) {
-            return array();
+            return [];
         }
 
         $validator = $this->getValidatorChain();
@@ -474,8 +475,8 @@ class Input implements
 
         $this->notEmptyValidator = true;
 
-        if (class_exists('Zend\ServiceManager\AbstractPluginManager')) {
-            $chain->prependByName('NotEmpty', array(), true);
+        if (class_exists(AbstractPluginManager::class)) {
+            $chain->prependByName('NotEmpty', [], true);
 
             return;
         }
@@ -490,10 +491,26 @@ class Input implements
      */
     protected function prepareRequiredValidationFailureMessage()
     {
-        $notEmpty = new NotEmpty();
-        $templates = $notEmpty->getOption('messageTemplates');
-        return array(
-            NotEmpty::IS_EMPTY => $templates[NotEmpty::IS_EMPTY],
-        );
+        $chain      = $this->getValidatorChain();
+        $notEmpty   = $chain->plugin(NotEmpty::class);
+
+        foreach ($chain->getValidators() as $validator) {
+            if ($validator['instance'] instanceof NotEmpty) {
+                $notEmpty = $validator['instance'];
+                break;
+            }
+        }
+
+        $templates  = $notEmpty->getOption('messageTemplates');
+        $message    = $templates[NotEmpty::IS_EMPTY];
+        $translator = $notEmpty->getTranslator();
+
+        if ($translator) {
+            $message = $translator->translate($message, $notEmpty->getTranslatorTextDomain());
+        }
+
+        return [
+            NotEmpty::IS_EMPTY => $message,
+        ];
     }
 }

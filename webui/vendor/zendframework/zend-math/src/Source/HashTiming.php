@@ -82,12 +82,12 @@ class HashTiming implements RandomLib\Source
             $total -= $bytes;
             for ($i=1; $i < 3; $i++) {
                 $t1   = microtime(true);
-                $seed = mt_rand();
+                $seed = $initialSeed = uniqid(mt_rand() . lcg_value() . rand() . getmypid(), true);
                 for ($j=1; $j < 50; $j++) {
-                    $seed = sha1($seed);
+                    $seed = sha1($initialSeed . $i . $seed);
                 }
                 $t2 = microtime(true);
-                $entropy .= $t1 . $t2;
+                $entropy .= $t1 . $t2 . $seed;
             }
             $div = (int) (($t2 - $t1) * 1000000);
             if ($div <= 0) {
@@ -97,15 +97,23 @@ class HashTiming implements RandomLib\Source
             $iter = $bytes * (int) (ceil(8 / $bits_per_round));
             for ($i = 0; $i < $iter; $i ++) {
                 $t1 = microtime();
-                $seed = sha1(mt_rand());
+                $seed = $initialSeed = sha1(uniqid(mt_rand() . lcg_value() . rand(), true));
                 for ($j = 0; $j < $rounds; $j++) {
-                    $seed = sha1($seed);
+                    $seed = sha1($initialSeed . $i . $seed);
                 }
                 $t2 = microtime();
-                $entropy .= $t1 . $t2;
+                $entropy .= $t1 . $t2 . $seed;
             }
             $result .= sha1($entropy, true);
         }
         return substr($result, 0, $size);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public static function isSupported()
+    {
+        return true;
     }
 }

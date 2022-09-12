@@ -3,7 +3,7 @@
  * Zend Framework (http://framework.zend.com/)
  *
  * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright Copyright (c) 2005-2016 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
 
@@ -46,14 +46,14 @@ class PatternOptions extends AbstractOptions
      * - ClassCache
      * @var array
      */
-    protected $classCacheMethods = array();
+    protected $classCacheMethods = [];
 
     /**
      * Used by:
      * - ClassCache
      * @var array
      */
-    protected $classNonCacheMethods = array();
+    protected $classNonCacheMethods = [];
 
     /**
      * Used by:
@@ -109,7 +109,7 @@ class PatternOptions extends AbstractOptions
      * - ObjectCache
      * @var array
      */
-    protected $objectCacheMethods = array();
+    protected $objectCacheMethods = [];
 
     /**
      * Used by:
@@ -123,7 +123,7 @@ class PatternOptions extends AbstractOptions
      * - ObjectCache
      * @var array
      */
-    protected $objectNonCacheMethods = array('__tostring');
+    protected $objectNonCacheMethods = ['__tostring'];
 
     /**
      * Used by:
@@ -730,7 +730,7 @@ class PatternOptions extends AbstractOptions
     protected function normalizeObjectMethods(array $methods)
     {
         $methods   = $this->recursiveStrtolower($methods);
-        $intersect = array_intersect(array('__set', '__get', '__unset', '__isset'), $methods);
+        $intersect = array_intersect(['__set', '__get', '__unset', '__isset'], $methods);
         if (!empty($intersect)) {
             throw new Exception\InvalidArgumentException(
                 "Magic properties are handled by option 'cache_magic_properties'"

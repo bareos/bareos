@@ -19,10 +19,10 @@ class Hex extends AbstractValidator
      *
      * @var array
      */
-    protected $messageTemplates = array(
+    protected $messageTemplates = [
         self::INVALID => "Invalid type given. String expected",
         self::NOT_HEX => "The input contains non-hexadecimal characters",
-    );
+    ];
 
     /**
      * Returns true if and only if $value contains only hexadecimal digit characters
@@ -32,13 +32,13 @@ class Hex extends AbstractValidator
      */
     public function isValid($value)
     {
-        if (!is_string($value) && !is_int($value)) {
+        if (! is_string($value) && ! is_int($value)) {
             $this->error(self::INVALID);
             return false;
         }
 
         $this->setValue($value);
-        if (!ctype_xdigit((string) $value)) {
+        if (! ctype_xdigit((string) $value)) {
             $this->error(self::NOT_HEX);
             return false;
         }

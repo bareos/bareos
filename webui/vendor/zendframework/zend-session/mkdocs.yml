@@ -1,0 +1,15 @@
+docs_dir: doc/book
+site_dir: doc/html
+pages:
+    - index.md
+    - Reference:
+        - "Session Config": config.md
+        - "Session Container": container.md
+        - "Session Manager": manager.md
+        - "Session Save Handlers": save-handler.md
+        - "Session Storage": storage.md
+        - "Session Validators": validator.md
+site_name: zend-session
+site_description: zend-session
+repo_url: 'https://github.com/zendframework/zend-session'
+copyright: 'Copyright (c) 2016 <a href="http://www.zend.com/">Zend Technologies USA Inc.</a>'

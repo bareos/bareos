@@ -1,24 +1,23 @@
 <?php
 /**
- * Zend Framework (http://framework.zend.com/)
- *
- * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @link      http://github.com/zendframework/zend-view for the canonical source repository
+ * @copyright Copyright (c) 2005-2016 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
 
 namespace Zend\View\Helper;
 
-use Zend\I18n\Translator\TranslatorInterface as Translator;
-use Zend\I18n\Translator\TranslatorAwareInterface;
 use Zend\View\Exception;
 
 /**
- * Helper for setting and retrieving title element for HTML head
+ * Helper for setting and retrieving title element for HTML head.
+ *
+ * Duck-types against Zend\I18n\Translator\TranslatorAwareInterface.
  */
-class HeadTitle extends Placeholder\Container\AbstractStandalone implements
-    TranslatorAwareInterface
+class HeadTitle extends Placeholder\Container\AbstractStandalone
 {
+    use TranslatorAwareTrait;
+
     /**
      * Registry key for placeholder
      *
@@ -32,27 +31,6 @@ class HeadTitle extends Placeholder\Container\AbstractStandalone implements
      * @var string
      */
     protected $defaultAttachOrder = null;
-
-    /**
-     * Translator (optional)
-     *
-     * @var Translator
-     */
-    protected $translator;
-
-    /**
-     * Translator text domain (optional)
-     *
-     * @var string
-     */
-    protected $translatorTextDomain = 'default';
-
-    /**
-     * Whether translator should be used
-     *
-     * @var bool
-     */
-    protected $translatorEnabled = true;
 
     /**
      * Retrieve placeholder for title element and optionally set state
@@ -107,16 +85,11 @@ class HeadTitle extends Placeholder\Container\AbstractStandalone implements
      */
     public function renderTitle()
     {
-        $items = array();
+        $items = [];
 
-        if (null !== ($translator = $this->getTranslator())) {
-            foreach ($this as $item) {
-                $items[] = $translator->translate($item, $this->getTranslatorTextDomain());
-            }
-        } else {
-            foreach ($this as $item) {
-                $items[] = $item;
-            }
+        $itemCallback = $this->getTitleItemCallback();
+        foreach ($this as $item) {
+            $items[] = $itemCallback($item);
         }
 
         $separator = $this->getSeparator();
@@ -148,11 +121,11 @@ class HeadTitle extends Placeholder\Container\AbstractStandalone implements
      */
     public function setDefaultAttachOrder($setType)
     {
-        if (!in_array($setType, array(
+        if (!in_array($setType, [
             Placeholder\Container\AbstractContainer::APPEND,
             Placeholder\Container\AbstractContainer::SET,
             Placeholder\Container\AbstractContainer::PREPEND
-        ))) {
+        ])) {
             throw new Exception\DomainException(
                 "You must use a valid attach order: 'PREPEND', 'APPEND' or 'SET'"
             );
@@ -172,92 +145,28 @@ class HeadTitle extends Placeholder\Container\AbstractStandalone implements
         return $this->defaultAttachOrder;
     }
 
-    // Translator methods - Good candidate to refactor as a trait with PHP 5.4
 
     /**
-     * Sets translator to use in helper
+     * Create and return a callback for normalizing title items.
      *
-     * @param  Translator $translator  [optional] translator.
-     *                                 Default is null, which sets no translator.
-     * @param  string     $textDomain  [optional] text domain
-     *                                 Default is null, which skips setTranslatorTextDomain
-     * @return HeadTitle
-     */
-    public function setTranslator(Translator $translator = null, $textDomain = null)
-    {
-        $this->translator = $translator;
-        if (null !== $textDomain) {
-            $this->setTranslatorTextDomain($textDomain);
-        }
-        return $this;
-    }
-
-    /**
-     * Returns translator used in helper
+     * If translation is not enabled, or no translator is present, returns a
+     * callable that simply returns the provided item; otherwise, returns a
+     * callable that returns a translation of the provided item.
      *
-     * @return Translator|null
+     * @return callable
      */
-    public function getTranslator()
+    private function getTitleItemCallback()
     {
-        if (! $this->isTranslatorEnabled()) {
-            return;
+        if (! $this->isTranslatorEnabled() || ! $this->hasTranslator()) {
+            return function ($item) {
+                return $item;
+            };
         }
 
-        return $this->translator;
-    }
-
-    /**
-     * Checks if the helper has a translator
-     *
-     * @return bool
-     */
-    public function hasTranslator()
-    {
-        return (bool) $this->getTranslator();
-    }
-
-    /**
-     * Sets whether translator is enabled and should be used
-     *
-     * @param  bool $enabled [optional] whether translator should be used.
-     *                       Default is true.
-     * @return HeadTitle
-     */
-    public function setTranslatorEnabled($enabled = true)
-    {
-        $this->translatorEnabled = (bool) $enabled;
-        return $this;
-    }
-
-    /**
-     * Returns whether translator is enabled and should be used
-     *
-     * @return bool
-     */
-    public function isTranslatorEnabled()
-    {
-        return $this->translatorEnabled;
-    }
-
-    /**
-     * Set translation text domain
-     *
-     * @param  string $textDomain
-     * @return HeadTitle
-     */
-    public function setTranslatorTextDomain($textDomain = 'default')
-    {
-        $this->translatorTextDomain = $textDomain;
-        return $this;
-    }
-
-    /**
-     * Return the translation text domain
-     *
-     * @return string
-     */
-    public function getTranslatorTextDomain()
-    {
-        return $this->translatorTextDomain;
+        $translator = $this->getTranslator();
+        $textDomain = $this->getTranslatorTextDomain();
+        return function ($item) use ($translator, $textDomain) {
+            return $translator->translate($item, $textDomain);
+        };
     }
 }

@@ -27,7 +27,7 @@ class EventManager implements EventManagerInterface
      * Subscribed events and their listeners
      * @var array Array of PriorityQueue objects
      */
-    protected $events = array();
+    protected $events = [];
 
     /**
      * @var string Class representing the event being emitted
@@ -38,7 +38,7 @@ class EventManager implements EventManagerInterface
      * Identifiers, used to pull shared signals from SharedEventManagerInterface instance
      * @var array
      */
-    protected $identifiers = array();
+    protected $identifiers = [];
 
     /**
      * Shared event manager
@@ -62,6 +62,9 @@ class EventManager implements EventManagerInterface
     /**
      * Set the event class to utilize
      *
+     * @deprecated This method is deprecated with 2.6.0, and will be removed in 3.0.0.
+     *     See {@link https://github.com/zendframework/zend-eventmanager/blob/develop/doc/book/migration/removed.md}
+     *     for details.
      * @param  string $class
      * @return EventManager
      */
@@ -74,6 +77,9 @@ class EventManager implements EventManagerInterface
     /**
      * Set shared event manager
      *
+     * @deprecated This method is deprecated with 2.6.0, and will be removed in 3.0.0.
+     *     See {@link https://github.com/zendframework/zend-eventmanager/blob/develop/doc/book/migration/removed.md}
+     *     for details.
      * @param SharedEventManagerInterface $sharedEventManager
      * @return EventManager
      */
@@ -87,6 +93,9 @@ class EventManager implements EventManagerInterface
     /**
      * Remove any shared event manager currently attached
      *
+     * @deprecated This method is deprecated with 2.6.0, and will be removed in 3.0.0.
+     *     See {@link https://github.com/zendframework/zend-eventmanager/blob/develop/doc/book/migration/removed.md}
+     *     for details.
      * @return void
      */
     public function unsetSharedManager()
@@ -143,7 +152,7 @@ class EventManager implements EventManagerInterface
         if (is_array($identifiers) || $identifiers instanceof Traversable) {
             $this->identifiers = array_unique((array) $identifiers);
         } elseif ($identifiers !== null) {
-            $this->identifiers = array($identifiers);
+            $this->identifiers = [$identifiers];
         }
         return $this;
     }
@@ -159,7 +168,7 @@ class EventManager implements EventManagerInterface
         if (is_array($identifiers) || $identifiers instanceof Traversable) {
             $this->identifiers = array_unique(array_merge($this->identifiers, (array) $identifiers));
         } elseif ($identifiers !== null) {
-            $this->identifiers = array_unique(array_merge($this->identifiers, array($identifiers)));
+            $this->identifiers = array_unique(array_merge($this->identifiers, [$identifiers]));
         }
         return $this;
     }
@@ -174,7 +183,7 @@ class EventManager implements EventManagerInterface
      * @return ResponseCollection All listener return values
      * @throws Exception\InvalidCallbackException
      */
-    public function trigger($event, $target = null, $argv = array(), $callback = null)
+    public function trigger($event, $target = null, $argv = [], $callback = null)
     {
         if ($event instanceof EventInterface) {
             $e        = $event;
@@ -199,9 +208,6 @@ class EventManager implements EventManagerInterface
             throw new Exception\InvalidCallbackException('Invalid callback provided');
         }
 
-        // Initial value of stop propagation flag should be false
-        $e->stopPropagation(false);
-
         return $this->triggerListeners($event, $e, $callback);
     }
 
@@ -212,12 +218,14 @@ class EventManager implements EventManagerInterface
      * Triggers listeners until the provided callback evaluates the return
      * value of one as true, or until all listeners have been executed.
      *
+     * @deprecated The signature of this method will change in 3.0.0.
+     *     See {@link https://github.com/zendframework/zend-eventmanager/blob/develop/doc/book/migration/changed.md}
+     *     for details.
      * @param  string|EventInterface $event
      * @param  string|object $target Object calling emit, or symbol describing target (such as static method name)
      * @param  array|ArrayAccess $argv Array of arguments; typically, should be associative
      * @param  callable $callback
      * @return ResponseCollection
-     * @deprecated Please use trigger()
      * @throws Exception\InvalidCallbackException if invalid callable provided
      */
     public function triggerUntil($event, $target, $argv = null, $callback = null)
@@ -227,6 +235,29 @@ class EventManager implements EventManagerInterface
             E_USER_DEPRECATED
         );
         return $this->trigger($event, $target, $argv, $callback);
+    }
+
+    /**
+     * Trigger an event instance.
+     *
+     * @param EventInterface $event
+     * @return ResponseCollection
+     */
+    public function triggerEvent(EventInterface $event)
+    {
+        return $this->triggerListeners($event->getName(), $event);
+    }
+
+    /**
+     * Trigger an event instance, short-circuiting if a listener response evaluates true via the callback.
+     *
+     * @param callable $callback
+     * @param EventInterface $event
+     * @return ResponseCollection
+     */
+    public function triggerEventUntil(callable $callback, EventInterface $event)
+    {
+        return $this->triggerListeners($event->getName(), $event, $callback);
     }
 
     /**
@@ -266,7 +297,7 @@ class EventManager implements EventManagerInterface
 
         // Array of events should be registered individually, and return an array of all listeners
         if (is_array($event)) {
-            $listeners = array();
+            $listeners = [];
             foreach ($event as $name) {
                 $listeners[] = $this->attach($name, $callback, $priority);
             }
@@ -279,7 +310,7 @@ class EventManager implements EventManagerInterface
         }
 
         // Create a callback handler, setting the event and priority in its metadata
-        $listener = new CallbackHandler($callback, array('event' => $event, 'priority' => $priority));
+        $listener = new CallbackHandler($callback, ['event' => $event, 'priority' => $priority]);
 
         // Inject the callback handler into the queue
         $this->events[$event]->insert($listener, $priority);
@@ -293,6 +324,9 @@ class EventManager implements EventManagerInterface
      * one or more times, typically to attach to multiple events using local
      * methods.
      *
+     * @deprecated This method is deprecated with 2.6.0, and will be removed in 3.0.0.
+     *     See {@link https://github.com/zendframework/zend-eventmanager/blob/develop/doc/book/migration/removed.md}
+     *     for details.
      * @param  ListenerAggregateInterface $aggregate
      * @param  int $priority If provided, a suggested priority for the aggregate to use
      * @return mixed return value of {@link ListenerAggregateInterface::attach()}
@@ -343,6 +377,9 @@ class EventManager implements EventManagerInterface
      * Listener aggregates accept an EventManagerInterface instance, and call detach()
      * of all previously attached listeners.
      *
+     * @deprecated This method is deprecated with 2.6.0, and will be removed in 3.0.0.
+     *     See {@link https://github.com/zendframework/zend-eventmanager/blob/develop/doc/book/migration/removed.md}
+     *     for details.
      * @param  ListenerAggregateInterface $aggregate
      * @return mixed return value of {@link ListenerAggregateInterface::detach()}
      */
@@ -354,6 +391,9 @@ class EventManager implements EventManagerInterface
     /**
      * Retrieve all registered events
      *
+     * @deprecated This method is deprecated with 2.6.0, and will be removed in 3.0.0.
+     *     See {@link https://github.com/zendframework/zend-eventmanager/blob/develop/doc/book/migration/removed.md}
+     *     for details.
      * @return array
      */
     public function getEvents()
@@ -364,6 +404,9 @@ class EventManager implements EventManagerInterface
     /**
      * Retrieve all listeners for a given event
      *
+     * @deprecated This method is deprecated with 2.6.0, and will be removed in 3.0.0.
+     *     See {@link https://github.com/zendframework/zend-eventmanager/blob/develop/doc/book/migration/removed.md}
+     *     for details.
      * @param  string $event
      * @return PriorityQueue
      */
@@ -415,6 +458,9 @@ class EventManager implements EventManagerInterface
      */
     protected function triggerListeners($event, EventInterface $e, $callback = null)
     {
+        // Initial value of stop propagation flag should be false
+        $e->stopPropagation(false);
+
         $responses = new ResponseCollection;
         $listeners = $this->getListeners($event);
 
@@ -470,7 +516,7 @@ class EventManager implements EventManagerInterface
     protected function getSharedListeners($event)
     {
         if (!$sharedManager = $this->getSharedManager()) {
-            return array();
+            return [];
         }
 
         $identifiers     = $this->getIdentifiers();
@@ -478,7 +524,7 @@ class EventManager implements EventManagerInterface
         if (!in_array('*', $identifiers)) {
             $identifiers[] = '*';
         }
-        $sharedListeners = array();
+        $sharedListeners = [];
 
         foreach ($identifiers as $id) {
             if (!$listeners = $sharedManager->getListeners($id, $event)) {

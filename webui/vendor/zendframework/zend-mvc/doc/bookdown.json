@@ -1,0 +1,15 @@
+{
+    "title": "Zend\\Mvc",
+    "target": "html/",
+    "content": [
+        "book/zend.mvc.intro.md",
+        "book/zend.mvc.quick-start.md",
+        "book/zend.mvc.services.md",
+        "book/zend.mvc.routing.md",
+        "book/zend.mvc.mvc-event.md",
+        "book/zend.mvc.send-response-event.md",
+        "book/zend.mvc.controllers.md",
+        "book/zend.mvc.plugins.md",
+        "book/zend.mvc.examples.md"
+    ]
+}

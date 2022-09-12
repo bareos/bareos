@@ -10,8 +10,10 @@
 
 namespace Zend\Session\SaveHandler;
 
-use Mongo;
-use MongoDate;
+use MongoDB\BSON\Binary;
+use MongoDB\BSON\UTCDatetime;
+use MongoDB\Client as MongoClient;
+use MongoDB\Collection as MongoCollection;
 use Zend\Session\Exception\InvalidArgumentException;
 
 /**
@@ -19,6 +21,13 @@ use Zend\Session\Exception\InvalidArgumentException;
  */
 class MongoDB implements SaveHandlerInterface
 {
+    /**
+     * MongoClient instance
+     *
+     * @var MongoClient
+     */
+    protected $mongoClient;
+
     /**
      * MongoCollection instance
      *
@@ -49,19 +58,12 @@ class MongoDB implements SaveHandlerInterface
     /**
      * Constructor
      *
-     * @param Mongo|MongoClient $mongo
+     * @param MongoClient $mongoClient
      * @param MongoDBOptions $options
      * @throws InvalidArgumentException
      */
-    public function __construct($mongo, MongoDBOptions $options)
+    public function __construct($mongoClient, MongoDBOptions $options)
     {
-        if (!($mongo instanceof \MongoClient || $mongo instanceof \Mongo)) {
-            throw new InvalidArgumentException(
-                'Parameter of type %s is invalid; must be MongoClient or Mongo',
-                (is_object($mongo) ? get_class($mongo) : gettype($mongo))
-            );
-        }
-
         if (null === ($database = $options->getDatabase())) {
             throw new InvalidArgumentException('The database option cannot be empty');
         }
@@ -70,7 +72,7 @@ class MongoDB implements SaveHandlerInterface
             throw new InvalidArgumentException('The collection option cannot be empty');
         }
 
-        $this->mongoCollection = $mongo->selectCollection($database, $collection);
+        $this->mongoClient = $mongoClient;
         $this->options = $options;
     }
 
@@ -85,7 +87,17 @@ class MongoDB implements SaveHandlerInterface
     {
         // Note: session save path is not used
         $this->sessionName = $name;
-        $this->lifetime    = ini_get('session.gc_maxlifetime');
+        $this->lifetime    = (int) ini_get('session.gc_maxlifetime');
+
+        $this->mongoCollection = $this->mongoClient->selectCollection(
+            $this->options->getDatabase(),
+            $this->options->getCollection()
+        );
+
+        $this->mongoCollection->createIndex(
+            [$this->options->getModifiedField() => 1],
+            $this->options->useExpireAfterSecondsIndex() ? ['expireAfterSeconds' => $this->lifetime] : []
+        );
 
         return true;
     }
@@ -108,18 +120,24 @@ class MongoDB implements SaveHandlerInterface
      */
     public function read($id)
     {
-        $session = $this->mongoCollection->findOne(array(
+        $session = $this->mongoCollection->findOne([
             '_id' => $id,
             $this->options->getNameField() => $this->sessionName,
-        ));
+        ]);
 
         if (null !== $session) {
-            if ($session[$this->options->getModifiedField()] instanceof MongoDate &&
-                $session[$this->options->getModifiedField()]->sec +
-                $session[$this->options->getLifetimeField()] > time()) {
-                return $session[$this->options->getDataField()];
+            // check if session has expired if index is not used
+            if (! $this->options->useExpireAfterSecondsIndex()) {
+                $timestamp = $session[$this->options->getLifetimeField()];
+                $timestamp += floor(((string)$session[$this->options->getModifiedField()]) / 1000);
+
+                // session expired
+                if ($timestamp <= time()) {
+                    $this->destroy($id);
+                    return '';
+                }
             }
-            $this->destroy($id);
+            return $session[$this->options->getDataField()]->getData();
         }
 
         return '';
@@ -136,19 +154,21 @@ class MongoDB implements SaveHandlerInterface
     {
         $saveOptions = array_replace(
             $this->options->getSaveOptions(),
-            array('upsert' => true, 'multiple' => false)
+            ['upsert' => true, 'multiple' => false]
         );
 
-        $criteria = array(
+        $criteria = [
             '_id' => $id,
             $this->options->getNameField() => $this->sessionName,
-        );
+        ];
 
-        $newObj = array('$set' => array(
-            $this->options->getDataField() => (string) $data,
-            $this->options->getLifetimeField() => $this->lifetime,
-            $this->options->getModifiedField() => new MongoDate(),
-        ));
+        $newObj = [
+            '$set' => [
+                $this->options->getDataField() => new Binary((string)$data, Binary::TYPE_GENERIC),
+                $this->options->getLifetimeField() => $this->lifetime,
+                $this->options->getModifiedField() => new UTCDatetime(floor(microtime(true) * 1000)),
+            ],
+        ];
 
         /* Note: a MongoCursorException will be thrown if a record with this ID
          * already exists with a different session name, since the upsert query
@@ -156,9 +176,9 @@ class MongoDB implements SaveHandlerInterface
          * This should only happen if ID's are not unique or if the session name
          * is altered mid-process.
          */
-        $result = $this->mongoCollection->update($criteria, $newObj, $saveOptions);
+        $result = $this->mongoCollection->updateOne($criteria, $newObj, $saveOptions);
 
-        return (bool) (isset($result['ok']) ? $result['ok'] : $result);
+        return $result->isAcknowledged();
     }
 
     /**
@@ -169,12 +189,15 @@ class MongoDB implements SaveHandlerInterface
      */
     public function destroy($id)
     {
-        $result = $this->mongoCollection->remove(array(
-            '_id' => $id,
-            $this->options->getNameField() => $this->sessionName,
-        ), $this->options->getSaveOptions());
+        $result = $this->mongoCollection->deleteOne(
+            [
+                '_id' => $id,
+                $this->options->getNameField() => $this->sessionName,
+            ],
+            $this->options->getSaveOptions()
+        );
 
-        return (bool) (isset($result['ok']) ? $result['ok'] : $result);
+        return $result->isAcknowledged();
     }
 
     /**
@@ -186,7 +209,7 @@ class MongoDB implements SaveHandlerInterface
      * used, consider indexing this field to make the remove query more
      * efficient.
      *
-     * @see https://docs.mongodb.org/manual/tutorial/expire-data/
+     * @see http://docs.mongodb.org/manual/tutorial/expire-data/
      * @param int $maxlifetime
      * @return bool
      */
@@ -196,10 +219,15 @@ class MongoDB implements SaveHandlerInterface
          * each document. Doing so would require a $where query to work with the
          * computed value (modified + lifetime) and be very inefficient.
          */
-        $result = $this->mongoCollection->remove(array(
-            $this->options->getModifiedField() => array('$lt' => new MongoDate(time() - $maxlifetime)),
-        ), $this->options->getSaveOptions());
+        $microseconds = floor(microtime(true) * 1000) - $maxlifetime;
 
-        return (bool) (isset($result['ok']) ? $result['ok'] : $result);
+        $result = $this->mongoCollection->deleteMany(
+            [
+                $this->options->getModifiedField() => ['$lt' => new UTCDateTime($microseconds)],
+            ],
+            $this->options->getSaveOptions()
+        );
+
+        return $result->isAcknowledged();
     }
 }

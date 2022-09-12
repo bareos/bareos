@@ -63,7 +63,7 @@ abstract class AbstractContainer extends ArrayObject
      */
     public function __construct($name = 'Default', Manager $manager = null)
     {
-        if (!preg_match('/^[a-z0-9][a-z0-9_\\\\]+$/i', $name)) {
+        if (! preg_match('/^[a-z0-9][a-z0-9_\\\\]+$/i', $name)) {
             throw new Exception\InvalidArgumentException(
                 'Name passed to container is invalid; must consist of alphanumerics, backslashes and underscores only'
             );
@@ -72,7 +72,7 @@ abstract class AbstractContainer extends ArrayObject
         $this->setManager($manager);
 
         // Create namespace
-        parent::__construct(array(), ArrayObject::ARRAY_AS_PROPS);
+        parent::__construct([], ArrayObject::ARRAY_AS_PROPS);
 
         // Start session
         $this->getManager()->start();
@@ -101,7 +101,7 @@ abstract class AbstractContainer extends ArrayObject
     {
         if (null === static::$defaultManager) {
             $manager = new static::$managerDefaultClass();
-            if (!$manager instanceof Manager) {
+            if (! $manager instanceof Manager) {
                 throw new Exception\InvalidArgumentException(
                     'Invalid default manager type provided; must implement ManagerInterface'
                 );
@@ -133,7 +133,7 @@ abstract class AbstractContainer extends ArrayObject
     {
         if (null === $manager) {
             $manager = static::getDefaultManager();
-            if (!$manager instanceof Manager) {
+            if (! $manager instanceof Manager) {
                 throw new Exception\InvalidArgumentException(
                     'Manager provided is invalid; must implement ManagerInterface'
                 );
@@ -173,7 +173,7 @@ abstract class AbstractContainer extends ArrayObject
      */
     protected function createContainer()
     {
-        return new ArrayObject(array(), ArrayObject::ARRAY_AS_PROPS);
+        return new ArrayObject([], ArrayObject::ARRAY_AS_PROPS);
     }
 
     /**
@@ -192,13 +192,13 @@ abstract class AbstractContainer extends ArrayObject
     {
         $storage = $this->getStorage();
         $name    = $this->getName();
-        if (!isset($storage[$name])) {
-            if (!$createContainer) {
+        if (! isset($storage[$name])) {
+            if (! $createContainer) {
                 return;
             }
             $storage[$name] = $this->createContainer();
         }
-        if (!is_array($storage[$name]) && !$storage[$name] instanceof Traversable) {
+        if (! is_array($storage[$name]) && ! $storage[$name] instanceof Traversable) {
             throw new Exception\RuntimeException('Container cannot write to storage due to type mismatch');
         }
 
@@ -219,7 +219,7 @@ abstract class AbstractContainer extends ArrayObject
         $name    = $this->getName();
 
         // Return early if key not found
-        if ((null !== $key) && !isset($storage[$name][$key])) {
+        if ((null !== $key) && ! isset($storage[$name][$key])) {
             return true;
         }
 
@@ -407,13 +407,13 @@ abstract class AbstractContainer extends ArrayObject
         $name = $this->getName();
 
         // Return early if the key isn't set
-        if (!isset($storage[$name][$key])) {
+        if (! isset($storage[$name][$key])) {
             return false;
         }
 
         $expired = $this->expireKeys($key);
 
-        return !$expired;
+        return ! $expired;
     }
 
     /**
@@ -424,7 +424,7 @@ abstract class AbstractContainer extends ArrayObject
      */
     public function &offsetGet($key)
     {
-        if (!$this->offsetExists($key)) {
+        if (! $this->offsetExists($key)) {
             return;
         }
         $storage = $this->getStorage();
@@ -441,7 +441,7 @@ abstract class AbstractContainer extends ArrayObject
      */
     public function offsetUnset($key)
     {
-        if (!$this->offsetExists($key)) {
+        if (! $this->offsetExists($key)) {
             return;
         }
         $storage = $this->getStorage();
@@ -462,7 +462,7 @@ abstract class AbstractContainer extends ArrayObject
         if (is_object($input) && ($input instanceof ArrayObject || $input instanceof \ArrayObject)) {
             $input = $input->getArrayCopy();
         }
-        if (!is_array($input)) {
+        if (! is_array($input)) {
             $input = (array) $input;
         }
 
@@ -516,7 +516,7 @@ abstract class AbstractContainer extends ArrayObject
 
         if (null === $vars) {
             $this->expireKeys(); // first we need to expire global key, since it can already be expired
-            $data = array('EXPIRE' => $ts);
+            $data = ['EXPIRE' => $ts];
         } elseif (is_array($vars)) {
             // Cannot pass "$this" to a lambda
             $container = $this;
@@ -533,7 +533,7 @@ abstract class AbstractContainer extends ArrayObject
             }, $expires);
 
             // Create metadata array to merge in
-            $data = array('EXPIRE_KEYS' => $expires);
+            $data = ['EXPIRE_KEYS' => $expires];
         } else {
             throw new Exception\InvalidArgumentException(
                 'Unknown data provided as second argument to ' . __METHOD__
@@ -567,7 +567,7 @@ abstract class AbstractContainer extends ArrayObject
 
         if (null === $vars) {
             $this->expireKeys(); // first we need to expire global key, since it can already be expired
-            $data = array('EXPIRE_HOPS' => array('hops' => $hops, 'ts' => $ts));
+            $data = ['EXPIRE_HOPS' => ['hops' => $hops, 'ts' => $ts]];
         } elseif (is_array($vars)) {
             // Cannot pass "$this" to a lambda
             $container = $this;
@@ -580,11 +580,11 @@ abstract class AbstractContainer extends ArrayObject
             // Map item keys => timestamp
             $expires   = array_flip($expires);
             $expires   = array_map(function () use ($hops, $ts) {
-                return array('hops' => $hops, 'ts' => $ts);
+                return ['hops' => $hops, 'ts' => $ts];
             }, $expires);
 
             // Create metadata array to merge in
-            $data = array('EXPIRE_HOPS_KEYS' => $expires);
+            $data = ['EXPIRE_HOPS_KEYS' => $expires];
         } else {
             throw new Exception\InvalidArgumentException(
                 'Unknown data provided as second argument to ' . __METHOD__

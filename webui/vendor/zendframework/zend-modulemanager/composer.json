@@ -6,24 +6,25 @@
         "zf2",
         "modulemanager"
     ],
-    "homepage": "https://github.com/zendframework/zend-module-manager",
+    "homepage": "https://github.com/zendframework/zend-modulemanager",
     "autoload": {
         "psr-4": {
             "Zend\\ModuleManager\\": "src/"
         }
     },
     "require": {
-        "php": ">=5.3.23",
-        "zendframework/zend-eventmanager": "self.version",
-        "zendframework/zend-stdlib": "self.version"
+        "php": ">=5.5",
+        "zendframework/zend-eventmanager": "~2.5",
+        "zendframework/zend-stdlib": "~2.7"
     },
     "require-dev": {
-        "zendframework/zend-config": "self.version",
-        "zendframework/zend-console": "self.version",
-        "zendframework/zend-loader": "self.version",
-        "zendframework/zend-servicemanager": "self.version",
+        "zendframework/zend-config": "~2.5",
+        "zendframework/zend-console": "~2.5",
+        "zendframework/zend-di": "~2.5",
+        "zendframework/zend-loader": "~2.5",
+        "zendframework/zend-mvc": "~2.5",
+        "zendframework/zend-servicemanager": "~2.5",
         "fabpot/php-cs-fixer": "1.7.*",
-        "satooshi/php-coveralls": "dev-master",
         "phpunit/PHPUnit": "~4.0"
     },
     "suggest": {
@@ -33,10 +34,12 @@
         "zendframework/zend-mvc": "Zend\\Mvc component",
         "zendframework/zend-servicemanager": "Zend\\ServiceManager component"
     },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
     "extra": {
         "branch-alias": {
-            "dev-master": "2.4-dev",
-            "dev-develop": "2.5-dev"
+            "dev-master": "2.6-dev",
+            "dev-develop": "2.7-dev"
         }
     },
     "autoload-dev": {

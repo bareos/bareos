@@ -87,10 +87,10 @@ class View implements EventManagerAwareInterface
      */
     public function setEventManager(EventManagerInterface $events)
     {
-        $events->setIdentifiers(array(
+        $events->setIdentifiers([
             __CLASS__,
             get_class($this),
-        ));
+        ]);
         $this->events = $events;
         return $this;
     }
@@ -169,10 +169,11 @@ class View implements EventManagerAwareInterface
     {
         $event   = $this->getEvent();
         $event->setModel($model);
+        $event->setName(ViewEvent::EVENT_RENDERER);
         $events  = $this->getEventManager();
-        $results = $events->trigger(ViewEvent::EVENT_RENDERER, $event, function ($result) {
+        $results = $events->triggerEventUntil(function ($result) {
             return ($result instanceof Renderer);
-        });
+        }, $event);
         $renderer = $results->last();
         if (!$renderer instanceof Renderer) {
             throw new Exception\RuntimeException(sprintf(
@@ -182,7 +183,8 @@ class View implements EventManagerAwareInterface
         }
 
         $event->setRenderer($renderer);
-        $events->trigger(ViewEvent::EVENT_RENDERER_POST, $event);
+        $event->setName(ViewEvent::EVENT_RENDERER_POST);
+        $events->triggerEvent($event);
 
         // If EVENT_RENDERER or EVENT_RENDERER_POST changed the model, make sure
         // we use this new model instead of the current $model
@@ -212,8 +214,9 @@ class View implements EventManagerAwareInterface
         }
 
         $event->setResult($rendered);
+        $event->setName(ViewEvent::EVENT_RESPONSE);
 
-        $events->trigger(ViewEvent::EVENT_RESPONSE, $event);
+        $events->triggerEvent($event);
     }
 
     /**

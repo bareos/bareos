@@ -13,37 +13,55 @@
         }
     },
     "require": {
-        "php": ">=5.3.23",
-        "zendframework/zend-eventmanager": "self.version",
-        "zendframework/zend-stdlib": "self.version"
+        "php": "^5.5 || ^7.0",
+        "zendframework/zend-eventmanager": "^2.6.2 || ^3.0",
+        "zendframework/zend-stdlib": "^2.7 || ^3.0"
     },
     "require-dev": {
-        "zendframework/zend-cache": "self.version",
-        "zendframework/zend-db": "self.version",
-        "zendframework/zend-http": "self.version",
-        "zendframework/zend-servicemanager": "self.version",
-        "zendframework/zend-validator": "self.version",
-        "fabpot/php-cs-fixer": "1.7.*",
-        "satooshi/php-coveralls": "dev-master",
-        "phpunit/PHPUnit": "~4.0"
+        "zendframework/zend-cache": "^2.6.1",
+        "zendframework/zend-db": "^2.7",
+        "zendframework/zend-http": "^2.5.4",
+        "zendframework/zend-servicemanager": "^2.7.5 || ^3.0.3",
+        "zendframework/zend-validator": "^2.6",
+        "container-interop/container-interop": "^1.1",
+        "mongodb/mongodb": "^1.0.1",
+        "phpunit/PHPUnit": "~4.0",
+        "zendframework/zend-coding-standard": "~1.0.0"
     },
     "suggest": {
         "zendframework/zend-cache": "Zend\\Cache component",
         "zendframework/zend-db": "Zend\\Db component",
-        "zendframework/zend-eventmanager": "Zend\\EventManager component",
         "zendframework/zend-http": "Zend\\Http component",
         "zendframework/zend-servicemanager": "Zend\\ServiceManager component",
-        "zendframework/zend-validator": "Zend\\Validator component"
+        "zendframework/zend-validator": "Zend\\Validator component",
+        "mongodb/mongodb": "If you want to use the MongoDB session save handler"
     },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
     "extra": {
         "branch-alias": {
-            "dev-master": "2.4-dev",
-            "dev-develop": "2.5-dev"
+            "dev-master": "2.7-dev",
+            "dev-develop": "2.8-dev"
+        },
+        "zf": {
+            "component": "Zend\\Session",
+            "config-provider": "Zend\\Session\\ConfigProvider"
         }
     },
     "autoload-dev": {
         "psr-4": {
             "ZendTest\\Session\\": "test/"
         }
+    },
+    "scripts": {
+        "check": [
+            "@cs-check",
+            "@test"
+        ],
+        "cs-check": "phpcs",
+        "cs-fix": "phpcbf",
+        "test": "phpunit --colors=always",
+        "test-coverage": "phpunit --colors=always --coverage-clover clover.xml",
+        "upload-coverage": "coveralls -v"
     }
 }
