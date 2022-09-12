@@ -38,7 +38,7 @@ timeout=0
 timed_checkpoint=""
 volume_checkpoint=""
 
-while [[ ${timeout} -lt 20 ]] && [[ -z $timed_checkpoint || -z $volume_checkpoint ]]
+while [[ ${timeout} -lt 30 ]] && [[ -z $timed_checkpoint || -z $volume_checkpoint ]]
 do
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out $backup_log
