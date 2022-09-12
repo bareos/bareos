@@ -420,7 +420,7 @@ static struct ua_cmdstruct commands[] = {
      true, true},
     {NT_("prune"), PruneCmd, _("Prune records from catalog"),
      NT_("files [client=<client>] [pool=<pool>] [yes] |\n"
-         "jobs [client=<client>] [pool=<pool>] [jobtype=<jobtype>] [yes] |\n"
+         "jobs [client=<client>] [pool=<pool>] [yes] |\n"
          "volume [all] [=volume] [pool=<pool>] [yes] |\n"
          "stats [yes] |\n"
          "directory [=directory] [client=<client>] [recursive] [yes] |\n"),
