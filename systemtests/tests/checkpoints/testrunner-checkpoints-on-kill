@@ -45,6 +45,7 @@ END_OF_DATA
     do
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out $backup_log
+status jobs
 messages
 quit
 END_OF_DATA
@@ -59,13 +60,13 @@ END_OF_DATA
 
     # Check that a timed checkpoint was triggered
     if [[ -z $timed_checkpoint ]]; then
-        echo "Timed checkpoint was not triggered!"
+        echo "ERROR: Timed checkpoint was not triggered!"
         estat=1;
     fi
 
     # Check that a checkpoint happened on a volume change
     if [[ -z $volume_checkpoint ]]; then
-        echo "Checkpoint was not triggered on volume changes!"
+        echo "ERROR: Checkpoint was not triggered on volume changes!"
         estat=2;
     fi
 
