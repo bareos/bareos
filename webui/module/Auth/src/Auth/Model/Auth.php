@@ -72,7 +72,7 @@ class Auth implements InputFilterAwareInterface
                   'options' => array(
                      'encoding' => 'UTF-8',
                      'min' => 1,
-                     'max' => 64,
+                     'max' => 128,
                   ),
                ),
             ),
@@ -88,7 +88,6 @@ class Auth implements InputFilterAwareInterface
          'options' => array(
              'encoding' => 'UTF-8',
              'min' => 1,
-             'max' => 64,
          ),
           ),
       ),
