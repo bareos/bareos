@@ -91,6 +91,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - devtools/dist-tarball.sh: fix name if version contains "~pre" [PR #1221]
 - dird: fix odd-even weeks parsing bug in schedule [PR #1210]
 - bcopy: fix crash in bcopy when using certain cli arguments [PR #1211]
+- webui: fix password string length limitation [BUG #1480][PR #1251]
 
 ### Changed
 - contrib: rename Python modules to satisfy PEP8 [PR #768]
@@ -282,4 +283,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1237]: https://github.com/bareos/bareos/pull/1237
 [PR #1238]: https://github.com/bareos/bareos/pull/1238
 [PR #1242]: https://github.com/bareos/bareos/pull/1242
+[PR #1251]: https://github.com/bareos/bareos/pull/1251
 [unreleased]: https://github.com/bareos/bareos/tree/master
