@@ -1611,7 +1611,8 @@ void OpensslPostErrors(JobControlRecord* jcr, int type, const char* errstring)
 
 // Allocate a dynamic OpenSSL mutex
 [[maybe_unused]] static struct CRYPTO_dynlock_value*
-openssl_create_dynamic_mutex(const char* file, int line)
+openssl_create_dynamic_mutex([[maybe_unused]] const char* file,
+                             [[maybe_unused]] int line)
 {
   struct CRYPTO_dynlock_value* dynlock;
   int status;
@@ -1631,8 +1632,8 @@ openssl_create_dynamic_mutex(const char* file, int line)
 [[maybe_unused]] static void OpensslUpdateDynamicMutex(
     int mode,
     struct CRYPTO_dynlock_value* dynlock,
-    const char* file,
-    int line)
+    [[maybe_unused]] const char* file,
+    [[maybe_unused]] int line)
 {
   if (mode & CRYPTO_LOCK) {
     lock_mutex(dynlock->mutex);
@@ -1643,8 +1644,8 @@ openssl_create_dynamic_mutex(const char* file, int line)
 
 [[maybe_unused]] static void OpensslDestroyDynamicMutex(
     struct CRYPTO_dynlock_value* dynlock,
-    const char* file,
-    int line)
+    [[maybe_unused]] const char* file,
+    [[maybe_unused]] int line)
 {
   int status;
 
@@ -1658,10 +1659,11 @@ openssl_create_dynamic_mutex(const char* file, int line)
 }
 
 // (Un)Lock a static OpenSSL mutex
-[[maybe_unused]] static void openssl_update_static_mutex(int mode,
-                                                         int i,
-                                                         const char* file,
-                                                         int line)
+[[maybe_unused]] static void openssl_update_static_mutex(
+    int mode,
+    int i,
+    [[maybe_unused]] const char* file,
+    [[maybe_unused]] int line)
 {
   if (mode & CRYPTO_LOCK) {
     lock_mutex(mutexes[i]);
