@@ -612,7 +612,7 @@ bool DeviceControlRecord::DoLoad(bool IsWriting)
   return retval;
 }
 
-void DeviceControlRecord::DoSwapping(bool IsWriting)
+void DeviceControlRecord::DoSwapping([[maybe_unused]] bool IsWriting)
 {
   DeviceControlRecord* dcr = this;
 

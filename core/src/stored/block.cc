@@ -932,8 +932,8 @@ DeviceControlRecord::ReadStatus DeviceControlRecord::ReadBlockFromDevice(
  *  the block header.  For a file, the block may be partially
  *  or completely in the current buffer.
  */
-DeviceControlRecord::ReadStatus DeviceControlRecord::ReadBlockFromDev(
-    bool check_block_numbers)
+DeviceControlRecord::ReadStatus DeviceControlRecord::ReadBlockFromDev([
+    [maybe_unused]] bool check_block_numbers)
 {
   ssize_t status;
   int looping;

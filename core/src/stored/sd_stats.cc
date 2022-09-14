@@ -345,7 +345,7 @@ static inline void cleanup_cached_statistics()
 }
 
 // Entry point for a separate statistics thread.
-extern "C" void* statistics_thread_runner(void* arg)
+extern "C" void* statistics_thread_runner([[maybe_unused]] void* arg)
 {
   utime_t now;
   struct timeval tv;

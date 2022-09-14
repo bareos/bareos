@@ -505,7 +505,9 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
  *      row[0]=Path, row[1]=Filename, row[2]=FileIndex
  *      row[3]=JobId row[4]=LStat
  */
-static int InsertBootstrapHandler(void* ctx, int num_fields, char** row)
+static int InsertBootstrapHandler(void* ctx,
+                                  [[maybe_unused]] int num_fields,
+                                  char** row)
 {
   JobId_t JobId;
   int FileIndex;

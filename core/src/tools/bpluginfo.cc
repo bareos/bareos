@@ -132,17 +132,27 @@ struct _progdata {
     ptr = NULL;      \
   }
 
-int registerBareosEvents(void* ctx, ...) { return 0; };
+int registerBareosEvents([[maybe_unused]] void* ctx, ...) { return 0; };
 
-int getBareosValue(void* ctx, int var, void* value) { return 0; };
+int getBareosValue([[maybe_unused]] void* ctx,
+                   [[maybe_unused]] int var,
+                   [[maybe_unused]] void* value)
+{
+  return 0;
+};
 
-int setBareosValue(void* ctx, int var, void* value) { return 0; };
+int setBareosValue([[maybe_unused]] void* ctx,
+                   [[maybe_unused]] int var,
+                   [[maybe_unused]] void* value)
+{
+  return 0;
+};
 
-int DebugMessage(void* ctx,
-                 const char* file,
-                 int line,
-                 int level,
-                 const char* fmt,
+int DebugMessage([[maybe_unused]] void* ctx,
+                 [[maybe_unused]] const char* file,
+                 [[maybe_unused]] int line,
+                 [[maybe_unused]] int level,
+                 [[maybe_unused]] const char* fmt,
                  ...)
 {
 #ifdef DEBUGMSG
@@ -151,12 +161,12 @@ int DebugMessage(void* ctx,
   return 0;
 };
 
-int JobMessage(void* ctx,
-               const char* file,
-               int line,
-               int type,
-               int64_t mtime,
-               const char* fmt,
+int JobMessage([[maybe_unused]] void* ctx,
+               [[maybe_unused]] const char* file,
+               [[maybe_unused]] int line,
+               [[maybe_unused]] int type,
+               [[maybe_unused]] int64_t mtime,
+               [[maybe_unused]] const char* fmt,
                ...)
 {
 #ifdef DEBUGMSG
@@ -165,12 +175,18 @@ int JobMessage(void* ctx,
   return 0;
 };
 
-void* bareosMalloc(void* ctx, const char* file, int line, size_t size)
+void* bareosMalloc([[maybe_unused]] void* ctx,
+                   [[maybe_unused]] const char* file,
+                   [[maybe_unused]] int line,
+                   size_t size)
 {
   return MALLOC(size);
 };
 
-void bareosFree(void* ctx, const char* file, int line, void* mem)
+void bareosFree([[maybe_unused]] void* ctx,
+                [[maybe_unused]] const char* file,
+                [[maybe_unused]] int line,
+                void* mem)
 {
   FREE(mem);
 };

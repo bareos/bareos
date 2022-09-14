@@ -76,24 +76,36 @@ static void PyErrorHandler()
 }
 
 using namespace filedaemon;
-bRC bareosRegisterEvents(PluginContext* ctx, int nr_events, ...)
+bRC bareosRegisterEvents([[maybe_unused]] PluginContext* ctx,
+                         [[maybe_unused]] int nr_events,
+                         ...)
 {
   return bRC_OK;
 };
-bRC bareosUnRegisterEvents(PluginContext* ctx, int nr_events, ...)
+bRC bareosUnRegisterEvents([[maybe_unused]] PluginContext* ctx,
+                           [[maybe_unused]] int nr_events,
+                           ...)
 {
   return bRC_OK;
 };
-bRC bareosGetInstanceCount(PluginContext* ctx, int* ret) { return bRC_OK; };
-bRC bareosGetValue(PluginContext* ctx, filedaemon::bVariable var, void* value)
+bRC bareosGetInstanceCount([[maybe_unused]] PluginContext* ctx,
+                           [[maybe_unused]] int* ret)
 {
   return bRC_OK;
 };
-bRC bareosSetValue(PluginContext* ctx, filedaemon::bVariable var, void* value)
+bRC bareosGetValue([[maybe_unused]] PluginContext* ctx,
+                   [[maybe_unused]] filedaemon::bVariable var,
+                   [[maybe_unused]] void* value)
 {
   return bRC_OK;
 };
-bRC bareosJobMsg(PluginContext* ctx,
+bRC bareosSetValue([[maybe_unused]] PluginContext* ctx,
+                   [[maybe_unused]] filedaemon::bVariable var,
+                   [[maybe_unused]] void* value)
+{
+  return bRC_OK;
+};
+bRC bareosJobMsg([[maybe_unused]] PluginContext* ctx,
                  const char* file,
                  int line,
                  int type,
@@ -105,7 +117,7 @@ bRC bareosJobMsg(PluginContext* ctx,
          file, line, type, (int64_t)mtime, fmt);
   return bRC_OK;
 };
-bRC bareosDebugMsg(PluginContext* ctx,
+bRC bareosDebugMsg([[maybe_unused]] PluginContext* ctx,
                    const char* file,
                    int line,
                    int level,
@@ -116,41 +128,69 @@ bRC bareosDebugMsg(PluginContext* ctx,
          fmt);
   return bRC_OK;
 };
-void* bareosMalloc(PluginContext* ctx, const char* file, int line, size_t size)
+void* bareosMalloc([[maybe_unused]] PluginContext* ctx,
+                   [[maybe_unused]] const char* file,
+                   [[maybe_unused]] int line,
+                   [[maybe_unused]] size_t size)
 {
   return NULL;
 };
-void bareosFree(PluginContext* ctx, const char* file, int line, void* mem)
+void bareosFree([[maybe_unused]] PluginContext* ctx,
+                [[maybe_unused]] const char* file,
+                [[maybe_unused]] int line,
+                [[maybe_unused]] void* mem)
 {
   return;
 };
-bRC bareosAddExclude(PluginContext* ctx, const char* file) { return bRC_OK; };
-bRC bareosAddInclude(PluginContext* ctx, const char* file) { return bRC_OK; };
-bRC bareosAddOptions(PluginContext* ctx, const char* opts) { return bRC_OK; };
-bRC bareosAddRegex(PluginContext* ctx, const char* item, int type)
+bRC bareosAddExclude([[maybe_unused]] PluginContext* ctx,
+                     [[maybe_unused]] const char* file)
 {
   return bRC_OK;
 };
-bRC bareosAddWild(PluginContext* ctx, const char* item, int type)
+bRC bareosAddInclude([[maybe_unused]] PluginContext* ctx,
+                     [[maybe_unused]] const char* file)
 {
   return bRC_OK;
 };
-bRC bareosNewOptions(PluginContext* ctx) { return bRC_OK; };
-bRC bareosNewInclude(PluginContext* ctx) { return bRC_OK; };
-bRC bareosNewPreInclude(PluginContext* ctx) { return bRC_OK; };
-bRC bareosCheckChanges(PluginContext* ctx, struct filedaemon::save_pkt* sp)
+bRC bareosAddOptions([[maybe_unused]] PluginContext* ctx,
+                     [[maybe_unused]] const char* opts)
 {
   return bRC_OK;
 };
-bRC bareosAcceptFile(PluginContext* ctx, struct filedaemon::save_pkt* sp)
+bRC bareosAddRegex([[maybe_unused]] PluginContext* ctx,
+                   [[maybe_unused]] const char* item,
+                   [[maybe_unused]] int type)
+{
+  return bRC_OK;
+};
+bRC bareosAddWild([[maybe_unused]] PluginContext* ctx,
+                  [[maybe_unused]] const char* item,
+                  [[maybe_unused]] int type)
+{
+  return bRC_OK;
+};
+bRC bareosNewOptions([[maybe_unused]] PluginContext* ctx) { return bRC_OK; };
+bRC bareosNewInclude([[maybe_unused]] PluginContext* ctx) { return bRC_OK; };
+bRC bareosNewPreInclude([[maybe_unused]] PluginContext* ctx) { return bRC_OK; };
+bRC bareosCheckChanges([[maybe_unused]] PluginContext* ctx,
+                       [[maybe_unused]] struct filedaemon::save_pkt* sp)
+{
+  return bRC_OK;
+};
+bRC bareosAcceptFile([[maybe_unused]] PluginContext* ctx,
+                     [[maybe_unused]] struct filedaemon::save_pkt* sp)
 {
   return bRC_OK;
 }; /* Need fname and statp */
-bRC bareosSetSeenBitmap(PluginContext* ctx, bool all, char* fname)
+bRC bareosSetSeenBitmap([[maybe_unused]] PluginContext* ctx,
+                        [[maybe_unused]] bool all,
+                        [[maybe_unused]] char* fname)
 {
   return bRC_OK;
 };
-bRC bareosClearSeenBitmap(PluginContext* ctx, bool all, char* fname)
+bRC bareosClearSeenBitmap([[maybe_unused]] PluginContext* ctx,
+                          [[maybe_unused]] bool all,
+                          [[maybe_unused]] char* fname)
 {
   return bRC_OK;
 };
@@ -189,7 +229,7 @@ Plugin plugin = {(char*)"python-fd-module-tester", 123, NULL, NULL, NULL, NULL};
 
 static PluginContext bareos_PluginContext = {0, &plugin, NULL, NULL};
 
-int main(int argc, char* argv[])
+int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
 {
   /* Py_SetProgramName(argv[0]); */
   Py_Initialize();

@@ -200,7 +200,11 @@ struct reqrep_xlate* ndmp_reqrep_by_vx(struct reqrep_xlate* table,
   return 0;
 }
 
-int ndmp_xtox_no_arguments(void* vxbody, void* vybody) { return 0; }
+int ndmp_xtox_no_arguments([[maybe_unused]] void* vxbody,
+                           [[maybe_unused]] void* vybody)
+{
+  return 0;
+}
 
 
-int ndmp_xtox_no_memused(void* vxbody) { return 0; }
+int ndmp_xtox_no_memused([[maybe_unused]] void* vxbody) { return 0; }

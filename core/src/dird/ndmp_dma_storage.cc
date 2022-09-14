@@ -176,7 +176,9 @@ bool do_ndmp_native_query_tape_and_robot_agents(JobControlRecord* jcr,
  * get status of a NDMP Native storage and store the information
  * coming in via the NDMP protocol
  */
-void DoNdmpNativeStorageStatus(UaContext* ua, StorageResource* store, char* cmd)
+void DoNdmpNativeStorageStatus(UaContext* ua,
+                               StorageResource* store,
+                               [[maybe_unused]] char* cmd)
 {
   struct ndm_job_param ndmp_job;
 
@@ -228,8 +230,8 @@ void DoNdmpStorageStatus(UaContext* ua, StorageResource* store, char* cmd)
  * debugging.
  */
 extern "C" void NdmpRobotStatusHandler(struct ndmlog* log,
-                                       char* tag,
-                                       int lev,
+                                       [[maybe_unused]] char* tag,
+                                       [[maybe_unused]] int lev,
                                        char* msg)
 {
   NIS* nis;
@@ -261,7 +263,7 @@ static void CleanupNdmpSession(struct ndm_session* ndmp_sess)
 
 // Generic function to run a storage Job on a remote NDMP server.
 static bool NdmpRunStorageJob(JobControlRecord* jcr,
-                              StorageResource* store,
+                              [[maybe_unused]] StorageResource* store,
                               struct ndm_session* ndmp_sess,
                               struct ndm_job_param* ndmp_job)
 {
@@ -924,9 +926,9 @@ bool NdmpAutochangerVolumeOperation(UaContext* ua,
 bool NdmpSendLabelRequest(UaContext* ua,
                           StorageResource* store,
                           MediaDbRecord* mr,
-                          MediaDbRecord* omr,
+                          [[maybe_unused]] MediaDbRecord* omr,
                           PoolDbRecord* pr,
-                          bool relabel,
+                          [[maybe_unused]] bool relabel,
                           drive_number_t drive,
                           slot_number_t slot)
 {

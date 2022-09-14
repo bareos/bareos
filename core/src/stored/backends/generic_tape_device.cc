@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2014-2014 Planets Communications B.V.
-   Copyright (C) 2014-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1111,7 +1111,9 @@ bool generic_tape_device::rewind(DeviceControlRecord* dcr)
 }
 
 // (Un)mount the device (for tape devices)
-bool generic_tape_device::do_mount(DeviceControlRecord* dcr, int mount, int dotimeout)
+bool generic_tape_device::do_mount([[maybe_unused]] DeviceControlRecord* dcr,
+                                   int mount,
+                                   int dotimeout)
 {
   PoolMem ocmd(PM_FNAME);
   POOLMEM* results;
@@ -1126,8 +1128,7 @@ bool generic_tape_device::do_mount(DeviceControlRecord* dcr, int mount, int doti
   }
 
   EditMountCodes(ocmd, icmd);
-  Dmsg2(100, "do_mount: cmd=%s mounted=%d\n", ocmd.c_str(),
-        IsMounted());
+  Dmsg2(100, "do_mount: cmd=%s mounted=%d\n", ocmd.c_str(), IsMounted());
 
   if (dotimeout) {
     /* Try at most 10 times to (un)mount the device. This should perhaps be
@@ -1140,16 +1141,16 @@ bool generic_tape_device::do_mount(DeviceControlRecord* dcr, int mount, int doti
 
   /* If busy retry each second */
   Dmsg1(100, "do_mount run_prog=%s\n", ocmd.c_str());
-  while ((status = RunProgramFullOutput(ocmd.c_str(),
-                                        max_open_wait / 2, results))
-         != 0) {
+  while (
+      (status = RunProgramFullOutput(ocmd.c_str(), max_open_wait / 2, results))
+      != 0) {
     if (tries-- > 0) { continue; }
 
     Dmsg5(100, "Device %s cannot be %smounted. stat=%d result=%s ERR=%s\n",
           print_name(), (mount ? "" : "un"), status, results,
           be.bstrerror(status));
-    Mmsg(errmsg, _("Device %s cannot be %smounted. ERR=%s\n"),
-         print_name(), (mount ? "" : "un"), be.bstrerror(status));
+    Mmsg(errmsg, _("Device %s cannot be %smounted. ERR=%s\n"), print_name(),
+         (mount ? "" : "un"), be.bstrerror(status));
 
     FreePoolMemory(results);
     Dmsg0(200, "============ mount=0\n");
@@ -1277,10 +1278,13 @@ char* generic_tape_device::StatusDev()
 /**
  * Set the position of the device.
  *
- * Returns: true  on succes
+ * Returns: true  on succe
  *          false on error
  */
-bool generic_tape_device::UpdatePos(DeviceControlRecord* dcr) { return true; }
+bool generic_tape_device::UpdatePos([[maybe_unused]] DeviceControlRecord* dcr)
+{
+  return true;
+}
 
 /**
  * Reposition the device to file, block
@@ -1389,19 +1393,22 @@ ssize_t generic_tape_device::d_write(int fd, const void* buffer, size_t count)
 
 int generic_tape_device::d_close(int fd) { return ::close(fd); }
 
-int generic_tape_device::d_ioctl(int fd, ioctl_req_t request, char* op)
+int generic_tape_device::d_ioctl([[maybe_unused]] int fd,
+                                 [[maybe_unused]] ioctl_req_t request,
+                                 [[maybe_unused]] char* op)
 {
   return -1;
 }
 
-boffset_t generic_tape_device::d_lseek(DeviceControlRecord* dcr,
-                                       boffset_t offset,
-                                       int whence)
+boffset_t generic_tape_device::d_lseek(
+    [[maybe_unused]] DeviceControlRecord* dcr,
+    [[maybe_unused]] boffset_t offset,
+    [[maybe_unused]] int whence)
 {
   return -1;
 }
 
-bool generic_tape_device::d_truncate(DeviceControlRecord* dcr)
+bool generic_tape_device::d_truncate([[maybe_unused]] DeviceControlRecord* dcr)
 {
   // Maybe we should rewind and write and eof ????
   return true; /* We don't really truncate tapes */

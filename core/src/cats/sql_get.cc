@@ -1231,7 +1231,7 @@ static void strip_md5(char* q)
  *
  * TODO: See if we can do the SORT only if needed (as an argument)
  */
-bool BareosDb::GetFileList(JobControlRecord* jcr,
+bool BareosDb::GetFileList([[maybe_unused]] JobControlRecord* jcr,
                            const char* jobids,
                            bool use_md5,
                            bool use_delta,
@@ -1277,7 +1277,7 @@ bool BareosDb::GetFileList(JobControlRecord* jcr,
   return BigSqlQuery(query.c_str(), ResultHandler, ctx);
 }
 
-bool BareosDb::GetUsedBaseJobids(JobControlRecord* jcr,
+bool BareosDb::GetUsedBaseJobids([[maybe_unused]] JobControlRecord* jcr,
                                  const char* jobids,
                                  db_list_ctx* result)
 {
@@ -1479,7 +1479,7 @@ bail_out:
   return retval;
 }
 
-bool BareosDb::GetVolumeJobids(JobControlRecord* jcr,
+bool BareosDb::GetVolumeJobids([[maybe_unused]] JobControlRecord* jcr,
                                MediaDbRecord* mr,
                                db_list_ctx* lst)
 {

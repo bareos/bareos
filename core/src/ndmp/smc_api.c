@@ -41,13 +41,12 @@
 
 int smc_scsi_xa(struct smc_ctrl_block* smc)
 {
-  int try
-    = 0;
+  int try = 0;
   int rc;
   int sense_key;
   unsigned char* sense_data = smc->scsi_req.sense_data;
 
-  for (try = 0; try < 2; try ++) {
+  for (try = 0; try < 2; try++) {
     rc = (*smc->issue_scsi_req)(smc);
     if (rc || smc->scsi_req.completion_status != SMCSR_CS_GOOD) {
       strcpy(smc->errmsg, "SCSI request failed");
@@ -384,7 +383,7 @@ retry:
 int smc_move(struct smc_ctrl_block* smc,
              unsigned from_addr,
              unsigned to_addr,
-             int invert,
+             [[maybe_unused]] int invert,
              unsigned chs_addr)
 {
   struct smc_scsi_req* sr = &smc->scsi_req;
@@ -407,18 +406,22 @@ int smc_move(struct smc_ctrl_block* smc,
   return 0;
 }
 
-int smc_position(struct smc_ctrl_block* smc, unsigned to_addr, int invert)
+int smc_position([[maybe_unused]] struct smc_ctrl_block* smc,
+                 [[maybe_unused]] unsigned to_addr,
+                 [[maybe_unused]] int invert)
 {
   return -1;
 }
 
 
-int smc_handy_move_to_drive(struct smc_ctrl_block* smc, unsigned from_se_ix)
+int smc_handy_move_to_drive([[maybe_unused]] struct smc_ctrl_block* smc,
+                            [[maybe_unused]] unsigned from_se_ix)
 {
   return -1;
 }
 
-int smc_handy_move_from_drive(struct smc_ctrl_block* smc, unsigned to_se_ix)
+int smc_handy_move_from_drive([[maybe_unused]] struct smc_ctrl_block* smc,
+                              [[maybe_unused]] unsigned to_se_ix)
 {
   return -1;
 }

@@ -48,7 +48,8 @@ int main(int argc, char* const* argv)
 
   int ic = 0;
   bwild_app.add_flag(
-      "-i,--ignore-case", [&ic](bool val) { ic = FNM_CASEFOLD; },
+      "-i,--ignore-case",
+      [&ic]([[maybe_unused]] bool val) { ic = FNM_CASEFOLD; },
       "Use case insensitive match.");
 
   bool no_linenos = false;
@@ -57,7 +58,8 @@ int main(int argc, char* const* argv)
 
   bool match_only = true;
   bwild_app.add_flag(
-      "-n,--not-match", [&match_only](bool val) { match_only = false; },
+      "-n,--not-match",
+      [&match_only]([[maybe_unused]] bool val) { match_only = false; },
       "Print line that do not match.");
 
   CLI11_PARSE(bwild_app, argc, argv);

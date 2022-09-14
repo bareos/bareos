@@ -156,7 +156,7 @@ static void toggle_verbose()
 
 
 static void PrintCatalogDetails(CatalogResource* catalog,
-                                const char* working_dir)
+                                [[maybe_unused]] const char* working_dir)
 {
   POOLMEM* catalog_details = GetPoolMemory(PM_MESSAGE);
 

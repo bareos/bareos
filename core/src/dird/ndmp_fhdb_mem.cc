@@ -450,7 +450,7 @@ static inline void add_out_of_order_metadata(NIS* nis,
 }
 
 extern "C" int bndmp_fhdb_mem_add_dir(struct ndmlog* ixlog,
-                                      int tagc,
+                                      [[maybe_unused]] int tagc,
                                       char* raw_name,
                                       ndmp9_u_quad dir_node,
                                       ndmp9_u_quad node)
@@ -592,7 +592,7 @@ static inline bool ProcessOutOfOrderMetadata(MetadataTable* meta_data,
 }
 
 extern "C" int bndmp_fhdb_mem_add_node(struct ndmlog* ixlog,
-                                       int tagc,
+                                       [[maybe_unused]] int tagc,
                                        ndmp9_u_quad node,
                                        ndmp9_file_stat* fstat)
 {
@@ -663,7 +663,7 @@ extern "C" int bndmp_fhdb_mem_add_node(struct ndmlog* ixlog,
 }
 
 extern "C" int bndmp_fhdb_mem_add_dirnode_root(struct ndmlog* ixlog,
-                                               int tagc,
+                                               [[maybe_unused]] int tagc,
                                                ndmp9_u_quad root_node)
 {
   NIS* nis = (NIS*)ixlog->ctx;

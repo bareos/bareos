@@ -144,12 +144,12 @@ class DeviceControlRecord {
   // Methods in askdir.c
   virtual DeviceControlRecord* get_new_spooling_dcr();
   virtual bool DirFindNextAppendableVolume() { return true; }
-  virtual bool DirUpdateVolumeInfo(bool label, bool update_LastWritten)
+  virtual bool DirUpdateVolumeInfo([[maybe_unused]] bool label,[[maybe_unused]]  bool update_LastWritten)
   {
     return true;
   }
-  virtual bool DirCreateJobmediaRecord(bool zero) { return true; }
-  virtual bool DirUpdateFileAttributes(DeviceRecord* record) { return true; }
+  virtual bool DirCreateJobmediaRecord([[maybe_unused]] bool zero) { return true; }
+  virtual bool DirUpdateFileAttributes([[maybe_unused]] DeviceRecord* record) { return true; }
   virtual bool DirAskSysopToMountVolume(int mode);
   virtual bool DirAskSysopToCreateAppendableVolume() { return true; }
   virtual bool DirGetVolumeInfo(enum get_vol_info_rw writing);

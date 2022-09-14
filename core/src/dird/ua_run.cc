@@ -271,7 +271,7 @@ static time_t ConvertDaysHoursToSecs(const RerunArguments& rerunargs,
   return schedtime;
 }
 
-static std::string PrepareRerunSqlQuery(UaContext* ua,
+static std::string PrepareRerunSqlQuery([[maybe_unused]] UaContext* ua,
                                         const RerunArguments& rerunargs,
                                         utime_t now)
 {
@@ -302,7 +302,7 @@ static std::string PrepareRerunSqlQuery(UaContext* ua,
  * Returns: 0 on error
  *          1 if OK
  */
-bool reRunCmd(UaContext* ua, const char* cmd)
+bool reRunCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
 {
   if (!OpenClientDb(ua)) { return true; }
   // Determine what cmdline arguments are given.
@@ -366,7 +366,7 @@ bool reRunCmd(UaContext* ua, const char* cmd)
  *          JobId if OK
  *
  */
-int DoRunCmd(UaContext* ua, const char* cmd)
+int DoRunCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
 {
   JobControlRecord* jcr = NULL;
   RunContext rc;
@@ -539,7 +539,7 @@ bail_out:
   return 0; /* do not run */
 }
 
-bool RunCmd(UaContext* ua, const char* cmd)
+bool RunCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
 {
   return (DoRunCmd(ua, ua->cmd) != 0);
 }

@@ -1087,7 +1087,8 @@ int wrap_send_data_read(FILE* fp, uint64_t offset, uint64_t length)
   return 0;
 }
 
-int wrap_parse_data_stats_msg(char* buf, struct wrap_msg_buf* wmsg)
+int wrap_parse_data_stats_msg([[maybe_unused]] char* buf,
+                              [[maybe_unused]] struct wrap_msg_buf* wmsg)
 {
   return -1;
 }

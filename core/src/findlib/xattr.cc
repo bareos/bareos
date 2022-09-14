@@ -171,7 +171,7 @@ void XattrDropInternalTable(alist<xattr_t*>* xattr_value_list)
  * This is repeated 1 or more times.
  *
  */
-uint32_t SerializeXattrStream(JobControlRecord* jcr,
+uint32_t SerializeXattrStream([[maybe_unused]] JobControlRecord* jcr,
                               XattrData* xattr_data,
                               uint32_t expected_serialize_len,
                               alist<xattr_t*>* xattr_value_list)
@@ -1265,7 +1265,7 @@ bail_out:
 
 static BxattrExitCode generic_parse_xattr_streams(JobControlRecord* jcr,
                                                   XattrData* xattr_data,
-                                                  int stream,
+                                                  [[maybe_unused]] int stream,
                                                   char* content,
                                                   uint32_t content_length)
 {

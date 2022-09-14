@@ -204,7 +204,7 @@ int ndmmedia_pp(struct ndmmedia* me, int lineno, char* buf)
   return 6;
 }
 
-int64_t ndmmedia_strtoll(char* str, char** tailp, int defbase)
+int64_t ndmmedia_strtoll(char* str, char** tailp, [[maybe_unused]] int defbase)
 {
   int64_t val = 0;
   int c;

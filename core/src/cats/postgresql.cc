@@ -58,8 +58,8 @@ static dlist<BareosDbPostgresql>* db_list = NULL;
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-BareosDbPostgresql::BareosDbPostgresql(JobControlRecord* jcr,
-                                       const char* db_driver,
+BareosDbPostgresql::BareosDbPostgresql([[maybe_unused]] JobControlRecord* jcr,
+                                       [[maybe_unused]] const char* db_driver,
                                        const char* db_name,
                                        const char* db_user,
                                        const char* db_password,
@@ -388,7 +388,7 @@ void BareosDbPostgresql::FreeEscapedObjectMemory(unsigned char* obj)
  */
 void BareosDbPostgresql::UnescapeObject(JobControlRecord* jcr,
                                         char* from,
-                                        int32_t expected_len,
+                                        [[maybe_unused]] int32_t expected_len,
                                         POOLMEM*& dest,
                                         int32_t* dest_len)
 {
@@ -578,7 +578,8 @@ bool BareosDbPostgresql::SqlQueryWithHandler(const char* query,
  * Returns:  true  on success
  *           false on failure
  */
-bool BareosDbPostgresql::SqlQueryWithoutHandler(const char* query, int flags)
+bool BareosDbPostgresql::SqlQueryWithoutHandler(const char* query,
+                                                [[maybe_unused]] int flags)
 {
   int i;
   bool retry = true;

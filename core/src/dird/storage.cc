@@ -786,7 +786,7 @@ bool DoAutochangerVolumeOperation(UaContext* ua,
 }
 
 // See if a specific slot is loaded in one of the drives.
-vol_list_t* vol_is_loaded_in_drive(StorageResource* store,
+vol_list_t* vol_is_loaded_in_drive([[maybe_unused]] StorageResource* store,
                                    changer_vol_list_t* vol_list,
                                    slot_number_t slot)
 {

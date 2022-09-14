@@ -1820,7 +1820,7 @@ bail_out:
 }
 
 /* TODO: redirect command ouput to job log */
-bool RunConsoleCommand(JobControlRecord* jcr, const char* cmd)
+bool RunConsoleCommand([[maybe_unused]] JobControlRecord* jcr, const char* cmd)
 {
   UaContext* ua;
   bool ok;

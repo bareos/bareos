@@ -1826,7 +1826,7 @@ static std::string PrintConfigRun(RunResource* run)
 
 static void PrintConfigRun(OutputFormatterResource& send,
                            ResourceItem* item,
-                           int indent,
+                           [[maybe_unused]] int indent,
                            bool inherited)
 {
   RunResource* run = GetItemVariable<RunResource*>(*item);
@@ -1858,7 +1858,7 @@ std::string FilesetResource::GetOptionValue(const char** option)
 void FilesetResource::PrintConfigIncludeExcludeOptions(
     OutputFormatterResource& send,
     FileOptions* fo,
-    bool verbose)
+    [[maybe_unused]] bool verbose)
 {
   send.SubResourceStart(NULL, false, "Options {\n");
 
@@ -2055,8 +2055,8 @@ void FilesetResource::PrintConfigIncludeExcludeOptions(
 
 bool FilesetResource::PrintConfig(
     OutputFormatterResource& send,
-    const ConfigurationParser& my_config /* unused */,
-    bool hide_sensitive_data,
+    [[maybe_unused]] const ConfigurationParser& my_config /* unused */,
+    [[maybe_unused]] bool hide_sensitive_data,
     bool verbose)
 {
   bool inherited = false;
@@ -2524,7 +2524,10 @@ static void StorePooltype(LEX* lc, ResourceItem* item, int index, int pass)
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void StoreActiononpurge(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreActiononpurge(LEX* lc,
+                               ResourceItem* item,
+                               int index,
+                               [[maybe_unused]] int pass)
 {
   uint32_t* destination = GetItemVariablePointer<uint32_t*>(*item);
 
@@ -2627,7 +2630,10 @@ static void StoreMigtype(LEX* lc, ResourceItem* item, int index)
 }
 
 // Store JobType (backup, verify, restore)
-static void StoreJobtype(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreJobtype(LEX* lc,
+                         ResourceItem* item,
+                         int index,
+                         [[maybe_unused]] int pass)
 {
   LexGetToken(lc, BCT_NAME);
   // Store the type both in pass 1 and pass 2
@@ -2650,7 +2656,10 @@ static void StoreJobtype(LEX* lc, ResourceItem* item, int index, int pass)
 }
 
 // Store Protocol (Native, NDMP/NDMP_BAREOS, NDMP_NATIVE)
-static void StoreProtocoltype(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreProtocoltype(LEX* lc,
+                              ResourceItem* item,
+                              int index,
+                              [[maybe_unused]] int pass)
 {
   LexGetToken(lc, BCT_NAME);
   // Store the type both in pass 1 and pass 2
@@ -2672,7 +2681,10 @@ static void StoreProtocoltype(LEX* lc, ResourceItem* item, int index, int pass)
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void StoreReplace(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreReplace(LEX* lc,
+                         ResourceItem* item,
+                         int index,
+                         [[maybe_unused]] int pass)
 {
   LexGetToken(lc, BCT_NAME);
   // Scan Replacement options
@@ -2698,7 +2710,7 @@ static void StoreReplace(LEX* lc, ResourceItem* item, int index, int pass)
 static void StoreAuthprotocoltype(LEX* lc,
                                   ResourceItem* item,
                                   int index,
-                                  int pass)
+                                  [[maybe_unused]] int pass)
 {
   LexGetToken(lc, BCT_NAME);
   // Store the type both in pass 1 and pass 2
@@ -2721,7 +2733,10 @@ static void StoreAuthprotocoltype(LEX* lc,
 }
 
 // Store authentication type (Mostly for NDMP like clear or MD5).
-static void StoreAuthtype(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreAuthtype(LEX* lc,
+                          ResourceItem* item,
+                          int index,
+                          [[maybe_unused]] int pass)
 {
   LexGetToken(lc, BCT_NAME);
   // Store the type both in pass 1 and pass 2
@@ -2745,7 +2760,10 @@ static void StoreAuthtype(LEX* lc, ResourceItem* item, int index, int pass)
 }
 
 // Store Job Level (Full, Incremental, ...)
-static void StoreLevel(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreLevel(LEX* lc,
+                       ResourceItem* item,
+                       int index,
+                       [[maybe_unused]] int pass)
 {
   LexGetToken(lc, BCT_NAME);
 
@@ -2881,7 +2899,10 @@ static void StoreAudit(LEX* lc, ResourceItem* item, int index, int pass)
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void StoreRunscriptWhen(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreRunscriptWhen(LEX* lc,
+                               ResourceItem* item,
+                               [[maybe_unused]] int index,
+                               [[maybe_unused]] int pass)
 {
   LexGetToken(lc, BCT_NAME);
 
@@ -2904,7 +2925,7 @@ static void StoreRunscriptWhen(LEX* lc, ResourceItem* item, int index, int pass)
 
 static void StoreRunscriptTarget(LEX* lc,
                                  ResourceItem* item,
-                                 int index,
+                                 [[maybe_unused]] int index,
                                  int pass)
 {
   LexGetToken(lc, BCT_STRING);
@@ -2933,7 +2954,10 @@ static void StoreRunscriptTarget(LEX* lc,
   ScanToEol(lc);
 }
 
-static void StoreRunscriptCmd(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreRunscriptCmd(LEX* lc,
+                              ResourceItem* item,
+                              [[maybe_unused]] int index,
+                              int pass)
 {
   LexGetToken(lc, BCT_STRING);
 
@@ -2947,7 +2971,7 @@ static void StoreRunscriptCmd(LEX* lc, ResourceItem* item, int index, int pass)
 
 static void StoreShortRunscript(LEX* lc,
                                 ResourceItem* item,
-                                int index,
+                                [[maybe_unused]] int index,
                                 int pass)
 {
   LexGetToken(lc, BCT_STRING);
@@ -3005,7 +3029,10 @@ static void StoreShortRunscript(LEX* lc,
  * Store a bool in a bit field without modifing hdr
  * We can also add an option to StoreBool to skip hdr
  */
-static void StoreRunscriptBool(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreRunscriptBool(LEX* lc,
+                               ResourceItem* item,
+                               [[maybe_unused]] int index,
+                               [[maybe_unused]] int pass)
 {
   LexGetToken(lc, BCT_NAME);
   if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
@@ -3458,7 +3485,7 @@ static bool HasDefaultValue(ResourceItem& item)
  */
 static void PrintConfigCb(ResourceItem& item,
                           OutputFormatterResource& send,
-                          bool hide_sensitive_data,
+                          [[maybe_unused]] bool hide_sensitive_data,
                           bool inherited,
                           bool verbose)
 {

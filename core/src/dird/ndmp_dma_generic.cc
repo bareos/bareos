@@ -520,8 +520,8 @@ void NdmpLoghandler(struct ndmlog* log, char* tag, int level, char* msg)
  * output
  */
 extern "C" void ndmp_log_delivery_cb_to_dmsg(struct ndmlog* log,
-                                             char* tag,
-                                             int lev,
+                                             [[maybe_unused]] char* tag,
+                                             [[maybe_unused]] int lev,
                                              char* msg)
 {
   NIS* nis;
@@ -539,8 +539,8 @@ extern "C" void ndmp_log_delivery_cb_to_dmsg(struct ndmlog* log,
  * output
  */
 extern "C" void ndmp_log_delivery_cb_to_jmsg(struct ndmlog* log,
-                                             char* tag,
-                                             int lev,
+                                             [[maybe_unused]] char* tag,
+                                             [[maybe_unused]] int lev,
                                              char* msg)
 {
   NIS* nis;
@@ -557,8 +557,8 @@ extern "C" void ndmp_log_delivery_cb_to_jmsg(struct ndmlog* log,
  * user agent
  */
 extern "C" void ndmp_log_delivery_cb_to_ua(struct ndmlog* log,
-                                           char* tag,
-                                           int lev,
+                                           [[maybe_unused]] char* tag,
+                                           [[maybe_unused]] int lev,
                                            char* msg)
 {
   NIS* nis;
@@ -654,7 +654,9 @@ bail_out:
  * Output the status of a NDMP client. Query the DATA agent of a
  * native NDMP server to give some info.
  */
-void DoNdmpClientStatus(UaContext* ua, ClientResource* client, char* cmd)
+void DoNdmpClientStatus(UaContext* ua,
+                        ClientResource* client,
+                        [[maybe_unused]] char* cmd)
 {
   struct ndm_job_param ndmp_job;
 

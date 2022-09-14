@@ -146,7 +146,7 @@ static int PamLocalCallback(int num_msg,
 #if defined(__sun)
                             struct pam_message** msgm,
 #else
-                            const struct pam_message** msgm,
+                            [[maybe_unused]] const struct pam_message** msgm,
 #endif
                             struct pam_response** response,
                             void* appdata_ptr)

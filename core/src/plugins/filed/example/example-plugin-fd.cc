@@ -141,7 +141,9 @@ static bRC freePlugin(PluginContext* ctx)
  * Called by core code to get a variable from the plugin.
  *   Not currently used.
  */
-static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value)
+static bRC getPluginValue([[maybe_unused]] PluginContext* ctx,
+                          [[maybe_unused]] pVariable var,
+                          [[maybe_unused]] void* value)
 {
   // printf("plugin: getPluginValue var=%d\n", var);
   return bRC_OK;
@@ -151,7 +153,9 @@ static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value)
  * Called by core code to set a plugin variable.
  *  Not currently used.
  */
-static bRC setPluginValue(PluginContext* ctx, pVariable var, void* value)
+static bRC setPluginValue([[maybe_unused]] PluginContext* ctx,
+                          [[maybe_unused]] pVariable var,
+                          [[maybe_unused]] void* value)
 {
   // printf("plugin: setPluginValue var=%d\n", var);
   return bRC_OK;
@@ -215,19 +219,20 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
  * The plugin can create "Virtual" files by giving them a
  * name that is not normally found on the file system.
  */
-static bRC startBackupFile(PluginContext* ctx, struct save_pkt* sp)
+static bRC startBackupFile([[maybe_unused]] PluginContext* ctx,
+                           [[maybe_unused]] struct save_pkt* sp)
 {
   return bRC_OK;
 }
 
 // Done backing up a file.
-static bRC endBackupFile(PluginContext* ctx) { return bRC_OK; }
+static bRC endBackupFile([[maybe_unused]] PluginContext* ctx) { return bRC_OK; }
 
 /*
  * Do actual I/O. Bareos calls this after startBackupFile
  * or after startRestoreFile to do the actual file input or output.
  */
-static bRC pluginIO(PluginContext* ctx, struct io_pkt* io)
+static bRC pluginIO([[maybe_unused]] PluginContext* ctx, struct io_pkt* io)
 {
   io->status = 0;
   io->io_errno = 0;
@@ -248,12 +253,16 @@ static bRC pluginIO(PluginContext* ctx, struct io_pkt* io)
   return bRC_OK;
 }
 
-static bRC startRestoreFile(PluginContext* ctx, const char* cmd)
+static bRC startRestoreFile([[maybe_unused]] PluginContext* ctx,
+                            [[maybe_unused]] const char* cmd)
 {
   return bRC_OK;
 }
 
-static bRC endRestoreFile(PluginContext* ctx) { return bRC_OK; }
+static bRC endRestoreFile([[maybe_unused]] PluginContext* ctx)
+{
+  return bRC_OK;
+}
 
 /*
  * Called here to give the plugin the information needed to
@@ -262,7 +271,8 @@ static bRC endRestoreFile(PluginContext* ctx) { return bRC_OK; }
  * This data is what is needed to create the file, but does
  * not contain actual file data.
  */
-static bRC createFile(PluginContext* ctx, struct restore_pkt* rp)
+static bRC createFile([[maybe_unused]] PluginContext* ctx,
+                      [[maybe_unused]] struct restore_pkt* rp)
 {
   return bRC_OK;
 }
@@ -271,20 +281,41 @@ static bRC createFile(PluginContext* ctx, struct restore_pkt* rp)
  * Called after the file has been restored. This can be used to set directory
  * permissions, ...
  */
-static bRC setFileAttributes(PluginContext* ctx, struct restore_pkt* rp)
+static bRC setFileAttributes([[maybe_unused]] PluginContext* ctx,
+                             [[maybe_unused]] struct restore_pkt* rp)
 {
   return bRC_OK;
 }
 
-static bRC getAcl(PluginContext* ctx, acl_pkt* ap) { return bRC_OK; }
+static bRC getAcl([[maybe_unused]] PluginContext* ctx,
+                  [[maybe_unused]] acl_pkt* ap)
+{
+  return bRC_OK;
+}
 
-static bRC setAcl(PluginContext* ctx, acl_pkt* ap) { return bRC_OK; }
+static bRC setAcl([[maybe_unused]] PluginContext* ctx,
+                  [[maybe_unused]] acl_pkt* ap)
+{
+  return bRC_OK;
+}
 
-static bRC getXattr(PluginContext* ctx, xattr_pkt* xp) { return bRC_OK; }
+static bRC getXattr([[maybe_unused]] PluginContext* ctx,
+                    [[maybe_unused]] xattr_pkt* xp)
+{
+  return bRC_OK;
+}
 
-static bRC setXattr(PluginContext* ctx, xattr_pkt* xp) { return bRC_OK; }
+static bRC setXattr([[maybe_unused]] PluginContext* ctx,
+                    [[maybe_unused]] xattr_pkt* xp)
+{
+  return bRC_OK;
+}
 
 // When using Incremental dump, all previous dumps are necessary
-static bRC checkFile(PluginContext* ctx, char* fname) { return bRC_OK; }
+static bRC checkFile([[maybe_unused]] PluginContext* ctx,
+                     [[maybe_unused]] char* fname)
+{
+  return bRC_OK;
+}
 
 } /* namespace filedaemon */

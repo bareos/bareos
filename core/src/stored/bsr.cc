@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -115,7 +115,8 @@ static BootStrapRecord* find_smallest_volfile(BootStrapRecord* fbsr,
  *  If possible, position the archive device (tape) to read the
  *  next block.
  */
-void PositionBsrBlock(BootStrapRecord* bsr, DeviceBlock* block)
+void PositionBsrBlock([[maybe_unused]] BootStrapRecord* bsr,
+                      [[maybe_unused]] DeviceBlock* block)
 {
   /* To be implemented */
 }
@@ -380,7 +381,7 @@ static BootStrapRecord* find_smallest_volfile(BootStrapRecord* found_bsr,
  * Returns: true if we should reposition
  *        : false otherwise.
  */
-bool IsThisBsrDone(BootStrapRecord* bsr, DeviceRecord* rec)
+bool IsThisBsrDone([[maybe_unused]] BootStrapRecord* bsr, DeviceRecord* rec)
 {
   BootStrapRecord* rbsr = rec->bsr;
   Dmsg1(dbglevel, "match_set %d\n", rbsr != NULL);
@@ -538,7 +539,7 @@ no_match:
 static int MatchVolume(BootStrapRecord* bsr,
                        BsrVolume* volume,
                        Volume_Label* volrec,
-                       bool done)
+                       [[maybe_unused]] bool done)
 {
   if (!volume) { return 0; /* Volume must match */ }
   if (bstrcmp(volume->VolumeName, volrec->VolumeName)) {
@@ -552,7 +553,7 @@ static int MatchVolume(BootStrapRecord* bsr,
 static int MatchClient(BootStrapRecord* bsr,
                        BsrClient* client,
                        Session_Label* sessrec,
-                       bool done)
+                       [[maybe_unused]] bool done)
 {
   if (!client) { return 1; /* no specification matches all */ }
   if (bstrcmp(client->ClientName, sessrec->ClientName)) { return 1; }
@@ -563,7 +564,7 @@ static int MatchClient(BootStrapRecord* bsr,
 static int MatchJob(BootStrapRecord* bsr,
                     BsrJob* job,
                     Session_Label* sessrec,
-                    bool done)
+                    [[maybe_unused]] bool done)
 {
   if (!job) { return 1; /* no specification matches all */ }
   if (bstrcmp(job->Job, sessrec->Job)) { return 1; }
@@ -574,7 +575,7 @@ static int MatchJob(BootStrapRecord* bsr,
 static int MatchJobType(BootStrapRecord* bsr,
                         BsrJobType* job_type,
                         Session_Label* sessrec,
-                        bool done)
+                        [[maybe_unused]] bool done)
 {
   if (!job_type) { return 1; /* no specification matches all */ }
   if (job_type->JobType == sessrec->JobType) { return 1; }
@@ -585,7 +586,7 @@ static int MatchJobType(BootStrapRecord* bsr,
 static int MatchJobLevel(BootStrapRecord* bsr,
                          BsrJoblevel* job_level,
                          Session_Label* sessrec,
-                         bool done)
+                         [[maybe_unused]] bool done)
 {
   if (!job_level) { return 1; /* no specification matches all */ }
   if (job_level->JobLevel == sessrec->JobLevel) { return 1; }
@@ -598,7 +599,7 @@ static int MatchJobLevel(BootStrapRecord* bsr,
 static int MatchJobid(BootStrapRecord* bsr,
                       BsrJobid* jobid,
                       Session_Label* sessrec,
-                      bool done)
+                      [[maybe_unused]] bool done)
 {
   if (!jobid) { return 1; /* no specification matches all */ }
   if (jobid->JobId <= sessrec->JobId && jobid->JobId2 >= sessrec->JobId) {
@@ -671,7 +672,7 @@ static int MatchVoladdr(BootStrapRecord* bsr,
 static int MatchStream(BootStrapRecord* bsr,
                        BsrStream* stream,
                        DeviceRecord* rec,
-                       bool done)
+                       [[maybe_unused]] bool done)
 {
   if (!stream) { return 1; /* no specification matches all */ }
   if (stream->stream == rec->Stream) { return 1; }

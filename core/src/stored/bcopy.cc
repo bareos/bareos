@@ -125,7 +125,7 @@ int main(int argc, char* argv[])
   bool ignore_label_errors = false;
   bcopy_app.add_flag(
       "-p,--ignore-errors",
-      [&ignore_label_errors](bool val) {
+      [&ignore_label_errors]([[maybe_unused]] bool val) {
         ignore_label_errors = true;
         forge_on = true;
       },

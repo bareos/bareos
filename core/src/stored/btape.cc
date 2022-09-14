@@ -2559,7 +2559,8 @@ bail_out:
 }
 
 /* Read 10'000 records then stop */
-static bool QuickieCb(DeviceControlRecord* dcr, DeviceRecord* rec)
+static bool QuickieCb(DeviceControlRecord* dcr,
+                      [[maybe_unused]] DeviceRecord* rec)
 {
   Device* dev = dcr->dev;
   quickie_count++;
@@ -2613,7 +2614,7 @@ static bool CompareBlocks(DeviceBlock* last_block, DeviceBlock* block)
  *   not it is full. If the tape fills, attempt to
  *   acquire another tape.
  */
-static int FlushBlock(DeviceBlock* block, int dump)
+static int FlushBlock(DeviceBlock* block, [[maybe_unused]] int dump)
 {
   char ec1[50], ec2[50];
   uint64_t rate;
@@ -2906,7 +2907,7 @@ int GetCmd(const char* prompt)
   return 0;
 }
 
-bool BTAPE_DCR::DirCreateJobmediaRecord(bool zero)
+bool BTAPE_DCR::DirCreateJobmediaRecord([[maybe_unused]] bool zero)
 {
   WroteVol = false;
   return 1;
@@ -2918,7 +2919,7 @@ bool BTAPE_DCR::DirFindNextAppendableVolume()
   return VolumeName[0] != 0;
 }
 
-bool BTAPE_DCR::DirAskSysopToMountVolume(int mode)
+bool BTAPE_DCR::DirAskSysopToMountVolume([[maybe_unused]] int mode)
 {
   Dmsg0(20, "Enter DirAskSysopToMountVolume\n");
   if (VolumeName[0] == 0) { return DirAskSysopToCreateAppendableVolume(); }

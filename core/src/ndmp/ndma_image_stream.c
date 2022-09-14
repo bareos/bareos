@@ -104,10 +104,10 @@ int ndmis_initialize(struct ndm_session* sess)
 }
 
 /* Commission -- Get agent ready. Entire session has been initialize()d */
-int ndmis_commission(struct ndm_session* sess) { return 0; }
+int ndmis_commission([[maybe_unused]] struct ndm_session* sess) { return 0; }
 
 /* Decommission -- Discard agent */
-int ndmis_decommission(struct ndm_session* sess) { return 0; }
+int ndmis_decommission([[maybe_unused]] struct ndm_session* sess) { return 0; }
 
 /* Destroy -- Destroy agent */
 int ndmis_destroy(struct ndm_session* sess)
@@ -124,7 +124,7 @@ int ndmis_destroy(struct ndm_session* sess)
 }
 
 /* Belay -- Cancel partially issued activation/start */
-int ndmis_belay(struct ndm_session* sess) { return 0; }
+int ndmis_belay([[maybe_unused]] struct ndm_session* sess) { return 0; }
 
 
 /*
@@ -260,8 +260,8 @@ ndmp9_error ndmis_data_connect(struct ndm_session* sess,
   error = ndmis_ep_connect(sess, addr, reason, mine_ep, peer_ep);
 #ifndef NDMOS_OPTION_NO_TAPE_AGENT
   if (error == NDMP9_NO_ERR) {
-    if (peer_ep->connect_status == NDMIS_CONN_ACCEPTED &&
-        peer_ep->addr_type == NDMP9_ADDR_LOCAL) {
+    if (peer_ep->connect_status == NDMIS_CONN_ACCEPTED
+        && peer_ep->addr_type == NDMP9_ADDR_LOCAL) {
       ndmta_quantum(sess);
     }
   }
@@ -287,8 +287,8 @@ int ndmis_ep_start(struct ndm_session* sess,
 {
   struct ndm_image_stream* is = sess->plumb.image_stream;
 
-  if (mine_ep->connect_status != NDMIS_CONN_CONNECTED &&
-      mine_ep->connect_status != NDMIS_CONN_ACCEPTED) {
+  if (mine_ep->connect_status != NDMIS_CONN_CONNECTED
+      && mine_ep->connect_status != NDMIS_CONN_ACCEPTED) {
     return -1;
   }
 
@@ -449,7 +449,7 @@ out:
   return error;
 }
 
-ndmp9_error ndmis_audit_ep_connect(struct ndm_session* sess,
+ndmp9_error ndmis_audit_ep_connect([[maybe_unused]] struct ndm_session* sess,
                                    ndmp9_addr_type addr_type,
                                    char* reason,
                                    struct ndmis_end_point* mine_ep,

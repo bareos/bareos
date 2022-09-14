@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -37,10 +37,14 @@
 #include "lib/util.h"
 
 /* Dummy functions */
-int GenerateJobEvent(JobControlRecord* jcr, const char* event) { return 1; }
-void GeneratePluginEvent(JobControlRecord* jcr,
-                         filedaemon::bEventType eventType,
-                         void* value)
+int GenerateJobEvent([[maybe_unused]] JobControlRecord* jcr,
+                     [[maybe_unused]] const char* event)
+{
+  return 1;
+}
+void GeneratePluginEvent([[maybe_unused]] JobControlRecord* jcr,
+                         [[maybe_unused]] filedaemon::bEventType eventType,
+                         [[maybe_unused]] void* value)
 {
 }
 
@@ -192,15 +196,17 @@ int main(int argc, char* const* argv)
   exit(0);
 }
 
-static int CountFiles(JobControlRecord* jcr,
-                      FindFilesPacket* ff,
-                      bool top_level)
+static int CountFiles([[maybe_unused]] JobControlRecord* jcr,
+                      [[maybe_unused]] FindFilesPacket* ff,
+                      [[maybe_unused]] bool top_level)
 {
   num_files++;
   return 1;
 }
 
-static int PrintFile(JobControlRecord* jcr, FindFilesPacket* ff, bool top_level)
+static int PrintFile([[maybe_unused]] JobControlRecord* jcr,
+                     FindFilesPacket* ff,
+                     [[maybe_unused]] bool top_level)
 {
   switch (ff->type) {
     case FT_LNKSAVED:

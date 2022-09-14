@@ -62,7 +62,7 @@ DBId_t dbid_list::get(int i) const
 }
 
 
-int DbIntHandler(void* ctx, int num_fields, char** row)
+int DbIntHandler(void* ctx, [[maybe_unused]] int num_fields, char** row)
 {
   uint32_t* val = (uint32_t*)ctx;
 
@@ -83,7 +83,7 @@ int DbIntHandler(void* ctx, int num_fields, char** row)
  * Called here to retrieve a 32/64 bit integer from the database.
  *   The returned integer will be extended to 64 bit.
  */
-int db_int64_handler(void* ctx, int num_fields, char** row)
+int db_int64_handler(void* ctx, [[maybe_unused]] int num_fields, char** row)
 {
   db_int64_ctx* lctx = (db_int64_ctx*)ctx;
 
@@ -98,7 +98,7 @@ int db_int64_handler(void* ctx, int num_fields, char** row)
  * Called here to retrieve a btime from the database.
  *   The returned integer will be extended to 64 bit.
  */
-int DbStrtimeHandler(void* ctx, int num_fields, char** row)
+int DbStrtimeHandler(void* ctx, [[maybe_unused]] int num_fields, char** row)
 {
   db_int64_ctx* lctx = (db_int64_ctx*)ctx;
 
@@ -126,7 +126,9 @@ struct max_connections_context {
   uint32_t nr_connections;
 };
 
-static inline int DbMaxConnectionsHandler(void* ctx, int num_fields, char** row)
+static inline int DbMaxConnectionsHandler(void* ctx,
+                                          [[maybe_unused]] int num_fields,
+                                          char** row)
 {
   struct max_connections_context* context;
   uint32_t index;
@@ -422,7 +424,7 @@ void BareosDb::ListDashes(OutputFormatter* send)
 }
 
 // List result handler used by queries done with db_big_sql_query()
-int BareosDb::ListResult(void* vctx, int nb_col, char** row)
+int BareosDb::ListResult(void* vctx, [[maybe_unused]] int nb_col, char** row)
 {
   JobControlRecord* jcr;
   char ewc[30];

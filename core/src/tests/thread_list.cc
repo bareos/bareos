@@ -112,7 +112,8 @@ TEST(thread_list, thread_list_startup_and_shutdown)
   EXPECT_EQ(thread_counter, maximum_thread_count);
 }
 
-static void* ThreadHandlerSleepRandomTime(ConfigurationParser*, void* data)
+static void* ThreadHandlerSleepRandomTime(ConfigurationParser*,
+                                          [[maybe_unused]] void* data)
 {
   std::mt19937_64 eng{std::random_device{}()};  // or seed however you want
   std::uniform_int_distribution<> dist{0, 10};

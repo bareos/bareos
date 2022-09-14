@@ -235,7 +235,9 @@ static bRC freePlugin(PluginContext* ctx)
 }
 
 // Return some plugin value (none defined)
-static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value)
+static bRC getPluginValue(PluginContext* ctx,
+                          pVariable var,
+                          [[maybe_unused]] void* value)
 {
   Dmsg(ctx, debuglevel, "autoxflate-sd: getPluginValue var=%d\n", var);
 
@@ -243,7 +245,9 @@ static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value)
 }
 
 // Set a plugin value (none defined)
-static bRC setPluginValue(PluginContext* ctx, pVariable var, void* value)
+static bRC setPluginValue(PluginContext* ctx,
+                          pVariable var,
+                          [[maybe_unused]] void* value)
 {
   Dmsg(ctx, debuglevel, "autoxflate-sd: setPluginValue var=%d\n", var);
 
@@ -535,7 +539,8 @@ bail_out:
 }
 
 // Setup inflation for auto inflation of data streams.
-static bool SetupAutoInflation(PluginContext* ctx, DeviceControlRecord* dcr)
+static bool SetupAutoInflation([[maybe_unused]] PluginContext* ctx,
+                               DeviceControlRecord* dcr)
 {
   JobControlRecord* jcr = dcr->jcr;
   uint32_t decompress_buf_size;

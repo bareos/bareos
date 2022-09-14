@@ -112,7 +112,7 @@ struct s_del_ctx {
  *  is allowed to get to MAX_DEL_LIST_LEN to limit the
  *  maximum malloc'ed memory.
  */
-static int DeleteHandler(void* ctx, int num_fields, char** row)
+static int DeleteHandler(void* ctx, [[maybe_unused]] int num_fields, char** row)
 {
   struct s_del_ctx* del = (struct s_del_ctx*)ctx;
 

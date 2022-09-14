@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2006 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -56,7 +56,7 @@ static POOLMEM* substitute_prompts(UaContext* ua,
  *   SQL statement possibly terminated by ;
  *   :next query prompt
  */
-bool QueryCmd(UaContext* ua, const char* cmd)
+bool QueryCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
 {
   FILE* fd = NULL;
   POOLMEM* query = GetPoolMemory(PM_MESSAGE);
@@ -225,7 +225,7 @@ static POOLMEM* substitute_prompts(UaContext* ua,
 }
 
 // Get general SQL query for Catalog
-bool SqlqueryCmd(UaContext* ua, const char* cmd)
+bool SqlqueryCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
 {
   PoolMem query(PM_MESSAGE);
   int len;

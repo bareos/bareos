@@ -65,7 +65,7 @@ class CramSockets {
  public:
   CramSockets(const char* r_code_str_1,
               const char* name_1,
-              const char* r_code_str_2,
+              [[maybe_unused]] const char* r_code_str_2,
               const char* name_2)
       : sockets(create_connected_server_and_client_bareos_socket())
       , client_cram(

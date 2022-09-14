@@ -167,7 +167,8 @@ int main(int argc, char* argv[])
   bextract_app
       .add_option(
           "-i,--include-list",
-          [&line, &fd, &got_inc](std::vector<std::string> val) {
+          [&line, &fd,
+           &got_inc]([[maybe_unused]] std::vector<std::string> val) {
             if ((fd = fopen(optarg, "rb")) == nullptr) {
               BErrNo be;
               Pmsg2(0, _("Could not open include file: %s, ERR=%s\n"), optarg,
@@ -265,7 +266,9 @@ static inline void DropDelayedDataStreams()
 
   if (!delayed_streams || delayed_streams->empty()) { return; }
 
-  foreach_alist (dds, delayed_streams) { free(dds->content); }
+  foreach_alist (dds, delayed_streams) {
+    free(dds->content);
+  }
 
   delayed_streams->destroy();
 }

@@ -129,7 +129,8 @@ void _unLockVolumes()
   }
 }
 
-void _lockReadVolumes(const char* file, int line)
+void _lockReadVolumes([[maybe_unused]] const char* file,
+                      [[maybe_unused]] int line)
 {
   read_vol_list_lock_count++;
   pthread_mutex_lock(&read_vol_lock);

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -139,23 +139,23 @@ bail_out:
   return retval;
 }
 
-static bRC PyGetPluginValue(PluginContext* plugin_ctx,
-                            pVariable var,
-                            void* value)
+static bRC PyGetPluginValue([[maybe_unused]] PluginContext* plugin_ctx,
+                            [[maybe_unused]] pVariable var,
+                            [[maybe_unused]] void* value)
 {
   return bRC_OK;
 }
 
-static bRC PySetPluginValue(PluginContext* plugin_ctx,
-                            pVariable var,
-                            void* value)
+static bRC PySetPluginValue([[maybe_unused]] PluginContext* plugin_ctx,
+                            [[maybe_unused]] pVariable var,
+                            [[maybe_unused]] void* value)
 {
   return bRC_OK;
 }
 
 static bRC PyHandlePluginEvent(PluginContext* plugin_ctx,
                                bSdEvent* event,
-                               void* value)
+                               [[maybe_unused]] void* value)
 {
   bRC retval = bRC_Error;
   plugin_private_context* plugin_priv_ctx
@@ -196,7 +196,8 @@ bail_out:
  * Callback function which is exposed as a part of the additional methods which
  * allow a Python plugin to get certain internal values of the current Job.
  */
-static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
+static PyObject* PyBareosGetValue([[maybe_unused]] PyObject* self,
+                                  PyObject* args)
 {
   int var;
   PluginContext* plugin_ctx = plugin_context;
@@ -284,7 +285,8 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
  * Callback function which is exposed as a part of the additional methods which
  * allow a Python plugin to get certain internal values of the current Job.
  */
-static PyObject* PyBareosSetValue(PyObject* self, PyObject* args)
+static PyObject* PyBareosSetValue([[maybe_unused]] PyObject* self,
+                                  PyObject* args)
 {
   int var;
   PluginContext* plugin_ctx = plugin_context;
@@ -333,7 +335,8 @@ bail_out:
  * allow a Python plugin to issue debug messages using the Bareos debug message
  * facility.
  */
-static PyObject* PyBareosDebugMessage(PyObject* self, PyObject* args)
+static PyObject* PyBareosDebugMessage([[maybe_unused]] PyObject* self,
+                                      PyObject* args)
 {
   int level;
   char* dbgmsg = NULL;
@@ -354,7 +357,8 @@ static PyObject* PyBareosDebugMessage(PyObject* self, PyObject* args)
  * allow a Python plugin to issue Job messages using the Bareos Job message
  * facility.
  */
-static PyObject* PyBareosJobMessage(PyObject* self, PyObject* args)
+static PyObject* PyBareosJobMessage([[maybe_unused]] PyObject* self,
+                                    PyObject* args)
 {
   int type;
   char* jobmsg = NULL;
@@ -375,7 +379,8 @@ static PyObject* PyBareosJobMessage(PyObject* self, PyObject* args)
  * allow a Python plugin to issue a Register Event to register additional events
  * it wants to receive.
  */
-static PyObject* PyBareosRegisterEvents(PyObject* self, PyObject* args)
+static PyObject* PyBareosRegisterEvents([[maybe_unused]] PyObject* self,
+                                        PyObject* args)
 {
   int len, event;
   PluginContext* plugin_ctx = plugin_context;
@@ -417,7 +422,8 @@ bail_out:
  * allow a Python plugin to issue an Unregister Event to unregister events it
  * doesn't want to receive anymore.
  */
-static PyObject* PyBareosUnRegisterEvents(PyObject* self, PyObject* args)
+static PyObject* PyBareosUnRegisterEvents([[maybe_unused]] PyObject* self,
+                                          PyObject* args)
 {
   int len, event;
   PluginContext* plugin_ctx = plugin_context;
@@ -459,7 +465,8 @@ bail_out:
  * allow a Python plugin to issue a GetInstanceCount to retrieve the number of
  * instances of the current plugin being loaded into the daemon.
  */
-static PyObject* PyBareosGetInstanceCount(PyObject* self, PyObject* args)
+static PyObject* PyBareosGetInstanceCount([[maybe_unused]] PyObject* self,
+                                          PyObject* args)
 {
   int value;
   PluginContext* plugin_ctx = plugin_context;

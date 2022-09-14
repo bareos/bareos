@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -65,7 +65,7 @@ static void UpdateSlots(UaContext* ua);
  *    update stats [days=...]
  *         updates long term statistics
  */
-bool UpdateCmd(UaContext* ua, const char* cmd)
+bool UpdateCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
 {
   static const char* kw[] = {NT_("media"),  /* 0 */
                              NT_("volume"), /* 1 */

@@ -107,21 +107,22 @@ static int EolCmd(FILE* input, BareosSocket* UA_sock);
 #  include <regex.h>
 #endif
 
-extern "C" void GotSigstop(int sig) { stop = true; }
+extern "C" void GotSigstop([[maybe_unused]] int sig) { stop = true; }
 
-extern "C" void GotSigcontinue(int sig) { stop = false; }
+extern "C" void GotSigcontinue([[maybe_unused]] int sig) { stop = false; }
 
-extern "C" void GotSigtout(int sig)
+extern "C" void GotSigtout([[maybe_unused]] int sig)
 {
   // printf("Got tout\n");
 }
 
-extern "C" void GotSigtin(int sig)
+extern "C" void GotSigtin([[maybe_unused]] int sig)
 {
   // printf("Got tin\n");
 }
 
-static int ZedKeyscmd(FILE* input, BareosSocket* UA_sock)
+static int ZedKeyscmd([[maybe_unused]] FILE* input,
+                      [[maybe_unused]] BareosSocket* UA_sock)
 {
   ConSetZedKeys();
   return 1;
@@ -475,7 +476,8 @@ static char* cpl_generator(const char* text, int state)
 }
 
 /* do not use the default filename completion */
-static char* dummy_completion_function(const char* text, int state)
+static char* dummy_completion_function([[maybe_unused]] const char* text,
+                                       [[maybe_unused]] int state)
 {
   return NULL;
 }
@@ -519,7 +521,9 @@ static struct cpl_keywords_t cpl_keywords[]
  * in case we want to do some simple parsing.  Return the array of matches,
  * or NULL if there aren't any.
  */
-static char** readline_completion(const char* text, int start, int end)
+static char** readline_completion(const char* text,
+                                  int start,
+                                  [[maybe_unused]] int end)
 {
   bool found = false;
   char** matches;
@@ -564,7 +568,8 @@ static char** readline_completion(const char* text, int start, int end)
 }
 
 static char eol = '\0';
-static int EolCmd(FILE* input, BareosSocket* UA_sock)
+static int EolCmd([[maybe_unused]] FILE* input,
+                  [[maybe_unused]] BareosSocket* UA_sock)
 {
   if ((argc > 1) && (strchr("!$%&'()*+,-/:;<>?[]^`{|}~", argk[1][0]) != NULL)) {
     eol = argk[1][0];
@@ -581,7 +586,10 @@ static int EolCmd(FILE* input, BareosSocket* UA_sock)
  *        0 if no input
  *       -1 error (must stop)
  */
-int GetCmd(FILE* input, const char* prompt, BareosSocket* sock, int sec)
+int GetCmd(FILE* input,
+           const char* prompt,
+           BareosSocket* sock,
+           [[maybe_unused]] int sec)
 {
   static char* line = NULL;
   static char* next = NULL;
@@ -880,7 +888,7 @@ int main(int argc, char* argv[])
   bool test_config = false;
   console_app.add_flag(
       "-l,--list-directors",
-      [&list_directors, &test_config](bool val) {
+      [&list_directors, &test_config]([[maybe_unused]] bool val) {
         list_directors = true;
         test_config = true;
       },
@@ -1174,7 +1182,8 @@ static int CheckResources()
 }
 
 /* @version */
-static int Versioncmd(FILE* input, BareosSocket* UA_sock)
+static int Versioncmd([[maybe_unused]] FILE* input,
+                      [[maybe_unused]] BareosSocket* UA_sock)
 {
   ConsoleOutputFormat("Version: %s (%s) %s\n", kBareosVersionStrings.Full,
                       kBareosVersionStrings.Date,
@@ -1183,7 +1192,7 @@ static int Versioncmd(FILE* input, BareosSocket* UA_sock)
 }
 
 /* @input <input-filename> */
-static int InputCmd(FILE* input, BareosSocket* UA_sock)
+static int InputCmd([[maybe_unused]] FILE* input, BareosSocket* UA_sock)
 {
   FILE* fd;
 
@@ -1223,7 +1232,8 @@ static int OutputCmd(FILE* input, BareosSocket* UA_sock)
   return DoOutputcmd(input, UA_sock);
 }
 
-static int DoOutputcmd(FILE* input, BareosSocket* UA_sock)
+static int DoOutputcmd([[maybe_unused]] FILE* input,
+                       [[maybe_unused]] BareosSocket* UA_sock)
 {
   FILE* file;
   const char* mode = "a+b";
@@ -1249,7 +1259,8 @@ static int DoOutputcmd(FILE* input, BareosSocket* UA_sock)
 }
 
 // @exec "some-command" [wait-seconds]
-static int ExecCmd(FILE* input, BareosSocket* UA_sock)
+static int ExecCmd([[maybe_unused]] FILE* input,
+                   [[maybe_unused]] BareosSocket* UA_sock)
 {
   Bpipe* bpipe;
   char line[5000];
@@ -1282,7 +1293,8 @@ static int ExecCmd(FILE* input, BareosSocket* UA_sock)
 }
 
 /* @echo xxx yyy */
-static int EchoCmd(FILE* input, BareosSocket* UA_sock)
+static int EchoCmd([[maybe_unused]] FILE* input,
+                   [[maybe_unused]] BareosSocket* UA_sock)
 {
   for (int i = 1; i < argc; i++) { ConsoleOutputFormat("%s ", argk[i]); }
   ConsoleOutput("\n");
@@ -1290,10 +1302,15 @@ static int EchoCmd(FILE* input, BareosSocket* UA_sock)
 }
 
 /* @quit */
-static int QuitCmd(FILE* input, BareosSocket* UA_sock) { return 0; }
+static int QuitCmd([[maybe_unused]] FILE* input,
+                   [[maybe_unused]] BareosSocket* UA_sock)
+{
+  return 0;
+}
 
 /* @help */
-static int HelpCmd(FILE* input, BareosSocket* UA_sock)
+static int HelpCmd([[maybe_unused]] FILE* input,
+                   [[maybe_unused]] BareosSocket* UA_sock)
 {
   int i;
   for (i = 0; i < comsize; i++) {
@@ -1303,14 +1320,16 @@ static int HelpCmd(FILE* input, BareosSocket* UA_sock)
 }
 
 /* @sleep secs */
-static int SleepCmd(FILE* input, BareosSocket* UA_sock)
+static int SleepCmd([[maybe_unused]] FILE* input,
+                    [[maybe_unused]] BareosSocket* UA_sock)
 {
   if (argc > 1) { sleep(atoi(argk[1])); }
   return 1;
 }
 
 /* @time */
-static int TimeCmd(FILE* input, BareosSocket* UA_sock)
+static int TimeCmd([[maybe_unused]] FILE* input,
+                   [[maybe_unused]] BareosSocket* UA_sock)
 {
   char sdt[50];
 

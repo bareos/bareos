@@ -57,7 +57,8 @@ int main(int argc, char* const* argv)
 
   bool match_only = true;
   bregex_app.add_flag(
-      "-n,--not-match", [&match_only](bool val) { match_only = false; },
+      "-n,--not-match",
+      [&match_only]([[maybe_unused]] bool val) { match_only = false; },
       "Print line that do not match.");
 
   CLI11_PARSE(bregex_app, argc, argv);

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2013 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -112,7 +112,7 @@ void unix_fifo_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
   Dmsg1(100, "open dev: fifo %d opened\n", fd);
 }
 
-bool unix_fifo_device::eod(DeviceControlRecord* dcr)
+bool unix_fifo_device::eod([[maybe_unused]] DeviceControlRecord* dcr)
 {
   if (fd < 0) {
     dev_errno = EBADF;
@@ -132,7 +132,9 @@ bool unix_fifo_device::eod(DeviceControlRecord* dcr)
 }
 
 // (Un)mount the device (For a FILE device)
-bool unix_fifo_device::do_mount(DeviceControlRecord* dcr, bool mount, int dotimeout)
+bool unix_fifo_device::do_mount(DeviceControlRecord* dcr,
+                                bool mount,
+                                int dotimeout)
 {
   PoolMem ocmd(PM_FNAME);
   POOLMEM* results;
@@ -150,8 +152,7 @@ bool unix_fifo_device::do_mount(DeviceControlRecord* dcr, bool mount, int dotime
 
   EditMountCodes(ocmd, icmd);
 
-  Dmsg2(100, "do_mount: cmd=%s mounted=%d\n", ocmd.c_str(),
-        IsMounted());
+  Dmsg2(100, "do_mount: cmd=%s mounted=%d\n", ocmd.c_str(), IsMounted());
 
   if (dotimeout) {
     /* Try at most 10 times to (un)mount the device. This should perhaps be
@@ -164,9 +165,9 @@ bool unix_fifo_device::do_mount(DeviceControlRecord* dcr, bool mount, int dotime
 
   /* If busy retry each second */
   Dmsg1(100, "do_mount run_prog=%s\n", ocmd.c_str());
-  while ((status = RunProgramFullOutput(ocmd.c_str(),
-                                        max_open_wait / 2, results))
-         != 0) {
+  while (
+      (status = RunProgramFullOutput(ocmd.c_str(), max_open_wait / 2, results))
+      != 0) {
     /* Doesn't work with internationalization (This is not a problem) */
     if (mount && fnmatch("*is already mounted on*", results, 0) == 0) { break; }
     if (!mount && fnmatch("* not mounted*", results, 0) == 0) { break; }
@@ -174,8 +175,7 @@ bool unix_fifo_device::do_mount(DeviceControlRecord* dcr, bool mount, int dotime
       /* Sometimes the device cannot be mounted because it is already mounted.
        * Try to unmount it, then remount it */
       if (mount) {
-        Dmsg1(400, "Trying to unmount the device %s...\n",
-              print_name());
+        Dmsg1(400, "Trying to unmount the device %s...\n", print_name());
         do_mount(dcr, 0, 0);
       }
       Bmicrosleep(1, 0);
@@ -184,8 +184,8 @@ bool unix_fifo_device::do_mount(DeviceControlRecord* dcr, bool mount, int dotime
     Dmsg5(100, "Device %s cannot be %smounted. status=%d result=%s ERR=%s\n",
           print_name(), (mount ? "" : "un"), status, results,
           be.bstrerror(status));
-    Mmsg(errmsg, _("Device %s cannot be %smounted. ERR=%s\n"),
-         print_name(), (mount ? "" : "un"), be.bstrerror(status));
+    Mmsg(errmsg, _("Device %s cannot be %smounted. ERR=%s\n"), print_name(),
+         (mount ? "" : "un"), be.bstrerror(status));
 
     // Now, just to be sure it is not mounted, try to read the filesystem.
     name_max = pathconf(".", _PC_NAME_MAX);
@@ -195,8 +195,7 @@ bool unix_fifo_device::do_mount(DeviceControlRecord* dcr, bool mount, int dotime
       BErrNo be;
       dev_errno = errno;
       Dmsg3(100, "do_mount: failed to open dir %s (dev=%s), ERR=%s\n",
-            device_resource->mount_point, print_name(),
-            be.bstrerror());
+            device_resource->mount_point, print_name(), be.bstrerror());
       goto get_out;
     }
 
@@ -307,19 +306,24 @@ ssize_t unix_fifo_device::d_write(int fd, const void* buffer, size_t count)
 
 int unix_fifo_device::d_close(int fd) { return ::close(fd); }
 
-int unix_fifo_device::d_ioctl(int fd, ioctl_req_t request, char* op)
+int unix_fifo_device::d_ioctl([[maybe_unused]] int fd,
+                              [[maybe_unused]] ioctl_req_t request,
+                              [[maybe_unused]] char* op)
 {
   return -1;
 }
 
-boffset_t unix_fifo_device::d_lseek(DeviceControlRecord* dcr,
-                                    boffset_t offset,
-                                    int whence)
+boffset_t unix_fifo_device::d_lseek([[maybe_unused]] DeviceControlRecord* dcr,
+                                    [[maybe_unused]] boffset_t offset,
+                                    [[maybe_unused]] int whence)
 {
   return -1;
 }
 
-bool unix_fifo_device::d_truncate(DeviceControlRecord* dcr) { return true; }
+bool unix_fifo_device::d_truncate([[maybe_unused]] DeviceControlRecord* dcr)
+{
+  return true;
+}
 
 class Backend : public BackendInterface {
  public:

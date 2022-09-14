@@ -59,7 +59,10 @@ int ndmp0_pp_header(void* data, char* buf)
   return 1; /* body */
 }
 
-int ndmp0_pp_request(ndmp0_message msg, void* data, int lineno, char* buf)
+int ndmp0_pp_request(ndmp0_message msg,
+                     void* data,
+                     [[maybe_unused]] int lineno,
+                     char* buf)
 {
   switch (msg) {
     default:
@@ -87,7 +90,10 @@ int ndmp0_pp_request(ndmp0_message msg, void* data, int lineno, char* buf)
   return 1; /* one line in buf */
 }
 
-int ndmp0_pp_reply(ndmp0_message msg, void* data, int lineno, char* buf)
+int ndmp0_pp_reply(ndmp0_message msg,
+                   void* data,
+                   [[maybe_unused]] int lineno,
+                   char* buf)
 {
   switch (msg) {
     default:

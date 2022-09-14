@@ -201,12 +201,14 @@ class MockDatabase : public BareosDb {
   bool ValidateConnection() override { return false; }
   void StartTransaction(JobControlRecord* /*jcr*/) override {}
   void EndTransaction(JobControlRecord* /*jcr*/) override {}
-  bool SqlCopyStart(const std::string& table_name,
-                    const std::vector<std::string>& column_names) override
+  bool SqlCopyStart(
+      [[maybe_unused]] const std::string& table_name,
+      [[maybe_unused]] const std::vector<std::string>& column_names) override
   {
     return false;
   }
-  bool SqlCopyInsert(const std::vector<DatabaseField>& data_fields) override
+  bool SqlCopyInsert([
+      [maybe_unused]] const std::vector<DatabaseField>& data_fields) override
   {
     return false;
   }

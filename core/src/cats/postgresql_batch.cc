@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -34,7 +34,8 @@
 #  include "lib/berrno.h"
 #  include "lib/dlist.h"
 
-bool BareosDbPostgresql::SqlBatchStartFileTable(JobControlRecord* jcr)
+bool BareosDbPostgresql::SqlBatchStartFileTable([
+    [maybe_unused]] JobControlRecord* jcr)
 {
   const char* query = "COPY batch FROM STDIN";
 
@@ -94,8 +95,9 @@ bail_out:
 }
 
 // Set error to something to abort operation
-bool BareosDbPostgresql::SqlBatchEndFileTable(JobControlRecord* jcr,
-                                              const char* error)
+bool BareosDbPostgresql::SqlBatchEndFileTable(
+    [[maybe_unused]] JobControlRecord* jcr,
+    const char* error)
 {
   int res;
   int count = 30;
@@ -191,8 +193,9 @@ static char* pgsql_copy_escape(char* dest, const char* src, size_t len)
   return dest;
 }
 
-bool BareosDbPostgresql::SqlBatchInsertFileTable(JobControlRecord* jcr,
-                                                 AttributesDbRecord* ar)
+bool BareosDbPostgresql::SqlBatchInsertFileTable(
+    [[maybe_unused]] JobControlRecord* jcr,
+    AttributesDbRecord* ar)
 {
   int res;
   int count = 30;

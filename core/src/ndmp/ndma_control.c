@@ -52,10 +52,10 @@ int ndmca_initialize(struct ndm_session* sess)
 }
 
 /* Commission -- Get agent ready. Entire session has been initialize()d */
-int ndmca_commission(struct ndm_session* sess) { return 0; }
+int ndmca_commission([[maybe_unused]] struct ndm_session* sess) { return 0; }
 
 /* Decommission -- Discard agent */
-int ndmca_decommission(struct ndm_session* sess) { return 0; }
+int ndmca_decommission([[maybe_unused]] struct ndm_session* sess) { return 0; }
 
 /* Decommission -- Discard agent */
 int ndmca_destroy(struct ndm_session* sess)
@@ -129,21 +129,21 @@ int ndmca_control_agent(struct ndm_session* sess)
       break;
 
     case NDM_JOB_OP_TEST_TAPE:
-#ifndef NDMOS_OPTION_NO_TEST_AGENTS
+#  ifndef NDMOS_OPTION_NO_TEST_AGENTS
       rc = ndmca_op_test_tape(sess);
-#endif
+#  endif
       break;
 
     case NDM_JOB_OP_TEST_MOVER:
-#ifndef NDMOS_OPTION_NO_TEST_AGENTS
+#  ifndef NDMOS_OPTION_NO_TEST_AGENTS
       rc = ndmca_op_test_mover(sess);
-#endif
+#  endif
       break;
 
     case NDM_JOB_OP_TEST_DATA:
-#ifndef NDMOS_OPTION_NO_TEST_AGENTS
+#  ifndef NDMOS_OPTION_NO_TEST_AGENTS
       rc = ndmca_op_test_data(sess);
-#endif
+#  endif
       break;
 
     case NDM_JOB_OP_REWIND_TAPE:

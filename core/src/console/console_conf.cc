@@ -252,7 +252,9 @@ static void ConfigBeforeCallback(ConfigurationParser& my_config)
   my_config.InitializeQualifiedResourceNameTypeConverter(map);
 }
 
-static void ConfigReadyCallback(ConfigurationParser& my_config) {}
+static void ConfigReadyCallback([[maybe_unused]] ConfigurationParser& my_config)
+{
+}
 
 ConfigurationParser* InitConsConfig(const char* configfile, int exit_code)
 {

@@ -599,7 +599,10 @@ int ndmca_media_capture_mover_window(struct ndm_session* sess)
   return 0;
 }
 
-int ndmca_media_calculate_windows(struct ndm_session* sess) { return 0; }
+int ndmca_media_calculate_windows([[maybe_unused]] struct ndm_session* sess)
+{
+  return 0;
+}
 
 int ndmca_media_calculate_offsets(struct ndm_session* sess)
 {

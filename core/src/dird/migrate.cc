@@ -446,7 +446,9 @@ static void AddUniqueId(idpkt* ids, char* item)
 }
 
 // Callback handler make list of DB Ids
-static int UniqueDbidHandler(void* ctx, int num_fields, char** row)
+static int UniqueDbidHandler(void* ctx,
+                             [[maybe_unused]] int num_fields,
+                             char** row)
 {
   idpkt* ids = (idpkt*)ctx;
 
@@ -475,7 +477,9 @@ static int ItemCompare(uitem* item1, uitem* item2)
   return strcmp(i1->item, i2->item);
 }
 
-static int UniqueNameHandler(void* ctx, int num_fields, char** row)
+static int UniqueNameHandler(void* ctx,
+                             [[maybe_unused]] int num_fields,
+                             char** row)
 {
   dlist<uitem>* list = (dlist<uitem>*)ctx;
 

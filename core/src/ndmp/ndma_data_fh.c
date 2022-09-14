@@ -71,7 +71,10 @@ int ndmda_fh_commission(struct ndm_session* sess)
 }
 
 /* Decommission -- Discard agent */
-int ndmda_fh_decommission(struct ndm_session* sess) { return 0; }
+int ndmda_fh_decommission([[maybe_unused]] struct ndm_session* sess)
+{
+  return 0;
+}
 
 /* Destroy -- Destroy agent */
 int ndmda_fh_destroy(struct ndm_session* sess)
@@ -85,7 +88,7 @@ int ndmda_fh_destroy(struct ndm_session* sess)
 }
 
 /* Belay -- Cancel partially issued activation/start */
-int ndmda_fh_belay(struct ndm_session* sess) { return 0; }
+int ndmda_fh_belay([[maybe_unused]] struct ndm_session* sess) { return 0; }
 
 
 /*

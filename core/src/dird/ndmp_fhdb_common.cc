@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2015-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -34,7 +34,7 @@
 namespace directordaemon {
 
 extern "C" int BndmpFhdbAddFile(struct ndmlog* ixlog,
-                                int tagc,
+                                [[maybe_unused]] int tagc,
                                 char* raw_name,
                                 ndmp9_file_stat* fstat)
 {

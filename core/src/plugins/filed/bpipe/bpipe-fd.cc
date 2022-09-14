@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -195,13 +195,17 @@ static bRC freePlugin(PluginContext* ctx)
 }
 
 // Return some plugin value (none defined)
-static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value)
+static bRC getPluginValue([[maybe_unused]] PluginContext* ctx,
+                          [[maybe_unused]] pVariable var,
+                          [[maybe_unused]] void* value)
 {
   return bRC_OK;
 }
 
 // Set a plugin value (none defined)
-static bRC setPluginValue(PluginContext* ctx, pVariable var, void* value)
+static bRC setPluginValue([[maybe_unused]] PluginContext* ctx,
+                          [[maybe_unused]] pVariable var,
+                          [[maybe_unused]] void* value)
 {
   return bRC_OK;
 }
@@ -275,7 +279,7 @@ static bRC startBackupFile(PluginContext* ctx, struct save_pkt* sp)
 }
 
 // Done with backup of this file
-static bRC endBackupFile(PluginContext* ctx)
+static bRC endBackupFile([[maybe_unused]] PluginContext* ctx)
 {
   /*
    * We would return bRC_More if we wanted startBackupFile to be called again to
@@ -389,7 +393,8 @@ static bRC pluginIO(PluginContext* ctx, struct io_pkt* io)
  * Bareos is notifying us that a plugin name string was found, and
  *   passing us the plugin command, so we can prepare for a restore.
  */
-static bRC startRestoreFile(PluginContext* ctx, const char* cmd)
+static bRC startRestoreFile(PluginContext* ctx,
+                            [[maybe_unused]] const char* cmd)
 {
   if (plugin_has_all_arguments(ctx) != bRC_OK) { return bRC_Error; }
 
@@ -433,21 +438,42 @@ static bRC createFile(PluginContext* ctx, struct restore_pkt* rp)
   return bRC_OK;
 }
 
-static bRC setFileAttributes(PluginContext* ctx, struct restore_pkt* rp)
+static bRC setFileAttributes([[maybe_unused]] PluginContext* ctx,
+                             [[maybe_unused]] struct restore_pkt* rp)
 {
   return bRC_OK;
 }
 
 // When using Incremental dump, all previous dumps are necessary
-static bRC checkFile(PluginContext* ctx, char* fname) { return bRC_OK; }
+static bRC checkFile([[maybe_unused]] PluginContext* ctx,
+                     [[maybe_unused]] char* fname)
+{
+  return bRC_OK;
+}
 
-static bRC getAcl(PluginContext* ctx, acl_pkt* ap) { return bRC_OK; }
+static bRC getAcl([[maybe_unused]] PluginContext* ctx,
+                  [[maybe_unused]] acl_pkt* ap)
+{
+  return bRC_OK;
+}
 
-static bRC setAcl(PluginContext* ctx, acl_pkt* ap) { return bRC_OK; }
+static bRC setAcl([[maybe_unused]] PluginContext* ctx,
+                  [[maybe_unused]] acl_pkt* ap)
+{
+  return bRC_OK;
+}
 
-static bRC getXattr(PluginContext* ctx, xattr_pkt* xp) { return bRC_OK; }
+static bRC getXattr([[maybe_unused]] PluginContext* ctx,
+                    [[maybe_unused]] xattr_pkt* xp)
+{
+  return bRC_OK;
+}
 
-static bRC setXattr(PluginContext* ctx, xattr_pkt* xp) { return bRC_OK; }
+static bRC setXattr([[maybe_unused]] PluginContext* ctx,
+                    [[maybe_unused]] xattr_pkt* xp)
+{
+  return bRC_OK;
+}
 
 /**
  * Apply codes in writer command:

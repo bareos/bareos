@@ -50,7 +50,7 @@
 bool BareosDb::AddDigestToFileRecord(JobControlRecord* jcr,
                                      FileId_t FileId,
                                      char* digest,
-                                     int type)
+                                     [[maybe_unused]] int type)
 {
   char ed1[50];
   int len = strlen(digest);

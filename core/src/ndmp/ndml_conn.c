@@ -39,18 +39,18 @@
 
 
 #ifndef NDMOS_OPTION_NO_NDMP4
-#define MAX_PROTOCOL_VERSION NDMP4VER
+#  define MAX_PROTOCOL_VERSION NDMP4VER
 #else /* !NDMOS_OPTION_NO_NDMP4 */
-#ifndef NDMOS_OPTION_NO_NDMP3
-#define MAX_PROTOCOL_VERSION NDMP3VER
-#else /* !NDMOS_OPTION_NO_NDMP3 */
-#ifndef NDMOS_OPTION_NO_NDMP2
-#define MAX_PROTOCOL_VERSION NDMP2VER
-#else /* !NDMOS_OPTION_NO_NDMP2 */
-#define MAX_PROTOCOL_VERSION 0
-#endif /* !NDMOS_OPTION_NO_NDM2 */
-#endif /* !NDMOS_OPTION_NO_NDMP3 */
-#endif /* !NDMOS_OPTION_NO_NDMP4 */
+#  ifndef NDMOS_OPTION_NO_NDMP3
+#    define MAX_PROTOCOL_VERSION NDMP3VER
+#  else /* !NDMOS_OPTION_NO_NDMP3 */
+#    ifndef NDMOS_OPTION_NO_NDMP2
+#      define MAX_PROTOCOL_VERSION NDMP2VER
+#    else /* !NDMOS_OPTION_NO_NDMP2 */
+#      define MAX_PROTOCOL_VERSION 0
+#    endif /* !NDMOS_OPTION_NO_NDM2 */
+#  endif   /* !NDMOS_OPTION_NO_NDMP3 */
+#endif     /* !NDMOS_OPTION_NO_NDMP4 */
 
 
 /*
@@ -215,8 +215,8 @@ int ndmconn_connect_sockaddr_in(struct ndmconn* conn,
     err = "recv-notify-connected";
     goto error_out;
   }
-  if (xa->request.header.message_type != NDMP0_MESSAGE_REQUEST ||
-      xa->request.header.message != NDMP0_NOTIFY_CONNECTED) {
+  if (xa->request.header.message_type != NDMP0_MESSAGE_REQUEST
+      || xa->request.header.message != NDMP0_NOTIFY_CONNECTED) {
     err = "msg-not-notify-connected";
     goto error_out;
   }
@@ -319,10 +319,10 @@ int ndmconn_accept(struct ndmconn* conn, int sock)
  */
 
 /* hangup */
-int ndmconn_abort(struct ndmconn* conn) { return 0; }
+int ndmconn_abort([[maybe_unused]] struct ndmconn* conn) { return 0; }
 
 /* orderly close */
-int ndmconn_close(struct ndmconn* conn) { return 0; }
+int ndmconn_close([[maybe_unused]] struct ndmconn* conn) { return 0; }
 
 
 /*
@@ -690,8 +690,8 @@ int ndmconn_exchange_nmb(struct ndmconn* conn,
   for (;;) {
     if ((rc = ndmconn_recv_nmb(conn, reply_nmb)) != 0) return rc;
 
-    if (reply_nmb->header.message_type == NDMP0_MESSAGE_REPLY &&
-        reply_nmb->header.reply_sequence == request_nmb->header.sequence) {
+    if (reply_nmb->header.message_type == NDMP0_MESSAGE_REPLY
+        && reply_nmb->header.reply_sequence == request_nmb->header.sequence) {
       conn->received_time = time(0);
       return 0;
     }
@@ -713,7 +713,8 @@ int ndmconn_recv_nmb(struct ndmconn* conn, struct ndmp_msg_buf* nmb)
   return ndmconn_xdr_nmb(conn, nmb, XDR_DECODE);
 }
 
-void ndmconn_free_nmb(struct ndmconn* conn, struct ndmp_msg_buf* nmb)
+void ndmconn_free_nmb([[maybe_unused]] struct ndmconn* conn,
+                      [[maybe_unused]] struct ndmp_msg_buf* nmb)
 {
   ndmnmb_free(nmb);
 }
@@ -911,7 +912,8 @@ int ndmconn_sys_write(struct ndmconn* conn, char* buf, unsigned len)
  * This default routine silently dumps the message.
  */
 
-void ndmconn_unexpected(struct ndmconn* conn, struct ndmp_msg_buf* nmb)
+void ndmconn_unexpected([[maybe_unused]] struct ndmconn* conn,
+                        struct ndmp_msg_buf* nmb)
 {
   xdrproc_t xdr_body = ndmnmb_find_xdrproc(nmb);
 

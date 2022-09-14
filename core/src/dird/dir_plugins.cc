@@ -118,14 +118,15 @@ static bool IsCtxGood(PluginContext* ctx,
   return true;
 }
 
-static inline bool trigger_plugin_event(JobControlRecord* jcr,
-                                        bDirEventType eventType,
-                                        bDirEvent* event,
-                                        PluginContext* ctx,
-                                        void* value,
-                                        alist<PluginContext*>* plugin_ctx_list,
-                                        int* index,
-                                        bRC* rc)
+static inline bool trigger_plugin_event(
+    [[maybe_unused]] JobControlRecord* jcr,
+    bDirEventType eventType,
+    bDirEvent* event,
+    PluginContext* ctx,
+    void* value,
+    [[maybe_unused]] alist<PluginContext*>* plugin_ctx_list,
+    int* index,
+    bRC* rc)
 {
   bool stop = false;
 
@@ -815,8 +816,8 @@ bail_out:
 }
 
 static bRC bareosJobMsg(PluginContext* ctx,
-                        const char* file,
-                        int line,
+                        [[maybe_unused]] const char* file,
+                        [[maybe_unused]] int line,
                         int type,
                         utime_t mtime,
                         const char* fmt,
@@ -840,7 +841,7 @@ static bRC bareosJobMsg(PluginContext* ctx,
   return bRC_OK;
 }
 
-static bRC bareosDebugMsg(PluginContext* ctx,
+static bRC bareosDebugMsg([[maybe_unused]] PluginContext* ctx,
                           const char* file,
                           int line,
                           int level,

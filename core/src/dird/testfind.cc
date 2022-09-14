@@ -63,9 +63,9 @@ void TestfindFreeJcr(JobControlRecord* jcr)
 
 
 /* Dummy functions */
-void GeneratePluginEvent(JobControlRecord* jcr,
-                         filedaemon::bEventType eventType,
-                         void* value)
+void GeneratePluginEvent([[maybe_unused]] JobControlRecord* jcr,
+                         [[maybe_unused]] filedaemon::bEventType eventType,
+                         [[maybe_unused]] void* value)
 {
 }
 extern bool ParseDirConfig(const char* configfile, int exit_code);
@@ -270,7 +270,9 @@ int main(int argc, char* const* argv)
 }
 
 
-static int PrintFile(JobControlRecord* jcr, FindFilesPacket* ff, bool top_level)
+static int PrintFile([[maybe_unused]] JobControlRecord* jcr,
+                     [[maybe_unused]] FindFilesPacket* ff,
+                     [[maybe_unused]] bool top_level)
 {
   switch (ff->type) {
     case FT_LNKSAVED:

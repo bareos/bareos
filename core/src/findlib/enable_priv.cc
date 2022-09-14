@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2009 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -37,7 +37,8 @@
 /*=============================================================*/
 
 #if !defined(HAVE_WIN32)
-int EnableBackupPrivileges(JobControlRecord* jcr, int ignore_errors)
+int EnableBackupPrivileges([[maybe_unused]] JobControlRecord* jcr,
+                           [[maybe_unused]] int ignore_errors)
 {
   return 0;
 }

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -159,23 +159,23 @@ bail_out:
   return retval;
 }
 
-static bRC PyGetPluginValue(PluginContext* plugin_ctx,
-                            pVariable var,
-                            void* value)
+static bRC PyGetPluginValue([[maybe_unused]] PluginContext* plugin_ctx,
+                            [[maybe_unused]] pVariable var,
+                            [[maybe_unused]] void* value)
 {
   return bRC_OK;
 }
 
-static bRC PySetPluginValue(PluginContext* plugin_ctx,
-                            pVariable var,
-                            void* value)
+static bRC PySetPluginValue([[maybe_unused]] PluginContext* plugin_ctx,
+                            [[maybe_unused]] pVariable var,
+                            [[maybe_unused]] void* value)
 {
   return bRC_OK;
 }
 
-static bRC PyHandlePluginEvent(PluginContext* plugin_ctx,
-                               bEvent* event,
-                               void* value)
+static bRC PyHandlePluginEvent([[maybe_unused]] PluginContext* plugin_ctx,
+                               [[maybe_unused]] bEvent* event,
+                               [[maybe_unused]] void* value)
 {
   bRC retval = bRC_Error;
   plugin_private_context* plugin_priv_ctx
@@ -1256,7 +1256,8 @@ bail_out:
  * which allow a Python plugin to get certain internal values of the current
  * Job.
  */
-static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
+static PyObject* PyBareosGetValue([[maybe_unused]] PyObject* self,
+                                  PyObject* args)
 {
   int var;
   PluginContext* plugin_ctx = plugin_context;
@@ -1328,7 +1329,8 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
  * which allow a Python plugin to get certain internal values of the current
  * Job.
  */
-static PyObject* PyBareosSetValue(PyObject* self, PyObject* args)
+static PyObject* PyBareosSetValue([[maybe_unused]] PyObject* self,
+                                  PyObject* args)
 {
   int var;
   PluginContext* plugin_ctx = plugin_context;
@@ -1375,7 +1377,8 @@ bail_out:
  * which allow a Python plugin to issue debug messages using the Bareos debug
  * message facility.
  */
-static PyObject* PyBareosDebugMessage(PyObject* self, PyObject* args)
+static PyObject* PyBareosDebugMessage([[maybe_unused]] PyObject* self,
+                                      PyObject* args)
 {
   int level;
   char* dbgmsg = NULL;
@@ -1399,7 +1402,8 @@ static PyObject* PyBareosDebugMessage(PyObject* self, PyObject* args)
  * which allow a Python plugin to issue Job messages using the Bareos Job
  * message facility.
  */
-static PyObject* PyBareosJobMessage(PyObject* self, PyObject* args)
+static PyObject* PyBareosJobMessage([[maybe_unused]] PyObject* self,
+                                    PyObject* args)
 {
   int level;
   char* jobmsg = NULL;
@@ -1420,7 +1424,8 @@ static PyObject* PyBareosJobMessage(PyObject* self, PyObject* args)
  * which allow a Python plugin to issue a Register Event to register
  * additional events it wants to receive.
  */
-static PyObject* PyBareosRegisterEvents(PyObject* self, PyObject* args)
+static PyObject* PyBareosRegisterEvents([[maybe_unused]] PyObject* self,
+                                        PyObject* args)
 {
   int len, event;
   PluginContext* plugin_ctx = plugin_context;
@@ -1461,7 +1466,8 @@ bail_out:
  * which allow a Python plugin to issue an Unregister Event to unregister
  * events it doesn't want to receive anymore.
  */
-static PyObject* PyBareosUnRegisterEvents(PyObject* self, PyObject* args)
+static PyObject* PyBareosUnRegisterEvents([[maybe_unused]] PyObject* self,
+                                          PyObject* args)
 {
   int len, event;
   PluginContext* plugin_ctx = plugin_context;
@@ -1500,7 +1506,8 @@ bail_out:
  * which allow a Python plugin to issue a GetInstanceCount to retrieve the
  * number of instances of the current plugin being loaded into the daemon.
  */
-static PyObject* PyBareosGetInstanceCount(PyObject* self, PyObject* args)
+static PyObject* PyBareosGetInstanceCount([[maybe_unused]] PyObject* self,
+                                          PyObject* args)
 {
   int value;
   PluginContext* plugin_ctx = plugin_context;
@@ -1522,7 +1529,8 @@ static PyObject* PyBareosGetInstanceCount(PyObject* self, PyObject* args)
  * Callback function which is exposed as a part of the additional methods
  * which allow a Python plugin to issue a Add Exclude pattern to the fileset.
  */
-static PyObject* PyBareosAddExclude(PyObject* self, PyObject* args)
+static PyObject* PyBareosAddExclude([[maybe_unused]] PyObject* self,
+                                    PyObject* args)
 {
   char* file = NULL;
   bRC retval = bRC_Error;
@@ -1541,7 +1549,8 @@ bail_out:
  * Callback function which is exposed as a part of the additional methods
  * which allow a Python plugin to issue a Add Include pattern to the fileset.
  */
-static PyObject* PyBareosAddInclude(PyObject* self, PyObject* args)
+static PyObject* PyBareosAddInclude([[maybe_unused]] PyObject* self,
+                                    PyObject* args)
 {
   char* file = NULL;
   bRC retval = bRC_Error;
@@ -1560,7 +1569,8 @@ bail_out:
  * Callback function which is exposed as a part of the additional methods
  * which allow a Python plugin to issue a Add Include Options to the fileset.
  */
-static PyObject* PyBareosAddOptions(PyObject* self, PyObject* args)
+static PyObject* PyBareosAddOptions([[maybe_unused]] PyObject* self,
+                                    PyObject* args)
 {
   char* opts = NULL;
   bRC retval = bRC_Error;
@@ -1579,7 +1589,8 @@ bail_out:
  * Callback function which is exposed as a part of the additional methods
  * which allow a Python plugin to issue a Add Regex to the fileset.
  */
-static PyObject* PyBareosAddRegex(PyObject* self, PyObject* args)
+static PyObject* PyBareosAddRegex([[maybe_unused]] PyObject* self,
+                                  PyObject* args)
 {
   int type;
   char* item = NULL;
@@ -1602,7 +1613,8 @@ bail_out:
  * Callback function which is exposed as a part of the additional methods
  * which allow a Python plugin to issue a Add Wildcard to the fileset.
  */
-static PyObject* PyBareosAddWild(PyObject* self, PyObject* args)
+static PyObject* PyBareosAddWild([[maybe_unused]] PyObject* self,
+                                 PyObject* args)
 {
   int type;
   char* item = NULL;
@@ -1624,7 +1636,8 @@ bail_out:
  * Callback function which is exposed as a part of the additional methods
  * which allow a Python plugin to issue a Add New Option block.
  */
-static PyObject* PyBareosNewOptions(PyObject* self, PyObject* args)
+static PyObject* PyBareosNewOptions([[maybe_unused]] PyObject* self,
+                                    PyObject* args)
 {
   PluginContext* plugin_ctx = plugin_context;
   bRC retval = bRC_Error;
@@ -1642,7 +1655,8 @@ bail_out:
  * Callback function which is exposed as a part of the additional methods
  * which allow a Python plugin to issue a Add New Include block.
  */
-static PyObject* PyBareosNewInclude(PyObject* self, PyObject* args)
+static PyObject* PyBareosNewInclude([[maybe_unused]] PyObject* self,
+                                    PyObject* args)
 {
   PluginContext* plugin_ctx = plugin_context;
   bRC retval = bRC_Error;
@@ -1660,7 +1674,8 @@ bail_out:
  * Callback function which is exposed as a part of the additional methods
  * which allow a Python plugin to issue a Add New Pre Include block.
  */
-static PyObject* PyBareosNewPreInclude(PyObject* self, PyObject* args)
+static PyObject* PyBareosNewPreInclude([[maybe_unused]] PyObject* self,
+                                       PyObject* args)
 {
   PluginContext* plugin_ctx = plugin_context;
   bRC retval = bRC_Error;
@@ -1679,7 +1694,8 @@ bail_out:
  * which allow a Python plugin to issue a check if a file have to be backed up
  * using Accurate code.
  */
-static PyObject* PyBareosCheckChanges(PyObject* self, PyObject* args)
+static PyObject* PyBareosCheckChanges([[maybe_unused]] PyObject* self,
+                                      PyObject* args)
 {
   PluginContext* plugin_ctx = plugin_context;
 
@@ -1731,7 +1747,8 @@ bail_out:
  * which allow a Python plugin to issue a check if a file would be saved using
  * current Include/Exclude code.
  */
-static PyObject* PyBareosAcceptFile(PyObject* self, PyObject* args)
+static PyObject* PyBareosAcceptFile([[maybe_unused]] PyObject* self,
+                                    PyObject* args)
 {
   PluginContext* plugin_ctx = plugin_context;
   struct save_pkt sp;
@@ -1773,7 +1790,8 @@ bail_out:
  * Callback function which is exposed as a part of the additional methods
  * which allow a Python plugin to issue a Set bit in the Accurate Seen bitmap.
  */
-static PyObject* PyBareosSetSeenBitmap(PyObject* self, PyObject* args)
+static PyObject* PyBareosSetSeenBitmap([[maybe_unused]] PyObject* self,
+                                       PyObject* args)
 {
   bool all;
   PluginContext* plugin_ctx = plugin_context;
@@ -1798,7 +1816,8 @@ bail_out:
  * which allow a Python plugin to issue a Clear bit in the Accurate Seen
  * bitmap.
  */
-static PyObject* PyBareosClearSeenBitmap(PyObject* self, PyObject* args)
+static PyObject* PyBareosClearSeenBitmap([[maybe_unused]] PyObject* self,
+                                         PyObject* args)
 {
   bool all;
   PluginContext* plugin_ctx = plugin_context;

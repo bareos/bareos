@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -412,13 +412,14 @@ static inline changer_vol_list_t* scan_slots_for_volnames(
 }
 
 // Convert a volume name into a slot selection.
-static inline bool get_slot_list_using_volname(UaContext* ua,
-                                               StorageResource* store,
-                                               const char* volumename,
-                                               changer_vol_list_t* vol_list,
-                                               char* wanted_slot_list,
-                                               char* selected_slot_list,
-                                               slot_number_t max_slots)
+static inline bool get_slot_list_using_volname(
+    UaContext* ua,
+    StorageResource* store,
+    const char* volumename,
+    changer_vol_list_t* vol_list,
+    char* wanted_slot_list,
+    char* selected_slot_list,
+    [[maybe_unused]] slot_number_t max_slots)
 {
   vol_list_t *vl1, *vl2;
   bool found = false;
@@ -1255,19 +1256,19 @@ bail_out:
 }
 
 // Import volumes from Import/Export Slots into normal Slots.
-bool ImportCmd(UaContext* ua, const char* cmd)
+bool ImportCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
 {
   return PerformMoveOperation(ua, VOLUME_IMPORT);
 }
 
 // Export volumes from normal slots to Import/Export Slots.
-bool ExportCmd(UaContext* ua, const char* cmd)
+bool ExportCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
 {
   return PerformMoveOperation(ua, VOLUME_EXPORT);
 }
 
 // Move volume from one slot to another.
-bool move_cmd(UaContext* ua, const char* cmd)
+bool move_cmd(UaContext* ua, [[maybe_unused]] const char* cmd)
 {
   return PerformMoveOperation(ua, VOLUME_MOVE);
 }

@@ -60,7 +60,7 @@ char* smc_elem_type_code_to_str(int code)
 
 int smc_pp_element_address_assignments(
     struct smc_element_address_assignment* eaa,
-    int lineno,
+    [[maybe_unused]] int lineno,
     char* buf)
 {
   sprintf(buf, "slots %d@%d  drive %d@%d  arm %d@%d  i/e %d@%d", eaa->se_count,

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -415,16 +415,16 @@ class Device {
 
   // Tape specific operations.
   virtual bool offline() { return true; }
-  virtual bool weof(int num) { return true; }
-  virtual bool fsf(int num) { return true; }
-  virtual bool bsf(int num) { return false; }
-  virtual bool fsr(int num) { return false; }
-  virtual bool bsr(int num) { return false; }
+  virtual bool weof([[maybe_unused]] int num) { return true; }
+  virtual bool fsf([[maybe_unused]] int num) { return true; }
+  virtual bool bsf([[maybe_unused]] int num) { return false; }
+  virtual bool fsr([[maybe_unused]] int num) { return false; }
+  virtual bool bsr([[maybe_unused]] int num) { return false; }
   virtual bool LoadDev() { return true; }
   virtual void LockDoor(){};
   virtual void UnlockDoor(){};
-  virtual void clrerror(int func){};
-  virtual void SetOsDeviceParameters(DeviceControlRecord* dcr){};
+  virtual void clrerror([[maybe_unused]] int func){};
+  virtual void SetOsDeviceParameters([[maybe_unused]]DeviceControlRecord* dcr){};
   virtual int32_t GetOsTapeFile() { return -1; }
 
   // Generic operations.
@@ -438,15 +438,15 @@ class Device {
   virtual bool Reposition(DeviceControlRecord* dcr,
                           uint32_t rfile,
                           uint32_t rblock);
-  virtual bool MountBackend(DeviceControlRecord* dcr, int timeout)
+  virtual bool MountBackend([[maybe_unused]]DeviceControlRecord* dcr,[[maybe_unused]] int timeout)
   {
     return true;
   }
-  virtual bool UnmountBackend(DeviceControlRecord* dcr, int timeout)
+  virtual bool UnmountBackend([[maybe_unused]]DeviceControlRecord* dcr,[[maybe_unused]] int timeout)
   {
     return true;
   }
-  virtual bool DeviceStatus(DeviceStatusInformation* dst) { return false; }
+  virtual bool DeviceStatus([[maybe_unused]]DeviceStatusInformation* dst) { return false; }
 
   // Low level operations
   virtual int d_ioctl(int fd, ioctl_req_t request, char* mt_com = NULL) = 0;
@@ -458,7 +458,7 @@ class Device {
                             boffset_t offset,
                             int whence) = 0;
   virtual bool d_truncate(DeviceControlRecord* dcr) = 0;
-  virtual bool d_flush(DeviceControlRecord* dcr) { return true; };
+  virtual bool d_flush([[maybe_unused]]DeviceControlRecord* dcr) { return true; };
 
     // Locking and blocking calls
   void rLock(bool locked = false);
@@ -493,15 +493,15 @@ class SpoolDevice :public Device
  public:
   SpoolDevice() = default;
   ~SpoolDevice() {   close(nullptr); }
-  int d_ioctl(int fd, ioctl_req_t request, char* mt_com = NULL) override {return -1;}
-  int d_open(const char* pathname, int flags, int mode) override {return -1;}
-  int d_close(int fd) override {return -1;}
-  ssize_t d_read(int fd, void* buffer, size_t count) override { return 0;}
-  ssize_t d_write(int fd, const void* buffer, size_t count) override { return 0;}
-  boffset_t d_lseek(DeviceControlRecord* dcr,
-                            boffset_t offset,
-                            int whence) override { return 0;}
-  bool d_truncate(DeviceControlRecord* dcr) override {return false;}
+  int d_ioctl([[maybe_unused]]int fd, [[maybe_unused]]ioctl_req_t request,[[maybe_unused]] char* mt_com = NULL) override {return -1;}
+  int d_open([[maybe_unused]]const char* pathname,[[maybe_unused]] int flags,[[maybe_unused]] int mode) override {return -1;}
+  int d_close([[maybe_unused]]int fd) override {return -1;}
+  ssize_t d_read([[maybe_unused]]int fd, [[maybe_unused]]void* buffer, [[maybe_unused]]size_t count) override { return 0;}
+  ssize_t d_write([[maybe_unused]]int fd,[[maybe_unused]] const void* buffer,[[maybe_unused]] size_t count) override { return 0;}
+  boffset_t d_lseek([[maybe_unused]]DeviceControlRecord* dcr,
+                     [[maybe_unused]]       boffset_t offset,
+                        [[maybe_unused]]    int whence) override { return 0;}
+  bool d_truncate([[maybe_unused]] DeviceControlRecord* dcr) override {return false;}
 };
 /* clang-format on */
 

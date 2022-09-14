@@ -58,19 +58,19 @@ int ndmra_initialize(struct ndm_session* sess)
 }
 
 /* Commission -- Get agent ready. Entire session has been initialize()d */
-int ndmra_commission(struct ndm_session* sess) { return 0; }
+int ndmra_commission([[maybe_unused]] struct ndm_session* sess) { return 0; }
 
 /* Decommission -- Discard agent */
-int ndmra_decommission(struct ndm_session* sess) { return 0; }
+int ndmra_decommission([[maybe_unused]] struct ndm_session* sess) { return 0; }
 
 /* Destroy -- Destroy agent */
 int ndmra_destroy(struct ndm_session* sess)
 {
   if (!sess->robot_acb) { return 0; }
 
-#ifdef NDMOS_OPTION_ROBOT_SIMULATOR
+#  ifdef NDMOS_OPTION_ROBOT_SIMULATOR
   if (sess->robot_acb->sim_dir) { NDMOS_API_FREE(sess->robot_acb->sim_dir); }
-#endif
+#  endif
 
   NDMOS_API_FREE(sess->robot_acb);
   sess->robot_acb = NULL;

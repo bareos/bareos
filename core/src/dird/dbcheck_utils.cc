@@ -23,13 +23,15 @@
 
 using namespace directordaemon;
 
-int PrintNameHandler(void* ctx, int num_fields, char** row)
+int PrintNameHandler([[maybe_unused]] void* ctx,
+                     [[maybe_unused]] int num_fields,
+                     char** row)
 {
   if (row[0]) { printf("%s\n", row[0]); }
   return 0;
 }
 
-int GetNameHandler(void* ctx, int num_fields, char** row)
+int GetNameHandler(void* ctx, [[maybe_unused]] int num_fields, char** row)
 {
   POOLMEM* name = (POOLMEM*)ctx;
 
@@ -37,42 +39,52 @@ int GetNameHandler(void* ctx, int num_fields, char** row)
   return 0;
 }
 
-int PrintJobHandler(void* ctx, int num_fields, char** row)
+int PrintJobHandler([[maybe_unused]] void* ctx,
+                    [[maybe_unused]] int num_fields,
+                    char** row)
 {
   printf(_("JobId=%s Name=\"%s\" StartTime=%s\n"), NPRT(row[0]), NPRT(row[1]),
          NPRT(row[2]));
   return 0;
 }
 
-int PrintJobmediaHandler(void* ctx, int num_fields, char** row)
+int PrintJobmediaHandler([[maybe_unused]] void* ctx,
+                         [[maybe_unused]] int num_fields,
+                         char** row)
 {
   printf(_("Orphaned JobMediaId=%s JobId=%s Volume=\"%s\"\n"), NPRT(row[0]),
          NPRT(row[1]), NPRT(row[2]));
   return 0;
 }
 
-int PrintFileHandler(void* ctx, int num_fields, char** row)
+int PrintFileHandler([[maybe_unused]] void* ctx,
+                     [[maybe_unused]] int num_fields,
+                     char** row)
 {
   printf(_("Orphaned FileId=%s JobId=%s Volume=\"%s\"\n"), NPRT(row[0]),
          NPRT(row[1]), NPRT(row[2]));
   return 0;
 }
 
-int PrintFilesetHandler(void* ctx, int num_fields, char** row)
+int PrintFilesetHandler([[maybe_unused]] void* ctx,
+                        [[maybe_unused]] int num_fields,
+                        char** row)
 {
   printf(_("Orphaned FileSetId=%s FileSet=\"%s\" MD5=%s\n"), NPRT(row[0]),
          NPRT(row[1]), NPRT(row[2]));
   return 0;
 }
 
-int PrintClientHandler(void* ctx, int num_fields, char** row)
+int PrintClientHandler([[maybe_unused]] void* ctx,
+                       [[maybe_unused]] int num_fields,
+                       char** row)
 {
   printf(_("Orphaned ClientId=%s Name=\"%s\"\n"), NPRT(row[0]), NPRT(row[1]));
   return 0;
 }
 
 // Called here with each id to be added to the list
-int IdListHandler(void* ctx, int num_fields, char** row)
+int IdListHandler(void* ctx, [[maybe_unused]] int num_fields, char** row)
 {
   ID_LIST* lst = (ID_LIST*)ctx;
 
@@ -105,7 +117,7 @@ int MakeIdList(BareosDb* db, const char* query, ID_LIST* id_list)
 }
 
 // Called here with each name to be added to the list
-int NameListHandler(void* ctx, int num_fields, char** row)
+int NameListHandler(void* ctx, [[maybe_unused]] int num_fields, char** row)
 {
   NameList* name = (NameList*)ctx;
 

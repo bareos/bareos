@@ -215,7 +215,7 @@ bool UserSelectFilesFromTree(TreeContext* tree)
  * row[0]=Path, row[1]=Filename, row[2]=FileIndex
  * row[3]=JobId row[4]=LStat row[5]=DeltaSeq row[6]=Fhinfo row[7]=Fhnode
  */
-int InsertTreeHandler(void* ctx, int num_fields, char** row)
+int InsertTreeHandler(void* ctx, [[maybe_unused]] int num_fields, char** row)
 {
   struct stat statp;
   TreeContext* tree = (TreeContext*)ctx;
@@ -652,7 +652,7 @@ static int DotLsdircmd(UaContext* ua, TreeContext* tree)
   return 1;
 }
 
-static int DotHelpcmd(UaContext* ua, TreeContext* tree)
+static int DotHelpcmd(UaContext* ua, [[maybe_unused]] TreeContext* tree)
 {
   for (int i = 0; i < comsize; i++) {
     /* List only non-dot commands */
@@ -923,7 +923,7 @@ static int Estimatecmd(UaContext* ua, TreeContext* tree)
   return 1;
 }
 
-static int HelpCmd(UaContext* ua, TreeContext* tree)
+static int HelpCmd(UaContext* ua, [[maybe_unused]] TreeContext* tree)
 {
   unsigned int i;
 
@@ -1119,9 +1119,13 @@ static int UnMarkdircmd(UaContext* ua, TreeContext* tree)
   return 1;
 }
 
-static int donecmd(UaContext* ua, TreeContext* tree) { return 0; }
+static int donecmd([[maybe_unused]] UaContext* ua,
+                   [[maybe_unused]] TreeContext* tree)
+{
+  return 0;
+}
 
-static int QuitCmd(UaContext* ua, TreeContext* tree)
+static int QuitCmd(UaContext* ua, [[maybe_unused]] TreeContext* tree)
 {
   ua->quit = true;
   return 0;

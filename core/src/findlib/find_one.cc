@@ -96,7 +96,7 @@ static void FreeDirFfPkt(FindFilesPacket* dir_ff_pkt)
 #if defined(HAVE_WIN32)
 static bool AcceptFstype(FindFilesPacket* ff, void* dummy) { return true; }
 #else
-static bool AcceptFstype(FindFilesPacket* ff, void* dummy)
+static bool AcceptFstype(FindFilesPacket* ff, [[maybe_unused]] void* dummy)
 {
   int i;
   char fs[1000];
@@ -154,7 +154,8 @@ static inline bool AcceptDrivetype(FindFilesPacket* ff, void* dummy)
   return accept;
 }
 #else
-static inline bool AcceptDrivetype(FindFilesPacket* ff, void* dummy)
+static inline bool AcceptDrivetype([[maybe_unused]] FindFilesPacket* ff,
+                                   [[maybe_unused]] void* dummy)
 {
   return true;
 }
@@ -165,10 +166,10 @@ static inline bool AcceptDrivetype(FindFilesPacket* ff, void* dummy)
  * It's odd, but we have to use the function to determine that...
  * Also, the man pages talk about things as if they were implemented.
  *
- * On Mac OS X, this succesfully differentiates between HFS+ and UFS
+ * On Mac OS X, this successfully differentiates between HFS+ and UFS
  * volumes, which makes me trust it is OK for others, too.
  */
-static bool VolumeHasAttrlist(const char* fname)
+static bool VolumeHasAttrlist([[maybe_unused]] const char* fname)
 {
 #ifdef HAVE_DARWIN_OS
   struct statfs st;
@@ -198,7 +199,8 @@ static bool VolumeHasAttrlist(const char* fname)
 }
 
 // check for BSD nodump flag
-static inline bool no_dump(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
+static inline bool no_dump([[maybe_unused]] JobControlRecord* jcr,
+                           [[maybe_unused]] FindFilesPacket* ff_pkt)
 {
 #if defined(HAVE_CHFLAGS) && defined(UF_NODUMP)
   if (BitIsSet(FO_HONOR_NODUMP, ff_pkt->flags)
@@ -212,7 +214,7 @@ static inline bool no_dump(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 }
 
 // check for sizes
-static inline bool CheckSizeMatching(JobControlRecord* jcr,
+static inline bool CheckSizeMatching([[maybe_unused]] JobControlRecord* jcr,
                                      FindFilesPacket* ff_pkt)
 {
   int64_t begin_size, end_size, difference;
@@ -809,7 +811,7 @@ static inline int process_special_file(JobControlRecord* jcr,
                                        int HandleFile(JobControlRecord* jcr,
                                                       FindFilesPacket* ff,
                                                       bool top_level),
-                                       char* fname,
+                                       [[maybe_unused]] char* fname,
                                        bool top_level)
 {
   int rtn_stat;

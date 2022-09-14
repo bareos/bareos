@@ -582,7 +582,7 @@ int ndmp_sxa_connect_open(struct ndm_session* sess,
 }
 
 static int connect_open_common(struct ndm_session* sess,
-                               struct ndmp_xa_buf* xa,
+                               [[maybe_unused]] struct ndmp_xa_buf* xa,
                                struct ndmconn* ref_conn,
                                int protocol_version)
 {
@@ -669,9 +669,9 @@ int ndmp_sxa_connect_close(struct ndm_session* sess,
 
 
 // NDMP[23]_CONNECT_SERVER_AUTH
-int ndmp_sxa_connect_server_auth(struct ndm_session* sess,
-                                 struct ndmp_xa_buf* xa,
-                                 struct ndmconn* ref_conn)
+int ndmp_sxa_connect_server_auth([[maybe_unused]] struct ndm_session* sess,
+                                 [[maybe_unused]] struct ndmp_xa_buf* xa,
+                                 [[maybe_unused]] struct ndmconn* ref_conn)
 {
   return NDMADR_UNIMPLEMENTED_MESSAGE;
 }
@@ -695,7 +695,7 @@ int ndmp_sxa_connect_server_auth(struct ndm_session* sess,
  */
 int ndmp_sxa_config_get_info(struct ndm_session* sess,
                              struct ndmp_xa_buf* xa,
-                             struct ndmconn* ref_conn)
+                             [[maybe_unused]] struct ndmconn* ref_conn)
 {
   NDMS_WITH_VOID_REQUEST(ndmp9_config_get_info)
   ndmos_sync_config_info(sess);
@@ -864,7 +864,7 @@ int ndmp_sxa_scsi_close(struct ndm_session* sess,
  */
 int ndmp_sxa_scsi_get_state(struct ndm_session* sess,
                             struct ndmp_xa_buf* xa,
-                            struct ndmconn* ref_conn)
+                            [[maybe_unused]] struct ndmconn* ref_conn)
 {
   struct ndm_robot_agent* ra = sess->robot_acb;
 
@@ -1072,7 +1072,7 @@ int ndmp_sxa_tape_close(struct ndm_session* sess,
  */
 int ndmp_sxa_tape_get_state(struct ndm_session* sess,
                             struct ndmp_xa_buf* xa,
-                            struct ndmconn* ref_conn)
+                            [[maybe_unused]] struct ndmconn* ref_conn)
 {
   struct ndm_tape_agent* ta = sess->tape_acb;
 
@@ -1244,9 +1244,9 @@ int ndmp_sxa_tape_read(struct ndm_session* sess,
  * nor is there merit to a generic "layer".
  * Still, just in case, it is implemented here.
  */
-int ndmp_sxa_tape_execute_cdb(struct ndm_session* sess,
+int ndmp_sxa_tape_execute_cdb([[maybe_unused]] struct ndm_session* sess,
                               struct ndmp_xa_buf* xa,
-                              struct ndmconn* ref_conn)
+                              [[maybe_unused]] struct ndmconn* ref_conn)
 {
   NDMS_WITH(ndmp9_tape_execute_cdb)
   return NDMADR_UNIMPLEMENTED_MESSAGE;
@@ -1258,7 +1258,8 @@ int ndmp_sxa_tape_execute_cdb(struct ndm_session* sess,
  * NDMPx_TAPE helper routines
  */
 
-static ndmp9_error tape_open_ok(struct ndm_session* sess, int will_write)
+static ndmp9_error tape_open_ok(struct ndm_session* sess,
+                                [[maybe_unused]] int will_write)
 {
   struct ndm_tape_agent* ta = sess->tape_acb;
 
@@ -2045,7 +2046,7 @@ static ndmp9_error mover_can_proceed(struct ndm_session* sess, int will_write);
  */
 int ndmp_sxa_mover_get_state(struct ndm_session* sess,
                              struct ndmp_xa_buf* xa,
-                             struct ndmconn* ref_conn)
+                             [[maybe_unused]] struct ndmconn* ref_conn)
 {
   struct ndm_tape_agent* ta = sess->tape_acb;
 
@@ -2509,7 +2510,7 @@ static ndmp9_error mover_can_proceed(struct ndm_session* sess, int will_write)
  */
 int ndmp_sxa_notify_data_halted(struct ndm_session* sess,
                                 struct ndmp_xa_buf* xa,
-                                struct ndmconn* ref_conn)
+                                [[maybe_unused]] struct ndmconn* ref_conn)
 {
   struct ndm_control_agent* ca = sess->control_acb;
 
@@ -2526,9 +2527,9 @@ int ndmp_sxa_notify_data_halted(struct ndm_session* sess,
 /*
  * NDMP[234]_NOTIFY_CONNECTED
  */
-int ndmp_sxa_notify_connected(struct ndm_session* sess,
+int ndmp_sxa_notify_connected([[maybe_unused]] struct ndm_session* sess,
                               struct ndmp_xa_buf* xa,
-                              struct ndmconn* ref_conn)
+                              [[maybe_unused]] struct ndmconn* ref_conn)
 {
   NDMS_WITH_NO_REPLY(ndmp9_notify_connected)
   xa->reply.flags |= NDMNMB_FLAG_NO_SEND;
@@ -2543,7 +2544,7 @@ int ndmp_sxa_notify_connected(struct ndm_session* sess,
  */
 int ndmp_sxa_notify_mover_halted(struct ndm_session* sess,
                                  struct ndmp_xa_buf* xa,
-                                 struct ndmconn* ref_conn)
+                                 [[maybe_unused]] struct ndmconn* ref_conn)
 {
   struct ndm_control_agent* ca = sess->control_acb;
 
@@ -2562,7 +2563,7 @@ int ndmp_sxa_notify_mover_halted(struct ndm_session* sess,
  */
 int ndmp_sxa_notify_mover_paused(struct ndm_session* sess,
                                  struct ndmp_xa_buf* xa,
-                                 struct ndmconn* ref_conn)
+                                 [[maybe_unused]] struct ndmconn* ref_conn)
 {
   struct ndm_control_agent* ca = sess->control_acb;
 
@@ -2583,7 +2584,7 @@ int ndmp_sxa_notify_mover_paused(struct ndm_session* sess,
  */
 int ndmp_sxa_notify_data_read(struct ndm_session* sess,
                               struct ndmp_xa_buf* xa,
-                              struct ndmconn* ref_conn)
+                              [[maybe_unused]] struct ndmconn* ref_conn)
 {
   struct ndm_control_agent* ca = sess->control_acb;
 

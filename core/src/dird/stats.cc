@@ -116,7 +116,7 @@ static inline void wait_for_next_run()
   unlock_mutex(mutex);
 }
 
-extern "C" void* statistics_thread(void* arg)
+extern "C" void* statistics_thread([[maybe_unused]] void* arg)
 {
   JobControlRecord* jcr;
   utime_t now;

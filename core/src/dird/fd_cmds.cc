@@ -788,7 +788,7 @@ bool SendIncludeList(JobControlRecord* jcr)
  *   is part of the FileSet sent with the
  *   "include_list" above.
  */
-bool SendExcludeList(JobControlRecord* jcr) { return true; }
+bool SendExcludeList([[maybe_unused]] JobControlRecord* jcr) { return true; }
 
 // This checks to see if there are any non local runscripts for this job.
 static bool HaveClientRunscripts(alist<RunScript*>* RunScripts)
@@ -886,7 +886,9 @@ struct RestoreObjectContext {
 };
 
 // RestoreObjectHandler is called for each file found
-static int RestoreObjectHandler(void* ctx, int num_fields, char** row)
+static int RestoreObjectHandler(void* ctx,
+                                [[maybe_unused]] int num_fields,
+                                char** row)
 {
   BareosSocket* fd;
   bool is_compressed;

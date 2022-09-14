@@ -3,7 +3,7 @@
 
    Copyright (C) 2010-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -84,21 +84,21 @@ BareosDb* DbSqlGetNonPooledConnection(JobControlRecord* jcr,
  * Initialize the sql connection pool.
  * For non pooling this is a no-op.
  */
-bool db_sql_pool_initialize(const char* db_drivername,
-                            const char* db_name,
-                            const char* db_user,
-                            const char* db_password,
-                            const char* db_address,
-                            int db_port,
-                            const char* db_socket,
-                            bool disable_batch_insert,
-                            bool try_reconnect,
-                            bool exit_on_fatal,
-                            int min_connections,
-                            int max_connections,
-                            int increment_connections,
-                            int idle_timeout,
-                            int validate_timeout)
+bool db_sql_pool_initialize([[maybe_unused]] const char* db_drivername,
+                            [[maybe_unused]] const char* db_name,
+                            [[maybe_unused]] const char* db_user,
+                            [[maybe_unused]] const char* db_password,
+                            [[maybe_unused]] const char* db_address,
+                            [[maybe_unused]] int db_port,
+                            [[maybe_unused]] const char* db_socket,
+                            [[maybe_unused]] bool disable_batch_insert,
+                            [[maybe_unused]] bool try_reconnect,
+                            [[maybe_unused]] bool exit_on_fatal,
+                            [[maybe_unused]] int min_connections,
+                            [[maybe_unused]] int max_connections,
+                            [[maybe_unused]] int increment_connections,
+                            [[maybe_unused]] int idle_timeout,
+                            [[maybe_unused]] int validate_timeout)
 {
   return true;
 }
@@ -145,7 +145,7 @@ BareosDb* DbSqlGetPooledConnection(JobControlRecord* jcr,
  */
 void DbSqlClosePooledConnection(JobControlRecord* jcr,
                                 BareosDb* mdb,
-                                bool abort)
+                                [[maybe_unused]] bool abort)
 {
   mdb->CloseDatabase(jcr);
 }

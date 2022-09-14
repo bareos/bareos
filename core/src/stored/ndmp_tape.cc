@@ -760,7 +760,7 @@ extern "C" ndmp9_error BndmpTapeClose(struct ndm_session* sess)
 
 extern "C" ndmp9_error bndmp_tape_mtio(struct ndm_session* sess,
                                        ndmp9_tape_mtio_op op,
-                                       uint32_t count,
+                                       [[maybe_unused]] uint32_t count,
                                        uint32_t* resid)
 {
   struct ndm_tape_agent* ta = sess->tape_acb;
@@ -999,8 +999,9 @@ void EndOfNdmpRestore(JobControlRecord* jcr)
   }
 }
 
-extern "C" void* HandleNdmpConnectionRequest(ConfigurationParser* config,
-                                             void* arg)
+extern "C" void* HandleNdmpConnectionRequest(
+    [[maybe_unused]] ConfigurationParser* config,
+    void* arg)
 {
   int status;
   struct ndmconn* conn;

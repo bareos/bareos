@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,7 +35,9 @@
 
 static bool signal_handler_called = false;
 
-static void SignalHandler(int signo, siginfo_t* info, void* extra)
+static void SignalHandler([[maybe_unused]] int signo,
+                          [[maybe_unused]] siginfo_t* info,
+                          [[maybe_unused]] void* extra)
 {
   signal_handler_called = true;
 }
