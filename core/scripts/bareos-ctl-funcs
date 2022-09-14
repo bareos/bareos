@@ -25,13 +25,13 @@ pidofproc() {
    if [ ! -z "${PGREP}" -a -x "${PGREP}" ] ; then
       pid=`${PGREP} -f $base`
       if [ "$pid" != "" ] ; then
-         echo $pid
+         echo $pid | cut -d' ' -f 1
          return 0
       fi
    fi
 
    # Finally try to extract it from ps
-   pid=`${PSCMD} | grep $base | ${AWK} '{ print $1 }' | tr '\n' ' '`
+   pid=`${PSCMD} | grep -m 1 $base | ${AWK} '{ print $1 }' | tr '\n' ' '`
    echo $pid
    return 0
 }
