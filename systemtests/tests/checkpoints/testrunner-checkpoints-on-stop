@@ -38,10 +38,11 @@ timeout=0
 timed_checkpoint=""
 volume_checkpoint=""
 
-while [[ ${timeout} -lt 30 ]] && [[ -z $timed_checkpoint || -z $volume_checkpoint ]]
+while [[ ${timeout} -lt 20 ]] && [[ -z $timed_checkpoint || -z $volume_checkpoint ]]
 do
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out $backup_log
+status jobs
 messages
 quit
 END_OF_DATA
@@ -50,7 +51,7 @@ END_OF_DATA
 
     timed_checkpoint=$(grep -m 1 'Doing timed backup checkpoint. Next checkpoint in 3 seconds' $backup_log)
     volume_checkpoint=$(grep -m 1 'Volume changed, doing checkpoint:' "$backup_log")
-    sleep 1
+    sleep 5
     ((++timeout))
 done
 

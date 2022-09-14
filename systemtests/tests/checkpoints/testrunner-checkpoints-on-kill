@@ -41,7 +41,7 @@ END_OF_DATA
     timed_checkpoint=""
     volume_checkpoint=""
 
-    while [[ ${timeout} -lt 30 ]] && [[ -z $timed_checkpoint || -z $volume_checkpoint ]]
+    while [[ ${timeout} -lt 20 ]] && [[ -z $timed_checkpoint || -z $volume_checkpoint ]]
     do
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out $backup_log
@@ -52,11 +52,11 @@ END_OF_DATA
 
         run_bconsole
 
-        timed_checkpoint=$(grep -m 1 'Doing timed backup checkpoint. Next checkpoint in 3 seconds' $backup_log)
+        timed_checkpoint=$(grep -m 1 'Doing timed backup checkpoint. Next checkpoint in 3 seconds' "$backup_log")
         volume_checkpoint=$(grep -m 1 'Volume changed, doing checkpoint:' "$backup_log")
-        sleep 1
+        sleep 5
         ((++timeout))
-    done
+    done #end while
 
     # Check that a timed checkpoint was triggered
     if [[ -z $timed_checkpoint ]]; then
@@ -70,23 +70,23 @@ END_OF_DATA
         estat=2;
     fi
 
-    slowjobid=$(grep 'Job queued. JobId=' $backup_log | sed -n -e 's/^.*JobId=//p')
+    slowjobid=$(grep 'Job queued. JobId=' "$backup_log" | sed -n -e 's/^.*JobId=//p')
 
-    if [ $daemon == "fd" ]; then
+    if [ "$daemon" == "fd" ]; then
         echo "Killing the FD"
         pkill -KILL -f "${BAREOS_FILEDAEMON_BINARY}"
         sleep 3
         ${rscripts}/bareos-ctl-fd start
     fi
 
-    if [ $daemon == "sd" ]; then
+    if [ "$daemon" == "sd" ]; then
 
         echo "Killing the SD"
         pkill -KILL -f "${BAREOS_STORAGEDAEMON_BINARY}"
         sleep 3
         ${rscripts}/bareos-ctl-sd start
     fi
-    if [ $daemon == "dir" ]; then
+    if [ "$daemon" == "dir" ]; then
 
         echo "Killing the DIR"
         pkill -KILL -f "${BAREOS_DIRECTOR_BINARY}"
