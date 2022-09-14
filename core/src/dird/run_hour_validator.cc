@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -56,7 +56,7 @@ static bool IsDayOfYearInLastWeek(int year, int day_of_year)
 // calculate the current hour of the year
 RunHourValidator::RunHourValidator(time_t time) : time_(time)
 {
-  struct tm tm = {0};
+  struct tm tm = {};
   localtime_r(&time_, &tm);
   hour_ = tm.tm_hour;
   mday_ = tm.tm_mday - 1;

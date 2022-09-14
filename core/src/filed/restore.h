@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
    Copyright (C) 2009 Free Software Foundation Europe e.V.
 
    This program is Free Software; you can redistribute it and/or
@@ -64,8 +64,8 @@ struct r_ctx {
   alist<DelayedDataStream*>* delayed_streams{nullptr};    /* streams that should be restored as last */
   SIGNATURE* sig{nullptr};            /* Cryptographic signature (if any) for file */
   CRYPTO_SESSION* cs{nullptr};        /* Cryptographic session data (if any) for file */
-  RestoreCipherContext cipher_ctx{0}; /* Cryptographic restore context (if any) for file */
-  RestoreCipherContext fork_cipher_ctx{0}; /* Cryptographic restore context (if any)
+  RestoreCipherContext cipher_ctx{}; /* Cryptographic restore context (if any) for file */
+  RestoreCipherContext fork_cipher_ctx{}; /* Cryptographic restore context (if any)
                                               for alternative stream */
 };
 /* clang-format on */

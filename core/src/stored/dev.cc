@@ -975,7 +975,7 @@ bool Device::close(DeviceControlRecord* dcr)
     case DeviceType::B_VTL_DEV:
     case DeviceType::B_TAPE_DEV:
       UnlockDoor();
-      // Fall through wanted
+      [[fallthrough]];
     default:
       status = d_close(fd);
       if (status < 0) {

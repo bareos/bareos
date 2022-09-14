@@ -510,7 +510,7 @@ static int parse_name(var_t* var,
 
 /* parse pattern text */
 static int parse_pattern(var_t* var,
-                         var_parse_t* ctx,
+                         [[maybe_unused]] var_parse_t* ctx,
                          const char* begin,
                          const char* end)
 {
@@ -528,7 +528,7 @@ static int parse_pattern(var_t* var,
 
 /* parse substitution text */
 static int parse_substext(var_t* var,
-                          var_parse_t* ctx,
+                          [[maybe_unused]] var_parse_t* ctx,
                           const char* begin,
                           const char* end)
 {
@@ -546,7 +546,7 @@ static int parse_substext(var_t* var,
 
 /* parse expression text */
 static int parse_exptext(var_t* var,
-                         var_parse_t* ctx,
+                         [[maybe_unused]] var_parse_t* ctx,
                          const char* begin,
                          const char* end)
 {
@@ -566,7 +566,7 @@ static int parse_exptext(var_t* var,
 
 /* parse opertion argument text */
 static int parse_opargtext(var_t* var,
-                           var_parse_t* ctx,
+                           [[maybe_unused]] var_parse_t* ctx,
                            const char* begin,
                            const char* end)
 {
@@ -723,8 +723,8 @@ error_return:
 }
 
 /* parse class description */
-static int parse_class_description(var_t* var,
-                                   var_parse_t* ctx,
+static int parse_class_description([[maybe_unused]] var_t* var,
+                                   [[maybe_unused]] var_parse_t* ctx,
                                    tokenbuf_t* src,
                                    tokenbuf_t* dst)
 {
@@ -748,8 +748,8 @@ static int parse_class_description(var_t* var,
 }
 
 /* parse regex replace part */
-static int parse_regex_replace(var_t* var,
-                               var_parse_t* ctx,
+static int parse_regex_replace([[maybe_unused]] var_t* var,
+                               [[maybe_unused]] var_parse_t* ctx,
                                const char* data,
                                tokenbuf_t* orig,
                                regmatch_t* pmatch,
@@ -1035,8 +1035,8 @@ static int op_search_and_replace(var_t* var,
 }
 
 /* operation: offset substring */
-static int op_offset(var_t* var,
-                     var_parse_t* ctx,
+static int op_offset([[maybe_unused]] var_t* var,
+                     [[maybe_unused]] var_parse_t* ctx,
                      tokenbuf_t* data,
                      int num1,
                      int num2,
@@ -1070,8 +1070,8 @@ static int op_offset(var_t* var,
 }
 
 /* operation: padding */
-static int op_padding(var_t* var,
-                      var_parse_t* ctx,
+static int op_padding([[maybe_unused]] var_t* var,
+                      [[maybe_unused]] var_parse_t* ctx,
                       tokenbuf_t* data,
                       int width,
                       tokenbuf_t* fill,
@@ -1167,8 +1167,8 @@ static int op_padding(var_t* var,
 }
 
 /* parse an integer number ("123") */
-static int parse_integer(var_t* var,
-                         var_parse_t* ctx,
+static int parse_integer([[maybe_unused]] var_t* var,
+                         [[maybe_unused]] var_parse_t* ctx,
                          const char* begin,
                          const char* end,
                          int* result)
@@ -1687,7 +1687,7 @@ static int parse_numexp(var_t* var,
 
 /* parse variable name ("abc") */
 static int parse_name(var_t* var,
-                      var_parse_t* ctx,
+                      [[maybe_unused]] var_parse_t* ctx,
                       const char* begin,
                       const char* end)
 {
@@ -2039,7 +2039,7 @@ static var_rc_t parse_looplimits(var_t* var,
 
 /* parse plain text */
 static int parse_text(var_t* var,
-                      var_parse_t* ctx,
+                      [[maybe_unused]] var_parse_t* ctx,
                       const char* begin,
                       const char* end)
 {
@@ -2316,7 +2316,7 @@ var_rc_t var_unescape(var_t* var,
                       const char* src,
                       int srclen,
                       char* dst,
-                      int dstlen,
+                      [[maybe_unused]] int dstlen,
                       int all)
 {
   const char* end;
@@ -2360,6 +2360,7 @@ var_rc_t var_unescape(var_t* var,
             if ((rc = expand_octal(&src, &dst, end)) != 0) return VAR_RC(rc);
             break;
           }
+          [[fallthrough]];
         default:
           if (!all) { *dst++ = '\\'; }
           *dst++ = *src;
@@ -2557,7 +2558,7 @@ static const char* var_errors[] = {
 };
 
 /* translate a return code into its corresponding descriptive text */
-const char* var_strerror(var_t* var, var_rc_t rc)
+const char* var_strerror([[maybe_unused]] var_t* var, var_rc_t rc)
 {
   const char* str;
   rc = (var_rc_t)(0 - rc);

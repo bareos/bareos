@@ -175,7 +175,10 @@ static struct s_kw CryptoCiphers[]
        {"aes256hmacsha1", CRYPTO_CIPHER_AES_256_CBC_HMAC_SHA1},
        {NULL, 0}};
 
-static void StoreCipher(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreCipher(LEX* lc,
+                        ResourceItem* item,
+                        int index,
+                        [[maybe_unused]] int pass)
 {
   int i;
   LexGetToken(lc, BCT_NAME);
@@ -250,7 +253,9 @@ static void ConfigBeforeCallback(ConfigurationParser& my_config)
   my_config.InitializeQualifiedResourceNameTypeConverter(map);
 }
 
-static void ConfigReadyCallback(ConfigurationParser& my_config) {}
+static void ConfigReadyCallback([[maybe_unused]] ConfigurationParser& my_config)
+{
+}
 
 ConfigurationParser* InitFdConfig(const char* configfile, int exit_code)
 {

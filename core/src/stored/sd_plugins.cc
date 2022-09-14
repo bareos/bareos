@@ -549,8 +549,7 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
         option = bp;
       }
 
-      if (instance < LOWEST_PLUGIN_INSTANCE
-          || instance > HIGHEST_PLUGIN_INSTANCE) {
+      if (instance > HIGHEST_PLUGIN_INSTANCE) {
         Jmsg(NULL, M_ERROR, 0,
              _("Illegal SD plugin options encountered, %s instance %d "
                "skipping\n"),

@@ -556,7 +556,7 @@ class FilesetResource : public BareosResource {
   std::vector<IncludeExcludeItem*> include_items;
   std::vector<IncludeExcludeItem*> exclude_items;
   bool have_MD5 = false;          /**< Set if MD5 initialized */
-  MD5_CTX md5c = {0};             /**< MD5 of include/exclude */
+  MD5_CTX md5c = {};              /**< MD5 of include/exclude */
   char MD5[30]{0};                /**< Base 64 representation of MD5 */
   bool ignore_fs_changes = false; /**< Don't force Full if FS changed */
   bool enable_vss = false;        /**< Enable Volume Shadow Copy */

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -227,7 +227,7 @@ static void CallbackThreadTimer(watchdog_t* self)
   pthread_kill(wid->tid, TIMEOUT_SIGNAL);
 }
 
-static btimer_t* btimer_start_common(uint32_t wait)
+static btimer_t* btimer_start_common([[maybe_unused]] uint32_t wait)
 {
   btimer_t* wid = (btimer_t*)malloc(sizeof(btimer_t));
 

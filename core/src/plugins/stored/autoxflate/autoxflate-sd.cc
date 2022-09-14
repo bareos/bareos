@@ -494,8 +494,10 @@ static bool SetupAutoDeflation(PluginContext* ctx, DeviceControlRecord* dcr)
 #endif
     case COMPRESS_FZFZ:
       compressorname = COMPRESSOR_NAME_FZLZ;
+      [[fallthrough]];
     case COMPRESS_FZ4L:
       compressorname = COMPRESSOR_NAME_FZ4L;
+      [[fallthrough]];
     case COMPRESS_FZ4H: {
       compressorname = COMPRESSOR_NAME_FZ4H;
       int zstat;

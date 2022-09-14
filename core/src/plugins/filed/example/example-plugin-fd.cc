@@ -1,7 +1,7 @@
 /*
 
    Copyright (C) 2007-2012 Kern Sibbald
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    You may freely use this code to create your own plugin provided
    it is to write a plugin for Bareos licensed under AGPLv3
@@ -50,11 +50,15 @@ static bRC setXattr(PluginContext* ctx, xattr_pkt* xp);
 static CoreFunctions* bareos_core_functions = NULL;
 static PluginApiDefinition* bareos_plugin_interface_version = NULL;
 
-static PluginInformation pluginInfo
-    = {sizeof(pluginInfo), FD_PLUGIN_INTERFACE_VERSION,
-       FD_PLUGIN_MAGIC,    PLUGIN_LICENSE,
-       PLUGIN_AUTHOR,      PLUGIN_DATE,
-       PLUGIN_VERSION,     PLUGIN_DESCRIPTION};
+static PluginInformation pluginInfo = {sizeof(pluginInfo),
+                                       FD_PLUGIN_INTERFACE_VERSION,
+                                       FD_PLUGIN_MAGIC,
+                                       PLUGIN_LICENSE,
+                                       PLUGIN_AUTHOR,
+                                       PLUGIN_DATE,
+                                       PLUGIN_VERSION,
+                                       PLUGIN_DESCRIPTION,
+                                       nullptr};
 
 static PluginFunctions pluginFuncs
     = {sizeof(pluginFuncs), FD_PLUGIN_INTERFACE_VERSION,

@@ -95,7 +95,7 @@ static void CloseVssBackupSession(JobControlRecord* jcr);
  * except echo the heartbeat to the Director).
  */
 bool BlastDataToStorageDaemon(JobControlRecord* jcr,
-                              char* addr,
+                              [[maybe_unused]] char* addr,
                               crypto_cipher_t cipher)
 {
   BareosSocket* sd;
@@ -490,7 +490,9 @@ static inline bool DoBackupXattr(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
  *          0 if error
  *         -1 to ignore file/directory (not used here)
  */
-int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
+int SaveFile(JobControlRecord* jcr,
+             FindFilesPacket* ff_pkt,
+             [[maybe_unused]] bool top_level)
 {
   bool do_read = false;
   bool plugin_started = false;
@@ -1434,7 +1436,7 @@ void UnstripPath(FindFilesPacket* ff_pkt)
   }
 }
 
-static void CloseVssBackupSession(JobControlRecord* jcr)
+static void CloseVssBackupSession([[maybe_unused]] JobControlRecord* jcr)
 {
 #if defined(WIN32_VSS)
   /*

@@ -757,7 +757,7 @@ static bool SendListItem(JobControlRecord* jcr,
       break;
     case '\\':
       p++; /* skip over \ */
-           /* Note, fall through wanted */
+      [[fallthrough]];
     default:
       PmStrcpy(fd->msg, code);
       fd->message_length = PmStrcat(fd->msg, p);

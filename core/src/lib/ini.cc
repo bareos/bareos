@@ -1,7 +1,7 @@
 /*
    Copyright (C) 2011-2011 Bacula Systems(R) SA
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can modify it under the terms of
    version three of the GNU Affero General Public License as published by the
@@ -108,7 +108,9 @@ static bool IniStoreName(LEX* lc, ConfigFile* inifile, ini_items* item)
   return true;
 }
 
-static bool IniStoreAlistStr(LEX* lc, ConfigFile* inifile, ini_items* item)
+static bool IniStoreAlistStr(LEX* lc,
+                             [[maybe_unused]] ConfigFile* inifile,
+                             ini_items* item)
 {
   alist<char*>* list;
   if (!lc) {

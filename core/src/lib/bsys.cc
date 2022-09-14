@@ -641,7 +641,8 @@ void ReadStateFile(const char* dir, const char* progname, int port)
   secure_erase_guard.Release();
 }
 
-static void SafeTheLastWritePosition(std::ofstream& file, uint64_t pos)
+static void SafeTheLastWritePosition(std::ofstream& file,
+                                     [[maybe_unused]] uint64_t pos)
 {
   std::streampos position_after_export = file.tellp();
 

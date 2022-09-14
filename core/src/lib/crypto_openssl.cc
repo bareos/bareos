@@ -522,7 +522,7 @@ err:
 /* Dispatch user PEM encryption callbacks */
 static int CryptoPemCallbackDispatch(char* buf,
                                      int size,
-                                     int rwflag,
+                                     [[maybe_unused]] int rwflag,
                                      void* userdata)
 {
   PEM_CB_CONTEXT* ctx = (PEM_CB_CONTEXT*)userdata;

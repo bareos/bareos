@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -113,7 +113,7 @@ struct BareosWinFilePacket {
   int32_t lerror{0};              /**< not used - simplies Win32 builds */
   boffset_t offset{0};            /**< Delta offset */
   JobControlRecord* jcr{nullptr}; /**< jcr for editing job codes */
-  PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT win32Decomplugin_private_context{0}; /**< context for decomposition
+  PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT win32Decomplugin_private_context{}; /**< context for decomposition
                                                                    of win32 backup streams */
   int use_backup_decomp{0};       /**< set if using BackupRead Stream Decomposition */
   bool reparse_point{false};      /**< not used in Unix */

@@ -137,9 +137,9 @@ static int BcloseChksize(JobControlRecord* jcr,
   return 0;
 }
 
-static inline bool RestoreFinderinfo(JobControlRecord* jcr,
-                                     POOLMEM* buf,
-                                     int32_t buflen)
+static inline bool RestoreFinderinfo([[maybe_unused]] JobControlRecord* jcr,
+                                     [[maybe_unused]] POOLMEM* buf,
+                                     [[maybe_unused]] int32_t buflen)
 {
 #ifdef HAVE_DARWIN_OS
   struct attrlist attrList;
@@ -1137,7 +1137,9 @@ ok_out:
   FreeAttr(rctx.attr);
 }
 
-int DoFileDigest(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
+int DoFileDigest(JobControlRecord* jcr,
+                 FindFilesPacket* ff_pkt,
+                 [[maybe_unused]] bool top_level)
 {
   Dmsg1(50, "DoFileDigest jcr=%p\n", jcr);
   return (DigestFile(jcr, ff_pkt, jcr->impl->crypto.digest));

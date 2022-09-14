@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can modify it under the terms of
    version three of the GNU Affero General Public License as published by the
@@ -29,11 +29,17 @@
 #  define MOD_ERROR_VAL NULL
 #  define MOD_SUCCESS_VAL(val) val
 #  define MOD_INIT(name) PyMODINIT_FUNC PyInit_##name(void)
-#  define MOD_DEF(ob, name, doc, methods)              \
-    static struct PyModuleDef moduledef = {            \
-        PyModuleDef_HEAD_INIT, name, doc, -1, methods, \
-    };                                                 \
-                                                       \
+#  define MOD_DEF(ob, name, doc, methods)                         \
+    static struct PyModuleDef moduledef = {PyModuleDef_HEAD_INIT, \
+                                           name,                  \
+                                           doc,                   \
+                                           -1,                    \
+                                           methods,               \
+                                           NULL,                  \
+                                           NULL,                  \
+                                           NULL,                  \
+                                           NULL};                 \
+                                                                  \
     ob = PyModule_Create(&moduledef);
 #else
 #  define MOD_ERROR_VAL

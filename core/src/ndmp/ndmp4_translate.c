@@ -2822,7 +2822,7 @@ int ndmp_4to9_fh_add_file_request(ndmp4_fh_add_file_post* request4,
 
 int ndmp_4to9_fh_add_file_free_request(ndmp9_fh_add_file_request* request9)
 {
-  int i;
+ uint32_t i;
 
   for (i = 0; i < request9->files.files_len; i++) {
     NDMOS_API_FREE(request9->files.files_val[i].unix_path);

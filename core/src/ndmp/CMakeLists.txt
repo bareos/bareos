@@ -165,6 +165,12 @@ set(LIBBAREOSNDMP_SRCS ${NDMP_PROTO_SRCS} ${NDMP_LIB_SRCS} ${NDMP_AGENT_SRCS}
                        ${NDMP_HELPER_SRCS}
 )
 
+set_source_files_properties(
+  ndmp2_translate.c ndmp3_translate.c ndmp4_translate.c ndml_conn.c
+  ndma_comm_dispatch.c ndma_tape.c PROPERTIES COMPILE_FLAGS
+                                              -Wno-enum-conversion
+)
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(RPCGEN_PARAMS "-C")
 else()

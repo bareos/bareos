@@ -7370,6 +7370,7 @@ more:
 						break;
 					}
 					/* FALLTHRU: Big enough MDB_DUPFIXED sub-page */
+          [[fallthrough]];
 				case MDB_CURRENT:
 					fp->mp_flags |= P_DIRTY;
 					COPY_PGNO(fp->mp_pgno, mp->mp_pgno);
@@ -10697,7 +10698,7 @@ int mdb_set_relctx(MDB_txn *txn, MDB_dbi dbi, void *ctx)
 }
 
 int ESECT
-mdb_env_get_maxkeysize(MDB_env *env)
+mdb_env_get_maxkeysize([[maybe_unused]]MDB_env *env)
 {
 	return ENV_MAXKEY(env);
 }

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -139,7 +139,7 @@ bail_out:
 
 // Finish initialization of the pocket structure.
 void BareosSocketTCP::FinInit(JobControlRecord* jcr,
-                              int sockfd,
+                              [[maybe_unused]] int sockfd,
                               const char* who,
                               const char* host,
                               int port,
@@ -162,7 +162,7 @@ void BareosSocketTCP::FinInit(JobControlRecord* jcr,
 bool BareosSocketTCP::open(JobControlRecord* jcr,
                            const char* name,
                            const char* host,
-                           char* service,
+                           [[maybe_unused]] char* service,
                            int port,
                            utime_t heart_beat,
                            int* fatal)

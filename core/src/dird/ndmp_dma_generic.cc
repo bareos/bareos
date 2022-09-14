@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -58,7 +58,7 @@ static ndmp_backup_format_option ndmp_backup_format_options[] = {
     {(char*)"zfs", false, true, false, true},
     {(char*)"vbb", false, true, false, true},
     {(char*)"image", false, true, false, true},
-    {NULL, false, false, false}};
+    {NULL, false, false, false, false}};
 
 /**
  * find ndmp_backup_format_option for given format

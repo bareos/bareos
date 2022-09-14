@@ -338,6 +338,7 @@ int Bvsnprintf(char* buffer, int32_t maxlen, const char* format, va_list args)
             break;
           case 'E':
             flags |= DP_F_UP;
+            [[fallthrough]];
           case 'e':
             if (cflags == DP_C_LDOUBLE) {
               fvalue = va_arg(args, LDOUBLE);
@@ -348,6 +349,7 @@ int Bvsnprintf(char* buffer, int32_t maxlen, const char* format, va_list args)
             break;
           case 'G':
             flags |= DP_F_UP;
+            [[fallthrough]];
           case 'g':
             if (cflags == DP_C_LDOUBLE) {
               fvalue = va_arg(args, LDOUBLE);

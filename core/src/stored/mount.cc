@@ -524,14 +524,17 @@ int DeviceControlRecord::CheckVolumeLabel(bool& ask, bool& autochanger)
       switch (TryAutolabel(true)) {
         case try_next_vol:
           goto check_next_volume;
+          [[fallthrough]];
         case try_read_vol:
           goto check_read_volume;
+          [[fallthrough]];
         case try_error:
           goto check_bail_out;
+          [[fallthrough]];
         case try_default:
           break;
       }
-      /* NOTE! Fall-through wanted. */
+      [[fallthrough]];
     case VOL_NO_MEDIA:
     default:
       Dmsg0(200, "VOL_NO_MEDIA or default.\n");

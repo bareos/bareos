@@ -578,6 +578,7 @@ static void SetOptions(findFOPTS* fo, const char* opts)
         break;
       case 'R': /* Resource forks and Finder Info */
         SetBit(FO_HFSPLUS, fo->flags);
+        [[fallthrough]];
       case 'r': /* read fifo */
         SetBit(FO_READFIFO, fo->flags);
         break;

@@ -535,7 +535,8 @@ int ndmos_chan_poll(struct ndmchan* chtab[], unsigned n_chtab, int milli_timo)
   struct ndmchan* ch;
   struct pollfd* pfdtab;
   int n_pfdtab;
-  int rc, i;
+  int rc;
+  unsigned int i;
 
   /*
    * See how many filedescriptors we need to check.

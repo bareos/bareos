@@ -193,7 +193,7 @@ void TreeAddDeltaPart(TREE_ROOT* root,
  */
 TREE_NODE* insert_tree_node(char* path,
                             char* fname,
-                            int type,
+                            [[maybe_unused]] int type,
                             TREE_ROOT* root,
                             TREE_NODE* parent)
 {

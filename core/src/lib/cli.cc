@@ -150,7 +150,7 @@ void AddDeprecatedExportOptionsHelp(CLI::App& app)
 {
   app.add_option(
          "-x",
-         [&app](std::vector<std::string> vals) {
+         [&app]([[maybe_unused]] std::vector<std::string> vals) {
            app.failure_message(CLI::FailureMessage::simple);
            throw CLI::ParseError(
                "The -xc and -xs options have changed.\n"
