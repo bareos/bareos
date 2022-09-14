@@ -54,6 +54,8 @@ endif(CCACHE_FOUND)
 #
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wextra")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra")
 
 option(ENABLE_SANITIZERS "Build with ASan/LSan/UBSan enabled" OFF)
 if(ENABLE_SANITIZERS)
@@ -339,7 +341,9 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
   include_directories(/usr/local/include)
   link_directories(/usr/local/lib)
   link_libraries(intl)
-  check_cxx_compiler_flag(-Wunused-but-set-variable compiler_will_warn_of_unused_but_set_variable)
+  check_cxx_compiler_flag(
+    -Wunused-but-set-variable compiler_will_warn_of_unused_but_set_variable
+  )
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")

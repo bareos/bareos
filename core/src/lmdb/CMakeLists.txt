@@ -23,7 +23,7 @@ if(HAVE_FREEBSD_OS)
 endif()
 
 add_library(bareoslmdb SHARED mdb.c midl.c)
-target_compile_options(bareoslmdb PRIVATE -Wno-missing-braces)
+target_compile_options(bareoslmdb PRIVATE -Wno-missing-braces -Wno-extra)
 
 # set target_link_options so lto doesn't complain either
 if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
