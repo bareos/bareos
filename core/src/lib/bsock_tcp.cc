@@ -317,7 +317,7 @@ bool BareosSocketTCP::open(JobControlRecord* jcr,
 bool BareosSocketTCP::SetKeepalive(JobControlRecord* jcr,
                                    int sockfd,
                                    bool enable,
-                                   int keepalive_start,
+                                   [[maybe_unused]] int keepalive_start,
                                    int keepalive_interval)
 {
   int value = int(enable);
