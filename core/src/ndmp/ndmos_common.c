@@ -66,8 +66,8 @@ void ndmos_sync_config_info(struct ndm_session* sess)
   char obuf[5];
 
   if (!sess->config_info) {
-    sess->config_info
-        = (ndmp9_config_info*)NDMOS_API_MALLOC(sizeof(ndmp9_config_info));
+    sess->config_info =
+        (ndmp9_config_info*)NDMOS_API_MALLOC(sizeof(ndmp9_config_info));
     if (!sess->config_info) return;
     NDMOS_MACRO_ZEROFILL(sess->config_info);
   }
@@ -188,8 +188,7 @@ int ndmos_ok_name_md5_digest(struct ndm_session* sess,
  * types of file descriptors to not block.
  */
 
-void ndmos_condition_listen_socket([[maybe_unused]] struct ndm_session* sess,
-                                   int sock)
+void ndmos_condition_listen_socket(struct ndm_session* sess, int sock)
 {
   int flag;
 
@@ -197,21 +196,18 @@ void ndmos_condition_listen_socket([[maybe_unused]] struct ndm_session* sess,
   setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (void*)&flag, sizeof flag);
 }
 
-void ndmos_condition_control_socket([[maybe_unused]] struct ndm_session* sess,
-                                    [[maybe_unused]] int sock)
+void ndmos_condition_control_socket(struct ndm_session* sess, int sock)
 {
   /* nothing */
 }
 
-void ndmos_condition_image_stream_socket(
-    [[maybe_unused]] struct ndm_session* sess,
-    int sock)
+void ndmos_condition_image_stream_socket(struct ndm_session* sess, int sock)
 {
   fcntl(sock, F_SETFL, O_NONBLOCK);
   signal(SIGPIPE, SIG_IGN);
 }
 
-void ndmos_condition_pipe_fd([[maybe_unused]] struct ndm_session* sess, int fd)
+void ndmos_condition_pipe_fd(struct ndm_session* sess, int fd)
 {
   fcntl(fd, F_SETFL, O_NONBLOCK);
   signal(SIGPIPE, SIG_IGN);
@@ -220,8 +216,8 @@ void ndmos_condition_pipe_fd([[maybe_unused]] struct ndm_session* sess, int fd)
 
 
 #ifdef NDMOS_COMMON_TAPE_INTERFACE
-#  ifndef NDMOS_OPTION_NO_TAPE_AGENT
-#    ifndef NDMOS_OPTION_TAPE_SIMULATOR
+#ifndef NDMOS_OPTION_NO_TAPE_AGENT
+#ifndef NDMOS_OPTION_TAPE_SIMULATOR
 /*
  * TAPE INTERFACE
  ****************************************************************
@@ -303,29 +299,29 @@ ndmp9_error ndmos_tape_execute_cdb(struct ndm_session* sess,
   return NDMP9_NOT_SUPPORTED_ERR;
 }
 
-#    endif /* !NDMOS_OPTION_TAPE_SIMULATOR */
-#  else    /* !NDMOS_OPTION_NO_TAPE_AGENT */
+#endif /* !NDMOS_OPTION_TAPE_SIMULATOR */
+#else  /* !NDMOS_OPTION_NO_TAPE_AGENT */
 /* tape interfaces implemented in ndma_tape_simulator.c */
-#  endif   /* !NDMOS_OPTION_NO_TAPE_AGENT */
-#endif     /* NDMOS_COMMON_TAPE_INTERFACE */
+#endif /* !NDMOS_OPTION_NO_TAPE_AGENT */
+#endif /* NDMOS_COMMON_TAPE_INTERFACE */
 
 
 #ifdef NDMOS_COMMON_ROBOT_INTERFACE
-#  ifndef NDMOS_OPTION_NO_ROBOT_AGENT
-#    ifndef NDMOS_OPTION_ROBOT_SIMULATOR
+#ifndef NDMOS_OPTION_NO_ROBOT_AGENT
+#ifndef NDMOS_OPTION_ROBOT_SIMULATOR
 
 /* ndmos_robot_* functions here */
 
-#    endif /* !NDMOS_OPTION_ROBOT_SIMULATOR */
-#  else    /* !NDMOS_OPTION_NO_ROBOT_AGENT */
+#endif /* !NDMOS_OPTION_ROBOT_SIMULATOR */
+#else  /* !NDMOS_OPTION_NO_ROBOT_AGENT */
 /* robot interfaces implemented in ndma_robot_simulator.c */
-#  endif   /* !NDMOS_OPTION_NO_ROBOT_AGENT */
-#endif     /* NDMOS_COMMON_ROBOT_INTERFACE */
+#endif /* !NDMOS_OPTION_NO_ROBOT_AGENT */
+#endif /* NDMOS_COMMON_ROBOT_INTERFACE */
 
 
 #ifdef NDMOS_COMMON_SCSI_INTERFACE
-#  ifndef NDMOS_OPTION_NO_ROBOT_AGENT /* Surrounds all SCSI intfs */
-#    ifndef NDMOS_OPTION_ROBOT_SIMULATOR
+#ifndef NDMOS_OPTION_NO_ROBOT_AGENT /* Surrounds all SCSI intfs */
+#ifndef NDMOS_OPTION_ROBOT_SIMULATOR
 /*
  * SCSI INTERFACE
  ****************************************************************
@@ -373,9 +369,9 @@ ndmp9_error ndmos_scsi_execute_cdb(struct ndm_session* sess,
   return NDMP9_NOT_SUPPORTED_ERR;
 }
 
-#    endif /* NDMOS_OPTION_ROBOT_SIMULATOR */
-#  endif   /* NDMOS_OPTION_NO_ROBOT_AGENT   Surrounds all SCSI intfs */
-#endif     /* NDMOS_COMMON_SCSI_INTERFACE */
+#endif /* NDMOS_OPTION_ROBOT_SIMULATOR */
+#endif /* NDMOS_OPTION_NO_ROBOT_AGENT   Surrounds all SCSI intfs */
+#endif /* NDMOS_COMMON_SCSI_INTERFACE */
 
 
 #ifdef NDMOS_COMMON_DISPATCH_REQUEST
@@ -398,17 +394,17 @@ ndmp9_error ndmos_scsi_execute_cdb(struct ndm_session* sess,
  * the request is interpretted.
  */
 
-#  ifndef I_HAVE_DISPATCH_REQUEST
+#ifndef I_HAVE_DISPATCH_REQUEST
 
 // If we're not intercepting, keep it simple
-int ndmos_dispatch_request([[maybe_unused]] struct ndm_session* sess,
-                           [[maybe_unused]] struct ndmp_xa_buf* xa,
-                           [[maybe_unused]] struct ndmconn* ref_conn)
+int ndmos_dispatch_request(struct ndm_session* sess,
+                           struct ndmp_xa_buf* xa,
+                           struct ndmconn* ref_conn)
 {
   return -1; /* not intercepted */
 }
 
-#  else /* !I_HAVE_DISPATCH_REQUEST */
+#else /* !I_HAVE_DISPATCH_REQUEST */
 
 /*
  * The following fragment is here for reference.
@@ -438,8 +434,8 @@ int ndmos_dispatch_request(struct ndm_session* sess,
     return 0;
   }
 
-  if (!sess->conn_authorized
-      && !(drt->flags & NDM_DRT_FLAG_OK_NOT_AUTHORIZED)) {
+  if (!sess->conn_authorized &&
+      !(drt->flags & NDM_DRT_FLAG_OK_NOT_AUTHORIZED)) {
     xa->reply.header.error = NDMP9_NOT_AUTHORIZED_ERR;
     return 0;
   }
@@ -459,30 +455,30 @@ int ndmos_dispatch_request(struct ndm_session* sess,
 
 struct ndm_dispatch_request_table ndmos_dispatch_request_table_v0[] = {{0}};
 
-#    ifndef NDMOS_OPTION_NO_NDMP2
+#ifndef NDMOS_OPTION_NO_NDMP2
 struct ndm_dispatch_request_table ndmos_dispatch_request_table_v2[] = {{0}};
-#    endif /* !NDMOS_OPTION_NO_NDMP2 */
+#endif /* !NDMOS_OPTION_NO_NDMP2 */
 
-#    ifndef NDMOS_OPTION_NO_NDMP3
+#ifndef NDMOS_OPTION_NO_NDMP3
 struct ndm_dispatch_request_table ndmos_dispatch_request_table_v3[] = {{0}};
-#    endif /* !NDMOS_OPTION_NO_NDMP3 */
+#endif /* !NDMOS_OPTION_NO_NDMP3 */
 
-#    ifndef NDMOS_OPTION_NO_NDMP4
+#ifndef NDMOS_OPTION_NO_NDMP4
 struct ndm_dispatch_request_table ndmos_dispatch_request_table_v4[] = {{0}};
-#    endif /* !NDMOS_OPTION_NO_NDMP4 */
+#endif /* !NDMOS_OPTION_NO_NDMP4 */
 
 
-struct ndm_dispatch_version_table ndmos_dispatch_version_table[]
-    = {{0, ndmos_dispatch_request_table_v0},
-#    ifndef NDMOS_OPTION_NO_NDMP2
-       {NDMP2VER, ndmos_dispatch_request_table_v2},
-#    endif /* !NDMOS_OPTION_NO_NDMP2 */
-#    ifndef NDMOS_OPTION_NO_NDMP3
-       {NDMP3VER, ndmos_dispatch_request_table_v3},
-#    endif /* !NDMOS_OPTION_NO_NDMP2 */
-#    ifndef NDMOS_OPTION_NO_NDMP4
-       {NDMP4VER, ndmos_dispatch_request_table_v4},
-#    endif /* !NDMOS_OPTION_NO_NDMP4 */
-       {-1}};
-#  endif   /* !I_HAVE_DISPATCH_REQUEST */
-#endif     /* NDMOS_COMMON_DISPATCH_REQUEST */
+struct ndm_dispatch_version_table ndmos_dispatch_version_table[] = {
+    {0, ndmos_dispatch_request_table_v0},
+#ifndef NDMOS_OPTION_NO_NDMP2
+    {NDMP2VER, ndmos_dispatch_request_table_v2},
+#endif /* !NDMOS_OPTION_NO_NDMP2 */
+#ifndef NDMOS_OPTION_NO_NDMP3
+    {NDMP3VER, ndmos_dispatch_request_table_v3},
+#endif /* !NDMOS_OPTION_NO_NDMP2 */
+#ifndef NDMOS_OPTION_NO_NDMP4
+    {NDMP4VER, ndmos_dispatch_request_table_v4},
+#endif /* !NDMOS_OPTION_NO_NDMP4 */
+    {-1}};
+#endif /* !I_HAVE_DISPATCH_REQUEST */
+#endif /* NDMOS_COMMON_DISPATCH_REQUEST */

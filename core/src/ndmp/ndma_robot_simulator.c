@@ -38,13 +38,13 @@
 #include "ndmagents.h"
 
 #ifndef NDMOS_OPTION_NO_ROBOT_AGENT
-#  ifdef NDMOS_OPTION_ROBOT_SIMULATOR
+#ifdef NDMOS_OPTION_ROBOT_SIMULATOR
 
-#    include "scsiconst.h"
+#include "scsiconst.h"
 
-#    define ROBOT_CONTROLLER 0
-#    define ROBOT_ID 7
-#    define ROBOT_LUN 1
+#define ROBOT_CONTROLLER 0
+#define ROBOT_ID 7
+#define ROBOT_LUN 1
 
 // interface
 
@@ -83,7 +83,7 @@ int ndmos_scsi_initialize(struct ndm_session* sess)
   return 0;
 }
 
-void ndmos_scsi_sync_state([[maybe_unused]] struct ndm_session* sess) {}
+void ndmos_scsi_sync_state(struct ndm_session* sess) {}
 
 ndmp9_error ndmos_scsi_open(struct ndm_session* sess, char* name)
 {
@@ -114,7 +114,7 @@ ndmp9_error ndmos_scsi_close(struct ndm_session* sess)
 }
 
 /* deprecated */
-ndmp9_error ndmos_scsi_set_target([[maybe_unused]] struct ndm_session* sess)
+ndmp9_error ndmos_scsi_set_target(struct ndm_session* sess)
 {
   return NDMP9_NOT_SUPPORTED_ERR;
 }
@@ -134,7 +134,7 @@ ndmp9_error ndmos_scsi_reset_device(struct ndm_session* sess)
 }
 
 /* deprecated */
-ndmp9_error ndmos_scsi_reset_bus([[maybe_unused]] struct ndm_session* sess)
+ndmp9_error ndmos_scsi_reset_bus(struct ndm_session* sess)
 {
   return NDMP9_NOT_SUPPORTED_ERR;
 }
@@ -158,6 +158,6 @@ ndmp9_error ndmos_scsi_execute_cdb(struct ndm_session* sess,
   return NDMP9_NO_ERR;
 }
 
-#  endif /* NDMOS_OPTION_ROBOT_SIMULATOR */
+#endif /* NDMOS_OPTION_ROBOT_SIMULATOR */
 
 #endif /* !NDMOS_OPTION_NO_ROBOT_AGENT */

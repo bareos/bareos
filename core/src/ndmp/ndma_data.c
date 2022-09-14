@@ -247,7 +247,7 @@ ndmp9_error ndmda_data_start_recover_fh(struct ndm_session* sess)
   return error;
 }
 
-void ndmda_sync_state([[maybe_unused]] struct ndm_session* sess)
+void ndmda_sync_state(struct ndm_session* sess)
 { /* no-op, always accurate */
 }
 
@@ -256,7 +256,7 @@ void ndmda_data_abort(struct ndm_session* sess)
   ndmda_data_halt(sess, NDMP9_DATA_HALT_ABORTED);
 }
 
-void ndmda_sync_environment([[maybe_unused]] struct ndm_session* sess)
+void ndmda_sync_environment(struct ndm_session* sess)
 {
   /* no-op, always accurate */
 }
@@ -725,17 +725,17 @@ void ndmda_send_data_read(struct ndm_session* sess,
   addr_type = da->data_state.data_connection_addr.addr_type;
 
   if (NDMP9_ADDR_LOCAL == addr_type) {
-#  ifndef NDMOS_OPTION_NO_TAPE_AGENT
+#ifndef NDMOS_OPTION_NO_TAPE_AGENT
     if (ndmta_local_mover_read(sess, offset, length) != 0) {
       ndma_send_logmsg(sess, NDMP9_LOG_ERROR, sess->plumb.data,
                        "local_mover_read failed");
       ndmda_data_halt(sess, NDMP9_DATA_HALT_INTERNAL_ERROR);
     }
-#  else  /* !NDMOS_OPTION_NO_TAPE_AGENT */
+#else  /* !NDMOS_OPTION_NO_TAPE_AGENT */
     ndma_send_logmsg(sess, NDMP9_LOG_ERROR, sess->plumb.data,
                      "local_mover_read not configured");
     ndmda_data_halt(sess, NDMP9_DATA_HALT_INTERNAL_ERROR);
-#  endif /* !NDMOS_OPTION_NO_TAPE_AGENT */
+#endif /* !NDMOS_OPTION_NO_TAPE_AGENT */
     return;
   }
 
@@ -792,14 +792,14 @@ struct ndmp9_pval* ndmda_find_env(struct ndm_session* sess, char* name)
 
 int ndmda_interpret_boolean_value(char* value_str, int default_value)
 {
-  if (strcasecmp(value_str, "y") == 0 || strcasecmp(value_str, "yes") == 0
-      || strcasecmp(value_str, "t") == 0 || strcasecmp(value_str, "true") == 0
-      || strcasecmp(value_str, "1") == 0)
+  if (strcasecmp(value_str, "y") == 0 || strcasecmp(value_str, "yes") == 0 ||
+      strcasecmp(value_str, "t") == 0 || strcasecmp(value_str, "true") == 0 ||
+      strcasecmp(value_str, "1") == 0)
     return 1;
 
-  if (strcasecmp(value_str, "n") == 0 || strcasecmp(value_str, "no") == 0
-      || strcasecmp(value_str, "f") == 0 || strcasecmp(value_str, "false") == 0
-      || strcasecmp(value_str, "0") == 0)
+  if (strcasecmp(value_str, "n") == 0 || strcasecmp(value_str, "no") == 0 ||
+      strcasecmp(value_str, "f") == 0 || strcasecmp(value_str, "false") == 0 ||
+      strcasecmp(value_str, "0") == 0)
     return 0;
 
   return default_value;
@@ -860,8 +860,8 @@ int ndmda_count_invalid_fh_info_pending(struct ndm_session* sess)
 
   count = 0;
   for (entry = da->nlist_tab.head; entry; entry = entry->next) {
-    if (entry->result_err == NDMP9_UNDEFINED_ERR
-        && entry->name.fh_info.valid != NDMP9_VALIDITY_VALID) {
+    if (entry->result_err == NDMP9_UNDEFINED_ERR &&
+        entry->name.fh_info.valid != NDMP9_VALIDITY_VALID) {
       count++;
     }
   }

@@ -51,32 +51,32 @@
 
 // ndmp_error
 
-struct enum_conversion ndmp_29_error[]
-    = {{NDMP2_UNDEFINED_ERR, NDMP9_UNDEFINED_ERR}, /* default */
-       {NDMP2_NO_ERR, NDMP9_NO_ERR},
-       {NDMP2_NOT_SUPPORTED_ERR, NDMP9_NOT_SUPPORTED_ERR},
-       {NDMP2_DEVICE_BUSY_ERR, NDMP9_DEVICE_BUSY_ERR},
-       {NDMP2_DEVICE_OPENED_ERR, NDMP9_DEVICE_OPENED_ERR},
-       {NDMP2_NOT_AUTHORIZED_ERR, NDMP9_NOT_AUTHORIZED_ERR},
-       {NDMP2_PERMISSION_ERR, NDMP9_PERMISSION_ERR},
-       {NDMP2_DEV_NOT_OPEN_ERR, NDMP9_DEV_NOT_OPEN_ERR},
-       {NDMP2_IO_ERR, NDMP9_IO_ERR},
-       {NDMP2_TIMEOUT_ERR, NDMP9_TIMEOUT_ERR},
-       {NDMP2_ILLEGAL_ARGS_ERR, NDMP9_ILLEGAL_ARGS_ERR},
-       {NDMP2_NO_TAPE_LOADED_ERR, NDMP9_NO_TAPE_LOADED_ERR},
-       {NDMP2_WRITE_PROTECT_ERR, NDMP9_WRITE_PROTECT_ERR},
-       {NDMP2_EOF_ERR, NDMP9_EOF_ERR},
-       {NDMP2_EOM_ERR, NDMP9_EOM_ERR},
-       {NDMP2_FILE_NOT_FOUND_ERR, NDMP9_FILE_NOT_FOUND_ERR},
-       {NDMP2_BAD_FILE_ERR, NDMP9_BAD_FILE_ERR},
-       {NDMP2_NO_DEVICE_ERR, NDMP9_NO_DEVICE_ERR},
-       {NDMP2_NO_BUS_ERR, NDMP9_NO_BUS_ERR},
-       {NDMP2_XDR_DECODE_ERR, NDMP9_XDR_DECODE_ERR},
-       {NDMP2_ILLEGAL_STATE_ERR, NDMP9_ILLEGAL_STATE_ERR},
-       {NDMP2_UNDEFINED_ERR, NDMP9_UNDEFINED_ERR},
-       {NDMP2_XDR_ENCODE_ERR, NDMP9_XDR_ENCODE_ERR},
-       {NDMP2_NO_MEM_ERR, NDMP9_NO_MEM_ERR},
-       END_ENUM_CONVERSION_TABLE};
+struct enum_conversion ndmp_29_error[] = {
+    {NDMP2_UNDEFINED_ERR, NDMP9_UNDEFINED_ERR}, /* default */
+    {NDMP2_NO_ERR, NDMP9_NO_ERR},
+    {NDMP2_NOT_SUPPORTED_ERR, NDMP9_NOT_SUPPORTED_ERR},
+    {NDMP2_DEVICE_BUSY_ERR, NDMP9_DEVICE_BUSY_ERR},
+    {NDMP2_DEVICE_OPENED_ERR, NDMP9_DEVICE_OPENED_ERR},
+    {NDMP2_NOT_AUTHORIZED_ERR, NDMP9_NOT_AUTHORIZED_ERR},
+    {NDMP2_PERMISSION_ERR, NDMP9_PERMISSION_ERR},
+    {NDMP2_DEV_NOT_OPEN_ERR, NDMP9_DEV_NOT_OPEN_ERR},
+    {NDMP2_IO_ERR, NDMP9_IO_ERR},
+    {NDMP2_TIMEOUT_ERR, NDMP9_TIMEOUT_ERR},
+    {NDMP2_ILLEGAL_ARGS_ERR, NDMP9_ILLEGAL_ARGS_ERR},
+    {NDMP2_NO_TAPE_LOADED_ERR, NDMP9_NO_TAPE_LOADED_ERR},
+    {NDMP2_WRITE_PROTECT_ERR, NDMP9_WRITE_PROTECT_ERR},
+    {NDMP2_EOF_ERR, NDMP9_EOF_ERR},
+    {NDMP2_EOM_ERR, NDMP9_EOM_ERR},
+    {NDMP2_FILE_NOT_FOUND_ERR, NDMP9_FILE_NOT_FOUND_ERR},
+    {NDMP2_BAD_FILE_ERR, NDMP9_BAD_FILE_ERR},
+    {NDMP2_NO_DEVICE_ERR, NDMP9_NO_DEVICE_ERR},
+    {NDMP2_NO_BUS_ERR, NDMP9_NO_BUS_ERR},
+    {NDMP2_XDR_DECODE_ERR, NDMP9_XDR_DECODE_ERR},
+    {NDMP2_ILLEGAL_STATE_ERR, NDMP9_ILLEGAL_STATE_ERR},
+    {NDMP2_UNDEFINED_ERR, NDMP9_UNDEFINED_ERR},
+    {NDMP2_XDR_ENCODE_ERR, NDMP9_XDR_ENCODE_ERR},
+    {NDMP2_NO_MEM_ERR, NDMP9_NO_MEM_ERR},
+    END_ENUM_CONVERSION_TABLE};
 
 
 int ndmp_2to9_error(ndmp2_error* error2, ndmp9_error* error9)
@@ -154,11 +154,11 @@ int ndmp_9to2_pval_vec_dup(ndmp9_pval* pval9,
 
 // ndmp[_mover]_addr
 
-struct enum_conversion ndmp_29_mover_addr_type[]
-    = {{NDMP_INVALID_GENERAL, NDMP_INVALID_GENERAL}, /* default */
-       {NDMP2_ADDR_LOCAL, NDMP9_ADDR_LOCAL},
-       {NDMP2_ADDR_TCP, NDMP9_ADDR_TCP},
-       END_ENUM_CONVERSION_TABLE};
+struct enum_conversion ndmp_29_mover_addr_type[] = {
+    {NDMP_INVALID_GENERAL, NDMP_INVALID_GENERAL}, /* default */
+    {NDMP2_ADDR_LOCAL, NDMP9_ADDR_LOCAL},
+    {NDMP2_ADDR_TCP, NDMP9_ADDR_TCP},
+    END_ENUM_CONVERSION_TABLE};
 
 
 int ndmp_2to9_mover_addr(ndmp2_mover_addr* addr2, ndmp9_addr* addr9)
@@ -170,8 +170,8 @@ int ndmp_2to9_mover_addr(ndmp2_mover_addr* addr2, ndmp9_addr* addr9)
 
     case NDMP2_ADDR_TCP:
       addr9->addr_type = NDMP9_ADDR_TCP;
-      addr9->ndmp9_addr_u.tcp_addr.ip_addr
-          = addr2->ndmp2_mover_addr_u.addr.ip_addr;
+      addr9->ndmp9_addr_u.tcp_addr.ip_addr =
+          addr2->ndmp2_mover_addr_u.addr.ip_addr;
       addr9->ndmp9_addr_u.tcp_addr.port = addr2->ndmp2_mover_addr_u.addr.port;
       break;
 
@@ -193,8 +193,8 @@ int ndmp_9to2_mover_addr(ndmp9_addr* addr9, ndmp2_mover_addr* addr2)
 
     case NDMP9_ADDR_TCP:
       addr2->addr_type = NDMP2_ADDR_TCP;
-      addr2->ndmp2_mover_addr_u.addr.ip_addr
-          = addr9->ndmp9_addr_u.tcp_addr.ip_addr;
+      addr2->ndmp2_mover_addr_u.addr.ip_addr =
+          addr9->ndmp9_addr_u.tcp_addr.ip_addr;
       addr2->ndmp2_mover_addr_u.addr.port = addr9->ndmp9_addr_u.tcp_addr.port;
       break;
 
@@ -213,12 +213,12 @@ int ndmp_9to2_mover_addr(ndmp9_addr* addr9, ndmp2_mover_addr* addr2)
  ****************************************************************
  */
 
-struct enum_conversion ndmp_29_auth_type[]
-    = {{NDMP_INVALID_GENERAL, NDMP_INVALID_GENERAL}, /* default */
-       {NDMP2_AUTH_NONE, NDMP9_AUTH_NONE},
-       {NDMP2_AUTH_TEXT, NDMP9_AUTH_TEXT},
-       {NDMP2_AUTH_MD5, NDMP9_AUTH_MD5},
-       END_ENUM_CONVERSION_TABLE};
+struct enum_conversion ndmp_29_auth_type[] = {
+    {NDMP_INVALID_GENERAL, NDMP_INVALID_GENERAL}, /* default */
+    {NDMP2_AUTH_NONE, NDMP9_AUTH_NONE},
+    {NDMP2_AUTH_TEXT, NDMP9_AUTH_TEXT},
+    {NDMP2_AUTH_MD5, NDMP9_AUTH_MD5},
+    END_ENUM_CONVERSION_TABLE};
 
 int ndmp_2to9_auth_data(ndmp2_auth_data* auth_data2,
                         ndmp9_auth_data* auth_data9)
@@ -435,15 +435,15 @@ int ndmp_9to2_connect_client_auth_request(
 
 /* TBD */
 int ndmp_2to9_connect_server_auth_request(
-    [[maybe_unused]] ndmp2_connect_server_auth_request* request2,
-    [[maybe_unused]] ndmp9_connect_server_auth_request* request9)
+    ndmp2_connect_server_auth_request* request2,
+    ndmp9_connect_server_auth_request* request9)
 {
   return -1;
 }
 
 int ndmp_9to2_connect_server_auth_request(
-    [[maybe_unused]] ndmp9_connect_server_auth_request* request9,
-    [[maybe_unused]] ndmp2_connect_server_auth_request* request2)
+    ndmp9_connect_server_auth_request* request9,
+    ndmp2_connect_server_auth_request* request2)
 {
   return -1;
 }
@@ -983,14 +983,14 @@ int ndmp_9to2_execute_cdb_reply(ndmp9_execute_cdb_reply* reply9,
  * just error reply
  */
 
-struct enum_conversion ndmp_29_tape_open_mode[]
-    = {{
-           NDMP_INVALID_GENERAL,
-           NDMP_INVALID_GENERAL,
-       }, /* default */
-       {NDMP2_TAPE_READ_MODE, NDMP9_TAPE_READ_MODE},
-       {NDMP2_TAPE_WRITE_MODE, NDMP9_TAPE_RDWR_MODE},
-       END_ENUM_CONVERSION_TABLE};
+struct enum_conversion ndmp_29_tape_open_mode[] = {
+    {
+        NDMP_INVALID_GENERAL,
+        NDMP_INVALID_GENERAL,
+    }, /* default */
+    {NDMP2_TAPE_READ_MODE, NDMP9_TAPE_READ_MODE},
+    {NDMP2_TAPE_WRITE_MODE, NDMP9_TAPE_RDWR_MODE},
+    END_ENUM_CONVERSION_TABLE};
 
 
 int ndmp_2to9_tape_open_request(ndmp2_tape_open_request* request2,
@@ -1083,19 +1083,19 @@ int ndmp_9to2_tape_get_state_reply(ndmp9_tape_get_state_reply* reply9,
 
 // ndmp_tape_mtio_request
 
-struct enum_conversion ndmp_29_tape_mtio_op[]
-    = {{
-           NDMP_INVALID_GENERAL,
-           NDMP_INVALID_GENERAL,
-       }, /* default */
-       {NDMP2_MTIO_FSF, NDMP9_MTIO_FSF},
-       {NDMP2_MTIO_BSF, NDMP9_MTIO_BSF},
-       {NDMP2_MTIO_FSR, NDMP9_MTIO_FSR},
-       {NDMP2_MTIO_BSR, NDMP9_MTIO_BSR},
-       {NDMP2_MTIO_REW, NDMP9_MTIO_REW},
-       {NDMP2_MTIO_EOF, NDMP9_MTIO_EOF},
-       {NDMP2_MTIO_OFF, NDMP9_MTIO_OFF},
-       END_ENUM_CONVERSION_TABLE};
+struct enum_conversion ndmp_29_tape_mtio_op[] = {
+    {
+        NDMP_INVALID_GENERAL,
+        NDMP_INVALID_GENERAL,
+    }, /* default */
+    {NDMP2_MTIO_FSF, NDMP9_MTIO_FSF},
+    {NDMP2_MTIO_BSF, NDMP9_MTIO_BSF},
+    {NDMP2_MTIO_FSR, NDMP9_MTIO_FSR},
+    {NDMP2_MTIO_BSR, NDMP9_MTIO_BSR},
+    {NDMP2_MTIO_REW, NDMP9_MTIO_REW},
+    {NDMP2_MTIO_EOF, NDMP9_MTIO_EOF},
+    {NDMP2_MTIO_OFF, NDMP9_MTIO_OFF},
+    END_ENUM_CONVERSION_TABLE};
 
 
 int ndmp_2to9_tape_mtio_request(ndmp2_tape_mtio_request* request2,
@@ -1286,55 +1286,55 @@ int ndmp_9to2_tape_read_reply(ndmp9_tape_read_reply* reply9,
  * no args request
  */
 
-struct enum_conversion ndmp_29_mover_mode[]
-    = {{
-           NDMP_INVALID_GENERAL,
-           NDMP_INVALID_GENERAL,
-       }, /* default */
-       {NDMP2_MOVER_MODE_READ, NDMP9_MOVER_MODE_READ},
-       {NDMP2_MOVER_MODE_WRITE, NDMP9_MOVER_MODE_WRITE},
+struct enum_conversion ndmp_29_mover_mode[] = {
+    {
+        NDMP_INVALID_GENERAL,
+        NDMP_INVALID_GENERAL,
+    }, /* default */
+    {NDMP2_MOVER_MODE_READ, NDMP9_MOVER_MODE_READ},
+    {NDMP2_MOVER_MODE_WRITE, NDMP9_MOVER_MODE_WRITE},
 
-       END_ENUM_CONVERSION_TABLE};
+    END_ENUM_CONVERSION_TABLE};
 
-struct enum_conversion ndmp_29_mover_state[]
-    = {{
-           NDMP_INVALID_GENERAL,
-           NDMP_INVALID_GENERAL,
-       }, /* default */
-       {NDMP2_MOVER_STATE_IDLE, NDMP9_MOVER_STATE_IDLE},
-       {NDMP2_MOVER_STATE_LISTEN, NDMP9_MOVER_STATE_LISTEN},
-       {NDMP2_MOVER_STATE_ACTIVE, NDMP9_MOVER_STATE_ACTIVE},
-       {NDMP2_MOVER_STATE_PAUSED, NDMP9_MOVER_STATE_PAUSED},
-       {NDMP2_MOVER_STATE_HALTED, NDMP9_MOVER_STATE_HALTED},
+struct enum_conversion ndmp_29_mover_state[] = {
+    {
+        NDMP_INVALID_GENERAL,
+        NDMP_INVALID_GENERAL,
+    }, /* default */
+    {NDMP2_MOVER_STATE_IDLE, NDMP9_MOVER_STATE_IDLE},
+    {NDMP2_MOVER_STATE_LISTEN, NDMP9_MOVER_STATE_LISTEN},
+    {NDMP2_MOVER_STATE_ACTIVE, NDMP9_MOVER_STATE_ACTIVE},
+    {NDMP2_MOVER_STATE_PAUSED, NDMP9_MOVER_STATE_PAUSED},
+    {NDMP2_MOVER_STATE_HALTED, NDMP9_MOVER_STATE_HALTED},
 
-       /* alias */
-       {NDMP2_MOVER_STATE_ACTIVE, NDMP9_MOVER_STATE_STANDBY},
+    /* alias */
+    {NDMP2_MOVER_STATE_ACTIVE, NDMP9_MOVER_STATE_STANDBY},
 
-       END_ENUM_CONVERSION_TABLE};
+    END_ENUM_CONVERSION_TABLE};
 
-struct enum_conversion ndmp_29_mover_pause_reason[]
-    = {{
-           NDMP_INVALID_GENERAL,
-           NDMP_INVALID_GENERAL,
-       }, /* default */
-       {NDMP2_MOVER_PAUSE_NA, NDMP9_MOVER_PAUSE_NA},
-       {NDMP2_MOVER_PAUSE_EOM, NDMP9_MOVER_PAUSE_EOM},
-       {NDMP2_MOVER_PAUSE_EOF, NDMP9_MOVER_PAUSE_EOF},
-       {NDMP2_MOVER_PAUSE_SEEK, NDMP9_MOVER_PAUSE_SEEK},
-       {NDMP2_MOVER_PAUSE_MEDIA_ERROR, NDMP9_MOVER_PAUSE_MEDIA_ERROR},
-       END_ENUM_CONVERSION_TABLE};
+struct enum_conversion ndmp_29_mover_pause_reason[] = {
+    {
+        NDMP_INVALID_GENERAL,
+        NDMP_INVALID_GENERAL,
+    }, /* default */
+    {NDMP2_MOVER_PAUSE_NA, NDMP9_MOVER_PAUSE_NA},
+    {NDMP2_MOVER_PAUSE_EOM, NDMP9_MOVER_PAUSE_EOM},
+    {NDMP2_MOVER_PAUSE_EOF, NDMP9_MOVER_PAUSE_EOF},
+    {NDMP2_MOVER_PAUSE_SEEK, NDMP9_MOVER_PAUSE_SEEK},
+    {NDMP2_MOVER_PAUSE_MEDIA_ERROR, NDMP9_MOVER_PAUSE_MEDIA_ERROR},
+    END_ENUM_CONVERSION_TABLE};
 
-struct enum_conversion ndmp_29_mover_halt_reason[]
-    = {{
-           NDMP_INVALID_GENERAL,
-           NDMP_INVALID_GENERAL,
-       }, /* default */
-       {NDMP2_MOVER_HALT_NA, NDMP9_MOVER_HALT_NA},
-       {NDMP2_MOVER_HALT_CONNECT_CLOSED, NDMP9_MOVER_HALT_CONNECT_CLOSED},
-       {NDMP2_MOVER_HALT_ABORTED, NDMP9_MOVER_HALT_ABORTED},
-       {NDMP2_MOVER_HALT_INTERNAL_ERROR, NDMP9_MOVER_HALT_INTERNAL_ERROR},
-       {NDMP2_MOVER_HALT_CONNECT_ERROR, NDMP9_MOVER_HALT_CONNECT_ERROR},
-       END_ENUM_CONVERSION_TABLE};
+struct enum_conversion ndmp_29_mover_halt_reason[] = {
+    {
+        NDMP_INVALID_GENERAL,
+        NDMP_INVALID_GENERAL,
+    }, /* default */
+    {NDMP2_MOVER_HALT_NA, NDMP9_MOVER_HALT_NA},
+    {NDMP2_MOVER_HALT_CONNECT_CLOSED, NDMP9_MOVER_HALT_CONNECT_CLOSED},
+    {NDMP2_MOVER_HALT_ABORTED, NDMP9_MOVER_HALT_ABORTED},
+    {NDMP2_MOVER_HALT_INTERNAL_ERROR, NDMP9_MOVER_HALT_INTERNAL_ERROR},
+    {NDMP2_MOVER_HALT_CONNECT_ERROR, NDMP9_MOVER_HALT_CONNECT_ERROR},
+    END_ENUM_CONVERSION_TABLE};
 
 
 int ndmp_2to9_mover_get_state_reply(ndmp2_mover_get_state_reply* reply2,
@@ -1413,8 +1413,8 @@ int ndmp_2to9_mover_listen_reply(ndmp2_mover_listen_reply* reply2,
 
   CNVT_E_TO_9(reply2, reply9, error, ndmp_29_error);
 
-  n_error
-      += ndmp_2to9_mover_addr(&reply2->mover, &reply9->data_connection_addr);
+  n_error +=
+      ndmp_2to9_mover_addr(&reply2->mover, &reply9->data_connection_addr);
 
   return n_error;
 }
@@ -1426,8 +1426,8 @@ int ndmp_9to2_mover_listen_reply(ndmp9_mover_listen_reply* reply9,
 
   CNVT_E_FROM_9(reply2, reply9, error, ndmp_29_error);
 
-  n_error
-      += ndmp_9to2_mover_addr(&reply9->data_connection_addr, &reply2->mover);
+  n_error +=
+      ndmp_9to2_mover_addr(&reply9->data_connection_addr, &reply2->mover);
 
   return n_error;
 }
@@ -1602,43 +1602,43 @@ int ndmp_9to2_name_vec_dup(ndmp9_name* name9,
  * no args request
  */
 
-struct enum_conversion ndmp_29_data_operation[]
-    = {{
-           NDMP_INVALID_GENERAL,
-           NDMP_INVALID_GENERAL,
-       }, /* default */
-       {NDMP2_DATA_OP_NOACTION, NDMP9_DATA_OP_NOACTION},
-       {NDMP2_DATA_OP_BACKUP, NDMP9_DATA_OP_BACKUP},
-       {NDMP2_DATA_OP_RESTORE, NDMP9_DATA_OP_RECOVER},
-       {NDMP2_DATA_OP_RESTORE_FILEHIST, NDMP9_DATA_OP_RECOVER_FILEHIST},
-       END_ENUM_CONVERSION_TABLE};
+struct enum_conversion ndmp_29_data_operation[] = {
+    {
+        NDMP_INVALID_GENERAL,
+        NDMP_INVALID_GENERAL,
+    }, /* default */
+    {NDMP2_DATA_OP_NOACTION, NDMP9_DATA_OP_NOACTION},
+    {NDMP2_DATA_OP_BACKUP, NDMP9_DATA_OP_BACKUP},
+    {NDMP2_DATA_OP_RESTORE, NDMP9_DATA_OP_RECOVER},
+    {NDMP2_DATA_OP_RESTORE_FILEHIST, NDMP9_DATA_OP_RECOVER_FILEHIST},
+    END_ENUM_CONVERSION_TABLE};
 
-struct enum_conversion ndmp_29_data_state[]
-    = {{
-           NDMP_INVALID_GENERAL,
-           NDMP_INVALID_GENERAL,
-       }, /* default */
-       {NDMP2_DATA_STATE_IDLE, NDMP9_DATA_STATE_IDLE},
-       {NDMP2_DATA_STATE_ACTIVE, NDMP9_DATA_STATE_ACTIVE},
-       {NDMP2_DATA_STATE_HALTED, NDMP9_DATA_STATE_HALTED},
+struct enum_conversion ndmp_29_data_state[] = {
+    {
+        NDMP_INVALID_GENERAL,
+        NDMP_INVALID_GENERAL,
+    }, /* default */
+    {NDMP2_DATA_STATE_IDLE, NDMP9_DATA_STATE_IDLE},
+    {NDMP2_DATA_STATE_ACTIVE, NDMP9_DATA_STATE_ACTIVE},
+    {NDMP2_DATA_STATE_HALTED, NDMP9_DATA_STATE_HALTED},
 
-       /* aliases */
-       {NDMP2_DATA_STATE_ACTIVE, NDMP9_DATA_STATE_CONNECTED},
-       {NDMP2_DATA_STATE_ACTIVE, NDMP9_DATA_STATE_LISTEN},
+    /* aliases */
+    {NDMP2_DATA_STATE_ACTIVE, NDMP9_DATA_STATE_CONNECTED},
+    {NDMP2_DATA_STATE_ACTIVE, NDMP9_DATA_STATE_LISTEN},
 
-       END_ENUM_CONVERSION_TABLE};
+    END_ENUM_CONVERSION_TABLE};
 
-struct enum_conversion ndmp_29_data_halt_reason[]
-    = {{
-           NDMP_INVALID_GENERAL,
-           NDMP_INVALID_GENERAL,
-       }, /* default */
-       {NDMP2_DATA_HALT_NA, NDMP9_DATA_HALT_NA},
-       {NDMP2_DATA_HALT_SUCCESSFUL, NDMP9_DATA_HALT_SUCCESSFUL},
-       {NDMP2_DATA_HALT_ABORTED, NDMP9_DATA_HALT_ABORTED},
-       {NDMP2_DATA_HALT_INTERNAL_ERROR, NDMP9_DATA_HALT_INTERNAL_ERROR},
-       {NDMP2_DATA_HALT_CONNECT_ERROR, NDMP9_DATA_HALT_CONNECT_ERROR},
-       END_ENUM_CONVERSION_TABLE};
+struct enum_conversion ndmp_29_data_halt_reason[] = {
+    {
+        NDMP_INVALID_GENERAL,
+        NDMP_INVALID_GENERAL,
+    }, /* default */
+    {NDMP2_DATA_HALT_NA, NDMP9_DATA_HALT_NA},
+    {NDMP2_DATA_HALT_SUCCESSFUL, NDMP9_DATA_HALT_SUCCESSFUL},
+    {NDMP2_DATA_HALT_ABORTED, NDMP9_DATA_HALT_ABORTED},
+    {NDMP2_DATA_HALT_INTERNAL_ERROR, NDMP9_DATA_HALT_INTERNAL_ERROR},
+    {NDMP2_DATA_HALT_CONNECT_ERROR, NDMP9_DATA_HALT_CONNECT_ERROR},
+    END_ENUM_CONVERSION_TABLE};
 
 
 int ndmp_2to9_data_get_state_reply(ndmp2_data_get_state_reply* reply2,
@@ -1872,15 +1872,15 @@ int ndmp_9to2_notify_data_halted_request(
  */
 
 /* NDMP2_NOTIFY_CONNECTED */
-struct enum_conversion ndmp_29_connect_reason[]
-    = {{
-           NDMP_INVALID_GENERAL,
-           NDMP_INVALID_GENERAL,
-       }, /* default */
-       {NDMP2_CONNECTED, NDMP9_CONNECTED},
-       {NDMP2_SHUTDOWN, NDMP9_SHUTDOWN},
-       {NDMP2_REFUSED, NDMP9_REFUSED},
-       END_ENUM_CONVERSION_TABLE};
+struct enum_conversion ndmp_29_connect_reason[] = {
+    {
+        NDMP_INVALID_GENERAL,
+        NDMP_INVALID_GENERAL,
+    }, /* default */
+    {NDMP2_CONNECTED, NDMP9_CONNECTED},
+    {NDMP2_SHUTDOWN, NDMP9_SHUTDOWN},
+    {NDMP2_REFUSED, NDMP9_REFUSED},
+    END_ENUM_CONVERSION_TABLE};
 
 int ndmp_2to9_notify_connected_request(ndmp2_notify_connected_request* request2,
                                        ndmp9_notify_connected_request* request9)
@@ -2053,8 +2053,8 @@ struct enum_conversion ndmp_29_recovery_status[] = {
 int ndmp_2to9_log_file_request(ndmp2_log_file_request* request2,
                                ndmp9_log_file_request* request9)
 {
-  request9->recovery_status
-      = convert_enum_to_9(ndmp_29_recovery_status, request2->error);
+  request9->recovery_status =
+      convert_enum_to_9(ndmp_29_recovery_status, request2->error);
   CNVT_STRDUP_TO_9(request2, request9, name);
   return 0;
 }
@@ -2062,8 +2062,8 @@ int ndmp_2to9_log_file_request(ndmp2_log_file_request* request2,
 int ndmp_9to2_log_file_request(ndmp9_log_file_request* request9,
                                ndmp2_log_file_request* request2)
 {
-  request2->error
-      = convert_enum_from_9(ndmp_29_recovery_status, request9->recovery_status);
+  request2->error =
+      convert_enum_from_9(ndmp_29_recovery_status, request9->recovery_status);
   CNVT_STRDUP_FROM_9(request2, request9, name);
   return 0;
 }
@@ -2078,19 +2078,19 @@ int ndmp_9to2_log_file_request(ndmp9_log_file_request* request9,
  * ndmp[_unix]_file_stat
  */
 
-struct enum_conversion ndmp_29_file_type[]
-    = {{
-           NDMP_INVALID_GENERAL,
-           NDMP_INVALID_GENERAL,
-       }, /* default */
-       {NDMP2_FILE_DIR, NDMP9_FILE_DIR},
-       {NDMP2_FILE_FIFO, NDMP9_FILE_FIFO},
-       {NDMP2_FILE_CSPEC, NDMP9_FILE_CSPEC},
-       {NDMP2_FILE_BSPEC, NDMP9_FILE_BSPEC},
-       {NDMP2_FILE_REG, NDMP9_FILE_REG},
-       {NDMP2_FILE_SLINK, NDMP9_FILE_SLINK},
-       {NDMP2_FILE_SOCK, NDMP9_FILE_SOCK},
-       END_ENUM_CONVERSION_TABLE};
+struct enum_conversion ndmp_29_file_type[] = {
+    {
+        NDMP_INVALID_GENERAL,
+        NDMP_INVALID_GENERAL,
+    }, /* default */
+    {NDMP2_FILE_DIR, NDMP9_FILE_DIR},
+    {NDMP2_FILE_FIFO, NDMP9_FILE_FIFO},
+    {NDMP2_FILE_CSPEC, NDMP9_FILE_CSPEC},
+    {NDMP2_FILE_BSPEC, NDMP9_FILE_BSPEC},
+    {NDMP2_FILE_REG, NDMP9_FILE_REG},
+    {NDMP2_FILE_SLINK, NDMP9_FILE_SLINK},
+    {NDMP2_FILE_SOCK, NDMP9_FILE_SOCK},
+    END_ENUM_CONVERSION_TABLE};
 
 
 int ndmp_2to9_unix_file_stat(ndmp2_unix_file_stat* fstat2,
@@ -2380,19 +2380,19 @@ int ndmp_9to2_fh_add_unix_node_free_request(
  * request/reply translation
  */
 
-#  define NO_ARG_REQUEST ndmp_xtox_no_arguments, ndmp_xtox_no_arguments
+#define NO_ARG_REQUEST ndmp_xtox_no_arguments, ndmp_xtox_no_arguments
 
-#  define JUST_ERROR_REPLY ndmp_2to9_error, ndmp_9to2_error
+#define JUST_ERROR_REPLY ndmp_2to9_error, ndmp_9to2_error
 
-#  define NO_ARG_REQUEST_JUST_ERROR_REPLY NO_ARG_REQUEST, JUST_ERROR_REPLY
+#define NO_ARG_REQUEST_JUST_ERROR_REPLY NO_ARG_REQUEST, JUST_ERROR_REPLY
 
-#  define NO_MEMUSED_REQUEST ndmp_xtox_no_memused, ndmp_xtox_no_memused
+#define NO_MEMUSED_REQUEST ndmp_xtox_no_memused, ndmp_xtox_no_memused
 
-#  define NO_MEMUSED_REPLY ndmp_xtox_no_memused, ndmp_xtox_no_memused
+#define NO_MEMUSED_REPLY ndmp_xtox_no_memused, ndmp_xtox_no_memused
 
-#  define NO_MEMUSED                                                  \
-    ndmp_xtox_no_memused, ndmp_xtox_no_memused, ndmp_xtox_no_memused, \
-        ndmp_xtox_no_memused
+#define NO_MEMUSED                                                  \
+  ndmp_xtox_no_memused, ndmp_xtox_no_memused, ndmp_xtox_no_memused, \
+      ndmp_xtox_no_memused
 
 
 struct reqrep_xlate ndmp2_reqrep_xlate_table[] = {
@@ -2412,7 +2412,7 @@ struct reqrep_xlate ndmp2_reqrep_xlate_table[] = {
         NO_ARG_REQUEST_JUST_ERROR_REPLY, /* actually no reply */
         NO_MEMUSED /* no memory free routines written yet */
     },
-#  ifdef notyet
+#ifdef notyet
     {
         NDMP2_CONNECT_SERVER_AUTH, NDMP9_CONNECT_SERVER_AUTH,
         ndmp_2to9_connect_server_auth_request,
@@ -2421,7 +2421,7 @@ struct reqrep_xlate ndmp2_reqrep_xlate_table[] = {
         ndmp_9to2_connect_server_auth_reply,
         NO_MEMUSED /* no memory free routines written yet */
     },
-#  endif /* notyet */
+#endif /* notyet */
     {
         NDMP2_CONFIG_GET_HOST_INFO, NDMP9_CONFIG_GET_HOST_INFO, NO_ARG_REQUEST,
         ndmp_2to9_config_get_host_info_reply,

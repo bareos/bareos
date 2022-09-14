@@ -136,8 +136,8 @@ int ndma_dispatch_request(struct ndm_session* sess,
    * the native version
    */
 
-  rrxl = reqrep_xlate_lookup_version(reqrep_xlate_version_table,
-                                     protocol_version);
+  rrxl =
+      reqrep_xlate_lookup_version(reqrep_xlate_version_table, protocol_version);
 
   /* find the protocol_version translation table */
   if (!rrxl) {
@@ -155,8 +155,8 @@ int ndma_dispatch_request(struct ndm_session* sess,
   }
 
   /* find the NDMPv9 dispatch table entry */
-  drt = ndma_drt_lookup(ndma_dispatch_version_table, NDMP9VER,
-                        rrxl->v9_message);
+  drt =
+      ndma_drt_lookup(ndma_dispatch_version_table, NDMP9VER, rrxl->v9_message);
 
   if (!drt) {
     /* can't do it */
@@ -172,8 +172,8 @@ have_drt:
     return 0;
   }
 
-  if (!sess->conn_authorized
-      && !(drt->flags & NDM_DRT_FLAG_OK_NOT_AUTHORIZED)) {
+  if (!sess->conn_authorized &&
+      !(drt->flags & NDM_DRT_FLAG_OK_NOT_AUTHORIZED)) {
     xa->reply.header.error = NDMP0_NOT_AUTHORIZED_ERR;
     return 0;
   }
@@ -223,8 +223,8 @@ have_drt:
   }
 
   if (rrxl) {
-    rc = (*rrxl->reply_9tox)((void*)&xa->reply.body,
-                             (void*)&arg_xa->reply.body);
+    rc =
+        (*rrxl->reply_9tox)((void*)&xa->reply.body, (void*)&arg_xa->reply.body);
 
     /* free up any memory allocated as part of the 9tox reply */
     if (rrxl) (*rrxl->free_reply_9tox)((void*)&arg_xa->reply.body);
@@ -441,8 +441,8 @@ int ndma_call_no_tattle(struct ndmconn* conn, struct ndmp_xa_buf* arg_xa)
   if (rrxl) {
     int xrc;
 
-    xrc = (*rrxl->reply_xto9)((void*)&xa->reply.body,
-                              (void*)&arg_xa->reply.body);
+    xrc =
+        (*rrxl->reply_xto9)((void*)&xa->reply.body, (void*)&arg_xa->reply.body);
 
     ndmnmb_free(&xa->request); /* clean up */
     ndmnmb_free(&xa->reply);   /* clean up */
@@ -582,7 +582,7 @@ int ndmp_sxa_connect_open(struct ndm_session* sess,
 }
 
 static int connect_open_common(struct ndm_session* sess,
-                               [[maybe_unused]] struct ndmp_xa_buf* xa,
+                               struct ndmp_xa_buf* xa,
                                struct ndmconn* ref_conn,
                                int protocol_version)
 {
@@ -669,9 +669,9 @@ int ndmp_sxa_connect_close(struct ndm_session* sess,
 
 
 // NDMP[23]_CONNECT_SERVER_AUTH
-int ndmp_sxa_connect_server_auth([[maybe_unused]] struct ndm_session* sess,
-                                 [[maybe_unused]] struct ndmp_xa_buf* xa,
-                                 [[maybe_unused]] struct ndmconn* ref_conn)
+int ndmp_sxa_connect_server_auth(struct ndm_session* sess,
+                                 struct ndmp_xa_buf* xa,
+                                 struct ndmconn* ref_conn)
 {
   return NDMADR_UNIMPLEMENTED_MESSAGE;
 }
@@ -695,7 +695,7 @@ int ndmp_sxa_connect_server_auth([[maybe_unused]] struct ndm_session* sess,
  */
 int ndmp_sxa_config_get_info(struct ndm_session* sess,
                              struct ndmp_xa_buf* xa,
-                             [[maybe_unused]] struct ndmconn* ref_conn)
+                             struct ndmconn* ref_conn)
 {
   NDMS_WITH_VOID_REQUEST(ndmp9_config_get_info)
   ndmos_sync_config_info(sess);
@@ -704,18 +704,18 @@ int ndmp_sxa_config_get_info(struct ndm_session* sess,
   if (sess->config_info->conntypes == 0) {
     /* OS left it for us to do */
 #ifndef NDMOS_OPTION_NO_DATA_AGENT
-#  ifndef NDMOS_OPTION_NO_TAPE_AGENT
+#ifndef NDMOS_OPTION_NO_TAPE_AGENT
     sess->config_info->conntypes |= NDMP9_CONFIG_CONNTYPE_LOCAL;
     sess->config_info->conntypes |= NDMP9_CONFIG_CONNTYPE_TCP;
-#  else  /* !NDMOS_OPTION_NO_TAPE_AGENT */
+#else  /* !NDMOS_OPTION_NO_TAPE_AGENT */
     sess->config_info->conntypes |= NDMP9_CONFIG_CONNTYPE_TCP;
-#  endif /* !NDMOS_OPTION_NO_TAPE_AGENT */
-#else    /* !NDMOS_OPTION_NO_DATA_AGENT */
-#  ifndef NDMOS_OPTION_NO_TAPE_AGENT
+#endif /* !NDMOS_OPTION_NO_TAPE_AGENT */
+#else  /* !NDMOS_OPTION_NO_DATA_AGENT */
+#ifndef NDMOS_OPTION_NO_TAPE_AGENT
     sess->config_info->conntypes |= NDMP9_CONFIG_CONNTYPE_TCP;
-#  else  /* !NDMOS_OPTION_NO_TAPE_AGENT */
-#  endif /* !NDMOS_OPTION_NO_TAPE_AGENT */
-#endif   /* !NDMOS_OPTION_NO_DATA_AGENT */
+#else  /* !NDMOS_OPTION_NO_TAPE_AGENT */
+#endif /* !NDMOS_OPTION_NO_TAPE_AGENT */
+#endif /* !NDMOS_OPTION_NO_DATA_AGENT */
   }
 
   if (sess->config_info->authtypes == 0) {
@@ -864,7 +864,7 @@ int ndmp_sxa_scsi_close(struct ndm_session* sess,
  */
 int ndmp_sxa_scsi_get_state(struct ndm_session* sess,
                             struct ndmp_xa_buf* xa,
-                            [[maybe_unused]] struct ndmconn* ref_conn)
+                            struct ndmconn* ref_conn)
 {
   struct ndm_robot_agent* ra = sess->robot_acb;
 
@@ -974,13 +974,13 @@ static ndmp9_error scsi_open_ok(struct ndm_session* sess)
   if (ra->scsi_state.error != NDMP9_DEV_NOT_OPEN_ERR)
     return NDMP9_DEVICE_OPENED_ERR;
 
-#  ifndef NDMOS_OPTION_ALLOW_SCSI_AND_TAPE_BOTH_OPEN
-#    ifndef NDMOS_OPTION_NO_TAPE_AGENT
+#ifndef NDMOS_OPTION_ALLOW_SCSI_AND_TAPE_BOTH_OPEN
+#ifndef NDMOS_OPTION_NO_TAPE_AGENT
   ndmos_tape_sync_state(sess);
   if (sess->tape_acb->tape_state.error != NDMP9_DEV_NOT_OPEN_ERR)
     return NDMP9_DEVICE_OPENED_ERR;
-#    endif /* !NDMOS_OPTION_NO_TAPE_AGENT */
-#  endif   /* NDMOS_OPTION_ALLOW_SCSI_AND_TAPE_BOTH_OPEN */
+#endif /* !NDMOS_OPTION_NO_TAPE_AGENT */
+#endif /* NDMOS_OPTION_ALLOW_SCSI_AND_TAPE_BOTH_OPEN */
 
   return NDMP9_NO_ERR;
 }
@@ -1072,7 +1072,7 @@ int ndmp_sxa_tape_close(struct ndm_session* sess,
  */
 int ndmp_sxa_tape_get_state(struct ndm_session* sess,
                             struct ndmp_xa_buf* xa,
-                            [[maybe_unused]] struct ndmconn* ref_conn)
+                            struct ndmconn* ref_conn)
 {
   struct ndm_tape_agent* ta = sess->tape_acb;
 
@@ -1244,9 +1244,9 @@ int ndmp_sxa_tape_read(struct ndm_session* sess,
  * nor is there merit to a generic "layer".
  * Still, just in case, it is implemented here.
  */
-int ndmp_sxa_tape_execute_cdb([[maybe_unused]] struct ndm_session* sess,
+int ndmp_sxa_tape_execute_cdb(struct ndm_session* sess,
                               struct ndmp_xa_buf* xa,
-                              [[maybe_unused]] struct ndmconn* ref_conn)
+                              struct ndmconn* ref_conn)
 {
   NDMS_WITH(ndmp9_tape_execute_cdb)
   return NDMADR_UNIMPLEMENTED_MESSAGE;
@@ -1258,8 +1258,7 @@ int ndmp_sxa_tape_execute_cdb([[maybe_unused]] struct ndm_session* sess,
  * NDMPx_TAPE helper routines
  */
 
-static ndmp9_error tape_open_ok(struct ndm_session* sess,
-                                [[maybe_unused]] int will_write)
+static ndmp9_error tape_open_ok(struct ndm_session* sess, int will_write)
 {
   struct ndm_tape_agent* ta = sess->tape_acb;
 
@@ -1267,14 +1266,14 @@ static ndmp9_error tape_open_ok(struct ndm_session* sess,
   if (ta->tape_state.state != NDMP9_TAPE_STATE_IDLE)
     return NDMP9_DEVICE_OPENED_ERR;
 
-#  ifndef NDMOS_OPTION_ALLOW_SCSI_AND_TAPE_BOTH_OPEN
-#    ifndef NDMOS_OPTION_NO_ROBOT_AGENT
+#ifndef NDMOS_OPTION_ALLOW_SCSI_AND_TAPE_BOTH_OPEN
+#ifndef NDMOS_OPTION_NO_ROBOT_AGENT
   ndmos_scsi_sync_state(sess);
-  if (sess->robot_acb
-      && sess->robot_acb->scsi_state.error != NDMP9_DEV_NOT_OPEN_ERR)
+  if (sess->robot_acb &&
+      sess->robot_acb->scsi_state.error != NDMP9_DEV_NOT_OPEN_ERR)
     return NDMP9_DEVICE_OPENED_ERR;
-#    endif /* !NDMOS_OPTION_NO_ROBOT_AGENT */
-#  endif   /* NDMOS_OPTION_ALLOW_SCSI_AND_TAPE_BOTH_OPEN */
+#endif /* !NDMOS_OPTION_NO_ROBOT_AGENT */
+#endif /* NDMOS_OPTION_ALLOW_SCSI_AND_TAPE_BOTH_OPEN */
 
   return NDMP9_NO_ERR;
 }
@@ -1396,8 +1395,8 @@ int ndmp_sxa_data_start_backup(struct ndm_session* sess,
           sizeof(sess->data_acb->bu_type) - 1);
   sess->data_acb->bu_type[sizeof(sess->data_acb->bu_type) - 1] = '\0';
 
-  error
-      = data_copy_environment(sess, request->env.env_val, request->env.env_len);
+  error =
+      data_copy_environment(sess, request->env.env_val, request->env.env_len);
   if (error != NDMP9_NO_ERR) {
     ndmda_belay(sess);
     NDMADR_RAISE(error, "copy-env");
@@ -1451,15 +1450,15 @@ int ndmp_sxa_data_start_recover(struct ndm_session* sess,
           sizeof(sess->data_acb->bu_type) - 1);
   sess->data_acb->bu_type[sizeof(sess->data_acb->bu_type) - 1] = '\0';
 
-  error
-      = data_copy_environment(sess, request->env.env_val, request->env.env_len);
+  error =
+      data_copy_environment(sess, request->env.env_val, request->env.env_len);
   if (error != NDMP9_NO_ERR) {
     ndmda_belay(sess);
     NDMADR_RAISE(error, "copy-env");
   }
 
-  error = data_copy_nlist(sess, request->nlist.nlist_val,
-                          request->nlist.nlist_len);
+  error =
+      data_copy_nlist(sess, request->nlist.nlist_val, request->nlist.nlist_len);
 
   if (error != NDMP9_NO_ERR) {
     ndmda_belay(sess);
@@ -1591,15 +1590,15 @@ int ndmp_sxa_data_start_recover_filehist(struct ndm_session* sess,
           sizeof(sess->data_acb->bu_type) - 1);
   sess->data_acb->bu_type[sizeof(sess->data_acb->bu_type) - 1] = '\0';
 
-  error
-      = data_copy_environment(sess, request->env.env_val, request->env.env_len);
+  error =
+      data_copy_environment(sess, request->env.env_val, request->env.env_len);
   if (error != NDMP9_NO_ERR) {
     ndmda_belay(sess);
     NDMADR_RAISE(error, "copy-env");
   }
 
-  error = data_copy_nlist(sess, request->nlist.nlist_val,
-                          request->nlist.nlist_len);
+  error =
+      data_copy_nlist(sess, request->nlist.nlist_val, request->nlist.nlist_len);
 
   if (error != NDMP9_NO_ERR) {
     ndmda_belay(sess);
@@ -1626,7 +1625,7 @@ int ndmp_sxa_data_start_recover_filehist(struct ndm_session* sess,
 }
 
 
-#  ifndef NDMOS_EFFECT_NO_NDMP3_NOR_NDMP4 /* Surrounds NDMPv[34] DATA intfs */
+#ifndef NDMOS_EFFECT_NO_NDMP3_NOR_NDMP4 /* Surrounds NDMPv[34] DATA intfs */
 /*
  * NDMP[34]_DATA_CONNECT
  */
@@ -1642,7 +1641,7 @@ int ndmp_sxa_data_connect(struct ndm_session* sess,
 }
 
 
-#    ifdef notyet
+#ifdef notyet
 static int data_listen_common34(struct ndm_session* sess,
                                 struct ndmp_xa_buf* xa,
                                 struct ndmconn* ref_conn,
@@ -1662,13 +1661,13 @@ int ndmadr_data_listen(struct ndm_session* sess,
     default:
       return NDMADR_UNIMPLEMENTED_VERSION; /* should never happen */
 
-#      ifndef NDMOS_OPTION_NO_NDMP2
+#ifndef NDMOS_OPTION_NO_NDMP2
     case NDMP2VER:
       /* not part of NDMPv2 */
       return NDMADR_UNSPECIFIED_MESSAGE;
-#      endif /* !NDMOS_OPTION_NO_NDMP2 */
+#endif /* !NDMOS_OPTION_NO_NDMP2 */
 
-#      ifndef NDMOS_OPTION_NO_NDMP3
+#ifndef NDMOS_OPTION_NO_NDMP3
     case NDMP3VER:
       NDMS_WITH(ndmp3_data_listen)
       ndmp9_addr_type addr_type;
@@ -1694,9 +1693,9 @@ int ndmadr_data_listen(struct ndm_session* sess,
       /* reply->error already set to NDMPx_NO_ERROR */
       NDMS_ENDWITH
       break;
-#      endif /* !NDMOS_OPTION_NO_NDMP3 */
+#endif /* !NDMOS_OPTION_NO_NDMP3 */
 
-#      ifndef NDMOS_OPTION_NO_NDMP4
+#ifndef NDMOS_OPTION_NO_NDMP4
     case NDMP4VER:
       NDMS_WITH(ndmp4_data_listen)
       ndmp9_addr_type addr_type;
@@ -1722,7 +1721,7 @@ int ndmadr_data_listen(struct ndm_session* sess,
       /* reply->error already set to NDMPx_NO_ERROR */
       NDMS_ENDWITH
       break;
-#      endif /* !NDMOS_OPTION_NO_NDMP4 */
+#endif /* !NDMOS_OPTION_NO_NDMP4 */
   }
   return 0;
 }
@@ -1734,9 +1733,9 @@ static int data_listen_common34(struct ndm_session* sess,
                                 ndmp9_addr_type addr_type)
 {
   struct ndm_data_agent* da = sess->data_acb;
-#      ifndef NDMOS_OPTION_NO_TAPE_AGENT
+#ifndef NDMOS_OPTION_NO_TAPE_AGENT
   struct ndm_tape_agent* ta = sess->tape_acb;
-#      endif /* !NDMOS_OPTION_NO_TAPE_AGENT */
+#endif /* !NDMOS_OPTION_NO_TAPE_AGENT */
   ndmp9_error error;
   char reason[100];
 
@@ -1746,9 +1745,9 @@ static int data_listen_common34(struct ndm_session* sess,
     default:
       NDMADR_RAISE_ILLEGAL_ARGS("mover_addr_type");
     case NDMP9_ADDR_LOCAL:
-#      ifdef NDMOS_OPTION_NO_TAPE_AGENT
+#ifdef NDMOS_OPTION_NO_TAPE_AGENT
       NDMADR_RAISE_ILLEGAL_ARGS("data LOCAL w/o local TAPE agent");
-#      endif /* NDMOS_OPTION_NO_TAPE_AGENT */
+#endif /* NDMOS_OPTION_NO_TAPE_AGENT */
       break;
 
     case NDMP9_ADDR_TCP:
@@ -1758,10 +1757,10 @@ static int data_listen_common34(struct ndm_session* sess,
   /* Check states -- this should cover everything */
   if (da->data_state.state != NDMP9_DATA_STATE_IDLE)
     NDMADR_RAISE_ILLEGAL_STATE("data_state !IDLE");
-#      ifndef NDMOS_OPTION_NO_TAPE_AGENT
+#ifndef NDMOS_OPTION_NO_TAPE_AGENT
   if (ta->mover_state.state != NDMP9_MOVER_STATE_IDLE)
     NDMADR_RAISE_ILLEGAL_STATE("mover_state !IDLE");
-#      endif /* !NDMOS_OPTION_NO_TAPE_AGENT */
+#endif /* !NDMOS_OPTION_NO_TAPE_AGENT */
 
   /*
    * Check image stream state -- should already be reflected
@@ -1784,10 +1783,9 @@ static int data_listen_common34(struct ndm_session* sess,
 
   return 0;
 }
-#    endif /* notyet */
+#endif /* notyet */
 
-#  endif /* !NDMOS_EFFECT_NO_NDMP3_NOR_NDMP4  Surrounds NDMPv[34] DATA intfs \
-          */
+#endif /* !NDMOS_EFFECT_NO_NDMP3_NOR_NDMP4  Surrounds NDMPv[34] DATA intfs */
 
 
 /*
@@ -1845,7 +1843,7 @@ static int data_can_connect_and_start(struct ndm_session* sess,
   rc = data_can_connect(sess, xa, ref_conn, data_addr);
   if (rc) return rc;
 
-#  ifndef NDMOS_OPTION_NO_TAPE_AGENT
+#ifndef NDMOS_OPTION_NO_TAPE_AGENT
   if (data_addr->addr_type == NDMP9_ADDR_LOCAL) {
     struct ndm_tape_agent* ta = sess->tape_acb;
     ndmp9_mover_get_state_reply* ms = &ta->mover_state;
@@ -1853,7 +1851,7 @@ static int data_can_connect_and_start(struct ndm_session* sess,
     if (ms->mode != mover_mode)
       NDMADR_RAISE_ILLEGAL_STATE("mover_mode mismatch");
   }
-#  endif /* !NDMOS_OPTION_NO_TAPE_AGENT */
+#endif /* !NDMOS_OPTION_NO_TAPE_AGENT */
 
   return 0;
 }
@@ -1864,9 +1862,9 @@ static int data_can_connect(struct ndm_session* sess,
                             ndmp9_addr* data_addr)
 {
   struct ndm_data_agent* da = sess->data_acb;
-#  ifndef NDMOS_OPTION_NO_TAPE_AGENT
+#ifndef NDMOS_OPTION_NO_TAPE_AGENT
   struct ndm_tape_agent* ta = sess->tape_acb;
-#  endif /* !NDMOS_OPTION_NO_TAPE_AGENT */
+#endif /* !NDMOS_OPTION_NO_TAPE_AGENT */
   ndmp9_error error;
   char reason[100];
 
@@ -1875,9 +1873,9 @@ static int data_can_connect(struct ndm_session* sess,
     default:
       NDMADR_RAISE_ILLEGAL_ARGS("addr_type");
     case NDMP9_ADDR_LOCAL:
-#  ifdef NDMOS_OPTION_NO_TAPE_AGENT
+#ifdef NDMOS_OPTION_NO_TAPE_AGENT
       NDMADR_RAISE_ILLEGAL_ARGS("mover LOCAL w/o local DATA agent");
-#  endif /* NDMOS_OPTION_NO_TAPE_AGENT */
+#endif /* NDMOS_OPTION_NO_TAPE_AGENT */
       break;
 
     case NDMP9_ADDR_TCP:
@@ -1888,7 +1886,7 @@ static int data_can_connect(struct ndm_session* sess,
   if (da->data_state.state != NDMP9_DATA_STATE_IDLE)
     NDMADR_RAISE_ILLEGAL_STATE("data_state !IDLE");
 
-#  ifndef NDMOS_OPTION_NO_TAPE_AGENT
+#ifndef NDMOS_OPTION_NO_TAPE_AGENT
   if (data_addr->addr_type == NDMP9_ADDR_LOCAL) {
     ndmp9_mover_get_state_reply* ms = &ta->mover_state;
 
@@ -1902,7 +1900,7 @@ static int data_can_connect(struct ndm_session* sess,
     if (ta->mover_state.state != NDMP9_MOVER_STATE_IDLE)
       NDMADR_RAISE_ILLEGAL_STATE("mover_state !IDLE");
   }
-#  endif /* !NDMOS_OPTION_NO_TAPE_AGENT */
+#endif /* !NDMOS_OPTION_NO_TAPE_AGENT */
 
   /*
    * Check image stream state -- should already be reflected
@@ -1923,9 +1921,9 @@ static int data_can_start(struct ndm_session* sess,
 {
   struct ndm_data_agent* da = sess->data_acb;
   ndmp9_data_get_state_reply* ds = &da->data_state;
-#  ifndef NDMOS_OPTION_NO_TAPE_AGENT
+#ifndef NDMOS_OPTION_NO_TAPE_AGENT
   struct ndm_tape_agent* ta = sess->tape_acb;
-#  endif /* !NDMOS_OPTION_NO_TAPE_AGENT */
+#endif /* !NDMOS_OPTION_NO_TAPE_AGENT */
 
   /* Check args */
   switch (mover_mode) {
@@ -1940,7 +1938,7 @@ static int data_can_start(struct ndm_session* sess,
   if (da->data_state.state != NDMP9_DATA_STATE_CONNECTED)
     NDMADR_RAISE_ILLEGAL_STATE("data_state !CONNECTED");
 
-#  ifndef NDMOS_OPTION_NO_TAPE_AGENT
+#ifndef NDMOS_OPTION_NO_TAPE_AGENT
   if (ds->data_connection_addr.addr_type == NDMP9_ADDR_LOCAL) {
     ndmp9_mover_get_state_reply* ms = &ta->mover_state;
 
@@ -1956,7 +1954,7 @@ static int data_can_start(struct ndm_session* sess,
     if (ta->mover_state.state != NDMP9_MOVER_STATE_IDLE)
       NDMADR_RAISE_ILLEGAL_STATE("mover_state !IDLE");
   }
-#  endif /* !NDMOS_OPTION_NO_TAPE_AGENT */
+#endif /* !NDMOS_OPTION_NO_TAPE_AGENT */
 
   return 0;
 }
@@ -2046,7 +2044,7 @@ static ndmp9_error mover_can_proceed(struct ndm_session* sess, int will_write);
  */
 int ndmp_sxa_mover_get_state(struct ndm_session* sess,
                              struct ndmp_xa_buf* xa,
-                             [[maybe_unused]] struct ndmconn* ref_conn)
+                             struct ndmconn* ref_conn)
 {
   struct ndm_tape_agent* ta = sess->tape_acb;
 
@@ -2065,9 +2063,9 @@ int ndmp_sxa_mover_listen(struct ndm_session* sess,
                           struct ndmp_xa_buf* xa,
                           struct ndmconn* ref_conn)
 {
-#  ifndef NDMOS_OPTION_NO_DATA_AGENT
+#ifndef NDMOS_OPTION_NO_DATA_AGENT
   struct ndm_data_agent* da = sess->data_acb;
-#  endif /* !NDMOS_OPTION_NO_DATA_AGENT */
+#endif /* !NDMOS_OPTION_NO_DATA_AGENT */
   struct ndm_tape_agent* ta = sess->tape_acb;
   ndmp9_error error;
   int will_write;
@@ -2097,9 +2095,9 @@ int ndmp_sxa_mover_listen(struct ndm_session* sess,
       NDMADR_RAISE_ILLEGAL_ARGS("mover_addr_type");
 
     case NDMP9_ADDR_LOCAL:
-#  ifdef NDMOS_OPTION_NO_DATA_AGENT
+#ifdef NDMOS_OPTION_NO_DATA_AGENT
       NDMADR_RAISE_ILLEGAL_ARGS("mover LOCAL w/o local DATA agent");
-#  endif /* NDMOS_OPTION_NO_DATA_AGENT */
+#endif /* NDMOS_OPTION_NO_DATA_AGENT */
       break;
 
     case NDMP9_ADDR_TCP:
@@ -2110,11 +2108,11 @@ int ndmp_sxa_mover_listen(struct ndm_session* sess,
   if (ta->mover_state.state != NDMP9_MOVER_STATE_IDLE) {
     NDMADR_RAISE_ILLEGAL_STATE("mover_state !IDLE");
   }
-#  ifndef NDMOS_OPTION_NO_DATA_AGENT
+#ifndef NDMOS_OPTION_NO_DATA_AGENT
   if (da && da->data_state.state != NDMP9_DATA_STATE_IDLE) {
     NDMADR_RAISE_ILLEGAL_STATE("data_state !IDLE");
   }
-#  endif /* !NDMOS_OPTION_NO_DATA_AGENT */
+#endif /* !NDMOS_OPTION_NO_DATA_AGENT */
 
   /* Check that the tape is ready to go */
   error = mover_can_proceed(sess, will_write);
@@ -2184,9 +2182,9 @@ int ndmp_sxa_mover_abort(struct ndm_session* sess,
   struct ndm_tape_agent* ta = sess->tape_acb;
 
   NDMS_WITH_VOID_REQUEST(ndmp9_mover_abort)
-  if (ta->mover_state.state != NDMP9_MOVER_STATE_LISTEN
-      && ta->mover_state.state != NDMP9_MOVER_STATE_ACTIVE
-      && ta->mover_state.state != NDMP9_MOVER_STATE_PAUSED) {
+  if (ta->mover_state.state != NDMP9_MOVER_STATE_LISTEN &&
+      ta->mover_state.state != NDMP9_MOVER_STATE_ACTIVE &&
+      ta->mover_state.state != NDMP9_MOVER_STATE_PAUSED) {
     NDMADR_RAISE_ILLEGAL_STATE("mover_state");
   }
 
@@ -2238,8 +2236,8 @@ int ndmp_sxa_mover_set_window(struct ndm_session* sess,
      * NDMP[23] require the Mover be in LISTEN state.
      * Unclear sequence for MOVER_CONNECT.
      */
-    if (ms->state != NDMP9_MOVER_STATE_LISTEN
-        && ms->state != NDMP9_MOVER_STATE_PAUSED) {
+    if (ms->state != NDMP9_MOVER_STATE_LISTEN &&
+        ms->state != NDMP9_MOVER_STATE_PAUSED) {
       NDMADR_RAISE_ILLEGAL_STATE("mover_state !LISTEN/PAUSED");
     }
   } else {
@@ -2248,8 +2246,8 @@ int ndmp_sxa_mover_set_window(struct ndm_session* sess,
      * This always preceeds both MOVER_LISTEN or
      * MOVER_CONNECT.
      */
-    if (ms->state != NDMP9_MOVER_STATE_IDLE
-        && ms->state != NDMP9_MOVER_STATE_PAUSED) {
+    if (ms->state != NDMP9_MOVER_STATE_IDLE &&
+        ms->state != NDMP9_MOVER_STATE_PAUSED) {
       NDMADR_RAISE_ILLEGAL_STATE("mover_state !IDLE/PAUSED");
     }
   }
@@ -2265,8 +2263,8 @@ int ndmp_sxa_mover_set_window(struct ndm_session* sess,
    * current window offset MUST be specified." (NDMPv4 RFC, Section
    * 3.6.2.2) -- we allow length = NDMP_LENGTH_INFINITY too */
 
-  if (request->length != NDMP_LENGTH_INFINITY
-      && request->length + request->offset != NDMP_LENGTH_INFINITY) {
+  if (request->length != NDMP_LENGTH_INFINITY &&
+      request->length + request->offset != NDMP_LENGTH_INFINITY) {
     if (request->length % ms->record_size != 0) {
       NDMADR_RAISE_ILLEGAL_ARGS("len !record_size");
     }
@@ -2364,8 +2362,8 @@ int ndmp_sxa_mover_set_record_size(struct ndm_session* sess,
   NDMS_WITH(ndmp9_mover_set_record_size)
   ndmta_mover_sync_state(sess);
 
-  if (ms->state != NDMP9_MOVER_STATE_IDLE
-      && ms->state != NDMP9_MOVER_STATE_PAUSED)
+  if (ms->state != NDMP9_MOVER_STATE_IDLE &&
+      ms->state != NDMP9_MOVER_STATE_PAUSED)
     NDMADR_RAISE_ILLEGAL_STATE("mover_state !IDLE/PAUSED");
 
   if (!NDMOS_MACRO_OK_TAPE_REC_LEN(request->record_size))
@@ -2378,8 +2376,7 @@ int ndmp_sxa_mover_set_record_size(struct ndm_session* sess,
 }
 
 
-#  ifndef NDMOS_EFFECT_NO_NDMP3_NOR_NDMP4 /* Surrounds NDMPv[34] MOVER intfs \
-                                           */
+#ifndef NDMOS_EFFECT_NO_NDMP3_NOR_NDMP4 /* Surrounds NDMPv[34] MOVER intfs */
 /*
  * NDMP[34]_MOVER_CONNECT
  */
@@ -2387,9 +2384,9 @@ int ndmp_sxa_mover_connect(struct ndm_session* sess,
                            struct ndmp_xa_buf* xa,
                            struct ndmconn* ref_conn)
 {
-#    ifndef NDMOS_OPTION_NO_DATA_AGENT
+#ifndef NDMOS_OPTION_NO_DATA_AGENT
   struct ndm_data_agent* da = sess->data_acb;
-#    endif /* !NDMOS_OPTION_NO_DATA_AGENT */
+#endif /* !NDMOS_OPTION_NO_DATA_AGENT */
   struct ndm_tape_agent* ta = sess->tape_acb;
   ndmp9_error error;
   int will_write;
@@ -2414,9 +2411,9 @@ int ndmp_sxa_mover_connect(struct ndm_session* sess,
     default:
       NDMADR_RAISE_ILLEGAL_ARGS("mover_addr_type");
     case NDMP9_ADDR_LOCAL:
-#    ifdef NDMOS_OPTION_NO_DATA_AGENT
+#ifdef NDMOS_OPTION_NO_DATA_AGENT
       NDMADR_RAISE_ILLEGAL_ARGS("mover LOCAL w/o local DATA agent");
-#    endif /* NDMOS_OPTION_NO_DATA_AGENT */
+#endif /* NDMOS_OPTION_NO_DATA_AGENT */
       break;
 
     case NDMP9_ADDR_TCP:
@@ -2426,7 +2423,7 @@ int ndmp_sxa_mover_connect(struct ndm_session* sess,
   /* Check states -- this should cover everything */
   if (ta->mover_state.state != NDMP9_MOVER_STATE_IDLE)
     NDMADR_RAISE_ILLEGAL_STATE("mover_state !IDLE");
-#    ifndef NDMOS_OPTION_NO_DATA_AGENT
+#ifndef NDMOS_OPTION_NO_DATA_AGENT
   if (request->addr.addr_type == NDMP9_ADDR_LOCAL) {
     ndmp9_data_get_state_reply* ds = &da->data_state;
 
@@ -2439,7 +2436,7 @@ int ndmp_sxa_mover_connect(struct ndm_session* sess,
     if (da->data_state.state != NDMP9_DATA_STATE_IDLE)
       NDMADR_RAISE_ILLEGAL_STATE("data_state !IDLE");
   }
-#    endif /* !NDMOS_OPTION_NO_DATA_AGENT */
+#endif /* !NDMOS_OPTION_NO_DATA_AGENT */
 
   /* Check that the tape is ready to go */
   error = mover_can_proceed(sess, will_write);
@@ -2469,8 +2466,7 @@ int ndmp_sxa_mover_connect(struct ndm_session* sess,
   return 0;
   NDMS_ENDWITH
 }
-#  endif /* !NDMOS_EFFECT_NO_NDMP3_NOR_NDMP4  Surrounds NDMPv[34] MOVER intfs \
-          */
+#endif /* !NDMOS_EFFECT_NO_NDMP3_NOR_NDMP4  Surrounds NDMPv[34] MOVER intfs */
 
 
 /*
@@ -2510,7 +2506,7 @@ static ndmp9_error mover_can_proceed(struct ndm_session* sess, int will_write)
  */
 int ndmp_sxa_notify_data_halted(struct ndm_session* sess,
                                 struct ndmp_xa_buf* xa,
-                                [[maybe_unused]] struct ndmconn* ref_conn)
+                                struct ndmconn* ref_conn)
 {
   struct ndm_control_agent* ca = sess->control_acb;
 
@@ -2527,9 +2523,9 @@ int ndmp_sxa_notify_data_halted(struct ndm_session* sess,
 /*
  * NDMP[234]_NOTIFY_CONNECTED
  */
-int ndmp_sxa_notify_connected([[maybe_unused]] struct ndm_session* sess,
+int ndmp_sxa_notify_connected(struct ndm_session* sess,
                               struct ndmp_xa_buf* xa,
-                              [[maybe_unused]] struct ndmconn* ref_conn)
+                              struct ndmconn* ref_conn)
 {
   NDMS_WITH_NO_REPLY(ndmp9_notify_connected)
   xa->reply.flags |= NDMNMB_FLAG_NO_SEND;
@@ -2544,7 +2540,7 @@ int ndmp_sxa_notify_connected([[maybe_unused]] struct ndm_session* sess,
  */
 int ndmp_sxa_notify_mover_halted(struct ndm_session* sess,
                                  struct ndmp_xa_buf* xa,
-                                 [[maybe_unused]] struct ndmconn* ref_conn)
+                                 struct ndmconn* ref_conn)
 {
   struct ndm_control_agent* ca = sess->control_acb;
 
@@ -2563,7 +2559,7 @@ int ndmp_sxa_notify_mover_halted(struct ndm_session* sess,
  */
 int ndmp_sxa_notify_mover_paused(struct ndm_session* sess,
                                  struct ndmp_xa_buf* xa,
-                                 [[maybe_unused]] struct ndmconn* ref_conn)
+                                 struct ndmconn* ref_conn)
 {
   struct ndm_control_agent* ca = sess->control_acb;
 
@@ -2584,7 +2580,7 @@ int ndmp_sxa_notify_mover_paused(struct ndm_session* sess,
  */
 int ndmp_sxa_notify_data_read(struct ndm_session* sess,
                               struct ndmp_xa_buf* xa,
-                              [[maybe_unused]] struct ndmconn* ref_conn)
+                              struct ndmconn* ref_conn)
 {
   struct ndm_control_agent* ca = sess->control_acb;
 
@@ -2675,7 +2671,7 @@ int ndmp_sxa_log_file(struct ndm_session* sess,
 }
 
 
-#  ifndef NDMOS_OPTION_NO_NDMP2
+#ifndef NDMOS_OPTION_NO_NDMP2
 /*
  * NDMP2_LOG_LOG
  */
@@ -2734,7 +2730,7 @@ int ndmp2_sxa_log_debug(struct ndm_session* sess,
   return 0;
 }
 
-#  endif /* !NDMOS_OPTION_NO_NDMP2 */
+#endif /* !NDMOS_OPTION_NO_NDMP2 */
 
 
 /*
@@ -2866,8 +2862,8 @@ int ndmp_sxa_fh_add_dir(struct ndm_session* sess,
         break;
 
       case 1:
-        if (strcmp(raw_name, "..") == 0 && dir->parent == dir->node
-            && dir->node == ca->job.root_node) {
+        if (strcmp(raw_name, "..") == 0 && dir->parent == dir->node &&
+            dir->node == ca->job.root_node) {
           /* goodness */
         } else {
           /* ungoodness */
@@ -2945,8 +2941,8 @@ int ndmta_local_mover_read(struct ndm_session* sess,
   struct ndmp9_mover_get_state_reply* ms = &ta->mover_state;
   char* errstr = 0;
 
-  if (ms->state != NDMP9_MOVER_STATE_ACTIVE
-      && ms->state != NDMP9_MOVER_STATE_LISTEN) {
+  if (ms->state != NDMP9_MOVER_STATE_ACTIVE &&
+      ms->state != NDMP9_MOVER_STATE_LISTEN) {
     errstr = "mover_state !ACTIVE";
     goto senderr;
   }
@@ -3002,34 +2998,34 @@ struct ndm_dispatch_request_table* ndma_drt_lookup(
   return 0;
 }
 
-struct ndm_dispatch_request_table ndma_dispatch_request_table_v0[]
-    = {{
-           NDMP0_CONNECT_OPEN,
-           NDM_DRT_FLAG_OK_NOT_CONNECTED + NDM_DRT_FLAG_OK_NOT_AUTHORIZED,
-           ndmp_sxa_connect_open,
-       },
-       {
-           NDMP0_CONNECT_CLOSE,
-           NDM_DRT_FLAG_OK_NOT_CONNECTED + NDM_DRT_FLAG_OK_NOT_AUTHORIZED,
-           ndmp_sxa_connect_close,
-       },
+struct ndm_dispatch_request_table ndma_dispatch_request_table_v0[] = {
+    {
+        NDMP0_CONNECT_OPEN,
+        NDM_DRT_FLAG_OK_NOT_CONNECTED + NDM_DRT_FLAG_OK_NOT_AUTHORIZED,
+        ndmp_sxa_connect_open,
+    },
+    {
+        NDMP0_CONNECT_CLOSE,
+        NDM_DRT_FLAG_OK_NOT_CONNECTED + NDM_DRT_FLAG_OK_NOT_AUTHORIZED,
+        ndmp_sxa_connect_close,
+    },
 #ifndef NDMOS_OPTION_NO_CONTROL_AGENT /* Surrounds NOTIFY intfs */
-       {
-           NDMP0_NOTIFY_CONNECTED,
-           0,
-           ndmp_sxa_notify_connected,
-       },
+    {
+        NDMP0_NOTIFY_CONNECTED,
+        0,
+        ndmp_sxa_notify_connected,
+    },
 #endif /* !NDMOS_OPTION_NO_CONTROL_AGENT */ /* Surrounds NOTIFY intfs */
-       {0}};
+    {0}};
 
 
 #ifndef NDMOS_OPTION_NO_NDMP2
-struct ndm_dispatch_request_table ndma_dispatch_request_table_v2[]
-    = {{NDMP2_CONFIG_GET_BUTYPE_ATTR, NDM_DRT_FLAG_OK_NOT_AUTHORIZED,
-        ndmp2_sxa_config_get_butype_attr},
-       {NDMP2_LOG_LOG, 0, ndmp2_sxa_log_log},
-       {NDMP2_LOG_DEBUG, 0, ndmp2_sxa_log_debug},
-       {0}};
+struct ndm_dispatch_request_table ndma_dispatch_request_table_v2[] = {
+    {NDMP2_CONFIG_GET_BUTYPE_ATTR, NDM_DRT_FLAG_OK_NOT_AUTHORIZED,
+     ndmp2_sxa_config_get_butype_attr},
+    {NDMP2_LOG_LOG, 0, ndmp2_sxa_log_log},
+    {NDMP2_LOG_DEBUG, 0, ndmp2_sxa_log_debug},
+    {0}};
 #endif /* !NDMOS_OPTION_NO_NDMP2 */
 
 #ifndef NDMOS_OPTION_NO_NDMP3
@@ -3041,108 +3037,108 @@ struct ndm_dispatch_request_table ndma_dispatch_request_table_v4[] = {{0}};
 #endif /* !NDMOS_OPTION_NO_NDMP4 */
 
 
-struct ndm_dispatch_request_table ndma_dispatch_request_table_v9[]
-    = {{NDMP9_CONNECT_OPEN,
-        NDM_DRT_FLAG_OK_NOT_CONNECTED + NDM_DRT_FLAG_OK_NOT_AUTHORIZED,
-        ndmp_sxa_connect_open},
-       {NDMP9_CONNECT_CLIENT_AUTH, NDM_DRT_FLAG_OK_NOT_AUTHORIZED,
-        ndmp_sxa_connect_client_auth},
-       {NDMP9_CONNECT_CLOSE, NDM_DRT_FLAG_OK_NOT_AUTHORIZED,
-        ndmp_sxa_connect_close},
-       {NDMP9_CONNECT_SERVER_AUTH, NDM_DRT_FLAG_OK_NOT_AUTHORIZED,
-        ndmp_sxa_connect_server_auth},
-       {NDMP9_CONFIG_GET_HOST_INFO, NDM_DRT_FLAG_OK_NOT_AUTHORIZED,
-        ndmp_sxa_config_get_info},
-       {NDMP9_CONFIG_GET_CONNECTION_TYPE, NDM_DRT_FLAG_OK_NOT_AUTHORIZED,
-        ndmp_sxa_config_get_info},
-       {NDMP9_CONFIG_GET_AUTH_ATTR, NDM_DRT_FLAG_OK_NOT_AUTHORIZED,
-        ndmp_sxa_config_get_auth_attr},
-       {NDMP9_CONFIG_GET_BUTYPE_INFO, NDM_DRT_FLAG_OK_NOT_AUTHORIZED,
-        ndmp_sxa_config_get_info},
-       {NDMP9_CONFIG_GET_FS_INFO, NDM_DRT_FLAG_OK_NOT_AUTHORIZED,
-        ndmp_sxa_config_get_info},
-       {NDMP9_CONFIG_GET_TAPE_INFO, NDM_DRT_FLAG_OK_NOT_AUTHORIZED,
-        ndmp_sxa_config_get_info},
-       {NDMP9_CONFIG_GET_SCSI_INFO, NDM_DRT_FLAG_OK_NOT_AUTHORIZED,
-        ndmp_sxa_config_get_info},
-       {NDMP9_CONFIG_GET_SERVER_INFO, NDM_DRT_FLAG_OK_NOT_AUTHORIZED,
-        ndmp_sxa_config_get_info},
+struct ndm_dispatch_request_table ndma_dispatch_request_table_v9[] = {
+    {NDMP9_CONNECT_OPEN,
+     NDM_DRT_FLAG_OK_NOT_CONNECTED + NDM_DRT_FLAG_OK_NOT_AUTHORIZED,
+     ndmp_sxa_connect_open},
+    {NDMP9_CONNECT_CLIENT_AUTH, NDM_DRT_FLAG_OK_NOT_AUTHORIZED,
+     ndmp_sxa_connect_client_auth},
+    {NDMP9_CONNECT_CLOSE, NDM_DRT_FLAG_OK_NOT_AUTHORIZED,
+     ndmp_sxa_connect_close},
+    {NDMP9_CONNECT_SERVER_AUTH, NDM_DRT_FLAG_OK_NOT_AUTHORIZED,
+     ndmp_sxa_connect_server_auth},
+    {NDMP9_CONFIG_GET_HOST_INFO, NDM_DRT_FLAG_OK_NOT_AUTHORIZED,
+     ndmp_sxa_config_get_info},
+    {NDMP9_CONFIG_GET_CONNECTION_TYPE, NDM_DRT_FLAG_OK_NOT_AUTHORIZED,
+     ndmp_sxa_config_get_info},
+    {NDMP9_CONFIG_GET_AUTH_ATTR, NDM_DRT_FLAG_OK_NOT_AUTHORIZED,
+     ndmp_sxa_config_get_auth_attr},
+    {NDMP9_CONFIG_GET_BUTYPE_INFO, NDM_DRT_FLAG_OK_NOT_AUTHORIZED,
+     ndmp_sxa_config_get_info},
+    {NDMP9_CONFIG_GET_FS_INFO, NDM_DRT_FLAG_OK_NOT_AUTHORIZED,
+     ndmp_sxa_config_get_info},
+    {NDMP9_CONFIG_GET_TAPE_INFO, NDM_DRT_FLAG_OK_NOT_AUTHORIZED,
+     ndmp_sxa_config_get_info},
+    {NDMP9_CONFIG_GET_SCSI_INFO, NDM_DRT_FLAG_OK_NOT_AUTHORIZED,
+     ndmp_sxa_config_get_info},
+    {NDMP9_CONFIG_GET_SERVER_INFO, NDM_DRT_FLAG_OK_NOT_AUTHORIZED,
+     ndmp_sxa_config_get_info},
 #ifndef NDMOS_OPTION_NO_ROBOT_AGENT /* Surrounds SCSI intfs */
-       {NDMP9_SCSI_OPEN, 0, ndmp_sxa_scsi_open},
-       {NDMP9_SCSI_CLOSE, 0, ndmp_sxa_scsi_close},
-       {NDMP9_SCSI_GET_STATE, 0, ndmp_sxa_scsi_get_state},
-       {NDMP9_SCSI_SET_TARGET, 0, ndmp_sxa_scsi_set_target},
-       {NDMP9_SCSI_RESET_DEVICE, 0, ndmp_sxa_scsi_reset_device},
-       {NDMP9_SCSI_RESET_BUS, 0, ndmp_sxa_scsi_reset_bus},
-       {NDMP9_SCSI_EXECUTE_CDB, 0, ndmp_sxa_scsi_execute_cdb},
+    {NDMP9_SCSI_OPEN, 0, ndmp_sxa_scsi_open},
+    {NDMP9_SCSI_CLOSE, 0, ndmp_sxa_scsi_close},
+    {NDMP9_SCSI_GET_STATE, 0, ndmp_sxa_scsi_get_state},
+    {NDMP9_SCSI_SET_TARGET, 0, ndmp_sxa_scsi_set_target},
+    {NDMP9_SCSI_RESET_DEVICE, 0, ndmp_sxa_scsi_reset_device},
+    {NDMP9_SCSI_RESET_BUS, 0, ndmp_sxa_scsi_reset_bus},
+    {NDMP9_SCSI_EXECUTE_CDB, 0, ndmp_sxa_scsi_execute_cdb},
 #endif /* !NDMOS_OPTION_NO_ROBOT_AGENT */ /* Surrounds SCSI intfs */
 #ifndef NDMOS_OPTION_NO_TAPE_AGENT        /* Surrounds TAPE intfs */
-       {NDMP9_TAPE_OPEN, 0, ndmp_sxa_tape_open},
-       {NDMP9_TAPE_CLOSE, 0, ndmp_sxa_tape_close},
-       {NDMP9_TAPE_GET_STATE, 0, ndmp_sxa_tape_get_state},
-       {NDMP9_TAPE_MTIO, 0, ndmp_sxa_tape_mtio},
-       {NDMP9_TAPE_WRITE, 0, ndmp_sxa_tape_write},
-       {NDMP9_TAPE_READ, 0, ndmp_sxa_tape_read},
-       {NDMP9_TAPE_EXECUTE_CDB, 0, ndmp_sxa_tape_execute_cdb},
+    {NDMP9_TAPE_OPEN, 0, ndmp_sxa_tape_open},
+    {NDMP9_TAPE_CLOSE, 0, ndmp_sxa_tape_close},
+    {NDMP9_TAPE_GET_STATE, 0, ndmp_sxa_tape_get_state},
+    {NDMP9_TAPE_MTIO, 0, ndmp_sxa_tape_mtio},
+    {NDMP9_TAPE_WRITE, 0, ndmp_sxa_tape_write},
+    {NDMP9_TAPE_READ, 0, ndmp_sxa_tape_read},
+    {NDMP9_TAPE_EXECUTE_CDB, 0, ndmp_sxa_tape_execute_cdb},
 #endif /* !NDMOS_OPTION_NO_TAPE_AGENT */ /* Surrounds TAPE intfs */
 #ifndef NDMOS_OPTION_NO_DATA_AGENT       /* Surrounds DATA intfs */
-       {NDMP9_DATA_GET_STATE, 0, ndmp_sxa_data_get_state},
-       {NDMP9_DATA_START_BACKUP, 0, ndmp_sxa_data_start_backup},
-       {NDMP9_DATA_START_RECOVER, 0, ndmp_sxa_data_start_recover},
-       {NDMP9_DATA_ABORT, 0, ndmp_sxa_data_abort},
-       {NDMP9_DATA_GET_ENV, 0, ndmp_sxa_data_get_env},
-       {NDMP9_DATA_STOP, 0, ndmp_sxa_data_stop},
-#  ifndef NDMOS_EFFECT_NO_NDMP3_NOR_NDMP4 /* Surrounds NDMPv[34] DATA intfs */
-#    ifdef notyet
-       {NDMP9_DATA_LISTEN, 0, ndmp_sxa_data_listen},
-#    endif /* notyet */
-       {NDMP9_DATA_CONNECT, 0, ndmp_sxa_data_connect},
-#  endif /* NDMOS_EFFECT_NO_NDMP3_NOR_NDMP4  Surrounds NDMPv[34] DATA intfs */
-       {NDMP9_DATA_START_RECOVER_FILEHIST, 0,
-        ndmp_sxa_data_start_recover_filehist},
+    {NDMP9_DATA_GET_STATE, 0, ndmp_sxa_data_get_state},
+    {NDMP9_DATA_START_BACKUP, 0, ndmp_sxa_data_start_backup},
+    {NDMP9_DATA_START_RECOVER, 0, ndmp_sxa_data_start_recover},
+    {NDMP9_DATA_ABORT, 0, ndmp_sxa_data_abort},
+    {NDMP9_DATA_GET_ENV, 0, ndmp_sxa_data_get_env},
+    {NDMP9_DATA_STOP, 0, ndmp_sxa_data_stop},
+#ifndef NDMOS_EFFECT_NO_NDMP3_NOR_NDMP4 /* Surrounds NDMPv[34] DATA intfs */
+#ifdef notyet
+    {NDMP9_DATA_LISTEN, 0, ndmp_sxa_data_listen},
+#endif /* notyet */
+    {NDMP9_DATA_CONNECT, 0, ndmp_sxa_data_connect},
+#endif /* NDMOS_EFFECT_NO_NDMP3_NOR_NDMP4  Surrounds NDMPv[34] DATA intfs */
+    {NDMP9_DATA_START_RECOVER_FILEHIST, 0,
+     ndmp_sxa_data_start_recover_filehist},
 #endif /* !NDMOS_OPTION_NO_DATA_AGENT */ /* Surrounds DATA intfs */
 #ifndef NDMOS_OPTION_NO_CONTROL_AGENT    /* Surrounds NOTIFY intfs */
-       {NDMP9_NOTIFY_DATA_HALTED, 0, ndmp_sxa_notify_data_halted},
-       {NDMP9_NOTIFY_CONNECTED, 0, ndmp_sxa_notify_connected},
-       {NDMP9_NOTIFY_MOVER_HALTED, 0, ndmp_sxa_notify_mover_halted},
-       {NDMP9_NOTIFY_MOVER_PAUSED, 0, ndmp_sxa_notify_mover_paused},
-       {NDMP9_NOTIFY_DATA_READ, 0, ndmp_sxa_notify_data_read},
+    {NDMP9_NOTIFY_DATA_HALTED, 0, ndmp_sxa_notify_data_halted},
+    {NDMP9_NOTIFY_CONNECTED, 0, ndmp_sxa_notify_connected},
+    {NDMP9_NOTIFY_MOVER_HALTED, 0, ndmp_sxa_notify_mover_halted},
+    {NDMP9_NOTIFY_MOVER_PAUSED, 0, ndmp_sxa_notify_mover_paused},
+    {NDMP9_NOTIFY_DATA_READ, 0, ndmp_sxa_notify_data_read},
 #endif /* !NDMOS_OPTION_NO_CONTROL_AGENT */ /* Surrounds NOTIFY intfs */
 #ifndef NDMOS_OPTION_NO_CONTROL_AGENT       /* Surrounds LOG intfs */
-       {NDMP9_LOG_FILE, 0, ndmp_sxa_log_file},
-       {NDMP9_LOG_MESSAGE, 0, ndmp_sxa_log_message},
+    {NDMP9_LOG_FILE, 0, ndmp_sxa_log_file},
+    {NDMP9_LOG_MESSAGE, 0, ndmp_sxa_log_message},
 #endif /* !NDMOS_OPTION_NO_CONTROL_AGENT */ /* Surrounds LOG intfs */
 #ifndef NDMOS_OPTION_NO_CONTROL_AGENT       /* Surrounds FH intfs */
-       {NDMP9_FH_ADD_FILE, 0, ndmp_sxa_fh_add_file},
-       {NDMP9_FH_ADD_DIR, 0, ndmp_sxa_fh_add_dir},
-       {NDMP9_FH_ADD_NODE, 0, ndmp_sxa_fh_add_node},
+    {NDMP9_FH_ADD_FILE, 0, ndmp_sxa_fh_add_file},
+    {NDMP9_FH_ADD_DIR, 0, ndmp_sxa_fh_add_dir},
+    {NDMP9_FH_ADD_NODE, 0, ndmp_sxa_fh_add_node},
 #endif /* !NDMOS_OPTION_NO_CONTROL_AGENT */ /* Surrounds FH intfs */
 #ifndef NDMOS_OPTION_NO_TAPE_AGENT          /* Surrounds MOVER intfs */
-       {NDMP9_MOVER_GET_STATE, 0, ndmp_sxa_mover_get_state},
-       {NDMP9_MOVER_LISTEN, 0, ndmp_sxa_mover_listen},
-       {NDMP9_MOVER_CONTINUE, 0, ndmp_sxa_mover_continue},
-       {NDMP9_MOVER_ABORT, 0, ndmp_sxa_mover_abort},
-       {NDMP9_MOVER_STOP, 0, ndmp_sxa_mover_stop},
-       {NDMP9_MOVER_SET_WINDOW, 0, ndmp_sxa_mover_set_window},
-       {NDMP9_MOVER_READ, 0, ndmp_sxa_mover_read},
-       {NDMP9_MOVER_CLOSE, 0, ndmp_sxa_mover_close},
-       {NDMP9_MOVER_SET_RECORD_SIZE, 0, ndmp_sxa_mover_set_record_size},
-       {NDMP9_MOVER_CONNECT, 0, ndmp_sxa_mover_connect},
+    {NDMP9_MOVER_GET_STATE, 0, ndmp_sxa_mover_get_state},
+    {NDMP9_MOVER_LISTEN, 0, ndmp_sxa_mover_listen},
+    {NDMP9_MOVER_CONTINUE, 0, ndmp_sxa_mover_continue},
+    {NDMP9_MOVER_ABORT, 0, ndmp_sxa_mover_abort},
+    {NDMP9_MOVER_STOP, 0, ndmp_sxa_mover_stop},
+    {NDMP9_MOVER_SET_WINDOW, 0, ndmp_sxa_mover_set_window},
+    {NDMP9_MOVER_READ, 0, ndmp_sxa_mover_read},
+    {NDMP9_MOVER_CLOSE, 0, ndmp_sxa_mover_close},
+    {NDMP9_MOVER_SET_RECORD_SIZE, 0, ndmp_sxa_mover_set_record_size},
+    {NDMP9_MOVER_CONNECT, 0, ndmp_sxa_mover_connect},
 #endif /* !NDMOS_OPTION_NO_TAPE_AGENT */ /* Surrounds MOVER intfs */
-       {0}};
+    {0}};
 
 
-struct ndm_dispatch_version_table ndma_dispatch_version_table[]
-    = {{0, ndma_dispatch_request_table_v0},
+struct ndm_dispatch_version_table ndma_dispatch_version_table[] = {
+    {0, ndma_dispatch_request_table_v0},
 #ifndef NDMOS_OPTION_NO_NDMP2
-       {NDMP2VER, ndma_dispatch_request_table_v2},
+    {NDMP2VER, ndma_dispatch_request_table_v2},
 #endif /* !NDMOS_OPTION_NO_NDMP2 */
 #ifndef NDMOS_OPTION_NO_NDMP3
-       {NDMP3VER, ndma_dispatch_request_table_v3},
+    {NDMP3VER, ndma_dispatch_request_table_v3},
 #endif /* !NDMOS_OPTION_NO_NDMP3 */
 #ifndef NDMOS_OPTION_NO_NDMP4
-       {NDMP4VER, ndma_dispatch_request_table_v4},
+    {NDMP4VER, ndma_dispatch_request_table_v4},
 #endif /* !NDMOS_OPTION_NO_NDMP4 */
-       {NDMP9VER, ndma_dispatch_request_table_v9},
+    {NDMP9VER, ndma_dispatch_request_table_v9},
 
-       {-1, 0}};
+    {-1}};

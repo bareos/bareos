@@ -29,7 +29,9 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DNDMOS_CONST_PRODUCT_NAME=\\\"Bareos\\\"")
 # -DNDMOS_CONST_PRODUCT_REVISION=\\\"${BAREOS_FULL_VERSION}\\\"")
 
 if(${HAVE_LINUX_OS})
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHAVE_LINUX_OS")
+  set(CMAKE_C_FLAGS
+      "${CMAKE_C_FLAGS} -DHAVE_LINUX_OS -Wno-unused-but-set-variable"
+  )
 elseif(${HAVE_SUN_OS})
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHAVE_SUN_OS")
 endif()
@@ -165,12 +167,6 @@ set(LIBBAREOSNDMP_SRCS ${NDMP_PROTO_SRCS} ${NDMP_LIB_SRCS} ${NDMP_AGENT_SRCS}
                        ${NDMP_HELPER_SRCS}
 )
 
-set_source_files_properties(
-  ndmp2_translate.c ndmp3_translate.c ndmp4_translate.c ndml_conn.c
-  ndma_comm_dispatch.c ndma_tape.c PROPERTIES COMPILE_FLAGS
-                                              -Wno-enum-conversion
-)
-
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(RPCGEN_PARAMS "-C")
 else()
@@ -192,6 +188,7 @@ foreach(NDMP_VERSION 0 2 3 4 9)
 endforeach()
 
 add_library(bareosndmp SHARED ${LIBBAREOSNDMP_SRCS} ${RPC_GEN_FILES})
+target_compile_options(bareosndmp PRIVATE -Wno-extra)
 target_include_directories(bareosndmp PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(bareosndmp ${WRAP_LIBS} ${TIRPC_LIBRARIES})
 
