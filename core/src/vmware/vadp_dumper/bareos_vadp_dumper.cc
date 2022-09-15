@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2014-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
    Copyright (C) 2015-2015 Planets Communications B.V.
 
    This program is Free Software; you can redistribute it and/or
@@ -302,13 +302,9 @@ static inline size_t robust_writer(int fd, void* buffer, int size)
     if (cnt > 0) {
       size -= cnt;
       total_bytes += cnt;
-    } else if (cnt < 0) {
-      total_bytes = -1;
-      goto bail_out;
     }
   } while (size > 0 && cnt > 0);
 
-bail_out:
   return total_bytes;
 }
 
@@ -323,13 +319,9 @@ static inline size_t robust_reader(int fd, void* buffer, int size)
     if (cnt > 0) {
       size -= cnt;
       total_bytes += cnt;
-    } else if (cnt < 0) {
-      total_bytes = -1;
-      goto bail_out;
     }
   } while (size > 0 && cnt > 0);
 
-bail_out:
   return total_bytes;
 }
 
@@ -774,7 +766,9 @@ static size_t write_to_vmdk(size_t sector_offset, size_t nbyte, void* buf)
 }
 
 // Read data from a stream using the robust reader function.
-static size_t read_from_stream(size_t sector_offset, size_t nbyte, void* buf)
+static size_t read_from_stream([[maybe_unused]] size_t sector_offset,
+                               size_t nbyte,
+                               void* buf)
 {
   return robust_reader(STDOUT_FILENO, buf, nbyte);
 }

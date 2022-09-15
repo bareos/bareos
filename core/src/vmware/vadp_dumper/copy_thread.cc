@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2014-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -164,7 +164,6 @@ bool send_to_copy_thread(size_t sector_offset, size_t nbyte)
 
   save_data->data_len
       = cp_thread->input_function(sector_offset, nbyte, save_data->data);
-  if (save_data->data_len < 0) { return false; }
   save_data->sector_offset = sector_offset;
 
   cb->enqueue(save_data);

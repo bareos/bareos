@@ -411,13 +411,17 @@ static bRC freePlugin(PluginContext* ctx)
 }
 
 // Return some plugin value (none defined)
-static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value)
+static bRC getPluginValue([[maybe_unused]] PluginContext* ctx,
+                          [[maybe_unused]] pVariable var,
+                          [[maybe_unused]] void* value)
 {
   return bRC_OK;
 }
 
 // Set a plugin value (none defined)
-static bRC setPluginValue(PluginContext* ctx, pVariable var, void* value)
+static bRC setPluginValue([[maybe_unused]] PluginContext* ctx,
+                          [[maybe_unused]] pVariable var,
+                          [[maybe_unused]] void* value)
 {
   return bRC_OK;
 }
@@ -1655,7 +1659,7 @@ bail_out:
 }
 
 // See if we need to do any postprocessing after the restore.
-static bRC end_restore_job(PluginContext* ctx, void* value)
+static bRC end_restore_job(PluginContext* ctx, [[maybe_unused]] void* value)
 {
   bRC retval = bRC_OK;
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
@@ -1673,7 +1677,8 @@ static bRC end_restore_job(PluginContext* ctx, void* value)
  * Bareos is notifying us that a plugin name string was found,
  * and passing us the plugin command, so we can prepare for a restore.
  */
-static bRC startRestoreFile(PluginContext* ctx, const char* cmd)
+static bRC startRestoreFile([[maybe_unused]] PluginContext* ctx,
+                            [[maybe_unused]] const char* cmd)
 {
   return bRC_OK;
 }
@@ -1682,7 +1687,10 @@ static bRC startRestoreFile(PluginContext* ctx, const char* cmd)
  * Bareos is notifying us that the plugin data has terminated,
  * so the restore for this particular file is done.
  */
-static bRC endRestoreFile(PluginContext* ctx) { return bRC_OK; }
+static bRC endRestoreFile([[maybe_unused]] PluginContext* ctx)
+{
+  return bRC_OK;
+}
 
 /**
  * This is called during restore to create the file (if necessary) We must
@@ -1895,7 +1903,7 @@ static bRC setFileAttributes(PluginContext* ctx, struct restore_pkt* rp)
 }
 
 // When using Incremental dump, all previous dumps are necessary
-static bRC checkFile(PluginContext* ctx, char* fname)
+static bRC checkFile(PluginContext* ctx, [[maybe_unused]] char* fname)
 {
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
