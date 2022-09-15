@@ -223,11 +223,12 @@ static inline bool SkipFstype(const char* fstype)
  * This function should be called with a write lock on the mntent_cache.
  */
 static void refresh_mount_cache(
-    mntent_cache_entry_t* handle_entry(uint32_t dev,
-                                       const char* special,
-                                       const char* mountpoint,
-                                       const char* fstype,
-                                       const char* mntopts))
+    [[maybe_unused]] mntent_cache_entry_t* handle_entry(
+        [[maybe_unused]] uint32_t dev,
+        [[maybe_unused]] const char* special,
+        [[maybe_unused]] const char* mountpoint,
+        [[maybe_unused]] const char* fstype,
+        [[maybe_unused]] const char* mntopts))
 {
 #if defined(HAVE_GETMNTENT)
   FILE* fp;

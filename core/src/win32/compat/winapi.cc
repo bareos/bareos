@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -108,7 +108,7 @@ t_GetLogicalDriveStringsW p_GetLogicalDriveStringsW = NULL;
 
 void InitWinAPIWrapper()
 {
-  OSVERSIONINFO osversioninfo = {sizeof(OSVERSIONINFO)};
+  OSVERSIONINFO osversioninfo = {sizeof(OSVERSIONINFO), 0, 0, 0, 0, 0};
 
   // Get the current OS version
   if (!GetVersionEx(&osversioninfo)) {

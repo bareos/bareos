@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -76,7 +76,8 @@ int stopRunningBareos()
  * the OS returns control here immediately after starting
  * the service.
  */
-void WINAPI serviceStartCallback(DWORD argc, char** argv)
+void WINAPI serviceStartCallback([[maybe_unused]] DWORD argc,
+                                 [[maybe_unused]] char** argv)
 {
   DWORD dwThreadID;
 
@@ -176,7 +177,7 @@ int bareosServiceMain()
 }
 
 // New style service bareos worker thread
-DWORD WINAPI bareosWorkerThread(LPVOID lpwThreadParam)
+DWORD WINAPI bareosWorkerThread([[maybe_unused]] LPVOID lpwThreadParam)
 {
   service_thread_id = GetCurrentThreadId();
 

@@ -1305,8 +1305,8 @@ void StopNdmpThreadServer()
   }
 }
 #else
-void EndOfNdmpBackup(JobControlRecord* jcr) {}
+void EndOfNdmpBackup([[maybe_unused]] JobControlRecord* jcr) {}
 
-void EndOfNdmpRestore(JobControlRecord* jcr) {}
+void EndOfNdmpRestore([[maybe_unused]] JobControlRecord* jcr) {}
 #endif /* HAVE_NDMP */
 } /* namespace storagedaemon */

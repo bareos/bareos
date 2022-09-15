@@ -85,7 +85,7 @@ struct BareosWinFilePacket {
   int BErrNo = 0;                   /**< errno */
   boffset_t offset = 0;             /**< Delta offset */
   JobControlRecord* jcr = nullptr;  /**< jcr for editing job codes */
-  PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT win32Decomplugin_private_context{0}; /**< context for decomposition
+  PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT win32Decomplugin_private_context{}; /**< context for decomposition
                                                                    of win32 backup streams */
   int use_backup_decomp = 0; /**< set if using BackupRead Stream Decomposition */
   bool reparse_point = false; /**< set if reparse point */

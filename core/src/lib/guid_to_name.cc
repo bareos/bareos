@@ -94,7 +94,8 @@ static int GidCompare(guitem* item1, guitem* item2)
 }
 
 
-static void GetUidname(uid_t uid, guitem* item)
+static void GetUidname([[maybe_unused]] uid_t uid,
+                       [[maybe_unused]] guitem* item)
 {
 #ifndef HAVE_WIN32
   struct passwd* pwbuf;
@@ -107,7 +108,8 @@ static void GetUidname(uid_t uid, guitem* item)
 #endif
 }
 
-static void GetGidname(gid_t gid, guitem* item)
+static void GetGidname([[maybe_unused]] gid_t gid,
+                       [[maybe_unused]] guitem* item)
 {
 #ifndef HAVE_WIN32
   struct group* grbuf;
