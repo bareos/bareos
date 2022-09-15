@@ -37,19 +37,10 @@ timeout=0
 timed_checkpoint=""
 volume_checkpoint=""
 
-cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out $backup_log
-messages
-quit
-END_OF_DATA
-
 while [[ ${timeout} -lt 30 ]] && [[ -z $timed_checkpoint || -z $volume_checkpoint ]]
 do
-
-    run_bconsole
-
-    timed_checkpoint=$(grep -m 1 'Doing timed backup checkpoint. Next checkpoint in 3 seconds' $backup_log)
-    volume_checkpoint=$(grep -m 1 'Volume changed, doing checkpoint:' "$backup_log")
+    timed_checkpoint=$(grep -m 1 'Doing timed backup checkpoint. Next checkpoint in 3 seconds' $messagesfile)
+    volume_checkpoint=$(grep -m 1 'Volume changed, doing checkpoint:' "$messagesfile")
     sleep 1
     ((++timeout))
 done

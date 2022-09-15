@@ -18,6 +18,7 @@ export config_directory_dir_additional_test_config=@config_directory_dir_additio
 
 working=${current_test_directory}/working
 working_dir=${working}
+messagesfile=${working_dir}/bareos-dir.conmsg
 tmp=${current_test_directory}/tmp
 export BackupDirectory="${tmp}/data"
 systemtests_s3_use_https=@systemtests_s3_use_https@
