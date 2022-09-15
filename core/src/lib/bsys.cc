@@ -553,7 +553,7 @@ void WritePidFile(int pidfile_fd,
 #endif
 
 // Delete the pid file if we created it
-int DeletePidFile(std::string pidfile_path)
+int DeletePidFile([[maybe_unused]] std::string pidfile_path)
 {
 #if !defined(HAVE_WIN32)
   if (!pidfile_path.empty()) { unlink(pidfile_path.c_str()); }
@@ -955,7 +955,7 @@ bool PathAppend(PoolMem& path, PoolMem& extra)
  * based on
  * src/findlib/mkpath.c:bool makedir(...)
  */
-static bool PathMkdir(char* path, mode_t mode)
+static bool PathMkdir(char* path, [[maybe_unused]] mode_t mode)
 {
   if (PathExists(path)) {
     Dmsg1(500, "skipped, path %s already exists.\n", path);

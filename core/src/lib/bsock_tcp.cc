@@ -636,7 +636,8 @@ get_out:
   return nbytes; /* return actual length of message */
 }
 
-int BareosSocketTCP::GetPeer(char* buf, socklen_t buflen)
+int BareosSocketTCP::GetPeer([[maybe_unused]] char* buf,
+                             [[maybe_unused]] socklen_t buflen)
 {
 #if !defined(HAVE_WIN32)
   if (peer_addr.sin_family == 0) {
