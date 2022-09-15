@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2009-2017, Farooq Mela
- * Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+ * Copyright (C) 2019-2022 Bareos GmbH & Co. KG
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -81,7 +81,8 @@ std::vector<BacktraceInfo> Backtrace(int skip, int amount)
   return trace_buf;
 }
 #else
-std::vector<BacktraceInfo> Backtrace(int skip, int amount)
+std::vector<BacktraceInfo> Backtrace([[maybe_unused]] int skip,
+                                     [[maybe_unused]] int amount)
 {
   return std::vector<BacktraceInfo>();
 }
