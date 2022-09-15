@@ -38,14 +38,15 @@ timeout=0
 timed_checkpoint=""
 volume_checkpoint=""
 
-while [[ ${timeout} -lt 20 ]] && [[ -z $timed_checkpoint || -z $volume_checkpoint ]]
-do
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out $backup_log
 status jobs
 messages
 quit
 END_OF_DATA
+
+while [[ ${timeout} -lt 10 ]] && [[ -z $timed_checkpoint || -z $volume_checkpoint ]]
+do
 
     run_bconsole
 
