@@ -1666,17 +1666,25 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
   PoolMem query(PM_MESSAGE);
 
   Dmsg2(100, "Enter migrate_cleanup %d %c\n", TermCode, TermCode);
-  UpdateJobEnd(jcr, TermCode);
+
 
   /*
    * Check if we actually did something.
    * mig_jcr is jcr of the newly migrated job.
    */
   if (mig_jcr) {
+    UpdateJobEnd(jcr, TermCode);
+
     char old_jobid[50], new_jobid[50];
 
     edit_uint64(jcr->impl->previous_jr.JobId, old_jobid);
     edit_uint64(mig_jcr->impl->jr.JobId, new_jobid);
+
+    // use the PriorJobId field to store the migrated jobid in order to keep
+    // track of it
+    Mmsg(query, "UPDATE Job SET priorjobid='%s' WHERE JobId=%d", new_jobid,
+         jcr->JobId);
+    jcr->db->SqlQuery(query.c_str());
 
     /*
      * See if we used a remote SD if so the mig_jcr contains
@@ -1888,6 +1896,9 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
         break;
     }
   } else if (jcr->impl->HasSelectedJobs) {
+    Mmsg(query, "DELETE FROM job WHERE JobId=%d", jcr->JobId);
+    jcr->db->SqlQuery(query.c_str());
+
     switch (jcr->JobStatus) {
       case JS_Terminated:
         TermMsg = _("%s OK");
@@ -1908,6 +1919,8 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
         break;
     }
   } else {
+    Mmsg(query, "DELETE FROM job WHERE JobId=%d", jcr->JobId);
+    jcr->db->SqlQuery(query.c_str());
     TermMsg = _("%s -- no files to %s");
   }
 
