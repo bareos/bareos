@@ -1429,7 +1429,7 @@ bacl_exit_code plugin_parse_acl_streams(JobControlRecord* jcr,
 // Plugin specific callback for getting XATTR information.
 BxattrExitCode PluginBuildXattrStreams(
     JobControlRecord* jcr,
-    [[mayb_unused]] struct XattrData* xattr_data,
+    [[maybe_unused]] struct XattrData* xattr_data,
     [[maybe_unused]] FindFilesPacket* ff_pkt)
 {
   Plugin* plugin;
