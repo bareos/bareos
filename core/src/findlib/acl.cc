@@ -1645,9 +1645,10 @@ static int os_default_acl_streams[1] = {-1};
  * new interface is not defined (Solaris 9 and older we fall back to the old
  * code)
  */
-static bacl_exit_code solaris_build_acl_streams(JobControlRecord* jcr,
-                                                AclData* acl_data,
-                                                FindFilesPacket* ff_pkt)
+static bacl_exit_code solaris_build_acl_streams(
+    JobControlRecord* jcr,
+    AclData* acl_data,
+    [[maybe_unused]] FindFilesPacket* ff_pkt)
 {
   int acl_enabled, flags;
   acl_t* aclp;
@@ -1740,11 +1741,12 @@ static bacl_exit_code solaris_build_acl_streams(JobControlRecord* jcr,
   return stream_status;
 }
 
-static bacl_exit_code solaris_parse_acl_streams(JobControlRecord* jcr,
-                                                AclData* acl_data,
-                                                int stream,
-                                                char* content,
-                                                uint32_t content_length)
+static bacl_exit_code solaris_parse_acl_streams(
+    JobControlRecord* jcr,
+    AclData* acl_data,
+    int stream,
+    char* content,
+    [[maybe_unused]] uint32_t content_length)
 {
   acl_t* aclp;
   int acl_enabled, error;

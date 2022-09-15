@@ -1427,9 +1427,10 @@ bacl_exit_code plugin_parse_acl_streams(JobControlRecord* jcr,
 }
 
 // Plugin specific callback for getting XATTR information.
-BxattrExitCode PluginBuildXattrStreams(JobControlRecord* jcr,
-                                       struct XattrData* xattr_data,
-                                       [[maybe_unused]] FindFilesPacket* ff_pkt)
+BxattrExitCode PluginBuildXattrStreams(
+    JobControlRecord* jcr,
+    [[mayb_unused]] struct XattrData* xattr_data,
+    [[maybe_unused]] FindFilesPacket* ff_pkt)
 {
   Plugin* plugin;
 #if defined(HAVE_XATTR)
@@ -1542,11 +1543,12 @@ bail_out:
 }
 
 // Plugin specific callback for setting XATTR information.
-BxattrExitCode PluginParseXattrStreams(JobControlRecord* jcr,
-                                       struct XattrData* xattr_data,
-                                       [[maybe_unused]] int stream,
-                                       char* content,
-                                       uint32_t content_length)
+BxattrExitCode PluginParseXattrStreams(
+    JobControlRecord* jcr,
+    [[maybe_unused]] struct XattrData* xattr_data,
+    [[maybe_unused]] int stream,
+    [[maybe_unused]] char* content,
+    [[maybe_unused]] uint32_t content_length)
 {
 #if defined(HAVE_XATTR)
   Plugin* plugin;
