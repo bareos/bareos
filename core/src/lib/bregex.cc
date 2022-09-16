@@ -1390,7 +1390,8 @@ void re_registers_to_regmatch(regexp_registers_t old_regs,
 int regexec(regex_t* preg,
             const char* string,
             size_t nmatch,
-            regmatch_t pmatch[])
+            regmatch_t pmatch[],
+            [[maybe_unused]] int eflags)
 {
   int status;
   int len = strlen(string);
