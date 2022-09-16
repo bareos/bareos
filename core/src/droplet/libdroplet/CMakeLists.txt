@@ -101,10 +101,6 @@ add_library(
 # openssl 3.0
 target_compile_options(droplet PUBLIC -Wno-deprecated-declarations -Wno-extra)
 
-set_source_files_properties(
-  src/getdate.c PROPERTIES COMPILE_FLAGS -Wno-maybe-uninitialized
-)
-
 target_include_directories(
   droplet PUBLIC include ${LIBXML2_INCLUDE_DIR} ${JSONC_INCLUDE_DIRS}
                  ${OPENSSL_INCLUDE_DIR}
