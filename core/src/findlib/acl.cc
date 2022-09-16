@@ -1018,9 +1018,10 @@ static int os_access_acl_streams[2]
     = {STREAM_ACL_FREEBSD_ACCESS_ACL, STREAM_ACL_FREEBSD_NFS4_ACL};
 static int os_default_acl_streams[1] = {STREAM_ACL_FREEBSD_DEFAULT_ACL};
 
-static bacl_exit_code freebsd_build_acl_streams(JobControlRecord* jcr,
-                                                AclData* acl_data,
-                                                FindFilesPacket* ff_pkt)
+static bacl_exit_code freebsd_build_acl_streams(
+    JobControlRecord* jcr,
+    AclData* acl_data,
+    [[maybe_unused]] FindFilesPacket* ff_pkt)
 {
   int acl_enabled = 0;
   bacl_type acltype = BACL_TYPE_NONE;
