@@ -860,7 +860,7 @@ static int ReOptimize(regex_t* bufp)
         break;
       case Cstar_jump:
         if (!ReOptimizeStarJump(bufp, code)) { return 0; }
-        /* fall through */
+        [[fallthrough]];
       case Cupdate_failure_jump:
       case Cjump:
       case Cdummy_failure_jump:
