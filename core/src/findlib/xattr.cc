@@ -1695,7 +1695,7 @@ bail_out:
 
 static BxattrExitCode bsd_parse_xattr_streams(JobControlRecord* jcr,
                                               XattrData* xattr_data,
-                                              int stream,
+                                              [[maybe_unused]] int stream,
                                               char* content,
                                               uint32_t content_length)
 {

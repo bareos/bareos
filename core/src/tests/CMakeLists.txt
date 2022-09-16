@@ -50,7 +50,9 @@ endmacro() # bareos_gtest_add_tests
 
 macro(bareos_add_test BAREOS_ADD_TEST_TESTNAME)
   set(options SKIP_GTEST DISABLE)
-  set(multiValueArgs ADDITIONAL_SOURCES LINK_LIBRARIES COMPILE_DEFINITIONS)
+  set(multiValueArgs ADDITIONAL_SOURCES LINK_LIBRARIES COMPILE_DEFINITIONS
+                     COMPILE_OPTIONS
+  )
   cmake_parse_arguments(
     BAREOS_ADD_TEST "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN}
   )
@@ -64,6 +66,9 @@ macro(bareos_add_test BAREOS_ADD_TEST_TESTNAME)
   )
   target_compile_definitions(
     ${BAREOS_ADD_TEST_TESTNAME} PRIVATE ${BAREOS_ADD_TEST_COMPILE_DEFINITIONS}
+  )
+  target_compile_options(
+    ${BAREOS_ADD_TEST_TESTNAME} PRIVATE ${BAREOS_ADD_TEST_COMPILE_OPTIONS}
   )
   if(BAREOS_ADD_TEST_DISABLE)
     set(disable "DISABLE")
@@ -219,9 +224,7 @@ if(NOT client-only)
     LINK_LIBRARIES ${LINK_LIBRARIES}
   )
 
-  bareos_add_test(
-    pruning LINK_LIBRARIES testing_common GTest::gtest_main
-  )
+  bareos_add_test(pruning LINK_LIBRARIES testing_common GTest::gtest_main)
   bareos_add_test(
     runjob LINK_LIBRARIES dird_objects bareosfind bareossql GTest::gtest_main
   )
@@ -257,7 +260,7 @@ if(NOT client-only)
     sd_reservation
     ${disable}
     LINK_LIBRARIES stored_objects bareossd bareos GTest::gtest_main
-                   GTest::gmock
+                   GTest::gmock COMPILE_OPTIONS -Wno-deprecated-copy
   )
   bareos_add_test(
     sd_statistics_thread
