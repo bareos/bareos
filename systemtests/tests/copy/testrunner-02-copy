@@ -12,6 +12,7 @@ TestName=02-copy
 . "${rscripts}"/functions
 
 log="$tmp/$TestName.log"
+query_results="$tmp/query_results.out"
 
 check_log() {
   if ! grep -q "$@" "$log"; then
@@ -30,6 +31,11 @@ label volume=TestCopyVolume001 storage=File2 pool=FullCopy
 run copy yes
 wait
 messages
+@$out $query_results
+sqlquery
+SELECT count(jobid) FROM job WHERE type='c';
+SELECT count(jobid) FROM job WHERE type='C';
+
 quit
 END_OF_DATA
 
@@ -39,5 +45,10 @@ check_for_zombie_jobs storage=File
 
 check_log -F 'Catalog record for Volume "TestCopyVolume001", Slot 0 successfully created.'
 check_log 'Termination:.*Copying OK'
+
+if [[ $(grep -c "|     1 |" "$query_results") -ne "2" ]]; then
+    echo "The expected amount of copy jobs in the catalog is not met."
+    estat=1
+fi
 
 end_test
