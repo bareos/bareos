@@ -71,18 +71,18 @@ static std::string error_message_disabling_xattributes{
  * Entry points when compiled without support for XATTRs or on an unsupported
  * platform.
  */
-BxattrExitCode BuildXattrStreams(JobControlRecord* jcr,
-                                 XattrData* xattr_data,
-                                 FindFilesPacket* ff_pkt)
+BxattrExitCode BuildXattrStreams([[maybe_unused]] JobControlRecord* jcr,
+                                 [[maybe_unused]] XattrData* xattr_data,
+                                 [[maybe_unused]] FindFilesPacket* ff_pkt)
 {
   return BxattrExitCode::kErrorFatal;
 }
 
-BxattrExitCode ParseXattrStreams(JobControlRecord* jcr,
-                                 XattrData* xattr_data,
-                                 int stream,
-                                 char* content,
-                                 uint32_t content_length)
+BxattrExitCode ParseXattrStreams([[maybe_unused]] JobControlRecord* jcr,
+                                 [[maybe_unused]] XattrData* xattr_data,
+                                 [[maybe_unused]] int stream,
+                                 [[maybe_unused]] char* content,
+                                 [[maybe_unused]] uint32_t content_length)
 {
   return BxattrExitCode::kErrorFatal;
 }
