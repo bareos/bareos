@@ -952,9 +952,10 @@ static bacl_exit_code generic_set_acl_on_os(
 static int os_access_acl_streams[1] = {STREAM_ACL_DARWIN_ACCESS_ACL};
 static int os_default_acl_streams[1] = {-1};
 
-static bacl_exit_code darwin_build_acl_streams(JobControlRecord* jcr,
-                                               AclData* acl_data,
-                                               FindFilesPacket* ff_pkt)
+static bacl_exit_code darwin_build_acl_streams(
+    JobControlRecord* jcr,
+    AclData* acl_data,
+    [[maybe_unused]] FindFilesPacket* ff_pkt)
 {
 #        if defined(HAVE_ACL_TYPE_EXTENDED)
   /**
@@ -984,7 +985,7 @@ static bacl_exit_code darwin_build_acl_streams(JobControlRecord* jcr,
 
 static bacl_exit_code darwin_parse_acl_streams(JobControlRecord* jcr,
                                                AclData* acl_data,
-                                               int stream,
+                                               [[maybe_unused]] int stream,
                                                char* content,
                                                uint32_t content_length)
 {
