@@ -156,6 +156,10 @@ if(Python3_FOUND)
                LINKER_LANGUAGE CXX
                INCLUDE_DIRECTORIES "${pymod3_include_dirs}"
   )
+  target_compile_options(
+    bareosfd-python3-module PUBLIC -fno-strict-aliasing
+                                   -Wno-missing-field-initializers
+  )
   if(NOT "${Python3_CCSHARED}" STREQUAL "")
     set_property(
       TARGET bareosfd-python3-module
