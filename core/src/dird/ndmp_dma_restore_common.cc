@@ -230,7 +230,7 @@ void NdmpRestoreCleanup(JobControlRecord* jcr, int TermCode)
 
 #else /* HAVE_NDMP */
 
-void NdmpRestoreCleanup(JobControlRecord* jcr, int TermCode)
+void NdmpRestoreCleanup(JobControlRecord* jcr, [[maybe_unused]] int TermCode)
 {
   Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
 }

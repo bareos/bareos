@@ -558,7 +558,7 @@ bail_out:
 
 // Create a copy thread that restores the EFS data.
 static inline bool SetupCopyThread(JobControlRecord* jcr,
-                                   BareosWinFilePacket* bfd)
+                                   [[maybe_unused]] BareosWinFilePacket* bfd)
 {
   int nr_save_elements;
   CopyThreadContext* new_context;

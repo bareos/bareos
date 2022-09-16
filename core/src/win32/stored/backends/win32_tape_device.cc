@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2013 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -146,13 +146,24 @@ typedef struct _TAPE_HANDLE_INFO {
 
 } TAPE_HANDLE_INFO, *PTAPE_HANDLE_INFO;
 
-TAPE_HANDLE_INFO TapeHandleTable[]
-    = {{INVALID_HANDLE_VALUE}, {INVALID_HANDLE_VALUE}, {INVALID_HANDLE_VALUE},
-       {INVALID_HANDLE_VALUE}, {INVALID_HANDLE_VALUE}, {INVALID_HANDLE_VALUE},
-       {INVALID_HANDLE_VALUE}, {INVALID_HANDLE_VALUE}, {INVALID_HANDLE_VALUE},
-       {INVALID_HANDLE_VALUE}, {INVALID_HANDLE_VALUE}, {INVALID_HANDLE_VALUE},
-       {INVALID_HANDLE_VALUE}, {INVALID_HANDLE_VALUE}, {INVALID_HANDLE_VALUE},
-       {INVALID_HANDLE_VALUE}};
+TAPE_HANDLE_INFO TapeHandleTable[] = {
+    {INVALID_HANDLE_VALUE, false, false, false, false, 0, 0, 0, 0},
+    {INVALID_HANDLE_VALUE, false, false, false, false, 0, 0, 0, 0},
+    {INVALID_HANDLE_VALUE, false, false, false, false, 0, 0, 0, 0},
+    {INVALID_HANDLE_VALUE, false, false, false, false, 0, 0, 0, 0},
+    {INVALID_HANDLE_VALUE, false, false, false, false, 0, 0, 0, 0},
+    {INVALID_HANDLE_VALUE, false, false, false, false, 0, 0, 0, 0},
+    {INVALID_HANDLE_VALUE, false, false, false, false, 0, 0, 0, 0},
+    {INVALID_HANDLE_VALUE, false, false, false, false, 0, 0, 0, 0},
+    {INVALID_HANDLE_VALUE, false, false, false, false, 0, 0, 0, 0},
+    {INVALID_HANDLE_VALUE, false, false, false, false, 0, 0, 0, 0},
+    {INVALID_HANDLE_VALUE, false, false, false, false, 0, 0, 0, 0},
+    {INVALID_HANDLE_VALUE, false, false, false, false, 0, 0, 0, 0},
+    {INVALID_HANDLE_VALUE, false, false, false, false, 0, 0, 0, 0},
+    {INVALID_HANDLE_VALUE, false, false, false, false, 0, 0, 0, 0},
+    {INVALID_HANDLE_VALUE, false, false, false, false, 0, 0, 0, 0},
+    {INVALID_HANDLE_VALUE, false, false, false, false, 0, 0, 0, 0},
+};
 
 #define NUMBER_HANDLE_ENTRIES \
   (sizeof(TapeHandleTable) / sizeof(TapeHandleTable[0]))
@@ -163,7 +174,9 @@ static DWORD GetDensityBlockSize(HANDLE hDevice,
                                  DWORD* pdwDensity,
                                  DWORD* pdwBlockSize);
 
-int win32_tape_device::d_open(const char* pathname, int flags, int mode)
+int win32_tape_device::d_open(const char* pathname,
+                              [[maybe_unused]] int flags,
+                              [[maybe_unused]] int mode)
 {
   HANDLE hDevice = INVALID_HANDLE_VALUE;
   char szDeviceName[256] = "\\\\.\\";
@@ -391,7 +404,9 @@ int win32_tape_device::d_close(int fd)
   return 0;
 }
 
-int win32_tape_device::d_ioctl(int fd, ioctl_req_t request, char* op)
+int win32_tape_device::d_ioctl([[maybe_unused]] int fd,
+                               ioctl_req_t request,
+                               char* op)
 {
   int result = 0;
 

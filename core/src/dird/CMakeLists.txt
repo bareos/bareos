@@ -173,7 +173,9 @@ if(HAVE_WIN32)
   target_sources(
     bareos-dir PRIVATE ../win32/generic/main.cc ../win32/generic/service.cc
   )
+  target_link_options(bareos-dir PRIVATE -Wno-cast-function-type)
   target_link_libraries(bareos-dir PRIVATE comctl32)
+  target_compile_options(bareos-dir PRIVATE -Wno-cast-function-type)
 endif()
 
 if(HAVE_NDMP)

@@ -193,7 +193,6 @@ if(NOT ${HAVE_DYNAMIC_SD_BACKENDS})
 endif()
 
 add_library(stored_objects STATIC ${SDSRCS})
-
 add_executable(bareos-sd stored.cc)
 
 target_link_libraries(
@@ -204,6 +203,7 @@ target_link_libraries(
 if(HAVE_WIN32)
   target_sources(bareos-sd PRIVATE ../win32/generic/main.cc)
   target_link_libraries(bareos-sd PRIVATE comctl32)
+  target_compile_options(stored_objects PRIVATE -Wno-cast-function-type)
 endif()
 if(HAVE_NDMP)
   target_link_libraries(stored_objects PRIVATE bareosndmp)

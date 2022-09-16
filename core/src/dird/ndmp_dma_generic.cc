@@ -679,7 +679,9 @@ void DoNdmpClientStatus(UaContext* ua,
               query_cbs);
 }
 #else
-void DoNdmpClientStatus(UaContext* ua, ClientResource* client, char* cmd)
+void DoNdmpClientStatus(UaContext* ua,
+                        [[maybe_unused]] ClientResource* client,
+                        [[maybe_unused]] char* cmd)
 {
   Jmsg(ua->jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
 }

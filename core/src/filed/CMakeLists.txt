@@ -85,6 +85,7 @@ if(HAVE_WIN32)
 
   target_compile_definitions(fd_objects PRIVATE ${FD_COMPILE_DEFINITIONS})
   target_compile_definitions(bareos-fd PRIVATE ${FD_COMPILE_DEFINITIONS})
+  target_compile_options(fd_objects PRIVATE -Wno-cast-function-type)
 endif()
 
 target_link_libraries(

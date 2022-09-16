@@ -188,7 +188,7 @@ static void usage()
  * Same as timezone.tz_minuteswest
  *   Unix TzOffset coded by:  Attila Fülöp
  */
-static long TzOffset(time_t lnow, struct tm& tm)
+static long TzOffset([[maybe_unused]] time_t lnow, struct tm& tm)
 {
 #if defined(HAVE_WIN32)
 #  if defined(HAVE_MINGW)
@@ -455,8 +455,8 @@ lookup_host:
     s = WSASocket(rp->ai_family, rp->ai_socktype, rp->ai_protocol, NULL, 0, 0);
 #  else
     s = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-#  endif
     if (s < 0) { continue; }
+#  endif
 
     if (connect(s, rp->ai_addr, rp->ai_addrlen) != -1) { break; }
 

@@ -94,7 +94,11 @@ static void FreeDirFfPkt(FindFilesPacket* dir_ff_pkt)
  * If we do not have a list of file system types, we accept anything.
  */
 #if defined(HAVE_WIN32)
-static bool AcceptFstype(FindFilesPacket* ff, void* dummy) { return true; }
+static bool AcceptFstype([[maybe_unused]] FindFilesPacket* ff,
+                         [[maybe_unused]] void* dummy)
+{
+  return true;
+}
 #else
 static bool AcceptFstype(FindFilesPacket* ff, [[maybe_unused]] void* dummy)
 {
@@ -128,7 +132,8 @@ static bool AcceptFstype(FindFilesPacket* ff, [[maybe_unused]] void* dummy)
  * If we do not have a list of drive types, we accept anything.
  */
 #if defined(HAVE_WIN32)
-static inline bool AcceptDrivetype(FindFilesPacket* ff, void* dummy)
+static inline bool AcceptDrivetype(FindFilesPacket* ff,
+                                   [[maybe_unused]] void* dummy)
 {
   int i;
   char dt[100];

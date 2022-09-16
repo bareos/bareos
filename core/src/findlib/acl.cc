@@ -72,18 +72,18 @@
  * Entry points when compiled without support for ACLs or on an unsupported
  * platform.
  */
-bacl_exit_code BuildAclStreams(JobControlRecord* jcr,
-                               AclData* acl_data,
-                               FindFilesPacket* ff_pkt)
+bacl_exit_code BuildAclStreams([[maybe_unused]] JobControlRecord* jcr,
+                               [[maybe_unused]] AclData* acl_data,
+                               [[maybe_unused]] FindFilesPacket* ff_pkt)
 {
   return bacl_exit_fatal;
 }
 
-bacl_exit_code parse_acl_streams(JobControlRecord* jcr,
-                                 AclData* acl_data,
-                                 int stream,
-                                 char* content,
-                                 uint32_t content_length)
+bacl_exit_code parse_acl_streams([[maybe_unused]] JobControlRecord* jcr,
+                                 [[maybe_unused]] AclData* acl_data,
+                                 [[maybe_unused]] int stream,
+                                 [[maybe_unused]] char* content,
+                                 [[maybe_unused]] uint32_t content_length)
 {
   return bacl_exit_fatal;
 }
