@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2015-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -785,7 +785,8 @@ bool OutputFormatter::ProcessTextBuffer()
   return retval;
 }
 
-void OutputFormatter::message(const char* type, PoolMem& message)
+void OutputFormatter::message([[maybe_unused]] const char* type,
+                              PoolMem& message)
 {
   switch (api) {
 #if HAVE_JANSSON
@@ -820,7 +821,7 @@ void OutputFormatter::SendBuffer()
   }
 }
 
-void OutputFormatter::FinalizeResult(bool result)
+void OutputFormatter::FinalizeResult([[maybe_unused]] bool result)
 {
   switch (api) {
 #if HAVE_JANSSON
