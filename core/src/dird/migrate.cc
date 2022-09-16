@@ -505,23 +505,20 @@ static bool FindJobidsFromMediaidList(JobControlRecord* jcr,
                                       idpkt* ids,
                                       const char* type)
 {
-  bool ok = false;
   PoolMem query(PM_MESSAGE);
 
   Mmsg(query, sql_jobids_from_mediaid, ids->list);
   ids->count = 0;
   if (!jcr->db->SqlQuery(query.c_str(), UniqueDbidHandler, (void*)ids)) {
     Jmsg(jcr, M_FATAL, 0, _("SQL failed. ERR=%s\n"), jcr->db->strerror());
-    goto bail_out;
+    return false;
   }
   if (ids->count == 0) {
     Jmsg(jcr, M_INFO, 0, _("No %ss found to %s.\n"), type,
          jcr->get_ActionName());
   }
-  ok = true;
 
-bail_out:
-  return ok;
+  return true;
 }
 
 static bool find_mediaid_then_jobids(JobControlRecord* jcr,
@@ -529,7 +526,6 @@ static bool find_mediaid_then_jobids(JobControlRecord* jcr,
                                      const char* query1,
                                      const char* type)
 {
-  bool ok = false;
   PoolMem query(PM_MESSAGE);
 
   ids->count = 0;
@@ -538,26 +534,22 @@ static bool find_mediaid_then_jobids(JobControlRecord* jcr,
   Mmsg(query, query1, jcr->impl->res.rpool->resource_name_);
   if (!jcr->db->SqlQuery(query.c_str(), UniqueDbidHandler, (void*)ids)) {
     Jmsg(jcr, M_FATAL, 0, _("SQL failed. ERR=%s\n"), jcr->db->strerror());
-    goto bail_out;
+    return false;
   }
 
   if (ids->count == 0) {
     Jmsg(jcr, M_INFO, 0, _("No %s found to %s.\n"), type,
          jcr->get_ActionName());
-    ok = true; /* Not an error */
-    goto bail_out;
+    return true;  // Not an error
   } else if (ids->count != 1) {
     Jmsg(jcr, M_FATAL, 0, _("SQL error. Expected 1 MediaId got %d\n"),
          ids->count);
-    goto bail_out;
+    return false;
   }
 
   Dmsg2(dbglevel, "%s MediaIds=%s\n", type, ids->list);
 
-  ok = FindJobidsFromMediaidList(jcr, ids, type);
-
-bail_out:
-  return ok;
+  return FindJobidsFromMediaidList(jcr, ids, type);
 }
 
 /**
@@ -569,14 +561,13 @@ bail_out:
 static inline bool FindJobidsOfPoolUncopiedJobs(JobControlRecord* jcr,
                                                 idpkt* ids)
 {
-  bool ok = false;
   PoolMem query(PM_MESSAGE);
 
   // Only a copy job is allowed
   if (!jcr->is_JobType(JT_COPY)) {
     Jmsg(jcr, M_FATAL, 0,
          _("Selection Type 'pooluncopiedjobs' only applies to Copy Jobs\n"));
-    goto bail_out;
+    return false;
   }
 
   Dmsg1(dbglevel, "copy selection pattern=%s\n",
@@ -587,12 +578,10 @@ static inline bool FindJobidsOfPoolUncopiedJobs(JobControlRecord* jcr,
   if (!jcr->db->SqlQuery(query.c_str(), UniqueDbidHandler, (void*)ids)) {
     Jmsg(jcr, M_FATAL, 0, _("SQL to get uncopied jobs failed. ERR=%s\n"),
          jcr->db->strerror());
-    goto bail_out;
+    return false;
   }
-  ok = true;
 
-bail_out:
-  return ok;
+  return true;
 }
 
 static bool regex_find_jobids(JobControlRecord* jcr,
@@ -701,9 +690,7 @@ static bool regex_find_jobids(JobControlRecord* jcr,
 
 bail_out:
   Dmsg2(dbglevel, "Count=%d Jobids=%s\n", ids->count, ids->list);
-  foreach_dlist (item, item_chain) {
-    free(item->item);
-  }
+  foreach_dlist (item, item_chain) { free(item->item); }
   delete item_chain;
   return ok;
 }
@@ -1518,10 +1505,7 @@ bail_out:
   return retval;
 }
 
-/**
- * Select the Jobs to Migrate/Copy using the getJobs_to_migrate function and
- * then exit.
- */
+// Select the Jobs to Migrate/Copy
 static inline bool DoMigrationSelection(JobControlRecord* jcr)
 {
   bool retval;
