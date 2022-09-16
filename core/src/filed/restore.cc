@@ -594,7 +594,7 @@ void DoRestore(JobControlRecord* jcr)
           case CF_EXTRACT:
             // File created and we expect file data
             rctx.extract = true;
-            // FALLTHROUGH
+            [[fallthrough]];
           case CF_CREATED:
             // File created, but there is no content
             rctx.fileAddr = 0;

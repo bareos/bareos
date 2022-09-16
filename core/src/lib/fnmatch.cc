@@ -175,7 +175,7 @@ static int r_fnmatch(const char* pattern,
             --pattern;
           }
         }
-        /* FALLTHROUGH */
+        [[fallthrough]];
       default:
       normal:
         if (FOLD(c) != FOLD(*string)) { return (FNM_NOMATCH); }

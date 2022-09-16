@@ -955,7 +955,7 @@ int FindOneFile(JobControlRecord* jcr,
         Dmsg1(100, "'%s' ignored (Size doesn't match\n", ff_pkt->fname);
         return 1;
       }
-      // Fall Through
+      [[fallthrough]];
     default:
       /*
        * If this is an Incremental backup, see if file was modified

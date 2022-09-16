@@ -1262,11 +1262,11 @@ int PluginCreateFile(JobControlRecord* jcr,
       Qmsg1(jcr, M_ERROR, 0,
             _("Plugin createFile call failed. Returned CF_ERROR file=%s\n"),
             attr->ofname);
-      // FALLTHROUGH
+      [[fallthrough]];
     case CF_SKIP:
-      // FALLTHROUGH
+      [[fallthrough]];
     case CF_CORE:
-      // FALLTHROUGH
+      [[fallthrough]];
     case CF_CREATED:
       return rp.create_status;
   }
