@@ -46,3 +46,12 @@ set_tests_properties(
     FIXTURES_REQUIRED
     "system:copy-migrate:03-impossible-copy;system:copy-migrate:02-copy;system:copy-migrate:01-backup;system:copy-migrate-fixture"
 )
+
+set_tests_properties(
+  system:copy-migrate:05-migrate
+  PROPERTIES
+    FIXTURES_SETUP
+    "system:copy-migrate:05-migrate"
+    FIXTURES_REQUIRED
+    "system:copy-migrate:04-bscan;system:copy-migrate:03-impossible-copy;system:copy-migrate:02-copy;system:copy-migrate:01-backup;system:copy-migrate-fixture"
+)
