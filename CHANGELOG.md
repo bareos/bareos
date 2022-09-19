@@ -18,14 +18,15 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Documentation
 - Univention Corporate Server (UCS) >= 5: same support as for other Linux distributions, but no extended integration as for UCS < 5 [PR #1245]
 
-- backport mssql add a warning in case of pitr to run another backup full or diff afterwards [PR #1246]
-- backport improve troubleshooting and debugging chapter [PR #1246]
-- backport update Appendix/HardwareSizing DB size with new numbers and formulas [BUG #1477][PR #1246]
-- backport add description to fileset signature sha256 and sha512 parameter [PR #1246]
-- backport add example to selection type = sql query [PR #1246]
-- backport improve Wild(*) section with links to example [PR #1246]
-- backport FreeBSD install create /usr/local/etc/pkg/repos directory [PR #1246]
-- backport dir-job-RescheduleTimes remove wrong default sentence [PR #1246]
+- mssql add a warning in case of pitr to run another backup full or diff afterwards [PR #1246]
+- improve troubleshooting and debugging chapter [PR #1246]
+- update Appendix/HardwareSizing DB size with new numbers and formulas [BUG #1477][PR #1246]
+- add description to fileset signature sha256 and sha512 parameter [PR #1246]
+- add example to selection type = sql query [PR #1246]
+- improve Wild(*) section with links to example [PR #1246]
+- FreeBSD install create /usr/local/etc/pkg/repos directory [PR #1246]
+- dir-job-RescheduleTimes remove wrong default sentence [PR #1246]
+- update PR handling hints [PR #1259]
 
 ## [21.1.4] - 2022-08-05
 

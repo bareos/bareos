@@ -34,8 +34,8 @@ There are version-dependent files in the Bareos sources that might need your att
 
 version.map.in
 ~~~~~~~~~~~~~~
-The file is in either :file:`core/src/cats/ddl` or :file:`src/cats/ddl`.
-Whenever the database schema version changes this file must be updated.
+The file :file:`core/src/cats/ddl/version.map.in` must be updated
+whenever the database schema version changes.
 Usually the developer who did a schema change should have done this.
 However, please double-check and add or update the version mapping if needed.
 
@@ -53,6 +53,10 @@ The script will also prepare all git commits that are required to release the ne
 Special considerations for major versions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Whenever you release a new major version you will be releasing more or less the master branch.
+
+Before branching, add the new major release to :file:`SECURITY.md`.
+You should also mark no longer supported versions as such.
+
 To allow the splitting of the development (i.e. continue working on master, but allowing to work on the newly released version, too) you will have to carry out a few additional steps.
 
 .. important::
