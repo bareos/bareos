@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2014-2016 Planets Communications B.V.
-   Copyright (C) 2014-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -358,19 +358,6 @@ StorageResource* UaContext::GetStoreResWithName(const char* name,
                                                 bool lock)
 {
   return (StorageResource*)GetResWithName(R_STORAGE, name, audit_event, lock);
-}
-
-StorageResource* UaContext::GetStoreResWithId(DBId_t id,
-                                              bool audit_event,
-                                              bool lock)
-{
-  StorageDbRecord storage_dbr;
-
-  storage_dbr.StorageId = id;
-  if (db->GetStorageRecord(jcr, &storage_dbr)) {
-    return GetStoreResWithName(storage_dbr.Name, audit_event, lock);
-  }
-  return NULL;
 }
 
 ClientResource* UaContext::GetClientResWithName(const char* name,

@@ -39,6 +39,7 @@
 #include "lib/edit.h"
 #include "lib/keyword_table_s.h"
 #include "lib/util.h"
+#include "dird/jcr_util.h"
 
 namespace directordaemon {
 
@@ -387,7 +388,7 @@ int DoRunCmd(UaContext* ua, const char* cmd)
    * before returning.
    */
   if (!jcr) {
-    jcr = NewDirectorJcr();
+    jcr = NewDirectorJcr(DirdFreeJcr);
     SetJcrDefaults(jcr, rc.job);
     jcr->impl->unlink_bsr
         = ua->jcr->impl->unlink_bsr; /* copy unlink flag from caller */

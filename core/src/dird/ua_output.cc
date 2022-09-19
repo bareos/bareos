@@ -43,6 +43,7 @@
 #include "dird/show_cmd_available_resources.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
+#include "dird/jcr_util.h"
 
 namespace directordaemon {
 
@@ -1279,7 +1280,7 @@ static bool ListNextvol(UaContext* ua, int ndays)
     }
   }
 
-  jcr = NewDirectorJcr();
+  jcr = NewDirectorJcr(DirdFreeJcr);
   for (run = NULL; (run = find_next_run(run, job, runtime, ndays));) {
     if (!CompleteJcrForJob(jcr, job, run->pool)) {
       found = false;

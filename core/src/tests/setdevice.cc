@@ -37,6 +37,7 @@
 #include "lib/parse_conf.h"
 #include "dird/dird_globals.h"
 #include "dird/dird_conf.h"
+#include "dird/jcr_util.h"
 
 
 #include <array>
@@ -67,7 +68,7 @@ TEST(setdevice, scan_command_line)
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
 
   std::unique_ptr<JobControlRecord, decltype(&Test_FreeJcr)> jcr(
-      NewDirectorJcr(), &Test_FreeJcr);
+      NewDirectorJcr(directordaemon::DirdFreeJcr), &Test_FreeJcr);
 
   std::unique_ptr<UaContext, decltype(&FreeUaContext)> ua(
       new_ua_context(jcr.get()), &FreeUaContext);

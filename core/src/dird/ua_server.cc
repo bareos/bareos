@@ -42,6 +42,7 @@
 #include "lib/bnet.h"
 #include "lib/parse_conf.h"
 #include "lib/thread_specific_data.h"
+#include "dird/jcr_util.h"
 
 
 namespace directordaemon {
@@ -53,7 +54,7 @@ namespace directordaemon {
 JobControlRecord* new_control_jcr(const char* base_name, int job_type)
 {
   JobControlRecord* jcr;
-  jcr = NewDirectorJcr();
+  jcr = NewDirectorJcr(DirdFreeJcr);
 
   // exclude JT_SYSTEM job from shared config counting
   if (job_type == JT_SYSTEM) {
