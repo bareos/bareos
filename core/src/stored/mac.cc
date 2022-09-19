@@ -255,7 +255,9 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
                         jcr->impl->dcr->after_rec->FileIndex),
         jcr->impl->dcr->after_rec->data_len);
 
-  SendAttrsToDir(jcr, jcr->impl->dcr->after_rec);
+  if (IsAttribute(jcr->impl->dcr->after_rec)) {
+    SendAttrsToDir(jcr, jcr->impl->dcr->after_rec);
+  }
 
   retval = true;
 

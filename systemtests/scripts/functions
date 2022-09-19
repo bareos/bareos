@@ -1038,7 +1038,7 @@ if [ ! -f ${target_file} ]; then
 fi
 
 if ! grep -q "${expected_result}" "${target_file}"; then
-  echo "Expected line \"${expected_result}\" was not found in log file \"${target_file}\"." >&2
+  echo "Fail: Expected line \"${expected_result}\" was not found in log file \"${target_file}\"." >&2
   estat=1
   if [ "${error_message}" != "" ]; then
     echo "-->${error_message}" >&2

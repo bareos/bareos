@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -107,31 +107,58 @@ bool BareosDb::CreateJobmediaRecord(JobControlRecord* jcr, JobMediaDbRecord* jm)
 
   DbLocker _{this};
 
-  Mmsg(cmd, "SELECT count(*) from JobMedia WHERE JobId=%s",
-       edit_int64(jm->JobId, ed1));
-  count = GetSqlRecordMax(jcr);
-  if (count < 0) { count = 0; }
-  count++;
-
   /* clang-format off */
   Mmsg(cmd,
-       "INSERT INTO JobMedia (JobId,MediaId,FirstIndex,LastIndex,"
-       "StartFile,EndFile,StartBlock,EndBlock,VolIndex,JobBytes) "
-       "VALUES (%s,%s,%u,%u,%u,%u,%u,%u,%u,%s)",
+       "UPDATE JobMedia SET LastIndex=%lu, EndFile=%lu, EndBlock=%lu, JobBytes=%s "
+       "WHERE JobId=%s AND MediaId=%s",
+       jm->LastIndex,
+       jm->EndFile,
+       jm->EndBlock,
+       edit_uint64(jm->JobBytes, ed3),
        edit_int64(jm->JobId, ed1),
-       edit_int64(jm->MediaId, ed2),
-       jm->FirstIndex, jm->LastIndex,
-       jm->StartFile, jm->EndFile,
-       jm->StartBlock, jm->EndBlock,
-       count,
-       edit_uint64(jm->JobBytes, ed3));
+       edit_int64(jm->MediaId, ed2));
   /* clang-format on */
 
+  bool update_result = false;
+  bool insert_result = false;
   Dmsg0(300, cmd);
-  if (INSERT_DB(jcr, cmd) != 1) {
-    Mmsg2(errmsg, _("Create JobMedia record %s failed: ERR=%s\n"), cmd,
-          sql_strerror());
+
+  if (UPDATE_DB(jcr, cmd) <= 0) {
+    Mmsg2(errmsg,
+          _("Update JobMedia record %s failed: ERR=%s\n Trying to insert: \n"),
+          cmd, sql_strerror());
+
+    Mmsg(cmd, "SELECT count(*) from JobMedia WHERE JobId=%s",
+         edit_int64(jm->JobId, ed1));
+    count = GetSqlRecordMax(jcr);
+    if (count < 0) { count = 0; }
+    count++;
+
+    /* clang-format off */
+    Mmsg(cmd,
+         "INSERT INTO JobMedia (JobId,MediaId,FirstIndex,LastIndex,"
+         "StartFile,EndFile,StartBlock,EndBlock,VolIndex,JobBytes) "
+         "VALUES (%s,%s,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%s)",
+         edit_int64(jm->JobId, ed1),
+         edit_int64(jm->MediaId, ed2),
+         jm->FirstIndex, jm->LastIndex,
+         jm->StartFile, jm->EndFile,
+         jm->StartBlock, jm->EndBlock,
+         count,
+         edit_uint64(jm->JobBytes, ed3));
+    /* clang-format on */
+
+    if (INSERT_DB(jcr, cmd) != 1) {
+      Mmsg2(errmsg, _("Create JobMedia record %s failed: ERR=%s\n"), cmd,
+            sql_strerror());
+    } else {
+      insert_result = true;
+    }
   } else {
+    update_result = true;
+  }
+
+  if (update_result || insert_result) {
     // Worked, now update the Media record with the EndFile and EndBlock
     Mmsg(cmd, "UPDATE Media SET EndFile=%u, EndBlock=%u WHERE MediaId=%u",
          jm->EndFile, jm->EndBlock, jm->MediaId);
@@ -759,8 +786,6 @@ bool BareosDb::WriteBatchFileRecords(JobControlRecord* jcr)
     return true;
   }
 
-  if (JobCanceled(jcr)) { goto bail_out; }
-
   Dmsg1(50, "db_create_file_record changes=%u\n", changes);
 
   jcr->JobStatus = JS_AttrInserting;
@@ -773,8 +798,6 @@ bool BareosDb::WriteBatchFileRecords(JobControlRecord* jcr)
     Jmsg1(jcr, M_FATAL, 0, "Batch end %s\n", errmsg);
     goto bail_out;
   }
-
-  if (JobCanceled(jcr)) { goto bail_out; }
 
   if (!jcr->db_batch->SqlQuery(SQL_QUERY::batch_lock_path_query)) {
     Jmsg1(jcr, M_FATAL, 0, "Lock Path table %s\n", errmsg);

@@ -1,0 +1,109 @@
+#!/bin/bash
+set -o pipefail
+set -u
+#
+# Kill the daemons while running a backup.
+# Check that metadata is still saved with checkpoints.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+slowjob="slow-backup-bareos-fd"
+
+for daemon in "dir" "sd" "fd"; do
+
+    backup_log=$tmp/kill-$daemon-backup-checkpoints.out
+    restore_log=$tmp/kill-$daemon-restore-checkpoints.out
+    restore_directory=$tmp/kill-$daemon-checkpoint-restores
+
+    rm -f $backup_log
+    rm -f $restore_log
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $backup_log
+run job=$slowjob level=Full yes
+quit
+END_OF_DATA
+
+    run_bconsole
+
+    timeout=0
+    timed_checkpoint=""
+    volume_checkpoint=""
+
+    while [[ ${timeout} -lt 30 ]] && [[ -z $timed_checkpoint || -z $volume_checkpoint ]]
+    do
+
+        timed_checkpoint=$(grep -m 1 'Doing timed backup checkpoint. Next checkpoint in 3 seconds' "$messagesfile")
+        volume_checkpoint=$(grep -m 1 'Volume changed, doing checkpoint:' "$messagesfile")
+        sleep 1
+        ((++timeout))
+    done #end while
+
+    # Check that a timed checkpoint was triggered
+    if [[ -z $timed_checkpoint ]]; then
+        echo "ERROR: Timed checkpoint was not triggered!"
+        estat=1;
+    fi
+
+    # Check that a checkpoint happened on a volume change
+    if [[ -z $volume_checkpoint ]]; then
+        echo "ERROR: Checkpoint was not triggered on volume changes!"
+        estat=2;
+    fi
+
+    slowjobid=$(grep 'Job queued. JobId=' "$backup_log" | sed -n -e 's/^.*JobId=//p')
+
+    if [ "$daemon" == "fd" ]; then
+        echo "Killing the FD"
+        pkill -KILL -f "${BAREOS_FILEDAEMON_BINARY}"
+        sleep 3
+        ${rscripts}/bareos-ctl-fd start
+    fi
+
+    if [ "$daemon" == "sd" ]; then
+
+        echo "Killing the SD"
+        pkill -KILL -f "${BAREOS_STORAGEDAEMON_BINARY}"
+        sleep 3
+        ${rscripts}/bareos-ctl-sd start
+    fi
+    if [ "$daemon" == "dir" ]; then
+
+        echo "Killing the DIR"
+        pkill -KILL -f "${BAREOS_DIRECTOR_BINARY}"
+        sleep 3
+        ${rscripts}/bareos-ctl-dir start
+    fi
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $backup_log
+wait
+messages
+@$out $restore_log
+restore jobid=${slowjobid} where=$restore_directory all done yes
+wait
+messages
+quit
+END_OF_DATA
+
+    run_bconsole
+
+    # Check that the restore works fine
+    expect_grep "Termination:            Restore OK" \
+                "$restore_log" \
+                "Restore job did not go well!"
+
+done #end for
+
+end_test

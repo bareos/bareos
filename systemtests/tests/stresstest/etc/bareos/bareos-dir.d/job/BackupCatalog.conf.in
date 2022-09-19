@@ -1,0 +1,20 @@
+Job {
+  Name = "BackupCatalog"
+  Description = "Backup the catalog database (after the nightly save)"
+  JobDefs = "DefaultJob"
+  Level = Full
+  FileSet="Catalog"
+
+  # This creates an ASCII copy of the catalog
+  # Arguments to make_catalog_backup.pl are:
+  #  make_catalog_backup.pl <catalog-name>
+  RunBeforeJob = "@scriptdir@/make_catalog_backup.pl MyCatalog"
+
+  # This deletes the copy of the catalog
+  RunAfterJob  = "@scriptdir@/delete_catalog_backup"
+
+  # This sends the bootstrap via mail for disaster recovery.
+  # Should be sent to another system, please change recipient accordingly
+  Write Bootstrap = "|@bindir@/bsmtp -h @smtp_host@ -f \"\(Bareos\) \" -s \"Bootstrap for Job %j\" @job_email@" # (#01)
+  Priority = 11                   # run after main backup
+}

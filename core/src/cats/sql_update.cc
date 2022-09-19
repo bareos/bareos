@@ -100,13 +100,23 @@ bool BareosDb::UpdateJobStartRecord(JobControlRecord* jcr, JobDbRecord* jr)
   DbLocker _{this};
   Mmsg(cmd,
        "UPDATE Job SET JobStatus='%c',Level='%c',StartTime='%s',"
-       "ClientId=%s,JobTDate=%s,PoolId=%s,FileSetId=%s WHERE JobId=%s",
+       "ClientId=%s,JobTDate=%s,PoolId=%s,FileSetId=%s,VolSessionId=%lu,"
+       "VolSessionTime=%lu WHERE JobId=%s",
        (char)(jcr->JobStatus), (char)(jr->JobLevel), dt,
        edit_int64(jr->ClientId, ed1), edit_uint64(JobTDate, ed2),
        edit_int64(jr->PoolId, ed3), edit_int64(jr->FileSetId, ed4),
-       edit_int64(jr->JobId, ed5));
+       jcr->VolSessionId, jcr->VolSessionTime, edit_int64(jr->JobId, ed5));
 
   changes = 0;
+  return UPDATE_DB(jcr, cmd) > 0;
+}
+
+bool BareosDb::UpdateRunningJobRecord(JobControlRecord* jcr)
+{
+  DbLocker _{this};
+  Mmsg(cmd, "UPDATE Job SET JobBytes=%llu,JobFiles=%lu WHERE JobId=%lu",
+       jcr->JobBytes, jcr->JobFiles, jcr->JobId);
+
   return UPDATE_DB(jcr, cmd) > 0;
 }
 
@@ -161,6 +171,7 @@ bool BareosDb::UpdateJobEndRecord(JobControlRecord* jcr, JobDbRecord* jr)
   JobTDate = ttime;
 
   DbLocker _{this};
+
   Mmsg(
       cmd,
       "UPDATE Job SET JobStatus='%c',Level='%c',EndTime='%s',"

@@ -40,6 +40,7 @@
  */
 
 #include "include/bareos.h"
+#include "stored/append.h"
 #include "stored/stored.h"
 #include "stored/acquire.h"
 #include "stored/authenticate.h"
@@ -1720,7 +1721,8 @@ static bool RunCmd(JobControlRecord* jcr)
 {
   Dmsg1(200, "Run_cmd: %s\n", jcr->dir_bsock->msg);
 
-  // If we do not need the FD, we are doing a migrate, copy, or virtual backup.
+  // If we do not need the FD, we are doing a migrate, copy, or virtual
+  // backup.
   if (jcr->NoClientUsed()) {
     return DoMacRun(jcr);
   } else {

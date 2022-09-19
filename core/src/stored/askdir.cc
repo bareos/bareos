@@ -62,7 +62,14 @@ static char Create_job_media[]
     = "CatReq Job=%s CreateJobMedia"
       " FirstIndex=%u LastIndex=%u StartFile=%u EndFile=%u"
       " StartBlock=%u EndBlock=%u Copy=%d Strip=%d MediaId=%s\n";
+
+static char Update_filelist[] = "Catreq Job=%s UpdateFileList\n";
+
+static char Update_jobrecord[]
+    = "Catreq Job=%s UpdateJobRecord JobFiles=%lu JobBytes=%llu\n";
+
 static char FileAttributes[] = "UpdCat Job=%s FileAttributes ";
+
 
 /* Responses received from the Director */
 static char OK_media[]
@@ -617,6 +624,19 @@ get_out:
   Dmsg0(debuglevel, "leave DirAskSysopToMountVolume\n");
   return true;
 }
+
+bool StorageDaemonDeviceControlRecord::DirAskToUpdateFileList()
+{
+  BareosSocket* dir = jcr->dir_bsock;
+  return dir->fsend(Update_filelist, jcr->Job);
+}
+
+bool StorageDaemonDeviceControlRecord::DirAskToUpdateJobRecord()
+{
+  BareosSocket* dir = jcr->dir_bsock;
+  return dir->fsend(Update_jobrecord, jcr->Job, jcr->JobFiles, jcr->JobBytes);
+}
+
 
 // Dummy methods for everything but SD and BTAPE.
 bool DeviceControlRecord::DirAskSysopToMountVolume(int /*mode*/)

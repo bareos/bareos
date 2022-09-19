@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -66,6 +66,11 @@ static char Create_job_media[]
       " FirstIndex=%u LastIndex=%u StartFile=%u EndFile=%u "
       " StartBlock=%u EndBlock=%u Copy=%d Strip=%d MediaId=%lld\n";
 
+static char Update_filelist[] = "Catreq Job=%127s UpdateFileList\n";
+
+static char Update_jobrecord[]
+    = "Catreq Job=%127s UpdateJobRecord JobFiles=%lu JobBytes=%llu\n";
+
 // Responses sent to Storage daemon
 static char OK_media[]
     = "1000 OK VolName=%s VolJobs=%u VolFiles=%u"
@@ -125,6 +130,9 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
 
     return;
   }
+
+  uint32_t update_jobfiles = 0;
+  uint64_t update_jobbytes = 0;
 
   // Find next appendable medium for SD
   unwanted_volumes.check_size(bs->message_length);
@@ -339,6 +347,28 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
     } else {
       Dmsg0(400, "JobMedia record created\n");
       bs->fsend(OK_create);
+    }
+  } else if (sscanf(bs->msg, Update_filelist, &Job) == 1) {
+    Dmsg0(0, "Updating filelist\n");
+
+    if (!jcr->db_batch->WriteBatchFileRecords(jcr)) {
+      Jmsg(jcr, M_FATAL, 0, _("Catalog error updating File table. %s\n"),
+           jcr->db_batch->strerror());
+      bs->fsend(_("1992 Update File table error\n"));
+    }
+
+  } else if (sscanf(bs->msg, Update_jobrecord, &Job, &update_jobfiles,
+                    &update_jobbytes)
+             == 3) {
+    Dmsg0(0, "Updating job record\n");
+
+    jcr->JobFiles = update_jobfiles;
+    jcr->JobBytes = update_jobbytes;
+
+    if (!jcr->db->UpdateRunningJobRecord(jcr)) {
+      Jmsg(jcr, M_FATAL, 0, _("Catalog error updating Job record. %s\n"),
+           jcr->db->strerror());
+      bs->fsend(_("1992 Update job record error\n"));
     }
   } else {
     omsg = GetMemory(bs->message_length + 1);

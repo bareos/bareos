@@ -47,6 +47,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - bareos tools: reintegrate testfind binary [PR #1176]
 - fd: add support for role switching on PostgreSQL add-on [BUG #4607] [PR #1178]
 - build: switch from FreeBSD 13.0 to 13.1 [PR #1253]
+- stored: dird: added backup checkpoints that save backup metadata to the Catalog during the execution of the backup. [PR#1074]
+- stored: dird: add backup checkpoints that save backup metadata to the Catalog during the execution of the backup. [PR #1074]
 
 ### Fixed
 - dird: RunScript fixes [PR #1217]
@@ -204,6 +206,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1067]: https://github.com/bareos/bareos/pull/1067
 [PR #1070]: https://github.com/bareos/bareos/pull/1070
 [PR #1072]: https://github.com/bareos/bareos/pull/1072
+[PR #1074]: https://github.com/bareos/bareos/pull/1074
 [PR #1079]: https://github.com/bareos/bareos/pull/1079
 [PR #1081]: https://github.com/bareos/bareos/pull/1081
 [PR #1082]: https://github.com/bareos/bareos/pull/1082

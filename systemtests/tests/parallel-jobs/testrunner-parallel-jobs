@@ -1,0 +1,48 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# Run 3 backups in parallel and then restore one of them
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+backup=backup-bareos-fd
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+backup_log=$tmp/parallel-backup.out
+restore_log=$tmp/paralell-restore.out
+
+rm -f $backup_log
+rm -f $restore_log
+
+start_test
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $backup_log
+run job=${backup} level=Full yes
+run job=${backup} level=Full yes
+run job=${backup} level=Full yes
+wait
+messages
+
+@$out $restore_log
+restore jobid=1 all done yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+check_restore_diff "${BackupDirectory}"
+
+end_test
