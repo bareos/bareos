@@ -888,7 +888,7 @@ prune
       :caption: prune
 
       prune files [client=<client>] [pool=<pool>] [yes] |
-            jobs [client=<client>] [pool=<pool>] [jobtype=<jobtype>] [yes] |
+            jobs [client=<client>] [pool=<pool>] [yes] |
             volume [=volume] [pool=<pool>] [all] [yes] |
             stats [yes] |
             directory [=directory] [client=<client>] [recursive] [yes]

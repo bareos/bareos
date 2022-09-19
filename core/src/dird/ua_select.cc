@@ -866,12 +866,11 @@ bool SelectMediaDbrByName(UaContext* ua,
                           const char* volumename)
 {
   new (mr) MediaDbRecord();
-  POOLMEM* err = GetPoolMemory(PM_FNAME);
+  std::string err{};
   if (IsNameValid(volumename, err)) {
     bstrncpy(mr->VolumeName, volumename, sizeof(mr->VolumeName));
   } else {
-    PmStrcpy(err, ua->db->strerror());
-    FreePoolMemory(err);
+    err = ua->db->strerror();
     return false;
   }
 
@@ -888,9 +887,8 @@ bool SelectMediaDbr(UaContext* ua, MediaDbRecord* mr)
 {
   int i;
   int retval = false;
-  POOLMEM* err = GetPoolMemory(PM_FNAME);
+  std::string err{};
 
-  *err = 0;
   new (mr) MediaDbRecord();  // placement new instead of memset
 
   i = FindArgWithValue(ua, NT_("volume"));
@@ -926,15 +924,13 @@ bool SelectMediaDbr(UaContext* ua, MediaDbRecord* mr)
 
 
   if (!ua->db->GetMediaRecord(ua->jcr, mr)) {
-    PmStrcpy(err, ua->db->strerror());
+    err = ua->db->strerror();
     goto bail_out;
   }
   retval = true;
 
 bail_out:
-  if (!retval && *err) { ua->ErrorMsg("%s", err); }
-  FreePoolMemory(err);
-
+  if (!retval && !err.empty()) { ua->ErrorMsg("%s", err.c_str()); }
   return retval;
 }
 

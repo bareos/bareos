@@ -66,7 +66,7 @@ class UaContext {
   UserAcl* user_acl;              /**< acl from console or user resource */
   POOLMEM* cmd;                   /**< Return command/name buffer */
   POOLMEM* args;                  /**< Command line arguments */
-  POOLMEM* errmsg;                /**< Store error message */
+  std::string errmsg{};           /**< Store error message */
   guid_list* guid;                /**< User and Group Name mapping cache */
   char* argk[MAX_CMD_ARGS];       /**< Argument keywords */
   char* argv[MAX_CMD_ARGS];       /**< Argument values */

@@ -109,19 +109,19 @@ class PoolMem {
   int Bvsprintf(const char* fmt, va_list arg_ptr);
 };
 
-int PmStrcat(POOLMEM*& pm, const char* str);
-int PmStrcat(POOLMEM*& pm, PoolMem& str);
-int PmStrcat(PoolMem& pm, const char* str);
-int PmStrcat(PoolMem*& pm, const char* str);
+int PmStrcat(POOLMEM*& dest_pm, const char* str);
+int PmStrcat(POOLMEM*& dest_pm, PoolMem& str);
+int PmStrcat(PoolMem& dest_pm, const char* str);
+int PmStrcat(PoolMem*& dest_pm, const char* str);
 
-int PmStrcpy(POOLMEM*& pm, const char* str);
-int PmStrcpy(POOLMEM*& pm, PoolMem& str);
-int PmStrcpy(PoolMem& pm, const char* str);
-int PmStrcpy(PoolMem*& pm, const char* str);
+int PmStrcpy(POOLMEM*& dest_pm, const char* str);
+int PmStrcpy(POOLMEM*& dest_pm, PoolMem& str);
+int PmStrcpy(PoolMem& dest_pm, const char* src_str);
+int PmStrcpy(PoolMem*& dest_pm, const char* str);
 
-int PmMemcpy(POOLMEM*& pm, const char* data, int32_t n);
-int PmMemcpy(POOLMEM*& pm, PoolMem& data, int32_t n);
-int PmMemcpy(PoolMem& pm, const char* data, int32_t n);
-int PmMemcpy(PoolMem*& pm, const char* data, int32_t n);
+int PmMemcpy(POOLMEM*& dest_pm, const char* data, int32_t n);
+int PmMemcpy(POOLMEM*& dest_pm, PoolMem& data, int32_t n);
+int PmMemcpy(PoolMem& dest_pm, const char* data, int32_t n);
+int PmMemcpy(PoolMem*& dest_pm, const char* data, int32_t n);
 
 #endif  // BAREOS_LIB_MEM_POOL_H_

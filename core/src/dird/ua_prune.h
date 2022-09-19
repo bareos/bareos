@@ -23,22 +23,22 @@
 #define BAREOS_DIRD_UA_PRUNE_H_
 
 #include "dird/ua.h"
+#include "cats/cats.h"
 
 namespace directordaemon {
 
 struct del_ctx;
 
 bool PruneFiles(UaContext* ua, ClientResource* client, PoolResource* pool);
-bool PruneJobs(UaContext* ua,
-               ClientResource* client,
-               PoolResource* pool,
-               std::vector<char> JobTypes);
+bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool);
 bool PruneVolume(UaContext* ua, MediaDbRecord* mr);
 int JobDeleteHandler(void* ctx, int num_fields, char** row);
 int DelCountHandler(void* ctx, int num_fields, char** row);
 int FileDeleteHandler(void* ctx, int num_fields, char** row);
-int GetPruneListForVolume(UaContext* ua, MediaDbRecord* mr, del_ctx* del);
-int ExcludeRunningJobsFromList(del_ctx* prune_list);
+int GetPruneListForVolume(UaContext* ua,
+                          MediaDbRecord* mr,
+                          std::vector<JobId_t>& prune_list);
+int ExcludeRunningJobsFromList(std::vector<JobId_t>& prune_list);
 
 } /* namespace directordaemon */
 #endif  // BAREOS_DIRD_UA_PRUNE_H_

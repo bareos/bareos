@@ -543,7 +543,7 @@ bool IsAnInteger(const char* n)
  *
  * If ua is non-NULL send the message
  */
-bool IsNameValid(const char* name, POOLMEM*& msg)
+bool IsNameValid(const char* name, std::string& msg)
 {
   int len;
   const char* p;
@@ -552,13 +552,13 @@ bool IsNameValid(const char* name, POOLMEM*& msg)
 
   /* Empty name is invalid */
   if (!name) {
-    if (msg) { Mmsg(msg, _("Empty name not allowed.\n")); }
+    msg = "Empty name not allowed.\n";
     return false;
   }
 
   /* check for beginning space */
   if (name[0] == ' ') {
-    if (msg) { Mmsg(msg, _("Name cannot start with space.\n")); }
+    msg = "Name cannot start with space.\n";
     return false;
   }
 
@@ -567,23 +567,25 @@ bool IsNameValid(const char* name, POOLMEM*& msg)
     if (B_ISALPHA(*p) || B_ISDIGIT(*p) || strchr(accept, (int)(*p))) {
       continue;
     }
-    if (msg) { Mmsg(msg, _("Illegal character \"%c\" in name.\n"), *p); }
+    msg = "Illegal character \"";
+    msg += *p;
+    msg.append("\" in name.\n");
     return false;
   }
 
   len = p - name;
   if (len >= MAX_NAME_LENGTH) {
-    if (msg) { Mmsg(msg, _("Name too long.\n")); }
+    msg = "Name too long.\n";
     return false;
   }
 
   if (len == 0) {
-    if (msg) { Mmsg(msg, _("Name must be at least one character long.\n")); }
+    msg = "Name must be at least one character long.\n";
     return false;
   } else {
     /* check for ending space */
     if (*(p - 1) == ' ') {
-      if (msg) { Mmsg(msg, _("Name cannot end with space.\n")); }
+      msg = "Name cannot end with space.\n";
       return false;
     }
   }
@@ -594,11 +596,9 @@ bool IsNameValid(const char* name, POOLMEM*& msg)
 bool IsNameValid(const char* name)
 {
   bool retval;
-  POOLMEM* msg = GetPoolMemory(PM_NAME);
+  std::string msg{};
 
   retval = IsNameValid(name, msg);
-
-  FreePoolMemory(msg);
 
   return retval;
 }

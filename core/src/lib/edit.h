@@ -43,7 +43,7 @@ char* edit_pthread(pthread_t val, char* buf, int buf_len);
 bool Is_a_number(const char* num);
 bool Is_a_number_list(const char* n);
 bool IsAnInteger(const char* n);
-bool IsNameValid(const char* name, POOLMEM*& msg);
+bool IsNameValid(const char* name, std::string &msg);
 bool IsNameValid(const char* name);
 bool IsAclEntryValid(const char* acl, std::vector<char>& msg);
 bool IsAclEntryValid(const char* acl);

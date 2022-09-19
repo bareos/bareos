@@ -58,10 +58,8 @@ void DoAutoprune(JobControlRecord* jcr)
   client = jcr->impl->res.client;
   pool = jcr->impl->res.pool;
 
-  std::vector<char> jobtypes;
-  jobtypes.push_back(jcr->getJobType());
   if (job->PruneJobs || client->AutoPrune) {
-    PruneJobs(ua, client, pool, jobtypes);
+    PruneJobs(ua, client, pool);
     pruned = true;
   } else {
     pruned = false;
@@ -90,7 +88,7 @@ void PruneVolumes(JobControlRecord* jcr,
   int count;
   UaContext* ua;
   dbid_list ids;
-  del_ctx prune_list;
+  std::vector<JobId_t> prune_list;
   PoolMem query(PM_MESSAGE);
   char ed1[50], ed2[100], ed3[50];
 
@@ -99,9 +97,6 @@ void PruneVolumes(JobControlRecord* jcr,
     Dmsg0(100, "AutoPrune not set in Pool.\n");
     return;
   }
-
-  prune_list.max_ids = 10000;
-  prune_list.JobId = (JobId_t*)malloc(sizeof(JobId_t) * prune_list.max_ids);
 
   ua = new_ua_context(jcr);
   DbLocker _{jcr->db};
@@ -178,11 +173,11 @@ void PruneVolumes(JobControlRecord* jcr,
     if (bstrcmp(lmr.VolStatus, "Full") || bstrcmp(lmr.VolStatus, "Used")) {
       Dmsg2(100, "Add prune list MediaId=%d Volume %s\n", (int)lmr.MediaId,
             lmr.VolumeName);
-      count = GetPruneListForVolume(ua, &lmr, &prune_list);
+      count = GetPruneListForVolume(ua, &lmr, prune_list);
       Dmsg1(100, "Num pruned = %d\n", count);
       if (count != 0) {
         PurgeJobListFromCatalog(ua, prune_list);
-        prune_list.num_ids = 0; /* reset count */
+        prune_list.clear(); /* reset count */
       }
       if (!IsVolumePurged(ua, &lmr)) {
         Dmsg1(050, "Vol=%s not pruned\n", lmr.VolumeName);
@@ -229,7 +224,6 @@ void PruneVolumes(JobControlRecord* jcr,
 bail_out:
   Dmsg0(100, "Leave prune volumes\n");
   FreeUaContext(ua);
-  if (prune_list.JobId) { free(prune_list.JobId); }
   return;
 }
 } /* namespace directordaemon */

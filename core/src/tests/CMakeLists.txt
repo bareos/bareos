@@ -214,6 +214,9 @@ if(NOT client-only)
   )
 
   bareos_add_test(
+    pruning LINK_LIBRARIES testing_common GTest::gtest_main
+  )
+  bareos_add_test(
     runjob LINK_LIBRARIES dird_objects bareosfind bareossql GTest::gtest_main
   )
 

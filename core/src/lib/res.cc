@@ -404,14 +404,13 @@ void ConfigurationParser::StoreName(LEX* lc,
                                     int index,
                                     int pass)
 {
-  POOLMEM* msg = GetPoolMemory(PM_EMSG);
+  std::string msg{};
 
   LexGetToken(lc, BCT_NAME);
   if (!IsNameValid(lc->str, msg)) {
-    scan_err1(lc, "%s\n", msg);
+    scan_err1(lc, "%s\n", msg.c_str());
     return;
   }
-  FreePoolMemory(msg);
   // Store the name both in pass 1 and pass 2
   char** p = GetItemVariablePointer<char**>(*item);
 

@@ -95,27 +95,6 @@ enum
  */
 
 template <typename T> class alist {
-  T* items = nullptr;
-  int num_items = 0;
-  int max_items = 0;
-  int num_grow = 0;
-  int cur_item = 0;
-  bool own_items = false;
-  /* Private grow list function. Used to insure that
-   *   at least one more "slot" is available.
-   */
-  void GrowList(void)
-  {
-    if (items == NULL) {
-      if (num_grow == 0) { num_grow = 1; /* default if not initialized */ }
-      items = (T*)malloc(num_grow * sizeof(T));
-      max_items = num_grow;
-    } else if (num_items == max_items) {
-      max_items += num_grow;
-      items = (T*)realloc(items, max_items * sizeof(T));
-    }
-  }
-
  public:
   // Ueb disable non pointer initialization
   alist(int num = 1, bool own = true) { init(num, own); }
@@ -224,6 +203,29 @@ template <typename T> class alist {
   // Use it as a stack, pushing and popping from the end
   void push(T item) { append(item); }
   T pop() { return remove(num_items - 1); }
+
+ private:
+  /* Private grow list function. Used to insure that
+   *   at least one more "slot" is available.
+   */
+  void GrowList(void)
+  {
+    if (items == NULL) {
+      if (num_grow == 0) { num_grow = 1; /* default if not initialized */ }
+      items = (T*)malloc(num_grow * sizeof(T));
+      max_items = num_grow;
+    } else if (num_items == max_items) {
+      max_items += num_grow;
+      items = (T*)realloc(items, max_items * sizeof(T));
+    }
+  }
+
+  T* items = nullptr;
+  int num_items = 0;
+  int max_items = 0;
+  int num_grow = 0;
+  int cur_item = 0;
+  bool own_items = false;
 };
 
 #endif  // BAREOS_LIB_ALIST_H_
