@@ -94,6 +94,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - dird: fix odd-even weeks parsing bug in schedule [PR #1210]
 - bcopy: fix crash in bcopy when using certain cli arguments [PR #1211]
 - webui: fix password string length limitation [BUG #1480][PR #1251]
+- systemtest: fixed issues with systemtests not succeeding on first try [PR #1186]
 
 ### Changed
 - contrib: rename Python modules to satisfy PEP8 [PR #768]

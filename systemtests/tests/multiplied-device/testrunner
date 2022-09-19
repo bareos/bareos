@@ -85,7 +85,6 @@ quit
 END_OF_DATA
 
 run_bconsole
-stop_bareos
 
 # rename files to be able to run the test again later
 mv ./etc/bareos/bareos-dir.d/storage/fakestorage1.conf_backup ./etc/bareos/bareos-dir.d/storage/fakestorage1.conf

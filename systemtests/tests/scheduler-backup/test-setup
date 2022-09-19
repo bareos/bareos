@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -33,6 +33,24 @@ set -u
 
 # Fill ${BackupDirectory} with data.
 setup_data
+
+
+# Setup scheduler configuration to run at current time
+if [ $(date +"%S") -ge 50 ]; then
+    sleep 11
+    # to avoid case when we set a scheduled time at for example 13:01 and
+    # before the setup is finished, it becomes 13:02 and schedule doesn't
+    # start. So we give the test extra time to go to the next minute.
+fi
+
+currenttime=$(date +"%H:%M")
+
+[[ -d "${conf}/bareos-dir.d/schedule" ]] || mkdir "${conf}/bareos-dir.d/schedule"
+
+echo "Schedule {
+  Name = \"TestCycle\"
+  Run = Level=Full daily at $currenttime
+}" > "$conf"/bareos-dir.d/schedule/schedule.conf
 
 bin/bareos start
 

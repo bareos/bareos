@@ -19,13 +19,16 @@ export TestName
 
 start_test
 
+disablelog="$tmp"/disablelog.out
+statuslog="$tmp"/statuslog.out
+
 cat <<END_OF_DATA >$tmp/bconcmds
 messages
-@$out $tmp/log3.out w
+@$out $disablelog
 enable client=bareos-fd
 status scheduler job=copy
 
-@$out $tmp/log4.out w
+@$out $statuslog
 disable client=bareos-fd
 status scheduler job=copy
 wait
@@ -36,14 +39,14 @@ END_OF_DATA
 run_bconsole
 
 #check that `status scheduler job=...` returns scheduled copy jobs
-if ! grep "TestCycle               Level=Full" "$tmp"/log3.out; then
-  echo "No scheduled job was found in $tmp/log3.out, which should contain all scheduled jobs" >&2
+if ! grep "TestCycle               Level=Full" "$disablelog"; then
+  echo "No scheduled jobs were found in $disablelog, which should contain all scheduled jobs" >&2
   estat=1
 fi
 
 #check that `status scheduler job=...` returns nothing when we disable the client
-if  grep "TestCycle               Level=Full" "$tmp"/log4.out; then
-  echo "a scheduled job was listed in $tmp/log4.out, which shouldn't happen" >&2
+if  grep "TestCycle               Level=Full" "$statuslog"; then
+  echo "a scheduled job was listed in $statuslog, which shouldn't happen" >&2
   estat=1
 fi
 

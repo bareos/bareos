@@ -113,10 +113,10 @@ if ! echo "SELECT * from test " | $MYSQL_CLIENT "${xtrabackup_test_db}" | grep "
     estat=3
 fi
 
-mysql_server_stop
 
 check_for_zombie_jobs storage=File
-stop_bareos
+
+mysql_server_stop
 
 check_two_logs
 

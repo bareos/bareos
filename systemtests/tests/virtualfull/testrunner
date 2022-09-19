@@ -119,7 +119,6 @@ END_OF_DATA
 run_bconsole "$tmp/bconcmds3"
 check_for_zombie_jobs storage=File
 check_two_logs
-stop_bareos
 
 if ! grep -q "Consolidating JobIds 1,2 containing 74 files" "$tmp/log1.out"; then
   echo "Consolidation message was not emitted" >&2

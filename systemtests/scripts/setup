@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #shellcheck source=../environment.in
 . ./environment
 . "${rscripts}/functions"

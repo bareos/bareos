@@ -3,6 +3,20 @@
 # A set of useful functions to be sourced in each test
 #
 
+wait_for_jobs_to_terminate ()
+{
+  status_of_what=$1
+  max_wait_in_seconds=$2
+  count=max_wait_in_seconds
+  while (( --count >= 0 )); do
+    if  "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" <<< "status ${status_of_what}" | grep "No Jobs running.";
+    then
+      break
+    fi
+    sleep 1
+  done
+}
+
 copy_configs()
 {
     COMPONENTS="bareos-dir bareos-sd bareos-fd bconsole tray-monitor"

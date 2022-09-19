@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Check for zombie jobs (not terminated).
 # Also scan logs for ERROR messages
@@ -7,6 +7,9 @@
 # shellcheck source=../environment.in
 . ./environment
 
+# shellcheck source= ./functions
+. "${rscripts}"/functions
+
 # check_for_zombie_jobs storage=STORAGE [client=localhost-fd]
 
 if [ $# = 2 ] ; then
@@ -14,6 +17,8 @@ if [ $# = 2 ] ; then
 else
     client="client"
 fi
+
+wait_for_jobs_to_terminate "${client}" 20
 
 "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" <<END_OF_DATA >/dev/null 2>&1
 @output "${tmp}"/dir.out
