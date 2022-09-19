@@ -14,7 +14,9 @@ CASE
     END as Duration,
 Job.JobTDate, Job.VolSessionId, Job.VolSessionTime,
 Job.JobFiles, Job.JobBytes, Job.JobErrors, Job.JobMissingFiles, Job.PoolId,
-Pool.Name as PoolName, Job.PriorJobId, Job.FileSetId, FileSet.FileSet
+Pool.Name as PoolName, Job.PriorJobId, Job.FileSetId, FileSet.FileSet,
+Job.LastCheckpointTime, Job.LastFileProcessed, Job.LastTransferRate,
+Job.AverageTransferRate, Job.LastCheckpointFiles
 FROM Job
 LEFT JOIN Client ON Client.ClientId=Job.ClientId
 LEFT JOIN Pool ON Pool.PoolId=Job.PoolId
