@@ -77,7 +77,7 @@ void TlsOpenSsl::SetTlsPskServerContext(ConfigurationParser* config)
   } else {
     // keep a shared_ptr to the current config, so a reload won't
     // free the memory we're going to use in the private context
-    d_->config_table_ = config->GetResourcesTable();
+    d_->config_table_ = config->GetResourcesContainer();
     SSL_CTX_set_ex_data(
         d_->openssl_ctx_,
         TlsOpenSslPrivate::SslCtxExDataIndex::kConfigurationParserPtr,

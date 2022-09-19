@@ -487,7 +487,7 @@ bool ConfigurationParser::FindConfigPath(PoolMem& full_path)
   return found;
 }
 
-void ConfigurationParser::RestoreResourceTable(
+void ConfigurationParser::RestoreResourcesContainer(
     std::shared_ptr<ConfigResourcesContainer>&& backup_table)
 {
   std::swap(config_resources_container_, backup_table);
@@ -495,7 +495,7 @@ void ConfigurationParser::RestoreResourceTable(
 }
 
 std::shared_ptr<ConfigResourcesContainer>
-ConfigurationParser::BackupResourceTable()
+ConfigurationParser::BackupResourcesContainer()
 {
   auto backup_table = config_resources_container_;
   config_resources_container_
@@ -504,7 +504,7 @@ ConfigurationParser::BackupResourceTable()
 }
 
 std::shared_ptr<ConfigResourcesContainer>
-ConfigurationParser::GetResourcesTable()
+ConfigurationParser::GetResourcesContainer()
 {
   return config_resources_container_;
 }
