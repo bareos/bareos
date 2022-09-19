@@ -118,6 +118,11 @@ class PythonBareosListCommandTest(bareos_unittest.Base):
             "priorjobid",
             "filesetid",
             "fileset",
+            "lastcheckpointtime",
+            "lastcheckpointfiles",
+            "lastfileprocessed",
+            "lasttransferrate",
+            "averagetransferrate"
         ]
         resultkeys = list(result["jobs"][0].keys())
 
