@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -20,7 +20,9 @@
 if(TARGET python-fd)
   create_systemtest(${SYSTEMTEST_PREFIX} "py2plug-fd-local-fileset-basic")
 else()
-  create_systemtest(${SYSTEMTEST_PREFIX} "py2plug-fd-local-fileset-basic" DISABLED)
+  create_systemtest(
+    ${SYSTEMTEST_PREFIX} "py2plug-fd-local-fileset-basic" DISABLED
+  )
 endif()
 
 if(TARGET python3-fd)
@@ -28,8 +30,11 @@ if(TARGET python3-fd)
   # Fails with UnicodeEncodeError: 'utf-8' codec can't encode characters in
   # position 133-142: surrogates not allowed
   set_tests_properties(
-    "${SYSTEMTEST_PREFIX}py3plug-fd-local-fileset-basic" PROPERTIES LABELS "broken"
+    "${SYSTEMTEST_PREFIX}py3plug-fd-local-fileset-basic" PROPERTIES LABELS
+                                                                    "broken"
   )
 else()
-  create_systemtest(${SYSTEMTEST_PREFIX} "py3plug-fd-local-fileset-basic" DISABLED)
+  create_systemtest(
+    ${SYSTEMTEST_PREFIX} "py3plug-fd-local-fileset-basic" DISABLED
+  )
 endif()
