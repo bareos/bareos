@@ -155,8 +155,7 @@ static void toggle_verbose()
 }
 
 
-static void PrintCatalogDetails(CatalogResource* catalog,
-                                [[maybe_unused]] const char* working_dir)
+static void PrintCatalogDetails(CatalogResource* catalog)
 {
   POOLMEM* catalog_details = GetPoolMemory(PM_MESSAGE);
 
@@ -919,7 +918,7 @@ int main(int argc, char* argv[])
 
       // Print catalog information and exit (-B)
       if (print_catalog) {
-        PrintCatalogDetails(catalog, me->working_directory);
+        PrintCatalogDetails(catalog);
         exit(0);
       }
 

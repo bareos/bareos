@@ -212,16 +212,11 @@ ssize_t win32_file_device::d_write(int fd, const void* buffer, size_t count)
 
 int win32_file_device::d_close(int fd) { return ::close(fd); }
 
-int win32_file_device::d_ioctl([[maybe_unused]] int fd,
-                               [[maybe_unused]] ioctl_req_t request,
-                               [[maybe_unused]] char* op)
-{
-  return -1;
-}
+int win32_file_device::d_ioctl(int, ioctl_req_t, char*) { return -1; }
 
-boffset_t win32_file_device::d_lseek([[maybe_unused]] DeviceControlRecord* dcr,
-                                     [[maybe_unused]] boffset_t offset,
-                                     [[maybe_unused]] int whence)
+boffset_t win32_file_device::d_lseek(DeviceControlRecord*,
+                                     boffset_t offset,
+                                     int whence)
 {
   return ::_lseeki64(fd, (__int64)offset, whence);
 }

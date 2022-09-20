@@ -511,25 +511,20 @@ bool CheckScsiAtEod(int fd) { return false; }
 #  endif
 #else
 // Dummy lowlevel functions when no support for platform.
-bool RecvScsiCmdPage([[maybe_unused]] int fd,
-                     [[maybe_unused]] const char* device_name,
-                     [[maybe_unused]] void* cdb,
-                     [[maybe_unused]] unsigned int cdb_len,
-                     [[maybe_unused]] void* cmd_page,
-                     [[maybe_unused]] unsigned int cmd_page_len)
+bool RecvScsiCmdPage(int, const char*, void*, unsigned int, void*, unsigned int)
 {
   return false;
 }
 
-bool send_scsi_cmd_page([[maybe_unused]] int fd,
-                        [[maybe_unused]] const char* device_name,
-                        [[maybe_unused]] void* cdb,
-                        [[maybe_unused]] unsigned int cdb_len,
-                        [[maybe_unused]] void* cmd_page,
-                        [[maybe_unused]] unsigned int cmd_page_len)
+bool send_scsi_cmd_page(int,
+                        const char*,
+                        void*,
+                        unsigned int,
+                        void*,
+                        unsigned int)
 {
   return false;
 }
 
-bool CheckScsiAtEod([[maybe_unused]] int fd) { return false; }
+bool CheckScsiAtEod(int) { return false; }
 #endif /* HAVE_LOWLEVEL_SCSI_INTERFACE */

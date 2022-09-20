@@ -72,18 +72,16 @@
  * Entry points when compiled without support for ACLs or on an unsupported
  * platform.
  */
-bacl_exit_code BuildAclStreams([[maybe_unused]] JobControlRecord* jcr,
-                               [[maybe_unused]] AclData* acl_data,
-                               [[maybe_unused]] FindFilesPacket* ff_pkt)
+bacl_exit_code BuildAclStreams(JobControlRecord*, AclData*, FindFilesPacket*)
 {
   return bacl_exit_fatal;
 }
 
-bacl_exit_code parse_acl_streams([[maybe_unused]] JobControlRecord* jcr,
-                                 [[maybe_unused]] AclData* acl_data,
-                                 [[maybe_unused]] int stream,
-                                 [[maybe_unused]] char* content,
-                                 [[maybe_unused]] uint32_t content_length)
+bacl_exit_code parse_acl_streams(JobControlRecord*,
+                                 AclData*,
+                                 int,
+                                 char*,
+                                 uint32_t)
 {
   return bacl_exit_fatal;
 }
@@ -824,12 +822,11 @@ bail_out:
 }
 
 // Generic wrapper around acl_set_file call.
-static bacl_exit_code generic_set_acl_on_os(
-    JobControlRecord* jcr,
-    AclData* acl_data,
-    bacl_type acltype,
-    char* content,
-    [[maybe_unused]] uint32_t content_length)
+static bacl_exit_code generic_set_acl_on_os(JobControlRecord* jcr,
+                                            AclData* acl_data,
+                                            bacl_type acltype,
+                                            char* content,
+                                            uint32_t)
 {
   acl_t acl;
   acl_type_t ostype;
@@ -952,10 +949,9 @@ static bacl_exit_code generic_set_acl_on_os(
 static int os_access_acl_streams[1] = {STREAM_ACL_DARWIN_ACCESS_ACL};
 static int os_default_acl_streams[1] = {-1};
 
-static bacl_exit_code darwin_build_acl_streams(
-    JobControlRecord* jcr,
-    AclData* acl_data,
-    [[maybe_unused]] FindFilesPacket* ff_pkt)
+static bacl_exit_code darwin_build_acl_streams(JobControlRecord* jcr,
+                                               AclData* acl_data,
+                                               FindFilesPacket*)
 {
 #        if defined(HAVE_ACL_TYPE_EXTENDED)
   /**
@@ -985,7 +981,7 @@ static bacl_exit_code darwin_build_acl_streams(
 
 static bacl_exit_code darwin_parse_acl_streams(JobControlRecord* jcr,
                                                AclData* acl_data,
-                                               [[maybe_unused]] int stream,
+                                               int,
                                                char* content,
                                                uint32_t content_length)
 {
@@ -1019,10 +1015,9 @@ static int os_access_acl_streams[2]
     = {STREAM_ACL_FREEBSD_ACCESS_ACL, STREAM_ACL_FREEBSD_NFS4_ACL};
 static int os_default_acl_streams[1] = {STREAM_ACL_FREEBSD_DEFAULT_ACL};
 
-static bacl_exit_code freebsd_build_acl_streams(
-    JobControlRecord* jcr,
-    AclData* acl_data,
-    [[maybe_unused]] FindFilesPacket* ff_pkt)
+static bacl_exit_code freebsd_build_acl_streams(JobControlRecord* jcr,
+                                                AclData* acl_data,
+                                                FindFilesPacket*)
 {
   int acl_enabled = 0;
   bacl_type acltype = BACL_TYPE_NONE;
@@ -1246,10 +1241,9 @@ static int os_access_acl_streams[1] = {STREAM_ACL_HURD_ACCESS_ACL};
 static int os_default_acl_streams[1] = {STREAM_ACL_HURD_DEFAULT_ACL};
 #        endif
 
-static bacl_exit_code generic_build_acl_streams(
-    JobControlRecord* jcr,
-    AclData* acl_data,
-    [[maybe_unused]] FindFilesPacket* ff_pkt)
+static bacl_exit_code generic_build_acl_streams(JobControlRecord* jcr,
+                                                AclData* acl_data,
+                                                FindFilesPacket*)
 {
   // Read access ACLs for files, dirs and links
   if (generic_get_acl_from_os(jcr, acl_data, BACL_TYPE_ACCESS)
@@ -1647,10 +1641,9 @@ static int os_default_acl_streams[1] = {-1};
  * new interface is not defined (Solaris 9 and older we fall back to the old
  * code)
  */
-static bacl_exit_code solaris_build_acl_streams(
-    JobControlRecord* jcr,
-    AclData* acl_data,
-    [[maybe_unused]] FindFilesPacket* ff_pkt)
+static bacl_exit_code solaris_build_acl_streams(JobControlRecord* jcr,
+                                                AclData* acl_data,
+                                                FindFilesPacket*)
 {
   int acl_enabled, flags;
   acl_t* aclp;
@@ -1743,12 +1736,11 @@ static bacl_exit_code solaris_build_acl_streams(
   return stream_status;
 }
 
-static bacl_exit_code solaris_parse_acl_streams(
-    JobControlRecord* jcr,
-    AclData* acl_data,
-    int stream,
-    char* content,
-    [[maybe_unused]] uint32_t content_length)
+static bacl_exit_code solaris_parse_acl_streams(JobControlRecord* jcr,
+                                                AclData* acl_data,
+                                                int stream,
+                                                char* content,
+                                                uint32_t)
 {
   acl_t* aclp;
   int acl_enabled, error;

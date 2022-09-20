@@ -37,16 +37,8 @@
 #include "lib/util.h"
 
 /* Dummy functions */
-int GenerateJobEvent([[maybe_unused]] JobControlRecord* jcr,
-                     [[maybe_unused]] const char* event)
-{
-  return 1;
-}
-void GeneratePluginEvent([[maybe_unused]] JobControlRecord* jcr,
-                         [[maybe_unused]] filedaemon::bEventType eventType,
-                         [[maybe_unused]] void* value)
-{
-}
+int GenerateJobEvent(JobControlRecord*, const char*) { return 1; }
+void GeneratePluginEvent(JobControlRecord*, filedaemon::bEventType, void*) {}
 
 /* Global variables */
 int attrs = 0;
@@ -196,17 +188,13 @@ int main(int argc, char* const* argv)
   exit(0);
 }
 
-static int CountFiles([[maybe_unused]] JobControlRecord* jcr,
-                      [[maybe_unused]] FindFilesPacket* ff,
-                      [[maybe_unused]] bool top_level)
+static int CountFiles(JobControlRecord*, FindFilesPacket*, bool)
 {
   num_files++;
   return 1;
 }
 
-static int PrintFile([[maybe_unused]] JobControlRecord* jcr,
-                     FindFilesPacket* ff,
-                     [[maybe_unused]] bool top_level)
+static int PrintFile(JobControlRecord*, FindFilesPacket* ff, bool)
 {
   switch (ff->type) {
     case FT_LNKSAVED:

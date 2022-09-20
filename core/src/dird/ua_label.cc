@@ -432,9 +432,7 @@ bail_out:
 }
 
 // Common routine for both label and relabel
-static int do_label(UaContext* ua,
-                    [[maybe_unused]] const char* cmd,
-                    bool relabel)
+static int do_label(UaContext* ua, const char*, bool relabel)
 {
   int i, j;
   BareosSocket* sd;

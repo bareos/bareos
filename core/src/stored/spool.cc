@@ -727,8 +727,7 @@ static void MakeUniqueSpoolFilename(JobControlRecord* jcr,
  *  return an error, and the higher level routine will transmit
  *  the data record by record -- using bsock->despool().
  */
-static bool BlastAttrSpoolFile(JobControlRecord* jcr,
-                               [[maybe_unused]] boffset_t size)
+static bool BlastAttrSpoolFile(JobControlRecord* jcr, boffset_t)
 {
   POOLMEM* name = GetPoolMemory(PM_MESSAGE);
 

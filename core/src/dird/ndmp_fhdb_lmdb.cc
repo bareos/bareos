@@ -62,7 +62,7 @@ static int debuglevel = 100;
 #  define B_PAGE_SIZE 4096
 
 extern "C" int bndmp_fhdb_lmdb_add_dir(struct ndmlog* ixlog,
-                                       [[maybe_unused]] int tagc,
+                                       int,
                                        char* raw_name,
                                        ndmp9_u_quad dir_node,
                                        ndmp9_u_quad node)
@@ -153,7 +153,7 @@ bail_out:
 }
 
 extern "C" int bndmp_fhdb_lmdb_add_node(struct ndmlog* ixlog,
-                                        [[maybe_unused]] int tagc,
+                                        int,
                                         ndmp9_u_quad node,
                                         ndmp9_file_stat* ndmp_fstat)
 {
@@ -324,7 +324,7 @@ bail_out:
 }
 
 extern "C" int bndmp_fhdb_lmdb_add_dirnode_root(struct ndmlog* ixlog,
-                                                [[maybe_unused]] int tagc,
+                                                int,
                                                 ndmp9_u_quad root_node)
 {
   NIS* nis = (NIS*)ixlog->ctx;

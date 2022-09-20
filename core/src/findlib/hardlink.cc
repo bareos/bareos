@@ -30,7 +30,7 @@
 #include "findlib/hardlink.h"
 
 // Lookup a inode/dev in the list of hardlinked files.
-CurLink* lookup_hardlink([[maybe_unused]] JobControlRecord* jcr,
+CurLink* lookup_hardlink(JobControlRecord*,
                          FindFilesPacket* ff_pkt,
                          ino_t ino,
                          dev_t dev)
@@ -51,7 +51,7 @@ CurLink* lookup_hardlink([[maybe_unused]] JobControlRecord* jcr,
   return hl;
 }
 
-CurLink* new_hardlink([[maybe_unused]] JobControlRecord* jcr,
+CurLink* new_hardlink(JobControlRecord*,
                       FindFilesPacket* ff_pkt,
                       char* fname,
                       ino_t ino,

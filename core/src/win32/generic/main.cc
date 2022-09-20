@@ -234,7 +234,7 @@ LRESULT CALLBACK bacWinProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
  * Called as a thread from BareosAppMain()
  * Here we handle the Windows messages
  */
-void* Main_Msg_Loop([[maybe_unused]] LPVOID lpwThreadParam)
+void* Main_Msg_Loop(LPVOID)
 {
   MSG msg;
 

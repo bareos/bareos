@@ -651,7 +651,7 @@ static bool IsDotCommand(const char* cmd)
 }
 
 // Add Volumes to an existing Pool
-static bool add_cmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+static bool add_cmd(UaContext* ua, const char*)
 {
   PoolDbRecord pr;
   MediaDbRecord mr;
@@ -783,7 +783,7 @@ static bool add_cmd(UaContext* ua, [[maybe_unused]] const char* cmd)
  * automount on
  * automount off
  */
-static bool AutomountCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+static bool AutomountCmd(UaContext* ua, const char*)
 {
   char* onoff;
 
@@ -798,8 +798,7 @@ static bool AutomountCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
   return true;
 }
 
-static inline bool CancelStorageDaemonJob(UaContext* ua,
-                                          [[maybe_unused]] const char* cmd)
+static inline bool CancelStorageDaemonJob(UaContext* ua, const char*)
 {
   int i;
   StorageResource* store;
@@ -822,7 +821,7 @@ static inline bool CancelStorageDaemonJob(UaContext* ua,
   return true;
 }
 
-static inline bool CancelJobs(UaContext* ua, [[maybe_unused]] const char* cmd)
+static inline bool CancelJobs(UaContext* ua, const char*)
 {
   JobControlRecord* jcr;
   JobId_t* JobId = nullptr;
@@ -862,7 +861,7 @@ static bool CancelCmd(UaContext* ua, const char* cmd)
  * Create a Pool Record in the database.
  * It is always created from the Resource record.
  */
-static bool CreateCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+static bool CreateCmd(UaContext* ua, const char*)
 {
   PoolResource* pool;
 
@@ -972,7 +971,7 @@ static inline bool setbwlimit_stored(UaContext* ua,
   return true;
 }
 
-static bool SetbwlimitCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+static bool SetbwlimitCmd(UaContext* ua, const char*)
 {
   int i;
   int64_t limit = -1;
@@ -1034,7 +1033,7 @@ static bool SetbwlimitCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
  * if the Console name is the same as the Client name
  * and the Console can access the client.
  */
-static bool SetipCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+static bool SetipCmd(UaContext* ua, const char*)
 {
   ClientResource* client;
   char buf[1024];
@@ -1144,13 +1143,13 @@ static void DoEnDisableCmd(UaContext* ua, bool setting)
       setting ? "En" : "Dis");
 }
 
-static bool EnableCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+static bool EnableCmd(UaContext* ua, const char*)
 {
   DoEnDisableCmd(ua, true);
   return true;
 }
 
-static bool DisableCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+static bool DisableCmd(UaContext* ua, const char*)
 {
   DoEnDisableCmd(ua, false);
   return true;
@@ -1632,7 +1631,7 @@ bool SetDeviceCommand::SendToSd(UaContext* ua,
 
 
 // setdevice storage=<storage-name> device=<device-name> autoselect=<bool>
-bool SetDeviceCommand::Cmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool SetDeviceCommand::Cmd(UaContext* ua, const char*)
 {
   auto arguments = ScanCommandLine(ua);
 
@@ -1662,7 +1661,7 @@ bool SetDeviceCommand::Cmd(UaContext* ua, [[maybe_unused]] const char* cmd)
 }
 
 // Resolve a hostname.
-static bool ResolveCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+static bool ResolveCmd(UaContext* ua, const char*)
 {
   StorageResource* storage = NULL;
   ClientResource* client = NULL;
@@ -1727,7 +1726,7 @@ static bool ResolveCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
 }
 
 // Turn debug tracing to file on/off
-static bool TraceCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+static bool TraceCmd(UaContext* ua, const char*)
 {
   char* onoff;
 
@@ -1743,7 +1742,7 @@ static bool TraceCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
   return true;
 }
 
-static bool var_cmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+static bool var_cmd(UaContext* ua, const char*)
 {
   if (!OpenClientDb(ua)) { return true; }
 
@@ -1762,7 +1761,7 @@ static bool var_cmd(UaContext* ua, [[maybe_unused]] const char* cmd)
   return true;
 }
 
-static bool EstimateCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+static bool EstimateCmd(UaContext* ua, const char*)
 {
   JobResource* job = NULL;
   ClientResource* client = NULL;
@@ -1968,7 +1967,7 @@ bail_out:
 }
 
 // Print time
-static bool time_cmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+static bool time_cmd(UaContext* ua, const char*)
 {
   char sdt[50];
   time_t ttime = time(NULL);
@@ -2017,7 +2016,7 @@ StorageResource* UaContext::GetStoreResWithId(DBId_t id,
  * truncate volstatus=Purged [storage=<storage>] [pool=<pool>]
  * [volume=<volume>] [drive=<drivenum>] [yes]
  */
-static bool TruncateCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+static bool TruncateCmd(UaContext* ua, const char*)
 {
   bool result = false;
   int i = -1;
@@ -2249,7 +2248,7 @@ bail_out:
 }
 
 // Reload the conf file
-static bool ReloadCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+static bool ReloadCmd(UaContext* ua, const char*)
 {
   bool result;
 
@@ -2273,7 +2272,7 @@ static bool ReloadCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
  * delete volume pool=<pool-name> volume=<name>
  * delete jobid=<jobid>
  */
-static bool DeleteCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+static bool DeleteCmd(UaContext* ua, const char*)
 {
   static const char* keywords[]
       = {NT_("volume"), NT_("pool"), NT_("jobid"), NT_("storage"), NULL};
@@ -2548,7 +2547,7 @@ static bool DeletePool(UaContext* ua)
   return true;
 }
 
-static bool MemoryCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+static bool MemoryCmd(UaContext* ua, const char*)
 {
   ListDirStatusHeader(ua);
   return true;
@@ -2597,21 +2596,21 @@ static void DoMountCmd(UaContext* ua, const char* cmd)
 }
 
 // mount [storage=<name>] [drive=nn] [slot=mm]
-static bool MountCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+static bool MountCmd(UaContext* ua, const char*)
 {
   DoMountCmd(ua, "mount"); /* mount */
   return true;
 }
 
 // unmount [storage=<name>] [drive=nn]
-static bool UnmountCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+static bool UnmountCmd(UaContext* ua, const char*)
 {
   DoMountCmd(ua, "unmount"); /* unmount */
   return true;
 }
 
 // Perform a NO-OP.
-static bool noop_cmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+static bool noop_cmd(UaContext* ua, const char*)
 {
   if (ua->api) { ua->signal(BNET_CMD_BEGIN); }
 
@@ -2621,7 +2620,7 @@ static bool noop_cmd(UaContext* ua, [[maybe_unused]] const char* cmd)
 }
 
 // release [storage=<name>] [drive=nn]
-static bool ReleaseCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+static bool ReleaseCmd(UaContext* ua, const char*)
 {
   DoMountCmd(ua, "release"); /* release */
   return true;
@@ -2631,7 +2630,7 @@ static bool ReleaseCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
  * Switch databases
  * use catalog=<name>
  */
-static bool use_cmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+static bool use_cmd(UaContext* ua, const char*)
 {
   CatalogResource *oldcatalog, *catalog;
 
@@ -2650,7 +2649,7 @@ static bool use_cmd(UaContext* ua, [[maybe_unused]] const char* cmd)
   return true;
 }
 
-bool quit_cmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool quit_cmd(UaContext* ua, const char*)
 {
   ua->quit = true;
 
@@ -2658,7 +2657,7 @@ bool quit_cmd(UaContext* ua, [[maybe_unused]] const char* cmd)
 }
 
 // Handler to get job status
-static int StatusHandler(void* ctx, [[maybe_unused]] int num_fields, char** row)
+static int StatusHandler(void* ctx, int, char** row)
 {
   char* val = (char*)ctx;
 
@@ -2672,7 +2671,7 @@ static int StatusHandler(void* ctx, [[maybe_unused]] int num_fields, char** row)
 }
 
 // Wait until no job is running
-static bool wait_cmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+static bool wait_cmd(UaContext* ua, const char*)
 {
   int i;
   JobControlRecord* jcr;
@@ -2814,7 +2813,7 @@ static bool wait_cmd(UaContext* ua, [[maybe_unused]] const char* cmd)
   return true;
 }
 
-static bool WhoAmICmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+static bool WhoAmICmd(UaContext* ua, const char*)
 {
   std::string message;
   message = ua->user_acl ? ua->user_acl->corresponding_resource->resource_name_
@@ -2823,7 +2822,7 @@ static bool WhoAmICmd(UaContext* ua, [[maybe_unused]] const char* cmd)
   return true;
 }
 
-static bool help_cmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+static bool help_cmd(UaContext* ua, const char*)
 {
   int i;
 
@@ -2863,7 +2862,7 @@ static bool help_cmd(UaContext* ua, [[maybe_unused]] const char* cmd)
   return true;
 }
 
-static bool DotHelpCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+static bool DotHelpCmd(UaContext* ua, const char*)
 {
   int i, j;
 
@@ -2921,7 +2920,7 @@ static bool DotHelpCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
   return true;
 }
 
-static bool VersionCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+static bool VersionCmd(UaContext* ua, const char*)
 {
   ua->send->ObjectStart("version");
   ua->send->ObjectKeyValue("name", my_name, "%s ");

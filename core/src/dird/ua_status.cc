@@ -366,7 +366,7 @@ void ListDirStatusHeader(UaContext* ua)
   }
 }
 
-static bool show_scheduled_preview([[maybe_unused]] UaContext* ua,
+static bool show_scheduled_preview(UaContext*,
                                    ScheduleResource* sched,
                                    PoolMem& overview,
                                    int* max_date_len,

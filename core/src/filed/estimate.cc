@@ -59,9 +59,7 @@ int MakeEstimate(JobControlRecord* jcr)
  * Called here by find() for each file included.
  *
  */
-static int TallyFile(JobControlRecord* jcr,
-                     FindFilesPacket* ff_pkt,
-                     [[maybe_unused]] bool top_level)
+static int TallyFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 {
   Attributes attr;
 

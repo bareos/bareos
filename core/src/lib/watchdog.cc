@@ -239,7 +239,7 @@ get_out:
  *  invoked.  If it is a one shot, the queue item
  *  is moved to the inactive queue.
  */
-extern "C" void* watchdog_thread([[maybe_unused]] void* arg)
+extern "C" void* watchdog_thread(void*)
 {
   struct timespec timeout;
   struct timeval tv;

@@ -415,16 +415,16 @@ class Device {
 
   // Tape specific operations.
   virtual bool offline() { return true; }
-  virtual bool weof([[maybe_unused]] int num) { return true; }
-  virtual bool fsf([[maybe_unused]] int num) { return true; }
-  virtual bool bsf([[maybe_unused]] int num) { return false; }
-  virtual bool fsr([[maybe_unused]] int num) { return false; }
-  virtual bool bsr([[maybe_unused]] int num) { return false; }
+  virtual bool weof(int) { return true; }
+  virtual bool fsf(int) { return true; }
+  virtual bool bsf(int) { return false; }
+  virtual bool fsr(int) { return false; }
+  virtual bool bsr(int) { return false; }
   virtual bool LoadDev() { return true; }
   virtual void LockDoor(){};
   virtual void UnlockDoor(){};
-  virtual void clrerror([[maybe_unused]] int func){};
-  virtual void SetOsDeviceParameters([[maybe_unused]]DeviceControlRecord* dcr){};
+  virtual void clrerror(int){};
+  virtual void SetOsDeviceParameters(DeviceControlRecord*){};
   virtual int32_t GetOsTapeFile() { return -1; }
 
   // Generic operations.
@@ -438,15 +438,15 @@ class Device {
   virtual bool Reposition(DeviceControlRecord* dcr,
                           uint32_t rfile,
                           uint32_t rblock);
-  virtual bool MountBackend([[maybe_unused]]DeviceControlRecord* dcr,[[maybe_unused]] int timeout)
+  virtual bool MountBackend(DeviceControlRecord*, int /* timeout */)
   {
     return true;
   }
-  virtual bool UnmountBackend([[maybe_unused]]DeviceControlRecord* dcr,[[maybe_unused]] int timeout)
+  virtual bool UnmountBackend(DeviceControlRecord*, int /* timeout */)
   {
     return true;
   }
-  virtual bool DeviceStatus([[maybe_unused]]DeviceStatusInformation* dst) { return false; }
+  virtual bool DeviceStatus(DeviceStatusInformation*) { return false; }
 
   // Low level operations
   virtual int d_ioctl(int fd, ioctl_req_t request, char* mt_com = NULL) = 0;
@@ -458,7 +458,7 @@ class Device {
                             boffset_t offset,
                             int whence) = 0;
   virtual bool d_truncate(DeviceControlRecord* dcr) = 0;
-  virtual bool d_flush([[maybe_unused]]DeviceControlRecord* dcr) { return true; };
+  virtual bool d_flush(DeviceControlRecord*) { return true; };
 
     // Locking and blocking calls
   void rLock(bool locked = false);
@@ -493,15 +493,15 @@ class SpoolDevice :public Device
  public:
   SpoolDevice() = default;
   ~SpoolDevice() {   close(nullptr); }
-  int d_ioctl([[maybe_unused]]int fd, [[maybe_unused]]ioctl_req_t request,[[maybe_unused]] char* mt_com = NULL) override {return -1;}
-  int d_open([[maybe_unused]]const char* pathname,[[maybe_unused]] int flags,[[maybe_unused]] int mode) override {return -1;}
-  int d_close([[maybe_unused]]int fd) override {return -1;}
-  ssize_t d_read([[maybe_unused]]int fd, [[maybe_unused]]void* buffer, [[maybe_unused]]size_t count) override { return 0;}
-  ssize_t d_write([[maybe_unused]]int fd,[[maybe_unused]] const void* buffer,[[maybe_unused]] size_t count) override { return 0;}
-  boffset_t d_lseek([[maybe_unused]]DeviceControlRecord* dcr,
-                     [[maybe_unused]]       boffset_t offset,
-                        [[maybe_unused]]    int whence) override { return 0;}
-  bool d_truncate([[maybe_unused]] DeviceControlRecord* dcr) override {return false;}
+  int d_ioctl(int, ioctl_req_t, char*) override {return -1;}
+  int d_open(const char*, int, int) override {return -1;}
+  int d_close(int) override {return -1;}
+  ssize_t d_read(int, void*, size_t) override { return 0;}
+  ssize_t d_write(int, const void*, size_t) override { return 0;}
+  boffset_t d_lseek(DeviceControlRecord*,
+                    boffset_t,
+                    int) override { return 0;}
+  bool d_truncate(DeviceControlRecord*) override {return false;}
 };
 /* clang-format on */
 

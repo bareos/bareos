@@ -440,10 +440,7 @@ static void ScanIncludeOptions(LEX* lc, int keyword, char* opts, int optlen)
 }
 
 // Store regex info
-static void StoreRegex(LEX* lc,
-                       ResourceItem* item,
-                       [[maybe_unused]] int index,
-                       int pass)
+static void StoreRegex(LEX* lc, ResourceItem* item, int, int pass)
 {
   int token, rc;
   regex_t preg{};
@@ -492,10 +489,7 @@ static void StoreRegex(LEX* lc,
 }
 
 // Store Base info
-static void StoreBase(LEX* lc,
-                      [[maybe_unused]] ResourceItem* item,
-                      [[maybe_unused]] int index,
-                      int pass)
+static void StoreBase(LEX* lc, ResourceItem*, int, int pass)
 {
   LexGetToken(lc, BCT_NAME);
   if (pass == 1) {
@@ -506,10 +500,7 @@ static void StoreBase(LEX* lc,
 }
 
 // Store reader info
-static void StorePlugin(LEX* lc,
-                        [[maybe_unused]] ResourceItem* item,
-                        [[maybe_unused]] int index,
-                        int pass)
+static void StorePlugin(LEX* lc, ResourceItem*, int, int pass)
 {
   LexGetToken(lc, BCT_NAME);
   if (pass == 1) {
@@ -520,10 +511,7 @@ static void StorePlugin(LEX* lc,
 }
 
 // Store Wild-card info
-static void StoreWild(LEX* lc,
-                      ResourceItem* item,
-                      [[maybe_unused]] int index,
-                      int pass)
+static void StoreWild(LEX* lc, ResourceItem* item, int, int pass)
 {
   int token;
   const char* type;
@@ -567,10 +555,7 @@ static void StoreWild(LEX* lc,
 }
 
 // Store fstype info
-static void StoreFstype(LEX* lc,
-                        [[maybe_unused]] ResourceItem* item,
-                        [[maybe_unused]] int index,
-                        int pass)
+static void StoreFstype(LEX* lc, ResourceItem*, int, int pass)
 {
   int token;
 
@@ -594,10 +579,7 @@ static void StoreFstype(LEX* lc,
 }
 
 // Store Drivetype info
-static void StoreDrivetype(LEX* lc,
-                           [[maybe_unused]] ResourceItem* item,
-                           [[maybe_unused]] int index,
-                           int pass)
+static void StoreDrivetype(LEX* lc, ResourceItem*, int, int pass)
 {
   int token;
 
@@ -620,10 +602,7 @@ static void StoreDrivetype(LEX* lc,
   ScanToEol(lc);
 }
 
-static void StoreMeta(LEX* lc,
-                      [[maybe_unused]] ResourceItem* item,
-                      [[maybe_unused]] int index,
-                      int pass)
+static void StoreMeta(LEX* lc, ResourceItem*, int, int pass)
 {
   int token;
 
@@ -650,7 +629,7 @@ static void StoreMeta(LEX* lc,
 static void StoreOption(
     LEX* lc,
     ResourceItem* item,
-    [[maybe_unused]] int index,
+    int,
     int pass,
     std::map<int, options_default_value_s>& option_default_values)
 {
@@ -708,11 +687,7 @@ static void SetupCurrentOpts(void)
 }
 
 // Come here when Options seen in Include/Exclude
-static void StoreOptionsRes(LEX* lc,
-                            [[maybe_unused]] ResourceItem* item,
-                            [[maybe_unused]] int index,
-                            int pass,
-                            bool exclude)
+static void StoreOptionsRes(LEX* lc, ResourceItem*, int, int pass, bool exclude)
 {
   int token, i;
   std::map<int, options_default_value_s> option_default_values
@@ -815,11 +790,7 @@ static FilesetResource* GetStaticFilesetResource()
  * always increase the name buffer by 10 items because we expect
  * to add more entries.
  */
-static void StoreFname(LEX* lc,
-                       [[maybe_unused]] ResourceItem* item,
-                       [[maybe_unused]] int index,
-                       int pass,
-                       [[maybe_unused]] bool exclude)
+static void StoreFname(LEX* lc, ResourceItem*, int, int pass, bool)
 {
   int token;
 
@@ -864,11 +835,7 @@ static void StoreFname(LEX* lc,
  * always increase the name buffer by 10 items because we expect
  * to add more entries.
  */
-static void StorePluginName(LEX* lc,
-                            [[maybe_unused]] ResourceItem* item,
-                            [[maybe_unused]] int index,
-                            int pass,
-                            bool exclude)
+static void StorePluginName(LEX* lc, ResourceItem*, int, int pass, bool exclude)
 {
   int token;
 
@@ -912,11 +879,7 @@ static void StorePluginName(LEX* lc,
 }
 
 // Store exclude directory containing info
-static void StoreExcludedir(LEX* lc,
-                            [[maybe_unused]] ResourceItem* item,
-                            [[maybe_unused]] int index,
-                            int pass,
-                            bool exclude)
+static void StoreExcludedir(LEX* lc, ResourceItem*, int, int pass, bool exclude)
 {
   if (exclude) {
     scan_err0(lc,

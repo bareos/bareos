@@ -108,9 +108,7 @@ static bool IniStoreName(LEX* lc, ConfigFile* inifile, ini_items* item)
   return true;
 }
 
-static bool IniStoreAlistStr(LEX* lc,
-                             [[maybe_unused]] ConfigFile* inifile,
-                             ini_items* item)
+static bool IniStoreAlistStr(LEX* lc, ConfigFile*, ini_items* item)
 {
   alist<char*>* list;
   if (!lc) {

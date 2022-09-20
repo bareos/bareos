@@ -547,7 +547,7 @@ static struct syslog_facility_name {
     {"local3", LOG_LOCAL3},     {"local4", LOG_LOCAL4}, {"local5", LOG_LOCAL5},
     {"local6", LOG_LOCAL6},     {"local7", LOG_LOCAL7}, {NULL, -1}};
 
-static inline bool SetSyslogFacility([[maybe_unused]] JobControlRecord* jcr,
+static inline bool SetSyslogFacility(JobControlRecord*,
                                      MessageDestinationInfo* d)
 {
   int i;
@@ -1546,11 +1546,7 @@ static int MessageTypeToLogPriority(int message_type)
  * sending a message, it is a bit messy to recursively call
  * yourself when the bnet packet is not reentrant).
  */
-void Qmsg(JobControlRecord* jcr,
-          int type,
-          [[maybe_unused]] utime_t mtime,
-          const char* fmt,
-          ...)
+void Qmsg(JobControlRecord* jcr, int type, utime_t, const char* fmt, ...)
 {
   va_list ap;
   int len, maxlen;

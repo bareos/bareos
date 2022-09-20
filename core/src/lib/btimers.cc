@@ -37,7 +37,7 @@ const int debuglevel = 900;
 
 /* Forward referenced functions */
 static void StopBtimer(btimer_t* wid);
-static btimer_t* btimer_start_common(uint32_t wait);
+static btimer_t* btimer_start_common();
 
 /* Forward referenced callback functions */
 static void CallbackChildTimer(watchdog_t* self);
@@ -53,7 +53,7 @@ btimer_t* start_child_timer(JobControlRecord* jcr, pid_t pid, uint32_t wait)
 {
   btimer_t* wid;
 
-  wid = btimer_start_common(wait);
+  wid = btimer_start_common();
   if (wid == NULL) { return NULL; }
   wid->type = TYPE_CHILD;
   wid->pid = pid;
@@ -124,7 +124,7 @@ btimer_t* start_thread_timer(JobControlRecord* jcr,
   char ed1[50];
   btimer_t* wid;
 
-  wid = btimer_start_common(wait);
+  wid = btimer_start_common();
   if (wid == NULL) {
     Dmsg1(debuglevel, "start_thread_timer return NULL from common. wait=%d.\n",
           wait);
@@ -160,7 +160,7 @@ btimer_t* StartBsockTimer(BareosSocket* bsock, uint32_t wait)
     return NULL;
   }
 
-  wid = btimer_start_common(wait);
+  wid = btimer_start_common();
   if (wid == NULL) { return NULL; }
 
   wid->type = TYPE_BSOCK;
@@ -227,7 +227,7 @@ static void CallbackThreadTimer(watchdog_t* self)
   pthread_kill(wid->tid, TIMEOUT_SIGNAL);
 }
 
-static btimer_t* btimer_start_common([[maybe_unused]] uint32_t wait)
+static btimer_t* btimer_start_common()
 {
   btimer_t* wid = (btimer_t*)malloc(sizeof(btimer_t));
 

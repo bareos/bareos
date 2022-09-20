@@ -144,23 +144,13 @@ bail_out:
   return retval;
 }
 
-static bRC PyGetPluginValue([[maybe_unused]] PluginContext* plugin_ctx,
-                            [[maybe_unused]] pVariable var,
-                            [[maybe_unused]] void* value)
-{
-  return bRC_OK;
-}
+static bRC PyGetPluginValue(PluginContext*, pVariable, void*) { return bRC_OK; }
 
-static bRC PySetPluginValue([[maybe_unused]] PluginContext* plugin_ctx,
-                            [[maybe_unused]] pVariable var,
-                            [[maybe_unused]] void* value)
-{
-  return bRC_OK;
-}
+static bRC PySetPluginValue(PluginContext*, pVariable, void*) { return bRC_OK; }
 
 static bRC PyHandlePluginEvent(PluginContext* plugin_ctx,
                                bDirEvent* event,
-                               [[maybe_unused]] void* value)
+                               void*)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx
@@ -202,8 +192,7 @@ bail_out:
  * which allow a Python plugin to get certain internal values of the current
  * Job.
  */
-static PyObject* PyBareosGetValue([[maybe_unused]] PyObject* self,
-                                  PyObject* args)
+static PyObject* PyBareosGetValue(PyObject*, PyObject* args)
 {
   int var;
   PluginContext* plugin_ctx = plugin_context;
@@ -291,8 +280,7 @@ static PyObject* PyBareosGetValue([[maybe_unused]] PyObject* self,
  * which allow a Python plugin to set certain internal values of the current
  * Job.
  */
-static PyObject* PyBareosSetValue([[maybe_unused]] PyObject* self,
-                                  PyObject* args)
+static PyObject* PyBareosSetValue(PyObject*, PyObject* args)
 {
   int var;
   PluginContext* plugin_ctx = plugin_context;
@@ -343,8 +331,7 @@ bail_out:
  * which allow a Python plugin to issue debug messages using the Bareos debug
  * message facility.
  */
-static PyObject* PyBareosDebugMessage([[maybe_unused]] PyObject* self,
-                                      PyObject* args)
+static PyObject* PyBareosDebugMessage(PyObject*, PyObject* args)
 {
   int level;
   char* dbgmsg = NULL;
@@ -365,8 +352,7 @@ static PyObject* PyBareosDebugMessage([[maybe_unused]] PyObject* self,
  * which allow a Python plugin to issue Job messages using the Bareos Job
  * message facility.
  */
-static PyObject* PyBareosJobMessage([[maybe_unused]] PyObject* self,
-                                    PyObject* args)
+static PyObject* PyBareosJobMessage(PyObject*, PyObject* args)
 {
   int type;
   char* jobmsg = NULL;
@@ -387,8 +373,7 @@ static PyObject* PyBareosJobMessage([[maybe_unused]] PyObject* self,
  * which allow a Python plugin to issue a Register Event to register
  * additional events it wants to receive.
  */
-static PyObject* PyBareosRegisterEvents([[maybe_unused]] PyObject* self,
-                                        PyObject* args)
+static PyObject* PyBareosRegisterEvents(PyObject*, PyObject* args)
 {
   int len, event;
   PluginContext* plugin_ctx = plugin_context;
@@ -430,8 +415,7 @@ bail_out:
  * which allow a Python plugin to issue an Unregister Event to unregister
  * events it doesn't want to receive anymore.
  */
-static PyObject* PyBareosUnRegisterEvents([[maybe_unused]] PyObject* self,
-                                          PyObject* args)
+static PyObject* PyBareosUnRegisterEvents(PyObject*, PyObject* args)
 {
   int len, event;
   PluginContext* plugin_ctx = plugin_context;
@@ -473,8 +457,7 @@ bail_out:
  * which allow a Python plugin to issue a GetInstanceCount to retrieve the
  * number of instances of the current plugin being loaded into the daemon.
  */
-static PyObject* PyBareosGetInstanceCount([[maybe_unused]] PyObject* self,
-                                          PyObject* args)
+static PyObject* PyBareosGetInstanceCount(PyObject*, PyObject* args)
 {
   int value;
   PluginContext* plugin_ctx = plugin_context;

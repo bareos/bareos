@@ -112,7 +112,7 @@ void unix_fifo_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
   Dmsg1(100, "open dev: fifo %d opened\n", fd);
 }
 
-bool unix_fifo_device::eod([[maybe_unused]] DeviceControlRecord* dcr)
+bool unix_fifo_device::eod(DeviceControlRecord*)
 {
   if (fd < 0) {
     dev_errno = EBADF;
@@ -306,24 +306,14 @@ ssize_t unix_fifo_device::d_write(int fd, const void* buffer, size_t count)
 
 int unix_fifo_device::d_close(int fd) { return ::close(fd); }
 
-int unix_fifo_device::d_ioctl([[maybe_unused]] int fd,
-                              [[maybe_unused]] ioctl_req_t request,
-                              [[maybe_unused]] char* op)
+int unix_fifo_device::d_ioctl(int, ioctl_req_t, char*) { return -1; }
+
+boffset_t unix_fifo_device::d_lseek(DeviceControlRecord*, boffset_t, int)
 {
   return -1;
 }
 
-boffset_t unix_fifo_device::d_lseek([[maybe_unused]] DeviceControlRecord* dcr,
-                                    [[maybe_unused]] boffset_t offset,
-                                    [[maybe_unused]] int whence)
-{
-  return -1;
-}
-
-bool unix_fifo_device::d_truncate([[maybe_unused]] DeviceControlRecord* dcr)
-{
-  return true;
-}
+bool unix_fifo_device::d_truncate(DeviceControlRecord*) { return true; }
 
 class Backend : public BackendInterface {
  public:

@@ -653,31 +653,19 @@ bool IsScsiEncryptionEnabled(int fd, const char* device_name)
 
 #else
 
-bool ClearScsiEncryptionKey([[maybe_unused]] int fd,
-                            [[maybe_unused]] const char* device_name)
-{
-  return false;
-}
+bool ClearScsiEncryptionKey(int, const char*) { return false; }
 
-bool SetScsiEncryptionKey([[maybe_unused]] int fd,
-                          [[maybe_unused]] const char* device_name,
-                          [[maybe_unused]] char* encryption_key)
-{
-  return false;
-}
+bool SetScsiEncryptionKey(int, const char*, char*) { return false; }
 
-int GetScsiDriveEncryptionStatus([[maybe_unused]] int fd,
-                                 [[maybe_unused]] const char* device_name,
-                                 POOLMEM*& status,
-                                 int indent)
+int GetScsiDriveEncryptionStatus(int, const char*, POOLMEM*& status, int indent)
 {
   PmStrcpy(status, "");
   IndentStatusMsg(status, _("Drive encryption status: Unknown\n"), indent);
   return strlen(status);
 }
 
-int GetScsiVolumeEncryptionStatus([[maybe_unused]] int fd,
-                                  [[maybe_unused]] const char* device_name,
+int GetScsiVolumeEncryptionStatus(int,
+                                  const char*,
                                   POOLMEM*& status,
                                   int indent)
 {
@@ -686,18 +674,9 @@ int GetScsiVolumeEncryptionStatus([[maybe_unused]] int fd,
   return strlen(status);
 }
 
-bool NeedScsiCryptoKey([[maybe_unused]] int fd,
-                       [[maybe_unused]] const char* device_name,
-                       [[maybe_unused]] bool use_drive_status)
-{
-  return false;
-}
+bool NeedScsiCryptoKey(int, const char*, bool) { return false; }
 
-bool GetScsiEncryptionEnabled([[maybe_unused]] int fd,
-                              [[maybe_unused]] const char* device_name)
-{
-  return false;
-}
+bool GetScsiEncryptionEnabled(int, const char*) { return false; }
 #endif /* HAVE_LOWLEVEL_SCSI_INTERFACE */
 
 static void IndentStatusMsg(POOLMEM*& status, const char* msg, int indent)

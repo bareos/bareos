@@ -83,7 +83,7 @@ static authorization_mapping authorization_mappings[] = {
     {NULL, 0},
 };
 
-bool DotAuthorizedCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotAuthorizedCmd(UaContext* ua, const char*)
 {
   bool retval = false;
 
@@ -112,7 +112,7 @@ bool DotAuthorizedCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
   return retval;
 }
 
-bool DotBvfsUpdateCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotBvfsUpdateCmd(UaContext* ua, const char*)
 {
   int pos;
 
@@ -130,7 +130,7 @@ bool DotBvfsUpdateCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
   return true;
 }
 
-bool DotBvfsClearCacheCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotBvfsClearCacheCmd(UaContext* ua, const char*)
 {
   if (!OpenClientDb(ua, true)) { return 1; }
 
@@ -175,7 +175,7 @@ static int BvfsStat(UaContext* ua, char* lstat, int32_t* LinkFI)
   return 0;
 }
 
-static int BvfsResultHandler(void* ctx, [[maybe_unused]] int fields, char** row)
+static int BvfsResultHandler(void* ctx, int, char** row)
 {
   UaContext* ua = (UaContext*)ctx;
   char* fileid = row[BVFS_FileId];
@@ -393,7 +393,7 @@ static bool BvfsValidateJobids(UaContext* ua,
 }
 
 // .bvfs_cleanup path=b2XXXXX
-bool DotBvfsCleanupCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotBvfsCleanupCmd(UaContext* ua, const char*)
 {
   int i;
 
@@ -411,7 +411,7 @@ bool DotBvfsCleanupCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
 }
 
 // .bvfs_restore path=b2XXXXX jobid=1,2 fileid=1,2 dirid=1,2 hardlink=1,2,3,4
-bool DotBvfsRestoreCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotBvfsRestoreCmd(UaContext* ua, const char*)
 {
   DBId_t pathid = 0;
   char* empty = (char*)"";
@@ -452,7 +452,7 @@ bool DotBvfsRestoreCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
  * .bvfs_lsfiles jobid=1,2,3,4 path=/
  * .bvfs_lsfiles jobid=1,2,3,4 pathid=10
  */
-bool DotBvfsLsfilesCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotBvfsLsfilesCmd(UaContext* ua, const char*)
 {
   int i;
   DBId_t pathid = 0;
@@ -500,7 +500,7 @@ bool DotBvfsLsfilesCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
  * .bvfs_lsdirs jobid=1,2,3,4 path=/
  * .bvfs_lsdirs jobid=1,2,3,4 pathid=10
  */
-bool DotBvfsLsdirsCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotBvfsLsdirsCmd(UaContext* ua, const char*)
 {
   DBId_t pathid = 0;
   int limit = 2000, offset = 0;
@@ -549,7 +549,7 @@ bool DotBvfsLsdirsCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
  * jobid isn't used.
  * versions is set, but not used.
  */
-bool DotBvfsVersionsCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotBvfsVersionsCmd(UaContext* ua, const char*)
 {
   DBId_t pathid = 0;
   int limit = 2000, offset = 0;
@@ -598,7 +598,7 @@ bool DotBvfsVersionsCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
  * .bvfs_get_jobids ujobid=JobName
  *  -> returns needed jobids to restore
  */
-bool DotBvfsGetJobidsCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotBvfsGetJobidsCmd(UaContext* ua, const char*)
 {
   int pos;
   JobDbRecord jr;
@@ -690,16 +690,14 @@ bool DotBvfsGetJobidsCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
   return true;
 }
 
-bool DotGetmsgsCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotGetmsgsCmd(UaContext* ua, const char* cmd)
 {
   if (console_msg_pending) { DoMessages(ua, cmd); }
   return 1;
 }
 
 #ifdef DEVELOPER
-static void DoStorageCmd(UaContext* ua,
-                         StorageResource* store,
-                         [[maybe_unused]] const char* cmd)
+static void DoStorageCmd(UaContext* ua, StorageResource* store, const char*)
 {
   BareosSocket* sd;
   JobControlRecord* jcr = ua->jcr;
@@ -723,8 +721,7 @@ static void DoStorageCmd(UaContext* ua,
   return;
 }
 
-static void DoClientCmd(UaContext* ua,
-                        ClientResource* client [[maybe_unused]] const char* cmd)
+static void DoClientCmd(UaContext* ua, ClientResource* client const char*)
 {
   BareosSocket* fd;
 
@@ -752,7 +749,7 @@ static void DoClientCmd(UaContext* ua,
  * .die (seg fault)
  * .exit (no arg => .quit)
  */
-bool DotAdminCmds(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotAdminCmds(UaContext* ua, const char*)
 {
   int i, a;
   JobControlRecord* jcr = NULL;
@@ -859,14 +856,14 @@ bool DotAdminCmds(UaContext* ua, [[maybe_unused]] const char* cmd)
 }
 #else
 // Dummy routine for non-development version
-bool DotAdminCmds(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotAdminCmds(UaContext* ua, const char*)
 {
   ua->ErrorMsg(_("Unknown command: %s\n"), ua->argk[0]);
   return true;
 }
 #endif
 
-bool DotJobdefsCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotJobdefsCmd(UaContext* ua, const char*)
 {
   JobResource* jobdefs;
 
@@ -889,7 +886,7 @@ bool DotJobdefsCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
  * Can use an argument to filter on JobType
  * .jobs [type=B]
  */
-bool DotJobsCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotJobsCmd(UaContext* ua, const char*)
 {
   int pos;
   JobResource* job;
@@ -923,7 +920,7 @@ bool DotJobsCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
   return true;
 }
 
-bool DotJobstatusCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotJobstatusCmd(UaContext* ua, const char*)
 {
   bool retval = false;
   PoolMem select;
@@ -953,7 +950,7 @@ bool DotJobstatusCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
   return retval;
 }
 
-bool DotFilesetsCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotFilesetsCmd(UaContext* ua, const char*)
 {
   FilesetResource* fs;
 
@@ -972,7 +969,7 @@ bool DotFilesetsCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
   return true;
 }
 
-bool DotCatalogsCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotCatalogsCmd(UaContext* ua, const char*)
 {
   CatalogResource* cat;
 
@@ -991,7 +988,7 @@ bool DotCatalogsCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
   return true;
 }
 
-bool DotClientsCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotClientsCmd(UaContext* ua, const char*)
 {
   bool enabled;
   bool disabled;
@@ -1019,7 +1016,7 @@ bool DotClientsCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
   return true;
 }
 
-bool DotConsolesCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotConsolesCmd(UaContext* ua, const char*)
 {
   ConsoleResource* console;
 
@@ -1036,7 +1033,7 @@ bool DotConsolesCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
   return true;
 }
 
-bool DotUsersCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotUsersCmd(UaContext* ua, const char*)
 {
   UserResource* user;
 
@@ -1053,7 +1050,7 @@ bool DotUsersCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
   return true;
 }
 
-bool DotMsgsCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotMsgsCmd(UaContext* ua, const char*)
 {
   MessagesResource* msgs = NULL;
 
@@ -1070,7 +1067,7 @@ bool DotMsgsCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
   return true;
 }
 
-bool DotPoolsCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotPoolsCmd(UaContext* ua, const char*)
 {
   int pos, length;
   PoolResource* pool;
@@ -1099,7 +1096,7 @@ bool DotPoolsCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
   return true;
 }
 
-bool DotStorageCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotStorageCmd(UaContext* ua, const char*)
 {
   bool enabled;
   bool disabled;
@@ -1127,7 +1124,7 @@ bool DotStorageCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
   return true;
 }
 
-bool DotProfilesCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotProfilesCmd(UaContext* ua, const char*)
 {
   ProfileResource* profile;
 
@@ -1144,7 +1141,7 @@ bool DotProfilesCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
   return true;
 }
 
-bool DotAopCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotAopCmd(UaContext* ua, const char*)
 {
   ua->send->ArrayStart("actiononpurge");
   for (int i = 0; ActionOnPurgeOptions[i].name; i++) {
@@ -1157,7 +1154,7 @@ bool DotAopCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
   return true;
 }
 
-bool DotTypesCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotTypesCmd(UaContext* ua, const char*)
 {
   ua->send->ArrayStart("jobtypes");
   for (int i = 0; jobtypes[i].type_name; i++) {
@@ -1178,7 +1175,7 @@ bool DotTypesCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
  * of new signals that indicate whether or not the command
  * succeeded.
  */
-bool DotApiCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotApiCmd(UaContext* ua, const char*)
 {
   if (ua->argc == 1) {
     ua->api = 1;
@@ -1239,7 +1236,7 @@ static int SqlHandler(void* ctx, int num_field, char** row)
   return 0;
 }
 
-bool DotSqlCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotSqlCmd(UaContext* ua, const char*)
 {
   int pos;
   bool retval = false;
@@ -1272,7 +1269,7 @@ bool DotSqlCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
   return retval;
 }
 
-static int OneHandler(void* ctx, [[maybe_unused]] int num_field, char** row)
+static int OneHandler(void* ctx, int, char** row)
 {
   UaContext* ua = (UaContext*)ctx;
 
@@ -1283,7 +1280,7 @@ static int OneHandler(void* ctx, [[maybe_unused]] int num_field, char** row)
   return 0;
 }
 
-bool DotMediatypesCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotMediatypesCmd(UaContext* ua, const char*)
 {
   if (!OpenClientDb(ua)) { return true; }
 
@@ -1298,7 +1295,7 @@ bool DotMediatypesCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
   return true;
 }
 
-bool DotMediaCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotMediaCmd(UaContext* ua, const char*)
 {
   if (!OpenClientDb(ua)) { return true; }
 
@@ -1313,7 +1310,7 @@ bool DotMediaCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
   return true;
 }
 
-bool DotScheduleCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotScheduleCmd(UaContext* ua, const char*)
 {
   bool enabled;
   bool disabled;
@@ -1341,7 +1338,7 @@ bool DotScheduleCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
   return true;
 }
 
-bool DotLocationsCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotLocationsCmd(UaContext* ua, const char*)
 {
   if (!OpenClientDb(ua)) { return true; }
 
@@ -1356,7 +1353,7 @@ bool DotLocationsCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
   return true;
 }
 
-bool DotLevelsCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotLevelsCmd(UaContext* ua, const char*)
 {
   // Note some levels are blank, which means none is needed
   ua->send->ArrayStart("levels");
@@ -1397,7 +1394,7 @@ bool DotLevelsCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
   return true;
 }
 
-bool DotVolstatusCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotVolstatusCmd(UaContext* ua, const char*)
 {
   ua->send->ArrayStart("volstatus");
   for (int i = 0; VolumeStatus[i].name; i++) {
@@ -1411,7 +1408,7 @@ bool DotVolstatusCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
 }
 
 // Return default values for a job
-bool DotDefaultsCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool DotDefaultsCmd(UaContext* ua, const char*)
 {
   char ed1[50];
   int pos = 0;

@@ -76,8 +76,7 @@ int stopRunningBareos()
  * the OS returns control here immediately after starting
  * the service.
  */
-void WINAPI serviceStartCallback([[maybe_unused]] DWORD argc,
-                                 [[maybe_unused]] char** argv)
+void WINAPI serviceStartCallback(DWORD, char**)
 {
   DWORD dwThreadID;
 
@@ -177,7 +176,7 @@ int bareosServiceMain()
 }
 
 // New style service bareos worker thread
-DWORD WINAPI bareosWorkerThread([[maybe_unused]] LPVOID lpwThreadParam)
+DWORD WINAPI bareosWorkerThread(LPVOID)
 {
   service_thread_id = GetCurrentThreadId();
 

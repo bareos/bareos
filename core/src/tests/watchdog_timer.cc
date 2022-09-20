@@ -35,9 +35,7 @@
 
 static bool signal_handler_called = false;
 
-static void SignalHandler([[maybe_unused]] int signo,
-                          [[maybe_unused]] siginfo_t* info,
-                          [[maybe_unused]] void* extra)
+static void SignalHandler(int, siginfo_t*, void*)
 {
   signal_handler_called = true;
 }

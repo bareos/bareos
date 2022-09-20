@@ -30,7 +30,7 @@
 #include "lib/volume_session_info.h"
 
 static bool callback_called_from_destructor = false;
-static void callback([[maybe_unused]] JobControlRecord* jcr)
+static void callback(JobControlRecord*)
 {
   callback_called_from_destructor = true;
 }

@@ -176,9 +176,7 @@ int RwlReadunlock(brwlock_t* rwl)
  * Lock for write access, wait until locked (or error).
  *   Multiple nested write locking is permitted.
  */
-int RwlWritelock_p(brwlock_t* rwl,
-                   [[maybe_unused]] const char* file,
-                   [[maybe_unused]] int line)
+int RwlWritelock_p(brwlock_t* rwl, const char*, int)
 {
   int status;
 

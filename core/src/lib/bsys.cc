@@ -552,14 +552,15 @@ void WritePidFile(int pidfile_fd,
 }
 #endif
 
-// Delete the pid file if we created it
-int DeletePidFile([[maybe_unused]] std::string pidfile_path)
+#if defined(HAVE_WIN32)
+int DeletePidFile(std::string) { return 1; }
+#else
+int DeletePidFile(std::string pidfile_path)
 {
-#if !defined(HAVE_WIN32)
   if (!pidfile_path.empty()) { unlink(pidfile_path.c_str()); }
-#endif
   return 1;
 }
+#endif
 
 static struct StateFileHeader state_hdr = {{"Bareos State\n"}, 4, 0, 0, {0}};
 

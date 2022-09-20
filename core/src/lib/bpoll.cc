@@ -151,13 +151,11 @@ int WaitForReadableFd(int fd, int msec, bool ignore_interupts)
  *            0 if timeout
  *           -1 if error
  */
-int WaitForWritableFd([[maybe_unused]] int fd,
-                      [[maybe_unused]] int msec,
-                      [[maybe_unused]] bool ignore_interupts)
-{
 #  if defined(HAVE_WIN32)
-  return 1;
+int WaitForWritableFd(int, int, bool) { return 1; }
 #  else
+int WaitForWritableFd(int fd, int msec, bool ignore_interupts)
+{
   fd_set fdset;
   struct timeval tv;
 
@@ -179,6 +177,6 @@ int WaitForWritableFd([[maybe_unused]] int fd,
         return 1;
     }
   }
-#  endif /* defined(HAVE_WIN32) */
 }
-#endif   /* HAVE_POLL */
+#  endif
+#endif /* HAVE_POLL */

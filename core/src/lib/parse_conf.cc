@@ -73,7 +73,7 @@
 #  define MAX_PATH 1024
 #endif
 
-bool PrintMessage([[maybe_unused]] void* sock, const char* fmt, ...)
+bool PrintMessage(void*, const char* fmt, ...)
 {
   va_list arg_ptr;
 

@@ -497,11 +497,11 @@ bail_out:
  * The code below shows how to return nothing.  See the Win32
  *   code below for returning something in the attributes.
  */
-int encode_attribsEx([[maybe_unused]] JobControlRecord* jcr,
-                     char* attribsEx,
-                     [[maybe_unused]] FindFilesPacket* ff_pkt)
-{
 #  ifdef HAVE_DARWIN_OS
+int encode_attribsEx(JobControlRecord* jcr,
+                     char* attribsEx,
+                     FindFilesPacket* ff_pkt)
+{
   /**
    * We save the Mac resource fork length so that on a
    * restore, we can be sure we put back the whole resource.
@@ -517,11 +517,15 @@ int encode_attribsEx([[maybe_unused]] JobControlRecord* jcr,
     p += ToBase64((uint64_t)(ff_pkt->hfsinfo.rsrclength), p);
   }
   *p = 0;
-#  else
-  *attribsEx = 0; /* no extended attributes */
-#  endif
   return STREAM_UNIX_ATTRIBUTES;
 }
+#  else
+int encode_attribsEx(JobControlRecord*, char* attribsEx, FindFilesPacket*)
+{
+  *attribsEx = 0; /* no extended attributes */
+  return STREAM_UNIX_ATTRIBUTES;
+}
+#  endif
 #else
 /*=============================================================*/
 /*                                                             */

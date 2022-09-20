@@ -174,9 +174,7 @@ static DWORD GetDensityBlockSize(HANDLE hDevice,
                                  DWORD* pdwDensity,
                                  DWORD* pdwBlockSize);
 
-int win32_tape_device::d_open(const char* pathname,
-                              [[maybe_unused]] int flags,
-                              [[maybe_unused]] int mode)
+int win32_tape_device::d_open(const char* pathname, int, int)
 {
   HANDLE hDevice = INVALID_HANDLE_VALUE;
   char szDeviceName[256] = "\\\\.\\";
@@ -404,9 +402,7 @@ int win32_tape_device::d_close(int fd)
   return 0;
 }
 
-int win32_tape_device::d_ioctl([[maybe_unused]] int fd,
-                               ioctl_req_t request,
-                               char* op)
+int win32_tape_device::d_ioctl(int, ioctl_req_t request, char* op)
 {
   int result = 0;
 

@@ -57,7 +57,7 @@ void FreeRunscript(RunScript* script)
   delete script;
 }
 
-static bool ScriptDirAllowed([[maybe_unused]] JobControlRecord* jcr,
+static bool ScriptDirAllowed(JobControlRecord*,
                              RunScript* script,
                              alist<const char*>* allowed_script_dirs)
 {

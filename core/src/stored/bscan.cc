@@ -437,10 +437,10 @@ static void do_scan()
  * Returns: true  if OK
  *          false if error
  */
-static inline bool UnpackRestoreObject([[maybe_unused]] JobControlRecord* jcr,
-                                       [[maybe_unused]] int32_t stream,
+static inline bool UnpackRestoreObject(JobControlRecord*,
+                                       int32_t /* stream */,
                                        char* rec,
-                                       [[maybe_unused]] int32_t reclen,
+                                       int32_t /* reclen */,
                                        RestoreObjectDbRecord* rop)
 {
   char* bp;

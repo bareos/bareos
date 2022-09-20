@@ -222,13 +222,12 @@ static inline bool SkipFstype(const char* fstype)
  * OS specific function to load the different mntents into the cache.
  * This function should be called with a write lock on the mntent_cache.
  */
-static void refresh_mount_cache(
-    [[maybe_unused]] mntent_cache_entry_t* handle_entry(
-        [[maybe_unused]] uint32_t dev,
-        [[maybe_unused]] const char* special,
-        [[maybe_unused]] const char* mountpoint,
-        [[maybe_unused]] const char* fstype,
-        [[maybe_unused]] const char* mntopts))
+static void refresh_mount_cache([[maybe_unused]] mntent_cache_entry_t*
+                                    handle_entry([[maybe_unused]] uint32_t dev,
+                                                 const char*,
+                                                 const char*,
+                                                 const char*,
+                                                 const char*))
 {
 #if defined(HAVE_GETMNTENT)
   FILE* fp;

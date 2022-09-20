@@ -316,20 +316,10 @@ static bRC freePlugin(PluginContext* ctx)
 }
 
 // Return some plugin value (none defined)
-static bRC getPluginValue([[maybe_unused]] PluginContext* ctx,
-                          [[maybe_unused]] pVariable var,
-                          [[maybe_unused]] void* value)
-{
-  return bRC_OK;
-}
+static bRC getPluginValue(PluginContext*, pVariable, void*) { return bRC_OK; }
 
 // Set a plugin value (none defined)
-static bRC setPluginValue([[maybe_unused]] PluginContext* ctx,
-                          [[maybe_unused]] pVariable var,
-                          [[maybe_unused]] void* value)
-{
-  return bRC_OK;
-}
+static bRC setPluginValue(PluginContext*, pVariable, void*) { return bRC_OK; }
 
 // Handle an event that was generated in Bareos
 static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
@@ -437,7 +427,7 @@ static bRC startBackupFile(PluginContext* ctx, struct save_pkt* sp)
 }
 
 // Done with backup of this file
-static bRC endBackupFile([[maybe_unused]] PluginContext* ctx)
+static bRC endBackupFile(PluginContext*)
 {
   /*
    * We would return bRC_More if we wanted startBackupFile to be called again to
@@ -1608,7 +1598,7 @@ bail_out:
 }
 
 // See if we need to do any postprocessing after the restore.
-static bRC end_restore_job(PluginContext* ctx, [[maybe_unused]] void* value)
+static bRC end_restore_job(PluginContext* ctx, void*)
 {
   bRC retval = bRC_OK;
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
@@ -1630,20 +1620,13 @@ static bRC end_restore_job(PluginContext* ctx, [[maybe_unused]] void* value)
  * Bareos is notifying us that a plugin name string was found,
  * and passing us the plugin command, so we can prepare for a restore.
  */
-static bRC startRestoreFile([[maybe_unused]] PluginContext* ctx,
-                            [[maybe_unused]] const char* cmd)
-{
-  return bRC_OK;
-}
+static bRC startRestoreFile(PluginContext*, const char*) { return bRC_OK; }
 
 /**
  * Bareos is notifying us that the plugin data has terminated,
  * so the restore for this particular file is done.
  */
-static bRC endRestoreFile([[maybe_unused]] PluginContext* ctx)
-{
-  return bRC_OK;
-}
+static bRC endRestoreFile(PluginContext*) { return bRC_OK; }
 
 /**
  * This is called during restore to create the file (if necessary) We must
@@ -1676,17 +1659,12 @@ static bRC createFile(PluginContext* ctx, struct restore_pkt* rp)
  * We will get here if the File is a directory after everything is written in
  * the directory.
  */
-static bRC setFileAttributes([[maybe_unused]] PluginContext* ctx,
-                             [[maybe_unused]] struct restore_pkt* rp)
+static bRC setFileAttributes(PluginContext*, struct restore_pkt*)
 {
   return bRC_OK;
 }
 
 // When using Incremental dump, all previous dumps are necessary
-static bRC checkFile([[maybe_unused]] PluginContext* ctx,
-                     [[maybe_unused]] char* fname)
-{
-  return bRC_OK;
-}
+static bRC checkFile(PluginContext*, char*) { return bRC_OK; }
 
 } /* namespace filedaemon */

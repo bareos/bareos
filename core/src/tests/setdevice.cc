@@ -46,7 +46,7 @@ using namespace directordaemon;
 
 static void Test_FreeJcr(JobControlRecord* jcr) { FreeJcr(jcr); }
 
-static bool sprintit([[maybe_unused]] void* ctx, const char* fmt, ...)
+static bool sprintit(void*, const char* fmt, ...)
 {
   va_list arg_ptr;
   PoolMem msg;

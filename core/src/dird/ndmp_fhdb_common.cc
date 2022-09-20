@@ -34,7 +34,7 @@
 namespace directordaemon {
 
 extern "C" int BndmpFhdbAddFile(struct ndmlog* ixlog,
-                                [[maybe_unused]] int tagc,
+                                int,
                                 char* raw_name,
                                 ndmp9_file_stat* fstat)
 {

@@ -65,7 +65,7 @@ static void UpdateSlots(UaContext* ua);
  *    update stats [days=...]
  *         updates long term statistics
  */
-bool UpdateCmd(UaContext* ua, [[maybe_unused]] const char* cmd)
+bool UpdateCmd(UaContext* ua, const char*)
 {
   static const char* kw[] = {NT_("media"),  /* 0 */
                              NT_("volume"), /* 1 */

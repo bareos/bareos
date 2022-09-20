@@ -1111,7 +1111,7 @@ bool generic_tape_device::rewind(DeviceControlRecord* dcr)
 }
 
 // (Un)mount the device (for tape devices)
-bool generic_tape_device::do_mount([[maybe_unused]] DeviceControlRecord* dcr,
+bool generic_tape_device::do_mount(DeviceControlRecord*,
                                    int mount,
                                    int dotimeout)
 {
@@ -1281,10 +1281,7 @@ char* generic_tape_device::StatusDev()
  * Returns: true  on succe
  *          false on error
  */
-bool generic_tape_device::UpdatePos([[maybe_unused]] DeviceControlRecord* dcr)
-{
-  return true;
-}
+bool generic_tape_device::UpdatePos(DeviceControlRecord*) { return true; }
 
 /**
  * Reposition the device to file, block
@@ -1393,22 +1390,14 @@ ssize_t generic_tape_device::d_write(int fd, const void* buffer, size_t count)
 
 int generic_tape_device::d_close(int fd) { return ::close(fd); }
 
-int generic_tape_device::d_ioctl([[maybe_unused]] int fd,
-                                 [[maybe_unused]] ioctl_req_t request,
-                                 [[maybe_unused]] char* op)
+int generic_tape_device::d_ioctl(int, ioctl_req_t, char*) { return -1; }
+
+boffset_t generic_tape_device::d_lseek(DeviceControlRecord*, boffset_t, int)
 {
   return -1;
 }
 
-boffset_t generic_tape_device::d_lseek(
-    [[maybe_unused]] DeviceControlRecord* dcr,
-    [[maybe_unused]] boffset_t offset,
-    [[maybe_unused]] int whence)
-{
-  return -1;
-}
-
-bool generic_tape_device::d_truncate([[maybe_unused]] DeviceControlRecord* dcr)
+bool generic_tape_device::d_truncate(DeviceControlRecord*)
 {
   // Maybe we should rewind and write and eof ????
   return true; /* We don't really truncate tapes */

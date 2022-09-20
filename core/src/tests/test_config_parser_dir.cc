@@ -35,7 +35,7 @@ namespace directordaemon {
 
 static std::string sprintoutput{};
 
-bool sprintit([[maybe_unused]] void* ctx, const char* fmt, ...)
+bool sprintit(void*, const char* fmt, ...)
 {
   va_list arg_ptr;
   PoolMem msg;
@@ -231,7 +231,7 @@ TEST(ConfigParser_Dir, CFG_TYPE_STR_VECTOR_OF_DIRS)
   test_config_directive_type(test_CFG_TYPE_STR_VECTOR_OF_DIRS);
 }
 
-void test_CFG_TYPE_ALIST_STR([[maybe_unused]] DirectorResource* me)
+void test_CFG_TYPE_ALIST_STR(DirectorResource*)
 {
   JobResource* job1 = (JobResource*)my_config->GetResWithName(R_JOB, "job1");
   EXPECT_STREQ("job1", job1->resource_name_);
@@ -253,7 +253,7 @@ TEST(ConfigParser_Dir, CFG_TYPE_ALIST_STR)
 }
 
 
-void test_CFG_TYPE_ALIST_RES([[maybe_unused]] DirectorResource* me)
+void test_CFG_TYPE_ALIST_RES(DirectorResource*)
 {
   JobResource* job1
       = (JobResource*)my_config->GetResWithName(R_JOB, "resultjob");
@@ -282,7 +282,7 @@ TEST(ConfigParser_Dir, CFG_TYPE_STR)
 }
 
 
-void test_CFG_TYPE_FNAME([[maybe_unused]] DirectorResource* me)
+void test_CFG_TYPE_FNAME(DirectorResource*)
 {
   FilesetResource* fileset1
       = (FilesetResource*)my_config->GetResWithName(R_FILESET, "fileset1");

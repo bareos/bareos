@@ -253,15 +253,14 @@ static bool IsEventForThisPlugin(Plugin* plugin, char* name, int len)
 }
 
 // Raise a certain plugin event.
-static inline bool trigger_plugin_event(
-    [[maybe_unused]] JobControlRecord* jcr,
-    bEventType eventType,
-    bEvent* event,
-    PluginContext* ctx,
-    void* value,
-    [[maybe_unused]] alist<PluginContext*>* plugin_ctx_list,
-    int* index,
-    bRC* rc)
+static inline bool trigger_plugin_event(JobControlRecord*,
+                                        bEventType eventType,
+                                        bEvent* event,
+                                        PluginContext* ctx,
+                                        void* value,
+                                        alist<PluginContext*>*,
+                                        int* index,
+                                        bRC* rc)
 
 {
   bool stop = false;
@@ -650,9 +649,7 @@ bail_out:
  * Sequence of calls for restore:
  *   See subroutine PluginNameStream() below.
  */
-int PluginSave(JobControlRecord* jcr,
-               FindFilesPacket* ff_pkt,
-               [[maybe_unused]] bool top_level)
+int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 {
   int len;
   bRC retval;
@@ -891,9 +888,7 @@ bail_out:
  *    us the data we need in save_pkt
  *
  */
-int PluginEstimate(JobControlRecord* jcr,
-                   FindFilesPacket* ff_pkt,
-                   [[maybe_unused]] bool top_level)
+int PluginEstimate(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 {
   int len;
   char* cmd = ff_pkt->top_fname;
@@ -1204,7 +1199,7 @@ bail_out:
 int PluginCreateFile(JobControlRecord* jcr,
                      Attributes* attr,
                      BareosWinFilePacket* bfd,
-                     [[maybe_unused]] int replace)
+                     int)
 {
   int flags;
   int retval;
@@ -1344,7 +1339,7 @@ bool PluginSetAttributes(JobControlRecord* jcr,
 // Plugin specific callback for getting ACL information.
 bacl_exit_code PluginBuildAclStreams(JobControlRecord* jcr,
                                      [[maybe_unused]] AclData* acl_data,
-                                     [[maybe_unused]] FindFilesPacket* ff_pkt)
+                                     FindFilesPacket*)
 {
   Plugin* plugin;
 
@@ -1390,7 +1385,7 @@ bacl_exit_code PluginBuildAclStreams(JobControlRecord* jcr,
 bacl_exit_code plugin_parse_acl_streams(
     JobControlRecord* jcr,
     [[maybe_unused]] AclData* acl_data,
-    [[maybe_unused]] int stream,
+    int,
     [[maybe_unused]] char* content,
     [[maybe_unused]] uint32_t content_length)
 {
@@ -1431,7 +1426,7 @@ bacl_exit_code plugin_parse_acl_streams(
 BxattrExitCode PluginBuildXattrStreams(
     JobControlRecord* jcr,
     [[maybe_unused]] struct XattrData* xattr_data,
-    [[maybe_unused]] FindFilesPacket* ff_pkt)
+    FindFilesPacket*)
 {
   Plugin* plugin;
 #if defined(HAVE_XATTR)
@@ -1547,7 +1542,7 @@ bail_out:
 BxattrExitCode PluginParseXattrStreams(
     JobControlRecord* jcr,
     [[maybe_unused]] struct XattrData* xattr_data,
-    [[maybe_unused]] int stream,
+    int,
     [[maybe_unused]] char* content,
     [[maybe_unused]] uint32_t content_length)
 {
@@ -2211,8 +2206,8 @@ static bRC bareosUnRegisterEvents(PluginContext* ctx, int nr_events, ...)
 }
 
 static bRC bareosJobMsg(PluginContext* ctx,
-                        [[maybe_unused]] const char* fname,
-                        [[maybe_unused]] int line,
+                        const char*,
+                        int,
                         int type,
                         utime_t mtime,
                         const char* fmt,
@@ -2236,7 +2231,7 @@ static bRC bareosJobMsg(PluginContext* ctx,
   return bRC_OK;
 }
 
-static bRC bareosDebugMsg([[maybe_unused]] PluginContext* ctx,
+static bRC bareosDebugMsg(PluginContext*,
                           const char* fname,
                           int line,
                           int level,
@@ -2254,18 +2249,12 @@ static bRC bareosDebugMsg([[maybe_unused]] PluginContext* ctx,
   return bRC_OK;
 }
 
-static void* bareosMalloc([[maybe_unused]] PluginContext* ctx,
-                          [[maybe_unused]] const char* fname,
-                          [[maybe_unused]] int line,
-                          size_t size)
+static void* bareosMalloc(PluginContext*, const char*, int, size_t size)
 {
   return malloc(size);
 }
 
-static void bareosFree([[maybe_unused]] PluginContext* ctx,
-                       [[maybe_unused]] const char* fname,
-                       [[maybe_unused]] int line,
-                       void* mem)
+static void bareosFree(PluginContext*, const char*, int, void* mem)
 {
   free(mem);
 }

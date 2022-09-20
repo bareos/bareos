@@ -87,9 +87,7 @@ void DoVerify(JobControlRecord* jcr)
  *
  *  Find the file, compute the MD5 or SHA1 and send it back to the Director
  */
-static int VerifyFile(JobControlRecord* jcr,
-                      FindFilesPacket* ff_pkt,
-                      [[maybe_unused]] bool top_level)
+static int VerifyFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 {
   PoolMem attribs(PM_NAME), attribsEx(PM_NAME);
   int status;

@@ -222,14 +222,9 @@ ssize_t unix_file_device::d_write(int fd, const void* buffer, size_t count)
 
 int unix_file_device::d_close(int fd) { return ::close(fd); }
 
-int unix_file_device::d_ioctl([[maybe_unused]] int fd,
-                              [[maybe_unused]] ioctl_req_t request,
-                              [[maybe_unused]] char* op)
-{
-  return -1;
-}
+int unix_file_device::d_ioctl(int, ioctl_req_t, char*) { return -1; }
 
-boffset_t unix_file_device::d_lseek([[maybe_unused]] DeviceControlRecord* dcr,
+boffset_t unix_file_device::d_lseek(DeviceControlRecord*,
                                     boffset_t offset,
                                     int whence)
 {

@@ -957,31 +957,20 @@ bool have_win32_api() { return false; /* no can do */ }
  *   Returns true  if function worked
  *   Returns false if failed (i.e. do not have Backup API on this machine)
  */
-bool set_win32_backup([[maybe_unused]] BareosWinFilePacket* bfd)
-{
-  return false; /* no can do */
-}
+bool set_win32_backup(BareosWinFilePacket*) { return false; /* no can do */ }
 
-bool SetPortableBackup([[maybe_unused]] BareosWinFilePacket* bfd)
-{
-  return true; /* no problem */
-}
+bool SetPortableBackup(BareosWinFilePacket*) { return true; /* no problem */ }
 
 /**
  * Return true  if we are writing in portable format
  * return false if not
  */
-bool IsPortableBackup([[maybe_unused]] BareosWinFilePacket* bfd)
+bool IsPortableBackup(BareosWinFilePacket*)
 {
   return true; /* portable by definition */
 }
 
-bool set_prog([[maybe_unused]] BareosWinFilePacket* bfd,
-              [[maybe_unused]] char* prog,
-              [[maybe_unused]] JobControlRecord* jcr)
-{
-  return false;
-}
+bool set_prog(BareosWinFilePacket*, char*, JobControlRecord*) { return false; }
 
 bool SetCmdPlugin(BareosWinFilePacket* bfd, JobControlRecord* jcr)
 {
@@ -1127,13 +1116,7 @@ int BopenRsrc(BareosWinFilePacket* bfd,
   return bfd->fid;
 }
 #  else
-int BopenRsrc([[maybe_unused]] BareosWinFilePacket* bfd,
-              [[maybe_unused]] const char* fname,
-              [[maybe_unused]] int flags,
-              [[maybe_unused]] mode_t mode)
-{
-  return -1;
-}
+int BopenRsrc(BareosWinFilePacket*, const char*, int, mode_t) { return -1; }
 #  endif
 
 int bclose(BareosWinFilePacket* bfd)

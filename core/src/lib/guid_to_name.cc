@@ -93,11 +93,12 @@ static int GidCompare(guitem* item1, guitem* item2)
   }
 }
 
-
-static void GetUidname([[maybe_unused]] uid_t uid,
-                       [[maybe_unused]] guitem* item)
+#ifdef HAVE_WIN32
+static void GetUidname(uid_t, guitem*) {}
+static void GetGidname(gid_t, guitem*) {}
+#else
+static void GetUidname(uid_t uid, guitem* item)
 {
-#ifndef HAVE_WIN32
   struct passwd* pwbuf;
   lock_mutex(mutex);
   pwbuf = getpwuid(uid);
@@ -105,13 +106,10 @@ static void GetUidname([[maybe_unused]] uid_t uid,
     item->name = strdup(pwbuf->pw_name);
   }
   unlock_mutex(mutex);
-#endif
 }
 
-static void GetGidname([[maybe_unused]] gid_t gid,
-                       [[maybe_unused]] guitem* item)
+static void GetGidname(gid_t gid, guitem* item)
 {
-#ifndef HAVE_WIN32
   struct group* grbuf;
   lock_mutex(mutex);
   grbuf = getgrgid(gid);
@@ -119,8 +117,8 @@ static void GetGidname([[maybe_unused]] gid_t gid,
     item->name = strdup(grbuf->gr_name);
   }
   unlock_mutex(mutex);
-#endif
 }
+#endif
 
 
 char* guid_list::uid_to_name(uid_t uid, char* name, int maxlen)

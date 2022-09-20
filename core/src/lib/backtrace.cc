@@ -81,8 +81,7 @@ std::vector<BacktraceInfo> Backtrace(int skip, int amount)
   return trace_buf;
 }
 #else
-std::vector<BacktraceInfo> Backtrace([[maybe_unused]] int skip,
-                                     [[maybe_unused]] int amount)
+std::vector<BacktraceInfo> Backtrace(int, int)
 {
   return std::vector<BacktraceInfo>();
 }

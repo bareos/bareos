@@ -520,10 +520,7 @@ err:
 }
 
 /* Dispatch user PEM encryption callbacks */
-static int CryptoPemCallbackDispatch(char* buf,
-                                     int size,
-                                     [[maybe_unused]] int rwflag,
-                                     void* userdata)
+static int CryptoPemCallbackDispatch(char* buf, int size, int, void* userdata)
 {
   PEM_CB_CONTEXT* ctx = (PEM_CB_CONTEXT*)userdata;
   return (ctx->pem_callback(buf, size, ctx->pem_userdata));
@@ -1611,8 +1608,7 @@ void OpensslPostErrors(JobControlRecord* jcr, int type, const char* errstring)
 
 // Allocate a dynamic OpenSSL mutex
 [[maybe_unused]] static struct CRYPTO_dynlock_value*
-openssl_create_dynamic_mutex([[maybe_unused]] const char* file,
-                             [[maybe_unused]] int line)
+openssl_create_dynamic_mutex(const char*, int)
 {
   struct CRYPTO_dynlock_value* dynlock;
   int status;
@@ -1632,8 +1628,8 @@ openssl_create_dynamic_mutex([[maybe_unused]] const char* file,
 [[maybe_unused]] static void OpensslUpdateDynamicMutex(
     int mode,
     struct CRYPTO_dynlock_value* dynlock,
-    [[maybe_unused]] const char* file,
-    [[maybe_unused]] int line)
+    const char*,
+    int)
 {
   if (mode & CRYPTO_LOCK) {
     lock_mutex(dynlock->mutex);
@@ -1644,8 +1640,8 @@ openssl_create_dynamic_mutex([[maybe_unused]] const char* file,
 
 [[maybe_unused]] static void OpensslDestroyDynamicMutex(
     struct CRYPTO_dynlock_value* dynlock,
-    [[maybe_unused]] const char* file,
-    [[maybe_unused]] int line)
+    const char*,
+    int)
 {
   int status;
 
@@ -1659,11 +1655,10 @@ openssl_create_dynamic_mutex([[maybe_unused]] const char* file,
 }
 
 // (Un)Lock a static OpenSSL mutex
-[[maybe_unused]] static void openssl_update_static_mutex(
-    int mode,
-    int i,
-    [[maybe_unused]] const char* file,
-    [[maybe_unused]] int line)
+[[maybe_unused]] static void openssl_update_static_mutex(int mode,
+                                                         int i,
+                                                         const char*,
+                                                         int)
 {
   if (mode & CRYPTO_LOCK) {
     lock_mutex(mutexes[i]);

@@ -939,13 +939,13 @@ class BareosDb : public BareosDbQueryEnum {
                             const char* old,
                             int len);
   virtual char* EscapeObject(JobControlRecord* jcr, char* old, int len);
-  virtual unsigned char* EscapeObject([[maybe_unused]] const unsigned char* old,
-                                      [[maybe_unused]] std::size_t old_len,
-                                      [[maybe_unused]] std::size_t& new_len)
+  virtual unsigned char* EscapeObject(const unsigned char*,
+                                      std::size_t,
+                                      std::size_t&)
   {
     return nullptr;
   }
-  virtual void FreeEscapedObjectMemory([[maybe_unused]] unsigned char* obj) {}
+  virtual void FreeEscapedObjectMemory(unsigned char*) {}
 
   virtual void UnescapeObject(JobControlRecord* jcr,
                               char* from,

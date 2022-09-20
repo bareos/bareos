@@ -132,28 +132,13 @@ struct _progdata {
     ptr = NULL;      \
   }
 
-int registerBareosEvents([[maybe_unused]] void* ctx, ...) { return 0; };
+int registerBareosEvents(void*, ...) { return 0; };
 
-int getBareosValue([[maybe_unused]] void* ctx,
-                   [[maybe_unused]] int var,
-                   [[maybe_unused]] void* value)
-{
-  return 0;
-};
+int getBareosValue(void*, [[maybe_unused]] int var, void*) { return 0; };
 
-int setBareosValue([[maybe_unused]] void* ctx,
-                   [[maybe_unused]] int var,
-                   [[maybe_unused]] void* value)
-{
-  return 0;
-};
+int setBareosValue(void*, [[maybe_unused]] int var, void*) { return 0; };
 
-int DebugMessage([[maybe_unused]] void* ctx,
-                 [[maybe_unused]] const char* file,
-                 [[maybe_unused]] int line,
-                 [[maybe_unused]] int level,
-                 [[maybe_unused]] const char* fmt,
-                 ...)
+int DebugMessage(void*, const char*, int, int, const char*, ...)
 {
 #ifdef DEBUGMSG
   printf("DG: %s:%d %s\n", file, line, fmt);
@@ -161,12 +146,12 @@ int DebugMessage([[maybe_unused]] void* ctx,
   return 0;
 };
 
-int JobMessage([[maybe_unused]] void* ctx,
-               [[maybe_unused]] const char* file,
-               [[maybe_unused]] int line,
+int JobMessage(void*,
+               const char*,
+               int,
                [[maybe_unused]] int type,
                [[maybe_unused]] int64_t mtime,
-               [[maybe_unused]] const char* fmt,
+               const char*,
                ...)
 {
 #ifdef DEBUGMSG
@@ -175,21 +160,12 @@ int JobMessage([[maybe_unused]] void* ctx,
   return 0;
 };
 
-void* bareosMalloc([[maybe_unused]] void* ctx,
-                   [[maybe_unused]] const char* file,
-                   [[maybe_unused]] int line,
-                   size_t size)
+void* bareosMalloc(void*, const char*, int, size_t size)
 {
   return MALLOC(size);
 };
 
-void bareosFree([[maybe_unused]] void* ctx,
-                [[maybe_unused]] const char* file,
-                [[maybe_unused]] int line,
-                void* mem)
-{
-  FREE(mem);
-};
+void bareosFree(void*, const char*, int, void* mem) { FREE(mem); };
 
 /* allocates and resets a main program data variable */
 progdata* allocpdata(void)

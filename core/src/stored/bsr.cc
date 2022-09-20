@@ -115,8 +115,7 @@ static BootStrapRecord* find_smallest_volfile(BootStrapRecord* fbsr,
  *  If possible, position the archive device (tape) to read the
  *  next block.
  */
-void PositionBsrBlock([[maybe_unused]] BootStrapRecord* bsr,
-                      [[maybe_unused]] DeviceBlock* block)
+void PositionBsrBlock(BootStrapRecord*, DeviceBlock*)
 {
   /* To be implemented */
 }
@@ -381,7 +380,7 @@ static BootStrapRecord* find_smallest_volfile(BootStrapRecord* found_bsr,
  * Returns: true if we should reposition
  *        : false otherwise.
  */
-bool IsThisBsrDone([[maybe_unused]] BootStrapRecord* bsr, DeviceRecord* rec)
+bool IsThisBsrDone(BootStrapRecord*, DeviceRecord* rec)
 {
   BootStrapRecord* rbsr = rec->bsr;
   Dmsg1(dbglevel, "match_set %d\n", rbsr != NULL);
@@ -539,7 +538,7 @@ no_match:
 static int MatchVolume(BootStrapRecord* bsr,
                        BsrVolume* volume,
                        Volume_Label* volrec,
-                       [[maybe_unused]] bool done)
+                       bool)
 {
   if (!volume) { return 0; /* Volume must match */ }
   if (bstrcmp(volume->VolumeName, volrec->VolumeName)) {
@@ -553,7 +552,7 @@ static int MatchVolume(BootStrapRecord* bsr,
 static int MatchClient(BootStrapRecord* bsr,
                        BsrClient* client,
                        Session_Label* sessrec,
-                       [[maybe_unused]] bool done)
+                       bool)
 {
   if (!client) { return 1; /* no specification matches all */ }
   if (bstrcmp(client->ClientName, sessrec->ClientName)) { return 1; }
@@ -564,7 +563,7 @@ static int MatchClient(BootStrapRecord* bsr,
 static int MatchJob(BootStrapRecord* bsr,
                     BsrJob* job,
                     Session_Label* sessrec,
-                    [[maybe_unused]] bool done)
+                    bool)
 {
   if (!job) { return 1; /* no specification matches all */ }
   if (bstrcmp(job->Job, sessrec->Job)) { return 1; }
@@ -575,7 +574,7 @@ static int MatchJob(BootStrapRecord* bsr,
 static int MatchJobType(BootStrapRecord* bsr,
                         BsrJobType* job_type,
                         Session_Label* sessrec,
-                        [[maybe_unused]] bool done)
+                        bool)
 {
   if (!job_type) { return 1; /* no specification matches all */ }
   if (job_type->JobType == sessrec->JobType) { return 1; }
@@ -586,7 +585,7 @@ static int MatchJobType(BootStrapRecord* bsr,
 static int MatchJobLevel(BootStrapRecord* bsr,
                          BsrJoblevel* job_level,
                          Session_Label* sessrec,
-                         [[maybe_unused]] bool done)
+                         bool)
 {
   if (!job_level) { return 1; /* no specification matches all */ }
   if (job_level->JobLevel == sessrec->JobLevel) { return 1; }
@@ -599,7 +598,7 @@ static int MatchJobLevel(BootStrapRecord* bsr,
 static int MatchJobid(BootStrapRecord* bsr,
                       BsrJobid* jobid,
                       Session_Label* sessrec,
-                      [[maybe_unused]] bool done)
+                      bool)
 {
   if (!jobid) { return 1; /* no specification matches all */ }
   if (jobid->JobId <= sessrec->JobId && jobid->JobId2 >= sessrec->JobId) {
@@ -672,7 +671,7 @@ static int MatchVoladdr(BootStrapRecord* bsr,
 static int MatchStream(BootStrapRecord* bsr,
                        BsrStream* stream,
                        DeviceRecord* rec,
-                       [[maybe_unused]] bool done)
+                       bool)
 {
   if (!stream) { return 1; /* no specification matches all */ }
   if (stream->stream == rec->Stream) { return 1; }

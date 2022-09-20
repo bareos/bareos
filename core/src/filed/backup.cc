@@ -81,7 +81,9 @@ static int send_data(JobControlRecord* jcr,
 bool EncodeAndSendAttributes(JobControlRecord* jcr,
                              FindFilesPacket* ff_pkt,
                              int& data_stream);
+#if defined(WIN32_VSS)
 static void CloseVssBackupSession(JobControlRecord* jcr);
+#endif
 
 /**
  * Find all the requested files and send them
@@ -95,7 +97,7 @@ static void CloseVssBackupSession(JobControlRecord* jcr);
  * except echo the heartbeat to the Director).
  */
 bool BlastDataToStorageDaemon(JobControlRecord* jcr,
-                              [[maybe_unused]] char* addr,
+                              char*,
                               crypto_cipher_t cipher)
 {
   BareosSocket* sd;
@@ -172,7 +174,9 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr,
          jcr->impl->xattr_data->u.build->nr_errors);
   }
 
+#if defined(WIN32_VSS)
   CloseVssBackupSession(jcr);
+#endif
 
   AccurateFinish(jcr); /* send deleted or base file list to SD */
 
@@ -490,9 +494,7 @@ static inline bool DoBackupXattr(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
  *          0 if error
  *         -1 to ignore file/directory (not used here)
  */
-int SaveFile(JobControlRecord* jcr,
-             FindFilesPacket* ff_pkt,
-             [[maybe_unused]] bool top_level)
+int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 {
   bool do_read = false;
   bool plugin_started = false;
@@ -1436,9 +1438,9 @@ void UnstripPath(FindFilesPacket* ff_pkt)
   }
 }
 
-static void CloseVssBackupSession([[maybe_unused]] JobControlRecord* jcr)
-{
 #if defined(WIN32_VSS)
+static void CloseVssBackupSession(JobControlRecord* jcr)
+{
   /*
    * STOP VSS ON WIN32
    * Tell vss to close the backup session
@@ -1476,6 +1478,6 @@ static void CloseVssBackupSession([[maybe_unused]] JobControlRecord* jcr)
       SaveFile(jcr, ff_pkt, true);
     }
   }
-#endif
 }
+#endif
 } /* namespace filedaemon */

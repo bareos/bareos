@@ -766,9 +766,7 @@ static size_t write_to_vmdk(size_t sector_offset, size_t nbyte, void* buf)
 }
 
 // Read data from a stream using the robust reader function.
-static size_t read_from_stream([[maybe_unused]] size_t sector_offset,
-                               size_t nbyte,
-                               void* buf)
+static size_t read_from_stream(size_t, size_t nbyte, void* buf)
 {
   return robust_reader(STDOUT_FILENO, buf, nbyte);
 }

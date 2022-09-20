@@ -643,11 +643,10 @@ bool BareosSocket::DoTlsHandshakeWithClient(TlsConfigCert* local_tls_cert,
   return false;
 }
 
-bool BareosSocket::DoTlsHandshakeWithServer(
-    TlsConfigCert* local_tls_cert,
-    [[maybe_unused]] const char* identity,
-    [[maybe_unused]] const char* password,
-    JobControlRecord* jcr)
+bool BareosSocket::DoTlsHandshakeWithServer(TlsConfigCert* local_tls_cert,
+                                            const char*,
+                                            const char*,
+                                            JobControlRecord* jcr)
 {
   if (BnetTlsClient(this, local_tls_cert->verify_peer_,
                     local_tls_cert->allowed_certificate_common_names_)) {

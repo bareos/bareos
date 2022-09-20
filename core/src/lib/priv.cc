@@ -44,11 +44,9 @@ extern "C" int initgroups(const char*, int);
  * Lower privileges by switching to new UID and GID if non-NULL.
  * If requested, keep readall capabilities after switch.
  */
-void drop([[maybe_unused]] char* uname,
-          [[maybe_unused]] char* gname,
-          [[maybe_unused]] bool keep_readall_caps)
-{
 #if defined(HAVE_PWD_H) && defined(HAVE_GRP_H)
+void drop(char* uname, char* gname, bool keep_readall_caps)
+{
   struct passwd* passw = NULL;
   struct group* group = NULL;
   gid_t gid;
@@ -136,5 +134,7 @@ void drop([[maybe_unused]] char* uname,
     BErrNo be;
     Emsg1(M_ERROR_TERM, 0, _("Could not set specified userid: %s\n"), username);
   }
-#endif
 }
+#else
+void drop(char*, char*, bool) {}
+#endif

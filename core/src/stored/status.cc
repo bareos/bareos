@@ -108,9 +108,8 @@ static void OutputStatus(JobControlRecord* jcr,
   }
 }
 
-static void ListResources([[maybe_unused]] StatusPacket* sp)
-{
-  /* this has not been implemented */
+static void ListResources(StatusPacket*)
+{ /* this has not been implemented */
 }
 
 static bool NeedToListDevice(const char* devicenames, const char* devicename)

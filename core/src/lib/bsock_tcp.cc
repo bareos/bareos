@@ -139,7 +139,7 @@ bail_out:
 
 // Finish initialization of the pocket structure.
 void BareosSocketTCP::FinInit(JobControlRecord* jcr,
-                              [[maybe_unused]] int sockfd,
+                              int,
                               const char* who,
                               const char* host,
                               int port,
@@ -162,7 +162,7 @@ void BareosSocketTCP::FinInit(JobControlRecord* jcr,
 bool BareosSocketTCP::open(JobControlRecord* jcr,
                            const char* name,
                            const char* host,
-                           [[maybe_unused]] char* service,
+                           char*,
                            int port,
                            utime_t heart_beat,
                            int* fatal)
@@ -636,10 +636,11 @@ get_out:
   return nbytes; /* return actual length of message */
 }
 
-int BareosSocketTCP::GetPeer([[maybe_unused]] char* buf,
-                             [[maybe_unused]] socklen_t buflen)
+#if defined(HAVE_WIN32)
+int BareosSocketTCP::GetPeer(char*, socklen_t) { return -1; }
+#else
+int BareosSocketTCP::GetPeer(char* buf, socklen_t buflen)
 {
-#if !defined(HAVE_WIN32)
   if (peer_addr.sin_family == 0) {
     socklen_t salen = sizeof(peer_addr);
     int rval = (getpeername)(fd_, (struct sockaddr*)&peer_addr, &salen);
@@ -649,10 +650,8 @@ int BareosSocketTCP::GetPeer([[maybe_unused]] char* buf,
     return -1;
 
   return 0;
-#else
-  return -1;
-#endif
 }
+#endif
 
 /*
  * Set the network buffer size, suggested size is in size.

@@ -176,9 +176,7 @@ bool do_ndmp_native_query_tape_and_robot_agents(JobControlRecord* jcr,
  * get status of a NDMP Native storage and store the information
  * coming in via the NDMP protocol
  */
-void DoNdmpNativeStorageStatus(UaContext* ua,
-                               StorageResource* store,
-                               [[maybe_unused]] char* cmd)
+void DoNdmpNativeStorageStatus(UaContext* ua, StorageResource* store, char*)
 {
   struct ndm_job_param ndmp_job;
 
@@ -230,8 +228,8 @@ void DoNdmpStorageStatus(UaContext* ua, StorageResource* store, char* cmd)
  * debugging.
  */
 extern "C" void NdmpRobotStatusHandler(struct ndmlog* log,
-                                       [[maybe_unused]] char* tag,
-                                       [[maybe_unused]] int lev,
+                                       char*,
+                                       int,
                                        char* msg)
 {
   NIS* nis;
@@ -263,7 +261,7 @@ static void CleanupNdmpSession(struct ndm_session* ndmp_sess)
 
 // Generic function to run a storage Job on a remote NDMP server.
 static bool NdmpRunStorageJob(JobControlRecord* jcr,
-                              [[maybe_unused]] StorageResource* store,
+                              StorageResource*,
                               struct ndm_session* ndmp_sess,
                               struct ndm_job_param* ndmp_job)
 {
@@ -926,9 +924,9 @@ bool NdmpAutochangerVolumeOperation(UaContext* ua,
 bool NdmpSendLabelRequest(UaContext* ua,
                           StorageResource* store,
                           MediaDbRecord* mr,
-                          [[maybe_unused]] MediaDbRecord* omr,
+                          MediaDbRecord*,
                           PoolDbRecord* pr,
-                          [[maybe_unused]] bool relabel,
+                          bool,
                           drive_number_t drive,
                           slot_number_t slot)
 {
@@ -1090,63 +1088,59 @@ bool ndmp_native_setup_robot_and_tape_for_native_backup_job(
 
 #else
 // Dummy entry points when NDMP not enabled.
-void DoNdmpStorageStatus(UaContext* ua,
-                         [[maybe_unused]] StorageResource* store,
-                         [[maybe_unused]] char* cmd)
+void DoNdmpStorageStatus(UaContext* ua, StorageResource*, char*)
 {
   Jmsg(ua->jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
 }
 
 dlist<vol_list_t>* ndmp_get_vol_list(UaContext* ua,
-                                     [[maybe_unused]] StorageResource* store,
-                                     [[maybe_unused]] bool listall,
-                                     [[maybe_unused]] bool scan)
+                                     StorageResource*,
+                                     bool,
+                                     bool)
 {
   Jmsg(ua->jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
   return (dlist<vol_list_t>*)NULL;
 }
 
-slot_number_t NdmpGetNumSlots(UaContext* ua,
-                              [[maybe_unused]] StorageResource* store)
+slot_number_t NdmpGetNumSlots(UaContext* ua, StorageResource*)
 {
   Jmsg(ua->jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
   return 0;
 }
 
-drive_number_t NdmpGetNumDrives(UaContext* ua,
-                                [[maybe_unused]] StorageResource* store)
+drive_number_t NdmpGetNumDrives(UaContext* ua, StorageResource*)
 {
   Jmsg(ua->jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
   return 0;
 }
 
 bool NdmpTransferVolume(UaContext* ua,
-                        [[maybe_unused]] StorageResource* store,
-                        [[maybe_unused]] slot_number_t src_slot,
-                        [[maybe_unused]] slot_number_t dst_slot)
+                        StorageResource*,
+                        slot_number_t,
+                        slot_number_t)
 {
   Jmsg(ua->jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
   return false;
 }
 
 bool NdmpAutochangerVolumeOperation(UaContext* ua,
-                                    [[maybe_unused]] StorageResource* store,
-                                    [[maybe_unused]] const char* operation,
-                                    [[maybe_unused]] drive_number_t drive,
-                                    [[maybe_unused]] slot_number_t slot)
+                                    StorageResource*,
+                                    const char*,
+                                    drive_number_t,
+                                    slot_number_t)
 {
   Jmsg(ua->jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
   return false;
 }
 
-bool NdmpSendLabelRequest([[maybe_unused]] UaContext* ua,
-                          [[maybe_unused]] StorageResource* store,
-                          [[maybe_unused]] MediaDbRecord* mr,
-                          [[maybe_unused]] MediaDbRecord* omr,
-                          [[maybe_unused]] PoolDbRecord* pr,
-                          [[maybe_unused]] bool relabel,
-                          [[maybe_unused]] drive_number_t drive,
-                          [[maybe_unused]] slot_number_t slot)
+bool NdmpSendLabelRequest(UaContext* ua,
+                          StorageResource*,
+                          MediaDbRecord*,
+                          MediaDbRecord*,
+                          PoolDbRecord*,
+                          bool,
+                          drive_number_t,
+                          slot_number_t)
 {
   Jmsg(ua->jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
   return false;

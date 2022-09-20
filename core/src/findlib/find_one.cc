@@ -94,13 +94,9 @@ static void FreeDirFfPkt(FindFilesPacket* dir_ff_pkt)
  * If we do not have a list of file system types, we accept anything.
  */
 #if defined(HAVE_WIN32)
-static bool AcceptFstype([[maybe_unused]] FindFilesPacket* ff,
-                         [[maybe_unused]] void* dummy)
-{
-  return true;
-}
+static bool AcceptFstype(FindFilesPacket*, void*) { return true; }
 #else
-static bool AcceptFstype(FindFilesPacket* ff, [[maybe_unused]] void* dummy)
+static bool AcceptFstype(FindFilesPacket* ff, void*)
 {
   int i;
   char fs[1000];
@@ -132,8 +128,7 @@ static bool AcceptFstype(FindFilesPacket* ff, [[maybe_unused]] void* dummy)
  * If we do not have a list of drive types, we accept anything.
  */
 #if defined(HAVE_WIN32)
-static inline bool AcceptDrivetype(FindFilesPacket* ff,
-                                   [[maybe_unused]] void* dummy)
+static inline bool AcceptDrivetype(FindFilesPacket* ff, void*)
 {
   int i;
   char dt[100];
@@ -159,11 +154,7 @@ static inline bool AcceptDrivetype(FindFilesPacket* ff,
   return accept;
 }
 #else
-static inline bool AcceptDrivetype([[maybe_unused]] FindFilesPacket* ff,
-                                   [[maybe_unused]] void* dummy)
-{
-  return true;
-}
+static inline bool AcceptDrivetype(FindFilesPacket*, void*) { return true; }
 #endif
 
 /**
@@ -174,9 +165,10 @@ static inline bool AcceptDrivetype([[maybe_unused]] FindFilesPacket* ff,
  * On Mac OS X, this successfully differentiates between HFS+ and UFS
  * volumes, which makes me trust it is OK for others, too.
  */
-static bool VolumeHasAttrlist([[maybe_unused]] const char* fname)
-{
+
 #ifdef HAVE_DARWIN_OS
+static bool VolumeHasAttrlist(const char* fname)
+{
   struct statfs st;
   struct volinfo_struct {
     unsigned long length;         /* Mandatory field */
@@ -199,28 +191,33 @@ static bool VolumeHasAttrlist([[maybe_unused]] const char* fname)
       return true;
     }
   }
-#endif
   return false;
 }
+#else
+static bool VolumeHasAttrlist(const char*) { return false; }
+#endif
 
 // check for BSD nodump flag
-static inline bool no_dump([[maybe_unused]] JobControlRecord* jcr,
-                           [[maybe_unused]] FindFilesPacket* ff_pkt)
-{
 #if defined(HAVE_CHFLAGS) && defined(UF_NODUMP)
+static inline bool no_dump(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
+{
   if (BitIsSet(FO_HONOR_NODUMP, ff_pkt->flags)
       && (ff_pkt->statp.st_flags & UF_NODUMP)) {
     Jmsg(jcr, M_INFO, 1, _("     NODUMP flag set - will not process %s\n"),
          ff_pkt->fname);
     return true; /* do not backup this file */
   }
-#endif
   return false; /* do backup */
 }
+#else
+static inline bool no_dump(JobControlRecord*, FindFilesPacket*)
+{
+  return false;
+}
+#endif
 
 // check for sizes
-static inline bool CheckSizeMatching([[maybe_unused]] JobControlRecord* jcr,
-                                     FindFilesPacket* ff_pkt)
+static inline bool CheckSizeMatching(JobControlRecord*, FindFilesPacket* ff_pkt)
 {
   int64_t begin_size, end_size, difference;
 
@@ -816,7 +813,7 @@ static inline int process_special_file(JobControlRecord* jcr,
                                        int HandleFile(JobControlRecord* jcr,
                                                       FindFilesPacket* ff,
                                                       bool top_level),
-                                       [[maybe_unused]] char* fname,
+                                       char*,
                                        bool top_level)
 {
   int rtn_stat;

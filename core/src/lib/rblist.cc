@@ -297,7 +297,7 @@ void rblist::RightRotate(void* item)
 }
 
 
-void rblist::remove([[maybe_unused]] void* item) {}
+void rblist::remove(void*) {}
 
 /* Destroy the tree contents.  Not totally working */
 void rblist::destroy()

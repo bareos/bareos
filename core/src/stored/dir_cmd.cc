@@ -339,7 +339,7 @@ bail_out:
  * Force SD to die, and hopefully dump itself.  Turned on only in development
  * version.
  */
-static bool die_cmd([[maybe_unused]] JobControlRecord* jcr)
+static bool die_cmd(JobControlRecord*)
 {
 #ifdef DEVELOPER
   JobControlRecord* djcr = NULL;

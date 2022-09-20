@@ -832,21 +832,11 @@ char* dlerror(void)
   return buf;
 }
 
-int fcntl([[maybe_unused]] int fd, [[maybe_unused]] int cmd) { return 0; }
+int fcntl(int, int) { return 0; }
 
-int chown([[maybe_unused]] const char* k,
-          [[maybe_unused]] uid_t,
-          [[maybe_unused]] gid_t)
-{
-  return 0;
-}
+int chown(const char*, uid_t, gid_t) { return 0; }
 
-int lchown([[maybe_unused]] const char* k,
-           [[maybe_unused]] uid_t,
-           [[maybe_unused]] gid_t)
-{
-  return 0;
-}
+int lchown(const char*, uid_t, gid_t) { return 0; }
 
 long int random(void) { return rand(); }
 
@@ -1804,7 +1794,7 @@ int win32_ftruncate(int fd, int64_t length)
   return 0;
 }
 
-int fcntl([[maybe_unused]] int fd, int cmd, [[maybe_unused]] long arg)
+int fcntl(int, int cmd, long)
 {
   int rval = 0;
 
@@ -1949,8 +1939,7 @@ bail_out:
 }
 
 // Create a hardlink
-int link([[maybe_unused]] const char* existing,
-         [[maybe_unused]] const char* newfile)
+int link(const char*, const char*)
 {
   errno = ENOSYS;
   return -1;
@@ -1962,7 +1951,7 @@ int gettimeofday(struct timeval* tv, struct timezone* tz)
 }
 
 // Write in Windows System log
-extern "C" void syslog([[maybe_unused]] int type, const char* fmt, ...)
+extern "C" void syslog(int, const char* fmt, ...)
 {
   va_list arg_ptr;
   int len, maxlen;
@@ -3016,10 +3005,7 @@ static void CloseHandleIfValid(HANDLE handle)
   if (handle != INVALID_HANDLE_VALUE) { CloseHandle(handle); }
 }
 
-Bpipe* OpenBpipe(char* prog,
-                 int wait,
-                 const char* mode,
-                 [[maybe_unused]] bool dup_stderr)
+Bpipe* OpenBpipe(char* prog, int wait, const char* mode, bool)
 {
   int mode_read, mode_write;
   SECURITY_ATTRIBUTES saAttr;
@@ -3214,11 +3200,7 @@ int CloseWpipe(Bpipe* bpipe)
 }
 
 // Syslog function, added by Nicolas Boichat
-extern "C" void openlog([[maybe_unused]] const char* ident,
-                        [[maybe_unused]] int option,
-                        [[maybe_unused]] int facility)
-{
-}
+extern "C" void openlog(const char*, int, int) {}
 
 // Log an error message
 void LogErrorMsg(const char* message)

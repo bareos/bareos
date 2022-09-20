@@ -97,11 +97,10 @@ void OutputFormatterResource::ResourceStart(const char* resource_type_groupname,
   send_->ObjectStart(resource_name, nullptr, case_sensitive_name);
 }
 
-void OutputFormatterResource::ResourceEnd(
-    const char* resource_type_groupname,
-    [[maybe_unused]] const char* resource_type_name,
-    const char* resource_name,
-    bool as_comment)
+void OutputFormatterResource::ResourceEnd(const char* resource_type_groupname,
+                                          const char*,
+                                          const char* resource_name,
+                                          bool as_comment)
 {
   send_->ObjectEnd(resource_name);
   indent_level_--;

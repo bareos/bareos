@@ -155,7 +155,7 @@ static inline bool fill_restore_environment_ndmp_native(
 // See in the tree with selected files what files were selected to be restored.
 int SetFilesToRestoreNdmpNative(JobControlRecord* jcr,
                                 struct ndm_job_param* job,
-                                [[maybe_unused]] int32_t FileIndex,
+                                int32_t,
                                 const char* restore_prefix,
                                 const char* ndmp_filesystem)
 {

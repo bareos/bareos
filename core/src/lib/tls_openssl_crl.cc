@@ -207,8 +207,8 @@ bail_out:
 static int CrlReloaderCtrl(X509_LOOKUP* lookup,
                            int cmd,
                            const char* argp,
-                           [[maybe_unused]] long argl,
-                           [[maybe_unused]] char** ret)
+                           long,
+                           char**)
 {
   int ok = 0;
 

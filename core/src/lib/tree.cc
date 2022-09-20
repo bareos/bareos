@@ -193,7 +193,7 @@ void TreeAddDeltaPart(TREE_ROOT* root,
  */
 TREE_NODE* insert_tree_node(char* path,
                             char* fname,
-                            [[maybe_unused]] int type,
+                            int,
                             TREE_ROOT* root,
                             TREE_NODE* parent)
 {
@@ -243,10 +243,7 @@ TREE_NODE* insert_tree_node(char* path,
     }
   } else {
     fname = path;
-    if (!parent) {
-      parent = (TREE_NODE*)root;
-      type = TN_DIR_NLS;
-    }
+    if (!parent) { parent = (TREE_NODE*)root; }
     Dmsg1(100, "No / found: %s\n", path);
   }
 

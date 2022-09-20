@@ -544,7 +544,7 @@ static storagedaemon::BootStrapRecord* store_fileregex(
 }
 
 static storagedaemon::BootStrapRecord* StoreJobtype(
-    [[maybe_unused]] LEX* lc,
+    LEX*,
     storagedaemon::BootStrapRecord* bsr)
 {
   /* *****FIXME****** */
@@ -553,7 +553,7 @@ static storagedaemon::BootStrapRecord* StoreJobtype(
 }
 
 static storagedaemon::BootStrapRecord* store_joblevel(
-    [[maybe_unused]] LEX* lc,
+    LEX*,
     storagedaemon::BootStrapRecord* bsr)
 {
   /* *****FIXME****** */

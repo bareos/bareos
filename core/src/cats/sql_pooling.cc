@@ -84,21 +84,21 @@ BareosDb* DbSqlGetNonPooledConnection(JobControlRecord* jcr,
  * Initialize the sql connection pool.
  * For non pooling this is a no-op.
  */
-bool db_sql_pool_initialize([[maybe_unused]] const char* db_drivername,
-                            [[maybe_unused]] const char* db_name,
-                            [[maybe_unused]] const char* db_user,
-                            [[maybe_unused]] const char* db_password,
-                            [[maybe_unused]] const char* db_address,
-                            [[maybe_unused]] int db_port,
-                            [[maybe_unused]] const char* db_socket,
-                            [[maybe_unused]] bool disable_batch_insert,
-                            [[maybe_unused]] bool try_reconnect,
-                            [[maybe_unused]] bool exit_on_fatal,
-                            [[maybe_unused]] int min_connections,
-                            [[maybe_unused]] int max_connections,
-                            [[maybe_unused]] int increment_connections,
-                            [[maybe_unused]] int idle_timeout,
-                            [[maybe_unused]] int validate_timeout)
+bool db_sql_pool_initialize(const char*,
+                            const char*,
+                            const char*,
+                            const char*,
+                            const char*,
+                            int,
+                            const char*,
+                            bool,
+                            bool,
+                            bool,
+                            int,
+                            int,
+                            int,
+                            int,
+                            int)
 {
   return true;
 }
@@ -143,9 +143,7 @@ BareosDb* DbSqlGetPooledConnection(JobControlRecord* jcr,
  * Put a connection back onto the pool for reuse.
  * For non pooling we just do a CloseDatabase.
  */
-void DbSqlClosePooledConnection(JobControlRecord* jcr,
-                                BareosDb* mdb,
-                                [[maybe_unused]] bool abort)
+void DbSqlClosePooledConnection(JobControlRecord* jcr, BareosDb* mdb, bool)
 {
   mdb->CloseDatabase(jcr);
 }

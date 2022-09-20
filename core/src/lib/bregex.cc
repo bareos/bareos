@@ -1391,7 +1391,7 @@ int regexec(regex_t* preg,
             const char* string,
             size_t nmatch,
             regmatch_t pmatch[],
-            [[maybe_unused]] int eflags)
+            int)
 {
   int status;
   int len = strlen(string);
@@ -1407,10 +1407,7 @@ int regexec(regex_t* preg,
   return status < 0 ? -1 : 0;
 }
 
-size_t regerror([[maybe_unused]] int errcode,
-                regex_t* preg,
-                char* errbuf,
-                size_t errbuf_size)
+size_t regerror(int, regex_t* preg, char* errbuf, size_t errbuf_size)
 {
   bstrncpy(errbuf, preg->errmsg, errbuf_size);
   return 0;

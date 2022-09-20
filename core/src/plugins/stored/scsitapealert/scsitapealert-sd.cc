@@ -135,9 +135,7 @@ static bRC freePlugin(PluginContext* ctx)
 }
 
 // Return some plugin value (none defined)
-static bRC getPluginValue([[maybe_unused]] PluginContext* ctx,
-                          [[maybe_unused]] pVariable var,
-                          [[maybe_unused]] void* value)
+static bRC getPluginValue(PluginContext*, pVariable var, void*)
 {
   Dmsg1(debuglevel, "scsitapealert-sd: getPluginValue var=%d\n", var);
 
@@ -145,9 +143,7 @@ static bRC getPluginValue([[maybe_unused]] PluginContext* ctx,
 }
 
 // Set a plugin value (none defined)
-static bRC setPluginValue([[maybe_unused]] PluginContext* ctx,
-                          [[maybe_unused]] pVariable var,
-                          [[maybe_unused]] void* value)
+static bRC setPluginValue(PluginContext*, pVariable var, void*)
 {
   Dmsg1(debuglevel, "scsitapealert-sd: setPluginValue var=%d\n", var);
 
@@ -155,9 +151,7 @@ static bRC setPluginValue([[maybe_unused]] PluginContext* ctx,
 }
 
 // Handle an event that was generated in Bareos
-static bRC handlePluginEvent([[maybe_unused]] PluginContext* ctx,
-                             [[maybe_unused]] bSdEvent* event,
-                             void* value)
+static bRC handlePluginEvent(PluginContext*, bSdEvent* event, void* value)
 {
   switch (event->eventType) {
     case bSdEventLabelVerified:
