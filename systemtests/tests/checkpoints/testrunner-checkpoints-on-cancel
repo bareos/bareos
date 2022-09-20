@@ -88,7 +88,7 @@ if [ $NumberOfBackedUpFiles -le 0 ]; then
 fi
 
 # Check that the restore of a canceled backup works fine
-expect_grep "Termination:            Restore OK" \
+expect_grep "Termination:.*Restore OK" \
             "$restore_log" \
             "Restore is not OK."
 
