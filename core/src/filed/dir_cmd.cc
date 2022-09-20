@@ -374,9 +374,7 @@ static inline bool AreMaxConcurrentJobsExceeded()
   JobControlRecord* jcr;
   unsigned int cnt = 0;
 
-  foreach_jcr (jcr) {
-    cnt++;
-  }
+  foreach_jcr (jcr) { cnt++; }
   endeach_jcr(jcr);
 
   return (cnt >= me->MaxConcurrentJobs) ? true : false;
@@ -2316,12 +2314,6 @@ static bool RestoreCmd(JobControlRecord* jcr)
   DoRestore(jcr);
   StopDirHeartbeat(jcr);
 
-  if (jcr->JobWarnings) {
-    jcr->setJobStatus(JS_Warnings);
-  } else {
-    jcr->setJobStatus(JS_Terminated);
-  }
-
   // Send Close session command to Storage daemon
   sd->fsend(read_close, jcr->impl->Ticket);
   Dmsg1(100, "filed>stored: %s", sd->msg);
@@ -2380,6 +2372,12 @@ bail_out:
 
   if (!retval) {
     EndRestoreCmd(jcr); /* stopping so send bEventEndRestoreJob */
+  }
+
+  if (jcr->JobWarnings) {
+    jcr->setJobStatus(JS_Warnings);
+  } else {
+    jcr->setJobStatus(JS_Terminated);
   }
 
   return retval;
