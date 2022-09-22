@@ -530,6 +530,8 @@ static void readlabelcmd()
       break;
     case VOL_OK:
       Pmsg0(0, _("Volume label read correctly.\n"));
+      debug_level = 20;
+      DumpVolumeLabel(dev);
       break;
     case VOL_IO_ERROR:
       Pmsg1(0, _("I/O error on device: ERR=%s"), dev->bstrerror());
@@ -550,9 +552,6 @@ static void readlabelcmd()
       Pmsg0(0, _("Unknown error.\n"));
       break;
   }
-
-  debug_level = 20;
-  DumpVolumeLabel(dev);
   debug_level = save_debug_level;
 }
 
