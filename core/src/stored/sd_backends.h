@@ -32,9 +32,8 @@ namespace storagedaemon {
 
 class BackendInterface {
  public:
-  virtual ~BackendInterface() {}
+  virtual ~BackendInterface() = default;
   virtual Device* GetDevice(JobControlRecord* jcr, DeviceType device_type) = 0;
-  virtual void FlushDevice(void) = 0;
 };
 
 

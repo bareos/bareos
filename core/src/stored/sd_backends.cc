@@ -61,7 +61,6 @@ struct BackendDeviceLibraryDescriptor {
 
   ~BackendDeviceLibraryDescriptor()
   {
-    FlushDevice();
     delete backend_interface;
     dlclose(dynamic_library_handle);
   }
@@ -90,7 +89,6 @@ struct BackendDeviceLibraryDescriptor {
   {
     return backend_interface->GetDevice(jcr, device_type);
   }
-  void FlushDevice() { backend_interface->FlushDevice(); }
 };
 
 const std::map<DeviceType, const char*> device_type_to_name_mapping

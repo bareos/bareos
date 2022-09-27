@@ -1040,7 +1040,6 @@ class Backend : public BackendInterface {
         return nullptr;
     }
   }
-  void FlushDevice(void) override {}
 };
 
 #ifdef HAVE_DYNAMIC_SD_BACKENDS
