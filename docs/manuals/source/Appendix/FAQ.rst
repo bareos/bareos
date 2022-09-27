@@ -12,6 +12,47 @@ The process for handling security-related problems is described in our GitHub `s
 
 .. _security policy: https://github.com/bareos/bareos/security/policy
 
+.. _bareos-1920-updatefaq:
+
+Upgrade of Bareos 19.2 with installed Python plugin on Debian
+-------------------------------------------------------------
+
+.. index::
+   single: Platform; Debian
+   single: bareos-19.2; Upgrade with Python packages on Debian
+
+On Debian platform, if you update from Bareos <=19.2 to Bareos >= 20 with any Python plugin installed, you will face some difficulties with :command:`apt upgrade`.
+This is due to the renaming of Python plugin packages into python2 packages and introducing the python3 packages. apt/dpkg is not able to handle this situation alone.
+
+
+.. code-block:: shell-session
+   :caption: Error upgrading from 19.2 with apt upgrade
+
+   apt upgrade bareos bareos-director bareos-filedaemon
+   Reading package lists... Done
+   Building dependency tree
+   Reading state information... Done
+   Calculating upgrade... Done
+   Some packages could not be installed. This may mean that you have
+   requested an impossible situation or if you are using the unstable
+   distribution that some required packages have not yet been created
+   or been moved out of Incoming.
+   The following information may help to resolve the situation:
+
+   The following packages have unmet dependencies:
+      bareos-director-python-plugin : Depends: bareos-common (= 19.2.12-2) but 21.1.2-1 is to be installed
+      bareos-filedaemon-python-plugin : Depends: bareos-common (= 19.2.12-2) but 21.1.2-1 is to be installed
+   E: Broken packages
+
+
+In this case, it is advised to use :command:`apt` with `full-upgrade` and directly move to new recommended python3 plugin.
+
+.. code-block:: shell-session
+   :caption: for full upgrade to python3
+
+   apt full-upgrade bareos-director-python3-plugin bareos-filedaemon-python3-plugin
+
+
 .. _bareos-1825-updatefaq:
 
 Bareos 18.2.5 FAQ
