@@ -377,10 +377,10 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
 bool DoNativeBackup(JobControlRecord* jcr)
 {
   int status;
-  BareosSocket* fd = NULL;
-  BareosSocket* sd = NULL;
-  StorageResource* store = NULL;
-  ClientResource* client = NULL;
+  BareosSocket* fd = nullptr;
+  BareosSocket* sd = nullptr;
+  StorageResource* store = nullptr;
+  ClientResource* client = nullptr;
   char ed1[100];
   db_int64_ctx job;
   PoolMem buf;
@@ -422,7 +422,7 @@ bool DoNativeBackup(JobControlRecord* jcr)
   }
   sd = jcr->store_bsock;
 
-  if (!StartStorageDaemonJob(jcr, NULL,
+  if (!StartStorageDaemonJob(jcr, nullptr,
                              jcr->dir_impl->res.write_storage_list)) {
     return false;
   }
@@ -574,7 +574,7 @@ bool DoNativeBackup(JobControlRecord* jcr)
    * in the next job run because in that case, their date
    * is after the start of this run.
    */
-  jcr->start_time = time(NULL);
+  jcr->start_time = time(nullptr);
   jcr->dir_impl->jr.StartTime = jcr->start_time;
   if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
@@ -617,7 +617,7 @@ close_fd:
     jcr->file_bsock->signal(BNET_TERMINATE);
     jcr->file_bsock->close();
     delete jcr->file_bsock;
-    jcr->file_bsock = NULL;
+    jcr->file_bsock = nullptr;
   }
 
 bail_out:
@@ -645,7 +645,7 @@ int WaitForJobTermination(JobControlRecord* jcr, int timeout)
   uint64_t JobBytes = 0;
   int VSS = 0;
   int Encrypt = 0;
-  btimer_t* tid = NULL;
+  btimer_t* tid = nullptr;
 
   jcr->setJobStatusWithPriorityCheck(JS_Running);
 
@@ -812,8 +812,8 @@ void UpdateBootstrapFile(JobControlRecord* jcr)
     FILE* fd;
     int VolCount;
     int got_pipe = 0;
-    Bpipe* bpipe = NULL;
-    VolumeParameters* VolParams = NULL;
+    Bpipe* bpipe = nullptr;
+    VolumeParameters* VolParams = nullptr;
     char edt[50], ed1[50], ed2[50];
     POOLMEM* fname = GetPoolMemory(PM_FNAME);
 
@@ -822,7 +822,7 @@ void UpdateBootstrapFile(JobControlRecord* jcr)
     if (*fname == '|') {
       got_pipe = 1;
       bpipe = OpenBpipe(fname + 1, 0, "w"); /* skip first char "|" */
-      fd = bpipe ? bpipe->wfd : NULL;
+      fd = bpipe ? bpipe->wfd : nullptr;
     } else {
       /* ***FIXME*** handle BASE */
       fd = fopen(fname, jcr->is_JobLevel(L_FULL) ? "w+b" : "a+b");
@@ -839,7 +839,7 @@ void UpdateBootstrapFile(JobControlRecord* jcr)
         }
       }
       /* Start output with when and who wrote it */
-      bstrftimes(edt, sizeof(edt), time(NULL));
+      bstrftimes(edt, sizeof(edt), time(nullptr));
       fprintf(fd, "# %s - %s - %s%s\n", edt, jcr->dir_impl->jr.Job,
               JobLevelToString(jcr->getJobLevel()), jcr->dir_impl->since);
       for (int i = 0; i < VolCount; i++) {
