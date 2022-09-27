@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -394,15 +394,17 @@ else()
 endif()
 
 # dynamic-storage-backends
-if(NOT DEFINED dynamic-storage-backends)
+if(NOT DEFINED dynamic-storage-backends OR dynamic-storage-backends)
   set(dynamic-storage-backends ON)
-  set(HAVE_DYNAMIC_SD_BACKENDS 1)
+  set(HAVE_DYNAMIC_SD_BACKENDS
+      1
+      CACHE INTERNAL ""
+  )
 else()
-  if(${dynamic-storage-backends})
-    set(HAVE_DYNAMIC_SD_BACKENDS 1)
-  else()
-    set(HAVE_DYNAMIC_SD_BACKENDS 0)
-  endif()
+  set(HAVE_DYNAMIC_SD_BACKENDS
+      0
+      CACHE INTERNAL ""
+  )
 endif()
 
 # scsi-crypto

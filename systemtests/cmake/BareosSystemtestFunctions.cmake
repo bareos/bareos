@@ -347,6 +347,14 @@ macro(prepare_testdir_for_daemon_run)
 
   set(backenddir ${BACKEND_DIR_TO_TEST})
   set(sd_backenddir ${SD_BACKEND_DIR_TO_TEST})
+  # the SD will not suppot the BackendDirectory setting if it was not built with
+  # HAVE_DYNAMIC_SD_BACKENDS, thus we declare `sd_backend_config` that will
+  # evaluate to nothing if we don't have dynamic backends enabled.
+  if(HAVE_DYNAMIC_SD_BACKENDS)
+    set(sd_backend_config "BackendDirectory = \"${SD_BACKEND_DIR_TO_TEST}\"")
+  else()
+    set(sd_backend_config "")
+  endif()
   set(BAREOS_WEBUI_PUBLIC_DIR ${WEBUI_PUBLIC_DIR_TO_TEST})
 
   set(dbHost ${current_test_directory}/tmp)

@@ -10,6 +10,7 @@ Storage {
   # Plugin Names = ""
   Working Directory =  "@working_dir@"
   SD Port = @sd_port@
+  @sd_backend_config@
 
   TLS Enable = yes
   TLS Require = yes
