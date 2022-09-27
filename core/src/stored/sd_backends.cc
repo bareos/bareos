@@ -93,6 +93,7 @@ struct BackendDeviceLibraryDescriptor {
 
 const std::map<DeviceType, const char*> device_type_to_name_mapping
     = {{DeviceType::B_FIFO_DEV, "fifo"},
+       {DeviceType::B_FILE_DEV, "file"},
        {DeviceType::B_TAPE_DEV, "tape"},
        {DeviceType::B_GFAPI_DEV, "gfapi"},
        {DeviceType::B_DROPLET_DEV, "droplet"},

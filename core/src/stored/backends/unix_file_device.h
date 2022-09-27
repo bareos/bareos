@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2013 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,6 +27,8 @@
 
 #ifndef BAREOS_STORED_BACKENDS_UNIX_FILE_DEVICE_H_
 #define BAREOS_STORED_BACKENDS_UNIX_FILE_DEVICE_H_
+
+#include "stored/dev.h"
 
 namespace storagedaemon {
 

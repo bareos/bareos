@@ -32,6 +32,7 @@
 #include "include/bareos.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
+#include "stored/sd_backends.h"
 #include "stored/device_control_record.h"
 #include "unix_file_device.h"
 #include "lib/berrno.h"
@@ -309,5 +310,24 @@ bool unix_file_device::d_truncate(DeviceControlRecord* dcr)
 bail_out:
   return true;
 }
+
+class Backend : public BackendInterface {
+ public:
+  Device* GetDevice(JobControlRecord* jcr, DeviceType device_type) override
+  {
+    switch (device_type) {
+      case DeviceType::B_FILE_DEV:
+        return new unix_file_device;
+      default:
+        Jmsg(jcr, M_FATAL, 0, _("Request for unknown devicetype: %d\n"),
+             device_type);
+        return nullptr;
+    }
+  }
+};
+
+#ifdef HAVE_DYNAMIC_SD_BACKENDS
+extern "C" BackendInterface* GetBackend(void) { return new Backend; }
+#endif
 
 } /* namespace storagedaemon  */

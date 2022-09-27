@@ -92,19 +92,15 @@
 #  endif
 #  include "backends/generic_tape_device.h"
 #  ifdef HAVE_WIN32
+#    include "backends/win32_file_device.h"
 #    include "backends/win32_tape_device.h"
 #    include "backends/win32_fifo_device.h"
 #  else
+#    include "backends/unix_file_device.h"
 #    include "backends/unix_tape_device.h"
 #    include "backends/unix_fifo_device.h"
 #  endif
 #endif /* HAVE_DYNAMIC_SD_BACKENDS */
-
-#ifdef HAVE_WIN32
-#  include "backends/win32_file_device.h"
-#else
-#  include "backends/unix_file_device.h"
-#endif
 
 #ifndef O_NONBLOCK
 #  define O_NONBLOCK 0
@@ -171,12 +167,12 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
 
   Device* dev = nullptr;
 
+  /*
+   * When using dynamic loading use the InitBackendDevice() function
+   * for any type of device.
+   */
+#if !defined(HAVE_DYNAMIC_SD_BACKENDS)
   switch (device_resource->dev_type) {
-    /*
-     * When using dynamic loading use the InitBackendDevice() function
-     * for any type of device not being of the type file.
-     */
-#ifndef HAVE_DYNAMIC_SD_BACKENDS
 #  ifdef HAVE_GFAPI
     case DeviceType::B_GFAPI_DEV:
       dev = new gfapi_device;
@@ -188,6 +184,9 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
       break;
 #  endif
 #  ifdef HAVE_WIN32
+    case DeviceType::B_FILE_DEV:
+      dev = new win32_file_device;
+      break;
     case DeviceType::B_TAPE_DEV:
       dev = new win32_tape_device;
       break;
@@ -195,6 +194,9 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
       dev = new win32_fifo_device;
       break;
 #  else
+    case DeviceType::B_FILE_DEV:
+      dev = new unix_file_device;
+      break;
     case DeviceType::B_TAPE_DEV:
       dev = new unix_tape_device;
       break;
@@ -202,42 +204,29 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
       dev = new unix_fifo_device;
       break;
 #  endif
-#endif /* HAVE_DYNAMIC_SD_BACKENDS */
-#ifdef HAVE_WIN32
-    case DeviceType::B_FILE_DEV:
-      dev = new win32_file_device;
-      break;
-#else
-    case DeviceType::B_FILE_DEV:
-      dev = new unix_file_device;
-      break;
-#endif
-    default:
-#ifdef HAVE_DYNAMIC_SD_BACKENDS
-      dev = InitBackendDevice(jcr, device_resource->dev_type);
-      if (!dev) {
-        try {
-          Jmsg2(jcr, M_ERROR, 0,
-                _("Initialization of dynamic %s device \"%s\" with archive "
-                  "device \"%s\" failed. Backend "
-                  "library might be missing or backend directory incorrect.\n"),
-                device_type_to_name_mapping.at(device_resource->dev_type),
-                device_resource->resource_name_,
-                device_resource->archive_device_string);
-        } catch (const std::out_of_range&) {
-          // device_resource->dev_type could exceed limits of map
-        }
-        return nullptr;
-      }
-#endif
-      break;
+    case DeviceType::B_UNKNOWN_DEV:
+      Jmsg2(jcr, M_ERROR, 0, _("%s has an unknown device type %d\n"),
+            device_resource->archive_device_string, device_resource->dev_type);
+      return nullptr;
   }
-
+#else
+  dev = InitBackendDevice(jcr, device_resource->dev_type);
   if (!dev) {
-    Jmsg2(jcr, M_ERROR, 0, _("%s has an unknown device type %d\n"),
-          device_resource->archive_device_string, device_resource->dev_type);
+    try {
+      Jmsg2(jcr, M_ERROR, 0,
+            _("Initialization of dynamic %s device \"%s\" with archive "
+              "device \"%s\" failed. Backend "
+              "library might be missing or backend directory incorrect.\n"),
+            device_type_to_name_mapping.at(device_resource->dev_type),
+            device_resource->resource_name_,
+            device_resource->archive_device_string);
+    } catch (const std::out_of_range&) {
+      // device_resource->dev_type could exceed limits of map
+    }
     return nullptr;
   }
+#endif  // !defined(HAVE_DYNAMIC_SD_BACKENDS)
+
   dev->InvalidateSlotNumber(); /* unknown */
 
   // Copy user supplied device parameters from Resource

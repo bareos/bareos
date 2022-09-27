@@ -44,34 +44,6 @@ if(NOT build_client_only)
   message("Backends are now ${BACKENDS}")
 endif()
 
-if(NOT ${HAVE_DYNAMIC_SD_BACKENDS})
-  set(AVAILABLE_DEVICE_API_SRCS backends/generic_tape_device.cc)
-
-  if(HAVE_WIN32)
-    list(
-      APPEND
-      AVAILABLE_DEVICE_API_SRCS
-      ${PROJECT_SOURCE_DIR}/src/win32/stored/backends/win32_fifo_device.cc
-      ${PROJECT_SOURCE_DIR}/src/win32/stored/backends/win32_file_device.cc
-      ${PROJECT_SOURCE_DIR}/src/win32/stored/backends/win32_tape_device.cc
-    )
-  else()
-    list(APPEND AVAILABLE_DEVICE_API_SRCS backends/unix_fifo_device.cc
-         # backends/droplet_device.cc
-         backends/unix_tape_device.cc backends/unix_file_device.cc
-    )
-  endif()
-
-  if(${HAVE_GFAPI})
-    list(APPEND AVAILABLE_DEVICE_API_SRCS backends/gfapi_device.cc)
-  endif()
-
-  if(TARGET droplet)
-    list(APPEND AVAILABLE_DEVICE_API_SRCS backends/droplet_device.cc)
-    list(APPEND AVAILABLE_DEVICE_API_SRCS backends/chunked_device.cc)
-  endif()
-endif()
-
 set(LIBBAREOSSD_SRCS
     acquire.cc
     ansi_label.cc
@@ -103,7 +75,6 @@ set(LIBBAREOSSD_SRCS
     stored_conf.cc
     vol_mgr.cc
     wait.cc
-    ${AVAILABLE_DEVICE_API_SRCS}
 )
 
 set(SDSRCS
@@ -177,10 +148,6 @@ else()
   message(STATUS "LIBBAREOSSD_LIBRARIES ARE ${LIBBAREOSSD_LIBRARIES}")
 endif()
 
-if(${HAVE_DYNAMIC_SD_BACKENDS})
-  list(APPEND LIBBAREOSSD_SRCS backends/unix_file_device.cc)
-endif()
-
 add_library(bareossd SHARED ${LIBBAREOSSD_SRCS})
 target_link_libraries(bareossd PRIVATE bareos Threads::Threads)
 set_target_properties(
@@ -240,9 +207,7 @@ install(SCRIPT ${PROJECT_SOURCE_DIR}/cmake/install-stored-configfiles.cmake)
 
 install(DIRECTORY DESTINATION "${archivedir}")
 
-if(${HAVE_DYNAMIC_SD_BACKENDS})
-  add_subdirectory(backends)
-endif()
+add_subdirectory(backends)
 
 if(TARGET droplet)
   target_compile_definitions(bareossd PRIVATE HAVE_BAREOSSD_DROPLET_DEVICE)
