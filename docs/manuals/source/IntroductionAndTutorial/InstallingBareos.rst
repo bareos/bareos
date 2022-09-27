@@ -1,7 +1,7 @@
 .. _InstallChapter:
 
-Installing Bareos
-=================
+Installing the Bareos Server
+============================
 
 .. index::
    pair: Bareos; Installation
@@ -36,15 +36,54 @@ This will start a very basic Bareos installation which will regularly backup a d
 Decide about the Bareos release to use
 --------------------------------------
 
-You’ll find Bareos binary package repositories at https://download.bareos.org/bareos/. The stable releases are available at https://download.bareos.org/bareos/release/.
+There are different types of Bareos repositories:
 
-The public key to verify the repository is also in repository directory (:file:`Release.key` for Debian based distributions, :file:`repodata/repomd.xml.key` for RPM based distributions).
+Bareos Subscription repositories on https://download.bareos.com/
 
-Section :ref:`section-InstallBareosPackages` describes how to add the software repository to your system.
+  * Contains the repositories for the Bareos Subscription customers.
+  * While the repository can be browsed, using them do require authentication credentials, which come with a Bareos subscription.
 
-Bareos requires a PostgreSQL database as its catalog.
-The backend is contained in package **bareos-database-postgresql**.
-The Bareos database packages have their dependencies only to the database client packages, therefore the database itself must be installed manually.
+Bareos Community repositories on https://download.bareos.org/ with
+
+  * releases from the stable branches at https://download.bareos.org/bareos/release/
+  * latest builds from the master branch at https://download.bareos.org/bareos/experimental/nightly/
+
+    * The path :file:`experimental/nightly/` has historical reason. Nowadays we publish to this path as soon as all automated tests succeed on all supported platforms.
+
+The software in both types of repositories is based on the same source code in https://github.com/bareos/bareos/. There are no hidden or Open-Core components.
+
+The public key to verify a repository is also in repository directory (:file:`Release.key` for Debian based distributions, :file:`repodata/repomd.xml.key` for RPM based distributions).
+
+The following code snippets are shell scripts that can be used as orientation how to download the package repositories and install Bareos packages. The release version number for **bareos** and the corresponding Linux distribution have to be updated for your needs, respectively.
+
+To simplify the installation, all Linux and FreeBSD repositories on https://download.bareos.org/ and https://download.bareos.com/ contain a script named :file:`add_bareos_repositories.sh`.
+
+Download the :file:`add_bareos_repositories.sh` script
+matching the requested Bareos release
+and the distribution of the target system.
+Copy the script onto the target system and
+execute it with a shell (:command:`sh`) as root (e.g. using :command:`sudo`)
+or manually perform the steps that are documented in the script.
+
+For example the script URL for bareos-21 and Debian 11 is:
+
+* https://download.bareos.org/bareos/release/21/Debian_11/add_bareos_repositories.sh
+* or for Bareos Subscription customers:
+
+   * https://download.bareos.com/bareos/release/21/Debian_11/add_bareos_repositories.sh
+   * .. note::
+
+        Bareos Subscription customers have credentials to authenticate against https://download.bareos.com.
+        Some files can be accessed without authentication,
+        but to use the repositories,
+        authentication is mandatory.
+        When downloading the file :file:`add_bareos_repositories.sh`,
+        it is ready to use,
+        because it contains your personal authentication credentials.
+        Therefore downloading this file requires authentication.
+        If this is inconvenient, you can alternatively download :file:`add_bareos_repository_template.sh`
+        and set ``BAREOS_USERNAME`` and ``BAREOS_PASSWORD`` manually.
+
 
 
 .. _section-InstallBareosPackages:
@@ -52,18 +91,25 @@ The Bareos database packages have their dependencies only to the database client
 Install the Bareos Software Packages
 ------------------------------------
 
-The package **bareos** is only a meta package which contains dependencies on the main components of Bareos, see :ref:`section-BareosPackages`. If you want to setup a distributed environment (like one Director, separate database server, multiple Storage daemons) you have to choose the regarding Bareos packages to install on each of the hosts instead of just installing the **bareos** package.
+The |dir| requires a PostgreSQL database as its catalog.
+The Bareos database packages have their dependencies only to the database client packages,
+therefore the database itself must be installed manually.
 
-The following code snippets are shell scripts that can be used as orientation how to download the package repositories and install bareos. The release version number for **bareos** and the corresponding Linux distribution have to be updated for your needs, respectively.
+.. important::
 
-**See** https://download.bareos.org/bareos/release/ **for applicable releases and distributions.**
-See :ref:`section-UniversalLinuxClient` if your distribution is not present.
+   Install and start a |postgresql| database server.
+
+
+The package **bareos** is only a meta package which contains dependencies on the main components of Bareos, see :ref:`section-BareosPackages`. If you want to setup a distributed environment (like one Bareos Director, separate database server, multiple Bareos Storage Daemons) you have to choose the regarding Bareos packages to install on each of the hosts instead of just installing the **bareos** package.
+
+
+.. _section-InstallBareosPackagesRedhat:
 
 Install on RedHat based Linux Distributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-RHEL, CentOS, Fedora
-^^^^^^^^^^^^^^^^^^^^
+RHEL and derivatives, Fedora
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. index::
    single: Platform; RHEL
@@ -74,37 +120,27 @@ RHEL, CentOS, Fedora
 Bareos :sinceVersion:`15.2.0: requires: jansson` requires the Jansson library package.
 On RHEL 7 it is available through the RHEL Server Optional channel.
 
-The EL_8 repository is intended for RHEL 8 derivates,
+The RHEL_* repository is for Red Hat Enterprise Linux,
+the EL_* repositories are for RHEL derivatives,
 like AlmaLinux, CentOS Stream, Oracle and Rocky Linux.
+These repositories are automatically tested against several of this distributions.
+
+Download the matching :file:`add_bareos_repositories.sh` script from
+https://download.bareos.com/bareos/ or
+https://download.bareos.org/bareos/,
+copy it to the target system and execute it:
+
+.. code-block:: shell-session
+   :caption: Shell example script for Bareos installation on Fedora, RHEL and RHEL derivatives (EL)
+
+   root@host:~# sh ./add_bareos_repositories.sh
+   root@host:~# yum install bareos
+
+If authentication credentials are required (https://download.bareos.com)
+they are stored within the repo file :file:`/etc/yum.repos.d/bareos.repo`.
 
 
-.. code-block:: sh
-   :caption: Shell example script for Bareos installation on RHEL / EL / Fedora
-
-   #!/bin/sh
-
-   # See https://download.bareos.org/bareos/release/
-   # for applicable releases and distributions
-
-   DIST=EL_8
-   # or
-   # DIST=RHEL_8
-   # DIST=RHEL_7
-   # DIST=CentOS_7
-   # DIST=Fedora_35
-   # DIST=Fedora_34
-
-
-   RELEASE=release/21
-   # RELEASE=experimental/nightly
-
-   # add the Bareos repository
-   URL=https://download.bareos.org/bareos/$RELEASE/$DIST
-   wget -O /etc/yum.repos.d/bareos.repo $URL/bareos.repo
-
-   # install Bareos packages
-   yum install bareos bareos-database-postgresql
-
+.. _section-InstallBareosPackagesSuse:
 
 Install on SUSE based Linux Distributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -116,118 +152,87 @@ SUSE Linux Enterprise Server (SLES), openSUSE
    single: Platform; SLES
    single: Platform; openSUSE
 
-.. code-block:: sh
+Download the matching :file:`add_bareos_repositories.sh` script from
+https://download.bareos.com/bareos/ or
+https://download.bareos.org/bareos/,
+copy it to the target system and execute it:
+
+.. code-block:: shell-session
    :caption: Shell example script for Bareos installation on SLES / openSUSE
 
-   #!/bin/sh
+   root@host:~# sh ./add_bareos_repositories.sh
+   root@host:~# zypper install bareos
 
-   # See https://download.bareos.org/bareos/release/
-   # for applicable releases and distributions
+If authentication credentials are required (https://download.bareos.com)
+they are stored in the file :file:`/etc/zypp/credentials.d/bareos`.
 
-   DIST=SLE_15_SP3
-   # or
-   # DIST=SLE_15_SP2
-   # DIST=SLE_12_SP5
-   # DIST=openSUSE_Leap_15.3
-   # DIST=openSUSE_Leap_15.2
-
-   RELEASE=release/21
-   # or
-   # RELEASE=experimental/nightly
-
-   # add the Bareos repository
-   URL=https://download.bareos.org/bareos/$RELEASE/$DIST
-   zypper addrepo --refresh $URL/bareos.repo
-
-   # install Bareos packages
-   zypper install bareos bareos-database-postgresql
 
 .. _section-InstallBareosPackagesDebian:
+
+.. _install-on-Univention-Corporate-Server:
+
+.. _section-univentioncorporateserver:
 
 Install on Debian based Linux Distributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Debian / Ubuntu
-^^^^^^^^^^^^^^^
+Debian / Ubuntu / Univention Corporate Server (UCS)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. index::
    single: Platform; Debian
    single: Platform; Ubuntu
+   single: Platform; Univention Corporate Server
 
-Adding an Debian/Ubuntu repository requires multiple steps:
+Download the matching :file:`add_bareos_repositories.sh` script from
+https://download.bareos.com/bareos/ or
+https://download.bareos.org/bareos/,
+copy it to the target system and execute it:
 
-* Storing the Bareos signature key of the repository.
-* Storing the Bareos repository configuration file in :file:`/etc/apt/sources.list.d/`, which references to the repository server a the local key file.
-* If you're a Bareos subscription customer, you also need your login credentials for https://download.bareos.com/ in :file:`/etc/apt/auth.conf.d/`.
+.. code-block:: shell-session
+   :caption: Shell example script for Bareos installation on Debian / Ubuntu / UCS
 
-To simplify this, the each Debian/Ubuntu repository on https://download.bareos.org/ and https://download.bareos.com/ contain a script named :file:`add_bareos_repositories.sh`.
-
-Download the :file:`add_bareos_repositories.sh` script
-matching the requested Bareos release
-and the distribution of the target system.
-
-Copy the script onto the target system and execute it with a shell (:command:`sh`) as root (e.g. using :command:`sudo`),
-or manually perform the steps that are documented in the script.
-
-For example the script URL for bareos-21 and Debian 11 is:
-
-* https://download.bareos.org/bareos/release/21/Debian_11/add_bareos_repositories.sh
-* or for Bareos subscription customers:
-
-   * https://download.bareos.com/bareos/release/21/Debian_11/add_bareos_repositories.sh
-   * .. note::
-
-        To download :file:`add_bareos_repositories.sh` you must authenticate against https://download.bareos.com. If this is inconvenient, you can alternatively download :file:`add_bareos_repository_template.sh` and replace ``BAREOS_USERNAME`` and ``BAREOS_PASSWORD`` in there manually.
+   root@host:~# sh ./add_bareos_repositories.sh
+   root@host:~# apt update
+   root@host:~# apt install bareos
 
 The :file:`add_bareos_repositories.sh` script will:
 
-* Create a Bareos signature key file :file:`/etc/apt/keyrings/bareos-keyring.gpg`.
+* Create a Bareos signature key file :file:`/etc/apt/keyrings/bareos-*.gpg`.
 * Create the Bareos repository configuration file :file:`/etc/apt/sources.list.d/bareos.sources`
 
-   * This file refers to the Bareos repository on the download server and to the local :file:`/etc/apt/keyrings/bareos-keyring.gpg` file.
+   * This file refers to the Bareos repository on the download server and to the local :file:`/etc/apt/keyrings/bareos-*.gpg` file.
 
-* If using https://download.bareos.com, it stores your credentials in :file:`/etc/apt/auth.conf.d/download_bareos_com.conf` file.
+* If authentication credentials are required (https://download.bareos.com)
+  they are stored in the file :file:`/etc/apt/auth.conf.d/download_bareos_com.conf`.
 
-.. code-block:: sh
-   :caption: Shell example script for Bareos installation on Debian / Ubuntu
+Univention Corporate Server
+'''''''''''''''''''''''''''
 
-   #!/bin/sh
+.. index::
+   single: Platform; Univention Corporate Server
 
-   # download the matching add_bareos_repositories.sh script from
-   # https://download.bareos.org/bareos/release/
-   # or https://download.bareos.com/bareos/release/
+The `Univention Corporate Server (UCS) <https://www.univention.de/>`_ is an enterprise Linux distribution based on Debian.
 
-   sudo sh ./add_bareos_repositories.sh
+Earlier releases (Bareos < 21, UCS < 5.0) offered extended integration into UCS and provided its software also via the Univention App Center.
+With version 5.0 of the UCS App Center the method of integration changed requiring commercially not reasonable efforts for deep integration.
 
-   # install Bareos packages
-   sudo apt-get update
-   sudo apt-get install bareos
+Bareos continues to support UCS with the same functionality as the other Linux distributions.
 
+During the build process, Bareos Debian 10 packages are automatically tested on an UCS 5.0 system.
+Only packages that passes this acceptance test, will get released by the Bareos project.
 
-Only Install the Bareos Client
-''''''''''''''''''''''''''''''
+.. note::
 
-If only the Bareos client should get installed,
-the procedure is very similar.
-Get the :file:`add_bareos_repositories.sh`
-matching the requested Bareos release
-and the distribution of the target system
-from https://download.bareos.org/ or https://download.bareos.com/
-and execute it on the target system:
+   While Bareos offers a software repository for UCS >= 5,
+   this repository is identical with the corresponding Debian repository.
+   The included APT sources file will also refer to the Debian repository.
 
-.. code-block:: sh
-   :caption: Shell example script for installing a Bareos client on Debian / Ubuntu
-
-   sudo sh ./add_bareos_repositories.sh
-   sudo apt-get update
-   sudo apt-get install bareos-filedaemon
-   # or for the bareos-filedaemon and additional client tools:
-   # sudo apt-get install bareos-client
-
-To configure the client, follow the instructions in :ref:`section-AddAClient`.
 
 
 .. _section-FreeBSD:
+
+.. _section-InstallBareosPackagesFreebsd:
 
 Install on FreeBSD based Distributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -235,119 +240,25 @@ Install on FreeBSD based Distributions
 .. index::
    single: Platform; FreeBSD
 
-.. code-block:: sh
+Download the matching :file:`add_bareos_repositories.sh` script from
+https://download.bareos.com/bareos/ or
+https://download.bareos.org/bareos/,
+copy it to the target system and execute it:
+
+.. code-block:: shell-session
    :caption: Shell example script for Bareos installation on FreeBSD
 
-   #!/bin/sh
+   root@host:~# sh ./add_bareos_repositories.sh
 
-   # See https://download.bareos.org/bareos/release/
-   # for applicable releases and distributions
-
-   DIST=FreeBSD_13.0
-   # or
-   # DIST=FreeBSD_12.2
-
-   RELEASE=release/21
-   # or
-   # RELEASE=experimental/nightly
-
-   URL=https://download.bareos.org/bareos/$RELEASE/$DIST
-
-   # add the Bareos repository
-   mkdir -p /usr/local/etc/pkg/repos
-   cd /usr/local/etc/pkg/repos
-   wget -q $URL/bareos.conf
-
-   # install Bareos packages
-   pkg install --yes bareos.com-director bareos.com-storage bareos.com-filedaemon bareos.com-database-postgresql bareos.com-bconsole
-
-   # setup the Bareos database
-   su postgres -c /usr/lib/bareos/scripts/create_bareos_database
-   su postgres -c /usr/lib/bareos/scripts/make_bareos_tables
-   su postgres -c /usr/lib/bareos/scripts/grant_bareos_privileges
-
-   # enable services
-   sysrc bareosdir_enable=YES
-   sysrc bareossd_enable=YES
-   sysrc bareosfd_enable=YES
-
-   # start services
-   service bareos-dir start
-   service bareos-sd start
-   service bareos-fd start
-
-   
-.. _section-Solaris:
-
-Install on Oracle Solaris
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. index::
-   single: Platform; Solaris
-
-Bareos offers **IPS** (*Image Packaging System*) filedaemon Packages for **Oracle Solaris 11.4**.
-
-First, download the Solaris package to the local disk and add the package as publisher
-**bareos**:
-
-.. code-block:: shell-session
-   :caption: Add bareos publisher
-
-   root@solaris114:~# pkg set-publisher -p bareos-fd-<version>.p5p  bareos
-   pkg set-publisher:
-     Added publisher(s): bareos
+   ## install Bareos packages
+   root@host:~# pkg install --yes bareos.com-director bareos.com-storage bareos.com-filedaemon bareos.com-database-postgresql bareos.com-bconsole
 
 
-Then, install the filedaemon with **pkg install**:
+The :file:`add_bareos_repositories.sh` script will:
 
-
-.. code-block:: shell-session
-   :caption: Install solaris package
-
-   root@solaris114:~# pkg install bareos-fd
-             Packages to install:  1
-              Services to change:  1
-         Create boot environment: No
-   Create backup boot environment: No
-
-   DOWNLOAD                                PKGS         FILES    XFER (MB)   SPEED
-   Completed                                1/1         44/44      1.0/1.0  4.8M/s
-
-   PHASE                                          ITEMS
-   Installing new actions                         94/94
-   Updating package state database                 Done
-   Updating package cache                           0/0
-   Updating image state                            Done
-   Creating fast lookup database                working |
-
-
-After installation, check the bareos-fd service status with **svcs bareos-fd**:
-
-.. code-block:: shell-session
-   :caption: Check solaris service
-
-   root@solaris114:~# svcs bareos-fd
-   STATE          STIME      FMRI
-   online         16:16:14   svc:/bareos-fd:default
-
-
-Finish the installation by adapting the configuration in :file:`/usr/local/etc/bareos` and restart the
-service with **svcadm restart bareos-fd**:
-
-.. code-block:: shell-session
-   :caption: Restart solaris service
-
-   root@solaris114:~# svcadm restart bareos-fd
-
-The bareos filedaemon service on solaris is now ready for use.
-
-Install on Univention Corporate Server
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Bareos offers additional functionality and integration into an Univention Corporate Server environment. Please follow the intructions in :ref:`section-UniventionCorporateServer`.
-
-If you are not interested in this additional functionality, the commands described in :ref:`section-InstallBareosPackagesDebian` will also work for Univention Corporate Servers.
-
+* Create the Bareos repository configuration file :file:`/usr/local/etc/pkg/repos/bareos.conf`.
+* If authentication credentials are required (https://download.bareos.com)
+  they are stored inside the Bareos repository configuration file.
 
 
 .. _section-CreateDatabase:
@@ -367,19 +278,11 @@ Since Bareos :sinceVersion:`14.2.0: dbconfig-common (Debian)` the Debian (and Ub
 Follow the instructions during install to configure it according to your needs.
 
 .. image:: /include/images/dbconfig-1-enable.*
-   :width: 45.0%
-
-.. image:: /include/images/dbconfig-2-select-database-type.*
-   :width: 45.0%
-
-
-
 
 If you decide not to use **dbconfig-common** (selecting :strong:`<No>` on the initial dialog), follow the instructions for :ref:`section-CreateDatabaseOtherDistributions`.
 
-The selectable database backends depend on the **bareos-database-*** packages installed.
-
 For details see :ref:`section-dbconfig`.
+
 
 .. _section-CreateDatabaseOtherDistributions:
 
@@ -401,15 +304,36 @@ If your PostgreSQL administration user is **postgres** (default), use the follow
 Start the daemons
 -----------------
 
+Please remark, the Bareos Daemons need to have access to the TCP ports 9101-9103.
+
+Linux
+~~~~~
+
 .. code-block:: shell-session
-   :caption: Start the Bareos Daemons
+   :caption: Enable and start the Bareos Daemons
 
-   systemctl start bareos-dir
-   systemctl start bareos-sd
-   systemctl start bareos-fd
+   root@host:~# systemctl enable --now bareos-dir
+   root@host:~# systemctl enable --now bareos-sd
+   root@host:~# systemctl enable --now bareos-fd
 
-Please remark, the Bareos Daemons need to have access to the ports 9101-9103.
+FreeBSD
+~~~~~~~
 
-Now you should be able to log in to the director using the bconsole.
+.. code-block:: shell-session
+   :caption: Configure Bareos on FreeBSD
 
-When you want to use the bareos-webui, please refer to the chapter :ref:`section-install-webui`.
+   ## enable services
+   root@host:~# sysrc bareosdir_enable=YES
+   root@host:~# sysrc bareossd_enable=YES
+   root@host:~# sysrc bareosfd_enable=YES
+
+   ## start services
+   root@host:~# service bareos-dir start
+   root@host:~# service bareos-sd start
+   root@host:~# service bareos-fd start
+
+
+
+Now you should be able to log in to the |dir| using the :ref:`section-bconsole`.
+
+When you want to use the |webui|, please refer to the chapter :ref:`section-install-webui`.

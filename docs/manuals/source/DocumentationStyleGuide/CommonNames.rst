@@ -29,6 +29,15 @@ Bareos Names
 +----------------------------------------+-------------------------------------------+
 | |traymonitor|                          | ``|traymonitor|``                         |
 +----------------------------------------+-------------------------------------------+
+| Bareos Subscription                    | Bareos Subscription                       |
++----------------------------------------+-------------------------------------------+
+| Bareos Subscription customers          | Bareos Subscription customers             |
++----------------------------------------+-------------------------------------------+
+| Bareos Subscription repositories       | Bareos Subscription repositories          |
++----------------------------------------+-------------------------------------------+
+| Bareos Community repositories          | Bareos Community repositories             |
++----------------------------------------+-------------------------------------------+
+
 
 The name **Bareos** should always be written with capital B (except in technical terms like URLs, releases (bareos-18.2.5) or host names).
 

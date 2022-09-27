@@ -22,33 +22,20 @@ dbconfig-common (Debian)
 .. index::
    single: Platform; Debian; dbconfig-common
    single: Platform; Ubuntu; dbconfig-common
+   single: Platform; Univention Corporate Server; dbconfig-common
 
-Since Bareos :sinceVersion:`14.2.0: dbconfig-common (Debian)` the Debian (and Ubuntu) based packages support the **dbconfig-common** mechanism to create and update the Bareos database, according to the user choices.
+Since Bareos :sinceVersion:`14.2.0: dbconfig-common (Debian)` the Debian / Ubuntu / UCS packages support the **dbconfig-common** mechanism to create and update the Bareos database, according to the user choices.
 
 The first choice is, if **dbconfig-common** should be used at all. If you decide against it, the database must be configured manually, see :ref:`CatMaintenanceManualConfiguration`.
 
 If you decided to use **dbconfig-common**, the next question will be asked.
 
 .. image:: /include/images/dbconfig-1-enable.*
-   :width: 45.0%
-
-
 
 The **dbconfig-common** configuration (and credentials) is done by the **bareos-database-common** package. Settings are stored in the file :file:`/etc/dbconfig-common/bareos-database-common.conf`. If you need to repeat this step, you can use the :command:`dpkg-reconfigure bareos-database-common` command.
 
-The Bareos database backend will get automatically configured in :file:`/etc/bareos/bareos-dir.d/catalog/MyCatalog.conf`. If the Server is not running locally you need to specify :config:option:`dir/catalog/DbAddress`\  in the catalog resource. A later reconfiguration might require manual adapt changes.
+The Bareos database backend will get automatically configured in :file:`/etc/bareos/bareos-dir.d/catalog/MyCatalog.conf`. If the Server is not running locally you need to specify :config:option:`dir/catalog/DbAddress`\  in the catalog resource. A later reconfiguration might require manual changes.
 
-
-
-.. warning::
-
-   When using the PostgreSQL backend and updating to Bareos < 14.2.3, it is necessary to manually grant database permissions (:command:`grant_bareos_privileges`), normally by
-
-.. code-block:: shell-session
-
-   su - postgres -c /usr/lib/bareos/scripts/grant_bareos_privileges
-
-For details see chapter :ref:`CatMaintenanceManualConfiguration`.
 
 .. _CatMaintenanceManualConfiguration:
 
@@ -138,7 +125,7 @@ If this works on your system can be verified by
    su - postgres
    psql
 
-If your database is configured to require a password, this must be defined in the file `:file:`~/.pgpass` <https://www.postgresql.org/docs/current/libpq-pgpass.html>`_ in the following syntax: :strong:`HOST:PORT:DATABASE:USER:PASSWORD`, e.g.
+If your database is configured to require a password, this must be defined in the file `~/.pgpass <https://www.postgresql.org/docs/current/libpq-pgpass.html>`_ in the following syntax: :strong:`HOST:PORT:DATABASE:USER:PASSWORD`, e.g.
 
 .. code-block:: cfg
    :caption: PostgreSQL access credentials

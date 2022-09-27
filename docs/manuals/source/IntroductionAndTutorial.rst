@@ -6,6 +6,7 @@ Introduction and Tutorial
 
       /IntroductionAndTutorial/WhatIsBareos.rst
       /IntroductionAndTutorial/InstallingBareos.rst
+      /IntroductionAndTutorial/InstallingBareosClient.rst
       /IntroductionAndTutorial/InstallingBareosWebui.rst
       /IntroductionAndTutorial/UpdatingBareos.rst
       /IntroductionAndTutorial/GettingStartedWithBareos.rst

@@ -176,6 +176,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - update Pull Request workflow description [PR #1243]
 - docs: improve operating system table [PR #1254]
 - add FAQ entry about howto upgrade from Bareos < 20 with Bareos Python packages installed [PR #1260]
+- describe usage of the add_bareos_repositories.sh script [PR #1248]
 
 [PR #698]: https://github.com/bareos/bareos/pull/698
 [PR #768]: https://github.com/bareos/bareos/pull/768
@@ -299,4 +300,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1253]: https://github.com/bareos/bareos/pull/1253
 [PR #1254]: https://github.com/bareos/bareos/pull/1254
 [PR #1260]: https://github.com/bareos/bareos/pull/1260
+[PR #1248]: https://github.com/bareos/bareos/pull/1248
+[PR #1251]: https://github.com/bareos/bareos/pull/1251
+[PR #1253]: https://github.com/bareos/bareos/pull/1253
+[PR #1254]: https://github.com/bareos/bareos/pull/1254
 [unreleased]: https://github.com/bareos/bareos/tree/master
