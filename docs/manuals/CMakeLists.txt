@@ -200,11 +200,12 @@ if(${docs-build-json})
     DEPENDS bscan
   )
 
+  # bsmtp -? return 1 so ||: is needed
   add_custom_command(
     OUTPUT ${USAGE_DIR}/bsmtp.txt
-    COMMAND bsmtp --help >/dev/null
+    COMMAND bsmtp -? > /dev/null 2>&1 ||:
     COMMAND ${PROJECT_SOURCE_DIR}/scripts/get-usage.sh $<TARGET_FILE:bsmtp>
-            ${USAGE_DIR}
+            ${USAGE_DIR} '-? ||:' ||:
     DEPENDS bsmtp
   )
 
@@ -282,10 +283,10 @@ endif()
 
 add_custom_target(
   docs-check-urls
-  COMMAND ${SPHINX_COMMAND} -M linkcheck "${SPHINX_SOURCE_DIR}" "${SPHINX_BUILDDIR}"
+  COMMAND ${SPHINX_COMMAND} -M linkcheck "${SPHINX_SOURCE_DIR}"
+          "${SPHINX_BUILDDIR}"
   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-  COMMENT
-    "Check if the URLs used in the documentation are still valid targets."
+  COMMENT "Check if the URLs used in the documentation are still valid targets."
 )
 
 # target: docs ######

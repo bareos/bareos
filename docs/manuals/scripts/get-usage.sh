@@ -23,9 +23,10 @@ set -u
 
 FULLPATH="$1"
 TARGETDIR="$2"
+FLAG="${3:---help}"
 
 COMMAND=$(basename "${FULLPATH}")
 
-USAGE=$("${FULLPATH}" --help)
+USAGE=$("${FULLPATH}" "$FLAG")
 
 sed --expression='/Usage:/,$!d' --expression='s|Usage: .*/|Usage: |' <<<"${USAGE}" > "${TARGETDIR}/${COMMAND}.txt"

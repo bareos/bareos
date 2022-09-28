@@ -1,3 +1,4 @@
+
 Usage: bsmtp [-f from] [-h mailhost] [-s subject] [-c copy] [recipient ...]
        -4          forces bsmtp to use IPv4 addresses only.
        -6          forces bsmtp to use IPv6 addresses only.
