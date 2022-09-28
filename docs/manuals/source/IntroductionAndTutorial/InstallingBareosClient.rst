@@ -34,63 +34,6 @@ consider using the :ref:`section-UniversalLinuxClient` instead.
 * :ref:`section-InstallBareosPackagesDebian`
 * :ref:`section-UniversalLinuxClient`
 
-.. Install on RedHat based Linux Distributions
-.. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-..
-.. .. index::
-..    single: Platform; RHEL
-..    single: Platform; CentOS
-..    single: Platform; Fedora
-..    single: Platform; EL
-..
-.. .. code-block:: shell-session
-..    :caption: Shell example script for Bareos installation on Fedora, RHEL and RHEL derivatives (EL)
-..
-..    ## download the matching add_bareos_repositories.sh script from
-..    ## https://download.bareos.org/bareos/release/
-..    ## or https://download.bareos.com/bareos/release/
-..
-..    root@host:~# sh ./add_bareos_repositories.sh
-..    root@host:~# yum install bareos-client
-..
-.. Install on SUSE based Linux Distributions
-.. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-..
-.. .. index::
-..    single: Platform; SLES
-..    single: Platform; openSUSE
-..
-.. .. code-block:: shell-session
-..    :caption: Shell example script for Bareos installation on SLES / openSUSE
-..
-..    ## download the matching add_bareos_repositories.sh script from
-..    ## https://download.bareos.org/bareos/release/
-..    ## or https://download.bareos.com/bareos/release/
-..
-..    root@host:~# sh ./add_bareos_repositories.sh
-..    root@host:~# zypper install bareos-client
-..
-.. Install on Debian based Linux Distributions
-.. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-..
-.. .. index::
-..    single: Platform; Debian
-..    single: Platform; Ubuntu
-..    single: Platform; Univention Corporate Server
-..
-.. .. code-block:: shell-session
-..    :caption: Shell example script for Bareos installation on Debian / Ubuntu / UCS
-..
-..    ## download the matching add_bareos_repositories.sh script from
-..    ## https://download.bareos.org/bareos/release/
-..    ## or https://download.bareos.com/bareos/release/
-..
-..    root@host:~## sh ./add_bareos_repositories.sh
-..    root@host:~## apt update
-..    root@host:~## apt install bareos-client
-..
-.. Install on FreeBSD based Distributions
-.. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. _section-UniversalLinuxClient:
 
