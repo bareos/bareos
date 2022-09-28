@@ -124,17 +124,6 @@ bool StartStorageDaemonJob(JobControlRecord* jcr,
                            alist<StorageResource*>* write_storage,
                            bool send_bsr)
 {
-  bool ok = true;
-  StorageResource* storage = nullptr;
-  char auth_key[100];
-  const char* fileset_md5;
-  PoolMem StoreName, device_name, pool_name, pool_type, media_type,
-      backup_format;
-  PoolMem job_name, client_name, fileset_name;
-  int copy = 0;
-  int stripe = 0;
-  uint64_t remainingquota = 0;
-  char ed1[30], ed2[30];
   BareosSocket* sd = jcr->store_bsock;
 
   /*
@@ -148,9 +137,11 @@ bool StartStorageDaemonJob(JobControlRecord* jcr,
   }
 
   // Now send JobId and permissions, and get back the authorization key.
+  PoolMem job_name;
   PmStrcpy(job_name, jcr->dir_impl->res.job->resource_name_);
   BashSpaces(job_name);
 
+  PoolMem client_name;
   if (jcr->dir_impl->res.client) {
     PmStrcpy(client_name, jcr->dir_impl->res.client->resource_name_);
   } else {
@@ -158,6 +149,7 @@ bool StartStorageDaemonJob(JobControlRecord* jcr,
   }
   BashSpaces(client_name);
 
+  PoolMem fileset_name;
   if (jcr->dir_impl->res.fileset) {
     PmStrcpy(fileset_name, jcr->dir_impl->res.fileset->resource_name_);
   } else {
@@ -165,9 +157,11 @@ bool StartStorageDaemonJob(JobControlRecord* jcr,
   }
   BashSpaces(fileset_name);
 
+  PoolMem backup_format;
   PmStrcpy(backup_format, jcr->dir_impl->backup_format);
   BashSpaces(backup_format);
 
+  const char* fileset_md5;
   if (jcr->dir_impl->res.fileset && jcr->dir_impl->res.fileset->MD5[0] == 0) {
     bstrncpy(jcr->dir_impl->res.fileset->MD5, "**Dummy**",
              sizeof(jcr->dir_impl->res.fileset->MD5));
@@ -190,9 +184,12 @@ bool StartStorageDaemonJob(JobControlRecord* jcr,
   }
 
   // Retrieve available quota 0 bytes means dont perform the check
-  remainingquota = FetchRemainingQuotas(jcr);
+
+  uint64_t remainingquota = FetchRemainingQuotas(jcr);
   Dmsg1(50, "Remainingquota: %llu\n", remainingquota);
 
+  char ed1[30];
+  char ed2[30];
   sd->fsend(jobcmd, edit_int64(jcr->JobId, ed1), jcr->Job, job_name.c_str(),
             client_name.c_str(), jcr->getJobType(), jcr->getJobLevel(),
             fileset_name.c_str(), !jcr->dir_impl->res.pool->catalog_files,
@@ -206,6 +203,7 @@ bool StartStorageDaemonJob(JobControlRecord* jcr,
   Dmsg1(100, ">stored: %s", sd->msg);
   if (BgetDirmsg(sd) > 0) {
     Dmsg1(100, "<stored: %s", sd->msg);
+    char auth_key[100];
     if (sscanf(sd->msg, OK_job, &jcr->VolSessionId, &jcr->VolSessionTime,
                &auth_key)
         != 3) {
@@ -238,6 +236,16 @@ bool StartStorageDaemonJob(JobControlRecord* jcr,
     Dmsg1(400, "Unexpected %s Secure Erase Reply\n", "SD");
   }
 
+
+  StorageResource* storage = nullptr;
+  PoolMem StoreName;
+  PoolMem device_name;
+  PoolMem pool_name;
+  PoolMem pool_type;
+  PoolMem media_type;
+  bool ok = true;
+  int copy = 0;
+  int stripe = 0;
   /*
    * We have two loops here. The first comes from the
    *  Storage = associated with the Job, and we need
@@ -248,7 +256,7 @@ bool StartStorageDaemonJob(JobControlRecord* jcr,
    *
    */
   /* Do read side of storage daemon */
-  if (ok && read_storage) {
+  if (read_storage) {
     /* For the moment, only migrate, copy and vbackup have rpool */
     if (jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_COPY)
         || (jcr->is_JobType(JT_BACKUP) && jcr->is_JobLevel(L_VIRTUAL_FULL))) {
