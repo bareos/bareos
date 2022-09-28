@@ -177,6 +177,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - docs: improve operating system table [PR #1254]
 - add FAQ entry about howto upgrade from Bareos < 20 with Bareos Python packages installed [PR #1260]
 - describe usage of the add_bareos_repositories.sh script [PR #1248]
+- Appendix/Bareos Programs improvements [PR #1255]
 
 [PR #698]: https://github.com/bareos/bareos/pull/698
 [PR #768]: https://github.com/bareos/bareos/pull/768
