@@ -95,6 +95,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - bcopy: fix crash in bcopy when using certain cli arguments [PR #1211]
 - webui: fix password string length limitation [BUG #1480][PR #1251]
 - systemtest: fixed issues with systemtests not succeeding on first try [PR #1186]
+- btape: dumplabel only when label is valid [PR #1266]
 
 ### Changed
 - contrib: rename Python modules to satisfy PEP8 [PR #768]
@@ -304,4 +305,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1251]: https://github.com/bareos/bareos/pull/1251
 [PR #1253]: https://github.com/bareos/bareos/pull/1253
 [PR #1254]: https://github.com/bareos/bareos/pull/1254
+[PR #1266]: https://github.com/bareos/bareos/pull/1266
 [unreleased]: https://github.com/bareos/bareos/tree/master
