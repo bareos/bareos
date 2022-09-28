@@ -1,13 +1,13 @@
 bareos-dbcopy
-=============
+~~~~~~~~~~~~~
 
 Synopsis
---------
+^^^^^^^^
 
 **bareos-dbcopy** [*options*] <*sourcecatalog*> <*destinationcatalog*>
 
 Description
------------
+^^^^^^^^^^^
 
 :program:`bareos-dbcopy` copies the data of all tables from the Bareos catalog
 ``<sourcecatalog>`` into the Bareos catalog ``<destinationcatalog>``.
@@ -35,7 +35,7 @@ For more information please read the according
 `<https://docs.bareos.org/>`_
 
 Internal workflow
------------------
+^^^^^^^^^^^^^^^^^
 * :program:`bareos-dbcopy` scans both the source and destination database for
   existing tables and column definitions.
 
@@ -48,7 +48,7 @@ Internal workflow
 * If a destination table already contains data, then this table is skipped.
 
 Options
--------
+^^^^^^^
 
 .. program:: bareos-dbcopy
 

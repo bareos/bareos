@@ -1,3 +1,5 @@
+.. _storage-media-output-format:
+
 Storage Media Output Format
 ===========================
 
