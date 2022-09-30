@@ -124,6 +124,7 @@ class AuthController extends AbstractActionController
       $session->offsetSet('dt_statesave', ($configuration['configuration']['tables']['save_previous_state']) ? 'true' : 'false');
       $session->offsetSet('dashboard_autorefresh_interval', $configuration['configuration']['dashboard']['autorefresh_interval']);
       $session->offsetSet('filetree_refresh_timeout', $configuration['configuration']['restore']['filetree_refresh_timeout']);
+      $session->offsetSet('analytics_checkpoint_interval', $configuration['configuration']['analytics']['checkpoint_interval']);
 
       if(isset($configuration['configuration']['autochanger']['labelpooltype'])) {
          $session->offsetSet('ac_labelpooltype', $configuration['configuration']['autochanger']['labelpooltype']);

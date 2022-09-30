@@ -49,3 +49,9 @@ labelpooltype=scratch
 ; Restore filetree refresh timeout after n milliseconds
 ; Default: 120000 milliseconds
 filetree_refresh_timeout=120000
+
+[analytics]
+; Checkpoint interval in milliseconds
+; Default: 60000 milliseconds
+checkpoint_interval=60000
+

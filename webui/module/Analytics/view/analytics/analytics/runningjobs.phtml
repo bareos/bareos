@@ -1,0 +1,313 @@
+<?php
+
+/**
+ *
+ * bareos-webui - Bareos Web-Frontend
+ *
+ * @link      https://github.com/bareos/bareos for the canonical source repository
+ * @copyright Copyright (c) 2013-2022 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+$title = _('Analytics');
+$this->headTitle($title);
+
+?>
+
+<?php if($this->acl_alert) : echo $this->ACLAlert($this->invalid_commands); elseif(!$this->acl_alert) : ?>
+
+<ul class="nav nav-tabs">
+   <li><a href="<?php echo $this->url('analytics', array('action'=>'index')); ?>"><?php echo $this->translate('Stored Data'); ?></a></li>
+   <li class="active"><a href="<?php echo $this->url('analytics', array('action'=>'runningjobs')); ?>"><?php echo $this->translate('Running Jobs'); ?></a></li>
+</ul>
+
+<br />
+
+<div class="row">
+  <div class="col-md-12">
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h3 class="panel-title"><?php echo $this->translate('Checkpoint Transfer Rates'); ?></h3>
+      </div>
+      <div class="panel-body">
+        <div id="runningjobs-chart"></div>
+      </div>
+      <div class="panel-body">
+      <div id="runningjobs-chart-average"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<?php
+  echo $this->headScript()->prependFile($this->basePath() . '/js/apexcharts.min.js');
+?>
+
+<style>
+</style>
+
+<script>
+
+var displayrange = 32 * <?php echo $_SESSION['bareos']['analytics_checkpoint_interval']; ?>;
+var checkpointinterval = <?php echo $_SESSION['bareos']['analytics_checkpoint_interval']; ?>;
+
+function getCurrentTime() {
+  let timezoneoffset = new Date().getTimezoneOffset() * 60 * 1000;
+  var currenttime = new Date().getTime();
+
+  return (currenttime -= timezoneoffset);
+}
+
+function formatBytes(value) {
+  let factor = 1000 // change to 1024 if required
+  let decimal = 2 // change if required
+  let megabyte = factor * factor
+
+  return (value / megabyte).toFixed(decimal)
+}
+
+var options1 = {
+  series: [],
+  title: {
+    text: 'Last Transfer Rate',
+    align: 'left'
+  },
+  noData: {
+    text: 'No data available.'
+  },
+  chart: {
+    id: 'runningjobs-chart1',
+    height: 300,
+    type: 'line',
+    animations: {
+      enabled: false
+    },
+    toolbar: {
+      show: false
+    },
+    zoom: {
+      enabled: false
+    }
+  },
+  dataLabels: {
+    enabled: false
+  },
+  stroke: {
+    curve: 'smooth'
+  },
+  markers: {
+    size: 2
+  },
+  xaxis: {
+    type: 'datetime',
+    range: displayrange,
+    min: getCurrentTime() - displayrange,
+    max: getCurrentTime()
+  },
+  yaxis: {
+    labels: {
+      formatter: function (value) {
+        return value + " MB/s";
+      }
+    }
+  },
+  legend: {
+    show: true,
+    showForSingleSeries: true,
+    onItemClick: {
+      toggleDataSeries: true
+    },
+    onItemHover: {
+      highlightDataSeries: true
+    },
+    position: 'bottom',
+    horizontalAlign: 'left'
+  },
+  grid: {
+    borderColor: '#aaa',
+    strokeDashArray: 4,
+  },
+  tooltip: {
+    x: {
+      format: "HH:mm:ss"
+    }
+  },
+  theme: {
+    mode: 'light',
+    palette: 'palette1'
+  }
+};
+
+var options2 = {
+  series: [],
+  title: {
+    text: 'Average Transfer Rate',
+    align: 'left'
+  },
+  noData: {
+    text: 'No data available.'
+  },
+  chart: {
+    id: 'runningjobs-chart2',
+    height: 300,
+    type: 'line',
+    animations: {
+      enabled: false
+    },
+    toolbar: {
+      show: false
+    },
+    zoom: {
+      enabled: false
+    }
+  },
+  dataLabels: {
+    enabled: false
+  },
+  stroke: {
+    curve: 'smooth'
+  },
+  markers: {
+    size: 2
+  },
+  xaxis: {
+    type: 'datetime',
+    range: displayrange,
+    min: getCurrentTime() - displayrange,
+    max: getCurrentTime()
+  },
+  yaxis: {
+    labels: {
+      formatter: function (value) {
+        return value + " MB/s";
+      }
+    }
+  },
+  legend: {
+    show: true,
+    showForSingleSeries: true,
+    onItemClick: {
+      toggleDataSeries: true
+    },
+    onItemHover: {
+      highlightDataSeries: true
+    },
+    position: 'bottom',
+    horizontalAlign: 'left'
+  },
+  grid: {
+    borderColor: '#aaa',
+    strokeDashArray: 4,
+  },
+  tooltip: {
+    x: {
+      format: "HH:mm:ss"
+    }
+  },
+  theme: {
+    mode: 'light',
+    palette: 'palette1'
+  }
+};
+
+var chart1 = new ApexCharts(document.querySelector("#runningjobs-chart"), options1);
+chart1.render();
+
+var chart2 = new ApexCharts(document.querySelector("#runningjobs-chart-average"), options2);
+chart2.render();
+
+var runtimedata = new Map()
+var series1 = []
+var series2 = []
+
+function updateRunningJobsData() {
+  $.ajax({
+    url: "<?php echo $this->url('analytics', array('action' => 'getData'), null) . '?data=runningjobs'; ?>",
+    dataType: 'json',
+    timeout: 10000,
+    success: function(response) {
+      if(response.length > 0) {
+        response.forEach((element) => {
+          if(runtimedata.has(element.jobid) === false) {
+            runtimedata.set(element.jobid, [[],[],[],[]])
+            runtimedata.get(element.jobid)[0].push(element.name)
+          }
+          if(runtimedata.get(element.jobid)[1].length > 31) {
+            runtimedata.get(element.jobid)[1].shift()
+            runtimedata.get(element.jobid)[3].shift()
+          }
+          runtimedata.get(element.jobid)[1].push({x: element.lastcheckpointtime, y: formatBytes(element.lasttransferrate)})
+          runtimedata.get(element.jobid)[2] = element.lastcheckpointtime
+          runtimedata.get(element.jobid)[3].push({x: element.lastcheckpointtime, y: formatBytes(element.averagetransferrate)})
+        })
+      }
+      runtimedata.forEach((value, key) => {
+        if(getCurrentTime() - value[2] > displayrange) {
+          runtimedata.delete(key)
+        }
+      })
+    },
+    error: function() {},
+    parsererror: function() {},
+    timeout: function() {}
+  })
+}
+
+function updateChart() {
+
+  series1 = []
+  series2 = []
+
+  runtimedata.forEach((value, key) => {
+    series1.push({name: key + " " + value[0][0], data: value[1]})
+    series2.push({name: key + " " + value[0][0], data: value[3]})
+  })
+  
+  chart1.updateOptions({
+    series: series1,
+    xaxis: {
+      type: 'datetime',
+      range: displayrange,
+      min: getCurrentTime() - displayrange,
+      max: getCurrentTime(),
+    }
+  })
+
+  chart2.updateOptions({
+    series: series2,
+    xaxis: {
+      type: 'datetime',
+      range: displayrange,
+      min: getCurrentTime() - displayrange,
+      max: getCurrentTime(),
+    }
+  })
+
+}
+
+const updateViewInterval = setInterval(updateView, <?php echo $_SESSION['bareos']['analytics_checkpoint_interval']; ?>)
+
+function updateView() {
+  updateRunningJobsData()
+  updateChart()
+  // debug
+  // console.log(runtimedata)
+}
+
+</script>
+
+<?php endif; ?>

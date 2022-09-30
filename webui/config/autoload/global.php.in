@@ -124,6 +124,13 @@ function read_configuration_ini($configuration, $configuration_ini)
       $arr['restore']['filetree_refresh_timeout'] = 120000;
    }
 
+   if( array_key_exists('analytics', $configuration) && array_key_exists('checkpoint_interval', $configuration['analytics']) && isset($configuration['analytics']['checkpoint_interval']) ) {
+      $arr['analytics']['checkpoint_interval'] = $configuration['analytics']['checkpoint_interval'];
+   }
+   else {
+      $arr['analytics']['checkpoint_interval'] = 60000;
+   }
+
    return $arr;
 }
 
