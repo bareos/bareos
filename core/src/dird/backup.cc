@@ -420,7 +420,6 @@ bool DoNativeBackup(JobControlRecord* jcr)
   if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
     return false;
   }
-  sd = jcr->store_bsock;
 
   if (!StartStorageDaemonJob(jcr, nullptr,
                              jcr->dir_impl->res.write_storage_list)) {
@@ -438,7 +437,7 @@ bool DoNativeBackup(JobControlRecord* jcr)
      * to avoid two threads from using the BareosSocket structure at
      * the same time.
      */
-    if (!sd->fsend("run")) { return false; }
+    if (!jcr->store_bsock->fsend("run")) { return false; }
 
     /*
      * Now start a Storage daemon message thread.  Note,
@@ -457,7 +456,6 @@ bool DoNativeBackup(JobControlRecord* jcr)
   }
   Dmsg1(120, "jobid: %d: connected\n", jcr->JobId);
   SendJobInfoToFileDaemon(jcr);
-  fd = jcr->file_bsock;
 
   if (jcr->passive_client && jcr->dir_impl->FDVersion < FD_VERSION_51) {
     Jmsg(jcr, M_FATAL, 0,
@@ -513,14 +511,14 @@ bool DoNativeBackup(JobControlRecord* jcr)
 
     connection_target_address = StorageAddressToContact(client, store);
 
-    fd->fsend(storaddrcmd, connection_target_address, store->SDport,
-              tls_policy);
-    if (!response(jcr, fd, OKstore, "Storage", DISPLAY_ERROR)) {
+    jcr->file_bsock->fsend(storaddrcmd, connection_target_address,
+                           store->SDport, tls_policy);
+    if (!response(jcr, jcr->file_bsock, OKstore, "Storage", DISPLAY_ERROR)) {
       Dmsg0(200, "Error from active client on storeaddrcmd\n");
       goto bail_out;
     }
 
-  } else { /* passive client */
+  } else {  // passive client
 
     TlsPolicy tls_policy;
     if (jcr->dir_impl->res.client->connection_successful_handshake_
@@ -534,10 +532,11 @@ bool DoNativeBackup(JobControlRecord* jcr)
 
     connection_target_address = ClientAddressToContact(client, store);
 
-    sd->fsend(passiveclientcmd, connection_target_address, client->FDport,
-              tls_policy);
+    jcr->store_bsock->fsend(passiveclientcmd, connection_target_address,
+                            client->FDport, tls_policy);
     Bmicrosleep(2, 0);
-    if (!response(jcr, sd, OKpassiveclient, "Passive client", DISPLAY_ERROR)) {
+    if (!response(jcr, jcr->store_bsock, OKpassiveclient, "Passive client",
+                  DISPLAY_ERROR)) {
       goto bail_out;
     }
 
@@ -586,14 +585,16 @@ bool DoNativeBackup(JobControlRecord* jcr)
    */
   if (!SendAccurateCurrentFiles(jcr)) { goto bail_out; /* error */ }
 
-  fd->fsend(backupcmd, jcr->JobFiles);
-  Dmsg1(100, ">filed: %s", fd->msg);
-  if (!response(jcr, fd, OKbackup, "Backup", DISPLAY_ERROR)) { goto bail_out; }
+  jcr->file_bsock->fsend(backupcmd, jcr->JobFiles);
+  Dmsg1(100, ">filed: %s", jcr->file_bsock->msg);
+  if (!response(jcr, jcr->file_bsock, OKbackup, "Backup", DISPLAY_ERROR)) {
+    goto bail_out;
+  }
 
   status = WaitForJobTermination(jcr);
   if (jcr->batch_started) {
     jcr->db_batch->WriteBatchFileRecords(
-        jcr); /* used by bulk batch file insert */
+        jcr);  // used by bulk batch file insert
   }
   if (jcr->HasBase && !jcr->db->CommitBaseFileAttributesRecord(jcr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
