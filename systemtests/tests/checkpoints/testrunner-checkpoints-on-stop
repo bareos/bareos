@@ -63,6 +63,7 @@ fi
 bin/bareos stop
 
 bin/bareos start
+bin/bareos status
 
 slowjobid=$(grep 'Job queued. JobId=' "$backup_log" | sed -n -e 's/^.*JobId=//p')
 
