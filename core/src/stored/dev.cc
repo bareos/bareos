@@ -108,6 +108,8 @@
 
 namespace storagedaemon {
 
+static void InitiateDevice(JobControlRecord* jcr, Device* dev);
+
 const char* Device::mode_to_str(DeviceMode mode)
 {
   static const char* modes[] = {"CREATE_READ_WRITE", "OPEN_READ_WRITE",
@@ -142,55 +144,51 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
 
   // If no device type specified, try to guess
   if (device_resource->dev_type == DeviceType::B_UNKNOWN_DEV) {
-    Jmsg2(jcr, M_ERROR, 0,
-          _("device type for %s was not identified. Cannot continue.\n"),
-          device_resource->archive_device_string);
+    Jmsg2(jcr, M_ERROR, 0, _("%s has an unknown device type %s\n"),
+          device_resource->archive_device_string,
+          device_resource->dev_type.c_str());
     return nullptr;
   }
 
   Device* dev = nullptr;
 
-  /*
-   * When using dynamic loading use the InitBackendDevice() function
-   * for any type of device.
-   */
+/*
+ * When using dynamic loading use the InitBackendDevice() function
+ * for any type of device.
+ */
 #if !defined(HAVE_DYNAMIC_SD_BACKENDS)
-  switch (device_resource->dev_type) {
+#  ifdef HAVE_WIN32
+  if (device_resource->dev_type == DeviceType::B_FILE_DEV) {
+    dev = new win32_file_device;
+  } else if (device_resource->dev_type == DeviceType::B_TAPE_DEV) {
+    dev = new win32_tape_device;
+  } else if (device_resource->dev_type == DeviceType::B_FIFO_DEV) {
+    dev = new win32_fifo_device;
+  } else
+#  else
+  if (device_resource->dev_type == DeviceType::B_FILE_DEV) {
+    dev = new unix_file_device;
+  } else if (device_resource->dev_type == DeviceType::B_TAPE_DEV) {
+    dev = new unix_tape_device;
+  } else if (device_resource->dev_type == DeviceType::B_FIFO_DEV) {
+    dev = new unix_fifo_device;
+  } else
+#  endif
 #  ifdef HAVE_GFAPI
-    case DeviceType::B_GFAPI_DEV:
-      dev = new gfapi_device;
-      break;
+      if (device_resource->dev_type == DeviceType::B_GFAPI_DEV) {
+    dev = new gfapi_device;
+  } else
 #  endif
 #  ifdef HAVE_BAREOSSD_DROPLET_DEVICE
-    case DeviceType::B_DROPLET_DEV:
-      dev = new DropletDevice;
-      break;
+      if (device_resource->dev_type == DeviceType::B_DROPLET_DEV) {
+    dev = new DropletDevice;
+  } else
 #  endif
-#  ifdef HAVE_WIN32
-    case DeviceType::B_FILE_DEV:
-      dev = new win32_file_device;
-      break;
-    case DeviceType::B_TAPE_DEV:
-      dev = new win32_tape_device;
-      break;
-    case DeviceType::B_FIFO_DEV:
-      dev = new win32_fifo_device;
-      break;
-#  else
-    case DeviceType::B_FILE_DEV:
-      dev = new unix_file_device;
-      break;
-    case DeviceType::B_TAPE_DEV:
-      dev = new unix_tape_device;
-      break;
-    case DeviceType::B_FIFO_DEV:
-      dev = new unix_fifo_device;
-      break;
-#  endif
-    case DeviceType::B_UNKNOWN_DEV:
-      Jmsg2(jcr, M_ERROR, 0, _("%s has an unknown device type %d\n"),
-            device_resource->archive_device_string, device_resource->dev_type);
-      return nullptr;
+  {
+    Jmsg2(jcr, M_ERROR, 0, _("%s has unsupported device type %s\n"),
+          device_resource->archive_device_string,
+          device_resource->dev_type.c_str());
+    return nullptr;
   }
 #else
   dev = InitBackendDevice(jcr, device_resource->dev_type);
@@ -200,8 +198,7 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
             _("Initialization of dynamic %s device \"%s\" with archive "
               "device \"%s\" failed. Backend "
               "library might be missing or backend directory incorrect.\n"),
-            device_type_to_name_mapping.at(device_resource->dev_type),
-            device_resource->resource_name_,
+            device_resource->dev_type.c_str(), device_resource->resource_name_,
             device_resource->archive_device_string);
     } catch (const std::out_of_range&) {
       // device_resource->dev_type could exceed limits of map
@@ -210,45 +207,54 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
   }
 #endif  // !defined(HAVE_DYNAMIC_SD_BACKENDS)
 
+  dev->device_resource = device_resource;
+  device_resource->dev = dev;
+
+  InitiateDevice(jcr, dev);
+  return dev;
+}  // namespace storagedaemon
+
+static void InitiateDevice(JobControlRecord* jcr, Device* dev)
+{
   dev->InvalidateSlotNumber(); /* unknown */
 
   // Copy user supplied device parameters from Resource
   dev->archive_device_string
-      = GetMemory(strlen(device_resource->archive_device_string) + 1);
-  PmStrcpy(dev->archive_device_string, device_resource->archive_device_string);
-  if (device_resource->device_options) {
-    dev->dev_options = GetMemory(strlen(device_resource->device_options) + 1);
-    PmStrcpy(dev->dev_options, device_resource->device_options);
+      = GetMemory(strlen(dev->device_resource->archive_device_string) + 1);
+  PmStrcpy(dev->archive_device_string,
+           dev->device_resource->archive_device_string);
+  if (dev->device_resource->device_options) {
+    dev->dev_options
+        = GetMemory(strlen(dev->device_resource->device_options) + 1);
+    PmStrcpy(dev->dev_options, dev->device_resource->device_options);
   }
-  dev->prt_name = GetMemory(strlen(device_resource->archive_device_string)
-                            + strlen(device_resource->resource_name_) + 20);
+  dev->prt_name
+      = GetMemory(strlen(dev->device_resource->archive_device_string)
+                  + strlen(dev->device_resource->resource_name_) + 20);
 
 
-  Mmsg(dev->prt_name, "\"%s\" (%s)", device_resource->resource_name_,
-       device_resource->archive_device_string);
+  Mmsg(dev->prt_name, "\"%s\" (%s)", dev->device_resource->resource_name_,
+       dev->device_resource->archive_device_string);
   Dmsg1(400, "Allocate dev=%s\n", dev->print_name());
-  CopySetBits(CAP_MAX, device_resource->cap_bits, dev->capabilities);
+  CopySetBits(CAP_MAX, dev->device_resource->cap_bits, dev->capabilities);
 
 
-  dev->min_block_size = device_resource->min_block_size;
-  dev->max_block_size = device_resource->max_block_size;
+  dev->min_block_size = dev->device_resource->min_block_size;
+  dev->max_block_size = dev->device_resource->max_block_size;
   dev->max_volume_size = 0;
-  dev->max_file_size = device_resource->max_file_size;
-  dev->max_concurrent_jobs = device_resource->max_concurrent_jobs;
-  dev->volume_capacity = device_resource->volume_capacity;
-  dev->max_rewind_wait = device_resource->max_rewind_wait;
-  dev->max_open_wait = device_resource->max_open_wait;
-  dev->max_open_vols = device_resource->max_open_vols;
-  dev->vol_poll_interval = device_resource->vol_poll_interval;
-  dev->max_spool_size = device_resource->max_spool_size;
-  dev->drive = device_resource->drive;
-  dev->drive_index = device_resource->drive_index;
-  dev->autoselect = device_resource->autoselect;
-  dev->norewindonclose = device_resource->norewindonclose;
-  dev->dev_type = device_resource->dev_type;
-  dev->device_resource = device_resource;
-
-  device_resource->dev = dev;
+  dev->max_file_size = dev->device_resource->max_file_size;
+  dev->max_concurrent_jobs = dev->device_resource->max_concurrent_jobs;
+  dev->volume_capacity = dev->device_resource->volume_capacity;
+  dev->max_rewind_wait = dev->device_resource->max_rewind_wait;
+  dev->max_open_wait = dev->device_resource->max_open_wait;
+  dev->max_open_vols = dev->device_resource->max_open_vols;
+  dev->vol_poll_interval = dev->device_resource->vol_poll_interval;
+  dev->max_spool_size = dev->device_resource->max_spool_size;
+  dev->drive = dev->device_resource->drive;
+  dev->drive_index = dev->device_resource->drive_index;
+  dev->autoselect = dev->device_resource->autoselect;
+  dev->norewindonclose = dev->device_resource->norewindonclose;
+  dev->dev_type = dev->device_resource->dev_type;
 
   if (dev->vol_poll_interval && dev->vol_poll_interval < 60) {
     dev->vol_poll_interval = 60;
@@ -263,15 +269,16 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
    */
   if (dev->IsFile() && dev->RequiresMount()) {
     struct stat statp;
-    if (!device_resource->mount_point
-        || stat(device_resource->mount_point, &statp) < 0) {
+    if (!dev->device_resource->mount_point
+        || stat(dev->device_resource->mount_point, &statp) < 0) {
       BErrNo be;
       dev->dev_errno = errno;
       Jmsg2(jcr, M_ERROR_TERM, 0, _("Unable to stat mount point %s: ERR=%s\n"),
-            device_resource->mount_point, be.bstrerror());
+            dev->device_resource->mount_point, be.bstrerror());
     }
 
-    if (!device_resource->mount_command || !device_resource->unmount_command) {
+    if (!dev->device_resource->mount_command
+        || !dev->device_resource->unmount_command) {
       Jmsg0(jcr, M_ERROR_TERM, 0,
             _("Mount and unmount commands must defined for a device which "
               "requires mount.\n"));
@@ -361,8 +368,6 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
   dev->initiated = true;
   Dmsg3(100, "dev=%s dev_max_bs=%u max_bs=%u\n", dev->archive_device_string,
         dev->device_resource->max_block_size, dev->max_block_size);
-
-  return dev;
 }
 
 // This routine initializes the device wait timers
@@ -575,7 +580,7 @@ bool Device::open(DeviceControlRecord* dcr, DeviceMode omode)
   }
 
   Dmsg4(100, "open dev: type=%d archive_device_string=%s vol=%s mode=%s\n",
-        dev_type, print_name(), getVolCatName(), mode_to_str(omode));
+        dev_type.c_str(), print_name(), getVolCatName(), mode_to_str(omode));
 
   ClearBit(ST_LABEL, state);
   ClearBit(ST_APPENDREADY, state);
@@ -941,21 +946,15 @@ bool Device::close(DeviceControlRecord* dcr)
 
   if (!norewindonclose) { OfflineOrRewind(); }
 
-  switch (dev_type) {
-    case DeviceType::B_TAPE_DEV:
-      UnlockDoor();
-      [[fallthrough]];
-    default:
-      status = d_close(fd);
-      if (status < 0) {
-        BErrNo be;
+  if (dev_type == DeviceType::B_TAPE_DEV) { UnlockDoor(); }
+  status = d_close(fd);
+  if (status < 0) {
+    BErrNo be;
 
-        Mmsg2(errmsg, _("Unable to close device %s. ERR=%s\n"), print_name(),
-              be.bstrerror());
-        dev_errno = errno;
-        retval = false;
-      }
-      break;
+    Mmsg2(errmsg, _("Unable to close device %s. ERR=%s\n"), print_name(),
+          be.bstrerror());
+    dev_errno = errno;
+    retval = false;
   }
 
   unmount(dcr, 1); /* do unmount if required */

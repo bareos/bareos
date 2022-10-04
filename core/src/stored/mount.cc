@@ -726,8 +726,8 @@ bool DeviceControlRecord::is_eod_valid()
   } else {
     Mmsg1(
         jcr->errmsg,
-        _("Don't know how to check if EOD is valid for a device of type %d\n"),
-        dev->dev_type);
+        _("Don't know how to check if EOD is valid for a device of type %s\n"),
+        dev->dev_type.c_str());
     Jmsg(jcr, M_ERROR, 0, jcr->errmsg);
     Dmsg0(050, jcr->errmsg);
     return false;

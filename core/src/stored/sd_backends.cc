@@ -43,14 +43,14 @@ namespace storagedaemon {
 
 struct BackendDeviceLibraryDescriptor {
  public:
-  DeviceType device_type{DeviceType::B_UNKNOWN_DEV};
+  std::string device_type{};
 
  private:
   void* dynamic_library_handle{};
   BackendInterface* backend_interface{};
 
  public:
-  BackendDeviceLibraryDescriptor(DeviceType t_device_type,
+  BackendDeviceLibraryDescriptor(const std::string& t_device_type,
                                  void* t_dynamic_library_handle,
                                  BackendInterface* t_backend_interface)
       : device_type(t_device_type)
@@ -71,30 +71,13 @@ struct BackendDeviceLibraryDescriptor {
       const BackendDeviceLibraryDescriptor& other)
       = delete;
   BackendDeviceLibraryDescriptor(BackendDeviceLibraryDescriptor&& other)
-  {
-    device_type = other.device_type;
-    std::swap(dynamic_library_handle, other.dynamic_library_handle);
-    std::swap(backend_interface, other.backend_interface);
-  }
+      = default;
   BackendDeviceLibraryDescriptor& operator=(
       BackendDeviceLibraryDescriptor&& other)
-  {
-    device_type = other.device_type;
-    std::swap(dynamic_library_handle, other.dynamic_library_handle);
-    std::swap(backend_interface, other.backend_interface);
-    return *this;
-  }
+      = default;
 
   Device* GetDevice() { return backend_interface->GetDevice(); }
 };
-
-const std::map<DeviceType, const char*> device_type_to_name_mapping
-    = {{DeviceType::B_FIFO_DEV, "fifo"},
-       {DeviceType::B_FILE_DEV, "file"},
-       {DeviceType::B_TAPE_DEV, "tape"},
-       {DeviceType::B_GFAPI_DEV, "gfapi"},
-       {DeviceType::B_DROPLET_DEV, "droplet"},
-       {DeviceType::B_UNKNOWN_DEV, nullptr}};
 
 static std::vector<std::unique_ptr<BackendDeviceLibraryDescriptor>>
     loaded_backends;
@@ -112,20 +95,14 @@ static inline const char* get_dlerror()
   return error != nullptr ? error : "";
 }
 
-Device* InitBackendDevice(JobControlRecord* jcr, DeviceType device_type)
+Device* InitBackendDevice(JobControlRecord* jcr, const std::string& device_type)
 {
   if (backend_directories.empty()) {
-    Jmsg(jcr, M_ERROR_TERM, 0, _("Catalog Backends Dir not configured.\n"));
+    Jmsg(jcr, M_ERROR_TERM, 0, _("storage backend dir not configured.\n"));
     // does not return
   }
 
-  const char* interface_name = nullptr;
-
-  try {
-    interface_name = device_type_to_name_mapping.at(device_type);
-  } catch (const std::out_of_range&) {
-    return nullptr;
-  }
+  const char* interface_name = device_type.c_str();
 
   for (const auto& b : loaded_backends) {
     if (b->device_type == device_type) { return b->GetDevice(); }

@@ -86,19 +86,6 @@ enum class DeviceMode : int
   OPEN_WRITE_ONLY
 };
 
-enum class DeviceType : int
-{
-  B_FILE_DEV = 1,
-  B_TAPE_DEV = 2,
-  B_FIFO_DEV = 3,
-  // B_VTL_DEV = 4,
-  B_GFAPI_DEV = 5,
-  B_DROPLET_DEV = 6,
-  // B_RADOS_DEV = 7,
-  // B_CEPHFS_DEV = 8
-  B_UNKNOWN_DEV = 0
-};
-
 // Generic status bits returned from StatusDev()
 enum
 {
@@ -183,6 +170,15 @@ enum
 // Make sure you have enough bits to store all above bit fields.
 #define ST_BYTES NbytesForBits(ST_MAX + 1)
 
+struct DeviceType {
+  static constexpr std::string_view B_DROPLET_DEV = "droplet";
+  static constexpr std::string_view B_FIFO_DEV = "fifo";
+  static constexpr std::string_view B_FILE_DEV = "file";
+  static constexpr std::string_view B_GFAPI_DEV = "gfapi";
+  static constexpr std::string_view B_TAPE_DEV = "tape";
+  static constexpr std::string_view B_UNKNOWN_DEV = "";
+};
+
 /*
  * Device structure definition.
  *
@@ -222,7 +218,7 @@ class Device {
   int dev_errno{};            /**< Our own errno */
   int oflags{};               /**< Read/write flags */
   DeviceMode open_mode{DeviceMode::kUndefined};
-  DeviceType dev_type{DeviceType::B_UNKNOWN_DEV};
+  std::string dev_type{};
   bool autoselect{};          /**< Autoselect in autochanger */
   bool norewindonclose{};     /**< Don't rewind tape drive on close */
   bool initiated{};           /**< Set when FactoryCreateDevice() called */
