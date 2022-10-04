@@ -102,7 +102,7 @@ static time_t last_rescan = 0;
 
 static const char* skipped_fs_types[] = {
 #if defined(HAVE_LINUX_OS)
-    "rootfs",
+    "rootfs",  // "nsfs", "tmpfs",
 #endif
     NULL};
 
@@ -152,8 +152,14 @@ static mntent_cache_entry_t* add_mntent_mapping(uint32_t dev,
   mce->fstype = strdup(fstype);
   if (mntopts) { mce->mntopts = strdup(mntopts); }
 
-  mntent_cache_entries->binary_insert(mce, CompareMntentMapping);
 
+  auto retval = mntent_cache_entries->binary_insert(mce, CompareMntentMapping);
+  if (retval != mce) {
+    Dmsg1(0, "failed to insert: %s %p, already exists!\n", mce->mountpoint,
+          mce->mountpoint);
+    DestroyMntentCacheEntry(mce);
+    free(mce);
+  }
   return mce;
 }
 

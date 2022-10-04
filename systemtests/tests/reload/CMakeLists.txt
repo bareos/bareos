@@ -19,3 +19,15 @@
 
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
+
+get_property(
+  test_names
+  DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  PROPERTY TESTS
+)
+set_tests_properties(
+  system:reload:add-second-director system:reload:add-uncommented-string
+  system:reload:unchanged-config PROPERTIES LABELS
+                                            broken_with_enabled_sanitzers
+)
+# message(FATAL_ERROR ${test_names})

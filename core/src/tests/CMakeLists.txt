@@ -278,6 +278,10 @@ if(NOT client-only)
     test_config_parser_dir LINK_LIBRARIES dird_objects bareos bareosfind
                                           bareossql GTest::gtest_main
   )
+  set_tests_properties(
+    gtest:ConfigParser_Dir.bareos_configparser_tests
+    PROPERTIES LABELS broken_with_enabled_sanitzers
+  )
   bareos_add_test(
     test_crc32
     ADDITIONAL_SOURCES ../stored/crc32/crc32.cc
@@ -399,6 +403,7 @@ bareos_add_test(
 )
 
 bareos_add_test(thread_list LINK_LIBRARIES bareos GTest::gtest_main)
+
 set_tests_properties(
   gtest:thread_list.thread_list_startup_and_shutdown PROPERTIES LABELS broken
 )

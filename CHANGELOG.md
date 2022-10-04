@@ -45,10 +45,11 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - core/platform: Adding Bareos firewalld service xml files [PR #1237]
 - dird: Added `FS Type = vfat` in LinuxAll.conf for UEFI partition [PR #1236]
 - bareos tools: reintegrate testfind binary [PR #1176]
-- fd: add support for role switching on PostgreSQL add-on [BUG #4607] [PR #1178]
+- fd: add support for role switching on PostgreSQL add-on [Issue #4607] [PR #1178]
 - build: switch from FreeBSD 13.0 to 13.1 [PR #1253]
-- stored: dird: added backup checkpoints that save backup metadata to the Catalog during the execution of the backup. [PR#1074]
+- stored: dird: added backup checkpoints that save backup metadata to the Catalog during the execution of the backup. [PR #1074]
 - stored: dird: add backup checkpoints that save backup metadata to the Catalog during the execution of the backup. [PR #1074]
+- build: run a build and test with sanitizers enabled [PR #1244]
 
 ### Fixed
 - dird: RunScript fixes [PR #1217]
@@ -82,7 +83,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - cats: make `.bvfs_update` and `.bvfs_versions` take archive jobs into consideration [PR #1152]
 - Fix `always-incremental-consolidate` systemtest sporadic fails, and rename it. [PR #1154]
 - packaging: FreeBSD place all scripts into "normal" location /usr/local/lib/bareos/scripts [PR #1163]
-- [BUG #1445] adding quotes to director name when using `configure export`. [PR #1171]
+- [Issue #1445] adding quotes to director name when using `configure export`. [PR #1171]
 - FreeBSD packages: add missing ddl/update 2171_2192 and 2192_2210 files [PR #1147]
 - Fix director connects to client while `Connection From Director To Client` is disabled. [PR #1099]
 - dir: miscalculation when using `always incremental keep number` [PR #1159]
@@ -93,7 +94,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - devtools/dist-tarball.sh: fix name if version contains "~pre" [PR #1221]
 - dird: fix odd-even weeks parsing bug in schedule [PR #1210]
 - bcopy: fix crash in bcopy when using certain cli arguments [PR #1211]
-- webui: fix password string length limitation [BUG #1480][PR #1251]
+- webui: fix password string length limitation [Issue #1480][PR #1251]
 - systemtest: fixed issues with systemtests not succeeding on first try [PR #1186]
 - btape: dumplabel only when label is valid [PR #1266]
 
@@ -155,10 +156,10 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - split the very long `Plugins.rst` file into one file per Bareos plugin [PR #1046]
 - rework SD plugin scsicrypto linux sg_io ioctl subsection for cap_sys_rawio [PR #1057]
 - improve action Python plugin documentation, by removing File in Fileset example [PR #1079]
-- improve Mysql - PostgreSQL howto [PR #1093] fixing [BUG #1429]
+- improve Mysql - PostgreSQL howto [PR #1093] fixing [Issue #1429]
 - clarifies Sphinx bareos-extension parallel_read_safe status to False [PR #1037]
-- fix incorrect link in contrib PythonFdPlugin [BUG #1450] [PR #1065]
-- clarifies CheckFileChanges option not intended to be used with plugin [BUG #1452][PR #1180]
+- fix incorrect link in contrib PythonFdPlugin [Issue #1450] [PR #1065]
+- clarifies CheckFileChanges option not intended to be used with plugin [Issue #1452][PR #1180]
 - fix broken links with sphinx linkcheck [PR #1200]
 - add Security FIPS section [PR #1181]
 - add instruction to run sphinx linkcheck before release [PR #1218]
@@ -167,7 +168,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - improve Wild(*) section with links to example [PR #1228]
 - add example to selection type = sql query [PR #1229]
 - dir-job-RescheduleTimes remove wrong default sentence [PR #1225]
-- update Appendix/HardwareSizing DB size with new numbers and formulas [BUG #1477][PR #1231]
+- update Appendix/HardwareSizing DB size with new numbers and formulas [Issue #1477][PR #1231]
 - add description to fileset signature sha256 and sha512 parameter [PR #1230]
 - improve troubleshooting and debugging chapter [PR #1233]
 - mssql: after PITR restore, a full backup is required [PR #1235]
@@ -182,6 +183,13 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - obsolete comments removed [PR #1268]
 - fix bsmtp get-usage.sh call [PR #1267]
 
+[Issue #1429]: https://bugs.bareos.org/view.php?id=1429
+[Issue #1445]: https://bugs.bareos.org/view.php?id=1445
+[Issue #1450]: https://bugs.bareos.org/view.php?id=1450
+[Issue #1452]: https://bugs.bareos.org/view.php?id=1452
+[Issue #1477]: https://bugs.bareos.org/view.php?id=1477
+[Issue #1480]: https://bugs.bareos.org/view.php?id=1480
+[Issue #4607]: https://bugs.bareos.org/view.php?id=4607
 [PR #698]: https://github.com/bareos/bareos/pull/698
 [PR #768]: https://github.com/bareos/bareos/pull/768
 [PR #1010]: https://github.com/bareos/bareos/pull/1010
@@ -299,6 +307,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1238]: https://github.com/bareos/bareos/pull/1238
 [PR #1242]: https://github.com/bareos/bareos/pull/1242
 [PR #1243]: https://github.com/bareos/bareos/pull/1243
+[PR #1244]: https://github.com/bareos/bareos/pull/1244
 [PR #1247]: https://github.com/bareos/bareos/pull/1247
 [PR #1248]: https://github.com/bareos/bareos/pull/1248
 [PR #1251]: https://github.com/bareos/bareos/pull/1251
@@ -308,4 +317,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1260]: https://github.com/bareos/bareos/pull/1260
 [PR #1266]: https://github.com/bareos/bareos/pull/1266
 [PR #1267]: https://github.com/bareos/bareos/pull/1267
+[PR #1268]: https://github.com/bareos/bareos/pull/1268
 [unreleased]: https://github.com/bareos/bareos/tree/master
