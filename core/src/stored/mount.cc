@@ -721,7 +721,7 @@ bool DeviceControlRecord::is_eod_valid()
       MarkVolumeInError();
       return false;
     }
-  } else if (dev->IsFifo() || dev->IsVtl()) {
+  } else if (dev->IsFifo()) {
     return true;
   } else {
     Mmsg1(

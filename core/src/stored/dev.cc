@@ -721,7 +721,7 @@ bool Device::rewind(DeviceControlRecord* dcr)
 
   if (fd < 0) { return false; }
 
-  if (IsFifo() || IsVtl()) { return true; }
+  if (IsFifo()) { return true; }
 
   if (d_lseek(dcr, (boffset_t)0, SEEK_SET) < 0) {
     BErrNo be;
@@ -771,8 +771,6 @@ bool Device::eod(DeviceControlRecord* dcr)
     return false;
   }
 
-  if (IsVtl()) { return true; }
-
   Dmsg0(100, "Enter eod\n");
   if (AtEot()) { return true; }
 
@@ -818,7 +816,7 @@ bool Device::UpdatePos(DeviceControlRecord* dcr)
     return false;
   }
 
-  if (IsFifo() || IsVtl()) { return true; }
+  if (IsFifo()) { return true; }
 
   file = 0;
   file_addr = 0;
@@ -909,7 +907,7 @@ bool Device::Reposition(DeviceControlRecord* dcr,
     return false;
   }
 
-  if (IsFifo() || IsVtl()) { return true; }
+  if (IsFifo()) { return true; }
 
   boffset_t pos = (((boffset_t)rfile) << 32) | rblock;
   Dmsg1(100, "===== lseek to %d\n", (int)pos);
@@ -961,7 +959,6 @@ bool Device::close(DeviceControlRecord* dcr)
   if (!norewindonclose) { OfflineOrRewind(); }
 
   switch (dev_type) {
-    case DeviceType::B_VTL_DEV:
     case DeviceType::B_TAPE_DEV:
       UnlockDoor();
       [[fallthrough]];

@@ -88,15 +88,15 @@ enum class DeviceMode : int
 
 enum class DeviceType : int
 {
-  B_UNKNOWN_DEV = 0,
   B_FILE_DEV = 1,
-  B_TAPE_DEV,
-  B_FIFO_DEV,
-  B_VTL_DEV,
-  B_GFAPI_DEV,
-  B_DROPLET_DEV,
-  B_RADOS_DEV,
-  B_CEPHFS_DEV
+  B_TAPE_DEV = 2,
+  B_FIFO_DEV = 3,
+  // B_VTL_DEV = 4,
+  B_GFAPI_DEV = 5,
+  B_DROPLET_DEV = 6,
+  // B_RADOS_DEV = 7,
+  // B_CEPHFS_DEV = 8
+  B_UNKNOWN_DEV = 0
 };
 
 // Generic status bits returned from StatusDev()
@@ -295,11 +295,9 @@ class Device {
   bool IsFile() const
   {
     return (dev_type == DeviceType::B_FILE_DEV || dev_type == DeviceType::B_GFAPI_DEV ||
-            dev_type == DeviceType::B_DROPLET_DEV || dev_type == DeviceType::B_RADOS_DEV ||
-            dev_type == DeviceType::B_CEPHFS_DEV);
+            dev_type == DeviceType::B_DROPLET_DEV);
   }
   bool IsFifo() const { return dev_type == DeviceType::B_FIFO_DEV; }
-  bool IsVtl() const { return dev_type == DeviceType::B_VTL_DEV; }
   bool IsOpen() const { return fd >= 0; }
   bool IsOffline() const { return BitIsSet(ST_OFFLINE, state); }
   bool IsLabeled() const { return BitIsSet(ST_LABEL, state); }

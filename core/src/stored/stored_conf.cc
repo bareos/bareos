@@ -256,7 +256,6 @@ static s_dvt_kw device_types[]
     = {{"file", DeviceType::B_FILE_DEV},
        {"tape", DeviceType::B_TAPE_DEV},
        {"fifo", DeviceType::B_FIFO_DEV},
-       {"vtl", DeviceType::B_VTL_DEV},
        {"gfapi", DeviceType::B_GFAPI_DEV},
        /* compatibility: object have been renamed to droplet */
        {"object", DeviceType::B_DROPLET_DEV},

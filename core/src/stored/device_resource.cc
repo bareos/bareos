@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -277,9 +277,6 @@ bool DeviceResource::Validate()
   if (max_block_size > 0 && dev_type != DeviceType::B_TAPE_DEV) {
     my_config->AddWarning(
         "Setting 'Maximum Block Size' on a non-tape device is unsupported");
-  }
-  if (dev_type == DeviceType::B_RADOS_DEV) {
-    my_config->AddWarning("The Rados Storage Backend Device is deprecated");
   }
   return true;
 }
