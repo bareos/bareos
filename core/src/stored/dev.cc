@@ -142,27 +142,10 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
 
   // If no device type specified, try to guess
   if (device_resource->dev_type == DeviceType::B_UNKNOWN_DEV) {
-    struct stat statp;
-    // Check that device is available
-    if (stat(device_resource->archive_device_string, &statp) < 0) {
-      BErrNo be;
-      Jmsg2(jcr, M_ERROR, 0, _("Unable to stat device %s: ERR=%s\n"),
-            device_resource->archive_device_string, be.bstrerror());
-      return nullptr;
-    }
-    if (S_ISDIR(statp.st_mode)) {
-      device_resource->dev_type = DeviceType::B_FILE_DEV;
-    } else if (S_ISCHR(statp.st_mode)) {
-      device_resource->dev_type = DeviceType::B_TAPE_DEV;
-    } else if (S_ISFIFO(statp.st_mode)) {
-      device_resource->dev_type = DeviceType::B_FIFO_DEV;
-    } else if (!BitIsSet(CAP_REQMOUNT, device_resource->cap_bits)) {
-      Jmsg2(jcr, M_ERROR, 0,
-            _("%s is an unknown device type. Must be tape or directory, "
-              "st_mode=%04o\n"),
-            device_resource->archive_device_string, (statp.st_mode & ~S_IFMT));
-      return nullptr;
-    }
+    Jmsg2(jcr, M_ERROR, 0,
+          _("device type for %s was not identified. Cannot continue.\n"),
+          device_resource->archive_device_string);
+    return nullptr;
   }
 
   Device* dev = nullptr;

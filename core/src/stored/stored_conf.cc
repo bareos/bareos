@@ -548,9 +548,45 @@ static void CheckDropletDevices(ConfigurationParser& my_config)
   }
 }
 
+static void GuessMissingDeviceTypes(ConfigurationParser& my_config)
+{
+  BareosResource* p = nullptr;
+
+  while ((p = my_config.GetNextRes(R_DEVICE, p)) != nullptr) {
+    DeviceResource* d = dynamic_cast<DeviceResource*>(p);
+    if (d && d->dev_type == DeviceType::B_UNKNOWN_DEV) {
+      struct stat statp;
+      // Check that device is available
+      if (stat(d->archive_device_string, &statp) < 0) {
+        BErrNo be;
+        Jmsg2(nullptr, M_ERROR_TERM, 0,
+              _("Unable to stat path '%s' for device %s: ERR=%s\n"
+                "Consider setting Device Type if device is not available when "
+                "daemon starts.\n"),
+              d->archive_device_string, d->resource_name_, be.bstrerror());
+        return;
+      }
+      if (S_ISDIR(statp.st_mode)) {
+        d->dev_type = DeviceType::B_FILE_DEV;
+      } else if (S_ISCHR(statp.st_mode)) {
+        d->dev_type = DeviceType::B_TAPE_DEV;
+      } else if (S_ISFIFO(statp.st_mode)) {
+        d->dev_type = DeviceType::B_FIFO_DEV;
+      } else if (!BitIsSet(CAP_REQMOUNT, d->cap_bits)) {
+        Jmsg2(nullptr, M_ERROR_TERM, 0,
+              _("%s is an unknown device type. Must be tape or directory, "
+                "st_mode=%04o\n"),
+              d->archive_device_string, (statp.st_mode & ~S_IFMT));
+        return;
+      }
+    }
+  }
+}
+
 static void ConfigReadyCallback(ConfigurationParser& my_config)
 {
   MultiplyConfiguredDevices(my_config);
+  GuessMissingDeviceTypes(my_config);
   CheckDropletDevices(my_config);
 }
 
