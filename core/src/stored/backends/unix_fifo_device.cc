@@ -315,14 +315,6 @@ boffset_t unix_fifo_device::d_lseek(DeviceControlRecord*, boffset_t, int)
 
 bool unix_fifo_device::d_truncate(DeviceControlRecord*) { return true; }
 
-class Backend : public BackendInterface {
- public:
-  Device* GetDevice() override { return new unix_fifo_device; }
-};
-
-#ifdef HAVE_DYNAMIC_SD_BACKENDS
-extern "C" BackendInterface* GetBackend(void) { return new Backend; }
-#endif
-
+REGISTER_SD_BACKEND(fifo, unix_fifo_device);
 
 } /* namespace storagedaemon  */

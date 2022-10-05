@@ -1027,12 +1027,6 @@ DropletDevice::~DropletDevice()
   unlock_mutex(mutex);
 }
 
-class Backend : public BackendInterface {
- public:
-  Device* GetDevice() override { return new DropletDevice; }
-};
+REGISTER_SD_BACKEND(droplet, DropletDevice)
 
-#ifdef HAVE_DYNAMIC_SD_BACKENDS
-extern "C" BackendInterface* GetBackend(void) { return new Backend; }
-#endif
 } /* namespace storagedaemon */

@@ -37,6 +37,7 @@
 #include "unix_file_device.h"
 #include "lib/berrno.h"
 #include "lib/util.h"
+#include "lib/plugin_registry.h"
 
 namespace storagedaemon {
 
@@ -311,13 +312,6 @@ bail_out:
   return true;
 }
 
-class Backend : public BackendInterface {
- public:
-  Device* GetDevice() override { return new unix_file_device; }
-};
-
-#ifdef HAVE_DYNAMIC_SD_BACKENDS
-extern "C" BackendInterface* GetBackend(void) { return new Backend; }
-#endif
+REGISTER_SD_BACKEND(file, unix_file_device);
 
 } /* namespace storagedaemon  */

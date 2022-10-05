@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2015 Planets Communications B.V.
-   Copyright (C) 2015-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -25,8 +25,8 @@
  * Marco van Wieringen, June 2014
  */
 
-#ifndef BAREOS_WIN32_STORED_BACKENDS_WIN32_FIFO_DEVICE_H_
-#define BAREOS_WIN32_STORED_BACKENDS_WIN32_FIFO_DEVICE_H_
+#ifndef BAREOS_STORED_BACKENDS_WIN32_FIFO_DEVICE_H_
+#define BAREOS_STORED_BACKENDS_WIN32_FIFO_DEVICE_H_
 
 #include "stored/dev.h"
 #include "lib/btimers.h"
@@ -61,4 +61,4 @@ class win32_fifo_device : public Device {
 };
 
 } /* namespace storagedaemon */
-#endif  // BAREOS_WIN32_STORED_BACKENDS_WIN32_FIFO_DEVICE_H_
+#endif  // BAREOS_STORED_BACKENDS_WIN32_FIFO_DEVICE_H_

@@ -575,15 +575,7 @@ gfapi_device::gfapi_device()
   virtual_filename_ = GetPoolMemory(PM_FNAME);
 }
 
-class Backend : public BackendInterface {
- public:
-  Device* GetDevice() override { return new gfapi_device; }
-};
-
-#  ifdef HAVE_DYNAMIC_SD_BACKENDS
-extern "C" BackendInterface* GetBackend(void) { return new Backend; }
-#  endif
-
+REGISTER_SD_BACKEND(gfapi, gfapi_device);
 
 } /* namespace storagedaemon */
 #endif /* HAVE_GFAPI */

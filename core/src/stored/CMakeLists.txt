@@ -155,7 +155,9 @@ set_target_properties(
                       SOVERSION "${BAREOS_VERSION_MAJOR}"
 )
 
-if(NOT ${HAVE_DYNAMIC_SD_BACKENDS})
+if(${HAVE_DYNAMIC_SD_BACKENDS})
+  target_sources(bareossd PRIVATE sd_backends_dynamic.cc)
+else()
   target_link_libraries(bareossd PRIVATE ${LIBBAREOSSD_LIBRARIES})
 endif()
 

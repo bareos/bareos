@@ -43,6 +43,7 @@
 
 #include "include/bareos.h"
 #include "stored/stored.h"
+#include "stored/sd_backends.h"
 #include "generic_tape_device.h"
 #include "win32_tape_device.h"
 
@@ -1109,5 +1110,7 @@ win32_tape_device::win32_tape_device()
 {
   SetCap(CAP_ADJWRITESIZE); /* Adjust write size to min/max */
 }
+
+REGISTER_SD_BACKEND(tape, win32_tape_device)
 
 } /* namespace storagedaemon */

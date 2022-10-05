@@ -59,13 +59,6 @@ unix_tape_device::unix_tape_device()
   SetCap(CAP_ADJWRITESIZE); /* Adjust write size to min/max */
 }
 
-class Backend : public BackendInterface {
- public:
-  Device* GetDevice() override { return new unix_tape_device; }
-};
-
-#ifdef HAVE_DYNAMIC_SD_BACKENDS
-extern "C" BackendInterface* GetBackend(void) { return new Backend; }
-#endif
+REGISTER_SD_BACKEND(tape, unix_tape_device)
 
 } /* namespace storagedaemon  */

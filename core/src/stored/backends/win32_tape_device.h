@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
    Copyright (C) 2013-2014 Planets Communications B.V.
 
    This program is Free Software; you can redistribute it and/or
@@ -25,8 +25,8 @@
  * Marco van Wieringen, December 2013
  */
 
-#ifndef BAREOS_WIN32_STORED_BACKENDS_WIN32_TAPE_DEVICE_H_
-#define BAREOS_WIN32_STORED_BACKENDS_WIN32_TAPE_DEVICE_H_
+#ifndef BAREOS_STORED_BACKENDS_WIN32_TAPE_DEVICE_H_
+#define BAREOS_STORED_BACKENDS_WIN32_TAPE_DEVICE_H_
 
 namespace storagedaemon {
 
@@ -46,4 +46,4 @@ class win32_tape_device : public generic_tape_device {
 };
 
 } /* namespace storagedaemon */
-#endif  // BAREOS_WIN32_STORED_BACKENDS_WIN32_TAPE_DEVICE_H_
+#endif  // BAREOS_STORED_BACKENDS_WIN32_TAPE_DEVICE_H_

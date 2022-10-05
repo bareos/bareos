@@ -28,6 +28,8 @@
 #ifndef BAREOS_STORED_SD_BACKENDS_H_
 #define BAREOS_STORED_SD_BACKENDS_H_
 
+#include <lib/plugin_registry.h>
+
 namespace storagedaemon {
 
 class BackendInterface {
@@ -36,6 +38,12 @@ class BackendInterface {
   virtual Device* GetDevice() = 0;
 };
 
+template <typename T> class Backend : public BackendInterface {
+ public:
+  Device* GetDevice(void) override { return new T(); }
+};
+
+template <typename T> BackendInterface* BackendFactory(void) { return new T(); }
 
 extern "C" {
 typedef BackendInterface* (*t_backend_base)(void);
@@ -52,7 +60,6 @@ BackendInterface* GetBackend(void);
 #  define DYN_LIB_EXTENSION ".so"
 #endif
 
-
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
 #  include <map>
 void SetBackendDeviceDirectories(std::vector<std::string>&& new_backend_dirs);
@@ -60,7 +67,15 @@ Device* InitBackendDevice(JobControlRecord* jcr,
                           const std::string& device_type);
 void FlushAndCloseBackendDevices();
 
+bool LoadStorageBackend(const std::string& dev_type,
+                        const std::vector<std::string>& backend_directories);
 #endif
+
+#define REGISTER_SD_BACKEND(backend_name, backend_class) \
+  [[maybe_unused]] static bool backend_name##_backend_   \
+      = PluginRegistry<BackendInterface>::Add(           \
+          #backend_name, BackendFactory<Backend<backend_class>>);
+
 } /* namespace storagedaemon */
 
 #endif  // BAREOS_STORED_SD_BACKENDS_H_

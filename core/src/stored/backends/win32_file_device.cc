@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2013 Planets Communications B.V.
+   Copyright (C) 2013-2014 Planets Communications B.V.
    Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
@@ -20,127 +20,30 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, MM
- * Extracted from other source files Marco van Wieringen, December 2013
- */
+// Kern Sibbald, MM
 /**
  * @file
- * UNIX FIFO API device abstraction.
- *
+ * Windows File API device abstraction.
  */
 
 #include "include/bareos.h"
-#include "win32_fifo_device.h"
 #include "lib/berrno.h"
 #include "stored/device_control_record.h"
 #include "stored/stored.h"
-#include "stored/autochanger.h"
+#include "stored/sd_backends.h"
+#include "win32_file_device.h"
 
 namespace storagedaemon {
 
-void win32_fifo_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
-{
-  file_size = 0;
-  int timeout = max_open_wait;
-  utime_t start_time = time(NULL);
-
-  mount(dcr, 1); /* do mount if required */
-
-  Dmsg0(100, "Open dev: device is fifo\n");
-
-  GetAutochangerLoadedSlot(dcr);
-
-  open_mode = omode;
-  set_mode(omode);
-
-  if (timeout < 1) { timeout = 1; }
-  errno = 0;
-
-  if (timeout) {
-    // Set open timer
-    tid = start_thread_timer(dcr->jcr, pthread_self(), timeout);
-  }
-
-  Dmsg2(100, "Try open %s mode=%s\n", prt_name, mode_to_str(omode));
-
-  // If busy retry each second for max_open_wait seconds
-  for (;;) {
-    // Try non-blocking open
-    fd = d_open(archive_device_string, oflags | O_NONBLOCK, 0);
-    if (fd < 0) {
-      BErrNo be;
-      dev_errno = errno;
-      Dmsg5(100, "Open error on %s omode=%d oflags=%x errno=%d: ERR=%s\n",
-            prt_name, omode, oflags, errno, be.bstrerror());
-    } else {
-      d_close(fd);
-      fd = d_open(archive_device_string, oflags, 0); /* open normally */
-      if (fd < 0) {
-        BErrNo be;
-        dev_errno = errno;
-        Dmsg5(100, "Open error on %s omode=%d oflags=%x errno=%d: ERR=%s\n",
-              prt_name, omode, oflags, errno, be.bstrerror());
-        break;
-      }
-      dev_errno = 0;
-      LockDoor();
-      break; /* Successfully opened and rewound */
-    }
-    Bmicrosleep(5, 0);
-
-    // Exceed wait time ?
-    if (time(NULL) - start_time >= max_open_wait) { break; /* yes, get out */ }
-  }
-
-  if (!IsOpen()) {
-    BErrNo be;
-    Mmsg2(errmsg, _("Unable to open device %s: ERR=%s\n"), prt_name,
-          be.bstrerror(dev_errno));
-    Dmsg1(100, "%s", errmsg);
-  }
-
-  // Stop any open() timer we started
-  if (tid) {
-    StopThreadTimer(tid);
-    tid = 0;
-  }
-
-  Dmsg1(100, "open dev: fifo %d opened\n", fd);
-}
-
-bool win32_fifo_device::eod(DeviceControlRecord*)
-{
-  if (fd < 0) {
-    dev_errno = EBADF;
-    Mmsg1(errmsg, _("Bad call to eod. Device %s not open\n"), prt_name);
-    return false;
-  }
-
-  Dmsg0(100, "Enter eod\n");
-  if (AtEot()) { return true; }
-
-  ClearEof(); /* remove EOF flag */
-
-  block_num = file = 0;
-  file_size = 0;
-  file_addr = 0;
-  return true;
-}
-
 // (Un)mount the device (For a FILE device)
-bool win32_fifo_device::do_mount(DeviceControlRecord* dcr,
-                                 bool mount,
-                                 int dotimeout)
+static bool do_mount(DeviceControlRecord* dcr, bool mount, int dotimeout)
 {
+  DeviceResource* device_resource = dcr->dev->device_resource;
   PoolMem ocmd(PM_FNAME);
   POOLMEM* results;
   DIR* dp;
   char* icmd;
-  struct dirent* result;
-#ifdef USE_READDIR_R
-  struct dirent* entry;
-#endif
+  struct dirent *entry, *result;
   int status, tries, name_max, count;
   BErrNo be;
 
@@ -150,9 +53,10 @@ bool win32_fifo_device::do_mount(DeviceControlRecord* dcr,
     icmd = device_resource->unmount_command;
   }
 
-  EditMountCodes(ocmd, icmd);
+  dcr->dev->EditMountCodes(ocmd, icmd);
 
-  Dmsg2(100, "do_mount: cmd=%s mounted=%d\n", ocmd.c_str(), IsMounted());
+  Dmsg2(100, "do_mount: cmd=%s mounted=%d\n", ocmd.c_str(),
+        dcr->dev->IsMounted());
 
   if (dotimeout) {
     /* Try at most 10 times to (un)mount the device. This should perhaps be
@@ -165,9 +69,9 @@ bool win32_fifo_device::do_mount(DeviceControlRecord* dcr,
 
   /* If busy retry each second */
   Dmsg1(100, "do_mount run_prog=%s\n", ocmd.c_str());
-  while (
-      (status = RunProgramFullOutput(ocmd.c_str(), max_open_wait / 2, results))
-      != 0) {
+  while ((status = RunProgramFullOutput(ocmd.c_str(),
+                                        dcr->dev->max_open_wait / 2, results))
+         != 0) {
     /* Doesn't work with internationalization (This is not a problem) */
     if (mount && fnmatch("*is already mounted on*", results, 0) == 0) { break; }
     if (!mount && fnmatch("* not mounted*", results, 0) == 0) { break; }
@@ -175,17 +79,18 @@ bool win32_fifo_device::do_mount(DeviceControlRecord* dcr,
       /* Sometimes the device cannot be mounted because it is already mounted.
        * Try to unmount it, then remount it */
       if (mount) {
-        Dmsg1(400, "Trying to unmount the device %s...\n", print_name());
+        Dmsg1(400, "Trying to unmount the device %s...\n",
+              dcr->dev->print_name());
         do_mount(dcr, 0, 0);
       }
       Bmicrosleep(1, 0);
       continue;
     }
     Dmsg5(100, "Device %s cannot be %smounted. status=%d result=%s ERR=%s\n",
-          print_name(), (mount ? "" : "un"), status, results,
+          dcr->dev->print_name(), (mount ? "" : "un"), status, results,
           be.bstrerror(status));
-    Mmsg(errmsg, _("Device %s cannot be %smounted. ERR=%s\n"), print_name(),
-         (mount ? "" : "un"), be.bstrerror(status));
+    Mmsg(dcr->dev->errmsg, _("Device %s cannot be %smounted. ERR=%s\n"),
+         dcr->dev->print_name(), (mount ? "" : "un"), be.bstrerror(status));
 
     // Now, just to be sure it is not mounted, try to read the filesystem.
     name_max = pathconf(".", _PC_NAME_MAX);
@@ -193,14 +98,14 @@ bool win32_fifo_device::do_mount(DeviceControlRecord* dcr,
 
     if (!(dp = opendir(device_resource->mount_point))) {
       BErrNo be;
-      dev_errno = errno;
+      dcr->dev->dev_errno = errno;
       Dmsg3(100, "do_mount: failed to open dir %s (dev=%s), ERR=%s\n",
-            device_resource->mount_point, print_name(), be.bstrerror());
+            device_resource->mount_point, dcr->dev->print_name(),
+            be.bstrerror());
       goto get_out;
     }
-#ifdef USE_READDIR_R
+
     entry = (struct dirent*)malloc(sizeof(struct dirent) + name_max + 1000);
-#endif
     count = 0;
     while (1) {
 #ifdef USE_READDIR_R
@@ -209,10 +114,11 @@ bool win32_fifo_device::do_mount(DeviceControlRecord* dcr,
       result = readdir(dp);
       if (result == NULL) {
 #endif
-        dev_errno = EIO;
+
+        dcr->dev->dev_errno = EIO;
         Dmsg2(129,
               "do_mount: failed to find suitable file in dir %s (dev=%s)\n",
-              device_resource->mount_point, print_name());
+              device_resource->mount_point, dcr->dev->print_name());
         break;
       }
       if (!bstrcmp(result->d_name, ".") && !bstrcmp(result->d_name, "..")
@@ -224,9 +130,7 @@ bool win32_fifo_device::do_mount(DeviceControlRecord* dcr,
               device_resource->mount_point);
       }
     }
-#ifdef USE_READDIR_R
     free(entry);
-#endif
     closedir(dp);
 
     Dmsg1(100,
@@ -264,7 +168,7 @@ bool win32_fifo_device::do_mount(DeviceControlRecord* dcr,
  * If timeout, wait until the mount command returns 0.
  * If !timeout, try to mount the device only once.
  */
-bool win32_fifo_device::MountBackend(DeviceControlRecord* dcr, int timeout)
+bool win32_file_device::MountBackend(DeviceControlRecord* dcr, int timeout)
 {
   bool retval = true;
 
@@ -281,7 +185,7 @@ bool win32_fifo_device::MountBackend(DeviceControlRecord* dcr, int timeout)
  * If timeout, wait until the unmount command returns 0.
  * If !timeout, try to unmount the device only once.
  */
-bool win32_fifo_device::UnmountBackend(DeviceControlRecord* dcr, int timeout)
+bool win32_file_device::UnmountBackend(DeviceControlRecord* dcr, int timeout)
 {
   bool retval = true;
 
@@ -292,30 +196,101 @@ bool win32_fifo_device::UnmountBackend(DeviceControlRecord* dcr, int timeout)
   return retval;
 }
 
-int win32_fifo_device::d_open(const char* pathname, int flags, int mode)
+int win32_file_device::d_open(const char* pathname, int flags, int mode)
 {
   return ::open(pathname, flags, mode);
 }
 
-ssize_t win32_fifo_device::d_read(int fd, void* buffer, size_t count)
+ssize_t win32_file_device::d_read(int fd, void* buffer, size_t count)
 {
   return ::read(fd, buffer, count);
 }
 
-ssize_t win32_fifo_device::d_write(int fd, const void* buffer, size_t count)
+ssize_t win32_file_device::d_write(int fd, const void* buffer, size_t count)
 {
   return ::write(fd, buffer, count);
 }
 
-int win32_fifo_device::d_close(int fd) { return ::close(fd); }
+int win32_file_device::d_close(int fd) { return ::close(fd); }
 
-int win32_fifo_device::d_ioctl(int, ioctl_req_t, char*) { return -1; }
+int win32_file_device::d_ioctl(int, ioctl_req_t, char*) { return -1; }
 
-boffset_t win32_fifo_device::d_lseek(DeviceControlRecord*, boffset_t, int)
+boffset_t win32_file_device::d_lseek(DeviceControlRecord*,
+                                     boffset_t offset,
+                                     int whence)
 {
-  return -1;
+  return ::_lseeki64(fd, (__int64)offset, whence);
 }
 
-bool win32_fifo_device::d_truncate(DeviceControlRecord*) { return true; }
+bool win32_file_device::d_truncate(DeviceControlRecord* dcr)
+{
+  struct stat st;
+
+  if (ftruncate(fd, 0) != 0) {
+    BErrNo be;
+
+    Mmsg2(errmsg, _("Unable to truncate device %s. ERR=%s\n"), print_name(),
+          be.bstrerror());
+    return false;
+  }
+
+  /*
+   * Check for a successful ftruncate() and issue a work-around for devices
+   * (mostly cheap NAS) that don't support truncation.
+   * Workaround supplied by Martin Schmid as a solution to bug #1011.
+   * 1. close file
+   * 2. delete file
+   * 3. open new file with same mode
+   * 4. change ownership to original
+   */
+  if (fstat(fd, &st) != 0) {
+    BErrNo be;
+
+    Mmsg2(errmsg, _("Unable to stat device %s. ERR=%s\n"), print_name(),
+          be.bstrerror());
+    return false;
+  }
+
+  if (st.st_size != 0) { /* ftruncate() didn't work */
+    PoolMem archive_name(PM_FNAME);
+
+    PmStrcpy(archive_name, archive_device_string);
+    if (!IsPathSeparator(
+            archive_name.c_str()[strlen(archive_name.c_str()) - 1])) {
+      PmStrcat(archive_name, "/");
+    }
+    PmStrcat(archive_name, dcr->VolumeName);
+
+    Mmsg2(errmsg,
+          _("Device %s doesn't support ftruncate(). Recreating file %s.\n"),
+          print_name(), archive_name.c_str());
+
+    // Close file and blow it away
+    ::close(fd);
+    SecureErase(dcr->jcr, archive_name.c_str());
+
+    // Recreate the file -- of course, empty
+    oflags = O_CREAT | O_RDWR | O_BINARY;
+    if ((fd = ::open(archive_name.c_str(), oflags, st.st_mode)) < 0) {
+      BErrNo be;
+
+      dev_errno = errno;
+      Mmsg2(errmsg, _("Could not reopen: %s, ERR=%s\n"), archive_name.c_str(),
+            be.bstrerror());
+      Emsg0(M_FATAL, 0, errmsg);
+
+      return false;
+    }
+
+    // Reset proper owner
+    chown(archive_name.c_str(), st.st_uid, st.st_gid);
+  }
+
+  return true;
+}
+
+win32_file_device::win32_file_device() {}
+
+REGISTER_SD_BACKEND(file, win32_file_device);
 
 } /* namespace storagedaemon */

@@ -82,26 +82,6 @@
 #include "include/jcr.h"
 #include "lib/berrno.h"
 
-#ifndef HAVE_DYNAMIC_SD_BACKENDS
-#  ifdef HAVE_GFAPI
-#    include "backends/gfapi_device.h"
-#  endif
-#  ifdef HAVE_BAREOSSD_DROPLET_DEVICE
-#    include "backends/chunked_device.h"
-#    include "backends/droplet_device.h"
-#  endif
-#  include "backends/generic_tape_device.h"
-#  ifdef HAVE_WIN32
-#    include "backends/win32_file_device.h"
-#    include "backends/win32_tape_device.h"
-#    include "backends/win32_fifo_device.h"
-#  else
-#    include "backends/unix_file_device.h"
-#    include "backends/unix_tape_device.h"
-#    include "backends/unix_fifo_device.h"
-#  endif
-#endif /* HAVE_DYNAMIC_SD_BACKENDS */
-
 #ifndef O_NONBLOCK
 #  define O_NONBLOCK 0
 #endif
@@ -142,77 +122,27 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
   Dmsg1(400, "max_block_size in device_resource res is %u\n",
         device_resource->max_block_size);
 
-  // If no device type specified, try to guess
-  if (device_resource->dev_type == DeviceType::B_UNKNOWN_DEV) {
+  if (!PluginRegistry<BackendInterface>::IsRegistered(
+          device_resource->dev_type)) {
     Jmsg2(jcr, M_ERROR, 0, _("%s has an unknown device type %s\n"),
           device_resource->archive_device_string,
           device_resource->dev_type.c_str());
     return nullptr;
   }
 
-  Device* dev = nullptr;
-
-/*
- * When using dynamic loading use the InitBackendDevice() function
- * for any type of device.
- */
-#if !defined(HAVE_DYNAMIC_SD_BACKENDS)
-#  ifdef HAVE_WIN32
-  if (device_resource->dev_type == DeviceType::B_FILE_DEV) {
-    dev = new win32_file_device;
-  } else if (device_resource->dev_type == DeviceType::B_TAPE_DEV) {
-    dev = new win32_tape_device;
-  } else if (device_resource->dev_type == DeviceType::B_FIFO_DEV) {
-    dev = new win32_fifo_device;
-  } else
-#  else
-  if (device_resource->dev_type == DeviceType::B_FILE_DEV) {
-    dev = new unix_file_device;
-  } else if (device_resource->dev_type == DeviceType::B_TAPE_DEV) {
-    dev = new unix_tape_device;
-  } else if (device_resource->dev_type == DeviceType::B_FIFO_DEV) {
-    dev = new unix_fifo_device;
-  } else
-#  endif
-#  ifdef HAVE_GFAPI
-      if (device_resource->dev_type == DeviceType::B_GFAPI_DEV) {
-    dev = new gfapi_device;
-  } else
-#  endif
-#  ifdef HAVE_BAREOSSD_DROPLET_DEVICE
-      if (device_resource->dev_type == DeviceType::B_DROPLET_DEV) {
-    dev = new DropletDevice;
-  } else
-#  endif
-  {
-    Jmsg2(jcr, M_ERROR, 0, _("%s has unsupported device type %s\n"),
-          device_resource->archive_device_string,
-          device_resource->dev_type.c_str());
-    return nullptr;
-  }
-#else
-  dev = InitBackendDevice(jcr, device_resource->dev_type);
-  if (!dev) {
-    try {
-      Jmsg2(jcr, M_ERROR, 0,
-            _("Initialization of dynamic %s device \"%s\" with archive "
-              "device \"%s\" failed. Backend "
-              "library might be missing or backend directory incorrect.\n"),
-            device_resource->dev_type.c_str(), device_resource->resource_name_,
-            device_resource->archive_device_string);
-    } catch (const std::out_of_range&) {
-      // device_resource->dev_type could exceed limits of map
-    }
-    return nullptr;
-  }
-#endif  // !defined(HAVE_DYNAMIC_SD_BACKENDS)
+  // FIXME: the PluginRegistry should return the device instead of the factory
+  //        so we save one call and a delete.
+  auto factory
+      = PluginRegistry<BackendInterface>::Create(device_resource->dev_type);
+  Device* dev = factory->GetDevice();
+  delete factory;
 
   dev->device_resource = device_resource;
   device_resource->dev = dev;
 
   InitiateDevice(jcr, dev);
   return dev;
-}  // namespace storagedaemon
+}
 
 static void InitiateDevice(JobControlRecord* jcr, Device* dev)
 {
