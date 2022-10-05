@@ -85,10 +85,7 @@ struct BackendDeviceLibraryDescriptor {
     return *this;
   }
 
-  Device* GetDevice(JobControlRecord* jcr, DeviceType device_type)
-  {
-    return backend_interface->GetDevice(jcr, device_type);
-  }
+  Device* GetDevice() { return backend_interface->GetDevice(); }
 };
 
 const std::map<DeviceType, const char*> device_type_to_name_mapping
@@ -131,9 +128,7 @@ Device* InitBackendDevice(JobControlRecord* jcr, DeviceType device_type)
   }
 
   for (const auto& b : loaded_backends) {
-    if (b->device_type == device_type) {
-      return b->GetDevice(jcr, device_type);
-    }
+    if (b->device_type == device_type) { return b->GetDevice(); }
   }
 
   t_backend_base GetBackend{nullptr};
@@ -204,7 +199,7 @@ Device* InitBackendDevice(JobControlRecord* jcr, DeviceType device_type)
   auto b = std::make_unique<BackendDeviceLibraryDescriptor>(
       device_type, dynamic_library_handle, GetBackend());
 
-  Device* d = b->GetDevice(jcr, device_type);
+  Device* d = b->GetDevice();
   loaded_backends.push_back(std::move(b));
   return d;
 }

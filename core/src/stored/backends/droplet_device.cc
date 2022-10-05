@@ -1029,17 +1029,7 @@ DropletDevice::~DropletDevice()
 
 class Backend : public BackendInterface {
  public:
-  Device* GetDevice(JobControlRecord* jcr, DeviceType device_type) override
-  {
-    switch (device_type) {
-      case DeviceType::B_DROPLET_DEV:
-        return new DropletDevice;
-      default:
-        Jmsg(jcr, M_FATAL, 0, _("Request for unknown devicetype: %d\n"),
-             device_type);
-        return nullptr;
-    }
-  }
+  Device* GetDevice() override { return new DropletDevice; }
 };
 
 #ifdef HAVE_DYNAMIC_SD_BACKENDS

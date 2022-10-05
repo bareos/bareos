@@ -313,17 +313,7 @@ bail_out:
 
 class Backend : public BackendInterface {
  public:
-  Device* GetDevice(JobControlRecord* jcr, DeviceType device_type) override
-  {
-    switch (device_type) {
-      case DeviceType::B_FILE_DEV:
-        return new unix_file_device;
-      default:
-        Jmsg(jcr, M_FATAL, 0, _("Request for unknown devicetype: %d\n"),
-             device_type);
-        return nullptr;
-    }
-  }
+  Device* GetDevice() override { return new unix_file_device; }
 };
 
 #ifdef HAVE_DYNAMIC_SD_BACKENDS
