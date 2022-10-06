@@ -384,6 +384,92 @@ static void CloseFdConnection(JobControlRecord* jcr)
   }
 }
 
+static bool ConfigureTlsRequirementsPassiveClient(JobControlRecord* jcr)
+{
+  ClientResource* client = jcr->dir_impl->res.client;
+  StorageResource* store = jcr->dir_impl->res.write_storage;
+  char* connection_target_address;
+
+  if (!jcr->passive_client) {
+    // TLS Requirement
+
+    TlsPolicy tls_policy;
+    if (jcr->dir_impl->res.client->connection_successful_handshake_
+        != ClientConnectionHandshakeMode::kTlsFirst) {
+      tls_policy = store->GetPolicy();
+    } else {
+      tls_policy = store->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto
+                                            : TlsPolicy::kBnetTlsNone;
+    }
+
+    Dmsg1(200, "Tls Policy for active client is: %d\n", tls_policy);
+
+    connection_target_address = StorageAddressToContact(client, store);
+
+    jcr->file_bsock->fsend(storaddrcmd, connection_target_address,
+                           store->SDport, tls_policy);
+    if (!response(jcr, jcr->file_bsock, OKstore, "Storage", DISPLAY_ERROR)) {
+      Dmsg0(200, "Error from active client on storeaddrcmd\n");
+      TerminateBackupWithError(jcr);
+      return false;
+    }
+
+  } else {  // passive client
+
+    TlsPolicy tls_policy;
+    if (jcr->dir_impl->res.client->connection_successful_handshake_
+        != ClientConnectionHandshakeMode::kTlsFirst) {
+      tls_policy = client->GetPolicy();
+    } else {
+      tls_policy = client->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto
+                                             : TlsPolicy::kBnetTlsNone;
+    }
+    Dmsg1(200, "Tls Policy for passive client is: %d\n", tls_policy);
+
+    connection_target_address = ClientAddressToContact(client, store);
+
+    jcr->store_bsock->fsend(passiveclientcmd, connection_target_address,
+                            client->FDport, tls_policy);
+    Bmicrosleep(2, 0);
+    if (!response(jcr, jcr->store_bsock, OKpassiveclient, "Passive client",
+                  DISPLAY_ERROR)) {
+      TerminateBackupWithError(jcr);
+      return false;
+    }
+  }  // if (!jcr->passive_client)
+  return true;
+}
+
+static bool ConfigureMessageThread(JobControlRecord* jcr)
+{
+  /*
+   * When the client is not in passive mode we can put the SD in
+   * listen mode for the FD connection.
+   */
+  jcr->passive_client = jcr->dir_impl->res.client->passive;
+
+  if (!ConfigureTlsRequirementsPassiveClient(jcr)) { return false; }
+
+  /*
+   * Start the job prior to starting the message thread below
+   * to avoid two threads from using the BareosSocket structure at
+   * the same time.
+   */
+  if (!jcr->store_bsock->fsend("run")) { return false; }
+
+  /*
+   * Now start a Storage daemon message thread.  Note,
+   * this thread is used to provide the catalog services
+   * for the backup job, including inserting the attributes
+   * into the catalog.  See CatalogUpdate() in catreq.c
+   */
+  if (!StartStorageDaemonMessageThread(jcr)) { return false; }
+
+  Dmsg0(150, "Storage daemon connection OK\n");
+
+  return true;
+}
+
 /*
  * Do a backup of the specified FileSet
  *
@@ -428,33 +514,6 @@ bool DoNativeBackup(JobControlRecord* jcr)
   }
 
   if (!StartStorageDaemonJob(jcr)) { return false; }
-  if (!ReserveWriteDevice(jcr, jcr->dir_impl->res.write_storage_list)) {
-    return false;
-  }
-
-  /*
-   * When the client is not in passive mode we can put the SD in
-   * listen mode for the FD connection.
-   */
-  jcr->passive_client = jcr->dir_impl->res.client->passive;
-  if (!jcr->passive_client) {
-    /*
-     * Start the job prior to starting the message thread below
-     * to avoid two threads from using the BareosSocket structure at
-     * the same time.
-     */
-    if (!jcr->store_bsock->fsend("run")) { return false; }
-
-    /*
-     * Now start a Storage daemon message thread.  Note,
-     * this thread is used to provide the catalog services
-     * for the backup job, including inserting the attributes
-     * into the catalog.  See CatalogUpdate() in catreq.c
-     */
-    if (!StartStorageDaemonMessageThread(jcr)) { return false; }
-
-    Dmsg0(150, "Storage daemon connection OK\n");
-  }
 
   jcr->setJobStatusWithPriorityCheck(JS_WaitFD);
   if (!ConnectToFileDaemon(jcr, 10, me->FDConnectTimeout, true)) {
@@ -515,75 +574,6 @@ bool DoNativeBackup(JobControlRecord* jcr)
     SendBwlimitToFd(jcr, jcr->Job);  // Old clients don't have this command
   }
 
-  ClientResource* client = jcr->dir_impl->res.client;
-  StorageResource* store = jcr->dir_impl->res.write_storage;
-  char* connection_target_address;
-
-  if (!jcr->passive_client) {
-    // TLS Requirement
-
-    TlsPolicy tls_policy;
-    if (jcr->dir_impl->res.client->connection_successful_handshake_
-        != ClientConnectionHandshakeMode::kTlsFirst) {
-      tls_policy = store->GetPolicy();
-    } else {
-      tls_policy = store->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto
-                                            : TlsPolicy::kBnetTlsNone;
-    }
-
-    Dmsg1(200, "Tls Policy for active client is: %d\n", tls_policy);
-
-    connection_target_address = StorageAddressToContact(client, store);
-
-    jcr->file_bsock->fsend(storaddrcmd, connection_target_address,
-                           store->SDport, tls_policy);
-    if (!response(jcr, jcr->file_bsock, OKstore, "Storage", DISPLAY_ERROR)) {
-      Dmsg0(200, "Error from active client on storeaddrcmd\n");
-      TerminateBackupWithError(jcr);
-      return false;
-    }
-
-  } else {  // passive client
-
-    TlsPolicy tls_policy;
-    if (jcr->dir_impl->res.client->connection_successful_handshake_
-        != ClientConnectionHandshakeMode::kTlsFirst) {
-      tls_policy = client->GetPolicy();
-    } else {
-      tls_policy = client->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto
-                                             : TlsPolicy::kBnetTlsNone;
-    }
-    Dmsg1(200, "Tls Policy for passive client is: %d\n", tls_policy);
-
-    connection_target_address = ClientAddressToContact(client, store);
-
-    jcr->store_bsock->fsend(passiveclientcmd, connection_target_address,
-                            client->FDport, tls_policy);
-    Bmicrosleep(2, 0);
-    if (!response(jcr, jcr->store_bsock, OKpassiveclient, "Passive client",
-                  DISPLAY_ERROR)) {
-      TerminateBackupWithError(jcr);
-      return false;
-    }
-
-    /*
-     * Start the job prior to starting the message thread below
-     * to avoid two threads from using the BareosSocket structure at
-     * the same time.
-     */
-    if (!jcr->store_bsock->fsend("run")) { return false; }
-
-    /*
-     * Now start a Storage daemon message thread.  Note,
-     * this thread is used to provide the catalog services
-     * for the backup job, including inserting the attributes
-     * into the catalog.  See CatalogUpdate() in catreq.c
-     */
-    if (!StartStorageDaemonMessageThread(jcr)) { return false; }
-
-    Dmsg0(150, "Storage daemon connection OK\n");
-  }  // if (!jcr->passive_client)
-
   // Declare the job started to start the MaxRunTime check
   jcr->setJobStarted();
 
@@ -616,6 +606,12 @@ bool DoNativeBackup(JobControlRecord* jcr)
     TerminateBackupWithError(jcr);
     return false;  // error
   }
+
+  if (!ReserveWriteDevice(jcr, jcr->dir_impl->res.write_storage_list)) {
+    return false;
+  }
+
+  if (!ConfigureMessageThread(jcr)) { return false; }
 
   jcr->file_bsock->fsend(backupcmd, jcr->JobFiles);
   Dmsg1(100, ">filed: %s", jcr->file_bsock->msg);
