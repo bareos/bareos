@@ -192,7 +192,7 @@ static void SendInfoSuccess(JobControlRecord* jcr, UaContext* ua)
   std::string m;
   if (jcr->impl->res.client->connection_successful_handshake_
       == ClientConnectionHandshakeMode::kUndefined) {
-    m += "\r\v";
+    m = "\r\v";
   }
   switch (jcr->impl->connection_handshake_try_) {
     case ClientConnectionHandshakeMode::kTlsFirst:
