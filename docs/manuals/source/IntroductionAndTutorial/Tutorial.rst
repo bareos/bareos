@@ -557,7 +557,7 @@ After exiting the Console program, you can examine the files in :file:`/tmp/bare
 .. code-block:: shell-session
    :caption: remove restore directory
 
-   root@host:~# rm -rf /tmp/bareos-restore
+   root@host:~# rm -rf /tmp/bareos-restores
 
 Quitting the Console Program
 ----------------------------
