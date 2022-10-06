@@ -26,10 +26,14 @@ template <typename T> class alist;
 
 namespace directordaemon {
 
-bool StartStorageDaemonJob(JobControlRecord* jcr,
-                           alist<StorageResource*>* read_storage,
-                           alist<StorageResource*>* write_storage,
-                           bool send_bsr = false);
+bool StartStorageDaemonJob(JobControlRecord* jcr, bool send_bsr = false);
+bool ReserveReadDevice(JobControlRecord* jcr,
+                       alist<StorageResource*>* read_storage);
+bool ReserveWriteDevice(JobControlRecord* jcr,
+                        alist<StorageResource*>* write_storage);
+bool ReserveReadAndWriteDevices(JobControlRecord* jcr,
+                                     alist<StorageResource*>* read_storage,
+                                     alist<StorageResource*>* write_storage);
 bool StartStorageDaemonMessageThread(JobControlRecord* jcr);
 int BgetDirmsg(BareosSocket* bs, bool allow_any_msg = false);
 void WaitForStorageDaemonTermination(JobControlRecord* jcr);

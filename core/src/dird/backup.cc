@@ -427,8 +427,8 @@ bool DoNativeBackup(JobControlRecord* jcr)
     return false;
   }
 
-  if (!StartStorageDaemonJob(jcr, nullptr,
-                             jcr->dir_impl->res.write_storage_list)) {
+  if (!StartStorageDaemonJob(jcr)) { return false; }
+  if (!ReserveWriteDevice(jcr, jcr->dir_impl->res.write_storage_list)) {
     return false;
   }
 

@@ -439,8 +439,8 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
     sd = jcr->store_bsock;
 
     // Now start a job with the Storage daemon
-    if (!StartStorageDaemonJob(jcr, jcr->dir_impl->res.read_storage_list,
-                               NULL)) {
+    if (!StartStorageDaemonJob(jcr)) { goto cleanup; }
+    if (!ReserveReadDevice(jcr, jcr->dir_impl->res.read_storage_list)) {
       goto cleanup;
     }
 

@@ -696,9 +696,7 @@ static bool regex_find_jobids(JobControlRecord* jcr,
 
 bail_out:
   Dmsg2(dbglevel, "Count=%d Jobids=%s\n", ids->count, ids->list);
-  foreach_dlist (item, item_chain) {
-    free(item->item);
-  }
+  foreach_dlist (item, item_chain) { free(item->item); }
   delete item_chain;
   return ok;
 }
@@ -1338,18 +1336,17 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
     }
 
     // Now start a job with the Reading Storage daemon
-    if (!StartStorageDaemonJob(jcr, jcr->dir_impl->res.read_storage_list, NULL,
-                               /* send_bsr */ true)) {
+    if (!StartStorageDaemonJob(jcr, true)) { goto bail_out; }
+    if (!ReserveReadDevice(jcr, jcr->dir_impl->res.read_storage_list)) {
       goto bail_out;
     }
 
     Dmsg0(150, "Reading Storage daemon connection OK\n");
 
     // Now start a job with the Writing Storage daemon
-
-    if (!StartStorageDaemonJob(mig_jcr, NULL,
-                               mig_jcr->dir_impl->res.write_storage_list,
-                               /* send_bsr */ false)) {
+    if (!StartStorageDaemonJob(mig_jcr, false)) { goto bail_out; }
+    if (!ReserveWriteDevice(mig_jcr,
+                            mig_jcr->dir_impl->res.write_storage_list)) {
       goto bail_out;
     }
 
@@ -1369,9 +1366,10 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
     }
 
     // Now start a job with the Storage daemon
-    if (!StartStorageDaemonJob(jcr, jcr->dir_impl->res.read_storage_list,
-                               jcr->dir_impl->res.write_storage_list,
-                               /* send_bsr */ true)) {
+    if (!StartStorageDaemonJob(jcr, true)
+        || !ReserveReadAndWriteDevices(jcr,
+                                       jcr->dir_impl->res.read_storage_list,
+                                       jcr->dir_impl->res.write_storage_list)) {
       FreePairedStorage(jcr);
       return false;
     }

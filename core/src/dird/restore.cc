@@ -163,8 +163,8 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
     sd = jcr->store_bsock;
 
     // Now start a job with the Storage daemon
-    if (!StartStorageDaemonJob(jcr, jcr->dir_impl->res.read_storage_list,
-                               NULL)) {
+    if (!StartStorageDaemonJob(jcr)) { goto bail_out; }
+    if (!ReserveReadDevice(jcr, jcr->dir_impl->res.read_storage_list)) {
       goto bail_out;
     }
 

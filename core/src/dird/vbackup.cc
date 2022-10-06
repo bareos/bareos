@@ -331,9 +331,9 @@ bool DoNativeVbackup(JobControlRecord* jcr)
   }
 
   // Now start a job with the Storage daemon
-  if (!StartStorageDaemonJob(jcr, jcr->dir_impl->res.read_storage_list,
-                             jcr->dir_impl->res.write_storage_list,
-                             /* send_bsr */ true)) {
+  if (!StartStorageDaemonJob(jcr, true)) { return false; }
+  if (!ReserveReadAndWriteDevices(jcr, jcr->dir_impl->res.read_storage_list,
+                                  jcr->dir_impl->res.write_storage_list)) {
     return false;
   }
   Dmsg0(100, "Storage daemon connection OK\n");

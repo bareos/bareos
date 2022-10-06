@@ -221,8 +221,8 @@ bool DoNdmpBackup(JobControlRecord* jcr)
     }
 
     // Now start a job with the Storage daemon
-    if (!StartStorageDaemonJob(jcr, NULL,
-                               jcr->dir_impl->res.write_storage_list)) {
+    if (!StartStorageDaemonJob(jcr)) { return false; }
+    if (!ReserveWriteDevice(jcr, jcr->dir_impl->res.write_storage_list)) {
       return false;
     }
 
