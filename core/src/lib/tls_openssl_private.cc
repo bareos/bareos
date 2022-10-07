@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -54,13 +54,6 @@ const std::string TlsOpenSslPrivate::tls_default_ciphers_{
 
 
 TlsOpenSslPrivate::TlsOpenSslPrivate()
-    : openssl_(nullptr)
-    , openssl_ctx_(nullptr)
-    , openssl_conf_ctx_(nullptr)
-    , tcp_file_descriptor_(0)
-    , pem_callback_(nullptr)
-    , pem_userdata_(nullptr)
-    , verify_peer_(false)
 {
   Dmsg0(100, "Construct TlsOpenSslPrivate\n");
 
