@@ -9,6 +9,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - build: switch from FreeBSD 13.0 to 13.1 [PR #1256]
 
 ### Fixed
+- dird: fix tls reload crash [PR #1263]
 - dird: RunScript fixes [PR #1222]
   - fix show command output for RunScript RunsOnClient
   - fix show verbose for RunScripts
@@ -606,4 +607,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1220]: https://github.com/bareos/bareos/pull/1220
 [PR #1222]: https://github.com/bareos/bareos/pull/1222
 [PR #1232]: https://github.com/bareos/bareos/pull/1232
+[PR #1245]: https://github.com/bareos/bareos/pull/1245
+[PR #1246]: https://github.com/bareos/bareos/pull/1246
+[PR #1256]: https://github.com/bareos/bareos/pull/1256
+[PR #1259]: https://github.com/bareos/bareos/pull/1259
+[PR #1263]: https://github.com/bareos/bareos/pull/1263
 [unreleased]: https://github.com/bareos/bareos/tree/master
