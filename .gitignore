@@ -128,9 +128,10 @@ core/src/tests/configs/console-director/tls_psk_default_enabled/bareos-dir.d/job
 core/src/tests/configs/console-director/tls_psk_default_enabled/bareos-dir.d/jobdefs/DefaultJob.conf
 core/src/tests/configs/console-director/tls_psk_default_enabled/bareos-dir.d/messages/Daemon.conf
 core/src/tests/configs/console-director/tls_psk_default_enabled/bareos-dir.d/messages/Standard.conf
-core/src/tests/configs/sd_backend/bareos-sd.d/device/droplet.conf
+core/src/tests/configs/droplet_backend/bareos-sd.d/device/droplet.conf
+core/src/tests/configs/droplet_backend/bareos-sd.d/storage/myself.conf
+core/src/tests/configs/droplet_backend/droplet.profile
 core/src/tests/configs/sd_backend/bareos-sd.d/storage/myself.conf
-core/src/tests/configs/sd_backend/droplet.profile
 core/src/tests/configs/sd_reservation/bareos-sd.d/storage/myself.conf
 core/src/tests/configs/statistics_thread/sd_statistics_thread/default_config/bareos-sd.d/storage/myself.conf
 core/src/tests/configs/statistics_thread/sd_statistics_thread/only_collect_set/bareos-sd.d/storage/myself.conf
