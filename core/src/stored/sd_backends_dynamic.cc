@@ -65,7 +65,7 @@ bool LoadStorageBackend(const std::string& dev_type,
     return false;
   }
 
-  if (!PluginRegistry<BackendInterface>::IsRegistered(dev_type)) {
+  if (!PluginRegistry<Device>::IsRegistered(dev_type)) {
     Jmsg(nullptr, M_ERROR_TERM, 0,
          "Loaded backend library for %s did not register its backend. This is "
          "probably a bug in the backend library.\n",

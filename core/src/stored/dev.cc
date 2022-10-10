@@ -122,20 +122,14 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
   Dmsg1(400, "max_block_size in device_resource res is %u\n",
         device_resource->max_block_size);
 
-  if (!PluginRegistry<BackendInterface>::IsRegistered(
-          device_resource->dev_type)) {
+  if (!PluginRegistry<Device>::IsRegistered(device_resource->dev_type)) {
     Jmsg2(jcr, M_ERROR, 0, _("%s has an unknown device type %s\n"),
           device_resource->archive_device_string,
           device_resource->dev_type.c_str());
     return nullptr;
   }
 
-  // FIXME: the PluginRegistry should return the device instead of the factory
-  //        so we save one call and a delete.
-  auto factory
-      = PluginRegistry<BackendInterface>::Create(device_resource->dev_type);
-  Device* dev = factory->GetDevice();
-  delete factory;
+  Device* dev = PluginRegistry<Device>::Create(device_resource->dev_type);
 
   dev->device_resource = device_resource;
   device_resource->dev = dev;
