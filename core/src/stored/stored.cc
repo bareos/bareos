@@ -663,10 +663,6 @@ static
     }
   }
 
-#if defined(HAVE_DYNAMIC_SD_BACKENDS)
-  FlushAndCloseBackendDevices();
-#endif
-
   if (configfile) {
     free(configfile);
     configfile = nullptr;

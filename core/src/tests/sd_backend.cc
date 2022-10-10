@@ -93,9 +93,6 @@ void sd::TearDown()
       }
     }
   }
-#if defined(HAVE_DYNAMIC_SD_BACKENDS)
-  FlushAndCloseBackendDevices();
-#endif
 
   if (configfile) { free(configfile); }
   if (my_config) { delete my_config; }

@@ -45,28 +45,7 @@ template <typename T> class Backend : public BackendInterface {
 
 template <typename T> BackendInterface* BackendFactory(void) { return new T(); }
 
-extern "C" {
-typedef BackendInterface* (*t_backend_base)(void);
-BackendInterface* GetBackend(void);
-}
-
-#if defined(HAVE_WIN32)
-#  define DYN_LIB_EXTENSION ".dll"
-#elif defined(HAVE_DARWIN_OS)
-/* cmake MODULE creates a .so files; cmake SHARED creates .dylib */
-// #define DYN_LIB_EXTENSION ".dylib"
-#  define DYN_LIB_EXTENSION ".so"
-#else
-#  define DYN_LIB_EXTENSION ".so"
-#endif
-
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
-#  include <map>
-void SetBackendDeviceDirectories(std::vector<std::string>&& new_backend_dirs);
-Device* InitBackendDevice(JobControlRecord* jcr,
-                          const std::string& device_type);
-void FlushAndCloseBackendDevices();
-
 bool LoadStorageBackend(const std::string& dev_type,
                         const std::vector<std::string>& backend_directories);
 #endif
@@ -76,6 +55,6 @@ bool LoadStorageBackend(const std::string& dev_type,
       = PluginRegistry<BackendInterface>::Add(           \
           #backend_name, BackendFactory<Backend<backend_class>>);
 
-} /* namespace storagedaemon */
+}  // namespace storagedaemon
 
 #endif  // BAREOS_STORED_SD_BACKENDS_H_

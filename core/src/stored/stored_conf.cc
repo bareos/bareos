@@ -617,10 +617,6 @@ bool ParseSdConfig(const char* configfile, int exit_code)
             configfile);
       return retval;
     }
-
-#if defined(HAVE_DYNAMIC_SD_BACKENDS)
-    SetBackendDeviceDirectories(std::move(me->backend_directories));
-#endif
   }
 
   return retval;
