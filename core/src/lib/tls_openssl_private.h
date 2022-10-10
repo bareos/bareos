@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -68,9 +68,9 @@ class TlsOpenSslPrivate {
                                     unsigned int max_psk_len);
 
   /* each TCP connection has its own SSL_CTX object and SSL object */
-  SSL* openssl_;
-  SSL_CTX* openssl_ctx_;
-  SSL_CONF_CTX* openssl_conf_ctx_;
+  SSL* openssl_{};
+  SSL_CTX* openssl_ctx_{};
+  SSL_CONF_CTX* openssl_conf_ctx_{};
 
   /* PskCredentials lookup map for all connections */
   static std::map<const SSL_CTX*, PskCredentials> psk_client_credentials_;
@@ -84,18 +84,19 @@ class TlsOpenSslPrivate {
   std::string protocol_;
 
   /* cert attributes */
-  int tcp_file_descriptor_;
+  int tcp_file_descriptor_{};
   std::string ca_certfile_;
   std::string ca_certdir_;
   std::string crlfile_;
   std::string certfile_;
   std::string keyfile_;
-  CRYPTO_PEM_PASSWD_CB* pem_callback_;
-  void* pem_userdata_;
+  CRYPTO_PEM_PASSWD_CB* pem_callback_{};
+  void* pem_userdata_{};
   std::string dhfile_;
   std::string cipherlist_;
-  bool verify_peer_;
-  /* *************** */
+  bool verify_peer_{};
+  std::shared_ptr<ConfigResourcesContainer>
+      config_table_{};  // config table being used
 };
 
 #endif  // BAREOS_LIB_TLS_OPENSSL_PRIVATE_H_

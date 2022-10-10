@@ -106,28 +106,31 @@ TEST(ConfigParser_Dir, bareos_configparser_tests)
   my_config->ParseConfig();
   my_config->DumpResources(PrintMessage, NULL);
 
-  auto backup = my_config->BackupResourceTable();
-  my_config->ParseConfig();
+  {
+    auto backup = my_config->BackupResourcesContainer();
+    my_config->ParseConfig();
 
-  me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
-  my_config->own_resource_ = me;
-  ASSERT_NE(nullptr, me);
-  my_config->RestoreResourceTable(std::move(backup));
-  ASSERT_NE(nullptr, me);
-
-  // If a config already exists, BackupResourceTable() needs to be called before
-  // ParseConfig(), otherwise memory of the existing config is not freed
+    me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
+    my_config->own_resource_ = me;
+    ASSERT_NE(nullptr, me);
+    my_config->RestoreResourcesContainer(std::move(backup));
+    ASSERT_NE(nullptr, me);
+  }
+  // If a config already exists, BackupResourcesContainer() needs to be called
+  // before ParseConfig(), otherwise memory of the existing config is not freed
   // completely
-  auto backup2 = my_config->BackupResourceTable();
-  my_config->ParseConfig();
+  {
+    auto backup = my_config->BackupResourcesContainer();
+    my_config->ParseConfig();
 
-  me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
-  my_config->own_resource_ = me;
-  assert(me);
+    me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
+    my_config->own_resource_ = me;
+    assert(me);
 
-  ASSERT_NE(nullptr, me);
-  my_config->DumpResources(PrintMessage, NULL);
-  ASSERT_NE(nullptr, me);
+    ASSERT_NE(nullptr, me);
+    my_config->DumpResources(PrintMessage, NULL);
+    ASSERT_NE(nullptr, me);
+  }
   delete my_config;
 
   TermMsg(); /* Terminate message handler */
