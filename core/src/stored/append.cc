@@ -119,12 +119,11 @@ static void UpdateJobrecord(JobControlRecord* jcr)
 
 void DoBackupCheckpoint(JobControlRecord* jcr)
 {
-  Jmsg(jcr, M_INFO, 0,
-       _("Checkpoint: Syncing current backup status to catalog\n"));
+  Dmsg0(100, _("Checkpoint: Syncing current backup status to catalog\n"));
   UpdateJobrecord(jcr);
   UpdateFileList(jcr);
   UpdateJobmediaRecord(jcr);
-  Jmsg(jcr, M_INFO, 0, _("Checkpoint completed\n"));
+  Dmsg0(100, _("Checkpoint completed\n"));
 }
 
 static time_t DoTimedCheckpoint(JobControlRecord* jcr,
