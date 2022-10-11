@@ -597,18 +597,17 @@ static void SendDeviceStatus(Device* dev, StatusPacket* sp)
   len = Mmsg(msg, _("Device state:\n"));
   sp->send(msg, len);
 
-  len = Mmsg(
-      msg,
-      "  %sOPENED %sTAPE %sLABEL %sMALLOC %sAPPEND %sREAD %sEOT %sWEOT %sEOF "
-      "%sNEXTVOL %sSHORT %sMOUNTED\n",
-      dev->IsOpen() ? "" : "!", dev->IsTape() ? "" : "!",
-      dev->IsLabeled() ? "" : "!",
-      BitIsSet(ST_ALLOCATED, dev->state) ? "" : "!",
-      dev->CanAppend() ? "" : "!", dev->CanRead() ? "" : "!",
-      dev->AtEot() ? "" : "!", BitIsSet(ST_WEOT, dev->state) ? "" : "!",
-      dev->AtEof() ? "" : "!", BitIsSet(ST_NEXTVOL, dev->state) ? "" : "!",
-      BitIsSet(ST_SHORT, dev->state) ? "" : "!",
-      BitIsSet(ST_MOUNTED, dev->state) ? "" : "!");
+  len = Mmsg(msg,
+             "  %sOPENED %sLABEL %sMALLOC %sAPPEND %sREAD %sEOT %sWEOT %sEOF "
+             "%sNEXTVOL %sSHORT %sMOUNTED\n",
+             dev->IsOpen() ? "" : "!", dev->IsLabeled() ? "" : "!",
+             BitIsSet(ST_ALLOCATED, dev->state) ? "" : "!",
+             dev->CanAppend() ? "" : "!", dev->CanRead() ? "" : "!",
+             dev->AtEot() ? "" : "!", BitIsSet(ST_WEOT, dev->state) ? "" : "!",
+             dev->AtEof() ? "" : "!",
+             BitIsSet(ST_NEXTVOL, dev->state) ? "" : "!",
+             BitIsSet(ST_SHORT, dev->state) ? "" : "!",
+             BitIsSet(ST_MOUNTED, dev->state) ? "" : "!");
   sp->send(msg, len);
 
   len = Mmsg(msg, _("  num_writers=%d reserves=%d block=%d\n"),
@@ -634,8 +633,8 @@ static void SendDeviceStatus(Device* dev, StatusPacket* sp)
 
   len = Mmsg(msg, _("Device parameters:\n"));
   sp->send(msg, len);
-  len = Mmsg(msg, _("  Archive name: %s Device name: %s\n"),
-             dev->archive_name(), dev->name());
+  len = Mmsg(msg, _("  Archive name: %s\nDevice name: %s\nDevice Type: %s\n"),
+             dev->archive_name(), dev->name(), dev->type().c_str());
   sp->send(msg, len);
   len = Mmsg(msg, _("  File=%u block=%u\n"), dev->file, dev->block_num);
   sp->send(msg, len);

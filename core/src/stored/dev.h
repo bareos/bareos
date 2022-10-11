@@ -335,6 +335,7 @@ class Device {
   const char* strerror() const;
   const char* archive_name() const;
   const char* name() const;
+  const std::string& type() const { return dev_type; }
   const char* print_name() const; /**< Name for display purposes */
   void SetEot() { SetBit(ST_EOT, state); }
   void SetEof() { SetBit(ST_EOF, state); }
