@@ -489,7 +489,7 @@ bool SendAttrsToDir(JobControlRecord* jcr, DeviceRecord* rec)
 {
   if (!jcr->impl->no_attributes) {
     BareosSocket* dir = jcr->dir_bsock;
-    if (AreAttributesSpooled(jcr)) { dir->SetSpooling(); }
+    if (AttributesAreSpooled(jcr)) { dir->SetSpooling(); }
     Dmsg0(850, "Send attributes to dir.\n");
     if (!jcr->impl->dcr->DirUpdateFileAttributes(rec)) {
       Jmsg(jcr, M_FATAL, 0, _("Error updating file attributes. ERR=%s\n"),

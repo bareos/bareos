@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,7 +28,7 @@ namespace storagedaemon {
 bool BeginDataSpool(DeviceControlRecord* dcr);
 bool DiscardDataSpool(DeviceControlRecord* dcr);
 bool CommitDataSpool(DeviceControlRecord* dcr);
-bool AreAttributesSpooled(JobControlRecord* jcr);
+bool AttributesAreSpooled(JobControlRecord* jcr);
 bool BeginAttributeSpool(JobControlRecord* jcr);
 bool DiscardAttributeSpool(JobControlRecord* jcr);
 bool CommitAttributeSpool(JobControlRecord* jcr);
