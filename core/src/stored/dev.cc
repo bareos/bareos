@@ -184,7 +184,7 @@ static void InitiateDevice(JobControlRecord* jcr, Device* dev)
     dev->vol_poll_interval = 60;
   }
 
-  if (dev->IsFifo()) { dev->SetCap(CAP_STREAM); }
+  if (dev->GetSeekMode() == SeekMode::NOSEEK) { dev->SetCap(CAP_STREAM); }
 
   /*
    * If the device requires mount :
@@ -633,15 +633,25 @@ bool Device::rewind(DeviceControlRecord* dcr)
 
   if (fd < 0) { return false; }
 
-  if (IsFifo()) { return true; }
-
-  if (d_lseek(dcr, (boffset_t)0, SEEK_SET) < 0) {
-    BErrNo be;
-    dev_errno = errno;
-    Mmsg2(errmsg, _("lseek error on %s. ERR=%s"), print_name(), be.bstrerror());
-    return false;
+  switch (GetSeekMode()) {
+    case SeekMode::NOSEEK: {
+      return true;
+    } break;
+    case SeekMode::BYTES: {
+      if (d_lseek(dcr, (boffset_t)0, SEEK_SET) < 0) {
+        BErrNo be;
+        dev_errno = errno;
+        Mmsg2(errmsg, _("lseek error on %s. ERR=%s"), print_name(),
+              be.bstrerror());
+        return false;
+      }
+    } break;
+    case SeekMode::FILE_BLOCK: {
+      dev_errno = EINVAL;
+      Mmsg(errmsg, "Block addressed backends must override rewind().");
+      return false;
+    } break;
   }
-
   return true;
 }
 
@@ -719,7 +729,6 @@ bool Device::eod(DeviceControlRecord* dcr)
 bool Device::UpdatePos(DeviceControlRecord* dcr)
 {
   boffset_t pos;
-  bool ok = true;
 
   if (!IsOpen()) {
     dev_errno = EBADF;
@@ -728,25 +737,34 @@ bool Device::UpdatePos(DeviceControlRecord* dcr)
     return false;
   }
 
-  if (IsFifo()) { return true; }
-
-  file = 0;
-  file_addr = 0;
-  pos = d_lseek(dcr, (boffset_t)0, SEEK_CUR);
-  if (pos < 0) {
-    BErrNo be;
-    dev_errno = errno;
-    Pmsg1(000, _("Seek error: ERR=%s\n"), be.bstrerror());
-    Mmsg2(errmsg, _("lseek error on %s. ERR=%s.\n"), print_name(),
-          be.bstrerror());
-    ok = false;
-  } else {
-    file_addr = pos;
-    block_num = (uint32_t)pos;
-    file = (uint32_t)(pos >> 32);
+  switch (GetSeekMode()) {
+    case SeekMode::NOSEEK: {
+      return true;
+    } break;
+    case SeekMode::BYTES: {
+      file = 0;
+      file_addr = 0;
+      pos = d_lseek(dcr, (boffset_t)0, SEEK_CUR);
+      if (pos < 0) {
+        BErrNo be;
+        dev_errno = errno;
+        Pmsg1(000, _("Seek error: ERR=%s\n"), be.bstrerror());
+        Mmsg2(errmsg, _("lseek error on %s. ERR=%s.\n"), print_name(),
+              be.bstrerror());
+        return false;
+      } else {
+        file_addr = pos;
+        block_num = (uint32_t)pos;
+        file = (uint32_t)(pos >> 32);
+      }
+    } break;
+    case SeekMode::FILE_BLOCK: {
+      dev_errno = EINVAL;
+      Mmsg(errmsg, "Block addressed backends must override UpdatePos().");
+      return false;
+    } break;
   }
-
-  return ok;
+  return true;
 }
 
 char* Device::StatusDev()
@@ -819,20 +837,30 @@ bool Device::Reposition(DeviceControlRecord* dcr,
     return false;
   }
 
-  if (IsFifo()) { return true; }
-
-  boffset_t pos = (((boffset_t)rfile) << 32) | rblock;
-  Dmsg1(100, "===== lseek to %d\n", (int)pos);
-  if (d_lseek(dcr, pos, SEEK_SET) == (boffset_t)-1) {
-    BErrNo be;
-    dev_errno = errno;
-    Mmsg2(errmsg, _("lseek error on %s. ERR=%s.\n"), print_name(),
-          be.bstrerror());
-    return false;
+  switch (GetSeekMode()) {
+    case SeekMode::NOSEEK: {
+      return true;
+    } break;
+    case SeekMode::BYTES: {
+      boffset_t pos = (((boffset_t)rfile) << 32) | rblock;
+      Dmsg1(100, "===== lseek to %d\n", (int)pos);
+      if (d_lseek(dcr, pos, SEEK_SET) == (boffset_t)-1) {
+        BErrNo be;
+        dev_errno = errno;
+        Mmsg2(errmsg, _("lseek error on %s. ERR=%s.\n"), print_name(),
+              be.bstrerror());
+        return false;
+      }
+      file = rfile;
+      block_num = rblock;
+      file_addr = pos;
+    } break;
+    case SeekMode::FILE_BLOCK: {
+      dev_errno = EINVAL;
+      Mmsg(errmsg, "Block addressed backends must override Reposition().");
+      return false;
+    } break;
   }
-  file = rfile;
-  block_num = rblock;
-  file_addr = pos;
   return true;
 }
 

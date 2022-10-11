@@ -177,11 +177,11 @@ enum class SeekMode
   BYTES        // device uses byte offsets (like a plain file)
 };
 
+// incomplete list of device types for GuessMissingDeviceTypes()
 struct DeviceType {
   static constexpr std::string_view B_DROPLET_DEV = "droplet";
   static constexpr std::string_view B_FIFO_DEV = "fifo";
   static constexpr std::string_view B_FILE_DEV = "file";
-  static constexpr std::string_view B_GFAPI_DEV = "gfapi";
   static constexpr std::string_view B_TAPE_DEV = "tape";
   static constexpr std::string_view B_UNKNOWN_DEV = "";
 };
@@ -299,7 +299,6 @@ class Device {
   bool RequiresMount() const { return BitIsSet(CAP_REQMOUNT, capabilities); }
   bool IsRemovable() const { return BitIsSet(CAP_REM, capabilities); }
   bool IsTape() const { return (dev_type == DeviceType::B_TAPE_DEV); }
-  bool IsFifo() const { return dev_type == DeviceType::B_FIFO_DEV; }
   bool IsOpen() const { return fd >= 0; }
   bool IsOffline() const { return BitIsSet(ST_OFFLINE, state); }
   bool IsLabeled() const { return BitIsSet(ST_LABEL, state); }
