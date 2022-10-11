@@ -42,6 +42,7 @@ class win32_fifo_device : public Device {
   ~win32_fifo_device() { close(nullptr); }
 
   // Interface from Device
+  SeekMode GetSeekMode() const override { return SeekMode::NOSEEK; }
   void OpenDevice(DeviceControlRecord* dcr, DeviceMode omode) override;
   bool eod(DeviceControlRecord* dcr) override;
   bool MountBackend(DeviceControlRecord* dcr, int timeout) override;

@@ -170,6 +170,13 @@ enum
 // Make sure you have enough bits to store all above bit fields.
 #define ST_BYTES NbytesForBits(ST_MAX + 1)
 
+enum class SeekMode
+{
+  NOSEEK,      // device cannot be seeked (e.g. a FIFO)
+  FILE_BLOCK,  // device works with file and blocknum (like a tape)
+  BYTES        // device uses byte offsets (like a plain file)
+};
+
 struct DeviceType {
   static constexpr std::string_view B_DROPLET_DEV = "droplet";
   static constexpr std::string_view B_FIFO_DEV = "fifo";
@@ -292,17 +299,12 @@ class Device {
   bool RequiresMount() const { return BitIsSet(CAP_REQMOUNT, capabilities); }
   bool IsRemovable() const { return BitIsSet(CAP_REM, capabilities); }
   bool IsTape() const { return (dev_type == DeviceType::B_TAPE_DEV); }
-  bool IsFile() const
-  {
-    return (dev_type == DeviceType::B_FILE_DEV || dev_type == DeviceType::B_GFAPI_DEV ||
-            dev_type == DeviceType::B_DROPLET_DEV);
-  }
   bool IsFifo() const { return dev_type == DeviceType::B_FIFO_DEV; }
   bool IsOpen() const { return fd >= 0; }
   bool IsOffline() const { return BitIsSet(ST_OFFLINE, state); }
   bool IsLabeled() const { return BitIsSet(ST_LABEL, state); }
   bool IsMounted() const { return BitIsSet(ST_MOUNTED, state); }
-  bool IsUnmountable() const { return ((IsFile() && IsRemovable())); }
+  bool IsUnmountable() const { return (IsRemovable() && RequiresMount()); }
   int NumReserved() const { return num_reserved_; }
   bool is_part_spooled() const { return BitIsSet(ST_PART_SPOOLED, state); }
   bool have_media() const { return BitIsSet(ST_MEDIA, state); }
@@ -403,7 +405,11 @@ class Device {
   bool unmount(DeviceControlRecord* dcr, int timeout);
   void EditMountCodes(PoolMem& omsg, const char* imsg);
   bool OfflineOrRewind();
-  bool ScanDirForVolume(DeviceControlRecord* dcr);
+protected:
+  bool ScanDirectoryForVolume(DeviceControlRecord* dcr);
+  virtual bool ScanForVolumeImpl(DeviceControlRecord* dcr);
+public:
+  bool ScanForVolume(DeviceControlRecord* dcr);
   void SetSlotNumber(slot_number_t slot);
   void InvalidateSlotNumber();
 
@@ -447,6 +453,8 @@ class Device {
     return true;
   }
   virtual bool DeviceStatus(DeviceStatusInformation*) { return false; }
+  virtual SeekMode GetSeekMode() const = 0;
+  virtual bool CanReadConcurrently() const { return false; }
 
   // Low level operations
   virtual int d_ioctl(int fd, ioctl_req_t request, char* mt_com = NULL) = 0;
@@ -493,14 +501,13 @@ class SpoolDevice :public Device
  public:
   SpoolDevice() = default;
   ~SpoolDevice() {   close(nullptr); }
+  SeekMode GetSeekMode() const override { return SeekMode::NOSEEK; }
   int d_ioctl(int, ioctl_req_t, char*) override {return -1;}
   int d_open(const char*, int, int) override {return -1;}
   int d_close(int) override {return -1;}
   ssize_t d_read(int, void*, size_t) override { return 0;}
   ssize_t d_write(int, const void*, size_t) override { return 0;}
-  boffset_t d_lseek(DeviceControlRecord*,
-                    boffset_t,
-                    int) override { return 0;}
+  boffset_t d_lseek(DeviceControlRecord*, boffset_t, int) override { return 0;}
   bool d_truncate(DeviceControlRecord*) override {return false;}
 };
 /* clang-format on */

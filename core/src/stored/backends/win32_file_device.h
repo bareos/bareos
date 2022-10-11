@@ -37,8 +37,11 @@ class win32_file_device : public Device {
   ~win32_file_device() { close(nullptr); }
 
   // Interface from Device
+  SeekMode GetSeekMode() const override { return SeekMode::BYTES; }
+  bool CanReadConcurrently() const override { return true; }
   bool MountBackend(DeviceControlRecord* dcr, int timeout) override;
   bool UnmountBackend(DeviceControlRecord* dcr, int timeout) override;
+  bool ScanForVolumeImpl(DeviceControlRecord* dcr) override;
   int d_close(int) override;
   int d_open(const char* pathname, int flags, int mode) override;
   int d_ioctl(int fd, ioctl_req_t request, char* mt = NULL) override;

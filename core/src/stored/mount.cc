@@ -244,11 +244,10 @@ mount_next_vol:
 
   while (!dev->open(dcr, mode)) {
     Dmsg1(150, "OpenDevice failed: ERR=%s\n", dev->bstrerror());
-    if (dev->IsFile() && dev->IsRemovable()) {
-      bool ok = true;
-      Dmsg0(150, "call scan_dir_for_vol\n");
-      if (ok && dev->ScanDirForVolume(dcr)) {
-        if (dev->open(dcr, mode)) { break; /* got a valid volume */ }
+    if (dev->IsRemovable()) {
+      Dmsg0(150, "call ScanForVolume\n");
+      if (dev->ScanForVolume(dcr) && dev->open(dcr, mode)) {
+        break; /* got a valid volume */
       }
     }
     if (TryAutolabel(false) == try_read_vol) {
@@ -654,85 +653,78 @@ void DeviceControlRecord::DoSwapping(bool)
  */
 bool DeviceControlRecord::is_eod_valid()
 {
-  DeviceControlRecord* dcr = this;
-
-  if (dev->IsTape()) {
-    /*
-     * Check if we are positioned on the tape at the same place
-     * that the database says we should be.
-     */
-    if (dev->VolCatInfo.VolCatFiles == dev->GetFile()) {
-      Jmsg(jcr, M_INFO, 0,
-           _("Ready to append to end of Volume \"%s\" at file=%d.\n"),
-           VolumeName, dev->GetFile());
-    } else if (dev->GetFile() > dev->VolCatInfo.VolCatFiles) {
-      Jmsg(jcr, M_WARNING, 0,
-           _("For Volume \"%s\":\n"
-             "The number of files mismatch! Volume=%u Catalog=%u\n"
-             "Correcting Catalog\n"),
-           VolumeName, dev->GetFile(), dev->VolCatInfo.VolCatFiles);
-      dev->VolCatInfo.VolCatFiles = dev->GetFile();
-      dev->VolCatInfo.VolCatBlocks = dev->GetBlockNum();
-      if (!dcr->DirUpdateVolumeInfo(false, true)) {
-        Jmsg(jcr, M_WARNING, 0, _("Error updating Catalog\n"));
+  switch (dev->GetSeekMode()) {
+    case SeekMode::FILE_BLOCK: {
+      /*
+       * Check if we are positioned on the tape at the same place
+       * that the database says we should be.
+       */
+      if (dev->VolCatInfo.VolCatFiles == dev->GetFile()) {
+        Jmsg(jcr, M_INFO, 0,
+             _("Ready to append to end of Volume \"%s\" at file=%d.\n"),
+             VolumeName, dev->GetFile());
+      } else if (dev->GetFile() > dev->VolCatInfo.VolCatFiles) {
+        Jmsg(jcr, M_WARNING, 0,
+             _("For Volume \"%s\":\n"
+               "The number of files mismatch! Volume=%u Catalog=%u\n"
+               "Correcting Catalog\n"),
+             VolumeName, dev->GetFile(), dev->VolCatInfo.VolCatFiles);
+        dev->VolCatInfo.VolCatFiles = dev->GetFile();
+        dev->VolCatInfo.VolCatBlocks = dev->GetBlockNum();
+        if (!DirUpdateVolumeInfo(false, true)) {
+          Jmsg(jcr, M_WARNING, 0, _("Error updating Catalog\n"));
+          MarkVolumeInError();
+          return false;
+        }
+      } else {
+        Jmsg(jcr, M_ERROR, 0,
+             _("Bareos cannot write on tape Volume \"%s\" because:\n"
+               "The number of files mismatch! Volume=%u Catalog=%u\n"),
+             VolumeName, dev->GetFile(), dev->VolCatInfo.VolCatFiles);
         MarkVolumeInError();
         return false;
       }
-    } else {
-      Jmsg(jcr, M_ERROR, 0,
-           _("Bareos cannot write on tape Volume \"%s\" because:\n"
-             "The number of files mismatch! Volume=%u Catalog=%u\n"),
-           VolumeName, dev->GetFile(), dev->VolCatInfo.VolCatFiles);
-      MarkVolumeInError();
-      return false;
-    }
-  } else if (dev->IsFile()) {
-    char ed1[50], ed2[50];
+    } break;
+    case SeekMode::BYTES: {
+      char ed1[50], ed2[50];
 
-    boffset_t pos;
-    pos = dev->d_lseek(dcr, (boffset_t)0, SEEK_CUR);
-    if (dev->VolCatInfo.VolCatBytes == (uint64_t)pos) {
-      Jmsg(jcr, M_INFO, 0,
-           _("Ready to append to end of Volume \"%s\""
-             " size=%s\n"),
-           VolumeName, edit_uint64(dev->VolCatInfo.VolCatBytes, ed1));
-    } else if ((uint64_t)pos > dev->VolCatInfo.VolCatBytes) {
-      Jmsg(jcr, M_WARNING, 0,
-           _("For Volume \"%s\":\n"
-             "The sizes do not match! Volume=%s Catalog=%s\n"
-             "Correcting Catalog\n"),
-           VolumeName, edit_uint64(pos, ed1),
-           edit_uint64(dev->VolCatInfo.VolCatBytes, ed2));
-      dev->VolCatInfo.VolCatBytes = (uint64_t)pos;
-      dev->VolCatInfo.VolCatFiles = (uint32_t)(pos >> 32);
-      if (!dcr->DirUpdateVolumeInfo(false, true)) {
-        Jmsg(jcr, M_WARNING, 0, _("Error updating Catalog\n"));
+      boffset_t pos;
+      pos = dev->d_lseek(this, (boffset_t)0, SEEK_CUR);
+      if (dev->VolCatInfo.VolCatBytes == (uint64_t)pos) {
+        Jmsg(jcr, M_INFO, 0,
+             _("Ready to append to end of Volume \"%s\""
+               " size=%s\n"),
+             VolumeName, edit_uint64(dev->VolCatInfo.VolCatBytes, ed1));
+      } else if ((uint64_t)pos > dev->VolCatInfo.VolCatBytes) {
+        Jmsg(jcr, M_WARNING, 0,
+             _("For Volume \"%s\":\n"
+               "The sizes do not match! Volume=%s Catalog=%s\n"
+               "Correcting Catalog\n"),
+             VolumeName, edit_uint64(pos, ed1),
+             edit_uint64(dev->VolCatInfo.VolCatBytes, ed2));
+        dev->VolCatInfo.VolCatBytes = (uint64_t)pos;
+        dev->VolCatInfo.VolCatFiles = (uint32_t)(pos >> 32);
+        if (!DirUpdateVolumeInfo(false, true)) {
+          Jmsg(jcr, M_WARNING, 0, _("Error updating Catalog\n"));
+          MarkVolumeInError();
+          return false;
+        }
+      } else {
+        Mmsg(jcr->errmsg,
+             _("Bareos cannot write on disk Volume \"%s\" because: "
+               "The sizes do not match! Volume=%s Catalog=%s\n"),
+             VolumeName, edit_uint64(pos, ed1),
+             edit_uint64(dev->VolCatInfo.VolCatBytes, ed2));
+        Jmsg(jcr, M_ERROR, 0, jcr->errmsg);
+        Dmsg0(050, jcr->errmsg);
         MarkVolumeInError();
         return false;
       }
-    } else {
-      Mmsg(jcr->errmsg,
-           _("Bareos cannot write on disk Volume \"%s\" because: "
-             "The sizes do not match! Volume=%s Catalog=%s\n"),
-           VolumeName, edit_uint64(pos, ed1),
-           edit_uint64(dev->VolCatInfo.VolCatBytes, ed2));
-      Jmsg(jcr, M_ERROR, 0, jcr->errmsg);
-      Dmsg0(050, jcr->errmsg);
-      MarkVolumeInError();
-      return false;
-    }
-  } else if (dev->IsFifo()) {
-    return true;
-  } else {
-    Mmsg1(
-        jcr->errmsg,
-        _("Don't know how to check if EOD is valid for a device of type %s\n"),
-        dev->dev_type.c_str());
-    Jmsg(jcr, M_ERROR, 0, jcr->errmsg);
-    Dmsg0(050, jcr->errmsg);
-    return false;
+    } break;
+    case SeekMode::NOSEEK: {
+      return true;
+    } break;
   }
-
   return true;
 }
 

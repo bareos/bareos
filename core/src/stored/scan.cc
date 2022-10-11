@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,8 +35,15 @@ namespace storagedaemon {
 /* Forward referenced functions */
 static bool IsVolumeNameLegal(char* name);
 
+bool Device::ScanForVolume(DeviceControlRecord* dcr)
+{
+  return ScanForVolumeImpl(dcr);  // call virtual implementation
+}
 
-bool Device::ScanDirForVolume(DeviceControlRecord* dcr)
+/* default implementation: don't scan at all */
+bool Device::ScanForVolumeImpl(DeviceControlRecord*) { return false; }
+
+bool Device::ScanDirectoryForVolume(DeviceControlRecord* dcr)
 {
   DIR* dp;
   struct dirent* result;

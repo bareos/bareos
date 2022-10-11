@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2017 Planets Communications B.V.
-   Copyright (C) 2014-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -80,6 +80,8 @@ class DropletDevice : public ChunkedDevice {
   ~DropletDevice();
 
   // Interface from Device
+  SeekMode GetSeekMode() const override { return SeekMode::BYTES; }
+  bool CanReadConcurrently() const override { return true; }
   int d_close(int fd) override;
   int d_open(const char* pathname, int flags, int mode) override;
   int d_ioctl(int fd, ioctl_req_t request, char* mt = NULL) override;

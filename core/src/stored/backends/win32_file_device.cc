@@ -196,6 +196,11 @@ bool win32_file_device::UnmountBackend(DeviceControlRecord* dcr, int timeout)
   return retval;
 }
 
+bool win32_file_device::ScanForVolumeImpl(DeviceControlRecord* dcr)
+{
+  return ScanDirectoryForVolume(dcr);
+}
+
 int win32_file_device::d_open(const char* pathname, int flags, int mode)
 {
   return ::open(pathname, flags, mode);

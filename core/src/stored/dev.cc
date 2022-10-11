@@ -191,7 +191,7 @@ static void InitiateDevice(JobControlRecord* jcr, Device* dev)
    * - Check that the mount point is available
    * - Check that (un)mount commands are defined
    */
-  if (dev->IsFile() && dev->RequiresMount()) {
+  if (dev->RequiresMount()) {
     struct stat statp;
     if (!dev->device_resource->mount_point
         || stat(dev->device_resource->mount_point, &statp) < 0) {
