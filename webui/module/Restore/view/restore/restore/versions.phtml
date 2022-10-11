@@ -165,6 +165,24 @@ $this->headTitle($title);
                   echo '<p>' . $this->formRow($form->get('replace')) . '</p>';
                   echo '<p>' . $this->formRow($form->get('where')) . '</p>';
 
+                  if($restore_params['mergefilesets'] == 1) {
+                     foreach($form->backups as $backup) {
+                        if($backup['jobid'] === $this->restore_params['jobid'] && $backup['pluginjob']) {
+                           echo '<p>'.$this->formRow($form->get('pluginoptions')).'</p>';
+                        }
+                     }
+                  } else {
+                     $pluginjobs = false;
+                     foreach($form->backups as $backup) {
+                        if($backup['pluginjob']) {
+                           $pluginjobs = true;
+                        }
+                     }
+                     if($pluginjobs) {
+                        echo '<p>'.$this->formRow($form->get('pluginoptions')).'</p>';
+                     }
+                  }
+
                   echo '<p>'.$this->formRow($form->get('form-submit')).'</p>';
 
                   // Hidden fields
@@ -415,8 +433,12 @@ function verifyRestoreFormDataFileSelection() {
       let restoreclient = document.getElementById('restoreclient').value;
       let replace = document.getElementById('replace').value;
       let where = document.getElementById('where').value;
+      let pluginoptions = '';
+      if(document.getElementById('pluginoptions') !== null) {
+         pluginoptions = document.getElementById('pluginoptions').value;
+      }
       let selectedFile = document.getElementById('selectedfile-name').innerHTML;
-      updateModalRestoreParamsTable(client, restoreclient, replace, where, selectedFile);
+      updateModalRestoreParamsTable(client, restoreclient, replace, where, pluginoptions, selectedFile);
       $("#modal-003").modal();
    } else {
       $("#modal-004").modal();
@@ -429,12 +451,13 @@ function submitRestoreFormData() {
    document.getElementById('restore').submit();
 }
 
-function updateModalRestoreParamsTable(client, restoreclient, replace, where, selectedFile) {
+function updateModalRestoreParamsTable(client, restoreclient, replace, where, pluginoptions, selectedFile) {
    $('#restore-params-table').empty();
    $('#restore-params-table').append("<tr><td><b>Client:</b></td><td>" + client + "</td></tr>");
    $('#restore-params-table').append("<tr><td><b>Restore to client:</b></td><td>" + restoreclient + "</td></tr>");
    $('#restore-params-table').append("<tr><td><b>Replace files on client:</b></td><td>" + replace + "</td></tr>");
    $('#restore-params-table').append("<tr><td><b>Restore location on client:</b></td><td>" + where + "</td></tr>");
+   $('#restore-params-table').append("<tr><td><b>Plugin Options:</b></td><td>" + pluginoptions + "</td></tr>");
    $('#restore-params-table').append("<tr><td><b>Selected file:</b></td><td>" + selectedFile + "</td></tr>");
 }
 
@@ -462,6 +485,7 @@ function updateRestoreParams(k, v) {
 
    p['restorejob'] = '<?php echo $this->restore_params['restorejob']; ?>';
    p['where'] = '<?php echo $this->restore_params['where']; ?>';
+   p['pluginoptions'] = '<?php echo $this->restore_params['pluginoptions']; ?>';
    p['fileset'] = '<?php echo $this->restore_params['fileset']; ?>';
 
    if (k === 'mergejobs' && v === '1') {
