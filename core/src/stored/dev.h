@@ -201,7 +201,11 @@ class Device {
  public:
   Device() = default;
   virtual ~Device();
-  Device* swap_dev{}; /**< Swap vol from this device */
+  Device(const Device&) = delete;
+  Device& operator=(const Device&) = delete;
+  Device(Device&&) = delete;
+  Device& operator=(Device&&) = delete;
+  Device* swap_dev{};         /**< Swap vol from this device */
   std::vector<DeviceControlRecord*> attached_dcrs;           /**< Attached DeviceControlRecords */
   pthread_mutex_t mutex_ = PTHREAD_MUTEX_INITIALIZER;        /**< Access control */
   pthread_mutex_t spool_mutex = PTHREAD_MUTEX_INITIALIZER;   /**< Mutex for updating spool_size */
