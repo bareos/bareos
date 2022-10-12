@@ -358,25 +358,29 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
         break;
       }
 
-      if (current_block_number != jcr->impl->dcr->block->BlockNumber) {
-        current_block_number = jcr->impl->dcr->block->BlockNumber;
-        SaveFullyProcessedFiles(jcr, processed_files);
-      }
-
       if (IsAttribute(jcr->impl->dcr->rec)) {
         file_currently_processed.AddAttribute(jcr->impl->dcr->rec);
       }
 
-      if (me->checkpoint_interval) {
-        if (jcr->impl->dcr->VolMediaId != current_volumeid) {
-          Jmsg0(jcr, M_INFO, 0, _("Volume changed, doing checkpoint:\n"));
-          DoBackupCheckpoint(jcr);
-          current_volumeid = jcr->impl->dcr->VolMediaId;
-        } else {
-          next_checkpoint_time = DoTimedCheckpoint(jcr, next_checkpoint_time,
-                                                   me->checkpoint_interval);
+      if (AttributesAreSpooled(jcr)) {
+        SaveFullyProcessedFiles(jcr, processed_files);
+      } else {
+        if (current_block_number != jcr->impl->dcr->block->BlockNumber) {
+          current_block_number = jcr->impl->dcr->block->BlockNumber;
+          SaveFullyProcessedFiles(jcr, processed_files);
+        }
+        if (me->checkpoint_interval) {
+          if (jcr->impl->dcr->VolMediaId != current_volumeid) {
+            Jmsg0(jcr, M_INFO, 0, _("Volume changed, doing checkpoint:\n"));
+            DoBackupCheckpoint(jcr);
+            current_volumeid = jcr->impl->dcr->VolMediaId;
+          } else {
+            next_checkpoint_time = DoTimedCheckpoint(jcr, next_checkpoint_time,
+                                                     me->checkpoint_interval);
+          }
         }
       }
+
 
       Dmsg0(650, "Enter bnet_get\n");
     }
