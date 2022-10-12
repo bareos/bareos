@@ -351,10 +351,15 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
   } else if (sscanf(bs->msg, Update_filelist, &Job) == 1) {
     Dmsg0(0, "Updating filelist\n");
 
-    if (!jcr->db_batch->WriteBatchFileRecords(jcr)) {
-      Jmsg(jcr, M_FATAL, 0, _("Catalog error updating File table. %s\n"),
-           jcr->db_batch->strerror());
-      bs->fsend(_("1992 Update File table error\n"));
+    if (jcr->db_batch) {
+      if (!jcr->db_batch->WriteBatchFileRecords(jcr)) {
+        Jmsg(jcr, M_FATAL, 0, _("Catalog error updating File table. %s\n"),
+             jcr->db_batch->strerror());
+        bs->fsend(_("1992 Update File table error\n"));
+      }
+    } else {
+      Jmsg(jcr, M_WARNING, 0,
+           _("Batch database connection not found. Cannot update file list\n"));
     }
 
   } else if (sscanf(bs->msg, Update_jobrecord, &Job, &update_jobfiles,
@@ -385,9 +390,9 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
 }
 
 /**
- * Note, we receive the whole attribute record, but we select out only the stat
- * packet, VolSessionId, VolSessionTime, FileIndex, file type, and file name to
- * store in the catalog.
+ * Note, we receive the whole attribute record, but we select out only the
+ * stat packet, VolSessionId, VolSessionTime, FileIndex, file type, and file
+ * name to store in the catalog.
  */
 static void UpdateAttribute(JobControlRecord* jcr,
                             char* msg,
