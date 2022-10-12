@@ -18,9 +18,11 @@ start_test
 
 backup_log=$tmp/stop-backup-checkpoints.out
 restore_log=$tmp/stop-restore-checkpoints.out
+restore_directory=$tmp/stop-checkpoints-restore-directory
 
 rm -f $backup_log
 rm -f $restore_log
+rm -rf $restore_directory
 
 slowjob="slow-backup-bareos-fd"
 
@@ -68,7 +70,7 @@ cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out $backup_log
 messages
 @$out $restore_log
-restore jobid=${slowjobid} where=$tmp/checkpoint-restores all done yes
+restore jobid=${slowjobid} where=$restore_directory all done yes
 wait
 messages
 quit
@@ -90,9 +92,9 @@ expect_grep "Termination:            Restore OK" \
             "Restore job did not go well!"
 
 # Certain systems do not support multiple types for find (-type f,l)
-NumberOfFilesRestored=$(find $tmp/checkpoint-restores/$tmp -type f | wc -l)
-NumberOfLinksRestored=$(find $tmp/checkpoint-restores/$tmp -type l | wc -l)
-NumberOfDirectoriesRestored=$(find $tmp/checkpoint-restores/$tmp -type d | wc -l)
+NumberOfFilesRestored=$(find $restore_directory/$tmp -type f | wc -l)
+NumberOfLinksRestored=$(find $restore_directory/$tmp -type l | wc -l)
+NumberOfDirectoriesRestored=$(find $restore_directory/$tmp -type d | wc -l)
 RestoredItems=$(expr $NumberOfFilesRestored + $NumberOfLinksRestored + $NumberOfDirectoriesRestored)
 
 # Check that the restored files are actually there

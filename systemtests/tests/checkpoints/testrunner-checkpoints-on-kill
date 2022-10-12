@@ -26,6 +26,7 @@ for daemon in "dir" "sd" "fd"; do
 
     rm -f $backup_log
     rm -f $restore_log
+    rm -rf $restore_directory
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
