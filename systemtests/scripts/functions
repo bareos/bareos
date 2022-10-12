@@ -1060,6 +1060,33 @@ if ! grep -q "${expected_result}" "${target_file}"; then
 fi
 }
 
+expect_not_grep()
+{
+
+local usage="Usage: ${FUNCNAME[0]} <non_expected_result> <log_file> [error message]\n    Make sure non_expected_result is not in log_file. Optionally display custom error_message if not found."
+local non_expected_result="$1"
+local target_file="$2"
+local error_message="$3"
+
+if [ $# -lt 2  ] || [ $# -gt 3  ]; then
+    echo -e "${FUNCNAME[0]} : wrong number of parameters.\n${usage}"
+    exit 1
+fi
+
+if [ ! -f ${target_file} ]; then
+    echo "\"${target_file}\" does not exist or is not a file."
+    exit 1
+fi
+
+if grep -q "${non_expected_result}" "${target_file}"; then
+  echo "Fail: Non expected line \"${non_expected_result}\" was found in log file \"${target_file}\"." >&2
+  estat=1
+  if [ "${error_message}" != "" ]; then
+    echo "-->${error_message}" >&2
+  fi
+fi
+}
+
 # Used by mysqltest 
 skip_if_root()
 {
