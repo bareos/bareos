@@ -92,7 +92,7 @@ static ResourceItem store_items[] = {
   {"SdConnectTimeout", CFG_TYPE_TIME, ITEM(res_store, SDConnectTimeout), 0, CFG_ITEM_DEFAULT, "1800" /* 30 minutes */, NULL, NULL},
   {"FdConnectTimeout", CFG_TYPE_TIME, ITEM(res_store, FDConnectTimeout), 0, CFG_ITEM_DEFAULT, "1800" /* 30 minutes */, NULL, NULL},
   {"HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_store, heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL},
-  {"CheckpointInterval", CFG_TYPE_TIME, ITEM(res_store, checkpoint_interval), 0, CFG_ITEM_DEFAULT, "60", NULL, NULL},
+  {"CheckpointInterval", CFG_TYPE_TIME, ITEM(res_store, checkpoint_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL},
   {"MaximumNetworkBufferSize", CFG_TYPE_PINT32, ITEM(res_store, max_network_buffer_size), 0, 0, NULL, NULL, NULL},
   {"ClientConnectWait", CFG_TYPE_TIME, ITEM(res_store, client_wait), 0, CFG_ITEM_DEFAULT, "1800" /* 30 minutes */, NULL, NULL},
   {"VerId", CFG_TYPE_STR, ITEM(res_store, verid), 0, 0, NULL, NULL, NULL},
