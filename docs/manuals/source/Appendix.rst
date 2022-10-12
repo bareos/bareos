@@ -13,6 +13,7 @@ Appendix
       /Appendix/VerifyFileIntegrityWithBareos.rst
       /Appendix/BackwardCompatibility.rst
       /Appendix/CatalogTables.rst
+      /Appendix/Checkpoints.rst
       /Appendix/Howtos.rst
       /Appendix/DisasterRecoveryUsingBareos.rst
       /Appendix/Troubleshooting.rst
