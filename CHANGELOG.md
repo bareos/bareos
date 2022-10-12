@@ -52,6 +52,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - build: run a build and test with sanitizers enabled [PR #1244]
 
 ### Fixed
+- webui: adapt links to new URLs after website relaunch. [PR #1275]
 - dird: fix possible crash in tls context on configuration reload [PR #1249]
 - dird: RunScript fixes [PR #1217]
   - fix show command output for RunScript RunsOnClient
