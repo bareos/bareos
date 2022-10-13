@@ -62,7 +62,8 @@ $this->headTitle($title);
 
 <script>
 
-var displayrange = 32 * <?php echo $_SESSION['bareos']['analytics_checkpoint_interval']; ?>;
+var checkpointnumber = 32 // checkpoints stored in map for each running jobid
+var displayrange = checkpointnumber * <?php echo $_SESSION['bareos']['analytics_checkpoint_interval']; ?>;
 var checkpointinterval = <?php echo $_SESSION['bareos']['analytics_checkpoint_interval']; ?>;
 
 function getCurrentTime() {
@@ -248,7 +249,7 @@ function updateRunningJobsData() {
             runtimedata.set(element.jobid, [[],[],[],[]])
             runtimedata.get(element.jobid)[0].push(element.name)
           }
-          if(runtimedata.get(element.jobid)[1].length > 31) {
+          if(runtimedata.get(element.jobid)[1].length > checkpointnumber - 1) {
             runtimedata.get(element.jobid)[1].shift()
             runtimedata.get(element.jobid)[3].shift()
           }
