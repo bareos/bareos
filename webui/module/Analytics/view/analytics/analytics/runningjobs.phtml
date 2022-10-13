@@ -39,6 +39,16 @@ $this->headTitle($title);
 
 <div class="row">
   <div class="col-md-12">
+    <button id="charttype-0" class="btn btn-primary" onclick="setChartType(0)">Stacked Area Chart</button>
+    &nbsp;
+    <button id="charttype-1" class="btn btn-primary" onclick="setChartType(1)">Line Chart</button>
+  </div>
+</div>
+
+<br />
+
+<div class="row">
+  <div class="col-md-12">
     <div class="panel panel-default">
       <div class="panel-heading">
         <h3 class="panel-title"><?php echo $this->translate('Checkpoint Transfer Rates'); ?></h3>
@@ -65,6 +75,42 @@ $this->headTitle($title);
 var checkpointnumber = 32 // checkpoints stored in map for each running jobid
 var displayrange = checkpointnumber * <?php echo $_SESSION['bareos']['analytics_checkpoint_interval']; ?>;
 var checkpointinterval = <?php echo $_SESSION['bareos']['analytics_checkpoint_interval']; ?>;
+
+var charttype = "area"
+var chartstacked = true
+
+function setChartType(value) {
+  switch(value) {
+    // stacked area chart
+    case 0:
+      charttype = "area"
+      chartstacked = true
+      break;
+    // line chart
+    case 1:
+      charttype = "line"
+      chartstacked = false
+      break;
+    default:
+      charttype = "area"
+      chartstacked = true
+
+  }
+
+  chart1.updateOptions({
+    chart: {
+      type: charttype,
+      stacked: chartstacked
+    }
+  })
+
+  chart2.updateOptions({
+    chart: {
+      type: charttype,
+      stacked: chartstacked
+    }
+  })
+}
 
 function getCurrentTime() {
   let timezoneoffset = new Date().getTimezoneOffset() * 60 * 1000;
@@ -93,8 +139,8 @@ var options1 = {
   chart: {
     id: 'runningjobs-chart1',
     height: 400,
-    type: 'area',
-    stacked: true,
+    type: charttype,
+    stacked: chartstacked,
     animations: {
       enabled: false
     },
@@ -166,8 +212,8 @@ var options2 = {
   chart: {
     id: 'runningjobs-chart2',
     height: 400,
-    type: 'area',
-    stacked: true,
+    type: charttype,
+    stacked: chartstacked,
     animations: {
       enabled: false
     },
