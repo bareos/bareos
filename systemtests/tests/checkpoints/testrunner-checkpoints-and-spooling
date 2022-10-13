@@ -1,0 +1,66 @@
+#!/bin/bash
+set -o pipefail
+set -u
+#
+# Run a job with spooling and check that checkpoints are not triggered
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+backup_log=$tmp/spool-backup-checkpoints.out
+restore_log=$tmp/spool-restore-checkpoints.out
+restore_directory=$tmp/spool-checkpoints-restore
+
+rm -f $backup_log
+rm -f $restore_log
+rm -rf $restore_directory
+
+slowjob="slow-backup-bareos-fd"
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $backup_log
+run job=$slowjob level=Full spooldata=yes yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+expect_not_grep "Doing timed backup checkpoint." \
+                "$backup_log" \
+                "Timed checkpoint was triggered for a spooled job. This should not happen here."
+
+expect_not_grep "Volume changed, doing checkpoint:" \
+                "$backup_log" \
+                "Checkpoint on volume change was triggered for a spooled job. This should not happen here."
+
+slowjobid=$(grep 'Job queued. JobId=' $backup_log | sed -n -e 's/^.*JobId=//p')
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $restore_log
+restore jobid=${slowjobid} where=$restore_directory all done yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+expect_grep "Termination:            Restore OK" \
+            "$restore_log" \
+            "Restore is not OK."
+
+end_test
