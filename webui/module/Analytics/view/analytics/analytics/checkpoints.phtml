@@ -66,12 +66,14 @@ $this->headTitle($title);
 
 <script>
 
-var checkpointnumber = 32 // checkpoints stored in map for each running jobid
+var checkpointnumber = 20 // checkpoints stored in map for each running jobid
 var displayrange = checkpointnumber * <?php echo $_SESSION['bareos']['analytics_checkpoint_interval']; ?>;
 var checkpointinterval = <?php echo $_SESSION['bareos']['analytics_checkpoint_interval']; ?>;
+var checkpointtransferrate = "last"
 
 var charttype = "area"
 var chartstacked = true
+var charttitle = "Last Transfer Rate"
 
 function setCheckpointNumber(value) {
   checkpointnumber = value / (checkpointinterval / 1000)
