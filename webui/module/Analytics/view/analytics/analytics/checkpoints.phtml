@@ -280,26 +280,23 @@ function updateRunningJobsData() {
 
 function updateChart() {
 
-  series1 = []
-  series2 = []
+  series = []
 
-  runtimedata.forEach((value, key) => {
-    series1.push({name: key + " " + value[0][0], data: value[1]})
-    series2.push({name: key + " " + value[0][0], data: value[3]})
-  })
-  
-  chart1.updateOptions({
-    series: series1,
-    xaxis: {
-      type: 'datetime',
-      range: displayrange,
-      min: getCurrentTime() - displayrange,
-      max: getCurrentTime(),
-    }
-  })
+  if(checkpointtransferrate === "last") {
+    runtimedata.forEach((value, key) => {
+      series.push({name: key + " " + value[0][0], data: value[1]})
+    })
+  } else {
+    runtimedata.forEach((value, key) => {
+      series.push({name: key + " " + value[0][0], data: value[3]})
+    })
+  }
 
-  chart2.updateOptions({
-    series: series2,
+  chart.updateOptions({
+    title: {
+      text: charttitle,
+    },
+    series: series,
     xaxis: {
       type: 'datetime',
       range: displayrange,
