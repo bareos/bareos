@@ -44,8 +44,30 @@ $this->headTitle($title);
         <h3 class="panel-title"><?php echo $this->translate('Checkpoint Transfer Rates'); ?></h3>
       </div>
       <div class="panel-body">
-        <label><input type="radio" id="ct0" name="charttype" checked="checked" value="0" onclick="setChartType(0)"/> Stacked Area Chart</label>
-        <label><input type="radio" id="ct1" name="charttype" value="1" onclick="setChartType(1)"/> Line Chart</label>
+        <div class="col-md-2">
+          <span><strong>Chart:</strong></span>
+          <label><input type="radio" id="ct0" name="charttype" checked="checked" value="0" onclick="setChartType(0)"/> Stacked Area</label>
+          <label><input type="radio" id="ct1" name="charttype" value="1" onclick="setChartType(1)"/> Line</label>
+        </div>
+        <div class="col-md-4">
+          <span><strong>Checkpoint collection: </strong></span>
+          <label><input type="radio" id="p0" name="period" checked="checked" value="0" onclick="setCheckpointNumber(60)"/> 1</label>
+          <label><input type="radio" id="p1" name="period" value="1" onclick="setCheckpointNumber(300)"/> 5</label>
+          <label><input type="radio" id="p2" name="period" value="2" onclick="setCheckpointNumber(600)"/> 10</label>
+          <label><input type="radio" id="p3" name="period" value="3" onclick="setCheckpointNumber(900)"/> 15</label>
+          <label><input type="radio" id="p4" name="period" value="4" onclick="setCheckpointNumber(1800)"/> 30</label>
+          <label><input type="radio" id="p5" name="period" value="5" onclick="setCheckpointNumber(3600)"/> 60</label>
+          <span> minute(s)</span>
+          <br />
+          <span><strong>Checkpoint interval: </strong></span><span><span id="checkpointinterval"><?php echo $_SESSION['bareos']['analytics_checkpoint_interval'] / 1000; ?></span> seconds</span>
+          <br />
+          <span><strong>Maximum checkpoints: </strong></span><span><span id="checkpointnumber">20</span> for each running job</span>
+        </div>
+        <div class="col-md-4">
+        <span><strong>Checkpoint data:</strong></span>
+          <label><input type="radio" id="cd0" name="chartdata" checked="checked" value="0" onclick="setCheckpointTransferrate(0)"/> Last transfer rate</label>
+          <label><input type="radio" id="cd1" name="chartdata" value="1" onclick="setCheckpointTransferrate(1)"/> Average transfer rate</label>
+        </div>
       </div>
       <div class="panel-body">
         <div id="runningjobs-chart"></div>
