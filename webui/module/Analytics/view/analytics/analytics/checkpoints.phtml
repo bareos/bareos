@@ -39,19 +39,13 @@ $this->headTitle($title);
 
 <div class="row">
   <div class="col-md-12">
-    <button id="charttype-0" class="btn btn-primary" onclick="setChartType(0)">Stacked Area Chart</button>
-    &nbsp;
-    <button id="charttype-1" class="btn btn-primary" onclick="setChartType(1)">Line Chart</button>
-  </div>
-</div>
-
-<br />
-
-<div class="row">
-  <div class="col-md-12">
     <div class="panel panel-default">
       <div class="panel-heading">
         <h3 class="panel-title"><?php echo $this->translate('Checkpoint Transfer Rates'); ?></h3>
+      </div>
+      <div class="panel-body">
+        <label><input type="radio" id="ct0" name="charttype" checked="checked" value="0" onclick="setChartType(0)"/> Stacked Area Chart</label>
+        <label><input type="radio" id="ct1" name="charttype" value="1" onclick="setChartType(1)"/> Line Chart</label>
       </div>
       <div class="panel-body">
         <div id="runningjobs-chart"></div>
