@@ -208,7 +208,7 @@ var options = {
   yaxis: {
     labels: {
       formatter: function (value) {
-        return value + " MB/s";
+        return value.toFixed(2) + " MB/s";
       }
     }
   },
