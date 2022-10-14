@@ -79,6 +79,21 @@ function setCheckpointNumber(value) {
   $("#checkpointnumber").html(checkpointnumber)
 }
 
+function setCheckpointTransferrate(value) {
+  switch(value) {
+    case 0:
+      checkpointtransferrate = "last"
+      charttitle = "Last Transfer Rate"
+      break;
+    case 1:
+      checkpointtransferrate = "average"
+      charttitle = "Average Transfer Rate"
+      break;
+    default:
+      break;
+  }
+}
+
 function setChartType(value) {
   switch(value) {
     // stacked area chart
