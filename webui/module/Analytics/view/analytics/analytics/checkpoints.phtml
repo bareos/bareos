@@ -73,6 +73,12 @@ var checkpointinterval = <?php echo $_SESSION['bareos']['analytics_checkpoint_in
 var charttype = "area"
 var chartstacked = true
 
+function setCheckpointNumber(value) {
+  checkpointnumber = value / (checkpointinterval / 1000)
+  displayrange = checkpointnumber * <?php echo $_SESSION['bareos']['analytics_checkpoint_interval']; ?>;
+  $("#checkpointnumber").html(checkpointnumber)
+}
+
 function setChartType(value) {
   switch(value) {
     // stacked area chart
