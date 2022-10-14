@@ -71,7 +71,7 @@ class AnalyticsController extends AbstractActionController
     return new ViewModel();
   }
 
-  public function runningjobsAction()
+  public function checkpointsAction()
   {
     $this->RequestURIPlugin()->setRequestURI();
 
@@ -151,7 +151,7 @@ class AnalyticsController extends AbstractActionController
         echo $e->getMessage();
       }
     }
-    elseif($data == "runningjobs") {
+    elseif($data == "checkpoints") {
       try {
         $this->bsock = $this->getServiceLocator()->get('director');
         $result = $this->getAnalyticsModel()->getRunningJobs($this->bsock);

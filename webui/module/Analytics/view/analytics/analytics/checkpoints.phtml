@@ -32,7 +32,7 @@ $this->headTitle($title);
 
 <ul class="nav nav-tabs">
    <li><a href="<?php echo $this->url('analytics', array('action'=>'index')); ?>"><?php echo $this->translate('Stored Data'); ?></a></li>
-   <li class="active"><a href="<?php echo $this->url('analytics', array('action'=>'runningjobs')); ?>"><?php echo $this->translate('Running Jobs'); ?></a></li>
+   <li class="active"><a href="<?php echo $this->url('analytics', array('action'=>'checkpoints')); ?>"><?php echo $this->translate('Checkpoints'); ?></a></li>
 </ul>
 
 <br />
@@ -285,7 +285,7 @@ var series2 = []
 
 function updateRunningJobsData() {
   $.ajax({
-    url: "<?php echo $this->url('analytics', array('action' => 'getData'), null) . '?data=runningjobs'; ?>",
+    url: "<?php echo $this->url('analytics', array('action' => 'getData'), null) . '?data=checkpoints'; ?>",
     dataType: 'json',
     timeout: 10000,
     success: function(response) {
