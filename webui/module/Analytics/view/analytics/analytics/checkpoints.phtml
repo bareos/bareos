@@ -136,14 +136,7 @@ function setChartType(value) {
 
   }
 
-  chart1.updateOptions({
-    chart: {
-      type: charttype,
-      stacked: chartstacked
-    }
-  })
-
-  chart2.updateOptions({
+  chart.updateOptions({
     chart: {
       type: charttype,
       stacked: chartstacked
@@ -166,7 +159,7 @@ function formatBytes(value) {
   return (value / megabyte).toFixed(decimal)
 }
 
-var options1 = {
+var options = {
   series: [],
   title: {
     text: 'Last Transfer Rate',
@@ -177,18 +170,25 @@ var options1 = {
   },
   chart: {
     id: 'runningjobs-chart1',
-    height: 400,
+    height: 500,
     type: charttype,
     stacked: chartstacked,
     animations: {
       enabled: false
     },
     toolbar: {
-      show: false
+      show: false,
+      tools: {
+        download: false,
+        selection: true,
+        zoom: true,
+        zoomin: true,
+        zoomout: true,
+        pan: true,
+        reset: true
+      }
     },
-    zoom: {
-      enabled: false
-    }
+    autoselected: 'zoom'
   },
   dataLabels: {
     enabled: false
@@ -239,88 +239,11 @@ var options1 = {
   }
 };
 
-var options2 = {
-  series: [],
-  title: {
-    text: 'Average Transfer Rate',
-    align: 'left'
-  },
-  noData: {
-    text: 'No data available.'
-  },
-  chart: {
-    id: 'runningjobs-chart2',
-    height: 400,
-    type: charttype,
-    stacked: chartstacked,
-    animations: {
-      enabled: false
-    },
-    toolbar: {
-      show: false
-    },
-    zoom: {
-      enabled: false
-    }
-  },
-  dataLabels: {
-    enabled: false
-  },
-  stroke: {
-    curve: 'smooth'
-  },
-  markers: {
-    size: 2
-  },
-  xaxis: {
-    type: 'datetime',
-    range: displayrange,
-    min: getCurrentTime() - displayrange,
-    max: getCurrentTime()
-  },
-  yaxis: {
-    labels: {
-      formatter: function (value) {
-        return value + " MB/s";
-      }
-    }
-  },
-  legend: {
-    show: true,
-    showForSingleSeries: true,
-    onItemClick: {
-      toggleDataSeries: true
-    },
-    onItemHover: {
-      highlightDataSeries: true
-    },
-    position: 'bottom',
-    horizontalAlign: 'left'
-  },
-  grid: {
-    borderColor: '#aaa',
-    strokeDashArray: 4,
-  },
-  tooltip: {
-    x: {
-      format: "HH:mm:ss"
-    }
-  },
-  theme: {
-    mode: 'light',
-    palette: 'palette1'
-  }
-};
-
-var chart1 = new ApexCharts(document.querySelector("#runningjobs-chart"), options1);
-chart1.render();
-
-var chart2 = new ApexCharts(document.querySelector("#runningjobs-chart-average"), options2);
-chart2.render();
+var chart = new ApexCharts(document.querySelector("#runningjobs-chart"), options);
+chart.render();
 
 var runtimedata = new Map()
-var series1 = []
-var series2 = []
+var series = []
 
 function updateRunningJobsData() {
   $.ajax({
