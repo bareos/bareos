@@ -79,15 +79,15 @@ int main(int argc, char* const* argv)
                         "Perform base64 encoding of keydata.");
 
   bool clear_encryption = false;
-  auto option_clear_encryption
-      = bscrypto_app.add_flag("-c", clear_encryption, "Clear encryption key.");
+  auto option_clear_encryption = bscrypto_app.add_flag(
+      "-c,--clear-encryption", clear_encryption, "Clear encryption key.");
 
   bool dump_cache = false;
   std::string cache_file{};
   auto option_dump_cache
       = bscrypto_app
             .add_option(
-                "-D",
+                "-D,--dump-cache",
                 [&dump_cache, &cache_file](std::vector<std::string> val) {
                   dump_cache = true;
                   cache_file = val[0];
@@ -102,7 +102,7 @@ int main(int argc, char* const* argv)
   bool drive_encryption_status = false;
   auto option_drive_encryption_status
       = bscrypto_app
-            .add_flag("-e", drive_encryption_status,
+            .add_flag("-e,--drive-encryption-status", drive_encryption_status,
                       "Show drive encryption status.")
             ->excludes(option_clear_encryption)
             ->excludes(option_dump_cache);
@@ -112,7 +112,7 @@ int main(int argc, char* const* argv)
   auto option_generate_pass
       = bscrypto_app
             .add_option(
-                "-g",
+                "-g,--generate-passphrase",
                 [&generate_passphrase, &keyfile](std::vector<std::string> val) {
                   generate_passphrase = true;
                   keyfile = val[0];
@@ -127,7 +127,7 @@ int main(int argc, char* const* argv)
   auto option_show_keyfile
       = bscrypto_app
             .add_option(
-                "-k",
+                "-k,--show-keyfile",
                 [&show_keydata, &keyfile](std::vector<std::string> val) {
                   show_keydata = true;
                   keyfile = val[0];
@@ -143,7 +143,7 @@ int main(int argc, char* const* argv)
   auto option_populate_cache
       = bscrypto_app
             .add_option(
-                "-p",
+                "-p,--populate-cachefile",
                 [&populate_cache, &cache_file](std::vector<std::string> val) {
                   populate_cache = true;
                   cache_file = val[0];
@@ -158,7 +158,7 @@ int main(int argc, char* const* argv)
   auto option_reset_cache
       = bscrypto_app
             .add_option(
-                "-r",
+                "-r,--reset-expiry-time",
                 [&reset_cache, &cache_file](std::vector<std::string> val) {
                   reset_cache = true;
                   cache_file = val[0];
@@ -173,7 +173,7 @@ int main(int argc, char* const* argv)
   auto option_set_encryption
       = bscrypto_app
             .add_option(
-                "-s",
+                "-s,--set-encryption-key",
                 [&set_encryption, &keyfile](std::vector<std::string> val) {
                   set_encryption = true;
                   keyfile = val[0];
@@ -190,7 +190,7 @@ int main(int argc, char* const* argv)
 
   bool volume_encryption_status = false;
   bscrypto_app
-      .add_flag("-v", volume_encryption_status,
+      .add_flag("-v,--volume-encryption-status", volume_encryption_status,
                 "Show volume encryption status.")
       ->excludes(option_clear_encryption)
       ->excludes(option_set_encryption)
@@ -204,7 +204,7 @@ int main(int argc, char* const* argv)
   std::string wrap_keyfile{};
   bscrypto_app
       .add_option(
-          "-w",
+          "-w,--wrap-unwrap-key",
           [&wrapped_keys, &wrap_keyfile](std::vector<std::string> val) {
             wrapped_keys = true;
             wrap_keyfile = val[0];
