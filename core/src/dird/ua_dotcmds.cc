@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -937,10 +937,10 @@ bool DotJobstatusCmd(UaContext* ua, const char* cmd)
     }
   }
 
+  if (!OpenClientDb(ua)) { return false; }
+
   ua->db->FillQuery(select, BareosDb::SQL_QUERY::get_jobstatus_details,
                     where.c_str());
-
-  if (!OpenClientDb(ua)) { return false; }
 
   ua->send->ArrayStart("jobstatus");
   retval = ua->db->ListSqlQuery(ua->jcr, select.c_str(), ua->send, HORZ_LIST,
