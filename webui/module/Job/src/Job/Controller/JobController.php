@@ -437,7 +437,7 @@ class JobController extends AbstractActionController
     }
 
     // Get required form construction data, jobs, clients, etc.
-    $clients = $this->getClientModel()->getClients($this->bsock);
+    $clients = $this->getClientModel()->getDotClients($this->bsock);
 
     // Get the different kind of jobs and merge them. Jobs of the following types
     // cannot nor wanted to be run. M,V,R,U,I,C and S.

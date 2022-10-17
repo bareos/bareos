@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2022 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -83,6 +83,36 @@ class DirectorModel
       }
       else {
          throw new \Exception('Missing argument.');
+      }
+   }
+
+   public function getBackupUnitReport(&$bsock=null, $api=0, $options=null)
+   {
+      if (!isset($bsock, $options)) {
+         throw new \Exception('Missing argument.');
+      }
+
+      // check for proper ACL settings
+      if ($api != 2) {
+         $cmd = 'status subscription';
+         $result = $bsock->send_command($cmd, 2);
+         $status = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         if (empty($status['result'])) {
+            return false;
+         }
+      }
+
+      $cmd = sprintf("status subscription %s", $options);
+      $result = $bsock->send_command($cmd, $api);
+
+      if ($api == 2) {
+         $status = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         if (isset($status['error'])) {
+           return false;
+         }
+         return $status['result'];
+      } else {
+         return $result;
       }
    }
 
