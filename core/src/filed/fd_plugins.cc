@@ -1863,6 +1863,7 @@ static int MyPluginBopen(BareosFilePacket* bfd,
     Dmsg1(debuglevel,
           "bopen: plugin wants to do read/write itself. status: %d\n",
           io.status);
+    bfd->filedes = 0;  // set filedes to 0 as otherwise IsBopen() fails.
     return io.status;
   }
 }
