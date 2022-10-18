@@ -437,10 +437,8 @@ int CreateFile(JobControlRecord* jcr,
       if (!makepath(attr, attr->ofname, new_mode, parent_mode, uid, gid, 0)) {
         return CF_ERROR;
       }
-      /*
-       * If we are using the Win32 Backup API, we open the directory so
-       * that the security info will be read and saved.
-       */
+      /* If we are using the Win32 Backup API, we open the directory so
+       * that the security info will be read and saved.  */
       if (!IsPortableBackup(bfd)) {
         if (IsBopen(bfd)) {
           Qmsg1(jcr, M_ERROR, 0, _("bpkt already open filedes=%d\n"),

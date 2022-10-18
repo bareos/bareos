@@ -507,11 +507,12 @@ static inline PyIoPacket* NativeToPyIoPacket(struct io_pkt* io)
     pIoPkt->fname = io->fname;
     pIoPkt->whence = io->whence;
     pIoPkt->offset = io->offset;
+    pIoPkt->filedes = io->filedes;
+    pIoPkt->do_io_in_core = io->do_io_in_core;
+
     if (io->func == IO_WRITE && io->count > 0) {
-      /*
-       * Only initialize the buffer with read data when we are writing and
-       * there is data.
-       */
+      /* Only initialize the buffer with read data when we are writing and
+       * there is data.*/
       pIoPkt->buf = PyByteArray_FromStringAndSize(io->buf, io->count);
       if (!pIoPkt->buf) {
         Py_DECREF((PyObject*)pIoPkt);
@@ -520,11 +521,8 @@ static inline PyIoPacket* NativeToPyIoPacket(struct io_pkt* io)
     } else {
       pIoPkt->buf = NULL;
     }
-
-    /*
-     * These must be set by the Python function but we initialize them to zero
-     * to be sure they have some valid setting an not random data.
-     */
+    /* These must be set by the Python function but we initialize them to zero
+     * to be sure they have some valid setting an not random data.  */
     pIoPkt->io_errno = 0;
     pIoPkt->lerror = 0;
     pIoPkt->win32 = false;
@@ -541,6 +539,9 @@ static inline bool PyIoPacketToNative(PyIoPacket* pIoPkt, struct io_pkt* io)
   io->lerror = pIoPkt->lerror;
   io->win32 = pIoPkt->win32;
   io->status = pIoPkt->status;
+  io->filedes = pIoPkt->filedes;
+  io->do_io_in_core = pIoPkt->do_io_in_core;
+
   if (io->func == IO_READ && io->status > 0) {
     // Only copy back the data when doing a read and there is data.
     if (PyByteArray_Check(pIoPkt->buf)) {
@@ -704,6 +705,7 @@ static inline PyRestorePacket* NativeToPyRestorePacket(struct restore_pkt* rp)
     pRestorePacket->RegexWhere = rp->RegexWhere;
     pRestorePacket->replace = rp->replace;
     pRestorePacket->create_status = rp->create_status;
+    pRestorePacket->filedes = rp->filedes;
   }
 
   return pRestorePacket;
@@ -714,6 +716,7 @@ static inline void PyRestorePacketToNative(PyRestorePacket* pRestorePacket,
 {
   // Only copy back the fields that are allowed to be changed.
   rp->create_status = pRestorePacket->create_status;
+  rp->filedes = pRestorePacket->filedes;
 }
 
 /**
@@ -2131,10 +2134,11 @@ static PyObject* PyIoPacket_repr(PyIoPacket* self)
   Mmsg(buf,
        "IoPacket(func=%d, count=%ld, flags=%ld, mode=%04o, "
        "buf=\"%s\", fname=\"%s\", status=%ld, io_errno=%ld, lerror=%ld, "
-       "whence=%ld, offset=%lld, win32=%d)",
+       "whence=%ld, offset=%lld, win32=%d, filedes=%d, do_io_in_core=%d)",
        self->func, self->count, self->flags, (self->mode & ~S_IFMT),
        PyGetByteArrayValue(self->buf), self->fname, self->status,
-       self->io_errno, self->lerror, self->whence, self->offset, self->win32);
+       self->io_errno, self->lerror, self->whence, self->offset, self->win32,
+       self->filedes, self->do_io_in_core);
   s = PyUnicode_FromString(buf.c_str());
 
   return s;
@@ -2143,19 +2147,12 @@ static PyObject* PyIoPacket_repr(PyIoPacket* self)
 // Initialization.
 static int PyIoPacket_init(PyIoPacket* self, PyObject* args, PyObject* kwds)
 {
-  static char* kwlist[] = {(char*)"func",
-                           (char*)"count",
-                           (char*)"flags",
-                           (char*)"mode",
-                           (char*)"buf",
-                           (char*)"fname",
-                           (char*)"status",
-                           (char*)"io_errno",
-                           (char*)"lerror",
-                           (char*)"whence",
-                           (char*)"offset",
-                           (char*)"win32",
-                           NULL};
+  static char* kwlist[]
+      = {(char*)"func",    (char*)"count",         (char*)"flags",
+         (char*)"mode",    (char*)"buf",           (char*)"fname",
+         (char*)"status",  (char*)"io_errno",      (char*)"lerror",
+         (char*)"whence",  (char*)"offset",        (char*)"win32",
+         (char*)"filedes", (char*)"do_io_in_core", NULL};
 
   self->func = 0;
   self->count = 0;
@@ -2169,12 +2166,14 @@ static int PyIoPacket_init(PyIoPacket* self, PyObject* args, PyObject* kwds)
   self->whence = 0;
   self->offset = 0;
   self->win32 = false;
+  self->filedes = -1;
+  self->do_io_in_core = false;
 
   if (!PyArg_ParseTupleAndKeywords(
-          args, kwds, "|Hiiiosiiiilc", kwlist, &self->func, &self->count,
+          args, kwds, "|Hiiiosiiiilcic", kwlist, &self->func, &self->count,
           &self->flags, &self->mode, &self->buf, &self->fname, &self->status,
           &self->io_errno, &self->lerror, &self->whence, &self->offset,
-          &self->win32)) {
+          &self->win32, &self->filedes, &self->do_io_in_core)) {
     return -1;
   }
 

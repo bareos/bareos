@@ -285,6 +285,7 @@ typedef struct {
   const char* RegexWhere;       /* Regex where */
   int replace;                  /* Replace flag */
   int create_status;            /* Status from createFile() */
+  int filedes;                  /* filedescriptor for read/write in core */
 } PyRestorePacket;
 
 // Forward declarations of type specific functions.
@@ -326,7 +327,9 @@ static PyMemberDef PyRestorePacket_members[] = {
      (char*)"Replace flag"},
     {(char*)"create_status", T_INT, offsetof(PyRestorePacket, create_status), 0,
      (char*)"Status from createFile()"},
-    {} /* Sentinel */};
+    {(char*)"filedes", T_INT, offsetof(PyRestorePacket, filedes), 0,
+     (char*)"file descriptor of current file"},
+    {NULL}};
 
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
@@ -360,6 +363,8 @@ typedef struct {
   int32_t whence;              /* Lseek argument */
   int64_t offset;              /* Lseek argument */
   bool win32;                  /* Win32 GetLastError returned */
+  int filedes;                 /* filedescriptor for read/write in core */
+  bool do_io_in_core;          /* do i/o (read/write) in core, not in plugin */
 } PyIoPacket;
 
 // Forward declarations of type specific functions.
@@ -396,7 +401,11 @@ static PyMemberDef PyIoPacket_members[]
         (char*)"Lseek argument"},
        {(char*)"win32", T_BOOL, offsetof(PyIoPacket, win32), 0,
         (char*)"Win32 GetLastError returned"},
-       {} /* Sentinel */};
+       {(char*)"filedes", T_INT, offsetof(PyIoPacket, filedes), 0,
+        (char*)"file descriptor of current file"},
+       {(char*)"do_io_in_core", T_BOOL, offsetof(PyIoPacket, do_io_in_core), 0,
+        (char*)"set to true if i/o (read/write) should be done in core"},
+       {NULL}};
 
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wmissing-field-initializers"

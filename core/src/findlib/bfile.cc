@@ -861,8 +861,13 @@ ssize_t bread(BareosFilePacket* bfd, void* buf, size_t count)
 {
   bfd->rw_bytes = 0;
 
-  if (bfd->cmd_plugin && plugin_bread) { return plugin_bread(bfd, buf, count); }
-
+  if (bfd->cmd_plugin && plugin_bread) {
+    // invalid filehandle -> plugin does read
+    if (bfd->fh == INVALID_HANDLE_VALUE) {
+      return plugin_bread(bfd, buf, count);
+    }
+    Dmsg1(400, "bread handled in core via bfd->fh=%d\n", bfd->fh);
+  }
   if (bfd->use_backup_api) {
     if (!p_BackupRead(bfd->fh, (BYTE*)buf, count, &bfd->rw_bytes,
                       0,                                /* no Abort */
@@ -890,8 +895,13 @@ ssize_t bwrite(BareosFilePacket* bfd, void* buf, size_t count)
   bfd->rw_bytes = 0;
 
   if (bfd->cmd_plugin && plugin_bwrite) {
-    return plugin_bwrite(bfd, buf, count);
+    // invalid filehandle -> plugin does read
+    if (bfd->fh == INVALID_HANDLE_VALUE) {
+      return plugin_bwrite(bfd, buf, count);
+    }
+    Dmsg1(400, "bwrite handled in core via bfd->fh=%d\n", bfd->fh);
   }
+
 
   if (bfd->use_backup_api) {
     if (!p_BackupWrite(bfd->fh, (BYTE*)buf, count, &bfd->rw_bytes,
@@ -1046,9 +1056,9 @@ int bopen(BareosFilePacket* bfd,
 
   if (bfd->cmd_plugin && plugin_bopen) {
     Dmsg1(400, "call plugin_bopen fname=%s\n", fname);
-    bfd->filedes = plugin_bopen(bfd, fname, flags, mode);
-    Dmsg1(400, "Plugin bopen stat=%d\n", bfd->filedes);
-    return bfd->filedes;
+    int retval = plugin_bopen(bfd, fname, flags, mode);
+    Dmsg1(400, "Plugin bopen stat=%d\n", retval);
+    return retval;
   }
 
   /* Normal file open */
@@ -1123,6 +1133,7 @@ int bclose(BareosFilePacket* bfd)
   if (bfd->cmd_plugin && plugin_bclose) {
     status = plugin_bclose(bfd);
     bfd->filedes = -1;
+    bfd->do_io_in_core = false;
     bfd->cmd_plugin = false;
   } else {
 #  if defined(HAVE_POSIX_FADVISE) && defined(POSIX_FADV_DONTNEED)
@@ -1139,6 +1150,7 @@ int bclose(BareosFilePacket* bfd)
     bfd->BErrNo = errno;
     bfd->filedes = -1;
     bfd->cmd_plugin = false;
+    bfd->do_io_in_core = false;
   }
 
   return status;
@@ -1146,23 +1158,24 @@ int bclose(BareosFilePacket* bfd)
 
 ssize_t bread(BareosFilePacket* bfd, void* buf, size_t count)
 {
-  ssize_t status;
+  if (bfd->cmd_plugin && plugin_bread)
+    // plugin does read/write
+    if (!bfd->do_io_in_core) { return plugin_bread(bfd, buf, count); }
 
-  if (bfd->cmd_plugin && plugin_bread) { return plugin_bread(bfd, buf, count); }
-
-  status = read(bfd->filedes, buf, count);
+  Dmsg1(400, "bread handled in core via bfd->filedes=%d\n", bfd->filedes);
+  ssize_t status = read(bfd->filedes, buf, count);
   bfd->BErrNo = errno;
   return status;
 }
 
 ssize_t bwrite(BareosFilePacket* bfd, void* buf, size_t count)
 {
-  ssize_t status;
+  if (bfd->cmd_plugin && plugin_bwrite)
+    // plugin does read/write
+    if (!bfd->do_io_in_core) { return plugin_bwrite(bfd, buf, count); }
 
-  if (bfd->cmd_plugin && plugin_bwrite) {
-    return plugin_bwrite(bfd, buf, count);
-  }
-  status = write(bfd->filedes, buf, count);
+  Dmsg1(400, "bwrite handled in core via bfd->filedes=%d\n", bfd->filedes);
+  ssize_t status = write(bfd->filedes, buf, count);
   bfd->BErrNo = errno;
   return status;
 }

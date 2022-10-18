@@ -76,7 +76,7 @@ struct BareosFilePacket {
   bool encrypted = false;           /**< set if using ReadEncryptedFileRaw/WriteEncryptedFileRaw */
   int mode = BF_CLOSED;             /**< set if file is open */
   HANDLE fh = INVALID_HANDLE_VALUE; /**< Win32 file handle */
-  int filedes = 0;                  /**< fd if doing Unix style */
+  int filedes = 0;                  /**< filedes if doing Unix style */
   LPVOID lplugin_private_context = nullptr;       /**< BackupRead/Write context */
   PVOID pvContext = nullptr;        /**< Encryption context */
   POOLMEM* errmsg = nullptr;        /**< error message buffer */
@@ -87,10 +87,10 @@ struct BareosFilePacket {
   JobControlRecord* jcr = nullptr;  /**< jcr for editing job codes */
   PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT win32Decomplugin_private_context{}; /**< context for decomposition
                                                                    of win32 backup streams */
-  int use_backup_decomp = 0;  /**< set if using BackupRead Stream Decomposition */
+  int use_backup_decomp = 0; /**< set if using BackupRead Stream Decomposition */
   bool reparse_point = false; /**< set if reparse point */
   bool cmd_plugin = false;    /**< set if we have a command plugin */
-  bool do_io_in_core{false};  /**< set if core should read/write from/to filedes */
+  bool do_io_in_core{false};      /**< set if core should read/write from/to filedes */
 };
 /* clang-format on */
 
@@ -111,7 +111,7 @@ struct BareosFilePacket {
   int filedes{0};                 /**< filedescriptor on Unix */
   int flags_{0};                  /**< open flags */
   int BErrNo{0};                  /**< errno */
-  int32_t lerror{0};              /**< not used - simplies Win32 builds */
+  int32_t lerror{0};              /**< not used - simplifies Win32 builds */
   boffset_t offset{0};            /**< Delta offset */
   JobControlRecord* jcr{nullptr}; /**< jcr for editing job codes */
   PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT win32Decomplugin_private_context{}; /**< context for decomposition

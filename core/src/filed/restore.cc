@@ -569,13 +569,11 @@ void DoRestore(JobControlRecord* jcr)
 
         BuildAttrOutputFnames(jcr, attr);
 
-        /*
-         * Try to actually create the file, which returns a status telling
-         * us if we need to extract or not.
-         */
+        /* Try to actually create the file, which returns a status telling
+         * us if we need to extract or not.  */
         jcr->fd_impl->num_files_examined++;
         rctx.extract = false;
-        status = CF_CORE; /* By default, let Bareos's core handle it */
+        status = CF_CORE; /* By default, let Bareos' core handle it */
 
         if (jcr->IsPlugin()) {
           status
@@ -610,10 +608,8 @@ void DoRestore(JobControlRecord* jcr)
               FromBase64(&rsrc_len, attr->attrEx);
               if (attr->type == FT_REG && rsrc_len > 0) { rctx.extract = true; }
 
-              /*
-               * Do not count the resource forks as regular files being
-               * restored.
-               */
+              /* Do not count the resource forks as regular files being
+               * restored.  */
               if (rsrc_len == 0) { jcr->JobFiles++; }
             } else {
               jcr->JobFiles++;
@@ -1301,10 +1297,8 @@ bail_out:
 // If extracting, close any previous stream
 static bool ClosePreviousStream(JobControlRecord* jcr, r_ctx& rctx)
 {
-  /*
-   * If extracting, it was from previous stream, so
-   * close the output file and validate the signature.
-   */
+  /* If extracting, it was from previous stream, so
+   * close the output file and validate the signature.  */
   if (rctx.extract) {
     if (rctx.size > 0 && !IsBopen(&rctx.bfd)) {
       Jmsg0(rctx.jcr, M_ERROR, 0,

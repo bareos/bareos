@@ -139,8 +139,14 @@ class TestBareosFd(unittest.TestCase):
     def test_IoPacket(self):
         test_IoPacket = bareosfd.IoPacket()
         self.assertEqual(
-            'IoPacket(func=0, count=0, flags=0, mode=0000, buf="", fname="<NULL>", status=0, io_errno=0, lerror=0, whence=0, offset=0, win32=0)',
+            'IoPacket(func=0, count=0, flags=0, mode=0000, buf="", fname="<NULL>", status=0, io_errno=0, lerror=0, whence=0, offset=0, win32=0, filedes=-1, do_io_in_core=0)',
             str(test_IoPacket),
+        )
+        test_IoPacket2 = bareosfd.IoPacket()
+        test_IoPacket2.do_io_in_core = True
+        self.assertEqual(
+            'IoPacket(func=0, count=0, flags=0, mode=0000, buf="", fname="<NULL>", status=0, io_errno=0, lerror=0, whence=0, offset=0, win32=0, filedes=-1, do_io_in_core=1)',
+            str(test_IoPacket2),
         )
 
     def test_AclPacket(self):
