@@ -146,9 +146,9 @@ function setChartType(value) {
 
 function getCurrentTime() {
   let timezoneoffset = new Date().getTimezoneOffset() * 60 * 1000;
-  var currenttime = new Date().getTime();
+  let currenttime = new Date().getTime();
 
-  return (currenttime -= timezoneoffset);
+  return (currenttime - timezoneoffset);
 }
 
 function formatBytes(value) {
