@@ -87,9 +87,10 @@ struct BareosFilePacket {
   JobControlRecord* jcr = nullptr;  /**< jcr for editing job codes */
   PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT win32Decomplugin_private_context{}; /**< context for decomposition
                                                                    of win32 backup streams */
-  int use_backup_decomp = 0; /**< set if using BackupRead Stream Decomposition */
+  int use_backup_decomp = 0;  /**< set if using BackupRead Stream Decomposition */
   bool reparse_point = false; /**< set if reparse point */
   bool cmd_plugin = false;    /**< set if we have a command plugin */
+  bool do_io_in_core{false};  /**< set if core should read/write from/to filedes */
 };
 /* clang-format on */
 
@@ -118,6 +119,7 @@ struct BareosFilePacket {
   int use_backup_decomp{0};       /**< set if using BackupRead Stream Decomposition */
   bool reparse_point{false};      /**< not used in Unix */
   bool cmd_plugin{false};         /**< set if we have a command plugin */
+  bool do_io_in_core{false};      /**< set if core should read/write from/to filedes */
 };
 /* clang-format on */
 
