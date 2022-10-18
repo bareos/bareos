@@ -137,9 +137,8 @@ void StartSocketServer(dlist<IPADDR>* addrs)
   }
 
   sock_fds = new alist<s_sockfd*>(10, not_owned_by_alist);
-  BnetThreadServerTcp(addrs, me->MaxConnections, sock_fds, thread_list,
-                      HandleConnectionRequest, my_config, nullptr,
-                      UserAgentShutdownCallback);
+  BnetThreadServerTcp(addrs, sock_fds, thread_list, HandleConnectionRequest,
+                      my_config, nullptr, UserAgentShutdownCallback);
 }
 
 void StopSocketServer()

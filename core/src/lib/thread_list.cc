@@ -51,8 +51,6 @@ class ThreadListPrivate {
   friend class ThreadGuard;
 
  private:
-  std::size_t maximum_thread_count_{};
-
   std::shared_ptr<ThreadListContainer> l{
       std::make_shared<ThreadListContainer>()};
 
@@ -67,12 +65,10 @@ class ThreadListPrivate {
 ThreadList::ThreadList() : impl_(std::make_unique<ThreadListPrivate>()) {}
 ThreadList::~ThreadList() = default;
 
-void ThreadList::Init(int maximum_thread_count,
-                      ThreadHandler ThreadInvokedHandler,
+void ThreadList::Init(ThreadHandler ThreadInvokedHandler,
                       ShutdownCallback ShutdownCallback)
 {
   if (!impl_->l->thread_list_.empty()) { return; }
-  impl_->maximum_thread_count_ = maximum_thread_count;
   impl_->ThreadInvokedHandler_ = std::move(ThreadInvokedHandler);
   impl_->ShutdownCallback_ = std::move(ShutdownCallback);
 }
@@ -209,12 +205,6 @@ static void WorkerThread(
 bool ThreadList::CreateAndAddNewThread(ConfigurationParser* config, void* data)
 {
   std::lock_guard<std::mutex> lg(impl_->l->thread_list_mutex_);
-
-  if (impl_->l->thread_list_.size() >= impl_->maximum_thread_count_) {
-    Dmsg1(debuglevel, "Number of maximum threads exceeded: %d\n",
-          impl_->maximum_thread_count_);
-    return false;
-  }
 
   auto run_condition = std::make_shared<IsRunningCondition>();
   bool success{false};

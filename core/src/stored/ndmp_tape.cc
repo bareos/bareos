@@ -89,7 +89,6 @@ namespace storagedaemon {
  */
 struct ndmp_thread_server_args {
   dlist<IPADDR>* addr_list;
-  int max_clients;
   ThreadList* thread_list;
 };
 
@@ -1173,7 +1172,7 @@ extern "C" void* ndmp_thread_server(void* arg)
 #  endif
   }
 
-  ntsa->thread_list->Init(ntsa->max_clients, HandleNdmpConnectionRequest);
+  ntsa->thread_list->Init(HandleNdmpConnectionRequest);
 
 #  ifdef HAVE_POLL
   // Allocate on stack from -- no need to free
@@ -1277,12 +1276,11 @@ extern "C" void* ndmp_thread_server(void* arg)
   return NULL;
 }
 
-int StartNdmpThreadServer(dlist<IPADDR>* addr_list, int max_clients)
+int StartNdmpThreadServer(dlist<IPADDR>* addr_list)
 {
   int status;
 
   ndmp_thread_server_args.addr_list = addr_list;
-  ndmp_thread_server_args.max_clients = max_clients;
   ndmp_thread_server_args.thread_list = &thread_list;
 
   if ((status = pthread_create(&ndmp_tid, NULL, ndmp_thread_server,

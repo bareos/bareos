@@ -27,7 +27,7 @@ namespace storagedaemon {
 
 void EndOfNdmpBackup(JobControlRecord* jcr);
 void EndOfNdmpRestore(JobControlRecord* jcr);
-int StartNdmpThreadServer(dlist<IPADDR>* addr_list, int max_clients);
+int StartNdmpThreadServer(dlist<IPADDR>* addr_list);
 void StopNdmpThreadServer();
 
 } /* namespace storagedaemon */

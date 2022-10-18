@@ -39,8 +39,7 @@ class ThreadList {
       = std::function<void*(ConfigurationParser* config, void* data)>;
   using ShutdownCallback = std::function<void*(void* data)>;
 
-  void Init(int maximum_thread_count,
-            ThreadHandler ThreadInvokedHandler,
+  void Init(ThreadHandler ThreadInvokedHandler,
             ShutdownCallback ShutdownCallback = nullptr);
 
   bool CreateAndAddNewThread(ConfigurationParser* config, void* data);

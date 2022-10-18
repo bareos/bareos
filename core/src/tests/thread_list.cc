@@ -94,7 +94,7 @@ TEST(thread_list, thread_list_startup_and_shutdown)
 {
   std::unique_ptr<ThreadList> t(std::make_unique<ThreadList>());
 
-  t->Init(maximum_allowed_thread_count, ThreadHandler, ShutdownCallback);
+  t->Init(ThreadHandler, ShutdownCallback);
 
   for (int i = 0; i < try_to_start_thread_count; i++) {
     auto wc(std::make_unique<WaitCondition>());
@@ -128,7 +128,7 @@ TEST(thread_list, thread_random_shutdown)
 {
   std::unique_ptr<ThreadList> t(std::make_unique<ThreadList>());
 
-  t->Init(maximum_allowed_thread_count, ThreadHandlerSleepRandomTime, nullptr);
+  t->Init(ThreadHandlerSleepRandomTime, nullptr);
 
   thread_counter = 0;
   for (int i = 0; i < maximum_allowed_thread_count; i++) {

@@ -244,7 +244,6 @@ int OpenSocketAndBind(IPADDR* ipaddr,
  */
 void BnetThreadServerTcp(
     dlist<IPADDR>* addr_list,
-    int max_clients,
     alist<s_sockfd*>* sockfds,
     ThreadList& thread_list,
     std::function<void*(ConfigurationParser* config, void* bsock)>
@@ -298,8 +297,7 @@ void BnetThreadServerTcp(
 #endif
   }
 
-  thread_list.Init(max_clients, HandleConnectionRequest,
-                   UserAgentShutdownCallback);
+  thread_list.Init(HandleConnectionRequest, UserAgentShutdownCallback);
 
 #ifdef HAVE_POLL
   struct pollfd* pfds = (struct pollfd*)alloca(sizeof(struct pollfd)

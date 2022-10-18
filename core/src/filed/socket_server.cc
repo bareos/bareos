@@ -122,11 +122,9 @@ void StartSocketServer(dlist<IPADDR>* addrs)
     Dmsg1(10, "filed: listening on port %d\n", p->GetPortHostOrder());
   }
 
-  // Permit MaxConnections connections.
   sock_fds = new alist<s_sockfd*>(10, not_owned_by_alist);
-  BnetThreadServerTcp(addrs, me->MaxConnections, sock_fds, thread_list,
-                      HandleConnectionRequest, my_config, nullptr,
-                      UserAgentShutdownCallback);
+  BnetThreadServerTcp(addrs, sock_fds, thread_list, HandleConnectionRequest,
+                      my_config, nullptr, UserAgentShutdownCallback);
 }
 
 void StopSocketServer(bool wait)

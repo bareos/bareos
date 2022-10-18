@@ -44,9 +44,7 @@ struct s_sockfd {
   int port;
 };
 
-void BnetThreadServerTcp(
-    dlist<IPADDR>* addr_list,
-    int max_clients,
+void BnetThreadServerTcp(dlist<IPADDR>* addr_list,
     alist<s_sockfd*>* sockfds,
     ThreadList& thread_list,
     std::function<void*(ConfigurationParser* config, void* bsock)>

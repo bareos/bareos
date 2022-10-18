@@ -134,12 +134,10 @@ extern "C" void* connect_thread(void* arg)
 {
   SetJcrInThreadSpecificData(nullptr);
 
-  // Permit MaxConnections connections.
   sock_fds = new alist<s_sockfd*>(10, not_owned_by_alist);
-  BnetThreadServerTcp((dlist<IPADDR>*)arg, me->MaxConnections, sock_fds,
-                      thread_list, HandleConnectionRequest, my_config,
-                      &server_state, UserAgentShutdownCallback,
-                      CleanupConnectionPool);
+  BnetThreadServerTcp((dlist<IPADDR>*)arg, sock_fds, thread_list,
+                      HandleConnectionRequest, my_config, &server_state,
+                      UserAgentShutdownCallback, CleanupConnectionPool);
 
   return NULL;
 }
