@@ -158,7 +158,7 @@ class AnalyticsController extends AbstractActionController
         $this->bsock->disconnect();
         $jobs = array();
         foreach($result as $job) {
-          $lastcheckpointtime = new \DateTime($job['lastcheckpointtime']);
+          $lastcheckpointtime = new \DateTime($job['lastcheckpointtime'], new \DateTimeZone('UTC'));
           $job['lastcheckpointtime'] = $lastcheckpointtime->format('U')*1000;
           array_push($jobs, $job);
         }
