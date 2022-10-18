@@ -87,7 +87,7 @@ static ResourceItem store_items[] = {
   {"PluginNames", CFG_TYPE_PLUGIN_NAMES, ITEM(res_store, plugin_names), 0, 0, NULL, NULL, NULL},
   {"ScriptsDirectory", CFG_TYPE_DIR, ITEM(res_store, scripts_directory), 0, 0, NULL, NULL, NULL},
   {"MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_store, MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "20", NULL, NULL},
-  {"MaximumConnections", CFG_TYPE_PINT32, ITEM(res_store, MaxConnections), 0, CFG_ITEM_DEFAULT, "42", "15.2.3-", NULL},
+  {"MaximumConnections", CFG_TYPE_PINT32, ITEM(res_store, MaxConnections), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "42", "15.2.3-", NULL},
   {"Messages", CFG_TYPE_RES, ITEM(res_store, messages), R_MSGS, 0, NULL, NULL, NULL},
   {"SdConnectTimeout", CFG_TYPE_TIME, ITEM(res_store, SDConnectTimeout), 0, CFG_ITEM_DEFAULT, "1800" /* 30 minutes */, NULL, NULL},
   {"FdConnectTimeout", CFG_TYPE_TIME, ITEM(res_store, FDConnectTimeout), 0, CFG_ITEM_DEFAULT, "1800" /* 30 minutes */, NULL, NULL},
@@ -777,9 +777,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
           p->device_resources = res_changer->device_resources;
 
           DeviceResource* q = nullptr;
-          foreach_alist (q, p->device_resources) {
-            q->changer_res = p;
-          }
+          foreach_alist (q, p->device_resources) { q->changer_res = p; }
 
           int errstat;
           if ((errstat = RwlInit(&p->changer_lock, PRIO_SD_ACH_ACCESS)) != 0) {

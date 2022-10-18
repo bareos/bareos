@@ -133,7 +133,7 @@ static ResourceItem dir_items[] = {
 #endif
   { "Subscriptions", CFG_TYPE_PINT32, ITEM(res_dir, subscriptions), 0, CFG_ITEM_DEFAULT, "0", "12.4.4-", NULL },
   { "MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_dir, MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "1", NULL, NULL },
-  { "MaximumConnections", CFG_TYPE_PINT32, ITEM(res_dir, MaxConnections), 0, CFG_ITEM_DEFAULT, "30", NULL, NULL },
+  { "MaximumConnections", CFG_TYPE_PINT32, ITEM(res_dir, MaxConnections), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "30", NULL, NULL },
   { "MaximumConsoleConnections", CFG_TYPE_PINT32, ITEM(res_dir, MaxConsoleConnections), 0, CFG_ITEM_DEFAULT, "20", NULL, NULL },
   { "Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_dir, password_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
   { "FdConnectTimeout", CFG_TYPE_TIME, ITEM(res_dir, FDConnectTimeout), 0, CFG_ITEM_DEFAULT, "180" /* 3 minutes */, NULL, NULL },
