@@ -15,10 +15,10 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
   - fix show verbose for RunScripts
   - execute console runscripts only on the Director
 - devtools/dist-tarball.sh: fix name if version contains "~pre" [PR #1220]
+- dird: fix crash in .jobstatus [PR #1286]
 
 ### Documentation
 - Univention Corporate Server (UCS) >= 5: same support as for other Linux distributions, but no extended integration as for UCS < 5 [PR #1245]
-
 - mssql add a warning in case of pitr to run another backup full or diff afterwards [PR #1246]
 - improve troubleshooting and debugging chapter [PR #1246]
 - update Appendix/HardwareSizing DB size with new numbers and formulas [BUG #1477][PR #1246]
@@ -612,4 +612,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1256]: https://github.com/bareos/bareos/pull/1256
 [PR #1259]: https://github.com/bareos/bareos/pull/1259
 [PR #1263]: https://github.com/bareos/bareos/pull/1263
+[PR #1286]: https://github.com/bareos/bareos/pull/1286
 [unreleased]: https://github.com/bareos/bareos/tree/master
