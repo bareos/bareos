@@ -571,8 +571,7 @@ void BareosDb::UpgradeCopies(const char* jobids)
        JT_COPY);
   SqlQuery(query.c_str());
 
-  Mmsg(query, "DROP TABLE cpy_tmp");
-  SqlQuery(query.c_str());
+  SqlQuery("DROP TABLE cpy_tmp");
 }
 #endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || \
           HAVE_DBI */
