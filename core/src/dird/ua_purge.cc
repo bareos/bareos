@@ -334,9 +334,7 @@ std::string PrepareJobidsTobedeleted(UaContext* ua,
   return jobids.Join(',');
 }
 
-/**
- * Delete given jobids (all records) from the catalog.
- */
+// Delete given jobids (all records) from the catalog.
 void PurgeJobListFromCatalog(UaContext* ua, std::vector<JobId_t>& deletion_list)
 {
   Dmsg1(150, "num_ids=%d\n", deletion_list.size());
@@ -348,9 +346,7 @@ void PurgeJobListFromCatalog(UaContext* ua, std::vector<JobId_t>& deletion_list)
   PurgeJobsFromCatalog(ua, jobids_to_delete_string.c_str());
 }
 
-/**
- * Delete files of given list of jobids
- */
+// Delete files of given list of jobids
 void PurgeFilesFromJobList(UaContext* ua, std::vector<JobId_t>& del)
 {
   std::string jobids_to_delete = PrepareJobidsTobedeleted(ua, del);
