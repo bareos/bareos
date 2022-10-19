@@ -134,29 +134,14 @@ struct _progdata {
 
 int registerBareosEvents(void*, ...) { return 0; };
 
-int getBareosValue(void*, [[maybe_unused]] int var, void*) { return 0; };
+int getBareosValue(void*, int, void*) { return 0; };
 
-int setBareosValue(void*, [[maybe_unused]] int var, void*) { return 0; };
+int setBareosValue(void*, int, void*) { return 0; };
 
-int DebugMessage(void*, const char*, int, int, const char*, ...)
+int DebugMessage(void*, const char*, int, int, const char*, ...) { return 0; };
+
+int JobMessage(void*, const char*, int, int, int64_t, const char*, ...)
 {
-#ifdef DEBUGMSG
-  printf("DG: %s:%d %s\n", file, line, fmt);
-#endif
-  return 0;
-};
-
-int JobMessage(void*,
-               const char*,
-               int,
-               [[maybe_unused]] int type,
-               [[maybe_unused]] int64_t mtime,
-               const char*,
-               ...)
-{
-#ifdef DEBUGMSG
-  printf("JM: %s:%d <%d> %s\n", file, line, type, fmt);
-#endif
   return 0;
 };
 
