@@ -18,8 +18,6 @@
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
-cmake_minimum_required(VERSION 3.0)
-
 add_library(
   droplet STATIC
   src/conn.c

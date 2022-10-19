@@ -18,9 +18,6 @@
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
-cmake_minimum_required(VERSION 3.0)
-# (for AUTOUIC)
-
 if(HAVE_WIN32)
   add_definitions(-D_STAT_DEFINED=1)
 endif()

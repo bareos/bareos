@@ -17,10 +17,6 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-cmake_policy(SET CMP0057 NEW) # IF(.. IN_LIST ..)
-cmake_policy(SET CMP0053 NEW)
-cmake_policy(SET CMP0064 NEW) # IF(TEST ...)
-
 macro(create_systemtests_directory)
   configurefilestosystemtest("systemtests" "data" "*.tgz" COPYONLY "")
   configurefilestosystemtest("systemtests" "data" "*.gz" COPYONLY "")

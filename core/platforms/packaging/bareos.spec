@@ -148,7 +148,7 @@ BuildRequires: git-core
 
 Source0: %{name}-%{version}.tar.gz
 
-BuildRequires: cmake >= 3.12
+BuildRequires: cmake >= 3.17
 BuildRequires: gcc
 BuildRequires: gcc-c++
 BuildRequires: make

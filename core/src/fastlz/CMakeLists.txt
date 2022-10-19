@@ -17,7 +17,6 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
-cmake_minimum_required(VERSION 3.0)
 project(bareosfastlz LANGUAGES C)
 
 add_library(
