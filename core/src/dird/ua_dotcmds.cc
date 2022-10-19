@@ -937,10 +937,10 @@ bool DotJobstatusCmd(UaContext* ua, const char* cmd)
     }
   }
 
+  if (!OpenClientDb(ua)) { return false; }
+
   ua->db->FillQuery(select, BareosDb::SQL_QUERY::get_jobstatus_details,
                     where.c_str());
-
-  if (!OpenClientDb(ua)) { return false; }
 
   ua->send->ArrayStart("jobstatus");
   retval = ua->db->ListSqlQuery(ua->jcr, select.c_str(), ua->send, HORZ_LIST,

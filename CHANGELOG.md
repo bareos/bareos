@@ -99,6 +99,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: fix password string length limitation [Issue #1480][PR #1251]
 - systemtest: fixed issues with systemtests not succeeding on first try [PR #1186]
 - btape: dumplabel only when label is valid [PR #1266]
+- dird: fix crash in .jobstatus [PR #1278]
 
 ### Changed
 - contrib: rename Python modules to satisfy PEP8 [PR #768]
@@ -312,6 +313,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1244]: https://github.com/bareos/bareos/pull/1244
 [PR #1247]: https://github.com/bareos/bareos/pull/1247
 [PR #1248]: https://github.com/bareos/bareos/pull/1248
+[PR #1249]: https://github.com/bareos/bareos/pull/1249
 [PR #1251]: https://github.com/bareos/bareos/pull/1251
 [PR #1253]: https://github.com/bareos/bareos/pull/1253
 [PR #1254]: https://github.com/bareos/bareos/pull/1254
@@ -320,4 +322,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1266]: https://github.com/bareos/bareos/pull/1266
 [PR #1267]: https://github.com/bareos/bareos/pull/1267
 [PR #1268]: https://github.com/bareos/bareos/pull/1268
+[PR #1275]: https://github.com/bareos/bareos/pull/1275
+[PR #1278]: https://github.com/bareos/bareos/pull/1278
 [unreleased]: https://github.com/bareos/bareos/tree/master
