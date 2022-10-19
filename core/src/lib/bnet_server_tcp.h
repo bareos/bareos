@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -44,7 +44,8 @@ struct s_sockfd {
   int port;
 };
 
-void BnetThreadServerTcp(dlist<IPADDR>* addr_list,
+void BnetThreadServerTcp(
+    dlist<IPADDR>* addr_list,
     alist<s_sockfd*>* sockfds,
     ThreadList& thread_list,
     std::function<void*(ConfigurationParser* config, void* bsock)>
