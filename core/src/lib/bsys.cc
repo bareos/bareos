@@ -642,16 +642,6 @@ void ReadStateFile(const char* dir, const char* progname, int port)
   secure_erase_guard.Release();
 }
 
-static void SafeTheLastWritePosition(std::ofstream& file,
-                                     [[maybe_unused]] uint64_t pos)
-{
-  std::streampos position_after_export = file.tellp();
-
-  pos = (position_after_export == static_cast<std::streampos>(-1))
-            ? static_cast<std::streampos>(0)
-            : position_after_export;
-}
-
 void WriteStateFile(const char* dir, const char* progname, int port)
 {
   std::string filename = CreateFileNameFrom(dir, progname, port);
@@ -679,9 +669,7 @@ void WriteStateFile(const char* dir, const char* progname, int port)
     Dmsg1(100, "write_last_jobs seek to %d\n", (int)state_hdr.last_jobs_addr);
     file.seekp(state_hdr.last_jobs_addr);
 
-    if (RecentJobResultsList::ExportToFile(file)) {
-      SafeTheLastWritePosition(file, state_hdr.end_of_recent_job_results_list);
-    }
+    RecentJobResultsList::ExportToFile(file);
 
     file.seekp(0);
     file.write(reinterpret_cast<char*>(&state_hdr), sizeof(StateFileHeader));
