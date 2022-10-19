@@ -865,7 +865,7 @@ int GetPruneListForVolume(UaContext* ua,
   if (!ua->db->SqlQuery(query.c_str(), FileDeleteHandler,
                         static_cast<void*>(&prune_list))) {
     if (ua->verbose) { ua->ErrorMsg("%s", ua->db->strerror()); }
-    Dmsg0(050, "Count failed\n");
+    Dmsg0(050, "Adding eligible jobs for pruning failed\n");
     return 0;
   }
 
@@ -882,7 +882,9 @@ int GetPruneListForVolume(UaContext* ua,
     if (!ua->db->SqlQuery(query.c_str(), FileDeleteHandler,
                           static_cast<void*>(&prune_list))) {
       if (ua->verbose) { ua->ErrorMsg("%s", ua->db->strerror()); }
-      Dmsg0(050, "Count failed\n");
+      Dmsg0(050,
+            "Adding migration and copy child jobs eligible for pruning "
+            "failed\n");
       return 0;
     }
   }
