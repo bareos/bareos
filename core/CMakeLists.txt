@@ -157,11 +157,6 @@ if(cxx_compiler_macro_prefix_map)
   )
 endif()
 
-check_cxx_compiler_flag(-Wno-unknown-pragmas compiler_has_no_unknown_pragmas)
-if(${compiler_has_no_unknown_pragmas})
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas")
-endif()
-
 check_cxx_compiler_flag(-Winvalid-offsetof compiler_has_invalid_offsetof)
 if(compiler_has_invalid_offsetof)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-invalid-offsetof")

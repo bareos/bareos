@@ -33,12 +33,9 @@
 #include <comutil.h>
 
 // Microsoft® MSSQL Virtual Device Interface (VDI)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunknown-pragmas"
 #include "vdi.h"
 #include "vdierror.h"
 #include "vdiguid.h"
-#pragma GCC diagnostic pop
 
 // Microsoft® ActiveX® Data Objects
 #include <initguid.h>
