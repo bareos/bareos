@@ -287,11 +287,17 @@ int main(int argc, char* argv[])
     return 0;
   }
 
-  if (!test_config) { /* we don't need to do this block in test mode */
-    if (!foreground) {
-      daemon_start("bareos-dir", pidfile_fd, pidfile_path);
-      InitStackDump(); /* grab new pid */
+  if (my_config->HasWarnings()) {
+    // messaging not initialized, so Jmsg with  M_WARNING doesn't work
+    fprintf(stderr, _("There are configuration warnings:\n"));
+    for (auto& warning : my_config->GetWarnings()) {
+      fprintf(stderr, " * %s\n", warning.c_str());
     }
+  }
+
+  if (!test_config && !foreground) {
+    daemon_start("bareos-dir", pidfile_fd, pidfile_path);
+    InitStackDump();  // grab new pid
   }
 
   if (InitCrypto() != 0) {
@@ -302,8 +308,7 @@ int main(int argc, char* argv[])
     return 0;
   }
 
-  if (!test_config) { /* we don't need to do this block in test mode */
-    /* Create pid must come after we are a daemon -- so we have our final pid */
+  if (!test_config) {
     ReadStateFile(me->working_directory, "bareos-dir",
                   GetFirstPortHostOrder(me->DIRaddrs));
   }
@@ -332,16 +337,7 @@ int main(int argc, char* argv[])
     return 0;
   }
 
-  if (test_config) {
-    if (my_config->HasWarnings()) {
-      /* messaging not initialized, so Jmsg with  M_WARNING doesn't work */
-      fprintf(stderr, _("There are configuration warnings:\n"));
-      for (auto& warning : my_config->GetWarnings()) {
-        fprintf(stderr, " * %s\n", warning.c_str());
-      }
-    }
-    TerminateDird(0);
-  }
+  if (test_config) { TerminateDird(0); }
 
   if (!InitializeSqlPooling()) {
     Jmsg((JobControlRecord*)nullptr, M_ERROR_TERM, 0,

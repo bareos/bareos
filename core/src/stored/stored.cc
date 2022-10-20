@@ -246,6 +246,14 @@ int main(int argc, char* argv[])
          my_config->get_base_config_path().c_str());
   }
 
+  if (my_config->HasWarnings()) {
+    // messaging not initialized, so Jmsg with  M_WARNING doesn't work
+    fprintf(stderr, _("There are configuration warnings:\n"));
+    for (auto& warning : my_config->GetWarnings()) {
+      fprintf(stderr, " * %s\n", warning.c_str());
+    }
+  }
+
   if (!foreground && !test_config) {
     daemon_start("bareos-sd", pidfile_fd, pidfile_path); /* become daemon */
     InitStackDump();                                     /* pick up new pid */
@@ -258,16 +266,7 @@ int main(int argc, char* argv[])
 
   InitReservationsLock();
 
-  if (test_config) {
-    if (my_config->HasWarnings()) {
-      /* messaging not initialized, so Jmsg with  M_WARNING doesn't work */
-      fprintf(stderr, _("There are configuration warnings:\n"));
-      for (auto& warning : my_config->GetWarnings()) {
-        fprintf(stderr, " * %s\n", warning.c_str());
-      }
-    }
-    TerminateStored(0);
-  }
+  if (test_config) { TerminateStored(0); }
 
   MyNameIs(0, (char**)nullptr, me->resource_name_); /* Set our real name */
 
