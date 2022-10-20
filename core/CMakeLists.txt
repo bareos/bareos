@@ -54,8 +54,6 @@ endif(CCACHE_FOUND)
 #
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wextra")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra")
 
 option(ENABLE_SANITIZERS "Build with ASan/LSan/UBSan enabled" OFF)
 if(ENABLE_SANITIZERS)
@@ -413,8 +411,8 @@ if(developer)
   add_definitions("-DDEVELOPER=1")
 endif()
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wall")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wall -Wextra")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra")
 
 include(BareosSetVariableDefaults)
 option(ENABLE_BCONSOLE "Build bconsole binary" ON)
