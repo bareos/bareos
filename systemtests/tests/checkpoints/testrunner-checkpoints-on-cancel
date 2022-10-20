@@ -19,9 +19,9 @@ backup_log=$tmp/cancel-backup-checkpoints.out
 restore_log=$tmp/cancel-restore-checkpoints.out
 restore_directory=$tmp/cancel-checkpoints-restore-directory
 
-rm -f $backup_log
-rm -f $restore_log
-rm -rf $restore_directory
+rm -f "$backup_log"
+rm -f "$restore_log"
+rm -rf "$restore_directory"
 
 slowjob="slow-backup-bareos-fd"
 
@@ -41,7 +41,7 @@ volume_checkpoint=""
 
 while [[ ${timeout} -lt 30 ]] && [[ -z $timed_checkpoint || -z $volume_checkpoint ]]
 do
-    timed_checkpoint=$(grep -m 1 'Doing timed backup checkpoint. Next checkpoint in 3 seconds' $messagesfile)
+    timed_checkpoint=$(grep -m 1 'Doing timed backup checkpoint. Next checkpoint in 3 seconds' "$messagesfile")
     volume_checkpoint=$(grep -m 1 'Volume changed, doing checkpoint:' "$messagesfile")
     sleep 1
     ((++timeout))
@@ -60,7 +60,7 @@ if [[ -z $volume_checkpoint ]]; then
 fi
 
 
-slowjobid=$(grep 'Job queued. JobId=' $backup_log | sed -n -e 's/^.*JobId=//p')
+slowjobid=$(grep 'Job queued. JobId=' "$backup_log" | sed -n -e 's/^.*JobId=//p')
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out $backup_log
@@ -81,10 +81,10 @@ expect_grep "Termination:            Backup Canceled" \
             "$backup_log" \
             "Job was not canceled!"
 
-NumberOfBackedUpFiles=$(grep 'FD Files Written:       ' $backup_log | sed -n -e 's/^.*Written:       //p')
+NumberOfBackedUpFiles=$(grep 'FD Files Written:       ' "$backup_log" | sed -n -e 's/^.*Written:       //p')
 
 # Check that part of the files were written despite the cancel
-if [ $NumberOfBackedUpFiles -le 0 ]; then
+if [ "$NumberOfBackedUpFiles" -le 0 ]; then
   echo "Checkpoint files were not correctly saved! Number of backed up files: ${NumberOfBackedUpFiles}" >&2
   estat=1
 fi
@@ -99,13 +99,13 @@ expect_grep "Files Restored:         ${NumberOfBackedUpFiles}" \
             "Restore of canceled job did not go well!"
 
 # Certain systems do not support multiple types for find (-type f,l)
-NumberOfFilesRestored=$(find $restore_directory/$tmp -type f | wc -l)
-NumberOfLinksRestored=$(find $restore_directory/$tmp -type l | wc -l)
-NumberOfDirectoriesRestored=$(find $restore_directory/$tmp -type d | wc -l)
-RestoredItems=$(expr $NumberOfFilesRestored + $NumberOfLinksRestored + $NumberOfDirectoriesRestored)
+NumberOfFilesRestored=$(find "$restore_directory"/"$tmp" -type f | wc -l)
+NumberOfLinksRestored=$(find "$restore_directory"/"$tmp" -type l | wc -l)
+NumberOfDirectoriesRestored=$(find "$restore_directory"/"$tmp" -type d | wc -l)
+RestoredItems=$((NumberOfFilesRestored + NumberOfLinksRestored + NumberOfDirectoriesRestored))
 
 # Check that the restored files are actually there
-if [ ${RestoredItems} -lt ${NumberOfBackedUpFiles} ]; then
+if [ ${RestoredItems} -lt "${NumberOfBackedUpFiles}" ]; then
   echo "Actual restored items count not met. Items (files, links, directories) found = ${RestoredItems} , backed up files = ${NumberOfBackedUpFiles}" >&2
   estat=1
 fi

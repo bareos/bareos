@@ -20,13 +20,13 @@ slowjob="slow-backup-bareos-fd"
 
 for daemon in "dir" "sd" "fd"; do
 
-    backup_log=$tmp/kill-$daemon-backup-checkpoints.out
-    restore_log=$tmp/kill-$daemon-restore-checkpoints.out
-    restore_directory=$tmp/kill-$daemon-checkpoint-restores
+    backup_log="$tmp"/kill-"$daemon"-backup-checkpoints.out
+    restore_log="$tmp"/kill-"$daemon"-restore-checkpoints.out
+    restore_directory="$tmp"/kill-"$daemon"-checkpoint-restores
 
-    rm -f $backup_log
-    rm -f $restore_log
-    rm -rf $restore_directory
+    rm -f "$backup_log"
+    rm -f "$restore_log"
+    rm -rf "$restore_directory"
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
@@ -69,7 +69,7 @@ END_OF_DATA
         echo "Killing the FD"
         pkill -KILL -f "${BAREOS_FILEDAEMON_BINARY}"
         sleep 3
-        ${rscripts}/bareos-ctl-fd start
+        "${rscripts}"/bareos-ctl-fd start
     fi
 
     if [ "$daemon" == "sd" ]; then
@@ -77,14 +77,14 @@ END_OF_DATA
         echo "Killing the SD"
         pkill -KILL -f "${BAREOS_STORAGEDAEMON_BINARY}"
         sleep 3
-        ${rscripts}/bareos-ctl-sd start
+        "${rscripts}"/bareos-ctl-sd start
     fi
     if [ "$daemon" == "dir" ]; then
 
         echo "Killing the DIR"
         pkill -KILL -f "${BAREOS_DIRECTOR_BINARY}"
         sleep 3
-        ${rscripts}/bareos-ctl-dir start
+        "${rscripts}"/bareos-ctl-dir start
     fi
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
