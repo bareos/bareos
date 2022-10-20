@@ -146,9 +146,6 @@ endif()
 
 add_library(bareos SHARED ${BAREOS_SRCS} $<TARGET_OBJECTS:version-obj>)
 
-# openssl 3.0
-target_compile_options(bareos PUBLIC -Wno-deprecated-declarations)
-
 add_library(version-obj OBJECT version.cc)
 target_compile_definitions(
   version-obj
