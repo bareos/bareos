@@ -111,9 +111,6 @@ if(HAVE_WIN32)
        ../win32/compat/winapi.cc
   )
   set_source_files_properties(
-    ../win32/compat/glob.cc PROPERTIES COMPILE_DEFINITIONS register=
-  )
-  set_source_files_properties(
     ../win32/compat/winapi.cc ../win32/compat/service.cc
     ../win32/generic/service.cc osinfo_win32.cc
     PROPERTIES COMPILE_FLAGS -Wno-cast-function-type
