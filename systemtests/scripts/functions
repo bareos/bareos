@@ -674,28 +674,34 @@ change_jobname()
 
 check_two_logs()
 {
-   if grep "^  Termination: *Backup OK" "${tmp}/log1.out" >/dev/null 2>&1; then
+   default_backup_log="${tmp}/log1.out"
+   backup_log=${2:-${default_backup_log}}
+
+   default_restore_log="${tmp}/log2.out"
+   restore_log=${2:-${default_restore_log}}
+
+   if grep "^  Termination: *Backup OK" "$backup_log" >/dev/null 2>&1; then
      bstat=${bstat:-$?}
    fi
 
-   if grep "^  Termination: .*Backup Error" "${tmp}/log1.out" >/dev/null 2>&1; then
+   if grep "^  Termination: .*Backup Error" "$backup_log" >/dev/null 2>&1; then
       bstat=2
    fi
 
-   if grep "^  Termination: *Restore OK" "${tmp}/log2.out" >/dev/null 2>&1; then
+   if grep "^  Termination: *Restore OK" "$restore_log" >/dev/null 2>&1; then
      rstat=${rstat:-$?}
    fi
 
-   if grep "^  Termination: .*Restore Error" "${tmp}/log2.out" >/dev/null 2>&1; then
+   if grep "^  Termination: .*Restore Error" "$restore_log" >/dev/null 2>&1; then
       rstat=2
    fi
-   if grep "^  Termination: *Restore OK -- warning file count mismatch" "${tmp}/log2.out" >/dev/null 2>&1; then
+   if grep "^  Termination: *Restore OK -- warning file count mismatch" "$restore_log" >/dev/null 2>&1; then
       rstat=3
    fi
-   if grep "^  Termination: .*Verify Differences" "${tmp}/log2.out" >/dev/null 2>&1; then
+   if grep "^  Termination: .*Verify Differences" "$restore_log" >/dev/null 2>&1; then
       rstat=4
    fi
-   if grep "Encoding error for database" "${tmp}/log1.out" > /dev/null; then
+   if grep "Encoding error for database" "$backup_log" > /dev/null; then
       print_debug "Found database encoding error"
       bstat=2
    fi
