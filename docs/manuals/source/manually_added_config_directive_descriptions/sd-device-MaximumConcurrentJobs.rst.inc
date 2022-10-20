@@ -3,3 +3,7 @@ This directive specifies the maximum number of Jobs that can run concurrently on
 .. warning::
 
    If :config:option:`sd/device/DeviceType` is "Droplet" then Maximum Concurrent Jobs is limited to 1.
+
+.. warning::
+
+   When using non-tape devices, it is highly recommended to set Maximum Concurrent Jobs to 1 to avoid intermixing jobs. Intermixed jobs on a Volume will significantly reduce performance during restore.

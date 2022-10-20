@@ -278,6 +278,24 @@ bool DeviceResource::Validate()
     my_config->AddWarning(
         "Setting 'Maximum Block Size' on a non-tape device is unsupported");
   }
+
+  if (max_concurrent_jobs == 0) {
+    my_config->AddWarning(
+        "Having no limit for 'Maximum Concurrent Jobs' (which is currently the "
+        "default) can reduce restore performance.");
+    my_config->AddWarning(
+        "The default value for 'Maximum Concurrent Jobs' will change to 1 "
+        "in Bareos 23.");
+  } else if (max_concurrent_jobs > 1 && device_type != DeviceType::B_TAPE_DEV) {
+    my_config->AddWarning(
+        "Setting 'Maximum Concurrent Jobs' on a non-tape device to a value "
+        "higher than 1 is not recommended, because it reduces performance on "
+        "restore.");
+  }
+
+  if (device_type == DeviceType::B_RADOS_DEV) {
+    my_config->AddWarning("The Rados Storage Backend Device is deprecated");
+  }
   return true;
 }
 
