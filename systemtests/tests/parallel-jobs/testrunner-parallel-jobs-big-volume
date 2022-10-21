@@ -1,0 +1,70 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# Run multiple backups in parallel and
+#   then restore them.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+backupjob="slow-backup-big-volume"
+parallelbackuplog="$tmp/big-volumes-parallel-backup.out"
+parallelrestorelog="$tmp/big-volume-parallel-restore.out"
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $parallelbackuplog
+run job=${backupjob} level=Full yes
+run job=${backupjob} level=Full yes
+run job=${backupjob} level=Full yes
+run job=${backupjob} level=Full yes
+run job=${backupjob} level=Full yes
+run job=${backupjob} level=Full yes
+wait
+messages
+@$out $parallelrestorelog
+restore jobid=1 where=$tmp/restore1 all done yes
+wait
+restore jobid=2 where=$tmp/restore2 all done yes
+wait
+restore jobid=3 where=$tmp/restore3 all done yes
+wait
+restore jobid=4 where=$tmp/restore4 all done yes
+wait
+restore jobid=5 where=$tmp/restore5 all done yes
+wait
+restore jobid=6 where=$tmp/restore6 all done yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+if [[ $(grep -c "Termination:.*Backup OK" "$parallelbackuplog") -ne "6" ]]; then
+    echo "Not all backups jobs finished successfully."
+    estat=1
+fi
+
+if [[ $(grep -c "Termination:.*Restore OK" "$parallelrestorelog") -ne "6" ]]; then
+    echo "Not all restore jobs finished successfully."
+    estat=2
+fi
+
+for i in {1..6}; do
+    restoredir="$tmp/restore$i"
+    check_restore_diff "${BackupDirectory}" "$restoredir"
+done
+
+end_test
