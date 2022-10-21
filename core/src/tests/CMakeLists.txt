@@ -260,7 +260,7 @@ if(NOT client-only)
     sd_reservation
     ${disable}
     LINK_LIBRARIES stored_objects bareossd bareos GTest::gtest_main
-                   GTest::gmock COMPILE_OPTIONS -Wno-deprecated-copy
+                   GTest::gmock
   )
   bareos_add_test(
     sd_statistics_thread
