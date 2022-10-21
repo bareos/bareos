@@ -139,7 +139,7 @@ struct JobControlRecordPrivate {
   int32_t reschedule_count{};           /**< Number of times rescheduled */
   int32_t FDVersion{};                  /**< File daemon version number */
   int64_t spool_size{};                 /**< Spool size for this job */
-  volatile bool sd_msg_thread_done{};   /**< Set when Storage message thread done */
+  std::atomic<bool> sd_msg_thread_done{};   /**< Set when Storage message thread done */
   bool IgnoreDuplicateJobChecking{};    /**< Set in migration jobs */
   bool IgnoreLevelPoolOverrides{};       /**< Set if a cmdline pool was specified */
   bool IgnoreClientConcurrency{};       /**< Set in migration jobs */
