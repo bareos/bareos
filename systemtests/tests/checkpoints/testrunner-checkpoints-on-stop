@@ -60,11 +60,11 @@ if [[ -z $volume_checkpoint ]]; then
     estat=2;
 fi
 
-slowjobid=$(grep 'Job queued. JobId=' "$backup_log" | sed -n -e 's/^.*JobId=//p')
-
 bin/bareos stop
 
 bin/bareos start
+
+slowjobid=$(grep 'Job queued. JobId=' "$backup_log" | sed -n -e 's/^.*JobId=//p')
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out $backup_log
