@@ -683,11 +683,13 @@ int WaitForJobTermination(JobControlRecord* jcr, int timeout)
    * the SD despool.
    */
   Dmsg5(100, "cancel=%d fd_ok=%d FDJS=%d JS=%d SDJS=%d\n", jcr->IsCanceled(),
-        fd_ok, jcr->impl->FDJobStatus, jcr->JobStatus, jcr->impl->SDJobStatus);
+        fd_ok, jcr->impl->FDJobStatus, jcr->JobStatus,
+        jcr->impl->SDJobStatus.load());
   if (jcr->IsCanceled()
       || (!jcr->impl->res.job->RescheduleIncompleteJobs && !fd_ok)) {
     Dmsg4(100, "fd_ok=%d FDJS=%d JS=%d SDJS=%d\n", fd_ok,
-          jcr->impl->FDJobStatus, jcr->JobStatus, jcr->impl->SDJobStatus);
+          jcr->impl->FDJobStatus, jcr->JobStatus,
+          jcr->impl->SDJobStatus.load());
     CancelStorageDaemonJob(jcr);
   }
 

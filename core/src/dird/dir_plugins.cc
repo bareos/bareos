@@ -687,7 +687,7 @@ static bRC bareosGetValue(PluginContext* ctx, brDirVariable var, void* value)
       case bDirVarSDJobStatus:
         *((int*)value) = jcr->impl->SDJobStatus;
         Dmsg1(debuglevel, "dir-plugin: return bDirVarSDJobStatus=%c\n",
-              jcr->impl->SDJobStatus);
+              jcr->impl->SDJobStatus.load());
         break;
       case bDirVarLastRate:
         *((int*)value) = jcr->LastRate;
