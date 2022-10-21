@@ -1148,6 +1148,9 @@ Section -ConfigureConfiguration
 #  Archive directory:            /usr/i686-w64-mingw32/sys-root/mingw/var/lib/bareos/storage
   FileWrite $R1 "s#/usr/.*mingw.*/sys-root/mingw/var/lib/bareos/storage#C:/bareos-storage#g$\r$\n"
 
+#  Working directory:            /usr/i686-w64-mingw32/sys-root/mingw/var/lib/bareos
+  FileWrite $R1 "s#/usr/.*mingw.*/sys-root/mingw/var/lib/bareos#$BareosAppdata/working#g$\r$\n"
+
 # Log directory:                /usr/i686-w64-mingw32/sys-root/mingw/var/log/bareos
   FileWrite $R1 "s#/usr/.*mingw.*/sys-root/mingw/var/log/bareos#$BareosAppdata/logs#g$\r$\n"
 
@@ -1162,9 +1165,6 @@ Section -ConfigureConfiguration
 
 #  Scripts directory:            /usr/x86_64-w64-mingw32/sys-root/mingw/lib/bareos/scripts
   FileWrite $R1 "s#/usr/.*mingw.*/sys-root/mingw/lib/bareos/scripts#$BareosAppdata/scripts#g$\r$\n"
-
-#  Working directory:            /var/lib/bareos
-  FileWrite $R1 "s#/var/lib/bareos#$BareosAppdata/working#g$\r$\n"
 
   FileWrite $R1 "s#dbpassword = .*#dbpassword = $DbPassword#g$\r$\n"
 
