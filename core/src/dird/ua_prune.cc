@@ -865,9 +865,30 @@ int GetPruneListForVolume(UaContext* ua,
   if (!ua->db->SqlQuery(query.c_str(), FileDeleteHandler,
                         static_cast<void*>(&prune_list))) {
     if (ua->verbose) { ua->ErrorMsg("%s", ua->db->strerror()); }
-    Dmsg0(050, "Count failed\n");
+    Dmsg0(050, "Adding eligible jobs for pruning failed\n");
     return 0;
   }
+
+  // in case job was the result of a copy or migration, delete the related
+  // migration or copy job
+  if (prune_list.size() > 0) {
+    BStringList copy_migrate_jobs_list;
+    for (auto jobid : prune_list) { copy_migrate_jobs_list << jobid; }
+    Mmsg(query,
+         "SELECT JobId from Job "
+         "WHERE type in ('%c','%c') AND priorjobid in (%s)",
+         JT_COPY, JT_MIGRATE, copy_migrate_jobs_list.Join(',').c_str());
+
+    if (!ua->db->SqlQuery(query.c_str(), FileDeleteHandler,
+                          static_cast<void*>(&prune_list))) {
+      if (ua->verbose) { ua->ErrorMsg("%s", ua->db->strerror()); }
+      Dmsg0(050,
+            "Adding migration and copy child jobs eligible for pruning "
+            "failed\n");
+      return 0;
+    }
+  }
+
   int NumJobsToBePruned = ExcludeRunningJobsFromList(prune_list);
   if (NumJobsToBePruned > 0) {
     ua->SendMsg(

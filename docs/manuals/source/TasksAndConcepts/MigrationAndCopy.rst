@@ -37,20 +37,24 @@ Bareos permits Pools to contain Volumes of different Media Types. However, when 
 
 A migration job can be started manually or from a Schedule, like a backup job. It searches for existing backup Jobs that match the parameters specified in the migration Job resource, primarily a :config:option:`dir/job/SelectionType`\ . If no match was found, the Migration job terminates without further action. Otherwise, for each Job found this way, the Migration Job will run a new Job which copies the Job data to a new Volume in the Migration Pool.
 
-Normally three jobs are involved during a migration:
+Normally four jobs are involved during a migration/copy:
 
--  The Migration control Job which starts the migration child Jobs.
+-  The migration/copy **control job**: This job checks for jobs that need to be copied/migrated and starts a copy/migrate worker job for each of these jobs. The migration/copy control job gets removed from the catalog database at the end of the operation.
 
--  The previous Backup Job (already run). The File records of this Job are purged when the Migration job terminates successfully. The data remain on the Volume until it is recycled.
+-  The migration/copy **worker jobs**: They copy the data of one original job to the resulting destination job. The worker jobs are removed from the database when the destination job (the job that is the result of the copying) is pruned from the catalog database.
 
--  A new Migration Backup Job that moves the data from the previous Backup job to the new Volume. If you subsequently do a restore, the data will be read from this Job.
+-  The **previous (original) Backup job** (*already run and being copied*): The File records of this job are purged when the migration/copy job terminates successfully. The data remain on the volume until it is recycled.
 
-If the Migration control Job finds more than one existing Job to migrate, it creates one migration job for each of them. This may result in a large number of Jobs. Please note that Migration doesn’t scale too well if you migrate data off of a large Volume because each job must read the same Volume, hence the jobs will have to run consecutively rather than simultaneously.
+-  The **new (destination) Backup job** (*the new copy*) that holds the data from the previous Backup job in the new Volume. If you subsequently do a restore, the data will be read from this job.
 
-Important Migration Considerations
+In case of a migration, the original job is purged from the catalog database immediately after the copy is completed. In a copy job, both original and new backup jobs remain in the catalog database and will be pruned with the standard Bareos mechanisms (i.e. after the expiration of the retention times).
+
+If the migration/copy control job finds more than one existing job to migrate, it creates one migration/copy job for each of them. This may result in a large number of jobs. Please note that migration/copy doesn’t scale too well if you migrate data off of a large Volume because each job must read the same Volume, hence the jobs will have to run consecutively rather than simultaneously.
+
+Important migration Considerations
 ----------------------------------
 
-:index:`\ <single: Migration; Important Migration Considerations>`\
+:index:`\ <single: migration; Important migration Considerations>`\
 
 -  Each Pool into which you migrate Jobs or Volumes must contain Volumes of only one :config:option:`dir/storage/MediaType`\ .
 

@@ -563,8 +563,15 @@ void BareosDb::UpgradeCopies(const char* jobids)
 
   SqlQuery(query.c_str());
 
-  Mmsg(query, "DROP TABLE cpy_tmp");
+  // remove the worker job that copied it
+  Mmsg(query,
+       "DELETE FROM Job "
+       "WHERE Type='%c' "
+       "AND priorjobid IN ( SELECT JobId FROM cpy_tmp )",
+       JT_COPY);
   SqlQuery(query.c_str());
+
+  SqlQuery("DROP TABLE cpy_tmp");
 }
 #endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || \
           HAVE_DBI */

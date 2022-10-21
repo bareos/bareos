@@ -334,9 +334,7 @@ std::string PrepareJobidsTobedeleted(UaContext* ua,
   return jobids.Join(',');
 }
 
-/**
- * Delete given jobids (all records) from the catalog.
- */
+// Delete given jobids (all records) from the catalog.
 void PurgeJobListFromCatalog(UaContext* ua, std::vector<JobId_t>& deletion_list)
 {
   Dmsg1(150, "num_ids=%d\n", deletion_list.size());
@@ -348,9 +346,7 @@ void PurgeJobListFromCatalog(UaContext* ua, std::vector<JobId_t>& deletion_list)
   PurgeJobsFromCatalog(ua, jobids_to_delete_string.c_str());
 }
 
-/**
- * Delete files of given list of jobids
- */
+// Delete files of given list of jobids
 void PurgeFilesFromJobList(UaContext* ua, std::vector<JobId_t>& del)
 {
   std::string jobids_to_delete = PrepareJobidsTobedeleted(ua, del);
@@ -480,13 +476,10 @@ bool IsVolumePurged(UaContext* ua, MediaDbRecord* mr, bool force)
   char ed1[50];
 
   if (!force && (mr->FirstWritten == 0 || mr->LastWritten == 0)) {
-    goto bail_out; /* not written cannot purge */
+    return false; /* not written cannot purge */
   }
 
-  if (bstrcmp(mr->VolStatus, "Purged")) {
-    purged = true;
-    goto bail_out;
-  }
+  if (bstrcmp(mr->VolStatus, "Purged")) { return true; }
 
   /* If purged, mark it so */
   cnt.count = 0;
@@ -496,7 +489,7 @@ bool IsVolumePurged(UaContext* ua, MediaDbRecord* mr, bool force)
                         static_cast<void*>(&cnt))) {
     ua->ErrorMsg("%s", ua->db->strerror());
     Dmsg0(050, "Count failed\n");
-    goto bail_out;
+    return false;
   }
 
   if (cnt.count == 0) {
@@ -507,7 +500,7 @@ bool IsVolumePurged(UaContext* ua, MediaDbRecord* mr, bool force)
       ua->ErrorMsg("%s", ua->db->strerror());
     }
   }
-bail_out:
+
   return purged;
 }
 

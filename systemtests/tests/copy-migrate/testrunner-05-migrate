@@ -1,0 +1,100 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+
+TestName=05-migrate
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+log="$tmp/$TestName.log"
+
+start_test
+
+migration_volume="TestMigrateVolume001"
+query_results="$tmp/query_results.out"
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $log
+label volume=TestVolume002 storage=File pool=Full
+run job=backup-bareos-fd level=Full yes
+run job=backup-bareos-fd level=Full yes
+run job=backup-bareos-fd level=Full yes
+wait
+update volume=TestVolume002 volstatus=Used
+messages
+label volume=$migration_volume storage=File2 pool=FullCopy
+run migrate yes
+wait
+messages
+@$out $query_results
+sqlquery
+SELECT count(jobid) FROM job WHERE type='g';
+SELECT count(jobid) FROM job WHERE type='M';
+
+quit
+END_OF_DATA
+
+run_bconsole
+
+expect_grep "The following 3 JobIds were chosen to be migrated: 10,11,12" \
+            "$log" \
+            "Expected jobs to be migrated do not match."
+
+# 1 administrative job that spawns 3 migration jobs
+if [[ $(grep -c "Termination:.*Migration OK" "$log") -ne "4" ]]; then
+    echo "Not all migration jobs finished successfully."
+    estat=1
+fi
+
+if [[ $(grep -c "|     3 |" "$query_results") -ne "2" ]]; then
+    echo "The necessary amount of migration related jobs are not available in the catalog."
+    estat=2
+fi
+
+rm -f $query_results
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $query_results
+prune volume=TestVolume002 yes
+sqlquery
+SELECT count(jobid) FROM job WHERE type='M';
+
+quit
+END_OF_DATA
+
+run_bconsole
+
+if ! grep "|     0 |" "$query_results" ; then
+    echo "Migrated jobs were not deleted appropriately after volume pruning."
+    estat=3
+fi
+
+rm -f $query_results
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $query_results
+update volume=$migration_volume volstatus=Used
+prune volume=$migration_volume yes
+sqlquery
+SELECT count(jobid) FROM job WHERE type='g';
+
+quit
+END_OF_DATA
+
+run_bconsole
+
+if ! grep "|     0 |" "$query_results" ; then
+    echo "Migration jobs were not deleted appropriately after volume pruning."
+    estat=4
+fi
+
+
+
+end_test
