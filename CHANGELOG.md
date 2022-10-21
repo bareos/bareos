@@ -134,6 +134,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - dird: fix config reload and unit tests dependency issue [PR #1161]
 - pruning: `prune jobs` doesn't ask for jobtypes anymore, and prunes all jobtypes except Archives (`A`) [PR #1215]
 - dird: cats: remove copy and migration jobs with no data from catalog [PR #1262]
+- build: enable compiling on ARM [PR #1270]
 
 ### Deprecated
 - make_catalog_backup.pl is now a shell wrapper script which will be removed in version 23.
