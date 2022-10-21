@@ -100,8 +100,13 @@ END_OF_DATA
 
     run_bconsole
 
+    # Check that the backup was halted
+    expect_not_grep "Termination:.*Backup OK" \
+                    "$backup_log"\
+                    "Backup was run successfully. The backup should fail."
+
     # Check that the restore works fine
-    expect_grep "Termination:            Restore OK" \
+    expect_grep "Termination:.*Restore OK" \
                 "$restore_log" \
                 "Restore job did not go well!"
 

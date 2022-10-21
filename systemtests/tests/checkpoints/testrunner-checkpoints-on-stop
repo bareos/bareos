@@ -86,6 +86,11 @@ if [ "$NumberOfBackedUpFiles" -le 0 ]; then
   estat=1
 fi
 
+# Check that the backup was halted
+expect_not_grep "Termination:.*Backup OK" \
+                "$backup_log"\
+                "Backup was run successfully. The backup should fail."
+
 # Check that the restore works fine
 expect_grep "Termination:            Restore OK" \
             "$restore_log"\
