@@ -30,6 +30,7 @@
 #include "include/bareos.h"
 #include "win32.h"
 #include "who.h"
+#include "fill_proc_address.h"
 
 // Other Window component dependencies
 #define BAREOS_DEPENDENCIES __TEXT("tcpip\0afd\0")
@@ -156,9 +157,8 @@ int bareosServiceMain()
 
     // Get entry point for RegisterServiceProcess function
     DWORD(WINAPI * RegisterService)(DWORD, DWORD);
-    RegisterService = (DWORD(WINAPI*)(DWORD, DWORD))GetProcAddress(
-        kerneldll, "RegisterServiceProcess");
-    if (RegisterService == NULL) {
+    if (!BareosFillProcAddress(RegisterService, kerneldll,
+                               "RegisterServiceProcess")) {
       MessageBox(NULL,
                  _("Registry service not found: Bareos service not started"),
                  APP_DESC, MB_OK);
@@ -510,8 +510,8 @@ static void SetServiceDescription(SC_HANDLE hSCManager,
 
   HINSTANCE hLib = LoadLibrary("ADVAPI32.DLL");
   if (!hLib) { return; }
-  ChangeServiceDescription
-      = (WinAPI)GetProcAddress(hLib, "ChangeServiceConfig2A");
+  BareosFillProcAddress(ChangeServiceDescription, hLib,
+                        "ChangeServiceConfig2A");
   FreeLibrary(hLib);
   if (!ChangeServiceDescription) { return; }
 

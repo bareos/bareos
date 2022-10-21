@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -38,6 +38,7 @@
 #  include "findlib/find.h"
 #  define FILE_DAEMON 1
 #  include "filed/fd_plugins.h"
+#  include "fill_proc_address.h"
 
 #  undef setlocale
 
@@ -433,10 +434,9 @@ VSSClientGeneric::VSSClientGeneric()
 {
   hLib_ = LoadLibraryA("VSSAPI.DLL");
   if (hLib_) {
-    CreateVssBackupComponents_
-        = (t_CreateVssBackupComponents)GetProcAddress(hLib_, VSSVBACK_ENTRY);
-    VssFreeSnapshotProperties_ = (t_VssFreeSnapshotProperties)GetProcAddress(
-        hLib_, "VssFreeSnapshotProperties");
+    BareosFillProcAddress(CreateVssBackupComponents_, hLib_, VSSVBACK_ENTRY);
+    BareosFillProcAddress(VssFreeSnapshotProperties_, hLib_,
+                          "VssFreeSnapshotProperties");
   }
 }
 
