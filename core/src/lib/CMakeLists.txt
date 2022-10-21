@@ -159,6 +159,17 @@ target_link_libraries(
           ${LZO2_LIBRARIES} ${CAM_LIBRARIES} CLI11::CLI11
 )
 
+if(CMAKE_CXX_FLAGS MATCHES "-fsanitize=address"
+   AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
+   AND CMAKE_CXX_COMPILER_VERSION MATCHES "^12"
+)
+  # work around compiler/stdlib bug see
+  # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105562#c17
+  set_source_files_properties(
+    cli.cc PROPERTIES COMPILE_FLAGS "-Wno-maybe-uninitialized"
+  )
+endif()
+
 if(ENABLE_CAPABILITY)
   target_link_libraries(bareos PRIVATE ${CAP_LIBRARIES})
 endif()
