@@ -31,6 +31,13 @@
 set -e
 set -u
 
+
+if [ -z "${PAM_WRAPPER_LIBRARIES:-}" ]; then
+    # verify PAM_WRAPPER_LIBRARIES has been set my cmake
+    echo "PAM_WRAPPER_LIBRARIES is not set"
+    exit 1
+fi
+
 export PAM_WRAPPER=1
 export PAM_WRAPPER_SERVICE_DIR=etc/pam.d/bareos_discover_pam_exec
 
@@ -43,8 +50,6 @@ fi
 #export PAM_WRAPPER_DEBUGLEVEL=4
 
 # PAM_WRAPPER creates extra environments in /tmp/pam.*/
-
-# PAM_WRAPPER_LIBRARIES will be set my cmake
 USERNAME="user"
 PASSWORD="user"
 echo "$PASSWORD" | LD_PRELOAD=${PAM_WRAPPER_LIBRARIES} pamtester bareos_discover_pam_exec "$USERNAME" authenticate > /dev/null 2>&1

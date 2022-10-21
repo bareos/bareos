@@ -17,6 +17,14 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+if(NOT Python3_FOUND)
+  create_systemtest(
+    ${SYSTEMTEST_PREFIX} "py3plug-fd-postgres" DISABLED COMMENT
+    "Python3 not found"
+  )
+  return()
+endif()
+
 if(TARGET python3-fd)
   check_pymodule_available(3 pg8000)
   check_pymodule_available(3 dateutil)
