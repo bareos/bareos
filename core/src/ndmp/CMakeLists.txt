@@ -29,15 +29,9 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DNDMOS_CONST_PRODUCT_NAME=\\\"Bareos\\\"")
 # -DNDMOS_CONST_PRODUCT_REVISION=\\\"${BAREOS_FULL_VERSION}\\\"")
 
 if(${HAVE_LINUX_OS})
-  set(CMAKE_C_FLAGS
-      "${CMAKE_C_FLAGS} -DHAVE_LINUX_OS -Wno-unused-but-set-variable"
-  )
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHAVE_LINUX_OS")
 elseif(${HAVE_SUN_OS})
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHAVE_SUN_OS")
-endif()
-
-if(compiler_will_warn_of_unused_but_set_variable)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-but-set-variable")
 endif()
 
 set(RPC_GEN_FILES

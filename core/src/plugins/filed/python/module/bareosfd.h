@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can modify it under the terms of
    version three of the GNU Affero General Public License as published by the
@@ -72,7 +72,7 @@ static int PyRestoreObject_init(PyRestoreObject* self,
 static PyObject* PyRestoreObject_repr(PyRestoreObject* self);
 
 static PyMethodDef PyRestoreObject_methods[] = {
-    {NULL} /* Sentinel */
+    {} /* Sentinel */
 };
 
 static PyMemberDef PyRestoreObject_members[]
@@ -98,47 +98,25 @@ static PyMemberDef PyRestoreObject_members[]
         (char*)"Attribute Stream"},
        {(char*)"jobid", T_UINT, offsetof(PyRestoreObject, JobId), 0,
         (char*)"Jobid"},
-       {NULL}};
+       {} /* Sentinel */};
 
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+/* clang-format off */
 static PyTypeObject PyRestoreObjectType = {
-    PyVarObject_HEAD_INIT(NULL, 0) "restore_object", /* tp_name */
-    sizeof(PyRestoreObject),                         /* tp_basicsize */
-    0,                                               /* tp_itemsize */
-    (destructor)PyRestoreObject_dealloc,             /* tp_dealloc */
-    0,                                               /* tp_print */
-    0,                                               /* tp_getattr */
-    0,                                               /* tp_setattr */
-    0,                                               /* tp_compare */
-    (reprfunc)PyRestoreObject_repr,                  /* tp_repr */
-    0,                                               /* tp_as_number */
-    0,                                               /* tp_as_sequence */
-    0,                                               /* tp_as_mapping */
-    0,                                               /* tp_hash */
-    0,                                               /* tp_call */
-    0,                                               /* tp_str */
-    0,                                               /* tp_getattro */
-    0,                                               /* tp_setattro */
-    0,                                               /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,        /* tp_flags*/
-    "io_pkt object",                                 /* tp_doc */
-    0,                                               /* tp_traverse */
-    0,                                               /* tp_clear */
-    0,                                               /* tp_richcompare */
-    0,                                               /* tp_weaklistoffset */
-    0,                                               /* tp_iter */
-    0,                                               /* tp_iternext */
-    PyRestoreObject_methods,                         /* tp_methods */
-    PyRestoreObject_members,                         /* tp_members */
-    0,                                               /* tp_getset */
-    0,                                               /* tp_base */
-    0,                                               /* tp_dict */
-    0,                                               /* tp_descr_get */
-    0,                                               /* tp_descr_set */
-    0,                                               /* tp_dictoffset */
-    (initproc)PyRestoreObject_init,                  /* tp_init */
-    0,                                               /* tp_alloc */
-    0,                                               /* tp_new */
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name      = "restore_object",
+    .tp_basicsize = sizeof(PyRestoreObject),
+    .tp_dealloc   = (destructor)PyRestoreObject_dealloc,
+    .tp_repr      = (reprfunc)PyRestoreObject_repr,
+    .tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_doc       = "io_pkt object",
+    .tp_methods   = PyRestoreObject_methods,
+    .tp_members   = PyRestoreObject_members,
+    .tp_init      = (initproc)PyRestoreObject_init,
 };
+/* clang-format on */
+#  pragma GCC diagnostic pop
 
 // The PyStatPacket type
 typedef struct {
@@ -165,7 +143,7 @@ static int PyStatPacket_init(PyStatPacket* self,
 static PyObject* PyStatPacket_repr(PyStatPacket* self);
 
 static PyMethodDef PyStatPacket_methods[] = {
-    {NULL} /* Sentinel */
+    {} /* Sentinel */
 };
 
 static PyMemberDef PyStatPacket_members[] = {
@@ -192,47 +170,25 @@ static PyMemberDef PyStatPacket_members[] = {
      (char*)"Blocksize"},
     {(char*)"st_blocks", T_ULONGLONG, offsetof(PyStatPacket, blocks), 0,
      (char*)"Blocks"},
-    {NULL}};
+    {} /* Sentinel */};
 
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+/* clang-format off */
 static PyTypeObject PyStatPacketType = {
-    PyVarObject_HEAD_INIT(NULL, 0) "stat_pkt", /* tp_name */
-    sizeof(PyStatPacket),                      /* tp_basicsize */
-    0,                                         /* tp_itemsize */
-    (destructor)PyStatPacket_dealloc,          /* tp_dealloc */
-    0,                                         /* tp_print */
-    0,                                         /* tp_getattr */
-    0,                                         /* tp_setattr */
-    0,                                         /* tp_compare */
-    (reprfunc)PyStatPacket_repr,               /* tp_repr */
-    0,                                         /* tp_as_number */
-    0,                                         /* tp_as_sequence */
-    0,                                         /* tp_as_mapping */
-    0,                                         /* tp_hash */
-    0,                                         /* tp_call */
-    0,                                         /* tp_str */
-    0,                                         /* tp_getattro */
-    0,                                         /* tp_setattro */
-    0,                                         /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,  /* tp_flags*/
-    "io_pkt object",                           /* tp_doc */
-    0,                                         /* tp_traverse */
-    0,                                         /* tp_clear */
-    0,                                         /* tp_richcompare */
-    0,                                         /* tp_weaklistoffset */
-    0,                                         /* tp_iter */
-    0,                                         /* tp_iternext */
-    PyStatPacket_methods,                      /* tp_methods */
-    PyStatPacket_members,                      /* tp_members */
-    0,                                         /* tp_getset */
-    0,                                         /* tp_base */
-    0,                                         /* tp_dict */
-    0,                                         /* tp_descr_get */
-    0,                                         /* tp_descr_set */
-    0,                                         /* tp_dictoffset */
-    (initproc)PyStatPacket_init,               /* tp_init */
-    0,                                         /* tp_alloc */
-    0,                                         /* tp_new */
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name      = "stat_pkt",
+    .tp_basicsize = sizeof(PyStatPacket),
+    .tp_dealloc   = (destructor)PyStatPacket_dealloc,
+    .tp_repr      = (reprfunc)PyStatPacket_repr,
+    .tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_doc       = "io_pkt object",
+    .tp_methods   = PyStatPacket_methods,
+    .tp_members   = PyStatPacket_members,
+    .tp_init      = (initproc)PyStatPacket_init,
 };
+/* clang-format on */
+#  pragma GCC diagnostic pop
 
 // The PySavePacket type
 typedef struct {
@@ -261,7 +217,7 @@ static int PySavePacket_init(PySavePacket* self,
 static PyObject* PySavePacket_repr(PySavePacket* self);
 
 static PyMethodDef PySavePacket_methods[] = {
-    {NULL} /* Sentinel */
+    {} /* Sentinel */
 };
 
 static PyMemberDef PySavePacket_members[] = {
@@ -293,47 +249,25 @@ static PyMemberDef PySavePacket_members[] = {
      (char*)"Restore ObjectLen"},
     {(char*)"object_index", T_INT, offsetof(PySavePacket, object_index), 0,
      (char*)"Restore ObjectIndex"},
-    {NULL}};
+    {} /* Sentinel */};
 
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+/* clang-format off */
 static PyTypeObject PySavePacketType = {
-    PyVarObject_HEAD_INIT(NULL, 0) "save_pkt", /* tp_name */
-    sizeof(PySavePacket),                      /* tp_basicsize */
-    0,                                         /* tp_itemsize */
-    (destructor)PySavePacket_dealloc,          /* tp_dealloc */
-    0,                                         /* tp_print */
-    0,                                         /* tp_getattr */
-    0,                                         /* tp_setattr */
-    0,                                         /* tp_compare */
-    (reprfunc)PySavePacket_repr,               /* tp_repr */
-    0,                                         /* tp_as_number */
-    0,                                         /* tp_as_sequence */
-    0,                                         /* tp_as_mapping */
-    0,                                         /* tp_hash */
-    0,                                         /* tp_call */
-    0,                                         /* tp_str */
-    0,                                         /* tp_getattro */
-    0,                                         /* tp_setattro */
-    0,                                         /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,  /* tp_flags*/
-    "save_pkt object",                         /* tp_doc */
-    0,                                         /* tp_traverse */
-    0,                                         /* tp_clear */
-    0,                                         /* tp_richcompare */
-    0,                                         /* tp_weaklistoffset */
-    0,                                         /* tp_iter */
-    0,                                         /* tp_iternext */
-    PySavePacket_methods,                      /* tp_methods */
-    PySavePacket_members,                      /* tp_members */
-    0,                                         /* tp_getset */
-    0,                                         /* tp_base */
-    0,                                         /* tp_dict */
-    0,                                         /* tp_descr_get */
-    0,                                         /* tp_descr_set */
-    0,                                         /* tp_dictoffset */
-    (initproc)PySavePacket_init,               /* tp_init */
-    0,                                         /* tp_alloc */
-    0,                                         /* tp_new */
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name      = "save_pkt",
+    .tp_basicsize = sizeof(PySavePacket),
+    .tp_dealloc   = (destructor)PySavePacket_dealloc,
+    .tp_repr      = (reprfunc)PySavePacket_repr,
+    .tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_doc       = "save_pkt object",
+    .tp_methods   = PySavePacket_methods,
+    .tp_members   = PySavePacket_members,
+    .tp_init      = (initproc)PySavePacket_init,
 };
+/* clang-format on */
+#  pragma GCC diagnostic pop
 
 // The PyRestorePacket type
 typedef struct {
@@ -361,7 +295,7 @@ static int PyRestorePacket_init(PyRestorePacket* self,
 static PyObject* PyRestorePacket_repr(PyRestorePacket* self);
 
 static PyMethodDef PyRestorePacket_methods[] = {
-    {NULL} /* Sentinel */
+    {} /* Sentinel */
 };
 
 static PyMemberDef PyRestorePacket_members[] = {
@@ -392,47 +326,25 @@ static PyMemberDef PyRestorePacket_members[] = {
      (char*)"Replace flag"},
     {(char*)"create_status", T_INT, offsetof(PyRestorePacket, create_status), 0,
      (char*)"Status from createFile()"},
-    {NULL}};
+    {} /* Sentinel */};
 
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+/* clang-format off */
 static PyTypeObject PyRestorePacketType = {
-    PyVarObject_HEAD_INIT(NULL, 0) "restore_pkt", /* tp_name */
-    sizeof(PyRestorePacket),                      /* tp_basicsize */
-    0,                                            /* tp_itemsize */
-    (destructor)PyRestorePacket_dealloc,          /* tp_dealloc */
-    0,                                            /* tp_print */
-    0,                                            /* tp_getattr */
-    0,                                            /* tp_setattr */
-    0,                                            /* tp_compare */
-    (reprfunc)PyRestorePacket_repr,               /* tp_repr */
-    0,                                            /* tp_as_number */
-    0,                                            /* tp_as_sequence */
-    0,                                            /* tp_as_mapping */
-    0,                                            /* tp_hash */
-    0,                                            /* tp_call */
-    0,                                            /* tp_str */
-    0,                                            /* tp_getattro */
-    0,                                            /* tp_setattro */
-    0,                                            /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,     /* tp_flags*/
-    "restore_pkt object",                         /* tp_doc */
-    0,                                            /* tp_traverse */
-    0,                                            /* tp_clear */
-    0,                                            /* tp_richcompare */
-    0,                                            /* tp_weaklistoffset */
-    0,                                            /* tp_iter */
-    0,                                            /* tp_iternext */
-    PyRestorePacket_methods,                      /* tp_methods */
-    PyRestorePacket_members,                      /* tp_members */
-    0,                                            /* tp_getset */
-    0,                                            /* tp_base */
-    0,                                            /* tp_dict */
-    0,                                            /* tp_descr_get */
-    0,                                            /* tp_descr_set */
-    0,                                            /* tp_dictoffset */
-    (initproc)PyRestorePacket_init,               /* tp_init */
-    0,                                            /* tp_alloc */
-    0,                                            /* tp_new */
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name      = "restore_pkt",
+    .tp_basicsize = sizeof(PyRestorePacket),
+    .tp_dealloc   = (destructor)PyRestorePacket_dealloc,
+    .tp_repr      = (reprfunc)PyRestorePacket_repr,
+    .tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_doc       = "restore_pkt object",
+    .tp_methods   = PyRestorePacket_methods,
+    .tp_members   = PyRestorePacket_members,
+    .tp_init      = (initproc)PyRestorePacket_init,
 };
+/* clang-format on */
+#  pragma GCC diagnostic pop
 
 // The PyIOPacket type
 typedef struct {
@@ -456,7 +368,7 @@ static int PyIoPacket_init(PyIoPacket* self, PyObject* args, PyObject* kwds);
 static PyObject* PyIoPacket_repr(PyIoPacket* self);
 
 static PyMethodDef PyIoPacket_methods[] = {
-    {NULL} /* Sentinel */
+    {} /* Sentinel */
 };
 
 static PyMemberDef PyIoPacket_members[]
@@ -484,47 +396,25 @@ static PyMemberDef PyIoPacket_members[]
         (char*)"Lseek argument"},
        {(char*)"win32", T_BOOL, offsetof(PyIoPacket, win32), 0,
         (char*)"Win32 GetLastError returned"},
-       {NULL}};
+       {} /* Sentinel */};
 
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+/* clang-format off */
 static PyTypeObject PyIoPacketType = {
-    PyVarObject_HEAD_INIT(NULL, 0) "io_pkt",  /* tp_name */
-    sizeof(PyIoPacket),                       /* tp_basicsize */
-    0,                                        /* tp_itemsize */
-    (destructor)PyIoPacket_dealloc,           /* tp_dealloc */
-    0,                                        /* tp_print */
-    0,                                        /* tp_getattr */
-    0,                                        /* tp_setattr */
-    0,                                        /* tp_compare */
-    (reprfunc)PyIoPacket_repr,                /* tp_repr */
-    0,                                        /* tp_as_number */
-    0,                                        /* tp_as_sequence */
-    0,                                        /* tp_as_mapping */
-    0,                                        /* tp_hash */
-    0,                                        /* tp_call */
-    0,                                        /* tp_str */
-    0,                                        /* tp_getattro */
-    0,                                        /* tp_setattro */
-    0,                                        /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags*/
-    "io_pkt object",                          /* tp_doc */
-    0,                                        /* tp_traverse */
-    0,                                        /* tp_clear */
-    0,                                        /* tp_richcompare */
-    0,                                        /* tp_weaklistoffset */
-    0,                                        /* tp_iter */
-    0,                                        /* tp_iternext */
-    PyIoPacket_methods,                       /* tp_methods */
-    PyIoPacket_members,                       /* tp_members */
-    0,                                        /* tp_getset */
-    0,                                        /* tp_base */
-    0,                                        /* tp_dict */
-    0,                                        /* tp_descr_get */
-    0,                                        /* tp_descr_set */
-    0,                                        /* tp_dictoffset */
-    (initproc)PyIoPacket_init,                /* tp_init */
-    0,                                        /* tp_alloc */
-    0,                                        /* tp_new */
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name      = "io_pkt",
+    .tp_basicsize = sizeof(PyIoPacket),
+    .tp_dealloc   = (destructor)PyIoPacket_dealloc,
+    .tp_repr      = (reprfunc)PyIoPacket_repr,
+    .tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_doc       = "io_pkt object",
+    .tp_methods   = PyIoPacket_methods,
+    .tp_members   = PyIoPacket_members,
+    .tp_init      = (initproc)PyIoPacket_init,
 };
+/* clang-format on */
+#  pragma GCC diagnostic pop
 
 // The PyAclPacket type
 typedef struct {
@@ -538,7 +428,7 @@ static int PyAclPacket_init(PyAclPacket* self, PyObject* args, PyObject* kwds);
 static PyObject* PyAclPacket_repr(PyAclPacket* self);
 
 static PyMethodDef PyAclPacket_methods[] = {
-    {NULL} /* Sentinel */
+    {} /* Sentinel */
 };
 
 static PyMemberDef PyAclPacket_members[]
@@ -546,47 +436,25 @@ static PyMemberDef PyAclPacket_members[]
         (char*)"Filename"},
        {(char*)"content", T_OBJECT, offsetof(PyAclPacket, content), 0,
         (char*)"ACL content buffer"},
-       {NULL}};
+       {} /* Sentinel */};
 
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+/* clang-format off */
 static PyTypeObject PyAclPacketType = {
-    PyVarObject_HEAD_INIT(NULL, 0) "acl_pkt", /* tp_name */
-    sizeof(PyAclPacket),                      /* tp_basicsize */
-    0,                                        /* tp_itemsize */
-    (destructor)PyAclPacket_dealloc,          /* tp_dealloc */
-    0,                                        /* tp_print */
-    0,                                        /* tp_getattr */
-    0,                                        /* tp_setattr */
-    0,                                        /* tp_compare */
-    (reprfunc)PyAclPacket_repr,               /* tp_repr */
-    0,                                        /* tp_as_number */
-    0,                                        /* tp_as_sequence */
-    0,                                        /* tp_as_mapping */
-    0,                                        /* tp_hash */
-    0,                                        /* tp_call */
-    0,                                        /* tp_str */
-    0,                                        /* tp_getattro */
-    0,                                        /* tp_setattro */
-    0,                                        /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags*/
-    "acl_pkt object",                         /* tp_doc */
-    0,                                        /* tp_traverse */
-    0,                                        /* tp_clear */
-    0,                                        /* tp_richcompare */
-    0,                                        /* tp_weaklistoffset */
-    0,                                        /* tp_iter */
-    0,                                        /* tp_iternext */
-    PyAclPacket_methods,                      /* tp_methods */
-    PyAclPacket_members,                      /* tp_members */
-    0,                                        /* tp_getset */
-    0,                                        /* tp_base */
-    0,                                        /* tp_dict */
-    0,                                        /* tp_descr_get */
-    0,                                        /* tp_descr_set */
-    0,                                        /* tp_dictoffset */
-    (initproc)PyAclPacket_init,               /* tp_init */
-    0,                                        /* tp_alloc */
-    0,                                        /* tp_new */
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name      = "acl_pkt",
+    .tp_basicsize = sizeof(PyAclPacket),
+    .tp_dealloc   = (destructor)PyAclPacket_dealloc,
+    .tp_repr      = (reprfunc)PyAclPacket_repr,
+    .tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_doc       = "acl_pkt object",
+    .tp_methods   = PyAclPacket_methods,
+    .tp_members   = PyAclPacket_members,
+    .tp_init      = (initproc)PyAclPacket_init,
 };
+/* clang-format on */
+#  pragma GCC diagnostic pop
 
 // The PyXattrPacket type
 typedef struct {
@@ -603,7 +471,7 @@ static int PyXattrPacket_init(PyXattrPacket* self,
 static PyObject* PyXattrPacket_repr(PyXattrPacket* self);
 
 static PyMethodDef PyXattrPacket_methods[] = {
-    {NULL} /* Sentinel */
+    {} /* Sentinel */
 };
 
 static PyMemberDef PyXattrPacket_members[]
@@ -613,47 +481,25 @@ static PyMemberDef PyXattrPacket_members[]
         (char*)"XATTR name buffer"},
        {(char*)"value", T_OBJECT, offsetof(PyXattrPacket, value), 0,
         (char*)"XATTR value buffer"},
-       {NULL}};
+       {} /* Sentinel */};
 
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+/* clang-format off */
 static PyTypeObject PyXattrPacketType = {
-    PyVarObject_HEAD_INIT(NULL, 0) "xattr_pkt", /* tp_name */
-    sizeof(PyXattrPacket),                      /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    (destructor)PyXattrPacket_dealloc,          /* tp_dealloc */
-    0,                                          /* tp_print */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_compare */
-    (reprfunc)PyXattrPacket_repr,               /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    0,                                          /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags*/
-    "xattr_pkt object",                         /* tp_doc */
-    0,                                          /* tp_traverse */
-    0,                                          /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    PyXattrPacket_methods,                      /* tp_methods */
-    PyXattrPacket_members,                      /* tp_members */
-    0,                                          /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    (initproc)PyXattrPacket_init,               /* tp_init */
-    0,                                          /* tp_alloc */
-    0,                                          /* tp_new */
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name      = "xattr_pkt",
+    .tp_basicsize = sizeof(PyXattrPacket),
+    .tp_dealloc   = (destructor)PyXattrPacket_dealloc,
+    .tp_repr      = (reprfunc)PyXattrPacket_repr,
+    .tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_doc       = "xattr_pkt object",
+    .tp_methods   = PyXattrPacket_methods,
+    .tp_members   = PyXattrPacket_members,
+    .tp_init      = (initproc)PyXattrPacket_init,
 };
+/* clang-format off */
+#  pragma GCC diagnostic pop
 
 // Callback methods from Python.
 static PyObject* PyBareosGetValue(PyObject* self, PyObject* args);

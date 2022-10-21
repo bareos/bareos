@@ -30,9 +30,7 @@ if(Python2_FOUND)
   target_link_libraries(python-fd ${Python2_LIBRARIES} bareos)
   target_include_directories(python-fd PUBLIC ${Python2_INCLUDE_DIRS})
   target_compile_definitions(python-fd PUBLIC PY2MODDIR=\"${Python2_SITEARCH}\")
-  target_compile_options(
-    python-fd PUBLIC ${Python2_CCSHARED} -Wno-missing-field-initializers
-  )
+  target_compile_options(python-fd PUBLIC ${Python2_CCSHARED})
   add_dependencies(bareos-fd python-fd)
   add_dependencies(python-fd bareosfd-python2-module)
 endif()
@@ -52,7 +50,6 @@ if(Python3_FOUND)
   target_compile_definitions(
     python3-fd PUBLIC PY3MODDIR=\"${Python3_SITEARCH}\"
   )
-  target_compile_options(python3-fd PUBLIC -Wno-missing-field-initializers)
   add_dependencies(bareos-fd python3-fd)
   add_dependencies(python3-fd bareosfd-python3-module)
 endif()
@@ -118,10 +115,7 @@ if(Python2_FOUND)
                LINKER_LANGUAGE CXX
                INCLUDE_DIRECTORIES "${pymod2_include_dirs}"
   )
-  target_compile_options(
-    bareosfd-python2-module PUBLIC -fno-strict-aliasing
-                                   -Wno-missing-field-initializers
-  )
+  target_compile_options(bareosfd-python2-module PUBLIC -fno-strict-aliasing)
   if(NOT "${Python2_CCSHARED}" STREQUAL "")
     target_compile_options(bareosfd-python2-module PUBLIC ${Python2_CCSHARED})
   endif()
@@ -156,15 +150,11 @@ if(Python3_FOUND)
                LINKER_LANGUAGE CXX
                INCLUDE_DIRECTORIES "${pymod3_include_dirs}"
   )
-  target_compile_options(
-    bareosfd-python3-module PUBLIC -fno-strict-aliasing
-                                   -Wno-missing-field-initializers
-  )
+  target_compile_options(bareosfd-python3-module PUBLIC -fno-strict-aliasing)
   if(NOT "${Python3_CCSHARED}" STREQUAL "")
     set_property(
-      TARGET bareosfd-python3-module
-      PROPERTY COMPILE_OPTIONS ${Python3_CCSHARED}
-               -Wno-missing-field-initializers
+      TARGET bareosfd-python3-module PROPERTY COMPILE_OPTIONS
+                                              ${Python3_CCSHARED}
     )
   endif()
   target_link_libraries(bareosfd-python3-module bareos ${Python3_LIBRARIES})
