@@ -443,7 +443,9 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       ok = false;
     } else if (ok && !jcr->IsJobCanceled()) {
       // Send attributes of the final partial block of the session
-      processed_files.push_back(std::move(file_currently_processed));
+      if (file_currently_processed.GetFileIndex() > 0) {
+        processed_files.push_back(std::move(file_currently_processed));
+      }
       SaveFullyProcessedFiles(jcr, processed_files);
     }
   }
