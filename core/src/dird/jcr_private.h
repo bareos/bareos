@@ -112,7 +112,7 @@ struct JobControlRecordPrivate {
   uint64_t SDJobBytes{};          /**< Number of bytes processed this job */
   uint32_t SDErrors{};            /**< Number of non-fatal errors */
   std::atomic<int32_t> SDJobStatus{}; /**< Storage Job Status */
-  volatile int32_t FDJobStatus{}; /**< File daemon Job Status */
+  std::atomic<int32_t> FDJobStatus{}; /**< File daemon Job Status */
   uint32_t DumpLevel{};           /**< Dump level when doing a NDMP backup */
   uint32_t ExpectedFiles{};       /**< Expected restore files */
   uint32_t MediaId{};             /**< DB record IDs associated with this job */
