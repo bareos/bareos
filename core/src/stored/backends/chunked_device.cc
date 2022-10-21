@@ -573,7 +573,7 @@ bool ChunkedDevice::ReadChunk()
  *  -1: failure
  *   0: success
  */
-int ChunkedDevice::SetupChunk(const char* pathname, int flags, int mode)
+int ChunkedDevice::SetupChunk(const char*, int flags, int)
 {
   int retval = -1;
   /*
@@ -657,7 +657,7 @@ int ChunkedDevice::SetupChunk(const char* pathname, int flags, int mode)
 }
 
 // Read a chunked volume.
-ssize_t ChunkedDevice::ReadChunked(int fd, void* buffer, size_t count)
+ssize_t ChunkedDevice::ReadChunked(int, void* buffer, size_t count)
 {
   ssize_t retval = 0;
 
@@ -791,7 +791,7 @@ bail_out:
 }
 
 // Write a chunked volume.
-ssize_t ChunkedDevice::WriteChunked(int fd, const void* buffer, size_t count)
+ssize_t ChunkedDevice::WriteChunked(int, const void* buffer, size_t count)
 {
   ssize_t retval = 0;
 
