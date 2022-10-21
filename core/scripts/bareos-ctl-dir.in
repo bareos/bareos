@@ -19,6 +19,7 @@ BAREOS_DIRECTOR_PORT=${BAREOS_DIRECTOR_PORT:-@dir_port@}
 BAREOS_DIRECTOR_USER=${BAREOS_DIRECTOR_USER:-@dir_user@}
 BAREOS_DIRECTOR_GROUP=${BAREOS_DIRECTOR_GROUP:-@dir_group@}
 BAREOS_SCRIPT_DIR=${BAREOS_SCRIPT_DIR:-@scriptdir@}
+WINE_DRIVE_PREFIX="${WINE_DRIVE_PREFIX:-}"
 
 #
 # Source the generic functions.
@@ -40,7 +41,7 @@ case "$1" in
             fi
 
             if [ "${BAREOS_CONFIG_DIR}" != '' ]; then
-                OPTIONS="${OPTIONS} -c ${BAREOS_CONFIG_DIR}"
+                OPTIONS="${OPTIONS} -c ${WINE_DRIVE_PREFIX}${BAREOS_CONFIG_DIR}"
             fi
 
             checkcfg

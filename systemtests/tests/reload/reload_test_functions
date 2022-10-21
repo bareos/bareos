@@ -102,15 +102,14 @@ END_OF_DATA3
 
 add_duplicate_dir_to_config() {
 cat <<END_OF_DATA4 > "$temporary_director_config_file"
-Director {                            # define myself
+Director {
   Name = bareos-dir-2
   QueryFile = "@scriptdir@/query.sql"
   Maximum Concurrent Jobs = 10
-  Password = "@dir_password@"         # Console password
+  Password = "@dir_password@"
   Messages = Daemon
   Auditing = yes
-#  Backend Directory = @backenddir@
-  Working Directory =  "@working_dir@"
+  Working Directory = "@working_dir@"
 }
 END_OF_DATA4
 }

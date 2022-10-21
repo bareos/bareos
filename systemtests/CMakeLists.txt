@@ -21,10 +21,23 @@ message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 project(bareos-systemtests)
 
+include(CMakePrintHelpers)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(BareosSystemtestFunctions)
 
 set(USER $ENV{USER})
+
+set(wine_drive_prefix "")
+if(${SYSTEMTESTS_USE_WINE})
+  set(wine_drive_prefix "Z:")
+  # Wine must use same DLLs installed on the cross-build system.
+  # These are located in CMAKE_BINARY_DIR.
+  string(APPEND WINEPATH "Z:${CMAKE_BINARY_DIR}\\;")
+  string(REPLACE "/" "\\" WINEPATH ${WINEPATH})
+endif()
+
+# ${wine_drive_prefix} can be used for the pki_* and tls_* settings, as these
+# are only used inside Bareos configuration files.
 
 # set the data encryption and signature keys
 set(pki_keypair ${CMAKE_CURRENT_SOURCE_DIR}/pki/fd.pem)
@@ -73,33 +86,36 @@ message(STATUS "POSTGRES_BIN_PATH is ${POSTGRES_BIN_PATH}")
 
 find_program(PERL perl)
 
+option(SYSTEMTESTS_USE_WINE
+       "Configure the systemtests to use WINE to run Bareos" OFF
+)
 option(RUN_SYSTEMTESTS_ON_INSTALLED_FILES
-       "configure the system tests to run on installed files (from packages)"
+       "Configure the system tests to run on installed files (from packages)"
 )
 
 set(ALL_BINARIES_BEING_USED_BY_SYSTEMTESTS
-    bareos-dir
     bareos-dbcheck
+    bareos-dir
     bareos-fd
     bareos-sd
-    bcopy
-    btape
-    bextract
-    bareos-sd
-    bls
-    bscan
     bconsole
-    bsmtp
-    bwild
-    bpluginfo
-    bsmtp
-    bscrypto
-    btestls
-    drivetype
-    fstype
+    bcopy
+    bextract
+    bls
     bregex
+    bscan
+    bscrypto
+    bsmtp
+    btape
+    bwild
     testfind
 )
+
+if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  list(APPEND ALL_BINARIES_BEING_USED_BY_SYSTEMTESTS bpluginfo btestls
+       drivetype fstype
+  )
+endif()
 
 if(TARGET bareos_vadp_dumper)
   list(APPEND ALL_BINARIES_BEING_USED_BY_SYSTEMTESTS bareos_vadp_dumper)
@@ -109,13 +125,6 @@ cmake_print_variables(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
 
 message(STATUS "Looking for binaries and paths...")
 find_systemtests_binary_paths(${ALL_BINARIES_BEING_USED_BY_SYSTEMTESTS})
-
-# extract  db version from cats.h
-file(STRINGS ${CMAKE_SOURCE_DIR}/core/src/cats/cats.h DB_VERSION_STRING
-     REGEX .*BDB_VERSION.*
-)
-string(REGEX MATCH [0-9]+ BDB_VERSION ${DB_VERSION_STRING})
-message(STATUS "db version from cats.h is ${BDB_VERSION}")
 
 # set variable values to be replaced by configure_file set(DEFAULT_DB_TYPE
 # ${default_db_backend}) message(STATUS "DEFAULT_DB_TYPE is ${DEFAULT_DB_TYPE}")

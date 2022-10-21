@@ -226,18 +226,21 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(CMAKE_LIBRARY_PATH ${MINGW_LIBDIR})
 
   # set WINEPATH so that cross-compiled .exe tests find their dlls
-  set(WINEPATH "Z:${MINGW_BINDIR}\\\\;")
-  string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/lib\\\\;")
-  string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/fastlz\\\\;")
-  string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/findlib\\\\;")
-  string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/stored\\\\;")
-  string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/cats\\\\;")
-
-  message(${WINEPATH})
+  set(WINEPATH "Z:${MINGW_BINDIR}/\\;")
+  string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/cats/\\;")
+  string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/fastlz/\\;")
+  string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/findlib/\\;")
+  string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/lib/\\;")
+  string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/lmdb/\\;")
+  string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/stored/\\;")
   # replace slash with backslash everywhere
   string(REPLACE "/" "\\" WINEPATH ${WINEPATH})
-  # MESSAGE(FATAL_ERROR ${WINEPATH})
+  message(WINEPATH=${WINEPATH})
 
+  set(WINEPATH
+      "${WINEPATH}"
+      PARENT_SCOPE
+  )
   set(ENV{WINEPATH} ${WINEPATH})
 
 endif()

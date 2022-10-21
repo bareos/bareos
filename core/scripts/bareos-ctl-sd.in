@@ -19,6 +19,7 @@ BAREOS_SD_PORT=${BAREOS_SD_PORT:-@sd_port@}
 BAREOS_SD_USER=${BAREOS_SD_USER:-@sd_user@}
 BAREOS_SD_GROUP=${BAREOS_SD_GROUP:-@sd_group@}
 BAREOS_SCRIPT_DIR=${BAREOS_SCRIPT_DIR:-@scriptdir@}
+WINE_DRIVE_PREFIX="${WINE_DRIVE_PREFIX:-}"
 
 #
 # Source the generic functions.
@@ -39,7 +40,7 @@ case "$1" in
             fi
 
             if [ "${BAREOS_CONFIG_DIR}" != '' ]; then
-                OPTIONS="${OPTIONS} -c ${BAREOS_CONFIG_DIR}"
+                OPTIONS="${OPTIONS} -c ${WINE_DRIVE_PREFIX}${BAREOS_CONFIG_DIR}"
             fi
 
             if [ "x${VALGRIND_SD}" = "x1" ]; then

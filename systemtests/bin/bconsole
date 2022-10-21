@@ -3,4 +3,4 @@
 #shellcheck source=../environment.in
 . ./environment
 
-"${BAREOS_BCONSOLE_BINARY}" -c "${conf}" "$@"
+"${BAREOS_BCONSOLE_BINARY}" -c "${WINE_DRIVE_PREFIX}${conf}" "$@"

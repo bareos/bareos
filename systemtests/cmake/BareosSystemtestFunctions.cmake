@@ -79,12 +79,13 @@ endmacro()
 # create and set the BINARY_NAME_TO_TEST variable to the full path of it
 macro(find_compiled_binary_and_set_binary_name_to_test_variable_for binary_name)
   create_variable_binary_name_to_test_for_binary_name(${binary_name})
-  get_target_property(
-    "${binary_name_to_test_upcase}" "${binary_name}" BINARY_DIR
-  )
-  set("${binary_name_to_test_upcase}"
-      "${${binary_name_to_test_upcase}}/${binary_name}"
-  )
+  get_target_property("binary_dir" "${binary_name}" BINARY_DIR)
+  # FIXME: is there a better way to get the resulting binary name/path?
+  if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    set("${binary_name_to_test_upcase}" "${binary_dir}/${binary_name}.exe")
+  else()
+    set("${binary_name_to_test_upcase}" "${binary_dir}/${binary_name}")
+  endif()
   message(
     "   ${binary_name_to_test_upcase} is ${${binary_name_to_test_upcase}}"
   )
@@ -152,7 +153,8 @@ macro(find_systemtests_binary_paths SYSTEMTESTS_BINARIES)
     set(BACKEND_DIR_TO_TEST ${BACKEND_DIR_TO_TEST})
     set(WEBUI_PUBLIC_DIR_TO_TEST /usr/share/bareos-webui/public)
 
-  else() # run systemtests on source and compiled files
+  else()
+    # run systemtests on source and compiled files
 
     foreach(BINARY ${ALL_BINARIES_BEING_USED_BY_SYSTEMTESTS})
       find_compiled_binary_and_set_binary_name_to_test_variable_for(${BINARY})
@@ -301,11 +303,21 @@ macro(link_binaries_to_test_to_current_sbin_dir_with_individual_filename)
     string(REPLACE "-" "_" binary_name ${binary_name})
     string(TOUPPER ${binary_name} binary_name_upcase)
     string(CONCAT bareos_XXX_binary ${binary_name_upcase} "_BINARY")
-    # message (STATUS "${bareos_XXX_binary}")
+    # message(STATUS "${bareos_XXX_binary}")
     set(${bareos_XXX_binary} ${CURRENT_SBIN_DIR}/${binary_name}-${TEST_NAME})
-    # message( "creating symlink ${${bareos_XXX_binary}}  ->
-    # ${${binary_name_to_test_upcase}}" )
-    create_symlink(${${binary_name_to_test_upcase}} ${${bareos_XXX_binary}})
+    # message("creating symlink ${${bareos_XXX_binary}} ->
+    # ${${binary_name_to_test_upcase}}")
+    if(${SYSTEMTESTS_USE_WINE})
+      create_symlink(
+        ${PROJECT_SOURCE_DIR}/scripts/bareos-wine-wrapper.sh
+        ${${bareos_XXX_binary}}
+      )
+      create_symlink(
+        ${${binary_name_to_test_upcase}} ${${bareos_XXX_binary}}.exe
+      )
+    else()
+      create_symlink(${${binary_name_to_test_upcase}} ${${bareos_XXX_binary}})
+    endif()
   endforeach()
   create_symlink(${scriptdir}/btraceback ${CURRENT_SBIN_DIR}/btraceback)
 
@@ -407,7 +419,7 @@ endmacro()
 macro(prepare_test_python)
   string(REGEX MATCH "py2plug" py_v2 "${TEST_NAME}")
   string(REGEX MATCH "py3plug" py_v3 "${TEST_NAME}")
-  # use python3 by default, exepts the name of test starts with py2plug.
+  # use python3 by default, excepts the name of test starts with py2plug.
   set(python_module_name python3)
   if(py_v2)
     set(python_module_name python)
@@ -433,7 +445,7 @@ macro(prepare_test_python)
         "${CMAKE_BINARY_DIR}/core/src/plugins/stored/python/${python_module_name}modules:"
         "${CMAKE_BINARY_DIR}/core/src/plugins/dird/python/${python_module_name}modules:"
         "${CMAKE_SOURCE_DIR}/systemtests/python-modules:"
-        "${CMAKE_CURRENT_SOURCE_DIR}/tests/${TEST_NAME}/python-modules"
+        "${CMAKE_SOURCE_DIR}/systemtests/tests/${TEST_NAME}/python-modules"
     )
   endif()
 endmacro()

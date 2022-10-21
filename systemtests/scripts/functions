@@ -411,20 +411,20 @@ check_duration_lt()
 }
 
 start_dir() {
-   "${BAREOS_DIRECTOR_BINARY}" -c "${BAREOS_CONFIG_DIR}" -t </dev/null
-   "${BAREOS_DIRECTOR_BINARY}" -c "${BAREOS_CONFIG_DIR}" -f </dev/null &
+   "${BAREOS_DIRECTOR_BINARY}" -c "${WINE_DRIVE_PREFIX}${BAREOS_CONFIG_DIR}" -t </dev/null
+   "${BAREOS_DIRECTOR_BINARY}" -c "${WINE_DRIVE_PREFIX}${BAREOS_CONFIG_DIR}" -f </dev/null &
    dir_pid=$!
 }
 
 start_fd() {
-   "${BAREOS_FILEDAEMON_BINARY}" -c "${BAREOS_CONFIG_DIR}" -t </dev/null
-   "${BAREOS_FILEDAEMON_BINARY}" -c "${BAREOS_CONFIG_DIR}" -f </dev/null &
+   "${BAREOS_FILEDAEMON_BINARY}" -c "${WINE_DRIVE_PREFIX}${BAREOS_CONFIG_DIR}" -t </dev/null
+   "${BAREOS_FILEDAEMON_BINARY}" -c "${WINE_DRIVE_PREFIX}${BAREOS_CONFIG_DIR}" -f </dev/null &
    fd_pid=$!
 }
 
 start_sd() {
-   "${BAREOS_STORAGEDAEMON_BINARY}" -c "${BAREOS_CONFIG_DIR}" -t </dev/null
-   "${BAREOS_STORAGEDAEMON_BINARY}" -c "${BAREOS_CONFIG_DIR}" -f </dev/null &
+   "${BAREOS_STORAGEDAEMON_BINARY}" -c "${WINE_DRIVE_PREFIX}${BAREOS_CONFIG_DIR}" -t </dev/null
+   "${BAREOS_STORAGEDAEMON_BINARY}" -c "${WINE_DRIVE_PREFIX}${BAREOS_CONFIG_DIR}" -f </dev/null &
    sd_pid=$!
 }
 

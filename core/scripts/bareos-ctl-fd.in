@@ -19,6 +19,7 @@ BAREOS_FD_PORT=${BAREOS_FD_PORT:-@fd_port@}
 BAREOS_FD_USER=${BAREOS_FD_USER:-@fd_user@}
 BAREOS_FD_GROUP=${BAREOS_FD_GROUP:-@fd_group@}
 BAREOS_SCRIPT_DIR=${BAREOS_SCRIPT_DIR:-@scriptdir@}
+WINE_DRIVE_PREFIX="${WINE_DRIVE_PREFIX:-}"
 
 #
 # Source the generic functions.
@@ -40,7 +41,7 @@ case "$1" in
             fi
 
             if [ "${BAREOS_CONFIG_DIR}" != '' ]; then
-                OPTIONS="${OPTIONS} -c ${BAREOS_CONFIG_DIR}"
+                OPTIONS="${OPTIONS} -c ${WINE_DRIVE_PREFIX}${BAREOS_CONFIG_DIR}"
             fi
 
             if [ "x${VALGRIND_FD}" = "x1" ]; then
