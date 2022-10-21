@@ -33,6 +33,7 @@
 #include "dird/jcr_private.h"
 #include "findlib/match.h"
 #include "lib/parse_conf.h"
+#include "include/allow_deprecated.h"
 
 #ifndef HAVE_REGEX_H
 #  include "lib/bregex.h"
@@ -812,7 +813,8 @@ static void StoreFname(LEX* lc, ResourceItem*, int, int pass, bool)
       case BCT_QUOTED_STRING: {
         FilesetResource* res_fs = GetStaticFilesetResource();
         if (res_fs->have_MD5) {
-          MD5_Update(&res_fs->md5c, (unsigned char*)lc->str, lc->str_len);
+          ALLOW_DEPRECATED(
+              MD5_Update(&res_fs->md5c, (unsigned char*)lc->str, lc->str_len));
         }
 
         if (res_incexe->name_list.size() == 0) {
@@ -861,7 +863,8 @@ static void StorePluginName(LEX* lc, ResourceItem*, int, int pass, bool exclude)
         FilesetResource* res_fs = GetStaticFilesetResource();
 
         if (res_fs->have_MD5) {
-          MD5_Update(&res_fs->md5c, (unsigned char*)lc->str, lc->str_len);
+          ALLOW_DEPRECATED(
+              MD5_Update(&res_fs->md5c, (unsigned char*)lc->str, lc->str_len));
         }
         if (res_incexe->plugin_list.size() == 0) {
           res_incexe->plugin_list.init(10, true);
@@ -913,7 +916,7 @@ static void StoreNewinc(LEX* lc, ResourceItem* item, int index, int pass)
   if (pass == 1) { res_incexe = new IncludeExcludeItem; }
 
   if (!res_fs->have_MD5) {
-    MD5_Init(&res_fs->md5c);
+    ALLOW_DEPRECATED(MD5_Init(&res_fs->md5c));
     res_fs->have_MD5 = true;
   }
   res_fs->new_include = true;

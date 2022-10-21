@@ -31,6 +31,7 @@
 
 #if defined(HAVE_OPENSSL)
 
+#  include "include/allow_deprecated.h"
 #  include <openssl/err.h>
 #  include <openssl/rand.h>
 
@@ -639,7 +640,8 @@ DIGEST* crypto_digest_new(JobControlRecord* jcr, crypto_digest_t type)
   /* Determine the correct OpenSSL message digest type */
   switch (type) {
     case CRYPTO_DIGEST_MD5:
-      md = EVP_md5();
+      // Solaris deprecates use of md5 in OpenSSL
+      ALLOW_DEPRECATED(md = EVP_md5();)
       break;
     case CRYPTO_DIGEST_SHA1:
       md = EVP_sha1();
@@ -1185,15 +1187,16 @@ CRYPTO_SESSION* crypto_session_new(crypto_cipher_t cipher,
     /* Encrypt the session key */
     ekey = (unsigned char*)malloc(EVP_PKEY_size(keypair->pubkey));
 
-    if ((ekey_len = EVP_PKEY_encrypt(ekey, cs->session_key, cs->session_key_len,
-                                     keypair->pubkey))
-        <= 0) {
-      /* OpenSSL failure */
-      RecipientInfo_free(ri);
-      CryptoSessionFree(cs);
-      free(ekey);
-      return NULL;
-    }
+    ALLOW_DEPRECATED(
+        if ((ekey_len = EVP_PKEY_encrypt(ekey, cs->session_key,
+                                         cs->session_key_len, keypair->pubkey))
+            <= 0) {
+          /* OpenSSL failure */
+          RecipientInfo_free(ri);
+          CryptoSessionFree(cs);
+          free(ekey);
+          return NULL;
+        })
 
     /* Store it in our ASN.1 structure */
     if (!M_ASN1_OCTET_STRING_set(ri->encryptedKey, ekey, ekey_len)) {
@@ -1311,10 +1314,10 @@ crypto_error_t CryptoSessionDecode(const uint8_t* data,
         /* Allocate sufficient space for the largest possible decrypted data */
         cs->session_key
             = (unsigned char*)malloc(EVP_PKEY_size(keypair->privkey));
-        cs->session_key_len = EVP_PKEY_decrypt(
-            cs->session_key, M_ASN1_STRING_data(ri->encryptedKey),
-            M_ASN1_STRING_length(ri->encryptedKey), keypair->privkey);
-
+        ALLOW_DEPRECATED(
+            cs->session_key_len = EVP_PKEY_decrypt(
+                cs->session_key, M_ASN1_STRING_data(ri->encryptedKey),
+                M_ASN1_STRING_length(ri->encryptedKey), keypair->privkey);)
         if (cs->session_key_len <= 0) {
           OpensslPostErrors(M_ERROR, _("Failure decrypting the session key"));
           retval = CRYPTO_ERROR_DECRYPTION;
@@ -1499,8 +1502,8 @@ int InitCrypto(void)
   ENGINE_load_pk11();
 #  else
   // Load all the builtin engines.
-  ENGINE_load_builtin_engines();
-  ENGINE_register_all_complete();
+  ALLOW_DEPRECATED(ENGINE_load_builtin_engines();
+                   ENGINE_register_all_complete();)
 #  endif
 
   crypto_initialized = true;

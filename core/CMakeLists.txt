@@ -324,9 +324,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
   if(${CMAKE_CXX_COMPILER_ID} MATCHES SunPro)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64")
   endif()
-  # Solaris 11.4 has all md5 functions on openssl declared deprecated this
-  # produces a lot of useless warnings, so disable them
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")

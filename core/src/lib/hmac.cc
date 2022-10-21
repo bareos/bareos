@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2006 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version two of the GNU Lesser General
@@ -28,6 +28,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/allow_deprecated.h"
 
 #define PAD_LEN 64 /* PAD length */
 #define SIG_LEN 16 /* MD5 digest length */
@@ -48,9 +49,8 @@ void hmac_md5(uint8_t* text, /* pointer to data stream */
   if (key_len > PAD_LEN) {
     MD5_CTX md5key;
 
-    MD5_Init(&md5key);
-    MD5_Update(&md5key, key, key_len);
-    MD5_Final(keysig, &md5key);
+    ALLOW_DEPRECATED(MD5_Init(&md5key); MD5_Update(&md5key, key, key_len);
+                     MD5_Final(keysig, &md5key);)
 
     key = keysig;
     key_len = SIG_LEN;
@@ -79,17 +79,19 @@ void hmac_md5(uint8_t* text, /* pointer to data stream */
     k_opad[i] ^= 0x5c;
   }
 
-  /* perform inner MD5 */
-  MD5_Init(&md5c);                    /* start inner hash */
-  MD5_Update(&md5c, k_ipad, PAD_LEN); /* hash inner pad */
-  MD5_Update(&md5c, text, text_len);  /* hash text */
-  MD5_Final(hmac, &md5c);             /* store inner hash */
+  ALLOW_DEPRECATED(
+      /* perform inner MD5 */
+      MD5_Init(&md5c);                    /* start inner hash */
+      MD5_Update(&md5c, k_ipad, PAD_LEN); /* hash inner pad */
+      MD5_Update(&md5c, text, text_len);  /* hash text */
+      MD5_Final(hmac, &md5c);             /* store inner hash */
 
-  /* perform outer MD5 */
-  MD5_Init(&md5c);                    /* start outer hash */
-  MD5_Update(&md5c, k_opad, PAD_LEN); /* hash outer pad */
-  MD5_Update(&md5c, hmac, SIG_LEN);   /* hash inner hash */
-  MD5_Final(hmac, &md5c);             /* store results */
+      /* perform outer MD5 */
+      MD5_Init(&md5c);                    /* start outer hash */
+      MD5_Update(&md5c, k_opad, PAD_LEN); /* hash outer pad */
+      MD5_Update(&md5c, hmac, SIG_LEN);   /* hash inner hash */
+      MD5_Final(hmac, &md5c);             /* store results */
+  )
 }
 /*
 Test Vectors (Trailing '\0' of a character string not included in test):
