@@ -1995,6 +1995,19 @@ static bool time_cmd(UaContext* ua, const char* cmd)
   return true;
 }
 
+StorageResource* UaContext::GetStoreResWithId(DBId_t id,
+                                              bool audit_event,
+                                              bool lock)
+{
+  StorageDbRecord storage_dbr;
+
+  storage_dbr.StorageId = id;
+  if (db->GetStorageRecord(jcr, &storage_dbr)) {
+    return GetStoreResWithName(storage_dbr.Name, audit_event, lock);
+  }
+  return NULL;
+}
+
 
 /**
  * truncate command. Truncates volumes (volume files) on the storage daemon.

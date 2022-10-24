@@ -35,6 +35,7 @@
 #include "dird/scheduler_time_adapter.h"
 #include "dird/storage.h"
 #include "lib/parse_conf.h"
+#include "dird/jcr_util.h"
 
 #include <chrono>
 #include <utility>
@@ -126,7 +127,7 @@ static void SetJcrFromRunResource(JobControlRecord* jcr, RunResource* run)
 JobControlRecord* SchedulerPrivate::TryCreateJobControlRecord(
     const SchedulerJobItem& next_job)
 {
-  JobControlRecord* jcr = NewDirectorJcr();
+  JobControlRecord* jcr = NewDirectorJcr(DirdFreeJcr);
   SetJcrDefaults(jcr, next_job.job);
   if (next_job.run != nullptr) {
     next_job.run->scheduled_last = time_adapter->time_source_->SystemTime();

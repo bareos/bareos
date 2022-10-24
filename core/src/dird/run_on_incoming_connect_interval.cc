@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,7 +30,7 @@
 #include "dird/jcr_private.h"
 #include "dird/run_on_incoming_connect_interval.h"
 #include "dird/scheduler.h"
-
+#include "dird/jcr_util.h"
 #include <utility>
 
 namespace directordaemon {
@@ -54,7 +54,7 @@ RunOnIncomingConnectInterval::RunOnIncomingConnectInterval(
 
 time_t RunOnIncomingConnectInterval::FindLastJobStart(JobResource* job)
 {
-  JobControlRecord* jcr = NewDirectorJcr();
+  JobControlRecord* jcr = NewDirectorJcr(DirdFreeJcr);
   SetJcrDefaults(jcr, job);
   auto db = db_ != nullptr ? db_ : GetDatabaseConnection(jcr);
   if (db == nullptr) {

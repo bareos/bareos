@@ -39,6 +39,7 @@
 #include "dird/storage.h"
 #include "lib/berrno.h"
 #include "lib/thread_specific_data.h"
+#include "dird/jcr_util.h"
 
 namespace directordaemon {
 
@@ -653,7 +654,7 @@ static bool RescheduleJob(JobControlRecord* jcr, jobq_t* jq, jobq_item_t* je)
        * appropriate fields.
        */
       jcr->setJobStatus(JS_WaitStartTime);
-      njcr = NewDirectorJcr();
+      njcr = NewDirectorJcr(DirdFreeJcr);
       SetJcrDefaults(njcr, jcr->impl->res.job);
       njcr->impl->reschedule_count = jcr->impl->reschedule_count;
       njcr->sched_time = jcr->sched_time;

@@ -26,13 +26,13 @@
  */
 
 #include "include/bareos.h"
-#include "dird/dird.h"
+#include "dird/dird_conf.h"
 #include "findlib/find.h"
 #include "lib/mntent_cache.h"
 #include "include/ch.h"
 #include "filed/fd_plugins.h"
 #include "lib/parse_conf.h"
-#include "dird/job.h"
+#include "dird/jcr_util.h"
 #include "dird/dird_globals.h"
 #include "dird/dird_conf.h"
 #include "dird/jcr_private.h"
@@ -40,12 +40,27 @@
 #include "findlib/attribs.h"
 #include "filed/fileset.h"
 #include "lib/util.h"
+#include "lib/tree.h"
 
 #if defined(HAVE_WIN32)
 #  define isatty(fd) (fd == 0)
 #endif
 
+
 using namespace directordaemon;
+
+void TestfindFreeJcr(JobControlRecord* jcr)
+{
+  Dmsg0(200, "Start testfind FreeJcr\n");
+
+  if (jcr->impl) {
+    delete jcr->impl;
+    jcr->impl = nullptr;
+  }
+
+  Dmsg0(200, "End testfind FreeJcr\n");
+}
+
 
 /* Dummy functions */
 void GeneratePluginEvent(JobControlRecord* jcr,
@@ -150,7 +165,7 @@ int main(int argc, char* const* argv)
     InitMsg(NULL, msg);
   }
 
-  jcr = NewDirectorJcr();  // Ueb: null
+  jcr = NewDirectorJcr(TestfindFreeJcr);
   jcr->impl->res.fileset
       = (FilesetResource*)my_config->GetResWithName(R_FILESET, fileset_name);
 

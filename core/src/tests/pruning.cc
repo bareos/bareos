@@ -22,6 +22,7 @@
 #include "testing_dir_common.h"
 
 #include "include/jcr.h"
+#include "dird/jcr_util.h"
 #include "dird/job.h"
 #include "dird/ua_prune.h"
 #include "dird/ua_purge.h"
@@ -34,11 +35,14 @@ TEST(Pruning, ExcludeRunningJobsFromList)
   PConfigParser director_config(DirectorPrepareResources(path_to_config));
   if (!director_config) { return; }
 
-  JobControlRecord* jcr1 = directordaemon::NewDirectorJcr();
+  JobControlRecord* jcr1
+      = directordaemon::NewDirectorJcr(directordaemon::DirdFreeJcr);
   jcr1->JobId = 1;
-  JobControlRecord* jcr2 = directordaemon::NewDirectorJcr();
+  JobControlRecord* jcr2
+      = directordaemon::NewDirectorJcr(directordaemon::DirdFreeJcr);
   jcr2->JobId = 2;
-  JobControlRecord* jcr3 = directordaemon::NewDirectorJcr();
+  JobControlRecord* jcr3
+      = directordaemon::NewDirectorJcr(directordaemon::DirdFreeJcr);
   jcr3->JobId = 3;
 
   std::vector<JobId_t> pruninglist{0, 0, 1, 2, 3, 4, 5};
@@ -58,7 +62,8 @@ TEST(Pruning, TransformJobidsTobedeleted)
   PConfigParser director_config(DirectorPrepareResources(path_to_config));
   if (!director_config) { return; }
 
-  JobControlRecord* jcr1 = directordaemon::NewDirectorJcr();
+  JobControlRecord* jcr1
+      = directordaemon::NewDirectorJcr(directordaemon::DirdFreeJcr);
   jcr1->JobId = 1;
 
   directordaemon::UaContext* ua = directordaemon::new_ua_context(jcr1);

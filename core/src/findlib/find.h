@@ -125,7 +125,7 @@ struct findFOPTS {
                              integer */
   int Compress_level{};     /**< Compression level */
   int StripPath{};          /**< Strip path count */
-  struct s_sz_matching* size_match; /**< Perform size matching ? */
+  struct s_sz_matching* size_match{}; /**< Perform size matching ? */
   b_fileset_shadow_type shadow_type{
       check_shadow_none};        /**< Perform fileset shadowing check ? */
   char VerifyOpts[MAX_OPTS]{};   /**< Verify options */

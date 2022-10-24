@@ -100,6 +100,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - systemtest: fixed issues with systemtests not succeeding on first try [PR #1186]
 - btape: dumplabel only when label is valid [PR #1266]
 - dird: fix crash in .jobstatus [PR #1278]
+- testfind: remove unnecessary libraries and fix systemtest [#1250]
 
 ### Changed
 - contrib: rename Python modules to satisfy PEP8 [PR #768]

@@ -47,6 +47,7 @@ set(DIRD_OBJECTS_SRCS
     getmsg.cc
     inc_conf.cc
     job.cc
+    jcr_util.cc
     jobq.cc
     job_trigger.cc
     migrate.cc
@@ -128,16 +129,16 @@ set(DBCHKSRCS dbcheck.cc dbcheck_utils.cc dird_conf.cc dird_globals.cc
 )
 
 if(compiler_will_warn_of_unused_but_set_variable)
-  set_source_files_properties(catreq.cc PROPERTIES COMPILE_FLAGS -Wno-unused-but-set-variable)
+  set_source_files_properties(
+    catreq.cc PROPERTIES COMPILE_FLAGS -Wno-unused-but-set-variable
+  )
 endif()
 
 if(HAVE_WIN32)
   list(APPEND DBCHKSRCS ../win32/dird/dbcheckres.rc)
 endif()
 
-set(TSTFNDSRCS testfind.cc dird_conf.cc dird_globals.cc ua_acl.cc ua_audit.cc
-               run_conf.cc inc_conf.cc
-)
+set(TSTFNDSRCS testfind.cc)
 
 set(DIRD_RESTYPES
     catalog
@@ -199,19 +200,7 @@ target_link_libraries(
 # is not built by default
 if(NOT client-only)
   add_executable(testfind ${TSTFNDSRCS})
-  target_link_libraries(
-    testfind
-    dird_objects
-    fd_objects
-    bareos
-    bareosfind
-    bareossql
-    jansson
-    ${OPENSSL_LIBRARIES}
-    ${ACL_LIBRARIES}
-    ${CAP_LIBRARIES}
-    ${LZO_LIBRARIES}
-  )
+  target_link_libraries(testfind dird_objects bareosfind)
 endif()
 install(TARGETS bareos-dir bareos-dbcheck testfind DESTINATION "${sbindir}")
 

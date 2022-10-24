@@ -57,6 +57,7 @@
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
+#include "dird/jcr_util.h"
 
 #include "cats/sql.h"
 
@@ -1109,7 +1110,7 @@ bool DoMigrationInit(JobControlRecord* jcr)
     if (!jcr->impl->spool_data) { jcr->impl->spool_data = job->spool_data; }
 
     // Create a migration jcr
-    mig_jcr = NewDirectorJcr();
+    mig_jcr = NewDirectorJcr(DirdFreeJcr);
     jcr->impl->mig_jcr = mig_jcr;
     memcpy(&mig_jcr->impl->previous_jr, &jcr->impl->previous_jr,
            sizeof(mig_jcr->impl->previous_jr));

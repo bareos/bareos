@@ -33,6 +33,7 @@
 #include "include/bareos.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
+#include "dird/jcr_util.h"
 
 #include <string>
 #include <vector>
@@ -97,7 +98,7 @@ void CatalogTest::SetUp()
 
   // connect to database
   {
-    jcr = directordaemon::NewDirectorJcr();
+    jcr = directordaemon::NewDirectorJcr(directordaemon::DirdFreeJcr);
     jcr->impl->res.catalog
         = (directordaemon::CatalogResource*)my_config->GetResWithName(
             directordaemon::R_CATALOG, catalog_backend_name.c_str());

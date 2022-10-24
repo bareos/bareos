@@ -24,6 +24,7 @@
 #include "dird/ua.h"
 #include "dird/fd_cmds.cc"
 #include "dird/job.cc"
+#include "dird/jcr_util.h"
 
 TEST(DirectorToClientConnection, DoesNotConnectWhenDisabled)
 {
@@ -35,7 +36,8 @@ TEST(DirectorToClientConnection, DoesNotConnectWhenDisabled)
   PConfigParser director_config(DirectorPrepareResources(path_to_config));
 
 
-  JobControlRecord* jcr = directordaemon::NewDirectorJcr();
+  JobControlRecord* jcr
+      = directordaemon::NewDirectorJcr(directordaemon::DirdFreeJcr);
 
   jcr->impl->res.client = static_cast<directordaemon::ClientResource*>(
       directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT,

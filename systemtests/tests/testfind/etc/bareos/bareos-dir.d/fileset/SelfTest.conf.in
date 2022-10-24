@@ -14,7 +14,7 @@ FileSet {
       fstype = zfs
       fstype = btrfs
     }
-   File = "@sbindir@"
+   File = "@tmpdir@/data"
    #File=<@tmpdir@/file-list
   }
 }
