@@ -269,9 +269,7 @@ static void DoAllStatus(UaContext* ua)
   /* Count Storage items */
   LockRes(my_config);
   i = 0;
-  foreach_res (store, R_STORAGE) {
-    i++;
-  }
+  foreach_res (store, R_STORAGE) { i++; }
   unique_store = (StorageResource**)malloc(i * sizeof(StorageResource));
   /* Find Unique Storage address/port */
   i = 0;
@@ -304,9 +302,7 @@ static void DoAllStatus(UaContext* ua)
   /* Count Client items */
   LockRes(my_config);
   i = 0;
-  foreach_res (client, R_CLIENT) {
-    i++;
-  }
+  foreach_res (client, R_CLIENT) { i++; }
   unique_client = (ClientResource**)malloc(i * sizeof(ClientResource));
   /* Find Unique Client address/port */
   i = 0;
@@ -487,9 +483,10 @@ static bool show_scheduled_preview(UaContext*,
  */
 static bool DoSubscriptionStatus(UaContext* ua)
 {
-  if (!ua->AclAccessOk(Command_ACL, "configure")) {
-    ua->ErrorMsg(_("%s %s: is an invalid command or needs access right to the"
-                   " \"configure\" command.\n"),
+  if (ua->AclHasRestrictions(Client_ACL) || ua->AclHasRestrictions(Job_ACL)
+          || ua->AclHasRestrictions(FileSet_ACL)) {
+    ua->ErrorMsg(_("%s %s: needs access to all client, job"
+                   " and fileset resources.\n"),
                  ua->argk[0], ua->argk[1]);
     return false;
   }
@@ -917,9 +914,7 @@ static void ListScheduledJobs(UaContext* ua)
     }
   } /* end for loop over resources */
   UnlockRes(my_config);
-  foreach_dlist (sp, sched) {
-    PrtRuntime(ua, sp);
-  }
+  foreach_dlist (sp, sched) { PrtRuntime(ua, sp); }
   if (num_jobs == 0 && !ua->api) { ua->SendMsg(_("No Scheduled Jobs.\n")); }
   if (!ua->api) ua->SendMsg("====\n");
   Dmsg0(200, "Leave list_sched_jobs_runs()\n");
