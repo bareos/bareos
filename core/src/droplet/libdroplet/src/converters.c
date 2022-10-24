@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+ * Copyright (C) 2020-2022 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -107,6 +107,7 @@ char* dpl_location_constraint_str(dpl_location_constraint_t location_constraint)
 {
   switch (location_constraint) {
     case DPL_LOCATION_CONSTRAINT_UNDEF:
+    case DPL_LOCATION_CONSTRAINT_ERROR:
       return NULL;
     /* case DPL_LOCATION_CONSTRAINT_US_STANDARD: */
     case DPL_LOCATION_CONSTRAINT_US_EAST_1:
@@ -156,6 +157,7 @@ dpl_canned_acl_t dpl_canned_acl(char* str)
 char* dpl_canned_acl_str(dpl_canned_acl_t canned_acl)
 {
   switch (canned_acl) {
+    case DPL_CANNED_ACL_ERROR:
     case DPL_CANNED_ACL_UNDEF:
       return "undef";
     case DPL_CANNED_ACL_PRIVATE:
@@ -194,6 +196,7 @@ dpl_storage_class_t dpl_storage_class(char* str)
 char* dpl_storage_class_str(dpl_storage_class_t storage_class)
 {
   switch (storage_class) {
+    case DPL_STORAGE_CLASS_ERROR:
     case DPL_STORAGE_CLASS_UNDEF:
       return NULL;
     case DPL_STORAGE_CLASS_STANDARD:

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+ * Copyright (C) 2020-2022 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -153,6 +153,7 @@ dpl_status_t dpl_cdmi_add_sysmd_to_req(const dpl_sysmd_t* sysmd, dpl_req_t* req)
 
   if (sysmd->mask & DPL_SYSMD_MASK_CANNED_ACL) {
     switch (sysmd->canned_acl) {
+      case DPL_CANNED_ACL_ERROR:
       case DPL_CANNED_ACL_UNDEF:
         n_aces = 0;
         break;

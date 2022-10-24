@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+ * Copyright (C) 2020-2022 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -465,6 +465,7 @@ dpl_status_t dpl_uks_gen_random_key(dpl_ctx_t* ctx,
   }
 
   switch (storage_class) {
+    case DPL_STORAGE_CLASS_ERROR:
     case DPL_STORAGE_CLASS_UNDEF:
     case DPL_STORAGE_CLASS_STANDARD:
     case DPL_STORAGE_CLASS_STANDARD_IA:

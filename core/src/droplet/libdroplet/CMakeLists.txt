@@ -98,8 +98,12 @@ add_library(
   src/backend/posix/replyparser.c
 )
 
-target_compile_options(droplet PRIVATE -Wno-deprecated-declarations -Wno-extra)
-target_link_options(droplet PRIVATE -Wno-deprecated-declarations -Wno-extra)
+include(BareosDisableWarnings)
+bareos_target_disable_warnings(
+  droplet -Wdeprecated-declarations -Wunused-but-set-variable
+  -Wnon-literal-null-conversion -Wsign-compare -Wunused-parameter
+  -Wdeprecated-non-prototype
+)
 
 target_include_directories(
   droplet PUBLIC include ${LIBXML2_INCLUDE_DIR} ${JSONC_INCLUDE_DIRS}

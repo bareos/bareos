@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+ * Copyright (C) 2020-2022 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -175,6 +175,7 @@ enum dpl_data_type
 
 typedef enum
 {
+  DPL_LOCATION_CONSTRAINT_ERROR = -1,
   DPL_LOCATION_CONSTRAINT_UNDEF,
   DPL_LOCATION_CONSTRAINT_EU_WEST_1,
   DPL_LOCATION_CONSTRAINT_EU_CENTRAL_1,
@@ -195,6 +196,7 @@ typedef enum
 
 typedef enum
 {
+  DPL_CANNED_ACL_ERROR = -1,
   DPL_CANNED_ACL_UNDEF,
   DPL_CANNED_ACL_PRIVATE,
   DPL_CANNED_ACL_PUBLIC_READ,
@@ -292,6 +294,7 @@ typedef struct {
 
 typedef enum
 {
+  DPL_STORAGE_CLASS_ERROR = -1,
   DPL_STORAGE_CLASS_UNDEF,
   DPL_STORAGE_CLASS_STANDARD,
   DPL_STORAGE_CLASS_REDUCED_REDUNDANCY,
