@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+ * Copyright (C) 2020-2022 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -116,7 +116,7 @@ static int is_usable(dpl_conn_t* conn)
         return 0;
       }
     }
-      /* fall down */
+    /* fallthrough */
     case 0:
       DPRINTF("is_usable: rv %d returning True\n", retval);
       return 1;

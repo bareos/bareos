@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+ * Copyright (C) 2020-2022 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -441,9 +441,9 @@ dpl_status_t dpl_s3_parse_list_bucket(const dpl_ctx_t* ctx,
                                          common_prefixes);
         if (ret != DPL_SUCCESS) break;
       }
-    } else if (tmp->type == XML_TEXT_NODE)
+    } else if (tmp->type == XML_TEXT_NODE) {
       DPRINTF("content: %s\n", tmp->content);
-
+    }
     tmp = tmp->next;
   }
 

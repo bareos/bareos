@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+ * Copyright (C) 2020-2022 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -535,7 +535,7 @@ static dpl_status_t dpl_s3_insert_signature_v4_params(const dpl_req_t* req,
     ret = create_signature(req, tm, sign_request, signature);
   }
 
-  if (ret == DPL_SUCCESS) DPRINTF("Signature: %s\n", signature);
+  if (ret == DPL_SUCCESS) { DPRINTF("Signature: %s\n", signature); }
 
   for (item = 0; item < canonical_params->n_items; item++) {
     dpl_dict_var_t* param

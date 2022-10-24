@@ -498,26 +498,29 @@ struct dpl_backend_s;
 
 typedef struct dpl_ctx {
   // Profile
-  int use_https : 1;
-  int encode_slashes : 1;         /*!< Client wants slashes encoded */
-  int empty_folder_emulation : 1; /*!< Folders are represented as empty objects
-                                     (otherwise, they're purely virtual) */
-  int keep_alive : 1;             /*!< Client supports keep-alive */
-  int url_encoding : 1;       /*!< Some servers does not handle url encoding */
-  int preserve_root_path : 1; /*!< Preserve "/" for root path access in HTTP
-                                 requests */
-  int trace_buffers : 1;
-  int trace_binary : 1; /*!< Default is trace ascii */
-  int ssl_comp : 1;     /*!< SSL compression support (default to false) */
-  int cert_verif : 1;   /*!< SSL certificate verification (default to true) */
-  int max_redirects;    /*!< Maximum number of redirects */
-  int n_conn_buckets;   /*!< Number of buckets         */
-  int n_conn_max;       /*!< Max connexions            */
-  int n_conn_max_hits;  /*!< Before auto-close         */
-  int conn_idle_time;   /*!< Auto-close after (sec)    */
-  int conn_timeout;     /*!< Connection timeout (sec)  */
-  int read_timeout;     /*!< Read timeout (sec)        */
-  int write_timeout;    /*!< Write timeout (sec)       */
+  unsigned int use_https : 1;
+  unsigned int encode_slashes : 1; /*!< Client wants slashes encoded */
+  unsigned int
+      empty_folder_emulation : 1; /*!< Folders are represented as empty objects
+                            (otherwise, they're purely virtual) */
+  unsigned int keep_alive : 1;    /*!< Client supports keep-alive */
+  unsigned int
+      url_encoding : 1; /*!< Some servers does not handle url encoding */
+  unsigned int preserve_root_path : 1; /*!< Preserve "/" for root path access in
+                                 HTTP requests */
+  unsigned int trace_buffers : 1;
+  unsigned int trace_binary : 1; /*!< Default is trace ascii */
+  unsigned int ssl_comp : 1; /*!< SSL compression support (default to false) */
+  unsigned int
+      cert_verif : 1;  /*!< SSL certificate verification (default to true) */
+  int max_redirects;   /*!< Maximum number of redirects */
+  int n_conn_buckets;  /*!< Number of buckets         */
+  int n_conn_max;      /*!< Max connexions            */
+  int n_conn_max_hits; /*!< Before auto-close         */
+  int conn_idle_time;  /*!< Auto-close after (sec)    */
+  int conn_timeout;    /*!< Connection timeout (sec)  */
+  int read_timeout;    /*!< Read timeout (sec)        */
+  int write_timeout;   /*!< Write timeout (sec)       */
   dpl_addrlist_t* addrlist; /*!< List of addresses to contact */
   int cur_host;             /*!< Current host beeing used in addrlist */
   int blacklist_expiretime; /*!< Expiration time of blacklisting */

@@ -373,7 +373,7 @@ dpl_status_t dpl_uks_hash_set(BIGNUM* k, uint32_t hash)
 {
   int i;
 
-  if (hash < 0 || hash >= (1 << DPL_UKS_HASH_NBITS)) return DPL_FAILURE;
+  if (hash >= (1 << DPL_UKS_HASH_NBITS)) return DPL_FAILURE;
 
   for (i = 0; i < DPL_UKS_HASH_NBITS; i++) {
     if (hash & 1 << i)
