@@ -26,6 +26,7 @@
  */
 
 #include "include/bareos.h"
+#include "stored/blocksize_boundaries.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
 #include "stored/acquire.h"
@@ -298,7 +299,10 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
   rdev->min_block_size = dcr->dev->min_block_size;
   rdev->device_resource = dcr->dev->device_resource;
   rdcr = dcr->get_new_spooling_dcr();
-  SetupNewDcrDevice(jcr, rdcr, rdev.get(), NULL);
+  struct BlockSizeBoundaries devboundries {
+    dcr->dev->max_block_size, dcr->dev->min_block_size
+  };
+  SetupNewDcrDevice(jcr, rdcr, rdev.get(), &devboundries);
   rdcr->spool_fd = dcr->spool_fd;
   block = dcr->block;       /* save block */
   dcr->block = rdcr->block; /* make read and write block the same */
