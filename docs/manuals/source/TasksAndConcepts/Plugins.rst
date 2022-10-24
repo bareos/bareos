@@ -558,7 +558,7 @@ Requirements
 
 As the Plugin is based on the |vsphere| Storage APIs for Data Protection, which requires at least a |vsphere| Essentials License. It is tested against |vsphere| Storage APIs for Data Protection of |vmware| 7.0.1. It does not work with standalone unlicensed |vmware| ESXi\ |trade|.
 
-Since Bareos :sinceVersion:`20.0.0: VMware Plugin: VDDK 7.0.1` the plugin is using the Virtual Disk Development Kit (VDDK) 7.0.1, as of the VDDK 7.0 release notes, it should be compatible with vSphere 7.0 and the next major release (except new features) and backward compatible with vSphere 6.5 and 6.7, see VDDK release notes at https://code.vmware.com/web/sdk/7.0/vddk for details.
+Since Bareos :sinceVersion:`20.0.8: VMware Plugin: VDDK 8.0.0` the plugin is using the Virtual Disk Development Kit (VDDK) 8.0.0, as of the VDDK 8.0 release notes, it should be compatible with vSphere 8 and the next major release (except new features) and backward compatible with vSphere 6.7 and 7, see VDDK release notes at https://code.vmware.com/web/sdk/8.0/vddk for details.
 
 This plugin requires the pyVmomi module. Since Bareos :sinceVersion:`20.0.0: VMware Plugin: pyVmomi` the package **bareos-vmware-plugin** no longer includes a dependency on a pyVmomi package, because some Linux distributions don't provide current versions. Consequently, pyVmomi must be either installed by using :command:`pip install pyvmomi` or by manually installing a distribution provided pyVmomi package.
 
