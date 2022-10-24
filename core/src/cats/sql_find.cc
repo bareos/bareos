@@ -142,17 +142,17 @@ bool BareosDb::FindJobStartTime(JobControlRecord* jcr,
 }
 
 /**
- * Find the last job start time for specified job and client
- * used in RunOnIncomingConnectInterval.
+ * Find the last job start time for specified job and client.
+ * Used in RunOnIncomingConnectInterval.
  *
- * The tricky part is that we can have an actual job in state C not yet started
- * this will return a starttime NULL due to following PostgreSQL rules.
+ * The tricky part is that we can have a job in state 'C' not yet started
+ * having a starttime of NULL.
  *
- * By default, null values sort as if larger than any non-null value; that is,
- * NULLS FIRST is the default for DESC order, and NULLS LAST otherwise.
+ * As NULL values are regarded as greater than any non-null value on sorting,
+ * the job with the NULL value starttime would be returned by the query below.
  *
- * To avoid this we use now()::timestamp. Casting is mandatory otherwise
- * value has a DST.
+ * To avoid this, we use NOW()::timestamp so that a valid timestamp is returned
+ * for jobs with NULL timestamp. Casting is required to remove the DST.
  */
 BareosDb::SqlFindResult BareosDb::FindLastJobStartTimeForJobAndClient(
     JobControlRecord* jcr,
