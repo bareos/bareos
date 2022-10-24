@@ -170,7 +170,6 @@ TEST(dlist, dlist)
   MYJCR* jcr1;
   MYJCR* save_jcr = NULL;
   MYJCR* next_jcr;
-  int count;
   int index = 0;
 
   jcr_chain = new dlist<MYJCR>();
@@ -234,11 +233,9 @@ TEST(dlist, dlist)
   jcr_chain = new dlist<MYJCR>();
 #define CNT 6
   strcpy(buf, "ZZZ");
-  count = 0;
   for (int i = 0; i < CNT; i++) {
     for (int j = 0; j < CNT; j++) {
       for (int k = 0; k < CNT; k++) {
-        count++;
         jcr = (MYJCR*)malloc(sizeof(MYJCR));
         jcr->buf = strdup(buf);
         jcr1 = jcr_chain->binary_insert(jcr, MyCompare<MYJCR>);
@@ -284,7 +281,6 @@ TEST(dlist, dlistString)
    *  it.
    */
   char buf[30];
-  int count{0};
   auto chain = std::make_unique<dlist<dlistString>>();
   chain->append(new_dlistString("This is a long test line"));
 #define CNT 6
@@ -292,7 +288,6 @@ TEST(dlist, dlistString)
   for (int i = 0; i < CNT; i++) {
     for (int j = 0; j < CNT; j++) {
       for (int k = 0; k < CNT; k++) {
-        count++;
         chain->append(new_dlistString(buf));
         buf[1]--;
       }

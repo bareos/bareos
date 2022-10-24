@@ -18,19 +18,16 @@
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
+include(BareosDisableWarnings)
+
 if(HAVE_FREEBSD_OS)
   add_definitions(-D_WANT_SEMUN=1)
 endif()
 
 add_library(bareoslmdb SHARED mdb.c midl.c)
-target_compile_options(bareoslmdb PRIVATE -Wno-missing-braces -Wno-extra)
-
-# set target_link_options so lto doesn't complain either
-if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
-  target_link_options(bareoslmdb PRIVATE -Wno-stringop-overflow)
-  target_compile_options(
-    bareoslmdb PRIVATE -Wno-stringop-overflow -Wno-return-local-addr
-  )
+bareos_target_disable_warnings(bareoslmdb -Wunused-parameter -Wimplicit-fallthrough)
+if(HAVE_WIN32)
+  bareos_target_disable_warnings(bareoslmdb -Wreturn-local-addr)
 endif()
 
 # empty the include_directories

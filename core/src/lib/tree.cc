@@ -153,7 +153,7 @@ template <typename T> static T* tree_alloc(TREE_ROOT* root, int size)
 void FreeTree(TREE_ROOT* root)
 {
   struct s_mem *mem, *rel;
-  uint32_t freed_blocks = 0;
+  [[maybe_unused]] uint32_t freed_blocks = 0;  // how is this unused? (clang 15)
 
   std::destroy_at(&root->hardlinks);
   for (mem = root->mem; mem;) {

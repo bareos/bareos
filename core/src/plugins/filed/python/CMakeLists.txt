@@ -17,6 +17,8 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+include(BareosDisableWarnings)
+
 if(Python2_FOUND)
   add_library(python-fd MODULE python-fd.cc)
   set_target_properties(
@@ -119,6 +121,7 @@ if(Python2_FOUND)
   if(NOT "${Python2_CCSHARED}" STREQUAL "")
     target_compile_options(bareosfd-python2-module PUBLIC ${Python2_CCSHARED})
   endif()
+  bareos_target_disable_warnings(bareosfd-python2-module -Wc99-designator)
   target_link_libraries(bareosfd-python2-module bareos ${Python2_LIBRARIES})
 
   add_test(NAME bareosfd-python2-module
@@ -157,6 +160,7 @@ if(Python3_FOUND)
                                               ${Python3_CCSHARED}
     )
   endif()
+  bareos_target_disable_warnings(bareosfd-python3-module -Wc99-designator)
   target_link_libraries(bareosfd-python3-module bareos ${Python3_LIBRARIES})
 
   add_test(NAME bareosfd-python3-module
