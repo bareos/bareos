@@ -182,11 +182,13 @@ foreach(NDMP_VERSION 0 2 3 4 9)
 endforeach()
 
 add_library(bareosndmp SHARED ${LIBBAREOSNDMP_SRCS} ${RPC_GEN_FILES})
-target_compile_options(
-  bareosndmp
-  PRIVATE -Wno-enum-conversion -Wno-unused-parameter -Wno-sign-compare
-          -Wno-missing-field-initializers -Wunused-but-set-variable
+include(BareosDisableWarnings)
+bareos_target_disable_warnings_c_only(
+  bareosndmp -Wenum-conversion -Wunused-parameter -Wsign-compare
+  -Wmissing-field-initializers -Wunused-but-set-variable
+  -Wdeprecated-non-prototype
 )
+
 target_include_directories(bareosndmp PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(bareosndmp ${WRAP_LIBS} ${TIRPC_LIBRARIES})
 
