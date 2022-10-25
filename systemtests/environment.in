@@ -29,8 +29,6 @@ dumps=${current_test_directory}/dumps
 rscripts=${PROJECT_BINARY_DIR}/scripts
 scripts=@scripts@
 cats=${PROJECT_BINARY_DIR}/cats
-src=${PROJECT_BINARY_DIR}/src
-tmpsrc=${PROJECT_BINARY_DIR}/tmpsrc
 
 DBTYPE=${DBTYPE:-@db_backend_to_test@}
 

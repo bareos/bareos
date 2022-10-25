@@ -773,9 +773,8 @@ check_restore_diff()
 {
    # $dest will be set to
    #   * the first function parameter, or
-   #   * ${BackupDirectory} (set by test), or
-   #   * ${src}
-   dest=${1:-${BackupDirectory:-$src}}
+   #   * ${BackupDirectory} (set by test)
+   dest=${1:-${BackupDirectory}}
    defaultrestoredirectory="$tmp/bareos-restores"
    restoredirectory=${2:-${defaultrestoredirectory}}
    result=0
@@ -860,17 +859,6 @@ check_restore_bin_diff()
    dstat=$?
 }
 
-
-check_restore_tmp_build_diff()
-{
-   if test "$debug" -eq 1 ; then
-      "$rscripts/diff.pl" -s "${tmpsrc}" -d "${tmp}/bareos-restores${tmpsrc}"
-      diff -ur "${tmpsrc}" "${tmp}/bareos-restores${tmpsrc}"
-   else
-      diff -ur "${tmpsrc}" "${tmp}/bareos-restores${tmpsrc}" >/dev/null 2>&1
-   fi
-   dstat=$?
-}
 
 # bstat is backup error
 # dstat is diff difference
@@ -1161,13 +1149,6 @@ rscripts=${rscripts:-"$cwd/scripts"}
 rconfigs=${rconfigs:-"$cwd/configs"}
 
 
-# Bareos source directory when copied here
-#  also build directory
-src=${src:-"$cwd/build"}
-
-# Temp source directory so we don't mess up $src
-tmpsrc=${tmpsrc:-"$cwd/tmp/build"}
-
 export BAREOS_CONFIG_DIR
 export bin
 export conf
@@ -1178,9 +1159,7 @@ export plugindir
 export plugindirtmp
 export rscripts
 export scripts
-export src
 export tmp
-export tmpsrc
 export working
 
 export dirport="$BASEPORT"
