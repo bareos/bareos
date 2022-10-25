@@ -44,9 +44,6 @@ macro(create_systemtests_directory)
   )
   file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/systemtests/tls/minio/)
 
-  configurefilestosystemtest("core/src" "defaultconfigs" "*.conf" @ONLY "")
-  configurefilestosystemtest("core/src" "defaultconfigs" "*.in" @ONLY "")
-
   configurefilestosystemtest("core" "scripts" "*.in" @ONLY "")
   configurefilestosystemtest("core" "scripts" "bareos-ctl-funcs" @ONLY "")
   configurefilestosystemtest("core" "scripts" "btraceback.gdb" @ONLY "")
