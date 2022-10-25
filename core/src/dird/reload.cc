@@ -51,11 +51,6 @@ bool CheckResources()
     OK = false;
     goto bail_out;
   } else {
-    // Sanity check.
-    if (me->MaxConsoleConnections > me->MaxConnections) {
-      me->MaxConnections = me->MaxConsoleConnections + 10;
-    }
-
     my_config->omit_defaults_ = true;
     SetWorkingDirectory(me->working_directory);
 

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -122,11 +122,9 @@ void StartSocketServer(dlist<IPADDR>* addrs)
     Dmsg1(10, "filed: listening on port %d\n", p->GetPortHostOrder());
   }
 
-  // Permit MaxConnections connections.
   sock_fds = new alist<s_sockfd*>(10, not_owned_by_alist);
-  BnetThreadServerTcp(addrs, me->MaxConnections, sock_fds, thread_list,
-                      HandleConnectionRequest, my_config, nullptr,
-                      UserAgentShutdownCallback);
+  BnetThreadServerTcp(addrs, sock_fds, thread_list, HandleConnectionRequest,
+                      my_config, nullptr, UserAgentShutdownCallback);
 }
 
 void StopSocketServer(bool wait)

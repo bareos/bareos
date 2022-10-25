@@ -318,11 +318,6 @@ static bool CheckResources()
           configfile.c_str());
     OK = false;
   } else {
-    // Sanity check.
-    if (me->MaxConnections < (2 * me->MaxConcurrentJobs)) {
-      me->MaxConnections = (2 * me->MaxConcurrentJobs) + 2;
-    }
-
     if (my_config->GetNextRes(R_CLIENT, (BareosResource*)me) != nullptr) {
       Emsg1(M_FATAL, 0, _("Only one Client resource permitted in %s\n"),
             configfile.c_str());

@@ -108,6 +108,7 @@
           "datatype": "PINT32",
           "code": 0,
           "default_value": "30",
+          "deprecated": true,
           "equals": true
         },
         "MaximumConsoleConnections": {

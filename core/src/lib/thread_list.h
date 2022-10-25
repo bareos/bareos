@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -39,8 +39,7 @@ class ThreadList {
       = std::function<void*(ConfigurationParser* config, void* data)>;
   using ShutdownCallback = std::function<void*(void* data)>;
 
-  void Init(int maximum_thread_count,
-            ThreadHandler ThreadInvokedHandler,
+  void Init(ThreadHandler ThreadInvokedHandler,
             ShutdownCallback ShutdownCallback = nullptr);
 
   bool CreateAndAddNewThread(ConfigurationParser* config, void* data);

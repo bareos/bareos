@@ -307,9 +307,7 @@ int main(int argc, char* argv[])
 
 #if HAVE_NDMP
   // Separate thread that handles NDMP connections
-  if (me->ndmp_enable) {
-    StartNdmpThreadServer(me->NDMPaddrs, me->MaxConnections);
-  }
+  if (me->ndmp_enable) { StartNdmpThreadServer(me->NDMPaddrs); }
 #endif
 
   // Single server used for Director/Storage and File daemon
@@ -345,11 +343,6 @@ static int CheckResources()
           _("No Device resource defined in %s. Cannot continue.\n"),
           configfile.c_str());
     OK = false;
-  }
-
-  // Sanity check.
-  if (me->MaxConnections < ((2 * me->MaxConcurrentJobs) + 2)) {
-    me->MaxConnections = (2 * me->MaxConcurrentJobs) + 2;
   }
 
   if (!me->messages) {
