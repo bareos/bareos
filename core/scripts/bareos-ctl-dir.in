@@ -44,8 +44,7 @@ case "$1" in
                 OPTIONS="${OPTIONS} -c ${WINE_DRIVE_PREFIX}${BAREOS_CONFIG_DIR}"
             fi
 
-            checkcfg
-            if [ $? != 0 ]; then
+            if ! checkcfg; then
                 exit 1
             fi
 

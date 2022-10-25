@@ -17,8 +17,13 @@ export MALLOC_CHECK_
 case "$1" in
    start)
       [ -x ${BAREOS_SCRIPTDIR}/bareos-ctl-sd ] && ${BAREOS_SCRIPTDIR}/bareos-ctl-sd $1 $2
+      status_sd=$?
       [ -x ${BAREOS_SCRIPTDIR}/bareos-ctl-fd ] && ${BAREOS_SCRIPTDIR}/bareos-ctl-fd $1 $2
+      status_fd=$?
       [ -x ${BAREOS_SCRIPTDIR}/bareos-ctl-dir ] && ${BAREOS_SCRIPTDIR}/bareos-ctl-dir $1 $2
+      status_dir=$?
+      status_all=`expr ${status_dir:-0} + ${status_sd:-0} + ${status_fd:-0}`
+      exit ${status_all}
       ;;
 
    stop)
