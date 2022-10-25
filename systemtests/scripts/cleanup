@@ -15,7 +15,6 @@ rm -rf "${working:?}"/CLEANUPMARKER
 rm -rf "${working:?}"/plugins/*
 rm -rf "${archivedir:?}"/*
 rm -f  "${config_directory_dir_additional_test_config}"/*
-rm -f  "${PIDDIR}"/*
 find . -name "gigaslam.gif" -exec rm -f {} \;
 
 # cleanup chrome user data (selenium tests)

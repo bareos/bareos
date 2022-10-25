@@ -9,7 +9,6 @@ Storage {
   # Plugin Directory = "@python_plugin_module_src_sd@"
   # Plugin Names = ""
   Working Directory =  "@wine_drive_prefix@@working_dir@"
-  Pid Directory =  "@piddir@"
   SD Port = @sd_port@
   @sd_backend_config@
 }

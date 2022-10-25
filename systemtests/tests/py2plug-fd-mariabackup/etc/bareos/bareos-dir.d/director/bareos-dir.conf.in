@@ -8,6 +8,5 @@ Director {
 
   Backend Directory = @backenddir@
   Working Directory =  "@wine_drive_prefix@@working_dir@"
-  Pid Directory =  "@piddir@"
   DirPort = @dir_port@
 }

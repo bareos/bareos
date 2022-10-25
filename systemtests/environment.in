@@ -66,9 +66,6 @@ export BAREOS_BEXTRACT_BINARY=@BEXTRACT_BINARY@
 export BAREOS_DBCHECK_BINARY=@BAREOS_DBCHECK_BINARY@
 export BAREOS_BCOPY_BINARY=@BCOPY_BINARY@
 
-
-export PIDDIR=@piddir@
-
 export archivedir
 
 export scripts
