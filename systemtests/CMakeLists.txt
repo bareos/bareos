@@ -27,6 +27,10 @@ include(BareosSystemtestFunctions)
 
 set(USER $ENV{USER})
 
+option(SYSTEMTESTS_USE_WINE
+       "Configure the systemtests to use WINE to run Bareos" OFF
+)
+
 set(wine_drive_prefix "")
 if(${SYSTEMTESTS_USE_WINE})
   set(wine_drive_prefix "Z:")
@@ -40,31 +44,43 @@ endif()
 # are only used inside Bareos configuration files.
 
 # set the data encryption and signature keys
-set(pki_keypair ${CMAKE_CURRENT_SOURCE_DIR}/pki/fd.pem)
-set(pki_master_key ${CMAKE_CURRENT_SOURCE_DIR}/pki/master.cert)
+set(pki_keypair ${wine_drive_prefix}${CMAKE_CURRENT_SOURCE_DIR}/pki/fd.pem)
+set(pki_master_key
+    ${wine_drive_prefix}${CMAKE_CURRENT_SOURCE_DIR}/pki/master.cert
+)
 
 # set the tls ca keys
-set(tls_ca_certificate ${CMAKE_CURRENT_SOURCE_DIR}/tls/bareos-ca.pem)
+set(tls_ca_certificate
+    ${wine_drive_prefix}${CMAKE_CURRENT_SOURCE_DIR}/tls/bareos-ca.pem
+)
 
 set(tls_fd_certificate
-    ${CMAKE_CURRENT_SOURCE_DIR}/tls/client1.bareos.org-cert.pem
+    ${wine_drive_prefix}${CMAKE_CURRENT_SOURCE_DIR}/tls/client1.bareos.org-cert.pem
 )
-set(tls_fd_key ${CMAKE_CURRENT_SOURCE_DIR}/tls/client1.bareos.org-key.pem)
+set(tls_fd_key
+    ${wine_drive_prefix}${CMAKE_CURRENT_SOURCE_DIR}/tls/client1.bareos.org-key.pem
+)
 
 set(tls_sd_certificate
-    ${CMAKE_CURRENT_SOURCE_DIR}/tls/bareos-sd1.bareos.org-cert.pem
+    ${wine_drive_prefix}${CMAKE_CURRENT_SOURCE_DIR}/tls/bareos-sd1.bareos.org-cert.pem
 )
-set(tls_sd_key ${CMAKE_CURRENT_SOURCE_DIR}/tls/bareos-sd1.bareos.org-key.pem)
+set(tls_sd_key
+    ${wine_drive_prefix}${CMAKE_CURRENT_SOURCE_DIR}/tls/bareos-sd1.bareos.org-key.pem
+)
 
 set(tls_dir_certificate
-    ${CMAKE_CURRENT_SOURCE_DIR}/tls/bareos-dir.bareos.org-cert.pem
+    ${wine_drive_prefix}${CMAKE_CURRENT_SOURCE_DIR}/tls/bareos-dir.bareos.org-cert.pem
 )
-set(tls_dir_key ${CMAKE_CURRENT_SOURCE_DIR}/tls/bareos-dir.bareos.org-key.pem)
+set(tls_dir_key
+    ${wine_drive_prefix}${CMAKE_CURRENT_SOURCE_DIR}/tls/bareos-dir.bareos.org-key.pem
+)
 
 set(tls_con_certificate
-    ${CMAKE_CURRENT_SOURCE_DIR}/tls/console.bareos.org-cert.pem
+    ${wine_drive_prefix}${CMAKE_CURRENT_SOURCE_DIR}/tls/console.bareos.org-cert.pem
 )
-set(tls_con_key ${CMAKE_CURRENT_SOURCE_DIR}/tls/console.bareos.org-key.pem)
+set(tls_con_key
+    ${wine_drive_prefix}${CMAKE_CURRENT_SOURCE_DIR}/tls/console.bareos.org-key.pem
+)
 
 option(SYSTEMTESTS_S3_USE_HTTPS "Use tls for S3 connections in systemtests"
        "yes"
@@ -86,9 +102,6 @@ message(STATUS "POSTGRES_BIN_PATH is ${POSTGRES_BIN_PATH}")
 
 find_program(PERL perl)
 
-option(SYSTEMTESTS_USE_WINE
-       "Configure the systemtests to use WINE to run Bareos" OFF
-)
 option(RUN_SYSTEMTESTS_ON_INSTALLED_FILES
        "Configure the system tests to run on installed files (from packages)"
 )
