@@ -1,7 +1,7 @@
 Device {
   Name = GlusterStorage
   Archive Device = "Gluster Device"
-  Device Options = "uri=@glusterfs_uri@,loglevel=20,logfile=@logdir@/gluster.log"
+  Device Options = "uri=@glusterfs_uri@,loglevel=20,logfile=@wine_drive_prefix@@logdir@/gluster.log"
   Device Type = gfapi
   Media Type = GlusterFile
   Label Media = yes

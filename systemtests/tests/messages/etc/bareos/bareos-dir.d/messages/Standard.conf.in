@@ -2,13 +2,13 @@ Messages {
   Name = Standard
   Description = "Message delivery for all reasonable directions"
   Console = all
-  Append = "@logdir@/append-to-a-very-long-file-12345678901234567890123456789012345678901234567890abcdefghijklmnopqrstuvwxyz12345678901234567890abcdefg" = all
+  Append = "@wine_drive_prefix@@logdir@/append-to-a-very-long-file-12345678901234567890123456789012345678901234567890abcdefghijklmnopqrstuvwxyz12345678901234567890abcdefg" = all
   Catalog = all
   Syslog = all
   Stdout = all
   Stderr = all
-  Mail Command = "/bin/bash -c \"cat - > @logdir@/mail\""
+  Mail Command = "/bin/bash -c \"cat - > @wine_drive_prefix@@logdir@/mail\""
   Mail = no-mail = all
-  Operator Command = "/bin/bash -c \"cat - > @logdir@/operator\""
+  Operator Command = "/bin/bash -c \"cat - > @wine_drive_prefix@@logdir@/operator\""
   Operator = no-operator = all
 }

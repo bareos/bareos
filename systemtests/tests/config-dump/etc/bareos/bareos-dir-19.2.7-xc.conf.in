@@ -214,7 +214,7 @@ Messages {
   MailCommand = "/usr/bin/bsmtp -h localhost -f \"\(Bareos\) \<%r\>\" -s \"Bareos: %t %e of %c %l\" %r"
   OperatorCommand = "/usr/bin/bsmtp -h localhost -f \"\(Bareos\) \<%r\>\" -s \"Bareos: Intervention needed for %j\" %r"
   catalog = all,!saved,!skipped,!audit
-  append = @logdir@/bareos.log = all,!saved,!skipped,!audit
+  append = @wine_drive_prefix@@logdir@/bareos.log = all,!saved,!skipped,!audit
   console = all,!saved,!skipped,!audit
   mail = root = all,!saved,!skipped,!audit
   operator = root = mount
@@ -223,8 +223,8 @@ Messages {
 Messages {
   Name = "Daemon"
   MailCommand = "/usr/bin/bsmtp -h localhost -f \"\(Bareos\) \<%r\>\" -s \"Bareos daemon message\" %r"
-  append = @logdir@/bareos-audit.log = audit
-  append = @logdir@/bareos.log = all,!skipped,!audit
+  append = @wine_drive_prefix@@logdir@/bareos-audit.log = audit
+  append = @wine_drive_prefix@@logdir@/bareos.log = all,!skipped,!audit
   console = all,!saved,!skipped,!audit
   mail = root = all,!skipped,!audit
 }

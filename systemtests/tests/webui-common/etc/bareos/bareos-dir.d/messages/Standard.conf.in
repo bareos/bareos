@@ -6,6 +6,6 @@ Messages {
   operator = @job_email@ = mount                                 # (#03)
   mail = @job_email@ = all, !skipped, !saved, !audit             # (#02)
   console = all, !skipped, !saved, !audit
-  append = "@logdir@/bareos.log" = all, !skipped, !saved, !audit
+  append = "@wine_drive_prefix@@logdir@/bareos.log" = all, !skipped, !saved, !audit
   catalog = all, !skipped, !saved, !audit
 }
