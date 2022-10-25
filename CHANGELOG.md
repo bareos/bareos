@@ -140,6 +140,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Deprecated
 - make_catalog_backup.pl is now a shell wrapper script which will be removed in version 23.
+- marked config directive `Compatible` as deprecated [PR #1284]
 
 ### Removed
 - removed the `-r` run job option. [PR #1206]
@@ -318,14 +319,19 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1247]: https://github.com/bareos/bareos/pull/1247
 [PR #1248]: https://github.com/bareos/bareos/pull/1248
 [PR #1249]: https://github.com/bareos/bareos/pull/1249
+[PR #1250]: https://github.com/bareos/bareos/pull/1250
 [PR #1251]: https://github.com/bareos/bareos/pull/1251
 [PR #1253]: https://github.com/bareos/bareos/pull/1253
 [PR #1254]: https://github.com/bareos/bareos/pull/1254
 [PR #1255]: https://github.com/bareos/bareos/pull/1255
 [PR #1260]: https://github.com/bareos/bareos/pull/1260
+[PR #1262]: https://github.com/bareos/bareos/pull/1262
 [PR #1266]: https://github.com/bareos/bareos/pull/1266
 [PR #1267]: https://github.com/bareos/bareos/pull/1267
 [PR #1268]: https://github.com/bareos/bareos/pull/1268
+[PR #1270]: https://github.com/bareos/bareos/pull/1270
 [PR #1275]: https://github.com/bareos/bareos/pull/1275
+[PR #1277]: https://github.com/bareos/bareos/pull/1277
 [PR #1278]: https://github.com/bareos/bareos/pull/1278
+[PR #1284]: https://github.com/bareos/bareos/pull/1284
 [unreleased]: https://github.com/bareos/bareos/tree/master

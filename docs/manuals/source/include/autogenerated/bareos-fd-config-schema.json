@@ -306,6 +306,7 @@
           "datatype": "BOOLEAN",
           "code": 0,
           "default_value": "false",
+          "deprecated": true,
           "equals": true
         },
         "MaximumBandwidthPerJob": {
@@ -592,6 +593,7 @@
           "datatype": "BOOLEAN",
           "code": 0,
           "default_value": "false",
+          "deprecated": true,
           "equals": true
         },
         "MaximumBandwidthPerJob": {

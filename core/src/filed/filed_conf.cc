@@ -109,7 +109,7 @@ static ResourceItem cli_items[] = {
   {"PkiCipher", CFG_TYPE_CIPHER, ITEM(res_client, pki_cipher), 0, CFG_ITEM_DEFAULT, "aes128", NULL,
       "PKI Cipher used for data encryption."},
   {"VerId", CFG_TYPE_STR, ITEM(res_client, verid), 0, 0, NULL, NULL, NULL},
-  {"Compatible", CFG_TYPE_BOOL, ITEM(res_client, compatible), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL},
+  {"Compatible", CFG_TYPE_BOOL, ITEM(res_client, compatible), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "false", NULL, NULL},
   {"MaximumBandwidthPerJob", CFG_TYPE_SPEED, ITEM(res_client, max_bandwidth_per_job), 0, 0, NULL, NULL, NULL},
   {"AllowBandwidthBursting", CFG_TYPE_BOOL, ITEM(res_client, allow_bw_bursting), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL},
   {"AllowedScriptDir", CFG_TYPE_ALIST_DIR, ITEM(res_client, allowed_script_dirs), 0, 0, NULL, NULL, NULL},

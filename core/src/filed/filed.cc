@@ -207,6 +207,14 @@ int main(int argc, char* argv[])
     TerminateFiled(1);
   }
 
+  if (my_config->HasWarnings()) {
+    // messaging not initialized, so Jmsg with  M_WARNING doesn't work
+    fprintf(stderr, _("There are configuration warnings:\n"));
+    for (auto& warning : my_config->GetWarnings()) {
+      fprintf(stderr, " * %s\n", warning.c_str());
+    }
+  }
+
   if (!foreground && !test_config) {
     daemon_start("bareos-fd", pidfile_fd, pidfile_path);
     InitStackDump(); /* set new pid */
@@ -227,16 +235,7 @@ int main(int argc, char* argv[])
   }
 #endif
 
-  if (test_config) {
-    if (my_config->HasWarnings()) {
-      /* messaging not initialized, so Jmsg with  M_WARNING doesn't work */
-      fprintf(stderr, _("There are configuration warnings:\n"));
-      for (auto& warning : my_config->GetWarnings()) {
-        fprintf(stderr, " * %s\n", warning.c_str());
-      }
-    }
-    TerminateFiled(0);
-  }
+  if (test_config) { TerminateFiled(0); }
 
   /* Maximum 1 daemon at a time */
   ReadStateFile(me->working_directory, "bareos-fd",
