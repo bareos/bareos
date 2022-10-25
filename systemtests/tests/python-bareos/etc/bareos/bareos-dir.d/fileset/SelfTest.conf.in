@@ -6,7 +6,6 @@ FileSet {
       Signature = MD5 # calculate md5 checksum per file
       xattrsupport = no
     }
-   #File = "@sbindir@"
     File=<@tmpdir@/file-list
   }
 }

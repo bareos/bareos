@@ -15,7 +15,6 @@ FileSet {
       fstype = btrfs
       fstype = vfat
     }
-   #File = "@sbindir@"
     File=<@tmpdir@/file-list
   }
 }
