@@ -378,13 +378,11 @@ macro(prepare_testdir_for_daemon_run)
     set(bin /bin)
     set(sbin /sbin)
     set(scripts ${SCRIPTS_DIR_TO_TEST})
-    set(python_plugin_module_src_dir ${PYTHON_PLUGINS_DIR_TO_TEST})
     set(python_plugin_module_src_test_dir ${PYTHON_PLUGINS_DIR_TO_TEST})
   else()
     set(bin ${PROJECT_BINARY_DIR}/bin)
     set(sbin ${PROJECT_BINARY_DIR}/sbin)
     set(scripts ${PROJECT_BINARY_DIR}/scripts)
-    set(python_plugin_module_src_dir ${CMAKE_SOURCE_DIR}/core/src/plugins)
     set(python_plugin_module_src_test_dir
         ${current_test_directory}/python-modules
     )
