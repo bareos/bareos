@@ -8,10 +8,10 @@ Job {
   # This creates an ASCII copy of the catalog
   # Arguments to make_catalog_backup are:
   # make_catalog_backup.pl <catalog-name>
-  RunBeforeJob = "@scriptdir@/make_catalog_backup MyCatalog"
+  RunBeforeJob = "@wine_drive_prefix@@scriptdir@/make_catalog_backup MyCatalog"
 
   # This deletes the copy of the catalog
-  RunAfterJob  = "@scriptdir@/delete_catalog_backup"
+  RunAfterJob  = "@wine_drive_prefix@@scriptdir@/delete_catalog_backup"
 
   # This sends the bootstrap via mail for disaster recovery.
   # Should be sent to another system, please change recipient accordingly
