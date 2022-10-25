@@ -8,4 +8,8 @@ Device {
   RemovableMedia = no;
   AlwaysOpen = no;
   Description = "File device. A connecting Director must have the same Name and MediaType."
+  Auto Inflate = both
+  Auto Deflate = both
+  Auto Deflate Algorithm = gzip
+
 }

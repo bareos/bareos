@@ -1,5 +1,5 @@
 Device {
-  Name = FileStorage
+  Name = FileStorage2
   Media Type = File
   Archive Device = @wine_drive_prefix@@archivedir@
   LabelMedia = yes;                   # lets Bareos label unlabeled media
@@ -8,4 +8,7 @@ Device {
   RemovableMedia = no;
   AlwaysOpen = no;
   Description = "File device. A connecting Director must have the same Name and MediaType."
+  Auto Deflate = out
+  Auto Deflate Algorithm = gzip
+
 }

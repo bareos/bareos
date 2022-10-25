@@ -1,5 +1,5 @@
 Device {
-  Name = FileStorage
+  Name = FileStorage2
   Media Type = File
   Archive Device = @wine_drive_prefix@@archivedir@
   LabelMedia = yes;                   # lets Bareos label unlabeled media

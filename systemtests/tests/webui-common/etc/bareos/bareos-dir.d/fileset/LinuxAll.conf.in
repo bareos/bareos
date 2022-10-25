@@ -18,11 +18,11 @@ FileSet {
     File = /
   }
   # Things that usually have to be excluded
-  # You have to exclude @archivedir@
+  # You have to exclude @wine_drive_prefix@@archivedir@
   # on your bareos server
   Exclude {
     File = @working_dir@
-    File = @archivedir@
+    File = @wine_drive_prefix@@archivedir@
     File = /proc
     File = /tmp
     File = /var/tmp
