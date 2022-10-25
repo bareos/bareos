@@ -59,7 +59,6 @@ Job {
   FileSet = "Catalog"
   Schedule = "WeeklyCycleAfterBackup"
   JobDefs = "DefaultJob"
-  WriteBootstrap = "|/usr/bin/bsmtp -h localhost -f \"\(Bareos\) \" -s \"Bootstrap for Job %j\" root"
   Priority = 11
   run before job = "/usr/lib/bareos/scripts/make_catalog_backup MyCatalog"
   run after job = "/usr/lib/bareos/scripts/delete_catalog_backup"
@@ -211,8 +210,6 @@ Pool {
 
 Messages {
   Name = "Standard"
-  MailCommand = "/usr/bin/bsmtp -h localhost -f \"\(Bareos\) \<%r\>\" -s \"Bareos: %t %e of %c %l\" %r"
-  OperatorCommand = "/usr/bin/bsmtp -h localhost -f \"\(Bareos\) \<%r\>\" -s \"Bareos: Intervention needed for %j\" %r"
   catalog = all,!saved,!skipped,!audit
   append = @wine_drive_prefix@@logdir@/bareos.log = all,!saved,!skipped,!audit
   console = all,!saved,!skipped,!audit
@@ -222,7 +219,6 @@ Messages {
 
 Messages {
   Name = "Daemon"
-  MailCommand = "/usr/bin/bsmtp -h localhost -f \"\(Bareos\) \<%r\>\" -s \"Bareos daemon message\" %r"
   append = @wine_drive_prefix@@logdir@/bareos-audit.log = audit
   append = @wine_drive_prefix@@logdir@/bareos.log = all,!skipped,!audit
   console = all,!saved,!skipped,!audit

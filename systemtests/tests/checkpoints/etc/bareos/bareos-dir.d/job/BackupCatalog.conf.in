@@ -13,8 +13,5 @@ Job {
   # This deletes the copy of the catalog
   RunAfterJob  = "@wine_drive_prefix@@scriptdir@/delete_catalog_backup"
 
-  # This sends the bootstrap via mail for disaster recovery.
-  # Should be sent to another system, please change recipient accordingly
-  Write Bootstrap = "|@bindir@/bsmtp -h @smtp_host@ -f \"\(Bareos\) \" -s \"Bootstrap for Job %j\" @job_email@" # (#01)
   Priority = 11                   # run after main backup
 }

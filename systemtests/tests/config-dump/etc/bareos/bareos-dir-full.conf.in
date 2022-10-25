@@ -732,7 +732,6 @@ Job {
   # AddPrefix =
   # AddSuffix =
   # Bootstrap =
-  WriteBootstrap = "|/usr/bin/bsmtp -h localhost -f \"\(Bareos\) \" -s \"Bootstrap for Job %j\" root"
   # WriteVerifyList =
   # Replace = Always
   # MaximumBandwidth = 0
@@ -1667,8 +1666,6 @@ Pool {
 
 Messages {
   Name = "Standard"
-  MailCommand = "/usr/bin/bsmtp -h localhost -f \"\(Bareos\) \<%r\>\" -s \"Bareos: %t %e of %c %l\" %r"
-  OperatorCommand = "/usr/bin/bsmtp -h localhost -f \"\(Bareos\) \<%r\>\" -s \"Bareos: Intervention needed for %j\" %r"
   catalog = debug,abort,fatal,error,warning,info,notsaved,mount,Terminate,restored,security,alert,volmgmt,!saved,!skipped,!audit
   append = /tmp/btest/systemtests/tests/config-dump/log/bareos.log = debug,abort,fatal,error,warning,info,notsaved,mount,Terminate,restored,security,alert,volmgmt,!saved,!skipped,!audit
   console = debug,abort,fatal,error,warning,info,notsaved,mount,Terminate,restored,security,alert,volmgmt,!saved,!skipped,!audit
@@ -1678,7 +1675,6 @@ Messages {
 
 Messages {
   Name = "Daemon"
-  MailCommand = "/usr/bin/bsmtp -h localhost -f \"\(Bareos\) \<%r\>\" -s \"Bareos daemon message\" %r"
   append = /tmp/btest/systemtests/tests/config-dump/log/bareos-audit.log = audit,!debug,!abort,!fatal,!error,!warning,!info,!saved,!notsaved,!skipped,!mount,!Terminate,!restored,!security,!alert,!volmgmt
   append = /tmp/btest/systemtests/tests/config-dump/log/bareos.log = debug,abort,fatal,error,warning,info,saved,notsaved,mount,Terminate,restored,security,alert,volmgmt,!skipped,!audit
   console = debug,abort,fatal,error,warning,info,notsaved,mount,Terminate,restored,security,alert,volmgmt,!saved,!skipped,!audit
