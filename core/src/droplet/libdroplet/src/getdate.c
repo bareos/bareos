@@ -2,7 +2,7 @@
 
 /* Bison implementation for Yacc-like parsers in C
 
-   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2022 Bareos GmbH & Co. KG
    Copyright (C) 1984, 1989-1990, 2000-2013 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
@@ -1159,26 +1159,8 @@ struct global* yy;
   int yychar;
 
 
-#if defined __GNUC__ && 407 <= __GNUC__ * 100 + __GNUC_MINOR__
-/* Suppress an incorrect diagnostic about yylval being uninitialized.  */
-#  define YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN                 \
-    _Pragma("GCC diagnostic push")                            \
-        _Pragma("GCC diagnostic ignored \"-Wuninitialized\"") \
-            _Pragma("GCC diagnostic ignored \"-Wmaybe-uninitialized\"")
-#  define YY_IGNORE_MAYBE_UNINITIALIZED_END _Pragma("GCC diagnostic pop")
-#else
-  /* Default value used for initialization, for pacifying older GCCs
-     or non-GCC compilers.  */
   static YYSTYPE yyval_default;
-#  define YY_INITIAL_VALUE(Value) = Value
-#endif
-#ifndef YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
-#  define YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
-#  define YY_IGNORE_MAYBE_UNINITIALIZED_END
-#endif
-#ifndef YY_INITIAL_VALUE
-#  define YY_INITIAL_VALUE(Value) /* Nothing. */
-#endif
+#define YY_INITIAL_VALUE(Value) = Value
 
   /* The semantic value of the lookahead symbol.  */
   YYSTYPE yylval YY_INITIAL_VALUE(yyval_default);
@@ -1362,9 +1344,7 @@ yybackup:
   yychar = YYEMPTY;
 
   yystate = yyn;
-  YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
   *++yyvsp = yylval;
-  YY_IGNORE_MAYBE_UNINITIALIZED_END
 
   goto yynewstate;
 
@@ -1943,9 +1923,7 @@ yyerrlab1:
     YY_STACK_PRINT(yyss, yyssp);
   }
 
-  YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
   *++yyvsp = yylval;
-  YY_IGNORE_MAYBE_UNINITIALIZED_END
 
 
   /* Shift the error token.  */
