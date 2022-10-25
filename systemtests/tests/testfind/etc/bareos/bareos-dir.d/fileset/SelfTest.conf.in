@@ -14,10 +14,10 @@ FileSet {
       fstype = zfs
       fstype = btrfs
     }
-   File=<@tmpdir@/file-list
+   File=<@wine_drive_prefix@@tmpdir@/file-list
   }
 
   Exclude {
-   File = "@tmpdir@/data/build/src/tests"
+   File = "@wine_drive_prefix@@tmpdir@/data/build/src/tests"
   }
 }
