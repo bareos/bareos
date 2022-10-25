@@ -2,5 +2,5 @@ Job {
   Name = "RestoreFiles"
   Type = Restore
   JobDefs = "DefaultJob"
-  Where = @tmp@/bareos-restores
+  Where = @wine_drive_prefix@@tmpdir@/bareos-restores
 }

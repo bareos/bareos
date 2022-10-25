@@ -10,9 +10,9 @@ Director {
   }
   QueryFile = "@wine_drive_prefix@@scriptdir@/query.sql"
   WorkingDirectory = "@working_dir@"
-  PluginDirectory = "@tmpdir@"
+  PluginDirectory = "@wine_drive_prefix@@tmpdir@"
   # PluginNames =
-  ScriptsDirectory = "@tmpdir@"
+  ScriptsDirectory = "@wine_drive_prefix@@tmpdir@"
   BackendDirectory = "@backenddir@"
   Subscriptions = 10
   MaximumConcurrentJobs = 100

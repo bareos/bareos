@@ -5,6 +5,6 @@ FileSet {
     Options {
       Signature = MD5 # calculate md5 checksum per file
     }
-    File=@tmpdir@/file-with-chflags
+    File=@wine_drive_prefix@@tmpdir@/file-with-chflags
   }
 }

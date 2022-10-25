@@ -3,9 +3,8 @@ FileSet {
   Description = "fileset just to backup some files for selftest"
   Include {
     Options {
-      Signature = MD5 # calculate md5 checksum per file
+      Signature = MD5
     }
-   #File = "@sbindir@"
-    File=<@tmpdir@/file-list
+    File=<@wine_drive_prefix@@tmpdir@/file-list
   }
 }

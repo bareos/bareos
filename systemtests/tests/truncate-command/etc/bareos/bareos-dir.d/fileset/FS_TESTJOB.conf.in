@@ -5,6 +5,6 @@ FileSet {
       Signature = MD5
       Sparse=yes
     }
-    File = "<@tmpdir@/file-list"
+    File = "<@wine_drive_prefix@@tmpdir@/file-list"
   }
 }

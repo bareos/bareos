@@ -6,6 +6,6 @@ FileSet {
       Signature = MD5 # calculate md5 checksum per file
       xattrsupport = no
     }
-    File=<@tmpdir@/file-list
+    File=<@wine_drive_prefix@@tmpdir@/file-list
   }
 }

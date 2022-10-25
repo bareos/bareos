@@ -4,27 +4,27 @@ FileSet {
      Options {
         signature = MD5
      }
-     File=@tmpdir@/data-multi-includes/data1
+     File=@wine_drive_prefix@@tmpdir@/data-multi-includes/data1
   }
   Include {
      Options {
         signature = MD5
         compression = GZIP
      }
-     File=@tmpdir@/data-multi-includes/data2
+     File=@wine_drive_prefix@@tmpdir@/data-multi-includes/data2
   }
   Include {
      Options {
         signature = MD5
         compression = GZIP9
      }
-     File=@tmpdir@/data-multi-includes/data3
+     File=@wine_drive_prefix@@tmpdir@/data-multi-includes/data3
   }
   Include {
      Options {
         signature = MD5
         compression = LZ4
      }
-     File=@tmpdir@/data-multi-includes/data4
+     File=@wine_drive_prefix@@tmpdir@/data-multi-includes/data4
   }
 }

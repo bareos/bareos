@@ -14,7 +14,6 @@ FileSet {
       fstype = zfs
       fstype = btrfs
     }
-    File=<@tmpdir@/file-list
-
+    File=<@wine_drive_prefix@@tmpdir@/file-list
   }
 }
