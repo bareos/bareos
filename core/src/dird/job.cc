@@ -1352,18 +1352,15 @@ bool GetOrCreateFilesetRecord(JobControlRecord* jcr)
     unsigned char digest[16]; /* MD5 digest length */
     memcpy(&md5c, &jcr->impl->res.fileset->md5c, sizeof(md5c));
     ALLOW_DEPRECATED(MD5_Final(digest, &md5c));
-    /*
-     * Keep the flag (last arg) set to false otherwise old FileSets will
-     * get new MD5 sums and the user will get Full backups on everything
-     */
+    /* Keep the flag (last arg) set to false otherwise old FileSets will
+     * get new MD5 sums and the user will get Full backups on everything */
     BinToBase64(fsr.MD5, sizeof(fsr.MD5), (char*)digest, sizeof(digest), false);
     bstrncpy(jcr->impl->res.fileset->MD5, fsr.MD5,
              sizeof(jcr->impl->res.fileset->MD5));
   } else {
     Jmsg(jcr, M_WARNING, 0, _("FileSet MD5 digest not found.\n"));
   }
-  if (!jcr->impl->res.fileset->ignore_fs_changes
-      || !jcr->db->GetFilesetRecord(jcr, &fsr)) {
+  if (!jcr->impl->res.fileset->ignore_fs_changes) {
     PoolMem FileSetText(PM_MESSAGE);
     OutputFormatter output_formatter
         = OutputFormatter(pm_append, (void*)&FileSetText, nullptr, nullptr);
