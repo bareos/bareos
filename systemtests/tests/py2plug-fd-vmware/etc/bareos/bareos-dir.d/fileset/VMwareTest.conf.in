@@ -14,7 +14,7 @@ FileSet {
 #:vcserver=vcenter.example.org
 #:vcuser=bakadm@vsphere.local
 #:vcpass=Bak.Adm-1234"
-   Plugin = "python:module_path=@python_plugin_module_src_test_dir@:module_name=bareos-fd-vmware:config_file=@wine_drive_prefix@@confdir@/VMwareTest.ini"
+   Plugin = "python:module_path=@wine_drive_prefix@@python_plugin_module_src_test_dir@:module_name=bareos-fd-vmware:config_file=@wine_drive_prefix@@confdir@/VMwareTest.ini"
 
 
   }

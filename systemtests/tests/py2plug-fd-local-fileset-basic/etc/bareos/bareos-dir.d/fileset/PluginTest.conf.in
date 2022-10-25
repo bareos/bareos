@@ -7,6 +7,6 @@ FileSet {
       acl support = yes
       xattr support = yes
     }
-    Plugin = "@python_module_name@:module_path=@python_plugin_module_src_test_dir@:module_name=bareos-fd-local-fileset-acl-xattr:filename=@wine_drive_prefix@@tmpdir@/file-list"
+    Plugin = "@python_module_name@:module_path=@wine_drive_prefix@@python_plugin_module_src_test_dir@:module_name=bareos-fd-local-fileset-acl-xattr:filename=@wine_drive_prefix@@tmpdir@/file-list"
   }
 }

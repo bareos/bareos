@@ -5,6 +5,6 @@ FileSet {
     Options {
       signature = MD5
     }
-    Plugin = "@python_module_name@:module_path=@python_plugin_module_src_test_dir@:module_name=bareos-fd-ovirt:ca=@current_test_directory@/etc/bareos/ovirt-ca.cert:server=@ovirt_server@:vm_name=@ovirt_vm_name@:include_disk_aliases=@ovirt_include_disk_alias@:config_file=@wine_drive_prefix@@confdir@/ovirt-plugin.ini"
+    Plugin = "@python_module_name@:module_path=@wine_drive_prefix@@python_plugin_module_src_test_dir@:module_name=bareos-fd-ovirt:ca=@current_test_directory@/etc/bareos/ovirt-ca.cert:server=@ovirt_server@:vm_name=@ovirt_vm_name@:include_disk_aliases=@ovirt_include_disk_alias@:config_file=@wine_drive_prefix@@confdir@/ovirt-plugin.ini"
   }
 }

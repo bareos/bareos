@@ -5,6 +5,6 @@ FileSet {
     Options {
       signature = MD5
     }
-    Plugin = "@python_module_name@:module_path=@python_plugin_module_src_test_dir@:module_name=bareos_fd_pluginoptions:filename=@wine_drive_prefix@@tmpdir@/file-list-simple:filesetoption=fileset"
+    Plugin = "@python_module_name@:module_path=@wine_drive_prefix@@python_plugin_module_src_test_dir@:module_name=bareos_fd_pluginoptions:filename=@wine_drive_prefix@@tmpdir@/file-list-simple:filesetoption=fileset"
   }
 }

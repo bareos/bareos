@@ -1,23 +1,23 @@
 Job {
   Name = "backup-bareos-fd1"
-  DIR Plugin Options ="@python_module_name@:module_path=@python_plugin_module_src_test_dir@:module_name=bareos-dir-test:output=@wine_drive_prefix@@tmpdir@/test-plugin1.log"
+  DIR Plugin Options ="@python_module_name@:module_path=@wine_drive_prefix@@python_plugin_module_src_test_dir@:module_name=bareos-dir-test:output=@wine_drive_prefix@@tmpdir@/test-plugin1.log"
   JobDefs = "DefaultJob"
 }
 
 Job {
   Name = "backup-bareos-fd2"
-  DIR Plugin Options ="@python_module_name@:module_path=@python_plugin_module_src_test_dir@:module_name=bareos-dir-test:output=@wine_drive_prefix@@tmpdir@/test-plugin2.log"
+  DIR Plugin Options ="@python_module_name@:module_path=@wine_drive_prefix@@python_plugin_module_src_test_dir@:module_name=bareos-dir-test:output=@wine_drive_prefix@@tmpdir@/test-plugin2.log"
   JobDefs = "DefaultJob"
 }
 
 Job {
   Name = "backup-bareos-fd3"
-  DIR Plugin Options ="@python_module_name@:module_path=@python_plugin_module_src_test_dir@:module_name=bareos-dir-test:output=@wine_drive_prefix@@tmpdir@/test-plugin3.log"
+  DIR Plugin Options ="@python_module_name@:module_path=@wine_drive_prefix@@python_plugin_module_src_test_dir@:module_name=bareos-dir-test:output=@wine_drive_prefix@@tmpdir@/test-plugin3.log"
   JobDefs = "DefaultJob"
 }
 
 Job {
   Name = "backup-bareos-fd4"
-  DIR Plugin Options ="@python_module_name@:module_path=@python_plugin_module_src_test_dir@:module_name=bareos-dir-test:output=@wine_drive_prefix@@tmpdir@/test-plugin4.log"
+  DIR Plugin Options ="@python_module_name@:module_path=@wine_drive_prefix@@python_plugin_module_src_test_dir@:module_name=bareos-dir-test:output=@wine_drive_prefix@@tmpdir@/test-plugin4.log"
   JobDefs = "DefaultJob"
 }

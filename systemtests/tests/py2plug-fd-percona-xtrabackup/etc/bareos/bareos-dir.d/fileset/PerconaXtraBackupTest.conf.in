@@ -6,7 +6,7 @@ FileSet {
       signature = MD5
     }
     Plugin = "@python_module_name@:"
-      "module_path=@python_plugin_module_src_test_dir@:"
+      "module_path=@wine_drive_prefix@@python_plugin_module_src_test_dir@:"
       "module_name=bareos-fd-percona-xtrabackup:dumpbinary=@XTRABACKUP_BINARY@ --defaults-file=mysqldefaults:"
       "extradumpoptions=--user=root@extradumpoptions@:"
       "mysqlcmd=mysql --defaults-file=mysqldefaults --user=root --raw"
