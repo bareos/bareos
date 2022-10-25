@@ -3,7 +3,7 @@ Device {
   Media Type = S3_Object1
   Archive Device = S3 Object Storage
   # Bucket needs to be host-indivdidual
-  Device Options = "profile=@confdir@/bareos-sd.d/device/droplet/droplet.profile,bucket=backup,iothreads=2"
+  Device Options = "profile=@wine_drive_prefix@@confdir@/bareos-sd.d/device/droplet/droplet.profile,bucket=backup,iothreads=2"
   Device Type = droplet
   LabelMedia = yes                    # lets Bareos label unlabeled media
   Random Access = yes

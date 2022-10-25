@@ -4,6 +4,6 @@ FileSet {
     Options {
       Signature = MD5
     }
-    File = "\\|sh -c '@confdir@/command.sh client'"
+    File = "\\|sh -c '@wine_drive_prefix@@confdir@/command.sh client'"
   }
 }

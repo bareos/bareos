@@ -4,6 +4,6 @@ FileSet {
     Options {
       Signature = MD5
     }
-    File = "\\<@confdir@/include-client"
+    File = "\\<@wine_drive_prefix@@confdir@/include-client"
   }
 }

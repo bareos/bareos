@@ -6,6 +6,6 @@ FileSet {
       signature = MD5
     }
     File = "@wine_drive_prefix@@working_dir@/@db_name@.sql" # database dump
-    File = "@confdir@"                   # configuration
+    File = "@wine_drive_prefix@@confdir@"                   # configuration
   }
 }
