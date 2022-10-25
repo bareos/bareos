@@ -6,7 +6,7 @@ Storage {
   NDMP Snooping = yes
   Plugin Directory = "@SD_PLUGINS_DIR_TO_TEST@"
   Plugin Names = "autoxflate"
-  Working Directory =  "@working_dir@"
+  Working Directory =  "@wine_drive_prefix@@working_dir@"
   SD Port = @sd_port@
   @sd_backend_config@
 }

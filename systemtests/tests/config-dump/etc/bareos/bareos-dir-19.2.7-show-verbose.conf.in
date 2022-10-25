@@ -8,7 +8,7 @@ Director {
       }
   }
   QueryFile = "@wine_drive_prefix@@scriptdir@/query.sql"
-  WorkingDirectory = "@working_dir@"
+  WorkingDirectory = "@wine_drive_prefix@@working_dir@"
   BackendDirectory = "@backenddir@"
   # Subscriptions = 0
   MaximumConcurrentJobs = 10

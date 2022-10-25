@@ -10,7 +10,7 @@ JobDefs {
     # %n	Job name
     # %t	Job type (Backup, …)
     # %i	Job Id
-    Command = "@PROJECT_BINARY_DIR@/tests/@TEST_NAME@/write.sh @working_dir@/jobid-%i-runscript.log 'jobdefs=jobdefs-runscript1' 'daemon=%d' 'jobname=%n' 'jobtype=%t' 'jobid=%i'"
+    Command = "@PROJECT_BINARY_DIR@/tests/@TEST_NAME@/write.sh @wine_drive_prefix@@working_dir@/jobid-%i-runscript.log 'jobdefs=jobdefs-runscript1' 'daemon=%d' 'jobname=%n' 'jobtype=%t' 'jobid=%i'"
   }
   Jobdefs = "DefaultJob"
 }

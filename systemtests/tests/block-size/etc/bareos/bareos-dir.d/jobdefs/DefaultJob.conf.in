@@ -8,5 +8,5 @@ JobDefs {
   Messages = Standard
   Pool = File
   Priority = 10
-  Write Bootstrap = "@working_dir@/%c.bsr"
+  Write Bootstrap = "@wine_drive_prefix@@working_dir@/%c.bsr"
 }

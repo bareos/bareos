@@ -21,7 +21,7 @@ Director {                            # define myself
   #
   # Plugin Directory = "@python_plugin_module_src_dir@"
   # Plugin Names = ""
-  Working Directory =  "@working_dir@"
+  Working Directory =  "@wine_drive_prefix@@working_dir@"
   DirPort = @dir_port@
 
   Subscriptions = 10

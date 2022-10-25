@@ -13,7 +13,7 @@ Client {
   # if set to no, new bareos features are enabled which is the default
   # compatible = yes
 
-  Working Directory =  "@working_dir@"
+  Working Directory =  "@wine_drive_prefix@@working_dir@"
   FD Port = @fd_port@
   TLS Enable = no
   TLS Require = no

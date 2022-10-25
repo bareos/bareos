@@ -1,7 +1,7 @@
 Director {
   Name = "bareos-dir"
   QueryFile = "@wine_drive_prefix@@scriptdir@/query.sql"
-  WorkingDirectory = "@working_dir@"
+  WorkingDirectory = "@wine_drive_prefix@@working_dir@"
   BackendDirectory = "@backenddir@"
   MaximumConcurrentJobs = 10
   Password = "@dir_password@"

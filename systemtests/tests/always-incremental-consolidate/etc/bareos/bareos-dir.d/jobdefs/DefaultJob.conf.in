@@ -8,7 +8,7 @@ JobDefs {
   Messages = Standard
   Pool = AI-Incremental
   Priority = 10
-  Write Bootstrap = "@working_dir@/%c.bsr"
+  Write Bootstrap = "@wine_drive_prefix@@working_dir@/%c.bsr"
   Full Backup Pool = AI-Consolidated
   AllowDuplicateJobs = no
   CancelLowerLevelDuplicates = yes

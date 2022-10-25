@@ -21,7 +21,7 @@ FileSet {
   # You have to exclude @wine_drive_prefix@@archivedir@
   # on your bareos server
   Exclude {
-    File = @working_dir@
+    File = @wine_drive_prefix@@working_dir@
     File = @wine_drive_prefix@@archivedir@
     File = /proc
     File = /tmp

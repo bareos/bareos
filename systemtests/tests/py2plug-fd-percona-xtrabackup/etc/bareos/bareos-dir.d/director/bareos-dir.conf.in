@@ -7,6 +7,6 @@ Director {
   Auditing = yes
 
   Backend Directory = @backenddir@
-  Working Directory =  "@working_dir@"
+  Working Directory =  "@wine_drive_prefix@@working_dir@"
   DirPort = @dir_port@
 }

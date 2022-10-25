@@ -57,7 +57,7 @@ END_OF_DATA
 
 run_bareos "$@"
 if is_debug; then
-    cat ${working_dir}/*.trace
+    cat ${working}/*.trace
 fi
 check_for_zombie_jobs storage=File
 stop_bareos

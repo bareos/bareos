@@ -2,6 +2,6 @@ Client {
   Name = @basename@-fd
   Maximum Concurrent Jobs = 20
 
-  Working Directory =  "@working_dir@"
+  Working Directory =  "@wine_drive_prefix@@working_dir@"
   FD Port = @fd_port@
 }

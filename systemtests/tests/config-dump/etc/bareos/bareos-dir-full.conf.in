@@ -9,7 +9,7 @@ Director {
     }
   }
   QueryFile = "@wine_drive_prefix@@scriptdir@/query.sql"
-  WorkingDirectory = "@working_dir@"
+  WorkingDirectory = "@wine_drive_prefix@@working_dir@"
   PluginDirectory = "@wine_drive_prefix@@tmpdir@"
   # PluginNames =
   ScriptsDirectory = "@wine_drive_prefix@@tmpdir@"
