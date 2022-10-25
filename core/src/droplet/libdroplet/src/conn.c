@@ -115,8 +115,9 @@ static int is_usable(dpl_conn_t* conn)
         DPRINTF("is_usable: rv %d returning False\n", retval);
         return 0;
       }
+      DPRINTF("is_usable: rv %d returning True\n", retval);
+      return 1;
     }
-    /* fallthrough */
     case 0:
       DPRINTF("is_usable: rv %d returning True\n", retval);
       return 1;
