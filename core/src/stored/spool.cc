@@ -672,7 +672,7 @@ static bool WriteSpoolData(DeviceControlRecord* dcr)
   return false;
 }
 
-bool AreAttributesSpooled(JobControlRecord* jcr)
+bool AttributesAreSpooled(JobControlRecord* jcr)
 {
   return jcr->impl->spool_attributes && jcr->dir_bsock->spool_fd_ != -1;
 }
@@ -694,7 +694,7 @@ bool BeginAttributeSpool(JobControlRecord* jcr)
 
 bool DiscardAttributeSpool(JobControlRecord* jcr)
 {
-  if (AreAttributesSpooled(jcr)) {
+  if (AttributesAreSpooled(jcr)) {
     return CloseAttrSpoolFile(jcr, jcr->dir_bsock);
   }
   return true;
@@ -757,7 +757,7 @@ bool CommitAttributeSpool(JobControlRecord* jcr)
 
   Dmsg1(100, "Commit attributes at %s\n",
         bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
-  if (AreAttributesSpooled(jcr)) {
+  if (AttributesAreSpooled(jcr)) {
     dir = jcr->dir_bsock;
     if ((size = lseek(dir->spool_fd_, 0, SEEK_END)) == -1) {
       BErrNo be;

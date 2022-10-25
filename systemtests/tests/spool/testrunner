@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 set -o pipefail
 set -u
 #
@@ -19,29 +18,62 @@ JobName=backup-bareos-fd
 "${rscripts}"/cleanup
 "${rscripts}"/setup
 
-
-
 # Fill ${BackupDirectory} with data.
 setup_data
 
 start_test
 
+backup_log=$tmp/spool-backup.out
+restore_log=$tmp/spool-restore.out
+
+rm -f "$backup_log"
+rm -f "$restore_log"
+
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null
 messages
-@$out $tmp/log1.out
+@$out $backup_log
 setdebug level=100 storage=File
 label volume=TestVolume001 storage=File pool=Full
 run job=$JobName yes
 status director
 status client
 status storage=File
+END_OF_DATA
+
+run_bareos
+
+timeout=0
+attribute_spool_file=""
+data_spool_file=""
+
+while [[ ${timeout} -lt 10 ]] && [[ -z $attribute_spool_file || -z $data_spool_file ]]
+do
+    attribute_spool_file=$(ls $working_dir/bareos-sd.attr*spool 2>/dev/null)
+    data_spool_file=$(ls $working_dir/bareos-sd.data*spool 2>/dev/null)
+    sleep 1
+    ((++timeout))
+done
+
+if [[ -z $attribute_spool_file ]]; then
+    echo "Attribute spooling file was not created!"
+    estat=1;
+fi
+
+if [[ -z $data_spool_file ]]; then
+    echo "Data spool file was not created!"
+    estat=2;
+fi
+
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $backup_log
 wait
 messages
 @#
 @# now do a restore
 @#
-@$out $tmp/log2.out
+@$out $restore_log
 wait
 restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done
 yes
@@ -50,9 +82,22 @@ messages
 quit
 END_OF_DATA
 
-run_bareos "$@"
+run_bconsole
+
+expect_grep "Backup OK" \
+            "$backup_log" \
+            "Spool job failed."
+
+expect_grep "Spooling data ..." \
+            "$backup_log" \
+            "Spooling not triggered."
+
+expect_grep "Committing spooled data" \
+            "$backup_log" \
+            "Despooling not triggered."
+
 check_for_zombie_jobs storage=File
 
-check_two_logs
-check_restore_diff ${BackupDirectory}
+check_two_logs "$backup_log" "$restore_log"
+check_restore_diff "${BackupDirectory}"
 end_test

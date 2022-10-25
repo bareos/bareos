@@ -269,7 +269,7 @@
         "CheckpointInterval": {
           "datatype": "TIME",
           "code": 0,
-          "default_value": "60",
+          "default_value": "0",
           "equals": true
         },
         "MaximumNetworkBufferSize": {

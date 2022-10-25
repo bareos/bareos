@@ -1,0 +1,53 @@
+#!/bin/bash
+set -o pipefail
+set -u
+#
+# Run a simple backup while checkpoints are activated then restore it
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+backup_log=$tmp/regular-backup-checkpoints.out
+restore_log=$tmp/regular-restore-checkpoints.out
+restore_directory=$tmp/regular-checkpoints-restore-directory
+
+rm -f "$backup_log"
+rm -f "$restore_log"
+rm -rf "$restore_directory"
+
+slowjob="slow-backup-bareos-fd"
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $backup_log
+run job=$slowjob yes
+status director
+status client
+status storage=File
+wait
+messages
+@#
+@# now do a restore
+@#
+@$out $restore_log
+restore client=bareos-fd fileset=SelfTest where=$restore_directory select all done yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File
+
+check_two_logs "$backup_log" "$restore_log"
+check_restore_diff "${BackupDirectory}" "$restore_directory"
+end_test

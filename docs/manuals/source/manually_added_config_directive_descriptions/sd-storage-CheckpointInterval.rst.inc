@@ -1,1 +1,3 @@
-:index:`\ <single: checkpoint interval>`\  This is the interval at which Backup checkpoints are executed. When a checkpoint is executed, the files that have been successfully stored into the media at that point in time will be updated in the catalog database.
+:index:`\ <single: checkpoint interval>`\  This is the interval at which Backup checkpoints are executed.
+
+For more information about checkpoints, check the :ref:`checkpoints-chapter` chapter.

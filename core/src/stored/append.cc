@@ -119,12 +119,11 @@ static void UpdateJobrecord(JobControlRecord* jcr)
 
 void DoBackupCheckpoint(JobControlRecord* jcr)
 {
-  Jmsg(jcr, M_INFO, 0,
-       _("Checkpoint: Syncing current backup status to catalog\n"));
+  Dmsg0(100, _("Checkpoint: Syncing current backup status to catalog\n"));
   UpdateJobrecord(jcr);
   UpdateFileList(jcr);
   UpdateJobmediaRecord(jcr);
-  Jmsg(jcr, M_INFO, 0, _("Checkpoint completed\n"));
+  Dmsg0(100, _("Checkpoint completed\n"));
 }
 
 static time_t DoTimedCheckpoint(JobControlRecord* jcr,
@@ -359,25 +358,29 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
         break;
       }
 
-      if (current_block_number != jcr->impl->dcr->block->BlockNumber) {
-        current_block_number = jcr->impl->dcr->block->BlockNumber;
-        SaveFullyProcessedFiles(jcr, processed_files);
-      }
-
       if (IsAttribute(jcr->impl->dcr->rec)) {
         file_currently_processed.AddAttribute(jcr->impl->dcr->rec);
       }
 
-      if (me->checkpoint_interval) {
-        if (jcr->impl->dcr->VolMediaId != current_volumeid) {
-          Jmsg0(jcr, M_INFO, 0, _("Volume changed, doing checkpoint:\n"));
-          DoBackupCheckpoint(jcr);
-          current_volumeid = jcr->impl->dcr->VolMediaId;
-        } else {
-          next_checkpoint_time = DoTimedCheckpoint(jcr, next_checkpoint_time,
-                                                   me->checkpoint_interval);
+      if (AttributesAreSpooled(jcr)) {
+        SaveFullyProcessedFiles(jcr, processed_files);
+      } else {
+        if (current_block_number != jcr->impl->dcr->block->BlockNumber) {
+          current_block_number = jcr->impl->dcr->block->BlockNumber;
+          SaveFullyProcessedFiles(jcr, processed_files);
+        }
+        if (me->checkpoint_interval) {
+          if (jcr->impl->dcr->VolMediaId != current_volumeid) {
+            Jmsg0(jcr, M_INFO, 0, _("Volume changed, doing checkpoint:\n"));
+            DoBackupCheckpoint(jcr);
+            current_volumeid = jcr->impl->dcr->VolMediaId;
+          } else {
+            next_checkpoint_time = DoTimedCheckpoint(jcr, next_checkpoint_time,
+                                                     me->checkpoint_interval);
+          }
         }
       }
+
 
       Dmsg0(650, "Enter bnet_get\n");
     }
@@ -444,7 +447,9 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       ok = false;
     } else if (ok && !jcr->IsJobCanceled()) {
       // Send attributes of the final partial block of the session
-      processed_files.push_back(std::move(file_currently_processed));
+      if (file_currently_processed.GetFileIndex() > 0) {
+        processed_files.push_back(std::move(file_currently_processed));
+      }
       SaveFullyProcessedFiles(jcr, processed_files);
     }
   }
@@ -488,7 +493,7 @@ bool SendAttrsToDir(JobControlRecord* jcr, DeviceRecord* rec)
 {
   if (!jcr->impl->no_attributes) {
     BareosSocket* dir = jcr->dir_bsock;
-    if (AreAttributesSpooled(jcr)) { dir->SetSpooling(); }
+    if (AttributesAreSpooled(jcr)) { dir->SetSpooling(); }
     Dmsg0(850, "Send attributes to dir.\n");
     if (!jcr->impl->dcr->DirUpdateFileAttributes(rec)) {
       Jmsg(jcr, M_FATAL, 0, _("Error updating file attributes. ERR=%s\n"),
