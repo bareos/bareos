@@ -650,9 +650,8 @@ static void ListRunningJobs(StatusPacket* sp)
   JobControlRecord* jcr;
   DeviceControlRecord *dcr, *rdcr;
   bool found = false;
-  time_t now = time(NULL);
   PoolMem msg(PM_MESSAGE);
-  int len, avebps, bps, sec;
+  int len;
   char JobName[MAX_NAME_LENGTH];
   char b1[50], b2[50], b3[50], b4[50];
 
@@ -701,22 +700,17 @@ static void ListRunningJobs(StatusPacket* sp)
                    dcr->spooling, dcr->despooling, dcr->despool_wait);
         sp->send(msg, len);
       }
-      if (jcr->last_time == 0) { jcr->last_time = jcr->run_time; }
-      sec = now - jcr->last_time;
-      if (sec <= 0) { sec = 1; }
-      bps = (jcr->JobBytes - jcr->LastJobBytes) / sec;
-      if (jcr->LastRate == 0) { jcr->LastRate = bps; }
-      avebps = (jcr->LastRate + bps) / 2;
+
+      jcr->UpdateJobStats();
+
       len = Mmsg(msg,
                  _("    Files=%s Bytes=%s AveBytes/sec=%s LastBytes/sec=%s\n"),
                  edit_uint64_with_commas(jcr->JobFiles, b1),
                  edit_uint64_with_commas(jcr->JobBytes, b2),
-                 edit_uint64_with_commas(avebps, b3),
-                 edit_uint64_with_commas(bps, b4));
+                 edit_uint64_with_commas(jcr->AverageRate, b3),
+                 edit_uint64_with_commas(jcr->LastRate, b4));
       sp->send(msg, len);
-      jcr->LastRate = avebps;
-      jcr->LastJobBytes = jcr->JobBytes;
-      jcr->last_time = now;
+
       found = true;
       if (jcr->file_bsock) {
         len = Mmsg(msg, _("    FDReadSeqNo=%s in_msg=%u out_msg=%d fd=%d\n"),
