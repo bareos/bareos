@@ -28,6 +28,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - FreeBSD install create /usr/local/etc/pkg/repos directory [PR #1246]
 - dir-job-RescheduleTimes remove wrong default sentence [PR #1246]
 - update PR handling hints [PR #1259]
+- Adapt VMware plugin documentation for update to VDDK 8 [PR #1291]
 
 ## [21.1.4] - 2022-08-05
 
