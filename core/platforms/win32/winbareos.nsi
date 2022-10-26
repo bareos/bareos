@@ -567,7 +567,7 @@ SectionIn 1 2 3 4
   File libpcre-1.dll
   File libbz2-1.dll
   File libssp-0.dll
-
+  File libintl-8.dll
 
   # for password generation
   File "openssl.exe"
@@ -2070,6 +2070,7 @@ ConfDeleteSkip:
   Delete "$INSTDIR\libpcre-1.dll"
   Delete "$INSTDIR\libbz2-1.dll"
   Delete "$INSTDIR\libssp-0.dll"
+  Delete "$INSTDIR\libintl-8.dll"
 
   RMDir /r "$INSTDIR\platforms"
 
