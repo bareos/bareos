@@ -5,6 +5,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Documentation
+- Adapt VMware plugin documentation for update to VDDK 8 [PR #1292]
+
 ## [20.0.7] - 2022-08-05
 
 ### Changed
