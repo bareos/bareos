@@ -103,6 +103,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - testfind: remove unnecessary libraries and fix systemtest [PR #1250]
 - stored: systemtests: docs: checkpoints improvements [PR #1277]
 - winbareos.nsi: fix working directory in configure.sed [PR #1288]
+- core: BareosDb::FindLastJobStartTimeForJobAndClient: take into account Running job [PR #1265] [BUG #1466]
 
 ### Changed
 - contrib: rename Python modules to satisfy PEP8 [PR #768]
@@ -328,6 +329,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1255]: https://github.com/bareos/bareos/pull/1255
 [PR #1260]: https://github.com/bareos/bareos/pull/1260
 [PR #1262]: https://github.com/bareos/bareos/pull/1262
+[PR #1265]: https://github.com/bareos/bareos/pull/1265
 [PR #1266]: https://github.com/bareos/bareos/pull/1266
 [PR #1267]: https://github.com/bareos/bareos/pull/1267
 [PR #1268]: https://github.com/bareos/bareos/pull/1268
