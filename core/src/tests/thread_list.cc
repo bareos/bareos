@@ -87,8 +87,7 @@ static void* ShutdownCallback(void* data)
   return nullptr;
 }
 
-static constexpr int maximum_allowed_thread_count = 10;
-static constexpr int try_to_start_thread_count = 11;
+static constexpr int maximum_thread_count = 10;
 
 TEST(thread_list, thread_list_startup_and_shutdown)
 {
@@ -96,7 +95,7 @@ TEST(thread_list, thread_list_startup_and_shutdown)
 
   t->Init(ThreadHandler, ShutdownCallback);
 
-  for (int i = 0; i < try_to_start_thread_count; i++) {
+  for (int i = 0; i < maximum_thread_count; i++) {
     auto wc(std::make_unique<WaitCondition>());
     if (t->CreateAndAddNewThread(nullptr, wc.get())) {
       list_of_wait_conditions.push_back(std::move(wc));
@@ -110,7 +109,7 @@ TEST(thread_list, thread_list_startup_and_shutdown)
     EXPECT_EQ(c.get()->GetStatus(), WaitCondition::Status::kSuccess);
   }
 
-  EXPECT_EQ(thread_counter, maximum_allowed_thread_count);
+  EXPECT_EQ(thread_counter, maximum_thread_count);
 }
 
 static void* ThreadHandlerSleepRandomTime(ConfigurationParser*, void* data)
@@ -131,7 +130,7 @@ TEST(thread_list, thread_random_shutdown)
   t->Init(ThreadHandlerSleepRandomTime, nullptr);
 
   thread_counter = 0;
-  for (int i = 0; i < maximum_allowed_thread_count; i++) {
+  for (int i = 0; i < maximum_thread_count; i++) {
     t->CreateAndAddNewThread(nullptr, nullptr);
   }
 
@@ -139,5 +138,5 @@ TEST(thread_list, thread_random_shutdown)
   t->ShutdownAndWaitForThreadsToFinish();
 
   EXPECT_EQ(t->Size(), 0);
-  EXPECT_EQ(thread_counter, maximum_allowed_thread_count);
+  EXPECT_EQ(thread_counter, maximum_thread_count);
 }
