@@ -1243,7 +1243,7 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
          edit_int64(jcr->impl->previous_jr.JobId, ed1),
          jcr->get_ActionName(true), jcr->get_OperationName());
     jcr->setJobStatusWithPriorityCheck(JS_Terminated);
-    MigrationCleanup(jcr, jcr->JobStatus);
+    MigrationCleanup(jcr, jcr->getJobStatus());
     return true;
   }
 
@@ -1253,7 +1253,7 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
          edit_int64(jcr->impl->previous_jr.JobId, ed1),
          jcr->get_OperationName());
     jcr->setJobStatusWithPriorityCheck(JS_Terminated);
-    MigrationCleanup(jcr, jcr->JobStatus);
+    MigrationCleanup(jcr, jcr->getJobStatus());
     return true;
   }
 
@@ -1501,7 +1501,7 @@ bail_out:
   FreePairedStorage(jcr);
 
   if (jcr->is_JobStatus(JS_Terminated)) {
-    MigrationCleanup(jcr, jcr->JobStatus);
+    MigrationCleanup(jcr, jcr->getJobStatus());
     retval = true;
   }
 
@@ -1516,7 +1516,7 @@ static inline bool DoMigrationSelection(JobControlRecord* jcr)
   retval = getJobs_to_migrate(jcr);
   if (retval) {
     jcr->setJobStatusWithPriorityCheck(JS_Terminated);
-    MigrationCleanup(jcr, jcr->JobStatus);
+    MigrationCleanup(jcr, jcr->getJobStatus());
   } else {
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   }
@@ -1852,7 +1852,7 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
       }
     }
 
-    switch (jcr->JobStatus) {
+    switch (jcr->getJobStatus()) {
       case JS_Terminated:
         TermMsg = _("%s OK");
         break;
@@ -1868,7 +1868,7 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
          * can be different so that is why we do a second switch inside the
          * switch on the JobStatus.
          */
-        switch (jcr->JobStatus) {
+        switch (jcr->getJobStatus()) {
           case JS_Canceled:
             TermMsg = _("%s Canceled");
             break;
@@ -1902,7 +1902,7 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
     Mmsg(query, "DELETE FROM job WHERE JobId=%d", jcr->JobId);
     jcr->db->SqlQuery(query.c_str());
 
-    switch (jcr->JobStatus) {
+    switch (jcr->getJobStatus()) {
       case JS_Terminated:
         TermMsg = _("%s OK");
         break;

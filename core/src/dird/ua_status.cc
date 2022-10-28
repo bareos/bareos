@@ -291,12 +291,12 @@ static void DoAllStatus(UaContext* ua)
   }
   UnlockRes(my_config);
 
-  previous_JobStatus = ua->jcr->JobStatus;
+  previous_JobStatus = ua->jcr->getJobStatus();
 
   /* Call each unique Storage daemon */
   for (j = 0; j < i; j++) {
     StorageStatus(ua, unique_store[j], NULL);
-    ua->jcr->JobStatus = previous_JobStatus;
+    ua->jcr->setJobStatus(previous_JobStatus);
   }
   free(unique_store);
 
@@ -326,12 +326,12 @@ static void DoAllStatus(UaContext* ua)
   }
   UnlockRes(my_config);
 
-  previous_JobStatus = ua->jcr->JobStatus;
+  previous_JobStatus = ua->jcr->getJobStatus();
 
   /* Call each unique File daemon */
   for (j = 0; j < i; j++) {
     ClientStatus(ua, unique_client[j], NULL);
-    ua->jcr->JobStatus = previous_JobStatus;
+    ua->jcr->setJobStatus(previous_JobStatus);
   }
   free(unique_client);
 }
@@ -970,7 +970,7 @@ static void ListRunningJobs(UaContext* ua)
       continue;
     }
     njobs++;
-    switch (jcr->JobStatus) {
+    switch (jcr->getJobStatus()) {
       case JS_Created:
         msg = _("is waiting execution");
         break;

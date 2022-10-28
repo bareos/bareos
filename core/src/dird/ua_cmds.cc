@@ -623,7 +623,7 @@ bool Do_a_command(UaContext* ua)
        * ua->jcr->setJobStatus(JS_Running)
        * isn't enough, as it does not overwrite error states.
        */
-      ua->jcr->JobStatus = JS_Running;
+      ua->jcr->setJobStatus(JS_Running);
 
       if (ua->api) { user->signal(BNET_CMD_BEGIN); }
       ua->send->SetMode(ua->api);
@@ -2741,8 +2741,8 @@ static bool wait_cmd(UaContext* ua, const char*)
       for (bool waiting = false; !waiting;) {
         foreach_jcr (jcr) {
           if (jcr->JobId != 0
-              && (jcr->JobStatus == JS_WaitMedia
-                  || jcr->JobStatus == JS_WaitMount)) {
+              && (jcr->getJobStatus() == JS_WaitMedia
+                  || jcr->getJobStatus() == JS_WaitMount)) {
             waiting = true;
             break;
           }

@@ -146,9 +146,11 @@ int RunScripts(JobControlRecord* jcr,
     } else {
       if ((script->when & SCRIPT_Before) && (when & SCRIPT_Before)) {
         if ((script->on_success
-             && (jcr->JobStatus == JS_Running || jcr->JobStatus == JS_Created))
+             && (jcr->getJobStatus() == JS_Running
+                 || jcr->getJobStatus() == JS_Created))
             || (script->on_failure
-                && (JobCanceled(jcr) || jcr->JobStatus == JS_Differences))) {
+                && (JobCanceled(jcr)
+                    || jcr->getJobStatus() == JS_Differences))) {
           Dmsg4(200, "runscript: Run it because SCRIPT_Before (%s,%i,%i,%c)\n",
                 script->command.c_str(), script->on_success, script->on_failure,
                 jcr->getJobStatus());
@@ -157,7 +159,7 @@ int RunScripts(JobControlRecord* jcr,
       }
 
       if ((script->when & SCRIPT_AfterVSS) && (when & SCRIPT_AfterVSS)) {
-        if ((script->on_success && (jcr->JobStatus == JS_Blocked))
+        if ((script->on_success && (jcr->getJobStatus() == JS_Blocked))
             || (script->on_failure && JobCanceled(jcr))) {
           Dmsg4(200,
                 "runscript: Run it because SCRIPT_AfterVSS (%s,%i,%i,%c)\n",
@@ -170,7 +172,8 @@ int RunScripts(JobControlRecord* jcr,
       if ((script->when & SCRIPT_After) && (when & SCRIPT_After)) {
         if ((script->on_success && jcr->IsTerminatedOk())
             || (script->on_failure
-                && (JobCanceled(jcr) || jcr->JobStatus == JS_Differences))) {
+                && (JobCanceled(jcr)
+                    || jcr->getJobStatus() == JS_Differences))) {
           Dmsg4(200, "runscript: Run it because SCRIPT_After (%s,%i,%i,%c)\n",
                 script->command.c_str(), script->on_success, script->on_failure,
                 jcr->getJobStatus());

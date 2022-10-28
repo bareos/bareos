@@ -370,7 +370,7 @@ void CloseMsg(JobControlRecord* jcr)
           switch (d->dest_code_) {
             case MessageDestinationCode::KMailOnError:
               if (jcr) {
-                switch (jcr->JobStatus) {
+                switch (jcr->getJobStatus()) {
                   case JS_Terminated:
                   case JS_Warnings:
                     goto rem_temp_file;
@@ -381,7 +381,7 @@ void CloseMsg(JobControlRecord* jcr)
               break;
             case MessageDestinationCode::kMailOnSuccess:
               if (jcr) {
-                switch (jcr->JobStatus) {
+                switch (jcr->getJobStatus()) {
                   case JS_Terminated:
                   case JS_Warnings:
                     break;

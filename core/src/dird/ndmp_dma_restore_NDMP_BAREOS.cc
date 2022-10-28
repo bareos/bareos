@@ -344,7 +344,7 @@ static inline int NdmpWaitForJobTermination(JobControlRecord* jcr)
   WaitForStorageDaemonTermination(jcr);
 
   jcr->impl->FDJobStatus = JS_Terminated;
-  if (jcr->JobStatus != JS_Terminated) { return jcr->JobStatus; }
+  if (jcr->getJobStatus() != JS_Terminated) { return jcr->getJobStatus(); }
   if (jcr->impl->FDJobStatus != JS_Terminated) {
     return jcr->impl->FDJobStatus;
   }

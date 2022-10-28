@@ -657,7 +657,7 @@ int WaitForJobTermination(JobControlRecord* jcr, int timeout)
                  == 7) {
         fd_ok = true;
         jcr->setJobStatusWithPriorityCheck(jcr->impl->FDJobStatus);
-        Dmsg1(100, "FDStatus=%c\n", (char)jcr->JobStatus);
+        Dmsg1(100, "FDStatus=%c\n", (char)jcr->getJobStatus());
       } else {
         Jmsg(jcr, M_WARNING, 0, _("Unexpected Client Job message: %s\n"),
              fd->msg);
@@ -717,7 +717,7 @@ int WaitForJobTermination(JobControlRecord* jcr, int timeout)
   if (!fd_ok || IsBnetError(fd)) { /* if fd not set, that use !fd_ok */
     jcr->impl->FDJobStatus = JS_ErrorTerminated;
   }
-  if (jcr->JobStatus != JS_Terminated) { return jcr->JobStatus; }
+  if (jcr->getJobStatus() != JS_Terminated) { return jcr->getJobStatus(); }
   if (jcr->impl->FDJobStatus != JS_Terminated) {
     return jcr->impl->FDJobStatus;
   }
@@ -757,7 +757,7 @@ void NativeBackupCleanup(JobControlRecord* jcr, int TermCode)
 
   UpdateBootstrapFile(jcr);
 
-  switch (jcr->JobStatus) {
+  switch (jcr->getJobStatus()) {
     case JS_Terminated:
       TermMsg = _("Backup OK");
       break;

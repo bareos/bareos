@@ -1691,16 +1691,20 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
           case all_jobs:
             break;
           case created_jobs:
-            if (jcr->JobStatus != JS_Created) { continue; }
+            if (jcr->getJobStatus() != JS_Created) { continue; }
             break;
           case blocked_jobs:
-            if (!jcr->job_started || jcr->JobStatus != JS_Blocked) { continue; }
+            if (!jcr->job_started || jcr->getJobStatus() != JS_Blocked) {
+              continue;
+            }
             break;
           case waiting_jobs:
             if (!JobWaiting(jcr)) { continue; }
             break;
           case running_jobs:
-            if (!jcr->job_started || jcr->JobStatus != JS_Running) { continue; }
+            if (!jcr->job_started || jcr->getJobStatus() != JS_Running) {
+              continue;
+            }
             break;
           default:
             break;

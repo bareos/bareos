@@ -675,7 +675,7 @@ void SdMsgThreadSendSignal(JobControlRecord* jcr, int sig)
 bool CancelJob(UaContext* ua, JobControlRecord* jcr)
 {
   char ed1[50];
-  int32_t old_status = jcr->JobStatus;
+  int32_t old_status = jcr->getJobStatus();
 
   jcr->setJobStatusWithPriorityCheck(JS_Canceled);
 
@@ -957,7 +957,7 @@ bool AllowDuplicateJob(JobControlRecord* jcr)
        * If CancelQueuedDuplicates is set do so only if job is queued.
        */
       if (job->CancelQueuedDuplicates) {
-        switch (djcr->JobStatus) {
+        switch (djcr->getJobStatus()) {
           case JS_Created:
           case JS_WaitJobRes:
           case JS_WaitClientRes:
@@ -1399,7 +1399,7 @@ void InitJcrJobRecord(JobControlRecord* jcr)
   jcr->impl->jr.EndTime = 0; /* perhaps rescheduled, clear it */
   jcr->impl->jr.JobType = jcr->getJobType();
   jcr->impl->jr.JobLevel = jcr->getJobLevel();
-  jcr->impl->jr.JobStatus = jcr->JobStatus;
+  jcr->impl->jr.JobStatus = jcr->getJobStatus();
   jcr->impl->jr.JobId = jcr->JobId;
   jcr->impl->jr.JobSumTotalBytes = 18446744073709551615LLU;
   bstrncpy(jcr->impl->jr.Name, jcr->impl->res.job->resource_name_,
@@ -1413,7 +1413,7 @@ void UpdateJobEndRecord(JobControlRecord* jcr)
   jcr->impl->jr.EndTime = time(NULL);
   jcr->end_time = jcr->impl->jr.EndTime;
   jcr->impl->jr.JobId = jcr->JobId;
-  jcr->impl->jr.JobStatus = jcr->JobStatus;
+  jcr->impl->jr.JobStatus = jcr->getJobStatus();
   jcr->impl->jr.JobFiles = jcr->JobFiles;
   jcr->impl->jr.JobBytes = jcr->JobBytes;
   jcr->impl->jr.ReadBytes = jcr->ReadBytes;
@@ -1636,7 +1636,7 @@ void SetJcrDefaults(JobControlRecord* jcr, JobResource* job)
   jcr->impl->res.job = job;
   jcr->setJobType(job->JobType);
   jcr->setJobProtocol(job->Protocol);
-  jcr->JobStatus = JS_Created;
+  jcr->setJobStatus(JS_Created);
 
   switch (jcr->getJobType()) {
     case JT_ADMIN:

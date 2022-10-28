@@ -643,7 +643,7 @@ bail_out:
          memorize current JobStatus and set to
          JS_Terminated to write into EOS_LABEL
        */
-      char currentJobStatus = jcr->JobStatus;
+      char currentJobStatus = jcr->getJobStatus();
       jcr->setJobStatusWithPriorityCheck(JS_Terminated);
 
       // Write End Of Session Label

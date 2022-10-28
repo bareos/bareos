@@ -625,7 +625,7 @@ static bool RescheduleJob(JobControlRecord* jcr, jobq_t* jq, jobq_item_t* je)
          _("Rescheduled Job %s at %s to re-run in %d seconds (%s).\n"),
          jcr->Job, dt, (int)jcr->impl->res.job->RescheduleInterval, dt2);
     DirdFreeJcrPointers(jcr); /* partial cleanup old stuff */
-    jcr->JobStatus = -1;
+    jcr->setJobStatus(-1);
     jcr->impl->SDJobStatus = 0;
     jcr->JobErrors = 0;
     if (!AllowDuplicateJob(jcr)) { return false; }
@@ -675,8 +675,8 @@ static bool RescheduleJob(JobControlRecord* jcr, jobq_t* jq, jobq_item_t* je)
       njcr->impl->res.next_pool = jcr->impl->res.next_pool;
       njcr->impl->res.run_next_pool_override
           = jcr->impl->res.run_next_pool_override;
-      njcr->JobStatus = -1;
-      njcr->setJobStatusWithPriorityCheck(jcr->JobStatus);
+      njcr->setJobStatus(-1);
+      njcr->setJobStatusWithPriorityCheck(jcr->getJobStatus());
       if (jcr->impl->res.read_storage) {
         CopyRstorage(njcr, jcr->impl->res.read_storage_list, _("previous Job"));
       } else {

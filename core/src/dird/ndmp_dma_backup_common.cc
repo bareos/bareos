@@ -293,7 +293,7 @@ void NdmpBackupCleanup(JobControlRecord* jcr, int TermCode)
 
   UpdateBootstrapFile(jcr);
 
-  switch (jcr->JobStatus) {
+  switch (jcr->getJobStatus()) {
     case JS_Terminated:
       TermMsg = _("Backup OK");
       break;

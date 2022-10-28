@@ -624,7 +624,7 @@ static void CreateSessionLabel(DeviceControlRecord* dcr,
     ser_uint32(jcr->JobErrors);
 
     /* Added in VerNum 11 */
-    ser_uint32(jcr->JobStatus);
+    ser_uint32(jcr->getJobStatus());
   }
   SerEnd(rec->data, SER_LENGTH_Session_Label);
   rec->data_len = SerLength(rec->data);

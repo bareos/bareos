@@ -2054,7 +2054,7 @@ static bRC bareosGetValue(PluginContext* ctx, bVariable var, void* value)
               NPRT(*((char**)value)));
         break;
       case bVarJobStatus:
-        *((int*)value) = jcr->JobStatus;
+        *((int*)value) = jcr->getJobStatus();
         Dmsg1(debuglevel, "fd-plugin: return bVarJobStatus=%d\n",
               jcr->getJobStatus());
         break;

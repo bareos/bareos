@@ -802,7 +802,7 @@ bool BareosDb::CreateFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr)
 bool BareosDb::WriteBatchFileRecords(JobControlRecord* jcr)
 {
   bool retval = false;
-  int JobStatus = jcr->JobStatus;
+  int JobStatus = jcr->getJobStatus();
 
   if (!jcr->batch_started) { /* no files to backup ? */
     Dmsg0(50, "db_create_file_record : no files\n");
@@ -811,7 +811,7 @@ bool BareosDb::WriteBatchFileRecords(JobControlRecord* jcr)
 
   Dmsg1(50, "db_create_file_record changes=%u\n", changes);
 
-  jcr->JobStatus = JS_AttrInserting;
+  jcr->setJobStatus(JS_AttrInserting);
 
   Jmsg(jcr, M_INFO, 0,
        "Insert of attributes batch table with %u entries start\n",
@@ -850,7 +850,7 @@ bool BareosDb::WriteBatchFileRecords(JobControlRecord* jcr)
   }
   /* clang-format on */
 
-  jcr->JobStatus = JobStatus; /* reset entry status */
+  jcr->setJobStatus(JobStatus); /* reset entry status */
   Jmsg(jcr, M_INFO, 0, "Insert of attributes batch table done\n");
   retval = true;
 

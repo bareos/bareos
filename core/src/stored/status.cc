@@ -519,7 +519,7 @@ static void SendBlockedStatus(Device* dev, StatusPacket* sp)
       bool found_jcr = false;
       dev->Lock();
       for (auto dcr : dev->attached_dcrs) {
-        if (dcr->jcr->JobStatus == JS_WaitMount) {
+        if (dcr->jcr->getJobStatus() == JS_WaitMount) {
           len = Mmsg(
               msg,
               _("    Device is BLOCKED waiting for mount of volume \"%s\",\n"
@@ -528,7 +528,7 @@ static void SendBlockedStatus(Device* dev, StatusPacket* sp)
               dcr->VolumeName, dcr->pool_name, dcr->media_type);
           sp->send(msg, len);
           found_jcr = true;
-        } else if (dcr->jcr->JobStatus == JS_WaitMedia) {
+        } else if (dcr->jcr->getJobStatus() == JS_WaitMedia) {
           len = Mmsg(msg,
                      _("    Device is BLOCKED waiting to create a volume for:\n"
                        "       Pool:        %s\n"
@@ -663,7 +663,7 @@ static void ListRunningJobs(StatusPacket* sp)
   }
 
   foreach_jcr (jcr) {
-    if (jcr->JobStatus == JS_WaitFD) {
+    if (jcr->getJobStatus() == JS_WaitFD) {
       len = Mmsg(msg, _("%s Job %s waiting for Client connection.\n"),
                  job_type_to_str(jcr->getJobType()), jcr->Job);
       sp->send(msg, len);

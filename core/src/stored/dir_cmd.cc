@@ -517,7 +517,7 @@ static bool CancelCmd(JobControlRecord* cjcr)
     }
   }
 
-  oldStatus = jcr->JobStatus;
+  oldStatus = jcr->getJobStatus();
   jcr->setJobStatusWithPriorityCheck(status);
 
   Dmsg2(800, "Cancel JobId=%d %p\n", jcr->JobId, jcr);

@@ -1258,7 +1258,7 @@ static bool UpdateJobRecord(BareosDb* db,
 
   jr->JobId = mjcr->JobId;
   jr->JobStatus = elabel->JobStatus;
-  mjcr->JobStatus = elabel->JobStatus;
+  mjcr->setJobStatus(elabel->JobStatus);
   jr->JobFiles = elabel->JobFiles;
   if (jr->JobFiles > 0) { /* If we found files, force PurgedFiles */
     jr->PurgedFiles = 0;
@@ -1294,7 +1294,7 @@ static bool UpdateJobRecord(BareosDb* db,
     char sdt[50], edt[50];
     char ec1[30], ec2[30], ec3[30];
 
-    switch (mjcr->JobStatus) {
+    switch (mjcr->getJobStatus()) {
       case JS_Terminated:
         TermMsg = _("Backup OK");
         break;
@@ -1427,7 +1427,7 @@ static JobControlRecord* create_jcr(JobDbRecord* jr,
   jobjcr->impl = new JobControlRecordPrivate;
   jobjcr->setJobType(jr->JobType);
   jobjcr->setJobLevel(jr->JobLevel);
-  jobjcr->JobStatus = jr->JobStatus;
+  jobjcr->setJobStatus(jr->JobStatus);
   bstrncpy(jobjcr->Job, jr->Job, sizeof(jobjcr->Job));
   jobjcr->JobId = JobId; /* this is JobId on tape */
   jobjcr->sched_time = jr->SchedTime;

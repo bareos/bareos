@@ -660,7 +660,7 @@ TlsPolicy JcrGetTlsPolicy(const char* unified_job_name)
 static void UpdateWaitTime(JobControlRecord* jcr, int newJobStatus)
 {
   bool enter_in_waittime;
-  int oldJobStatus = jcr->JobStatus;
+  int oldJobStatus = jcr->getJobStatus();
 
   switch (newJobStatus) {
     case JS_WaitFD:

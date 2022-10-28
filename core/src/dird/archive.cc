@@ -83,7 +83,7 @@ void ArchiveCleanup(JobControlRecord* jcr, int TermCode)
   }
 
   msg_type = M_INFO; /* by default INFO message */
-  switch (jcr->JobStatus) {
+  switch (jcr->getJobStatus()) {
     case JS_Terminated:
       TermMsg = _("Archive OK");
       break;

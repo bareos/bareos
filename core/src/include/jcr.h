@@ -67,11 +67,12 @@ struct CopyThreadContext;
 typedef void(JCR_free_HANDLER)(JobControlRecord* jcr);
 
 #define JobTerminatedSuccessfully(jcr) \
-  (jcr->JobStatus == JS_Terminated || jcr->JobStatus == JS_Warnings)
+  (jcr->getJobStatus() == JS_Terminated || jcr->getJobStatus() == JS_Warnings)
 
-#define JobCanceled(jcr)                                                 \
-  (jcr->JobStatus == JS_Canceled || jcr->JobStatus == JS_ErrorTerminated \
-   || jcr->JobStatus == JS_FatalError)
+#define JobCanceled(jcr)                        \
+  (jcr->getJobStatus() == JS_Canceled           \
+   || jcr->getJobStatus() == JS_ErrorTerminated \
+   || jcr->getJobStatus() == JS_FatalError)
 
 #define foreach_jcr(jcr) \
   for (jcr = jcr_walk_start(); jcr; (jcr = jcr_walk_next(jcr)))
@@ -83,6 +84,7 @@ class JobControlRecord {
  private:
   pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; /**< Jcr mutex */
   std::atomic<int32_t> _use_count{};                   /**< Use count */
+  std::atomic<int32_t> JobStatus{}; /**< ready, running, blocked, terminated */
   int32_t JobType_{};            /**< Backup, restore, verify ... */
   int32_t JobLevel_{};           /**< Job level */
   int32_t Protocol_{};           /**< Backup Protocol */
@@ -165,7 +167,6 @@ class JobControlRecord {
   uint64_t LastJobBytes{};      /**< Last sample number bytes */
   uint64_t ReadBytes{};         /**< Bytes read -- before compression */
   FileId_t FileId{};            /**< Last FileId used */
-  std::atomic<int32_t> JobStatus{}; /**< ready, running, blocked, terminated */
   int32_t JobPriority{};        /**< Job priority */
   time_t sched_time{};          /**< Job schedule time, i.e. when it should start */
   time_t initial_sched_time{};  /**< Original sched time before any reschedules are done */

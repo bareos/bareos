@@ -380,7 +380,7 @@ bool DoNativeVbackup(JobControlRecord* jcr)
       jcr); /* used by bulk batch file insert */
   if (!jcr->is_JobStatus(JS_Terminated)) { return false; }
 
-  NativeVbackupCleanup(jcr, jcr->JobStatus, JobLevel_of_first_job);
+  NativeVbackupCleanup(jcr, jcr->getJobStatus(), JobLevel_of_first_job);
 
   // Remove the successfully consolidated jobids from the database
   if (jcr->impl->res.job->AlwaysIncremental
@@ -407,7 +407,7 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
 
   Dmsg2(100, "Enter backup_cleanup %d %c\n", TermCode, TermCode);
 
-  switch (jcr->JobStatus) {
+  switch (jcr->getJobStatus()) {
     case JS_Terminated:
     case JS_Warnings:
       jcr->impl->jr.JobLevel = JobLevel; /* We want this to appear as what the
@@ -456,7 +456,7 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
 
   UpdateBootstrapFile(jcr);
 
-  switch (jcr->JobStatus) {
+  switch (jcr->getJobStatus()) {
     case JS_Terminated:
       TermMsg = _("Backup OK");
       break;
