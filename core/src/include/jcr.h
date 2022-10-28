@@ -133,7 +133,6 @@ class JobControlRecord {
   const char* get_OperationName();               /**< in lib/jcr.c */
   const char* get_ActionName(bool past = false); /**< in lib/jcr.c */
   void setJobStatus(int newJobStatus);           /**< in lib/jcr.c */
-  void resetJobStatus(int newJobStatus);         /**< in lib/jcr.c */
   bool sendJobStatus();                          /**< in lib/jcr.c */
   bool sendJobStatus(int newJobStatus);          /**< in lib/jcr.c */
   bool JobReads();                               /**< in lib/jcr.c */

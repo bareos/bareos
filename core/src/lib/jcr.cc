@@ -756,11 +756,6 @@ void JobControlRecord::setJobStarted()
   job_started_time = time(nullptr);
 }
 
-void JobControlRecord::resetJobStatus(int newJobStatus)
-{
-  JobStatus = newJobStatus;
-}
-
 void JobControlRecord::setJobStatus(int newJobStatus)
 {
   int priority;
