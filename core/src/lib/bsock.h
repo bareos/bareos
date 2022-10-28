@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -37,15 +37,17 @@
 #define BAREOS_LIB_BSOCK_H_
 
 #include <include/bareos.h>
-#include <mutex>
-#include <functional>
-#include <cassert>
 #include "lib/address_conf.h"
 #include "lib/bnet_network_dump.h"
 #include "lib/tls.h"
 #include "lib/s_password.h"
 #include "lib/tls_conf.h"
 #include "include/version_numbers.h"
+
+#include <mutex>
+#include <functional>
+#include <cassert>
+#include <atomic>
 
 struct btimer_t; /* forward reference */
 class BareosSocket;
@@ -62,20 +64,20 @@ class BareosSocket {
    *  bat breaks on some systems such as RedHat.
    */
  public:
-  int fd_;                     /* Socket file descriptor */
-  uint64_t read_seqno;         /* Read sequence number */
-  POOLMEM* msg;                /* Message pool buffer */
-  POOLMEM* errmsg;             /* Edited error message */
-  int spool_fd_;               /* Spooling file */
-  IPADDR* src_addr;            /* IP address to source connections from */
-  uint32_t in_msg_no;          /* Input message number */
-  uint32_t out_msg_no;         /* Output message number */
-  int32_t message_length;      /* Message length */
-  volatile time_t timer_start; /* Time started read/write */
-  int b_errno;                 /* BareosSocket errno */
-  int blocking_;       /* Blocking state (0 = nonblocking, 1 = blocking) */
-  volatile int errors; /* Incremented for each error on socket */
-  volatile bool suppress_error_msgs_; /* Set to suppress error messages */
+  int fd_;                         /* Socket file descriptor */
+  uint64_t read_seqno;             /* Read sequence number */
+  POOLMEM* msg;                    /* Message pool buffer */
+  POOLMEM* errmsg;                 /* Edited error message */
+  int spool_fd_;                   /* Spooling file */
+  IPADDR* src_addr;                /* IP address to source connections from */
+  uint32_t in_msg_no;              /* Input message number */
+  uint32_t out_msg_no;             /* Output message number */
+  int32_t message_length;          /* Message length */
+  std::atomic<time_t> timer_start; /* Time started read/write */
+  int b_errno;                     /* BareosSocket errno */
+  int blocking_;           /* Blocking state (0 = nonblocking, 1 = blocking) */
+  std::atomic<int> errors; /* Incremented for each error on socket */
+  std::atomic<bool> suppress_error_msgs_; /* Set to suppress error messages */
   int sleep_time_after_authentication_error;
 
   struct sockaddr client_addr;  /* Client's IP address */
