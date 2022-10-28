@@ -1310,7 +1310,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %files storage-tape
 # tape specific files
 %defattr(-, root, root)
-%{backend_dir}/libbareossd-gentape*.so
 %{backend_dir}/libbareossd-tape*.so
 %{script_dir}/mtx-changer
 %config(noreplace) %{_sysconfdir}/%{name}/mtx-changer.conf
@@ -1333,7 +1332,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %if 0%{?droplet}
 %files storage-droplet
 %defattr(-, root, root)
-%{backend_dir}/libbareossd-chunked*.so
 %{backend_dir}/libbareossd-droplet*.so
 %{library_dir}/libbareosdroplet.so*
 %attr(0640, %{director_daemon_user},%{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/storage/S3_Object.conf.example

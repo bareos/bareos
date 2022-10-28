@@ -41,29 +41,21 @@ endif()
 
 if(TARGET droplet)
   add_sd_backend(bareossd-droplet)
-  target_sources(bareossd-droplet PRIVATE droplet_device.cc)
-  target_link_libraries(bareossd-droplet PRIVATE droplet)
-  target_compile_definitions(
-    bareossd-droplet INTERFACE HAVE_BAREOSSD_DROPLET_DEVICE
+  target_sources(
+    bareossd-droplet PRIVATE droplet_device.cc ordered_cbuf.cc
+                             chunked_device.cc
   )
-  if(HAVE_DYNAMIC_SD_BACKENDS)
-    add_library(bareossd-chunked SHARED ordered_cbuf.cc chunked_device.cc)
-    install(TARGETS bareossd-chunked DESTINATION ${backenddir})
-    target_link_libraries(bareossd-droplet PRIVATE bareossd-chunked)
-  else()
-    target_sources(bareossd-droplet PRIVATE ordered_cbuf.cc chunked_device.cc)
-  endif()
-
+  target_link_libraries(bareossd-droplet PRIVATE droplet)
 endif()
 
 add_sd_backend(bareossd-file)
 add_sd_backend(bareossd-fifo)
 add_sd_backend(bareossd-tape)
+target_sources(bareossd-tape PRIVATE generic_tape_device.cc)
 if(HAVE_WIN32)
   target_sources(bareossd-file PRIVATE win32_file_device.cc)
   target_sources(bareossd-fifo PRIVATE win32_fifo_device.cc)
   target_sources(bareossd-tape PRIVATE win32_tape_device.cc)
-
   target_link_libraries(bareossd-file PRIVATE bareos)
 else()
   target_sources(bareossd-file PRIVATE unix_file_device.cc)
@@ -71,17 +63,7 @@ else()
   target_sources(bareossd-tape PRIVATE unix_tape_device.cc)
 endif()
 
-if(HAVE_DYNAMIC_SD_BACKENDS)
-  add_library(bareossd-gentape SHARED generic_tape_device.cc)
-  install(TARGETS bareossd-gentape DESTINATION ${backenddir})
-  target_link_libraries(bareossd-tape bareossd-gentape)
-  if(HAVE_DARWIN_OS)
-    target_link_libraries(bareossd-gentape bareos bareossd)
-  endif()
-else()
-  target_sources(bareossd-tape PRIVATE generic_tape_device.cc)
-endif()
-
 if(HAVE_DARWIN_OS)
   target_link_libraries(bareossd-fifo bareos bareossd)
+  target_link_libraries(bareossd-gentape bareos bareossd)
 endif()
