@@ -141,6 +141,19 @@ bool BareosDb::FindJobStartTime(JobControlRecord* jcr,
   return true;
 }
 
+/**
+ * Find the last job start time for specified job and client.
+ * Used in RunOnIncomingConnectInterval.
+ *
+ * The tricky part is that we can have a job in state 'C' not yet started
+ * having a starttime of NULL.
+ *
+ * As NULL values are regarded as greater than any non-null value on sorting,
+ * the job with the NULL value starttime would be returned by the query below.
+ *
+ * To avoid this, we use NOW()::timestamp so that a valid timestamp is returned
+ * for jobs with NULL timestamp. Casting is required to remove the DST.
+ */
 BareosDb::SqlFindResult BareosDb::FindLastJobStartTimeForJobAndClient(
     JobControlRecord* jcr,
     std::string job_basename,
@@ -161,10 +174,13 @@ BareosDb::SqlFindResult BareosDb::FindLastJobStartTimeForJobAndClient(
   strcpy(stime_out.data(), default_time);
 
   Mmsg(cmd,
-       "SELECT StartTime"
+       "SELECT "
+       " CASE WHEN StartTime is NULL THEN NOW()::timestamp "
+       " ELSE StartTime::timestamp "
+       "END"
        " FROM Job"
        " WHERE Job.Name='%s'"
-       " AND (Job.JobStatus='T' OR Job.JobStatus='W')"
+       " AND Job.JobStatus IN ('T','W','C','R')"
        " AND Job.ClientId=(SELECT ClientId"
        "                   FROM Client WHERE Client.Name='%s')"
        " ORDER BY StartTime DESC LIMIT 1",
