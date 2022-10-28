@@ -262,7 +262,7 @@ static VolumeReservationItem* new_vol_item(DeviceControlRecord* dcr,
   VolumeReservationItem* vol;
 
   vol = (VolumeReservationItem*)malloc(sizeof(VolumeReservationItem));
-  std::construct_at(vol);
+  vol = new (vol) VolumeReservationItem();
 
   vol->vol_name = strdup(VolumeName);
   if (dcr) {
