@@ -217,7 +217,7 @@ JobControlRecord::JobControlRecord()
   JobId = 0;
   setJobType(JT_SYSTEM); /* internal job until defined */
   setJobLevel(L_NONE);
-  setJobStatus(JS_Created); /* ready to run */
+  setJobStatusWithPriorityCheck(JS_Created); /* ready to run */
   SetTimeoutHandler();
 }
 
@@ -743,7 +743,7 @@ bool JobControlRecord::sendJobStatus()
 bool JobControlRecord::sendJobStatus(int newJobStatus)
 {
   if (!is_JobStatus(newJobStatus)) {
-    setJobStatus(newJobStatus);
+    setJobStatusWithPriorityCheck(newJobStatus);
     if (dir_bsock) { return dir_bsock->fsend(Job_status, Job, JobStatus); }
   }
 
@@ -756,7 +756,7 @@ void JobControlRecord::setJobStarted()
   job_started_time = time(nullptr);
 }
 
-void JobControlRecord::setJobStatus(int newJobStatus)
+void JobControlRecord::setJobStatusWithPriorityCheck(int newJobStatus)
 {
   int priority;
   int old_priority = 0;

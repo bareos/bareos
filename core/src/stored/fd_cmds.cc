@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -134,7 +134,7 @@ void* HandleFiledConnection(BareosSocket* fd, char* job_name)
   if (!AuthenticateFiledaemon(jcr)) {
     Dmsg1(50, "Authentication failed Job %s\n", jcr->Job);
     Jmsg(jcr, M_FATAL, 0, _("Unable to authenticate File daemon\n"));
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   } else {
     utime_t now;
 
@@ -177,7 +177,7 @@ void RunJob(JobControlRecord* jcr)
 
   jcr->end_time = time(NULL);
   DequeueMessages(jcr); /* send any queued messages */
-  jcr->setJobStatus(JS_Terminated);
+  jcr->setJobStatusWithPriorityCheck(JS_Terminated);
 
   GeneratePluginEvent(jcr, bSdEventJobEnd);
 
@@ -220,7 +220,7 @@ void DoFdCommands(JobControlRecord* jcr)
             } else {
               Jmsg0(jcr, M_FATAL, 0, _("Command error with FD, hanging up.\n"));
             }
-            jcr->setJobStatus(JS_ErrorTerminated);
+            jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
           }
           quit = true;
         }

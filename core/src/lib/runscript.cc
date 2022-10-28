@@ -190,7 +190,7 @@ int RunScripts(JobControlRecord* jcr,
              _("Runscript: run %s \"%s\" could not execute, "
                "not in one of the allowed scripts dirs\n"),
              label, script->command.c_str());
-        jcr->setJobStatus(JS_ErrorTerminated);
+        jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
         goto bail_out;
       }
 
@@ -274,7 +274,7 @@ bool RunScript::Run(JobControlRecord* jcr, const char* name)
 
 bail_out:
   /* cancel running job properly */
-  if (fail_on_error) { jcr->setJobStatus(JS_ErrorTerminated); }
+  if (fail_on_error) { jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated); }
   Dmsg1(100, "runscript failed. fail_on_error=%d\n", fail_on_error);
   return false;
 }

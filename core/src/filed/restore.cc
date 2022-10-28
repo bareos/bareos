@@ -414,7 +414,7 @@ void DoRestore(JobControlRecord* jcr)
   rctx.jcr = jcr;
 
   sd = jcr->store_bsock;
-  jcr->setJobStatus(JS_Running);
+  jcr->setJobStatusWithPriorityCheck(JS_Running);
 
   LockRes(my_config);
   ClientResource* client
@@ -426,7 +426,7 @@ void DoRestore(JobControlRecord* jcr)
     buf_size = 0; /* use default */
   }
   if (!BnetSetBufferSize(sd, buf_size, BNET_SETBUF_WRITE)) {
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return;
   }
   jcr->buf_size = sd->message_length;
@@ -1040,11 +1040,11 @@ void DoRestore(JobControlRecord* jcr)
   }
 
   if (!ClosePreviousStream(jcr, rctx)) { goto bail_out; }
-  jcr->setJobStatus(JS_Terminated);
+  jcr->setJobStatusWithPriorityCheck(JS_Terminated);
   goto ok_out;
 
 bail_out:
-  jcr->setJobStatus(JS_ErrorTerminated);
+  jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
 
 ok_out:
 #ifdef HAVE_WIN32

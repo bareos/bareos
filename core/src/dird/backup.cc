@@ -385,7 +385,7 @@ bool DoNativeBackup(JobControlRecord* jcr)
   Jmsg(jcr, M_INFO, 0, _("Start Backup JobId %s, Job=%s\n"),
        edit_uint64(jcr->JobId, ed1), jcr->Job);
 
-  jcr->setJobStatus(JS_Running);
+  jcr->setJobStatusWithPriorityCheck(JS_Running);
   Dmsg2(100, "JobId=%d JobLevel=%c\n", jcr->impl->jr.JobId,
         jcr->impl->jr.JobLevel);
   if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->impl->jr)) {
@@ -411,7 +411,7 @@ bool DoNativeBackup(JobControlRecord* jcr)
    * will be contacting him for a backup  session.
    */
   Dmsg0(110, "Open connection with storage daemon\n");
-  jcr->setJobStatus(JS_WaitSD);
+  jcr->setJobStatusWithPriorityCheck(JS_WaitSD);
 
   if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
     return false;
@@ -446,7 +446,7 @@ bool DoNativeBackup(JobControlRecord* jcr)
     Dmsg0(150, "Storage daemon connection OK\n");
   }
 
-  jcr->setJobStatus(JS_WaitFD);
+  jcr->setJobStatusWithPriorityCheck(JS_WaitFD);
   if (!ConnectToFileDaemon(jcr, 10, me->FDConnectTimeout, true)) {
     goto bail_out;
   }
@@ -462,7 +462,7 @@ bool DoNativeBackup(JobControlRecord* jcr)
     goto close_fd;
   }
 
-  jcr->setJobStatus(JS_Running);
+  jcr->setJobStatusWithPriorityCheck(JS_Running);
 
   if (!SendLevelCommand(jcr)) { goto bail_out; }
 
@@ -616,7 +616,7 @@ close_fd:
   }
 
 bail_out:
-  jcr->setJobStatus(JS_ErrorTerminated);
+  jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   WaitForJobTermination(jcr, me->FDConnectTimeout);
 
   return false;
@@ -642,7 +642,7 @@ int WaitForJobTermination(JobControlRecord* jcr, int timeout)
   int Encrypt = 0;
   btimer_t* tid = NULL;
 
-  jcr->setJobStatus(JS_Running);
+  jcr->setJobStatusWithPriorityCheck(JS_Running);
 
   if (fd) {
     if (timeout) {
@@ -656,7 +656,7 @@ int WaitForJobTermination(JobControlRecord* jcr, int timeout)
                     &ReadBytes, &JobBytes, &JobErrors, &VSS, &Encrypt)
                  == 7) {
         fd_ok = true;
-        jcr->setJobStatus(jcr->impl->FDJobStatus);
+        jcr->setJobStatusWithPriorityCheck(jcr->impl->FDJobStatus);
         Dmsg1(100, "FDStatus=%c\n", (char)jcr->JobStatus);
       } else {
         Jmsg(jcr, M_WARNING, 0, _("Unexpected Client Job message: %s\n"),
@@ -745,7 +745,7 @@ void NativeBackupCleanup(JobControlRecord* jcr, int TermCode)
     Jmsg(jcr, M_WARNING, 0,
          _("Error getting Job record for Job report: ERR=%s\n"),
          jcr->db->strerror());
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   }
 
   bstrncpy(cr.Name, jcr->impl->res.client->resource_name_, sizeof(cr.Name));
@@ -828,7 +828,7 @@ void UpdateBootstrapFile(JobControlRecord* jcr)
                "update Bootstrap file. ERR=%s\n"),
              jcr->db->strerror());
         if (jcr->impl->SDJobFiles != 0) {
-          jcr->setJobStatus(JS_ErrorTerminated);
+          jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
         }
       }
       /* Start output with when and who wrote it */
@@ -869,7 +869,7 @@ void UpdateBootstrapFile(JobControlRecord* jcr)
            _("Could not open WriteBootstrap file:\n"
              "%s: ERR=%s\n"),
            fname, be.bstrerror());
-      jcr->setJobStatus(JS_ErrorTerminated);
+      jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     }
     FreePoolMemory(fname);
   }

@@ -158,7 +158,7 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
         if (!WriteSessionLabel(jcr->impl->dcr, SOS_LABEL)) {
           Jmsg1(jcr, M_FATAL, 0, _("Write session label failed. ERR=%s\n"),
                 dev->bstrerror());
-          jcr->setJobStatus(JS_ErrorTerminated);
+          jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
           retval = false;
           goto bail_out;
         }
@@ -627,7 +627,7 @@ bool DoMacRun(JobControlRecord* jcr)
   }
 
 bail_out:
-  if (!ok) { jcr->setJobStatus(JS_ErrorTerminated); }
+  if (!ok) { jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated); }
 
   if (!acquire_fail && !jcr->impl->remote_replicate && jcr->impl->dcr) {
     /*
@@ -644,7 +644,7 @@ bail_out:
          JS_Terminated to write into EOS_LABEL
        */
       char currentJobStatus = jcr->JobStatus;
-      jcr->setJobStatus(JS_Terminated);
+      jcr->setJobStatusWithPriorityCheck(JS_Terminated);
 
       // Write End Of Session Label
       DeviceControlRecord* dcr = jcr->impl->dcr;
@@ -655,11 +655,11 @@ bail_out:
           Jmsg1(jcr, M_FATAL, 0, _("Error writing end session label. ERR=%s\n"),
                 dev->bstrerror());
         }
-        jcr->setJobStatus(JS_ErrorTerminated);
+        jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
         ok = false;
       } else {
         /* restore JobStatus */
-        jcr->setJobStatus(currentJobStatus);
+        jcr->setJobStatusWithPriorityCheck(currentJobStatus);
       }
       // Flush out final partial block of this session
       if (!jcr->impl->dcr->WriteBlockToDevice()) {
@@ -708,7 +708,7 @@ bail_out:
   Dmsg0(30, "Done reading.\n");
   jcr->end_time = time(NULL);
   DequeueMessages(jcr); /* send any queued messages */
-  if (ok) { jcr->setJobStatus(JS_Terminated); }
+  if (ok) { jcr->setJobStatusWithPriorityCheck(JS_Terminated); }
 
   GeneratePluginEvent(jcr, bSdEventJobEnd);
   dir->fsend(Job_end, jcr->Job, jcr->JobStatus, jcr->JobFiles,

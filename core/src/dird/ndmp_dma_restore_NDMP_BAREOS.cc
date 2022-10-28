@@ -325,7 +325,7 @@ bool DoNdmpRestoreInit(JobControlRecord* jcr)
 
 static inline int NdmpWaitForJobTermination(JobControlRecord* jcr)
 {
-  jcr->setJobStatus(JS_Running);
+  jcr->setJobStatusWithPriorityCheck(JS_Running);
 
   /*
    * Force cancel in SD if failing, but not for Incomplete jobs
@@ -429,7 +429,7 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
      *
      */
     Dmsg0(10, "Open connection to storage daemon\n");
-    jcr->setJobStatus(JS_WaitSD);
+    jcr->setJobStatusWithPriorityCheck(JS_WaitSD);
 
     // Start conversation with Storage daemon
     if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
@@ -442,7 +442,7 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
       goto cleanup;
     }
 
-    jcr->setJobStatus(JS_Running);
+    jcr->setJobStatusWithPriorityCheck(JS_Running);
 
     // Send the bootstrap file -- what Volumes/files to restore
     if (!SendBootstrapFile(jcr, sd, info)

@@ -757,7 +757,7 @@ static bool CancelCmd(JobControlRecord* jcr)
       dir->fsend(_("2901 Job %s not found.\n"), Job);
     } else {
       GeneratePluginEvent(cjcr, bEventCancelCommand, nullptr);
-      cjcr->setJobStatus(JS_Canceled);
+      cjcr->setJobStatusWithPriorityCheck(JS_Canceled);
       if (cjcr->store_bsock) {
         cjcr->store_bsock->SetTimedOut();
         cjcr->store_bsock->SetTerminated();
@@ -1332,7 +1332,7 @@ static bool BootstrapCmd(JobControlRecord* jcr)
      */
     while (dir->recv() >= 0) {}
     FreeBootstrap(jcr);
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return false;
   }
 
@@ -1878,7 +1878,7 @@ static bool BackupCmd(JobControlRecord* jcr)
     goto cleanup;
   }
 
-  jcr->setJobStatus(JS_Blocked);
+  jcr->setJobStatusWithPriorityCheck(JS_Blocked);
   jcr->setJobType(JT_BACKUP);
   Dmsg1(100, "begin backup ff=%p\n", jcr->impl->ff);
 
@@ -1999,11 +1999,11 @@ static bool BackupCmd(JobControlRecord* jcr)
   // Send Files to Storage daemon
   Dmsg1(110, "begin blast ff=%p\n", (FindFilesPacket*)jcr->impl->ff);
   if (!BlastDataToStorageDaemon(jcr, nullptr, cipher)) {
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     BnetSuppressErrorMessages(sd, 1);
     Dmsg0(110, "Error in blast_data.\n");
   } else {
-    jcr->setJobStatus(JS_Terminated);
+    jcr->setJobStatusWithPriorityCheck(JS_Terminated);
     /* Note, the above set status will not override an error */
     if (!jcr->IsTerminatedOk()) {
       BnetSuppressErrorMessages(sd, 1);
@@ -2011,7 +2011,7 @@ static bool BackupCmd(JobControlRecord* jcr)
     }
     // Expect to get response to append_data from Storage daemon
     if (!response(jcr, sd, OK_append, "Append Data")) {
-      jcr->setJobStatus(JS_ErrorTerminated);
+      jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
       goto cleanup;
     }
 
@@ -2019,7 +2019,7 @@ static bool BackupCmd(JobControlRecord* jcr)
     sd->fsend(append_end, jcr->impl->Ticket);
     /* Get end OK */
     if (!response(jcr, sd, OK_end, "Append End")) {
-      jcr->setJobStatus(JS_ErrorTerminated);
+      jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
       goto cleanup;
     }
 
@@ -2277,14 +2277,14 @@ static bool RestoreCmd(JobControlRecord* jcr)
   dir->fsend(OKrestore);
   Dmsg1(110, "filed>dird: %s", dir->msg);
 
-  jcr->setJobStatus(JS_Blocked);
+  jcr->setJobStatusWithPriorityCheck(JS_Blocked);
 
   if (!OpenSdReadSession(jcr)) {
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     goto bail_out;
   }
 
-  jcr->setJobStatus(JS_Running);
+  jcr->setJobStatusWithPriorityCheck(JS_Running);
 
   // Do restore of files and data
   StartDirHeartbeat(jcr);
@@ -2314,9 +2314,9 @@ static bool RestoreCmd(JobControlRecord* jcr)
   StopDirHeartbeat(jcr);
 
   if (jcr->JobWarnings) {
-    jcr->setJobStatus(JS_Warnings);
+    jcr->setJobStatusWithPriorityCheck(JS_Warnings);
   } else {
-    jcr->setJobStatus(JS_Terminated);
+    jcr->setJobStatusWithPriorityCheck(JS_Terminated);
   }
 
   // Send Close session command to Storage daemon
@@ -2361,7 +2361,9 @@ static bool RestoreCmd(JobControlRecord* jcr)
 bail_out:
   BfreeAndNull(jcr->where);
 
-  if (jcr->JobErrors) { jcr->setJobStatus(JS_ErrorTerminated); }
+  if (jcr->JobErrors) {
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+  }
 
   Dmsg0(100, "Done in job.c\n");
 

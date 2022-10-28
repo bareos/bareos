@@ -184,7 +184,7 @@ bool DoNdmpBackup(JobControlRecord* jcr)
   Jmsg(jcr, M_INFO, 0, _("Start NDMP Backup JobId %s, Job=%s\n"),
        edit_uint64(jcr->JobId, ed1), jcr->Job);
 
-  jcr->setJobStatus(JS_Running);
+  jcr->setJobStatusWithPriorityCheck(JS_Running);
   Dmsg2(100, "JobId=%d JobLevel=%c\n", jcr->impl->jr.JobId,
         jcr->impl->jr.JobLevel);
   if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->impl->jr)) {
@@ -215,7 +215,7 @@ bool DoNdmpBackup(JobControlRecord* jcr)
   if (jcr->impl->res.write_storage->paired_storage) {
     SetPairedStorage(jcr);
 
-    jcr->setJobStatus(JS_WaitSD);
+    jcr->setJobStatusWithPriorityCheck(JS_WaitSD);
     if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
       return false;
     }
@@ -447,7 +447,7 @@ cleanup:
 bail_out:
   // Error handling of failed Job.
   status = JS_ErrorTerminated;
-  jcr->setJobStatus(JS_ErrorTerminated);
+  jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
 
   if (jcr->store_bsock) {
     CancelStorageDaemonJob(jcr);

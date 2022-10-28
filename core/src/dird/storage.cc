@@ -480,7 +480,7 @@ bool SelectNextRstore(JobControlRecord* jcr, bootstrap_info& info)
             R_STORAGE, info.storage))) {
     Jmsg(jcr, M_FATAL, 0, _("Could not get storage resource '%s'.\n"),
          info.storage);
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return false;
   }
 
@@ -498,13 +498,13 @@ bool SelectNextRstore(JobControlRecord* jcr, bootstrap_info& info)
   DecReadStore(jcr);
   FreeRstorage(jcr);
   SetRstorage(jcr, &ustore);
-  jcr->setJobStatus(JS_WaitSD);
+  jcr->setJobStatusWithPriorityCheck(JS_WaitSD);
 
   // Wait for up to 6 hours to increment read stoage counter
   for (int i = 0; i < MAX_TRIES; i++) {
     // Try to get read storage counter incremented
     if (IncReadStore(jcr)) {
-      jcr->setJobStatus(JS_Running);
+      jcr->setJobStatusWithPriorityCheck(JS_Running);
       return true;
     }
     Bmicrosleep(10, 0); /* Sleep 10 secs */

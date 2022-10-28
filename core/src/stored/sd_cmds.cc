@@ -134,7 +134,9 @@ void* handle_stored_connection(BareosSocket* sd, char* job_name)
           jcr->Job);
   }
 
-  if (!jcr->authenticated) { jcr->setJobStatus(JS_ErrorTerminated); }
+  if (!jcr->authenticated) {
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+  }
 
   pthread_cond_signal(&jcr->impl->job_start_wait); /* wake waiting job */
   FreeJcr(jcr);
@@ -174,7 +176,7 @@ static void DoSdCommands(JobControlRecord* jcr)
             } else {
               Jmsg0(jcr, M_FATAL, 0, _("Command error with SD, hanging up.\n"));
             }
-            jcr->setJobStatus(JS_ErrorTerminated);
+            jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
           }
           quit = true;
         }
@@ -256,7 +258,7 @@ bool DoListenRun(JobControlRecord* jcr)
   jcr->end_time = time(NULL);
 
   DequeueMessages(jcr); /* send any queued messages */
-  jcr->setJobStatus(JS_Terminated);
+  jcr->setJobStatusWithPriorityCheck(JS_Terminated);
 
 cleanup:
   GeneratePluginEvent(jcr, bSdEventJobEnd);

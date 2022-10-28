@@ -80,7 +80,7 @@ bool use_cmd(JobControlRecord* jcr)
 {
   // Get the device, media, and pool information
   if (!UseDeviceCmd(jcr)) {
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
     return false;
   }

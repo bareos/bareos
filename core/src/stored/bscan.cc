@@ -699,7 +699,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
           UpdateJobRecord(db, &jr, &elabel, rec);
 
           mjcr->end_time = jr.EndTime;
-          mjcr->setJobStatus(JS_Terminated);
+          mjcr->setJobStatusWithPriorityCheck(JS_Terminated);
 
           // Create JobMedia record
           mjcr->impl->read_dcr->VolLastIndex = dcr->VolLastIndex;

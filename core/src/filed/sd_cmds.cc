@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -84,7 +84,7 @@ void* handle_stored_connection(BareosSocket* sd)
   if (!AuthenticateStoragedaemon(jcr)) {
     Dmsg1(50, "Authentication failed Job %s\n", jcr->Job);
     Jmsg(jcr, M_FATAL, 0, _("Unable to authenticate Storage daemon\n"));
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   } else {
     Dmsg2(50, "OK Authentication jid=%u Job %s\n", (uint32_t)jcr->JobId,
           jcr->Job);

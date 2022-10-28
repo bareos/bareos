@@ -319,7 +319,7 @@ bool DoNativeVbackup(JobControlRecord* jcr)
    * daemon.
    */
   Dmsg0(110, "Open connection with storage daemon\n");
-  jcr->setJobStatus(JS_WaitSD);
+  jcr->setJobStatusWithPriorityCheck(JS_WaitSD);
 
   // Start conversation with Storage daemon
   if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
@@ -347,7 +347,7 @@ bool DoNativeVbackup(JobControlRecord* jcr)
   jcr->start_time = time(NULL);
   jcr->impl->jr.StartTime = jcr->start_time;
   jcr->impl->jr.JobTDate = jcr->start_time;
-  jcr->setJobStatus(JS_Running);
+  jcr->setJobStatusWithPriorityCheck(JS_Running);
 
   // Update job start record
   if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->impl->jr)) {
@@ -368,14 +368,14 @@ bool DoNativeVbackup(JobControlRecord* jcr)
   // Now start a Storage daemon message thread
   if (!StartStorageDaemonMessageThread(jcr)) { return false; }
 
-  jcr->setJobStatus(JS_Running);
+  jcr->setJobStatusWithPriorityCheck(JS_Running);
 
   /*
    * Pickup Job termination data
    * Note, the SD stores in jcr->JobFiles/ReadBytes/JobBytes/JobErrors
    */
   WaitForStorageDaemonTermination(jcr);
-  jcr->setJobStatus(jcr->impl->SDJobStatus);
+  jcr->setJobStatusWithPriorityCheck(jcr->impl->SDJobStatus);
   jcr->db_batch->WriteBatchFileRecords(
       jcr); /* used by bulk batch file insert */
   if (!jcr->is_JobStatus(JS_Terminated)) { return false; }
@@ -444,7 +444,7 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
     Jmsg(jcr, M_WARNING, 0,
          _("Error getting Job record for Job report: ERR=%s\n"),
          jcr->db->strerror());
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   }
 
   bstrncpy(cr.Name, jcr->impl->res.client->resource_name_, sizeof(cr.Name));

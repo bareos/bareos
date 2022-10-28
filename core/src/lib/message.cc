@@ -1291,7 +1291,7 @@ void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
       break;
     case M_FATAL:
       Mmsg(buf, _("%s JobId %u: Fatal error: "), my_name, JobId);
-      if (jcr) { jcr->setJobStatus(JS_FatalError); }
+      if (jcr) { jcr->setJobStatusWithPriorityCheck(JS_FatalError); }
       if (jcr && jcr->JobErrors == 0) { jcr->JobErrors = 1; }
       break;
     case M_ERROR:

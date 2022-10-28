@@ -1047,7 +1047,7 @@ bool DoMigrationInit(JobControlRecord* jcr)
     }
 
     if (jcr->impl->previous_jr.JobId == 0 || jcr->impl->ExpectedFiles == 0) {
-      jcr->setJobStatus(JS_Terminated);
+      jcr->setJobStatusWithPriorityCheck(JS_Terminated);
       Dmsg1(dbglevel, "JobId=%d expected files == 0\n", (int)jcr->JobId);
       if (jcr->impl->previous_jr.JobId == 0) {
         Jmsg(jcr, M_INFO, 0, _("No previous Job found to %s.\n"),
@@ -1242,7 +1242,7 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
          _("JobId %s already %s probably by another Job. %s stopped.\n"),
          edit_int64(jcr->impl->previous_jr.JobId, ed1),
          jcr->get_ActionName(true), jcr->get_OperationName());
-    jcr->setJobStatus(JS_Terminated);
+    jcr->setJobStatusWithPriorityCheck(JS_Terminated);
     MigrationCleanup(jcr, jcr->JobStatus);
     return true;
   }
@@ -1252,7 +1252,7 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
          _("JobId %s cannot %s using the same read and write storage.\n"),
          edit_int64(jcr->impl->previous_jr.JobId, ed1),
          jcr->get_OperationName());
-    jcr->setJobStatus(JS_Terminated);
+    jcr->setJobStatusWithPriorityCheck(JS_Terminated);
     MigrationCleanup(jcr, jcr->JobStatus);
     return true;
   }
@@ -1308,7 +1308,7 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
     jcr->impl->res.write_storage_list = write_storage_list;
 
     // Start conversation with Reading Storage daemon
-    jcr->setJobStatus(JS_WaitSD);
+    jcr->setJobStatusWithPriorityCheck(JS_WaitSD);
     if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
       goto bail_out;
     }
@@ -1317,7 +1317,7 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
     Dmsg0(110, "Open connection with writing storage daemon\n");
 
     // Start conversation with Writing Storage daemon
-    mig_jcr->setJobStatus(JS_WaitSD);
+    mig_jcr->setJobStatusWithPriorityCheck(JS_WaitSD);
     if (!ConnectToStorageDaemon(mig_jcr, 10, me->SDConnectTimeout, true)) {
       goto bail_out;
     }
@@ -1344,8 +1344,8 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
 
     // Open a message channel connection with the Storage daemon.
     Dmsg0(110, "Open connection with storage daemon\n");
-    jcr->setJobStatus(JS_WaitSD);
-    mig_jcr->setJobStatus(JS_WaitSD);
+    jcr->setJobStatusWithPriorityCheck(JS_WaitSD);
+    mig_jcr->setJobStatusWithPriorityCheck(JS_WaitSD);
 
     // Start conversation with Storage daemon
     if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
@@ -1377,7 +1377,7 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
   jcr->start_time = time(NULL);
   jcr->impl->jr.StartTime = jcr->start_time;
   jcr->impl->jr.JobTDate = jcr->start_time;
-  jcr->setJobStatus(JS_Running);
+  jcr->setJobStatusWithPriorityCheck(JS_Running);
 
   // Update job start record for this migration control job
   if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->impl->jr)) {
@@ -1391,7 +1391,7 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
   mig_jcr->start_time = time(NULL);
   mig_jcr->impl->jr.StartTime = mig_jcr->start_time;
   mig_jcr->impl->jr.JobTDate = mig_jcr->start_time;
-  mig_jcr->setJobStatus(JS_Running);
+  mig_jcr->setJobStatusWithPriorityCheck(JS_Running);
 
   // Update job start record for the real migration backup job
   if (!mig_jcr->db->UpdateJobStartRecord(mig_jcr, &mig_jcr->impl->jr)) {
@@ -1455,8 +1455,8 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
   // Now start a Storage daemon message thread
   if (!StartStorageDaemonMessageThread(jcr)) { goto bail_out; }
 
-  jcr->setJobStatus(JS_Running);
-  mig_jcr->setJobStatus(JS_Running);
+  jcr->setJobStatusWithPriorityCheck(JS_Running);
+  mig_jcr->setJobStatusWithPriorityCheck(JS_Running);
 
   /*
    * Pickup Job termination data
@@ -1467,13 +1467,13 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
   if (jcr->impl->remote_replicate) {
     WaitForStorageDaemonTermination(jcr);
     WaitForStorageDaemonTermination(mig_jcr);
-    jcr->setJobStatus(jcr->impl->SDJobStatus);
+    jcr->setJobStatusWithPriorityCheck(jcr->impl->SDJobStatus);
     if (mig_jcr->batch_started) {
       mig_jcr->db_batch->WriteBatchFileRecords(mig_jcr);
     }
   } else {
     WaitForStorageDaemonTermination(jcr);
-    jcr->setJobStatus(jcr->impl->SDJobStatus);
+    jcr->setJobStatusWithPriorityCheck(jcr->impl->SDJobStatus);
     if (jcr->batch_started) { jcr->db_batch->WriteBatchFileRecords(jcr); }
   }
 
@@ -1515,10 +1515,10 @@ static inline bool DoMigrationSelection(JobControlRecord* jcr)
 
   retval = getJobs_to_migrate(jcr);
   if (retval) {
-    jcr->setJobStatus(JS_Terminated);
+    jcr->setJobStatusWithPriorityCheck(JS_Terminated);
     MigrationCleanup(jcr, jcr->JobStatus);
   } else {
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   }
 
   return retval;
@@ -1817,7 +1817,7 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
       Jmsg(jcr, M_WARNING, 0,
            _("Error getting Job record for Job report: ERR=%s\n"),
            jcr->db->strerror());
-      jcr->setJobStatus(JS_ErrorTerminated);
+      jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     }
 
     UpdateBootstrapFile(mig_jcr);

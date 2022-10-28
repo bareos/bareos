@@ -265,12 +265,12 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
            "...\n"),
          jcr->impl->dcr->VolumeName,
          edit_uint64_with_commas(jcr->impl->dcr->job_spool_size, ec1));
-    jcr->setJobStatus(JS_DataCommitting);
+    jcr->setJobStatusWithPriorityCheck(JS_DataCommitting);
   } else {
     Jmsg(jcr, M_INFO, 0,
          _("Writing spooled data to Volume. Despooling %s bytes ...\n"),
          edit_uint64_with_commas(jcr->impl->dcr->job_spool_size, ec1));
-    jcr->setJobStatus(JS_DataDespooling);
+    jcr->setJobStatusWithPriorityCheck(JS_DataDespooling);
   }
   jcr->sendJobStatus(JS_DataDespooling);
   dcr->despool_wait = true;

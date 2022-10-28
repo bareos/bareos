@@ -281,7 +281,7 @@ void NdmpBackupCleanup(JobControlRecord* jcr, int TermCode)
     Jmsg(jcr, M_WARNING, 0,
          _("Error getting Job record for Job report: ERR=%s"),
          jcr->db->strerror());
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   }
 
   bstrncpy(cr.Name, jcr->impl->res.client->resource_name_, sizeof(cr.Name));

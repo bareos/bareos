@@ -613,7 +613,7 @@ static
     foreach_jcr (jcr) {
       BareosSocket* fd;
       if (jcr->JobId == 0) { continue; /* ignore console */ }
-      jcr->setJobStatus(JS_Canceled);
+      jcr->setJobStatusWithPriorityCheck(JS_Canceled);
       fd = jcr->file_bsock;
       if (fd) {
         fd->SetTimedOut();

@@ -171,7 +171,7 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
   jcr->impl->nextrun_ready_inited = true;
 
   CreateUniqueJobName(jcr, jcr->impl->res.job->resource_name_);
-  jcr->setJobStatus(JS_Created);
+  jcr->setJobStatusWithPriorityCheck(JS_Created);
   jcr->unlock();
 
   // Open database
@@ -364,7 +364,7 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
       break;
     default:
       Pmsg1(0, _("Unimplemented job type: %d\n"), jcr->getJobType());
-      jcr->setJobStatus(JS_ErrorTerminated);
+      jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
       goto bail_out;
   }
 
@@ -424,7 +424,7 @@ bool UseWaitingClient(JobControlRecord* jcr, int timeout)
 void UpdateJobEnd(JobControlRecord* jcr, int TermCode)
 {
   DequeueMessages(jcr); /* display any queued messages */
-  jcr->setJobStatus(TermCode);
+  jcr->setJobStatusWithPriorityCheck(TermCode);
   UpdateJobEndRecord(jcr);
 }
 
@@ -442,8 +442,9 @@ static void* job_thread(void* arg)
   DetachIfNotDetached(pthread_self());
 
   Dmsg0(200, "=====Start Job=========\n");
-  jcr->setJobStatus(JS_Running); /* this will be set only if no error */
-  jcr->start_time = time(NULL);  /* set the real start time */
+  jcr->setJobStatusWithPriorityCheck(
+      JS_Running);              /* this will be set only if no error */
+  jcr->start_time = time(NULL); /* set the real start time */
   jcr->impl->jr.StartTime = jcr->start_time;
 
   // Let the statistics subsystem know a new Job was started.
@@ -452,13 +453,13 @@ static void* job_thread(void* arg)
   if (jcr->impl->res.job->MaxStartDelay != 0
       && jcr->impl->res.job->MaxStartDelay
              < (utime_t)(jcr->start_time - jcr->sched_time)) {
-    jcr->setJobStatus(JS_Canceled);
+    jcr->setJobStatusWithPriorityCheck(JS_Canceled);
     Jmsg(jcr, M_FATAL, 0,
          _("Job canceled because max start delay time exceeded.\n"));
   }
 
   if (JobCheckMaxrunschedtime(jcr)) {
-    jcr->setJobStatus(JS_Canceled);
+    jcr->setJobStatusWithPriorityCheck(JS_Canceled);
     Jmsg(jcr, M_FATAL, 0,
          _("Job canceled because max run sched time exceeded.\n"));
   }
@@ -676,7 +677,7 @@ bool CancelJob(UaContext* ua, JobControlRecord* jcr)
   char ed1[50];
   int32_t old_status = jcr->JobStatus;
 
-  jcr->setJobStatus(JS_Canceled);
+  jcr->setJobStatusWithPriorityCheck(JS_Canceled);
 
   switch (old_status) {
     case JS_Created:
@@ -740,17 +741,17 @@ static void JobMonitorWatchdog(watchdog_t* self)
 
     /* check MaxWaitTime */
     if (JobCheckMaxwaittime(jcr)) {
-      jcr->setJobStatus(JS_Canceled);
+      jcr->setJobStatusWithPriorityCheck(JS_Canceled);
       Qmsg(jcr, M_FATAL, 0, _("Max wait time exceeded. Job canceled.\n"));
       cancel = true;
       /* check MaxRunTime */
     } else if (JobCheckMaxruntime(jcr)) {
-      jcr->setJobStatus(JS_Canceled);
+      jcr->setJobStatusWithPriorityCheck(JS_Canceled);
       Qmsg(jcr, M_FATAL, 0, _("Max run time exceeded. Job canceled.\n"));
       cancel = true;
       /* check MaxRunSchedTime */
     } else if (JobCheckMaxrunschedtime(jcr)) {
-      jcr->setJobStatus(JS_Canceled);
+      jcr->setJobStatusWithPriorityCheck(JS_Canceled);
       Qmsg(jcr, M_FATAL, 0, _("Max run sched time exceeded. Job canceled.\n"));
       cancel = true;
     }
@@ -943,7 +944,7 @@ bool AllowDuplicateJob(JobControlRecord* jcr)
         // cancel_dup will be done below
         if (cancel_me) {
           /* Zap current job */
-          jcr->setJobStatus(JS_Canceled);
+          jcr->setJobStatusWithPriorityCheck(JS_Canceled);
           Jmsg(jcr, M_FATAL, 0,
                _("JobId %d already running. Duplicate job not allowed.\n"),
                djcr->JobId);
@@ -978,13 +979,13 @@ bool AllowDuplicateJob(JobControlRecord* jcr)
              djcr->JobId);
         CancelJob(ua, djcr);
         Bmicrosleep(0, 500000);
-        djcr->setJobStatus(JS_Canceled);
+        djcr->setJobStatusWithPriorityCheck(JS_Canceled);
         CancelJob(ua, djcr);
         FreeUaContext(ua);
         Dmsg2(800, "Cancel dup %p JobId=%d\n", djcr, djcr->JobId);
       } else {
         // Zap current job
-        jcr->setJobStatus(JS_Canceled);
+        jcr->setJobStatusWithPriorityCheck(JS_Canceled);
         Jmsg(jcr, M_FATAL, 0,
              _("JobId %d already running. Duplicate job not allowed.\n"),
              djcr->JobId);
