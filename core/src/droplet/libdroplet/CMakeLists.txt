@@ -21,7 +21,7 @@ message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 cmake_minimum_required(VERSION 3.0)
 
 add_library(
-  droplet SHARED
+  droplet STATIC
   src/conn.c
   src/converters.c
   src/value.c
@@ -112,6 +112,7 @@ bareos_disable_warnings(
   C_ONLY
   ADD_FOR_LTO
 )
+set_property(TARGET droplet PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 target_include_directories(
   droplet PUBLIC include ${LIBXML2_INCLUDE_DIR} ${JSONC_INCLUDE_DIRS}
@@ -120,5 +121,3 @@ target_include_directories(
 target_link_libraries(
   droplet ${LIBXML2_LIBRARIES} ${JSONC_LIBRARIES} ${OPENSSL_LIBRARIES}
 )
-
-install(TARGETS droplet DESTINATION ${libdir})

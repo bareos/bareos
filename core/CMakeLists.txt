@@ -423,14 +423,6 @@ if(NOT client-only
   # directory it is also not safe on 32-bit systems, so we only build it on
   # 64-bit
   add_subdirectory(src/droplet)
-  if(TARGET droplet)
-    set_target_properties(
-      droplet
-      PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
-                 SOVERSION "${BAREOS_VERSION_MAJOR}"
-                 PREFIX "libbareos"
-    )
-  endif()
 endif()
 
 include(BareosGenerateDebianInfo)
