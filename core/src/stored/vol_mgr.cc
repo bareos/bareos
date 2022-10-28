@@ -51,7 +51,6 @@ static int read_vol_list_lock_count = 0;
 
 /* Forward referenced functions */
 static void FreeVolItem(VolumeReservationItem* vol);
-static void FreeReadVolItem(VolumeReservationItem* vol);
 static VolumeReservationItem* new_vol_item(DeviceControlRecord* dcr,
                                            const char* VolumeName);
 static void DebugListVolumes(const char* imsg);
@@ -163,7 +162,7 @@ void AddReadVolume(JobControlRecord* jcr, const char* VolumeName)
   LockReadVolumes();
   vol = (VolumeReservationItem*)read_vol_list->binary_insert(nvol, ReadCompare);
   if (vol != nvol) {
-    FreeReadVolItem(nvol);
+    FreeVolItem(nvol);
     Dmsg2(debuglevel, "read_vol=%s JobId=%d already in list.\n", VolumeName,
           jcr->JobId);
   } else {
@@ -191,7 +190,7 @@ void RemoveReadVolume(JobControlRecord* jcr, const char* VolumeName)
   }
   if (fvol) {
     read_vol_list->remove(fvol);
-    FreeReadVolItem(fvol);
+    FreeVolItem(fvol);
   }
   UnlockReadVolumes();
   // pthread_cond_broadcast(&wait_next_vol);
@@ -279,7 +278,7 @@ static VolumeReservationItem* new_vol_item(DeviceControlRecord* dcr,
 
 static void FreeVolItem(VolumeReservationItem* vol)
 {
-  Device* dev = NULL;
+  Device* dev = nullptr;
 
   vol->DecUseCount();
   vol->Lock();
@@ -292,25 +291,7 @@ static void FreeVolItem(VolumeReservationItem* vol)
   if (vol->dev) { dev = vol->dev; }
   vol->DestroyMutex();
   free(vol);
-  if (dev) { dev->vol = NULL; }
-}
-
-static void FreeReadVolItem(VolumeReservationItem* vol)
-{
-  Device* dev = NULL;
-
-  vol->DecUseCount();
-  vol->Lock();
-  if (vol->UseCount() > 0) {
-    vol->Unlock();
-    return;
-  }
-  vol->Unlock();
-  free(vol->vol_name);
-  if (vol->dev) { dev = vol->dev; }
-  vol->DestroyMutex();
-  free(vol);
-  if (dev) { dev->vol = NULL; }
+  if (dev) { dev->vol = nullptr; }
 }
 
 /**
@@ -656,7 +637,7 @@ VolumeReservationItem* ReadVolWalkNext(VolumeReservationItem* prev_vol)
     Dmsg2(debuglevel, "Inc walk_next UseCount=%d volname=%s\n", vol->UseCount(),
           vol->vol_name);
   }
-  if (prev_vol) { FreeReadVolItem(prev_vol); }
+  if (prev_vol) { FreeVolItem(prev_vol); }
   UnlockReadVolumes();
 
   return vol;
@@ -669,7 +650,7 @@ void ReadVolWalkEnd(VolumeReservationItem* vol)
     LockReadVolumes();
     Dmsg2(debuglevel, "Free walk_end UseCount=%d volname=%s\n", vol->UseCount(),
           vol->vol_name);
-    FreeReadVolItem(vol);
+    FreeVolItem(vol);
     UnlockReadVolumes();
   }
 }
