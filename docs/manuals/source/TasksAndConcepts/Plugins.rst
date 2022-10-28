@@ -93,4 +93,4 @@ with the **python3** plugin (which uses Python 3).
 
 .. include:: Plugins/DirectorPlugins.rst.inc
 .. include:: Plugins/StorageDaemonPlugins.rst.inc
-.. include:: Plugins/FileDaemonPlugins.rst.inc 
+.. include:: Plugins/FileDaemonPlugins.rst.inc
