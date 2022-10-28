@@ -676,8 +676,11 @@ This package contains the GlusterFS plugin for the file daemon
 Summary:       Bareos Web User Interface
 Group:         Productivity/Archiving/Backup
 
-Requires: php >= 7.0.0
+BuildRequires: httpd
+BuildRequires: httpd-devel
 
+Requires: php >= 7.0.0
+Requires: php-fpm
 Requires: php-bz2
 Requires: php-ctype
 Requires: php-curl
@@ -691,11 +694,6 @@ Requires: php-hash
 Requires: php-iconv
 Requires: php-intl
 Requires: php-json
-
-%if !0%{?suse_version}
-Requires: php-libxml
-%endif
-
 Requires: php-mbstring
 Requires: php-openssl
 Requires: php-pcre
@@ -708,29 +706,27 @@ Requires: php-xmlreader
 Requires: php-xmlwriter
 Requires: php-zip
 
-%if 0%{?suse_version} || 0%{?sle_version}
-BuildRequires: apache2
-# /usr/sbin/apxs2
-BuildRequires: apache2-devel
-BuildRequires: mod_php_any
-%define _apache_conf_dir /etc/apache2/conf.d/
-%define www_daemon_user  wwwrun
-%define www_daemon_group www
-Requires: apache
-Recommends: mod_php_any
-%else
-BuildRequires: httpd
-# apxs2
-BuildRequires: httpd-devel
-%define _apache_conf_dir /etc/httpd/conf.d/
-%define www_daemon_user  apache
-%define www_daemon_group apache
-%if 0%{?fedora_version} >= 33 || 0%{?rhel_version} >= 900
-Requires:   php-fpm
-%else
-Requires:   mod_php
+%if !0%{?suse_version}
+Requires: php-libxml
 %endif
-Requires:   httpd
+
+%if 0%{?centos_version} || 0%{?rhel_version} || 0%{?fedora}
+Requires: httpd
+%define _apache_conf_dir /etc/httpd/conf.d/
+%define www_daemon_user apache
+%define www_daemon_group apache
+%endif
+
+%if 0%{?suse_version} || 0%{?sle_version}
+%if 0%{?sle_version} == 120500
+Requires: apache2
+%else
+Requires: apache2-event
+%endif
+Requires: apache2-mod_fcgid
+%define _apache_conf_dir /etc/apache2/conf.d/
+%define www_daemon_user wwwrun
+%define www_daemon_group www
 %endif
 
 %description webui
@@ -1765,22 +1761,11 @@ fi\
 
 %if 0%{?webui}
 %post webui
-%if 0%{?suse_version} >= 1110
-a2enmod setenv &> /dev/null || true
+%if 0%{?suse_version}
 a2enmod rewrite &> /dev/null || true
-%endif
-
-%if 0%{?suse_version} >= 1315
-# 1315:
-#   SLES12 (PHP 7)
-#   openSUSE Leap 42.1 (PHP 5)
-if php -v | grep -q "PHP 7"; then
-  a2enmod php7 &> /dev/null || true
-else
-  a2enmod php5 &> /dev/null || true
-fi
-%else
-a2enmod php5 &> /dev/null || true
+a2enmod proxy &> /dev/null || true
+a2enmod proxy_fcgi &> /dev/null || true
+a2enmod fcgid &> /dev/null || true
 %endif
 %endif
 
