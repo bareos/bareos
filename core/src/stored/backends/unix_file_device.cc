@@ -37,7 +37,6 @@
 #include "unix_file_device.h"
 #include "lib/berrno.h"
 #include "lib/util.h"
-#include "lib/plugin_registry.h"
 
 namespace storagedaemon {
 

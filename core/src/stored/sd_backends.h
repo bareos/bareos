@@ -22,7 +22,7 @@
 #ifndef BAREOS_STORED_SD_BACKENDS_H_
 #define BAREOS_STORED_SD_BACKENDS_H_
 
-#include <lib/plugin_registry.h>
+#include <lib/implementation_factory.h>
 
 namespace storagedaemon {
 
@@ -34,10 +34,10 @@ bool LoadStorageBackend(const std::string& dev_type,
                         const std::vector<std::string>& backend_directories);
 #endif
 
-#define REGISTER_SD_BACKEND(backend_name, backend_class) \
-  [[maybe_unused]] static bool backend_name##_backend_   \
-      = PluginRegistry<Device>::Add(#backend_name,       \
-                                    DeviceFactory<backend_class>);
+#define REGISTER_SD_BACKEND(backend_name, backend_class)  \
+  [[maybe_unused]] static bool backend_name##_backend_    \
+      = ImplementationFactory<Device>::Add(#backend_name, \
+                                           DeviceFactory<backend_class>);
 
 }  // namespace storagedaemon
 

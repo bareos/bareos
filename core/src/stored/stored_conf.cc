@@ -43,7 +43,7 @@
 #define NEED_JANSSON_NAMESPACE 1
 #include "lib/output_formatter.h"
 #include "lib/output_formatter_resource.h"
-#include "lib/plugin_registry.h"
+#include "lib/implementation_factory.h"
 #include "include/auth_types.h"
 #include "include/jcr.h"
 
@@ -557,7 +557,7 @@ static void CheckAndLoadDeviceBackends(ConfigurationParser& my_config)
     DeviceResource* d = dynamic_cast<DeviceResource*>(p);
     if (d) {
       to_lower(d->dev_type);
-      if (!PluginRegistry<Device>::IsRegistered(d->dev_type)) {
+      if (!ImplementationFactory<Device>::IsRegistered(d->dev_type)) {
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
         if (!storage_res || storage_res->backend_directories.empty()) {
           Jmsg2(nullptr, M_ERROR_TERM, 0,
