@@ -759,13 +759,9 @@ void JobControlRecord::setJobStarted()
 void JobControlRecord::setJobStatusWithPriorityCheck(int newJobStatus)
 {
   int priority;
-  int old_priority = 0;
-  int oldJobStatus = ' ';
+  int oldJobStatus = JobStatus;
+  int old_priority = GetStatusPriority(oldJobStatus);
 
-  if (JobStatus) {
-    oldJobStatus = JobStatus;
-    old_priority = GetStatusPriority(oldJobStatus);
-  }
   priority = GetStatusPriority(newJobStatus);
 
   Dmsg2(800, "setJobStatus(%s, %c)\n", Job, newJobStatus);
@@ -789,7 +785,7 @@ void JobControlRecord::setJobStatusWithPriorityCheck(int newJobStatus)
   if (priority > old_priority || (priority == 0 && old_priority == 0)) {
     Dmsg4(800, "Set new stat. old: %c,%d new: %c,%d\n", oldJobStatus,
           old_priority, newJobStatus, priority);
-    JobStatus = newJobStatus; /* replace with new status */
+    JobStatus.compare_exchange_strong(oldJobStatus, newJobStatus);
   }
 
   if (oldJobStatus != JobStatus) {
