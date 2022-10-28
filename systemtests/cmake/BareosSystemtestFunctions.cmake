@@ -27,6 +27,7 @@ macro(create_systemtests_directory)
   configurefilestosystemtest(
     "systemtests" "scripts" "run_python_unittests.sh" @ONLY ""
   )
+  configurefilestosystemtest("systemtests" "scripts" "webui.sh" @ONLY "")
   configurefilestosystemtest("systemtests" "scripts" "setup" @ONLY "")
   configurefilestosystemtest("systemtests" "scripts" "start_bareos.sh" @ONLY "")
   configurefilestosystemtest("systemtests" "scripts" "start_minio.sh" @ONLY "")
