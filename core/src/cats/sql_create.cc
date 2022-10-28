@@ -706,7 +706,7 @@ bool BareosDb::CreateFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr)
     num_rows = SqlNumRows();
 
     if (num_rows > 1) {
-      Mmsg1(errmsg, _("More than one FileSet!: %d\n"), num_rows);
+      Mmsg2(errmsg, _("More than one FileSet! %s: %d\n"), esc_fs, num_rows);
       Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
     }
     if (num_rows >= 1) {
@@ -734,8 +734,9 @@ bool BareosDb::CreateFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr)
 
       Mmsg(cmd,
            "UPDATE FileSet SET (FileSet,MD5,CreateTime,FileSetText) "
-           "= ('%s','%s','%s','%s')",
-           esc_fs, esc_md5, fsr->cCreateTime, esc_filesettext.c_str());
+           "= ('%s','%s','%s','%s') WHERE FileSet='%s' AND MD5='%s' ",
+           esc_fs, esc_md5, fsr->cCreateTime, esc_filesettext.c_str(), esc_fs,
+           esc_md5);
       if (QUERY_DB(jcr, cmd)) {
         SqlFreeResult();
         return true;
@@ -762,7 +763,6 @@ bool BareosDb::CreateFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr)
     len = strlen(fsr->FileSetText);
     esc_filesettext.check_size(len * 2 + 1);
     EscapeString(jcr, esc_filesettext.c_str(), fsr->FileSetText, len);
-
     Mmsg(cmd,
          "INSERT INTO FileSet (FileSet,MD5,CreateTime,FileSetText) "
          "VALUES ('%s','%s','%s','%s')",
@@ -925,7 +925,6 @@ bool BareosDb::CreateFileAttributesRecord(JobControlRecord* jcr,
   DbLocker _{this};
   Dmsg1(dbglevel, "Fname=%s\n", ar->fname);
   Dmsg0(dbglevel, "put_file_into_catalog\n");
-
   SplitPathAndFile(jcr, ar->fname);
 
   if (!CreatePathRecord(jcr, ar)) { return false; }

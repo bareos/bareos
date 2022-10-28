@@ -1360,7 +1360,8 @@ bool GetOrCreateFilesetRecord(JobControlRecord* jcr)
   } else {
     Jmsg(jcr, M_WARNING, 0, _("FileSet MD5 digest not found.\n"));
   }
-  if (!jcr->impl->res.fileset->ignore_fs_changes) {
+  if (!jcr->impl->res.fileset->ignore_fs_changes
+      || !jcr->db->GetFilesetRecord(jcr, &fsr)) {
     PoolMem FileSetText(PM_MESSAGE);
     OutputFormatter output_formatter
         = OutputFormatter(pm_append, (void*)&FileSetText, nullptr, nullptr);
