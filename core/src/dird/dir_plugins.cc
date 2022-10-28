@@ -644,7 +644,7 @@ static bRC bareosGetValue(PluginContext* ctx, brDirVariable var, void* value)
       case bDirVarJobStatus:
         *((int*)value) = jcr->JobStatus;
         Dmsg1(debuglevel, "dir-plugin: return bDirVarJobStatus=%c\n",
-              jcr->JobStatus);
+              jcr->getJobStatus());
         break;
       case bDirVarPriority:
         *((int*)value) = jcr->JobPriority;

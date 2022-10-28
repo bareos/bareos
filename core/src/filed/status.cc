@@ -440,7 +440,8 @@ bool QstatusCmd(JobControlRecord* jcr)
     dir->fsend(OKqstatus, cmd);
     foreach_jcr (njcr) {
       if (njcr->JobId != 0) {
-        dir->fsend(DotStatusJob, njcr->JobId, njcr->JobStatus, njcr->JobErrors);
+        dir->fsend(DotStatusJob, njcr->JobId, njcr->getJobStatus(),
+                   njcr->JobErrors);
       }
     }
     endeach_jcr(njcr);

@@ -711,9 +711,9 @@ bail_out:
   if (ok) { jcr->setJobStatusWithPriorityCheck(JS_Terminated); }
 
   GeneratePluginEvent(jcr, bSdEventJobEnd);
-  dir->fsend(Job_end, jcr->Job, jcr->JobStatus, jcr->JobFiles,
+  dir->fsend(Job_end, jcr->Job, jcr->getJobStatus(), jcr->JobFiles,
              edit_uint64(jcr->JobBytes, ec1), jcr->JobErrors);
-  Dmsg4(100, Job_end, jcr->Job, jcr->JobStatus, jcr->JobFiles, ec1);
+  Dmsg4(100, Job_end, jcr->Job, jcr->getJobStatus(), jcr->JobFiles, ec1);
 
   dir->signal(BNET_EOD); /* send EOD to Director daemon */
   FreePlugins(jcr);      /* release instantiated plugins */

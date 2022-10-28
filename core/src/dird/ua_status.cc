@@ -111,7 +111,7 @@ bool DotStatusCmd(UaContext* ua, const char* cmd)
         if (njcr->JobId != 0
             && ua->AclAccessOk(Job_ACL, njcr->impl->res.job->resource_name_)) {
           ua->SendMsg(DotStatusJob, edit_int64(njcr->JobId, ed1),
-                      njcr->JobStatus, njcr->JobErrors);
+                      njcr->getJobStatus(), njcr->JobErrors);
         }
       }
       endeach_jcr(njcr);
@@ -1068,7 +1068,7 @@ static void ListRunningJobs(UaContext* ua)
 
       default:
         emsg = (char*)GetPoolMemory(PM_FNAME);
-        Mmsg(emsg, _("is in unknown state %c"), jcr->JobStatus);
+        Mmsg(emsg, _("is in unknown state %c"), jcr->getJobStatus());
         pool_mem = true;
         msg = emsg;
         break;

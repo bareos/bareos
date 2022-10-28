@@ -165,7 +165,7 @@ class JobControlRecord {
   uint64_t LastJobBytes{};      /**< Last sample number bytes */
   uint64_t ReadBytes{};         /**< Bytes read -- before compression */
   FileId_t FileId{};            /**< Last FileId used */
-  volatile int32_t JobStatus{}; /**< ready, running, blocked, terminated */
+  std::atomic<int32_t> JobStatus{}; /**< ready, running, blocked, terminated */
   int32_t JobPriority{};        /**< Job priority */
   time_t sched_time{};          /**< Job schedule time, i.e. when it should start */
   time_t initial_sched_time{};  /**< Original sched time before any reschedules are done */

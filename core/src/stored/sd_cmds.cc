@@ -263,7 +263,7 @@ bool DoListenRun(JobControlRecord* jcr)
 cleanup:
   GeneratePluginEvent(jcr, bSdEventJobEnd);
 
-  dir->fsend(Job_end, jcr->Job, jcr->JobStatus, jcr->JobFiles,
+  dir->fsend(Job_end, jcr->Job, jcr->getJobStatus(), jcr->JobFiles,
              edit_uint64(jcr->JobBytes, ec1), jcr->JobErrors);
 
   dir->signal(BNET_EOD); /* send EOD to Director daemon */

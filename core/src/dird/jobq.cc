@@ -421,7 +421,7 @@ extern "C" void* jobq_server(void* arg)
 
       // Call user's routine here
       Dmsg3(2300, "Calling user engine for jobid=%d use=%d stat=%c\n",
-            jcr->JobId, jcr->UseCount(), jcr->JobStatus);
+            jcr->JobId, jcr->UseCount(), jcr->getJobStatus());
       jq->engine(je->jcr);
 
       // Job finished detach from thread

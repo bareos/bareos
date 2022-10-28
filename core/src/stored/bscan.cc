@@ -1310,7 +1310,7 @@ static bool UpdateJobRecord(BareosDb* db,
         break;
       default:
         TermMsg = term_code;
-        sprintf(term_code, _("Job Termination code: %d"), mjcr->JobStatus);
+        sprintf(term_code, _("Job Termination code: %d"), mjcr->getJobStatus());
         break;
     }
     bstrftime(sdt, sizeof(sdt), mjcr->start_time);

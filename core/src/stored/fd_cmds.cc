@@ -181,7 +181,7 @@ void RunJob(JobControlRecord* jcr)
 
   GeneratePluginEvent(jcr, bSdEventJobEnd);
 
-  dir->fsend(Job_end, jcr->Job, jcr->JobStatus, jcr->JobFiles,
+  dir->fsend(Job_end, jcr->Job, jcr->getJobStatus(), jcr->JobFiles,
              edit_uint64(jcr->JobBytes, ec1), jcr->JobErrors);
   dir->signal(BNET_EOD); /* send EOD to Director daemon */
 
@@ -318,7 +318,7 @@ static bool AppendCloseSession(JobControlRecord* jcr)
   }
 
   // Send final statistics to File daemon
-  fd->fsend(OK_close, jcr->JobStatus);
+  fd->fsend(OK_close, jcr->getJobStatus());
   Dmsg1(120, ">filed: %s", fd->msg);
 
   fd->signal(BNET_EOD); /* send EOD to File daemon */
@@ -414,7 +414,7 @@ static bool ReadCloseSession(JobControlRecord* jcr)
   }
 
   // Send final close msg to File daemon
-  fd->fsend(OK_close, jcr->JobStatus);
+  fd->fsend(OK_close, jcr->getJobStatus());
   Dmsg1(160, ">filed: %s", fd->msg);
 
   fd->signal(BNET_EOD); /* send EOD to File daemon */

@@ -683,12 +683,12 @@ int WaitForJobTermination(JobControlRecord* jcr, int timeout)
    * the SD despool.
    */
   Dmsg5(100, "cancel=%d fd_ok=%d FDJS=%d JS=%d SDJS=%d\n", jcr->IsCanceled(),
-        fd_ok, jcr->impl->FDJobStatus.load(), jcr->JobStatus,
+        fd_ok, jcr->impl->FDJobStatus.load(), jcr->getJobStatus(),
         jcr->impl->SDJobStatus.load());
   if (jcr->IsCanceled()
       || (!jcr->impl->res.job->RescheduleIncompleteJobs && !fd_ok)) {
     Dmsg4(100, "fd_ok=%d FDJS=%d JS=%d SDJS=%d\n", fd_ok,
-          jcr->impl->FDJobStatus.load(), jcr->JobStatus,
+          jcr->impl->FDJobStatus.load(), jcr->getJobStatus(),
           jcr->impl->SDJobStatus.load());
     CancelStorageDaemonJob(jcr);
   }
@@ -789,7 +789,8 @@ void NativeBackupCleanup(JobControlRecord* jcr, int TermCode)
       break;
     default:
       TermMsg = term_code;
-      sprintf(term_code, _("Inappropriate term code: %c\n"), jcr->JobStatus);
+      sprintf(term_code, _("Inappropriate term code: %c\n"),
+              jcr->getJobStatus());
       break;
   }
 

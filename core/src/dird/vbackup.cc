@@ -485,7 +485,8 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
       break;
     default:
       TermMsg = term_code;
-      sprintf(term_code, _("Inappropriate term code: %c\n"), jcr->JobStatus);
+      sprintf(term_code, _("Inappropriate term code: %c\n"),
+              jcr->getJobStatus());
       break;
   }
 

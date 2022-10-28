@@ -649,7 +649,7 @@ static void* job_thread(void* arg)
   if (jcr->msg_queue && jcr->msg_queue->size() > 0) { DequeueMessages(jcr); }
 
   GeneratePluginEvent(jcr, bDirEventJobEnd);
-  Dmsg1(50, "======== End Job stat=%c ==========\n", jcr->JobStatus);
+  Dmsg1(50, "======== End Job stat=%c ==========\n", jcr->getJobStatus());
 
   return NULL;
 }

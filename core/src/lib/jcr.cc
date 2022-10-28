@@ -734,7 +734,7 @@ static int GetStatusPriority(int JobStatus)
 // Send Job status to Director
 bool JobControlRecord::sendJobStatus()
 {
-  if (dir_bsock) { return dir_bsock->fsend(Job_status, Job, JobStatus); }
+  if (dir_bsock) { return dir_bsock->fsend(Job_status, Job, getJobStatus()); }
 
   return true;
 }
@@ -744,7 +744,7 @@ bool JobControlRecord::sendJobStatus(int newJobStatus)
 {
   if (!is_JobStatus(newJobStatus)) {
     setJobStatusWithPriorityCheck(newJobStatus);
-    if (dir_bsock) { return dir_bsock->fsend(Job_status, Job, JobStatus); }
+    if (dir_bsock) { return dir_bsock->fsend(Job_status, Job, getJobStatus()); }
   }
 
   return true;
@@ -1042,11 +1042,11 @@ void DbgPrintJcr(FILE* fp)
        jcr; jcr = (JobControlRecord*)job_control_record_chain->next(jcr)) {
     fprintf(fp, "threadid=%s JobId=%d JobStatus=%c jcr=%p name=%s\n",
             edit_pthread(jcr->my_thread_id, ed1, sizeof(ed1)), (int)jcr->JobId,
-            jcr->JobStatus, jcr, jcr->Job);
-    fprintf(fp,
-            "threadid=%s killable=%d JobId=%d JobStatus=%c jcr=%p name=%s\n",
-            edit_pthread(jcr->my_thread_id, ed1, sizeof(ed1)),
-            jcr->IsKillable(), (int)jcr->JobId, jcr->JobStatus, jcr, jcr->Job);
+            jcr->getJobStatus(), jcr, jcr->Job);
+    fprintf(
+        fp, "threadid=%s killable=%d JobId=%d JobStatus=%c jcr=%p name=%s\n",
+        edit_pthread(jcr->my_thread_id, ed1, sizeof(ed1)), jcr->IsKillable(),
+        (int)jcr->JobId, jcr->getJobStatus(), jcr, jcr->Job);
     fprintf(fp, "\tUseCount=%i\n", jcr->UseCount());
     fprintf(fp, "\tJobType=%c JobLevel=%c\n", jcr->getJobType(),
             jcr->getJobLevel());

@@ -471,7 +471,7 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
   if (jcr->JobId) { /* send EndJob if running a job */
     char ed1[50], ed2[50];
     // Send termination status back to Dir
-    dir->fsend(EndJob, jcr->JobStatus, jcr->JobFiles,
+    dir->fsend(EndJob, jcr->getJobStatus(), jcr->JobFiles,
                edit_uint64(jcr->ReadBytes, ed1),
                edit_uint64(jcr->JobBytes, ed2), jcr->JobErrors,
                jcr->impl->enable_vss, jcr->impl->crypto.pki_encrypt);

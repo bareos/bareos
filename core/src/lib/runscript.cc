@@ -113,7 +113,7 @@ int RunScripts(JobControlRecord* jcr,
   int when;
 
   Dmsg2(200, "runscript: running all RunScript object (%s) JobStatus=%c\n",
-        label, jcr->JobStatus);
+        label, jcr->getJobStatus());
 
   if (strstr(label, NT_("Before"))) {
     when = SCRIPT_Before;
@@ -133,7 +133,7 @@ int RunScripts(JobControlRecord* jcr,
           "runscript: try to run (Target=%s, OnSuccess=%i, OnFailure=%i, "
           "CurrentJobStatus=%c, command=%s)\n",
           NSTDPRNT(script->target), script->on_success, script->on_failure,
-          jcr->JobStatus, NSTDPRNT(script->command));
+          jcr->getJobStatus(), NSTDPRNT(script->command));
     runit = false;
 
     if (!script->IsLocal()) {
@@ -151,7 +151,7 @@ int RunScripts(JobControlRecord* jcr,
                 && (JobCanceled(jcr) || jcr->JobStatus == JS_Differences))) {
           Dmsg4(200, "runscript: Run it because SCRIPT_Before (%s,%i,%i,%c)\n",
                 script->command.c_str(), script->on_success, script->on_failure,
-                jcr->JobStatus);
+                jcr->getJobStatus());
           runit = true;
         }
       }
@@ -162,7 +162,7 @@ int RunScripts(JobControlRecord* jcr,
           Dmsg4(200,
                 "runscript: Run it because SCRIPT_AfterVSS (%s,%i,%i,%c)\n",
                 script->command.c_str(), script->on_success, script->on_failure,
-                jcr->JobStatus);
+                jcr->getJobStatus());
           runit = true;
         }
       }
@@ -173,7 +173,7 @@ int RunScripts(JobControlRecord* jcr,
                 && (JobCanceled(jcr) || jcr->JobStatus == JS_Differences))) {
           Dmsg4(200, "runscript: Run it because SCRIPT_After (%s,%i,%i,%c)\n",
                 script->command.c_str(), script->on_success, script->on_failure,
-                jcr->JobStatus);
+                jcr->getJobStatus());
           runit = true;
         }
       }

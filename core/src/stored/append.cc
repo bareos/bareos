@@ -415,7 +415,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     bs->fsend("3999 Failed append\n");
   }
 
-  Dmsg1(200, "Write EOS label JobStatus=%c\n", jcr->JobStatus);
+  Dmsg1(200, "Write EOS label JobStatus=%c\n", jcr->getJobStatus());
 
   /*
    * Check if we can still write. This may not be the case

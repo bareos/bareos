@@ -939,7 +939,7 @@ void EndOfNdmpBackup(JobControlRecord* jcr)
     /* Check if we can still write. This may not be the case
      *  if we are at the end of the tape or we got a fatal I/O error. */
     if (dcr->dev && dcr->dev->CanWrite()) {
-      Dmsg1(200, "Write EOS label JobStatus=%c\n", jcr->JobStatus);
+      Dmsg1(200, "Write EOS label JobStatus=%c\n", jcr->getJobStatus());
 
       if (!WriteSessionLabel(dcr, EOS_LABEL)) {
         /* Print only if JobStatus JS_Terminated and not cancelled to avoid

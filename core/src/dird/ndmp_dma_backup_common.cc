@@ -322,7 +322,8 @@ void NdmpBackupCleanup(JobControlRecord* jcr, int TermCode)
       break;
     default:
       TermMsg = term_code;
-      sprintf(term_code, _("Inappropriate term code: %c\n"), jcr->JobStatus);
+      sprintf(term_code, _("Inappropriate term code: %c\n"),
+              jcr->getJobStatus());
       break;
   }
 
