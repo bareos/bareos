@@ -45,8 +45,9 @@
 #include "lib/breg.h"
 #include "lib/dlink.h"
 #include "lib/path_list.h"
-#include <unordered_set>
 
+#include <unordered_set>
+#include <atomic>
 
 struct job_callback_item;
 class BareosDb;
@@ -81,7 +82,7 @@ typedef void(JCR_free_HANDLER)(JobControlRecord* jcr);
 class JobControlRecord {
  private:
   pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; /**< Jcr mutex */
-  volatile int32_t _use_count{};                   /**< Use count */
+  std::atomic<int32_t> _use_count{};                   /**< Use count */
   int32_t JobType_{};            /**< Backup, restore, verify ... */
   int32_t JobLevel_{};           /**< Job level */
   int32_t Protocol_{};           /**< Backup Protocol */
@@ -98,15 +99,11 @@ class JobControlRecord {
   void unlock() { unlock_mutex(mutex); }
   void IncUseCount(void)
   {
-    lock();
-    _use_count++;
-    unlock();
+    ++_use_count;
   }
   void DecUseCount(void)
   {
-    lock();
-    _use_count--;
-    unlock();
+    --_use_count;
   }
   int32_t UseCount() const { return _use_count; }
   void InitMutex(void) { pthread_mutex_init(&mutex, NULL); }
