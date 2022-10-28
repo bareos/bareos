@@ -849,7 +849,14 @@ void UpdateBootstrapFile(JobControlRecord* jcr)
       }
       if (VolParams) { free(VolParams); }
       if (got_pipe) {
-        CloseBpipe(bpipe);
+        int status = CloseBpipe(bpipe);
+        if (status) {
+          BErrNo err;
+          Jmsg(jcr, M_FATAL, 0,
+               _("Piping went wrong when updating bootstrap file: "
+                 "%s: ERR=%s\n"),
+               fname, err.bstrerror(status));
+        }
       } else {
         fclose(fd);
       }
