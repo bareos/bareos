@@ -567,7 +567,7 @@ SectionIn 1 2 3 4
   File libpcre-1.dll
   File libbz2-1.dll
   File libssp-0.dll
-
+  File libintl-8.dll
 
   # for password generation
   File "openssl.exe"
@@ -599,7 +599,7 @@ SectionIn 1 2 3 4
   #File "bpipe-fd.dll"
   #File "mssqlvdi-fd.dll"
   #File "python-fd.dll"
-  File "*fd*"
+  File "*-fd.dll"
 
   File "Plugins\BareosFd*.py"
   File "Plugins\bareos-fd*.py"
@@ -662,7 +662,7 @@ SectionIn 2 3
   SetShellVarContext all
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
-  File "*sd*"
+  File "*-sd.dll"
   File "Plugins\BareosSd*.py"
   File "Plugins\bareos-sd*.py"
 SectionEnd
@@ -824,7 +824,7 @@ SectionIn 2 3
   SetOverwrite ifnewer
 
   #File "python-dir.dll"
-  File "*dir*"
+  File "*-dir.dll"
   File "Plugins\BareosDir*.py"
   File "Plugins\bareos-dir*.py"
 SectionEnd
@@ -1148,6 +1148,9 @@ Section -ConfigureConfiguration
 #  Archive directory:            /usr/i686-w64-mingw32/sys-root/mingw/var/lib/bareos/storage
   FileWrite $R1 "s#/usr/.*mingw.*/sys-root/mingw/var/lib/bareos/storage#C:/bareos-storage#g$\r$\n"
 
+#  Working directory:            /usr/i686-w64-mingw32/sys-root/mingw/var/lib/bareos
+  FileWrite $R1 "s#/usr/.*mingw.*/sys-root/mingw/var/lib/bareos#$BareosAppdata/working#g$\r$\n"
+
 # Log directory:                /usr/i686-w64-mingw32/sys-root/mingw/var/log/bareos
   FileWrite $R1 "s#/usr/.*mingw.*/sys-root/mingw/var/log/bareos#$BareosAppdata/logs#g$\r$\n"
 
@@ -1162,9 +1165,6 @@ Section -ConfigureConfiguration
 
 #  Scripts directory:            /usr/x86_64-w64-mingw32/sys-root/mingw/lib/bareos/scripts
   FileWrite $R1 "s#/usr/.*mingw.*/sys-root/mingw/lib/bareos/scripts#$BareosAppdata/scripts#g$\r$\n"
-
-#  Working directory:            /var/lib/bareos
-  FileWrite $R1 "s#/var/lib/bareos#$BareosAppdata/working#g$\r$\n"
 
   FileWrite $R1 "s#dbpassword = .*#dbpassword = $DbPassword#g$\r$\n"
 
@@ -2072,6 +2072,7 @@ ConfDeleteSkip:
   Delete "$INSTDIR\libpcre-1.dll"
   Delete "$INSTDIR\libbz2-1.dll"
   Delete "$INSTDIR\libssp-0.dll"
+  Delete "$INSTDIR\libintl-8.dll"
 
   RMDir /r "$INSTDIR\platforms"
 

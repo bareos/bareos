@@ -102,6 +102,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - dird: fix crash in .jobstatus [PR #1278]
 - testfind: remove unnecessary libraries and fix systemtest [PR #1250]
 - stored: systemtests: docs: checkpoints improvements [PR #1277]
+- winbareos.nsi: fix working directory in configure.sed [PR #1288]
 
 ### Changed
 - contrib: rename Python modules to satisfy PEP8 [PR #768]
