@@ -118,7 +118,7 @@ class JobControlRecord {
   void setJobLevel(int32_t JobLevel) { JobLevel_ = JobLevel; }
   void setJobType(int32_t JobType) { JobType_ = JobType; }
   void setJobProtocol(int32_t JobProtocol) { Protocol_ = JobProtocol; }
-  void forceJobStatus(int32_t aJobStatus) { JobStatus = aJobStatus; }
+  void setJobStatus(int32_t aJobStatus) { JobStatus = aJobStatus; }
   void setJobStarted();
   int32_t getJobType() const { return JobType_; }
   int32_t getJobLevel() const { return JobLevel_; }

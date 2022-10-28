@@ -334,7 +334,7 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
       Dmsg2(000, "Fatal append error on device %s: ERR=%s\n",
             dcr->dev->print_name(), dcr->dev->bstrerror());
       /* Force in case Incomplete set */
-      jcr->forceJobStatus(JS_FatalError);
+      jcr->setJobStatus(JS_FatalError);
     }
     Dmsg3(800, "Write block ok=%d FI=%d LI=%d\n", ok, block->FirstIndex,
           block->LastIndex);
@@ -354,7 +354,7 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
     Jmsg2(jcr, M_FATAL, 0,
           _("Could not create JobMedia record for Volume=\"%s\" Job=%s\n"),
           dcr->getVolCatName(), jcr->Job);
-    jcr->forceJobStatus(JS_FatalError); /* override any Incomplete */
+    jcr->setJobStatus(JS_FatalError); /* override any Incomplete */
   }
   /* Set new file/block parameters for current dcr */
   SetNewFileParameters(dcr);
@@ -458,7 +458,7 @@ static int ReadBlockFromSpoolFile(DeviceControlRecord* dcr)
             _("Spool header read error. Wanted %u bytes, got %d\n"), rlen,
             status);
     }
-    jcr->forceJobStatus(JS_FatalError); /* override any Incomplete */
+    jcr->setJobStatus(JS_FatalError); /* override any Incomplete */
     return RB_ERROR;
   }
   rlen = hdr.len;
@@ -467,7 +467,7 @@ static int ReadBlockFromSpoolFile(DeviceControlRecord* dcr)
           rlen);
     Jmsg2(jcr, M_FATAL, 0, _("Spool block too big. Max %u bytes, got %u\n"),
           block->buf_len, rlen);
-    jcr->forceJobStatus(JS_FatalError); /* override any Incomplete */
+    jcr->setJobStatus(JS_FatalError); /* override any Incomplete */
     return RB_ERROR;
   }
   status = read(dcr->spool_fd, (char*)block->buf, (size_t)rlen);
@@ -476,7 +476,7 @@ static int ReadBlockFromSpoolFile(DeviceControlRecord* dcr)
           status);
     Jmsg2(dcr->jcr, M_FATAL, 0,
           _("Spool data read error. Wanted %u bytes, got %d\n"), rlen, status);
-    jcr->forceJobStatus(JS_FatalError); /* override any Incomplete */
+    jcr->setJobStatus(JS_FatalError); /* override any Incomplete */
     return RB_ERROR;
   }
   /* Setup write pointers */
@@ -582,7 +582,7 @@ static bool WriteSpoolHeader(DeviceControlRecord* dcr)
 
       Jmsg(jcr, M_FATAL, 0, _("Error writing header to spool file. ERR=%s\n"),
            be.bstrerror());
-      jcr->forceJobStatus(JS_FatalError); /* override any Incomplete */
+      jcr->setJobStatus(JS_FatalError); /* override any Incomplete */
     }
     if (status != (ssize_t)sizeof(hdr)) {
       Jmsg(jcr, M_ERROR, 0,
@@ -607,7 +607,7 @@ static bool WriteSpoolHeader(DeviceControlRecord* dcr)
       }
       if (!DespoolData(dcr, false)) {
         Jmsg(jcr, M_FATAL, 0, _("Fatal despooling error.\n"));
-        jcr->forceJobStatus(JS_FatalError); /* override any Incomplete */
+        jcr->setJobStatus(JS_FatalError); /* override any Incomplete */
         return false;
       }
       continue; /* try again */
@@ -615,7 +615,7 @@ static bool WriteSpoolHeader(DeviceControlRecord* dcr)
     return true;
   }
   Jmsg(jcr, M_FATAL, 0, _("Retrying after header spooling error failed.\n"));
-  jcr->forceJobStatus(JS_FatalError); /* override any Incomplete */
+  jcr->setJobStatus(JS_FatalError); /* override any Incomplete */
   return false;
 }
 
@@ -633,7 +633,7 @@ static bool WriteSpoolData(DeviceControlRecord* dcr)
 
       Jmsg(jcr, M_FATAL, 0, _("Error writing data to spool file. ERR=%s\n"),
            be.bstrerror());
-      jcr->forceJobStatus(JS_FatalError); /* override any Incomplete */
+      jcr->setJobStatus(JS_FatalError); /* override any Incomplete */
     }
     if (status != (ssize_t)block->binbuf) {
       // If we wrote something, truncate it and the header, then despool
@@ -654,7 +654,7 @@ static bool WriteSpoolData(DeviceControlRecord* dcr)
 
       if (!DespoolData(dcr, false)) {
         Jmsg(jcr, M_FATAL, 0, _("Fatal despooling error.\n"));
-        jcr->forceJobStatus(JS_FatalError); /* override any Incomplete */
+        jcr->setJobStatus(JS_FatalError); /* override any Incomplete */
         return false;
       }
 
@@ -667,7 +667,7 @@ static bool WriteSpoolData(DeviceControlRecord* dcr)
   }
 
   Jmsg(jcr, M_FATAL, 0, _("Retrying after data spooling error failed.\n"));
-  jcr->forceJobStatus(JS_FatalError); /* override any Incomplete */
+  jcr->setJobStatus(JS_FatalError); /* override any Incomplete */
 
   return false;
 }
@@ -739,7 +739,7 @@ static bool BlastAttrSpoolFile(JobControlRecord* jcr, boffset_t)
 
   if (jcr->dir_bsock->recv() <= 0) {
     Jmsg(jcr, M_FATAL, 0, _("Network error on BlastAttributes.\n"));
-    jcr->forceJobStatus(JS_FatalError); /* override any Incomplete */
+    jcr->setJobStatus(JS_FatalError); /* override any Incomplete */
     return false;
   }
 
@@ -764,7 +764,7 @@ bool CommitAttributeSpool(JobControlRecord* jcr)
 
       Jmsg(jcr, M_FATAL, 0, _("lseek on attributes file failed: ERR=%s\n"),
            be.bstrerror());
-      jcr->forceJobStatus(JS_FatalError); /* override any Incomplete */
+      jcr->setJobStatus(JS_FatalError); /* override any Incomplete */
       goto bail_out;
     }
 
@@ -779,7 +779,7 @@ bool CommitAttributeSpool(JobControlRecord* jcr)
           Jmsg(jcr, M_FATAL, 0,
                _("Truncate on attributes file failed: ERR=%s\n"),
                be.bstrerror());
-          jcr->forceJobStatus(JS_FatalError); /* override any Incomplete */
+          jcr->setJobStatus(JS_FatalError); /* override any Incomplete */
           goto bail_out;
         }
         Dmsg2(100, "=== Attrib spool truncated from %lld to %lld\n", size,
@@ -793,7 +793,7 @@ bool CommitAttributeSpool(JobControlRecord* jcr)
 
       Jmsg(jcr, M_FATAL, 0, _("Fseek on attributes file failed: ERR=%s\n"),
            be.bstrerror());
-      jcr->forceJobStatus(JS_FatalError); /* override any Incomplete */
+      jcr->setJobStatus(JS_FatalError); /* override any Incomplete */
       goto bail_out;
     }
 
@@ -835,7 +835,7 @@ static bool OpenAttrSpoolFile(JobControlRecord* jcr, BareosSocket* bs)
 
     Jmsg(jcr, M_FATAL, 0, _("fopen attr spool file %s failed: ERR=%s\n"), name,
          be.bstrerror());
-    jcr->forceJobStatus(JS_FatalError); /* override any Incomplete */
+    jcr->setJobStatus(JS_FatalError); /* override any Incomplete */
     FreePoolMemory(name);
     return false;
   }

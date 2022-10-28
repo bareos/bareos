@@ -294,7 +294,7 @@ bool ConnectToFileDaemon(JobControlRecord* jcr,
               delete jcr->file_bsock;
               jcr->file_bsock = nullptr;
             }
-            jcr->forceJobStatus(JS_Running);
+            jcr->setJobStatus(JS_Running);
             jcr->impl->connection_handshake_try_
                 = ClientConnectionHandshakeMode::kCleartextFirst;
             break;
