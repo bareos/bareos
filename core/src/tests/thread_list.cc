@@ -57,7 +57,8 @@ class WaitCondition {
   {
     std::unique_lock<std::mutex> ul(mutex_);
     status_ = Status::kWaiting;
-    bool success = cond_variable_.wait_for(ul, ms, [=]() { return notified; });
+    bool success
+        = cond_variable_.wait_for(ul, ms, [this]() { return notified; });
     status_ = success ? Status::kSuccess : Status::kTimedOut;
   }
   void NotifyOne()
