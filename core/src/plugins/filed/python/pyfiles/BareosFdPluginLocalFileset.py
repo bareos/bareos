@@ -132,3 +132,66 @@ class BareosFdPluginLocalFileset(BareosFdPluginLocalFilesBaseclass):  # noqa
             return bareosfd.bRC_Error
         else:
             return bareosfd.bRC_OK
+
+    def plugin_io_open(self, IOP):
+        self.FNAME = IOP.fname
+        bareosfd.DebugMessage(250, "io_open: self.FNAME is set to %s\n" % (self.FNAME))
+        if os.path.isdir(self.FNAME):
+            bareosfd.DebugMessage(100, "%s is a directory\n" % (self.FNAME))
+            self.fileType = "FT_DIR"
+            bareosfd.DebugMessage(
+                100,
+                "Did not open file %s of type %s\n" % (self.FNAME, self.fileType),
+            )
+            return bareosfd.bRC_OK
+        elif os.path.islink(self.FNAME):
+            self.fileType = "FT_LNK"
+            bareosfd.DebugMessage(
+                100,
+                "Did not open file %s of type %s\n" % (self.FNAME, self.fileType),
+            )
+            return bareosfd.bRC_OK
+        elif os.path.exists(self.FNAME) and stat.S_ISFIFO(os.stat(self.FNAME).st_mode):
+            self.fileType = "FT_FIFO"
+            bareosfd.DebugMessage(
+                100,
+                "Did not open file %s of type %s\n" % (self.FNAME, self.fileType),
+            )
+            return bareosfd.bRC_OK
+        else:
+            self.fileType = "FT_REG"
+            bareosfd.DebugMessage(
+                150,
+                "file %s has type %s - trying to open it\n"
+                % (self.FNAME, self.fileType),
+            )
+        try:
+            if IOP.flags & (os.O_CREAT | os.O_WRONLY):
+                bareosfd.DebugMessage(
+                    100,
+                    "Open file %s for writing with %s\n" % (self.FNAME, IOP),
+                )
+                dirname = os.path.dirname(self.FNAME)
+                if not os.path.exists(dirname):
+                    bareosfd.DebugMessage(
+                        100,
+                        "Directory %s does not exist, creating it now\n" % (dirname),
+                    )
+                    os.makedirs(dirname)
+                self.file = open(self.FNAME, "wb")
+            else:
+                bareosfd.DebugMessage(
+                    100,
+                    "Open file %s for reading with %s\n" % (self.FNAME, IOP),
+                )
+                self.file = open(self.FNAME, "rb")
+
+            # do io in core
+            IOP.do_io_in_core = True
+            IOP.filedes = self.file.fileno()
+
+        except:
+            IOP.status = -1
+            return bareosfd.bRC_Error
+
+        return bareosfd.bRC_OK
