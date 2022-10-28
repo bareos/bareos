@@ -16,6 +16,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
   - execute console runscripts only on the Director
 - devtools/dist-tarball.sh: fix name if version contains "~pre" [PR #1220]
 - dird: fix crash in .jobstatus [PR #1286]
+- winbareos.nsi: fix working directory in configure.sed [PR #1289]
 
 ### Documentation
 - Univention Corporate Server (UCS) >= 5: same support as for other Linux distributions, but no extended integration as for UCS < 5 [PR #1245]
