@@ -1,7 +1,7 @@
 #
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -375,3 +375,30 @@ class PythonBareosAclTest(bareos_unittest.Json):
         #
         self._test_list_with_valid_jobid(director, jobid1)
         self._test_list_with_invalid_jobid(director, jobid2)
+
+    def _test_status_subscription(self, username, password):
+        logger = logging.getLogger()
+
+        configured_subscriptions = "10"
+
+        director_root = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+            **self.director_extra_options
+        )
+
+        result = director_root.call("status subscription all")
+        self.assertEqual(
+            configured_subscriptions, result["total-units-required"]["configured"]
+        )
+
+    def test_status_subscription_admin(self):
+        username = self.get_operator_username()
+        password = self.get_operator_password(username)
+        self._test_status_subscription(username, password)
+
+    def test_status_subscription_user_fails(self):
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            self._test_status_subscription(u"client-bareos-fd", u"secret")
