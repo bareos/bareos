@@ -49,7 +49,7 @@ const char* socket_error_message
     = "No such file or directory (errno=2 | win_error=0x0000276D)";
 const char* win_socket_error_message = "Windows error 0x0000276D";
 const char* bind_error_message
-    = "No such file or directory (errno=2 | win_error=0x0000271F)";
+    = "No such file or directory (errno=2 | win_error=0x0000271E)";
 #else
 #  error "error_messages for current OS undefined"
 #endif
