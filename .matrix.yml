@@ -96,15 +96,6 @@ OS:
         x86_64:
            - bareos
            - python-bareos
-    "15_SP2":
-      TYPE: rpm
-      IMAGE: sle152
-      ARCH:
-      - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - python-bareos
     "12_SP5":
       TYPE: rpm
       IMAGE: sles12sp5
