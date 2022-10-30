@@ -922,6 +922,7 @@ CXXFLAGS="${CXXFLAGS:-%optflags}" ; export CXXFLAGS ;
 
 # use our own cmake call instead of cmake macro as it is different on different platforms/versions
 cmake  .. \
+  -G Ninja \
   -DCMAKE_VERBOSE_MAKEFILE=ON \
   -DCMAKE_INSTALL_PREFIX:PATH=/usr \
   -DCMAKE_INSTALL_LIBDIR:PATH=/usr/lib \
@@ -999,7 +1000,8 @@ cmake  .. \
   %endif
 
 #Add flags
-%__make CFLAGS="$RPM_OPT_FLAGS" CXXFLAGS="$RPM_OPT_FLAGS" %{?_smp_mflags};
+CFLAGS="$RPM_OPT_FLAGS" CXXFLAGS="$RPM_OPT_FLAGS" \
+  cmake --build . --verbose %{?_smp_mflags}
 
 %check
 # run unit tests
@@ -1009,15 +1011,10 @@ pushd %{CMAKE_BUILDDIR}
 REGRESS_DEBUG=1 ctest -V -S CTestScript.cmake || echo "ctest result:$?"
 
 %install
-##if 0#{?suse_version}
-#    #makeinstall DESTDIR=#{buildroot} install
-##else
-#    make DESTDIR=#{buildroot} install
-##endif
-#make DESTDIR=#{buildroot} install-autostart
 
 pushd %{CMAKE_BUILDDIR}
-make  DESTDIR=%{buildroot} install
+
+DESTDIR=%{buildroot} cmake --install .
 
 popd
 

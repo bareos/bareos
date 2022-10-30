@@ -124,7 +124,6 @@ override_dh_systemd_start:
 override_dh_makeshlibs:
 	dh_makeshlibs -n
 
-
 override_dh_auto_test:
 # Only run tests,
 # if DEB_BUILD_OPTIONS does not contain nocheck,
@@ -136,14 +135,11 @@ else
 	@echo "ctest: skipped"
 endif
 
-
 override_dh_shlibdeps:
 	dh_shlibdeps -l$(shell pwd)/debian/tmp/usr/lib/bareos
 
-
 %:
-	dh $@ --builddirectory=cmake-build
-
+	dh $@ --buildsystem=cmake+ninja --builddirectory=cmake-build
 
 gen-debian-copyright:
 	(cd debian; make copyright)
