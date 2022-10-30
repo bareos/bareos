@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2021-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2021-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -49,7 +49,7 @@ const char* socket_error_message
     = "No such file or directory (errno=2 | win_error=0x0000276D)";
 const char* win_socket_error_message = "Windows error 0x0000276D";
 const char* bind_error_message
-    = "No such file or directory (errno=2 | win_error=0x0000273F)";
+    = "No such file or directory (errno=2 | win_error=0x0000271F)";
 #else
 #  error "error_messages for current OS undefined"
 #endif
