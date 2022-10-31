@@ -32,31 +32,6 @@ OS:
            - libfastlz
            - python-bareos
 
-    "16.04":
-      TYPE: deb
-      IMAGE: "ubuntu16.04"
-      BUILD_FOR_VERSIONS:
-        - bareos-20
-        - bareos-19.2
-        - bareos-19.1
-        - bareos-18.2
-        - bareos-17.2
-      ARCH:
-        - i586
-        - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-vmware
-           - bareos-webui
-           - libfastlz
-           - python-bareos
-        i586:
-           - bareos
-           - bareos-webui
-           - libfastlz
-           - python-bareos
-
   openSUSE:
     "Leap_15.3":
       TYPE: rpm
