@@ -404,10 +404,6 @@ bareos_add_test(
 
 bareos_add_test(thread_list LINK_LIBRARIES bareos GTest::gtest_main)
 
-set_tests_properties(
-  gtest:thread_list.thread_list_startup_and_shutdown PROPERTIES LABELS broken
-)
-
 bareos_add_test(
   thread_specific_data LINK_LIBRARIES bareos Threads::Threads GTest::gtest_main
 )

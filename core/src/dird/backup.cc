@@ -849,7 +849,15 @@ void UpdateBootstrapFile(JobControlRecord* jcr)
       }
       if (VolParams) { free(VolParams); }
       if (got_pipe) {
-        CloseBpipe(bpipe);
+        int status = CloseBpipe(bpipe);
+        if (status) {
+          BErrNo err;
+          Jmsg(jcr, M_ERROR, 0,
+               _("Error running program when updating bootstrap file: "
+                 "%s: ERR=%s\n"),
+               fname, err.bstrerror(status));
+          jcr->setJobStatus(JS_ErrorTerminated);
+        }
       } else {
         fclose(fd);
       }

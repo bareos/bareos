@@ -104,6 +104,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - stored: systemtests: docs: checkpoints improvements [PR #1277]
 - winbareos.nsi: fix working directory in configure.sed [PR #1288]
 - core: BareosDb::FindLastJobStartTimeForJobAndClient: take into account Running job [PR #1265] [BUG #1466]
+- backup.cc: fail backup when `Write Bootstrap` to pipe fails [PR #1296]
 
 ### Changed
 - contrib: rename Python modules to satisfy PEP8 [PR #768]
