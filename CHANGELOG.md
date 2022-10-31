@@ -8,6 +8,12 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Documentation
 - Adapt VMware plugin documentation for update to VDDK 8 [PR #1292]
 
+### Fixed
+- winbareos.nsi: fix working directory in configure.sed [PR #1290]
+
+### Removed
+- packaging: do not build for EOL Ubuntu 16.04 anymore [PR #1290]
+
 ## [20.0.7] - 2022-08-05
 
 ### Changed
@@ -22,6 +28,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
   - webui is NOT affected
   - webui does NOT use the npm server
   - webui does NOT use a user-provided locale string to directly switch moment locale
+
 
 ## [20.0.6] - 2022-03-14
 
