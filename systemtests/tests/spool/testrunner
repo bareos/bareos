@@ -1,10 +1,9 @@
 #!/bin/bash
+
+set -e
 set -o pipefail
 set -u
-#
-# Run a simple backup
-#   then restore it.
-#
+
 TestName="$(basename "$(pwd)")"
 export TestName
 
@@ -49,8 +48,8 @@ data_spool_file=""
 
 while [[ ${timeout} -lt 10 ]] && [[ -z $attribute_spool_file || -z $data_spool_file ]]
 do
-    attribute_spool_file=$(ls $working_dir/bareos-sd.attr*spool 2>/dev/null)
-    data_spool_file=$(ls $working_dir/bareos-sd.data*spool 2>/dev/null)
+    attribute_spool_file=$(ls $working/bareos-sd.attr*spool 2>/dev/null || true)
+    data_spool_file=$(ls $working/bareos-sd.data*spool 2>/dev/null || true)
     sleep 1
     ((++timeout))
 done
