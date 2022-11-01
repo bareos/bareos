@@ -732,6 +732,7 @@ Job {
   # AddPrefix =
   # AddSuffix =
   # Bootstrap =
+  # WriteBootstrap = "/var/lib/bareos/%c.bsr"
   # WriteVerifyList =
   # Replace = Always
   # MaximumBandwidth = 0
