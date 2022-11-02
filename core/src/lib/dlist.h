@@ -34,24 +34,10 @@
 #include "lib/message.h"
 #include "lib/message_severity.h"
 
-/**
- * There is a lot of extra casting here to work around the fact
- * that some compilers (Sun and Visual C++) do not accept
- * (void *) as an lvalue on the left side of an equal.
- *
- * Loop var through each member of list
- */
-#ifdef HAVE_TYPEOF
-#  define foreach_dlist(var, list)                                   \
+#define foreach_dlist(var, list) \
     for ((var) = nullptr;                                            \
-         (list ? ((var) = (typeof(var))(list)->next(var)) : nullptr) \
+         (list ? ((var) = (list)->next(var)) : nullptr) \
          != nullptr;)
-#else
-#  define foreach_dlist(var, list)                                           \
-    for ((var) = nullptr;                                                    \
-         (list ? (*((void**)&(var)) = (void*)((list)->next(var))) : nullptr) \
-         != nullptr;)
-#endif
 
 template <typename T> class dlist {
   T* head{nullptr};
