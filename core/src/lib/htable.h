@@ -28,17 +28,8 @@
 #ifndef BAREOS_LIB_HTABLE_H_
 #define BAREOS_LIB_HTABLE_H_
 
-// Loop var through each member of table
-#ifdef HAVE_TYPEOF
-#  define foreach_htable(var, tbl)                     \
-    for ((var) = (typeof(var))((tbl)->first()); (var); \
-         (var) = (typeof(var))((tbl)->next()))
-#else
-#  define foreach_htable(var, tbl)                             \
-    for ((*((void**)&(var)) = (void*)((tbl)->first())); (var); \
-         (*((void**)&(var)) = (void*)((tbl)->next())))
-#endif
-
+#define foreach_htable(var, tbl) \
+  for ((var) = (tbl)->first(); (var); (var) = (tbl)->next())
 
 #include "include/config.h"
 #include "monotonic_buffer.h"
