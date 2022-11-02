@@ -30,22 +30,9 @@
 
 #define M_ABORT 1
 
-/**
- * There is a lot of extra casting here to work around the fact
- * that some compilers (Sun and Visual C++) do not accept
- * (bnode *) as an lvalue on the left side of an equal.
- *
- * Loop var through each member of list
- */
-#ifdef HAVE_TYPEOF
-#  define foreach_rblist(var, tree)                     \
-    for (((var) = (typeof(var))(tree)->first()); (var); \
-         ((var) = (typeof(var))(tree)->next(var)))
-#else
-#  define foreach_rblist(var, tree)                             \
-    for ((*((void**)&(var)) = (void*)((tree)->first())); (var); \
-         (*((void**)&(var)) = (void*)((tree)->next(var))))
-#endif
+#define foreach_rblist(var, tree)                                    \
+  for (((var) = static_cast<decltype(var)>((tree)->first())); (var); \
+       ((var) = static_cast<decltype(var)>((tree)->next(var))))
 
 struct rblink {
   void* parent = nullptr;
