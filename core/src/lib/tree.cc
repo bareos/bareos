@@ -153,21 +153,17 @@ template <typename T> static T* tree_alloc(TREE_ROOT* root, int size)
 void FreeTree(TREE_ROOT* root)
 {
   struct s_mem *mem, *rel;
-  [[maybe_unused]] uint32_t freed_blocks = 0;  // how is this unused? (clang 15)
 
   std::destroy_at(&root->hardlinks);
   for (mem = root->mem; mem;) {
     rel = mem;
     mem = mem->next;
     free(rel);
-    freed_blocks++;
   }
   if (root->cached_path) {
     FreePoolMemory(root->cached_path);
     root->cached_path = NULL;
   }
-  Dmsg3(100, "Total size=%u blocks=%u freed_blocks=%u\n", root->total_size,
-        root->blocks, freed_blocks);
   free(root);
   return;
 }
