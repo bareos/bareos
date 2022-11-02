@@ -53,23 +53,23 @@ static bool LoadDynamicLibrary(
   return false;
 }
 
-bool LoadStorageBackend(const std::string& dev_type,
+bool LoadStorageBackend(const std::string& device_type,
                         const std::vector<std::string>& backend_directories)
 {
   using namespace std::string_literals;
 
-  if (dev_type.empty() || backend_directories.empty()) { return false; }
+  if (device_type.empty() || backend_directories.empty()) { return false; }
 
-  if (!LoadDynamicLibrary("libbareossd-"s + dev_type + kDynLibExtension,
+  if (!LoadDynamicLibrary("libbareossd-"s + device_type + kDynLibExtension,
                           backend_directories)) {
     return false;
   }
 
-  if (!ImplementationFactory<Device>::IsRegistered(dev_type)) {
+  if (!ImplementationFactory<Device>::IsRegistered(device_type)) {
     Jmsg(nullptr, M_ERROR_TERM, 0,
          "Loaded backend library for %s did not register its backend. This is "
          "probably a bug in the backend library.\n",
-         dev_type.c_str());
+         device_type.c_str());
   }
 
   return true;

@@ -38,7 +38,7 @@ DeviceResource::DeviceResource()
     , changer_command(nullptr)
     , alert_command(nullptr)
     , spool_directory(nullptr)
-    , dev_type(DeviceType::B_UNKNOWN_DEV)
+    , device_type(DeviceType::B_UNKNOWN_DEV)
     , label_type(B_BAREOS_LABEL)
     , autoselect(true)
     , norewindonclose(true)
@@ -115,7 +115,7 @@ DeviceResource::DeviceResource(const DeviceResource& other)
   if (other.spool_directory) {
     spool_directory = strdup(other.spool_directory);
   }
-  dev_type = other.dev_type;
+  device_type = other.device_type;
   label_type = other.label_type;
   autoselect = other.autoselect;
   norewindonclose = other.norewindonclose;
@@ -170,7 +170,7 @@ DeviceResource& DeviceResource::operator=(const DeviceResource& rhs)
   changer_command = rhs.changer_command;
   alert_command = rhs.alert_command;
   spool_directory = rhs.spool_directory;
-  dev_type = rhs.dev_type;
+  device_type = rhs.device_type;
   label_type = rhs.label_type;
   autoselect = rhs.autoselect;
   norewindonclose = rhs.norewindonclose;
@@ -274,7 +274,7 @@ void DeviceResource::CreateAndAssignSerialNumber(uint16_t number)
 
 bool DeviceResource::Validate()
 {
-  if (max_block_size > 0 && dev_type != DeviceType::B_TAPE_DEV) {
+  if (max_block_size > 0 && device_type != DeviceType::B_TAPE_DEV) {
     my_config->AddWarning(
         "Setting 'Maximum Block Size' on a non-tape device is unsupported");
   }

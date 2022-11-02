@@ -148,7 +148,7 @@ static ResourceItem dev_items[] = {
   {"Description", CFG_TYPE_STR, ITEM(res_dev, description_), 0, 0, NULL, NULL,
       "The Description directive provides easier human recognition, but is not used by Bareos directly."},
   {"MediaType", CFG_TYPE_STRNAME, ITEM(res_dev, media_type), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"DeviceType", CFG_TYPE_STDSTR, ITEM(res_dev, dev_type), 0, CFG_ITEM_DEFAULT, "", NULL, NULL},
+  {"DeviceType", CFG_TYPE_STDSTR, ITEM(res_dev, device_type), 0, CFG_ITEM_DEFAULT, "", NULL, NULL},
   {"ArchiveDevice", CFG_TYPE_STRNAME, ITEM(res_dev, archive_device_string), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
   {"DeviceOptions", CFG_TYPE_STR, ITEM(res_dev, device_options), 0, 0, NULL, "15.2.0-", NULL},
   {"DiagnosticDevice", CFG_TYPE_STRNAME, ITEM(res_dev, diag_device_name), 0, 0, NULL, NULL, NULL},
@@ -489,11 +489,11 @@ static void CheckDropletDevices(ConfigurationParser& my_config)
 
   while ((p = my_config.GetNextRes(R_DEVICE, p)) != nullptr) {
     DeviceResource* d = dynamic_cast<DeviceResource*>(p);
-    if (d && d->dev_type == DeviceType::B_DROPLET_DEV) {
+    if (d && d->device_type == DeviceType::B_DROPLET_DEV) {
       if (d->max_concurrent_jobs == 0) {
         /*
-         * 0 is the general default. However, for this dev_type, only 1 works.
-         * So we set it to this value.
+         * 0 is the general default. However, for this device_type, only 1
+         * works. So we set it to this value.
          */
         Jmsg1(nullptr, M_WARNING, 0,
               _("device %s is set to the default 'Maximum Concurrent Jobs' = "
@@ -516,7 +516,7 @@ static void GuessMissingDeviceTypes(ConfigurationParser& my_config)
 
   while ((p = my_config.GetNextRes(R_DEVICE, p)) != nullptr) {
     DeviceResource* d = dynamic_cast<DeviceResource*>(p);
-    if (d && d->dev_type == DeviceType::B_UNKNOWN_DEV) {
+    if (d && d->device_type == DeviceType::B_UNKNOWN_DEV) {
       struct stat statp;
       // Check that device is available
       if (stat(d->archive_device_string, &statp) < 0) {
@@ -529,11 +529,11 @@ static void GuessMissingDeviceTypes(ConfigurationParser& my_config)
         return;
       }
       if (S_ISDIR(statp.st_mode)) {
-        d->dev_type = DeviceType::B_FILE_DEV;
+        d->device_type = DeviceType::B_FILE_DEV;
       } else if (S_ISCHR(statp.st_mode)) {
-        d->dev_type = DeviceType::B_TAPE_DEV;
+        d->device_type = DeviceType::B_TAPE_DEV;
       } else if (S_ISFIFO(statp.st_mode)) {
-        d->dev_type = DeviceType::B_FIFO_DEV;
+        d->device_type = DeviceType::B_FIFO_DEV;
       } else if (!BitIsSet(CAP_REQMOUNT, d->cap_bits)) {
         Jmsg2(nullptr, M_ERROR_TERM, 0,
               _("%s is an unknown device type. Must be tape or directory, "
@@ -556,24 +556,24 @@ static void CheckAndLoadDeviceBackends(ConfigurationParser& my_config)
   while ((p = my_config.GetNextRes(R_DEVICE, p)) != nullptr) {
     DeviceResource* d = dynamic_cast<DeviceResource*>(p);
     if (d) {
-      to_lower(d->dev_type);
-      if (!ImplementationFactory<Device>::IsRegistered(d->dev_type)) {
+      to_lower(d->device_type);
+      if (!ImplementationFactory<Device>::IsRegistered(d->device_type)) {
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
         if (!storage_res || storage_res->backend_directories.empty()) {
           Jmsg2(nullptr, M_ERROR_TERM, 0,
                 "Backend Directory not set. Cannot load dynamic backend %s\n",
-                d->dev_type.c_str());
+                d->device_type.c_str());
         }
-        if (!LoadStorageBackend(d->dev_type,
+        if (!LoadStorageBackend(d->device_type,
                                 storage_res->backend_directories)) {
           Jmsg2(nullptr, M_ERROR_TERM, 0,
                 "Could not load storage backend %s for device %s.\n",
-                d->dev_type.c_str(), d->resource_name_);
+                d->device_type.c_str(), d->resource_name_);
         }
 #else
         Jmsg2(nullptr, M_ERROR_TERM, 0,
-              "Backend %s for device %s not available.\n", d->dev_type.c_str(),
-              d->resource_name_);
+              "Backend %s for device %s not available.\n",
+              d->device_type.c_str(), d->resource_name_);
 #endif
       }
     }

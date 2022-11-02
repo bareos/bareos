@@ -229,7 +229,7 @@ class Device {
   int dev_errno{};            /**< Our own errno */
   int oflags{};               /**< Read/write flags */
   DeviceMode open_mode{DeviceMode::kUndefined};
-  std::string dev_type{};
+  std::string device_type{};
   bool autoselect{};          /**< Autoselect in autochanger */
   bool norewindonclose{};     /**< Don't rewind tape drive on close */
   bool initiated{};           /**< Set when FactoryCreateDevice() called */
@@ -298,7 +298,7 @@ class Device {
   bool AttachedToAutochanger() const { return BitIsSet(CAP_ATTACHED_TO_AUTOCHANGER, capabilities); }
   bool RequiresMount() const { return BitIsSet(CAP_REQMOUNT, capabilities); }
   bool IsRemovable() const { return BitIsSet(CAP_REM, capabilities); }
-  bool IsTape() const { return (dev_type == DeviceType::B_TAPE_DEV); }
+  bool IsTape() const { return (device_type == DeviceType::B_TAPE_DEV); }
   bool IsOpen() const { return fd >= 0; }
   bool IsOffline() const { return BitIsSet(ST_OFFLINE, state); }
   bool IsLabeled() const { return BitIsSet(ST_LABEL, state); }
@@ -335,7 +335,7 @@ class Device {
   const char* strerror() const;
   const char* archive_name() const;
   const char* name() const;
-  const std::string& type() const { return dev_type; }
+  const std::string& type() const { return device_type; }
   const char* print_name() const; /**< Name for display purposes */
   void SetEot() { SetBit(ST_EOT, state); }
   void SetEof() { SetBit(ST_EOF, state); }

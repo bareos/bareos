@@ -35,16 +35,16 @@ class AutochangerResource;
 
 class DeviceResource : public BareosResource {
  public:
-  char* media_type;             /**< User assigned media type */
-  char* archive_device_string;  /**< Archive device name */
-  char* device_options;         /**< Device specific option string */
-  char* diag_device_name;       /**< Diagnostic device name */
-  char* changer_name;           /**< Changer device name */
-  char* changer_command;        /**< Changer command  -- external program */
-  char* alert_command;          /**< Alert command -- external program */
-  char* spool_directory;        /**< Spool file directory */
-  std::string dev_type;         /**< device type */
-  uint32_t label_type;          /**< label type */
+  char* media_type;            /**< User assigned media type */
+  char* archive_device_string; /**< Archive device name */
+  char* device_options;        /**< Device specific option string */
+  char* diag_device_name;      /**< Diagnostic device name */
+  char* changer_name;          /**< Changer device name */
+  char* changer_command;       /**< Changer command  -- external program */
+  char* alert_command;         /**< Alert command -- external program */
+  char* spool_directory;       /**< Spool file directory */
+  std::string device_type;
+  uint32_t label_type;
   bool autoselect;              /**< Automatically select from AutoChanger */
   bool norewindonclose;         /**< Don't rewind tape drive on close */
   bool drive_tapealert_enabled; /**< Enable Tape Alert monitoring */

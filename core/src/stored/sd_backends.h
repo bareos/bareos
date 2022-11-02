@@ -30,7 +30,7 @@ class Device;
 template <typename T> Device* DeviceFactory(void) { return new T(); }
 
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
-bool LoadStorageBackend(const std::string& dev_type,
+bool LoadStorageBackend(const std::string& device_type,
                         const std::vector<std::string>& backend_directories);
 #endif
 

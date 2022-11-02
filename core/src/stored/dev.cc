@@ -122,15 +122,16 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
   Dmsg1(400, "max_block_size in device_resource res is %u\n",
         device_resource->max_block_size);
 
-  if (!ImplementationFactory<Device>::IsRegistered(device_resource->dev_type)) {
+  if (!ImplementationFactory<Device>::IsRegistered(
+          device_resource->device_type)) {
     Jmsg2(jcr, M_ERROR, 0, _("%s has an unknown device type %s\n"),
           device_resource->archive_device_string,
-          device_resource->dev_type.c_str());
+          device_resource->device_type.c_str());
     return nullptr;
   }
 
   Device* dev
-      = ImplementationFactory<Device>::Create(device_resource->dev_type);
+      = ImplementationFactory<Device>::Create(device_resource->device_type);
 
   dev->device_resource = device_resource;
   device_resource->dev = dev;
@@ -179,7 +180,7 @@ static void InitiateDevice(JobControlRecord* jcr, Device* dev)
   dev->drive_index = dev->device_resource->drive_index;
   dev->autoselect = dev->device_resource->autoselect;
   dev->norewindonclose = dev->device_resource->norewindonclose;
-  dev->dev_type = dev->device_resource->dev_type;
+  dev->device_type = dev->device_resource->device_type;
 
   if (dev->vol_poll_interval && dev->vol_poll_interval < 60) {
     dev->vol_poll_interval = 60;
@@ -505,7 +506,7 @@ bool Device::open(DeviceControlRecord* dcr, DeviceMode omode)
   }
 
   Dmsg4(100, "open dev: type=%d archive_device_string=%s vol=%s mode=%s\n",
-        dev_type.c_str(), print_name(), getVolCatName(), mode_to_str(omode));
+        device_type.c_str(), print_name(), getVolCatName(), mode_to_str(omode));
 
   ClearBit(ST_LABEL, state);
   ClearBit(ST_APPENDREADY, state);
@@ -899,7 +900,7 @@ bool Device::close(DeviceControlRecord* dcr)
 
   if (!norewindonclose) { OfflineOrRewind(); }
 
-  if (dev_type == DeviceType::B_TAPE_DEV) { UnlockDoor(); }
+  if (device_type == DeviceType::B_TAPE_DEV) { UnlockDoor(); }
   status = d_close(fd);
   if (status < 0) {
     BErrNo be;
