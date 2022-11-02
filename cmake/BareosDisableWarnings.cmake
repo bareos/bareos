@@ -17,41 +17,60 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-function(bareos_target_disable_warnings)
-  list(POP_FRONT ARGV target)
-  if(NOT TARGET ${target})
-    message(FATAL_ERROR "No such target ${target}")
+# This functions disables compiler warnings on targets, if they're supported.
+
+function(bareos_disable_warnings)
+  set(options C_ONLY CXX_ONLY ADD_FOR_LTO)
+  set(oneValueArgs TARGET)
+  set(multiValueArgs TARGETS WARNINGS)
+  cmake_parse_arguments(
+    ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN}
+  )
+  if(ARG_UNPARSED_ARGUMENTS)
+    message(
+      FATAL_ERROR
+        "Unparsed arguments to bareos_disable_warnings(): ${ARG_UNPARSED_ARGUMENTS}"
+    )
   endif()
-  foreach(warning ${ARGV})
-    string(REGEX REPLACE "^-W" "" plain_warning ${warning})
-    string(REGEX REPLACE "-" "_" plain_warning_sym ${plain_warning})
-    check_c_compiler_flag(
-      "-W${plain_warning}" "CC_SUPPORTS_W${plain_warning_sym}"
+  if(ARG_TARGET AND ARG_TARGETS)
+    message(
+      FATAL_ERROR
+        "Don't mix TARGET and TARGETS. Just add '${ARG_TARGET}' to TARGETS"
     )
-    check_cxx_compiler_flag(
-      "-W${plain_warning}" "CXX_SUPPORTS_W${plain_warning_sym}"
-    )
-    if(CC_SUPPORTS_W${plain_warning_sym} AND CXX_SUPPORTS_W${plain_warning_sym})
-      target_compile_options("${target}" PRIVATE "-Wno-${plain_warning}")
-      target_link_options("${target}" PRIVATE "-Wno-${plain_warning}")
+  endif()
+  if(ARG_TARGET)
+    set(ARG_TARGETS ${ARG_TARGET})
+  endif()
+  foreach(target ${ARG_TARGETS})
+    if(NOT TARGET ${target})
+      message(FATAL_ERROR "No such target ${target}")
     endif()
   endforeach()
-endfunction()
 
-function(bareos_target_disable_warnings_c_only)
-  list(POP_FRONT ARGV target)
-  if(NOT TARGET ${target})
-    message(FATAL_ERROR "No such target ${target}")
-  endif()
-  foreach(warning ${ARGV})
+  foreach(warning ${ARG_WARNINGS})
     string(REGEX REPLACE "^-W" "" plain_warning ${warning})
     string(REGEX REPLACE "-" "_" plain_warning_sym ${plain_warning})
-    check_c_compiler_flag(
-      "-W${plain_warning}" "CC_SUPPORTS_W${plain_warning_sym}"
+
+    if(NOT ARG_CXX_ONLY)
+      check_c_compiler_flag(
+        "-W${plain_warning}" "CC_SUPPORTS_W${plain_warning_sym}"
+      )
+    endif()
+    if(NOT ARG_C_ONLY)
+      check_cxx_compiler_flag(
+        "-W${plain_warning}" "CXX_SUPPORTS_W${plain_warning_sym}"
+      )
+    endif()
+
+    if((ARG_CXX_ONLY OR CC_SUPPORTS_W${plain_warning_sym})
+       AND (ARG_C_ONLY OR CXX_SUPPORTS_W${plain_warning_sym})
     )
-    if(CC_SUPPORTS_W${plain_warning_sym})
-      target_compile_options("${target}" PRIVATE "-Wno-${plain_warning}")
-      target_link_options("${target}" PRIVATE "-Wno-${plain_warning}")
+      foreach(target ${ARG_TARGETS})
+        target_compile_options("${target}" PRIVATE "-Wno-${plain_warning}")
+        if(ARG_ADD_FOR_LTO)
+          target_link_options("${target}" PRIVATE "-Wno-${plain_warning}")
+        endif()
+      endforeach()
     endif()
   endforeach()
 endfunction()

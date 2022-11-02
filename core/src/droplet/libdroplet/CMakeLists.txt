@@ -99,10 +99,18 @@ add_library(
 )
 
 include(BareosDisableWarnings)
-bareos_target_disable_warnings(
-  droplet -Wdeprecated-declarations -Wunused-but-set-variable
-  -Wnon-literal-null-conversion -Wsign-compare -Wunused-parameter
+bareos_disable_warnings(
+  TARGETS
+  droplet
+  WARNINGS
+  -Wdeprecated-declarations
+  -Wunused-but-set-variable
+  -Wnon-literal-null-conversion
+  -Wsign-compare
+  -Wunused-parameter
   -Wdeprecated-non-prototype
+  C_ONLY
+  ADD_FOR_LTO
 )
 
 target_include_directories(

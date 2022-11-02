@@ -183,10 +183,18 @@ endforeach()
 
 add_library(bareosndmp SHARED ${LIBBAREOSNDMP_SRCS} ${RPC_GEN_FILES})
 include(BareosDisableWarnings)
-bareos_target_disable_warnings_c_only(
-  bareosndmp -Wenum-conversion -Wunused-parameter -Wsign-compare
-  -Wmissing-field-initializers -Wunused-but-set-variable
+bareos_disable_warnings(
+  TARGET
+  bareosndmp
+  WARNINGS
+  bareosndmp
+  -Wenum-conversion
+  -Wunused-parameter
+  -Wsign-compare
+  -Wmissing-field-initializers
+  -Wunused-but-set-variable
   -Wdeprecated-non-prototype
+  C_ONLY
 )
 
 target_include_directories(bareosndmp PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
