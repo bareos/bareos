@@ -536,8 +536,8 @@ static void GuessMissingDeviceTypes(ConfigurationParser& my_config)
         d->device_type = DeviceType::B_FIFO_DEV;
       } else if (!BitIsSet(CAP_REQMOUNT, d->cap_bits)) {
         Jmsg2(nullptr, M_ERROR_TERM, 0,
-              _("%s is an unknown device type. Must be tape or directory, "
-                "st_mode=%04o\n"),
+              "cannot deduce Device Type from '%s'. Must be tape or directory, "
+              "st_mode=%04o\n",
               d->archive_device_string, (statp.st_mode & ~S_IFMT));
         return;
       }

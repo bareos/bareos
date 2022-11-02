@@ -124,7 +124,7 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
 
   if (!ImplementationFactory<Device>::IsRegistered(
           device_resource->device_type)) {
-    Jmsg2(jcr, M_ERROR, 0, _("%s has an unknown device type %s\n"),
+    Jmsg2(jcr, M_ERROR, 0, _("%s has an unsupported Device Type %s\n"),
           device_resource->archive_device_string,
           device_resource->device_type.c_str());
     return nullptr;
