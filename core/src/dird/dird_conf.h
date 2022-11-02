@@ -210,7 +210,7 @@ class ProfileResource : public BareosResource {
 struct UserAcl {
   BareosResource* corresponding_resource = nullptr;
   alist<const char*>* ACL_lists[Num_ACL] = {0}; /**< Pointers to ACLs */
-  alist<const char*>* profiles = nullptr; /**< Pointers to profile resources */
+  alist<ProfileResource*>* profiles = nullptr; /**< Pointers to profile resources */
 };
 
 // Console Resource
@@ -340,7 +340,7 @@ class StorageResource
   char* media_type = nullptr; /**< Media Type provided by this Storage */
   char* ndmp_changer_device = nullptr; /**< If DIR controls storage directly
                                 (NDMP_NATIVE) changer device used */
-  alist<const char*>* device
+  alist<DeviceResource*>* device
       = nullptr;                     /**< Alternate devices for this Storage */
   int32_t MaxConcurrentJobs = 0;     /**< Maximum concurrent jobs */
   int32_t MaxConcurrentReadJobs = 0; /**< Maximum concurrent jobs reading */
@@ -475,7 +475,7 @@ class JobResource : public BareosResource {
   alist<const char*>* FdPluginOptions = nullptr; /**< Generic FD plugin options used by this Job */
   alist<const char*>* SdPluginOptions = nullptr; /**< Generic SD plugin options used by this Job */
   alist<const char*>* DirPluginOptions = nullptr;           /**< Generic DIR plugin options used by this Job */
-  alist<const char*>* base = nullptr; /**< Base jobs */
+  alist<JobResource*>* base = nullptr; /**< Base jobs */
 
   bool allow_mixed_priority = false; /**< Allow jobs with higher priority concurrently with this */
   bool where_use_regexp = false;  /**< true if RestoreWhere is a BareosRegex */

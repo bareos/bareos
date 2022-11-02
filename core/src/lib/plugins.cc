@@ -215,7 +215,7 @@ bool LoadPlugins(void* bareos_plugin_interface_version,
    * type.
    */
   if (plugin_names && plugin_names->size()) {
-    char* name = nullptr;
+    const char* name = nullptr;
     PoolMem plugin_name(PM_FNAME);
 
     foreach_alist (name, plugin_names) {

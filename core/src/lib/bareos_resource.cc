@@ -23,9 +23,9 @@
 
 #include "lib/bareos_resource.h"
 
-const char* GetResourceName(void* resource)
+const char* GetResourceName(const void* resource)
 {
-  return ((BareosResource*)resource)->resource_name_;
+  return static_cast<const BareosResource*>(resource)->resource_name_;
 }
 
 BareosResource::BareosResource()

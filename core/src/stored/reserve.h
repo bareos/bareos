@@ -56,7 +56,7 @@ class DirectorStorage {
 class ReserveContext {
  public:
   JobControlRecord* jcr;
-  char* device_name;
+  const char* device_name;
   DirectorStorage* store;
   DeviceResource* device_resource;
   Device* low_use_drive;            /**< Low use drive candidate */

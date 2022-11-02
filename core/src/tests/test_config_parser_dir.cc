@@ -235,7 +235,7 @@ void test_config_directive_type(
 
 void test_CFG_TYPE_AUDIT(DirectorResource* me)
 {
-  char* val = nullptr;
+  const char* val = nullptr;
   foreach_alist (val, me->audit_events) {
     printf("AuditEvents = %s\n", val);
   }
@@ -250,7 +250,7 @@ TEST(ConfigParser_Dir, CFG_TYPE_AUDIT)
 
 void test_CFG_TYPE_PLUGIN_NAMES(DirectorResource* me)
 {
-  char* val = nullptr;
+  const char* val = nullptr;
   foreach_alist (val, me->plugin_names) {
     printf("PluginNames = %s\n", val);
   }

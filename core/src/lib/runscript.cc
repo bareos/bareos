@@ -61,7 +61,7 @@ static bool ScriptDirAllowed(JobControlRecord*,
                              RunScript* script,
                              alist<const char*>* allowed_script_dirs)
 {
-  char *bp, *allowed_script_dir = nullptr;
+  const char* allowed_script_dir = nullptr;
   bool allowed = false;
   PoolMem script_dir(PM_FNAME);
 
@@ -70,7 +70,9 @@ static bool ScriptDirAllowed(JobControlRecord*,
 
   // Determine the dir the script is in.
   PmStrcpy(script_dir, script->command.c_str());
-  if ((bp = strrchr(script_dir.c_str(), '/'))) { *bp = '\0'; }
+  if (char* bp = strrchr(script_dir.c_str(), '/'); bp != nullptr) {
+    *bp = '\0';
+  }
 
   /*
    * Make sure there are no relative path elements in script dir by which the

@@ -66,7 +66,7 @@ void AlistFill(alist<const char*>* list, int max)
 // we expect, that the list is filled with strings of numbers from 0 to n.
 void TestForeachAlist(alist<const char*>* list)
 {
-  char* str = NULL;
+  const char* str = NULL;
   char buf[30];
   int i = 0;
 

@@ -107,7 +107,7 @@ class OutputFormatterResource {
   void KeyMultipleStringsInOneLine(
       const char* key,
       alist<const char*>* list,
-      std::function<const char*(void* item)> GetValue,
+      std::function<const char*(const void* item)> GetValue,
       bool as_comment = false,
       bool quoted_strings = true);
 
@@ -119,7 +119,7 @@ class OutputFormatterResource {
 
   void KeyMultipleStringsOnePerLine(const char* key,
                                     alist<const char*>* list,
-                                    std::function<const char*(void*)> GetValue,
+                                    std::function<const char*(const void*)> GetValue,
                                     bool as_comment = false,
                                     bool quoted_strings = true,
                                     bool escape_strings = false);

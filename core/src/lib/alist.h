@@ -35,48 +35,23 @@
  * Loop var through each member of list using an increasing index.
  * Loop var through each member of list using an decreasing index.
  */
-#ifdef HAVE_TYPEOF
-#  define foreach_alist(var, list)                                 \
-    for ((var) = list ? (typeof((var)))(list)->first() : 0; (var); \
-         (var) = (typeof(var))(list)->next())
+#define foreach_alist(var, list)                                 \
+  for ((var) = list ? (list)->first() : 0; (var); \
+       (var) = (list)->next())
 
-#  define foreach_alist_null(var, list)                                  \
-    for ((var) = list ? (typeof((var)))(list)->first() : nullptr; (var); \
-         (var) = (typeof(var))(list)->next())
+#define foreach_alist_null(var, list)                                  \
+  for ((var) = list ? (list)->first() : nullptr; (var); \
+       (var) = (list)->next())
 
-#  define foreach_alist_index(inx, var, list)                                 \
-    for ((inx) = 0;                                                           \
-         (list != nullptr) ? ((var) = (typeof((var)))(list)->get((inx))) : 0; \
-         (inx)++)
+#define foreach_alist_index(inx, var, list)                                 \
+  for ((inx) = 0;                                                           \
+       (list != nullptr) ? ((var) = (list)->get((inx))) : 0; \
+       (inx)++)
 
-#  define foreach_alist_rindex(inx, var, list)                                \
-    for ((list != nullptr) ? (inx) = ((list)->size() - 1) : 0;                \
-         (list != nullptr) ? ((var) = (typeof((var)))(list)->get((inx))) : 0; \
-         (inx)--)
-
-#else
-#  define foreach_alist(var, list)                                          \
-    for ((void)(list ? (*((void**)&(var)) = (void*)((list)->first())) : 0); \
-         (var); (*((void**)&(var)) = (void*)((list)->next())))
-
-#  define foreach_alist_null(var, list)                               \
-    for ((void)(list ? (*((void**)&(var)) = (void*)((list)->first())) \
-                     : nullptr);                                      \
-         (var); (*((void**)&(var)) = (void*)((list)->next())))
-
-#  define foreach_alist_index(inx, var, list)                                 \
-    for ((inx) = 0; (list != nullptr)                                         \
-                        ? ((*((void**)&(var)) = (void*)((list)->get((inx))))) \
-                        : 0;                                                  \
-         (inx)++)
-
-#  define foreach_alist_rindex(inx, var, list)                     \
-    for ((list != nullptr) ? (inx) = ((list)->size() - 1) : 0;     \
-         (list != nullptr)                                         \
-             ? ((*((void**)&(var)) = (void*)((list)->get((inx))))) \
-             : 0;                                                  \
-         (inx)--)
-#endif
+#define foreach_alist_rindex(inx, var, list)                                \
+  for ((list != nullptr) ? (inx) = ((list)->size() - 1) : 0;                \
+       (list != nullptr) ? ((var) = (list)->get((inx))) : 0; \
+       (inx)--)
 
 
 #include <string>

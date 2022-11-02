@@ -405,7 +405,7 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
 {
   bool ok = false;
   DirectorStorage* store = nullptr;
-  char* device_name = nullptr;
+  const char* device_name = nullptr;
   alist<DirectorStorage*>* dirstore;
   DeviceControlRecord* dcr = jcr->impl->dcr;
 

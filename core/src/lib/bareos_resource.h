@@ -64,6 +64,6 @@ class BareosResource {
                                  bool verbose);
 };
 
-const char* GetResourceName(void* resource);
+const char* GetResourceName(const void* resource);
 
 #endif  // BAREOS_LIB_BAREOS_RESOURCE_H_
