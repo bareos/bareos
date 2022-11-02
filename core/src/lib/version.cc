@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -53,14 +53,14 @@
 #endif
 
 #if !defined BAREOS_SERVICES_MESSAGE
-#  define BAREOS_SERVICES_MESSAGE                             \
-    "self-compiled binaries are UNSUPPORTED by bareos.com.\n" \
-    "Get official binaries and vendor support on https://www.bareos.com"
+#  define BAREOS_SERVICES_MESSAGE            \
+    "Self-compiled binaries (UNSUPPORTED)\n" \
+    "Get professional support from https://www.bareos.com"
 #endif
 
 #if !defined BAREOS_JOBLOG_MESSAGE
 #  define BAREOS_JOBLOG_MESSAGE \
-    "self-compiled: Get official binaries and vendor support on bareos.com"
+    "Self-compiled: Get professional support from https://www.bareos.com"
 #endif
 
 #define BAREOS_COPYRIGHT_MESSAGE_WITH_FSF_AND_PLANETS            \
