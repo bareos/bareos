@@ -1278,7 +1278,7 @@ char* generic_tape_device::StatusDev()
 /**
  * Set the position of the device.
  *
- * Returns: true  on succe
+ * Returns: true  on success
  *          false on error
  */
 bool generic_tape_device::UpdatePos(DeviceControlRecord*) { return true; }
