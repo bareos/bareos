@@ -464,8 +464,8 @@ struct CopyThreadSaveData {
 };
 
 struct CopyThreadContext {
-  BareosWinFilePacket* bfd; /* Filehandle */
-  int nr_save_elements;     /* Number of save items in save_data */
+  BareosFilePacket* bfd; /* Filehandle */
+  int nr_save_elements;  /* Number of save items in save_data */
   CopyThreadSaveData*
       save_data;      /* To save data (cached structure build during restore) */
   CircularBuffer* cb; /* Circular buffer for passing work to copy thread */
@@ -557,7 +557,7 @@ bail_out:
 }
 
 // Create a copy thread that restores the EFS data.
-static inline bool SetupCopyThread(JobControlRecord* jcr, BareosWinFilePacket*)
+static inline bool SetupCopyThread(JobControlRecord* jcr, BareosFilePacket*)
 {
   int nr_save_elements;
   CopyThreadContext* new_context;
@@ -603,7 +603,7 @@ bail_out:
 
 // Send data to the copy thread that restores EFS data.
 int win32_send_to_copy_thread(JobControlRecord* jcr,
-                              BareosWinFilePacket* bfd,
+                              BareosFilePacket* bfd,
                               char* data,
                               const int32_t length)
 {

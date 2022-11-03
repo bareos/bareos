@@ -218,7 +218,7 @@ struct FindFilesPacket {
   int32_t object_compression{0};  /**< Type of compression for object */
   int type{0};                    /**< FT_ type from above */
   int ff_errno{0};                /**< Errno */
-  BareosWinFilePacket bfd;        /**< Bareos file descriptor */
+  BareosFilePacket bfd;        /**< Bareos file descriptor */
   time_t save_time{0};            /**< Start of incremental time */
   bool accurate_found{false};     /**< Found in the accurate hash (valid after
                                        CheckChanges()) */
@@ -262,7 +262,7 @@ struct FindFilesPacket {
    * Darwin specific things.
    * To avoid clutter, we always include rsrc_bfd and volhas_attrlist.
    */
-  BareosWinFilePacket rsrc_bfd; /**< Fd for resource forks */
+  BareosFilePacket rsrc_bfd; /**< Fd for resource forks */
   bool volhas_attrlist{false};  /**< Volume supports getattrlist() */
   HfsPlusInfo hfsinfo;          /**< Finder Info and resource fork size */
 };

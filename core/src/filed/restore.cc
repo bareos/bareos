@@ -105,7 +105,7 @@ static void FreeSignature(r_ctx& rctx);
 static bool ClosePreviousStream(JobControlRecord* jcr, r_ctx& rctx);
 
 int32_t ExtractData(JobControlRecord* jcr,
-                    BareosWinFilePacket* bfd,
+                    BareosFilePacket* bfd,
                     POOLMEM* buf,
                     int32_t buflen,
                     uint64_t* addr,
@@ -118,7 +118,7 @@ int32_t ExtractData(JobControlRecord* jcr,
  * Makes use of some code from SetAttributes().
  */
 static int BcloseChksize(JobControlRecord* jcr,
-                         BareosWinFilePacket* bfd,
+                         BareosFilePacket* bfd,
                          boffset_t osize)
 {
   char ec1[50], ec2[50];
@@ -1153,7 +1153,7 @@ int DoFileDigest(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 }
 
 bool SparseData(JobControlRecord* jcr,
-                BareosWinFilePacket* bfd,
+                BareosFilePacket* bfd,
                 uint64_t* addr,
                 char** data,
                 uint32_t* length)
@@ -1180,7 +1180,7 @@ bool SparseData(JobControlRecord* jcr,
 }
 
 bool StoreData(JobControlRecord* jcr,
-               BareosWinFilePacket* bfd,
+               BareosFilePacket* bfd,
                char* data,
                const int32_t length,
                bool win32_decomp)
@@ -1234,7 +1234,7 @@ bool StoreData(JobControlRecord* jcr,
  * Return value is the number of bytes written, or -1 on errors.
  */
 int32_t ExtractData(JobControlRecord* jcr,
-                    BareosWinFilePacket* bfd,
+                    BareosFilePacket* bfd,
                     POOLMEM* buf,
                     int32_t buflen,
                     uint64_t* addr,

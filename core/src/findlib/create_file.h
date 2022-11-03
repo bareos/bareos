@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,7 +23,7 @@
 
 int CreateFile(JobControlRecord* jcr,
                Attributes* attr,
-               BareosWinFilePacket* ofd,
+               BareosFilePacket* ofd,
                int replace);
 
 #endif  // BAREOS_FINDLIB_CREATE_FILE_H_

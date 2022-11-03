@@ -67,7 +67,7 @@ static int PathAlreadySeen(JobControlRecord* jcr, char* path, int pnl);
  */
 int CreateFile(JobControlRecord* jcr,
                Attributes* attr,
-               BareosWinFilePacket* bfd,
+               BareosFilePacket* bfd,
                int replace)
 {
   mode_t new_mode, parent_mode;

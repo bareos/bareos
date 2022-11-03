@@ -57,7 +57,7 @@
 #endif
 
 #ifdef FILE_DAEMON
-struct BareosWinFilePacket;
+struct BareosFilePacket;
 struct FindFilesPacket;
 #endif /* FILE_DAEMON */
 
@@ -263,11 +263,11 @@ bool SendPluginName(JobControlRecord* jcr, BareosSocket* sd, bool start);
 bool PluginNameStream(JobControlRecord* jcr, char* name);
 int PluginCreateFile(JobControlRecord* jcr,
                      Attributes* attr,
-                     BareosWinFilePacket* bfd,
+                     BareosFilePacket* bfd,
                      int replace);
 bool PluginSetAttributes(JobControlRecord* jcr,
                          Attributes* attr,
-                         BareosWinFilePacket* ofd);
+                         BareosFilePacket* ofd);
 bacl_exit_code PluginBuildAclStreams(JobControlRecord* jcr,
                                      AclData* acl_data,
                                      FindFilesPacket* ff_pkt);
