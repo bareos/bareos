@@ -206,7 +206,7 @@ static inline bool RestoreFileAttributes(JobControlRecord* jcr,
   // Restore owner and group.
 #ifdef HAVE_FCHOWN
   if (file_is_open) {
-    if (fchown(ofd->fid, attr->statp.st_uid, attr->statp.st_gid) < 0
+    if (fchown(ofd->filedes, attr->statp.st_uid, attr->statp.st_gid) < 0
         && !suppress_errors) {
       BErrNo be;
 
@@ -231,7 +231,7 @@ static inline bool RestoreFileAttributes(JobControlRecord* jcr,
   // Restore filemode.
 #ifdef HAVE_FCHMOD
   if (file_is_open) {
-    if (fchmod(ofd->fid, attr->statp.st_mode) < 0 && !suppress_errors) {
+    if (fchmod(ofd->filedes, attr->statp.st_mode) < 0 && !suppress_errors) {
       BErrNo be;
 
       Jmsg2(jcr, M_ERROR, 0, _("Unable to set file modes %s: ERR=%s\n"),
@@ -266,7 +266,7 @@ static inline bool RestoreFileAttributes(JobControlRecord* jcr,
     restore_times[1].tv_sec = attr->statp.st_mtime;
     restore_times[1].tv_usec = 0;
 
-    if (futimes(ofd->fid, restore_times) < 0 && !suppress_errors) {
+    if (futimes(ofd->filedes, restore_times) < 0 && !suppress_errors) {
       BErrNo be;
 
       Jmsg2(jcr, M_ERROR, 0, _("Unable to set file times %s: ERR=%s\n"),
@@ -283,7 +283,7 @@ static inline bool RestoreFileAttributes(JobControlRecord* jcr,
     restore_times[1].tv_sec = attr->statp.st_mtime;
     restore_times[1].tv_nsec = 0;
 
-    if (futimens(ofd->fid, restore_times) < 0 && !suppress_errors) {
+    if (futimens(ofd->filedes, restore_times) < 0 && !suppress_errors) {
       BErrNo be;
 
       Jmsg2(jcr, M_ERROR, 0, _("Unable to set file times %s: ERR=%s\n"),
@@ -626,7 +626,8 @@ static bool set_win32_attributes(JobControlRecord* jcr,
   if (!(p_SetFileAttributesW || p_SetFileAttributesA)) { return false; }
 
   if (!p || !*p) { /* we should have attributes */
-    Dmsg2(100, "Attributes missing. of=%s ofd=%d\n", attr->ofname, ofd->fid);
+    Dmsg2(100, "Attributes missing. of=%s ofd=%d\n", attr->ofname,
+          ofd->filedes);
     if (IsBopen(ofd)) { bclose(ofd); }
     return false;
   } else {

@@ -76,7 +76,7 @@ struct BareosFilePacket {
   bool encrypted = false;           /**< set if using ReadEncryptedFileRaw/WriteEncryptedFileRaw */
   int mode = BF_CLOSED;             /**< set if file is open */
   HANDLE fh = INVALID_HANDLE_VALUE; /**< Win32 file handle */
-  int fid = 0;                      /**< fd if doing Unix style */
+  int filedes = 0;                  /**< fd if doing Unix style */
   LPVOID lplugin_private_context = nullptr;       /**< BackupRead/Write context */
   PVOID pvContext = nullptr;        /**< Encryption context */
   POOLMEM* errmsg = nullptr;        /**< error message buffer */
@@ -107,7 +107,7 @@ HANDLE BgetHandle(BareosFilePacket* bfd);
 /* Basic Unix low level I/O file packet */
 /* clang-format off */
 struct BareosFilePacket {
-  int fid{0};                     /**< file id on Unix */
+  int filedes{0};                 /**< filedescriptor on Unix */
   int flags_{0};                  /**< open flags */
   int BErrNo{0};                  /**< errno */
   int32_t lerror{0};              /**< not used - simplies Win32 builds */

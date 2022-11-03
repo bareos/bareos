@@ -223,7 +223,8 @@ int CreateFile(JobControlRecord* jcr,
           }
 
           if (IsBopen(bfd)) {
-            Qmsg1(jcr, M_ERROR, 0, _("bpkt already open fid=%d\n"), bfd->fid);
+            Qmsg1(jcr, M_ERROR, 0, _("bpkt already open filedes=%d\n"),
+                  bfd->filedes);
             bclose(bfd);
           }
 
@@ -312,7 +313,8 @@ int CreateFile(JobControlRecord* jcr,
               tid = NULL;
             }
             if (IsBopen(bfd)) {
-              Qmsg1(jcr, M_ERROR, 0, _("bpkt already open fid=%d\n"), bfd->fid);
+              Qmsg1(jcr, M_ERROR, 0, _("bpkt already open filedes=%d\n"),
+                    bfd->filedes);
             }
             Dmsg2(400, "open %s flags=%08o\n", attr->ofname, flags);
             if ((bopen(bfd, attr->ofname, flags, 0, 0)) < 0) {
@@ -441,7 +443,8 @@ int CreateFile(JobControlRecord* jcr,
        */
       if (!IsPortableBackup(bfd)) {
         if (IsBopen(bfd)) {
-          Qmsg1(jcr, M_ERROR, 0, _("bpkt already open fid=%d\n"), bfd->fid);
+          Qmsg1(jcr, M_ERROR, 0, _("bpkt already open filedes=%d\n"),
+                bfd->filedes);
         }
         if (bopen(bfd, attr->ofname, O_WRONLY | O_BINARY, 0,
                   attr->statp.st_rdev)
