@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -51,7 +51,7 @@
 
 static bool makedir(JobControlRecord* jcr,
                     char* path,
-                    mode_t mode,
+                    [[maybe_unused]] mode_t mode,
                     int* created)
 {
   struct stat statp;

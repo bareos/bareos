@@ -193,7 +193,6 @@ if(NOT ${HAVE_DYNAMIC_SD_BACKENDS})
 endif()
 
 add_library(stored_objects STATIC ${SDSRCS})
-
 add_executable(bareos-sd stored.cc)
 
 target_link_libraries(

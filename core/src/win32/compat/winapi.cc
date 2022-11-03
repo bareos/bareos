@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,6 +30,12 @@
  */
 
 #include "include/bareos.h"
+#include "fill_proc_address.h"
+
+#define SET_API_POINTER_EX(name, symbol) \
+  BareosFillProcAddress(p_##name, hLib, #symbol)
+
+#define SET_API_POINTER(symbol) BareosFillProcAddress(p_##symbol, hLib, #symbol)
 
 // Init with win9x, but maybe set to NT in InitWinAPI
 DWORD g_platform_id = VER_PLATFORM_WIN32_WINDOWS;
@@ -108,7 +114,7 @@ t_GetLogicalDriveStringsW p_GetLogicalDriveStringsW = NULL;
 
 void InitWinAPIWrapper()
 {
-  OSVERSIONINFO osversioninfo = {sizeof(OSVERSIONINFO)};
+  OSVERSIONINFO osversioninfo = {sizeof(OSVERSIONINFO), 0, 0, 0, 0, 0};
 
   // Get the current OS version
   if (!GetVersionEx(&osversioninfo)) {
@@ -122,140 +128,100 @@ void InitWinAPIWrapper()
   HMODULE hLib = LoadLibraryA("KERNEL32.DLL");
   if (hLib) {
     // Get logical drive calls
-    p_GetLogicalDriveStringsA = (t_GetLogicalDriveStringsA)GetProcAddress(
-        hLib, "GetLogicalDriveStringsA");
-    p_GetLogicalDriveStringsW = (t_GetLogicalDriveStringsW)GetProcAddress(
-        hLib, "GetLogicalDriveStringsW");
+    SET_API_POINTER(GetLogicalDriveStringsA);
+    SET_API_POINTER(GetLogicalDriveStringsW);
 
     // Create process calls
-    p_CreateProcessA = (t_CreateProcessA)GetProcAddress(hLib, "CreateProcessA");
-    p_CreateProcessW = (t_CreateProcessW)GetProcAddress(hLib, "CreateProcessW");
+    SET_API_POINTER(CreateProcessA);
+    SET_API_POINTER(CreateProcessW);
 
     // Create file calls
-    p_CreateFileA = (t_CreateFileA)GetProcAddress(hLib, "CreateFileA");
-    p_CreateDirectoryA
-        = (t_CreateDirectoryA)GetProcAddress(hLib, "CreateDirectoryA");
-    p_CreateSymbolicLinkA
-        = (t_CreateSymbolicLinkA)GetProcAddress(hLib, "CreateSymbolicLinkA");
+    SET_API_POINTER(CreateFileA);
+    SET_API_POINTER(CreateDirectoryA);
+    SET_API_POINTER(CreateSymbolicLinkA);
 
 #if (_WIN32_WINNT >= 0x0600)
     // File Information calls
-    p_GetFileInformationByHandleEx
-        = (t_GetFileInformationByHandleEx)GetProcAddress(
-            hLib, "GetFileInformationByHandleEx");
+    SET_API_POINTER(GetFileInformationByHandleEx);
 #endif
 
     // Attribute calls
-    p_GetFileAttributesA
-        = (t_GetFileAttributesA)GetProcAddress(hLib, "GetFileAttributesA");
-    p_GetFileAttributesExA
-        = (t_GetFileAttributesExA)GetProcAddress(hLib, "GetFileAttributesExA");
-    p_SetFileAttributesA
-        = (t_SetFileAttributesA)GetProcAddress(hLib, "SetFileAttributesA");
+    SET_API_POINTER(GetFileAttributesA);
+    SET_API_POINTER(GetFileAttributesExA);
+    SET_API_POINTER(SetFileAttributesA);
 
     // Process calls
-    p_SetProcessShutdownParameters
-        = (t_SetProcessShutdownParameters)GetProcAddress(
-            hLib, "SetProcessShutdownParameters");
+    SET_API_POINTER(SetProcessShutdownParameters);
 
     // Char conversion calls
-    p_WideCharToMultiByte
-        = (t_WideCharToMultiByte)GetProcAddress(hLib, "WideCharToMultiByte");
-    p_MultiByteToWideChar
-        = (t_MultiByteToWideChar)GetProcAddress(hLib, "MultiByteToWideChar");
+    SET_API_POINTER(WideCharToMultiByte);
+    SET_API_POINTER(MultiByteToWideChar);
 
     // Find files
-    p_FindFirstFileA = (t_FindFirstFileA)GetProcAddress(hLib, "FindFirstFileA");
-    p_FindNextFileA = (t_FindNextFileA)GetProcAddress(hLib, "FindNextFileA");
+    SET_API_POINTER(FindFirstFileA);
+    SET_API_POINTER(FindNextFileA);
 
     // Get and set directory
-    p_GetCurrentDirectoryA
-        = (t_GetCurrentDirectoryA)GetProcAddress(hLib, "GetCurrentDirectoryA");
-    p_SetCurrentDirectoryA
-        = (t_SetCurrentDirectoryA)GetProcAddress(hLib, "SetCurrentDirectoryA");
+    SET_API_POINTER(GetCurrentDirectoryA);
+    SET_API_POINTER(SetCurrentDirectoryA);
 
     if (g_platform_id != VER_PLATFORM_WIN32_WINDOWS) {
-      p_CreateFileW = (t_CreateFileW)GetProcAddress(hLib, "CreateFileW");
-      p_CreateDirectoryW
-          = (t_CreateDirectoryW)GetProcAddress(hLib, "CreateDirectoryW");
-      p_CreateSymbolicLinkW
-          = (t_CreateSymbolicLinkW)GetProcAddress(hLib, "CreateSymbolicLinkW");
+      SET_API_POINTER(CreateFileW);
+      SET_API_POINTER(CreateDirectoryW);
+      SET_API_POINTER(CreateSymbolicLinkW);
 
       // Backup calls
-      p_BackupRead = (t_BackupRead)GetProcAddress(hLib, "BackupRead");
-      p_BackupWrite = (t_BackupWrite)GetProcAddress(hLib, "BackupWrite");
+      SET_API_POINTER(BackupRead);
+      SET_API_POINTER(BackupWrite);
 
-      p_GetFileAttributesW
-          = (t_GetFileAttributesW)GetProcAddress(hLib, "GetFileAttributesW");
-      p_GetFileAttributesExW = (t_GetFileAttributesExW)GetProcAddress(
-          hLib, "GetFileAttributesExW");
-      p_SetFileAttributesW
-          = (t_SetFileAttributesW)GetProcAddress(hLib, "SetFileAttributesW");
-      p_FindFirstFileW
-          = (t_FindFirstFileW)GetProcAddress(hLib, "FindFirstFileW");
-      p_FindNextFileW = (t_FindNextFileW)GetProcAddress(hLib, "FindNextFileW");
-      p_GetCurrentDirectoryW = (t_GetCurrentDirectoryW)GetProcAddress(
-          hLib, "GetCurrentDirectoryW");
-      p_SetCurrentDirectoryW = (t_SetCurrentDirectoryW)GetProcAddress(
-          hLib, "SetCurrentDirectoryW");
+      SET_API_POINTER(GetFileAttributesW);
+      SET_API_POINTER(GetFileAttributesExW);
+      SET_API_POINTER(SetFileAttributesW);
+      SET_API_POINTER(FindFirstFileW);
+      SET_API_POINTER(FindNextFileW);
+      SET_API_POINTER(GetCurrentDirectoryW);
+      SET_API_POINTER(SetCurrentDirectoryW);
 
       /*
        * Some special stuff we need for VSS
        * but static linkage doesn't work on Win 9x
        */
-      p_GetVolumePathNameW
-          = (t_GetVolumePathNameW)GetProcAddress(hLib, "GetVolumePathNameW");
-      p_GetVolumeNameForVolumeMountPointW
-          = (t_GetVolumeNameForVolumeMountPointW)GetProcAddress(
-              hLib, "GetVolumeNameForVolumeMountPointW");
+      SET_API_POINTER(GetVolumePathNameW);
+      SET_API_POINTER(GetVolumeNameForVolumeMountPointW);
 
-      p_AttachConsole = (t_AttachConsole)GetProcAddress(hLib, "AttachConsole");
+      SET_API_POINTER(AttachConsole);
     }
   }
 
   if (g_platform_id != VER_PLATFORM_WIN32_WINDOWS) {
     hLib = LoadLibraryA("MSVCRT.DLL");
     if (hLib) {
-      /* unlink */
-      p_wunlink = (t_wunlink)GetProcAddress(hLib, "_wunlink");
-      /* wmkdir */
-      p_wmkdir = (t_wmkdir)GetProcAddress(hLib, "_wmkdir");
+      SET_API_POINTER_EX(wunlink, _wunlink);
+      SET_API_POINTER_EX(wmkdir, _wmkdir);
     }
 
     hLib = LoadLibraryA("ADVAPI32.DLL");
     if (hLib) {
-      p_OpenProcessToken
-          = (t_OpenProcessToken)GetProcAddress(hLib, "OpenProcessToken");
-      p_AdjustTokenPrivileges = (t_AdjustTokenPrivileges)GetProcAddress(
-          hLib, "AdjustTokenPrivileges");
-      p_LookupPrivilegeValue = (t_LookupPrivilegeValue)GetProcAddress(
-          hLib, "LookupPrivilegeValueA");
+      SET_API_POINTER(OpenProcessToken);
+      SET_API_POINTER(AdjustTokenPrivileges);
+      SET_API_POINTER_EX(LookupPrivilegeValue, LookupPrivilegeValueA);
 
       // EFS calls
-      p_OpenEncryptedFileRawA = (t_OpenEncryptedFileRawA)GetProcAddress(
-          hLib, "OpenEncryptedFileRawA");
-      p_OpenEncryptedFileRawW = (t_OpenEncryptedFileRawW)GetProcAddress(
-          hLib, "OpenEncryptedFileRawW");
-      p_ReadEncryptedFileRaw = (t_ReadEncryptedFileRaw)GetProcAddress(
-          hLib, "ReadEncryptedFileRaw");
-      p_WriteEncryptedFileRaw = (t_WriteEncryptedFileRaw)GetProcAddress(
-          hLib, "WriteEncryptedFileRaw");
-      p_CloseEncryptedFileRaw = (t_CloseEncryptedFileRaw)GetProcAddress(
-          hLib, "CloseEncryptedFileRaw");
+      SET_API_POINTER(OpenEncryptedFileRawA);
+      SET_API_POINTER(OpenEncryptedFileRawW);
+      SET_API_POINTER(ReadEncryptedFileRaw);
+      SET_API_POINTER(WriteEncryptedFileRaw);
+      SET_API_POINTER(CloseEncryptedFileRaw);
     }
   }
 
   hLib = LoadLibraryA("SHELL32.DLL");
   if (hLib) {
-    p_SHGetFolderPath
-        = (t_SHGetFolderPath)GetProcAddress(hLib, "SHGetFolderPathA");
+    SET_API_POINTER_EX(SHGetFolderPath, SHGetFolderPathA);
   } else {
     // If SHELL32 isn't found try SHFOLDER for older systems
     hLib = LoadLibraryA("SHFOLDER.DLL");
-    if (hLib) {
-      p_SHGetFolderPath
-          = (t_SHGetFolderPath)GetProcAddress(hLib, "SHGetFolderPathA");
-    }
+    if (hLib) { SET_API_POINTER_EX(SHGetFolderPath, SHGetFolderPathA); }
   }
 
   atexit(Win32TSDCleanup);

@@ -603,7 +603,7 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
 }
 
 void BareosDb::ListJobTotals(JobControlRecord* jcr,
-                             JobDbRecord* jr,
+                             JobDbRecord*,
                              OutputFormatter* sendit)
 {
   DbLocker _{this};

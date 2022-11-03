@@ -489,7 +489,7 @@ get_out2:
  * Here we attempt to init and open each device. This is done once at startup in
  * a separate thread.
  */
-extern "C" void* device_initialization(void* arg)
+extern "C" void* device_initialization(void*)
 {
   DeviceResource* device_resource = nullptr;
   DeviceControlRecord* dcr;

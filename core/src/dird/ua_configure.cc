@@ -35,10 +35,7 @@
 
 namespace directordaemon {
 
-static void ConfigureLexErrorHandler(const char* file,
-                                     int line,
-                                     LEX* lc,
-                                     PoolMem& msg)
+static void ConfigureLexErrorHandler(const char*, int, LEX* lc, PoolMem& msg)
 {
   UaContext* ua;
 
@@ -67,8 +64,8 @@ static void ConfigureLexErrorHandler(const char* file,
 }
 
 static inline bool configure_write_resource(const char* filename,
-                                            const char* resourcetype,
-                                            const char* name,
+                                            const char*,
+                                            const char*,
                                             const char* content,
                                             const bool overwrite = false)
 {
@@ -460,7 +457,7 @@ static inline bool ConfigureExport(UaContext* ua)
   return result;
 }
 
-bool ConfigureCmd(UaContext* ua, const char* cmd)
+bool ConfigureCmd(UaContext* ua, const char*)
 {
   bool result = false;
 

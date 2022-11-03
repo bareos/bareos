@@ -32,6 +32,7 @@
 #include "lib/bstringlist.h"
 #include "lib/qualified_resource_name_type_converter.h"
 #include "include/version_numbers.h"
+#include "include/allow_deprecated.h"
 
 #include <algorithm>
 #include <sstream>
@@ -820,14 +821,13 @@ void MakeSessionKey(char* key, char* seed, int mode)
   Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)getuid());
   Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)getgid());
 #endif
-  MD5_Init(&md5c);
-  MD5_Update(&md5c, (uint8_t*)s, strlen(s));
-  MD5_Final(md5key, &md5c);
-  Bsnprintf(s + strlen(s), ss, "%lu",
-            (uint32_t)((time(NULL) + 65121) ^ 0x375F));
-  MD5_Init(&md5c);
-  MD5_Update(&md5c, (uint8_t*)s, strlen(s));
-  MD5_Final(md5key1, &md5c);
+  ALLOW_DEPRECATED(MD5_Init(&md5c); MD5_Update(&md5c, (uint8_t*)s, strlen(s));
+                   MD5_Final(md5key, &md5c);
+                   Bsnprintf(s + strlen(s), ss, "%lu",
+                             (uint32_t)((time(NULL) + 65121) ^ 0x375F));
+                   MD5_Init(&md5c); MD5_Update(&md5c, (uint8_t*)s, strlen(s));
+                   MD5_Final(md5key1, &md5c);)
+
 #define nextrand (md5key[j] ^ md5key1[j])
   if (mode) {
     for (j = k = 0; j < 16; j++) {

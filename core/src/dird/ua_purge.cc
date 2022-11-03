@@ -60,7 +60,7 @@ static bool ActionOnPurgeCmd(UaContext* ua, const char* cmd);
  * Purge records from database
  *
  */
-bool PurgeCmd(UaContext* ua, const char* cmd)
+bool PurgeCmd(UaContext* ua, const char*)
 {
   int i;
   ClientResource* client;
@@ -134,7 +134,7 @@ bool PurgeCmd(UaContext* ua, const char* cmd)
           if (client) { PurgeFilesFromClient(ua, client); }
           return true;
         case 3: /* Volume */
-          if (SelectMediaDbr(ua, &mr)) { PurgeFilesFromVolume(ua, &mr); }
+          // not implemented
           return true;
       }
       break;
@@ -404,9 +404,6 @@ void PurgeJobsFromCatalog(UaContext* ua, const char* jobs)
   ua->db->PurgeJobs(jobs);
 }
 
-void PurgeFilesFromVolume(UaContext* ua, MediaDbRecord* mr) {
-} /* ***FIXME*** implement */
-
 /**
  * Returns: 1 if Volume purged
  *          0 if Volume not purged
@@ -580,7 +577,7 @@ static void do_truncate_on_purge(UaContext* ua,
  * Implement Bareos bconsole command  purge action
  * purge action= pool= volume= storage= devicetype=
  */
-static bool ActionOnPurgeCmd(UaContext* ua, const char* cmd)
+static bool ActionOnPurgeCmd(UaContext* ua, const char*)
 {
   bool allpools = false;
   drive_number_t drive = kInvalidSlotNumber;

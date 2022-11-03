@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2013 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -109,7 +109,7 @@ void win32_fifo_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
   Dmsg1(100, "open dev: fifo %d opened\n", fd);
 }
 
-bool win32_fifo_device::eod(DeviceControlRecord* dcr)
+bool win32_fifo_device::eod(DeviceControlRecord*)
 {
   if (fd < 0) {
     dev_errno = EBADF;
@@ -129,7 +129,9 @@ bool win32_fifo_device::eod(DeviceControlRecord* dcr)
 }
 
 // (Un)mount the device (For a FILE device)
-bool win32_fifo_device::do_mount(DeviceControlRecord* dcr, bool mount, int dotimeout)
+bool win32_fifo_device::do_mount(DeviceControlRecord* dcr,
+                                 bool mount,
+                                 int dotimeout)
 {
   PoolMem ocmd(PM_FNAME);
   POOLMEM* results;
@@ -150,8 +152,7 @@ bool win32_fifo_device::do_mount(DeviceControlRecord* dcr, bool mount, int dotim
 
   EditMountCodes(ocmd, icmd);
 
-  Dmsg2(100, "do_mount: cmd=%s mounted=%d\n", ocmd.c_str(),
-        IsMounted());
+  Dmsg2(100, "do_mount: cmd=%s mounted=%d\n", ocmd.c_str(), IsMounted());
 
   if (dotimeout) {
     /* Try at most 10 times to (un)mount the device. This should perhaps be
@@ -164,9 +165,9 @@ bool win32_fifo_device::do_mount(DeviceControlRecord* dcr, bool mount, int dotim
 
   /* If busy retry each second */
   Dmsg1(100, "do_mount run_prog=%s\n", ocmd.c_str());
-  while ((status = RunProgramFullOutput(ocmd.c_str(),
-                                        max_open_wait / 2, results))
-         != 0) {
+  while (
+      (status = RunProgramFullOutput(ocmd.c_str(), max_open_wait / 2, results))
+      != 0) {
     /* Doesn't work with internationalization (This is not a problem) */
     if (mount && fnmatch("*is already mounted on*", results, 0) == 0) { break; }
     if (!mount && fnmatch("* not mounted*", results, 0) == 0) { break; }
@@ -174,8 +175,7 @@ bool win32_fifo_device::do_mount(DeviceControlRecord* dcr, bool mount, int dotim
       /* Sometimes the device cannot be mounted because it is already mounted.
        * Try to unmount it, then remount it */
       if (mount) {
-        Dmsg1(400, "Trying to unmount the device %s...\n",
-              print_name());
+        Dmsg1(400, "Trying to unmount the device %s...\n", print_name());
         do_mount(dcr, 0, 0);
       }
       Bmicrosleep(1, 0);
@@ -184,8 +184,8 @@ bool win32_fifo_device::do_mount(DeviceControlRecord* dcr, bool mount, int dotim
     Dmsg5(100, "Device %s cannot be %smounted. status=%d result=%s ERR=%s\n",
           print_name(), (mount ? "" : "un"), status, results,
           be.bstrerror(status));
-    Mmsg(errmsg, _("Device %s cannot be %smounted. ERR=%s\n"),
-         print_name(), (mount ? "" : "un"), be.bstrerror(status));
+    Mmsg(errmsg, _("Device %s cannot be %smounted. ERR=%s\n"), print_name(),
+         (mount ? "" : "un"), be.bstrerror(status));
 
     // Now, just to be sure it is not mounted, try to read the filesystem.
     name_max = pathconf(".", _PC_NAME_MAX);
@@ -195,8 +195,7 @@ bool win32_fifo_device::do_mount(DeviceControlRecord* dcr, bool mount, int dotim
       BErrNo be;
       dev_errno = errno;
       Dmsg3(100, "do_mount: failed to open dir %s (dev=%s), ERR=%s\n",
-            device_resource->mount_point, print_name(),
-            be.bstrerror());
+            device_resource->mount_point, print_name(), be.bstrerror());
       goto get_out;
     }
 #ifdef USE_READDIR_R
@@ -310,18 +309,13 @@ ssize_t win32_fifo_device::d_write(int fd, const void* buffer, size_t count)
 
 int win32_fifo_device::d_close(int fd) { return ::close(fd); }
 
-int win32_fifo_device::d_ioctl(int fd, ioctl_req_t request, char* op)
+int win32_fifo_device::d_ioctl(int, ioctl_req_t, char*) { return -1; }
+
+boffset_t win32_fifo_device::d_lseek(DeviceControlRecord*, boffset_t, int)
 {
   return -1;
 }
 
-boffset_t win32_fifo_device::d_lseek(DeviceControlRecord* dcr,
-                                     boffset_t offset,
-                                     int whence)
-{
-  return -1;
-}
-
-bool win32_fifo_device::d_truncate(DeviceControlRecord* dcr) { return true; }
+bool win32_fifo_device::d_truncate(DeviceControlRecord*) { return true; }
 
 } /* namespace storagedaemon */

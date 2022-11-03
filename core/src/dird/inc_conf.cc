@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -33,6 +33,7 @@
 #include "dird/jcr_private.h"
 #include "findlib/match.h"
 #include "lib/parse_conf.h"
+#include "include/allow_deprecated.h"
 
 #ifndef HAVE_REGEX_H
 #  include "lib/bregex.h"
@@ -440,7 +441,7 @@ static void ScanIncludeOptions(LEX* lc, int keyword, char* opts, int optlen)
 }
 
 // Store regex info
-static void StoreRegex(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreRegex(LEX* lc, ResourceItem* item, int, int pass)
 {
   int token, rc;
   regex_t preg{};
@@ -489,7 +490,7 @@ static void StoreRegex(LEX* lc, ResourceItem* item, int index, int pass)
 }
 
 // Store Base info
-static void StoreBase(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreBase(LEX* lc, ResourceItem*, int, int pass)
 {
   LexGetToken(lc, BCT_NAME);
   if (pass == 1) {
@@ -500,7 +501,7 @@ static void StoreBase(LEX* lc, ResourceItem* item, int index, int pass)
 }
 
 // Store reader info
-static void StorePlugin(LEX* lc, ResourceItem* item, int index, int pass)
+static void StorePlugin(LEX* lc, ResourceItem*, int, int pass)
 {
   LexGetToken(lc, BCT_NAME);
   if (pass == 1) {
@@ -511,7 +512,7 @@ static void StorePlugin(LEX* lc, ResourceItem* item, int index, int pass)
 }
 
 // Store Wild-card info
-static void StoreWild(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreWild(LEX* lc, ResourceItem* item, int, int pass)
 {
   int token;
   const char* type;
@@ -555,7 +556,7 @@ static void StoreWild(LEX* lc, ResourceItem* item, int index, int pass)
 }
 
 // Store fstype info
-static void StoreFstype(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreFstype(LEX* lc, ResourceItem*, int, int pass)
 {
   int token;
 
@@ -579,7 +580,7 @@ static void StoreFstype(LEX* lc, ResourceItem* item, int index, int pass)
 }
 
 // Store Drivetype info
-static void StoreDrivetype(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreDrivetype(LEX* lc, ResourceItem*, int, int pass)
 {
   int token;
 
@@ -602,7 +603,7 @@ static void StoreDrivetype(LEX* lc, ResourceItem* item, int index, int pass)
   ScanToEol(lc);
 }
 
-static void StoreMeta(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreMeta(LEX* lc, ResourceItem*, int, int pass)
 {
   int token;
 
@@ -629,7 +630,7 @@ static void StoreMeta(LEX* lc, ResourceItem* item, int index, int pass)
 static void StoreOption(
     LEX* lc,
     ResourceItem* item,
-    int index,
+    int,
     int pass,
     std::map<int, options_default_value_s>& option_default_values)
 {
@@ -687,11 +688,7 @@ static void SetupCurrentOpts(void)
 }
 
 // Come here when Options seen in Include/Exclude
-static void StoreOptionsRes(LEX* lc,
-                            ResourceItem* item,
-                            int index,
-                            int pass,
-                            bool exclude)
+static void StoreOptionsRes(LEX* lc, ResourceItem*, int, int pass, bool exclude)
 {
   int token, i;
   std::map<int, options_default_value_s> option_default_values
@@ -794,11 +791,7 @@ static FilesetResource* GetStaticFilesetResource()
  * always increase the name buffer by 10 items because we expect
  * to add more entries.
  */
-static void StoreFname(LEX* lc,
-                       ResourceItem* item,
-                       int index,
-                       int pass,
-                       bool exclude)
+static void StoreFname(LEX* lc, ResourceItem*, int, int pass, bool)
 {
   int token;
 
@@ -820,7 +813,8 @@ static void StoreFname(LEX* lc,
       case BCT_QUOTED_STRING: {
         FilesetResource* res_fs = GetStaticFilesetResource();
         if (res_fs->have_MD5) {
-          MD5_Update(&res_fs->md5c, (unsigned char*)lc->str, lc->str_len);
+          ALLOW_DEPRECATED(
+              MD5_Update(&res_fs->md5c, (unsigned char*)lc->str, lc->str_len));
         }
 
         if (res_incexe->name_list.size() == 0) {
@@ -843,11 +837,7 @@ static void StoreFname(LEX* lc,
  * always increase the name buffer by 10 items because we expect
  * to add more entries.
  */
-static void StorePluginName(LEX* lc,
-                            ResourceItem* item,
-                            int index,
-                            int pass,
-                            bool exclude)
+static void StorePluginName(LEX* lc, ResourceItem*, int, int pass, bool exclude)
 {
   int token;
 
@@ -873,7 +863,8 @@ static void StorePluginName(LEX* lc,
         FilesetResource* res_fs = GetStaticFilesetResource();
 
         if (res_fs->have_MD5) {
-          MD5_Update(&res_fs->md5c, (unsigned char*)lc->str, lc->str_len);
+          ALLOW_DEPRECATED(
+              MD5_Update(&res_fs->md5c, (unsigned char*)lc->str, lc->str_len));
         }
         if (res_incexe->plugin_list.size() == 0) {
           res_incexe->plugin_list.init(10, true);
@@ -891,11 +882,7 @@ static void StorePluginName(LEX* lc,
 }
 
 // Store exclude directory containing info
-static void StoreExcludedir(LEX* lc,
-                            ResourceItem* item,
-                            int index,
-                            int pass,
-                            bool exclude)
+static void StoreExcludedir(LEX* lc, ResourceItem*, int, int pass, bool exclude)
 {
   if (exclude) {
     scan_err0(lc,
@@ -929,7 +916,7 @@ static void StoreNewinc(LEX* lc, ResourceItem* item, int index, int pass)
   if (pass == 1) { res_incexe = new IncludeExcludeItem; }
 
   if (!res_fs->have_MD5) {
-    MD5_Init(&res_fs->md5c);
+    ALLOW_DEPRECATED(MD5_Init(&res_fs->md5c));
     res_fs->have_MD5 = true;
   }
   res_fs->new_include = true;

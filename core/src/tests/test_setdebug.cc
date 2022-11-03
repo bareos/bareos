@@ -44,21 +44,17 @@ class SetdebugTest : public ::testing::Test {
 static std::multiset<std::string> client_names;
 static std::multiset<std::string> stored_names;
 
-static void DoClientSetdebug(UaContext* ua,
+static void DoClientSetdebug(UaContext*,
                              ClientResource* client,
-                             int level,
-                             int trace_flag,
-                             int hangup_flag,
-                             int timestamp_flag)
+                             int,
+                             int,
+                             int,
+                             int)
 {
   client_names.insert(client->resource_name_);
 }
 
-static void DoStorageSetdebug(UaContext* ua,
-                              StorageResource* store,
-                              int level,
-                              int trace_flag,
-                              int timestamp_flag)
+static void DoStorageSetdebug(UaContext*, StorageResource* store, int, int, int)
 {
   stored_names.insert(store->resource_name_);
 }

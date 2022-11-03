@@ -31,6 +31,7 @@
 
 #if defined(HAVE_OPENSSL)
 
+#  include "include/allow_deprecated.h"
 #  include <openssl/err.h>
 #  include <openssl/rand.h>
 
@@ -520,10 +521,7 @@ err:
 }
 
 /* Dispatch user PEM encryption callbacks */
-static int CryptoPemCallbackDispatch(char* buf,
-                                     int size,
-                                     int rwflag,
-                                     void* userdata)
+static int CryptoPemCallbackDispatch(char* buf, int size, int, void* userdata)
 {
   PEM_CB_CONTEXT* ctx = (PEM_CB_CONTEXT*)userdata;
   return (ctx->pem_callback(buf, size, ctx->pem_userdata));
@@ -642,7 +640,8 @@ DIGEST* crypto_digest_new(JobControlRecord* jcr, crypto_digest_t type)
   /* Determine the correct OpenSSL message digest type */
   switch (type) {
     case CRYPTO_DIGEST_MD5:
-      md = EVP_md5();
+      // Solaris deprecates use of md5 in OpenSSL
+      ALLOW_DEPRECATED(md = EVP_md5();)
       break;
     case CRYPTO_DIGEST_SHA1:
       md = EVP_sha1();
@@ -1188,15 +1187,16 @@ CRYPTO_SESSION* crypto_session_new(crypto_cipher_t cipher,
     /* Encrypt the session key */
     ekey = (unsigned char*)malloc(EVP_PKEY_size(keypair->pubkey));
 
-    if ((ekey_len = EVP_PKEY_encrypt(ekey, cs->session_key, cs->session_key_len,
-                                     keypair->pubkey))
-        <= 0) {
-      /* OpenSSL failure */
-      RecipientInfo_free(ri);
-      CryptoSessionFree(cs);
-      free(ekey);
-      return NULL;
-    }
+    ALLOW_DEPRECATED(
+        if ((ekey_len = EVP_PKEY_encrypt(ekey, cs->session_key,
+                                         cs->session_key_len, keypair->pubkey))
+            <= 0) {
+          /* OpenSSL failure */
+          RecipientInfo_free(ri);
+          CryptoSessionFree(cs);
+          free(ekey);
+          return NULL;
+        })
 
     /* Store it in our ASN.1 structure */
     if (!M_ASN1_OCTET_STRING_set(ri->encryptedKey, ekey, ekey_len)) {
@@ -1314,10 +1314,10 @@ crypto_error_t CryptoSessionDecode(const uint8_t* data,
         /* Allocate sufficient space for the largest possible decrypted data */
         cs->session_key
             = (unsigned char*)malloc(EVP_PKEY_size(keypair->privkey));
-        cs->session_key_len = EVP_PKEY_decrypt(
-            cs->session_key, M_ASN1_STRING_data(ri->encryptedKey),
-            M_ASN1_STRING_length(ri->encryptedKey), keypair->privkey);
-
+        ALLOW_DEPRECATED(
+            cs->session_key_len = EVP_PKEY_decrypt(
+                cs->session_key, M_ASN1_STRING_data(ri->encryptedKey),
+                M_ASN1_STRING_length(ri->encryptedKey), keypair->privkey);)
         if (cs->session_key_len <= 0) {
           OpensslPostErrors(M_ERROR, _("Failure decrypting the session key"));
           retval = CRYPTO_ERROR_DECRYPTION;
@@ -1502,8 +1502,8 @@ int InitCrypto(void)
   ENGINE_load_pk11();
 #  else
   // Load all the builtin engines.
-  ENGINE_load_builtin_engines();
-  ENGINE_register_all_complete();
+  ALLOW_DEPRECATED(ENGINE_load_builtin_engines();
+                   ENGINE_register_all_complete();)
 #  endif
 
   crypto_initialized = true;
@@ -1611,7 +1611,7 @@ void OpensslPostErrors(JobControlRecord* jcr, int type, const char* errstring)
 
 // Allocate a dynamic OpenSSL mutex
 [[maybe_unused]] static struct CRYPTO_dynlock_value*
-openssl_create_dynamic_mutex(const char* file, int line)
+openssl_create_dynamic_mutex(const char*, int)
 {
   struct CRYPTO_dynlock_value* dynlock;
   int status;
@@ -1631,8 +1631,8 @@ openssl_create_dynamic_mutex(const char* file, int line)
 [[maybe_unused]] static void OpensslUpdateDynamicMutex(
     int mode,
     struct CRYPTO_dynlock_value* dynlock,
-    const char* file,
-    int line)
+    const char*,
+    int)
 {
   if (mode & CRYPTO_LOCK) {
     lock_mutex(dynlock->mutex);
@@ -1643,8 +1643,8 @@ openssl_create_dynamic_mutex(const char* file, int line)
 
 [[maybe_unused]] static void OpensslDestroyDynamicMutex(
     struct CRYPTO_dynlock_value* dynlock,
-    const char* file,
-    int line)
+    const char*,
+    int)
 {
   int status;
 
@@ -1660,8 +1660,8 @@ openssl_create_dynamic_mutex(const char* file, int line)
 // (Un)Lock a static OpenSSL mutex
 [[maybe_unused]] static void openssl_update_static_mutex(int mode,
                                                          int i,
-                                                         const char* file,
-                                                         int line)
+                                                         const char*,
+                                                         int)
 {
   if (mode & CRYPTO_LOCK) {
     lock_mutex(mutexes[i]);

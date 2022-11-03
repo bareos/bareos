@@ -132,48 +132,25 @@ struct _progdata {
     ptr = NULL;      \
   }
 
-int registerBareosEvents(void* ctx, ...) { return 0; };
+int registerBareosEvents(void*, ...) { return 0; };
 
-int getBareosValue(void* ctx, int var, void* value) { return 0; };
+int getBareosValue(void*, int, void*) { return 0; };
 
-int setBareosValue(void* ctx, int var, void* value) { return 0; };
+int setBareosValue(void*, int, void*) { return 0; };
 
-int DebugMessage(void* ctx,
-                 const char* file,
-                 int line,
-                 int level,
-                 const char* fmt,
-                 ...)
+int DebugMessage(void*, const char*, int, int, const char*, ...) { return 0; };
+
+int JobMessage(void*, const char*, int, int, int64_t, const char*, ...)
 {
-#ifdef DEBUGMSG
-  printf("DG: %s:%d %s\n", file, line, fmt);
-#endif
   return 0;
 };
 
-int JobMessage(void* ctx,
-               const char* file,
-               int line,
-               int type,
-               int64_t mtime,
-               const char* fmt,
-               ...)
-{
-#ifdef DEBUGMSG
-  printf("JM: %s:%d <%d> %s\n", file, line, type, fmt);
-#endif
-  return 0;
-};
-
-void* bareosMalloc(void* ctx, const char* file, int line, size_t size)
+void* bareosMalloc(void*, const char*, int, size_t size)
 {
   return MALLOC(size);
 };
 
-void bareosFree(void* ctx, const char* file, int line, void* mem)
-{
-  FREE(mem);
-};
+void bareosFree(void*, const char*, int, void* mem) { FREE(mem); };
 
 /* allocates and resets a main program data variable */
 progdata* allocpdata(void)

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -38,7 +38,7 @@ static int debuglevel = 100;
 #  define AVG_NR_BYTES_PER_ENTRY 256
 #  define B_PAGE_SIZE 4096
 
-BareosAccurateFilelistLmdb::BareosAccurateFilelistLmdb(JobControlRecord* jcr,
+BareosAccurateFilelistLmdb::BareosAccurateFilelistLmdb(JobControlRecord*,
                                                        uint32_t number_of_files)
 {
   filenr_ = 0;
@@ -134,7 +134,7 @@ bail_out:
 }
 
 bool BareosAccurateFilelistLmdb::AddFile(char* fname,
-                                         int fname_length,
+                                         int /* fname_length */,
                                          char* lstat,
                                          int lstat_length,
                                          char* chksum,

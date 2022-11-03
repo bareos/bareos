@@ -104,10 +104,8 @@ accurate_payload* BareosAccurateFilelistHtable::lookup_payload(char* fname)
   return (temp) ? &temp->payload : NULL;
 }
 
-bool BareosAccurateFilelistHtable::UpdatePayload(char* fname,
-                                                 accurate_payload* payload)
+bool BareosAccurateFilelistHtable::UpdatePayload(char*, accurate_payload*)
 {
-  // Nothing to do.
   return true;
 }
 

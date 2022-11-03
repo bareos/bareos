@@ -157,11 +157,6 @@ if(cxx_compiler_macro_prefix_map)
   )
 endif()
 
-check_cxx_compiler_flag(-Wno-unknown-pragmas compiler_has_no_unknown_pragmas)
-if(${compiler_has_no_unknown_pragmas})
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas")
-endif()
-
 check_cxx_compiler_flag(-Winvalid-offsetof compiler_has_invalid_offsetof)
 if(compiler_has_invalid_offsetof)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-invalid-offsetof")
@@ -329,9 +324,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
   if(${CMAKE_CXX_COMPILER_ID} MATCHES SunPro)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64")
   endif()
-  # Solaris 11.4 has all md5 functions on openssl declared deprecated this
-  # produces a lot of useless warnings, so disable them
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
@@ -339,7 +331,9 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
   include_directories(/usr/local/include)
   link_directories(/usr/local/lib)
   link_libraries(intl)
-  check_cxx_compiler_flag(-Wunused-but-set-variable compiler_will_warn_of_unused_but_set_variable)
+  check_cxx_compiler_flag(
+    -Wunused-but-set-variable compiler_will_warn_of_unused_but_set_variable
+  )
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -409,8 +403,8 @@ if(developer)
   add_definitions("-DDEVELOPER=1")
 endif()
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wall")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wall -Wextra")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra")
 
 include(BareosSetVariableDefaults)
 option(ENABLE_BCONSOLE "Build bconsole binary" ON)

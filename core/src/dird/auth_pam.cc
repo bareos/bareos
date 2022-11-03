@@ -144,9 +144,9 @@ static int PamConversationCallback(int num_msg,
 
 static int PamLocalCallback(int num_msg,
 #if defined(__sun)
-                            struct pam_message** msgm,
+                            struct pam_message**,
 #else
-                            const struct pam_message** msgm,
+                            const struct pam_message**,
 #endif
                             struct pam_response** response,
                             void* appdata_ptr)

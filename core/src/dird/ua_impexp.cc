@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -417,8 +417,7 @@ static inline bool get_slot_list_using_volname(UaContext* ua,
                                                const char* volumename,
                                                changer_vol_list_t* vol_list,
                                                char* wanted_slot_list,
-                                               char* selected_slot_list,
-                                               slot_number_t max_slots)
+                                               char* selected_slot_list)
 {
   vol_list_t *vl1, *vl2;
   bool found = false;
@@ -513,8 +512,7 @@ static inline slot_number_t get_slot_list_using_volnames(
     int arg,
     changer_vol_list_t* vol_list,
     char* wanted_slot_list,
-    char* selected_slot_list,
-    slot_number_t max_slots)
+    char* selected_slot_list)
 {
   slot_number_t i;
   slot_number_t cnt = 0;
@@ -542,8 +540,7 @@ static inline slot_number_t get_slot_list_using_volnames(
       while (sep != NULL) {
         *sep = '\0';
         if (get_slot_list_using_volname(ua, store, token, vol_list,
-                                        wanted_slot_list, selected_slot_list,
-                                        max_slots)) {
+                                        wanted_slot_list, selected_slot_list)) {
           cnt++;
         }
         token = ++sep;
@@ -553,8 +550,7 @@ static inline slot_number_t get_slot_list_using_volnames(
       // Pick up the last token.
       if (*token) {
         if (get_slot_list_using_volname(ua, store, token, vol_list,
-                                        wanted_slot_list, selected_slot_list,
-                                        max_slots)) {
+                                        wanted_slot_list, selected_slot_list)) {
           cnt++;
         }
       }
@@ -1070,8 +1066,8 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
         tmp_slot_list = (char*)malloc(NbytesForBits(max_slots));
         ClearAllBits(max_slots, tmp_slot_list);
         nr_enabled_src_slots = get_slot_list_using_volnames(
-            ua, store.store, list_index, vol_list, src_slot_list, tmp_slot_list,
-            max_slots);
+            ua, store.store, list_index, vol_list, src_slot_list,
+            tmp_slot_list);
         if (src_slot_list) { free(src_slot_list); }
         src_slot_list = tmp_slot_list;
       }
@@ -1255,19 +1251,19 @@ bail_out:
 }
 
 // Import volumes from Import/Export Slots into normal Slots.
-bool ImportCmd(UaContext* ua, const char* cmd)
+bool ImportCmd(UaContext* ua, const char*)
 {
   return PerformMoveOperation(ua, VOLUME_IMPORT);
 }
 
 // Export volumes from normal slots to Import/Export Slots.
-bool ExportCmd(UaContext* ua, const char* cmd)
+bool ExportCmd(UaContext* ua, const char*)
 {
   return PerformMoveOperation(ua, VOLUME_EXPORT);
 }
 
 // Move volume from one slot to another.
-bool move_cmd(UaContext* ua, const char* cmd)
+bool move_cmd(UaContext* ua, const char*)
 {
   return PerformMoveOperation(ua, VOLUME_MOVE);
 }

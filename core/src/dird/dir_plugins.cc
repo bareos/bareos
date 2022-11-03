@@ -118,12 +118,10 @@ static bool IsCtxGood(PluginContext* ctx,
   return true;
 }
 
-static inline bool trigger_plugin_event(JobControlRecord* jcr,
-                                        bDirEventType eventType,
+static inline bool trigger_plugin_event(bDirEventType eventType,
                                         bDirEvent* event,
                                         PluginContext* ctx,
                                         void* value,
-                                        alist<PluginContext*>* plugin_ctx_list,
                                         int* index,
                                         bRC* rc)
 {
@@ -221,8 +219,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
     PluginContext* ctx;
 
     foreach_alist_rindex (i, ctx, plugin_ctx_list) {
-      if (trigger_plugin_event(jcr, eventType, &event, ctx, value,
-                               plugin_ctx_list, &i, &rc)) {
+      if (trigger_plugin_event(eventType, &event, ctx, value, &i, &rc)) {
         break;
       }
     }
@@ -230,8 +227,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
     PluginContext* ctx;
 
     foreach_alist_index (i, ctx, plugin_ctx_list) {
-      if (trigger_plugin_event(jcr, eventType, &event, ctx, value,
-                               plugin_ctx_list, &i, &rc)) {
+      if (trigger_plugin_event(eventType, &event, ctx, value, &i, &rc)) {
         break;
       }
     }
@@ -441,8 +437,7 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
         option = bp;
       }
 
-      if (instance < LOWEST_PLUGIN_INSTANCE
-          || instance > HIGHEST_PLUGIN_INSTANCE) {
+      if (instance > HIGHEST_PLUGIN_INSTANCE) {
         Jmsg(NULL, M_ERROR, 0,
              _("Illegal DIR plugin options encountered, %s instance %d "
                "skipping\n"),
@@ -476,8 +471,8 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
         }
 
         if (ctx) {
-          trigger_plugin_event(jcr, eventType, &event, ctx,
-                               (void*)plugin_options, NULL, NULL, NULL);
+          trigger_plugin_event(eventType, &event, ctx, (void*)plugin_options,
+                               NULL, NULL);
         }
       }
     }
@@ -816,8 +811,8 @@ bail_out:
 }
 
 static bRC bareosJobMsg(PluginContext* ctx,
-                        const char* file,
-                        int line,
+                        const char*,
+                        int,
                         int type,
                         utime_t mtime,
                         const char* fmt,
@@ -841,7 +836,7 @@ static bRC bareosJobMsg(PluginContext* ctx,
   return bRC_OK;
 }
 
-static bRC bareosDebugMsg(PluginContext* ctx,
+static bRC bareosDebugMsg(PluginContext*,
                           const char* file,
                           int line,
                           int level,

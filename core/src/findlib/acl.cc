@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -72,18 +72,16 @@
  * Entry points when compiled without support for ACLs or on an unsupported
  * platform.
  */
-bacl_exit_code BuildAclStreams(JobControlRecord* jcr,
-                               AclData* acl_data,
-                               FindFilesPacket* ff_pkt)
+bacl_exit_code BuildAclStreams(JobControlRecord*, AclData*, FindFilesPacket*)
 {
   return bacl_exit_fatal;
 }
 
-bacl_exit_code parse_acl_streams(JobControlRecord* jcr,
-                                 AclData* acl_data,
-                                 int stream,
-                                 char* content,
-                                 uint32_t content_length)
+bacl_exit_code parse_acl_streams(JobControlRecord*,
+                                 AclData*,
+                                 int,
+                                 char*,
+                                 uint32_t)
 {
   return bacl_exit_fatal;
 }
@@ -828,7 +826,7 @@ static bacl_exit_code generic_set_acl_on_os(JobControlRecord* jcr,
                                             AclData* acl_data,
                                             bacl_type acltype,
                                             char* content,
-                                            uint32_t content_length)
+                                            uint32_t)
 {
   acl_t acl;
   acl_type_t ostype;
@@ -953,7 +951,7 @@ static int os_default_acl_streams[1] = {-1};
 
 static bacl_exit_code darwin_build_acl_streams(JobControlRecord* jcr,
                                                AclData* acl_data,
-                                               FindFilesPacket* ff_pkt)
+                                               FindFilesPacket*)
 {
 #        if defined(HAVE_ACL_TYPE_EXTENDED)
   /**
@@ -983,7 +981,7 @@ static bacl_exit_code darwin_build_acl_streams(JobControlRecord* jcr,
 
 static bacl_exit_code darwin_parse_acl_streams(JobControlRecord* jcr,
                                                AclData* acl_data,
-                                               int stream,
+                                               int,
                                                char* content,
                                                uint32_t content_length)
 {
@@ -1019,7 +1017,7 @@ static int os_default_acl_streams[1] = {STREAM_ACL_FREEBSD_DEFAULT_ACL};
 
 static bacl_exit_code freebsd_build_acl_streams(JobControlRecord* jcr,
                                                 AclData* acl_data,
-                                                FindFilesPacket* ff_pkt)
+                                                FindFilesPacket*)
 {
   int acl_enabled = 0;
   bacl_type acltype = BACL_TYPE_NONE;
@@ -1245,7 +1243,7 @@ static int os_default_acl_streams[1] = {STREAM_ACL_HURD_DEFAULT_ACL};
 
 static bacl_exit_code generic_build_acl_streams(JobControlRecord* jcr,
                                                 AclData* acl_data,
-                                                FindFilesPacket* ff_pkt)
+                                                FindFilesPacket*)
 {
   // Read access ACLs for files, dirs and links
   if (generic_get_acl_from_os(jcr, acl_data, BACL_TYPE_ACCESS)
@@ -1645,7 +1643,7 @@ static int os_default_acl_streams[1] = {-1};
  */
 static bacl_exit_code solaris_build_acl_streams(JobControlRecord* jcr,
                                                 AclData* acl_data,
-                                                FindFilesPacket* ff_pkt)
+                                                FindFilesPacket*)
 {
   int acl_enabled, flags;
   acl_t* aclp;
@@ -1742,7 +1740,7 @@ static bacl_exit_code solaris_parse_acl_streams(JobControlRecord* jcr,
                                                 AclData* acl_data,
                                                 int stream,
                                                 char* content,
-                                                uint32_t content_length)
+                                                uint32_t)
 {
   acl_t* aclp;
   int acl_enabled, error;

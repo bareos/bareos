@@ -109,7 +109,7 @@ static void fillcmd();
 static void qfillcmd();
 static void statcmd();
 static void unfillcmd();
-static int FlushBlock(DeviceBlock* block, int dump);
+static int FlushBlock(DeviceBlock* block);
 static bool QuickieCb(DeviceControlRecord* dcr, DeviceRecord* rec);
 static bool CompareBlocks(DeviceBlock* last_block, DeviceBlock* block);
 static bool MyMountNextReadVolume(DeviceControlRecord* dcr);
@@ -2199,7 +2199,7 @@ static void fillcmd()
             rec.remainder);
 
       /* Write block to tape */
-      if (!FlushBlock(block, 1)) {
+      if (!FlushBlock(block)) {
         Pmsg0(000, _("Flush block failed.\n"));
         exit_code = 1;
         break;
@@ -2223,7 +2223,7 @@ static void fillcmd()
         now = time(nullptr);
         bstrftime(buf1, sizeof(buf1), now, "%H:%M:%S");
         Pmsg1(-1, _("%s Flush block, write EOF\n"), buf1);
-        FlushBlock(block, 0);
+        FlushBlock(block);
       }
 
       /* Get out after writing 1000 blocks to the second tape */
@@ -2559,7 +2559,7 @@ bail_out:
 }
 
 /* Read 10'000 records then stop */
-static bool QuickieCb(DeviceControlRecord* dcr, DeviceRecord* rec)
+static bool QuickieCb(DeviceControlRecord* dcr, DeviceRecord*)
 {
   Device* dev = dcr->dev;
   quickie_count++;
@@ -2613,7 +2613,7 @@ static bool CompareBlocks(DeviceBlock* last_block, DeviceBlock* block)
  *   not it is full. If the tape fills, attempt to
  *   acquire another tape.
  */
-static int FlushBlock(DeviceBlock* block, int dump)
+static int FlushBlock(DeviceBlock* block)
 {
   char ec1[50], ec2[50];
   uint64_t rate;
@@ -2906,7 +2906,7 @@ int GetCmd(const char* prompt)
   return 0;
 }
 
-bool BTAPE_DCR::DirCreateJobmediaRecord(bool zero)
+bool BTAPE_DCR::DirCreateJobmediaRecord(bool)
 {
   WroteVol = false;
   return 1;
@@ -2918,7 +2918,7 @@ bool BTAPE_DCR::DirFindNextAppendableVolume()
   return VolumeName[0] != 0;
 }
 
-bool BTAPE_DCR::DirAskSysopToMountVolume(int mode)
+bool BTAPE_DCR::DirAskSysopToMountVolume(int)
 {
   Dmsg0(20, "Enter DirAskSysopToMountVolume\n");
   if (VolumeName[0] == 0) { return DirAskSysopToCreateAppendableVolume(); }

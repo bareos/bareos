@@ -48,19 +48,16 @@ class pathid_cache {
 };
 
 // Generic path handlers used for database queries.
-static int GetPathHandler(void* ctx, int fields, char** row)
+static int GetPathHandler(void* ctx, int, char** row)
 {
   PoolMem* buf = (PoolMem*)ctx;
-
   PmStrcpy(*buf, row[0]);
-
   return 0;
 }
 
 static int PathHandler(void* ctx, int fields, char** row)
 {
   Bvfs* fs = (Bvfs*)ctx;
-
   return fs->_handlePath(ctx, fields, row);
 }
 
@@ -355,7 +352,7 @@ int BareosDb::BvfsBuildLsFileQuery(PoolMem& query,
   return nb_record;
 }
 
-static int ResultHandler(void* ctx, int fields, char** row)
+static int ResultHandler(void*, int fields, char** row)
 {
   Dmsg1(100, "ResultHandler(*,%d,**)", fields);
   if (fields == 4) {
@@ -548,7 +545,7 @@ DBId_t Bvfs::get_root()
   return p;
 }
 
-int Bvfs::_handlePath(void* ctx, int fields, char** row)
+int Bvfs::_handlePath(void*, int fields, char** row)
 {
   if (BvfsIsDir(row)) {
     // Can have the same path 2 times
@@ -598,7 +595,7 @@ bool Bvfs::ls_dirs()
   return true;
 }
 
-static void build_ls_files_query(JobControlRecord* jcr,
+static void build_ls_files_query(JobControlRecord*,
                                  BareosDb* db,
                                  PoolMem& query,
                                  const char* JobId,

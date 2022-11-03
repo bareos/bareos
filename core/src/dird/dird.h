@@ -182,7 +182,7 @@ struct RuntimeStorageStatus {
       = PTHREAD_MUTEX_INITIALIZER; /**< Any access to the list devices is
          controlled by this lock */
 #if HAVE_NDMP
-  struct smc_element_address_assignment storage_mapping = {0};
+  struct smc_element_address_assignment storage_mapping = {};
   std::list<ndmp_deviceinfo_t> ndmp_deviceinfo;
 #endif
 };

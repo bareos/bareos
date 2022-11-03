@@ -552,14 +552,15 @@ void WritePidFile(int pidfile_fd,
 }
 #endif
 
-// Delete the pid file if we created it
+#if defined(HAVE_WIN32)
+int DeletePidFile(std::string) { return 1; }
+#else
 int DeletePidFile(std::string pidfile_path)
 {
-#if !defined(HAVE_WIN32)
   if (!pidfile_path.empty()) { unlink(pidfile_path.c_str()); }
-#endif
   return 1;
 }
+#endif
 
 static struct StateFileHeader state_hdr = {{"Bareos State\n"}, 4, 0, 0, {0}};
 
@@ -641,15 +642,6 @@ void ReadStateFile(const char* dir, const char* progname, int port)
   secure_erase_guard.Release();
 }
 
-static void SafeTheLastWritePosition(std::ofstream& file, uint64_t pos)
-{
-  std::streampos position_after_export = file.tellp();
-
-  pos = (position_after_export == static_cast<std::streampos>(-1))
-            ? static_cast<std::streampos>(0)
-            : position_after_export;
-}
-
 void WriteStateFile(const char* dir, const char* progname, int port)
 {
   std::string filename = CreateFileNameFrom(dir, progname, port);
@@ -677,9 +669,7 @@ void WriteStateFile(const char* dir, const char* progname, int port)
     Dmsg1(100, "write_last_jobs seek to %d\n", (int)state_hdr.last_jobs_addr);
     file.seekp(state_hdr.last_jobs_addr);
 
-    if (RecentJobResultsList::ExportToFile(file)) {
-      SafeTheLastWritePosition(file, state_hdr.end_of_recent_job_results_list);
-    }
+    RecentJobResultsList::ExportToFile(file);
 
     file.seekp(0);
     file.write(reinterpret_cast<char*>(&state_hdr), sizeof(StateFileHeader));
@@ -954,7 +944,7 @@ bool PathAppend(PoolMem& path, PoolMem& extra)
  * based on
  * src/findlib/mkpath.c:bool makedir(...)
  */
-static bool PathMkdir(char* path, mode_t mode)
+static bool PathMkdir(char* path, [[maybe_unused]] mode_t mode)
 {
   if (PathExists(path)) {
     Dmsg1(500, "skipped, path %s already exists.\n", path);

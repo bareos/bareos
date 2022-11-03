@@ -63,11 +63,7 @@ void TestfindFreeJcr(JobControlRecord* jcr)
 
 
 /* Dummy functions */
-void GeneratePluginEvent(JobControlRecord* jcr,
-                         filedaemon::bEventType eventType,
-                         void* value)
-{
-}
+void GeneratePluginEvent(JobControlRecord*, filedaemon::bEventType, void*) {}
 extern bool ParseDirConfig(const char* configfile, int exit_code);
 
 /* Global variables */
@@ -270,7 +266,7 @@ int main(int argc, char* const* argv)
 }
 
 
-static int PrintFile(JobControlRecord* jcr, FindFilesPacket* ff, bool top_level)
+static int PrintFile(JobControlRecord*, FindFilesPacket* ff, bool)
 {
   switch (ff->type) {
     case FT_LNKSAVED:
@@ -578,6 +574,7 @@ static void SetOptions(findFOPTS* fo, const char* opts)
         break;
       case 'R': /* Resource forks and Finder Info */
         SetBit(FO_HFSPLUS, fo->flags);
+        [[fallthrough]];
       case 'r': /* read fifo */
         SetBit(FO_READFIFO, fo->flags);
         break;

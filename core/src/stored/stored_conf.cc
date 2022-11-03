@@ -278,10 +278,7 @@ static s_kw compression_algorithms[]
        {"lzfast", COMPRESS_FZFZ}, {"lz4", COMPRESS_FZ4L},
        {"lz4hc", COMPRESS_FZ4H},  {NULL, 0}};
 
-static void StoreAuthenticationType(LEX* lc,
-                                    ResourceItem* item,
-                                    int index,
-                                    int pass)
+static void StoreAuthenticationType(LEX* lc, ResourceItem* item, int index, int)
 {
   int i;
 
@@ -332,7 +329,7 @@ static void StoreAutopassword(LEX* lc, ResourceItem* item, int index, int pass)
   }
 }
 
-static void StoreDeviceType(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreDeviceType(LEX* lc, ResourceItem* item, int index, int)
 {
   int i;
 
@@ -366,7 +363,7 @@ static void StoreMaxblocksize(LEX* lc, ResourceItem* item, int index, int pass)
 }
 
 // Store the IO direction on a certain device.
-static void StoreIoDirection(LEX* lc, ResourceItem* item, int index, int pass)
+static void StoreIoDirection(LEX* lc, ResourceItem* item, int index, int)
 {
   int i;
 
@@ -390,7 +387,7 @@ static void StoreIoDirection(LEX* lc, ResourceItem* item, int index, int pass)
 static void StoreCompressionalgorithm(LEX* lc,
                                       ResourceItem* item,
                                       int index,
-                                      int pass)
+                                      int)
 {
   int i;
 
@@ -442,7 +439,7 @@ static void ParseConfigCb(LEX* lc,
                           ResourceItem* item,
                           int index,
                           int pass,
-                          BareosResource** configuration_resources)
+                          BareosResource**)
 {
   switch (item->type) {
     case CFG_TYPE_AUTOPASSWORD:

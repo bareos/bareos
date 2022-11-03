@@ -66,7 +66,7 @@ static bool ParseListBackupsCmd(UaContext* ua,
 #define DEFAULT_NR_DAYS 50
 
 // Turn auto display of console messages on/off
-bool AutodisplayCmd(UaContext* ua, const char* cmd)
+bool AutodisplayCmd(UaContext* ua, const char*)
 {
   static const char* kw[] = {NT_("on"), NT_("off"), NULL};
 
@@ -85,7 +85,7 @@ bool AutodisplayCmd(UaContext* ua, const char* cmd)
 }
 
 // Turn GUI mode on/off
-bool gui_cmd(UaContext* ua, const char* cmd)
+bool gui_cmd(UaContext* ua, const char*)
 {
   static const char* kw[] = {NT_("on"), NT_("off"), NULL};
 
@@ -210,7 +210,7 @@ static void ShowAll(UaContext* ua, bool hide_sensitive_data, bool verbose)
  *  show disabled clients - shows disabled clients
  *  show disabled schedules - shows disabled schedules
  */
-bool show_cmd(UaContext* ua, const char* cmd)
+bool show_cmd(UaContext* ua, const char*)
 {
   int i, j, type, len;
   int recurse;
@@ -1443,9 +1443,9 @@ bool CompleteJcrForJob(JobControlRecord* jcr,
   return true;
 }
 
-static void ConLockRelease(void* arg) { Vw(con_lock); }
+static void ConLockRelease(void*) { Vw(con_lock); }
 
-void DoMessages(UaContext* ua, const char* cmd)
+void DoMessages(UaContext* ua, const char*)
 {
   char msg[2000];
   int mlen;

@@ -438,7 +438,7 @@ static
  * configuration file.
  */
 #if !defined(HAVE_WIN32)
-extern "C" void SighandlerReloadConfig(int sig, siginfo_t* siginfo, void* ptr)
+extern "C" void SighandlerReloadConfig(int, siginfo_t*, void*)
 {
   static bool is_reloading = false;
 

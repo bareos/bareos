@@ -107,21 +107,12 @@ static int EolCmd(FILE* input, BareosSocket* UA_sock);
 #  include <regex.h>
 #endif
 
-extern "C" void GotSigstop(int sig) { stop = true; }
+extern "C" void GotSigstop(int) { stop = true; }
+extern "C" void GotSigcontinue(int) { stop = false; }
+extern "C" void GotSigtout(int) {}
+extern "C" void GotSigtin(int) {}
 
-extern "C" void GotSigcontinue(int sig) { stop = false; }
-
-extern "C" void GotSigtout(int sig)
-{
-  // printf("Got tout\n");
-}
-
-extern "C" void GotSigtin(int sig)
-{
-  // printf("Got tin\n");
-}
-
-static int ZedKeyscmd(FILE* input, BareosSocket* UA_sock)
+static int ZedKeyscmd(FILE*, BareosSocket*)
 {
   ConSetZedKeys();
   return 1;
@@ -475,10 +466,7 @@ static char* cpl_generator(const char* text, int state)
 }
 
 /* do not use the default filename completion */
-static char* dummy_completion_function(const char* text, int state)
-{
-  return NULL;
-}
+static char* dummy_completion_function(const char*, int) { return NULL; }
 
 struct cpl_keywords_t {
   const char* key;
@@ -519,7 +507,7 @@ static struct cpl_keywords_t cpl_keywords[]
  * in case we want to do some simple parsing.  Return the array of matches,
  * or NULL if there aren't any.
  */
-static char** readline_completion(const char* text, int start, int end)
+static char** readline_completion(const char* text, int start, int)
 {
   bool found = false;
   char** matches;
@@ -564,7 +552,7 @@ static char** readline_completion(const char* text, int start, int end)
 }
 
 static char eol = '\0';
-static int EolCmd(FILE* input, BareosSocket* UA_sock)
+static int EolCmd(FILE*, BareosSocket*)
 {
   if ((argc > 1) && (strchr("!$%&'()*+,-/:;<>?[]^`{|}~", argk[1][0]) != NULL)) {
     eol = argk[1][0];
@@ -581,7 +569,7 @@ static int EolCmd(FILE* input, BareosSocket* UA_sock)
  *        0 if no input
  *       -1 error (must stop)
  */
-int GetCmd(FILE* input, const char* prompt, BareosSocket* sock, int sec)
+int GetCmd(FILE* input, const char* prompt, BareosSocket* sock, int)
 {
   static char* line = NULL;
   static char* next = NULL;
@@ -880,7 +868,7 @@ int main(int argc, char* argv[])
   bool test_config = false;
   console_app.add_flag(
       "-l,--list-directors",
-      [&list_directors, &test_config](bool val) {
+      [&list_directors, &test_config](bool) {
         list_directors = true;
         test_config = true;
       },
@@ -1174,7 +1162,7 @@ static int CheckResources()
 }
 
 /* @version */
-static int Versioncmd(FILE* input, BareosSocket* UA_sock)
+static int Versioncmd(FILE*, BareosSocket*)
 {
   ConsoleOutputFormat("Version: %s (%s) %s\n", kBareosVersionStrings.Full,
                       kBareosVersionStrings.Date,
@@ -1183,7 +1171,7 @@ static int Versioncmd(FILE* input, BareosSocket* UA_sock)
 }
 
 /* @input <input-filename> */
-static int InputCmd(FILE* input, BareosSocket* UA_sock)
+static int InputCmd(FILE*, BareosSocket*)
 {
   FILE* fd;
 
@@ -1223,7 +1211,7 @@ static int OutputCmd(FILE* input, BareosSocket* UA_sock)
   return DoOutputcmd(input, UA_sock);
 }
 
-static int DoOutputcmd(FILE* input, BareosSocket* UA_sock)
+static int DoOutputcmd(FILE*, BareosSocket*)
 {
   FILE* file;
   const char* mode = "a+b";
@@ -1249,7 +1237,7 @@ static int DoOutputcmd(FILE* input, BareosSocket* UA_sock)
 }
 
 // @exec "some-command" [wait-seconds]
-static int ExecCmd(FILE* input, BareosSocket* UA_sock)
+static int ExecCmd(FILE*, BareosSocket*)
 {
   Bpipe* bpipe;
   char line[5000];
@@ -1282,7 +1270,7 @@ static int ExecCmd(FILE* input, BareosSocket* UA_sock)
 }
 
 /* @echo xxx yyy */
-static int EchoCmd(FILE* input, BareosSocket* UA_sock)
+static int EchoCmd(FILE*, BareosSocket*)
 {
   for (int i = 1; i < argc; i++) { ConsoleOutputFormat("%s ", argk[i]); }
   ConsoleOutput("\n");
@@ -1290,10 +1278,10 @@ static int EchoCmd(FILE* input, BareosSocket* UA_sock)
 }
 
 /* @quit */
-static int QuitCmd(FILE* input, BareosSocket* UA_sock) { return 0; }
+static int QuitCmd(FILE*, BareosSocket*) { return 0; }
 
 /* @help */
-static int HelpCmd(FILE* input, BareosSocket* UA_sock)
+static int HelpCmd(FILE*, BareosSocket*)
 {
   int i;
   for (i = 0; i < comsize; i++) {
@@ -1303,14 +1291,14 @@ static int HelpCmd(FILE* input, BareosSocket* UA_sock)
 }
 
 /* @sleep secs */
-static int SleepCmd(FILE* input, BareosSocket* UA_sock)
+static int SleepCmd(FILE*, BareosSocket*)
 {
   if (argc > 1) { sleep(atoi(argk[1])); }
   return 1;
 }
 
 /* @time */
-static int TimeCmd(FILE* input, BareosSocket* UA_sock)
+static int TimeCmd(FILE*, BareosSocket*)
 {
   char sdt[50];
 

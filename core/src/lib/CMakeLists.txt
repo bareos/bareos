@@ -111,7 +111,8 @@ if(HAVE_WIN32)
        ../win32/compat/winapi.cc
   )
   set_source_files_properties(
-    ../win32/compat/glob.cc PROPERTIES COMPILE_DEFINITIONS register=
+    ../win32/compat/winapi.cc ../win32/compat/service.cc
+    ../win32/generic/service.cc osinfo_win32.cc
   )
 
 else()
@@ -141,9 +142,6 @@ endif()
 
 add_library(bareos SHARED ${BAREOS_SRCS} $<TARGET_OBJECTS:version-obj>)
 
-# openssl 3.0
-target_compile_options(bareos PUBLIC -Wno-deprecated-declarations)
-
 add_library(version-obj OBJECT version.cc)
 target_compile_definitions(
   version-obj
@@ -160,6 +158,17 @@ target_link_libraries(
   PRIVATE bareosfastlz ${OPENSSL_LIBRARIES} Threads::Threads ${ZLIB_LIBRARIES}
           ${LZO2_LIBRARIES} ${CAM_LIBRARIES} CLI11::CLI11
 )
+
+if(CMAKE_CXX_FLAGS MATCHES "-fsanitize=address"
+   AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
+   AND CMAKE_CXX_COMPILER_VERSION MATCHES "^12"
+)
+  # work around compiler/stdlib bug see
+  # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105562#c17
+  set_source_files_properties(
+    cli.cc PROPERTIES COMPILE_FLAGS "-Wno-maybe-uninitialized"
+  )
+endif()
 
 if(ENABLE_CAPABILITY)
   target_link_libraries(bareos PRIVATE ${CAP_LIBRARIES})

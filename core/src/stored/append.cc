@@ -48,7 +48,7 @@ static char OK_replicate[] = "3000 OK replicate data\n";
 
 /* Forward referenced functions */
 
-void PossibleIncompleteJob(JobControlRecord* jcr, int32_t last_file_index) {}
+void PossibleIncompleteJob(JobControlRecord*, int32_t) {}
 
 
 ProcessedFileData::ProcessedFileData(DeviceRecord* record)

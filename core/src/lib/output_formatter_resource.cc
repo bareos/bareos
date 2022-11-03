@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -98,7 +98,7 @@ void OutputFormatterResource::ResourceStart(const char* resource_type_groupname,
 }
 
 void OutputFormatterResource::ResourceEnd(const char* resource_type_groupname,
-                                          const char* resource_type_name,
+                                          const char*,
                                           const char* resource_name,
                                           bool as_comment)
 {

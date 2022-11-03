@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
   bls_app
       .add_option(
           "-i,--include-list",
-          [&line, &fd](std::vector<std::string> val) {
+          [&line, &fd](std::vector<std::string>) {
             if ((fd = fopen(optarg, "rb")) == nullptr) {
               BErrNo be;
               Pmsg2(0, _("Could not open include file: %s, ERR=%s\n"), optarg,
@@ -182,7 +182,7 @@ int main(int argc, char* argv[])
   bool ignore_label_errors = false;
   bls_app.add_flag(
       "-p,--ignore-errors",
-      [&ignore_label_errors](bool val) {
+      [&ignore_label_errors](bool) {
         ignore_label_errors = true;
         forge_on = true;
       },
@@ -281,7 +281,7 @@ static void do_close(JobControlRecord* jcr)
 }
 
 /* List just block information */
-static void DoBlocks(char* infname)
+static void DoBlocks(char*)
 {
   DeviceBlock* block = dcr->block;
   char buf1[100], buf2[100];
@@ -359,13 +359,10 @@ static bool jobs_cb(DeviceControlRecord* dcr, DeviceRecord* rec)
 }
 
 /* Do list job records */
-static void do_jobs(char* infname)
-{
-  ReadRecords(dcr, jobs_cb, MountNextReadVolume);
-}
+static void do_jobs(char*) { ReadRecords(dcr, jobs_cb, MountNextReadVolume); }
 
 /* Do an ls type listing of an archive */
-static void do_ls(char* infname)
+static void do_ls(char*)
 {
   if (dump_label) {
     DumpVolumeLabel(dev);
@@ -376,7 +373,7 @@ static void do_ls(char* infname)
 }
 
 // Called here for each record from ReadRecords()
-static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
+static bool RecordCb(DeviceControlRecord*, DeviceRecord* rec)
 {
   PoolMem record_str(PM_MESSAGE);
 

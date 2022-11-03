@@ -34,10 +34,6 @@ elseif(${HAVE_SUN_OS})
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHAVE_SUN_OS")
 endif()
 
-if(compiler_will_warn_of_unused_but_set_variable)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-but-set-variable")
-endif()
-
 set(RPC_GEN_FILES
     ndmp0.h
     ndmp0_xdr.c
@@ -186,6 +182,21 @@ foreach(NDMP_VERSION 0 2 3 4 9)
 endforeach()
 
 add_library(bareosndmp SHARED ${LIBBAREOSNDMP_SRCS} ${RPC_GEN_FILES})
+include(BareosDisableWarnings)
+bareos_disable_warnings(
+  TARGET
+  bareosndmp
+  WARNINGS
+  bareosndmp
+  -Wenum-conversion
+  -Wunused-parameter
+  -Wsign-compare
+  -Wmissing-field-initializers
+  -Wunused-but-set-variable
+  -Wdeprecated-non-prototype
+  C_ONLY
+)
+
 target_include_directories(bareosndmp PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(bareosndmp ${WRAP_LIBS} ${TIRPC_LIBRARIES})
 

@@ -153,21 +153,17 @@ template <typename T> static T* tree_alloc(TREE_ROOT* root, int size)
 void FreeTree(TREE_ROOT* root)
 {
   struct s_mem *mem, *rel;
-  uint32_t freed_blocks = 0;
 
   std::destroy_at(&root->hardlinks);
   for (mem = root->mem; mem;) {
     rel = mem;
     mem = mem->next;
     free(rel);
-    freed_blocks++;
   }
   if (root->cached_path) {
     FreePoolMemory(root->cached_path);
     root->cached_path = NULL;
   }
-  Dmsg3(100, "Total size=%u blocks=%u freed_blocks=%u\n", root->total_size,
-        root->blocks, freed_blocks);
   free(root);
   return;
 }
@@ -193,7 +189,7 @@ void TreeAddDeltaPart(TREE_ROOT* root,
  */
 TREE_NODE* insert_tree_node(char* path,
                             char* fname,
-                            int type,
+                            int,
                             TREE_ROOT* root,
                             TREE_NODE* parent)
 {
@@ -243,10 +239,7 @@ TREE_NODE* insert_tree_node(char* path,
     }
   } else {
     fname = path;
-    if (!parent) {
-      parent = (TREE_NODE*)root;
-      type = TN_DIR_NLS;
-    }
+    if (!parent) { parent = (TREE_NODE*)root; }
     Dmsg1(100, "No / found: %s\n", path);
   }
 

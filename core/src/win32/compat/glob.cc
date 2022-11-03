@@ -1,7 +1,7 @@
 /**
  * @file glob.c
  * Copyright (C) 2011-2013, MinGW.org project.
- * Copyright (C) 2016-2019 Bareos GmbH & Co. KG
+ * Copyright (C) 2016-2022 Bareos GmbH & Co. KG
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -123,8 +123,8 @@ static int IsGlobPattern(const char* pattern, int flags)
   /* Check if "pattern" represents a globbing pattern
    * with included wild card characters.
    */
-  register const char* p;
-  register int c;
+  const char* p;
+  int c;
 
   /* Proceed only if specified pattern is not NULL...
    */
@@ -203,7 +203,7 @@ static const char* glob_set_adjusted(const char* pattern, int flags)
    * match was successful or not; (a failed match is the desired
    * outcome for an excluded character set).
    */
-  register const char* p = pattern;
+  const char* p = pattern;
 
   /* We need to move the pointer forward, until we find the ']'
    * which marks the end of the set specification.
@@ -252,7 +252,7 @@ static const char* glob_in_set(const char* set, int test, int flags)
    * glob_set_adjusted() before resuming pattern matching in the
    * case of a successful match.
    */
-  register int c, lastc;
+  int c, lastc;
   if (((lastc = *set) == ']') || (lastc == '-')) {
     /* This is the special case of matching ']' or '-' as the
      * first character in the set, where it must match literally...
@@ -357,8 +357,8 @@ static int GlobStrcmp(const char* pattern, const char* text, int flags)
    *   [SET]   matches any one character in "text" which is also in "SET"
    *   [!SET]  matches any one character in "text" which is NOT in "SET"
    */
-  register const char *p = pattern, *t = text;
-  register int c;
+  const char *p = pattern, *t = text;
+  int c;
 
   if ((*t == '.') && (*p != '.') && ((flags & GLOB_PERIOD) == 0))
     /*

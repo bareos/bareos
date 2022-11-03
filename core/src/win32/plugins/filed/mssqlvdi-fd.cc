@@ -3,7 +3,7 @@
 
    Copyright (C) 2010 Zilvinas Krapavickas <zkrapavickas@gmail.com>
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -33,12 +33,9 @@
 #include <comutil.h>
 
 // Microsoft® MSSQL Virtual Device Interface (VDI)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunknown-pragmas"
 #include "vdi.h"
 #include "vdierror.h"
 #include "vdiguid.h"
-#pragma GCC diagnostic pop
 
 // Microsoft® ActiveX® Data Objects
 #include <initguid.h>
@@ -123,7 +120,7 @@ static PluginFunctions pluginFuncs
        freePlugin, /* free plugin instance */
        getPluginValue, setPluginValue, handlePluginEvent, startBackupFile,
        endBackupFile, startRestoreFile, endRestoreFile, pluginIO, createFile,
-       setFileAttributes, checkFile};
+       setFileAttributes, checkFile, nullptr, nullptr, nullptr, nullptr};
 
 // Plugin private context
 struct plugin_ctx {
@@ -316,16 +313,10 @@ static bRC freePlugin(PluginContext* ctx)
 }
 
 // Return some plugin value (none defined)
-static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value)
-{
-  return bRC_OK;
-}
+static bRC getPluginValue(PluginContext*, pVariable, void*) { return bRC_OK; }
 
 // Set a plugin value (none defined)
-static bRC setPluginValue(PluginContext* ctx, pVariable var, void* value)
-{
-  return bRC_OK;
-}
+static bRC setPluginValue(PluginContext*, pVariable, void*) { return bRC_OK; }
 
 // Handle an event that was generated in Bareos
 static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
@@ -433,7 +424,7 @@ static bRC startBackupFile(PluginContext* ctx, struct save_pkt* sp)
 }
 
 // Done with backup of this file
-static bRC endBackupFile(PluginContext* ctx)
+static bRC endBackupFile(PluginContext*)
 {
   /*
    * We would return bRC_More if we wanted startBackupFile to be called again to
@@ -1604,7 +1595,7 @@ bail_out:
 }
 
 // See if we need to do any postprocessing after the restore.
-static bRC end_restore_job(PluginContext* ctx, void* value)
+static bRC end_restore_job(PluginContext* ctx, void*)
 {
   bRC retval = bRC_OK;
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
@@ -1626,16 +1617,13 @@ static bRC end_restore_job(PluginContext* ctx, void* value)
  * Bareos is notifying us that a plugin name string was found,
  * and passing us the plugin command, so we can prepare for a restore.
  */
-static bRC startRestoreFile(PluginContext* ctx, const char* cmd)
-{
-  return bRC_OK;
-}
+static bRC startRestoreFile(PluginContext*, const char*) { return bRC_OK; }
 
 /**
  * Bareos is notifying us that the plugin data has terminated,
  * so the restore for this particular file is done.
  */
-static bRC endRestoreFile(PluginContext* ctx) { return bRC_OK; }
+static bRC endRestoreFile(PluginContext*) { return bRC_OK; }
 
 /**
  * This is called during restore to create the file (if necessary) We must
@@ -1668,12 +1656,12 @@ static bRC createFile(PluginContext* ctx, struct restore_pkt* rp)
  * We will get here if the File is a directory after everything is written in
  * the directory.
  */
-static bRC setFileAttributes(PluginContext* ctx, struct restore_pkt* rp)
+static bRC setFileAttributes(PluginContext*, struct restore_pkt*)
 {
   return bRC_OK;
 }
 
 // When using Incremental dump, all previous dumps are necessary
-static bRC checkFile(PluginContext* ctx, char* fname) { return bRC_OK; }
+static bRC checkFile(PluginContext*, char*) { return bRC_OK; }
 
 } /* namespace filedaemon */

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -58,7 +58,7 @@ static ndmp_backup_format_option ndmp_backup_format_options[] = {
     {(char*)"zfs", false, true, false, true},
     {(char*)"vbb", false, true, false, true},
     {(char*)"image", false, true, false, true},
-    {NULL, false, false, false}};
+    {NULL, false, false, false, false}};
 
 /**
  * find ndmp_backup_format_option for given format
@@ -520,8 +520,8 @@ void NdmpLoghandler(struct ndmlog* log, char* tag, int level, char* msg)
  * output
  */
 extern "C" void ndmp_log_delivery_cb_to_dmsg(struct ndmlog* log,
-                                             char* tag,
-                                             int lev,
+                                             char*,
+                                             int,
                                              char* msg)
 {
   NIS* nis;
@@ -539,8 +539,8 @@ extern "C" void ndmp_log_delivery_cb_to_dmsg(struct ndmlog* log,
  * output
  */
 extern "C" void ndmp_log_delivery_cb_to_jmsg(struct ndmlog* log,
-                                             char* tag,
-                                             int lev,
+                                             char*,
+                                             int,
                                              char* msg)
 {
   NIS* nis;
@@ -557,8 +557,8 @@ extern "C" void ndmp_log_delivery_cb_to_jmsg(struct ndmlog* log,
  * user agent
  */
 extern "C" void ndmp_log_delivery_cb_to_ua(struct ndmlog* log,
-                                           char* tag,
-                                           int lev,
+                                           char*,
+                                           int,
                                            char* msg)
 {
   NIS* nis;
@@ -654,7 +654,7 @@ bail_out:
  * Output the status of a NDMP client. Query the DATA agent of a
  * native NDMP server to give some info.
  */
-void DoNdmpClientStatus(UaContext* ua, ClientResource* client, char* cmd)
+void DoNdmpClientStatus(UaContext* ua, ClientResource* client, char*)
 {
   struct ndm_job_param ndmp_job;
 
@@ -677,7 +677,7 @@ void DoNdmpClientStatus(UaContext* ua, ClientResource* client, char* cmd)
               query_cbs);
 }
 #else
-void DoNdmpClientStatus(UaContext* ua, ClientResource* client, char* cmd)
+void DoNdmpClientStatus(UaContext* ua, ClientResource*, char*)
 {
   Jmsg(ua->jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
 }

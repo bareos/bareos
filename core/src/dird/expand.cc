@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2006 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -37,7 +37,7 @@
 
 namespace directordaemon {
 
-static int date_item(JobControlRecord* jcr,
+static int date_item(JobControlRecord*,
                      int code,
                      const char** val_ptr,
                      int* val_len,
@@ -186,11 +186,11 @@ static struct s_built_in_vars built_in_vars[] = {
  * Search the table of built-in variables, and if found,
  * call the appropriate subroutine to do the work.
  */
-static var_rc_t lookup_built_in_var(var_t* ctx,
+static var_rc_t lookup_built_in_var(var_t*,
                                     void* my_ctx,
                                     const char* var_ptr,
                                     int var_len,
-                                    int var_index,
+                                    int,
                                     const char** val_ptr,
                                     int* val_len,
                                     int* val_size)
@@ -211,7 +211,7 @@ static var_rc_t lookup_built_in_var(var_t* ctx,
 }
 
 // Search counter variables
-static var_rc_t lookup_counter_var(var_t* ctx,
+static var_rc_t lookup_counter_var(var_t*,
                                    void* my_ctx,
                                    const char* var_ptr,
                                    int var_len,
@@ -389,16 +389,16 @@ static var_rc_t lookup_var(var_t* ctx,
  *   val_ptr points to the value string
  *   out_ptr points to string to be returned
  */
-static var_rc_t operate_var(var_t* var,
-                            void* my_ctx,
+static var_rc_t operate_var(var_t*,
+                            void*,
                             const char* op_ptr,
                             int op_len,
                             const char* arg_ptr,
-                            int arg_len,
+                            int,
                             const char* val_ptr,
                             int val_len,
-                            char** out_ptr,
-                            int* out_len,
+                            char**,
+                            int*,
                             int* out_size)
 {
   CounterResource* counter;

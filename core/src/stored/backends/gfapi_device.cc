@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2014 Planets Communications B.V.
-   Copyright (C) 2014-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -54,7 +54,7 @@ struct device_option {
 static device_option device_options[] = {{"uri=", argument_uri, 4},
                                          {"logfile=", argument_logfile, 8},
                                          {"loglevel=", argument_loglevel, 9},
-                                         {NULL, argument_none}};
+                                         {NULL, argument_none, 0}};
 
 /**
  * Parse a gluster definition into something we can use for setting
@@ -263,7 +263,7 @@ static inline bool GfapiMakedirs(glfs_t* glfs, const char* directory)
 }
 
 // Open a volume using gfapi.
-int gfapi_device::d_open(const char* pathname, int flags, int mode)
+int gfapi_device::d_open(const char*, int flags, int mode)
 {
   int status;
 
@@ -434,7 +434,7 @@ bail_out:
 }
 
 // Read data from a volume using gfapi.
-ssize_t gfapi_device::d_read(int fd, void* buffer, size_t count)
+ssize_t gfapi_device::d_read(int, void* buffer, size_t count)
 {
   if (gfd_) {
     return glfs_read(gfd_, buffer, count, 0);
@@ -445,7 +445,7 @@ ssize_t gfapi_device::d_read(int fd, void* buffer, size_t count)
 }
 
 // Write data to a volume using gfapi.
-ssize_t gfapi_device::d_write(int fd, const void* buffer, size_t count)
+ssize_t gfapi_device::d_write(int, const void* buffer, size_t count)
 {
   if (gfd_) {
     return glfs_write(gfd_, buffer, count, 0);
@@ -455,7 +455,7 @@ ssize_t gfapi_device::d_write(int fd, const void* buffer, size_t count)
   }
 }
 
-int gfapi_device::d_close(int fd)
+int gfapi_device::d_close(int)
 {
   if (gfd_) {
     int status;
@@ -469,9 +469,9 @@ int gfapi_device::d_close(int fd)
   }
 }
 
-int gfapi_device::d_ioctl(int fd, ioctl_req_t request, char* op) { return -1; }
+int gfapi_device::d_ioctl(int, ioctl_req_t, char*) { return -1; }
 
-boffset_t gfapi_device::d_lseek(DeviceControlRecord* dcr,
+boffset_t gfapi_device::d_lseek(DeviceControlRecord*,
                                 boffset_t offset,
                                 int whence)
 {
@@ -483,7 +483,7 @@ boffset_t gfapi_device::d_lseek(DeviceControlRecord* dcr,
   }
 }
 
-bool gfapi_device::d_truncate(DeviceControlRecord* dcr)
+bool gfapi_device::d_truncate(DeviceControlRecord*)
 {
   struct stat st;
 

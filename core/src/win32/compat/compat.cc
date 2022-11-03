@@ -39,10 +39,7 @@
 #include "lib/bsignal.h"
 #include "lib/daemon.h"
 #include "lib/berrno.h"
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunknown-pragmas"
 #include "vss.h"
-#pragma GCC diagnostic pop
 
 /**
  * Sanity check to make sure FILE_ATTRIBUTE_VALID_FLAGS is always smaller
@@ -832,11 +829,11 @@ char* dlerror(void)
   return buf;
 }
 
-int fcntl(int fd, int cmd) { return 0; }
+int fcntl(int, int) { return 0; }
 
-int chown(const char* k, uid_t, gid_t) { return 0; }
+int chown(const char*, uid_t, gid_t) { return 0; }
 
-int lchown(const char* k, uid_t, gid_t) { return 0; }
+int lchown(const char*, uid_t, gid_t) { return 0; }
 
 long int random(void) { return rand(); }
 
@@ -1794,7 +1791,7 @@ int win32_ftruncate(int fd, int64_t length)
   return 0;
 }
 
-int fcntl(int fd, int cmd, long arg)
+int fcntl(int, int cmd, long)
 {
   int rval = 0;
 
@@ -1939,7 +1936,7 @@ bail_out:
 }
 
 // Create a hardlink
-int link(const char* existing, const char* newfile)
+int link(const char*, const char*)
 {
   errno = ENOSYS;
   return -1;
@@ -1951,7 +1948,7 @@ int gettimeofday(struct timeval* tv, struct timezone* tz)
 }
 
 // Write in Windows System log
-extern "C" void syslog(int type, const char* fmt, ...)
+extern "C" void syslog(int, const char* fmt, ...)
 {
   va_list arg_ptr;
   int len, maxlen;
@@ -2158,7 +2155,7 @@ int inet_aton(const char* a, struct in_addr* inp)
   return 1;
 }
 
-void InitSignals(void Terminate(int sig)) {}
+void InitSignals([[maybe_unused]] void Terminate(int sig)) {}
 
 void InitStackDump(void) {}
 
@@ -2167,6 +2164,7 @@ long pathconf(const char* path, int name)
   switch (name) {
     case _PC_PATH_MAX:
       if (strncmp(path, "\\\\?\\", 4) == 0) return 32767;
+      [[fallthrough]];
     case _PC_NAME_MAX:
       return 255;
   }
@@ -3004,7 +3002,7 @@ static void CloseHandleIfValid(HANDLE handle)
   if (handle != INVALID_HANDLE_VALUE) { CloseHandle(handle); }
 }
 
-Bpipe* OpenBpipe(char* prog, int wait, const char* mode, bool dup_stderr)
+Bpipe* OpenBpipe(char* prog, int wait, const char* mode, bool)
 {
   int mode_read, mode_write;
   SECURITY_ATTRIBUTES saAttr;
@@ -3199,7 +3197,7 @@ int CloseWpipe(Bpipe* bpipe)
 }
 
 // Syslog function, added by Nicolas Boichat
-extern "C" void openlog(const char* ident, int option, int facility) {}
+extern "C" void openlog(const char*, int, int) {}
 
 // Log an error message
 void LogErrorMsg(const char* message)

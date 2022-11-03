@@ -276,9 +276,7 @@ get_out:
  * back to the director. The information comes from the
  * dev record.
  */
-bool StorageDaemonDeviceControlRecord::DirUpdateVolumeInfo(
-    bool label,
-    bool update_LastWritten)
+bool StorageDaemonDeviceControlRecord::DirUpdateVolumeInfo(bool label, bool)
 {
   BareosSocket* dir = jcr->dir_bsock;
   VolumeCatalogInfo* vol = &dev->VolCatInfo;
@@ -304,9 +302,7 @@ bool StorageDaemonDeviceControlRecord::DirUpdateVolumeInfo(
   if (label) {
     bstrncpy(vol->VolCatStatus, "Append", sizeof(vol->VolCatStatus));
   }
-  // if (update_LastWritten) {
   vol->VolLastWritten = time(NULL);
-  // }
   PmStrcpy(volume_name, vol->VolCatName);
   BashSpaces(volume_name);
   InChanger = vol->InChanger;
@@ -649,7 +645,7 @@ bool DeviceControlRecord::DirAskSysopToMountVolume(int /*mode*/)
   return true;
 }
 
-bool DeviceControlRecord::DirGetVolumeInfo(enum get_vol_info_rw writing)
+bool DeviceControlRecord::DirGetVolumeInfo(enum get_vol_info_rw)
 {
   Dmsg0(100, "Fake DirGetVolumeInfo\n");
   setVolCatName(VolumeName);

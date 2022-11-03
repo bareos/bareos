@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,6 +30,7 @@
 #include "include/bareos.h"
 #include "win32.h"
 #include "who.h"
+#include "fill_proc_address.h"
 
 // Other Window component dependencies
 #define BAREOS_DEPENDENCIES __TEXT("tcpip\0afd\0")
@@ -76,7 +77,7 @@ int stopRunningBareos()
  * the OS returns control here immediately after starting
  * the service.
  */
-void WINAPI serviceStartCallback(DWORD argc, char** argv)
+void WINAPI serviceStartCallback(DWORD, char**)
 {
   DWORD dwThreadID;
 
@@ -156,9 +157,8 @@ int bareosServiceMain()
 
     // Get entry point for RegisterServiceProcess function
     DWORD(WINAPI * RegisterService)(DWORD, DWORD);
-    RegisterService = (DWORD(WINAPI*)(DWORD, DWORD))GetProcAddress(
-        kerneldll, "RegisterServiceProcess");
-    if (RegisterService == NULL) {
+    if (!BareosFillProcAddress(RegisterService, kerneldll,
+                               "RegisterServiceProcess")) {
       MessageBox(NULL,
                  _("Registry service not found: Bareos service not started"),
                  APP_DESC, MB_OK);
@@ -176,7 +176,7 @@ int bareosServiceMain()
 }
 
 // New style service bareos worker thread
-DWORD WINAPI bareosWorkerThread(LPVOID lpwThreadParam)
+DWORD WINAPI bareosWorkerThread(LPVOID)
 {
   service_thread_id = GetCurrentThreadId();
 
@@ -510,8 +510,8 @@ static void SetServiceDescription(SC_HANDLE hSCManager,
 
   HINSTANCE hLib = LoadLibrary("ADVAPI32.DLL");
   if (!hLib) { return; }
-  ChangeServiceDescription
-      = (WinAPI)GetProcAddress(hLib, "ChangeServiceConfig2A");
+  BareosFillProcAddress(ChangeServiceDescription, hLib,
+                        "ChangeServiceConfig2A");
   FreeLibrary(hLib);
   if (!ChangeServiceDescription) { return; }
 

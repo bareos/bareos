@@ -203,7 +203,7 @@ static bRC freePlugin(PluginContext* ctx)
 }
 
 // Return some plugin value (none defined)
-static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value)
+static bRC getPluginValue(PluginContext*, pVariable var, void*)
 {
   Dmsg1(debuglevel, "scsicrypto-sd: getPluginValue var=%d\n", var);
 
@@ -211,7 +211,7 @@ static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value)
 }
 
 // Set a plugin value (none defined)
-static bRC setPluginValue(PluginContext* ctx, pVariable var, void* value)
+static bRC setPluginValue(PluginContext*, pVariable var, void*)
 {
   Dmsg1(debuglevel, "scsicrypto-sd: setPluginValue var=%d\n", var);
 
@@ -219,7 +219,7 @@ static bRC setPluginValue(PluginContext* ctx, pVariable var, void* value)
 }
 
 // Handle an event that was generated in Bareos
-static bRC handlePluginEvent(PluginContext* ctx, bSdEvent* event, void* value)
+static bRC handlePluginEvent(PluginContext*, bSdEvent* event, void* value)
 {
   switch (event->eventType) {
     case bSdEventLabelRead:

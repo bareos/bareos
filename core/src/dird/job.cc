@@ -71,6 +71,7 @@
 #include "lib/util.h"
 #include "lib/watchdog.h"
 #include "include/protocol_types.h"
+#include "include/allow_deprecated.h"
 
 namespace directordaemon {
 
@@ -1350,7 +1351,7 @@ bool GetOrCreateFilesetRecord(JobControlRecord* jcr)
     MD5_CTX md5c;
     unsigned char digest[16]; /* MD5 digest length */
     memcpy(&md5c, &jcr->impl->res.fileset->md5c, sizeof(md5c));
-    MD5_Final(digest, &md5c);
+    ALLOW_DEPRECATED(MD5_Final(digest, &md5c));
     /*
      * Keep the flag (last arg) set to false otherwise old FileSets will
      * get new MD5 sums and the user will get Full backups on everything
@@ -1820,7 +1821,7 @@ bail_out:
 }
 
 /* TODO: redirect command ouput to job log */
-bool RunConsoleCommand(JobControlRecord* jcr, const char* cmd)
+bool RunConsoleCommand(JobControlRecord*, const char* cmd)
 {
   UaContext* ua;
   bool ok;

@@ -137,11 +137,11 @@ static int BcloseChksize(JobControlRecord* jcr,
   return 0;
 }
 
+#ifdef HAVE_DARWIN_OS
 static inline bool RestoreFinderinfo(JobControlRecord* jcr,
                                      POOLMEM* buf,
                                      int32_t buflen)
 {
-#ifdef HAVE_DARWIN_OS
   struct attrlist attrList;
 
   memset(&attrList, 0, sizeof(attrList));
@@ -163,10 +163,13 @@ static inline bool RestoreFinderinfo(JobControlRecord* jcr,
   }
 
   return true;
-#else
-  return true;
-#endif
 }
+#else
+static inline bool RestoreFinderinfo(JobControlRecord*, POOLMEM*, int32_t)
+{
+  return true;
+}
+#endif
 
 // Cleanup of delayed restore stack with streams for later processing.
 static inline void DropDelayedDataStreams(r_ctx& rctx, bool reuse)
@@ -594,7 +597,7 @@ void DoRestore(JobControlRecord* jcr)
           case CF_EXTRACT:
             // File created and we expect file data
             rctx.extract = true;
-            // FALLTHROUGH
+            [[fallthrough]];
           case CF_CREATED:
             // File created, but there is no content
             rctx.fileAddr = 0;
@@ -1137,7 +1140,7 @@ ok_out:
   FreeAttr(rctx.attr);
 }
 
-int DoFileDigest(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
+int DoFileDigest(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 {
   Dmsg1(50, "DoFileDigest jcr=%p\n", jcr);
   return (DigestFile(jcr, ff_pkt, jcr->impl->crypto.digest));

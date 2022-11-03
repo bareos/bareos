@@ -71,18 +71,18 @@ static std::string error_message_disabling_xattributes{
  * Entry points when compiled without support for XATTRs or on an unsupported
  * platform.
  */
-BxattrExitCode BuildXattrStreams(JobControlRecord* jcr,
-                                 XattrData* xattr_data,
-                                 FindFilesPacket* ff_pkt)
+BxattrExitCode BuildXattrStreams(JobControlRecord*,
+                                 XattrData*,
+                                 FindFilesPacket*)
 {
   return BxattrExitCode::kErrorFatal;
 }
 
-BxattrExitCode ParseXattrStreams(JobControlRecord* jcr,
-                                 XattrData* xattr_data,
-                                 int stream,
-                                 char* content,
-                                 uint32_t content_length)
+BxattrExitCode ParseXattrStreams(JobControlRecord*,
+                                 XattrData*,
+                                 int,
+                                 char*,
+                                 uint32_t)
 {
   return BxattrExitCode::kErrorFatal;
 }
@@ -171,7 +171,7 @@ void XattrDropInternalTable(alist<xattr_t*>* xattr_value_list)
  * This is repeated 1 or more times.
  *
  */
-uint32_t SerializeXattrStream(JobControlRecord* jcr,
+uint32_t SerializeXattrStream(JobControlRecord*,
                               XattrData* xattr_data,
                               uint32_t expected_serialize_len,
                               alist<xattr_t*>* xattr_value_list)
@@ -1265,7 +1265,7 @@ bail_out:
 
 static BxattrExitCode generic_parse_xattr_streams(JobControlRecord* jcr,
                                                   XattrData* xattr_data,
-                                                  int stream,
+                                                  int,
                                                   char* content,
                                                   uint32_t content_length)
 {
@@ -1695,7 +1695,7 @@ bail_out:
 
 static BxattrExitCode bsd_parse_xattr_streams(JobControlRecord* jcr,
                                               XattrData* xattr_data,
-                                              int stream,
+                                              int,
                                               char* content,
                                               uint32_t content_length)
 {

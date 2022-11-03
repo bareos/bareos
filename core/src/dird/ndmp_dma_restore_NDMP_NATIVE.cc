@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -155,7 +155,7 @@ static inline bool fill_restore_environment_ndmp_native(
 // See in the tree with selected files what files were selected to be restored.
 int SetFilesToRestoreNdmpNative(JobControlRecord* jcr,
                                 struct ndm_job_param* job,
-                                int32_t FileIndex,
+                                int32_t,
                                 const char* restore_prefix,
                                 const char* ndmp_filesystem)
 {

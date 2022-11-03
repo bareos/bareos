@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -432,7 +432,7 @@ bail_out:
 }
 
 // Common routine for both label and relabel
-static int do_label(UaContext* ua, const char* cmd, bool relabel)
+static int do_label(UaContext* ua, const char*, bool relabel)
 {
   int i, j;
   BareosSocket* sd;

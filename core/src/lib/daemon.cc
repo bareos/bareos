@@ -38,12 +38,7 @@
 
 #if defined(HAVE_WIN32)
 
-void daemon_start(const char* progname,
-                  int pidfile_fd,
-                  std::string pidfile_path)
-{
-  return;
-}
+void daemon_start(const char*, int, std::string) { return; }
 
 #else  // !HAVE_WIN32
 

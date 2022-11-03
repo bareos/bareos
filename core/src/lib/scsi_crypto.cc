@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -653,25 +653,19 @@ bool IsScsiEncryptionEnabled(int fd, const char* device_name)
 
 #else
 
-bool ClearScsiEncryptionKey(int fd, const char* device_name) { return false; }
+bool ClearScsiEncryptionKey(int, const char*) { return false; }
 
-bool SetScsiEncryptionKey(int fd, const char* device_name, char* encryption_key)
-{
-  return false;
-}
+bool SetScsiEncryptionKey(int, const char*, char*) { return false; }
 
-int GetScsiDriveEncryptionStatus(int fd,
-                                 const char* device_name,
-                                 POOLMEM*& status,
-                                 int indent)
+int GetScsiDriveEncryptionStatus(int, const char*, POOLMEM*& status, int indent)
 {
   PmStrcpy(status, "");
   IndentStatusMsg(status, _("Drive encryption status: Unknown\n"), indent);
   return strlen(status);
 }
 
-int GetScsiVolumeEncryptionStatus(int fd,
-                                  const char* device_name,
+int GetScsiVolumeEncryptionStatus(int,
+                                  const char*,
                                   POOLMEM*& status,
                                   int indent)
 {
@@ -680,12 +674,9 @@ int GetScsiVolumeEncryptionStatus(int fd,
   return strlen(status);
 }
 
-bool NeedScsiCryptoKey(int fd, const char* device_name, bool use_drive_status)
-{
-  return false;
-}
+bool NeedScsiCryptoKey(int, const char*, bool) { return false; }
 
-bool GetScsiEncryptionEnabled(int fd, const char* device_name) { return false; }
+bool GetScsiEncryptionEnabled(int, const char*) { return false; }
 #endif /* HAVE_LOWLEVEL_SCSI_INTERFACE */
 
 static void IndentStatusMsg(POOLMEM*& status, const char* msg, int indent)

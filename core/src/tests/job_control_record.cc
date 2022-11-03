@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,7 +30,7 @@
 #include "lib/volume_session_info.h"
 
 static bool callback_called_from_destructor = false;
-static void callback(JobControlRecord* jcr)
+static void callback(JobControlRecord*)
 {
   callback_called_from_destructor = true;
 }

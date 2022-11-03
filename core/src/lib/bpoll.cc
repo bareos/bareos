@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -151,11 +151,11 @@ int WaitForReadableFd(int fd, int msec, bool ignore_interupts)
  *            0 if timeout
  *           -1 if error
  */
+#  if defined(HAVE_WIN32)
+int WaitForWritableFd(int, int, bool) { return 1; }
+#  else
 int WaitForWritableFd(int fd, int msec, bool ignore_interupts)
 {
-#  if defined(HAVE_WIN32)
-  return 1;
-#  else
   fd_set fdset;
   struct timeval tv;
 
@@ -177,6 +177,6 @@ int WaitForWritableFd(int fd, int msec, bool ignore_interupts)
         return 1;
     }
   }
-#  endif /* defined(HAVE_WIN32) */
 }
-#endif   /* HAVE_POLL */
+#  endif
+#endif /* HAVE_POLL */

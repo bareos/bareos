@@ -85,13 +85,13 @@ static device_option device_options[]
        {"ioslots=", argument_ioslots, 8},
        {"retries=", argument_retries, 8},
        {"mmap", argument_mmap, 4},
-       {NULL, argument_none}};
+       {NULL, argument_none, 0}};
 
 static int droplet_reference_count = 0;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 // Generic log function that glues libdroplet with BAREOS.
-static void DropletDeviceLogfunc(dpl_ctx_t* ctx,
+static void DropletDeviceLogfunc(dpl_ctx_t*,
                                  dpl_log_level_t level,
                                  const char* message)
 {
@@ -122,6 +122,7 @@ static inline int DropletErrnoToSystemErrno(dpl_status_t status)
       break;
     case DPL_ETIMEOUT:
       errno = ETIMEDOUT;
+      break;
     case DPL_ENOMEM:
       errno = ENOMEM;
       break;
@@ -160,8 +161,8 @@ static inline int DropletErrnoToSystemErrno(dpl_status_t status)
 
 // Callback for getting the total size of a chunked volume.
 static dpl_status_t chunked_volume_size_callback(dpl_sysmd_t* sysmd,
-                                                 dpl_ctx_t* ctx,
-                                                 const char* chunkpath,
+                                                 dpl_ctx_t*,
+                                                 const char*,
                                                  void* data)
 {
   dpl_status_t status = DPL_SUCCESS;
@@ -178,10 +179,10 @@ static dpl_status_t chunked_volume_size_callback(dpl_sysmd_t* sysmd,
  * @return DPL_SUCCESS on success, on error: a dpl_status_t value that
  * represents the error.
  */
-static dpl_status_t chunked_volume_truncate_callback(dpl_sysmd_t* sysmd,
+static dpl_status_t chunked_volume_truncate_callback(dpl_sysmd_t*,
                                                      dpl_ctx_t* ctx,
                                                      const char* chunkpath,
-                                                     void* data)
+                                                     void*)
 {
   dpl_status_t status = DPL_SUCCESS;
 
@@ -642,6 +643,7 @@ bool DropletDevice::ReadRemoteChunk(chunk_io_request* request)
         dev_errno = EIO;
         Bmicrosleep(INFLIGT_RETRY_TIME, 0);
         ++tries;
+        break;
       default:
         Mmsg2(errmsg, _("Failed to read %s using dpl_fget(): ERR=%s.\n"),
               chunk_name.c_str(), dpl_status_str(status));
@@ -666,7 +668,7 @@ bail_out:
  * Internal method for truncating a chunked volume on the remote backing
  * store.
  */
-bool DropletDevice::TruncateRemoteVolume(DeviceControlRecord* dcr)
+bool DropletDevice::TruncateRemoteVolume(DeviceControlRecord*)
 {
   PoolMem chunk_dir(PM_FNAME);
 
@@ -685,7 +687,7 @@ bool DropletDevice::TruncateRemoteVolume(DeviceControlRecord* dcr)
 }
 
 
-bool DropletDevice::d_flush(DeviceControlRecord* dcr)
+bool DropletDevice::d_flush(DeviceControlRecord*)
 {
   return WaitUntilChunksWritten();
 };
@@ -927,9 +929,9 @@ ssize_t DropletDevice::d_write(int fd, const void* buffer, size_t count)
   return WriteChunked(fd, buffer, count);
 }
 
-int DropletDevice::d_close(int fd) { return CloseChunk(); }
+int DropletDevice::d_close(int) { return CloseChunk(); }
 
-int DropletDevice::d_ioctl(int fd, ioctl_req_t request, char* op) { return -1; }
+int DropletDevice::d_ioctl(int, ioctl_req_t, char*) { return -1; }
 
 /**
  * Open a directory on the backing store and find out size information for a
@@ -967,7 +969,7 @@ bail_out:
   return volumesize;
 }
 
-boffset_t DropletDevice::d_lseek(DeviceControlRecord* dcr,
+boffset_t DropletDevice::d_lseek(DeviceControlRecord*,
                                  boffset_t offset,
                                  int whence)
 {

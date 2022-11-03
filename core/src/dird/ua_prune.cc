@@ -47,7 +47,7 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client);
 static bool PruneStats(UaContext* ua, utime_t retention);
 
 // Called here to count entries to be deleted
-int DelCountHandler(void* ctx, int num_fields, char** row)
+int DelCountHandler(void* ctx, int, char** row)
 {
   s_count_ctx* cnt = static_cast<s_count_ctx*>(ctx);
 
@@ -67,7 +67,7 @@ int DelCountHandler(void* ctx, int num_fields, char** row)
  *  is allowed to get to MAX_DEL_LIST_LEN to limit the
  *  maximum malloc'ed memory.
  */
-int JobDeleteHandler(void* ctx, int num_fields, char** row)
+int JobDeleteHandler(void* ctx, int, char** row)
 {
   std::vector<JobId_t>* jobs_todelete = static_cast<std::vector<JobId_t>*>(ctx);
 
@@ -79,7 +79,7 @@ int JobDeleteHandler(void* ctx, int num_fields, char** row)
   return 0;
 }
 
-int FileDeleteHandler(void* ctx, int num_fields, char** row)
+int FileDeleteHandler(void* ctx, int, char** row)
 {
   std::vector<JobId_t>* jobs_todelete = static_cast<std::vector<JobId_t>*>(ctx);
   if (jobs_todelete->size() >= MAX_DEL_LIST_LEN) { return 1; }
@@ -123,7 +123,7 @@ static bool PruneAllVolumes(UaContext* ua,
 }
 
 // Prune records from database
-bool PruneCmd(UaContext* ua, const char* cmd)
+bool PruneCmd(UaContext* ua, const char*)
 {
   ClientResource* client;
   PoolResource* pool;

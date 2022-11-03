@@ -339,7 +339,7 @@ bail_out:
  * Force SD to die, and hopefully dump itself.  Turned on only in development
  * version.
  */
-static bool die_cmd(JobControlRecord* jcr)
+static bool die_cmd(JobControlRecord*)
 {
 #ifdef DEVELOPER
   JobControlRecord* djcr = NULL;
@@ -798,7 +798,7 @@ static void LabelVolumeIfOk(DeviceControlRecord* dcr,
         dir->fsend(_("3922 Cannot relabel an ANSI/IBM labeled Volume.\n"));
         goto cleanup;
       }
-      // Fall through wanted!
+      [[fallthrough]];
     case VOL_IO_ERROR:
     case VOL_NO_LABEL:
       if (!WriteNewVolumeLabelToDev(dcr, newname, poolname, relabel)) {

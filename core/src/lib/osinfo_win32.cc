@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -41,6 +41,7 @@
 #include <tchar.h>
 #include <stdio.h>
 
+#include "fill_proc_address.h"
 #include "osinfo.h"
 
 static char win_os[300];
@@ -144,8 +145,6 @@ static bool GetWindowsVersionString(LPTSTR osbuf, int maxsiz)
 {
   OSVERSIONINFOEX osvi;
   SYSTEM_INFO si;
-  PGNSI pGNSI;
-  PGPI pGPI;
   BOOL bOsVersionInfoEx;
   DWORD dwType;
 
@@ -158,9 +157,9 @@ static bool GetWindowsVersionString(LPTSTR osbuf, int maxsiz)
 
   // Call GetNativeSystemInfo if supported or GetSystemInfo otherwise.
 
-  pGNSI = (PGNSI)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")),
-                                "GetNativeSystemInfo");
-  if (pGNSI) {
+  if (PGNSI pGNSI;
+      BareosFillProcAddress(pGNSI, GetModuleHandle(TEXT("kernel32.dll")),
+                            "GetNativeSystemInfo")) {
     pGNSI(&si);
   } else {
     GetSystemInfo(&si);
@@ -199,9 +198,9 @@ static bool GetWindowsVersionString(LPTSTR osbuf, int maxsiz)
             break;
         }
 
-        pGPI = (PGPI)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")),
-                                    "GetProductInfo");
-        if (pGPI) {
+        if (PGPI pGPI;
+            BareosFillProcAddress(pGPI, GetModuleHandle(TEXT("kernel32.dll")),
+                                  "GetProductInfo")) {
           pGPI(osvi.dwMajorVersion, osvi.dwMinorVersion, 0, 0, &dwType);
         } else {
           dwType = PRODUCT_HOME_BASIC;

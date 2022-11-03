@@ -1,7 +1,7 @@
 /**
  * @file glob.h
  * Copyright (C) 2012 MinGW.org project
- * Copyright (C) 2016-2021 Bareos GmbH & Co. KG
+ * Copyright (C) 2016-2022 Bareos GmbH & Co. KG
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -35,7 +35,6 @@
 #ifndef BAREOS_WIN32_COMPAT_INCLUDE_GLOB_H_
 #define BAREOS_WIN32_COMPAT_INCLUDE_GLOB_H_
 #include <_mingw.h>
-#pragma GCC system_header
 
 #ifndef RC_INVOKED
 /* POSIX requires glob.h to define the size_t type; we need to

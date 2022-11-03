@@ -127,7 +127,7 @@ void AddToNamelist(struct ndm_job_param* job,
  * Database handler that handles the returned environment data for a given
  * JobId.
  */
-int NdmpEnvHandler(void* ctx, int num_fields, char** row)
+int NdmpEnvHandler(void* ctx, int, char** row)
 {
   struct ndm_env_table* envtab;
   ndmp9_pval pv;
@@ -230,7 +230,7 @@ void NdmpRestoreCleanup(JobControlRecord* jcr, int TermCode)
 
 #else /* HAVE_NDMP */
 
-void NdmpRestoreCleanup(JobControlRecord* jcr, int TermCode)
+void NdmpRestoreCleanup(JobControlRecord* jcr, int)
 {
   Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
 }

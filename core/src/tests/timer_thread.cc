@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -75,13 +75,13 @@ void TimerThreadTest::TearDown()
   if (stop_timer_thread_on_tear_down) { TimerThread::Stop(); }
 }
 
-void TimerThreadTest::TimerCallback(TimerThread::Timer* t)
+void TimerThreadTest::TimerCallback(TimerThread::Timer*)
 {
   timer_callback_was_called = true;
   timer_callback_thread_is_timer = TimerThread::CurrentThreadIsTimerThread();
 }
 
-void TimerThreadTest::TimerUserDestructorCallback(TimerThread::Timer* t)
+void TimerThreadTest::TimerUserDestructorCallback(TimerThread::Timer*)
 {
   user_destructor_was_called = true;
 }

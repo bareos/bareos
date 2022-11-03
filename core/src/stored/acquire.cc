@@ -331,7 +331,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
           FreeVolume(dev);
         }
         dev->SetLoad();
-        /* Fall through */
+        [[fallthrough]];
       default:
         Jmsg1(jcr, M_WARNING, 0, "Read acquire: %s", jcr->errmsg);
       default_path:

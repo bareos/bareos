@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2008 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -59,9 +59,7 @@ int MakeEstimate(JobControlRecord* jcr)
  * Called here by find() for each file included.
  *
  */
-static int TallyFile(JobControlRecord* jcr,
-                     FindFilesPacket* ff_pkt,
-                     bool top_level)
+static int TallyFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 {
   Attributes attr;
 

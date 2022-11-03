@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -860,7 +860,7 @@ static int ReOptimize(regex_t* bufp)
         break;
       case Cstar_jump:
         if (!ReOptimizeStarJump(bufp, code)) { return 0; }
-        /* fall through */
+        [[fallthrough]];
       case Cupdate_failure_jump:
       case Cjump:
       case Cdummy_failure_jump:
@@ -1391,7 +1391,7 @@ int regexec(regex_t* preg,
             const char* string,
             size_t nmatch,
             regmatch_t pmatch[],
-            int eflags)
+            int)
 {
   int status;
   int len = strlen(string);
@@ -1407,7 +1407,7 @@ int regexec(regex_t* preg,
   return status < 0 ? -1 : 0;
 }
 
-size_t regerror(int errcode, regex_t* preg, char* errbuf, size_t errbuf_size)
+size_t regerror(int, regex_t* preg, char* errbuf, size_t errbuf_size)
 {
   bstrncpy(errbuf, preg->errmsg, errbuf_size);
   return 0;
@@ -1548,6 +1548,7 @@ continue_matching:
       UPDATE_FAILURE(state, text, goto error);
       /* fall to next case */
     }
+      [[fallthrough]];
       /* treat Cstar_jump just like Cjump if it hasn't been optimized */
     case Cstar_jump:
     case Cjump: {
@@ -1738,7 +1739,7 @@ continue_matching:
        /*NOTREACHED*/}
   }
 
-  //NOTREACHED
+  // NOTREACHED
 
   /* Using "break;" in the above switch statement is equivalent to "goto fail;"
    */

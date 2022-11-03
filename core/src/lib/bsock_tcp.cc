@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -139,7 +139,7 @@ bail_out:
 
 // Finish initialization of the pocket structure.
 void BareosSocketTCP::FinInit(JobControlRecord* jcr,
-                              int sockfd,
+                              int,
                               const char* who,
                               const char* host,
                               int port,
@@ -162,7 +162,7 @@ void BareosSocketTCP::FinInit(JobControlRecord* jcr,
 bool BareosSocketTCP::open(JobControlRecord* jcr,
                            const char* name,
                            const char* host,
-                           char* service,
+                           char*,
                            int port,
                            utime_t heart_beat,
                            int* fatal)
@@ -317,7 +317,7 @@ bool BareosSocketTCP::open(JobControlRecord* jcr,
 bool BareosSocketTCP::SetKeepalive(JobControlRecord* jcr,
                                    int sockfd,
                                    bool enable,
-                                   int keepalive_start,
+                                   [[maybe_unused]] int keepalive_start,
                                    int keepalive_interval)
 {
   int value = int(enable);
@@ -636,9 +636,11 @@ get_out:
   return nbytes; /* return actual length of message */
 }
 
+#if defined(HAVE_WIN32)
+int BareosSocketTCP::GetPeer(char*, socklen_t) { return -1; }
+#else
 int BareosSocketTCP::GetPeer(char* buf, socklen_t buflen)
 {
-#if !defined(HAVE_WIN32)
   if (peer_addr.sin_family == 0) {
     socklen_t salen = sizeof(peer_addr);
     int rval = (getpeername)(fd_, (struct sockaddr*)&peer_addr, &salen);
@@ -648,10 +650,8 @@ int BareosSocketTCP::GetPeer(char* buf, socklen_t buflen)
     return -1;
 
   return 0;
-#else
-  return -1;
-#endif
 }
+#endif
 
 /*
  * Set the network buffer size, suggested size is in size.

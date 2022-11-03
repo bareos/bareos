@@ -94,7 +94,7 @@ static bool InsertTableIntoFindexList(UaContext* ua,
 static void GetAndDisplayBasejobs(UaContext* ua, RestoreContext* rx);
 
 // Restore files
-bool RestoreCmd(UaContext* ua, const char* cmd)
+bool RestoreCmd(UaContext* ua, const char*)
 {
   RestoreContext rx; /* restore context */
   PoolMem buf;
@@ -965,7 +965,7 @@ static bool InsertFileIntoFindexList(UaContext* ua,
 static bool InsertDirIntoFindexList(UaContext* ua,
                                     RestoreContext* rx,
                                     char* dir,
-                                    char* date)
+                                    char*)
 {
   StripTrailingJunk(dir);
 
@@ -1440,7 +1440,7 @@ bail_out:
   return ok;
 }
 
-static int RestoreCountHandler(void* ctx, int num_fields, char** row)
+static int RestoreCountHandler(void* ctx, int, char** row)
 {
   RestoreContext* rx = (RestoreContext*)ctx;
   rx->JobId = str_to_int64(row[0]);
@@ -1468,7 +1468,7 @@ static int JobidFileindexHandler(void* ctx, int num_fields, char** row)
 }
 
 // Callback handler make list of JobIds
-static int JobidHandler(void* ctx, int num_fields, char** row)
+static int JobidHandler(void* ctx, int, char** row)
 {
   RestoreContext* rx = (RestoreContext*)ctx;
 
@@ -1480,7 +1480,7 @@ static int JobidHandler(void* ctx, int num_fields, char** row)
 }
 
 // Callback handler to pickup last Full backup JobTDate
-static int LastFullHandler(void* ctx, int num_fields, char** row)
+static int LastFullHandler(void* ctx, int, char** row)
 {
   RestoreContext* rx = (RestoreContext*)ctx;
 
@@ -1489,7 +1489,7 @@ static int LastFullHandler(void* ctx, int num_fields, char** row)
 }
 
 // Callback handler build FileSet name prompt list
-static int FilesetHandler(void* ctx, int num_fields, char** row)
+static int FilesetHandler(void* ctx, int, char** row)
 {
   /* row[0] = FileSet (name) */
   if (row[0]) { AddPrompt((UaContext*)ctx, row[0]); }

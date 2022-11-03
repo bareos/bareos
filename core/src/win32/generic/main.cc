@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -234,7 +234,7 @@ LRESULT CALLBACK bacWinProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
  * Called as a thread from BareosAppMain()
  * Here we handle the Windows messages
  */
-void* Main_Msg_Loop(LPVOID lpwThreadParam)
+void* Main_Msg_Loop(LPVOID)
 {
   MSG msg;
 

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -212,12 +212,9 @@ ssize_t win32_file_device::d_write(int fd, const void* buffer, size_t count)
 
 int win32_file_device::d_close(int fd) { return ::close(fd); }
 
-int win32_file_device::d_ioctl(int fd, ioctl_req_t request, char* op)
-{
-  return -1;
-}
+int win32_file_device::d_ioctl(int, ioctl_req_t, char*) { return -1; }
 
-boffset_t win32_file_device::d_lseek(DeviceControlRecord* dcr,
+boffset_t win32_file_device::d_lseek(DeviceControlRecord*,
                                      boffset_t offset,
                                      int whence)
 {

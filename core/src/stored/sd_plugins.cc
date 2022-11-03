@@ -233,12 +233,12 @@ char* edit_device_codes(DeviceControlRecord* dcr,
   return omsg;
 }
 
-static inline bool trigger_plugin_event(JobControlRecord* jcr,
+static inline bool trigger_plugin_event(JobControlRecord*,
                                         bSdEventType eventType,
                                         bSdEvent* event,
                                         PluginContext* ctx,
                                         void* value,
-                                        alist<PluginContext*>* plugin_ctx_list,
+                                        alist<PluginContext*>*,
                                         int* index,
                                         bRC* rc)
 {
@@ -549,8 +549,7 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
         option = bp;
       }
 
-      if (instance < LOWEST_PLUGIN_INSTANCE
-          || instance > HIGHEST_PLUGIN_INSTANCE) {
+      if (instance > HIGHEST_PLUGIN_INSTANCE) {
         Jmsg(NULL, M_ERROR, 0,
              _("Illegal SD plugin options encountered, %s instance %d "
                "skipping\n"),
@@ -871,8 +870,8 @@ bail_out:
 }
 
 static bRC bareosJobMsg(PluginContext* ctx,
-                        const char* file,
-                        int line,
+                        const char*,
+                        int,
                         int type,
                         utime_t mtime,
                         const char* fmt,
@@ -896,7 +895,7 @@ static bRC bareosJobMsg(PluginContext* ctx,
   return bRC_OK;
 }
 
-static bRC bareosDebugMsg(PluginContext* ctx,
+static bRC bareosDebugMsg(PluginContext*,
                           const char* file,
                           int line,
                           int level,

@@ -72,7 +72,7 @@ class LogFiles {
 
 std::map<std::string, FILE*> LogFiles::list_of_filepointers;
 
-static void SyslogCallback_(int mode, const char* msg)
+static void SyslogCallback_(int, const char* msg)
 {
   try {
     FILE* fp = LogFiles::list_of_filepointers.at("syslog");
@@ -83,9 +83,7 @@ static void SyslogCallback_(int mode, const char* msg)
   }
 }
 
-static bool DbLogInsertCallback_(JobControlRecord* jcr,
-                                 utime_t mtime,
-                                 const char* msg)
+static bool DbLogInsertCallback_(JobControlRecord*, utime_t, const char* msg)
 {
   try {
     FILE* fp = LogFiles::list_of_filepointers.at("dblog");

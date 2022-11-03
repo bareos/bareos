@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -511,25 +511,20 @@ bool CheckScsiAtEod(int fd) { return false; }
 #  endif
 #else
 // Dummy lowlevel functions when no support for platform.
-bool RecvScsiCmdPage(int fd,
-                     const char* device_name,
-                     void* cdb,
-                     unsigned int cdb_len,
-                     void* cmd_page,
-                     unsigned int cmd_page_len)
+bool RecvScsiCmdPage(int, const char*, void*, unsigned int, void*, unsigned int)
 {
   return false;
 }
 
-bool send_scsi_cmd_page(int fd,
-                        const char* device_name,
-                        void* cdb,
-                        unsigned int cdb_len,
-                        void* cmd_page,
-                        unsigned int cmd_page_len)
+bool send_scsi_cmd_page(int,
+                        const char*,
+                        void*,
+                        unsigned int,
+                        void*,
+                        unsigned int)
 {
   return false;
 }
 
-bool CheckScsiAtEod(int fd) { return false; }
+bool CheckScsiAtEod(int) { return false; }
 #endif /* HAVE_LOWLEVEL_SCSI_INTERFACE */

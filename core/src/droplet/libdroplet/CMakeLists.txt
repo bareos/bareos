@@ -98,8 +98,20 @@ add_library(
   src/backend/posix/replyparser.c
 )
 
-# openssl 3.0
-target_compile_options(droplet PUBLIC -Wno-deprecated-declarations)
+include(BareosDisableWarnings)
+bareos_disable_warnings(
+  TARGETS
+  droplet
+  WARNINGS
+  -Wdeprecated-declarations
+  -Wunused-but-set-variable
+  -Wnon-literal-null-conversion
+  -Wsign-compare
+  -Wunused-parameter
+  -Wdeprecated-non-prototype
+  C_ONLY
+  ADD_FOR_LTO
+)
 
 target_include_directories(
   droplet PUBLIC include ${LIBXML2_INCLUDE_DIR} ${JSONC_INCLUDE_DIRS}

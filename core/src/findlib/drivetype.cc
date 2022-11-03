@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2007 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -74,7 +74,7 @@ bool Drivetype(const char* fname, char* dt, int dtlen)
 
 #else /* No recognised OS */
 
-bool Drivetype(const char* fname, char* dt, int dtlen)
+bool Drivetype(const char*, char*, int)
 {
   Dmsg0(10, "!!! Drivetype() not implemented for this OS. !!!\n");
   return false;

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -41,6 +41,7 @@
 
 #include "include/bareos.h"
 #include "lib/crypto_wrap.h"
+#include "include/allow_deprecated.h"
 
 #if defined(HAVE_OPENSSL)
 
@@ -70,7 +71,7 @@ void AesWrap(uint8_t* kek, int n, uint8_t* plain, uint8_t* cipher)
   memcpy(r, plain, 8 * n);
 
 #  ifdef HAVE_OPENSSL
-  AES_set_encrypt_key(kek, 128, &key);
+  ALLOW_DEPRECATED(AES_set_encrypt_key(kek, 128, &key));
 #  endif
 
   /*
@@ -87,7 +88,7 @@ void AesWrap(uint8_t* kek, int n, uint8_t* plain, uint8_t* cipher)
       memcpy(b, a, 8);
       memcpy(b + 8, r, 8);
 #  ifdef HAVE_OPENSSL
-      AES_encrypt(b, b, &key);
+      ALLOW_DEPRECATED(AES_encrypt(b, b, &key));
 #  endif
       memcpy(a, b, 8);
       a[7] ^= n * j + i;
@@ -123,7 +124,7 @@ int AesUnwrap(uint8_t* kek, int n, uint8_t* cipher, uint8_t* plain)
   memcpy(r, cipher + 8, 8 * n);
 
 #  ifdef HAVE_OPENSSL
-  AES_set_decrypt_key(kek, 128, &key);
+  ALLOW_DEPRECATED(AES_set_decrypt_key(kek, 128, &key));
 #  endif
 
   /*
@@ -142,7 +143,7 @@ int AesUnwrap(uint8_t* kek, int n, uint8_t* cipher, uint8_t* plain)
 
       memcpy(b + 8, r, 8);
 #  ifdef HAVE_OPENSSL
-      AES_decrypt(b, b, &key);
+      ALLOW_DEPRECATED(AES_decrypt(b, b, &key));
 #  endif
       memcpy(a, b, 8);
       memcpy(r, b + 8, 8);

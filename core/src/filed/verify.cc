@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -87,9 +87,7 @@ void DoVerify(JobControlRecord* jcr)
  *
  *  Find the file, compute the MD5 or SHA1 and send it back to the Director
  */
-static int VerifyFile(JobControlRecord* jcr,
-                      FindFilesPacket* ff_pkt,
-                      bool top_level)
+static int VerifyFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 {
   PoolMem attribs(PM_NAME), attribsEx(PM_NAME);
   int status;

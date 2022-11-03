@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -44,9 +44,9 @@ extern "C" int initgroups(const char*, int);
  * Lower privileges by switching to new UID and GID if non-NULL.
  * If requested, keep readall capabilities after switch.
  */
+#if defined(HAVE_PWD_H) && defined(HAVE_GRP_H)
 void drop(char* uname, char* gname, bool keep_readall_caps)
 {
-#if defined(HAVE_PWD_H) && defined(HAVE_GRP_H)
   struct passwd* passw = NULL;
   struct group* group = NULL;
   gid_t gid;
@@ -134,5 +134,7 @@ void drop(char* uname, char* gname, bool keep_readall_caps)
     BErrNo be;
     Emsg1(M_ERROR_TERM, 0, _("Could not set specified userid: %s\n"), username);
   }
-#endif
 }
+#else
+void drop(char*, char*, bool) {}
+#endif

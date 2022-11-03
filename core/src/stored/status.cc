@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -108,9 +108,8 @@ static void OutputStatus(JobControlRecord* jcr,
   }
 }
 
-static void ListResources(StatusPacket* sp)
-{
-  /* this has not been implemented */
+static void ListResources(StatusPacket*)
+{ /* this has not been implemented */
 }
 
 static bool NeedToListDevice(const char* devicenames, const char* devicename)

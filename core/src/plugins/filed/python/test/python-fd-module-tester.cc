@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -76,24 +76,18 @@ static void PyErrorHandler()
 }
 
 using namespace filedaemon;
-bRC bareosRegisterEvents(PluginContext* ctx, int nr_events, ...)
+bRC bareosRegisterEvents(PluginContext*, int, ...) { return bRC_OK; };
+bRC bareosUnRegisterEvents(PluginContext*, int, ...) { return bRC_OK; };
+bRC bareosGetInstanceCount(PluginContext*, int*) { return bRC_OK; };
+bRC bareosGetValue(PluginContext*, filedaemon::bVariable, void*)
 {
   return bRC_OK;
 };
-bRC bareosUnRegisterEvents(PluginContext* ctx, int nr_events, ...)
+bRC bareosSetValue(PluginContext*, filedaemon::bVariable, void*)
 {
   return bRC_OK;
 };
-bRC bareosGetInstanceCount(PluginContext* ctx, int* ret) { return bRC_OK; };
-bRC bareosGetValue(PluginContext* ctx, filedaemon::bVariable var, void* value)
-{
-  return bRC_OK;
-};
-bRC bareosSetValue(PluginContext* ctx, filedaemon::bVariable var, void* value)
-{
-  return bRC_OK;
-};
-bRC bareosJobMsg(PluginContext* ctx,
+bRC bareosJobMsg(PluginContext*,
                  const char* file,
                  int line,
                  int type,
@@ -105,7 +99,7 @@ bRC bareosJobMsg(PluginContext* ctx,
          file, line, type, (int64_t)mtime, fmt);
   return bRC_OK;
 };
-bRC bareosDebugMsg(PluginContext* ctx,
+bRC bareosDebugMsg(PluginContext*,
                    const char* file,
                    int line,
                    int level,
@@ -116,44 +110,26 @@ bRC bareosDebugMsg(PluginContext* ctx,
          fmt);
   return bRC_OK;
 };
-void* bareosMalloc(PluginContext* ctx, const char* file, int line, size_t size)
-{
-  return NULL;
-};
-void bareosFree(PluginContext* ctx, const char* file, int line, void* mem)
-{
-  return;
-};
-bRC bareosAddExclude(PluginContext* ctx, const char* file) { return bRC_OK; };
-bRC bareosAddInclude(PluginContext* ctx, const char* file) { return bRC_OK; };
-bRC bareosAddOptions(PluginContext* ctx, const char* opts) { return bRC_OK; };
-bRC bareosAddRegex(PluginContext* ctx, const char* item, int type)
-{
-  return bRC_OK;
-};
-bRC bareosAddWild(PluginContext* ctx, const char* item, int type)
+void* bareosMalloc(PluginContext*, const char*, int, size_t) { return NULL; };
+void bareosFree(PluginContext*, const char*, int, void*) { return; };
+bRC bareosAddExclude(PluginContext*, const char*) { return bRC_OK; };
+bRC bareosAddInclude(PluginContext*, const char*) { return bRC_OK; };
+bRC bareosAddOptions(PluginContext*, const char*) { return bRC_OK; };
+bRC bareosAddRegex(PluginContext*, const char*, int) { return bRC_OK; };
+bRC bareosAddWild(PluginContext*, const char*, int) { return bRC_OK; };
+bRC bareosNewOptions(PluginContext*) { return bRC_OK; };
+bRC bareosNewInclude(PluginContext*) { return bRC_OK; };
+bRC bareosNewPreInclude(PluginContext*) { return bRC_OK; };
+bRC bareosCheckChanges(PluginContext*, struct filedaemon::save_pkt*)
 {
   return bRC_OK;
 };
-bRC bareosNewOptions(PluginContext* ctx) { return bRC_OK; };
-bRC bareosNewInclude(PluginContext* ctx) { return bRC_OK; };
-bRC bareosNewPreInclude(PluginContext* ctx) { return bRC_OK; };
-bRC bareosCheckChanges(PluginContext* ctx, struct filedaemon::save_pkt* sp)
-{
-  return bRC_OK;
-};
-bRC bareosAcceptFile(PluginContext* ctx, struct filedaemon::save_pkt* sp)
+bRC bareosAcceptFile(PluginContext*, struct filedaemon::save_pkt*)
 {
   return bRC_OK;
 }; /* Need fname and statp */
-bRC bareosSetSeenBitmap(PluginContext* ctx, bool all, char* fname)
-{
-  return bRC_OK;
-};
-bRC bareosClearSeenBitmap(PluginContext* ctx, bool all, char* fname)
-{
-  return bRC_OK;
-};
+bRC bareosSetSeenBitmap(PluginContext*, bool, char*) { return bRC_OK; };
+bRC bareosClearSeenBitmap(PluginContext*, bool, char*) { return bRC_OK; };
 
 
 /* Bareos entry points */
@@ -185,11 +161,11 @@ static filedaemon::CoreFunctions bareos_core_functions
 
 // create plugin context
 
-Plugin plugin = {(char*)"python-fd-module-tester", 123, NULL, NULL, NULL};
+Plugin plugin = {(char*)"python-fd-module-tester", 123, NULL, NULL, NULL, NULL};
 
 static PluginContext bareos_PluginContext = {0, &plugin, NULL, NULL};
 
-int main(int argc, char* argv[])
+int main()
 {
   /* Py_SetProgramName(argv[0]); */
   Py_Initialize();

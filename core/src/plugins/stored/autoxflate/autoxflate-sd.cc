@@ -235,7 +235,7 @@ static bRC freePlugin(PluginContext* ctx)
 }
 
 // Return some plugin value (none defined)
-static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value)
+static bRC getPluginValue(PluginContext* ctx, pVariable var, void*)
 {
   Dmsg(ctx, debuglevel, "autoxflate-sd: getPluginValue var=%d\n", var);
 
@@ -243,7 +243,7 @@ static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value)
 }
 
 // Set a plugin value (none defined)
-static bRC setPluginValue(PluginContext* ctx, pVariable var, void* value)
+static bRC setPluginValue(PluginContext* ctx, pVariable var, void*)
 {
   Dmsg(ctx, debuglevel, "autoxflate-sd: setPluginValue var=%d\n", var);
 
@@ -494,8 +494,10 @@ static bool SetupAutoDeflation(PluginContext* ctx, DeviceControlRecord* dcr)
 #endif
     case COMPRESS_FZFZ:
       compressorname = COMPRESSOR_NAME_FZLZ;
+      [[fallthrough]];
     case COMPRESS_FZ4L:
       compressorname = COMPRESSOR_NAME_FZ4L;
+      [[fallthrough]];
     case COMPRESS_FZ4H: {
       compressorname = COMPRESSOR_NAME_FZ4H;
       int zstat;
@@ -533,7 +535,7 @@ bail_out:
 }
 
 // Setup inflation for auto inflation of data streams.
-static bool SetupAutoInflation(PluginContext* ctx, DeviceControlRecord* dcr)
+static bool SetupAutoInflation(PluginContext*, DeviceControlRecord* dcr)
 {
   JobControlRecord* jcr = dcr->jcr;
   uint32_t decompress_buf_size;

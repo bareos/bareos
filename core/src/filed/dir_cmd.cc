@@ -58,10 +58,7 @@
 
 #if defined(WIN32_VSS)
 #  include "win32/findlib/win32.h"
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wunknown-pragmas"
 #  include "vss.h"
-#  pragma GCC diagnostic pop
 #endif
 
 namespace filedaemon {

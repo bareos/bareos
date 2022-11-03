@@ -106,7 +106,7 @@ static void clone_a_server_socket(BareosSocket* bs)
 static void start_bareos_server(std::promise<bool>* promise,
                                 std::string console_name,
                                 std::string console_password,
-                                std::string server_address,
+                                std::string,
                                 int server_port)
 
 {

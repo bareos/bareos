@@ -757,7 +757,7 @@ static bool SendListItem(JobControlRecord* jcr,
       break;
     case '\\':
       p++; /* skip over \ */
-           /* Note, fall through wanted */
+      [[fallthrough]];
     default:
       PmStrcpy(fd->msg, code);
       fd->message_length = PmStrcat(fd->msg, p);
@@ -788,7 +788,7 @@ bool SendIncludeList(JobControlRecord* jcr)
  *   is part of the FileSet sent with the
  *   "include_list" above.
  */
-bool SendExcludeList(JobControlRecord* jcr) { return true; }
+bool SendExcludeList(JobControlRecord*) { return true; }
 
 // This checks to see if there are any non local runscripts for this job.
 static bool HaveClientRunscripts(alist<RunScript*>* RunScripts)
@@ -886,7 +886,7 @@ struct RestoreObjectContext {
 };
 
 // RestoreObjectHandler is called for each file found
-static int RestoreObjectHandler(void* ctx, int num_fields, char** row)
+static int RestoreObjectHandler(void* ctx, int, char** row)
 {
   BareosSocket* fd;
   bool is_compressed;

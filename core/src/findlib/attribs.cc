@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -186,9 +186,10 @@ int SelectDataStream(FindFilesPacket* ff_pkt, bool compatible)
 }
 
 // Restore all file attributes like owner, mode and file times.
-static inline bool RestoreFileAttributes(JobControlRecord* jcr,
-                                         Attributes* attr,
-                                         BareosWinFilePacket* ofd)
+static inline bool RestoreFileAttributes(
+    JobControlRecord* jcr,
+    Attributes* attr,
+    [[maybe_unused]] BareosWinFilePacket* ofd)
 {
   bool ok = true;
   bool suppress_errors;
@@ -496,11 +497,11 @@ bail_out:
  * The code below shows how to return nothing.  See the Win32
  *   code below for returning something in the attributes.
  */
+#  ifdef HAVE_DARWIN_OS
 int encode_attribsEx(JobControlRecord* jcr,
                      char* attribsEx,
                      FindFilesPacket* ff_pkt)
 {
-#  ifdef HAVE_DARWIN_OS
   /**
    * We save the Mac resource fork length so that on a
    * restore, we can be sure we put back the whole resource.
@@ -516,11 +517,15 @@ int encode_attribsEx(JobControlRecord* jcr,
     p += ToBase64((uint64_t)(ff_pkt->hfsinfo.rsrclength), p);
   }
   *p = 0;
-#  else
-  *attribsEx = 0; /* no extended attributes */
-#  endif
   return STREAM_UNIX_ATTRIBUTES;
 }
+#  else
+int encode_attribsEx(JobControlRecord*, char* attribsEx, FindFilesPacket*)
+{
+  *attribsEx = 0; /* no extended attributes */
+  return STREAM_UNIX_ATTRIBUTES;
+}
+#  endif
 #else
 /*=============================================================*/
 /*                                                             */
@@ -599,11 +604,7 @@ int encode_attribsEx(JobControlRecord* jcr,
 #    define plug(st, val) st = (typeof st)val
 #  else
 // Use templates to do the casting
-template <class T>
-void plug(T& st, uint64_t val)
-{
-  st = static_cast<T>(val);
-}
+template <class T> void plug(T& st, uint64_t val) { st = static_cast<T>(val); }
 #  endif
 
 /**

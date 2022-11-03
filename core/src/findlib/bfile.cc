@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -957,29 +957,20 @@ bool have_win32_api() { return false; /* no can do */ }
  *   Returns true  if function worked
  *   Returns false if failed (i.e. do not have Backup API on this machine)
  */
-bool set_win32_backup(BareosWinFilePacket* bfd)
-{
-  return false; /* no can do */
-}
+bool set_win32_backup(BareosWinFilePacket*) { return false; /* no can do */ }
 
-bool SetPortableBackup(BareosWinFilePacket* bfd)
-{
-  return true; /* no problem */
-}
+bool SetPortableBackup(BareosWinFilePacket*) { return true; /* no problem */ }
 
 /**
  * Return true  if we are writing in portable format
  * return false if not
  */
-bool IsPortableBackup(BareosWinFilePacket* bfd)
+bool IsPortableBackup(BareosWinFilePacket*)
 {
   return true; /* portable by definition */
 }
 
-bool set_prog(BareosWinFilePacket* bfd, char* prog, JobControlRecord* jcr)
-{
-  return false;
-}
+bool set_prog(BareosWinFilePacket*, char*, JobControlRecord*) { return false; }
 
 bool SetCmdPlugin(BareosWinFilePacket* bfd, JobControlRecord* jcr)
 {
@@ -1125,13 +1116,7 @@ int BopenRsrc(BareosWinFilePacket* bfd,
   return bfd->fid;
 }
 #  else
-int BopenRsrc(BareosWinFilePacket* bfd,
-              const char* fname,
-              int flags,
-              mode_t mode)
-{
-  return -1;
-}
+int BopenRsrc(BareosWinFilePacket*, const char*, int, mode_t) { return -1; }
 #  endif
 
 int bclose(BareosWinFilePacket* bfd)
