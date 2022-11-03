@@ -6,4 +6,5 @@ This directive specifies the maximum number of Jobs that can run concurrently on
 
 .. warning::
 
-   When using non-tape devices, it is highly recommended to set Maximum Concurrent Jobs to 1 to avoid intermixing jobs. Intermixed jobs on a Volume will significantly reduce performance during restore.
+
+   When using devices that are *not* of type *tape*, it is highly recommended to set `Maximum Concurrent Jobs` to 1 to avoid intermixing jobs. Intermixed jobs on a Volume will significantly reduce performance during restore. Instead, define as many devices as required (e.g. multiply disk devices via :config:option:`sd/device/Count`) and parallelize by storing each job to an individual device at once.

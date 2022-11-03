@@ -25,6 +25,7 @@
 #include "stored/autoxflate.h"
 #include "stored/device_resource.h"
 #include "stored/stored_globals.h"
+#include <fmt/format.h>
 
 namespace storagedaemon {
 
@@ -275,26 +276,29 @@ void DeviceResource::CreateAndAssignSerialNumber(uint16_t number)
 bool DeviceResource::Validate()
 {
   if (max_block_size > 0 && device_type != DeviceType::B_TAPE_DEV) {
-    my_config->AddWarning(
-        "Setting 'Maximum Block Size' on a non-tape device is unsupported");
+    my_config->AddWarning(fmt::format(
+        FMT_STRING(
+            "Device {:s}: Setting 'Maximum Block Size' is only supported on  "
+            "tape devices"),
+        resource_name_));
   }
 
   if (max_concurrent_jobs == 0) {
-    my_config->AddWarning(
-        "Having no limit for 'Maximum Concurrent Jobs' (which is currently the "
-        "default) can reduce restore performance.");
-    my_config->AddWarning(
-        "The default value for 'Maximum Concurrent Jobs' will change to 1 "
-        "in Bareos 23.");
+    my_config->AddWarning(fmt::format(
+        FMT_STRING("Device {:s}: unlimited (0) 'Maximum Concurrent Jobs' (the "
+                   "default) reduces the restore peformance."),
+        resource_name_));
+    my_config->AddWarning(fmt::format(
+        FMT_STRING("Device {:s}: the default value for 'Maximum Concurrent "
+                   "Jobs' will change from 0 (unlimited) to 1 in Bareos 23."),
+        resource_name_));
   } else if (max_concurrent_jobs > 1 && device_type != DeviceType::B_TAPE_DEV) {
-    my_config->AddWarning(
-        "Setting 'Maximum Concurrent Jobs' on a non-tape device to a value "
-        "higher than 1 is not recommended, because it reduces performance on "
-        "restore.");
-  }
-
-  if (device_type == DeviceType::B_RADOS_DEV) {
-    my_config->AddWarning("The Rados Storage Backend Device is deprecated");
+    my_config->AddWarning(fmt::format(
+        FMT_STRING(
+            "Device {:s}: setting 'Maximum Concurrent Jobs' on "
+            "device that are not of type tape to a value higher than 1 is not "
+            "recommended as it will reduce the restore performance."),
+        resource_name_));
   }
   return true;
 }
