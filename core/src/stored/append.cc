@@ -48,9 +48,6 @@ static char OK_replicate[] = "3000 OK replicate data\n";
 
 /* Forward referenced functions */
 
-void PossibleIncompleteJob(JobControlRecord*, int32_t) {}
-
-
 ProcessedFileData::ProcessedFileData(DeviceRecord* record)
     : volsessionid_(record->VolSessionId)
     , volsessiontime_(record->VolSessionTime)
@@ -285,7 +282,6 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       }
       Jmsg2(jcr, M_FATAL, 0, _("Error reading data header from %s. ERR=%s\n"),
             what, bs->bstrerror());
-      PossibleIncompleteJob(jcr, last_file_index);
       ok = false;
       break;
     }
@@ -294,7 +290,6 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       Jmsg2(jcr, M_FATAL, 0, _("Malformed data header from %s: %s\n"), what,
             bs->msg);
       ok = false;
-      PossibleIncompleteJob(jcr, last_file_index);
       break;
     }
 
@@ -316,7 +311,6 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       Jmsg3(jcr, M_FATAL, 0,
             _("FileIndex=%d from %s not positive or sequential=%d\n"),
             file_index, what, last_file_index);
-      PossibleIncompleteJob(jcr, last_file_index);
       ok = false;
       break;
     }
@@ -397,7 +391,6 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
               bs->bstrerror());
         Jmsg2(jcr, M_FATAL, 0, _("Network error reading from %s. ERR=%s\n"),
               what, bs->bstrerror());
-        PossibleIncompleteJob(jcr, last_file_index);
       }
       ok = false;
       break;
@@ -429,7 +422,6 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       if (ok && !jcr->IsJobCanceled()) {
         Jmsg1(jcr, M_FATAL, 0, _("Error writing end session label. ERR=%s\n"),
               dev->bstrerror());
-        PossibleIncompleteJob(jcr, last_file_index);
       }
       jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
       ok = false;
@@ -443,7 +435,6 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
         Jmsg2(jcr, M_FATAL, 0, _("Fatal append error on device %s: ERR=%s\n"),
               dev->print_name(), dev->bstrerror());
         Dmsg0(100, _("Set ok=FALSE after WriteBlockToDevice.\n"));
-        PossibleIncompleteJob(jcr, last_file_index);
       }
       jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
       ok = false;
