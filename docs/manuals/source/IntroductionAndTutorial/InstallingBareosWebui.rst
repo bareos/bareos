@@ -62,9 +62,9 @@ System Requirements
 
 -  The |webui| can be installed on any host. It does not have to be installed on the same as the |dir|.
 
--  The default installation uses an Apache webserver with mod-rewrite, mod-php and mod-setenv.
+-  PHP-FPM with Apache HTTP webserver having mod-rewrite enabled.
 
--  PHP 5.3.23 or newer, PHP 7 recommended
+-  PHP 7 or newer is recommended.
 
 -  On SUSE Linux Enterprise 12 you need the additional SUSE Linux Enterprise Module for Web Scripting 12.
 
