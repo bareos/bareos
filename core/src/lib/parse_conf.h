@@ -489,8 +489,8 @@ inline std::shared_ptr<ConfigResourcesContainer> _init_foreach_res_(
 // Loop through each resource of type, returning in var
 #define foreach_res(var, type)                                    \
   for (auto _config_table_ = _init_foreach_res_(my_config, &var); \
-       ((var)                                                      \
-       = static_cast<decltype(var)>(my_config->GetNextRes((type), var)));)
+       ((var)                                                     \
+        = static_cast<decltype(var)>(my_config->GetNextRes((type), var)));)
 
 #define LockRes(x) (x)->b_LockRes(__FILE__, __LINE__)
 #define UnlockRes(x) (x)->b_UnlockRes(__FILE__, __LINE__)

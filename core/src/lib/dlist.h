@@ -35,9 +35,8 @@
 #include "lib/message_severity.h"
 
 #define foreach_dlist(var, list) \
-    for ((var) = nullptr;                                            \
-         (list ? ((var) = (list)->next(var)) : nullptr) \
-         != nullptr;)
+  for ((var) = nullptr;          \
+       (list ? ((var) = (list)->next(var)) : nullptr) != nullptr;)
 
 template <typename T> class dlist {
   T* head{nullptr};

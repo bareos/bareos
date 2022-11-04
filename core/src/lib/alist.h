@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,23 +35,18 @@
  * Loop var through each member of list using an increasing index.
  * Loop var through each member of list using an decreasing index.
  */
-#define foreach_alist(var, list)                                 \
-  for ((var) = list ? (list)->first() : 0; (var); \
-       (var) = (list)->next())
+#define foreach_alist(var, list) \
+  for ((var) = list ? (list)->first() : 0; (var); (var) = (list)->next())
 
-#define foreach_alist_null(var, list)                                  \
-  for ((var) = list ? (list)->first() : nullptr; (var); \
-       (var) = (list)->next())
+#define foreach_alist_null(var, list) \
+  for ((var) = list ? (list)->first() : nullptr; (var); (var) = (list)->next())
 
-#define foreach_alist_index(inx, var, list)                                 \
-  for ((inx) = 0;                                                           \
-       (list != nullptr) ? ((var) = (list)->get((inx))) : 0; \
-       (inx)++)
+#define foreach_alist_index(inx, var, list) \
+  for ((inx) = 0; (list != nullptr) ? ((var) = (list)->get((inx))) : 0; (inx)++)
 
-#define foreach_alist_rindex(inx, var, list)                                \
-  for ((list != nullptr) ? (inx) = ((list)->size() - 1) : 0;                \
-       (list != nullptr) ? ((var) = (list)->get((inx))) : 0; \
-       (inx)--)
+#define foreach_alist_rindex(inx, var, list)                 \
+  for ((list != nullptr) ? (inx) = ((list)->size() - 1) : 0; \
+       (list != nullptr) ? ((var) = (list)->get((inx))) : 0; (inx)--)
 
 
 #include <string>
