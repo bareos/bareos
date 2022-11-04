@@ -487,9 +487,6 @@ extern char win_os[];
 // Define to 1 if TLS support should be enabled
 #cmakedefine HAVE_TLS @HAVE_TLS@
 
-// Define to 1 if compiler has typeof
-#cmakedefine HAVE_TYPEOF @HAVE_TYPEOF@
-
 // Define to 1 if you have the <ucontext.h> header file
 #cmakedefine HAVE_UCONTEXT_H @HAVE_UCONTEXT_H@
 

@@ -475,16 +475,22 @@ void IndentConfigItem(PoolMem& cfg_str,
                       const char* config_item,
                       bool inherited = false);
 
+/* this function is used as an initializer in foreach_res, so we can null
+ * the pointer passed into and also get a reference to the configuration that
+ * we then keep for the lifetime of the loop.
+ */
+inline std::shared_ptr<ConfigResourcesContainer> _init_foreach_res_(
+    ConfigurationParser* my_config,
+    void* var)
+{
+  memset(var, 0, sizeof(void*));
+  return my_config->GetResourcesContainer();
+}
 // Loop through each resource of type, returning in var
-#ifdef HAVE_TYPEOF
-#  define foreach_res(var, type)                                    \
-    for ((var) = NULL; ((var) = (typeof(var))my_config->GetNextRes( \
-                            (type), (BareosResource*)var));)
-#else
-#  define foreach_res(var, type)                                        \
-    for (var = NULL; (*((void**)&(var)) = (void*)my_config->GetNextRes( \
-                          (type), (BareosResource*)var));)
-#endif
+#define foreach_res(var, type)                                    \
+  for (auto _config_table_ = _init_foreach_res_(my_config, &var); \
+       ((var)                                                     \
+        = static_cast<decltype(var)>(my_config->GetNextRes((type), var)));)
 
 #define LockRes(x) (x)->b_LockRes(__FILE__, __LINE__)
 #define UnlockRes(x) (x)->b_UnlockRes(__FILE__, __LINE__)

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2015-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -66,7 +66,7 @@ void AlistFill(alist<const char*>* list, int max)
 // we expect, that the list is filled with strings of numbers from 0 to n.
 void TestForeachAlist(alist<const char*>* list)
 {
-  char* str = NULL;
+  const char* str = NULL;
   char buf[30];
   int i = 0;
 

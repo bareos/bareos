@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -107,7 +107,7 @@ class OutputFormatterResource {
   void KeyMultipleStringsInOneLine(
       const char* key,
       alist<const char*>* list,
-      std::function<const char*(void* item)> GetValue,
+      std::function<const char*(const void* item)> GetValue,
       bool as_comment = false,
       bool quoted_strings = true);
 
@@ -117,12 +117,13 @@ class OutputFormatterResource {
                                     bool quoted_strings = true,
                                     bool escape_strings = false);
 
-  void KeyMultipleStringsOnePerLine(const char* key,
-                                    alist<const char*>* list,
-                                    std::function<const char*(void*)> GetValue,
-                                    bool as_comment = false,
-                                    bool quoted_strings = true,
-                                    bool escape_strings = false);
+  void KeyMultipleStringsOnePerLine(
+      const char* key,
+      alist<const char*>* list,
+      std::function<const char*(const void*)> GetValue,
+      bool as_comment = false,
+      bool quoted_strings = true,
+      bool escape_strings = false);
 
   void KeyMultipleStringsOnePerLine(const char* key,
                                     const std::vector<std::string>&,

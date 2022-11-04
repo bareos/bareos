@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,9 +23,9 @@
 
 #include "lib/bareos_resource.h"
 
-const char* GetResourceName(void* resource)
+const char* GetResourceName(const void* resource)
 {
-  return ((BareosResource*)resource)->resource_name_;
+  return static_cast<const BareosResource*>(resource)->resource_name_;
 }
 
 BareosResource::BareosResource()
