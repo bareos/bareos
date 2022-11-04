@@ -844,28 +844,38 @@ class BareosDb : public BareosDbQueryEnum {
                                 uint32_t JobId,
                                 OutputFormatter* sendit,
                                 e_list_type type);
+
+  enum class CollapseMode
+  {
+    NoCollapse,
+    Collapse
+  };
+
   bool ListSqlQuery(JobControlRecord* jcr,
                     const char* query,
                     OutputFormatter* sendit,
                     e_list_type type,
-                    bool verbose);
+                    const bool verbose);
   bool ListSqlQuery(JobControlRecord* jcr,
                     SQL_QUERY query,
                     OutputFormatter* sendit,
                     e_list_type type,
-                    bool verbose);
+                    const bool verbose);
   bool ListSqlQuery(JobControlRecord* jcr,
                     const char* query,
                     OutputFormatter* sendit,
                     e_list_type type,
                     const char* description,
-                    bool verbose = false);
+                    const bool verbose = false,
+                    const CollapseMode collapse = CollapseMode::NoCollapse);
   bool ListSqlQuery(JobControlRecord* jcr,
                     SQL_QUERY query,
                     OutputFormatter* sendit,
                     e_list_type type,
                     const char* description,
-                    bool verbose);
+                    const bool verbose,
+                    const CollapseMode collapse = CollapseMode::NoCollapse);
+
   void ListClientRecords(JobControlRecord* jcr,
                          char* clientname,
                          OutputFormatter* sendit,

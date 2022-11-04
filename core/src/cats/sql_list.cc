@@ -46,7 +46,7 @@ bool BareosDb::ListSqlQuery(JobControlRecord* jcr,
                             const char* query,
                             OutputFormatter* sendit,
                             e_list_type type,
-                            bool verbose)
+                            const bool verbose)
 {
   return ListSqlQuery(jcr, query, sendit, type, "query", verbose);
 }
@@ -55,7 +55,7 @@ bool BareosDb::ListSqlQuery(JobControlRecord* jcr,
                             SQL_QUERY query,
                             OutputFormatter* sendit,
                             e_list_type type,
-                            bool verbose)
+                            const bool verbose)
 {
   return ListSqlQuery(jcr, query, sendit, type, "query", verbose);
 }
@@ -65,7 +65,8 @@ bool BareosDb::ListSqlQuery(JobControlRecord* jcr,
                             OutputFormatter* sendit,
                             e_list_type type,
                             const char* description,
-                            bool verbose)
+                            const bool verbose,
+                            const CollapseMode collapse)
 {
   DbLocker _{this};
 
@@ -75,9 +76,24 @@ bool BareosDb::ListSqlQuery(JobControlRecord* jcr,
     return false;
   }
 
-  sendit->ArrayStart(description);
-  ListResult(jcr, sendit, type);
-  sendit->ArrayEnd(description);
+  if ((collapse == CollapseMode::Collapse) && (SqlNumRows() > 1)) {
+    Mmsg(errmsg,
+         _("Query returned %d rows. In collapsed mode, only one row is "
+           "accepted.\n"),
+         SqlNumRows());
+    if (verbose) { sendit->Decoration(errmsg); }
+    return false;
+  }
+
+  if (collapse == CollapseMode::Collapse) {
+    sendit->ObjectStart(description);
+    ListResult(jcr, sendit, type);
+    sendit->ObjectEnd(description);
+  } else {
+    sendit->ArrayStart(description);
+    ListResult(jcr, sendit, type);
+    sendit->ArrayEnd(description);
+  }
   SqlFreeResult();
 
   return true;
@@ -88,10 +104,11 @@ bool BareosDb::ListSqlQuery(JobControlRecord* jcr,
                             OutputFormatter* sendit,
                             e_list_type type,
                             const char* description,
-                            bool verbose)
+                            const bool verbose,
+                            const CollapseMode collapse)
 {
   return ListSqlQuery(jcr, get_predefined_query(query), sendit, type,
-                      description, verbose);
+                      description, verbose, collapse);
 }
 
 void BareosDb::ListPoolRecords(JobControlRecord* jcr,
