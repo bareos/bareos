@@ -142,6 +142,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - build: enable compiling on ARM [PR #1270]
 - core and webui: adapt binary info messages to new wording [PR #1298]
 - build: enable -Wextra warning level and apply required changes [PR #1261]
+- lib: make foreach_res() reload-safe [PR #1279]
 
 ### Deprecated
 - make_catalog_backup.pl is now a shell wrapper script which will be removed in version 23.
