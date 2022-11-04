@@ -140,6 +140,8 @@ class BareosFdPluginLocalFilesBaseclass(BareosFdPluginBaseclass):  # noqa
         savepkt.statp = mystatp
         bareosfd.DebugMessage(150, "file statpx " + str(savepkt.statp) + "\n")
 
+        savepkt.flags  = bytearray.fromhex('ff ff ff ff ff')
+        bareosfd.DebugMessage(150, "file flags " + str(savepkt.flags) + "\n")
         return bareosfd.bRC_OK
 
     def create_file(self, restorepkt):

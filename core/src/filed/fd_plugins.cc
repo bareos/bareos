@@ -543,10 +543,8 @@ void PluginUpdateFfPkt(FindFilesPacket* ff_pkt, struct save_pkt* sp)
     ClearBit(FO_OFFSETS, ff_pkt->flags);
   }
 
-  /*
-   * Sparse code doesn't work with plugins
-   * that use FIFO or STDOUT/IN to communicate
-   */
+  /* Sparse code doesn't work with plugins
+   * that use FIFO or STDOUT/IN to communicate */
   if (BitIsSet(FO_SPARSE, sp->flags)) {
     SetBit(FO_SPARSE, ff_pkt->flags);
   } else {
@@ -557,6 +555,18 @@ void PluginUpdateFfPkt(FindFilesPacket* ff_pkt, struct save_pkt* sp)
     SetBit(FO_PORTABLE_DATA, ff_pkt->flags);
   } else {
     ClearBit(FO_PORTABLE_DATA, ff_pkt->flags);
+  }
+
+  if (BitIsSet(FO_ACL, sp->flags)) {
+    SetBit(FO_ACL, ff_pkt->flags);
+  } else {
+    ClearBit(FO_ACL, ff_pkt->flags);
+  }
+
+  if (BitIsSet(FO_XATTR, sp->flags)) {
+    SetBit(FO_XATTR, ff_pkt->flags);
+  } else {
+    ClearBit(FO_XATTR, ff_pkt->flags);
   }
 
   SetBit(FO_PLUGIN, ff_pkt->flags); /* data from plugin */

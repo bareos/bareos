@@ -337,6 +337,8 @@ static inline bool PySavePacketToNative(
       char* flags;
 
       if (PyByteArray_Size(pSavePkt->flags) != sizeof(sp->flags)) {
+        PyErr_Format(PyExc_TypeError, "flags size %ld is not as expected %lu",
+                     PyByteArray_Size(pSavePkt->flags), sizeof(sp->flags));
         goto bail_out;
       }
 
