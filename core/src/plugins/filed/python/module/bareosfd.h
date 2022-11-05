@@ -329,7 +329,7 @@ static PyMemberDef PyRestorePacket_members[] = {
      (char*)"Status from createFile()"},
     {(char*)"filedes", T_INT, offsetof(PyRestorePacket, filedes), 0,
      (char*)"file descriptor of current file"},
-    {NULL}};
+    {NULL, 0, 0, 0, NULL}};
 
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
@@ -405,7 +405,7 @@ static PyMemberDef PyIoPacket_members[]
         (char*)"file descriptor of current file"},
        {(char*)"do_io_in_core", T_BOOL, offsetof(PyIoPacket, do_io_in_core), 0,
         (char*)"set to true if i/o (read/write) should be done in core"},
-       {NULL}};
+       {NULL, 0, 0, 0, NULL}};
 
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
