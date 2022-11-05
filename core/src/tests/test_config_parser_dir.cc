@@ -148,8 +148,7 @@ TEST(ConfigParser_Dir, foreach_res_and_reload)
       RELATIVE_PROJECT_SOURCE_DIR "/configs/bareos-configparser-tests");
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   my_config->ParseConfig();
-
-  [[maybe_unused]] auto do_reload = [](bool keep_config) {
+  auto do_reload = [](bool keep_config) {
     auto backup = my_config->BackupResourcesContainer();
     my_config->ParseConfig();
 
@@ -167,10 +166,9 @@ TEST(ConfigParser_Dir, foreach_res_and_reload)
   bool done = false;
 
   auto do_foreach_res = [&]() {
-    std::unique_lock lk(cv_m);
+    std::unique_lock<std::mutex> lk(cv_m);
     BareosResource* client;
     client = (BareosResource*)0xfefe;
-    // auto handle = my_config->GetResourcesContainer();
     foreach_res (client, R_CLIENT) {
       cv.wait(lk);
       printf("%p %s\n", client->resource_name_, client->resource_name_);
