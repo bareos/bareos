@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -86,10 +86,10 @@ static void SetJcrSdJobStatus(JobControlRecord* jcr, int SDJobStatus)
   // Some SD Job status setting are propagated to the controlling Job.
   switch (jcr->impl->SDJobStatus) {
     case JS_Incomplete:
-      jcr->setJobStatus(JS_Incomplete);
+      jcr->setJobStatusWithPriorityCheck(JS_Incomplete);
       break;
     case JS_FatalError:
-      jcr->setJobStatus(JS_FatalError);
+      jcr->setJobStatusWithPriorityCheck(JS_FatalError);
       break;
     default:
       break;

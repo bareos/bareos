@@ -51,7 +51,6 @@ static int read_vol_list_lock_count = 0;
 
 /* Forward referenced functions */
 static void FreeVolItem(VolumeReservationItem* vol);
-static void FreeReadVolItem(VolumeReservationItem* vol);
 static VolumeReservationItem* new_vol_item(DeviceControlRecord* dcr,
                                            const char* VolumeName);
 static void DebugListVolumes(const char* imsg);
@@ -163,7 +162,7 @@ void AddReadVolume(JobControlRecord* jcr, const char* VolumeName)
   LockReadVolumes();
   vol = (VolumeReservationItem*)read_vol_list->binary_insert(nvol, ReadCompare);
   if (vol != nvol) {
-    FreeReadVolItem(nvol);
+    FreeVolItem(nvol);
     Dmsg2(debuglevel, "read_vol=%s JobId=%d already in list.\n", VolumeName,
           jcr->JobId);
   } else {
@@ -191,7 +190,7 @@ void RemoveReadVolume(JobControlRecord* jcr, const char* VolumeName)
   }
   if (fvol) {
     read_vol_list->remove(fvol);
-    FreeReadVolItem(fvol);
+    FreeVolItem(fvol);
   }
   UnlockReadVolumes();
   // pthread_cond_broadcast(&wait_next_vol);
@@ -261,10 +260,10 @@ static VolumeReservationItem* new_vol_item(DeviceControlRecord* dcr,
                                            const char* VolumeName)
 {
   VolumeReservationItem* vol;
-  VolumeReservationItem emptyVol;
 
   vol = (VolumeReservationItem*)malloc(sizeof(VolumeReservationItem));
-  *vol = emptyVol;
+  vol = new (vol) VolumeReservationItem();
+
   vol->vol_name = strdup(VolumeName);
   if (dcr) {
     vol->dev = dcr->dev;
@@ -279,7 +278,7 @@ static VolumeReservationItem* new_vol_item(DeviceControlRecord* dcr,
 
 static void FreeVolItem(VolumeReservationItem* vol)
 {
-  Device* dev = NULL;
+  Device* dev = nullptr;
 
   vol->DecUseCount();
   vol->Lock();
@@ -292,25 +291,7 @@ static void FreeVolItem(VolumeReservationItem* vol)
   if (vol->dev) { dev = vol->dev; }
   vol->DestroyMutex();
   free(vol);
-  if (dev) { dev->vol = NULL; }
-}
-
-static void FreeReadVolItem(VolumeReservationItem* vol)
-{
-  Device* dev = NULL;
-
-  vol->DecUseCount();
-  vol->Lock();
-  if (vol->UseCount() > 0) {
-    vol->Unlock();
-    return;
-  }
-  vol->Unlock();
-  free(vol->vol_name);
-  if (vol->dev) { dev = vol->dev; }
-  vol->DestroyMutex();
-  free(vol);
-  if (dev) { dev->vol = NULL; }
+  if (dev) { dev->vol = nullptr; }
 }
 
 /**
@@ -368,10 +349,9 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
                                       const char* VolumeName)
 {
   VolumeReservationItem *vol, *nvol;
-  Device* volatile dev = dcr->dev;
 
   if (JobCanceled(dcr->jcr)) { return NULL; }
-  ASSERT(dev != NULL);
+  ASSERT(dcr->dev != NULL);
 
   Dmsg2(debuglevel, "enter reserve_volume=%s drive=%s\n", VolumeName,
         dcr->dev->print_name());
@@ -382,7 +362,7 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
     Mmsg(dcr->jcr->errmsg,
          _("Could not reserve volume \"%s\" for append, because it is read by "
            "another Job.\n"),
-         dev->VolHdr.VolumeName);
+         dcr->dev->VolHdr.VolumeName);
     return NULL;
   }
 
@@ -397,10 +377,10 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
    * First, remove any old volume attached to this device as it is no longer
    * used.
    */
-  if (dev->vol) {
-    vol = dev->vol;
+  if (dcr->dev->vol) {
+    vol = dcr->dev->vol;
     Dmsg4(debuglevel, "Vol attached=%s, newvol=%s volinuse=%d on %s\n",
-          vol->vol_name, VolumeName, vol->IsInUse(), dev->print_name());
+          vol->vol_name, VolumeName, vol->IsInUse(), dcr->dev->print_name());
     /*
      * Make sure we don't remove the current volume we are inserting
      * because it was probably inserted by another job, or it
@@ -422,11 +402,11 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
             vol->vol_name);
 
       // If old Volume is still mounted, must unload it
-      if (bstrcmp(vol->vol_name, dev->VolHdr.VolumeName)) {
+      if (bstrcmp(vol->vol_name, dcr->dev->VolHdr.VolumeName)) {
         Dmsg0(50, "SetUnload\n");
-        dev->SetUnload(); /* have to unload current volume */
+        dcr->dev->SetUnload(); /* have to unload current volume */
       }
-      FreeVolume(dev); /* Release old volume entry */
+      FreeVolume(dcr->dev); /* Release old volume entry */
 
       if (debug_level >= debuglevel) { DebugListVolumes("reserve_vol free"); }
     }
@@ -439,11 +419,12 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
    * See if this is a request for reading a file type device which can be
    * accesses by multiple readers at once without disturbing each other.
    */
-  if (me->filedevice_concurrent_read && !dcr->IsWriting() && dev->IsFile()) {
+  if (me->filedevice_concurrent_read && !dcr->IsWriting()
+      && dcr->dev->IsFile()) {
     nvol->SetJobid(dcr->jcr->JobId);
     nvol->SetReading();
     vol = nvol;
-    dev->vol = vol;
+    dcr->dev->vol = vol;
 
     /*
      * Read volumes on file based devices are not inserted into the write volume
@@ -458,7 +439,7 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
 
   if (vol != nvol) {
     Dmsg2(debuglevel, "Found vol=%s dev-same=%d\n", vol->vol_name,
-          dev == vol->dev);
+          dcr->dev == vol->dev);
 
     /*
      * At this point, a Volume with this name already is in the list,
@@ -473,7 +454,7 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
     FreeVolItem(nvol);
 
     if (vol->dev) {
-      Dmsg2(debuglevel, "dev=%s vol->dev=%s\n", dev->print_name(),
+      Dmsg2(debuglevel, "dev=%s vol->dev=%s\n", dcr->dev->print_name(),
             vol->dev->print_name());
     }
 
@@ -481,35 +462,35 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
      * Check if we are trying to use the Volume on a different drive dev is our
      * device vol->dev is where the Volume we want is
      */
-    if (dev != vol->dev) {
+    if (dcr->dev != vol->dev) {
       // Caller wants to switch Volume to another device
 
       // should be different devices with different names
-      if (bstrcmp(dev->print_name(), vol->dev->print_name())) {
+      if (bstrcmp(dcr->dev->print_name(), vol->dev->print_name())) {
         // names are same
         Dmsg1(100, "device pointers are different but have same name %s\n",
-              dev->print_name());
+              dcr->dev->print_name());
       }
 
       if (!vol->dev->IsBusy() && !vol->IsSwapping()) {
         slot_number_t slot;
 
         Dmsg3(debuglevel, "==== Swap vol=%s from dev=%s to %s\n", VolumeName,
-              vol->dev->print_name(), dev->print_name());
-        FreeVolume(dev); /* free any volume attached to our drive */
-        Dmsg1(50, "SetUnload dev=%s\n", dev->print_name());
-        dev->SetUnload();      /* Unload any volume that is on our drive */
+              vol->dev->print_name(), dcr->dev->print_name());
+        FreeVolume(dcr->dev); /* free any volume attached to our drive */
+        Dmsg1(50, "SetUnload dev=%s\n", dcr->dev->print_name());
+        dcr->dev->SetUnload(); /* Unload any volume that is on our drive */
         dcr->SetDev(vol->dev); /* temp point to other dev */
         slot = GetAutochangerLoadedSlot(dcr); /* get slot on other drive */
-        dcr->SetDev(dev);                     /* restore dev */
+        dcr->SetDev(dcr->dev);                /* restore dev */
         vol->SetSlotNumber(slot);             /* save slot */
         vol->dev->SetUnload();                /* unload the other drive */
         vol->SetSwapping();                   /* swap from other drive */
-        dev->swap_dev = vol->dev;             /* remember to get this vol */
-        dev->SetLoad();                       /* then reload on our drive */
+        dcr->dev->swap_dev = vol->dev;        /* remember to get this vol */
+        dcr->dev->SetLoad();                  /* then reload on our drive */
         vol->dev->vol = NULL; /* remove volume from other drive */
-        vol->dev = dev;       /* point the Volume at our drive */
-        dev->vol = vol;       /* point our drive at the Volume */
+        vol->dev = dcr->dev;  /* point the Volume at our drive */
+        dcr->dev->vol = vol;  /* point our drive at the Volume */
       } else {
         Jmsg7(dcr->jcr, M_WARNING, 0,
               "Need volume from other drive, but swap not possible. "
@@ -517,13 +498,14 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
               "vol=%s from dev=%s to %s\n",
               vol->dev->CanRead(), vol->dev->num_writers,
               vol->dev->NumReserved(), vol->IsSwapping(), VolumeName,
-              vol->dev->print_name(), dev->print_name());
-        if (vol->IsSwapping() && dev->swap_dev) {
+              vol->dev->print_name(), dcr->dev->print_name());
+        if (vol->IsSwapping() && dcr->dev->swap_dev) {
           Dmsg3(debuglevel, "Swap failed vol=%s from=%s to dev=%s\n",
-                vol->vol_name, dev->swap_dev->print_name(), dev->print_name());
+                vol->vol_name, dcr->dev->swap_dev->print_name(),
+                dcr->dev->print_name());
         } else {
           Dmsg3(debuglevel, "Swap failed vol=%s from=%p to dev=%s\n",
-                vol->vol_name, dev->swap_dev, dev->print_name());
+                vol->vol_name, dcr->dev->swap_dev, dcr->dev->print_name());
         }
 
         if (debug_level >= debuglevel) { DebugListVolumes("failed swap"); }
@@ -532,10 +514,10 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
         goto get_out;
       }
     } else {
-      dev->vol = vol;
+      dcr->dev->vol = vol;
     }
   } else {
-    dev->vol = vol; /* point to newly inserted volume */
+    dcr->dev->vol = vol; /* point to newly inserted volume */
   }
 
 get_out:
@@ -655,7 +637,7 @@ VolumeReservationItem* ReadVolWalkNext(VolumeReservationItem* prev_vol)
     Dmsg2(debuglevel, "Inc walk_next UseCount=%d volname=%s\n", vol->UseCount(),
           vol->vol_name);
   }
-  if (prev_vol) { FreeReadVolItem(prev_vol); }
+  if (prev_vol) { FreeVolItem(prev_vol); }
   UnlockReadVolumes();
 
   return vol;
@@ -668,7 +650,7 @@ void ReadVolWalkEnd(VolumeReservationItem* vol)
     LockReadVolumes();
     Dmsg2(debuglevel, "Free walk_end UseCount=%d volname=%s\n", vol->UseCount(),
           vol->vol_name);
-    FreeReadVolItem(vol);
+    FreeVolItem(vol);
     UnlockReadVolumes();
   }
 }

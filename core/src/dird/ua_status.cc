@@ -111,7 +111,7 @@ bool DotStatusCmd(UaContext* ua, const char* cmd)
         if (njcr->JobId != 0
             && ua->AclAccessOk(Job_ACL, njcr->impl->res.job->resource_name_)) {
           ua->SendMsg(DotStatusJob, edit_int64(njcr->JobId, ed1),
-                      njcr->JobStatus, njcr->JobErrors);
+                      njcr->getJobStatus(), njcr->JobErrors);
         }
       }
       endeach_jcr(njcr);
@@ -291,12 +291,12 @@ static void DoAllStatus(UaContext* ua)
   }
   UnlockRes(my_config);
 
-  previous_JobStatus = ua->jcr->JobStatus;
+  previous_JobStatus = ua->jcr->getJobStatus();
 
   /* Call each unique Storage daemon */
   for (j = 0; j < i; j++) {
     StorageStatus(ua, unique_store[j], NULL);
-    ua->jcr->JobStatus = previous_JobStatus;
+    ua->jcr->setJobStatus(previous_JobStatus);
   }
   free(unique_store);
 
@@ -326,12 +326,12 @@ static void DoAllStatus(UaContext* ua)
   }
   UnlockRes(my_config);
 
-  previous_JobStatus = ua->jcr->JobStatus;
+  previous_JobStatus = ua->jcr->getJobStatus();
 
   /* Call each unique File daemon */
   for (j = 0; j < i; j++) {
     ClientStatus(ua, unique_client[j], NULL);
-    ua->jcr->JobStatus = previous_JobStatus;
+    ua->jcr->setJobStatus(previous_JobStatus);
   }
   free(unique_client);
 }
@@ -970,7 +970,7 @@ static void ListRunningJobs(UaContext* ua)
       continue;
     }
     njobs++;
-    switch (jcr->JobStatus) {
+    switch (jcr->getJobStatus()) {
       case JS_Created:
         msg = _("is waiting execution");
         break;
@@ -1068,7 +1068,7 @@ static void ListRunningJobs(UaContext* ua)
 
       default:
         emsg = (char*)GetPoolMemory(PM_FNAME);
-        Mmsg(emsg, _("is in unknown state %c"), jcr->JobStatus);
+        Mmsg(emsg, _("is in unknown state %c"), jcr->getJobStatus());
         pool_mem = true;
         msg = emsg;
         break;

@@ -103,7 +103,7 @@ static inline bool SendBootstrapFileToSd(JobControlRecord* jcr,
     BErrNo be;
     Jmsg(jcr, M_FATAL, 0, _("Could not open bootstrap file %s: ERR=%s\n"),
          jcr->RestoreBootstrap, be.bstrerror());
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return false;
   }
   sd->fsend(bootstrap);
@@ -492,7 +492,7 @@ void WaitForStorageDaemonTermination(JobControlRecord* jcr)
     /* Give SD 30 seconds to clean up after cancel */
     if (cancel_count == 6) { break; }
   }
-  jcr->setJobStatus(JS_Terminated);
+  jcr->setJobStatusWithPriorityCheck(JS_Terminated);
 }
 
 } /* namespace directordaemon */

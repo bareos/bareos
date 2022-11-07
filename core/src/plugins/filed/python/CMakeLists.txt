@@ -116,6 +116,7 @@ if(Python2_FOUND)
                LINK_FLAGS "${Python2_BLDSHARED_FLAGS}"
                LINKER_LANGUAGE CXX
                INCLUDE_DIRECTORIES "${pymod2_include_dirs}"
+               CXX_STANDARD 17
   )
   target_compile_options(bareosfd-python2-module PUBLIC -fno-strict-aliasing)
   if(NOT "${Python2_CCSHARED}" STREQUAL "")
@@ -154,6 +155,7 @@ if(Python3_FOUND)
                LINK_FLAGS "${Python3_BLDSHARED_FLAGS}"
                LINKER_LANGUAGE CXX
                INCLUDE_DIRECTORIES "${pymod3_include_dirs}"
+               CXX_STANDARD 17
   )
   target_compile_options(bareosfd-python3-module PUBLIC -fno-strict-aliasing)
   if(NOT "${Python3_CCSHARED}" STREQUAL "")

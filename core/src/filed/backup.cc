@@ -105,7 +105,7 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr,
 
   sd = jcr->store_bsock;
 
-  jcr->setJobStatus(JS_Running);
+  jcr->setJobStatusWithPriorityCheck(JS_Running);
 
   Dmsg1(300, "filed: opened data connection %d to stored\n", sd->fd_);
 
@@ -120,7 +120,7 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr,
     buf_size = 0; /* use default */
   }
   if (!sd->SetBufferSize(buf_size, BNET_SETBUF_WRITE)) {
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     Jmsg(jcr, M_FATAL, 0, _("Cannot set buffer size FD->SD.\n"));
     return false;
   }
@@ -160,7 +160,7 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr,
   // Subroutine SaveFile() is called for each file
   if (!FindFiles(jcr, (FindFilesPacket*)jcr->impl->ff, SaveFile, PluginSave)) {
     ok = false; /* error */
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   }
 
   if (have_acl && jcr->impl->acl_data->u.build->nr_errors > 0) {
@@ -1214,7 +1214,7 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
 
   // Debug code: check if we must hangup
   if (hangup && (jcr->JobFiles > (uint32_t)hangup)) {
-    jcr->setJobStatus(JS_Incomplete);
+    jcr->setJobStatusWithPriorityCheck(JS_Incomplete);
     Jmsg1(jcr, M_FATAL, 0, "Debug hangup requested after %d files.\n", hangup);
     SetHangup(0);
     return false;

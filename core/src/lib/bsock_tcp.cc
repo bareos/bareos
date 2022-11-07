@@ -396,7 +396,7 @@ bool BareosSocketTCP::SendPacket(int32_t* hdr, int32_t pktsiz)
   rc = write_nbytes((char*)hdr, pktsiz);
   timer_start = 0; /* clear timer */
   if (rc != pktsiz) {
-    errors++;
+    ++errors;
     if (errno == 0) {
       b_errno = EIO;
     } else {
@@ -451,7 +451,7 @@ bool BareosSocketTCP::send()
   if (errors) {
     if (!suppress_error_msgs_) {
       Qmsg4(jcr_, M_ERROR, 0, _("Socket has errors=%d on call to %s:%s:%d\n"),
-            errors, who_, host_, port_);
+            errors.load(), who_, host_, port_);
     }
     return false;
   }
@@ -544,13 +544,13 @@ int32_t BareosSocketTCP::recv()
     } else {
       b_errno = errno;
     }
-    errors++;
+    ++errors;
     nbytes = BNET_HARDEOF; /* assume hard EOF received */
     goto get_out;
   }
   timer_start = 0; /* clear timer */
   if (nbytes != header_length) {
-    errors++;
+    ++errors;
     b_errno = EIO;
     Qmsg5(jcr_, M_ERROR, 0, _("Read expected %d got %d from %s:%s:%d\n"),
           header_length, nbytes, who_, host_, port_);
@@ -600,7 +600,7 @@ int32_t BareosSocketTCP::recv()
     } else {
       b_errno = errno;
     }
-    errors++;
+    ++errors;
     Qmsg4(jcr_, M_ERROR, 0, _("Read error from %s:%s:%d: ERR=%s\n"), who_,
           host_, port_, this->bstrerror());
     nbytes = BNET_ERROR;
@@ -611,7 +611,7 @@ int32_t BareosSocketTCP::recv()
   message_length = nbytes;
   if (nbytes != pktsiz) {
     b_errno = EIO;
-    errors++;
+    ++errors;
     Qmsg5(jcr_, M_ERROR, 0, _("Read expected %d got %d from %s:%s:%d\n"),
           pktsiz, nbytes, who_, host_, port_);
     nbytes = BNET_ERROR;

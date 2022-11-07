@@ -144,6 +144,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - core and webui: adapt binary info messages to new wording [PR #1298]
 - build: enable -Wextra warning level and apply required changes [PR #1261]
 - lib: make foreach_res() reload-safe [PR #1279]
+- Prepare Bareos for an upgrade to the C++20 standard [PR #1271]
 
 ### Deprecated
 - make_catalog_backup.pl is now a shell wrapper script which will be removed in version 23.
@@ -340,6 +341,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1267]: https://github.com/bareos/bareos/pull/1267
 [PR #1268]: https://github.com/bareos/bareos/pull/1268
 [PR #1270]: https://github.com/bareos/bareos/pull/1270
+[PR #1271]: https://github.com/bareos/bareos/pull/1271
 [PR #1275]: https://github.com/bareos/bareos/pull/1275
 [PR #1277]: https://github.com/bareos/bareos/pull/1277
 [PR #1278]: https://github.com/bareos/bareos/pull/1278

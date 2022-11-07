@@ -73,7 +73,7 @@ JobControlRecord* SetupDummyJcr(const char* name,
   jcr->JobId = 0;
   jcr->setJobType(JT_CONSOLE);
   jcr->setJobLevel(L_FULL);
-  jcr->JobStatus = JS_Terminated;
+  jcr->setJobStatus(JS_Terminated);
   jcr->where = strdup("");
   jcr->impl->job_name = GetPoolMemory(PM_FNAME);
   PmStrcpy(jcr->impl->job_name, "Dummy.Job.Name");

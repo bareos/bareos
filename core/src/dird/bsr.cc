@@ -580,7 +580,7 @@ bool OpenBootstrapFile(JobControlRecord* jcr, bootstrap_info& info)
     BErrNo be;
     Jmsg(jcr, M_FATAL, 0, _("Could not open bootstrap file %s: ERR=%s\n"),
          jcr->RestoreBootstrap, be.bstrerror());
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return false;
   }
 

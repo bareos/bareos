@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -153,7 +153,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
      *
      */
     Dmsg0(10, "Open connection with storage daemon\n");
-    jcr->setJobStatus(JS_WaitSD);
+    jcr->setJobStatusWithPriorityCheck(JS_WaitSD);
 
     // Start conversation with Storage daemon
     if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
@@ -168,7 +168,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
 
     if (first_time) {
       // Start conversation with File daemon
-      jcr->setJobStatus(JS_WaitFD);
+      jcr->setJobStatusWithPriorityCheck(JS_WaitFD);
       jcr->impl->keep_sd_auth_key = true; /* don't clear the sd_auth_key now */
 
       if (!ConnectToFileDaemon(jcr, 10, me->FDConnectTimeout, true)) {
@@ -191,7 +191,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
       }
     }
 
-    jcr->setJobStatus(JS_Running);
+    jcr->setJobStatusWithPriorityCheck(JS_Running);
 
     // Send the bootstrap file -- what Volumes/files to restore
     bool success = false;

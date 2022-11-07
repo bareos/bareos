@@ -325,17 +325,18 @@ bool DoNdmpRestoreInit(JobControlRecord* jcr)
 
 static inline int NdmpWaitForJobTermination(JobControlRecord* jcr)
 {
-  jcr->setJobStatus(JS_Running);
+  jcr->setJobStatusWithPriorityCheck(JS_Running);
 
   /*
    * Force cancel in SD if failing, but not for Incomplete jobs
    * so that we let the SD despool.
    */
   Dmsg4(100, "cancel=%d FDJS=%d JS=%d SDJS=%d\n", jcr->IsCanceled(),
-        jcr->impl->FDJobStatus, jcr->JobStatus, jcr->impl->SDJobStatus);
+        jcr->impl->FDJobStatus.load(), jcr->getJobStatus(),
+        jcr->impl->SDJobStatus.load());
   if (jcr->IsCanceled() || (!jcr->impl->res.job->RescheduleIncompleteJobs)) {
-    Dmsg3(100, "FDJS=%d JS=%d SDJS=%d\n", jcr->impl->FDJobStatus,
-          jcr->JobStatus, jcr->impl->SDJobStatus);
+    Dmsg3(100, "FDJS=%d JS=%d SDJS=%d\n", jcr->impl->FDJobStatus.load(),
+          jcr->getJobStatus(), jcr->impl->SDJobStatus.load());
     CancelStorageDaemonJob(jcr);
   }
 
@@ -343,7 +344,7 @@ static inline int NdmpWaitForJobTermination(JobControlRecord* jcr)
   WaitForStorageDaemonTermination(jcr);
 
   jcr->impl->FDJobStatus = JS_Terminated;
-  if (jcr->JobStatus != JS_Terminated) { return jcr->JobStatus; }
+  if (jcr->getJobStatus() != JS_Terminated) { return jcr->getJobStatus(); }
   if (jcr->impl->FDJobStatus != JS_Terminated) {
     return jcr->impl->FDJobStatus;
   }
@@ -428,7 +429,7 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
      *
      */
     Dmsg0(10, "Open connection to storage daemon\n");
-    jcr->setJobStatus(JS_WaitSD);
+    jcr->setJobStatusWithPriorityCheck(JS_WaitSD);
 
     // Start conversation with Storage daemon
     if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
@@ -441,7 +442,7 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
       goto cleanup;
     }
 
-    jcr->setJobStatus(JS_Running);
+    jcr->setJobStatusWithPriorityCheck(JS_Running);
 
     // Send the bootstrap file -- what Volumes/files to restore
     if (!SendBootstrapFile(jcr, sd, info)

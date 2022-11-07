@@ -115,7 +115,7 @@ bool DoConsolidate(JobControlRecord* jcr)
   Jmsg(jcr, M_INFO, 0, _("Start Consolidate JobId %d, Job=%s\n"), jcr->JobId,
        jcr->Job);
 
-  jcr->setJobStatus(JS_Running);
+  jcr->setJobStatusWithPriorityCheck(JS_Running);
 
   foreach_res (job, R_JOB) {
     if (job->AlwaysIncremental) {
@@ -319,7 +319,7 @@ bool DoConsolidate(JobControlRecord* jcr)
 bail_out:
   // Restore original job back to jcr.
   jcr->impl->res.job = tmpjob;
-  jcr->setJobStatus(JS_Terminated);
+  jcr->setJobStatusWithPriorityCheck(JS_Terminated);
   ConsolidateCleanup(jcr, JS_Terminated);
 
   if (jobids) { free(jobids); }
@@ -343,11 +343,11 @@ void ConsolidateCleanup(JobControlRecord* jcr, int TermCode)
     Jmsg(jcr, M_WARNING, 0,
          _("Error getting Job record for Job report: ERR=%s\n"),
          jcr->db->strerror());
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   }
 
   msg_type = M_INFO; /* by default INFO message */
-  switch (jcr->JobStatus) {
+  switch (jcr->getJobStatus()) {
     case JS_Terminated:
       TermMsg = _("Consolidate OK");
       break;
@@ -361,7 +361,8 @@ void ConsolidateCleanup(JobControlRecord* jcr, int TermCode)
       break;
     default:
       TermMsg = term_code;
-      sprintf(term_code, _("Inappropriate term code: %c\n"), jcr->JobStatus);
+      sprintf(term_code, _("Inappropriate term code: %c\n"),
+              jcr->getJobStatus());
       break;
   }
   bstrftimes(schedt, sizeof(schedt), jcr->impl->jr.SchedTime);

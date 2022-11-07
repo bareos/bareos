@@ -72,7 +72,7 @@ class DeviceControlRecord {
   JobControlRecord* jcr{};         /**< Pointer to JobControlRecord */
   pthread_mutex_t mutex_ = PTHREAD_MUTEX_INITIALIZER;  /**< Access control */
   pthread_mutex_t r_mutex = PTHREAD_MUTEX_INITIALIZER; /**< rLock pre-mutex */
-  Device* volatile dev{};          /**< Pointer to device */
+  Device* dev{};          /**< Pointer to device */
   DeviceResource* device_resource{};    /**< Pointer to device resource */
   DeviceBlock* block{};            /**< Pointer to current block */
   DeviceRecord* rec{};             /**< Pointer to record being processed */

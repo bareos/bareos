@@ -167,7 +167,7 @@ extern "C" void* sched_wait(void* arg)
   Dmsg0(2300, "Enter sched_wait.\n");
   free(arg);
   time_t wtime = jcr->sched_time - time(NULL);
-  jcr->setJobStatus(JS_WaitStartTime);
+  jcr->setJobStatusWithPriorityCheck(JS_WaitStartTime);
 
   // Wait until scheduled time arrives
   if (wtime > 0) {
@@ -421,7 +421,7 @@ extern "C" void* jobq_server(void* arg)
 
       // Call user's routine here
       Dmsg3(2300, "Calling user engine for jobid=%d use=%d stat=%c\n",
-            jcr->JobId, jcr->UseCount(), jcr->JobStatus);
+            jcr->JobId, jcr->UseCount(), jcr->getJobStatus());
       jq->engine(je->jcr);
 
       // Job finished detach from thread
@@ -509,7 +509,7 @@ extern "C" void* jobq_server(void* arg)
               || (jcr->JobPriority < Priority
                   && jcr->impl->res.job->allow_mixed_priority
                   && running_allow_mix))) {
-          jcr->setJobStatus(JS_WaitPriority);
+          jcr->setJobStatusWithPriorityCheck(JS_WaitPriority);
           break;
         }
 
@@ -625,7 +625,7 @@ static bool RescheduleJob(JobControlRecord* jcr, jobq_t* jq, jobq_item_t* je)
          _("Rescheduled Job %s at %s to re-run in %d seconds (%s).\n"),
          jcr->Job, dt, (int)jcr->impl->res.job->RescheduleInterval, dt2);
     DirdFreeJcrPointers(jcr); /* partial cleanup old stuff */
-    jcr->JobStatus = -1;
+    jcr->setJobStatus(-1);
     jcr->impl->SDJobStatus = 0;
     jcr->JobErrors = 0;
     if (!AllowDuplicateJob(jcr)) { return false; }
@@ -653,7 +653,7 @@ static bool RescheduleJob(JobControlRecord* jcr, jobq_t* jq, jobq_item_t* je)
        * conflicts.  We now create a new job, copying the
        * appropriate fields.
        */
-      jcr->setJobStatus(JS_WaitStartTime);
+      jcr->setJobStatusWithPriorityCheck(JS_WaitStartTime);
       njcr = NewDirectorJcr(DirdFreeJcr);
       SetJcrDefaults(njcr, jcr->impl->res.job);
       njcr->impl->reschedule_count = jcr->impl->reschedule_count;
@@ -675,8 +675,8 @@ static bool RescheduleJob(JobControlRecord* jcr, jobq_t* jq, jobq_item_t* je)
       njcr->impl->res.next_pool = jcr->impl->res.next_pool;
       njcr->impl->res.run_next_pool_override
           = jcr->impl->res.run_next_pool_override;
-      njcr->JobStatus = -1;
-      njcr->setJobStatus(jcr->JobStatus);
+      njcr->setJobStatus(-1);
+      njcr->setJobStatusWithPriorityCheck(jcr->getJobStatus());
       if (jcr->impl->res.read_storage) {
         CopyRstorage(njcr, jcr->impl->res.read_storage_list, _("previous Job"));
       } else {
@@ -747,7 +747,7 @@ static bool AcquireResources(JobControlRecord* jcr)
 
   if (jcr->impl->res.read_storage) {
     if (!IncReadStore(jcr)) {
-      jcr->setJobStatus(JS_WaitStoreRes);
+      jcr->setJobStatusWithPriorityCheck(JS_WaitStoreRes);
 
       return false;
     }
@@ -756,7 +756,7 @@ static bool AcquireResources(JobControlRecord* jcr)
   if (jcr->impl->res.write_storage) {
     if (!IncWriteStore(jcr)) {
       DecReadStore(jcr);
-      jcr->setJobStatus(JS_WaitStoreRes);
+      jcr->setJobStatusWithPriorityCheck(JS_WaitStoreRes);
 
       return false;
     }
@@ -766,7 +766,7 @@ static bool AcquireResources(JobControlRecord* jcr)
     // Back out previous locks
     DecWriteStore(jcr);
     DecReadStore(jcr);
-    jcr->setJobStatus(JS_WaitClientRes);
+    jcr->setJobStatusWithPriorityCheck(JS_WaitClientRes);
 
     return false;
   }
@@ -776,7 +776,7 @@ static bool AcquireResources(JobControlRecord* jcr)
     DecWriteStore(jcr);
     DecReadStore(jcr);
     DecClientConcurrency(jcr);
-    jcr->setJobStatus(JS_WaitJobRes);
+    jcr->setJobStatusWithPriorityCheck(JS_WaitJobRes);
 
     return false;
   }

@@ -40,7 +40,7 @@ int MakeEstimate(JobControlRecord* jcr)
 {
   int status;
 
-  jcr->setJobStatus(JS_Running);
+  jcr->setJobStatusWithPriorityCheck(JS_Running);
 
   SetFindOptions((FindFilesPacket*)jcr->impl->ff, jcr->impl->incremental,
                  jcr->impl->since_time);

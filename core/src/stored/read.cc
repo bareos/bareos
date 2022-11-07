@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -84,7 +84,7 @@ bool DoReadData(JobControlRecord* jcr)
 
   // Let any SD plugin know now its time to setup the record translation infra.
   if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation, dcr) != bRC_OK) {
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return false;
   }
 

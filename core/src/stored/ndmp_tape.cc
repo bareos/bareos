@@ -716,7 +716,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
   return NDMP9_NO_ERR;
 
 bail_out:
-  jcr->setJobStatus(JS_ErrorTerminated);
+  jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   return NDMP9_NO_DEVICE_ERR;
 }
 
@@ -832,7 +832,7 @@ extern "C" ndmp9_error bndmp_tape_write(struct ndm_session* sess,
     *done_count = count;
     err = NDMP9_NO_ERR;
   } else {
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     err = NDMP9_IO_ERR;
   }
 
@@ -886,7 +886,7 @@ extern "C" ndmp9_error bndmp_tape_read(struct ndm_session* sess,
       err = NDMP9_NO_ERR;
     }
   } else {
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     err = NDMP9_IO_ERR;
   }
 
@@ -939,7 +939,7 @@ void EndOfNdmpBackup(JobControlRecord* jcr)
     /* Check if we can still write. This may not be the case
      *  if we are at the end of the tape or we got a fatal I/O error. */
     if (dcr->dev && dcr->dev->CanWrite()) {
-      Dmsg1(200, "Write EOS label JobStatus=%c\n", jcr->JobStatus);
+      Dmsg1(200, "Write EOS label JobStatus=%c\n", jcr->getJobStatus());
 
       if (!WriteSessionLabel(dcr, EOS_LABEL)) {
         /* Print only if JobStatus JS_Terminated and not cancelled to avoid
@@ -948,7 +948,7 @@ void EndOfNdmpBackup(JobControlRecord* jcr)
           Jmsg1(jcr, M_FATAL, 0, _("Error writing end session label. ERR=%s\n"),
                 dcr->dev->bstrerror());
         }
-        jcr->setJobStatus(JS_ErrorTerminated);
+        jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
       }
 
       Dmsg0(90, "back from write_end_session_label()\n");
@@ -961,7 +961,7 @@ void EndOfNdmpBackup(JobControlRecord* jcr)
           Jmsg2(jcr, M_FATAL, 0, _("Fatal append error on device %s: ERR=%s\n"),
                 dcr->dev->print_name(), dcr->dev->bstrerror());
         }
-        jcr->setJobStatus(JS_ErrorTerminated);
+        jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
       }
     }
 

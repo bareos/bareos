@@ -73,7 +73,7 @@ JobControlRecord* new_control_jcr(const char* base_name, int job_type)
   jcr->sched_time = jcr->start_time;
   jcr->setJobType(job_type);
   jcr->setJobLevel(L_NONE);
-  jcr->setJobStatus(JS_Running);
+  jcr->setJobStatusWithPriorityCheck(JS_Running);
   jcr->JobId = 0;
 
   return jcr;

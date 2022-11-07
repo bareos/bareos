@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -186,7 +186,7 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
   Jmsg(jcr, M_INFO, 0, _("Start NDMP Backup JobId %s, Job=%s\n"),
        edit_uint64(jcr->JobId, ed1), jcr->Job);
 
-  jcr->setJobStatus(JS_Running);
+  jcr->setJobStatusWithPriorityCheck(JS_Running);
   Dmsg2(100, "JobId=%d JobLevel=%c\n", jcr->impl->jr.JobId,
         jcr->impl->jr.JobLevel);
   if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->impl->jr)) {
@@ -401,7 +401,7 @@ cleanup:
 bail_out:
   // Error handling of failed Job.
   status = JS_ErrorTerminated;
-  jcr->setJobStatus(JS_ErrorTerminated);
+  jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
 
 ok_out:
   if (nis) {

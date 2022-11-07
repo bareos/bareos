@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -58,7 +58,7 @@ bool DoArchive(JobControlRecord* jcr)
   Jmsg(jcr, M_INFO, 0, _("Start Archive JobId %d, Job=%s\n"), jcr->JobId,
        jcr->Job);
 
-  jcr->setJobStatus(JS_Running);
+  jcr->setJobStatusWithPriorityCheck(JS_Running);
   ArchiveCleanup(jcr, JS_Terminated);
 
   return true;
@@ -79,11 +79,11 @@ void ArchiveCleanup(JobControlRecord* jcr, int TermCode)
     Jmsg(jcr, M_WARNING, 0,
          _("Error getting Job record for Job report: ERR=%s\n"),
          jcr->db->strerror());
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   }
 
   msg_type = M_INFO; /* by default INFO message */
-  switch (jcr->JobStatus) {
+  switch (jcr->getJobStatus()) {
     case JS_Terminated:
       TermMsg = _("Archive OK");
       break;
@@ -97,7 +97,8 @@ void ArchiveCleanup(JobControlRecord* jcr, int TermCode)
       break;
     default:
       TermMsg = term_code;
-      sprintf(term_code, _("Inappropriate term code: %c\n"), jcr->JobStatus);
+      sprintf(term_code, _("Inappropriate term code: %c\n"),
+              jcr->getJobStatus());
       break;
   }
 

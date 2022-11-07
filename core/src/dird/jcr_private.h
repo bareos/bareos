@@ -45,17 +45,19 @@ namespace storagedaemon {
 struct BootStrapRecord;
 }  // namespace storagedaemon
 
-#define JobWaiting(jcr)                                                        \
-  (jcr->job_started                                                            \
-   && (jcr->JobStatus == JS_WaitFD || jcr->JobStatus == JS_WaitSD              \
-       || jcr->JobStatus == JS_WaitMedia || jcr->JobStatus == JS_WaitMount     \
-       || jcr->JobStatus == JS_WaitStoreRes || jcr->JobStatus == JS_WaitJobRes \
-       || jcr->JobStatus == JS_WaitClientRes                                   \
-       || jcr->JobStatus == JS_WaitMaxJobs                                     \
-       || jcr->JobStatus == JS_WaitPriority                                    \
-       || jcr->impl->SDJobStatus == JS_WaitMedia                               \
-       || jcr->impl->SDJobStatus == JS_WaitMount                               \
-       || jcr->impl->SDJobStatus == JS_WaitDevice                              \
+#define JobWaiting(jcr)                                                     \
+  (jcr->job_started                                                         \
+   && (jcr->getJobStatus() == JS_WaitFD || jcr->getJobStatus() == JS_WaitSD \
+       || jcr->getJobStatus() == JS_WaitMedia                               \
+       || jcr->getJobStatus() == JS_WaitMount                               \
+       || jcr->getJobStatus() == JS_WaitStoreRes                            \
+       || jcr->getJobStatus() == JS_WaitJobRes                              \
+       || jcr->getJobStatus() == JS_WaitClientRes                           \
+       || jcr->getJobStatus() == JS_WaitMaxJobs                             \
+       || jcr->getJobStatus() == JS_WaitPriority                            \
+       || jcr->impl->SDJobStatus == JS_WaitMedia                            \
+       || jcr->impl->SDJobStatus == JS_WaitMount                            \
+       || jcr->impl->SDJobStatus == JS_WaitDevice                           \
        || jcr->impl->SDJobStatus == JS_WaitMaxJobs))
 
 /* clang-format off */
@@ -111,8 +113,8 @@ struct JobControlRecordPrivate {
   uint32_t SDJobFiles{};          /**< Number of files written, this job */
   uint64_t SDJobBytes{};          /**< Number of bytes processed this job */
   uint32_t SDErrors{};            /**< Number of non-fatal errors */
-  volatile int32_t SDJobStatus{}; /**< Storage Job Status */
-  volatile int32_t FDJobStatus{}; /**< File daemon Job Status */
+  std::atomic<int32_t> SDJobStatus{}; /**< Storage Job Status */
+  std::atomic<int32_t> FDJobStatus{}; /**< File daemon Job Status */
   uint32_t DumpLevel{};           /**< Dump level when doing a NDMP backup */
   uint32_t ExpectedFiles{};       /**< Expected restore files */
   uint32_t MediaId{};             /**< DB record IDs associated with this job */
@@ -139,7 +141,7 @@ struct JobControlRecordPrivate {
   int32_t reschedule_count{};           /**< Number of times rescheduled */
   int32_t FDVersion{};                  /**< File daemon version number */
   int64_t spool_size{};                 /**< Spool size for this job */
-  volatile bool sd_msg_thread_done{};   /**< Set when Storage message thread done */
+  std::atomic<bool> sd_msg_thread_done{};   /**< Set when Storage message thread done */
   bool IgnoreDuplicateJobChecking{};    /**< Set in migration jobs */
   bool IgnoreLevelPoolOverrides{};       /**< Set if a cmdline pool was specified */
   bool IgnoreClientConcurrency{};       /**< Set in migration jobs */

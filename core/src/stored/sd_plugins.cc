@@ -736,9 +736,9 @@ static bRC bareosGetValue(PluginContext* ctx, bsdrVariable var, void* value)
               NPRT(*((char**)value)));
         break;
       case bsdVarJobStatus:
-        *((int*)value) = jcr->JobStatus;
+        *((int*)value) = jcr->getJobStatus();
         Dmsg1(debuglevel, "sd-plugin: return bsdVarJobStatus=%c\n",
-              jcr->JobStatus);
+              jcr->getJobStatus());
         break;
       case bsdVarVolumeName:
         if (jcr->impl->dcr) {

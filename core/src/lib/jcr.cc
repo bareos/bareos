@@ -217,7 +217,7 @@ JobControlRecord::JobControlRecord()
   JobId = 0;
   setJobType(JT_SYSTEM); /* internal job until defined */
   setJobLevel(L_NONE);
-  setJobStatus(JS_Created); /* ready to run */
+  setJobStatusWithPriorityCheck(JS_Created); /* ready to run */
   SetTimeoutHandler();
 }
 
@@ -660,7 +660,7 @@ TlsPolicy JcrGetTlsPolicy(const char* unified_job_name)
 static void UpdateWaitTime(JobControlRecord* jcr, int newJobStatus)
 {
   bool enter_in_waittime;
-  int oldJobStatus = jcr->JobStatus;
+  int oldJobStatus = jcr->getJobStatus();
 
   switch (newJobStatus) {
     case JS_WaitFD:
@@ -734,7 +734,7 @@ static int GetStatusPriority(int JobStatus)
 // Send Job status to Director
 bool JobControlRecord::sendJobStatus()
 {
-  if (dir_bsock) { return dir_bsock->fsend(Job_status, Job, JobStatus); }
+  if (dir_bsock) { return dir_bsock->fsend(Job_status, Job, getJobStatus()); }
 
   return true;
 }
@@ -743,8 +743,8 @@ bool JobControlRecord::sendJobStatus()
 bool JobControlRecord::sendJobStatus(int newJobStatus)
 {
   if (!is_JobStatus(newJobStatus)) {
-    setJobStatus(newJobStatus);
-    if (dir_bsock) { return dir_bsock->fsend(Job_status, Job, JobStatus); }
+    setJobStatusWithPriorityCheck(newJobStatus);
+    if (dir_bsock) { return dir_bsock->fsend(Job_status, Job, getJobStatus()); }
   }
 
   return true;
@@ -756,21 +756,12 @@ void JobControlRecord::setJobStarted()
   job_started_time = time(nullptr);
 }
 
-void JobControlRecord::resetJobStatus(int newJobStatus)
-{
-  JobStatus = newJobStatus;
-}
-
-void JobControlRecord::setJobStatus(int newJobStatus)
+void JobControlRecord::setJobStatusWithPriorityCheck(int newJobStatus)
 {
   int priority;
-  int old_priority = 0;
-  int oldJobStatus = ' ';
+  int oldJobStatus = JobStatus;
+  int old_priority = GetStatusPriority(oldJobStatus);
 
-  if (JobStatus) {
-    oldJobStatus = JobStatus;
-    old_priority = GetStatusPriority(oldJobStatus);
-  }
   priority = GetStatusPriority(newJobStatus);
 
   Dmsg2(800, "setJobStatus(%s, %c)\n", Job, newJobStatus);
@@ -794,7 +785,7 @@ void JobControlRecord::setJobStatus(int newJobStatus)
   if (priority > old_priority || (priority == 0 && old_priority == 0)) {
     Dmsg4(800, "Set new stat. old: %c,%d new: %c,%d\n", oldJobStatus,
           old_priority, newJobStatus, priority);
-    JobStatus = newJobStatus; /* replace with new status */
+    JobStatus.compare_exchange_strong(oldJobStatus, newJobStatus);
   }
 
   if (oldJobStatus != JobStatus) {
@@ -1047,11 +1038,11 @@ void DbgPrintJcr(FILE* fp)
        jcr; jcr = (JobControlRecord*)job_control_record_chain->next(jcr)) {
     fprintf(fp, "threadid=%s JobId=%d JobStatus=%c jcr=%p name=%s\n",
             edit_pthread(jcr->my_thread_id, ed1, sizeof(ed1)), (int)jcr->JobId,
-            jcr->JobStatus, jcr, jcr->Job);
-    fprintf(fp,
-            "threadid=%s killable=%d JobId=%d JobStatus=%c jcr=%p name=%s\n",
-            edit_pthread(jcr->my_thread_id, ed1, sizeof(ed1)),
-            jcr->IsKillable(), (int)jcr->JobId, jcr->JobStatus, jcr, jcr->Job);
+            jcr->getJobStatus(), jcr, jcr->Job);
+    fprintf(
+        fp, "threadid=%s killable=%d JobId=%d JobStatus=%c jcr=%p name=%s\n",
+        edit_pthread(jcr->my_thread_id, ed1, sizeof(ed1)), jcr->IsKillable(),
+        (int)jcr->JobId, jcr->getJobStatus(), jcr, jcr->Job);
     fprintf(fp, "\tUseCount=%i\n", jcr->UseCount());
     fprintf(fp, "\tJobType=%c JobLevel=%c\n", jcr->getJobType(),
             jcr->getJobLevel());

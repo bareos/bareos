@@ -28,6 +28,8 @@
 #ifndef BAREOS_LIB_CONNECTION_POOL_H_
 #define BAREOS_LIB_CONNECTION_POOL_H_
 
+#include <atomic>
+
 template <typename T> class alist;
 class BareosSocket;
 
@@ -57,7 +59,7 @@ class Connection {
   char name_[MAX_NAME_LENGTH];
   int protocol_version_;
   bool authenticated_;
-  volatile bool in_use_;
+  std::atomic<bool> in_use_;
   time_t connect_time_;
   pthread_mutex_t mutex_;
 };

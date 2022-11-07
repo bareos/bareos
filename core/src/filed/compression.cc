@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -166,7 +166,7 @@ bool SetupCompressionContext(b_ctx& bctx)
               != Z_OK) {
             Jmsg(bctx.jcr, M_FATAL, 0,
                  _("Compression deflateParams error: %d\n"), zstat);
-            bctx.jcr->setJobStatus(JS_ErrorTerminated);
+            bctx.jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
             goto bail_out;
           }
         }
@@ -203,7 +203,7 @@ bool SetupCompressionContext(b_ctx& bctx)
               != Z_OK) {
             Jmsg(bctx.jcr, M_FATAL, 0,
                  _("Compression fastlzlibSetCompressor error: %d\n"), zstat);
-            bctx.jcr->setJobStatus(JS_ErrorTerminated);
+            bctx.jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
             goto bail_out;
           }
         }

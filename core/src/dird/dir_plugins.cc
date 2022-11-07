@@ -642,9 +642,9 @@ static bRC bareosGetValue(PluginContext* ctx, brDirVariable var, void* value)
               NPRT(*((char**)value)));
         break;
       case bDirVarJobStatus:
-        *((int*)value) = jcr->JobStatus;
+        *((int*)value) = jcr->getJobStatus();
         Dmsg1(debuglevel, "dir-plugin: return bDirVarJobStatus=%c\n",
-              jcr->JobStatus);
+              jcr->getJobStatus());
         break;
       case bDirVarPriority:
         *((int*)value) = jcr->JobPriority;
@@ -682,12 +682,12 @@ static bRC bareosGetValue(PluginContext* ctx, brDirVariable var, void* value)
       case bDirVarFDJobStatus:
         *((int*)value) = jcr->impl->FDJobStatus;
         Dmsg1(debuglevel, "dir-plugin: return bDirVarFDJobStatus=%c\n",
-              jcr->impl->FDJobStatus);
+              jcr->impl->FDJobStatus.load());
         break;
       case bDirVarSDJobStatus:
         *((int*)value) = jcr->impl->SDJobStatus;
         Dmsg1(debuglevel, "dir-plugin: return bDirVarSDJobStatus=%c\n",
-              jcr->impl->SDJobStatus);
+              jcr->impl->SDJobStatus.load());
         break;
       case bDirVarLastRate:
         *((int*)value) = jcr->LastRate;

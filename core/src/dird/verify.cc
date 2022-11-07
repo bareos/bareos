@@ -237,7 +237,7 @@ bool DoVerify(JobControlRecord* jcr)
   switch (JobLevel) {
     case L_VERIFY_VOLUME_TO_CATALOG:
       // Start conversation with Storage daemon
-      jcr->setJobStatus(JS_Blocked);
+      jcr->setJobStatusWithPriorityCheck(JS_Blocked);
       if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
         return false;
       }
@@ -260,7 +260,7 @@ bool DoVerify(JobControlRecord* jcr)
       }
 
       // OK, now connect to the File daemon and ask him for the files.
-      jcr->setJobStatus(JS_Blocked);
+      jcr->setJobStatusWithPriorityCheck(JS_Blocked);
       if (!ConnectToFileDaemon(jcr, 10, me->FDConnectTimeout, true)) {
         goto bail_out;
       }
@@ -278,7 +278,7 @@ bool DoVerify(JobControlRecord* jcr)
       break;
     default:
       // OK, now connect to the File daemon and ask him for the files.
-      jcr->setJobStatus(JS_Blocked);
+      jcr->setJobStatusWithPriorityCheck(JS_Blocked);
       if (!ConnectToFileDaemon(jcr, 10, me->FDConnectTimeout, true)) {
         goto bail_out;
       }
@@ -287,7 +287,7 @@ bool DoVerify(JobControlRecord* jcr)
       break;
   }
 
-  jcr->setJobStatus(JS_Running);
+  jcr->setJobStatusWithPriorityCheck(JS_Running);
 
   Dmsg0(30, ">filed: Send include list\n");
   if (!SendIncludeList(jcr)) { goto bail_out; }
@@ -661,7 +661,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
                                               &jcr->impl->previous_jr, &fdbr)) {
           Jmsg(jcr, M_INFO, 0, _("New file: %s\n"), jcr->impl->fname);
           Dmsg1(020, _("File not in catalog: %s\n"), jcr->impl->fname);
-          jcr->setJobStatus(JS_Differences);
+          jcr->setJobStatusWithPriorityCheck(JS_Differences);
           continue;
         } else {
           /*
@@ -689,7 +689,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
                      _("      st_ino   differ. Cat: %s File: %s\n"),
                      edit_uint64((uint64_t)statc.st_ino, ed1),
                      edit_uint64((uint64_t)statf.st_ino, ed2));
-                jcr->setJobStatus(JS_Differences);
+                jcr->setJobStatusWithPriorityCheck(JS_Differences);
               }
               break;
             case 'p': /* permissions bits */
@@ -698,7 +698,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
                 Jmsg(jcr, M_INFO, 0,
                      _("      st_mode  differ. Cat: %x File: %x\n"),
                      (uint32_t)statc.st_mode, (uint32_t)statf.st_mode);
-                jcr->setJobStatus(JS_Differences);
+                jcr->setJobStatusWithPriorityCheck(JS_Differences);
               }
               break;
             case 'n': /* number of links */
@@ -707,7 +707,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
                 Jmsg(jcr, M_INFO, 0,
                      _("      st_nlink differ. Cat: %d File: %d\n"),
                      (uint32_t)statc.st_nlink, (uint32_t)statf.st_nlink);
-                jcr->setJobStatus(JS_Differences);
+                jcr->setJobStatusWithPriorityCheck(JS_Differences);
               }
               break;
             case 'u': /* user id */
@@ -716,7 +716,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
                 Jmsg(jcr, M_INFO, 0,
                      _("      st_uid   differ. Cat: %u File: %u\n"),
                      (uint32_t)statc.st_uid, (uint32_t)statf.st_uid);
-                jcr->setJobStatus(JS_Differences);
+                jcr->setJobStatusWithPriorityCheck(JS_Differences);
               }
               break;
             case 'g': /* group id */
@@ -725,7 +725,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
                 Jmsg(jcr, M_INFO, 0,
                      _("      st_gid   differ. Cat: %u File: %u\n"),
                      (uint32_t)statc.st_gid, (uint32_t)statf.st_gid);
-                jcr->setJobStatus(JS_Differences);
+                jcr->setJobStatusWithPriorityCheck(JS_Differences);
               }
               break;
             case 's': /* size */
@@ -735,28 +735,28 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
                      _("      st_size  differ. Cat: %s File: %s\n"),
                      edit_uint64((uint64_t)statc.st_size, ed1),
                      edit_uint64((uint64_t)statf.st_size, ed2));
-                jcr->setJobStatus(JS_Differences);
+                jcr->setJobStatusWithPriorityCheck(JS_Differences);
               }
               break;
             case 'a': /* access time */
               if (statc.st_atime != statf.st_atime) {
                 PrtFname(jcr);
                 Jmsg(jcr, M_INFO, 0, _("      st_atime differs\n"));
-                jcr->setJobStatus(JS_Differences);
+                jcr->setJobStatusWithPriorityCheck(JS_Differences);
               }
               break;
             case 'm':
               if (statc.st_mtime != statf.st_mtime) {
                 PrtFname(jcr);
                 Jmsg(jcr, M_INFO, 0, _("      st_mtime differs\n"));
-                jcr->setJobStatus(JS_Differences);
+                jcr->setJobStatusWithPriorityCheck(JS_Differences);
               }
               break;
             case 'c': /* ctime */
               if (statc.st_ctime != statf.st_ctime) {
                 PrtFname(jcr);
                 Jmsg(jcr, M_INFO, 0, _("      st_ctime differs\n"));
-                jcr->setJobStatus(JS_Differences);
+                jcr->setJobStatusWithPriorityCheck(JS_Differences);
               }
               break;
             case 'd': /* file size decrease */
@@ -766,7 +766,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
                      _("      st_size  decrease. Cat: %s File: %s\n"),
                      edit_uint64((uint64_t)statc.st_size, ed1),
                      edit_uint64((uint64_t)statf.st_size, ed2));
-                jcr->setJobStatus(JS_Differences);
+                jcr->setJobStatusWithPriorityCheck(JS_Differences);
               }
               break;
             case '5': /* compare MD5 */
@@ -813,7 +813,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
               PrtFname(jcr);
               Jmsg(jcr, M_INFO, 0, _("      %s differs. File=%s Cat=%s\n"),
                    stream_to_ascii(stream), buf.c_str(), fdbr.Digest);
-              jcr->setJobStatus(JS_Differences);
+              jcr->setJobStatusWithPriorityCheck(JS_Differences);
             }
             do_Digest = CRYPTO_DIGEST_NONE;
           }
@@ -842,7 +842,9 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
        JobId, jcr->JobId);
   /* MissingHandler is called for each file found */
   jcr->db->SqlQuery(buf.c_str(), MissingHandler, (void*)jcr);
-  if (jcr->impl->fn_printed) { jcr->setJobStatus(JS_Differences); }
+  if (jcr->impl->fn_printed) {
+    jcr->setJobStatusWithPriorityCheck(JS_Differences);
+  }
 
 bail_out:
   FreePoolMemory(fname);

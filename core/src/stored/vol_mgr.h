@@ -46,6 +46,8 @@
 #ifndef BAREOS_STORED_VOL_MGR_H_
 #define BAREOS_STORED_VOL_MGR_H_
 
+#include <atomic>
+
 template <typename T> class dlist;
 
 namespace storagedaemon {
@@ -60,12 +62,12 @@ void ReadVolWalkEnd(VolumeReservationItem* vol);
 
 // Volume reservation class -- see vol_mgr.c and reserve.c
 class VolumeReservationItem {
-  bool swapping_{false};          /**< set when swapping to another drive */
-  bool in_use_{false};            /**< set when volume reserved or in use */
-  bool reading_{false};           /**< set when reading */
-  slot_number_t slot_{0};         /**< slot of swapping volume */
-  uint32_t JobId_{0};             /**< JobId for read volumes */
-  volatile int32_t use_count_{0}; /**< Use count */
+  bool swapping_{false};              /**< set when swapping to another drive */
+  bool in_use_{false};                /**< set when volume reserved or in use */
+  bool reading_{false};               /**< set when reading */
+  slot_number_t slot_{0};             /**< slot of swapping volume */
+  uint32_t JobId_{0};                 /**< JobId for read volumes */
+  std::atomic<int32_t> use_count_{0}; /**< Use count */
   pthread_mutex_t mutex_ = PTHREAD_MUTEX_INITIALIZER; /**< Vol muntex */
  public:
   dlink<VolumeReservationItem> link;
@@ -76,18 +78,8 @@ class VolumeReservationItem {
   void DestroyMutex() { pthread_mutex_destroy(&mutex_); }
   void Lock() { lock_mutex(mutex_); }
   void Unlock() { unlock_mutex(mutex_); }
-  void IncUseCount(void)
-  {
-    lock_mutex(mutex_);
-    use_count_++;
-    unlock_mutex(mutex_);
-  }
-  void DecUseCount(void)
-  {
-    lock_mutex(mutex_);
-    use_count_--;
-    unlock_mutex(mutex_);
-  }
+  void IncUseCount(void) { ++use_count_; }
+  void DecUseCount(void) { --use_count_; }
   int32_t UseCount() const { return use_count_; }
   bool IsSwapping() const { return swapping_; }
   bool is_reading() const { return reading_; }

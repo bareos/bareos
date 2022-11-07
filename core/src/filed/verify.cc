@@ -62,7 +62,7 @@ static bool calculate_file_chksum(JobControlRecord* jcr,
  */
 void DoVerify(JobControlRecord* jcr)
 {
-  jcr->setJobStatus(JS_Running);
+  jcr->setJobStatusWithPriorityCheck(JS_Running);
   jcr->buf_size = DEFAULT_NETWORK_BUFFER_SIZE;
   if ((jcr->impl->big_buf = (char*)malloc(jcr->buf_size)) == NULL) {
     Jmsg1(jcr, M_ABORT, 0, _("Cannot malloc %d network read buffer\n"),
@@ -79,7 +79,7 @@ void DoVerify(JobControlRecord* jcr)
     free(jcr->impl->big_buf);
     jcr->impl->big_buf = NULL;
   }
-  jcr->setJobStatus(JS_Terminated);
+  jcr->setJobStatusWithPriorityCheck(JS_Terminated);
 }
 
 /**

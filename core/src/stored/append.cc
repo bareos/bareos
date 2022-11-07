@@ -181,18 +181,18 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
           jcr->impl->dcr->device_resource->max_network_buffer_size,
           BNET_SETBUF_WRITE)) {
     Jmsg0(jcr, M_FATAL, 0, _("Unable to set network buffer size.\n"));
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return false;
   }
 
   if (!AcquireDeviceForAppend(jcr->impl->dcr)) {
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return false;
   }
 
   if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation, jcr->impl->dcr)
       != bRC_OK) {
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return false;
   }
 
@@ -204,13 +204,13 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   Dmsg1(50, "Begin append device=%s\n", dev->print_name());
 
   if (!BeginDataSpool(jcr->impl->dcr)) {
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return false;
   }
 
   if (!BeginAttributeSpool(jcr)) {
     DiscardDataSpool(jcr->impl->dcr);
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return false;
   }
 
@@ -223,7 +223,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   if (!WriteSessionLabel(jcr->impl->dcr, SOS_LABEL)) {
     Jmsg1(jcr, M_FATAL, 0, _("Write session label failed. ERR=%s\n"),
           dev->bstrerror());
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     ok = false;
   }
   if (dev->VolCatInfo.VolCatName[0] == 0) {
@@ -403,7 +403,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   }
 
   // Create Job status for end of session label
-  jcr->setJobStatus(ok ? JS_Terminated : JS_ErrorTerminated);
+  jcr->setJobStatusWithPriorityCheck(ok ? JS_Terminated : JS_ErrorTerminated);
 
   if (ok && bs == jcr->file_bsock) {
     // Terminate connection with FD
@@ -415,7 +415,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     bs->fsend("3999 Failed append\n");
   }
 
-  Dmsg1(200, "Write EOS label JobStatus=%c\n", jcr->JobStatus);
+  Dmsg1(200, "Write EOS label JobStatus=%c\n", jcr->getJobStatus());
 
   /*
    * Check if we can still write. This may not be the case
@@ -429,7 +429,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
               dev->bstrerror());
         PossibleIncompleteJob(jcr, last_file_index);
       }
-      jcr->setJobStatus(JS_ErrorTerminated);
+      jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
       ok = false;
     }
     Dmsg0(90, "back from write_end_session_label()\n");
@@ -443,7 +443,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
         Dmsg0(100, _("Set ok=FALSE after WriteBlockToDevice.\n"));
         PossibleIncompleteJob(jcr, last_file_index);
       }
-      jcr->setJobStatus(JS_ErrorTerminated);
+      jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
       ok = false;
     } else if (ok && !jcr->IsJobCanceled()) {
       // Send attributes of the final partial block of the session

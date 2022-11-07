@@ -305,7 +305,7 @@ static bool DoNdmpNativeRestore(JobControlRecord* jcr)
 
   ndmp_sess.dump_media_info = 1;  // for debugging
 
-  jcr->setJobStatus(JS_Running);
+  jcr->setJobStatusWithPriorityCheck(JS_Running);
 
   // Initialize the session structure.
   if (ndma_session_initialize(&ndmp_sess)) { goto cleanup_ndmp; }

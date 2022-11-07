@@ -98,7 +98,7 @@ bool job_cmd(JobControlRecord* jcr)
     PmStrcpy(jcr->errmsg, dir->msg);
     dir->fsend(BAD_job, status, jcr->errmsg);
     Dmsg1(100, ">dird: %s", dir->msg);
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return false;
   }
 
@@ -346,7 +346,7 @@ bool FinishCmd(JobControlRecord* jcr)
 
       jcr->end_time = time(NULL);
       DequeueMessages(jcr); /* send any queued messages */
-      jcr->setJobStatus(JS_Terminated);
+      jcr->setJobStatusWithPriorityCheck(JS_Terminated);
 
       switch (jcr->getJobType()) {
         case JT_BACKUP:
@@ -361,7 +361,7 @@ bool FinishCmd(JobControlRecord* jcr)
 
       GeneratePluginEvent(jcr, bSdEventJobEnd);
 
-      dir->fsend(Job_end, jcr->Job, jcr->JobStatus, jcr->JobFiles,
+      dir->fsend(Job_end, jcr->Job, jcr->getJobStatus(), jcr->JobFiles,
                  edit_uint64(jcr->JobBytes, ec1), jcr->JobErrors);
       dir->signal(BNET_EOD); /* send EOD to Director daemon */
 

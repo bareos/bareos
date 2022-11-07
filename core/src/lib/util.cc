@@ -962,7 +962,7 @@ POOLMEM* edit_job_codes(JobControlRecord* jcr,
           break;
         case 'e': /* Job Exit code */
           if (jcr) {
-            str = job_status_to_str(jcr->JobStatus);
+            str = job_status_to_str(jcr->getJobStatus());
           } else {
             str = _("*None*");
           }

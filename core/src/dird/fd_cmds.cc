@@ -145,7 +145,7 @@ static bool connect_outbound_to_file_daemon(JobControlRecord* jcr,
                    jcr->impl->res.client->FDport, verbose)) {
     delete fd;
     fd = NULL;
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   } else {
     jcr->file_bsock = fd;
     jcr->authenticated = false;
@@ -192,7 +192,7 @@ static void SendInfoSuccess(JobControlRecord* jcr, UaContext* ua)
   std::string m;
   if (jcr->impl->res.client->connection_successful_handshake_
       == ClientConnectionHandshakeMode::kUndefined) {
-    m += "\r\v";
+    m = "\r\v";
   }
   switch (jcr->impl->connection_handshake_try_) {
     case ClientConnectionHandshakeMode::kTlsFirst:
@@ -274,7 +274,7 @@ bool ConnectToFileDaemon(JobControlRecord* jcr,
     }
 
     if (jcr->file_bsock) {
-      jcr->setJobStatus(JS_Running);
+      jcr->setJobStatusWithPriorityCheck(JS_Running);
       if (AuthenticateWithFileDaemon(jcr)) {
         success = true;
         SendInfoSuccess(jcr, ua);
@@ -294,7 +294,7 @@ bool ConnectToFileDaemon(JobControlRecord* jcr,
               delete jcr->file_bsock;
               jcr->file_bsock = nullptr;
             }
-            jcr->resetJobStatus(JS_Running);
+            jcr->setJobStatus(JS_Running);
             jcr->impl->connection_handshake_try_
                 = ClientConnectionHandshakeMode::kCleartextFirst;
             break;
@@ -317,7 +317,7 @@ bool ConnectToFileDaemon(JobControlRecord* jcr,
            && jcr->impl->connection_handshake_try_
                   != ClientConnectionHandshakeMode::kFailed);
 
-  if (!success) { jcr->setJobStatus(JS_ErrorTerminated); }
+  if (!success) { jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated); }
 
   return success;
 }
@@ -347,7 +347,7 @@ int SendJobInfoToFileDaemon(JobControlRecord* jcr)
           storage = jcr->impl->res.read_storage;
         } else {
           Jmsg(jcr, M_FATAL, 0, _("No read or write storage defined\n"));
-          jcr->setJobStatus(JS_ErrorTerminated);
+          jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
           return 0;
         }
         if (storage) {
@@ -379,7 +379,7 @@ int SendJobInfoToFileDaemon(JobControlRecord* jcr)
     if (!bstrncmp(fd->msg, OKjob, strlen(OKjob))) {
       Jmsg(jcr, M_FATAL, 0, _("File daemon \"%s\" rejected Job command: %s\n"),
            jcr->impl->res.client->resource_name_, fd->msg);
-      jcr->setJobStatus(JS_ErrorTerminated);
+      jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
       return 0;
     } else if (jcr->db) {
       ClientDbRecord cr;
@@ -397,7 +397,7 @@ int SendJobInfoToFileDaemon(JobControlRecord* jcr)
   } else {
     Jmsg(jcr, M_FATAL, 0, _("FD gave bad response to JobId command: %s\n"),
          BnetStrerror(fd));
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return 0;
   }
 
@@ -690,7 +690,7 @@ static bool SendFileset(JobControlRecord* jcr)
   return true;
 
 bail_out:
-  jcr->setJobStatus(JS_ErrorTerminated);
+  jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   return false;
 }
 
@@ -1086,7 +1086,7 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
            _("<filed: bad attributes, expected 3 fields got %d\n"
              "message_length=%d msg=%s\n"),
            len, fd->message_length, fd->msg);
-      jcr->setJobStatus(JS_ErrorTerminated);
+      jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
       return 0;
     }
     p = fd->msg;
@@ -1178,7 +1178,7 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
     jcr->cached_attribute = false;
   }
 
-  jcr->setJobStatus(JS_Terminated);
+  jcr->setJobStatusWithPriorityCheck(JS_Terminated);
 
   return 1;
 }
