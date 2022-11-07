@@ -17,6 +17,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - devtools/dist-tarball.sh: fix name if version contains "~pre" [PR #1220]
 - dird: fix crash in .jobstatus [PR #1286]
 - winbareos.nsi: fix working directory in configure.sed [PR #1289]
+- webui: fix pool link in job details formatter [PR #1303] [BUG #1489]
 
 ### Documentation
 - Univention Corporate Server (UCS) >= 5: same support as for other Linux distributions, but no extended integration as for UCS < 5 [PR #1245]
@@ -48,7 +49,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Documentation
 - doc: backport FIPS section in security [PR #1212]
-
 
 ## [21.1.3] - 2022-05-09
 
@@ -214,6 +214,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - SQL: queries: fix sql queries to handle negative job duration value [PR #1201]
 - dird: fix TLS-PSK credential not found error with very long job names [PR #1208]
 - dird: fix odd-even weeks parsing bug in schedule [PR #1232]
+
 
 ### Added
 - plugin: added mariabackup python plugin, added systemtest for mariabackup and updated systemtest for percona-xtrabackup [PR #967]
