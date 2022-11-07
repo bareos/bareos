@@ -258,7 +258,7 @@ class SeleniumTest(unittest.TestCase):
                     opt.add_argument("--no-sandbox")
 
                 self.driver = webdriver.Chrome(
-                    self.chromedriverpath, chrome_options=opt
+                    self.chromedriverpath, options=opt
                 )
             elif self.browser == "firefox":
                 d = DesiredCapabilities.FIREFOX
