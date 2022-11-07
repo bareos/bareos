@@ -95,21 +95,35 @@ bRC bareosJobMsg(PluginContext*,
                  const char* fmt,
                  ...)
 {
-  printf("bareosJobMsg file:%s line:%d type:%d time: %+" PRId64 ", fmt:%s\n",
-         file, line, type, (int64_t)mtime, fmt);
+  {
+    char buffer[1024]{};
+    va_list arg_ptr;
+    va_start(arg_ptr, fmt);
+    vsprintf(buffer, fmt, arg_ptr);
+    va_end(arg_ptr);
+    printf("bareosJobMsg file:%s line:%d type:%d time: %+" PRId64 ", %s\n",
+           file, line, type, (int64_t)mtime, buffer);
+    return bRC_OK;
+  }
   return bRC_OK;
 };
-bRC bareosDebugMsg(PluginContext*,
-                   const char* file,
-                   int line,
-                   int level,
-                   const char* fmt,
-                   ...)
+
+static bRC bareosDebugMsg(PluginContext*,
+                          const char* fname,
+                          int line,
+                          int level,
+                          const char* fmt,
+                          ...)
 {
-  printf("bareosDebugMsg file:%s line:%d level:%d fmt:%s\n", file, line, level,
-         fmt);
+  char buffer[1024]{};
+  va_list arg_ptr;
+  va_start(arg_ptr, fmt);
+  vsprintf(buffer, fmt, arg_ptr);
+  va_end(arg_ptr);
+  printf("bareosDebugMsg: %s %d %d %s\n", fname, line, level, buffer);
   return bRC_OK;
-};
+}
+
 void* bareosMalloc(PluginContext*, const char*, int, size_t) { return NULL; };
 void bareosFree(PluginContext*, const char*, int, void*) { return; };
 bRC bareosAddExclude(PluginContext*, const char*) { return bRC_OK; };
