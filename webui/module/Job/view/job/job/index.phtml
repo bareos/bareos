@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2021 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2022 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -309,7 +309,7 @@ $this->headTitle($title);
       html.push('</tr>');
       html.push('<tr>');
       html.push('<th><?php echo addslashes($this->translate("Pool")); ?></th>');
-      html.push('<td><a href="<?php echo $this->basePath() . '/pool/details/'; ?>' + row.poolname + '">' + row.poolname + '</a></td>');
+      html.push('<td><a href="<?php echo $this->basePath() . '/pool/details/?pool='; ?>' + row.poolname + '">' + row.poolname + '</a></td>');
       html.push('</tr>');
       html.push('<tr>');
       html.push('<th><?php echo addslashes($this->translate("Scheduled")); ?></th>');
