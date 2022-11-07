@@ -368,6 +368,22 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
   return true;
 }
 
+static void TerminateBackupWithError(JobControlRecord* jcr)
+{
+  jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+  WaitForJobTermination(jcr, me->FDConnectTimeout);
+}
+
+static void CloseFdConnection(JobControlRecord* jcr)
+{
+  if (jcr->file_bsock) {
+    jcr->file_bsock->signal(BNET_TERMINATE);
+    jcr->file_bsock->close();
+    delete jcr->file_bsock;
+    jcr->file_bsock = nullptr;
+  }
+}
+
 /*
  * Do a backup of the specified FileSet
  *
@@ -376,18 +392,8 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
  */
 bool DoNativeBackup(JobControlRecord* jcr)
 {
-  int status;
-  BareosSocket* fd = nullptr;
-  BareosSocket* sd = nullptr;
-  StorageResource* store = nullptr;
-  ClientResource* client = nullptr;
-  char ed1[100];
-  db_int64_ctx job;
-  PoolMem buf;
-
-  /* Print Job Start message */
-  Jmsg(jcr, M_INFO, 0, _("Start Backup JobId %s, Job=%s\n"),
-       edit_uint64(jcr->JobId, ed1), jcr->Job);
+  Jmsg(jcr, M_INFO, 0, _("Start Backup JobId %llu, Job=%s\n"), jcr->JobId,
+       jcr->Job);
 
   jcr->setJobStatusWithPriorityCheck(JS_Running);
   Dmsg2(100, "JobId=%d JobLevel=%c\n", jcr->dir_impl->jr.JobId,
@@ -452,7 +458,8 @@ bool DoNativeBackup(JobControlRecord* jcr)
 
   jcr->setJobStatusWithPriorityCheck(JS_WaitFD);
   if (!ConnectToFileDaemon(jcr, 10, me->FDConnectTimeout, true)) {
-    goto bail_out;
+    TerminateBackupWithError(jcr);
+    return false;
   }
   Dmsg1(120, "jobid: %d: connected\n", jcr->JobId);
   SendJobInfoToFileDaemon(jcr);
@@ -462,20 +469,37 @@ bool DoNativeBackup(JobControlRecord* jcr)
          _("Client \"%s\" doesn't support passive client mode. "
            "Please upgrade your client or disable compat mode.\n"),
          jcr->dir_impl->res.client->resource_name_);
-    goto close_fd;
+    CloseFdConnection(jcr);
+    TerminateBackupWithError(jcr);
+    return false;
   }
 
   jcr->setJobStatusWithPriorityCheck(JS_Running);
 
-  if (!SendLevelCommand(jcr)) { goto bail_out; }
+  if (!SendLevelCommand(jcr)) {
+    TerminateBackupWithError(jcr);
+    return false;
+  }
 
-  if (!SendIncludeList(jcr)) { goto bail_out; }
+  if (!SendIncludeList(jcr)) {
+    TerminateBackupWithError(jcr);
+    return false;
+  }
 
-  if (!SendExcludeList(jcr)) { goto bail_out; }
+  if (!SendExcludeList(jcr)) {
+    TerminateBackupWithError(jcr);
+    return false;
+  }
 
-  if (!SendPluginOptions(jcr)) { goto bail_out; }
+  if (!SendPluginOptions(jcr)) {
+    TerminateBackupWithError(jcr);
+    return false;
+  }
 
-  if (!SendPreviousRestoreObjects(jcr)) { goto bail_out; }
+  if (!SendPreviousRestoreObjects(jcr)) {
+    TerminateBackupWithError(jcr);
+    return false;
+  }
 
   if (!SendSecureEraseReqToFd(jcr)) {
     Dmsg1(500, "Unexpected %s secure erase\n", "client");
@@ -488,11 +512,11 @@ bool DoNativeBackup(JobControlRecord* jcr)
   }
 
   if (jcr->max_bandwidth > 0) {
-    SendBwlimitToFd(jcr, jcr->Job); /* Old clients don't have this command */
+    SendBwlimitToFd(jcr, jcr->Job);  // Old clients don't have this command
   }
 
-  client = jcr->dir_impl->res.client;
-  store = jcr->dir_impl->res.write_storage;
+  ClientResource* client = jcr->dir_impl->res.client;
+  StorageResource* store = jcr->dir_impl->res.write_storage;
   char* connection_target_address;
 
   if (!jcr->passive_client) {
@@ -515,7 +539,8 @@ bool DoNativeBackup(JobControlRecord* jcr)
                            store->SDport, tls_policy);
     if (!response(jcr, jcr->file_bsock, OKstore, "Storage", DISPLAY_ERROR)) {
       Dmsg0(200, "Error from active client on storeaddrcmd\n");
-      goto bail_out;
+      TerminateBackupWithError(jcr);
+      return false;
     }
 
   } else {  // passive client
@@ -537,7 +562,8 @@ bool DoNativeBackup(JobControlRecord* jcr)
     Bmicrosleep(2, 0);
     if (!response(jcr, jcr->store_bsock, OKpassiveclient, "Passive client",
                   DISPLAY_ERROR)) {
-      goto bail_out;
+      TerminateBackupWithError(jcr);
+      return false;
     }
 
     /*
@@ -556,12 +582,15 @@ bool DoNativeBackup(JobControlRecord* jcr)
     if (!StartStorageDaemonMessageThread(jcr)) { return false; }
 
     Dmsg0(150, "Storage daemon connection OK\n");
-  } /* if (!jcr->passive_client) */
+  }  // if (!jcr->passive_client)
 
   // Declare the job started to start the MaxRunTime check
   jcr->setJobStarted();
 
-  if (!SendRunscriptsCommands(jcr)) { goto bail_out; }
+  if (!SendRunscriptsCommands(jcr)) {
+    TerminateBackupWithError(jcr);
+    return false;
+  }
 
   /*
    * We re-update the job start record so that the start
@@ -583,15 +612,19 @@ bool DoNativeBackup(JobControlRecord* jcr)
    * If backup is in accurate mode, we send the list of
    * all files to FD.
    */
-  if (!SendAccurateCurrentFiles(jcr)) { goto bail_out; /* error */ }
+  if (!SendAccurateCurrentFiles(jcr)) {
+    TerminateBackupWithError(jcr);
+    return false;  // error
+  }
 
   jcr->file_bsock->fsend(backupcmd, jcr->JobFiles);
   Dmsg1(100, ">filed: %s", jcr->file_bsock->msg);
   if (!response(jcr, jcr->file_bsock, OKbackup, "Backup", DISPLAY_ERROR)) {
-    goto bail_out;
+    TerminateBackupWithError(jcr);
+    return false;
   }
 
-  status = WaitForJobTermination(jcr);
+  int status = WaitForJobTermination(jcr);
   if (jcr->batch_started) {
     jcr->db_batch->WriteBatchFileRecords(
         jcr);  // used by bulk batch file insert
@@ -610,20 +643,6 @@ bool DoNativeBackup(JobControlRecord* jcr)
     NativeBackupCleanup(jcr, status);
     return true;
   }
-
-  return false;
-
-close_fd:
-  if (jcr->file_bsock) {
-    jcr->file_bsock->signal(BNET_TERMINATE);
-    jcr->file_bsock->close();
-    delete jcr->file_bsock;
-    jcr->file_bsock = nullptr;
-  }
-
-bail_out:
-  jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
-  WaitForJobTermination(jcr, me->FDConnectTimeout);
 
   return false;
 }
