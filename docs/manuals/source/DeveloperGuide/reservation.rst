@@ -3,7 +3,7 @@ Reservation
 
 Introduction
 ------------
-After the director set up a job on the SD it will then issue a "use" command to tell the SD what storage device it wants to use.
+After the director set up a job on the SD and after running any ``run before`` scripts, it will then issue a "use" command to tell the SD what storage device it wants to use.
 The SD then checks the list of devices the director sent and tries to reserve a suitable device.
 In the end the SD either tells the director which device to use or that there is no device available for the job.
 
