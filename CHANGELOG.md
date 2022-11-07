@@ -50,6 +50,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - stored: dird: added backup checkpoints that save backup metadata to the Catalog during the execution of the backup. [PR #1074]
 - stored: dird: add backup checkpoints that save backup metadata to the Catalog during the execution of the backup. [PR #1074]
 - build: run a build and test with sanitizers enabled [PR #1244]
+- catalog: update fileset text in fileset record [PR #1300]
 
 ### Fixed
 - webui: adapt links to new URLs after website relaunch. [PR #1275]
@@ -332,6 +333,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1254]: https://github.com/bareos/bareos/pull/1254
 [PR #1255]: https://github.com/bareos/bareos/pull/1255
 [PR #1260]: https://github.com/bareos/bareos/pull/1260
+[PR #1261]: https://github.com/bareos/bareos/pull/1261
 [PR #1262]: https://github.com/bareos/bareos/pull/1262
 [PR #1265]: https://github.com/bareos/bareos/pull/1265
 [PR #1266]: https://github.com/bareos/bareos/pull/1266
@@ -341,6 +343,11 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1275]: https://github.com/bareos/bareos/pull/1275
 [PR #1277]: https://github.com/bareos/bareos/pull/1277
 [PR #1278]: https://github.com/bareos/bareos/pull/1278
+[PR #1279]: https://github.com/bareos/bareos/pull/1279
 [PR #1284]: https://github.com/bareos/bareos/pull/1284
 [PR #1285]: https://github.com/bareos/bareos/pull/1285
+[PR #1288]: https://github.com/bareos/bareos/pull/1288
+[PR #1296]: https://github.com/bareos/bareos/pull/1296
+[PR #1298]: https://github.com/bareos/bareos/pull/1298
+[PR #1300]: https://github.com/bareos/bareos/pull/1300
 [unreleased]: https://github.com/bareos/bareos/tree/master
