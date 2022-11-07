@@ -62,7 +62,7 @@ System Requirements
 
 -  The |webui| can be installed on any host. It does not have to be installed on the same as the |dir|.
 
--  PHP-FPM with Apache HTTP webserver having mod-rewrite enabled.
+-  The default installation uses PHP-FPM with Apache HTTP webserver having mod-rewrite enabled.
 
 -  PHP 7 or newer is recommended.
 
