@@ -696,7 +696,9 @@ static bool regex_find_jobids(JobControlRecord* jcr,
 
 bail_out:
   Dmsg2(dbglevel, "Count=%d Jobids=%s\n", ids->count, ids->list);
-  foreach_dlist (item, item_chain) { free(item->item); }
+  foreach_dlist (item, item_chain) {
+    free(item->item);
+  }
   delete item_chain;
   return ok;
 }
