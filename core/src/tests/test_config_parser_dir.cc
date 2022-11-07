@@ -31,6 +31,11 @@
 #include "dird/dird_conf.h"
 #include "lib/output_formatter_resource.h"
 
+#include <thread>
+#include <condition_variable>
+#include <chrono>
+using namespace std::chrono_literals;
+
 namespace directordaemon {
 bool DoReloadConfig() { return false; }
 }  // namespace directordaemon
@@ -135,6 +140,61 @@ TEST(ConfigParser_Dir, bareos_configparser_tests)
 
   TermMsg(); /* Terminate message handler */
 }
+
+TEST(ConfigParser_Dir, foreach_res_and_reload)
+{
+  OSDependentInit();
+  std::string path_to_config_file = std::string(
+      RELATIVE_PROJECT_SOURCE_DIR "/configs/bareos-configparser-tests");
+  my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
+  my_config->ParseConfig();
+  auto do_reload = [](bool keep_config) {
+    auto backup = my_config->BackupResourcesContainer();
+    my_config->ParseConfig();
+
+    me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
+    my_config->own_resource_ = me;
+    ASSERT_NE(nullptr, me);
+    if (!keep_config) {
+      my_config->RestoreResourcesContainer(std::move(backup));
+      ASSERT_NE(nullptr, me);
+    }
+  };
+
+  std::mutex cv_m;
+  std::condition_variable cv;
+  bool done = false;
+
+  auto do_foreach_res = [&]() {
+    std::unique_lock<std::mutex> lk(cv_m);
+    BareosResource* client;
+    client = (BareosResource*)0xfefe;
+    foreach_res (client, R_CLIENT) {
+      cv.wait(lk);
+      printf("%p %s\n", client->resource_name_, client->resource_name_);
+    }
+    done = true;
+    return;
+  };
+
+  auto reload_loop = [&]() {
+    std::unique_lock<std::mutex> lk(cv_m);
+    while (!done) {
+      lk.unlock();
+      printf("Config reload\n");
+      do_reload(true);
+      cv.notify_one();
+      std::this_thread::sleep_for(10ms);
+      lk.lock();
+    }
+  };
+
+  std::thread t1{do_foreach_res}, t2{reload_loop};
+  t1.join();
+  t2.join();
+
+  delete my_config;
+}  // namespace directordaemon
 
 TEST(ConfigParser_Dir, runscript_test)
 {
