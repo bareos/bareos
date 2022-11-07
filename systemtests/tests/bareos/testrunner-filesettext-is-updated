@@ -1,0 +1,68 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+
+# Delete fileset text from database and check that it is readded
+# when estimate call uses the fileset
+TestName="$(basename "$(pwd)")"
+export TestName
+
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+run_log=$tmp/run.out
+filesetwithtext=$tmp/fileset-with-filesettext
+filesetwithouttext=$tmp/fileset-without-filesettext
+JobName=backup-bareos-fd
+
+rm -f $run_log $filesetwithtext $filesetwithouttext
+
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $run_log
+@# first do an estimate to be sure the fileset db entry exists
+estimate listing job=$JobName
+
+@# remove filesettext from db entry
+sqlquery
+update fileset set filesettext='';
+
+@$out $filesetwithouttext
+@# display fileset entry (without filesettext)
+sqlquery
+select * from fileset;
+
+@# call estimate to update the fileset db entry and readd the filesettext
+estimate listing job=$JobName
+
+@#verify the fileset text is added again
+@$out $filesetwithtext
+sqlquery
+select * from fileset;
+END_OF_DATA
+
+run_bconsole
+
+run_bconsole
+
+# check that the fileset has not the fileset text after it was deleted
+expect_grep "|         1 | SelfTest | FileSet {" \
+            "$filesetwithtext" \
+            "The expected fileset text was not found."
+
+# check that the fileset has the fileset was added by the estimate call
+expect_grep "|         1 | SelfTest |             |" \
+            "$filesetwithouttext" \
+            "The expected fileset without text was not found."
+
+
+end_test
