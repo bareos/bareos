@@ -153,7 +153,7 @@ $this->headTitle($title);
       html.push('</tr>');
       html.push('<tr>');
       html.push('<th><?php echo addslashes($this->translate("Pool")); ?></th>');
-      html.push('<td><a href="<?php echo $this->basePath() . '/pool/details/'; ?>' + row.poolname + '">' + row.poolname + '</a></td>');
+      html.push('<td><a href="<?php echo $this->basePath() . '/pool/details/?pool='; ?>' + row.poolname + '">' + row.poolname + '</a></td>');
       html.push('</tr>');
       html.push('<tr>');
       html.push('<th><?php echo addslashes($this->translate("Scheduled")); ?></th>');
