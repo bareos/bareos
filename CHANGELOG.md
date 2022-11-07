@@ -7,6 +7,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Changed
 - build: switch from FreeBSD 13.0 to 13.1 [PR #1256]
+- lib: make foreach_res() reload-safe [PR #1301]
 
 ### Fixed
 - dird: fix tls reload crash [PR #1263]
@@ -615,4 +616,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1259]: https://github.com/bareos/bareos/pull/1259
 [PR #1263]: https://github.com/bareos/bareos/pull/1263
 [PR #1286]: https://github.com/bareos/bareos/pull/1286
+[PR #1289]: https://github.com/bareos/bareos/pull/1289
+[PR #1291]: https://github.com/bareos/bareos/pull/1291
+[PR #1301]: https://github.com/bareos/bareos/pull/1301
 [unreleased]: https://github.com/bareos/bareos/tree/master
