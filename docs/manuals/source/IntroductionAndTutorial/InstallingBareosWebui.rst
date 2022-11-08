@@ -62,7 +62,7 @@ System Requirements
 
 -  The |webui| can be installed on any host. It does not have to be installed on the same as the |dir|.
 
--  The default installation uses PHP-FPM with Apache HTTP webserver having mod-rewrite enabled.
+-  The default installation uses PHP-FPM with Apache HTTP webserver having mod-rewrite and mod-fcgid enabled.
 
 -  PHP 7 or newer is recommended.
 
@@ -448,6 +448,69 @@ As an alternative to the method above the Bvfs cache can be updated after each j
 .. note::
 
    We do provide a specific JobId in the *JobId* command argument in this example. Only the *JobId* given by the placeholder %i will be computed into the cache.
+
+Upgrade from 21.x.x to 22.x.x
+-----------------------------
+
+|webui| now requires PHP-FPM instead of Apache2 mod-php. Due to this change there are some manual steps to consider
+before and after upgrading. Please have a look at the following remarks according to your operating system of choice.
+
+Debian, Ubuntu, Univention
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Before upgrading
+^^^^^^^^^^^^^^^^
+
+- Disable or remove any PHP module in Apache2
+
+After upgrading
+^^^^^^^^^^^^^^^
+
+- Enable PHP-FPM Apache2 configuration (e.g. `a2enconf php7.3-fpm`, `a2enconf php7.4-fpm` or `a2enconf php8.1-fpm`)
+
+- Restart Apache2 and PHP-FPM
+
+.. code-block:: bareosconfig
+
+   systemctl restart php8.1-fpm
+   systemctl restart apache2
+
+SUSE Linux Enterprise Server (SLES), openSUSE
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Before upgrading
+^^^^^^^^^^^^^^^^
+
+- Disable or remove any PHP module in Apache2
+
+After upgrading
+^^^^^^^^^^^^^^^
+
+- Ensure a php.ini file is in place (e.g. `/etc/php7/fpm/php.ini` or `/etc/php8/fpm/php.ini`)
+
+- Configure PHP-FPM to your needs (e.g. `/etc/php7/fpm/php-fpm.conf` and `/etc/php7/fpm/php-fpm.d/www.conf`)
+
+- Configure mod_fcgid to your needs `/etc/apache2/conf.d/mod_fcgid.conf`
+
+A minimal example may look like following.
+
+.. code-block:: bareosconfig
+   :caption: /etc/apache2/conf.d/mod_fcgid.conf
+
+   <IfModule fcgid_module>
+        DirectoryIndex index.php
+        <FilesMatch "\.php$">
+                SetHandler "proxy:fcgi://127.0.0.1:9000/"
+                #CGIPassAuth on
+        </FilesMatch>
+   </IfModule>
+
+- Restart Apache2 and PHP-FPM
+
+.. code-block:: bareosconfig
+
+   systemctl restart apache2
+   systemctl restart php-fpm
 
 Upgrade from 18.2.6 to 18.2.7
 -----------------------------
