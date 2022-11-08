@@ -7,6 +7,14 @@ DH_VERBOSE = 1
 # This has to be exported to make some magic below work.
 DH_OPTIONS = -v
 
+# Default build directory is "cmake-build",
+# but this can be overwritten by the variable BUILD_DIRECTORY.
+ifeq ($(strip ${BUILD_DIRECTORY}),)
+BUILD_DIR = cmake-build
+else
+BUILD_DIR = ${BUILD_DIRECTORY}
+endif
+
 DAEMON_USER = bareos
 DAEMON_GROUP = bareos
 DIRECTOR_DAEMON_USER = $(DAEMON_USER)
@@ -81,7 +89,7 @@ else
 	echo "configure full configuration"
 	dh_auto_configure -- $(CONFIGURE_COMMON) -Dpython=yes -Dtraymonitor=yes
 endif
-	cmake --build cmake-build/ -- generate-debian-control
+	cmake --build ${BUILD_DIR} -- generate-debian-control
 
 
 override_dh_fixperms:
@@ -131,7 +139,7 @@ override_dh_auto_test:
 # see https://www.debian.org/doc/debian-policy/ch-source.html#s-debianrules-options
 # No tabs allowed before ifeq.
 ifneq (nocheck,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
-	cd cmake-build && ls Testing/*/Test.xml || REGRESS_DEBUG=1 ctest -V -S CTestScript.cmake || echo "ctest result:$?"
+	cd ${BUILD_DIR} && ls Testing/*/Test.xml || REGRESS_DEBUG=1 ctest -V -S CTestScript.cmake || echo "ctest result:$?"
 else
 	@echo "ctest: skipped"
 endif
@@ -142,7 +150,7 @@ override_dh_shlibdeps:
 
 
 %:
-	dh $@ --builddirectory=cmake-build
+	dh $@ --builddirectory=${BUILD_DIR}
 
 
 gen-debian-copyright:
