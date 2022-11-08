@@ -18,8 +18,8 @@ export TestName
 start_test
 
 backupjob="slow-backup-big-volume"
-parallelbackuplog="$tmp/big-volumes-parallel-backup.out"
-parallelrestorelog="$tmp/big-volume-parallel-restore.out"
+parallelbackuplog="$tmp/backup-parallel-jobs.out"
+parallelrestorelog="$tmp/restore-parallel-jobs.out"
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
@@ -33,18 +33,28 @@ run job=${backupjob} level=Full yes
 run job=${backupjob} level=Full yes
 wait
 messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+backup_jobids=($(grep 'Job queued.' $parallelbackuplog | sed -n -e 's/^.*JobId=//p'))
+
+rm -rf $tmp/restore1
+rm -rf $tmp/restore2
+rm -rf $tmp/restore3
+rm -rf $tmp/restore4
+rm -rf $tmp/restore5
+rm -rf $tmp/restore6
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out $parallelrestorelog
-restore jobid=1 where=$tmp/restore1 all done yes
-wait
-restore jobid=2 where=$tmp/restore2 all done yes
-wait
-restore jobid=3 where=$tmp/restore3 all done yes
-wait
-restore jobid=4 where=$tmp/restore4 all done yes
-wait
-restore jobid=5 where=$tmp/restore5 all done yes
-wait
-restore jobid=6 where=$tmp/restore6 all done yes
+restore jobid=${backup_jobids[0]} where=$tmp/restore1 all done yes
+restore jobid=${backup_jobids[1]} where=$tmp/restore2 all done yes
+restore jobid=${backup_jobids[2]} where=$tmp/restore3 all done yes
+restore jobid=${backup_jobids[3]} where=$tmp/restore4 all done yes
+restore jobid=${backup_jobids[4]} where=$tmp/restore5 all done yes
+restore jobid=${backup_jobids[5]} where=$tmp/restore6 all done yes
 wait
 messages
 quit
