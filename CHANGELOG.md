@@ -10,6 +10,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Fixed
 - webui: get volume and pool params from query instead of route [PR #1145]
+- webui: fix pool link in job details formatter [PR #1304] [BUG #1489]
 
 ## [20.0.6] - 2022-03-14
 
