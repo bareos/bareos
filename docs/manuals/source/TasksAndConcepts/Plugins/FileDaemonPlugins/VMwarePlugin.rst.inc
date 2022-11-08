@@ -330,9 +330,9 @@ After enabling CBT, Backup Jobs can be run or scheduled as usual, for example in
 Restore
 ^^^^^^^
 
-For restoring to the same still exising VM from which the backup has been taken, the VM must be powered off and no snapshot must exist. In :command:`bconsole` use the restore menu 5, select the correct FileSet and enter :bcommand:`mark *`, then :bcommand:`done`. After restore has finished, the VM will be set to its previous powerstate. So if it was powered on at backup time, it will be powered on after restore. This can be changed by using the plugin option :command:`restore_powerstate` (see below).
+For restoring to the same still exising VM from which the backup has been taken, the VM must be **powered off** and **no snapshot** must exist. In :command:`bconsole` use the restore menu 5, select the correct FileSet and enter :bcommand:`mark *`, then :bcommand:`done`. After restore has finished, the VM will be set to its previous powerstate. So if it was powered on at backup time, it will be powered on after restore. This can be changed by using the plugin option :command:`restore_powerstate` (see below).
 
-Since :sinceVersion:`22.0.0: VMware Plugin: recreate VMs` the plugin will recreate the VM if it does not exist. By passing plugin options, with this version it is also possible to recreate the VM in a different folder, datacenter, host, cluster, resource pool or datatore, see below for details. The MAC address and the UUID of the VM will be restored, too. Restoring to a different VM location, eg, by passing a different folder, will create a new VM even if the VM which was backed up still exists. In this case, the new VM will get a new generated MAC address and UUID.
+Since :sinceVersion:`22.0.0: VMware Plugin: recreate VMs` the plugin will recreate the VM if it does not exist. By passing plugin options, with this version it is also possible to recreate the VM in a different folder, datacenter, host, cluster, resource pool or datatore, see below for details. The MAC address and the UUID of the VM will be restored, too. Restoring to a different VM location, eg, by passing a different folder, will **create a new VM** even **if the VM** which was backed up **still exists**. In this case, the new VM will get a new generated MAC address and UUID.
 
 .. note::
 
@@ -539,8 +539,10 @@ restore_resource_pool (optional)
    By default, if a VM to be restored does not exist, it will be recreated in the same resource pool which it has in been in at backup time. Using this option allows to override this and specify a different resource pool. Since :sinceVersion:`22.0.0: VMware Plugin`
 
 restore_powerstate (optional)
-   By default, after restore a VM will be set to its previous powerstate which means the powerstate at backup time. When specifying ``restore_powerstate=off`` the VM will stay powered off after restore. Also can be forced to on with ``restore_powerstate=on``. Note that this will only work if DRS is configured to **fully automated**, otherwise the API request to power on a VM will be ignored. Since :sinceVersion:`22.0.0: VMware Plugin`
+   By **default**, after restore a VM will be set to its **previous powerstate** which means the powerstate at backup time. When specifying ``restore_powerstate=off`` the VM will stay powered off after restore. Also can be forced to on with ``restore_powerstate=on``. Note that this will only work if DRS is configured to **fully automated**, otherwise the API request to power on a VM will be ignored. Since :sinceVersion:`22.0.0: VMware Plugin`
+
+poweron_timeout (optional)
+   Timeout in seconds to wait for a VM to be powered on after restore, default 15s. When a VM is powered on after restore (see also the option *restore_powerstate* above), the plugin will check if it succeeded by checking the power state. If it is not powered on within this timeout, the restore job will issue a warning message.
 
 uuid (deprecated)
-   The uuid option could be used instead of *dc*, *folder* and *vmname* to uniquely address a VM for backup. As the plugin since :sinceVersion:`22.0.0: VMware Plugin` is able recreate VMs in a different datacenter, folder or datastore, this option has become useless.
-
+   The uuid option could be used instead of *dc*, *folder* and *vmname* to uniquely address a VM for backup. As the plugin since :sinceVersion:`22.0.0: VMware Plugin` is able recreate VMs in a different datacenter, folder or datastore, this option has become useless. When using uuid, restoring is only possible to the same still existing VM. It is recommended to change the configuration, as the uuid option will be dropped in the next version.

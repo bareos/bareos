@@ -232,8 +232,23 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         if mandatory_options is None:
             # not passed, use default
             mandatory_options = self.mandatory_options_default
-            if "uuid" not in self.options:
-                mandatory_options += self.mandatory_options_vmname
+
+        if "uuid" in self.options:
+            disallowed_options = list(
+                set(self.options).intersection(set(self.mandatory_options_vmname))
+            )
+            if disallowed_options:
+                bareosfd.JobMessage(
+                    bareosfd.M_FATAL,
+                    "Option(s) '%s' not allow with uuid.\n"
+                    % ",".join(disallowed_options),
+                )
+                return bareosfd.bRC_Error
+
+        else:
+            mandatory_options = list(
+                set(mandatory_options).union(set(self.mandatory_options_vmname))
+            )
 
         if self.options.get("localvmdk") == "yes":
             mandatory_options = list(
@@ -251,7 +266,8 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
                 return bareosfd.bRC_Error
 
-            if option in self.utf8_options:
+        for option in self.utf8_options:
+            if self.options.get(option):
                 # make sure to convert to utf8
                 bareosfd.DebugMessage(
                     100,
@@ -271,22 +287,37 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                     "Type of option %s is %s\n" % (option, type(self.options[option])),
                 )
 
-            # strip trailing "/" from folder option value value
-            if "folder" in self.options:
-                self.options["folder"] = self.options["folder"].rstrip("/")
+        # strip trailing "/" from folder option value value
+        if "folder" in self.options:
+            self.options["folder"] = self.options["folder"].rstrip("/")
 
-            if self.options.get("restore_powerstate"):
-                if self.options["restore_powerstate"] not in ["on", "off", "previous"]:
-                    bareosfd.JobMessage(
-                        bareosfd.M_FATAL,
-                        "Invalid value '%s' for restore_powerstate, valid: on, off or previous.\n"
-                        % self.options["restore_powerstate"],
-                    )
-                    return bareosfd.bRC_Error
-            else:
-                # restore previous power state by default
-                self.options["restore_powerstate"] = "previous"
+        if self.options.get("restore_powerstate"):
+            if self.options["restore_powerstate"] not in ["on", "off", "previous"]:
+                bareosfd.JobMessage(
+                    bareosfd.M_FATAL,
+                    "Invalid value '%s' for restore_powerstate, valid: on, off or previous.\n"
+                    % self.options["restore_powerstate"],
+                )
+                return bareosfd.bRC_Error
+        else:
+            # restore previous power state by default
+            self.options["restore_powerstate"] = "previous"
 
+        if self.options.get("poweron_timeout"):
+            try:
+                self.vadp.poweron_timeout = int(self.options["poweron_timeout"])
+            except ValueError:
+                bareosfd.JobMessage(
+                    bareosfd.M_FATAL,
+                    "Invalid value '%s' for poweron_timeout, only digits allowed\n"
+                    % self.options["poweron_timeout"],
+                )
+                return bareosfd.bRC_Error
+
+        else:
+            self.vadp.poweron_timeout = 15
+
+        for options in self.options:
             bareosfd.DebugMessage(
                 100,
                 "Using Option %s=%s\n"
@@ -461,14 +492,6 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         # be set to diskPathRoot
         cbt_data = self.vadp.restore_objects_by_objectname[objectname]["data"]
 
-        # replace datastore when restoring to other datastore
-        # if self.options.get("restore_datastore"):
-        #    cbt_data["DiskParams"]["diskPathRoot"] = self.vadp.datastore_rex.sub(
-        #        "[" + self.options["restore_datastore"] + "]",
-        #        cbt_data["DiskParams"]["diskPathRoot"],
-        #        count=1,
-        #    )
-
         if self.vadp.vmfs_vm_path_changed:
             cbt_data["DiskParams"][
                 "diskPathRoot"
@@ -482,7 +505,8 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         # If a new VM was created, its VM moref must be written to the JSON file for vadp dumper
         # instead of the VM moref that was stored at backup time
-        cbt_data["ConnParams"]["VmMoRef"] = "moref=" + self.vadp.vm._GetMoId()
+        if self.vadp.vm:
+            cbt_data["ConnParams"]["VmMoRef"] = "moref=" + self.vadp.vm._GetMoId()
 
         self.vadp.writeStringToFile(json_filename, json.dumps(cbt_data))
         self.cbt_json_local_file_path = json_filename
@@ -752,7 +776,10 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 "handle_plugin_event() called with bEventEndRestoreJob\n",
             )
 
-            return self.vadp.restore_power_state()
+            if self.vadp.vm:
+                return self.vadp.restore_power_state()
+
+            return bareosfd.bRC_OK
 
         else:
             bareosfd.DebugMessage(
@@ -906,6 +933,7 @@ class BareosVADPWrapper(object):
         self.vmfs_vm_path = None
         self.datastore_rex = re.compile(r"\[(.+?)\]")
         self.datastore_vm_path_rex = re.compile(r"\[(.+?)\] (.+)\/")
+        self.poweron_timeout = None
 
     def connect_vmware(self):
         # this prevents from repeating on second call
@@ -1503,10 +1531,6 @@ class BareosVADPWrapper(object):
             ),
         )
 
-        # DEBUG: Test Hack to see if it creates the directory in VMFS
-        # config.files = vim.vm.FileInfo()
-        # config.files.vmPathName = "[datastore1]"
-        # Yes, this implicitly creates the dir on VMFS, including _n suffix if needed.
         while not vm_created:
             try:
                 create_vm_task = target_folder.CreateVm(
@@ -1802,15 +1826,15 @@ class BareosVADPWrapper(object):
         """
         Convert the VM config info from the snapshot to JSON
         """
-        # This will be saved in a restore objects
+        # This will be saved in a restore object
         self.vm_config_info_json = json.dumps(
             self.create_snap_result.config, cls=VmomiJSONEncoder
         )
         self.files_to_backup.append("%s/%s" % (self.backup_path, "vm_config.json"))
 
         # Note: the vm property of the snapshot result also contains a config property,
-        # but it can't be used to create a VM because it reflects the state after the
-        # snapshot, while the config property represents the state of the snapshot,
+        # but it can't be used to create a VM because it reflects the state *after* the
+        # snapshot, while the config property represents the state *of the snapshot*,
         # so that it contains the correct disks.
         # However, we also need the VM info to be able to restore custom attributes etc.
         self.vm_info_json = json.dumps(self.create_snap_result.vm, cls=VmomiJSONEncoder)
@@ -2062,7 +2086,10 @@ class BareosVADPWrapper(object):
                 '"' + StringCodec.encode(self.restore_vmdk_file) + '"'
             )
         else:
-            bareos_vadp_dumper_opts["restore"] = "-S -D -R"
+            # Note: -c omits disk geometry checks, this is necessary to allow
+            # recreating and restoring VMs which have been deployed from OVA
+            # as the disk may have different geometry initially after creation.
+            bareos_vadp_dumper_opts["restore"] = "-S -D -R -c"
             if "transport" in self.options:
                 bareos_vadp_dumper_opts["restore"] += (
                     " -f %s" % self.options["transport"]
@@ -2443,14 +2470,13 @@ class BareosVADPWrapper(object):
             # Also when DRS Automation is set to fully automated, the task terminates
             # with success state before the VM is powered on. So there seems to be
             # no reliable solution for this problem. Workaround: poll power state
-            # with timeout. FIXME: The timeout should be made configurable later.
+            # with timeout. It's configurable, plugin option poweron_timeout
 
-            poweron_timeout = 10
             poweron_start_time = time.time()
             # This could probably be implemented better by using WaitForUpdates()
             while self.vm.runtime.powerState != "poweredOn":
                 time.sleep(1)
-                if time.time() - poweron_start_time >= poweron_timeout:
+                if time.time() - poweron_start_time >= self.poweron_timeout:
                     break
 
             if self.vm.runtime.powerState != "poweredOn":
@@ -2670,11 +2696,9 @@ class BareosVmConfigInfoToSpec(object):
                 boot_device = vim.vm.BootOptions.BootableCdromDevice()
             elif boot_order["_vimtype"] == "vim.vm.BootOptions.BootableDiskDevice":
                 boot_device = vim.vm.BootOptions.BootableDiskDevice()
-                # TODO: check if device keys can be restored as backed up
                 boot_device.deviceKey = boot_order["deviceKey"]
             elif boot_order["_vimtype"] == "vim.vm.BootOptions.BootableEthernetDevice":
                 boot_device = vim.vm.BootOptions.BootableEthernetDevice()
-                # TODO: check if device keys can be restored as backed up
                 boot_device.deviceKey = boot_order["deviceKey"]
             elif boot_order["_vimtype"] == "vim.vm.BootOptions.BootableFloppyDevice":
                 boot_device = vim.vm.BootOptions.BootableFloppyDevice()
@@ -2811,7 +2835,6 @@ class BareosVmConfigInfoToSpec(object):
             elif device["_vimtype"] == "vim.vm.device.VirtualFloppy":
                 add_device = self._transform_virtual_floppy(device)
             else:
-                # TODO: raise error, unknown device
                 raise RuntimeError(
                     "Error: Unknown Device Type %s" % (device["_vimtype"])
                 )
@@ -2834,7 +2857,6 @@ class BareosVmConfigInfoToSpec(object):
         elif device["_vimtype"] == "vim.vm.device.VirtualLsiLogicSASController":
             add_device = vim.vm.device.VirtualLsiLogicSASController()
         else:
-            # TODO: raise error
             raise RuntimeError(
                 "Error: Unknown SCSI controller type %s" % (device["_vimtype"])
             )
@@ -2855,7 +2877,6 @@ class BareosVmConfigInfoToSpec(object):
         elif device["_vimtype"] == "vim.vm.device.VirtualAHCIController":
             add_device = vim.vm.device.VirtualAHCIController()
         else:
-            # TODO: raise error
             raise RuntimeError(
                 "Error: Unknown controller type %s" % (device["_vimtype"])
             )
@@ -2882,7 +2903,6 @@ class BareosVmConfigInfoToSpec(object):
         elif device["_vimtype"] == "vim.vm.device.VirtualUSBXHCIController":
             add_device = vim.vm.device.VirtualUSBXHCIController()
         else:
-            # TODO: unknown type, raise error
             raise RuntimeError(
                 "Error: Unknown USB controller type %s" % (device["_vimtype"])
             )
@@ -2935,7 +2955,6 @@ class BareosVmConfigInfoToSpec(object):
             add_device.backing.deviceName = device["backing"]["deviceName"]
             add_device.backing.useAutoDetect = device["backing"]["useAutoDetect"]
         else:
-            # TODO: unknown backing type, raise error
             raise RuntimeError(
                 "Error: Unknown CDROM backing type %s" % (device["backing"]["_vimtype"])
             )
@@ -2943,9 +2962,9 @@ class BareosVmConfigInfoToSpec(object):
 
         add_device.connectable = self._transform_connectable(device)
 
-        # TODO: Looks like negative values must not be used for default devices,
-        # the second VirtualIDEController seems to have key 201, but is that always the case?
-        # TODO: Same for VirtualCdrom, getting error "The device '1' is referring to a nonexisting controller '-200'."
+        # Looks like negative values must not be used for default devices,
+        # the second VirtualIDEController seems to have key 201, that always seems to be the case.
+        # Same for VirtualCdrom, getting error "The device '1' is referring to a nonexisting controller '-200'."
         add_device.controllerKey = device["controllerKey"]
         if device["controllerKey"] not in [200, 201]:
             add_device.controllerKey = device["controllerKey"] * -1
@@ -2971,7 +2990,6 @@ class BareosVmConfigInfoToSpec(object):
             add_device.backing.deviceName = device["backing"]["deviceName"]
             add_device.backing.useAutoDetect = device["backing"]["useAutoDetect"]
         else:
-            # TODO: unknown backing type, raise error
             raise RuntimeError(
                 "Unknown Backing for Floppy: %s" % (device["backing"]["_vimtype"])
             )
@@ -2979,8 +2997,8 @@ class BareosVmConfigInfoToSpec(object):
 
         add_device.connectable = self._transform_connectable(device)
 
-        # TODO: Looks like negative values must not be used for default devices,
-        # the VirtualSIOController seems to have key 400, but is that always the case?
+        # Looks like negative values must not be used for default devices,
+        # the VirtualSIOController seems to have key 400, that seems to be always the case.
         add_device.controllerKey = device["controllerKey"]
         if device["controllerKey"] not in [400]:
             add_device.controllerKey = device["controllerKey"] * -1
@@ -3018,7 +3036,6 @@ class BareosVmConfigInfoToSpec(object):
             # add_device.backing.uuid = device["backing"]["uuid"]
             add_device.backing.writeThrough = device["backing"]["writeThrough"]
         else:
-            # TODO: unsupported backing type, raise error
             raise RuntimeError(
                 "Unknown Backing for disk: %s" % (device["backing"]["_vimtype"])
             )
@@ -3062,7 +3079,6 @@ class BareosVmConfigInfoToSpec(object):
         elif device["_vimtype"] == "vim.vm.device.VirtualVmxnet3Vrdma":
             add_device = vim.vm.device.VirtualVmxnet3Vrdma()
         else:
-            # TODO: unknown ethernet card type, raise error
             raise RuntimeError("Unknown ethernet card type: %s" % (device["_vimtype"]))
             return None
 
@@ -3107,7 +3123,6 @@ class BareosVmConfigInfoToSpec(object):
             add_device.backing.deviceName = device["backing"]["deviceName"]
             add_device.backing.useAutoDetect = device["backing"]["useAutoDetect"]
         else:
-            # TODO: unknown backing type, raise error
             raise RuntimeError(
                 "Unknown ethernet backing type: %s" % (device["backing"]["_vimtype"])
             )
@@ -3115,8 +3130,8 @@ class BareosVmConfigInfoToSpec(object):
 
         add_device.key = device["key"] * -1
         add_device.connectable = self._transform_connectable(device)
-        # TODO: Looks like negative values must not be used for default devices,
-        # the VirtualPCIController seems to have key 100, but is that always the case?
+        # Looks like negative values must not be used for default devices,
+        # the VirtualPCIController always seems to have key 100.
         add_device.controllerKey = device["controllerKey"]
         if device["controllerKey"] != 100:
             add_device.controllerKey = device["controllerKey"] * -1
@@ -3235,7 +3250,9 @@ class BareosVmConfigInfoToSpec(object):
         latency_sensitivity = vim.LatencySensitivity()
         if latency_sensitivity_config["level"] == "custom":
             # Note: custom level is deprecrated since 5.5
-            # TODO: raise error
+            raise RuntimeError(
+                "Invalid latency sensitivity: custom (deprecated since 5.5)"
+            )
             return None
         latency_sensitivity.level = latency_sensitivity_config["level"]
 
