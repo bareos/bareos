@@ -227,7 +227,7 @@ Configure your Apache Webserver
 
 The package **bareos-webui** provides a default configuration for Apache. Depending on your distribution, it is installed at :file:`/etc/apache2/conf.d/bareos-webui.conf`, :file:`/etc/httpd/conf.d/bareos-webui.conf`, :file:`/etc/apache2/available-conf/bareos-webui.conf` or similar.
 
-The required Apache modules, :strong:`setenv`, :strong:`rewrite` and :strong:`php` are enabled via package postinstall script. However, after installing the **bareos-webui** package, you need to restart your Apache webserver manually.
+The required Apache modules, :strong:`fcgid` and :strong:`rewrite` are enabled via package postinstall script. However, after installing the **bareos-webui** package, you need to restart your Apache webserver manually.
 
 
 .. _section-webui-configuration-files:
