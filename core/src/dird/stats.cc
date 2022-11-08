@@ -29,7 +29,7 @@
 #include "dird.h"
 #include "dird/dird_globals.h"
 #include "dird/get_database_connection.h"
-#include "dird/jcr_private.h"
+#include "dird/director_jcr_impl.h"
 #include "cats/sql_pooling.h"
 #include "dird/sd_cmds.h"
 #include "dird/ua_server.h"
@@ -129,12 +129,12 @@ extern "C" void* statistics_thread(void*)
 
   jcr = new_control_jcr("*StatisticsCollector*", JT_SYSTEM);
 
-  jcr->impl->res.catalog
+  jcr->dir_impl->res.catalog
       = (CatalogResource*)my_config->GetNextRes(R_CATALOG, NULL);
   jcr->db = GetDatabaseConnection(jcr);
   if (jcr->db == NULL) {
     Jmsg(jcr, M_FATAL, 0, _("Could not open database \"%s\".\n"),
-         jcr->impl->res.catalog->db_name);
+         jcr->dir_impl->res.catalog->db_name);
     goto bail_out;
   }
 
@@ -191,7 +191,7 @@ extern "C" void* statistics_thread(void*)
           continue;
       }
 
-      jcr->impl->res.read_storage = store;
+      jcr->dir_impl->res.read_storage = store;
       if (!ConnectToStorageDaemon(jcr, 2, 1, false)) {
         UnlockRes(my_config);
         continue;

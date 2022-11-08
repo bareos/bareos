@@ -27,7 +27,7 @@
 #include "dird/get_database_connection.h"
 #include "dird/job.h"
 #include "dird/job_trigger.h"
-#include "dird/jcr_private.h"
+#include "dird/director_jcr_impl.h"
 #include "dird/run_on_incoming_connect_interval.h"
 #include "dird/scheduler.h"
 #include "dird/jcr_util.h"

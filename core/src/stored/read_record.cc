@@ -38,7 +38,7 @@
 #include "stored/butil.h"
 #include "stored/device.h"
 #include "stored/device_control_record.h"
-#include "stored/jcr_private.h"
+#include "stored/stored_jcr_impl.h"
 #include "stored/label.h"
 #include "stored/match_bsr.h"
 #include "stored/read_ctx.h"
@@ -216,15 +216,15 @@ bool ReadNextBlockFromDevice(DeviceControlRecord* dcr,
             trec->FileIndex = EOT_LABEL;
             trec->File = dcr->dev->file;
             *status = RecordCb(dcr, trec);
-            if (jcr->impl->read_session.mount_next_volume) {
-              jcr->impl->read_session.mount_next_volume = false;
+            if (jcr->sd_impl->read_session.mount_next_volume) {
+              jcr->sd_impl->read_session.mount_next_volume = false;
               dcr->dev->ClearEot();
             }
             FreeRecord(trec);
           }
           return false;
         }
-        jcr->impl->read_session.mount_next_volume = false;
+        jcr->sd_impl->read_session.mount_next_volume = false;
 
         /*
          * We just have a new tape up, now read the label (first record)
@@ -253,7 +253,7 @@ bool ReadNextBlockFromDevice(DeviceControlRecord* dcr,
         } else {
           // I/O error or strange end of tape
           DisplayTapeErrorStatus(jcr, dcr->dev);
-          if (forge_on || jcr->impl->ignore_label_errors) {
+          if (forge_on || jcr->sd_impl->ignore_label_errors) {
             dcr->dev->fsr(1); /* try skipping bad record */
             Pmsg0(000, _("Did fsr in attemp to skip bad record.\n"));
             continue;
@@ -317,10 +317,10 @@ bool ReadNextRecordFromBlock(DeviceControlRecord* dcr,
     // Some sort of label?
     if (rec->FileIndex < 0) {
       HandleSessionRecord(dcr->dev, rec, &rctx->sessrec);
-      if (jcr->impl->read_session.bsr) {
+      if (jcr->sd_impl->read_session.bsr) {
         // We just check block FI and FT not FileIndex
         rec->match_stat
-            = MatchBsrBlock(jcr->impl->read_session.bsr, dcr->block);
+            = MatchBsrBlock(jcr->sd_impl->read_session.bsr, dcr->block);
       } else {
         rec->match_stat = 0;
       }
@@ -329,9 +329,9 @@ bool ReadNextRecordFromBlock(DeviceControlRecord* dcr,
     }
 
     // Apply BootStrapRecord filter
-    if (jcr->impl->read_session.bsr) {
-      rec->match_stat = MatchBsr(jcr->impl->read_session.bsr, rec, &dev->VolHdr,
-                                 &rctx->sessrec, jcr);
+    if (jcr->sd_impl->read_session.bsr) {
+      rec->match_stat = MatchBsr(jcr->sd_impl->read_session.bsr, rec,
+                                 &dev->VolHdr, &rctx->sessrec, jcr);
       if (rec->match_stat == -1) { /* no more possible matches */
         *done = true;              /* all items found, stop */
         Dmsg2(debuglevel, "All done=(file:block) %u:%u\n", dev->file,
@@ -362,7 +362,7 @@ bool ReadNextRecordFromBlock(DeviceControlRecord* dcr,
 
     if (rctx->lastFileIndex != READ_NO_FILEINDEX
         && rctx->lastFileIndex != rec->FileIndex) {
-      if (IsThisBsrDone(jcr->impl->read_session.bsr, rec)
+      if (IsThisBsrDone(jcr->sd_impl->read_session.bsr, rec)
           && TryDeviceRepositioning(jcr, rec, dcr)) {
         Dmsg2(debuglevel, "This bsr done, break pos %u:%u\n", dev->file,
               dev->block_num);
@@ -397,7 +397,7 @@ bool ReadRecords(DeviceControlRecord* dcr,
 
   rctx = new_read_context();
   PositionDeviceToFirstFile(jcr, dcr);
-  jcr->impl->read_session.mount_next_volume = false;
+  jcr->sd_impl->read_session.mount_next_volume = false;
 
   while (ok && !done) {
     if (JobCanceled(jcr)) {

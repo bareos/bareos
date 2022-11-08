@@ -26,7 +26,7 @@
 #include "dird/get_database_connection.h"
 #include "dird/dird_conf.h"
 #include "dird/dird_globals.h"
-#include "dird/jcr_private.h"
+#include "dird/director_jcr_impl.h"
 #include "dird/job.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -99,11 +99,11 @@ void CatalogTest::SetUp()
   // connect to database
   {
     jcr = directordaemon::NewDirectorJcr(directordaemon::DirdFreeJcr);
-    jcr->impl->res.catalog
+    jcr->dir_impl->res.catalog
         = (directordaemon::CatalogResource*)my_config->GetResWithName(
             directordaemon::R_CATALOG, catalog_backend_name.c_str());
 
-    ASSERT_NE(jcr->impl->res.catalog, nullptr);
+    ASSERT_NE(jcr->dir_impl->res.catalog, nullptr);
 
     auto backenddir = std::vector<std::string>{backend_dir};
     DbSetBackendDirs(backenddir);

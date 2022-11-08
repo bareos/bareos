@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -25,7 +25,7 @@
 #include "cats/sql_pooling.h"
 #include "dird/dird_conf.h"
 #include "dird/get_database_connection.h"
-#include "dird/jcr_private.h"
+#include "dird/director_jcr_impl.h"
 #include "include/jcr.h"
 
 namespace directordaemon {
@@ -33,15 +33,16 @@ namespace directordaemon {
 BareosDb* GetDatabaseConnection(JobControlRecord* jcr)
 {
   return DbSqlGetPooledConnection(
-      jcr, jcr->impl->res.catalog->db_driver, jcr->impl->res.catalog->db_name,
-      jcr->impl->res.catalog->db_user,
-      jcr->impl->res.catalog->db_password.value,
-      jcr->impl->res.catalog->db_address, jcr->impl->res.catalog->db_port,
-      jcr->impl->res.catalog->db_socket,
-      jcr->impl->res.catalog->mult_db_connections,
-      jcr->impl->res.catalog->disable_batch_insert,
-      jcr->impl->res.catalog->try_reconnect,
-      jcr->impl->res.catalog->exit_on_fatal);
+      jcr, jcr->dir_impl->res.catalog->db_driver,
+      jcr->dir_impl->res.catalog->db_name, jcr->dir_impl->res.catalog->db_user,
+      jcr->dir_impl->res.catalog->db_password.value,
+      jcr->dir_impl->res.catalog->db_address,
+      jcr->dir_impl->res.catalog->db_port,
+      jcr->dir_impl->res.catalog->db_socket,
+      jcr->dir_impl->res.catalog->mult_db_connections,
+      jcr->dir_impl->res.catalog->disable_batch_insert,
+      jcr->dir_impl->res.catalog->try_reconnect,
+      jcr->dir_impl->res.catalog->exit_on_fatal);
 }
 
 }  // namespace directordaemon

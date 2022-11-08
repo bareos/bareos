@@ -49,7 +49,7 @@
 #include "dird.h"
 #include "dird/inc_conf.h"
 #include "dird/dird_globals.h"
-#include "dird/jcr_private.h"
+#include "dird/director_jcr_impl.h"
 #include "include/auth_protocol_types.h"
 #include "include/auth_types.h"
 #include "include/migration_selection_types.h"
@@ -3139,25 +3139,29 @@ extern "C" char* job_code_callback_director(JobControlRecord* jcr,
 
   switch (param[0]) {
     case 'f':
-      if (jcr->impl->res.fileset) {
-        return jcr->impl->res.fileset->resource_name_;
+      if (jcr->dir_impl->res.fileset) {
+        return jcr->dir_impl->res.fileset->resource_name_;
       }
       break;
     case 'h':
-      if (jcr->impl->res.client) { return jcr->impl->res.client->address; }
+      if (jcr->dir_impl->res.client) {
+        return jcr->dir_impl->res.client->address;
+      }
       break;
     case 'p':
-      if (jcr->impl->res.pool) { return jcr->impl->res.pool->resource_name_; }
+      if (jcr->dir_impl->res.pool) {
+        return jcr->dir_impl->res.pool->resource_name_;
+      }
       break;
     case 'w':
-      if (jcr->impl->res.write_storage) {
-        return jcr->impl->res.write_storage->resource_name_;
+      if (jcr->dir_impl->res.write_storage) {
+        return jcr->dir_impl->res.write_storage->resource_name_;
       }
       break;
     case 'x':
-      return jcr->impl->spool_data ? yes : no;
+      return jcr->dir_impl->spool_data ? yes : no;
     case 'C':
-      return jcr->impl->cloned ? yes : no;
+      return jcr->dir_impl->cloned ? yes : no;
     case 'D':
       return my_name;
     case 'V':
@@ -3166,7 +3170,7 @@ extern "C" char* job_code_callback_director(JobControlRecord* jcr,
          * If this is a migration/copy we need the volume name from the
          * mig_jcr.
          */
-        if (jcr->impl->mig_jcr) { jcr = jcr->impl->mig_jcr; }
+        if (jcr->dir_impl->mig_jcr) { jcr = jcr->dir_impl->mig_jcr; }
 
         if (jcr->VolumeName) {
           return jcr->VolumeName;

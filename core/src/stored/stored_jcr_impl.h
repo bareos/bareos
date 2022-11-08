@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,8 +21,8 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_STORED_JCR_PRIVATE_H_
-#define BAREOS_STORED_JCR_PRIVATE_H_
+#ifndef BAREOS_STORED_STORED_JCR_IMPL_H_
+#define BAREOS_STORED_STORED_JCR_IMPL_H_
 
 #include "stored/read_ctx.h"
 #include "stored/stored_conf.h"
@@ -65,7 +65,7 @@ struct DeviceWaitTimes {
 
 
 /* clang-format off */
-struct JobControlRecordPrivate {
+struct StoredJcrImpl {
   JobControlRecord* next_dev{}; /**< Next JobControlRecord attached to device */
   JobControlRecord* prev_dev{}; /**< Previous JobControlRecord attached to device */
   pthread_cond_t job_start_wait = PTHREAD_COND_INITIALIZER; /**< Wait for FD to start Job */
@@ -104,4 +104,4 @@ struct JobControlRecordPrivate {
 };
 /* clang-format on */
 
-#endif  // BAREOS_STORED_JCR_PRIVATE_H_
+#endif  // BAREOS_STORED_STORED_JCR_IMPL_H_

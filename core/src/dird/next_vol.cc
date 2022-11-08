@@ -32,7 +32,7 @@
 #include "dird.h"
 #include "dird/autoprune.h"
 #include "dird/autorecycle.h"
-#include "dird/jcr_private.h"
+#include "dird/director_jcr_impl.h"
 #include "dird/next_vol.h"
 #include "dird/newvol.h"
 #include "dird/ua_db.h"
@@ -74,7 +74,7 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
   int retry = 0;
   bool ok;
   bool InChanger;
-  StorageResource* store = jcr->impl->res.write_storage;
+  StorageResource* store = jcr->dir_impl->res.write_storage;
 
   bstrncpy(mr->MediaType, store->media_type, sizeof(mr->MediaType));
   Dmsg3(debuglevel,
@@ -151,12 +151,12 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
 
       //  Look at more drastic ways to find an Appendable Volume
       if (!ok
-          && (jcr->impl->res.pool->purge_oldest_volume
-              || jcr->impl->res.pool->recycle_oldest_volume)) {
+          && (jcr->dir_impl->res.pool->purge_oldest_volume
+              || jcr->dir_impl->res.pool->recycle_oldest_volume)) {
         Dmsg2(debuglevel,
               "No next volume found. PurgeOldest=%d\n RecyleOldest=%d",
-              jcr->impl->res.pool->purge_oldest_volume,
-              jcr->impl->res.pool->recycle_oldest_volume);
+              jcr->dir_impl->res.pool->purge_oldest_volume,
+              jcr->dir_impl->res.pool->recycle_oldest_volume);
 
         // Find oldest volume to recycle
         SetStorageidInMr(store, mr);
@@ -168,11 +168,11 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
           Dmsg0(debuglevel, "Try purge Volume.\n");
           // 7.  Try to purging oldest volume only if not UA calling us.
           ua = new_ua_context(jcr);
-          if (jcr->impl->res.pool->purge_oldest_volume && create) {
+          if (jcr->dir_impl->res.pool->purge_oldest_volume && create) {
             Jmsg(jcr, M_INFO, 0, _("Purging oldest volume \"%s\"\n"),
                  mr->VolumeName);
             ok = PurgeJobsFromVolume(ua, mr);
-          } else if (jcr->impl->res.pool->recycle_oldest_volume) {
+          } else if (jcr->dir_impl->res.pool->recycle_oldest_volume) {
             // 8. Try recycling the oldest volume
             Jmsg(jcr, M_INFO, 0, _("Pruning oldest volume \"%s\"\n"),
                  mr->VolumeName);
@@ -336,7 +336,7 @@ void CheckIfVolumeValidOrRecyclable(JobControlRecord* jcr,
    * try to catch close calls ...
    */
   if ((mr->LastWritten + mr->VolRetention - 60) < (utime_t)time(NULL)
-      && jcr->impl->res.pool->recycle_current_volume
+      && jcr->dir_impl->res.pool->recycle_current_volume
       && (bstrcmp(mr->VolStatus, "Full") || bstrcmp(mr->VolStatus, "Used"))) {
     // Attempt prune of current volume to see if we can recycle it for use.
     UaContext* ua;
@@ -419,7 +419,8 @@ bool GetScratchVolume(JobControlRecord* jcr,
        * add a Volume.
        */
       PoolDbRecord pr;
-      bstrncpy(pr.Name, jcr->impl->res.pool->resource_name_, sizeof(pr.Name));
+      bstrncpy(pr.Name, jcr->dir_impl->res.pool->resource_name_,
+               sizeof(pr.Name));
 
       if (!jcr->db->GetPoolRecord(jcr, &pr)) {
         Jmsg(jcr, M_WARNING, 0, _("Unable to get Pool record: ERR=%s\n"),
@@ -431,7 +432,7 @@ bool GetScratchVolume(JobControlRecord* jcr,
       if (pr.MaxVols > 0 && pr.NumVols >= pr.MaxVols) {
         Jmsg(jcr, M_WARNING, 0,
              _("Unable add Scratch Volume, Pool \"%s\" full MaxVols=%d\n"),
-             jcr->impl->res.pool->resource_name_, pr.MaxVols);
+             jcr->dir_impl->res.pool->resource_name_, pr.MaxVols);
         goto bail_out;
       }
 

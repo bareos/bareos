@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -25,7 +25,7 @@
 #include "filed/filed.h"
 #include "filed/accurate.h"
 #include "filed/filed_globals.h"
-#include "filed/jcr_private.h"
+#include "filed/filed_jcr_impl.h"
 #include "filed/verify.h"
 #include "lib/attribs.h"
 #include "lib/bsock.h"
@@ -39,11 +39,11 @@ bool AccurateMarkFileAsSeen(JobControlRecord* jcr, char* fname)
 {
   accurate_payload* temp;
 
-  if (!jcr->accurate || !jcr->impl->file_list) { return false; }
+  if (!jcr->accurate || !jcr->fd_impl->file_list) { return false; }
 
-  temp = jcr->impl->file_list->lookup_payload(fname);
+  temp = jcr->fd_impl->file_list->lookup_payload(fname);
   if (temp) {
-    jcr->impl->file_list->MarkFileAsSeen(temp);
+    jcr->fd_impl->file_list->MarkFileAsSeen(temp);
     Dmsg1(debuglevel, "marked <%s> as seen\n", fname);
   } else {
     Dmsg1(debuglevel, "<%s> not found to be marked as seen\n", fname);
@@ -56,11 +56,11 @@ bool accurate_unMarkFileAsSeen(JobControlRecord* jcr, char* fname)
 {
   accurate_payload* temp;
 
-  if (!jcr->accurate || !jcr->impl->file_list) { return false; }
+  if (!jcr->accurate || !jcr->fd_impl->file_list) { return false; }
 
-  temp = jcr->impl->file_list->lookup_payload(fname);
+  temp = jcr->fd_impl->file_list->lookup_payload(fname);
   if (temp) {
-    jcr->impl->file_list->UnmarkFileAsSeen(temp);
+    jcr->fd_impl->file_list->UnmarkFileAsSeen(temp);
     Dmsg1(debuglevel, "unmarked <%s> as seen\n", fname);
   } else {
     Dmsg1(debuglevel, "<%s> not found to be unmarked as seen\n", fname);
@@ -71,17 +71,17 @@ bool accurate_unMarkFileAsSeen(JobControlRecord* jcr, char* fname)
 
 bool AccurateMarkAllFilesAsSeen(JobControlRecord* jcr)
 {
-  if (!jcr->accurate || !jcr->impl->file_list) { return false; }
+  if (!jcr->accurate || !jcr->fd_impl->file_list) { return false; }
 
-  jcr->impl->file_list->MarkAllFilesAsSeen();
+  jcr->fd_impl->file_list->MarkAllFilesAsSeen();
   return true;
 }
 
 bool accurate_unMarkAllFilesAsSeen(JobControlRecord* jcr)
 {
-  if (!jcr->accurate || !jcr->impl->file_list) { return false; }
+  if (!jcr->accurate || !jcr->fd_impl->file_list) { return false; }
 
-  jcr->impl->file_list->UnmarkAllFilesAsSeen();
+  jcr->fd_impl->file_list->UnmarkAllFilesAsSeen();
   return true;
 }
 
@@ -91,7 +91,7 @@ static inline bool AccurateLookup(JobControlRecord* jcr,
 {
   bool found = false;
 
-  *payload = jcr->impl->file_list->lookup_payload(fname);
+  *payload = jcr->fd_impl->file_list->lookup_payload(fname);
   if (*payload) {
     found = true;
     Dmsg1(debuglevel, "lookup <%s> ok\n", fname);
@@ -102,9 +102,9 @@ static inline bool AccurateLookup(JobControlRecord* jcr,
 
 void AccurateFree(JobControlRecord* jcr)
 {
-  if (jcr->impl->file_list) {
-    delete jcr->impl->file_list;
-    jcr->impl->file_list = NULL;
+  if (jcr->fd_impl->file_list) {
+    delete jcr->fd_impl->file_list;
+    jcr->fd_impl->file_list = NULL;
   }
 }
 
@@ -118,19 +118,19 @@ bool AccurateFinish(JobControlRecord* jcr)
     return retval;
   }
 
-  if (jcr->accurate && jcr->impl->file_list) {
+  if (jcr->accurate && jcr->fd_impl->file_list) {
     if (jcr->is_JobLevel(L_FULL)) {
       if (!jcr->rerunning) {
-        retval = jcr->impl->file_list->SendBaseFileList();
+        retval = jcr->fd_impl->file_list->SendBaseFileList();
       }
     } else {
-      retval = jcr->impl->file_list->SendDeletedList();
+      retval = jcr->fd_impl->file_list->SendDeletedList();
     }
 
     AccurateFree(jcr);
     if (jcr->is_JobLevel(L_FULL)) {
       Jmsg(jcr, M_INFO, 0, _("Space saved with Base jobs: %lld MB\n"),
-           jcr->impl->base_size / (1024 * 1024));
+           jcr->fd_impl->base_size / (1024 * 1024));
     }
   }
 
@@ -160,7 +160,7 @@ bool AccurateCheckFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 
   if (!jcr->accurate && !jcr->rerunning) { return true; }
 
-  if (!jcr->impl->file_list) { return true; /** Not initialized properly */ }
+  if (!jcr->fd_impl->file_list) { return true; /** Not initialized properly */ }
 
   // Apply path stripping for lookup in accurate data.
   StripPath(ff_pkt);
@@ -316,11 +316,11 @@ bool AccurateCheckFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
   if (jcr->getJobLevel() == L_FULL) {
     if (!status) {
       // Compute space saved with basefile.
-      jcr->impl->base_size += ff_pkt->statp.st_size;
-      jcr->impl->file_list->MarkFileAsSeen(payload);
+      jcr->fd_impl->base_size += ff_pkt->statp.st_size;
+      jcr->fd_impl->file_list->MarkFileAsSeen(payload);
     }
   } else {
-    jcr->impl->file_list->MarkFileAsSeen(payload);
+    jcr->fd_impl->file_list->MarkFileAsSeen(payload);
   }
 
 bail_out:
@@ -346,18 +346,18 @@ bool AccurateCmd(JobControlRecord* jcr)
   if (me->always_use_lmdb
       || (me->lmdb_threshold > 0
           && number_of_previous_files >= me->lmdb_threshold)) {
-    jcr->impl->file_list
+    jcr->fd_impl->file_list
         = new BareosAccurateFilelistLmdb(jcr, number_of_previous_files);
   } else {
-    jcr->impl->file_list
+    jcr->fd_impl->file_list
         = new BareosAccurateFilelistHtable(jcr, number_of_previous_files);
   }
 #else
-  jcr->impl->file_list
+  jcr->fd_impl->file_list
       = new BareosAccurateFilelistHtable(jcr, number_of_previous_files);
 #endif
 
-  if (!jcr->impl->file_list->init()) { return false; }
+  if (!jcr->fd_impl->file_list->init()) { return false; }
 
   jcr->accurate = true;
 
@@ -388,11 +388,11 @@ bool AccurateCmd(JobControlRecord* jcr)
       }
     }
 
-    jcr->impl->file_list->AddFile(fname, fname_length, lstat, lstat_length,
-                                  chksum, chksum_length, delta_seq);
+    jcr->fd_impl->file_list->AddFile(fname, fname_length, lstat, lstat_length,
+                                     chksum, chksum_length, delta_seq);
   }
 
-  if (!jcr->impl->file_list->EndLoad()) { return false; }
+  if (!jcr->fd_impl->file_list->EndLoad()) { return false; }
 
   return true;
 }

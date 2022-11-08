@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -33,7 +33,7 @@
 
 #  include "include/bareos.h"
 #  include "filed/filed.h"
-#  include "filed/jcr_private.h"
+#  include "filed/filed_jcr_impl.h"
 #  include "lib/thread_specific_data.h"
 
 #  include "ms_atl.h"
@@ -54,9 +54,9 @@ static bool VSSPathConvert(const char* szFilePath,
 {
   JobControlRecord* jcr = GetJcrFromThreadSpecificData();
 
-  if (jcr && jcr->impl->pVSSClient) {
-    return jcr->impl->pVSSClient->GetShadowPath(szFilePath, szShadowPath,
-                                                nBuflen);
+  if (jcr && jcr->fd_impl->pVSSClient) {
+    return jcr->fd_impl->pVSSClient->GetShadowPath(szFilePath, szShadowPath,
+                                                   nBuflen);
   }
 
   return false;
@@ -68,9 +68,9 @@ static bool VSSPathConvertW(const wchar_t* szFilePath,
 {
   JobControlRecord* jcr = GetJcrFromThreadSpecificData();
 
-  if (jcr && jcr->impl->pVSSClient) {
-    return jcr->impl->pVSSClient->GetShadowPathW(szFilePath, szShadowPath,
-                                                 nBuflen);
+  if (jcr && jcr->fd_impl->pVSSClient) {
+    return jcr->fd_impl->pVSSClient->GetShadowPathW(szFilePath, szShadowPath,
+                                                    nBuflen);
   }
 
   return false;
@@ -82,15 +82,15 @@ void VSSInit(JobControlRecord* jcr)
   if (g_MajorVersion == 5) {
     switch (g_MinorVersion) {
       case 1:
-        jcr->impl->pVSSClient = new VSSClientXP();
+        jcr->fd_impl->pVSSClient = new VSSClientXP();
         break;
       case 2:
-        jcr->impl->pVSSClient = new VSSClient2003();
+        jcr->fd_impl->pVSSClient = new VSSClient2003();
         break;
     }
     // Vista or Longhorn or later
   } else if (g_MajorVersion >= 6) {
-    jcr->impl->pVSSClient = new VSSClientVista();
+    jcr->fd_impl->pVSSClient = new VSSClientVista();
   }
 
   // Setup the callback functions.

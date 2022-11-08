@@ -29,7 +29,7 @@
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
 #include "stored/device_control_record.h"
-#include "stored/jcr_private.h"
+#include "stored/stored_jcr_impl.h"
 #include "lib/util.h"
 #include "include/jcr.h"
 #include "lib/parse_conf.h"
@@ -294,8 +294,9 @@ void UpdateJobStatistics(JobControlRecord* jcr, utime_t now)
   job_stat->timestamp = now;
   job_stat->JobFiles = jcr->JobFiles;
   job_stat->JobBytes = jcr->JobBytes;
-  if (jcr->impl->dcr && jcr->impl->dcr->device_resource) {
-    job_stat->DevName = strdup(jcr->impl->dcr->device_resource->resource_name_);
+  if (jcr->sd_impl->dcr && jcr->sd_impl->dcr->device_resource) {
+    job_stat->DevName
+        = strdup(jcr->sd_impl->dcr->device_resource->resource_name_);
   } else {
     job_stat->DevName = strdup("unknown");
   }

@@ -33,7 +33,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
-#include "dird/jcr_private.h"
+#include "dird/director_jcr_impl.h"
 #include "dird/job.h"
 #include "dird/dird_globals.h"
 #include "dird/sd_cmds.h"
@@ -727,7 +727,7 @@ static void DoClientCmd(UaContext* ua, ClientResource* client const char*)
 
   /* Connect to File daemon */
 
-  ua->jcr->impl->res.client = client;
+  ua->jcr->dir_impl->res.client = client;
   /* Try to connect for 15 seconds */
   ua->SendMsg(_("Connecting to Client %s at %s:%d\n"), client->resource_name_,
               client->address, client->FDport);

@@ -31,7 +31,7 @@
 #include "dird/dird_globals.h"
 #include "dird/authenticate.h"
 #include "dird/authenticate_console.h"
-#include "dird/jcr_private.h"
+#include "dird/director_jcr_impl.h"
 #include "dird/job.h"
 #include "dird/pthread_detach_if_not_detached.h"
 #include "dird/ua_cmds.h"
@@ -58,14 +58,14 @@ JobControlRecord* new_control_jcr(const char* base_name, int job_type)
 
   // exclude JT_SYSTEM job from shared config counting
   if (job_type == JT_SYSTEM) {
-    jcr->impl->job_config_resources_container_ = nullptr;
+    jcr->dir_impl->job_config_resources_container_ = nullptr;
   }
 
   /* The job and defaults are not really used, but we set them up to ensure that
    * everything is correctly initialized. */
   LockRes(my_config);
-  jcr->impl->res.job = (JobResource*)my_config->GetNextRes(R_JOB, NULL);
-  SetJcrDefaults(jcr, jcr->impl->res.job);
+  jcr->dir_impl->res.job = (JobResource*)my_config->GetNextRes(R_JOB, NULL);
+  SetJcrDefaults(jcr, jcr->dir_impl->res.job);
   UnlockRes(my_config);
 
   jcr->sd_auth_key = strdup("dummy"); /* dummy Storage daemon key */

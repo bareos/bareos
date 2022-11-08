@@ -35,7 +35,7 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/next_vol.h"
-#include "dird/jcr_private.h"
+#include "dird/director_jcr_impl.h"
 #include "dird/sd_cmds.h"
 #include "findlib/find.h"
 #include "lib/berrno.h"
@@ -88,7 +88,7 @@ static int SendVolumeInfoToStorageDaemon(JobControlRecord* jcr,
   int status;
   char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50], ed6[50];
 
-  jcr->impl->MediaId = mr->MediaId;
+  jcr->dir_impl->MediaId = mr->MediaId;
   PmStrcpy(jcr->VolumeName, mr->VolumeName);
   BashSpaces(mr->VolumeName);
   status = sd->fsend(
@@ -145,7 +145,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
     ok = jcr->db->GetPoolRecord(jcr, &pr);
     if (ok) {
       mr.PoolId = pr.PoolId;
-      SetStorageidInMr(jcr->impl->res.write_storage, &mr);
+      SetStorageidInMr(jcr->dir_impl->res.write_storage, &mr);
       mr.ScratchPoolId = pr.ScratchPoolId;
       ok = FindNextVolumeForAppend(jcr, &mr, index, unwanted_volumes.c_str(),
                                    fnv_create_vol, fnv_prune);
@@ -179,10 +179,10 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
          *   Pool matches, and it is either Append or Recycle
          *   and Media Type matches and Pool allows any volume.
          */
-        if (mr.PoolId != jcr->impl->jr.PoolId) {
+        if (mr.PoolId != jcr->dir_impl->jr.PoolId) {
           reason = _("not in Pool");
         } else if (!bstrcmp(mr.MediaType,
-                            jcr->impl->res.write_storage->media_type)) {
+                            jcr->dir_impl->res.write_storage->media_type)) {
           reason = _("not correct MediaType");
         } else {
           /*
@@ -280,11 +280,11 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
      * However, do so only if we are writing the tape, i.e.
      * the number of VolWrites has increased.
      */
-    if (jcr->impl->res.write_storage && sdmr.VolWrites > mr.VolWrites) {
+    if (jcr->dir_impl->res.write_storage && sdmr.VolWrites > mr.VolWrites) {
       Dmsg2(050, "Update StorageId old=%d new=%d\n", mr.StorageId,
-            jcr->impl->res.write_storage->StorageId);
+            jcr->dir_impl->res.write_storage->StorageId);
       // Update StorageId after write
-      SetStorageidInMr(jcr->impl->res.write_storage, &mr);
+      SetStorageidInMr(jcr->dir_impl->res.write_storage, &mr);
     } else {
       // Nothing written, reset same StorageId
       SetStorageidInMr(NULL, &mr);
@@ -331,8 +331,8 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
                     &jm.EndBlock, &Copy, &Stripe, &MediaId)
              == 10) {
     // Request to create a JobMedia record
-    if (jcr->impl->mig_jcr) {
-      jm.JobId = jcr->impl->mig_jcr->JobId;
+    if (jcr->dir_impl->mig_jcr) {
+      jm.JobId = jcr->dir_impl->mig_jcr->JobId;
     } else {
       jm.JobId = jcr->JobId;
     }
@@ -465,7 +465,7 @@ static void UpdateAttribute(JobControlRecord* jcr,
   Dmsg5(400, "UpdCat VolSessId=%d VolSessT=%d FI=%d Strm=%d reclen=%d\n",
         VolSessionId, VolSessionTime, FileIndex, Stream, reclen);
 
-  jcr->impl->SDJobBytes
+  jcr->dir_impl->SDJobBytes
       += reclen; /* update number of bytes transferred for quotas */
 
   switch (Stream) {
@@ -515,8 +515,8 @@ static void UpdateAttribute(JobControlRecord* jcr,
       }
       ar->Stream = Stream;
       ar->link = NULL;
-      if (jcr->impl->mig_jcr) {
-        ar->JobId = jcr->impl->mig_jcr->JobId;
+      if (jcr->dir_impl->mig_jcr) {
+        ar->JobId = jcr->dir_impl->mig_jcr->JobId;
       } else {
         ar->JobId = jcr->JobId;
       }
@@ -542,8 +542,8 @@ static void UpdateAttribute(JobControlRecord* jcr,
 
       ro.Stream = Stream;
       ro.FileIndex = FileIndex;
-      if (jcr->impl->mig_jcr) {
-        ro.JobId = jcr->impl->mig_jcr->JobId;
+      if (jcr->dir_impl->mig_jcr) {
+        ro.JobId = jcr->dir_impl->mig_jcr->JobId;
       } else {
         ro.JobId = jcr->JobId;
       }
@@ -659,7 +659,7 @@ static void UpdateAttribute(JobControlRecord* jcr,
 // Update File Attributes in the catalog with data sent by the Storage daemon.
 void CatalogUpdate(JobControlRecord* jcr, BareosSocket* bs)
 {
-  if (!jcr->impl->res.pool->catalog_files) {
+  if (!jcr->dir_impl->res.pool->catalog_files) {
     return; /* user disabled cataloging */
   }
 
@@ -696,7 +696,8 @@ bool DespoolAttributesFromFile(JobControlRecord* jcr, const char* file)
 
   Dmsg0(100, "Begin DespoolAttributesFromFile\n");
 
-  if (jcr->IsJobCanceled() || !jcr->impl->res.pool->catalog_files || !jcr->db) {
+  if (jcr->IsJobCanceled() || !jcr->dir_impl->res.pool->catalog_files
+      || !jcr->db) {
     goto bail_out; /* user disabled cataloging */
   }
 

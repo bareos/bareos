@@ -28,7 +28,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
-#include "dird/jcr_private.h"
+#include "dird/director_jcr_impl.h"
 #include "dird/next_vol.h"
 #include "dird/ua_server.h"
 #include "dird/ua_prune.h"
@@ -49,14 +49,14 @@ void DoAutoprune(JobControlRecord* jcr)
   PoolResource* pool;
   bool pruned;
 
-  if (!jcr->impl->res.client) { /* temp -- remove me */
+  if (!jcr->dir_impl->res.client) { /* temp -- remove me */
     return;
   }
 
   ua = new_ua_context(jcr);
-  job = jcr->impl->res.job;
-  client = jcr->impl->res.client;
-  pool = jcr->impl->res.pool;
+  job = jcr->dir_impl->res.job;
+  client = jcr->dir_impl->res.client;
+  pool = jcr->dir_impl->res.pool;
 
   if (job->PruneJobs || client->AutoPrune) {
     PruneJobs(ua, client, pool);
@@ -92,8 +92,9 @@ void PruneVolumes(JobControlRecord* jcr,
   PoolMem query(PM_MESSAGE);
   char ed1[50], ed2[100], ed3[50];
 
-  Dmsg1(100, "Prune volumes PoolId=%d\n", jcr->impl->jr.PoolId);
-  if (!jcr->impl->res.job->PruneVolumes && !jcr->impl->res.pool->AutoPrune) {
+  Dmsg1(100, "Prune volumes PoolId=%d\n", jcr->dir_impl->jr.PoolId);
+  if (!jcr->dir_impl->res.job->PruneVolumes
+      && !jcr->dir_impl->res.pool->AutoPrune) {
     Dmsg0(100, "AutoPrune not set in Pool.\n");
     return;
   }

@@ -40,7 +40,7 @@
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
 #include "stored/device_control_record.h"
-#include "stored/jcr_private.h"
+#include "stored/stored_jcr_impl.h"
 #include "stored/job.h"
 #include "stored/sd_plugins.h"
 #include "stored/sd_stats.h"
@@ -135,7 +135,7 @@ void WaitThenUnreserve(std::unique_ptr<TestJob>&);
 void WaitThenUnreserve(std::unique_ptr<TestJob>& job)
 {
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
-  job->jcr->impl->dcr->UnreserveDevice();
+  job->jcr->sd_impl->dcr->UnreserveDevice();
   ReleaseDeviceCond();
 }
 

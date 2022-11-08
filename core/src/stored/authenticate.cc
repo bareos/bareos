@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,7 +28,7 @@
 #include "include/bareos.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
-#include "stored/jcr_private.h"
+#include "stored/stored_jcr_impl.h"
 #include "lib/parse_conf.h"
 #include "lib/bsock.h"
 #include "lib/bnet_network_dump.h"
@@ -85,7 +85,7 @@ bool AuthenticateDirector(JobControlRecord* jcr)
 
   UnbashSpaces(dirname);
   director = (DirectorResource*)my_config->GetResWithName(R_DIRECTOR, dirname);
-  jcr->impl->director = director;
+  jcr->sd_impl->director = director;
 
   if (!director) {
     Dmsg2(debuglevel, "Connection from unknown Director %s at %s rejected.\n",

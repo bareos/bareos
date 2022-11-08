@@ -21,8 +21,8 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_DIRD_JCR_PRIVATE_H_
-#define BAREOS_DIRD_JCR_PRIVATE_H_
+#ifndef BAREOS_DIRD_DIRECTOR_JCR_IMPL_H_
+#define BAREOS_DIRD_DIRECTOR_JCR_IMPL_H_
 
 #include "cats/cats.h"
 #include "dird/client_connection_handshake_mode.h"
@@ -55,10 +55,10 @@ struct BootStrapRecord;
        || jcr->getJobStatus() == JS_WaitClientRes                           \
        || jcr->getJobStatus() == JS_WaitMaxJobs                             \
        || jcr->getJobStatus() == JS_WaitPriority                            \
-       || jcr->impl->SDJobStatus == JS_WaitMedia                            \
-       || jcr->impl->SDJobStatus == JS_WaitMount                            \
-       || jcr->impl->SDJobStatus == JS_WaitDevice                           \
-       || jcr->impl->SDJobStatus == JS_WaitMaxJobs))
+       || jcr->dir_impl->SDJobStatus == JS_WaitMedia                        \
+       || jcr->dir_impl->SDJobStatus == JS_WaitMount                        \
+       || jcr->dir_impl->SDJobStatus == JS_WaitDevice                       \
+       || jcr->dir_impl->SDJobStatus == JS_WaitMaxJobs))
 
 /* clang-format off */
 struct Resources {
@@ -96,8 +96,8 @@ struct Resources {
   bool run_next_pool_override{};  /**< Next pool override was given on run cmdline */
 };
 
-struct JobControlRecordPrivate {
-  JobControlRecordPrivate( std::shared_ptr<ConfigResourcesContainer> configuration_resources_container) : job_config_resources_container_(configuration_resources_container) {
+struct DirectorJcrImpl {
+  DirectorJcrImpl( std::shared_ptr<ConfigResourcesContainer> configuration_resources_container) : job_config_resources_container_(configuration_resources_container) {
     RestoreJobId = 0; MigrateJobId = 0; VerifyJobId = 0;
   }
   std::shared_ptr<ConfigResourcesContainer> job_config_resources_container_;
@@ -169,4 +169,4 @@ struct JobControlRecordPrivate {
 };
 /* clang-format on */
 
-#endif  // BAREOS_DIRD_JCR_PRIVATE_H_
+#endif  // BAREOS_DIRD_DIRECTOR_JCR_IMPL_H_

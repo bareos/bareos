@@ -33,7 +33,7 @@
 #include "stored/acquire.h"
 #include "stored/butil.h"
 #include "stored/device_control_record.h"
-#include "stored/jcr_private.h"
+#include "stored/stored_jcr_impl.h"
 #include "stored/mount.h"
 #include "stored/read_record.h"
 #include "findlib/find.h"
@@ -396,9 +396,9 @@ static void DoExtract(char* devname,
   jcr = SetupJcr("bextract", devname, bsr, director, dcr, VolumeName,
                  true); /* read device */
   if (!jcr) { exit(1); }
-  dev = jcr->impl->read_dcr->dev;
+  dev = jcr->sd_impl->read_dcr->dev;
   if (!dev) { exit(1); }
-  dcr = jcr->impl->read_dcr;
+  dcr = jcr->sd_impl->read_dcr;
 
   // Make sure where directory exists and that it is a directory
   if (stat(where, &statp) < 0) {
@@ -445,7 +445,7 @@ static void DoExtract(char* devname,
 
   CleanupCompression(jcr);
 
-  CleanDevice(jcr->impl->dcr);
+  CleanDevice(jcr->sd_impl->dcr);
   delete dev;
   FreeDeviceControlRecord(dcr);
   FreeJcr(jcr);

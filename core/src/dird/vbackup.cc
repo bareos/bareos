@@ -39,7 +39,7 @@
 #include "dird/dird_globals.h"
 #include "dird/backup.h"
 #include "dird/bsr.h"
-#include "dird/jcr_private.h"
+#include "dird/director_jcr_impl.h"
 #include "dird/job.h"
 #include "dird/migration.h"
 #include "dird/msgchan.h"
@@ -102,12 +102,12 @@ class JobConsistencyChecker {
 std::string GetVfJobids(JobControlRecord& jcr)
 {
   // See if we already got a list of jobids to use.
-  if (jcr.impl->vf_jobids) {
-    Dmsg1(10, "jobids=%s\n", jcr.impl->vf_jobids);
-    return jcr.impl->vf_jobids;
+  if (jcr.dir_impl->vf_jobids) {
+    Dmsg1(10, "jobids=%s\n", jcr.dir_impl->vf_jobids);
+    return jcr.dir_impl->vf_jobids;
   } else {
     db_list_ctx jobids_ctx;
-    jcr.db->AccurateGetJobids(&jcr, &jcr.impl->jr, &jobids_ctx);
+    jcr.db->AccurateGetJobids(&jcr, &jcr.dir_impl->jr, &jobids_ctx);
     Dmsg1(10, "consolidate candidates:  %s.\n",
           jobids_ctx.GetAsString().c_str());
     return jobids_ctx.GetAsString();
@@ -128,9 +128,9 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
 
   if (!AllowDuplicateJob(jcr)) { return false; }
 
-  jcr->impl->jr.PoolId
-      = GetOrCreatePoolRecord(jcr, jcr->impl->res.pool->resource_name_);
-  if (jcr->impl->jr.PoolId == 0) {
+  jcr->dir_impl->jr.PoolId
+      = GetOrCreatePoolRecord(jcr, jcr->dir_impl->res.pool->resource_name_);
+  if (jcr->dir_impl->jr.PoolId == 0) {
     Dmsg1(dbglevel, "JobId=%d no PoolId\n", (int)jcr->JobId);
     Jmsg(jcr, M_FATAL, 0, _("Could not get or create a Pool record.\n"));
     return false;
@@ -142,38 +142,41 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
    * pool will be changed to point to the write pool,
    * which comes from pool->NextPool.
    */
-  jcr->impl->res.rpool = jcr->impl->res.pool; /* save read pool */
-  PmStrcpy(jcr->impl->res.rpool_source, jcr->impl->res.pool_source);
+  jcr->dir_impl->res.rpool = jcr->dir_impl->res.pool; /* save read pool */
+  PmStrcpy(jcr->dir_impl->res.rpool_source, jcr->dir_impl->res.pool_source);
 
   // If pool storage specified, use it for restore
-  CopyRstorage(jcr, jcr->impl->res.pool->storage, _("Pool resource"));
+  CopyRstorage(jcr, jcr->dir_impl->res.pool->storage, _("Pool resource"));
 
   Dmsg2(dbglevel, "Read pool=%s (From %s)\n",
-        jcr->impl->res.rpool->resource_name_, jcr->impl->res.rpool_source);
+        jcr->dir_impl->res.rpool->resource_name_,
+        jcr->dir_impl->res.rpool_source);
 
   jcr->start_time = time(NULL);
-  jcr->impl->jr.StartTime = jcr->start_time;
-  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->impl->jr)) {
+  jcr->dir_impl->jr.StartTime = jcr->start_time;
+  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
   }
 
   // See if there is a next pool override.
-  if (jcr->impl->res.run_next_pool_override) {
-    PmStrcpy(jcr->impl->res.npool_source, _("Run NextPool override"));
-    PmStrcpy(jcr->impl->res.pool_source, _("Run NextPool override"));
+  if (jcr->dir_impl->res.run_next_pool_override) {
+    PmStrcpy(jcr->dir_impl->res.npool_source, _("Run NextPool override"));
+    PmStrcpy(jcr->dir_impl->res.pool_source, _("Run NextPool override"));
     storage_source = _("Storage from Run NextPool override");
   } else {
     // See if there is a next pool override in the Job definition.
-    if (jcr->impl->res.job->next_pool) {
-      jcr->impl->res.next_pool = jcr->impl->res.job->next_pool;
-      PmStrcpy(jcr->impl->res.npool_source, _("Job's NextPool resource"));
-      PmStrcpy(jcr->impl->res.pool_source, _("Job's NextPool resource"));
+    if (jcr->dir_impl->res.job->next_pool) {
+      jcr->dir_impl->res.next_pool = jcr->dir_impl->res.job->next_pool;
+      PmStrcpy(jcr->dir_impl->res.npool_source, _("Job's NextPool resource"));
+      PmStrcpy(jcr->dir_impl->res.pool_source, _("Job's NextPool resource"));
       storage_source = _("Storage from Job's NextPool resource");
     } else {
       // Fall back to the pool's NextPool definition.
-      jcr->impl->res.next_pool = jcr->impl->res.pool->NextPool;
-      PmStrcpy(jcr->impl->res.npool_source, _("Job Pool's NextPool resource"));
-      PmStrcpy(jcr->impl->res.pool_source, _("Job Pool's NextPool resource"));
+      jcr->dir_impl->res.next_pool = jcr->dir_impl->res.pool->NextPool;
+      PmStrcpy(jcr->dir_impl->res.npool_source,
+               _("Job Pool's NextPool resource"));
+      PmStrcpy(jcr->dir_impl->res.pool_source,
+               _("Job Pool's NextPool resource"));
       storage_source = _("Storage from Pool's NextPool resource");
     }
   }
@@ -183,22 +186,22 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
    * record exists in the database. Note, in this case, we
    * will be migrating from pool to pool->NextPool.
    */
-  if (jcr->impl->res.next_pool) {
-    jcr->impl->jr.PoolId
-        = GetOrCreatePoolRecord(jcr, jcr->impl->res.next_pool->resource_name_);
-    if (jcr->impl->jr.PoolId == 0) { return false; }
+  if (jcr->dir_impl->res.next_pool) {
+    jcr->dir_impl->jr.PoolId = GetOrCreatePoolRecord(
+        jcr, jcr->dir_impl->res.next_pool->resource_name_);
+    if (jcr->dir_impl->jr.PoolId == 0) { return false; }
   }
 
-  if (!SetMigrationWstorage(jcr, jcr->impl->res.pool, jcr->impl->res.next_pool,
-                            storage_source)) {
+  if (!SetMigrationWstorage(jcr, jcr->dir_impl->res.pool,
+                            jcr->dir_impl->res.next_pool, storage_source)) {
     return false;
   }
 
-  jcr->impl->res.pool = jcr->impl->res.next_pool;
+  jcr->dir_impl->res.pool = jcr->dir_impl->res.next_pool;
 
   Dmsg2(dbglevel, "Write pool=%s read rpool=%s\n",
-        jcr->impl->res.pool->resource_name_,
-        jcr->impl->res.rpool->resource_name_);
+        jcr->dir_impl->res.pool->resource_name_,
+        jcr->dir_impl->res.rpool->resource_name_);
 
   // CreateClones(jcr);
 
@@ -214,22 +217,23 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
  */
 bool DoNativeVbackup(JobControlRecord* jcr)
 {
-  if (!jcr->impl->res.read_storage_list) {
+  if (!jcr->dir_impl->res.read_storage_list) {
     Jmsg(jcr, M_FATAL, 0, _("No storage for reading given.\n"));
     return false;
   }
 
-  if (!jcr->impl->res.write_storage_list) {
+  if (!jcr->dir_impl->res.write_storage_list) {
     Jmsg(jcr, M_FATAL, 0, _("No storage for writing given.\n"));
     return false;
   }
 
   Dmsg2(100, "read_storage_list=%p write_storage_list=%p\n",
-        jcr->impl->res.read_storage_list, jcr->impl->res.write_storage_list);
+        jcr->dir_impl->res.read_storage_list,
+        jcr->dir_impl->res.write_storage_list);
   Dmsg2(100, "Read store=%s, write store=%s\n",
-        ((StorageResource*)jcr->impl->res.read_storage_list->first())
+        ((StorageResource*)jcr->dir_impl->res.read_storage_list->first())
             ->resource_name_,
-        ((StorageResource*)jcr->impl->res.write_storage_list->first())
+        ((StorageResource*)jcr->dir_impl->res.write_storage_list->first())
             ->resource_name_);
 
   Jmsg(jcr, M_INFO, 0, _("Start Virtual Backup JobId %lu, Job=%s\n"),
@@ -295,11 +299,11 @@ bool DoNativeVbackup(JobControlRecord* jcr)
    * values from that job so that anything changed after that
    * time will be picked up on the next backup.
    */
-  jcr->impl->previous_jr = JobDbRecord{};
-  jcr->impl->previous_jr.JobId = str_to_int64(jobid_list.back().c_str());
+  jcr->dir_impl->previous_jr = JobDbRecord{};
+  jcr->dir_impl->previous_jr.JobId = str_to_int64(jobid_list.back().c_str());
   Dmsg1(10, "Previous JobId=%s\n", jobid_list.back().c_str());
 
-  if (!jcr->db->GetJobRecord(jcr, &jcr->impl->previous_jr)) {
+  if (!jcr->db->GetJobRecord(jcr, &jcr->dir_impl->previous_jr)) {
     Jmsg(jcr, M_FATAL, 0,
          _("Error getting Job record for previous Job: ERR=%s\n"),
          jcr->db->strerror());
@@ -312,7 +316,7 @@ bool DoNativeVbackup(JobControlRecord* jcr)
   }
 
   Jmsg(jcr, M_INFO, 0, _("Consolidating JobIds %s containing %d files\n"),
-       jobids.c_str(), jcr->impl->ExpectedFiles);
+       jobids.c_str(), jcr->dir_impl->ExpectedFiles);
 
   /*
    * Open a message channel connection with the Storage
@@ -327,8 +331,8 @@ bool DoNativeVbackup(JobControlRecord* jcr)
   }
 
   // Now start a job with the Storage daemon
-  if (!StartStorageDaemonJob(jcr, jcr->impl->res.read_storage_list,
-                             jcr->impl->res.write_storage_list,
+  if (!StartStorageDaemonJob(jcr, jcr->dir_impl->res.read_storage_list,
+                             jcr->dir_impl->res.write_storage_list,
                              /* send_bsr */ true)) {
     return false;
   }
@@ -345,12 +349,12 @@ bool DoNativeVbackup(JobControlRecord* jcr)
    * is after the start of this run.
    */
   jcr->start_time = time(NULL);
-  jcr->impl->jr.StartTime = jcr->start_time;
-  jcr->impl->jr.JobTDate = jcr->start_time;
+  jcr->dir_impl->jr.StartTime = jcr->start_time;
+  jcr->dir_impl->jr.JobTDate = jcr->start_time;
   jcr->setJobStatusWithPriorityCheck(JS_Running);
 
   // Update job start record
-  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->impl->jr)) {
+  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
     return false;
   }
@@ -375,7 +379,7 @@ bool DoNativeVbackup(JobControlRecord* jcr)
    * Note, the SD stores in jcr->JobFiles/ReadBytes/JobBytes/JobErrors
    */
   WaitForStorageDaemonTermination(jcr);
-  jcr->setJobStatusWithPriorityCheck(jcr->impl->SDJobStatus);
+  jcr->setJobStatusWithPriorityCheck(jcr->dir_impl->SDJobStatus);
   jcr->db_batch->WriteBatchFileRecords(
       jcr); /* used by bulk batch file insert */
   if (!jcr->is_JobStatus(JS_Terminated)) { return false; }
@@ -383,8 +387,8 @@ bool DoNativeVbackup(JobControlRecord* jcr)
   NativeVbackupCleanup(jcr, jcr->getJobStatus(), JobLevel_of_first_job);
 
   // Remove the successfully consolidated jobids from the database
-  if (jcr->impl->res.job->AlwaysIncremental
-      && jcr->impl->res.job->AlwaysIncrementalJobRetention) {
+  if (jcr->dir_impl->res.job->AlwaysIncremental
+      && jcr->dir_impl->res.job->AlwaysIncrementalJobRetention) {
     UaContext* ua;
     ua = new_ua_context(jcr);
     PurgeJobsFromCatalog(ua, jobids.c_str());
@@ -410,8 +414,8 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
   switch (jcr->getJobStatus()) {
     case JS_Terminated:
     case JS_Warnings:
-      jcr->impl->jr.JobLevel = JobLevel; /* We want this to appear as what the
-                                      first consolidated job was */
+      jcr->dir_impl->jr.JobLevel = JobLevel; /* We want this to appear as what
+                                      the first consolidated job was */
       Jmsg(jcr, M_INFO, 0,
            _("Joblevel was set to joblevel of first consolidated job: %s\n"),
            job_level_to_str(JobLevel));
@@ -420,11 +424,11 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
       break;
   }
 
-  jcr->JobFiles = jcr->impl->SDJobFiles;
-  jcr->JobBytes = jcr->impl->SDJobBytes;
+  jcr->JobFiles = jcr->dir_impl->SDJobFiles;
+  jcr->JobBytes = jcr->dir_impl->SDJobBytes;
 
   if (jcr->getJobStatus() == JS_Terminated
-      && (jcr->JobErrors || jcr->impl->SDErrors)) {
+      && (jcr->JobErrors || jcr->dir_impl->SDErrors)) {
     TermCode = JS_Warnings;
   }
 
@@ -434,20 +438,21 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
   Mmsg(query,
        "UPDATE Job SET StartTime='%s',EndTime='%s',"
        "JobTDate=%s WHERE JobId=%s",
-       jcr->impl->previous_jr.cStartTime, jcr->impl->previous_jr.cEndTime,
-       edit_uint64(jcr->impl->previous_jr.JobTDate, ec1),
+       jcr->dir_impl->previous_jr.cStartTime,
+       jcr->dir_impl->previous_jr.cEndTime,
+       edit_uint64(jcr->dir_impl->previous_jr.JobTDate, ec1),
        edit_uint64(jcr->JobId, ec2));
   jcr->db->SqlQuery(query.c_str());
 
   // Get the fully updated job record
-  if (!jcr->db->GetJobRecord(jcr, &jcr->impl->jr)) {
+  if (!jcr->db->GetJobRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_WARNING, 0,
          _("Error getting Job record for Job report: ERR=%s\n"),
          jcr->db->strerror());
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   }
 
-  bstrncpy(cr.Name, jcr->impl->res.client->resource_name_, sizeof(cr.Name));
+  bstrncpy(cr.Name, jcr->dir_impl->res.client->resource_name_, sizeof(cr.Name));
   if (!jcr->db->GetClientRecord(jcr, &cr)) {
     Jmsg(jcr, M_WARNING, 0,
          _("Error getting Client record for Job report: ERR=%s\n"),
@@ -469,8 +474,8 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
       msg_type = M_ERROR; /* Generate error message */
       if (jcr->store_bsock) {
         jcr->store_bsock->signal(BNET_TERMINATE);
-        if (jcr->impl->SD_msg_chan_started) {
-          pthread_cancel(jcr->impl->SD_msg_chan);
+        if (jcr->dir_impl->SD_msg_chan_started) {
+          pthread_cancel(jcr->dir_impl->SD_msg_chan);
         }
       }
       break;
@@ -478,8 +483,8 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
       TermMsg = _("Backup Canceled");
       if (jcr->store_bsock) {
         jcr->store_bsock->signal(BNET_TERMINATE);
-        if (jcr->impl->SD_msg_chan_started) {
-          pthread_cancel(jcr->impl->SD_msg_chan);
+        if (jcr->dir_impl->SD_msg_chan_started) {
+          pthread_cancel(jcr->dir_impl->SD_msg_chan);
         }
       }
       break;
@@ -539,11 +544,11 @@ static bool CreateBootstrapFile(JobControlRecord& jcr,
 
   UaContext* ua = new_ua_context(&jcr);
   AddVolumeInformationToBsr(ua, rx.bsr.get());
-  jcr.impl->ExpectedFiles = WriteBsrFile(ua, rx);
-  Dmsg1(10, "Found %d files to consolidate.\n", jcr.impl->ExpectedFiles);
+  jcr.dir_impl->ExpectedFiles = WriteBsrFile(ua, rx);
+  Dmsg1(10, "Found %d files to consolidate.\n", jcr.dir_impl->ExpectedFiles);
   FreeUaContext(ua);
   rx.bsr.reset(nullptr);
-  return jcr.impl->ExpectedFiles != 0;
+  return jcr.dir_impl->ExpectedFiles != 0;
 }
 
 } /* namespace directordaemon */

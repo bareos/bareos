@@ -30,7 +30,7 @@
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
 #include "stored/device_control_record.h"
-#include "stored/jcr_private.h"
+#include "stored/stored_jcr_impl.h"
 #include "sd_plugins.h"
 #include "lib/crypto_cache.h"
 #include "stored/sd_stats.h"
@@ -501,7 +501,7 @@ static inline PluginContext* instantiate_plugin(JobControlRecord* jcr,
 
 /**
  * Send a bSdEventNewPluginOptions event to all plugins configured in
- * jcr->impl_->plugin_options.
+ * jcr->sd_impl_->plugin_options.
  */
 void DispatchNewPluginOptions(JobControlRecord* jcr)
 {
@@ -517,11 +517,11 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
 
   if (!sd_plugin_list || sd_plugin_list->empty()) { return; }
 
-  if (jcr->impl->plugin_options && jcr->impl->plugin_options->size()) {
+  if (jcr->sd_impl->plugin_options && jcr->sd_impl->plugin_options->size()) {
     eventType = bSdEventNewPluginOptions;
     event.eventType = eventType;
 
-    foreach_alist_index (i, plugin_options, jcr->impl->plugin_options) {
+    foreach_alist_index (i, plugin_options, jcr->sd_impl->plugin_options) {
       // Make a private copy of plugin options.
       PmStrcpy(priv_plugin_options, plugin_options);
 
@@ -671,7 +671,7 @@ static bRC bareosGetValue(PluginContext* ctx, bsdrVariable var, void* value)
   if (jcr) {
     switch (var) {
       case bsdVarJob:
-        *((char**)value) = jcr->impl->job_name;
+        *((char**)value) = jcr->sd_impl->job_name;
         Dmsg1(debuglevel, "sd-plugin: return bsdVarJobName=%s\n",
               NPRT(*((char**)value)));
         break;
@@ -695,8 +695,8 @@ static bRC bareosGetValue(PluginContext* ctx, bsdrVariable var, void* value)
               NPRT(*((char**)value)));
         break;
       case bsdVarPool:
-        if (jcr->impl->dcr) {
-          *((char**)value) = jcr->impl->dcr->pool_name;
+        if (jcr->sd_impl->dcr) {
+          *((char**)value) = jcr->sd_impl->dcr->pool_name;
           Dmsg1(debuglevel, "sd-plugin: return bsdVarPool=%s\n",
                 NPRT(*((char**)value)));
         } else {
@@ -704,8 +704,8 @@ static bRC bareosGetValue(PluginContext* ctx, bsdrVariable var, void* value)
         }
         break;
       case bsdVarPoolType:
-        if (jcr->impl->dcr) {
-          *((char**)value) = jcr->impl->dcr->pool_type;
+        if (jcr->sd_impl->dcr) {
+          *((char**)value) = jcr->sd_impl->dcr->pool_type;
           Dmsg1(debuglevel, "sd-plugin: return bsdVarPoolType=%s\n",
                 NPRT(*((char**)value)));
         } else {
@@ -713,8 +713,8 @@ static bRC bareosGetValue(PluginContext* ctx, bsdrVariable var, void* value)
         }
         break;
       case bsdVarStorage:
-        if (jcr->impl->dcr && jcr->impl->dcr->device_resource) {
-          *((char**)value) = jcr->impl->dcr->device_resource->resource_name_;
+        if (jcr->sd_impl->dcr && jcr->sd_impl->dcr->device_resource) {
+          *((char**)value) = jcr->sd_impl->dcr->device_resource->resource_name_;
           Dmsg1(debuglevel, "sd-plugin: return bsdVarStorage=%s\n",
                 NPRT(*((char**)value)));
         } else {
@@ -722,8 +722,8 @@ static bRC bareosGetValue(PluginContext* ctx, bsdrVariable var, void* value)
         }
         break;
       case bsdVarMediaType:
-        if (jcr->impl->dcr) {
-          *((char**)value) = jcr->impl->dcr->media_type;
+        if (jcr->sd_impl->dcr) {
+          *((char**)value) = jcr->sd_impl->dcr->media_type;
           Dmsg1(debuglevel, "sd-plugin: return bsdVarMediaType=%s\n",
                 NPRT(*((char**)value)));
         } else {
@@ -741,8 +741,8 @@ static bRC bareosGetValue(PluginContext* ctx, bsdrVariable var, void* value)
               jcr->getJobStatus());
         break;
       case bsdVarVolumeName:
-        if (jcr->impl->dcr) {
-          *((char**)value) = jcr->impl->dcr->VolumeName;
+        if (jcr->sd_impl->dcr) {
+          *((char**)value) = jcr->sd_impl->dcr->VolumeName;
           Dmsg1(debuglevel, "sd-plugin: return bsdVarVolumeName=%s\n",
                 NPRT(*((char**)value)));
         } else {
