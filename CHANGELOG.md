@@ -45,7 +45,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - core/platform: Adding Bareos firewalld service xml files [PR #1237]
 - dird: Added `FS Type = vfat` in LinuxAll.conf for UEFI partition [PR #1236]
 - bareos tools: reintegrate testfind binary [PR #1176]
-- fd: add support for role switching on PostgreSQL add-on [Issue #4607] [PR #1178]
+- fd: add support for role switching on PostgreSQL add-on [Issue #1456] [PR #1178]
 - build: switch from FreeBSD 13.0 to 13.1 [PR #1253]
 - stored: dird: added backup checkpoints that save backup metadata to the Catalog during the execution of the backup. [PR #1074]
 - stored: dird: add backup checkpoints that save backup metadata to the Catalog during the execution of the backup. [PR #1074]
@@ -105,8 +105,10 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - stored: systemtests: docs: checkpoints improvements [PR #1277]
 - winbareos.nsi: fix working directory in configure.sed [PR #1288]
 - core: BareosDb::FindLastJobStartTimeForJobAndClient: take into account Running job [PR #1265] [Issue #1466]
+- core: BareosDb::FindLastJobStartTimeForJobAndClient: take into account Running job [Issue #1466] [PR #1265]
 - backup.cc: fail backup when `Write Bootstrap` to pipe fails [PR #1296]
-- webui: fix pool link in job details formatter [PR 1306] [BUG #1489]
+- webui: fix pool link in job details formatter [Issue #1489] [PR #1303]
+- webui: patch zf2 to eliminate a php warning caused by zend-stdlib [PR #1305]
 
 ### Changed
 - contrib: rename Python modules to satisfy PEP8 [PR #768]
@@ -208,10 +210,11 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [Issue #1445]: https://bugs.bareos.org/view.php?id=1445
 [Issue #1450]: https://bugs.bareos.org/view.php?id=1450
 [Issue #1452]: https://bugs.bareos.org/view.php?id=1452
+[Issue #1456]: https://bugs.bareos.org/view.php?id=1456
 [Issue #1466]: https://bugs.bareos.org/view.php?id=1466
 [Issue #1477]: https://bugs.bareos.org/view.php?id=1477
 [Issue #1480]: https://bugs.bareos.org/view.php?id=1480
-[Issue #4607]: https://bugs.bareos.org/view.php?id=4607
+[Issue #1489]: https://bugs.bareos.org/view.php?id=1489
 [PR #698]: https://github.com/bareos/bareos/pull/698
 [PR #768]: https://github.com/bareos/bareos/pull/768
 [PR #1010]: https://github.com/bareos/bareos/pull/1010
@@ -358,4 +361,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1296]: https://github.com/bareos/bareos/pull/1296
 [PR #1298]: https://github.com/bareos/bareos/pull/1298
 [PR #1300]: https://github.com/bareos/bareos/pull/1300
+[PR #1303]: https://github.com/bareos/bareos/pull/1303
+[PR #1305]: https://github.com/bareos/bareos/pull/1305
 [unreleased]: https://github.com/bareos/bareos/tree/master
