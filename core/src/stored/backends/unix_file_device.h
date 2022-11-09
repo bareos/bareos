@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2013 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,6 +28,8 @@
 #ifndef BAREOS_STORED_BACKENDS_UNIX_FILE_DEVICE_H_
 #define BAREOS_STORED_BACKENDS_UNIX_FILE_DEVICE_H_
 
+#include "stored/dev.h"
+
 namespace storagedaemon {
 
 class unix_file_device : public Device {
@@ -36,8 +38,11 @@ class unix_file_device : public Device {
   ~unix_file_device() { close(nullptr); }
 
   // Interface from Device
+  SeekMode GetSeekMode() const override { return SeekMode::BYTES; }
+  bool CanReadConcurrently() const override { return true; }
   bool MountBackend(DeviceControlRecord* dcr, int timeout) override;
   bool UnmountBackend(DeviceControlRecord* dcr, int timeout) override;
+  bool ScanForVolumeImpl(DeviceControlRecord* dcr) override;
   int d_close(int) override;
   int d_open(const char* pathname, int flags, int mode) override;
   int d_ioctl(int fd, ioctl_req_t request, char* mt = NULL) override;

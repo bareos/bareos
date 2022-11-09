@@ -47,9 +47,7 @@
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
 #include "stored/wait.h"
-#if defined(HAVE_DYNAMIC_SD_BACKENDS)
-#  include "stored/sd_backends.h"
-#endif
+#include "stored/sd_backends.h"
 
 #include "bsock_mock.h"
 
@@ -99,9 +97,6 @@ void ReservationTest::TearDown()
       }
     }
   }
-#if defined(HAVE_DYNAMIC_SD_BACKENDS)
-  FlushAndCloseBackendDevices();
-#endif
 
   if (configfile) { free(configfile); }
   if (my_config) { delete my_config; }

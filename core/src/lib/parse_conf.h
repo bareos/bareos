@@ -166,7 +166,7 @@ enum
   CFG_TYPE_META = 91,       /* Meta tag */
 
   // Storage daemon resource types
-  CFG_TYPE_DEVTYPE = 201,      /* Device Type */
+  // CFG_TYPE_DEVTYPE = 201,      /* Device Type */
   CFG_TYPE_MAXBLOCKSIZE = 202, /* Maximum Blocksize */
   CFG_TYPE_IODIRECTION = 203,  /* AutoXflateMode IO Direction */
   CFG_TYPE_CMPRSALGO = 204,    /* Compression Algorithm */

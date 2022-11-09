@@ -359,10 +359,6 @@ static void TerminateBtape(int status)
 
   if (dev) { delete dev; }
 
-#if defined(HAVE_DYNAMIC_SD_BACKENDS)
-  FlushAndCloseBackendDevices();
-#endif
-
   if (configfile) { free(configfile); }
 
   if (my_config) {

@@ -437,7 +437,7 @@ DeviceControlRecord* AcquireDeviceForAppend(DeviceControlRecord* dcr)
 
   dev->Lock_acquire(); /* only one job at a time */
   dev->Lock();
-  Dmsg1(100, "acquire_append device is %s\n", dev->IsTape() ? "tape" : "disk");
+  Dmsg1(100, "acquire_append device is %s\n", dev->type().c_str());
 
   // With the reservation system, this should not happen
   if (dev->CanRead()) {

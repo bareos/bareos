@@ -3393,10 +3393,6 @@
       "number": 91,
       "description": "Meta tag"
     },
-    "DEVICE_TYPE": {
-      "number": 201,
-      "description": "Device Type"
-    },
     "MAX_BLOCKSIZE": {
       "number": 202,
       "description": "Maximum Blocksize"

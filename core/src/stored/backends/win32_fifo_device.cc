@@ -36,6 +36,7 @@
 #include "stored/device_control_record.h"
 #include "stored/stored.h"
 #include "stored/autochanger.h"
+#include "stored/sd_backends.h"
 
 namespace storagedaemon {
 
@@ -317,5 +318,7 @@ boffset_t win32_fifo_device::d_lseek(DeviceControlRecord*, boffset_t, int)
 }
 
 bool win32_fifo_device::d_truncate(DeviceControlRecord*) { return true; }
+
+REGISTER_SD_BACKEND(fifo, win32_fifo_device);
 
 } /* namespace storagedaemon */

@@ -35,6 +35,7 @@
 #include "include/allow_deprecated.h"
 
 #include <algorithm>
+#include <cctype>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -1181,4 +1182,10 @@ regex_t* StringToRegex(const char* input)
     free(output);
   }
   return output;
+}
+
+void to_lower(std::string& s)
+{
+  std::transform(s.begin(), s.end(), s.begin(),
+                 [](unsigned char c) { return std::tolower(c); });
 }

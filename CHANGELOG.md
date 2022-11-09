@@ -104,7 +104,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - testfind: remove unnecessary libraries and fix systemtest [PR #1250]
 - stored: systemtests: docs: checkpoints improvements [PR #1277]
 - winbareos.nsi: fix working directory in configure.sed [PR #1288]
-- core: BareosDb::FindLastJobStartTimeForJobAndClient: take into account Running job [PR #1265] [BUG #1466]
+- core: BareosDb::FindLastJobStartTimeForJobAndClient: take into account Running job [PR #1265] [Issue #1466]
 - backup.cc: fail backup when `Write Bootstrap` to pipe fails [PR #1296]
 - webui: fix pool link in job details formatter [PR 1306] [BUG #1489]
 
@@ -146,6 +146,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - build: enable -Wextra warning level and apply required changes [PR #1261]
 - lib: make foreach_res() reload-safe [PR #1279]
 - Prepare Bareos for an upgrade to the C++20 standard [PR #1271]
+- stored: refactor the SD's backend interface [PR #1272]
 
 ### Deprecated
 - make_catalog_backup.pl is now a shell wrapper script which will be removed in version 23.
@@ -205,6 +206,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [Issue #1445]: https://bugs.bareos.org/view.php?id=1445
 [Issue #1450]: https://bugs.bareos.org/view.php?id=1450
 [Issue #1452]: https://bugs.bareos.org/view.php?id=1452
+[Issue #1466]: https://bugs.bareos.org/view.php?id=1466
 [Issue #1477]: https://bugs.bareos.org/view.php?id=1477
 [Issue #1480]: https://bugs.bareos.org/view.php?id=1480
 [Issue #4607]: https://bugs.bareos.org/view.php?id=4607
@@ -343,6 +345,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1268]: https://github.com/bareos/bareos/pull/1268
 [PR #1270]: https://github.com/bareos/bareos/pull/1270
 [PR #1271]: https://github.com/bareos/bareos/pull/1271
+[PR #1272]: https://github.com/bareos/bareos/pull/1272
 [PR #1275]: https://github.com/bareos/bareos/pull/1275
 [PR #1277]: https://github.com/bareos/bareos/pull/1277
 [PR #1278]: https://github.com/bareos/bareos/pull/1278

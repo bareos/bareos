@@ -82,35 +82,13 @@
 #include "include/jcr.h"
 #include "lib/berrno.h"
 
-#ifndef HAVE_DYNAMIC_SD_BACKENDS
-#  ifdef HAVE_GFAPI
-#    include "backends/gfapi_device.h"
-#  endif
-#  ifdef HAVE_BAREOSSD_DROPLET_DEVICE
-#    include "backends/chunked_device.h"
-#    include "backends/droplet_device.h"
-#  endif
-#  include "backends/generic_tape_device.h"
-#  ifdef HAVE_WIN32
-#    include "backends/win32_tape_device.h"
-#    include "backends/win32_fifo_device.h"
-#  else
-#    include "backends/unix_tape_device.h"
-#    include "backends/unix_fifo_device.h"
-#  endif
-#endif /* HAVE_DYNAMIC_SD_BACKENDS */
-
-#ifdef HAVE_WIN32
-#  include "backends/win32_file_device.h"
-#else
-#  include "backends/unix_file_device.h"
-#endif
-
 #ifndef O_NONBLOCK
 #  define O_NONBLOCK 0
 #endif
 
 namespace storagedaemon {
+
+static void InitiateDevice(JobControlRecord* jcr, Device* dev);
 
 const char* Device::mode_to_str(DeviceMode mode)
 {
@@ -144,162 +122,89 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
   Dmsg1(400, "max_block_size in device_resource res is %u\n",
         device_resource->max_block_size);
 
-  // If no device type specified, try to guess
-  if (device_resource->dev_type == DeviceType::B_UNKNOWN_DEV) {
-    struct stat statp;
-    // Check that device is available
-    if (stat(device_resource->archive_device_string, &statp) < 0) {
-      BErrNo be;
-      Jmsg2(jcr, M_ERROR, 0, _("Unable to stat device %s: ERR=%s\n"),
-            device_resource->archive_device_string, be.bstrerror());
-      return nullptr;
-    }
-    if (S_ISDIR(statp.st_mode)) {
-      device_resource->dev_type = DeviceType::B_FILE_DEV;
-    } else if (S_ISCHR(statp.st_mode)) {
-      device_resource->dev_type = DeviceType::B_TAPE_DEV;
-    } else if (S_ISFIFO(statp.st_mode)) {
-      device_resource->dev_type = DeviceType::B_FIFO_DEV;
-    } else if (!BitIsSet(CAP_REQMOUNT, device_resource->cap_bits)) {
-      Jmsg2(jcr, M_ERROR, 0,
-            _("%s is an unknown device type. Must be tape or directory, "
-              "st_mode=%04o\n"),
-            device_resource->archive_device_string, (statp.st_mode & ~S_IFMT));
-      return nullptr;
-    }
-  }
-
-  Device* dev = nullptr;
-
-  switch (device_resource->dev_type) {
-    /*
-     * When using dynamic loading use the InitBackendDevice() function
-     * for any type of device not being of the type file.
-     */
-#ifndef HAVE_DYNAMIC_SD_BACKENDS
-#  ifdef HAVE_GFAPI
-    case DeviceType::B_GFAPI_DEV:
-      dev = new gfapi_device;
-      break;
-#  endif
-#  ifdef HAVE_BAREOSSD_DROPLET_DEVICE
-    case DeviceType::B_DROPLET_DEV:
-      dev = new DropletDevice;
-      break;
-#  endif
-#  ifdef HAVE_WIN32
-    case DeviceType::B_TAPE_DEV:
-      dev = new win32_tape_device;
-      break;
-    case DeviceType::B_FIFO_DEV:
-      dev = new win32_fifo_device;
-      break;
-#  else
-    case DeviceType::B_TAPE_DEV:
-      dev = new unix_tape_device;
-      break;
-    case DeviceType::B_FIFO_DEV:
-      dev = new unix_fifo_device;
-      break;
-#  endif
-#endif /* HAVE_DYNAMIC_SD_BACKENDS */
-#ifdef HAVE_WIN32
-    case DeviceType::B_FILE_DEV:
-      dev = new win32_file_device;
-      break;
-#else
-    case DeviceType::B_FILE_DEV:
-      dev = new unix_file_device;
-      break;
-#endif
-    default:
-#ifdef HAVE_DYNAMIC_SD_BACKENDS
-      dev = InitBackendDevice(jcr, device_resource->dev_type);
-      if (!dev) {
-        try {
-          Jmsg2(jcr, M_ERROR, 0,
-                _("Initialization of dynamic %s device \"%s\" with archive "
-                  "device \"%s\" failed. Backend "
-                  "library might be missing or backend directory incorrect.\n"),
-                device_type_to_name_mapping.at(device_resource->dev_type),
-                device_resource->resource_name_,
-                device_resource->archive_device_string);
-        } catch (const std::out_of_range&) {
-          // device_resource->dev_type could exceed limits of map
-        }
-        return nullptr;
-      }
-#endif
-      break;
-  }
-
-  if (!dev) {
-    Jmsg2(jcr, M_ERROR, 0, _("%s has an unknown device type %d\n"),
-          device_resource->archive_device_string, device_resource->dev_type);
+  if (!ImplementationFactory<Device>::IsRegistered(
+          device_resource->device_type)) {
+    Jmsg2(jcr, M_ERROR, 0, _("%s has an unsupported Device Type %s\n"),
+          device_resource->archive_device_string,
+          device_resource->device_type.c_str());
     return nullptr;
   }
+
+  Device* dev
+      = ImplementationFactory<Device>::Create(device_resource->device_type);
+
+  dev->device_resource = device_resource;
+  device_resource->dev = dev;
+
+  InitiateDevice(jcr, dev);
+  return dev;
+}
+
+static void InitiateDevice(JobControlRecord* jcr, Device* dev)
+{
   dev->InvalidateSlotNumber(); /* unknown */
 
   // Copy user supplied device parameters from Resource
   dev->archive_device_string
-      = GetMemory(strlen(device_resource->archive_device_string) + 1);
-  PmStrcpy(dev->archive_device_string, device_resource->archive_device_string);
-  if (device_resource->device_options) {
-    dev->dev_options = GetMemory(strlen(device_resource->device_options) + 1);
-    PmStrcpy(dev->dev_options, device_resource->device_options);
+      = GetMemory(strlen(dev->device_resource->archive_device_string) + 1);
+  PmStrcpy(dev->archive_device_string,
+           dev->device_resource->archive_device_string);
+  if (dev->device_resource->device_options) {
+    dev->dev_options
+        = GetMemory(strlen(dev->device_resource->device_options) + 1);
+    PmStrcpy(dev->dev_options, dev->device_resource->device_options);
   }
-  dev->prt_name = GetMemory(strlen(device_resource->archive_device_string)
-                            + strlen(device_resource->resource_name_) + 20);
+  dev->prt_name
+      = GetMemory(strlen(dev->device_resource->archive_device_string)
+                  + strlen(dev->device_resource->resource_name_) + 20);
 
 
-  Mmsg(dev->prt_name, "\"%s\" (%s)", device_resource->resource_name_,
-       device_resource->archive_device_string);
+  Mmsg(dev->prt_name, "\"%s\" (%s)", dev->device_resource->resource_name_,
+       dev->device_resource->archive_device_string);
   Dmsg1(400, "Allocate dev=%s\n", dev->print_name());
-  CopySetBits(CAP_MAX, device_resource->cap_bits, dev->capabilities);
+  CopySetBits(CAP_MAX, dev->device_resource->cap_bits, dev->capabilities);
 
 
-  dev->min_block_size = device_resource->min_block_size;
-  dev->max_block_size = device_resource->max_block_size;
+  dev->min_block_size = dev->device_resource->min_block_size;
+  dev->max_block_size = dev->device_resource->max_block_size;
   dev->max_volume_size = 0;
-  dev->max_file_size = device_resource->max_file_size;
-  dev->max_concurrent_jobs = device_resource->max_concurrent_jobs;
-  dev->volume_capacity = device_resource->volume_capacity;
-  dev->max_rewind_wait = device_resource->max_rewind_wait;
-  dev->max_open_wait = device_resource->max_open_wait;
-  dev->max_open_vols = device_resource->max_open_vols;
-  dev->vol_poll_interval = device_resource->vol_poll_interval;
-  dev->max_spool_size = device_resource->max_spool_size;
-  dev->drive = device_resource->drive;
-  dev->drive_index = device_resource->drive_index;
-  dev->autoselect = device_resource->autoselect;
-  dev->norewindonclose = device_resource->norewindonclose;
-  dev->dev_type = device_resource->dev_type;
-  dev->device_resource = device_resource;
-
-  device_resource->dev = dev;
+  dev->max_file_size = dev->device_resource->max_file_size;
+  dev->max_concurrent_jobs = dev->device_resource->max_concurrent_jobs;
+  dev->volume_capacity = dev->device_resource->volume_capacity;
+  dev->max_rewind_wait = dev->device_resource->max_rewind_wait;
+  dev->max_open_wait = dev->device_resource->max_open_wait;
+  dev->max_open_vols = dev->device_resource->max_open_vols;
+  dev->vol_poll_interval = dev->device_resource->vol_poll_interval;
+  dev->max_spool_size = dev->device_resource->max_spool_size;
+  dev->drive = dev->device_resource->drive;
+  dev->drive_index = dev->device_resource->drive_index;
+  dev->autoselect = dev->device_resource->autoselect;
+  dev->norewindonclose = dev->device_resource->norewindonclose;
+  dev->device_type = dev->device_resource->device_type;
 
   if (dev->vol_poll_interval && dev->vol_poll_interval < 60) {
     dev->vol_poll_interval = 60;
   }
 
-  if (dev->IsFifo()) { dev->SetCap(CAP_STREAM); }
+  if (dev->GetSeekMode() == SeekMode::NOSEEK) { dev->SetCap(CAP_STREAM); }
 
   /*
    * If the device requires mount :
    * - Check that the mount point is available
    * - Check that (un)mount commands are defined
    */
-  if (dev->IsFile() && dev->RequiresMount()) {
+  if (dev->RequiresMount()) {
     struct stat statp;
-    if (!device_resource->mount_point
-        || stat(device_resource->mount_point, &statp) < 0) {
+    if (!dev->device_resource->mount_point
+        || stat(dev->device_resource->mount_point, &statp) < 0) {
       BErrNo be;
       dev->dev_errno = errno;
       Jmsg2(jcr, M_ERROR_TERM, 0, _("Unable to stat mount point %s: ERR=%s\n"),
-            device_resource->mount_point, be.bstrerror());
+            dev->device_resource->mount_point, be.bstrerror());
     }
 
-    if (!device_resource->mount_command || !device_resource->unmount_command) {
+    if (!dev->device_resource->mount_command
+        || !dev->device_resource->unmount_command) {
       Jmsg0(jcr, M_ERROR_TERM, 0,
             _("Mount and unmount commands must defined for a device which "
               "requires mount.\n"));
@@ -389,8 +294,6 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
   dev->initiated = true;
   Dmsg3(100, "dev=%s dev_max_bs=%u max_bs=%u\n", dev->archive_device_string,
         dev->device_resource->max_block_size, dev->max_block_size);
-
-  return dev;
 }
 
 // This routine initializes the device wait timers
@@ -603,7 +506,7 @@ bool Device::open(DeviceControlRecord* dcr, DeviceMode omode)
   }
 
   Dmsg4(100, "open dev: type=%d archive_device_string=%s vol=%s mode=%s\n",
-        dev_type, print_name(), getVolCatName(), mode_to_str(omode));
+        device_type.c_str(), print_name(), getVolCatName(), mode_to_str(omode));
 
   ClearBit(ST_LABEL, state);
   ClearBit(ST_APPENDREADY, state);
@@ -732,15 +635,25 @@ bool Device::rewind(DeviceControlRecord* dcr)
 
   if (fd < 0) { return false; }
 
-  if (IsFifo() || IsVtl()) { return true; }
-
-  if (d_lseek(dcr, (boffset_t)0, SEEK_SET) < 0) {
-    BErrNo be;
-    dev_errno = errno;
-    Mmsg2(errmsg, _("lseek error on %s. ERR=%s"), print_name(), be.bstrerror());
-    return false;
+  switch (GetSeekMode()) {
+    case SeekMode::NOSEEK: {
+      return true;
+    } break;
+    case SeekMode::BYTES: {
+      if (d_lseek(dcr, (boffset_t)0, SEEK_SET) < 0) {
+        BErrNo be;
+        dev_errno = errno;
+        Mmsg2(errmsg, _("lseek error on %s. ERR=%s"), print_name(),
+              be.bstrerror());
+        return false;
+      }
+    } break;
+    case SeekMode::FILE_BLOCK: {
+      dev_errno = EINVAL;
+      Mmsg(errmsg, "Block addressed backends must override rewind().");
+      return false;
+    } break;
   }
-
   return true;
 }
 
@@ -782,8 +695,6 @@ bool Device::eod(DeviceControlRecord* dcr)
     return false;
   }
 
-  if (IsVtl()) { return true; }
-
   Dmsg0(100, "Enter eod\n");
   if (AtEot()) { return true; }
 
@@ -820,7 +731,6 @@ bool Device::eod(DeviceControlRecord* dcr)
 bool Device::UpdatePos(DeviceControlRecord* dcr)
 {
   boffset_t pos;
-  bool ok = true;
 
   if (!IsOpen()) {
     dev_errno = EBADF;
@@ -829,25 +739,34 @@ bool Device::UpdatePos(DeviceControlRecord* dcr)
     return false;
   }
 
-  if (IsFifo() || IsVtl()) { return true; }
-
-  file = 0;
-  file_addr = 0;
-  pos = d_lseek(dcr, (boffset_t)0, SEEK_CUR);
-  if (pos < 0) {
-    BErrNo be;
-    dev_errno = errno;
-    Pmsg1(000, _("Seek error: ERR=%s\n"), be.bstrerror());
-    Mmsg2(errmsg, _("lseek error on %s. ERR=%s.\n"), print_name(),
-          be.bstrerror());
-    ok = false;
-  } else {
-    file_addr = pos;
-    block_num = (uint32_t)pos;
-    file = (uint32_t)(pos >> 32);
+  switch (GetSeekMode()) {
+    case SeekMode::NOSEEK: {
+      return true;
+    } break;
+    case SeekMode::BYTES: {
+      file = 0;
+      file_addr = 0;
+      pos = d_lseek(dcr, (boffset_t)0, SEEK_CUR);
+      if (pos < 0) {
+        BErrNo be;
+        dev_errno = errno;
+        Pmsg1(000, _("Seek error: ERR=%s\n"), be.bstrerror());
+        Mmsg2(errmsg, _("lseek error on %s. ERR=%s.\n"), print_name(),
+              be.bstrerror());
+        return false;
+      } else {
+        file_addr = pos;
+        block_num = (uint32_t)pos;
+        file = (uint32_t)(pos >> 32);
+      }
+    } break;
+    case SeekMode::FILE_BLOCK: {
+      dev_errno = EINVAL;
+      Mmsg(errmsg, "Block addressed backends must override UpdatePos().");
+      return false;
+    } break;
   }
-
-  return ok;
+  return true;
 }
 
 char* Device::StatusDev()
@@ -920,20 +839,30 @@ bool Device::Reposition(DeviceControlRecord* dcr,
     return false;
   }
 
-  if (IsFifo() || IsVtl()) { return true; }
-
-  boffset_t pos = (((boffset_t)rfile) << 32) | rblock;
-  Dmsg1(100, "===== lseek to %d\n", (int)pos);
-  if (d_lseek(dcr, pos, SEEK_SET) == (boffset_t)-1) {
-    BErrNo be;
-    dev_errno = errno;
-    Mmsg2(errmsg, _("lseek error on %s. ERR=%s.\n"), print_name(),
-          be.bstrerror());
-    return false;
+  switch (GetSeekMode()) {
+    case SeekMode::NOSEEK: {
+      return true;
+    } break;
+    case SeekMode::BYTES: {
+      boffset_t pos = (((boffset_t)rfile) << 32) | rblock;
+      Dmsg1(100, "===== lseek to %d\n", (int)pos);
+      if (d_lseek(dcr, pos, SEEK_SET) == (boffset_t)-1) {
+        BErrNo be;
+        dev_errno = errno;
+        Mmsg2(errmsg, _("lseek error on %s. ERR=%s.\n"), print_name(),
+              be.bstrerror());
+        return false;
+      }
+      file = rfile;
+      block_num = rblock;
+      file_addr = pos;
+    } break;
+    case SeekMode::FILE_BLOCK: {
+      dev_errno = EINVAL;
+      Mmsg(errmsg, "Block addressed backends must override Reposition().");
+      return false;
+    } break;
   }
-  file = rfile;
-  block_num = rblock;
-  file_addr = pos;
   return true;
 }
 
@@ -971,22 +900,15 @@ bool Device::close(DeviceControlRecord* dcr)
 
   if (!norewindonclose) { OfflineOrRewind(); }
 
-  switch (dev_type) {
-    case DeviceType::B_VTL_DEV:
-    case DeviceType::B_TAPE_DEV:
-      UnlockDoor();
-      [[fallthrough]];
-    default:
-      status = d_close(fd);
-      if (status < 0) {
-        BErrNo be;
+  if (device_type == DeviceType::B_TAPE_DEV) { UnlockDoor(); }
+  status = d_close(fd);
+  if (status < 0) {
+    BErrNo be;
 
-        Mmsg2(errmsg, _("Unable to close device %s. ERR=%s\n"), print_name(),
-              be.bstrerror());
-        dev_errno = errno;
-        retval = false;
-      }
-      break;
+    Mmsg2(errmsg, _("Unable to close device %s. ERR=%s\n"), print_name(),
+          be.bstrerror());
+    dev_errno = errno;
+    retval = false;
   }
 
   unmount(dcr, 1); /* do unmount if required */

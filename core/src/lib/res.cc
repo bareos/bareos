@@ -2205,7 +2205,7 @@ static DatatypeName datatype_names[] = {
     {CFG_TYPE_META, "META_TAG", "Meta tag"},
 
     // Storage daemon resource types
-    {CFG_TYPE_DEVTYPE, "DEVICE_TYPE", "Device Type"},
+    //{CFG_TYPE_DEVTYPE, "DEVICE_TYPE", "Device Type"},
     {CFG_TYPE_MAXBLOCKSIZE, "MAX_BLOCKSIZE", "Maximum Blocksize"},
     {CFG_TYPE_IODIRECTION, "IO_DIRECTION", "IO Direction"},
     {CFG_TYPE_CMPRSALGO, "COMPRESSION_ALGORITHM", "Compression Algorithm"},

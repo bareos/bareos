@@ -575,26 +575,7 @@ gfapi_device::gfapi_device()
   virtual_filename_ = GetPoolMemory(PM_FNAME);
 }
 
-class Backend : public BackendInterface {
- public:
-  Device* GetDevice(JobControlRecord* jcr, DeviceType device_type) override
-  {
-    switch (device_type) {
-      case DeviceType::B_GFAPI_DEV:
-        return new gfapi_device;
-      default:
-        Jmsg(jcr, M_FATAL, 0, _("Request for unknown devicetype: %d\n"),
-             device_type);
-        return nullptr;
-    }
-  }
-  void FlushDevice(void) override {}
-};
-
-#  ifdef HAVE_DYNAMIC_SD_BACKENDS
-extern "C" BackendInterface* GetBackend(void) { return new Backend; }
-#  endif
-
+REGISTER_SD_BACKEND(gfapi, gfapi_device);
 
 } /* namespace storagedaemon */
 #endif /* HAVE_GFAPI */

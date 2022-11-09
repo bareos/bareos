@@ -43,6 +43,7 @@
 #define NEED_JANSSON_NAMESPACE 1
 #include "lib/output_formatter.h"
 #include "lib/output_formatter_resource.h"
+#include "lib/implementation_factory.h"
 #include "include/auth_types.h"
 #include "include/jcr.h"
 
@@ -147,7 +148,7 @@ static ResourceItem dev_items[] = {
   {"Description", CFG_TYPE_STR, ITEM(res_dev, description_), 0, 0, NULL, NULL,
       "The Description directive provides easier human recognition, but is not used by Bareos directly."},
   {"MediaType", CFG_TYPE_STRNAME, ITEM(res_dev, media_type), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
-  {"DeviceType", CFG_TYPE_DEVTYPE, ITEM(res_dev, dev_type), 0, 0, NULL, NULL, NULL},
+  {"DeviceType", CFG_TYPE_STDSTR, ITEM(res_dev, device_type), 0, CFG_ITEM_DEFAULT, "", NULL, NULL},
   {"ArchiveDevice", CFG_TYPE_STRNAME, ITEM(res_dev, archive_device_string), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
   {"DeviceOptions", CFG_TYPE_STR, ITEM(res_dev, device_options), 0, 0, NULL, "15.2.0-", NULL},
   {"DiagnosticDevice", CFG_TYPE_STRNAME, ITEM(res_dev, diag_device_name), 0, 0, NULL, NULL, NULL},
@@ -247,22 +248,6 @@ static ResourceTable resources[] = {
 static struct s_kw authentication_methods[]
     = {{"None", AT_NONE}, {"Clear", AT_CLEAR}, {"MD5", AT_MD5}, {NULL, 0}};
 
-struct s_dvt_kw {
-  const char* name;
-  DeviceType token;
-};
-
-static s_dvt_kw device_types[]
-    = {{"file", DeviceType::B_FILE_DEV},
-       {"tape", DeviceType::B_TAPE_DEV},
-       {"fifo", DeviceType::B_FIFO_DEV},
-       {"vtl", DeviceType::B_VTL_DEV},
-       {"gfapi", DeviceType::B_GFAPI_DEV},
-       /* compatibility: object have been renamed to droplet */
-       {"object", DeviceType::B_DROPLET_DEV},
-       {"droplet", DeviceType::B_DROPLET_DEV},
-       {nullptr, DeviceType::B_UNKNOWN_DEV}};
-
 struct s_io_kw {
   const char* name;
   AutoXflateMode token;
@@ -327,27 +312,6 @@ static void StoreAutopassword(LEX* lc, ResourceItem* item, int index, int pass)
       my_config->StoreResource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
       break;
   }
-}
-
-static void StoreDeviceType(LEX* lc, ResourceItem* item, int index, int)
-{
-  int i;
-
-  LexGetToken(lc, BCT_NAME);
-  // Store the label pass 2 so that type is defined
-  for (i = 0; device_types[i].name; i++) {
-    if (Bstrcasecmp(lc->str, device_types[i].name)) {
-      SetItemVariable<DeviceType>(*item, device_types[i].token);
-      i = 0;
-      break;
-    }
-  }
-  if (i != 0) {
-    scan_err1(lc, _("Expected a Device Type keyword, got: %s"), lc->str);
-  }
-  ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 // Store Maximum Block Size, and check it is not greater than MAX_BLOCK_LENGTH
@@ -448,9 +412,6 @@ static void ParseConfigCb(LEX* lc,
     case CFG_TYPE_AUTHTYPE:
       StoreAuthenticationType(lc, item, index, pass);
       break;
-    case CFG_TYPE_DEVTYPE:
-      StoreDeviceType(lc, item, index, pass);
-      break;
     case CFG_TYPE_MAXBLOCKSIZE:
       StoreMaxblocksize(lc, item, index, pass);
       break;
@@ -528,11 +489,11 @@ static void CheckDropletDevices(ConfigurationParser& my_config)
 
   while ((p = my_config.GetNextRes(R_DEVICE, p)) != nullptr) {
     DeviceResource* d = dynamic_cast<DeviceResource*>(p);
-    if (d && d->dev_type == DeviceType::B_DROPLET_DEV) {
+    if (d && d->device_type == DeviceType::B_DROPLET_DEV) {
       if (d->max_concurrent_jobs == 0) {
         /*
-         * 0 is the general default. However, for this dev_type, only 1 works.
-         * So we set it to this value.
+         * 0 is the general default. However, for this device_type, only 1
+         * works. So we set it to this value.
          */
         Jmsg1(nullptr, M_WARNING, 0,
               _("device %s is set to the default 'Maximum Concurrent Jobs' = "
@@ -549,9 +510,81 @@ static void CheckDropletDevices(ConfigurationParser& my_config)
   }
 }
 
+static void GuessMissingDeviceTypes(ConfigurationParser& my_config)
+{
+  BareosResource* p = nullptr;
+
+  while ((p = my_config.GetNextRes(R_DEVICE, p)) != nullptr) {
+    DeviceResource* d = dynamic_cast<DeviceResource*>(p);
+    if (d && d->device_type == DeviceType::B_UNKNOWN_DEV) {
+      struct stat statp;
+      // Check that device is available
+      if (stat(d->archive_device_string, &statp) < 0) {
+        BErrNo be;
+        Jmsg2(nullptr, M_ERROR_TERM, 0,
+              _("Unable to stat path '%s' for device %s: ERR=%s\n"
+                "Consider setting Device Type if device is not available when "
+                "daemon starts.\n"),
+              d->archive_device_string, d->resource_name_, be.bstrerror());
+        return;
+      }
+      if (S_ISDIR(statp.st_mode)) {
+        d->device_type = DeviceType::B_FILE_DEV;
+      } else if (S_ISCHR(statp.st_mode)) {
+        d->device_type = DeviceType::B_TAPE_DEV;
+      } else if (S_ISFIFO(statp.st_mode)) {
+        d->device_type = DeviceType::B_FIFO_DEV;
+      } else if (!BitIsSet(CAP_REQMOUNT, d->cap_bits)) {
+        Jmsg2(nullptr, M_ERROR_TERM, 0,
+              "cannot deduce Device Type from '%s'. Must be tape or directory, "
+              "st_mode=%04o\n",
+              d->archive_device_string, (statp.st_mode & ~S_IFMT));
+        return;
+      }
+    }
+  }
+}
+
+static void CheckAndLoadDeviceBackends(ConfigurationParser& my_config)
+{
+#if defined(HAVE_DYNAMIC_SD_BACKENDS)
+  auto storage_res
+      = dynamic_cast<StorageResource*>(my_config.GetNextRes(R_STORAGE, NULL));
+#endif
+
+  BareosResource* p = nullptr;
+  while ((p = my_config.GetNextRes(R_DEVICE, p)) != nullptr) {
+    DeviceResource* d = dynamic_cast<DeviceResource*>(p);
+    if (d) {
+      to_lower(d->device_type);
+      if (!ImplementationFactory<Device>::IsRegistered(d->device_type)) {
+#if defined(HAVE_DYNAMIC_SD_BACKENDS)
+        if (!storage_res || storage_res->backend_directories.empty()) {
+          Jmsg2(nullptr, M_ERROR_TERM, 0,
+                "Backend Directory not set. Cannot load dynamic backend %s\n",
+                d->device_type.c_str());
+        }
+        if (!LoadStorageBackend(d->device_type,
+                                storage_res->backend_directories)) {
+          Jmsg2(nullptr, M_ERROR_TERM, 0,
+                "Could not load storage backend %s for device %s.\n",
+                d->device_type.c_str(), d->resource_name_);
+        }
+#else
+        Jmsg2(nullptr, M_ERROR_TERM, 0,
+              "Backend %s for device %s not available.\n",
+              d->device_type.c_str(), d->resource_name_);
+#endif
+      }
+    }
+  }
+}
+
 static void ConfigReadyCallback(ConfigurationParser& my_config)
 {
   MultiplyConfiguredDevices(my_config);
+  GuessMissingDeviceTypes(my_config);
+  CheckAndLoadDeviceBackends(my_config);
   CheckDropletDevices(my_config);
 }
 
@@ -581,10 +614,6 @@ bool ParseSdConfig(const char* configfile, int exit_code)
             configfile);
       return retval;
     }
-
-#if defined(HAVE_DYNAMIC_SD_BACKENDS)
-    SetBackendDeviceDirectories(std::move(me->backend_directories));
-#endif
   }
 
   return retval;

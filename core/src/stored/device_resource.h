@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,16 +35,16 @@ class AutochangerResource;
 
 class DeviceResource : public BareosResource {
  public:
-  char* media_type;             /**< User assigned media type */
-  char* archive_device_string;  /**< Archive device name */
-  char* device_options;         /**< Device specific option string */
-  char* diag_device_name;       /**< Diagnostic device name */
-  char* changer_name;           /**< Changer device name */
-  char* changer_command;        /**< Changer command  -- external program */
-  char* alert_command;          /**< Alert command -- external program */
-  char* spool_directory;        /**< Spool file directory */
-  DeviceType dev_type;          /**< device type */
-  uint32_t label_type;          /**< label type */
+  char* media_type;            /**< User assigned media type */
+  char* archive_device_string; /**< Archive device name */
+  char* device_options;        /**< Device specific option string */
+  char* diag_device_name;      /**< Diagnostic device name */
+  char* changer_name;          /**< Changer device name */
+  char* changer_command;       /**< Changer command  -- external program */
+  char* alert_command;         /**< Alert command -- external program */
+  char* spool_directory;       /**< Spool file directory */
+  std::string device_type;
+  uint32_t label_type;
   bool autoselect;              /**< Automatically select from AutoChanger */
   bool norewindonclose;         /**< Don't rewind tape drive on close */
   bool drive_tapealert_enabled; /**< Enable Tape Alert monitoring */

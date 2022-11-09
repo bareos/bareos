@@ -21,5 +21,6 @@ setup_data
 echo "${BackupDirectory}/build" >"$tmp/file-list-simple"
 
 bin/bareos start
+bin/bareos status
 
 print_debug "$(bin/bconsole <<< "status dir")"

@@ -420,7 +420,7 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
    * accesses by multiple readers at once without disturbing each other.
    */
   if (me->filedevice_concurrent_read && !dcr->IsWriting()
-      && dcr->dev->IsFile()) {
+      && dcr->dev->CanReadConcurrently()) {
     nvol->SetJobid(dcr->jcr->JobId);
     nvol->SetReading();
     vol = nvol;
@@ -761,7 +761,8 @@ bool FreeVolume(Device* dev)
      *  - Config option filedevice_concurrent_read is not on.
      *  - The device is not of type File.
      */
-    if (vol->IsWriting() || !me->filedevice_concurrent_read || !dev->IsFile()) {
+    if (vol->IsWriting() || !me->filedevice_concurrent_read
+        || !dev->CanReadConcurrently()) {
       vol_list->remove(vol);
     }
     Dmsg2(debuglevel, "=== remove volume %s dev=%s\n", vol->vol_name,

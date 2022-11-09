@@ -1,8 +1,8 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
    Copyright (C) 2013-2014 Planets Communications B.V.
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,30 +20,38 @@
    02110-1301, USA.
 */
 /*
- * Windows Tape API device abstraction.
+ * Windows File API device abstraction.
  *
  * Marco van Wieringen, December 2013
  */
 
-#ifndef BAREOS_WIN32_STORED_BACKENDS_WIN32_TAPE_DEVICE_H_
-#define BAREOS_WIN32_STORED_BACKENDS_WIN32_TAPE_DEVICE_H_
+#ifndef BAREOS_STORED_BACKENDS_WIN32_FILE_DEVICE_H_
+#define BAREOS_STORED_BACKENDS_WIN32_FILE_DEVICE_H_
+#include "lib/util.h"
 
 namespace storagedaemon {
 
-class win32_tape_device : public generic_tape_device {
+class win32_file_device : public Device {
  public:
-  win32_tape_device();
-  ~win32_tape_device() { close(nullptr); }
+  win32_file_device();
+  ~win32_file_device() { close(nullptr); }
 
+  // Interface from Device
+  SeekMode GetSeekMode() const override { return SeekMode::BYTES; }
+  bool CanReadConcurrently() const override { return true; }
+  bool MountBackend(DeviceControlRecord* dcr, int timeout) override;
+  bool UnmountBackend(DeviceControlRecord* dcr, int timeout) override;
+  bool ScanForVolumeImpl(DeviceControlRecord* dcr) override;
   int d_close(int) override;
   int d_open(const char* pathname, int flags, int mode) override;
   int d_ioctl(int fd, ioctl_req_t request, char* mt = NULL) override;
   ssize_t d_read(int fd, void* buffer, size_t count) override;
   ssize_t d_write(int fd, const void* buffer, size_t count) override;
-  int TapeOp(struct mtop* mt_com);
-  int TapeGet(struct mtget* mt_com);
-  int TapePos(struct mtpos* mt_com);
+  boffset_t d_lseek(DeviceControlRecord* dcr,
+                    boffset_t offset,
+                    int whence) override;
+  bool d_truncate(DeviceControlRecord* dcr) override;
 };
 
 } /* namespace storagedaemon */
-#endif  // BAREOS_WIN32_STORED_BACKENDS_WIN32_TAPE_DEVICE_H_
+#endif  // BAREOS_STORED_BACKENDS_WIN32_FILE_DEVICE_H_

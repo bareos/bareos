@@ -148,7 +148,7 @@ BuildRequires: git-core
 
 Source0: %{name}-%{version}.tar.gz
 
-BuildRequires: cmake >= 3.12
+BuildRequires: cmake >= 3.17
 BuildRequires: gcc
 BuildRequires: gcc-c++
 BuildRequires: make
@@ -1300,6 +1300,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{_sbindir}/bareos-sd
 %{script_dir}/disk-changer
 %{plugin_dir}/autoxflate-sd.so
+%{backend_dir}/libbareossd-file*.so
 %{_mandir}/man8/bareos-sd.8.gz
 %if 0%{?systemd_support}
 %{_unitdir}/bareos-sd.service
@@ -1309,7 +1310,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %files storage-tape
 # tape specific files
 %defattr(-, root, root)
-%{backend_dir}/libbareossd-gentape*.so
 %{backend_dir}/libbareossd-tape*.so
 %{script_dir}/mtx-changer
 %config(noreplace) %{_sysconfdir}/%{name}/mtx-changer.conf
@@ -1332,9 +1332,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %if 0%{?droplet}
 %files storage-droplet
 %defattr(-, root, root)
-%{backend_dir}/libbareossd-chunked*.so
 %{backend_dir}/libbareossd-droplet*.so
-%{library_dir}/libbareosdroplet.so*
 %attr(0640, %{director_daemon_user},%{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/storage/S3_Object.conf.example
 %attr(0640, %{storage_daemon_user},%{daemon_group})  %{_sysconfdir}/%{name}/bareos-sd.d/device/S3_ObjectStorage.conf.example
 %dir %{_sysconfdir}/%{name}/bareos-sd.d/device/droplet/

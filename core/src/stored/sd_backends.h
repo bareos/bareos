@@ -1,8 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2014-2014 Planets Communications B.V.
-   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,49 +18,27 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-// Marco van Wieringen, June 2014
-/**
- * @file
- * Dynamic loading of SD backend plugins.
- */
 
 #ifndef BAREOS_STORED_SD_BACKENDS_H_
 #define BAREOS_STORED_SD_BACKENDS_H_
 
+#include <lib/implementation_factory.h>
+
 namespace storagedaemon {
 
-class BackendInterface {
- public:
-  virtual ~BackendInterface() {}
-  virtual Device* GetDevice(JobControlRecord* jcr, DeviceType device_type) = 0;
-  virtual void FlushDevice(void) = 0;
-};
-
-
-extern "C" {
-typedef BackendInterface* (*t_backend_base)(void);
-BackendInterface* GetBackend(void);
-}
-
-#if defined(HAVE_WIN32)
-#  define DYN_LIB_EXTENSION ".dll"
-#elif defined(HAVE_DARWIN_OS)
-/* cmake MODULE creates a .so files; cmake SHARED creates .dylib */
-// #define DYN_LIB_EXTENSION ".dylib"
-#  define DYN_LIB_EXTENSION ".so"
-#else
-#  define DYN_LIB_EXTENSION ".so"
-#endif
-
+class Device;
+template <typename T> Device* DeviceFactory(void) { return new T(); }
 
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
-#  include <map>
-void SetBackendDeviceDirectories(std::vector<std::string>&& new_backend_dirs);
-Device* InitBackendDevice(JobControlRecord* jcr, DeviceType device_type);
-void FlushAndCloseBackendDevices();
-
-extern const std::map<DeviceType, const char*> device_type_to_name_mapping;
+bool LoadStorageBackend(const std::string& device_type,
+                        const std::vector<std::string>& backend_directories);
 #endif
-} /* namespace storagedaemon */
+
+#define REGISTER_SD_BACKEND(backend_name, backend_class)  \
+  [[maybe_unused]] static bool backend_name##_backend_    \
+      = ImplementationFactory<Device>::Add(#backend_name, \
+                                           DeviceFactory<backend_class>);
+
+}  // namespace storagedaemon
 
 #endif  // BAREOS_STORED_SD_BACKENDS_H_
