@@ -20,7 +20,7 @@
 */
 
 #include "dird/dird_globals.h"
-#include "dird/jcr_private.h"
+#include "dird/director_jcr_impl.h"
 #include "lib/parse_bsr.h"
 #include "lib/parse_conf.h"
 
@@ -30,8 +30,7 @@ namespace directordaemon {
 JobControlRecord* NewDirectorJcr(JCR_free_HANDLER* DirdFreeJcr)
 {
   JobControlRecord* jcr = new_jcr(DirdFreeJcr);
-  jcr->impl
-      = new JobControlRecordPrivate(my_config->config_resources_container_);
+  jcr->dir_impl = new DirectorJcrImpl(my_config->config_resources_container_);
   Dmsg1(10, "NewDirectorJcr: configuration_resources_ is at %p %s\n",
         my_config->config_resources_container_->configuration_resources_,
         my_config->config_resources_container_->TimeStampAsString().c_str());

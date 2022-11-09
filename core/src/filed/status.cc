@@ -30,7 +30,7 @@
 #include "include/bareos.h"
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
-#include "filed/jcr_private.h"
+#include "filed/filed_jcr_impl.h"
 #include "lib/status_packet.h"
 #include "lib/bsock.h"
 #include "lib/edit.h"
@@ -169,21 +169,21 @@ static void ListRunningJobsPlain(StatusPacket* sp)
                  njcr->Job);
       sp->send(msg, len);
 #ifdef WIN32_VSS
-      len = Mmsg(
-          msg, _("    %s%s %s Job started: %s\n"),
-          (njcr->impl->pVSSClient && njcr->impl->pVSSClient->IsInitialized())
-              ? "VSS "
-              : "",
-          JobLevelToString(njcr->getJobLevel()),
-          job_type_to_str(njcr->getJobType()), dt);
+      len = Mmsg(msg, _("    %s%s %s Job started: %s\n"),
+                 (njcr->fd_impl->pVSSClient
+                  && njcr->fd_impl->pVSSClient->IsInitialized())
+                     ? "VSS "
+                     : "",
+                 JobLevelToString(njcr->getJobLevel()),
+                 job_type_to_str(njcr->getJobType()), dt);
 #else
       len = Mmsg(msg, _("    %s %s Job started: %s\n"),
                  JobLevelToString(njcr->getJobLevel()),
                  job_type_to_str(njcr->getJobType()), dt);
 #endif
-    } else if ((njcr->JobId == 0) && (njcr->impl->director)) {
+    } else if ((njcr->JobId == 0) && (njcr->fd_impl->director)) {
       len = Mmsg(msg, _("%s (director) connected at: %s\n"),
-                 njcr->impl->director->resource_name_, dt);
+                 njcr->fd_impl->director->resource_name_, dt);
     } else {
       /*
        * This should only occur shortly, until the JobControlRecord values are
@@ -205,11 +205,12 @@ static void ListRunningJobsPlain(StatusPacket* sp)
                edit_uint64_with_commas(njcr->max_bandwidth, b4));
     sp->send(msg, len);
     len = Mmsg(msg, _("    Files Examined=%s\n"),
-               edit_uint64_with_commas(njcr->impl->num_files_examined, b1));
+               edit_uint64_with_commas(njcr->fd_impl->num_files_examined, b1));
     sp->send(msg, len);
     if (njcr->JobFiles > 0) {
       njcr->lock();
-      len = Mmsg(msg, _("    Processing file: %s\n"), njcr->impl->last_fname);
+      len = Mmsg(msg, _("    Processing file: %s\n"),
+                 njcr->fd_impl->last_fname);
       njcr->unlock();
       sp->send(msg, len);
     }
@@ -242,7 +243,7 @@ static void ListRunningJobsApi(StatusPacket* sp)
   PoolMem msg(PM_MESSAGE);
   char dt[MAX_TIME_LENGTH], b1[32], b2[32], b3[32], b4[32];
 
-  // List running jobs for Bat/Bweb (simple to parse)
+  // List running jobs for Bat/Bweb (sfd_imple to parse)
   foreach_jcr (njcr) {
     bstrutime(dt, sizeof(dt), njcr->start_time);
     if (njcr->JobId == 0) {
@@ -251,12 +252,12 @@ static void ListRunningJobsApi(StatusPacket* sp)
       len = Mmsg(msg, "JobId=%d\n Job=%s\n", njcr->JobId, njcr->Job);
       sp->send(msg, len);
 #ifdef WIN32_VSS
-      len = Mmsg(
-          msg, " VSS=%d\n Level=%c\n JobType=%c\n JobStarted=%s\n",
-          (njcr->impl->pVSSClient && njcr->impl->pVSSClient->IsInitialized())
-              ? 1
-              : 0,
-          njcr->getJobLevel(), njcr->getJobType(), dt);
+      len = Mmsg(msg, " VSS=%d\n Level=%c\n JobType=%c\n JobStarted=%s\n",
+                 (njcr->fd_impl->pVSSClient
+                  && njcr->fd_impl->pVSSClient->IsInitialized())
+                     ? 1
+                     : 0,
+                 njcr->getJobLevel(), njcr->getJobType(), dt);
 #else
       len = Mmsg(msg, " VSS=%d\n Level=%c\n JobType=%c\n JobStarted=%s\n", 0,
                  njcr->getJobLevel(), njcr->getJobType(), dt);
@@ -275,11 +276,11 @@ static void ListRunningJobsApi(StatusPacket* sp)
                edit_int64(njcr->max_bandwidth, b4));
     sp->send(msg, len);
     len = Mmsg(msg, " Files Examined=%s\n",
-               edit_uint64(njcr->impl->num_files_examined, b1));
+               edit_uint64(njcr->fd_impl->num_files_examined, b1));
     sp->send(msg, len);
     if (njcr->JobFiles > 0) {
       njcr->lock();
-      len = Mmsg(msg, " Processing file=%s\n", njcr->impl->last_fname);
+      len = Mmsg(msg, " Processing file=%s\n", njcr->fd_impl->last_fname);
       njcr->unlock();
       sp->send(msg, len);
     }
@@ -440,7 +441,8 @@ bool QstatusCmd(JobControlRecord* jcr)
     dir->fsend(OKqstatus, cmd);
     foreach_jcr (njcr) {
       if (njcr->JobId != 0) {
-        dir->fsend(DotStatusJob, njcr->JobId, njcr->JobStatus, njcr->JobErrors);
+        dir->fsend(DotStatusJob, njcr->JobId, njcr->getJobStatus(),
+                   njcr->JobErrors);
       }
     }
     endeach_jcr(njcr);

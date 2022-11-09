@@ -30,7 +30,7 @@
 #include "dird/dird_conf.h"
 #include "dird/dird_globals.h"
 #include "dird/get_database_connection.h"
-#include "dird/jcr_private.h"
+#include "dird/director_jcr_impl.h"
 #include "dird/job.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"

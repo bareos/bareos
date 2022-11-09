@@ -30,6 +30,7 @@
 #include "lib/berrno.h"
 #include "stored/device_control_record.h"
 #include "stored/stored.h"
+#include "stored/sd_backends.h"
 #include "win32_file_device.h"
 
 namespace storagedaemon {
@@ -195,6 +196,11 @@ bool win32_file_device::UnmountBackend(DeviceControlRecord* dcr, int timeout)
   return retval;
 }
 
+bool win32_file_device::ScanForVolumeImpl(DeviceControlRecord* dcr)
+{
+  return ScanDirectoryForVolume(dcr);
+}
+
 int win32_file_device::d_open(const char* pathname, int flags, int mode)
 {
   return ::open(pathname, flags, mode);
@@ -289,5 +295,7 @@ bool win32_file_device::d_truncate(DeviceControlRecord* dcr)
 }
 
 win32_file_device::win32_file_device() {}
+
+REGISTER_SD_BACKEND(file, win32_file_device);
 
 } /* namespace storagedaemon */

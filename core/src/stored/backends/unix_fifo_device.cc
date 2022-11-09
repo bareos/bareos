@@ -315,25 +315,6 @@ boffset_t unix_fifo_device::d_lseek(DeviceControlRecord*, boffset_t, int)
 
 bool unix_fifo_device::d_truncate(DeviceControlRecord*) { return true; }
 
-class Backend : public BackendInterface {
- public:
-  Device* GetDevice(JobControlRecord* jcr, DeviceType device_type) override
-  {
-    switch (device_type) {
-      case DeviceType::B_FIFO_DEV:
-        return new unix_fifo_device;
-      default:
-        Jmsg(jcr, M_FATAL, 0, _("Request for unknown devicetype: %d\n"),
-             device_type);
-        return nullptr;
-    }
-  }
-  void FlushDevice(void) override {}
-};
-
-#ifdef HAVE_DYNAMIC_SD_BACKENDS
-extern "C" BackendInterface* GetBackend(void) { return new Backend; }
-#endif
-
+REGISTER_SD_BACKEND(fifo, unix_fifo_device);
 
 } /* namespace storagedaemon  */

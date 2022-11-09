@@ -10,5 +10,5 @@ Storage {
   # Plugin Names = ""
   Working Directory =  "@working_dir@"
   SD Port = @sd_port@
-  BackendDirectory = @sd_backenddir@
+  @sd_backend_config@
 }

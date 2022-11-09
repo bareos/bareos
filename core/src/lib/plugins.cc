@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -215,7 +215,7 @@ bool LoadPlugins(void* bareos_plugin_interface_version,
    * type.
    */
   if (plugin_names && plugin_names->size()) {
-    char* name = nullptr;
+    const char* name = nullptr;
     PoolMem plugin_name(PM_FNAME);
 
     foreach_alist (name, plugin_names) {

@@ -340,7 +340,7 @@ static bool CheckResources()
 #endif
     }
 
-    /* pki_encrypt implies pki_sign */
+    /* pki_encrypt fd_implies pki_sign */
     if (me->pki_encrypt) { me->pki_sign = true; }
 
     if ((me->pki_encrypt || me->pki_sign) && !me->pki_keypair_file) {
@@ -354,7 +354,7 @@ static bool CheckResources()
 
     /* If everything is well, attempt to initialize our public/private keys */
     if (OK && (me->pki_encrypt || me->pki_sign)) {
-      char* filepath = nullptr;
+      const char* filepath = nullptr;
       /* Load our keypair */
       me->pki_keypair = crypto_keypair_new();
       if (!me->pki_keypair) {

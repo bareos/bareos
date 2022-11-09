@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,7 +31,7 @@
 #include "stored/acquire.h"
 #include "stored/bsr.h"
 #include "stored/device_control_record.h"
-#include "stored/jcr_private.h"
+#include "stored/stored_jcr_impl.h"
 #include "stored/mount.h"
 #include "stored/read_record.h"
 #include "lib/bnet.h"
@@ -57,7 +57,7 @@ static char rec_header[] = "rechdr %ld %ld %ld %ld %ld";
 bool DoReadData(JobControlRecord* jcr)
 {
   BareosSocket* fd = jcr->file_bsock;
-  DeviceControlRecord* dcr = jcr->impl->read_dcr;
+  DeviceControlRecord* dcr = jcr->sd_impl->read_dcr;
   bool ok = true;
 
   Dmsg0(20, "Start read data.\n");
@@ -67,14 +67,14 @@ bool DoReadData(JobControlRecord* jcr)
     return false;
   }
 
-  if (jcr->impl->NumReadVolumes == 0) {
+  if (jcr->sd_impl->NumReadVolumes == 0) {
     Jmsg(jcr, M_FATAL, 0, _("No Volume names found for restore.\n"));
     fd->fsend(FD_error);
     return false;
   }
 
   Dmsg2(200, "Found %d volumes names to restore. First=%s\n",
-        jcr->impl->NumReadVolumes, jcr->impl->VolList->VolumeName);
+        jcr->sd_impl->NumReadVolumes, jcr->sd_impl->VolList->VolumeName);
 
   // Ready device for reading
   if (!AcquireDeviceForRead(dcr)) {
@@ -84,7 +84,7 @@ bool DoReadData(JobControlRecord* jcr)
 
   // Let any SD plugin know now its time to setup the record translation infra.
   if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation, dcr) != bRC_OK) {
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return false;
   }
 
@@ -96,7 +96,7 @@ bool DoReadData(JobControlRecord* jcr)
   // Send end of data to FD
   fd->signal(BNET_EOD);
 
-  if (!ReleaseDevice(jcr->impl->read_dcr)) { ok = false; }
+  if (!ReleaseDevice(jcr->sd_impl->read_dcr)) { ok = false; }
 
   Dmsg0(30, "Done reading.\n");
   return ok;

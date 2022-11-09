@@ -40,16 +40,14 @@
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
 #include "stored/device_control_record.h"
-#include "stored/jcr_private.h"
+#include "stored/stored_jcr_impl.h"
 #include "stored/job.h"
 #include "stored/sd_plugins.h"
 #include "stored/sd_stats.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
 #include "stored/wait.h"
-#if defined(HAVE_DYNAMIC_SD_BACKENDS)
-#  include "stored/sd_backends.h"
-#endif
+#include "stored/sd_backends.h"
 
 #include "bsock_mock.h"
 
@@ -99,9 +97,6 @@ void ReservationTest::TearDown()
       }
     }
   }
-#if defined(HAVE_DYNAMIC_SD_BACKENDS)
-  FlushAndCloseBackendDevices();
-#endif
 
   if (configfile) { free(configfile); }
   if (my_config) { delete my_config; }
@@ -140,7 +135,7 @@ void WaitThenUnreserve(std::unique_ptr<TestJob>&);
 void WaitThenUnreserve(std::unique_ptr<TestJob>& job)
 {
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
-  job->jcr->impl->dcr->UnreserveDevice();
+  job->jcr->sd_impl->dcr->UnreserveDevice();
   ReleaseDeviceCond();
 }
 

@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -37,7 +37,7 @@
 #include "dird/fd_cmds.h"
 #include "dird/client_connection_handshake_mode.h"
 #include "dird/dird_globals.h"
-#include "dird/jcr_private.h"
+#include "dird/director_jcr_impl.h"
 #include "lib/bnet.h"
 #include "lib/qualified_resource_name_type_converter.h"
 #include "lib/bstringlist.h"
@@ -124,9 +124,9 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
   if (jcr->authenticated) { return true; }
 
   BareosSocket* fd = jcr->file_bsock;
-  ClientResource* client = jcr->impl->res.client;
+  ClientResource* client = jcr->dir_impl->res.client;
 
-  if (jcr->impl->connection_handshake_try_
+  if (jcr->dir_impl->connection_handshake_try_
       == ClientConnectionHandshakeMode::kTlsFirst) {
     std::string qualified_resource_name;
     if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
@@ -186,9 +186,9 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
   }
 
   Dmsg1(110, "<filed: %s", fd->msg);
-  jcr->impl->FDVersion = 0;
+  jcr->dir_impl->FDVersion = 0;
   if (!bstrncmp(fd->msg, FDOKhello, sizeof(FDOKhello))
-      && sscanf(fd->msg, FDOKnewHello, &jcr->impl->FDVersion) != 1) {
+      && sscanf(fd->msg, FDOKnewHello, &jcr->dir_impl->FDVersion) != 1) {
     Dmsg0(debuglevel, _("File daemon rejected Hello command\n"));
     Jmsg(jcr, M_FATAL, 0,
          _("File daemon at \"%s:%d\" rejected Hello command\n"), fd->host(),

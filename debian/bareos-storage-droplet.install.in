@@ -1,5 +1,3 @@
-@libdir@/libbareosdroplet.so*
-@backenddir@/libbareossd-chunked.so*
 @backenddir@/libbareossd-droplet.so*
 @configtemplatedir@/bareos-dir.d/storage/S3_Object.conf.example
 @configtemplatedir@/bareos-sd.d/device/S3_ObjectStorage.conf.example

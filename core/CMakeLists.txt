@@ -17,8 +17,6 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
-
-cmake_minimum_required(VERSION 3.12)
 project(bareos C CXX)
 
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
@@ -27,13 +25,6 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
       "Building from bareos/core/ is not supported anymore. Use bareos/ instead"
   )
 endif()
-
-cmake_policy(SET CMP0054 NEW)
-cmake_policy(SET CMP0057 NEW)
-
-if(POLICY CMP0109)
-  cmake_policy(SET CMP0109 NEW)
-endif(POLICY CMP0109)
 
 # disable in-source builds
 if("${PROJECT_SOURCE_DIR}" STREQUAL "${PROJECT_BINARY_DIR}")
@@ -422,14 +413,6 @@ if(NOT client-only
   # directory it is also not safe on 32-bit systems, so we only build it on
   # 64-bit
   add_subdirectory(src/droplet)
-  if(TARGET droplet)
-    set_target_properties(
-      droplet
-      PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
-                 SOVERSION "${BAREOS_VERSION_MAJOR}"
-                 PREFIX "libbareos"
-    )
-  endif()
 endif()
 
 include(BareosGenerateDebianInfo)

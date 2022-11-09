@@ -65,6 +65,8 @@
 #include "stored/volume_catalog_info.h"
 
 #include <vector>
+#include <atomic>
+
 template <typename T> class dlist;
 
 namespace storagedaemon {
@@ -82,19 +84,6 @@ enum class DeviceMode : int
   OPEN_READ_WRITE,
   OPEN_READ_ONLY,
   OPEN_WRITE_ONLY
-};
-
-enum class DeviceType : int
-{
-  B_UNKNOWN_DEV = 0,
-  B_FILE_DEV = 1,
-  B_TAPE_DEV,
-  B_FIFO_DEV,
-  B_VTL_DEV,
-  B_GFAPI_DEV,
-  B_DROPLET_DEV,
-  B_RADOS_DEV,
-  B_CEPHFS_DEV
 };
 
 // Generic status bits returned from StatusDev()
@@ -181,6 +170,22 @@ enum
 // Make sure you have enough bits to store all above bit fields.
 #define ST_BYTES NbytesForBits(ST_MAX + 1)
 
+enum class SeekMode
+{
+  NOSEEK,      // device cannot be seeked (e.g. a FIFO)
+  FILE_BLOCK,  // device works with file and blocknum (like a tape)
+  BYTES        // device uses byte offsets (like a plain file)
+};
+
+// incomplete list of device types for GuessMissingDeviceTypes()
+struct DeviceType {
+  static constexpr std::string_view B_DROPLET_DEV = "droplet";
+  static constexpr std::string_view B_FIFO_DEV = "fifo";
+  static constexpr std::string_view B_FILE_DEV = "file";
+  static constexpr std::string_view B_TAPE_DEV = "tape";
+  static constexpr std::string_view B_UNKNOWN_DEV = "";
+};
+
 /*
  * Device structure definition.
  *
@@ -203,7 +208,11 @@ class Device {
  public:
   Device() = default;
   virtual ~Device();
-  Device* volatile swap_dev{}; /**< Swap vol from this device */
+  Device(const Device&) = delete;
+  Device& operator=(const Device&) = delete;
+  Device(Device&&) = delete;
+  Device& operator=(Device&&) = delete;
+  Device* swap_dev{};         /**< Swap vol from this device */
   std::vector<DeviceControlRecord*> attached_dcrs;           /**< Attached DeviceControlRecords */
   pthread_mutex_t mutex_ = PTHREAD_MUTEX_INITIALIZER;        /**< Access control */
   pthread_mutex_t spool_mutex = PTHREAD_MUTEX_INITIALIZER;   /**< Mutex for updating spool_size */
@@ -220,7 +229,7 @@ class Device {
   int dev_errno{};            /**< Our own errno */
   int oflags{};               /**< Read/write flags */
   DeviceMode open_mode{DeviceMode::kUndefined};
-  DeviceType dev_type{DeviceType::B_UNKNOWN_DEV};
+  std::string device_type{};
   bool autoselect{};          /**< Autoselect in autochanger */
   bool norewindonclose{};     /**< Don't rewind tape drive on close */
   bool initiated{};           /**< Set when FactoryCreateDevice() called */
@@ -289,20 +298,12 @@ class Device {
   bool AttachedToAutochanger() const { return BitIsSet(CAP_ATTACHED_TO_AUTOCHANGER, capabilities); }
   bool RequiresMount() const { return BitIsSet(CAP_REQMOUNT, capabilities); }
   bool IsRemovable() const { return BitIsSet(CAP_REM, capabilities); }
-  bool IsTape() const { return (dev_type == DeviceType::B_TAPE_DEV); }
-  bool IsFile() const
-  {
-    return (dev_type == DeviceType::B_FILE_DEV || dev_type == DeviceType::B_GFAPI_DEV ||
-            dev_type == DeviceType::B_DROPLET_DEV || dev_type == DeviceType::B_RADOS_DEV ||
-            dev_type == DeviceType::B_CEPHFS_DEV);
-  }
-  bool IsFifo() const { return dev_type == DeviceType::B_FIFO_DEV; }
-  bool IsVtl() const { return dev_type == DeviceType::B_VTL_DEV; }
+  bool IsTape() const { return (device_type == DeviceType::B_TAPE_DEV); }
   bool IsOpen() const { return fd >= 0; }
   bool IsOffline() const { return BitIsSet(ST_OFFLINE, state); }
   bool IsLabeled() const { return BitIsSet(ST_LABEL, state); }
   bool IsMounted() const { return BitIsSet(ST_MOUNTED, state); }
-  bool IsUnmountable() const { return ((IsFile() && IsRemovable())); }
+  bool IsUnmountable() const { return (IsRemovable() && RequiresMount()); }
   int NumReserved() const { return num_reserved_; }
   bool is_part_spooled() const { return BitIsSet(ST_PART_SPOOLED, state); }
   bool have_media() const { return BitIsSet(ST_MEDIA, state); }
@@ -334,6 +335,7 @@ class Device {
   const char* strerror() const;
   const char* archive_name() const;
   const char* name() const;
+  const std::string& type() const { return device_type; }
   const char* print_name() const; /**< Name for display purposes */
   void SetEot() { SetBit(ST_EOT, state); }
   void SetEof() { SetBit(ST_EOF, state); }
@@ -403,7 +405,11 @@ class Device {
   bool unmount(DeviceControlRecord* dcr, int timeout);
   void EditMountCodes(PoolMem& omsg, const char* imsg);
   bool OfflineOrRewind();
-  bool ScanDirForVolume(DeviceControlRecord* dcr);
+protected:
+  bool ScanDirectoryForVolume(DeviceControlRecord* dcr);
+  virtual bool ScanForVolumeImpl(DeviceControlRecord* dcr);
+public:
+  bool ScanForVolume(DeviceControlRecord* dcr);
   void SetSlotNumber(slot_number_t slot);
   void InvalidateSlotNumber();
 
@@ -447,6 +453,8 @@ class Device {
     return true;
   }
   virtual bool DeviceStatus(DeviceStatusInformation*) { return false; }
+  virtual SeekMode GetSeekMode() const = 0;
+  virtual bool CanReadConcurrently() const { return false; }
 
   // Low level operations
   virtual int d_ioctl(int fd, ioctl_req_t request, char* mt_com = NULL) = 0;
@@ -493,14 +501,13 @@ class SpoolDevice :public Device
  public:
   SpoolDevice() = default;
   ~SpoolDevice() {   close(nullptr); }
+  SeekMode GetSeekMode() const override { return SeekMode::NOSEEK; }
   int d_ioctl(int, ioctl_req_t, char*) override {return -1;}
   int d_open(const char*, int, int) override {return -1;}
   int d_close(int) override {return -1;}
   ssize_t d_read(int, void*, size_t) override { return 0;}
   ssize_t d_write(int, const void*, size_t) override { return 0;}
-  boffset_t d_lseek(DeviceControlRecord*,
-                    boffset_t,
-                    int) override { return 0;}
+  boffset_t d_lseek(DeviceControlRecord*, boffset_t, int) override { return 0;}
   bool d_truncate(DeviceControlRecord*) override {return false;}
 };
 /* clang-format on */

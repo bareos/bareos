@@ -48,6 +48,7 @@ fi
 setup_data
 
 bin/bareos start
+bin/bareos status
 
 # make sure, director is up and running.
 print_debug "$(bin/bconsole <<< "status dir")"

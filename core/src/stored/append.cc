@@ -30,7 +30,7 @@
 #include "stored/acquire.h"
 #include "stored/fd_cmds.h"
 #include "stored/stored_globals.h"
-#include "stored/jcr_private.h"
+#include "stored/stored_jcr_impl.h"
 #include "stored/label.h"
 #include "stored/spool.h"
 #include "lib/bget_msg.h"
@@ -101,20 +101,20 @@ bool IsAttribute(DeviceRecord* record)
 static void UpdateFileList(JobControlRecord* jcr)
 {
   Dmsg0(100, _("... update file list\n"));
-  jcr->impl->dcr->DirAskToUpdateFileList();
+  jcr->sd_impl->dcr->DirAskToUpdateFileList();
 }
 
 static void UpdateJobmediaRecord(JobControlRecord* jcr)
 {
   Dmsg0(100, _("... create job media record\n"));
-  jcr->impl->dcr->DirCreateJobmediaRecord(false);
+  jcr->sd_impl->dcr->DirCreateJobmediaRecord(false);
 }
 
 static void UpdateJobrecord(JobControlRecord* jcr)
 {
   Dmsg2(100, _("... update job record: %llu bytes %lu files\n"), jcr->JobBytes,
         jcr->JobFiles);
-  jcr->impl->dcr->DirAskToUpdateJobRecord();
+  jcr->sd_impl->dcr->DirAskToUpdateJobRecord();
 }
 
 void DoBackupCheckpoint(JobControlRecord* jcr)
@@ -165,11 +165,11 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   POOLMEM* rec_data;
   char ec[50];
 
-  if (!jcr->impl->dcr) {
+  if (!jcr->sd_impl->dcr) {
     Jmsg0(jcr, M_FATAL, 0, _("DeviceControlRecord is NULL!!!\n"));
     return false;
   }
-  dev = jcr->impl->dcr->dev;
+  dev = jcr->sd_impl->dcr->dev;
   if (!dev) {
     Jmsg0(jcr, M_FATAL, 0, _("Device is NULL!!!\n"));
     return false;
@@ -178,21 +178,22 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   Dmsg1(100, "Start append data. res=%d\n", dev->NumReserved());
 
   if (!bs->SetBufferSize(
-          jcr->impl->dcr->device_resource->max_network_buffer_size,
+          jcr->sd_impl->dcr->device_resource->max_network_buffer_size,
           BNET_SETBUF_WRITE)) {
     Jmsg0(jcr, M_FATAL, 0, _("Unable to set network buffer size.\n"));
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return false;
   }
 
-  if (!AcquireDeviceForAppend(jcr->impl->dcr)) {
-    jcr->setJobStatus(JS_ErrorTerminated);
+  if (!AcquireDeviceForAppend(jcr->sd_impl->dcr)) {
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return false;
   }
 
-  if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation, jcr->impl->dcr)
+  if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation,
+                          jcr->sd_impl->dcr)
       != bRC_OK) {
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return false;
   }
 
@@ -203,14 +204,14 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   }
   Dmsg1(50, "Begin append device=%s\n", dev->print_name());
 
-  if (!BeginDataSpool(jcr->impl->dcr)) {
-    jcr->setJobStatus(JS_ErrorTerminated);
+  if (!BeginDataSpool(jcr->sd_impl->dcr)) {
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return false;
   }
 
   if (!BeginAttributeSpool(jcr)) {
-    DiscardDataSpool(jcr->impl->dcr);
-    jcr->setJobStatus(JS_ErrorTerminated);
+    DiscardDataSpool(jcr->sd_impl->dcr);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return false;
   }
 
@@ -220,10 +221,10 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   }
 
   // Write Begin Session Record
-  if (!WriteSessionLabel(jcr->impl->dcr, SOS_LABEL)) {
+  if (!WriteSessionLabel(jcr->sd_impl->dcr, SOS_LABEL)) {
     Jmsg1(jcr, M_FATAL, 0, _("Write session label failed. ERR=%s\n"),
           dev->bstrerror());
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     ok = false;
   }
   if (dev->VolCatInfo.VolCatName[0] == 0) {
@@ -255,7 +256,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
    * file. 1. for the Attributes, 2. for the file data if any,
    * and 3. for the MD5 if any.
    */
-  jcr->impl->dcr->VolFirstIndex = jcr->impl->dcr->VolLastIndex = 0;
+  jcr->sd_impl->dcr->VolFirstIndex = jcr->sd_impl->dcr->VolLastIndex = 0;
   jcr->run_time = time(NULL); /* start counting time for rates */
 
   auto now
@@ -263,10 +264,10 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   time_t next_checkpoint_time = now + me->checkpoint_interval;
 
   std::vector<ProcessedFile> processed_files{};
-  int64_t current_volumeid = jcr->impl->dcr->VolMediaId;
+  int64_t current_volumeid = jcr->sd_impl->dcr->VolMediaId;
 
   ProcessedFile file_currently_processed;
-  uint32_t current_block_number = jcr->impl->dcr->block->BlockNumber;
+  uint32_t current_block_number = jcr->sd_impl->dcr->block->BlockNumber;
 
   for (last_file_index = 0; ok && !jcr->IsJobCanceled();) {
     /*
@@ -333,47 +334,48 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
      * We save the original data pointer from the record so we can restore
      * that after the loop ends.
      */
-    rec_data = jcr->impl->dcr->rec->data;
+    rec_data = jcr->sd_impl->dcr->rec->data;
     while ((n = BgetMsg(bs)) > 0 && !jcr->IsJobCanceled()) {
-      jcr->impl->dcr->rec->VolSessionId = jcr->VolSessionId;
-      jcr->impl->dcr->rec->VolSessionTime = jcr->VolSessionTime;
-      jcr->impl->dcr->rec->FileIndex = file_index;
-      jcr->impl->dcr->rec->Stream = stream;
-      jcr->impl->dcr->rec->maskedStream
+      jcr->sd_impl->dcr->rec->VolSessionId = jcr->VolSessionId;
+      jcr->sd_impl->dcr->rec->VolSessionTime = jcr->VolSessionTime;
+      jcr->sd_impl->dcr->rec->FileIndex = file_index;
+      jcr->sd_impl->dcr->rec->Stream = stream;
+      jcr->sd_impl->dcr->rec->maskedStream
           = stream & STREAMMASK_TYPE; /* strip high bits */
-      jcr->impl->dcr->rec->data_len = bs->message_length;
-      jcr->impl->dcr->rec->data = bs->msg; /* use message buffer */
+      jcr->sd_impl->dcr->rec->data_len = bs->message_length;
+      jcr->sd_impl->dcr->rec->data = bs->msg; /* use message buffer */
 
       Dmsg4(850, "before writ_rec FI=%d SessId=%d Strm=%s len=%d\n",
-            jcr->impl->dcr->rec->FileIndex, jcr->impl->dcr->rec->VolSessionId,
-            stream_to_ascii(buf1, jcr->impl->dcr->rec->Stream,
-                            jcr->impl->dcr->rec->FileIndex),
-            jcr->impl->dcr->rec->data_len);
+            jcr->sd_impl->dcr->rec->FileIndex,
+            jcr->sd_impl->dcr->rec->VolSessionId,
+            stream_to_ascii(buf1, jcr->sd_impl->dcr->rec->Stream,
+                            jcr->sd_impl->dcr->rec->FileIndex),
+            jcr->sd_impl->dcr->rec->data_len);
 
-      ok = jcr->impl->dcr->WriteRecord();
+      ok = jcr->sd_impl->dcr->WriteRecord();
       if (!ok) {
         Dmsg2(90, "Got WriteBlockToDev error on device %s. %s\n",
-              jcr->impl->dcr->dev->print_name(),
-              jcr->impl->dcr->dev->bstrerror());
+              jcr->sd_impl->dcr->dev->print_name(),
+              jcr->sd_impl->dcr->dev->bstrerror());
         break;
       }
 
-      if (IsAttribute(jcr->impl->dcr->rec)) {
-        file_currently_processed.AddAttribute(jcr->impl->dcr->rec);
+      if (IsAttribute(jcr->sd_impl->dcr->rec)) {
+        file_currently_processed.AddAttribute(jcr->sd_impl->dcr->rec);
       }
 
       if (AttributesAreSpooled(jcr)) {
         SaveFullyProcessedFiles(jcr, processed_files);
       } else {
-        if (current_block_number != jcr->impl->dcr->block->BlockNumber) {
-          current_block_number = jcr->impl->dcr->block->BlockNumber;
+        if (current_block_number != jcr->sd_impl->dcr->block->BlockNumber) {
+          current_block_number = jcr->sd_impl->dcr->block->BlockNumber;
           SaveFullyProcessedFiles(jcr, processed_files);
         }
         if (me->checkpoint_interval) {
-          if (jcr->impl->dcr->VolMediaId != current_volumeid) {
+          if (jcr->sd_impl->dcr->VolMediaId != current_volumeid) {
             Jmsg0(jcr, M_INFO, 0, _("Volume changed, doing checkpoint:\n"));
             DoBackupCheckpoint(jcr);
-            current_volumeid = jcr->impl->dcr->VolMediaId;
+            current_volumeid = jcr->sd_impl->dcr->VolMediaId;
           } else {
             next_checkpoint_time = DoTimedCheckpoint(jcr, next_checkpoint_time,
                                                      me->checkpoint_interval);
@@ -387,7 +389,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     Dmsg2(650, "End read loop with %s. Stat=%d\n", what, n);
 
     // Restore the original data pointer.
-    jcr->impl->dcr->rec->data = rec_data;
+    jcr->sd_impl->dcr->rec->data = rec_data;
 
     if (bs->IsError()) {
       if (!jcr->IsJobCanceled()) {
@@ -403,7 +405,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   }
 
   // Create Job status for end of session label
-  jcr->setJobStatus(ok ? JS_Terminated : JS_ErrorTerminated);
+  jcr->setJobStatusWithPriorityCheck(ok ? JS_Terminated : JS_ErrorTerminated);
 
   if (ok && bs == jcr->file_bsock) {
     // Terminate connection with FD
@@ -415,27 +417,27 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     bs->fsend("3999 Failed append\n");
   }
 
-  Dmsg1(200, "Write EOS label JobStatus=%c\n", jcr->JobStatus);
+  Dmsg1(200, "Write EOS label JobStatus=%c\n", jcr->getJobStatus());
 
   /*
    * Check if we can still write. This may not be the case
    * if we are at the end of the tape or we got a fatal I/O error.
    */
   if (ok || dev->CanWrite()) {
-    if (!WriteSessionLabel(jcr->impl->dcr, EOS_LABEL)) {
+    if (!WriteSessionLabel(jcr->sd_impl->dcr, EOS_LABEL)) {
       // Print only if ok and not cancelled to avoid spurious messages
       if (ok && !jcr->IsJobCanceled()) {
         Jmsg1(jcr, M_FATAL, 0, _("Error writing end session label. ERR=%s\n"),
               dev->bstrerror());
         PossibleIncompleteJob(jcr, last_file_index);
       }
-      jcr->setJobStatus(JS_ErrorTerminated);
+      jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
       ok = false;
     }
     Dmsg0(90, "back from write_end_session_label()\n");
 
     // Flush out final partial block of this session
-    if (!jcr->impl->dcr->WriteBlockToDevice()) {
+    if (!jcr->sd_impl->dcr->WriteBlockToDevice()) {
       // Print only if ok and not cancelled to avoid spurious messages
       if (ok && !jcr->IsJobCanceled()) {
         Jmsg2(jcr, M_FATAL, 0, _("Fatal append error on device %s: ERR=%s\n"),
@@ -443,7 +445,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
         Dmsg0(100, _("Set ok=FALSE after WriteBlockToDevice.\n"));
         PossibleIncompleteJob(jcr, last_file_index);
       }
-      jcr->setJobStatus(JS_ErrorTerminated);
+      jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
       ok = false;
     } else if (ok && !jcr->IsJobCanceled()) {
       // Send attributes of the final partial block of the session
@@ -455,14 +457,14 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   }
 
   if (!ok && !jcr->is_JobStatus(JS_Incomplete)) {
-    DiscardDataSpool(jcr->impl->dcr);
+    DiscardDataSpool(jcr->sd_impl->dcr);
   } else {
     // Note: if commit is OK, the device will remain blocked
-    CommitDataSpool(jcr->impl->dcr);
+    CommitDataSpool(jcr->sd_impl->dcr);
   }
 
   // Release the device -- and send final Vol info to DIR and unlock it.
-  ReleaseDevice(jcr->impl->dcr);
+  ReleaseDevice(jcr->sd_impl->dcr);
 
   /*
    * Don't use time_t for job_elapsed as time_t can be 32 or 64 bits,
@@ -491,11 +493,11 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
 // Send attributes and digest to Director for Catalog
 bool SendAttrsToDir(JobControlRecord* jcr, DeviceRecord* rec)
 {
-  if (!jcr->impl->no_attributes) {
+  if (!jcr->sd_impl->no_attributes) {
     BareosSocket* dir = jcr->dir_bsock;
     if (AttributesAreSpooled(jcr)) { dir->SetSpooling(); }
     Dmsg0(850, "Send attributes to dir.\n");
-    if (!jcr->impl->dcr->DirUpdateFileAttributes(rec)) {
+    if (!jcr->sd_impl->dcr->DirUpdateFileAttributes(rec)) {
       Jmsg(jcr, M_FATAL, 0, _("Error updating file attributes. ERR=%s\n"),
            dir->bstrerror());
       dir->ClearSpooling();

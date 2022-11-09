@@ -39,7 +39,7 @@
 #include "stored/device.h"
 #include "stored/device_control_record.h"
 #include "stored/bsr.h"
-#include "stored/jcr_private.h"
+#include "stored/stored_jcr_impl.h"
 #include "lib/parse_bsr.h"
 #include "lib/parse_conf.h"
 #include "include/jcr.h"
@@ -62,28 +62,28 @@ JobControlRecord* SetupDummyJcr(const char* name,
                                 DirectorResource* director)
 {
   JobControlRecord* jcr = new_jcr(MyFreeJcr);
-  jcr->impl = new JobControlRecordPrivate;
+  jcr->sd_impl = new StoredJcrImpl;
 
-  jcr->impl->read_session.bsr = bsr;
-  jcr->impl->director = director;
+  jcr->sd_impl->read_session.bsr = bsr;
+  jcr->sd_impl->director = director;
   jcr->VolSessionId = 1;
   jcr->VolSessionTime = (uint32_t)time(NULL);
-  jcr->impl->NumReadVolumes = 0;
-  jcr->impl->NumWriteVolumes = 0;
+  jcr->sd_impl->NumReadVolumes = 0;
+  jcr->sd_impl->NumWriteVolumes = 0;
   jcr->JobId = 0;
   jcr->setJobType(JT_CONSOLE);
   jcr->setJobLevel(L_FULL);
-  jcr->JobStatus = JS_Terminated;
+  jcr->setJobStatus(JS_Terminated);
   jcr->where = strdup("");
-  jcr->impl->job_name = GetPoolMemory(PM_FNAME);
-  PmStrcpy(jcr->impl->job_name, "Dummy.Job.Name");
+  jcr->sd_impl->job_name = GetPoolMemory(PM_FNAME);
+  PmStrcpy(jcr->sd_impl->job_name, "Dummy.Job.Name");
   jcr->client_name = GetPoolMemory(PM_FNAME);
   PmStrcpy(jcr->client_name, "Dummy.Client.Name");
   bstrncpy(jcr->Job, name, sizeof(jcr->Job));
-  jcr->impl->fileset_name = GetPoolMemory(PM_FNAME);
-  PmStrcpy(jcr->impl->fileset_name, "Dummy.fileset.name");
-  jcr->impl->fileset_md5 = GetPoolMemory(PM_FNAME);
-  PmStrcpy(jcr->impl->fileset_md5, "Dummy.fileset.md5");
+  jcr->sd_impl->fileset_name = GetPoolMemory(PM_FNAME);
+  PmStrcpy(jcr->sd_impl->fileset_name, "Dummy.fileset.name");
+  jcr->sd_impl->fileset_md5 = GetPoolMemory(PM_FNAME);
+  PmStrcpy(jcr->sd_impl->fileset_md5, "Dummy.fileset.md5");
 
   NewPlugins(jcr); /* instantiate plugins */
 
@@ -153,7 +153,7 @@ static bool setup_to_access_device(DeviceControlRecord* dcr,
   } else {
     VolName[0] = 0;
   }
-  if (!jcr->impl->read_session.bsr && VolName[0] == 0) {
+  if (!jcr->sd_impl->read_session.bsr && VolName[0] == 0) {
     if (!bstrncmp(dev_name, "/dev/", 5)) {
       /* Try stripping file part */
       p = dev_name + strlen(dev_name);
@@ -178,7 +178,7 @@ static bool setup_to_access_device(DeviceControlRecord* dcr,
     return false;
   }
   device_resource->dev = dev;
-  jcr->impl->dcr = dcr;
+  jcr->sd_impl->dcr = dcr;
   SetupNewDcrDevice(jcr, dcr, dev, NULL);
   if (!readonly) { dcr->SetWillWrite(); }
 
@@ -193,7 +193,7 @@ static bool setup_to_access_device(DeviceControlRecord* dcr,
   if (readonly) { /* read only access? */
     Dmsg0(100, "Acquire device for read\n");
     if (!AcquireDeviceForRead(dcr)) { return false; }
-    jcr->impl->read_dcr = dcr;
+    jcr->sd_impl->read_dcr = dcr;
   } else {
     if (!FirstOpenDevice(dcr)) {
       Jmsg1(jcr, M_FATAL, 0, _("Cannot open %s\n"), dev->print_name());
@@ -210,9 +210,9 @@ static bool setup_to_access_device(DeviceControlRecord* dcr,
  */
 static void MyFreeJcr(JobControlRecord* jcr)
 {
-  if (jcr->impl->job_name) {
-    FreePoolMemory(jcr->impl->job_name);
-    jcr->impl->job_name = NULL;
+  if (jcr->sd_impl->job_name) {
+    FreePoolMemory(jcr->sd_impl->job_name);
+    jcr->sd_impl->job_name = NULL;
   }
 
   if (jcr->client_name) {
@@ -220,14 +220,14 @@ static void MyFreeJcr(JobControlRecord* jcr)
     jcr->client_name = NULL;
   }
 
-  if (jcr->impl->fileset_name) {
-    FreePoolMemory(jcr->impl->fileset_name);
-    jcr->impl->fileset_name = NULL;
+  if (jcr->sd_impl->fileset_name) {
+    FreePoolMemory(jcr->sd_impl->fileset_name);
+    jcr->sd_impl->fileset_name = NULL;
   }
 
-  if (jcr->impl->fileset_md5) {
-    FreePoolMemory(jcr->impl->fileset_md5);
-    jcr->impl->fileset_md5 = NULL;
+  if (jcr->sd_impl->fileset_md5) {
+    FreePoolMemory(jcr->sd_impl->fileset_md5);
+    jcr->sd_impl->fileset_md5 = NULL;
   }
 
   if (jcr->comment) {
@@ -235,16 +235,16 @@ static void MyFreeJcr(JobControlRecord* jcr)
     jcr->comment = NULL;
   }
 
-  if (jcr->impl->VolList) { FreeRestoreVolumeList(jcr); }
+  if (jcr->sd_impl->VolList) { FreeRestoreVolumeList(jcr); }
 
-  if (jcr->impl->dcr) {
-    FreeDeviceControlRecord(jcr->impl->dcr);
-    jcr->impl->dcr = NULL;
+  if (jcr->sd_impl->dcr) {
+    FreeDeviceControlRecord(jcr->sd_impl->dcr);
+    jcr->sd_impl->dcr = NULL;
   }
 
-  if (jcr->impl) {
-    delete jcr->impl;
-    jcr->impl = nullptr;
+  if (jcr->sd_impl) {
+    delete jcr->sd_impl;
+    jcr->sd_impl = nullptr;
   }
 
   return;

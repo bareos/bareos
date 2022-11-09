@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,7 +28,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
-#include "dird/jcr_private.h"
+#include "dird/director_jcr_impl.h"
 #include "dird/dird_globals.h"
 #include "dird/job.h"
 #include "dird/next_vol.h"
@@ -89,10 +89,10 @@ int NdmpLoadNext(struct ndm_session* sess)
   bool prune = false;
   struct ndmmedia* media;
   int index = 1;
-  StorageResource* store = jcr->impl->res.write_storage;
+  StorageResource* store = jcr->dir_impl->res.write_storage;
 
   // get the poolid for pool name
-  mr.PoolId = jcr->impl->jr.PoolId;
+  mr.PoolId = jcr->dir_impl->jr.PoolId;
 
 
   if (FindNextVolumeForAppend(jcr, &mr, index, unwanted_volumes, create,
@@ -169,7 +169,7 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
   char* item;
 
   ndmp_log_level
-      = std::max(jcr->impl->res.client->ndmp_loglevel, me->ndmp_loglevel);
+      = std::max(jcr->dir_impl->res.client->ndmp_loglevel, me->ndmp_loglevel);
 
   struct ndmca_media_callbacks media_callbacks;
 
@@ -186,22 +186,23 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
   Jmsg(jcr, M_INFO, 0, _("Start NDMP Backup JobId %s, Job=%s\n"),
        edit_uint64(jcr->JobId, ed1), jcr->Job);
 
-  jcr->setJobStatus(JS_Running);
-  Dmsg2(100, "JobId=%d JobLevel=%c\n", jcr->impl->jr.JobId,
-        jcr->impl->jr.JobLevel);
-  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->impl->jr)) {
+  jcr->setJobStatusWithPriorityCheck(JS_Running);
+  Dmsg2(100, "JobId=%d JobLevel=%c\n", jcr->dir_impl->jr.JobId,
+        jcr->dir_impl->jr.JobLevel);
+  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
     return false;
   }
 
   status = 0;
-  StorageResource* store = jcr->impl->res.write_storage;
+  StorageResource* store = jcr->dir_impl->res.write_storage;
   PoolMem virtual_filename(PM_FNAME);
   IncludeExcludeItem* ie;
 
 
-  if (!NdmpBuildClientAndStorageJob(jcr, jcr->impl->res.write_storage,
-                                    jcr->impl->res.client, true, /* init_tape */
+  if (!NdmpBuildClientAndStorageJob(jcr, jcr->dir_impl->res.write_storage,
+                                    jcr->dir_impl->res.client,
+                                    true, /* init_tape */
                                     true, /* init_robot */
                                     NDM_JOB_OP_BACKUP, &ndmp_job)) {
     goto bail_out;
@@ -221,7 +222,7 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
    * Only one include set of the fileset  is allowed in NATIVE mode as
    * in NDMP also per job only one filesystem can be backed up
    */
-  fileset = jcr->impl->res.fileset;
+  fileset = jcr->dir_impl->res.fileset;
 
   if (fileset->include_items.size() > 1) {
     Jmsg(jcr, M_ERROR, 0,
@@ -260,8 +261,8 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
   nis->filesystem = item;
   nis->FileIndex = 1;
   nis->jcr = jcr;
-  nis->save_filehist = jcr->impl->res.job->SaveFileHist;
-  nis->filehist_size = jcr->impl->res.job->FileHistSize;
+  nis->save_filehist = jcr->dir_impl->res.job->SaveFileHist;
+  nis->filehist_size = jcr->dir_impl->res.job->FileHistSize;
 
   ndmp_sess.param->log.ctx = nis;
   ndmp_sess.param->log_tag = strdup("DIR-NDMP");
@@ -294,9 +295,9 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
    * individual file records to it. So we allocate it here once so its available
    * during the whole NDMP session.
    */
-  if (Bstrcasecmp(jcr->impl->backup_format, "dump")) {
+  if (Bstrcasecmp(jcr->dir_impl->backup_format, "dump")) {
     Mmsg(virtual_filename, "/@NDMP%s%%%d", nis->filesystem,
-         jcr->impl->DumpLevel);
+         jcr->dir_impl->DumpLevel);
   } else {
     Mmsg(virtual_filename, "/@NDMP%s", nis->filesystem);
   }
@@ -329,7 +330,7 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
   }
 
   // See if there were any errors during the backup.
-  jcr->impl->jr.FileIndex = 1;
+  jcr->dir_impl->jr.FileIndex = 1;
   if (!extract_post_backup_stats_ndmp_native(jcr, item, &ndmp_sess)) {
     goto cleanup;
   }
@@ -401,7 +402,7 @@ cleanup:
 bail_out:
   // Error handling of failed Job.
   status = JS_ErrorTerminated;
-  jcr->setJobStatus(JS_ErrorTerminated);
+  jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
 
 ok_out:
   if (nis) {
@@ -421,21 +422,21 @@ bool DoNdmpBackupInitNdmpNative(JobControlRecord* jcr)
 
   if (!AllowDuplicateJob(jcr)) { return false; }
 
-  jcr->impl->jr.PoolId
-      = GetOrCreatePoolRecord(jcr, jcr->impl->res.pool->resource_name_);
-  if (jcr->impl->jr.PoolId == 0) { return false; }
+  jcr->dir_impl->jr.PoolId
+      = GetOrCreatePoolRecord(jcr, jcr->dir_impl->res.pool->resource_name_);
+  if (jcr->dir_impl->jr.PoolId == 0) { return false; }
 
   jcr->start_time = time(NULL);
-  jcr->impl->jr.StartTime = jcr->start_time;
-  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->impl->jr)) {
+  jcr->dir_impl->jr.StartTime = jcr->start_time;
+  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
     return false;
   }
 
   // If pool storage specified, use it instead of job storage
-  CopyWstorage(jcr, jcr->impl->res.pool->storage, _("Pool resource"));
+  CopyWstorage(jcr, jcr->dir_impl->res.pool->storage, _("Pool resource"));
 
-  if (!jcr->impl->res.write_storage_list) {
+  if (!jcr->dir_impl->res.write_storage_list) {
     Jmsg(jcr, M_FATAL, 0,
          _("No Storage specification found in Job or Pool.\n"));
     return false;
@@ -473,7 +474,8 @@ static inline bool extract_post_backup_stats_ndmp_native(
     // translate Physical to Logical Slot before storing into database
 
     media->slot_addr = GetBareosSlotNumberByElementAddress(
-        &jcr->impl->res.write_storage->runtime_storage_status->storage_mapping,
+        &jcr->dir_impl->res.write_storage->runtime_storage_status
+             ->storage_mapping,
         slot_type_t::kSlotTypeStorage, media->slot_addr);
 #  if 0
       Jmsg(jcr, M_INFO, 0, _("Physical Slot is %d\n"), media->slot_addr);
@@ -515,7 +517,7 @@ static inline bool extract_post_backup_stats_ndmp_native(
   ndm_ee = sess->control_acb->job.result_env_tab.head;
   while (ndm_ee) {
     if (!jcr->db->CreateNdmpEnvironmentString(
-            jcr, &jcr->impl->jr, ndm_ee->pval.name, ndm_ee->pval.value)) {
+            jcr, &jcr->dir_impl->jr, ndm_ee->pval.name, ndm_ee->pval.value)) {
       break;
     }
     ndm_ee = ndm_ee->next;
@@ -526,7 +528,7 @@ static inline bool extract_post_backup_stats_ndmp_native(
    * level.
    */
   if (nbf_options && nbf_options->uses_level) {
-    jcr->db->UpdateNdmpLevelMapping(jcr, &jcr->impl->jr, filesystem,
+    jcr->db->UpdateNdmpLevelMapping(jcr, &jcr->dir_impl->jr, filesystem,
                                     sess->control_acb->job.bu_level);
   }
 

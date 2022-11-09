@@ -97,11 +97,11 @@ BareosSocket::BareosSocket(const BareosSocket& other)
   in_msg_no = other.in_msg_no;
   out_msg_no = other.out_msg_no;
   message_length = other.message_length;
-  timer_start = other.timer_start;
+  timer_start = other.timer_start.load();
   b_errno = other.b_errno;
   blocking_ = other.blocking_;
-  errors = other.errors;
-  suppress_error_msgs_ = other.suppress_error_msgs_;
+  errors = other.errors.load();
+  suppress_error_msgs_ = other.suppress_error_msgs_.load();
   sleep_time_after_authentication_error
       = other.sleep_time_after_authentication_error;
   client_addr = other.client_addr;

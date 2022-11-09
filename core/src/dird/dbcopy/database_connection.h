@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -25,7 +25,7 @@
 #include "include/bareos.h"
 #include "dird/dird_globals.h"
 #include "dird/job.h"
-#include "dird/jcr_private.h"
+#include "dird/director_jcr_impl.h"
 #include "dird/dird_conf.h"
 #include "dird/get_database_connection.h"
 #include "dird/dbcopy/database_type.h"
@@ -47,11 +47,11 @@ class DatabaseConnection {
   {
     jcr_.reset(directordaemon::NewDirectorJcr());
 
-    jcr_->impl->res.catalog
+    jcr_->dir_impl->res.catalog
         = static_cast<directordaemon::CatalogResource*>(config->GetResWithName(
             directordaemon::R_CATALOG, catalog_resource_name.c_str()));
 
-    if (jcr_->impl->res.catalog == nullptr) {
+    if (jcr_->dir_impl->res.catalog == nullptr) {
       std::string err{"Could not find catalog resource "};
       err += catalog_resource_name;
       err += ".";
@@ -67,7 +67,7 @@ class DatabaseConnection {
       throw std::runtime_error(err);
     }
 
-    db_type = DatabaseType::Convert(jcr_->impl->res.catalog->db_driver);
+    db_type = DatabaseType::Convert(jcr_->dir_impl->res.catalog->db_driver);
   }
 
  private:

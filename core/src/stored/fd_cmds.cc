@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -38,7 +38,7 @@
 #include "stored/authenticate.h"
 #include "stored/device_control_record.h"
 #include "stored/fd_cmds.h"
-#include "stored/jcr_private.h"
+#include "stored/stored_jcr_impl.h"
 #include "stored/read.h"
 #include "stored/sd_stats.h"
 #include "lib/bnet.h"
@@ -134,7 +134,7 @@ void* HandleFiledConnection(BareosSocket* fd, char* job_name)
   if (!AuthenticateFiledaemon(jcr)) {
     Dmsg1(50, "Authentication failed Job %s\n", jcr->Job);
     Jmsg(jcr, M_FATAL, 0, _("Unable to authenticate File daemon\n"));
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   } else {
     utime_t now;
 
@@ -147,7 +147,7 @@ void* HandleFiledConnection(BareosSocket* fd, char* job_name)
     UpdateJobStatistics(jcr, now);
   }
 
-  pthread_cond_signal(&jcr->impl->job_start_wait); /* wake waiting job */
+  pthread_cond_signal(&jcr->sd_impl->job_start_wait); /* wake waiting job */
   FreeJcr(jcr);
 
   return NULL;
@@ -177,11 +177,11 @@ void RunJob(JobControlRecord* jcr)
 
   jcr->end_time = time(NULL);
   DequeueMessages(jcr); /* send any queued messages */
-  jcr->setJobStatus(JS_Terminated);
+  jcr->setJobStatusWithPriorityCheck(JS_Terminated);
 
   GeneratePluginEvent(jcr, bSdEventJobEnd);
 
-  dir->fsend(Job_end, jcr->Job, jcr->JobStatus, jcr->JobFiles,
+  dir->fsend(Job_end, jcr->Job, jcr->getJobStatus(), jcr->JobFiles,
              edit_uint64(jcr->JobBytes, ec1), jcr->JobErrors);
   dir->signal(BNET_EOD); /* send EOD to Director daemon */
 
@@ -220,7 +220,7 @@ void DoFdCommands(JobControlRecord* jcr)
             } else {
               Jmsg0(jcr, M_FATAL, 0, _("Command error with FD, hanging up.\n"));
             }
-            jcr->setJobStatus(JS_ErrorTerminated);
+            jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
           }
           quit = true;
         }
@@ -250,7 +250,7 @@ static bool AppendDataCmd(JobControlRecord* jcr)
   BareosSocket* fd = jcr->file_bsock;
 
   Dmsg1(120, "Append data: %s", fd->msg);
-  if (jcr->impl->session_opened) {
+  if (jcr->sd_impl->session_opened) {
     Dmsg1(110, "<filed: %s", fd->msg);
     jcr->setJobType(JT_BACKUP);
     if (DoAppendData(jcr, fd, "FD")) {
@@ -272,7 +272,7 @@ static bool AppendEndSession(JobControlRecord* jcr)
   BareosSocket* fd = jcr->file_bsock;
 
   Dmsg1(120, "stored<filed: %s", fd->msg);
-  if (!jcr->impl->session_opened) {
+  if (!jcr->sd_impl->session_opened) {
     PmStrcpy(jcr->errmsg, _("Attempt to close non-open session.\n"));
     fd->fsend(NOT_opened);
     return false;
@@ -286,13 +286,13 @@ static bool AppendOpenSession(JobControlRecord* jcr)
   BareosSocket* fd = jcr->file_bsock;
 
   Dmsg1(120, "Append open session: %s", fd->msg);
-  if (jcr->impl->session_opened) {
+  if (jcr->sd_impl->session_opened) {
     PmStrcpy(jcr->errmsg, _("Attempt to open already open session.\n"));
     fd->fsend(NO_open);
     return false;
   }
 
-  jcr->impl->session_opened = true;
+  jcr->sd_impl->session_opened = true;
 
   /* Send "Ticket" to File Daemon */
   fd->fsend(OK_open, jcr->VolSessionId);
@@ -311,19 +311,19 @@ static bool AppendCloseSession(JobControlRecord* jcr)
   BareosSocket* fd = jcr->file_bsock;
 
   Dmsg1(120, "<filed: %s", fd->msg);
-  if (!jcr->impl->session_opened) {
+  if (!jcr->sd_impl->session_opened) {
     PmStrcpy(jcr->errmsg, _("Attempt to close non-open session.\n"));
     fd->fsend(NOT_opened);
     return false;
   }
 
   // Send final statistics to File daemon
-  fd->fsend(OK_close, jcr->JobStatus);
+  fd->fsend(OK_close, jcr->getJobStatus());
   Dmsg1(120, ">filed: %s", fd->msg);
 
   fd->signal(BNET_EOD); /* send EOD to File daemon */
 
-  jcr->impl->session_opened = false;
+  jcr->sd_impl->session_opened = false;
   return true;
 }
 
@@ -338,7 +338,7 @@ static bool ReadDataCmd(JobControlRecord* jcr)
   BareosSocket* fd = jcr->file_bsock;
 
   Dmsg1(120, "Read data: %s", fd->msg);
-  if (jcr->impl->session_opened) {
+  if (jcr->sd_impl->session_opened) {
     Dmsg1(120, "<filed: %s", fd->msg);
     return DoReadData(jcr);
   } else {
@@ -358,38 +358,38 @@ static bool ReadOpenSession(JobControlRecord* jcr)
   BareosSocket* fd = jcr->file_bsock;
 
   Dmsg1(120, "%s\n", fd->msg);
-  if (jcr->impl->session_opened) {
+  if (jcr->sd_impl->session_opened) {
     PmStrcpy(jcr->errmsg, _("Attempt to open read on non-open session.\n"));
     fd->fsend(NO_open);
     return false;
   }
 
-  if (sscanf(fd->msg, read_open, jcr->impl->read_dcr->VolumeName,
-             &jcr->impl->read_session.read_VolSessionId,
-             &jcr->impl->read_session.read_VolSessionTime,
-             &jcr->impl->read_session.read_StartFile,
-             &jcr->impl->read_session.read_EndFile,
-             &jcr->impl->read_session.read_StartBlock,
-             &jcr->impl->read_session.read_EndBlock)
+  if (sscanf(fd->msg, read_open, jcr->sd_impl->read_dcr->VolumeName,
+             &jcr->sd_impl->read_session.read_VolSessionId,
+             &jcr->sd_impl->read_session.read_VolSessionTime,
+             &jcr->sd_impl->read_session.read_StartFile,
+             &jcr->sd_impl->read_session.read_EndFile,
+             &jcr->sd_impl->read_session.read_StartBlock,
+             &jcr->sd_impl->read_session.read_EndBlock)
       == 7) {
-    if (jcr->impl->session_opened) {
+    if (jcr->sd_impl->session_opened) {
       PmStrcpy(jcr->errmsg, _("Attempt to open read on non-open session.\n"));
       fd->fsend(NOT_opened);
       return false;
     }
     Dmsg4(100,
           "ReadOpenSession got: JobId=%d Vol=%s VolSessId=%ld VolSessT=%ld\n",
-          jcr->JobId, jcr->impl->read_dcr->VolumeName,
-          jcr->impl->read_session.read_VolSessionId,
-          jcr->impl->read_session.read_VolSessionTime);
+          jcr->JobId, jcr->sd_impl->read_dcr->VolumeName,
+          jcr->sd_impl->read_session.read_VolSessionId,
+          jcr->sd_impl->read_session.read_VolSessionTime);
     Dmsg4(100, "  StartF=%ld EndF=%ld StartB=%ld EndB=%ld\n",
-          jcr->impl->read_session.read_StartFile,
-          jcr->impl->read_session.read_EndFile,
-          jcr->impl->read_session.read_StartBlock,
-          jcr->impl->read_session.read_EndBlock);
+          jcr->sd_impl->read_session.read_StartFile,
+          jcr->sd_impl->read_session.read_EndFile,
+          jcr->sd_impl->read_session.read_StartBlock,
+          jcr->sd_impl->read_session.read_EndBlock);
   }
 
-  jcr->impl->session_opened = true;
+  jcr->sd_impl->session_opened = true;
   jcr->setJobType(JT_RESTORE);
 
   // Send "Ticket" to File Daemon
@@ -408,18 +408,18 @@ static bool ReadCloseSession(JobControlRecord* jcr)
   BareosSocket* fd = jcr->file_bsock;
 
   Dmsg1(120, "Read close session: %s\n", fd->msg);
-  if (!jcr->impl->session_opened) {
+  if (!jcr->sd_impl->session_opened) {
     fd->fsend(NOT_opened);
     return false;
   }
 
   // Send final close msg to File daemon
-  fd->fsend(OK_close, jcr->JobStatus);
+  fd->fsend(OK_close, jcr->getJobStatus());
   Dmsg1(160, ">filed: %s", fd->msg);
 
   fd->signal(BNET_EOD); /* send EOD to File daemon */
 
-  jcr->impl->session_opened = false;
+  jcr->sd_impl->session_opened = false;
   return true;
 }
 

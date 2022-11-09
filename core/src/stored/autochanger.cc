@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -123,11 +123,10 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
   slot_number_t wanted_slot;
   JobControlRecord* jcr = dcr->jcr;
   drive_number_t drive;
-  Device* volatile dev = dcr->dev;
 
-  if (!dev->AttachedToAutochanger()) {
+  if (!dcr->dev->AttachedToAutochanger()) {
     Dmsg1(100, "Device %s is not attached to an autochanger\n",
-          dev->print_name());
+          dcr->dev->print_name());
     return 0;
   }
 
@@ -138,7 +137,7 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
     return 1; /* nothing to load */
   }
 
-  drive = dev->drive_index;
+  drive = dcr->dev->drive_index;
   wanted_slot = dcr->VolCatInfo.InChanger ? dcr->VolCatInfo.Slot : 0;
   Dmsg3(100, "autoload: slot=%hd InChgr=%d Vol=%s\n", dcr->VolCatInfo.Slot,
         dcr->VolCatInfo.InChanger, dcr->getVolCatName());
@@ -162,31 +161,31 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
   changer = GetPoolMemory(PM_FNAME);
   if (!IsSlotNumberValid(wanted_slot)) {
     // Suppress info when polling
-    if (!dev->poll) {
+    if (!dcr->dev->poll) {
       Jmsg(
           jcr, M_INFO, 0,
           _("No slot defined in catalog (slot=%hd) for Volume \"%s\" on %s.\n"),
-          wanted_slot, dcr->getVolCatName(), dev->print_name());
+          wanted_slot, dcr->getVolCatName(), dcr->dev->print_name());
       Jmsg(jcr, M_INFO, 0,
            _("Cartridge change or \"update slots\" may be required.\n"));
     }
     rtn_stat = 0;
   } else if (!dcr->device_resource->changer_name) {
     // Suppress info when polling
-    if (!dev->poll) {
+    if (!dcr->dev->poll) {
       Jmsg(jcr, M_INFO, 0,
            _("No \"Changer Device\" for %s. Manual load of Volume may be "
              "required.\n"),
-           dev->print_name());
+           dcr->dev->print_name());
     }
     rtn_stat = 0;
   } else if (!dcr->device_resource->changer_command) {
     // Suppress info when polling
-    if (!dev->poll) {
+    if (!dcr->dev->poll) {
       Jmsg(jcr, M_INFO, 0,
            _("No \"Changer Command\" for %s. Manual load of Volume may be "
              "required.\n"),
-           dev->print_name());
+           dcr->dev->print_name());
     }
     rtn_stat = 0;
   } else {
@@ -218,7 +217,7 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
 
       // Load the desired volume.
       Dmsg2(100, "Doing changer load slot %hd %s\n", wanted_slot,
-            dev->print_name());
+            dcr->dev->print_name());
       Jmsg(
           jcr, M_INFO, 0,
           _("3304 Issuing autochanger \"load slot %hd, drive %hd\" command.\n"),
@@ -226,7 +225,7 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
       dcr->VolCatInfo.Slot = wanted_slot; /* slot to be loaded */
       changer = edit_device_codes(
           dcr, changer, dcr->device_resource->changer_command, "load");
-      dev->close(dcr);
+      dcr->dev->close(dcr);
       Dmsg1(200, "Run program=%s\n", changer);
       status = RunProgramFullOutput(changer, timeout, results.addr());
       if (status == 0) {
@@ -236,10 +235,10 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
             wanted_slot, drive);
         Dmsg2(100, "load slot %hd, drive %hd, status is OK.\n", wanted_slot,
               drive);
-        dev->SetSlotNumber(wanted_slot); /* set currently loaded slot */
-        if (dev->vol) {
+        dcr->dev->SetSlotNumber(wanted_slot); /* set currently loaded slot */
+        if (dcr->dev->vol) {
           // We just swapped this Volume so it cannot be swapping any more
-          dev->vol->ClearSwapping();
+          dcr->dev->vol->ClearSwapping();
         }
       } else {
         BErrNo be;
@@ -257,13 +256,13 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
              _("3992 Bad autochanger \"load slot %hd, drive %hd\": "
                "ERR=%s.\nResults=%s\n"),
              wanted_slot, drive, be.bstrerror(), results.c_str());
-        dev->SetSlotNumber(-1); /* mark unknown */
+        dcr->dev->SetSlotNumber(-1); /* mark unknown */
       }
       Dmsg2(100, "load slot %hd status=%d\n", wanted_slot, status);
       UnlockChanger(dcr);
     } else {
-      status = 0;                      /* we got what we want */
-      dev->SetSlotNumber(wanted_slot); /* set currently loaded slot */
+      status = 0;                           /* we got what we want */
+      dcr->dev->SetSlotNumber(wanted_slot); /* set currently loaded slot */
     }
 
     Dmsg1(100, "After changer, status=%d\n", status);

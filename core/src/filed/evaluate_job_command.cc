@@ -1,7 +1,7 @@
 /**
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -33,10 +33,10 @@ JobCommand::JobCommand(const char* msg) : job_{0}, sd_auth_key_{0}
 {
   ProtocolVersion protocol = ProtocolVersion::kVersionUndefinded;
 
-  std::vector<ProtocolVersion> implemented_protocols{
+  std::vector<ProtocolVersion> fd_implemented_protocols{
       ProtocolVersion::kVersionFrom_18_2, ProtocolVersion::KVersionBefore_18_2};
 
-  for (auto protocol_try : implemented_protocols) {
+  for (auto protocol_try : fd_implemented_protocols) {
     switch (protocol_try) {
       case ProtocolVersion::kVersionFrom_18_2:
         if (sscanf(msg, jobcmdssl_.c_str(), &job_id_, job_, &vol_session_id_,

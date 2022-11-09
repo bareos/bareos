@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2013 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -59,24 +59,6 @@ unix_tape_device::unix_tape_device()
   SetCap(CAP_ADJWRITESIZE); /* Adjust write size to min/max */
 }
 
-class Backend : public BackendInterface {
- public:
-  Device* GetDevice(JobControlRecord* jcr, DeviceType device_type) override
-  {
-    switch (device_type) {
-      case DeviceType::B_TAPE_DEV:
-        return new unix_tape_device;
-      default:
-        Jmsg(jcr, M_FATAL, 0, _("Request for unknown devicetype: %d\n"),
-             device_type);
-        return nullptr;
-    }
-  }
-  void FlushDevice(void) override {}
-};
-
-#ifdef HAVE_DYNAMIC_SD_BACKENDS
-extern "C" BackendInterface* GetBackend(void) { return new Backend; }
-#endif
+REGISTER_SD_BACKEND(tape, unix_tape_device)
 
 } /* namespace storagedaemon  */

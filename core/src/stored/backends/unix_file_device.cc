@@ -32,6 +32,7 @@
 #include "include/bareos.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
+#include "stored/sd_backends.h"
 #include "stored/device_control_record.h"
 #include "unix_file_device.h"
 #include "lib/berrno.h"
@@ -205,6 +206,11 @@ bool unix_file_device::UnmountBackend(DeviceControlRecord* dcr, int timeout)
   return retval;
 }
 
+bool unix_file_device::ScanForVolumeImpl(DeviceControlRecord* dcr)
+{
+  return ScanDirectoryForVolume(dcr);
+}
+
 int unix_file_device::d_open(const char* pathname, int flags, int mode)
 {
   return ::open(pathname, flags, mode);
@@ -309,5 +315,7 @@ bool unix_file_device::d_truncate(DeviceControlRecord* dcr)
 bail_out:
   return true;
 }
+
+REGISTER_SD_BACKEND(file, unix_file_device);
 
 } /* namespace storagedaemon  */

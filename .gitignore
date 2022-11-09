@@ -110,6 +110,7 @@ core/src/defaultconfigs/tray-monitor.d/storage/StorageDaemon-local.conf
 core/src/include/config.h
 core/src/qt-tray-monitor/bareos-tray-monitor.desktop
 core/src/tests/configs/bareos-configparser-tests/bareos-dir-CFG_TYPE_STR_VECTOR_OF_DIRS.conf
+core/src/tests/configs/bareos-configparser-tests/bareos-sd.d/storage/bareos-sd.conf
 core/src/tests/configs/catalog/bareos-dir.d/catalog/MyCatalog.conf
 core/src/tests/configs/console-director/tls_disabled/bareos-dir.d/director/bareos-dir.conf
 core/src/tests/configs/console-director/tls_disabled/bareos-dir.d/fileset/Catalog.conf
@@ -127,10 +128,15 @@ core/src/tests/configs/console-director/tls_psk_default_enabled/bareos-dir.d/job
 core/src/tests/configs/console-director/tls_psk_default_enabled/bareos-dir.d/jobdefs/DefaultJob.conf
 core/src/tests/configs/console-director/tls_psk_default_enabled/bareos-dir.d/messages/Daemon.conf
 core/src/tests/configs/console-director/tls_psk_default_enabled/bareos-dir.d/messages/Standard.conf
-core/src/tests/configs/sd_backend/bareos-sd.d/device/droplet.conf
+core/src/tests/configs/droplet_backend/bareos-sd.d/device/droplet.conf
+core/src/tests/configs/droplet_backend/bareos-sd.d/storage/myself.conf
+core/src/tests/configs/droplet_backend/droplet.profile
 core/src/tests/configs/sd_backend/bareos-sd.d/storage/myself.conf
-core/src/tests/configs/sd_backend/droplet.profile
 core/src/tests/configs/sd_reservation/bareos-sd.d/storage/myself.conf
+core/src/tests/configs/statistics_thread/sd_statistics_thread/default_config/bareos-sd.d/storage/myself.conf
+core/src/tests/configs/statistics_thread/sd_statistics_thread/only_collect_set/bareos-sd.d/storage/myself.conf
+core/src/tests/configs/statistics_thread/sd_statistics_thread/only_interval_set/bareos-sd.d/storage/myself.conf
+core/src/tests/configs/stored_multiplied_device/bareos-sd.d/storage/bareos-sd.conf
 core/src/win32/console/consoleres.rc
 core/src/win32/dird/dbcheckres.rc
 core/src/win32/dird/dirdres.rc

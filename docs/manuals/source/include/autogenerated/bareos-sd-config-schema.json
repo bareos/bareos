@@ -505,8 +505,9 @@
           "required": true
         },
         "DeviceType": {
-          "datatype": "DEVICE_TYPE",
+          "datatype": "STRING",
           "code": 0,
+          "default_value": "",
           "equals": true
         },
         "ArchiveDevice": {

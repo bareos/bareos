@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -43,7 +43,7 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/catreq.h"
-#include "dird/jcr_private.h"
+#include "dird/director_jcr_impl.h"
 #include "dird/msgchan.h"
 #include "lib/bnet.h"
 #include "lib/edit.h"
@@ -81,15 +81,15 @@ static void SetJcrSdJobStatus(JobControlRecord* jcr, int SDJobStatus)
     Dmsg0(800, "Setting wait_time\n");
     jcr->wait_time = time(NULL);
   }
-  jcr->impl->SDJobStatus = SDJobStatus;
+  jcr->dir_impl->SDJobStatus = SDJobStatus;
 
   // Some SD Job status setting are propagated to the controlling Job.
-  switch (jcr->impl->SDJobStatus) {
+  switch (jcr->dir_impl->SDJobStatus) {
     case JS_Incomplete:
-      jcr->setJobStatus(JS_Incomplete);
+      jcr->setJobStatusWithPriorityCheck(JS_Incomplete);
       break;
     case JS_FatalError:
-      jcr->setJobStatus(JS_FatalError);
+      jcr->setJobStatusWithPriorityCheck(JS_FatalError);
       break;
     default:
       break;

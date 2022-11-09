@@ -28,7 +28,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
-#include "dird/jcr_private.h"
+#include "dird/director_jcr_impl.h"
 #include "dird/run_hour_validator.h"
 #include "dird/dird_globals.h"
 #include "dird/fd_cmds.h"
@@ -109,9 +109,10 @@ bool DotStatusCmd(UaContext* ua, const char* cmd)
       ua->SendMsg(OKdotstatus, ua->argk[2]);
       foreach_jcr (njcr) {
         if (njcr->JobId != 0
-            && ua->AclAccessOk(Job_ACL, njcr->impl->res.job->resource_name_)) {
+            && ua->AclAccessOk(Job_ACL,
+                               njcr->dir_impl->res.job->resource_name_)) {
           ua->SendMsg(DotStatusJob, edit_int64(njcr->JobId, ed1),
-                      njcr->JobStatus, njcr->JobErrors);
+                      njcr->getJobStatus(), njcr->JobErrors);
         }
       }
       endeach_jcr(njcr);
@@ -291,12 +292,12 @@ static void DoAllStatus(UaContext* ua)
   }
   UnlockRes(my_config);
 
-  previous_JobStatus = ua->jcr->JobStatus;
+  previous_JobStatus = ua->jcr->getJobStatus();
 
   /* Call each unique Storage daemon */
   for (j = 0; j < i; j++) {
     StorageStatus(ua, unique_store[j], NULL);
-    ua->jcr->JobStatus = previous_JobStatus;
+    ua->jcr->setJobStatus(previous_JobStatus);
   }
   free(unique_store);
 
@@ -326,12 +327,12 @@ static void DoAllStatus(UaContext* ua)
   }
   UnlockRes(my_config);
 
-  previous_JobStatus = ua->jcr->JobStatus;
+  previous_JobStatus = ua->jcr->getJobStatus();
 
   /* Call each unique File daemon */
   for (j = 0; j < i; j++) {
     ClientStatus(ua, unique_client[j], NULL);
-    ua->jcr->JobStatus = previous_JobStatus;
+    ua->jcr->setJobStatus(previous_JobStatus);
   }
   free(unique_client);
 }
@@ -799,12 +800,12 @@ static void PrtRuntime(UaContext* ua, sched_pkt* sp)
   if (sp->job->JobType == JT_BACKUP) {
     jcr->db = NULL;
     ok = CompleteJcrForJob(jcr, sp->job, sp->pool);
-    Dmsg1(250, "Using pool=%s\n", jcr->impl->res.pool->resource_name_);
+    Dmsg1(250, "Using pool=%s\n", jcr->dir_impl->res.pool->resource_name_);
     if (jcr->db) { CloseDb = true; /* new db opened, remember to close it */ }
     if (ok) {
-      mr.PoolId = jcr->impl->jr.PoolId;
-      jcr->impl->res.write_storage = sp->store;
-      SetStorageidInMr(jcr->impl->res.write_storage, &mr);
+      mr.PoolId = jcr->dir_impl->jr.PoolId;
+      jcr->dir_impl->res.write_storage = sp->store;
+      SetStorageidInMr(jcr->dir_impl->res.write_storage, &mr);
       Dmsg0(250, "call FindNextVolumeForAppend\n");
       /* no need to set ScratchPoolId, since we use fnv_no_create_vol */
       ok = FindNextVolumeForAppend(jcr, &mr, 1, NULL, fnv_no_create_vol,
@@ -966,11 +967,11 @@ static void ListRunningJobs(UaContext* ua)
   }
   foreach_jcr (jcr) {
     if (jcr->JobId == 0
-        || !ua->AclAccessOk(Job_ACL, jcr->impl->res.job->resource_name_)) {
+        || !ua->AclAccessOk(Job_ACL, jcr->dir_impl->res.job->resource_name_)) {
       continue;
     }
     njobs++;
-    switch (jcr->JobStatus) {
+    switch (jcr->getJobStatus()) {
       case JS_Created:
         msg = _("is waiting execution");
         break;
@@ -1003,23 +1004,23 @@ static void ListRunningJobs(UaContext* ua)
         break;
       case JS_WaitFD:
         emsg = (char*)GetPoolMemory(PM_FNAME);
-        if (!jcr->impl->res.client) {
+        if (!jcr->dir_impl->res.client) {
           Mmsg(emsg, _("is waiting on Client"));
         } else {
           Mmsg(emsg, _("is waiting on Client %s"),
-               jcr->impl->res.client->resource_name_);
+               jcr->dir_impl->res.client->resource_name_);
         }
         pool_mem = true;
         msg = emsg;
         break;
       case JS_WaitSD:
         emsg = (char*)GetPoolMemory(PM_FNAME);
-        if (jcr->impl->res.write_storage) {
+        if (jcr->dir_impl->res.write_storage) {
           Mmsg(emsg, _("is waiting on Storage \"%s\""),
-               jcr->impl->res.write_storage->resource_name_);
-        } else if (jcr->impl->res.read_storage) {
+               jcr->dir_impl->res.write_storage->resource_name_);
+        } else if (jcr->dir_impl->res.read_storage) {
           Mmsg(emsg, _("is waiting on Storage \"%s\""),
-               jcr->impl->res.read_storage->resource_name_);
+               jcr->dir_impl->res.read_storage->resource_name_);
         } else {
           Mmsg(emsg, _("is waiting on Storage"));
         }
@@ -1068,13 +1069,13 @@ static void ListRunningJobs(UaContext* ua)
 
       default:
         emsg = (char*)GetPoolMemory(PM_FNAME);
-        Mmsg(emsg, _("is in unknown state %c"), jcr->JobStatus);
+        Mmsg(emsg, _("is in unknown state %c"), jcr->getJobStatus());
         pool_mem = true;
         msg = emsg;
         break;
     }
     // Now report Storage daemon status code
-    switch (jcr->impl->SDJobStatus) {
+    switch (jcr->dir_impl->SDJobStatus) {
       case JS_WaitMount:
         if (pool_mem) {
           FreePoolMemory(emsg);
@@ -1098,12 +1099,13 @@ static void ListRunningJobs(UaContext* ua)
           // client initiated connection
           Mmsg(emsg, _("is waiting for Client to connect (Client Initiated "
                        "Connection)"));
-        } else if (!jcr->impl->res.client || !jcr->impl->res.write_storage) {
+        } else if (!jcr->dir_impl->res.client
+                   || !jcr->dir_impl->res.write_storage) {
           Mmsg(emsg, _("is waiting for Client to connect to Storage daemon"));
         } else {
           Mmsg(emsg, _("is waiting for Client %s to connect to Storage %s"),
-               jcr->impl->res.client->resource_name_,
-               jcr->impl->res.write_storage->resource_name_);
+               jcr->dir_impl->res.client->resource_name_,
+               jcr->dir_impl->res.write_storage->resource_name_);
         }
         msg = emsg;
         break;
@@ -1597,7 +1599,7 @@ static void StatusSlots(UaContext* ua, StorageResource* store)
   slot_number_t max_slots;
   changer_vol_list_t* vol_list = NULL;
 
-  ua->jcr->impl->res.write_storage = store;
+  ua->jcr->dir_impl->res.write_storage = store;
 
   // Slot | Volume | Status | MediaType | Pool
   const char* slot_hformat = " %4i%c| %16s | %9s | %14s | %24s |\n";

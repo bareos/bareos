@@ -1,8 +1,8 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2015-2015 Planets Communications B.V.
-   Copyright (C) 2015-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2014 Planets Communications B.V.
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,45 +20,30 @@
    02110-1301, USA.
 */
 /*
- * WIN32 FIFO API device abstraction.
+ * Windows Tape API device abstraction.
  *
- * Marco van Wieringen, June 2014
+ * Marco van Wieringen, December 2013
  */
 
-#ifndef BAREOS_WIN32_STORED_BACKENDS_WIN32_FIFO_DEVICE_H_
-#define BAREOS_WIN32_STORED_BACKENDS_WIN32_FIFO_DEVICE_H_
-
-#include "stored/dev.h"
-#include "lib/btimers.h"
-#include "lib/util.h"
+#ifndef BAREOS_STORED_BACKENDS_WIN32_TAPE_DEVICE_H_
+#define BAREOS_STORED_BACKENDS_WIN32_TAPE_DEVICE_H_
 
 namespace storagedaemon {
 
-class DeviceControlRecord;
-
-class win32_fifo_device : public Device {
+class win32_tape_device : public generic_tape_device {
  public:
-  win32_fifo_device() = default;
-  ~win32_fifo_device() { close(nullptr); }
+  win32_tape_device();
+  ~win32_tape_device() { close(nullptr); }
 
-  // Interface from Device
-  void OpenDevice(DeviceControlRecord* dcr, DeviceMode omode) override;
-  bool eod(DeviceControlRecord* dcr) override;
-  bool MountBackend(DeviceControlRecord* dcr, int timeout) override;
-  bool UnmountBackend(DeviceControlRecord* dcr, int timeout) override;
   int d_close(int) override;
   int d_open(const char* pathname, int flags, int mode) override;
   int d_ioctl(int fd, ioctl_req_t request, char* mt = NULL) override;
-  boffset_t d_lseek(DeviceControlRecord* dcr,
-                    boffset_t offset,
-                    int whence) override;
   ssize_t d_read(int fd, void* buffer, size_t count) override;
   ssize_t d_write(int fd, const void* buffer, size_t count) override;
-  bool d_truncate(DeviceControlRecord* dcr) override;
-
- private:
-  bool do_mount(DeviceControlRecord* dcr, bool mount, int dotimeout);
+  int TapeOp(struct mtop* mt_com);
+  int TapeGet(struct mtget* mt_com);
+  int TapePos(struct mtpos* mt_com);
 };
 
 } /* namespace storagedaemon */
-#endif  // BAREOS_WIN32_STORED_BACKENDS_WIN32_FIFO_DEVICE_H_
+#endif  // BAREOS_STORED_BACKENDS_WIN32_TAPE_DEVICE_H_

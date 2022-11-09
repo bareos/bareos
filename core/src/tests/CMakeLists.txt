@@ -249,7 +249,7 @@ if(NOT client-only)
   )
   bareos_add_test(sd_backend LINK_LIBRARIES ${LINK_LIBRARIES})
   if(TARGET droplet)
-    target_compile_definitions(sd_backend PRIVATE HAVE_DROPLET)
+    bareos_add_test(droplet_backend LINK_LIBRARIES ${LINK_LIBRARIES})
   endif()
   if(${CMAKE_SYSTEM_NAME} MATCHES "SunOS") # disable on solaris
     set(disable "DISABLE")

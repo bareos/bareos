@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,7 +29,7 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/autorecycle.h"
-#include "dird/jcr_private.h"
+#include "dird/director_jcr_impl.h"
 #include "dird/next_vol.h"
 
 namespace directordaemon {
@@ -45,8 +45,8 @@ bool FindRecycledVolume(JobControlRecord* jcr,
   bstrncpy(mr->VolStatus, "Recycle", sizeof(mr->VolStatus));
   SetStorageidInMr(store, mr);
   if (jcr->db->FindNextVolume(jcr, 1, InChanger, mr, unwanted_volumes)) {
-    jcr->impl->MediaId = mr->MediaId;
-    Dmsg1(20, "Find_next_vol MediaId=%u\n", jcr->impl->MediaId);
+    jcr->dir_impl->MediaId = mr->MediaId;
+    Dmsg1(20, "Find_next_vol MediaId=%u\n", jcr->dir_impl->MediaId);
     PmStrcpy(jcr->VolumeName, mr->VolumeName);
     SetStorageidInMr(store, mr);
 

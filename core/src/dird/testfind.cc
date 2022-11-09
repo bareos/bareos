@@ -35,7 +35,7 @@
 #include "dird/jcr_util.h"
 #include "dird/dird_globals.h"
 #include "dird/dird_conf.h"
-#include "dird/jcr_private.h"
+#include "dird/director_jcr_impl.h"
 #include "lib/recent_job_results_list.h"
 #include "findlib/attribs.h"
 #include "filed/fileset.h"
@@ -53,9 +53,9 @@ void TestfindFreeJcr(JobControlRecord* jcr)
 {
   Dmsg0(200, "Start testfind FreeJcr\n");
 
-  if (jcr->impl) {
-    delete jcr->impl;
-    jcr->impl = nullptr;
+  if (jcr->dir_impl) {
+    delete jcr->dir_impl;
+    jcr->dir_impl = nullptr;
   }
 
   Dmsg0(200, "End testfind FreeJcr\n");
@@ -162,10 +162,10 @@ int main(int argc, char* const* argv)
   }
 
   jcr = NewDirectorJcr(TestfindFreeJcr);
-  jcr->impl->res.fileset
+  jcr->dir_impl->res.fileset
       = (FilesetResource*)my_config->GetResWithName(R_FILESET, fileset_name);
 
-  if (jcr->impl->res.fileset == NULL) {
+  if (jcr->dir_impl->res.fileset == NULL) {
     fprintf(stderr, "%s: Fileset not found\n", fileset_name);
 
     FilesetResource* var;
@@ -433,7 +433,7 @@ static void CountFiles(FindFilesPacket* ar)
 
 static bool CopyFileset(FindFilesPacket* ff, JobControlRecord* jcr)
 {
-  FilesetResource* jcr_fileset = jcr->impl->res.fileset;
+  FilesetResource* jcr_fileset = jcr->dir_impl->res.fileset;
   int num;
   bool include = true;
 

@@ -1,5 +1,4 @@
 
-lib/libbareossd-gentape.so
 lib/libbareossd-tape.so
 lib/bareos/scripts/mtx-changer
 @sample  %%ETCDIR%%/mtx-changer.conf.sample

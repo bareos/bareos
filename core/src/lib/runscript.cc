@@ -61,7 +61,7 @@ static bool ScriptDirAllowed(JobControlRecord*,
                              RunScript* script,
                              alist<const char*>* allowed_script_dirs)
 {
-  char *bp, *allowed_script_dir = nullptr;
+  const char* allowed_script_dir = nullptr;
   bool allowed = false;
   PoolMem script_dir(PM_FNAME);
 
@@ -70,7 +70,9 @@ static bool ScriptDirAllowed(JobControlRecord*,
 
   // Determine the dir the script is in.
   PmStrcpy(script_dir, script->command.c_str());
-  if ((bp = strrchr(script_dir.c_str(), '/'))) { *bp = '\0'; }
+  if (char* bp = strrchr(script_dir.c_str(), '/'); bp != nullptr) {
+    *bp = '\0';
+  }
 
   /*
    * Make sure there are no relative path elements in script dir by which the
@@ -111,7 +113,7 @@ int RunScripts(JobControlRecord* jcr,
   int when;
 
   Dmsg2(200, "runscript: running all RunScript object (%s) JobStatus=%c\n",
-        label, jcr->JobStatus);
+        label, jcr->getJobStatus());
 
   if (strstr(label, NT_("Before"))) {
     when = SCRIPT_Before;
@@ -131,7 +133,7 @@ int RunScripts(JobControlRecord* jcr,
           "runscript: try to run (Target=%s, OnSuccess=%i, OnFailure=%i, "
           "CurrentJobStatus=%c, command=%s)\n",
           NSTDPRNT(script->target), script->on_success, script->on_failure,
-          jcr->JobStatus, NSTDPRNT(script->command));
+          jcr->getJobStatus(), NSTDPRNT(script->command));
     runit = false;
 
     if (!script->IsLocal()) {
@@ -144,23 +146,25 @@ int RunScripts(JobControlRecord* jcr,
     } else {
       if ((script->when & SCRIPT_Before) && (when & SCRIPT_Before)) {
         if ((script->on_success
-             && (jcr->JobStatus == JS_Running || jcr->JobStatus == JS_Created))
+             && (jcr->getJobStatus() == JS_Running
+                 || jcr->getJobStatus() == JS_Created))
             || (script->on_failure
-                && (JobCanceled(jcr) || jcr->JobStatus == JS_Differences))) {
+                && (JobCanceled(jcr)
+                    || jcr->getJobStatus() == JS_Differences))) {
           Dmsg4(200, "runscript: Run it because SCRIPT_Before (%s,%i,%i,%c)\n",
                 script->command.c_str(), script->on_success, script->on_failure,
-                jcr->JobStatus);
+                jcr->getJobStatus());
           runit = true;
         }
       }
 
       if ((script->when & SCRIPT_AfterVSS) && (when & SCRIPT_AfterVSS)) {
-        if ((script->on_success && (jcr->JobStatus == JS_Blocked))
+        if ((script->on_success && (jcr->getJobStatus() == JS_Blocked))
             || (script->on_failure && JobCanceled(jcr))) {
           Dmsg4(200,
                 "runscript: Run it because SCRIPT_AfterVSS (%s,%i,%i,%c)\n",
                 script->command.c_str(), script->on_success, script->on_failure,
-                jcr->JobStatus);
+                jcr->getJobStatus());
           runit = true;
         }
       }
@@ -168,10 +172,11 @@ int RunScripts(JobControlRecord* jcr,
       if ((script->when & SCRIPT_After) && (when & SCRIPT_After)) {
         if ((script->on_success && jcr->IsTerminatedOk())
             || (script->on_failure
-                && (JobCanceled(jcr) || jcr->JobStatus == JS_Differences))) {
+                && (JobCanceled(jcr)
+                    || jcr->getJobStatus() == JS_Differences))) {
           Dmsg4(200, "runscript: Run it because SCRIPT_After (%s,%i,%i,%c)\n",
                 script->command.c_str(), script->on_success, script->on_failure,
-                jcr->JobStatus);
+                jcr->getJobStatus());
           runit = true;
         }
       }
@@ -188,7 +193,7 @@ int RunScripts(JobControlRecord* jcr,
              _("Runscript: run %s \"%s\" could not execute, "
                "not in one of the allowed scripts dirs\n"),
              label, script->command.c_str());
-        jcr->setJobStatus(JS_ErrorTerminated);
+        jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
         goto bail_out;
       }
 
@@ -272,7 +277,7 @@ bool RunScript::Run(JobControlRecord* jcr, const char* name)
 
 bail_out:
   /* cancel running job properly */
-  if (fail_on_error) { jcr->setJobStatus(JS_ErrorTerminated); }
+  if (fail_on_error) { jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated); }
   Dmsg1(100, "runscript failed. fail_on_error=%d\n", fail_on_error);
   return false;
 }

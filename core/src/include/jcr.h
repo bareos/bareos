@@ -45,8 +45,9 @@
 #include "lib/breg.h"
 #include "lib/dlink.h"
 #include "lib/path_list.h"
-#include <unordered_set>
 
+#include <unordered_set>
+#include <atomic>
 
 struct job_callback_item;
 class BareosDb;
@@ -56,7 +57,9 @@ class JobControlRecord;
 
 struct AttributesDbRecord;
 struct PluginContext;
-struct JobControlRecordPrivate;
+struct DirectorJcrImpl;
+struct StoredJcrImpl;
+struct FiledJcrImpl;
 struct VolumeSessionInfo;
 
 #ifdef HAVE_WIN32
@@ -66,11 +69,12 @@ struct CopyThreadContext;
 typedef void(JCR_free_HANDLER)(JobControlRecord* jcr);
 
 #define JobTerminatedSuccessfully(jcr) \
-  (jcr->JobStatus == JS_Terminated || jcr->JobStatus == JS_Warnings)
+  (jcr->getJobStatus() == JS_Terminated || jcr->getJobStatus() == JS_Warnings)
 
-#define JobCanceled(jcr)                                                 \
-  (jcr->JobStatus == JS_Canceled || jcr->JobStatus == JS_ErrorTerminated \
-   || jcr->JobStatus == JS_FatalError)
+#define JobCanceled(jcr)                        \
+  (jcr->getJobStatus() == JS_Canceled           \
+   || jcr->getJobStatus() == JS_ErrorTerminated \
+   || jcr->getJobStatus() == JS_FatalError)
 
 #define foreach_jcr(jcr) \
   for (jcr = jcr_walk_start(); jcr; (jcr = jcr_walk_next(jcr)))
@@ -81,7 +85,8 @@ typedef void(JCR_free_HANDLER)(JobControlRecord* jcr);
 class JobControlRecord {
  private:
   pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; /**< Jcr mutex */
-  volatile int32_t _use_count{};                   /**< Use count */
+  std::atomic<int32_t> _use_count{};                   /**< Use count */
+  std::atomic<int32_t> JobStatus{}; /**< ready, running, blocked, terminated */
   int32_t JobType_{};            /**< Backup, restore, verify ... */
   int32_t JobLevel_{};           /**< Job level */
   int32_t Protocol_{};           /**< Backup Protocol */
@@ -98,15 +103,11 @@ class JobControlRecord {
   void unlock() { unlock_mutex(mutex); }
   void IncUseCount(void)
   {
-    lock();
-    _use_count++;
-    unlock();
+    ++_use_count;
   }
   void DecUseCount(void)
   {
-    lock();
-    _use_count--;
-    unlock();
+    --_use_count;
   }
   int32_t UseCount() const { return _use_count; }
   void InitMutex(void) { pthread_mutex_init(&mutex, NULL); }
@@ -121,7 +122,7 @@ class JobControlRecord {
   void setJobLevel(int32_t JobLevel) { JobLevel_ = JobLevel; }
   void setJobType(int32_t JobType) { JobType_ = JobType; }
   void setJobProtocol(int32_t JobProtocol) { Protocol_ = JobProtocol; }
-  void forceJobStatus(int32_t aJobStatus) { JobStatus = aJobStatus; }
+  void setJobStatus(int32_t aJobStatus) { JobStatus = aJobStatus; }
   void setJobStarted();
   int32_t getJobType() const { return JobType_; }
   int32_t getJobLevel() const { return JobLevel_; }
@@ -135,8 +136,7 @@ class JobControlRecord {
   bool IsPlugin() const { return (cmd_plugin || opt_plugin); }
   const char* get_OperationName();               /**< in lib/jcr.c */
   const char* get_ActionName(bool past = false); /**< in lib/jcr.c */
-  void setJobStatus(int newJobStatus);           /**< in lib/jcr.c */
-  void resetJobStatus(int newJobStatus);         /**< in lib/jcr.c */
+  void setJobStatusWithPriorityCheck(int newJobStatus); /**< in lib/jcr.c */
   bool sendJobStatus();                          /**< in lib/jcr.c */
   bool sendJobStatus(int newJobStatus);          /**< in lib/jcr.c */
   bool JobReads();                               /**< in lib/jcr.c */
@@ -169,7 +169,6 @@ class JobControlRecord {
   uint64_t LastJobBytes{};      /**< Last sample number bytes */
   uint64_t ReadBytes{};         /**< Bytes read -- before compression */
   FileId_t FileId{};            /**< Last FileId used */
-  volatile int32_t JobStatus{}; /**< ready, running, blocked, terminated */
   int32_t JobPriority{};        /**< Job priority */
   time_t sched_time{};          /**< Job schedule time, i.e. when it should start */
   time_t initial_sched_time{};  /**< Original sched time before any reschedules are done */
@@ -233,7 +232,12 @@ class JobControlRecord {
   PathList* path_list{};      /**< Directory list (used by findlib) */
   bool is_passive_client_connection_probing{}; /**< Set if director probes a passive client connection */
 
-  JobControlRecordPrivate* impl{nullptr}; /* Pointer to implementation of each daemon */
+  union {
+    DirectorJcrImpl* dir_impl;
+    StoredJcrImpl* sd_impl;
+    FiledJcrImpl* fd_impl;
+  };
+
 };
 /* clang-format on */
 

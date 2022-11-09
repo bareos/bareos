@@ -29,7 +29,7 @@
 #include "include/bareos.h"
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
-#include "filed/jcr_private.h"
+#include "filed/filed_jcr_impl.h"
 #include "filed/restore.h"
 #include "lib/bnet.h"
 #include "lib/bsock.h"
@@ -146,7 +146,7 @@ bool AuthenticateDirector(JobControlRecord* jcr)
     return false;
   }
 
-  jcr->impl->director = director;
+  jcr->fd_impl->director = director;
 
   return dir->fsend("%s", (me->compatible) ? OK_hello_compat : OK_hello);
 }

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,7 +30,7 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/admin.h"
-#include "dird/jcr_private.h"
+#include "dird/director_jcr_impl.h"
 #include "dird/job.h"
 #include "dird/storage.h"
 
@@ -52,14 +52,14 @@ bool DoAdminInit(JobControlRecord* jcr)
  */
 bool do_admin(JobControlRecord* jcr)
 {
-  jcr->impl->jr.JobId = jcr->JobId;
+  jcr->dir_impl->jr.JobId = jcr->JobId;
 
-  jcr->impl->fname = (char*)GetPoolMemory(PM_FNAME);
+  jcr->dir_impl->fname = (char*)GetPoolMemory(PM_FNAME);
 
   Jmsg(jcr, M_INFO, 0, _("Start Admin JobId %d, Job=%s\n"), jcr->JobId,
        jcr->Job);
 
-  jcr->setJobStatus(JS_Running);
+  jcr->setJobStatusWithPriorityCheck(JS_Running);
   AdminCleanup(jcr, JS_Terminated);
 
   return true;
@@ -76,15 +76,15 @@ void AdminCleanup(JobControlRecord* jcr, int TermCode)
 
   UpdateJobEnd(jcr, TermCode);
 
-  if (!jcr->db->GetJobRecord(jcr, &jcr->impl->jr)) {
+  if (!jcr->db->GetJobRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_WARNING, 0,
          _("Error getting Job record for Job report: ERR=%s\n"),
          jcr->db->strerror());
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   }
 
   msg_type = M_INFO; /* by default INFO message */
-  switch (jcr->JobStatus) {
+  switch (jcr->getJobStatus()) {
     case JS_Terminated:
       TermMsg = _("Admin OK");
       break;
@@ -98,12 +98,13 @@ void AdminCleanup(JobControlRecord* jcr, int TermCode)
       break;
     default:
       TermMsg = term_code;
-      sprintf(term_code, _("Inappropriate term code: %c\n"), jcr->JobStatus);
+      sprintf(term_code, _("Inappropriate term code: %c\n"),
+              jcr->getJobStatus());
       break;
   }
-  bstrftimes(schedt, sizeof(schedt), jcr->impl->jr.SchedTime);
-  bstrftimes(sdt, sizeof(sdt), jcr->impl->jr.StartTime);
-  bstrftimes(edt, sizeof(edt), jcr->impl->jr.EndTime);
+  bstrftimes(schedt, sizeof(schedt), jcr->dir_impl->jr.SchedTime);
+  bstrftimes(sdt, sizeof(sdt), jcr->dir_impl->jr.StartTime);
+  bstrftimes(edt, sizeof(edt), jcr->dir_impl->jr.EndTime);
 
   Jmsg(jcr, msg_type, 0,
        _("BAREOS %s (%s): %s\n"
@@ -116,9 +117,9 @@ void AdminCleanup(JobControlRecord* jcr, int TermCode)
          "  Job triggered by:       %s\n"
          "  Termination:            %s\n\n"),
        kBareosVersionStrings.Full, kBareosVersionStrings.ShortDate, edt,
-       jcr->impl->jr.JobId, jcr->impl->jr.Job, schedt, sdt, edt,
+       jcr->dir_impl->jr.JobId, jcr->dir_impl->jr.Job, schedt, sdt, edt,
        kBareosVersionStrings.JoblogMessage,
-       JobTriggerToString(jcr->impl->job_trigger).c_str(), TermMsg);
+       JobTriggerToString(jcr->dir_impl->job_trigger).c_str(), TermMsg);
 
   Dmsg0(debuglevel, "Leave AdminCleanup()\n");
 }

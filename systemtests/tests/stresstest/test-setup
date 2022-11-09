@@ -38,6 +38,7 @@ fi
 echo "$1" >$tmp/file-list
 
 bin/bareos start
+bin/bareos status
 
 # make sure, director is up and running.
 print_debug "$(bin/bconsole <<< "status dir")"

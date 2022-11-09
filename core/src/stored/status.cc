@@ -31,7 +31,7 @@
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
 #include "stored/device_control_record.h"
-#include "stored/jcr_private.h"
+#include "stored/stored_jcr_impl.h"
 #include "stored/spool.h"
 #include "stored/status.h"
 #include "lib/status_packet.h"
@@ -519,7 +519,7 @@ static void SendBlockedStatus(Device* dev, StatusPacket* sp)
       bool found_jcr = false;
       dev->Lock();
       for (auto dcr : dev->attached_dcrs) {
-        if (dcr->jcr->JobStatus == JS_WaitMount) {
+        if (dcr->jcr->getJobStatus() == JS_WaitMount) {
           len = Mmsg(
               msg,
               _("    Device is BLOCKED waiting for mount of volume \"%s\",\n"
@@ -528,7 +528,7 @@ static void SendBlockedStatus(Device* dev, StatusPacket* sp)
               dcr->VolumeName, dcr->pool_name, dcr->media_type);
           sp->send(msg, len);
           found_jcr = true;
-        } else if (dcr->jcr->JobStatus == JS_WaitMedia) {
+        } else if (dcr->jcr->getJobStatus() == JS_WaitMedia) {
           len = Mmsg(msg,
                      _("    Device is BLOCKED waiting to create a volume for:\n"
                        "       Pool:        %s\n"
@@ -597,18 +597,17 @@ static void SendDeviceStatus(Device* dev, StatusPacket* sp)
   len = Mmsg(msg, _("Device state:\n"));
   sp->send(msg, len);
 
-  len = Mmsg(
-      msg,
-      "  %sOPENED %sTAPE %sLABEL %sMALLOC %sAPPEND %sREAD %sEOT %sWEOT %sEOF "
-      "%sNEXTVOL %sSHORT %sMOUNTED\n",
-      dev->IsOpen() ? "" : "!", dev->IsTape() ? "" : "!",
-      dev->IsLabeled() ? "" : "!",
-      BitIsSet(ST_ALLOCATED, dev->state) ? "" : "!",
-      dev->CanAppend() ? "" : "!", dev->CanRead() ? "" : "!",
-      dev->AtEot() ? "" : "!", BitIsSet(ST_WEOT, dev->state) ? "" : "!",
-      dev->AtEof() ? "" : "!", BitIsSet(ST_NEXTVOL, dev->state) ? "" : "!",
-      BitIsSet(ST_SHORT, dev->state) ? "" : "!",
-      BitIsSet(ST_MOUNTED, dev->state) ? "" : "!");
+  len = Mmsg(msg,
+             "  %sOPENED %sLABEL %sMALLOC %sAPPEND %sREAD %sEOT %sWEOT %sEOF "
+             "%sNEXTVOL %sSHORT %sMOUNTED\n",
+             dev->IsOpen() ? "" : "!", dev->IsLabeled() ? "" : "!",
+             BitIsSet(ST_ALLOCATED, dev->state) ? "" : "!",
+             dev->CanAppend() ? "" : "!", dev->CanRead() ? "" : "!",
+             dev->AtEot() ? "" : "!", BitIsSet(ST_WEOT, dev->state) ? "" : "!",
+             dev->AtEof() ? "" : "!",
+             BitIsSet(ST_NEXTVOL, dev->state) ? "" : "!",
+             BitIsSet(ST_SHORT, dev->state) ? "" : "!",
+             BitIsSet(ST_MOUNTED, dev->state) ? "" : "!");
   sp->send(msg, len);
 
   len = Mmsg(msg, _("  num_writers=%d reserves=%d block=%d\n"),
@@ -634,8 +633,8 @@ static void SendDeviceStatus(Device* dev, StatusPacket* sp)
 
   len = Mmsg(msg, _("Device parameters:\n"));
   sp->send(msg, len);
-  len = Mmsg(msg, _("  Archive name: %s Device name: %s\n"),
-             dev->archive_name(), dev->name());
+  len = Mmsg(msg, _("  Archive name: %s\nDevice name: %s\nDevice Type: %s\n"),
+             dev->archive_name(), dev->name(), dev->type().c_str());
   sp->send(msg, len);
   len = Mmsg(msg, _("  File=%u block=%u\n"), dev->file, dev->block_num);
   sp->send(msg, len);
@@ -663,13 +662,13 @@ static void ListRunningJobs(StatusPacket* sp)
   }
 
   foreach_jcr (jcr) {
-    if (jcr->JobStatus == JS_WaitFD) {
+    if (jcr->getJobStatus() == JS_WaitFD) {
       len = Mmsg(msg, _("%s Job %s waiting for Client connection.\n"),
                  job_type_to_str(jcr->getJobType()), jcr->Job);
       sp->send(msg, len);
     }
-    dcr = jcr->impl->dcr;
-    rdcr = jcr->impl->read_dcr;
+    dcr = jcr->sd_impl->dcr;
+    rdcr = jcr->sd_impl->read_dcr;
     if ((dcr && dcr->device_resource) || (rdcr && rdcr->device_resource)) {
       bstrncpy(JobName, jcr->Job, sizeof(JobName));
       /* There are three periods after the Job name */
@@ -755,7 +754,7 @@ static inline void SendDriveReserveMessages(JobControlRecord* jcr,
   char* msg;
 
   jcr->lock();
-  msgs = jcr->impl->reserve_msgs;
+  msgs = jcr->sd_impl->reserve_msgs;
   if (!msgs || msgs->size() == 0) { goto bail_out; }
   for (i = msgs->size() - 1; i >= 0; i--) {
     msg = (char*)msgs->get(i);
@@ -783,7 +782,7 @@ static void ListJobsWaitingOnReservation(StatusPacket* sp)
   }
 
   foreach_jcr (jcr) {
-    if (!jcr->impl->reserve_msgs) { continue; }
+    if (!jcr->sd_impl->reserve_msgs) { continue; }
     SendDriveReserveMessages(jcr, sp);
   }
   endeach_jcr(jcr);
@@ -985,7 +984,8 @@ bool DotstatusCmd(JobControlRecord* jcr)
     dir->fsend(OKdotstatus, cmd.c_str());
     foreach_jcr (njcr) {
       if (njcr->JobId != 0) {
-        dir->fsend(DotStatusJob, njcr->JobId, njcr->JobStatus, njcr->JobErrors);
+        dir->fsend(DotStatusJob, njcr->JobId, njcr->getJobStatus(),
+                   njcr->JobErrors);
       }
     }
     endeach_jcr(njcr);

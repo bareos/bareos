@@ -37,7 +37,7 @@
 #include "dird/fd_cmds.h"
 #include "dird/get_database_connection.h"
 #include "dird/job.h"
-#include "dird/jcr_private.h"
+#include "dird/director_jcr_impl.h"
 #include "dird/migration.h"
 #include "dird/pthread_detach_if_not_detached.h"
 #include "dird/restore.h"
@@ -144,23 +144,23 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
 
   // See if we should suppress all output.
   if (!suppress_output) {
-    InitMsg(jcr, jcr->impl->res.messages, job_code_callback_director);
+    InitMsg(jcr, jcr->dir_impl->res.messages, job_code_callback_director);
   } else {
     jcr->suppress_output = true;
   }
 
   // Initialize termination condition variable
-  if ((errstat = pthread_cond_init(&jcr->impl->term_wait, NULL)) != 0) {
+  if ((errstat = pthread_cond_init(&jcr->dir_impl->term_wait, NULL)) != 0) {
     BErrNo be;
     Jmsg1(jcr, M_FATAL, 0, _("Unable to init job cond variable: ERR=%s\n"),
           be.bstrerror(errstat));
     jcr->unlock();
     goto bail_out;
   }
-  jcr->impl->term_wait_inited = true;
+  jcr->dir_impl->term_wait_inited = true;
 
   // Initialize nextrun ready condition variable
-  if ((errstat = pthread_cond_init(&jcr->impl->nextrun_ready, NULL)) != 0) {
+  if ((errstat = pthread_cond_init(&jcr->dir_impl->nextrun_ready, NULL)) != 0) {
     BErrNo be;
     Jmsg1(jcr, M_FATAL, 0,
           _("Unable to init job nextrun cond variable: ERR=%s\n"),
@@ -168,10 +168,10 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
     jcr->unlock();
     goto bail_out;
   }
-  jcr->impl->nextrun_ready_inited = true;
+  jcr->dir_impl->nextrun_ready_inited = true;
 
-  CreateUniqueJobName(jcr, jcr->impl->res.job->resource_name_);
-  jcr->setJobStatus(JS_Created);
+  CreateUniqueJobName(jcr, jcr->dir_impl->res.job->resource_name_);
+  jcr->setJobStatusWithPriorityCheck(JS_Created);
   jcr->unlock();
 
   // Open database
@@ -179,44 +179,45 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
   jcr->db = GetDatabaseConnection(jcr);
   if (jcr->db == NULL) {
     Jmsg(jcr, M_FATAL, 0, _("Could not open database \"%s\".\n"),
-         jcr->impl->res.catalog->db_name);
+         jcr->dir_impl->res.catalog->db_name);
     goto bail_out;
   }
   Dmsg0(150, "DB opened\n");
-  if (!jcr->impl->fname) { jcr->impl->fname = GetPoolMemory(PM_FNAME); }
+  if (!jcr->dir_impl->fname) { jcr->dir_impl->fname = GetPoolMemory(PM_FNAME); }
 
-  if (!jcr->impl->res.pool_source) {
-    jcr->impl->res.pool_source = GetPoolMemory(PM_MESSAGE);
-    PmStrcpy(jcr->impl->res.pool_source, _("unknown source"));
+  if (!jcr->dir_impl->res.pool_source) {
+    jcr->dir_impl->res.pool_source = GetPoolMemory(PM_MESSAGE);
+    PmStrcpy(jcr->dir_impl->res.pool_source, _("unknown source"));
   }
 
-  if (!jcr->impl->res.npool_source) {
-    jcr->impl->res.npool_source = GetPoolMemory(PM_MESSAGE);
-    PmStrcpy(jcr->impl->res.npool_source, _("unknown source"));
+  if (!jcr->dir_impl->res.npool_source) {
+    jcr->dir_impl->res.npool_source = GetPoolMemory(PM_MESSAGE);
+    PmStrcpy(jcr->dir_impl->res.npool_source, _("unknown source"));
   }
 
   if (jcr->JobReads()) {
-    if (!jcr->impl->res.rpool_source) {
-      jcr->impl->res.rpool_source = GetPoolMemory(PM_MESSAGE);
-      PmStrcpy(jcr->impl->res.rpool_source, _("unknown source"));
+    if (!jcr->dir_impl->res.rpool_source) {
+      jcr->dir_impl->res.rpool_source = GetPoolMemory(PM_MESSAGE);
+      PmStrcpy(jcr->dir_impl->res.rpool_source, _("unknown source"));
     }
   }
 
   // Create Job record
   InitJcrJobRecord(jcr);
 
-  if (jcr->impl->res.client) {
+  if (jcr->dir_impl->res.client) {
     if (!GetOrCreateClientRecord(jcr)) { goto bail_out; }
   }
 
-  if (!jcr->db->CreateJobRecord(jcr, &jcr->impl->jr)) {
+  if (!jcr->db->CreateJobRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
     goto bail_out;
   }
 
-  jcr->JobId = jcr->impl->jr.JobId;
+  jcr->JobId = jcr->dir_impl->jr.JobId;
   Dmsg4(100, "Created job record JobId=%d Name=%s Type=%c Level=%c\n",
-        jcr->JobId, jcr->Job, jcr->impl->jr.JobType, jcr->impl->jr.JobLevel);
+        jcr->JobId, jcr->Job, jcr->dir_impl->jr.JobType,
+        jcr->dir_impl->jr.JobLevel);
 
   NewPlugins(jcr); /* instantiate plugins for this jcr */
   DispatchNewPluginOptions(jcr);
@@ -224,11 +225,12 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
 
   if (JobCanceled(jcr)) { goto bail_out; }
 
-  if (jcr->JobReads() && !jcr->impl->res.read_storage_list) {
-    if (jcr->impl->res.job->storage) {
-      CopyRwstorage(jcr, jcr->impl->res.job->storage, _("Job resource"));
+  if (jcr->JobReads() && !jcr->dir_impl->res.read_storage_list) {
+    if (jcr->dir_impl->res.job->storage) {
+      CopyRwstorage(jcr, jcr->dir_impl->res.job->storage, _("Job resource"));
     } else {
-      CopyRwstorage(jcr, jcr->impl->res.job->pool->storage, _("Pool resource"));
+      CopyRwstorage(jcr, jcr->dir_impl->res.job->pool->storage,
+                    _("Pool resource"));
     }
   }
 
@@ -308,9 +310,9 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
            * Any non NDMP restore is not interested at the items
            * that were selected for restore so drop them now.
            */
-          if (jcr->impl->restore_tree_root) {
-            FreeTree(jcr->impl->restore_tree_root);
-            jcr->impl->restore_tree_root = NULL;
+          if (jcr->dir_impl->restore_tree_root) {
+            FreeTree(jcr->dir_impl->restore_tree_root);
+            jcr->dir_impl->restore_tree_root = NULL;
           }
           if (!DoNativeRestoreInit(jcr)) {
             NativeRestoreCleanup(jcr, JS_ErrorTerminated);
@@ -364,7 +366,7 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
       break;
     default:
       Pmsg1(0, _("Unimplemented job type: %d\n"), jcr->getJobType());
-      jcr->setJobStatus(JS_ErrorTerminated);
+      jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
       goto bail_out;
   }
 
@@ -382,7 +384,7 @@ bool IsConnectingToClientAllowed(ClientResource* res)
 
 bool IsConnectingToClientAllowed(JobControlRecord* jcr)
 {
-  return IsConnectingToClientAllowed(jcr->impl->res.client);
+  return IsConnectingToClientAllowed(jcr->dir_impl->res.client);
 }
 
 bool IsConnectFromClientAllowed(ClientResource* res)
@@ -392,7 +394,7 @@ bool IsConnectFromClientAllowed(ClientResource* res)
 
 bool IsConnectFromClientAllowed(JobControlRecord* jcr)
 {
-  return IsConnectFromClientAllowed(jcr->impl->res.client);
+  return IsConnectFromClientAllowed(jcr->dir_impl->res.client);
 }
 
 bool UseWaitingClient(JobControlRecord* jcr, int timeout)
@@ -403,17 +405,17 @@ bool UseWaitingClient(JobControlRecord* jcr, int timeout)
 
   if (!IsConnectFromClientAllowed(jcr)) {
     Dmsg1(120, "Connection from client \"%s\" to director is not allowed.\n",
-          jcr->impl->res.client->resource_name_);
+          jcr->dir_impl->res.client->resource_name_);
   } else {
-    connection
-        = connections->remove(jcr->impl->res.client->resource_name_, timeout);
+    connection = connections->remove(jcr->dir_impl->res.client->resource_name_,
+                                     timeout);
     if (connection) {
       jcr->file_bsock = connection->bsock();
-      jcr->impl->FDVersion = connection->protocol_version();
+      jcr->dir_impl->FDVersion = connection->protocol_version();
       jcr->authenticated = connection->authenticated();
       delete (connection);
       Jmsg(jcr, M_INFO, 0, _("Using Client Initiated Connection (%s).\n"),
-           jcr->impl->res.client->resource_name_);
+           jcr->dir_impl->res.client->resource_name_);
       result = true;
     }
   }
@@ -424,7 +426,7 @@ bool UseWaitingClient(JobControlRecord* jcr, int timeout)
 void UpdateJobEnd(JobControlRecord* jcr, int TermCode)
 {
   DequeueMessages(jcr); /* display any queued messages */
-  jcr->setJobStatus(TermCode);
+  jcr->setJobStatusWithPriorityCheck(TermCode);
   UpdateJobEndRecord(jcr);
 }
 
@@ -442,40 +444,41 @@ static void* job_thread(void* arg)
   DetachIfNotDetached(pthread_self());
 
   Dmsg0(200, "=====Start Job=========\n");
-  jcr->setJobStatus(JS_Running); /* this will be set only if no error */
-  jcr->start_time = time(NULL);  /* set the real start time */
-  jcr->impl->jr.StartTime = jcr->start_time;
+  jcr->setJobStatusWithPriorityCheck(
+      JS_Running);              /* this will be set only if no error */
+  jcr->start_time = time(NULL); /* set the real start time */
+  jcr->dir_impl->jr.StartTime = jcr->start_time;
 
   // Let the statistics subsystem know a new Job was started.
   stats_job_started();
 
-  if (jcr->impl->res.job->MaxStartDelay != 0
-      && jcr->impl->res.job->MaxStartDelay
+  if (jcr->dir_impl->res.job->MaxStartDelay != 0
+      && jcr->dir_impl->res.job->MaxStartDelay
              < (utime_t)(jcr->start_time - jcr->sched_time)) {
-    jcr->setJobStatus(JS_Canceled);
+    jcr->setJobStatusWithPriorityCheck(JS_Canceled);
     Jmsg(jcr, M_FATAL, 0,
          _("Job canceled because max start delay time exceeded.\n"));
   }
 
   if (JobCheckMaxrunschedtime(jcr)) {
-    jcr->setJobStatus(JS_Canceled);
+    jcr->setJobStatusWithPriorityCheck(JS_Canceled);
     Jmsg(jcr, M_FATAL, 0,
          _("Job canceled because max run sched time exceeded.\n"));
   }
 
   // TODO : check if it is used somewhere
-  if (jcr->impl->res.job->RunScripts == NULL) {
+  if (jcr->dir_impl->res.job->RunScripts == NULL) {
     Dmsg0(200, "Warning, job->RunScripts is empty\n");
-    jcr->impl->res.job->RunScripts
+    jcr->dir_impl->res.job->RunScripts
         = new alist<RunScript*>(10, not_owned_by_alist);
   }
 
-  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->impl->jr)) {
+  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
   }
 
   // Run any script BeforeJob on dird
-  RunScripts(jcr, jcr->impl->res.job->RunScripts, "BeforeJob");
+  RunScripts(jcr, jcr->dir_impl->res.job->RunScripts, "BeforeJob");
 
   /*
    * We re-update the job start record so that the start time is set after the
@@ -487,8 +490,8 @@ static void* job_thread(void* arg)
    * because in that case, their date is after the start of this run.
    */
   jcr->start_time = time(NULL);
-  jcr->impl->jr.StartTime = jcr->start_time;
-  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->impl->jr)) {
+  jcr->dir_impl->jr.StartTime = jcr->start_time;
+  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
   }
 
@@ -642,13 +645,13 @@ static void* job_thread(void* arg)
       break;
   }
 
-  RunScripts(jcr, jcr->impl->res.job->RunScripts, "AfterJob");
+  RunScripts(jcr, jcr->dir_impl->res.job->RunScripts, "AfterJob");
 
   // Send off any queued messages
   if (jcr->msg_queue && jcr->msg_queue->size() > 0) { DequeueMessages(jcr); }
 
   GeneratePluginEvent(jcr, bDirEventJobEnd);
-  Dmsg1(50, "======== End Job stat=%c ==========\n", jcr->JobStatus);
+  Dmsg1(50, "======== End Job stat=%c ==========\n", jcr->getJobStatus());
 
   return NULL;
 }
@@ -656,10 +659,10 @@ static void* job_thread(void* arg)
 void SdMsgThreadSendSignal(JobControlRecord* jcr, int sig)
 {
   jcr->lock();
-  if (!jcr->impl->sd_msg_thread_done && jcr->impl->SD_msg_chan_started
-      && !pthread_equal(jcr->impl->SD_msg_chan, pthread_self())) {
+  if (!jcr->dir_impl->sd_msg_thread_done && jcr->dir_impl->SD_msg_chan_started
+      && !pthread_equal(jcr->dir_impl->SD_msg_chan, pthread_self())) {
     Dmsg1(800, "Send kill to SD msg chan jid=%d\n", jcr->JobId);
-    pthread_kill(jcr->impl->SD_msg_chan, sig);
+    pthread_kill(jcr->dir_impl->SD_msg_chan, sig);
   }
   jcr->unlock();
 }
@@ -674,9 +677,9 @@ void SdMsgThreadSendSignal(JobControlRecord* jcr, int sig)
 bool CancelJob(UaContext* ua, JobControlRecord* jcr)
 {
   char ed1[50];
-  int32_t old_status = jcr->JobStatus;
+  int32_t old_status = jcr->getJobStatus();
 
-  jcr->setJobStatus(JS_Canceled);
+  jcr->setJobStatusWithPriorityCheck(JS_Canceled);
 
   switch (old_status) {
     case JS_Created:
@@ -703,14 +706,16 @@ bool CancelJob(UaContext* ua, JobControlRecord* jcr)
       }
 
       // Cancel second Storage daemon for SD-SD replication.
-      if (jcr->impl->mig_jcr && jcr->impl->mig_jcr->store_bsock) {
-        if (!CancelStorageDaemonJob(ua, jcr->impl->mig_jcr)) { return false; }
+      if (jcr->dir_impl->mig_jcr && jcr->dir_impl->mig_jcr->store_bsock) {
+        if (!CancelStorageDaemonJob(ua, jcr->dir_impl->mig_jcr)) {
+          return false;
+        }
       }
 
       break;
   }
 
-  RunScripts(jcr, jcr->impl->res.job->RunScripts, "AfterJob");
+  RunScripts(jcr, jcr->dir_impl->res.job->RunScripts, "AfterJob");
 
   return true;
 }
@@ -733,24 +738,24 @@ static void JobMonitorWatchdog(watchdog_t* self)
   foreach_jcr (jcr) {
     bool cancel = false;
 
-    if (jcr->JobId == 0 || JobCanceled(jcr) || jcr->impl->no_maxtime) {
+    if (jcr->JobId == 0 || JobCanceled(jcr) || jcr->dir_impl->no_maxtime) {
       Dmsg2(800, "Skipping JobControlRecord=%p Job=%s\n", jcr, jcr->Job);
       continue;
     }
 
     /* check MaxWaitTime */
     if (JobCheckMaxwaittime(jcr)) {
-      jcr->setJobStatus(JS_Canceled);
+      jcr->setJobStatusWithPriorityCheck(JS_Canceled);
       Qmsg(jcr, M_FATAL, 0, _("Max wait time exceeded. Job canceled.\n"));
       cancel = true;
       /* check MaxRunTime */
     } else if (JobCheckMaxruntime(jcr)) {
-      jcr->setJobStatus(JS_Canceled);
+      jcr->setJobStatusWithPriorityCheck(JS_Canceled);
       Qmsg(jcr, M_FATAL, 0, _("Max run time exceeded. Job canceled.\n"));
       cancel = true;
       /* check MaxRunSchedTime */
     } else if (JobCheckMaxrunschedtime(jcr)) {
-      jcr->setJobStatus(JS_Canceled);
+      jcr->setJobStatusWithPriorityCheck(JS_Canceled);
       Qmsg(jcr, M_FATAL, 0, _("Max run sched time exceeded. Job canceled.\n"));
       cancel = true;
     }
@@ -777,7 +782,7 @@ static void JobMonitorWatchdog(watchdog_t* self)
 static bool JobCheckMaxwaittime(JobControlRecord* jcr)
 {
   bool cancel = false;
-  JobResource* job = jcr->impl->res.job;
+  JobResource* job = jcr->dir_impl->res.job;
   utime_t current = 0;
 
   if (!JobWaiting(jcr)) { return false; }
@@ -801,7 +806,7 @@ static bool JobCheckMaxwaittime(JobControlRecord* jcr)
 static bool JobCheckMaxruntime(JobControlRecord* jcr)
 {
   bool cancel = false;
-  JobResource* job = jcr->impl->res.job;
+  JobResource* job = jcr->dir_impl->res.job;
   utime_t run_time;
 
   if (JobCanceled(jcr) || !jcr->job_started) { return false; }
@@ -840,10 +845,11 @@ static bool JobCheckMaxruntime(JobControlRecord* jcr)
  */
 static bool JobCheckMaxrunschedtime(JobControlRecord* jcr)
 {
-  if (jcr->impl->MaxRunSchedTime == 0 || JobCanceled(jcr)) { return false; }
-  if ((watchdog_time - jcr->initial_sched_time) < jcr->impl->MaxRunSchedTime) {
+  if (jcr->dir_impl->MaxRunSchedTime == 0 || JobCanceled(jcr)) { return false; }
+  if ((watchdog_time - jcr->initial_sched_time)
+      < jcr->dir_impl->MaxRunSchedTime) {
     Dmsg3(200, "Job %p (%s) with MaxRunSchedTime %d not expired\n", jcr,
-          jcr->Job, jcr->impl->MaxRunSchedTime);
+          jcr->Job, jcr->dir_impl->MaxRunSchedTime);
     return false;
   }
 
@@ -864,7 +870,7 @@ DBId_t GetOrCreatePoolRecord(JobControlRecord* jcr, char* pool_name)
 
   while (!jcr->db->GetPoolRecord(jcr, &pr)) { /* get by Name */
     /* Try to create the pool */
-    if (CreatePool(jcr, jcr->db, jcr->impl->res.pool, POOL_OP_CREATE) < 0) {
+    if (CreatePool(jcr, jcr->db, jcr->dir_impl->res.pool, POOL_OP_CREATE) < 0) {
       Jmsg(jcr, M_FATAL, 0, _("Pool \"%s\" not in database. ERR=%s"), pr.Name,
            jcr->db->strerror());
       return 0;
@@ -884,7 +890,7 @@ DBId_t GetOrCreatePoolRecord(JobControlRecord* jcr, char* pool_name)
 bool AllowDuplicateJob(JobControlRecord* jcr)
 {
   JobControlRecord* djcr; /* possible duplicate job */
-  JobResource* job = jcr->impl->res.job;
+  JobResource* job = jcr->dir_impl->res.job;
   bool cancel_dup = false;
   bool cancel_me = false;
 
@@ -892,7 +898,7 @@ bool AllowDuplicateJob(JobControlRecord* jcr)
    * See if AllowDuplicateJobs is set or
    * if duplicate checking is disabled for this job.
    */
-  if (job->AllowDuplicateJobs || jcr->impl->IgnoreDuplicateJobChecking) {
+  if (job->AllowDuplicateJobs || jcr->dir_impl->IgnoreDuplicateJobChecking) {
     return true;
   }
 
@@ -912,9 +918,9 @@ bool AllowDuplicateJob(JobControlRecord* jcr)
      * See if this Job has the IgnoreDuplicateJobChecking flag set, ignore it
      * for any checking against other jobs.
      */
-    if (djcr->impl->IgnoreDuplicateJobChecking) { continue; }
+    if (djcr->dir_impl->IgnoreDuplicateJobChecking) { continue; }
 
-    if (bstrcmp(job->resource_name_, djcr->impl->res.job->resource_name_)) {
+    if (bstrcmp(job->resource_name_, djcr->dir_impl->res.job->resource_name_)) {
       if (job->DuplicateJobProximity > 0) {
         utime_t now = (utime_t)time(NULL);
         if ((now - djcr->start_time) > job->DuplicateJobProximity) {
@@ -943,7 +949,7 @@ bool AllowDuplicateJob(JobControlRecord* jcr)
         // cancel_dup will be done below
         if (cancel_me) {
           /* Zap current job */
-          jcr->setJobStatus(JS_Canceled);
+          jcr->setJobStatusWithPriorityCheck(JS_Canceled);
           Jmsg(jcr, M_FATAL, 0,
                _("JobId %d already running. Duplicate job not allowed.\n"),
                djcr->JobId);
@@ -956,7 +962,7 @@ bool AllowDuplicateJob(JobControlRecord* jcr)
        * If CancelQueuedDuplicates is set do so only if job is queued.
        */
       if (job->CancelQueuedDuplicates) {
-        switch (djcr->JobStatus) {
+        switch (djcr->getJobStatus()) {
           case JS_Created:
           case JS_WaitJobRes:
           case JS_WaitClientRes:
@@ -978,13 +984,13 @@ bool AllowDuplicateJob(JobControlRecord* jcr)
              djcr->JobId);
         CancelJob(ua, djcr);
         Bmicrosleep(0, 500000);
-        djcr->setJobStatus(JS_Canceled);
+        djcr->setJobStatusWithPriorityCheck(JS_Canceled);
         CancelJob(ua, djcr);
         FreeUaContext(ua);
         Dmsg2(800, "Cancel dup %p JobId=%d\n", djcr, djcr->JobId);
       } else {
         // Zap current job
-        jcr->setJobStatus(JS_Canceled);
+        jcr->setJobStatusWithPriorityCheck(JS_Canceled);
         Jmsg(jcr, M_FATAL, 0,
              _("JobId %d already running. Duplicate job not allowed.\n"),
              djcr->JobId);
@@ -1020,14 +1026,15 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
   utime_t last_diff_time;
   char prev_job[MAX_NAME_LENGTH];
 
-  jcr->impl->since[0] = 0;
+  jcr->dir_impl->since[0] = 0;
 
   // If since time was given on command line use it
   if (jcr->starttime_string && jcr->starttime_string[0]) {
-    bstrncpy(jcr->impl->since, _(", since="), sizeof(jcr->impl->since));
-    bstrncat(jcr->impl->since, jcr->starttime_string, sizeof(jcr->impl->since));
+    bstrncpy(jcr->dir_impl->since, _(", since="), sizeof(jcr->dir_impl->since));
+    bstrncat(jcr->dir_impl->since, jcr->starttime_string,
+             sizeof(jcr->dir_impl->since));
     Jmsg(jcr, M_INFO, 0, "Using since time from command line %s (%s)",
-         jcr->starttime_string, jcr->impl->since);
+         jcr->starttime_string, jcr->dir_impl->since);
     return pool_updated;
   }
 
@@ -1037,7 +1044,7 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
     jcr->starttime_string = GetPoolMemory(PM_MESSAGE);
     jcr->starttime_string[0] = 0;
   }
-  jcr->impl->PrevJob[0] = 0;
+  jcr->dir_impl->PrevJob[0] = 0;
 
   /*
    * Lookup the last FULL backup job to get the time/date for a
@@ -1051,19 +1058,20 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
 
       // Look up start time of last Full job
       now = (utime_t)time(NULL);
-      jcr->impl->jr.JobId = 0; /* flag to return since time */
+      jcr->dir_impl->jr.JobId = 0; /* flag to return since time */
 
       /*
        * This is probably redundant, but some of the code below
        * uses jcr->starttime_string, so don't remove unless you are sure.
        */
-      if (!jcr->db->FindJobStartTime(jcr, &jcr->impl->jr, jcr->starttime_string,
-                                     jcr->impl->PrevJob)) {
+      if (!jcr->db->FindJobStartTime(jcr, &jcr->dir_impl->jr,
+                                     jcr->starttime_string,
+                                     jcr->dir_impl->PrevJob)) {
         do_full = true;
       }
 
-      have_full = jcr->db->FindLastJobStartTime(jcr, &jcr->impl->jr, start_time,
-                                                prev_job, L_FULL);
+      have_full = jcr->db->FindLastJobStartTime(jcr, &jcr->dir_impl->jr,
+                                                start_time, prev_job, L_FULL);
       if (have_full) {
         last_full_time = StrToUtime(start_time);
       } else {
@@ -1075,9 +1083,9 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
 
       // Make sure the last diff is recent enough
       if (have_full && JobLevel == L_INCREMENTAL
-          && jcr->impl->res.job->MaxDiffInterval > 0) {
+          && jcr->dir_impl->res.job->MaxDiffInterval > 0) {
         // Lookup last diff job
-        if (jcr->db->FindLastJobStartTime(jcr, &jcr->impl->jr, start_time,
+        if (jcr->db->FindLastJobStartTime(jcr, &jcr->dir_impl->jr, start_time,
                                           prev_job, L_DIFFERENTIAL)) {
           last_diff_time = StrToUtime(start_time);
           // If no Diff since Full, use Full time
@@ -1092,19 +1100,19 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
           Dmsg1(50, "No last_diff_time setting to full_time=%lld\n",
                 last_full_time);
         }
-        do_diff
-            = ((now - last_diff_time) >= jcr->impl->res.job->MaxDiffInterval);
+        do_diff = ((now - last_diff_time)
+                   >= jcr->dir_impl->res.job->MaxDiffInterval);
         Dmsg2(50, "do_diff=%d diffInter=%lld\n", do_diff,
-              jcr->impl->res.job->MaxDiffInterval);
+              jcr->dir_impl->res.job->MaxDiffInterval);
       }
 
       // Note, do_full takes precedence over do_vfull and do_diff
-      if (have_full && jcr->impl->res.job->MaxFullInterval > 0) {
-        do_full
-            = ((now - last_full_time) >= jcr->impl->res.job->MaxFullInterval);
-      } else if (have_full && jcr->impl->res.job->MaxVFullInterval > 0) {
-        do_vfull
-            = ((now - last_full_time) >= jcr->impl->res.job->MaxVFullInterval);
+      if (have_full && jcr->dir_impl->res.job->MaxFullInterval > 0) {
+        do_full = ((now - last_full_time)
+                   >= jcr->dir_impl->res.job->MaxFullInterval);
+      } else if (have_full && jcr->dir_impl->res.job->MaxVFullInterval > 0) {
+        do_vfull = ((now - last_full_time)
+                    >= jcr->dir_impl->res.job->MaxVFullInterval);
       }
       FreePoolMemory(start_time);
 
@@ -1114,9 +1122,9 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
         Jmsg(jcr, M_INFO, 0,
              _("No prior or suitable Full backup found in catalog. Doing FULL "
                "backup.\n"));
-        Bsnprintf(jcr->impl->since, sizeof(jcr->impl->since),
+        Bsnprintf(jcr->dir_impl->since, sizeof(jcr->dir_impl->since),
                   _(" (upgraded from %s)"), JobLevelToString(JobLevel));
-        jcr->setJobLevel(jcr->impl->jr.JobLevel = L_FULL);
+        jcr->setJobLevel(jcr->dir_impl->jr.JobLevel = L_FULL);
         pool_updated = true;
       } else if (do_vfull) {
         /*
@@ -1127,59 +1135,60 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
         Jmsg(jcr, M_INFO, 0,
              _("No prior or suitable Full backup found in catalog. Doing "
                "Virtual FULL backup.\n"));
-        Bsnprintf(jcr->impl->since, sizeof(jcr->impl->since),
+        Bsnprintf(jcr->dir_impl->since, sizeof(jcr->dir_impl->since),
                   _(" (upgraded from %s)"),
                   JobLevelToString(jcr->getJobLevel()));
-        jcr->setJobLevel(jcr->impl->jr.JobLevel = L_VIRTUAL_FULL);
+        jcr->setJobLevel(jcr->dir_impl->jr.JobLevel = L_VIRTUAL_FULL);
         pool_updated = true;
 
         /*
          * If we get upgraded to a Virtual Full we will be using a read pool so
          * make sure we have a rpool_source.
          */
-        if (!jcr->impl->res.rpool_source) {
-          jcr->impl->res.rpool_source = GetPoolMemory(PM_MESSAGE);
-          PmStrcpy(jcr->impl->res.rpool_source, _("unknown source"));
+        if (!jcr->dir_impl->res.rpool_source) {
+          jcr->dir_impl->res.rpool_source = GetPoolMemory(PM_MESSAGE);
+          PmStrcpy(jcr->dir_impl->res.rpool_source, _("unknown source"));
         }
       } else if (do_diff) {
         // No recent diff job found, so upgrade this one to Diff
         Jmsg(jcr, M_INFO, 0,
              _("No prior or suitable Differential backup found in catalog. "
                "Doing Differential backup.\n"));
-        Bsnprintf(jcr->impl->since, sizeof(jcr->impl->since),
+        Bsnprintf(jcr->dir_impl->since, sizeof(jcr->dir_impl->since),
                   _(" (upgraded from %s)"), JobLevelToString(JobLevel));
-        jcr->setJobLevel(jcr->impl->jr.JobLevel = L_DIFFERENTIAL);
+        jcr->setJobLevel(jcr->dir_impl->jr.JobLevel = L_DIFFERENTIAL);
         pool_updated = true;
       } else {
-        if (jcr->impl->res.job->rerun_failed_levels) {
-          if (jcr->db->FindFailedJobSince(jcr, &jcr->impl->jr,
+        if (jcr->dir_impl->res.job->rerun_failed_levels) {
+          if (jcr->db->FindFailedJobSince(jcr, &jcr->dir_impl->jr,
                                           jcr->starttime_string, JobLevel)) {
             Jmsg(jcr, M_INFO, 0,
                  _("Prior failed job found in catalog. Upgrading to %s.\n"),
                  JobLevelToString(JobLevel));
-            Bsnprintf(jcr->impl->since, sizeof(jcr->impl->since),
+            Bsnprintf(jcr->dir_impl->since, sizeof(jcr->dir_impl->since),
                       _(" (upgraded from %s)"), JobLevelToString(JobLevel));
-            jcr->setJobLevel(jcr->impl->jr.JobLevel = JobLevel);
-            jcr->impl->jr.JobId = jcr->JobId;
+            jcr->setJobLevel(jcr->dir_impl->jr.JobLevel = JobLevel);
+            jcr->dir_impl->jr.JobId = jcr->JobId;
             pool_updated = true;
             break;
           }
         }
 
-        bstrncpy(jcr->impl->since, _(", since="), sizeof(jcr->impl->since));
-        bstrncat(jcr->impl->since, jcr->starttime_string,
-                 sizeof(jcr->impl->since));
+        bstrncpy(jcr->dir_impl->since, _(", since="),
+                 sizeof(jcr->dir_impl->since));
+        bstrncat(jcr->dir_impl->since, jcr->starttime_string,
+                 sizeof(jcr->dir_impl->since));
       }
-      jcr->impl->jr.JobId = jcr->JobId;
+      jcr->dir_impl->jr.JobId = jcr->JobId;
 
       /*
        * Lookup the Job record of the previous Job and store it in
-       * jcr->impl_->previous_jr.
+       * jcr->dir_impl_->previous_jr.
        */
-      if (jcr->impl->PrevJob[0]) {
-        bstrncpy(jcr->impl->previous_jr.Job, jcr->impl->PrevJob,
-                 sizeof(jcr->impl->previous_jr.Job));
-        if (!jcr->db->GetJobRecord(jcr, &jcr->impl->previous_jr)) {
+      if (jcr->dir_impl->PrevJob[0]) {
+        bstrncpy(jcr->dir_impl->previous_jr.Job, jcr->dir_impl->PrevJob,
+                 sizeof(jcr->dir_impl->previous_jr.Job));
+        if (!jcr->db->GetJobRecord(jcr, &jcr->dir_impl->previous_jr)) {
           Jmsg(jcr, M_FATAL, 0,
                _("Could not get job record for previous Job. ERR=%s\n"),
                jcr->db->strerror());
@@ -1190,7 +1199,7 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
   }
 
   Dmsg3(100, "Level=%c last start time=%s job=%s\n", JobLevel,
-        jcr->starttime_string, jcr->impl->PrevJob);
+        jcr->starttime_string, jcr->dir_impl->PrevJob);
 
   return pool_updated;
 }
@@ -1204,86 +1213,93 @@ void ApplyPoolOverrides(JobControlRecord* jcr, bool force)
    * If a cmdline pool override is given ignore any level pool overrides.
    * Unless a force is given then we always apply any overrides.
    */
-  if (!force && jcr->impl->IgnoreLevelPoolOverrides) { return; }
+  if (!force && jcr->dir_impl->IgnoreLevelPoolOverrides) { return; }
 
   /*
    * If only a pool override and no level overrides are given in run entry
    * choose this pool
    */
-  if (jcr->impl->res.run_pool_override && !jcr->impl->res.run_full_pool_override
-      && !jcr->impl->res.run_vfull_pool_override
-      && !jcr->impl->res.run_inc_pool_override
-      && !jcr->impl->res.run_diff_pool_override) {
-    PmStrcpy(jcr->impl->res.pool_source, _("Run Pool override"));
+  if (jcr->dir_impl->res.run_pool_override
+      && !jcr->dir_impl->res.run_full_pool_override
+      && !jcr->dir_impl->res.run_vfull_pool_override
+      && !jcr->dir_impl->res.run_inc_pool_override
+      && !jcr->dir_impl->res.run_diff_pool_override) {
+    PmStrcpy(jcr->dir_impl->res.pool_source, _("Run Pool override"));
     Dmsg2(100, "Pool set to '%s' because of %s",
-          jcr->impl->res.pool->resource_name_, _("Run Pool override\n"));
+          jcr->dir_impl->res.pool->resource_name_, _("Run Pool override\n"));
   } else {
     // Apply any level related Pool selections
     switch (jcr->getJobLevel()) {
       case L_FULL:
-        if (jcr->impl->res.full_pool) {
-          jcr->impl->res.pool = jcr->impl->res.full_pool;
+        if (jcr->dir_impl->res.full_pool) {
+          jcr->dir_impl->res.pool = jcr->dir_impl->res.full_pool;
           pool_override = true;
-          if (jcr->impl->res.run_full_pool_override) {
-            PmStrcpy(jcr->impl->res.pool_source, _("Run FullPool override"));
+          if (jcr->dir_impl->res.run_full_pool_override) {
+            PmStrcpy(jcr->dir_impl->res.pool_source,
+                     _("Run FullPool override"));
             Dmsg2(100, "Pool set to '%s' because of %s",
-                  jcr->impl->res.full_pool->resource_name_,
+                  jcr->dir_impl->res.full_pool->resource_name_,
                   "Run FullPool override\n");
           } else {
-            PmStrcpy(jcr->impl->res.pool_source, _("Job FullPool override"));
+            PmStrcpy(jcr->dir_impl->res.pool_source,
+                     _("Job FullPool override"));
             Dmsg2(100, "Pool set to '%s' because of %s",
-                  jcr->impl->res.full_pool->resource_name_,
+                  jcr->dir_impl->res.full_pool->resource_name_,
                   "Job FullPool override\n");
           }
         }
         break;
       case L_VIRTUAL_FULL:
-        if (jcr->impl->res.vfull_pool) {
-          jcr->impl->res.pool = jcr->impl->res.vfull_pool;
+        if (jcr->dir_impl->res.vfull_pool) {
+          jcr->dir_impl->res.pool = jcr->dir_impl->res.vfull_pool;
           pool_override = true;
-          if (jcr->impl->res.run_vfull_pool_override) {
-            PmStrcpy(jcr->impl->res.pool_source, _("Run VFullPool override"));
+          if (jcr->dir_impl->res.run_vfull_pool_override) {
+            PmStrcpy(jcr->dir_impl->res.pool_source,
+                     _("Run VFullPool override"));
             Dmsg2(100, "Pool set to '%s' because of %s",
-                  jcr->impl->res.vfull_pool->resource_name_,
+                  jcr->dir_impl->res.vfull_pool->resource_name_,
                   "Run VFullPool override\n");
           } else {
-            PmStrcpy(jcr->impl->res.pool_source, _("Job VFullPool override"));
+            PmStrcpy(jcr->dir_impl->res.pool_source,
+                     _("Job VFullPool override"));
             Dmsg2(100, "Pool set to '%s' because of %s",
-                  jcr->impl->res.vfull_pool->resource_name_,
+                  jcr->dir_impl->res.vfull_pool->resource_name_,
                   "Job VFullPool override\n");
           }
         }
         break;
       case L_INCREMENTAL:
-        if (jcr->impl->res.inc_pool) {
-          jcr->impl->res.pool = jcr->impl->res.inc_pool;
+        if (jcr->dir_impl->res.inc_pool) {
+          jcr->dir_impl->res.pool = jcr->dir_impl->res.inc_pool;
           pool_override = true;
-          if (jcr->impl->res.run_inc_pool_override) {
-            PmStrcpy(jcr->impl->res.pool_source, _("Run IncPool override"));
+          if (jcr->dir_impl->res.run_inc_pool_override) {
+            PmStrcpy(jcr->dir_impl->res.pool_source, _("Run IncPool override"));
             Dmsg2(100, "Pool set to '%s' because of %s",
-                  jcr->impl->res.inc_pool->resource_name_,
+                  jcr->dir_impl->res.inc_pool->resource_name_,
                   "Run IncPool override\n");
           } else {
-            PmStrcpy(jcr->impl->res.pool_source, _("Job IncPool override"));
+            PmStrcpy(jcr->dir_impl->res.pool_source, _("Job IncPool override"));
             Dmsg2(100, "Pool set to '%s' because of %s",
-                  jcr->impl->res.inc_pool->resource_name_,
+                  jcr->dir_impl->res.inc_pool->resource_name_,
                   "Job IncPool override\n");
           }
         }
         break;
       case L_DIFFERENTIAL:
-        if (jcr->impl->res.diff_pool) {
-          jcr->impl->res.pool = jcr->impl->res.diff_pool;
+        if (jcr->dir_impl->res.diff_pool) {
+          jcr->dir_impl->res.pool = jcr->dir_impl->res.diff_pool;
           pool_override = true;
-          if (jcr->impl->res.run_diff_pool_override) {
-            PmStrcpy(jcr->impl->res.pool_source, _("Run DiffPool override"));
+          if (jcr->dir_impl->res.run_diff_pool_override) {
+            PmStrcpy(jcr->dir_impl->res.pool_source,
+                     _("Run DiffPool override"));
             Dmsg2(100, "Pool set to '%s' because of %s",
-                  jcr->impl->res.diff_pool->resource_name_,
+                  jcr->dir_impl->res.diff_pool->resource_name_,
                   "Run DiffPool override\n");
           } else {
-            PmStrcpy(jcr->impl->res.pool_source, _("Job DiffPool override"));
+            PmStrcpy(jcr->dir_impl->res.pool_source,
+                     _("Job DiffPool override"));
             Dmsg2(100, "Pool set to '%s' because of %s",
-                  jcr->impl->res.diff_pool->resource_name_,
+                  jcr->dir_impl->res.diff_pool->resource_name_,
                   "Job DiffPool override\n");
           }
         }
@@ -1292,9 +1308,9 @@ void ApplyPoolOverrides(JobControlRecord* jcr, bool force)
   }
 
   // Update catalog if pool overridden
-  if (pool_override && jcr->impl->res.pool->catalog) {
-    jcr->impl->res.catalog = jcr->impl->res.pool->catalog;
-    PmStrcpy(jcr->impl->res.catalog_source, _("Pool resource"));
+  if (pool_override && jcr->dir_impl->res.pool->catalog) {
+    jcr->dir_impl->res.catalog = jcr->dir_impl->res.pool->catalog;
+    PmStrcpy(jcr->dir_impl->res.catalog_source, _("Pool resource"));
   }
 }
 
@@ -1303,40 +1319,40 @@ bool GetOrCreateClientRecord(JobControlRecord* jcr)
 {
   ClientDbRecord cr;
 
-  bstrncpy(cr.Name, jcr->impl->res.client->resource_name_, sizeof(cr.Name));
-  cr.AutoPrune = jcr->impl->res.client->AutoPrune;
-  cr.FileRetention = jcr->impl->res.client->FileRetention;
-  cr.JobRetention = jcr->impl->res.client->JobRetention;
+  bstrncpy(cr.Name, jcr->dir_impl->res.client->resource_name_, sizeof(cr.Name));
+  cr.AutoPrune = jcr->dir_impl->res.client->AutoPrune;
+  cr.FileRetention = jcr->dir_impl->res.client->FileRetention;
+  cr.JobRetention = jcr->dir_impl->res.client->JobRetention;
   if (!jcr->client_name) { jcr->client_name = GetPoolMemory(PM_NAME); }
-  PmStrcpy(jcr->client_name, jcr->impl->res.client->resource_name_);
+  PmStrcpy(jcr->client_name, jcr->dir_impl->res.client->resource_name_);
   if (!jcr->db->CreateClientRecord(jcr, &cr)) {
     Jmsg(jcr, M_FATAL, 0, _("Could not create Client record. ERR=%s\n"),
          jcr->db->strerror());
     return false;
   }
   // Only initialize quota when a Soft or Hard Limit is set.
-  if (jcr->impl->res.client->HardQuota != 0
-      || jcr->impl->res.client->SoftQuota != 0) {
+  if (jcr->dir_impl->res.client->HardQuota != 0
+      || jcr->dir_impl->res.client->SoftQuota != 0) {
     if (!jcr->db->GetQuotaRecord(jcr, &cr)) {
       if (!jcr->db->CreateQuotaRecord(jcr, &cr)) {
         Jmsg(jcr, M_FATAL, 0, _("Could not create Quota record. ERR=%s\n"),
              jcr->db->strerror());
       }
-      jcr->impl->res.client->QuotaLimit = 0;
-      jcr->impl->res.client->GraceTime = 0;
+      jcr->dir_impl->res.client->QuotaLimit = 0;
+      jcr->dir_impl->res.client->GraceTime = 0;
     }
   }
-  jcr->impl->jr.ClientId = cr.ClientId;
-  jcr->impl->res.client->QuotaLimit = cr.QuotaLimit;
-  jcr->impl->res.client->GraceTime = cr.GraceTime;
+  jcr->dir_impl->jr.ClientId = cr.ClientId;
+  jcr->dir_impl->res.client->QuotaLimit = cr.QuotaLimit;
+  jcr->dir_impl->res.client->GraceTime = cr.GraceTime;
   if (cr.Uname[0]) {
-    if (!jcr->impl->client_uname) {
-      jcr->impl->client_uname = GetPoolMemory(PM_NAME);
+    if (!jcr->dir_impl->client_uname) {
+      jcr->dir_impl->client_uname = GetPoolMemory(PM_NAME);
     }
-    PmStrcpy(jcr->impl->client_uname, cr.Uname);
+    PmStrcpy(jcr->dir_impl->client_uname, cr.Uname);
   }
   Dmsg2(100, "Created Client %s record %d\n",
-        jcr->impl->res.client->resource_name_, jcr->impl->jr.ClientId);
+        jcr->dir_impl->res.client->resource_name_, jcr->dir_impl->jr.ClientId);
   return true;
 }
 
@@ -1345,24 +1361,22 @@ bool GetOrCreateFilesetRecord(JobControlRecord* jcr)
   FileSetDbRecord fsr;
 
   // Get or Create FileSet record
-  bstrncpy(fsr.FileSet, jcr->impl->res.fileset->resource_name_,
+  bstrncpy(fsr.FileSet, jcr->dir_impl->res.fileset->resource_name_,
            sizeof(fsr.FileSet));
-  if (jcr->impl->res.fileset->have_MD5) {
+  if (jcr->dir_impl->res.fileset->have_MD5) {
     MD5_CTX md5c;
     unsigned char digest[16]; /* MD5 digest length */
-    memcpy(&md5c, &jcr->impl->res.fileset->md5c, sizeof(md5c));
+    memcpy(&md5c, &jcr->dir_impl->res.fileset->md5c, sizeof(md5c));
     ALLOW_DEPRECATED(MD5_Final(digest, &md5c));
-    /*
-     * Keep the flag (last arg) set to false otherwise old FileSets will
-     * get new MD5 sums and the user will get Full backups on everything
-     */
+    /* Keep the flag (last arg) set to false otherwise old FileSets will
+     * get new MD5 sums and the user will get Full backups on everything */
     BinToBase64(fsr.MD5, sizeof(fsr.MD5), (char*)digest, sizeof(digest), false);
-    bstrncpy(jcr->impl->res.fileset->MD5, fsr.MD5,
-             sizeof(jcr->impl->res.fileset->MD5));
+    bstrncpy(jcr->dir_impl->res.fileset->MD5, fsr.MD5,
+             sizeof(jcr->dir_impl->res.fileset->MD5));
   } else {
     Jmsg(jcr, M_WARNING, 0, _("FileSet MD5 digest not found.\n"));
   }
-  if (!jcr->impl->res.fileset->ignore_fs_changes
+  if (!jcr->dir_impl->res.fileset->ignore_fs_changes
       || !jcr->db->GetFilesetRecord(jcr, &fsr)) {
     PoolMem FileSetText(PM_MESSAGE);
     OutputFormatter output_formatter
@@ -1370,8 +1384,8 @@ bool GetOrCreateFilesetRecord(JobControlRecord* jcr)
     OutputFormatterResource output_formatter_resource
         = OutputFormatterResource(&output_formatter);
 
-    jcr->impl->res.fileset->PrintConfig(output_formatter_resource, *my_config,
-                                        false, false);
+    jcr->dir_impl->res.fileset->PrintConfig(output_formatter_resource,
+                                            *my_config, false, false);
 
     fsr.FileSetText = FileSetText.c_str();
 
@@ -1383,46 +1397,47 @@ bool GetOrCreateFilesetRecord(JobControlRecord* jcr)
     }
   }
 
-  jcr->impl->jr.FileSetId = fsr.FileSetId;
-  bstrncpy(jcr->impl->FSCreateTime, fsr.cCreateTime,
-           sizeof(jcr->impl->FSCreateTime));
+  jcr->dir_impl->jr.FileSetId = fsr.FileSetId;
+  bstrncpy(jcr->dir_impl->FSCreateTime, fsr.cCreateTime,
+           sizeof(jcr->dir_impl->FSCreateTime));
 
   Dmsg2(119, "Created FileSet %s record %u\n",
-        jcr->impl->res.fileset->resource_name_, jcr->impl->jr.FileSetId);
+        jcr->dir_impl->res.fileset->resource_name_,
+        jcr->dir_impl->jr.FileSetId);
 
   return true;
 }
 
 void InitJcrJobRecord(JobControlRecord* jcr)
 {
-  jcr->impl->jr.SchedTime = jcr->sched_time;
-  jcr->impl->jr.StartTime = jcr->start_time;
-  jcr->impl->jr.EndTime = 0; /* perhaps rescheduled, clear it */
-  jcr->impl->jr.JobType = jcr->getJobType();
-  jcr->impl->jr.JobLevel = jcr->getJobLevel();
-  jcr->impl->jr.JobStatus = jcr->JobStatus;
-  jcr->impl->jr.JobId = jcr->JobId;
-  jcr->impl->jr.JobSumTotalBytes = 18446744073709551615LLU;
-  bstrncpy(jcr->impl->jr.Name, jcr->impl->res.job->resource_name_,
-           sizeof(jcr->impl->jr.Name));
-  bstrncpy(jcr->impl->jr.Job, jcr->Job, sizeof(jcr->impl->jr.Job));
+  jcr->dir_impl->jr.SchedTime = jcr->sched_time;
+  jcr->dir_impl->jr.StartTime = jcr->start_time;
+  jcr->dir_impl->jr.EndTime = 0; /* perhaps rescheduled, clear it */
+  jcr->dir_impl->jr.JobType = jcr->getJobType();
+  jcr->dir_impl->jr.JobLevel = jcr->getJobLevel();
+  jcr->dir_impl->jr.JobStatus = jcr->getJobStatus();
+  jcr->dir_impl->jr.JobId = jcr->JobId;
+  jcr->dir_impl->jr.JobSumTotalBytes = 18446744073709551615LLU;
+  bstrncpy(jcr->dir_impl->jr.Name, jcr->dir_impl->res.job->resource_name_,
+           sizeof(jcr->dir_impl->jr.Name));
+  bstrncpy(jcr->dir_impl->jr.Job, jcr->Job, sizeof(jcr->dir_impl->jr.Job));
 }
 
 // Write status and such in DB
 void UpdateJobEndRecord(JobControlRecord* jcr)
 {
-  jcr->impl->jr.EndTime = time(NULL);
-  jcr->end_time = jcr->impl->jr.EndTime;
-  jcr->impl->jr.JobId = jcr->JobId;
-  jcr->impl->jr.JobStatus = jcr->JobStatus;
-  jcr->impl->jr.JobFiles = jcr->JobFiles;
-  jcr->impl->jr.JobBytes = jcr->JobBytes;
-  jcr->impl->jr.ReadBytes = jcr->ReadBytes;
-  jcr->impl->jr.VolSessionId = jcr->VolSessionId;
-  jcr->impl->jr.VolSessionTime = jcr->VolSessionTime;
-  jcr->impl->jr.JobErrors = jcr->JobErrors;
-  jcr->impl->jr.HasBase = jcr->HasBase;
-  if (!jcr->db->UpdateJobEndRecord(jcr, &jcr->impl->jr)) {
+  jcr->dir_impl->jr.EndTime = time(NULL);
+  jcr->end_time = jcr->dir_impl->jr.EndTime;
+  jcr->dir_impl->jr.JobId = jcr->JobId;
+  jcr->dir_impl->jr.JobStatus = jcr->getJobStatus();
+  jcr->dir_impl->jr.JobFiles = jcr->JobFiles;
+  jcr->dir_impl->jr.JobBytes = jcr->JobBytes;
+  jcr->dir_impl->jr.ReadBytes = jcr->ReadBytes;
+  jcr->dir_impl->jr.VolSessionId = jcr->VolSessionId;
+  jcr->dir_impl->jr.VolSessionTime = jcr->VolSessionTime;
+  jcr->dir_impl->jr.JobErrors = jcr->JobErrors;
+  jcr->dir_impl->jr.HasBase = jcr->HasBase;
+  if (!jcr->db->UpdateJobEndRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_WARNING, 0, _("Error updating job record. %s\n"),
          jcr->db->strerror());
   }
@@ -1510,14 +1525,14 @@ void DirdFreeJcrPointers(JobControlRecord* jcr)
 
   BfreeAndNull(jcr->sd_auth_key);
   BfreeAndNull(jcr->where);
-  BfreeAndNull(jcr->impl->backup_format);
+  BfreeAndNull(jcr->dir_impl->backup_format);
   BfreeAndNull(jcr->RestoreBootstrap);
   BfreeAndNull(jcr->ar);
 
   FreeAndNullPoolMemory(jcr->JobIds);
-  FreeAndNullPoolMemory(jcr->impl->client_uname);
+  FreeAndNullPoolMemory(jcr->dir_impl->client_uname);
   FreeAndNullPoolMemory(jcr->attr);
-  FreeAndNullPoolMemory(jcr->impl->fname);
+  FreeAndNullPoolMemory(jcr->dir_impl->fname);
 }
 
 /**
@@ -1529,21 +1544,21 @@ void DirdFreeJcr(JobControlRecord* jcr)
 {
   Dmsg0(200, "Start dird FreeJcr\n");
 
-  if (jcr->impl->mig_jcr) {
-    FreeJcr(jcr->impl->mig_jcr);
-    jcr->impl->mig_jcr = NULL;
+  if (jcr->dir_impl->mig_jcr) {
+    FreeJcr(jcr->dir_impl->mig_jcr);
+    jcr->dir_impl->mig_jcr = NULL;
   }
 
   DirdFreeJcrPointers(jcr);
 
-  if (jcr->impl->term_wait_inited) {
-    pthread_cond_destroy(&jcr->impl->term_wait);
-    jcr->impl->term_wait_inited = false;
+  if (jcr->dir_impl->term_wait_inited) {
+    pthread_cond_destroy(&jcr->dir_impl->term_wait);
+    jcr->dir_impl->term_wait_inited = false;
   }
 
-  if (jcr->impl->nextrun_ready_inited) {
-    pthread_cond_destroy(&jcr->impl->nextrun_ready);
-    jcr->impl->nextrun_ready_inited = false;
+  if (jcr->dir_impl->nextrun_ready_inited) {
+    pthread_cond_destroy(&jcr->dir_impl->nextrun_ready);
+    jcr->dir_impl->nextrun_ready_inited = false;
   }
 
   if (jcr->db_batch) {
@@ -1557,24 +1572,26 @@ void DirdFreeJcr(JobControlRecord* jcr)
     jcr->db = NULL;
   }
 
-  if (jcr->impl->restore_tree_root) { FreeTree(jcr->impl->restore_tree_root); }
+  if (jcr->dir_impl->restore_tree_root) {
+    FreeTree(jcr->dir_impl->restore_tree_root);
+  }
 
-  if (jcr->impl->bsr) {
-    libbareos::FreeBsr(jcr->impl->bsr);
-    jcr->impl->bsr = NULL;
+  if (jcr->dir_impl->bsr) {
+    libbareos::FreeBsr(jcr->dir_impl->bsr);
+    jcr->dir_impl->bsr = NULL;
   }
 
   FreeAndNullPoolMemory(jcr->starttime_string);
-  FreeAndNullPoolMemory(jcr->impl->fname);
-  FreeAndNullPoolMemory(jcr->impl->res.pool_source);
-  FreeAndNullPoolMemory(jcr->impl->res.npool_source);
-  FreeAndNullPoolMemory(jcr->impl->res.rpool_source);
-  FreeAndNullPoolMemory(jcr->impl->res.wstore_source);
-  FreeAndNullPoolMemory(jcr->impl->res.rstore_source);
-  FreeAndNullPoolMemory(jcr->impl->res.catalog_source);
-  FreeAndNullPoolMemory(jcr->impl->FDSecureEraseCmd);
-  FreeAndNullPoolMemory(jcr->impl->SDSecureEraseCmd);
-  FreeAndNullPoolMemory(jcr->impl->vf_jobids);
+  FreeAndNullPoolMemory(jcr->dir_impl->fname);
+  FreeAndNullPoolMemory(jcr->dir_impl->res.pool_source);
+  FreeAndNullPoolMemory(jcr->dir_impl->res.npool_source);
+  FreeAndNullPoolMemory(jcr->dir_impl->res.rpool_source);
+  FreeAndNullPoolMemory(jcr->dir_impl->res.wstore_source);
+  FreeAndNullPoolMemory(jcr->dir_impl->res.rstore_source);
+  FreeAndNullPoolMemory(jcr->dir_impl->res.catalog_source);
+  FreeAndNullPoolMemory(jcr->dir_impl->FDSecureEraseCmd);
+  FreeAndNullPoolMemory(jcr->dir_impl->SDSecureEraseCmd);
+  FreeAndNullPoolMemory(jcr->dir_impl->vf_jobids);
 
   // Delete lists setup to hold storage pointers
   FreeRwstorage(jcr);
@@ -1588,9 +1605,9 @@ void DirdFreeJcr(JobControlRecord* jcr)
 
   FreePlugins(jcr); /* release instantiated plugins */
 
-  if (jcr->impl) {
-    delete jcr->impl;
-    jcr->impl = nullptr;
+  if (jcr->dir_impl) {
+    delete jcr->dir_impl;
+    jcr->dir_impl = nullptr;
   }
 
   Dmsg0(200, "End dird FreeJcr\n");
@@ -1634,10 +1651,10 @@ void GetJobStorage(UnifiedStorageResource* store,
  */
 void SetJcrDefaults(JobControlRecord* jcr, JobResource* job)
 {
-  jcr->impl->res.job = job;
+  jcr->dir_impl->res.job = job;
   jcr->setJobType(job->JobType);
   jcr->setJobProtocol(job->Protocol);
-  jcr->JobStatus = JS_Created;
+  jcr->setJobStatus(JS_Created);
 
   switch (jcr->getJobType()) {
     case JT_ADMIN:
@@ -1651,18 +1668,18 @@ void SetJcrDefaults(JobControlRecord* jcr, JobResource* job)
       break;
   }
 
-  if (!jcr->impl->fname) { jcr->impl->fname = GetPoolMemory(PM_FNAME); }
-  if (!jcr->impl->res.pool_source) {
-    jcr->impl->res.pool_source = GetPoolMemory(PM_MESSAGE);
-    PmStrcpy(jcr->impl->res.pool_source, _("unknown source"));
+  if (!jcr->dir_impl->fname) { jcr->dir_impl->fname = GetPoolMemory(PM_FNAME); }
+  if (!jcr->dir_impl->res.pool_source) {
+    jcr->dir_impl->res.pool_source = GetPoolMemory(PM_MESSAGE);
+    PmStrcpy(jcr->dir_impl->res.pool_source, _("unknown source"));
   }
-  if (!jcr->impl->res.npool_source) {
-    jcr->impl->res.npool_source = GetPoolMemory(PM_MESSAGE);
-    PmStrcpy(jcr->impl->res.npool_source, _("unknown source"));
+  if (!jcr->dir_impl->res.npool_source) {
+    jcr->dir_impl->res.npool_source = GetPoolMemory(PM_MESSAGE);
+    PmStrcpy(jcr->dir_impl->res.npool_source, _("unknown source"));
   }
-  if (!jcr->impl->res.catalog_source) {
-    jcr->impl->res.catalog_source = GetPoolMemory(PM_MESSAGE);
-    PmStrcpy(jcr->impl->res.catalog_source, _("unknown source"));
+  if (!jcr->dir_impl->res.catalog_source) {
+    jcr->dir_impl->res.catalog_source = GetPoolMemory(PM_MESSAGE);
+    PmStrcpy(jcr->dir_impl->res.catalog_source, _("unknown source"));
   }
 
   jcr->JobPriority = job->Priority;
@@ -1673,48 +1690,48 @@ void SetJcrDefaults(JobControlRecord* jcr, JobResource* job)
   } else if (job->pool) {
     CopyRwstorage(jcr, job->pool->storage, _("Pool resource"));
   }
-  jcr->impl->res.client = job->client;
+  jcr->dir_impl->res.client = job->client;
 
-  if (jcr->impl->res.client) {
+  if (jcr->dir_impl->res.client) {
     if (!jcr->client_name) { jcr->client_name = GetPoolMemory(PM_NAME); }
-    PmStrcpy(jcr->client_name, jcr->impl->res.client->resource_name_);
+    PmStrcpy(jcr->client_name, jcr->dir_impl->res.client->resource_name_);
   }
 
-  PmStrcpy(jcr->impl->res.pool_source, _("Job resource"));
-  jcr->impl->res.pool = job->pool;
-  jcr->impl->res.full_pool = job->full_pool;
-  jcr->impl->res.inc_pool = job->inc_pool;
-  jcr->impl->res.diff_pool = job->diff_pool;
+  PmStrcpy(jcr->dir_impl->res.pool_source, _("Job resource"));
+  jcr->dir_impl->res.pool = job->pool;
+  jcr->dir_impl->res.full_pool = job->full_pool;
+  jcr->dir_impl->res.inc_pool = job->inc_pool;
+  jcr->dir_impl->res.diff_pool = job->diff_pool;
 
   if (job->pool && job->pool->catalog) {
-    jcr->impl->res.catalog = job->pool->catalog;
-    PmStrcpy(jcr->impl->res.catalog_source, _("Pool resource"));
+    jcr->dir_impl->res.catalog = job->pool->catalog;
+    PmStrcpy(jcr->dir_impl->res.catalog_source, _("Pool resource"));
   } else {
     if (job->catalog) {
-      jcr->impl->res.catalog = job->catalog;
-      PmStrcpy(jcr->impl->res.catalog_source, _("Job resource"));
+      jcr->dir_impl->res.catalog = job->catalog;
+      PmStrcpy(jcr->dir_impl->res.catalog_source, _("Job resource"));
     } else {
       if (job->client) {
-        jcr->impl->res.catalog = job->client->catalog;
-        PmStrcpy(jcr->impl->res.catalog_source, _("Client resource"));
+        jcr->dir_impl->res.catalog = job->client->catalog;
+        PmStrcpy(jcr->dir_impl->res.catalog_source, _("Client resource"));
       } else {
-        jcr->impl->res.catalog
+        jcr->dir_impl->res.catalog
             = (CatalogResource*)my_config->GetNextRes(R_CATALOG, NULL);
-        PmStrcpy(jcr->impl->res.catalog_source, _("Default catalog"));
+        PmStrcpy(jcr->dir_impl->res.catalog_source, _("Default catalog"));
       }
     }
   }
 
-  jcr->impl->res.fileset = job->fileset;
+  jcr->dir_impl->res.fileset = job->fileset;
   jcr->accurate = job->accurate;
-  jcr->impl->res.messages = job->messages;
-  jcr->impl->spool_data = job->spool_data;
-  jcr->impl->spool_size = job->spool_size;
-  jcr->impl->IgnoreDuplicateJobChecking = job->IgnoreDuplicateJobChecking;
-  jcr->impl->MaxRunSchedTime = job->MaxRunSchedTime;
+  jcr->dir_impl->res.messages = job->messages;
+  jcr->dir_impl->spool_data = job->spool_data;
+  jcr->dir_impl->spool_size = job->spool_size;
+  jcr->dir_impl->IgnoreDuplicateJobChecking = job->IgnoreDuplicateJobChecking;
+  jcr->dir_impl->MaxRunSchedTime = job->MaxRunSchedTime;
 
-  if (jcr->impl->backup_format) { free(jcr->impl->backup_format); }
-  jcr->impl->backup_format = strdup(job->backup_format);
+  if (jcr->dir_impl->backup_format) { free(jcr->dir_impl->backup_format); }
+  jcr->dir_impl->backup_format = strdup(job->backup_format);
 
   if (jcr->RestoreBootstrap) {
     free(jcr->RestoreBootstrap);
@@ -1727,7 +1744,7 @@ void SetJcrDefaults(JobControlRecord* jcr, JobResource* job)
   }
 
   // This can be overridden by Console program
-  jcr->impl->res.verify_job = job->verify_job;
+  jcr->dir_impl->res.verify_job = job->verify_job;
 
   // If no default level given, set one
   if (jcr->getJobLevel() == 0) {
@@ -1752,12 +1769,12 @@ void SetJcrDefaults(JobControlRecord* jcr, JobResource* job)
 void CreateClones(JobControlRecord* jcr)
 {
   // Fire off any clone jobs (run directives)
-  Dmsg2(900, "cloned=%d run_cmds=%p\n", jcr->impl->cloned,
-        jcr->impl->res.job->run_cmds);
-  if (!jcr->impl->cloned && jcr->impl->res.job->run_cmds) {
-    char* runcmd = nullptr;
+  Dmsg2(900, "cloned=%d run_cmds=%p\n", jcr->dir_impl->cloned,
+        jcr->dir_impl->res.job->run_cmds);
+  if (!jcr->dir_impl->cloned && jcr->dir_impl->res.job->run_cmds) {
+    const char* runcmd = nullptr;
     JobId_t jobid;
-    JobResource* job = jcr->impl->res.job;
+    JobResource* job = jcr->dir_impl->res.job;
     POOLMEM* cmd = GetPoolMemory(PM_FNAME);
 
     UaContext* ua = new_ua_context(jcr);
@@ -1782,7 +1799,7 @@ void CreateClones(JobControlRecord* jcr)
 }
 
 /**
- * Given: a JobId in jcr->impl_->previous_jr.JobId,
+ * Given: a JobId in jcr->dir_impl_->previous_jr.JobId,
  *  this subroutine writes a bsr file to restore that job.
  * Returns: -1 on error
  *           number of files if OK
@@ -1795,24 +1812,24 @@ int CreateRestoreBootstrapFile(JobControlRecord* jcr)
 
   rx.bsr = std::make_unique<RestoreBootstrapRecord>();
   rx.JobIds = (char*)"";
-  rx.bsr->JobId = jcr->impl->previous_jr.JobId;
+  rx.bsr->JobId = jcr->dir_impl->previous_jr.JobId;
   ua = new_ua_context(jcr);
   if (!AddVolumeInformationToBsr(ua, rx.bsr.get())) {
     files = -1;
     goto bail_out;
   }
-  for (uint32_t fi = 1; fi <= jcr->impl->previous_jr.JobFiles; fi++) {
+  for (uint32_t fi = 1; fi <= jcr->dir_impl->previous_jr.JobFiles; fi++) {
     rx.bsr->fi->Add(fi);
   }
-  jcr->impl->ExpectedFiles = WriteBsrFile(ua, rx);
-  if (jcr->impl->ExpectedFiles == 0) {
+  jcr->dir_impl->ExpectedFiles = WriteBsrFile(ua, rx);
+  if (jcr->dir_impl->ExpectedFiles == 0) {
     files = 0;
     goto bail_out;
   }
   FreeUaContext(ua);
   rx.bsr.reset(nullptr);
-  jcr->impl->needs_sd = true;
-  return jcr->impl->ExpectedFiles;
+  jcr->dir_impl->needs_sd = true;
+  return jcr->dir_impl->ExpectedFiles;
 
 bail_out:
   FreeUaContext(ua);

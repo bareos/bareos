@@ -33,7 +33,7 @@
 #include "lib/crypto_cache.h"
 #include "stored/acquire.h"
 #include "stored/butil.h"
-#include "stored/jcr_private.h"
+#include "stored/stored_jcr_impl.h"
 #include "stored/label.h"
 #include "stored/mount.h"
 #include "stored/read_record.h"
@@ -195,9 +195,9 @@ int main(int argc, char* argv[])
                     inputVolumes, true); /* read device */
   if (!in_jcr) { exit(1); }
 
-  in_jcr->impl->ignore_label_errors = ignore_label_errors;
+  in_jcr->sd_impl->ignore_label_errors = ignore_label_errors;
 
-  in_dev = in_jcr->impl->dcr->dev;
+  in_dev = in_jcr->sd_impl->dcr->dev;
   if (!in_dev) { exit(1); }
 
   // Setup output device for writing
@@ -208,29 +208,29 @@ int main(int argc, char* argv[])
                      outputVolumes, false); /* write device */
   if (!out_jcr) { exit(1); }
 
-  out_dev = out_jcr->impl->dcr->dev;
+  out_dev = out_jcr->sd_impl->dcr->dev;
   if (!out_dev) { exit(1); }
 
   Dmsg0(100, "About to acquire device for writing\n");
 
   // For we must now acquire the device for writing
   out_dev->rLock(false);
-  if (!out_dev->open(out_jcr->impl->dcr, DeviceMode::OPEN_READ_WRITE)) {
+  if (!out_dev->open(out_jcr->sd_impl->dcr, DeviceMode::OPEN_READ_WRITE)) {
     Emsg1(M_FATAL, 0, _("dev open failed: %s\n"), out_dev->errmsg);
     out_dev->Unlock();
     exit(1);
   }
   out_dev->Unlock();
-  if (!AcquireDeviceForAppend(out_jcr->impl->dcr)) {
+  if (!AcquireDeviceForAppend(out_jcr->sd_impl->dcr)) {
     FreeJcr(in_jcr);
     exit(1);
   }
-  out_block = out_jcr->impl->dcr->block;
+  out_block = out_jcr->sd_impl->dcr->block;
 
-  bool ok = ReadRecords(in_jcr->impl->dcr, RecordCb, MountNextReadVolume);
+  bool ok = ReadRecords(in_jcr->sd_impl->dcr, RecordCb, MountNextReadVolume);
 
   if (ok || out_dev->CanWrite()) {
-    if (!out_jcr->impl->dcr->WriteBlockToDevice()) {
+    if (!out_jcr->sd_impl->dcr->WriteBlockToDevice()) {
       Pmsg0(000, _("Write of last block failed.\n"));
     }
   }
@@ -285,10 +285,10 @@ static bool RecordCb(DeviceControlRecord* in_dcr, DeviceRecord* rec)
           /* Skipping record, because does not match BootStrapRecord filter */
           return true;
         }
-        while (!WriteRecordToBlock(out_jcr->impl->dcr, rec)) {
+        while (!WriteRecordToBlock(out_jcr->sd_impl->dcr, rec)) {
           Dmsg2(150, "!WriteRecordToBlock data_len=%d rem=%d\n", rec->data_len,
                 rec->remainder);
-          if (!out_jcr->impl->dcr->WriteBlockToDevice()) {
+          if (!out_jcr->sd_impl->dcr->WriteBlockToDevice()) {
             Dmsg2(90, "Got WriteBlockToDev error on device %s: ERR=%s\n",
                   out_dev->print_name(), out_dev->bstrerror());
             Jmsg(out_jcr, M_FATAL, 0, _("Cannot fixup device error. %s\n"),
@@ -296,7 +296,7 @@ static bool RecordCb(DeviceControlRecord* in_dcr, DeviceRecord* rec)
             return false;
           }
         }
-        if (!out_jcr->impl->dcr->WriteBlockToDevice()) {
+        if (!out_jcr->sd_impl->dcr->WriteBlockToDevice()) {
           Dmsg2(90, "Got WriteBlockToDev error on device %s: ERR=%s\n",
                 out_dev->print_name(), out_dev->bstrerror());
           Jmsg(out_jcr, M_FATAL, 0, _("Cannot fixup device error. %s\n"),
@@ -321,10 +321,10 @@ static bool RecordCb(DeviceControlRecord* in_dcr, DeviceRecord* rec)
     return true;
   }
   records++;
-  while (!WriteRecordToBlock(out_jcr->impl->dcr, rec)) {
+  while (!WriteRecordToBlock(out_jcr->sd_impl->dcr, rec)) {
     Dmsg2(150, "!WriteRecordToBlock data_len=%d rem=%d\n", rec->data_len,
           rec->remainder);
-    if (!out_jcr->impl->dcr->WriteBlockToDevice()) {
+    if (!out_jcr->sd_impl->dcr->WriteBlockToDevice()) {
       Dmsg2(90, "Got WriteBlockToDev error on device %s: ERR=%s\n",
             out_dev->print_name(), out_dev->bstrerror());
       Jmsg(out_jcr, M_FATAL, 0, _("Cannot fixup device error. %s\n"),

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,7 +27,7 @@
 #include "include/bareos.h"
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
-#include "filed/jcr_private.h"
+#include "filed/filed_jcr_impl.h"
 #include "filed/authenticate.h"
 #include "lib/bnet.h"
 #include "lib/bsock.h"
@@ -84,15 +84,15 @@ void* handle_stored_connection(BareosSocket* sd)
   if (!AuthenticateStoragedaemon(jcr)) {
     Dmsg1(50, "Authentication failed Job %s\n", jcr->Job);
     Jmsg(jcr, M_FATAL, 0, _("Unable to authenticate Storage daemon\n"));
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   } else {
     Dmsg2(50, "OK Authentication jid=%u Job %s\n", (uint32_t)jcr->JobId,
           jcr->Job);
   }
 
   if (!jcr->max_bandwidth) {
-    if (jcr->impl->director->max_bandwidth_per_job) {
-      jcr->max_bandwidth = jcr->impl->director->max_bandwidth_per_job;
+    if (jcr->fd_impl->director->max_bandwidth_per_job) {
+      jcr->max_bandwidth = jcr->fd_impl->director->max_bandwidth_per_job;
     } else if (me->max_bandwidth_per_job) {
       jcr->max_bandwidth = me->max_bandwidth_per_job;
     }

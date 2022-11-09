@@ -704,11 +704,13 @@ bool BareosDb::CreateFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr)
   fsr->FileSetId = 0;
   if (QUERY_DB(jcr, cmd)) {
     num_rows = SqlNumRows();
+
     if (num_rows > 1) {
-      Mmsg1(errmsg, _("More than one FileSet!: %d\n"), num_rows);
+      Mmsg2(errmsg, _("More than one FileSet! %s: %d\n"), esc_fs, num_rows);
       Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
     }
     if (num_rows >= 1) {
+      // fileset record found
       if ((row = SqlFetchRow()) == NULL) {
         Mmsg1(errmsg, _("error fetching FileSet row: ERR=%s\n"),
               sql_strerror());
@@ -722,8 +724,30 @@ bool BareosDb::CreateFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr)
       } else {
         bstrncpy(fsr->cCreateTime, row[1], sizeof(fsr->cCreateTime));
       }
+      // Update existing fileset record to make sure the fileset text is
+      // inserted
+      PoolMem esc_filesettext(PM_MESSAGE);
+
+      len = strlen(fsr->FileSetText);
+      esc_filesettext.check_size(len * 2 + 1);
+      EscapeString(jcr, esc_filesettext.c_str(), fsr->FileSetText, len);
+
+      Mmsg(cmd,
+           "UPDATE FileSet SET (FileSet,MD5,CreateTime,FileSetText) "
+           "= ('%s','%s','%s','%s') WHERE FileSet='%s' AND MD5='%s' ",
+           esc_fs, esc_md5, fsr->cCreateTime, esc_filesettext.c_str(), esc_fs,
+           esc_md5);
+      if (QUERY_DB(jcr, cmd)) {
+        SqlFreeResult();
+        return true;
+      } else {
+        Mmsg1(errmsg, _("error updating FileSet row: ERR=%s\n"),
+              sql_strerror());
+        Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
+        SqlFreeResult();
+        return false;
+      }
       SqlFreeResult();
-      return true;
     }
     SqlFreeResult();
   }
@@ -739,7 +763,6 @@ bool BareosDb::CreateFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr)
     len = strlen(fsr->FileSetText);
     esc_filesettext.check_size(len * 2 + 1);
     EscapeString(jcr, esc_filesettext.c_str(), fsr->FileSetText, len);
-
     Mmsg(cmd,
          "INSERT INTO FileSet (FileSet,MD5,CreateTime,FileSetText) "
          "VALUES ('%s','%s','%s','%s')",
@@ -779,7 +802,7 @@ bool BareosDb::CreateFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr)
 bool BareosDb::WriteBatchFileRecords(JobControlRecord* jcr)
 {
   bool retval = false;
-  int JobStatus = jcr->JobStatus;
+  int JobStatus = jcr->getJobStatus();
 
   if (!jcr->batch_started) { /* no files to backup ? */
     Dmsg0(50, "db_create_file_record : no files\n");
@@ -788,7 +811,7 @@ bool BareosDb::WriteBatchFileRecords(JobControlRecord* jcr)
 
   Dmsg1(50, "db_create_file_record changes=%u\n", changes);
 
-  jcr->JobStatus = JS_AttrInserting;
+  jcr->setJobStatus(JS_AttrInserting);
 
   Jmsg(jcr, M_INFO, 0,
        "Insert of attributes batch table with %u entries start\n",
@@ -827,7 +850,7 @@ bool BareosDb::WriteBatchFileRecords(JobControlRecord* jcr)
   }
   /* clang-format on */
 
-  jcr->JobStatus = JobStatus; /* reset entry status */
+  jcr->setJobStatus(JobStatus); /* reset entry status */
   Jmsg(jcr, M_INFO, 0, "Insert of attributes batch table done\n");
   retval = true;
 
@@ -902,7 +925,6 @@ bool BareosDb::CreateFileAttributesRecord(JobControlRecord* jcr,
   DbLocker _{this};
   Dmsg1(dbglevel, "Fname=%s\n", ar->fname);
   Dmsg0(dbglevel, "put_file_into_catalog\n");
-
   SplitPathAndFile(jcr, ar->fname);
 
   if (!CreatePathRecord(jcr, ar)) { return false; }

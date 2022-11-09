@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,7 +29,7 @@
 #include "include/bareos.h"
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
-#include "filed/jcr_private.h"
+#include "filed/filed_jcr_impl.h"
 #include "lib/bsock.h"
 #include "lib/bget_msg.h"
 #include "lib/bnet.h"
@@ -62,11 +62,11 @@ void DoVerifyVolume(JobControlRecord* jcr)
   sd = jcr->store_bsock;
   if (!sd) {
     Jmsg(jcr, M_FATAL, 0, _("Storage command not issued before Verify.\n"));
-    jcr->setJobStatus(JS_FatalError);
+    jcr->setJobStatusWithPriorityCheck(JS_FatalError);
     return;
   }
   dir = jcr->dir_bsock;
-  jcr->setJobStatus(JS_Running);
+  jcr->setJobStatusWithPriorityCheck(JS_Running);
 
   LockRes(my_config);
   ClientResource* client
@@ -79,7 +79,7 @@ void DoVerifyVolume(JobControlRecord* jcr)
     buf_size = 0; /* use default */
   }
   if (!BnetSetBufferSize(sd, buf_size, BNET_SETBUF_WRITE)) {
-    jcr->setJobStatus(JS_FatalError);
+    jcr->setJobStatusWithPriorityCheck(JS_FatalError);
     return;
   }
   jcr->buf_size = sd->message_length;
@@ -166,8 +166,8 @@ void DoVerifyVolume(JobControlRecord* jcr)
         }
         jcr->lock();
         jcr->JobFiles++;
-        jcr->impl->num_files_examined++;
-        PmStrcpy(jcr->impl->last_fname, fname); /* last file examined */
+        jcr->fd_impl->num_files_examined++;
+        PmStrcpy(jcr->fd_impl->last_fname, fname); /* last file examined */
         jcr->unlock();
 
         /*
@@ -249,7 +249,7 @@ void DoVerifyVolume(JobControlRecord* jcr)
       case STREAM_RESTORE_OBJECT:
         jcr->lock();
         jcr->JobFiles++;
-        jcr->impl->num_files_examined++;
+        jcr->fd_impl->num_files_examined++;
         jcr->unlock();
 
         Dmsg2(400, "send inx=%d STREAM_RESTORE_OBJECT-%d\n", jcr->JobFiles,
@@ -264,11 +264,11 @@ void DoVerifyVolume(JobControlRecord* jcr)
 
     } /* end switch */
   }   /* end while bnet_get */
-  jcr->setJobStatus(JS_Terminated);
+  jcr->setJobStatusWithPriorityCheck(JS_Terminated);
   goto ok_out;
 
 bail_out:
-  jcr->setJobStatus(JS_ErrorTerminated);
+  jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
 
 ok_out:
   CleanupCompression(jcr);

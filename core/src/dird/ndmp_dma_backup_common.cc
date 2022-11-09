@@ -28,7 +28,7 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/backup.h"
-#include "dird/jcr_private.h"
+#include "dird/director_jcr_impl.h"
 #include "dird/job.h"
 #include "dird/ndmp_dma_backup_common.h"
 #include "lib/edit.h"
@@ -85,8 +85,8 @@ bool FillBackupEnvironment(JobControlRecord* jcr,
     char text_level[50];
 
     // Set the dump level for the backup.
-    jcr->impl->DumpLevel = NativeToNdmpLevel(jcr, filesystem);
-    job->bu_level = jcr->impl->DumpLevel;
+    jcr->dir_impl->DumpLevel = NativeToNdmpLevel(jcr, filesystem);
+    job->bu_level = jcr->dir_impl->DumpLevel;
     if (job->bu_level == -1) { return false; }
 
     pv.name = ndmp_env_keywords[NDMP_ENV_KW_LEVEL];
@@ -167,7 +167,7 @@ bool FillBackupEnvironment(JobControlRecord* jcr,
   if (jcr->store_bsock) {
     if (nbf_options && nbf_options->uses_level) {
       Mmsg(tape_device, "%s@%s%%%d", jcr->sd_auth_key, filesystem,
-           jcr->impl->DumpLevel);
+           jcr->dir_impl->DumpLevel);
     } else {
       Mmsg(tape_device, "%s@%s", jcr->sd_auth_key, filesystem);
     }
@@ -183,7 +183,7 @@ int NativeToNdmpLevel(JobControlRecord* jcr, char* filesystem)
 {
   int level = -1;
 
-  if (!jcr->db->CreateNdmpLevelMapping(jcr, &jcr->impl->jr, filesystem)) {
+  if (!jcr->db->CreateNdmpLevelMapping(jcr, &jcr->dir_impl->jr, filesystem)) {
     return -1;
   }
 
@@ -195,7 +195,7 @@ int NativeToNdmpLevel(JobControlRecord* jcr, char* filesystem)
       level = 1;
       break;
     case L_INCREMENTAL:
-      level = jcr->db->GetNdmpLevelMapping(jcr, &jcr->impl->jr, filesystem);
+      level = jcr->db->GetNdmpLevelMapping(jcr, &jcr->dir_impl->jr, filesystem);
       break;
     default:
       Jmsg(jcr, M_FATAL, 0, _("Illegal Job Level %c for NDMP Job\n"),
@@ -220,7 +220,7 @@ void RegisterCallbackHooks(struct ndmlog* ixlog)
 #  ifdef HAVE_LMDB
   NIS* nis = (NIS*)ixlog->ctx;
 
-  if (nis->jcr->impl->res.client->ndmp_use_lmdb) {
+  if (nis->jcr->dir_impl->res.client->ndmp_use_lmdb) {
     NdmpFhdbLmdbRegister(ixlog);
   } else {
     NdmpFhdbMemRegister(ixlog);
@@ -235,7 +235,7 @@ void UnregisterCallbackHooks(struct ndmlog* ixlog)
 #  ifdef HAVE_LMDB
   NIS* nis = (NIS*)ixlog->ctx;
 
-  if (nis->jcr->impl->res.client->ndmp_use_lmdb) {
+  if (nis->jcr->dir_impl->res.client->ndmp_use_lmdb) {
     NdmpFhdbLmdbUnregister(ixlog);
   } else {
     NdmpFhdbMemUnregister(ixlog);
@@ -250,7 +250,7 @@ void ProcessFhdb(struct ndmlog* ixlog)
 #  ifdef HAVE_LMDB
   NIS* nis = (NIS*)ixlog->ctx;
 
-  if (nis->jcr->impl->res.client->ndmp_use_lmdb) {
+  if (nis->jcr->dir_impl->res.client->ndmp_use_lmdb) {
     NdmpFhdbLmdbProcessDb(ixlog);
   } else {
     NdmpFhdbMemProcessDb(ixlog);
@@ -271,20 +271,20 @@ void NdmpBackupCleanup(JobControlRecord* jcr, int TermCode)
   Dmsg2(100, "Enter NdmpBackupCleanup %d %c\n", TermCode, TermCode);
 
   if (jcr->is_JobStatus(JS_Terminated)
-      && (jcr->JobErrors || jcr->impl->SDErrors || jcr->JobWarnings)) {
+      && (jcr->JobErrors || jcr->dir_impl->SDErrors || jcr->JobWarnings)) {
     TermCode = JS_Warnings;
   }
 
   UpdateJobEnd(jcr, TermCode);
 
-  if (!jcr->db->GetJobRecord(jcr, &jcr->impl->jr)) {
+  if (!jcr->db->GetJobRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_WARNING, 0,
          _("Error getting Job record for Job report: ERR=%s"),
          jcr->db->strerror());
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   }
 
-  bstrncpy(cr.Name, jcr->impl->res.client->resource_name_, sizeof(cr.Name));
+  bstrncpy(cr.Name, jcr->dir_impl->res.client->resource_name_, sizeof(cr.Name));
   if (!jcr->db->GetClientRecord(jcr, &cr)) {
     Jmsg(jcr, M_WARNING, 0,
          _("Error getting Client record for Job report: ERR=%s"),
@@ -293,7 +293,7 @@ void NdmpBackupCleanup(JobControlRecord* jcr, int TermCode)
 
   UpdateBootstrapFile(jcr);
 
-  switch (jcr->JobStatus) {
+  switch (jcr->getJobStatus()) {
     case JS_Terminated:
       TermMsg = _("Backup OK");
       break;
@@ -306,8 +306,8 @@ void NdmpBackupCleanup(JobControlRecord* jcr, int TermCode)
       msg_type = M_ERROR; /* Generate error message */
       if (jcr->store_bsock) {
         jcr->store_bsock->signal(BNET_TERMINATE);
-        if (jcr->impl->SD_msg_chan_started) {
-          pthread_cancel(jcr->impl->SD_msg_chan);
+        if (jcr->dir_impl->SD_msg_chan_started) {
+          pthread_cancel(jcr->dir_impl->SD_msg_chan);
         }
       }
       break;
@@ -315,14 +315,15 @@ void NdmpBackupCleanup(JobControlRecord* jcr, int TermCode)
       TermMsg = _("Backup Canceled");
       if (jcr->store_bsock) {
         jcr->store_bsock->signal(BNET_TERMINATE);
-        if (jcr->impl->SD_msg_chan_started) {
-          pthread_cancel(jcr->impl->SD_msg_chan);
+        if (jcr->dir_impl->SD_msg_chan_started) {
+          pthread_cancel(jcr->dir_impl->SD_msg_chan);
         }
       }
       break;
     default:
       TermMsg = term_code;
-      sprintf(term_code, _("Inappropriate term code: %c\n"), jcr->JobStatus);
+      sprintf(term_code, _("Inappropriate term code: %c\n"),
+              jcr->getJobStatus());
       break;
   }
 

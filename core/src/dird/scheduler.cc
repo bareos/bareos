@@ -36,7 +36,7 @@
 #include "dird/scheduler.h"
 #include "dird/scheduler_private.h"
 #include "dird/scheduler_time_adapter.h"
-#include "dird/jcr_private.h"
+#include "dird/director_jcr_impl.h"
 #include "dird/job.h"
 #include "dird/storage.h"
 #include "lib/parse_conf.h"

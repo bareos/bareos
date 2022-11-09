@@ -26,7 +26,7 @@
 #include "lib/util.h"
 #include "lib/output_formatter_resource.h"
 
-const char* GetAsCString(void* item) { return (const char*)item; }
+const char* GetAsCString(const void* item) { return (const char*)item; }
 
 OutputFormatterResource::OutputFormatterResource(OutputFormatter* send,
                                                  int indent_level)
@@ -199,13 +199,13 @@ void OutputFormatterResource::KeyUnquotedString(const char* name,
 void OutputFormatterResource::KeyMultipleStringsInOneLine(
     const char* key,
     alist<const char*>* list,
-    std::function<const char*(void* item)> GetValue,
+    std::function<const char*(const void* item)> GetValue,
     bool as_comment,
     bool quoted_strings)
 {
   // Each member of the list is comma-separated
   int cnt = 0;
-  char* item = nullptr;
+  const char* item = nullptr;
   std::string format = "%s";
   if (quoted_strings) { format = "\"%s\""; }
 
@@ -255,13 +255,13 @@ void OutputFormatterResource::KeyMultipleStringsOnePerLineAddItem(
 void OutputFormatterResource::KeyMultipleStringsOnePerLine(
     const char* key,
     alist<const char*>* list,
-    std::function<const char*(void* item)> GetValue,
+    std::function<const char*(const void* item)> GetValue,
     bool as_comment,
     bool quoted_strings,
     bool escape_strings)
 {
   // One line for each member of the list
-  char* item = nullptr;
+  const char* item = nullptr;
 
   if ((list == NULL) or (list->empty())) {
     if (as_comment) {

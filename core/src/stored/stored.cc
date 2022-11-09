@@ -38,7 +38,7 @@
 #include "stored/autochanger.h"
 #include "stored/bsr.h"
 #include "stored/device.h"
-#include "stored/jcr_private.h"
+#include "stored/stored_jcr_impl.h"
 #include "stored/job.h"
 #include "stored/label.h"
 #include "stored/ndmp_tape.h"
@@ -505,7 +505,7 @@ extern "C" void* device_initialization(void*)
   jcr->setJobType(JT_SYSTEM);
 
   // Initialize job start condition variable
-  errstat = pthread_cond_init(&jcr->impl->job_start_wait, nullptr);
+  errstat = pthread_cond_init(&jcr->sd_impl->job_start_wait, nullptr);
   if (errstat != 0) {
     BErrNo be;
     Jmsg1(jcr, M_ABORT, 0,
@@ -514,7 +514,7 @@ extern "C" void* device_initialization(void*)
   }
 
   // Initialize job end condition variable
-  errstat = pthread_cond_init(&jcr->impl->job_end_wait, nullptr);
+  errstat = pthread_cond_init(&jcr->sd_impl->job_end_wait, nullptr);
   if (errstat != 0) {
     BErrNo be;
     Jmsg1(jcr, M_ABORT, 0,
@@ -534,9 +534,9 @@ extern "C" void* device_initialization(void*)
     }
 
     dcr = new StorageDaemonDeviceControlRecord;
-    jcr->impl->dcr = dcr;
+    jcr->sd_impl->dcr = dcr;
     SetupNewDcrDevice(jcr, dcr, dev, nullptr);
-    jcr->impl->dcr->SetWillWrite();
+    jcr->sd_impl->dcr->SetWillWrite();
     GeneratePluginEvent(jcr, bSdEventDeviceInit, dcr);
     if (dev->AttachedToAutochanger()) {
       // If autochanger set slot in dev structure
@@ -550,7 +550,7 @@ extern "C" void* device_initialization(void*)
               dev->print_name());
         Dmsg1(20, "Could not open device %s\n", dev->print_name());
         FreeDeviceControlRecord(dcr);
-        jcr->impl->dcr = nullptr;
+        jcr->sd_impl->dcr = nullptr;
         continue;
       }
     }
@@ -568,7 +568,7 @@ extern "C" void* device_initialization(void*)
       }
     }
     FreeDeviceControlRecord(dcr);
-    jcr->impl->dcr = nullptr;
+    jcr->sd_impl->dcr = nullptr;
   }
   FreeJcr(jcr);
   init_done = true;
@@ -613,23 +613,23 @@ static
     foreach_jcr (jcr) {
       BareosSocket* fd;
       if (jcr->JobId == 0) { continue; /* ignore console */ }
-      jcr->setJobStatus(JS_Canceled);
+      jcr->setJobStatusWithPriorityCheck(JS_Canceled);
       fd = jcr->file_bsock;
       if (fd) {
         fd->SetTimedOut();
         jcr->MyThreadSendSignal(TIMEOUT_SIGNAL);
         Dmsg1(100, "term_stored killing JobId=%d\n", jcr->JobId);
         /* ***FIXME*** wiffle through all dcrs */
-        if (jcr->impl->dcr && jcr->impl->dcr->dev
-            && jcr->impl->dcr->dev->blocked()) {
-          pthread_cond_broadcast(&jcr->impl->dcr->dev->wait_next_vol);
+        if (jcr->sd_impl->dcr && jcr->sd_impl->dcr->dev
+            && jcr->sd_impl->dcr->dev->blocked()) {
+          pthread_cond_broadcast(&jcr->sd_impl->dcr->dev->wait_next_vol);
           Dmsg1(100, "JobId=%u broadcast wait_device_release\n",
                 (uint32_t)jcr->JobId);
           ReleaseDeviceCond();
         }
-        if (jcr->impl->read_dcr && jcr->impl->read_dcr->dev
-            && jcr->impl->read_dcr->dev->blocked()) {
-          pthread_cond_broadcast(&jcr->impl->read_dcr->dev->wait_next_vol);
+        if (jcr->sd_impl->read_dcr && jcr->sd_impl->read_dcr->dev
+            && jcr->sd_impl->read_dcr->dev->blocked()) {
+          pthread_cond_broadcast(&jcr->sd_impl->read_dcr->dev->wait_next_vol);
           Dmsg1(100, "JobId=%u broadcast wait_device_release\n",
                 (uint32_t)jcr->JobId);
           ReleaseDeviceCond();
@@ -662,10 +662,6 @@ static
             device_resource->archive_device_string);
     }
   }
-
-#if defined(HAVE_DYNAMIC_SD_BACKENDS)
-  FlushAndCloseBackendDevices();
-#endif
 
   if (configfile) {
     free(configfile);

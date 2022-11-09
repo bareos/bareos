@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,7 +32,7 @@
 #include "include/bareos.h"
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
-#include "filed/jcr_private.h"
+#include "filed/filed_jcr_impl.h"
 
 #if defined(HAVE_LIBZ)
 #  include <zlib.h>
@@ -45,7 +45,7 @@ namespace filedaemon {
 // For compression we enable all used compressors in the fileset.
 bool AdjustCompressionBuffers(JobControlRecord* jcr)
 {
-  findFILESET* fileset = jcr->impl->ff->fileset;
+  findFILESET* fileset = jcr->fd_impl->ff->fileset;
   uint32_t compress_buf_size = 0;
 
   if (fileset) {
@@ -166,7 +166,7 @@ bool SetupCompressionContext(b_ctx& bctx)
               != Z_OK) {
             Jmsg(bctx.jcr, M_FATAL, 0,
                  _("Compression deflateParams error: %d\n"), zstat);
-            bctx.jcr->setJobStatus(JS_ErrorTerminated);
+            bctx.jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
             goto bail_out;
           }
         }
@@ -203,7 +203,7 @@ bool SetupCompressionContext(b_ctx& bctx)
               != Z_OK) {
             Jmsg(bctx.jcr, M_FATAL, 0,
                  _("Compression fastlzlibSetCompressor error: %d\n"), zstat);
-            bctx.jcr->setJobStatus(JS_ErrorTerminated);
+            bctx.jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
             goto bail_out;
           }
         }

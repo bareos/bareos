@@ -481,7 +481,7 @@ static bool SetupAutoDeflation(PluginContext* ctx, DeviceControlRecord* dcr)
           != Z_OK) {
         Jmsg(ctx, M_FATAL,
              _("autoxflate-sd: Compression deflateParams error: %d\n"), zstat);
-        jcr->setJobStatus(JS_ErrorTerminated);
+        jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
         goto bail_out;
       }
       break;
@@ -517,7 +517,7 @@ static bool SetupAutoDeflation(PluginContext* ctx, DeviceControlRecord* dcr)
              _("autoxflate-sd: Compression fastlzlibSetCompressor error: "
                "%d\n"),
              zstat);
-        jcr->setJobStatus(JS_ErrorTerminated);
+        jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
         goto bail_out;
       }
       break;

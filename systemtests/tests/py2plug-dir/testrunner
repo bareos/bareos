@@ -19,6 +19,9 @@ export TestName
 #shellcheck source=../environment.in
 . ./environment
 
+LSAN_OPTIONS=suppressions="$(pwd)/lsan-suppressions.txt"
+export LSAN_OPTIONS
+
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
 "${rscripts}"/cleanup

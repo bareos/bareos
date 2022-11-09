@@ -29,7 +29,7 @@
 
 
 #include "dird/dird_globals.h"
-#include "dird/jcr_private.h"
+#include "dird/director_jcr_impl.h"
 #include "dird/scheduler.h"
 #include "dird/dird_conf.h"
 #define DIRECTOR_DAEMON
@@ -144,7 +144,9 @@ void SimulatedTimeSource::ExecuteJob(JobControlRecord* jcr)
   list_of_job_execution_time_stamps.emplace_back(
       time_adapter->time_source_->SystemTime());
 
-  if (debug) { std::cout << jcr->impl->res.job->resource_name_ << std::endl; }
+  if (debug) {
+    std::cout << jcr->dir_impl->res.job->resource_name_ << std::endl;
+  }
 
   if (counter_of_number_of_jobs_run == maximum_number_of_jobs_run) {
     scheduler->Terminate();

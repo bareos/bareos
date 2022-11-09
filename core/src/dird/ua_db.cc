@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,7 +28,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
-#include "dird/jcr_private.h"
+#include "dird/director_jcr_impl.h"
 #include "dird/ua_db.h"
 #include "cats/sql_pooling.h"
 #include "dird/ua_select.h"
@@ -132,7 +132,7 @@ bool OpenDb(UaContext* ua, bool use_private)
   mult_db_conn = ua->catalog->mult_db_connections;
   if (use_private) { mult_db_conn = true; }
 
-  ua->jcr->impl->res.catalog = ua->catalog;
+  ua->jcr->dir_impl->res.catalog = ua->catalog;
   Dmsg0(100, "UA Open database\n");
   ua->db = DbSqlGetPooledConnection(
       ua->jcr, ua->catalog->db_driver, ua->catalog->db_name,

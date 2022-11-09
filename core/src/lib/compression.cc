@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -304,7 +304,7 @@ static bool compress_with_zlib(JobControlRecord* jcr,
 
   if ((zstat = deflate(pZlibStream, Z_FINISH)) != Z_STREAM_END) {
     Jmsg(jcr, M_FATAL, 0, _("Compression deflate error: %d\n"), zstat);
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return false;
   }
 
@@ -313,7 +313,7 @@ static bool compress_with_zlib(JobControlRecord* jcr,
   // Reset zlib stream to be able to begin from scratch again
   if ((zstat = deflateReset(pZlibStream)) != Z_OK) {
     Jmsg(jcr, M_FATAL, 0, _("Compression deflateReset error: %d\n"), zstat);
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return false;
   }
 
@@ -344,7 +344,7 @@ static bool compress_with_lzo(JobControlRecord* jcr,
   if (lzores != LZO_E_OK || *compress_len > max_compress_len) {
     // This should NEVER happen
     Jmsg(jcr, M_FATAL, 0, _("Compression LZO error: %d\n"), lzores);
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return false;
   }
 
@@ -376,7 +376,7 @@ static bool compress_with_fastlz(JobControlRecord* jcr,
   if ((zstat = fastlzlibCompress(pZfastStream, Z_FINISH)) != Z_STREAM_END) {
     Jmsg(jcr, M_FATAL, 0, _("Compression fastlzlibCompress error: %d\n"),
          zstat);
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return false;
   }
 
@@ -386,7 +386,7 @@ static bool compress_with_fastlz(JobControlRecord* jcr,
   if ((zstat = fastlzlibCompressReset(pZfastStream)) != Z_OK) {
     Jmsg(jcr, M_FATAL, 0, _("Compression fastlzlibCompressReset error: %d\n"),
          zstat);
-    jcr->setJobStatus(JS_ErrorTerminated);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return false;
   }
 

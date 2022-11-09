@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -52,7 +52,7 @@
 #include "stored/stored.h" /* pull in Storage Daemon headers */
 #include "stored/device.h"
 #include "stored/device_control_record.h"
-#include "stored/jcr_private.h"
+#include "stored/stored_jcr_impl.h"
 #include "stored/match_bsr.h"
 #include "lib/edit.h"
 #include "include/jcr.h"
@@ -167,7 +167,7 @@ bool FixupDeviceBlockWriteError(DeviceControlRecord* dcr, int retries)
   }
 
   /* Clear NewVol now because DirGetVolumeInfo() already done */
-  jcr->impl->dcr->NewVol = false;
+  jcr->sd_impl->dcr->NewVol = false;
   SetNewVolumeParameters(dcr);
 
   jcr->run_time += time(NULL) - wait_time; /* correct run time for mount wait */
@@ -225,7 +225,7 @@ void SetNewVolumeParameters(DeviceControlRecord* dcr)
     Jmsg1(jcr, M_ERROR, 0, "%s", jcr->errmsg);
   }
   SetNewFileParameters(dcr);
-  jcr->impl->NumWriteVolumes++;
+  jcr->sd_impl->NumWriteVolumes++;
   dcr->NewVol = false;
 }
 
@@ -305,9 +305,9 @@ BootStrapRecord* PositionDeviceToFirstFile(JobControlRecord* jcr,
    * Now find and position to first file and block
    *   on this tape.
    */
-  if (jcr->impl->read_session.bsr) {
-    jcr->impl->read_session.bsr->Reposition = true;
-    bsr = find_next_bsr(jcr->impl->read_session.bsr, dev);
+  if (jcr->sd_impl->read_session.bsr) {
+    jcr->sd_impl->read_session.bsr->Reposition = true;
+    bsr = find_next_bsr(jcr->sd_impl->read_session.bsr, dev);
     if (GetBsrStartAddr(bsr, &file, &block) > 0) {
       Jmsg(jcr, M_INFO, 0,
            _("Forward spacing Volume \"%s\" to file:block %u:%u.\n"),
@@ -331,15 +331,15 @@ bool TryDeviceRepositioning(JobControlRecord* jcr,
   BootStrapRecord* bsr;
   Device* dev = dcr->dev;
 
-  bsr = find_next_bsr(jcr->impl->read_session.bsr, dev);
-  if (bsr == NULL && jcr->impl->read_session.bsr->mount_next_volume) {
+  bsr = find_next_bsr(jcr->sd_impl->read_session.bsr, dev);
+  if (bsr == NULL && jcr->sd_impl->read_session.bsr->mount_next_volume) {
     Dmsg0(500, "Would mount next volume here\n");
     Dmsg2(500, "Current position (file:block) %u:%u\n", dev->file,
           dev->block_num);
-    jcr->impl->read_session.bsr->mount_next_volume = false;
+    jcr->sd_impl->read_session.bsr->mount_next_volume = false;
     if (!dev->AtEot()) {
       /* Set EOT flag to force mount of next Volume */
-      jcr->impl->read_session.mount_next_volume = true;
+      jcr->sd_impl->read_session.mount_next_volume = true;
       dev->SetEot();
     }
     rec->Block = 0;

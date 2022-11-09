@@ -91,5 +91,6 @@ std::string CreateDelimitedStringForSqlQueries(
 
 std::string TPAsString(const std::chrono::system_clock::time_point& tp);
 regex_t* StringToRegex(const char* input);
+void to_lower(std::string& s);
 
 #endif  // BAREOS_LIB_UTIL_H_

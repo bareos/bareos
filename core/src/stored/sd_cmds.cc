@@ -36,7 +36,7 @@
 #include "stored/stored_globals.h"
 #include "stored/append.h"
 #include "stored/authenticate.h"
-#include "stored/jcr_private.h"
+#include "stored/stored_jcr_impl.h"
 #include "stored/sd_stats.h"
 #include "stored/sd_stats.h"
 #include "lib/bnet.h"
@@ -134,9 +134,11 @@ void* handle_stored_connection(BareosSocket* sd, char* job_name)
           jcr->Job);
   }
 
-  if (!jcr->authenticated) { jcr->setJobStatus(JS_ErrorTerminated); }
+  if (!jcr->authenticated) {
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+  }
 
-  pthread_cond_signal(&jcr->impl->job_start_wait); /* wake waiting job */
+  pthread_cond_signal(&jcr->sd_impl->job_start_wait); /* wake waiting job */
   FreeJcr(jcr);
 
   return NULL;
@@ -174,7 +176,7 @@ static void DoSdCommands(JobControlRecord* jcr)
             } else {
               Jmsg0(jcr, M_FATAL, 0, _("Command error with SD, hanging up.\n"));
             }
-            jcr->setJobStatus(JS_ErrorTerminated);
+            jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
           }
           quit = true;
         }
@@ -223,7 +225,7 @@ bool DoListenRun(JobControlRecord* jcr)
    */
   lock_mutex(mutex);
   while (!jcr->authenticated && !JobCanceled(jcr)) {
-    errstat = pthread_cond_wait(&jcr->impl->job_start_wait, &mutex);
+    errstat = pthread_cond_wait(&jcr->sd_impl->job_start_wait, &mutex);
     if (errstat == EINVAL || errstat == EPERM) { break; }
     Dmsg1(800, "=== Auth cond errstat=%d\n", errstat);
   }
@@ -256,12 +258,12 @@ bool DoListenRun(JobControlRecord* jcr)
   jcr->end_time = time(NULL);
 
   DequeueMessages(jcr); /* send any queued messages */
-  jcr->setJobStatus(JS_Terminated);
+  jcr->setJobStatusWithPriorityCheck(JS_Terminated);
 
 cleanup:
   GeneratePluginEvent(jcr, bSdEventJobEnd);
 
-  dir->fsend(Job_end, jcr->Job, jcr->JobStatus, jcr->JobFiles,
+  dir->fsend(Job_end, jcr->Job, jcr->getJobStatus(), jcr->JobFiles,
              edit_uint64(jcr->JobBytes, ec1), jcr->JobErrors);
 
   dir->signal(BNET_EOD); /* send EOD to Director daemon */
@@ -278,13 +280,13 @@ static bool StartReplicationSession(JobControlRecord* jcr)
   BareosSocket* sd = jcr->store_bsock;
 
   Dmsg1(120, "Start replication session: %s", sd->msg);
-  if (jcr->impl->session_opened) {
+  if (jcr->sd_impl->session_opened) {
     PmStrcpy(jcr->errmsg, _("Attempt to open already open session.\n"));
     sd->fsend(NO_open);
     return false;
   }
 
-  jcr->impl->session_opened = true;
+  jcr->sd_impl->session_opened = true;
 
   // Send "Ticket" to Storage Daemon
   sd->fsend(OK_start_replicate, jcr->VolSessionId);
@@ -303,7 +305,7 @@ static bool ReplicateData(JobControlRecord* jcr)
   BareosSocket* sd = jcr->store_bsock;
 
   Dmsg1(120, "Replicate data: %s", sd->msg);
-  if (jcr->impl->session_opened) {
+  if (jcr->sd_impl->session_opened) {
     utime_t now;
 
     // Update the initial Job Statistics.
@@ -332,7 +334,7 @@ static bool EndReplicationSession(JobControlRecord* jcr)
   BareosSocket* sd = jcr->store_bsock;
 
   Dmsg1(120, "stored<stored: %s", sd->msg);
-  if (!jcr->impl->session_opened) {
+  if (!jcr->sd_impl->session_opened) {
     PmStrcpy(jcr->errmsg, _("Attempt to close non-open session.\n"));
     sd->fsend(NOT_opened);
     return false;

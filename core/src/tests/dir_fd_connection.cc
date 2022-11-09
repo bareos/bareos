@@ -39,7 +39,7 @@ TEST(DirectorToClientConnection, DoesNotConnectWhenDisabled)
   JobControlRecord* jcr
       = directordaemon::NewDirectorJcr(directordaemon::DirdFreeJcr);
 
-  jcr->impl->res.client = static_cast<directordaemon::ClientResource*>(
+  jcr->dir_impl->res.client = static_cast<directordaemon::ClientResource*>(
       directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT,
                                                 "fd-no-connection"));
   directordaemon::UaContext* ua = nullptr;

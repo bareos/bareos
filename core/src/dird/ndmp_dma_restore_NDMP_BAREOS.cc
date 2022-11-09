@@ -29,7 +29,7 @@
 #include "dird.h"
 #include "dird/dird_globals.h"
 #include "dird/getmsg.h"
-#include "dird/jcr_private.h"
+#include "dird/director_jcr_impl.h"
 #include "dird/msgchan.h"
 #include "dird/sd_cmds.h"
 #include "dird/storage.h"
@@ -69,7 +69,7 @@ static inline char* lookup_fileindex(JobControlRecord* jcr, int32_t FileIndex)
   TREE_NODE *node, *parent;
   PoolMem restore_pathname, tmp;
 
-  node = FirstTreeNode(jcr->impl->restore_tree_root);
+  node = FirstTreeNode(jcr->dir_impl->restore_tree_root);
   while (node) {
     // See if this is the wanted FileIndex.
     if (node->FileIndex == FileIndex) {
@@ -104,7 +104,7 @@ static inline int set_files_to_restore(JobControlRecord* jcr,
   TREE_NODE *node, *parent;
   PoolMem restore_pathname, tmp;
 
-  node = FirstTreeNode(jcr->impl->restore_tree_root);
+  node = FirstTreeNode(jcr->dir_impl->restore_tree_root);
   while (node) {
     // See if this is the wanted FileIndex and the user asked to extract it.
     if (node->FileIndex == FileIndex && node->extract) {
@@ -223,7 +223,7 @@ static inline bool fill_restore_environment(JobControlRecord* jcr,
   }
 
   // Lookup any meta tags that need to be added.
-  fileset = jcr->impl->res.fileset;
+  fileset = jcr->dir_impl->res.fileset;
   for (IncludeExcludeItem* ie : fileset->include_items) {
     // Loop over each file = entry of the fileset.
     for (int j = 0; j < ie->name_list.size(); j++) {
@@ -246,7 +246,7 @@ static inline bool fill_restore_environment(JobControlRecord* jcr,
   if (jcr->where) {
     restore_prefix = jcr->where;
   } else {
-    restore_prefix = jcr->impl->res.job->RestoreWhere;
+    restore_prefix = jcr->dir_impl->res.job->RestoreWhere;
   }
 
   if (!restore_prefix) { return false; }
@@ -315,7 +315,7 @@ bool DoNdmpRestoreInit(JobControlRecord* jcr)
 {
   FreeWstorage(jcr); /* we don't write */
 
-  if (!jcr->impl->restore_tree_root) {
+  if (!jcr->dir_impl->restore_tree_root) {
     Jmsg(jcr, M_FATAL, 0, _("Cannot NDMP restore without a file selection.\n"));
     return false;
   }
@@ -325,29 +325,31 @@ bool DoNdmpRestoreInit(JobControlRecord* jcr)
 
 static inline int NdmpWaitForJobTermination(JobControlRecord* jcr)
 {
-  jcr->setJobStatus(JS_Running);
+  jcr->setJobStatusWithPriorityCheck(JS_Running);
 
   /*
    * Force cancel in SD if failing, but not for Incomplete jobs
    * so that we let the SD despool.
    */
   Dmsg4(100, "cancel=%d FDJS=%d JS=%d SDJS=%d\n", jcr->IsCanceled(),
-        jcr->impl->FDJobStatus, jcr->JobStatus, jcr->impl->SDJobStatus);
-  if (jcr->IsCanceled() || (!jcr->impl->res.job->RescheduleIncompleteJobs)) {
-    Dmsg3(100, "FDJS=%d JS=%d SDJS=%d\n", jcr->impl->FDJobStatus,
-          jcr->JobStatus, jcr->impl->SDJobStatus);
+        jcr->dir_impl->FDJobStatus.load(), jcr->getJobStatus(),
+        jcr->dir_impl->SDJobStatus.load());
+  if (jcr->IsCanceled()
+      || (!jcr->dir_impl->res.job->RescheduleIncompleteJobs)) {
+    Dmsg3(100, "FDJS=%d JS=%d SDJS=%d\n", jcr->dir_impl->FDJobStatus.load(),
+          jcr->getJobStatus(), jcr->dir_impl->SDJobStatus.load());
     CancelStorageDaemonJob(jcr);
   }
 
   // Note, the SD stores in jcr->JobFiles/ReadBytes/JobBytes/JobErrors
   WaitForStorageDaemonTermination(jcr);
 
-  jcr->impl->FDJobStatus = JS_Terminated;
-  if (jcr->JobStatus != JS_Terminated) { return jcr->JobStatus; }
-  if (jcr->impl->FDJobStatus != JS_Terminated) {
-    return jcr->impl->FDJobStatus;
+  jcr->dir_impl->FDJobStatus = JS_Terminated;
+  if (jcr->getJobStatus() != JS_Terminated) { return jcr->getJobStatus(); }
+  if (jcr->dir_impl->FDJobStatus != JS_Terminated) {
+    return jcr->dir_impl->FDJobStatus;
   }
-  return jcr->impl->SDJobStatus;
+  return jcr->dir_impl->SDJobStatus;
 }
 
 /**
@@ -375,26 +377,26 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
   bool retval = false;
   int NdmpLoglevel;
 
-  if (jcr->impl->res.client->ndmp_loglevel > me->ndmp_loglevel) {
-    NdmpLoglevel = jcr->impl->res.client->ndmp_loglevel;
+  if (jcr->dir_impl->res.client->ndmp_loglevel > me->ndmp_loglevel) {
+    NdmpLoglevel = jcr->dir_impl->res.client->ndmp_loglevel;
   } else {
     NdmpLoglevel = me->ndmp_loglevel;
   }
 
   // We first parse the BootStrapRecord ourself so we know what to restore.
-  jcr->impl->bsr = libbareos::parse_bsr(jcr, jcr->RestoreBootstrap);
-  if (!jcr->impl->bsr) {
+  jcr->dir_impl->bsr = libbareos::parse_bsr(jcr, jcr->RestoreBootstrap);
+  if (!jcr->dir_impl->bsr) {
     Jmsg(jcr, M_FATAL, 0, _("Error parsing bootstrap file.\n"));
     goto bail_out;
   }
 
   // Setup all paired read storage.
   SetPairedStorage(jcr);
-  if (!jcr->impl->res.paired_read_write_storage) {
+  if (!jcr->dir_impl->res.paired_read_write_storage) {
     Jmsg(jcr, M_FATAL, 0,
          _("Read storage %s doesn't point to storage definition with paired "
            "storage option.\n"),
-         jcr->impl->res.read_storage->resource_name_);
+         jcr->dir_impl->res.read_storage->resource_name_);
     goto bail_out;
   }
 
@@ -405,7 +407,7 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
   memset(nis, 0, sizeof(NIS));
 
   // Read the bootstrap file
-  bsr = jcr->impl->bsr;
+  bsr = jcr->dir_impl->bsr;
   while (!feof(info.bs)) {
     if (!SelectNextRstore(jcr, info)) { goto cleanup; }
 
@@ -415,8 +417,8 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
      * we perform as part of the whole job. We only free the env_table between
      * every sub-restore.
      */
-    if (!NdmpBuildClientJob(jcr, jcr->impl->res.client,
-                            jcr->impl->res.paired_read_write_storage,
+    if (!NdmpBuildClientJob(jcr, jcr->dir_impl->res.client,
+                            jcr->dir_impl->res.paired_read_write_storage,
                             NDM_JOB_OP_EXTRACT, &ndmp_job)) {
       goto cleanup;
     }
@@ -428,7 +430,7 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
      *
      */
     Dmsg0(10, "Open connection to storage daemon\n");
-    jcr->setJobStatus(JS_WaitSD);
+    jcr->setJobStatusWithPriorityCheck(JS_WaitSD);
 
     // Start conversation with Storage daemon
     if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
@@ -437,11 +439,12 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
     sd = jcr->store_bsock;
 
     // Now start a job with the Storage daemon
-    if (!StartStorageDaemonJob(jcr, jcr->impl->res.read_storage_list, NULL)) {
+    if (!StartStorageDaemonJob(jcr, jcr->dir_impl->res.read_storage_list,
+                               NULL)) {
       goto cleanup;
     }
 
-    jcr->setJobStatus(JS_Running);
+    jcr->setJobStatusWithPriorityCheck(JS_Running);
 
     // Send the bootstrap file -- what Volumes/files to restore
     if (!SendBootstrapFile(jcr, sd, info)
@@ -470,13 +473,13 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
     bool first_run = true;
     bool next_sessid = true;
     bool next_fi = true;
-    int first_fi = jcr->impl->bsr->FileIndex->findex;
-    int last_fi = jcr->impl->bsr->FileIndex->findex2;
-    VolumeSessionInfo current_session{jcr->impl->bsr->sessid->sessid,
-                                      jcr->impl->bsr->sesstime->sesstime};
+    int first_fi = jcr->dir_impl->bsr->FileIndex->findex;
+    int last_fi = jcr->dir_impl->bsr->FileIndex->findex2;
+    VolumeSessionInfo current_session{jcr->dir_impl->bsr->sessid->sessid,
+                                      jcr->dir_impl->bsr->sesstime->sesstime};
     cnt = 0;
 
-    for (bsr = jcr->impl->bsr; bsr; bsr = bsr->next) {
+    for (bsr = jcr->dir_impl->bsr; bsr; bsr = bsr->next) {
       if (current_session.id != bsr->sessid->sessid) {
         current_session = {bsr->sessid->sessid, bsr->sesstime->sesstime};
         first_run = true;
@@ -526,7 +529,7 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
         if (jcr->store_bsock && cnt > 0) {
           jcr->store_bsock->fsend("nextrun");
           lock_mutex(mutex);
-          pthread_cond_wait(&jcr->impl->nextrun_ready, &mutex);
+          pthread_cond_wait(&jcr->dir_impl->nextrun_ready, &mutex);
           unlock_mutex(mutex);
         }
 
@@ -553,7 +556,7 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
         session_initialized = true;
 
         // Copy the actual job to perform.
-        jcr->impl->jr.FileIndex = current_fi;
+        jcr->dir_impl->jr.FileIndex = current_fi;
 
         memcpy(&ndmp_sess.control_acb->job, &ndmp_job,
                sizeof(struct ndm_job_param));
@@ -662,8 +665,8 @@ cleanup:
   CloseBootstrapFile(info);
 
 bail_out:
-  FreeTree(jcr->impl->restore_tree_root);
-  jcr->impl->restore_tree_root = NULL;
+  FreeTree(jcr->dir_impl->restore_tree_root);
+  jcr->dir_impl->restore_tree_root = NULL;
   return retval;
 }
 
@@ -673,14 +676,14 @@ bool DoNdmpRestore(JobControlRecord* jcr)
 {
   int status;
 
-  jcr->impl->jr.JobLevel = L_FULL; /* Full restore */
-  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->impl->jr)) {
+  jcr->dir_impl->jr.JobLevel = L_FULL; /* Full restore */
+  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
     goto bail_out;
   }
   Dmsg0(20, "Updated job start record\n");
 
-  Dmsg1(20, "RestoreJobId=%d\n", jcr->impl->res.job->RestoreJobId);
+  Dmsg1(20, "RestoreJobId=%d\n", jcr->dir_impl->res.job->RestoreJobId);
 
   // Validate the Job to have a NDMP client.
   if (!NdmpValidateClient(jcr)) { return false; }
