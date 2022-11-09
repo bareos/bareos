@@ -5,11 +5,15 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Breaking Changes
+- VMWare plugin now uses VDDK 8. As a result the minimum supported vSphere version is now 6.7.
+
 ### Documentation
 - Adapt VMware plugin documentation for update to VDDK 8 [PR #1292]
 
 ### Fixed
 - winbareos.nsi: fix working directory in configure.sed [PR #1290]
+- webui: fix pool link in job details formatter [PR #1304] [Issue #1489]
 
 ### Removed
 - packaging: do not build for EOL Ubuntu 16.04 anymore [PR #1290]
@@ -18,11 +22,10 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Changed
 - jstreegrid: remove handling of IE < 8 using navigator interface to avoid warnings in chrome [PR #1142]
-- doc: clarifies CheckFileChanges option not intended to be used with plugin [BUG #1452] [PR #1196]
+- doc: clarifies CheckFileChanges option not intended to be used with plugin [Issue #1452] [PR #1196]
 - build: switch from FreeBSD 13.0 to 13.1 [PR #1258]
 ### Fixed
 - webui: get volume and pool params from query instead of route [PR #1145]
-- webui: fix pool link in job details formatter [PR #1304] [BUG #1489]
 
 ### Security
 - webui: update moment.js to version 2.29.2 [PR #1157] [CVE-2022-24785](https://github.com/advisories/GHSA-8hfj-j24r-96c4)
@@ -334,6 +337,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [Issue #1329]: https://bugs.bareos.org/view.php?id=1329
 [Issue #1369]: https://bugs.bareos.org/view.php?id=1369
 [Issue #1374]: https://bugs.bareos.org/view.php?id=1374
+[Issue #1452]: https://bugs.bareos.org/view.php?id=1452
+[Issue #1489]: https://bugs.bareos.org/view.php?id=1489
 [PR #383]: https://github.com/bareos/bareos/pull/383
 [PR #384]: https://github.com/bareos/bareos/pull/384
 [PR #385]: https://github.com/bareos/bareos/pull/385
@@ -529,4 +534,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1145]: https://github.com/bareos/bareos/pull/1145
 [PR #1157]: https://github.com/bareos/bareos/pull/1157
 [PR #1196]: https://github.com/bareos/bareos/pull/1196
+[PR #1258]: https://github.com/bareos/bareos/pull/1258
+[PR #1290]: https://github.com/bareos/bareos/pull/1290
+[PR #1292]: https://github.com/bareos/bareos/pull/1292
+[PR #1304]: https://github.com/bareos/bareos/pull/1304
 [unreleased]: https://github.com/bareos/bareos/tree/master
