@@ -11,5 +11,8 @@ LIB_DEPENDS+=  libbareosndmp.so:sysutils/bareos.com-common
 LIB_DEPENDS+=  libbareosfind.so:sysutils/bareos.com-common
 LIB_DEPENDS+=  libbareossd.so:sysutils/bareos.com-common
 
+# optional overrides, used by build system.
+.-include "overrides.mk"
+
 .include "${MASTERDIR}/BareosPackageOnlyMakefile"
 .include "${MASTERDIR}/BareosCommonMakefile"
