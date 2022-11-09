@@ -32,7 +32,7 @@
 #include "include/bareos.h"
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
-#include "filed/jcr_private.h"
+#include "filed/filed_jcr_impl.h"
 #include "findlib/match.h"
 #include "lib/berrno.h"
 #include "lib/edit.h"
@@ -62,10 +62,12 @@ extern "C" char* job_code_callback_filed(JobControlRecord* jcr,
 
   switch (param[0]) {
     case 'D':
-      if (jcr->impl->director) { return jcr->impl->director->resource_name_; }
+      if (jcr->fd_impl->director) {
+        return jcr->fd_impl->director->resource_name_;
+      }
       break;
     case 'm':
-      return edit_uint64(jcr->impl->since_time, str);
+      return edit_uint64(jcr->fd_impl->since_time, str);
   }
 
   return NULL;
@@ -76,8 +78,8 @@ bool InitFileset(JobControlRecord* jcr)
   FindFilesPacket* ff;
   findFILESET* fileset;
 
-  if (!jcr->impl->ff) { return false; }
-  ff = jcr->impl->ff;
+  if (!jcr->fd_impl->ff) { return false; }
+  ff = jcr->fd_impl->ff;
   if (ff->fileset) { return false; }
   fileset = (findFILESET*)malloc(sizeof(findFILESET));
   *fileset = findFILESET{};
@@ -174,8 +176,8 @@ void AddFileToFileset(JobControlRecord* jcr,
 
 findIncludeExcludeItem* get_incexe(JobControlRecord* jcr)
 {
-  if (jcr->impl->ff && jcr->impl->ff->fileset) {
-    return jcr->impl->ff->fileset->incexe;
+  if (jcr->fd_impl->ff && jcr->fd_impl->ff->fileset) {
+    return jcr->fd_impl->ff->fileset->incexe;
   }
 
   return NULL;
@@ -183,14 +185,14 @@ findIncludeExcludeItem* get_incexe(JobControlRecord* jcr)
 
 void SetIncexe(JobControlRecord* jcr, findIncludeExcludeItem* incexe)
 {
-  findFILESET* fileset = jcr->impl->ff->fileset;
+  findFILESET* fileset = jcr->fd_impl->ff->fileset;
   fileset->incexe = incexe;
 }
 
 // Add a regex to the current fileset
 int AddRegexToFileset(JobControlRecord* jcr, const char* item, int type)
 {
-  findFOPTS* current_opts = start_options(jcr->impl->ff);
+  findFOPTS* current_opts = start_options(jcr->fd_impl->ff);
   regex_t* preg;
   int rc;
   char prbuf[500];
@@ -224,7 +226,7 @@ int AddRegexToFileset(JobControlRecord* jcr, const char* item, int type)
 // Add a wild card to the current fileset
 int AddWildToFileset(JobControlRecord* jcr, const char* item, int type)
 {
-  findFOPTS* current_opts = start_options(jcr->impl->ff);
+  findFOPTS* current_opts = start_options(jcr->fd_impl->ff);
 
   if (type == ' ') {
     current_opts->wild.append(strdup(item));
@@ -244,7 +246,7 @@ int AddWildToFileset(JobControlRecord* jcr, const char* item, int type)
 // Add options to the current fileset
 int AddOptionsToFileset(JobControlRecord* jcr, const char* item)
 {
-  findFOPTS* current_opts = start_options(jcr->impl->ff);
+  findFOPTS* current_opts = start_options(jcr->fd_impl->ff);
 
   SetOptions(current_opts, item);
 
@@ -253,7 +255,7 @@ int AddOptionsToFileset(JobControlRecord* jcr, const char* item)
 
 void AddFileset(JobControlRecord* jcr, const char* item)
 {
-  FindFilesPacket* ff = jcr->impl->ff;
+  FindFilesPacket* ff = jcr->fd_impl->ff;
   findFILESET* fileset = ff->fileset;
   int code, subcode;
   int state = fileset->state;
@@ -290,21 +292,21 @@ void AddFileset(JobControlRecord* jcr, const char* item)
   }
   switch (code) {
     case 'I':
-      (void)new_include(jcr->impl->ff->fileset);
+      (void)new_include(jcr->fd_impl->ff->fileset);
       break;
     case 'E':
-      (void)new_exclude(jcr->impl->ff->fileset);
+      (void)new_exclude(jcr->fd_impl->ff->fileset);
       break;
     case 'N': /* Null */
       state = state_none;
       break;
     case 'F': /* File */
       state = state_include;
-      AddFileToFileset(jcr, item, true, jcr->impl->ff->fileset);
+      AddFileToFileset(jcr, item, true, jcr->fd_impl->ff->fileset);
       break;
     case 'P': /* Plugin */
       state = state_include;
-      AddFileToFileset(jcr, item, false, jcr->impl->ff->fileset);
+      AddFileToFileset(jcr, item, false, jcr->fd_impl->ff->fileset);
       break;
     case 'R': /* Regex */
       state = AddRegexToFileset(jcr, item, subcode);
@@ -360,16 +362,16 @@ bool TermFileset(JobControlRecord* jcr)
 {
   findFILESET* fileset;
 
-  fileset = jcr->impl->ff->fileset;
+  fileset = jcr->fd_impl->ff->fileset;
 #ifdef HAVE_WIN32
   /*
    * Expand the fileset to include all drive letters when the fileset includes a
    * File = / entry.
    */
-  if (!expand_win32_fileset(jcr->impl->ff->fileset)) { return false; }
+  if (!expand_win32_fileset(jcr->fd_impl->ff->fileset)) { return false; }
 
   // Exclude entries in NotToBackup registry key
-  if (!exclude_win32_not_to_backup_registry_entries(jcr, jcr->impl->ff)) {
+  if (!exclude_win32_not_to_backup_registry_entries(jcr, jcr->fd_impl->ff)) {
     return false;
   }
 #endif
@@ -388,7 +390,7 @@ bool TermFileset(JobControlRecord* jcr)
     }
   }
 
-  return jcr->impl->ff->fileset->state != state_error;
+  return jcr->fd_impl->ff->fileset->state != state_error;
 }
 
 /**

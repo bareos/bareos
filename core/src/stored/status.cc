@@ -31,7 +31,7 @@
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
 #include "stored/device_control_record.h"
-#include "stored/jcr_private.h"
+#include "stored/stored_jcr_impl.h"
 #include "stored/spool.h"
 #include "stored/status.h"
 #include "lib/status_packet.h"
@@ -667,8 +667,8 @@ static void ListRunningJobs(StatusPacket* sp)
                  job_type_to_str(jcr->getJobType()), jcr->Job);
       sp->send(msg, len);
     }
-    dcr = jcr->impl->dcr;
-    rdcr = jcr->impl->read_dcr;
+    dcr = jcr->sd_impl->dcr;
+    rdcr = jcr->sd_impl->read_dcr;
     if ((dcr && dcr->device_resource) || (rdcr && rdcr->device_resource)) {
       bstrncpy(JobName, jcr->Job, sizeof(JobName));
       /* There are three periods after the Job name */
@@ -754,7 +754,7 @@ static inline void SendDriveReserveMessages(JobControlRecord* jcr,
   char* msg;
 
   jcr->lock();
-  msgs = jcr->impl->reserve_msgs;
+  msgs = jcr->sd_impl->reserve_msgs;
   if (!msgs || msgs->size() == 0) { goto bail_out; }
   for (i = msgs->size() - 1; i >= 0; i--) {
     msg = (char*)msgs->get(i);
@@ -782,7 +782,7 @@ static void ListJobsWaitingOnReservation(StatusPacket* sp)
   }
 
   foreach_jcr (jcr) {
-    if (!jcr->impl->reserve_msgs) { continue; }
+    if (!jcr->sd_impl->reserve_msgs) { continue; }
     SendDriveReserveMessages(jcr, sp);
   }
   endeach_jcr(jcr);

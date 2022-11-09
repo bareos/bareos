@@ -33,7 +33,7 @@
 #include "cats/cats.h"
 #include "dird/dird_conf.h"
 #include "dird/dird_globals.h"
-#include "dird/jcr_private.h"
+#include "dird/director_jcr_impl.h"
 #include "dird/job.h"
 #include "dird/run_on_incoming_connect_interval.h"
 #include "dird/scheduler.h"
@@ -145,7 +145,7 @@ static void SchedulerJobCallback(JobControlRecord* jcr)
   ++test_results.job_counter;
 
   // add job-name to map
-  test_results.job_names[jcr->impl->res.job->resource_name_]++;
+  test_results.job_names[jcr->dir_impl->res.job->resource_name_]++;
   FreeJcr(jcr);
 }
 

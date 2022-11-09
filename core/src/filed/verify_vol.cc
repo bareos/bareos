@@ -29,7 +29,7 @@
 #include "include/bareos.h"
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
-#include "filed/jcr_private.h"
+#include "filed/filed_jcr_impl.h"
 #include "lib/bsock.h"
 #include "lib/bget_msg.h"
 #include "lib/bnet.h"
@@ -166,8 +166,8 @@ void DoVerifyVolume(JobControlRecord* jcr)
         }
         jcr->lock();
         jcr->JobFiles++;
-        jcr->impl->num_files_examined++;
-        PmStrcpy(jcr->impl->last_fname, fname); /* last file examined */
+        jcr->fd_impl->num_files_examined++;
+        PmStrcpy(jcr->fd_impl->last_fname, fname); /* last file examined */
         jcr->unlock();
 
         /*
@@ -249,7 +249,7 @@ void DoVerifyVolume(JobControlRecord* jcr)
       case STREAM_RESTORE_OBJECT:
         jcr->lock();
         jcr->JobFiles++;
-        jcr->impl->num_files_examined++;
+        jcr->fd_impl->num_files_examined++;
         jcr->unlock();
 
         Dmsg2(400, "send inx=%d STREAM_RESTORE_OBJECT-%d\n", jcr->JobFiles,

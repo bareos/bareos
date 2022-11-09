@@ -39,7 +39,7 @@
 #include "include/bareos.h"
 #include "stored/bsr.h"
 #include "stored/device_control_record.h"
-#include "stored/jcr_private.h"
+#include "stored/stored_jcr_impl.h"
 #include "stored/stored.h"
 #include "include/jcr.h"
 
@@ -795,13 +795,13 @@ static VolumeList* new_restore_volume()
  */
 static bool AddRestoreVolume(JobControlRecord* jcr, VolumeList* vol)
 {
-  VolumeList* next = jcr->impl->VolList;
+  VolumeList* next = jcr->sd_impl->VolList;
 
   /* Add volume to volume manager's read list */
   AddReadVolume(jcr, vol->VolumeName);
 
-  if (!next) {                /* list empty ? */
-    jcr->impl->VolList = vol; /* yes, add volume */
+  if (!next) {                   /* list empty ? */
+    jcr->sd_impl->VolList = vol; /* yes, add volume */
   } else {
     /* Loop through all but last */
     for (; next->next; next = next->next) {
@@ -835,10 +835,10 @@ void CreateRestoreVolumeList(JobControlRecord* jcr)
   VolumeList* vol;
 
   // Build a list of volumes to be processed
-  jcr->impl->NumReadVolumes = 0;
-  jcr->impl->CurReadVolume = 0;
-  if (jcr->impl->read_session.bsr) {
-    BootStrapRecord* bsr = jcr->impl->read_session.bsr;
+  jcr->sd_impl->NumReadVolumes = 0;
+  jcr->sd_impl->CurReadVolume = 0;
+  if (jcr->sd_impl->read_session.bsr) {
+    BootStrapRecord* bsr = jcr->sd_impl->read_session.bsr;
     if (!bsr->volume || !bsr->volume->VolumeName[0]) { return; }
     for (; bsr; bsr = bsr->next) {
       BsrVolume* bsrvol;
@@ -858,7 +858,7 @@ void CreateRestoreVolumeList(JobControlRecord* jcr)
         vol->Slot = bsrvol->Slot;
         vol->start_file = sfile;
         if (AddRestoreVolume(jcr, vol)) {
-          jcr->impl->NumReadVolumes++;
+          jcr->sd_impl->NumReadVolumes++;
           Dmsg2(400, "Added volume=%s mediatype=%s\n", vol->VolumeName,
                 vol->MediaType);
         } else {
@@ -870,15 +870,15 @@ void CreateRestoreVolumeList(JobControlRecord* jcr)
     }
   } else {
     /* This is the old way -- deprecated */
-    for (p = jcr->impl->dcr->VolumeName; p && *p;) {
+    for (p = jcr->sd_impl->dcr->VolumeName; p && *p;) {
       n = strchr(p, '|'); /* volume name separator */
       if (n) { *n++ = 0; /* Terminate name */ }
       vol = new_restore_volume();
       bstrncpy(vol->VolumeName, p, sizeof(vol->VolumeName));
-      bstrncpy(vol->MediaType, jcr->impl->dcr->media_type,
+      bstrncpy(vol->MediaType, jcr->sd_impl->dcr->media_type,
                sizeof(vol->MediaType));
       if (AddRestoreVolume(jcr, vol)) {
-        jcr->impl->NumReadVolumes++;
+        jcr->sd_impl->NumReadVolumes++;
       } else {
         free((char*)vol);
       }
@@ -889,7 +889,7 @@ void CreateRestoreVolumeList(JobControlRecord* jcr)
 
 void FreeRestoreVolumeList(JobControlRecord* jcr)
 {
-  VolumeList* vol = jcr->impl->VolList;
+  VolumeList* vol = jcr->sd_impl->VolList;
   VolumeList* tmp;
 
   for (; vol;) {
@@ -898,7 +898,7 @@ void FreeRestoreVolumeList(JobControlRecord* jcr)
     free(vol);
     vol = tmp;
   }
-  jcr->impl->VolList = NULL;
+  jcr->sd_impl->VolList = NULL;
 }
 
 } /* namespace storagedaemon */

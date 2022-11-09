@@ -57,7 +57,9 @@ class JobControlRecord;
 
 struct AttributesDbRecord;
 struct PluginContext;
-struct JobControlRecordPrivate;
+struct DirectorJcrImpl;
+struct StoredJcrImpl;
+struct FiledJcrImpl;
 struct VolumeSessionInfo;
 
 #ifdef HAVE_WIN32
@@ -230,7 +232,12 @@ class JobControlRecord {
   PathList* path_list{};      /**< Directory list (used by findlib) */
   bool is_passive_client_connection_probing{}; /**< Set if director probes a passive client connection */
 
-  JobControlRecordPrivate* impl{nullptr}; /* Pointer to implementation of each daemon */
+  union {
+    DirectorJcrImpl* dir_impl;
+    StoredJcrImpl* sd_impl;
+    FiledJcrImpl* fd_impl;
+  };
+
 };
 /* clang-format on */
 

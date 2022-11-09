@@ -32,7 +32,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
-#include "dird/jcr_private.h"
+#include "dird/director_jcr_impl.h"
 #include "dird/next_vol.h"
 #include "dird/sd_cmds.h"
 #include "dird/ua_db.h"
@@ -620,7 +620,7 @@ static bool ActionOnPurgeCmd(UaContext* ua, const char*)
   }
 
   // Choose storage
-  ua->jcr->impl->res.write_storage = store = get_storage_resource(ua);
+  ua->jcr->dir_impl->res.write_storage = store = get_storage_resource(ua);
   if (!store) { goto bail_out; }
 
   switch (store->Protocol) {
@@ -695,7 +695,7 @@ static bool ActionOnPurgeCmd(UaContext* ua, const char*)
 bail_out:
   CloseDb(ua);
   if (sd) { CloseSdBsock(ua); }
-  ua->jcr->impl->res.write_storage = NULL;
+  ua->jcr->dir_impl->res.write_storage = NULL;
   if (results) { free(results); }
 
   return true;

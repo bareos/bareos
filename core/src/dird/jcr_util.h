@@ -22,7 +22,7 @@
 #ifndef BAREOS_DIRD_JCR_UTIL_H_
 #define BAREOS_DIRD_JCR_UTIL_H_
 
-#include "dird/jcr_private.h"
+#include "dird/director_jcr_impl.h"
 
 namespace directordaemon {
 

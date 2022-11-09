@@ -28,7 +28,7 @@
 
 #include "include/bareos.h"
 #include "filed/filed.h"
-#include "filed/jcr_private.h"
+#include "filed/filed_jcr_impl.h"
 #include "filed/accurate.h"
 
 namespace filedaemon {
@@ -42,14 +42,15 @@ int MakeEstimate(JobControlRecord* jcr)
 
   jcr->setJobStatusWithPriorityCheck(JS_Running);
 
-  SetFindOptions((FindFilesPacket*)jcr->impl->ff, jcr->impl->incremental,
-                 jcr->impl->since_time);
+  SetFindOptions((FindFilesPacket*)jcr->fd_impl->ff, jcr->fd_impl->incremental,
+                 jcr->fd_impl->since_time);
   /* in accurate mode, we overwrite the find_one check function */
   if (jcr->accurate) {
-    SetFindChangedFunction((FindFilesPacket*)jcr->impl->ff, AccurateCheckFile);
+    SetFindChangedFunction((FindFilesPacket*)jcr->fd_impl->ff,
+                           AccurateCheckFile);
   }
 
-  status = FindFiles(jcr, (FindFilesPacket*)jcr->impl->ff, TallyFile,
+  status = FindFiles(jcr, (FindFilesPacket*)jcr->fd_impl->ff, TallyFile,
                      PluginEstimate);
   AccurateFree(jcr);
   return status;
@@ -103,9 +104,9 @@ static int TallyFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
     }
 #endif
   }
-  jcr->impl->num_files_examined++;
+  jcr->fd_impl->num_files_examined++;
   jcr->JobFiles++; /* increment number of files seen */
-  if (jcr->impl->listing) {
+  if (jcr->fd_impl->listing) {
     memcpy(&attr.statp, &ff_pkt->statp, sizeof(struct stat));
     attr.type = ff_pkt->type;
     attr.ofname = (POOLMEM*)ff_pkt->fname;

@@ -27,7 +27,7 @@
 #include "include/bareos.h"
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
-#include "filed/jcr_private.h"
+#include "filed/filed_jcr_impl.h"
 #include "filed/authenticate.h"
 #include "lib/bnet.h"
 #include "lib/bsock.h"
@@ -91,8 +91,8 @@ void* handle_stored_connection(BareosSocket* sd)
   }
 
   if (!jcr->max_bandwidth) {
-    if (jcr->impl->director->max_bandwidth_per_job) {
-      jcr->max_bandwidth = jcr->impl->director->max_bandwidth_per_job;
+    if (jcr->fd_impl->director->max_bandwidth_per_job) {
+      jcr->max_bandwidth = jcr->fd_impl->director->max_bandwidth_per_job;
     } else if (me->max_bandwidth_per_job) {
       jcr->max_bandwidth = me->max_bandwidth_per_job;
     }

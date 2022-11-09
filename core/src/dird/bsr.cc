@@ -29,7 +29,7 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/dird_globals.h"
-#include "dird/jcr_private.h"
+#include "dird/director_jcr_impl.h"
 #include "dird/ua_input.h"
 #include "dird/ua_restore.h"
 #include "dird/ua_server.h"
@@ -247,13 +247,13 @@ static void MakeUniqueRestoreFilename(UaContext* ua, PoolMem& fname)
   int i = FindArgWithValue(ua, "bootstrap");
   if (i >= 0) {
     Mmsg(fname, "%s", ua->argv[i]);
-    jcr->impl->unlink_bsr = false;
+    jcr->dir_impl->unlink_bsr = false;
   } else {
     lock_mutex(mutex);
     uniq++;
     unlock_mutex(mutex);
     Mmsg(fname, "%s/%s.restore.%u.bsr", working_directory, my_name, uniq);
-    jcr->impl->unlink_bsr = true;
+    jcr->dir_impl->unlink_bsr = true;
   }
   if (jcr->RestoreBootstrap) { free(jcr->RestoreBootstrap); }
   jcr->RestoreBootstrap = strdup(fname.c_str());
@@ -572,7 +572,7 @@ bool OpenBootstrapFile(JobControlRecord* jcr, bootstrap_info& info)
   info.ua = NULL;
 
   if (!jcr->RestoreBootstrap) { return false; }
-  bstrncpy(info.storage, jcr->impl->res.read_storage->resource_name_,
+  bstrncpy(info.storage, jcr->dir_impl->res.read_storage->resource_name_,
            MAX_NAME_LENGTH);
 
   bs = fopen(jcr->RestoreBootstrap, "rb");
@@ -610,13 +610,13 @@ static inline bool IsOnSameStorage(JobControlRecord* jcr, char* new_one)
   StorageResource* new_store;
 
   // With old FD, we send the whole bootstrap to the storage
-  if (jcr->impl->FDVersion < FD_VERSION_2) { return true; }
+  if (jcr->dir_impl->FDVersion < FD_VERSION_2) { return true; }
 
   // We are in init loop ? shoudn't fail here
   if (!*new_one) { return true; }
 
   // Same name
-  if (bstrcmp(new_one, jcr->impl->res.read_storage->resource_name_)) {
+  if (bstrcmp(new_one, jcr->dir_impl->res.read_storage->resource_name_)) {
     return true;
   }
 
@@ -631,8 +631,9 @@ static inline bool IsOnSameStorage(JobControlRecord* jcr, char* new_one)
    * If Port and Hostname/IP are same, we are talking to the same
    * Storage Daemon
    */
-  if (jcr->impl->res.read_storage->SDport != new_store->SDport
-      || !bstrcmp(jcr->impl->res.read_storage->address, new_store->address)) {
+  if (jcr->dir_impl->res.read_storage->SDport != new_store->SDport
+      || !bstrcmp(jcr->dir_impl->res.read_storage->address,
+                  new_store->address)) {
     return false;
   }
 

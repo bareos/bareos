@@ -30,7 +30,7 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/admin.h"
-#include "dird/jcr_private.h"
+#include "dird/director_jcr_impl.h"
 #include "dird/job.h"
 #include "dird/storage.h"
 
@@ -52,9 +52,9 @@ bool DoAdminInit(JobControlRecord* jcr)
  */
 bool do_admin(JobControlRecord* jcr)
 {
-  jcr->impl->jr.JobId = jcr->JobId;
+  jcr->dir_impl->jr.JobId = jcr->JobId;
 
-  jcr->impl->fname = (char*)GetPoolMemory(PM_FNAME);
+  jcr->dir_impl->fname = (char*)GetPoolMemory(PM_FNAME);
 
   Jmsg(jcr, M_INFO, 0, _("Start Admin JobId %d, Job=%s\n"), jcr->JobId,
        jcr->Job);
@@ -76,7 +76,7 @@ void AdminCleanup(JobControlRecord* jcr, int TermCode)
 
   UpdateJobEnd(jcr, TermCode);
 
-  if (!jcr->db->GetJobRecord(jcr, &jcr->impl->jr)) {
+  if (!jcr->db->GetJobRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_WARNING, 0,
          _("Error getting Job record for Job report: ERR=%s\n"),
          jcr->db->strerror());
@@ -102,9 +102,9 @@ void AdminCleanup(JobControlRecord* jcr, int TermCode)
               jcr->getJobStatus());
       break;
   }
-  bstrftimes(schedt, sizeof(schedt), jcr->impl->jr.SchedTime);
-  bstrftimes(sdt, sizeof(sdt), jcr->impl->jr.StartTime);
-  bstrftimes(edt, sizeof(edt), jcr->impl->jr.EndTime);
+  bstrftimes(schedt, sizeof(schedt), jcr->dir_impl->jr.SchedTime);
+  bstrftimes(sdt, sizeof(sdt), jcr->dir_impl->jr.StartTime);
+  bstrftimes(edt, sizeof(edt), jcr->dir_impl->jr.EndTime);
 
   Jmsg(jcr, msg_type, 0,
        _("BAREOS %s (%s): %s\n"
@@ -117,9 +117,9 @@ void AdminCleanup(JobControlRecord* jcr, int TermCode)
          "  Job triggered by:       %s\n"
          "  Termination:            %s\n\n"),
        kBareosVersionStrings.Full, kBareosVersionStrings.ShortDate, edt,
-       jcr->impl->jr.JobId, jcr->impl->jr.Job, schedt, sdt, edt,
+       jcr->dir_impl->jr.JobId, jcr->dir_impl->jr.Job, schedt, sdt, edt,
        kBareosVersionStrings.JoblogMessage,
-       JobTriggerToString(jcr->impl->job_trigger).c_str(), TermMsg);
+       JobTriggerToString(jcr->dir_impl->job_trigger).c_str(), TermMsg);
 
   Dmsg0(debuglevel, "Leave AdminCleanup()\n");
 }

@@ -30,7 +30,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
-#include "dird/jcr_private.h"
+#include "dird/director_jcr_impl.h"
 #include "dird/job.h"
 #include "dird/restore.h"
 
@@ -179,16 +179,16 @@ void NdmpRestoreCleanup(JobControlRecord* jcr, int TermCode)
   Dmsg0(20, "In NdmpRestoreCleanup\n");
   UpdateJobEnd(jcr, TermCode);
 
-  if (jcr->impl->unlink_bsr && jcr->RestoreBootstrap) {
+  if (jcr->dir_impl->unlink_bsr && jcr->RestoreBootstrap) {
     SecureErase(jcr, jcr->RestoreBootstrap);
-    jcr->impl->unlink_bsr = false;
+    jcr->dir_impl->unlink_bsr = false;
   }
 
   if (JobCanceled(jcr)) { CancelStorageDaemonJob(jcr); }
 
   switch (TermCode) {
     case JS_Terminated:
-      if (jcr->impl->ExpectedFiles > jcr->impl->jr.JobFiles) {
+      if (jcr->dir_impl->ExpectedFiles > jcr->dir_impl->jr.JobFiles) {
         TermMsg = _("Restore OK -- warning file count mismatch");
       } else {
         TermMsg = _("Restore OK");
@@ -203,8 +203,8 @@ void NdmpRestoreCleanup(JobControlRecord* jcr, int TermCode)
       msg_type = M_ERROR; /* Generate error message */
       if (jcr->store_bsock) {
         jcr->store_bsock->signal(BNET_TERMINATE);
-        if (jcr->impl->SD_msg_chan_started) {
-          pthread_cancel(jcr->impl->SD_msg_chan);
+        if (jcr->dir_impl->SD_msg_chan_started) {
+          pthread_cancel(jcr->dir_impl->SD_msg_chan);
         }
       }
       break;
@@ -212,8 +212,8 @@ void NdmpRestoreCleanup(JobControlRecord* jcr, int TermCode)
       TermMsg = _("Restore Canceled");
       if (jcr->store_bsock) {
         jcr->store_bsock->signal(BNET_TERMINATE);
-        if (jcr->impl->SD_msg_chan_started) {
-          pthread_cancel(jcr->impl->SD_msg_chan);
+        if (jcr->dir_impl->SD_msg_chan_started) {
+          pthread_cancel(jcr->dir_impl->SD_msg_chan);
         }
       }
       break;

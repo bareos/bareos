@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,8 +21,8 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_FILED_JCR_PRIVATE_H_
-#define BAREOS_FILED_JCR_PRIVATE_H_
+#ifndef BAREOS_FILED_FILED_JCR_IMPL_H_
+#define BAREOS_FILED_FILED_JCR_IMPL_H_
 
 #include "include/bareos.h"
 
@@ -49,7 +49,7 @@ struct CryptoContext {
   int32_t pki_session_encoded_size{}; /**< Size of DER-encoded pki_session */
 };
 
-struct JobControlRecordPrivate {
+struct FiledJcrImpl {
   uint32_t num_files_examined{};  /**< Files examined this job */
   POOLMEM* last_fname{};          /**< Last file saved/verified */
   POOLMEM* job_metadata{};        /**< VSS job metadata */
@@ -89,4 +89,4 @@ struct JobControlRecordPrivate {
 };
 /* clang-format on */
 
-#endif  // BAREOS_FILED_JCR_PRIVATE_H_
+#endif  // BAREOS_FILED_FILED_JCR_IMPL_H_

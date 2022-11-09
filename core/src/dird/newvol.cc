@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -36,7 +36,7 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/expand.h"
-#include "dird/jcr_private.h"
+#include "dird/director_jcr_impl.h"
 #include "dird/next_vol.h"
 #include "cats/sql.h"
 #include "dird/ua_db.h"
@@ -71,7 +71,7 @@ bool newVolume(JobControlRecord* jcr, MediaDbRecord* mr, StorageResource* store)
     *mr = MediaDbRecord{};
     SetPoolDbrDefaultsInMediaDbr(mr, &pr);
     jcr->VolumeName[0] = 0;
-    bstrncpy(mr->MediaType, jcr->impl->res.write_storage->media_type,
+    bstrncpy(mr->MediaType, jcr->dir_impl->res.write_storage->media_type,
              sizeof(mr->MediaType));
     GeneratePluginEvent(jcr, bDirEventNewVolume); /* return void... */
     if (jcr->VolumeName[0] && IsVolumeNameLegal(NULL, jcr->VolumeName)) {
@@ -163,7 +163,7 @@ static bool PerformFullNameSubstitution(JobControlRecord* jcr,
   bool ok = false;
   POOLMEM* label = GetPoolMemory(PM_FNAME);
 
-  jcr->impl->NumVols = pr->NumVols;
+  jcr->dir_impl->NumVols = pr->NumVols;
   if (VariableExpansion(jcr, pr->LabelFormat, label)) {
     bstrncpy(mr->VolumeName, label, sizeof(mr->VolumeName));
     ok = true;

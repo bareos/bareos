@@ -31,7 +31,7 @@
 #include "stored/acquire.h"
 #include "stored/device.h"
 #include "stored/device_control_record.h"
-#include "stored/jcr_private.h"
+#include "stored/stored_jcr_impl.h"
 #include "lib/berrno.h"
 #include "lib/bsock.h"
 #include "lib/edit.h"
@@ -118,7 +118,7 @@ bool BeginDataSpool(DeviceControlRecord* dcr)
 {
   bool status = true;
 
-  if (dcr->jcr->impl->spool_data) {
+  if (dcr->jcr->sd_impl->spool_data) {
     Dmsg0(100, "Turning on data spooling\n");
     dcr->spool_data = true;
     status = OpenDataSpoolFile(dcr);
@@ -186,7 +186,7 @@ static bool OpenDataSpoolFile(DeviceControlRecord* dcr)
   if ((spool_fd = open(name, O_CREAT | O_TRUNC | O_RDWR | O_BINARY, 0640))
       >= 0) {
     dcr->spool_fd = spool_fd;
-    dcr->jcr->impl->spool_attributes = true;
+    dcr->jcr->sd_impl->spool_attributes = true;
   } else {
     BErrNo be;
 
@@ -249,7 +249,7 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
   BareosSocket* dir = jcr->dir_bsock;
 
   Dmsg0(100, "Despooling data\n");
-  if (jcr->impl->dcr->job_spool_size == 0) {
+  if (jcr->sd_impl->dcr->job_spool_size == 0) {
     Jmsg(jcr, M_WARNING, 0,
          _("Despooling zero bytes. Your disk is probably FULL!\n"));
   }
@@ -263,13 +263,13 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
     Jmsg(jcr, M_INFO, 0,
          _("Committing spooled data to Volume \"%s\". Despooling %s bytes "
            "...\n"),
-         jcr->impl->dcr->VolumeName,
-         edit_uint64_with_commas(jcr->impl->dcr->job_spool_size, ec1));
+         jcr->sd_impl->dcr->VolumeName,
+         edit_uint64_with_commas(jcr->sd_impl->dcr->job_spool_size, ec1));
     jcr->setJobStatusWithPriorityCheck(JS_DataCommitting);
   } else {
     Jmsg(jcr, M_INFO, 0,
          _("Writing spooled data to Volume. Despooling %s bytes ...\n"),
-         edit_uint64_with_commas(jcr->impl->dcr->job_spool_size, ec1));
+         edit_uint64_with_commas(jcr->sd_impl->dcr->job_spool_size, ec1));
     jcr->setJobStatusWithPriorityCheck(JS_DataDespooling);
   }
   jcr->sendJobStatus(JS_DataDespooling);
@@ -373,8 +373,8 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
          "Bytes/second\n"),
        despool_elapsed / 3600, despool_elapsed % 3600 / 60,
        despool_elapsed % 60,
-       edit_uint64_with_suffix(jcr->impl->dcr->job_spool_size / despool_elapsed,
-                               ec1));
+       edit_uint64_with_suffix(
+           jcr->sd_impl->dcr->job_spool_size / despool_elapsed, ec1));
 
   dcr->block = block; /* reset block */
 
@@ -674,7 +674,7 @@ static bool WriteSpoolData(DeviceControlRecord* dcr)
 
 bool AttributesAreSpooled(JobControlRecord* jcr)
 {
-  return jcr->impl->spool_attributes && jcr->dir_bsock->spool_fd_ != -1;
+  return jcr->sd_impl->spool_attributes && jcr->dir_bsock->spool_fd_ != -1;
 }
 
 /**
@@ -686,7 +686,7 @@ bool AttributesAreSpooled(JobControlRecord* jcr)
  */
 bool BeginAttributeSpool(JobControlRecord* jcr)
 {
-  if (!jcr->impl->no_attributes && jcr->impl->spool_attributes) {
+  if (!jcr->sd_impl->no_attributes && jcr->sd_impl->spool_attributes) {
     return OpenAttrSpoolFile(jcr, jcr->dir_bsock);
   }
   return true;

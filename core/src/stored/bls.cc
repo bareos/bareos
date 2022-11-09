@@ -35,7 +35,7 @@
 #include "stored/acquire.h"
 #include "stored/butil.h"
 #include "stored/device_control_record.h"
-#include "stored/jcr_private.h"
+#include "stored/stored_jcr_impl.h"
 #include "stored/label.h"
 #include "stored/match_bsr.h"
 #include "stored/mount.h"
@@ -238,10 +238,10 @@ int main(int argc, char* argv[])
     jcr = SetupJcr("bls", device.data(), bsr, director, dcr, VolumeNames,
                    true); /* read device */
     if (!jcr) { exit(1); }
-    jcr->impl->ignore_label_errors = ignore_label_errors;
-    dev = jcr->impl->dcr->dev;
+    jcr->sd_impl->ignore_label_errors = ignore_label_errors;
+    dev = jcr->sd_impl->dcr->dev;
     if (!dev) { exit(1); }
-    dcr = jcr->impl->dcr;
+    dcr = jcr->sd_impl->dcr;
     rec = new_record();
     attr = new_attr(jcr);
     /*
@@ -274,9 +274,9 @@ static void do_close(JobControlRecord* jcr)
 {
   FreeAttr(attr);
   FreeRecord(rec);
-  CleanDevice(jcr->impl->dcr);
+  CleanDevice(jcr->sd_impl->dcr);
   delete dev;
-  FreeDeviceControlRecord(jcr->impl->dcr);
+  FreeDeviceControlRecord(jcr->sd_impl->dcr);
   FreeJcr(jcr);
 }
 
