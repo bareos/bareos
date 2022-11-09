@@ -147,6 +147,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - lib: make foreach_res() reload-safe [PR #1279]
 - Prepare Bareos for an upgrade to the C++20 standard [PR #1271]
 - stored: refactor the SD's backend interface [PR #1272]
+- core: use distinct names for JobControlRecordPrivate [PR #1307]
 
 ### Deprecated
 - make_catalog_backup.pl is now a shell wrapper script which will be removed in version 23.
