@@ -22,6 +22,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - build: switch from FreeBSD 13.0 to 13.1 [PR #1258]
 ### Fixed
 - webui: get volume and pool params from query instead of route [PR #1145]
+- webui: fix pool link in job details formatter [PR #1304] [BUG #1489]
 
 ### Security
 - webui: update moment.js to version 2.29.2 [PR #1157] [CVE-2022-24785](https://github.com/advisories/GHSA-8hfj-j24r-96c4)
