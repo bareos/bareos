@@ -21,6 +21,9 @@ backupjob="slow-backup-big-volume"
 parallelbackuplog="$tmp/backup-parallel-jobs.out"
 parallelrestorelog="$tmp/restore-parallel-jobs.out"
 
+rm -f $parallelbackuplog
+rm -f $parallelrestorelog
+
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
 messages
