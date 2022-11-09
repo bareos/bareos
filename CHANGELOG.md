@@ -5,6 +5,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Breaking Changes
+- VMWare plugin now uses VDDK 8. As a result the minimum supported vSphere version is now 6.7.
+
 ### Changed
 - build: switch from FreeBSD 13.0 to 13.1 [PR #1256]
 - lib: make foreach_res() reload-safe [PR #1301]
@@ -18,13 +21,13 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - devtools/dist-tarball.sh: fix name if version contains "~pre" [PR #1220]
 - dird: fix crash in .jobstatus [PR #1286]
 - winbareos.nsi: fix working directory in configure.sed [PR #1289]
-- webui: fix pool link in job details formatter [PR #1303] [BUG #1489]
+- webui: fix pool link in job details formatter [PR #1303] [Issue #1489]
 
 ### Documentation
 - Univention Corporate Server (UCS) >= 5: same support as for other Linux distributions, but no extended integration as for UCS < 5 [PR #1245]
 - mssql add a warning in case of pitr to run another backup full or diff afterwards [PR #1246]
 - improve troubleshooting and debugging chapter [PR #1246]
-- update Appendix/HardwareSizing DB size with new numbers and formulas [BUG #1477][PR #1246]
+- update Appendix/HardwareSizing DB size with new numbers and formulas [Issue #1477][PR #1246]
 - add description to fileset signature sha256 and sha512 parameter [PR #1246]
 - add example to selection type = sql query [PR #1246]
 - improve Wild(*) section with links to example [PR #1246]
@@ -43,7 +46,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - build: Add support for SLE_15_SP4 [PR #1207]
 
 ### Changed
-- doc: clarifies CheckFileChanges option not intended to be used with plugin [BUG #1452][PR #1195]
+- doc: clarifies CheckFileChanges option not intended to be used with plugin [Issue #1452][PR #1195]
 - config parser: Refactor config reloading by using shared pointers instead of callbacks [PR #1214]
 
 ### Security
@@ -410,6 +413,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [Issue #1374]: https://bugs.bareos.org/view.php?id=1374
 [Issue #1445]: https://bugs.bareos.org/view.php?id=1445
 [Issue #1450]: https://bugs.bareos.org/view.php?id=1450
+[Issue #1452]: https://bugs.bareos.org/view.php?id=1452
+[Issue #1477]: https://bugs.bareos.org/view.php?id=1477
+[Issue #1489]: https://bugs.bareos.org/view.php?id=1489
 [PR #552]: https://github.com/bareos/bareos/pull/552
 [PR #694]: https://github.com/bareos/bareos/pull/694
 [PR #700]: https://github.com/bareos/bareos/pull/700
@@ -620,4 +626,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1289]: https://github.com/bareos/bareos/pull/1289
 [PR #1291]: https://github.com/bareos/bareos/pull/1291
 [PR #1301]: https://github.com/bareos/bareos/pull/1301
+[PR #1303]: https://github.com/bareos/bareos/pull/1303
 [unreleased]: https://github.com/bareos/bareos/tree/master
