@@ -183,7 +183,7 @@ OS:
   EL:
     "9":
       TYPE: rpm
-      IMAGE: centos9
+      IMAGE: rhel9
       ARCH:
       - x86_64
       PROJECTPACKAGES:
