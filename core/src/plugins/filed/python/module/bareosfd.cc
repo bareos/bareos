@@ -887,6 +887,9 @@ static inline bool PyAclPacketToNative(PyAclPacket* pAclPacket,
     if (ap->content) { free(ap->content); }
     ap->content = (char*)malloc(ap->content_length);
     memcpy(ap->content, buf, ap->content_length);
+  } else {
+    PyErr_SetString(PyExc_TypeError,
+                    "acl packet content needs to be of bytearray type");
   }
 
   return true;
@@ -1368,9 +1371,6 @@ static PyObject* PyBareosDebugMessage(PyObject*, PyObject* args)
   int level;
   char* dbgmsg = NULL;
   PluginContext* plugin_ctx = plugin_context;
-  /* plugin_private_context* ppc = */
-  /*     (plugin_private_context*)plugin_ctx->plugin_private_context;
-   */
 
   if (!PyArg_ParseTuple(args, "i|z:BareosDebugMessage", &level, &dbgmsg)) {
     return NULL;
