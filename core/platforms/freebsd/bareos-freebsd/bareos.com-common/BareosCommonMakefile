@@ -44,6 +44,7 @@ STORAGE_DAEMON_GROUP=operator
 PLIST_SUB+=	LIBVERSION=${DISTVERSION:C/\..*//} # major version
 PLIST_SUB+=	DISTVERSION=${DISTVERSION:C/(.{6}).*/\1/} # full version
 
+DEFAULT_VERSIONS+=ssl=openssl
 USES+=ssl
 USES+=gettext-runtime
 USES+=readline
@@ -73,6 +74,8 @@ LIB_DEPENDS+=	liblzo2.so:archivers/lzo2 \
 		          libjansson.so:devel/jansson
 LIB_DEPENDS+= libpython3.7m.so:lang/python37
 
+# optional overrides, used by build system.
+.-include "BareosCommonMakefile-overrides.mk"
 
 #GNU_CONFIGURE=	yes
 CMAKE_VERBOSE = yes
@@ -125,11 +128,5 @@ CMAKE_ARGS+= -DCMAKE_VERBOSE_MAKEFILE=ON \
   -Dfd-group=$(DAEMON_GROUP) \
   -Ddefault_db_backend="XXX_REPLACE_WITH_DATABASE_DRIVER_XXX" \
   -DVERSION_STRING=$(DISTVERSION)
-
-post-install:
-	find ${STAGEDIR} -name '*.conf' -exec mv -v {} {}.sample \;
-	@${MKDIR} ${STAGEDIR}/var/lib/bareos/storage
-	@${MKDIR} ${STAGEDIR}/var/log/bareos
-	@${MKDIR} ${STAGEDIR}/var/run/bareos
 
 .include <bsd.port.mk>
