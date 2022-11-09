@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and since Bareos version 20 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [20.0.8] - 2022-11-09
 
 ### Breaking Changes
 - VMWare plugin now uses VDDK 8. As a result the minimum supported vSphere version is now 6.7.
@@ -308,6 +308,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [20.0.5]: https://github.com/bareos/bareos/releases/tag/Release%2F20.0.5
 [20.0.6]: https://github.com/bareos/bareos/releases/tag/Release%2F20.0.6
 [20.0.7]: https://github.com/bareos/bareos/releases/tag/Release%2F20.0.7
+[20.0.8]: https://github.com/bareos/bareos/releases/tag/Release%2F20.0.8
 [Issue #579]: https://bugs.bareos.org/view.php?id=579
 [Issue #871]: https://bugs.bareos.org/view.php?id=871
 [Issue #971]: https://bugs.bareos.org/view.php?id=971
@@ -538,4 +539,3 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1290]: https://github.com/bareos/bareos/pull/1290
 [PR #1292]: https://github.com/bareos/bareos/pull/1292
 [PR #1304]: https://github.com/bareos/bareos/pull/1304
-[unreleased]: https://github.com/bareos/bareos/tree/master
