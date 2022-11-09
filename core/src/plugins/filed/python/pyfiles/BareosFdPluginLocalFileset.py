@@ -137,11 +137,16 @@ class BareosFdPluginLocalFileset(BareosFdPluginLocalFilesBaseclass):  # noqa
         bareosfd.DebugMessage(
             100, "my get_acl() entry point in Python called with %s\n" % (acl)
         )
+        acl.content = bytearray(b"Hello ACL")
         return bareosfd.bRC_OK
 
     def set_acl(self, acl):
         bareosfd.DebugMessage(
             100, "my set_acl() entry point in Python called with %s\n" % (acl)
+        )
+        bareosfd.JobMessage(
+            bareosfd.M_INFO,
+            "my set_acl() entry point in Python called with %s\n" % (acl),
         )
         return bareosfd.bRC_OK
 
@@ -149,10 +154,16 @@ class BareosFdPluginLocalFileset(BareosFdPluginLocalFilesBaseclass):  # noqa
         bareosfd.DebugMessage(
             100, "my get_xattr() entry point in Python called with %s\n" % (xattr)
         )
+        xattr.name = bytearray(b"Hello XATTR")
+        xattr.value = bytearray(b"Hello XATTR")
         return bareosfd.bRC_OK
 
     def set_xattr(self, xattr):
         bareosfd.DebugMessage(
             100, "my set_xattr() entry point in Python called with %s\n" % (xattr)
+        )
+        bareosfd.JobMessage(
+            bareosfd.M_INFO,
+            "my set_xattr() entry point in Python called with %s\n" % (xattr),
         )
         return bareosfd.bRC_OK
