@@ -1500,31 +1500,6 @@ bool GetLevelFromName(JobControlRecord* jcr, const char* level_name)
   return found;
 }
 
-// Insert an JobId into the list of selected JobIds when its a unique new id.
-static inline bool InsertSelectedJobid(alist<JobId_t*>* selected_jobids,
-                                       JobId_t JobId)
-{
-  bool found;
-  JobId_t* selected_jobid = nullptr;
-
-  found = false;
-  foreach_alist (selected_jobid, selected_jobids) {
-    if (*selected_jobid == JobId) {
-      found = true;
-      break;
-    }
-  }
-
-  if (!found) {
-    selected_jobid = (JobId_t*)malloc(sizeof(JobId_t));
-    *selected_jobid = JobId;
-    selected_jobids->append(selected_jobid);
-    return true;
-  }
-
-  return false;
-}
-
 /**
  * Get a job selection, "reason" is used in user messages and can be: cancel,
  * limit, ...
@@ -1532,38 +1507,23 @@ static inline bool InsertSelectedJobid(alist<JobId_t*>* selected_jobids,
  * Returns: NULL on error
  *          alist on success with the selected jobids.
  */
-alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
+std::unordered_set<JobId_t> select_jobs(UaContext* ua, const char* reason)
 {
-  int i;
-  int cnt = 0;
-  int njobs = 0;
-  JobControlRecord* jcr = NULL;
-  bool select_all = false;
-  bool select_by_state = false;
-  alist<JobId_t*>* selected_jobids;
-  const char* lst[] = {"job", "jobid", "ujobid", NULL};
-  enum
-  {
-    none,
-    all_jobs,
-    created_jobs,
-    blocked_jobs,
-    waiting_jobs,
-    running_jobs
-  } selection_criterium;
-
-  // Allocate a list for holding the selected JobIds.
-  selected_jobids = new alist<JobId_t*>(10, owned_by_alist);
-
   // See if "all" is given.
+  bool select_all = false;
   if (FindArg(ua, NT_("all")) > 0) { select_all = true; }
 
   // See if "state=" is given.
+  bool select_by_state = false;
   if (FindArgWithValue(ua, NT_("state")) > 0) { select_by_state = true; }
 
   // See if there are any jobid, job or ujobid keywords.
+  JobControlRecord* jcr = nullptr;
+  std::unordered_set<JobId_t> selected_jobids;
+  const char* lst[] = {"job", "jobid", "ujobid", NULL};
+
   if (FindArgKeyword(ua, lst) > 0) {
-    for (i = 1; i < ua->argc; i++) {
+    for (int i = 1; i < ua->argc; i++) {
       if (Bstrcasecmp(ua->argk[i], NT_("jobid"))) {
         JobId_t JobId = str_to_int64(ua->argv[i]);
         if (!JobId) { continue; }
@@ -1596,10 +1556,11 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
             && !ua->AclAccessOk(Job_ACL, jcr->dir_impl->res.job->resource_name_,
                                 true)) {
           ua->ErrorMsg(_("Unauthorized command from this console.\n"));
-          goto bail_out;
+          selected_jobids.clear();
+          return selected_jobids;
         }
 
-        if (InsertSelectedJobid(selected_jobids, jcr->JobId)) { cnt++; }
+        selected_jobids.insert(jcr->JobId);
 
         FreeJcr(jcr);
         jcr = NULL;
@@ -1611,7 +1572,9 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
    * If we didn't select any Jobs using jobid, job or ujobid keywords try
    * other selections.
    */
-  if (cnt == 0) {
+
+  int njobs = 0;
+  if (selected_jobids.empty()) {
     char buf[1000];
     int tjobs = 0; /* Total # number jobs */
 
@@ -1634,8 +1597,19 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
       } else {
         ua->SendMsg(_("None of your jobs are running.\n"));
       }
-      goto bail_out;
+      selected_jobids.clear();
+      return selected_jobids;
     }
+
+    enum
+    {
+      none,
+      all_jobs,
+      created_jobs,
+      blocked_jobs,
+      waiting_jobs,
+      running_jobs
+    } selection_criterium;
 
     if (select_all || select_by_state) {
       // Set selection criterium.
@@ -1643,7 +1617,7 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
       if (select_all) {
         selection_criterium = all_jobs;
       } else {
-        i = FindArgWithValue(ua, NT_("state"));
+        int i = FindArgWithValue(ua, NT_("state"));
         if (i > 0) {
           if (Bstrcasecmp(ua->argv[i], NT_("created"))) {
             selection_criterium = created_jobs;
@@ -1665,7 +1639,8 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
             ua->ErrorMsg(
                 _("Illegal state either created, blocked, waiting or "
                   "running\n"));
-            goto bail_out;
+            selected_jobids.clear();
+            return selected_jobids;
           }
         }
       }
@@ -1707,13 +1682,13 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
             break;
         }
 
-        InsertSelectedJobid(selected_jobids, jcr->JobId);
+        selected_jobids.insert(jcr->JobId);
         ua->SendMsg(_("Selected Job %d for cancelling\n"), jcr->JobId);
       }
 
-      if (selected_jobids->empty()) {
+      if (selected_jobids.empty()) {
         ua->SendMsg(_("No Jobs selected.\n"));
-        goto bail_out;
+        return selected_jobids;
       }
 
       /*
@@ -1722,7 +1697,8 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
        */
       if (!ua->batch && FindArg(ua, NT_("yes")) == -1) {
         if (!GetYesno(ua, _("Confirm cancel (yes/no): ")) || !ua->pint32_val) {
-          goto bail_out;
+          selected_jobids.clear();
+          return selected_jobids;
         }
       }
     } else {
@@ -1746,7 +1722,10 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
       endeach_jcr(jcr);
 
       Bsnprintf(temp, sizeof(temp), _("Choose Job to %s"), _(reason));
-      if (DoPrompt(ua, _("Job"), temp, buf, sizeof(buf)) < 0) { goto bail_out; }
+      if (DoPrompt(ua, _("Job"), temp, buf, sizeof(buf)) < 0) {
+        selected_jobids.clear();
+        return selected_jobids;
+      }
 
       if (bstrcmp(reason, "cancel")) {
         if (ua->api && njobs == 1) {
@@ -1754,12 +1733,16 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
 
           Bsnprintf(nbuf, sizeof(nbuf), _("Cancel: %s\n\n%s"), buf,
                     _("Confirm cancel?"));
-          if (!GetYesno(ua, nbuf) || !ua->pint32_val) { goto bail_out; }
+          if (!GetYesno(ua, nbuf) || !ua->pint32_val) {
+            selected_jobids.clear();
+            return selected_jobids;
+          }
         } else {
           if (njobs == 1) {
             if (!GetYesno(ua, _("Confirm cancel (yes/no): "))
                 || !ua->pint32_val) {
-              goto bail_out;
+              selected_jobids.clear();
+              return selected_jobids;
             }
           }
         }
@@ -1769,20 +1752,16 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
       jcr = get_jcr_by_full_name(JobName);
       if (!jcr) {
         ua->WarningMsg(_("Job \"%s\" not found.\n"), JobName);
-        goto bail_out;
+        selected_jobids.clear();
+        return selected_jobids;
       }
 
-      InsertSelectedJobid(selected_jobids, jcr->JobId);
+      selected_jobids.insert(jcr->JobId);
       FreeJcr(jcr);
     }
   }
 
   return selected_jobids;
-
-bail_out:
-  delete selected_jobids;
-
-  return NULL;
 }
 
 /**
