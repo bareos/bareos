@@ -922,7 +922,6 @@ CXXFLAGS="${CXXFLAGS:-%optflags}" ; export CXXFLAGS ;
 
 # use our own cmake call instead of cmake macro as it is different on different platforms/versions
 cmake  .. \
-  -G Ninja \
   -DCMAKE_VERBOSE_MAKEFILE=ON \
   -DCMAKE_INSTALL_PREFIX:PATH=/usr \
   -DCMAKE_INSTALL_LIBDIR:PATH=/usr/lib \
