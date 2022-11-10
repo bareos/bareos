@@ -38,7 +38,7 @@
 #include "lib/parse_conf.h"
 #include "stored/butil.h"
 #include "stored/device_control_record.h"
-#include "stored/jcr_private.h"
+#include "stored/stored_jcr_impl.h"
 #include "stored/job.h"
 #include "stored/sd_plugins.h"
 #include "stored/sd_stats.h"
