@@ -163,8 +163,7 @@ bool DotStatusCmd(UaContext* ua, const char* cmd)
 
 void FormatRunningBackupJobsStatus(UaContext* ua, JobControlRecord* jcr)
 {
-  if (jcr && jcr->getJobStatus() == JS_Running
-      && jcr->getJobType() == JT_BACKUP) {
+  if (jcr && jcr->getJobType() == JT_BACKUP) {
     switch (ua->api) {
       case API_MODE_JSON:
         ua->send->ObjectStart();
@@ -191,14 +190,14 @@ void FormatRunningBackupJobsStatus(UaContext* ua, JobControlRecord* jcr)
 
 void DoRunningJobsStatus(UaContext* ua)
 {
-  int jobid = 0;
-  int argposition = FindArgWithValue(ua, NT_("jobid"));
+  std::unordered_set<JobId_t> selected_jobids = select_jobs(ua, "status");
 
   ua->send->ArrayStart("jobs");
-  if (argposition > 0) {
-    jobid = str_to_int64(ua->argv[argposition]);
-    JobControlRecord* jcr = get_jcr_by_id(jobid);
-    FormatRunningBackupJobsStatus(ua, jcr);
+  if (!selected_jobids.empty()) {
+    for (auto jobid : selected_jobids) {
+      JobControlRecord* jcr = get_jcr_by_id(jobid);
+      FormatRunningBackupJobsStatus(ua, jcr);
+    }
   } else {
     JobControlRecord* jcr;
     foreach_jcr (jcr) { FormatRunningBackupJobsStatus(ua, jcr); }
