@@ -824,21 +824,18 @@ static inline bool CancelStorageDaemonJob(UaContext* ua, const char*)
 static inline bool CancelJobs(UaContext* ua, const char*)
 {
   JobControlRecord* jcr;
-  JobId_t* JobId = nullptr;
-  alist<JobId_t*>* selection;
+  std::unordered_set<JobId_t> selection;
 
   selection = select_jobs(ua, "cancel");
-  if (!selection) { return true; }
+  if (selection.empty()) { return true; }
 
   // Loop over the different JobIds selected.
-  foreach_alist (JobId, selection) {
-    if (!(jcr = get_jcr_by_id(*JobId))) { continue; }
+  for (auto JobId : selection) {
+    if (!(jcr = get_jcr_by_id(JobId))) { continue; }
 
     CancelJob(ua, jcr);
     FreeJcr(jcr);
   }
-
-  delete selection;
 
   return true;
 }
@@ -990,15 +987,14 @@ static bool SetbwlimitCmd(UaContext* ua, const char*)
 
   if (FindArgKeyword(ua, lst) > 0) {
     JobControlRecord* jcr;
-    JobId_t* JobId = nullptr;
-    alist<JobId_t*>* selection;
+    std::unordered_set<JobId_t> selection;
 
     selection = select_jobs(ua, "limit");
-    if (!selection) { return true; }
+    if (selection.empty()) { return true; }
 
     // Loop over the different JobIds selected.
-    foreach_alist (JobId, selection) {
-      if (!(jcr = get_jcr_by_id(*JobId))) { continue; }
+    for (auto JobId : selection) {
+      if (!(jcr = get_jcr_by_id(JobId))) { continue; }
 
       jcr->max_bandwidth = limit;
       bstrncpy(Job, jcr->Job, sizeof(Job));
@@ -1013,8 +1009,6 @@ static bool SetbwlimitCmd(UaContext* ua, const char*)
       }
       FreeJcr(jcr);
     }
-
-    delete selection;
   } else if (FindArg(ua, NT_("storage")) >= 0) {
     store = get_storage_resource(ua);
   } else {

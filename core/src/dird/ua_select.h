@@ -23,6 +23,7 @@
 #define BAREOS_DIRD_UA_SELECT_H_
 
 #include "dird/ua.h"
+#include <unordered_set>
 template <typename T> class alist;
 
 struct PoolDbRecord;
@@ -82,7 +83,7 @@ bool GetClientDbr(UaContext* ua, ClientDbRecord* cr);
 PoolResource* get_pool_resource(UaContext* ua);
 JobResource* get_restore_job(UaContext* ua);
 PoolResource* select_pool_resource(UaContext* ua);
-alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason);
+std::unordered_set<JobId_t> select_jobs(UaContext* ua, const char* reason);
 ClientResource* get_client_resource(UaContext* ua);
 int GetJobDbr(UaContext* ua, JobDbRecord* jr);
 bool GetUserSlotList(UaContext* ua,
