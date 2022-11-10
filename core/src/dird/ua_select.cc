@@ -1285,17 +1285,13 @@ StorageResource* get_storage_resource(UaContext* ua,
                                       bool use_default,
                                       bool autochangers_only)
 {
-  int i;
-  JobControlRecord* jcr;
-  int jobid;
-  char ed1[50];
-  char* StoreName = NULL;
-  StorageResource* store = NULL;
-
   Dmsg1(100, "get_storage_resource: autochangers_only is %d\n",
         autochangers_only);
 
-  for (i = 1; i < ua->argc; i++) {
+  JobControlRecord* jcr;
+  char* StoreName = nullptr;
+  StorageResource* store = nullptr;
+  for (int i = 1; i < ua->argc; i++) {
     // Ignore any zapped keyword.
     if (*ua->argk[i] == 0) { continue; }
     if (use_default && !ua->argv[i]) {
@@ -1318,18 +1314,19 @@ StorageResource* get_storage_resource(UaContext* ua,
         break;
       }
     } else {
-      if (Bstrcasecmp(ua->argk[i], NT_("storage"))
-          || Bstrcasecmp(ua->argk[i], NT_("sd"))) {
+      if ((Bstrcasecmp(ua->argk[i], NT_("storage"))
+           || Bstrcasecmp(ua->argk[i], NT_("sd")))
+          && ua->argv[i]) {
         StoreName = ua->argv[i];
         break;
       } else if (Bstrcasecmp(ua->argk[i], NT_("jobid"))) {
-        jobid = str_to_int64(ua->argv[i]);
+        int jobid = str_to_int64(ua->argv[i]);
         if (jobid <= 0) {
           ua->ErrorMsg(_("Expecting jobid=nn command, got: %s\n"), ua->argk[i]);
           return NULL;
         }
         if (!(jcr = get_jcr_by_id(jobid))) {
-          ua->ErrorMsg(_("JobId %s is not running.\n"), edit_int64(jobid, ed1));
+          ua->ErrorMsg(_("JobId %llu is not running.\n"), jobid);
           return NULL;
         }
         store = jcr->dir_impl->res.write_storage;
@@ -1377,7 +1374,7 @@ StorageResource* get_storage_resource(UaContext* ua,
   }
 
   if (store && !ua->AclAccessOk(Storage_ACL, store->resource_name_)) {
-    store = NULL;
+    store = nullptr;
   }
 
   // No keywords found, so present a selection list

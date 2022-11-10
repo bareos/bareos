@@ -44,6 +44,7 @@
 #include "dird/ua_output.h"
 #include "dird/ua_select.h"
 #include "dird/ua_status.h"
+#include "dird/ua_input.h"
 #include "include/auth_protocol_types.h"
 #include "lib/edit.h"
 #include "lib/recent_job_results_list.h"
@@ -61,6 +62,7 @@ static void ListRunningJobs(UaContext* ua);
 static void ListTerminatedJobs(UaContext* ua);
 static void ListConnectedClients(UaContext* ua);
 static void DoDirectorStatus(UaContext* ua);
+static void DoStorageStatus(UaContext* ua);
 static void DoSchedulerStatus(UaContext* ua);
 static bool DoSubscriptionStatus(UaContext* ua);
 static void DoConfigurationStatus(UaContext* ua);
@@ -159,17 +161,102 @@ bool DotStatusCmd(UaContext* ua, const char* cmd)
   return true;
 }
 
+void FormatRunningBackupJobsStatus(UaContext* ua, JobControlRecord* jcr)
+{
+  if (jcr && jcr->getJobStatus() == JS_Running
+      && jcr->getJobType() == JT_BACKUP) {
+    switch (ua->api) {
+      case API_MODE_JSON:
+        ua->send->ObjectStart();
+        ua->send->ObjectKeyValue("jobid", jcr->JobId, "%s\n");
+        ua->send->ObjectKeyValue("averagetransferrate", jcr->AverageRate,
+                                 "%s\n");
+        ua->send->ObjectKeyValue("lasttransferrate", jcr->LastRate, "%s\n");
+        ua->send->ObjectKeyValue("jobfiles", jcr->JobFiles, "%s\n");
+        ua->send->ObjectKeyValue("jobbytes", jcr->JobBytes, "%s\n");
+        ua->send->ObjectEnd();
+        break;
+      default:
+        ua->SendMsg(_("\njobid %d stats: \n"
+                      "  average rate : %lu \n"
+                      "  last rate : %lu \n"
+                      "  jobfiles : %lu \n"
+                      "  job bytes : %llu \n\n"),
+                    jcr->JobId, jcr->AverageRate, jcr->LastRate, jcr->JobFiles,
+                    jcr->JobBytes);
+        break;
+    }
+  }
+}
+
+void DoRunningJobsStatus(UaContext* ua)
+{
+  int jobid = 0;
+  int argposition = FindArgWithValue(ua, NT_("jobid"));
+
+  ua->send->ArrayStart("jobs");
+  if (argposition > 0) {
+    jobid = str_to_int64(ua->argv[argposition]);
+    JobControlRecord* jcr = get_jcr_by_id(jobid);
+    FormatRunningBackupJobsStatus(ua, jcr);
+  } else {
+    JobControlRecord* jcr;
+    foreach_jcr (jcr) { FormatRunningBackupJobsStatus(ua, jcr); }
+  }
+
+  ua->send->ArrayEnd("jobs");
+}
+
+
+static bool PromptUserChooseStatus(UaContext* ua)
+{
+  StartPrompt(ua, _("Status available for:\n"));
+  AddPrompt(ua, NT_("Director"));
+  AddPrompt(ua, NT_("Storage"));
+  AddPrompt(ua, NT_("Client"));
+  AddPrompt(ua, NT_("Scheduler"));
+  AddPrompt(ua, NT_("All"));
+
+  char prmt[MAX_NAME_LENGTH];
+  int item;
+  Dmsg0(20, "DoPrompt: select daemon\n");
+  if ((item = DoPrompt(ua, "", _("Select daemon type for status"), prmt,
+                       sizeof(prmt)))
+      < 0) {
+    return true;
+  }
+  Dmsg1(20, "item=%d\n", item);
+  switch (item) {
+    case 0: /* Director */
+      DoDirectorStatus(ua);
+      break;
+    case 1: {
+      StorageResource* store = select_storage_resource(ua);
+      if (store) { StorageStatus(ua, store, NULL); }
+      break;
+    }
+    case 2: {
+      ClientResource* client = select_client_resource(ua);
+      if (client) { ClientStatus(ua, client, NULL); }
+      break;
+    }
+    case 3:
+      DoSchedulerStatus(ua);
+      break;
+    case 4:
+      DoAllStatus(ua);
+      break;
+    default:
+      break;
+  }
+  return true;
+}
+
 // status command
 bool StatusCmd(UaContext* ua, const char* cmd)
 {
-  StorageResource* store;
-  ClientResource* client;
-  int item, i;
-  bool autochangers_only;
-
   Dmsg1(20, "status:%s:\n", cmd);
-
-  for (i = 1; i < ua->argc; i++) {
+  for (int i = 1; i < ua->argc; i++) {
     if (Bstrcasecmp(ua->argk[i], NT_("all"))) {
       DoAllStatus(ua);
       return true;
@@ -177,7 +264,7 @@ bool StatusCmd(UaContext* ua, const char* cmd)
       DoDirectorStatus(ua);
       return true;
     } else if (Bstrcasecmp(ua->argk[i], NT_("client"))) {
-      client = get_client_resource(ua);
+      ClientResource* client = get_client_resource(ua);
       if (client) { ClientStatus(ua, client, NULL); }
       return true;
     } else if (bstrncasecmp(ua->argk[i], NT_("sched"), 5)) {
@@ -188,71 +275,19 @@ bool StatusCmd(UaContext* ua, const char* cmd)
     } else if (bstrncasecmp(ua->argk[i], NT_("conf"), 4)) {
       DoConfigurationStatus(ua);
       return true;
-    } else {
-      // limit storages to autochangers if slots is given
-      autochangers_only = (FindArg(ua, NT_("slots")) > 0);
-      store = get_storage_resource(ua, false, autochangers_only);
-
-      if (store) {
-        if (FindArg(ua, NT_("slots")) > 0) {
-          switch (ua->api) {
-            case API_MODE_OFF:
-              StatusSlots(ua, store);
-              break;
-            case API_MODE_ON:
-              StatusContentApi(ua, store);
-              break;
-            case API_MODE_JSON:
-              StatusContentJson(ua, store);
-              break;
-          }
-        } else {
-          StorageStatus(ua, store, NULL);
-        }
-      }
+    } else if (bstrncasecmp(ua->argk[i], NT_("running"), 7)) {
+      DoRunningJobsStatus(ua);
+      return true;
+    } else if (bstrncasecmp(ua->argk[i], NT_("storage"), 7)) {
+      DoStorageStatus(ua);
 
       return true;
+    } else {
+      return PromptUserChooseStatus(ua);
     }
   }
   /* If no args, ask for status type */
-  if (ua->argc == 1) {
-    char prmt[MAX_NAME_LENGTH];
-
-    StartPrompt(ua, _("Status available for:\n"));
-    AddPrompt(ua, NT_("Director"));
-    AddPrompt(ua, NT_("Storage"));
-    AddPrompt(ua, NT_("Client"));
-    AddPrompt(ua, NT_("Scheduler"));
-    AddPrompt(ua, NT_("All"));
-    Dmsg0(20, "DoPrompt: select daemon\n");
-    if ((item = DoPrompt(ua, "", _("Select daemon type for status"), prmt,
-                         sizeof(prmt)))
-        < 0) {
-      return true;
-    }
-    Dmsg1(20, "item=%d\n", item);
-    switch (item) {
-      case 0: /* Director */
-        DoDirectorStatus(ua);
-        break;
-      case 1:
-        store = select_storage_resource(ua);
-        if (store) { StorageStatus(ua, store, NULL); }
-        break;
-      case 2:
-        client = select_client_resource(ua);
-        if (client) { ClientStatus(ua, client, NULL); }
-        break;
-      case 3:
-        DoSchedulerStatus(ua);
-        break;
-      case 4:
-        DoAllStatus(ua);
-        break;
-      default:
-        break;
-    }
-  }
+  if (ua->argc == 1) { return PromptUserChooseStatus(ua); }
   return true;
 }
 
@@ -269,9 +304,7 @@ static void DoAllStatus(UaContext* ua)
   /* Count Storage items */
   LockRes(my_config);
   i = 0;
-  foreach_res (store, R_STORAGE) {
-    i++;
-  }
+  foreach_res (store, R_STORAGE) { i++; }
   unique_store = (StorageResource**)malloc(i * sizeof(StorageResource));
   /* Find Unique Storage address/port */
   i = 0;
@@ -304,9 +337,7 @@ static void DoAllStatus(UaContext* ua)
   /* Count Client items */
   LockRes(my_config);
   i = 0;
-  foreach_res (client, R_CLIENT) {
-    i++;
-  }
+  foreach_res (client, R_CLIENT) { i++; }
   unique_client = (ClientResource**)malloc(i * sizeof(ClientResource));
   /* Find Unique Client address/port */
   i = 0;
@@ -762,6 +793,31 @@ static void DoDirectorStatus(UaContext* ua)
   ua->SendMsg("====\n");
 }
 
+static void DoStorageStatus(UaContext* ua)
+{
+  // limit storages to autochangers if slots is given
+  bool autochangers_only = (FindArg(ua, NT_("slots")) > 0);
+  StorageResource* store = get_storage_resource(ua, false, autochangers_only);
+
+  if (store) {
+    if (FindArg(ua, NT_("slots")) > 0) {
+      switch (ua->api) {
+        case API_MODE_OFF:
+          StatusSlots(ua, store);
+          break;
+        case API_MODE_ON:
+          StatusContentApi(ua, store);
+          break;
+        case API_MODE_JSON:
+          StatusContentJson(ua, store);
+          break;
+      }
+    } else {
+      StorageStatus(ua, store, NULL);
+    }
+  }
+}
+
 static void PrtRunhdr(UaContext* ua)
 {
   if (!ua->api) {
@@ -917,9 +973,7 @@ static void ListScheduledJobs(UaContext* ua)
     }
   } /* end for loop over resources */
   UnlockRes(my_config);
-  foreach_dlist (sp, sched) {
-    PrtRuntime(ua, sp);
-  }
+  foreach_dlist (sp, sched) { PrtRuntime(ua, sp); }
   if (num_jobs == 0 && !ua->api) { ua->SendMsg(_("No Scheduled Jobs.\n")); }
   if (!ua->api) ua->SendMsg("====\n");
   Dmsg0(200, "Leave list_sched_jobs_runs()\n");
