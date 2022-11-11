@@ -793,6 +793,16 @@ MOD_INIT(bareosfd)
   if (!pDictbIOPS) { return MOD_ERROR_VAL; }
   if (PyModule_AddObject(m, bIOPS, pDictbIOPS)) { return MOD_ERROR_VAL; }
 
+  const char* bIOPstatus = "bIOPstatus";
+  PyObject* pDictbIOPstatus = NULL;
+  pDictbIOPstatus = PyDict_New();
+  ConstSet_StrLong(pDictbIOPstatus, io_status_error, -1);
+  ConstSet_StrLong(pDictbIOPstatus, io_status_plugin, 0);
+  ConstSet_StrLong(pDictbIOPstatus, io_status_core, 1);
+  if (!pDictbIOPstatus) { return MOD_ERROR_VAL; }
+  if (PyModule_AddObject(m, bIOPstatus, pDictbIOPstatus)) { return MOD_ERROR_VAL; }
+
+
 
   const char* bLevels = "bLevels";
   PyObject* pDictbLevels = NULL;

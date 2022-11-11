@@ -187,8 +187,13 @@ class BareosFdPluginLocalFileset(BareosFdPluginLocalFilesBaseclass):  # noqa
                 self.file = open(self.FNAME, "rb")
 
             # do io in core
-            IOP.do_io_in_core = True
-            IOP.filedes = self.file.fileno()
+            # IOP.filedes = self.file.fileno()
+            # IOP.status =  bareosfd.io_status_core
+            ##IOP.status = 1
+
+            #  do io in plugin
+            IOP.status = bareosfd.io_status_plugin
+            ##IOP.status = 0
 
         except:
             IOP.status = -1

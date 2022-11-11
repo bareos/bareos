@@ -61,6 +61,13 @@ struct BareosFilePacket;
 struct FindFilesPacket;
 #endif /* FILE_DAEMON */
 
+enum IoStatus : int
+{
+  error = -1,
+  success = 0,
+  do_io_in_core = 1,
+};
+
 template <typename T> class alist;
 
 namespace filedaemon {
@@ -138,22 +145,21 @@ enum
 };
 
 struct io_pkt {
-  int32_t pkt_size;   /* Size of this packet */
-  int32_t func;       /* Function code */
-  int32_t count;      /* Read/write count */
-  int32_t flags;      /* Open flags */
-  mode_t mode;        /* Permissions for created files */
-  char* buf;          /* Read/write buffer */
-  const char* fname;  /* Open filename */
-  int32_t status;     /* Return status */
-  int32_t io_errno;   /* Errno code */
-  int32_t lerror;     /* Win32 error code */
-  int32_t whence;     /* Lseek argument */
-  boffset_t offset;   /* Lseek argument */
-  bool win32;         /* Win32 GetLastError returned */
-  int filedes;        /* file descriptor to read/write in core */
-  bool do_io_in_core; /* do io in core */
-  int32_t pkt_end;    /* End packet sentinel */
+  int32_t pkt_size;  /* Size of this packet */
+  int32_t func;      /* Function code */
+  int32_t count;     /* Read/write count */
+  int32_t flags;     /* Open flags */
+  mode_t mode;       /* Permissions for created files */
+  char* buf;         /* Read/write buffer */
+  const char* fname; /* Open filename */
+  int32_t status;    /* Return status */
+  int32_t io_errno;  /* Errno code */
+  int32_t lerror;    /* Win32 error code */
+  int32_t whence;    /* Lseek argument */
+  boffset_t offset;  /* Lseek argument */
+  bool win32;        /* Win32 GetLastError returned */
+  int filedes;       /* file descriptor to read/write in core */
+  int32_t pkt_end;   /* End packet sentinel */
 };
 
 struct acl_pkt {
