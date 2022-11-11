@@ -164,25 +164,38 @@ bool DotStatusCmd(UaContext* ua, const char* cmd)
 void FormatRunningBackupJobsStatus(UaContext* ua, JobControlRecord* jcr)
 {
   if (jcr && jcr->getJobType() == JT_BACKUP) {
+    char last_update_timestamp[MAX_TIME_LENGTH];
+    if (jcr->last_time > 0) {
+      bstrutime(last_update_timestamp, sizeof(last_update_timestamp),
+                jcr->last_time);
+    } else {
+      auto now = std::chrono::system_clock::to_time_t(
+          std::chrono::system_clock::now());
+
+      bstrutime(last_update_timestamp, sizeof(last_update_timestamp), now);
+    }
     switch (ua->api) {
       case API_MODE_JSON:
         ua->send->ObjectStart();
         ua->send->ObjectKeyValue("jobid", jcr->JobId, "%s\n");
+        ua->send->ObjectKeyValue("job", jcr->Job, "%s\n");
         ua->send->ObjectKeyValue("averagetransferrate", jcr->AverageRate,
                                  "%s\n");
         ua->send->ObjectKeyValue("lasttransferrate", jcr->LastRate, "%s\n");
         ua->send->ObjectKeyValue("jobfiles", jcr->JobFiles, "%s\n");
         ua->send->ObjectKeyValue("jobbytes", jcr->JobBytes, "%s\n");
+        ua->send->ObjectKeyValue("lastupdate", last_update_timestamp, "%s\n");
         ua->send->ObjectEnd();
         break;
       default:
-        ua->SendMsg(_("\njobid %d stats: \n"
+        ua->SendMsg(_("\nStatistics of Job %s with jobid %d : \n"
                       "  average rate : %lu \n"
                       "  last rate : %lu \n"
                       "  jobfiles : %lu \n"
-                      "  job bytes : %llu \n\n"),
-                    jcr->JobId, jcr->AverageRate, jcr->LastRate, jcr->JobFiles,
-                    jcr->JobBytes);
+                      "  job bytes : %llu \n"
+                      "  lastupdate : %s\n\n"),
+                    jcr->Job, jcr->JobId, jcr->AverageRate, jcr->LastRate,
+                    jcr->JobFiles, jcr->JobBytes, last_update_timestamp);
         break;
     }
   }
