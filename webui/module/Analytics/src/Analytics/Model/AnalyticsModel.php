@@ -58,7 +58,8 @@ class AnalyticsModel
    public function getRunningJobs(&$bsock)
    {
       if(isset($bsock)) {
-         $cmd = 'llist jobs jobstatus=R';
+         //$cmd = 'llist jobs jobstatus=R';
+         $cmd = 'status running';
          $result = $bsock->send_command($cmd, 2);
          $runningjobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          $result = $runningjobs['result']['jobs'];
