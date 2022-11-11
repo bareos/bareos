@@ -190,7 +190,7 @@ void FormatRunningBackupJobsStatus(UaContext* ua, JobControlRecord* jcr)
 
 void DoRunningJobsStatus(UaContext* ua)
 {
-  std::unordered_set<JobId_t> selected_jobids = select_jobs(ua, "status");
+  std::unordered_set<JobId_t> selected_jobids = select_jobid_job_ujobid(ua);
 
   ua->send->ArrayStart("jobs");
   if (!selected_jobids.empty()) {
