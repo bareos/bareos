@@ -69,7 +69,8 @@ static char Create_job_media[]
 static char Update_filelist[] = "Catreq Job=%127s UpdateFileList\n";
 
 static char Update_jobrecord[]
-    = "Catreq Job=%127s UpdateJobRecord LastCheckpointFiles=%lu JobFiles=%lu "
+    = "Catreq Job=%127s UpdateJobRecord LastCheckpointTime=%llu "
+      "LastCheckpointFiles=%lu JobFiles=%lu "
       "JobBytes=%llu\n";
 
 static char Update_jobstats[]
@@ -364,9 +365,9 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
            _("Batch database connection not found. Cannot update file list\n"));
     }
 
-  } else if (sscanf(bs->msg, Update_jobrecord, &Job, &jcr->LastCheckpointFiles,
-                    &jcr->JobFiles, &jcr->JobBytes)
-             == 4) {
+  } else if (sscanf(bs->msg, Update_jobrecord, &Job, &jcr->last_checkpoint_time,
+                    &jcr->LastCheckpointFiles, &jcr->JobFiles, &jcr->JobBytes)
+             == 5) {
     Dmsg0(0, "Updating job record\n");
 
     if (!jcr->db->UpdateRunningJobRecord(jcr)) {
