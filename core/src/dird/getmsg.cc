@@ -83,6 +83,12 @@ static void SetJcrSdJobStatus(JobControlRecord* jcr, int SDJobStatus)
   }
   jcr->dir_impl->SDJobStatus = SDJobStatus;
 
+  jcr->setJobStatus(SDJobStatus);
+
+  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->impl->jr)) {
+    Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
+  }
+
   // Some SD Job status setting are propagated to the controlling Job.
   switch (jcr->dir_impl->SDJobStatus) {
     case JS_Incomplete:
