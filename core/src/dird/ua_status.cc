@@ -178,6 +178,7 @@ void FormatRunningBackupJobsStatus(UaContext* ua, JobControlRecord* jcr)
       case API_MODE_JSON:
         ua->send->ObjectStart();
         ua->send->ObjectKeyValue("jobid", jcr->JobId, "%s\n");
+        ua->send->ObjectKeyValue("job", jcr->Job, "%s\n");
         ua->send->ObjectKeyValue("averagetransferrate", jcr->AverageRate,
                                  "%s\n");
         ua->send->ObjectKeyValue("lasttransferrate", jcr->LastRate, "%s\n");
@@ -187,14 +188,14 @@ void FormatRunningBackupJobsStatus(UaContext* ua, JobControlRecord* jcr)
         ua->send->ObjectEnd();
         break;
       default:
-        ua->SendMsg(_("\njobid %d stats: \n"
+        ua->SendMsg(_("\nStatistics of Job %s with jobid %d : \n"
                       "  average rate : %lu \n"
                       "  last rate : %lu \n"
                       "  jobfiles : %lu \n"
                       "  job bytes : %llu \n"
                       "  lastupdate : %s\n\n"),
-                    jcr->JobId, jcr->AverageRate, jcr->LastRate, jcr->JobFiles,
-                    jcr->JobBytes, last_update_timestamp);
+                    jcr->Job, jcr->JobId, jcr->AverageRate, jcr->LastRate,
+                    jcr->JobFiles, jcr->JobBytes, last_update_timestamp);
         break;
     }
   }
