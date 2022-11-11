@@ -83,6 +83,7 @@ bool GetClientDbr(UaContext* ua, ClientDbRecord* cr);
 PoolResource* get_pool_resource(UaContext* ua);
 JobResource* get_restore_job(UaContext* ua);
 PoolResource* select_pool_resource(UaContext* ua);
+std::unordered_set<JobId_t> select_jobid_job_ujobid(UaContext* ua);
 std::unordered_set<JobId_t> select_jobs(UaContext* ua, const char* reason);
 ClientResource* get_client_resource(UaContext* ua);
 int GetJobDbr(UaContext* ua, JobDbRecord* jr);

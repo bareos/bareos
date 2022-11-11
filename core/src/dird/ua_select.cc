@@ -1500,24 +1500,8 @@ bool GetLevelFromName(JobControlRecord* jcr, const char* level_name)
   return found;
 }
 
-/**
- * Get a job selection, "reason" is used in user messages and can be: cancel,
- * limit, ...
- *
- * Returns: NULL on error
- *          alist on success with the selected jobids.
- */
-std::unordered_set<JobId_t> select_jobs(UaContext* ua, const char* reason)
-{
-  // See if "all" is given.
-  bool select_all = false;
-  if (FindArg(ua, NT_("all")) > 0) { select_all = true; }
-
-  // See if "state=" is given.
-  bool select_by_state = false;
-  if (FindArgWithValue(ua, NT_("state")) > 0) { select_by_state = true; }
-
-  // See if there are any jobid, job or ujobid keywords.
+std::unordered_set<JobId_t> select_jobid_job_ujobid(UaContext* ua)
+{  // See if there are any jobid, job or ujobid keywords.
   JobControlRecord* jcr = nullptr;
   std::unordered_set<JobId_t> selected_jobids;
   const char* lst[] = {"job", "jobid", "ujobid", NULL};
@@ -1528,9 +1512,7 @@ std::unordered_set<JobId_t> select_jobs(UaContext* ua, const char* reason)
         JobId_t JobId = str_to_int64(ua->argv[i]);
         if (!JobId) { continue; }
         if (!(jcr = get_jcr_by_id(JobId))) {
-          ua->ErrorMsg(_("JobId %s is not running. Use Job name to %s "
-                         "inactive jobs.\n"),
-                       ua->argv[i], _(reason));
+          ua->ErrorMsg(_("JobId %s is not running.\n"), ua->argv[i]);
           continue;
         }
       } else if (Bstrcasecmp(ua->argk[i], NT_("job"))) {
@@ -1567,6 +1549,30 @@ std::unordered_set<JobId_t> select_jobs(UaContext* ua, const char* reason)
       }
     }
   }
+
+  return selected_jobids;
+}
+
+/**
+ * Get a job selection, "reason" is used in user messages and can be: cancel,
+ * limit, ...
+ *
+ * Returns: NULL on error
+ *          alist on success with the selected jobids.
+ */
+std::unordered_set<JobId_t> select_jobs(UaContext* ua, const char* reason)
+{
+  // See if "all" is given.
+  bool select_all = false;
+  if (FindArg(ua, NT_("all")) > 0) { select_all = true; }
+
+  // See if "state=" is given.
+  bool select_by_state = false;
+  if (FindArgWithValue(ua, NT_("state")) > 0) { select_by_state = true; }
+
+  // See if there are any jobid, job or ujobid keywords.
+  JobControlRecord* jcr = nullptr;
+  std::unordered_set<JobId_t> selected_jobids = select_jobid_job_ujobid(ua);
 
   /*
    * If we didn't select any Jobs using jobid, job or ujobid keywords try
