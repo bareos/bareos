@@ -164,6 +164,16 @@ bool DotStatusCmd(UaContext* ua, const char* cmd)
 void FormatRunningBackupJobsStatus(UaContext* ua, JobControlRecord* jcr)
 {
   if (jcr && jcr->getJobType() == JT_BACKUP) {
+    char last_update_timestamp[MAX_TIME_LENGTH];
+    if (jcr->last_time > 0) {
+      bstrutime(last_update_timestamp, sizeof(last_update_timestamp),
+                jcr->last_time);
+    } else {
+      auto now = std::chrono::system_clock::to_time_t(
+          std::chrono::system_clock::now());
+
+      bstrutime(last_update_timestamp, sizeof(last_update_timestamp), now);
+    }
     switch (ua->api) {
       case API_MODE_JSON:
         ua->send->ObjectStart();
@@ -173,6 +183,7 @@ void FormatRunningBackupJobsStatus(UaContext* ua, JobControlRecord* jcr)
         ua->send->ObjectKeyValue("lasttransferrate", jcr->LastRate, "%s\n");
         ua->send->ObjectKeyValue("jobfiles", jcr->JobFiles, "%s\n");
         ua->send->ObjectKeyValue("jobbytes", jcr->JobBytes, "%s\n");
+        ua->send->ObjectKeyValue("lastupdate", last_update_timestamp, "%s\n");
         ua->send->ObjectEnd();
         break;
       default:
@@ -180,9 +191,10 @@ void FormatRunningBackupJobsStatus(UaContext* ua, JobControlRecord* jcr)
                       "  average rate : %lu \n"
                       "  last rate : %lu \n"
                       "  jobfiles : %lu \n"
-                      "  job bytes : %llu \n\n"),
+                      "  job bytes : %llu \n"
+                      "  lastupdate : %s\n\n"),
                     jcr->JobId, jcr->AverageRate, jcr->LastRate, jcr->JobFiles,
-                    jcr->JobBytes);
+                    jcr->JobBytes, last_update_timestamp);
         break;
     }
   }
