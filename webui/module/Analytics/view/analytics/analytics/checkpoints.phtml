@@ -255,7 +255,7 @@ function updateRunningJobsData() {
         response.forEach((element) => {
           if(runtimedata.has(element.jobid) === false) {
             runtimedata.set(element.jobid, [[],[],[],[]])
-            runtimedata.get(element.jobid)[0].push(element.name)
+            runtimedata.get(element.jobid)[0].push(element.job)
           }
           if(runtimedata.get(element.jobid)[1].length > checkpointnumber - 1) {
             runtimedata.get(element.jobid)[1].shift()
