@@ -2578,6 +2578,7 @@ class BareosVmConfigInfoToSpec(object):
     def __init__(self, config_info):
         self.config_info = config_info
         self.datastore_rex = re.compile(r"\[(.+?)\]")
+        self.backing_filename_snapshot_rex = re.compile(r"(-\d{6})\.vmdk$")
         self.target_datastore_name = None
 
     def transform(self, target_datastore_name=None):
@@ -3026,7 +3027,13 @@ class BareosVmConfigInfoToSpec(object):
                     device["backing"]["fileName"],
                     count=1,
                 )
-            add_device.backing.fileName = device["backing"]["fileName"]
+
+            # if a snapshot existed at backup time, the disk backing name will be like
+            # [datastore1] tcl131-test1_1/tcl131-test1-000001.vmdk
+            # the -000001 must be removed when recreating a VM:
+            add_device.backing.fileName = self.backing_filename_snapshot_rex.sub(
+                ".vmdk", device["backing"]["fileName"]
+            )
             add_device.backing.digestEnabled = device["backing"]["digestEnabled"]
             add_device.backing.diskMode = device["backing"]["diskMode"]
             add_device.backing.eagerlyScrub = device["backing"]["eagerlyScrub"]
