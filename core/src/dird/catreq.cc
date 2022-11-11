@@ -72,6 +72,10 @@ static char Update_jobrecord[]
     = "Catreq Job=%127s UpdateJobRecord LastCheckpointFiles=%lu JobFiles=%lu "
       "JobBytes=%llu\n";
 
+static char Update_jobstats[]
+    = "Catreq Job=%127s UpdateJobStats JobFiles=%lu "
+      "JobBytes=%llu\n";
+
 // Responses sent to Storage daemon
 static char OK_media[]
     = "1000 OK VolName=%s VolJobs=%u VolFiles=%u"
@@ -370,6 +374,13 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
            jcr->db->strerror());
       bs->fsend(_("1992 Update job record error\n"));
     }
+  } else if (sscanf(bs->msg, Update_jobstats, &Job, &jcr->JobFiles,
+                    &jcr->JobBytes)
+             == 3) {
+    Dmsg0(0, "Updating jcr stats\n");
+
+    jcr->UpdateJobStats();
+
   } else {
     omsg = GetMemory(bs->message_length + 1);
     PmStrcpy(omsg, bs->msg);
