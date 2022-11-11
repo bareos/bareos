@@ -69,6 +69,10 @@ static char Update_jobrecord[]
     = "Catreq Job=%s UpdateJobRecord LastCheckpointFiles=%lu JobFiles=%lu "
       "JobBytes=%llu\n";
 
+static char Update_jobstats[]
+    = "Catreq Job=%s UpdateJobStats JobFiles=%lu "
+      "JobBytes=%llu\n";
+
 static char FileAttributes[] = "UpdCat Job=%s FileAttributes ";
 
 
@@ -635,6 +639,12 @@ bool StorageDaemonDeviceControlRecord::DirAskToUpdateJobRecord()
                     jcr->JobFiles, jcr->JobBytes);
 }
 
+
+bool StorageDaemonDeviceControlRecord::DirAskToUpdateJobStats()
+{
+  BareosSocket* dir = jcr->dir_bsock;
+  return dir->fsend(Update_jobstats, jcr->Job, jcr->JobFiles, jcr->JobBytes);
+}
 
 // Dummy methods for everything but SD and BTAPE.
 bool DeviceControlRecord::DirAskSysopToMountVolume(int /*mode*/)

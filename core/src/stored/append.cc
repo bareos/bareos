@@ -39,6 +39,8 @@
 #include "lib/berrno.h"
 #include "lib/berrno.h"
 
+#define STATS_UPDATE_INTERVAL 5
+
 namespace storagedaemon {
 
 /* Responses sent to the daemon */
@@ -114,6 +116,13 @@ static void UpdateJobrecord(JobControlRecord* jcr)
   jcr->sd_impl->dcr->DirAskToUpdateJobRecord();
 }
 
+static void UpdateJobStats(JobControlRecord* jcr)
+{
+  Dmsg2(100, _("... update job stats: %llu bytes %lu files\n"), jcr->JobBytes,
+        jcr->JobFiles);
+  jcr->sd_impl->dcr->DirAskToUpdateJobStats();
+}
+
 void DoBackupCheckpoint(JobControlRecord* jcr)
 {
   Dmsg0(100, _("Checkpoint: Syncing current backup status to catalog\n"));
@@ -138,6 +147,23 @@ static time_t DoTimedCheckpoint(JobControlRecord* jcr,
   }
 
   return checkpoint_time;
+}
+
+static time_t DoStatsUpdate(JobControlRecord* jcr,
+                            time_t stats_time,
+                            time_t stats_interval)
+{
+  const time_t now
+      = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+  if (now > stats_time) {
+    while (stats_time <= now) { stats_time += stats_interval; }
+    Dmsg0(100,
+          _("Doing stats update checkpoint. Next stat update in %d seconds\n"),
+          stats_interval);
+    UpdateJobStats(jcr);
+  }
+
+  return stats_time;
 }
 
 static void SaveFullyProcessedFiles(JobControlRecord* jcr,
@@ -262,6 +288,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   auto now
       = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
   time_t next_checkpoint_time = now + me->checkpoint_interval;
+  time_t next_stats_time = now + STATS_UPDATE_INTERVAL;
 
   std::vector<ProcessedFile> processed_files{};
   int64_t current_volumeid = jcr->sd_impl->dcr->VolMediaId;
@@ -360,6 +387,9 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       if (IsAttribute(jcr->sd_impl->dcr->rec)) {
         file_currently_processed.AddAttribute(jcr->sd_impl->dcr->rec);
       }
+
+      next_stats_time
+          = DoStatsUpdate(jcr, next_stats_time, STATS_UPDATE_INTERVAL);
 
       if (AttributesAreSpooled(jcr)) {
         SaveFullyProcessedFiles(jcr, processed_files);

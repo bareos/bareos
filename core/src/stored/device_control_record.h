@@ -155,6 +155,7 @@ class DeviceControlRecord {
   virtual bool DirGetVolumeInfo(enum get_vol_info_rw writing);
   virtual bool DirAskToUpdateFileList() { return true;}
   virtual bool DirAskToUpdateJobRecord() { return true;}
+  virtual bool DirAskToUpdateJobStats() { return true;}
 
   // Methods in lock.c
   void dblock(int why);
