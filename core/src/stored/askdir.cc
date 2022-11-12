@@ -66,7 +66,8 @@ static char Create_job_media[]
 static char Update_filelist[] = "Catreq Job=%s UpdateFileList\n";
 
 static char Update_jobrecord[]
-    = "Catreq Job=%s UpdateJobRecord LastCheckpointFiles=%lu JobFiles=%lu "
+    = "Catreq Job=%s UpdateJobRecord LastCheckpointTime=%llu "
+      "LastCheckpointFiles=%lu JobFiles=%lu "
       "JobBytes=%llu\n";
 
 static char Update_jobstats[]
@@ -635,8 +636,8 @@ bool StorageDaemonDeviceControlRecord::DirAskToUpdateFileList()
 bool StorageDaemonDeviceControlRecord::DirAskToUpdateJobRecord()
 {
   BareosSocket* dir = jcr->dir_bsock;
-  return dir->fsend(Update_jobrecord, jcr->Job, jcr->LastCheckpointFiles,
-                    jcr->JobFiles, jcr->JobBytes);
+  return dir->fsend(Update_jobrecord, jcr->Job, jcr->last_checkpoint_time,
+                    jcr->LastCheckpointFiles, jcr->JobFiles, jcr->JobBytes);
 }
 
 

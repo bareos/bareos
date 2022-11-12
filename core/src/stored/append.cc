@@ -39,7 +39,7 @@
 #include "lib/berrno.h"
 #include "lib/berrno.h"
 
-#define STATS_UPDATE_INTERVAL 5
+#define STATS_UPDATE_INTERVAL 3
 
 namespace storagedaemon {
 
@@ -126,6 +126,12 @@ static void UpdateJobStats(JobControlRecord* jcr)
 void DoBackupCheckpoint(JobControlRecord* jcr)
 {
   Dmsg0(100, _("Checkpoint: Syncing current backup status to catalog\n"));
+
+  auto now
+      = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+
+  jcr->last_checkpoint_time = now;
+
   UpdateJobrecord(jcr);
   UpdateFileList(jcr);
   UpdateJobmediaRecord(jcr);
