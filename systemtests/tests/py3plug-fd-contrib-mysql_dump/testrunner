@@ -51,7 +51,7 @@ echo "insert into test (data) VALUES ('test entry 2') " | $MYSQL_CLIENT "${test_
 
 cat <<END_OF_DATA2 >"$tmp/bconcmds"
 @$out $tmp/log1i.out
-# run incremental again without any new data
+@# run incremental again without any new data
 run job=$JobName yes
 wait
 status dir
