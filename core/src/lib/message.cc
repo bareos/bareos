@@ -912,7 +912,7 @@ static void pt_out(char* buf)
  *  desired, but not currently printed.
  *
  *  If the level is negative, the details of file and line number are not
- * printed.
+ *  printed.
  */
 void d_msg(const char* file, int line, int level, const char* fmt, ...)
 {

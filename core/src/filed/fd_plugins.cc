@@ -1367,6 +1367,7 @@ bacl_exit_code PluginBuildAclStreams(JobControlRecord* jcr,
           memcpy(acl_data->u.build->content, ap.content, ap.content_length);
           acl_data->u.build->content_length = ap.content_length;
           free(ap.content);
+          acl_data->u.build->content[acl_data->u.build->content_length] = '\0';
           retval = SendAclStream(jcr, acl_data, STREAM_ACL_PLUGIN);
         } else {
           retval = bacl_exit_ok;

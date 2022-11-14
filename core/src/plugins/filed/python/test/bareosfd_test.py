@@ -1,6 +1,6 @@
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -145,7 +145,10 @@ class TestBareosFd(unittest.TestCase):
 
     def test_AclPacket(self):
         test_AclPacket = bareosfd.AclPacket()
-        self.assertEqual('AclPacket(fname="<NULL>", content="")', str(test_AclPacket))
+        test_AclPacket.content = bytearray(b"Hello ACL")
+        self.assertEqual(
+            'AclPacket(fname="<NULL>", content="Hello ACL")', str(test_AclPacket)
+        )
 
     def test_XattrPacket(self):
         test_XattrPacket = bareosfd.XattrPacket()

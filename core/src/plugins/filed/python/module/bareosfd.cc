@@ -885,8 +885,8 @@ static inline bool PyAclPacketToNative(PyAclPacket* pAclPacket,
     }
 
     if (ap->content) { free(ap->content); }
-    ap->content = (char*)malloc(ap->content_length);
-    memcpy(ap->content, buf, ap->content_length);
+    ap->content = (char*)malloc(ap->content_length + 1);
+    memcpy(ap->content, buf, ap->content_length + 1);
   } else {
     PyErr_SetString(PyExc_TypeError,
                     "acl packet content needs to be of bytearray type");
