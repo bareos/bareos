@@ -85,7 +85,7 @@ static void SetJcrSdJobStatus(JobControlRecord* jcr, int SDJobStatus)
 
   jcr->setJobStatus(SDJobStatus);
 
-  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->impl->jr)) {
+  if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
   }
 
