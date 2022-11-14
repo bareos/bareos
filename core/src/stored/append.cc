@@ -147,6 +147,9 @@ static void SaveFullyProcessedFiles(JobControlRecord* jcr,
     for_each(
         processed_files.begin(), processed_files.end(),
         [&jcr](ProcessedFile& file) { file.SendAttributesToDirector(jcr); });
+
+    jcr->LastCheckpointFiles
+        = processed_files.back().GetFileIndex() - jcr->JobFiles;
     jcr->JobFiles = processed_files.back().GetFileIndex();
     processed_files.clear();
   }

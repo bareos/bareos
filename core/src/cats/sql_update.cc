@@ -113,9 +113,24 @@ bool BareosDb::UpdateJobStartRecord(JobControlRecord* jcr, JobDbRecord* jr)
 
 bool BareosDb::UpdateRunningJobRecord(JobControlRecord* jcr)
 {
+  char timestamp[MAX_TIME_LENGTH];
+
+  auto now
+      = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+
+  bstrutime(timestamp, sizeof(timestamp), now);
+
+  jcr->UpdateJobStats();
+
   DbLocker _{this};
-  Mmsg(cmd, "UPDATE Job SET JobBytes=%llu,JobFiles=%lu WHERE JobId=%lu",
-       jcr->JobBytes, jcr->JobFiles, jcr->JobId);
+  Mmsg(cmd,
+       "UPDATE Job SET "
+       "JobFiles=%lu,LastCheckpointFiles=%lu,"
+       "JobBytes=%llu,AverageTransferRate=%lu,LastTransferRate=%lu,"
+       "LastCheckpointTime='%s',LastFileProcessed='%s'"
+       " WHERE JobId=%lu",
+       jcr->JobFiles, jcr->LastCheckpointFiles, jcr->JobBytes, jcr->AverageRate,
+       jcr->LastRate, timestamp, jcr->ar ? jcr->ar->fname : "", jcr->JobId);
 
   return UPDATE_DB(jcr, cmd) > 0;
 }

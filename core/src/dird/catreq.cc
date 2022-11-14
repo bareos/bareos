@@ -69,7 +69,8 @@ static char Create_job_media[]
 static char Update_filelist[] = "Catreq Job=%127s UpdateFileList\n";
 
 static char Update_jobrecord[]
-    = "Catreq Job=%127s UpdateJobRecord JobFiles=%lu JobBytes=%llu\n";
+    = "Catreq Job=%127s UpdateJobRecord LastCheckpointFiles=%lu JobFiles=%lu "
+      "JobBytes=%llu\n";
 
 // Responses sent to Storage daemon
 static char OK_media[]
@@ -130,9 +131,6 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
 
     return;
   }
-
-  uint32_t update_jobfiles = 0;
-  uint64_t update_jobbytes = 0;
 
   // Find next appendable medium for SD
   unwanted_volumes.check_size(bs->message_length);
@@ -362,13 +360,10 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
            _("Batch database connection not found. Cannot update file list\n"));
     }
 
-  } else if (sscanf(bs->msg, Update_jobrecord, &Job, &update_jobfiles,
-                    &update_jobbytes)
-             == 3) {
+  } else if (sscanf(bs->msg, Update_jobrecord, &Job, &jcr->LastCheckpointFiles,
+                    &jcr->JobFiles, &jcr->JobBytes)
+             == 4) {
     Dmsg0(0, "Updating job record\n");
-
-    jcr->JobFiles = update_jobfiles;
-    jcr->JobBytes = update_jobbytes;
 
     if (!jcr->db->UpdateRunningJobRecord(jcr)) {
       Jmsg(jcr, M_FATAL, 0, _("Catalog error updating Job record. %s\n"),
