@@ -295,13 +295,6 @@ if(ENABLE_WEBUI_SELENIUM_TEST)
       "${current_test_directory}/webui/config/autoload/global.php" @ONLY
     )
     configure_file(
-      "${CMAKE_SOURCE_DIR}/systemtests/tests/webui-common/directors.ini.in"
-      "${current_test_directory}/etc/bareos-webui/directors.ini" @ONLY
-    )
-    file(COPY "${CMAKE_SOURCE_DIR}/webui/install/configuration.ini"
-         DESTINATION "${current_test_directory}/etc/bareos-webui/"
-    )
-    configure_file(
       "${CMAKE_SOURCE_DIR}/systemtests/tests/webui-common/testrunner.in"
       "${current_test_directory}/testrunner" @ONLY
     )
