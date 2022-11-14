@@ -253,7 +253,8 @@ bool show_cmd(UaContext* ua, const char* cmd)
         ShowDisabledSchedules(ua);
       }
       ua->send->ObjectEnd("disabled");
-      goto bail_out;
+      UnlockRes(my_config);
+      return true;
     }
 
     type = 0;
@@ -299,13 +300,13 @@ bool show_cmd(UaContext* ua, const char* cmd)
         for (j = 0; show_cmd_available_resources[j].res_name; j++) {
           ua->InfoMsg("%s\n", _(show_cmd_available_resources[j].res_name));
         }
-        goto bail_out;
+        break;
       case -3:
         ua->ErrorMsg(_("%s resource %s not found.\n"), res_name, ua->argv[i]);
-        goto bail_out;
+        break;
       case 0:
         ua->ErrorMsg(_("Resource %s not found\n"), res_name);
-        goto bail_out;
+        break;
       default:
         my_config->DumpResourceCb_(recurse ? type : -type, res, bsendmsg, ua,
                                    hide_sensitive_data, verbose);
@@ -313,7 +314,6 @@ bool show_cmd(UaContext* ua, const char* cmd)
     }
   }
 
-bail_out:
   UnlockRes(my_config);
   return true;
 }
