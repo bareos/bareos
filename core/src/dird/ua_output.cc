@@ -212,12 +212,7 @@ static void ShowAll(UaContext* ua, bool hide_sensitive_data, bool verbose)
  */
 bool show_cmd(UaContext* ua, const char*)
 {
-  int i, j, type, len;
-  int recurse;
-  char* res_name;
-  BareosResource* res = NULL;
   bool verbose = false;
-  bool hide_sensitive_data;
 
   Dmsg1(20, "show: %s\n", ua->UA_sock->msg);
 
@@ -225,7 +220,8 @@ bool show_cmd(UaContext* ua, const char*)
    * When the console has no access to the configure cmd then any show cmd
    * will suppress all sensitive information like for instance passwords.
    */
-  hide_sensitive_data = !ua->AclAccessOk(Command_ACL, "configure", false);
+
+  bool hide_sensitive_data = !ua->AclAccessOk(Command_ACL, "configure", false);
 
   if (FindArg(ua, NT_("verbose")) > 0) { verbose = true; }
 
@@ -234,7 +230,7 @@ bool show_cmd(UaContext* ua, const char*)
   // Without parameter, show all ressources.
   if (ua->argc == 1) { ShowAll(ua, hide_sensitive_data, verbose); }
 
-  for (i = 1; i < ua->argc; i++) {
+  for (int i = 1; i < ua->argc; i++) {
     // skip verbose keyword, already handled earlier.
     if (Bstrcasecmp(ua->argk[i], NT_("verbose"))) { continue; }
 
@@ -258,13 +254,15 @@ bool show_cmd(UaContext* ua, const char*)
       return true;
     }
 
-    type = 0;
-    res_name = ua->argk[i];
+    int type = 0;
+    int recurse = 0;
+    char* res_name = ua->argk[i];
+    BareosResource* res = nullptr;
     if (!ua->argv[i]) { /* was a name given? */
       // No name, dump all resources of specified type
       recurse = 1;
-      len = strlen(res_name);
-      for (j = 0; show_cmd_available_resources[j].res_name; j++) {
+      int len = strlen(res_name);
+      for (int j = 0; show_cmd_available_resources[j].res_name; j++) {
         if (bstrncasecmp(res_name, _(show_cmd_available_resources[j].res_name),
                          len)) {
           type = show_cmd_available_resources[j].type;
@@ -272,7 +270,7 @@ bool show_cmd(UaContext* ua, const char*)
             res = my_config->config_resources_container_
                       ->configuration_resources_[type];
           } else {
-            res = NULL;
+            res = nullptr;
           }
           break;
         }
@@ -280,8 +278,8 @@ bool show_cmd(UaContext* ua, const char*)
     } else {
       // Dump a single resource with specified name
       recurse = 0;
-      len = strlen(res_name);
-      for (j = 0; show_cmd_available_resources[j].res_name; j++) {
+      int len = strlen(res_name);
+      for (int j = 0; show_cmd_available_resources[j].res_name; j++) {
         if (bstrncasecmp(res_name, _(show_cmd_available_resources[j].res_name),
                          len)) {
           type = show_cmd_available_resources[j].type;
@@ -298,7 +296,7 @@ bool show_cmd(UaContext* ua, const char*)
         break;
       case -2:
         ua->InfoMsg(_("Keywords for the show command are:\n"));
-        for (j = 0; show_cmd_available_resources[j].res_name; j++) {
+        for (int j = 0; show_cmd_available_resources[j].res_name; j++) {
           ua->InfoMsg("%s\n", _(show_cmd_available_resources[j].res_name));
         }
         break;
