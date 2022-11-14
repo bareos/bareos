@@ -861,6 +861,21 @@ void JcrWalkEnd(JobControlRecord* jcr)
   }
 }
 
+
+void JobControlRecord::UpdateJobStats()
+{
+  time_t now = time(nullptr);
+
+  if (last_time == 0) { last_time = run_time; }
+  int elapsed_time = now - last_time;
+  if (elapsed_time <= 0) { elapsed_time = 1; }
+  LastRate = (JobBytes - LastJobBytes) / elapsed_time;
+  if (AverageRate == 0) { AverageRate = LastRate; }
+  AverageRate = (AverageRate + LastRate) / 2;
+  LastJobBytes = JobBytes;
+  last_time = now;
+}
+
 // Return number of Jobs
 int JobCount()
 {

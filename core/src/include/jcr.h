@@ -143,6 +143,7 @@ class JobControlRecord {
   void MyThreadSendSignal(int sig);              /**< in lib/jcr.c */
   void SetKillable(bool killable);               /**< in lib/jcr.c */
   bool IsKillable() const { return my_thread_killable; }
+  void UpdateJobStats();
 
   dlink<JobControlRecord> link;                     /**< JobControlRecord chain link */
   pthread_t my_thread_id{};       /**< Id of thread controlling jcr */
