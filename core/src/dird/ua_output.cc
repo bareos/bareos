@@ -211,8 +211,6 @@ static void ShowAll(UaContext* ua, bool hide_sensitive_data, bool verbose)
  */
 bool show_cmd(UaContext* ua, const char* cmd)
 {
-  bool verbose = false;
-
   Dmsg1(20, "show: %s\n", ua->UA_sock->msg);
 
   /*
@@ -222,12 +220,13 @@ bool show_cmd(UaContext* ua, const char* cmd)
 
   bool hide_sensitive_data = !ua->AclAccessOk(Command_ACL, "configure", false);
 
-  if (FindArg(ua, NT_("verbose")) > 0) { verbose = true; }
+  bool show_verbose = false;
+  if (FindArg(ua, NT_("verbose")) > 0) { show_verbose = true; }
 
   LockRes(my_config);
 
   // Without parameter, show all ressources.
-  if (ua->argc == 1) { ShowAll(ua, hide_sensitive_data, verbose); }
+  if (ua->argc == 1) { ShowAll(ua, hide_sensitive_data, show_verbose); }
 
   for (int i = 1; i < ua->argc; i++) {
     // skip verbose keyword, already handled earlier.
@@ -291,7 +290,7 @@ bool show_cmd(UaContext* ua, const char* cmd)
 
     switch (type) {
       case -1: /* all */
-        ShowAll(ua, hide_sensitive_data, verbose);
+        ShowAll(ua, hide_sensitive_data, show_verbose);
         break;
       case -2:
         ua->InfoMsg(_("Keywords for the show command are:\n"));
@@ -307,7 +306,7 @@ bool show_cmd(UaContext* ua, const char* cmd)
         break;
       default:
         my_config->DumpResourceCb_(recurse ? type : -type, res, bsendmsg, ua,
-                                   hide_sensitive_data, verbose);
+                                   hide_sensitive_data, show_verbose);
         break;
     }
   }
