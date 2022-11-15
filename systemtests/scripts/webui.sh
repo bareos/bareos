@@ -23,6 +23,10 @@
 # Start the Bareos WebUI webserver.
 #
 
+set -e
+set -o pipefail
+set -u
+
 #shellcheck source=../environment.in
 . ./environment
 
