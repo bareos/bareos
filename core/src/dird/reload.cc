@@ -34,7 +34,6 @@ namespace directordaemon {
  */
 bool CheckResources()
 {
-  bool OK = true;
   JobResource* job;
   const std::string& configfile = my_config->get_base_config_path();
 
@@ -48,8 +47,8 @@ bool CheckResources()
          _("No Director resource defined in %s\n"
            "Without that I don't know who I am :-(\n"),
          configfile.c_str());
-    OK = false;
-    goto bail_out;
+    UnlockRes(my_config);
+    return false;
   } else {
     my_config->omit_defaults_ = true;
     SetWorkingDirectory(me->working_directory);
@@ -60,8 +59,8 @@ bool CheckResources()
       if (!me->messages) {
         Jmsg(nullptr, M_FATAL, 0, _("No Messages resource defined in %s\n"),
              configfile.c_str());
-        OK = false;
-        goto bail_out;
+        UnlockRes(my_config);
+        return false;
       }
     }
 
@@ -72,24 +71,24 @@ bool CheckResources()
       Jmsg(nullptr, M_FATAL, 0,
            _("Cannot optimize for speed and size define only one in %s\n"),
            configfile.c_str());
-      OK = false;
-      goto bail_out;
+      UnlockRes(my_config);
+      return false;
     }
 
     if (my_config->GetNextRes(R_DIRECTOR, (BareosResource*)me) != nullptr) {
       Jmsg(nullptr, M_FATAL, 0,
            _("Only one Director resource permitted in %s\n"),
            configfile.c_str());
-      OK = false;
-      goto bail_out;
+      UnlockRes(my_config);
+      return false;
     }
 
     if (me->IsTlsConfigured()) {
       if (!have_tls) {
         Jmsg(nullptr, M_FATAL, 0,
              _("TLS required but not compiled into BAREOS.\n"));
-        OK = false;
-        goto bail_out;
+        UnlockRes(my_config);
+        return false;
       }
     }
   }
@@ -97,13 +96,13 @@ bool CheckResources()
   if (!job) {
     Jmsg(nullptr, M_FATAL, 0, _("No Job records defined in %s\n"),
          configfile.c_str());
-    OK = false;
-    goto bail_out;
+    UnlockRes(my_config);
+    return false;
   }
 
   if (!PopulateDefs()) {
-    OK = false;
-    goto bail_out;
+    UnlockRes(my_config);
+    return false;
   }
 
   // Loop over Jobs
@@ -113,8 +112,8 @@ bool CheckResources()
            _("MaxFullConsolidations configured in job %s which is not of job "
              "type \"consolidate\" in file %s\n"),
            job->resource_name_, configfile.c_str());
-      OK = false;
-      goto bail_out;
+      UnlockRes(my_config);
+      return false;
     }
 
     if (job->JobType != JT_BACKUP
@@ -125,8 +124,8 @@ bool CheckResources()
            _("AlwaysIncremental configured in job %s which is not of job type "
              "\"backup\" in file %s\n"),
            job->resource_name_, configfile.c_str());
-      OK = false;
-      goto bail_out;
+      UnlockRes(my_config);
+      return false;
     }
   }
 
@@ -136,8 +135,8 @@ bool CheckResources()
       if (!have_tls) {
         Jmsg(nullptr, M_FATAL, 0,
              _("TLS required but not configured in BAREOS.\n"));
-        OK = false;
-        goto bail_out;
+        UnlockRes(my_config);
+        return false;
       }
     }
   }
@@ -147,8 +146,8 @@ bool CheckResources()
     if (client->IsTlsConfigured()) {
       if (!have_tls) {
         Jmsg(nullptr, M_FATAL, 0, _("TLS required but not configured.\n"));
-        OK = false;
-        goto bail_out;
+        UnlockRes(my_config);
+        return false;
       }
     }
   }
@@ -158,8 +157,8 @@ bool CheckResources()
     if (store->IsTlsConfigured()) {
       if (!have_tls) {
         Jmsg(nullptr, M_FATAL, 0, _("TLS required but not configured.\n"));
-        OK = false;
-        goto bail_out;
+        UnlockRes(my_config);
+        return false;
       }
     }
 
@@ -183,20 +182,17 @@ bool CheckResources()
     }
   }
 
-  if (OK) {
-    CloseMsg(nullptr);              /* close temp message handler */
-    InitMsg(nullptr, me->messages); /* open daemon message handler */
-    if (me->secure_erase_cmdline) {
-      SetSecureEraseCmdline(me->secure_erase_cmdline);
-    }
-    if (me->log_timestamp_format) {
-      SetLogTimestampFormat(me->log_timestamp_format);
-    }
+  CloseMsg(nullptr);              /* close temp message handler */
+  InitMsg(nullptr, me->messages); /* open daemon message handler */
+  if (me->secure_erase_cmdline) {
+    SetSecureEraseCmdline(me->secure_erase_cmdline);
+  }
+  if (me->log_timestamp_format) {
+    SetLogTimestampFormat(me->log_timestamp_format);
   }
 
-bail_out:
   UnlockRes(my_config);
-  return OK;
+  return true;
 }
 
 // Initialize the sql pooling.
