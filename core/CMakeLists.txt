@@ -822,6 +822,8 @@ message(
   "   Bareos version:               ${BAREOS} ${BAREOS_FULL_VERSION} (${DATE}) "
 )
 message("   Build platform:               ${BAREOS_PLATFORM}")
+message("   PROJECT_SOURCE_DIR:           ${PROJECT_SOURCE_DIR}")
+message("   CMAKE_MODULE_PATH:            ${CMAKE_MODULE_PATH}")
 message("   Source code location:         ${srcdir} ")
 message("   Install binaries:             ${bindir} ")
 message("   Install system binaries:      ${sbindir} ")
