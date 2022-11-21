@@ -182,6 +182,24 @@ bool CheckResources()
     }
   }
 
+  ConsoleResource* console;
+  BStringList consoles_with_auth_problems;
+  foreach_res (console, R_CONSOLE) {
+    if (console->use_pam_authentication_
+        && (console->user_acl.ACL_lists[0] || console->user_acl.profiles)) {
+      consoles_with_auth_problems.push_back(
+          std::string(console->resource_name_));
+    }
+  }
+  if (!consoles_with_auth_problems.empty()) {
+    Jmsg(nullptr, M_FATAL, 0,
+         "Console(s) `%s` using `Use Pam Authentication` while "
+         "having ACL or a Profile activated\n",
+         consoles_with_auth_problems.Join(',').c_str());
+    UnlockRes(my_config);
+    return false;
+  }
+
   CloseMsg(nullptr);              /* close temp message handler */
   InitMsg(nullptr, me->messages); /* open daemon message handler */
   if (me->secure_erase_cmdline) {
