@@ -37,6 +37,8 @@ setup_data
 find ${tmp}/data/weird-files -type l -exec rm {} \;
 find tmp/data/weird-files -links +1 -type f -exec rm {} \;
 
+grep py3 <<< "$TestName" && rm tmp/data/weird-files/filename-with-non-utf8-bytestring*
+
 print_debug "$(locale)"
 
 start_test

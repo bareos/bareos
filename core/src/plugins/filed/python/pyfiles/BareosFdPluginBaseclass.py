@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2021 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2022 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -417,6 +417,45 @@ class BareosFdPluginBaseclass(object):
             "handle_backup_file() entry point in Python called with %s\n" % (savepkt),
         )
         return bRC_OK
+
+    def get_acl(self, acl):
+        bareosfd.DebugMessage(
+            100, "my get_acl() entry point in Python called with %s\n" % (acl)
+        )
+        acl.content = bytearray(b"Hello ACL")
+        return bareosfd.bRC_OK
+
+    def set_acl(self, acl):
+        bareosfd.DebugMessage(
+            100, "my set_acl() entry point in Python called with %s\n" % (acl)
+        )
+        bareosfd.JobMessage(
+            bareosfd.M_INFO,
+            "my set_acl() entry point in Python called with %s\n" % (acl),
+        )
+        return bareosfd.bRC_OK
+
+    def get_xattr(self, xattr):
+        bareosfd.DebugMessage(
+            100, "my get_xattr() entry point in Python called with %s\n" % (xattr)
+        )
+        xattr.name = bytearray(b"XATTR name")
+        xattr.value = bytearray(b"XATTR value")
+
+        # return values:
+        #   bareosfd.bRC_More to be called again to add more xattrs,
+        #   bareosfd.bRC_OK to finish adding xattrs
+        return bareosfd.bRC_OK
+
+    def set_xattr(self, xattr):
+        bareosfd.DebugMessage(
+            100, "my set_xattr() entry point in Python called with %s\n" % (xattr)
+        )
+        bareosfd.JobMessage(
+            bareosfd.M_INFO,
+            "my set_xattr() entry point in Python called with %s\n" % (xattr),
+        )
+        return bareosfd.bRC_OK
 
 
 # vim: ts=4 tabstop=4 expandtab shiftwidth=4 softtabstop=4
