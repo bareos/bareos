@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2021 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2022 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -44,14 +44,12 @@ if(strlen(getenv('BAREOS_WEBUI_CONFDIR')) > 0) {
 }
 
 $directors = null;
-$configuration = null;
 
 // Check for existing directors.ini and parse if present
 if(!file_exists($directors_ini)) {
    echo "Error: Missing configuration file ".$directors_ini.".";
    exit();
-}
-else {
+} else {
    // As of PHP 5.6.1 can also be specified as INI_SCANNER_TYPED. In this mode boolean,
    // null and integer types are preserved when possible. String values "true", "on" and
    // "yes" are converted to TRUE. "false", "off", "no" and "none" are considered FALSE.
@@ -64,67 +62,61 @@ else {
    $directors = parse_ini_file($directors_ini, true, INI_SCANNER_NORMAL);
 }
 
-// Check for existing configuration.ini and parse if present
-if(!file_exists($configuration_ini)) {
-   echo "Error: Missing configuration file ".$configuration_ini.".";
-   exit();
-}
-else {
-   $configuration = parse_ini_file($configuration_ini, true, INI_SCANNER_NORMAL);
-}
-
 // read configuration.ini
-function read_configuration_ini($configuration, $configuration_ini)
+function read_configuration_ini($configuration_ini)
 {
-   $arr = array();
+   // Set defaults.
+   $result = array(
+     'session' => array(
+        'timeout' => 3600
+      ),
+      'tables' => array(
+        'pagination_values' => "10,25,50,100",
+        'pagination_default_value' => 25,
+        'save_previous_state' => false,
+      ),
+      /*
+      'autochanger' => array(
+        'labelpooltype' => <NODEFAULT>,
+      ),
+      */
+      'dashboard' => array(
+        'autorefresh_interval' => 60000,
+      ),
+      'restore' => array(
+        'filetree_refresh_timeout' => 120000,
+      ),
+   );
+ 
+   // Check for existing configuration.ini and parse if present
+   if(file_exists($configuration_ini)) {
+        $configuration = parse_ini_file($configuration_ini, true, INI_SCANNER_NORMAL);
 
-   if( array_key_exists('session', $configuration) && array_key_exists('timeout', $configuration['session']) && isset($configuration['session']['timeout']) ) {
-      $arr['session']['timeout'] = $configuration['session']['timeout'];
+        // this also works fine: $result = array_merge($defaults, $configuration);
+        if(isset($configuration['session']['timeout'])) {
+            $result['session']['timeout'] = $configuration['session']['timeout'];
+        }
+        if(isset($configuration['tables']['pagination_values'])) {
+            $result['tables']['pagination_values'] = $configuration['tables']['pagination_values'];
+        }
+        if(isset($configuration['tables']['pagination_default_value'])) {
+            $result['tables']['pagination_default_value'] = $configuration['tables']['pagination_default_value'];
+        }
+        if(isset($configuration['tables']['save_previous_state'])) {
+            $result['tables']['save_previous_state'] = $configuration['tables']['save_previous_state'];
+        }
+        if(isset($configuration['autochanger']['labelpooltype'])) {
+            $result['autochanger']['labelpooltype'] = $configuration['autochanger']['labelpooltype'];
+        }
+        if(isset($configuration['dashboard']['autorefresh_interval'])) {
+            $result['dashboard']['autorefresh_interval'] = $configuration['dashboard']['autorefresh_interval'];
+        }
+        if(isset($configuration['restore']['filetree_refresh_timeout'])) {
+            $result['restore']['filetree_refresh_timeout'] = $configuration['restore']['filetree_refresh_timeout'];
+        }
    }
-   else {
-      $arr['session']['timeout'] = 3600;
-   }
-
-   if( array_key_exists('tables', $configuration) && array_key_exists('pagination_values', $configuration['tables']) && isset($configuration['tables']['pagination_values']) ) {
-      $arr['tables']['pagination_values'] = $configuration['tables']['pagination_values'];
-   }
-   else {
-      $arr['tables']['pagination_values'] = "10,25,50,100";
-   }
-
-   if( array_key_exists('tables', $configuration) && array_key_exists('pagination_default_value', $configuration['tables']) && isset($configuration['tables']['pagination_default_value']) ) {
-      $arr['tables']['pagination_default_value'] = $configuration['tables']['pagination_default_value'];
-   }
-   else {
-      $arr['tables']['pagination_default_value'] = 25;
-   }
-
-   if( array_key_exists('tables', $configuration) && array_key_exists('save_previous_state', $configuration['tables']) && isset($configuration['tables']['save_previous_state']) ) {
-      $arr['tables']['save_previous_state'] = $configuration['tables']['save_previous_state'];
-   }
-   else {
-      $arr['tables']['save_previous_state'] = false;
-   }
-
-   if( array_key_exists('autochanger', $configuration) && array_key_exists('labelpooltype', $configuration['autochanger']) && isset($configuration['autochanger']['labelpooltype']) ) {
-      $arr['autochanger']['labelpooltype'] = $configuration['autochanger']['labelpooltype'];
-   }
-
-   if( array_key_exists('dashboard', $configuration) && array_key_exists('autorefresh_interval', $configuration['dashboard']) && isset($configuration['dashboard']['autorefresh_interval']) ) {
-      $arr['dashboard']['autorefresh_interval'] = $configuration['dashboard']['autorefresh_interval'];
-   }
-   else {
-      $arr['dashboard']['autorefresh_interval'] = 60000;
-   }
-
-   if( array_key_exists('restore', $configuration) && array_key_exists('filetree_refresh_timeout', $configuration['restore']) && isset($configuration['restore']['filetree_refresh_timeout']) ) {
-      $arr['restore']['filetree_refresh_timeout'] = $configuration['restore']['filetree_refresh_timeout'];
-   }
-   else {
-      $arr['restore']['filetree_refresh_timeout'] = 120000;
-   }
-
-   return $arr;
+   
+   return $result;
 }
 
 // read directors.ini
@@ -251,7 +243,7 @@ function read_directors_ini($directors, $directors_ini)
 
 return array(
    'directors' => read_directors_ini($directors, $directors_ini),
-   'configuration' => read_configuration_ini($configuration, $configuration_ini),
+   'configuration' => read_configuration_ini($configuration_ini),
    'service_manager' => array(
       'factories' => array(
          'Zend\Session\Config\ConfigInterface' => 'Zend\Session\Service\SessionConfigFactory',

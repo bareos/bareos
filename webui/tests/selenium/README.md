@@ -25,6 +25,7 @@ To run the test you must set certain environment variables:
 ### Optional:
 
  * `BAREOS_CHROMEDRIVER_PATH`: Set the path to your chromedriver here.
+ * `BAREOS_WEBUI_CHROME_HEADLESS`: By default, tests with chrome are performed headless. Setting it to "yes" will start (and end) a browser window.
 
 ## Running the test
 
@@ -36,6 +37,7 @@ export BAREOS_CLIENT_NAME=bareos-fd
 export BAREOS_RESTOREFILE=/etc/passwd
 export BAREOS_LOG_PATH=/tmp/selenium-logs/
 export BAREOS_DELAY=1
+export BAREOS_WEBUI_CHROME_HEADLESS=no
 python webui-selenium-test.py -v
 ```
 
