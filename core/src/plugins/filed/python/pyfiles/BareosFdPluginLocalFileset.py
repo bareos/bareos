@@ -43,6 +43,7 @@ class BareosFdPluginLocalFileset(BareosFdPluginLocalFilesBaseclass):  # noqa
             "Constructor called in module %s with plugindef=%s\n"
             % (__name__, plugindef),
         )
+        self.current_xattr_number = 0
         super(BareosFdPluginLocalFileset, self).__init__(plugindef, mandatory_options)
 
     def filename_is_allowed(self, filename, allowregex, denyregex):
@@ -132,3 +133,41 @@ class BareosFdPluginLocalFileset(BareosFdPluginLocalFilesBaseclass):  # noqa
             return bareosfd.bRC_Error
         else:
             return bareosfd.bRC_OK
+
+    def get_xattr(self, xattr):
+        bareosfd.DebugMessage(
+            100, "get_xattr() entry point in Python called with %s\n" % (xattr)
+        )
+        import sys
+
+        if sys.version_info >= (3, 0):
+            xattr.name = bytearray(
+                bytes("XATTR name " + str(self.current_xattr_number), "utf-8")
+            )
+            xattr.value = bytearray(
+                bytes("XATTR value " + str(self.current_xattr_number), "utf-8")
+            )
+        else:
+            xattr.name = bytearray(
+                bytes("XATTR name " + str(self.current_xattr_number))
+            )
+            xattr.value = bytearray(
+                bytes("XATTR value " + str(self.current_xattr_number))
+            )
+
+        self.current_xattr_number += 1
+        if self.current_xattr_number < 4:
+            return bareosfd.bRC_More
+        else:
+            self.current_xattr_number = 0
+            return bareosfd.bRC_OK
+
+    def set_xattr(self, xattr):
+        bareosfd.DebugMessage(
+            100, "my set_xattr() entry point in Python called with %s\n" % (xattr)
+        )
+        bareosfd.JobMessage(
+            bareosfd.M_INFO,
+            "my set_xattr() entry point in Python called with %s\n" % (xattr),
+        )
+        return bareosfd.bRC_OK

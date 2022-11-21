@@ -40,6 +40,8 @@ class BareosFdPluginoptions(BareosFdPluginLocalFileset):
             "Constructor called in module %s with plugindef=%s\n"
             % (__name__, plugindef),
         )
+
+        self.current_xattr_number = 0
         # Last argument of super constructor is a list of mandatory arguments
         super(BareosFdPluginLocalFileset, self).__init__(plugindef, ["filename"])
 

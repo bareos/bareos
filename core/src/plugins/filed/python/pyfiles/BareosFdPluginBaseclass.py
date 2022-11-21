@@ -387,30 +387,6 @@ class BareosFdPluginBaseclass(object):
         )
         return bRC_OK
 
-    def get_acl(self, acl):
-        bareosfd.DebugMessage(
-            100, "get_acl() entry point in Python called with %s\n" % (acl)
-        )
-        return bRC_OK
-
-    def set_acl(self, acl):
-        bareosfd.DebugMessage(
-            100, "set_acl() entry point in Python called with %s\n" % (acl)
-        )
-        return bRC_OK
-
-    def get_xattr(self, xattr):
-        bareosfd.DebugMessage(
-            100, "get_xattr() entry point in Python called with %s\n" % (xattr)
-        )
-        return bRC_OK
-
-    def set_xattr(self, xattr):
-        bareosfd.DebugMessage(
-            100, "set_xattr() entry point in Python called with %s\n" % (xattr)
-        )
-        return bRC_OK
-
     def handle_backup_file(self, savepkt):
         bareosfd.DebugMessage(
             100,
@@ -422,7 +398,6 @@ class BareosFdPluginBaseclass(object):
         bareosfd.DebugMessage(
             100, "my get_acl() entry point in Python called with %s\n" % (acl)
         )
-        acl.content = bytearray(b"Hello ACL")
         return bareosfd.bRC_OK
 
     def set_acl(self, acl):
@@ -439,8 +414,6 @@ class BareosFdPluginBaseclass(object):
         bareosfd.DebugMessage(
             100, "my get_xattr() entry point in Python called with %s\n" % (xattr)
         )
-        xattr.name = bytearray(b"XATTR name")
-        xattr.value = bytearray(b"XATTR value")
 
         # return values:
         #   bareosfd.bRC_More to be called again to add more xattrs,
