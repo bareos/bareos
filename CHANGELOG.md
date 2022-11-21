@@ -51,6 +51,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - stored: dird: add backup checkpoints that save backup metadata to the Catalog during the execution of the backup. [PR #1074]
 - build: run a build and test with sanitizers enabled [PR #1244]
 - catalog: update fileset text in fileset record [PR #1300]
+- stored: emit warnings for Maximum Concurrent Jobs in device configs [PR #1282]
 
 ### Fixed
 - webui: adapt links to new URLs after website relaunch. [PR #1275]
