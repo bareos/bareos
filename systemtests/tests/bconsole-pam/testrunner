@@ -26,6 +26,9 @@ export TestName
 #shellcheck source=../environment.in
 . ./environment
 
+usepam_and_acl_config=$conf/bareos-dir.d/console/has_usepam_and_profile_with_acl.conf
+rm -f $usepam_and_acl_config
+
 JobName=backup-bareos-fd
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
@@ -145,6 +148,28 @@ if ! ${rscripts}/bareos-ctl-dir status >/dev/null; then
   exit 1
 fi
 
+
+echo "Console {
+  Name = \"usepam_acl\"
+  Password = \"secret\"
+  UsePamAuthentication = yes
+  Profile = \"operator\"
+}" > $usepam_and_acl_config
+
+cat <<END_OF_DATA >"$tmp"/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/usepam_acl.out
+reload
+messages
+quit
+END_OF_DATA
+
+${BAREOS_BCONSOLE_BINARY} -c ${conf} -p etc/user1.cred < $tmp/bconcmds >${tmp}/log1.out 2>${tmp}/err1.out
+
+expect_grep "Console(s) \`usepam_acl\` using \`Use Pam Authentication\` while having ACL or a Profile activated" \
+            "$tmp/usepam_acl.out" \
+            "wesh"
 
 stop_bareos > $output 2>&1
 
