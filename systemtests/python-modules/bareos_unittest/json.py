@@ -2,7 +2,7 @@
 #
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -41,7 +41,6 @@ from bareos_unittest.base import Base as PythonBareosBase
 
 
 class Json(PythonBareosBase):
-
     #
     # Util
     #
@@ -51,7 +50,7 @@ class Json(PythonBareosBase):
         logger = logging.getLogger()
         rc = False
         try:
-            result = director.call(u".{}".format(resourcesname))
+            result = director.call(".{}".format(resourcesname))
             for i in result[resourcesname]:
                 if i["name"] == name:
                     rc = True
@@ -73,12 +72,10 @@ class Json(PythonBareosBase):
             self.assertEqual(result["configure"]["add"]["name"], resourcename)
             self.assertTrue(
                 self.check_resource(director, resourcesname, resourcename),
-                u"Failed to find resource {} in {}.".format(
-                    resourcename, resourcesname
-                ),
+                "Failed to find resource {} in {}.".format(resourcename, resourcesname),
             )
 
-    def wait_job(self, director, jobId, expected_status=u"OK"):
+    def wait_job(self, director, jobId, expected_status="OK"):
         result = director.call("wait jobid={}".format(jobId))
         # "result": {
         #    "job": {
@@ -88,16 +85,34 @@ class Json(PythonBareosBase):
         #    "exitstatus": 0
         #    }
         # }
-        self.assertEqual(result["job"]["jobstatuslong"], expected_status)
+        self.assertEqual(
+            expected_status,
+            result["job"]["jobstatuslong"],
+            'Result is "{}", but expected "{}". Joblog:\n{}'.format(
+                result["job"]["jobstatuslong"],
+                expected_status,
+                self.get_joblog_as_str(director, jobId),
+            ),
+        )
+
+    def get_joblog_as_str(self, director, jobId):
+        result = director.call("list joblog jobid={}".format(jobId))
+        joblog = "".join(
+            [
+                "{} {}".format(i.get("time"), i.get("logtext"))
+                for i in result.get("joblog", [])
+            ]
+        )
+        return joblog
 
     def run_job(self, director, jobname=None, level=None, extra=None, wait=False):
         logger = logging.getLogger()
         run_parameter = ["job={}".format(jobname), "yes"]
         if level:
-            run_parameter.append(u"level={}".format(level))
+            run_parameter.append("level={}".format(level))
         if extra:
-            run_parameter.append(u"{}".format(extra))
-        result = director.call("run {}".format(u" ".join(run_parameter)))
+            run_parameter.append("{}".format(extra))
+        result = director.call("run {}".format(" ".join(run_parameter)))
         jobId = result["run"]["jobid"]
         if wait:
             self.wait_job(director, jobId)
@@ -117,15 +132,15 @@ class Json(PythonBareosBase):
         run_parameter = ["client={}".format(client)]
 
         if jobname:
-            run_parameter.append(u"restorejob={}".format(jobname))
+            run_parameter.append("restorejob={}".format(jobname))
         if jobid:
-            run_parameter.append(u"jobid={}".format(jobid))
+            run_parameter.append("jobid={}".format(jobid))
         if fileset:
-            run_parameter.append(u"fileset={}".format(fileset))
+            run_parameter.append("fileset={}".format(fileset))
         if extra:
-            run_parameter.append(u"{}".format(extra))
+            run_parameter.append("{}".format(extra))
         run_parameter += ["select", "all", "done", "yes"]
-        result = director.call("restore {}".format(u" ".join(run_parameter)))
+        result = director.call("restore {}".format(" ".join(run_parameter)))
         jobId = result["run"]["jobid"]
         if wait:
             self.wait_job(director, jobId)
@@ -136,8 +151,8 @@ class Json(PythonBareosBase):
         for job in jobs:
             if job["jobid"] == jobid:
                 files = int(job["jobfiles"])
-                logger.debug(u"Job {} contains {} files.".format(jobid, files))
-                self.assertTrue(files >= 1, u"Job {} contains no files.".format(jobid))
+                logger.debug("Job {} contains {} files.".format(jobid, files))
+                self.assertTrue(files >= 1, "Job {} contains no files.".format(jobid))
                 return True
         self.fail("Failed to find job {}".format(jobid))
         # add return to prevent pylint warning
@@ -184,13 +199,12 @@ class Json(PythonBareosBase):
             self.assertEqual(
                 len(result),
                 0,
-                u"Command {} should not return results. Current result: {} visible".format(
+                "Command {} should not return results. Current result: {} visible".format(
                     listcmd, str(result)
                 ),
             )
 
     def search_joblog(self, director, jobId, patterns):
-
         if isinstance(patterns, list):
             pattern_dict = {i: False for i in patterns}
         else:
@@ -212,7 +226,6 @@ class Json(PythonBareosBase):
             )
 
     def run_job_and_search_joblog(self, director, jobname, level, patterns):
-
         jobId = self.run_job(director, jobname, level, wait=True)
         self.search_joblog(director, jobId, patterns)
         return jobId
@@ -222,4 +235,4 @@ class Json(PythonBareosBase):
         try:
             return result["jobs"][0]
         except KeyError:
-            raise ValueError(u"jobid {} does not exist".format(jobid))
+            raise ValueError("jobid {} does not exist".format(jobid))
