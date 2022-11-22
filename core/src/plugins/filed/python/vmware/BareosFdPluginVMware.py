@@ -104,10 +104,10 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             "vadp_dumper_verbose",
             "verifyssl",
             "quiesce",
-            "cleanup_tmp_files",
+            "cleanup_tmpfiles",
             "restore_esxhost",
             "restore_cluster",
-            "restore_resource_pool",
+            "restore_resourcepool",
             "restore_datastore",
             "restore_powerstate",
         ]
@@ -866,7 +866,6 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         # create a stat packet for a restore object
         statp = bareosfd.StatPacket()
         savepkt.statp = statp
-        # see src/filed/backup.c how this is done in c
         savepkt.type = bareosfd.FT_RESTORE_FIRST
         # set the fname of the restore object to the vmdk name
         # by stripping of the _cbt.json suffix
@@ -933,6 +932,7 @@ class BareosVADPWrapper(object):
         self.vmfs_vm_path = None
         self.datastore_rex = re.compile(r"\[(.+?)\]")
         self.datastore_vm_path_rex = re.compile(r"\[(.+?)\] (.+)\/")
+        self.slashes_rex = re.compile(r"\/+")
         self.poweron_timeout = None
 
     def connect_vmware(self):
@@ -1111,6 +1111,7 @@ class BareosVADPWrapper(object):
         )
 
         self.vmconfig2json()
+        self.check_vmconfig_backup()
 
         bareosfd.DebugMessage(
             100,
@@ -1278,8 +1279,8 @@ class BareosVADPWrapper(object):
         )
         for vm_folder in vm_folder_view.view:
             # avoid "//" when current_folder_name is "/"
-            subfolder_name = (
-                "/" + (current_folder_name + "/").lstrip("/") + vm_folder.name
+            subfolder_name = self.proper_path(
+                current_folder_name + "/" + vm_folder.name
             )
             self._get_vm_folders(vm_folders, subfolder_name, vm_folder)
         vm_folder_view.Destroy()
@@ -1300,7 +1301,7 @@ class BareosVADPWrapper(object):
             for folder_part in folder_name.split("/")[1:]:
                 current_folder_path += "/" + folder_part
                 # avoid leading "//"
-                current_folder_path = "/" + current_folder_path.lstrip("/")
+                current_folder_path = self.proper_path(current_folder_path)
                 if current_folder_path in all_vm_folders:
                     current_folder = all_vm_folders[current_folder_path]
                     continue
@@ -1325,7 +1326,7 @@ class BareosVADPWrapper(object):
                 )
             else:
                 objects_by_folder[
-                    "/" + (folder_name + "/").lstrip("/") + current_object.name
+                    self.proper_path(folder_name + "/" + current_object.name)
                 ] = current_object
 
         return
@@ -1347,7 +1348,7 @@ class BareosVADPWrapper(object):
             stack.append(("/", resource_pool))
         while stack:
             folder, resource_pool = stack.pop()
-            path = "/" + (folder + "/").lstrip("/") + resource_pool.name
+            path = self.poper_path(folder + "/" + resource_pool.name)
             resource_pools[path] = resource_pool
             for sub_resource_pool in resource_pool.resourcePool:
                 stack.append((path, sub_resource_pool))
@@ -1453,7 +1454,7 @@ class BareosVADPWrapper(object):
             )
             return False
 
-        if self.options.get("restore_resource_pool") and not self.options.get(
+        if self.options.get("restore_resourcepool") and not self.options.get(
             "restore_cluster"
         ):
             bareosfd.JobMessage(
@@ -1465,11 +1466,11 @@ class BareosVADPWrapper(object):
         if self.options.get("restore_cluster"):
             clusters_by_folder = {}
             self.get_objects_by_folder(datacenter.hostFolder, "/", clusters_by_folder)
-            cluster_path = "/" + self.options["restore_cluster"].lstrip("/")
+            cluster_path = self.proper_path(self.options["restore_cluster"])
             if cluster_path in clusters_by_folder:
-                if self.options.get("restore_resource_pool"):
+                if self.options.get("restore_resourcepool"):
                     resource_pool = self.get_resource_pool_by_path(
-                        self.options["restore_resource_pool"],
+                        self.options["restore_resourcepool"],
                         clusters_by_folder[cluster_path],
                     )
                     if not resource_pool:
@@ -1848,6 +1849,27 @@ class BareosVADPWrapper(object):
         self.vm_metadata_json = json.dumps(vm_metadata)
         self.files_to_backup.append("%s/%s" % (self.backup_path, "vm_metadata.json"))
 
+    def check_vmconfig_backup(self):
+        """
+        Check the vmconfig at backup time, warn about possible restore problems
+        """
+        config_info = json.loads(self.vm_config_info_json)
+        transformer = BareosVmConfigInfoToSpec(config_info)
+
+        used_datastore_names = transformer.get_datastore_names()
+        if len(used_datastore_names) > 1:
+            bareosfd.JobMessage(
+                bareosfd.M_ERROR,
+                "VM %s is using multiple datastores (%s), restore will not yet be possible!\n"
+                % (
+                    StringCodec.encode(self.options["vmname"]),
+                    StringCodec.encode(used_datastore_names),
+                ),
+            )
+            return False
+
+        return True
+
     def restore_custom_fields(self):
         """
         Restore Custom Fields
@@ -2089,6 +2111,9 @@ class BareosVADPWrapper(object):
             # Note: -c omits disk geometry checks, this is necessary to allow
             # recreating and restoring VMs which have been deployed from OVA
             # as the disk may have different geometry initially after creation.
+            # -S  Cleanup on start
+            # -D  Cleanup on disconnect
+            # -R  Restore metadata of VMDK on restore action
             bareos_vadp_dumper_opts["restore"] = "-S -D -R -c"
             if "transport" in self.options:
                 bareos_vadp_dumper_opts["restore"] += (
@@ -2345,10 +2370,10 @@ class BareosVADPWrapper(object):
         Cleanup temporary files
         """
 
-        if self.options.get("cleanup_tmp_files") == "no":
+        if self.options.get("cleanup_tmpfiles") == "no":
             bareosfd.DebugMessage(
                 100,
-                "end_dumper() not deleting temporary file, cleanup_tmp_files is set to no\n",
+                "end_dumper() not deleting temporary file, cleanup_tmpfiles is set to no\n",
             )
             return True
 
@@ -2558,6 +2583,14 @@ class BareosVADPWrapper(object):
             os.stat(directory_name)
         except OSError:
             os.makedirs(directory_name)
+
+    def proper_path(self, path):
+        """
+        Ensure proper path:
+        - removes multiplied slashes
+        - makes sure it starts with slash
+        """
+        return self.slashes_rex.sub("/", "/" + path)
 
 
 class StringCodec:
@@ -3030,7 +3063,7 @@ class BareosVmConfigInfoToSpec(object):
 
             # if a snapshot existed at backup time, the disk backing name will be like
             # [datastore1] tcl131-test1_1/tcl131-test1-000001.vmdk
-            # the -000001 must be removed when recreating a VM:
+            # the part "-000001" must be removed when recreating a VM:
             add_device.backing.fileName = self.backing_filename_snapshot_rex.sub(
                 ".vmdk", device["backing"]["fileName"]
             )

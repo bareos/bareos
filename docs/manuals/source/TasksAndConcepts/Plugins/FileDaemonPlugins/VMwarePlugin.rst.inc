@@ -332,7 +332,7 @@ Restore
 
 For restoring to the same still exising VM from which the backup has been taken, the VM must be **powered off** and **no snapshot** must exist. In :command:`bconsole` use the restore menu 5, select the correct FileSet and enter :bcommand:`mark *`, then :bcommand:`done`. After restore has finished, the VM will be set to its previous powerstate. So if it was powered on at backup time, it will be powered on after restore. This can be changed by using the plugin option :command:`restore_powerstate` (see below).
 
-Since :sinceVersion:`22.0.0: VMware Plugin: recreate VMs` the plugin will recreate the VM if it does not exist. By passing plugin options, with this version it is also possible to recreate the VM in a different folder, datacenter, host, cluster, resource pool or datatore, see below for details. The MAC address and the UUID of the VM will be restored, too. Restoring to a different VM location, eg, by passing a different folder, will **create a new VM** even **if the VM** which was backed up **still exists**. In this case, the new VM will get a new generated MAC address and UUID.
+Since :sinceVersion:`22.0.0: VMware Plugin: recreate VMs` the plugin will recreate the VM if it does not exist. By passing plugin options, with this version it is also possible to recreate the VM in a different folder, datacenter, host, cluster, resource pool or datastore, see below for details. The MAC address and the UUID of the VM will be restored, too. Restoring to a different VM location, eg, by passing a different folder, will **create a new VM** even **if the VM** which was backed up **still exists**. In this case, the new VM will get a new generated MAC address and UUID.
 
 .. note::
 
@@ -506,7 +506,7 @@ vcthumbprint (optional)
    Thumbprint of the vCenter SSL Certificate, which is the SHA1 checksum of the SSL Certificate
 
 transport (optional)
-   Normally the transport mode mode will be autonegotiated, eg. if the system that runs this plugin is a VM has storage access to the datatore of the VM thats beeing backed up, the *hotadd* transport will be used. Otherwise the *nbd* or *nbdssl* transport. For details about transport modes see the VDDK documentation. This option can be used to force the given transport mode.
+   Normally the transport mode mode will be autonegotiated, eg. if the system that runs this plugin is a VM has storage access to the datastore of the VM that's being backed up, the *hotadd* transport will be used. Otherwise the *nbd* or *nbdssl* transport. For details about transport modes see the VDDK documentation. This option can be used to force the given transport mode.
 
 log_path (optional)
    The default log path is :file:`/var/log/bareos/`. A different path can be specified using this option, it will be used for ``bareos_vadp_dumper`` log files.
@@ -518,16 +518,16 @@ vadp_dumper_verbose (optional)
    When setting ``vadp_dumper_verbose=yes``, the option ``-v`` will be added when running ``bareos_vadp_dumper``. This can be helpful for debugging purposes.
 
 verifyssl (optional)
-   By default the validity of SSL certificates will be verifed. By setting ``verifyssl=no`` this can be disabled.
+   By default the validity of SSL certificates will be verified. By setting ``verifyssl=no`` this can be disabled.
 
 quiesce (optional)
    The backed up VM will be triggered to quiesce its filesystems before creating a snapshot by default to increase the data consistency. This can fail or take very long on a VM which runs heavy I/O workload. When setting ``quiesce=no`` the quiescing will be skipped, but the snapshot may be inconsistent. It is not recommended to use this option, instead try stop heavy I/O load before snapshot. This could be possible by running pre-freeze and post-thaw actions which can be configured in VMware tools, see VMware documentation for details.
 
-cleanup_tmp_files (optional)
-   By default, temporary files created by the plugin will be cleaned up after backup or restore. When setting ``cleanup_tmp_files=no`` they will be left over, this can be helpful for debugging purposes. Since :sinceVersion:`22.0.0: VMware Plugin`
+cleanup_tmpfiles (optional)
+   By default, temporary files created by the plugin will be cleaned up after backup or restore. When setting ``cleanup_tmpfiles=no`` they will be left over, this can be helpful for debugging purposes. Since :sinceVersion:`22.0.0: VMware Plugin`
 
 restore_esxhost (optional)
-   By default, if a VM to be restored does not exist, it will be recreated on the same host that it has been running on at backup time. Use this option to restore on a the given ESX host. Since :sinceVersion:`22.0.0: VMware Plugin`
+   By default, if a VM to be restored does not exist, it will be recreated on the same host that it has been running on at backup time. Use this option to restore on the given ESX host. Since :sinceVersion:`22.0.0: VMware Plugin`
 
 restore_cluster (optional)
    Instead of specifying *restore_esxhost*, it is also possible to specify a cluster name using this option, the ESX host will be autoselected in that case, if DRS is configured properly. Since :sinceVersion:`22.0.0: VMware Plugin`
@@ -535,7 +535,7 @@ restore_cluster (optional)
 restore_datastore (optional)
    By default, if a VM to be restored does not exist, it will be recreated in the same datastore where it was stored at backup time. Use this option to restore on the given datastore. Since :sinceVersion:`22.0.0: VMware Plugin`
 
-restore_resource_pool (optional)
+restore_resourcepool (optional)
    By default, if a VM to be restored does not exist, it will be recreated in the same resource pool which it has in been in at backup time. Using this option allows to override this and specify a different resource pool. Since :sinceVersion:`22.0.0: VMware Plugin`
 
 restore_powerstate (optional)
