@@ -56,55 +56,18 @@ OS:
            - bareos-vmware
            - python-bareos
 
-  openSUSE:
-    "Leap_15.4":
-      TYPE: rpm
-      IMAGE: opensuse-leap154
-      ARCH:
-      - x86_64
-      PROJECTPACKAGES:
-       x86_64:
-          - bareos
-          - python-bareos
-
-    "Leap_15.3":
-      TYPE: rpm
-      IMAGE: opensuse-leap153
-      ARCH:
-      - x86_64
-      PROJECTPACKAGES:
-       x86_64:
-          - bareos
-          - python-bareos
-
-  SLE:
-    "15_SP4":
+  SUSE:
+    "15":
       TYPE: rpm
       IMAGE: sle154
+      CUSTOM_TEST_IMAGES: [ SLE-15_SP3, SLE-15_SP4, openSUSE-Leap_15.3, openSUSE-Leap_15.4 ]
       ARCH:
       - x86_64
       PROJECTPACKAGES:
         x86_64:
            - bareos
            - python-bareos
-    "15_SP3":
-      TYPE: rpm
-      IMAGE: sle153
-      ARCH:
-      - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - python-bareos
-    "15_SP2":
-      TYPE: rpm
-      IMAGE: sle152
-      ARCH:
-      - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - python-bareos
+  SLE:
     "12_SP5":
       TYPE: rpm
       IMAGE: sles12sp5
