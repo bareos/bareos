@@ -148,6 +148,10 @@ bool ConnectToStorageDaemon(JobControlRecord* jcr,
     return false;
   }
 
+  if (jcr->JobId != 0) {
+    Jmsg(jcr, M_INFO, 0, "%s\n", sd->GetCipherMessageString().c_str());
+  }
+
   jcr->store_bsock = sd.release();
   return true;
 }

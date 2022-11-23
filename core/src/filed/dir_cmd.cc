@@ -1605,6 +1605,11 @@ static bool StorageCmd(JobControlRecord* jcr)
     }
   }
 
+  if (jcr->JobId != 0) {
+    Jmsg(jcr, M_INFO, 0, "%s\n",
+         storage_daemon_socket->GetCipherMessageString().c_str());
+  }
+
   storage_daemon_socket->InitBnetDump(
       my_config->CreateOwnQualifiedNameForNetworkDump());
   storage_daemon_socket->fsend("Hello Start Job %s\n", jcr->Job);
