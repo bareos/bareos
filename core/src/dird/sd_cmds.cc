@@ -707,6 +707,13 @@ void DoNativeStorageStatus(UaContext* ua, StorageResource* store, char* cmd)
     return;
   }
 
+  if (ua->jcr->store_bsock) {
+    std::string cipher_string;
+    ua->jcr->store_bsock->GetCipherMessageString(cipher_string);
+    cipher_string += '\n';
+    ua->SendMsg(cipher_string.c_str());
+  }
+
   Dmsg0(20, _("Connected to storage daemon\n"));
 
   if (cmd) {
