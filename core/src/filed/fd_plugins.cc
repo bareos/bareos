@@ -1225,7 +1225,7 @@ int PluginCreateFile(JobControlRecord* jcr,
   rp.RegexWhere = jcr->RegexWhere;
   rp.replace = jcr->fd_impl->replace;
   rp.create_status = CF_ERROR;
-  rp.filedes = -1;
+  rp.filedes = INVALID_FILEDESCRIPTOR;
 
   Dmsg4(debuglevel,
         "call plugin createFile stream=%d type=%d LinkFI=%d File=%s\n",
@@ -1319,6 +1319,7 @@ bool PluginSetAttributes(JobControlRecord* jcr,
   rp.RegexWhere = jcr->RegexWhere;
   rp.replace = jcr->fd_impl->replace;
   rp.create_status = CF_ERROR;
+  rp.filedes = INVALID_FILEDESCRIPTOR;
 
   PlugFunc(plugin)->setFileAttributes(jcr->plugin_ctx, &rp);
 
@@ -1328,7 +1329,6 @@ bool PluginSetAttributes(JobControlRecord* jcr,
     if (IsBopen(ofd)) { bclose(ofd); }
     PmStrcpy(attr->ofname, "*None*");
   }
-  rp.filedes = -1;
 
   return true;
 }
@@ -1883,7 +1883,7 @@ static int MyPluginBclose(BareosFilePacket* bfd)
   memset(&io, 0, sizeof(io));
   io.pkt_size = sizeof(io);
   io.pkt_end = sizeof(io);
-  io.filedes = -1;
+  io.filedes = bfd->filedes;
 
   io.func = IO_CLOSE;
 
@@ -1919,7 +1919,7 @@ static ssize_t MyPluginBread(BareosFilePacket* bfd, void* buf, size_t count)
   memset(&io, 0, sizeof(io));
   io.pkt_size = sizeof(io);
   io.pkt_end = sizeof(io);
-  io.filedes = -1;
+  io.filedes = bfd->filedes;
 
   io.func = IO_READ;
   io.count = count;

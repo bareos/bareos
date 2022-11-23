@@ -61,6 +61,8 @@ struct BareosFilePacket;
 struct FindFilesPacket;
 #endif /* FILE_DAEMON */
 
+#define INVALID_FILEDESCRIPTOR -1;
+
 enum IoStatus : int
 {
   error = -1,

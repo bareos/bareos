@@ -186,14 +186,22 @@ class BareosFdPluginLocalFileset(BareosFdPluginLocalFilesBaseclass):  # noqa
                 )
                 self.file = open(self.FNAME, "rb")
 
-            # do io in core
-            # IOP.filedes = self.file.fileno()
-            # IOP.status =  bareosfd.io_status_core
-            ##IOP.status = 1
+            if "do_io_in_core" in self.options:
+                bareosfd.JobMessage(
+                    bareosfd.M_INFO,
+                    "doing io in core as requested by plugin option\n",
+                )
+                # do io in core
+                IOP.filedes = self.file.fileno()
+                IOP.status = bareosfd.iostat_do_in_core
+            else:
+                bareosfd.JobMessage(
+                    bareosfd.M_INFO,
+                    "doing io in plugin\n",
+                )
 
-            #  do io in plugin
-            IOP.status = bareosfd.io_status_plugin
-            ##IOP.status = 0
+                #  do io in plugin
+                IOP.status = bareosfd.iostat_do_in_plugin
 
         except:
             IOP.status = -1

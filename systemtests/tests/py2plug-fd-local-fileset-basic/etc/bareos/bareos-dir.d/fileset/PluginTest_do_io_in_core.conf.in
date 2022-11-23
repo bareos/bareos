@@ -1,0 +1,11 @@
+FileSet {
+  Name = "PluginTest_do_io_in_core"
+  Description = "Test the Plugin functionality with a Python Plugin doing io in core."
+  Include {
+    Plugin = "@python_module_name@"
+              ":module_path=@python_plugin_module_src_test_dir@"
+              ":module_name=bareos-fd-local-fileset"
+              ":filename=@tmpdir@/file-list"
+              ":do_io_in_core=True"
+  }
+}

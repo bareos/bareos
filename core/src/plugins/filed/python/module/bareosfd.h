@@ -796,9 +796,9 @@ MOD_INIT(bareosfd)
   const char* bIOPstatus = "bIOPstatus";
   PyObject* pDictbIOPstatus = NULL;
   pDictbIOPstatus = PyDict_New();
-  ConstSet_StrLong(pDictbIOPstatus, io_status_error, -1);
-  ConstSet_StrLong(pDictbIOPstatus, io_status_plugin, 0);
-  ConstSet_StrLong(pDictbIOPstatus, io_status_core, 1);
+  ConstSet_StrLong(pDictbIOPstatus, iostat_error, -1);
+  ConstSet_StrLong(pDictbIOPstatus, iostat_do_in_plugin, 0);
+  ConstSet_StrLong(pDictbIOPstatus, iostat_do_in_core, 1);
   if (!pDictbIOPstatus) { return MOD_ERROR_VAL; }
   if (PyModule_AddObject(m, bIOPstatus, pDictbIOPstatus)) { return MOD_ERROR_VAL; }
 
