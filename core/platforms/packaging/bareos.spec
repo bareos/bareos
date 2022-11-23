@@ -241,15 +241,7 @@ BuildRequires: lsb-release
 %endif
 
 # dependency tricks for vixdisklib
-# Note: __requires_exclude only works for dists with rpm version >= 4.9
-#       SLES12 has suse_version 1315, SLES11 has 1110
-%if 0%{?rhel} >= 7 || 0%{?fedora} >= 16 || 0%{?suse_version} >= 1110
 %global __requires_exclude ^(.*libvixDiskLib.*|.*CXXABI_1.3.9.*)$
-
-%else
-%define _use_internal_dependency_generator 0
-%define our_find_requires %{_builddir}/%{name}-%{version}/find_requires
-%endif
 
 %define replace_python_shebang sed -i '1s|^#!.*|#!%{__python3} %{py3_shbang_opts}|'
 
@@ -545,9 +537,6 @@ Summary:        Bareos VMware plugin
 Group:          Productivity/Archiving/Backup
 Requires:       bareos-vadp-dumper
 Requires:       bareos-filedaemon-python-plugin >= 15.2
-%if 0%{?suse_version} == 1110
-Requires:       python-ordereddict
-%endif
 
 %description -n bareos-vmware-plugin
 Uses the VMware API to take snapshots of running VMs and takes
@@ -993,19 +982,11 @@ pushd %{CMAKE_BUILDDIR}
 REGRESS_DEBUG=1 ctest -V -S CTestScript.cmake || echo "ctest result:$?"
 
 %install
-##if 0#{?suse_version}
-#    #makeinstall DESTDIR=#{buildroot} install
-##else
-#    make DESTDIR=#{buildroot} install
-##endif
-#make DESTDIR=#{buildroot} install-autostart
-
 pushd %{CMAKE_BUILDDIR}
 make  DESTDIR=%{buildroot} install
 
 popd
 
-#rm -Rvf build
 
 
 install -d -m 755 %{buildroot}/usr/share/applications
@@ -1084,16 +1065,6 @@ rm -f %{buildroot}/%{_sysconfdir}/%{name}/bareos-dir.d/plugin-python-ldap.conf
 %if ! 0%{?glusterfs}
 rm -f %{buildroot}/%{script_dir}/bareos-glusterfind-wrapper
 %endif
-
-# install tray monitor
-# #if 0#{?build_qt_monitor}
-# #if 0#{?suse_version} > 1010
-# disables, because suse_update_desktop_file complains
-# that there are two desktop file (applications and autostart)
-# ##suse_update_desktop_file bareos-tray-monitor System Backup
-# #endif
-# #endif
-
 
 # remove man page if qt tray monitor is not built
 %if !0%{?build_qt_monitor}
