@@ -708,8 +708,7 @@ void DoNativeStorageStatus(UaContext* ua, StorageResource* store, char* cmd)
   }
 
   if (ua->jcr->store_bsock) {
-    std::string cipher_string;
-    ua->jcr->store_bsock->GetCipherMessageString(cipher_string);
+    std::string cipher_string = ua->jcr->store_bsock->GetCipherMessageString();
     cipher_string += '\n';
     ua->SendMsg(cipher_string.c_str());
   }

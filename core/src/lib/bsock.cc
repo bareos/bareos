@@ -748,23 +748,21 @@ bool BareosSocket::EvaluateCleartextBareosHello(
   return success;
 }
 
-void BareosSocket::GetCipherMessageString(std::string& str) const
+std::string BareosSocket::GetCipherMessageString() const
 {
+  std::string cipher_string{" Encryption: "};
   if (tls_conn) {
-    std::string m;
-    m = " Encryption: ";
-    m += tls_conn->TlsCipherGetName();
-    str = m;
+    cipher_string += tls_conn->TlsCipherGetName();
   } else {
-    str = " Encryption: None";
+    cipher_string += "None";
   }
+  return cipher_string;
 }
 
 void BareosSocket::OutputCipherMessageString(
     std::function<void(const char*)> output_cb)
 {
-  std::string str;
-  GetCipherMessageString(str);
+  std::string str = GetCipherMessageString();
   str += '\n';
   output_cb(str.c_str());
 }
