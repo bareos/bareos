@@ -17,7 +17,6 @@ export TestName
 "${rscripts}"/setup
 
 start_test
-
 run_bareos "$@"
 
 echo "status conf" | "${BAREOS_BCONSOLE_BINARY}" -c etc/bareos/bconsole-acl-none.conf > ${logdir}/acl-none.log

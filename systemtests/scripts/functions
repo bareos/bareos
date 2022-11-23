@@ -886,7 +886,8 @@ end_test()
    # Stop the Bareos daemons only
    # if a single test is defined.
    if [[ "$0" == *testrunner ]]; then
-      "${rscripts}/bareos" stop
+      stop_bareos
+      "${rscripts}/bareos" stop      
    fi
 
    if [ "$estat" != "0" ] ; then
