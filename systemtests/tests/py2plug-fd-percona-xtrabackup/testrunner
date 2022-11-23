@@ -47,14 +47,13 @@ status dir
 run job=$JobName level=Incremental yes
 wait JobName=$JobName
 status dir
-
-
 END_OF_DATA
 
 # insert data and run incremental
 echo "insert into test (data) VALUES ('test entry 2') " | $MYSQL_CLIENT "${xtrabackup_test_db}"
 
-run_bareos "$@"
+start_bareos
+run_bconsole
 
 cat <<END_OF_DATA2 >"$tmp/bconcmds"
 @# run incremental again without any new data
@@ -65,15 +64,15 @@ wait
 messages
 quit
 END_OF_DATA2
-run_bareos "$@"
+run_bconsole
+
 
 cat <<END_OF_DATA3 >"$tmp/bconcmds"
 restore client=bareos-fd fileset=PerconaXtraBackupTest yes restorejob=RestoreFile select all done
 @$out $tmp/log2.out
 wait
 END_OF_DATA3
-
-run_bareos "$@"
+run_bconsole
 
 mysql_server_stop
 

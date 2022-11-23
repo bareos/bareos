@@ -58,7 +58,8 @@ wait
 status dir
 END_OF_DATA2
 
-run_bareos "$@"
+start_bareos "$@"
+run_bconsole
 check_log $tmp/log1i.out
 
 cat <<END_OF_DATA3 >"$tmp/bconcmds"
@@ -69,7 +70,7 @@ status dir
 llist jobs job=RestoreFile
 END_OF_DATA3
 
-run_bareos "$@"
+run_bconsole "$@"
 check_log $tmp/log2.out
 
 check_for_zombie_jobs storage=File
