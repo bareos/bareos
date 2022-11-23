@@ -23,9 +23,9 @@ import time
 import types
 
 # print(dir(bareosfd))
-print("bareosfd.io_status_error: ", bareosfd.io_status_error)
-print("bareosfd.io_status_core: ", bareosfd.io_status_core)
-print("bareosfd.io_status_plugin: ", bareosfd.io_status_plugin)
+print("bareosfd.iostat_error: ", bareosfd.iostat_error)
+print("bareosfd.iostat_do_in_core: ", bareosfd.iostat_do_in_core)
+print("bareosfd.iostat_do_in_plugin: ", bareosfd.iostat_do_in_plugin)
 # print "bareosfd.bJobMessageType:", str( bareosfd.bJobMessageType)
 # print "bareosfd.bVariable:", str( bareosfd.bVariable)
 # print "bareosfd.bEventType:", str( bareosfd.bEventType)
