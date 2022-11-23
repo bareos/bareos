@@ -186,15 +186,14 @@ bool CheckResources()
   BStringList consoles_with_auth_problems;
   foreach_res (console, R_CONSOLE) {
     if (console->use_pam_authentication_
-        && (console->user_acl.ACL_lists[0] || console->user_acl.profiles)) {
-      consoles_with_auth_problems.push_back(
-          std::string(console->resource_name_));
+        && (console->user_acl.HasAcl() || console->user_acl.profiles)) {
+      consoles_with_auth_problems.emplace_back(console->resource_name_);
     }
   }
   if (!consoles_with_auth_problems.empty()) {
     Jmsg(nullptr, M_FATAL, 0,
-         "Console(s) `%s` using `Use Pam Authentication` while "
-         "having ACL or a Profile activated\n",
+         "Combining `Use Pam Authentication` with ACL commands or `Profile` in "
+         "Console(s) `%s` is not allowed\n",
          consoles_with_auth_problems.Join(',').c_str());
     UnlockRes(my_config);
     return false;

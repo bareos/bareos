@@ -167,9 +167,13 @@ END_OF_DATA
 
 ${BAREOS_BCONSOLE_BINARY} -c ${conf} -p etc/user1.cred < $tmp/bconcmds >${tmp}/log1.out 2>${tmp}/err1.out
 
-expect_grep "Console(s) \`usepam_acl\` using \`Use Pam Authentication\` while having ACL or a Profile activated" \
+expect_not_grep "reloaded" \
             "$tmp/usepam_acl.out" \
-            "wesh"
+            "Reload was succesful. This should not happen"
+
+expect_grep "Combining \`Use Pam Authentication\` with ACL commands or \`Profile\` in Console(s) \`usepam_acl\` is not allowed" \
+            "$tmp/usepam_acl.out" \
+            "Use Pam Authentication with ACL error was not shown"
 
 stop_bareos > $output 2>&1
 
