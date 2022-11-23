@@ -449,31 +449,30 @@ As an alternative to the method above the Bvfs cache can be updated after each j
 
    We do provide a specific JobId in the *JobId* command argument in this example. Only the *JobId* given by the placeholder %i will be computed into the cache.
 
-Upgrade from 21.x.x to 22.x.x
------------------------------
+Upgrade from Bareos 21 or lower to Bareos 22
+--------------------------------------------
 
-|webui| now requires PHP-FPM instead of Apache2 mod-php. Due to this change there are some manual steps to consider
-before and after upgrading. Please have a look at the following remarks according to your operating system of choice.
+|webui| now requires **php-fpm** instead of Apache **mod-php**.
+
+Usually this should be automatically handled by the packagemanager while updating.
+
+Please consider the following remarks below according to your operating system of choice
+if auto upgrading does not work for you.
+
+If the |webui| is not reachable after upgrading, make sure that:
+
+- Apache **mod-php** is disabled or has been removed
+
+- **php-fpm*** usage is configured properly in Apache
+
+- **php-fpm** service is enabled and has been restarted
+
+- Apache service has been restarted
 
 Debian, Ubuntu, Univention
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Before upgrading
-^^^^^^^^^^^^^^^^
-
-- Disable or remove any PHP module in Apache2
-
-After upgrading
-^^^^^^^^^^^^^^^
-
-- Enable PHP-FPM Apache2 configuration (e.g. `a2enconf php7.3-fpm`, `a2enconf php7.4-fpm` or `a2enconf php8.1-fpm`)
-
-- Restart Apache2 and PHP-FPM
-
-.. code-block:: bareosconfig
-
-   systemctl restart php8.1-fpm
-   systemctl restart apache2
+Please use `apt` instead of `apt-get` to upgrade automatically.
 
 SUSE Linux Enterprise Server (SLES), openSUSE
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -507,10 +506,9 @@ A minimal example may look like following.
 
 - Restart Apache2 and PHP-FPM
 
-.. code-block:: bareosconfig
+.. code-block:: shell-session
 
-   systemctl restart apache2
-   systemctl restart php-fpm
+   systemctl restart apache2 php-fpm
 
 Upgrade from 18.2.6 to 18.2.7
 -----------------------------
