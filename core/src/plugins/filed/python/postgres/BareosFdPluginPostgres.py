@@ -452,6 +452,12 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
             )
         return bareosfd.bRC_OK
 
+    def __dbConClose(self):
+        try:
+            self.dbCon.close()
+        except Exception as e:
+            pass
+
     def closeDbConnection(self):
         # TODO Error Handling
         # Get Backup Start Date
@@ -469,6 +475,7 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
                 + "CHECKPOINT LOCATION: %s, " % self.labelItems["CHECKPOINT LOCATION"]
                 + "START WAL LOCATION: %s\n" % self.labelItems["START WAL LOCATION"],
             )
+            self.__dbConClose()
             self.PostgressFullBackupRunning = False
         except Exception as e:
             bareosfd.JobMessage(
@@ -523,6 +530,7 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
                 self.files_to_backup.append("ROP")
                 return self.checkForWalFiles()
             else:
+                self.__dbConClose()
                 return bareosfd.bRC_OK
 
     def end_backup_job(self):
@@ -534,6 +542,8 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
         if self.PostgressFullBackupRunning:
             self.closeDbConnection()
             self.PostgressFullBackupRunning = False
+        else:
+            self.__dbConClose()
         return bareosfd.bRC_OK
 
     def wait_for_wal_archiving(self, LSN):
