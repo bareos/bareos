@@ -153,6 +153,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - core: use distinct names for JobControlRecordPrivate [PR #1307]
 - webui-selenium-test: use options instead of chrome_options [PR #1306]
 - systemtests: improve webui testing [PR #1313]
+- dird: prohibit PAM usage with user ACL and Profiles in consoles [PR #1318]
 
 ### Deprecated
 - make_catalog_backup.pl is now a shell wrapper script which will be removed in version 23.
@@ -366,5 +367,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1300]: https://github.com/bareos/bareos/pull/1300
 [PR #1303]: https://github.com/bareos/bareos/pull/1303
 [PR #1305]: https://github.com/bareos/bareos/pull/1305
+[PR #1306]: https://github.com/bareos/bareos/pull/1306
+[PR #1307]: https://github.com/bareos/bareos/pull/1307
 [PR #1313]: https://github.com/bareos/bareos/pull/1313
+[PR #1318]: https://github.com/bareos/bareos/pull/1318
 [unreleased]: https://github.com/bareos/bareos/tree/master
