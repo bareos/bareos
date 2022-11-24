@@ -1,0 +1,18 @@
+Storage {
+  Name = bareos-sd
+  Maximum Concurrent Jobs = 20
+
+  # remove comment from "Plugin Directory" to load plugins from specified directory.
+  # if "Plugin Names" is defined, only the specified plugins will be loaded,
+  # otherwise all storage plugins (*-sd.so) from the "Plugin Directory".
+  #
+  # Plugin Directory = "@python_plugin_module_src_sd@"
+  # Plugin Names = ""
+  Working Directory =  "@working_dir@"
+  SD Port = @sd_port@
+  @sd_backend_config@
+  # Read as disable everything(-) that is enable by default, plus enable TLSv1.2 in case it is not by default
+  TLS Protocol = "-TLSv1,-TLSv1.1,-TLSv1.3,TLSv1.2"
+  # List of ciphers that should normally be hardware accelerated, and usable by kernel kTLS, order is important.
+  TLS Cipher List = "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:AES128-GCM-SHA256:PSK-AES128-GCM-SHA256:AES256-GCM-SHA384:PSK-AES256-GCM-SHA384"
+}

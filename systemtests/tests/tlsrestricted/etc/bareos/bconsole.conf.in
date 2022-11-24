@@ -1,0 +1,14 @@
+#
+# Bareos User Agent (or Console) Configuration File
+#
+
+Director {
+  Name = @basename@-dir
+  DIRport = @dir_port@
+  Address = @hostname@
+  Password = "@dir_password@"
+  # Read as disable everything(-) that is enable by default, plus enable TLSv1.2 in case it is not by default
+  TLS Protocol = "-TLSv1,-TLSv1.1,-TLSv1.3,TLSv1.2"
+  # List of ciphers that should normally be hardware accelerated, and usable by kernel kTLS, order is important.
+  TLS Cipher List = "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:AES128-GCM-SHA256:PSK-AES128-GCM-SHA256:AES256-GCM-SHA384:PSK-AES256-GCM-SHA384"
+}
