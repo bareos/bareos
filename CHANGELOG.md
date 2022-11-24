@@ -17,6 +17,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Previously deprecated rados/ceph backend and cephfs plugin have been removed. Use the droplet backend to store into ceph via S3, and backup cephfs filesystems by backing up a mount point.
     - packages bareos-storage-ceph and bareos-filedaemon-ceph-plugin if previously installed need to be removed manually.
 - Bareos 22 removes bareos-webui support for RHEL 7 and CentOS 7
+- Bareos 22 uses the VMware VDDK 8.0.0 for the VMware Plugin. [PR #1295]. VDDK 8.0.0 supports vSphere 8 and is backward compatible with vSphere 6.7 and 7. **vSphere 6.5 is not supported anymore**.
 
 ### Added
 - dird: add command line feature to print specific resources [PR #1153]
@@ -51,6 +52,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - stored: dird: add backup checkpoints that save backup metadata to the Catalog during the execution of the backup. [PR #1074]
 - build: run a build and test with sanitizers enabled [PR #1244]
 - catalog: update fileset text in fileset record [PR #1300]
+- VMware Plugin: Save VM configuration and recreate VM before restore [PR #1295]
 
 ### Fixed
 - webui: fix job timeline x-axis UTC timestamp issue [PR #1283]
