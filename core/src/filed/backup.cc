@@ -72,7 +72,7 @@ const bool have_xattr = false;
 #endif
 
 /* Forward referenced functions */
-int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level);
+
 static int send_data(JobControlRecord* jcr,
                      int stream,
                      FindFilesPacket* ff_pkt,
@@ -97,8 +97,11 @@ static void CloseVssBackupSession(JobControlRecord* jcr);
  * except echo the heartbeat to the Director).
  */
 bool BlastDataToStorageDaemon(JobControlRecord* jcr,
-                              char*,
-                              crypto_cipher_t cipher)
+                              crypto_cipher_t cipher,
+                              uint32_t buf_size,
+                              int callback(JobControlRecord* jcr,
+                                           FindFilesPacket* ff_pkt,
+                                           bool top_level))
 {
   BareosSocket* sd;
   bool ok = true;
@@ -108,17 +111,7 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr,
   jcr->setJobStatusWithPriorityCheck(JS_Running);
 
   Dmsg1(300, "filed: opened data connection %d to stored\n", sd->fd_);
-  ClientResource* client = nullptr;
-  {
-    ResLocker _{my_config};
-    client = (ClientResource*)my_config->GetNextRes(R_CLIENT, NULL);
-  }
-  uint32_t buf_size;
-  if (client) {
-    buf_size = client->max_network_buffer_size;
-  } else {
-    buf_size = 0; /* use default */
-  }
+
   if (!sd->SetBufferSize(buf_size, BNET_SETBUF_WRITE)) {
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     Jmsg(jcr, M_FATAL, 0, _("Cannot set buffer size FD->SD.\n"));
@@ -159,7 +152,7 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr,
   }
 
   // Subroutine SaveFile() is called for each file
-  if (!FindFiles(jcr, (FindFilesPacket*)jcr->fd_impl->ff, SaveFile,
+  if (!FindFiles(jcr, (FindFilesPacket*)jcr->fd_impl->ff, callback,
                  PluginSave)) {
     ok = false; /* error */
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
@@ -185,6 +178,8 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr,
   StopHeartbeatMonitor(jcr);
 
   sd->signal(BNET_EOD); /* end of sending data */
+
+  if (sd != nullptr) { sd->signal(BNET_EOD); /* end of sending data */ }
 
   if (have_acl && jcr->fd_impl->acl_data) {
     FreePoolMemory(jcr->fd_impl->acl_data->u.build->content);

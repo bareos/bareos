@@ -42,6 +42,7 @@ set(DIRD_OBJECTS_SRCS
     dir_plugins.cc
     dird_conf.cc
     expand.cc
+    testfind_jcr.cc
     fd_cmds.cc
     get_database_connection.cc
     getmsg.cc
@@ -192,7 +193,7 @@ target_link_libraries(
 # is not built by default
 if(NOT client-only)
   add_executable(testfind ${TSTFNDSRCS})
-  target_link_libraries(testfind dird_objects bareosfind)
+  target_link_libraries(testfind dird_objects fd_objects bareosfind)
 endif()
 install(TARGETS bareos-dir bareos-dbcheck testfind DESTINATION "${sbindir}")
 

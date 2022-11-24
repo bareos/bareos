@@ -41,6 +41,7 @@
 #include "lib/util.h"
 #include "lib/address_conf.h"
 #include "lib/alist.h"
+#include "filed/filed_utils.h"
 
 using namespace filedaemon;
 
@@ -48,8 +49,6 @@ using namespace filedaemon;
 extern void* handle_connection_request(void* dir_sock);
 extern bool PrintMessage(void* sock, const char* fmt, ...);
 
-/* Forward referenced functions */
-static bool CheckResources();
 
 static std::string pidfile_path{};
 
@@ -295,13 +294,14 @@ void TerminateFiled(int sig)
   CleanupCrypto();
   exit(sig);
 }
-} /* namespace filedaemon */
 
+
+} /* namespace filedaemon */
 /**
  * Make a quick check to see that we have all the
  * resources needed.
  */
-static bool CheckResources()
+bool CheckResources()
 {
   bool OK = true;
   DirectorResource* director;

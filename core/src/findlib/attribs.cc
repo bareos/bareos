@@ -73,7 +73,7 @@ int SelectDataStream(FindFilesPacket* ff_pkt, bool compatible)
   int stream;
 
   /* This is a plugin special restore object */
-  if (ff_pkt->type == FT_RESTORE_FIRST) {
+  if (compatible && ff_pkt->type == FT_RESTORE_FIRST) {
     ClearAllBits(FO_MAX, ff_pkt->flags);
     return STREAM_FILE_DATA;
   }

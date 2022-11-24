@@ -35,8 +35,4 @@ expect_grep "Max file length: 148" \
             "$testfind_log" \
             "Max file length is incorrect."
 
-expect_grep "Hard links     : 2" \
-            "$testfind_log" \
-            "Number of hard links is incorrect."
-
 end_test

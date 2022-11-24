@@ -80,7 +80,7 @@ static void FreeDirFfPkt(FindFilesPacket* dir_ff_pkt)
 {
   free(dir_ff_pkt->fname);
   free(dir_ff_pkt->link);
-  FreePoolMemory(dir_ff_pkt->sys_fname);
+  if (dir_ff_pkt->sys_fname) { FreePoolMemory(dir_ff_pkt->sys_fname); }
   if (dir_ff_pkt->fname_save) { FreePoolMemory(dir_ff_pkt->fname_save); }
   if (dir_ff_pkt->link_save) { FreePoolMemory(dir_ff_pkt->link_save); }
   if (dir_ff_pkt->ignoredir_fname) {

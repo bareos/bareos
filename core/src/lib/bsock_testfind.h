@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,24 +19,17 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_FILED_DIR_CMD_H_
-#define BAREOS_FILED_DIR_CMD_H_
+#ifndef BAREOS_LIB_BSOCK_TESTFIND_H_
+#define BAREOS_LIB_BSOCK_TESTFIND_H_
 
-#include "lib/crypto.h"
+#include "lib/bsock_tcp.h"
 
-class JobControlRecord;
-class BareosSocket;
+class BareosSocketTestfind : public BareosSocketTCP {
+ public:
+  BareosSocketTestfind();
+  ~BareosSocketTestfind();
 
-namespace filedaemon {
+  bool send() override;
+};
 
-JobControlRecord* create_new_director_session(BareosSocket* dir);
-void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir);
-void* handle_director_connection(BareosSocket* dir);
-bool StartConnectToDirectorThreads();
-bool StopConnectToDirectorThreads(bool wait = false);
-JobControlRecord* NewFiledJcr();
-bool GetWantedCryptoCipher(JobControlRecord* jcr, crypto_cipher_t* cipher);
-void CleanupFileset(JobControlRecord* jcr);
-} /* namespace filedaemon */
-
-#endif  // BAREOS_FILED_DIR_CMD_H_
+#endif  // BAREOS_LIB_BSOCK_TESTFIND_H_

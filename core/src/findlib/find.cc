@@ -169,6 +169,7 @@ int FindFiles(JobControlRecord* jcr,
           bstrncpy(ff->BaseJobOpts, fo->BaseJobOpts, sizeof(ff->BaseJobOpts));
         }
       }
+
       Dmsg4(50, "Verify=<%s> Accurate=<%s> BaseJob=<%s> flags=<%d>\n",
             ff->VerifyOpts, ff->AccurateOpts, ff->BaseJobOpts, ff->flags);
 

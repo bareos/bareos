@@ -3,7 +3,7 @@
 
    Copyright (C) 2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -63,13 +63,18 @@ struct b_ctx {
 };
 
 bool BlastDataToStorageDaemon(JobControlRecord* jcr,
-                              char* addr,
-                              crypto_cipher_t cipher);
+                              crypto_cipher_t cipher,
+                              uint32_t buf_size,
+                              int callback(JobControlRecord* jcr,
+                                           FindFilesPacket* ff_pkt,
+                                           bool top_level));
 bool EncodeAndSendAttributes(JobControlRecord* jcr,
                              FindFilesPacket* ff_pkt,
                              int& data_stream);
 void StripPath(FindFilesPacket* ff_pkt);
 void UnstripPath(FindFilesPacket* ff_pkt);
+int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level);
+
 
 } /* namespace filedaemon */
 #endif  // BAREOS_FILED_BACKUP_H_

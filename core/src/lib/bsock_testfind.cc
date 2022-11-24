@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,25 +18,31 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
+// Testfind Sockets abstraction.
 
-#ifndef BAREOS_FILED_DIR_CMD_H_
-#define BAREOS_FILED_DIR_CMD_H_
+#include "lib/bsock_testfind.h"
 
-#include "lib/crypto.h"
 
-class JobControlRecord;
-class BareosSocket;
+#ifndef ENODATA /* not defined on BSD systems */
+#  define ENODATA EPIPE
+#endif
 
-namespace filedaemon {
+#ifndef SOL_TCP
+#  define SOL_TCP IPPROTO_TCP
+#endif
 
-JobControlRecord* create_new_director_session(BareosSocket* dir);
-void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir);
-void* handle_director_connection(BareosSocket* dir);
-bool StartConnectToDirectorThreads();
-bool StopConnectToDirectorThreads(bool wait = false);
-JobControlRecord* NewFiledJcr();
-bool GetWantedCryptoCipher(JobControlRecord* jcr, crypto_cipher_t* cipher);
-void CleanupFileset(JobControlRecord* jcr);
-} /* namespace filedaemon */
+#ifdef HAVE_WIN32
+#  define socketRead(fd, buf, len) ::recv(fd, buf, len, 0)
+#  define socketWrite(fd, buf, len) ::send(fd, buf, len, 0)
+#  define socketClose(fd) ::closesocket(fd)
+#else
+#  define socketRead(fd, buf, len) ::read(fd, buf, len)
+#  define socketWrite(fd, buf, len) ::write(fd, buf, len)
+#  define socketClose(fd) ::close(fd)
+#endif
 
-#endif  // BAREOS_FILED_DIR_CMD_H_
+BareosSocketTestfind::BareosSocketTestfind() : BareosSocketTCP() {}
+
+BareosSocketTestfind::~BareosSocketTestfind() { destroy(); }
+
+bool BareosSocketTestfind::send() { return true; }

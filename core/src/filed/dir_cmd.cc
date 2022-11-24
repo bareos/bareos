@@ -55,6 +55,7 @@
 #include "lib/bnet_network_dump.h"
 #include "lib/watchdog.h"
 #include "lib/util.h"
+#include "filed/backup.h"
 
 #if defined(WIN32_VSS)
 #  include "win32/findlib/win32.h"
@@ -296,7 +297,7 @@ static bool ValidateCommand(JobControlRecord* jcr,
   return allowed;
 }
 
-static inline void CleanupFileset(JobControlRecord* jcr)
+void CleanupFileset(JobControlRecord* jcr)
 {
   findFILESET* fileset;
   findIncludeExcludeItem* incexe;
@@ -377,7 +378,7 @@ static inline bool AreMaxConcurrentJobsExceeded()
   return (cnt >= me->MaxConcurrentJobs) ? true : false;
 }
 
-static JobControlRecord* NewFiledJcr()
+JobControlRecord* NewFiledJcr()
 {
   JobControlRecord* jcr = new_jcr(FiledFreeJcr);
   jcr->fd_impl = new FiledJcrImpl;
@@ -1725,8 +1726,7 @@ static inline void ClearCompressionFlagInFileset(JobControlRecord* jcr)
 }
 
 // Find out what encryption cipher to use.
-static inline bool GetWantedCryptoCipher(JobControlRecord* jcr,
-                                         crypto_cipher_t* cipher)
+bool GetWantedCryptoCipher(JobControlRecord* jcr, crypto_cipher_t* cipher)
 {
   findFILESET* fileset;
   bool force_encrypt = false;
@@ -1802,6 +1802,8 @@ static bool BackupCmd(JobControlRecord* jcr)
   BareosSocket* dir = jcr->dir_bsock;
   BareosSocket* sd = jcr->store_bsock;
   crypto_cipher_t cipher = CRYPTO_CIPHER_NONE;
+  ClientResource* client
+      = (ClientResource*)my_config->GetNextRes(R_CLIENT, NULL);
 
   /* See if we are in restore only mode then we don't allow a backup to be
    * initiated. */
@@ -1984,7 +1986,8 @@ static bool BackupCmd(JobControlRecord* jcr)
 
   // Send Files to Storage daemon
   Dmsg1(110, "begin blast ff=%p\n", (FindFilesPacket*)jcr->fd_impl->ff);
-  if (!BlastDataToStorageDaemon(jcr, nullptr, cipher)) {
+  if (!BlastDataToStorageDaemon(jcr, cipher, client->max_network_buffer_size,
+                                SaveFile)) {
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     BnetSuppressErrorMessages(sd, 1);
     Dmsg0(110, "Error in blast_data.\n");
