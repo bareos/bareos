@@ -277,7 +277,7 @@ Fileset Signature Algorithm
 
 The default signature algorithm to verify the integrity of the files is `MD5`.
 As all MD5 related function are disabled in `FIPS` mode, Bareos emits errors
-like the following when trying to calculate MD5 siguatures on a FIPS system:
+like the following when trying to calculate MD5 signatures on a FIPS system:
 
 .. code-block::
 
