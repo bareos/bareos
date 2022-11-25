@@ -77,9 +77,9 @@ int main(int argc, char* const* argv)
        populate_cache = false, reset_cache = false, set_encryption = false,
        show_keydata = false, volume_encryption_status = false,
        wrapped_keys = false;
-  char* keyfile = NULL;
-  char* cache_file = NULL;
-  char* wrap_keyfile = NULL;
+  std::string keyfile{};
+  std::string cache_file{};
+  std::string wrap_keyfile{};
   char keydata[64];
   char wrapdata[64];
 
@@ -100,7 +100,7 @@ int main(int argc, char* const* argv)
 
       case 'D':
         dump_cache = true;
-        cache_file = strdup(optarg);
+        cache_file = optarg;
         break;
 
       case 'd':
@@ -114,39 +114,39 @@ int main(int argc, char* const* argv)
 
       case 'g':
         generate_passphrase = true;
-        if (keyfile) {
+        if (!keyfile.empty()) {
           usage();
           goto bail_out;
         }
-        keyfile = strdup(optarg);
+        keyfile = optarg;
         break;
 
       case 'k':
         show_keydata = true;
-        if (keyfile) {
+        if (!keyfile.empty()) {
           usage();
           goto bail_out;
         }
-        keyfile = strdup(optarg);
+        keyfile = optarg;
         break;
 
       case 'p':
         populate_cache = true;
-        cache_file = strdup(optarg);
+        cache_file = optarg;
         break;
 
       case 'r':
         reset_cache = true;
-        cache_file = strdup(optarg);
+        cache_file = optarg;
         break;
 
       case 's':
         set_encryption = true;
-        if (keyfile) {
+        if (!keyfile.empty()) {
           usage();
           goto bail_out;
         }
-        keyfile = strdup(optarg);
+        keyfile = optarg;
         break;
 
       case 'v':
@@ -155,7 +155,7 @@ int main(int argc, char* const* argv)
 
       case 'w':
         wrapped_keys = true;
-        wrap_keyfile = strdup(optarg);
+        wrap_keyfile = optarg;
         break;
 
       case '?':
@@ -211,7 +211,7 @@ int main(int argc, char* const* argv)
 
   if (dump_cache) {
     // Load any keys currently in the cache.
-    ReadCryptoCache(cache_file);
+    ReadCryptoCache(cache_file.c_str());
 
     // Dump the content of the cache.
     DumpCryptoCache(1);
@@ -225,7 +225,7 @@ int main(int argc, char* const* argv)
     char new_cache_entry[256];
 
     // Load any keys currently in the cache.
-    ReadCryptoCache(cache_file);
+    ReadCryptoCache(cache_file.c_str());
 
     /* Read new entries from stdin and parse them to update
      * the cache. */
@@ -247,7 +247,7 @@ int main(int argc, char* const* argv)
     }
 
     // Write out the new cache entries.
-    WriteCryptoCache(cache_file);
+    WriteCryptoCache(cache_file.c_str());
 
     FlushCryptoCache();
     goto bail_out;
@@ -255,13 +255,13 @@ int main(int argc, char* const* argv)
 
   if (reset_cache) {
     // Load any keys currently in the cache.
-    ReadCryptoCache(cache_file);
+    ReadCryptoCache(cache_file.c_str());
 
     // Reset all entries.
     ResetCryptoCache();
 
     // Write out the new cache entries.
-    WriteCryptoCache(cache_file);
+    WriteCryptoCache(cache_file.c_str());
 
     FlushCryptoCache();
     goto bail_out;
@@ -273,20 +273,21 @@ int main(int argc, char* const* argv)
   if (wrapped_keys) {
     /* Read the key bits from the keyfile.
      * - == stdin */
-    if (bstrcmp(wrap_keyfile, "-")) {
+    if (bstrcmp(wrap_keyfile.c_str(), "-")) {
       kfd = 0;
       fprintf(stdout, T_("Enter Key Encryption Key: "));
       fflush(stdout);
     } else {
-      kfd = open(wrap_keyfile, O_RDONLY);
+      kfd = open(wrap_keyfile.c_str(), O_RDONLY);
       if (kfd < 0) {
-        fprintf(stderr, T_("Cannot open keyfile %s\n"), wrap_keyfile);
+        fprintf(stderr, T_("Cannot open keyfile %s\n"), wrap_keyfile.c_str());
         retval = 1;
         goto bail_out;
       }
     }
     if (read(kfd, wrapdata, sizeof(wrapdata))) {
-      fprintf(stderr, T_("Cannot read from keyfile %s\n"), wrap_keyfile);
+      fprintf(stderr, T_("Cannot read from keyfile %s\n"),
+              wrap_keyfile.c_str());
       retval = 1;
       goto bail_out;
     }
@@ -333,12 +334,12 @@ int main(int argc, char* const* argv)
 
     /* See where to write the key.
      * - == stdout */
-    if (bstrcmp(keyfile, "-")) {
+    if (bstrcmp(keyfile.c_str(), "-")) {
       kfd = 1;
     } else {
-      kfd = open(keyfile, O_WRONLY | O_CREAT, 0644);
+      kfd = open(keyfile.c_str(), O_WRONLY | O_CREAT, 0644);
       if (kfd < 0) {
-        fprintf(stderr, T_("Cannot open keyfile %s\n"), keyfile);
+        fprintf(stderr, T_("Cannot open keyfile %s\n"), keyfile.c_str());
         free(passphrase);
         retval = 1;
         goto bail_out;
@@ -349,13 +350,13 @@ int main(int argc, char* const* argv)
       cnt = BinToBase64(keydata, sizeof(keydata), passphrase, length, true);
       if (write(kfd, keydata, cnt) != cnt) {
         fprintf(stderr, T_("Failed to write %d bytes to keyfile %s\n"), cnt,
-                keyfile);
+                keyfile.c_str());
       }
     } else {
       cnt = DEFAULT_PASSPHRASE_LENGTH;
       if (write(kfd, passphrase, cnt) != cnt) {
         fprintf(stderr, T_("Failed to write %d bytes to keyfile %s\n"), cnt,
-                keyfile);
+                keyfile.c_str());
       }
     }
 
@@ -378,20 +379,20 @@ int main(int argc, char* const* argv)
 
     /* Read the key bits from the keyfile.
      * - == stdin */
-    if (bstrcmp(keyfile, "-")) {
+    if (bstrcmp(keyfile.c_str(), "-")) {
       kfd = 0;
       fprintf(stdout, T_("Enter Encryption Key: "));
       fflush(stdout);
     } else {
-      kfd = open(keyfile, O_RDONLY);
+      kfd = open(keyfile.c_str(), O_RDONLY);
       if (kfd < 0) {
-        fprintf(stderr, T_("Cannot open keyfile %s\n"), keyfile);
+        fprintf(stderr, T_("Cannot open keyfile %s\n"), keyfile.c_str());
         retval = 1;
         goto bail_out;
       }
     }
     if (read(kfd, keydata, sizeof(keydata)) == 0) {
-      fprintf(stderr, T_("Cannot read from keyfile %s\n"), keyfile);
+      fprintf(stderr, T_("Cannot read from keyfile %s\n"), keyfile.c_str());
       retval = 1;
       goto bail_out;
     }
@@ -415,7 +416,7 @@ int main(int argc, char* const* argv)
         fprintf(stderr,
                 T_("Failed to base64 decode the keydata read from %s, "
                    "aborting...\n"),
-                keyfile);
+                keyfile.c_str());
         free(wrapped_passphrase);
         goto bail_out;
       }
@@ -430,7 +431,7 @@ int main(int argc, char* const* argv)
         fprintf(stderr,
                 T_("Failed to aes unwrap the keydata read from %s using the "
                    "wrap data from %s ERR=%s, aborting...\n"),
-                keyfile, wrap_keyfile, error->c_str());
+                keyfile.c_str(), wrap_keyfile.c_str(), error->c_str());
         free(wrapped_passphrase);
         goto bail_out;
       }
@@ -489,20 +490,20 @@ int main(int argc, char* const* argv)
   if (set_encryption) {
     /* Read the key bits from the keyfile.
      * - == stdin */
-    if (bstrcmp(keyfile, "-")) {
+    if (bstrcmp(keyfile.c_str(), "-")) {
       kfd = 0;
       fprintf(stdout, T_("Enter Encryption Key (close with ^D): "));
       fflush(stdout);
     } else {
-      kfd = open(keyfile, O_RDONLY);
+      kfd = open(keyfile.c_str(), O_RDONLY);
       if (kfd < 0) {
-        fprintf(stderr, T_("Cannot open keyfile %s\n"), keyfile);
+        fprintf(stderr, T_("Cannot open keyfile %s\n"), keyfile.c_str());
         retval = 1;
         goto bail_out;
       }
     }
     if (read(kfd, keydata, sizeof(keydata)) == 0) {
-      fprintf(stderr, T_("Cannot read from keyfile %s\n"), keyfile);
+      fprintf(stderr, T_("Cannot read from keyfile %s\n"), keyfile.c_str());
       retval = 1;
       goto bail_out;
     }
@@ -533,11 +534,5 @@ int main(int argc, char* const* argv)
   }
 
 bail_out:
-  if (cache_file) { free(cache_file); }
-
-  if (keyfile) { free(keyfile); }
-
-  if (wrap_keyfile) { free(wrap_keyfile); }
-
   exit(retval);
 }
