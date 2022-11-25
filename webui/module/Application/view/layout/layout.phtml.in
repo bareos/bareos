@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2020 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2022 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  * @author    Frank Bergkemper
  *
@@ -43,8 +43,8 @@ include 'version.php';
 ?>
 
 <!-- Styles -->
-<?php echo $this->headLink(array('rel' => 'shortcut icon', 'type' => 'image/vnd.microsoft.icon', 'href' => $this->basePath() . '/img/favicon.ico'))
-   ->prependStylesheet($this->basePath() . '/css/style.css')
+<?php echo $this->headLink(array('rel' => 'shortcut icon', 'type' => 'image/vnd.microsoft.icon', 'href' => $this->basePath() . '/themes/'.$_SESSION['bareos']['theme'].'/img/favicon.ico'))
+   ->prependStylesheet($this->basePath() . '/css/main.css')
    ->prependStylesheet($this->basePath() . '/css/bootstrap-datetimepicker.min.css')
    ->prependStylesheet($this->basePath() . '/css/bootstrap-select.min.css')
    ->prependStylesheet($this->basePath() . '/css/bootstrap.min.css');
@@ -68,60 +68,6 @@ include 'version.php';
 
 <body>
 
-<style>
-@media (max-width: 1525px) {
-    body {
-      padding-top: 105px;
-    }
-}
-@media (max-width: 1480px) {
-    body {
-      padding-top: 60px;
-    }
-    .navbar-header {
-        float: none;
-    }
-    .navbar-toggle {
-        display: block;
-    }
-    .navbar-collapse {
-        border-top: 1px solid transparent;
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
-    }
-    .navbar-collapse.collapse {
-        display: none!important;
-    }
-    .navbar-nav {
-        float: none!important;
-        margin: 7.5px -15px;
-    }
-    .navbar-nav>li {
-        float: none;
-    }
-    .navbar-nav>li>a {
-        padding-top: 10px;
-        padding-bottom: 10px;
-    }
-    .navbar-right {
-        float: right!important;
-    }
-    .navbar-left {
-        float: left!important;
-    }
-    .navbar-text {
-        float: none;
-        margin: 15px 0;
-    }
-    /* since 3.1.0 */
-    .navbar-collapse.collapse.in {
-        display: block!important;
-    }
-    .collapsing {
-        overflow: hidden!important;
-    }
-}
-</style>
-
 <div class="spinner" id="spinner"></div>
 
 <!-- TOP NAVBAR -->
@@ -134,7 +80,7 @@ include 'version.php';
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
          </button>
-         <a href="<?php echo $this->url('dashboard', array('action' => 'index')); ?>" target="_self"><img src="<?php echo $this->basePath('img/bareos-logo-small.png') ?>" alt="Bareos" /></a>&nbsp;
+         <a href="<?php echo $this->url('dashboard', array('action' => 'index')); ?>" target="_self"><img src="<?php echo $this->basePath() . '/themes/'.$_SESSION['bareos']['theme'] . '/img/bareos-logo-small.png'; ?>" alt="Bareos" /></a>&nbsp;
       </div>
       <div class="collapse navbar-collapse">
          <?php echo $this->navigation('navigation')->menu()->setMinDepth(0)->setMaxDepth(0)->setUlClass('nav navbar-nav'); ?>

@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2022 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  * @author    Frank Bergkemper
  *
@@ -40,9 +40,9 @@ echo $this->doctype();
    ?>
 
    <!-- Styles -->
-   <?php echo $this->headLink(array('rel' => 'shortcut icon', 'type' => 'image/vnd.microsoft.icon', 'href' => $this->basePath() . '/img/favicon.ico'))
-         ->prependStylesheet($this->basePath() . '/css/style.css')
-         ->prependStylesheet($this->basePath() . '/css/bootstrap.min.css')
+   <?php echo $this->headLink(array('rel' => 'shortcut icon', 'type' => 'image/vnd.microsoft.icon', 'href' => $this->basePath() . '/themes/'.$_SESSION['bareos']['theme'].'/img/favicon.ico'))
+         ->prependStylesheet($this->basePath() . '/themes/'.$_SESSION['bareos']['theme'].'/css/main.css')
+         ->prependStylesheet($this->basePath() . '/themes/'.$_SESSION['bareos']['theme'].'/css/bootstrap.min.css')
    ?>
 
    <!-- Scripts -->

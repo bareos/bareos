@@ -41,8 +41,10 @@ echo $this->doctype();
       ?>
 
       <!-- Styles -->
-      <?php echo $this->headLink(array('rel' => 'shortcut icon', 'type' => 'image/vnd.microsoft.icon', 'href' => $this->basePath() . '/img/favicon.ico'))
-         ->prependStylesheet($this->basePath() . '/css/style.css')
+      <?php echo $this->headLink(array('rel' => 'shortcut icon', 'type' => 'image/vnd.microsoft.icon', 'href' => $this->basePath() . '/themes/'.$_SESSION['bareos']['theme'].'/img/favicon.ico'))
+         ->prependStylesheet($this->basePath() . '/themes/'.$_SESSION['bareos']['theme'].'/css/login.css')
+         ->prependStylesheet($this->basePath() . '/css/login.css')
+         ->prependStylesheet($this->basePath() . '/css/main.css')
          ->prependStylesheet($this->basePath() . '/css/bootstrap-select.min.css')
          ->prependStylesheet($this->basePath() . '/css/bootstrap.min.css')
       ?>
@@ -62,31 +64,12 @@ echo $this->doctype();
 
 <body>
 
-   <style>
-      .panel-default, .panel {
-         background-color: transparent;
-         border-width: 0px;
-         -webkit-box-shadow: none;
-         -moz-box-shadow: none;
-         box-shadow: none;
-      }
-      html {
-         min-height: 100%;
-      }
-      body {
-         background: linear-gradient(#0075be 50%, #ffd700 50%);
-      }
-      p, a:link, a:visited, a:hover, a:active {
-         color: #000;
-      }
-   </style>
-
    <?php
       include 'version.php';
    ?>
 
    <div class="container text-center">
-      <img src="<?php echo $this->basePath() . '/img/bareos.png'; ?>" />
+      <img src="<?php echo $this->basePath() . '/themes/'.$_SESSION['bareos']['theme'].'/img/bareos.png'; ?>" />
       <br /><br /><br />
       <?php echo $this->content; ?>
       <br />
