@@ -64,6 +64,33 @@ static void usage()
       "\n");
 }
 
+/**
+ * Read the key bits from the keyfile.
+ * - == stdin
+ */
+static void ReadKeyBits(const std::string& keyfile, char* data)
+{
+  int kfd = 0;
+  if (bstrcmp(keyfile.c_str(), "-")) {
+    kfd = 0;
+    fprintf(stdout, T_("Enter Encryption Key (close with ^D): "));
+    fflush(stdout);
+  } else {
+    kfd = open(keyfile.c_str(), O_RDONLY);
+    if (kfd < 0) {
+      fprintf(stderr, T_("Cannot open keyfile %s\n", keyfile.c_str()));
+      exit(1);
+    }
+  }
+  if (read(kfd, data, sizeof(data)) == 0) {
+    fprintf(stderr, T_("Cannot read from keyfile %s\n"), keyfile.c_str()));
+    exit(1);
+  }
+  if (kfd > 0) { close(kfd); }
+  StripTrailingJunk(data);
+  Dmsg1(10, "Key data = %s\n", data);
+}
+
 int main(int argc, char* const* argv)
 {
   int ch, kfd, length;
@@ -260,28 +287,7 @@ int main(int argc, char* const* argv)
   memset(keydata, 0, sizeof(keydata));
   memset(wrapdata, 0, sizeof(wrapdata));
 
-  if (wrapped_keys) {
-    /* Read the key bits from the keyfile.
-     * - == stdin */
-    if (bstrcmp(wrap_keyfile.c_str(), "-")) {
-      kfd = 0;
-      fprintf(stdout, T_("Enter Key Encryption Key: "));
-      fflush(stdout);
-    } else {
-      kfd = open(wrap_keyfile.c_str(), O_RDONLY);
-      if (kfd < 0) {
-        fprintf(stderr, T_("Cannot open keyfile %s\n"), wrap_keyfile.c_str());
-        exit(1);
-      }
-    }
-    if (read(kfd, wrapdata, sizeof(wrapdata))) {
-      fprintf(stderr, T_("Cannot read from keyfile %s\n"), wrap_keyfile.c_str());
-      exit(1);
-    }
-    if (kfd > 0) { close(kfd); }
-    StripTrailingJunk(wrapdata);
-    Dmsg1(10, "Wrapped keydata = %s\n", wrapdata);
-  }
+  if (wrapped_keys) { ReadKeyBits(wrap_keyfile, wrapdata); }
 
   /* Generate a new passphrase allow it to be wrapped using the given wrapkey
    * and base64 if specified or when wrapped. */
@@ -317,7 +323,7 @@ int main(int argc, char* const* argv)
     } else {
       kfd = open(keyfile.c_str(), O_WRONLY | O_CREAT, 0644);
       if (kfd < 0) {
-        fprintf(stderr, T_("Cannot open keyfile %s\n"), keyfile.c_str());
+        fprintf(stderr, T_("Cannot open keyfile %s\n", keyfile.c_str()));
         free(passphrase);
         exit(1);
       }
@@ -326,14 +332,14 @@ int main(int argc, char* const* argv)
     if (base64_transform || wrapped_keys) {
       cnt = BinToBase64(keydata, sizeof(keydata), passphrase, length, true);
       if (write(kfd, keydata, cnt) != cnt) {
-        fprintf(stderr, T_("Failed to write %d bytes to keyfile %s\n"), cnt,
-                keyfile.c_str());
+        fprintf(stderr, T_("Failed to write %d bytes to keyfile %s\n", cnt,
+                keyfile.c_str()));
       }
     } else {
       cnt = DEFAULT_PASSPHRASE_LENGTH;
       if (write(kfd, passphrase, cnt) != cnt) {
-        fprintf(stderr, T_("Failed to write %d bytes to keyfile %s\n"), cnt,
-                keyfile.c_str());
+        fprintf(stderr, T_("Failed to write %d bytes to keyfile %s\n", cnt,
+                keyfile.c_str()));
       }
     }
 
@@ -352,28 +358,8 @@ int main(int argc, char* const* argv)
   }
 
   if (show_keydata) {
+    ReadKeyBits(keyfile, keydata);
     char* passphrase;
-
-    /* Read the key bits from the keyfile.
-     * - == stdin */
-    if (bstrcmp(keyfile.c_str(), "-")) {
-      kfd = 0;
-      fprintf(stdout, T_("Enter Encryption Key: "));
-      fflush(stdout);
-    } else {
-      kfd = open(keyfile.c_str(), O_RDONLY);
-      if (kfd < 0) {
-        fprintf(stderr, T_("Cannot open keyfile %s\n"), keyfile.c_str());
-        exit(1);
-      }
-    }
-    if (read(kfd, keydata, sizeof(keydata)) == 0) {
-      fprintf(stderr, T_("Cannot read from keyfile %s\n"), keyfile.c_str());
-      exit(1);
-    }
-    if (kfd > 0) { close(kfd); }
-    StripTrailingJunk(keydata);
-    Dmsg1(10, "Keydata = %s\n", keydata);
 
     // See if we need to unwrap the passphrase.
     if (wrapped_keys) {
@@ -390,8 +376,8 @@ int main(int argc, char* const* argv)
           == 0) {
         fprintf(stderr,
                 T_("Failed to base64 decode the keydata read from %s, "
-                  "aborting...\n"),
-                keyfile.c_str());
+                  "aborting...\n",
+                keyfile.c_str()));
         free(wrapped_passphrase);
         exit(0);
       }
@@ -406,8 +392,8 @@ int main(int argc, char* const* argv)
           == -1) {
         fprintf(stderr,
                 T_("Failed to aes unwrap the keydata read from %s using the "
-                  "wrap data from %s, aborting...\n"),
-                keyfile.c_str(), wrap_keyfile.c_str());
+                  "wrap data from %s, aborting...\n",
+                keyfile.c_str(), wrap_keyfile.c_str()));
         free(wrapped_passphrase);
         exit(0);
       }
@@ -432,7 +418,7 @@ int main(int argc, char* const* argv)
     }
 
     Dmsg1(10, "Unwrapped passphrase = %s\n", passphrase);
-    fprintf(stdout, "%s\n", passphrase);
+    fprintf(stdout, T_("%s\n", passphrase));
 
     free(passphrase);
     exit(0);
@@ -452,7 +438,7 @@ int main(int argc, char* const* argv)
     POOLMEM* encryption_status = GetPoolMemory(PM_MESSAGE);
 
     if (GetScsiDriveEncryptionStatus(-1, argv[0], encryption_status, 0)) {
-      fprintf(stdout, "%s", encryption_status);
+      fprintf(stdout, T_("%s", encryption_status));
       FreePoolMemory(encryption_status);
     } else {
       FreePoolMemory(encryption_status);
@@ -462,26 +448,7 @@ int main(int argc, char* const* argv)
 
   // Load a new encryption key onto the given drive.
   if (set_encryption) {
-    /* Read the key bits from the keyfile.
-     * - == stdin */
-    if (bstrcmp(keyfile.c_str(), "-")) {
-      kfd = 0;
-      fprintf(stdout, T_("Enter Encryption Key (close with ^D): "));
-      fflush(stdout);
-    } else {
-      kfd = open(keyfile.c_str(), O_RDONLY);
-      if (kfd < 0) {
-        fprintf(stderr, _("Cannot open keyfile %s\n"), keyfile.c_str());
-        exit(1);
-      }
-    }
-    if (read(kfd, keydata, sizeof(keydata)) == 0) {
-      fprintf(stderr, T_("Cannot read from keyfile %s\n"), keyfile.c_str());
-      exit(1);
-    }
-    if (kfd > 0) { close(kfd); }
-    StripTrailingJunk(keydata);
-
+    ReadKeyBits(keyfile, keydata);
     if (SetScsiEncryptionKey(-1, argv[0], keydata)) {
       exit(0);
     } else {
@@ -495,7 +462,7 @@ int main(int argc, char* const* argv)
     POOLMEM* encryption_status = GetPoolMemory(PM_MESSAGE);
 
     if (GetScsiVolumeEncryptionStatus(-1, argv[0], encryption_status, 0)) {
-      fprintf(stdout, "%s", encryption_status);
+      fprintf(stdout, T_("%s", encryption_status));
       FreePoolMemory(encryption_status);
     } else {
       FreePoolMemory(encryption_status);
