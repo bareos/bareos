@@ -111,6 +111,30 @@ It should be wrapped at 72 chars and can consist of multiple paragraphs separate
   - imperative language
   - hard limit of 72 characters in the long description
 
+Sometimes during development, you may want to refactor code (without changing overall software behaviour) either to accommodate the new (functional) changes that follow or just for cleanliness.
+
+Refactoring is always welcome but can sometimes require extra care and attention from reviewers to ensure those changes do not actually break current behaviour.
+
+If you mix refactoring and actual functional changes (goal of your PR), it may become a change soup and make it difficult for the reviewer and lengthen the review process even more.
+
+Make sure you differentiate refactoring changes and functional changes (goals of the PR), refactoring commits should be prepended with either ``Refactoring:`` or ``Refactor:`` to make it even easier for reviewers to spot.
+
+Refactoring commits should be lined up together either at the start of the branch or at the end.
+
+A branch commit tree would look something like this:
+::
+
+    * systemtests: update related tests
+    * docs: update documentation
+    * Fix: filed: fix a bug that makes xxx break
+    * dird: stored: my new fancy feature
+    * refactor: backup.cc: replace `goto` statements
+    * refactor: stored: extract blabla code to its own function
+    * refactor: msgchan.cc: remove unnecessary pool memory variables
+    * refactor: msgchan.cc: change variable names
+
+
+
 .. _section-Changelog:
 
 CHANGELOG
