@@ -8,44 +8,54 @@
 ; SESSION SETTINGS
 ;------------------------------------------------------------------------------
 ;
-[session]
-; Default: 3600 seconds
-timeout=3600
+;[session]
+; Session timeout in seconds
+; Default:
+;timeout=3600
 
 ;------------------------------------------------------------------------------
 ; DASHBOARD SETTINGS
 ;------------------------------------------------------------------------------
-[dashboard]
-; Autorefresh Interval
-; Default: 60000 milliseconds
-autorefresh_interval=60000
+;[dashboard]
+; Autorefresh Interval in milliseconds
+; Default:
+;autorefresh_interval=60000
 
 ;------------------------------------------------------------------------------
 ; TABLE SETTINGS
 ;------------------------------------------------------------------------------
-[tables]
+;[tables]
 ; Possible values for pagination
-; Default: 10,25,50,100
-pagination_values=10,25,50,100
+; Default:
+;pagination_values=10,25,50,100
 
 ; Default number of rows per page
 ; for possible values see pagination_values
-; Default: 25
-pagination_default_value=25
+; Default:
+;pagination_default_value=25
 
 ; State saving - restore table state on page reload.
-; Default: false
-save_previous_state=false
+; Default:
+;save_previous_state=false
 
 ;------------------------------------------------------------------------------
 ; VARIOUS SETTINGS
 ;------------------------------------------------------------------------------
-[autochanger]
-; Pooltype for label to use as filter.
-; Default: none
-labelpooltype=scratch
+;[autochanger]
+; Name of the pool used to label and assign new media, e.g. Scratch.
+; Default:
+;labelpooltype=
 
-[restore]
-; Restore filetree refresh timeout after n milliseconds
-; Default: 120000 milliseconds
-filetree_refresh_timeout=120000
+;[restore]
+; Restore filetree refresh timeout in milliseconds
+; Default:
+;filetree_refresh_timeout=120000
+
+;------------------------------------------------------------------------------
+; THEME SETTINGS
+;------------------------------------------------------------------------------
+;[theme]
+; Possible values: default, sunflower
+; Default:
+;name=sunflower
+
