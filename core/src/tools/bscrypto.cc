@@ -30,39 +30,12 @@
 #include <unistd.h>
 #include "include/fcntl_def.h"
 #include "include/bareos.h"
+#include "lib/cli.h"
 #include "lib/crypto_cache.h"
 #include "lib/crypto_wrap.h"
 #include "lib/passphrase.h"
 #include "lib/scsi_crypto.h"
 #include "lib/base64.h"
-
-static void usage()
-{
-  fprintf(
-      stderr,
-      "\n"
-      "Usage: bscrypto <options> [<device_name>]\n"
-      "       -b              Perform base64 encoding of keydata\n"
-      "       -c              Clear encryption key\n"
-      "       -D <cachefile>  Dump content of given cachefile\n"
-      "       -d <nn>         Set debug level to <nn>\n"
-      "       -e              Show drive encryption status\n"
-      "       -g <keyfile>    Generate new encryption passphrase in keyfile\n"
-      "       -k <keyfile>    Show content of keyfile\n"
-      "       -p <cachefile>  Populate given cachefile with crypto keys\n"
-      "       -r <cachefile>  Reset expiry time for entries of given "
-      "cachefile\n"
-      "       -s <keyfile>    Set encryption key loaded from keyfile\n"
-      "       -v              Show volume encryption status\n"
-      "       -w <keyfile>    Wrap/Unwrap the key using RFC3394 aes-(un)wrap\n"
-      "                       using the key in keyfile as a Key Encryption "
-      "Key\n"
-      "       -?              print this message.\n"
-      "\n"
-      "       A keyfile named - is either stdin or stdout depending on the "
-      "option\n"
-      "\n");
-}
 
 /**
  * Read the key bits from the keyfile.
@@ -93,107 +66,163 @@ static void ReadKeyBits(const std::string& keyfile, char* data)
 
 int main(int argc, char* const* argv)
 {
-  int ch, kfd, length;
-  bool base64_transform = false, clear_encryption = false, dump_cache = false,
-       drive_encryption_status = false, generate_passphrase = false,
-       populate_cache = false, reset_cache = false, set_encryption = false,
-       show_keydata = false, volume_encryption_status = false,
-       wrapped_keys = false;
-  std::string keyfile{};
-  std::string cache_file{};
-  std::string wrap_keyfile{};
-  char keydata[64];
-  char wrapdata[64];
-
   setlocale(LC_ALL, "");
   tzset();
   bindtextdomain("bareos", LOCALEDIR);
   textdomain("bareos");
 
-  while ((ch = getopt(argc, argv, "bcD:d:eg:k:p:r:s:vw:?")) != -1) {
-    switch (ch) {
-      case 'b':
-        base64_transform = true;
-        break;
+  CLI::App bscrypto_app;
+  InitCLIApp(bscrypto_app, "The Bareos encryption tool.");
 
-      case 'c':
-        clear_encryption = true;
-        break;
+  bool base64_transform = false;
+  bscrypto_app.add_flag("-b,--base64", base64_transform,
+                        "Perform base64 encoding of keydata.");
 
-      case 'D':
-        dump_cache = true;
-        cache_file = optarg;
-        break;
+  bool clear_encryption = false;
+  auto option_clear_encryption = bscrypto_app.add_flag(
+      "-c,--clear-encryption", clear_encryption, "Clear encryption key.");
 
-      case 'd':
-        debug_level = atoi(optarg);
-        if (debug_level <= 0) { debug_level = 1; }
-        break;
+  bool dump_cache = false;
+  std::string cache_file{};
+  auto option_dump_cache
+      = bscrypto_app
+            .add_option(
+                "-D,--dump-cache",
+                [&dump_cache, &cache_file](std::vector<std::string> val) {
+                  dump_cache = true;
+                  cache_file = val[0];
+                  return true;
+                },
+                "Dump content of given cachefile.")
+            ->type_name("<cachefile>")
+            ->excludes(option_clear_encryption);
 
-      case 'e':
-        drive_encryption_status = true;
-        break;
+  AddDebugOptions(bscrypto_app);
 
-      case 'g':
-        generate_passphrase = true;
-        if (!keyfile.empty()) {
-          usage();
-          exit(0);
-        }
-        keyfile = optarg;
-        break;
+  bool drive_encryption_status = false;
+  auto option_drive_encryption_status
+      = bscrypto_app
+            .add_flag("-e,--drive-encryption-status", drive_encryption_status,
+                      "Show drive encryption status.")
+            ->excludes(option_clear_encryption)
+            ->excludes(option_dump_cache);
 
-      case 'k':
-        show_keydata = true;
-        if (!keyfile.empty()) {
-          usage();
-          exit(0);
-        }
-        keyfile = optarg;
-        break;
+  bool generate_passphrase = false;
+  std::string keyfile{};
+  auto option_generate_pass
+      = bscrypto_app
+            .add_option(
+                "-g,--generate-passphrase",
+                [&generate_passphrase, &keyfile](std::vector<std::string> val) {
+                  generate_passphrase = true;
+                  keyfile = val[0];
+                  return true;
+                },
+                "Generate new encryption passphrase in keyfile.")
+            ->type_name("<keyfile>")
+            ->excludes(option_clear_encryption)
+            ->excludes(option_drive_encryption_status);
 
-      case 'p':
-        populate_cache = true;
-        cache_file = optarg;
-        break;
+  bool show_keydata = false;
+  auto option_show_keyfile
+      = bscrypto_app
+            .add_option(
+                "-k,--show-keyfile",
+                [&show_keydata, &keyfile](std::vector<std::string> val) {
+                  show_keydata = true;
+                  keyfile = val[0];
+                  return true;
+                },
+                "Show content of keyfile.")
+            ->type_name("<keyfile>")
+            ->excludes(option_generate_pass)
+            ->excludes(option_clear_encryption)
+            ->excludes(option_drive_encryption_status);
 
-      case 'r':
-        reset_cache = true;
-        cache_file = optarg;
-        break;
+  bool populate_cache = false;
+  auto option_populate_cache
+      = bscrypto_app
+            .add_option(
+                "-p,--populate-cachefile",
+                [&populate_cache, &cache_file](std::vector<std::string> val) {
+                  populate_cache = true;
+                  cache_file = val[0];
+                  return true;
+                },
+                "Populate given cachefile with crypto keys.")
+            ->type_name("<cachefile>")
+            ->excludes(option_clear_encryption)
+            ->excludes(option_drive_encryption_status);
 
-      case 's':
-        set_encryption = true;
-        if (!keyfile.empty()) {
-          usage();
-          exit(0);
-        }
-        keyfile = optarg;
-        break;
+  bool reset_cache = false;
+  auto option_reset_cache
+      = bscrypto_app
+            .add_option(
+                "-r,--reset-expiry-time",
+                [&reset_cache, &cache_file](std::vector<std::string> val) {
+                  reset_cache = true;
+                  cache_file = val[0];
+                  return true;
+                },
+                "Reset expiry time for entries of given cachefile.")
+            ->type_name("<cachefile>")
+            ->excludes(option_clear_encryption)
+            ->excludes(option_drive_encryption_status);
 
-      case 'v':
-        volume_encryption_status = true;
-        break;
+  bool set_encryption = false;
+  auto option_set_encryption
+      = bscrypto_app
+            .add_option(
+                "-s,--set-encryption-key",
+                [&set_encryption, &keyfile](std::vector<std::string> val) {
+                  set_encryption = true;
+                  keyfile = val[0];
+                  return true;
+                },
+                "Set encryption key loaded from keyfile.")
+            ->type_name("<keyfile>")
+            ->excludes(option_show_keyfile)
+            ->excludes(option_clear_encryption)
+            ->excludes(option_reset_cache)
+            ->excludes(option_dump_cache)
+            ->excludes(option_drive_encryption_status)
+            ->excludes(option_generate_pass);
 
-      case 'w':
-        wrapped_keys = true;
-        wrap_keyfile = optarg;
-        break;
+  bool volume_encryption_status = false;
+  bscrypto_app
+      .add_flag("-v,--volume-encryption-status", volume_encryption_status,
+                "Show volume encryption status.")
+      ->excludes(option_clear_encryption)
+      ->excludes(option_set_encryption)
+      ->excludes(option_generate_pass)
+      ->excludes(option_show_keyfile)
+      ->excludes(option_dump_cache)
+      ->excludes(option_populate_cache)
+      ->excludes(option_reset_cache);
 
-      case '?':
-      default:
-        usage();
-        exit(0);
-    }
-  }
+  bool wrapped_keys = false;
+  std::string wrap_keyfile{};
+  bscrypto_app
+      .add_option(
+          "-w,--wrap-unwrap-key",
+          [&wrapped_keys, &wrap_keyfile](std::vector<std::string> val) {
+            wrapped_keys = true;
+            wrap_keyfile = val[0];
+            return true;
+          },
+          "Wrap/Unwrap the key using RFC3394 aes-(un)wrap using the key in "
+          "keyfile as a Key Encryption.")
+      ->type_name("<keyfile>")
+      ->excludes(option_show_keyfile);
 
-  argc -= optind;
-  argv += optind;
+  std::string device_name{};
+  bscrypto_app.add_option("device name", device_name, "Name of device.");
+
+  CLI11_PARSE(bscrypto_app, argc, argv);
 
   if (!generate_passphrase && !show_keydata && !dump_cache && !populate_cache
-      && !reset_cache && argc < 1) {
+      && !reset_cache && device_name.empty()) {
     fprintf(stderr, T_("Missing device_name argument for this option\n"));
-    usage();
     exit(1);
   }
 
@@ -284,6 +313,9 @@ int main(int argc, char* const* argv)
     exit(0);
   }
 
+
+  char keydata[64];
+  char wrapdata[64];
   memset(keydata, 0, sizeof(keydata));
   memset(wrapdata, 0, sizeof(wrapdata));
 
@@ -291,6 +323,7 @@ int main(int argc, char* const* argv)
 
   /* Generate a new passphrase allow it to be wrapped using the given wrapkey
    * and base64 if specified or when wrapped. */
+  int length;
   if (generate_passphrase) {
     int cnt;
     char* passphrase;
@@ -323,6 +356,7 @@ int main(int argc, char* const* argv)
 
     /* See where to write the key.
      * - == stdout */
+    int kfd;
     if (bstrcmp(keyfile.c_str(), "-")) {
       kfd = 1;
     } else {
@@ -430,7 +464,7 @@ int main(int argc, char* const* argv)
 
   // Clear the loaded encryption key of the given drive.
   if (clear_encryption) {
-    if (ClearScsiEncryptionKey(-1, argv[0])) {
+    if (ClearScsiEncryptionKey(-1, device_name.c_str())) {
       exit(0);
     } else {
       exit(1);
@@ -441,7 +475,8 @@ int main(int argc, char* const* argv)
   if (drive_encryption_status) {
     POOLMEM* encryption_status = GetPoolMemory(PM_MESSAGE);
 
-    if (GetScsiDriveEncryptionStatus(-1, argv[0], encryption_status, 0)) {
+    if (GetScsiDriveEncryptionStatus(-1, device_name.c_str(), encryption_status,
+                                     0)) {
       fprintf(stdout, T_("%s"), encryption_status);
       FreePoolMemory(encryption_status);
     } else {
@@ -453,7 +488,8 @@ int main(int argc, char* const* argv)
   // Load a new encryption key onto the given drive.
   if (set_encryption) {
     ReadKeyBits(keyfile, keydata);
-    if (SetScsiEncryptionKey(-1, argv[0], keydata)) {
+
+    if (SetScsiEncryptionKey(-1, device_name.c_str(), keydata)) {
       exit(0);
     } else {
       exit(1);
@@ -465,7 +501,8 @@ int main(int argc, char* const* argv)
   if (volume_encryption_status) {
     POOLMEM* encryption_status = GetPoolMemory(PM_MESSAGE);
 
-    if (GetScsiVolumeEncryptionStatus(-1, argv[0], encryption_status, 0)) {
+    if (GetScsiVolumeEncryptionStatus(-1, device_name.c_str(),
+                                      encryption_status, 0)) {
       fprintf(stdout, T_("%s"), encryption_status);
       FreePoolMemory(encryption_status);
     } else {
