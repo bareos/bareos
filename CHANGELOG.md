@@ -30,6 +30,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - tests: simplify test coverage analysis [PR #1010]
 - webui: analytics module: show stored data per jobname in treemap [PR #1082]
 - webui: add pool column to volume lists [PR #1120]
+- webui: introduce themes [#1281]
 - dird: console: add `jobtype` parameter to `(l)list jobs` [PR #1149]
 - contrib: add support for building and packaging [PR #768]:
   - bareos-contrib-director-python-plugins
@@ -362,6 +363,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1278]: https://github.com/bareos/bareos/pull/1278
 [PR #1279]: https://github.com/bareos/bareos/pull/1279
 [PR #1283]: https://github.com/bareos/bareos/pull/1283
+[PR #1281]: https://github.com/bareos/bareos/pull/1281
 [PR #1284]: https://github.com/bareos/bareos/pull/1284
 [PR #1285]: https://github.com/bareos/bareos/pull/1285
 [PR #1288]: https://github.com/bareos/bareos/pull/1288
