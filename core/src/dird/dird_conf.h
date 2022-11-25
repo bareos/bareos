@@ -212,6 +212,13 @@ struct UserAcl {
   alist<const char*>* ACL_lists[Num_ACL] = {0}; /**< Pointers to ACLs */
   alist<ProfileResource*>* profiles
       = nullptr; /**< Pointers to profile resources */
+  bool HasAcl()
+  {
+    for (int i = Job_ACL; i < Num_ACL; ++i) {
+      if (ACL_lists[i]) { return true; }
+    }
+    return false;
+  }
 };
 
 // Console Resource

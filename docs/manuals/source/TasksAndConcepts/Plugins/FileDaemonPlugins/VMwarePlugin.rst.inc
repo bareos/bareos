@@ -16,6 +16,8 @@ Status
 
 The Plugin can do full, differential and incremental backup and restore of VM disks.
 
+Since :sinceVersion:`22.0.0: VMware Plugin` it also backs up the VM configuration metadata so that it can recreate deleted VMs and then restore the VM disks.
+
 Current limitations amongst others are:
 
 .. limitation:: VMware Plugin: Normal VM disks can not be excluded from the backup.
@@ -26,23 +28,15 @@ Current limitations amongst others are:
 
 
 
-.. limitation:: VMware Plugin: VM configuration is not backed up.
-
-   The VM configuration is not backed up, so that it is not yet possible to recreate a completely deleted VM.
-
-
-
 .. limitation:: VMware Plugin: Virtual Disks have to be smaller than 2TB for restore to local VMDK.
 
    Virtual Disks have to be smaller than 2 TB for being able to restore to local VMDK files, see :mantis:`670`.
 
 
 
-.. limitation:: VMware Plugin: Restore can only be done to the same VM or to local VMDK files.
+.. limitation:: VMware Plugin: Restore not possible on recreated VM when VM was created from template or OVA.
 
-   Until Bareos Version 15.2.2, the restore has only be possible to the same existing VM with existing virtual disks.
-   Since :sinceVersion:`15.2.3: VMware Plugin: restore to VMDK files`
-   it is also possible to restore to local VMDK files, see below for more details.
+   When creating a VM from template or OVA, the parameter **ddb.adaptertype** in the .vmdk file is changed from **lsilogic** to **buslogic** although SCSI adapter type is VMware Paravirtual or LSI Logic. Restore works to the same still existing VM, but when such a VM was completely removed so that the plugin recreates it via vSphere API, the newly created disk will have **ddb.adaptertype** set to **lsilogic** with different numbers of cylinders and heads which causes the restore to fail due to disk geometry mismatch. Currently there's no known workaround.
 
 
 
@@ -51,7 +45,7 @@ Requirements
 
 As the Plugin is based on the |vsphere| Storage APIs for Data Protection, which requires at least a |vsphere| Essentials License. It is tested against |vsphere| Storage APIs for Data Protection of |vmware| 7.0.1. It does not work with standalone unlicensed |vmware| ESXi\ |trade|.
 
-Since Bareos :sinceVersion:`21.0.0: VMware Plugin: VDDK 7.0.1` the plugin is using the Virtual Disk Development Kit (VDDK) 7.0.1, as of the VDDK 7.0 release notes, it should be compatible with vSphere 7.0 and the next major release (except new features) and backward compatible with vSphere 6.5 and 6.7, see VDDK release notes at https://developer.vmware.com/web/sdk/7.0/vddk for details.
+Since Bareos :sinceVersion:`22.0.0: VMware Plugin: VDDK 8.0.0` the plugin is using the Virtual Disk Development Kit (VDDK) 8.0.0, as of the VDDK 8.0 release notes, it should be compatible with vSphere 8 and the next major release (except new features) and backward compatible with vSphere 6.7 and 7, see VDDK release notes at https://developer.vmware.com/web/sdk/8.0/vddk for details.
 
 This plugin requires the pyVmomi module. Since Bareos :sinceVersion:`21.0.0: VMware Plugin: pyVmomi` the package **bareos-vmware-plugin** no longer includes a dependency on a pyVmomi package, because some Linux distributions don't provide current versions. Consequently, pyVmomi must be either installed by using :command:`pip install pyvmomi` or by manually installing a distribution provided pyVmomi package.
 
@@ -67,11 +61,7 @@ First add a user account in vCenter that has full privileges by assigning the ac
 
 When using the vCenter appliance with embedded SSO, a user account usually has the structure :command:`<username>@vsphere.local`, it may be different when using Active Directory as SSO in vCenter. For the examples here, we will use :command:`bakadm@vsphere.local` with the password :command:`Bak.Adm-1234`.
 
-For more details regarding users and permissions in vSphere see
-
--  https://pubs.vmware.com/vsphere-55/topic/com.vmware.vsphere.security.doc/GUID-72BFF98C-C530-4C50-BF31-B5779D2A4BBB.html and
-
--  https://pubs.vmware.com/vsphere-55/topic/com.vmware.vsphere.security.doc/GUID-5372F580-5C23-4E9C-8A4E-EF1B4DD9033E.html
+For more details regarding users and permissions see vSphere documentation at https://docs.vmare.com
 
 Make sure to add or enable the following settings in your |fd| configuration:
 
@@ -140,7 +130,7 @@ to
 
 or install the **bareos-vmware-plugin-compat** package which includes compatibility symbolic links.
 
-Since :sinceVersion:`17.2.4: VMware Plugin: vcthumbprint`: as the Plugin is using the Virtual Disk Development Kit (VDDK) 6.5, it is required to pass the thumbprint of the vCenter SSL Certificate, which is the SHA1 checksum of the SSL Certificate. The thumbprint can be retrieved like this:
+Since :sinceVersion:`17.2.4: VMware Plugin: vcthumbprint`: The Plugin is using the Virtual Disk Development Kit (VDDK), which requires to pass the thumbprint of the vCenter SSL Certificate since version 6.5. The thumbprint is the SHA1 checksum of the SSL Certificate. The thumbprint can be retrieved like this:
 
 .. code-block:: shell-session
    :caption: Example Retrieving vCenter SSL Certificate Thumbprint
@@ -174,7 +164,7 @@ For ease of use (but less secure) when the :command:`vcthumbprint` is not given,
 
 Also since :sinceVersion:`17.2.4: VMware Plugin: transport=nbdssl` another optional plugin option has been added that can be used for trying to force a given transport method. Normally, when no transport method is given, VDDK will negotiate available transport methods and select the best one. For a description of transport methods, see
 
-https://developer.vmware.com/docs/4076/virtual-disk-development-kit-programming-guide/doc/vddkDataStruct.5.5.html
+https://developer.vmware.com/docs/16967/virtual-disk-development-kit-programming-guide/GUID-15395099-5300-4D3F-BCC3-E50DCDC954C2.html
 
 When the plugin runs in a VMware virtual machine which has access to datastore where the virtual disks to be backed up reside, VDDK will use the hotadd transport method. On a physical server without SAN access, it will use the NBD transport method, hotadd transport is not available in this case.
 
@@ -242,27 +232,6 @@ Since :sinceVersion:`17.2.8: VMware Plugin: non-ascii characters` it is possible
    }
 
 However, it is important to know that it is not possible to use non-ascii characters as an argument for the :strong:`Name`\  of a job or fileset resource.
-
-Before this, it was only possible specify VMs contained in vApps by using the instance UUID with the :strong:`uuid` instead of :strong:`folder` and :strong:`vmname` like this:
-
-.. code-block:: bareosconfig
-   :caption: bareos-dir.conf: VMware Plugin FileSet definition for vApp
-
-   FileSet {
-     Name = "vApp_Test_vm_Test_VM_01_fileset"
-       ...
-
-       Plugin = "python"
-                ":module_name=bareos-fd-vmware"
-                ":dc=mydc1"
-                ":uuid=502b112f-3954-d761-be08-5570c8a780e2"
-                ":vcserver=vcenter.example.org"
-                ":vcuser=bakadm@vsphere.local"
-                ":vcpass=Bak.Adm-1234"
-     }
-   }
-
-Note that it must be the so called vSphere instance UUID, not the BIOS UUID which is shown inside a VM when using for example :command:`dmidecode`. The :command:`vmware_cbt_tool.py` utility was adapted accordingly (see below for details).
 
 Since :sinceVersion:`20: VMware Plugin: config file` it is optionally possible to use a configuration file on the system running the Bareos File Daemon. This can be useful to specify common plugin options instead of having to repeat them in every Fileset. Options which are specifed in the config file will override options from the Fileset, if the same option is given there, too. A warning will be issued in that case. Use the plugin option **config_file** to specify the config file name as in the following example:
 
@@ -361,7 +330,13 @@ After enabling CBT, Backup Jobs can be run or scheduled as usual, for example in
 Restore
 ^^^^^^^
 
-For restore, the VM must be powered off and no snapshot must exist. In :command:`bconsole` use the restore menu 5, select the correct FileSet and enter :bcommand:`mark *`, then :bcommand:`done`. After restore has finished, the VM can be powered on.
+For restoring to the same still exising VM from which the backup has been taken, the VM must be **powered off** and **no snapshot** must exist. In :command:`bconsole` use the restore menu 5, select the correct FileSet and enter :bcommand:`mark *`, then :bcommand:`done`. After restore has finished, the VM will be set to its previous powerstate. So if it was powered on at backup time, it will be powered on after restore. This can be changed by using the plugin option :command:`restore_powerstate` (see below).
+
+Since :sinceVersion:`22.0.0: VMware Plugin: recreate VMs` the plugin will recreate the VM if it does not exist. By passing plugin options, with this version it is also possible to recreate the VM in a different folder, datacenter, host, cluster, resource pool or datastore, see below for details. The MAC address and the UUID of the VM will be restored, too. Restoring to a different VM location, eg, by passing a different folder, will **create a new VM** even **if the VM** which was backed up **still exists**. In this case, the new VM will get a new generated MAC address and UUID.
+
+.. note::
+
+   When restoring a VM to a different location while the backed up VM still exists and a static IP is configured within the VM: To avoid IP address conflicts, make sure to also add the plugin option :command:`restore_powerstate=off` and disable or change the network adapter configuration of the VM before powering it on.
 
 Restore to local VMDK File
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -490,13 +465,14 @@ After the restore process has finished, the restored VMDK files can be found und
 .. code-block:: shell-session
    :caption: Example result of restore to local VMDK
 
-   # <input>ls -laR /tmp/bareos-restores</input>
+   $ <input>ls -laR /tmp/bareos-restores</input>
    /tmp/bareos-restores:
    total 28
    drwxr-x--x.  3 root root  4096 Feb 25 15:47 .
    drwxrwxrwt. 17 root root 20480 Feb 25 15:44 ..
    drwxr-xr-x.  2 root root  4096 Feb 25 15:19 [ESX5-PS100] stephand-test02
 
+   $ <input>ls -la "/tmp/bareos-restores/[ESX5-PS100] stephand-test02"</input>
    /tmp/bareos-restores/[ESX5-PS100] stephand-test02:
    total 7898292
    drwxr-xr-x. 2 root root       4096 Feb 25 15:19 .
@@ -504,20 +480,69 @@ After the restore process has finished, the restored VMDK files can be found und
    -rw-------. 1 root root 2075197440 Feb 25 15:19 stephand-test02_1.vmdk
    -rw-------. 1 root root 6012731392 Feb 25 15:19 stephand-test02.vmdk
 
-Debugging in case of problems
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If the backup or restore fails, it is possible to get verbose information by adding
-the plugin option :strong:`vadp_dumper_verbose=yes`
+Description of all Plugin Options
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. code-block:: bareosconfig
-   :caption: debug vadp_dumper
+vcserver (mandatory on backup)
+   Hostname (FQDN) or IP address of vCenter server
 
-       Plugin = "python"
-                ":module_name=bareos-fd-vmware"
-                ":dc=mydc1:folder=/webservers"
-                ":vmname=websrv1"
-                ":vcserver=vcenter.example.org"
-                ":vcuser=bakadm@vsphere.local"
-                ":vcpass=Bak.Adm-1234"
-                ":vadp_dumper_verbose=yes"
+vcuser (mandatory on backup)
+   Username for API access to vCenter, eg. administrator@vsphere.local
+
+vcpass (mandatory on backup)
+   Password for API access to vCenter
+
+dc (mandatory on backup)
+   Datacenter name
+
+folder (mandatory on backup)
+   The VM folder in which the VM to be backed up resides. This must be given like a UNIX path with ``/`` as separator.
+
+vmname (mandatory on backup)
+   The name of the VM to be backed up.
+
+vcthumbprint (optional)
+   Thumbprint of the vCenter SSL Certificate, which is the SHA1 checksum of the SSL Certificate
+
+transport (optional)
+   Normally the transport mode mode will be autonegotiated, eg. if the system that runs this plugin is a VM has storage access to the datastore of the VM that's being backed up, the *hotadd* transport will be used. Otherwise the *nbd* or *nbdssl* transport. For details about transport modes see the VDDK documentation. This option can be used to force the given transport mode.
+
+log_path (optional)
+   The default log path is :file:`/var/log/bareos/`. A different path can be specified using this option, it will be used for ``bareos_vadp_dumper`` log files.
+
+localvmdk (optional)
+   Restore to local ``.vmdk`` file(s) instead of restore to VM. Default is *no*.
+
+vadp_dumper_verbose (optional)
+   When setting ``vadp_dumper_verbose=yes``, the option ``-v`` will be added when running ``bareos_vadp_dumper``. This can be helpful for debugging purposes.
+
+verifyssl (optional)
+   By default the validity of SSL certificates will be verified. By setting ``verifyssl=no`` this can be disabled.
+
+quiesce (optional)
+   The backed up VM will be triggered to quiesce its filesystems before creating a snapshot by default to increase the data consistency. This can fail or take very long on a VM which runs heavy I/O workload. When setting ``quiesce=no`` the quiescing will be skipped, but the snapshot may be inconsistent. It is not recommended to use this option, instead try stop heavy I/O load before snapshot. This could be possible by running pre-freeze and post-thaw actions which can be configured in VMware tools, see VMware documentation for details.
+
+cleanup_tmpfiles (optional)
+   By default, temporary files created by the plugin will be cleaned up after backup or restore. When setting ``cleanup_tmpfiles=no`` they will be left over, this can be helpful for debugging purposes. Since :sinceVersion:`22.0.0: VMware Plugin`
+
+restore_esxhost (optional)
+   By default, if a VM to be restored does not exist, it will be recreated on the same host that it has been running on at backup time. Use this option to restore on the given ESX host. Since :sinceVersion:`22.0.0: VMware Plugin`
+
+restore_cluster (optional)
+   Instead of specifying *restore_esxhost*, it is also possible to specify a cluster name using this option, the ESX host will be autoselected in that case, if DRS is configured properly. Since :sinceVersion:`22.0.0: VMware Plugin`
+
+restore_datastore (optional)
+   By default, if a VM to be restored does not exist, it will be recreated in the same datastore where it was stored at backup time. Use this option to restore on the given datastore. Since :sinceVersion:`22.0.0: VMware Plugin`
+
+restore_resourcepool (optional)
+   By default, if a VM to be restored does not exist, it will be recreated in the same resource pool which it has in been in at backup time. Using this option allows to override this and specify a different resource pool. Since :sinceVersion:`22.0.0: VMware Plugin`
+
+restore_powerstate (optional)
+   By **default**, after restore a VM will be set to its **previous powerstate** which means the powerstate at backup time. When specifying ``restore_powerstate=off`` the VM will stay powered off after restore. Also can be forced to on with ``restore_powerstate=on``. Note that this will only work if DRS is configured to **fully automated**, otherwise the API request to power on a VM will be ignored. Since :sinceVersion:`22.0.0: VMware Plugin`
+
+poweron_timeout (optional)
+   Timeout in seconds to wait for a VM to be powered on after restore, default 15s. When a VM is powered on after restore (see also the option *restore_powerstate* above), the plugin will check if it succeeded by checking the power state. If it is not powered on within this timeout, the restore job will issue a warning message.
+
+uuid (deprecated)
+   The uuid option could be used instead of *dc*, *folder* and *vmname* to uniquely address a VM for backup. As the plugin since :sinceVersion:`22.0.0: VMware Plugin` is able recreate VMs in a different datacenter, folder or datastore, this option has become useless. When using uuid, restoring is only possible to the same still existing VM. It is recommended to change the configuration, as the uuid option will be dropped in the next version.

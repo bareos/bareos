@@ -258,7 +258,7 @@ class SeleniumTest(unittest.TestCase):
                     opt.add_argument("--no-sandbox")
 
                 self.driver = webdriver.Chrome(
-                    self.chromedriverpath, chrome_options=opt
+                    self.chromedriverpath, options=opt
                 )
             elif self.browser == "firefox":
                 d = DesiredCapabilities.FIREFOX
@@ -766,6 +766,7 @@ def get_env():
     if chromedriverpath:
         SeleniumTest.chromedriverpath = chromedriverpath
 
+    SeleniumTest.chromeheadless = True
     chromeheadless = os.environ.get("BAREOS_WEBUI_CHROME_HEADLESS")
     if chromeheadless is not None and chromeheadless.lower() in [
         "false",
@@ -775,8 +776,6 @@ def get_env():
         "off",
     ]:
         SeleniumTest.chromeheadless = False
-    else:
-        SeleniumTest.chromeheadless = True
 
     browser = os.environ.get("BAREOS_WEBUI_BROWSER")
     if browser:

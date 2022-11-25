@@ -35,7 +35,7 @@ BrandingText "Bareos Installer"
 !define PRODUCT_NAME "Bareos"
 #!define PRODUCT_VERSION "1.0"
 !define PRODUCT_PUBLISHER "Bareos GmbH & Co.KG"
-!define PRODUCT_WEB_SITE "http://www.bareos.com"
+!define PRODUCT_WEB_SITE "https://www.bareos.com"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\bareos-fd.exe"
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
@@ -894,7 +894,8 @@ Section "Bareos Webui" SEC_WEBUI
    SetOutPath "$INSTDIR"
    SetOverwrite ifnewer
    File /r "nssm.exe"
-   File /r "bareos-webui"
+   SetOutPath "$INSTDIR\bareos-webui"
+   File /r "bareos-webui\*.*"
 
 IfSilent skip_vc_redist_check
    # check  for Visual C++ Redistributable für Visual Studio 2012 x86 (on 32 and 64 bit systems)

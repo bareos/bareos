@@ -17,6 +17,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Previously deprecated rados/ceph backend and cephfs plugin have been removed. Use the droplet backend to store into ceph via S3, and backup cephfs filesystems by backing up a mount point.
     - packages bareos-storage-ceph and bareos-filedaemon-ceph-plugin if previously installed need to be removed manually.
 - Bareos 22 removes bareos-webui support for RHEL 7 and CentOS 7
+- Bareos 22 uses the VMware VDDK 8.0.0 for the VMware Plugin. [PR #1295]. VDDK 8.0.0 supports vSphere 8 and is backward compatible with vSphere 6.7 and 7. **vSphere 6.5 is not supported anymore**.
 
 ### Added
 - dird: add command line feature to print specific resources [PR #1153]
@@ -45,15 +46,17 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - core/platform: Adding Bareos firewalld service xml files [PR #1237]
 - dird: Added `FS Type = vfat` in LinuxAll.conf for UEFI partition [PR #1236]
 - bareos tools: reintegrate testfind binary [PR #1176]
-- fd: add support for role switching on PostgreSQL add-on [Issue #4607] [PR #1178]
+- fd: add support for role switching on PostgreSQL add-on [Issue #1456] [PR #1178]
 - build: switch from FreeBSD 13.0 to 13.1 [PR #1253]
 - stored: dird: added backup checkpoints that save backup metadata to the Catalog during the execution of the backup. [PR #1074]
 - stored: dird: add backup checkpoints that save backup metadata to the Catalog during the execution of the backup. [PR #1074]
 - build: run a build and test with sanitizers enabled [PR #1244]
 - catalog: update fileset text in fileset record [PR #1300]
 - stored: emit warnings for Maximum Concurrent Jobs in device configs [PR #1282]
+- VMware Plugin: Save VM configuration and recreate VM before restore [PR #1295]
 
 ### Fixed
+- webui: fix job timeline x-axis UTC timestamp issue [PR #1283]
 - webui: adapt links to new URLs after website relaunch. [PR #1275]
 - dird: fix possible crash in tls context on configuration reload [PR #1249]
 - dird: RunScript fixes [PR #1217]
@@ -106,8 +109,10 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - stored: systemtests: docs: checkpoints improvements [PR #1277]
 - winbareos.nsi: fix working directory in configure.sed [PR #1288]
 - core: BareosDb::FindLastJobStartTimeForJobAndClient: take into account Running job [PR #1265] [Issue #1466]
+- core: BareosDb::FindLastJobStartTimeForJobAndClient: take into account Running job [Issue #1466] [PR #1265]
 - backup.cc: fail backup when `Write Bootstrap` to pipe fails [PR #1296]
-- webui: fix pool link in job details formatter [PR 1306] [BUG #1489]
+- webui: fix pool link in job details formatter [Issue #1489] [PR #1303]
+- webui: patch zf2 to eliminate a php warning caused by zend-stdlib [PR #1305]
 
 ### Changed
 - contrib: rename Python modules to satisfy PEP8 [PR #768]
@@ -149,6 +154,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Prepare Bareos for an upgrade to the C++20 standard [PR #1271]
 - stored: refactor the SD's backend interface [PR #1272]
 - core: use distinct names for JobControlRecordPrivate [PR #1307]
+- webui-selenium-test: use options instead of chrome_options [PR #1306]
+- systemtests: improve webui testing [PR #1313]
+- dird: prohibit PAM usage with user ACL and Profiles in consoles [PR #1318]
 
 ### Deprecated
 - make_catalog_backup.pl is now a shell wrapper script which will be removed in version 23.
@@ -208,10 +216,11 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [Issue #1445]: https://bugs.bareos.org/view.php?id=1445
 [Issue #1450]: https://bugs.bareos.org/view.php?id=1450
 [Issue #1452]: https://bugs.bareos.org/view.php?id=1452
+[Issue #1456]: https://bugs.bareos.org/view.php?id=1456
 [Issue #1466]: https://bugs.bareos.org/view.php?id=1466
 [Issue #1477]: https://bugs.bareos.org/view.php?id=1477
 [Issue #1480]: https://bugs.bareos.org/view.php?id=1480
-[Issue #4607]: https://bugs.bareos.org/view.php?id=4607
+[Issue #1489]: https://bugs.bareos.org/view.php?id=1489
 [PR #698]: https://github.com/bareos/bareos/pull/698
 [PR #768]: https://github.com/bareos/bareos/pull/768
 [PR #1010]: https://github.com/bareos/bareos/pull/1010
@@ -352,10 +361,17 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1277]: https://github.com/bareos/bareos/pull/1277
 [PR #1278]: https://github.com/bareos/bareos/pull/1278
 [PR #1279]: https://github.com/bareos/bareos/pull/1279
+[PR #1283]: https://github.com/bareos/bareos/pull/1283
 [PR #1284]: https://github.com/bareos/bareos/pull/1284
 [PR #1285]: https://github.com/bareos/bareos/pull/1285
 [PR #1288]: https://github.com/bareos/bareos/pull/1288
 [PR #1296]: https://github.com/bareos/bareos/pull/1296
 [PR #1298]: https://github.com/bareos/bareos/pull/1298
 [PR #1300]: https://github.com/bareos/bareos/pull/1300
+[PR #1303]: https://github.com/bareos/bareos/pull/1303
+[PR #1305]: https://github.com/bareos/bareos/pull/1305
+[PR #1306]: https://github.com/bareos/bareos/pull/1306
+[PR #1307]: https://github.com/bareos/bareos/pull/1307
+[PR #1313]: https://github.com/bareos/bareos/pull/1313
+[PR #1318]: https://github.com/bareos/bareos/pull/1318
 [unreleased]: https://github.com/bareos/bareos/tree/master

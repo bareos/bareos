@@ -53,9 +53,10 @@ export BAREOS_SBIN_DIR=${sbin}
 export BAREOS_WORKING_DIR=${working}
 export BASEPORT=@BASEPORT@
 export BAREOS_DIRECTOR_PORT=@dir_port@
+export BAREOS_FD_PORT=@fd_port@
 export BAREOS_STORAGE_PORT=@sd_port@
 export BAREOS_STORAGE2_PORT=@sd2_port@
-export BAREOS_FD_PORT=@fd_port@
+export BAREOS_WEBUI_PORT=@php_port@
 export MINIO_PORT=@minio_port@
 
 export BAREOS_DIRECTOR_BINARY=@BAREOS_DIR_BINARY@
@@ -109,6 +110,7 @@ export BAREOS_WEBUI_LOG_PATH=${logdir}
 export BAREOS_WEBUI_DELAY=1
 export BAREOS_WEBUI_PUBLIC_DIR=@BAREOS_WEBUI_PUBLIC_DIR@
 
+export PHP_EXECUTABLE=@PHP@
 export PYTHON_EXECUTABLE=@PYTHON_EXECUTABLE@
 
 #
