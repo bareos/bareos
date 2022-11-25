@@ -66,7 +66,6 @@ static void usage()
 
 int main(int argc, char* const* argv)
 {
-  int retval = 0;
   int ch, kfd, length;
   bool base64_transform = false, clear_encryption = false, dump_cache = false,
        drive_encryption_status = false, generate_passphrase = false,
@@ -112,7 +111,7 @@ int main(int argc, char* const* argv)
         generate_passphrase = true;
         if (!keyfile.empty()) {
           usage();
-          goto bail_out;
+          exit(0);
         }
         keyfile = optarg;
         break;
@@ -121,7 +120,7 @@ int main(int argc, char* const* argv)
         show_keydata = true;
         if (!keyfile.empty()) {
           usage();
-          goto bail_out;
+          exit(0);
         }
         keyfile = optarg;
         break;
@@ -140,7 +139,7 @@ int main(int argc, char* const* argv)
         set_encryption = true;
         if (!keyfile.empty()) {
           usage();
-          goto bail_out;
+          exit(0);
         }
         keyfile = optarg;
         break;
@@ -157,7 +156,7 @@ int main(int argc, char* const* argv)
       case '?':
       default:
         usage();
-        goto bail_out;
+        exit(0);
     }
   }
 
@@ -168,20 +167,17 @@ int main(int argc, char* const* argv)
       && !reset_cache && argc < 1) {
     fprintf(stderr, T_("Missing device_name argument for this option\n"));
     usage();
-    retval = 1;
-    goto bail_out;
+    exit(1);
   }
 
   if (generate_passphrase && show_keydata) {
     fprintf(stderr, T_("Either use -g or -k not both\n"));
-    retval = 1;
-    goto bail_out;
+    exit(1);
   }
 
   if (clear_encryption && set_encryption) {
     fprintf(stderr, T_("Either use -c or -s not both\n"));
-    retval = 1;
-    goto bail_out;
+    exit(1);
   }
 
   if ((clear_encryption || set_encryption)
@@ -189,8 +185,7 @@ int main(int argc, char* const* argv)
     fprintf(
         stderr,
         T_("Either set or clear the crypto key or ask for status not both\n"));
-    retval = 1;
-    goto bail_out;
+    exit(1);
   }
 
   if ((clear_encryption || set_encryption || drive_encryption_status
@@ -199,8 +194,7 @@ int main(int argc, char* const* argv)
           || reset_cache)) {
     fprintf(stderr, T_("Don't mix operations which are incompatible "
                        "e.g. generate/show vs set/clear etc.\n"));
-    retval = 1;
-    goto bail_out;
+    exit(1);
   }
 
   OSDependentInit();
@@ -213,7 +207,7 @@ int main(int argc, char* const* argv)
     DumpCryptoCache(1);
 
     FlushCryptoCache();
-    goto bail_out;
+    exit(0);
   }
 
   if (populate_cache) {
@@ -246,7 +240,7 @@ int main(int argc, char* const* argv)
     WriteCryptoCache(cache_file.c_str());
 
     FlushCryptoCache();
-    goto bail_out;
+    exit(0);
   }
 
   if (reset_cache) {
@@ -260,7 +254,7 @@ int main(int argc, char* const* argv)
     WriteCryptoCache(cache_file.c_str());
 
     FlushCryptoCache();
-    goto bail_out;
+    exit(0);
   }
 
   memset(keydata, 0, sizeof(keydata));
@@ -277,15 +271,13 @@ int main(int argc, char* const* argv)
       kfd = open(wrap_keyfile.c_str(), O_RDONLY);
       if (kfd < 0) {
         fprintf(stderr, T_("Cannot open keyfile %s\n"), wrap_keyfile.c_str());
-        retval = 1;
-        goto bail_out;
+        exit(1);
       }
     }
     if (read(kfd, wrapdata, sizeof(wrapdata))) {
       fprintf(stderr, T_("Cannot read from keyfile %s\n"),
               wrap_keyfile.c_str());
-      retval = 1;
-      goto bail_out;
+      exit(1);
     }
     if (kfd > 0) { close(kfd); }
     StripTrailingJunk(wrapdata);
@@ -299,10 +291,7 @@ int main(int argc, char* const* argv)
     char* passphrase;
 
     passphrase = generate_crypto_passphrase(DEFAULT_PASSPHRASE_LENGTH);
-    if (!passphrase) {
-      retval = 1;
-      goto bail_out;
-    }
+    if (!passphrase) { exit(1); }
 
     Dmsg1(10, "Generated passphrase = %s\n", passphrase);
 
@@ -318,8 +307,7 @@ int main(int argc, char* const* argv)
               (unsigned char*)passphrase, (unsigned char*)wrapped_passphrase)) {
         fprintf(stderr, T_("Cannot wrap passphrase ERR=%s\n"), error->c_str());
         free(passphrase);
-        retval = 1;
-        goto bail_out;
+        exit(1);
       }
 
       free(passphrase);
@@ -337,8 +325,7 @@ int main(int argc, char* const* argv)
       if (kfd < 0) {
         fprintf(stderr, T_("Cannot open keyfile %s\n"), keyfile.c_str());
         free(passphrase);
-        retval = 1;
-        goto bail_out;
+        exit(1);
       }
     }
 
@@ -363,11 +350,11 @@ int main(int argc, char* const* argv)
     } else {
       if (write(kfd, "\n", 1) == 0) {
         free(passphrase);
-        goto bail_out;
+        exit(0);
       }
     }
     free(passphrase);
-    goto bail_out;
+    exit(0);
   }
 
   if (show_keydata) {
@@ -383,14 +370,12 @@ int main(int argc, char* const* argv)
       kfd = open(keyfile.c_str(), O_RDONLY);
       if (kfd < 0) {
         fprintf(stderr, T_("Cannot open keyfile %s\n"), keyfile.c_str());
-        retval = 1;
-        goto bail_out;
+        exit(1);
       }
     }
     if (read(kfd, keydata, sizeof(keydata)) == 0) {
       fprintf(stderr, T_("Cannot read from keyfile %s\n"), keyfile.c_str());
-      retval = 1;
-      goto bail_out;
+      exit(1);
     }
     if (kfd > 0) { close(kfd); }
     StripTrailingJunk(keydata);
@@ -414,7 +399,7 @@ int main(int argc, char* const* argv)
                    "aborting...\n"),
                 keyfile.c_str());
         free(wrapped_passphrase);
-        goto bail_out;
+        exit(0);
       }
 
       length = DEFAULT_PASSPHRASE_LENGTH;
@@ -429,7 +414,7 @@ int main(int argc, char* const* argv)
                    "wrap data from %s ERR=%s, aborting...\n"),
                 keyfile.c_str(), wrap_keyfile.c_str(), error->c_str());
         free(wrapped_passphrase);
-        goto bail_out;
+        exit(0);
       }
 
       free(wrapped_passphrase);
@@ -455,16 +440,15 @@ int main(int argc, char* const* argv)
     fprintf(stdout, "%s\n", passphrase);
 
     free(passphrase);
-    goto bail_out;
+    exit(0);
   }
 
   // Clear the loaded encryption key of the given drive.
   if (clear_encryption) {
     if (ClearScsiEncryptionKey(-1, argv[0])) {
-      goto bail_out;
+      exit(0);
     } else {
-      retval = 1;
-      goto bail_out;
+      exit(1);
     }
   }
 
@@ -476,9 +460,8 @@ int main(int argc, char* const* argv)
       fprintf(stdout, "%s", encryption_status);
       FreePoolMemory(encryption_status);
     } else {
-      retval = 1;
       FreePoolMemory(encryption_status);
-      goto bail_out;
+      exit(1);
     }
   }
 
@@ -493,24 +476,21 @@ int main(int argc, char* const* argv)
     } else {
       kfd = open(keyfile.c_str(), O_RDONLY);
       if (kfd < 0) {
-        fprintf(stderr, T_("Cannot open keyfile %s\n"), keyfile.c_str());
-        retval = 1;
-        goto bail_out;
+        fprintf(stderr, _("Cannot open keyfile %s\n"), keyfile.c_str());
+        exit(1);
       }
     }
     if (read(kfd, keydata, sizeof(keydata)) == 0) {
       fprintf(stderr, T_("Cannot read from keyfile %s\n"), keyfile.c_str());
-      retval = 1;
-      goto bail_out;
+      exit(1);
     }
     if (kfd > 0) { close(kfd); }
     StripTrailingJunk(keydata);
 
     if (SetScsiEncryptionKey(-1, argv[0], keydata)) {
-      goto bail_out;
+      exit(0);
     } else {
-      retval = 1;
-      goto bail_out;
+      exit(1);
     }
   }
 
@@ -523,12 +503,10 @@ int main(int argc, char* const* argv)
       fprintf(stdout, "%s", encryption_status);
       FreePoolMemory(encryption_status);
     } else {
-      retval = 1;
       FreePoolMemory(encryption_status);
-      goto bail_out;
+      exit(1);
     }
   }
 
-bail_out:
-  exit(retval);
+  exit(0);
 }
