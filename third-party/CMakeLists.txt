@@ -19,4 +19,5 @@
 
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
-add_subdirectory(CLI11)
+add_subdirectory(CLI11 EXCLUDE_FROM_ALL)
+add_subdirectory(fmt EXCLUDE_FROM_ALL)
