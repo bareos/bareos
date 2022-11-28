@@ -44,18 +44,6 @@ OS:
            - bareos-vmware
            - python-bareos
 
-    "18.04":
-      TYPE: deb
-      IMAGE: "ubuntu18.04"
-      ARCH:
-        - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-webui
-           - bareos-vmware
-           - python-bareos
-
   SUSE:
     "15":
       TYPE: rpm
