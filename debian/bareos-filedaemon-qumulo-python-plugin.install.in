@@ -1,0 +1,4 @@
+@plugindir@/bareos-fd-qumulo.py*
+@plugindir@/BareosFdPluginQumulo.py*
+@configtemplatedir@/bareos-dir.d/fileset/plugin-qumulo.conf.example
+@configtemplatedir@/bareos-dir.d/job/backup-qumulo.conf.example

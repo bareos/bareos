@@ -478,6 +478,12 @@ Requires:   bareos-filedaemon-python-plugin = %{version}
 Suggests:   bareos-filedaemon-python3-plugin = %{version}
 %endif
 
+%package    filedaemon-qumulo-python-plugin
+Summary:    Ovirt Python plugin for Bareos File daemon
+Group:      Productivity/Archiving/Backup
+Requires:   bareos-filedaemon = %{version}
+Requires:   bareos-filedaemon-python-plugin = %{version}
+
 %package    filedaemon-libcloud-python-plugin
 Summary:    Libcloud Python plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
@@ -620,6 +626,11 @@ This package contains the LDAP python plugin for the file daemon
 %{dscr}
 
 This package contains the Ovirt python plugin for the file daemon
+
+%description filedaemon-qumulo-python-plugin
+%{dscr}
+
+This package contains the qumulo python plugin for the file daemon
 
 %description filedaemon-libcloud-python-plugin
 %{dscr}
@@ -1535,6 +1546,13 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{plugin_dir}/BareosFdPluginOvirt.py*
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/fileset/plugin-ovirt.conf.example
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/job/backup-ovirt.conf.example
+
+%files filedaemon-qumulo-python-plugin
+%defattr(-, root, root)
+%{plugin_dir}/bareos-fd-qumulo.py*
+%{plugin_dir}/BareosFdPluginQumulo.py*
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/fileset/plugin-qumulo.conf.example
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/job/backup-qumulo.conf.example
 
 %files filedaemon-libcloud-python-plugin
 %defattr(-, root, root)

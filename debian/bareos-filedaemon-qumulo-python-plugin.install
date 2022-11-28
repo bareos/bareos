@@ -1,0 +1,4 @@
+/usr/local/lib64/bareos/plugins/bareos-fd-qumulo.py*
+/usr/local/lib64/bareos/plugins/BareosFdPluginQumulo.py*
+/usr/local/etc/bareos/bareos-dir.d/fileset/plugin-qumulo.conf.example
+/usr/local/etc/bareos/bareos-dir.d/job/backup-qumulo.conf.example
