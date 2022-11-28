@@ -17,6 +17,7 @@ x86_64/bareos-database-tools
 x86_64/bareos-director
 x86_64/bareos-director-python2-plugin
 x86_64/bareos-director-python3-plugin
+x86_64/bareos-filedaemon-qumulo-python-plugin
 x86_64/bareos-director-python-plugins-common
 x86_64/bareos-filedaemon
 x86_64/bareos-filedaemon-glusterfs-plugin
