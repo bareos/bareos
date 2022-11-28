@@ -77,6 +77,11 @@ class AuthController extends AbstractActionController
 
       $request = $this->getRequest();
 
+      // Init Session Container
+      $session = new Container('bareos');
+      $configuration = $this->getServiceLocator()->get('configuration');
+      $session->offsetSet('theme', $configuration['configuration']['theme']['name']);
+
       if(!$request->isPost()) {
          return $this->createNewLoginForm($form, $multi_dird_env);
       }
@@ -106,7 +111,6 @@ class AuthController extends AbstractActionController
          return $this->createNewLoginForm($form, $multi_dird_env, $err_msg, $this->bsock);
       }
 
-      $session = new Container('bareos');
       $session->offsetSet('director', $director);
       $session->offsetSet('username', $username);
       $session->offsetSet('password', $password);
@@ -116,9 +120,6 @@ class AuthController extends AbstractActionController
       $session->offsetSet('product-updates', $bareos_updates);
       $session->offsetSet('product-updates-status', false);
       $session->offsetSet('dird-update-available', false);
-
-      $configuration = $this->getServiceLocator()->get('configuration');
-
       $session->offsetSet('dt_lengthmenu', $configuration['configuration']['tables']['pagination_values']);
       $session->offsetSet('dt_pagelength', $configuration['configuration']['tables']['pagination_default_value']);
       $session->offsetSet('dt_statesave', ($configuration['configuration']['tables']['save_previous_state']) ? 'true' : 'false');
