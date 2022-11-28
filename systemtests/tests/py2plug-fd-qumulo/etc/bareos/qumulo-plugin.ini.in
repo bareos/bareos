@@ -1,0 +1,16 @@
+[general]
+# qumulo api host
+host = @qumulo_host@
+# api port, default is 8000
+port = @qumulo_api_port@
+# api user name
+user = @qumulo_api_user@
+# api user  password
+password = @qumulo_api_password@
+
+# mountpoint where qumulo / is mounted via nfs
+mount_point = @qumulo_api_mountpoint@
+# prefix for snapshot names
+snapshot_name = @qumulo_snapshot_name@
+# name of the share that should be backed up
+share_name = @qumulo_share_name@

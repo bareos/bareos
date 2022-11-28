@@ -745,6 +745,10 @@ if(VIXDISKLIB_FOUND)
   list(APPEND PLUGINS python-vmware)
 endif()
 
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/src/plugins/filed/python/qumulo)
+  list(APPEND PLUGINS python-qumulo)
+endif()
+
 if(${HAVE_GLUSTERFS})
   list(APPEND PLUGINS gfapi)
 endif()

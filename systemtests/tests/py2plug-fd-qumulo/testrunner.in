@@ -1,0 +1,109 @@
+#!/bin/bash
+set -e
+set -u
+#
+# This systemtest tests the Qumulo plugin functionality
+# of the Bareos FD by using the supplied module
+#   BareosFdPluginQumulo.py
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+echo "etc/bareos/qumulo-plugin.ini:"
+echo "---------------------"
+sed 's/password.*/password = ***/g' <  etc/bareos/qumulo-plugin.ini
+echo "---------------------"
+
+QUMULO_MOUNTPOINT=/qumulo/nfs
+QUMULO_SHARE=bareos
+QUMULO_SHARE_FILESYSTEM_PATH=/bareos/share1
+
+QUMULO_SHARE_BASEDIR="$QUMULO_MOUNTPOINT/$QUMULO_SHARE_FILESYSTEM_PATH"
+
+if !(df | grep -q "$QUMULO_MOUNTPOINT"); then
+  echo "ERROR: QUMULO_MOUNTPOINT $QUMULO_MOUNTPOINT is not mounted"
+  exit 1
+fi
+if  ! [ -d "$QUMULO_SHARE_BASEDIR" ]; then
+  echo "ERROR: $QUMULO_SHARE_BASEDIR is no directory"
+  exit 1
+fi
+
+
+
+JobName=backup-qumulo
+#shellcheck source=../environment.in
+. ./environment
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
+
+# unpack demo files into test subdir being backed up
+mkdir -p "$QUMULO_SHARE_BASEDIR/$TestName"
+# BackupDirectory is overwritten
+BackupDirectory="$QUMULO_SHARE_BASEDIR/$TestName"
+setup_data
+# cleanup files that have problems being backed up currently:
+for f in\
+   weird-files/dangling-link \
+   weird-files/absolute-softlink \
+   weird-files/filename-with-non-utf8-bytestring* \
+   weird-files/subdir/a-softlink \
+   weird-files/subdir/softlink-to-normalfile \
+   weird-files/softlink-to-softlinkee;
+ do
+   rm "${BackupDirectory}"/$f
+done
+
+trap '' exit
+
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+@#setdebug level=100 client=bareos-fd
+label volume=TestVolume001 storage=File pool=Full
+run job=$JobName level=Full yes
+status director
+status client
+status storage=File
+wait
+messages
+@#
+@# now do a restore
+@#
+@$out $tmp/log2.out
+wait
+restore client=bareos-fd fileset=QumuloTest where=$tmp/bareos-restores select all done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bareos "$@"
+check_for_zombie_jobs storage=File
+
+check_two_logs
+
+#TODO: check restores
+
+# fix paths for diff check
+
+# find TestName
+TestNameDirRestored=$(find $tmp -name "$TestName" -type d)
+mkdir -p "$tmp/bareos-restores/$QUMULO_SHARE_BASEDIR/"
+mv "$TestNameDirRestored" "$tmp/bareos-restores/$QUMULO_SHARE_BASEDIR/"
+
+#tmp/bareos-restores/tmp/py3plug-fd-qumulo-fd/backup-qumulo.2022-09-27_13.31.45_03/bareos/py3plug-fd-qumulo/build/src/tests/Makefile
+#tmp/bareos-restores//qumulo/nfs/bareos/share1/py3plug-fd-qumulo
+
+
+check_restore_diff
+
+rm -rvf "$QUMULO_SHARE_BASEDIR/$TestName"
+
+end_test
