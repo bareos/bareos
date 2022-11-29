@@ -473,7 +473,6 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
 static bRC get_next_file_to_backup(PluginContext* ctx)
 {
   int status;
-  struct save_pkt sp;
   struct dirent* entry;
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
@@ -735,10 +734,8 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
         return bRC_Error;
     }
 
+    save_pkt sp;
     // See if we accept this file under the currently loaded fileset.
-    memset(&sp, 0, sizeof(sp));
-    sp.pkt_size = sizeof(sp);
-    sp.pkt_end = sizeof(sp);
     sp.fname = p_ctx->next_filename;
     sp.type = p_ctx->type;
     memcpy(&sp.statp, &p_ctx->statp, sizeof(sp.statp));

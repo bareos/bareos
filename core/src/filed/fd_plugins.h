@@ -96,45 +96,48 @@ struct restore_object_pkt {
 
 // This packet is used for file save info transfer.
 struct save_pkt {
-  int32_t pkt_size;        /* Size of this packet */
-  char* fname;             /* Full path and filename */
-  char* link;              /* Link name if any */
-  struct stat statp;       /* System stat() packet for file */
-  int32_t type;            /* FT_xx for this file */
-  char flags[FOPTS_BYTES]; /* Bareos internal flags */
-  bool no_read;            /* During the save, the file should not be saved */
-  bool portable;           /* Set if data format is portable */
-  bool accurate_found; /* Found in accurate list (valid after CheckChanges()) */
-  char* cmd;           /* Command */
-  time_t save_time;    /* Start of incremental time */
-  uint32_t delta_seq;  /* Delta sequence number */
-  char* object_name;   /* Object name to create */
-  char* object;        /* Restore object data to save */
-  int32_t object_len;  /* Restore object length */
-  int32_t index;       /* Restore object index */
-  int32_t pkt_end;     /* End packet sentinel */
+  int32_t pkt_size{sizeof(save_pkt)}; /* Size of this packet */
+  char* fname{};                      /* Full path and filename */
+  char* link{};                       /* Link name if any */
+  struct stat statp {
+  };                         /* System stat() packet for file */
+  int32_t type{};            /* FT_xx for this file */
+  char flags[FOPTS_BYTES]{}; /* Bareos internal flags */
+  bool no_read{};            /* During the save, the file should not be saved */
+  bool portable{};           /* Set if data format is portable */
+  bool accurate_found{}; /* Found in accurate list (valid after CheckChanges())
+                          */
+  char* cmd{};           /* Command */
+  time_t save_time{};    /* Start of incremental time */
+  uint32_t delta_seq{};  /* Delta sequence number */
+  char* object_name{};   /* Object name to create */
+  char* object{};        /* Restore object data to save */
+  int32_t object_len{};  /* Restore object length */
+  int32_t index{};       /* Restore object index */
+  int32_t pkt_end{sizeof(save_pkt)}; /* End packet sentinel */
 };
 
 // This packet is used for file restore info transfer.
 struct restore_pkt {
-  int32_t pkt_size;       /* Size of this packet */
-  int32_t stream;         /* Attribute stream id */
-  int32_t data_stream;    /* Id of data stream to follow */
-  int32_t type;           /* File type FT */
-  int32_t file_index;     /* File index */
-  int32_t LinkFI;         /* File index to data if hard link */
-  uid_t uid;              /* Userid */
-  struct stat statp;      /* Decoded stat packet */
-  const char* attrEx;     /* Extended attributes if any */
-  const char* ofname;     /* Output filename */
-  const char* olname;     /* Output link name */
-  const char* where;      /* Where */
-  const char* RegexWhere; /* Regex where */
-  int replace;            /* Replace flag */
-  int create_status;      /* Status from createFile() */
-  uint32_t delta_seq;     /* Delta sequence number */
-  int filedes;            /* file descriptor to read/write in core */
-  int32_t pkt_end;        /* End packet sentinel */
+  int32_t pkt_size{sizeof(restore_pkt)}; /* Size of this packet */
+  int32_t stream{};                      /* Attribute stream id */
+  int32_t data_stream{};                 /* Id of data stream to follow */
+  int32_t type{};                        /* File type FT */
+  int32_t file_index{};                  /* File index */
+  int32_t LinkFI{};                      /* File index to data if hard link */
+  uid_t uid{};                           /* Userid */
+  struct stat statp {
+  };                        /* Decoded stat packet */
+  const char* attrEx{};     /* Extended attributes if any */
+  const char* ofname{};     /* Output filename */
+  const char* olname{};     /* Output link name */
+  const char* where{};      /* Where */
+  const char* RegexWhere{}; /* Regex where */
+  int replace{};            /* Replace flag */
+  int create_status{};      /* Status from createFile() */
+  uint32_t delta_seq{};     /* Delta sequence number */
+  int filedes{};            /* file descriptor to read/write in core */
+  int32_t pkt_end{sizeof(restore_pkt)}; /* End packet sentinel */
 };
 
 enum
@@ -165,21 +168,21 @@ struct io_pkt {
 };
 
 struct acl_pkt {
-  int32_t pkt_size;        /* Size of this packet */
-  const char* fname;       /* Full path and filename */
-  uint32_t content_length; /* ACL content length */
-  char* content;           /* ACL content */
-  int32_t pkt_end;         /* End packet sentinel */
+  int32_t pkt_size{sizeof(acl_pkt)}; /* Size of this packet */
+  const char* fname{};               /* Full path and filename */
+  uint32_t content_length{};         /* ACL content length */
+  char* content{};                   /* ACL content */
+  int32_t pkt_end{sizeof(acl_pkt)};  /* End packet sentinel */
 };
 
 struct xattr_pkt {
-  int32_t pkt_size;      /* Size of this packet */
-  const char* fname;     /* Full path and filename */
-  uint32_t name_length;  /* XATTR name length */
-  char* name;            /* XATTR name */
-  uint32_t value_length; /* XATTR value length */
-  char* value;           /* XATTR value */
-  int32_t pkt_end;       /* End packet sentinel */
+  int32_t pkt_size{sizeof(xattr_pkt)}; /* Size of this packet */
+  const char* fname{};                 /* Full path and filename */
+  uint32_t name_length{};              /* XATTR name length */
+  char* name{};                        /* XATTR name */
+  uint32_t value_length{};             /* XATTR value length */
+  char* value{};                       /* XATTR value */
+  int32_t pkt_end{sizeof(xattr_pkt)};  /* End packet sentinel */
 };
 
 /****************************************************************************
