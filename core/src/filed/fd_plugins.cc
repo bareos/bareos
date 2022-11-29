@@ -1813,9 +1813,9 @@ static int MyPluginBopen(BareosFilePacket* bfd,
   if (!jcr->plugin_ctx) { return 0; }
   plugin = (Plugin*)jcr->plugin_ctx->plugin;
 
-  memset(&io, 0, sizeof(io));
-  io.pkt_size = sizeof(io);
-  io.pkt_end = sizeof(io);
+  /* memset(&io, 0, sizeof(io)); */
+  /* io.pkt_size = sizeof(io); */
+  /* io.pkt_end = sizeof(io); */
   io.filedes = -1;
 
   io.func = IO_OPEN;
@@ -1884,9 +1884,9 @@ static int MyPluginBclose(BareosFilePacket* bfd)
   if (!jcr->plugin_ctx) { return 0; }
   plugin = (Plugin*)jcr->plugin_ctx->plugin;
 
-  memset(&io, 0, sizeof(io));
-  io.pkt_size = sizeof(io);
-  io.pkt_end = sizeof(io);
+  /* memset(&io, 0, sizeof(io)); */
+  /* io.pkt_size = sizeof(io); */
+  /* io.pkt_end = sizeof(io); */
   io.filedes = bfd->filedes;
 
   io.func = IO_CLOSE;
@@ -1920,9 +1920,9 @@ static ssize_t MyPluginBread(BareosFilePacket* bfd, void* buf, size_t count)
   if (!jcr->plugin_ctx) { return 0; }
   plugin = (Plugin*)jcr->plugin_ctx->plugin;
 
-  memset(&io, 0, sizeof(io));
-  io.pkt_size = sizeof(io);
-  io.pkt_end = sizeof(io);
+  /* memset(&io, 0, sizeof(io)); */
+  /* io.pkt_size = sizeof(io); */
+  /* io.pkt_end = sizeof(io); */
   io.filedes = bfd->filedes;
 
   io.func = IO_READ;
@@ -1960,9 +1960,9 @@ static ssize_t MyPluginBwrite(BareosFilePacket* bfd, void* buf, size_t count)
   }
   plugin = (Plugin*)jcr->plugin_ctx->plugin;
 
-  memset(&io, 0, sizeof(io));
-  io.pkt_size = sizeof(io);
-  io.pkt_end = sizeof(io);
+  /* memset(&io, 0, sizeof(io)); */
+  /* io.pkt_size = sizeof(io); */
+  /* io.pkt_end = sizeof(io); */
 
   io.func = IO_WRITE;
   io.count = count;
