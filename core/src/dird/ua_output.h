@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,8 +23,19 @@
 #define BAREOS_DIRD_UA_OUTPUT_H_
 
 #include "lib/output_formatter.h"
+#include "dird/dird_conf.h"
+
+#include <unordered_map>
 
 namespace directordaemon {
+
+static std::unordered_map<std::string, int> show_cmd_available_resources = {
+    {"directors", R_DIRECTOR}, {"clients", R_CLIENT},   {"jobdefs", R_JOBDEFS},
+    {"jobs", R_JOB},           {"storages", R_STORAGE}, {"catalogs", R_CATALOG},
+    {"schedules", R_SCHEDULE}, {"filesets", R_FILESET}, {"pools", R_POOL},
+    {"messages", R_MSGS},      {"counters", R_COUNTER}, {"profiles", R_PROFILE},
+    {"consoles", R_CONSOLE},   {"users", R_USER}};
+
 
 class RunResource;
 
