@@ -211,6 +211,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Appendix/Bareos Programs improvements [PR #1255]
 - obsolete comments removed [PR #1268]
 - fix bsmtp get-usage.sh call [PR #1267]
+- add new VSS troubleshooting instruction to Windows chapter [PR #1317]
 
 [Issue #1429]: https://bugs.bareos.org/view.php?id=1429
 [Issue #1445]: https://bugs.bareos.org/view.php?id=1445
@@ -361,10 +362,12 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1277]: https://github.com/bareos/bareos/pull/1277
 [PR #1278]: https://github.com/bareos/bareos/pull/1278
 [PR #1279]: https://github.com/bareos/bareos/pull/1279
+[PR #1282]: https://github.com/bareos/bareos/pull/1282
 [PR #1283]: https://github.com/bareos/bareos/pull/1283
 [PR #1284]: https://github.com/bareos/bareos/pull/1284
 [PR #1285]: https://github.com/bareos/bareos/pull/1285
 [PR #1288]: https://github.com/bareos/bareos/pull/1288
+[PR #1295]: https://github.com/bareos/bareos/pull/1295
 [PR #1296]: https://github.com/bareos/bareos/pull/1296
 [PR #1298]: https://github.com/bareos/bareos/pull/1298
 [PR #1300]: https://github.com/bareos/bareos/pull/1300
@@ -373,5 +376,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1306]: https://github.com/bareos/bareos/pull/1306
 [PR #1307]: https://github.com/bareos/bareos/pull/1307
 [PR #1313]: https://github.com/bareos/bareos/pull/1313
+[PR #1317]: https://github.com/bareos/bareos/pull/1317
 [PR #1318]: https://github.com/bareos/bareos/pull/1318
 [unreleased]: https://github.com/bareos/bareos/tree/master
