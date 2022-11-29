@@ -3,8 +3,8 @@
 The Windows Version of Bareos
 =============================
 
-:index:`\ <single: Platform; Windows>`
-:index:`\ <single: Windows>`
+.. index:: Platform; Windows
+.. index:: Windows
 
 The Windows version of Bareos is a native Win32 port, but there are very few source code changes to the Unix code, which means that the Windows version is for the most part running code that has long proved stable on Unix systems.
 
@@ -21,8 +21,8 @@ Once installed Bareos normally runs as a system service. This means that it is i
 Windows Installation
 --------------------
 
-:index:`\ <single: Installation; Windows>`
-:index:`\ <single: Windows; File Daemon; Installation>`
+.. index:: Installation; Windows
+.. index:: Windows; File Daemon; Installation
 
 Normally, you will install the Windows version of Bareos from the binaries. The **winbareos** binary packages are provided in the :file:`windows` directory of the current Bareos release directory. For Bareos 21 it is https://download.bareos.org/bareos/release/21/windows/ (Bareos Community Repository) or https://download.bareos.com/bareos/release/21/windows/ (Bareos Subscription Repository). Additionally, there are `OPSI <https://www.opsi.org>`_ packages available in the :file:`windows/opsi/` directory (Bareos 21: https://download.bareos.org/bareos/release/21/windows/opsi/ resp. https://download.bareos.com/bareos/release/21/windows/opsi/).
 
@@ -150,37 +150,77 @@ By setting the Installation Parameters via commandline and using the silent inst
 
 DBADMINUSER and DBADMINPASSWORD are used to create the bareos databases. If login is not possible silent installer will abort
 
-Dealing with Windows Problems
------------------------------
+.. _VSS:
 
-:index:`\ <single: Problem; Windows>`\  :index:`\ <single: Windows; Dealing with Problems>`\
+Volume Shadow Copy Service (VSS)
+--------------------------------
 
-Antivirus Program
-~~~~~~~~~~~~~~~~~
+.. index:: Windows; Volume Shadow Copy Service
+.. index:: Windows; VSS
 
-If you are not using the portable option, and you have :config:option:`dir/fileset/EnableVss`\  (Volume Shadow Copy) enabled in the |dir| and you experience problems with Bareos not being able to open files, it is most likely that you are running an antivirus program that blocks Bareos from doing certain operations. In this case, disable the antivirus program and try another backup. If it succeeds, either get a different (better) antivirus program or use
-something like :config:option:`dir/job/ClientRunBeforeJob`\ /:config:option:`dir/job/ClientRunBeforeJob`\  to turn off the antivirus program while the backup is running.
+VSS is available since Windows XP. From the perspective of a backup-solution for Windows, this is an extremely important step. VSS allows Bareos to backup open files and even to interact with applications like RDBMS to produce consistent file copies. VSS aware applications are called VSS Writers, they register with the OS so that when Bareos wants to do a Snapshot, the OS will notify the register Writer programs, which may then create a consistent state in their application, which will be backed
+up. Examples for these writers are "MSDE" (Microsoft database engine), "Event Log Writer", "Registry Writer" plus 3rd party-writers. If you have a non-vss aware application a shadow copy is still generated and the open files can be backed up, but there is no guarantee that the file is consistent.
 
-If turning off anti-virus software does not resolve your VSS problems, you might have to turn on VSS debugging. The following link describes how to do this: https://docs.microsoft.com/en-US/troubleshoot/windows-server/backup-and-storage/enable-debug-tracing-features-vss.
+Bareos produces a message from each of the registered writer programs when it is doing a VSS backup so you know which ones are correctly backed up.
 
-Enable Debuggging
-~~~~~~~~~~~~~~~~~
+Technically Bareos creates a shadow copy as soon as the backup process starts. It does then backup all files from the shadow copy and destroys the shadow copy after the backup process. Please have in mind, that VSS creates a snapshot and thus backs up the system at the state it had when starting the backup. It will disregard file changes which occur during the backup process.
 
-In case of problems, you can enable the creation of log files. For this you have to use the :command:`bconsole` :ref:`setdebug <bcommandSetdebug>` command:
+VSS can be turned on by placing an
 
-.. code-block:: bconsole
-   :caption: Enable debug
+.. index:: Enable VSS
+.. index:: VSS; Enable
 
-   *<input>setdebug client=bareos-fd level=200 trace=1</input>
-   Connecting to Client bareos-fd at bareos.example.com:9102
-   2000 OK setdebug=200 trace=1 hangup=0 tracefile=c:\bareos-fd.trace
+::
+
+   Enable VSS = yes
+
+in your FileSet resource.
+
+The VSS aware File daemon has the letters VSS on the signon line that it produces when contacted by the console. For example:
+
+::
+
+   Tibs-fd Version: 1.37.32 (22 July 2005) VSS Windows XP MVS NT 5.1.2600
+
+the VSS is shown in the line above. This only means that the File daemon is capable of doing VSS not that VSS is turned on for a particular backup. There are two ways of telling if VSS is actually turned on during a backup. The first is to look at the status output for a job, e.g.:
+
+::
+
+   Running Jobs:
+   JobId 1 Job NightlySave.2005-07-23_13.25.45 is running.
+       VSS Backup Job started: 23-Jul-05 13:25
+       Files=70,113 Bytes=3,987,180,650 Bytes/sec=3,244,247
+       Files Examined=75,021
+       Processing file: c:/Documents and Settings/user/My Documents/My Pictures/Misc1/Sans titre - 39.pdd
+       SDReadSeqNo=5 fd=352
+
+
+
+Here, you see under Running Jobs that JobId 1 is "VSS Backup Job started ..." This means that VSS is enabled for that job. If VSS is not enabled, it will simply show "Backup Job started ..." without the letters VSS.
+
+The second way to know that the job was backed up with VSS is to look at the Job Report, which will look something like the following:
+
+::
+
+   23-Jul 13:25 rufus-dir: Start Backup JobId 1, Job=NightlySave.2005-07-23_13.25.45
+   23-Jul 13:26 rufus-sd: Wrote label to prelabeled Volume "TestVolume001" on device "DDS-4" (/dev/nst0)
+   23-Jul 13:26 rufus-sd: Spooling data ...
+   23-Jul 13:26 Tibs: Generate VSS snapshots. Driver="VSS WinXP", Drive(s)="C"
+   23-Jul 13:26 Tibs: VSS Writer: "MSDEWriter", State: 1 (VSS_WS_STABLE)
+   23-Jul 13:26 Tibs: VSS Writer: "Microsoft Writer (Bootable State)", State: 1 (VSS_WS_STABLE)
+   23-Jul 13:26 Tibs: VSS Writer: "WMI Writer", State: 1 (VSS_WS_STABLE)
+   23-Jul 13:26 Tibs: VSS Writer: "Microsoft Writer (Service State)", State: 1 (VSS_WS_STABLE)
+
+
+
+In the above Job Report listing, you see that the VSS snapshot was generated for drive C (if other drives are backed up, they will be listed on the ``Drive(s)="C"`` line. You also see the reports from each of the writer program. Here they all report VSS_WS_STABLE, which means that you will get a consistent snapshot of the data handled by that writer.
 
 .. _Compatibility:
 
 Windows Compatibility Considerations
 ------------------------------------
 
-:index:`\ <single: Windows; Compatibility Considerations>`\
+.. index:: Windows; Compatibility Considerations
 
 Exclusively Opened Files
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -188,17 +228,15 @@ Exclusively Opened Files
 If you are not using the :ref:`VSS` option and if any applications are running during the backup and they have files opened exclusively, Bareos will not be able to backup those files, so be sure you close your applications (or tell your users to close their applications) before the backup. Fortunately, most Microsoft applications do not open files exclusively so that they can be backed up. However, you will need to experiment. In any case, if Bareos cannot open the file, it will
 print an error message, so you will always know which files were not backed up. If Volume Shadow Copy Service is enabled, Bareos is able to backing up any file.
 
-Backing up the Windows Registry
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-During backup, Bareos doesn’t know about the system registry, so you will either need to write it out to an ASCII file using :command:`regedit /e` or use a program specifically designed to make a copy or backup the registry.
 
 Windows Reparse Points
 ~~~~~~~~~~~~~~~~~~~~~~
 
 :sinceVersion:`12.4.5: Windows: Reparse points`
 
-:index:`\ <single: Windows; Symbolic links>`\  :index:`\ <single: Windows; Junction points>`\  :index:`\ <single: Windows; Volume Mount Points (VMP)>`\
+.. index:: Windows; Symbolic links
+.. index:: Windows; Junction points
+.. index:: single: Windows; Volume Mount Points (VMP)
 
 Besides normal files and directories, Windows filesystems also support special files, called "Reparse Points". Bareos can handle the following types of Reparse points:
 
@@ -288,7 +326,7 @@ FilesNotToBackup Registry Key
 
 :sinceVersion:`14.2.0: Windows: FilesNotToBackup`
 
-:index:`\ <single: Windows; Exclude Files from Backup>`\
+.. index:: Windows; Exclude Files from Backup
 
 Windows supports a special Registry Key that specifies the names of the files and directories that backup applications should not backup or restore.
 
@@ -334,7 +372,7 @@ The JobLog will then show the following informational line:
 
    Fileset has autoexclude disabled, ignoring FilesNotToBackup Registry key
 
-For more details about the Windows registry key see https://docs.microsoft.com/en-us/windows/win32/backup/registry-keys-for-backup-and-restore?#filesnottobackup.
+For more details about the Windows registry key see https://learn.microsoft.com/en-us/windows/win32/backup/registry-keys-for-backup-and-restore.
 
 Windows dedup support
 ~~~~~~~~~~~~~~~~~~~~~
@@ -358,89 +396,9 @@ Support for Windows EFS filesystems
 Windows has support for a so called EFS filesystem. This is an encrypted filesystem, to be able to backup the data and to restore it we need to use a special API. With this API you in essence export the data on backup and import it on restore. This way you never have access to the unencrypted data but just import and export the encrypted data. This is the cleanest way of handling encryption by just seeing the data as some opaque data and not try to do anything special with it.
 
 
-.. _VSS:
-
-Volume Shadow Copy Service (VSS)
---------------------------------
-
-:index:`\ <single: Windows; Volume Shadow Copy Service>`
-:index:`\ <single: Windows; VSS>`
-
-VSS is available since Windows XP. From the perspective of a backup-solution for Windows, this is an extremely important step. VSS allows Bareos to backup open files and even to interact with applications like RDBMS to produce consistent file copies. VSS aware applications are called VSS Writers, they register with the OS so that when Bareos wants to do a Snapshot, the OS will notify the register Writer programs, which may then create a consistent state in their application, which will be backed
-up. Examples for these writers are "MSDE" (Microsoft database engine), "Event Log Writer", "Registry Writer" plus 3rd party-writers. If you have a non-vss aware application a shadow copy is still generated and the open files can be backed up, but there is no guarantee that the file is consistent.
-
-Bareos produces a message from each of the registered writer programs when it is doing a VSS backup so you know which ones are correctly backed up.
-
-Technically Bareos creates a shadow copy as soon as the backup process starts. It does then backup all files from the shadow copy and destroys the shadow copy after the backup process. Please have in mind, that VSS creates a snapshot and thus backs up the system at the state it had when starting the backup. It will disregard file changes which occur during the backup process.
-
-VSS can be turned on by placing an
-
-:index:`\ <single: Enable VSS>`
-:index:`\ <single: VSS; Enable>`
-
-::
-
-   Enable VSS = yes
-
-in your FileSet resource.
-
-The VSS aware File daemon has the letters VSS on the signon line that it produces when contacted by the console. For example:
-
-::
-
-   Tibs-fd Version: 1.37.32 (22 July 2005) VSS Windows XP MVS NT 5.1.2600
-
-the VSS is shown in the line above. This only means that the File daemon is capable of doing VSS not that VSS is turned on for a particular backup. There are two ways of telling if VSS is actually turned on during a backup. The first is to look at the status output for a job, e.g.:
-
-::
-
-   Running Jobs:
-   JobId 1 Job NightlySave.2005-07-23_13.25.45 is running.
-       VSS Backup Job started: 23-Jul-05 13:25
-       Files=70,113 Bytes=3,987,180,650 Bytes/sec=3,244,247
-       Files Examined=75,021
-       Processing file: c:/Documents and Settings/user/My Documents/My Pictures/Misc1/Sans titre - 39.pdd
-       SDReadSeqNo=5 fd=352
-
-
-
-Here, you see under Running Jobs that JobId 1 is "VSS Backup Job started ..." This means that VSS is enabled for that job. If VSS is not enabled, it will simply show "Backup Job started ..." without the letters VSS.
-
-The second way to know that the job was backed up with VSS is to look at the Job Report, which will look something like the following:
-
-::
-
-   23-Jul 13:25 rufus-dir: Start Backup JobId 1, Job=NightlySave.2005-07-23_13.25.45
-   23-Jul 13:26 rufus-sd: Wrote label to prelabeled Volume "TestVolume001" on device "DDS-4" (/dev/nst0)
-   23-Jul 13:26 rufus-sd: Spooling data ...
-   23-Jul 13:26 Tibs: Generate VSS snapshots. Driver="VSS WinXP", Drive(s)="C"
-   23-Jul 13:26 Tibs: VSS Writer: "MSDEWriter", State: 1 (VSS_WS_STABLE)
-   23-Jul 13:26 Tibs: VSS Writer: "Microsoft Writer (Bootable State)", State: 1 (VSS_WS_STABLE)
-   23-Jul 13:26 Tibs: VSS Writer: "WMI Writer", State: 1 (VSS_WS_STABLE)
-   23-Jul 13:26 Tibs: VSS Writer: "Microsoft Writer (Service State)", State: 1 (VSS_WS_STABLE)
-
-
-
-In the above Job Report listing, you see that the VSS snapshot was generated for drive C (if other drives are backed up, they will be listed on the \bconsoleOutput{Drive(s)="C"} line. You also see the reports from each of the writer program. Here they all report VSS_WS_STABLE, which means that you will get a consistent snapshot of the data handled by that writer.
-
-VSS Problems
-~~~~~~~~~~~~
-
-:index:`\ <single: Windows; Problem; VSS>`
-:index:`\ <single: Windows; VSS; Problem>`
-:index:`\ <single: Windows; Problem; VSS>`
-:index:`\ <single: Problem; Windows; VSS>`
-
-If you are experiencing problems such as VSS hanging on MSDE, first try running vssadmin to check for problems, then try running ntbackup which also uses VSS to see if it has similar problems. If so, you know that the problem is in your Windows machine and not with Bareos.
-
-The FD hang problems were reported with MSDEwriter when:
-
--  a local firewall locked local access to the MSDE TCP port (MSDEwriter seems to use TCP/IP and not Named Pipes).
-
--  msdtcs was installed to run under "localsystem": try running msdtcs under networking account (instead of local system) (com+ seems to work better with this configuration).
-
 Backup/Restore of Windows Registry
----------------------------------------
+----------------------------------
+
 The Windows Registry can be backed up using VSS.
 The VSS Registry Writer will make sure you can take a stable backup of the registry hives.
 
@@ -480,20 +438,26 @@ Well-Known Hives
 
 Restoring the Registry
 ~~~~~~~~~~~~~~~~~~~~~~
+
 To restore a part of the Registry, you simply restore the file containing the appropriate hive to another location on the machine.
 You can then use regedit to open ("mount") that restored hive file by selecting "Load Hive" in the "Registry" menu.
 With the hive mounted you can now export keys or subtrees from the mounted hive and import these at any other location.
 
 Once you're finished you should unload the hive using "Unload Hive" from the "Registry" menu.
 
+Dumping the Windows Registry
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You write the registry content out to an ASCII file using :command:`regedit /e`.
+
 
 Windows Firewalls
 -----------------
 
-:index:`\ <single: Firewall; Windows>`
-:index:`\ <single: Windows; Firewall>`
+.. index:: Firewall; Windows
+.. index:: Windows; Firewall
 
-The Windows buildin Firewall is enabled since Windows version WinXP SP2. The Bareos installer opens the required network ports for Bareos. However, if you are using another Firewall, you might need to manually open the Bareos network ports. The |fd| listens on 9102/TCP.
+The Windows builtin Firewall is enabled since Windows version WinXP SP2. The Bareos installer opens the required network ports for Bareos. However, if you are using another Firewall, you might need to manually open the Bareos network ports. The |fd| listens on 9102/TCP.
 
 Network TCP Port
 ~~~~~~~~~~~~~~~~
@@ -504,28 +468,50 @@ If you want to see if the File daemon has properly opened the port and is listen
 
    netstat -an | findstr 910[123]
 
-Windows Restore Problems
-------------------------
+Dealing with Windows Problems
+-----------------------------
 
-:index:`\ <single: Problem; Windows Restore>`
-:index:`\ <single: Windows; Restore Problem>`
+.. index:: Problem; Windows
+.. index:: Problem; Windows Backup
+.. index:: Windows; Backup Problems
+.. index:: Windows; Dealing with Problems
 
-Please see the :ref:`section-RestoreOnWindows` chapter for problems that you might encounter doing a restore.
+Antivirus Program
+~~~~~~~~~~~~~~~~~
 
-Windows Backup Problems
------------------------
+If you are not using the portable option, and you have :config:option:`dir/fileset/EnableVss`\  (Volume Shadow Copy) enabled in the |dir| and you experience problems with Bareos not being able to open files, it is most likely that you are running an antivirus program that blocks Bareos from doing certain operations. In this case, disable the antivirus program and try another backup. If it succeeds, either get a different (better) antivirus program or use
+something like :config:option:`dir/job/ClientRunBeforeJob`\ /:config:option:`dir/job/ClientRunBeforeJob`\  to turn off the antivirus program while the backup is running.
 
-:index:`\ <single: Problem; Windows Backup>`
-:index:`\ <single: Windows; Backup Problems>`
+If turning off anti-virus software does not resolve your VSS problems, you might have to turn on VSS debugging. The following link describes how to do this: https://learn.microsoft.com/en-US/troubleshoot/windows-server/backup-and-storage/enable-debug-tracing-features-vss.
 
-If during a Backup, you get the message: ERR=Access is denied and you are using the portable option, you should try both adding both the non-portable (backup API) and the Volume Shadow Copy options to your Director’s conf file.
+Enable Debugging
+~~~~~~~~~~~~~~~~~
 
-In the Options resource:
+In case of problems, you can enable the creation of log files. For this you have to use the :command:`bconsole` :ref:`setdebug <bcommandSetdebug>` command:
+
+.. code-block:: bconsole
+   :caption: Enable debug
+
+   *<input>setdebug client=bareos-fd level=200 trace=1</input>
+   Connecting to Client bareos-fd at bareos.example.com:9102
+   2000 OK setdebug=200 trace=1 hangup=0 tracefile=c:\bareos-fd.trace
+
+Please see the chapter :ref:`section-Debugging` for additional information.
+
+
+.. index:: Windows; Access is denied
+.. index:: Windows; Could not stat
+
+Error Read Access is denied
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If during a Backup, you get the message: ``ERR=Access is denied`` and you are using the portable option, you should try adding both the non-portable (backup API) and the Volume Shadow Copy options to your Fileset’s conf file.
+
+In the Include Options resource:
 
 ::
 
    portable = no
-
 
 
 In the FileSet resource:
@@ -544,11 +530,103 @@ In general, specifying these two options should allow you to backup any file on 
 
 Thanks to Georger Araujo for the above information.
 
+
+Error VSS could not grow in time
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If during a Backup, you get this kind of message in the job log:
+
+::
+
+      Could not stat "D:/examples_dir/sample_file.doc": ERR=The system cannot find the file specified.
+      Could not stat "D:/examples_dir/Documents": ERR=Access is denied.
+
+
+You are maybe facing a VSS snapshot size problem: `the shadow copy storage could not grow in time`, and thus the system removes the snapshot in use during the backup. Of course this invalidates access to data that should be saved during the job by the |fd|. Unfortunately such operations are not reported to the |fd|, which gets read and access deny errors when trying to access the data.
+
+Checking the Windows system log around the time the problem occur in the backup job should show this kind of error logged.
+
+::
+
+      Log Name:      System
+      Source:        Volsnap
+      Date:          9/26/2022 2:13:27 AM
+      Event ID:      25
+      Task Category: None
+      Level:         Error
+      Keywords:      Classic
+      User:          N/A
+      Computer:      bareos-windows-fd
+      Description:
+      The shadow copies of volume D: were deleted because the shadow copy storage could
+      not grow in time.  Consider reducing the IO load on the system or choose a shadow
+      copy storage volume that is not being shadow copied.
+      Event Xml:
+      <Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
+      <System>
+         <Provider Name="Volsnap" Guid="{cb017cd2-1f37-4e65-82bc-3e91f6a37559}" EventSourceName="volsnap" />
+         <EventID Qualifiers="49158">25</EventID>
+         <Version>0</Version>
+         <Level>2</Level>
+         <Task>0</Task>
+         <Opcode>0</Opcode>
+         <Keywords>0x80000000000000</Keywords>
+         <TimeCreated SystemTime="2022-09-26T00:13:27.611447600Z" />
+         <EventRecordID>1151393</EventRecordID>
+         <Correlation />
+         <Execution ProcessID="4" ThreadID="278416" />
+         <Channel>System</Channel>
+         <Computer>bareos-windows-fd</Computer>
+         <Security />
+      </System>
+      <EventData>
+         <Data Name="DeviceName">\Device\HarddiskVolumeShadowCopy293</Data>
+         <Data Name="VolumeName">D:</Data>
+         <Data Name="NTSTATUS">00000000</Data>
+         <Data Name="SourceTag">168</Data>
+         <Data Name="SourceFileID">0x0005</Data>
+         <Data Name="SourceLine">2618</Data>
+         <Binary>000000000600300000000000190006C0A80000000000000090000000000000000000000000000000</Binary>
+      </EventData>
+      </Event>
+
+You need to find a way to extend your VSS disk space.
+
+.. warning::
+
+   Beside the job has serious issue, the snapshot removal is not reported to the |fd|, and as such the backup job often terminated with a status of "OK -- with warnings" ``W`` status.
+
+
+VSS hanging on MSDE
+~~~~~~~~~~~~~~~~~~~
+
+.. index:: Windows; Problem; VSS
+.. index:: Windows; VSS; Problem
+.. index:: Windows; Problem; VSS
+.. index:: Problem; Windows; VSS
+
+If you are experiencing problems such as VSS hanging on MSDE, first try running vssadmin to check for problems, then try running Windows Backup Feature which also uses VSS to see if it has similar problems. If so, you know that the problem is in your Windows machine and not with Bareos.
+
+The FD hang problems were reported with MSDEwriter when:
+
+-  a local firewall locked local access to the MSDE TCP port (MSDEwriter seems to use TCP/IP and not Named Pipes).
+
+-  msdtcs was installed to run under "localsystem": try running msdtcs under networking account (instead of local system) (com+ seems to work better with this configuration).
+
+
+Windows Restore Problems
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. index:: Problem; Windows Restore
+.. index:: Windows; Restore Problem
+
+Please see the :ref:`section-RestoreOnWindows` chapter for problems that you might encounter doing a restore.
+
 Windows Ownership and Permissions Problems
 ------------------------------------------
 
-:index:`\ <single: Problem; Windows Ownership and Permissions>`
-:index:`\ <single: Windows; Ownership and Permissions Problems>`
+.. index:: Problem; Windows Ownership and Permissions
+.. index:: Windows; Ownership and Permissions Problems
 
 If you restore files backed up from Windows to an alternate directory, Bareos may need to create some higher level directories that were not saved (or restored). In this case, the File daemon will create them under the SYSTEM account because that is the account that Bareos runs under as a service and with full access permission. However, there may be cases where you have problems accessing those files even if you run as administrator. In principle, Microsoft supplies you with the way to cease
 the ownership of those files and thus change the permissions. However, a much better solution to working with and changing Win32 permissions is the program SetACL, which can be found at `https://helgeklein.com/setacl/ <https://helgeklein.com/setacl/>`_.
@@ -556,7 +634,6 @@ the ownership of those files and thus change the permissions. However, a much be
 If you have not installed Bareos while running as Administrator and if Bareos is not running as a Process with the userid (User Name) SYSTEM, then it is very unlikely that it will have sufficient permission to access all your files.
 
 Some users have experienced problems restoring files that participate in the Active Directory. They also report that changing the userid under which Bareos (bareos-fd.exe) runs, from SYSTEM to a Domain Admin userid, resolves the problem.
-
 
 
 Advanced Windows Configuration
@@ -618,7 +695,7 @@ The service can be started by calling
 Windows Specific Command Line Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Windows; File Daemon; Command Line Options>`\
+.. index:: Windows; File Daemon; Command Line Options
 
 These options are not normally seen or used by the user, and are documented here only for information purposes. At the current time, to change the default options, you must either manually run Bareos or you must manually edit the system registry and modify the appropriate entries.
 
