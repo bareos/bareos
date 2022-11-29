@@ -364,7 +364,6 @@ typedef struct {
   int64_t offset;              /* Lseek argument */
   bool win32;                  /* Win32 GetLastError returned */
   int filedes;                 /* filedescriptor for read/write in core */
-  bool do_io_in_core;          /* do i/o (read/write) in core, not in plugin */
 } PyIoPacket;
 
 // Forward declarations of type specific functions.
@@ -403,8 +402,6 @@ static PyMemberDef PyIoPacket_members[]
         (char*)"Win32 GetLastError returned"},
        {(char*)"filedes", T_INT, offsetof(PyIoPacket, filedes), 0,
         (char*)"file descriptor of current file"},
-       {(char*)"do_io_in_core", T_BOOL, offsetof(PyIoPacket, do_io_in_core), 0,
-        (char*)"set to true if i/o (read/write) should be done in core"},
        {NULL, 0, 0, 0, NULL}};
 
 #  pragma GCC diagnostic push
