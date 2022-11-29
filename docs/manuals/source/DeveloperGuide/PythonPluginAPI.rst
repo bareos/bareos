@@ -168,7 +168,7 @@ The standard way of operation is that the API calls the ``plugin_io()`` function
 provided by the python plugin which reads the data from the source and passes
 this data back to the Bareos core as ``bytearray`` on backup gets the data back in
 a ``bytearray`` from the core to write it back during restore.
-While this procedure implements the full Bareos plugin logic, it is note very
+While this procedure implements the full Bareos plugin logic, it is not very
 efficient as the data needs to be moved between the python interpreter and the
 Bareos core and can slow down performance of backups and restores significantly.
 
@@ -183,15 +183,22 @@ file backups through the python plugin interface **reaches the same speed as a
 native file backup** without plugin involved.
 
 To adapt an existing plugin for doing direct I/O, the plugin in the function
-`plugin_io_open()` needs to set `do_io_in_core` to `True` and the `filedes`
-needs to be set to the valid filedescriptor in the `IoPacket`:
+`plugin_io_open()` needs to set `IOP.status` to `bareosfd.iostat_do_in_core`
+and the `filedes` needs to be set to the valid filedescriptor in the
+`IoPacket`.
+To let the plugin do the I/O, just set `IOP.status` to
+`bareosfd.iostat_do_in_plugin`:
 
 .. code-block:: python
    :caption: enable direct I/O in python plugins
 
-       # do io in core
-       IOP.do_io_in_core = True
-       IOP.filedes = self.file.fileno()
+            if I_want_io_in_core:
+                # do io in core
+                IOP.filedes = self.file.fileno()
+                IOP.status =  bareosfd.iostat_do_in_core
+            else:
+                #  do io in plugin
+                IOP.status = bareosfd.iostat_do_in_plugin
 
 
 Description of the Bareos Python plugin API for Bareos < 20
