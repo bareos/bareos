@@ -159,6 +159,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - systemtests: improve webui testing [PR #1313]
 - dird: prohibit PAM usage with user ACL and Profiles in consoles [PR #1318]
 - webui: cleanup webui source tree [PR #1314]
+- dird: do device reservation as late as possible, i.e. after run before job scripts [PR #1273]
 
 ### Deprecated
 - make_catalog_backup.pl is now a shell wrapper script which will be removed in version 23.
