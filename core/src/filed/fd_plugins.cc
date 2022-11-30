@@ -1217,7 +1217,7 @@ int PluginCreateFile(JobControlRecord* jcr,
   rp.RegexWhere = jcr->RegexWhere;
   rp.replace = jcr->fd_impl->replace;
   rp.create_status = CF_ERROR;
-  rp.filedes = INVALID_FILEDESCRIPTOR;
+  rp.filedes = kInvalidFiledescriptor;
 
   Dmsg4(debuglevel,
         "call plugin createFile stream=%d type=%d LinkFI=%d File=%s\n",
@@ -1308,7 +1308,7 @@ bool PluginSetAttributes(JobControlRecord* jcr,
   rp.RegexWhere = jcr->RegexWhere;
   rp.replace = jcr->fd_impl->replace;
   rp.create_status = CF_ERROR;
-  rp.filedes = INVALID_FILEDESCRIPTOR;
+  rp.filedes = kInvalidFiledescriptor;
 
   PlugFunc(plugin)->setFileAttributes(jcr->plugin_ctx, &rp);
 
@@ -1792,7 +1792,7 @@ static int MyPluginBopen(BareosFilePacket* bfd,
   if (!jcr->plugin_ctx) { return 0; }
   plugin = (Plugin*)jcr->plugin_ctx->plugin;
 
-  io.filedes = -1;
+  io.filedes = kInvalidFiledescriptor;
 
   io.func = IO_OPEN;
   io.fname = fname;
@@ -1823,7 +1823,7 @@ static int MyPluginBopen(BareosFilePacket* bfd,
   if (io.status == IoStatus::do_io_in_core) { bfd->do_io_in_core = true; }
 
   if (bfd->do_io_in_core) {
-    if (io.filedes != -1) {
+    if (io.filedes != kInvalidFiledescriptor) {
       Dmsg1(
           debuglevel,
           "bopen: plugin asks for core to do the read/write via filedescriptor "
@@ -1875,7 +1875,7 @@ static int MyPluginBclose(BareosFilePacket* bfd)
   }
 
   Dmsg1(debuglevel, "plugin_bclose stat=%d\n", io.status);
-  bfd->filedes = -1;
+  bfd->filedes = kInvalidFiledescriptor;
   return io.status;
 }
 

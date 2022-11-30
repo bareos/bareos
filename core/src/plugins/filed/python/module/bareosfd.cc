@@ -2165,7 +2165,7 @@ static int PyIoPacket_init(PyIoPacket* self, PyObject* args, PyObject* kwds)
   self->whence = 0;
   self->offset = 0;
   self->win32 = false;
-  self->filedes = -1;
+  self->filedes = kInvalidFiledescriptor;
 
   if (!PyArg_ParseTupleAndKeywords(
           args, kwds, "|Hiiiosiiiilci", kwlist, &self->func, &self->count,
