@@ -402,7 +402,6 @@ static inline bool bndmp_read_data_from_block(JobControlRecord* jcr,
       rec = dcr->before_rec;
     }
 
-    Jmsg1(jcr, M_INFO, 0, _("rctx->rec is at %p.\n"), rctx->rec);
     if (rec != rctx->rec) {
       Dmsg1(400, _("recstream: %d, rctxstream: %d .\n"), rec->maskedStream,
             rctx->rec->maskedStream);
