@@ -158,6 +158,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui-selenium-test: use options instead of chrome_options [PR #1306]
 - systemtests: improve webui testing [PR #1313]
 - dird: prohibit PAM usage with user ACL and Profiles in consoles [PR #1318]
+- webui: cleanup webui source tree [PR #1314]
 
 ### Deprecated
 - make_catalog_backup.pl is now a shell wrapper script which will be removed in version 23.
@@ -380,4 +381,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1313]: https://github.com/bareos/bareos/pull/1313
 [PR #1317]: https://github.com/bareos/bareos/pull/1317
 [PR #1318]: https://github.com/bareos/bareos/pull/1318
+[PR #1314]: https://github.com/bareos/bareos/pull/1314
 [unreleased]: https://github.com/bareos/bareos/tree/master

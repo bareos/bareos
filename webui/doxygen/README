@@ -1,5 +1,0 @@
-This directory contains the doxygen configuration
-to create the doxygen docmumentation for bareos-webui.
-
-To create the documentation,
-run create_doxygen_documentation.sh in this directory.
