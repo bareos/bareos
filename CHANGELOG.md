@@ -5,6 +5,10 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Fixed
+
+- dird: fix director resource not showing when using `show director` [PR #1322]
+
 ## [21.1.5] - 2022-11-09
 
 ### Breaking Changes
@@ -630,4 +634,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1291]: https://github.com/bareos/bareos/pull/1291
 [PR #1301]: https://github.com/bareos/bareos/pull/1301
 [PR #1303]: https://github.com/bareos/bareos/pull/1303
+[PR #1322]: https://github.com/bareos/bareos/pull/1322
 [unreleased]: https://github.com/bareos/bareos/tree/master
