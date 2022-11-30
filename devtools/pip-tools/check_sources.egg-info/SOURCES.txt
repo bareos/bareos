@@ -1,5 +1,10 @@
 README.md
+pyproject.toml
 setup.py
+changelog_utils/__init__.py
+changelog_utils/add_entry.py
+changelog_utils/fileio.py
+changelog_utils/update_links.py
 check_sources.egg-info/PKG-INFO
 check_sources.egg-info/SOURCES.txt
 check_sources.egg-info/dependency_links.txt

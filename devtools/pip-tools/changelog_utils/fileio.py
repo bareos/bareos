@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -17,23 +17,13 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-from setuptools import setup, find_packages
 
-# this will not work for an installation outside of pipenv, because
-# dependencies are missing.
+def read_changelog_file(fp):
+    fp.seek(0)
+    return fp.readlines()
 
-setup(
-    name="check-sources",
-    version="0.0.1",
-    packages=find_packages(),
-    entry_points={
-        "console_scripts": [
-            "check-sources=check_sources.__main__:main",
-            "bareos-check-sources=check_sources.__main__:main",
-            "add-copyright-header=check_sources.add_copyright_header:main",
-            "pr-tool=pr_tool.main:main",
-            "update-changelog-links=changelog_utils.update_links:main",
-            "add-changelog-entry=changelog_utils.add_entry:main",
-        ]
-    },
-)
+
+def write_changelog_file(fp, lines):
+    fp.seek(0)
+    fp.truncate()
+    fp.writelines(lines)
