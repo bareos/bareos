@@ -1,0 +1,61 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# Run a first job that has a runscript BEFORE,
+# then run a second job while the first is executing the script.
+# First job should not be reserving a device while in RunScript Before
+# The second job should not wait for the first to reserve a device.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+sleeping_job="runscriptjob"
+regular_job="backup-bareos-fd"
+reservationlog="$tmp/reservation-order.out"
+
+rm -f $reservationlog
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $reservationlog
+run job=${sleeping_job} level=Full yes
+@sleep 3
+run job=${regular_job} storage=File2 level=Full yes
+wait JobName=$regular_job
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+sleepjob_id=$(awk '/Job queued./{i++}i==1 {print; exit;}' "$reservationlog" | sed -n -e 's/^.*JobId=//p')
+regularjob_id=$(awk '/Job queued./{i++}i==2 {print; exit;}' "$reservationlog" | sed -n -e 's/^.*JobId=//p')
+
+if [[ $(grep "JobId $sleepjob_id" "$reservationlog" | tail -1 | grep "run ClientBeforeJob \"sleep 10\"") == "" ]]; then
+    echo "Log contains more entries after 'sleep 10' for sleeping job. This means the regular job had to wait for it to finish first."
+fi
+
+expect_not_grep "JobId $sleepjob_id: Using Device \"FileStorage2\" to write." \
+                "$reservationlog" \
+                "Sleeping job should not be reserving the device!"
+
+expect_grep "JobId $regularjob_id: Using Device \"FileStorage2\" to write." \
+            "$reservationlog" \
+            "Regular job did not reserve the device while sleeping job was sleeping!"
+
+expect_grep "JobStatus=OK" \
+            "$reservationlog" \
+            "Regular job did not finish correctly"
+
+end_test

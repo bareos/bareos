@@ -117,25 +117,185 @@ static inline bool SendBootstrapFileToSd(JobControlRecord* jcr,
   return true;
 }
 
-/** Start a job with the Storage daemon
- */
-bool StartStorageDaemonJob(JobControlRecord* jcr,
-                           alist<StorageResource*>* read_storage,
-                           alist<StorageResource*>* write_storage,
-                           bool send_bsr)
+bool ReserveReadDevice(JobControlRecord* jcr,
+                       alist<StorageResource*>* read_storage)
 {
-  bool ok = true;
+  BareosSocket* sd_socket = jcr->store_bsock;
   StorageResource* storage = nullptr;
-  char auth_key[100];
-  const char* fileset_md5;
-  PoolMem StoreName, device_name, pool_name, pool_type, media_type,
-      backup_format;
-  PoolMem job_name, client_name, fileset_name;
+  PoolMem device_name;
+  std::string StoreName{};
+  std::string pool_name{};
+  std::string pool_type{};
+  std::string media_type{};
+  bool ok = true;
   int copy = 0;
   int stripe = 0;
-  uint64_t remainingquota = 0;
-  char ed1[30], ed2[30];
-  BareosSocket* sd = jcr->store_bsock;
+  /*
+   * We have two loops here. The first comes from the
+   *  Storage = associated with the Job, and we need
+   *  to attach to each one.
+   * The inner loop loops over all the alternative devices
+   *  associated with each Storage. It selects the first
+   *  available one.
+   *
+   */
+  // Do read side of storage daemon
+  if (read_storage) {
+    // For the moment, only migrate, copy and vbackup have rpool
+    if (jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_COPY)
+        || (jcr->is_JobType(JT_BACKUP) && jcr->is_JobLevel(L_VIRTUAL_FULL))) {
+      pool_type = jcr->dir_impl->res.rpool->pool_type;
+      pool_name = jcr->dir_impl->res.rpool->resource_name_;
+    } else {
+      pool_type = jcr->dir_impl->res.pool->pool_type;
+      pool_name = jcr->dir_impl->res.pool->resource_name_;
+    }
+    BashSpaces(pool_type);
+    BashSpaces(pool_name);
+    foreach_alist (storage, read_storage) {
+      Dmsg1(100, "Rstore=%s\n", storage->resource_name_);
+      StoreName = storage->resource_name_;
+      BashSpaces(StoreName);
+      media_type = storage->media_type;
+      BashSpaces(media_type);
+      sd_socket->fsend(use_storage, StoreName.c_str(), media_type.c_str(),
+                       pool_name.c_str(), pool_type.c_str(), 0, copy, stripe);
+      Dmsg1(100, "read_storage >stored: %s", sd_socket->msg);
+      DeviceResource* dev = nullptr;
+      /* Loop over alternative storage Devices until one is OK */
+      foreach_alist (dev, storage->device) {
+        PmStrcpy(device_name, dev->resource_name_);
+        BashSpaces(device_name);
+        sd_socket->fsend(use_device, device_name.c_str());
+        Dmsg1(100, ">stored: %s", sd_socket->msg);
+      }
+      sd_socket->signal(BNET_EOD);  // end of Device
+    }
+    sd_socket->signal(BNET_EOD);  // end of Storages
+    if (BgetDirmsg(sd_socket) > 0) {
+      Dmsg1(100, "<stored: %s", sd_socket->msg);
+      // ****FIXME**** save actual device name
+      ok = sscanf(sd_socket->msg, OK_device, device_name.c_str()) == 1;
+    } else {
+      ok = false;
+    }
+    if (ok) {
+      Jmsg(jcr, M_INFO, 0, _("Using Device \"%s\" to read.\n"),
+           device_name.c_str());
+    }
+  }
+
+  if (!ok) {
+    if (jcr->store_bsock->msg[0]) {
+      Jmsg(jcr, M_FATAL, 0,
+           _("\n"
+             "     Storage daemon didn't accept Device \"%s\" because:\n     "
+             "%s\n"),
+           device_name.c_str(), jcr->store_bsock->msg);
+    } else {
+      Jmsg(jcr, M_FATAL, 0,
+           _("\n"
+             "     Storage daemon didn't accept Device \"%s\" command.\n"),
+           device_name.c_str());
+    }
+  }
+
+  return ok;
+}
+
+bool ReserveWriteDevice(JobControlRecord* jcr,
+                        alist<StorageResource*>* write_storage)
+{
+  PoolMem device_name;
+  std::string StoreName{};
+  std::string pool_name{};
+  std::string pool_type{};
+  std::string media_type{};
+  bool ok = true;
+  int copy = 0;
+  int stripe = 0;
+  /*
+   * We have two loops here. The first comes from the
+   *  Storage = associated with the Job, and we need
+   *  to attach to each one.
+   * The inner loop loops over all the alternative devices
+   *  associated with each Storage. It selects the first
+   *  available one.
+   *
+   */
+  // Do write side of storage daemon
+  if (write_storage) {
+    pool_type = jcr->dir_impl->res.pool->pool_type;
+    pool_name = jcr->dir_impl->res.pool->resource_name_;
+    BashSpaces(pool_type);
+    BashSpaces(pool_name);
+    StorageResource* storage = nullptr;
+    foreach_alist (storage, write_storage) {
+      StoreName = storage->resource_name_;
+      BashSpaces(StoreName);
+      media_type = storage->media_type;
+      BashSpaces(media_type);
+      jcr->store_bsock->fsend(use_storage, StoreName.c_str(),
+                              media_type.c_str(), pool_name.c_str(),
+                              pool_type.c_str(), 1, copy, stripe);
+
+      Dmsg1(100, "write_storage >stored: %s", jcr->store_bsock->msg);
+      DeviceResource* dev = nullptr;
+      // Loop over alternative storage Devices until one is OK
+      foreach_alist (dev, storage->device) {
+        PmStrcpy(device_name, dev->resource_name_);
+        BashSpaces(device_name);
+        jcr->store_bsock->fsend(use_device, device_name.c_str());
+        Dmsg1(100, ">stored: %s", jcr->store_bsock->msg);
+      }
+      jcr->store_bsock->signal(BNET_EOD);  // end of Devices
+    }
+    jcr->store_bsock->signal(BNET_EOD);  // end of Storages
+    if (BgetDirmsg(jcr->store_bsock) > 0) {
+      Dmsg1(100, "<stored: %s", jcr->store_bsock->msg);
+      // ****FIXME**** save actual device name
+      ok = sscanf(jcr->store_bsock->msg, OK_device, device_name.c_str()) == 1;
+    } else {
+      ok = false;
+    }
+    if (ok) {
+      Jmsg(jcr, M_INFO, 0, _("Using Device \"%s\" to write.\n"),
+           device_name.c_str());
+    }
+  }
+  if (!ok) {
+    if (jcr->store_bsock->msg[0]) {
+      Jmsg(jcr, M_FATAL, 0,
+           _("\n"
+             "     Storage daemon didn't accept Device \"%s\" because:\n     "
+             "%s\n"),
+           device_name.c_str(), jcr->store_bsock->msg);
+    } else {
+      Jmsg(jcr, M_FATAL, 0,
+           _("\n"
+             "     Storage daemon didn't accept Device \"%s\" command.\n"),
+           device_name.c_str());
+    }
+  }
+
+  return ok;
+}
+
+bool ReserveReadAndWriteDevices(JobControlRecord* jcr,
+                                alist<StorageResource*>* read_storage,
+                                alist<StorageResource*>* write_storage)
+{
+  if (!ReserveReadDevice(jcr, read_storage)) { return false; }
+  if (!ReserveWriteDevice(jcr, write_storage)) { return false; }
+
+  return true;
+}
+
+/** Start a job with the Storage daemon
+ */
+bool StartStorageDaemonJob(JobControlRecord* jcr, bool send_bsr)
+{
+  BareosSocket* sd_socket = jcr->store_bsock;
 
   /*
    * Before actually starting a new Job on the SD make sure we send any specific
@@ -143,31 +303,35 @@ bool StartStorageDaemonJob(JobControlRecord* jcr,
    */
   if (!SendStoragePluginOptions(jcr)) {
     Jmsg(jcr, M_FATAL, 0,
-         _("Storage daemon rejected Plugin Options command: %s\n"), sd->msg);
+         _("Storage daemon rejected Plugin Options command: %s\n"),
+         sd_socket->msg);
     return false;
   }
 
   // Now send JobId and permissions, and get back the authorization key.
-  PmStrcpy(job_name, jcr->dir_impl->res.job->resource_name_);
+  std::string job_name = jcr->dir_impl->res.job->resource_name_;
   BashSpaces(job_name);
 
+  std::string client_name;
   if (jcr->dir_impl->res.client) {
-    PmStrcpy(client_name, jcr->dir_impl->res.client->resource_name_);
+    client_name = jcr->dir_impl->res.client->resource_name_;
   } else {
-    PmStrcpy(client_name, "**None**");
+    client_name = "**None**";
   }
   BashSpaces(client_name);
-
+  std::string fileset_name;
   if (jcr->dir_impl->res.fileset) {
-    PmStrcpy(fileset_name, jcr->dir_impl->res.fileset->resource_name_);
+    fileset_name = jcr->dir_impl->res.fileset->resource_name_;
   } else {
-    PmStrcpy(fileset_name, "**None**");
+    fileset_name = "**None**";
   }
   BashSpaces(fileset_name);
 
-  PmStrcpy(backup_format, jcr->dir_impl->backup_format);
+  std::string backup_format;
+  backup_format = jcr->dir_impl->backup_format;
   BashSpaces(backup_format);
 
+  const char* fileset_md5;
   if (jcr->dir_impl->res.fileset && jcr->dir_impl->res.fileset->MD5[0] == 0) {
     bstrncpy(jcr->dir_impl->res.fileset->MD5, "**Dummy**",
              sizeof(jcr->dir_impl->res.fileset->MD5));
@@ -185,33 +349,37 @@ bool StartStorageDaemonJob(JobControlRecord* jcr,
    * for the same jobid.
    */
   if (jcr->dir_impl->reschedule_count) {
-    sd->fsend("cancel Job=%s\n", jcr->Job);
-    while (sd->recv() >= 0) { continue; }
+    sd_socket->fsend("cancel Job=%s\n", jcr->Job);
+    while (sd_socket->recv() >= 0) { continue; }
   }
 
   // Retrieve available quota 0 bytes means dont perform the check
-  remainingquota = FetchRemainingQuotas(jcr);
+
+  uint64_t remainingquota = FetchRemainingQuotas(jcr);
   Dmsg1(50, "Remainingquota: %llu\n", remainingquota);
 
-  sd->fsend(jobcmd, edit_int64(jcr->JobId, ed1), jcr->Job, job_name.c_str(),
-            client_name.c_str(), jcr->getJobType(), jcr->getJobLevel(),
-            fileset_name.c_str(), !jcr->dir_impl->res.pool->catalog_files,
-            jcr->dir_impl->res.job->SpoolAttributes, fileset_md5,
-            jcr->dir_impl->spool_data,
-            jcr->dir_impl->res.job->PreferMountedVolumes,
-            edit_int64(jcr->dir_impl->spool_size, ed2), jcr->rerunning,
-            jcr->VolSessionId, jcr->VolSessionTime, remainingquota,
-            jcr->getJobProtocol(), backup_format.c_str());
+  char ed1[30];
+  char ed2[30];
+  sd_socket->fsend(
+      jobcmd, edit_int64(jcr->JobId, ed1), jcr->Job, job_name.c_str(),
+      client_name.c_str(), jcr->getJobType(), jcr->getJobLevel(),
+      fileset_name.c_str(), !jcr->dir_impl->res.pool->catalog_files,
+      jcr->dir_impl->res.job->SpoolAttributes, fileset_md5,
+      jcr->dir_impl->spool_data, jcr->dir_impl->res.job->PreferMountedVolumes,
+      edit_int64(jcr->dir_impl->spool_size, ed2), jcr->rerunning,
+      jcr->VolSessionId, jcr->VolSessionTime, remainingquota,
+      jcr->getJobProtocol(), backup_format.c_str());
 
-  Dmsg1(100, ">stored: %s", sd->msg);
-  if (BgetDirmsg(sd) > 0) {
-    Dmsg1(100, "<stored: %s", sd->msg);
-    if (sscanf(sd->msg, OK_job, &jcr->VolSessionId, &jcr->VolSessionTime,
+  Dmsg1(100, ">stored: %s", sd_socket->msg);
+  if (BgetDirmsg(sd_socket) > 0) {
+    Dmsg1(100, "<stored: %s", sd_socket->msg);
+    char auth_key[100];
+    if (sscanf(sd_socket->msg, OK_job, &jcr->VolSessionId, &jcr->VolSessionTime,
                &auth_key)
         != 3) {
-      Dmsg1(100, "BadJob=%s\n", sd->msg);
+      Dmsg1(100, "BadJob=%s\n", sd_socket->msg);
       Jmsg(jcr, M_FATAL, 0, _("Storage daemon rejected Job command: %s\n"),
-           sd->msg);
+           sd_socket->msg);
       return false;
     } else {
       BfreeAndNull(jcr->sd_auth_key);
@@ -220,13 +388,14 @@ bool StartStorageDaemonJob(JobControlRecord* jcr,
     }
   } else {
     Jmsg(jcr, M_FATAL, 0, _("<stored: bad response to Job command: %s\n"),
-         sd->bstrerror());
+         sd_socket->bstrerror());
     return false;
   }
 
   if (send_bsr
-      && (!SendBootstrapFileToSd(jcr, sd)
-          || !response(jcr, sd, OKbootstrap, "Bootstrap", DISPLAY_ERROR))) {
+      && (!SendBootstrapFileToSd(jcr, sd_socket)
+          || !response(jcr, sd_socket, OKbootstrap, "Bootstrap",
+                       DISPLAY_ERROR))) {
     return false;
   }
 
@@ -237,117 +406,7 @@ bool StartStorageDaemonJob(JobControlRecord* jcr,
   if (!SendSecureEraseReqToSd(jcr)) {
     Dmsg1(400, "Unexpected %s Secure Erase Reply\n", "SD");
   }
-
-  /*
-   * We have two loops here. The first comes from the
-   *  Storage = associated with the Job, and we need
-   *  to attach to each one.
-   * The inner loop loops over all the alternative devices
-   *  associated with each Storage. It selects the first
-   *  available one.
-   *
-   */
-  /* Do read side of storage daemon */
-  if (ok && read_storage) {
-    /* For the moment, only migrate, copy and vbackup have rpool */
-    if (jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_COPY)
-        || (jcr->is_JobType(JT_BACKUP) && jcr->is_JobLevel(L_VIRTUAL_FULL))) {
-      PmStrcpy(pool_type, jcr->dir_impl->res.rpool->pool_type);
-      PmStrcpy(pool_name, jcr->dir_impl->res.rpool->resource_name_);
-    } else {
-      PmStrcpy(pool_type, jcr->dir_impl->res.pool->pool_type);
-      PmStrcpy(pool_name, jcr->dir_impl->res.pool->resource_name_);
-    }
-    BashSpaces(pool_type);
-    BashSpaces(pool_name);
-    foreach_alist (storage, read_storage) {
-      Dmsg1(100, "Rstore=%s\n", storage->resource_name_);
-      PmStrcpy(StoreName, storage->resource_name_);
-      BashSpaces(StoreName);
-      PmStrcpy(media_type, storage->media_type);
-      BashSpaces(media_type);
-      sd->fsend(use_storage, StoreName.c_str(), media_type.c_str(),
-                pool_name.c_str(), pool_type.c_str(), 0, copy, stripe);
-      Dmsg1(100, "read_storage >stored: %s", sd->msg);
-      DeviceResource* dev = nullptr;
-      /* Loop over alternative storage Devices until one is OK */
-      foreach_alist (dev, storage->device) {
-        PmStrcpy(device_name, dev->resource_name_);
-        BashSpaces(device_name);
-        sd->fsend(use_device, device_name.c_str());
-        Dmsg1(100, ">stored: %s", sd->msg);
-      }
-      sd->signal(BNET_EOD); /* end of Devices */
-    }
-    sd->signal(BNET_EOD); /* end of Storages */
-    if (BgetDirmsg(sd) > 0) {
-      Dmsg1(100, "<stored: %s", sd->msg);
-      /* ****FIXME**** save actual device name */
-      ok = sscanf(sd->msg, OK_device, device_name.c_str()) == 1;
-    } else {
-      ok = false;
-    }
-    if (ok) {
-      Jmsg(jcr, M_INFO, 0, _("Using Device \"%s\" to read.\n"),
-           device_name.c_str());
-    }
-  }
-
-  /* Do write side of storage daemon */
-  if (ok && write_storage) {
-    PmStrcpy(pool_type, jcr->dir_impl->res.pool->pool_type);
-    PmStrcpy(pool_name, jcr->dir_impl->res.pool->resource_name_);
-    BashSpaces(pool_type);
-    BashSpaces(pool_name);
-    foreach_alist (storage, write_storage) {
-      PmStrcpy(StoreName, storage->resource_name_);
-      BashSpaces(StoreName);
-      PmStrcpy(media_type, storage->media_type);
-      BashSpaces(media_type);
-      sd->fsend(use_storage, StoreName.c_str(), media_type.c_str(),
-                pool_name.c_str(), pool_type.c_str(), 1, copy, stripe);
-
-      Dmsg1(100, "write_storage >stored: %s", sd->msg);
-      DeviceResource* dev = nullptr;
-      /* Loop over alternative storage Devices until one is OK */
-      foreach_alist (dev, storage->device) {
-        PmStrcpy(device_name, dev->resource_name_);
-        BashSpaces(device_name);
-        sd->fsend(use_device, device_name.c_str());
-        Dmsg1(100, ">stored: %s", sd->msg);
-      }
-      sd->signal(BNET_EOD); /* end of Devices */
-    }
-    sd->signal(BNET_EOD); /* end of Storages */
-    if (BgetDirmsg(sd) > 0) {
-      Dmsg1(100, "<stored: %s", sd->msg);
-      /* ****FIXME**** save actual device name */
-      ok = sscanf(sd->msg, OK_device, device_name.c_str()) == 1;
-    } else {
-      ok = false;
-    }
-    if (ok) {
-      Jmsg(jcr, M_INFO, 0, _("Using Device \"%s\" to write.\n"),
-           device_name.c_str());
-    }
-  }
-  if (!ok) {
-    PoolMem err_msg;
-    if (sd->msg[0]) {
-      PmStrcpy(err_msg, sd->msg); /* save message */
-      Jmsg(jcr, M_FATAL, 0,
-           _("\n"
-             "     Storage daemon didn't accept Device \"%s\" because:\n     "
-             "%s\n"),
-           device_name.c_str(), err_msg.c_str() /* sd->msg */);
-    } else {
-      Jmsg(jcr, M_FATAL, 0,
-           _("\n"
-             "     Storage daemon didn't accept Device \"%s\" command.\n"),
-           device_name.c_str());
-    }
-  }
-  return ok;
+  return true;
 }
 
 /** Start a thread to handle Storage daemon messages and

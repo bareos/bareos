@@ -3,7 +3,7 @@ set -e
 set -o pipefail
 set -u
 #
-# Run multiple backups in parallel in small volumes and
+# Run multiple backups in parallel and
 #   then restore them.
 #
 TestName="$(basename "$(pwd)")"
@@ -17,9 +17,12 @@ export TestName
 
 start_test
 
-backupjob="slow-backup-small-volumes"
-parallelbackuplog="$tmp/small-volumes-parallel-backup.out"
-parallelrestorelog="$tmp/small-volumes-parallel-restore.out"
+backupjob="slow-backup-big-volume"
+parallelbackuplog="$tmp/backup-parallel-jobs.out"
+parallelrestorelog="$tmp/restore-parallel-jobs.out"
+
+rm -f $parallelbackuplog
+rm -f $parallelrestorelog
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
@@ -33,18 +36,28 @@ run job=${backupjob} level=Full yes
 run job=${backupjob} level=Full yes
 wait
 messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+backup_jobids=($(grep 'Job queued.' $parallelbackuplog | sed -n -e 's/^.*JobId=//p'))
+
+rm -rf $tmp/restore1
+rm -rf $tmp/restore2
+rm -rf $tmp/restore3
+rm -rf $tmp/restore4
+rm -rf $tmp/restore5
+rm -rf $tmp/restore6
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out $parallelrestorelog
-restore jobid=13 where=$tmp/restore13 all done yes
-wait
-restore jobid=14 where=$tmp/restore14 all done yes
-wait
-restore jobid=15 where=$tmp/restore15 all done yes
-wait
-restore jobid=16 where=$tmp/restore16 all done yes
-wait
-restore jobid=17 where=$tmp/restore17 all done yes
-wait
-restore jobid=18 where=$tmp/restore18 all done yes
+restore jobid=${backup_jobids[0]} where=$tmp/restore1 all done yes
+restore jobid=${backup_jobids[1]} where=$tmp/restore2 all done yes
+restore jobid=${backup_jobids[2]} where=$tmp/restore3 all done yes
+restore jobid=${backup_jobids[3]} where=$tmp/restore4 all done yes
+restore jobid=${backup_jobids[4]} where=$tmp/restore5 all done yes
+restore jobid=${backup_jobids[5]} where=$tmp/restore6 all done yes
 wait
 messages
 quit
@@ -62,7 +75,7 @@ if [[ $(grep -c "Termination:.*Restore OK" "$parallelrestorelog") -ne "6" ]]; th
     estat=2
 fi
 
-for i in {13..18}; do
+for i in {1..6}; do
     restoredir="$tmp/restore$i"
     check_restore_diff "${BackupDirectory}" "$restoredir"
 done

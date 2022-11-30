@@ -28,6 +28,7 @@ You can use following options may be specified in the body of the RunScript:
 
 Any output sent by the command to standard output will be included in the Bareos job report. The command string must be a valid program name or name of a shell script.
 
+RunScript commands that are configured to run "before" a job, are also executed before the device reservation.
 
 
 .. warning::

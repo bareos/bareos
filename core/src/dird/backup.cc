@@ -368,6 +368,108 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
   return true;
 }
 
+static void TerminateBackupWithError(JobControlRecord* jcr)
+{
+  jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+  WaitForJobTermination(jcr, me->FDConnectTimeout);
+}
+
+static void CloseFdConnection(JobControlRecord* jcr)
+{
+  if (jcr->file_bsock) {
+    jcr->file_bsock->signal(BNET_TERMINATE);
+    jcr->file_bsock->close();
+    delete jcr->file_bsock;
+    jcr->file_bsock = nullptr;
+  }
+}
+
+static bool ConfigureTlsRequirementsPassiveClient(JobControlRecord* jcr)
+{
+  ClientResource* client = jcr->dir_impl->res.client;
+  StorageResource* store = jcr->dir_impl->res.write_storage;
+  char* connection_target_address;
+
+  if (!jcr->passive_client) {
+    // TLS Requirement
+
+    TlsPolicy tls_policy;
+    if (jcr->dir_impl->res.client->connection_successful_handshake_
+        != ClientConnectionHandshakeMode::kTlsFirst) {
+      tls_policy = store->GetPolicy();
+    } else {
+      tls_policy = store->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto
+                                            : TlsPolicy::kBnetTlsNone;
+    }
+
+    Dmsg1(200, "Tls Policy for active client is: %d\n", tls_policy);
+
+    connection_target_address = StorageAddressToContact(client, store);
+
+    jcr->file_bsock->fsend(storaddrcmd, connection_target_address,
+                           store->SDport, tls_policy);
+    if (!response(jcr, jcr->file_bsock, OKstore, "Storage", DISPLAY_ERROR)) {
+      Dmsg0(200, "Error from active client on storeaddrcmd\n");
+      TerminateBackupWithError(jcr);
+      return false;
+    }
+
+  } else {  // passive client
+
+    TlsPolicy tls_policy;
+    if (jcr->dir_impl->res.client->connection_successful_handshake_
+        != ClientConnectionHandshakeMode::kTlsFirst) {
+      tls_policy = client->GetPolicy();
+    } else {
+      tls_policy = client->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto
+                                             : TlsPolicy::kBnetTlsNone;
+    }
+    Dmsg1(200, "Tls Policy for passive client is: %d\n", tls_policy);
+
+    connection_target_address = ClientAddressToContact(client, store);
+
+    jcr->store_bsock->fsend(passiveclientcmd, connection_target_address,
+                            client->FDport, tls_policy);
+    Bmicrosleep(2, 0);
+    if (!response(jcr, jcr->store_bsock, OKpassiveclient, "Passive client",
+                  DISPLAY_ERROR)) {
+      TerminateBackupWithError(jcr);
+      return false;
+    }
+  }  // if (!jcr->passive_client)
+  return true;
+}
+
+static bool ConfigureMessageThread(JobControlRecord* jcr)
+{
+  /*
+   * When the client is not in passive mode we can put the SD in
+   * listen mode for the FD connection.
+   */
+  jcr->passive_client = jcr->dir_impl->res.client->passive;
+
+  if (!ConfigureTlsRequirementsPassiveClient(jcr)) { return false; }
+
+  /*
+   * Start the job prior to starting the message thread below
+   * to avoid two threads from using the BareosSocket structure at
+   * the same time.
+   */
+  if (!jcr->store_bsock->fsend("run")) { return false; }
+
+  /*
+   * Now start a Storage daemon message thread.  Note,
+   * this thread is used to provide the catalog services
+   * for the backup job, including inserting the attributes
+   * into the catalog.  See CatalogUpdate() in catreq.c
+   */
+  if (!StartStorageDaemonMessageThread(jcr)) { return false; }
+
+  Dmsg0(150, "Storage daemon connection OK\n");
+
+  return true;
+}
+
 /*
  * Do a backup of the specified FileSet
  *
@@ -376,18 +478,8 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
  */
 bool DoNativeBackup(JobControlRecord* jcr)
 {
-  int status;
-  BareosSocket* fd = NULL;
-  BareosSocket* sd = NULL;
-  StorageResource* store = NULL;
-  ClientResource* client = NULL;
-  char ed1[100];
-  db_int64_ctx job;
-  PoolMem buf;
-
-  /* Print Job Start message */
-  Jmsg(jcr, M_INFO, 0, _("Start Backup JobId %s, Job=%s\n"),
-       edit_uint64(jcr->JobId, ed1), jcr->Job);
+  Jmsg(jcr, M_INFO, 0, _("Start Backup JobId %llu, Job=%s\n"), jcr->JobId,
+       jcr->Job);
 
   jcr->setJobStatusWithPriorityCheck(JS_Running);
   Dmsg2(100, "JobId=%d JobLevel=%c\n", jcr->dir_impl->jr.JobId,
@@ -420,64 +512,53 @@ bool DoNativeBackup(JobControlRecord* jcr)
   if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
     return false;
   }
-  sd = jcr->store_bsock;
 
-  if (!StartStorageDaemonJob(jcr, NULL,
-                             jcr->dir_impl->res.write_storage_list)) {
-    return false;
-  }
-
-  /*
-   * When the client is not in passive mode we can put the SD in
-   * listen mode for the FD connection.
-   */
-  jcr->passive_client = jcr->dir_impl->res.client->passive;
-  if (!jcr->passive_client) {
-    /*
-     * Start the job prior to starting the message thread below
-     * to avoid two threads from using the BareosSocket structure at
-     * the same time.
-     */
-    if (!sd->fsend("run")) { return false; }
-
-    /*
-     * Now start a Storage daemon message thread.  Note,
-     * this thread is used to provide the catalog services
-     * for the backup job, including inserting the attributes
-     * into the catalog.  See CatalogUpdate() in catreq.c
-     */
-    if (!StartStorageDaemonMessageThread(jcr)) { return false; }
-
-    Dmsg0(150, "Storage daemon connection OK\n");
-  }
+  if (!StartStorageDaemonJob(jcr)) { return false; }
 
   jcr->setJobStatusWithPriorityCheck(JS_WaitFD);
   if (!ConnectToFileDaemon(jcr, 10, me->FDConnectTimeout, true)) {
-    goto bail_out;
+    TerminateBackupWithError(jcr);
+    return false;
   }
   Dmsg1(120, "jobid: %d: connected\n", jcr->JobId);
   SendJobInfoToFileDaemon(jcr);
-  fd = jcr->file_bsock;
 
   if (jcr->passive_client && jcr->dir_impl->FDVersion < FD_VERSION_51) {
     Jmsg(jcr, M_FATAL, 0,
          _("Client \"%s\" doesn't support passive client mode. "
            "Please upgrade your client or disable compat mode.\n"),
          jcr->dir_impl->res.client->resource_name_);
-    goto close_fd;
+    CloseFdConnection(jcr);
+    TerminateBackupWithError(jcr);
+    return false;
   }
 
   jcr->setJobStatusWithPriorityCheck(JS_Running);
 
-  if (!SendLevelCommand(jcr)) { goto bail_out; }
+  if (!SendLevelCommand(jcr)) {
+    TerminateBackupWithError(jcr);
+    return false;
+  }
 
-  if (!SendIncludeList(jcr)) { goto bail_out; }
+  if (!SendIncludeList(jcr)) {
+    TerminateBackupWithError(jcr);
+    return false;
+  }
 
-  if (!SendExcludeList(jcr)) { goto bail_out; }
+  if (!SendExcludeList(jcr)) {
+    TerminateBackupWithError(jcr);
+    return false;
+  }
 
-  if (!SendPluginOptions(jcr)) { goto bail_out; }
+  if (!SendPluginOptions(jcr)) {
+    TerminateBackupWithError(jcr);
+    return false;
+  }
 
-  if (!SendPreviousRestoreObjects(jcr)) { goto bail_out; }
+  if (!SendPreviousRestoreObjects(jcr)) {
+    TerminateBackupWithError(jcr);
+    return false;
+  }
 
   if (!SendSecureEraseReqToFd(jcr)) {
     Dmsg1(500, "Unexpected %s secure erase\n", "client");
@@ -490,79 +571,16 @@ bool DoNativeBackup(JobControlRecord* jcr)
   }
 
   if (jcr->max_bandwidth > 0) {
-    SendBwlimitToFd(jcr, jcr->Job); /* Old clients don't have this command */
+    SendBwlimitToFd(jcr, jcr->Job);  // Old clients don't have this command
   }
-
-  client = jcr->dir_impl->res.client;
-  store = jcr->dir_impl->res.write_storage;
-  char* connection_target_address;
-
-  if (!jcr->passive_client) {
-    // TLS Requirement
-
-    TlsPolicy tls_policy;
-    if (jcr->dir_impl->res.client->connection_successful_handshake_
-        != ClientConnectionHandshakeMode::kTlsFirst) {
-      tls_policy = store->GetPolicy();
-    } else {
-      tls_policy = store->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto
-                                            : TlsPolicy::kBnetTlsNone;
-    }
-
-    Dmsg1(200, "Tls Policy for active client is: %d\n", tls_policy);
-
-    connection_target_address = StorageAddressToContact(client, store);
-
-    fd->fsend(storaddrcmd, connection_target_address, store->SDport,
-              tls_policy);
-    if (!response(jcr, fd, OKstore, "Storage", DISPLAY_ERROR)) {
-      Dmsg0(200, "Error from active client on storeaddrcmd\n");
-      goto bail_out;
-    }
-
-  } else { /* passive client */
-
-    TlsPolicy tls_policy;
-    if (jcr->dir_impl->res.client->connection_successful_handshake_
-        != ClientConnectionHandshakeMode::kTlsFirst) {
-      tls_policy = client->GetPolicy();
-    } else {
-      tls_policy = client->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto
-                                             : TlsPolicy::kBnetTlsNone;
-    }
-    Dmsg1(200, "Tls Policy for passive client is: %d\n", tls_policy);
-
-    connection_target_address = ClientAddressToContact(client, store);
-
-    sd->fsend(passiveclientcmd, connection_target_address, client->FDport,
-              tls_policy);
-    Bmicrosleep(2, 0);
-    if (!response(jcr, sd, OKpassiveclient, "Passive client", DISPLAY_ERROR)) {
-      goto bail_out;
-    }
-
-    /*
-     * Start the job prior to starting the message thread below
-     * to avoid two threads from using the BareosSocket structure at
-     * the same time.
-     */
-    if (!jcr->store_bsock->fsend("run")) { return false; }
-
-    /*
-     * Now start a Storage daemon message thread.  Note,
-     * this thread is used to provide the catalog services
-     * for the backup job, including inserting the attributes
-     * into the catalog.  See CatalogUpdate() in catreq.c
-     */
-    if (!StartStorageDaemonMessageThread(jcr)) { return false; }
-
-    Dmsg0(150, "Storage daemon connection OK\n");
-  } /* if (!jcr->passive_client) */
 
   // Declare the job started to start the MaxRunTime check
   jcr->setJobStarted();
 
-  if (!SendRunscriptsCommands(jcr)) { goto bail_out; }
+  if (!SendRunscriptsCommands(jcr)) {
+    TerminateBackupWithError(jcr);
+    return false;
+  }
 
   /*
    * We re-update the job start record so that the start
@@ -574,7 +592,7 @@ bool DoNativeBackup(JobControlRecord* jcr)
    * in the next job run because in that case, their date
    * is after the start of this run.
    */
-  jcr->start_time = time(NULL);
+  jcr->start_time = time(nullptr);
   jcr->dir_impl->jr.StartTime = jcr->start_time;
   if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
@@ -584,16 +602,28 @@ bool DoNativeBackup(JobControlRecord* jcr)
    * If backup is in accurate mode, we send the list of
    * all files to FD.
    */
-  if (!SendAccurateCurrentFiles(jcr)) { goto bail_out; /* error */ }
+  if (!SendAccurateCurrentFiles(jcr)) {
+    TerminateBackupWithError(jcr);
+    return false;  // error
+  }
 
-  fd->fsend(backupcmd, jcr->JobFiles);
-  Dmsg1(100, ">filed: %s", fd->msg);
-  if (!response(jcr, fd, OKbackup, "Backup", DISPLAY_ERROR)) { goto bail_out; }
+  if (!ReserveWriteDevice(jcr, jcr->dir_impl->res.write_storage_list)) {
+    return false;
+  }
 
-  status = WaitForJobTermination(jcr);
+  if (!ConfigureMessageThread(jcr)) { return false; }
+
+  jcr->file_bsock->fsend(backupcmd, jcr->JobFiles);
+  Dmsg1(100, ">filed: %s", jcr->file_bsock->msg);
+  if (!response(jcr, jcr->file_bsock, OKbackup, "Backup", DISPLAY_ERROR)) {
+    TerminateBackupWithError(jcr);
+    return false;
+  }
+
+  int status = WaitForJobTermination(jcr);
   if (jcr->batch_started) {
     jcr->db_batch->WriteBatchFileRecords(
-        jcr); /* used by bulk batch file insert */
+        jcr);  // used by bulk batch file insert
   }
   if (jcr->HasBase && !jcr->db->CommitBaseFileAttributesRecord(jcr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
@@ -609,20 +639,6 @@ bool DoNativeBackup(JobControlRecord* jcr)
     NativeBackupCleanup(jcr, status);
     return true;
   }
-
-  return false;
-
-close_fd:
-  if (jcr->file_bsock) {
-    jcr->file_bsock->signal(BNET_TERMINATE);
-    jcr->file_bsock->close();
-    delete jcr->file_bsock;
-    jcr->file_bsock = NULL;
-  }
-
-bail_out:
-  jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
-  WaitForJobTermination(jcr, me->FDConnectTimeout);
 
   return false;
 }
@@ -645,7 +661,7 @@ int WaitForJobTermination(JobControlRecord* jcr, int timeout)
   uint64_t JobBytes = 0;
   int VSS = 0;
   int Encrypt = 0;
-  btimer_t* tid = NULL;
+  btimer_t* tid = nullptr;
 
   jcr->setJobStatusWithPriorityCheck(JS_Running);
 
@@ -812,8 +828,8 @@ void UpdateBootstrapFile(JobControlRecord* jcr)
     FILE* fd;
     int VolCount;
     int got_pipe = 0;
-    Bpipe* bpipe = NULL;
-    VolumeParameters* VolParams = NULL;
+    Bpipe* bpipe = nullptr;
+    VolumeParameters* VolParams = nullptr;
     char edt[50], ed1[50], ed2[50];
     POOLMEM* fname = GetPoolMemory(PM_FNAME);
 
@@ -822,7 +838,7 @@ void UpdateBootstrapFile(JobControlRecord* jcr)
     if (*fname == '|') {
       got_pipe = 1;
       bpipe = OpenBpipe(fname + 1, 0, "w"); /* skip first char "|" */
-      fd = bpipe ? bpipe->wfd : NULL;
+      fd = bpipe ? bpipe->wfd : nullptr;
     } else {
       /* ***FIXME*** handle BASE */
       fd = fopen(fname, jcr->is_JobLevel(L_FULL) ? "w+b" : "a+b");
@@ -839,7 +855,7 @@ void UpdateBootstrapFile(JobControlRecord* jcr)
         }
       }
       /* Start output with when and who wrote it */
-      bstrftimes(edt, sizeof(edt), time(NULL));
+      bstrftimes(edt, sizeof(edt), time(nullptr));
       fprintf(fd, "# %s - %s - %s%s\n", edt, jcr->dir_impl->jr.Job,
               JobLevelToString(jcr->getJobLevel()), jcr->dir_impl->since);
       for (int i = 0; i < VolCount; i++) {
