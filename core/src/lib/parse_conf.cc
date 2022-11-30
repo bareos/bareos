@@ -304,7 +304,7 @@ int ConfigurationParser::GetResourceCode(const char* resource_type_name)
     }
   }
 
-  return 0;
+  return -1;
 }
 
 ResourceTable* ConfigurationParser::GetResourceTable(
@@ -563,7 +563,7 @@ bool ConfigurationParser::DumpResources(bool sendit(void* sock,
     result = true;
   } else {
     int res_type = GetResourceCode(res_type_name.c_str());
-    if (res_type > 0) {
+    if (res_type >= 0) {
       BareosResource* res = nullptr;
       if (res_name.empty()) {
         // No name, dump all resources of specified type

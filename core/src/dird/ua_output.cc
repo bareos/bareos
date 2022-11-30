@@ -40,7 +40,6 @@
 #include "dird/ua_db.h"
 #include "dird/ua_output.h"
 #include "dird/ua_select.h"
-#include "dird/show_cmd_available_resources.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
 #include "dird/jcr_util.h"
@@ -212,29 +211,36 @@ static void ShowAll(UaContext* ua, bool hide_sensitive_data, bool verbose)
  */
 bool show_cmd(UaContext* ua, const char*)
 {
-  int i, j, type, len;
-  int recurse;
-  char* res_name;
-  BareosResource* res = NULL;
-  bool verbose = false;
-  bool hide_sensitive_data;
-
   Dmsg1(20, "show: %s\n", ua->UA_sock->msg);
 
   /*
    * When the console has no access to the configure cmd then any show cmd
    * will suppress all sensitive information like for instance passwords.
    */
-  hide_sensitive_data = !ua->AclAccessOk(Command_ACL, "configure", false);
 
-  if (FindArg(ua, NT_("verbose")) > 0) { verbose = true; }
+  bool hide_sensitive_data = !ua->AclAccessOk(Command_ACL, "configure", false);
+
+  bool show_verbose = false;
+  if (FindArg(ua, NT_("verbose")) > 0) { show_verbose = true; }
+
+  if (FindArg(ua, "help") > 0) {
+    ua->InfoMsg(_("Keywords for the show command are:\n"));
+    for (const auto& command : show_cmd_available_resources) {
+      ua->InfoMsg("%s\n", command.first.c_str());
+    }
+    return true;
+  }
 
   LockRes(my_config);
 
   // Without parameter, show all ressources.
-  if (ua->argc == 1) { ShowAll(ua, hide_sensitive_data, verbose); }
+  if (ua->argc == 1 || FindArg(ua, "all") > 0) {
+    ShowAll(ua, hide_sensitive_data, show_verbose);
+    UnlockRes(my_config);
+    return true;
+  }
 
-  for (i = 1; i < ua->argc; i++) {
+  for (int i = 1; i < ua->argc; i++) {
     // skip verbose keyword, already handled earlier.
     if (Bstrcasecmp(ua->argk[i], NT_("verbose"))) { continue; }
 
@@ -254,67 +260,53 @@ bool show_cmd(UaContext* ua, const char*)
         ShowDisabledSchedules(ua);
       }
       ua->send->ObjectEnd("disabled");
-      goto bail_out;
+      UnlockRes(my_config);
+      return true;
     }
 
-    type = 0;
-    res_name = ua->argk[i];
+    int type = -1;
+    int recurse = 0;
+    char* res_name = ua->argk[i];
+    int len = strlen(res_name);
+    BareosResource* res = nullptr;
     if (!ua->argv[i]) { /* was a name given? */
       // No name, dump all resources of specified type
       recurse = 1;
-      len = strlen(res_name);
-      for (j = 0; show_cmd_available_resources[j].res_name; j++) {
-        if (bstrncasecmp(res_name, _(show_cmd_available_resources[j].res_name),
-                         len)) {
-          type = show_cmd_available_resources[j].type;
-          if (type > 0) {
-            res = my_config->config_resources_container_
-                      ->configuration_resources_[type];
-          } else {
-            res = NULL;
-          }
+      for (const auto& command : show_cmd_available_resources) {
+        if (bstrncasecmp(res_name, command.first.c_str(), len)) {
+          type = command.second;
+          res = my_config->config_resources_container_
+                    ->configuration_resources_[type];
           break;
         }
       }
     } else {
       // Dump a single resource with specified name
       recurse = 0;
-      len = strlen(res_name);
-      for (j = 0; show_cmd_available_resources[j].res_name; j++) {
-        if (bstrncasecmp(res_name, _(show_cmd_available_resources[j].res_name),
-                         len)) {
-          type = show_cmd_available_resources[j].type;
+      for (const auto& command : show_cmd_available_resources) {
+        if (bstrncasecmp(res_name, command.first.c_str(), len)) {
+          type = command.second;
           res = (BareosResource*)ua->GetResWithName(type, ua->argv[i], true);
-          if (!res) { type = -3; }
+          if (!res) {
+            ua->ErrorMsg(_("%s resource %s not found.\n"), res_name,
+                         ua->argv[i]);
+            UnlockRes(my_config);
+            return true;
+          }
           break;
         }
       }
     }
 
-    switch (type) {
-      case -1: /* all */
-        ShowAll(ua, hide_sensitive_data, verbose);
-        break;
-      case -2:
-        ua->InfoMsg(_("Keywords for the show command are:\n"));
-        for (j = 0; show_cmd_available_resources[j].res_name; j++) {
-          ua->InfoMsg("%s\n", _(show_cmd_available_resources[j].res_name));
-        }
-        goto bail_out;
-      case -3:
-        ua->ErrorMsg(_("%s resource %s not found.\n"), res_name, ua->argv[i]);
-        goto bail_out;
-      case 0:
-        ua->ErrorMsg(_("Resource %s not found\n"), res_name);
-        goto bail_out;
-      default:
-        my_config->DumpResourceCb_(recurse ? type : -type, res, bsendmsg, ua,
-                                   hide_sensitive_data, verbose);
-        break;
+    if (type >= 0) {
+      my_config->DumpResourceCb_(recurse ? type : -type, res, bsendmsg, ua,
+                                 hide_sensitive_data, show_verbose);
+
+    } else {
+      ua->ErrorMsg(_("Resource %s not found\n"), res_name);
     }
   }
 
-bail_out:
   UnlockRes(my_config);
   return true;
 }

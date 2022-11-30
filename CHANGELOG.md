@@ -30,7 +30,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - tests: simplify test coverage analysis [PR #1010]
 - webui: analytics module: show stored data per jobname in treemap [PR #1082]
 - webui: add pool column to volume lists [PR #1120]
-- webui: introduce themes [#1281]
+- webui: introduce themes [PR #1281]
 - dird: console: add `jobtype` parameter to `(l)list jobs` [PR #1149]
 - contrib: add support for building and packaging [PR #768]:
   - bareos-contrib-director-python-plugins
@@ -109,11 +109,11 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - testfind: remove unnecessary libraries and fix systemtest [PR #1250]
 - stored: systemtests: docs: checkpoints improvements [PR #1277]
 - winbareos.nsi: fix working directory in configure.sed [PR #1288]
-- core: BareosDb::FindLastJobStartTimeForJobAndClient: take into account Running job [PR #1265] [Issue #1466]
 - core: BareosDb::FindLastJobStartTimeForJobAndClient: take into account Running job [Issue #1466] [PR #1265]
 - backup.cc: fail backup when `Write Bootstrap` to pipe fails [PR #1296]
 - webui: fix pool link in job details formatter [Issue #1489] [PR #1303]
 - webui: patch zf2 to eliminate a php warning caused by zend-stdlib [PR #1305]
+- dird: fix director resource not showing when using `show director` or the `--xc director` cli option [PR #1315]
 
 ### Changed
 - contrib: rename Python modules to satisfy PEP8 [PR #768]
@@ -364,9 +364,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1277]: https://github.com/bareos/bareos/pull/1277
 [PR #1278]: https://github.com/bareos/bareos/pull/1278
 [PR #1279]: https://github.com/bareos/bareos/pull/1279
+[PR #1281]: https://github.com/bareos/bareos/pull/1281
 [PR #1282]: https://github.com/bareos/bareos/pull/1282
 [PR #1283]: https://github.com/bareos/bareos/pull/1283
-[PR #1281]: https://github.com/bareos/bareos/pull/1281
 [PR #1284]: https://github.com/bareos/bareos/pull/1284
 [PR #1285]: https://github.com/bareos/bareos/pull/1285
 [PR #1288]: https://github.com/bareos/bareos/pull/1288
@@ -379,6 +379,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1306]: https://github.com/bareos/bareos/pull/1306
 [PR #1307]: https://github.com/bareos/bareos/pull/1307
 [PR #1313]: https://github.com/bareos/bareos/pull/1313
+[PR #1315]: https://github.com/bareos/bareos/pull/1315
 [PR #1317]: https://github.com/bareos/bareos/pull/1317
 [PR #1318]: https://github.com/bareos/bareos/pull/1318
 [PR #1314]: https://github.com/bareos/bareos/pull/1314

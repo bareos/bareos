@@ -238,7 +238,7 @@ class PythonBareosListCommandTest(bareos_unittest.Base):
         self.assertTrue(result["jobs"])
         for job in result["jobs"]:
             self.assertTrue(job["jobstatus"], "T")
-            
+
         # running a job a canceling
         director.call("run job=backup-bareos-fd yes")
         director.call("cancel job=backup-bareos-fd yes")

@@ -30,7 +30,6 @@
 #include "dird/dird_globals.h"
 #include "dird/dird_conf.h"
 #include "dird/ua_output.h"
-#include "dird/show_cmd_available_resources.h"
 
 #include <set>
 
@@ -53,10 +52,8 @@ TEST(available_resources_equals_config_resources, check_contents)
 
   std::set<uint32_t> set_of_show_cmd_resources;
 
-  for (int i = 0; show_cmd_available_resources[i].res_name; i++) {
-    if (show_cmd_available_resources[i].type >= 0) {
-      set_of_show_cmd_resources.insert(show_cmd_available_resources[i].type);
-    }
+  for (const auto& command : show_cmd_available_resources) {
+    set_of_show_cmd_resources.insert(command.second);
   }
 
   EXPECT_EQ(set_of_config_resources, set_of_show_cmd_resources)

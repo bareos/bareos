@@ -1,7 +1,7 @@
 #
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -74,3 +74,39 @@ class PythonBareosShowTest(bareos_unittest.Json):
         fileset_show_description = result["filesets"][fileset]["description"]
 
         self.assertIn(fileset_show_description, fileset_content_list)
+
+    def test_show_resources(self):
+        """
+        show resources in bconsole
+        """
+
+        username = self.get_operator_username()
+        password = self.get_operator_password(username)
+
+        director = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+            **self.director_extra_options
+        )
+        list_of_resources = {
+            "directors",
+            "clients",
+            "jobs",
+            "jobdefs",
+            "storages",
+            "schedules",
+            "catalogs",
+            "filesets",
+            "pools",
+            "messages",
+            "profiles",
+            "consoles",
+            "counters",
+            "users",
+        }
+        for resource in list_of_resources:
+            call = director.call("show {}".format(resource))
+            result = call[resource]
+            self.assertTrue(len(result) > 0)
