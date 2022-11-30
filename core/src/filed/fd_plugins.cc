@@ -708,8 +708,8 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
     }
 
     // Loop getting filenames to backup then saving them
-    save_pkt sp;
     while (!jcr->IsJobCanceled()) {
+      save_pkt sp;
       sp.portable = true;
       sp.no_read = false;
       CopyBits(FO_MAX, ff_pkt->flags, sp.flags);
@@ -881,7 +881,6 @@ int PluginEstimate(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 {
   int len;
   char* cmd = ff_pkt->top_fname;
-  save_pkt sp;
   bEvent event;
   bEventType eventType;
   PoolMem fname(PM_FNAME);
@@ -931,6 +930,7 @@ int PluginEstimate(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 
     // Loop getting filenames to backup then saving them
     while (!jcr->IsJobCanceled()) {
+      save_pkt sp;
       sp.portable = true;
       CopyBits(FO_MAX, ff_pkt->flags, sp.flags);
       sp.cmd = cmd;
@@ -1428,9 +1428,9 @@ BxattrExitCode PluginBuildXattrStreams(
     int xattr_count = 0;
     xattr_t* current_xattr;
     uint32_t expected_serialize_len = 0;
-    xattr_pkt xp;
 
     while (1) {
+      xattr_pkt xp;
       xp.fname = xattr_data->last_fname;
 
       switch (PlugFunc(plugin)->getXattr(jcr->plugin_ctx, &xp)) {

@@ -61,12 +61,10 @@ struct BareosFilePacket;
 struct FindFilesPacket;
 #endif /* FILE_DAEMON */
 
-
-enum IoStatus : int
-{
-  error = -1,
-  success = 0,
-  do_io_in_core = 1,
+struct IoStatus {
+  static constexpr int error = -1;
+  static constexpr int success = 0;
+  static constexpr int do_io_in_core = 1;
 };
 
 template <typename T> class alist;
