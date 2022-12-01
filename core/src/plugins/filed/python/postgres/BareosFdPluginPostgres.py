@@ -450,7 +450,7 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
     def __dbConClose(self):
         try:
             self.dbCon.close()
-        except Exception as e:
+        except pg8000.exceptions.InterfaceError as e:
             pass
 
     def closeDbConnection(self):
