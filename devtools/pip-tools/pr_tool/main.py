@@ -34,6 +34,10 @@ from time import sleep
 
 from changelog_utils import file_has_pr_entry, add_entry_to_file, update_links
 
+PASS_MARK = " ✓ "
+INFO_MARK = "   "
+FAIL_MARK = " ✗ "
+
 
 class InvokationError(Exception):
     def __init__(self, result):
@@ -49,7 +53,7 @@ class Gh:
     """thin and simple proxy wrapper around github cli"""
 
     @staticmethod
-    def make_param_str(k, v):
+    def make_option_str(k, v):
         param = k.replace("_", "-")
         if isinstance(v, list):
             return "--{}={}".format(param, ",".join(v))
@@ -72,12 +76,15 @@ class Gh:
 
     def __call__(self, *args, **kwargs):
         """invoke command, parse response if json and return"""
-        opts = [Gh.make_param_str(k, v) for (k, v) in kwargs.items()]
+        # filter out args that evaluate to False (i.e. None or "")
+        params = list(filter(lambda x: x, args))
+        # convert kwargs to "--key-word=value"
+        opts = [Gh.make_option_str(k, v) for (k, v) in kwargs.items()]
         if self.dryrun:
-            print(self.cmd + list(args) + opts)
+            print(self.cmd + opts + params)
         else:
             res = run(
-                self.cmd + list(args) + opts,
+                self.cmd + opts + params,
                 stdin=DEVNULL,
                 stdout=PIPE,
                 stderr=PIPE,
@@ -124,13 +131,18 @@ class Checklist:
         self.is_ok = True
 
     def ok(self, text):
-        print(" ✓  {}".format(text))
+        print("{} {}".format(PASS_MARK, text))
+
+    def info(self, text):
+        print("{} {}".format(INFO_MARK, text))
 
     def fail(self, text):
         self.is_ok = False
-        print(" ✗  {}".format(text))
+        print("{} {}".format(FAIL_MARK, text))
 
-    def check(self, condition, ok_str, fail_str):
+    def check(self, condition, ok_str, fail_str=None):
+        if not fail_str:
+            fail_str = ok_str
         if condition:
             self.ok(ok_str)
         else:
@@ -140,9 +152,13 @@ class Checklist:
         return self.is_ok
 
 
-def check_merge_prereq(repo, pr):
+def check_merge_prereq(repo, pr, ignore_status_checks=False):
 
     cl = Checklist()
+
+    cl.check(
+        pr["state"] == "OPEN", "PR state is {}\n\t{}".format(pr["state"], pr["url"])
+    )
 
     cl.check(
         pr["headRefOid"] == repo.head.commit.hexsha,
@@ -173,6 +189,15 @@ def check_merge_prereq(repo, pr):
     )
 
     cl.check(not repo.is_dirty(), "No dirty files", "Repository has dirty files")
+
+    if not ignore_status_checks:
+        for status_check in pr["statusCheckRollup"]:
+            cl.check(
+                status_check["state"] == "SUCCESS",
+                "Status check '{context}': {state}\n\t{targetUrl}".format(
+                    **status_check
+                ),
+            )
 
     return cl.all_checks_ok()
 
@@ -220,6 +245,16 @@ def parse_cmdline_args():
         action="store_true",
         help="do everything except the final call to 'gh pr merge'",
     )
+    merge_parser.add_argument(
+        "--admin-override",
+        action="store_true",
+        help="use --admin when running 'gh pr merge'",
+    )
+    merge_parser.add_argument(
+        "--ignore-status-checks",
+        action="store_true",
+        help="ignore (required) github status checks",
+    )
     dump_parser = subparsers.add_parser("dump")
 
     args = parser.parse_args()
@@ -238,13 +273,19 @@ def check_merge_is_possible(repo, pr):
     return pr["mergeable"] == "MERGEABLE"
 
 
-def do_github_merge(repo, pr, *, skip_merge):
+def do_github_merge(repo, pr, *, skip_merge=False, admin_override=False):
+    if admin_override:
+        admin_param = "--admin"
+    else:
+        admin_param = None
+
     if skip_merge:
         print("Merge would run the following gh commandline:")
         gh = Gh(dryrun=True)
     else:
         gh = Gh()
     return gh.pr.merge(
+        admin_param,
         "--merge",
         "--delete-branch",
         match_head_commit=repo.head.commit.hexsha,
@@ -252,9 +293,11 @@ def do_github_merge(repo, pr, *, skip_merge):
     )
 
 
-def merge_pr(repo, pr, *, skip_merge):
+def merge_pr(
+    repo, pr, *, skip_merge=False, admin_override=False, ignore_status_checks=False
+):
     print("Checking merge prerequisites:")
-    if not check_merge_prereq(repo, pr):
+    if not check_merge_prereq(repo, pr, ignore_status_checks):
         print("Unmet requirements. Will not merge!")
         return False
     print()
@@ -270,7 +313,9 @@ def merge_pr(repo, pr, *, skip_merge):
             repo.git.push()
 
         if check_merge_is_possible(repo, pr):
-            return do_github_merge(repo, pr, skip_merge=skip_merge)
+            return do_github_merge(
+                repo, pr, skip_merge=skip_merge, admin_override=admin_override
+            )
 
         else:
             base_branch = "origin/{}".format(pr["baseRefName"])
@@ -298,7 +343,9 @@ def merge_pr(repo, pr, *, skip_merge):
             repo.git.push("-f")
 
         if check_merge_is_possible(repo, pr):
-            return do_github_merge(repo, pr, skip_merge=skip_merge)
+            return do_github_merge(
+                repo, pr, skip_merge=skip_merge, admin_override=admin_override
+            )
         else:
             raise Exception("PR merge still not possible after rebase.")
 
@@ -331,8 +378,10 @@ def get_current_pr_data():
             "mergeable",
             "number",
             "reviewDecision",
+            "state",
             "statusCheckRollup",
             "title",
+            "url",
         ]
     )
 
@@ -352,9 +401,16 @@ def main():
     if args.subcommand == "check":
         ret = check_merge_prereq(repo, pr_data)
         if check_changelog_entry(repo, pr_data):
-            print(" ✓  ChangeLog record present")
+            print("{} ChangeLog record present".format(PASS_MARK))
+        elif not pr_data["isCrossRepository"] or pr_data["maintainerCanModify"]:
+            print("{} ChangeLog record can be added automatically".format(INFO_MARK))
         else:
-            print("    ChangeLog record can be added automatically")
+            print(
+                "{} ChangeLog record cannot be added, "
+                + "author denies access".format(FAIL_MARK)
+            )
+            ret = False
+
         handle_ret(ret)
     elif args.subcommand == "add-changelog":
         if check_changelog_entry(repo, pr_data):
@@ -362,6 +418,14 @@ def main():
             exit(1)
         handle_ret(add_changelog_entry(repo, pr_data))
     elif args.subcommand == "merge":
-        handle_ret(merge_pr(repo, pr_data, skip_merge=args.skip_merge))
+        handle_ret(
+            merge_pr(
+                repo,
+                pr_data,
+                skip_merge=args.skip_merge,
+                admin_override=args.admin_override,
+                ignore_status_checks=args.ignore_status_checks,
+            )
+        )
     elif args.subcommand == "dump":
         pprint(pr_data)
