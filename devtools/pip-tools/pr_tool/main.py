@@ -29,14 +29,31 @@ import git.exc
 from os import environ, chdir
 from pprint import pprint
 from subprocess import run, PIPE, DEVNULL
-from sys import stderr
+from sys import stdout, stderr
 from time import sleep
 
 from changelog_utils import file_has_pr_entry, add_entry_to_file, update_links
 
-PASS_MARK = " ✓ "
-INFO_MARK = "   "
-FAIL_MARK = " ✗ "
+
+class Mark:
+    PASS = " ✓ "
+    INFO = " ➜ "
+    FAIL = " ✗ "
+
+    _RED = "\x1b[91m"
+    _CYAN = "\x1b[96m"
+    _GREEN = "\x1b[92m"
+    _ENDC = "\x1b[0m"
+
+    @classmethod
+    def enable_colors(cls):
+        cls.PASS = cls._decorate(cls.PASS, cls._GREEN)
+        cls.INFO = cls._decorate(cls.INFO, cls._CYAN)
+        cls.FAIL = cls._decorate(cls.FAIL, cls._RED)
+
+    @classmethod
+    def _decorate(cls, text, color):
+        return "{}{}{}".format(color, text, cls._ENDC)
 
 
 class InvokationError(Exception):
@@ -131,14 +148,14 @@ class Checklist:
         self.is_ok = True
 
     def ok(self, text):
-        print("{} {}".format(PASS_MARK, text))
+        print("{} {}".format(Mark.PASS, text))
 
     def info(self, text):
-        print("{} {}".format(INFO_MARK, text))
+        print("{} {}".format(Mark.INFO, text))
 
     def fail(self, text):
         self.is_ok = False
-        print("{} {}".format(FAIL_MARK, text))
+        print("{} {}".format(Mark.FAIL, text))
 
     def check(self, condition, ok_str, fail_str=None):
         if not fail_str:
@@ -235,6 +252,11 @@ def parse_cmdline_args():
         metavar="<path>",
         help="path to local git repository",
     )
+    color_group = parser.add_mutually_exclusive_group()
+    color_group.add_argument(
+        "--color", action="store_true", help="enable colors (default on TTY)"
+    )
+    color_group.add_argument("--no-color", action="store_true", help="disable colors")
 
     subparsers = parser.add_subparsers(dest="subcommand")
     check_parser = subparsers.add_parser("check")
@@ -258,6 +280,9 @@ def parse_cmdline_args():
     dump_parser = subparsers.add_parser("dump")
 
     args = parser.parse_args()
+
+    if not args.no_color and stdout.isatty() or args.color:
+        Mark.enable_colors()
 
     if not args.subcommand:
         parser.print_help()
@@ -401,13 +426,13 @@ def main():
     if args.subcommand == "check":
         ret = check_merge_prereq(repo, pr_data)
         if check_changelog_entry(repo, pr_data):
-            print("{} ChangeLog record present".format(PASS_MARK))
+            print("{} ChangeLog record present".format(Mark.PASS))
         elif not pr_data["isCrossRepository"] or pr_data["maintainerCanModify"]:
-            print("{} ChangeLog record can be added automatically".format(INFO_MARK))
+            print("{} ChangeLog record can be added automatically".format(Mark.INFO))
         else:
             print(
                 "{} ChangeLog record cannot be added, "
-                + "author denies access".format(FAIL_MARK)
+                + "author denies access".format(Mark.FAIL)
             )
             ret = False
 
