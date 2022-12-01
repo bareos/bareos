@@ -18,8 +18,6 @@ Director {
   # FdConnectTimeout = 3 minutes
   # SdConnectTimeout = 30 minutes
   # HeartbeatInterval = 0
-  # StatisticsRetention = 5 years 1 months 5 days
-  # StatisticsCollectInterval = 150
   # OptimizeForSize = yes
   # OptimizeForSpeed = no
   # OmitDefaults = yes
@@ -264,7 +262,6 @@ Storage {
   # CacheStatusInterval = 30 seconds
   # MaximumConcurrentJobs = 1
   # MaximumConcurrentReadJobs = 0
-  # CollectStatistics = no
   # TlsAuthenticate = no
   # TlsEnable = yes
   # TlsRequire = no

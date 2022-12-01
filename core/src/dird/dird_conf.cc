@@ -139,8 +139,8 @@ static ResourceItem dir_items[] = {
   { "FdConnectTimeout", CFG_TYPE_TIME, ITEM(res_dir, FDConnectTimeout), 0, CFG_ITEM_DEFAULT, "180" /* 3 minutes */, NULL, NULL },
   { "SdConnectTimeout", CFG_TYPE_TIME, ITEM(res_dir, SDConnectTimeout), 0, CFG_ITEM_DEFAULT, "1800" /* 30 minutes */, NULL, NULL },
   { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_dir, heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
-  { "StatisticsRetention", CFG_TYPE_TIME, ITEM(res_dir, stats_retention), 0, CFG_ITEM_DEFAULT, "160704000" /* 5 years */, NULL, NULL },
-  { "StatisticsCollectInterval", CFG_TYPE_PINT32, ITEM(res_dir, stats_collect_interval), 0, CFG_ITEM_DEFAULT, "0", "14.2.0-", NULL },
+  { "StatisticsRetention", CFG_TYPE_TIME, ITEM(res_dir, stats_retention), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "160704000" /* 5 years */, NULL, NULL },
+  { "StatisticsCollectInterval", CFG_TYPE_PINT32, ITEM(res_dir, stats_collect_interval), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "0", "14.2.0-", NULL },
   { "VerId", CFG_TYPE_STR, ITEM(res_dir, verid), 0, 0, NULL, NULL, NULL },
   { "OptimizeForSize", CFG_TYPE_BOOL, ITEM(res_dir, optimize_for_size), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
   { "OptimizeForSpeed", CFG_TYPE_BOOL, ITEM(res_dir, optimize_for_speed), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
@@ -287,7 +287,7 @@ static ResourceItem store_items[] = {
   { "MaximumConcurrentReadJobs", CFG_TYPE_PINT32, ITEM(res_store, MaxConcurrentReadJobs), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
   { "PairedStorage", CFG_TYPE_RES, ITEM(res_store, paired_storage), R_STORAGE, 0, NULL, NULL, NULL },
   { "MaximumBandwidthPerJob", CFG_TYPE_SPEED, ITEM(res_store, max_bandwidth), 0, 0, NULL, NULL, NULL },
-  { "CollectStatistics", CFG_TYPE_BOOL, ITEM(res_store, collectstats), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
+  { "CollectStatistics", CFG_TYPE_BOOL, ITEM(res_store, collectstats), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "false", NULL, NULL },
   { "NdmpChangerDevice", CFG_TYPE_STRNAME, ITEM(res_store, ndmp_changer_device), 0, 0, NULL, "16.2.4-",
      "Allows direct control of a Storage Daemon Auto Changer device by the Director. Only used in NDMP_NATIVE environments." },
    TLS_COMMON_CONFIG(res_store),
@@ -1058,9 +1058,7 @@ static void PropagateResource(ResourceItem* items,
               *new_list = new alist<const char*>(10, owned_by_alist);
             }
 
-            foreach_alist (str, orig_list) {
-              (*new_list)->append(strdup(str));
-            }
+            foreach_alist (str, orig_list) { (*new_list)->append(strdup(str)); }
 
             SetBit(i, dest->item_present_);
             SetBit(i, dest->inherit_content_);
@@ -1082,9 +1080,7 @@ static void PropagateResource(ResourceItem* items,
               *new_list = new alist<BareosResource*>(10, not_owned_by_alist);
             }
 
-            foreach_alist (res, orig_list) {
-              (*new_list)->append(res);
-            }
+            foreach_alist (res, orig_list) { (*new_list)->append(res); }
 
             SetBit(i, dest->item_present_);
             SetBit(i, dest->inherit_content_);
@@ -1108,9 +1104,7 @@ static void PropagateResource(ResourceItem* items,
               *new_list = new alist<const char*>(10, owned_by_alist);
             }
 
-            foreach_alist (str, orig_list) {
-              (*new_list)->append(strdup(str));
-            }
+            foreach_alist (str, orig_list) { (*new_list)->append(strdup(str)); }
 
             SetBit(i, dest->item_present_);
             SetBit(i, dest->inherit_content_);
@@ -2478,9 +2472,7 @@ static bool PopulateJobdefaults()
   bool retval = true;
 
   // Propagate the content of a JobDefs to another.
-  foreach_res (jobdefs, R_JOBDEFS) {
-    PropagateJobdefs(R_JOBDEFS, jobdefs);
-  }
+  foreach_res (jobdefs, R_JOBDEFS) { PropagateJobdefs(R_JOBDEFS, jobdefs); }
 
   // Propagate the content of the JobDefs to the actual Job.
   foreach_res (job, R_JOB) {

@@ -22,8 +22,6 @@ Director {
   FdConnectTimeout = 1 minutes
   SdConnectTimeout = 3 minutes
   HeartbeatInterval = 30 seconds
-  StatisticsRetention = 1 years 2 months 3 weeks 4 days 5 hours 6 minutes 7 seconds
-  StatisticsCollectInterval = 1500
   VerId = "My Private Version ID"
   OptimizeForSize = Yes
   # OptimizeForSpeed = No
@@ -1290,7 +1288,6 @@ Storage {
   # MaximumConcurrentReadJobs = 0
   # PairedStorage = ""
   # MaximumBandwidthPerJob = 0
-  # CollectStatistics = No
   # NdmpChangerDevice =
   # TlsAuthenticate = No
   # TlsEnable = Yes
