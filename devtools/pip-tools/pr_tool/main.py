@@ -143,6 +143,57 @@ class CheckmarkAnalyzer:
             print("- {}".format(task))
 
 
+class CommitAnalyzer:
+    headline_pattern = re.compile(r"(fixup|\[[^\]]*\])")
+
+    def __init__(self, commits):
+        self.is_ok = True
+        self.commit_issues = []
+
+        for commit in commits:
+            if not self.check_commit(commit):
+                self.is_ok = False
+
+    def check_commit(self, commit):
+        issues = []
+        issues.extend(self._check_headline(commit["messageHeadline"]))
+        issues.extend(self._check_body(commit["messageBody"]))
+
+        if len(issues) > 0:
+            self._record_issues(commit, issues)
+            return False
+        else:
+            return True
+
+    @classmethod
+    def _check_headline(cls, text):
+        issues = []
+        if len(text) > 50:
+            issues.append("headline too long")
+        res = cls.headline_pattern.match(text)
+        if res:
+            issues.append("headline starts with '{}'".format(res.group(0)))
+        return issues
+
+    @staticmethod
+    def _check_body(text):
+        for line in text.split("\n"):
+            if len(line) > 72:
+                return ["body contains line longer 72 chars"]
+        return []
+
+    def _record_issues(self, commit, issues):
+        commit_descr = "{oid:9.9} {messageHeadline}".format(**commit)
+        for issue in issues:
+            self.commit_issues.append("{}: {}".format(commit_descr, issue))
+
+    def ok(self):
+        return self.is_ok
+
+    def issues(self):
+        return self.commit_issues
+
+
 class Checklist:
     def __init__(self):
         self.is_ok = True
@@ -215,6 +266,13 @@ def check_merge_prereq(repo, pr, ignore_status_checks=False):
                     **status_check
                 ),
             )
+
+    commitRes = CommitAnalyzer(pr["commits"])
+    cl.check(
+        commitRes.ok(),
+        "Commit checks passed",
+        "Commit checks failed:\n\t{}".format("\n\t".join(commitRes.issues())),
+    )
 
     return cl.all_checks_ok()
 
@@ -396,6 +454,7 @@ def get_current_pr_data():
         json=[
             "body",
             "baseRefName",
+            "commits",
             "headRefOid",
             "isCrossRepository",
             "isDraft",
