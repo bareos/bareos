@@ -99,7 +99,7 @@ bRC bareosJobMsg(PluginContext*,
     char buffer[1024]{};
     va_list arg_ptr;
     va_start(arg_ptr, fmt);
-    vsprintf(buffer, fmt, arg_ptr);
+    vsnprintf(buffer, 1024, fmt, arg_ptr);
     va_end(arg_ptr);
     printf("bareosJobMsg file:%s line:%d type:%d time: %+" PRId64 ", %s\n",
            file, line, type, (int64_t)mtime, buffer);
@@ -118,7 +118,7 @@ static bRC bareosDebugMsg(PluginContext*,
   char buffer[1024]{};
   va_list arg_ptr;
   va_start(arg_ptr, fmt);
-  vsprintf(buffer, fmt, arg_ptr);
+  vsnprintf(buffer, 1024, fmt, arg_ptr);
   va_end(arg_ptr);
   printf("bareosDebugMsg: %s %d %d %s\n", fname, line, level, buffer);
   return bRC_OK;
