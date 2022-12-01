@@ -492,7 +492,15 @@ inline std::shared_ptr<ConfigResourcesContainer> _init_foreach_res_(
        ((var)                                                     \
         = static_cast<decltype(var)>(my_config->GetNextRes((type), var)));)
 
-#define LockRes(x) (x)->b_LockRes(__FILE__, __LINE__)
-#define UnlockRes(x) (x)->b_UnlockRes(__FILE__, __LINE__)
+class ResLocker {
+  const ConfigurationParser* config_res_;
+
+ public:
+  ResLocker(const ConfigurationParser* config) : config_res_(config)
+  {
+    config_res_->b_LockRes(__FILE__, __LINE__);
+  }
+  ~ResLocker() { config_res_->b_UnlockRes(__FILE__, __LINE__); }
+};
 
 #endif  // BAREOS_LIB_PARSE_CONF_H_
