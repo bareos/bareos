@@ -9,6 +9,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 - dird: fix director resource not showing when using `show director` [PR #1322]
 
+### Changed
+- ndmp_tape.cc: do not log current rctx->rec in joblog [PR #1323]
+
 ## [21.1.5] - 2022-11-09
 
 ### Breaking Changes
@@ -635,4 +638,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1301]: https://github.com/bareos/bareos/pull/1301
 [PR #1303]: https://github.com/bareos/bareos/pull/1303
 [PR #1322]: https://github.com/bareos/bareos/pull/1322
+[PR #1323]: https://github.com/bareos/bareos/pull/1323
 [unreleased]: https://github.com/bareos/bareos/tree/master
