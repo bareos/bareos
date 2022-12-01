@@ -62,9 +62,9 @@ System Requirements
 
 -  The |webui| can be installed on any host. It does not have to be installed on the same as the |dir|.
 
--  The default installation uses an Apache webserver with mod-rewrite, mod-php and mod-setenv.
+-  The default installation uses PHP-FPM with Apache HTTP webserver having mod-rewrite and mod-fcgid enabled.
 
--  PHP 5.3.23 or newer, PHP 7 recommended
+-  PHP 7 or newer is recommended.
 
 -  On SUSE Linux Enterprise 12 you need the additional SUSE Linux Enterprise Module for Web Scripting 12.
 
@@ -227,7 +227,7 @@ Configure your Apache Webserver
 
 The package **bareos-webui** provides a default configuration for Apache. Depending on your distribution, it is installed at :file:`/etc/apache2/conf.d/bareos-webui.conf`, :file:`/etc/httpd/conf.d/bareos-webui.conf`, :file:`/etc/apache2/available-conf/bareos-webui.conf` or similar.
 
-The required Apache modules, :strong:`setenv`, :strong:`rewrite` and :strong:`php` are enabled via package postinstall script. However, after installing the **bareos-webui** package, you need to restart your Apache webserver manually.
+The required Apache modules, :strong:`fcgid` and :strong:`rewrite` are enabled via package postinstall script. However, after installing the **bareos-webui** package, you need to restart your Apache webserver manually.
 
 
 .. _section-webui-configuration-files:
@@ -448,6 +448,67 @@ As an alternative to the method above the Bvfs cache can be updated after each j
 .. note::
 
    We do provide a specific JobId in the *JobId* command argument in this example. Only the *JobId* given by the placeholder %i will be computed into the cache.
+
+Upgrade from Bareos 21 or lower to Bareos 22
+--------------------------------------------
+
+|webui| now requires **php-fpm** instead of Apache **mod-php**.
+
+Usually this should be automatically handled by the packagemanager while updating.
+
+Please consider the following remarks below according to your operating system of choice
+if auto upgrading does not work for you.
+
+If the |webui| is not reachable after upgrading, make sure that:
+
+- Apache **mod-php** is disabled or has been removed
+
+- **php-fpm*** usage is configured properly in Apache
+
+- **php-fpm** service is enabled and has been restarted
+
+- Apache service has been restarted
+
+Debian, Ubuntu, Univention
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Please use `apt` instead of `apt-get` to upgrade automatically.
+
+SUSE Linux Enterprise Server (SLES), openSUSE
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Before upgrading
+^^^^^^^^^^^^^^^^
+
+- Disable or remove any PHP module in Apache2
+
+After upgrading
+^^^^^^^^^^^^^^^
+
+- Ensure a php.ini file is in place (e.g. `/etc/php7/fpm/php.ini` or `/etc/php8/fpm/php.ini`)
+
+- Configure PHP-FPM to your needs (e.g. `/etc/php7/fpm/php-fpm.conf` and `/etc/php7/fpm/php-fpm.d/www.conf`)
+
+- Configure mod_fcgid to your needs `/etc/apache2/conf.d/mod_fcgid.conf`
+
+A minimal example may look like following.
+
+.. code-block:: bareosconfig
+   :caption: /etc/apache2/conf.d/mod_fcgid.conf
+
+   <IfModule fcgid_module>
+        DirectoryIndex index.php
+        <FilesMatch "\.php$">
+                SetHandler "proxy:fcgi://127.0.0.1:9000/"
+                #CGIPassAuth on
+        </FilesMatch>
+   </IfModule>
+
+- Restart Apache2 and PHP-FPM
+
+.. code-block:: shell-session
+
+   systemctl restart apache2 php-fpm
 
 Upgrade from 18.2.6 to 18.2.7
 -----------------------------
