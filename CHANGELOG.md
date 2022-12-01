@@ -161,6 +161,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: cleanup webui source tree [PR #1314]
 - dird: do device reservation as late as possible, i.e. after run before job scripts [PR #1273]
 - ndmp_tape.cc: do not log current rctx->rec in joblog [PR #1324]
+- dird: stored: set statistics collection as deprecated [PR #1320]
 
 ### Deprecated
 - make_catalog_backup.pl is now a shell wrapper script which will be removed in version 23.
