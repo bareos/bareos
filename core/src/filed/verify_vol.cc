@@ -68,10 +68,11 @@ void DoVerifyVolume(JobControlRecord* jcr)
   dir = jcr->dir_bsock;
   jcr->setJobStatusWithPriorityCheck(JS_Running);
 
-  LockRes(my_config);
-  ClientResource* client
-      = (ClientResource*)my_config->GetNextRes(R_CLIENT, NULL);
-  UnlockRes(my_config);
+  ClientResource* client = nullptr;
+  {
+    ResLocker _{my_config};
+    client = (ClientResource*)my_config->GetNextRes(R_CLIENT, NULL);
+  }
   uint32_t buf_size;
   if (client) {
     buf_size = client->max_network_buffer_size;

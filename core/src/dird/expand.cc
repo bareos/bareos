@@ -229,7 +229,7 @@ static var_rc_t lookup_counter_var(var_t*,
   PmMemcpy(buf, var_ptr, var_len);
   (buf.c_str())[var_len] = 0;
 
-  LockRes(my_config);
+  ResLocker _{my_config};
   for (counter = NULL; (counter = (CounterResource*)my_config->GetNextRes(
                             R_COUNTER, (BareosResource*)counter));) {
     if (bstrcmp(counter->resource_name_, buf.c_str())) {
@@ -278,7 +278,6 @@ static var_rc_t lookup_counter_var(var_t*,
       break;
     }
   }
-  UnlockRes(my_config);
 
   return status;
 }
@@ -421,7 +420,7 @@ static var_rc_t operate_var(var_t*,
     (buf.c_str())[val_len] = 0;
     Dmsg1(100, "Val=%s\n", buf.c_str());
 
-    LockRes(my_config);
+    ResLocker _{my_config};
     for (counter = NULL; (counter = (CounterResource*)my_config->GetNextRes(
                               R_COUNTER, (BareosResource*)counter));) {
       if (bstrcmp(counter->resource_name_, buf.c_str())) {
@@ -429,7 +428,7 @@ static var_rc_t operate_var(var_t*,
         break;
       }
     }
-    UnlockRes(my_config);
+
     return status;
   }
   *out_size = 0;

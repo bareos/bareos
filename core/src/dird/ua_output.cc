@@ -231,12 +231,11 @@ bool show_cmd(UaContext* ua, const char*)
     return true;
   }
 
-  LockRes(my_config);
+  ResLocker _{my_config};
 
   // Without parameter, show all ressources.
   if (ua->argc == 1 || FindArg(ua, "all") > 0) {
     ShowAll(ua, hide_sensitive_data, show_verbose);
-    UnlockRes(my_config);
     return true;
   }
 
@@ -260,7 +259,6 @@ bool show_cmd(UaContext* ua, const char*)
         ShowDisabledSchedules(ua);
       }
       ua->send->ObjectEnd("disabled");
-      UnlockRes(my_config);
       return true;
     }
 
@@ -290,7 +288,6 @@ bool show_cmd(UaContext* ua, const char*)
           if (!res) {
             ua->ErrorMsg(_("%s resource %s not found.\n"), res_name,
                          ua->argv[i]);
-            UnlockRes(my_config);
             return true;
           }
           break;
@@ -307,7 +304,6 @@ bool show_cmd(UaContext* ua, const char*)
     }
   }
 
-  UnlockRes(my_config);
   return true;
 }
 
@@ -1165,7 +1161,8 @@ static inline bool parse_fileset_selection_param(PoolMem& selection,
     FilesetResource* fs;
     PoolMem temp(PM_MESSAGE);
 
-    LockRes(my_config);
+
+    ResLocker _{my_config};
     foreach_res (fs, R_FILESET) {
       if (!ua->AclAccessOk(FileSet_ACL, fs->resource_name_, false)) {
         continue;
@@ -1178,7 +1175,7 @@ static inline bool parse_fileset_selection_param(PoolMem& selection,
       PmStrcat(selection, temp.c_str());
     }
     PmStrcat(selection, ") ");
-    UnlockRes(my_config);
+
   } else if (fileset >= 0) {
     if (!ua->AclAccessOk(FileSet_ACL, ua->argv[fileset], true)) {
       ua->ErrorMsg(_("Access to specified FileSet not allowed.\n"));

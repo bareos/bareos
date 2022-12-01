@@ -158,7 +158,7 @@ StorageResource* select_storage_resource(UaContext* ua, bool autochanger_only)
     StartPrompt(ua, _("The defined Storage resources are:\n"));
   }
 
-  LockRes(my_config);
+  ResLocker _{my_config};
   foreach_res (store, R_STORAGE) {
     if (ua->AclAccessOk(Storage_ACL, store->resource_name_)) {
       if (autochanger_only && !store->autochanger) {
@@ -168,7 +168,6 @@ StorageResource* select_storage_resource(UaContext* ua, bool autochanger_only)
       }
     }
   }
-  UnlockRes(my_config);
 
   SortCaseInsensitive(storage_resource_names);
 
@@ -195,13 +194,14 @@ FilesetResource* select_fileset_resource(UaContext* ua)
 
   StartPrompt(ua, _("The defined FileSet resources are:\n"));
 
-  LockRes(my_config);
-  foreach_res (fs, R_FILESET) {
-    if (ua->AclAccessOk(FileSet_ACL, fs->resource_name_)) {
-      fileset_resource_names.emplace_back(fs->resource_name_);
+  {
+    ResLocker _{my_config};
+    foreach_res (fs, R_FILESET) {
+      if (ua->AclAccessOk(FileSet_ACL, fs->resource_name_)) {
+        fileset_resource_names.emplace_back(fs->resource_name_);
+      }
     }
   }
-  UnlockRes(my_config);
 
   SortCaseInsensitive(fileset_resource_names);
 
@@ -234,9 +234,10 @@ CatalogResource* get_catalog_resource(UaContext* ua)
   }
 
   if (ua->gui && !catalog) {
-    LockRes(my_config);
-    catalog = (CatalogResource*)my_config->GetNextRes(R_CATALOG, NULL);
-    UnlockRes(my_config);
+    {
+      ResLocker _{my_config};
+      catalog = (CatalogResource*)my_config->GetNextRes(R_CATALOG, NULL);
+    }
 
     if (!catalog) {
       ua->ErrorMsg(_("Could not find a Catalog resource\n"));
@@ -254,13 +255,14 @@ CatalogResource* get_catalog_resource(UaContext* ua)
   if (!catalog) {
     StartPrompt(ua, _("The defined Catalog resources are:\n"));
 
-    LockRes(my_config);
-    foreach_res (catalog, R_CATALOG) {
-      if (ua->AclAccessOk(Catalog_ACL, catalog->resource_name_)) {
-        AddPrompt(ua, catalog->resource_name_);
+    {
+      ResLocker _{my_config};
+      foreach_res (catalog, R_CATALOG) {
+        if (ua->AclAccessOk(Catalog_ACL, catalog->resource_name_)) {
+          AddPrompt(ua, catalog->resource_name_);
+        }
       }
     }
-    UnlockRes(my_config);
 
     if (DoPrompt(ua, _("Catalog"), _("Select Catalog resource"), name,
                  sizeof(name))
@@ -283,15 +285,16 @@ JobResource* select_enable_disable_job_resource(UaContext* ua, bool enable)
 
   StartPrompt(ua, _("The defined Job resources are:\n"));
 
-  LockRes(my_config);
-  foreach_res (job, R_JOB) {
-    if (!ua->AclAccessOk(Job_ACL, job->resource_name_)) { continue; }
-    if (job->enabled == enable) { /* Already enabled/disabled? */
-      continue;                   /* yes, skip */
+  {
+    ResLocker _{my_config};
+    foreach_res (job, R_JOB) {
+      if (!ua->AclAccessOk(Job_ACL, job->resource_name_)) { continue; }
+      if (job->enabled == enable) { /* Already enabled/disabled? */
+        continue;                   /* yes, skip */
+      }
+      job_resource_names.emplace_back(job->resource_name_);
     }
-    job_resource_names.emplace_back(job->resource_name_);
   }
-  UnlockRes(my_config);
 
   SortCaseInsensitive(job_resource_names);
 
@@ -318,13 +321,14 @@ JobResource* select_job_resource(UaContext* ua)
 
   StartPrompt(ua, _("The defined Job resources are:\n"));
 
-  LockRes(my_config);
-  foreach_res (job, R_JOB) {
-    if (ua->AclAccessOk(Job_ACL, job->resource_name_)) {
-      job_resource_names.emplace_back(job->resource_name_);
+  {
+    ResLocker _{my_config};
+    foreach_res (job, R_JOB) {
+      if (ua->AclAccessOk(Job_ACL, job->resource_name_)) {
+        job_resource_names.emplace_back(job->resource_name_);
+      }
     }
   }
-  UnlockRes(my_config);
 
   SortCaseInsensitive(job_resource_names);
 
@@ -368,14 +372,15 @@ JobResource* select_restore_job_resource(UaContext* ua)
 
   StartPrompt(ua, _("The defined Restore Job resources are:\n"));
 
-  LockRes(my_config);
-  foreach_res (job, R_JOB) {
-    if (job->JobType == JT_RESTORE
-        && ua->AclAccessOk(Job_ACL, job->resource_name_)) {
-      restore_job_names.emplace_back(job->resource_name_);
+  {
+    ResLocker _{my_config};
+    foreach_res (job, R_JOB) {
+      if (job->JobType == JT_RESTORE
+          && ua->AclAccessOk(Job_ACL, job->resource_name_)) {
+        restore_job_names.emplace_back(job->resource_name_);
+      }
     }
   }
-  UnlockRes(my_config);
 
   SortCaseInsensitive(restore_job_names);
 
@@ -401,13 +406,14 @@ ClientResource* select_client_resource(UaContext* ua)
 
   StartPrompt(ua, _("The defined Client resources are:\n"));
 
-  LockRes(my_config);
-  foreach_res (client, R_CLIENT) {
-    if (ua->AclAccessOk(Client_ACL, client->resource_name_)) {
-      client_resource_names.emplace_back(client->resource_name_);
+  {
+    ResLocker _{my_config};
+    foreach_res (client, R_CLIENT) {
+      if (ua->AclAccessOk(Client_ACL, client->resource_name_)) {
+        client_resource_names.emplace_back(client->resource_name_);
+      }
     }
   }
-  UnlockRes(my_config);
 
   SortCaseInsensitive(client_resource_names);
 
@@ -436,15 +442,16 @@ ClientResource* select_enable_disable_client_resource(UaContext* ua,
 
   StartPrompt(ua, _("The defined Client resources are:\n"));
 
-  LockRes(my_config);
-  foreach_res (client, R_CLIENT) {
-    if (!ua->AclAccessOk(Client_ACL, client->resource_name_)) { continue; }
-    if (client->enabled == enable) { /* Already enabled/disabled? */
-      continue;                      /* yes, skip */
+  {
+    ResLocker _{my_config};
+    foreach_res (client, R_CLIENT) {
+      if (!ua->AclAccessOk(Client_ACL, client->resource_name_)) { continue; }
+      if (client->enabled == enable) { /* Already enabled/disabled? */
+        continue;                      /* yes, skip */
+      }
+      client_resource_names.emplace_back(client->resource_name_);
     }
-    client_resource_names.emplace_back(client->resource_name_);
   }
-  UnlockRes(my_config);
 
   SortCaseInsensitive(client_resource_names);
 
@@ -498,15 +505,16 @@ ScheduleResource* select_enable_disable_schedule_resource(UaContext* ua,
 
   StartPrompt(ua, _("The defined Schedule resources are:\n"));
 
-  LockRes(my_config);
-  foreach_res (sched, R_SCHEDULE) {
-    if (!ua->AclAccessOk(Schedule_ACL, sched->resource_name_)) { continue; }
-    if (sched->enabled == enable) { /* Already enabled/disabled? */
-      continue;                     /* yes, skip */
+  {
+    ResLocker _{my_config};
+    foreach_res (sched, R_SCHEDULE) {
+      if (!ua->AclAccessOk(Schedule_ACL, sched->resource_name_)) { continue; }
+      if (sched->enabled == enable) { /* Already enabled/disabled? */
+        continue;                     /* yes, skip */
+      }
+      schedule_resource_names.emplace_back(sched->resource_name_);
     }
-    schedule_resource_names.emplace_back(sched->resource_name_);
   }
-  UnlockRes(my_config);
 
   SortCaseInsensitive(schedule_resource_names);
 
@@ -942,13 +950,14 @@ PoolResource* select_pool_resource(UaContext* ua)
   std::vector<std::string> pool_resource_names;
 
   StartPrompt(ua, _("The defined Pool resources are:\n"));
-  LockRes(my_config);
-  foreach_res (pool, R_POOL) {
-    if (ua->AclAccessOk(Pool_ACL, pool->resource_name_)) {
-      pool_resource_names.emplace_back(pool->resource_name_);
+  {
+    ResLocker _{my_config};
+    foreach_res (pool, R_POOL) {
+      if (ua->AclAccessOk(Pool_ACL, pool->resource_name_)) {
+        pool_resource_names.emplace_back(pool->resource_name_);
+      }
     }
   }
-  UnlockRes(my_config);
 
   SortCaseInsensitive(pool_resource_names);
 
@@ -1472,13 +1481,12 @@ int GetMediaType(UaContext* ua, char* MediaType, int max_media)
 
   StartPrompt(ua, _("Media Types defined in conf file:\n"));
 
-  LockRes(my_config);
+  ResLocker _{my_config};
   foreach_res (store, R_STORAGE) {
     if (ua->AclAccessOk(Storage_ACL, store->resource_name_)) {
       AddPrompt(ua, store->media_type);
     }
   }
-  UnlockRes(my_config);
 
   return (DoPrompt(ua, _("Media Type"), _("Select the Media Type"), MediaType,
                    max_media)

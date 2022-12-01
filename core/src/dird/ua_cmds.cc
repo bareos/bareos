@@ -1286,7 +1286,7 @@ static void AllStorageSetdebug(UaContext* ua,
   std::vector<StorageResource*> storages_with_unique_address;
   StorageResource* storage_in_config = nullptr;
 
-  LockRes(my_config);
+  ResLocker _{my_config};
   do {
     storage_in_config = static_cast<StorageResource*>(
         my_config->GetNextRes(R_STORAGE, storage_in_config));
@@ -1307,7 +1307,6 @@ static void AllStorageSetdebug(UaContext* ua,
       }
     }
   } while (storage_in_config);
-  UnlockRes(my_config);
 
   for (StorageResource* store : storages_with_unique_address) {
     DoStorageSetdebugFunction(ua, store, level, trace_flag, timestamp_flag);
@@ -1342,7 +1341,7 @@ static void AllClientSetdebug(UaContext* ua,
   std::vector<ClientResource*> clients_with_unique_address;
   ClientResource* client_in_config = nullptr;
 
-  LockRes(my_config);
+  ResLocker _{my_config};
   do {
     client_in_config = static_cast<ClientResource*>(
         my_config->GetNextRes(R_CLIENT, client_in_config));
@@ -1363,7 +1362,6 @@ static void AllClientSetdebug(UaContext* ua,
       }
     }
   } while (client_in_config);
-  UnlockRes(my_config);
 
   for (ClientResource* client : clients_with_unique_address) {
     DoClientSetdebugFunction(ua, client, level, trace_flag, hangup_flag,

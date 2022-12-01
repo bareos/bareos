@@ -183,8 +183,7 @@ void SchedulerPrivate::FillSchedulerJobQueueOrSleep()
 
 static time_t CalculateRuntime(time_t time, uint32_t minute)
 {
-  struct tm tm {
-  };
+  struct tm tm {};
   Blocaltime(&time, &tm);
   tm.tm_min = minute;
   tm.tm_sec = 0;
@@ -203,7 +202,7 @@ void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
 
   JobResource* job = nullptr;
 
-  LockRes(my_config);
+  ResLocker _{my_config};
   foreach_res (job, R_JOB) {
     if (!IsAutomaticSchedulerJob(job)) { continue; }
 
@@ -231,7 +230,6 @@ void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
       }
     }
   }
-  UnlockRes(my_config);
   Dmsg0(local_debuglevel, "Finished AddJobsForThisAndNextHourToQueue\n");
 }
 

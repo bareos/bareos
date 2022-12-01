@@ -178,9 +178,7 @@ static inline void DropDelayedDataStreams(r_ctx& rctx, bool reuse)
 
   if (!rctx.delayed_streams || rctx.delayed_streams->empty()) { return; }
 
-  foreach_alist (dds, rctx.delayed_streams) {
-    free(dds->content);
-  }
+  foreach_alist (dds, rctx.delayed_streams) { free(dds->content); }
 
   rctx.delayed_streams->destroy();
   if (reuse) { rctx.delayed_streams->init(10, owned_by_alist); }
@@ -417,10 +415,12 @@ void DoRestore(JobControlRecord* jcr)
   sd = jcr->store_bsock;
   jcr->setJobStatusWithPriorityCheck(JS_Running);
 
-  LockRes(my_config);
-  ClientResource* client
-      = (ClientResource*)my_config->GetNextRes(R_CLIENT, NULL);
-  UnlockRes(my_config);
+  ClientResource* client = nullptr;
+  {
+    ResLocker _{my_config};
+    client = (ClientResource*)my_config->GetNextRes(R_CLIENT, NULL);
+  }
+
   if (client) {
     buf_size = client->max_network_buffer_size;
   } else {

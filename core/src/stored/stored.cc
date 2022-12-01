@@ -497,7 +497,7 @@ extern "C" void* device_initialization(void*)
   Device* dev;
   int errstat;
 
-  LockRes(my_config);
+  ResLocker _{my_config};
 
   pthread_detach(pthread_self());
   jcr = NewStoredJcr();
@@ -572,7 +572,6 @@ extern "C" void* device_initialization(void*)
   }
   FreeJcr(jcr);
   init_done = true;
-  UnlockRes(my_config);
   return nullptr;
 }
 

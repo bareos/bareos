@@ -108,11 +108,11 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr,
   jcr->setJobStatusWithPriorityCheck(JS_Running);
 
   Dmsg1(300, "filed: opened data connection %d to stored\n", sd->fd_);
-
-  LockRes(my_config);
-  ClientResource* client
-      = (ClientResource*)my_config->GetNextRes(R_CLIENT, NULL);
-  UnlockRes(my_config);
+  ClientResource* client = nullptr;
+  {
+    ResLocker _{my_config};
+    client = (ClientResource*)my_config->GetNextRes(R_CLIENT, NULL);
+  }
   uint32_t buf_size;
   if (client) {
     buf_size = client->max_network_buffer_size;

@@ -266,31 +266,30 @@ static void DoAllStatus(UaContext* ua)
 
   DoDirectorStatus(ua);
 
-  /* Count Storage items */
-  LockRes(my_config);
-  i = 0;
-  foreach_res (store, R_STORAGE) {
-    i++;
-  }
-  unique_store = (StorageResource**)malloc(i * sizeof(StorageResource));
-  /* Find Unique Storage address/port */
-  i = 0;
-  foreach_res (store, R_STORAGE) {
-    found = false;
-    if (!ua->AclAccessOk(Storage_ACL, store->resource_name_)) { continue; }
-    for (j = 0; j < i; j++) {
-      if (bstrcmp(unique_store[j]->address, store->address)
-          && unique_store[j]->SDport == store->SDport) {
-        found = true;
-        break;
+  {
+    /* Count Storage items */
+    ResLocker _{my_config};
+    i = 0;
+    foreach_res (store, R_STORAGE) { i++; }
+    unique_store = (StorageResource**)malloc(i * sizeof(StorageResource));
+    /* Find Unique Storage address/port */
+    i = 0;
+    foreach_res (store, R_STORAGE) {
+      found = false;
+      if (!ua->AclAccessOk(Storage_ACL, store->resource_name_)) { continue; }
+      for (j = 0; j < i; j++) {
+        if (bstrcmp(unique_store[j]->address, store->address)
+            && unique_store[j]->SDport == store->SDport) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        unique_store[i++] = store;
+        Dmsg2(40, "Stuffing: %s:%d\n", store->address, store->SDport);
       }
     }
-    if (!found) {
-      unique_store[i++] = store;
-      Dmsg2(40, "Stuffing: %s:%d\n", store->address, store->SDport);
-    }
   }
-  UnlockRes(my_config);
 
   previous_JobStatus = ua->jcr->getJobStatus();
 
@@ -301,31 +300,30 @@ static void DoAllStatus(UaContext* ua)
   }
   free(unique_store);
 
-  /* Count Client items */
-  LockRes(my_config);
-  i = 0;
-  foreach_res (client, R_CLIENT) {
-    i++;
-  }
-  unique_client = (ClientResource**)malloc(i * sizeof(ClientResource));
-  /* Find Unique Client address/port */
-  i = 0;
-  foreach_res (client, R_CLIENT) {
-    found = false;
-    if (!ua->AclAccessOk(Client_ACL, client->resource_name_)) { continue; }
-    for (j = 0; j < i; j++) {
-      if (bstrcmp(unique_client[j]->address, client->address)
-          && unique_client[j]->FDport == client->FDport) {
-        found = true;
-        break;
+  {
+    /* Count Client items */
+    ResLocker _{my_config};
+    i = 0;
+    foreach_res (client, R_CLIENT) { i++; }
+    unique_client = (ClientResource**)malloc(i * sizeof(ClientResource));
+    /* Find Unique Client address/port */
+    i = 0;
+    foreach_res (client, R_CLIENT) {
+      found = false;
+      if (!ua->AclAccessOk(Client_ACL, client->resource_name_)) { continue; }
+      for (j = 0; j < i; j++) {
+        if (bstrcmp(unique_client[j]->address, client->address)
+            && unique_client[j]->FDport == client->FDport) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        unique_client[i++] = client;
+        Dmsg2(40, "Stuffing: %s:%d\n", client->address, client->FDport);
       }
     }
-    if (!found) {
-      unique_client[i++] = client;
-      Dmsg2(40, "Stuffing: %s:%d\n", client->address, client->FDport);
-    }
   }
-  UnlockRes(my_config);
 
   previous_JobStatus = ua->jcr->getJobStatus();
 
@@ -658,35 +656,20 @@ static void DoSchedulerStatus(UaContext* ua)
   ua->SendMsg("Schedule               Jobs Triggered\n");
   ua->SendMsg("===========================================================\n");
 
-  LockRes(my_config);
-  foreach_res (sched, R_SCHEDULE) {
-    int cnt = 0;
+  {
+    ResLocker _{my_config};
+    foreach_res (sched, R_SCHEDULE) {
+      int cnt = 0;
 
-    if (!sched->enabled) { continue; }
+      if (!sched->enabled) { continue; }
 
-    if (!ua->AclAccessOk(Schedule_ACL, sched->resource_name_)) { continue; }
+      if (!ua->AclAccessOk(Schedule_ACL, sched->resource_name_)) { continue; }
 
-    if (schedule_given_by_cmdline_args) {
-      if (!bstrcmp(sched->resource_name_, schedulename)) { continue; }
-    }
-
-    if (job) {
-      if (job->schedule
-          && bstrcmp(sched->resource_name_, job->schedule->resource_name_)) {
-        if (cnt++ == 0) { ua->SendMsg("%s\n", sched->resource_name_); }
-        if (!job->enabled || (job->client && !job->client->enabled)) {
-          ua->SendMsg("                       %s (disabled)\n",
-                      job->resource_name_);
-        } else {
-          ua->SendMsg("                       %s\n", job->resource_name_);
-        }
+      if (schedule_given_by_cmdline_args) {
+        if (!bstrcmp(sched->resource_name_, schedulename)) { continue; }
       }
-    } else {
-      foreach_res (job, R_JOB) {
-        if (!ua->AclAccessOk(Job_ACL, job->resource_name_)) { continue; }
 
-        if (client && job->client != client) { continue; }
-
+      if (job) {
         if (job->schedule
             && bstrcmp(sched->resource_name_, job->schedule->resource_name_)) {
           if (cnt++ == 0) { ua->SendMsg("%s\n", sched->resource_name_); }
@@ -697,12 +680,29 @@ static void DoSchedulerStatus(UaContext* ua)
             ua->SendMsg("                       %s\n", job->resource_name_);
           }
         }
-      }
-    }
+      } else {
+        foreach_res (job, R_JOB) {
+          if (!ua->AclAccessOk(Job_ACL, job->resource_name_)) { continue; }
 
-    if (cnt > 0) { ua->SendMsg("\n"); }
+          if (client && job->client != client) { continue; }
+
+          if (job->schedule
+              && bstrcmp(sched->resource_name_,
+                         job->schedule->resource_name_)) {
+            if (cnt++ == 0) { ua->SendMsg("%s\n", sched->resource_name_); }
+            if (!job->enabled || (job->client && !job->client->enabled)) {
+              ua->SendMsg("                       %s (disabled)\n",
+                          job->resource_name_);
+            } else {
+              ua->SendMsg("                       %s\n", job->resource_name_);
+            }
+          }
+        }
+      }
+
+      if (cnt > 0) { ua->SendMsg("\n"); }
+    }
   }
-  UnlockRes(my_config);
 
   // Build an overview.
   if (days > 0) { /* future */
@@ -729,45 +729,48 @@ start_again:
           }
         }
       } else {
-        LockRes(my_config);
-        foreach_res (job, R_JOB) {
-          if (!ua->AclAccessOk(Job_ACL, job->resource_name_)) { continue; }
+        {
+          ResLocker _{my_config};
+          foreach_res (job, R_JOB) {
+            if (!ua->AclAccessOk(Job_ACL, job->resource_name_)) { continue; }
 
-          if (job->schedule && job->schedule->enabled && job->enabled) {
-            // skip if client is set but not enabled
-            if (job->client && job->client == client && !job->client->enabled) {
-              continue;
-            }
-            if (!show_scheduled_preview(ua, job->schedule, overview,
-                                        &max_date_len, time_to_check)) {
-              job = NULL;
-              UnlockRes(my_config);
-              goto start_again;
+            if (job->schedule && job->schedule->enabled && job->enabled) {
+              // skip if client is set but not enabled
+              if (job->client && job->client == client
+                  && !job->client->enabled) {
+                continue;
+              }
+              if (!show_scheduled_preview(ua, job->schedule, overview,
+                                          &max_date_len, time_to_check)) {
+                job = NULL;
+                goto start_again;
+              }
             }
           }
         }
-        UnlockRes(my_config);
         job = NULL;
       }
     } else {
       // List all schedules.
-      LockRes(my_config);
-      foreach_res (sched, R_SCHEDULE) {
-        if (!sched->enabled) { continue; }
+      {
+        ResLocker _{my_config};
+        foreach_res (sched, R_SCHEDULE) {
+          if (!sched->enabled) { continue; }
 
-        if (!ua->AclAccessOk(Schedule_ACL, sched->resource_name_)) { continue; }
+          if (!ua->AclAccessOk(Schedule_ACL, sched->resource_name_)) {
+            continue;
+          }
 
-        if (schedule_given_by_cmdline_args) {
-          if (!bstrcmp(sched->resource_name_, schedulename)) { continue; }
-        }
+          if (schedule_given_by_cmdline_args) {
+            if (!bstrcmp(sched->resource_name_, schedulename)) { continue; }
+          }
 
-        if (!show_scheduled_preview(ua, sched, overview, &max_date_len,
-                                    time_to_check)) {
-          UnlockRes(my_config);
-          goto start_again;
+          if (!show_scheduled_preview(ua, sched, overview, &max_date_len,
+                                      time_to_check)) {
+            goto start_again;
+          }
         }
       }
-      UnlockRes(my_config);
     }
 
     time_to_check += seconds_per_hour; /* next hour */
@@ -913,44 +916,43 @@ static void ListScheduledJobs(UaContext* ua)
   }
 
   // Loop through all jobs
-  LockRes(my_config);
-  foreach_res (job, R_JOB) {
-    if (!ua->AclAccessOk(Job_ACL, job->resource_name_) || !job->enabled
-        || (job->client && !job->client->enabled)) {
-      continue;
-    }
-    for (run = NULL; (run = find_next_run(run, job, runtime, days));) {
-      UnifiedStorageResource store;
-      level = job->JobLevel;
-      if (run->level) { level = run->level; }
-      priority = job->Priority;
-      if (run->Priority) { priority = run->Priority; }
-      if (!hdr_printed) {
-        PrtRunhdr(ua);
-        hdr_printed = true;
+  {
+    ResLocker _{my_config};
+    foreach_res (job, R_JOB) {
+      if (!ua->AclAccessOk(Job_ACL, job->resource_name_) || !job->enabled
+          || (job->client && !job->client->enabled)) {
+        continue;
       }
-      sp = (sched_pkt*)malloc(sizeof(sched_pkt));
-      sp->job = job;
-      sp->level = level;
-      sp->priority = priority;
-      sp->runtime = runtime;
-      sp->pool = run->pool;
-      GetJobStorage(&store, job, run);
-      sp->store = store.store;
-      if (sp->store) {
-        Dmsg3(250, "job=%s storage=%s MediaType=%s\n", job->resource_name_,
-              sp->store->resource_name_, sp->store->media_type);
-      } else {
-        Dmsg1(250, "job=%s could not get job storage\n", job->resource_name_);
+      for (run = NULL; (run = find_next_run(run, job, runtime, days));) {
+        UnifiedStorageResource store;
+        level = job->JobLevel;
+        if (run->level) { level = run->level; }
+        priority = job->Priority;
+        if (run->Priority) { priority = run->Priority; }
+        if (!hdr_printed) {
+          PrtRunhdr(ua);
+          hdr_printed = true;
+        }
+        sp = (sched_pkt*)malloc(sizeof(sched_pkt));
+        sp->job = job;
+        sp->level = level;
+        sp->priority = priority;
+        sp->runtime = runtime;
+        sp->pool = run->pool;
+        GetJobStorage(&store, job, run);
+        sp->store = store.store;
+        if (sp->store) {
+          Dmsg3(250, "job=%s storage=%s MediaType=%s\n", job->resource_name_,
+                sp->store->resource_name_, sp->store->media_type);
+        } else {
+          Dmsg1(250, "job=%s could not get job storage\n", job->resource_name_);
+        }
+        sched->BinaryInsertMultiple(sp, CompareByRuntimePriority);
+        num_jobs++;
       }
-      sched->BinaryInsertMultiple(sp, CompareByRuntimePriority);
-      num_jobs++;
-    }
-  } /* end for loop over resources */
-  UnlockRes(my_config);
-  foreach_dlist (sp, sched) {
-    PrtRuntime(ua, sp);
+    } /* end for loop over resources */
   }
+  foreach_dlist (sp, sched) { PrtRuntime(ua, sp); }
   if (num_jobs == 0 && !ua->api) { ua->SendMsg(_("No Scheduled Jobs.\n")); }
   if (!ua->api) ua->SendMsg("====\n");
   Dmsg0(200, "Leave list_sched_jobs_runs()\n");

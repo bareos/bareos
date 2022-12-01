@@ -95,13 +95,11 @@ QStringList MonitorItemThread::createRes(const cl_opts& cl)
 {
   QStringList tabRefs;
 
-  LockRes(my_config);
+  ResLocker _{my_config};
 
   int monitorItems = 0;
   MonitorResource* monitorRes;
-  foreach_res (monitorRes, R_MONITOR) {
-    monitorItems++;
-  }
+  foreach_res (monitorRes, R_MONITOR) { monitorItems++; }
 
   if (monitorItems != 1) {
     const std::string& configfile = my_config->get_base_config_path();
@@ -158,8 +156,6 @@ QStringList MonitorItemThread::createRes(const cl_opts& cl)
     items.append(item);
     nitems++;
   }
-
-  UnlockRes(my_config);
 
   if (nitems == 0) {
     Emsg1(M_ERROR_TERM, 0,

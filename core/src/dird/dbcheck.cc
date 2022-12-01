@@ -875,7 +875,8 @@ int main(int argc, char* argv[])
 
     my_config = InitDirConfig(configfile.c_str(), M_ERROR_TERM);
     my_config->ParseConfig();
-    LockRes(my_config);
+
+    ResLocker _{my_config};
     foreach_res (catalog, R_CATALOG) {
       if (!catalogname.empty()
           && bstrcmp(catalog->resource_name_, catalogname.c_str())) {
@@ -887,7 +888,7 @@ int main(int argc, char* argv[])
         break;
       }
     }
-    UnlockRes(my_config);
+
     if (!found) {
       if (!catalogname.empty()) {
         Pmsg2(0,
@@ -902,10 +903,11 @@ int main(int argc, char* argv[])
       }
       exit(1);
     } else {
-      LockRes(my_config);
-      me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
-      my_config->own_resource_ = me;
-      UnlockRes(my_config);
+      {
+        ResLocker _{my_config};
+        me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
+        my_config->own_resource_ = me;
+      }
       if (!me) {
         Pmsg0(0, _("Error no Director resource defined.\n"));
         exit(1);

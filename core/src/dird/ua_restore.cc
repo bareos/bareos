@@ -171,14 +171,14 @@ bool RestoreCmd(UaContext* ua, const char*)
   if (!OpenClientDb(ua, true)) { goto bail_out; }
 
   /* Ensure there is at least one Restore Job */
-  LockRes(my_config);
-  foreach_res (job, R_JOB) {
-    if (job->JobType == JT_RESTORE) {
-      if (!rx.restore_job) { rx.restore_job = job; }
-      rx.restore_jobs++;
+  {
+    foreach_res (job, R_JOB) {
+      if (job->JobType == JT_RESTORE) {
+        if (!rx.restore_job) { rx.restore_job = job; }
+        rx.restore_jobs++;
+      }
     }
   }
-  UnlockRes(my_config);
   if (!rx.restore_jobs) {
     ua->ErrorMsg(
         _("No Restore Job Resource found in %s.\n"
@@ -1519,16 +1519,17 @@ void FindStorageResource(UaContext* ua,
     return;
   }
   // Try looking up Storage by name
-  LockRes(my_config);
-  foreach_res (store, R_STORAGE) {
-    if (bstrcmp(Storage, store->resource_name_)) {
-      if (ua->AclAccessOk(Storage_ACL, store->resource_name_)) {
-        rx.store = store;
+  {
+    ResLocker _{my_config};
+    foreach_res (store, R_STORAGE) {
+      if (bstrcmp(Storage, store->resource_name_)) {
+        if (ua->AclAccessOk(Storage_ACL, store->resource_name_)) {
+          rx.store = store;
+        }
+        break;
       }
-      break;
     }
   }
-  UnlockRes(my_config);
 
   if (rx.store) {
     int i;
@@ -1549,7 +1550,7 @@ void FindStorageResource(UaContext* ua,
 
   // If no storage resource, try to find one from MediaType
   if (!rx.store) {
-    LockRes(my_config);
+    ResLocker _{my_config};
     foreach_res (store, R_STORAGE) {
       if (bstrcmp(MediaType, store->media_type)) {
         if (ua->AclAccessOk(Storage_ACL, store->resource_name_)) {
@@ -1564,11 +1565,9 @@ void FindStorageResource(UaContext* ua,
                            Storage, store->resource_name_, MediaType);
           }
         }
-        UnlockRes(my_config);
         return;
       }
     }
-    UnlockRes(my_config);
     ua->WarningMsg(_("\nUnable to find Storage resource for\n"
                      "MediaType \"%s\", needed by the Jobs you selected.\n"),
                    MediaType);
