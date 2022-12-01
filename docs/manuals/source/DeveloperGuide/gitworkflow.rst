@@ -117,7 +117,7 @@ Refactoring is always welcome but can sometimes require extra care and attention
 
 If you mix refactoring and actual functional changes (goal of your PR), it may become a change soup and make it difficult for the reviewer and lengthen the review process even more.
 
-Make sure you differentiate refactoring changes and functional changes (goals of the PR), refactoring commits should be prepended with either ``Refactoring:`` or ``Refactor:`` to make it even easier for reviewers to spot.
+Make sure you differentiate refactoring changes and functional changes (goals of the PR), refactoring commits should be prepended with either ``refactoring:`` or ``refactor:`` to make it even easier for reviewers to spot.
 
 Refactoring commits should be lined up together either at the start of the branch or at the end.
 
