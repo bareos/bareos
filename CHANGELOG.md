@@ -18,6 +18,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
     - packages bareos-storage-ceph and bareos-filedaemon-ceph-plugin if previously installed need to be removed manually.
 - Bareos 22 removes bareos-webui support for RHEL 7 and CentOS 7
 - Bareos 22 uses the VMware VDDK 8.0.0 for the VMware Plugin. [PR #1295]. VDDK 8.0.0 supports vSphere 8 and is backward compatible with vSphere 6.7 and 7. **vSphere 6.5 is not supported anymore**.
+- Bareos 22 bareos-webui now uses php_fpm instead of mod_php. [PR #1287]. Update should run smoothly, for details check the "Installing Bareos Webui" chapter in the docs.
 
 ### Added
 - dird: add command line feature to print specific resources [PR #1153]
@@ -162,6 +163,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - dird: do device reservation as late as possible, i.e. after run before job scripts [PR #1273]
 - ndmp_tape.cc: do not log current rctx->rec in joblog [PR #1324]
 - dird: stored: set statistics collection as deprecated [PR #1320]
+- webui: switch from mod_php to php-fpm [PR #1287]
 
 ### Deprecated
 - make_catalog_backup.pl is now a shell wrapper script which will be removed in version 23.
