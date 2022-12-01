@@ -32,13 +32,13 @@ static bRC freePlugin(PluginContext* ctx);
 static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value);
 static bRC setPluginValue(PluginContext* ctx, pVariable var, void* value);
 static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value);
-static bRC startBackupFile(PluginContext* ctx, struct save_pkt* sp);
+static bRC startBackupFile(PluginContext* ctx, save_pkt* sp);
 static bRC endBackupFile(PluginContext* ctx);
-static bRC pluginIO(PluginContext* ctx, struct io_pkt* io);
+static bRC pluginIO(PluginContext* ctx, io_pkt* io);
 static bRC startRestoreFile(PluginContext* ctx, const char* cmd);
 static bRC endRestoreFile(PluginContext* ctx);
-static bRC createFile(PluginContext* ctx, struct restore_pkt* rp);
-static bRC setFileAttributes(PluginContext* ctx, struct restore_pkt* rp);
+static bRC createFile(PluginContext* ctx, restore_pkt* rp);
+static bRC setFileAttributes(PluginContext* ctx, restore_pkt* rp);
 static bRC checkFile(PluginContext* ctx, char* fname);
 static bRC getAcl(PluginContext* ctx, acl_pkt* ap);
 static bRC setAcl(PluginContext* ctx, acl_pkt* ap);
@@ -215,7 +215,7 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
  * The plugin can create "Virtual" files by giving them a
  * name that is not normally found on the file system.
  */
-static bRC startBackupFile(PluginContext*, struct save_pkt*) { return bRC_OK; }
+static bRC startBackupFile(PluginContext*, save_pkt*) { return bRC_OK; }
 
 // Done backing up a file.
 static bRC endBackupFile(PluginContext*) { return bRC_OK; }
@@ -224,7 +224,7 @@ static bRC endBackupFile(PluginContext*) { return bRC_OK; }
  * Do actual I/O. Bareos calls this after startBackupFile
  * or after startRestoreFile to do the actual file input or output.
  */
-static bRC pluginIO(PluginContext*, struct io_pkt* io)
+static bRC pluginIO(PluginContext*, io_pkt* io)
 {
   io->status = 0;
   io->io_errno = 0;
@@ -256,16 +256,13 @@ static bRC endRestoreFile(PluginContext*) { return bRC_OK; }
  * This data is what is needed to create the file, but does
  * not contain actual file data.
  */
-static bRC createFile(PluginContext*, struct restore_pkt*) { return bRC_OK; }
+static bRC createFile(PluginContext*, restore_pkt*) { return bRC_OK; }
 
 /*
  * Called after the file has been restored. This can be used to set directory
  * permissions, ...
  */
-static bRC setFileAttributes(PluginContext*, struct restore_pkt*)
-{
-  return bRC_OK;
-}
+static bRC setFileAttributes(PluginContext*, restore_pkt*) { return bRC_OK; }
 
 static bRC getAcl(PluginContext*, acl_pkt*) { return bRC_OK; }
 

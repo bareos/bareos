@@ -134,11 +134,11 @@ bRC bareosAddWild(PluginContext*, const char*, int) { return bRC_OK; };
 bRC bareosNewOptions(PluginContext*) { return bRC_OK; };
 bRC bareosNewInclude(PluginContext*) { return bRC_OK; };
 bRC bareosNewPreInclude(PluginContext*) { return bRC_OK; };
-bRC bareosCheckChanges(PluginContext*, struct filedaemon::save_pkt*)
+bRC bareosCheckChanges(PluginContext*, filedaemon::save_pkt*)
 {
   return bRC_OK;
 };
-bRC bareosAcceptFile(PluginContext*, struct filedaemon::save_pkt*)
+bRC bareosAcceptFile(PluginContext*, filedaemon::save_pkt*)
 {
   return bRC_OK;
 }; /* Need fname and statp */

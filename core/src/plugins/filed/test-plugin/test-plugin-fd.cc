@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -47,13 +47,13 @@ static bRC freePlugin(PluginContext* ctx);
 static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value);
 static bRC setPluginValue(PluginContext* ctx, pVariable var, void* value);
 static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value);
-static bRC startBackupFile(PluginContext* ctx, struct save_pkt* sp);
+static bRC startBackupFile(PluginContext* ctx, save_pkt* sp);
 static bRC endBackupFile(PluginContext* ctx);
-static bRC pluginIO(PluginContext* ctx, struct io_pkt* io);
+static bRC pluginIO(PluginContext* ctx, io_pkt* io);
 static bRC startRestoreFile(PluginContext* ctx, const char* cmd);
 static bRC endRestoreFile(PluginContext* ctx);
-static bRC createFile(PluginContext* ctx, struct restore_pkt* rp);
-static bRC setFileAttributes(PluginContext* ctx, struct restore_pkt* rp);
+static bRC createFile(PluginContext* ctx, restore_pkt* rp);
+static bRC setFileAttributes(PluginContext* ctx, restore_pkt* rp);
 static bRC checkFile(PluginContext* ctx, char* fname);
 static bRC getAcl(PluginContext* ctx, acl_pkt* ap);
 static bRC setAcl(PluginContext* ctx, acl_pkt* ap);
@@ -298,7 +298,7 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
 }
 
 // Start the backup of a specific file
-static bRC startBackupFile(PluginContext* ctx, struct save_pkt* sp)
+static bRC startBackupFile(PluginContext* ctx, save_pkt* sp)
 {
   struct plugin_ctx* p_ctx = (struct plugin_ctx*)ctx->plugin_private_context;
   if (!p_ctx) { return bRC_Error; }
@@ -579,7 +579,7 @@ static bRC endBackupFile(PluginContext* ctx)
 
 
 // Bareos is calling us to do the actual I/O
-static bRC pluginIO(PluginContext* ctx, struct io_pkt* io)
+static bRC pluginIO(PluginContext* ctx, io_pkt* io)
 {
   struct plugin_ctx* p_ctx = (struct plugin_ctx*)ctx->plugin_private_context;
   if (!p_ctx) { return bRC_Error; }
@@ -619,7 +619,7 @@ static bRC endRestoreFile(PluginContext* ctx)
  *  CF_CREATED  -- created, but no content to extract (typically directories)
  *
  */
-static bRC createFile(PluginContext* ctx, struct restore_pkt* rp)
+static bRC createFile(PluginContext* ctx, restore_pkt* rp)
 {
   printf("test-plugin-fd: createFile\n");
   if (strlen(rp->where) > 512) {
@@ -632,7 +632,7 @@ static bRC createFile(PluginContext* ctx, struct restore_pkt* rp)
   return bRC_OK;
 }
 
-static bRC setFileAttributes(PluginContext* ctx, struct restore_pkt* rp)
+static bRC setFileAttributes(PluginContext* ctx, restore_pkt* rp)
 {
   printf("test-plugin-fd: setFileAttributes\n");
   return bRC_OK;

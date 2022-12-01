@@ -300,10 +300,10 @@ int PluginEstimate(JobControlRecord* jcr,
                    FindFilesPacket* ff_pkt,
                    bool top_level);
 bool PluginCheckFile(JobControlRecord* jcr, char* fname);
-void PluginUpdateFfPkt(FindFilesPacket* ff_pkt, struct save_pkt* sp);
+void PluginUpdateFfPkt(FindFilesPacket* ff_pkt, save_pkt* sp);
 bRC PluginOptionHandleFile(JobControlRecord* jcr,
                            FindFilesPacket* ff_pkt,
-                           struct save_pkt* sp);
+                           save_pkt* sp);
 #endif
 
 #ifdef __cplusplus
@@ -348,9 +348,9 @@ typedef struct s_bareosFuncs {
   bRC (*NewOptions)(PluginContext* ctx);
   bRC (*NewInclude)(PluginContext* ctx);
   bRC (*NewPreInclude)(PluginContext* ctx);
-  bRC (*checkChanges)(PluginContext* ctx, struct save_pkt* sp);
+  bRC (*checkChanges)(PluginContext* ctx, save_pkt* sp);
   bRC (*AcceptFile)(PluginContext* ctx,
-                    struct save_pkt* sp); /* Need fname and statp */
+                    save_pkt* sp); /* Need fname and statp */
   bRC (*SetSeenBitmap)(PluginContext* ctx, bool all, char* fname);
   bRC (*ClearSeenBitmap)(PluginContext* ctx, bool all, char* fname);
 } CoreFunctions;
@@ -379,18 +379,18 @@ typedef struct s_pluginFuncs {
   bRC (*getPluginValue)(PluginContext* ctx, pVariable var, void* value);
   bRC (*setPluginValue)(PluginContext* ctx, pVariable var, void* value);
   bRC (*handlePluginEvent)(PluginContext* ctx, bEvent* event, void* value);
-  bRC (*startBackupFile)(PluginContext* ctx, struct save_pkt* sp);
+  bRC (*startBackupFile)(PluginContext* ctx, save_pkt* sp);
   bRC (*endBackupFile)(PluginContext* ctx);
   bRC (*startRestoreFile)(PluginContext* ctx, const char* cmd);
   bRC (*endRestoreFile)(PluginContext* ctx);
-  bRC (*pluginIO)(PluginContext* ctx, struct io_pkt* io);
-  bRC (*createFile)(PluginContext* ctx, struct restore_pkt* rp);
-  bRC (*setFileAttributes)(PluginContext* ctx, struct restore_pkt* rp);
+  bRC (*pluginIO)(PluginContext* ctx, io_pkt* io);
+  bRC (*createFile)(PluginContext* ctx, restore_pkt* rp);
+  bRC (*setFileAttributes)(PluginContext* ctx, restore_pkt* rp);
   bRC (*checkFile)(PluginContext* ctx, char* fname);
-  bRC (*getAcl)(PluginContext* ctx, struct acl_pkt* ap);
-  bRC (*setAcl)(PluginContext* ctx, struct acl_pkt* ap);
-  bRC (*getXattr)(PluginContext* ctx, struct xattr_pkt* xp);
-  bRC (*setXattr)(PluginContext* ctx, struct xattr_pkt* xp);
+  bRC (*getAcl)(PluginContext* ctx, acl_pkt* ap);
+  bRC (*setAcl)(PluginContext* ctx, acl_pkt* ap);
+  bRC (*getXattr)(PluginContext* ctx, xattr_pkt* xp);
+  bRC (*setXattr)(PluginContext* ctx, xattr_pkt* xp);
 } PluginFunctions;
 
 #define PlugFunc(plugin) ((PluginFunctions*)(plugin->plugin_functions))

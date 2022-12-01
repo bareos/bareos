@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -86,13 +86,13 @@ static bRC setPluginValue(PluginContext* plugin_ctx,
 static bRC handlePluginEvent(PluginContext* plugin_ctx,
                              bEvent* event,
                              void* value);
-static bRC startBackupFile(PluginContext* plugin_ctx, struct save_pkt* sp);
+static bRC startBackupFile(PluginContext* plugin_ctx, save_pkt* sp);
 static bRC endBackupFile(PluginContext* plugin_ctx);
-static bRC pluginIO(PluginContext* plugin_ctx, struct io_pkt* io);
+static bRC pluginIO(PluginContext* plugin_ctx, io_pkt* io);
 static bRC startRestoreFile(PluginContext* plugin_ctx, const char* cmd);
 static bRC endRestoreFile(PluginContext* plugin_ctx);
-static bRC createFile(PluginContext* plugin_ctx, struct restore_pkt* rp);
-static bRC setFileAttributes(PluginContext* plugin_ctx, struct restore_pkt* rp);
+static bRC createFile(PluginContext* plugin_ctx, restore_pkt* rp);
+static bRC setFileAttributes(PluginContext* plugin_ctx, restore_pkt* rp);
 static bRC checkFile(PluginContext* plugin_ctx, char* fname);
 static bRC getAcl(PluginContext* plugin_ctx, acl_pkt* ap);
 static bRC setAcl(PluginContext* plugin_ctx, acl_pkt* ap);
@@ -336,9 +336,9 @@ static bRC handlePluginEvent(PluginContext* plugin_ctx,
       plugin_priv_ctx->plugin_options = strdup((char*)value);
       break;
     case bEventRestoreObject: {
-      struct restore_object_pkt* rop;
+      restore_object_pkt* rop;
 
-      rop = (struct restore_object_pkt*)value;
+      rop = (restore_object_pkt*)value;
 
       /* Only use the plugin definition of a restore object if we
        * didn't get any other plugin definition from some other source before.*/
@@ -390,9 +390,9 @@ static bRC handlePluginEvent(PluginContext* plugin_ctx,
         }
         break;
       case bEventRestoreObject: {
-        struct restore_object_pkt* rop;
+        restore_object_pkt* rop;
 
-        rop = (struct restore_object_pkt*)value;
+        rop = (restore_object_pkt*)value;
         if (!rop) {
           /*
            * If rop == NULL this means we got the last restore object.
@@ -419,8 +419,7 @@ static bRC handlePluginEvent(PluginContext* plugin_ctx,
         break;
       }
       case bEventHandleBackupFile:
-        retval
-            = Bareosfd_PyHandleBackupFile(plugin_ctx, (struct save_pkt*)value);
+        retval = Bareosfd_PyHandleBackupFile(plugin_ctx, (save_pkt*)value);
         break;
       default:
         /*
@@ -450,7 +449,7 @@ bail_out:
  * The plugin can create "Virtual" files by giving them a
  * name that is not normally found on the file system.
  */
-static bRC startBackupFile(PluginContext* plugin_ctx, struct save_pkt* sp)
+static bRC startBackupFile(PluginContext* plugin_ctx, save_pkt* sp)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx
@@ -520,7 +519,7 @@ bail_out:
  * or after startRestoreFile to do the actual file
  * input or output.
  */
-static bRC pluginIO(PluginContext* plugin_ctx, struct io_pkt* io)
+static bRC pluginIO(PluginContext* plugin_ctx, io_pkt* io)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx
@@ -579,7 +578,7 @@ bail_out:
  * This data is what is needed to create the file, but does
  * not contain actual file data.
  */
-static bRC createFile(PluginContext* plugin_ctx, struct restore_pkt* rp)
+static bRC createFile(PluginContext* plugin_ctx, restore_pkt* rp)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx
@@ -599,7 +598,7 @@ bail_out:
  * Called after the file has been restored. This can be used to
  * set directory permissions, ...
  */
-static bRC setFileAttributes(PluginContext* plugin_ctx, struct restore_pkt* rp)
+static bRC setFileAttributes(PluginContext* plugin_ctx, restore_pkt* rp)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx

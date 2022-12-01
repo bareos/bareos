@@ -573,22 +573,22 @@ static bRC PySetPluginValue(PluginContext* plugin_ctx,
 static bRC PyHandlePluginEvent(PluginContext* plugin_ctx,
                                bEvent* event,
                                void* value);
-static bRC PyStartBackupFile(PluginContext* plugin_ctx, struct save_pkt* sp);
+static bRC PyStartBackupFile(PluginContext* plugin_ctx, save_pkt* sp);
 static bRC PyEndBackupFile(PluginContext* plugin_ctx);
-static bRC PyPluginIO(PluginContext* plugin_ctx, struct io_pkt* io);
+static bRC PyPluginIO(PluginContext* plugin_ctx, io_pkt* io);
 static bRC PyStartRestoreFile(PluginContext* plugin_ctx, const char* cmd);
 static bRC PyEndRestoreFile(PluginContext* plugin_ctx);
-static bRC PyCreateFile(PluginContext* plugin_ctx, struct restore_pkt* rp);
+static bRC PyCreateFile(PluginContext* plugin_ctx, restore_pkt* rp);
 static bRC PySetFileAttributes(PluginContext* plugin_ctx,
-                               struct restore_pkt* rp);
+                               restore_pkt* rp);
 static bRC PyCheckFile(PluginContext* plugin_ctx, char* fname);
 static bRC PyGetAcl(PluginContext* plugin_ctx, acl_pkt* ap);
 static bRC PySetAcl(PluginContext* plugin_ctx, acl_pkt* ap);
 static bRC PyGetXattr(PluginContext* plugin_ctx, xattr_pkt* xp);
 static bRC PySetXattr(PluginContext* plugin_ctx, xattr_pkt* xp);
 static bRC PyRestoreObjectData(PluginContext* plugin_ctx,
-                               struct restore_object_pkt* rop);
-static bRC PyHandleBackupFile(PluginContext* plugin_ctx, struct save_pkt* sp);
+                               restore_object_pkt* rop);
+static bRC PyHandleBackupFile(PluginContext* plugin_ctx, save_pkt* sp);
 
 } /* namespace filedaemon */
 using namespace filedaemon;
