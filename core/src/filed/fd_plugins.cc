@@ -1832,12 +1832,16 @@ static int MyPluginBopen(BareosFilePacket* bfd,
     errno = io.io_errno;
     bfd->lerror = io.lerror;
   }
+
   //  The plugin has two options for the read/write during the IO_OPEN call:
   //  1.: - Set io.status to IoStatus::do_io_in_core, and
   //      - Set the io.filedes to the filedescriptor of the file that was
   //        opened in the plugin. In this case the core code will read from
   //        write to that filedescriptor during backup and restore.
-  //  2.: - Set io.status to IoStatus::success, and
+  //
+  //  2.: - Set io.status to bareosfd.iostat_do_in_plugin.
+  //        This will call the plugin to do the IO itself.
+
   bfd->filedes = io.filedes;
 
   if (io.status == IoStatus::do_io_in_core) { bfd->do_io_in_core = true; }
