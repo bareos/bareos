@@ -526,7 +526,7 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
             return bareosfd.bRC_More
         else:
             if self.PostgressFullBackupRunning:
-                self.completed_backup_job_and_close_db()
+                self.complete_backup_job_and_close_db()
                 # Now we can also create the Restore object with the right timestamp
                 self.files_to_backup.append("ROP")
                 return self.checkForWalFiles()
@@ -541,7 +541,7 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
         especially when job was cancelled
         """
         if self.PostgressFullBackupRunning:
-            self.completed_backup_job_and_close_db()
+            self.complete_backup_job_and_close_db()
             self.PostgressFullBackupRunning = False
         else:
             self.close_db_connection()
