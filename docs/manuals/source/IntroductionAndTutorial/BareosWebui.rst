@@ -343,6 +343,11 @@ Restore location on client
    In case you want to use another location, simply enter the path here where you want to restore to on the selected client, for example :file:`/tmp/bareos-restore/`.
 
 
+Plugin options
+
+   Provide a plugin options string here if required. The field is only shown if a fileset using a plugin is detected.
+
+
 Restore multiple files
 ~~~~~~~~~~~~~~~~~~~~~~
 

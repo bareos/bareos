@@ -956,10 +956,12 @@ class BareosBSock implements BareosBSockInterface
     * @param $fileid
     * @param $dirid
     * @param $jobids
+    * @param $replace
+    * @param $pluginoptions
     *
     * @return string
     */
-   public function restore($jobid=null, $client=null, $restoreclient=null, $restorejob=null, $where=null, $fileid=null, $dirid=null, $jobids=null, $replace=null)
+   public function restore($jobid=null, $client=null, $restoreclient=null, $restorejob=null, $where=null, $fileid=null, $dirid=null, $jobids=null, $replace=null, $pluginoptions=null)
    {
       $result = "";
       $debug = "";
@@ -973,7 +975,13 @@ class BareosBSock implements BareosBSockInterface
          $debug = self::receive_message();
       }
 
-      if(self::send('restore file=?b2000'.$rnd.' client="'.$client.'" restoreclient="'.$restoreclient.'" restorejob="'.$restorejob.'" where="'.$where.'" replace="'.$replace.'" yes')) {
+      $restore_cmd = 'restore file=?b2000'.$rnd.' client="'.$client.'" restoreclient="'.$restoreclient.'" restorejob="'.$restorejob.'" where="'.$where.'" replace="'.$replace.'"';
+
+      if(!empty($pluginoptions)) {
+         $restore_cmd .= ' pluginoptions="'.$pluginoptions.'"';
+      }
+
+      if(self::send($restore_cmd.' yes')) {
          $result = self::receive_message();
       }
 

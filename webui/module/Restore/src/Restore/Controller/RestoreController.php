@@ -152,6 +152,7 @@ class RestoreController extends AbstractActionController
         $dirid = $form->getInputFilter()->getValue('checked_directories');
         $jobids = $form->getInputFilter()->getValue('jobids_hidden');
         $replace = $form->getInputFilter()->getValue('replace');
+        $pluginoptions = $form->getInputFilter()->getValue('pluginoptions');
 
         try {
           $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
@@ -177,7 +178,8 @@ class RestoreController extends AbstractActionController
               $fileid,
               $dirid,
               $jobids,
-              $replace
+              $replace,
+              $pluginoptions
             );
           }
         } catch(Exception $e) {
@@ -323,6 +325,7 @@ class RestoreController extends AbstractActionController
         $dirid = $form->getInputFilter()->getValue('checked_directories');
         $jobids = $form->getInputFilter()->getValue('jobids_hidden');
         $replace = $form->getInputFilter()->getValue('replace');
+        $pluginoptions = $form->getInputFilter()->getValue('pluginoptions');
 
         try {
           $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
@@ -348,7 +351,8 @@ class RestoreController extends AbstractActionController
               $fileid,
               $dirid,
               $jobids,
-              $replace
+              $replace,
+              $pluginoptions
             );
           }
         } catch (Exception $e) {
@@ -684,6 +688,13 @@ class RestoreController extends AbstractActionController
     }
     else {
       $this->restore_params['where'] = null;
+    }
+
+    if($this->params()->fromQuery('pluginoptions')) {
+      $this->restore_params['pluginoptions'] = $this->params()->fromQuery('pluginoptions');
+    }
+    else {
+      $this->restore_params['pluginoptions'] = null;
     }
 
     if($this->params()->fromQuery('fileid')) {

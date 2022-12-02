@@ -36,7 +36,7 @@ class RestoreForm extends Form
    protected $filesets;
    protected $restorejobresources;
    protected $jobids;
-   protected $backups;
+   public $backups;
 
    public function __construct($restore_params=null, $clients=null, $filesets=null, $restorejobresources=null, $jobids=null, $backups=null)
    {
@@ -405,6 +405,84 @@ class RestoreForm extends Form
                      'id' => 'replace',
                      'value' => 'always',
                      'disabled' => true
+                  )
+               )
+            );
+         }
+      }
+
+      // Plugin Options
+      $pluginoptions_placeholder = _('e.g. <plugin>:file=<filepath>:reader=<readprogram>:writer=<writeprogram>');
+      if($restore_params['mergefilesets'] == 0) {
+         $pluginjobs = false;
+         foreach($backups as $backup) {
+            if($backup['pluginjob']) {
+               $pluginjobs = true;
+            }
+         }
+         if($pluginjobs) {
+            $this->add(array(
+               'name' => 'pluginoptions',
+               'type' => 'text',
+               'options' => array(
+                  'label' => _('Plugin options')
+                  ),
+               'attributes' => array(
+                  'class' => 'form-control selectpicker show-tick',
+                  'value' => '',
+                  'id' => 'pluginoptions',
+                  'size' => '30',
+                  'placeholder' => $pluginoptions_placeholder,
+                  'required' => false
+                  )
+               )
+            );
+         } else {
+            $this->add(array(
+               'name' => 'pluginoptions',
+               'type' => 'Zend\Form\Element\Hidden',
+               'attributes' => array(
+                  'value' => '',
+                  'id' => 'pluginoptions',
+                  'required' => false,
+                  'disabled' => true
+                  )
+               )
+            );
+         }
+      }
+
+      if($restore_params['mergefilesets'] == 1) {
+         if(isset($restore_params['jobid'])) {
+            foreach($backups as $backup) {
+               if($backup['jobid'] === $restore_params['jobid'] && $backup['pluginjob']) {
+                  $this->add(array(
+                     'name' => 'pluginoptions',
+                     'type' => 'text',
+                     'options' => array(
+                        'label' => _('Plugin Options')
+                        ),
+                     'attributes' => array(
+                        'class' => 'form-control selectpicker show-tick',
+                        'value' => '',
+                        'id' => 'pluginoptions',
+                        'size' => '30',
+                        'placeholder' => $pluginoptions_placeholder,
+                        'required' => false
+                        )
+                     )
+                  );
+               }
+            }
+         } else {
+            $this->add(array(
+               'name' => 'pluginoptions',
+               'type' => 'Zend\Form\Element\Hidden',
+               'attributes' => array(
+                  'value' => '',
+                  'id' => 'pluginoptions',
+                  'required' => false,
+                  'disabled' => true
                   )
                )
             );

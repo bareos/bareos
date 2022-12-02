@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2020 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2022 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -114,6 +114,24 @@ class ClientModel
          }
          $result = $bsock->send_command($cmd, 2);
          $backups = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+
+         if(!isset($limit)) {
+            $filesets_pluginjob = array();
+            foreach ($backups['result']['backups'] as $key=>$backup) {
+               if (!array_key_exists($backup['fileset'], $filesets_pluginjob)) {
+                  $cmd = 'show fileset="'.$backup['fileset'].'"';
+                  $result = $bsock->send_command($cmd, 2);
+                  $fileset = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+                  $filesets_pluginjob[$backup['fileset']] = false;
+                  if (array_key_exists("plugin", $fileset['result']['filesets'][$backup['fileset']]['include'][0])) {
+                     if (!empty($fileset['result']['filesets'][$backup['fileset']]['include'][0]['plugin'])) {
+                        $filesets_pluginjob[$backup['fileset']] = true;
+                     }
+                  }
+               }
+               $backups['result']['backups'][$key]['pluginjob'] = $filesets_pluginjob[$backup['fileset']];
+            }
+         }
          return $backups['result']['backups'];
       }
       else {

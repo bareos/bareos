@@ -56,6 +56,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - catalog: update fileset text in fileset record [PR #1300]
 - stored: emit warnings for Maximum Concurrent Jobs in device configs [PR #1282]
 - VMware Plugin: Save VM configuration and recreate VM before restore [PR #1295]
+- webui: extend restore to handle plugin options [PR #1276]
 
 ### Fixed
 - webui: fix job timeline x-axis UTC timestamp issue [PR #1283]
@@ -366,6 +367,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1271]: https://github.com/bareos/bareos/pull/1271
 [PR #1272]: https://github.com/bareos/bareos/pull/1272
 [PR #1275]: https://github.com/bareos/bareos/pull/1275
+[PR #1276]: https://github.com/bareos/bareos/pull/1276
 [PR #1277]: https://github.com/bareos/bareos/pull/1277
 [PR #1278]: https://github.com/bareos/bareos/pull/1278
 [PR #1279]: https://github.com/bareos/bareos/pull/1279

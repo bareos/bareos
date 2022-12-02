@@ -265,13 +265,14 @@ class RestoreModel
     * @param $dirid
     * @param $jobids
     * @param $replace
+    * @param $pluginoptions
     *
     * @return string
     */
-   public function restore(&$bsock=null, $jobid=null, $client=null, $restoreclient=null, $restorejob=null, $where=null, $fileid=null, $dirid=null, $jobids=null, $replace=null)
+   public function restore(&$bsock=null, $jobid=null, $client=null, $restoreclient=null, $restorejob=null, $where=null, $fileid=null, $dirid=null, $jobids=null, $replace=null, $pluginoptions=null)
    {
       if(isset($bsock)) {
-         $result = $bsock->restore($jobid, $client, $restoreclient, $restorejob, $where, $fileid, $dirid, $jobids, $replace);
+         $result = $bsock->restore($jobid, $client, $restoreclient, $restorejob, $where, $fileid, $dirid, $jobids, $replace, $pluginoptions);
          return $result;
       }
       else {
