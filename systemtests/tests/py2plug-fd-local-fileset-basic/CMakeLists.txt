@@ -19,24 +19,18 @@
 
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 
-if(TARGET python-fd AND BASENAME MATCHES "py2")
-  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
-else()
-  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED)
+if(BASENAME MATCHES "py2")
+  if(TARGET python-fd)
+    create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
+  else()
+    create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED)
+  endif()
 endif()
 
-if(TARGET python3-fd AND BASENAME MATCHES "py3")
-  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
-  # Fail with UnicodeEncodeError: 'utf-8' codec can't encode characters in
-  # position 133-142: surrogates not allowed
-  set_tests_properties(
-    "${SYSTEMTEST_PREFIX}py3plug-fd-local-fileset-basic:basic"
-    PROPERTIES LABELS "broken"
-  )
-  set_tests_properties(
-    "${SYSTEMTEST_PREFIX}py3plug-fd-local-fileset-basic:io_in_core"
-    PROPERTIES LABELS "broken"
-  )
-else()
-  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED)
+if(BASENAME MATCHES "py3")
+  if(TARGET python3-fd)
+    create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
+  else()
+    create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED)
+  endif()
 endif()
