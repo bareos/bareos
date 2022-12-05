@@ -164,6 +164,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - ndmp_tape.cc: do not log current rctx->rec in joblog [PR #1324]
 - dird: stored: set statistics collection as deprecated [PR #1320]
 - webui: switch from mod_php to php-fpm [PR #1287]
+- bareos-fd-postgres: properly close database connection [PR #1326]
 
 ### Deprecated
 - make_catalog_backup.pl is now a shell wrapper script which will be removed in version 23.
@@ -365,6 +366,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1270]: https://github.com/bareos/bareos/pull/1270
 [PR #1271]: https://github.com/bareos/bareos/pull/1271
 [PR #1272]: https://github.com/bareos/bareos/pull/1272
+[PR #1273]: https://github.com/bareos/bareos/pull/1273
 [PR #1275]: https://github.com/bareos/bareos/pull/1275
 [PR #1277]: https://github.com/bareos/bareos/pull/1277
 [PR #1278]: https://github.com/bareos/bareos/pull/1278
@@ -374,6 +376,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1283]: https://github.com/bareos/bareos/pull/1283
 [PR #1284]: https://github.com/bareos/bareos/pull/1284
 [PR #1285]: https://github.com/bareos/bareos/pull/1285
+[PR #1287]: https://github.com/bareos/bareos/pull/1287
 [PR #1288]: https://github.com/bareos/bareos/pull/1288
 [PR #1295]: https://github.com/bareos/bareos/pull/1295
 [PR #1296]: https://github.com/bareos/bareos/pull/1296
@@ -388,5 +391,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1315]: https://github.com/bareos/bareos/pull/1315
 [PR #1317]: https://github.com/bareos/bareos/pull/1317
 [PR #1318]: https://github.com/bareos/bareos/pull/1318
+[PR #1320]: https://github.com/bareos/bareos/pull/1320
 [PR #1324]: https://github.com/bareos/bareos/pull/1324
+[PR #1326]: https://github.com/bareos/bareos/pull/1326
 [unreleased]: https://github.com/bareos/bareos/tree/master
