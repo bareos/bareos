@@ -890,6 +890,7 @@ static inline bool PyAclPacketToNative(PyAclPacket* pAclPacket,
   } else {
     PyErr_SetString(PyExc_TypeError,
                     "acl packet content needs to be of bytearray type");
+    return false;
   }
 
   return true;
