@@ -221,7 +221,6 @@ class Checklist:
 
 
 def check_merge_prereq(repo, pr, ignore_status_checks=False):
-
     cl = Checklist()
 
     cl.check(
@@ -266,6 +265,13 @@ def check_merge_prereq(repo, pr, ignore_status_checks=False):
                     **status_check
                 ),
             )
+        cl.check(
+            have_status_context(
+                "continuous-integration/jenkins/pr-merge", pr["statusCheckRollup"]
+            ),
+            "Required status check present",
+            "Required status check missing",
+        )
 
     commitRes = CommitAnalyzer(pr["commits"])
     cl.check(
@@ -275,6 +281,13 @@ def check_merge_prereq(repo, pr, ignore_status_checks=False):
     )
 
     return cl.all_checks_ok()
+
+
+def have_status_context(context, status_check_rollup):
+    for status_check in status_check_rollup:
+        if status_check["context"] == context:
+            return True
+    return False
 
 
 def check_changelog_entry(repo, pr):
