@@ -500,12 +500,12 @@ function(add_disabled_systemtest PREFIX TEST_NAME)
     add_test(NAME ${FULL_TEST_NAME} COMMAND false)
   endif()
   set_tests_properties(${FULL_TEST_NAME} PROPERTIES DISABLED true)
-  message(STATUS "Test: ${FULL_TEST_NAME} => disabled (${ARG_COMMENT})")
+  message(STATUS "✘ ${FULL_TEST_NAME} => disabled (${ARG_COMMENT})")
 endfunction()
 
 function(add_systemtest name file)
   cmake_parse_arguments(PARSE_ARGV 2 ARG "PYTHON" "WORKING_DIRECTORY" "")
-  message(STATUS "      * ${name}")
+  message(STATUS "     └─ ✓ ${name}")
 
   if(ARG_WORKING_DIRECTORY)
     set(directory "${ARG_WORKING_DIRECTORY}")
@@ -627,7 +627,7 @@ macro(create_systemtest prefix test_subdir)
   if(ARG_DISABLED)
     add_disabled_systemtest(${prefix} ${test_subdir} COMMENT "${ARG_COMMENT}")
   else()
-    message(STATUS "Test: ${test_basename} (baseport=${BASEPORT})")
+    message(STATUS "✓ ${test_basename} (baseport=${BASEPORT})")
 
     prepare_test(${test_subdir})
     configurefilestosystemtest(
