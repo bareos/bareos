@@ -1,6 +1,6 @@
 # BAREOS® - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+# Copyright (C) 2020-2022 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or modify it under
 # the terms of version three of the GNU Affero General Public License as
@@ -23,10 +23,10 @@ find_program(GETFACL_PROG getfacl)
 set(SETFACL_WORKS NO)
 if(SETFACL_PROG AND GETFACL_PROG)
   file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/acl-test-file.txt" "Just a testfile")
-  exec_program(
-    ${SETFACL_PROG} ${CMAKE_CURRENT_BINARY_DIR}
-    ARGS "-m user:0:rw- acl-test-file.txt"
-    RETURN_VALUE SETFACL_RETURN
+  execute_process(
+    COMMAND ${SETFACL_PROG} -m user:0:rw- acl-test-file.txt
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    RESULT_VARIABLE SETFACL_RETURN
   )
   if(SETFACL_RETURN EQUAL 0)
     set(SETFACL_WORKS YES)
