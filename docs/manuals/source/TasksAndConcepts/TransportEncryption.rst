@@ -583,21 +583,21 @@ TLS Restricting Protocol and Cipher
 
 
 
-With TLS/PSK activated by default in Bareos since version 18, it is sometimes mandatory, to achieve a better performance and increase the throughput of backups and restores.
-To do so, you need to fine tune the configuration, selecting wisely the protocol and ciphers used. That syntax and parameters usage, are far from evident.
-To do that we only need to change two parameters into bareos configuration files, but their syntax, and the location are a bit complex.
+With TLS/PSK activated by default in Bareos since version 18, it is sometimes mandatory to achieve better performance and increase the throughput of backups and restores.
+To do so, you need to fine-tune the configuration, selecting wisely the protocol and ciphers used. Syntax and parameter usage is far from evident.
+To do that, we only need to change two parameters into bareos configuration files, but their syntax and the location are a bit complex.
 
 This chapter will show you how to do that.
 
 .. note::
 
-   Bareos version 21 does not yet provide a way to parameterize TLSv1.3 protocol and associated ciphers, and as TLS protocol below 1.2 are considered as weak, we will concentrate our efforts to restrict ciphers usage to the protocol version 1.2.
+   Bareos version 21 does not yet provide a way to parameterize the TLSv1.3 protocol and associated ciphers. And since TLS protocols below 1.2 are considered weak, we will concentrate efforts on restricting cipher usage to protocol version 1.2.
 
 
 Determine available ciphers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The following command :command:`openssl` help to determine which ciphers are available for protocol 1.2 with the needed psk extensions.
+The following command :command:`openssl` helps to determine which ciphers are available for protocol 1.2 with the needed PSK extensions.
 
 
 .. code-block:: shell-session
@@ -606,7 +606,7 @@ The following command :command:`openssl` help to determine which ciphers are ava
    openssl ciphers -tls1_2 -psk -s
 
 
-Adding `-v` option will give you a output list in column mode.
+Adding `-v` option will give you an output list in column mode.
 
 Example of column output excluding SSLv3 and SHA1.
 
@@ -675,10 +675,10 @@ From that list we propose to use the following ciphers list:
 
 
 
-Order is done by level of "most secure" label done by [ciphersuite.info](https://ciphersuite.info/) website, then by ascending strength of digest to minimize cpu impact. Note the importance to have some cipher with **PSK** in name to support the TLS/PSK mechanism.
+Order is done by level of "most secure" label done by [ciphersuite.info](https://ciphersuite.info/) website, then by ascending strength of digest to minimize cpu impact. Note the importance to have some cipher with **PSK** in its name to support the TLS/PSK mechanism.
 
 
-Just be sure they are present on all host you want to use with Bareos.
+Just be sure they are present on all hosts you want to use with Bareos.
 
 .. note ::
 
@@ -739,11 +739,11 @@ For bconsole
 
 
 
-In the following example, we will remove all protocol below 1.2 and 1.3, and activate specifically 1.2 if it is not by default.
+In the following example, we will remove all protocols below 1.2 and 1.3, and activate specifically 1.2 if it is not by default.
 
-The list of cipher that should normally be hardware accelerated, and usable by kernel kTLS, order is important.
+The order of the list of ciphers that should normally be hardware accelerated and usable by kernel kTLS, is important.
 
-Both values need to be set as string enclosed by double quotes.
+Both values need to be set as strings enclosed by double quotes.
 
 
 .. code-block:: bareosconfig
@@ -775,7 +775,7 @@ Those parameters have to be included in each resource located at (filenames in d
 How to test protocol and ciphers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Testing the protocol in use, and supported ciphers can be done with the :command:`nmap` tool.
+Testing the protocol in use and supported ciphers can be done with the :command:`nmap` tool.
 
 .. code-block:: shell-session
    :caption: testing protocol and cipher with nmap
@@ -915,7 +915,7 @@ With the restricted configuration in place, the signature in :command:`bconsole`
 Conclusion
 ~~~~~~~~~~
 
-You are now able to configure TLS Protocol and cipher list to match your needs. Once this is in place we highly recommend to compare with real jobs the gain or lost of performance.
+You are now able to configure TLS Protocol and cipher list to match your needs. Once this is in place we highly recommend comparing with real jobs the gain or loss of performance.
 
 .. note::
 
