@@ -921,4 +921,3 @@ You are now able to configure TLS Protocol and cipher list to match your needs. 
 
    Publish here some numbers comparing PSK-AES128-GCM-SHA256 TLSv1.2
    with defaulting TLS_CHACHA20_POLY1305_SHA256 TLSv1.3
-

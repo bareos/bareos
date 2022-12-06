@@ -371,9 +371,7 @@ static inline bool AreMaxConcurrentJobsExceeded()
   JobControlRecord* jcr;
   unsigned int cnt = 0;
 
-  foreach_jcr (jcr) {
-    cnt++;
-  }
+  foreach_jcr (jcr) { cnt++; }
   endeach_jcr(jcr);
 
   return (cnt >= me->MaxConcurrentJobs) ? true : false;
