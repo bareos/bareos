@@ -166,6 +166,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - dird: stored: set statistics collection as deprecated [PR #1320]
 - webui: switch from mod_php to php-fpm [PR #1287]
 - bareos-fd-postgres: properly close database connection [PR #1326]
+- filed: fix handling of `STREAM_ACL_PLUGIN` during restore [PR #1308]
 
 ### Deprecated
 - make_catalog_backup.pl is now a shell wrapper script which will be removed in version 23.
@@ -388,6 +389,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1305]: https://github.com/bareos/bareos/pull/1305
 [PR #1306]: https://github.com/bareos/bareos/pull/1306
 [PR #1307]: https://github.com/bareos/bareos/pull/1307
+[PR #1308]: https://github.com/bareos/bareos/pull/1308
 [PR #1313]: https://github.com/bareos/bareos/pull/1313
 [PR #1314]: https://github.com/bareos/bareos/pull/1314
 [PR #1315]: https://github.com/bareos/bareos/pull/1315
