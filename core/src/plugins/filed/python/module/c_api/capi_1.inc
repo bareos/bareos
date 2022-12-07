@@ -23,20 +23,20 @@
 #define Bareosfd_PyHandlePluginEvent_RETURN bRC
 #define Bareosfd_PyHandlePluginEvent_PROTO (PluginContext* bareos_plugin_ctx, bEvent* event, void* value)
 
-/* static bRC PyStartBackupFile(PluginContext* bareos_plugin_ctx, struct save_pkt* sp); */
+/* static bRC PyStartBackupFile(PluginContext* bareos_plugin_ctx, save_pkt* sp); */
 #define Bareosfd_PyStartBackupFile_NUM 4
 #define Bareosfd_PyStartBackupFile_RETURN bRC
-#define Bareosfd_PyStartBackupFile_PROTO (PluginContext* bareos_plugin_ctx, struct save_pkt* sp)
+#define Bareosfd_PyStartBackupFile_PROTO (PluginContext* bareos_plugin_ctx, save_pkt* sp)
 
 /* static bRC PyEndBackupFile(PluginContext* bareos_plugin_ctx); */
 #define Bareosfd_PyEndBackupFile_NUM 5
 #define Bareosfd_PyEndBackupFile_RETURN bRC
 #define Bareosfd_PyEndBackupFile_PROTO (PluginContext* bareos_plugin_ctx)
 
-/* static bRC PyPluginIO(PluginContext* bareos_plugin_ctx, struct io_pkt* io); */
+/* static bRC PyPluginIO(PluginContext* bareos_plugin_ctx, io_pkt* io); */
 #define Bareosfd_PyPluginIO_NUM 6
 #define Bareosfd_PyPluginIO_RETURN bRC
-#define Bareosfd_PyPluginIO_PROTO (PluginContext* bareos_plugin_ctx, struct io_pkt* io)
+#define Bareosfd_PyPluginIO_PROTO (PluginContext* bareos_plugin_ctx, io_pkt* io)
 
 /* static bRC PyStartRestoreFile(PluginContext* bareos_plugin_ctx, const char* cmd); */
 #define Bareosfd_PyStartRestoreFile_NUM 7
@@ -48,15 +48,15 @@
 #define Bareosfd_PyEndRestoreFile_RETURN bRC
 #define Bareosfd_PyEndRestoreFile_PROTO (PluginContext* bareos_plugin_ctx)
 
-/* static bRC PyCreateFile(PluginContext* bareos_plugin_ctx, struct restore_pkt* rp); */
+/* static bRC PyCreateFile(PluginContext* bareos_plugin_ctx, restore_pkt* rp); */
 #define Bareosfd_PyCreateFile_NUM 9
 #define Bareosfd_PyCreateFile_RETURN bRC
-#define Bareosfd_PyCreateFile_PROTO (PluginContext* bareos_plugin_ctx, struct restore_pkt* rp)
+#define Bareosfd_PyCreateFile_PROTO (PluginContext* bareos_plugin_ctx, restore_pkt* rp)
 
-/* static bRC PySetFileAttributes(PluginContext* bareos_plugin_ctx, struct restore_pkt* rp); */
+/* static bRC PySetFileAttributes(PluginContext* bareos_plugin_ctx, restore_pkt* rp); */
 #define Bareosfd_PySetFileAttributes_NUM 10
 #define Bareosfd_PySetFileAttributes_RETURN bRC
-#define Bareosfd_PySetFileAttributes_PROTO (PluginContext* bareos_plugin_ctx, struct restore_pkt* rp)
+#define Bareosfd_PySetFileAttributes_PROTO (PluginContext* bareos_plugin_ctx, restore_pkt* rp)
 
 /* static bRC PyCheckFile(PluginContext* bareos_plugin_ctx, char* fname); */
 #define Bareosfd_PyCheckFile_NUM 11
@@ -83,15 +83,15 @@
 #define Bareosfd_PySetXattr_RETURN bRC
 #define Bareosfd_PySetXattr_PROTO (PluginContext* bareos_plugin_ctx, xattr_pkt* xp)
 
-/* static bRC PyRestoreObjectData(PluginContext* bareos_plugin_ctx, struct restore_object_pkt* rop); */
+/* static bRC PyRestoreObjectData(PluginContext* bareos_plugin_ctx, restore_object_pkt* rop); */
 #define Bareosfd_PyRestoreObjectData_NUM 16
 #define Bareosfd_PyRestoreObjectData_RETURN bRC
-#define Bareosfd_PyRestoreObjectData_PROTO (PluginContext* bareos_plugin_ctx, struct restore_object_pkt* rop)
+#define Bareosfd_PyRestoreObjectData_PROTO (PluginContext* bareos_plugin_ctx, restore_object_pkt* rop)
 
-/* static bRC PyHandleBackupFile(PluginContext* bareos_plugin_ctx, struct save_pkt* sp); */
+/* static bRC PyHandleBackupFile(PluginContext* bareos_plugin_ctx, save_pkt* sp); */
 #define Bareosfd_PyHandleBackupFile_NUM 17
 #define Bareosfd_PyHandleBackupFile_RETURN bRC
-#define Bareosfd_PyHandleBackupFile_PROTO (PluginContext* bareos_plugin_ctx, struct save_pkt* sp)
+#define Bareosfd_PyHandleBackupFile_PROTO (PluginContext* bareos_plugin_ctx, save_pkt* sp)
 
 /* static bRC set_bareos_core_functions(CoreFunctions* new_bareos_core_functions); */
 #define Bareosfd_set_bareos_core_functions_NUM 18

@@ -26,6 +26,7 @@
 
 import bareosfd
 import os
+import sys
 import re
 from BareosFdPluginBaseclass import BareosFdPluginBaseclass
 import stat
@@ -66,6 +67,18 @@ class BareosFdPluginLocalFilesBaseclass(BareosFdPluginBaseclass):  # noqa
         """
         self.files_to_backup.append(filename)
 
+    def _get_next_file_as_str(self):
+        while True:
+            fname = self.files_to_backup.pop()
+            try:
+                fname.encode("utf-8")
+                return fname
+            except UnicodeEncodeError:
+                bareosfd.JobMessage(
+                    bareosfd.M_ERROR,
+                    "name " + repr(fname) + " cannot be encoded in utf-8\n",
+                )
+
     def start_backup_file(self, savepkt):
         """
         Defines the file to backup and creates the savepkt. In this example
@@ -76,7 +89,10 @@ class BareosFdPluginLocalFilesBaseclass(BareosFdPluginBaseclass):  # noqa
             bareosfd.DebugMessage(100, "No files to backup\n")
             return bareosfd.bRC_Skip
 
-        self.file_to_backup = self.files_to_backup.pop()
+        if sys.version_info >= (3, 0):
+            self.file_to_backup = self._get_next_file_as_str()
+        else:
+            self.file_to_backup = self.files_to_backup.pop()
         bareosfd.DebugMessage(100, "file: " + self.file_to_backup + "\n")
 
         mystatp = bareosfd.StatPacket()

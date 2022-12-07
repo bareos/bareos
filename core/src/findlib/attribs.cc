@@ -46,7 +46,7 @@ extern void unix_name_to_win32(POOLMEM*& win32_name, const char* name);
 /* Forward referenced subroutines */
 static bool set_win32_attributes(JobControlRecord* jcr,
                                  Attributes* attr,
-                                 BareosWinFilePacket* ofd);
+                                 BareosFilePacket* ofd);
 void WinError(JobControlRecord* jcr, const char* prefix, POOLMEM* ofile);
 #endif /* HAVE_WIN32 */
 
@@ -186,10 +186,9 @@ int SelectDataStream(FindFilesPacket* ff_pkt, bool compatible)
 }
 
 // Restore all file attributes like owner, mode and file times.
-static inline bool RestoreFileAttributes(
-    JobControlRecord* jcr,
-    Attributes* attr,
-    [[maybe_unused]] BareosWinFilePacket* ofd)
+static inline bool RestoreFileAttributes(JobControlRecord* jcr,
+                                         Attributes* attr,
+                                         [[maybe_unused]] BareosFilePacket* ofd)
 {
   bool ok = true;
   bool suppress_errors;
@@ -207,7 +206,7 @@ static inline bool RestoreFileAttributes(
   // Restore owner and group.
 #ifdef HAVE_FCHOWN
   if (file_is_open) {
-    if (fchown(ofd->fid, attr->statp.st_uid, attr->statp.st_gid) < 0
+    if (fchown(ofd->filedes, attr->statp.st_uid, attr->statp.st_gid) < 0
         && !suppress_errors) {
       BErrNo be;
 
@@ -232,7 +231,7 @@ static inline bool RestoreFileAttributes(
   // Restore filemode.
 #ifdef HAVE_FCHMOD
   if (file_is_open) {
-    if (fchmod(ofd->fid, attr->statp.st_mode) < 0 && !suppress_errors) {
+    if (fchmod(ofd->filedes, attr->statp.st_mode) < 0 && !suppress_errors) {
       BErrNo be;
 
       Jmsg2(jcr, M_ERROR, 0, _("Unable to set file modes %s: ERR=%s\n"),
@@ -267,7 +266,7 @@ static inline bool RestoreFileAttributes(
     restore_times[1].tv_sec = attr->statp.st_mtime;
     restore_times[1].tv_usec = 0;
 
-    if (futimes(ofd->fid, restore_times) < 0 && !suppress_errors) {
+    if (futimes(ofd->filedes, restore_times) < 0 && !suppress_errors) {
       BErrNo be;
 
       Jmsg2(jcr, M_ERROR, 0, _("Unable to set file times %s: ERR=%s\n"),
@@ -284,7 +283,7 @@ static inline bool RestoreFileAttributes(
     restore_times[1].tv_sec = attr->statp.st_mtime;
     restore_times[1].tv_nsec = 0;
 
-    if (futimens(ofd->fid, restore_times) < 0 && !suppress_errors) {
+    if (futimens(ofd->filedes, restore_times) < 0 && !suppress_errors) {
       BErrNo be;
 
       Jmsg2(jcr, M_ERROR, 0, _("Unable to set file times %s: ERR=%s\n"),
@@ -355,7 +354,7 @@ static inline bool RestoreFileAttributes(
  */
 bool SetAttributes(JobControlRecord* jcr,
                    Attributes* attr,
-                   BareosWinFilePacket* ofd)
+                   BareosFilePacket* ofd)
 {
   mode_t old_mask;
   bool ok = true;
@@ -616,7 +615,7 @@ template <typename T> static void plug(T& st, uint64_t val)
  */
 static bool set_win32_attributes(JobControlRecord* jcr,
                                  Attributes* attr,
-                                 BareosWinFilePacket* ofd)
+                                 BareosFilePacket* ofd)
 {
   char* p = attr->attrEx;
   int64_t val;
@@ -627,7 +626,8 @@ static bool set_win32_attributes(JobControlRecord* jcr,
   if (!(p_SetFileAttributesW || p_SetFileAttributesA)) { return false; }
 
   if (!p || !*p) { /* we should have attributes */
-    Dmsg2(100, "Attributes missing. of=%s ofd=%d\n", attr->ofname, ofd->fid);
+    Dmsg2(100, "Attributes missing. of=%s ofd=%d\n", attr->ofname,
+          ofd->filedes);
     if (IsBopen(ofd)) { bclose(ofd); }
     return false;
   } else {

@@ -285,6 +285,7 @@ typedef struct {
   const char* RegexWhere;       /* Regex where */
   int replace;                  /* Replace flag */
   int create_status;            /* Status from createFile() */
+  int filedes;                  /* filedescriptor for read/write in core */
 } PyRestorePacket;
 
 // Forward declarations of type specific functions.
@@ -326,7 +327,9 @@ static PyMemberDef PyRestorePacket_members[] = {
      (char*)"Replace flag"},
     {(char*)"create_status", T_INT, offsetof(PyRestorePacket, create_status), 0,
      (char*)"Status from createFile()"},
-    {} /* Sentinel */};
+    {(char*)"filedes", T_INT, offsetof(PyRestorePacket, filedes), 0,
+     (char*)"file descriptor of current file"},
+    {NULL, 0, 0, 0, NULL}};
 
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
@@ -360,6 +363,7 @@ typedef struct {
   int32_t whence;              /* Lseek argument */
   int64_t offset;              /* Lseek argument */
   bool win32;                  /* Win32 GetLastError returned */
+  int filedes;                 /* filedescriptor for read/write in core */
 } PyIoPacket;
 
 // Forward declarations of type specific functions.
@@ -396,7 +400,9 @@ static PyMemberDef PyIoPacket_members[]
         (char*)"Lseek argument"},
        {(char*)"win32", T_BOOL, offsetof(PyIoPacket, win32), 0,
         (char*)"Win32 GetLastError returned"},
-       {} /* Sentinel */};
+       {(char*)"filedes", T_INT, offsetof(PyIoPacket, filedes), 0,
+        (char*)"file descriptor of current file"},
+       {NULL, 0, 0, 0, NULL}};
 
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wmissing-field-initializers"
@@ -567,22 +573,22 @@ static bRC PySetPluginValue(PluginContext* plugin_ctx,
 static bRC PyHandlePluginEvent(PluginContext* plugin_ctx,
                                bEvent* event,
                                void* value);
-static bRC PyStartBackupFile(PluginContext* plugin_ctx, struct save_pkt* sp);
+static bRC PyStartBackupFile(PluginContext* plugin_ctx, save_pkt* sp);
 static bRC PyEndBackupFile(PluginContext* plugin_ctx);
-static bRC PyPluginIO(PluginContext* plugin_ctx, struct io_pkt* io);
+static bRC PyPluginIO(PluginContext* plugin_ctx, io_pkt* io);
 static bRC PyStartRestoreFile(PluginContext* plugin_ctx, const char* cmd);
 static bRC PyEndRestoreFile(PluginContext* plugin_ctx);
-static bRC PyCreateFile(PluginContext* plugin_ctx, struct restore_pkt* rp);
+static bRC PyCreateFile(PluginContext* plugin_ctx, restore_pkt* rp);
 static bRC PySetFileAttributes(PluginContext* plugin_ctx,
-                               struct restore_pkt* rp);
+                               restore_pkt* rp);
 static bRC PyCheckFile(PluginContext* plugin_ctx, char* fname);
 static bRC PyGetAcl(PluginContext* plugin_ctx, acl_pkt* ap);
 static bRC PySetAcl(PluginContext* plugin_ctx, acl_pkt* ap);
 static bRC PyGetXattr(PluginContext* plugin_ctx, xattr_pkt* xp);
 static bRC PySetXattr(PluginContext* plugin_ctx, xattr_pkt* xp);
 static bRC PyRestoreObjectData(PluginContext* plugin_ctx,
-                               struct restore_object_pkt* rop);
-static bRC PyHandleBackupFile(PluginContext* plugin_ctx, struct save_pkt* sp);
+                               restore_object_pkt* rop);
+static bRC PyHandleBackupFile(PluginContext* plugin_ctx, save_pkt* sp);
 
 } /* namespace filedaemon */
 using namespace filedaemon;
@@ -783,6 +789,16 @@ MOD_INIT(bareosfd)
   ConstSet_StrLong(pDictbIOPS, IO_SEEK, 5);
   if (!pDictbIOPS) { return MOD_ERROR_VAL; }
   if (PyModule_AddObject(m, bIOPS, pDictbIOPS)) { return MOD_ERROR_VAL; }
+
+  const char* bIOPstatus = "bIOPstatus";
+  PyObject* pDictbIOPstatus = NULL;
+  pDictbIOPstatus = PyDict_New();
+  ConstSet_StrLong(pDictbIOPstatus, iostat_error, IoStatus::error);
+  ConstSet_StrLong(pDictbIOPstatus, iostat_do_in_plugin, IoStatus::success);
+  ConstSet_StrLong(pDictbIOPstatus, iostat_do_in_core, IoStatus::do_io_in_core);
+  if (!pDictbIOPstatus) { return MOD_ERROR_VAL; }
+  if (PyModule_AddObject(m, bIOPstatus, pDictbIOPstatus)) { return MOD_ERROR_VAL; }
+
 
 
   const char* bLevels = "bLevels";

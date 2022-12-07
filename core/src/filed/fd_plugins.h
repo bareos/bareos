@@ -57,9 +57,15 @@
 #endif
 
 #ifdef FILE_DAEMON
-struct BareosWinFilePacket;
+struct BareosFilePacket;
 struct FindFilesPacket;
 #endif /* FILE_DAEMON */
+
+struct IoStatus {
+  static constexpr int error = -1;
+  static constexpr int success = 0;
+  static constexpr int do_io_in_core = 1;
+};
 
 template <typename T> class alist;
 
@@ -87,44 +93,48 @@ struct restore_object_pkt {
 
 // This packet is used for file save info transfer.
 struct save_pkt {
-  int32_t pkt_size;        /* Size of this packet */
-  char* fname;             /* Full path and filename */
-  char* link;              /* Link name if any */
-  struct stat statp;       /* System stat() packet for file */
-  int32_t type;            /* FT_xx for this file */
-  char flags[FOPTS_BYTES]; /* Bareos internal flags */
-  bool no_read;            /* During the save, the file should not be saved */
-  bool portable;           /* Set if data format is portable */
-  bool accurate_found; /* Found in accurate list (valid after CheckChanges()) */
-  char* cmd;           /* Command */
-  time_t save_time;    /* Start of incremental time */
-  uint32_t delta_seq;  /* Delta sequence number */
-  char* object_name;   /* Object name to create */
-  char* object;        /* Restore object data to save */
-  int32_t object_len;  /* Restore object length */
-  int32_t index;       /* Restore object index */
-  int32_t pkt_end;     /* End packet sentinel */
+  int32_t pkt_size{sizeof(save_pkt)}; /* Size of this packet */
+  char* fname{};                      /* Full path and filename */
+  char* link{};                       /* Link name if any */
+  struct stat statp {
+  };                         /* System stat() packet for file */
+  int32_t type{};            /* FT_xx for this file */
+  char flags[FOPTS_BYTES]{}; /* Bareos internal flags */
+  bool no_read{};            /* During the save, the file should not be saved */
+  bool portable{};           /* Set if data format is portable */
+  bool accurate_found{}; /* Found in accurate list (valid after CheckChanges())
+                          */
+  char* cmd{};           /* Command */
+  time_t save_time{};    /* Start of incremental time */
+  uint32_t delta_seq{};  /* Delta sequence number */
+  char* object_name{};   /* Object name to create */
+  char* object{};        /* Restore object data to save */
+  int32_t object_len{};  /* Restore object length */
+  int32_t index{};       /* Restore object index */
+  int32_t pkt_end{sizeof(save_pkt)}; /* End packet sentinel */
 };
 
 // This packet is used for file restore info transfer.
 struct restore_pkt {
-  int32_t pkt_size;       /* Size of this packet */
-  int32_t stream;         /* Attribute stream id */
-  int32_t data_stream;    /* Id of data stream to follow */
-  int32_t type;           /* File type FT */
-  int32_t file_index;     /* File index */
-  int32_t LinkFI;         /* File index to data if hard link */
-  uid_t uid;              /* Userid */
-  struct stat statp;      /* Decoded stat packet */
-  const char* attrEx;     /* Extended attributes if any */
-  const char* ofname;     /* Output filename */
-  const char* olname;     /* Output link name */
-  const char* where;      /* Where */
-  const char* RegexWhere; /* Regex where */
-  int replace;            /* Replace flag */
-  int create_status;      /* Status from createFile() */
-  uint32_t delta_seq;     /* Delta sequence number */
-  int32_t pkt_end;        /* End packet sentinel */
+  int32_t pkt_size{sizeof(restore_pkt)}; /* Size of this packet */
+  int32_t stream{};                      /* Attribute stream id */
+  int32_t data_stream{};                 /* Id of data stream to follow */
+  int32_t type{};                        /* File type FT */
+  int32_t file_index{};                  /* File index */
+  int32_t LinkFI{};                      /* File index to data if hard link */
+  uid_t uid{};                           /* Userid */
+  struct stat statp {
+  };                        /* Decoded stat packet */
+  const char* attrEx{};     /* Extended attributes if any */
+  const char* ofname{};     /* Output filename */
+  const char* olname{};     /* Output link name */
+  const char* where{};      /* Where */
+  const char* RegexWhere{}; /* Regex where */
+  int replace{};            /* Replace flag */
+  int create_status{};      /* Status from createFile() */
+  uint32_t delta_seq{};     /* Delta sequence number */
+  int filedes{};            /* file descriptor to read/write in core */
+  int32_t pkt_end{sizeof(restore_pkt)}; /* End packet sentinel */
 };
 
 enum
@@ -137,38 +147,39 @@ enum
 };
 
 struct io_pkt {
-  int32_t pkt_size;  /* Size of this packet */
-  int32_t func;      /* Function code */
-  int32_t count;     /* Read/write count */
-  int32_t flags;     /* Open flags */
-  mode_t mode;       /* Permissions for created files */
-  char* buf;         /* Read/write buffer */
-  const char* fname; /* Open filename */
-  int32_t status;    /* Return status */
-  int32_t io_errno;  /* Errno code */
-  int32_t lerror;    /* Win32 error code */
-  int32_t whence;    /* Lseek argument */
-  boffset_t offset;  /* Lseek argument */
-  bool win32;        /* Win32 GetLastError returned */
-  int32_t pkt_end;   /* End packet sentinel */
+  int32_t pkt_size{sizeof(io_pkt)}; /* Size of this packet */
+  int32_t func{IO_OPEN};            /* Function code */
+  int32_t count{};                  /* Read/write count */
+  int32_t flags{};                  /* Open flags */
+  mode_t mode{};                    /* Permissions for created files */
+  char* buf{};                      /* Read/write buffer */
+  const char* fname{};              /* Open filename */
+  int32_t status{};                 /* Return status */
+  int32_t io_errno{};               /* Errno code */
+  int32_t lerror{};                 /* Win32 error code */
+  int32_t whence{};                 /* Lseek argument */
+  boffset_t offset{};               /* Lseek argument */
+  bool win32{};                     /* Win32 GetLastError returned */
+  int filedes{};                    /* file descriptor to read/write in core */
+  int32_t pkt_end{sizeof(io_pkt)};  /* End packet sentinel */
 };
 
 struct acl_pkt {
-  int32_t pkt_size;        /* Size of this packet */
-  const char* fname;       /* Full path and filename */
-  uint32_t content_length; /* ACL content length */
-  char* content;           /* ACL content */
-  int32_t pkt_end;         /* End packet sentinel */
+  int32_t pkt_size{sizeof(acl_pkt)}; /* Size of this packet */
+  const char* fname{};               /* Full path and filename */
+  uint32_t content_length{};         /* ACL content length */
+  char* content{};                   /* ACL content */
+  int32_t pkt_end{sizeof(acl_pkt)};  /* End packet sentinel */
 };
 
 struct xattr_pkt {
-  int32_t pkt_size;      /* Size of this packet */
-  const char* fname;     /* Full path and filename */
-  uint32_t name_length;  /* XATTR name length */
-  char* name;            /* XATTR name */
-  uint32_t value_length; /* XATTR value length */
-  char* value;           /* XATTR value */
-  int32_t pkt_end;       /* End packet sentinel */
+  int32_t pkt_size{sizeof(xattr_pkt)}; /* Size of this packet */
+  const char* fname{};                 /* Full path and filename */
+  uint32_t name_length{};              /* XATTR name length */
+  char* name{};                        /* XATTR name */
+  uint32_t value_length{};             /* XATTR value length */
+  char* value{};                       /* XATTR value */
+  int32_t pkt_end{sizeof(xattr_pkt)};  /* End packet sentinel */
 };
 
 /****************************************************************************
@@ -263,11 +274,11 @@ bool SendPluginName(JobControlRecord* jcr, BareosSocket* sd, bool start);
 bool PluginNameStream(JobControlRecord* jcr, char* name);
 int PluginCreateFile(JobControlRecord* jcr,
                      Attributes* attr,
-                     BareosWinFilePacket* bfd,
+                     BareosFilePacket* bfd,
                      int replace);
 bool PluginSetAttributes(JobControlRecord* jcr,
                          Attributes* attr,
-                         BareosWinFilePacket* ofd);
+                         BareosFilePacket* ofd);
 bacl_exit_code PluginBuildAclStreams(JobControlRecord* jcr,
                                      AclData* acl_data,
                                      FindFilesPacket* ff_pkt);
@@ -289,10 +300,10 @@ int PluginEstimate(JobControlRecord* jcr,
                    FindFilesPacket* ff_pkt,
                    bool top_level);
 bool PluginCheckFile(JobControlRecord* jcr, char* fname);
-void PluginUpdateFfPkt(FindFilesPacket* ff_pkt, struct save_pkt* sp);
+void PluginUpdateFfPkt(FindFilesPacket* ff_pkt, save_pkt* sp);
 bRC PluginOptionHandleFile(JobControlRecord* jcr,
                            FindFilesPacket* ff_pkt,
-                           struct save_pkt* sp);
+                           save_pkt* sp);
 #endif
 
 #ifdef __cplusplus
@@ -337,9 +348,9 @@ typedef struct s_bareosFuncs {
   bRC (*NewOptions)(PluginContext* ctx);
   bRC (*NewInclude)(PluginContext* ctx);
   bRC (*NewPreInclude)(PluginContext* ctx);
-  bRC (*checkChanges)(PluginContext* ctx, struct save_pkt* sp);
+  bRC (*checkChanges)(PluginContext* ctx, save_pkt* sp);
   bRC (*AcceptFile)(PluginContext* ctx,
-                    struct save_pkt* sp); /* Need fname and statp */
+                    save_pkt* sp); /* Need fname and statp */
   bRC (*SetSeenBitmap)(PluginContext* ctx, bool all, char* fname);
   bRC (*ClearSeenBitmap)(PluginContext* ctx, bool all, char* fname);
 } CoreFunctions;
@@ -368,18 +379,18 @@ typedef struct s_pluginFuncs {
   bRC (*getPluginValue)(PluginContext* ctx, pVariable var, void* value);
   bRC (*setPluginValue)(PluginContext* ctx, pVariable var, void* value);
   bRC (*handlePluginEvent)(PluginContext* ctx, bEvent* event, void* value);
-  bRC (*startBackupFile)(PluginContext* ctx, struct save_pkt* sp);
+  bRC (*startBackupFile)(PluginContext* ctx, save_pkt* sp);
   bRC (*endBackupFile)(PluginContext* ctx);
   bRC (*startRestoreFile)(PluginContext* ctx, const char* cmd);
   bRC (*endRestoreFile)(PluginContext* ctx);
-  bRC (*pluginIO)(PluginContext* ctx, struct io_pkt* io);
-  bRC (*createFile)(PluginContext* ctx, struct restore_pkt* rp);
-  bRC (*setFileAttributes)(PluginContext* ctx, struct restore_pkt* rp);
+  bRC (*pluginIO)(PluginContext* ctx, io_pkt* io);
+  bRC (*createFile)(PluginContext* ctx, restore_pkt* rp);
+  bRC (*setFileAttributes)(PluginContext* ctx, restore_pkt* rp);
   bRC (*checkFile)(PluginContext* ctx, char* fname);
-  bRC (*getAcl)(PluginContext* ctx, struct acl_pkt* ap);
-  bRC (*setAcl)(PluginContext* ctx, struct acl_pkt* ap);
-  bRC (*getXattr)(PluginContext* ctx, struct xattr_pkt* xp);
-  bRC (*setXattr)(PluginContext* ctx, struct xattr_pkt* xp);
+  bRC (*getAcl)(PluginContext* ctx, acl_pkt* ap);
+  bRC (*setAcl)(PluginContext* ctx, acl_pkt* ap);
+  bRC (*getXattr)(PluginContext* ctx, xattr_pkt* xp);
+  bRC (*setXattr)(PluginContext* ctx, xattr_pkt* xp);
 } PluginFunctions;
 
 #define PlugFunc(plugin) ((PluginFunctions*)(plugin->plugin_functions))

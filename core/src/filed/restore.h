@@ -50,11 +50,11 @@ struct r_ctx {
   int32_t full_stream{0};      /* full stream including new bits */
   int32_t comp_stream{0};      /* last compressed stream found. needed only to
                                   restore encrypted compressed backup */
-  BareosWinFilePacket bfd;     /* File content */
+  BareosFilePacket bfd;     /* File content */
   uint64_t fileAddr{0};        /* file write address */
   uint32_t size{0};            /* Size of file */
   char flags[FOPTS_BYTES]{};   /* Options for ExtractData() */
-  BareosWinFilePacket forkbfd; /* Alternative data stream */
+  BareosFilePacket forkbfd; /* Alternative data stream */
   uint64_t fork_addr{0};       /* Write address for alternative stream */
   int64_t fork_size{0};        /* Size of alternate stream */
   char fork_flags[FOPTS_BYTES]{0};    /* Options for ExtractData() */
@@ -76,12 +76,12 @@ int DoFileDigest(JobControlRecord* jcr,
                  FindFilesPacket* ff_pkt,
                  bool top_level);
 bool SparseData(JobControlRecord* jcr,
-                BareosWinFilePacket* bfd,
+                BareosFilePacket* bfd,
                 uint64_t* addr,
                 char** data,
                 uint32_t* length);
 bool StoreData(JobControlRecord* jcr,
-               BareosWinFilePacket* bfd,
+               BareosFilePacket* bfd,
                char* data,
                const int32_t length,
                bool win32_decomp);

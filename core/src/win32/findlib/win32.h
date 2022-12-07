@@ -2,7 +2,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,7 +31,7 @@ bool win32_onefs_is_disabled(findFILESET* fileset);
 void win32_cleanup_copy_thread(JobControlRecord* jcr);
 void win32_flush_copy_thread(JobControlRecord* jcr);
 int win32_send_to_copy_thread(JobControlRecord* jcr,
-                              BareosWinFilePacket* bfd,
+                              BareosFilePacket* bfd,
                               char* data,
                               const int32_t length);
 

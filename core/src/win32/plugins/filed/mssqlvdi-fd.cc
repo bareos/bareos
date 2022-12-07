@@ -85,13 +85,13 @@ static bRC freePlugin(PluginContext* ctx);
 static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value);
 static bRC setPluginValue(PluginContext* ctx, pVariable var, void* value);
 static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value);
-static bRC startBackupFile(PluginContext* ctx, struct save_pkt* sp);
+static bRC startBackupFile(PluginContext* ctx, save_pkt* sp);
 static bRC endBackupFile(PluginContext* ctx);
-static bRC pluginIO(PluginContext* ctx, struct io_pkt* io);
+static bRC pluginIO(PluginContext* ctx, io_pkt* io);
 static bRC startRestoreFile(PluginContext* ctx, const char* cmd);
 static bRC endRestoreFile(PluginContext* ctx);
-static bRC createFile(PluginContext* ctx, struct restore_pkt* rp);
-static bRC setFileAttributes(PluginContext* ctx, struct restore_pkt* rp);
+static bRC createFile(PluginContext* ctx, restore_pkt* rp);
+static bRC setFileAttributes(PluginContext* ctx, restore_pkt* rp);
 static bRC checkFile(PluginContext* ctx, char* fname);
 
 static bRC parse_plugin_definition(PluginContext* ctx, void* value);
@@ -365,7 +365,7 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
 }
 
 // Start the backup of a specific file
-static bRC startBackupFile(PluginContext* ctx, struct save_pkt* sp)
+static bRC startBackupFile(PluginContext* ctx, save_pkt* sp)
 {
   time_t now;
   PoolMem fname(PM_NAME);
@@ -1170,7 +1170,7 @@ static inline bool PerformAdoRecover(PluginContext* ctx)
 }
 
 // Setup a VDI device for performing a backup or restore operation.
-static inline bool SetupVdiDevice(PluginContext* ctx, struct io_pkt* io)
+static inline bool SetupVdiDevice(PluginContext* ctx, io_pkt* io)
 {
   int status;
   HRESULT hr = NOERROR;
@@ -1326,7 +1326,7 @@ bail_out:
 
 // Perform an I/O operation to a file as part of a restore.
 static inline bool PerformFileIo(PluginContext* ctx,
-                                 struct io_pkt* io,
+                                 io_pkt* io,
                                  DWORD* completionCode)
 {
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
@@ -1395,7 +1395,7 @@ bail_out:
 
 // Perform an I/O operation to a virtual device as part of a backup or restore.
 static inline bool PerformVdiIo(PluginContext* ctx,
-                                struct io_pkt* io,
+                                io_pkt* io,
                                 DWORD* completionCode)
 {
   HRESULT hr = NOERROR;
@@ -1485,7 +1485,7 @@ bail_out:
 }
 
 // End of I/O tear down the VDI and check if everything did go to plan.
-static inline bool TearDownVdiDevice(PluginContext* ctx, struct io_pkt* io)
+static inline bool TearDownVdiDevice(PluginContext* ctx, io_pkt* io)
 {
   HRESULT hr = NOERROR;
   VDC_Command* cmd;
@@ -1530,7 +1530,7 @@ bail_out:
 }
 
 // Bareos is calling us to do the actual I/O
-static bRC pluginIO(PluginContext* ctx, struct io_pkt* io)
+static bRC pluginIO(PluginContext* ctx, io_pkt* io)
 {
   DWORD completionCode = ERROR_BAD_ENVIRONMENT;
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
@@ -1635,7 +1635,7 @@ static bRC endRestoreFile(PluginContext*) { return bRC_OK; }
  *  CF_CREATED  -- created, but no content to extract (typically directories)
  *  CF_CORE     -- let bareos core create the file
  */
-static bRC createFile(PluginContext* ctx, struct restore_pkt* rp)
+static bRC createFile(PluginContext* ctx, restore_pkt* rp)
 {
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
@@ -1656,10 +1656,7 @@ static bRC createFile(PluginContext* ctx, struct restore_pkt* rp)
  * We will get here if the File is a directory after everything is written in
  * the directory.
  */
-static bRC setFileAttributes(PluginContext*, struct restore_pkt*)
-{
-  return bRC_OK;
-}
+static bRC setFileAttributes(PluginContext*, restore_pkt*) { return bRC_OK; }
 
 // When using Incremental dump, all previous dumps are necessary
 static bRC checkFile(PluginContext*, char*) { return bRC_OK; }

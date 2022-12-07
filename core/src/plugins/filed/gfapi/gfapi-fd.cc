@@ -68,13 +68,13 @@ static bRC freePlugin(PluginContext* ctx);
 static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value);
 static bRC setPluginValue(PluginContext* ctx, pVariable var, void* value);
 static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value);
-static bRC startBackupFile(PluginContext* ctx, struct save_pkt* sp);
+static bRC startBackupFile(PluginContext* ctx, save_pkt* sp);
 static bRC endBackupFile(PluginContext* ctx);
-static bRC pluginIO(PluginContext* ctx, struct io_pkt* io);
+static bRC pluginIO(PluginContext* ctx, io_pkt* io);
 static bRC startRestoreFile(PluginContext* ctx, const char* cmd);
 static bRC endRestoreFile(PluginContext* ctx);
-static bRC createFile(PluginContext* ctx, struct restore_pkt* rp);
-static bRC setFileAttributes(PluginContext* ctx, struct restore_pkt* rp);
+static bRC createFile(PluginContext* ctx, restore_pkt* rp);
+static bRC setFileAttributes(PluginContext* ctx, restore_pkt* rp);
 static bRC checkFile(PluginContext* ctx, char* fname);
 static bRC getAcl(PluginContext* ctx, acl_pkt* ap);
 static bRC setAcl(PluginContext* ctx, acl_pkt* ap);
@@ -473,7 +473,6 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
 static bRC get_next_file_to_backup(PluginContext* ctx)
 {
   int status;
-  struct save_pkt sp;
   struct dirent* entry;
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
@@ -735,10 +734,8 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
         return bRC_Error;
     }
 
+    save_pkt sp;
     // See if we accept this file under the currently loaded fileset.
-    memset(&sp, 0, sizeof(sp));
-    sp.pkt_size = sizeof(sp);
-    sp.pkt_end = sizeof(sp);
     sp.fname = p_ctx->next_filename;
     sp.type = p_ctx->type;
     memcpy(&sp.statp, &p_ctx->statp, sizeof(sp.statp));
@@ -761,7 +758,7 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
 }
 
 // Start the backup of a specific file
-static bRC startBackupFile(PluginContext* ctx, struct save_pkt* sp)
+static bRC startBackupFile(PluginContext* ctx, save_pkt* sp)
 {
   int status;
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
@@ -1562,7 +1559,7 @@ static bRC setup_restore(PluginContext* ctx, void* value)
 }
 
 // Bareos is calling us to do the actual I/O
-static bRC pluginIO(PluginContext* ctx, struct io_pkt* io)
+static bRC pluginIO(PluginContext* ctx, io_pkt* io)
 {
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
@@ -1684,7 +1681,7 @@ static bRC endRestoreFile(PluginContext*) { return bRC_OK; }
  *  CF_EXTRACT  -- extract the file (i.e.call i/o routines)
  *  CF_CREATED  -- created, but no content to extract (typically directories)
  */
-static bRC createFile(PluginContext* ctx, struct restore_pkt* rp)
+static bRC createFile(PluginContext* ctx, restore_pkt* rp)
 {
   int status;
   bool exists = false;
@@ -1838,7 +1835,7 @@ bail_out:
   return bRC_OK;
 }
 
-static bRC setFileAttributes(PluginContext* ctx, struct restore_pkt* rp)
+static bRC setFileAttributes(PluginContext* ctx, restore_pkt* rp)
 {
   int status;
   struct timespec times[2];

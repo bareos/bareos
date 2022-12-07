@@ -271,7 +271,7 @@ bail_out:
  * Return value is true on success, false on failure.
  */
 bool FlushCipher(JobControlRecord* jcr,
-                 BareosWinFilePacket* bfd,
+                 BareosFilePacket* bfd,
                  uint64_t* addr,
                  char* flags,
                  int32_t stream,

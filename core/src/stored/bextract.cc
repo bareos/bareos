@@ -65,7 +65,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec);
 
 static Device* dev = nullptr;
 static DeviceControlRecord* dcr;
-static BareosWinFilePacket bfd;
+static BareosFilePacket bfd;
 static JobControlRecord* jcr;
 static FindFilesPacket* ff;
 static bool extract = false;
@@ -455,9 +455,7 @@ static void DoExtract(char* devname,
   return;
 }
 
-static bool StoreData(BareosWinFilePacket* bfd,
-                      char* data,
-                      const int32_t length)
+static bool StoreData(BareosFilePacket* bfd, char* data, const int32_t length)
 {
   if (is_win32_stream(attr->data_stream) && !have_win32_api()) {
     SetPortableBackup(bfd);

@@ -16,7 +16,7 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
-
+message("Adding systemtests from ${CMAKE_CURRENT_SOURCE_DIR}")
 add_subdirectory(acl)
 add_subdirectory(always-incremental-consolidate)
 add_subdirectory(autochanger)
@@ -57,13 +57,14 @@ add_subdirectory(py2plug-dir)
 add_subdirectory(py2plug-fd-contrib-bareos_tasks_mysql)
 add_subdirectory(py2plug-fd-ldap)
 add_subdirectory(py2plug-fd-libcloud)
-add_subdirectory(py2plug-fd-local-fileset-basic)
 add_subdirectory(py2plug-fd-local-fileset-restoreobject)
 add_subdirectory(py2plug-fd-mariabackup)
 add_subdirectory(py2plug-fd-ovirt)
 add_subdirectory(py2plug-fd-percona-xtrabackup)
 add_subdirectory(py2plug-fd-vmware)
 add_subdirectory(py2plug-sd)
+add_subdirectory(py2plug-fd-local-fileset-basic)
+add_subdirectory(py3plug-fd-local-fileset-basic)
 add_subdirectory(py3plug-fd-contrib-mysql_dump)
 add_subdirectory(py3plug-fd-postgres)
 add_subdirectory(python-bareos)

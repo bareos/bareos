@@ -506,7 +506,7 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
   int rtnstat = 0;
   b_save_ctx bsctx;
   bool has_file_data = false;
-  struct save_pkt sp; /* use by option plugin */
+  save_pkt sp; /* use by option plugin */
   BareosSocket* sd = jcr->store_bsock;
 
   if (jcr->IsCanceled() || jcr->IsIncomplete()) { return 0; }

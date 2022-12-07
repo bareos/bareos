@@ -45,7 +45,7 @@ const bool have_darwin_os = false;
 #endif
 
 static int VerifyFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool);
-static int ReadDigest(BareosWinFilePacket* bfd,
+static int ReadDigest(BareosFilePacket* bfd,
                       DIGEST* digest,
                       JobControlRecord* jcr);
 static bool calculate_file_chksum(JobControlRecord* jcr,
@@ -276,7 +276,7 @@ static int VerifyFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
  */
 int DigestFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, DIGEST* digest)
 {
-  BareosWinFilePacket bfd;
+  BareosFilePacket bfd;
 
   binit(&bfd);
 
@@ -323,7 +323,7 @@ int DigestFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, DIGEST* digest)
  * Read message digest of bfd, updating digest
  * In case of errors we need the job control record and file name.
  */
-static int ReadDigest(BareosWinFilePacket* bfd,
+static int ReadDigest(BareosFilePacket* bfd,
                       DIGEST* digest,
                       JobControlRecord* jcr)
 {

@@ -29,8 +29,15 @@ JobName=backup-bareos-fd
 # Fill ${BackupDirectory} with data.
 setup_data
 
-# this test does not work with links because of the restore objects
-rm -r "${tmp}"/data/weird-files >/dev/null 2>&1
+# this test does not work with links, because
+# python 2 does not support setting mtime on links
+# they are restored properly but with wrong timestamps
+# This is supposed to work with the future plugin-fd interface
+# using Python3
+find ${tmp}/data/weird-files -type l -exec rm {} \;
+find tmp/data/weird-files -links +1 -type f -exec rm {} \;
+rm tmp/data/weird-files/*utf*
+print_debug "$(locale)"
 
 start_test
 
@@ -38,19 +45,29 @@ cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null
 messages
 @$out $tmp/log1.out
-setdebug level=100 client=bareos-fd
+setdebug level=800 client trace=1
 label volume=TestVolume001 storage=File pool=Full
-run job=$JobName yes
+run job=$JobName fileset=PluginTest_do_io_in_core yes
 status director
 status client
 status storage=File
 wait
 messages
+END_OF_DATA
+
+run_bareos "$@"
+if is_debug; then
+    cat ${working_dir}/*.trace
+fi
+check_for_zombie_jobs storage=File
+stop_bareos
+
+cat <<END_OF_DATA >$tmp/bconcmds
 @#
 @# now do a restore
 @#
 @$out $tmp/log2.out
-restore client=bareos-fd fileset=PluginTest where=$tmp/bareos-restores select all done yes
+restore client=bareos-fd fileset=PluginTest_do_io_in_core where=$tmp/bareos-restores select all done yes
 status client=bareos-fd
 wait
 messages
@@ -60,8 +77,13 @@ run_bareos "$@"
 check_for_zombie_jobs storage=File
 
 check_two_logs
-list=( $(find "${BackupDirectory}" -type f) )
-# Using check_restore_only_files_diff instead of check_restore_diff
-# to don't diff the file attributes, because they are not saved
-check_restore_only_files_diff "${list[@]}"
+check_restore_diff ${BackupDirectory}
+
+expect_grep "bread handled in core"\
+  working/py?plug-fd-local-fileset-basic-fd.trace \
+  "io was not handled in core according to trace file."
+
+
+
 end_test
+bin/bareos stop

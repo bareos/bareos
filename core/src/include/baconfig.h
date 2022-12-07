@@ -264,6 +264,8 @@ constexpr slot_number_t kInvalidSlotNumber
 constexpr slot_number_t kInvalidDriveNumber
     = std::numeric_limits<drive_number_t>::max();
 
+constexpr int kInvalidFiledescriptor = -1;
+
 inline bool IsSlotNumberValid(slot_number_t slot)
 {
   return slot && slot != kInvalidSlotNumber;

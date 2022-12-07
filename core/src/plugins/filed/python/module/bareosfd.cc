@@ -68,22 +68,21 @@ static bRC PySetPluginValue(PluginContext* plugin_ctx,
 static bRC PyHandlePluginEvent(PluginContext* plugin_ctx,
                                bEvent* event,
                                void* value);
-static bRC PyStartBackupFile(PluginContext* plugin_ctx, struct save_pkt* sp);
+static bRC PyStartBackupFile(PluginContext* plugin_ctx, save_pkt* sp);
 static bRC PyEndBackupFile(PluginContext* plugin_ctx);
-static bRC PyPluginIO(PluginContext* plugin_ctx, struct io_pkt* io);
+static bRC PyPluginIO(PluginContext* plugin_ctx, io_pkt* io);
 static bRC PyStartRestoreFile(PluginContext* plugin_ctx, const char* cmd);
 static bRC PyEndRestoreFile(PluginContext* plugin_ctx);
-static bRC PyCreateFile(PluginContext* plugin_ctx, struct restore_pkt* rp);
-static bRC PySetFileAttributes(PluginContext* plugin_ctx,
-                               struct restore_pkt* rp);
+static bRC PyCreateFile(PluginContext* plugin_ctx, restore_pkt* rp);
+static bRC PySetFileAttributes(PluginContext* plugin_ctx, restore_pkt* rp);
 static bRC PyCheckFile(PluginContext* plugin_ctx, char* fname);
 static bRC PyGetAcl(PluginContext* plugin_ctx, acl_pkt* ap);
 static bRC PySetAcl(PluginContext* plugin_ctx, acl_pkt* ap);
 static bRC PyGetXattr(PluginContext* plugin_ctx, xattr_pkt* xp);
 static bRC PySetXattr(PluginContext* plugin_ctx, xattr_pkt* xp);
 static bRC PyRestoreObjectData(PluginContext* plugin_ctx,
-                               struct restore_object_pkt* rop);
-static bRC PyHandleBackupFile(PluginContext* plugin_ctx, struct save_pkt* sp);
+                               restore_object_pkt* rop);
+static bRC PyHandleBackupFile(PluginContext* plugin_ctx, save_pkt* sp);
 
 /* Pointers to Bareos functions */
 static CoreFunctions* bareos_core_functions = NULL;
@@ -241,7 +240,7 @@ static inline void PyStatPacketToNative(PyStatPacket* pStatp,
   statp->st_blocks = pStatp->blocks;
 }
 
-static inline PySavePacket* NativeToPySavePacket(struct save_pkt* sp)
+static inline PySavePacket* NativeToPySavePacket(save_pkt* sp)
 {
   PySavePacket* pSavePkt = PyObject_New(PySavePacket, &PySavePacketType);
 
@@ -274,7 +273,7 @@ static inline PySavePacket* NativeToPySavePacket(struct save_pkt* sp)
 
 static inline bool PySavePacketToNative(
     PySavePacket* pSavePkt,
-    struct save_pkt* sp,
+    save_pkt* sp,
     struct plugin_private_context* plugin_priv_ctx,
     bool is_options_plugin)
 {
@@ -412,7 +411,7 @@ bail_out:
  * The plugin can create "Virtual" files by giving them a
  * name that is not normally found on the file system.
  */
-static bRC PyStartBackupFile(PluginContext* plugin_ctx, struct save_pkt* sp)
+static bRC PyStartBackupFile(PluginContext* plugin_ctx, save_pkt* sp)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx
@@ -494,7 +493,7 @@ bail_out:
   return retval;
 }
 
-static inline PyIoPacket* NativeToPyIoPacket(struct io_pkt* io)
+static inline PyIoPacket* NativeToPyIoPacket(io_pkt* io)
 {
   PyIoPacket* pIoPkt = PyObject_New(PyIoPacket, &PyIoPacketType);
 
@@ -507,11 +506,11 @@ static inline PyIoPacket* NativeToPyIoPacket(struct io_pkt* io)
     pIoPkt->fname = io->fname;
     pIoPkt->whence = io->whence;
     pIoPkt->offset = io->offset;
+    pIoPkt->filedes = io->filedes;
+
     if (io->func == IO_WRITE && io->count > 0) {
-      /*
-       * Only initialize the buffer with read data when we are writing and
-       * there is data.
-       */
+      /* Only initialize the buffer with read data when we are writing and
+       * there is data.*/
       pIoPkt->buf = PyByteArray_FromStringAndSize(io->buf, io->count);
       if (!pIoPkt->buf) {
         Py_DECREF((PyObject*)pIoPkt);
@@ -520,11 +519,8 @@ static inline PyIoPacket* NativeToPyIoPacket(struct io_pkt* io)
     } else {
       pIoPkt->buf = NULL;
     }
-
-    /*
-     * These must be set by the Python function but we initialize them to zero
-     * to be sure they have some valid setting an not random data.
-     */
+    /* These must be set by the Python function but we initialize them to zero
+     * to be sure they have some valid setting an not random data.  */
     pIoPkt->io_errno = 0;
     pIoPkt->lerror = 0;
     pIoPkt->win32 = false;
@@ -534,13 +530,15 @@ static inline PyIoPacket* NativeToPyIoPacket(struct io_pkt* io)
   return pIoPkt;
 }
 
-static inline bool PyIoPacketToNative(PyIoPacket* pIoPkt, struct io_pkt* io)
+static inline bool PyIoPacketToNative(PyIoPacket* pIoPkt, io_pkt* io)
 {
   // Only copy back the arguments that are allowed to change.
   io->io_errno = pIoPkt->io_errno;
   io->lerror = pIoPkt->lerror;
   io->win32 = pIoPkt->win32;
   io->status = pIoPkt->status;
+  io->filedes = pIoPkt->filedes;
+
   if (io->func == IO_READ && io->status > 0) {
     // Only copy back the data when doing a read and there is data.
     if (PyByteArray_Check(pIoPkt->buf)) {
@@ -563,7 +561,7 @@ static inline bool PyIoPacketToNative(PyIoPacket* pIoPkt, struct io_pkt* io)
  * or after startRestoreFile to do the actual file
  * input or output.
  */
-static bRC PyPluginIO(PluginContext* plugin_ctx, struct io_pkt* io)
+static bRC PyPluginIO(PluginContext* plugin_ctx, io_pkt* io)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx
@@ -684,7 +682,7 @@ bail_out:
   return retval;
 }
 
-static inline PyRestorePacket* NativeToPyRestorePacket(struct restore_pkt* rp)
+static inline PyRestorePacket* NativeToPyRestorePacket(restore_pkt* rp)
 {
   PyRestorePacket* pRestorePacket
       = PyObject_New(PyRestorePacket, &PyRestorePacketType);
@@ -704,16 +702,18 @@ static inline PyRestorePacket* NativeToPyRestorePacket(struct restore_pkt* rp)
     pRestorePacket->RegexWhere = rp->RegexWhere;
     pRestorePacket->replace = rp->replace;
     pRestorePacket->create_status = rp->create_status;
+    pRestorePacket->filedes = rp->filedes;
   }
 
   return pRestorePacket;
 }
 
 static inline void PyRestorePacketToNative(PyRestorePacket* pRestorePacket,
-                                           struct restore_pkt* rp)
+                                           restore_pkt* rp)
 {
   // Only copy back the fields that are allowed to be changed.
   rp->create_status = pRestorePacket->create_status;
+  rp->filedes = pRestorePacket->filedes;
 }
 
 /**
@@ -729,7 +729,7 @@ static inline void PyRestorePacketToNative(PyRestorePacket* pRestorePacket,
  * CF_EXTRACT  -- extract the file (i.e.call i/o routines)
  * CF_CREATED  -- created, but no content to extract (typically directories)
  */
-static bRC PyCreateFile(PluginContext* plugin_ctx, struct restore_pkt* rp)
+static bRC PyCreateFile(PluginContext* plugin_ctx, restore_pkt* rp)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx
@@ -772,8 +772,7 @@ bail_out:
   return retval;
 }
 
-static bRC PySetFileAttributes(PluginContext* plugin_ctx,
-                               struct restore_pkt* rp)
+static bRC PySetFileAttributes(PluginContext* plugin_ctx, restore_pkt* rp)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx
@@ -852,7 +851,7 @@ bail_out:
   return retval;
 }
 
-static inline PyAclPacket* NativeToPyAclPacket(struct acl_pkt* ap)
+static inline PyAclPacket* NativeToPyAclPacket(acl_pkt* ap)
 {
   PyAclPacket* pAclPacket = PyObject_New(PyAclPacket, &PyAclPacketType);
 
@@ -870,8 +869,7 @@ static inline PyAclPacket* NativeToPyAclPacket(struct acl_pkt* ap)
   return pAclPacket;
 }
 
-static inline bool PyAclPacketToNative(PyAclPacket* pAclPacket,
-                                       struct acl_pkt* ap)
+static inline bool PyAclPacketToNative(PyAclPacket* pAclPacket, acl_pkt* ap)
 {
   if (!pAclPacket->content) { return true; }
 
@@ -983,7 +981,7 @@ bail_out:
   return retval;
 }
 
-static inline PyXattrPacket* NativeToPyXattrPacket(struct xattr_pkt* xp)
+static inline PyXattrPacket* NativeToPyXattrPacket(xattr_pkt* xp)
 {
   PyXattrPacket* pXattrPacket = PyObject_New(PyXattrPacket, &PyXattrPacketType);
 
@@ -1008,7 +1006,7 @@ static inline PyXattrPacket* NativeToPyXattrPacket(struct xattr_pkt* xp)
 }
 
 static inline bool PyXattrPacketToNative(PyXattrPacket* pXattrPacket,
-                                         struct xattr_pkt* xp)
+                                         xattr_pkt* xp)
 {
   if (!pXattrPacket->name) { return true; }
 
@@ -1132,8 +1130,7 @@ bail_out:
   return retval;
 }
 
-static inline PyRestoreObject* NativeToPyRestoreObject(
-    struct restore_object_pkt* rop)
+static inline PyRestoreObject* NativeToPyRestoreObject(restore_object_pkt* rop)
 {
   PyRestoreObject* pRestoreObject
       = PyObject_New(PyRestoreObject, &PyRestoreObjectType);
@@ -1156,7 +1153,7 @@ static inline PyRestoreObject* NativeToPyRestoreObject(
 }
 
 static bRC PyRestoreObjectData(PluginContext* plugin_ctx,
-                               struct restore_object_pkt* rop)
+                               restore_object_pkt* rop)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx
@@ -1197,7 +1194,7 @@ bail_out:
   return retval;
 }
 
-static bRC PyHandleBackupFile(PluginContext* plugin_ctx, struct save_pkt* sp)
+static bRC PyHandleBackupFile(PluginContext* plugin_ctx, save_pkt* sp)
 {
   bRC retval = bRC_Error;
   struct plugin_private_context* plugin_priv_ctx
@@ -1672,7 +1669,7 @@ static PyObject* PyBareosCheckChanges(PyObject*, PyObject* args)
 {
   PluginContext* plugin_ctx = plugin_context;
 
-  struct save_pkt sp;
+  save_pkt sp;
   bRC retval = bRC_Error;
   PySavePacket* pSavePkt;
 
@@ -1723,7 +1720,7 @@ bail_out:
 static PyObject* PyBareosAcceptFile(PyObject*, PyObject* args)
 {
   PluginContext* plugin_ctx = plugin_context;
-  struct save_pkt sp;
+  save_pkt sp;
   bRC retval = bRC_Error;
   PySavePacket* pSavePkt;
 
@@ -2131,10 +2128,11 @@ static PyObject* PyIoPacket_repr(PyIoPacket* self)
   Mmsg(buf,
        "IoPacket(func=%d, count=%ld, flags=%ld, mode=%04o, "
        "buf=\"%s\", fname=\"%s\", status=%ld, io_errno=%ld, lerror=%ld, "
-       "whence=%ld, offset=%lld, win32=%d)",
+       "whence=%ld, offset=%lld, win32=%d, filedes=%d)",
        self->func, self->count, self->flags, (self->mode & ~S_IFMT),
        PyGetByteArrayValue(self->buf), self->fname, self->status,
-       self->io_errno, self->lerror, self->whence, self->offset, self->win32);
+       self->io_errno, self->lerror, self->whence, self->offset, self->win32,
+       self->filedes);
   s = PyUnicode_FromString(buf.c_str());
 
   return s;
@@ -2143,19 +2141,13 @@ static PyObject* PyIoPacket_repr(PyIoPacket* self)
 // Initialization.
 static int PyIoPacket_init(PyIoPacket* self, PyObject* args, PyObject* kwds)
 {
-  static char* kwlist[] = {(char*)"func",
-                           (char*)"count",
-                           (char*)"flags",
-                           (char*)"mode",
-                           (char*)"buf",
-                           (char*)"fname",
-                           (char*)"status",
-                           (char*)"io_errno",
-                           (char*)"lerror",
-                           (char*)"whence",
-                           (char*)"offset",
-                           (char*)"win32",
-                           NULL};
+  static char* kwlist[] = {(char*)"func",    (char*)"count",
+                           (char*)"flags",   (char*)"mode",
+                           (char*)"buf",     (char*)"fname",
+                           (char*)"status",  (char*)"io_errno",
+                           (char*)"lerror",  (char*)"whence",
+                           (char*)"offset",  (char*)"win32",
+                           (char*)"filedes", NULL};
 
   self->func = 0;
   self->count = 0;
@@ -2169,12 +2161,13 @@ static int PyIoPacket_init(PyIoPacket* self, PyObject* args, PyObject* kwds)
   self->whence = 0;
   self->offset = 0;
   self->win32 = false;
+  self->filedes = kInvalidFiledescriptor;
 
   if (!PyArg_ParseTupleAndKeywords(
-          args, kwds, "|Hiiiosiiiilc", kwlist, &self->func, &self->count,
+          args, kwds, "|Hiiiosiiiilci", kwlist, &self->func, &self->count,
           &self->flags, &self->mode, &self->buf, &self->fname, &self->status,
           &self->io_errno, &self->lerror, &self->whence, &self->offset,
-          &self->win32)) {
+          &self->win32, &self->filedes)) {
     return -1;
   }
 

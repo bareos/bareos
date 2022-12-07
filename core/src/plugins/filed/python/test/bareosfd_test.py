@@ -22,7 +22,10 @@ import bareosfd
 import time
 import types
 
-# print dir(bareosfd)
+# print(dir(bareosfd))
+print("bareosfd.iostat_error: ", bareosfd.iostat_error)
+print("bareosfd.iostat_do_in_core: ", bareosfd.iostat_do_in_core)
+print("bareosfd.iostat_do_in_plugin: ", bareosfd.iostat_do_in_plugin)
 # print "bareosfd.bJobMessageType:", str( bareosfd.bJobMessageType)
 # print "bareosfd.bVariable:", str( bareosfd.bVariable)
 # print "bareosfd.bEventType:", str( bareosfd.bEventType)
@@ -139,7 +142,7 @@ class TestBareosFd(unittest.TestCase):
     def test_IoPacket(self):
         test_IoPacket = bareosfd.IoPacket()
         self.assertEqual(
-            'IoPacket(func=0, count=0, flags=0, mode=0000, buf="", fname="<NULL>", status=0, io_errno=0, lerror=0, whence=0, offset=0, win32=0)',
+            'IoPacket(func=0, count=0, flags=0, mode=0000, buf="", fname="<NULL>", status=0, io_errno=0, lerror=0, whence=0, offset=0, win32=0, filedes=-1)',
             str(test_IoPacket),
         )
 

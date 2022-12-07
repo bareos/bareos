@@ -51,18 +51,14 @@
 #include "findlib/hardlink.h"
 
 // Function pointers to be set here (findlib)
-extern int (*plugin_bopen)(BareosWinFilePacket* bfd,
+extern int (*plugin_bopen)(BareosFilePacket* bfd,
                            const char* fname,
                            int flags,
                            mode_t mode);
-extern int (*plugin_bclose)(BareosWinFilePacket* bfd);
-extern ssize_t (*plugin_bread)(BareosWinFilePacket* bfd,
-                               void* buf,
-                               size_t count);
-extern ssize_t (*plugin_bwrite)(BareosWinFilePacket* bfd,
-                                void* buf,
-                                size_t count);
-extern boffset_t (*plugin_blseek)(BareosWinFilePacket* bfd,
+extern int (*plugin_bclose)(BareosFilePacket* bfd);
+extern ssize_t (*plugin_bread)(BareosFilePacket* bfd, void* buf, size_t count);
+extern ssize_t (*plugin_bwrite)(BareosFilePacket* bfd, void* buf, size_t count);
+extern boffset_t (*plugin_blseek)(BareosFilePacket* bfd,
                                   boffset_t offset,
                                   int whence);
 
@@ -72,7 +68,7 @@ extern char* version;
 namespace filedaemon {
 
 int SaveFile(JobControlRecord*, FindFilesPacket*, bool);
-bool SetCmdPlugin(BareosWinFilePacket*, JobControlRecord*);
+bool SetCmdPlugin(BareosFilePacket*, JobControlRecord*);
 
 /* Exported variables */
 ClientResource* me; /* my resource */
@@ -87,7 +83,7 @@ bool accurate_unMarkFileAsSeen(JobControlRecord*, char*) { return true; }
 
 bool accurate_unMarkAllFilesAsSeen(JobControlRecord*) { return true; }
 
-bool SetCmdPlugin(BareosWinFilePacket*, JobControlRecord*) { return true; }
+bool SetCmdPlugin(BareosFilePacket*, JobControlRecord*) { return true; }
 
 TEST(fd, fd_plugins)
 {

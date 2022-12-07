@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,7 +26,7 @@ int encode_attribsEx(JobControlRecord* jcr,
                      FindFilesPacket* ff_pkt);
 bool SetAttributes(JobControlRecord* jcr,
                    Attributes* attr,
-                   BareosWinFilePacket* ofd);
+                   BareosFilePacket* ofd);
 int SelectDataStream(FindFilesPacket* ff_pkt, bool compatible);
 
 #endif  // BAREOS_FINDLIB_ATTRIBS_H_

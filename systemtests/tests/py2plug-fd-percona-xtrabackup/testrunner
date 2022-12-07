@@ -57,7 +57,7 @@ echo "insert into test (data) VALUES ('test entry 2') " | $MYSQL_CLIENT "${xtrab
 run_bareos "$@"
 
 cat <<END_OF_DATA2 >"$tmp/bconcmds"
-# run incremental again without any new data
+@# run incremental again without any new data
 run job=$JobName yes
 wait JobName=$JobName
 status dir

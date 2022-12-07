@@ -41,18 +41,14 @@
 #include "lib/bsock.h"
 
 // Function pointers to be set here (findlib)
-extern int (*plugin_bopen)(BareosWinFilePacket* bfd,
+extern int (*plugin_bopen)(BareosFilePacket* bfd,
                            const char* fname,
                            int flags,
                            mode_t mode);
-extern int (*plugin_bclose)(BareosWinFilePacket* bfd);
-extern ssize_t (*plugin_bread)(BareosWinFilePacket* bfd,
-                               void* buf,
-                               size_t count);
-extern ssize_t (*plugin_bwrite)(BareosWinFilePacket* bfd,
-                                void* buf,
-                                size_t count);
-extern boffset_t (*plugin_blseek)(BareosWinFilePacket* bfd,
+extern int (*plugin_bclose)(BareosFilePacket* bfd);
+extern ssize_t (*plugin_bread)(BareosFilePacket* bfd, void* buf, size_t count);
+extern ssize_t (*plugin_bwrite)(BareosFilePacket* bfd, void* buf, size_t count);
+extern boffset_t (*plugin_blseek)(BareosFilePacket* bfd,
                                   boffset_t offset,
                                   int whence);
 
@@ -109,23 +105,21 @@ static bRC bareosNewInclude(PluginContext* ctx);
 static bRC bareosNewPreInclude(PluginContext* ctx);
 static bool IsPluginCompatible(Plugin* plugin);
 static bool GetPluginName(JobControlRecord* jcr, char* cmd, int* ret);
-static bRC bareosCheckChanges(PluginContext* ctx, struct save_pkt* sp);
-static bRC bareosAcceptFile(PluginContext* ctx, struct save_pkt* sp);
+static bRC bareosCheckChanges(PluginContext* ctx, save_pkt* sp);
+static bRC bareosAcceptFile(PluginContext* ctx, save_pkt* sp);
 static bRC bareosSetSeenBitmap(PluginContext* ctx, bool all, char* fname);
 static bRC bareosClearSeenBitmap(PluginContext* ctx, bool all, char* fname);
 static bRC bareosGetInstanceCount(PluginContext* ctx, int* ret);
 
 // These will be plugged into the global pointer structure for the findlib.
-static int MyPluginBopen(BareosWinFilePacket* bfd,
+static int MyPluginBopen(BareosFilePacket* bfd,
                          const char* fname,
                          int flags,
                          mode_t mode);
-static int MyPluginBclose(BareosWinFilePacket* bfd);
-static ssize_t MyPluginBread(BareosWinFilePacket* bfd, void* buf, size_t count);
-static ssize_t MyPluginBwrite(BareosWinFilePacket* bfd,
-                              void* buf,
-                              size_t count);
-static boffset_t MyPluginBlseek(BareosWinFilePacket* bfd,
+static int MyPluginBclose(BareosFilePacket* bfd);
+static ssize_t MyPluginBread(BareosFilePacket* bfd, void* buf, size_t count);
+static ssize_t MyPluginBwrite(BareosFilePacket* bfd, void* buf, size_t count);
+static boffset_t MyPluginBlseek(BareosFilePacket* bfd,
                                 boffset_t offset,
                                 int whence);
 
@@ -524,7 +518,7 @@ static bool GetPluginName(JobControlRecord* jcr, char* cmd, int* ret)
   return true;
 }
 
-void PluginUpdateFfPkt(FindFilesPacket* ff_pkt, struct save_pkt* sp)
+void PluginUpdateFfPkt(FindFilesPacket* ff_pkt, save_pkt* sp)
 {
   ff_pkt->no_read = sp->no_read;
   ff_pkt->delta_seq = sp->delta_seq;
@@ -565,7 +559,7 @@ void PluginUpdateFfPkt(FindFilesPacket* ff_pkt, struct save_pkt* sp)
 // Ask to a Option Plugin what to do with the current file
 bRC PluginOptionHandleFile(JobControlRecord* jcr,
                            FindFilesPacket* ff_pkt,
-                           struct save_pkt* sp)
+                           save_pkt* sp)
 {
   int len;
   char* cmd;
@@ -579,8 +573,6 @@ bRC PluginOptionHandleFile(JobControlRecord* jcr,
   eventType = bEventHandleBackupFile;
   event.eventType = eventType;
 
-  memset(sp, 0, sizeof(struct save_pkt));
-  sp->pkt_size = sp->pkt_end = sizeof(struct save_pkt);
   sp->portable = true;
   CopyBits(FO_MAX, ff_pkt->flags, sp->flags);
   sp->cmd = cmd;
@@ -656,7 +648,6 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
   char* cmd;
   bEvent event;
   PluginContext* ctx = nullptr;
-  struct save_pkt sp;
   bEventType eventType;
   PoolMem fname(PM_FNAME);
   PoolMem link(PM_FNAME);
@@ -718,9 +709,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 
     // Loop getting filenames to backup then saving them
     while (!jcr->IsJobCanceled()) {
-      memset(&sp, 0, sizeof(sp));
-      sp.pkt_size = sizeof(sp);
-      sp.pkt_end = sizeof(sp);
+      save_pkt sp;
       sp.portable = true;
       sp.no_read = false;
       CopyBits(FO_MAX, ff_pkt->flags, sp.flags);
@@ -892,7 +881,6 @@ int PluginEstimate(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 {
   int len;
   char* cmd = ff_pkt->top_fname;
-  struct save_pkt sp;
   bEvent event;
   bEventType eventType;
   PoolMem fname(PM_FNAME);
@@ -942,9 +930,7 @@ int PluginEstimate(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 
     // Loop getting filenames to backup then saving them
     while (!jcr->IsJobCanceled()) {
-      memset(&sp, 0, sizeof(sp));
-      sp.pkt_size = sizeof(sp);
-      sp.pkt_end = sizeof(sp);
+      save_pkt sp;
       sp.portable = true;
       CopyBits(FO_MAX, ff_pkt->flags, sp.flags);
       sp.cmd = cmd;
@@ -1033,7 +1019,7 @@ bool SendPluginName(JobControlRecord* jcr, BareosSocket* sd, bool start)
 {
   int status;
   int index = jcr->JobFiles;
-  struct save_pkt* sp = (struct save_pkt*)jcr->fd_impl->plugin_sp;
+  save_pkt* sp = (save_pkt*)jcr->fd_impl->plugin_sp;
 
   if (!sp) {
     Jmsg0(jcr, M_FATAL, 0, _("Plugin save packet not found.\n"));
@@ -1198,14 +1184,14 @@ bail_out:
  */
 int PluginCreateFile(JobControlRecord* jcr,
                      Attributes* attr,
-                     BareosWinFilePacket* bfd,
+                     BareosFilePacket* bfd,
                      int)
 {
   int flags;
   int retval;
   int status;
   Plugin* plugin;
-  struct restore_pkt rp;
+  restore_pkt rp;
   PluginContext* ctx = jcr->plugin_ctx;
   b_plugin_ctx* b_ctx = (b_plugin_ctx*)jcr->plugin_ctx->core_private_context;
 
@@ -1231,6 +1217,7 @@ int PluginCreateFile(JobControlRecord* jcr,
   rp.RegexWhere = jcr->RegexWhere;
   rp.replace = jcr->fd_impl->replace;
   rp.create_status = CF_ERROR;
+  rp.filedes = kInvalidFiledescriptor;
 
   Dmsg4(debuglevel,
         "call plugin createFile stream=%d type=%d LinkFI=%d File=%s\n",
@@ -1252,6 +1239,7 @@ int PluginCreateFile(JobControlRecord* jcr,
     return CF_ERROR;
   }
 
+  bfd->filedes = rp.filedes;
   switch (rp.create_status) {
     case CF_ERROR:
       Qmsg1(jcr, M_ERROR, 0,
@@ -1296,19 +1284,16 @@ int PluginCreateFile(JobControlRecord* jcr,
  */
 bool PluginSetAttributes(JobControlRecord* jcr,
                          Attributes* attr,
-                         BareosWinFilePacket* ofd)
+                         BareosFilePacket* ofd)
 {
   Plugin* plugin;
-  struct restore_pkt rp;
+  restore_pkt rp;
 
   Dmsg0(debuglevel, "PluginSetAttributes\n");
 
   if (!jcr->plugin_ctx) { return false; }
   plugin = (Plugin*)jcr->plugin_ctx->plugin;
 
-  memset(&rp, 0, sizeof(rp));
-  rp.pkt_size = sizeof(rp);
-  rp.pkt_end = sizeof(rp);
   rp.stream = attr->stream;
   rp.data_stream = attr->data_stream;
   rp.type = attr->type;
@@ -1323,6 +1308,7 @@ bool PluginSetAttributes(JobControlRecord* jcr,
   rp.RegexWhere = jcr->RegexWhere;
   rp.replace = jcr->fd_impl->replace;
   rp.create_status = CF_ERROR;
+  rp.filedes = kInvalidFiledescriptor;
 
   PlugFunc(plugin)->setFileAttributes(jcr->plugin_ctx, &rp);
 
@@ -1353,10 +1339,7 @@ bacl_exit_code PluginBuildAclStreams(JobControlRecord* jcr,
   } else {
     bacl_exit_code retval = bacl_exit_error;
 #if defined(HAVE_ACL)
-    struct acl_pkt ap;
-
-    memset(&ap, 0, sizeof(ap));
-    ap.pkt_size = ap.pkt_end = sizeof(struct acl_pkt);
+    acl_pkt ap;
     ap.fname = acl_data->last_fname;
 
     switch (PlugFunc(plugin)->getAcl(jcr->plugin_ctx, &ap)) {
@@ -1402,10 +1385,7 @@ bacl_exit_code plugin_parse_acl_streams(
   } else {
     bacl_exit_code retval = bacl_exit_error;
 #if defined(HAVE_ACL)
-    struct acl_pkt ap;
-
-    memset(&ap, 0, sizeof(ap));
-    ap.pkt_size = ap.pkt_end = sizeof(struct acl_pkt);
+    acl_pkt ap;
     ap.fname = acl_data->last_fname;
     ap.content = content;
     ap.content_length = content_length;
@@ -1447,12 +1427,10 @@ BxattrExitCode PluginBuildXattrStreams(
     bool more;
     int xattr_count = 0;
     xattr_t* current_xattr;
-    struct xattr_pkt xp;
     uint32_t expected_serialize_len = 0;
 
     while (1) {
-      memset(&xp, 0, sizeof(xp));
-      xp.pkt_size = xp.pkt_end = sizeof(struct xattr_pkt);
+      xattr_pkt xp;
       xp.fname = xattr_data->last_fname;
 
       switch (PlugFunc(plugin)->getXattr(jcr->plugin_ctx, &xp)) {
@@ -1561,7 +1539,6 @@ BxattrExitCode PluginParseXattrStreams(
   plugin = (Plugin*)jcr->plugin_ctx->plugin;
   if (PlugFunc(plugin)->setXattr != NULL) {
     xattr_t* current_xattr = nullptr;
-    struct xattr_pkt xp;
 
     xattr_value_list = new alist<xattr_t*>(10, not_owned_by_alist);
 
@@ -1571,8 +1548,7 @@ BxattrExitCode PluginParseXattrStreams(
       goto bail_out;
     }
 
-    memset(&xp, 0, sizeof(xp));
-    xp.pkt_size = xp.pkt_end = sizeof(struct xattr_pkt);
+    xattr_pkt xp;
     xp.fname = xattr_data->last_fname;
 
     foreach_alist (current_xattr, xattr_value_list) {
@@ -1801,26 +1777,22 @@ void FreePlugins(JobControlRecord* jcr)
   jcr->plugin_ctx_list = NULL;
 }
 
-/**
- * Entry point for opening the file this is a wrapper around the pluginIO
- * entry point in the plugin.
- */
-static int MyPluginBopen(BareosWinFilePacket* bfd,
+/** Entry point for opening the file this is a wrapper around
+    the pluginIO entry point in the plugin.  */
+static int MyPluginBopen(BareosFilePacket* bfd,
                          const char* fname,
                          int flags,
                          mode_t mode)
 {
   Plugin* plugin;
-  struct io_pkt io;
+  io_pkt io;
   JobControlRecord* jcr = bfd->jcr;
 
   Dmsg1(debuglevel, "plugin_bopen flags=%08o\n", flags);
   if (!jcr->plugin_ctx) { return 0; }
   plugin = (Plugin*)jcr->plugin_ctx->plugin;
 
-  memset(&io, 0, sizeof(io));
-  io.pkt_size = sizeof(io);
-  io.pkt_end = sizeof(io);
+  io.filedes = kInvalidFiledescriptor;
 
   io.func = IO_OPEN;
   io.fname = fname;
@@ -1837,28 +1809,58 @@ static int MyPluginBopen(BareosWinFilePacket* bfd,
     bfd->lerror = io.lerror;
   }
 
-  Dmsg1(debuglevel, "Return from plugin open status=%d\n", io.status);
+  //  The plugin has two options for the read/write during the IO_OPEN call:
+  //  1.: - Set io.status to IoStatus::do_io_in_core, and
+  //      - Set the io.filedes to the filedescriptor of the file that was
+  //        opened in the plugin. In this case the core code will read from
+  //        write to that filedescriptor during backup and restore.
+  //
+  //  2.: - Set io.status to bareosfd.iostat_do_in_plugin.
+  //        This will call the plugin to do the IO itself.
 
-  return io.status;
+  bfd->filedes = io.filedes;
+
+  if (io.status == IoStatus::do_io_in_core) { bfd->do_io_in_core = true; }
+
+  if (bfd->do_io_in_core) {
+    if (io.filedes != kInvalidFiledescriptor) {
+      Dmsg1(
+          debuglevel,
+          "bopen: plugin asks for core to do the read/write via filedescriptor "
+          "%d\n",
+          io.filedes);
+      return io.filedes;
+    } else {
+      Dmsg1(debuglevel,
+            "bopen: ERROR: plugin wants to do read/write itself but did not "
+            "return a valid filedescriptor: %d\n",
+            io.filedes);
+      return -2;
+    }
+  } else {
+    Dmsg1(debuglevel,
+          "bopen: plugin wants to do read/write itself. status: %d\n",
+          io.status);
+    bfd->filedes = 0;  // set filedes to 0 as otherwise IsBopen() fails.
+    return io.status;
+  }
 }
 
 /**
  * Entry point for closing the file this is a wrapper around the pluginIO
  * entry point in the plugin.
  */
-static int MyPluginBclose(BareosWinFilePacket* bfd)
+static int MyPluginBclose(BareosFilePacket* bfd)
 {
   Plugin* plugin;
-  struct io_pkt io;
+  io_pkt io;
   JobControlRecord* jcr = bfd->jcr;
 
   Dmsg0(debuglevel, "===== plugin_bclose\n");
   if (!jcr->plugin_ctx) { return 0; }
   plugin = (Plugin*)jcr->plugin_ctx->plugin;
 
-  memset(&io, 0, sizeof(io));
-  io.pkt_size = sizeof(io);
-  io.pkt_end = sizeof(io);
+  io.filedes = bfd->filedes;
 
   io.func = IO_CLOSE;
 
@@ -1873,7 +1875,7 @@ static int MyPluginBclose(BareosWinFilePacket* bfd)
   }
 
   Dmsg1(debuglevel, "plugin_bclose stat=%d\n", io.status);
-
+  bfd->filedes = kInvalidFiledescriptor;
   return io.status;
 }
 
@@ -1881,19 +1883,17 @@ static int MyPluginBclose(BareosWinFilePacket* bfd)
  * Entry point for reading from the file this is a wrapper around the pluginIO
  * entry point in the plugin.
  */
-static ssize_t MyPluginBread(BareosWinFilePacket* bfd, void* buf, size_t count)
+static ssize_t MyPluginBread(BareosFilePacket* bfd, void* buf, size_t count)
 {
   Plugin* plugin;
-  struct io_pkt io;
+  io_pkt io;
   JobControlRecord* jcr = bfd->jcr;
 
   Dmsg0(debuglevel, "plugin_bread\n");
   if (!jcr->plugin_ctx) { return 0; }
   plugin = (Plugin*)jcr->plugin_ctx->plugin;
 
-  memset(&io, 0, sizeof(io));
-  io.pkt_size = sizeof(io);
-  io.pkt_end = sizeof(io);
+  io.filedes = bfd->filedes;
 
   io.func = IO_READ;
   io.count = count;
@@ -1917,10 +1917,10 @@ static ssize_t MyPluginBread(BareosWinFilePacket* bfd, void* buf, size_t count)
  * Entry point for writing to the file this is a wrapper around the pluginIO
  * entry point in the plugin.
  */
-static ssize_t MyPluginBwrite(BareosWinFilePacket* bfd, void* buf, size_t count)
+static ssize_t MyPluginBwrite(BareosFilePacket* bfd, void* buf, size_t count)
 {
   Plugin* plugin;
-  struct io_pkt io;
+  io_pkt io;
   JobControlRecord* jcr = bfd->jcr;
 
   Dmsg0(debuglevel, "plugin_bwrite\n");
@@ -1930,9 +1930,6 @@ static ssize_t MyPluginBwrite(BareosWinFilePacket* bfd, void* buf, size_t count)
   }
   plugin = (Plugin*)jcr->plugin_ctx->plugin;
 
-  memset(&io, 0, sizeof(io));
-  io.pkt_size = sizeof(io);
-  io.pkt_end = sizeof(io);
 
   io.func = IO_WRITE;
   io.count = count;
@@ -1955,12 +1952,12 @@ static ssize_t MyPluginBwrite(BareosWinFilePacket* bfd, void* buf, size_t count)
  * Entry point for seeking in the file this is a wrapper around the pluginIO
  * entry point in the plugin.
  */
-static boffset_t MyPluginBlseek(BareosWinFilePacket* bfd,
+static boffset_t MyPluginBlseek(BareosFilePacket* bfd,
                                 boffset_t offset,
                                 int whence)
 {
   Plugin* plugin;
-  struct io_pkt io;
+  io_pkt io;
   JobControlRecord* jcr = bfd->jcr;
 
   Dmsg0(debuglevel, "plugin_bseek\n");
@@ -2408,7 +2405,7 @@ static bRC bareosNewPreInclude(PluginContext* ctx)
 }
 
 // Check if a file have to be backed up using Accurate code
-static bRC bareosCheckChanges(PluginContext* ctx, struct save_pkt* sp)
+static bRC bareosCheckChanges(PluginContext* ctx, save_pkt* sp)
 {
   JobControlRecord* jcr;
   b_plugin_ctx* bctx;
@@ -2455,7 +2452,7 @@ bail_out:
 }
 
 // Check if a file would be saved using current Include/Exclude code
-static bRC bareosAcceptFile(PluginContext* ctx, struct save_pkt* sp)
+static bRC bareosAcceptFile(PluginContext* ctx, save_pkt* sp)
 {
   JobControlRecord* jcr;
   FindFilesPacket* ff_pkt;
