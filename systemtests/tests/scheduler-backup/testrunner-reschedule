@@ -1,0 +1,59 @@
+#!/bin/bash
+set -o pipefail
+set -u
+#
+# Run a failing job and reschedule it
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+reschedulejob="reschedulejob"
+rescheduleoutput=$tmp/reschedule.out
+
+rm -f $rescheduleoutput
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $rescheduleoutput
+run job=$reschedulejob level=Full yes
+quit
+END_OF_DATA
+
+run_bconsole
+
+timeout=0
+number_reschedules=0
+number_errorbackups=0
+
+while [[ ${timeout} -lt 10 ]] && [[ ${number_reschedules} -ne 3 || ${number_errorbackups} -ne 4 ]]
+do
+    number_errorbackups=$(grep -c 'Termination:.*Backup Error' "$messagesfile")
+    number_reschedules=$(grep -c 'Rescheduled Job .* to re-run in 3 seconds' "$messagesfile")
+    sleep 3
+    ((++timeout))
+done
+
+if [[ $number_reschedules -ne 3 ]]; then
+    echo "Required amount of reschedules not done!"
+    echo $number_reschedules
+    estat=1;
+fi
+
+if [[ $number_errorbackups -ne 4 ]]; then
+    echo "Required amount of backups not run!"
+    echo $number_errorbackups
+    estat=2;
+fi
+
+check_for_zombie_jobs storage=File
+
+end_test
