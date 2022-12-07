@@ -371,9 +371,7 @@ static inline bool AreMaxConcurrentJobsExceeded()
   JobControlRecord* jcr;
   unsigned int cnt = 0;
 
-  foreach_jcr (jcr) {
-    cnt++;
-  }
+  foreach_jcr (jcr) { cnt++; }
   endeach_jcr(jcr);
 
   return (cnt >= me->MaxConcurrentJobs) ? true : false;
@@ -1603,6 +1601,11 @@ static bool StorageCmd(JobControlRecord* jcr)
       jcr->store_bsock = nullptr;
       goto bail_out;
     }
+  }
+
+  if (jcr->JobId != 0) {
+    Jmsg(jcr, M_INFO, 0, "%s\n",
+         storage_daemon_socket->GetCipherMessageString().c_str());
   }
 
   storage_daemon_socket->InitBnetDump(

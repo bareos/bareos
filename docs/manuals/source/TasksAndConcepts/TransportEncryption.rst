@@ -83,7 +83,8 @@ You can use programs like `xca <https://github.com/chris2511/xca/>`_ or TinyCA t
 Example TLS Configuration Files
 -------------------------------
 
-:index:`\ <single: Example; TLS Configuration Files>`\  :index:`\ <single: TLS Configuration Files>`\
+.. index:: Example; TLS Configuration Files
+.. index:: TLS Configuration Files
 
 Examples of the TLS portions of the configuration files are listed below.
 
@@ -570,3 +571,353 @@ In Bareos Version 18.2 the relevant resources for some connections had to be cha
 .. [#psk] From Version 18.2 onwards this is identical to the TLS-PSK Pre-Shared Key
 .. [#user_agent] The name of the default console is predefined and cannot be changed
 .. [#cert] Certificate directives are: TlsVerifyPeer, TlsCaCertificateFile, TlsCaCertificateDir, TlsCertificateRevocationList, TlsCertificate, TlsKey, TlsAllowedCn
+
+
+.. _TLSRestrictingProtocolCipherChapter:
+
+TLS Restricting Protocol and Cipher
+-----------------------------------
+
+.. index:: Example; TLS howto limit cipher
+.. index:: TLS Limit protocol, TLS Limit cipher
+
+
+
+With TLS/PSK activated by default in Bareos since version 18, it is sometimes mandatory to achieve better performance and increase the throughput of backups and restores.
+To do so, you need to fine-tune the configuration, selecting wisely the protocol and ciphers used. Syntax and parameter usage is far from evident.
+To do that, we only need to change two parameters into bareos configuration files, but their syntax and the location are a bit complex.
+
+This chapter will show you how to do that.
+
+.. note::
+
+   Bareos version 21 does not yet provide a way to parameterize the TLSv1.3 protocol and associated ciphers. And since TLS protocols below 1.2 are considered weak, we will concentrate efforts on restricting cipher usage to protocol version 1.2.
+
+
+Determine available ciphers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The following command :command:`openssl` helps to determine which ciphers are available for protocol 1.2 with the needed PSK extensions.
+
+
+.. code-block:: shell-session
+   :caption: openssl list available ciphers for tls v1.2 with psk
+
+   openssl ciphers -tls1_2 -psk -s
+
+
+Adding `-v` option will give you an output list in column mode.
+
+Example of column output excluding SSLv3 and SHA1.
+
+.. code-block:: shell-session
+   :caption: openssl verbose cipher list for tls v1.2 with psk filtering SSLv2 and SHA1
+
+   openssl ciphers -v -tls1_2 -psk -s | grep -v SSLv3 | grep -v Mac=SHA1
+
+
+   Example output list of ciphers:
+
+      ECDHE-ECDSA-AES256-GCM-SHA384 TLSv1.2 Kx=ECDH     Au=ECDSA Enc=AESGCM(256) Mac=AEAD
+      ECDHE-RSA-AES256-GCM-SHA384 TLSv1.2 Kx=ECDH     Au=RSA  Enc=AESGCM(256) Mac=AEAD
+      ECDHE-ECDSA-CHACHA20-POLY1305 TLSv1.2 Kx=ECDH     Au=ECDSA Enc=CHACHA20/POLY1305(256) Mac=AEAD
+      ECDHE-RSA-CHACHA20-POLY1305 TLSv1.2 Kx=ECDH     Au=RSA  Enc=CHACHA20/POLY1305(256) Mac=AEAD
+      ECDHE-ECDSA-AES256-CCM  TLSv1.2 Kx=ECDH     Au=ECDSA Enc=AESCCM(256) Mac=AEAD
+      ECDHE-ECDSA-AES128-GCM-SHA256 TLSv1.2 Kx=ECDH     Au=ECDSA Enc=AESGCM(128) Mac=AEAD
+      ECDHE-RSA-AES128-GCM-SHA256 TLSv1.2 Kx=ECDH     Au=RSA  Enc=AESGCM(128) Mac=AEAD
+      ECDHE-ECDSA-AES128-CCM  TLSv1.2 Kx=ECDH     Au=ECDSA Enc=AESCCM(128) Mac=AEAD
+      ECDHE-ECDSA-AES128-SHA256 TLSv1.2 Kx=ECDH     Au=ECDSA Enc=AES(128)  Mac=SHA256
+      ECDHE-RSA-AES128-SHA256 TLSv1.2 Kx=ECDH     Au=RSA  Enc=AES(128)  Mac=SHA256
+      AES256-GCM-SHA384       TLSv1.2 Kx=RSA      Au=RSA  Enc=AESGCM(256) Mac=AEAD
+      AES256-CCM              TLSv1.2 Kx=RSA      Au=RSA  Enc=AESCCM(256) Mac=AEAD
+      AES128-GCM-SHA256       TLSv1.2 Kx=RSA      Au=RSA  Enc=AESGCM(128) Mac=AEAD
+      AES128-CCM              TLSv1.2 Kx=RSA      Au=RSA  Enc=AESCCM(128) Mac=AEAD
+      AES256-SHA256           TLSv1.2 Kx=RSA      Au=RSA  Enc=AES(256)  Mac=SHA256
+      AES128-SHA256           TLSv1.2 Kx=RSA      Au=RSA  Enc=AES(128)  Mac=SHA256
+      DHE-RSA-AES256-GCM-SHA384 TLSv1.2 Kx=DH       Au=RSA  Enc=AESGCM(256) Mac=AEAD
+      DHE-RSA-CHACHA20-POLY1305 TLSv1.2 Kx=DH       Au=RSA  Enc=CHACHA20/POLY1305(256) Mac=AEAD
+      DHE-RSA-AES256-CCM      TLSv1.2 Kx=DH       Au=RSA  Enc=AESCCM(256) Mac=AEAD
+      DHE-RSA-AES128-GCM-SHA256 TLSv1.2 Kx=DH       Au=RSA  Enc=AESGCM(128) Mac=AEAD
+      DHE-RSA-AES128-CCM      TLSv1.2 Kx=DH       Au=RSA  Enc=AESCCM(128) Mac=AEAD
+      DHE-RSA-AES256-SHA256   TLSv1.2 Kx=DH       Au=RSA  Enc=AES(256)  Mac=SHA256
+      DHE-RSA-AES128-SHA256   TLSv1.2 Kx=DH       Au=RSA  Enc=AES(128)  Mac=SHA256
+      PSK-AES256-GCM-SHA384   TLSv1.2 Kx=PSK      Au=PSK  Enc=AESGCM(256) Mac=AEAD
+      PSK-CHACHA20-POLY1305   TLSv1.2 Kx=PSK      Au=PSK  Enc=CHACHA20/POLY1305(256) Mac=AEAD
+      PSK-AES256-CCM          TLSv1.2 Kx=PSK      Au=PSK  Enc=AESCCM(256) Mac=AEAD
+      PSK-AES128-GCM-SHA256   TLSv1.2 Kx=PSK      Au=PSK  Enc=AESGCM(128) Mac=AEAD
+      PSK-AES128-CCM          TLSv1.2 Kx=PSK      Au=PSK  Enc=AESCCM(128) Mac=AEAD
+      PSK-AES128-CBC-SHA256   TLSv1 Kx=PSK      Au=PSK  Enc=AES(128)  Mac=SHA256
+      DHE-PSK-AES256-GCM-SHA384 TLSv1.2 Kx=DHEPSK   Au=PSK  Enc=AESGCM(256) Mac=AEAD
+      DHE-PSK-CHACHA20-POLY1305 TLSv1.2 Kx=DHEPSK   Au=PSK  Enc=CHACHA20/POLY1305(256) Mac=AEAD
+      DHE-PSK-AES256-CCM      TLSv1.2 Kx=DHEPSK   Au=PSK  Enc=AESCCM(256) Mac=AEAD
+      DHE-PSK-AES128-GCM-SHA256 TLSv1.2 Kx=DHEPSK   Au=PSK  Enc=AESGCM(128) Mac=AEAD
+      DHE-PSK-AES128-CCM      TLSv1.2 Kx=DHEPSK   Au=PSK  Enc=AESCCM(128) Mac=AEAD
+      DHE-PSK-AES128-CBC-SHA256 TLSv1 Kx=DHEPSK   Au=PSK  Enc=AES(128)  Mac=SHA256
+      ECDHE-PSK-CHACHA20-POLY1305 TLSv1.2 Kx=ECDHEPSK Au=PSK  Enc=CHACHA20/POLY1305(256) Mac=AEAD
+      ECDHE-PSK-AES128-CBC-SHA256 TLSv1 Kx=ECDHEPSK Au=PSK  Enc=AES(128)  Mac=SHA256
+      RSA-PSK-AES256-GCM-SHA384 TLSv1.2 Kx=RSAPSK   Au=RSA  Enc=AESGCM(256) Mac=AEAD
+      RSA-PSK-CHACHA20-POLY1305 TLSv1.2 Kx=RSAPSK   Au=RSA  Enc=CHACHA20/POLY1305(256) Mac=AEAD
+      RSA-PSK-AES128-GCM-SHA256 TLSv1.2 Kx=RSAPSK   Au=RSA  Enc=AESGCM(128) Mac=AEAD
+      RSA-PSK-AES128-CBC-SHA256 TLSv1 Kx=RSAPSK   Au=RSA  Enc=AES(128)  Mac=SHA256
+
+
+
+From that list we propose to use the following ciphers list:
+
+.. note::
+
+   ECDHE-RSA-AES128-GCM-SHA256
+   ECDHE-RSA-AES256-GCM-SHA384
+   PSK-AES128-GCM-SHA256
+   AES128-GCM-SHA256
+   PSK-AES256-GCM-SHA384
+   AES256-GCM-SHA384
+
+
+
+Order is done by level of "most secure" label done by [ciphersuite.info](https://ciphersuite.info/) website, then by ascending strength of digest to minimize cpu impact. Note the importance to have some cipher with **PSK** in its name to support the TLS/PSK mechanism.
+
+
+Just be sure they are present on all hosts you want to use with Bareos.
+
+.. note ::
+
+   In the future Bareos, we will have support the Linux kernel kTLS feature and fully configurable TLSv1.3, on modern platforms with OpenSSL > 3.x
+
+
+Resources parameters to configure
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We will modify the following options
+
+On |dir|
+
+:config:option:`dir/director/TlsProtocol`
+
+:config:option:`dir/director/TlsCipherList`
+
+:config:option:`dir/console/TlsProtocol`
+
+:config:option:`dir/console/TlsCipherList`
+
+:config:option:`dir/client/TlsProtocol`
+
+:config:option:`dir/client/TlsCipherList`
+
+:config:option:`dir/storage/TlsProtocol`
+
+:config:option:`dir/storage/TlsCipherList`
+
+
+On |fd|
+
+:config:option:`fd/client/TlsProtocol`
+
+:config:option:`fd/client/TlsCipherList`
+
+:config:option:`fd/director/TlsProtocol`
+
+:config:option:`fd/director/TlsCipherList`
+
+
+On |sd|
+
+:config:option:`sd/storage/TlsProtocol`
+
+:config:option:`sd/storage/TlsCipherList`
+
+:config:option:`sd/director/TlsProtocol`
+
+:config:option:`sd/director/TlsCipherList`
+
+
+For bconsole
+
+:config:option:`console/console/TlsProtocol`
+
+:config:option:`console/console/TlsCipherList`
+
+
+
+In the following example, we will remove all protocols below 1.2 and 1.3, and activate specifically 1.2 if it is not by default.
+
+The order of the list of ciphers that should normally be hardware accelerated and usable by kernel kTLS, is important.
+
+Both values need to be set as strings enclosed by double quotes.
+
+
+.. code-block:: bareosconfig
+   :caption: TLS Protocol and TLS Cipher List Restricted syntax values
+
+   ...
+   TLS Protocol = "-TLSv1,-TLSv1.1,-TLSv1.3,TLSv1.2"
+   TLS Cipher List = "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:AES128-GCM-SHA256:PSK-AES128-GCM-SHA256:AES256-GCM-SHA384:PSK-AES256-GCM-SHA384"
+   ...
+
+Those parameters have to be included in each resource located at (filenames in default installation).
+
+.. code-block:: cfg
+   :caption: List of configuration files where to apply changes
+
+    bareos-dir.d/director/bareos-dir.conf
+    bareos-dir.d/client/bareos-fd.conf
+    bareos-dir.d/storage/File.conf
+
+    bareos-fd.d/client/myself.conf
+    bareos-fd.d/director/bareos-dir.conf
+
+    bareos-sd.d/storage/bareos-sd.conf
+    bareos-sd.d/director/bareos-dir.conf
+
+    bconsole.conf
+
+
+How to test protocol and ciphers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Testing the protocol in use and supported ciphers can be done with the :command:`nmap` tool.
+
+.. code-block:: shell-session
+   :caption: testing protocol and cipher with nmap
+
+   # director
+   nmap --script ssl-enum-ciphers -p 9101 -n localhost
+
+   # fd
+   nmap --script ssl-enum-ciphers -p 9102 -n localhost
+
+   # sd
+   nmap --script ssl-enum-ciphers -p 9103 -n localhost
+
+
+If your daemons are using exclusively ipv6 you have to use the :command:`nmap -6` option.
+
+
+.. code-block:: shell
+   :caption: Example of default ciphers for bareos-fd before restricted configuration
+
+   nmap --script ssl-enum-ciphers -p 9102 -n localhost
+
+    Starting Nmap 7.93 ( https://nmap.org ) at 2022-11-22 14:25 CET
+    Nmap scan report for localhost (::1)
+    Host is up (0.000095s latency).
+    Other addresses for localhost (not scanned): 127.0.0.1
+
+    PORT     STATE SERVICE
+    9102/tcp open  jetdirect
+    | ssl-enum-ciphers:
+    |   TLSv1.0:
+    |     ciphers:
+    |       TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA (secp256r1) - A
+    |       TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256 (secp256r1) - A
+    |       TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA (secp256r1) - A
+    |       TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384 (secp256r1) - A
+    |       TLS_ECDHE_PSK_WITH_CAMELLIA_128_CBC_SHA256 (secp256r1) - A
+    |       TLS_ECDHE_PSK_WITH_CAMELLIA_256_CBC_SHA384 (secp256r1) - A
+    |       TLS_PSK_WITH_AES_128_CBC_SHA - unknown
+    |       TLS_PSK_WITH_AES_128_CBC_SHA256 - unknown
+    |       TLS_PSK_WITH_AES_256_CBC_SHA - unknown
+    |       TLS_PSK_WITH_AES_256_CBC_SHA384 - unknown
+    |       TLS_PSK_WITH_CAMELLIA_128_CBC_SHA256 - unknown
+    |       TLS_PSK_WITH_CAMELLIA_256_CBC_SHA384 - unknown
+    |     compressors:
+    |       NULL
+    |     cipher preference: client
+    |   TLSv1.1:
+    |     ciphers:
+    |       TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA (secp256r1) - A
+    |       TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256 (secp256r1) - A
+    |       TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA (secp256r1) - A
+    |       TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384 (secp256r1) - A
+    |       TLS_ECDHE_PSK_WITH_CAMELLIA_128_CBC_SHA256 (secp256r1) - A
+    |       TLS_ECDHE_PSK_WITH_CAMELLIA_256_CBC_SHA384 (secp256r1) - A
+    |       TLS_PSK_WITH_AES_128_CBC_SHA - unknown
+    |       TLS_PSK_WITH_AES_128_CBC_SHA256 - unknown
+    |       TLS_PSK_WITH_AES_256_CBC_SHA - unknown
+    |       TLS_PSK_WITH_AES_256_CBC_SHA384 - unknown
+    |       TLS_PSK_WITH_CAMELLIA_128_CBC_SHA256 - unknown
+    |       TLS_PSK_WITH_CAMELLIA_256_CBC_SHA384 - unknown
+    |     compressors:
+    |       NULL
+    |     cipher preference: client
+    |   TLSv1.2:
+    |     ciphers:
+    |       TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA (secp256r1) - A
+    |       TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256 (secp256r1) - A
+    |       TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA (secp256r1) - A
+    |       TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384 (secp256r1) - A
+    |       TLS_ECDHE_PSK_WITH_CAMELLIA_128_CBC_SHA256 (secp256r1) - A
+    |       TLS_ECDHE_PSK_WITH_CAMELLIA_256_CBC_SHA384 (secp256r1) - A
+    |       TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256 (secp256r1) - A
+    |       TLS_PSK_WITH_AES_128_CBC_SHA - unknown
+    |       TLS_PSK_WITH_AES_128_CBC_SHA256 - unknown
+    |       TLS_PSK_WITH_AES_128_CCM - unknown
+    |       TLS_PSK_WITH_AES_128_CCM_8 - unknown
+    |       TLS_PSK_WITH_AES_128_GCM_SHA256 - unknown
+    |       TLS_PSK_WITH_AES_256_CBC_SHA - unknown
+    |       TLS_PSK_WITH_AES_256_CBC_SHA384 - unknown
+    |       TLS_PSK_WITH_AES_256_CCM - unknown
+    |       TLS_PSK_WITH_AES_256_CCM_8 - unknown
+    |       TLS_PSK_WITH_AES_256_GCM_SHA384 - unknown
+    |       TLS_PSK_WITH_ARIA_128_GCM_SHA256 - unknown
+    |       TLS_PSK_WITH_ARIA_256_GCM_SHA384 - unknown
+    |       TLS_PSK_WITH_CAMELLIA_128_CBC_SHA256 - unknown
+    |       TLS_PSK_WITH_CAMELLIA_256_CBC_SHA384 - unknown
+    |       TLS_PSK_WITH_CHACHA20_POLY1305_SHA256 - unknown
+    |     compressors:
+    |       NULL
+    |     cipher preference: client
+    |_  least strength: unknown
+
+    Nmap done: 1 IP address (1 host up) scanned in 0.23 seconds
+
+To be compared to the following output when restricted protocol and cipher are in place.
+
+.. code-block:: shell
+   :caption: Example of TLS restricted protocol and ciphers for bareos-fd only TLS-PSK
+
+   nmap --script ssl-enum-ciphers -p 9102 -n localhost
+
+    Starting Nmap 7.93 ( https://nmap.org ) at 2022-11-22 14:50 CET
+    Nmap scan report for localhost (127.0.0.1)
+    Host is up (0.000057s latency).
+    Other addresses for localhost (not scanned): ::1
+
+    PORT     STATE SERVICE
+    9101/tcp open  jetdirect
+    | ssl-enum-ciphers:
+    |   TLSv1.2:
+    |     ciphers:
+    |       TLS_PSK_WITH_AES_128_GCM_SHA256 - unknown
+    |       TLS_PSK_WITH_AES_256_GCM_SHA384 - unknown
+    |     compressors:
+    |       NULL
+    |     cipher preference: client
+    |     warnings:
+    |       Forward Secrecy not supported by any cipher
+    |_  least strength: unknown
+
+    Nmap done: 1 IP address (1 host up) scanned in 0.28 seconds
+
+With the restricted configuration in place, the signature in :command:`bconsole` will reflect the changes.
+
+
+.. code-block:: bconsole
+   :caption: director connection with restricted TLS protocol and ciphers
+
+   bconsole
+
+    Connecting to Director localhost:9101
+      Encryption: PSK-AES128-GCM-SHA256 TLSv1.2
+    1000 OK: bareos-dir Version: 21.1.5 (09 November 2022)
+
+
+Conclusion
+~~~~~~~~~~
+
+You are now able to configure TLS Protocol and cipher list to match your needs. Once this is in place we highly recommend comparing with real jobs the gain or loss of performance.
+
+.. note::
+
+   Publish here some numbers comparing PSK-AES128-GCM-SHA256 TLSv1.2
+   with defaulting TLS_CHACHA20_POLY1305_SHA256 TLSv1.3

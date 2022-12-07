@@ -1,0 +1,12 @@
+Storage {
+  Name = File
+  Address = @hostname@
+  Password = "@sd_password@"
+  Device = FileStorage
+  Media Type = File
+  SD Port = @sd_port@
+  # Read as disable everything(-) that is enable by default, plus enable TLSv1.2 in case it is not by default
+  TLS Protocol = "-TLSv1,-TLSv1.1,-TLSv1.3,TLSv1.2"
+  # List of ciphers that should normally be hardware accelerated, and usable by kernel kTLS, order is important.
+  TLS Cipher List = "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:AES128-GCM-SHA256:PSK-AES128-GCM-SHA256:AES256-GCM-SHA384:PSK-AES256-GCM-SHA384"
+}

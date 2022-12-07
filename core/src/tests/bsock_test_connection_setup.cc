@@ -112,8 +112,7 @@ static void CheckEncryption(const BareosSocket* UA_sock, TlsPolicy tls_policy)
     std::cout << " Cleartext" << std::endl;
   } else {
     EXPECT_TRUE(UA_sock->tls_conn.get());
-    std::string cipher;
-    UA_sock->GetCipherMessageString(cipher);
+    std::string cipher = UA_sock->GetCipherMessageString();
     cipher += '\n';
     std::cout << cipher;
   }

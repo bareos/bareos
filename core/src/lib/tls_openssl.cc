@@ -92,7 +92,7 @@ std::string TlsOpenSsl::TlsCipherGetName() const
 {
   if (d_->openssl_) {
     const SSL_CIPHER* cipher = SSL_get_current_cipher(d_->openssl_);
-    const char* protocol_name = SSL_get_cipher_version(d_->openssl_);
+    const char* protocol_name = SSL_get_version(d_->openssl_);
     if (cipher) {
       return std::string(SSL_CIPHER_get_name(cipher)) + " " + protocol_name;
     }

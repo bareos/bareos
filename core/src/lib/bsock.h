@@ -216,7 +216,7 @@ class BareosSocket {
                                     std::string& r_code_str_out,
                                     BareosVersionNumber& version_out) const;
   void OutputCipherMessageString(std::function<void(const char*)>);
-  void GetCipherMessageString(std::string& str) const;
+  std::string GetCipherMessageString() const;
   bool ReceiveAndEvaluateResponseMessage(uint32_t& id_out,
                                          BStringList& args_out);
   bool FormatAndSendResponseMessage(uint32_t id,

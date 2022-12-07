@@ -148,6 +148,10 @@ bool ConnectToStorageDaemon(JobControlRecord* jcr,
     return false;
   }
 
+  if (jcr->JobId != 0) {
+    Jmsg(jcr, M_INFO, 0, "%s\n", sd->GetCipherMessageString().c_str());
+  }
+
   jcr->store_bsock = sd.release();
   return true;
 }
@@ -705,6 +709,12 @@ void DoNativeStorageStatus(UaContext* ua, StorageResource* store, char* cmd)
     ua->SendMsg(_("\nFailed to connect to Storage daemon %s.\n====\n"),
                 store->resource_name_);
     return;
+  }
+
+  if (ua->jcr->store_bsock) {
+    std::string cipher_string = ua->jcr->store_bsock->GetCipherMessageString();
+    cipher_string += '\n';
+    ua->SendMsg(cipher_string.c_str());
   }
 
   Dmsg0(20, _("Connected to storage daemon\n"));

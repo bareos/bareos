@@ -1,0 +1,64 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# Check all daemon connection to be setup like expected.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-bareos-fd
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
+
+
+
+# Fill ${BackupDirectory} with data.
+setup_data
+
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+run job=$JobName yes
+status director
+status client
+status storage=File
+wait
+messages
+@#
+@# now do a restore
+@#
+@$out $tmp/log2.out
+wait
+restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done
+yes
+wait
+messages
+@$out $tmp/job1.out
+list joblog jobid=1
+quit
+END_OF_DATA
+
+run_bareos "$@"
+check_for_zombie_jobs storage=File
+
+check_two_logs
+check_restore_diff ${BackupDirectory}
+
+# Test TLS restricted Protocol and ciphers list.
+# bareos-dir count 2 dir->fd + dir->sd
+# bareos-fd count 1 fd->sd
+expect_grep "bareos-dir JobId 1:  Encryption: PSK-AES128-GCM-SHA256 TLSv1.2" "$tmp/job1.out" "bareos-dir TLS failing"
+expect_grep "${TestName}-fd JobId 1:  Encryption: PSK-AES128-GCM-SHA256 TLSv1.2" "$tmp/job1.out" "bareos-fd TLS Failing"
+
+end_test
