@@ -452,7 +452,19 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
             )
         return bareosfd.bRC_OK
 
-    def closeDbConnection(self):
+    def close_db_connection(self):
+        """
+        Make sure the DB connection is closed properly. Will not throw if the connection was already closed.
+        """
+        try:
+            self.dbCon.close()
+        except pg8000.exceptions.InterfaceError as e:
+            pass
+
+    def complete_backup_job_and_close_db(self):
+        """
+        Call pg_stop_backup() on PostgreSQL DB to mark the backup job as completed.
+        """
         # TODO Error Handling
         # Get Backup Start Date
         self.parseBackupLabelFile()
@@ -469,6 +481,7 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
                 + "CHECKPOINT LOCATION: %s, " % self.labelItems["CHECKPOINT LOCATION"]
                 + "START WAL LOCATION: %s\n" % self.labelItems["START WAL LOCATION"],
             )
+            self.close_db_connection()
             self.PostgressFullBackupRunning = False
         except Exception as e:
             bareosfd.JobMessage(
@@ -518,11 +531,12 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
             return bareosfd.bRC_More
         else:
             if self.PostgressFullBackupRunning:
-                self.closeDbConnection()
+                self.complete_backup_job_and_close_db()
                 # Now we can also create the Restore object with the right timestamp
                 self.files_to_backup.append("ROP")
                 return self.checkForWalFiles()
             else:
+                self.close_db_connection()
                 return bareosfd.bRC_OK
 
     def end_backup_job(self):
@@ -532,8 +546,10 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
         especially when job was cancelled
         """
         if self.PostgressFullBackupRunning:
-            self.closeDbConnection()
+            self.complete_backup_job_and_close_db()
             self.PostgressFullBackupRunning = False
+        else:
+            self.close_db_connection()
         return bareosfd.bRC_OK
 
     def wait_for_wal_archiving(self, LSN):
