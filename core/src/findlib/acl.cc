@@ -107,7 +107,7 @@ bacl_exit_code SendAclStream(JobControlRecord* jcr,
     return bacl_exit_fatal;
   }
 
-  // Send the buffer to the storage deamon
+  // Send the buffer to the storage daemon
   Dmsg1(400, "Backing up ACL <%s>\n", acl_data->u.build->content);
   msgsave = sd->msg;
   sd->msg = acl_data->u.build->content;

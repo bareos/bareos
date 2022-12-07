@@ -1,1 +1,0 @@
-../../../../core/src/plugins/filed/python/pyfiles/BareosFdPluginLocalFileset.py

@@ -214,7 +214,7 @@ OS:
            - python-bareos
 
   FreeBSD:
-    "12.2":
+    "12.3":
       TYPE: freebsd
       ARCH:
         - amd64

@@ -339,6 +339,7 @@ static inline bool PopDelayedDataStreams(JobControlRecord* jcr, r_ctx& rctx)
       case STREAM_ACL_FREEBSD_NFS4_ACL:
       case STREAM_ACL_HURD_DEFAULT_ACL:
       case STREAM_ACL_HURD_ACCESS_ACL:
+      case STREAM_ACL_PLUGIN:
         if (!do_reStoreAcl(jcr, dds->stream, dds->content,
                            dds->content_length)) {
           goto bail_out;
@@ -894,6 +895,7 @@ void DoRestore(JobControlRecord* jcr)
       case STREAM_ACL_FREEBSD_NFS4_ACL:
       case STREAM_ACL_HURD_DEFAULT_ACL:
       case STREAM_ACL_HURD_ACCESS_ACL:
+      case STREAM_ACL_PLUGIN:
         /*
          * Do not restore ACLs when
          * a) The current file is not extracted
