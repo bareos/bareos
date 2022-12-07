@@ -168,7 +168,8 @@ class CommitAnalyzer:
     @classmethod
     def _check_headline(cls, text):
         issues = []
-        if len(text) > 50:
+        # we encourage to use no more than 50 chars, but still accept up to 60
+        if len(text) > 60:
             issues.append("headline too long")
         res = cls.headline_pattern.match(text)
         if res:
@@ -178,6 +179,11 @@ class CommitAnalyzer:
     @staticmethod
     def _check_body(text):
         for line in text.split("\n"):
+            lowerline = line.lower()
+            if lowerline.startswith("co-authored-by:") or line.startswith(
+                "signed-off-by:"
+            ):
+                continue
             if len(line) > 72:
                 return ["body contains line longer 72 chars"]
         return []
