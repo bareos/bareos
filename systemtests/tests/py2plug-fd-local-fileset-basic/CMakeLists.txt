@@ -30,6 +30,12 @@ endif()
 if(BASENAME MATCHES "py3")
   if(TARGET python3-fd)
     create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
+    set_tests_properties(
+      "${SYSTEMTEST_PREFIX}${BASENAME}:basic" PROPERTIES LABELS broken
+    )
+    set_tests_properties(
+      "${SYSTEMTEST_PREFIX}${BASENAME}:io_in_core" PROPERTIES LABELS broken
+    )
   else()
     create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED)
   endif()
