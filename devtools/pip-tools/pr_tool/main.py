@@ -380,13 +380,14 @@ def do_github_merge(repo, pr, *, skip_merge=False, admin_override=False):
         gh = Gh(dryrun=True)
     else:
         gh = Gh()
-    return gh.pr.merge(
+    gh.pr.merge(
         admin_param,
         "--merge",
         "--delete-branch",
         match_head_commit=repo.head.commit.hexsha,
         subject="Merge pull request #{}".format(pr["number"]),
     )
+    return True
 
 
 def merge_pr(
@@ -515,14 +516,17 @@ def main():
             exit(1)
         handle_ret(add_changelog_entry(repo, pr_data))
     elif args.subcommand == "merge":
-        handle_ret(
-            merge_pr(
-                repo,
-                pr_data,
-                skip_merge=args.skip_merge,
-                admin_override=args.admin_override,
-                ignore_status_checks=args.ignore_status_checks,
-            )
+        ret = merge_pr(
+            repo,
+            pr_data,
+            skip_merge=args.skip_merge,
+            admin_override=args.admin_override,
+            ignore_status_checks=args.ignore_status_checks,
         )
+        if ret:
+            print("{} Merged pull request.".format(Mark.PASS))
+        else:
+            print("{} Pull request not merged.".format(Mark.FAIL))
+        handle_ret(ret)
     elif args.subcommand == "dump":
         pprint(pr_data)
