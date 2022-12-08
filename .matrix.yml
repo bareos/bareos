@@ -169,7 +169,6 @@ OS:
       TYPE: solaris
       ARCH:
         - i386
-        - sparc
 
   win:
     cross:
