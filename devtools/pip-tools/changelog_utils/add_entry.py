@@ -26,11 +26,18 @@ from .fileio import read_changelog_file, write_changelog_file
 
 # top_dir = realpath(dirname(__file__) + "/..")
 top_dir = curdir
-section_order = ["Added", "Changed", "Deprecated", "Removed", "Fixed", "Security"]
+section_order = [
+    "Added",
+    "Changed",
+    "Deprecated",
+    "Removed",
+    "Fixed",
+    "Security",
+    "Documentation",
+]
 
 
 def add_changelog_entry(lines, entry, section):
-
     if section not in section_order:
         raise KeyError(f"{section} is not a valid section name")
 
