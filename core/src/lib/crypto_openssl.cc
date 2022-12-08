@@ -46,6 +46,9 @@
 #    include <openssl/asn1t.h>
 #    include <openssl/engine.h>
 #    include <openssl/evp.h>
+#    include <iomanip>
+#    include <sstream>
+
 
 /*
  * For OpenSSL version 1.x, EVP_PKEY_encrypt no longer exists. It was not an
@@ -1461,6 +1464,30 @@ void CryptoCipherFree(CIPHER_CONTEXT* cipher_ctx) { delete cipher_ctx; }
 const char* crypto_digest_name(DIGEST* digest)
 {
   return crypto_digest_name(digest->type);
+}
+
+std::optional<std::string> compute_hash(const std::string& unhashed,
+                                        const std::string& digestname)
+{
+  std::stringstream result;
+  const EVP_MD* type = EVP_get_digestbyname(digestname.c_str());
+  if (type) {
+    unsigned char hash[EVP_MAX_MD_SIZE];
+    unsigned int lengthOfHash = 0;
+    EVP_MD_CTX* context = EVP_MD_CTX_create();
+    if ((context != nullptr) && EVP_DigestInit_ex(context, type, nullptr)
+        && EVP_DigestUpdate(context, unhashed.c_str(), unhashed.length())
+        && EVP_DigestFinal_ex(context, hash, &lengthOfHash)) {
+      result << "{" << EVP_MD_name(type) << "}";
+      result << std::hex << std::setw(2) << std::setfill('0');
+      for (unsigned int i = 0; i < lengthOfHash; ++i) {
+        result << static_cast<int>(hash[i]);
+      }
+      EVP_MD_CTX_destroy(context);
+      return result.str();
+    }
+  }
+  return {};
 }
 
 #  endif /* HAVE_CRYPTO */
