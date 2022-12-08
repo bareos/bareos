@@ -986,7 +986,7 @@ REGRESS_DEBUG=1 ctest -V -S CTestScript.cmake || echo "ctest result:$?"
 
 %install
 pushd %{CMAKE_BUILDDIR}
-make  DESTDIR=%{buildroot} install
+make DESTDIR=%{buildroot} install/fast
 
 popd
 
