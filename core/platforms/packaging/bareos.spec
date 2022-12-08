@@ -971,8 +971,11 @@ cmake  .. \
   -DENABLE_PYTHON2=no \
   %endif
 
-#Add flags
-%__make CFLAGS="$RPM_OPT_FLAGS" CXXFLAGS="$RPM_OPT_FLAGS" %{?_smp_mflags};
+%if 0%{?make_build:1}
+%make_build
+%else
+%__make %{?_smp_mflags};
+%endif
 
 %check
 # run unit tests
