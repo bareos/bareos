@@ -478,6 +478,24 @@ static bool show_scheduled_preview(UaContext*,
   return true;
 }
 
+std::string get_subscription_status_checksum_source_text(UaContext* ua,
+                                                         const char* timestamp)
+{
+  const std::string salt("SECRETSALT");
+  PoolMem subscriptions(PM_MESSAGE);
+  PoolMem query(PM_MESSAGE);
+  OutputFormatter output_text
+      = OutputFormatter(pm_append, &subscriptions, nullptr, nullptr);
+  ua->db->FillQuery(
+      query, BareosDb::SQL_QUERY::subscription_select_backup_unit_total_1,
+      me->subscriptions);
+  ua->db->ListSqlQuery(ua->jcr, query.c_str(), &output_text, VERT_LIST, false);
+  std::string checksum_source
+      = salt + "\n" + timestamp + "\n" + subscriptions.c_str();
+  Dmsg1(500, "status_subscription summary=%s\n", checksum_source.c_str());
+  return checksum_source;
+}
+
 /**
  * Check the number of clients in the DB against the configured number of
  * subscriptions
@@ -514,6 +532,9 @@ static bool DoSubscriptionStatus(UaContext* ua)
     return false;
   }
 
+  char now[30] = {0};
+  bstrftime(now, sizeof(now), (utime_t)time(NULL), "%F %T");
+
   if (kw_all || kw_detail) {
     ua->send->ObjectKeyValue(
         "version", "Bareos version: ", kBareosVersionStrings.Full, "%s");
@@ -538,6 +559,13 @@ static bool DoSubscriptionStatus(UaContext* ua)
     ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, VERT_LIST,
                          "total-units-required", true,
                          BareosDb::CollapseMode::Collapse);
+    std::string checksum_source
+        = get_subscription_status_checksum_source_text(ua, now);
+    auto checksum = compute_hash(checksum_source);
+    if (checksum) {
+      ua->send->ObjectKeyValue("checksum", "Checksum: ", checksum->c_str(),
+                               "%s\n");
+    }
   }
   if (kw_all || kw_unknown) {
     ua->SendMsg(
