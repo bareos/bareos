@@ -171,6 +171,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - dird: fix tls protocol shown and document TLS Protocol & ciphers restriction [PR #1319]
 - status subscription: extend output [PR #1312]
 - dird: fix for crash when starting rescheduled jobs [PR #1327]
+- unify and merge builds where possible [PR #1309]
 
 ### Deprecated
 - make_catalog_backup.pl is now a shell wrapper script which will be removed in version 23.
@@ -395,6 +396,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1306]: https://github.com/bareos/bareos/pull/1306
 [PR #1307]: https://github.com/bareos/bareos/pull/1307
 [PR #1308]: https://github.com/bareos/bareos/pull/1308
+[PR #1309]: https://github.com/bareos/bareos/pull/1309
 [PR #1312]: https://github.com/bareos/bareos/pull/1312
 [PR #1313]: https://github.com/bareos/bareos/pull/1313
 [PR #1314]: https://github.com/bareos/bareos/pull/1314
