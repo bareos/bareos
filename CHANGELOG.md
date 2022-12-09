@@ -170,6 +170,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - filed: fix handling of `STREAM_ACL_PLUGIN` during restore [PR #1308]
 - dird: fix tls protocol shown and document TLS Protocol & ciphers restriction [PR #1319]
 - status subscription: extend output [PR #1312]
+- dird: fix for crash when starting rescheduled jobs [PR #1327]
 
 ### Deprecated
 - make_catalog_backup.pl is now a shell wrapper script which will be removed in version 23.
@@ -404,4 +405,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1320]: https://github.com/bareos/bareos/pull/1320
 [PR #1324]: https://github.com/bareos/bareos/pull/1324
 [PR #1326]: https://github.com/bareos/bareos/pull/1326
+[PR #1327]: https://github.com/bareos/bareos/pull/1327
 [unreleased]: https://github.com/bareos/bareos/tree/master
