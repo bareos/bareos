@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 set -o pipefail
 set -u
 #
@@ -36,8 +37,8 @@ number_errorbackups=0
 
 while [[ ${timeout} -lt 10 ]] && [[ ${number_reschedules} -ne 3 || ${number_errorbackups} -ne 4 ]]
 do
-    number_errorbackups=$(grep -c 'Termination:.*Backup Error' "$messagesfile")
-    number_reschedules=$(grep -c 'Rescheduled Job .* to re-run in 3 seconds' "$messagesfile")
+    number_errorbackups=$(grep -c 'Termination:.*Backup Error' "$messagesfile" || :)
+    number_reschedules=$(grep -c 'Rescheduled Job .* to re-run in 3 seconds' "$messagesfile" || :)
     sleep 3
     ((++timeout))
 done

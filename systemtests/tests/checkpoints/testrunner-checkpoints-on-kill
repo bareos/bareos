@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 set -o pipefail
 set -u
 #
@@ -45,8 +46,8 @@ END_OF_DATA
     while [[ ${timeout} -lt 30 ]] && [[ -z $timed_checkpoint || -z $volume_checkpoint ]]
     do
 
-        timed_checkpoint=$(grep -m 1 'Doing timed backup checkpoint. Next checkpoint in 3 seconds' "$messagesfile")
-        volume_checkpoint=$(grep -m 1 'Volume changed, doing checkpoint:' "$messagesfile")
+        timed_checkpoint=$(grep -m 1 'Doing timed backup checkpoint. Next checkpoint in 3 seconds' "$messagesfile" || : )
+        volume_checkpoint=$(grep -m 1 'Volume changed, doing checkpoint:' "$messagesfile" || : )
         sleep 1
         ((++timeout))
     done #end while
