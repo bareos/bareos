@@ -3,7 +3,7 @@ set -e
 set -o pipefail
 set -u
 #
-# Run a simple backup
+# Let bareos run a scheduled backup
 #   then restore it.
 #
 TestName="$(basename "$(pwd)")"

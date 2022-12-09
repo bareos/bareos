@@ -312,14 +312,14 @@ bool StartStorageDaemonJob(JobControlRecord* jcr, bool send_bsr)
   std::string job_name = jcr->dir_impl->res.job->resource_name_;
   BashSpaces(job_name);
 
-  std::string client_name;
+  std::string client_name{};
   if (jcr->dir_impl->res.client) {
     client_name = jcr->dir_impl->res.client->resource_name_;
   } else {
     client_name = "**None**";
   }
   BashSpaces(client_name);
-  std::string fileset_name;
+  std::string fileset_name{};
   if (jcr->dir_impl->res.fileset) {
     fileset_name = jcr->dir_impl->res.fileset->resource_name_;
   } else {
@@ -327,9 +327,13 @@ bool StartStorageDaemonJob(JobControlRecord* jcr, bool send_bsr)
   }
   BashSpaces(fileset_name);
 
-  std::string backup_format;
-  backup_format = jcr->dir_impl->backup_format;
-  BashSpaces(backup_format);
+  std::string backup_format{};
+  if (jcr->dir_impl->backup_format) {
+    backup_format = jcr->dir_impl->backup_format;
+    BashSpaces(backup_format);
+  } else {
+    backup_format = "**None**";
+  }
 
   const char* fileset_md5;
   if (jcr->dir_impl->res.fileset && jcr->dir_impl->res.fileset->MD5[0] == 0) {
