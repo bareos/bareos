@@ -87,29 +87,22 @@ BuildRequires: libtirpc-devel
 # RedHat (CentOS, Fedora, RHEL) specific settings
 #
 
-# centos/rhel 5: segfault when building qt monitor
-%if 0%{?centos_version} == 505 || 0%{?rhel_version} == 505
-%define build_qt_monitor 0
-%define have_git 0
-%define python_plugins 0
-%endif
-
 %if 0%{?fedora_version} >= 20
 %define glusterfs 1
 %define systemd_support 1
 %endif
 
-%if 0%{?rhel_version} >= 700 || 0%{?centos_version} >= 700
+%if 0%{?rhel} >= 7
 %define glusterfs 1
 %define systemd_support 1
 %endif
 
-%if 0%{?rhel_version} == 700 || 0%{?centos_version} == 700
+%if 0%{?rhel} == 7
 %define webui 0
 %endif
 
 # use Developer Toolset 8 compiler as standard is too old
-%if 0%{?centos_version} == 700 || 0%{?rhel_version} == 700
+%if 0%{?rhel} == 7
 BuildRequires: devtoolset-8-gcc
 BuildRequires: devtoolset-8-gcc-c++
 %endif
@@ -175,7 +168,7 @@ BuildRequires: mtx
 BuildRequires: libqt5-qtbase-devel
 %else
 
-%if 0%{?centos_version} > 700 || 0%{?rhel_version} > 700 || 0%{?fedora} >= 29
+%if 0%{?rhel} > 7 || 0%{?fedora} >= 29
 BuildRequires: qt5-qtbase-devel
 %else
 BuildRequires: qt-devel
@@ -185,7 +178,7 @@ BuildRequires: qt-devel
 %endif
 
 %if 0%{?python_plugins}
-  %if 0%{?fedora} >= 36 || 0%{?rhel_version} >= 900 || 0%{?suse_version} >= 1550 || 0%{?sle_version} >= 150400
+  %if 0%{?fedora} >= 36 || 0%{?rhel} >= 9 || 0%{?suse_version} >= 1550 || 0%{?sle_version} >= 150400
 %define python2_available 0
   %endif
  %if 0%{python2_available}
@@ -221,28 +214,23 @@ BuildRequires: passwd
 
 
 # Some magic to be able to determine what platform we are running on.
-%if 0%{?rhel_version} || 0%{?centos_version} || 0%{?fedora_version}
+%if 0%{?rhel} || 0%{?fedora}
 
-%if 0%{?centos_version} < 900
+%if 0%{?rhel} && 0%{?rhel} < 9
 BuildRequires: redhat-lsb
 %endif
 
 # older versions require additional release packages
-%if 0%{?rhel_version}   && 0%{?rhel_version} <= 600
+%if 0%{?rhel}   && 0%{?rhel} <= 6
 BuildRequires: redhat-release
 %endif
 
-%if 0%{?centos_version} && 0%{?centos_version} <= 600
-BuildRequires: redhat-release
-%endif
-
-%if 0%{?fedora_version}
+%if 0%{?fedora}
 BuildRequires: fedora-release
 %endif
 
-%if 0%{?rhel_version} >= 600 || 0%{?centos_version} >= 600 || 0%{?fedora_version} >= 14
 BuildRequires: jansson-devel
-%endif
+
 %else
 # non suse, non redhat: eg. mandriva.
 
@@ -253,15 +241,7 @@ BuildRequires: lsb-release
 %endif
 
 # dependency tricks for vixdisklib
-# Note: __requires_exclude only works for dists with rpm version >= 4.9
-#       SLES12 has suse_version 1315, SLES11 has 1110
-%if 0%{?rhel_version} >= 700 || 0%{?centos_version} >= 700 || 0%{?fedora_version} >= 16 || 0%{?suse_version} >= 1110
 %global __requires_exclude ^(.*libvixDiskLib.*|.*CXXABI_1.3.9.*)$
-
-%else
-%define _use_internal_dependency_generator 0
-%define our_find_requires %{_builddir}/%{name}-%{version}/find_requires
-%endif
 
 %define replace_python_shebang sed -i '1s|^#!.*|#!%{__python3} %{py3_shbang_opts}|'
 
@@ -557,9 +537,6 @@ Summary:        Bareos VMware plugin
 Group:          Productivity/Archiving/Backup
 Requires:       bareos-vadp-dumper
 Requires:       bareos-filedaemon-python-plugin >= 15.2
-%if 0%{?suse_version} == 1110
-Requires:       python-ordereddict
-%endif
 
 %description -n bareos-vmware-plugin
 Uses the VMware API to take snapshots of running VMs and takes
@@ -710,7 +687,7 @@ Requires: php-zip
 Requires: php-libxml
 %endif
 
-%if 0%{?centos_version} || 0%{?rhel_version} || 0%{?fedora}
+%if 0%{?rhel} || 0%{?fedora}
 Requires: httpd
 %define _apache_conf_dir /etc/httpd/conf.d/
 %define www_daemon_user apache
@@ -891,7 +868,7 @@ mkdir %{CMAKE_BUILDDIR}
 pushd %{CMAKE_BUILDDIR}
 
 # use Developer Toolset 8 compiler as standard is too old
-%if 0%{?centos_version} == 700 || 0%{?rhel_version} == 700
+%if 0%{?rhel} == 7
 source /opt/rh/devtoolset-8/enable
 %endif
 
@@ -994,8 +971,11 @@ cmake  .. \
   -DENABLE_PYTHON2=no \
   %endif
 
-#Add flags
-%__make CFLAGS="$RPM_OPT_FLAGS" CXXFLAGS="$RPM_OPT_FLAGS" %{?_smp_mflags};
+%if 0%{?make_build:1}
+%make_build
+%else
+%__make %{?_smp_mflags};
+%endif
 
 %check
 # run unit tests
@@ -1005,19 +985,11 @@ pushd %{CMAKE_BUILDDIR}
 REGRESS_DEBUG=1 ctest -V -S CTestScript.cmake || echo "ctest result:$?"
 
 %install
-##if 0#{?suse_version}
-#    #makeinstall DESTDIR=#{buildroot} install
-##else
-#    make DESTDIR=#{buildroot} install
-##endif
-#make DESTDIR=#{buildroot} install-autostart
-
 pushd %{CMAKE_BUILDDIR}
-make  DESTDIR=%{buildroot} install
+make DESTDIR=%{buildroot} install/fast
 
 popd
 
-#rm -Rvf build
 
 
 install -d -m 755 %{buildroot}/usr/share/applications
@@ -1096,16 +1068,6 @@ rm -f %{buildroot}/%{_sysconfdir}/%{name}/bareos-dir.d/plugin-python-ldap.conf
 %if ! 0%{?glusterfs}
 rm -f %{buildroot}/%{script_dir}/bareos-glusterfind-wrapper
 %endif
-
-# install tray monitor
-# #if 0#{?build_qt_monitor}
-# #if 0#{?suse_version} > 1010
-# disables, because suse_update_desktop_file complains
-# that there are two desktop file (applications and autostart)
-# ##suse_update_desktop_file bareos-tray-monitor System Backup
-# #endif
-# #endif
-
 
 # remove man page if qt tray monitor is not built
 %if !0%{?build_qt_monitor}

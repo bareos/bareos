@@ -44,67 +44,18 @@ OS:
            - bareos-vmware
            - python-bareos
 
-    "18.04":
-      TYPE: deb
-      IMAGE: "ubuntu18.04"
-      ARCH:
-        - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-webui
-           - bareos-vmware
-           - python-bareos
-
-  openSUSE:
-    "Leap_15.4":
-      TYPE: rpm
-      IMAGE: opensuse-leap154
-      ARCH:
-      - x86_64
-      PROJECTPACKAGES:
-       x86_64:
-          - bareos
-          - python-bareos
-
-    "Leap_15.3":
-      TYPE: rpm
-      IMAGE: opensuse-leap153
-      ARCH:
-      - x86_64
-      PROJECTPACKAGES:
-       x86_64:
-          - bareos
-          - python-bareos
-
-  SLE:
-    "15_SP4":
+  SUSE:
+    "15":
       TYPE: rpm
       IMAGE: sle154
+      CUSTOM_TEST_IMAGES: [ SLE-15_SP3, SLE-15_SP4, openSUSE-Leap_15.3, openSUSE-Leap_15.4 ]
       ARCH:
       - x86_64
       PROJECTPACKAGES:
         x86_64:
            - bareos
            - python-bareos
-    "15_SP3":
-      TYPE: rpm
-      IMAGE: sle153
-      ARCH:
-      - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - python-bareos
-    "15_SP2":
-      TYPE: rpm
-      IMAGE: sle152
-      ARCH:
-      - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - python-bareos
+  SLE:
     "12_SP5":
       TYPE: rpm
       IMAGE: sles12sp5
@@ -115,41 +66,19 @@ OS:
            - bareos
            - python-bareos
 
-  RHEL:
-    "8":
-      TYPE: rpm
-      IMAGE: rhel8
-      ARCH:
-      - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-vmware
-           - python-bareos
-    "7":
-      TYPE: rpm
-      IMAGE: rhel7
-      ARCH:
-      - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-vmware
-           - python-bareos
-
   Fedora:
+    "37":
+      TYPE: rpm
+      IMAGE: fedora37
+      ARCH:
+      - x86_64
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - python-bareos
     "36":
       TYPE: rpm
       IMAGE: fedora36
-      ARCH:
-      - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - python-bareos
-    "35":
-      TYPE: rpm
-      IMAGE: fedora35
       ARCH:
       - x86_64
       PROJECTPACKAGES:
@@ -171,6 +100,7 @@ OS:
     "10":
       TYPE: deb
       IMAGE: "debian10"
+      CUSTOM_TEST_IMAGES: [ Debian, "Univention-5.0" ]
       ARCH:
         - x86_64
       PROJECTPACKAGES:
@@ -183,7 +113,8 @@ OS:
   EL:
     "9":
       TYPE: rpm
-      IMAGE: centos9
+      IMAGE: rhel9
+      CUSTOM_TEST_IMAGES: [ Rocky, Alma, Oracle, Stream, RHEL ]
       ARCH:
       - x86_64
       PROJECTPACKAGES:
@@ -193,7 +124,8 @@ OS:
            - python-bareos
     "8":
       TYPE: rpm
-      IMAGE: rocky8
+      IMAGE: rhel8
+      CUSTOM_TEST_IMAGES: [ Rocky, Alma, Oracle, Stream, RHEL ]
       ARCH:
       - x86_64
       PROJECTPACKAGES:
@@ -201,10 +133,10 @@ OS:
            - bareos
            - bareos-vmware
            - python-bareos
-  CentOS:
     "7":
       TYPE: rpm
-      IMAGE: centos7
+      IMAGE: rhel7
+      CUSTOM_TEST_IMAGES: [ CentOS, RHEL ]
       ARCH:
       - x86_64
       PROJECTPACKAGES:
@@ -237,7 +169,6 @@ OS:
       TYPE: solaris
       ARCH:
         - i386
-        - sparc
 
   win:
     cross:
