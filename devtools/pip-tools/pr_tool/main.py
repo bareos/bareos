@@ -507,7 +507,11 @@ def main():
         if check_changelog_entry(repo, pr_data):
             print("{} ChangeLog record present".format(Mark.PASS))
         elif not pr_data["isCrossRepository"] or pr_data["maintainerCanModify"]:
-            print("{} ChangeLog record can be added automatically".format(Mark.INFO))
+            print(
+                "{} ChangeLog record WILL be added automatically during merge".format(
+                    Mark.INFO
+                )
+            )
         else:
             print(
                 "{} ChangeLog record cannot be added, "
