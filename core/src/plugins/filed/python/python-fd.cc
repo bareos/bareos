@@ -238,6 +238,8 @@ static bRC newPlugin(PluginContext* plugin_ctx)
       bEventPluginCommand, bEventJobStart, bEventRestoreCommand,
       bEventEstimateCommand, bEventBackupCommand, bEventRestoreObject);
 
+#include "plugins/include/joblog_warn_about_python2_deprecation.inc"
+
   return bRC_OK;
 }
 
