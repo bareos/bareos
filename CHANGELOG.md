@@ -11,6 +11,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Changed
 - ndmp_tape.cc: do not log current rctx->rec in joblog [PR #1323]
+- bareos-fd-postgres: properly close database connection [PR #1328]
 
 ## [21.1.5] - 2022-11-09
 
@@ -639,4 +640,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1303]: https://github.com/bareos/bareos/pull/1303
 [PR #1322]: https://github.com/bareos/bareos/pull/1322
 [PR #1323]: https://github.com/bareos/bareos/pull/1323
+[PR #1328]: https://github.com/bareos/bareos/pull/1328
 [unreleased]: https://github.com/bareos/bareos/tree/master
