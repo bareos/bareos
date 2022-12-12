@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and since Bareos version 20 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [21.1.6] - 2022-12-12
 
 ### Fixed
 
@@ -405,6 +405,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [21.1.3]: https://github.com/bareos/bareos/releases/tag/Release%2F21.1.3
 [21.1.4]: https://github.com/bareos/bareos/releases/tag/Release%2F21.1.4
 [21.1.5]: https://github.com/bareos/bareos/releases/tag/Release%2F21.1.5
+[21.1.6]: https://github.com/bareos/bareos/releases/tag/Release%2F21.1.6
 [Issue #579]: https://bugs.bareos.org/view.php?id=579
 [Issue #847]: https://bugs.bareos.org/view.php?id=847
 [Issue #871]: https://bugs.bareos.org/view.php?id=871
@@ -641,4 +642,3 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1322]: https://github.com/bareos/bareos/pull/1322
 [PR #1323]: https://github.com/bareos/bareos/pull/1323
 [PR #1328]: https://github.com/bareos/bareos/pull/1328
-[unreleased]: https://github.com/bareos/bareos/tree/master
