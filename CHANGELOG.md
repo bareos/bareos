@@ -177,6 +177,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - make_catalog_backup.pl is now a shell wrapper script which will be removed in version 23.
 - marked config directive `Compatible` as deprecated [PR #1284]
 - deprecated `Maximum Connections` directive from all daemons and removed all uses in code. Directive has no effect anymore [PR #1285]
+- Deprecate python2 plugins [PR #1331]
 
 ### Removed
 - removed the `-r` run job option. [PR #1206]
@@ -408,4 +409,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1324]: https://github.com/bareos/bareos/pull/1324
 [PR #1326]: https://github.com/bareos/bareos/pull/1326
 [PR #1327]: https://github.com/bareos/bareos/pull/1327
+[PR #1331]: https://github.com/bareos/bareos/pull/1331
 [unreleased]: https://github.com/bareos/bareos/tree/master
