@@ -2,7 +2,7 @@ Package:        bareos-filedaemon-python2-plugin
 Architecture:   any
 Section:        python
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), bareos-filedaemon-python-plugins-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Depends:        bareos-filedaemon (= ${binary:Version}), bareos-filedaemon-python-plugins-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
 Recommends:     python-dateutil
 Provides:       bareos-filedaemon-python-plugin (= ${binary:Version})
 Replaces:       bareos-filedaemon-python-plugin
