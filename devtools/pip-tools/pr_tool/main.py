@@ -32,7 +32,12 @@ from subprocess import run, PIPE, DEVNULL
 from sys import stdout, stderr
 from time import sleep
 
-from changelog_utils import file_has_pr_entry, add_entry_to_file, update_links
+from changelog_utils import (
+    file_has_pr_entry,
+    add_entry_to_file,
+    update_links,
+    guess_section,
+)
 
 
 class Mark:
@@ -302,6 +307,13 @@ def check_changelog_entry(repo, pr):
         return file_has_pr_entry(fp, pr["number"])
 
 
+def get_changelog_section(pr):
+    # TODO:
+    # evaluate PR labels to select a section
+    # print(pr["labels"])
+    return guess_section(pr["title"])
+
+
 def add_changelog_entry(repo, pr):
     if pr["isCrossRepository"] and not pr["maintainerCanModify"]:
         print(
@@ -310,8 +322,9 @@ def add_changelog_entry(repo, pr):
         )
         return False
     changelog = "{}/CHANGELOG.md".format(repo.working_tree_dir)
+    section = get_changelog_section(pr)
     with open(changelog, "r+") as fp:
-        if not add_entry_to_file(fp, pr["title"], pr=pr["number"]):
+        if not add_entry_to_file(fp, pr["title"], pr=pr["number"], section=section):
             return False
         update_links(fp)
     repo.git.add("CHANGELOG.md")
@@ -507,9 +520,10 @@ def main():
         if check_changelog_entry(repo, pr_data):
             print("{} ChangeLog record present".format(Mark.PASS))
         elif not pr_data["isCrossRepository"] or pr_data["maintainerCanModify"]:
+            section = get_changelog_section(pr_data)
             print(
-                "{} ChangeLog record WILL be added automatically during merge".format(
-                    Mark.INFO
+                "{} ChangeLog record WILL be automatically added to section '{}' during merge".format(
+                    Mark.INFO, section
                 )
             )
         else:
