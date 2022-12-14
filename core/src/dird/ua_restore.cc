@@ -1519,17 +1519,16 @@ void FindStorageResource(UaContext* ua,
     return;
   }
   // Try looking up Storage by name
-  {
-    ResLocker _{my_config};
-    foreach_res (store, R_STORAGE) {
-      if (bstrcmp(Storage, store->resource_name_)) {
-        if (ua->AclAccessOk(Storage_ACL, store->resource_name_)) {
-          rx.store = store;
-        }
-        break;
+
+  foreach_res (store, R_STORAGE) {
+    if (bstrcmp(Storage, store->resource_name_)) {
+      if (ua->AclAccessOk(Storage_ACL, store->resource_name_)) {
+        rx.store = store;
       }
+      break;
     }
   }
+
 
   if (rx.store) {
     int i;
@@ -1550,7 +1549,6 @@ void FindStorageResource(UaContext* ua,
 
   // If no storage resource, try to find one from MediaType
   if (!rx.store) {
-    ResLocker _{my_config};
     foreach_res (store, R_STORAGE) {
       if (bstrcmp(MediaType, store->media_type)) {
         if (ua->AclAccessOk(Storage_ACL, store->resource_name_)) {

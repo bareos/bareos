@@ -876,7 +876,6 @@ int main(int argc, char* argv[])
     my_config = InitDirConfig(configfile.c_str(), M_ERROR_TERM);
     my_config->ParseConfig();
 
-    ResLocker _{my_config};
     foreach_res (catalog, R_CATALOG) {
       if (!catalogname.empty()
           && bstrcmp(catalog->resource_name_, catalogname.c_str())) {

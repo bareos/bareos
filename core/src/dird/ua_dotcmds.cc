@@ -867,7 +867,6 @@ bool DotJobdefsCmd(UaContext* ua, const char*)
 {
   JobResource* jobdefs;
 
-  ResLocker _{my_config};
   ua->send->ArrayStart("jobdefs");
   foreach_res (jobdefs, R_JOBDEFS) {
     if (ua->AclAccessOk(Job_ACL, jobdefs->resource_name_)) {
@@ -898,7 +897,6 @@ bool DotJobsCmd(UaContext* ua, const char*)
   enabled = FindArg(ua, NT_("enabled")) >= 0;
   disabled = FindArg(ua, NT_("disabled")) >= 0;
 
-  ResLocker _{my_config};
   ua->send->ArrayStart("jobs");
   foreach_res (job, R_JOB) {
     if (!type || type == job->JobType) {
@@ -952,7 +950,6 @@ bool DotFilesetsCmd(UaContext* ua, const char*)
 {
   FilesetResource* fs;
 
-  ResLocker _{my_config};
   ua->send->ArrayStart("filesets");
   foreach_res (fs, R_FILESET) {
     if (ua->AclAccessOk(FileSet_ACL, fs->resource_name_)) {
@@ -970,7 +967,6 @@ bool DotCatalogsCmd(UaContext* ua, const char*)
 {
   CatalogResource* cat;
 
-  ResLocker _{my_config};
   ua->send->ArrayStart("catalogs");
   foreach_res (cat, R_CATALOG) {
     if (ua->AclAccessOk(Catalog_ACL, cat->resource_name_)) {
@@ -993,7 +989,6 @@ bool DotClientsCmd(UaContext* ua, const char*)
   enabled = FindArg(ua, NT_("enabled")) >= 0;
   disabled = FindArg(ua, NT_("disabled")) >= 0;
 
-  ResLocker _{my_config};
   ua->send->ArrayStart("clients");
   foreach_res (client, R_CLIENT) {
     if (ua->AclAccessOk(Client_ACL, client->resource_name_)) {
@@ -1015,7 +1010,6 @@ bool DotConsolesCmd(UaContext* ua, const char*)
 {
   ConsoleResource* console;
 
-  ResLocker _{my_config};
   ua->send->ArrayStart("consoles");
   foreach_res (console, R_CONSOLE) {
     ua->send->ObjectStart();
@@ -1031,7 +1025,6 @@ bool DotUsersCmd(UaContext* ua, const char*)
 {
   UserResource* user;
 
-  ResLocker _{my_config};
   ua->send->ArrayStart("users");
   foreach_res (user, R_USER) {
     ua->send->ObjectStart();
@@ -1047,7 +1040,6 @@ bool DotMsgsCmd(UaContext* ua, const char*)
 {
   MessagesResource* msgs = NULL;
 
-  ResLocker _{my_config};
   ua->send->ArrayStart("messages");
   foreach_res (msgs, R_MSGS) {
     ua->send->ObjectStart();
@@ -1071,7 +1063,6 @@ bool DotPoolsCmd(UaContext* ua, const char*)
     length = 0;
   }
 
-  ResLocker _{my_config};
   ua->send->ArrayStart("pools");
   foreach_res (pool, R_POOL) {
     if (ua->AclAccessOk(Pool_ACL, pool->resource_name_)) {
@@ -1096,7 +1087,6 @@ bool DotStorageCmd(UaContext* ua, const char*)
   enabled = FindArg(ua, NT_("enabled")) >= 0;
   disabled = FindArg(ua, NT_("disabled")) >= 0;
 
-  ResLocker _{my_config};
   ua->send->ArrayStart("storages");
   foreach_res (store, R_STORAGE) {
     if (ua->AclAccessOk(Storage_ACL, store->resource_name_)) {
@@ -1118,7 +1108,6 @@ bool DotProfilesCmd(UaContext* ua, const char*)
 {
   ProfileResource* profile;
 
-  ResLocker _{my_config};
   ua->send->ArrayStart("profiles");
   foreach_res (profile, R_PROFILE) {
     ua->send->ObjectStart();
@@ -1308,7 +1297,6 @@ bool DotScheduleCmd(UaContext* ua, const char*)
   enabled = FindArg(ua, NT_("enabled")) >= 0;
   disabled = FindArg(ua, NT_("disabled")) >= 0;
 
-  ResLocker _{my_config};
   ua->send->ArrayStart("schedules");
   foreach_res (sched, R_SCHEDULE) {
     if (ua->AclAccessOk(Schedule_ACL, sched->resource_name_)) {

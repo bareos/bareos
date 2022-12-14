@@ -264,7 +264,6 @@ static DeviceResource* find_device_res(char* archive_device_string,
   DeviceResource* device_resource;
 
   Dmsg0(900, "Enter find_device_res\n");
-  ResLocker _{my_config};
   foreach_res (device_resource, R_DEVICE) {
     Dmsg2(900, "Compare %s and %s\n", device_resource->archive_device_string,
           archive_device_string);

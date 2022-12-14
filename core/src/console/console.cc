@@ -671,13 +671,12 @@ static bool SelectDirector(const char* director,
 
   *ret_cons = NULL;
   *ret_dir = NULL;
-  {
-    ResLocker _{console::my_config};
-    numdir = 0;
-    foreach_res (director_resource_tmp, R_DIRECTOR) { numdir++; }
-    numcon = 0;
-    foreach_res (console_resource_tmp, R_CONSOLE) { numcon++; }
-  }
+
+  numdir = 0;
+  foreach_res (director_resource_tmp, R_DIRECTOR) { numdir++; }
+  numcon = 0;
+  foreach_res (console_resource_tmp, R_CONSOLE) { numcon++; }
+
 
   if (numdir == 1) { /* No choose */
     director_resource_tmp
@@ -685,12 +684,11 @@ static bool SelectDirector(const char* director,
   }
 
   if (director) { /* Command line choice overwrite the no choose option */
-    {
-      ResLocker _{my_config};
-      foreach_res (director_resource_tmp, R_DIRECTOR) {
-        if (bstrcmp(director_resource_tmp->resource_name_, director)) { break; }
-      }
+
+    foreach_res (director_resource_tmp, R_DIRECTOR) {
+      if (bstrcmp(director_resource_tmp->resource_name_, director)) { break; }
     }
+
     if (!director_resource_tmp) { /* Can't find Director used as argument */
       ConsoleOutputFormat(_("Can't find %s in Director list\n"), director);
       return 0;
@@ -701,16 +699,15 @@ static bool SelectDirector(const char* director,
     UA_sock = new BareosSocketTCP;
   try_again:
     ConsoleOutput(_("Available Directors:\n"));
-    {
-      ResLocker _{my_config};
-      numdir = 0;
-      foreach_res (director_resource_tmp, R_DIRECTOR) {
-        ConsoleOutputFormat(_("%2d:  %s at %s:%d\n"), 1 + numdir++,
-                            director_resource_tmp->resource_name_,
-                            director_resource_tmp->address,
-                            director_resource_tmp->DIRport);
-      }
+
+    numdir = 0;
+    foreach_res (director_resource_tmp, R_DIRECTOR) {
+      ConsoleOutputFormat(_("%2d:  %s at %s:%d\n"), 1 + numdir++,
+                          director_resource_tmp->resource_name_,
+                          director_resource_tmp->address,
+                          director_resource_tmp->DIRport);
     }
+
     if (GetCmd(stdin, _("Select Director by entering a number: "), UA_sock, 600)
         < 0) {
       WSACleanup(); /* Cleanup Windows sockets */
@@ -970,7 +967,6 @@ int main(int argc, char* argv[])
   ConInit(stdin);
 
   if (list_directors) {
-    ResLocker _{my_config};
     foreach_res (director_resource, R_DIRECTOR) {
       ConsoleOutputFormat("%s\n", director_resource->resource_name_);
     }

@@ -1161,8 +1161,6 @@ static inline bool parse_fileset_selection_param(PoolMem& selection,
     FilesetResource* fs;
     PoolMem temp(PM_MESSAGE);
 
-
-    ResLocker _{my_config};
     foreach_res (fs, R_FILESET) {
       if (!ua->AclAccessOk(FileSet_ACL, fs->resource_name_, false)) {
         continue;

@@ -202,7 +202,6 @@ void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
 
   JobResource* job = nullptr;
 
-  ResLocker _{my_config};
   foreach_res (job, R_JOB) {
     if (!IsAutomaticSchedulerJob(job)) { continue; }
 
