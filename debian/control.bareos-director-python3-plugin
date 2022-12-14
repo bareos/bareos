@@ -2,7 +2,7 @@ Package:        bareos-director-python3-plugin
 Architecture:   any
 Section:        python
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), bareos-director-python-plugins-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Depends:        bareos-common (= ${binary:Version}), bareos-director (= ${binary:Version}), bareos-director-python-plugins-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
 Provides:       bareos-director-python-plugin (= ${binary:Version})
 Replaces:       bareos-director-python-plugin
 Conflicts:      bareos-director-python-plugin

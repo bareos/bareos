@@ -460,7 +460,7 @@ Requires:   bareos-filedaemon = %{version}
 Summary:    LDAP Python plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-filedaemon = %{version}
-Requires:   bareos-filedaemon-python-plugin = %{version}
+Requires:   bareos-filedaemon-python2-plugin = %{version}
 Requires:   python-ldap
 
 %package    filedaemon-ovirt-python-plugin
@@ -468,30 +468,45 @@ Summary:    Ovirt Python plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-filedaemon = %{version}
 Requires:   bareos-filedaemon-python-plugin = %{version}
+%if 0%{?rhel} != 7
+Suggests:   bareos-filedaemon-python3-plugin = %{version}
+%endif
 
 %package    filedaemon-libcloud-python-plugin
 Summary:    Libcloud Python plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-filedaemon = %{version}
 Requires:   bareos-filedaemon-python-plugin = %{version}
+%if 0%{?rhel} != 7
+Suggests:   bareos-filedaemon-python3-plugin = %{version}
+%endif
 
 %package    filedaemon-postgresql-python-plugin
 Summary:    PostgreSQL Python plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-filedaemon = %{version}
 Requires:   bareos-filedaemon-python-plugin = %{version}
+%if 0%{?rhel} != 7
+Suggests:   bareos-filedaemon-python3-plugin = %{version}
+%endif
 
 %package    filedaemon-percona-xtrabackup-python-plugin
 Summary:    Percona xtrabackup Python plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-filedaemon = %{version}
 Requires:   bareos-filedaemon-python-plugin = %{version}
+%if 0%{?rhel} != 7
+Suggests:   bareos-filedaemon-python3-plugin = %{version}
+%endif
 
 %package    filedaemon-mariabackup-python-plugin
 Summary:    Mariabackup Python plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-filedaemon = %{version}
 Requires:   bareos-filedaemon-python-plugin = %{version}
+%if 0%{?rhel} != 7
+Suggests:   bareos-filedaemon-python3-plugin = %{version}
+%endif
 
 
   %if 0%{?python2_available}
@@ -537,6 +552,10 @@ Summary:        Bareos VMware plugin
 Group:          Productivity/Archiving/Backup
 Requires:       bareos-vadp-dumper
 Requires:       bareos-filedaemon-python-plugin >= 15.2
+
+%if 0%{?rhel} != 7
+Suggests:       bareos-filedaemon-python3-plugin = %{version}
+%endif
 
 %description -n bareos-vmware-plugin
 Uses the VMware API to take snapshots of running VMs and takes
@@ -730,6 +749,9 @@ This package provides some additional tools, not part of the Bareos project.
 Summary:     Additional File Daemon Python plugins, not part of the Bareos project
 Group:       Productivity/Archiving/Backup
 Requires:    bareos-filedaemon-python-plugin
+%if 0%{?rhel} != 7
+Suggests:   bareos-filedaemon-python3-plugin = %{version}
+%endif
 
 %description contrib-filedaemon-python-plugins
 %{dscr}
@@ -741,6 +763,9 @@ This package provides additional File Daemon Python plugins, not part of the Bar
 Summary:     Additional Director Python plugins, not part of the Bareos project
 Group:       Productivity/Archiving/Backup
 Requires:    bareos-director-python-plugin
+%if 0%{?rhel} != 7
+Suggests:   bareos-director-python3-plugin = %{version}
+%endif
 
 %description contrib-director-python-plugins
 %{dscr}
