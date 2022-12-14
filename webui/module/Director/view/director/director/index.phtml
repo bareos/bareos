@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2022 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  * @author    Frank Bergkemper
  *
@@ -26,17 +26,17 @@
 
 $title = _('Director');
 $this->headTitle($title);
-
 ?>
 
 <ul class="nav nav-tabs">
    <li class="active"><a href="<?php echo $this->url('director', array('action'=>'index')); ?>"><?php echo $this->translate('Status'); ?></a></li>
    <li><a href="<?php echo $this->url('director', array('action'=>'messages')); ?>"><?php echo $this->translate('Messages'); ?></a></li>
+   <li><a href="<?php echo $this->url('director', array('action'=>'subscription')); ?>"><?php echo $this->translate('Subscription'); ?></a></li>
 </ul>
 
 <br />
 
-<?php if($this->acl_alert) : echo $this->ACLAlert($this->invalid_commands); elseif(!$this->acl_alert) : ?>
+<?php if($this->acl_alert) : echo $this->ACLAlert($this->invalid_commands); else : ?>
 
 <div class="row">
 <div class="col-md-8">
@@ -55,6 +55,7 @@ $this->headTitle($title);
 </pre>
 </div>
 
+</div>
 </div>
 </div>
 
