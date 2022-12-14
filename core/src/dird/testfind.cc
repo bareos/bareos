@@ -37,6 +37,7 @@
 
 #include "lib/mntent_cache.h"
 #include "lib/parse_conf.h"
+#include "lib/cli.h"
 #include "dird/jcr_util.h"
 #include "dird/dird_globals.h"
 #include "dird/dird_conf.h"
@@ -65,44 +66,10 @@ void TestfindFreeJcr(JobControlRecord* jcr)
   Dmsg0(200, "End testfind FreeJcr\n");
 }
 
-
 extern bool ParseDirConfig(const char* configfile, int exit_code);
-
-/* Global variables */
-
-static int attrs = 0;
-
-static void usage()
-{
-  fprintf(
-      stderr,
-      _("\n"
-        "Usage: testfind [-d debug_level] [-] [pattern1 ...]\n"
-        "       -a          print extended attributes (Win32 debug)\n"
-        "       -d <nn>     set debug level to <nn>\n"
-        "       -dt         print timestamp in debug output\n"
-        "       -c          specify config file containing FileSet resources\n"
-        "       -f          specify which FileSet to use\n"
-        "       -?          print this message.\n"
-        "\n"
-        "Patterns are used for file inclusion -- normally directories.\n"
-        "Debug level >= 1 prints each file found.\n"
-        "Debug level >= 10 prints path/file for catalog.\n"
-        "Errors are always printed.\n"
-        "Files/paths truncated is the number of files/paths with len > 255.\n"
-        "Truncation is only in the catalog.\n"
-        "\n"));
-
-  exit(1);
-}
-
 
 int main(int argc, char* const* argv)
 {
-  const char* configfile = ConfigurationParser::GetDefaultConfigDir();
-  const char* fileset_name = "SelfTest";
-  int ch;
-
   OSDependentInit();
 
   setlocale(LC_ALL, "");
@@ -110,39 +77,29 @@ int main(int argc, char* const* argv)
   bindtextdomain("bareos", LOCALEDIR);
   textdomain("bareos");
 
-  while ((ch = getopt(argc, argv, "ac:d:f:?")) != -1) {
-    switch (ch) {
-      case 'a': /* print extended attributes *debug* */
-        attrs = 1;
-        break;
+  CLI::App testfind_app;
+  InitCLIApp(testfind_app, "The Bareos Testfind Tool.", 2000);
 
-      case 'c': /* set debug level */
-        configfile = optarg;
-        break;
+  bool attrs = false;
+  testfind_app.add_flag("-a,--print-attributes", attrs,
+                        "Print extended attributes (Win32 debug).");
 
-      case 'd': /* set debug level */
-        if (*optarg == 't') {
-          dbg_timestamp = true;
-        } else {
-          debug_level = atoi(optarg);
-          if (debug_level <= 0) { debug_level = 1; }
-        }
-        break;
+  std::string configfile = ConfigurationParser::GetDefaultConfigDir();
+  testfind_app
+      .add_option("-c,--config", configfile,
+                  "Use <path> as configuration file or directory.")
+      ->check(CLI::ExistingPath)
+      ->type_name("<path>");
 
-      case 'f': /* exclude patterns */
-        fileset_name = optarg;
-        break;
+  AddDebugOptions(testfind_app);
 
-      case '?':
-      default:
-        usage();
-    }
-  }
+  std::string fileset_name = "SelfTest";
+  testfind_app.add_option("-f,--fileset", fileset_name,
+                          "Specify which FileSet to use.");
 
-  argc -= optind;
-  argv += optind;
+  CLI11_PARSE(testfind_app, argc, argv);
 
-  directordaemon::my_config = InitDirConfig(configfile, M_ERROR_TERM);
+  directordaemon::my_config = InitDirConfig(configfile.c_str(), M_ERROR_TERM);
   directordaemon::my_config->ParseConfig();
 
 
@@ -153,11 +110,11 @@ int main(int argc, char* const* argv)
   JobControlRecord* jcr;
   jcr = NewDirectorJcr(TestfindFreeJcr);
 
-  FilesetResource* dir_fileset
-      = (FilesetResource*)my_config->GetResWithName(R_FILESET, fileset_name);
+  FilesetResource* dir_fileset = (FilesetResource*)my_config->GetResWithName(
+      R_FILESET, fileset_name.c_str());
 
   if (dir_fileset == NULL) {
-    fprintf(stderr, "%s: Fileset not found\n", fileset_name);
+    fprintf(stderr, "%s: Fileset not found\n", fileset_name.c_str());
 
     FilesetResource* var;
 
@@ -170,7 +127,7 @@ int main(int argc, char* const* argv)
     exit(1);
   }
 
-  launchFileDaemonLogic(dir_fileset, configfile, attrs);
+  launchFileDaemonLogic(dir_fileset, configfile.c_str(), attrs);
 
   FreeJcr(jcr);
   if (my_config) {

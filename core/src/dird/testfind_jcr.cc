@@ -56,7 +56,7 @@ static int handleFile(JobControlRecord* jcr,
 
 void launchFileDaemonLogic(directordaemon::FilesetResource* jcr_fileset,
                            const char* configfile,
-                           int attrs)
+                           bool attrs)
 {
   local_attrs = attrs;
   crypto_cipher_t cipher = CRYPTO_CIPHER_NONE;

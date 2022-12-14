@@ -193,7 +193,7 @@ target_link_libraries(
 # is not built by default
 if(NOT client-only)
   add_executable(testfind ${TSTFNDSRCS})
-  target_link_libraries(testfind dird_objects fd_objects bareosfind)
+  target_link_libraries(testfind dird_objects fd_objects bareosfind CLI11::CLI11)
 endif()
 install(TARGETS bareos-dir bareos-dbcheck testfind DESTINATION "${sbindir}")
 
