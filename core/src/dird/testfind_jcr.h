@@ -28,7 +28,7 @@
 
 void launchFileDaemonLogic(directordaemon::FilesetResource* jcr_fileset,
                            const char* configfile,
-                           bool attrs);
+                           bool print_attrs);
 void SetOptions(findFOPTS* fo, const char* opts);
 bool setupFileset(FindFilesPacket* ff,
                   directordaemon::FilesetResource* jcr_fileset);

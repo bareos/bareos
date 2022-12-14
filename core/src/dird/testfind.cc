@@ -68,8 +68,8 @@ int main(int argc, char* const* argv)
   CLI::App testfind_app;
   InitCLIApp(testfind_app, "The Bareos Testfind Tool.", 2000);
 
-  bool attrs = false;
-  testfind_app.add_flag("-a,--print-attributes", attrs,
+  bool print_attributes = false;
+  testfind_app.add_flag("-a,--print-attributes", print_attributes,
                         "Print extended attributes (Win32 debug).");
 
   std::string configfile = ConfigurationParser::GetDefaultConfigDir();
@@ -106,7 +106,7 @@ int main(int argc, char* const* argv)
     exit(1);
   }
 
-  launchFileDaemonLogic(dir_fileset, configfile.c_str(), attrs);
+  launchFileDaemonLogic(dir_fileset, configfile.c_str(), print_attributes);
 
   if (my_config) {
     delete my_config;

@@ -42,7 +42,7 @@ static int max_file_len = 0;
 static int max_path_len = 0;
 static int trunc_fname = 0;
 static int trunc_path = 0;
-static int local_attrs = 0;
+static bool print_attributes = false;
 
 static int handleFile(JobControlRecord* jcr,
                       FindFilesPacket* ff_pkt,
@@ -56,9 +56,9 @@ static int handleFile(JobControlRecord* jcr,
 
 void launchFileDaemonLogic(directordaemon::FilesetResource* jcr_fileset,
                            const char* configfile,
-                           bool attrs)
+                           bool print_attrs)
 {
-  local_attrs = attrs;
+  print_attributes = print_attrs;
   crypto_cipher_t cipher = CRYPTO_CIPHER_NONE;
 
   my_config = InitFdConfig(configfile, M_ERROR_TERM);
@@ -365,7 +365,7 @@ int PrintFile(JobControlRecord*, FindFilesPacket* ff, bool)
       printf(_("Err: Unknown file ff->type %d: %s\n"), ff->type, ff->fname);
       break;
   }
-  if (local_attrs) {
+  if (print_attributes) {
     char attr[200];
     //    encode_attribsEx(NULL, attr, ff);
     if (*attr != 0) { printf("AttrEx=%s\n", attr); }
