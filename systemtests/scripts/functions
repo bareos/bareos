@@ -700,7 +700,7 @@ check_two_logs()
       echo "Restore error!"
       rstat=2
    fi
-   if grep "^  Termination: .*Restore OK -- warning file count mismatch" "$restore_log" >/dev/null 2>&1; then
+   if grep ".* Warning: File count mismatch" "$restore_log" >/dev/null 2>&1; then
       echo "File count mismatch in restore!"
       rstat=3
    fi
