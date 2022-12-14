@@ -106,8 +106,15 @@ bool BareosDb::CreateJobmediaRecord(JobControlRecord* jcr, JobMediaDbRecord* jm)
 
   /* clang-format off */
   Mmsg(cmd,
-       "UPDATE JobMedia SET LastIndex=%lu, EndFile=%lu, EndBlock=%lu, JobBytes=%llu "
+       "UPDATE JobMedia SET "
+       "FirstIndex = (CASE WHEN firstindex=0 THEN %lu ELSE firstindex END), "
+       "StartBlock = (CASE WHEN startblock=0 THEN %lu ELSE startblock END), "
+       "StartFile  = (CASE WHEN startfile=0 THEN %lu ELSE startfile END), "
+       "LastIndex=%lu, EndFile=%lu, EndBlock=%lu, JobBytes=%llu "
        "WHERE JobId=%lu AND MediaId=%lu",
+       jm->FirstIndex,
+       jm->StartBlock,
+       jm->StartFile,
        jm->LastIndex,
        jm->EndFile,
        jm->EndBlock,
