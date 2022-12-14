@@ -58,6 +58,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - VMware Plugin: Save VM configuration and recreate VM before restore [PR #1295]
 - webui: extend restore to handle plugin options [PR #1276]
 - python plugins: enable direct I/O in core instead of calling python for read and write [PR #1297]
+- webui: introduce subscription backup unit report [PR #1280]
 
 ### Fixed
 - webui: fix job timeline x-axis UTC timestamp issue [PR #1283]
@@ -380,6 +381,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1277]: https://github.com/bareos/bareos/pull/1277
 [PR #1278]: https://github.com/bareos/bareos/pull/1278
 [PR #1279]: https://github.com/bareos/bareos/pull/1279
+[PR #1280]: https://github.com/bareos/bareos/pull/1280
 [PR #1281]: https://github.com/bareos/bareos/pull/1281
 [PR #1282]: https://github.com/bareos/bareos/pull/1282
 [PR #1283]: https://github.com/bareos/bareos/pull/1283
