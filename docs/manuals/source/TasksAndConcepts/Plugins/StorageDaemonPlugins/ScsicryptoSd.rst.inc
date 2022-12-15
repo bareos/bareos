@@ -105,7 +105,7 @@ Set the setting with our helper
 
 .. code-block:: shell-session
 
-   /usr/lib/bareos/script/bareos-config.sh set_scsicrypto_capabilities
+   /usr/lib/bareos/scripts/bareos-config set_scsicrypto_capabilities
 
 
 Set the setting manually
@@ -125,7 +125,7 @@ Remove the setting with our helper
 
 .. code-block:: shell-session
 
-   /usr/lib/bareos/script/bareos-config.sh unset_scsicrypto_capabilities
+   /usr/lib/bareos/scripts/bareos-config unset_scsicrypto_capabilities
 
 Remove the setting manually
 
@@ -144,7 +144,7 @@ Check the setting with our helper
 
 .. code-block:: shell-session
 
-   /usr/lib/bareos/script/bareos-config.sh check_scsicrypto_capabilities
+   /usr/lib/bareos/scripts/bareos-config check_scsicrypto_capabilities
 
 
 Check the setting manually
