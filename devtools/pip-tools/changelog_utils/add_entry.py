@@ -63,7 +63,7 @@ def add_changelog_entry(lines, entry, section):
             if current_section == section:
                 while True:
                     idx += 1
-                    if not lines[idx].startswith("- "):
+                    if not lines[idx].strip().startswith("- "):
                         insert_offset = idx
                         break
                 break
