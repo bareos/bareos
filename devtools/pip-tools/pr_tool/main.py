@@ -307,10 +307,14 @@ def check_changelog_entry(repo, pr):
         return file_has_pr_entry(fp, pr["number"])
 
 
+def get_plain_label_list(label_list):
+    return [x["name"].lower() for x in label_list]
+
+
 def get_changelog_section(pr):
-    # TODO:
-    # evaluate PR labels to select a section
-    # print(pr["labels"])
+    labels = get_plain_label_list(pr["labels"])
+    if "documentation" in labels:
+        return "Documentation"
     return guess_section(pr["title"])
 
 
@@ -491,6 +495,7 @@ def get_current_pr_data():
             "headRefOid",
             "isCrossRepository",
             "isDraft",
+            "labels",
             "maintainerCanModify",
             "mergeable",
             "number",
