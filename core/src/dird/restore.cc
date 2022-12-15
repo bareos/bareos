@@ -424,7 +424,6 @@ void NativeRestoreCleanup(JobControlRecord* jcr, int TermCode)
   int msg_type = M_INFO;
 
   Dmsg0(20, "In NativeRestoreCleanup\n");
-  UpdateJobEnd(jcr, TermCode);
 
   if (jcr->dir_impl->unlink_bsr && jcr->RestoreBootstrap) {
     SecureErase(jcr, jcr->RestoreBootstrap);
@@ -433,13 +432,16 @@ void NativeRestoreCleanup(JobControlRecord* jcr, int TermCode)
 
   if (JobCanceled(jcr)) { CancelStorageDaemonJob(jcr); }
 
+  if (jcr->dir_impl->ExpectedFiles != jcr->JobFiles) {
+    TermCode = JS_Warnings;
+    Jmsg(jcr, M_WARNING, 0,
+         _("File count mismatch: expected=%lu , restored=%lu\n"),
+         jcr->dir_impl->ExpectedFiles, jcr->JobFiles);
+  }
+
   switch (TermCode) {
     case JS_Terminated:
-      if (jcr->dir_impl->ExpectedFiles > jcr->dir_impl->jr.JobFiles) {
-        TermMsg = _("Restore OK -- warning file count mismatch");
-      } else {
-        TermMsg = _("Restore OK");
-      }
+      TermMsg = _("Restore OK");
       break;
     case JS_Warnings:
       TermMsg = _("Restore OK -- with warnings");
@@ -447,7 +449,7 @@ void NativeRestoreCleanup(JobControlRecord* jcr, int TermCode)
     case JS_FatalError:
     case JS_ErrorTerminated:
       TermMsg = _("*** Restore Error ***");
-      msg_type = M_ERROR; /* Generate error message */
+      msg_type = M_ERROR;  // Generate error message
       if (jcr->store_bsock) {
         jcr->store_bsock->signal(BNET_TERMINATE);
         if (jcr->dir_impl->SD_msg_chan_started) {
@@ -469,6 +471,8 @@ void NativeRestoreCleanup(JobControlRecord* jcr, int TermCode)
       sprintf(term_code, _("Inappropriate term code: %c\n"), TermCode);
       break;
   }
+
+  UpdateJobEnd(jcr, TermCode);
 
   GenerateRestoreSummary(jcr, msg_type, TermMsg);
 

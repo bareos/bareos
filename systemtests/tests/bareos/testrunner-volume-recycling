@@ -1,0 +1,66 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# Run multiple backups in parallel and
+#   then restore them.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+backupjob="recyclejob"
+recycle_backuplog="$tmp/recycle-backuplog.out"
+recycle_restorelog="$tmp/recycle-restorelog.out"
+recyle_restoredirectory="$tmp/recycle-restore"
+
+rm -f $recycle_backuplog
+rm -f $recycle_restorelog
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $recycle_backuplog
+run job=$backupjob level=Full yes
+wait
+@sleep 2
+run job=$backupjob level=Full yes
+wait
+@sleep 2
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+backup_with_recycled_volume=$(awk '/Job queued./{i++}i==2 {print; exit;}' "$recycle_backuplog" | sed -n -e 's/^.*JobId=//p')
+volume_tobe_recycled=$(grep "Labeled new Volume" $recycle_backuplog | sed -n -e 's/^.*Labeled new Volume "//p' | sed -n -e 's/" on device .*//p')
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $recycle_restorelog
+restore jobid=$backup_with_recycled_volume client=bareos-fd fileset=SelfTest where=$recyle_restoredirectory select all done yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+expect_grep "Recycled volume \"$volume_tobe_recycled\"" \
+            "$recycle_backuplog" \
+            "Volume was not recycled!"
+
+expect_grep "New volume \"$volume_tobe_recycled\" mounted on device \"FileStorage\"" \
+            "$recycle_backuplog" \
+            "Recycled volume was not reused!"
+
+check_two_logs "$recycle_backuplog" "$recycle_restorelog"
+check_restore_diff "${BackupDirectory}" "$recyle_restoredirectory"
+
+end_test

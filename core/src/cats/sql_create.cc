@@ -102,21 +102,25 @@ bool BareosDb::CreateJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
  */
 bool BareosDb::CreateJobmediaRecord(JobControlRecord* jcr, JobMediaDbRecord* jm)
 {
-  int count;
-  char ed1[50], ed2[50], ed3[50];
-
   DbLocker _{this};
 
   /* clang-format off */
   Mmsg(cmd,
-       "UPDATE JobMedia SET LastIndex=%lu, EndFile=%lu, EndBlock=%lu, JobBytes=%s "
-       "WHERE JobId=%s AND MediaId=%s",
+       "UPDATE JobMedia SET "
+       "FirstIndex = (CASE WHEN firstindex=0 THEN %lu ELSE firstindex END), "
+       "StartBlock = (CASE WHEN startblock=0 THEN %lu ELSE startblock END), "
+       "StartFile  = (CASE WHEN startfile=0 THEN %lu ELSE startfile END), "
+       "LastIndex=%lu, EndFile=%lu, EndBlock=%lu, JobBytes=%llu "
+       "WHERE JobId=%lu AND MediaId=%lu",
+       jm->FirstIndex,
+       jm->StartBlock,
+       jm->StartFile,
        jm->LastIndex,
        jm->EndFile,
        jm->EndBlock,
-       edit_uint64(jm->JobBytes, ed3),
-       edit_int64(jm->JobId, ed1),
-       edit_int64(jm->MediaId, ed2));
+       jm->JobBytes,
+       jm->JobId,
+       jm->MediaId);
   /* clang-format on */
 
   bool update_result = false;
@@ -128,9 +132,8 @@ bool BareosDb::CreateJobmediaRecord(JobControlRecord* jcr, JobMediaDbRecord* jm)
           _("Update JobMedia record %s failed: ERR=%s\n Trying to insert: \n"),
           cmd, sql_strerror());
 
-    Mmsg(cmd, "SELECT count(*) from JobMedia WHERE JobId=%s",
-         edit_int64(jm->JobId, ed1));
-    count = GetSqlRecordMax(jcr);
+    Mmsg(cmd, "SELECT count(*) from JobMedia WHERE JobId=%lu", jm->JobId);
+    int count = GetSqlRecordMax(jcr);
     if (count < 0) { count = 0; }
     count++;
 
@@ -138,14 +141,14 @@ bool BareosDb::CreateJobmediaRecord(JobControlRecord* jcr, JobMediaDbRecord* jm)
     Mmsg(cmd,
          "INSERT INTO JobMedia (JobId,MediaId,FirstIndex,LastIndex,"
          "StartFile,EndFile,StartBlock,EndBlock,VolIndex,JobBytes) "
-         "VALUES (%s,%s,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%s)",
-         edit_int64(jm->JobId, ed1),
-         edit_int64(jm->MediaId, ed2),
+         "VALUES (%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%llu)",
+         jm->JobId,
+         jm->MediaId,
          jm->FirstIndex, jm->LastIndex,
          jm->StartFile, jm->EndFile,
          jm->StartBlock, jm->EndBlock,
          count,
-         edit_uint64(jm->JobBytes, ed3));
+         jm->JobBytes);
     /* clang-format on */
 
     if (INSERT_DB(jcr, cmd) != 1) {

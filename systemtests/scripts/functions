@@ -678,7 +678,7 @@ change_jobname()
 check_two_logs()
 {
    default_backup_log="${tmp}/log1.out"
-   backup_log=${2:-${default_backup_log}}
+   backup_log=${1:-${default_backup_log}}
 
    default_restore_log="${tmp}/log2.out"
    restore_log=${2:-${default_restore_log}}
@@ -688,6 +688,7 @@ check_two_logs()
    fi
 
    if grep "^  Termination: .*Backup Error" "$backup_log" >/dev/null 2>&1; then
+      echo "Backup error!"
       bstat=2
    fi
 
@@ -696,9 +697,11 @@ check_two_logs()
    fi
 
    if grep "^  Termination: .*Restore Error" "$restore_log" >/dev/null 2>&1; then
+      echo "Restore error!"
       rstat=2
    fi
-   if grep "^  Termination: *Restore OK -- warning file count mismatch" "$restore_log" >/dev/null 2>&1; then
+   if grep ".* Warning: File count mismatch" "$restore_log" >/dev/null 2>&1; then
+      echo "File count mismatch in restore!"
       rstat=3
    fi
    if grep "^  Termination: .*Verify Differences" "$restore_log" >/dev/null 2>&1; then

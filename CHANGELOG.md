@@ -65,6 +65,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: adapt links to new URLs after website relaunch. [PR #1275]
 - dird: fix possible crash in tls context on configuration reload [PR #1249]
 - dird: RunScript fixes [PR #1217]
+- fix file count mismatch on restores that use recycled volumes [PR #1330]
   - fix show command output for RunScript RunsOnClient
   - fix show verbose for RunScripts
   - execute console runscripts only on the Director
@@ -412,6 +413,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1324]: https://github.com/bareos/bareos/pull/1324
 [PR #1326]: https://github.com/bareos/bareos/pull/1326
 [PR #1327]: https://github.com/bareos/bareos/pull/1327
+[PR #1330]: https://github.com/bareos/bareos/pull/1330
 [PR #1331]: https://github.com/bareos/bareos/pull/1331
 [PR #1332]: https://github.com/bareos/bareos/pull/1332
 [unreleased]: https://github.com/bareos/bareos/tree/master
