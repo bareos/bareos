@@ -6,7 +6,7 @@ Operating Systems
 .. index::
    pair: Operating Systems; Support
 
-The Bareos project provides packages that have been released on http://download.bareos.org/bareos/release/.
+The Bareos project provides packages, published at https://download.bareos.org/ and https://download.bareos.com/.
 
 Additionally, the following table gives an overview on the available package versions and the operating systems, respectively:
 

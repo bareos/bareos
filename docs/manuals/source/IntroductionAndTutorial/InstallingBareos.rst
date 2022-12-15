@@ -38,17 +38,17 @@ Decide about the Bareos release to use
 
 There are different types of Bareos repositories:
 
-Bareos Subscription repositories on https://download.bareos.com/
+#. Bareos Subscription repositories on https://download.bareos.com/
 
-  * Contains the repositories for the Bareos Subscription customers.
-  * While the repository can be browsed, using them do require authentication credentials, which come with a Bareos subscription.
+   * Contain the repositories for the Bareos Subscription customers.
+   * The last three major releases are maintained, https://download.bareos.com/bareos/release/
+   * Older versions stay available.
+   * While the repository can be browsed, using them do require authentication credentials, which come with a Bareos subscription.
 
-Bareos Community repositories on https://download.bareos.org/ with
+#. Bareos Community repositories on https://download.bareos.org/ with
 
-  * releases from the stable branches at https://download.bareos.org/bareos/release/
-  * latest builds from the master branch at https://download.bareos.org/bareos/experimental/nightly/
-
-    * The path :file:`experimental/nightly/` has historical reason. Nowadays we publish to this path as soon as all automated tests succeed on all supported platforms.
+   * latest build of the most recent Bareos stable branch at https://download.bareos.org/current/
+   * latest build of the Bareos master branch at https://download.bareos.org/next/
 
 The software in both types of repositories is based on the same source code in https://github.com/bareos/bareos/. There are no hidden or Open-Core components.
 
@@ -65,24 +65,26 @@ Copy the script onto the target system and
 execute it with a shell (:command:`sh`) as root (e.g. using :command:`sudo`)
 or manually perform the steps that are documented in the script.
 
-For example the script URL for bareos-21 and Debian 11 is:
+For example the script URL Debian 11 of the community current repository is:
 
-* https://download.bareos.org/bareos/release/21/Debian_11/add_bareos_repositories.sh
-* or for Bareos Subscription customers:
+* https://download.bareos.org/current/Debian_11/add_bareos_repositories.sh
 
-   * https://download.bareos.com/bareos/release/21/Debian_11/add_bareos_repositories.sh
-   * .. note::
 
-        Bareos Subscription customers have credentials to authenticate against https://download.bareos.com.
-        Some files can be accessed without authentication,
-        but to use the repositories,
-        authentication is mandatory.
-        When downloading the file :file:`add_bareos_repositories.sh`,
-        it is ready to use,
-        because it contains your personal authentication credentials.
-        Therefore downloading this file requires authentication.
-        If this is inconvenient, you can alternatively download :file:`add_bareos_repository_template.sh`
-        and set ``BAREOS_USERNAME`` and ``BAREOS_PASSWORD`` manually.
+For Bareos Subscription customers the URL of the bareos-22 release for Debian 11 is:
+
+* https://download.bareos.com/bareos/release/22/Debian_11/add_bareos_repositories.sh
+* .. note::
+
+     Bareos Subscription customers have credentials to authenticate against https://download.bareos.com.
+     Some files can be accessed without authentication,
+     but to use the repositories,
+     authentication is mandatory.
+     When downloading the file :file:`add_bareos_repositories.sh`,
+     it is ready to use,
+     because it contains your personal authentication credentials.
+     Therefore downloading this file requires authentication.
+     If this is inconvenient, you can alternatively download :file:`add_bareos_repository_template.sh`
+     and set ``BAREOS_USERNAME`` and ``BAREOS_PASSWORD`` manually.
 
 
 
@@ -126,8 +128,8 @@ like AlmaLinux, CentOS Stream, Oracle and Rocky Linux.
 These repositories are automatically tested against several of this distributions.
 
 Download the matching :file:`add_bareos_repositories.sh` script from
-https://download.bareos.com/bareos/ or
-https://download.bareos.org/bareos/,
+https://download.bareos.com/bareos/release/,
+https://download.bareos.org/current/ or https://download.bareos.com/next/,
 copy it to the target system and execute it:
 
 .. code-block:: shell-session
@@ -153,8 +155,8 @@ SUSE Linux Enterprise Server (SLES), openSUSE
    single: Platform; openSUSE
 
 Download the matching :file:`add_bareos_repositories.sh` script from
-https://download.bareos.com/bareos/ or
-https://download.bareos.org/bareos/,
+https://download.bareos.com/bareos/release/,
+https://download.bareos.org/current/ or https://download.bareos.com/next/,
 copy it to the target system and execute it:
 
 .. code-block:: shell-session
@@ -185,8 +187,8 @@ Debian / Ubuntu / Univention Corporate Server (UCS)
    single: Platform; Univention Corporate Server
 
 Download the matching :file:`add_bareos_repositories.sh` script from
-https://download.bareos.com/bareos/ or
-https://download.bareos.org/bareos/,
+https://download.bareos.com/bareos/release/,
+https://download.bareos.org/current/ or https://download.bareos.com/next/,
 copy it to the target system and execute it:
 
 .. code-block:: shell-session
@@ -241,8 +243,8 @@ Install on FreeBSD based Distributions
    single: Platform; FreeBSD
 
 Download the matching :file:`add_bareos_repositories.sh` script from
-https://download.bareos.com/bareos/ or
-https://download.bareos.org/bareos/,
+https://download.bareos.com/bareos/release/,
+https://download.bareos.org/current/ or https://download.bareos.com/next/,
 copy it to the target system and execute it:
 
 .. code-block:: shell-session

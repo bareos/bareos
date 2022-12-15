@@ -62,7 +62,7 @@ However, it is planed to provide it also in other formats.
 
 The ULC have extra repositories, their names starting with **ULC_**
 (e.g. **ULC_deb_OpenSSL_1.1**)
-at https://download.bareos.org/bareos/release/.
+at https://download.bareos.com/bareos/release/ and https://download.bareos.org/current/.
 There will be different repositories depending on packaging standard
 and remaining dependencies.
 These repositories contain the **bareos-universal-client** package

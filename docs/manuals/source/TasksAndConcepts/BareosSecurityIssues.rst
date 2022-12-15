@@ -279,7 +279,7 @@ The default signature algorithm to verify the integrity of the files is `MD5`.
 As all MD5 related function are disabled in `FIPS` mode, Bareos emits errors
 like the following when trying to calculate MD5 signatures on a FIPS system:
 
-.. code-block::
+.. code-block:: none
 
    Warning: MD5 digest digest initialization failed
    Error: OpenSSL digest initialization failed: ERR=error:060800C8:digital envelope routines:EVP_DigestInit_ex:disabled for FIPS
