@@ -47,7 +47,9 @@
  * of every major release. Usually, a major release is released once a year.
  *
  * The binary packages can be downloaded on
- * http://download.bareos.org/bareos/release/
+ * https://download.bareos.org/
+ * and
+ * https://download.bareos.com/
  *
  * Maintenance releases are available in sourcecode.
  *
