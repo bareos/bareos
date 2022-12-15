@@ -135,7 +135,10 @@ def file_has_pr_entry(fp, pr):
 
 def main():
     args = parse_cmdline_args()
-    changelog_file = f"{top_dir}/{args.file}"
+    if args.file.startswith("/"):
+        changelog_file = args.file
+    else:
+        changelog_file = f"{top_dir}/{args.file}"
 
     try:
         with open(changelog_file, "r+") as fp:
