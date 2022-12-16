@@ -161,6 +161,50 @@ Not all packages are required to run Bareos.
 
 -  On a Backup Administration system you need to install at least **bareos-bconsole** to have an interactive console to the |dir|.
 
+Comparison between Community and Subscription Repositories
+----------------------------------------------------------
+
+The Bareos project is fully committed to Open-Source.
+
+We often receive inquiries from Bareos users about the availability of maintenance releases. Please note the following information about the release of packages:
+
+* Maintenance releases are always available as source code for everyone.
+* Ready-built packages (from a repository) are only available to subscription customers.
+
+The Bareos project offers two different download areas: the community repository and the subscription repository. The community repository contains binary packages from each major release. Subscription/support customers also receive intermediate versions of the packages with updates and bug fixes from the subscription repository.
+
+For a simple comparison of the two editions, please see the following table:
+
++-----------------------+------------------------------------------------------------------------------+--------------------------------------------------------------------------------+
+|          	        |  Community Edition                                                           |    Bareos Subscription                                                         |
++=======================+==============================================================================+================================================================================+
+| Source code	        | Available on `GitHub <https://github.com/bareos/bareos/>`_                                                                                                    |
++-----------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|  **Packages**                                                                                                                                                                         |
++-----------------------+------------------------------------------------------------------------------+--------------------------------------------------------------------------------+
+| Experimental Packages | `Nightly build <https://download.bareos.org/next/>`_                         |                                                                                |
++-----------------------+------------------------------------------------------------------------------+--------------------------------------------------------------------------------+
+| Initial major release | `Community repository <https://download.bareos.org/current/>`_               | `Subscription repository <https://download.bareos.com/bareos/release/>`_       |
++-----------------------+------------------------------------------------------------------------------+--------------------------------------------------------------------------------+
+| Updates and bug fixes | (Source code only)                                                           | `Subscription repository <https://download.bareos.com/bareos/release/>`_       |
++-----------------------+------------------------------------------------------------------------------+--------------------------------------------------------------------------------+
+|  **Community**                                                                                                                                                                        |
++-----------------------+------------------------------------------------------------------------------+--------------------------------------------------------------------------------+
+| Mailing list	        | `bareos-users <https://groups.google.com/forum/#!forum/bareos-users>`_                                                                                        |
++-----------------------+------------------------------------------------------------------------------+--------------------------------------------------------------------------------+
+|  **Support**                                                                                                                                                                          |
++-----------------------+------------------------------------------------------------------------------+--------------------------------------------------------------------------------+
+| Options  	        | `bareos-users <https://groups.google.com/forum/#!forum/bareos-users>`_       | `Support offerings with service level <https://www.bareos.com/support/>`_      |
++-----------------------+------------------------------------------------------------------------------+--------------------------------------------------------------------------------+
+|  **Development**                                                                                                                                                                      |
++-----------------------+------------------------------------------------------------------------------+--------------------------------------------------------------------------------+
+| Bug tracker           | https://bugs.bareos.org/                                                                                                                                      |
++-----------------------+------------------------------------------------------------------------------+--------------------------------------------------------------------------------+
+| New features          | `Join in <https://www.bareos.com/community/join-in/>`_                       | `Co-Funding <https://www.bareos.com/download/pricing/#co-funding>`_            |
++-----------------------+------------------------------------------------------------------------------+--------------------------------------------------------------------------------+
+
+
+
 Quick Start
 -----------
 
