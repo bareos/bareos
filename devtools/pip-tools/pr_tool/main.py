@@ -441,7 +441,7 @@ def merge_pr(
             )
 
         else:
-            base_branch = "origin/{}".format(pr["baseRefName"])
+            base_branch = "{}/{}".format(pr["_git_remote"], pr["baseRefName"])
             print(
                 "Resetting to {} and rebasing onto {}".format(
                     original_commit.hexsha, base_branch
@@ -523,9 +523,35 @@ def setup_logging(*, verbose, debug):
         logging.getLogger("git.cmd").setLevel(logging.INFO)
 
 
+def find_gh_remote(repo):
+    """determine the git remote that matches the github repository gh will
+    operate on, the so-called base repository"""
+
+    # as the configuration would allow you to have multiple repositories with
+    # this parameter set, we will not terminate the loop until we're sure we
+    # didn't find two origins...
+    gh_remote = None
+    for remote in repo.remotes:
+        if (
+            remote.config_reader.has_option("gh-resolved")
+            and remote.config_reader.get_value("gh-resolved") == "base"
+        ):
+            if gh_remote:
+                raise foo
+            gh_remote = remote
+
+    return gh_remote
+
+
 def main():
     args = parse_cmdline_args()
     setup_logging(verbose=args.verbose, debug=args.debug)
+
+    if "GH_HOST" in environ or "GH_REPO" in environ:
+        logging.critical(
+            "cannot work correctly with GH_HOST or GH_REPO env variables set"
+        )
+        return 2
 
     chdir(args.directory)
     try:
@@ -534,13 +560,15 @@ def main():
         logging.critical("not a git repository")
         return 2
 
-    if "GH_HOST" in environ or "GH_REPO" in environ:
-        logging.critical(
-            "cannot work correctly with GH_HOST or GH_REPO env variables set"
-        )
+    git_remote = find_gh_remote(repo)
+    if not git_remote:
+        logging.critical("Could not find the remote that is used by gh.")
         return 2
+    logging.info("Using git remote '{}'".format(git_remote))
 
     pr_data = get_current_pr_data()
+    pr_data["_git_remote"] = git_remote
+
     if args.subcommand == "check":
         ret = check_merge_prereq(repo, pr_data)
         if check_changelog_entry(repo, pr_data):
