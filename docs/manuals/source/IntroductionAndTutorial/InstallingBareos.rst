@@ -50,7 +50,7 @@ There are different types of Bareos repositories:
    * latest build of the most recent Bareos stable branch at https://download.bareos.org/current/
    * latest build of the Bareos master branch at https://download.bareos.org/next/
 
-The software in both types of repositories is based on the same source code in https://github.com/bareos/bareos/. There are no hidden or Open-Core components.
+For details, see :ref:`section-BareosBinaryReleasePolicy`.
 
 The public key to verify a repository is also in repository directory (:file:`Release.key` for Debian based distributions, :file:`repodata/repomd.xml.key` for RPM based distributions).
 
