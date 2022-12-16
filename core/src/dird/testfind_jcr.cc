@@ -1,4 +1,4 @@
-﻿/*
+/*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2022-2022 Bareos GmbH & Co. KG
@@ -108,7 +108,6 @@ bool setupFileset(FindFilesPacket* ff,
   bool include = true;
 
   findFILESET* fileset;
-
 
   findFILESET* fileset_allocation = (findFILESET*)malloc(sizeof(findFILESET));
   fileset = new (fileset_allocation)(findFILESET);

@@ -54,18 +54,6 @@
 
 using namespace directordaemon;
 
-void TestfindFreeJcr(JobControlRecord* jcr)
-{
-  Dmsg0(200, "Start testfind FreeJcr\n");
-
-  if (jcr->dir_impl) {
-    delete jcr->dir_impl;
-    jcr->dir_impl = nullptr;
-  }
-
-  Dmsg0(200, "End testfind FreeJcr\n");
-}
-
 extern bool ParseDirConfig(const char* configfile, int exit_code);
 
 int main(int argc, char* const* argv)
@@ -93,8 +81,8 @@ int main(int argc, char* const* argv)
 
   AddDebugOptions(testfind_app);
 
-  std::string fileset_name = "SelfTest";
-  testfind_app.add_option("-f,--fileset", fileset_name,
+  std::string filesetname = "SelfTest";
+  testfind_app.add_option("-f,--fileset", filesetname,
                           "Specify which FileSet to use.");
 
   CLI11_PARSE(testfind_app, argc, argv);
@@ -102,20 +90,11 @@ int main(int argc, char* const* argv)
   directordaemon::my_config = InitDirConfig(configfile.c_str(), M_ERROR_TERM);
   directordaemon::my_config->ParseConfig();
 
-
-  MessagesResource* msg;
-
-  foreach_res (msg, R_MSGS) { InitMsg(NULL, msg); }
-
-  JobControlRecord* jcr;
-  jcr = NewDirectorJcr(TestfindFreeJcr);
-
   FilesetResource* dir_fileset = (FilesetResource*)my_config->GetResWithName(
-      R_FILESET, fileset_name.c_str());
+      R_FILESET, filesetname.c_str());
 
-  if (dir_fileset == NULL) {
-    fprintf(stderr, "%s: Fileset not found\n", fileset_name.c_str());
-
+  if (!dir_fileset) {
+    fprintf(stderr, "%s: Fileset not found\n", filesetname.c_str());
     FilesetResource* var;
 
     fprintf(stderr, "Valid FileSets:\n");
@@ -129,19 +108,11 @@ int main(int argc, char* const* argv)
 
   launchFileDaemonLogic(dir_fileset, configfile.c_str(), attrs);
 
-  FreeJcr(jcr);
   if (my_config) {
     delete my_config;
     my_config = NULL;
   }
-
-  RecentJobResultsList::Cleanup();
-  CleanupJcrChain();
-
-
   FlushMntentCache();
-
-  TermMsg();
 
   exit(0);
 }
