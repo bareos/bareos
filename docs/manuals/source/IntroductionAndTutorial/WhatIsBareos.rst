@@ -109,6 +109,9 @@ Following Bareos Linux packages are available (release 22.0.0~dev):
 bareos                                             Backup Archiving REcovery Open Sourced - metapackage
 bareos-bconsole                                    Bareos administration console (CLI)
 bareos-client                                      Bareos client Meta-All-In-One package
+bareos-contrib-director-python-plugins             Additional Director Python plugins, not part of the Bareos project
+bareos-contrib-filedaemon-python-plugins           Additional File Daemon Python plugins, not part of the Bareos project
+bareos-contrib-tools                               Some additional tools, not part of the Bareos core project
 bareos-common                                      Common files, required by multiple Bareos packages
 bareos-database-common                             Generic abstraction libs and files to connect to a database
 bareos-database-postgresql                         Libs and tools for postgresql catalog
