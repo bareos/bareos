@@ -346,6 +346,9 @@ def parse_cmdline_args():
         metavar="<path>",
         help="path to local git repository",
     )
+    log_group = parser.add_mutually_exclusive_group()
+    log_group.add_argument("--debug", "-d", action="store_true")
+    log_group.add_argument("--verbose", "-v", action="store_true")
     color_group = parser.add_mutually_exclusive_group()
     color_group.add_argument(
         "--color", action="store_true", help="enable colors (default on TTY)"
@@ -508,15 +511,33 @@ def get_current_pr_data():
     )
 
 
-def main():
+def setup_logging(*, verbose, debug):
     logging.basicConfig(format="%(levelname)s: %(name)s: %(message)s", stream=stderr)
+
+    if verbose:
+        logging.getLogger().setLevel(logging.INFO)
+
+    if debug:
+        logging.getLogger().setLevel(logging.DEBUG)
+        # disable debug logging for git commands
+        logging.getLogger("git.cmd").setLevel(logging.INFO)
+
+
+def main():
     args = parse_cmdline_args()
+    setup_logging(verbose=args.verbose, debug=args.debug)
 
     chdir(args.directory)
     try:
         repo = Repo(".", search_parent_directories=True)
     except git.exc.InvalidGitRepositoryError:
-        print("not a git repository")
+        logging.critical("not a git repository")
+        return 2
+
+    if "GH_HOST" in environ or "GH_REPO" in environ:
+        logging.critical(
+            "cannot work correctly with GH_HOST or GH_REPO env variables set"
+        )
         return 2
 
     pr_data = get_current_pr_data()
