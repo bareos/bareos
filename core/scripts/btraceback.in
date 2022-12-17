@@ -78,9 +78,9 @@ case ${DEBUGGER} in
       ;;
    GDB)
       if [ ${POSTMORTEM} != NONE -a -s ${POSTMORTEM} ]; then
-         ${GDB} -quiet -batch -x @scriptdir@/btraceback.gdb $1 ${POSTMORTEM} >> ${WD}/bareos.$2.traceback 2>&1
+         ${GDB} -quiet  $1 ${POSTMORTEM}  < @scriptdir@/btraceback.gdb >> ${WD}/bareos.$2.traceback 2>&1
       else
-         ${GDB} -quiet -batch -x @scriptdir@/btraceback.gdb $1 $2 >> ${WD}/bareos.$2.traceback 2>&1
+         ${GDB} -quiet  $1 $2 < @scriptdir@/btraceback.gdb >> ${WD}/bareos.$2.traceback 2>&1
       fi
       ;;
    MDB)
