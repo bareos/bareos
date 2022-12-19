@@ -510,6 +510,13 @@ A minimal example may look like following.
 
    systemctl restart apache2 php-fpm
 
+Console/Profile changes
+~~~~~~~~~~~~~~~~~~~~~~~
+
+The |webui| restore form now accepts a `plugin options string` in the restore form for plugin restores. 
+Therefore, the |webui| Director profile :config:option:`dir/profile = webui-admin` has been extended by the directive :config:option:`dir/profile/PluginOptionsACL = *all*` in Bareos :sinceVersion:`22.0.0: PluginOptionsACL = *all* added to profile webui-admin`.
+To make use of that feature in |webui|, a proper configured :config:option:`dir/profile/PluginOptionsACL` is required.
+
 Upgrade from 18.2.6 to 18.2.7
 -----------------------------
 
