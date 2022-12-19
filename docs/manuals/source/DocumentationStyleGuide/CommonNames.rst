@@ -89,6 +89,7 @@ Products
    :header: "Text to be Displayed", "Text Formatting"
 
    |mysql|,      ``|mysql|``
+   open-source,  open-source
    |postgresql|, ``|postgresql|``
    reST,         reST
    |sqlite|,     ``|sqlite|``
