@@ -2468,11 +2468,22 @@ class BareosVADPWrapper(object):
         Restore power state according to restore_powerstate option
         """
 
-        if not self.restore_vm_info:
+        if not self.restore_vm_info and self.restore_vm_info_json:
             self.restore_vm_info = json.loads(self.restore_vm_info_json)
 
         if self.options["restore_powerstate"] == "off":
             return bareosfd.bRC_OK
+
+        if (
+            self.options["restore_powerstate"] == "previous"
+            and self.restore_vm_info is None
+        ):
+            bareosfd.JobMessage(
+                bareosfd.M_WARNING,
+                "Previous power state of VM %s unknown, skipping restore powerstate\n"
+                % (self.vm.name),
+            )
+            return bareosfd.bRC_Error
 
         if self.options["restore_powerstate"] == "on" or (
             self.options["restore_powerstate"] == "previous"
