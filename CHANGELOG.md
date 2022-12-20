@@ -176,6 +176,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - unify and merge builds where possible [PR #1309]
 - python plugins: give python3 plugins priority over python2 plugins in packages [PR #1332]
 - VMware Plugin: fix restore of backups taken before version 22 [PR #1337]
+- btraceback: make the gdb script processing failsafe [PR #1334]
 
 ### Deprecated
 - make_catalog_backup.pl is now a shell wrapper script which will be removed in version 23.
@@ -421,5 +422,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1331]: https://github.com/bareos/bareos/pull/1331
 [PR #1332]: https://github.com/bareos/bareos/pull/1332
 [PR #1333]: https://github.com/bareos/bareos/pull/1333
+[PR #1334]: https://github.com/bareos/bareos/pull/1334
 [PR #1337]: https://github.com/bareos/bareos/pull/1337
 [unreleased]: https://github.com/bareos/bareos/tree/master
