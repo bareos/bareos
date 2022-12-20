@@ -116,7 +116,7 @@ class Gh:
             if res.returncode != 0:
                 raise InvokationError(res)
 
-            if "json" in kwargs:
+            if "json" in kwargs or len(self.cmd) >= 2 and self.cmd[1] == "api":
                 return json.loads(res.stdout)
 
             return res.stdout
@@ -441,7 +441,7 @@ def merge_pr(
             )
 
         else:
-            base_branch = "{}/{}".format(pr["_git_remote"], pr["baseRefName"])
+            base_branch = pr["_base_branch"]
             print(
                 "Resetting to {} and rebasing onto {}".format(
                     original_commit.hexsha, base_branch
@@ -490,6 +490,7 @@ def handle_ret(ret):
 
 
 def get_current_pr_data():
+    logging.debug("Getting pull request data from GitHub")
     return Gh().pr.view(
         json=[
             "body",
@@ -509,6 +510,20 @@ def get_current_pr_data():
             "url",
         ]
     )
+
+
+def get_remote_ref(branch, owner="{owner}", repo="{repo}"):
+    return Gh().api(
+        "repos/{owner}/{repo}/git/refs/heads/{branch}".format(
+            owner=owner, repo=repo, branch=branch
+        )
+    )
+
+
+def repo_up_to_date(repo, pr_data, remote_ref):
+    local_head = repo.commit(pr_data["_base_branch"])
+    remote_head = remote_ref["object"]["sha"]
+    return local_head != remote_head
 
 
 def setup_logging(*, verbose, debug):
@@ -567,7 +582,16 @@ def main():
     logging.info("Using git remote '{}'".format(git_remote))
 
     pr_data = get_current_pr_data()
-    pr_data["_git_remote"] = git_remote
+    pr_data["_base_branch"] = "{}/{}".format(git_remote, pr_data["baseRefName"])
+
+    remote_ref = get_remote_ref(pr_data["baseRefName"])
+
+    if not repo_up_to_date(repo, pr_data, remote_ref):
+        logging.warning(
+            "You repository is out of date. Please run 'git fetch {}'".format(
+                git_remote
+            )
+        )
 
     if args.subcommand == "check":
         ret = check_merge_prereq(repo, pr_data)
