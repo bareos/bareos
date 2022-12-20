@@ -160,12 +160,18 @@ class CommitAnalyzer:
                 self.is_ok = False
 
     def check_commit(self, commit):
+        headline, *messageBody = commit.message.split("\n")
         issues = []
-        issues.extend(self._check_headline(commit["messageHeadline"]))
-        issues.extend(self._check_body(commit["messageBody"]))
+        if messageBody[0] == "":
+            messageBody.pop(0)
+        else:
+            issues.append("missing empty line after headline")
+
+        issues.extend(self._check_headline(headline))
+        issues.extend(self._check_body("\n".join(messageBody)))
 
         if len(issues) > 0:
-            self._record_issues(commit, issues)
+            self._record_issues(commit, headline, issues)
             return False
         else:
             return True
@@ -193,8 +199,8 @@ class CommitAnalyzer:
                 return ["body contains line longer 72 chars"]
         return []
 
-    def _record_issues(self, commit, issues):
-        commit_descr = "{oid:9.9} {messageHeadline}".format(**commit)
+    def _record_issues(self, commit, headline, issues):
+        commit_descr = "{:9.9} {}".format(str(commit), headline)
         for issue in issues:
             self.commit_issues.append("{}: {}".format(commit_descr, issue))
 
@@ -284,7 +290,8 @@ def check_merge_prereq(repo, pr, ignore_status_checks=False):
             "Required status check missing",
         )
 
-    commitRes = CommitAnalyzer(pr["commits"])
+    commit_iter = pr["_repo"].iter_commits("{}..HEAD".format(pr["_merge_base"]))
+    commitRes = CommitAnalyzer(commit_iter)
     cl.check(
         commitRes.ok(),
         "Commit checks passed",
@@ -582,7 +589,13 @@ def main():
     logging.info("Using git remote '{}'".format(git_remote))
 
     pr_data = get_current_pr_data()
+    pr_data["_repo"] = repo
     pr_data["_base_branch"] = "{}/{}".format(git_remote, pr_data["baseRefName"])
+
+    pr_data["_merge_base"] = repo.merge_base(
+        repo.head.commit, repo.commit(pr_data["_base_branch"])
+    )[0]
+    logging.info("Merge-base is {}".format(pr_data["_merge_base"]))
 
     remote_ref = get_remote_ref(pr_data["baseRefName"])
 
@@ -606,8 +619,9 @@ def main():
             )
         else:
             print(
-                "{} ChangeLog record cannot be added, "
-                + "author denies access".format(Mark.FAIL)
+                "{} ChangeLog record cannot be added, author denies access".format(
+                    Mark.FAIL
+                )
             )
             ret = False
 
