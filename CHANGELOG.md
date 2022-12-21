@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and since Bareos version 20 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [22.0.0] - 2022-12-21
 
 ### Breaking Changes
 - when using PAM Bareos will now check authorization, too. If authorization is not configured, login will fail. See [updated documentation](https://docs.bareos.org/TasksAndConcepts/PAM.html#configuration) on how to proceed [PR #1115].
@@ -233,6 +233,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - add chapter about Bareos Binary Release Policy [PR #1333]
 - add chapter for `mariabackup` db plugin [PR #1016]
 
+[22.0.0]: https://github.com/bareos/bareos/releases/tag/Release%2F22.0.0
 [Issue #1429]: https://bugs.bareos.org/view.php?id=1429
 [Issue #1445]: https://bugs.bareos.org/view.php?id=1445
 [Issue #1450]: https://bugs.bareos.org/view.php?id=1450
@@ -421,4 +422,3 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1333]: https://github.com/bareos/bareos/pull/1333
 [PR #1334]: https://github.com/bareos/bareos/pull/1334
 [PR #1337]: https://github.com/bareos/bareos/pull/1337
-[unreleased]: https://github.com/bareos/bareos/tree/master
