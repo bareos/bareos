@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -39,10 +39,12 @@ class MultipleCommonAncestors(Exception):
 class FileHistory:
     def __init__(self, repo):
         self.repo = repo
-        self.file_commits = {}
+        self.file_commits = None
         self.changed_files = None
 
     def load_changed_files(self):
+        if self.changed_files is not None:
+            return True
         self.changed_files = set(
             (
                 [Path(i.b_path) for i in self.repo.index.diff(None)]
@@ -51,13 +53,42 @@ class FileHistory:
             )
         )
 
-    def is_changed(self, file_path):
-        if not self.changed_files:
-            self.load_changed_files()
+    def load_file_commits(self, ignore=[]):
+        if self.file_commits is not None:
+            return True
 
+        res = self.repo.git.log("--raw", "--pretty=+%H")
+        file_commits = {}
+        for line in res.splitlines():
+            if line == "":
+                continue
+            if line[0] == ":":
+                if commit is not None:
+                    file_path = Path(line.split("\t")[-1])
+                    if not file_path in file_commits:
+                        file_commits[file_path] = []
+                    file_commits[file_path].append(commit)
+            elif line[0] == "+":
+                commit = self.repo.commit(line[1:])
+                if commit in ignore:
+                    commit = None
+
+        self.file_commits = file_commits
+
+    def is_changed(self, file_path):
+        self.load_changed_files()
         return file_path in self.changed_files
 
     def get_commits_for(self, file_path, ignore=[]):
+        # we pass ignore here which is a bug: subsequent calls will always use
+        # the same ignore list as the first call
+        self.load_file_commits(ignore)
+
+        if file_path in self.file_commits:
+            return self.file_commits[file_path]
+
+        # fallback to the old per-file approach
+        # needed for files that have been renamed
         res = self.repo.git.log(
             "--pretty=format:%H", "--follow", "--remove-empty", "--", file_path
         )
