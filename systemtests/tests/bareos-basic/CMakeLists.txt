@@ -21,11 +21,11 @@ get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
 
 set_tests_properties(
-  system:bareos:simple-backup-and-restore
-  PROPERTIES FIXTURES_SETUP "system:bareos:backup-job-fixture"
+  system:bareos-basic:simple-backup-and-restore
+  PROPERTIES FIXTURES_SETUP "system:bareos-basic:backup-job-fixture"
 )
 set_tests_properties(
-  system:bareos:status-subscriptions
+  system:bareos-basic:status-subscriptions
   PROPERTIES FIXTURES_REQUIRED
-             "system:bareos:backup-job-fixture;system:bareos-fixture"
+             "system:bareos-basic:backup-job-fixture;system:bareos-basic-fixture"
 )
