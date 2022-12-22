@@ -23,7 +23,7 @@ import json
 import logging
 import re
 
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from git import Repo
 import git.exc
 from os import environ, chdir
@@ -31,6 +31,7 @@ from pprint import pprint
 from subprocess import run, PIPE, DEVNULL
 from sys import stdout, stderr
 from time import sleep
+from io import StringIO
 
 from changelog_utils import (
     file_has_pr_entry,
@@ -38,6 +39,8 @@ from changelog_utils import (
     update_links,
     guess_section,
 )
+
+from check_sources.main import main_program as check_sources
 
 
 class Mark:
@@ -120,6 +123,56 @@ class Gh:
                 return json.loads(res.stdout)
 
             return res.stdout
+
+
+class CheckSources:
+    class ScreenManagerMock:
+        class Updatable:
+            def update(self, *args, **kwargs):
+                pass
+
+        def status_bar(self, *args, **kwargs):
+            return self.Updatable()
+
+        def counter(self, *args, **kwargs):
+            return self.Updatable()
+
+        def stop(self):
+            pass
+
+    def __init__(self, repo, merge_base):
+        log_buffer = StringIO()
+
+        # emulate commandline options
+        args = Namespace()
+        args.plugin = []
+        args.ignore_file = ".bareos-check-sources-ignore"
+        args.diff = False
+        args.modify = False
+        args.since = merge_base
+        args.since_merge = None
+        args.all = False
+        args.untracked = False
+
+        logging.debug("Running bareos-check-sources")
+        self.status = check_sources(
+            args=args,
+            screen_manager=self.ScreenManagerMock(),
+            log_file=log_buffer,
+            repo=repo,
+        )
+        self.log_lines = log_buffer.getvalue().split("\n")
+        logging.debug(
+            "Running bareos-check-sources finished with return code {}".format(
+                self.status
+            )
+        )
+
+    def ok(self):
+        return self.status == 0
+
+    def issues(self):
+        return self.log_lines
 
 
 class CheckmarkAnalyzer:
@@ -296,6 +349,17 @@ def check_merge_prereq(repo, pr, ignore_status_checks=False):
         commitRes.ok(),
         "Commit checks passed",
         "Commit checks failed:\n\t{}".format("\n\t".join(commitRes.issues())),
+    )
+
+    checkSourcesRes = CheckSources(pr["_repo"], pr["_merge_base"])
+    cl.check(
+        checkSourcesRes.ok(),
+        "bareos-check-sources --since={} reported no problems".format(
+            pr["_merge_base"]
+        ),
+        "bareos-check-sources --since={} reported:\n\t{}".format(
+            pr["_merge_base"], "\n\t".join(checkSourcesRes.issues())
+        ),
     )
 
     return cl.all_checks_ok()

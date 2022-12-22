@@ -17,6 +17,7 @@ If you have any questions or problems, please give a comment in the PR.
 
 
 ### Checklist for the _reviewer_ of the PR (will be processed by the Bareos team)
+Make sure you check/merge the PR using `devtools/pr-tool` to have some simple automated checks run and a proper changelog record added.
 
 ##### General
 - [ ] Is the PR title usable as CHANGELOG entry?
@@ -25,15 +26,12 @@ If you have any questions or problems, please give a comment in the PR.
 - [ ] Check backport line
 
 ##### Source code quality
-
 - [ ] Source code changes are understandable
 - [ ] Variable and function names are meaningful
 - [ ] Code comments are correct (logically and spelling)
 - [ ] Required documentation changes are present and part of the PR
-- [ ] `bareos-check-sources --since-merge` does not report any problems
 
 ##### Tests
-
 - [ ] Decision taken that a test is required (if not, then remove this paragraph)
 - [ ] The choice of the type of test (unit test or systemtest) is reasonable
 - [ ] Testname matches exactly what is being tested
