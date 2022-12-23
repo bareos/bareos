@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -48,9 +48,7 @@ def is_valid_textfile(file_path, ignorelist):
     if file_is_ignored(file_path, ignorelist):
         return False
 
-    mime = magic.from_file(str(file_path), mime=True)
-    if not mime.startswith("text/"):
-        logger.debug("Skipping non-text file {} with type {}".format(file_path, mime))
+    if file_path.stat().st_size == 0:
         return False
 
     return True
