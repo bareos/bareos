@@ -44,6 +44,7 @@ set(DIRD_OBJECTS_SRCS
     expand.cc
     testfind_jcr.cc
     fd_cmds.cc
+    fd_sendfileset.cc
     get_database_connection.cc
     getmsg.cc
     inc_conf.cc
