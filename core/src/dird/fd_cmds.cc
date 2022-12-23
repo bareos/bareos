@@ -667,13 +667,19 @@ static bool SendFileset(JobControlRecord* jcr)
 
       for (int j = 0; j < ie->name_list.size(); j++) {
         item = (char*)ie->name_list.get(j);
-        if (!SendListItem(jcr, "F ", item, fd)) { goto bail_out; }
+        if (!SendListItem(jcr, "F ", item, fd)) {
+          jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+          return false;
+        }
       }
       fd->fsend("N\n");
 
       for (int j = 0; j < ie->plugin_list.size(); j++) {
         item = (char*)ie->plugin_list.get(j);
-        if (!SendListItem(jcr, "P ", item, fd)) { goto bail_out; }
+        if (!SendListItem(jcr, "P ", item, fd)) {
+          jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+          return false;
+        }
       }
       fd->fsend("N\n");
     }
@@ -686,12 +692,11 @@ static bool SendFileset(JobControlRecord* jcr)
   }
 
   fd->signal(BNET_EOD); /* end of data */
-  if (!response(jcr, fd, OKinc, "Include", DISPLAY_ERROR)) { goto bail_out; }
+  if (!response(jcr, fd, OKinc, "Include", DISPLAY_ERROR)) {
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+    return false;
+  }
   return true;
-
-bail_out:
-  jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
-  return false;
 }
 
 static bool SendListItem(JobControlRecord* jcr,
