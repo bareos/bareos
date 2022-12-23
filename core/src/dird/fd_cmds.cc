@@ -660,30 +660,37 @@ static void SendFilesetIgnoredir(JobControlRecord* jcr,
     fd->fsend("Z %s\n", include_exclude_item->ignoredir.get(j));
   }
 }
-// Send either an Included or an Excluded list to FD
-static bool SendFileset(JobControlRecord* jcr)
+
+static bool SendIncludeExcludeItems(JobControlRecord* jcr,
+                                    FilesetResource* fileset)
 {
-  FilesetResource* fileset = jcr->dir_impl->res.fileset;
   BareosSocket* fd = jcr->file_bsock;
 
   for (auto include_item : fileset->include_items) {
     fd->fsend("I\n");
     SendFilesetIgnoredir(jcr, include_item);
     SendFilesetOptions(jcr, include_item);
-    if (!SendFilesetFileAndPlugin(jcr, include_item)) {
-      jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
-      return false;
-    }
+    if (!SendFilesetFileAndPlugin(jcr, include_item)) { return false; }
   }
 
   for (auto exclude_item : fileset->exclude_items) {
     fd->fsend("E\n");
     SendFilesetIgnoredir(jcr, exclude_item);
     SendFilesetOptions(jcr, exclude_item);
-    if (!SendFilesetFileAndPlugin(jcr, exclude_item)) {
-      jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
-      return false;
-    }
+    if (!SendFilesetFileAndPlugin(jcr, exclude_item)) { return false; }
+  }
+
+  return true;
+}
+
+// Send either an Included or an Excluded list to FD
+static bool SendFileset(JobControlRecord* jcr, FilesetResource* fileset)
+{
+  BareosSocket* fd = jcr->file_bsock;
+
+  if (!SendIncludeExcludeItems(jcr, fileset)) {
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+    return false;
   }
 
   fd->signal(BNET_EOD); /* end of data */
@@ -778,7 +785,7 @@ bool SendIncludeExcludeLists(JobControlRecord* jcr)
   if (jcr->dir_impl->res.fileset->new_include) {
     fd->fsend(filesetcmd,
               jcr->dir_impl->res.fileset->enable_vss ? " vss=1" : "");
-    return SendFileset(jcr);
+    return SendFileset(jcr, jcr->dir_impl->res.fileset);
   }
   return true;
 }
