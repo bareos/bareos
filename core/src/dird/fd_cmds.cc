@@ -535,160 +535,155 @@ bool SendLevelCommand(JobControlRecord* jcr)
   return true;
 }
 
+static void SendFilesetOptions(JobControlRecord* jcr,
+                               IncludeExcludeItem* include_exclude_item)
+{
+  StorageResource* store = jcr->dir_impl->res.write_storage;
+  BareosSocket* fd = jcr->file_bsock;
+
+  for (auto file_option : include_exclude_item->file_options_list) {
+    bool enhanced_wild = false;
+    if (strchr(file_option->opts, 'W')) { enhanced_wild = true; }
+
+    // Strip out compression option Zn if disallowed for this Storage
+    if (store && !store->AllowCompress) {
+      char newopts[MAX_FOPTS];
+      bool done = false; /* print warning only if compression enabled in FS */
+      int l = 0;
+
+      for (int k = 0; file_option->opts[k] != '\0'; k++) {
+        /*
+         * Z compress option is followed by the single-digit compress level
+         * or 'o' For fastlz its Zf with a single char selecting the actual
+         * compression algo.
+         */
+        if (file_option->opts[k] == 'Z' && file_option->opts[k + 1] == 'f') {
+          done = true;
+          k += 2; /* skip option */
+        } else if (file_option->opts[k] == 'Z') {
+          done = true;
+          k++; /* skip option and level */
+        } else {
+          newopts[l] = file_option->opts[k];
+          l++;
+        }
+      }
+      newopts[l] = '\0';
+
+      if (done) {
+        Jmsg(jcr, M_INFO, 0,
+             _("FD compression disabled for this Job because "
+               "AllowCompress=No in Storage resource.\n"));
+      }
+
+      // Send the new trimmed option set without overwriting fo->opts
+      fd->fsend("O %s\n", newopts);
+    } else {
+      // Send the original options
+      fd->fsend("O %s\n", file_option->opts);
+    }
+
+    for (int k = 0; k < file_option->regex.size(); k++) {
+      fd->fsend("R %s\n", file_option->regex.get(k));
+    }
+
+    for (int k = 0; k < file_option->regexdir.size(); k++) {
+      fd->fsend("RD %s\n", file_option->regexdir.get(k));
+    }
+
+    for (int k = 0; k < file_option->regexfile.size(); k++) {
+      fd->fsend("RF %s\n", file_option->regexfile.get(k));
+    }
+
+    for (int k = 0; k < file_option->wild.size(); k++) {
+      fd->fsend("W %s\n", file_option->wild.get(k));
+    }
+
+    for (int k = 0; k < file_option->wilddir.size(); k++) {
+      fd->fsend("WD %s\n", file_option->wilddir.get(k));
+    }
+
+    for (int k = 0; k < file_option->wildfile.size(); k++) {
+      fd->fsend("WF %s\n", file_option->wildfile.get(k));
+    }
+
+    for (int k = 0; k < file_option->wildbase.size(); k++) {
+      fd->fsend("W%c %s\n", enhanced_wild ? 'B' : 'F',
+                file_option->wildbase.get(k));
+    }
+
+    for (int k = 0; k < file_option->base.size(); k++) {
+      fd->fsend("B %s\n", file_option->base.get(k));
+    }
+
+    for (int k = 0; k < file_option->fstype.size(); k++) {
+      fd->fsend("X %s\n", file_option->fstype.get(k));
+    }
+
+    for (int k = 0; k < file_option->Drivetype.size(); k++) {
+      fd->fsend("XD %s\n", file_option->Drivetype.get(k));
+    }
+
+    if (file_option->plugin) { fd->fsend("G %s\n", file_option->plugin); }
+
+    if (file_option->reader) { fd->fsend("D %s\n", file_option->reader); }
+
+    if (file_option->writer) { fd->fsend("T %s\n", file_option->writer); }
+
+    fd->fsend("N\n");
+  }
+}
+
+static bool SendFilesetFileAndPlugin(JobControlRecord* jcr,
+                                     IncludeExcludeItem* ie)
+{
+  BareosSocket* fd = jcr->file_bsock;
+  char* item;
+  for (int j = 0; j < ie->name_list.size(); j++) {
+    item = (char*)ie->name_list.get(j);
+    if (!SendListItem(jcr, "F ", item, fd)) { return false; }
+  }
+  fd->fsend("N\n");
+
+  for (int j = 0; j < ie->plugin_list.size(); j++) {
+    item = (char*)ie->plugin_list.get(j);
+    if (!SendListItem(jcr, "P ", item, fd)) { return false; }
+  }
+  fd->fsend("N\n");
+  return true;
+}
+static void SendFilesetIgnoredir(JobControlRecord* jcr,
+                                 IncludeExcludeItem* include_exclude_item)
+{
+  BareosSocket* fd = jcr->file_bsock;
+  for (int j = 0; j < include_exclude_item->ignoredir.size(); j++) {
+    fd->fsend("Z %s\n", include_exclude_item->ignoredir.get(j));
+  }
+}
 // Send either an Included or an Excluded list to FD
 static bool SendFileset(JobControlRecord* jcr)
 {
   FilesetResource* fileset = jcr->dir_impl->res.fileset;
   BareosSocket* fd = jcr->file_bsock;
-  StorageResource* store = jcr->dir_impl->res.write_storage;
-  int num;
-  bool include = true;
 
-  while (1) {
-    if (include) {
-      num = fileset->include_items.size();
-    } else {
-      num = fileset->exclude_items.size();
+  for (auto include_item : fileset->include_items) {
+    fd->fsend("I\n");
+    SendFilesetIgnoredir(jcr, include_item);
+    SendFilesetOptions(jcr, include_item);
+    if (!SendFilesetFileAndPlugin(jcr, include_item)) {
+      jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+      return false;
     }
-    for (int i = 0; i < num; i++) {
-      char* item;
-      IncludeExcludeItem* ie;
+  }
 
-      if (include) {
-        ie = fileset->include_items[i];
-        fd->fsend("I\n");
-      } else {
-        ie = fileset->exclude_items[i];
-        fd->fsend("E\n");
-      }
-
-      for (int j = 0; j < ie->ignoredir.size(); j++) {
-        fd->fsend("Z %s\n", ie->ignoredir.get(j));
-      }
-
-      for (std::size_t j = 0; j < ie->file_options_list.size(); j++) {
-        FileOptions* fo = ie->file_options_list[j];
-        bool enhanced_wild = false;
-
-        for (int k = 0; fo->opts[k] != '\0'; k++) {
-          if (fo->opts[k] == 'W') {
-            enhanced_wild = true;
-            break;
-          }
-        }
-
-        // Strip out compression option Zn if disallowed for this Storage
-        if (store && !store->AllowCompress) {
-          char newopts[MAX_FOPTS];
-          bool done
-              = false; /* print warning only if compression enabled in FS */
-          int l = 0;
-
-          for (int k = 0; fo->opts[k] != '\0'; k++) {
-            /*
-             * Z compress option is followed by the single-digit compress level
-             * or 'o' For fastlz its Zf with a single char selecting the actual
-             * compression algo.
-             */
-            if (fo->opts[k] == 'Z' && fo->opts[k + 1] == 'f') {
-              done = true;
-              k += 2; /* skip option */
-            } else if (fo->opts[k] == 'Z') {
-              done = true;
-              k++; /* skip option and level */
-            } else {
-              newopts[l] = fo->opts[k];
-              l++;
-            }
-          }
-          newopts[l] = '\0';
-
-          if (done) {
-            Jmsg(jcr, M_INFO, 0,
-                 _("FD compression disabled for this Job because "
-                   "AllowCompress=No in Storage resource.\n"));
-          }
-
-          // Send the new trimmed option set without overwriting fo->opts
-          fd->fsend("O %s\n", newopts);
-        } else {
-          // Send the original options
-          fd->fsend("O %s\n", fo->opts);
-        }
-
-        for (int k = 0; k < fo->regex.size(); k++) {
-          fd->fsend("R %s\n", fo->regex.get(k));
-        }
-
-        for (int k = 0; k < fo->regexdir.size(); k++) {
-          fd->fsend("RD %s\n", fo->regexdir.get(k));
-        }
-
-        for (int k = 0; k < fo->regexfile.size(); k++) {
-          fd->fsend("RF %s\n", fo->regexfile.get(k));
-        }
-
-        for (int k = 0; k < fo->wild.size(); k++) {
-          fd->fsend("W %s\n", fo->wild.get(k));
-        }
-
-        for (int k = 0; k < fo->wilddir.size(); k++) {
-          fd->fsend("WD %s\n", fo->wilddir.get(k));
-        }
-
-        for (int k = 0; k < fo->wildfile.size(); k++) {
-          fd->fsend("WF %s\n", fo->wildfile.get(k));
-        }
-
-        for (int k = 0; k < fo->wildbase.size(); k++) {
-          fd->fsend("W%c %s\n", enhanced_wild ? 'B' : 'F', fo->wildbase.get(k));
-        }
-
-        for (int k = 0; k < fo->base.size(); k++) {
-          fd->fsend("B %s\n", fo->base.get(k));
-        }
-
-        for (int k = 0; k < fo->fstype.size(); k++) {
-          fd->fsend("X %s\n", fo->fstype.get(k));
-        }
-
-        for (int k = 0; k < fo->Drivetype.size(); k++) {
-          fd->fsend("XD %s\n", fo->Drivetype.get(k));
-        }
-
-        if (fo->plugin) { fd->fsend("G %s\n", fo->plugin); }
-
-        if (fo->reader) { fd->fsend("D %s\n", fo->reader); }
-
-        if (fo->writer) { fd->fsend("T %s\n", fo->writer); }
-
-        fd->fsend("N\n");
-      }
-
-      for (int j = 0; j < ie->name_list.size(); j++) {
-        item = (char*)ie->name_list.get(j);
-        if (!SendListItem(jcr, "F ", item, fd)) {
-          jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
-          return false;
-        }
-      }
-      fd->fsend("N\n");
-
-      for (int j = 0; j < ie->plugin_list.size(); j++) {
-        item = (char*)ie->plugin_list.get(j);
-        if (!SendListItem(jcr, "P ", item, fd)) {
-          jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
-          return false;
-        }
-      }
-      fd->fsend("N\n");
+  for (auto exclude_item : fileset->exclude_items) {
+    fd->fsend("E\n");
+    SendFilesetIgnoredir(jcr, exclude_item);
+    SendFilesetOptions(jcr, exclude_item);
+    if (!SendFilesetFileAndPlugin(jcr, exclude_item)) {
+      jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+      return false;
     }
-
-    if (!include) { /* If we just did excludes */
-      break;        /*   all done */
-    }
-
-    include = false; /* Now do excludes */
   }
 
   fd->signal(BNET_EOD); /* end of data */
