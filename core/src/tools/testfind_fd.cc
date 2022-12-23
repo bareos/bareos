@@ -31,6 +31,8 @@
 #include "tools/dummysockets.h"
 #include "tools/testfind_fd.h"
 
+#include <iostream>
+
 using namespace filedaemon;
 
 static struct TestfindStats {
@@ -67,7 +69,7 @@ void ProcessFileset(directordaemon::FilesetResource* director_fileset,
   me->compatible = true;
 
   if (!CheckResources()) {
-    printf("Problem checking resources!");
+    std::cout << "Problem checking resources!";
     return;
   }
 
@@ -95,16 +97,16 @@ void ProcessFileset(directordaemon::FilesetResource* director_fileset,
                            handleFile);
 
   testfind_stats.hard_links = jcr->fd_impl->ff->linkhash->size();
-  printf(_("\n"
-           "Total files    : %lu\n"
-           "Max file length: %lu\n"
-           "Max path length: %lu\n"
-           "Files truncated: %lu\n"
-           "Paths truncated: %lu\n"
-           "Hard links     : %lu\n"),
-         testfind_stats.num_files, testfind_stats.max_file_len,
-         testfind_stats.max_path_len, testfind_stats.trunc_fname,
-         testfind_stats.trunc_path, testfind_stats.hard_links);
+
+
+  std::cout << std::endl
+            << "Total files    : " << testfind_stats.num_files << std::endl
+            << "Max file length: " << testfind_stats.max_file_len << std::endl
+            << "Max path length: " << testfind_stats.max_path_len << std::endl
+            << "Files truncated: " << testfind_stats.trunc_fname << std::endl
+            << "Paths truncated: " << testfind_stats.trunc_path << std::endl
+            << "Hard links     : " << testfind_stats.hard_links << std::endl
+            << std::endl;
 
   jcr->file_bsock->close();
   delete jcr->file_bsock;
