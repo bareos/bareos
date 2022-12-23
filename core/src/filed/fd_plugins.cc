@@ -2334,7 +2334,7 @@ static bRC bareosAddOptions(PluginContext* ctx, const char* opts)
   if (!IsCtxGood(ctx, jcr, bctx)) { return bRC_Error; }
 
   if (!opts) { return bRC_Error; }
-  AddOptionsToFileset(jcr, opts);
+  AddOptionsFlagsToFileset(jcr, opts);
   Dmsg1(1000, "Add options=%s\n", opts);
 
   return bRC_OK;

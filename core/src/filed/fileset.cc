@@ -33,6 +33,7 @@
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
 #include "filed/filed_jcr_impl.h"
+#include "filed/fileset.h"
 #include "findlib/match.h"
 #include "lib/berrno.h"
 #include "lib/edit.h"
@@ -44,9 +45,6 @@
 #endif
 
 namespace filedaemon {
-
-/* Forward referenced functions */
-static int SetOptions(findFOPTS* fo, const char* opts);
 
 /**
  * callback function for edit_job_codes
@@ -243,158 +241,12 @@ int AddWildToFileset(JobControlRecord* jcr, const char* item, int type)
   return state_options;
 }
 
-// Add options to the current fileset
-int AddOptionsToFileset(JobControlRecord* jcr, const char* item)
-{
-  findFOPTS* current_opts = start_options(jcr->fd_impl->ff);
-
-  SetOptions(current_opts, item);
-
-  return state_options;
-}
-
-void AddFileset(JobControlRecord* jcr, const char* item)
-{
-  FindFilesPacket* ff = jcr->fd_impl->ff;
-  findFILESET* fileset = ff->fileset;
-  int code, subcode;
-  int state = fileset->state;
-  findFOPTS* current_opts;
-
-  // Get code, optional subcode, and position item past the dividing space
-  Dmsg1(100, "%s\n", item);
-  code = item[0];
-  if (code != '\0') { ++item; }
-
-  subcode = ' '; /* A space is always a valid subcode */
-  if (item[0] != '\0' && item[0] != ' ') {
-    subcode = item[0];
-    ++item;
-  }
-
-  if (*item == ' ') { ++item; }
-
-  // Skip all lines we receive after an error
-  if (state == state_error) {
-    Dmsg0(100, "State=error return\n");
-    return;
-  }
-
-  /* The switch tests the code for validity.
-   * The subcode is always good if it is a space, otherwise we must confirm.
-   * We set state to state_error first assuming the subcode is invalid,
-   * requiring state to be set in cases below that handle subcodes. */
-  if (subcode != ' ') {
-    state = state_error;
-    Dmsg0(100, "Set state=error or double code.\n");
-  }
-  switch (code) {
-    case 'I':
-      (void)new_include(jcr->fd_impl->ff->fileset);
-      break;
-    case 'E':
-      (void)new_exclude(jcr->fd_impl->ff->fileset);
-      break;
-    case 'N': /* Null */
-      state = state_none;
-      break;
-    case 'F': /* File */
-      state = state_include;
-      AddFileToFileset(jcr, item, true, jcr->fd_impl->ff->fileset);
-      break;
-    case 'P': /* Plugin */
-      state = state_include;
-      AddFileToFileset(jcr, item, false, jcr->fd_impl->ff->fileset);
-      break;
-    case 'R': /* Regex */
-      state = AddRegexToFileset(jcr, item, subcode);
-      break;
-    case 'B':
-      current_opts = start_options(ff);
-      current_opts->base.append(strdup(item));
-      state = state_options;
-      break;
-    case 'X': /* Filetype or Drive type */
-      current_opts = start_options(ff);
-      state = state_options;
-      if (subcode == ' ') {
-        current_opts->fstype.append(strdup(item));
-      } else if (subcode == 'D') {
-        current_opts->Drivetype.append(strdup(item));
-      } else {
-        state = state_error;
-      }
-      break;
-    case 'W': /* Wild cards */
-      state = AddWildToFileset(jcr, item, subcode);
-      break;
-    case 'O': /* Options */
-      state = AddOptionsToFileset(jcr, item);
-      break;
-    case 'Z': /* Ignore dir */
-      state = state_include;
-      fileset->incexe->ignoredir.append(strdup(item));
-      break;
-    case 'D':
-      current_opts = start_options(ff);
-      state = state_options;
-      break;
-    case 'T':
-      current_opts = start_options(ff);
-      state = state_options;
-      break;
-    case 'G': /* Plugin command for this Option block */
-      current_opts = start_options(ff);
-      current_opts->plugin = strdup(item);
-      state = state_options;
-      break;
-    default:
-      Jmsg(jcr, M_FATAL, 0, _("Invalid FileSet command: %s\n"), item);
-      state = state_error;
-      break;
-  }
-  ff->fileset->state = state;
-}
-
-bool TermFileset(JobControlRecord* jcr)
-{
-  findFILESET* fileset;
-
-  fileset = jcr->fd_impl->ff->fileset;
-#ifdef HAVE_WIN32
-  /* Expand the fileset to include all drive letters when the fileset includes a
-   * File = / entry. */
-  if (!expand_win32_fileset(jcr->fd_impl->ff->fileset)) { return false; }
-
-  // Exclude entries in NotToBackup registry key
-  if (!exclude_win32_not_to_backup_registry_entries(jcr, jcr->fd_impl->ff)) {
-    return false;
-  }
-#endif
-
-  // Generate bEventPluginCommand events for each Options Plugin.
-  for (int i = 0; i < fileset->include_list.size(); i++) {
-    findIncludeExcludeItem* incexe
-        = (findIncludeExcludeItem*)fileset->include_list.get(i);
-
-    for (int j = 0; j < incexe->opts_list.size(); j++) {
-      findFOPTS* fo = (findFOPTS*)incexe->opts_list.get(j);
-
-      if (fo->plugin) {
-        GeneratePluginEvent(jcr, bEventPluginCommand, (void*)fo->plugin);
-      }
-    }
-  }
-
-  return jcr->fd_impl->ff->fileset->state != state_error;
-}
-
 /**
  * As an optimization, we should do this during
  *  "compile" time in filed/job.c, and keep only a bit mask
  *  and the Verify options.
  */
-static int SetOptions(findFOPTS* fo, const char* opts)
+static int SetOptionsAndFlags(findFOPTS* fo, const char* opts)
 {
   int j;
   const char* p;
@@ -661,5 +513,155 @@ static int SetOptions(findFOPTS* fo, const char* opts)
   }
 
   return state_options;
+}
+
+// Add options to the current fileset
+int AddOptionsFlagsToFileset(JobControlRecord* jcr, const char* item)
+{
+  findFOPTS* current_opts = start_options(jcr->fd_impl->ff);
+
+  SetOptionsAndFlags(current_opts, item);
+
+  return state_options;
+}
+
+void AddFileset(JobControlRecord* jcr, const char* item)
+{
+  FindFilesPacket* ff = jcr->fd_impl->ff;
+  findFILESET* fileset = ff->fileset;
+  int code, subcode;
+  int state = fileset->state;
+  findFOPTS* current_opts;
+
+  // Get code, optional subcode, and position item past the dividing space
+  Dmsg1(100, "%s\n", item);
+  code = item[0];
+  if (code != '\0') { ++item; }
+
+  subcode = ' '; /* A space is always a valid subcode */
+  if (item[0] != '\0' && item[0] != ' ') {
+    subcode = item[0];
+    ++item;
+  }
+
+  if (*item == ' ') { ++item; }
+
+  // Skip all lines we receive after an error
+  if (state == state_error) {
+    Dmsg0(100, "State=error return\n");
+    return;
+  }
+
+  /**
+   * The switch tests the code for validity.
+   * The subcode is always good if it is a space, otherwise we must confirm.
+   * We set state to state_error first assuming the subcode is invalid,
+   * requiring state to be set in cases below that handle subcodes.
+   */
+  if (subcode != ' ') {
+    state = state_error;
+    Dmsg0(100, "Set state=error or double code.\n");
+  }
+  switch (code) {
+    case 'I':
+      (void)new_include(jcr->fd_impl->ff->fileset);
+      break;
+    case 'E':
+      (void)new_exclude(jcr->fd_impl->ff->fileset);
+      break;
+    case 'N': /* Null */
+      state = state_none;
+      break;
+    case 'F': /* File */
+      state = state_include;
+      AddFileToFileset(jcr, item, true, jcr->fd_impl->ff->fileset);
+      break;
+    case 'P': /* Plugin */
+      state = state_include;
+      AddFileToFileset(jcr, item, false, jcr->fd_impl->ff->fileset);
+      break;
+    case 'R': /* Regex */
+      state = AddRegexToFileset(jcr, item, subcode);
+      break;
+    case 'B':
+      current_opts = start_options(ff);
+      current_opts->base.append(strdup(item));
+      state = state_options;
+      break;
+    case 'X': /* Filetype or Drive type */
+      current_opts = start_options(ff);
+      state = state_options;
+      if (subcode == ' ') {
+        current_opts->fstype.append(strdup(item));
+      } else if (subcode == 'D') {
+        current_opts->Drivetype.append(strdup(item));
+      } else {
+        state = state_error;
+      }
+      break;
+    case 'W': /* Wild cards */
+      state = AddWildToFileset(jcr, item, subcode);
+      break;
+    case 'O': /* Options */
+      state = AddOptionsFlagsToFileset(jcr, item);
+      break;
+    case 'Z': /* Ignore dir */
+      state = state_include;
+      fileset->incexe->ignoredir.append(strdup(item));
+      break;
+    case 'D':
+      current_opts = start_options(ff);
+      state = state_options;
+      break;
+    case 'T':
+      current_opts = start_options(ff);
+      state = state_options;
+      break;
+    case 'G': /* Plugin command for this Option block */
+      current_opts = start_options(ff);
+      current_opts->plugin = strdup(item);
+      state = state_options;
+      break;
+    default:
+      Jmsg(jcr, M_FATAL, 0, _("Invalid FileSet command: %s\n"), item);
+      state = state_error;
+      break;
+  }
+  ff->fileset->state = state;
+}
+
+bool TermFileset(JobControlRecord* jcr)
+{
+  findFILESET* fileset;
+
+  fileset = jcr->fd_impl->ff->fileset;
+#ifdef HAVE_WIN32
+  /*
+   * Expand the fileset to include all drive letters when the fileset includes a
+   * File = / entry.
+   */
+  if (!expand_win32_fileset(jcr->fd_impl->ff->fileset)) { return false; }
+
+  // Exclude entries in NotToBackup registry key
+  if (!exclude_win32_not_to_backup_registry_entries(jcr, jcr->fd_impl->ff)) {
+    return false;
+  }
+#endif
+
+  // Generate bEventPluginCommand events for each Options Plugin.
+  for (int i = 0; i < fileset->include_list.size(); i++) {
+    findIncludeExcludeItem* incexe
+        = (findIncludeExcludeItem*)fileset->include_list.get(i);
+
+    for (int j = 0; j < incexe->opts_list.size(); j++) {
+      findFOPTS* fo = (findFOPTS*)incexe->opts_list.get(j);
+
+      if (fo->plugin) {
+        GeneratePluginEvent(jcr, bEventPluginCommand, (void*)fo->plugin);
+      }
+    }
+  }
+
+  return jcr->fd_impl->ff->fileset->state != state_error;
 }
 } /* namespace filedaemon */
