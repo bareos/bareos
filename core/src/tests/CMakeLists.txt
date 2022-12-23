@@ -49,6 +49,8 @@ macro(bareos_gtest_add_tests testname)
 endmacro() # bareos_gtest_add_tests
 
 macro(bareos_add_test BAREOS_ADD_TEST_TESTNAME)
+  # special option for gtests that aren't supposed to run alone, since they
+  # are executed by systemtests with which they have dependencies.
   set(options SKIP_GTEST DISABLE)
   set(multiValueArgs ADDITIONAL_SOURCES LINK_LIBRARIES COMPILE_DEFINITIONS
                      COMPILE_OPTIONS
@@ -176,7 +178,7 @@ if(NOT client-only)
     catalog
     LINK_LIBRARIES bareos dird_objects bareosfind bareossql
                    $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
-    SKIP_GTEST
+    SKIP_GTEST # used by systemtest catalog
   )
 
   bareos_add_test(cli_test LINK_LIBRARIES bareos CLI11::CLI11 GTest::gtest_main)
@@ -210,7 +212,7 @@ if(NOT client-only)
     messages_resource
     LINK_LIBRARIES bareos dird_objects bareosfind bareossql
                    $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
-    SKIP_GTEST
+    SKIP_GTEST # used by systemtest messages
   )
   bareos_add_test(
     multicolumn_prompts
