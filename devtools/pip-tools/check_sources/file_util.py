@@ -45,6 +45,9 @@ def is_valid_textfile(file_path, ignorelist):
     if not file_path.is_file():
         return False
 
+    if file_path.is_symlink():
+        return False
+
     if file_is_ignored(file_path, ignorelist):
         return False
 
