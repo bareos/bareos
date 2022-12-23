@@ -177,8 +177,6 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr,
 
   StopHeartbeatMonitor(jcr);
 
-  sd->signal(BNET_EOD); /* end of sending data */
-
   if (sd != nullptr) { sd->signal(BNET_EOD); /* end of sending data */ }
 
   if (have_acl && jcr->fd_impl->acl_data) {
