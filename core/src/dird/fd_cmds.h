@@ -22,6 +22,9 @@
 #ifndef BAREOS_DIRD_FD_CMDS_H_
 #define BAREOS_DIRD_FD_CMDS_H_
 
+#include "dird/ua.h"
+#include "lib/connection_pool.h"
+
 namespace directordaemon {
 
 bool ConnectToFileDaemon(JobControlRecord* jcr,
@@ -30,8 +33,7 @@ bool ConnectToFileDaemon(JobControlRecord* jcr,
                          bool verbose,
                          UaContext* ua = nullptr);
 int SendJobInfoToFileDaemon(JobControlRecord* jcr);
-bool SendIncludeList(JobControlRecord* jcr);
-bool SendExcludeList(JobControlRecord* jcr);
+bool SendIncludeExcludeLists(JobControlRecord* jcr);
 bool SendLevelCommand(JobControlRecord* jcr);
 bool SendBwlimitToFd(JobControlRecord* jcr, const char* Job);
 bool SendSecureEraseReqToFd(JobControlRecord* jcr);

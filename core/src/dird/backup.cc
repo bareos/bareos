@@ -540,12 +540,7 @@ bool DoNativeBackup(JobControlRecord* jcr)
     return false;
   }
 
-  if (!SendIncludeList(jcr)) {
-    TerminateBackupWithError(jcr);
-    return false;
-  }
-
-  if (!SendExcludeList(jcr)) {
+  if (!SendIncludeExcludeLists(jcr)) {
     TerminateBackupWithError(jcr);
     return false;
   }

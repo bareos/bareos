@@ -772,7 +772,7 @@ static bool SendListItem(JobControlRecord* jcr,
 }
 
 // Send include list to File daemon
-bool SendIncludeList(JobControlRecord* jcr)
+bool SendIncludeExcludeLists(JobControlRecord* jcr)
 {
   BareosSocket* fd = jcr->file_bsock;
   if (jcr->dir_impl->res.fileset->new_include) {
@@ -782,14 +782,6 @@ bool SendIncludeList(JobControlRecord* jcr)
   }
   return true;
 }
-
-/**
- * Send exclude list to File daemon
- *   Under the new scheme, the Exclude list
- *   is part of the FileSet sent with the
- *   "include_list" above.
- */
-bool SendExcludeList(JobControlRecord*) { return true; }
 
 // This checks to see if there are any non local runscripts for this job.
 static bool HaveClientRunscripts(alist<RunScript*>* RunScripts)

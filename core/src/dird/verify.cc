@@ -289,11 +289,8 @@ bool DoVerify(JobControlRecord* jcr)
 
   jcr->setJobStatusWithPriorityCheck(JS_Running);
 
-  Dmsg0(30, ">filed: Send include list\n");
-  if (!SendIncludeList(jcr)) { goto bail_out; }
-
-  Dmsg0(30, ">filed: Send exclude list\n");
-  if (!SendExcludeList(jcr)) { goto bail_out; }
+  Dmsg0(30, ">filed: Send include and exclude lists\n");
+  if (!SendIncludeExcludeLists(jcr)) { goto bail_out; }
 
   /*
    * Send Level command to File daemon, as well as the Storage address if
