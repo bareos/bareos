@@ -34,12 +34,12 @@
 using namespace filedaemon;
 
 static struct TestfindStats {
-  int num_files = 0;
-  int max_file_len = 0;
-  int max_path_len = 0;
-  int trunc_fname = 0;
-  int trunc_path = 0;
-  int hard_links = 0;
+  uint64_t num_files = 0;
+  uint64_t max_file_len = 0;
+  uint64_t max_path_len = 0;
+  uint64_t trunc_fname = 0;
+  uint64_t trunc_path = 0;
+  uint64_t hard_links = 0;
   bool print_attributes = false;
 } testfind_stats;
 
@@ -96,12 +96,12 @@ void ProcessFileset(directordaemon::FilesetResource* director_fileset,
 
   testfind_stats.hard_links = jcr->fd_impl->ff->linkhash->size();
   printf(_("\n"
-           "Total files    : %d\n"
-           "Max file length: %d\n"
-           "Max path length: %d\n"
-           "Files truncated: %d\n"
-           "Paths truncated: %d\n"
-           "Hard links     : %d\n"),
+           "Total files    : %lu\n"
+           "Max file length: %lu\n"
+           "Max path length: %lu\n"
+           "Files truncated: %lu\n"
+           "Paths truncated: %lu\n"
+           "Hard links     : %lu\n"),
          testfind_stats.num_files, testfind_stats.max_file_len,
          testfind_stats.max_path_len, testfind_stats.trunc_fname,
          testfind_stats.trunc_path, testfind_stats.hard_links);
@@ -220,7 +220,6 @@ int PrintFile(JobControlRecord*, FindFilesPacket* ff, bool)
 
 void UpdateFilestats(FindFilesPacket* ffp)
 {
-  int filename_length, path_length;
   char *l, *p;
   PoolMem file(PM_FNAME);
   PoolMem spath(PM_FNAME);
@@ -247,7 +246,7 @@ void UpdateFilestats(FindFilesPacket* ffp)
    * space. This makes handling zero length filenames
    * easier.
    */
-  filename_length = p - l;
+  uint64_t filename_length = p - l;
   if (filename_length > testfind_stats.max_file_len) {
     testfind_stats.max_file_len = filename_length;
   }
@@ -263,7 +262,7 @@ void UpdateFilestats(FindFilesPacket* ffp)
     PmStrcpy(file, " "); /* blank filename */
   }
 
-  path_length = l - ffp->fname;
+  uint64_t path_length = l - ffp->fname;
   if (path_length > testfind_stats.max_path_len) {
     testfind_stats.max_path_len = path_length;
   }
