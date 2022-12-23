@@ -445,20 +445,16 @@ static int OurCallback(JobControlRecord* jcr,
 }
 
 // Terminate FindFiles() and release all allocated memory
-int TermFindFiles(FindFilesPacket* ff)
+void TermFindFiles(FindFilesPacket* ff)
 {
-  int hard_links = 0;
-
   if (ff) {
     FreePoolMemory(ff->sys_fname);
     if (ff->fname_save) { FreePoolMemory(ff->fname_save); }
     if (ff->link_save) { FreePoolMemory(ff->link_save); }
     if (ff->ignoredir_fname) { FreePoolMemory(ff->ignoredir_fname); }
-    hard_links = TermFindOne(ff);
+    TermFindOne(ff);
     free(ff);
   }
-
-  return hard_links;
 }
 
 // Allocate a new include/exclude block.

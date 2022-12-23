@@ -1033,15 +1033,9 @@ int FindOneFile(JobControlRecord* jcr,
   }
 }
 
-int TermFindOne(FindFilesPacket* ff)
+void TermFindOne(FindFilesPacket* ff)
 {
-  int count;
-
-  if (ff->linkhash == NULL) { return 0; }
-
-  count = ff->linkhash->size();
+  if (ff->linkhash == nullptr) { return; }
   delete ff->linkhash;
-  ff->linkhash = NULL;
-
-  return count;
+  ff->linkhash = nullptr;
 }

@@ -280,7 +280,7 @@ int FindFiles(JobControlRecord* jcr,
 bool MatchFiles(JobControlRecord* jcr,
                 FindFilesPacket* ff,
                 int sub(JobControlRecord*, FindFilesPacket* ff_pkt, bool));
-int TermFindFiles(FindFilesPacket* ff);
+void TermFindFiles(FindFilesPacket* ff);
 bool IsInFileset(FindFilesPacket* ff);
 bool AcceptFile(FindFilesPacket* ff);
 findIncludeExcludeItem* allocate_new_incexe(void);
