@@ -2,10 +2,7 @@
 set -e
 set -o pipefail
 set -u
-#
-# Run a simple backup
-#   then restore it.
-#
+
 TestName="$(basename "$(pwd)")"
 export TestName
 
@@ -22,17 +19,27 @@ zstat=0
 . "${rscripts}"/functions
 setup_data
 
-testfind_log=$tmp/testfind.out
+selftest_log=$tmp/selftest_log.out
+wildcard_log=$tmp/wildcard_log.out
 
-rm -f $testfind_log
-./sbin/testfind-testfind -c etc/bareos | tee  "$testfind_log"
+job_log=$logdir/bareos.log
 
-expect_grep "Total files    : 68" \
-            "$testfind_log" \
+rm -f $selftest_log
+rm -f $job_log
+
+./sbin/testfind-testfind -c etc/bareos -f SelfTest | tee  "$selftest_log"
+./sbin/testfind-testfind -c etc/bareos -f Wildtest | tee  "$wildcard_log"
+
+expect_grep "Total files.*50" \
+            "$selftest_log" \
             "Number of files is incorrect."
 
-expect_grep "Max file length: 148" \
-            "$testfind_log" \
-            "Max file length is incorrect."
+expect_grep "Hard links.*2" \
+            "$selftest_log" \
+            "Number of files is incorrect."
+
+expect_grep "Total files.*18" \
+            "$wildcard_log" \
+            "Number of files is incorrect."
 
 end_test

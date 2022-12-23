@@ -14,7 +14,10 @@ FileSet {
       fstype = zfs
       fstype = btrfs
     }
-   File = "@tmpdir@/data"
-   #File=<@tmpdir@/file-list
+   File=<@tmpdir@/file-list
+  }
+
+  Exclude {
+   File = "@tmpdir@/data/build/src/tests"
   }
 }

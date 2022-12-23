@@ -15,11 +15,4 @@ Client {
 
   Working Directory =  "@working_dir@"
   FD Port = @fd_port@
-
-  Pki Key Pair = "@pki_keypair@"
-  Pki Master Key = "@pki_master_key@"
-  Pki Encryption = yes
-  Pki Signatures = yes
-  Pki Cipher = aes128
-
 }

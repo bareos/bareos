@@ -1,0 +1,14 @@
+FileSet {
+  Name = "Wildtest"
+  Description = "fileset just to backup some files for selftest"
+  Include {
+    Options {
+       wildfile = "*.c"
+    }
+    Options {
+       Exclude = yes
+       RegexFile = ".*"
+    }
+   File=<@tmpdir@/file-list
+  }
+}
