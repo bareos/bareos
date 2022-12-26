@@ -167,10 +167,8 @@ void NdmpLoghandler(struct ndmlog* log, char* tag, int level, char* msg)
   nis = (NIS*)log->ctx;
   if (!nis) { return; }
 
-  /*
-   * If the log level of this message is under our logging treshold we
-   * log it as part of the Job.
-   */
+  /* If the log level of this message is under our logging treshold we
+   * log it as part of the Job. */
   if (level <= (int)nis->LogLevel) {
     if (nis->jcr) {
       // Look at the tag field to see what is logged.
@@ -1164,7 +1162,7 @@ extern "C" void* ndmp_thread_server(void* arg)
             be.bstrerror());
 #  endif
     }
-    listen(fd_ptr->fd, me->MaxConnections); /* tell system we are ready */
+    listen(fd_ptr->fd, kListenBacklog); /* tell system we are ready */
     sockfds.push_back(fd_ptr);
 #  ifdef HAVE_POLL
     nfds++;

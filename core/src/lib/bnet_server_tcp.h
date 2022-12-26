@@ -24,6 +24,8 @@
 #include <atomic>
 #include <functional>
 
+constexpr int kListenBacklog = 50;
+
 class ConfigurationParser;
 class ThreadList;
 class IPADDR;
