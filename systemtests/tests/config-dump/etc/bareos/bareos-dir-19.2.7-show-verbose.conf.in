@@ -12,7 +12,6 @@ Director {
   BackendDirectory = "@backenddir@"
   # Subscriptions = 0
   MaximumConcurrentJobs = 10
-  # MaximumConnections = 30
   # MaximumConsoleConnections = 20
   Password = "@dir_password@"
   # FdConnectTimeout = 3 minutes

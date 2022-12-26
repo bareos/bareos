@@ -236,14 +236,6 @@
           "default_value": "20",
           "equals": true
         },
-        "MaximumConnections": {
-          "datatype": "PINT32",
-          "code": 0,
-          "default_value": "42",
-          "deprecated": true,
-          "equals": true,
-          "versions": "15.2.3-"
-        },
         "Messages": {
           "datatype": "RES",
           "code": 4,

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -88,7 +88,6 @@ static ResourceItem store_items[] = {
   {"PluginNames", CFG_TYPE_PLUGIN_NAMES, ITEM(res_store, plugin_names), 0, 0, NULL, NULL, NULL},
   {"ScriptsDirectory", CFG_TYPE_DIR, ITEM(res_store, scripts_directory), 0, 0, NULL, NULL, NULL},
   {"MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_store, MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "20", NULL, NULL},
-  {"MaximumConnections", CFG_TYPE_PINT32, ITEM(res_store, MaxConnections), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "42", "15.2.3-", NULL},
   {"Messages", CFG_TYPE_RES, ITEM(res_store, messages), R_MSGS, 0, NULL, NULL, NULL},
   {"SdConnectTimeout", CFG_TYPE_TIME, ITEM(res_store, SDConnectTimeout), 0, CFG_ITEM_DEFAULT, "1800" /* 30 minutes */, NULL, NULL},
   {"FdConnectTimeout", CFG_TYPE_TIME, ITEM(res_store, FDConnectTimeout), 0, CFG_ITEM_DEFAULT, "1800" /* 30 minutes */, NULL, NULL},

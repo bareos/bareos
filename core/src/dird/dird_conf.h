@@ -120,7 +120,6 @@ class DirectorResource
   std::vector<std::string> backend_directories;
   MessagesResource* messages = nullptr; /* Daemon message handler */
   uint32_t MaxConcurrentJobs = 0; /* Max concurrent jobs for whole director */
-  uint32_t MaxConnections = 0;    /* Max concurrent connections */
   uint32_t MaxConsoleConnections = 0; /* Max concurrent console connections */
   utime_t FDConnectTimeout = {0};     /* Timeout for connect in seconds */
   utime_t SDConnectTimeout = {0};     /* Timeout for connect in seconds */
