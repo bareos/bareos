@@ -39,7 +39,6 @@
 #include "stored/label.h"
 #include "stored/mount.h"
 #include "stored/read_record.h"
-#include "stored/sd_stats.h"
 #include "stored/spool.h"
 #include "lib/bget_msg.h"
 #include "lib/bnet.h"
@@ -443,7 +442,6 @@ static inline void CheckAutoXflation(JobControlRecord* jcr)
 // Read Data and commit to new job.
 bool DoMacRun(JobControlRecord* jcr)
 {
-  utime_t now;
   char ec1[50];
   const char* Type;
   bool ok = true;
@@ -543,10 +541,6 @@ bool DoMacRun(JobControlRecord* jcr)
       goto bail_out;
     }
 
-    // Update the initial Job Statistics.
-    now = (utime_t)time(NULL);
-    UpdateJobStatistics(jcr, now);
-
     // Read all data and send it to remote SD.
     ok = ReadRecords(jcr->sd_impl->read_dcr, CloneRecordToRemoteSd,
                      MountNextReadVolume);
@@ -605,10 +599,6 @@ bool DoMacRun(JobControlRecord* jcr)
           jcr->sd_impl->dcr->dev->block_num);
 
     jcr->sendJobStatus(JS_Running);
-
-    // Update the initial Job Statistics.
-    now = (utime_t)time(NULL);
-    UpdateJobStatistics(jcr, now);
 
     if (!BeginDataSpool(jcr->sd_impl->dcr)) {
       ok = false;

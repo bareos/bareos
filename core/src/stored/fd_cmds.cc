@@ -40,7 +40,6 @@
 #include "stored/fd_cmds.h"
 #include "stored/stored_jcr_impl.h"
 #include "stored/read.h"
-#include "stored/sd_stats.h"
 #include "lib/bnet.h"
 #include "lib/bsock.h"
 #include "lib/edit.h"
@@ -136,15 +135,9 @@ void* HandleFiledConnection(BareosSocket* fd, char* job_name)
     Jmsg(jcr, M_FATAL, 0, _("Unable to authenticate File daemon\n"));
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   } else {
-    utime_t now;
-
     jcr->authenticated = true;
     Dmsg2(50, "OK Authentication jid=%u Job %s\n", (uint32_t)jcr->JobId,
           jcr->Job);
-
-    // Update the initial Job Statistics.
-    now = (utime_t)time(NULL);
-    UpdateJobStatistics(jcr, now);
   }
 
   pthread_cond_signal(&jcr->sd_impl->job_start_wait); /* wake waiting job */

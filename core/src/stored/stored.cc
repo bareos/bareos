@@ -44,7 +44,6 @@
 #include "stored/ndmp_tape.h"
 #include "stored/sd_backends.h"
 #include "stored/sd_device_control_record.h"
-#include "stored/sd_stats.h"
 #include "stored/socket_server.h"
 #include "stored/stored_globals.h"
 #include "stored/wait.h"
@@ -302,8 +301,6 @@ int main(int argc, char* argv[])
     InitJcrSubsystem(
         me->jcr_watchdog_time); /* start JobControlRecord watchdogs etc. */
   }
-
-  StartStatisticsThread();
 
 #if HAVE_NDMP
   // Separate thread that handles NDMP connections
@@ -594,7 +591,6 @@ static
   }
   in_here = true;
   debug_level = 0; /* turn off any debug */
-  StopStatisticsThread();
 #if HAVE_NDMP
   if (me->ndmp_enable) { StopNdmpThreadServer(); }
 #endif

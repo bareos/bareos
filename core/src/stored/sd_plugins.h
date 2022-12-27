@@ -156,7 +156,6 @@ typedef struct s_sdbareosFuncs {
                            const char* cmd);
   char* (*LookupCryptoKey)(const char* VolumeName);
   bool (*UpdateVolumeInfo)(DeviceControlRecord* dcr);
-  void (*UpdateTapeAlert)(DeviceControlRecord* dcr, uint64_t flags);
   DeviceRecord* (*new_record)(bool with_data);
   void (*CopyRecordState)(DeviceRecord* dst, DeviceRecord* src);
   void (*FreeRecord)(DeviceRecord* rec);

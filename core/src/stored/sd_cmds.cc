@@ -37,8 +37,6 @@
 #include "stored/append.h"
 #include "stored/authenticate.h"
 #include "stored/stored_jcr_impl.h"
-#include "stored/sd_stats.h"
-#include "stored/sd_stats.h"
 #include "lib/bnet.h"
 #include "lib/bsock.h"
 #include "lib/edit.h"
@@ -306,12 +304,6 @@ static bool ReplicateData(JobControlRecord* jcr)
 
   Dmsg1(120, "Replicate data: %s", sd->msg);
   if (jcr->sd_impl->session_opened) {
-    utime_t now;
-
-    // Update the initial Job Statistics.
-    now = (utime_t)time(NULL);
-    UpdateJobStatistics(jcr, now);
-
     Dmsg1(110, "<stored: %s", sd->msg);
     if (DoAppendData(jcr, sd, "SD")) {
       return true;

@@ -33,7 +33,6 @@
 #include "stored/stored_jcr_impl.h"
 #include "sd_plugins.h"
 #include "lib/crypto_cache.h"
-#include "stored/sd_stats.h"
 #include "lib/edit.h"
 #include "include/jcr.h"
 
@@ -74,7 +73,6 @@ static char* bareosEditDeviceCodes(DeviceControlRecord* dcr,
                                    const char* cmd);
 static char* bareosLookupCryptoKey(const char* VolumeName);
 static bool bareosUpdateVolumeInfo(DeviceControlRecord* dcr);
-static void bareosUpdateTapeAlert(DeviceControlRecord* dcr, uint64_t flags);
 static DeviceRecord* bareosNewRecord(bool with_data);
 static void bareosCopyRecordState(DeviceRecord* dst, DeviceRecord* src);
 static void bareosFreeRecord(DeviceRecord* rec);
@@ -92,8 +90,8 @@ static CoreFunctions bareos_core_functions
        bareosSetValue,         bareosJobMsg,
        bareosDebugMsg,         bareosEditDeviceCodes,
        bareosLookupCryptoKey,  bareosUpdateVolumeInfo,
-       bareosUpdateTapeAlert,  bareosNewRecord,
-       bareosCopyRecordState,  bareosFreeRecord};
+       bareosNewRecord,        bareosCopyRecordState,
+       bareosFreeRecord};
 
 // Bareos private context
 struct b_plugin_ctx {
@@ -929,14 +927,6 @@ static char* bareosLookupCryptoKey(const char* VolumeName)
 static bool bareosUpdateVolumeInfo(DeviceControlRecord* dcr)
 {
   return dcr->DirGetVolumeInfo(GET_VOL_INFO_FOR_READ);
-}
-
-static void bareosUpdateTapeAlert(DeviceControlRecord* dcr, uint64_t flags)
-{
-  utime_t now;
-  now = (utime_t)time(NULL);
-
-  UpdateDeviceTapealert(dcr->device_resource->resource_name_, flags, now);
 }
 
 static DeviceRecord* bareosNewRecord(bool with_data)

@@ -205,11 +205,8 @@ static bRC handle_tapealert_readout(void* value)
   Dmsg1(debuglevel, "scsitapealert-sd: flags: %ld \n", flags);
 
   if (flags) {
-    Dmsg1(
-        debuglevel,
-        "scsitapealert-sd: tapealerts on device %s, calling UpdateTapeAlerts\n",
-        dev->archive_device_string);
-    bareos_core_functions->UpdateTapeAlert(dcr, flags);
+    Dmsg1(debuglevel, "scsitapealert-sd: tapealerts on device %s\n",
+          dev->archive_device_string);
   }
 
   return bRC_OK;

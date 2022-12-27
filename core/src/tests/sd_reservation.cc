@@ -43,7 +43,6 @@
 #include "stored/stored_jcr_impl.h"
 #include "stored/job.h"
 #include "stored/sd_plugins.h"
-#include "stored/sd_stats.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
 #include "stored/wait.h"

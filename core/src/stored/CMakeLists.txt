@@ -68,7 +68,6 @@ set(LIBBAREOSSD_SRCS
     scan.cc
     sd_device_control_record.cc
     sd_plugins.cc
-    sd_stats.cc
     spool.cc
     stored_globals.cc
     stored_conf.cc
@@ -87,7 +86,6 @@ set(SDSRCS
     ndmp_tape.cc
     read.cc
     sd_cmds.cc
-    sd_stats.cc
     socket_server.cc
     status.cc
 )

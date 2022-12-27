@@ -57,7 +57,6 @@
 #include "stored/reserve.h"
 #include "stored/sd_cmds.h"
 #include "stored/status.h"
-#include "stored/sd_stats.h"
 #include "stored/stored_globals.h"
 #include "stored/wait.h"
 #include "stored/job.h"
@@ -206,7 +205,6 @@ static struct s_sd_dir_cmds cmds[] = {
     {"setbandwidth=", SetbandwidthCmd, false},
     {"setdebug=", SetdebugCmd, false},  /**< Set debug level */
     {"setdevice", SetdeviceCmd, false}, /**< Set device parameter */
-    {"stats", StatsCmd, false},
     {"status", StatusCmd, true},
     {".status", DotstatusCmd, true},
     {"unmount", UnmountCmd, false},
@@ -219,9 +217,7 @@ static inline bool AreMaxConcurrentJobsExceeded()
   JobControlRecord* jcr;
   unsigned int cnt = 0;
 
-  foreach_jcr (jcr) {
-    cnt++;
-  }
+  foreach_jcr (jcr) { cnt++; }
   endeach_jcr(jcr);
 
   return (cnt >= me->MaxConcurrentJobs) ? true : false;
@@ -1794,13 +1790,7 @@ static bool PassiveCmd(JobControlRecord* jcr)
     jcr->file_bsock = NULL;
     goto bail_out;
   } else {
-    utime_t now;
-
     Dmsg0(110, "Authenticated with FD.\n");
-
-    // Update the initial Job Statistics.
-    now = (utime_t)time(NULL);
-    UpdateJobStatistics(jcr, now);
   }
 
   // Send OK to Director

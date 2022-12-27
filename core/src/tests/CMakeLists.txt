@@ -259,11 +259,7 @@ if(NOT client-only)
     LINK_LIBRARIES stored_objects bareossd bareos GTest::gtest_main
                    GTest::gmock
   )
-  bareos_add_test(
-    sd_statistics_thread
-    LINK_LIBRARIES testing_common dird_objects bareos bareossql bareosfind
-                   Threads::Threads GTest::gtest_main
-  )
+
   bareos_add_test(
     select_functions LINK_LIBRARIES dird_objects bareosfind bareossql
                                     GTest::gtest_main
