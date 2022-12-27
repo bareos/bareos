@@ -377,36 +377,6 @@ struct FileSetDbRecord {
   bool created = false; /**< set when record newly created */
 };
 
-struct DeviceStatisticsDbRecord {
-  DBId_t DeviceId = 0;       /**< Device record id */
-  time_t SampleTime = 0;     /**< Timestamp statistic was captured */
-  uint64_t ReadTime = 0;     /**< Time spent reading volume */
-  uint64_t WriteTime = 0;    /**< Time spent writing volume */
-  uint64_t ReadBytes = 0;    /**< Number of bytes read */
-  uint64_t WriteBytes = 0;   /**< Number of bytes written */
-  uint64_t SpoolSize = 0;    /**< Number of bytes spooled */
-  uint32_t NumWaiting = 0;   /**< Number of Jobs waiting for device */
-  uint32_t NumWriters = 0;   /**< Number of writers to device */
-  DBId_t MediaId = 0;        /**< MediaId used */
-  uint64_t VolCatBytes = 0;  /**< Volume Bytes */
-  uint64_t VolCatFiles = 0;  /**< Volume Files */
-  uint64_t VolCatBlocks = 0; /**< Volume Blocks */
-};
-
-struct TapealertStatsDbRecord {
-  DBId_t DeviceId = 0;     /**< Device record id */
-  time_t SampleTime = 0;   /**< Timestamp statistic was captured */
-  uint64_t AlertFlags = 0; /**< Tape Alerts raised */
-};
-
-struct JobStatisticsDbRecord {
-  DBId_t DeviceId = 0;   /**< Device record id */
-  time_t SampleTime = 0; /**< Timestamp statistic was captured */
-  JobId_t JobId = 0;     /**< Job record id */
-  uint32_t JobFiles = 0; /**< Number of Files in Job */
-  uint64_t JobBytes = 0; /**< Number of Bytes in Job */
-};
-
 // Call back context for getting a 32/64 bit value from the database
 class db_int64_ctx {
  public:
@@ -645,11 +615,6 @@ class BareosDb : public BareosDbQueryEnum {
                                    JobDbRecord* jr,
                                    char* name,
                                    char* value);
-  bool CreateJobStatistics(JobControlRecord* jcr, JobStatisticsDbRecord* jsr);
-  bool CreateDeviceStatistics(JobControlRecord* jcr,
-                              DeviceStatisticsDbRecord* dsr);
-  bool CreateTapealertStatistics(JobControlRecord* jcr,
-                                 TapealertStatsDbRecord* tsr);
 
   /* sql_delete.c */
   bool DeletePoolRecord(JobControlRecord* jcr, PoolDbRecord* pool_dbr);
