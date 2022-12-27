@@ -50,7 +50,6 @@ class DeviceResource : public BareosResource {
   bool drive_tapealert_enabled; /**< Enable Tape Alert monitoring */
   bool drive_crypto_enabled;    /**< Enable hardware crypto */
   bool query_crypto_status;     /**< Query device for crypto status */
-  bool collectstats;            /**< Set if statistics should be collected */
   bool eof_on_error_is_eot;     /**< Interpret EOF during read error as EOT */
   drive_number_t drive;         /**< Autochanger logical drive number */
   drive_number_t drive_index;   /**< Autochanger physical drive index */

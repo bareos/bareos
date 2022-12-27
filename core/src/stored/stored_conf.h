@@ -106,12 +106,11 @@ class StorageResource
   alist<const char*>* plugin_names = nullptr;
   char* scripts_directory = nullptr;
   std::vector<std::string> backend_directories;
-  uint32_t MaxConcurrentJobs = 0;      /**< Maximum concurrent jobs to run */
-  uint32_t MaxConnections = 0;         /**< Maximum connections to allow */
-  uint32_t ndmploglevel = 0;           /**< Initial NDMP log level */
-  uint32_t jcr_watchdog_time = 0;      /**< Absolute time after which a Job gets
-                                      terminated regardless of its progress */
-  uint32_t stats_collect_interval = 0; /**<  in seconds */
+  uint32_t MaxConcurrentJobs = 0; /**< Maximum concurrent jobs to run */
+  uint32_t MaxConnections = 0;    /**< Maximum connections to allow */
+  uint32_t ndmploglevel = 0;      /**< Initial NDMP log level */
+  uint32_t jcr_watchdog_time = 0; /**< Absolute time after which a Job gets
+                                 terminated regardless of its progress */
   MessagesResource* messages = nullptr; /**< Daemon message handler */
   utime_t SDConnectTimeout = {0};       /**< Timeout in seconds */
   utime_t FDConnectTimeout = {0};       /**< Timeout in seconds */
@@ -126,8 +125,6 @@ class StorageResource
   bool allow_bw_bursting = false; /**< Allow bursting with bandwidth limiting */
   bool ndmp_enable = false;       /**< Enable NDMP protocol listener */
   bool ndmp_snooping = false;     /**< Enable NDMP protocol snooping */
-  bool collect_dev_stats = false; /**< Collect Device Statistics */
-  bool collect_job_stats = false; /**< Collect Job Statistics */
   bool device_reserve_by_mediatype = false; /**< Allow device reservation based
                                        on a matching mediatype */
   bool filedevice_concurrent_read = false;  /**< Allow filedevices to be read

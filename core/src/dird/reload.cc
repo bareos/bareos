@@ -140,29 +140,12 @@ bool CheckResources()
     }
   }
 
-  StorageResource *store, *nstore;
+  StorageResource* store;
   foreach_res (store, R_STORAGE) {
     if (store->IsTlsConfigured()) {
       if (!have_tls) {
         Jmsg(nullptr, M_FATAL, 0, _("TLS required but not configured.\n"));
         return false;
-      }
-    }
-
-    /* If we collect statistics on this SD make sure any other entry pointing to
-     * the same SD does not collect statistics otherwise we collect the same
-     * data multiple times. */
-    if (store->collectstats) {
-      nstore = store;
-      while ((nstore = (StorageResource*)my_config->GetNextRes(
-                  R_STORAGE, (BareosResource*)nstore))) {
-        if (IsSameStorageDaemon(store, nstore) && nstore->collectstats) {
-          nstore->collectstats = false;
-          Dmsg1(200,
-                _("Disabling collectstats for storage \"%s\""
-                  " as other storage already collects from this SD.\n"),
-                nstore->resource_name_);
-        }
       }
     }
   }

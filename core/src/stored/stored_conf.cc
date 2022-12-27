@@ -108,9 +108,6 @@ static ResourceItem store_items[] = {
   {"NdmpPort", CFG_TYPE_ADDRESSES_PORT, ITEM(res_store, NDMPaddrs), 0, CFG_ITEM_DEFAULT, "10000", NULL, NULL},
   {"AutoXFlateOnReplication", CFG_TYPE_BOOL, ITEM(res_store, autoxflateonreplication), 0, CFG_ITEM_DEFAULT, "false", "13.4.0-", NULL},
   {"AbsoluteJobTimeout", CFG_TYPE_PINT32, ITEM(res_store, jcr_watchdog_time), 0, 0, NULL, NULL, NULL},
-  {"CollectDeviceStatistics", CFG_TYPE_BOOL, ITEM(res_store, collect_dev_stats), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "false", NULL, NULL},
-  {"CollectJobStatistics", CFG_TYPE_BOOL, ITEM(res_store, collect_job_stats), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "false", NULL, NULL},
-  {"StatisticsCollectInterval", CFG_TYPE_PINT32, ITEM(res_store, stats_collect_interval), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "0", NULL, NULL},
   {"DeviceReserveByMediaType", CFG_TYPE_BOOL, ITEM(res_store, device_reserve_by_mediatype), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL},
   {"FileDeviceConcurrentRead", CFG_TYPE_BOOL, ITEM(res_store, filedevice_concurrent_read), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL},
   {"SecureEraseCommand", CFG_TYPE_STR, ITEM(res_store, secure_erase_cmdline), 0, 0, NULL, "15.2.1-",
@@ -209,7 +206,6 @@ static ResourceItem dev_items[] = {
   {"AutoDeflateAlgorithm", CFG_TYPE_CMPRSALGO, ITEM(res_dev, autodeflate_algorithm), 0, 0, NULL, "13.4.0-", NULL},
   {"AutoDeflateLevel", CFG_TYPE_PINT16, ITEM(res_dev, autodeflate_level), 0, CFG_ITEM_DEFAULT, "6", "13.4.0-",NULL},
   {"AutoInflate", CFG_TYPE_IODIRECTION, ITEM(res_dev, autoinflate), 0, 0, NULL, "13.4.0-", NULL},
-  {"CollectStatistics", CFG_TYPE_BOOL, ITEM(res_dev, collectstats), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL},
   {"EofOnErrorIsEot", CFG_TYPE_BOOL, ITEM(res_dev, eof_on_error_is_eot), 0, CFG_ITEM_DEFAULT, NULL, "18.2.4-",
       "If Yes, Bareos will treat any read error at an end-of-file mark as end-of-tape. You should only set "
       "this option if your tape-drive fails to detect end-of-tape while reading."},

@@ -46,7 +46,6 @@ DeviceResource::DeviceResource()
     , drive_tapealert_enabled(false)
     , drive_crypto_enabled(false)
     , query_crypto_status(false)
-    , collectstats(false)
     , eof_on_error_is_eot(false)
     , drive(0)
     , drive_index(0)
@@ -123,7 +122,6 @@ DeviceResource::DeviceResource(const DeviceResource& other)
   drive_tapealert_enabled = other.drive_tapealert_enabled;
   drive_crypto_enabled = other.drive_crypto_enabled;
   query_crypto_status = other.query_crypto_status;
-  collectstats = other.collectstats;
   eof_on_error_is_eot = other.eof_on_error_is_eot;
   drive = other.drive;
   drive_index = other.drive_index;
@@ -178,7 +176,6 @@ DeviceResource& DeviceResource::operator=(const DeviceResource& rhs)
   drive_tapealert_enabled = rhs.drive_tapealert_enabled;
   drive_crypto_enabled = rhs.drive_crypto_enabled;
   query_crypto_status = rhs.query_crypto_status;
-  collectstats = rhs.collectstats;
   eof_on_error_is_eot = rhs.eof_on_error_is_eot;
   drive = rhs.drive;
   drive_index = rhs.drive_index;

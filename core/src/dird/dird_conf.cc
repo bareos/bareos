@@ -285,7 +285,6 @@ static ResourceItem store_items[] = {
   { "MaximumConcurrentReadJobs", CFG_TYPE_PINT32, ITEM(res_store, MaxConcurrentReadJobs), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
   { "PairedStorage", CFG_TYPE_RES, ITEM(res_store, paired_storage), R_STORAGE, 0, NULL, NULL, NULL },
   { "MaximumBandwidthPerJob", CFG_TYPE_SPEED, ITEM(res_store, max_bandwidth), 0, 0, NULL, NULL, NULL },
-  { "CollectStatistics", CFG_TYPE_BOOL, ITEM(res_store, collectstats), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "false", NULL, NULL },
   { "NdmpChangerDevice", CFG_TYPE_STRNAME, ITEM(res_store, ndmp_changer_device), 0, 0, NULL, "16.2.4-",
      "Allows direct control of a Storage Daemon Auto Changer device by the Director. Only used in NDMP_NATIVE environments." },
    TLS_COMMON_CONFIG(res_store),

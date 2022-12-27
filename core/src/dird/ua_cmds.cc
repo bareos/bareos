@@ -422,7 +422,6 @@ static struct ua_cmdstruct commands[] = {
      NT_("files [client=<client>] [pool=<pool>] [yes] |\n"
          "jobs [client=<client>] [pool=<pool>] [yes] |\n"
          "volume [all] [=volume] [pool=<pool>] [yes] |\n"
-         "stats [yes] |\n"
          "directory [=directory] [client=<client>] [recursive] [yes] |\n"),
      true, true},
     {NT_("purge"), PurgeCmd, _("Purge records from catalog"),

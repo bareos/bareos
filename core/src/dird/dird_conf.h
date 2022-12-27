@@ -351,8 +351,6 @@ class StorageResource
   int32_t MaxConcurrentReadJobs = 0; /**< Maximum concurrent jobs reading */
   bool enabled = false;              /**< Set if device is enabled */
   bool autochanger = false;          /**< Set if autochanger */
-  bool collectstats
-      = false; /**< Set if statistics should be collected of this SD */
   bool AllowCompress = false; /**< Set if this Storage should allow jobs to
                          enable compression */
   int64_t StorageId = 0;      /**< Set from Storage DB record */
