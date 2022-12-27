@@ -298,36 +298,6 @@
     EnvValue : TEXT
   }
 
-  entity DeviceStats {
-    **DeviceId** : INTEGER
-    SampleTime : TIMESTAMP
-    ReadTime : BIGINT
-    WriteTime : BIGINT
-    ReadBytes : BIGINT
-    WriteBytes : BIGINT
-    SpoolSize : BIGINT
-    NumWaiting : SMALLINT
-    NumWriters : SMALLINT
-    **MediaId** : INTEGER
-    VolCatBytes : BIGINT
-    VolCatFiles : BIGINT
-    VolCatBlocks : BIGINT
-  }
-
-  entity JobStats {
-    **DeviceId** : INTEGER
-    SampleTime : TIMESTAMP
-    **JobId** : INTEGER
-    JobFiles : INTEGER
-    JobBytes : BIGINT
-  }
-
-  entity TapeAlerts {
-    **DeviceId** : INTEGER
-    SampleTime : TIMESTAMP
-    AlertFlags : BIGINT
-  }
-
   package unreferenced <<Rectangle>> {
   entity Status {
     **JobStatus** : CHAR(1)
@@ -355,8 +325,6 @@
   Client }o-- Quota
   Client }o-- NDMPLevelMap
 
-  Device }o-- TapeAlerts
-  Device }o-- DeviceStats
   Device }o-- Media
 
   Fileset }o-- Job
@@ -369,14 +337,12 @@
   Job  }o-- basefiles
   Job  }o-- PathVisibility
   Job  }o-- NDMPJobEnvironment
-  Job  }o-- JobStats
   Job  }o-- RestoreObject
 
   Location }o-- Media
 
   Media }o-- JobMedia
   Media }o-- LocationLog
-  Media }o-- DeviceStats
 
   MediaType }o-- Device
   MediaType }o-- Media

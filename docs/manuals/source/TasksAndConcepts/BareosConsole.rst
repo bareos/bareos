@@ -881,7 +881,7 @@ move
 prune
    :index:`\ <single: Console; Command; prune>`
 
-   The Prune command allows you to safely remove expired database records from Jobs, Volumes and Statistics. This command works only on the Catalog database and does not affect data written to Volumes. In all cases, the Prune command applies a retention period to the specified records. You can Prune expired File entries from Job records; you can Prune expired Job records from the database, and you can Prune
+   The Prune command allows you to safely remove expired database records from Jobs and Volumes. This command works only on the Catalog database and does not affect data written to Volumes. In all cases, the Prune command applies a retention period to the specified records. You can Prune expired File entries from Job records; you can Prune expired Job records from the database, and you can Prune
    both expired Job and File records from specified Volumes. Volumes can be pruned separately by specifying the desired volume to prune, or all volumes can be pruned at once with the ``all`` option.
 
    .. code-block:: bconsole
@@ -890,7 +890,6 @@ prune
       prune files [client=<client>] [pool=<pool>] [yes] |
             jobs [client=<client>] [pool=<pool>] [yes] |
             volume [=volume] [pool=<pool>] [all] [yes] |
-            stats [yes] |
             directory [=directory] [client=<client>] [recursive] [yes]
 
    For a Volume to be pruned, the volume status must be **Full**, **Used** or **Append** otherwise the pruning will not take place.
@@ -1502,8 +1501,6 @@ update
    For Pool :bcommand:`update pool`, Bareos will move the Volume record from its existing pool to the pool specified.
 
    For Volume from Pool, All Volumes from Pool and All Volumes from all Pools, the following values are updated from the Pool record: Recycle, RecyclePool, VolRetention, VolUseDuration, MaxVolJobs, MaxVolFiles, and MaxVolBytes.
-
-   For updating the statistics, use :bcommand:`updates stats`, see :ref:`section-JobStatistics`.
 
    The full form of the update command with all command line arguments is:
 

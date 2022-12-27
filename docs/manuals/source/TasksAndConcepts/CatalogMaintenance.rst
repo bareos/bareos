@@ -378,55 +378,6 @@ Job Retention = <time-period-specification>
 
    If set to yes, Bareos will automatically apply the File retention period and the Job retention period for the Client at the end of the Job. If you turn this off by setting it to no, your Catalog will grow each time you run a Job.
 
-.. _section-JobStatistics:
-
-Job Statistics
-^^^^^^^^^^^^^^
-
-.. index::
-   single: Statistics
-   single: Job; Statistics
-
-Bareos catalog contains lot of information about your IT infrastructure, how many files, their size, the number of video or music files etc. Using Bareos catalog during the day to get them permit to save resources on your servers.
-
-In this chapter, you will find tips and information to measure Bareos efficiency and report statistics.
-
-If you want to have statistics on your backups to provide some Service Level Agreement indicators, you could use a few SQL queries on the Job table to report how many:
-
--  jobs have run
-
--  jobs have been successful
-
--  files have been backed up
-
--  ...
-
-However, these statistics are accurate only if your job retention is greater than your statistics period. Ie, if jobs are purged from the catalog, you won’t be able to use them.
-
-Now, you can use the :bcommand:`update stats [days=num]` console command to fill the JobHistory table with new Job records. If you want to be sure to take in account only good jobs, ie if one of your important job has failed but you have fixed the problem and restarted it on time, you probably want to delete the first bad job record and keep only the successful one. For that simply let your staff do the job, and update JobHistory table after two or three days depending on your
-organization using the :strong:`[days=num]` option.
-
-These statistics records aren’t used for restoring, but mainly for capacity planning, billings, etc.
-
-The :config:option:`dir/director/StatisticsRetention`\  defines the length of time that Bareos will keep statistics job records in the Catalog database after the Job End time. This information is stored in the ``JobHistory`` table. When this time period expires, and if user runs :bcommand:`prune stats` command, Bareos will prune (remove) Job records that are older than the specified period.
-
-You can use the following Job resource in your nightly :config:option:`dir/job = BackupCatalog`\  job to maintain statistics.
-
-.. code-block:: bareosconfig
-   :caption: bareos-dir.d/job/BackupCatalog.conf
-
-   Job {
-     Name = BackupCatalog
-     ...
-     RunScript {
-       Console = "update stats days=3"
-       Console = "prune stats yes"
-       RunsWhen = After
-       RunsOnClient = no
-     }
-   }
-
-
 PostgreSQL Database
 -------------------
 
