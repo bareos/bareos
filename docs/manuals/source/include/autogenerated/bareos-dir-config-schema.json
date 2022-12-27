@@ -141,21 +141,6 @@
           "default_value": "0",
           "equals": true
         },
-        "StatisticsRetention": {
-          "datatype": "TIME",
-          "code": 0,
-          "default_value": "160704000",
-          "deprecated": true,
-          "equals": true
-        },
-        "StatisticsCollectInterval": {
-          "datatype": "PINT32",
-          "code": 0,
-          "default_value": "0",
-          "deprecated": true,
-          "equals": true,
-          "versions": "14.2.0-"
-        },
         "VerId": {
           "datatype": "STRING",
           "code": 0,
@@ -1713,13 +1698,6 @@
         "MaximumBandwidthPerJob": {
           "datatype": "SPEED",
           "code": 0,
-          "equals": true
-        },
-        "CollectStatistics": {
-          "datatype": "BOOLEAN",
-          "code": 0,
-          "default_value": "false",
-          "deprecated": true,
           "equals": true
         },
         "NdmpChangerDevice": {
