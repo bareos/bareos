@@ -106,7 +106,7 @@ Now that the installation is done, you will have to let bareos know that you are
 .. code-block:: shell-session
 
    -Dchanger-device=/dev/tape/by-id/scsi-SSTK_L700_XYZZY_A
-   -Dtape-devices=/dev/tape/by-id/scsi-350223344ab000100-nst;/dev/tape/by-id/scsi-350223344ab000200-nst;/dev/tape/by-id/scsi-350223344ab000300-nst;/dev/tape/by-id/scsi-350223344ab000400-nst
+   -Dtape-devices="/dev/tape/by-id/scsi-350223344ab000100-nst;/dev/tape/by-id/scsi-350223344ab000200-nst;/dev/tape/by-id/scsi-350223344ab000300-nst;/dev/tape/by-id/scsi-350223344ab000400-nst"
 
 The selected devices are the ones used in our tests.
 
