@@ -121,7 +121,7 @@ bool BareosDb::UpdateRunningJobRecord(JobControlRecord* jcr)
 }
 
 // Update Long term statistics with all jobs that were run before age seconds
-int BareosDb::UpdateStats(JobControlRecord* jcr, utime_t age)
+int BareosDb::UpdateJobHistory(JobControlRecord* jcr, utime_t age)
 {
   char ed1[30];
   int rows;

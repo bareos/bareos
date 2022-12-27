@@ -47,7 +47,7 @@ namespace directordaemon {
 static bool UpdateVolume(UaContext* ua);
 static bool UpdatePool(UaContext* ua);
 static bool UpdateJob(UaContext* ua);
-static bool UpdateStats(UaContext* ua);
+static bool UpdateJobHistory(UaContext* ua);
 static void UpdateSlots(UaContext* ua);
 
 /**
@@ -94,7 +94,7 @@ bool UpdateCmd(UaContext* ua, const char*)
       UpdateJob(ua);
       return true;
     case 6:
-      UpdateStats(ua);
+      UpdateJobHistory(ua);
       return true;
     default:
       break;
@@ -117,7 +117,7 @@ bool UpdateCmd(UaContext* ua, const char*)
       UpdateSlots(ua);
       break;
     case 3:
-      UpdateStats(ua);
+      UpdateJobHistory(ua);
       break;
     default:
       break;
@@ -838,14 +838,14 @@ static bool UpdateVolume(UaContext* ua)
 }
 
 // Update long term statistics
-static bool UpdateStats(UaContext* ua)
+static bool UpdateJobHistory(UaContext* ua)
 {
   int i = FindArgWithValue(ua, NT_("days"));
   utime_t since = 0;
 
   if (i >= 0) { since = ((int64_t)atoi(ua->argv[i]) * 24 * 60 * 60); }
 
-  int nb = ua->db->UpdateStats(ua->jcr, since);
+  int nb = ua->db->UpdateJobHistory(ua->jcr, since);
   ua->InfoMsg(_("Updating %i job(s).\n"), nb);
 
   return true;

@@ -924,7 +924,7 @@ class BareosDb : public BareosDbQueryEnum {
                              int type);
   bool MarkFileRecord(JobControlRecord* jcr, FileId_t FileId, JobId_t JobId);
   void MakeInchangerUnique(JobControlRecord* jcr, MediaDbRecord* mr);
-  int UpdateStats(JobControlRecord* jcr, utime_t age);
+  int UpdateJobHistory(JobControlRecord* jcr, utime_t age);
   void UpgradeCopies(const char* jobids);
 
   /* Low level methods */
