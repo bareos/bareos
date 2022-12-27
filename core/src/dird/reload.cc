@@ -237,8 +237,6 @@ bool DoReloadConfig()
   }
   is_reloading = true;
 
-  StopStatisticsThread();
-
   LockJobs();
   ResLocker _{my_config};
 
@@ -263,8 +261,6 @@ bool DoReloadConfig()
     Dmsg0(10, "Director's configuration file reread successfully.\n");
     Dmsg0(10, "Releasing previous configuration resource table.\n");
 
-    StartStatisticsThread();
-
   } else {  // parse config failed
     Jmsg(nullptr, M_ERROR, 0, _("Please correct the configuration in %s\n"),
          my_config->get_base_config_path().c_str());
@@ -275,8 +271,6 @@ bool DoReloadConfig()
     me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
     assert(me);
     my_config->own_resource_ = me;
-
-    StartStatisticsThread();
   }
 
   UnlockJobs();

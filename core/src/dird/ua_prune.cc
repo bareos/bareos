@@ -44,7 +44,6 @@ namespace directordaemon {
 
 /* Forward referenced functions */
 static bool PruneDirectory(UaContext* ua, ClientResource* client);
-static bool PruneStats(UaContext* ua, utime_t retention);
 
 // Called here to count entries to be deleted
 int DelCountHandler(void* ctx, int, char** row)
@@ -129,13 +128,11 @@ bool PruneCmd(UaContext* ua, const char*)
   PoolResource* pool;
   PoolDbRecord pr;
   MediaDbRecord mr;
-  utime_t retention;
   int kw;
   const char* permission_denied_message
       = _("Permission denied: need full %s permission.\n");
   static const char* keywords[]
-      = {NT_("Files"), NT_("Jobs"),      NT_("Volume"),
-         NT_("Stats"), NT_("Directory"), NULL};
+      = {NT_("Files"), NT_("Jobs"), NT_("Volume"), NT_("Directory"), NULL};
 
   /*
    * All prune commands might target jobs that reside on different storages.
@@ -156,7 +153,7 @@ bool PruneCmd(UaContext* ua, const char*)
 
   // First search args
   kw = FindArgKeyword(ua, keywords);
-  if (kw < 0 || kw > 4) {
+  if (kw < 0 || kw > 3) {
     // No args, so check known equivalents
     for (int i = 1; i < ua->argc; i++) {
       if (bstrncasecmp(ua->argk[i], NT_("Volume"), 6)) {
@@ -165,7 +162,7 @@ bool PruneCmd(UaContext* ua, const char*)
       }
     }
 
-    if (kw < 0 || kw > 4) {
+    if (kw < 0 || kw > 3) {
       // still nothing? ask user
       kw = DoKeywordPrompt(ua, _("Choose item to prune"), keywords);
     }
@@ -243,24 +240,7 @@ bool PruneCmd(UaContext* ua, const char*)
         return PruneVolume(ua, &mr);
       }
 
-    case 3: /* prune stats */
-      if (!me->stats_retention) { return false; }
-
-      retention = me->stats_retention;
-
-      if (ua->AclHasRestrictions(Client_ACL)) {
-        ua->ErrorMsg(permission_denied_message, "client");
-        return false;
-      }
-      if (ua->AclHasRestrictions(Pool_ACL)) {
-        ua->ErrorMsg(permission_denied_message, "pool");
-        return false;
-      }
-
-      if (!ConfirmRetention(ua, &retention, "Statistics")) { return false; }
-
-      return PruneStats(ua, retention);
-    case 4: /* prune directory */
+    case 3: /* prune directory */
 
       if (ua->AclHasRestrictions(Pool_ACL)) {
         ua->ErrorMsg(permission_denied_message, "pool");
@@ -408,41 +388,6 @@ bail_out:
   if (prune_topdir) { free(prune_topdir); }
 
   return retval;
-}
-
-// Prune Job stat records from the database.
-static bool PruneStats(UaContext* ua, utime_t retention)
-{
-  char ed1[50];
-  char dt[MAX_TIME_LENGTH];
-  PoolMem query(PM_MESSAGE);
-  utime_t now = (utime_t)time(NULL);
-
-  DbLock(ua->db);
-  Mmsg(query, "DELETE FROM JobHisto WHERE JobTDate < %s",
-       edit_int64(now - retention, ed1));
-  ua->db->SqlQuery(query.c_str());
-  DbUnlock(ua->db);
-
-  ua->InfoMsg(_("Pruned Jobs from JobHisto in catalog.\n"));
-
-  bstrutime(dt, sizeof(dt), now - retention);
-
-  DbLock(ua->db);
-  Mmsg(query, "DELETE FROM DeviceStats WHERE SampleTime < '%s'", dt);
-  ua->db->SqlQuery(query.c_str());
-  DbUnlock(ua->db);
-
-  ua->InfoMsg(_("Pruned Statistics from DeviceStats in catalog.\n"));
-
-  DbLock(ua->db);
-  Mmsg(query, "DELETE FROM JobStats WHERE SampleTime < '%s'", dt);
-  ua->db->SqlQuery(query.c_str());
-  DbUnlock(ua->db);
-
-  ua->InfoMsg(_("Pruned Statistics from JobStats in catalog.\n"));
-
-  return true;
 }
 
 /**

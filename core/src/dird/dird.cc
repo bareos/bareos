@@ -36,7 +36,6 @@
 #include "dird/job.h"
 #include "dird/scheduler.h"
 #include "dird/socket_server.h"
-#include "dird/stats.h"
 #include "lib/daemon.h"
 #include "lib/berrno.h"
 #include "lib/edit.h"
@@ -371,8 +370,6 @@ int main(int argc, char* argv[])
   DbgJcrAddHook(
       DbDebugPrint); /* used to debug BareosDb connexion after fatal signal */
 
-  StartStatisticsThread();
-
   Dmsg0(200, "Start UA server\n");
   if (!StartSocketServer(me->DIRaddrs)) { TerminateDird(0); }
 
@@ -407,7 +404,6 @@ static
 
   DestroyConfigureUsageString();
   StopSocketServer();
-  StopStatisticsThread();
   StopWatchdog();
   DbSqlPoolDestroy();
   DbFlushBackends();

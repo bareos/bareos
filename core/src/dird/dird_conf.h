@@ -125,7 +125,6 @@ class DirectorResource
   utime_t FDConnectTimeout = {0};     /* Timeout for connect in seconds */
   utime_t SDConnectTimeout = {0};     /* Timeout for connect in seconds */
   utime_t heartbeat_interval = {0};   /* Interval to send heartbeats */
-  utime_t stats_retention = {0};   /* Statistics retention period in seconds */
   bool optimize_for_size = false;  /* Optimize daemon for minimum memory size */
   bool optimize_for_speed = false; /* Optimize daemon for speed which may need
                               more memory */
@@ -140,9 +139,7 @@ class DirectorResource
   uint32_t subscriptions = 0;     /* Number of subscribtions available */
   uint32_t jcr_watchdog_time = 0; /* Absolute time after which a Job gets
                                  terminated  regardless of its progress */
-  uint32_t stats_collect_interval
-      = 0;               /* Statistics collect interval in seconds */
-  char* verid = nullptr; /* Custom Id to print in version command */
+  char* verid = nullptr;          /* Custom Id to print in version command */
   char* secure_erase_cmdline = nullptr; /* Cmdline to execute to perform secure
                                  erase of file */
   char* log_timestamp_format = nullptr; /* Timestamp format to use in generic

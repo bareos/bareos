@@ -28,7 +28,6 @@
 #include "dird_globals.h"
 #include "dird/storage.h"
 #include "lib/parse_conf.h"
-#include "dird/stats.h"
 #include "cats/cats.h"
 #include "cats/sql_pooling.h"
 #include "dird/check_catalog.h"

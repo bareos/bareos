@@ -189,10 +189,7 @@ if(NOT client-only)
     dir_fd_connection LINK_LIBRARIES testing_common dird_objects bareos
                                      bareossql bareosfind GTest::gtest_main
   )
-  bareos_add_test(
-    dir_statistics_thread LINK_LIBRARIES testing_common dird_objects bareos
-                                         bareossql bareosfind GTest::gtest_main
-  )
+
   bareos_add_test(
     globbing_test
     LINK_LIBRARIES bareos dird_objects bareosfind bareossql

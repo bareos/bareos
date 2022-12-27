@@ -42,7 +42,6 @@
 #include "dird/pthread_detach_if_not_detached.h"
 #include "dird/restore.h"
 #include "dird/sd_cmds.h"
-#include "dird/stats.h"
 #include "dird/storage.h"
 #include "dird/ua_cmds.h"
 #include "dird/ua_db.h"
@@ -448,9 +447,6 @@ static void* job_thread(void* arg)
       JS_Running);              /* this will be set only if no error */
   jcr->start_time = time(NULL); /* set the real start time */
   jcr->dir_impl->jr.StartTime = jcr->start_time;
-
-  // Let the statistics subsystem know a new Job was started.
-  stats_job_started();
 
   if (jcr->dir_impl->res.job->MaxStartDelay != 0
       && jcr->dir_impl->res.job->MaxStartDelay

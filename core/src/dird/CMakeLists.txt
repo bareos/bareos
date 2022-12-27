@@ -80,7 +80,6 @@ set(DIRD_OBJECTS_SRCS
     scheduler.cc
     scheduler_job_item_queue.cc
     scheduler_private.cc
-    stats.cc
     storage.cc
     ua.cc
     ua_acl.cc

@@ -139,8 +139,6 @@ static ResourceItem dir_items[] = {
   { "FdConnectTimeout", CFG_TYPE_TIME, ITEM(res_dir, FDConnectTimeout), 0, CFG_ITEM_DEFAULT, "180" /* 3 minutes */, NULL, NULL },
   { "SdConnectTimeout", CFG_TYPE_TIME, ITEM(res_dir, SDConnectTimeout), 0, CFG_ITEM_DEFAULT, "1800" /* 30 minutes */, NULL, NULL },
   { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_dir, heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
-  { "StatisticsRetention", CFG_TYPE_TIME, ITEM(res_dir, stats_retention), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "160704000" /* 5 years */, NULL, NULL },
-  { "StatisticsCollectInterval", CFG_TYPE_PINT32, ITEM(res_dir, stats_collect_interval), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "0", "14.2.0-", NULL },
   { "VerId", CFG_TYPE_STR, ITEM(res_dir, verid), 0, 0, NULL, NULL, NULL },
   { "OptimizeForSize", CFG_TYPE_BOOL, ITEM(res_dir, optimize_for_size), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
   { "OptimizeForSpeed", CFG_TYPE_BOOL, ITEM(res_dir, optimize_for_speed), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
