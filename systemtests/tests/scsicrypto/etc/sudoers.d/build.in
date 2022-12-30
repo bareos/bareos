@@ -1,0 +1,8 @@
+# bareos testing with mhvtl
+# bareos   env_keep += "MHVTL_HOME_PATH"
+build   ALL = (root) NOPASSWD:/usr/bin/systemctl start mhvtl.target
+build   ALL = (root) NOPASSWD:/usr/bin/systemctl stop mhvtl.target
+build   ALL = (root) NOPASSWD:/usr/bin/rm -rf /var/lib/mhvtl/*
+build   ALL = (root) NOPASSWD:/usr/bin/make_vtl_media --config-dir /etc/mhvtl
+build   ALL = (root) NOPASSWD:/usr/sbin/setcap cap_sys_rawio=ep *
+build   ALL = (root) NOPASSWD:/usr/sbin/setcap -v cap_sys_rawio=ep *
