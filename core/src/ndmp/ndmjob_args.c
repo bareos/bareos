@@ -825,6 +825,7 @@ void dump_settings(void)
 
 int copy_args_expanding_macros(int argc, char* argv[], char* av[], int max_ac)
 {
+  (void) max_ac; //unused
   int i, ac = 0, rc;
   char* arg;
   char* p;

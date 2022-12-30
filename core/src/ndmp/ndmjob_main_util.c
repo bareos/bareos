@@ -96,6 +96,7 @@ void error_byebye(char* fmt, ...)
 
 void ndmjob_log_deliver(struct ndmlog* log, char* tag, int lev, char* msg)
 {
+  (void) log; //unused
   char tagbuf[32];
 
   if (the_mode == 'D') {
@@ -125,6 +126,8 @@ void ndmjob_log_deliver(struct ndmlog* log, char* tag, int lev, char* msg)
 #ifndef NDMOS_OPTION_NO_CONTROL_AGENT
 void ndmjob_ixlog_deliver(struct ndmlog* log, char* tag, int lev, char* msg)
 {
+  (void) log; //unused
+  (void) lev; //unused
   fprintf(index_fp, "%s %s\n", tag, msg);
   fflush(index_fp); /* this doesn't change the run time */
 }

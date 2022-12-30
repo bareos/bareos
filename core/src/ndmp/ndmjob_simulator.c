@@ -957,7 +957,7 @@ static void robot_state_load(struct ndm_session* sess, struct robot_state* rs)
     robot_state_init(rs);
     return;
   }
-  if (read(fd, (void*)rs, sizeof(*rs)) < sizeof(*rs)) {
+  if (read(fd, (void*)rs, (sizeof(*rs)) < sizeof(*rs))) {
     robot_state_init(rs);
     close(fd);
     return;
@@ -977,7 +977,7 @@ static int robot_state_save(struct ndm_session* sess, struct robot_state* rs)
   snprintf(filename, sizeof filename, "%s/state", sess->robot_acb->sim_dir);
   fd = open(filename, O_WRONLY | O_TRUNC | O_CREAT, 0666);
   if (fd < 0) return -1;
-  if (write(fd, (void*)rs, sizeof(*rs)) < sizeof(*rs)) {
+  if (write(fd, (void*)rs, (sizeof(*rs)) < sizeof(*rs))) {
     close(fd);
     return -1;
   }
@@ -1464,11 +1464,13 @@ static ndmp9_error ndmjob_scsi_open(struct ndm_session* sess, char* name)
 
 static ndmp9_error ndmjob_scsi_close(struct ndm_session* sess)
 {
+  (void) sess; //unused
   return NDMP9_NO_ERR;
 }
 
 static ndmp9_error ndmjob_scsi_reset(struct ndm_session* sess)
 {
+  (void) sess; //unused
   return NDMP9_NO_ERR;
 }
 
@@ -1493,10 +1495,11 @@ static int ndmjob_validate_password(struct ndm_session* sess,
                                     char* name,
                                     char* pass)
 {
-  if (strcmp(name, "ndmp") != 0) return 0;
-
-  if (strcmp(pass, "ndmp") != 0) return 0;
-
+  (void) sess; //unused
+  if (strcmp(name, "ndmp") != 0)
+    return 0;
+  if (strcmp(pass, "ndmp") != 0)
+    return 0;
   return 1; /* OK */
 }
 
