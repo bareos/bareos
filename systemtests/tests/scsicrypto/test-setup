@@ -1,0 +1,75 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2022-2024 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
+
+# copy and paste the etc/sudoers.d/build file to /etc/
+# to make the user build able to execute the following.
+# Reset any existing tapes
+PATH=${PATH}:/usr/sbin
+#. /etc/mhvtl/mhvtl.conf
+#export MHVTL_HOME_PATH
+#sudo /usr/bin/systemctl stop mhvtl.target
+#sleep 5
+#if [ $(pgrep vtl | wc -l) -ne 0 ];then
+#  printf "Still vtl process running, aborting \n"
+#  exit 1
+#fi
+#sudo /usr/bin/rm -rf /var/lib/mhvtl/*
+#sudo /usr/bin/make_vtl_media --config-dir /etc/mhvtl
+#sudo /usr/bin/systemctl start mhvtl.target
+#sleep 5
+
+# set raw cap for binaries
+for b in bareos_sd bcopy bextract bls bscan bscrypto btape; do
+  sb=$(readlink sbin/${b}-scsicrypto)
+  export sb
+  sudo setcap cap_sys_rawio=ep "${sb}"
+done
+
+if ! "${rscripts}/invalidate_tapes.sh" ${1:-}
+then
+  echo "Could not invalidate tapes"
+  exit 1
+fi
+
+if ! "${rscripts}/create_autochanger_configs.sh" ${1:-}
+then
+  echo "Could not create autochanger configs"
+  exit 1
+fi
+
+# Fill ${BackupDirectory} with data.
+setup_data
+
+if [ -f "etc/bareos/.ltocrypt-keyfile" ]; then
+  rm -f "etc/bareos/.ltocrypt-keyfile"
+fi
