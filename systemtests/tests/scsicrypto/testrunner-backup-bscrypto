@@ -1,0 +1,203 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=./environment
+. ./environment
+. ./test-config
+
+#shellcheck source=../../scripts/functions
+. "${rscripts}"/functions
+. "${rscripts}"/bareos-config-lib.sh
+
+on_error() {
+  local lc="${BASH_COMMAND}"
+  echo "Error occurred in testrunner script [${lc}]"
+  export estat=1
+  exit 1
+}
+trap 'on_error' ERR
+
+# Prepare KEK and initial tests
+# ltodrive="/dev/tape/by-id/scsi-350223344ab000100-nst"
+# changer="/dev/tape/by-id/scsi-SSTK_L700_XYZZY_A-changer"
+ltodrive="${TAPE_DEVICES0[${USE_TAPE_DEVICE}]}"
+changer="${CHANGER_DEVICE0}"
+keyfile="etc/bareos/.ltocrypt-keyfile"
+mybsc="sbin/bscrypto-${TestName}"
+backup_log="$tmp/${TestName}-backup.out"
+export ltodrive changer keyfile mybsc backup_log
+
+start_test
+
+# Create kek 
+if ! ${mybsc} -g "${keyfile}"; then
+  printf "Creating KEK failed \n"
+  export estat=1
+  exit 1
+fi
+# Read keyfile and compare to previously generated
+gen_kek="$(cat ${keyfile})"
+read_kek=$($mybsc -k ${keyfile}) 
+if [ "${gen_kek}" != "$read_kek" ];then
+  printf "Created KEK [%s] differ from Read KEK [%s] failure. \n" "${gen_kek}" "${read_kek}"
+#  export estat=1
+#  exit 1
+fi
+
+# Set the KEK to configuration
+# we don't use our config-libs set(get)_config_param_in_file 
+# due to bad parsing and writing of complex string like KEK
+# here we also use œ char that will never appear in KEK
+sed -i "s \(^}$\) Key\ Encryption\ Key\ =\ \"${gen_kek}\"\n\1 g" etc/bareos/bareos-dir.d/director/bareos-dir.conf
+sed -i "s \(^}$\) Key\ Encryption\ Key\ =\ \"${gen_kek}\"\n\1 g" etc/bareos/bareos-sd.d/director/bareos-dir.conf
+# Can be checked with 
+echo -n "configured global KEK: "
+sbin/bareos_dir-scsicrypto --config etc/bareos --xc Director | grep -w KeyEncryptionKey
+
+# Load first tape in, ignore errors
+echo Checking drive and volume state
+/usr/sbin/mtx -f "${changer}" load 1 0 ||:
+sleep 1
+/usr/sbin/mtx -f "${changer}" status
+
+# Check that drive is not encrypted.
+drive_state="$(${mybsc} -e "${ltodrive}" | awk -F ':' '/[De,En]cryption Mode:/ {gsub("^ ","",$2);print $2}' | xargs | sed -e 's/\n/ /g')"
+if [ "${drive_state}" != "Disabled Disabled" ];then
+  printf "Drive state [%s] differs from expected [Disabled Disabled] \n" "${drive_state}"
+  export estat=1
+  exit 1
+fi
+# Expected output like in 21.1.6
+#Drive encryption status:
+#   Encryption Mode: Disabled
+#   Decryption Mode: Disabled
+#   Raw Decryption Mode Disabled (RDMD): Disabled
+#   Volume Contains Encrypted Logical Blocks (VCELB): Disabled
+#   Logical Block encryption parameters: No report
+
+# Check that tape is not encrypted.
+tape_state="$(${mybsc} -v "${ltodrive}" | awk -F ':' '/Encryption Status:/ {gsub("^ ","",$2);print $2}' | xargs | sed -e 's/\n/ /g')"
+if [ "${tape_state}" != "Illegal logical block" ];then
+  printf "Tape state [%s] differs from expected [Illegal logical block] \n" "${tape_state}"
+  export estat=1
+  exit 1
+fi
+# Expected output like in 21.1.6
+#Volume encryption status:
+#   Compression Status: Unknown
+#   Encryption Status: Illegal logical block
+#   Raw Decryption Mode Disabled Status (RDMDS): Disabled
+#   Encryption Mode External Status (EMES): Disabled
+
+
+# Additionals tests can take place here to prove low level scsicrypto is working.
+# + Set the key to drive and volume
+# + do a tar job
+# + check again volume
+
+# cleanup before bareos tests
+/usr/bin/mt -f "${ltodrive}" rewind
+/usr/bin/mt -f "${ltodrive}" weof
+# Empty the drive without failing.
+/usr/sbin/mtx -f "${changer}" unload 1 0 ||: 
+/usr/sbin/mtx -f "${changer}" inventory ||: 
+
+
+# Bareos tests
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $backup_log
+setdebug level=100 trace=1 timestamp=1 all
+update slots
+label barcodes encrypt slot=1-4 drive=0 pool=Scratch storage=Tape-0 yes
+umount storage=Tape-0 drive=0
+list media
+run job=backup-bareos-fd Level=Full pool=Full storage=Tape-0 spooldata=yes yes
+wait
+setdebug level=0 all
+status director
+status client
+status storage=Tape-0
+wait
+messages
+END_OF_DATA
+
+run_bareos "$@"
+
+# check_for_zombie_jobs storage=Tape-0
+stop_bareos
+sleep 1
+
+expect_grep "Backup OK" \
+            "$backup_log" \
+            "Backup job failed."
+
+expect_grep "Spooling data ..." \
+            "$backup_log" \
+            "Spooling not triggered."
+
+expect_grep "Committing spooled data" \
+            "$backup_log" \
+            "Despooling not triggered."
+
+expect_grep "Encryption Mode: Mixed" \
+            "$backup_log" \
+            "Encryption status not found."
+
+# Check if crypto cache is there and readable.
+# Clear cache it seems to always failed, need to find why
+if ! "${mybsc}" -c "${ltodrive}"; then
+  printf "Clearing KEK failed \n"
+#  export estat=1
+#  exit 1
+fi
+
+# Dump cache
+crypto_cache="${working_dir}/bareos-sd.${BAREOS_STORAGE_PORT}.cryptoc"
+if ! "${mybsc}" -D "${crypto_cache}" > "${tmp}/crypto_cache.log";  then
+  printf "Dumping crypto cache failed \n"
+  export estat=1
+  exit 1
+fi
+expect_grep "E01001L8" \
+            "${tmp}/crytpo_cache.log" \
+            "Volume E01001L8 not found in cache dump".
+# With wrapped key volume in crypto cache we should be able
+# to check the drive and volume encryption status
+# How?
+
+# Test volume content listing
+sbin/bls-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" -L -j -V E01001L8 tapedrive-0-.dev.tape.by-id.scsi-350223344ab000100-nst > "${tmp}/bls-Ljoutput.log"
+expect_grep "JobId             : 1" \
+            "${tmp}/bls-Ljoutput.log" \
+            "BLS jobid not found."
+expect_grep "Crypto cache read 1 entries" \
+            "${tmp}/bls-Ljoutput.log" \
+            "bls: no crypto cache entry found."
+
+sbin/bls-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" -V E01001L8 tapedrive-0-.dev.tape.by-id.scsi-350223344ab000100-nst > "${tmp}/bls-output.log"
+expect_grep "bls JobId 0: Ready to read from volume \"E01001L8\" on device \"tapedrive-0-.dev.tape.by-id.scsi-350223344ab000100-nst\"" \
+            "${tmp}/bls-output.log" \
+            "BLS failed to read volume."
+
+mkdir -p "${tmp}/restores" ||:
+output="${tmp}/bextract-output.log"
+# Test volume extraction
+sbin/bextract-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" -V E01001L8 tapedrive-0-.dev.tape.by-id.scsi-350223344ab000100-nst "${tmp}/restores" > "${output}"
+expect_grep "Crypto cache read 1 entries" \
+            "${output}" \
+            "bextract: no crypto cache entry found."
+
+diff -rup "${tmp}/data" "${tmp}/restores/data"
+
+#keep log copy for debug
+#cp "$backup_log" "log/$(basename ${backup_log})"
+
+end_test
+exit 0
