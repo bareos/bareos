@@ -5,6 +5,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Changed
+- cats: fix issue where `startfile` field gets wrongly updated [PR #1347]
+
 ## [22.0.0] - 2022-12-21
 
 ### Breaking Changes
@@ -424,4 +427,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1333]: https://github.com/bareos/bareos/pull/1333
 [PR #1334]: https://github.com/bareos/bareos/pull/1334
 [PR #1337]: https://github.com/bareos/bareos/pull/1337
+[PR #1347]: https://github.com/bareos/bareos/pull/1347
 [unreleased]: https://github.com/bareos/bareos/tree/master
