@@ -109,12 +109,10 @@ bool BareosDb::CreateJobmediaRecord(JobControlRecord* jcr, JobMediaDbRecord* jm)
        "UPDATE JobMedia SET "
        "FirstIndex = (CASE WHEN firstindex=0 THEN %lu ELSE firstindex END), "
        "StartBlock = (CASE WHEN startblock=0 THEN %lu ELSE startblock END), "
-       "StartFile  = (CASE WHEN startfile=0 THEN %lu ELSE startfile END), "
        "LastIndex=%lu, EndFile=%lu, EndBlock=%lu, JobBytes=%llu "
        "WHERE JobId=%lu AND MediaId=%lu",
        jm->FirstIndex,
        jm->StartBlock,
-       jm->StartFile,
        jm->LastIndex,
        jm->EndFile,
        jm->EndBlock,
@@ -128,8 +126,8 @@ bool BareosDb::CreateJobmediaRecord(JobControlRecord* jcr, JobMediaDbRecord* jm)
   Dmsg0(300, cmd);
 
   if (UPDATE_DB(jcr, cmd) <= 0) {
-    Mmsg2(errmsg,
-          _("Update JobMedia record %s failed: ERR=%s\n Trying to insert: \n"),
+    Dmsg2(200,
+          "Update JobMedia record %s failed: ERR=%s. Trying now to insert: \n",
           cmd, sql_strerror());
 
     Mmsg(cmd, "SELECT count(*) from JobMedia WHERE JobId=%lu", jm->JobId);
