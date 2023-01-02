@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -494,10 +494,8 @@ bool BareosDb::CreateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
            dt, mr->MediaId);
       retval = UPDATE_DB(jcr, cmd) > 0;
     }
-    /*
-     * Make sure that if InChanger is non-zero any other identical slot
-     * has InChanger zero.
-     */
+    /* Make sure that if InChanger is non-zero any other identical slot
+     * has InChanger zero. */
     MakeInchangerUnique(jcr, mr);
   }
 
