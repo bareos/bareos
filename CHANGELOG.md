@@ -8,5 +8,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Removed
 - remove no longer used pkglists [PR #1335]
 
+### Changed
+- cats: fix issue where `startfile` field gets wrongly updated [PR #1346]
+
 [PR #1335]: https://github.com/bareos/bareos/pull/1335
+[PR #1346]: https://github.com/bareos/bareos/pull/1346
 [unreleased]: https://github.com/bareos/bareos/tree/master
