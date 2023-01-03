@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -329,6 +329,11 @@ int main(int margc, char* margv[])
     Pmsg0(000, _("btape only works with tape storage.\n"));
     usage();
     exit(1);
+  }
+
+  // Let SD plugins setup the record translation
+  if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation, dcr) != bRC_OK) {
+    Jmsg(jcr, M_FATAL, 0, _("bSdEventSetupRecordTranslation call failed!\n"));
   }
 
   if (!open_the_device()) { exit(1); }
@@ -1073,10 +1078,8 @@ static bool write_two_files()
   bool rc = false; /* bad return code */
   Device* dev = dcr->dev;
 
-  /*
-   * Set big max_file_size so that write_record_to_block
-   * doesn't insert any additional EOF marks
-   */
+  /* Set big max_file_size so that write_record_to_block
+   * doesn't insert any additional EOF marks */
   if (dev->max_block_size) {
     dev->max_file_size = 2LL * num_recs * (uint64_t)dev->max_block_size;
   } else {
@@ -1499,10 +1502,8 @@ try_again:
   }
 
   if (!open_the_device()) { goto bail_out; }
-  /*
-   * Start with sleep_time 0 then increment by 30 seconds if we get
-   * a failure.
-   */
+  /* Start with sleep_time 0 then increment by 30 seconds if we get
+   * a failure. */
   Bmicrosleep(sleep_time, 0);
   if (!dev->rewind(dcr) || !dev->weof(1)) {
     Pmsg1(0, _("Bad status from rewind. ERR=%s\n"), dev->bstrerror());
@@ -2140,11 +2141,9 @@ static void fillcmd()
   dcr->DirAskSysopToCreateAppendableVolume();
   dev->SetAppend(); /* force volume to be relabeled */
 
-  /*
-   * Acquire output device for writing.  Note, after acquiring a
+  /* Acquire output device for writing.  Note, after acquiring a
    *   device, we MUST release it, which is done at the end of this
-   *   subroutine.
-   */
+   *   subroutine. */
   Dmsg0(100, "just before acquire_device\n");
   if (!AcquireDeviceForAppend(dcr)) {
     jcr->setJobStatus(JS_ErrorTerminated);
@@ -2449,11 +2448,9 @@ static bool do_unfill()
     Pmsg1(-1, "%s", dev->errmsg);
     goto bail_out;
   }
-  /*
-   * We now have the first tape mounted.
+  /* We now have the first tape mounted.
    * Note, re-reading last block may have caused us to
-   *   loose track of where we are (block number unknown).
-   */
+   *   loose track of where we are (block number unknown). */
   Pmsg0(-1, _("Rewinding.\n"));
   if (!dev->rewind(dcr)) { /* get to a known place on tape */
     goto bail_out;
@@ -2632,10 +2629,8 @@ static int FlushBlock(DeviceBlock* block, int dump)
     Pmsg3(000, _("Last block at: %u:%u this_dev_block_num=%d\n"), last_file,
           last_block_num, this_block_num);
     if (vol_num == 1) {
-      /*
-       * This is 1st tape, so save first tape info separate
-       *  from second tape info
-       */
+      /* This is 1st tape, so save first tape info separate
+       *  from second tape info */
       last_block_num1 = last_block_num;
       last_file1 = last_file;
       last_block1 = dup_block(last_block);
@@ -2684,12 +2679,10 @@ static int FlushBlock(DeviceBlock* block, int dump)
   /* Save contents after write so that the header is serialized */
   memcpy(this_block->buf, block->buf, this_block->buf_len);
 
-  /*
-   * Note, we always read/write to block, but we toggle
+  /* Note, we always read/write to block, but we toggle
    *  copying it to one or another of two allocated blocks.
    * Switch blocks so that the block just successfully written is
-   *  always in last_block.
-   */
+   *  always in last_block. */
   tblock = last_block;
   last_block = this_block;
   this_block = tblock;
