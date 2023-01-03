@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -233,6 +233,7 @@ int main(int argc, char* argv[])
 
   LoadSdPlugins(me->plugin_directory, me->plugin_names);
 
+
   ReadCryptoCache(me->working_directory, "bareos-sd",
                   GetFirstPortHostOrder(me->SDaddrs));
 
@@ -265,9 +266,7 @@ static inline void DropDelayedDataStreams()
 
   if (!delayed_streams || delayed_streams->empty()) { return; }
 
-  foreach_alist (dds, delayed_streams) {
-    free(dds->content);
-  }
+  foreach_alist (dds, delayed_streams) { free(dds->content); }
 
   delayed_streams->destroy();
 }
@@ -306,8 +305,7 @@ static inline void PopDelayedDataStreams()
   // See if there is anything todo.
   if (!delayed_streams || delayed_streams->empty()) { return; }
 
-  /*
-   * Only process known delayed data streams here.
+  /* Only process known delayed data streams here.
    * If you start using more delayed data streams
    * be sure to add them in this loop and add the
    * proper calls here.
@@ -315,8 +313,7 @@ static inline void PopDelayedDataStreams()
    * Currently we support delayed data stream
    * processing for the following type of streams:
    * - *_ACL_*
-   * - *_XATTR_*
-   */
+   * - *_XATTR_* */
   foreach_alist (dds, delayed_streams) {
     switch (dds->stream) {
       case STREAM_UNIX_ACCESS_ACL:
@@ -400,6 +397,11 @@ static void DoExtract(char* devname,
   if (!dev) { exit(1); }
   dcr = jcr->sd_impl->read_dcr;
 
+  // Let SD plugins setup the record translation
+  if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation, dcr) != bRC_OK) {
+    Jmsg(jcr, M_FATAL, 0, _("bSdEventSetupRecordTranslation call failed!\n"));
+  }
+
   // Make sure where directory exists and that it is a directory
   if (stat(where, &statp) < 0) {
     BErrNo be;
@@ -428,10 +430,8 @@ static void DoExtract(char* devname,
 
   ReadRecords(dcr, RecordCb, MountNextReadVolume);
 
-  /*
-   * If output file is still open, it was the last one in the
-   * archive since we just hit an end of file, so close the file.
-   */
+  /* If output file is still open, it was the last one in the
+   * archive since we just hit an end of file, so close the file. */
   if (IsBopen(&bfd)) { ClosePreviousStream(); }
   FreeAttr(attr);
 
