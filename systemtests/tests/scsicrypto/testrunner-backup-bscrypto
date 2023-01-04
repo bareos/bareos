@@ -48,6 +48,10 @@ if [ "${gen_kek}" != "$read_kek" ];then
   export estat=1
   exit 1
 fi
+# on master cli11 the read key is truncated a lot
+# on previous version it only differe on the last characters
+# Created DU*F6KBpwyI*?)ndZr7Za%R80DJ:Zbk2 differ from Read KEK DU*F6KBpwyI*?)ndZr7Za%R80DJ:Zbk
+
 
 # Set the KEK to configuration
 # we don't use our config-libs set(get)_config_param_in_file 
