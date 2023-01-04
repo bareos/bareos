@@ -45,8 +45,8 @@ gen_kek="$(cat ${keyfile})"
 read_kek=$($mybsc -k ${keyfile}) 
 if [ "${gen_kek}" != "$read_kek" ];then
   printf "Created KEK [%s] differ from Read KEK [%s] failure. \n" "${gen_kek}" "${read_kek}"
-#  export estat=1
-#  exit 1
+  export estat=1
+  exit 1
 fi
 
 # Set the KEK to configuration
