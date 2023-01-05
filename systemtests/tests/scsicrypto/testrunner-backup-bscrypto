@@ -48,10 +48,6 @@ if [ "${gen_kek}" != "$read_kek" ];then
   export estat=1
   exit 1
 fi
-# on master cli11 the read key is truncated a lot
-# on previous version it only differe on the last characters
-# Created DU*F6KBpwyI*?)ndZr7Za%R80DJ:Zbk2 differ from Read KEK DU*F6KBpwyI*?)ndZr7Za%R80DJ:Zbk
-
 
 # Set the KEK to configuration
 # we don't use our config-libs set(get)_config_param_in_file 
@@ -163,42 +159,46 @@ if ! "${mybsc}" -c "${ltodrive}"; then
 fi
 
 # Dump cache
+crypto_cache_log=$tmp/crypto_cache.log
 crypto_cache="${working_dir}/bareos-sd.${BAREOS_STORAGE_PORT}.cryptoc"
-if ! "${mybsc}" -D "${crypto_cache}" > "${tmp}/crypto_cache.log";  then
+if ! "${mybsc}" -D "${crypto_cache}" > "${crypto_cache_log}";  then
   printf "Dumping crypto cache failed \n"
   export estat=1
   exit 1
 fi
 expect_grep "E01001L8" \
-            "${tmp}/crytpo_cache.log" \
+            "${crypto_cache_log}" \
             "Volume E01001L8 not found in cache dump".
 # With wrapped key volume in crypto cache we should be able
 # to check the drive and volume encryption status
 # How?
 
 # Test volume content listing
-sbin/bls-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" -L -j -V E01001L8 tapedrive-0-.dev.tape.by-id.scsi-350223344ab000100-nst > "${tmp}/bls-Ljoutput.log"
+bls_lj_log=$tmp/bls-Ljoutput.log
+sbin/bls-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" -L -j -V E01001L8 tapedrive-0-.dev.tape.by-id.scsi-350223344ab000100-nst > "${bls_lj_log}"
 expect_grep "JobId             : 1" \
-            "${tmp}/bls-Ljoutput.log" \
+            "$bls_lj_log" \
             "BLS jobid not found."
 expect_grep "Crypto cache read 1 entries" \
-            "${tmp}/bls-Ljoutput.log" \
+            "$bls_lj_log" \
             "bls: no crypto cache entry found."
 
-sbin/bls-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" -V E01001L8 tapedrive-0-.dev.tape.by-id.scsi-350223344ab000100-nst > "${tmp}/bls-output.log"
+bls_log=$tmp/bls-output.log
+sbin/bls-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" -V E01001L8 tapedrive-0-.dev.tape.by-id.scsi-350223344ab000100-nst > "${bls_log}"
 expect_grep "bls JobId 0: Ready to read from volume \"E01001L8\" on device \"tapedrive-0-.dev.tape.by-id.scsi-350223344ab000100-nst\"" \
-            "${tmp}/bls-output.log" \
+            "${bls_log}" \
             "BLS failed to read volume."
 
-mkdir -p "${tmp}/restores" ||:
-output="${tmp}/bextract-output.log"
+restore_directory=${tmp}/bareos-restores
+mkdir -p "${restore_directory}" ||:
+bextract_log="${tmp}/bextract-output.log"
 # Test volume extraction
-sbin/bextract-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" -V E01001L8 tapedrive-0-.dev.tape.by-id.scsi-350223344ab000100-nst "${tmp}/restores" > "${output}"
+sbin/bextract-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" -V E01001L8 tapedrive-0-.dev.tape.by-id.scsi-350223344ab000100-nst "${restore_directory}" > "${bextract_log}"
 expect_grep "Crypto cache read 1 entries" \
-            "${output}" \
+            "${bextract_log}" \
             "bextract: no crypto cache entry found."
 
-diff -rup "${tmp}/data" "${tmp}/restores/data"
+check_restore_diff "${BackupDirectory}"
 
 #keep log copy for debug
 #cp "$backup_log" "log/$(basename ${backup_log})"
