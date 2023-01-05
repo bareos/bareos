@@ -215,8 +215,7 @@ int main(int argc, char* const* argv)
           },
           "Wrap/Unwrap the key using RFC3394 aes-(un)wrap using the key in "
           "keyfile as a Key Encryption.")
-      ->type_name("<keyfile>")
-      ->excludes(option_show_keyfile);
+      ->type_name("<keyfile>");
 
   std::string device_name{};
   bscrypto_app.add_option("device name", device_name, "Name of device.");
