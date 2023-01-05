@@ -93,7 +93,8 @@ Device {
     ArchiveDevice = ${tape_device}
 
     MediaType = LTO
-
+    Drive Crypto Enabled = Yes
+    Query Crypto Status = Yes
     AutoChanger = yes
     AutomaticMount = yes
     MaximumFileSize = 10GB
