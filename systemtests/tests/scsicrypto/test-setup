@@ -46,6 +46,9 @@ fi
 sudo /usr/bin/rm -rf /var/lib/mhvtl/*
 sudo /usr/bin/make_vtl_media --config-dir /etc/mhvtl
 sudo /usr/bin/systemctl start mhvtl.target
+
+sleep 5
+
 # set raw cap for binaries
 for b in bareos_sd bcopy bextract bls bscan bscrypto btape; do
   sb=$(readlink sbin/${b}-scsicrypto)
