@@ -41,7 +41,9 @@
  * Read the key bits from the keyfile.
  * - == stdin
  */
-static void ReadKeyBits(const std::string& keyfile, char* data)
+static void ReadKeyBits(const std::string& keyfile,
+                        char* data,
+                        size_t sizeof_data)
 {
   int kfd = 0;
   if (bstrcmp(keyfile.c_str(), "-")) {
@@ -55,8 +57,9 @@ static void ReadKeyBits(const std::string& keyfile, char* data)
       exit(1);
     }
   }
-  if (read(kfd, data, sizeof(data)) == 0) {
-    fprintf(stderr, T_("Cannot read from keyfile %s\n"), keyfile.c_str()));
+  Dmsg1(5, "data size = %d\n", sizeof_data);
+  if (read(kfd, data, sizeof_data) == 0) {
+    fprintf(stderr, T_("Cannot read from keyfile %s\n", keyfile.c_str()));
     exit(1);
   }
   if (kfd > 0) { close(kfd); }
@@ -319,7 +322,7 @@ int main(int argc, char* const* argv)
   memset(keydata, 0, sizeof(keydata));
   memset(wrapdata, 0, sizeof(wrapdata));
 
-  if (wrapped_keys) { ReadKeyBits(wrap_keyfile, wrapdata); }
+  if (wrapped_keys) { ReadKeyBits(wrap_keyfile, wrapdata, sizeof(wrapdata)); }
 
   /* Generate a new passphrase allow it to be wrapped using the given wrapkey
    * and base64 if specified or when wrapped. */
@@ -392,7 +395,7 @@ int main(int argc, char* const* argv)
   }
 
   if (show_keydata) {
-    ReadKeyBits(keyfile, keydata);
+    ReadKeyBits(keyfile, keydata, sizeof(keydata));
     char* passphrase;
 
     // See if we need to unwrap the passphrase.
@@ -483,7 +486,7 @@ int main(int argc, char* const* argv)
 
   // Load a new encryption key onto the given drive.
   if (set_encryption) {
-    ReadKeyBits(keyfile, keydata);
+    ReadKeyBits(keyfile, keydata, sizeof(keydata));
 
     if (SetScsiEncryptionKey(-1, device_name.c_str(), keydata)) {
       exit(0);
