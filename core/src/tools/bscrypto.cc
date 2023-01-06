@@ -454,7 +454,7 @@ int main(int argc, char* const* argv)
         length = DEFAULT_PASSPHRASE_LENGTH;
         passphrase = (char*)malloc(length);
         memset(passphrase, 0, length);
-        bstrncpy(passphrase, keydata, length);
+        bstrncpy(passphrase, keydata, length + 1);
       }
     }
 
