@@ -146,16 +146,20 @@ expect_grep "Committing spooled data" \
             "$backup_log" \
             "Despooling not triggered."
 
-expect_grep "Encryption Mode: Mixed" \
+expect_grep "Encryption Mode: Encrypt" \
             "$backup_log" \
-            "Encryption status not found."
+            "Encryption mode wrong or not found."
+
+expect_grep "Decryption Mode: Mixed" \
+            "$backup_log" \
+            "Decryption mode wrong or not found."
 
 # Check if crypto cache is there and readable.
 # Clear cache it seems to always failed, need to find why
 if ! "${mybsc}" -c "${ltodrive}"; then
   printf "Clearing KEK failed \n"
-#  export estat=1
-#  exit 1
+  export estat=1
+  exit 1
 fi
 
 # Dump cache
@@ -179,7 +183,7 @@ sbin/bls-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" -L -j -V E01001L8 tapedriv
 expect_grep "JobId             : 1" \
             "$bls_lj_log" \
             "BLS jobid not found."
-expect_grep "Crypto cache read 1 entries" \
+expect_grep "Crypto cache read 4 entries" \
             "$bls_lj_log" \
             "bls: no crypto cache entry found."
 
@@ -194,7 +198,7 @@ mkdir -p "${restore_directory}" ||:
 bextract_log="${tmp}/bextract-output.log"
 # Test volume extraction
 sbin/bextract-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" -V E01001L8 tapedrive-0-.dev.tape.by-id.scsi-350223344ab000100-nst "${restore_directory}" > "${bextract_log}"
-expect_grep "Crypto cache read 1 entries" \
+expect_grep "Crypto cache read 4 entries" \
             "${bextract_log}" \
             "bextract: no crypto cache entry found."
 
