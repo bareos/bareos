@@ -262,7 +262,7 @@ int main(int argc, char* const* argv)
     ReadCryptoCache(cache_file.c_str());
 
     // Dump the content of the cache.
-    DumpCryptoCache(1);
+    DumpCryptoCache(STDOUT_FILENO);
 
     FlushCryptoCache();
     exit(0);
