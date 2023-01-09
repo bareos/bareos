@@ -53,8 +53,6 @@ set(BAREOS_SRCS
     cram_md5.cc
     crypto.cc
     crypto_cache.cc
-    crypto_none.cc
-    crypto_nss.cc
     crypto_openssl.cc
     crypto_wrap.cc
     daemon.cc
