@@ -32,6 +32,7 @@
 #include <string>
 
 template <typename T> class alist;
+class JobControlRecord;
 
 /* Opaque X509 Public/Private Key Pair Structure */
 typedef struct X509_Keypair X509_KEYPAIR;
@@ -67,7 +68,8 @@ typedef enum
   CRYPTO_DIGEST_MD5 = 1,
   CRYPTO_DIGEST_SHA1 = 2,
   CRYPTO_DIGEST_SHA256 = 3,
-  CRYPTO_DIGEST_SHA512 = 4
+  CRYPTO_DIGEST_SHA512 = 4,
+  CRYPTO_DIGEST_XXH128 = 5
 } crypto_digest_t;
 
 /* Cipher Types */
@@ -105,6 +107,7 @@ typedef enum
 #define CRYPTO_DIGEST_SHA1_SIZE 20   /* 160 bits */
 #define CRYPTO_DIGEST_SHA256_SIZE 32 /* 256 bits */
 #define CRYPTO_DIGEST_SHA512_SIZE 64 /* 512 bits */
+#define CRYPTO_DIGEST_XXH128_SIZE 16 /* 128 bits */
 
 /* Maximum Message Digest Size */
 #ifdef HAVE_OPENSSL
@@ -131,6 +134,8 @@ typedef enum
 #  define CRYPTO_CIPHER_MAX_BLOCK_SIZE 0
 
 #endif /* HAVE_OPENSSL */
+
+class DigestInitException : public std::exception {};
 
 struct Digest {
   JobControlRecord* jcr;
