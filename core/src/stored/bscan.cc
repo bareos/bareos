@@ -890,6 +890,13 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
       UpdateDigestRecord(db, digest, rec, CRYPTO_DIGEST_SHA512);
       break;
 
+    case STREAM_XXH128_DIGEST:
+      BinToBase64(digest, sizeof(digest), (char*)rec->data,
+                  CRYPTO_DIGEST_XXH128_SIZE, true);
+      if (verbose > 1) { Pmsg1(000, _("Got XXH128 record: %s\n"), digest); }
+      UpdateDigestRecord(db, digest, rec, CRYPTO_DIGEST_XXH128);
+      break;
+
     case STREAM_ENCRYPTED_SESSION_DATA:
       // TODO landonf: Investigate crypto support in bscan
       if (verbose > 1) { Pmsg0(000, _("Got signed digest record\n")); }

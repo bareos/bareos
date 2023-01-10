@@ -134,6 +134,8 @@ const char* stream_to_ascii(int stream)
       return _("SHA256 digest");
     case STREAM_SHA512_DIGEST:
       return _("SHA512 digest");
+    case STREAM_XXH128_DIGEST:
+      return _("XXH128 digest");
     case STREAM_SIGNED_DIGEST:
       return _("Signed digest");
     case STREAM_ENCRYPTED_FILE_DATA:
@@ -452,6 +454,7 @@ bool IsRestoreStreamSupported(int stream)
     case STREAM_SHA256_DIGEST:
     case STREAM_SHA512_DIGEST:
 #  endif
+    case STREAM_XXH128_DIGEST:
 #  ifdef HAVE_CRYPTO
     case STREAM_SIGNED_DIGEST:
     case STREAM_ENCRYPTED_FILE_DATA:
@@ -1020,6 +1023,7 @@ bool IsRestoreStreamSupported(int stream)
     case STREAM_SHA256_DIGEST:
     case STREAM_SHA512_DIGEST:
 #  endif
+    case STREAM_XXH128_DIGEST:
 #  ifdef HAVE_CRYPTO
     case STREAM_SIGNED_DIGEST:
     case STREAM_ENCRYPTED_FILE_DATA:

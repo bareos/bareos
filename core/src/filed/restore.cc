@@ -976,6 +976,7 @@ void DoRestore(JobControlRecord* jcr)
       case STREAM_SHA1_DIGEST:
       case STREAM_SHA256_DIGEST:
       case STREAM_SHA512_DIGEST:
+      case STREAM_XXH128_DIGEST:
         break;
 
       case STREAM_PROGRAM_NAMES:

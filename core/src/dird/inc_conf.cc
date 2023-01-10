@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -150,6 +150,7 @@ static struct s_fs_opt FS_options[]
        {"sha1", INC_KW_DIGEST, "S"},
        {"sha256", INC_KW_DIGEST, "S2"},
        {"sha512", INC_KW_DIGEST, "S3"},
+       {"xxh128", INC_KW_DIGEST, "S4"},
        {"gzip", INC_KW_COMPRESSION, "Z6"},
        {"gzip1", INC_KW_COMPRESSION, "Z1"},
        {"gzip2", INC_KW_COMPRESSION, "Z2"},
@@ -992,11 +993,9 @@ void StoreInc(LEX* lc, ResourceItem* item, int index, int pass)
 {
   int token;
 
-  /*
-   * Decide if we are doing a new Include or an old include. The
+  /* Decide if we are doing a new Include or an old include. The
    *  new Include is followed immediately by open brace, whereas the
-   *  old include has options following the Include.
-   */
+   *  old include has options following the Include. */
   token = LexGetToken(lc, BCT_SKIP_EOL);
   if (token == BCT_BOB) {
     StoreNewinc(lc, item, index, pass);

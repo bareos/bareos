@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -178,12 +178,10 @@ bool AccurateCheckFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
     goto bail_out;
   }
 
-  /**
-   * Restore original name so we can check the actual file when we check
+  /* Restore original name so we can check the actual file when we check
    * the accurate options later on. This is mostly important for the
    * CalculateAndCompareFileChksum() function as that needs to calulate
-   * the checksum of the real file and not try to open the stripped pathname.
-   */
+   * the checksum of the real file and not try to open the stripped pathname. */
   UnstripPath(ff_pkt);
 
   ff_pkt->accurate_found = true;
@@ -211,10 +209,8 @@ bool AccurateCheckFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
         }
         break;
       case 'p': /** Permissions bits */
-        /**
-         * TODO: If something change only in perm, user, group
-         * Backup only the attribute stream
-         */
+        /* TODO: If something change only in perm, user, group
+         * Backup only the attribute stream */
         if (statc.st_mode != ff_pkt->statp.st_mode) {
           Dmsg3(debuglevel - 1,
                 "%s     st_mode  differ. Cat: %04o File: %04o\n", fname,
@@ -289,7 +285,8 @@ bool AccurateCheckFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
                 && (BitIsSet(FO_MD5, ff_pkt->flags)
                     || BitIsSet(FO_SHA1, ff_pkt->flags)
                     || BitIsSet(FO_SHA256, ff_pkt->flags)
-                    || BitIsSet(FO_SHA512, ff_pkt->flags)))) {
+                    || BitIsSet(FO_SHA512, ff_pkt->flags)
+                    || BitIsSet(FO_XXH128, ff_pkt->flags)))) {
           if (!*payload->chksum && !jcr->rerunning) {
             Jmsg(jcr, M_WARNING, 0, _("Cannot verify checksum for %s\n"),
                  ff_pkt->fname);
@@ -309,10 +306,8 @@ bool AccurateCheckFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
     }
   }
 
-  /**
-   * In Incr/Diff accurate mode, we mark all files as seen
-   * When in Full+Base mode, we mark only if the file match exactly
-   */
+  /* In Incr/Diff accurate mode, we mark all files as seen
+   * When in Full+Base mode, we mark only if the file match exactly */
   if (jcr->getJobLevel() == L_FULL) {
     if (!status) {
       // Compute space saved with basefile.
@@ -378,10 +373,8 @@ bool AccurateCmd(JobControlRecord* jcr)
       chksum_length = strlen(chksum);
       delta_seq = str_to_int32(chksum + chksum_length + 1);
 
-      /**
-       * Sanity check total length of the received msg must be at least
-       * total of the 3 lengths calculated + 3 (\0)
-       */
+      /* Sanity check total length of the received msg must be at least
+       * total of the 3 lengths calculated + 3 (\0) */
       if ((fname_length + lstat_length + chksum_length + 3)
           > dir->message_length) {
         continue;

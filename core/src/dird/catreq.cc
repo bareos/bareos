@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -167,28 +167,22 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
     UnbashSpaces(mr.VolumeName);
     if (jcr->db->GetMediaRecord(jcr, &mr)) {
       const char* reason = NULL; /* detailed reason for rejection */
-      /*
-       * If we are reading, accept any volume (reason == NULL)
+      /* If we are reading, accept any volume (reason == NULL)
        * If we are writing, check if the Volume is valid
-       *   for this job, and do a recycle if necessary
-       */
+       *   for this job, and do a recycle if necessary */
       if (writing) {
-        /*
-         * SD wants to write this Volume, so make
+        /* SD wants to write this Volume, so make
          *   sure it is suitable for this job, i.e.
          *   Pool matches, and it is either Append or Recycle
-         *   and Media Type matches and Pool allows any volume.
-         */
+         *   and Media Type matches and Pool allows any volume. */
         if (mr.PoolId != jcr->dir_impl->jr.PoolId) {
           reason = _("not in Pool");
         } else if (!bstrcmp(mr.MediaType,
                             jcr->dir_impl->res.write_storage->media_type)) {
           reason = _("not correct MediaType");
         } else {
-          /*
-           * Now try recycling if necessary
-           *   reason set non-NULL if we cannot use it
-           */
+          /* Now try recycling if necessary
+           *   reason set non-NULL if we cannot use it */
           CheckIfVolumeValidOrRecyclable(jcr, &mr, &reason);
         }
       }
@@ -215,11 +209,9 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
                     &sdmr.VolStatus, &sdmr.Slot, &label, &sdmr.InChanger,
                     &sdmr.VolReadTime, &sdmr.VolWriteTime, &VolFirstWritten)
              == 18) {
-    /*
-     * Request to update Media record. Comes typically at the end
+    /* Request to update Media record. Comes typically at the end
      * of a Storage daemon Job Session, when labeling/relabeling a
-     * Volume, or when an EOF mark is written.
-     */
+     * Volume, or when an EOF mark is written. */
     DbLocker _{jcr->db};
     Dmsg3(400, "Update media %s oldStat=%s newStat=%s\n", sdmr.VolumeName,
           mr.VolStatus, sdmr.VolStatus);
@@ -267,19 +259,15 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
     Dmsg2(400, "Update media: BefVolJobs=%u After=%u\n", mr.VolJobs,
           sdmr.VolJobs);
 
-    /*
-     * Check if the volume has been written by the job,
-     * and update the LastWritten field if needed.
-     */
+    /* Check if the volume has been written by the job,
+     * and update the LastWritten field if needed. */
     if (mr.VolBlocks != sdmr.VolBlocks && VolLastWritten != 0) {
       mr.LastWritten = VolLastWritten;
     }
 
-    /*
-     * Update to point to the last device used to write the Volume.
+    /* Update to point to the last device used to write the Volume.
      * However, do so only if we are writing the tape, i.e.
-     * the number of VolWrites has increased.
-     */
+     * the number of VolWrites has increased. */
     if (jcr->dir_impl->res.write_storage && sdmr.VolWrites > mr.VolWrites) {
       Dmsg2(050, "Update StorageId old=%d new=%d\n", mr.StorageId,
             jcr->dir_impl->res.write_storage->StorageId);
@@ -307,10 +295,8 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
     Dmsg2(400, "UpdateMediaRecord. Stat=%s Vol=%s\n", mr.VolStatus,
           mr.VolumeName);
 
-    /*
-     * Update the database, then before sending the response to the SD,
-     * check if the Volume has expired.
-     */
+    /* Update the database, then before sending the response to the SD,
+     * check if the Volume has expired. */
     if (!jcr->db->UpdateMediaRecord(jcr, &mr)) {
       Jmsg(jcr, M_FATAL, 0, _("Catalog error updating Media record. %s"),
            jcr->db->strerror());
@@ -412,11 +398,9 @@ static void UpdateAttribute(JobControlRecord* jcr,
   jcr->db->StartTransaction(jcr); /* start transaction if not already open */
   ar = jcr->ar;
 
-  /*
-   * Start by scanning directly in the message buffer to get Stream
+  /* Start by scanning directly in the message buffer to get Stream
    * there may be a cached attr so we cannot yet write into
-   * jcr->attr or jcr->ar
-   */
+   * jcr->attr or jcr->ar */
   p = msg;
   SkipNonspaces(&p); /* UpdCat */
   SkipSpaces(&p);
@@ -433,8 +417,7 @@ static void UpdateAttribute(JobControlRecord* jcr,
   unser_uint32(reclen);         /* Record length */
   p += UnserLength(p);          /* Raw record follows */
 
-  /**
-   * At this point p points to the raw record, which varies according
+  /* At this point p points to the raw record, which varies according
    *  to what kind of a record (Stream) was sent.  Note, the integer
    *  fields at the beginning of these "raw" records are in ASCII with
    *  spaces between them so one can use scanf or manual scanning to
@@ -458,8 +441,7 @@ static void UpdateAttribute(JobControlRecord* jcr,
    *   Object_compression
    *   Plugin_name
    *   Object_name
-   *   Binary Object data
-   */
+   *   Binary Object data */
 
   Dmsg1(400, "UpdCat msg=%s\n", msg);
   Dmsg5(400, "UpdCat VolSessId=%d VolSessT=%d FI=%d Strm=%d reclen=%d\n",
@@ -525,11 +507,9 @@ static void UpdateAttribute(JobControlRecord* jcr,
       jcr->cached_attribute = true;
 
 
-      /*
-       * Fhinfo and Fhnode are not sent from the SD,
+      /* Fhinfo and Fhnode are not sent from the SD,
        * they exist only in NDMP 2-Way backups so we
-       * set them to 0 here
-       */
+       * set them to 0 here */
       ar->Fhinfo = 0;
       ar->Fhnode = 0;
 
@@ -616,6 +596,10 @@ static void UpdateAttribute(JobControlRecord* jcr,
             case STREAM_SHA512_DIGEST:
               len = CRYPTO_DIGEST_SHA512_SIZE;
               type = CRYPTO_DIGEST_SHA512;
+              break;
+            case STREAM_XXH128_DIGEST:
+              len = CRYPTO_DIGEST_XXH128_SIZE;
+              type = CRYPTO_DIGEST_XXH128;
               break;
             default:
               Jmsg(jcr, M_ERROR, 0,
