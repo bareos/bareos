@@ -277,8 +277,6 @@ struct X509_Keypair {
   EVP_PKEY* privkey;
 };
 
-class DigestInitException : public std::exception {};
-
 /* Message Digest Structure */
 struct EvpDigest : public Digest {
 #    if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
