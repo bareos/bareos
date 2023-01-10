@@ -9,6 +9,7 @@ import subprocess
 import bareosfd
 import BareosFdPluginBaseclass
 from lockfile import LockFile
+import collections
 
 
 class BareosFdPluginVz7CtFs(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
@@ -28,7 +29,7 @@ class BareosFdPluginVz7CtFs(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         # using mandatory options in python constructor is not working cause options are merged inside plugin_option_parser
         # and not on directzor side
         super(BareosFdPluginVz7CtFs, self).__init__(plugindef)
-        self.files = []
+        self.files = collections.deque()
         # Filled during start_backup_job
         self.cnf_default_excludes = []
         self.excluded_backup_paths = []
@@ -123,9 +124,9 @@ class BareosFdPluginVz7CtFs(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                                                universal_newlines=True)
         except subprocess.CalledProcessError:
             return []
-        cts = ct_list.split("\n")
-        cts.pop(-1)
-        cts.pop(0)
+        cts = collections.deque(ct_list.split("\n"))
+        cts.pop()
+        cts.popleft()
         ct_list = []
         for record in cts:
             cname, cuuid, status = record.split()
@@ -147,11 +148,11 @@ class BareosFdPluginVz7CtFs(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 universal_newlines=True)
         except subprocess.CalledProcessError:
             return []
-        snapshot_list = snapshot_list.split("\n")
+        snapshot_list = collections.deque(snapshot_list.split("\n"))
         snapshots = []
         while snapshot_list:
             parentuuid, status, snapshot_uuid, fname = [None, None, None, None]
-            line = snapshot_list.pop(0)
+            line = snapshot_list.popleft()
             if line == "":
                 continue
             tokens = line.split()
@@ -379,7 +380,7 @@ class BareosFdPluginVz7CtFs(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 "No files to backup\n")
             return bareosfd.bRCs['bareosfd.bRC_Skip']
         # reading file list from beginning to ensure dirs are created before files
-        path_to_backup = self.files.pop(0)
+        path_to_backup = self.files.popleft()
         possible_link_to_dir = path_to_backup.rstrip('/')
         try:
             osstat = os.lstat(path_to_backup)

@@ -200,6 +200,13 @@ To let the plugin do the I/O, just set `IOP.status` to
                 #  do io in plugin
                 IOP.status = bareosfd.iostat_do_in_plugin
 
+Using large lists may cause performance issues
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Using large lists in Python can have a significant performance impact as it incurs O(n) memory movement costs for ``pop(0)`` and ``insert(0, v)`` operations. Plugins which use large lists should use ``collections.deque`` instead as its ``popleft()`` and ``appendleft()`` functions perform well. If possible it is even better to use a generator to also decrease the memory footprint.
+
+For more details see `Python collections.deque documentation <https://docs.python.org/3/library/collections.html#collections.deque>`
+
 
 Description of the Bareos Python plugin API for Bareos < 20
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
