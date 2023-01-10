@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,6 +27,7 @@
 
 #include "include/bareos.h"
 #include "lib/berrno.h"
+#include "lib/crypto.h"
 #include "lib/crypto_openssl.h"
 
 #if defined(HAVE_OPENSSL)
@@ -276,23 +277,24 @@ struct X509_Keypair {
   EVP_PKEY* privkey;
 };
 
-/* Message Digest Structure */
-struct Digest {
-  JobControlRecord* jcr;
-  crypto_digest_t type;
+class DigestInitException : public std::exception {};
 
+/* Message Digest Structure */
+struct EvpDigest : public Digest {
 #    if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
   /* Openssl Version < 1.1 */
  private:
   EVP_MD_CTX ctx;
 
  public:
-  Digest(JobControlRecord* jcr, crypto_digest_t type) : jcr(jcr), type(type)
+  EvpDigest(JobControlRecord* jcr, crypto_digest_t type, const EVP_MD* md)
+      : Digest(jcr, type)
   {
     EVP_MD_CTX_init(&ctx);
+    if (EVP_DigestInit_ex(&ctx, md, NULL) == 0) { throw DigestInitException{}; }
   }
 
-  ~Digest() { EVP_MD_CTX_cleanup(&ctx); }
+  virtual ~EvpDigest() { EVP_MD_CTX_cleanup(&ctx); }
 
 
   EVP_MD_CTX& get_ctx() { return ctx; }
@@ -305,18 +307,23 @@ struct Digest {
  public:
   EVP_MD_CTX& get_ctx() { return *ctx; }
 
-  Digest(JobControlRecord* jcr, crypto_digest_t type) : jcr(jcr), type(type)
+  EvpDigest(JobControlRecord* jcr, crypto_digest_t type, const EVP_MD* md)
+      : Digest(jcr, type)
   {
     ctx = EVP_MD_CTX_new();
     EVP_MD_CTX_init(ctx);
+    if (EVP_DigestInit_ex(ctx, md, NULL) == 0) { throw DigestInitException{}; }
   }
 
-  ~Digest()
+  virtual ~EvpDigest()
   {
     EVP_MD_CTX_free(ctx);
     ctx = NULL;
   }
 #    endif
+
+  virtual bool Update(const uint8_t* data, uint32_t length) override;
+  virtual bool Finalize(uint8_t* data, uint32_t* length) override;
 };
 
 
@@ -555,11 +562,9 @@ bool CryptoKeypairHasKey(const char* file)
     OPENSSL_free(header);
     OPENSSL_free(data);
 
-    /*
-     * PEM Header Found, check for a private key
+    /* PEM Header Found, check for a private key
      * Due to OpenSSL limitations, we must specifically
-     * list supported PEM private key encodings.
-     */
+     * list supported PEM private key encodings. */
     if (bstrcmp(name, PEM_STRING_RSA) || bstrcmp(name, PEM_STRING_DSA)
         || bstrcmp(name, PEM_STRING_PKCS8)
         || bstrcmp(name, PEM_STRING_PKCS8INF)) {
@@ -633,46 +638,34 @@ void CryptoKeypairFree(X509_KEYPAIR* keypair)
  *  Returns: A pointer to a DIGEST object on success.
  *           NULL on failure.
  */
-DIGEST* crypto_digest_new(JobControlRecord* jcr, crypto_digest_t type)
+DIGEST* OpensslDigestNew(JobControlRecord* jcr, crypto_digest_t type)
 {
-  DIGEST* digest = new DIGEST(jcr, type);
-  const EVP_MD* md = NULL; /* Quell invalid uninitialized warnings */
-
   Dmsg1(150, "crypto_digest_new jcr=%p\n", jcr);
 
-  /* Determine the correct OpenSSL message digest type */
-  switch (type) {
-    case CRYPTO_DIGEST_MD5:
-      // Solaris deprecates use of md5 in OpenSSL
-      ALLOW_DEPRECATED(md = EVP_md5();)
-      break;
-    case CRYPTO_DIGEST_SHA1:
-      md = EVP_sha1();
-      break;
+  try {
+    /* Determine the correct OpenSSL message digest type */
+    switch (type) {
+      case CRYPTO_DIGEST_MD5:
+        // Solaris deprecates use of md5 in OpenSSL
+        ALLOW_DEPRECATED(return new EvpDigest(jcr, type, EVP_md5());)
+        break;
+      case CRYPTO_DIGEST_SHA1:
+        return new EvpDigest(jcr, type, EVP_sha1());
 #    ifdef HAVE_SHA2
-    case CRYPTO_DIGEST_SHA256:
-      md = EVP_sha256();
-      break;
-    case CRYPTO_DIGEST_SHA512:
-      md = EVP_sha512();
-      break;
+      case CRYPTO_DIGEST_SHA256:
+        return new EvpDigest(jcr, type, EVP_sha256());
+      case CRYPTO_DIGEST_SHA512:
+        return new EvpDigest(jcr, type, EVP_sha512());
 #    endif
-    default:
-      Jmsg1(jcr, M_ERROR, 0, _("Unsupported digest type: %d\n"), type);
-      goto err;
+      default:
+        Jmsg1(jcr, M_ERROR, 0, _("Unsupported digest type: %d\n"), type);
+        throw DigestInitException{};
+    }
+  } catch (const DigestInitException& e) {
+    Dmsg0(150, "Digest init failed.\n");
+    OpensslPostErrors(jcr, M_ERROR, _("OpenSSL digest initialization failed"));
+    return NULL;
   }
-
-  /* Initialize the backing OpenSSL context */
-  if (EVP_DigestInit_ex(&digest->get_ctx(), md, NULL) == 0) { goto err; }
-
-  return digest;
-
-err:
-  /* This should not happen, but never say never ... */
-  Dmsg0(150, "Digest init failed.\n");
-  OpensslPostErrors(jcr, M_ERROR, _("OpenSSL digest initialization failed"));
-  CryptoDigestFree(digest);
-  return NULL;
 }
 
 /*
@@ -680,11 +673,11 @@ err:
  * Returns: true on success
  *          false on failure
  */
-bool CryptoDigestUpdate(DIGEST* digest, const uint8_t* data, uint32_t length)
+bool EvpDigest::Update(const uint8_t* data, uint32_t length)
 {
-  if (EVP_DigestUpdate(&digest->get_ctx(), data, length) == 0) {
+  if (EVP_DigestUpdate(&get_ctx(), data, length) == 0) {
     Dmsg0(150, "digest update failed\n");
-    OpensslPostErrors(digest->jcr, M_ERROR, _("OpenSSL digest update failed"));
+    OpensslPostErrors(jcr, M_ERROR, _("OpenSSL digest update failed"));
     return false;
   } else {
     return true;
@@ -698,12 +691,11 @@ bool CryptoDigestUpdate(DIGEST* digest, const uint8_t* data, uint32_t length)
  * Returns: true on success
  *          false on failure
  */
-bool CryptoDigestFinalize(DIGEST* digest, uint8_t* dest, uint32_t* length)
+bool EvpDigest::Finalize(uint8_t* dest, uint32_t* length)
 {
-  if (!EVP_DigestFinal(&digest->get_ctx(), dest, (unsigned int*)length)) {
+  if (!EVP_DigestFinal(&get_ctx(), dest, (unsigned int*)length)) {
     Dmsg0(150, "digest finalize failed\n");
-    OpensslPostErrors(digest->jcr, M_ERROR,
-                      _("OpenSSL digest finalize failed"));
+    OpensslPostErrors(jcr, M_ERROR, _("OpenSSL digest finalize failed"));
     return false;
   } else {
     return true;
@@ -839,8 +831,8 @@ crypto_error_t CryptoSignVerify(SIGNATURE* sig,
       sigLen = M_ASN1_STRING_length(si->signature);
       sigData = M_ASN1_STRING_data(si->signature);
 
-      ok = EVP_VerifyFinal(&digest->get_ctx(), sigData, sigLen,
-                           keypair->pubkey);
+      ok = EVP_VerifyFinal(&dynamic_cast<EvpDigest*>(digest)->get_ctx(),
+                           sigData, sigLen, keypair->pubkey);
       if (ok >= 1) {
         return CRYPTO_ERROR_NONE;
       } else if (ok == 0) {
@@ -912,16 +904,18 @@ int CryptoSignAddSigner(SIGNATURE* sig, DIGEST* digest, X509_KEYPAIR* keypair)
   assert(EVP_PKEY_type(EVP_PKEY_id(keypair->pubkey)) == EVP_PKEY_RSA);
   /* This is slightly evil. Reach into the BAREOS_LIB_MD_H_ structure and grab
    * the key type */
-  si->signatureAlgorithm = OBJ_nid2obj(EVP_MD_CTX_type(&digest->get_ctx()));
+  {
+    auto digest_ctx = &dynamic_cast<EvpDigest*>(digest)->get_ctx();
+    si->signatureAlgorithm = OBJ_nid2obj(EVP_MD_CTX_type(digest_ctx));
 
-  /* Finalize/Sign our Digest */
-  len = EVP_PKEY_size(keypair->privkey);
-  buf = (unsigned char*)malloc(len);
-  if (!EVP_SignFinal(&digest->get_ctx(), buf, &len, keypair->privkey)) {
-    OpensslPostErrors(M_ERROR, _("Signature creation failed"));
-    goto err;
+    /* Finalize/Sign our Digest */
+    len = EVP_PKEY_size(keypair->privkey);
+    buf = (unsigned char*)malloc(len);
+    if (!EVP_SignFinal(digest_ctx, buf, &len, keypair->privkey)) {
+      OpensslPostErrors(M_ERROR, _("Signature creation failed"));
+      goto err;
+    }
   }
-
   /* Add the signature to the SignerInfo structure */
   if (!M_ASN1_OCTET_STRING_set(si->signature, buf, len)) {
     /* Allocation failed in OpenSSL */
@@ -1159,10 +1153,8 @@ CRYPTO_SESSION* crypto_session_new(crypto_cipher_t cipher,
     free(iv);
   }
 
-  /*
-   * Create RecipientInfo structures for supplied
-   * public keys.
-   */
+  /* Create RecipientInfo structures for supplied
+   * public keys. */
   foreach_alist (keypair, pubkeys) {
     RecipientInfo* ri;
     unsigned char* ekey;
@@ -1284,10 +1276,8 @@ crypto_error_t CryptoSessionDecode(const uint8_t* data,
 
   recipients = cs->cryptoData->recipientInfo;
 
-  /*
-   * Find a matching RecipientInfo structure for a supplied
-   * public key
-   */
+  /* Find a matching RecipientInfo structure for a supplied
+   * public key */
   foreach_alist (keypair, keypairs) {
     RecipientInfo* ri;
     int i;
@@ -1547,10 +1537,8 @@ int InitCrypto(void)
  */
 int CleanupCrypto(void)
 {
-  /*
-   * Ensure that we've actually been initialized; Doing this here decreases the
-   * complexity of client's termination/cleanup code.
-   */
+  /* Ensure that we've actually been initialized; Doing this here decreases the
+   * complexity of client's termination/cleanup code. */
   if (!crypto_initialized) { return 0; }
 
 #  ifndef HAVE_SUN_OS
@@ -1626,12 +1614,10 @@ void OpensslPostErrors(JobControlRecord* jcr, int type, const char* errstring)
 #    ifdef HAVE_WIN32
   return (unsigned long)getpid();
 #    else
-  /*
-   * Comparison without use of pthread_equal() is mandated by the OpenSSL API
+  /* Comparison without use of pthread_equal() is mandated by the OpenSSL API
    *
    * Note: this creates problems with the new Win32 pthreads
-   *   emulation code, which defines pthread_t as a structure.
-   */
+   *   emulation code, which defines pthread_t as a structure. */
   return ((unsigned long)pthread_self());
 #    endif /* not HAVE_WIN32 */
 }
