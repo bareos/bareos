@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2008 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -157,9 +157,7 @@ int main(int argc, char* const* argv)
 
   MessagesResource* msg;
 
-  foreach_res (msg, R_MSGS) {
-    InitMsg(NULL, msg);
-  }
+  foreach_res (msg, R_MSGS) { InitMsg(NULL, msg); }
 
   jcr = NewDirectorJcr(TestfindFreeJcr);
   jcr->dir_impl->res.fileset
@@ -598,6 +596,10 @@ static void SetOptions(findFOPTS* fo, const char* opts)
             p++;
             break;
 #endif
+          case '4':
+            SetBit(FO_XXH128, fo->flags);
+            p++;
+            break;
           default:
             /* Automatically downgrade to SHA-1 if an unsupported
              * SHA variant is specified */

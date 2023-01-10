@@ -1907,6 +1907,10 @@ void FilesetResource::PrintConfigIncludeExcludeOptions(
             p++;
             break;
 #endif
+          case '4':
+            send.KeyQuotedString("Signature", "XXH128");
+            p++;
+            break;
           default:
             send.KeyQuotedString("Signature", "SHA1");
             break;
