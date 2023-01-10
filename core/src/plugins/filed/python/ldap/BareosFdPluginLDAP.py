@@ -3,7 +3,7 @@
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
 # Copyright (C) 2015-2015 Planets Communications B.V.
-# Copyright (C) 2015-2020 Bareos GmbH & Co. KG
+# Copyright (C) 2015-2023 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -257,7 +257,8 @@ class BareosLDAPWrapper:
         except ldap.INVALID_CREDENTIALS:
             bareosfd.JobMessage(
                 bareosfd.bJobMessageType["M_FATAL"],
-                "Failed to bind to LDAP uri due to invalid credentials %s\n" % (options["uri"]),
+                "Failed to bind to LDAP uri due to invalid credentials %s\n"
+                % (options["uri"]),
             )
 
             return bareosfd.bRC_Error
