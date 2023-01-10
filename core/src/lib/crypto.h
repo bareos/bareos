@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2007 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,10 +35,6 @@ template <typename T> class alist;
 
 /* Opaque X509 Public/Private Key Pair Structure */
 typedef struct X509_Keypair X509_KEYPAIR;
-
-/* Opaque Message Digest Structure */
-/* Digest is defined (twice) in crypto.c */
-typedef struct Digest DIGEST;
 
 /* Opaque Message Signature Structure */
 typedef struct Signature SIGNATURE;
@@ -136,11 +132,34 @@ typedef enum
 
 #endif /* HAVE_OPENSSL */
 
+struct Digest {
+  JobControlRecord* jcr;
+  crypto_digest_t type;
+
+  Digest(JobControlRecord* jcr, crypto_digest_t type) : jcr(jcr), type(type) {}
+  virtual ~Digest() = default;
+  virtual bool Update(const uint8_t* data, uint32_t length) = 0;
+  virtual bool Finalize(uint8_t* data, uint32_t* length) = 0;
+};
+/* Opaque Message Digest Structure */
+typedef struct Digest DIGEST;
+
+
 int InitCrypto(void);
 int CleanupCrypto(void);
 DIGEST* crypto_digest_new(JobControlRecord* jcr, crypto_digest_t type);
-bool CryptoDigestUpdate(DIGEST* digest, const uint8_t* data, uint32_t length);
-bool CryptoDigestFinalize(DIGEST* digest, uint8_t* dest, uint32_t* length);
+inline bool CryptoDigestUpdate(DIGEST* digest,
+                               const uint8_t* data,
+                               uint32_t length)
+{
+  return digest->Update(data, length);
+}
+inline bool CryptoDigestFinalize(DIGEST* digest,
+                                 uint8_t* dest,
+                                 uint32_t* length)
+{
+  return digest->Finalize(dest, length);
+}
 void CryptoDigestFree(DIGEST* digest);
 SIGNATURE* crypto_sign_new(JobControlRecord* jcr);
 crypto_error_t CryptoSignGetDigest(SIGNATURE* sig,
