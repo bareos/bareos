@@ -222,6 +222,8 @@ int main(int argc, char* const* argv)
 
   CLI11_PARSE(bscrypto_app, argc, argv);
 
+  InitMsg(nullptr, nullptr);
+
   if (!generate_passphrase && !show_keydata && !dump_cache && !populate_cache
       && !reset_cache && device_name.empty()) {
     fprintf(stderr, T_("Missing device_name argument for this option\n"));
@@ -512,6 +514,6 @@ int main(int argc, char* const* argv)
       exit(1);
     }
   }
-
+  TermMsg();
   exit(0);
 }
