@@ -37,6 +37,13 @@
 #include "lib/scsi_crypto.h"
 #include "lib/base64.h"
 
+
+static void TerminateBscrypto(int exitcode)
+{
+  TermMsg();
+  exit(exitcode);
+}
+
 /**
  * Read the key bits from the keyfile.
  * - == stdin
@@ -54,13 +61,13 @@ static void ReadKeyBits(const std::string& keyfile,
     kfd = open(keyfile.c_str(), O_RDONLY);
     if (kfd < 0) {
       fprintf(stderr, T_("Cannot open keyfile %s\n"), keyfile.c_str());
-      exit(1);
+      TerminateBscrypto(1);
     }
   }
   Dmsg1(5, "data size = %d\n", sizeof_data);
   if (read(kfd, data, sizeof_data) == 0) {
     fprintf(stderr, T_("Cannot read from keyfile %s\n"), keyfile.c_str());
-    exit(1);
+    TerminateBscrypto(1);
   }
   if (kfd > 0) { close(kfd); }
   StripTrailingJunk(data);
@@ -227,17 +234,17 @@ int main(int argc, char* const* argv)
   if (!generate_passphrase && !show_keydata && !dump_cache && !populate_cache
       && !reset_cache && device_name.empty()) {
     fprintf(stderr, T_("Missing device_name argument for this option\n"));
-    exit(1);
+    TerminateBscrypto(1);
   }
 
   if (generate_passphrase && show_keydata) {
     fprintf(stderr, T_("Either use -g or -k not both\n"));
-    exit(1);
+    TerminateBscrypto(1);
   }
 
   if (clear_encryption && set_encryption) {
     fprintf(stderr, T_("Either use -c or -s not both\n"));
-    exit(1);
+    TerminateBscrypto(1);
   }
 
   if ((clear_encryption || set_encryption)
@@ -245,7 +252,7 @@ int main(int argc, char* const* argv)
     fprintf(
         stderr,
         T_("Either set or clear the crypto key or ask for status not both\n"));
-    exit(1);
+    TerminateBscrypto(1);
   }
 
   if ((clear_encryption || set_encryption || drive_encryption_status
@@ -253,8 +260,8 @@ int main(int argc, char* const* argv)
       && (generate_passphrase || show_keydata || dump_cache || populate_cache
           || reset_cache)) {
     fprintf(stderr, T_("Don't mix operations which are incompatible "
-                       "e.g. generate/show vs set/clear etc.\n"));
-    exit(1);
+                      "e.g. generate/show vs set/clear etc.\n"));
+    TerminateBscrypto(1);
   }
 
   OSDependentInit();
@@ -267,7 +274,7 @@ int main(int argc, char* const* argv)
     DumpCryptoCache(STDOUT_FILENO);
 
     FlushCryptoCache();
-    exit(0);
+    TerminateBscrypto(0);
   }
 
   if (populate_cache) {
@@ -300,7 +307,7 @@ int main(int argc, char* const* argv)
     WriteCryptoCache(cache_file.c_str());
 
     FlushCryptoCache();
-    exit(0);
+    TerminateBscrypto(0);
   }
 
   if (reset_cache) {
@@ -314,7 +321,7 @@ int main(int argc, char* const* argv)
     WriteCryptoCache(cache_file.c_str());
 
     FlushCryptoCache();
-    exit(0);
+    TerminateBscrypto(0);
   }
 
 
@@ -333,7 +340,7 @@ int main(int argc, char* const* argv)
     char* passphrase;
 
     passphrase = generate_crypto_passphrase(DEFAULT_PASSPHRASE_LENGTH);
-    if (!passphrase) { exit(1); }
+    if (!passphrase) { TerminateBscrypto(1); }
 
     Dmsg1(10, T_("Generated passphrase = %s\n"), passphrase);
 
@@ -349,7 +356,7 @@ int main(int argc, char* const* argv)
               (unsigned char*)passphrase, (unsigned char*)wrapped_passphrase)) {
         fprintf(stderr, T_("Cannot wrap passphrase ERR=%s\n"), error->c_str());
         free(passphrase);
-        exit(1);
+        TerminateBscrypto(1);
       }
 
       free(passphrase);
@@ -368,7 +375,7 @@ int main(int argc, char* const* argv)
       if (kfd < 0) {
         fprintf(stderr, T_("Cannot open keyfile %s\n"), keyfile.c_str());
         free(passphrase);
-        exit(1);
+        TerminateBscrypto(1);
       }
     }
 
@@ -393,11 +400,11 @@ int main(int argc, char* const* argv)
     } else {
       if (write(kfd, "\n", 1) == 0) {
         free(passphrase);
-        exit(0);
+        TerminateBscrypto(0);
       }
     }
     free(passphrase);
-    exit(0);
+    TerminateBscrypto(0);
   }
 
   if (show_keydata) {
@@ -422,7 +429,7 @@ int main(int argc, char* const* argv)
                    "aborting...\n"),
                 keyfile.c_str());
         free(wrapped_passphrase);
-        exit(0);
+        TerminateBscrypto(0);
       }
 
       length = DEFAULT_PASSPHRASE_LENGTH;
@@ -437,7 +444,7 @@ int main(int argc, char* const* argv)
                    "wrap data from %s ERR=%s, aborting...\n"),
                 keyfile.c_str(), wrap_keyfile.c_str(), error->c_str());
         free(wrapped_passphrase);
-        exit(0);
+        TerminateBscrypto(0);
       }
 
       free(wrapped_passphrase);
@@ -463,15 +470,15 @@ int main(int argc, char* const* argv)
     fprintf(stdout, T_("%s\n"), passphrase);
 
     free(passphrase);
-    exit(0);
+    TerminateBscrypto(0);
   }
 
   // Clear the loaded encryption key of the given drive.
   if (clear_encryption) {
     if (ClearScsiEncryptionKey(-1, device_name.c_str())) {
-      exit(0);
+      TerminateBscrypto(0);
     } else {
-      exit(1);
+      TerminateBscrypto(1);
     }
   }
 
@@ -485,7 +492,7 @@ int main(int argc, char* const* argv)
       FreePoolMemory(encryption_status);
     } else {
       FreePoolMemory(encryption_status);
-      exit(1);
+      TerminateBscrypto(1);
     }
   }
 
@@ -494,9 +501,9 @@ int main(int argc, char* const* argv)
     ReadKeyBits(keyfile, keydata, sizeof(keydata));
 
     if (SetScsiEncryptionKey(-1, device_name.c_str(), keydata)) {
-      exit(0);
+      TerminateBscrypto(0);
     } else {
-      exit(1);
+      TerminateBscrypto(1);
     }
   }
 
@@ -511,9 +518,9 @@ int main(int argc, char* const* argv)
       FreePoolMemory(encryption_status);
     } else {
       FreePoolMemory(encryption_status);
-      exit(1);
+      TerminateBscrypto(1);
     }
   }
   TermMsg();
-  exit(0);
+  TerminateBscrypto(0);
 }
