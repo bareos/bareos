@@ -96,7 +96,9 @@ void ProcessFileset(directordaemon::FilesetResource* director_fileset,
   BlastDataToStorageDaemon(jcr, cipher, DEFAULT_NETWORK_BUFFER_SIZE,
                            handleFile);
 
-  testfind_stats.hard_links = jcr->fd_impl->ff->linkhash->size();
+  if (jcr->fd_impl->ff->linkhash) {
+    testfind_stats.hard_links = jcr->fd_impl->ff->linkhash->size();
+  }
 
 
   std::cout << std::endl
