@@ -9,7 +9,7 @@ This information is also available as ``CHANGELOG.md`` in the corresponding bran
 
 .. note::
 
-   You can consult our :ref:`section-BareosBinaryReleasePolicy` section to get more information about version available.
+   See :ref:`section-BareosBinaryReleasePolicy` for more information about available versions.
 
 .. _Bareos GitHub project: https://github.com/bareos/bareos/
 
