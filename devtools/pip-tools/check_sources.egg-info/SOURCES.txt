@@ -25,6 +25,7 @@ check_sources/plugins/copyright_plugin.py
 check_sources/plugins/include_guard_plugin.py
 check_sources/plugins/mergeconflict_plugin.py
 check_sources/plugins/python_black_plugin.py
+check_sources/plugins/remove_block_comment_start_end.py
 check_sources/plugins/shebang_plugin.py
 check_sources/plugins/three_line_comments.py
 check_sources/plugins/whitespace_plugin.py
