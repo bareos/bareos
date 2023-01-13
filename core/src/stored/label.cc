@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -69,6 +69,7 @@ static void CreateVolumeLabelRecord(DeviceControlRecord* dcr,
 int ReadDevVolumeLabel(DeviceControlRecord* dcr)
 {
   JobControlRecord* jcr = dcr->jcr;
+  Device* volatile dev = dcr->dev;
   char* VolName = dcr->VolumeName;
   DeviceRecord* record;
   bool ok = false;
@@ -80,33 +81,31 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
    * We always write the label in an 64512 byte / 63k block.
    * so we never have problems reading the volume label.
    */
-  dcr->dev->SetLabelBlocksize(dcr);
+  dev->SetLabelBlocksize(dcr);
 
   Dmsg5(100,
         "Enter ReadVolumeLabel res=%d device=%s vol=%s dev_Vol=%s "
         "max_blocksize=%u\n",
-        dcr->dev->NumReserved(), dcr->dev->print_name(), VolName,
-        dcr->dev->VolHdr.VolumeName[0] ? dcr->dev->VolHdr.VolumeName : "*NULL*",
-        dcr->dev->max_block_size);
+        dev->NumReserved(), dev->print_name(), VolName,
+        dev->VolHdr.VolumeName[0] ? dev->VolHdr.VolumeName : "*NULL*",
+        dev->max_block_size);
 
-  if (!dcr->dev->IsOpen()) {
-    if (!dcr->dev->open(dcr, DeviceMode::OPEN_READ_ONLY)) {
-      return VOL_IO_ERROR;
-    }
+  if (!dev->IsOpen()) {
+    if (!dev->open(dcr, DeviceMode::OPEN_READ_ONLY)) { return VOL_IO_ERROR; }
   }
 
-  dcr->dev->ClearLabeled();
-  dcr->dev->ClearAppend();
-  dcr->dev->ClearRead();
-  dcr->dev->label_type = B_BAREOS_LABEL;
+  dev->ClearLabeled();
+  dev->ClearAppend();
+  dev->ClearRead();
+  dev->label_type = B_BAREOS_LABEL;
 
-  if (!dcr->dev->rewind(dcr)) {
+  if (!dev->rewind(dcr)) {
     Mmsg(jcr->errmsg, _("Couldn't rewind device %s: ERR=%s\n"),
-         dcr->dev->print_name(), dcr->dev->print_errmsg());
+         dev->print_name(), dev->print_errmsg());
     Dmsg1(130, "return VOL_NO_MEDIA: %s", jcr->errmsg);
     return VOL_NO_MEDIA;
   }
-  bstrncpy(dcr->dev->VolHdr.Id, "**error**", sizeof(dcr->dev->VolHdr.Id));
+  bstrncpy(dev->VolHdr.Id, "**error**", sizeof(dev->VolHdr.Id));
 
   /*
    * The stored plugin handling the bSdEventLabelRead event can abort
@@ -120,21 +119,21 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
   // Read ANSI/IBM label if so requested
   want_ansi_label = dcr->VolCatInfo.LabelType != B_BAREOS_LABEL
                     || dcr->device_resource->label_type != B_BAREOS_LABEL;
-  if (want_ansi_label || dcr->dev->HasCap(CAP_CHECKLABELS)) {
+  if (want_ansi_label || dev->HasCap(CAP_CHECKLABELS)) {
     status = ReadAnsiIbmLabel(dcr);
     // If we want a label and didn't find it, return error
     if (want_ansi_label && status != VOL_OK) { goto bail_out; }
     if (status == VOL_NAME_ERROR || status == VOL_LABEL_ERROR) {
       Mmsg(jcr->errmsg,
            _("Wrong Volume mounted on device %s: Wanted %s have %s\n"),
-           dcr->dev->print_name(), VolName, dcr->dev->VolHdr.VolumeName);
-      if (!dcr->dev->poll && jcr->sd_impl->label_errors++ > 100) {
+           dev->print_name(), VolName, dev->VolHdr.VolumeName);
+      if (!dev->poll && jcr->sd_impl->label_errors++ > 100) {
         Jmsg(jcr, M_FATAL, 0, _("Too many tries: %s"), jcr->errmsg);
       }
       goto bail_out;
     }
     if (status != VOL_OK) { /* Not an ANSI/IBM label, so re-read */
-      dcr->dev->rewind(dcr);
+      dev->rewind(dcr);
     } else {
       have_ansi_label = true;
     }
@@ -150,30 +149,30 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
     Mmsg(jcr->errmsg,
          _("Requested Volume \"%s\" on %s is not a Bareos "
            "labeled Volume, because: ERR=%s"),
-         NPRT(VolName), dcr->dev->print_name(), dcr->dev->print_errmsg());
+         NPRT(VolName), dev->print_name(), dev->print_errmsg());
     Dmsg1(130, "%s", jcr->errmsg);
   } else if (!ReadRecordFromBlock(dcr, record)) {
     Mmsg(jcr->errmsg, _("Could not read Volume label from block.\n"));
     Dmsg1(130, "%s", jcr->errmsg);
-  } else if (!UnserVolumeLabel(dcr->dev, record)) {
+  } else if (!UnserVolumeLabel(dev, record)) {
     Mmsg(jcr->errmsg, _("Could not UnSerialize Volume label: ERR=%s\n"),
-         dcr->dev->print_errmsg());
+         dev->print_errmsg());
     Dmsg1(130, "%s", jcr->errmsg);
-  } else if (!bstrcmp(dcr->dev->VolHdr.Id, BareosId)
-             && !bstrcmp(dcr->dev->VolHdr.Id, OldBaculaId)
-             && !bstrcmp(dcr->dev->VolHdr.Id, OlderBaculaId)) {
-    Mmsg(jcr->errmsg, _("Volume Header Id bad: %s\n"), dcr->dev->VolHdr.Id);
+  } else if (!bstrcmp(dev->VolHdr.Id, BareosId)
+             && !bstrcmp(dev->VolHdr.Id, OldBaculaId)
+             && !bstrcmp(dev->VolHdr.Id, OlderBaculaId)) {
+    Mmsg(jcr->errmsg, _("Volume Header Id bad: %s\n"), dev->VolHdr.Id);
     Dmsg1(130, "%s", jcr->errmsg);
   } else {
     ok = true;
   }
   FreeRecord(record); /* finished reading Volume record */
 
-  if (!dcr->dev->IsVolumeToUnload()) { dcr->dev->ClearUnload(); }
+  if (!dev->IsVolumeToUnload()) { dev->ClearUnload(); }
 
   if (!ok) {
     if (forge_on || jcr->sd_impl->ignore_label_errors) {
-      dcr->dev->SetLabeled(); /* set has Bareos label */
+      dev->SetLabeled(); /* set has Bareos label */
       Jmsg(jcr, M_ERROR, 0, "%s", jcr->errmsg);
       goto ok_out;
     }
@@ -187,11 +186,11 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
    * then read the Bareos Volume label. Now we need to
    * make sure we have the right Volume.
    */
-  if (dcr->dev->VolHdr.VerNum != BareosTapeVersion
-      && dcr->dev->VolHdr.VerNum != OldCompatibleBareosTapeVersion1) {
+  if (dev->VolHdr.VerNum != BareosTapeVersion
+      && dev->VolHdr.VerNum != OldCompatibleBareosTapeVersion1) {
     Mmsg(jcr->errmsg,
          _("Volume on %s has wrong Bareos version. Wanted %d got %d\n"),
-         dcr->dev->print_name(), BareosTapeVersion, dcr->dev->VolHdr.VerNum);
+         dev->print_name(), BareosTapeVersion, dev->VolHdr.VerNum);
     Dmsg1(130, "VOL_VERSION_ERROR: %s", jcr->errmsg);
     status = VOL_VERSION_ERROR;
     goto bail_out;
@@ -201,12 +200,12 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
    * We are looking for either an unused Bareos tape (PRE_LABEL) or
    * a Bareos volume label (VOL_LABEL)
    */
-  if (dcr->dev->VolHdr.LabelType != PRE_LABEL
-      && dcr->dev->VolHdr.LabelType != VOL_LABEL) {
+  if (dev->VolHdr.LabelType != PRE_LABEL
+      && dev->VolHdr.LabelType != VOL_LABEL) {
     Mmsg(jcr->errmsg, _("Volume on %s has bad Bareos label type: %x\n"),
-         dcr->dev->print_name(), dcr->dev->VolHdr.LabelType);
+         dev->print_name(), dev->VolHdr.LabelType);
     Dmsg1(130, "%s", jcr->errmsg);
-    if (!dcr->dev->poll && jcr->sd_impl->label_errors++ > 100) {
+    if (!dev->poll && jcr->sd_impl->label_errors++ > 100) {
       Jmsg(jcr, M_FATAL, 0, _("Too many tries: %s"), jcr->errmsg);
     }
     Dmsg0(150, "return VOL_LABEL_ERROR\n");
@@ -214,22 +213,22 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
     goto bail_out;
   }
 
-  dcr->dev->SetLabeled(); /* set has Bareos label */
+  dev->SetLabeled(); /* set has Bareos label */
 
   /* Compare Volume Names */
   Dmsg2(130, "Compare Vol names: VolName=%s hdr=%s\n", VolName ? VolName : "*",
-        dcr->dev->VolHdr.VolumeName);
+        dev->VolHdr.VolumeName);
   if (VolName && *VolName && *VolName != '*'
-      && !bstrcmp(dcr->dev->VolHdr.VolumeName, VolName)) {
+      && !bstrcmp(dev->VolHdr.VolumeName, VolName)) {
     Mmsg(jcr->errmsg,
          _("Wrong Volume mounted on device %s: Wanted %s have %s\n"),
-         dcr->dev->print_name(), VolName, dcr->dev->VolHdr.VolumeName);
+         dev->print_name(), VolName, dev->VolHdr.VolumeName);
     Dmsg1(130, "%s", jcr->errmsg);
     /*
      * Cancel Job if too many label errors
      *  => we are in a loop
      */
-    if (!dcr->dev->poll && jcr->sd_impl->label_errors++ > 100) {
+    if (!dev->poll && jcr->sd_impl->label_errors++ > 100) {
       Jmsg(jcr, M_FATAL, 0, "Too many tries: %s", jcr->errmsg);
     }
     Dmsg0(150, "return VOL_NAME_ERROR\n");
@@ -237,12 +236,12 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
     goto bail_out;
   }
 
-  if (debug_level >= 200) { DumpVolumeLabel(dcr->dev); }
+  if (debug_level >= 200) { DumpVolumeLabel(dev); }
 
   Dmsg0(130, "Leave ReadVolumeLabel() VOL_OK\n");
   // If we are a streaming device, we only get one chance to read
-  if (!dcr->dev->HasCap(CAP_STREAM)) {
-    dcr->dev->rewind(dcr);
+  if (!dev->HasCap(CAP_STREAM)) {
+    dev->rewind(dcr);
     if (have_ansi_label) {
       status = ReadAnsiIbmLabel(dcr);
       // If we want a label and didn't find it, return error
@@ -250,12 +249,12 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
     }
   }
 
-  Dmsg1(100, "Call reserve_volume=%s\n", dcr->dev->VolHdr.VolumeName);
-  if (reserve_volume(dcr, dcr->dev->VolHdr.VolumeName) == NULL) {
+  Dmsg1(100, "Call reserve_volume=%s\n", dev->VolHdr.VolumeName);
+  if (reserve_volume(dcr, dev->VolHdr.VolumeName) == NULL) {
     Mmsg2(jcr->errmsg, _("Could not reserve volume %s on %s\n"),
-          dcr->dev->VolHdr.VolumeName, dcr->dev->print_name());
-    Dmsg2(150, "Could not reserve volume %s on %s\n",
-          dcr->dev->VolHdr.VolumeName, dcr->dev->print_name());
+          dev->VolHdr.VolumeName, dev->print_name());
+    Dmsg2(150, "Could not reserve volume %s on %s\n", dev->VolHdr.VolumeName,
+          dev->print_name());
     status = VOL_NAME_ERROR;
     goto bail_out;
   }
@@ -280,13 +279,13 @@ ok_out:
    * Reset blocksizes from volinfo to device as we set blocksize to
    * DEFAULT_BLOCK_SIZE to read the label
    */
-  dcr->dev->SetBlocksizes(dcr);
+  dev->SetBlocksizes(dcr);
 
   return VOL_OK;
 
 bail_out:
   EmptyBlock(dcr->block);
-  dcr->dev->rewind(dcr);
+  dev->rewind(dcr);
   Dmsg1(150, "return %d\n", status);
   return status;
 }

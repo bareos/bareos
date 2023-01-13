@@ -3,7 +3,7 @@
 
    Copyright (C) 2005-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -57,6 +57,7 @@ static bool SameLabelNames(char* bareos_name, char* ansi_name);
  */
 int ReadAnsiIbmLabel(DeviceControlRecord* dcr)
 {
+  Device* volatile dev = dcr->dev;
   JobControlRecord* jcr = dcr->jcr;
   char label[80]; /* tape label */
   int status, i;
@@ -68,36 +69,36 @@ int ReadAnsiIbmLabel(DeviceControlRecord* dcr)
    * If tape read the following EOF mark, on disk do not read.
    */
   Dmsg0(100, "Read ansi label.\n");
-  if (!dcr->dev->IsTape()) { return VOL_OK; }
+  if (!dev->IsTape()) { return VOL_OK; }
 
-  dcr->dev->label_type = B_BAREOS_LABEL; /* assume Bareos label */
+  dev->label_type = B_BAREOS_LABEL; /* assume Bareos label */
 
   // Read a maximum of 5 records VOL1, HDR1, ... HDR4
   for (i = 0; i < 6; i++) {
     do {
-      status = dcr->dev->read(label, sizeof(label));
+      status = dev->read(label, sizeof(label));
     } while (status == -1 && errno == EINTR);
 
     if (status < 0) {
       BErrNo be;
-      dcr->dev->clrerror(-1);
+      dev->clrerror(-1);
       Dmsg1(100, "Read device got: ERR=%s\n", be.bstrerror());
       Mmsg2(jcr->errmsg, _("Read error on device %s in ANSI label. ERR=%s\n"),
-            dcr->dev->archive_device_string, be.bstrerror());
-      Jmsg(jcr, M_ERROR, 0, "%s", dcr->dev->errmsg);
-      dcr->dev->VolCatInfo.VolCatErrors++;
+            dev->archive_device_string, be.bstrerror());
+      Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
+      dev->VolCatInfo.VolCatErrors++;
       return VOL_IO_ERROR;
     }
 
     if (status == 0) {
-      if (dcr->dev->AtEof()) {
-        dcr->dev->SetEot(); /* second eof, set eot bit */
+      if (dev->AtEof()) {
+        dev->SetEot(); /* second eof, set eot bit */
         Dmsg0(100, "EOM on ANSI label\n");
         Mmsg0(jcr->errmsg,
               _("Insane! End of tape while reading ANSI label.\n"));
         return VOL_LABEL_ERROR; /* at EOM this shouldn't happen */
       } else {
-        dcr->dev->SetAteof(); /* set eof state */
+        dev->SetAteof(); /* set eof state */
       }
     }
 
@@ -106,7 +107,7 @@ int ReadAnsiIbmLabel(DeviceControlRecord* dcr)
         if (status == 80) {
           if (bstrncmp("VOL1", label, 4)) {
             ok = true;
-            dcr->dev->label_type = B_ANSI_LABEL;
+            dev->label_type = B_ANSI_LABEL;
             Dmsg0(100, "Got ANSI VOL1 label\n");
           } else {
             // Try EBCDIC
@@ -114,7 +115,7 @@ int ReadAnsiIbmLabel(DeviceControlRecord* dcr)
             if (bstrncmp("VOL1", label, 4)) {
               ok = true;
               ;
-              dcr->dev->label_type = B_IBM_LABEL;
+              dev->label_type = B_IBM_LABEL;
               Dmsg0(100, "Found IBM label.\n");
               Dmsg0(100, "Got IBM VOL1 label\n");
             }
@@ -134,26 +135,26 @@ int ReadAnsiIbmLabel(DeviceControlRecord* dcr)
             char* p = &label[4];
             char* q;
 
-            FreeVolume(dcr->dev);
+            FreeVolume(dev);
 
             // Store new Volume name
-            q = dcr->dev->VolHdr.VolumeName;
+            q = dev->VolHdr.VolumeName;
             for (int i = 0; *p != ' ' && i < 6; i++) { *q++ = *p++; }
             *q = 0;
             Dmsg0(100, "Call reserve_volume\n");
             //  why is this reserve_volume() needed???? KES
-            reserve_volume(dcr, dcr->dev->VolHdr.VolumeName);
-            dcr->dev = dcr->dev; /* may have changed in reserve_volume */
+            reserve_volume(dcr, dev->VolHdr.VolumeName);
+            dev = dcr->dev; /* may have changed in reserve_volume */
             Dmsg2(100, "Wanted ANSI Vol %s got %6s\n", VolName,
-                  dcr->dev->VolHdr.VolumeName);
+                  dev->VolHdr.VolumeName);
             Mmsg2(jcr->errmsg, _("Wanted ANSI Volume \"%s\" got \"%s\"\n"),
-                  VolName, dcr->dev->VolHdr.VolumeName);
+                  VolName, dev->VolHdr.VolumeName);
             return VOL_NAME_ERROR;
           }
         }
         break;
       case 1:
-        if (dcr->dev->label_type == B_IBM_LABEL) {
+        if (dev->label_type == B_IBM_LABEL) {
           EbcdicToAscii(label, label, sizeof(label));
         }
 
@@ -172,7 +173,7 @@ int ReadAnsiIbmLabel(DeviceControlRecord* dcr)
                   &label[4]);
             Mmsg1(jcr->errmsg,
                   _("ANSI/IBM Volume \"%s\" does not belong to Bareos.\n"),
-                  dcr->dev->VolHdr.VolumeName);
+                  dev->VolHdr.VolumeName);
             return VOL_NAME_ERROR; /* Not a Bareos label */
           }
         } else {
@@ -181,14 +182,14 @@ int ReadAnsiIbmLabel(DeviceControlRecord* dcr)
                   &label[4]);
             Mmsg1(jcr->errmsg,
                   _("ANSI/IBM Volume \"%s\" does not belong to Bareos.\n"),
-                  dcr->dev->VolHdr.VolumeName);
+                  dev->VolHdr.VolumeName);
             return VOL_NAME_ERROR; /* Not a Bareos label */
           }
         }
         Dmsg0(100, "Got HDR1 label\n");
         break;
       case 2:
-        if (dcr->dev->label_type == B_IBM_LABEL) {
+        if (dev->label_type == B_IBM_LABEL) {
           EbcdicToAscii(label, label, sizeof(label));
         }
 
@@ -206,7 +207,7 @@ int ReadAnsiIbmLabel(DeviceControlRecord* dcr)
           return VOL_OK;
         }
 
-        if (dcr->dev->label_type == B_IBM_LABEL) {
+        if (dev->label_type == B_IBM_LABEL) {
           EbcdicToAscii(label, label, sizeof(label));
         }
 

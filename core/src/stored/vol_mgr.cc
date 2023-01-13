@@ -349,9 +349,10 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
                                       const char* VolumeName)
 {
   VolumeReservationItem *vol, *nvol;
+  Device* volatile dev = dcr->dev;
 
   if (JobCanceled(dcr->jcr)) { return NULL; }
-  ASSERT(dcr->dev != NULL);
+  ASSERT(dev != NULL);
 
   Dmsg2(debuglevel, "enter reserve_volume=%s drive=%s\n", VolumeName,
         dcr->dev->print_name());
@@ -362,7 +363,7 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
     Mmsg(dcr->jcr->errmsg,
          _("Could not reserve volume \"%s\" for append, because it is read by "
            "another Job.\n"),
-         dcr->dev->VolHdr.VolumeName);
+         dev->VolHdr.VolumeName);
     return NULL;
   }
 
@@ -377,10 +378,10 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
    * First, remove any old volume attached to this device as it is no longer
    * used.
    */
-  if (dcr->dev->vol) {
-    vol = dcr->dev->vol;
+  if (dev->vol) {
+    vol = dev->vol;
     Dmsg4(debuglevel, "Vol attached=%s, newvol=%s volinuse=%d on %s\n",
-          vol->vol_name, VolumeName, vol->IsInUse(), dcr->dev->print_name());
+          vol->vol_name, VolumeName, vol->IsInUse(), dev->print_name());
     /*
      * Make sure we don't remove the current volume we are inserting
      * because it was probably inserted by another job, or it
@@ -402,11 +403,11 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
             vol->vol_name);
 
       // If old Volume is still mounted, must unload it
-      if (bstrcmp(vol->vol_name, dcr->dev->VolHdr.VolumeName)) {
+      if (bstrcmp(vol->vol_name, dev->VolHdr.VolumeName)) {
         Dmsg0(50, "SetUnload\n");
-        dcr->dev->SetUnload(); /* have to unload current volume */
+        dev->SetUnload(); /* have to unload current volume */
       }
-      FreeVolume(dcr->dev); /* Release old volume entry */
+      FreeVolume(dev); /* Release old volume entry */
 
       if (debug_level >= debuglevel) { DebugListVolumes("reserve_vol free"); }
     }
@@ -420,11 +421,11 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
    * accesses by multiple readers at once without disturbing each other.
    */
   if (me->filedevice_concurrent_read && !dcr->IsWriting()
-      && dcr->dev->CanReadConcurrently()) {
+      && dev->CanReadConcurrently()) {
     nvol->SetJobid(dcr->jcr->JobId);
     nvol->SetReading();
     vol = nvol;
-    dcr->dev->vol = vol;
+    dev->vol = vol;
 
     /*
      * Read volumes on file based devices are not inserted into the write volume
@@ -439,7 +440,7 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
 
   if (vol != nvol) {
     Dmsg2(debuglevel, "Found vol=%s dev-same=%d\n", vol->vol_name,
-          dcr->dev == vol->dev);
+          dev == vol->dev);
 
     /*
      * At this point, a Volume with this name already is in the list,
@@ -454,7 +455,7 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
     FreeVolItem(nvol);
 
     if (vol->dev) {
-      Dmsg2(debuglevel, "dev=%s vol->dev=%s\n", dcr->dev->print_name(),
+      Dmsg2(debuglevel, "dev=%s vol->dev=%s\n", dev->print_name(),
             vol->dev->print_name());
     }
 
@@ -462,35 +463,35 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
      * Check if we are trying to use the Volume on a different drive dev is our
      * device vol->dev is where the Volume we want is
      */
-    if (dcr->dev != vol->dev) {
+    if (dev != vol->dev) {
       // Caller wants to switch Volume to another device
 
       // should be different devices with different names
-      if (bstrcmp(dcr->dev->print_name(), vol->dev->print_name())) {
+      if (bstrcmp(dev->print_name(), vol->dev->print_name())) {
         // names are same
         Dmsg1(100, "device pointers are different but have same name %s\n",
-              dcr->dev->print_name());
+              dev->print_name());
       }
 
       if (!vol->dev->IsBusy() && !vol->IsSwapping()) {
         slot_number_t slot;
 
         Dmsg3(debuglevel, "==== Swap vol=%s from dev=%s to %s\n", VolumeName,
-              vol->dev->print_name(), dcr->dev->print_name());
-        FreeVolume(dcr->dev); /* free any volume attached to our drive */
-        Dmsg1(50, "SetUnload dev=%s\n", dcr->dev->print_name());
-        dcr->dev->SetUnload(); /* Unload any volume that is on our drive */
+              vol->dev->print_name(), dev->print_name());
+        FreeVolume(dev); /* free any volume attached to our drive */
+        Dmsg1(50, "SetUnload dev=%s\n", dev->print_name());
+        dev->SetUnload();      /* Unload any volume that is on our drive */
         dcr->SetDev(vol->dev); /* temp point to other dev */
         slot = GetAutochangerLoadedSlot(dcr); /* get slot on other drive */
-        dcr->SetDev(dcr->dev);                /* restore dev */
+        dcr->SetDev(dev);                     /* restore dev */
         vol->SetSlotNumber(slot);             /* save slot */
         vol->dev->SetUnload();                /* unload the other drive */
         vol->SetSwapping();                   /* swap from other drive */
-        dcr->dev->swap_dev = vol->dev;        /* remember to get this vol */
-        dcr->dev->SetLoad();                  /* then reload on our drive */
+        dev->swap_dev = vol->dev;             /* remember to get this vol */
+        dev->SetLoad();                       /* then reload on our drive */
         vol->dev->vol = NULL; /* remove volume from other drive */
-        vol->dev = dcr->dev;  /* point the Volume at our drive */
-        dcr->dev->vol = vol;  /* point our drive at the Volume */
+        vol->dev = dev;       /* point the Volume at our drive */
+        dev->vol = vol;       /* point our drive at the Volume */
       } else {
         Jmsg7(dcr->jcr, M_WARNING, 0,
               "Need volume from other drive, but swap not possible. "
@@ -498,14 +499,13 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
               "vol=%s from dev=%s to %s\n",
               vol->dev->CanRead(), vol->dev->num_writers,
               vol->dev->NumReserved(), vol->IsSwapping(), VolumeName,
-              vol->dev->print_name(), dcr->dev->print_name());
-        if (vol->IsSwapping() && dcr->dev->swap_dev) {
+              vol->dev->print_name(), dev->print_name());
+        if (vol->IsSwapping() && dev->swap_dev) {
           Dmsg3(debuglevel, "Swap failed vol=%s from=%s to dev=%s\n",
-                vol->vol_name, dcr->dev->swap_dev->print_name(),
-                dcr->dev->print_name());
+                vol->vol_name, dev->swap_dev->print_name(), dev->print_name());
         } else {
           Dmsg3(debuglevel, "Swap failed vol=%s from=%p to dev=%s\n",
-                vol->vol_name, dcr->dev->swap_dev, dcr->dev->print_name());
+                vol->vol_name, dev->swap_dev, dev->print_name());
         }
 
         if (debug_level >= debuglevel) { DebugListVolumes("failed swap"); }
@@ -514,10 +514,10 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
         goto get_out;
       }
     } else {
-      dcr->dev->vol = vol;
+      dev->vol = vol;
     }
   } else {
-    dcr->dev->vol = vol; /* point to newly inserted volume */
+    dev->vol = vol; /* point to newly inserted volume */
   }
 
 get_out:
