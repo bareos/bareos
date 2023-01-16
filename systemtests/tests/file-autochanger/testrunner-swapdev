@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -e
+set -o pipefail
+set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+label barcodes slots=1 drive=0 pool=Incremental yes
+release alldrives
+mount drive=1 slot=1
+run job=backup-bareos-fd yes
+wait
+END_OF_DATA
+
+run_bconsole
+
+end_test
