@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2022-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -66,4 +66,15 @@ endif()
 if(HAVE_DARWIN_OS)
   target_link_libraries(bareossd-fifo bareos bareossd)
   target_link_libraries(bareossd-gentape bareos bareossd)
+endif()
+
+if(HAVE_DYNAMIC_SD_BACKENDS)
+  add_library(bareossd-autochanger_test MODULE)
+  set_property(
+    TARGET bareossd-autochanger_test PROPERTY POSITION_INDEPENDENT_CODE ON
+  )
+  target_sources(
+    bareossd-autochanger_test PRIVATE autochanger_test_device.cc
+                                      unix_file_device.cc
+  )
 endif()
