@@ -22,7 +22,7 @@ set -u
 
 . ./environment
 . ./test-config
-. ./redirect_output
+. "${rscripts}/redirect_output"
 
 echo "=== $0 Running ==="
 
@@ -61,7 +61,7 @@ Storage {
   Address = @hostname@
   Password = "sd_password"
   Device = autochanger-${changer_index}
-  SD Port = @sd_port@
+  SD Port = ${BAREOS_STORAGE_PORT}
   Media Type = LTO
   Auto Changer = yes
   MaximumConcurrentJobs=2000

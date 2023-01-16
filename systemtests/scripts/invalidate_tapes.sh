@@ -23,7 +23,7 @@ set -u
 
 . ./environment
 . ./test-config
-. ./redirect_output
+. "${rscripts}/redirect_output"
 
 echo "=== $0 Running ==="
 
