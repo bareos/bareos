@@ -50,6 +50,9 @@ if [ "${gen_kek}" != "$read_kek" ];then
 fi
 
 # Set the KEK to configuration
+# first stage is cleaning any previous run
+sed -i "/Key Encryption Key =.*/d" etc/bareos/bareos-dir.d/director/bareos-dir.conf
+sed -i "/Key Encryption Key =.*/d" etc/bareos/bareos-dir.d/director/bareos-dir.conf
 # we don't use our config-libs set(get)_config_param_in_file 
 # due to bad parsing and writing of complex string like KEK
 # here we also use œ char that will never appear in KEK

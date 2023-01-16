@@ -35,19 +35,18 @@ set -u
 # to make the user build able to execute the following.
 # Reset any existing tapes
 PATH=${PATH}:/usr/sbin
-. /etc/mhvtl/mhvtl.conf
-export MHVTL_HOME_PATH
-sudo /usr/bin/systemctl stop mhvtl.target
-sleep 1
-if [ $(pgrep vtl | wc -l) -ne 0 ];then
-  printf "Still vtl process running, aborting \n"
-  exit 1
-fi
-sudo /usr/bin/rm -rf /var/lib/mhvtl/*
-sudo /usr/bin/make_vtl_media --config-dir /etc/mhvtl
-sudo /usr/bin/systemctl start mhvtl.target
-
-sleep 5
+#. /etc/mhvtl/mhvtl.conf
+#export MHVTL_HOME_PATH
+#sudo /usr/bin/systemctl stop mhvtl.target
+#sleep 5
+#if [ $(pgrep vtl | wc -l) -ne 0 ];then
+#  printf "Still vtl process running, aborting \n"
+#  exit 1
+#fi
+#sudo /usr/bin/rm -rf /var/lib/mhvtl/*
+#sudo /usr/bin/make_vtl_media --config-dir /etc/mhvtl
+#sudo /usr/bin/systemctl start mhvtl.target
+#sleep 5
 
 # set raw cap for binaries
 for b in bareos_sd bcopy bextract bls bscan bscrypto btape; do
@@ -56,13 +55,13 @@ for b in bareos_sd bcopy bextract bls bscan bscrypto btape; do
   sudo setcap cap_sys_rawio=ep "${sb}"
 done
 
-if ! ./invalidate_tapes.sh ${1:-}
+if ! "${rscripts}/invalidate_tapes.sh" ${1:-}
 then
   echo "Could not invalidate tapes"
   exit 1
 fi
 
-if ! ./create_autochanger_configs.sh ${1:-}
+if ! "${rscripts}/create_autochanger_configs.sh" ${1:-}
 then
   echo "Could not create autochanger configs"
   exit 1
