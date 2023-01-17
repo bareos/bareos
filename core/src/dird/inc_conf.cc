@@ -292,6 +292,12 @@ ResourceItem options_items[] = {
 
 /* clang-format on */
 
+
+struct OptionsDefaultValues {
+  std::map<int, options_default_value_s> option_default_values
+      = {{INC_KW_ACL, {false, "A"}}, {INC_KW_XATTR, {false, "X"}}};
+};
+
 // determine used compression algorithms
 void FindUsedCompressalgos(PoolMem* compressalgos, JobControlRecord* jcr)
 {
@@ -687,12 +693,33 @@ static void SetupCurrentOpts(void)
   res_incexe->file_options_list.push_back(fo);
 }
 
+static void ApplyDefaultValuesForUnsetOptions(
+    OptionsDefaultValues default_values)
+{
+  for (auto const& option : default_values.option_default_values) {
+    int keyword_id = option.first;
+    bool was_set_in_config = option.second.configured;
+    std::string default_value = option.second.default_value;
+    if (!was_set_in_config) {
+      bstrncat(res_incexe->current_opts->opts, default_value.c_str(),
+               MAX_FOPTS);
+      Dmsg2(900, "setting default value for keyword-id=%d, %s\n", keyword_id,
+            default_value.c_str());
+    }
+  }
+}
+
+static void StoreDefaultOptions()
+{
+  SetupCurrentOpts();
+  ApplyDefaultValuesForUnsetOptions(OptionsDefaultValues{});
+}
+
 // Come here when Options seen in Include/Exclude
 static void StoreOptionsRes(LEX* lc, ResourceItem*, int pass, bool exclude)
 {
-  int token, i;
-  std::map<int, options_default_value_s> option_default_values
-      = {{INC_KW_ACL, {false, "A"}}, {INC_KW_XATTR, {false, "X"}}};
+  int token;
+  OptionsDefaultValues default_values;
 
   if (exclude) {
     scan_err0(lc, _("Options section not permitted in Exclude\n"));
@@ -714,7 +741,7 @@ static void StoreOptionsRes(LEX* lc, ResourceItem*, int pass, bool exclude)
       return;
     }
     bool found = false;
-    for (i = 0; options_items[i].name; i++) {
+    for (int i = 0; options_items[i].name; i++) {
       if (Bstrcasecmp(options_items[i].name, lc->str)) {
         token = LexGetToken(lc, BCT_SKIP_EOL);
         if (token != BCT_EQUALS) {
@@ -724,7 +751,8 @@ static void StoreOptionsRes(LEX* lc, ResourceItem*, int pass, bool exclude)
         /* Call item handler */
         switch (options_items[i].type) {
           case CFG_TYPE_OPTION:
-            StoreOption(lc, &options_items[i], pass, option_default_values);
+            StoreOption(lc, &options_items[i], pass,
+                        default_values.option_default_values);
             break;
           case CFG_TYPE_REGEX:
             StoreRegex(lc, &options_items[i], pass);
@@ -760,20 +788,7 @@ static void StoreOptionsRes(LEX* lc, ResourceItem*, int pass, bool exclude)
     }
   }
 
-  /* apply default values for unset options */
-  if (pass == 1) {
-    for (auto const& o : option_default_values) {
-      int keyword_id = o.first;
-      bool was_set_in_config = o.second.configured;
-      std::string default_value = o.second.default_value;
-      if (!was_set_in_config) {
-        bstrncat(res_incexe->current_opts->opts, default_value.c_str(),
-                 MAX_FOPTS);
-        Dmsg2(900, "setting default value for keyword-id=%d, %s\n", keyword_id,
-              default_value.c_str());
-      }
-    }
-  }
+  if (pass == 1) { ApplyDefaultValuesForUnsetOptions(default_values); }
 }
 
 static FilesetResource* GetStaticFilesetResource()
@@ -921,6 +936,7 @@ static void StoreNewinc(LEX* lc, ResourceItem* item, int index, int pass)
   }
   res_fs->new_include = true;
   int token;
+  bool has_options = false;
   while ((token = LexGetToken(lc, BCT_SKIP_EOL)) != BCT_EOF) {
     if (token == BCT_EOB) { break; }
     if (token != BCT_IDENTIFIER) {
@@ -950,6 +966,7 @@ static void StoreNewinc(LEX* lc, ResourceItem* item, int index, int pass)
             break;
           case CFG_TYPE_OPTIONS:
             StoreOptionsRes(lc, &newinc_items[i], pass, item->code);
+            has_options = true;
             break;
           default:
             break;
@@ -962,6 +979,10 @@ static void StoreNewinc(LEX* lc, ResourceItem* item, int index, int pass)
       scan_err1(lc, _("Keyword %s not permitted in this resource"), lc->str);
       return;
     }
+  }
+
+  if (!has_options) {
+    if (pass == 1) { StoreDefaultOptions(); }
   }
 
   if (pass == 1) {
