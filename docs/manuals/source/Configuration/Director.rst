@@ -713,18 +713,18 @@ The directives within an Options resource may be one of the following:
 
 .. config:option:: dir/fileset/include/options/Signature
 
-   :type: <MD5|SHA1|SHA256|SHA512>
+   :type: <MD5|SHA1|SHA256|SHA512|XXH128>
 
    It is strongly recommend to use signatures for your backups.
    Note, only one type of signature can be computed per file.
 
    You have to find the right balance between speed and security. Todays CPUs have often special instructions that can calculate checksums very fast. So if in doubt, testing the speed of the different signatures in your environment will show what is the fastest algorithm.
-   For example the MD5 message-digest algorithm is a cryptographically broken but, it is still suitable for other non-cryptographic purposes (like calculating a checksum to avoid unintended data change as used by Bareos here) and may be preferred due to lower computational requirements than more recent SHA algorithms.
+   The XXH128 algorithm is not cryptographically safe, but it is suitable for non-cryptographic purposes (like calculating a checksum to avoid avoid data corruption as used by Bareos here).  Bareos suggests XXH128 as the preferred algorithm due to the fact that it has by magnitudes lower computational requirements. The calculation of the cryptographical checksum like MD5 or SHA has proven to be the bottleneck in environments with high-speed requirements.
 
    MD5
            :index:`\ <single: MD5>`
            :index:`\ <single: signature; MD5>`
-           An MD5 signature (128 bits) will be computed for each files saved.  Adding this
+           An MD5 signature (128 bits) will be computed for each file saved.  Adding this
            option generates about 5\% extra overhead for each file saved.  In
            addition to the additional CPU time, the MD5 signature adds 16 more
            bytes per file to your catalog.
@@ -732,7 +732,7 @@ The directives within an Options resource may be one of the following:
    SHA1
            :index:`\ <single: SHA1>`
            :index:`\ <single: signature; SHA1>`
-           An SHA1 (160 bits) signature will be computed for each files saved.
+           An SHA1 (160 bits) signature will be computed for each file saved.
            The SHA1 algorithm is purported to be some what slower than the MD5
            algorithm, but at the same time is significantly better from a cryptographic
            point of view (i.e. much fewer collisions).
@@ -741,19 +741,27 @@ The directives within an Options resource may be one of the following:
    SHA256
            :index:`\ <single: SHA256>`
            :index:`\ <single: signature; SHA256>`
-           An SHA256 signature (256 bits) will be computed for each files saved.
+           An SHA256 signature (256 bits) will be computed for each file saved.
            The SHA256 algorithm is purported to be slower than the SHA1 algorithm, but
            at the same time is significantly better from a cryptographic point of view
            (i.e. no collisions found).
-           The SHA256 signature requires adds 32 bytes per file to your catalog.
+           The SHA256 signature requires 32 bytes per file in the catalog.
 
    SHA512
            :index:`\ <single: SHA512>`
            :index:`\ <single: signature; SHA512>`
-           An SHA512 signature (512 bits) will be computed for each files saved.
+           An SHA512 signature (512 bits) will be computed for each file saved.
            This is the slowest algorithm and is equivalent in terms of cryptographic
            value than SHA256.
-           The SHA512 signature requires adds 64 bytes per file to your catalog.
+           The SHA512 signature requires 64 bytes per file in the catalog.
+
+   XXH128
+           :index:`\ <single: XXH128>`
+           :index:`\ <single: signature; XXH128>`
+           An xxHash signature (XXH3, 128 bits) will be computed for each file saved.
+           This is the algorithm with the least computational requirements, but it is also not cryptographically safe.
+           The XXH128 signature requires 16 bytes per file in the catalog.
+
 
 
 .. config:option:: dir/fileset/include/options/BaseJob
