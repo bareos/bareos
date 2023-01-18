@@ -3,7 +3,7 @@
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
 # Copyright (C) 2015-2015 Planets Communications B.V.
-# Copyright (C) 2015-2020 Bareos GmbH & Co. KG
+# Copyright (C) 2015-2023 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -37,6 +37,7 @@ import ldap.resiter
 import ldap.modlist
 import time
 from calendar import timegm
+import collections
 
 
 def _safe_encode(data):
@@ -256,7 +257,8 @@ class BareosLDAPWrapper:
         except ldap.INVALID_CREDENTIALS:
             bareosfd.JobMessage(
                 bareosfd.bJobMessageType["M_FATAL"],
-                "Failed to bind to LDAP uri due to invalid credentials %s\n" % (options["uri"]),
+                "Failed to bind to LDAP uri due to invalid credentials %s\n"
+                % (options["uri"]),
             )
 
             return bareosfd.bRC_Error
@@ -397,7 +399,7 @@ class BareosLDAPWrapper:
                 # if there is nothing return an error.
                 try:
                     res_type, res_data, res_msgid, res_controls = self.resultset.next()
-                    self.ldap_entries = res_data
+                    self.ldap_entries = collections.deque(res_data)
                 except ldap.NO_SUCH_OBJECT:
                     return bareosfd.bRC_Error
                 except StopIteration:
@@ -405,7 +407,7 @@ class BareosLDAPWrapper:
 
             # Get the next entry from the result set.
             if self.ldap_entries:
-                self.dn, self.entry = self.ldap_entries.pop(0)
+                self.dn, self.entry = self.ldap_entries.popleft()
 
                 if self.dn:
                     # Extract the createTimestamp and modifyTimestamp and
@@ -483,7 +485,7 @@ class BareosLDAPWrapper:
                 try:
                     # Get the next result set
                     res_type, res_data, res_msgid, res_controls = self.resultset.next()
-                    self.ldap_entries = res_data
+                    self.ldap_entries = collections.deque(res_data)
 
                     # We expect something to be in the result set but better check
                     if self.ldap_entries:
