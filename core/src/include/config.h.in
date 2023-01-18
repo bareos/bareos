@@ -421,12 +421,6 @@ extern char win_os[];
 // Define to 1 if you have the `sizeof_proplist_entry' function
 #cmakedefine HAVE_SIZEOF_PROPLIST_ENTRY @HAVE_SIZEOF_PROPLIST_ENTRY@
 
-// Set if you have an SQLite3 Database
-#cmakedefine HAVE_SQLITE3 @HAVE_SQLITE3@
-
-// Define to 1 if you have the `sqlite3_threadsafe' function
-#cmakedefine HAVE_SQLITE3_THREADSAFE @HAVE_SQLITE3_THREADSAFE@
-
 // Define to 1 if you are running Solaris
 #cmakedefine HAVE_SUN_OS @HAVE_SUN_OS@
 

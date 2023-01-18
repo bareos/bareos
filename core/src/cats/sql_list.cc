@@ -28,7 +28,7 @@
 
 #include "include/bareos.h"
 
-#if HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI
+#if HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI
 
 #  include "cats.h"
 #  include "lib/edit.h"
@@ -788,5 +788,5 @@ void BareosDb::ListFilesets(JobControlRecord* jcr,
 
   SqlFreeResult();
 }
-#endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || \
+#endif /* HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || \
           HAVE_DBI */

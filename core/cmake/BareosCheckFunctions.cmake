@@ -80,7 +80,6 @@ check_function_exists(setreuid HAVE_SETREUID)
 check_function_exists(setxattr HAVE_SETXATTR)
 check_function_exists(hl_loa HAVE_HL_LOA)
 check_function_exists(sizeof_proplist_entry HAVE_SIZEOF_PROPLIST_ENTRY)
-check_function_exists(sqlite3_threadsafe HAVE_SQLITE3_THREADSAFE)
 check_function_exists(unlinkat HAVE_UNLINKAT)
 check_function_exists(utimes HAVE_UTIMES)
 

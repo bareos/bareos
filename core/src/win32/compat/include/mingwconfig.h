@@ -153,12 +153,6 @@
 /* Define to 1 if DB batch insert code enabled */
 #define USE_BATCH_FILE_INSERT 1
 
-/* Set if you have an SQLite3 Database */
-#define HAVE_SQLITE3 1
-
-/* Define to 1 if you have the `sqlite3_threadsafe' function. */
-#define HAVE_SQLITE3_THREADSAFE 1
-
 /* Set if you have an PostgreSQL Database */
 #define HAVE_POSTGRESQL 1
 
