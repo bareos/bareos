@@ -481,7 +481,6 @@ static bool prune_set_filter(UaContext* ua,
                          strlen(pool->resource_name_));
     Mmsg(tmp, " AND Pool.Name = '%s' ", ed2);
     PmStrcat(*add_where, tmp.c_str());
-    /* Use ON() instead of USING for some old SQLite */
     PmStrcat(*add_from, " JOIN Pool USING(PoolId) ");
   }
   Dmsg2(150, "f=%s w=%s\n", add_from->c_str(), add_where->c_str());

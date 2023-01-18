@@ -27,7 +27,7 @@
  *
  * Almost generic set of SQL database interface routines
  * (with a little more work) SQL engine specific routines are in
- * mysql.c, postgresql.c, sqlite.c, ...
+ * mysql.c, postgresql.c, ...
  */
 
 #include "include/bareos.h"
