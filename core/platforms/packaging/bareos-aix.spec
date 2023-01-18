@@ -52,7 +52,6 @@ Vendor: 	The Bareos Team
 # default settings
 %define client_only 1
 %define build_qt_monitor 0
-%define build_sqlite3 1
 %define check_cmocka 1
 %define glusterfs 0
 %define objectstorage 0

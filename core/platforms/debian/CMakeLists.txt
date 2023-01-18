@@ -165,13 +165,6 @@ if(${_index} GREATER -1)
   )
 endif()
 
-list(FIND db_backends "sqlite3" _index)
-if(${_index} GREATER -1)
-  bareos_install_sql_files_to_dbconfig_common(
-    BAREOS_DB_NAME sqlite3 DEBIAN_DB_NAME sqlite3
-  )
-endif()
-
 list(FIND db_backends "mysql" _index)
 if(${_index} GREATER -1)
   bareos_install_sql_files_to_dbconfig_common(

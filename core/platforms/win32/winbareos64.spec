@@ -64,8 +64,6 @@ BuildRequires:  %{mingw}-lzo
 BuildRequires:  %{mingw}-lzo-devel
 BuildRequires:  %{mingw}-libfastlz
 BuildRequires:  %{mingw}-libfastlz-devel
-BuildRequires:  %{mingw}-libsqlite3-0
-BuildRequires:  %{mingw}-libsqlite-devel
 BuildRequires:  %{mingw}-gtest-devel
 BuildRequires:  %{mingw}-libgtest0
 BuildRequires:  %{mingw}-libjansson
@@ -114,7 +112,6 @@ for flavor in %flavors; do
    pushd $flavor
    %{_mingw64_cmake} \
       -DCMAKE_INSTALL_BINDIR:PATH=%{_mingw64_bindir} \
-      -Dsqlite3=yes \
       -Dpostgresql=yes \
       -Dtraymonitor=yes \
       -DWINDOWS_BITS=%WINDOWS_BITS \

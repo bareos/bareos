@@ -80,12 +80,6 @@ BuildRequires:  mingw64-lzo
 BuildRequires:  mingw32-libfastlz
 BuildRequires:  mingw64-libfastlz
 
-BuildRequires:  mingw32-sqlite
-BuildRequires:  mingw64-sqlite
-
-BuildRequires:  mingw32-libsqlite
-BuildRequires:  mingw64-libsqlite
-
 BuildRequires:  mingw32-libjansson
 BuildRequires:  mingw64-libjansson
 
@@ -167,7 +161,6 @@ for flavor in %{flavors}; do
       libreadline6.dll \
       libssl-*.dll \
       libstdc++-6.dll \
-      libsqlite3-0.dll \
       libtermcap-0.dll \
       openssl.exe \
       libwinpthread-1.dll \
@@ -184,7 +177,6 @@ for flavor in %{flavors}; do
       libharfbuzz-0.dll \
       libpcre16-0.dll \
       sed.exe \
-      sqlite3.exe \
       zlib1.dll \
    ; do
       cp %{_mingw32_bindir}/$file $RPM_BUILD_ROOT/$flavor/release32
