@@ -28,7 +28,7 @@
 
 #include "include/bareos.h"
 
-#if HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI
+#if HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_DBI
 
 #  include "cats.h"
 #  include "lib/edit.h"
@@ -573,5 +573,4 @@ void BareosDb::UpgradeCopies(const char* jobids)
 
   SqlQuery("DROP TABLE cpy_tmp");
 }
-#endif /* HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || \
-          HAVE_DBI */
+#endif /* HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_DBI */

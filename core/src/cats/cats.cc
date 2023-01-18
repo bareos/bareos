@@ -28,7 +28,7 @@
 
 #include "include/bareos.h"
 
-#if HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI
+#if HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_DBI
 
 #  include "cats.h"
 #  include "sql_pooling.h"
@@ -97,16 +97,12 @@ const char* BareosDb::GetType(void)
       return "MySQL";
     case SQL_INTERFACE_TYPE_POSTGRESQL:
       return "PostgreSQL";
-    case SQL_INTERFACE_TYPE_INGRES:
-      return "Ingres";
     case SQL_INTERFACE_TYPE_DBI:
       switch (db_type_) {
         case SQL_TYPE_MYSQL:
           return "DBI:MySQL";
         case SQL_TYPE_POSTGRESQL:
           return "DBI:PostgreSQL";
-        case SQL_TYPE_INGRES:
-          return "DBI:Ingres";
         default:
           return "DBI:Unknown";
       }
@@ -233,5 +229,4 @@ void BareosDb::UnescapeObject(JobControlRecord*,
   dest[expected_len] = '\0';
 }
 
-#endif /* HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || \
-          HAVE_DBI */
+#endif /* HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_DBI */

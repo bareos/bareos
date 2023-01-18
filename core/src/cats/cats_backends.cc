@@ -28,7 +28,7 @@
 #include "include/bareos.h"
 #include "lib/edit.h"
 
-#if HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI
+#if HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_DBI
 
 #  include "cats.h"
 
@@ -298,5 +298,4 @@ BareosDb* db_init_database(JobControlRecord* jcr,
 
 void DbFlushBackends(void) {}
 #  endif /* HAVE_DYNAMIC_CATS_BACKENDS */
-#endif   /* HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || \
-            HAVE_DBI */
+#endif   /* HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_DBI */
