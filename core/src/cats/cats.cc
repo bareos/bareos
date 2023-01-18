@@ -97,8 +97,6 @@ const char* BareosDb::GetType(void)
       return "MySQL";
     case SQL_INTERFACE_TYPE_POSTGRESQL:
       return "PostgreSQL";
-    case SQL_INTERFACE_TYPE_SQLITE3:
-      return "SQLite3";
     case SQL_INTERFACE_TYPE_INGRES:
       return "Ingres";
     case SQL_INTERFACE_TYPE_DBI:
@@ -107,8 +105,6 @@ const char* BareosDb::GetType(void)
           return "DBI:MySQL";
         case SQL_TYPE_POSTGRESQL:
           return "DBI:PostgreSQL";
-        case SQL_TYPE_SQLITE3:
-          return "DBI:SQLite3";
         case SQL_TYPE_INGRES:
           return "DBI:Ingres";
         default:

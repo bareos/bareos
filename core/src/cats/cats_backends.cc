@@ -42,7 +42,6 @@ static struct backend_interface_mapping_t {
     = {{"dbi", TRUE, SQL_INTERFACE_TYPE_DBI},
        {"mysql", FALSE, SQL_INTERFACE_TYPE_MYSQL},
        {"postgresql", FALSE, SQL_INTERFACE_TYPE_POSTGRESQL},
-       {"sqlite3", FALSE, SQL_INTERFACE_TYPE_SQLITE3},
        {NULL, FALSE, 0}};
 
 #    include "cats_backends.h"

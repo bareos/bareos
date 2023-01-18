@@ -1264,9 +1264,7 @@ bool JobResource::Validate()
 bool CatalogResource::Validate()
 {
   /* during 1st pass, db_driver is nullptr and we skip the check */
-  if (db_driver != nullptr
-      && (std::string(db_driver) == "mysql"
-          || std::string(db_driver) == "sqlite3")) {
+  if (db_driver != nullptr && std::string(db_driver) == "mysql") {
     my_config->AddWarning(std::string("Deprecated DB driver ") + db_driver
                           + " for Catalog " + resource_name_);
   }

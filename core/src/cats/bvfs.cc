@@ -693,13 +693,8 @@ void Bvfs::clear_cache()
   // db->SqlQuery(BareosDb::SQL_QUERY::bvfs_clear_cache_0);
   db->StartTransaction(jcr);
   db->SqlQuery("UPDATE Job SET HasCache=0");
-  if (db->GetTypeIndex() == SQL_TYPE_SQLITE3) {
-    db->SqlQuery("DELETE FROM PathHierarchy;");
-    db->SqlQuery("DELETE FROM PathVisibility;");
-  } else {
-    db->SqlQuery("TRUNCATE PathHierarchy");
-    db->SqlQuery("TRUNCATE PathVisibility");
-  }
+  db->SqlQuery("TRUNCATE PathHierarchy");
+  db->SqlQuery("TRUNCATE PathVisibility");
   db->EndTransaction(jcr);
 }
 
