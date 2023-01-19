@@ -18,9 +18,13 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Fixed
 - Fix gcc warnings in ndmjob program [PR #1343]
 
+### Documentation
+- add explanation about binary version numbers [PR #1354]
+
 [PR #1335]: https://github.com/bareos/bareos/pull/1335
 [PR #1343]: https://github.com/bareos/bareos/pull/1343
 [PR #1346]: https://github.com/bareos/bareos/pull/1346
 [PR #1351]: https://github.com/bareos/bareos/pull/1351
 [PR #1352]: https://github.com/bareos/bareos/pull/1352
+[PR #1354]: https://github.com/bareos/bareos/pull/1354
 [unreleased]: https://github.com/bareos/bareos/tree/master
