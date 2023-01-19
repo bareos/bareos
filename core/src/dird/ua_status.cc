@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -389,30 +389,24 @@ static bool show_scheduled_preview(UaContext*,
       tm.tm_min = run->minute;         /* Set run minute */
       tm.tm_sec = 0;                   /* Zero secs */
 
-      /*
-       * Convert the time into a user parsable string.
+      /* Convert the time into a user parsable string.
        * As we use locale specific strings for weekday and month we
-       * need to keep track of the longest data string used.
-       */
+       * need to keep track of the longest data string used. */
       runtime = mktime(&tm);
       bstrftime_wd(dt, sizeof(dt), runtime);
       date_len = strlen(dt);
       if (date_len > *max_date_len) {
         if (*max_date_len == 0) {
-          /*
-           * When the datelen changes during the loop the locale generates a
+          /* When the datelen changes during the loop the locale generates a
            * date string that is variable. Only thing we can do about that is
            * start from scratch again. We invoke this by return false from this
-           * function.
-           */
+           * function. */
           *max_date_len = date_len;
           PmStrcpy(overview, "");
           return false;
         } else {
-          /*
-           * This is the first determined length we use this until we are proven
-           * wrong.
-           */
+          /* This is the first determined length we use this until we are proven
+           * wrong. */
           *max_date_len = date_len;
         }
       }
@@ -466,10 +460,8 @@ static bool show_scheduled_preview(UaContext*,
     }
   }
 
-  /*
-   * If we make it till here the length of the datefield is constant or didn't
-   * change.
-   */
+  /* If we make it till here the length of the datefield is constant or didn't
+   * change. */
   return true;
 }
 
@@ -1445,10 +1437,8 @@ static void StatusContentApi(UaContext* ua, StorageResource* store)
             }
             break;
           case slot_status_t::kSlotStatusEmpty:
-            /*
-             * See if this empty slot is empty because the volume is loaded
-             * in one of the drives.
-             */
+            /* See if this empty slot is empty because the volume is loaded
+             * in one of the drives. */
             vl2 = vol_is_loaded_in_drive(store, vol_list,
                                          vl1->bareos_slot_number);
             if (vl2) {
@@ -1550,10 +1540,8 @@ static void StatusContentJson(UaContext* ua, StorageResource* store)
             }
             break;
           case slot_status_t::kSlotStatusEmpty:
-            /*
-             * See if this empty slot is empty because the volume is loaded
-             * in one of the drives.
-             */
+            /* See if this empty slot is empty because the volume is loaded
+             * in one of the drives. */
             vl2 = vol_is_loaded_in_drive(store, vol_list,
                                          vl1->bareos_slot_number);
             if (vl2) {
@@ -1652,10 +1640,8 @@ static void StatusSlots(UaContext* ua, StorageResource* store)
       _("------+------------------+-----------+----------------+---------------"
         "-----------|\n"));
 
-  /*
-   * Walk through the list getting the media records
-   * Slots start numbering at 1.
-   */
+  /* Walk through the list getting the media records
+   * Slots start numbering at 1. */
   foreach_dlist (vl1, vol_list->contents) {
     vl2 = NULL;
     switch (vl1->slot_type) {
@@ -1678,10 +1664,8 @@ static void StatusSlots(UaContext* ua, StorageResource* store)
         switch (vl1->slot_status) {
           case slot_status_t::kSlotStatusEmpty:
             if (vl1->slot_type == slot_type_t::kSlotTypeStorage) {
-              /*
-               * See if this empty slot is empty because the volume is loaded
-               * in one of the drives.
-               */
+              /* See if this empty slot is empty because the volume is loaded
+               * in one of the drives. */
               vl2 = vol_is_loaded_in_drive(store, vol_list,
                                            vl1->bareos_slot_number);
               if (!vl2) {
@@ -1696,10 +1680,8 @@ static void StatusSlots(UaContext* ua, StorageResource* store)
             }
             FALLTHROUGH_INTENDED;
           case slot_status_t::kSlotStatusFull: {
-            /*
-             * We get here for all slots with content and for empty
-             * slots with their volume loaded in a drive.
-             */
+            /* We get here for all slots with content and for empty
+             * slots with their volume loaded in a drive. */
             MediaDbRecord mr;
             if (vl1->slot_status == slot_status_t::kSlotStatusFull) {
               if (!vl1->VolName) {

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -616,13 +616,11 @@ bool Do_a_command(UaContext* ua)
         ua->LogAuditEventCmdline();
       }
 
-      /*
-       * Some commands alter the JobStatus of the JobControlRecord.
+      /* Some commands alter the JobStatus of the JobControlRecord.
        * As the console JobControlRecord keeps running,
        * we set it to running state again.
        * ua->jcr->setJobStatus(JS_Running)
-       * isn't enough, as it does not overwrite error states.
-       */
+       * isn't enough, as it does not overwrite error states. */
       ua->jcr->setJobStatus(JS_Running);
 
       if (ua->api) { user->signal(BNET_CMD_BEGIN); }
@@ -2028,10 +2026,8 @@ static bool TruncateCmd(UaContext* ua, const char*)
   PoolDbRecord pool_dbr;
   StorageDbRecord storage_dbr;
   drive_number_t drive_number = 0;
-  /*
-   * Look for volumes that can be recycled,
-   * are enabled and have used more than the first block.
-   */
+  /* Look for volumes that can be recycled,
+   * are enabled and have used more than the first block. */
   mr.Recycle = 1;
   mr.Enabled = VOL_ENABLED;
   mr.VolBytes = (512 * 126); /* search volumes with more than 64,512 bytes
@@ -2065,11 +2061,9 @@ static bool TruncateCmd(UaContext* ua, const char*)
   ua->send->AddAclFilterTuple(2, Pool_ACL);
   ua->send->AddAclFilterTuple(3, Storage_ACL);
 
-  /*
-   * storage parameter is only required
+  /* storage parameter is only required
    * if ACL forbids access to all storages.
-   * Otherwise the user should not be asked for this parameter.
-   */
+   * Otherwise the user should not be asked for this parameter. */
   i = FindArgWithValue(ua, "storage");
   if ((i >= 0) || ua->AclHasRestrictions(Storage_ACL)) {
     if (!SelectStorageDbr(ua, &storage_dbr, "storage")) { goto bail_out; }
@@ -2077,11 +2071,9 @@ static bool TruncateCmd(UaContext* ua, const char*)
     parsed_args++;
   }
 
-  /*
-   * pool parameter is only required
+  /* pool parameter is only required
    * if ACL forbids access to all pools.
-   * Otherwise the user should not be asked for this parameter.
-   */
+   * Otherwise the user should not be asked for this parameter. */
   i = FindArgWithValue(ua, "pool");
   if ((i >= 0) || ua->AclHasRestrictions(Pool_ACL)) {
     if (!SelectPoolDbr(ua, &pool_dbr, "pool")) { goto bail_out; }
@@ -2089,12 +2081,10 @@ static bool TruncateCmd(UaContext* ua, const char*)
     if (i >= 0) { parsed_args++; }
   }
 
-  /*
-   * parse volume parameter.
+  /* parse volume parameter.
    * Currently only support one volume parameter
    * (multiple volume parameter have been intended before,
-   * but this causes problems with parsing and ACL handling).
-   */
+   * but this causes problems with parsing and ACL handling). */
   i = FindArgWithValue(ua, "volume");
   if (i >= 0) {
     if (IsNameValid(ua->argv[i])) {
@@ -2140,11 +2130,9 @@ static bool TruncateCmd(UaContext* ua, const char*)
   ua->db->ListSqlQuery(ua->jcr, tmp.c_str(), ua->send, HORZ_LIST, "volumes",
                        true);
 
-  /*
-   * execute query to get media ids.
+  /* execute query to get media ids.
    * Second execution is only required,
-   * because function is also used in other contextes.
-   */
+   * because function is also used in other contextes. */
   // tmp.strcpy(ua->db->cmd);
   if (!ua->db->GetQueryDbids(ua->jcr, tmp, mediaIds)) {
     Dmsg0(100, "No results from db_get_query_dbids\n");
@@ -2383,13 +2371,11 @@ static void DeleteJob(UaContext* ua)
       s = strdup(ua->argv[i]);
       tok = s;
 
-      /*
-       * We could use strtok() here.  But we're not going to, because:
+      /* We could use strtok() here.  But we're not going to, because:
        * (a) strtok() is deprecated, having been replaced by strsep();
        * (b) strtok() is broken in significant ways.
        * we could use strsep() instead, but it's not universally available.
-       * so we grow our own using strchr().
-       */
+       * so we grow our own using strchr(). */
       sep = strchr(tok, ',');
       while (sep != NULL) {
         *sep = '\0';
@@ -2446,10 +2432,8 @@ static bool DeleteJobIdRange(UaContext* ua, char* tok)
     j2 = (JobId_t)str_to_uint64(tok2);
 
     if (j2 > j1) {
-      /*
-       * See if the range is big if more then 25 Jobs are deleted
-       * ask the user for confirmation.
-       */
+      /* See if the range is big if more then 25 Jobs are deleted
+       * ask the user for confirmation. */
       if ((!ua->batch) && ((j2 - j1) > 25)) {
         Bsnprintf(buf, sizeof(buf),
                   _("Are you sure you want to delete %d JobIds ? (yes/no): "),
@@ -2682,10 +2666,8 @@ static bool wait_cmd(UaContext* ua, const char*)
   char jobstatus = '?'; /* Unknown by default */
   PoolMem temp(PM_MESSAGE);
 
-  /*
-   * no args
-   * Wait until no job is running
-   */
+  /* no args
+   * Wait until no job is running */
   if (ua->argc == 1) {
     Bmicrosleep(0, 200000); /* let job actually start */
     for (bool running = true; running;) {
@@ -2866,10 +2848,8 @@ static bool DotHelpCmd(UaContext* ua, const char*)
 {
   int i, j;
 
-  /*
-   * Implement DotHelpCmd here instead of ua_dotcmds.c,
-   * because comsize and commands are defined here.
-   */
+  /* Implement DotHelpCmd here instead of ua_dotcmds.c,
+   * because comsize and commands are defined here. */
 
   // Want to display a specific help section
   j = FindArgWithValue(ua, NT_("item"));

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -149,11 +149,9 @@ bool CheckResources()
       }
     }
 
-    /*
-     * If we collect statistics on this SD make sure any other entry pointing to
+    /* If we collect statistics on this SD make sure any other entry pointing to
      * the same SD does not collect statistics otherwise we collect the same
-     * data multiple times.
-     */
+     * data multiple times. */
     if (store->collectstats) {
       nstore = store;
       while ((nstore = (StorageResource*)my_config->GetNextRes(
@@ -232,10 +230,8 @@ bool DoReloadConfig()
 
 
   if (is_reloading) {
-    /*
-     * Note: don't use Jmsg here, as it could produce a race condition
-     * on multiple parallel reloads
-     */
+    /* Note: don't use Jmsg here, as it could produce a race condition
+     * on multiple parallel reloads */
     Qmsg(nullptr, M_ERROR, 0, _("Already reloading. Request ignored.\n"));
     return false;
   }

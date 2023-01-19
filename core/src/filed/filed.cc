@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -421,8 +421,7 @@ static bool CheckResources()
         }
       }
 
-      /*
-       * Crypto recipients. We're always included as a recipient.
+      /* Crypto recipients. We're always included as a recipient.
        * The symmetric session key will be encrypted for each of these readers.
        */
       me->pki_recipients = new alist<X509_KEYPAIR*>(10, not_owned_by_alist);

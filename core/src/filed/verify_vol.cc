@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -130,15 +130,13 @@ void DoVerifyVolume(JobControlRecord* jcr)
         *fname = 0;
         *lname = 0;
 
-        /*
-         * An Attributes record consists of:
+        /* An Attributes record consists of:
          *    File_index
          *    Type   (FT_types)
          *    Filename
          *    Attributes
          *    Link name (if file linked i.e. FT_LNK)
-         *    Extended Attributes (if Win32)
-         */
+         *    Extended Attributes (if Win32) */
         if (sscanf(sd->msg, "%d %d", &record_file_index, &type) != 2) {
           Jmsg(jcr, M_FATAL, 0, _("Error scanning record header: %s\n"),
                sd->msg);
@@ -171,8 +169,7 @@ void DoVerifyVolume(JobControlRecord* jcr)
         PmStrcpy(jcr->fd_impl->last_fname, fname); /* last file examined */
         jcr->unlock();
 
-        /*
-         * Send file attributes to Director
+        /* Send file attributes to Director
          *   File_index
          *   Stream
          *   Verify Options
@@ -180,8 +177,7 @@ void DoVerifyVolume(JobControlRecord* jcr)
          *   Encoded attributes
          *   Link name (if type==FT_LNK)
          * For a directory, link is the same as fname, but with trailing
-         * slash. For a linked file, link is the link.
-         */
+         * slash. For a linked file, link is the link. */
         /* Send file attributes to Director */
         Dmsg2(200, "send Attributes inx=%d fname=%s\n", jcr->JobFiles, fname);
         if (type == FT_LNK || type == FT_LNKSAVED) {

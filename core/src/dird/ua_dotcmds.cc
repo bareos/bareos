@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -629,10 +629,8 @@ bool DotBvfsGetJobidsCmd(UaContext* ua, const char*)
   if (jr.JobLevel == L_BASE) {
     jobids.add(edit_int64(jr.JobId, ed1));
   } else {
-    /*
-     * If we have the "all" option, we do a search on all defined fileset for
-     * this client
-     */
+    /* If we have the "all" option, we do a search on all defined fileset for
+     * this client */
     if (FindArg(ua, "all") > 0) {
       ua->db->FillQuery(query, BareosDb::SQL_QUERY::uar_sel_filesetid,
                         edit_int64(jr.ClientId, ed1));
@@ -797,10 +795,8 @@ bool DotAdminCmds(UaContext* ua, const char*)
   }
 
   if (!dir && !store && !client) {
-    /*
-     * We didn't find an appropriate keyword above, so
-     * prompt the user.
-     */
+    /* We didn't find an appropriate keyword above, so
+     * prompt the user. */
     StartPrompt(ua, _("Available daemons are: \n"));
     AddPrompt(ua, _("Director"));
     AddPrompt(ua, _("Storage"));
@@ -1398,11 +1394,9 @@ bool DotDefaultsCmd(UaContext* ua, const char*)
     if (job) {
       UnifiedStorageResource store;
 
-      /*
-       * BAT parses the result of this command message by message,
+      /* BAT parses the result of this command message by message,
        * instead of looking for a separator.
-       * Therefore the SendBuffer() function is called after each line.
-       */
+       * Therefore the SendBuffer() function is called after each line. */
       ua->send->ObjectKeyValue("job", "%s=", job->resource_name_, "%s\n");
       ua->send->SendBuffer();
       ua->send->ObjectKeyValue("pool", "%s=", job->pool->resource_name_,

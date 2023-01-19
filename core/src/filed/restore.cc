@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -230,11 +230,9 @@ static inline bool do_reStoreAcl(JobControlRecord* jcr,
     case bacl_exit_fatal:
       return false;
     case bacl_exit_error:
-      /*
-       * Non-fatal errors, count them and when the number is under
+      /* Non-fatal errors, count them and when the number is under
        * ACL_REPORT_ERR_MAX_PER_JOB print the error message set by the lower
-       * level routine in jcr->errmsg.
-       */
+       * level routine in jcr->errmsg. */
       if (jcr->fd_impl->acl_data->u.parse->nr_errors
           < ACL_REPORT_ERR_MAX_PER_JOB) {
         Jmsg(jcr, M_WARNING, 0, "%s", jcr->errmsg);
@@ -302,8 +300,7 @@ static inline bool PopDelayedDataStreams(JobControlRecord* jcr, r_ctx& rctx)
   // See if there is anything todo.
   if (!rctx.delayed_streams || rctx.delayed_streams->empty()) { return true; }
 
-  /*
-   * Only process known delayed data streams here.
+  /* Only process known delayed data streams here.
    * If you start using more delayed data streams
    * be sure to add them in this loop and add the
    * proper calls here.
@@ -311,8 +308,7 @@ static inline bool PopDelayedDataStreams(JobControlRecord* jcr, r_ctx& rctx)
    * Currently we support delayed data stream
    * processing for the following type of streams:
    * - *_ACL_*
-   * - *_XATTR_*
-   */
+   * - *_XATTR_* */
   foreach_alist (dds, rctx.delayed_streams) {
     switch (dds->stream) {
       case STREAM_UNIX_ACCESS_ACL:
@@ -443,8 +439,7 @@ void DoRestore(JobControlRecord* jcr)
     }
   }
 
-  /*
-   * Get a record from the Storage daemon. We are guaranteed to
+  /* Get a record from the Storage daemon. We are guaranteed to
    *   receive records in the following order:
    *   1. Stream record header
    *   2. Stream data (one or more of the following in the order given)
@@ -466,8 +461,7 @@ void DoRestore(JobControlRecord* jcr)
    *      The expected size of the stream, fork_len, should be set when
    *      opening the fd.
    *   3. Not all the stream data records are required -- e.g. if there
-   *      is no fork, there is no alternate data stream, no ACL, ...
-   */
+   *      is no fork, there is no alternate data stream, no ACL, ... */
   binit(&rctx.bfd);
   binit(&rctx.forkbfd);
   attr = rctx.attr = new_attr(jcr);
@@ -538,10 +532,8 @@ void DoRestore(JobControlRecord* jcr)
         if (rctx.type == FT_DELETED) { /* deleted file */
           continue;
         }
-        /*
-         * Restore objects should be ignored here -- they are
-         * returned at the beginning of the restore.
-         */
+        /* Restore objects should be ignored here -- they are
+         * returned at the beginning of the restore. */
         if (IS_FT_OBJECT(rctx.type)) { continue; }
 
         // Unpack attributes and do sanity check them
@@ -714,11 +706,9 @@ void DoRestore(JobControlRecord* jcr)
         if (rctx.extract) {
           bool process_data = false;
 
-          /*
-           * Force an expected, consistent stream type here
+          /* Force an expected, consistent stream type here
            * First see if we need to process the data and
-           * set the flags.
-           */
+           * set the flags. */
           if (rctx.prev_stream == rctx.stream) {
             process_data = true;
           } else {
@@ -733,10 +723,8 @@ void DoRestore(JobControlRecord* jcr)
             }
           }
 
-          /*
-           * If process_data is set in the test above continue here with the
-           * processing of the data based on the stream type available.
-           */
+          /* If process_data is set in the test above continue here with the
+           * processing of the data based on the stream type available. */
           if (process_data) {
             ClearAllBits(FO_MAX, rctx.flags);
             switch (rctx.stream) {
@@ -786,10 +774,8 @@ void DoRestore(JobControlRecord* jcr)
                 break;
             }
 
-            /*
-             * Check for a win32 stream type on a system without the win32 API.
-             * On those we decompose the BackupWrite data.
-             */
+            /* Check for a win32 stream type on a system without the win32 API.
+             * On those we decompose the BackupWrite data. */
             if (is_win32_stream(rctx.stream) && !have_win32_api()) {
               SetPortableBackup(&rctx.bfd);
               // "decompose" BackupWrite data
@@ -808,10 +794,8 @@ void DoRestore(JobControlRecord* jcr)
         }
         break;
 
-      /*
-       * Resource fork stream - only recorded after a file to be restored
-       * Silently ignore if we cannot write - we already reported that
-       */
+      /* Resource fork stream - only recorded after a file to be restored
+       * Silently ignore if we cannot write - we already reported that */
       case STREAM_ENCRYPTED_MACOS_FORK_DATA:
       case STREAM_MACOS_FORK_DATA:
         if (have_darwin_os) {
@@ -892,21 +876,17 @@ void DoRestore(JobControlRecord* jcr)
       case STREAM_ACL_HURD_DEFAULT_ACL:
       case STREAM_ACL_HURD_ACCESS_ACL:
       case STREAM_ACL_PLUGIN:
-        /*
-         * Do not restore ACLs when
+        /* Do not restore ACLs when
          * a) The current file is not extracted
          * b)     and it is not a directory (they are never "extracted")
-         * c) or the file name is empty
-         */
+         * c) or the file name is empty */
         if ((!rctx.extract && jcr->fd_impl->last_type != FT_DIREND)
             || (*jcr->fd_impl->last_fname == 0)) {
           break;
         }
         if (have_acl) {
-          /*
-           * For anything that is not a directory we delay
-           * the restore of acls till a later stage.
-           */
+          /* For anything that is not a directory we delay
+           * the restore of acls till a later stage. */
           if (jcr->fd_impl->last_type != FT_DIREND) {
             PushDelayedDataStream(rctx, sd);
           } else {
@@ -930,21 +910,17 @@ void DoRestore(JobControlRecord* jcr)
       case STREAM_XATTR_FREEBSD:
       case STREAM_XATTR_LINUX:
       case STREAM_XATTR_NETBSD:
-        /*
-         * Do not restore Extended Attributes when
+        /* Do not restore Extended Attributes when
          * a) The current file is not extracted
          * b)     and it is not a directory (they are never "extracted")
-         * c) or the file name is empty
-         */
+         * c) or the file name is empty */
         if ((!rctx.extract && jcr->fd_impl->last_type != FT_DIREND)
             || (*jcr->fd_impl->last_fname == 0)) {
           break;
         }
         if (have_xattr) {
-          /*
-           * For anything that is not a directory we delay
-           * the restore of xattr till a later stage.
-           */
+          /* For anything that is not a directory we delay
+           * the restore of xattr till a later stage. */
           if (jcr->fd_impl->last_type != FT_DIREND) {
             PushDelayedDataStream(rctx, sd);
           } else {
@@ -959,12 +935,10 @@ void DoRestore(JobControlRecord* jcr)
         break;
 
       case STREAM_XATTR_SOLARIS:
-        /*
-         * Do not restore Extended Attributes when
+        /* Do not restore Extended Attributes when
          * a) The current file is not extracted
          * b)     and it is not a directory (they are never "extracted")
-         * c) or the file name is empty
-         */
+         * c) or the file name is empty */
         if ((!rctx.extract && jcr->fd_impl->last_type != FT_DIREND)
             || (*jcr->fd_impl->last_fname == 0)) {
           break;
@@ -1031,10 +1005,8 @@ void DoRestore(JobControlRecord* jcr)
     } /* end switch(stream) */
   }   /* end while get_msg() */
 
-  /*
-   * If output file is still open, it was the last one in the
-   * archive since we just hit an end of file, so close the file.
-   */
+  /* If output file is still open, it was the last one in the
+   * archive since we just hit an end of file, so close the file. */
   if (IsBopen(&rctx.forkbfd)) {
     BcloseChksize(jcr, &rctx.forkbfd, rctx.fork_size);
   }
@@ -1281,10 +1253,8 @@ int32_t ExtractData(JobControlRecord* jcr,
       memmove(cipher_ctx->buf, &cipher_ctx->buf[cipher_ctx->packet_len],
               cipher_ctx->buf_len);
     }
-    /*
-     * The packet was successfully written, reset the length so that the next
-     * packet length may be re-read by UnserCryptoPacketLen()
-     */
+    /* The packet was successfully written, reset the length so that the next
+     * packet length may be re-read by UnserCryptoPacketLen() */
     cipher_ctx->packet_len = 0;
   }
 

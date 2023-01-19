@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -140,10 +140,8 @@ static bool setup_to_access_device(DeviceControlRecord* dcr,
 
   InitReservationsLock();
 
-  /*
-   * If no volume name already given and no bsr, and it is a file,
-   * try getting name from Filename
-   */
+  /* If no volume name already given and no bsr, and it is a file,
+   * try getting name from Filename */
   if (!VolumeName.empty()) {
     bstrncpy(VolName, VolumeName.c_str(), sizeof(VolName));
     if (VolumeName.size() >= MAX_NAME_LENGTH) {
