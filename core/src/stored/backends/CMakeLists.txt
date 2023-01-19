@@ -29,7 +29,6 @@ macro(add_sd_backend backend_name)
     add_library(${backend_name} OBJECT)
     target_link_libraries(bareossd PRIVATE ${backend_name})
   endif()
-  set_property(TARGET ${backend_name} PROPERTY POSITION_INDEPENDENT_CODE ON)
 endmacro()
 
 if(${HAVE_GLUSTERFS})
@@ -70,9 +69,6 @@ endif()
 
 if(HAVE_DYNAMIC_SD_BACKENDS)
   add_library(bareossd-autochanger_test MODULE)
-  set_property(
-    TARGET bareossd-autochanger_test PROPERTY POSITION_INDEPENDENT_CODE ON
-  )
   target_sources(
     bareossd-autochanger_test PRIVATE autochanger_test_device.cc
                                       unix_file_device.cc
