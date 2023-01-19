@@ -28,7 +28,7 @@
 #include "include/bareos.h"
 #include "lib/edit.h"
 
-#if HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_DBI
+#if HAVE_MYSQL || HAVE_POSTGRESQL
 
 #  include "cats.h"
 
@@ -39,8 +39,7 @@ static struct backend_interface_mapping_t {
   bool partly_compare;
   int interface_type_id;
 } backend_interface_mappings[]
-    = {{"dbi", TRUE, SQL_INTERFACE_TYPE_DBI},
-       {"mysql", FALSE, SQL_INTERFACE_TYPE_MYSQL},
+    = {{"mysql", FALSE, SQL_INTERFACE_TYPE_MYSQL},
        {"postgresql", FALSE, SQL_INTERFACE_TYPE_POSTGRESQL},
        {NULL, FALSE, 0}};
 
@@ -298,4 +297,4 @@ BareosDb* db_init_database(JobControlRecord* jcr,
 
 void DbFlushBackends(void) {}
 #  endif /* HAVE_DYNAMIC_CATS_BACKENDS */
-#endif   /* HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_DBI */
+#endif   /* HAVE_MYSQL || HAVE_POSTGRESQL */

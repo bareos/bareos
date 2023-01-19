@@ -32,7 +32,7 @@
 
 #include "include/bareos.h"
 
-#if HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_DBI
+#if HAVE_MYSQL || HAVE_POSTGRESQL
 
 #  include "cats.h"
 #  include "lib/edit.h"
@@ -909,4 +909,4 @@ void DbDebugPrint(JobControlRecord* jcr, FILE* fp)
 
   mdb->DbDebugPrint(fp);
 }
-#endif /* HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_DBI */
+#endif /* HAVE_MYSQL || HAVE_POSTGRESQL */

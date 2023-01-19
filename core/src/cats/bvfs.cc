@@ -26,7 +26,7 @@
  */
 #include "include/bareos.h"
 
-#if HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_DBI
+#if HAVE_MYSQL || HAVE_POSTGRESQL
 
 #  include "cats/cats.h"
 #  include "cats/sql.h"
@@ -878,4 +878,4 @@ bail_out:
   return retval;
 }
 
-#endif /* HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_DBI */
+#endif /* HAVE_MYSQL || HAVE_POSTGRESQL */

@@ -28,7 +28,7 @@
 
 #include "include/bareos.h"
 
-#if HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_DBI
+#if HAVE_MYSQL || HAVE_POSTGRESQL
 
 #  include "cats.h"
 #  include "cats_backends.h"
@@ -148,4 +148,4 @@ void DbSqlClosePooledConnection(JobControlRecord* jcr, BareosDb* mdb, bool)
   mdb->CloseDatabase(jcr);
 }
 
-#endif /* HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_DBI */
+#endif /* HAVE_MYSQL || HAVE_POSTGRESQL */

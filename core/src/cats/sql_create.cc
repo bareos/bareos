@@ -30,7 +30,7 @@
 
 static const int dbglevel = 100;
 
-#if HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_DBI
+#if HAVE_MYSQL || HAVE_POSTGRESQL
 
 #  include "cats.h"
 #  include "lib/edit.h"
@@ -1392,4 +1392,4 @@ bool BareosDb::CreateTapealertStatistics(JobControlRecord* jcr,
     return true;
   }
 }
-#endif /* HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_DBI */
+#endif /* HAVE_MYSQL || HAVE_POSTGRESQL */

@@ -32,7 +32,7 @@
 
 #include "include/bareos.h"
 
-#if HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_DBI
+#if HAVE_MYSQL || HAVE_POSTGRESQL
 
 #  include "cats.h"
 #  include "sql.h"
@@ -1910,4 +1910,4 @@ bool BareosDb::VerifyMediaIdsFromSingleStorage(JobControlRecord* jcr,
 }
 
 
-#endif /* HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_DBI */
+#endif /* HAVE_MYSQL || HAVE_POSTGRESQL */
