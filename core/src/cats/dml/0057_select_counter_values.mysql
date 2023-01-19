@@ -1,3 +1,0 @@
-SELECT Counters.MinValue, Counters.MaxValue, CurrentValue, WrapCounter
-  FROM Counters
- WHERE Counter = '%s'

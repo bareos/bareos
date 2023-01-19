@@ -20,7 +20,7 @@
 #   02110-1301, USA.
 
 
-DATABASES="postgresql mysql"
+DATABASES="postgresql"
 QUERY_NAMES_FILE="../bdb_query_names.inc"
 QUERY_ENUM_FILE="../bdb_query_enum_class.h"
 

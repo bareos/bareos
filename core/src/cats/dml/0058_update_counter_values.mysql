@@ -1,3 +1,0 @@
-UPDATE Counters
-   SET Counters.MinValue = %d, Counters.MaxValue = %d, CurrentValue = %d, WrapCounter = '%s'
- WHERE Counter           = '%s'
