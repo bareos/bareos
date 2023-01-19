@@ -99,17 +99,3 @@ mysql
     * db_version is already 2002. It detects, nothing to do.
   * update dbconfig already configured
 
-
-sqlite3
-=======
-
-  * install
-    * /etc/dbconfig-common/bareos-database-common.conf created
-    * db: setup
-    * creates link from /var/lib/bareos/bareos.db to bareos
-  * update from 12.4:
-    * updates db_version from 2001 to 2002.
-  * update from 13.2:
-    * db_version is already 2002. It detects, nothing to do.
-    * creates link from /var/lib/bareos/bareos.db to bareos
-  * update dbconfig already configured

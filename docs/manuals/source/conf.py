@@ -74,7 +74,6 @@ rst_epilog = """
 .. |mariadb| replace:: MariaDB
 .. |mysql| replace:: MySQL
 .. |postgresql| replace:: PostgreSQL
-.. |sqlite| replace:: Sqlite
 .. |vmware| replace:: VMware
 .. |vsphere| replace:: VMware vSphere
 

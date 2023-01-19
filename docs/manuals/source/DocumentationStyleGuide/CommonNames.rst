@@ -92,7 +92,6 @@ Products
    open-source,  open-source
    |postgresql|, ``|postgresql|``
    reST,         reST
-   |sqlite|,     ``|sqlite|``
    TLS-PSK,      TLS-PSK
    |vmware|,     ``|vmware|``
    |vsphere|,    ``|vsphere|``
