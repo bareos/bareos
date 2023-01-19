@@ -1,0 +1,277 @@
+<?php
+
+/**
+ *
+ * bareos-webui - Bareos Web-Frontend
+ *
+ * @link      https://github.com/bareos/bareos for the canonical source repository
+ * @copyright Copyright (c) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+$title = _('Analytics');
+$this->headTitle($title);
+
+?>
+
+<?php if($this->acl_alert) : echo $this->ACLAlert($this->invalid_commands); elseif(!$this->acl_alert) : ?>
+
+<ul class="nav nav-tabs">
+   <li><a href="<?php echo $this->url('analytics', array('action'=>'index')); ?>"><?php echo $this->translate('Stored Data'); ?></a></li>
+   <li class="active"><a href="<?php echo $this->url('analytics', array('action'=>'configuration')); ?>"><?php echo $this->translate('Configuration'); ?></a></li>
+</ul>
+
+<br />
+
+<div class="row">
+  <div class="col-md-2">
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h3 class="panel-title"><?php echo $this->translate('Configuration Tree'); ?></h3>
+      </div>
+      <div class="panel-body">
+        <div class="btn-group" data-toggle="buttons">
+          <input type="radio" id="chart-1" name="config-tree" checked="checked" value="1" />
+          <label>Director, Clients, Jobs and Filesets</label><br>
+          <input type="radio" id="chart-2" name="config-tree" value="2" />
+          <label>Director, Consoles, Profiles</label><br>
+          <input type="radio" id="chart-3" name="config-tree" value="3" />
+          <label>Director, Storage, Jobs, Pools</label><br>
+          <input type="radio" id="chart-4" name="config-tree" value="4" />
+          <label>Director, Schedules</label><br>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-10">
+    <div id="chart-container"></div>
+  </div>
+</div>
+
+<?php
+  echo $this->headScript()->prependFile($this->basePath() . '/js/d3/d3.min.js');
+?>
+
+<style>
+/*
+.node circle {
+  fill: #999;
+}
+
+.node text {
+  font: 10px sans-serif;
+}
+
+.node--internal circle {
+  fill: #555;
+}
+
+.node--internal text {
+  text-shadow: 0 1px 0 #fff, 0 -1px 0 #fff, 1px 0 0 #fff, -1px 0 0 #fff;
+}
+
+.link {
+  fill: none;
+  stroke: #555;
+  stroke-opacity: 0.4;
+  stroke-width: 1.5px;
+}
+
+form {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 10px;
+  position: absolute;
+  left: 10px;
+  top: 10px;
+}
+
+label {
+  display: block;
+}
+*/
+</style>
+
+<script>
+
+var root;
+var margin;
+var svg;
+var width;
+var gNode;
+var gLink;
+var diagonal;
+
+d3.json("<?php echo $this->url('analytics', array('action' => 'getData'), null) . '?data=config-tree-dir-fd-job'; ?>").then(function(data) {
+
+  // debug
+  //console.log(data)
+
+  margin = { top: 25, right: 25, bottom: 25, left: 25 };
+  width = d3.width || 600;
+  root = d3.hierarchy(data);
+  const dx = 5;
+  const dy = width / 6;
+  const tree = d3.tree().nodeSize([dx, dy]);
+  diagonal = d3
+    .linkHorizontal()
+    .x((d) => d.y)
+    .y((d) => d.x);
+
+  root.x0 = dy / 2;
+  root.y0 = 0;
+  root.descendants().forEach((d, i) => {
+    d.id = i;
+    d._children = d.children;
+    // if (d.depth && d.data.name.length !== 7) d.children = null;
+  });
+
+  tree(root);
+
+  svg = d3
+    .create("svg")
+    .attr("viewBox", [-margin.left, -margin.top, width, dx])
+    .style("font", "4px sans-serif")
+    .style("user-select", "none");
+
+  gLink = svg
+    .append("g")
+    .attr("fill", "none")
+    .attr("stroke", "#0275d8")
+    .attr("stroke-opacity", 0.25)
+    .attr("stroke-width", 0.5);
+
+  gNode = svg
+    .append("g")
+    .attr("cursor", "pointer")
+    .attr("pointer-events", "all");
+
+  update(root);
+
+  document.querySelector("#chart-container").appendChild(svg.node());
+
+});
+
+function update(source) {
+  const duration = d3.event && d3.event.altKey ? 2500 : 250;
+  const nodes = root.descendants().reverse();
+  const links = root.links();
+
+  // Compute the new tree layout.
+
+  let left = root;
+  let right = root;
+  root.eachBefore((node) => {
+    if (node.x < left.x) left = node;
+    if (node.x > right.x) right = node;
+  });
+
+  const height = right.x - left.x + margin.top + margin.bottom;
+
+  const transition = svg
+    .transition()
+    .duration(duration)
+    .attr("viewBox", [-margin.left, left.x - margin.top, width, height])
+    .tween(
+      "resize",
+      window.ResizeObserver ? null : () => () => svg.dispatch("toggle")
+    );
+
+  // Update the nodes…
+  const node = gNode.selectAll("g").data(nodes, (d) => d.id);
+
+  // Enter any new nodes at the parent's previous position.
+  const nodeEnter = node
+    .enter()
+    .append("g")
+    .attr("transform", (d) => `translate(${source.y0},${source.x0})`)
+    .attr("fill-opacity", 0)
+    .attr("stroke-opacity", 0)
+    .on("click", (event, d) => {
+      d.children = d.children ? null : d._children;
+      update(d);
+    });
+
+  nodeEnter
+    .append("circle")
+    .attr("r", 2.0)
+    .attr("fill", (d) => (d._children ? "#0275d8" : "#0275d8"))
+    .attr("stroke-width", 5);
+
+  nodeEnter
+    .append("text")
+    .attr("dy", "0.31em")
+    .attr("x", (d) => (d._children ? -6 : 6))
+    .attr("text-anchor", (d) => (d._children ? "end" : "start"))
+    .text((d) => d.data.name)
+    .clone(true)
+    .lower()
+    .attr("stroke-linejoin", "round")
+    .attr("stroke-width", 3)
+    .attr("stroke", "white");
+
+  // Transition nodes to their new position.
+  node
+    .merge(nodeEnter)
+    .transition(transition)
+    .attr("transform", (d) => `translate(${d.y},${d.x})`)
+    .attr("fill-opacity", 1)
+    .attr("stroke-opacity", 1);
+
+  // Transition exiting nodes to the parent's new position.
+  node
+    .exit()
+    .transition(transition)
+    .remove()
+    .attr("transform", (d) => `translate(${source.y},${source.x})`)
+    .attr("fill-opacity", 0)
+    .attr("stroke-opacity", 0);
+
+  // Update the links…
+  const link = gLink.selectAll("path").data(links, (d) => d.target.id);
+
+  // Enter any new links at the parent's previous position.
+  const linkEnter = link
+    .enter()
+    .append("path")
+    .attr("d", (d) => {
+      const o = { x: source.x0, y: source.y0 };
+      return diagonal({ source: o, target: o });
+    });
+
+  // Transition links to their new position.
+  link.merge(linkEnter).transition(transition).attr("d", diagonal);
+
+  // Transition exiting nodes to the parent's new position.
+  link
+    .exit()
+    .transition(transition)
+    .remove()
+    .attr("d", (d) => {
+      const o = { x: source.x, y: source.y };
+      return diagonal({ source: o, target: o });
+    });
+
+  // Stash the old positions for transition.
+  root.eachBefore((d) => {
+    d.x0 = d.x;
+    d.y0 = d.y;
+  });
+}
+
+</script>
+
+<?php endif; ?>
