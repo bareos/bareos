@@ -43,6 +43,10 @@
 #include "ndmjr_none.h"
 
 
-int ndmjr_none_apply(struct ndm_job_param* job, char* reason) { return 0; }
+int ndmjr_none_apply(struct ndm_job_param* job, char* reason) {
+  (void) job; //unused
+  (void) reason; //unused
+  return 0;
+}
 
 #endif /* !NDMOS_OPTION_NO_CONTROL_AGENT */

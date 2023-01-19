@@ -5,6 +5,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Changed
+
 ### Removed
 - remove no longer used pkglists [PR #1335]
 
@@ -12,7 +14,11 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - cats: fix issue where `startfile` field gets wrongly updated [PR #1346]
 - Python Plugins: Avoid pop(0) performance impact [PR #1351]
 
+### Fixed
+- Fix gcc warnings in ndmjob program [PR #1343]
+
 [PR #1335]: https://github.com/bareos/bareos/pull/1335
+[PR #1343]: https://github.com/bareos/bareos/pull/1343
 [PR #1346]: https://github.com/bareos/bareos/pull/1346
 [PR #1351]: https://github.com/bareos/bareos/pull/1351
 [unreleased]: https://github.com/bareos/bareos/tree/master
