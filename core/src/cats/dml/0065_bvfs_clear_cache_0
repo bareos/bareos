@@ -1,7 +1,3 @@
-# used by .bvfs_clear_cache
-# Do not use!
-# MySQL does not support multiple SQL statements in one query.
-
 BEGIN;
    UPDATE Job SET HasCache=0;
    TRUNCATE PathHierarchy;

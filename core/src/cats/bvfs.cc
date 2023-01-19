@@ -684,18 +684,7 @@ static bool CheckTemp(char* output_table)
 
 void Bvfs::clear_cache()
 {
-  /*
-   * FIXME:
-   * can't use predefined query,
-   * as MySQL queries do only support single SQL statements,
-   * not multiple.
-   */
-  // db->SqlQuery(BareosDb::SQL_QUERY::bvfs_clear_cache_0);
-  db->StartTransaction(jcr);
-  db->SqlQuery("UPDATE Job SET HasCache=0");
-  db->SqlQuery("TRUNCATE PathHierarchy");
-  db->SqlQuery("TRUNCATE PathVisibility");
-  db->EndTransaction(jcr);
+  db->SqlQuery(BareosDb::SQL_QUERY::bvfs_clear_cache_0);
 }
 
 bool Bvfs::DropRestoreList(char* output_table)
