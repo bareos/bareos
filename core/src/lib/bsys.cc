@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -196,20 +196,16 @@ char* bstrinlinecpy(char* dest, const char* src)
 {
   int len;
 
-  /*
-   * Sanity check. We can only inline copy if the src > dest
+  /* Sanity check. We can only inline copy if the src > dest
    * otherwise the resulting copy will overwrite the end of
-   * the string.
-   */
+   * the string. */
   if (src <= dest) { return NULL; }
 
   len = strlen(src);
-  /*
-   * Cannot use strcpy or memcpy as those functions are not
+  /* Cannot use strcpy or memcpy as those functions are not
    * allowed on overlapping data and this is inline replacement
    * for sure is. So we use memmove which is allowed on
-   * overlapping data.
-   */
+   * overlapping data. */
   memmove(dest, src, len + 1);
 
   return dest;
@@ -838,10 +834,8 @@ bool PathIsAbsolute(const char* path)
   if (IsPathSeparator(path[0])) { return true; }
 
 #ifdef HAVE_WIN32
-  /*
-   * Windows:
-   * Does path begin with drive? if yes, it is absolute
-   */
+  /* Windows:
+   * Does path begin with drive? if yes, it is absolute */
   if (strlen(path) >= 3) {
     if (isalpha(path[0]) && path[1] == ':' && IsPathSeparator(path[2])) {
       return true;

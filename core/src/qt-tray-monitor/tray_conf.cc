@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -291,12 +291,10 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
     }
   }
 
-  /*
-   * During pass 2 in each "store" routine, we looked up pointers
+  /* During pass 2 in each "store" routine, we looked up pointers
    * to all the resource_definitions referrenced in the current resource, now we
    * must copy their addresses from the static record to the allocated
-   * record.
-   */
+   * record. */
   if (pass == 2) {
     switch (type) {
       case R_MONITOR:
