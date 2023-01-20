@@ -1,0 +1,29 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+
+# run bscan and make sure it does not crash
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+start_test
+
+JobName=backup-bareos-fd
+
+run_bscan_db -vv -s -V TestVolume001 FileStorage
+ret=$?
+if [ $ret -ne 0 ]; then
+  echo "bscan exit code: $ret"
+  stop_bareos
+  exit $ret
+fi
+
+end_test
