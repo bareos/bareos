@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -117,7 +117,7 @@ def get_since_commit(since, repo):
         raise
     try:
         return git_util.find_common_ancestor(since_commit, repo.head.commit)
-    except (git_util.NoCommonAncestor):
+    except git_util.NoCommonAncestor:
         logger.error(
             "No common ancestor for the following commits:\n  {}\n  {}".format(
                 git_util.commit_to_human(since_commit),
@@ -125,7 +125,7 @@ def get_since_commit(since, repo):
             )
         )
         raise
-    except (git_util.MultipleCommonAncestors):
+    except git_util.MultipleCommonAncestors:
         logger.error(
             (
                 "Multiple common ancestors for the following " "commits:\n  {}\n  {}"
@@ -165,16 +165,14 @@ def get_plugins_for_file(file_path):
     return (checkers, modifiers)
 
 
-def main_program(args):
-    setup_logging(verbose=args.verbose, debug=args.debug)
-    screen_manager = enlighten.get_manager()
-
-    try:
-        repo = Repo(args.directory, search_parent_directories=True)
-    except git.exc.InvalidGitRepositoryError:
-        logger.error("{} is not in a git repository".format(args.directory))
-        return 2
-    logger.info("Using git repository {}".format(repo.working_tree_dir))
+def main_program(*, args, screen_manager, log_file=stderr, repo=None):
+    if not repo:
+        try:
+            repo = Repo(args.directory, search_parent_directories=True)
+        except git.exc.InvalidGitRepositoryError:
+            logger.error("{} is not in a git repository".format(args.directory))
+            return 2
+        logger.info("Using git repository {}".format(repo.working_tree_dir))
     os.chdir(repo.working_tree_dir)
 
     load_plugins(args.plugin)
@@ -242,7 +240,7 @@ def main_program(args):
             if plugin(**plugin_args):
                 logger.debug("File '{}' passed check '{}'".format(f, name))
             else:
-                print("File '{}' failed check '{}'".format(f, name), file=stderr)
+                print("File '{}' failed check '{}'".format(f, name), file=log_file)
                 success = False
 
         modified = False
@@ -253,9 +251,11 @@ def main_program(args):
             if modified_content != file_content:
                 modified = True
                 if args.modify:
-                    print("Plugin '{}' modified '{}'".format(name, f), file=stderr)
+                    print("Plugin '{}' modified '{}'".format(name, f), file=log_file)
                 else:
-                    print("Plugin '{}' would modify '{}'".format(name, f), file=stderr)
+                    print(
+                        "Plugin '{}' would modify '{}'".format(name, f), file=log_file
+                    )
                     success = False
 
                 if args.diff:
@@ -277,7 +277,9 @@ def main_program(args):
 
 def main():
     args = parse_cmdline_args()
+    setup_logging(verbose=args.verbose, debug=args.debug)
+    screen_manager = enlighten.get_manager()
     try:
-        return main_program(args)
+        return main_program(args=args, screen_manager=screen_manager)
     except KeyboardInterrupt:
         exit(130)

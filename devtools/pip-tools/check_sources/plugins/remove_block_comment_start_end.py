@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -17,23 +17,36 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-from setuptools import setup, find_packages
+"""
+ this plugin compresses /* and */ alone in one line for block comments so that
+ they are merged into the second and the last line, respecrively.
 
-# this will not work for an installation outside of pipenv, because
-# dependencies are missing.
+ It compresses comments like
 
-setup(
-    name="check-sources",
-    version="0.0.1",
-    packages=find_packages(),
-    entry_points={
-        "console_scripts": [
-            "check-sources=check_sources.__main__:main",
-            "bareos-check-sources=check_sources.__main__:main",
-            "add-copyright-header=check_sources.add_copyright_header:main",
-            "pr-tool=pr_tool.main:main",
-            "update-changelog-links=changelog_utils.update_links:main",
-            "add-changelog-entry=changelog_utils.add_entry:main",
-        ]
-    },
+ /*
+  * this is a block
+  * comment
+  */
+
+to:
+
+ /* this is a block
+  * comment */
+
+
+Comments that start in column one (file license info, function documentation)
+should remain untouched
+
+"""
+
+from ..registry import register_modifier
+import re
+
+replace_regexp = re.compile(
+    r"(?<!^)/\*+\n\s+\*([\s\S]*?)\n\s+\*/", flags=re.MULTILINE | re.DOTALL
 )
+
+
+@register_modifier("*.cc", "*.c", "*.h", name="compress c block comments")
+def shrink_block_comment_start_end(file_path, file_content, **kwargs):
+    return replace_regexp.sub("/*\\1 */", file_content)
