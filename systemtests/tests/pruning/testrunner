@@ -11,6 +11,8 @@ TestName="$(basename "$(pwd)")"
 export TestName
 
 regularjob_name=backup-bareos-fd
+failingjob_name=failingjob
+smallvoljob_name=smallvoljob
 
 #shellcheck source=../environment.in
 . ./environment
@@ -170,6 +172,44 @@ END_OF_DATA
 
 run_bconsole
 
+# Purging failed jobs
+
+purging_failed_jobs="$tmp"/purging_failed_jobs.out
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $purging_failed_jobs
+run job=$failingjob_name level=Full yes
+run job=$failingjob_name level=Full yes
+run job=$failingjob_name level=Full yes
+wait
+messages
+purge jobs client=bareos-fd jobstatus=E yes
+wait
+quit
+END_OF_DATA
+
+run_bconsole
+
+# Purging failed jobs in specific pool
+
+purging_pool_failed_jobs="$tmp"/purging_pool_failed_jobs.out
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $purging_pool_failed_jobs
+run job=$smallvoljob_name level=Full yes
+run job=$smallvoljob_name level=Full yes
+run job=$smallvoljob_name level=Full yes
+run job=$failingjob_name level=Full yes
+run job=$failingjob_name level=Full yes
+run job=$failingjob_name level=Full yes
+wait
+messages
+purge jobs jobstatus=E pool=SmallFull
+quit
+END_OF_DATA
+
+run_bconsole
+
 check_for_zombie_jobs storage=File
 check_two_logs "$label_backup_log" "$restore_log"
 
@@ -236,5 +276,26 @@ expect_grep "Pruned Files from 1 Jobs" \
 expect_grep "Most likely your retention policy pruned the files." \
             "$file_pruning_log" \
             "Restore command found files, when they should have been pruned"
+
+## Purging failed jobs
+expect_grep "Found 3 Jobs for client \"bareos-fd\" in catalog \"MyCatalog\"" \
+            "$purging_failed_jobs" \
+            "Correct number of failed jobs to prune was not found."
+
+expect_grep "Purging the following 3 JobIds: 12,13,14" \
+            "$purging_failed_jobs" \
+            "Expected pruned failed jobids not found" \
+            "Purging the"
+
+## Purging failed jobs from specific pool
+
+expect_grep "3 Jobs on Pool \"SmallFull\" purged from catalog" \
+            "$purging_pool_failed_jobs" \
+            "Correct number of jobs with warnings to purge on specific pool was not found."
+
+expect_grep "Purging the following 3 JobIds: 18,19,20" \
+            "$purging_pool_failed_jobs" \
+            "Expected purged jobids with warnings in specific pool not found" \
+            "Purging the"
 
 end_test
