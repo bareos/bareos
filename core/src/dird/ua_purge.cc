@@ -142,9 +142,11 @@ bool PurgeCmd(UaContext* ua, const char*)
     case 1:
       switch (FindArgKeyword(ua, jobs_keywords)) {
         case 0: /* client */
+        {
           client = get_client_resource(ua);
           if (client) { PurgeJobsFromClient(ua, client); }
           return true;
+        }
         case 1: /* Volume */
           if (SelectMediaDbr(ua, &mr)) {
             PurgeJobsFromVolume(ua, &mr, /*force*/ true);
@@ -199,9 +201,16 @@ bool PurgeCmd(UaContext* ua, const char*)
       if (client) { PurgeFilesFromClient(ua, client); }
       break;
     case 1: /* jobs */
+    {
       client = get_client_resource(ua);
+      std::vector<char> jobstatuslist;
+      if (!GetUserJobStatusSelection(ua, jobstatuslist)) {
+        ua->ErrorMsg(_("invalid jobstatus parameter\n"));
+        return false;
+      }
       if (client) { PurgeJobsFromClient(ua, client); }
       break;
+    }
     case 2: /* Volume */
       if (SelectMediaDbr(ua, &mr)) {
         PurgeJobsFromVolume(ua, &mr, /*force*/ true);
@@ -278,10 +287,22 @@ static bool PurgeJobsFromClient(UaContext* ua, ClientResource* client)
 
   ua->InfoMsg(_("Begin purging jobs from Client \"%s\"\n"), cr.Name);
 
-  const std::string select_jobs_from_client
+  std::vector<char> jobstatuslist;
+  if (!GetUserJobStatusSelection(ua, jobstatuslist)) {
+    ua->ErrorMsg(_("invalid jobstatus parameter\n"));
+    return false;
+  }
+
+  std::string select_jobs_from_client
       = "SELECT JobId, PurgedFiles FROM Job "
-        "WHERE ClientId=%lu "
-        "ORDER BY JobId";
+        "WHERE ClientId=%lu ";
+  if (!jobstatuslist.empty()) {
+    std::string jobStatuses
+        = CreateDelimitedStringForSqlQueries(jobstatuslist, ',');
+    select_jobs_from_client += "AND JobStatus IN (" + jobStatuses + ") ";
+  }
+
+  select_jobs_from_client.append("ORDER BY JobId");
 
   PoolMem query(PM_MESSAGE);
   Mmsg(query, select_jobs_from_client.c_str(), cr.ClientId);
