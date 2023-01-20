@@ -5,6 +5,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Changed
+- VMware Plugin: introduce pyVmomi 8.x compatibility [PR #1358]
+
 ## [22.0.1] - 2023-01-02
 
 ### Changed
@@ -431,4 +434,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1334]: https://github.com/bareos/bareos/pull/1334
 [PR #1337]: https://github.com/bareos/bareos/pull/1337
 [PR #1347]: https://github.com/bareos/bareos/pull/1347
+[PR #1358]: https://github.com/bareos/bareos/pull/1358
 [unreleased]: https://github.com/bareos/bareos/tree/master

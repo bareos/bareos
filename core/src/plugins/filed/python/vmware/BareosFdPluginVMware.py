@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2022 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2023 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -48,7 +48,7 @@ try:
 except ImportError:
     from six.moves import configparser
 
-from pyVim.connect import SmartConnect, SmartConnectNoSSL, Disconnect
+from pyVim.connect import SmartConnect, Disconnect
 from pyVmomi import vim
 from pyVmomi import vmodl
 from pyVim.task import WaitForTask
@@ -979,11 +979,12 @@ class BareosVADPWrapper(object):
 
         if retry_no_ssl:
             try:
-                self.si = SmartConnectNoSSL(
+                self.si = SmartConnect(
                     host=self.options["vcserver"],
                     user=self.options["vcuser"],
                     pwd=self.options["vcpass"],
                     port=443,
+                    disableSslCertValidation=True,
                 )
 
             except IOError as ioerror:
