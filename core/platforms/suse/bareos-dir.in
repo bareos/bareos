@@ -16,9 +16,9 @@
 ### BEGIN INIT INFO
 # Provides:			 bareos-dir
 # Required-Start:	 $local_fs $remote_fs $network $time $syslog
-# Should-Start:      postgresql mysql bareos-sd bareos-fd
+# Should-Start:      postgresql bareos-sd bareos-fd
 # Required-Stop:	 $local_fs $remote_fs $network
-# Should-Stop:       postgresql mysql bareos-sd bareos-fd
+# Should-Stop:       postgresql bareos-sd bareos-fd
 # Default-Start:	 3 5
 # Default-Stop: 	 0 1 2 6
 # Short-Description:	bareos director

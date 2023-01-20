@@ -164,10 +164,3 @@ if(${_index} GREATER -1)
     BAREOS_DB_NAME postgresql DEBIAN_DB_NAME pgsql
   )
 endif()
-
-list(FIND db_backends "mysql" _index)
-if(${_index} GREATER -1)
-  bareos_install_sql_files_to_dbconfig_common(
-    BAREOS_DB_NAME mysql DEBIAN_DB_NAME mysql
-  )
-endif()
