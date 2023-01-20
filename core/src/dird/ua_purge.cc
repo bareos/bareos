@@ -31,6 +31,7 @@
  */
 
 #include "include/bareos.h"
+#include "cats/sql.h"
 #include "dird.h"
 #include "dird/director_jcr_impl.h"
 #include "dird/next_vol.h"
@@ -441,12 +442,33 @@ bool PurgeJobsFromVolume(UaContext* ua, MediaDbRecord* mr, bool force)
     return false;
   }
 
+  std::vector<char> jobstatuslist;
+  if (!GetUserJobStatusSelection(ua, jobstatuslist)) {
+    ua->ErrorMsg(_("invalid jobstatus parameter\n"));
+    return false;
+  }
+
   // Check if he wants to purge a single jobid
   int i = FindArgWithValue(ua, "jobid");
   db_list_ctx lst;
   std::string jobids;
   if (i >= 0 && Is_a_number_list(ua->argv[i])) {
     jobids = std::string(ua->argv[i]);
+  } else if (!jobstatuslist.empty()) {
+    std::string jobStatuses
+        = CreateDelimitedStringForSqlQueries(jobstatuslist, ',');
+    PoolMem query(PM_MESSAGE);
+
+    Mmsg(query,
+         "SELECT DISTINCT JobMedia.JobId FROM JobMedia, Job "
+         "WHERE JobMedia.MediaId=%lu "
+         "AND Job.JobId = JobMedia.JobId "
+         "AND Job.JobStatus in (%s)",
+         mr->MediaId, jobStatuses.c_str());
+
+    ua->db->SqlQuery(query.c_str(), DbListHandler, &lst);
+    jobids = lst.GetAsString();
+
   } else {
     // Purge ALL JobIds
     if (!ua->db->GetVolumeJobids(ua->jcr, mr, &lst)) {
@@ -667,8 +689,8 @@ static bool ActionOnPurgeCmd(UaContext* ua, const char*)
   }
 
   /*
-   * Look for all Purged volumes that can be recycled, are enabled and have more
-   * the 10,000 bytes.
+   * Look for all Purged volumes that can be recycled, are enabled and have
+   * more the 10,000 bytes.
    */
   mr.Recycle = 1;
   mr.Enabled = VOL_ENABLED;
