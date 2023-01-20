@@ -1,0 +1,35 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+
+# run bls and make sure it works (with autoxflate plugin)
+TestName="$(basename "$(pwd)")"
+export TestName
+
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+start_test
+
+JobName=backup-bareos-fd
+
+run_bls -vv -V TestVolume001 FileStorage
+ret=$?
+if [ $ret -ne 0 ]; then
+  echo "bls exit code: $ret"
+  stop_bareos
+  exit $ret
+fi
+
+if ! grep -q "weird-files/dangling-link" "$tmp/bls.out"; then
+  echo 'Expected string \"weird-files/dangling-link\" not found in  bls output'
+  stop_bareos
+  exit 1
+fi
+
+
+end_test
