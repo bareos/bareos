@@ -28,7 +28,7 @@
 
 #include "include/bareos.h"
 
-#if HAVE_MYSQL || HAVE_POSTGRESQL
+#if HAVE_POSTGRESQL
 
 #  include "cats.h"
 #  include "lib/edit.h"
@@ -665,31 +665,17 @@ void BareosDb::ListFilesForJob(JobControlRecord* jcr,
 
   DbLocker _{this};
 
-  if (GetTypeIndex() == SQL_TYPE_MYSQL) {
-    Mmsg(cmd,
-         "SELECT CONCAT(Path.Path,Name) AS Filename "
-         "FROM (SELECT PathId, Name FROM File WHERE JobId=%s "
-         "UNION ALL "
-         "SELECT PathId, Name "
-         "FROM BaseFiles JOIN File "
-         "ON (BaseFiles.FileId = File.FileId) "
-         "WHERE BaseFiles.JobId = %s"
-         ") AS F, Path "
-         "WHERE Path.PathId=F.PathId",
-         edit_int64(jobid, ed1), ed1);
-  } else {
-    Mmsg(cmd,
-         "SELECT Path.Path||Name AS Filename "
-         "FROM (SELECT PathId, Name FROM File WHERE JobId=%s "
-         "UNION ALL "
-         "SELECT PathId, Name "
-         "FROM BaseFiles JOIN File "
-         "ON (BaseFiles.FileId = File.FileId) "
-         "WHERE BaseFiles.JobId = %s"
-         ") AS F, Path "
-         "WHERE Path.PathId=F.PathId",
-         edit_int64(jobid, ed1), ed1);
-  }
+  Mmsg(cmd,
+       "SELECT Path.Path||Name AS Filename "
+       "FROM (SELECT PathId, Name FROM File WHERE JobId=%s "
+       "UNION ALL "
+       "SELECT PathId, Name "
+       "FROM BaseFiles JOIN File "
+       "ON (BaseFiles.FileId = File.FileId) "
+       "WHERE BaseFiles.JobId = %s"
+       ") AS F, Path "
+       "WHERE Path.PathId=F.PathId",
+       edit_int64(jobid, ed1), ed1);
 
   sendit->ArrayStart("filenames");
   if (!BigSqlQuery(cmd, ::ListResult, &lctx)) { return; }
@@ -707,23 +693,13 @@ void BareosDb::ListBaseFilesForJob(JobControlRecord* jcr,
 
   DbLocker _{this};
 
-  if (GetTypeIndex() == SQL_TYPE_MYSQL) {
-    Mmsg(cmd,
-         "SELECT CONCAT(Path.Path,File.Name) AS Filename "
-         "FROM BaseFiles, File, Path "
-         "WHERE BaseFiles.JobId=%s AND BaseFiles.BaseJobId = File.JobId "
-         "AND BaseFiles.FileId = File.FileId "
-         "AND Path.PathId=File.PathId",
-         edit_int64(jobid, ed1));
-  } else {
-    Mmsg(cmd,
-         "SELECT Path.Path||File.Name AS Filename "
-         "FROM BaseFiles, File, Path "
-         "WHERE BaseFiles.JobId=%s AND BaseFiles.BaseJobId = File.JobId "
-         "AND BaseFiles.FileId = File.FileId "
-         "AND Path.PathId=File.PathId",
-         edit_int64(jobid, ed1));
-  }
+  Mmsg(cmd,
+       "SELECT Path.Path||File.Name AS Filename "
+       "FROM BaseFiles, File, Path "
+       "WHERE BaseFiles.JobId=%s AND BaseFiles.BaseJobId = File.JobId "
+       "AND BaseFiles.FileId = File.FileId "
+       "AND Path.PathId=File.PathId",
+       edit_int64(jobid, ed1));
 
   sendit->ArrayStart("files");
   if (!BigSqlQuery(cmd, ::ListResult, &lctx)) { return; }
@@ -788,4 +764,4 @@ void BareosDb::ListFilesets(JobControlRecord* jcr,
 
   SqlFreeResult();
 }
-#endif /* HAVE_MYSQL || HAVE_POSTGRESQL */
+#endif /* HAVE_POSTGRESQL */

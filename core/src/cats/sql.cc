@@ -27,12 +27,12 @@
  *
  * Almost generic set of SQL database interface routines
  * (with a little more work) SQL engine specific routines are in
- * mysql.c, postgresql.c, ...
+ * postgresql.c, ...
  */
 
 #include "include/bareos.h"
 
-#if HAVE_MYSQL || HAVE_POSTGRESQL
+#if HAVE_POSTGRESQL
 
 #  include "cats.h"
 #  include "lib/edit.h"
@@ -129,17 +129,9 @@ struct max_connections_context {
 static inline int DbMaxConnectionsHandler(void* ctx, int, char** row)
 {
   struct max_connections_context* context;
-  uint32_t index;
 
   context = (struct max_connections_context*)ctx;
-  switch (context->db->GetTypeIndex()) {
-    case SQL_TYPE_MYSQL:
-      index = 1;
-      break;
-    default:
-      index = 0;
-      break;
-  }
+  uint32_t index = 0;
 
   if (row[index]) {
     context->nr_connections = str_to_int64(row[index]);
@@ -909,4 +901,4 @@ void DbDebugPrint(JobControlRecord* jcr, FILE* fp)
 
   mdb->DbDebugPrint(fp);
 }
-#endif /* HAVE_MYSQL || HAVE_POSTGRESQL */
+#endif /* HAVE_POSTGRESQL */

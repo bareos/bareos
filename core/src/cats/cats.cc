@@ -28,7 +28,7 @@
 
 #include "include/bareos.h"
 
-#if HAVE_MYSQL || HAVE_POSTGRESQL
+#if HAVE_POSTGRESQL
 
 #  include "cats.h"
 #  include "sql_pooling.h"
@@ -93,8 +93,6 @@ BareosDb* BareosDb::CloneDatabaseConnection(JobControlRecord* jcr,
 const char* BareosDb::GetType(void)
 {
   switch (db_interface_type_) {
-    case SQL_INTERFACE_TYPE_MYSQL:
-      return "MySQL";
     case SQL_INTERFACE_TYPE_POSTGRESQL:
       return "PostgreSQL";
     default:
@@ -220,4 +218,4 @@ void BareosDb::UnescapeObject(JobControlRecord*,
   dest[expected_len] = '\0';
 }
 
-#endif /* HAVE_MYSQL || HAVE_POSTGRESQL */
+#endif /* HAVE_POSTGRESQL */

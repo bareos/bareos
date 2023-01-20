@@ -105,8 +105,6 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   include(FindPostgreSQL)
 endif()
 
-include(CMakeUserFindMySQL)
-
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(OPENSSL_USE_STATIC_LIBS 1)
 endif()

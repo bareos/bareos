@@ -28,7 +28,7 @@
 
 #include "include/bareos.h"
 
-#if HAVE_MYSQL || HAVE_POSTGRESQL
+#if HAVE_POSTGRESQL
 
 #  include "cats.h"
 #  include "lib/edit.h"
@@ -264,4 +264,4 @@ void BareosDb::PurgeJobs(const char* jobids)
   Mmsg(query, "DELETE FROM Job WHERE JobId IN (%s)", jobids);
   SqlQuery(query.c_str());
 }
-#endif /* HAVE_MYSQL || HAVE_POSTGRESQL */
+#endif /* HAVE_POSTGRESQL */

@@ -26,7 +26,7 @@
  */
 #include "include/bareos.h"
 
-#if HAVE_MYSQL || HAVE_POSTGRESQL
+#if HAVE_POSTGRESQL
 
 #  include "cats/cats.h"
 #  include "cats/sql.h"
@@ -859,17 +859,6 @@ bool Bvfs::compute_restore_list(char* fileid,
     goto bail_out;
   }
 
-  /* MySQL need it */
-  if (db->GetTypeIndex() == SQL_TYPE_MYSQL) {
-    Mmsg(query, "CREATE INDEX idx_%s ON %s (JobId)", output_table,
-         output_table);
-    Dmsg1(dbglevel_sql, "q=%s\n", query.c_str());
-    if (!db->SqlQuery(query.c_str())) {
-      Dmsg0(dbglevel, "Can't execute q\n");
-      goto bail_out;
-    }
-  }
-
   retval = true;
 
 bail_out:
@@ -878,4 +867,4 @@ bail_out:
   return retval;
 }
 
-#endif /* HAVE_MYSQL || HAVE_POSTGRESQL */
+#endif /* HAVE_POSTGRESQL */

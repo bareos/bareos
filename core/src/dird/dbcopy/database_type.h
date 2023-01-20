@@ -28,14 +28,12 @@ class DatabaseType {
   {
     kUndefined,
     kPostgresql,
-    kMysql
   };
 
   static Enum Convert(const std::string& s)
   {
     static const std::map<std::string, DatabaseType::Enum> types{
-        {"postgresql", DatabaseType::Enum::kPostgresql},
-        {"mysql", DatabaseType::Enum::kMysql}};
+        {"postgresql", DatabaseType::Enum::kPostgresql}};
     if (types.find(s) == types.cend()) { return Enum::kUndefined; }
     return types.at(s);
   }
@@ -43,8 +41,7 @@ class DatabaseType {
   static std::string Convert(Enum e)
   {
     static const std::map<DatabaseType::Enum, std::string> types{
-        {DatabaseType::Enum::kPostgresql, "postgresql"},
-        {DatabaseType::Enum::kMysql, "mysql"}};
+        {DatabaseType::Enum::kPostgresql, "postgresql"}};
     if (types.find(e) == types.cend()) { return std::string(); }
     return types.at(e);
   }

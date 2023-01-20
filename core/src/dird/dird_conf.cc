@@ -1261,15 +1261,7 @@ bool JobResource::Validate()
   return true;
 }
 
-bool CatalogResource::Validate()
-{
-  /* during 1st pass, db_driver is nullptr and we skip the check */
-  if (db_driver != nullptr && std::string(db_driver) == "mysql") {
-    my_config->AddWarning(std::string("Deprecated DB driver ") + db_driver
-                          + " for Catalog " + resource_name_);
-  }
-  return true;
-}
+bool CatalogResource::Validate() { return true; }
 
 char* CatalogResource::display(POOLMEM* dst)
 {

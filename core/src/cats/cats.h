@@ -445,14 +445,12 @@ class db_list_ctx : public BStringList {
 
 typedef enum
 {
-  SQL_INTERFACE_TYPE_MYSQL = 0,
   SQL_INTERFACE_TYPE_POSTGRESQL = 1,
   SQL_INTERFACE_TYPE_UNKNOWN = 99
 } SQL_INTERFACETYPE;
 
 typedef enum
 {
-  SQL_TYPE_MYSQL = 0,
   SQL_TYPE_POSTGRESQL = 1,
   SQL_TYPE_UNKNOWN = 99
 } SQL_DBTYPE;

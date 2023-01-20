@@ -337,12 +337,6 @@ extern char win_os[];
 // Define to 1 if you have the <mtio.h> header file
 #cmakedefine HAVE_MTIO_H @HAVE_MTIO_H@
 
-// Set if you have an MySQL Database
-#cmakedefine HAVE_MYSQL @HAVE_MYSQL@
-
-// Set if have mysql_thread_safe
-#cmakedefine HAVE_MYSQL_THREAD_SAFE @HAVE_MYSQL_THREAD_SAFE@
-
 // Define to 1 if you have the `nanosleep' function
 #cmakedefine HAVE_NANOSLEEP @HAVE_NANOSLEEP@
 

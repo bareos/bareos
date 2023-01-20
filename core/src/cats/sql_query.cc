@@ -27,7 +27,7 @@
 
 #include "include/bareos.h"
 
-#if HAVE_MYSQL || HAVE_POSTGRESQL
+#if HAVE_POSTGRESQL
 
 #  include "cats.h"
 
@@ -155,4 +155,4 @@ bool BareosDb::SqlQuery(const char* query,
 
   return retval;
 }
-#endif /* HAVE_MYSQL || HAVE_POSTGRESQL */
+#endif /* HAVE_POSTGRESQL */
