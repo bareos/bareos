@@ -10,28 +10,33 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-JobName=backup-bareos-fd
+regularjob_name=backup-bareos-fd
 
 #shellcheck source=../environment.in
 . ./environment
 
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
+
 "${rscripts}"/cleanup
 "${rscripts}"/setup
-
-
 
 # Fill ${BackupDirectory} with data.
 setup_data
 
 start_test
 
+start_bareos
+
+label_backup_log="$tmp"/label_backup_log.out
+restore_log="$tmp"/restore_log.out
+prune_volume_log="$tmp"/prune_volume_log.out
+prune_all_log="$tmp"/prune_all_log.out
+
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null
 messages
-@$out $tmp/log1.out
-setdebug level=100 storage=File
+@$out $label_backup_log
 label volume=TestVolume001 storage=File pool=Full
 label volume=TestVolume002 storage=File pool=Full
 label volume=TestVolume003 storage=File pool=Full
@@ -41,10 +46,11 @@ status director
 status client
 status storage=File
 wait
+run job=$regularjob_name Level=Full yes
+run job=$regularjob_name Level=Full yes
 messages
 
-run job=$JobName Level=Full yes
-run job=$JobName Level=Full yes
+@$out $restore_log
 @#
 @# now do a restore
 @#
@@ -54,7 +60,7 @@ yes
 wait
 messages
 
-@$out $tmp/log2.out
+@$out $prune_volume_log
 @#
 @# now prune using the commandline
 @#
@@ -62,60 +68,69 @@ messages
 update volume=TestVolume001 volstatus=Used
 prune volume=TestVolume001 yes
 wait
-messages
+quit
+END_OF_DATA
 
-@$out $tmp/log3.out
+run_bconsole
+
+## prune all volumes
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $prune_all_log
 @#
 @# now do the same but using the prune all command
 @#
 @#
 
-run job=$JobName Level=Full yes
-run job=$JobName Level=Full yes
+run job=$regularjob_name Level=Full yes
+run job=$regularjob_name Level=Full yes
 wait
 update volume=TestVolume002 volstatus=Used
 
-run job=$JobName Level=Full yes
-run job=$JobName Level=Full yes
+run job=$regularjob_name Level=Full yes
+run job=$regularjob_name Level=Full yes
 wait
 update volume=TestVolume003 volstatus=Used
 
 @sleep 6
 
+messages
 prune volume all yes
 wait
-messages
 
-
-run job=$JobName Level=Full yes
+run job=$regularjob_name Level=Full yes
 wait
 
 quit
 END_OF_DATA
 
-run_bareos "$@"
+run_bconsole
+
+# Prune all volumes of specific pool
+
+prune_all_pool_log="$tmp"/prune_all_pool_log.out
 
 touch $tmp/data/weird-files/newfilecreatedjustforthistest
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out $tmp/log4.out
+@$out $prune_all_pool_log
 @#
 @# Prune all volumes of a given pool
 @#
 @#
 
-run job=$JobName Level=Incremental yes
+run job=$regularjob_name Level=Incremental yes
 wait
 
 @sleep 6
 
+messages
 update volume=TestVolume004 volstatus=Used
 update volume=TestVolumeIncremental volstatus=Used
 
 prune volume all pool=Incremental yes
 
 wait
-messages
 quit
 END_OF_DATA
 
@@ -127,13 +142,13 @@ job_pruning_log="$tmp"/job_pruning_log.out
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out $job_pruning_log
-run job=$JobName Level=Full yes
-run job=$JobName Level=Full yes
+run job=$regularjob_name Level=Full yes
+run job=$regularjob_name Level=Full yes
 wait
 @sleep 2
+messages
 prune jobs yes
 wait
-messages
 quit
 END_OF_DATA
 
@@ -149,7 +164,6 @@ prune files yes
 wait
 restore jobid=11
 no
-
 messages
 quit
 END_OF_DATA
@@ -157,79 +171,70 @@ END_OF_DATA
 run_bconsole
 
 check_for_zombie_jobs storage=File
+check_two_logs "$label_backup_log" "$restore_log"
 
-check_two_logs
+## Prune volumes
+expect_grep "Purging the following 2 JobIds: 1,2" \
+            "$prune_volume_log" \
+            "Pruned jobs from volume pruning not found" \
+            "Purging the"
 
-if ! grep "Purging the following 2 JobIds: 1,2" "$tmp"/log2.out; then
-  echo "'Purging the following JobIds: 1,2' not found in $tmp/log2.out" >&2
-  grep 'Purging the' "$tmp"/log2.out >&2 || :
-  estat=1
-fi
+expect_grep "Volume \"TestVolume001\" contains no jobs after pruning." \
+            "$prune_volume_log" \
+            "Volume still contains jobs, or wrong volume pruned." \
+            "Volume.*contains no jobs after pruning."
 
-if ! grep -F 'Volume "TestVolume001" contains no jobs after pruning.' $tmp/log2.out; then
-  echo "'Volume \"TestVolume001\" contains no jobs after pruning.' not found in $tmp/log2.out" >&2
-  grep 'Volume.*contains no jobs after pruning.' $tmp/log2.out >&2 || :
-  estat=1
-fi
+## Prune all volumes
+expect_grep "Purging the following 2 JobIds: 4,5" \
+            "$prune_all_log" \
+            "Pruned jobs from volume all pruning not found" \
+            "Purging the"
 
-## prune all volumes checks
+expect_grep "Volume \"TestVolume002\" contains no jobs after pruning." \
+            "$prune_all_log" \
+            "Volume still contains jobs, or wrong volume pruned." \
+            "Volume.*contains no jobs after pruning."
 
-if ! grep "Purging the following 2 JobIds: 4,5" "$tmp"/log3.out; then
-  echo "'Purging the following JobIds: 4,5' not found in $tmp/log3.out" >&2
-  grep 'Purging the' "$tmp"/log3.out >&2 || :
-  estat=1
-fi
+expect_grep "Purging the following 2 JobIds: 6,7" \
+            "$prune_all_log" \
+            "Pruned jobs from volume all pruning not found" \
+            "Purging the"
 
-if ! grep -F 'Volume "TestVolume002" contains no jobs after pruning.' $tmp/log3.out; then
-  echo "'Volume \"TestVolume002\" contains no jobs after pruning.' not found in $tmp/log3.out" >&2
-  grep 'Volume.*contains no jobs after pruning.' $tmp/log3.out >&2 || :
-  estat=1
-fi
+expect_grep "Volume \"TestVolume003\" contains no jobs after pruning." \
+            "$prune_all_log" \
+            "Volume still contains jobs, or wrong volume pruned." \
+            "Volume.*contains no jobs after pruning."
 
-if ! grep "Purging the following 2 JobIds: 6,7" "$tmp"/log3.out; then
-  echo "'Purging the following JobIds: 6,7' not found in $tmp/log3.out" >&2
-  grep 'Purging the' "$tmp"/log3.out >&2 || :
-  estat=1
-fi
 
-if ! grep -F 'Volume "TestVolume003" contains no jobs after pruning.' $tmp/log3.out; then
-  echo "'Volume \"TestVolume003\" contains no jobs after pruning.' not found in $tmp/log3.out" >&2
-  grep 'Volume.*contains no jobs after pruning.' $tmp/log3.out >&2 || :
-  estat=1
-fi
+## Prune all volumes from specific pool
 
-# Prune all volumes of specific pool
+expect_grep "Purging the following 1 JobIds: 9" \
+            "$prune_all_pool_log" \
+            "Pruned jobs from volume all pool pruning not found" \
+            "Purging the"
 
-if ! grep "Purging the following 1 JobIds: 9" "$tmp"/log4.out; then
-  echo "'Purging the following JobIds: 9' not found in $tmp/log4.out" >&2
-  grep 'Purging the' "$tmp"/log3.out >&2 || :
-  estat=1
-fi
+expect_grep "Volume \"TestVolumeIncremental\" contains no jobs after pruning." \
+            "$prune_all_pool_log" \
+            "Volume still contains jobs, or wrong volume pruned." \
+            "Volume.*contains no jobs after pruning."
 
-if ! grep -F 'Volume "TestVolumeIncremental" contains no jobs after pruning.' $tmp/log4.out; then
-  echo "'Volume \"TestVolumeIncremental\" contains no jobs after pruning.' not found in $tmp/log4.out" >&2
-  grep 'Volume.*contains no jobs after pruning.' $tmp/log3.out >&2 || :
-  estat=1
-fi
-
-#job pruning
-
+## Pruning jobs
 expect_grep "Purging the following 3 JobIds: 3,8,10" \
             "$job_pruning_log" \
-            "job pruning went wrong"
+            "Expected pruned jobids not found" \
+            "Purging the"
 
 expect_grep "Pruned 3 Jobs for client bareos-fd from catalog." \
             "$job_pruning_log" \
-            "job pruning went wrong"
+            "Expected number of jobs pruned not found"
 
-#file pruning
-
+## Pruning files
 expect_grep "Pruned Files from 1 Jobs" \
             "$file_pruning_log" \
-            "file pruning went wrong"
+            "Expected number of files pruned not found"
 
 expect_grep "Most likely your retention policy pruned the files." \
             "$file_pruning_log" \
-            "file pruning went wrong"
+            "Restore command found files, when they should have been pruned"
 
 end_test
