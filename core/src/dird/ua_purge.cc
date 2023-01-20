@@ -54,6 +54,7 @@ namespace directordaemon {
 /* Forward referenced functions */
 static bool PurgeFilesFromClient(UaContext* ua, ClientResource* client);
 static bool PurgeJobsFromClient(UaContext* ua, ClientResource* client);
+static bool PurgeJobsFromPool(UaContext* ua, PoolDbRecord* pool_record);
 static bool PurgeQuotaFromClient(UaContext* ua, ClientResource* client);
 static bool ActionOnPurgeCmd(UaContext* ua, const char* cmd);
 
@@ -79,7 +80,8 @@ bool PurgeCmd(UaContext* ua, const char*)
 
   static const char* quota_keywords[] = {NT_("Client"), NULL};
 
-  static const char* jobs_keywords[] = {NT_("Client"), NT_("Volume"), NULL};
+  static const char* jobs_keywords[]
+      = {NT_("Client"), NT_("Volume"), NT_("Pool"), NULL};
 
   ua->WarningMsg(
       _("\nThis command can be DANGEROUS!!!\n\n"
@@ -153,6 +155,14 @@ bool PurgeCmd(UaContext* ua, const char*)
             PurgeJobsFromVolume(ua, &mr, /*force*/ true);
           }
           return true;
+        case 2: /* pool */
+        {
+          PoolDbRecord pool_record;
+          if (SelectPoolDbr(ua, &pool_record)) {
+            PurgeJobsFromPool(ua, &pool_record);
+          }
+          return true;
+        }
       }
       break;
     /* Volume */
@@ -204,11 +214,6 @@ bool PurgeCmd(UaContext* ua, const char*)
     case 1: /* jobs */
     {
       client = get_client_resource(ua);
-      std::vector<char> jobstatuslist;
-      if (!GetUserJobStatusSelection(ua, jobstatuslist)) {
-        ua->ErrorMsg(_("invalid jobstatus parameter\n"));
-        return false;
-      }
       if (client) { PurgeJobsFromClient(ua, client); }
       break;
     }
@@ -217,9 +222,10 @@ bool PurgeCmd(UaContext* ua, const char*)
         PurgeJobsFromVolume(ua, &mr, /*force*/ true);
       }
       break;
-    case 3:
-      client = get_client_resource(ua); /* Quota */
+    case 3: /* Quota */
+      client = get_client_resource(ua);
       if (client) { PurgeQuotaFromClient(ua, client); }
+      break;
   }
   return true;
 }
@@ -272,13 +278,48 @@ static bool PurgeFilesFromClient(UaContext* ua, ClientResource* client)
   return true;
 }
 
+static bool PurgeJobsFromPool(UaContext* ua, PoolDbRecord* pool_record)
+{
+  std::vector<char> jobstatuslist;
+  if (!GetUserJobStatusSelection(ua, jobstatuslist)) {
+    ua->ErrorMsg(_("invalid jobstatus parameter\n"));
+    return false;
+  }
+
+  std::string select_jobs_from_pool
+      = "SELECT DISTINCT JobMedia.JobId FROM JobMedia, Job "
+        "WHERE Job.JobId = JobMedia.JobId "
+        "AND Jobmedia.MediaId IN "
+        "(SELECT MediaId FROM Media WHERE PoolId="
+        + std::to_string(pool_record->PoolId) + ") ";
+
+  if (!jobstatuslist.empty()) {
+    std::string jobStatuses
+        = CreateDelimitedStringForSqlQueries(jobstatuslist, ',');
+    select_jobs_from_pool += "AND Job.JobStatus IN (" + jobStatuses + ") ";
+  }
+  select_jobs_from_pool.append("ORDER BY JobId");
+
+
+  std::vector<JobId_t> delete_list;
+  ua->db->SqlQuery(select_jobs_from_pool.c_str(), JobDeleteHandler,
+                   &delete_list);
+
+  if (delete_list.size() > 0) { PurgeJobListFromCatalog(ua, delete_list); }
+
+  ua->InfoMsg(_("%d Job%s on Pool \"%s\" purged from catalog.\n"),
+              delete_list.size(), delete_list.size() <= 1 ? "" : "s",
+              pool_record->Name);
+
+  return true;
+}
 
 /**
  * Purge Job records from the database.
  * We unconditionally delete the job and all File records for that Job.
- * This is simple enough that no
- * temporary tables are needed. We simply make an in memory list of
- * the JobIds then delete the Job, Files, and JobMedia records in that list.
+ * This is simple enough that no temporary tables are needed.
+ * We simply make an in memory list of the JobIds then delete the Job, Files,
+ * and JobMedia records in that list.
  */
 static bool PurgeJobsFromClient(UaContext* ua, ClientResource* client)
 {
@@ -471,7 +512,7 @@ bool PurgeJobsFromVolume(UaContext* ua, MediaDbRecord* mr, bool force)
 
   } else {
     // Purge ALL JobIds
-    if (!ua->db->GetVolumeJobids(ua->jcr, mr, &lst)) {
+    if (!ua->db->GetVolumeJobids(mr, &lst)) {
       ua->ErrorMsg("%s", ua->db->strerror());
       Dmsg0(050, "Count failed\n");
       return false;
@@ -481,7 +522,7 @@ bool PurgeJobsFromVolume(UaContext* ua, MediaDbRecord* mr, bool force)
 
   if (jobids.size() > 0) { PurgeJobsFromCatalog(ua, jobids.c_str()); }
 
-  ua->InfoMsg(_("%d File%s on Volume \"%s\" purged from catalog.\n"),
+  ua->InfoMsg(_("%d Jobs%s on Volume \"%s\" purged from catalog.\n"),
               lst.size(), lst.size() <= 1 ? "" : "s", mr->VolumeName);
 
   return IsVolumePurged(ua, mr, force);
@@ -494,7 +535,7 @@ bool PurgeJobsFromVolume(UaContext* ua, MediaDbRecord* mr, bool force)
  * Returns: true if volume purged
  *          false if not
  *
- * Note, we normally will not purge a volume that has Firstor LastWritten
+ * Note, we normally will not purge a volume that has First or LastWritten
  *   zero, because it means the volume is most likely being written
  *   however, if the user manually purges using the purge command in
  *   the console, he has been warned, and we go ahead and purge
@@ -502,11 +543,6 @@ bool PurgeJobsFromVolume(UaContext* ua, MediaDbRecord* mr, bool force)
  */
 bool IsVolumePurged(UaContext* ua, MediaDbRecord* mr, bool force)
 {
-  PoolMem query(PM_MESSAGE);
-  struct s_count_ctx cnt;
-  bool purged = false;
-  char ed1[50];
-
   if (!force && (mr->FirstWritten == 0 || mr->LastWritten == 0)) {
     return false; /* not written cannot purge */
   }
@@ -514,9 +550,10 @@ bool IsVolumePurged(UaContext* ua, MediaDbRecord* mr, bool force)
   if (bstrcmp(mr->VolStatus, "Purged")) { return true; }
 
   /* If purged, mark it so */
+  PoolMem query(PM_MESSAGE);
+  struct s_count_ctx cnt;
   cnt.count = 0;
-  Mmsg(query, "SELECT 1 FROM JobMedia WHERE MediaId=%s LIMIT 1",
-       edit_int64(mr->MediaId, ed1));
+  Mmsg(query, "SELECT 1 FROM JobMedia WHERE MediaId=%lu LIMIT 1", mr->MediaId);
   if (!ua->db->SqlQuery(query.c_str(), DelCountHandler,
                         static_cast<void*>(&cnt))) {
     ua->ErrorMsg("%s", ua->db->strerror());
@@ -524,6 +561,7 @@ bool IsVolumePurged(UaContext* ua, MediaDbRecord* mr, bool force)
     return false;
   }
 
+  bool purged = false;
   if (cnt.count == 0) {
     ua->WarningMsg(_("There are no more Jobs associated with Volume \"%s\". "
                      "Marking it purged.\n"),

@@ -346,6 +346,7 @@ static struct ua_cmdstruct commands[] = {
          "fileset [ filesetid=<filesetid> ] | fileset [ jobid=<jobid> ] |\n"
          "jobs [job=<job-name>] [client=<client-name>] [jobstatus=<status>] "
          "[jobtype=<jobtype>] [joblevel=<joblevel>] [volume=<volumename>] "
+         "[pool=<pool>] "
          "[days=<number>] [hours=<number>] [last] [count] |\n"
          "job=<job-name> [client=<client-name>] [jobstatus=<status>] "
          "[jobtype=<jobtype>] [volume=<volumename>] [days=<number>] "
@@ -382,7 +383,8 @@ static struct ua_cmdstruct commands[] = {
          "fileset jobid=<jobid> | fileset ujobid=<complete_name> |\n"
          "fileset [ filesetid=<filesetid> ] | fileset [ jobid=<jobid> ] |\n"
          "jobs [job=<job-name>] [client=<client-name>] [jobstatus=<status>] "
-         "[jobtype=<jobtype>][volume=<volumename>] [days=<number>] "
+         "[jobtype=<jobtype>] [volume=<volumename>] [pool=<pool>] "
+         "[days=<number>] "
          "[hours=<number>] [last] [count] |\n"
          "job=<job-name> [client=<client-name>] [jobstatus=<status>] "
          "[jobtype=<jobtype>] [joblevel=<joblevel>] [volume=<volumename>] "
@@ -400,11 +402,11 @@ static struct ua_cmdstruct commands[] = {
          "pool=<pool-name> |\n"
          "poolid=<poolid> |\n"
          "volumes [ jobid=<jobid> | ujobid=<complete_name> | pool=<pool-name> "
-         "| all ] |\n"
+         "| all ] [count] |\n"
          "volume=<volume-name> |\n"
          "volumeid=<volumeid> | mediaid=<volumeid> |\n"
-         "[ current ] | [ enabled ] | [disabled] |\n"
-         "[ limit=<num> [ offset=<number> ] ]"),
+         "[current] | [enabled | disabled] |\n"
+         "[limit=<num> [offset=<number>]]"),
      true, true},
     {NT_("messages"), MessagesCmd, _("Display pending messages"), NT_(""),
      false, false},
@@ -428,7 +430,8 @@ static struct ua_cmdstruct commands[] = {
     {NT_("purge"), PurgeCmd, _("Purge records from catalog"),
      NT_("[files [job=<job> | jobid=<jobid> | client=<client> | "
          "volume=<volume>]] |\n"
-         "[jobs [client=<client> | volume=<volume>]] |\n"
+         "[jobs [client=<client> | volume=<volume>] | pool=<pool>] "
+         "[jobstatus=<status>]] |\n"
          "[volume[=<volume>] [storage=<storage>] [pool=<pool> | allpools] "
          "[devicetype=<type>] [drive=<drivenum>] [action=<action>]] |\n"
          "[quota [client=<client>]]"),
@@ -2481,7 +2484,7 @@ static bool DeleteVolume(UaContext* ua)
 
   // If not purged, do it
   if (!bstrcmp(mr.VolStatus, "Purged")) {
-    if (!ua->db->GetVolumeJobids(ua->jcr, &mr, &lst)) {
+    if (!ua->db->GetVolumeJobids(&mr, &lst)) {
       ua->ErrorMsg(_("Can't list jobs on this volume\n"));
       return true;
     }

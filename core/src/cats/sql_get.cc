@@ -1478,15 +1478,19 @@ bail_out:
   return retval;
 }
 
-bool BareosDb::GetVolumeJobids(JobControlRecord*,
-                               MediaDbRecord* mr,
-                               db_list_ctx* lst)
+bool BareosDb::GetVolumeJobids(MediaDbRecord* mr, db_list_ctx* lst)
 {
-  char ed1[50];
-
   DbLocker _{this};
-  Mmsg(cmd, "SELECT DISTINCT JobId FROM JobMedia WHERE MediaId=%s",
-       edit_int64(mr->MediaId, ed1));
+  Mmsg(cmd, "SELECT DISTINCT JobId FROM JobMedia WHERE MediaId=%lu",
+       mr->MediaId);
+
+  return SqlQueryWithHandler(cmd, DbListHandler, lst);
+}
+
+bool BareosDb::GetVolumesInPool(PoolDbRecord* mr, db_list_ctx* lst)
+{
+  DbLocker _{this};
+  Mmsg(cmd, "SELECT DISTINCT MediaId FROM Media WHERE PoolId=%lu", mr->PoolId);
 
   return SqlQueryWithHandler(cmd, DbListHandler, lst);
 }

@@ -688,9 +688,8 @@ class BareosDb : public BareosDbQueryEnum {
                           int& JobLevel);
 
   /* sql_get.c */
-  bool GetVolumeJobids(JobControlRecord* jcr,
-                       MediaDbRecord* mr,
-                       db_list_ctx* lst);
+  bool GetVolumeJobids(MediaDbRecord* mr, db_list_ctx* lst);
+  bool GetVolumesInPool(PoolDbRecord* mr, db_list_ctx* lst);
   bool GetBaseFileList(JobControlRecord* jcr,
                        bool use_md5,
                        DB_RESULT_HANDLER* ResultHandler,
