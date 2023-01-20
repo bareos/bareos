@@ -164,8 +164,6 @@ Not all packages are required to run Bareos.
 
 .. _section-BareosBinaryReleasePolicy:
 
-.. _section-BareosRepositoryTypes:
-
 Bareos Binary Release Policy
 ----------------------------
 
@@ -180,13 +178,13 @@ There are different types of Bareos binaries:
 
       * Only the latest build is available.
       * Packages may be marked as pre-releases (``<next-version-number>~pre``) and are published after passing an automated testing process.
-      * When a new Bareos major version gets released, the version in this repository will also change to the new version.
+      * When a new Bareos major version gets released, this repository will also change to the new **current** version.
 
    * Latest build of the Bareos master branch at https://download.bareos.org/next/
 
       * Only the latest build is available.
       * Packages are marked as pre-releases (``<next-major-version-number>.0.0~pre``) and are only published after passing an automated testing process.
-      * When a new Bareos major version gets released, the version in this repository will also change to the new version.
+      * When the development of a new Bareos major version starts, this repository will also change to the new **next** version.
 
 #. Bareos Subscription binaries on https://download.bareos.com/
 
@@ -197,6 +195,17 @@ There are different types of Bareos binaries:
    * While the repository can be browsed, accessing the binaries requires a Bareos Subscription.
 
 The software in both types of repositories is based on the same source code freely available in https://github.com/bareos/bareos/. There are no hidden nor open core components.
+
+.. note::
+
+   About ``<next-version-number>~pre`` version numbers:
+
+   Assume the current major release is ``22`` and the latest stable release is ``22.0.1``.
+   As soon as some code gets backported to Bareos 22,
+   packages with ``22.0.2~pre`` version will get published.
+   It means the latest stable current ``22.0.1`` release + newer backported feature that will appear in ``22.0.2``.
+   Thus your Bareos installation will always run stable tested current software.
+
 
 For a simple comparison of the two editions, please see the following table:
 
