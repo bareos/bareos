@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -61,8 +61,7 @@ int UnpackAttributesRecord(JobControlRecord* jcr,
 {
   char* p;
   int object_len;
-  /*
-   * An Attributes record consists of:
+  /* An Attributes record consists of:
    *    File_index
    *    Type   (FT_types)
    *    Filename
@@ -71,8 +70,7 @@ int UnpackAttributesRecord(JobControlRecord* jcr,
    *    Extended attributes (Win32)
    *  plus optional values determined by AR_ flags in upper bits of Type
    *    Data_stream
-   *
-   */
+   * */
   attr->stream = stream;
   Dmsg1(debuglevel, "Attr: %s\n", rec);
   if (sscanf(rec, "%d %d", &attr->file_index, &attr->type) != 2) {
@@ -82,10 +80,8 @@ int UnpackAttributesRecord(JobControlRecord* jcr,
   }
   Dmsg2(debuglevel, "Got Attr: FilInx=%d type=%d\n", attr->file_index,
         attr->type);
-  /*
-   * Note AR_DATA_STREAM should never be set since it is encoded
-   *  at the end of the attributes.
-   */
+  /* Note AR_DATA_STREAM should never be set since it is encoded
+   *  at the end of the attributes. */
   if (attr->type & AR_DATA_STREAM) {
     attr->data_stream = 1;
   } else {
@@ -162,16 +158,14 @@ static void StripDoubleSlashes(char* fname)
  */
 void BuildAttrOutputFnames(JobControlRecord* jcr, Attributes* attr)
 {
-  /*
-   * Prepend the where directory so that the
+  /* Prepend the where directory so that the
    * files are put where the user wants.
    *
    * We do a little jig here to handle Win32 files with
    *   a drive letter -- we simply change the drive
    *   from, for example, c: to c/ for
    *   every filename if a prefix is supplied.
-   *
-   */
+   * */
 
   if (jcr->where_bregexp) {
     char* ret;
@@ -261,11 +255,11 @@ static const char* attr_stat_to_str(PoolMem& resultbuffer,
   if (!jcr->id_list) { jcr->id_list = new_guid_list(); }
   guid = jcr->id_list;
   p = encode_mode(attr->statp.st_mode, buf);
-  p += sprintf(p, "  %2d ", (uint32_t)attr->statp.st_nlink);
-  p += sprintf(p, "%-8.8s %-8.8s",
-               guid->uid_to_name(attr->statp.st_uid, en1, sizeof(en1)),
-               guid->gid_to_name(attr->statp.st_gid, en2, sizeof(en2)));
-  p += sprintf(p, "%12.12s ", edit_int64(attr->statp.st_size, ec1));
+  p += snprintf(p, 1000, "  %2d ", (uint32_t)attr->statp.st_nlink);
+  p += snprintf(p, 1000, "%-8.8s %-8.8s",
+                guid->uid_to_name(attr->statp.st_uid, en1, sizeof(en1)),
+                guid->gid_to_name(attr->statp.st_gid, en2, sizeof(en2)));
+  p += snprintf(p, 1000, "%12.12s ", edit_int64(attr->statp.st_size, ec1));
   p = encode_time(attr->statp.st_ctime, p);
 
   resultbuffer.strcat(buf);

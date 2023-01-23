@@ -1284,7 +1284,7 @@ static int parse_operation(var_t* var,
       if (data->begin != NULL) {
         char buf[((sizeof(int) * 8) / 3)
                  + 10]; /* sufficient size: <#bits> x log_10(2) + safety */
-        sprintf(buf, "%d", (int)(data->end - data->begin));
+        snprintf(buf, sizeof(buf), "%d", (int)(data->end - data->begin));
         tokenbuf_free(data);
         if (!tokenbuf_assign(data, buf, strlen(buf))) {
           rc = VAR_ERR_OUT_OF_MEMORY;
