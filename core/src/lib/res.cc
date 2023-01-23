@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -280,10 +280,8 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
         int cnt = 0;
         bool done = false;
 
-        /*
-         * See if this is an old style syslog definition.
-         * We count the number of = signs in the current config line.
-         */
+        /* See if this is an old style syslog definition.
+         * We count the number of = signs in the current config line. */
         p = lc->line;
         while (!done && *p) {
           switch (*p) {
@@ -301,10 +299,8 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
           p++;
         }
 
-        /*
-         * If there is more then one = its the new format e.g.
-         * syslog = facility = filter
-         */
+        /* If there is more then one = its the new format e.g.
+         * syslog = facility = filter */
         if (cnt > 1) {
           dest = GetPoolMemory(PM_MESSAGE);
           // Pick up a single facility.
@@ -552,8 +548,9 @@ void ConfigurationParser::StoreMd5Password(LEX* lc,
                            &md5c, (unsigned char*)(lc->str), lc->str_len);
                        MD5_Final(digest, &md5c);)
       for (i = j = 0; i < sizeof(digest); i++) {
-        sprintf(&sig[j], "%02x", digest[i]);
+        snprintf(&sig[j], 3, "%02x", digest[i]);
         j += 2;
+        ASSERT(j < 100);
       }
       pwd->encoding = p_encoding_md5;
       pwd->value = strdup(sig);
@@ -686,12 +683,10 @@ void ConfigurationParser::StoreStdVectorStr(LEX* lc,
       Dmsg4(900, "Append %s to vector %p size=%d %s\n", lc->str, list,
             list->size(), item->name);
 
-      /*
-       * See if we need to drop the default value.
+      /* See if we need to drop the default value.
        *
        * We first check to see if the config item has the CFG_ITEM_DEFAULT
-       * flag set and currently has exactly one entry.
-       */
+       * flag set and currently has exactly one entry. */
       if (!BitIsSet(index, (*item->allocated_resource)->item_present_)) {
         if ((item->flags & CFG_ITEM_DEFAULT) && list->size() == 1) {
           if (list->at(0) == item->default_value) { list->clear(); }
@@ -728,12 +723,10 @@ void ConfigurationParser::StoreAlistStr(LEX* lc,
       Dmsg4(900, "Append %s to alist %p size=%d %s\n", lc->str, list,
             list->size(), item->name);
 
-      /*
-       * See if we need to drop the default value from the alist.
+      /* See if we need to drop the default value from the alist.
        *
        * We first check to see if the config item has the CFG_ITEM_DEFAULT
-       * flag set and currently has exactly one entry.
-       */
+       * flag set and currently has exactly one entry. */
       if (!BitIsSet(index, (*item->allocated_resource)->item_present_)) {
         if ((item->flags & CFG_ITEM_DEFAULT) && list->size() == 1) {
           char* entry = (char*)list->first();
@@ -778,12 +771,10 @@ void ConfigurationParser::StoreAlistDir(LEX* lc,
       DoShellExpansion(lc->str, SizeofPoolMemory(lc->str));
     }
 
-    /*
-     * See if we need to drop the default value from the alist.
+    /* See if we need to drop the default value from the alist.
      *
      * We first check to see if the config item has the CFG_ITEM_DEFAULT
-     * flag set and currently has exactly one entry.
-     */
+     * flag set and currently has exactly one entry. */
     if ((item->flags & CFG_ITEM_DEFAULT) && list->size() == 1) {
       char* entry;
 
@@ -1493,11 +1484,9 @@ std::string PrintConfigTime(ResourceItem* item)
   utime_t secs = GetItemVariable<utime_t>(*item);
   int factor;
 
-  /*
-   * Reverse time formatting: 1 Month, 1 Week, etc.
+  /* Reverse time formatting: 1 Month, 1 Week, etc.
    *
-   * convert default value string to numeric value
-   */
+   * convert default value string to numeric value */
   static const char* modifier[] = {"years", "months",  "weeks",   "days",
                                    "hours", "minutes", "seconds", NULL};
   static const int32_t multiplier[] = {60 * 60 * 24 * 365,
@@ -1822,10 +1811,8 @@ void BareosResource::PrintResourceItem(ResourceItem& item,
     Dmsg1(200, "%s: default value\n", item.name);
 
     if ((verbose) && (!(item.flags & CFG_ITEM_DEPRECATED))) {
-      /*
-       * If value has a expliciet default value and verbose mode is on,
-       * display directive as inherited.
-       */
+      /* If value has a expliciet default value and verbose mode is on,
+       * display directive as inherited. */
       print_item = true;
       inherited = true;
     }
@@ -1973,10 +1960,8 @@ void BareosResource::PrintResourceItem(ResourceItem& item,
       break;
     }
     case CFG_TYPE_MSGS:
-      /*
-       * We ignore these items as they are printed in a special way in
-       * MessagesResource::PrintConfig()
-       */
+      /* We ignore these items as they are printed in a special way in
+       * MessagesResource::PrintConfig() */
       break;
     case CFG_TYPE_ADDRESSES: {
       dlist<IPADDR>* addrs = GetItemVariable<dlist<IPADDR>*>(item);
@@ -1997,10 +1982,8 @@ void BareosResource::PrintResourceItem(ResourceItem& item,
       // Is stored in CFG_TYPE_ADDRESSES and printed there.
       break;
     default:
-      /*
-       * This is a non-generic type call back to the daemon to get things
-       * printed.
-       */
+      /* This is a non-generic type call back to the daemon to get things
+       * printed. */
       if (my_config.print_res_) {
         my_config.print_res_(item, send, hide_sensitive_data, inherited,
                              verbose);

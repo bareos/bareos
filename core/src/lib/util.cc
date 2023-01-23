@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -321,11 +321,9 @@ char* encode_time(utime_t utime, char* buf)
   time_t time = utime;
 
 #if defined(HAVE_WIN32)
-  /*
-   * Avoid a seg fault in Microsoft's CRT localtime_r(),
+  /* Avoid a seg fault in Microsoft's CRT localtime_r(),
    * which incorrectly references a NULL returned from gmtime() if
-   * time is negative before or after the timezone adjustment.
-   */
+   * time is negative before or after the timezone adjustment. */
   struct tm* gtm;
 
   if ((gtm = gmtime(&time)) == NULL) { return buf; }
@@ -336,8 +334,10 @@ char* encode_time(utime_t utime, char* buf)
 #endif
 
   Blocaltime(&time, &tm);
-  n = sprintf(buf, "%04d-%02d-%02d %02d:%02d:%02d", tm.tm_year + 1900,
-              tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+  // FIXME: this is unsafe, because we don't know the size of the buffer
+  //        we're writing to
+  n = snprintf(buf, 24, "%04d-%02d-%02d %02d:%02d:%02d", tm.tm_year + 1900,
+               tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 
   return buf + n;
 }
@@ -782,14 +782,12 @@ void MakeSessionKey(char* key, char* seed, int mode)
   s[0] = 0;
   if (seed != NULL) { bstrncat(s, seed, sizeof(s)); }
 
-  /*
-   * The following creates a seed for the session key generator
+  /* The following creates a seed for the session key generator
    * based on a collection of volatile and environment-specific
    * information unlikely to be vulnerable (as a whole) to an
    * exhaustive search attack.  If one of these items isn't
    * available on your machine, replace it with something
-   * equivalent or, if you like, just delete it.
-   */
+   * equivalent or, if you like, just delete it. */
 #if defined(HAVE_WIN32)
   {
     LARGE_INTEGER li;
