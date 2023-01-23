@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -169,7 +169,7 @@ extern "C" void SignalHandler(int sig)
     dbg_print_bareos();
 #  endif
 
-    sprintf(pid_buf, "%d", (int)main_pid);
+    snprintf(pid_buf, 20, "%d", (int)main_pid);
     Dmsg1(300, "Working=%s\n", working_directory);
     Dmsg1(300, "btpath=%s\n", btpath);
     Dmsg1(300, "exepath=%s\n", exepath);
