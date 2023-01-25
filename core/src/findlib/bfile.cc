@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -214,7 +214,7 @@ const char* stream_to_ascii(int stream)
     case STREAM_XATTR_NETBSD:
       return _("NetBSD Specific Extended attribs");
     default:
-      sprintf(buf, "%d", stream);
+      snprintf(buf, 20, "%d", stream);
       return (const char*)buf;
   }
 }
@@ -733,17 +733,14 @@ int bopen(BareosFilePacket* bfd,
   Dmsg4(100, "bopen: fname %s, flags %08o, mode %04o, rdev %u\n", fname, flags,
         (mode & ~S_IFMT), rdev);
 
-  /*
-   * If the FILE_ATTRIBUTES_DEDUPED_ITEM bit is set this is a deduped file
+  /* If the FILE_ATTRIBUTES_DEDUPED_ITEM bit is set this is a deduped file
    * we let the bopen function know it should open the file without the
    * FILE_FLAG_OPEN_REPARSE_POINT flag by setting in the O_NOFOLLOW open flag.
    */
   if (rdev & FILE_ATTRIBUTES_DEDUPED_ITEM) { flags |= O_NOFOLLOW; }
 
-  /*
-   * If the FILE_ATTRIBUTE_ENCRYPTED bit is set this is an file on an EFS
-   * filesystem. For that we need some special handling.
-   */
+  /* If the FILE_ATTRIBUTE_ENCRYPTED bit is set this is an file on an EFS
+   * filesystem. For that we need some special handling. */
   if (rdev & FILE_ATTRIBUTE_ENCRYPTED) {
     return BopenEncrypted(bfd, fname, flags, mode);
   } else {
@@ -793,11 +790,9 @@ static inline int BcloseNonencrypted(BareosFilePacket* bfd)
     goto all_done;
   }
 
-  /*
-   * We need to tell the API to release the buffer it
+  /* We need to tell the API to release the buffer it
    *  allocated in lplugin_private_context.  We do so by calling the
-   *  API one more time, but with the Abort bit set.
-   */
+   *  API one more time, but with the Abort bit set. */
   if (bfd->use_backup_api && bfd->mode == BF_READ) {
     BYTE buf[10];
     if (bfd->lplugin_private_context
