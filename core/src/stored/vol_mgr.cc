@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2013 Free Software Foundation Europe e.V.
-   Copyright (C) 2015-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -366,26 +366,20 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
     return NULL;
   }
 
-  /*
-   * We lock the reservations system here to ensure when adding a new volume
-   * that no newly scheduled job can reserve it.
-   */
+  /* We lock the reservations system here to ensure when adding a new volume
+   * that no newly scheduled job can reserve it. */
   LockVolumes();
   if (debug_level >= debuglevel) { DebugListVolumes("begin reserve_volume"); }
 
-  /*
-   * First, remove any old volume attached to this device as it is no longer
-   * used.
-   */
+  /* First, remove any old volume attached to this device as it is no longer
+   * used. */
   if (dcr->dev->vol) {
     vol = dcr->dev->vol;
     Dmsg4(debuglevel, "Vol attached=%s, newvol=%s volinuse=%d on %s\n",
           vol->vol_name, VolumeName, vol->IsInUse(), dcr->dev->print_name());
-    /*
-     * Make sure we don't remove the current volume we are inserting
+    /* Make sure we don't remove the current volume we are inserting
      * because it was probably inserted by another job, or it
-     * is not being used and is marked as not reserved.
-     */
+     * is not being used and is marked as not reserved. */
     if (bstrcmp(vol->vol_name, VolumeName)) {
       Dmsg2(debuglevel, "=== set reserved vol=%s dev=%s\n", VolumeName,
             vol->dev->print_name());
@@ -415,10 +409,8 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
   // Create a new Volume entry
   nvol = new_vol_item(dcr, VolumeName);
 
-  /*
-   * See if this is a request for reading a file type device which can be
-   * accesses by multiple readers at once without disturbing each other.
-   */
+  /* See if this is a request for reading a file type device which can be
+   * accesses by multiple readers at once without disturbing each other. */
   if (me->filedevice_concurrent_read && !dcr->IsWriting()
       && dcr->dev->CanReadConcurrently()) {
     nvol->SetJobid(dcr->jcr->JobId);
@@ -426,10 +418,8 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
     vol = nvol;
     dcr->dev->vol = vol;
 
-    /*
-     * Read volumes on file based devices are not inserted into the write volume
-     * list.
-     */
+    /* Read volumes on file based devices are not inserted into the write volume
+     * list. */
     goto get_out;
   } else {
     // Now try to insert the new Volume
@@ -441,11 +431,9 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
     Dmsg2(debuglevel, "Found vol=%s dev-same=%d\n", vol->vol_name,
           dcr->dev == vol->dev);
 
-    /*
-     * At this point, a Volume with this name already is in the list,
+    /* At this point, a Volume with this name already is in the list,
      * so we simply release our new Volume entry. Note, this should
-     * only happen if we are moving the volume from one drive to another.
-     */
+     * only happen if we are moving the volume from one drive to another. */
     Dmsg2(debuglevel, "reserve_vol free-tmp vol=%s at %p\n", vol->vol_name,
           vol->vol_name);
 
@@ -458,10 +446,8 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
             vol->dev->print_name());
     }
 
-    /*
-     * Check if we are trying to use the Volume on a different drive dev is our
-     * device vol->dev is where the Volume we want is
-     */
+    /* Check if we are trying to use the Volume on a different drive dev is our
+     * device vol->dev is where the Volume we want is */
     if (dcr->dev != vol->dev) {
       // Caller wants to switch Volume to another device
 
@@ -480,17 +466,20 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
         FreeVolume(dcr->dev); /* free any volume attached to our drive */
         Dmsg1(50, "SetUnload dev=%s\n", dcr->dev->print_name());
         dcr->dev->SetUnload(); /* Unload any volume that is on our drive */
-        dcr->SetDev(vol->dev); /* temp point to other dev */
-        slot = GetAutochangerLoadedSlot(dcr); /* get slot on other drive */
-        dcr->SetDev(dcr->dev);                /* restore dev */
-        vol->SetSlotNumber(slot);             /* save slot */
-        vol->dev->SetUnload();                /* unload the other drive */
-        vol->SetSwapping();                   /* swap from other drive */
-        dcr->dev->swap_dev = vol->dev;        /* remember to get this vol */
-        dcr->dev->SetLoad();                  /* then reload on our drive */
-        vol->dev->vol = NULL; /* remove volume from other drive */
-        vol->dev = dcr->dev;  /* point the Volume at our drive */
-        dcr->dev->vol = vol;  /* point our drive at the Volume */
+        {
+          auto original_dcr_dev = dcr->dev;
+          dcr->SetDev(vol->dev);                /* temp point to other dev */
+          slot = GetAutochangerLoadedSlot(dcr); /* get slot on other drive */
+          dcr->SetDev(original_dcr_dev);        /* restore dev */
+        }
+        vol->SetSlotNumber(slot);      /* save slot */
+        vol->dev->SetUnload();         /* unload the other drive */
+        vol->SetSwapping();            /* swap from other drive */
+        dcr->dev->swap_dev = vol->dev; /* remember to get this vol */
+        dcr->dev->SetLoad();           /* then reload on our drive */
+        vol->dev->vol = NULL;          /* remove volume from other drive */
+        vol->dev = dcr->dev;           /* point the Volume at our drive */
+        dcr->dev->vol = vol;           /* point our drive at the Volume */
       } else {
         Jmsg7(dcr->jcr, M_WARNING, 0,
               "Need volume from other drive, but swap not possible. "
@@ -716,12 +705,10 @@ bool VolumeUnused(DeviceControlRecord* dcr)
     return false;
   }
 
-  /*
-   * If this is a tape, we do not free the volume, rather we wait
+  /* If this is a tape, we do not free the volume, rather we wait
    * until the autoloader unloads it, or until another tape is
    * explicitly read in this drive. This allows the SD to remember
-   * where the tapes are or last were.
-   */
+   * where the tapes are or last were. */
   Dmsg4(debuglevel,
         "=== set not reserved vol=%s num_writers=%d dev_reserved=%d dev=%s\n",
         dev->vol->vol_name, dev->num_writers, dev->NumReserved(),
@@ -729,10 +716,8 @@ bool VolumeUnused(DeviceControlRecord* dcr)
   if (dev->IsTape() || dev->AttachedToAutochanger()) {
     return true;
   } else {
-    /*
-     * Note, this frees the volume reservation entry, but the file descriptor
-     * remains open with the OS.
-     */
+    /* Note, this frees the volume reservation entry, but the file descriptor
+     * remains open with the OS. */
     return FreeVolume(dev);
   }
 }
@@ -755,12 +740,10 @@ bool FreeVolume(Device* dev)
     Dmsg1(debuglevel, "=== clear in_use vol=%s\n", vol->vol_name);
     dev->vol = NULL;
 
-    /*
-     * Volume is on write volume list if one of the folling is applicable:
+    /* Volume is on write volume list if one of the folling is applicable:
      *  - The volume is written to.
      *  - Config option filedevice_concurrent_read is not on.
-     *  - The device is not of type File.
-     */
+     *  - The device is not of type File. */
     if (vol->IsWriting() || !me->filedevice_concurrent_read
         || !dev->CanReadConcurrently()) {
       vol_list->remove(vol);

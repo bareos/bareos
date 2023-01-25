@@ -8,6 +8,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Changed
 - VMware Plugin: introduce pyVmomi 8.x compatibility [PR #1358]
 - build: replace sprintf by snprintf due to upgraded MacOS compiler, change linking of googletest [PR #1362]
+- storage daemon: fix crash on volume swap [PR #1360]
 
 ## [22.0.1] - 2023-01-02
 
@@ -436,5 +437,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1337]: https://github.com/bareos/bareos/pull/1337
 [PR #1347]: https://github.com/bareos/bareos/pull/1347
 [PR #1358]: https://github.com/bareos/bareos/pull/1358
+[PR #1360]: https://github.com/bareos/bareos/pull/1360
 [PR #1362]: https://github.com/bareos/bareos/pull/1362
 [unreleased]: https://github.com/bareos/bareos/tree/master
