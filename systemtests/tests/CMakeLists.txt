@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -41,6 +41,7 @@ add_subdirectory(deprecation)
 add_subdirectory(droplet-s3)
 add_subdirectory(encrypt-signature-no-tls)
 add_subdirectory(encrypt-signature-tls-cert)
+add_subdirectory(file-autochanger)
 add_subdirectory(fileset-multiple-blocks)
 add_subdirectory(filesets)
 add_subdirectory(gfapi-fd)

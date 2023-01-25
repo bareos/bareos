@@ -1,0 +1,66 @@
+#!/bin/bash
+set -e
+set -u
+
+exec 2>>"${tmp:-/tmp}/mtx-changer.out"
+echo "$0" "$@" >&2
+
+inv_file="${tmp:-/tmp}/mtx-inventory.txt"
+contents="$(cat "$inv_file")"
+
+#ctl="$1"
+cmd="$2"
+slot="$3"
+device="$4"
+drive="$5"
+
+case "$cmd" in
+  slots)
+    grep -c '^S:' <<<"$contents"
+    ;;
+  list)
+    awk -F: '$3 == "F" { 
+    if($1 == "D")
+      printf("%s:%s\n", $4, $5)
+    else
+      printf("%s:%s\n", $2, $4)
+    }' <<<"$contents"
+    ;;
+  listall)
+    cat <<<"$contents"
+    ;;
+  loaded)
+    line="$(grep "D:${drive}:" <<<"$contents")"
+    barcode="$(cut -d: -f 5 <<< "$line")"
+    if [ "$(cut -d: -f 3 <<< "$line")" = F ]; then
+      ln -sf "$barcode" "${device}"
+      touch "${device}"
+      cut -d: -f 4 <<< "$line"
+    else
+      [ -L "${device}" ] && rm "${device}"
+      echo 0
+    fi
+    ;;
+  load)
+    barcode="$(awk -F: "/^S:$slot:F:/ { print \$NF }" <<<"$contents")"
+    ln -sf "$barcode" "${device}"
+    touch "${device}"
+    (
+    grep -v -E "^(D:${drive}:|S:${slot}:)" <<< "$contents"
+    printf "D:%d:F:%s:%s\n" "${drive}" "${slot}" "${barcode}"
+    printf "S:%d:E\n" "${slot}"
+    ) | sort -V > "$inv_file"
+    ;;
+  unload)
+    barcode="$(awk -F: "/^D:$drive:F:/ { print \$NF }" <<<"$contents")"
+    [ -L "${device}" ] && rm "${device}"
+
+    (
+    grep -v -E "^(D:${drive}:|S:${slot}:)" <<< "$contents"
+    printf "D:%d:E\n" "${drive}"
+    printf "S:%d:F:%s\n" "${slot}" "${barcode}"
+    ) | sort -V > "$inv_file"
+    ;;
+  *)
+    ;;
+esac

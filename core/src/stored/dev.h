@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -298,7 +298,7 @@ class Device {
   bool AttachedToAutochanger() const { return BitIsSet(CAP_ATTACHED_TO_AUTOCHANGER, capabilities); }
   bool RequiresMount() const { return BitIsSet(CAP_REQMOUNT, capabilities); }
   bool IsRemovable() const { return BitIsSet(CAP_REM, capabilities); }
-  bool IsTape() const { return (device_type == DeviceType::B_TAPE_DEV); }
+  virtual bool IsTape() const { return false; }
   bool IsOpen() const { return fd >= 0; }
   bool IsOffline() const { return BitIsSet(ST_OFFLINE, state); }
   bool IsLabeled() const { return BitIsSet(ST_LABEL, state); }
@@ -318,11 +318,9 @@ class Device {
   bool CanAppend() const { return BitIsSet(ST_APPENDREADY, state); }
   bool IsCryptoEnabled() const { return BitIsSet(ST_CRYPTOKEY, state); }
 
-  /**
-   * CanWrite() is meant for checking at the end of a job to see
+  /* CanWrite() is meant for checking at the end of a job to see
    * if we still have a tape (perhaps not if at end of tape
-   * and the job is canceled).
-   */
+   * and the job is canceled). */
   bool CanWrite() const
   {
     return IsOpen() && CanAppend() && IsLabeled() && !AtWeot();
