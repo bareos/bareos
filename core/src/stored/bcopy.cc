@@ -264,8 +264,17 @@ int main(int argc, char* argv[])
   delete in_dev;
   delete out_dev;
 
+  CleanupCompression(in_jcr);
+  CleanupCompression(out_jcr);
+  FreePlugins(out_jcr);
+  FreePlugins(in_jcr);
+  UnloadSdPlugins();
   FreeJcr(in_jcr);
   FreeJcr(out_jcr);
+
+  delete in_dev;
+  delete out_dev;
+
 
   return 0;
 }
@@ -280,10 +289,7 @@ static bool RecordCb(DeviceControlRecord* in_dcr, DeviceRecord* rec)
           rec->VolSessionId, rec->VolSessionTime, rec->FileIndex, rec->Stream,
           rec->data_len);
   }
-  /*
-   * Check for Start or End of Session Record
-   *
-   */
+  // Check for Start or End of Session Record
   if (rec->FileIndex < 0) {
     GetSessionRecord(in_dcr->dev, rec, &sessrec);
 
