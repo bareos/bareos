@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -276,16 +276,18 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
 
   // Resources
   json_t* resource = json_object();
-  json_object_set(json, "resource", resource);
+  json_object_set_new(json, "resource", resource);
   json_t* bareos_fd = json_object();
-  json_object_set(resource, "bareos-fd", bareos_fd);
+  json_object_set_new(resource, "bareos-fd", bareos_fd);
 
   for (int r = 0; resources[r].name; r++) {
     ResourceTable resource = my_config->resource_definitions_[r];
-    json_object_set(bareos_fd, resource.name, json_items(resource.items));
+    json_object_set_new(bareos_fd, resource.name, json_items(resource.items));
   }
 
-  PmStrcat(buffer, json_dumps(json, JSON_INDENT(2)));
+  char* const json_str = json_dumps(json, JSON_INDENT(2));
+  PmStrcat(buffer, json_str);
+  free(json_str);
   json_decref(json);
 
   return true;
@@ -381,9 +383,7 @@ static void FreeResource(BareosResource* res, int type)
       if (p->pki_signing_key_files) { delete p->pki_signing_key_files; }
       if (p->pki_signers) {
         X509_KEYPAIR* keypair = nullptr;
-        foreach_alist (keypair, p->pki_signers) {
-          CryptoKeypairFree(keypair);
-        }
+        foreach_alist (keypair, p->pki_signers) { CryptoKeypairFree(keypair); }
         delete p->pki_signers;
       }
       if (p->pki_master_key_files) { delete p->pki_master_key_files; }

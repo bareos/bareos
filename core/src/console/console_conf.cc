@@ -274,16 +274,19 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
   json_object_set_new(json, "version", json_string(kBareosVersionStrings.Full));
 
   json_t* json_resource_object = json_object();
-  json_object_set(json, "resource", json_resource_object);
+  json_object_set_new(json, "resource", json_resource_object);
   json_t* bconsole = json_object();
-  json_object_set(json_resource_object, "bconsole", bconsole);
+  json_object_set_new(json_resource_object, "bconsole", bconsole);
 
   ResourceTable* resources = my_config->resource_definitions_;
   for (; resources->name; ++resources) {
-    json_object_set(bconsole, resources->name, json_items(resources->items));
+    json_object_set_new(bconsole, resources->name,
+                        json_items(resources->items));
   }
 
-  PmStrcat(buffer, json_dumps(json, JSON_INDENT(2)));
+  char* const json_str = json_dumps(json, JSON_INDENT(2));
+  PmStrcat(buffer, json_str);
+  free(json_str);
   json_decref(json);
 
   return true;

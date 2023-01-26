@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -291,12 +291,10 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
     }
   }
 
-  /*
-   * During pass 2 in each "store" routine, we looked up pointers
+  /* During pass 2 in each "store" routine, we looked up pointers
    * to all the resource_definitions referrenced in the current resource, now we
    * must copy their addresses from the static record to the allocated
-   * record.
-   */
+   * record. */
   if (pass == 2) {
     switch (type) {
       case R_MONITOR:
@@ -401,17 +399,19 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
 
   // Resources
   json_t* resource = json_object();
-  json_object_set(json, "resource", resource);
+  json_object_set_new(json, "resource", resource);
   json_t* bareos_tray_monitor = json_object();
-  json_object_set(resource, "bareos-tray-monitor", bareos_tray_monitor);
+  json_object_set_new(resource, "bareos-tray-monitor", bareos_tray_monitor);
 
   for (int r = 0; resource_definitions[r].name; r++) {
     ResourceTable resource = my_config->resource_definitions_[r];
-    json_object_set(bareos_tray_monitor, resource.name,
-                    json_items(resource.items));
+    json_object_set_new(bareos_tray_monitor, resource.name,
+                        json_items(resource.items));
   }
 
-  PmStrcat(buffer, json_dumps(json, JSON_INDENT(2)));
+  char* const json_str = json_dumps(json, JSON_INDENT(2));
+  PmStrcat(buffer, json_str);
+  free(json_str);
   json_decref(json);
 
   return true;

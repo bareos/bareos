@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -290,11 +290,9 @@ static void StoreAutopassword(LEX* lc, ResourceItem* item, int index, int pass)
 {
   switch ((*item->allocated_resource)->rcode_) {
     case R_DIRECTOR:
-      /*
-       * As we need to store both clear and MD5 hashed within the same
+      /* As we need to store both clear and MD5 hashed within the same
        * resource class we use the item->code as a hint default is 0
-       * and for clear we need a code of 1.
-       */
+       * and for clear we need a code of 1. */
       switch (item->code) {
         case 1:
           my_config->StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index,
@@ -491,10 +489,8 @@ static void CheckDropletDevices(ConfigurationParser& my_config)
     DeviceResource* d = dynamic_cast<DeviceResource*>(p);
     if (d && d->device_type == DeviceType::B_DROPLET_DEV) {
       if (d->max_concurrent_jobs == 0) {
-        /*
-         * 0 is the general default. However, for this device_type, only 1
-         * works. So we set it to this value.
-         */
+        /* 0 is the general default. However, for this device_type, only 1
+         * works. So we set it to this value. */
         Jmsg1(nullptr, M_WARNING, 0,
               _("device %s is set to the default 'Maximum Concurrent Jobs' = "
                 "1.\n"),
@@ -632,16 +628,18 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
 
   // Resources
   json_t* resource = json_object();
-  json_object_set(json, "resource", resource);
+  json_object_set_new(json, "resource", resource);
   json_t* bareos_sd = json_object();
-  json_object_set(resource, "bareos-sd", bareos_sd);
+  json_object_set_new(resource, "bareos-sd", bareos_sd);
 
   for (int r = 0; resources[r].name; r++) {
     ResourceTable resource = my_config->resource_definitions_[r];
-    json_object_set(bareos_sd, resource.name, json_items(resource.items));
+    json_object_set_new(bareos_sd, resource.name, json_items(resource.items));
   }
 
-  PmStrcat(buffer, json_dumps(json, JSON_INDENT(2)));
+  char* const json_str = json_dumps(json, JSON_INDENT(2));
+  PmStrcat(buffer, json_str);
+  free(json_str);
   json_decref(json);
 
   return true;
