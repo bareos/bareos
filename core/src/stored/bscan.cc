@@ -355,11 +355,13 @@ int main(int argc, char* argv[])
   }
   db->CloseDatabase(bjcr);
   DbFlushBackends();
-
   CleanDevice(bjcr->sd_impl->dcr);
   delete dev;
   FreeDeviceControlRecord(bjcr->sd_impl->dcr);
+  FreePlugins(bjcr);
+  CleanupCompression(bjcr);
   FreeJcr(bjcr);
+  UnloadSdPlugins();
 
   return 0;
 }
