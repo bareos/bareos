@@ -6,7 +6,6 @@ set -u
 "${rscripts}/bareos" stop >/dev/null
 
 tail -n +1 "${working:?}"/*.traceback 2>/dev/null || true
-
 rm -rf "${tmp:?}"/*
 rm -rf "${logdir:?}"/*.log
 rm -rf "${working:?}"/*.bsr "${working:?}"/log*.sd
@@ -26,5 +25,3 @@ find . -name "gigaslam.gif" -exec rm -f {} \;
 rm -rf /tmp/chrome-user-data-*
 
 ${scripts}/drop_bareos_database ${DBTYPE} >/dev/null 2>&1
-
-exit 0

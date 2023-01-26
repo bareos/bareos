@@ -396,7 +396,7 @@ endif()
 
 # scsi-crypto
 if(NOT DEFINED scsi-crypto)
-  set(scsi-crypto OFF)
+  set(scsi-crypto ON)
 endif()
 
 # lmdb
