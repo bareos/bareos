@@ -1,0 +1,36 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+set -x
+
+# run bls and make sure it works (with autoxflate plugin)
+TestName="$(basename "$(pwd)")"
+export TestName
+
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+start_test
+
+JobName=backup-bareos-fd
+
+run_bcopy -v -i TestVolume001  -o TestVolume002  FileStorage FileStorage2
+ret=$?
+if [ $ret -ne 0 ]; then
+  echo "bcopy exit code: $ret"
+  stop_bareos
+  exit $ret
+fi
+
+if ! grep -q "bcopy: stored/bcopy.cc:253-0 . Jobs copied. .*records copied." "$tmp/bcopy.out"; then
+  echo 'Expected string \"weird-files/dangling-link\" not found in bcopy output'
+  stop_bareos
+  exit 1
+fi
+
+
+end_test
