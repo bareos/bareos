@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -492,7 +492,19 @@ inline std::shared_ptr<ConfigResourcesContainer> _init_foreach_res_(
        ((var)                                                     \
         = static_cast<decltype(var)>(my_config->GetNextRes((type), var)));)
 
-#define LockRes(x) (x)->b_LockRes(__FILE__, __LINE__)
-#define UnlockRes(x) (x)->b_UnlockRes(__FILE__, __LINE__)
+class ResLocker {
+  const ConfigurationParser* config_res_;
+
+ public:
+  ResLocker(const ConfigurationParser* config) : config_res_(config)
+  {
+    config_res_->b_LockRes(__FILE__, __LINE__);
+  }
+  ~ResLocker() { config_res_->b_UnlockRes(__FILE__, __LINE__); }
+  ResLocker(const ResLocker&) = delete;
+  ResLocker& operator=(const ResLocker&) = delete;
+  ResLocker(ResLocker&&) = delete;
+  ResLocker& operator=(ResLocker&&) = delete;
+};
 
 #endif  // BAREOS_LIB_PARSE_CONF_H_

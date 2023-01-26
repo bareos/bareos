@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -37,7 +37,7 @@ bool CheckResources()
   JobResource* job;
   const std::string& configfile = my_config->get_base_config_path();
 
-  LockRes(my_config);
+  ResLocker _{my_config};
 
   job = (JobResource*)my_config->GetNextRes(R_JOB, nullptr);
   me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
@@ -47,7 +47,6 @@ bool CheckResources()
          _("No Director resource defined in %s\n"
            "Without that I don't know who I am :-(\n"),
          configfile.c_str());
-    UnlockRes(my_config);
     return false;
   } else {
     my_config->omit_defaults_ = true;
@@ -59,7 +58,6 @@ bool CheckResources()
       if (!me->messages) {
         Jmsg(nullptr, M_FATAL, 0, _("No Messages resource defined in %s\n"),
              configfile.c_str());
-        UnlockRes(my_config);
         return false;
       }
     }
@@ -71,7 +69,6 @@ bool CheckResources()
       Jmsg(nullptr, M_FATAL, 0,
            _("Cannot optimize for speed and size define only one in %s\n"),
            configfile.c_str());
-      UnlockRes(my_config);
       return false;
     }
 
@@ -79,7 +76,6 @@ bool CheckResources()
       Jmsg(nullptr, M_FATAL, 0,
            _("Only one Director resource permitted in %s\n"),
            configfile.c_str());
-      UnlockRes(my_config);
       return false;
     }
 
@@ -87,7 +83,6 @@ bool CheckResources()
       if (!have_tls) {
         Jmsg(nullptr, M_FATAL, 0,
              _("TLS required but not compiled into BAREOS.\n"));
-        UnlockRes(my_config);
         return false;
       }
     }
@@ -96,14 +91,10 @@ bool CheckResources()
   if (!job) {
     Jmsg(nullptr, M_FATAL, 0, _("No Job records defined in %s\n"),
          configfile.c_str());
-    UnlockRes(my_config);
     return false;
   }
 
-  if (!PopulateDefs()) {
-    UnlockRes(my_config);
-    return false;
-  }
+  if (!PopulateDefs()) { return false; }
 
   // Loop over Jobs
   foreach_res (job, R_JOB) {
@@ -112,7 +103,6 @@ bool CheckResources()
            _("MaxFullConsolidations configured in job %s which is not of job "
              "type \"consolidate\" in file %s\n"),
            job->resource_name_, configfile.c_str());
-      UnlockRes(my_config);
       return false;
     }
 
@@ -124,7 +114,6 @@ bool CheckResources()
            _("AlwaysIncremental configured in job %s which is not of job type "
              "\"backup\" in file %s\n"),
            job->resource_name_, configfile.c_str());
-      UnlockRes(my_config);
       return false;
     }
   }
@@ -135,7 +124,7 @@ bool CheckResources()
       if (!have_tls) {
         Jmsg(nullptr, M_FATAL, 0,
              _("TLS required but not configured in BAREOS.\n"));
-        UnlockRes(my_config);
+        ;
         return false;
       }
     }
@@ -146,7 +135,6 @@ bool CheckResources()
     if (client->IsTlsConfigured()) {
       if (!have_tls) {
         Jmsg(nullptr, M_FATAL, 0, _("TLS required but not configured.\n"));
-        UnlockRes(my_config);
         return false;
       }
     }
@@ -157,16 +145,13 @@ bool CheckResources()
     if (store->IsTlsConfigured()) {
       if (!have_tls) {
         Jmsg(nullptr, M_FATAL, 0, _("TLS required but not configured.\n"));
-        UnlockRes(my_config);
         return false;
       }
     }
 
-    /*
-     * If we collect statistics on this SD make sure any other entry pointing to
+    /* If we collect statistics on this SD make sure any other entry pointing to
      * the same SD does not collect statistics otherwise we collect the same
-     * data multiple times.
-     */
+     * data multiple times. */
     if (store->collectstats) {
       nstore = store;
       while ((nstore = (StorageResource*)my_config->GetNextRes(
@@ -195,7 +180,6 @@ bool CheckResources()
          "Combining `Use Pam Authentication` with ACL commands or `Profile` in "
          "Console(s) `%s` is not allowed\n",
          consoles_with_auth_problems.Join(',').c_str());
-    UnlockRes(my_config);
     return false;
   }
 
@@ -208,7 +192,6 @@ bool CheckResources()
     SetLogTimestampFormat(me->log_timestamp_format);
   }
 
-  UnlockRes(my_config);
   return true;
 }
 
@@ -247,10 +230,8 @@ bool DoReloadConfig()
 
 
   if (is_reloading) {
-    /*
-     * Note: don't use Jmsg here, as it could produce a race condition
-     * on multiple parallel reloads
-     */
+    /* Note: don't use Jmsg here, as it could produce a race condition
+     * on multiple parallel reloads */
     Qmsg(nullptr, M_ERROR, 0, _("Already reloading. Request ignored.\n"));
     return false;
   }
@@ -259,7 +240,7 @@ bool DoReloadConfig()
   StopStatisticsThread();
 
   LockJobs();
-  LockRes(my_config);
+  ResLocker _{my_config};
 
   DbSqlPoolFlush();
 
@@ -298,7 +279,6 @@ bool DoReloadConfig()
     StartStatisticsThread();
   }
 
-  UnlockRes(my_config);
   UnlockJobs();
   is_reloading = false;
   return reloaded;

@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -430,14 +430,12 @@ static void eliminate_orphaned_client_records()
   const char* query;
 
   printf(_("Checking for orphaned Client entries.\n"));
-  /*
-   * In English:
+  /* In English:
    *   Wiffle through Client for every Client
    *   joining with the Job table including every Client even if
    *   there is not a match in Job (left outer join), then
    *   filter out only those where no Job points to a Client
-   *   i.e. Job.Client is NULL
-   */
+   *   i.e. Job.Client is NULL */
   query
       = "SELECT Client.ClientId,Client.Name FROM Client "
         "LEFT OUTER JOIN Job USING(ClientId) "
@@ -472,14 +470,12 @@ static void eliminate_orphaned_job_records()
   const char* query;
 
   printf(_("Checking for orphaned Job entries.\n"));
-  /*
-   * In English:
+  /* In English:
    *   Wiffle through Job for every Job
    *   joining with the Client table including every Job even if
    *   there is not a match in Client (left outer join), then
    *   filter out only those where no Client exists
-   *   i.e. Client.Name is NULL
-   */
+   *   i.e. Client.Name is NULL */
   query
       = "SELECT Job.JobId,Job.Name FROM Job "
         "LEFT OUTER JOIN Client USING(ClientId) "
@@ -875,7 +871,7 @@ int main(int argc, char* argv[])
 
     my_config = InitDirConfig(configfile.c_str(), M_ERROR_TERM);
     my_config->ParseConfig();
-    LockRes(my_config);
+
     foreach_res (catalog, R_CATALOG) {
       if (!catalogname.empty()
           && bstrcmp(catalog->resource_name_, catalogname.c_str())) {
@@ -887,7 +883,7 @@ int main(int argc, char* argv[])
         break;
       }
     }
-    UnlockRes(my_config);
+
     if (!found) {
       if (!catalogname.empty()) {
         Pmsg2(0,
@@ -902,10 +898,11 @@ int main(int argc, char* argv[])
       }
       exit(1);
     } else {
-      LockRes(my_config);
-      me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
-      my_config->own_resource_ = me;
-      UnlockRes(my_config);
+      {
+        ResLocker _{my_config};
+        me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
+        my_config->own_resource_ = me;
+      }
       if (!me) {
         Pmsg0(0, _("Error no Director resource defined.\n"));
         exit(1);

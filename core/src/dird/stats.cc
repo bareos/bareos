@@ -161,46 +161,38 @@ extern "C" void* statistics_thread(void*)
       StorageResource* store;
       int64_t StorageId;
 
-      LockRes(my_config);
-      if ((current_store.c_str())[0]) {
-        store = (StorageResource*)my_config->GetResWithName(
-            R_STORAGE, current_store.c_str());
-      } else {
-        store = NULL;
-      }
+      {
+        ResLocker _{my_config};
+        if ((current_store.c_str())[0]) {
+          store = (StorageResource*)my_config->GetResWithName(
+              R_STORAGE, current_store.c_str());
+        } else {
+          store = NULL;
+        }
 
-      store = (StorageResource*)my_config->GetNextRes(R_STORAGE,
-                                                      (BareosResource*)store);
-      if (!store) {
-        PmStrcpy(current_store, "");
-        UnlockRes(my_config);
-        break;
-      }
-
-      PmStrcpy(current_store, store->resource_name_);
-      if (!store->collectstats) {
-        UnlockRes(my_config);
-        continue;
-      }
-
-      switch (store->Protocol) {
-        case APT_NATIVE:
+        store = (StorageResource*)my_config->GetNextRes(R_STORAGE,
+                                                        (BareosResource*)store);
+        if (!store) {
+          PmStrcpy(current_store, "");
           break;
-        default:
-          UnlockRes(my_config);
-          continue;
+        }
+
+        PmStrcpy(current_store, store->resource_name_);
+        if (!store->collectstats) { continue; }
+
+        switch (store->Protocol) {
+          case APT_NATIVE:
+            break;
+          default:
+            continue;
+        }
+
+        jcr->dir_impl->res.read_storage = store;
+        if (!ConnectToStorageDaemon(jcr, 2, 1, false)) { continue; }
+
+        StorageId = store->StorageId;
+        sd = jcr->store_bsock;
       }
-
-      jcr->dir_impl->res.read_storage = store;
-      if (!ConnectToStorageDaemon(jcr, 2, 1, false)) {
-        UnlockRes(my_config);
-        continue;
-      }
-
-      StorageId = store->StorageId;
-      sd = jcr->store_bsock;
-
-      UnlockRes(my_config);
 
       // Do our work retrieving the statistics from the remote SD.
       if (sd->fsend("stats")) {

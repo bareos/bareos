@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -258,10 +258,8 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
         at_prompt = false;
       }
 
-      /*
-       * Suppress output if running
-       * in background or user hit ctl-c
-       */
+      /* Suppress output if running
+       * in background or user hit ctl-c */
       if (!stop && !usrbrk()) {
         if (UA_sock->msg) { ConsoleOutput(UA_sock->msg); }
       }
@@ -584,10 +582,8 @@ int GetCmd(FILE* input, const char* prompt, BareosSocket* sock, int)
   StripTrailingJunk(line);
   command = line;
 
-  /*
-   * Split "line" into multiple commands separated by the eol character.
-   *   Each part is pointed to by "next" until finally it becomes null.
-   */
+  /* Split "line" into multiple commands separated by the eol character.
+   *   Each part is pointed to by "next" until finally it becomes null. */
   if (eol == '\0') {
     next = NULL;
   } else {
@@ -672,16 +668,11 @@ static bool SelectDirector(const char* director,
   *ret_cons = NULL;
   *ret_dir = NULL;
 
-  LockRes(console::my_config);
   numdir = 0;
-  foreach_res (director_resource_tmp, R_DIRECTOR) {
-    numdir++;
-  }
+  foreach_res (director_resource_tmp, R_DIRECTOR) { numdir++; }
   numcon = 0;
-  foreach_res (console_resource_tmp, R_CONSOLE) {
-    numcon++;
-  }
-  UnlockRes(my_config);
+  foreach_res (console_resource_tmp, R_CONSOLE) { numcon++; }
+
 
   if (numdir == 1) { /* No choose */
     director_resource_tmp
@@ -689,11 +680,11 @@ static bool SelectDirector(const char* director,
   }
 
   if (director) { /* Command line choice overwrite the no choose option */
-    LockRes(my_config);
+
     foreach_res (director_resource_tmp, R_DIRECTOR) {
       if (bstrcmp(director_resource_tmp->resource_name_, director)) { break; }
     }
-    UnlockRes(my_config);
+
     if (!director_resource_tmp) { /* Can't find Director used as argument */
       ConsoleOutputFormat(_("Can't find %s in Director list\n"), director);
       return 0;
@@ -704,7 +695,7 @@ static bool SelectDirector(const char* director,
     UA_sock = new BareosSocketTCP;
   try_again:
     ConsoleOutput(_("Available Directors:\n"));
-    LockRes(my_config);
+
     numdir = 0;
     foreach_res (director_resource_tmp, R_DIRECTOR) {
       ConsoleOutputFormat(_("%2d:  %s at %s:%d\n"), 1 + numdir++,
@@ -712,7 +703,7 @@ static bool SelectDirector(const char* director,
                           director_resource_tmp->address,
                           director_resource_tmp->DIRport);
     }
-    UnlockRes(my_config);
+
     if (GetCmd(stdin, _("Select Director by entering a number: "), UA_sock, 600)
         < 0) {
       WSACleanup(); /* Cleanup Windows sockets */
@@ -732,16 +723,17 @@ static bool SelectDirector(const char* director,
       goto try_again;
     }
     delete UA_sock;
-    LockRes(my_config);
-    for (i = 0; i < item; i++) {
-      director_resource_tmp = (DirectorResource*)my_config->GetNextRes(
-          R_DIRECTOR, (BareosResource*)director_resource_tmp);
+    {
+      ResLocker _{my_config};
+      for (i = 0; i < item; i++) {
+        director_resource_tmp = (DirectorResource*)my_config->GetNextRes(
+            R_DIRECTOR, (BareosResource*)director_resource_tmp);
+      }
     }
-    UnlockRes(my_config);
   }
 
   // Look for a console linked to this director
-  LockRes(my_config);
+  ResLocker _{my_config};
   for (i = 0; i < numcon; i++) {
     console_resource_tmp = (ConsoleResource*)my_config->GetNextRes(
         R_CONSOLE, (BareosResource*)console_resource_tmp);
@@ -768,7 +760,6 @@ static bool SelectDirector(const char* director,
     console_resource_tmp = (ConsoleResource*)my_config->GetNextRes(
         R_CONSOLE, (BareosResource*)NULL);
   }
-  UnlockRes(my_config);
 
   *ret_dir = director_resource_tmp;
   *ret_cons = console_resource_tmp;
@@ -972,11 +963,9 @@ int main(int argc, char* argv[])
   ConInit(stdin);
 
   if (list_directors) {
-    LockRes(my_config);
     foreach_res (director_resource, R_DIRECTOR) {
       ConsoleOutputFormat("%s\n", director_resource->resource_name_);
     }
-    UnlockRes(my_config);
   }
 
   if (test_config) {
@@ -1137,12 +1126,10 @@ static int CheckResources()
   bool OK = true;
   DirectorResource* director;
 
-  LockRes(my_config);
+  ResLocker _{my_config};
 
   numdir = 0;
-  foreach_res (director, R_DIRECTOR) {
-    numdir++;
-  }
+  foreach_res (director, R_DIRECTOR) { numdir++; }
 
   if (numdir == 0) {
     const std::string& configfile = my_config->get_base_config_path();
@@ -1155,8 +1142,6 @@ static int CheckResources()
 
   me = (ConsoleResource*)my_config->GetNextRes(R_CONSOLE, NULL);
   my_config->own_resource_ = me;
-
-  UnlockRes(my_config);
 
   return OK;
 }

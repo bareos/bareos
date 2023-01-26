@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -158,7 +158,6 @@ StorageResource* select_storage_resource(UaContext* ua, bool autochanger_only)
     StartPrompt(ua, _("The defined Storage resources are:\n"));
   }
 
-  LockRes(my_config);
   foreach_res (store, R_STORAGE) {
     if (ua->AclAccessOk(Storage_ACL, store->resource_name_)) {
       if (autochanger_only && !store->autochanger) {
@@ -168,7 +167,6 @@ StorageResource* select_storage_resource(UaContext* ua, bool autochanger_only)
       }
     }
   }
-  UnlockRes(my_config);
 
   SortCaseInsensitive(storage_resource_names);
 
@@ -195,13 +193,12 @@ FilesetResource* select_fileset_resource(UaContext* ua)
 
   StartPrompt(ua, _("The defined FileSet resources are:\n"));
 
-  LockRes(my_config);
   foreach_res (fs, R_FILESET) {
     if (ua->AclAccessOk(FileSet_ACL, fs->resource_name_)) {
       fileset_resource_names.emplace_back(fs->resource_name_);
     }
   }
-  UnlockRes(my_config);
+
 
   SortCaseInsensitive(fileset_resource_names);
 
@@ -234,9 +231,10 @@ CatalogResource* get_catalog_resource(UaContext* ua)
   }
 
   if (ua->gui && !catalog) {
-    LockRes(my_config);
-    catalog = (CatalogResource*)my_config->GetNextRes(R_CATALOG, NULL);
-    UnlockRes(my_config);
+    {
+      ResLocker _{my_config};
+      catalog = (CatalogResource*)my_config->GetNextRes(R_CATALOG, NULL);
+    }
 
     if (!catalog) {
       ua->ErrorMsg(_("Could not find a Catalog resource\n"));
@@ -254,20 +252,17 @@ CatalogResource* get_catalog_resource(UaContext* ua)
   if (!catalog) {
     StartPrompt(ua, _("The defined Catalog resources are:\n"));
 
-    LockRes(my_config);
     foreach_res (catalog, R_CATALOG) {
       if (ua->AclAccessOk(Catalog_ACL, catalog->resource_name_)) {
         AddPrompt(ua, catalog->resource_name_);
       }
     }
-    UnlockRes(my_config);
 
     if (DoPrompt(ua, _("Catalog"), _("Select Catalog resource"), name,
                  sizeof(name))
         < 0) {
       return NULL;
     }
-
     catalog = ua->GetCatalogResWithName(name);
   }
 
@@ -283,7 +278,6 @@ JobResource* select_enable_disable_job_resource(UaContext* ua, bool enable)
 
   StartPrompt(ua, _("The defined Job resources are:\n"));
 
-  LockRes(my_config);
   foreach_res (job, R_JOB) {
     if (!ua->AclAccessOk(Job_ACL, job->resource_name_)) { continue; }
     if (job->enabled == enable) { /* Already enabled/disabled? */
@@ -291,7 +285,6 @@ JobResource* select_enable_disable_job_resource(UaContext* ua, bool enable)
     }
     job_resource_names.emplace_back(job->resource_name_);
   }
-  UnlockRes(my_config);
 
   SortCaseInsensitive(job_resource_names);
 
@@ -318,13 +311,11 @@ JobResource* select_job_resource(UaContext* ua)
 
   StartPrompt(ua, _("The defined Job resources are:\n"));
 
-  LockRes(my_config);
   foreach_res (job, R_JOB) {
     if (ua->AclAccessOk(Job_ACL, job->resource_name_)) {
       job_resource_names.emplace_back(job->resource_name_);
     }
   }
-  UnlockRes(my_config);
 
   SortCaseInsensitive(job_resource_names);
 
@@ -368,14 +359,13 @@ JobResource* select_restore_job_resource(UaContext* ua)
 
   StartPrompt(ua, _("The defined Restore Job resources are:\n"));
 
-  LockRes(my_config);
+
   foreach_res (job, R_JOB) {
     if (job->JobType == JT_RESTORE
         && ua->AclAccessOk(Job_ACL, job->resource_name_)) {
       restore_job_names.emplace_back(job->resource_name_);
     }
   }
-  UnlockRes(my_config);
 
   SortCaseInsensitive(restore_job_names);
 
@@ -401,13 +391,11 @@ ClientResource* select_client_resource(UaContext* ua)
 
   StartPrompt(ua, _("The defined Client resources are:\n"));
 
-  LockRes(my_config);
   foreach_res (client, R_CLIENT) {
     if (ua->AclAccessOk(Client_ACL, client->resource_name_)) {
       client_resource_names.emplace_back(client->resource_name_);
     }
   }
-  UnlockRes(my_config);
 
   SortCaseInsensitive(client_resource_names);
 
@@ -436,7 +424,6 @@ ClientResource* select_enable_disable_client_resource(UaContext* ua,
 
   StartPrompt(ua, _("The defined Client resources are:\n"));
 
-  LockRes(my_config);
   foreach_res (client, R_CLIENT) {
     if (!ua->AclAccessOk(Client_ACL, client->resource_name_)) { continue; }
     if (client->enabled == enable) { /* Already enabled/disabled? */
@@ -444,7 +431,6 @@ ClientResource* select_enable_disable_client_resource(UaContext* ua,
     }
     client_resource_names.emplace_back(client->resource_name_);
   }
-  UnlockRes(my_config);
 
   SortCaseInsensitive(client_resource_names);
 
@@ -498,7 +484,6 @@ ScheduleResource* select_enable_disable_schedule_resource(UaContext* ua,
 
   StartPrompt(ua, _("The defined Schedule resources are:\n"));
 
-  LockRes(my_config);
   foreach_res (sched, R_SCHEDULE) {
     if (!ua->AclAccessOk(Schedule_ACL, sched->resource_name_)) { continue; }
     if (sched->enabled == enable) { /* Already enabled/disabled? */
@@ -506,7 +491,6 @@ ScheduleResource* select_enable_disable_schedule_resource(UaContext* ua,
     }
     schedule_resource_names.emplace_back(sched->resource_name_);
   }
-  UnlockRes(my_config);
 
   SortCaseInsensitive(schedule_resource_names);
 
@@ -587,8 +571,9 @@ bool SelectClientDbr(UaContext* ua, ClientDbRecord* cr)
   }
 
   if (num_clients <= 0) {
-    ua->ErrorMsg(_(
-        "No clients defined. You must run a job before using this command.\n"));
+    ua->ErrorMsg(
+        _("No clients defined. You must run a job before using this "
+          "command.\n"));
     if (ids) { free(ids); }
     return false;
   }
@@ -741,11 +726,9 @@ bool SelectPoolDbr(UaContext* ua, PoolDbRecord* pr, const char* argk)
 
   new (&opr) PoolDbRecord();  // placement new instead of memset
 
-  /*
-   * *None* is only returned when selecting a recyclepool, and in that case
+  /* *None* is only returned when selecting a recyclepool, and in that case
    * the calling code is only interested in opr.Name, so then we can leave
-   * pr as all zero.
-   */
+   * pr as all zero. */
   if (!bstrcmp(name, _("*None*"))) {
     bstrncpy(opr.Name, name, sizeof(opr.Name));
 
@@ -841,11 +824,9 @@ bool SelectStorageDbr(UaContext* ua, StorageDbRecord* sr, const char* argk)
 
   new (&osr) StorageDbRecord();  // placement new instead of memset
 
-  /*
-   * *None* is only returned when selecting a recyclestorage, and in that case
+  /* *None* is only returned when selecting a recyclestorage, and in that case
    * the calling code is only interested in osr.Name, so then we can leave
-   * sr as all zero.
-   */
+   * sr as all zero. */
   if (!bstrcmp(name, _("*None*"))) {
     bstrncpy(osr.Name, name, sizeof(osr.Name));
 
@@ -942,13 +923,13 @@ PoolResource* select_pool_resource(UaContext* ua)
   std::vector<std::string> pool_resource_names;
 
   StartPrompt(ua, _("The defined Pool resources are:\n"));
-  LockRes(my_config);
+
   foreach_res (pool, R_POOL) {
     if (ua->AclAccessOk(Pool_ACL, pool->resource_name_)) {
       pool_resource_names.emplace_back(pool->resource_name_);
     }
   }
-  UnlockRes(my_config);
+
 
   SortCaseInsensitive(pool_resource_names);
 
@@ -1472,13 +1453,11 @@ int GetMediaType(UaContext* ua, char* MediaType, int max_media)
 
   StartPrompt(ua, _("Media Types defined in conf file:\n"));
 
-  LockRes(my_config);
   foreach_res (store, R_STORAGE) {
     if (ua->AclAccessOk(Storage_ACL, store->resource_name_)) {
       AddPrompt(ua, store->media_type);
     }
   }
-  UnlockRes(my_config);
 
   return (DoPrompt(ua, _("Media Type"), _("Select the Media Type"), MediaType,
                    max_media)
@@ -1610,10 +1589,8 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
     }
   }
 
-  /*
-   * If we didn't select any Jobs using jobid, job or ujobid keywords try
-   * other selections.
-   */
+  /* If we didn't select any Jobs using jobid, job or ujobid keywords try
+   * other selections. */
   if (cnt == 0) {
     char buf[1000];
     int tjobs = 0; /* Total # number jobs */
@@ -1673,10 +1650,8 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
         }
       }
 
-      /*
-       * Select from all available Jobs the Jobs matching the selection
-       * criterium.
-       */
+      /* Select from all available Jobs the Jobs matching the selection
+       * criterium. */
       foreach_jcr (jcr) {
         if (jcr->JobId == 0) { /* This is us */
           continue;
@@ -1719,10 +1694,8 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
         goto bail_out;
       }
 
-      /*
-       * Only ask for confirmation when not in batch mode and there is no yes
-       * on the cmdline.
-       */
+      /* Only ask for confirmation when not in batch mode and there is no yes
+       * on the cmdline. */
       if (!ua->batch && FindArg(ua, NT_("yes")) == -1) {
         if (!GetYesno(ua, _("Confirm cancel (yes/no): ")) || !ua->pint32_val) {
           goto bail_out;
@@ -1808,10 +1781,8 @@ bool GetUserSlotList(UaContext* ua,
   bstrncpy(search_argument, argument, sizeof(search_argument));
   i = FindArgWithValue(ua, search_argument);
   if (i == -1) { /* not found */
-    /*
-     * See if the last letter of search_argument is a 's'
-     * When it is strip it and try if that argument is given.
-     */
+    /* See if the last letter of search_argument is a 's'
+     * When it is strip it and try if that argument is given. */
     len = strlen(search_argument);
     if (len > 0 && search_argument[len - 1] == 's') {
       search_argument[len - 1] = '\0';

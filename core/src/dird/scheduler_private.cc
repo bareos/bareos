@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -183,8 +183,7 @@ void SchedulerPrivate::FillSchedulerJobQueueOrSleep()
 
 static time_t CalculateRuntime(time_t time, uint32_t minute)
 {
-  struct tm tm {
-  };
+  struct tm tm {};
   Blocaltime(&time, &tm);
   tm.tm_min = minute;
   tm.tm_sec = 0;
@@ -203,7 +202,6 @@ void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
 
   JobResource* job = nullptr;
 
-  LockRes(my_config);
   foreach_res (job, R_JOB) {
     if (!IsAutomaticSchedulerJob(job)) { continue; }
 
@@ -231,7 +229,6 @@ void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
       }
     }
   }
-  UnlockRes(my_config);
   Dmsg0(local_debuglevel, "Finished AddJobsForThisAndNextHourToQueue\n");
 }
 

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -213,10 +213,8 @@ bool show_cmd(UaContext* ua, const char*)
 {
   Dmsg1(20, "show: %s\n", ua->UA_sock->msg);
 
-  /*
-   * When the console has no access to the configure cmd then any show cmd
-   * will suppress all sensitive information like for instance passwords.
-   */
+  /* When the console has no access to the configure cmd then any show cmd
+   * will suppress all sensitive information like for instance passwords. */
 
   bool hide_sensitive_data = !ua->AclAccessOk(Command_ACL, "configure", false);
 
@@ -231,12 +229,11 @@ bool show_cmd(UaContext* ua, const char*)
     return true;
   }
 
-  LockRes(my_config);
+  ResLocker _{my_config};
 
   // Without parameter, show all ressources.
   if (ua->argc == 1 || FindArg(ua, "all") > 0) {
     ShowAll(ua, hide_sensitive_data, show_verbose);
-    UnlockRes(my_config);
     return true;
   }
 
@@ -260,7 +257,6 @@ bool show_cmd(UaContext* ua, const char*)
         ShowDisabledSchedules(ua);
       }
       ua->send->ObjectEnd("disabled");
-      UnlockRes(my_config);
       return true;
     }
 
@@ -290,7 +286,6 @@ bool show_cmd(UaContext* ua, const char*)
           if (!res) {
             ua->ErrorMsg(_("%s resource %s not found.\n"), res_name,
                          ua->argv[i]);
-            UnlockRes(my_config);
             return true;
           }
           break;
@@ -307,7 +302,6 @@ bool show_cmd(UaContext* ua, const char*)
     }
   }
 
-  UnlockRes(my_config);
   return true;
 }
 
@@ -457,17 +451,13 @@ static void SetQueryRange(PoolMem& query_range, UaContext* ua, JobDbRecord* jr)
 {
   int i;
 
-  /*
-   * Ensure query range is an empty string instead of NULL
-   * to avoid any issues.
-   */
+  /* Ensure query range is an empty string instead of NULL
+   * to avoid any issues. */
   if (query_range.c_str() == NULL) { PmStrcpy(query_range, ""); }
 
-  /*
-   * See if this is a second call to SetQueryRange() if so and any acl
+  /* See if this is a second call to SetQueryRange() if so and any acl
    * filters have been set we setup a new query_range filter including a
-   * limit filter.
-   */
+   * limit filter. */
   if (query_range.strlen()) {
     if (!ua->send->has_acl_filters()) { return; }
     PmStrcpy(query_range, "");
@@ -536,10 +526,8 @@ static bool ListMedia(UaContext* ua,
                                optionslist.count, ua->send, llist);
       ua->send->ObjectEnd("volume");
     } else {
-      /*
-       * If no job or jobid keyword found, then we list all media
-       * Is a specific pool wanted?
-       */
+      /* If no job or jobid keyword found, then we list all media
+       * Is a specific pool wanted? */
 
       PoolDbRecord pr;
       int i = FindArgWithValue(ua, NT_("pool"));
@@ -565,12 +553,10 @@ static bool ListMedia(UaContext* ua,
 
         // List all volumes, flat
         if (FindArg(ua, NT_("all")) > 0) {
-          /*
-           * The result of "list media all"
+          /* The result of "list media all"
            * does not contain the Pool information,
            * therefore checking the Pool_ACL is not possible.
-           * For this reason, we prevent this command.
-           */
+           * For this reason, we prevent this command. */
           if (ua->AclHasRestrictions(Pool_ACL) && (llist != VERT_LIST)) {
             ua->ErrorMsg(
                 _("Restricted permission. Use the commands 'list media' or "
@@ -762,10 +748,8 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
   } else if ((Bstrcasecmp(ua->argk[1], NT_("jobid"))
               || Bstrcasecmp(ua->argk[1], NT_("ujobid")))
              && ua->argv[1]) {
-    /*
-     * List JOBID=nn
-     * List UJOBID=xxx
-     */
+    /* List JOBID=nn
+     * List UJOBID=xxx */
     if (ua->argv[1]) {
       jobid = GetJobidFromCmdline(ua);
       if (jobid > 0) {
@@ -884,10 +868,8 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
   } else if (Bstrcasecmp(ua->argk[1], NT_("log"))) {
     bool reverse;
 
-    /*
-     * List last <limit> LOG entries
-     * default is DEFAULT_LOG_LINES entries
-     */
+    /* List last <limit> LOG entries
+     * default is DEFAULT_LOG_LINES entries */
     reverse = FindArg(ua, NT_("reverse")) >= 0;
 
     if (strlen(query_range.c_str()) == 0) {
@@ -1165,7 +1147,6 @@ static inline bool parse_fileset_selection_param(PoolMem& selection,
     FilesetResource* fs;
     PoolMem temp(PM_MESSAGE);
 
-    LockRes(my_config);
     foreach_res (fs, R_FILESET) {
       if (!ua->AclAccessOk(FileSet_ACL, fs->resource_name_, false)) {
         continue;
@@ -1178,7 +1159,7 @@ static inline bool parse_fileset_selection_param(PoolMem& selection,
       PmStrcat(selection, temp.c_str());
     }
     PmStrcat(selection, ") ");
-    UnlockRes(my_config);
+
   } else if (fileset >= 0) {
     if (!ua->AclAccessOk(FileSet_ACL, ua->argv[fileset], true)) {
       ua->ErrorMsg(_("Access to specified FileSet not allowed.\n"));
@@ -1351,10 +1332,8 @@ RunResource* find_next_run(RunResource* run,
     run = run->next;
   }
   for (; run; run = run->next) {
-    /*
-     * Find runs in next 24 hours.  Day 0 is today, so if
-     *   ndays=1, look at today and tomorrow.
-     */
+    /* Find runs in next 24 hours.  Day 0 is today, so if
+     *   ndays=1, look at today and tomorrow. */
     for (day = 0; day <= ndays; day++) {
       future = now + (day * 60 * 60 * 24);
 

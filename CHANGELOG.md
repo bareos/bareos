@@ -10,6 +10,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - devtools: add `pr-tool` to automate PR review and merge [PR #935]
 - build: replace sprintf by snprintf due to upgraded MacOS compiler, change linking of googletest [PR #1361]
 - storage daemon: fix crash on volume swap [PR #1356]
+- core: make resource/configuration locking safer [PR #1325]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -25,6 +26,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - add explanation about binary version numbers [PR #1354]
 
 [PR #935]: https://github.com/bareos/bareos/pull/935
+[PR #1325]: https://github.com/bareos/bareos/pull/1325
 [PR #1335]: https://github.com/bareos/bareos/pull/1335
 [PR #1343]: https://github.com/bareos/bareos/pull/1343
 [PR #1346]: https://github.com/bareos/bareos/pull/1346

@@ -129,7 +129,7 @@ Example
 
 ::
 
-    LockRes();
+    ResLocker _{my_config};
     ua->send->array_start("storages");
     foreach_res(store, R_STORAGE) {
         if (acl_access_ok(ua, Storage_ACL, store->name())) {
@@ -139,7 +139,6 @@ Example
         }
     }
     ua->send->array_end("storages");
-    UnlockRes();
 
 results to
 

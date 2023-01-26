@@ -95,15 +95,21 @@ BareosResource* ConfigurationParser::GetResWithName(int rcode,
   BareosResource* res;
   int rindex = rcode;
 
-  if (lock) { LockRes(this); }
+  if (lock) {
+    ResLocker _{this};
 
-  res = config_resources_container_->configuration_resources_[rindex];
-  while (res) {
-    if (bstrcmp(res->resource_name_, name)) { break; }
-    res = res->next_;
+    res = config_resources_container_->configuration_resources_[rindex];
+    while (res) {
+      if (bstrcmp(res->resource_name_, name)) { break; }
+      res = res->next_;
+    }
+  } else {
+    res = config_resources_container_->configuration_resources_[rindex];
+    while (res) {
+      if (bstrcmp(res->resource_name_, name)) { break; }
+      res = res->next_;
+    }
   }
-
-  if (lock) { UnlockRes(this); }
 
   return res;
 }

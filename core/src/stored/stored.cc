@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -497,7 +497,7 @@ extern "C" void* device_initialization(void*)
   Device* dev;
   int errstat;
 
-  LockRes(my_config);
+  ResLocker _{my_config};
 
   pthread_detach(pthread_self());
   jcr = NewStoredJcr();
@@ -572,7 +572,6 @@ extern "C" void* device_initialization(void*)
   }
   FreeJcr(jcr);
   init_done = true;
-  UnlockRes(my_config);
   return nullptr;
 }
 
@@ -604,12 +603,10 @@ static
   StopWatchdog();
 
   if (sig == SIGTERM) { /* normal shutdown request? */
-    /*
-     * This is a normal shutdown request. We wiffle through
+    /* This is a normal shutdown request. We wiffle through
      *   all open jobs canceling them and trying to wake
      *   them up so that they will report back the correct
-     *   volume status.
-     */
+     *   volume status. */
     foreach_jcr (jcr) {
       BareosSocket* fd;
       if (jcr->JobId == 0) { continue; /* ignore console */ }
