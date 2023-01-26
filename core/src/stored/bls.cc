@@ -297,7 +297,11 @@ static void do_close(JobControlRecord* jcr)
   CleanDevice(jcr->impl->dcr);
   delete dev;
   FreeDeviceControlRecord(jcr->impl->dcr);
+
+  CleanupCompression(jcr);
+  FreePlugins(jcr);
   FreeJcr(jcr);
+  UnloadSdPlugins();
 }
 
 /* List just block information */
