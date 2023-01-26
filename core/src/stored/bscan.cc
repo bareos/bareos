@@ -387,12 +387,15 @@ int main(int argc, char* argv[])
         "%7d Media\n%7d Pool\n%7d Job\n%7d File\n%7d RestoreObject\n",
         num_media, num_pools, num_jobs, num_files, num_restoreobjects);
   }
+  db->CloseDatabase(bjcr);
   DbFlushBackends();
-
   CleanDevice(bjcr->impl->dcr);
   delete dev;
   FreeDeviceControlRecord(bjcr->impl->dcr);
+  FreePlugins(bjcr);
+  CleanupCompression(bjcr);
   FreeJcr(bjcr);
+  UnloadSdPlugins();
 
   return 0;
 }
