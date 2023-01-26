@@ -253,11 +253,17 @@ int main(int argc, char* argv[])
   Pmsg2(000, _("%u Jobs copied. %u records copied.\n"), jobs, records);
 
 
+  CleanupCompression(in_jcr);
+  CleanupCompression(out_jcr);
+  FreePlugins(out_jcr);
+  FreePlugins(in_jcr);
+  UnloadSdPlugins();
   FreeJcr(in_jcr);
   FreeJcr(out_jcr);
 
   delete in_dev;
   delete out_dev;
+
 
   return 0;
 }
