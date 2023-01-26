@@ -385,7 +385,7 @@ static void DoExtract(char* devname,
                       DirectorResource* director)
 {
   struct stat statp;
-  uint32_t decompress_buf_size;
+  /* uint32_t decompress_buf_size; */
 
   EnableBackupPrivileges(nullptr, 1);
 
@@ -417,13 +417,13 @@ static void DoExtract(char* devname,
   attr = new_attr(jcr);
 
   jcr->buf_size = DEFAULT_NETWORK_BUFFER_SIZE;
-  SetupDecompressionBuffers(jcr, &decompress_buf_size);
+  /* SetupDecompressionBuffers(jcr, &decompress_buf_size); */
 
-  if (decompress_buf_size > 0) {
-    jcr->compress = CompressionContext{};
-    jcr->compress.inflate_buffer = GetMemory(decompress_buf_size);
-    jcr->compress.inflate_buffer_size = decompress_buf_size;
-  }
+  /* if (decompress_buf_size > 0) { */
+  /*   jcr->compress = CompressionContext{}; */
+  /*   jcr->compress.inflate_buffer = GetMemory(decompress_buf_size); */
+  /*   jcr->compress.inflate_buffer_size = decompress_buf_size; */
+  /* } */
 
   acl_data.last_fname = GetPoolMemory(PM_FNAME);
   xattr_data.last_fname = GetPoolMemory(PM_FNAME);
@@ -443,12 +443,18 @@ static void DoExtract(char* devname,
     delete delayed_streams;
   }
 
-  CleanupCompression(jcr);
 
   CleanDevice(jcr->sd_impl->dcr);
+
   delete dev;
+
   FreeDeviceControlRecord(dcr);
+
+  CleanupCompression(jcr);
+  FreePlugins(jcr);
   FreeJcr(jcr);
+  UnloadSdPlugins();
+
 
   printf(_("%u files restored.\n"), num_files);
 
