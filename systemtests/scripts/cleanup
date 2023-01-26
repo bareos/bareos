@@ -13,6 +13,7 @@ function deletefiles(){
   rm -rf "${working:?}"/*.trace "${working:?}"/*.traceback "${working:?}"/*.bactrace
   rm -rf "${working:?}"/*.state
   rm -rf "${working:?}"/*.conmsg
+  rm -rf "${working:?}"/*.cryptoc
   rm -rf "${working:?}"/*.pid
   rm -rf "${working:?}"/*.mail
   rm -rf "${working:?}"/CLEANUPMARKER
@@ -27,5 +28,3 @@ function deletefiles(){
 deletefiles
 
 ${scripts}/drop_bareos_database ${DBTYPE} >/dev/null 2>&1
-
-exit 0
