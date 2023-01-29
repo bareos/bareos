@@ -12,6 +12,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - storage daemon: fix crash on volume swap [PR #1356]
 - core: make resource/configuration locking safer [PR #1325]
 - json generation: Fix some leaks and an integer overflow [PR #1130]
+- tray-monitor: build against Qt6 when present [PR #1011]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -27,6 +28,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - add explanation about binary version numbers [PR #1354]
 
 [PR #935]: https://github.com/bareos/bareos/pull/935
+[PR #1011]: https://github.com/bareos/bareos/pull/1011
 [PR #1130]: https://github.com/bareos/bareos/pull/1130
 [PR #1325]: https://github.com/bareos/bareos/pull/1325
 [PR #1335]: https://github.com/bareos/bareos/pull/1335
