@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2022 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -67,7 +67,7 @@ $this->headTitle($title);
       <?php echo $this->translate("OS"); ?>
    </th>
    <th
-      data-field="hf-1"
+      data-field="version"
       data-filter-control="input"
       data-filter-control-placeholder="<?php echo $this->translate("Version"); ?>">
       <?php echo $this->translate("Version"); ?>
@@ -94,6 +94,7 @@ $this->headTitle($title);
    echo $this->headScript()->prependFile($this->basePath() . '/js/custom-functions.js');
    echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-table-filter-control.min.css');
    echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-table.min.css');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-sort.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-formatter.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-filter-control.min.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-locale-all.min.js');
@@ -160,10 +161,9 @@ $this->headTitle($title);
                }
             },
             {
-               field: 'hf-1',
-               formatter: function(value, row, index) {
-                  return formatUpdateStatus(value, row, index);
-               }
+               field: 'version',
+               sortable: true,
+               sorter: sortSemanticVersion,
             },
             {
                field: 'enabled',
@@ -177,14 +177,6 @@ $this->headTitle($title);
                formatter: function(value, row, index) {
                   return clientsActionButtonsFormatter(value, row, index, basePath);
                }
-            },
-            {
-               field: 'hf-2',
-               visible: false,
-            },
-            {
-               field: 'hf-3',
-               visible: false,
             }
          ]
       });
