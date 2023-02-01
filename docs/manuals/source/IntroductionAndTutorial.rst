@@ -7,9 +7,8 @@ Introduction and Tutorial
       /IntroductionAndTutorial/WhatIsBareos.rst
       /IntroductionAndTutorial/InstallingBareos.rst
       /IntroductionAndTutorial/InstallingBareosClient.rst
-      /IntroductionAndTutorial/InstallingBareosWebui.rst
       /IntroductionAndTutorial/UpdatingBareos.rst
+      /IntroductionAndTutorial/BareosWebui.rst
       /IntroductionAndTutorial/GettingStartedWithBareos.rst
       /IntroductionAndTutorial/Tutorial.rst
-      /IntroductionAndTutorial/BareosWebui.rst
       /IntroductionAndTutorial/CriticalItemsToImplementBeforeProduction.rst
