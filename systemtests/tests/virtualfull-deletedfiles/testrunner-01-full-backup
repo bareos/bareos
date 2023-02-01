@@ -1,0 +1,38 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+myname=$(basename "$0")
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+echo "$0" >"${tmp}/data/$myname"
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $tmp/$myname.log
+run job=backup-bareos-fd level=Full yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+if ! grep -q 'FD Files Written:.*2' "$tmp/$myname.log"; then
+  echo "Number of files mismatch!"
+  exit 2
+fi
+
+end_test
