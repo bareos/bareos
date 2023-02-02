@@ -5,6 +5,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Changed
+- systemtests: `rename virtualfull` -> `virtualfull-basic` ,`bareos` -> `bareos-basic`, `bconsole` -> `bconsole-basic` [PR #1364]
+
 ## [21.1.6] - 2022-12-12
 
 ### Fixed
@@ -644,4 +647,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1322]: https://github.com/bareos/bareos/pull/1322
 [PR #1323]: https://github.com/bareos/bareos/pull/1323
 [PR #1328]: https://github.com/bareos/bareos/pull/1328
+[PR #1364]: https://github.com/bareos/bareos/pull/1364
 [unreleased]: https://github.com/bareos/bareos/tree/master
