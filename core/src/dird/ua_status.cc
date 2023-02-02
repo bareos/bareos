@@ -74,6 +74,11 @@ static char DotStatusJob[] = "JobId=%s JobStatus=%c JobErrors=%d\n";
 
 static void ClientStatus(UaContext* ua, ClientResource* client, char* cmd)
 {
+  if (!client->enabled) {
+    ua->SendMsg("Client \"%s\" is disabled; skipping status call\n",
+                client->resource_name_);
+    return;
+  }
   switch (client->Protocol) {
     case APT_NATIVE:
       DoNativeClientStatus(ua, client, cmd);
