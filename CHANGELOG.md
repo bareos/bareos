@@ -13,6 +13,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - core: make resource/configuration locking safer [PR #1325]
 - json generation: Fix some leaks and an integer overflow [PR #1130]
 - tray-monitor: build against Qt6 when present [PR #1011]
+- systemtests: `rename virtualfull` -> `virtualfull-basic` ,`bareos` -> `bareos-basic`, `bconsole` -> `bconsole-basic` [PR #1339]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -32,6 +33,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1130]: https://github.com/bareos/bareos/pull/1130
 [PR #1325]: https://github.com/bareos/bareos/pull/1325
 [PR #1335]: https://github.com/bareos/bareos/pull/1335
+[PR #1339]: https://github.com/bareos/bareos/pull/1339
 [PR #1343]: https://github.com/bareos/bareos/pull/1343
 [PR #1346]: https://github.com/bareos/bareos/pull/1346
 [PR #1351]: https://github.com/bareos/bareos/pull/1351
