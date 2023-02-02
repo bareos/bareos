@@ -164,6 +164,9 @@ $this->headTitle($title);
                field: 'version',
                sortable: true,
                sorter: sortSemanticVersion,
+               formatter: function(value, row, index) {
+                  return formatUpdateStatus(value, row, index);
+               }
             },
             {
                field: 'enabled',

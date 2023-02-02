@@ -414,6 +414,18 @@ function formatUname(value, basePath) {
    }
 }
 
+function formatUpdateStatus(value, row, index) {
+    var label = "label-default";
+    if (row.version_status == "upgrade_required") {
+        label = "label-danger";
+    } else if (row.version_status == "update_required") {
+        label = "label-warning";
+    } else if (row.version_status == "uptodate") {
+        label = "label-success";
+    }
+    return `<span class="label ${label}" id="label-fd-version" data-toggle="tooltip" data-placement="top" title="${row.version_tooltip}">${row.version}</span>`;
+}
+
 function formatScheduleName(value, basePath) {
    return '<a href="' + basePath + '/schedule/details?schedule=' + value + '">' + value + '</a>';
 }
