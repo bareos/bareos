@@ -16,13 +16,14 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
+
 message("Adding systemtests from ${CMAKE_CURRENT_SOURCE_DIR}")
 add_subdirectory(acl)
 add_subdirectory(always-incremental-consolidate)
 add_subdirectory(autochanger)
-add_subdirectory(bareos)
+add_subdirectory(bareos-basic)
 add_subdirectory(bareos-acl)
-add_subdirectory(bconsole)
+add_subdirectory(bconsole-basic)
 add_subdirectory(bconsole-pam)
 add_subdirectory(block-size)
 add_subdirectory(bscan-bextract-bls-bcopy)
@@ -81,6 +82,6 @@ add_subdirectory(testfind)
 add_subdirectory(tlsrestricted)
 add_subdirectory(truncate-command)
 add_subdirectory(upgrade-database)
-add_subdirectory(virtualfull)
+add_subdirectory(virtualfull-basic)
 add_subdirectory(virtualfull-bscan)
 add_subdirectory(xattr)

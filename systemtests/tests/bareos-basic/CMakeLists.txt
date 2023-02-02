@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -21,11 +21,12 @@ get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
 
 set_tests_properties(
-  system:bareos:simple-backup-and-restore
-  PROPERTIES FIXTURES_SETUP "system:bareos:backup-job-fixture"
+  system:bareos-basic:simple-backup-and-restore
+  PROPERTIES FIXTURES_SETUP "system:bareos-basic:backup-job-fixture"
 )
 set_tests_properties(
-  system:bareos:status-subscriptions
-  PROPERTIES FIXTURES_REQUIRED
-             "system:bareos:backup-job-fixture;system:bareos-fixture"
+  system:bareos-basic:status-subscriptions
+  PROPERTIES
+    FIXTURES_REQUIRED
+    "system:bareos-basic:backup-job-fixture;system:bareos-basic-fixture"
 )
