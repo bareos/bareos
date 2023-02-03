@@ -14,6 +14,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - json generation: Fix some leaks and an integer overflow [PR #1130]
 - tray-monitor: build against Qt6 when present [PR #1011]
 - systemtests: `rename virtualfull` -> `virtualfull-basic` ,`bareos` -> `bareos-basic`, `bconsole` -> `bconsole-basic` [PR #1339]
+- stored: fix crashes of storage tools when autoxflate plugin is loaded [PR #1348]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -36,6 +37,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1339]: https://github.com/bareos/bareos/pull/1339
 [PR #1343]: https://github.com/bareos/bareos/pull/1343
 [PR #1346]: https://github.com/bareos/bareos/pull/1346
+[PR #1348]: https://github.com/bareos/bareos/pull/1348
 [PR #1351]: https://github.com/bareos/bareos/pull/1351
 [PR #1352]: https://github.com/bareos/bareos/pull/1352
 [PR #1354]: https://github.com/bareos/bareos/pull/1354
