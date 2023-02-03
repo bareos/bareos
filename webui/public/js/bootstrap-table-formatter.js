@@ -3,7 +3,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2020-2022 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2020-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -414,23 +414,6 @@ function formatUname(value, basePath) {
    }
 }
 
-function formatUpdateStatus(value, row, index) {
-   if(row.available_fd === "" || row.available_fd === null || row.available_fd === undefined) {
-      return '<span class="label label-default" id="label-fd-version" data-toggle="tooltip" data-placement="top" title="Unknown update status">'+row.installed_fd+'</span>';
-   }
-   if(row.update_fd === true) {
-      if(row.update_dird === true) {
-         return '<span class="label label-danger" id="label-fd-version" data-toggle="tooltip" data-placement="top" title="Version '+row.available_fd+' is available">'+row.installed_fd+'</span> <span class="text-danger" data-toggle="tooltip" data-placement="top">(Director upgrade '+row.available_dird+' required first)</span>';
-      }
-      else {
-         return '<span class="label label-danger" id="label-fd-version" data-toggle="tooltip" data-placement="top" title="Version '+row.available_fd+' is available">'+row.installed_fd+'</span>';
-      }
-   }
-   else {
-      return '<span class="label label-success" id="label-fd-version" data-toggle="tooltip" data-placement="top" title="Up to date">'+row.installed_fd+'</span>';
-   }
-}
-
 function formatScheduleName(value, basePath) {
    return '<a href="' + basePath + '/schedule/details?schedule=' + value + '">' + value + '</a>';
 }
@@ -500,23 +483,11 @@ function clientsActionButtonsFormatter(value, row, index, basePath) {
    let statusClientButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/client/status?client=' + row.name + '" title="' + iJS._("Status") + '" id="btn-1"><span class="glyphicon glyphicon-search"></span></a>';
    let disableButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/client/index?action=disable&client=' + row.name + '" title="' + iJS._("Disable") + '" id="btn-1"><span class="glyphicon glyphicon-remove"></span></a>';
    let enableButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/client/index?action=enable&client=' + row.name + '" title="' + iJS._("Enable") + '" id="btn-1"><span class="glyphicon glyphicon-ok"></span></a>';
-   let downloadButton = '<a href="' + row.url_package + '" target="_blank"><button type="button" class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" title="'+ iJS._("Download update") + '"><span class="glyphicon glyphicon-download-alt"></span></button></a>';
 
    if(row.enabled) {
-      if(row.update_fd === true) {
-         return restoreButton + '&nbsp;' + statusClientButton + '&nbsp;' + disableButton + '&nbsp;' + downloadButton;
-      }
-      else {
-         return restoreButton + '&nbsp;' + statusClientButton + '&nbsp;' + disableButton;
-      }
-   }
-   else {
-      if(row.update_fd === true) {
-         return restoreButton + '&nbsp;' + statusClientButton + '&nbsp;' + enableButton + '&nbsp;' + downloadButton;
-      }
-      else {
-         return restoreButton + '&nbsp;' + statusClientButton + '&nbsp;' + enableButton;
-      }
+      return restoreButton + '&nbsp;' + statusClientButton + '&nbsp;' + disableButton;
+   } else {
+      return restoreButton + '&nbsp;' + statusClientButton + '&nbsp;' + enableButton;
    }
 }
 
