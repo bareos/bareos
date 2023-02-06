@@ -103,6 +103,7 @@ static void UpdateJobmediaRecord(JobControlRecord* jcr)
 {
   Dmsg0(100, _("... create job media record\n"));
   jcr->sd_impl->dcr->DirCreateJobmediaRecord(false);
+  jcr->sd_impl->dcr->VolFirstIndex = jcr->sd_impl->dcr->VolLastIndex;
 }
 
 static void UpdateJobrecord(JobControlRecord* jcr)
