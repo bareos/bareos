@@ -499,7 +499,7 @@ function clientsActionButtonsFormatter(value, row, index, basePath) {
    if(row.enabled) {
       return restoreButton + '&nbsp;' + statusClientButton + '&nbsp;' + disableButton;
    } else {
-      return restoreButton + '&nbsp;' + statusClientButton + '&nbsp;' + enableButton;
+      return restoreButton + '&nbsp;' + enableButton;
    }
 }
 
