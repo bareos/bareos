@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -343,6 +343,13 @@ int main(int argc, char* argv[])
   if (!bjcr) { exit(1); }
   dev = bjcr->impl->read_dcr->dev;
 
+  // Let SD plugins setup the record translation
+  if (GeneratePluginEvent(bjcr, bSdEventSetupRecordTranslation, dcr)
+      != bRC_OK) {
+    Jmsg(bjcr, M_FATAL, 0, _("bSdEventSetupRecordTranslation call failed!\n"));
+  }
+
+
   if (showProgress) {
     char ed1[50];
     struct stat sb;
@@ -380,12 +387,15 @@ int main(int argc, char* argv[])
         "%7d Media\n%7d Pool\n%7d Job\n%7d File\n%7d RestoreObject\n",
         num_media, num_pools, num_jobs, num_files, num_restoreobjects);
   }
+  db->CloseDatabase(bjcr);
   DbFlushBackends();
-
   CleanDevice(bjcr->impl->dcr);
   delete dev;
   FreeDeviceControlRecord(bjcr->impl->dcr);
+  FreePlugins(bjcr);
+  CleanupCompression(bjcr);
   FreeJcr(bjcr);
+  UnloadSdPlugins();
 
   return 0;
 }
@@ -668,12 +678,10 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
           bstrncpy(dcr->pool_type, label.PoolType, sizeof(dcr->pool_type));
           bstrncpy(dcr->pool_name, label.PoolName, sizeof(dcr->pool_name));
 
-          /*
-           * Look for existing Job Media records for this job.  If there are
+          /* Look for existing Job Media records for this job.  If there are
            * any, no new ones need be created.  This may occur if File
            * Retention has expired before Job Retention, or if the volume
-           * has already been bscan'd
-           */
+           * has already been bscan'd */
           Mmsg(sql_buffer, "SELECT count(*) from JobMedia where JobId=%d",
                jr.JobId);
           db->SqlQuery(sql_buffer.c_str(), db_int64_handler, &jmr_count);
@@ -852,10 +860,8 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
     case STREAM_ENCRYPTED_FILE_DATA:
     case STREAM_ENCRYPTED_WIN32_DATA:
     case STREAM_ENCRYPTED_MACOS_FORK_DATA:
-      /*
-       * For encrypted stream, this is an approximation.
-       * The data must be decrypted to know the correct length.
-       */
+      /* For encrypted stream, this is an approximation.
+       * The data must be decrypted to know the correct length. */
       mjcr->JobBytes += rec->data_len;
       if (rec->maskedStream == STREAM_SPARSE_DATA) {
         mjcr->JobBytes -= sizeof(uint64_t);
@@ -1163,10 +1169,8 @@ static bool CreatePoolRecord(BareosDb* db, PoolDbRecord* pr)
 // Called from SOS to create a client for the current Job
 static bool CreateClientRecord(BareosDb* db, ClientDbRecord* cr)
 {
-  /*
-   * Note, update_db can temporarily be set false while
-   * updating the database, so we must ensure that ClientId is non-zero.
-   */
+  /* Note, update_db can temporarily be set false while
+   * updating the database, so we must ensure that ClientId is non-zero. */
   if (!update_db) {
     cr->ClientId = 0;
     if (!db->GetClientRecord(bjcr, cr)) {
@@ -1452,10 +1456,8 @@ static JobControlRecord* create_jcr(JobDbRecord* jr,
                                     uint32_t JobId)
 {
   JobControlRecord* jobjcr;
-  /*
-   * Transfer as much as possible to the Job JobControlRecord. Most important is
-   *   the JobId and the ClientId.
-   */
+  /* Transfer as much as possible to the Job JobControlRecord. Most important is
+   *   the JobId and the ClientId. */
   jobjcr = new_jcr(BscanFreeJcr);
   jobjcr->impl = new JobControlRecordPrivate;
   jobjcr->setJobType(jr->JobType);

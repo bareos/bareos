@@ -1,0 +1,38 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+# run bextract and check it works
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+
+start_test
+
+JobName=backup-bareos-fd
+
+rm -rf "$tmp/bareos-restores"
+mkdir -p  "$tmp/bareos-restores"
+run_bextract -vv -V TestVolume001 FileStorage "$tmp/bareos-restores"
+ret=$?
+if [ $ret -ne 0 ]; then
+  echo "bextract exit code: $ret"
+  stop_bareos
+  exit $ret
+else
+  find "$tmp/bareos-restores"
+  check_restore_diff "${BackupDirectory}" # check extracted files
+  mv "$tmp/bareos-restores" "$tmp/bextract-restores" # move extracted files away
+  mkdir -p  "$tmp/bareos-restores"
+fi
+
+
+end_test

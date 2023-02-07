@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -209,6 +209,14 @@ int main(int argc, char* argv[])
   in_dev = in_jcr->impl->dcr->dev;
   if (!in_dev) { exit(1); }
 
+  // Let SD plugins setup the record translation
+  if (GeneratePluginEvent(in_jcr, bSdEventSetupRecordTranslation, in_dcr)
+      != bRC_OK) {
+    Jmsg(in_jcr, M_FATAL, 0,
+         _("bSdEventSetupRecordTranslation call for input failed!\n"));
+  }
+
+
   // Setup output device for writing
   Dmsg0(100, "About to setup output jcr\n");
 
@@ -219,6 +227,13 @@ int main(int argc, char* argv[])
 
   out_dev = out_jcr->impl->dcr->dev;
   if (!out_dev) { exit(1); }
+
+  // Let SD plugins setup the record translation
+  if (GeneratePluginEvent(out_jcr, bSdEventSetupRecordTranslation, out_dcr)
+      != bRC_OK) {
+    Jmsg(in_jcr, M_FATAL, 0,
+         _("bSdEventSetupRecordTranslation call for output failed!\n"));
+  }
 
   Dmsg0(100, "About to acquire device for writing\n");
 
@@ -249,8 +264,17 @@ int main(int argc, char* argv[])
   delete in_dev;
   delete out_dev;
 
+  CleanupCompression(in_jcr);
+  CleanupCompression(out_jcr);
+  FreePlugins(out_jcr);
+  FreePlugins(in_jcr);
+  UnloadSdPlugins();
   FreeJcr(in_jcr);
   FreeJcr(out_jcr);
+
+  delete in_dev;
+  delete out_dev;
+
 
   return 0;
 }
@@ -265,10 +289,7 @@ static bool RecordCb(DeviceControlRecord* in_dcr, DeviceRecord* rec)
           rec->VolSessionId, rec->VolSessionTime, rec->FileIndex, rec->Stream,
           rec->data_len);
   }
-  /*
-   * Check for Start or End of Session Record
-   *
-   */
+  // Check for Start or End of Session Record
   if (rec->FileIndex < 0) {
     GetSessionRecord(in_dcr->dev, rec, &sessrec);
 
