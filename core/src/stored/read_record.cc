@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -207,11 +207,9 @@ bool ReadNextBlockFromDevice(DeviceControlRecord* dcr,
         if (!mount_cb(dcr)) {
           Jmsg(jcr, M_INFO, 0, _("End of all volumes.\n"));
           if (RecordCb) {
-            /*
-             * Create EOT Label so that Media record may
+            /* Create EOT Label so that Media record may
              *  be properly updated because this is the last
-             *  tape.
-             */
+             *  tape. */
             trec = new_record();
             trec->FileIndex = EOT_LABEL;
             trec->File = dcr->dev->file;
@@ -226,11 +224,9 @@ bool ReadNextBlockFromDevice(DeviceControlRecord* dcr,
         }
         jcr->sd_impl->read_session.mount_next_volume = false;
 
-        /*
-         * We just have a new tape up, now read the label (first record)
+        /* We just have a new tape up, now read the label (first record)
          *  and pass it off to the callback routine, then continue
-         *  most likely reading the previous record.
-         */
+         *  most likely reading the previous record. */
         dcr->ReadBlockFromDevice(NO_BLOCK_NUMBER_CHECK);
         trec = new_record();
         ReadRecordFromBlock(dcr, trec);
@@ -297,12 +293,10 @@ bool ReadNextRecordFromBlock(DeviceControlRecord* dcr,
           rec_state_bits_to_str(rec), block->BlockNumber, rec->remainder,
           dev->file, dev->block_num);
 
-    /*
-     * At this point, we have at least a record header.
+    /* At this point, we have at least a record header.
      *  Now decide if we want this record or not, but remember
      *  before accessing the record, we may need to read again to
-     *  get all the data.
-     */
+     *  get all the data. */
     rctx->records_processed++;
     Dmsg6(debuglevel, "recno=%d state_bits=%s blk=%d SI=%d ST=%d FI=%d\n",
           rctx->records_processed, rec_state_bits_to_str(rec),
@@ -411,10 +405,8 @@ bool ReadRecords(DeviceControlRecord* dcr,
       break;
     }
 
-    /*
-     * Get a new record for each Job as defined by VolSessionId and
-     * VolSessionTime
-     */
+    /* Get a new record for each Job as defined by VolSessionId and
+     * VolSessionTime */
     if (!rctx->rec || rctx->rec->VolSessionId != dcr->block->VolSessionId
         || rctx->rec->VolSessionTime != dcr->block->VolSessionTime) {
       ReadContextSetRecord(dcr, rctx);
@@ -430,22 +422,17 @@ bool ReadRecords(DeviceControlRecord* dcr,
     Dmsg1(debuglevel, "Block %s empty\n",
           IsBlockEmpty(rctx->rec) ? "is" : "NOT");
 
-    /*
-     * Process the block and read all records in the block and send
-     * them to the defined callback.
-     */
+    /* Process the block and read all records in the block and send
+     * them to the defined callback. */
     while (ok && !IsBlockEmpty(rctx->rec)) {
       if (!ReadNextRecordFromBlock(dcr, rctx, &done)) { break; }
 
       if (rctx->rec->FileIndex < 0) {
-        /*
-         * Note, we pass *all* labels to the callback routine. If
+        /* Note, we pass *all* labels to the callback routine. If
          *  he wants to know if they matched the bsr, then he must
          *  check the match_stat in the record */
         ok = RecordCb(dcr, rctx->rec);
       } else {
-        DeviceRecord* rec;
-
         Dmsg6(debuglevel,
               "OK callback. recno=%d state_bits=%s blk=%d SI=%d ST=%d FI=%d\n",
               rctx->records_processed, rec_state_bits_to_str(rctx->rec),
@@ -459,22 +446,24 @@ bool ReadRecords(DeviceControlRecord* dcr,
         /*
          * We want the plugins to be called in reverse order so we give the
          * GeneratePluginEvent() the reverse argument so it knows that we want
-         * the plugins to be called in that order.
-         */
+         * the plugins to be called in that order. */
         if (GeneratePluginEvent(jcr, bSdEventReadRecordTranslation, dcr, true)
             != bRC_OK) {
           ok = false;
           continue;
         }
 
-        /*
-         * The record got translated when we got an after_rec pointer after
+        /* The record got translated when we got an after_rec pointer after
          * calling the bSdEventReadRecordTranslation plugin event. If no
          * translation has taken place we just point the rec pointer to same
-         * DeviceRecord as in the before_rec pointer.
-         */
-        rec = (dcr->after_rec) ? dcr->after_rec : dcr->before_rec;
-        ok = RecordCb(dcr, rec);
+         * DeviceRecord as in the before_rec pointer. */
+        if (dcr->after_rec) {
+          ok = RecordCb(dcr, dcr->after_rec);
+          FreeRecord(dcr->after_rec);
+          dcr->after_rec = nullptr;
+        } else {
+          ok = RecordCb(dcr, dcr->before_rec);
+        }
       }
     }
     Dmsg2(debuglevel, "After end recs in block. pos=%u:%u\n", dcr->dev->file,

@@ -30,3 +30,27 @@ set_tests_properties(
     FIXTURES_REQUIRED
     "system:bareos-basic:backup-job-fixture;system:bareos-basic-fixture"
 )
+set_tests_properties(
+  system:bareos-basic:bls-autoxflate
+  PROPERTIES
+    FIXTURES_REQUIRED
+    "system:bareos-basic:backup-job-fixture;system:bareos-basic-fixture"
+)
+set_tests_properties(
+  system:bareos-basic:bextract-autoxflate
+  PROPERTIES
+    FIXTURES_REQUIRED
+    "system:bareos-basic:backup-job-fixture;system:bareos-basic-fixture"
+)
+set_tests_properties(
+  system:bareos-basic:bscan-autoxflate
+  PROPERTIES
+    FIXTURES_REQUIRED
+    "system:bareos-basic:backup-job-fixture;system:bareos-basic-fixture"
+)
+set_tests_properties(
+  system:bareos-basic:bcopy-autoxflate
+  PROPERTIES
+    FIXTURES_REQUIRED
+    "system:bareos-basic:backup-job-fixture;system:bareos-basic-fixture"
+)
