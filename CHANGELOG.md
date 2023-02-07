@@ -8,12 +8,12 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Changed
 - VMware Plugin: introduce pyVmomi 8.x compatibility [PR #1358]
 - build: replace sprintf by snprintf due to upgraded MacOS compiler, change linking of googletest [PR #1362]
-- storage daemon: fix crash on volume swap [PR #1360]
 - systemtests: `rename virtualfull` -> `virtualfull-basic` ,`bareos` -> `bareos-basic`, `bconsole` -> `bconsole-basic` [PR #1363]
 - webui: enable sorting on version column [PR #1368]
 
 ### Fixed
 - stored: fix crashes of storage tools when autoxflate plugin is loaded [PR #1369]
+- storage daemon: fix crash on volume swap [PR #1360]
 
 ## [22.0.1] - 2023-01-02
 
