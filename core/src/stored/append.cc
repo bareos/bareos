@@ -94,7 +94,7 @@ bool IsAttribute(DeviceRecord* record)
          || CryptoDigestStreamType(record->maskedStream) != CRYPTO_DIGEST_NONE;
 }
 
-static void SaveFullyProcessedFiles(
+static void SaveFullyProcessedFilesAttributes(
     JobControlRecord* jcr,
     std::vector<ProcessedFile>& processed_files)
 {
@@ -312,11 +312,11 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       }
 
       if (AttributesAreSpooled(jcr)) {
-        SaveFullyProcessedFiles(jcr, processed_files);
+        SaveFullyProcessedFilesAttributes(jcr, processed_files);
       } else {
         if (current_block_number != jcr->sd_impl->dcr->block->BlockNumber) {
           current_block_number = jcr->sd_impl->dcr->block->BlockNumber;
-          SaveFullyProcessedFiles(jcr, processed_files);
+          SaveFullyProcessedFilesAttributes(jcr, processed_files);
         }
         if (me->checkpoint_interval) {
           if (jcr->sd_impl->dcr->VolMediaId != current_volumeid) {
@@ -394,7 +394,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       if (file_currently_processed.GetFileIndex() > 0) {
         processed_files.push_back(std::move(file_currently_processed));
       }
-      SaveFullyProcessedFiles(jcr, processed_files);
+      SaveFullyProcessedFilesAttributes(jcr, processed_files);
     }
   }
 
