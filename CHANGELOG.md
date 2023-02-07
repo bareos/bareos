@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and since Bareos version 20 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [22.0.2] - 2023-02-07
 
 ### Changed
 - VMware Plugin: introduce pyVmomi 8.x compatibility [PR #1358]
@@ -252,6 +252,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 [22.0.0]: https://github.com/bareos/bareos/releases/tag/Release%2F22.0.0
 [22.0.1]: https://github.com/bareos/bareos/releases/tag/Release%2F22.0.1
+[22.0.2]: https://github.com/bareos/bareos/releases/tag/Release%2F22.0.2
 [Issue #1429]: https://bugs.bareos.org/view.php?id=1429
 [Issue #1445]: https://bugs.bareos.org/view.php?id=1445
 [Issue #1450]: https://bugs.bareos.org/view.php?id=1450
@@ -447,4 +448,3 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1363]: https://github.com/bareos/bareos/pull/1363
 [PR #1368]: https://github.com/bareos/bareos/pull/1368
 [PR #1369]: https://github.com/bareos/bareos/pull/1369
-[unreleased]: https://github.com/bareos/bareos/tree/master
