@@ -386,6 +386,8 @@ def get_changelog_section(pr):
     labels = get_plain_label_list(pr["labels"])
     if "documentation" in labels:
         return "Documentation"
+    if "bugfix" in labels:
+        return "Fixed"
     return guess_section(pr["title"])
 
 
