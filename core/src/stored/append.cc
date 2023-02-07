@@ -28,6 +28,7 @@
 #include "stored/append.h"
 #include "stored/stored.h"
 #include "stored/acquire.h"
+#include "stored/checkpointhandler.h"
 #include "stored/fd_cmds.h"
 #include "stored/stored_globals.h"
 #include "stored/stored_jcr_impl.h"
@@ -93,54 +94,9 @@ bool IsAttribute(DeviceRecord* record)
          || CryptoDigestStreamType(record->maskedStream) != CRYPTO_DIGEST_NONE;
 }
 
-static void UpdateFileList(JobControlRecord* jcr)
-{
-  Dmsg0(100, _("... update file list\n"));
-  jcr->sd_impl->dcr->DirAskToUpdateFileList();
-}
-
-static void UpdateJobmediaRecord(JobControlRecord* jcr)
-{
-  Dmsg0(100, _("... create job media record\n"));
-  jcr->sd_impl->dcr->DirCreateJobmediaRecord(false);
-  jcr->sd_impl->dcr->VolFirstIndex = jcr->sd_impl->dcr->VolLastIndex;
-}
-
-static void UpdateJobrecord(JobControlRecord* jcr)
-{
-  Dmsg2(100, _("... update job record: %llu bytes %lu files\n"), jcr->JobBytes,
-        jcr->JobFiles);
-  jcr->sd_impl->dcr->DirAskToUpdateJobRecord();
-}
-
-void DoBackupCheckpoint(JobControlRecord* jcr)
-{
-  Dmsg0(100, _("Checkpoint: Syncing current backup status to catalog\n"));
-  UpdateJobrecord(jcr);
-  UpdateFileList(jcr);
-  UpdateJobmediaRecord(jcr);
-  Dmsg0(100, _("Checkpoint completed\n"));
-}
-
-static time_t DoTimedCheckpoint(JobControlRecord* jcr,
-                                time_t checkpoint_time,
-                                time_t checkpoint_interval)
-{
-  const time_t now
-      = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-  if (now > checkpoint_time) {
-    while (checkpoint_time <= now) { checkpoint_time += checkpoint_interval; }
-    Jmsg(jcr, M_INFO, 0,
-         _("Doing timed backup checkpoint. Next checkpoint in %d seconds\n"),
-         checkpoint_interval);
-    DoBackupCheckpoint(jcr);
-  }
-
-  return checkpoint_time;
-}
-
-static void SaveFullyProcessedFiles(JobControlRecord* jcr,
-                                    std::vector<ProcessedFile>& processed_files)
+static void SaveFullyProcessedFiles(
+    JobControlRecord* jcr,
+    std::vector<ProcessedFile>& processed_files)
 {
   if (!processed_files.empty()) {
     for_each(
@@ -255,9 +211,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   jcr->sd_impl->dcr->VolFirstIndex = jcr->sd_impl->dcr->VolLastIndex = 0;
   jcr->run_time = time(NULL); /* start counting time for rates */
 
-  auto now
-      = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-  time_t next_checkpoint_time = now + me->checkpoint_interval;
+  CheckpointHandler checkpoint_handler(me->checkpoint_interval);
 
   std::vector<ProcessedFile> processed_files{};
   int64_t current_volumeid = jcr->sd_impl->dcr->VolMediaId;
@@ -367,15 +321,13 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
         if (me->checkpoint_interval) {
           if (jcr->sd_impl->dcr->VolMediaId != current_volumeid) {
             Jmsg0(jcr, M_INFO, 0, _("Volume changed, doing checkpoint:\n"));
-            DoBackupCheckpoint(jcr);
+            checkpoint_handler.DoBackupCheckpoint(jcr);
             current_volumeid = jcr->sd_impl->dcr->VolMediaId;
           } else {
-            next_checkpoint_time = DoTimedCheckpoint(jcr, next_checkpoint_time,
-                                                     me->checkpoint_interval);
+            checkpoint_handler.DoTimedCheckpoint(jcr);
           }
         }
       }
-
 
       Dmsg0(650, "Enter bnet_get\n");
     }
