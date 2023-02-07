@@ -64,8 +64,6 @@ class ProcessedFile {
 bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what);
 bool IsAttribute(DeviceRecord* record);
 bool SendAttrsToDir(JobControlRecord* jcr, DeviceRecord* rec);
-
-void DoBackupCheckpoint(JobControlRecord* jcr);
 }  // namespace storagedaemon
 
 #endif  // BAREOS_STORED_APPEND_H_
