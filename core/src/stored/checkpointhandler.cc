@@ -45,6 +45,10 @@ void CheckpointHandler::UpdateJobmediaRecord(JobControlRecord* jcr)
 {
   Dmsg0(100, _("... create job media record\n"));
   jcr->sd_impl->dcr->DirCreateJobmediaRecord(false);
+
+  jcr->sd_impl->dcr->VolFirstIndex = jcr->sd_impl->dcr->VolLastIndex;
+  jcr->sd_impl->dcr->StartFile = jcr->sd_impl->dcr->EndFile;
+  jcr->sd_impl->dcr->StartBlock = jcr->sd_impl->dcr->EndBlock + 1;
 }
 
 void CheckpointHandler::UpdateJobrecord(JobControlRecord* jcr)
@@ -60,8 +64,6 @@ void CheckpointHandler::DoBackupCheckpoint(JobControlRecord* jcr)
   UpdateJobrecord(jcr);
   UpdateFileList(jcr);
   UpdateJobmediaRecord(jcr);
-
-  jcr->sd_impl->dcr->VolFirstIndex = jcr->sd_impl->dcr->VolLastIndex;
 
   SetReadyForCheckpoint(false);
 
