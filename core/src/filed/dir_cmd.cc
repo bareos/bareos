@@ -1273,7 +1273,7 @@ static bool FilesetCmd(JobControlRecord* jcr)
   while (dir->recv() >= 0) {
     StripTrailingJunk(dir->msg);
     Dmsg1(500, "Fileset: %s\n", dir->msg);
-    AddFileset(jcr, dir->msg);
+    AddFileset(jcr, std::string{dir->msg}.c_str());
   }
 
   if (!TermFileset(jcr)) { return false; }
