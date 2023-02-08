@@ -63,6 +63,22 @@ void CheckpointHandler::DoBackupCheckpoint(JobControlRecord* jcr)
 
   jcr->sd_impl->dcr->VolFirstIndex = jcr->sd_impl->dcr->VolLastIndex;
 
+  SetReadyForCheckpoint(false);
+
+  Dmsg0(100, _("Checkpoint completed\n"));
+}
+
+/* On volume changes, the SD already creates a jobmedia table entry for the
+   finished volume, so we only need to update the File and Job tables */
+void CheckpointHandler::DoVolumeChangeBackupCheckpoint(JobControlRecord* jcr)
+{
+  Jmsg0(jcr, M_INFO, 0, _("Volume changed, doing checkpoint:\n"));
+  Dmsg0(100, _("Checkpoint: Syncing current backup status to catalog\n"));
+  UpdateJobrecord(jcr);
+  UpdateFileList(jcr);
+
+  SetReadyForCheckpoint(false);
+
   Dmsg0(100, _("Checkpoint completed\n"));
 }
 

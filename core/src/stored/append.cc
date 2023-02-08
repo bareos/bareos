@@ -94,7 +94,7 @@ bool IsAttribute(DeviceRecord* record)
          || CryptoDigestStreamType(record->maskedStream) != CRYPTO_DIGEST_NONE;
 }
 
-static void SaveFullyProcessedFilesAttributes(
+static bool SaveFullyProcessedFilesAttributes(
     JobControlRecord* jcr,
     std::vector<ProcessedFile>& processed_files)
 {
@@ -104,7 +104,9 @@ static void SaveFullyProcessedFilesAttributes(
         [&jcr](ProcessedFile& file) { file.SendAttributesToDirector(jcr); });
     jcr->JobFiles = processed_files.back().GetFileIndex();
     processed_files.clear();
+    return true;
   }
+  return false;
 }
 
 // Append Data sent from File daemon
@@ -211,6 +213,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   jcr->sd_impl->dcr->VolFirstIndex = jcr->sd_impl->dcr->VolLastIndex = 0;
   jcr->run_time = time(NULL); /* start counting time for rates */
 
+  bool checkpoints_enabled = me->checkpoint_interval > 0 ? true : false;
   CheckpointHandler checkpoint_handler(me->checkpoint_interval);
 
   std::vector<ProcessedFile> processed_files{};
@@ -307,6 +310,15 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
         break;
       }
 
+      if (checkpoints_enabled && checkpoint_handler.ReadyForCheckpoint()) {
+        if (jcr->sd_impl->dcr->VolMediaId != current_volumeid) {
+          checkpoint_handler.DoVolumeChangeBackupCheckpoint(jcr);
+          current_volumeid = jcr->sd_impl->dcr->VolMediaId;
+        } else {
+          checkpoint_handler.DoTimedCheckpoint(jcr);
+        }
+      }
+
       if (IsAttribute(jcr->sd_impl->dcr->rec)) {
         file_currently_processed.AddAttribute(jcr->sd_impl->dcr->rec);
       }
@@ -316,15 +328,10 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       } else {
         if (current_block_number != jcr->sd_impl->dcr->block->BlockNumber) {
           current_block_number = jcr->sd_impl->dcr->block->BlockNumber;
-          SaveFullyProcessedFilesAttributes(jcr, processed_files);
-        }
-        if (me->checkpoint_interval) {
-          if (jcr->sd_impl->dcr->VolMediaId != current_volumeid) {
-            Jmsg0(jcr, M_INFO, 0, _("Volume changed, doing checkpoint:\n"));
-            checkpoint_handler.DoBackupCheckpoint(jcr);
-            current_volumeid = jcr->sd_impl->dcr->VolMediaId;
-          } else {
-            checkpoint_handler.DoTimedCheckpoint(jcr);
+          if (SaveFullyProcessedFilesAttributes(jcr, processed_files)) {
+            if (checkpoints_enabled) {
+              checkpoint_handler.SetReadyForCheckpoint(true);
+            }
           }
         }
       }

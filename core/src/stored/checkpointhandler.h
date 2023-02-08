@@ -31,12 +31,16 @@ class CheckpointHandler {
   CheckpointHandler(time_t interval);
   void DoBackupCheckpoint(JobControlRecord* jcr);
   void DoTimedCheckpoint(JobControlRecord* jcr);
+  void DoVolumeChangeBackupCheckpoint(JobControlRecord* jcr);
+  void SetReadyForCheckpoint(bool ready) { ready_for_checkpoint_ = ready; }
+  bool ReadyForCheckpoint() const { return ready_for_checkpoint_; }
 
  private:
   void UpdateFileList(JobControlRecord* jcr);
   void UpdateJobmediaRecord(JobControlRecord* jcr);
   void UpdateJobrecord(JobControlRecord* jcr);
 
+  bool ready_for_checkpoint_ = false;
   time_t next_checkpoint_time_{};
   time_t checkpoint_interval_{};
 };
