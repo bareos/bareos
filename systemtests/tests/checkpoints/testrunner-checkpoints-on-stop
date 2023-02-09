@@ -31,7 +31,7 @@ cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
 messages
 @$out $backup_log
-run job=$slowjob level=Full yes
+run job=$slowjob fileset=bigfileset level=Full yes
 quit
 END_OF_DATA
 
@@ -99,9 +99,9 @@ expect_grep "Termination:            Restore OK" \
             "Restore job did not go well!"
 
 # Certain systems do not support multiple types for find (-type f,l)
-NumberOfFilesRestored=$(find "$restore_directory"/"$tmp" -type f | wc -l)
-NumberOfLinksRestored=$(find "$restore_directory"/"$tmp" -type l | wc -l)
-NumberOfDirectoriesRestored=$(find "$restore_directory"/"$tmp" -type d | wc -l)
+NumberOfFilesRestored=$(find "$restore_directory"/"$PROJECT_SOURCE_DIR"/tests -type f | wc -l)
+NumberOfLinksRestored=$(find "$restore_directory"/"$PROJECT_SOURCE_DIR"/tests -type l | wc -l)
+NumberOfDirectoriesRestored=$(find "$restore_directory"/"$PROJECT_SOURCE_DIR"/tests -type d | wc -l)
 RestoredItems=$((NumberOfFilesRestored + NumberOfLinksRestored + NumberOfDirectoriesRestored))
 
 # Check that the restored files are actually there
