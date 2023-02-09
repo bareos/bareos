@@ -310,28 +310,33 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
         break;
       }
 
-      if (checkpoints_enabled && checkpoint_handler.ReadyForCheckpoint()) {
-        if (jcr->sd_impl->dcr->VolMediaId != current_volumeid) {
-          checkpoint_handler.DoVolumeChangeBackupCheckpoint(jcr);
-          current_volumeid = jcr->sd_impl->dcr->VolMediaId;
-        } else {
-          checkpoint_handler.DoTimedCheckpoint(jcr);
-        }
-      }
-
       if (IsAttribute(jcr->sd_impl->dcr->rec)) {
         file_currently_processed.AddAttribute(jcr->sd_impl->dcr->rec);
       }
 
+      bool block_changed
+          = current_block_number != jcr->sd_impl->dcr->block->BlockNumber;
+      bool volume_changed
+          = jcr->sd_impl->dcr->VolMediaId != current_volumeid && block_changed;
+
       if (AttributesAreSpooled(jcr)) {
         SaveFullyProcessedFilesAttributes(jcr, processed_files);
       } else {
-        if (current_block_number != jcr->sd_impl->dcr->block->BlockNumber) {
+        if (block_changed) {
           current_block_number = jcr->sd_impl->dcr->block->BlockNumber;
           if (SaveFullyProcessedFilesAttributes(jcr, processed_files)) {
             if (checkpoints_enabled) {
               checkpoint_handler.SetReadyForCheckpoint(true);
             }
+          }
+        }
+
+        if (checkpoints_enabled && checkpoint_handler.ReadyForCheckpoint()) {
+          if (volume_changed) {
+            checkpoint_handler.DoVolumeChangeBackupCheckpoint(jcr);
+            current_volumeid = jcr->sd_impl->dcr->VolMediaId;
+          } else {
+            checkpoint_handler.DoTimedCheckpoint(jcr);
           }
         }
       }
