@@ -36,7 +36,7 @@ bool CheckResources()
   DirectorResource* director;
   const std::string& configfile = my_config->get_base_config_path();
 
-  LockRes(my_config);
+  ResLocker _{my_config};
 
   me = (ClientResource*)my_config->GetNextRes(R_CLIENT, nullptr);
   my_config->own_resource_ = me;
@@ -47,11 +47,6 @@ bool CheckResources()
           configfile.c_str());
     OK = false;
   } else {
-    // Sanity check.
-    if (me->MaxConnections < (2 * me->MaxConcurrentJobs)) {
-      me->MaxConnections = (2 * me->MaxConcurrentJobs) + 2;
-    }
-
     if (my_config->GetNextRes(R_CLIENT, (BareosResource*)me) != nullptr) {
       Emsg1(M_FATAL, 0, _("Only one Client resource permitted in %s\n"),
             configfile.c_str());
@@ -74,7 +69,7 @@ bool CheckResources()
 #endif
     }
 
-    /* pki_encrypt implies pki_sign */
+    /* pki_encrypt fd_implies pki_sign */
     if (me->pki_encrypt) { me->pki_sign = true; }
 
     if ((me->pki_encrypt || me->pki_sign) && !me->pki_keypair_file) {
@@ -192,16 +187,13 @@ bool CheckResources()
 
 
   /* Verify that a director record exists */
-  LockRes(my_config);
   director = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
-  UnlockRes(my_config);
+
   if (!director) {
     Emsg1(M_FATAL, 0, _("No Director resource defined in %s\n"),
           configfile.c_str());
     OK = false;
   }
-
-  UnlockRes(my_config);
 
   if (OK) {
     CloseMsg(nullptr);              /* close temp message handler */
