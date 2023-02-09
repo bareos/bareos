@@ -75,13 +75,7 @@ void CheckpointHandler::DoBackupCheckpoint(JobControlRecord* jcr)
 void CheckpointHandler::DoVolumeChangeBackupCheckpoint(JobControlRecord* jcr)
 {
   Jmsg0(jcr, M_INFO, 0, _("Volume changed, doing checkpoint:\n"));
-  Dmsg0(100, _("Checkpoint: Syncing current backup status to catalog\n"));
-  UpdateJobrecord(jcr);
-  UpdateFileList(jcr);
-
-  SetReadyForCheckpoint(false);
-
-  Dmsg0(100, _("Checkpoint completed\n"));
+  DoBackupCheckpoint(jcr);
 }
 
 void CheckpointHandler::DoTimedCheckpoint(JobControlRecord* jcr)
