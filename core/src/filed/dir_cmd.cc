@@ -1802,9 +1802,12 @@ static bool BackupCmd(JobControlRecord* jcr)
   BareosSocket* dir = jcr->dir_bsock;
   BareosSocket* sd = jcr->store_bsock;
   crypto_cipher_t cipher = CRYPTO_CIPHER_NONE;
-  ClientResource* client
-      = (ClientResource*)my_config->GetNextRes(R_CLIENT, NULL);
 
+  ClientResource* client = nullptr;
+  {
+    ResLocker _{my_config};
+    client = (ClientResource*)my_config->GetNextRes(R_CLIENT, NULL);
+  }
   /* See if we are in restore only mode then we don't allow a backup to be
    * initiated. */
   if (restore_only_mode) {
