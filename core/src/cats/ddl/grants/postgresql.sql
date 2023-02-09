@@ -26,9 +26,6 @@ GRANT ALL ON RestoreObject TO @DB_USER@;
 GRANT ALL ON Quota TO @DB_USER@;
 GRANT ALL ON NDMPLevelMap TO @DB_USER@;
 GRANT ALL ON NDMPJobEnvironment TO @DB_USER@;
-GRANT ALL ON DeviceStats TO @DB_USER@;
-GRANT ALL ON JobStats TO @DB_USER@;
-GRANT ALL ON TapeAlerts TO @DB_USER@;
 
 -- For sequences ON those tables
 GRANT SELECT, UPDATE ON path_pathid_seq TO @DB_USER@;

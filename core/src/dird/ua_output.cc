@@ -1012,15 +1012,6 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
 
       ua->db->ListSqlQuery(ua->jcr, ua->cmd, ua->send, llist, "backups");
     }
-  } else if (Bstrcasecmp(ua->argk[1], NT_("jobstatistics"))
-             || Bstrcasecmp(ua->argk[1], NT_("jobstats"))) {
-    jobid = GetJobidFromCmdline(ua);
-    if (jobid > 0) {
-      ua->db->ListJobstatisticsRecords(ua->jcr, jobid, ua->send, llist);
-    } else {
-      ua->ErrorMsg(_("no jobid given\n"));
-      return false;
-    }
   } else {
     ua->ErrorMsg(_("Unknown list keyword: %s\n"), NPRT(ua->argk[1]));
     return false;

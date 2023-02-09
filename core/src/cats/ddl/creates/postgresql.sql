@@ -397,36 +397,6 @@ CREATE TABLE NDMPJobEnvironment (
     CONSTRAINT NDMPJobEnvironment_pkey PRIMARY KEY (JobId, FileIndex, EnvName)
 );
 
-CREATE TABLE DeviceStats (
-    DeviceId          INTEGER     DEFAULT 0,
-    SampleTime        TIMESTAMP   WITHOUT TIME ZONE NOT NULL,
-    ReadTime          BIGINT      NOT NULL DEFAULT 0,
-    WriteTime         BIGINT      NOT NULL DEFAULT 0,
-    ReadBytes         BIGINT      DEFAULT 0,
-    WriteBytes        BIGINT      DEFAULT 0,
-    SpoolSize         BIGINT      DEFAULT 0,
-    NumWaiting        SMALLINT    DEFAULT 0,
-    NumWriters        SMALLINT    DEFAULT 0,
-    MediaId           INTEGER     NOT NULL,
-    VolCatBytes       BIGINT      DEFAULT 0,
-    VolCatFiles       BIGINT      DEFAULT 0,
-    VolCatBlocks      BIGINT      DEFAULT 0
-);
-
-CREATE TABLE JobStats (
-    DeviceId          INTEGER     DEFAULT 0,
-    SampleTime        TIMESTAMP   WITHOUT TIME ZONE NOT NULL,
-    JobId             INTEGER     NOT NULL,
-    JobFiles          INTEGER     DEFAULT 0,
-    JobBytes          BIGINT      DEFAULT 0
-);
-
-CREATE TABLE TapeAlerts (
-    DeviceId          INTEGER     DEFAULT 0,
-    SampleTime        TIMESTAMP   WITHOUT TIME ZONE NOT NULL,
-    AlertFlags        BIGINT      DEFAULT 0
-);
-
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('C', 'Created, not yet running',15);
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES

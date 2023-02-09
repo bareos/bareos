@@ -492,34 +492,6 @@ void BareosDb::ListJoblogRecords(JobControlRecord* jcr,
   SqlFreeResult();
 }
 
-/**
- * list job statistics records for certain jobid
- *
- */
-void BareosDb::ListJobstatisticsRecords(JobControlRecord* jcr,
-                                        uint32_t JobId,
-                                        OutputFormatter* sendit,
-                                        e_list_type type)
-{
-  char ed1[50];
-
-  if (JobId <= 0) { return; }
-  DbLocker _{this};
-  Mmsg(cmd,
-       "SELECT DeviceId, SampleTime, JobId, JobFiles, JobBytes "
-       "FROM JobStats "
-       "WHERE JobStats.JobId=%s "
-       "ORDER BY JobStats.SampleTime ",
-       edit_int64(JobId, ed1));
-  if (!QUERY_DB(jcr, cmd)) { return; }
-
-  sendit->ArrayStart("jobstats");
-  ListResult(jcr, sendit, type);
-  sendit->ArrayEnd("jobstats");
-
-  SqlFreeResult();
-}
-
 void BareosDb::ListJobRecords(JobControlRecord* jcr,
                               JobDbRecord* jr,
                               const char* range,

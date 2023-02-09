@@ -133,9 +133,6 @@ core/src/tests/configs/droplet_backend/bareos-sd.d/storage/myself.conf
 core/src/tests/configs/droplet_backend/droplet.profile
 core/src/tests/configs/sd_backend/bareos-sd.d/storage/myself.conf
 core/src/tests/configs/sd_reservation/bareos-sd.d/storage/myself.conf
-core/src/tests/configs/statistics_thread/sd_statistics_thread/default_config/bareos-sd.d/storage/myself.conf
-core/src/tests/configs/statistics_thread/sd_statistics_thread/only_collect_set/bareos-sd.d/storage/myself.conf
-core/src/tests/configs/statistics_thread/sd_statistics_thread/only_interval_set/bareos-sd.d/storage/myself.conf
 core/src/tests/configs/stored_multiplied_device/bareos-sd.d/storage/bareos-sd.conf
 core/src/win32/console/consoleres.rc
 core/src/win32/dird/dbcheckres.rc

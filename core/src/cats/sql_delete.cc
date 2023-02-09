@@ -255,9 +255,6 @@ void BareosDb::PurgeJobs(const char* jobids)
   Mmsg(query, "DELETE FROM NDMPJobEnvironment WHERE JobId IN (%s)", jobids);
   SqlQuery(query.c_str());
 
-  Mmsg(query, "DELETE FROM JobStats WHERE JobId IN (%s)", jobids);
-  SqlQuery(query.c_str());
-
   UpgradeCopies(jobids);
 
   /* Now remove the Job record itself */

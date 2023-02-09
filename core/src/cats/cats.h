@@ -805,10 +805,6 @@ class BareosDb : public BareosDbQueryEnum {
                       bool reverse,
                       OutputFormatter* sendit,
                       e_list_type type);
-  void ListJobstatisticsRecords(JobControlRecord* jcr,
-                                uint32_t JobId,
-                                OutputFormatter* sendit,
-                                e_list_type type);
 
   enum class CollapseMode
   {
