@@ -737,9 +737,6 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
   int i;
   int error = 0;
 
-  BareosResource* allocated_resource = *resources[type].allocated_resource_;
-  if (pass == 2 && !allocated_resource->Validate()) { return false; }
-
   // Ensure that all required items are present
   for (i = 0; items[i].name; i++) {
     if (items[i].flags & CFG_ITEM_REQUIRED) {
@@ -758,6 +755,9 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
 
   // save previously discovered pointers into dynamic memory
   if (pass == 2) {
+    BareosResource* allocated_resource = my_config->GetResWithName(
+        type, (*items->allocated_resource)->resource_name_);
+    if (allocated_resource && !allocated_resource->Validate()) { return false; }
     switch (type) {
       case R_DEVICE:
       case R_MSGS:
@@ -765,8 +765,8 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
         // Resources not containing a resource
         break;
       case R_DIRECTOR: {
-        DirectorResource* p = dynamic_cast<DirectorResource*>(
-            my_config->GetResWithName(R_DIRECTOR, res_dir->resource_name_));
+        DirectorResource* p
+            = dynamic_cast<DirectorResource*>(allocated_resource);
         if (!p) {
           Emsg1(M_ERROR_TERM, 0, _("Cannot find Director resource %s\n"),
                 res_dir->resource_name_);
@@ -777,8 +777,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
         break;
       }
       case R_STORAGE: {
-        StorageResource* p = dynamic_cast<StorageResource*>(
-            my_config->GetResWithName(R_STORAGE, res_store->resource_name_));
+        StorageResource* p = dynamic_cast<StorageResource*>(allocated_resource);
         if (!p) {
           Emsg1(M_ERROR_TERM, 0, _("Cannot find Storage resource %s\n"),
                 res_store->resource_name_);
@@ -793,9 +792,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
       }
       case R_AUTOCHANGER: {
         AutochangerResource* p
-            = dynamic_cast<AutochangerResource*>(my_config->GetResWithName(
-                R_AUTOCHANGER, res_changer->resource_name_));
-
+            = dynamic_cast<AutochangerResource*>(allocated_resource);
         if (!p) {
           Emsg1(M_ERROR_TERM, 0, _("Cannot find AutoChanger resource %s\n"),
                 res_changer->resource_name_);
