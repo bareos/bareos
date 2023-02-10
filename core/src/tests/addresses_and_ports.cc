@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -119,7 +119,9 @@ static bool try_binding_director_port(std::string path_to_config,
 
   bool start_socket_server_ok
       = directordaemon::StartSocketServer(directordaemon::me->DIRaddrs);
-  EXPECT_TRUE(start_socket_server_ok) << "Could not start SocketServer";
+  EXPECT_TRUE(start_socket_server_ok)
+      << "Could not start SocketServer; "
+      << "Is a local director blocking the port ?";
   if (!start_socket_server_ok) { return false; }
 
   result = test_sockets(family, port);
