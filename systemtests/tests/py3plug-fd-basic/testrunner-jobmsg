@@ -1,0 +1,45 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-bareos-fd
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+rm -f "$tmp/jobmsg-backup.out" "$tmp/jobmsg-restore.out"
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/jobmsg-backup.out
+run job=$JobName yes
+wait
+messages
+@$out $tmp/jobmsg-restore.out
+restore client=bareos-fd fileset=PluginTest where=$tmp/bareos-restores select all done yes
+wait
+messages
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File
+
+check_two_logs $tmp/jobmsg-backup.out $tmp/jobmsg-restore.out
+
+awk '/python3-fd-mod:/ { print $NF }' $tmp/jobmsg-backup.out > $tmp/jobmsg-backup.txt
+diff -u jobmsg-backup.txt tmp/jobmsg-backup.txt
+
+awk '/python3-fd-mod:/ { print $NF }' $tmp/jobmsg-restore.out > $tmp/jobmsg-restore.txt
+diff -u jobmsg-restore.txt tmp/jobmsg-restore.txt
+
+end_test
