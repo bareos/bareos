@@ -23,6 +23,9 @@
 # this test module will emit a job message in every single callback there is
 # to make sure emitting a message won't break anything
 
+# import all the wrapper functions in our module scope
+from BareosFdWrapper import *
+
 from bareosfd import (
     bRC_OK,
     JobMessage,
@@ -33,18 +36,12 @@ from bareosfd import (
     StatPacket,
 )
 
-# get direct access to bareos_fd_plugin_object
-import BareosFdWrapper
-
-# import all the wrapper functions in our module scope
-from BareosFdWrapper import *
-
 from BareosFdPluginBaseclass import BareosFdPluginBaseclass
 
 import sys
 from stat import S_IFREG, S_IFDIR, S_IRWXU
 
-
+@BareosPlugin
 class TestPlugin(BareosFdPluginBaseclass):
     def __init__(self, plugindef):
         JobMessage(M_INFO, "__init__('{}')\n".format(plugindef))
@@ -142,9 +139,3 @@ class TestPlugin(BareosFdPluginBaseclass):
     def handle_backup_file(self, savepkt):
         JobMessage(M_INFO, "handle_backup_file()\n")
         return super().handle_backup_file(savepkt)
-
-
-def load_bareos_plugin(plugindef):
-    DebugMessage(100, "load_bareos_plugin()\n")
-    BareosFdWrapper.bareos_fd_plugin_object = TestPlugin(plugindef)
-    return bRC_OK
