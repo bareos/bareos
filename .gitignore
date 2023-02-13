@@ -76,7 +76,6 @@ core/src/cats/delete_catalog_backup
 core/src/cats/drop_bareos_database
 core/src/cats/drop_bareos_tables
 core/src/cats/grant_bareos_privileges
-core/src/cats/install-default-backend
 core/src/cats/make_bareos_tables
 core/src/cats/make_catalog_backup
 core/src/cats/update_bareos_tables
