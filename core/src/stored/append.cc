@@ -213,7 +213,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   jcr->sd_impl->dcr->VolFirstIndex = jcr->sd_impl->dcr->VolLastIndex = 0;
   jcr->run_time = time(NULL); /* start counting time for rates */
 
-  bool checkpoints_enabled = me->checkpoint_interval > 0 ? true : false;
+  const bool checkpoints_enabled = me->checkpoint_interval > 0;
   CheckpointHandler checkpoint_handler(me->checkpoint_interval);
 
   std::vector<ProcessedFile> processed_files{};
@@ -314,9 +314,9 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
         file_currently_processed.AddAttribute(jcr->sd_impl->dcr->rec);
       }
 
-      bool block_changed
+      const bool block_changed
           = current_block_number != jcr->sd_impl->dcr->block->BlockNumber;
-      bool volume_changed
+      const bool volume_changed
           = jcr->sd_impl->dcr->VolMediaId != current_volumeid && block_changed;
 
       if (AttributesAreSpooled(jcr)) {
@@ -326,12 +326,12 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
           current_block_number = jcr->sd_impl->dcr->block->BlockNumber;
           if (SaveFullyProcessedFilesAttributes(jcr, processed_files)) {
             if (checkpoints_enabled) {
-              checkpoint_handler.SetReadyForCheckpoint(true);
+              checkpoint_handler.SetReadyForCheckpoint();
             }
           }
         }
 
-        if (checkpoints_enabled && checkpoint_handler.ReadyForCheckpoint()) {
+        if (checkpoints_enabled && checkpoint_handler.IsReadyForCheckpoint()) {
           if (volume_changed) {
             checkpoint_handler.DoVolumeChangeBackupCheckpoint(jcr);
             current_volumeid = jcr->sd_impl->dcr->VolMediaId;
