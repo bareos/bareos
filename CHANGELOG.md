@@ -17,6 +17,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - stored: fix crashes of storage tools when autoxflate plugin is loaded [PR #1348]
 - webui: enable sorting on version column [PR #1365]
 - dird: skip disabled clients in status command [PR #1367]
+- bsmtp: fix and update code, and change CLI parsing to CLI11 [PR #1316]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -35,6 +36,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #935]: https://github.com/bareos/bareos/pull/935
 [PR #1011]: https://github.com/bareos/bareos/pull/1011
 [PR #1130]: https://github.com/bareos/bareos/pull/1130
+[PR #1316]: https://github.com/bareos/bareos/pull/1316
 [PR #1325]: https://github.com/bareos/bareos/pull/1325
 [PR #1335]: https://github.com/bareos/bareos/pull/1335
 [PR #1339]: https://github.com/bareos/bareos/pull/1339
