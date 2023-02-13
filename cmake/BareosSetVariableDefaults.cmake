@@ -458,18 +458,10 @@ if(NOT LIBZ_FOUND)
 endif()
 
 if(NOT client-only)
-
   if(${postgresql})
     set(HAVE_POSTGRESQL 1)
+    set(DEFAULT_DB_TYPE postgresql)
   endif()
-  get_directory_property(hasParent PARENT_DIRECTORY)
-  if(hasParent)
-    set(DEFAULT_DB_TYPE
-        ${default_db_backend}
-        PARENT_SCOPE
-    )
-  endif()
-  set(DEFAULT_DB_TYPE ${default_db_backend})
 endif()
 
 # systemd

@@ -126,7 +126,6 @@ CMAKE_ARGS+= -DCMAKE_VERBOSE_MAKEFILE=ON \
   -Dsd-group=$(STORAGE_DAEMON_GROUP) \
   -Dfd-user=$(FILE_DAEMON_USER) \
   -Dfd-group=$(DAEMON_GROUP) \
-  -Ddefault_db_backend="XXX_REPLACE_WITH_DATABASE_DRIVER_XXX" \
   -DVERSION_STRING=$(DISTVERSION)
 
 .include <bsd.port.mk>

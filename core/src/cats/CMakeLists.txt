@@ -69,17 +69,3 @@ install(
   PATTERN *.in EXCLUDE
   PATTERN *.sql EXCLUDE
 )
-
-install(CODE "set(libdir \"${libdir}\")")
-install(CODE "set(backenddir \"${backenddir}\")")
-install(CODE "set(default_db_backend \"${default_db_backend}\")")
-install(
-  CODE "set(CMAKE_SHARED_LIBRARY_SUFFIX \"${CMAKE_SHARED_LIBRARY_SUFFIX}\")"
-)
-install(CODE "set(VERSION \"${BAREOS_NUMERIC_VERSION}\")")
-install(CODE "set(SRC_DIR \"${PROJECT_SOURCE_DIR}\")")
-
-install(
-  SCRIPT ${PROJECT_SOURCE_DIR}/cmake/bareos-symlink-default-db-backend.cmake
-)
-
