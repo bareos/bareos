@@ -16,6 +16,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - systemtests: `rename virtualfull` -> `virtualfull-basic` ,`bareos` -> `bareos-basic`, `bconsole` -> `bconsole-basic` [PR #1339]
 - stored: fix crashes of storage tools when autoxflate plugin is loaded [PR #1348]
 - webui: enable sorting on version column [PR #1365]
+- dird: skip disabled clients in status command [PR #1367]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -47,4 +48,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1361]: https://github.com/bareos/bareos/pull/1361
 [PR #1365]: https://github.com/bareos/bareos/pull/1365
 [PR #1366]: https://github.com/bareos/bareos/pull/1366
+[PR #1367]: https://github.com/bareos/bareos/pull/1367
 [unreleased]: https://github.com/bareos/bareos/tree/master
