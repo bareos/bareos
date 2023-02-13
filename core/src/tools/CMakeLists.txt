@@ -23,7 +23,7 @@ if(HAVE_WIN32)
   list(APPEND BSMTPSRCS ../win32/tools/bsmtpres.rc)
 endif()
 add_executable(bsmtp ${BSMTPSRCS})
-target_link_libraries(bsmtp bareos)
+target_link_libraries(bsmtp bareos CLI11::CLI11)
 
 add_executable(drivetype drivetype.cc)
 target_link_libraries(drivetype bareos bareosfind)
