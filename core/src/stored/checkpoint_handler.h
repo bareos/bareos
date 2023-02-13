@@ -19,8 +19,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 02110-1301, USA.
 */
 
-#ifndef BAREOS_STORED_CHECKPOINTHANDLER_H_
-#define BAREOS_STORED_CHECKPOINTHANDLER_H_
+#ifndef BAREOS_STORED_CHECKPOINT_HANDLER_H_
+#define BAREOS_STORED_CHECKPOINT_HANDLER_H_
 
 #include "include/jcr.h"
 
@@ -46,4 +46,4 @@ class CheckpointHandler {
 };
 
 }  // namespace storagedaemon
-#endif  // BAREOS_STORED_CHECKPOINTHANDLER_H_
+#endif  // BAREOS_STORED_CHECKPOINT_HANDLER_H_

@@ -19,7 +19,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 02110-1301, USA.
 */
 
-#include "checkpointhandler.h"
+#include "checkpoint_handler.h"
 
 #include "stored/stored_jcr_impl.h"
 #include "stored/device_control_record.h"

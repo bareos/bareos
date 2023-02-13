@@ -28,7 +28,7 @@
 #include "stored/append.h"
 #include "stored/stored.h"
 #include "stored/acquire.h"
-#include "stored/checkpointhandler.h"
+#include "stored/checkpoint_handler.h"
 #include "stored/fd_cmds.h"
 #include "stored/stored_globals.h"
 #include "stored/stored_jcr_impl.h"
