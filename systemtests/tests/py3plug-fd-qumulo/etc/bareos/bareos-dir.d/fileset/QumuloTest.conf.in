@@ -1,10 +1,9 @@
 FileSet {
   Name = "QumuloTest"
-  Description = "Test the Plugin functionality of the oVirt Plugin."
+  Description = "Test the Qumulo Plugin functionality."
   Include {
     Options {
       signature = MD5
-      strip path = 3
     }
     Plugin = "@python_module_name@:module_path=@python_plugin_module_src_test_dir@"
       ":module_name=bareos-fd-qumulo"

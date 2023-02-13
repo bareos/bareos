@@ -32,11 +32,12 @@ add_custom_target(
 
 option(qumulo_host "IP or FQDN for qumulo api access" 192.168.76.20)
 option(qumulo_api_port "qumulo api port" 8000)
-option(qumulo_api_user "qumulo api user" admin)
-option(qumulo_api_password "qumulo api password")
-option(qumulo_api_mountpoint "qumulo root share nfs mount point" /qumulo/nfs)
+option(qumulo_api_user "qumulo api user" backup)
+option(qumulo_api_password "qumulo api password" B@ckup%12345)
+option(qumulo_api_mountpoint "qumulo root share nfs mount point" /qumulo)
 option(qumulo_snapshot_name "qumulo snapshot name" qumulo-backup)
-option(qumulo_share_name "qumulo share name to be backed up" bareos)
+option(qumulo_share_name "qumulo share name to be backed up" bareos-regress)
+option(qumulo_fs_path "qumulo path to be backed up" /regress)
 
 set(default_build_type "Debug")
 

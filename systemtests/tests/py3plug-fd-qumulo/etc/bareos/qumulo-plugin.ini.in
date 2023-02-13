@@ -13,4 +13,12 @@ mount_point = @qumulo_api_mountpoint@
 # prefix for snapshot names
 snapshot_name = @qumulo_snapshot_name@
 # name of the share that should be backed up
+# can be omited if path is given
 share_name = @qumulo_share_name@
+# absolute filesystem after mount_point
+path = @qumulo_fs_path@
+
+[advanced]
+log_level = INFO
+api_limit = 10000
+max_workers = 20

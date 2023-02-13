@@ -14,22 +14,19 @@ echo "---------------------"
 sed 's/password.*/password = ***/g' <  etc/bareos/qumulo-plugin.ini
 echo "---------------------"
 
-QUMULO_MOUNTPOINT=/qumulo/nfs
-QUMULO_SHARE=bareos
-QUMULO_SHARE_FILESYSTEM_PATH=/bareos/share1
+QUMULO_MOUNTPOINT=@qumulo_api_mountpoint@
+QUMULO_SHARE=@qumulo_share_name@
+QUMULO_SHARE_FILESYSTEM_PATH=@qumulo_fs_path@
+QUMULO_SHARE_BASEDIR="${QUMULO_MOUNTPOINT}/${QUMULO_SHARE_FILESYSTEM_PATH}"
 
-QUMULO_SHARE_BASEDIR="$QUMULO_MOUNTPOINT/$QUMULO_SHARE_FILESYSTEM_PATH"
-
-if !(df | grep -q "$QUMULO_MOUNTPOINT"); then
-  echo "ERROR: QUMULO_MOUNTPOINT $QUMULO_MOUNTPOINT is not mounted"
+if !(df "${QUMULO_MOUNTPOINT}"); then
+  echo "ERROR: QUMULO_MOUNTPOINT ${QUMULO_MOUNTPOINT} is not mounted"
   exit 1
 fi
-if  ! [ -d "$QUMULO_SHARE_BASEDIR" ]; then
-  echo "ERROR: $QUMULO_SHARE_BASEDIR is no directory"
+if  ! [ -d "${QUMULO_SHARE_BASEDIR}" ]; then
+  echo "ERROR: ${QUMULO_SHARE_BASEDIR} is not a directory"
   exit 1
 fi
-
-
 
 JobName=backup-qumulo
 #shellcheck source=../environment.in
@@ -40,9 +37,9 @@ JobName=backup-qumulo
 "${rscripts}"/setup
 
 # unpack demo files into test subdir being backed up
-mkdir -p "$QUMULO_SHARE_BASEDIR/$TestName"
+mkdir -p "${QUMULO_SHARE_BASEDIR}/${TestName}"
 # BackupDirectory is overwritten
-BackupDirectory="$QUMULO_SHARE_BASEDIR/$TestName"
+BackupDirectory="${QUMULO_SHARE_BASEDIR}/${TestName}"
 setup_data
 # cleanup files that have problems being backed up currently:
 for f in\
@@ -53,7 +50,7 @@ for f in\
    weird-files/subdir/softlink-to-normalfile \
    weird-files/softlink-to-softlinkee;
  do
-   rm "${BackupDirectory}"/$f
+   rm -f "${BackupDirectory}/${f}"
 done
 
 trap '' exit
@@ -65,7 +62,6 @@ cat <<END_OF_DATA >$tmp/bconcmds
 messages
 @$out $tmp/log1.out
 @#setdebug level=100 client=bareos-fd
-label volume=TestVolume001 storage=File pool=Full
 run job=$JobName level=Full yes
 status director
 status client
@@ -88,6 +84,20 @@ run_bareos "$@"
 check_for_zombie_jobs storage=File
 
 check_two_logs
+
+
+# We want to check presence of share & fs_path, or share alone, or fs_path alone
+
+# We want to test overwrite option in fileset.
+
+# Backup parallels jobs
+
+# Backup Incremental with no changes
+
+# Backup incremental after changes
+
+# Check snapshot used and deleted
+
 
 #TODO: check restores
 
@@ -128,6 +138,6 @@ check_restore_only_files_diff \
   "$QUMULO_SHARE_BASEDIR/$TestName"/build/src/tests/testls.c \
 # done instead
 
-rm -rvf "$QUMULO_SHARE_BASEDIR/$TestName"
+rm -rvf "${QUMULO_SHARE_BASEDIR}/${TestName}"
 
 end_test
