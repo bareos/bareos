@@ -80,7 +80,7 @@ set(SDSRCS
     append.cc
     askdir.cc
     authenticate.cc
-    checkpointhandler.cc
+    checkpoint_handler.cc
     dir_cmd.cc
     fd_cmds.cc
     job.cc
