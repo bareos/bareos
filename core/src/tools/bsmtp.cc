@@ -59,6 +59,8 @@
  */
 #include "include/bareos.h"
 #include "include/jcr.h"
+#include "lib/cli.h"
+#include "lib/bstringlist.h"
 #define MY_NAME "bsmtp"
 
 #if defined(HAVE_WIN32)
@@ -68,7 +70,6 @@
 #ifndef MAXSTRING
 #  define MAXSTRING 254
 #endif
-
 
 enum resolv_type
 {
@@ -80,40 +81,29 @@ enum resolv_type
 static FILE* sfp;
 static FILE* rfp;
 
-static char* from_addr = NULL;
-static char* cc_addr = NULL;
-static char* subject = NULL;
-static char* err_addr = NULL;
-static const char* mailhost = NULL;
-static char* reply_addr = NULL;
-static int mailport = 25;
-static char my_hostname[MAXSTRING];
-static bool content_utf8 = false;
-static resolv_type default_resolv_type = RESOLV_PROTO_IPV4;
-
 /*
  * Take input that may have names and other stuff and strip
  *  it down to the mail box address ... i.e. what is enclosed
  *  in < >.  Otherwise add < >.
  */
-static char* cleanup_addr(char* addr, char* buf, int buf_len)
+static char* cleanup_addr(std::string addr, char* buf, int buf_len)
 {
   char *p, *q;
 
-  if ((p = strchr(addr, '<')) == NULL) {
-    snprintf(buf, buf_len, "<%s>", addr);
+  if ((p = strchr(addr.data(), '<')) == nullptr) {
+    snprintf(buf, buf_len, "<%s>", addr.c_str());
   } else {
     /* Copy <addr> */
     for (q = buf; *p && *p != '>';) { *q++ = *p++; }
     if (*p) { *q++ = *p; }
     *q = 0;
   }
-  Dmsg2(100, "cleanup in=%s out=%s\n", addr, buf);
+  Dmsg2(100, "cleanup in=%s out=%s\n", addr.c_str(), buf);
   return buf;
 }
 
 //  examine message from server
-static void GetResponse(void)
+static void GetResponse(const std::string& mailhost)
 {
   char buf[1000];
 
@@ -122,10 +112,12 @@ static void GetResponse(void)
   while (fgets(buf, sizeof(buf), rfp)) {
     int len = strlen(buf);
     if (len > 0) { buf[len - 1] = 0; }
-    if (debug_level >= 10) { fprintf(stderr, "%s <-- %s\n", mailhost, buf); }
-    Dmsg2(10, "%s --> %s\n", mailhost, buf);
+    if (debug_level >= 10) {
+      fprintf(stderr, "%s <-- %s\n", mailhost.c_str(), buf);
+    }
+    Dmsg2(10, "%s --> %s\n", mailhost.c_str(), buf);
     if (!isdigit((int)buf[0]) || buf[0] > '3') {
-      Pmsg2(0, _("Fatal malformed reply from %s: %s\n"), mailhost, buf);
+      Pmsg2(0, _("Fatal malformed reply from %s: %s\n"), mailhost.c_str(), buf);
       exit(1);
     }
     if (buf[3] != '-') { break; }
@@ -137,7 +129,10 @@ static void GetResponse(void)
 }
 
 //  say something to server and check the response
-static void chat(const char* fmt, ...)
+static void chat(char* my_hostname,
+                 const std::string& mailhost,
+                 const char* fmt,
+                 ...)
 {
   va_list ap;
 
@@ -153,34 +148,7 @@ static void chat(const char* fmt, ...)
 
   fflush(sfp);
   if (debug_level >= 10) { fflush(stdout); }
-  GetResponse();
-}
-
-
-static void usage()
-{
-  fprintf(stderr,
-          _("\n"
-            "Usage: %s [-f from] [-h mailhost] [-s subject] [-c copy] "
-            "[recipient ...]\n"
-            "       -4          forces bsmtp to use IPv4 addresses only.\n"
-            "       -6          forces bsmtp to use IPv6 addresses only.\n"
-            "       -8          set charset to UTF-8\n"
-            "       -a          use any ip protocol for address resolution\n"
-            "       -c          set the Cc: field\n"
-            "       -d <nn>     set debug level to <nn>\n"
-            "       -dt         print a timestamp in debug output\n"
-            "       -f          set the From: field\n"
-            "       -h          use mailhost:port as the SMTP server\n"
-            "       -s          set the Subject: field\n"
-            "       -r          set the Reply-To: field\n"
-            "       -l          set the maximum number of lines to send "
-            "(default: unlimited)\n"
-            "       -?          print this message.\n"
-            "\n"),
-          MY_NAME);
-
-  exit(1);
+  GetResponse(mailhost);
 }
 
 /*
@@ -240,112 +208,96 @@ static void GetDateString(char* buf, int buf_len)
  */
 int main(int argc, char* argv[])
 {
-  char buf[1000];
-  int i, ch;
-  unsigned long maxlines, lines;
-#if defined(HAVE_WIN32)
-  SOCKET s;
-#else
-  int s{}, r{};
-  struct passwd* pwd;
-#endif
-  char *cp, *p;
-#ifdef HAVE_GETADDRINFO
-  int res;
-  struct addrinfo hints;
-  struct addrinfo *ai, *rp;
-  char mail_port[10];
-#else
-  struct hostent* hp;
-  struct sockaddr_in sin;
-#endif
-  const char* options = "468ac:d:f:h:r:s:l:?";
-
   setlocale(LC_ALL, "en_US");
   tzset();
   bindtextdomain("bareos", LOCALEDIR);
   textdomain("bareos");
 
   MyNameIs(argc, argv, "bsmtp");
-  maxlines = 0;
 
-  while ((ch = getopt(argc, argv, options)) != -1) {
-    switch (ch) {
-      case '4':
-        default_resolv_type = RESOLV_PROTO_IPV4;
-        break;
+  CLI::App bsmtp_app;
+  InitCLIApp(bsmtp_app, "The Bareos simple mail transport program.");
+  bsmtp_app.set_help_flag("--help,-?", "Print this help message and exit.");
 
-      case '6':
-        default_resolv_type = RESOLV_PROTO_IPV6;
-        break;
+  resolv_type default_resolv_type = RESOLV_PROTO_IPV4;
 
-      case '8':
-        content_utf8 = true;
-        break;
+  bsmtp_app.add_flag(
+      "-4,--ipv4-protocol",
+      [&default_resolv_type](bool) { default_resolv_type = RESOLV_PROTO_IPV4; },
+      "Forces bsmtp to use IPv4 addresses only.");
 
-      case 'a':
-        default_resolv_type = RESOLV_PROTO_ANY;
-        break;
+  bsmtp_app.add_flag(
+      "-6,--ipv6-protocol",
+      [&default_resolv_type](bool) { default_resolv_type = RESOLV_PROTO_IPV6; },
+      "Forces bsmtp to use IPv6 addresses only.");
 
-      case 'c':
-        Dmsg1(20, "cc=%s\n", optarg);
-        cc_addr = optarg;
-        break;
 
-      case 'd': /* set debug level */
-        if (*optarg == 't') {
-          dbg_timestamp = true;
-        } else {
-          debug_level = atoi(optarg);
-          if (debug_level <= 0) { debug_level = 1; }
-        }
-        Dmsg1(20, "Debug level = %d\n", debug_level);
-        break;
+  bool content_utf8 = false;
+  bsmtp_app.add_flag("-8,--utf8", content_utf8, "set charset to UTF-8.");
 
-      case 'f': /* from */
-        from_addr = optarg;
-        break;
+  bsmtp_app.add_flag(
+      "-a,--any-protocol",
+      [&default_resolv_type](bool) { default_resolv_type = RESOLV_PROTO_ANY; },
+      "Use any ip protocol for address resolution.");
 
-      case 'h': /* smtp host */
-        Dmsg1(20, "host=%s\n", optarg);
-        p = strchr(optarg, ':');
-        if (p) {
-          *p++ = 0;
-          mailport = atoi(p);
-        }
-        mailhost = optarg;
-        break;
 
-      case 's': /* subject */
-        Dmsg1(20, "subject=%s\n", optarg);
-        subject = optarg;
-        break;
+  std::string cc_addr{};
+  bsmtp_app.add_option("-c,--copy-to", cc_addr, "Set the Cc: field.");
 
-      case 'r': /* reply address */
-        reply_addr = optarg;
-        break;
+  AddDebugOptions(bsmtp_app);
 
-      case 'l':
-        Dmsg1(20, "maxlines=%s\n", optarg);
-        maxlines = (unsigned long)atol(optarg);
-        break;
+  std::string from_addr{};
+  bsmtp_app.add_option("-f,--from", from_addr, "Set the From: field.")
+      ->required();
 
-      case '?':
-      default:
-        usage();
-    }
-  }
-  argc -= optind;
-  argv += optind;
+  int mailport = 25;
+  std::string mailhost{};
+  bsmtp_app
+      .add_option(
+          "-h,--mailhost",
+          [&mailport, &mailhost](std::vector<std::string> val) {
+            Dmsg1(20, "host=%s\n", val[0].c_str());
+            BStringList host_and_port;
+            if (val[0].at(0) == '[') {
+              host_and_port = BStringList(val[0], "]:");
+              host_and_port[0].erase(0, 1);
+            } else {
+              host_and_port = BStringList(val[0], ':');
+            }
 
-  if (argc < 1) {
-    Pmsg0(0, _("Fatal error: no recipient given.\n"));
-    usage();
-    exit(1);
-  }
+            if (host_and_port.size() == 2) {
+              mailport = atoi(host_and_port[1].c_str());
+              Dmsg1(20, "port=%d\n", mailport);
+            }
+
+            if (host_and_port[0].back() == ']') { host_and_port[0].pop_back(); }
+            mailhost = host_and_port[0];
+            return true;
+          },
+          "Use mailhost:port as the SMTP server.")
+      ->type_name("<mailhost/IPv4_address:port>,<[mailhost/IPv6_address]:port>")
+      ->required();
+
+  std::string subject{};
+  bsmtp_app.add_option("-s,--subject", subject, "Set the Subject: field.")
+      ->required();
+
+  std::string reply_addr{};
+  bsmtp_app.add_option("-r,--reply-to", reply_addr, "Set the Reply-To: field.");
+
+  unsigned long maxlines = 0;
+  bsmtp_app.add_option("-l,--max-lines", maxlines,
+                       "Set the maximum number of lines to send.");
+
+  std::vector<std::string> recipients;
+  bsmtp_app.add_option("recipients", recipients, "List of recipients.")
+      ->required();
+
+  CLI11_PARSE(bsmtp_app, argc, argv);
 
   //  Determine SMTP server
-  if (mailhost == NULL) {
+  char* cp;
+  if (mailhost.empty()) {
     if ((cp = getenv("SMTPSERVER")) != NULL) {
       mailhost = cp;
     } else {
@@ -360,15 +312,20 @@ int main(int argc, char* argv[])
   WSAStartup(MAKEWORD(2, 2), &wsaData);
 #endif
 
-  /*
-   *  Find out my own host name for HELO;
-   *  if possible, get the fully qualified domain name
-   */
+  /*  Find out my own host name for HELO;
+   *  if possible, get the fully qualified domain name */
+  char my_hostname[MAXSTRING];
   if (gethostname(my_hostname, sizeof(my_hostname) - 1) < 0) {
     Pmsg1(0, _("Fatal gethostname error: ERR=%s\n"), strerror(errno));
     exit(1);
   }
+
 #ifdef HAVE_GETADDRINFO
+  int res;
+  struct addrinfo hints;
+  struct addrinfo *ai, *rp;
+  char mail_port[10];
+
   memset(&hints, 0, sizeof(struct addrinfo));
   hints.ai_family = AF_UNSPEC;
   hints.ai_socktype = 0;
@@ -384,6 +341,9 @@ int main(int argc, char* argv[])
   my_hostname[sizeof(my_hostname) - 1] = '\0';
   freeaddrinfo(ai);
 #else
+  struct hostent* hp;
+  struct sockaddr_in sin;
+
   if ((hp = gethostbyname(my_hostname)) == NULL) {
     Pmsg2(0, _("Fatal gethostbyname for myself failed \"%s\": ERR=%s\n"),
           my_hostname, strerror(errno));
@@ -395,7 +355,11 @@ int main(int argc, char* argv[])
   Dmsg1(20, "My hostname is: %s\n", my_hostname);
 
   //  Determine from address.
-  if (from_addr == NULL) {
+#if !defined(HAVE_WIN32)
+  struct passwd* pwd;
+#endif
+  char buf[1000];
+  if (from_addr.empty()) {
 #if defined(HAVE_WIN32)
     DWORD dwSize = UNLEN + 1;
     LPSTR lpszBuffer = (LPSTR)alloca(dwSize);
@@ -412,9 +376,9 @@ int main(int argc, char* argv[])
       snprintf(buf, sizeof(buf), "%s@%s", pwd->pw_name, my_hostname);
     }
 #endif
-    from_addr = strdup(buf);
+    from_addr = buf;
   }
-  Dmsg1(20, "From addr=%s\n", from_addr);
+  Dmsg1(20, "From addr=%s\n", from_addr.c_str());
 
   //  Connect to smtp daemon on mailhost.
 lookup_host:
@@ -439,10 +403,10 @@ lookup_host:
   hints.ai_flags = 0;
   snprintf(mail_port, sizeof(mail_port), "%d", mailport);
 
-  if ((res = getaddrinfo(mailhost, mail_port, &hints, &ai)) != 0) {
-    Pmsg2(0, _("Error unknown mail host \"%s\": ERR=%s\n"), mailhost,
+  if ((res = getaddrinfo(mailhost.c_str(), mail_port, &hints, &ai)) != 0) {
+    Pmsg2(0, _("Error unknown mail host \"%s\": ERR=%s\n"), mailhost.c_str(),
           gai_strerror(res));
-    if (!Bstrcasecmp(mailhost, "localhost")) {
+    if (!Bstrcasecmp(mailhost.c_str(), "localhost")) {
       Pmsg0(0, _("Retrying connection using \"localhost\".\n"));
       mailhost = "localhost";
       goto lookup_host;
@@ -450,6 +414,11 @@ lookup_host:
     exit(1);
   }
 
+#  if defined(HAVE_WIN32)
+  SOCKET s;
+#  else
+  int s{}, r{};
+#  endif
   for (rp = ai; rp != NULL; rp = rp->ai_next) {
 #  if defined(HAVE_WIN32)
     s = WSASocket(rp->ai_family, rp->ai_socktype, rp->ai_protocol, NULL, 0, 0);
@@ -464,16 +433,16 @@ lookup_host:
   }
 
   if (!rp) {
-    Pmsg1(0, _("Failed to connect to mailhost %s\n"), mailhost);
+    Pmsg1(0, _("Failed to connect to mailhost %s\n"), mailhost.c_str());
     exit(1);
   }
 
   freeaddrinfo(ai);
 #else
-  if ((hp = gethostbyname(mailhost)) == NULL) {
-    Pmsg2(0, _("Error unknown mail host \"%s\": ERR=%s\n"), mailhost,
+  if ((hp = gethostbyname(mailhost.c_str())) == NULL) {
+    Pmsg2(0, _("Error unknown mail host \"%s\": ERR=%s\n"), mailhost.c_str(),
           strerror(errno));
-    if (!Bstrcasecmp(mailhost, "localhost")) {
+    if (!Bstrcasecmp(mailhost.c_str(), "localhost")) {
       Pmsg0(0, _("Retrying connection using \"localhost\".\n"));
       mailhost = "localhost";
       goto lookup_host;
@@ -502,7 +471,7 @@ lookup_host:
   }
 #  endif
   if (connect(s, (struct sockaddr*)&sin, sizeof(sin)) < 0) {
-    Pmsg2(0, _("Fatal connect error to %s: ERR=%s\n"), mailhost,
+    Pmsg2(0, _("Fatal connect error to %s: ERR=%s\n"), mailhost.c_str(),
           strerror(errno));
     exit(1);
   }
@@ -541,75 +510,51 @@ lookup_host:
   }
 #endif
 
-  /*
-   *  Send SMTP headers.  Note, if any of the strings have a <
+  /*  Send SMTP headers.  Note, if any of the strings have a <
    *   in them already, we do not enclose the string in < >, otherwise
-   *   we do.
-   */
-  GetResponse(); /* banner */
-  chat("HELO %s\r\n", my_hostname);
-  chat("MAIL FROM:%s\r\n", cleanup_addr(from_addr, buf, sizeof(buf)));
+   *   we do. */
+  GetResponse(mailhost); /* banner */
+  chat(my_hostname, mailhost, "HELO %s\r\n", my_hostname);
+  chat(my_hostname, mailhost, "MAIL FROM:%s\r\n",
+       cleanup_addr(from_addr, buf, sizeof(buf)));
 
-  for (i = 0; i < argc; i++) {
-    Dmsg1(20, "rcpt to: %s\n", argv[i]);
-    chat("RCPT TO:%s\r\n", cleanup_addr(argv[i], buf, sizeof(buf)));
+  for (const auto& recipient : recipients) {
+    Dmsg1(20, "rcpt to: %s\n", recipient.c_str());
+    chat(my_hostname, mailhost, "RCPT TO:%s\r\n",
+         cleanup_addr(recipient, buf, sizeof(buf)));
   }
 
-  if (cc_addr) {
-    chat("RCPT TO:%s\r\n", cleanup_addr(cc_addr, buf, sizeof(buf)));
+  if (!cc_addr.empty()) {
+    chat(my_hostname, mailhost, "RCPT TO:%s\r\n",
+         cleanup_addr(cc_addr, buf, sizeof(buf)));
   }
   Dmsg0(20, "Data\n");
-  chat("DATA\r\n");
+  chat(my_hostname, mailhost, "DATA\r\n");
 
   //  Send message header
-  fprintf(sfp, "From: %s\r\n", from_addr);
-  Dmsg1(10, "From: %s\r\n", from_addr);
-  if (subject) {
-    fprintf(sfp, "Subject: %s\r\n", subject);
-    Dmsg1(10, "Subject: %s\r\n", subject);
+  fprintf(sfp, "From: %s\r\n", from_addr.c_str());
+  Dmsg1(10, "From: %s\r\n", from_addr.c_str());
+  if (!subject.empty()) {
+    fprintf(sfp, "Subject: %s\r\n", subject.c_str());
+    Dmsg1(10, "Subject: %s\r\n", subject.c_str());
   }
-  if (reply_addr) {
-    fprintf(sfp, "Reply-To: %s\r\n", reply_addr);
-    Dmsg1(10, "Reply-To: %s\r\n", reply_addr);
-  }
-  if (err_addr) {
-    fprintf(sfp, "Errors-To: %s\r\n", err_addr);
-    Dmsg1(10, "Errors-To: %s\r\n", err_addr);
+  if (!reply_addr.empty()) {
+    fprintf(sfp, "Reply-To: %s\r\n", reply_addr.c_str());
+    Dmsg1(10, "Reply-To: %s\r\n", reply_addr.c_str());
   }
 
-#if defined(HAVE_WIN32)
-  DWORD dwSize = UNLEN + 1;
-  LPSTR lpszBuffer = (LPSTR)alloca(dwSize);
 
-  if (GetUserName(lpszBuffer, &dwSize)) {
-    fprintf(sfp, "Sender: %s@%s\r\n", lpszBuffer, my_hostname);
-    Dmsg2(10, "Sender: %s@%s\r\n", lpszBuffer, my_hostname);
-  } else {
-    fprintf(sfp, "Sender: unknown-user@%s\r\n", my_hostname);
-    Dmsg1(10, "Sender: unknown-user@%s\r\n", my_hostname);
-  }
-#else
-  if ((pwd = getpwuid(getuid())) == 0) {
-    fprintf(sfp, "Sender: userid-%d@%s\r\n", (int)getuid(), my_hostname);
-    Dmsg2(10, "Sender: userid-%d@%s\r\n", (int)getuid(), my_hostname);
-  } else {
-    fprintf(sfp, "Sender: %s@%s\r\n", pwd->pw_name, my_hostname);
-    Dmsg2(10, "Sender: %s@%s\r\n", pwd->pw_name, my_hostname);
-  }
-#endif
+  BStringList list_of_recipients;
+  list_of_recipients << recipients;
+  fprintf(sfp, "To: %s", list_of_recipients.Join(',').c_str());
+  Dmsg1(10, "To: %s", list_of_recipients.Join(',').c_str());
 
-  fprintf(sfp, "To: %s", argv[0]);
-  Dmsg1(10, "To: %s", argv[0]);
-  for (i = 1; i < argc; i++) {
-    fprintf(sfp, ",%s", argv[i]);
-    Dmsg1(10, ",%s", argv[i]);
-  }
 
   fprintf(sfp, "\r\n");
   Dmsg0(10, "\r\n");
-  if (cc_addr) {
-    fprintf(sfp, "Cc: %s\r\n", cc_addr);
-    Dmsg1(10, "Cc: %s\r\n", cc_addr);
+  if (!cc_addr.empty()) {
+    fprintf(sfp, "Cc: %s\r\n", cc_addr.c_str());
+    Dmsg1(10, "Cc: %s\r\n", cc_addr.c_str());
   }
 
   if (content_utf8) {
@@ -624,7 +569,7 @@ lookup_host:
   fprintf(sfp, "\r\n");
 
   //  Send message body
-  lines = 0;
+  unsigned long lines = 0;
   while (fgets(buf, sizeof(buf), stdin)) {
     if (maxlines > 0 && ++lines > maxlines) {
       Dmsg1(20, "skip line because of maxlines limit: %lu\n", maxlines);
@@ -649,8 +594,8 @@ lookup_host:
   }
 
   //  Send SMTP quit command
-  chat(".\r\n");
-  chat("QUIT\r\n");
+  chat(my_hostname, mailhost, ".\r\n");
+  chat(my_hostname, mailhost, "QUIT\r\n");
 
   //  Go away gracefully ...
   exit(0);

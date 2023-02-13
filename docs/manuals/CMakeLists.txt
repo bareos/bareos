@@ -198,12 +198,11 @@ if(${docs-build-json})
     DEPENDS bscan
   )
 
-  # bsmtp -? return 1 so ||: is needed
   add_custom_command(
     OUTPUT ${USAGE_DIR}/bsmtp.txt
-    COMMAND bsmtp -? > /dev/null 2>&1 ||:
+    COMMAND bsmtp --help > /dev/null
     COMMAND ${PROJECT_SOURCE_DIR}/scripts/get-usage.sh $<TARGET_FILE:bsmtp>
-            ${USAGE_DIR} '-? ||:' ||:
+            ${USAGE_DIR}
     DEPENDS bsmtp
   )
 
