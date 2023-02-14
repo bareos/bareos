@@ -192,3 +192,6 @@ debian/bareos-universal-client.install
 debian/bareos-universal-client.postinst
 debian/bareos-universal-client.preinst
 debian/univention-bareos.postinst
+
+# qumulo exclusion
+core/src/plugins/filed/python/qumulo
