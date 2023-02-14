@@ -1233,7 +1233,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 #%%{plugin_dir}/*-dir.so
 %{script_dir}/delete_catalog_backup
 %{script_dir}/make_catalog_backup
-%{script_dir}/make_catalog_backup.pl
 %{_sbindir}/bareos-dir
 %dir %{_docdir}/%{name}
 %{_mandir}/man8/bareos-dir.8.gz

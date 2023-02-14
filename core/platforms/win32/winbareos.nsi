@@ -1,7 +1,7 @@
 ;
 ;   BAREOS - Backup Archiving REcovery Open Sourced
 ;
-;   Copyright (C) 2012-2022 Bareos GmbH & Co. KG
+;   Copyright (C) 2012-2023 Bareos GmbH & Co. KG
 ;
 ;   This program is Free Software; you can redistribute it and/or
 ;   modify it under the terms of version three of the GNU Affero General Public
@@ -1110,7 +1110,7 @@ Section -ConfigureConfiguration
   #
   # catalog backup scripts
   #
-  FileWrite $R1 "s#make_catalog_backup.pl#make_catalog_backup.bat#g$\r$\n"
+  FileWrite $R1 "s#make_catalog_backup#make_catalog_backup.bat#g$\r$\n"
   FileWrite $R1 "s#delete_catalog_backup#delete_catalog_backup.bat#g$\r$\n"
 
   FileWrite $R1 "s#/tmp/bareos-restores#C:/temp/bareos-restores#g$\r$\n"
