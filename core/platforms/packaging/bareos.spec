@@ -479,7 +479,7 @@ Suggests:   bareos-filedaemon-python3-plugin = %{version}
 %endif
 
 %package    filedaemon-qumulo-python-plugin
-Summary:    Ovirt Python plugin for Bareos File daemon
+Summary:    Qumulo Python plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-filedaemon = %{version}
 Requires:   bareos-filedaemon-python-plugin = %{version}
@@ -630,7 +630,7 @@ This package contains the Ovirt python plugin for the file daemon
 %description filedaemon-qumulo-python-plugin
 %{dscr}
 
-This package contains the qumulo python plugin for the file daemon
+This package contains the Qumulo python plugin for the file daemon
 
 %description filedaemon-libcloud-python-plugin
 %{dscr}
