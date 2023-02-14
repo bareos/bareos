@@ -8,6 +8,8 @@ set -u
 #
 TestName="$(basename "$(pwd)")"
 export TestName
+export LANG=en_US@UTF-8
+export LC_ALL=en_US@UTF-8
 
 echo "etc/bareos/qumulo-plugin.ini:"
 echo "---------------------"
@@ -43,15 +45,10 @@ BackupDirectory="${QUMULO_SHARE_BASEDIR}/${TestName}"
 setup_data
 # cleanup files that have problems being backed up currently:
 for f in\
-   weird-files/dangling-link \
-   weird-files/absolute-softlink \
    weird-files/filename-with-non-utf8-bytestring* \
-   weird-files/subdir/a-softlink \
-   weird-files/subdir/softlink-to-normalfile \
    weird-files/'A-file-with-accents-'$'\303\243\303\240\303\242\303\241\303\244\303\241''-'$'\303\200\303\203\303\202\303\204\303\201\303\203\303\200' \
    weird-files/'dir-with-accents-'$'\303\250\303\251\303\244\303\261\303\273' \
    weird-files/'filename-with-non-utf8-bytestring->C'$'\303''N' \
-   weird-files/softlink-to-softlinkee;
  do
    rm -vrf "${BackupDirectory}/${f}"
 done
@@ -64,7 +61,7 @@ cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null
 messages
 @$out $tmp/log1.out
-@#setdebug level=100 client=bareos-fd
+@#setdebug level=250 trace=1 timestamp=1 client=bareos-fd
 run job=$JobName level=Full yes
 status director
 status client
