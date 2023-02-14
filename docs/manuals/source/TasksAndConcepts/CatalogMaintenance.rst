@@ -115,7 +115,7 @@ To view and test the currently configured settings, use following commands:
 PostgreSQL configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-On most distributions, PostgreSQL uses ident to allow access to the database system. The database administrator account is the Unix user **postgres**. Normally, this user can access the database without password, as the ident mechanism is used to identify the user.
+On most distributions, PostgreSQL uses ident to allow access to the local database system. The database administrator account is the Unix user **postgres**. Normally, this user can access the database without password, as the ident mechanism is used to identify the user.
 
 If this works on your system can be verified by
 
@@ -312,18 +312,17 @@ For example, suppose you do a backup of two systems, each with 100,000 files. Su
    Size = 154 * No. Systems * (100,000 * 4 + 10,000 * 26)
 
 
-
 where we have assumed four weeks in a month and 26 incremental backups per month. This would give the following:
-
 
 
 ::
 
    Size = 154 * 2 * (100,000 * 4 + 10,000 * 26) = 203,280,000 bytes
+   Indexes Size = (154 * 2 * (100,000 * 4 + 10,000 * 26))/3 = 67,760,000
 
 
 
-So for the above two systems, we should expect to have a database size of approximately 200 Megabytes. Of course, this will vary according to how many files are actually backed up.
+So for the above two systems, we should expect to have a database size of approximately 270 Megabytes including the indexes. Of course, this will vary according to how many files are actually backed up.
 
 You will note that the File table (containing the file attributes) make up the large bulk of the number of records as well as the space used. As a consequence, the most important Retention period will be the File Retention period.
 
@@ -433,6 +432,20 @@ PostgreSQL Database
 .. index::
    single: Database; PostgreSQL
    single: PostgreSQL
+
+.. _FreeSpacePostgres:
+
+Free space needed with PostgreSQL Database
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To ensure that all PostgreSQL maintenance operations like vacuuming and reindexing roll out smoothly we highly recommend to keep at least the size of your database available as free space.
+
+Bareos has some routines creating huge temp file for its operation, which also needs free space.
+
+Upgrading your PostgreSQL version to a new major, will from time to time impose a reindex operation which will use temp space too, especially if option :command:`concurrently` is used.
+
+You can create and use a dedicated `tablespace` for temporary files, check `PostgreSQL documentation <https://www.postgresql.org/docs/current/manage-ag-tablespaces.html>`_\.
+
 
 .. _CompactingPostgres:
 
@@ -681,3 +694,56 @@ Assuming that you start all your nightly backup jobs at 1:05 am (and that they r
    }
 
 It is preferable to write/send the :ref:`bootstrap <BootstrapChapter>` file to another computer. It will allow you to quickly recover the database backup should that be necessary. If you do not have a bootstrap file, it is still possible to recover your database backup, but it will be more work and take longer.
+
+
+.. _PGDG:
+
+Provide postgresql.service with PGDG packages
+---------------------------------------------
+
+.. index::
+   single: PGDG; Bareos database
+   single: systemd; bareos-dir.service
+   single: systemd; bareos-director.service
+   single: systemd; postgresql-XX.service
+
+
+On several distributions, it maybe advisable to use more recent version of PostgreSQL.
+In such case we recommend to rely on the official :strong:`PostgreSQL Global Development Group`
+aka :strong:`PGDG` packages.
+They can be obtained from repository referenced on page `download PostgreSQL <https://www.postgresql.org/download/>`_\.
+
+While the packages will work fine with Bareos, their politic to never create conflicts with distributor packages,
+their installation will not offer the warranty that postgresql is started before the |dir| daemon.
+
+You can either override `bareos-dir.service` to add the corresponding After requirement.
+
+.. code-block:: shell-session
+   :caption: Add After requirement line in bareos-dir.service with PGDG postgresql-15 server
+
+   systemctl edit bareos-dir.service
+
+   ### Editing /etc/systemd/system/bareos-dir.service.d/override.conf
+   ### Anything between here and the comment below will become the new contents of the file
+
+   [Unit]
+   After=postgresql-15.service
+
+   systemctl daemon-reload
+   systemctl reload bareos-dir
+
+Or surcharge the PGDG `postgresql-XX.service` to add the missing postgresql.service alias.
+
+.. code-block:: shell-session
+   :caption: Add alias postgresql.service in install section
+
+   systemctl edit postgresql-15.service
+
+   ### Editing /etc/systemd/system/postgresql-15.service.d/override.conf
+   ### Anything between here and the comment below will become the new contents of the file
+
+   [Install]
+   Alias=postgresql.service
+
+   systemctl daemon-reload
+   systemctl enable --now postgresql-15
