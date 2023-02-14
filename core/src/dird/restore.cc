@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -147,12 +147,10 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
     if (!SelectNextRstore(jcr, info)) { goto bail_out; }
     store = jcr->dir_impl->res.read_storage;
 
-    /**
-     * Open a message channel connection with the Storage
+    /* Open a message channel connection with the Storage
      * daemon. This is to let him know that our client
      * will be contacting him for a backup session.
-     *
-     */
+     * */
     Dmsg0(10, "Open connection with storage daemon\n");
     jcr->setJobStatusWithPriorityCheck(JS_WaitSD);
 
@@ -207,22 +205,18 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
     if (!success) { goto bail_out; }
 
     if (!jcr->passive_client) {
-      /*
-       * When the client is not in passive mode we can put the SD in
+      /* When the client is not in passive mode we can put the SD in
        * listen mode for the FD connection. And ask the FD to connect
-       * to the SD.
-       */
+       * to the SD. */
       if (!sd->fsend("run")) { goto bail_out; }
 
       // Now start a Storage daemon message thread
       if (!StartStorageDaemonMessageThread(jcr)) { goto bail_out; }
       Dmsg0(50, "Storage daemon connection OK\n");
 
-      /*
-       * Send Storage daemon address to the File daemon,
+      /* Send Storage daemon address to the File daemon,
        * then wait for File daemon to make connection
-       * with Storage daemon.
-       */
+       * with Storage daemon. */
 
       // TLS Requirement
 
@@ -248,10 +242,8 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
         goto bail_out;
       }
     } else {
-      /*
-       * In passive mode we tell the FD what authorization key to use
-       * and the ask the SD to initiate the connection.
-       */
+      /* In passive mode we tell the FD what authorization key to use
+       * and the ask the SD to initiate the connection. */
       fd->fsend(setauthorizationcmd, jcr->sd_auth_key);
       memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
 
@@ -306,10 +298,8 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
           goto bail_out;
         }
       } else {
-        /*
-         * Plugin options specified and not a FD that understands the new
-         * protocol keyword.
-         */
+        /* Plugin options specified and not a FD that understands the new
+         * protocol keyword. */
         if (jcr->dir_impl->plugin_options) {
           Jmsg(jcr, M_FATAL, 0,
                _("Client \"%s\" doesn't support plugin option passing. "
@@ -511,6 +501,16 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
   JobstatusToAscii(jcr->dir_impl->SDJobStatus, sd_term_msg,
                    sizeof(sd_term_msg));
 
+  ClientDbRecord cr;
+  bstrncpy(cr.Name, jcr->dir_impl->res.client->resource_name_, sizeof(cr.Name));
+  if (!jcr->db->GetClientRecord(jcr, &cr)) {
+    Jmsg(jcr, M_WARNING, 0,
+         _("Error getting Client record for Job report: ERR=%s\n"),
+         jcr->db->strerror());
+    // if we could not look up the client record we print nothing
+    cr.Uname[0] = '\0';
+  }
+
   switch (jcr->getJobProtocol()) {
     case PT_NDMP_BAREOS:
     case PT_NDMP_NATIVE:
@@ -519,7 +519,7 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
              "  Build OS:               %s\n"
              "  JobId:                  %d\n"
              "  Job:                    %s\n"
-             "  Restore Client:         %s\n"
+             "  Restore Client:         \"%s\" %s\n"
              "  Start time:             %s\n"
              "  End time:               %s\n"
              "  Elapsed time:           %s\n"
@@ -534,7 +534,7 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
            BAREOS, my_name, kBareosVersionStrings.Full,
            kBareosVersionStrings.ShortDate, kBareosVersionStrings.GetOsInfo(),
            jcr->dir_impl->jr.JobId, jcr->dir_impl->jr.Job,
-           jcr->dir_impl->res.client->resource_name_, sdt, edt,
+           jcr->dir_impl->res.client->resource_name_, cr.Uname, sdt, edt,
            edit_utime(RunTime, elapsed, sizeof(elapsed)),
            edit_uint64_with_commas((uint64_t)jcr->dir_impl->ExpectedFiles, ec1),
            edit_uint64_with_commas((uint64_t)jcr->dir_impl->jr.JobFiles, ec2),
@@ -563,7 +563,7 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
              "  Build OS:               %s\n"
              "  JobId:                  %d\n"
              "  Job:                    %s\n"
-             "  Restore Client:         %s\n"
+             "  Restore Client:         \"%s\" %s\n"
              "  Start time:             %s\n"
              "  End time:               %s\n"
              "  Elapsed time:           %s\n"
@@ -581,7 +581,7 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
            BAREOS, my_name, kBareosVersionStrings.Full,
            kBareosVersionStrings.ShortDate, kBareosVersionStrings.GetOsInfo(),
            jcr->dir_impl->jr.JobId, jcr->dir_impl->jr.Job,
-           jcr->dir_impl->res.client->resource_name_, sdt, edt,
+           jcr->dir_impl->res.client->resource_name_, cr.Uname, sdt, edt,
            edit_utime(RunTime, elapsed, sizeof(elapsed)),
            edit_uint64_with_commas((uint64_t)jcr->dir_impl->ExpectedFiles, ec1),
            edit_uint64_with_commas((uint64_t)jcr->dir_impl->jr.JobFiles, ec2),

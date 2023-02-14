@@ -18,6 +18,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: enable sorting on version column [PR #1365]
 - dird: skip disabled clients in status command [PR #1367]
 - bsmtp: fix and update code, and change CLI parsing to CLI11 [PR #1316]
+- ua_restore: Add additional client info for restore report [PR #1374]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -51,4 +52,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1365]: https://github.com/bareos/bareos/pull/1365
 [PR #1366]: https://github.com/bareos/bareos/pull/1366
 [PR #1367]: https://github.com/bareos/bareos/pull/1367
+[PR #1374]: https://github.com/bareos/bareos/pull/1374
 [unreleased]: https://github.com/bareos/bareos/tree/master
