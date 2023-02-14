@@ -48,9 +48,12 @@ for f in\
    weird-files/filename-with-non-utf8-bytestring* \
    weird-files/subdir/a-softlink \
    weird-files/subdir/softlink-to-normalfile \
+   weird-files/'A-file-with-accents-'$'\303\243\303\240\303\242\303\241\303\244\303\241''-'$'\303\200\303\203\303\202\303\204\303\201\303\203\303\200' \
+   weird-files/'dir-with-accents-'$'\303\250\303\251\303\244\303\261\303\273' \
+   weird-files/'filename-with-non-utf8-bytestring->C'$'\303''N' \
    weird-files/softlink-to-softlinkee;
  do
-   rm -f "${BackupDirectory}/${f}"
+   rm -vrf "${BackupDirectory}/${f}"
 done
 
 trap '' exit
