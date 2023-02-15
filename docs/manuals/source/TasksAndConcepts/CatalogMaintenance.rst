@@ -115,7 +115,7 @@ To view and test the currently configured settings, use following commands:
 PostgreSQL configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-On most distributions, PostgreSQL uses ident to allow access to the local database system. The database administrator account is the Unix user **postgres**. Normally, this user can access the database without password, as the ident mechanism is used to identify the user.
+On most distributions, PostgreSQL uses `ident` to allow access to the local database system. The database administrator account is the Unix user **postgres**. Normally, this user can access the database without password, as the ident mechanism is used to identify the user.
 
 If this works on your system can be verified by
 
@@ -291,139 +291,6 @@ If **dbconfig-common** did not succeed or you choose not to use it, run the Bare
    /usr/lib/bareos/scripts/make_bareos_tables
    /usr/lib/bareos/scripts/grant_bareos_privileges
 
-Retention Periods
------------------
-
-Database Size
-~~~~~~~~~~~~~
-
-.. index::
-   single: Size; Database
-   single: Database Size
-
-As mentioned above, if you do not do automatic pruning, your Catalog will grow each time you run a Job. Normally, you should decide how long you want File records to be maintained in the Catalog and set the File Retention period to that time. Then you can either wait and see how big your Catalog gets or make a calculation assuming approximately 154 bytes for each File saved and knowing the number of Files that are saved during each backup and the number of Clients you backup.
-
-For example, suppose you do a backup of two systems, each with 100,000 files. Suppose further that you do a Full backup weekly and an Incremental every day, and that the Incremental backup typically saves 4,000 files. The size of your database after a month can roughly be calculated as:
-
-
-
-::
-
-   Size = 154 * No. Systems * (100,000 * 4 + 10,000 * 26)
-
-
-where we have assumed four weeks in a month and 26 incremental backups per month. This would give the following:
-
-
-::
-
-   Size = 154 * 2 * (100,000 * 4 + 10,000 * 26) = 203,280,000 bytes
-   Indexes Size = (154 * 2 * (100,000 * 4 + 10,000 * 26))/3 = 67,760,000
-
-
-
-So for the above two systems, we should expect to have a database size of approximately 270 Megabytes including the indexes. Of course, this will vary according to how many files are actually backed up.
-
-You will note that the File table (containing the file attributes) make up the large bulk of the number of records as well as the space used. As a consequence, the most important Retention period will be the File Retention period.
-
-Without proper setup and maintenance, your Catalog may continue to grow indefinitely as you run Jobs and backup Files, and/or it may become very inefficient and slow. How fast the size of your Catalog grows depends on the number of Jobs you run and how many files they backup. By deleting records within the database, you can make space available for the new records that will be added during the next Job. By constantly deleting old expired records (dates older than the Retention period), your
-database size will remain constant.
-
-.. _Retention:
-
-Setting Retention Periods
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. index::
-   single: Setting Retention Periods
-   single: Periods; Setting Retention
-
-Bareos uses three Retention periods: the File Retention period, the Job Retention period, and the Volume Retention period. Of these three, the File Retention period is by far the most important in determining how large your database will become.
-
-The File Retention and the Job Retention are specified in each Client resource as is shown below. The Volume Retention period is specified in the Pool resource, and the details are given in the next chapter of this manual.
-
-File Retention = <time-period-specification>
-   .. index::
-      single: File Retention
-      single: Retention; File
-
-   The File Retention record defines the length of time that Bareos will keep File records in the Catalog database. When this time period expires, and if AutoPrune is set to yes, Bareos will prune (remove) File records that are older than the specified File Retention period. The pruning will occur at the end of a backup Job for the given Client. Note that the Client database record contains a copy of the
-   File and Job retention periods, but Bareos uses the current values found in the Director’s Client resource to do the pruning.
-
-   Since File records in the database account for probably 80 percent of the size of the database, you should carefully determine exactly what File Retention period you need. Once the File records have been removed from the database, you will no longer be able to restore individual files in a Job. However, as long as the Job record still exists, you will be able to restore all files in the job.
-
-   Retention periods are specified in seconds, but as a convenience, there are a number of modifiers that permit easy specification in terms of minutes, hours, days, weeks, months, quarters, or years on the record. See :config:datatype:`TIME` for additional details of modifier specification.
-
-   The default File retention period is 60 days.
-
-Job Retention = <time-period-specification>
-   .. index::
-      single: Job; Retention
-      single: Retention; Job
-
-   The Job Retention record defines the length of time that Bareos will keep Job records in the Catalog database. When this time period expires, and if AutoPrune is set to yes Bareos will prune (remove) Job records that are older than the specified Job Retention period. Note, if a Job record is selected for pruning, all associated File and JobMedia records will also be pruned regardless of the File Retention
-   period set. As a consequence, you normally will set the File retention period to be less than the Job retention period.
-
-   As mentioned above, once the File records are removed from the database, you will no longer be able to restore individual files from the Job. However, as long as the Job record remains in the database, you will be able to restore all the files backed up for the Job. As a consequence, it is generally a good idea to retain the Job records much longer than the File records.
-
-   The retention period is specified in seconds, but as a convenience, there are a number of modifiers that permit easy specification in terms of minutes, hours, days, weeks, months, quarters, or years. See :config:datatype:`TIME` for additional details of modifier specification.
-
-   The default Job Retention period is 180 days.
-
-:config:option:`dir/client/AutoPrune`\
-   .. index::
-      single: AutoPrune
-      single: Job; Retention; AutoPrune
-
-   If set to yes, Bareos will automatically apply the File retention period and the Job retention period for the Client at the end of the Job. If you turn this off by setting it to no, your Catalog will grow each time you run a Job.
-
-.. _section-JobStatistics:
-
-Job Statistics
-^^^^^^^^^^^^^^
-
-.. index::
-   single: Statistics
-   single: Job; Statistics
-
-Bareos catalog contains lot of information about your IT infrastructure, how many files, their size, the number of video or music files etc. Using Bareos catalog during the day to get them permit to save resources on your servers.
-
-In this chapter, you will find tips and information to measure Bareos efficiency and report statistics.
-
-If you want to have statistics on your backups to provide some Service Level Agreement indicators, you could use a few SQL queries on the Job table to report how many:
-
--  jobs have run
-
--  jobs have been successful
-
--  files have been backed up
-
--  ...
-
-However, these statistics are accurate only if your job retention is greater than your statistics period. Ie, if jobs are purged from the catalog, you won’t be able to use them.
-
-Now, you can use the :bcommand:`update stats [days=num]` console command to fill the JobHistory table with new Job records. If you want to be sure to take in account only good jobs, ie if one of your important job has failed but you have fixed the problem and restarted it on time, you probably want to delete the first bad job record and keep only the successful one. For that simply let your staff do the job, and update JobHistory table after two or three days depending on your
-organization using the :strong:`[days=num]` option.
-
-These statistics records aren’t used for restoring, but mainly for capacity planning, billings, etc.
-
-The :config:option:`dir/director/StatisticsRetention`\  defines the length of time that Bareos will keep statistics job records in the Catalog database after the Job End time. This information is stored in the ``JobHistory`` table. When this time period expires, and if user runs :bcommand:`prune stats` command, Bareos will prune (remove) Job records that are older than the specified period.
-
-You can use the following Job resource in your nightly :config:option:`dir/job = BackupCatalog`\  job to maintain statistics.
-
-.. code-block:: bareosconfig
-   :caption: bareos-dir.d/job/BackupCatalog.conf
-
-   Job {
-     Name = BackupCatalog
-     ...
-     RunScript {
-       Console = "update stats days=3"
-       Console = "prune stats yes"
-       RunsWhen = After
-       RunsOnClient = no
-     }
-   }
 
 
 PostgreSQL Database
@@ -433,18 +300,77 @@ PostgreSQL Database
    single: Database; PostgreSQL
    single: PostgreSQL
 
+
+Database Size Planning
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. index::
+   single: Size; Database
+   single: Database Size
+
+Your Catalog will grow each time you run a Job, and the space used in tables will be relaxed when a volume get recycled and the previous job removed.
+You can make a calculation assuming approximately 154 bytes for each File saved and knowing the number of Files that are saved during each backup and the number of Clients you backup.
+
+For example, suppose you do a backup of two systems, each with 100,000 files.
+Suppose further that you do a Full backup weekly and an Incremental every day, and that the Incremental backup typically saves 4,000 files.
+The size of your database after a month can roughly be calculated as:
+
+
+::
+
+   Size = 154 * No. Systems * (100,000 * 4 + 10,000 * 26)
+
+
+Where we have assumed four weeks in a month and 26 incremental backups per month. This would give the following:
+
+
+::
+
+   Size = 154 * 2 * (100,000 * 4 + 10,000 * 26) = 203,280,000 bytes
+   Indexes Size = (154 * 2 * (100,000 * 4 + 10,000 * 26))/3 = 67,760,000
+
+
+
+So for the above two systems, we should expect to have a database size of approximately 270 Megabytes including the indexes.
+Of course, this will vary according to how many files are actually backed up.
+
+You will note that the File table (containing the file attributes) make up the large bulk of the number of records as well as the space used.
+
+Without proper setup and maintenance, your Catalog may continue to grow indefinitely read carefully the following sections for planning free space and autovacuuming.
+
+
 .. _FreeSpacePostgres:
 
 Free space needed with PostgreSQL Database
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To ensure that all PostgreSQL maintenance operations like vacuuming and reindexing roll out smoothly we highly recommend to keep at least the size of your database available as free space.
+To ensure that all PostgreSQL maintenance operations like vacuuming and reindexing roll out smoothly we highly recommend not to fill the disk containing the postgresql data directory to more than 50% during normal operation.
+If this is not possible, you might need to make more space available at least temporary when the database is being upgraded to a new schema version.
 
-Bareos has some routines creating huge temp file for its operation, which also needs free space.
-
-Upgrading your PostgreSQL version to a new major, will from time to time impose a reindex operation which will use temp space too, especially if option :command:`concurrently` is used.
+Normal Bareos operation can create huge temp file requiring free space.
+Upgrading to a new PostgreSQL major version, will from time to time, impose a reindex operation which will use temp space too, especially if option :command:`concurrently` is used.
 
 You can create and use a dedicated `tablespace` for temporary files, check `PostgreSQL documentation <https://www.postgresql.org/docs/current/manage-ag-tablespaces.html>`_\.
+
+To check how much temp files and bytes have been used you can run the following query.
+
+.. code-block:: bconsole
+   :caption: SQL query to show temporary number of files and bytes used
+
+   *sql
+   Entering SQL query mode.
+   Terminate each query with a semicolon.
+   Terminate query mode with a blank line.
+   Enter SQL query: select datname,temp_files,temp_bytes
+   from pg_stat_database where datname='bareos';
+   +---------+------------+---------------+
+   | datname | temp_files | temp_bytes    |
+   +---------+------------+---------------+
+   | bareos  |         35 | 7,646,920,704 |
+   +---------+------------+---------------+
+   Enter SQL query:
+   End query mode.
+   *
 
 
 .. _CompactingPostgres:
@@ -459,7 +385,7 @@ Over time, as noted above, your database will tend to grow until Bareos starts d
 
 Note that PostgreSQL uses multiversion concurrency control (MVCC), so that an UPDATE or DELETE of a row does not immediately remove the old version of the row. Space occupied by outdated or deleted row versions is only reclaimed for reuse by new rows when running **VACUUM**. Such outdated or deleted row versions are also referred to as *dead tuples*.
 
-Since PostgreSQL Version 8.3, autovacuum is enabled by default, so that setting up a cron job to run VACUUM is not necesary in most of the cases. Note that there are two variants of VACUUM: standard VACUUM and VACUUM FULL. Standard VACUUM only marks old row versions for reuse, it does not free any allocated disk space to the operating system. Only VACUUM FULL can free up disk space, but it requires exclusive table locks so that it can not be used in parallel with production database operations
+Since PostgreSQL Version 8.3, autovacuum is enabled by default, so that setting up a cron job to run VACUUM is not necessary in most of the cases. Note that there are two variants of VACUUM: standard VACUUM and VACUUM FULL. Standard VACUUM only marks old row versions for reuse, it does not free any allocated disk space to the operating system. Only VACUUM FULL can free up disk space, but it requires exclusive table locks so that it can not be used in parallel with production database operations
 and temporarily requires up to as much additional disk space that the table being processed occupies.
 
 All database programs have some means of writing the database out in ASCII format and then reloading it. Doing so will re-create the database from scratch producing a compacted result, so below, we show you how you can do this for PostgreSQL.
@@ -467,6 +393,7 @@ All database programs have some means of writing the database out in ASCII forma
 For a PostgreSQL database, you could write the Bareos database as an ASCII file (:file:`bareos.sql`) then reload it by doing the following:
 
 .. code-block:: shell-session
+   :caption: Instruction to dump and reload Bareos catalog database
 
    pg_dump -c bareos > bareos.sql
    cat bareos.sql | psql bareos
@@ -483,7 +410,9 @@ More details on this subject can be found in the PostgreSQL documentation. The p
 What To Do When The Database Keeps Growing
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Especially when a high number of files are being backed up or when working with high retention periods, it is probable that autovacuuming will not work. When starting to use Bareos with an empty Database, it is normal that the file table and other tables grow, but the growth rate should drop as soon as jobs are deleted by retention or pruning. The file table is usually the largest table in Bareos.
+Especially when a high number of files are being backed up or when working with high retention periods, it is probable that default autovacuuming will not be triggered.
+When starting to use Bareos with an empty Database, it is normal that the file table and other tables grow, but the growth rate should drop as soon as jobs are deleted by retention or pruning.
+The file table is usually the largest table in Bareos.
 
 The reason for autovacuuming not being triggered is then probably the default setting of ``autovacuum_vacuum_scale_factor = 0.2``, the current value can be shown with the following query or looked up in ``postgresql.conf``:
 
@@ -496,7 +425,13 @@ The reason for autovacuuming not being triggered is then probably the default se
      0.2
      (1 row)
 
-In essence, this means that a VACUUM is only triggered when 20% of table size are obsolete. Consequently, the larger the table is, the less frequently VACUUM will be triggered by autovacuum. This make sense because vacuuming has a performance impact. While it is possible to override the autovacuum parameters on a table-by-table basis, it can then still be triggered at any time.
+In essence, this means that a VACUUM is only triggered when 20% of table size are obsolete. Consequently, the larger the table is, the less frequently VACUUM will be triggered by autovacuum.
+This make sense because vacuuming has a performance impact. While it is possible to override the autovacuum parameters on a table-by-table basis, it can then still be triggered at any time.
+
+.. code-block:: shell-session
+   :caption: SQL statement to set the autovacuum\_vacuum\_scale\_factor parameter for table file
+
+   root@localhost# su postgres -c 'psql -d bareos -c "ALTER TABLE public.file SET (autovacuum_vacuum_scale_factor = 0.02);"'
 
 To learn more details about autovacuum see https://www.postgresql.org/docs/current/routine-vacuuming.html#AUTOVACUUM
 
@@ -708,13 +643,7 @@ Provide postgresql.service with PGDG packages
    single: systemd; postgresql-XX.service
 
 
-On several distributions, it maybe advisable to use more recent version of PostgreSQL.
-In such case we recommend to rely on the official :strong:`PostgreSQL Global Development Group`
-aka :strong:`PGDG` packages.
-They can be obtained from repository referenced on page `download PostgreSQL <https://www.postgresql.org/download/>`_\.
-
-While the packages will work fine with Bareos, their politic to never create conflicts with distributor packages,
-their installation will not offer the warranty that postgresql is started before the |dir| daemon.
+If you are using packages from :strong:`PostgreSQL Global Development Group` aka :strong:`PGDG` the delivered `systemd postgresql-XX.service` needs to be edited to add the standard `postgresql.service` alias which is required to start |dir| after `postgresql`\.
 
 You can either override `bareos-dir.service` to add the corresponding After requirement.
 
@@ -747,3 +676,52 @@ Or surcharge the PGDG `postgresql-XX.service` to add the missing postgresql.serv
 
    systemctl daemon-reload
    systemctl enable --now postgresql-15
+
+
+.. _section-JobStatistics:
+
+Job Statistics
+--------------
+
+.. index::
+   single: Statistics
+   single: Job; Statistics
+
+Bareos catalog contains lot of information about your IT infrastructure, how many files, their size, the number of video or music files etc. Using Bareos catalog during the day to get them permit to save resources on your servers.
+
+In this chapter, you will find tips and information to measure Bareos efficiency and report statistics.
+
+If you want to have statistics on your backups to provide some Service Level Agreement indicators, you could use a few SQL queries on the Job table to report how many:
+
+-  jobs have run
+
+-  jobs have been successful
+
+-  files have been backed up
+
+-  ...
+
+However, these statistics are accurate only if your job retention is greater than your statistics period. Ie, if jobs are purged from the catalog, you won’t be able to use them.
+
+Now, you can use the :bcommand:`update stats [days=num]` console command to fill the JobHistory table with new Job records. If you want to be sure to take in account only good jobs, ie if one of your important job has failed but you have fixed the problem and restarted it on time, you probably want to delete the first bad job record and keep only the successful one. For that simply let your staff do the job, and update JobHistory table after two or three days depending on your
+organization using the :strong:`[days=num]` option.
+
+These statistics records aren’t used for restoring, but mainly for capacity planning, billings, etc.
+
+The :config:option:`dir/director/StatisticsRetention`\  defines the length of time that Bareos will keep statistics job records in the Catalog database after the Job End time. This information is stored in the ``JobHistory`` table. When this time period expires, and if user runs :bcommand:`prune stats` command, Bareos will prune (remove) Job records that are older than the specified period.
+
+You can use the following Job resource in your nightly :config:option:`dir/job = BackupCatalog`\  job to maintain statistics.
+
+.. code-block:: bareosconfig
+   :caption: bareos-dir.d/job/BackupCatalog.conf
+
+   Job {
+     Name = BackupCatalog
+     ...
+     RunScript {
+       Console = "update stats days=3"
+       Console = "prune stats yes"
+       RunsWhen = After
+       RunsOnClient = no
+     }
+   }

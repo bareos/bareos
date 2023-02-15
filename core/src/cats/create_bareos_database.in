@@ -3,7 +3,7 @@
 # BAREOS® - Backup Archiving REcovery Open Sourced
 #
 # Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-# Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+# Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -39,7 +39,7 @@ if [ $# -gt 0 ]; then
   handle_database_scripts_command_line_parameter $*
 fi
 # Below this line no external or additional parameters are supported.
-info "Creating of ${db_name} database"
+info "Creating database '${db_name}'"
 
 # use SQL_ASCII to be able to put any filename into
 # the database even those created with unusual character sets
@@ -61,9 +61,9 @@ else
 fi
 
 if [ ${retval} -eq 0 ]; then
-   info "Creating of ${db_name} database succeeded."
+   info "Creation of database '${db_name}' succeeded."
 else
-   error "Creating of ${db_name} database failed."
+   error "Creation of database '${db_name}' failed."
 fi
 
 exit ${retval}
