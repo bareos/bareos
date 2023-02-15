@@ -712,16 +712,21 @@ int SaveFile2(JobControlRecord* jcr,
   }
 
   // Check if original file has a digest, and send it
-  if (ff_pkt->type == FT_LNKSAVED && ff_pkt->digest) {
-    Dmsg2(300, "Link %s digest %d\n", ff_pkt->fname, ff_pkt->digest_len);
-    sd->fsend("%ld %d 0", jcr->JobFiles, ff_pkt->digest_stream);
+  if (ff_pkt->type == FT_LNKSAVED && ff_pkt->linkhash) {
+	  CurLink* hl = lookup_hardlink(jcr, ff_pkt, ff_pkt->statp.st_ino,
+				      ff_pkt->statp.st_dev);
+	  if (hl && !bstrcmp(ff_pkt->fname, hl->name))
+	  {
+		  Dmsg2(300, "Link %s digest %d\n", ff_pkt->fname, hl->digest_len);
+		  sd->fsend("%ld %d 0", jcr->JobFiles, hl->digest_stream);
 
-    sd->msg = CheckPoolMemorySize(sd->msg, ff_pkt->digest_len);
-    memcpy(sd->msg, ff_pkt->digest, ff_pkt->digest_len);
-    sd->message_length = ff_pkt->digest_len;
-    sd->send();
+		  sd->msg = CheckPoolMemorySize(sd->msg, hl->digest_len);
+		  memcpy(sd->msg, hl->digest, hl->digest_len);
+		  sd->message_length = hl->digest_len;
+		  sd->send();
 
-    sd->signal(BNET_EOD); /* end of hardlink record */
+		  sd->signal(BNET_EOD); /* end of hardlink record */
+	  }
   }
 
 good_rtn:
