@@ -14,7 +14,7 @@ LIB_DEPENDS+= liblzo2.so:archivers/lzo2 \
 
 post-patch:
 	@echo post-patch ${PORTNAME}${PKGNAMESUFFIX} via master package in ${MASTERDIR}
-	${REINPLACE_CMD} -e 's|^pg_dump|/usr/local/bin/pg_dump|g' ${WRKSRC}/core/src/cats/make_catalog_backup.pl.in
+	${REINPLACE_CMD} -e '1s|^#!.*perl|#!/usr/local/bin/perl|' -e 's|pg_dump|/usr/local/bin/pg_dump|g' ${WRKSRC}/core/src/cats/make_catalog_backup.pl.in
 
 post-install:
 	@echo post-install ${PORTNAME}${PKGNAMESUFFIX} via master package in ${MASTERDIR}
