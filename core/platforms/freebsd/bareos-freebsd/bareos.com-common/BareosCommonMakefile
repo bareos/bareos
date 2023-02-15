@@ -40,11 +40,6 @@ DIRECTOR_DAEMON_USER=${BAREOS_GROUP}
 DAEMON_GROUP=wheel
 STORAGE_DAEMON_GROUP=operator
 
-
-SHEBANG_LANG=   perl
-SHEBANG_FILES=  ${WRKSRC}/core/src/cats/make_catalog_backup.pl.in
-
-
 PLIST_SUB+=	LIBVERSION=${DISTVERSION:C/\..*//} # major version
 PLIST_SUB+=	DISTVERSION=${DISTVERSION:C/(.{6}).*/\1/} # full version
 
