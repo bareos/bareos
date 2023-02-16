@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -933,10 +933,8 @@ static bool job_cmd(JobControlRecord* jcr)
   NewPlugins(jcr); /* instantiate plugins for this jcr */
   GeneratePluginEvent(jcr, bEventJobStart, (void*)jcr->errmsg);
 
-  /*
-   * the director will treat any text after the "2000 OK Job" as the client's
-   * uname and will update the client's catalog record with that value.
-   */
+  /* the director will treat any text after the "2000 OK Job" as the client's
+   * uname and will update the client's catalog record with that value. */
   return dir->fsend(OKjob, kBareosVersionStrings.Full,
                     kBareosVersionStrings.ShortDate,
                     kBareosVersionStrings.GetOsInfo(), BAREOS_PLATFORM);
@@ -1273,7 +1271,7 @@ static bool FilesetCmd(JobControlRecord* jcr)
   while (dir->recv() >= 0) {
     StripTrailingJunk(dir->msg);
     Dmsg1(500, "Fileset: %s\n", dir->msg);
-    AddFileset(jcr, dir->msg);
+    AddFileset(jcr, std::string{dir->msg}.c_str());
   }
 
   if (!TermFileset(jcr)) { return false; }
@@ -1327,10 +1325,8 @@ static bool BootstrapCmd(JobControlRecord* jcr)
     BErrNo be;
     Jmsg(jcr, M_FATAL, 0, _("Could not create bootstrap file %s: ERR=%s\n"),
          jcr->RestoreBootstrap, be.bstrerror());
-    /*
-     * Suck up what he is sending to us so that he will then
-     *   read our error message.
-     */
+    /* Suck up what he is sending to us so that he will then
+     *   read our error message. */
     while (dir->recv() >= 0) {}
     FreeBootstrap(jcr);
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
@@ -1378,10 +1374,8 @@ static bool LevelCmd(JobControlRecord* jcr)
   } else if (bstrcmp(level, "since_utime")) {
     char ed1[50], ed2[50];
 
-    /*
-     * We get his UTC since time, then sync the clocks and correct it to agree
-     * with our clock.
-     */
+    /* We get his UTC since time, then sync the clocks and correct it to agree
+     * with our clock. */
     buf = GetMemory(dir->message_length + 1);
     utime_t since_time, adj;
     btime_t his_time, bt_start, rt = 0, bt_adj = 0;
@@ -1402,10 +1396,8 @@ static bool LevelCmd(JobControlRecord* jcr)
     since_time = str_to_uint64(buf); /* this is the since time */
     Dmsg2(100, "since_time=%lld prev_job=%s\n", since_time,
           jcr->fd_impl->PrevJob);
-    /*
-     * Sync clocks by polling him for the time. We take 10 samples of his time
-     * throwing out the first two.
-     */
+    /* Sync clocks by polling him for the time. We take 10 samples of his time
+     * throwing out the first two. */
     for (int i = 0; i < 10; i++) {
       bt_start = GetCurrentBtime();
       dir->signal(BNET_BTIME); /* poll for time */
@@ -1502,24 +1494,18 @@ static void SetStorageAuthKeyAndTlsPolicy(JobControlRecord* jcr,
   /* if no key don't update anything */
   if (!*key) { return; }
 
-  /**
-   * We can be contacting multiple storage daemons.
-   * So, make sure that any old jcr->store_bsock is cleaned up.
-   */
+  /* We can be contacting multiple storage daemons.
+   * So, make sure that any old jcr->store_bsock is cleaned up. */
   if (jcr->store_bsock) {
     delete jcr->store_bsock;
     jcr->store_bsock = nullptr;
   }
 
-  /**
-   * We can be contacting multiple storage daemons.
-   * So, make sure that any old jcr->sd_auth_key is cleaned up.
-   */
+  /* We can be contacting multiple storage daemons.
+   * So, make sure that any old jcr->sd_auth_key is cleaned up. */
   if (jcr->sd_auth_key) {
-    /*
-     * If we already have a Authorization key, director can do multi storage
-     * restore
-     */
+    /* If we already have a Authorization key, director can do multi storage
+     * restore */
     Dmsg0(5, "set multi_restore=true\n");
     jcr->fd_impl->multi_restore = true;
     free(jcr->sd_auth_key);
@@ -1721,10 +1707,8 @@ static inline void ClearCompressionFlagInFileset(JobControlRecord* jcr)
             case COMPRESS_FZ4H:
               break;
             default:
-              /*
-               * When we get here its because the wanted compression protocol is
-               * not supported with the current compile options.
-               */
+              /* When we get here its because the wanted compression protocol is
+               * not supported with the current compile options. */
               Jmsg(jcr, M_WARNING, 0,
                    "%s compression support requested in fileset but not "
                    "available on this platform. Disabling "
@@ -1748,10 +1732,8 @@ static inline bool GetWantedCryptoCipher(JobControlRecord* jcr,
   bool force_encrypt = false;
   crypto_cipher_t wanted_cipher = CRYPTO_CIPHER_NONE;
 
-  /*
-   * Walk the fileset and check for the FO_FORCE_ENCRYPT flag and any forced
-   * crypto cipher.
-   */
+  /* Walk the fileset and check for the FO_FORCE_ENCRYPT flag and any forced
+   * crypto cipher. */
   fileset = jcr->fd_impl->ff->fileset;
   if (fileset) {
     for (int i = 0; i < fileset->include_list.size(); i++) {
@@ -1794,16 +1776,12 @@ static inline bool GetWantedCryptoCipher(JobControlRecord* jcr,
   // See if fileset forced a certain cipher.
   if (wanted_cipher == CRYPTO_CIPHER_NONE) { wanted_cipher = me->pki_cipher; }
 
-  /*
-   * See if we are in compatible mode then we are hardcoded to
-   * CRYPTO_CIPHER_AES_128_CBC.
-   */
+  /* See if we are in compatible mode then we are hardcoded to
+   * CRYPTO_CIPHER_AES_128_CBC. */
   if (me->compatible) { wanted_cipher = CRYPTO_CIPHER_AES_128_CBC; }
 
-  /*
-   * See if FO_FORCE_ENCRYPT is set and encryption is not configured for the
-   * filed.
-   */
+  /* See if FO_FORCE_ENCRYPT is set and encryption is not configured for the
+   * filed. */
   if (force_encrypt && !jcr->fd_impl->crypto.pki_encrypt) {
     Jmsg(jcr, M_FATAL, 0,
          _("Fileset forces encryption but encryption is not configured\n"));
@@ -1825,10 +1803,8 @@ static bool BackupCmd(JobControlRecord* jcr)
   BareosSocket* sd = jcr->store_bsock;
   crypto_cipher_t cipher = CRYPTO_CIPHER_NONE;
 
-  /*
-   * See if we are in restore only mode then we don't allow a backup to be
-   * initiated.
-   */
+  /* See if we are in restore only mode then we don't allow a backup to be
+   * initiated. */
   if (restore_only_mode) {
     Jmsg(jcr, M_FATAL, 0,
          _("Filed in restore only mode, backups are not allowed, "
@@ -1854,10 +1830,8 @@ static bool BackupCmd(JobControlRecord* jcr)
     Dmsg1(100, "JobFiles=%ld\n", jcr->JobFiles);
   }
 
-  /**
-   * Validate some options given to the backup make sense for the compiled in
-   * options of this filed.
-   */
+  /* Validate some options given to the backup make sense for the compiled in
+   * options of this filed. */
 #ifndef HAVE_WIN32
   if (!have_acl) {
     ClearFlagInFileset(jcr, FO_ACL,
@@ -2215,10 +2189,8 @@ static bool RestoreCmd(JobControlRecord* jcr)
   int prefix_links;
   char replace;
 
-  /*
-   * See if we are in backup only mode then we don't allow a restore to be
-   * initiated.
-   */
+  /* See if we are in backup only mode then we don't allow a restore to be
+   * initiated. */
   if (backup_only_mode) {
     Jmsg(jcr, M_FATAL, 0,
          _("Filed in backup only mode, restores are not allowed, "
@@ -2344,10 +2316,8 @@ static bool RestoreCmd(JobControlRecord* jcr)
   sd->signal(BNET_TERMINATE);
 
 #if defined(WIN32_VSS)
-  /*
-   * STOP VSS ON WIN32
-   * Tell vss to close the restore session
-   */
+  /* STOP VSS ON WIN32
+   * Tell vss to close the restore session */
   if (jcr->fd_impl->pVSSClient) {
     Dmsg0(100, "About to call CloseRestore\n");
 
