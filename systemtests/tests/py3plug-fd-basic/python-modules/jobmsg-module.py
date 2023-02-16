@@ -41,6 +41,7 @@ from BareosFdPluginBaseclass import BareosFdPluginBaseclass
 import sys
 from stat import S_IFREG, S_IFDIR, S_IRWXU
 
+
 @BareosPlugin
 class TestPlugin(BareosFdPluginBaseclass):
     def __init__(self, plugindef):
