@@ -1935,7 +1935,7 @@ static bool EstimateCmd(UaContext* ua, const char*)
   if (!SendLevelCommand(jcr)) { goto bail_out; }
 
   if (!SendIncludeExcludeLists(jcr)) {
-    ua->ErrorMsg(_("Error sending include list.\n"));
+    ua->ErrorMsg(_("Error sending include and exclude lists.\n"));
     goto bail_out;
   }
 

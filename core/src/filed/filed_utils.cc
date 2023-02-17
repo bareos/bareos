@@ -69,7 +69,7 @@ bool CheckResources()
 #endif
     }
 
-    /* pki_encrypt fd_implies pki_sign */
+    /* pki_encrypt implies pki_sign */
     if (me->pki_encrypt) { me->pki_sign = true; }
 
     if ((me->pki_encrypt || me->pki_sign) && !me->pki_keypair_file) {

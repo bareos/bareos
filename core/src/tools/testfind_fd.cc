@@ -69,7 +69,7 @@ void ProcessFileset(directordaemon::FilesetResource* director_fileset,
   me->compatible = true;
 
   if (!CheckResources()) {
-    std::cout << "Problem checking resources!";
+    std::cout << "Problem checking resources!" << std::endl;
     return;
   }
 
