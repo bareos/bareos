@@ -26,6 +26,111 @@
 
 namespace filedaemon {
 
+static bool InitPublicPrivateKeys(const std::string& configfile)
+{
+  bool OK = true;
+  const char* filepath = nullptr;
+  /* Load our keypair */
+  me->pki_keypair = crypto_keypair_new();
+  if (!me->pki_keypair) {
+    Emsg0(M_FATAL, 0, _("Failed to allocate a new keypair object.\n"));
+    OK = false;
+  } else {
+    if (!CryptoKeypairLoadCert(me->pki_keypair, me->pki_keypair_file)) {
+      Emsg2(M_FATAL, 0,
+            _("Failed to load public certificate for File"
+              " daemon \"%s\" in %s.\n"),
+            me->resource_name_, configfile.c_str());
+      OK = false;
+    }
+
+    if (!CryptoKeypairLoadKey(me->pki_keypair, me->pki_keypair_file, nullptr,
+                              nullptr)) {
+      Emsg2(M_FATAL, 0,
+            _("Failed to load private key for File"
+              " daemon \"%s\" in %s.\n"),
+            me->resource_name_, configfile.c_str());
+      OK = false;
+    }
+  }
+
+  // Trusted Signers. We're always trusted.
+  me->pki_signers = new alist<X509_KEYPAIR*>(10, not_owned_by_alist);
+  if (me->pki_keypair) {
+    me->pki_signers->append(crypto_keypair_dup(me->pki_keypair));
+  }
+
+  /* If additional signing public keys have been specified, load them up */
+  if (me->pki_signing_key_files) {
+    foreach_alist (filepath, me->pki_signing_key_files) {
+      X509_KEYPAIR* keypair;
+
+      keypair = crypto_keypair_new();
+      if (!keypair) {
+        Emsg0(M_FATAL, 0, _("Failed to allocate a new keypair object.\n"));
+        OK = false;
+      } else {
+        if (CryptoKeypairLoadCert(keypair, filepath)) {
+          me->pki_signers->append(keypair);
+
+          /* Attempt to load a private key, if available */
+          if (CryptoKeypairHasKey(filepath)) {
+            if (!CryptoKeypairLoadKey(keypair, filepath, nullptr, nullptr)) {
+              Emsg3(M_FATAL, 0,
+                    _("Failed to load private key from file %s for File"
+                      " daemon \"%s\" in %s.\n"),
+                    filepath, me->resource_name_, configfile.c_str());
+              OK = false;
+            }
+          }
+
+        } else {
+          Emsg3(M_FATAL, 0,
+                _("Failed to load trusted signer certificate"
+                  " from file %s for File daemon \"%s\" in %s.\n"),
+                filepath, me->resource_name_, configfile.c_str());
+          OK = false;
+        }
+      }
+    }
+  }
+
+  /*
+   * Crypto recipients. We're always included as a recipient.
+   * The symmetric session key will be encrypted for each of these readers.
+   */
+  me->pki_recipients = new alist<X509_KEYPAIR*>(10, not_owned_by_alist);
+  if (me->pki_keypair) {
+    me->pki_recipients->append(crypto_keypair_dup(me->pki_keypair));
+  }
+
+
+  /* If additional keys have been specified, load them up */
+  if (me->pki_master_key_files) {
+    foreach_alist (filepath, me->pki_master_key_files) {
+      X509_KEYPAIR* keypair;
+
+      keypair = crypto_keypair_new();
+      if (!keypair) {
+        Emsg0(M_FATAL, 0, _("Failed to allocate a new keypair object.\n"));
+        OK = false;
+      } else {
+        if (CryptoKeypairLoadCert(keypair, filepath)) {
+          me->pki_recipients->append(keypair);
+        } else {
+          Emsg3(M_FATAL, 0,
+                _("Failed to load master key certificate"
+                  " from file %s for File daemon \"%s\" in %s.\n"),
+                filepath, me->resource_name_, configfile.c_str());
+          OK = false;
+        }
+      }
+    }
+  }
+
+  return OK;
+}
+
 /**
  * Make a quick check to see that we have all the
  * resources needed.
@@ -81,107 +186,8 @@ bool CheckResources()
       OK = false;
     }
 
-    /* If everything is well, attempt to initialize our public/private keys */
     if (OK && (me->pki_encrypt || me->pki_sign)) {
-      const char* filepath = nullptr;
-      /* Load our keypair */
-      me->pki_keypair = crypto_keypair_new();
-      if (!me->pki_keypair) {
-        Emsg0(M_FATAL, 0, _("Failed to allocate a new keypair object.\n"));
-        OK = false;
-      } else {
-        if (!CryptoKeypairLoadCert(me->pki_keypair, me->pki_keypair_file)) {
-          Emsg2(M_FATAL, 0,
-                _("Failed to load public certificate for File"
-                  " daemon \"%s\" in %s.\n"),
-                me->resource_name_, configfile.c_str());
-          OK = false;
-        }
-
-        if (!CryptoKeypairLoadKey(me->pki_keypair, me->pki_keypair_file,
-                                  nullptr, nullptr)) {
-          Emsg2(M_FATAL, 0,
-                _("Failed to load private key for File"
-                  " daemon \"%s\" in %s.\n"),
-                me->resource_name_, configfile.c_str());
-          OK = false;
-        }
-      }
-
-      // Trusted Signers. We're always trusted.
-      me->pki_signers = new alist<X509_KEYPAIR*>(10, not_owned_by_alist);
-      if (me->pki_keypair) {
-        me->pki_signers->append(crypto_keypair_dup(me->pki_keypair));
-      }
-
-      /* If additional signing public keys have been specified, load them up */
-      if (me->pki_signing_key_files) {
-        foreach_alist (filepath, me->pki_signing_key_files) {
-          X509_KEYPAIR* keypair;
-
-          keypair = crypto_keypair_new();
-          if (!keypair) {
-            Emsg0(M_FATAL, 0, _("Failed to allocate a new keypair object.\n"));
-            OK = false;
-          } else {
-            if (CryptoKeypairLoadCert(keypair, filepath)) {
-              me->pki_signers->append(keypair);
-
-              /* Attempt to load a private key, if available */
-              if (CryptoKeypairHasKey(filepath)) {
-                if (!CryptoKeypairLoadKey(keypair, filepath, nullptr,
-                                          nullptr)) {
-                  Emsg3(M_FATAL, 0,
-                        _("Failed to load private key from file %s for File"
-                          " daemon \"%s\" in %s.\n"),
-                        filepath, me->resource_name_, configfile.c_str());
-                  OK = false;
-                }
-              }
-
-            } else {
-              Emsg3(M_FATAL, 0,
-                    _("Failed to load trusted signer certificate"
-                      " from file %s for File daemon \"%s\" in %s.\n"),
-                    filepath, me->resource_name_, configfile.c_str());
-              OK = false;
-            }
-          }
-        }
-      }
-
-      /*
-       * Crypto recipients. We're always included as a recipient.
-       * The symmetric session key will be encrypted for each of these readers.
-       */
-      me->pki_recipients = new alist<X509_KEYPAIR*>(10, not_owned_by_alist);
-      if (me->pki_keypair) {
-        me->pki_recipients->append(crypto_keypair_dup(me->pki_keypair));
-      }
-
-
-      /* If additional keys have been specified, load them up */
-      if (me->pki_master_key_files) {
-        foreach_alist (filepath, me->pki_master_key_files) {
-          X509_KEYPAIR* keypair;
-
-          keypair = crypto_keypair_new();
-          if (!keypair) {
-            Emsg0(M_FATAL, 0, _("Failed to allocate a new keypair object.\n"));
-            OK = false;
-          } else {
-            if (CryptoKeypairLoadCert(keypair, filepath)) {
-              me->pki_recipients->append(keypair);
-            } else {
-              Emsg3(M_FATAL, 0,
-                    _("Failed to load master key certificate"
-                      " from file %s for File daemon \"%s\" in %s.\n"),
-                    filepath, me->resource_name_, configfile.c_str());
-              OK = false;
-            }
-          }
-        }
-      }
+      OK = InitPublicPrivateKeys(configfile);
     }
   }
 
