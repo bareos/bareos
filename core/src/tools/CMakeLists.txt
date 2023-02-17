@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -67,7 +67,9 @@ endif()
 if(NOT client-only)
   set(TSTFNDSRCS testfind.cc testfind_fd.cc dummysockets.cc)
   add_executable(testfind ${TSTFNDSRCS})
-  target_link_libraries(testfind dird_objects fd_objects bareosfind CLI11::CLI11)
+  target_link_libraries(
+    testfind dird_objects fd_objects bareosfind CLI11::CLI11
+  )
   list(APPEND TOOLS_SBIN testfind)
 endif()
 

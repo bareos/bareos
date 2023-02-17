@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -121,8 +121,7 @@ bool DoVerify(JobControlRecord* jcr)
   new (&jcr->dir_impl->previous_jr)
       JobDbRecord();  // placement new instead of memset
 
-  /*
-   * Find JobId of last job that ran. Note, we do this when
+  /* Find JobId of last job that ran. Note, we do this when
    *   the job actually starts running, not at schedule time,
    *   so that we find the last job that terminated before
    *   this job runs rather than before it is scheduled. This
@@ -131,8 +130,7 @@ bool DoVerify(JobControlRecord* jcr)
    *
    *   For VERIFY_CATALOG we want the JobId of the last INIT.
    *   For VERIFY_VOLUME_TO_CATALOG, we want the JobId of the
-   *       last backup Job.
-   */
+   *       last backup Job. */
   JobLevel = jcr->getJobLevel();
   switch (JobLevel) {
     case L_VERIFY_CATALOG:
@@ -170,10 +168,8 @@ bool DoVerify(JobControlRecord* jcr)
       }
       Dmsg1(100, "Last full jobid=%d\n", verify_jobid);
 
-      /*
-       * Now get the job record for the previous backup that interests
-       *   us. We use the verify_jobid that we found above.
-       */
+      /* Now get the job record for the previous backup that interests
+       *   us. We use the verify_jobid that we found above. */
       jcr->dir_impl->previous_jr.JobId = verify_jobid;
       if (!jcr->db->GetJobRecord(jcr, &jcr->dir_impl->previous_jr)) {
         Jmsg(jcr, M_FATAL, 0,
@@ -192,19 +188,15 @@ bool DoVerify(JobControlRecord* jcr)
            jcr->dir_impl->previous_jr.JobId, jcr->dir_impl->previous_jr.Job);
   }
 
-  /*
-   * If we are verifying a Volume, we need the Storage
+  /* If we are verifying a Volume, we need the Storage
    *   daemon, so open a connection, otherwise, just
    *   create a dummy authorization key (passed to
-   *   File daemon but not used).
-   */
+   *   File daemon but not used). */
   switch (JobLevel) {
     case L_VERIFY_VOLUME_TO_CATALOG:
-      /*
-       * Note: negative status is an error, zero status, means
+      /* Note: negative status is an error, zero status, means
        *  no files were backed up, so skip calling SD and
-       *  client.
-       */
+       *  client. */
       status = CreateRestoreBootstrapFile(jcr);
       if (status < 0) { /* error */
         return false;
@@ -292,10 +284,8 @@ bool DoVerify(JobControlRecord* jcr)
   Dmsg0(30, ">filed: Send include and exclude lists\n");
   if (!SendIncludeExcludeLists(jcr)) { goto bail_out; }
 
-  /*
-   * Send Level command to File daemon, as well as the Storage address if
-   * appropriate.
-   */
+  /* Send Level command to File daemon, as well as the Storage address if
+   * appropriate. */
   switch (JobLevel) {
     case L_VERIFY_INIT:
       level = "init";
@@ -381,11 +371,9 @@ bool DoVerify(JobControlRecord* jcr)
   fd->fsend(verifycmd, level);
   if (!response(jcr, fd, OKverify, "Verify", DISPLAY_ERROR)) { goto bail_out; }
 
-  /*
-   * Now get data back from File daemon and
+  /* Now get data back from File daemon and
    *  compare it to the catalog or store it in the
-   *  catalog depending on the run type.
-   */
+   *  catalog depending on the run type. */
   switch (JobLevel) {
     case L_VERIFY_CATALOG:
       // Verify from catalog
@@ -592,16 +580,14 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
   jcr->dir_impl->FileIndex = 0;
 
   Dmsg0(20, "dir: waiting to receive file attributes\n");
-  /*
-   * Get Attributes and Signature from File daemon
+  /* Get Attributes and Signature from File daemon
    * We expect:
    *   FileIndex
    *   Stream
    *   Options or Digest (MD5/SHA1)
    *   Filename
    *   Attributes
-   *   Link name  ???
-   */
+   *   Link name  ??? */
   while ((n = BgetDirmsg(fd)) >= 0 && !JobCanceled(jcr)) {
     int stream;
     char *attr, *p, *fn;
@@ -620,10 +606,8 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
             len, fd->message_length, fd->msg);
       goto bail_out;
     }
-    /*
-     * We read the Options or Signature into fname
-     *  to prevent overrun, now copy it to proper location.
-     */
+    /* We read the Options or Signature into fname
+     *  to prevent overrun, now copy it to proper location. */
     PmStrcpy(Opts_Digest, fname);
     p = fd->msg;
     SkipNonspaces(&p); /* skip FileIndex */
@@ -667,10 +651,8 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
           jcr->setJobStatusWithPriorityCheck(JS_Differences);
           continue;
         } else {
-          /*
-           * mark file record as visited by stuffing the
-           * current JobId, which is unique, into the MarkId field.
-           */
+          /* mark file record as visited by stuffing the
+           * current JobId, which is unique, into the MarkId field. */
           jcr->db->MarkFileRecord(jcr, fdbr.FileId, jcr->JobId);
         }
 
@@ -678,10 +660,8 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
               jcr->dir_impl->fname, file_index, Opts_Digest.c_str());
         DecodeStat(fdbr.LStat, &statc, sizeof(statc),
                    &LinkFIc); /* decode catalog stat */
-        /*
-         * Loop over options supplied by user and verify the
-         * fields he requests.
-         */
+        /* Loop over options supplied by user and verify the
+         * fields he requests. */
         for (p = Opts_Digest.c_str(); *p; p++) {
           char ed1[30], ed2[30];
           switch (*p) {
@@ -792,17 +772,13 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
         break;
 
       default:
-        /*
-         * Got Digest Signature from Storage daemon
-         *  It came across in the Opts_Digest field.
-         */
+        /* Got Digest Signature from Storage daemon
+         *  It came across in the Opts_Digest field. */
         if (CryptoDigestStreamType(stream) != CRYPTO_DIGEST_NONE) {
           Dmsg2(400, "stream=Digest inx=%d Digest=%s\n", file_index,
                 Opts_Digest.c_str());
-          /*
-           * When ever we get a digest it MUST have been
-           * preceded by an attributes record, which sets attr_file_index
-           */
+          /* When ever we get a digest it MUST have been
+           * preceded by an attributes record, which sets attr_file_index */
           if (jcr->dir_impl->FileIndex != (uint32_t)file_index) {
             Jmsg2(jcr, M_FATAL, 0,
                   _("MD5/SHA1 index %d not same as attributes %d\n"),

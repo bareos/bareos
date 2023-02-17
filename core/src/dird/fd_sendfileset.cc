@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-Copyright (C) 2022-2022 Bareos GmbH & Co. KG
+Copyright (C) 2023-2023 Bareos GmbH & Co. KG
 
 This program is Free Software; you can redistribute it and/or
 modify it under the terms of version three of the GNU Affero General Public
@@ -124,11 +124,9 @@ static void SendFilesetOptions(JobControlRecord* jcr,
       int l = 0;
 
       for (int k = 0; file_option->opts[k] != '\0'; k++) {
-        /*
-         * Z compress option is followed by the single-digit compress level
+        /* Z compress option is followed by the single-digit compress level
          * or 'o' For fastlz its Zf with a single char selecting the actual
-         * compression algo.
-         */
+         * compression algo. */
         if (file_option->opts[k] == 'Z' && file_option->opts[k + 1] == 'f') {
           done = true;
           k += 2; /* skip option */

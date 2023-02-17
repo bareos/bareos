@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -442,27 +442,21 @@ static bool ConfigureTlsRequirementsPassiveClient(JobControlRecord* jcr)
 
 static bool ConfigureMessageThread(JobControlRecord* jcr)
 {
-  /*
-   * When the client is not in passive mode we can put the SD in
-   * listen mode for the FD connection.
-   */
+  /* When the client is not in passive mode we can put the SD in
+   * listen mode for the FD connection. */
   jcr->passive_client = jcr->dir_impl->res.client->passive;
 
   if (!ConfigureTlsRequirementsPassiveClient(jcr)) { return false; }
 
-  /*
-   * Start the job prior to starting the message thread below
+  /* Start the job prior to starting the message thread below
    * to avoid two threads from using the BareosSocket structure at
-   * the same time.
-   */
+   * the same time. */
   if (!jcr->store_bsock->fsend("run")) { return false; }
 
-  /*
-   * Now start a Storage daemon message thread.  Note,
+  /* Now start a Storage daemon message thread.  Note,
    * this thread is used to provide the catalog services
    * for the backup job, including inserting the attributes
-   * into the catalog.  See CatalogUpdate() in catreq.c
-   */
+   * into the catalog.  See CatalogUpdate() in catreq.c */
   if (!StartStorageDaemonMessageThread(jcr)) { return false; }
 
   Dmsg0(150, "Storage daemon connection OK\n");
@@ -501,11 +495,9 @@ bool DoNativeBackup(JobControlRecord* jcr)
     return false;
   }
 
-  /*
-   * Open a message channel connection with the Storage
+  /* Open a message channel connection with the Storage
    * daemon. This is to let him know that our client
-   * will be contacting him for a backup  session.
-   */
+   * will be contacting him for a backup  session. */
   Dmsg0(110, "Open connection with storage daemon\n");
   jcr->setJobStatusWithPriorityCheck(JS_WaitSD);
 
@@ -577,26 +569,22 @@ bool DoNativeBackup(JobControlRecord* jcr)
     return false;
   }
 
-  /*
-   * We re-update the job start record so that the start
+  /* We re-update the job start record so that the start
    * time is set after the run before job.  This avoids
    * that any files created by the run before job will
    * be saved twice.  They will be backed up in the current
    * job, but not in the next one unless they are changed.
    * Without this, they will be backed up in this job and
    * in the next job run because in that case, their date
-   * is after the start of this run.
-   */
+   * is after the start of this run. */
   jcr->start_time = time(nullptr);
   jcr->dir_impl->jr.StartTime = jcr->start_time;
   if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
   }
 
-  /*
-   * If backup is in accurate mode, we send the list of
-   * all files to FD.
-   */
+  /* If backup is in accurate mode, we send the list of
+   * all files to FD. */
   if (!SendAccurateCurrentFiles(jcr)) {
     TerminateBackupWithError(jcr);
     return false;  // error
@@ -624,10 +612,8 @@ bool DoNativeBackup(JobControlRecord* jcr)
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
   }
 
-  /*
-   * Check softquotas after job did run.
-   * If quota is exceeded now, set the GraceTime.
-   */
+  /* Check softquotas after job did run.
+   * If quota is exceeded now, set the GraceTime. */
   CheckSoftquotas(jcr);
 
   if (status == JS_Terminated) {
@@ -694,10 +680,8 @@ int WaitForJobTermination(JobControlRecord* jcr, int timeout)
     fd->signal(BNET_TERMINATE); /* tell Client we are terminating */
   }
 
-  /*
-   * Force cancel in SD if failing, but not for Incomplete jobs so that we let
-   * the SD despool.
-   */
+  /* Force cancel in SD if failing, but not for Incomplete jobs so that we let
+   * the SD despool. */
   Dmsg5(100, "cancel=%d fd_ok=%d FDJS=%d JS=%d SDJS=%d\n", jcr->IsCanceled(),
         fd_ok, jcr->dir_impl->FDJobStatus.load(), jcr->getJobStatus(),
         jcr->dir_impl->SDJobStatus.load());
@@ -935,12 +919,10 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
    }
 
    if (!jcr->db->GetJobVolumeNames(jcr, jcr->dir_impl->jr.JobId, jcr->VolumeName)) {
-      /*
-       * Note, if the job has erred, most likely it did not write any
+      /* Note, if the job has erred, most likely it did not write any
        * tape, so suppress this "error" message since in that case
        * it is normal.  Or look at it the other way, only for a
-       * normal exit should we complain about this error.
-       */
+       * normal exit should we complain about this error. */
       if (jcr->IsTerminatedOk() && jcr->dir_impl->jr.JobBytes) {
          Jmsg(jcr, M_ERROR, 0, "%s", jcr->db->strerror());
       }

@@ -552,12 +552,10 @@ void AddFileset(JobControlRecord* jcr, const char* item)
     return;
   }
 
-  /**
-   * The switch tests the code for validity.
+  /* The switch tests the code for validity.
    * The subcode is always good if it is a space, otherwise we must confirm.
    * We set state to state_error first assuming the subcode is invalid,
-   * requiring state to be set in cases below that handle subcodes.
-   */
+   * requiring state to be set in cases below that handle subcodes. */
   if (subcode != ' ') {
     state = state_error;
     Dmsg0(100, "Set state=error or double code.\n");
@@ -636,10 +634,8 @@ bool TermFileset(JobControlRecord* jcr)
 
   fileset = jcr->fd_impl->ff->fileset;
 #ifdef HAVE_WIN32
-  /*
-   * Expand the fileset to include all drive letters when the fileset includes a
-   * File = / entry.
-   */
+  /* Expand the fileset to include all drive letters when the fileset includes a
+   * File = / entry. */
   if (!expand_win32_fileset(jcr->fd_impl->ff->fileset)) { return false; }
 
   // Exclude entries in NotToBackup registry key

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -95,10 +95,8 @@ static bool InitPublicPrivateKeys(const std::string& configfile)
     }
   }
 
-  /*
-   * Crypto recipients. We're always included as a recipient.
-   * The symmetric session key will be encrypted for each of these readers.
-   */
+  /* Crypto recipients. We're always included as a recipient.
+   * The symmetric session key will be encrypted for each of these readers. */
   me->pki_recipients = new alist<X509_KEYPAIR*>(10, not_owned_by_alist);
   if (me->pki_keypair) {
     me->pki_recipients->append(crypto_keypair_dup(me->pki_keypair));

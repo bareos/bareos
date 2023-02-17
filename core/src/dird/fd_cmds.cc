@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -802,10 +802,8 @@ bool SendRestoreObjects(JobControlRecord* jcr, JobId_t JobId, bool send_global)
     SendJobSpecificRestoreObjects(jcr, JobId, &octx);
   }
 
-  /*
-   * Send to FD only if we have at least one restore object.
-   * This permits backward compatibility with older FDs.
-   */
+  /* Send to FD only if we have at least one restore object.
+   * This permits backward compatibility with older FDs. */
   if (octx.count > 0) {
     fd = jcr->file_bsock;
     fd->fsend(restoreobjectendcmd);
@@ -905,12 +903,10 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
     } else if (CryptoDigestStreamType(stream) != CRYPTO_DIGEST_NONE) {
       size_t length;
 
-      /*
-       * First, get STREAM_UNIX_ATTRIBUTES and fill AttributesDbRecord structure
+      /* First, get STREAM_UNIX_ATTRIBUTES and fill AttributesDbRecord structure
        * Next, we CAN have a CRYPTO_DIGEST, so we fill AttributesDbRecord with
        * it (or not) When we get a new STREAM_UNIX_ATTRIBUTES, we known that we
-       * can add file to the catalog At the end, we have to add the last file
-       */
+       * can add file to the catalog At the end, we have to add the last file */
       if (jcr->dir_impl->FileIndex != (uint32_t)file_index) {
         Jmsg3(jcr, M_ERROR, 0, _("%s index %d not same as attributes %d\n"),
               stream_to_ascii(stream), file_index, jcr->dir_impl->FileIndex);
@@ -1117,10 +1113,8 @@ void* HandleFiledConnection(ConnectionPool* connections,
 
   RunOnIncomingConnectInterval(client_name).Run();
 
-  /*
-   * The connection is now kept in the connection_pool.
-   * This thread is no longer required and will end now.
-   */
+  /* The connection is now kept in the connection_pool.
+   * This thread is no longer required and will end now. */
   socket_guard.Release();
   return NULL;
 }

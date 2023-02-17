@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef TESTFIND_JCR_H
-#define TESTFIND_JCR_H
+#ifndef BAREOS_TOOLS_TESTFIND_FD_H_
+#define BAREOS_TOOLS_TESTFIND_FD_H_
 
 #include "include/jcr.h"
 #include "dird/dird_conf.h"
@@ -32,4 +32,4 @@ void ProcessFileset(directordaemon::FilesetResource* director_fileset,
 void UpdateFilestats(FindFilesPacket* ffp);
 int PrintFile(JobControlRecord*, FindFilesPacket* ff, bool);
 
-#endif  // TESTFIND_JCR_H
+#endif  // BAREOS_TOOLS_TESTFIND_FD_H_

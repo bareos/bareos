@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -121,11 +121,9 @@ int FindFiles(JobControlRecord* jcr,
   findFILESET* fileset = ff->fileset;
   if (fileset) {
     int i, j;
-    /*
-     * TODO: We probably need be move the initialization in the fileset loop,
+    /* TODO: We probably need be move the initialization in the fileset loop,
      * at this place flags options are "concatenated" accross Include {} blocks
-     * (not only Options{} blocks inside a Include{})
-     */
+     * (not only Options{} blocks inside a Include{}) */
     ClearAllBits(FO_MAX, ff->flags);
     for (i = 0; i < fileset->include_list.size(); i++) {
       dlistString* node;
@@ -140,10 +138,8 @@ int FindFiles(JobControlRecord* jcr,
       ff->plugin = NULL;
       ff->opt_plugin = false;
 
-      /*
-       * By setting all options, we in effect OR the global options which is
-       * what we want.
-       */
+      /* By setting all options, we in effect OR the global options which is
+       * what we want. */
       for (j = 0; j < incexe->opts_list.size(); j++) {
         findFOPTS* fo;
 

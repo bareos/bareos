@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -49,8 +49,8 @@ macro(bareos_gtest_add_tests testname)
 endmacro() # bareos_gtest_add_tests
 
 macro(bareos_add_test BAREOS_ADD_TEST_TESTNAME)
-  # special option for gtests that aren't supposed to run alone, since they
-  # are executed by systemtests with which they have dependencies.
+  # special option for gtests that aren't supposed to run alone, since they are
+  # executed by systemtests with which they have dependencies.
   set(options SKIP_GTEST DISABLE)
   set(multiValueArgs ADDITIONAL_SOURCES LINK_LIBRARIES COMPILE_DEFINITIONS
                      COMPILE_OPTIONS

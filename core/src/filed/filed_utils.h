@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef FILED_UTILS_H
-#define FILED_UTILS_H
+#ifndef BAREOS_FILED_FILED_UTILS_H_
+#define BAREOS_FILED_FILED_UTILS_H_
 
 #define FILE_DAEMON 1
 #include "filed_conf.h"
@@ -34,4 +34,4 @@ bool CheckResources();
 
 
 } /* namespace filedaemon */
-#endif  // FILED_UTILS_H
+#endif  // BAREOS_FILED_FILED_UTILS_H_

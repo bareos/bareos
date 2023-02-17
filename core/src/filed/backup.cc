@@ -110,7 +110,7 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr,
 
   jcr->setJobStatusWithPriorityCheck(JS_Running);
 
-  Dmsg1(300, "filed: opened data connection %d to stored\n", sd->fd_);
+  Dmsg1(300, "filed: opened data connection %d to stored.\n", sd->fd_);
 
   if (!sd->SetBufferSize(buf_size, BNET_SETBUF_WRITE)) {
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
