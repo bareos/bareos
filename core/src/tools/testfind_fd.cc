@@ -116,7 +116,6 @@ void ProcessFileset(directordaemon::FilesetResource* director_fileset,
   CleanupFileset(jcr);
   FreeJcr(jcr);
 
-  TermMsg();
   if (me->secure_erase_cmdline) { FreePoolMemory(me->secure_erase_cmdline); }
 }
 
