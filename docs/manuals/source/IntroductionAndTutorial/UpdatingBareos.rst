@@ -451,7 +451,7 @@ Sometimes improvements in Bareos make it necessary to update the database scheme
 
    root@host:~# su - bareos -s /bin/sh -c "bareos-dir -t"
    bareos-dir: dird/check_catalog.cc:64-0 Could not open Catalog "MyCatalog", database "bareos".
-   bareos-dir: dird/check_catalog.cc:71-0 Version error for database "bareos". Wanted 2210, got 2192
+   bareos-dir: dird/check_catalog.cc:71-0 Version error for database "bareos". Wanted 2230, got 2210
    bareos-dir ERROR TERMINATION
    Please correct the configuration in /etc/bareos/bareos-dir.d/*/*.conf
 

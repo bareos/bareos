@@ -453,8 +453,8 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
 -- Initialize Version
 --   DELETE should not be required,
 --   but prevents errors if create script is called multiple times
-DELETE FROM Version WHERE VersionId<=2210;
-INSERT INTO Version (VersionId) VALUES (2210);
+DELETE FROM Version WHERE VersionId<=2230;
+INSERT INTO Version (VersionId) VALUES (2230);
 
 -- subscription status part
 DROP VIEW IF EXISTS backup_unit_overview;

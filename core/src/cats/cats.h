@@ -445,7 +445,7 @@ class pathid_cache;
 #define QUERY_HTABLE_PAGES 128
 
 // Current database version number for all drivers
-#define BDB_VERSION 2210
+#define BDB_VERSION 2230
 
 #ifdef _BDB_PRIV_INTERFACE_
 typedef char** SQL_ROW;
