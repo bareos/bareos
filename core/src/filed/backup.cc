@@ -1220,13 +1220,12 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
         attribs.c_str(), attribsEx);
 
   jcr->lock();
-  jcr->JobFiles++;                   /* increment number of files sent */
-  ff_pkt->FileIndex = jcr->JobFiles; /* return FileIndex */
+  ff_pkt->FileIndex = ++jcr->JobFiles; /* return FileIndex */
   PmStrcpy(jcr->fd_impl->last_fname, ff_pkt->fname);
   jcr->unlock();
 
   // Debug code: check if we must hangup
-  if (hangup && (jcr->JobFiles > (uint32_t)hangup)) {
+  if (hangup && (ff_pkt->FileIndex > hangup)) {
     jcr->setJobStatusWithPriorityCheck(JS_Incomplete);
     Jmsg1(jcr, M_FATAL, 0, "Debug hangup requested after %d files.\n", hangup);
     SetHangup(0);
@@ -1235,7 +1234,7 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
 
   /* Send Attributes header to Storage daemon
    *    <file-index> <stream> <info> */
-  if (!sd->fsend("%ld %d 0", jcr->JobFiles, attr_stream)) {
+  if (!sd->fsend("%ld %d 0", ff_pkt->FileIndex, attr_stream)) {
     if (!jcr->IsCanceled() && !jcr->IsIncomplete()) {
       Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
             sd->bstrerror());
@@ -1275,16 +1274,16 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
     case FT_JUNCTION:
     case FT_LNK:
     case FT_LNKSAVED:
-      Dmsg3(300, "Link %d %s to %s\n", jcr->JobFiles, ff_pkt->fname,
+      Dmsg3(300, "Link %d %s to %s\n", ff_pkt->FileIndex, ff_pkt->fname,
             ff_pkt->link);
-      status = SendFileHeader(sd, jcr->JobFiles, ff_pkt->type, ff_pkt->fname,
+      status = SendFileHeader(sd, ff_pkt->FileIndex, ff_pkt->type, ff_pkt->fname,
 			      attribs.c_str(), ff_pkt->link, attribsEx,
 			      ff_pkt->delta_seq);
       break;
     case FT_DIREND:
     case FT_REPARSE:
       /* Here link is the canonical filename (i.e. with trailing slash) */
-	    status = SendFileHeader(sd, jcr->JobFiles, ff_pkt->type, ff_pkt->link,
+	    status = SendFileHeader(sd, ff_pkt->FileIndex, ff_pkt->type, ff_pkt->link,
 			      attribs.c_str(), /* link */ nullptr, attribsEx,
 			      ff_pkt->delta_seq);
       break;
@@ -1312,7 +1311,7 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
       }
 
       sd->message_length = Mmsg(
-          sd->msg, "%d %d %d %d %d %d %s%c%s%c", jcr->JobFiles, ff_pkt->type,
+          sd->msg, "%d %d %d %d %d %d %s%c%s%c", ff_pkt->FileIndex, ff_pkt->type,
           ff_pkt->object_index, comp_len, ff_pkt->object_len,
           object_compression, ff_pkt->fname, 0, ff_pkt->object_name, 0);
       sd->msg = CheckPoolMemorySize(sd->msg, sd->message_length + comp_len + 2);
@@ -1324,12 +1323,12 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
       if (object_compression) { FreeAndNullPoolMemory(ff_pkt->object); }
     } break;
     case FT_REG:
-	    status = SendFileHeader(sd, jcr->JobFiles, ff_pkt->type, ff_pkt->fname,
+	    status = SendFileHeader(sd, ff_pkt->FileIndex, ff_pkt->type, ff_pkt->fname,
 			      attribs.c_str(), /* link */ nullptr, attribsEx,
 			      ff_pkt->delta_seq);
       break;
     default:
-	    status = SendFileHeader(sd, jcr->JobFiles, ff_pkt->type, ff_pkt->fname,
+	    status = SendFileHeader(sd, ff_pkt->FileIndex, ff_pkt->type, ff_pkt->fname,
 			      attribs.c_str(), /* link */ nullptr, attribsEx,
 			      ff_pkt->delta_seq);
       break;
