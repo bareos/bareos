@@ -1267,8 +1267,9 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
       break;
     case FT_PLUGIN_CONFIG:
     case FT_RESTORE_FIRST:
+    {
       comp_len = ff_pkt->object_len;
-      ff_pkt->object_compression = 0;
+      bool object_compression = 0;
 
       if (ff_pkt->object_len > 1000) {
         // Big object, compress it
@@ -1278,7 +1279,7 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
         Zdeflate(ff_pkt->object, ff_pkt->object_len, comp_obj, comp_len);
         if (comp_len < ff_pkt->object_len) {
           ff_pkt->object = comp_obj;
-          ff_pkt->object_compression = 1; /* zlib level 9 compression */
+          object_compression = 1; /* zlib level 9 compression */
         } else {
           // Uncompressed object smaller, use it
           comp_len = ff_pkt->object_len;
@@ -1290,15 +1291,15 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
       sd->message_length = Mmsg(
           sd->msg, "%d %d %d %d %d %d %s%c%s%c", jcr->JobFiles, ff_pkt->type,
           ff_pkt->object_index, comp_len, ff_pkt->object_len,
-          ff_pkt->object_compression, ff_pkt->fname, 0, ff_pkt->object_name, 0);
+          object_compression, ff_pkt->fname, 0, ff_pkt->object_name, 0);
       sd->msg = CheckPoolMemorySize(sd->msg, sd->message_length + comp_len + 2);
       memcpy(sd->msg + sd->message_length, ff_pkt->object, comp_len);
 
       // Note we send one extra byte so Dir can store zero after object
       sd->message_length += comp_len + 1;
       status = sd->send();
-      if (ff_pkt->object_compression) { FreeAndNullPoolMemory(ff_pkt->object); }
-      break;
+      if (object_compression) { FreeAndNullPoolMemory(ff_pkt->object); }
+    } break;
     case FT_REG:
       status = sd->fsend("%ld %d %s%c%s%c%c%s%c%d%c", jcr->JobFiles,
                          ff_pkt->type, ff_pkt->fname, 0, attribs.c_str(), 0, 0,

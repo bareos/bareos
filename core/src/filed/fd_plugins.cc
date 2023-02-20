@@ -739,7 +739,6 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
         ff_pkt->fname = cmd; /* full plugin string */
         ff_pkt->object_name = sp.object_name;
         ff_pkt->object_index = sp.index; /* restore object index */
-        ff_pkt->object_compression = 0;  /* no compression for now */
         ff_pkt->object = sp.object;
         ff_pkt->object_len = sp.object_len;
       } else {
