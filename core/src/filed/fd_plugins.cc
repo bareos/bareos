@@ -825,7 +825,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       }
 
       // Call Bareos core code to backup the plugin's file
-      SaveFile(jcr, ff_pkt, true);
+      ff_pkt->FileSave(jcr, ff_pkt, true);
 
       if (ff_pkt->linked) { ff_pkt->linked->FileIndex = ff_pkt->FileIndex; }
 
