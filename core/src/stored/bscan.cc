@@ -142,19 +142,6 @@ int main(int argc, char* argv[])
   CLI::App bscan_app;
   InitCLIApp(bscan_app, "The Bareos Database Scan tool.", 2001);
 
-  std::string backend_directory = PATH_BAREOS_BACKENDDIR;
-  bscan_app
-      .add_option(
-          "-a,--backend-directory", backend_directory,
-          "Specify a directory from where Bareos backends can be loaded.")
-      ->type_name("<directory>");
-
-  std::string ignored_B;
-  bscan_app
-      .add_option("-B,--dbdriver", ignored_B,
-                  "Exists for backwards compatibility and is ignored.")
-      ->type_name("<dbdriver>");
-
   bscan_app
       .add_option(
           "-b,--parse-bootstrap",

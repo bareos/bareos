@@ -481,9 +481,9 @@ run_bscan()
 {
    print_debug "bscanning with ${BAREOS_BSCAN_BINARY}"
    if test "$debug" -eq 1 ; then
-      "${BAREOS_BSCAN_BINARY}" -B "$DBTYPE" -a "$backenddir" -c "${conf}" "$@" </dev/null | tee "${tmp}/bscan.out"
+      "${BAREOS_BSCAN_BINARY}" -c "${conf}" "$@" </dev/null | tee "${tmp}/bscan.out"
    else
-      "${BAREOS_BSCAN_BINARY}" -B "$DBTYPE" -a "$backenddir" -c "${conf}" "$@" </dev/null 2>&1 >"${tmp}/bscan.out"
+      "${BAREOS_BSCAN_BINARY}" -c "${conf}" "$@" </dev/null 2>&1 >"${tmp}/bscan.out"
    fi
 }
 

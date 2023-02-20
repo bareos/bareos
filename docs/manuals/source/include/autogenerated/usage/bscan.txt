@@ -15,12 +15,6 @@ Options:
     --version
         Display program version information and exit 
 
-    -a,--backend-directory <directory>
-        Specify a directory from where Bareos backends can be loaded. 
-
-    -B,--dbdriver <dbdriver>
-        Exists for backwards compatibility and is ignored. 
-
     -b,--parse-bootstrap <bootstrap>:FILE
         Specify a bootstrap file 
 
