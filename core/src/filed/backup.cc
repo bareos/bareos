@@ -1195,16 +1195,18 @@ bool SendRestoreObject(BareosSocket* sd,
       bool object_compression = 0;
 
       char* send_data = object_data;
+      PoolMem compressed_object;
 
       if (object_len > 1000) {
         // Big object, compress it
         comp_len = compressBound(object_len);
-        POOLMEM* comp_obj = GetMemory(comp_len);
         // FIXME: check Zdeflate error
-        Zdeflate((char *)object_data, object_len, comp_obj, comp_len);
+        Zdeflate((char *)object_data, object_len,
+		 compressed_object.check_size(comp_len),
+		 comp_len);
         if (comp_len < object_len) {
 		// compressed object is smaller; use it
-          send_data = comp_obj;
+		send_data = compressed_object.c_str();
           object_compression = 1; /* zlib level 9 compression */
 	  Dmsg2(100, "Object compressed from %d to %d bytes\n",
 		object_len, comp_len);
@@ -1220,9 +1222,7 @@ bool SendRestoreObject(BareosSocket* sd,
 
       // Note we send one extra byte so Dir can store zero after object
       sd->message_length += comp_len + 1;
-      bool status = sd->send();
-      if (object_compression) { FreeAndNullPoolMemory(send_data); }
-      return status;
+      return sd->send();
 }
 
 bool EncodeAndSendAttributes(JobControlRecord* jcr,
