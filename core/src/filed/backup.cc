@@ -1373,9 +1373,8 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
 }
 
 // Do in place strip of path
-static bool do_strip(int count, char* in)
+static bool do_strip(int count, const char* in, char* out)
 {
-  char* out = in;
   int stripped;
   int numsep = 0;
 
@@ -1423,29 +1422,24 @@ void StripPath(FindFilesPacket* ff_pkt)
   }
 
   if (!ff_pkt->fname_save) {
-    ff_pkt->fname_save = GetPoolMemory(PM_FNAME);
-    ff_pkt->link_save = GetPoolMemory(PM_FNAME);
-  }
-
-  PmStrcpy(ff_pkt->fname_save, ff_pkt->fname);
-  if (ff_pkt->type != FT_LNK && ff_pkt->fname != ff_pkt->link) {
-    PmStrcpy(ff_pkt->link_save, ff_pkt->link);
-    Dmsg2(500, "strcpy link_save=%d link=%d\n", strlen(ff_pkt->link_save),
-          strlen(ff_pkt->link));
+	  std::swap(ff_pkt->fname, ff_pkt->fname_save);
+	  ff_pkt->fname = GetPoolMemory(PM_FNAME);
+	  std::swap(ff_pkt->link, ff_pkt->link_save);
+	  ff_pkt->link = GetPoolMemory(PM_FNAME);
   }
 
   /* Strip path. If it doesn't succeed put it back. If it does, and there
    * is a different link string, attempt to strip the link. If it fails,
    * back them both back. Do not strip symlinks. I.e. if either stripping
    * fails don't strip anything. */
-  if (!do_strip(ff_pkt->StripPath, ff_pkt->fname)) {
+  if (!do_strip(ff_pkt->StripPath, ff_pkt->fname_save, ff_pkt->fname)) {
     UnstripPath(ff_pkt);
     goto rtn;
   }
 
   // Strip links but not symlinks
   if (ff_pkt->type != FT_LNK && ff_pkt->fname != ff_pkt->link) {
-    if (!do_strip(ff_pkt->StripPath, ff_pkt->link)) { UnstripPath(ff_pkt); }
+	  if (!do_strip(ff_pkt->StripPath, ff_pkt->link_save, ff_pkt->link)) { UnstripPath(ff_pkt); }
   }
 
 rtn:
@@ -1458,15 +1452,11 @@ void UnstripPath(FindFilesPacket* ff_pkt)
   if (!BitIsSet(FO_STRIPPATH, ff_pkt->flags) || ff_pkt->StripPath <= 0) {
     return;
   }
+  std::swap(ff_pkt->fname, ff_pkt->fname_save);
+  FreeAndNullPoolMemory(ff_pkt->fname_save);
 
-  strcpy(ff_pkt->fname, ff_pkt->fname_save);
-  if (ff_pkt->type != FT_LNK && ff_pkt->fname != ff_pkt->link) {
-    Dmsg2(500, "strcpy link=%s link_save=%s\n", ff_pkt->link,
-          ff_pkt->link_save);
-    strcpy(ff_pkt->link, ff_pkt->link_save);
-    Dmsg2(500, "strcpy link=%d link_save=%d\n", strlen(ff_pkt->link),
-          strlen(ff_pkt->link_save));
-  }
+  std::swap(ff_pkt->link, ff_pkt->link_save);
+  FreeAndNullPoolMemory(ff_pkt->link_save);
 }
 
 #if defined(WIN32_VSS)
