@@ -1160,6 +1160,28 @@ bail_out:
   return 0;
 }
 
+bool SendFileHeader(BareosSocket* sd,
+		    int32_t file_index, // attention: is 32bit, gets send with %ld
+		    int type,
+		    const char* canonical_name,
+		    const char* encoded_attributes,
+		    const char* link_name,
+		    const char* encoded_ex_attributes,
+		    int32_t delta_seq // attention: is signed, gets send as unsigned
+		   )
+{
+	// fsend already would already do these substitutions for us,
+	// but this makes it clearer.
+	if (!canonical_name) canonical_name = "";
+	if (!encoded_attributes) encoded_attributes = "";
+	if (!link_name) link_name = "";
+	if (!encoded_ex_attributes) encoded_ex_attributes = "";
+	bool status = sd->fsend("%ld %d %s%c%s%c%s%c%s%c%u%c", file_index,
+				type, canonical_name, 0, encoded_attributes, 0,
+				link_name, 0, encoded_ex_attributes, 0, delta_seq, 0);
+	return status;
+}
+
 bool EncodeAndSendAttributes(JobControlRecord* jcr,
                              FindFilesPacket* ff_pkt,
                              int& data_stream)
@@ -1248,22 +1270,23 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
       && ff_pkt->type != FT_DELETED) { /* already stripped */
     StripPath(ff_pkt);
   }
+
   switch (ff_pkt->type) {
     case FT_JUNCTION:
     case FT_LNK:
     case FT_LNKSAVED:
       Dmsg3(300, "Link %d %s to %s\n", jcr->JobFiles, ff_pkt->fname,
             ff_pkt->link);
-      status = sd->fsend("%ld %d %s%c%s%c%s%c%s%c%u%c", jcr->JobFiles,
-                         ff_pkt->type, ff_pkt->fname, 0, attribs.c_str(), 0,
-                         ff_pkt->link, 0, attribsEx, 0, ff_pkt->delta_seq, 0);
+      status = SendFileHeader(sd, jcr->JobFiles, ff_pkt->type, ff_pkt->fname,
+			      attribs.c_str(), ff_pkt->link, attribsEx,
+			      ff_pkt->delta_seq);
       break;
     case FT_DIREND:
     case FT_REPARSE:
       /* Here link is the canonical filename (i.e. with trailing slash) */
-      status = sd->fsend("%ld %d %s%c%s%c%c%s%c%u%c", jcr->JobFiles,
-                         ff_pkt->type, ff_pkt->link, 0, attribs.c_str(), 0, 0,
-                         attribsEx, 0, ff_pkt->delta_seq, 0);
+	    status = SendFileHeader(sd, jcr->JobFiles, ff_pkt->type, ff_pkt->link,
+			      attribs.c_str(), /* link */ nullptr, attribsEx,
+			      ff_pkt->delta_seq);
       break;
     case FT_PLUGIN_CONFIG:
     case FT_RESTORE_FIRST:
@@ -1301,14 +1324,14 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
       if (object_compression) { FreeAndNullPoolMemory(ff_pkt->object); }
     } break;
     case FT_REG:
-      status = sd->fsend("%ld %d %s%c%s%c%c%s%c%d%c", jcr->JobFiles,
-                         ff_pkt->type, ff_pkt->fname, 0, attribs.c_str(), 0, 0,
-                         attribsEx, 0, ff_pkt->delta_seq, 0);
+	    status = SendFileHeader(sd, jcr->JobFiles, ff_pkt->type, ff_pkt->fname,
+			      attribs.c_str(), /* link */ nullptr, attribsEx,
+			      ff_pkt->delta_seq);
       break;
     default:
-      status = sd->fsend("%ld %d %s%c%s%c%c%s%c%u%c", jcr->JobFiles,
-                         ff_pkt->type, ff_pkt->fname, 0, attribs.c_str(), 0, 0,
-                         attribsEx, 0, ff_pkt->delta_seq, 0);
+	    status = SendFileHeader(sd, jcr->JobFiles, ff_pkt->type, ff_pkt->fname,
+			      attribs.c_str(), /* link */ nullptr, attribsEx,
+			      ff_pkt->delta_seq);
       break;
   }
 
