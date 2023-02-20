@@ -825,7 +825,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       }
 
       // Call Bareos core code to backup the plugin's file
-      SaveFile(jcr, ff_pkt, true);
+      ff_pkt->FileSave(jcr, ff_pkt, true);
 
       // Restore original flags.
       CopyBits(FO_MAX, flags, ff_pkt->flags);
