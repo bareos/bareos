@@ -215,7 +215,6 @@ struct FindFilesPacket {
   int32_t delta_seq{0};     /**< Delta Sequence number */
   int32_t object_index{0};  /**< Object index */
   int32_t object_len{0};    /**< Object length */
-  int32_t object_compression{0};  /**< Type of compression for object */
   int type{0};                    /**< FT_ type from above */
   int ff_errno{0};                /**< Errno */
   BareosFilePacket bfd;        /**< Bareos file descriptor */
