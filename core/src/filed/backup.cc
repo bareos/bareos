@@ -1321,19 +1321,21 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
     case FT_JUNCTION:
     case FT_LNK:
     case FT_LNKSAVED:
+    {
       Dmsg3(300, "Link %d %s to %s\n", ff_pkt->FileIndex, ff_pkt->fname,
             ff_pkt->link);
       status = SendFileHeader(sd, ff_pkt->FileIndex, ff_pkt->type, ff_pkt->fname,
 			      attribs.c_str(), ff_pkt->link, attribsEx,
 			      ff_pkt->delta_seq);
-      break;
+    } break;
     case FT_DIREND:
     case FT_REPARSE:
+    {
       /* Here link is the canonical filename (i.e. with trailing slash) */
 	    status = SendFileHeader(sd, ff_pkt->FileIndex, ff_pkt->type, ff_pkt->link,
 			      attribs.c_str(), /* link */ nullptr, attribsEx,
 			      ff_pkt->delta_seq);
-      break;
+    } break;
     case FT_PLUGIN_CONFIG:
     case FT_RESTORE_FIRST:
     {
@@ -1347,15 +1349,17 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
 				       ff_pkt->object);
     } break;
     case FT_REG:
+    {
 	    status = SendFileHeader(sd, ff_pkt->FileIndex, ff_pkt->type, ff_pkt->fname,
 			      attribs.c_str(), /* link */ nullptr, attribsEx,
 			      ff_pkt->delta_seq);
-      break;
+    } break;
     default:
+    {
 	    status = SendFileHeader(sd, ff_pkt->FileIndex, ff_pkt->type, ff_pkt->fname,
 			      attribs.c_str(), /* link */ nullptr, attribsEx,
 			      ff_pkt->delta_seq);
-      break;
+    } break;
   }
 
   if (!IS_FT_OBJECT(ff_pkt->type) && ff_pkt->type != FT_DELETED) {
