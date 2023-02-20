@@ -1182,6 +1182,49 @@ bool SendFileHeader(BareosSocket* sd,
 	return status;
 }
 
+bool SendRestoreObject(BareosSocket* sd,
+		       int32_t file_index,
+		       int file_type,
+		       const char* file_name,
+		       const char* object_name,
+		       int32_t object_index,
+		       int32_t object_len,
+		       char* object_data)
+{
+      int comp_len = object_len;
+      bool object_compression = 0;
+
+      char* send_data = object_data;
+
+      if (object_len > 1000) {
+        // Big object, compress it
+        comp_len = compressBound(object_len);
+        POOLMEM* comp_obj = GetMemory(comp_len);
+        // FIXME: check Zdeflate error
+        Zdeflate((char *)object_data, object_len, comp_obj, comp_len);
+        if (comp_len < object_len) {
+		// compressed object is smaller; use it
+          send_data = comp_obj;
+          object_compression = 1; /* zlib level 9 compression */
+	  Dmsg2(100, "Object compressed from %d to %d bytes\n",
+		object_len, comp_len);
+        }
+      }
+
+      sd->message_length = Mmsg(
+          sd->msg, "%d %d %d %d %d %d %s%c%s%c", file_index, file_type,
+          object_index, comp_len, object_len,
+          object_compression, file_name, 0, object_name, 0);
+      sd->msg = CheckPoolMemorySize(sd->msg, sd->message_length + comp_len + 2);
+      memcpy(sd->msg + sd->message_length, send_data, comp_len);
+
+      // Note we send one extra byte so Dir can store zero after object
+      sd->message_length += comp_len + 1;
+      bool status = sd->send();
+      if (object_compression) { FreeAndNullPoolMemory(send_data); }
+      return status;
+}
+
 bool EncodeAndSendAttributes(JobControlRecord* jcr,
                              FindFilesPacket* ff_pkt,
                              int& data_stream)
@@ -1190,7 +1233,6 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
   PoolMem attribs(PM_NAME), attribsExBuf(PM_NAME);
   char* attribsEx = NULL;
   int attr_stream;
-  int comp_len;
   bool status;
   int hangup = GetHangup();
 #ifdef FD_NO_SEND_TEST
@@ -1290,37 +1332,14 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
     case FT_PLUGIN_CONFIG:
     case FT_RESTORE_FIRST:
     {
-      comp_len = ff_pkt->object_len;
-      bool object_compression = 0;
-
-      if (ff_pkt->object_len > 1000) {
-        // Big object, compress it
-        comp_len = compressBound(ff_pkt->object_len);
-        POOLMEM* comp_obj = GetMemory(comp_len);
-        // FIXME: check Zdeflate error
-        Zdeflate(ff_pkt->object, ff_pkt->object_len, comp_obj, comp_len);
-        if (comp_len < ff_pkt->object_len) {
-          ff_pkt->object = comp_obj;
-          object_compression = 1; /* zlib level 9 compression */
-        } else {
-          // Uncompressed object smaller, use it
-          comp_len = ff_pkt->object_len;
-        }
-        Dmsg2(100, "Object compressed from %d to %d bytes\n",
-              ff_pkt->object_len, comp_len);
-      }
-
-      sd->message_length = Mmsg(
-          sd->msg, "%d %d %d %d %d %d %s%c%s%c", ff_pkt->FileIndex, ff_pkt->type,
-          ff_pkt->object_index, comp_len, ff_pkt->object_len,
-          object_compression, ff_pkt->fname, 0, ff_pkt->object_name, 0);
-      sd->msg = CheckPoolMemorySize(sd->msg, sd->message_length + comp_len + 2);
-      memcpy(sd->msg + sd->message_length, ff_pkt->object, comp_len);
-
-      // Note we send one extra byte so Dir can store zero after object
-      sd->message_length += comp_len + 1;
-      status = sd->send();
-      if (object_compression) { FreeAndNullPoolMemory(ff_pkt->object); }
+	    status = SendRestoreObject(sd,
+				       ff_pkt->FileIndex,
+				       ff_pkt->type,
+				       ff_pkt->fname,
+				       ff_pkt->object_name,
+				       ff_pkt->object_index,
+				       ff_pkt->object_len,
+				       ff_pkt->object);
     } break;
     case FT_REG:
 	    status = SendFileHeader(sd, ff_pkt->FileIndex, ff_pkt->type, ff_pkt->fname,
