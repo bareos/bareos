@@ -423,10 +423,10 @@ void NativeRestoreCleanup(JobControlRecord* jcr, int TermCode)
   if (JobCanceled(jcr)) { CancelStorageDaemonJob(jcr); }
 
   if (jcr->dir_impl->ExpectedFiles != jcr->JobFiles) {
-    TermCode = JS_Warnings;
     Jmsg(jcr, M_WARNING, 0,
          _("File count mismatch: expected=%lu , restored=%lu\n"),
          jcr->dir_impl->ExpectedFiles, jcr->JobFiles);
+    if (TermCode == JS_Terminated) { TermCode = JS_Warnings; }
   }
 
   switch (TermCode) {
