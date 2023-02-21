@@ -301,11 +301,23 @@ static bool PurgeJobsFromPool(UaContext* ua, PoolDbRecord* pool_record)
   ua->db->SqlQuery(select_jobs_from_pool.c_str(), JobDeleteHandler,
                    &delete_list);
 
-  if (delete_list.size() > 0) { PurgeJobListFromCatalog(ua, delete_list); }
-
-  ua->InfoMsg(_("%d Job%s on Pool \"%s\" purged from catalog.\n"),
-              delete_list.size(), delete_list.size() <= 1 ? "" : "s",
-              pool_record->Name);
+  ClientResource* client = ua->jcr->dir_impl->res.client;
+  if (delete_list.empty()) {
+    ua->WarningMsg(_("No Jobs found for pool %s to purge from %s catalog.\n"),
+                   pool_record->Name, client->catalog->resource_name_);
+  } else {
+    ua->InfoMsg(_("Found %d Jobs for pool \"%s\" in catalog \"%s\".\n"),
+                delete_list.size(), pool_record->Name,
+                client->catalog->resource_name_);
+    if (!GetConfirmation(ua, "Purge (yes/no)? ")) {
+      ua->InfoMsg(_("Purge canceled.\n"));
+    } else {
+      PurgeJobListFromCatalog(ua, delete_list);
+      ua->InfoMsg(_("%d Job%s on Pool \"%s\" purged from catalog.\n"),
+                  delete_list.size(), delete_list.size() <= 1 ? "" : "s",
+                  pool_record->Name);
+    }
+  }
 
   return true;
 }
@@ -361,6 +373,9 @@ static bool PurgeJobsFromClient(UaContext* ua, ClientResource* client)
       ua->InfoMsg(_("Purge canceled.\n"));
     } else {
       PurgeJobListFromCatalog(ua, delete_list);
+      ua->InfoMsg(_("%d Job%s on client \"%s\" purged from catalog.\n"),
+                  delete_list.size(), delete_list.size() <= 1 ? "" : "s",
+                  client->resource_name_);
     }
   }
 
@@ -516,10 +531,21 @@ bool PurgeJobsFromVolume(UaContext* ua, MediaDbRecord* mr, bool force)
     jobids = lst.GetAsString();
   }
 
-  if (jobids.size() > 0) { PurgeJobsFromCatalog(ua, jobids.c_str()); }
-
-  ua->InfoMsg(_("%d Jobs%s on Volume \"%s\" purged from catalog.\n"),
-              lst.size(), lst.size() <= 1 ? "" : "s", mr->VolumeName);
+  ClientResource* client = ua->jcr->dir_impl->res.client;
+  if (lst.empty()) {
+    ua->WarningMsg(_("No Jobs found for media %s to purge from %s catalog.\n"),
+                   mr->VolumeName, client->catalog->resource_name_);
+  } else {
+    ua->InfoMsg(_("Found %d Jobs for media \"%s\" in catalog \"%s\".\n"),
+                lst.size(), mr->VolumeName, client->catalog->resource_name_);
+    if (!GetConfirmation(ua, "Purge (yes/no)? ")) {
+      ua->InfoMsg(_("Purge canceled.\n"));
+    } else {
+      PurgeJobsFromCatalog(ua, jobids.c_str());
+      ua->InfoMsg(_("%d Jobs%s on Volume \"%s\" purged from catalog.\n"),
+                  lst.size(), lst.size() <= 1 ? "" : "s", mr->VolumeName);
+    }
+  }
 
   return IsVolumePurged(ua, mr, force);
 }

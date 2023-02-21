@@ -60,7 +60,7 @@ fi
 
 cat <<END_OF_DATA >${tmp}/bconcmds2
 @$out ${tmp}/log2.out w
-purge volume=${VolumeName}
+purge volume=${VolumeName} yes
 truncate volstatus=Purged volume=${VolumeName} yes
 messages
 END_OF_DATA

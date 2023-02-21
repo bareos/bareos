@@ -204,7 +204,7 @@ run job=$failingjob_name level=Full yes
 run job=$failingjob_name level=Full yes
 wait
 messages
-purge jobs jobstatus=E pool=SmallFull
+purge jobs jobstatus=E pool=SmallFull yes
 quit
 END_OF_DATA
 
