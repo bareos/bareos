@@ -697,9 +697,9 @@ struct s_kw ActionOnPurgeOptions[]
  *
  * name token
  */
-struct s_kw VolumeStatus[]
-    = {{"Append", 0}, {"Full", 0},     {"Used", 0},  {"Recycle", 0},
-       {"Purged", 0}, {"Cleaning", 0}, {"Error", 0}, {NULL, 0}};
+struct s_kw VolumeStatus[] = {{"Append", 0},  {"Full", 0},    {"Used", 0},
+                              {"Recycle", 0}, {"Purged", 0},  {"Cleaning", 0},
+                              {"Error", 0},   {"Archive", 0}, {NULL, 0}};
 
 /**
  * Keywords (RHS) permitted in Pool type records
