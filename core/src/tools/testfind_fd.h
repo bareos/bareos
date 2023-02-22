@@ -27,9 +27,7 @@
 #include "findlib/find.h"
 
 void ProcessFileset(directordaemon::FilesetResource* director_fileset,
-                    const char* configfile,
-                    bool print_attrs);
-void UpdateFilestats(FindFilesPacket* ffp);
+                    const char* configfile);
 int PrintFile(JobControlRecord*, FindFilesPacket* ff, bool);
 
 #endif  // BAREOS_TOOLS_TESTFIND_FD_H_

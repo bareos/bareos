@@ -30,16 +30,9 @@
 #include "dird/dird_globals.h"
 #include "lib/parse_conf.h"
 #include "lib/cli.h"
-#include "lib/mntent_cache.h"
 #include "tools/testfind_fd.h"
 
-#if defined(HAVE_WIN32)
-#  define isatty(fd) (fd == 0)
-#endif
-
 using namespace directordaemon;
-
-extern bool ParseDirConfig(const char* configfile, int exit_code);
 
 int main(int argc, char* const* argv)
 {
@@ -52,10 +45,6 @@ int main(int argc, char* const* argv)
 
   CLI::App testfind_app;
   InitCLIApp(testfind_app, "The Bareos Testfind Tool.", 2000);
-
-  bool print_attributes = false;
-  testfind_app.add_flag("-a,--print-attributes", print_attributes,
-                        "Print extended attributes (Win32 debug).");
 
   std::string configfile = ConfigurationParser::GetDefaultConfigDir();
   testfind_app
@@ -75,11 +64,11 @@ int main(int argc, char* const* argv)
   directordaemon::my_config = InitDirConfig(configfile.c_str(), M_ERROR_TERM);
 
   if (!directordaemon::my_config) {
-    fprintf(stderr, "Error parsing configuration!\n");
+    std::cerr << "Error parsing configuration!\n";
     exit(2);
   }
   if (!directordaemon::my_config->ParseConfig()) {
-    fprintf(stderr, "Error parsing configuration!\n");
+    std::cerr << "Error parsing configuration!\n";
     exit(3);
   }
 
@@ -89,23 +78,23 @@ int main(int argc, char* const* argv)
   InitMsg(nullptr, nullptr);
 
   if (!dir_fileset) {
-    fprintf(stderr, "%s: Fileset not found\n", filesetname.c_str());
+    std::cerr << filesetname.c_str() << ": Fileset not found\n"
+              << "Valid FileSets:\n";
+
     FilesetResource* var;
-    fprintf(stderr, "Valid FileSets:\n");
     foreach_res (var, R_FILESET) {
-      fprintf(stderr, "    %s\n", var->resource_name_);
+      std::cerr << "  " << var->resource_name_ << std::endl;
     }
     exit(1);
   }
 
-  ProcessFileset(dir_fileset, configfile.c_str(), print_attributes);
+  ProcessFileset(dir_fileset, configfile.c_str());
 
   if (my_config) {
     delete my_config;
-    my_config = NULL;
+    my_config = nullptr;
   }
 
-  FlushMntentCache();
   TermMsg();
 
   exit(0);
