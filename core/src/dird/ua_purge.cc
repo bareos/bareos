@@ -319,6 +319,20 @@ static bool PurgeJobsFromPool(UaContext* ua, PoolDbRecord* pool_record)
     }
   }
 
+  std::vector<DBId_t> media_ids_in_pool;
+  if (ua->db->GetMediaIdsInPool(pool_record, &media_ids_in_pool)) {
+    ua->WarningMsg(_("No Medias found for pool %s.\n"), pool_record->Name,
+                   client->catalog->resource_name_);
+  }
+  for (auto mediaid : media_ids_in_pool) {
+    MediaDbRecord mr;
+    mr.MediaId = mediaid;
+    if (!ua->db->GetMediaRecord(ua->jcr, &mr)) {
+      ua->ErrorMsg("%s", ua->db->strerror());
+    }
+    IsVolumePurged(ua, &mr, false);
+  }
+
   return true;
 }
 

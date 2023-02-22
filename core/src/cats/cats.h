@@ -689,7 +689,7 @@ class BareosDb : public BareosDbQueryEnum {
 
   /* sql_get.c */
   bool GetVolumeJobids(MediaDbRecord* mr, db_list_ctx* lst);
-  bool GetVolumesInPool(PoolDbRecord* mr, db_list_ctx* lst);
+  bool GetMediaIdsInPool(PoolDbRecord* pool_record, std::vector<DBId_t>* lst);
   bool GetBaseFileList(JobControlRecord* jcr,
                        bool use_md5,
                        DB_RESULT_HANDLER* ResultHandler,

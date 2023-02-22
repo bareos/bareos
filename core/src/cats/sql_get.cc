@@ -1375,7 +1375,8 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
      *
      * If we are doing always incremental, we need to limit the search to
      * only include incrementals that are older than (now -
-     * AlwaysIncrementalInterval) and leave AlwaysIncrementalNumber incrementals */
+     * AlwaysIncrementalInterval) and leave AlwaysIncrementalNumber incrementals
+     */
     Mmsg(query,
          "INSERT INTO btemp3%s (JobId, StartTime, EndTime, JobTDate, "
          "PurgedFiles) "
@@ -1486,12 +1487,14 @@ bool BareosDb::GetVolumeJobids(MediaDbRecord* mr, db_list_ctx* lst)
   return SqlQueryWithHandler(cmd, DbListHandler, lst);
 }
 
-bool BareosDb::GetVolumesInPool(PoolDbRecord* mr, db_list_ctx* lst)
+bool BareosDb::GetMediaIdsInPool(PoolDbRecord* pool_record,
+                                 std::vector<DBId_t>* lst)
 {
   DbLocker _{this};
-  Mmsg(cmd, "SELECT DISTINCT MediaId FROM Media WHERE PoolId=%lu", mr->PoolId);
+  Mmsg(cmd, "SELECT DISTINCT MediaId FROM Media WHERE PoolId=%lu",
+       pool_record->PoolId);
 
-  return SqlQueryWithHandler(cmd, DbListHandler, lst);
+  return SqlQueryWithHandler(cmd, DbIdListHandler, lst);
 }
 
 /**
