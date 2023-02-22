@@ -155,6 +155,17 @@ Sourcecode Comments
 Use ``/* */`` for multi-line comments.
 Use ``//`` for single-line comments.
 
+SQL queries
+-----------
+
+Developers will have to use SQL queries to get data from the database. When you navigate the current code you might get a bit confused as there are different ways to do it:
+First, there are direct queries written within the functions that need them. Second, there are functions within the ``cats`` library containing ready made queries that get called. And finally there are the generated SQL files within the ``cats/dml`` folder that get invoked in certain situations.
+
+Until we decide on a unified way to handle sql queries, we advise the following:
+
+- If your queries are trivial, you can put them as a string within the code you are writing, make sure you wrap them in a function, and make sure it can be reused,
+- If you are dealing with long and convoluted queries, write them within the ``cats/dml`` folder and update the related files and enums.
+
 Do's
 ----
 
