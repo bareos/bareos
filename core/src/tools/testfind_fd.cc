@@ -26,7 +26,6 @@
 #include "filed/filed_globals.h"
 #include "filed/dir_cmd.h"
 #include "filed/fileset.h"
-#include "findlib/attribs.h"
 #include "lib/parse_conf.h"
 #include "tools/dummysockets.h"
 #include "tools/testfind_fd.h"
@@ -42,8 +41,6 @@ void ProcessFileset(directordaemon::FilesetResource* director_fileset,
   my_config->ParseConfig();
 
   me = static_cast<ClientResource*>(my_config->GetNextRes(R_CLIENT, nullptr));
-  no_signals = true;
-  me->compatible = true;
 
   if (!CheckResources()) {
     std::cout << "Problem checking resources!" << std::endl;
@@ -56,15 +53,14 @@ void ProcessFileset(directordaemon::FilesetResource* director_fileset,
 
   EmptySocket* stored_sock = new EmptySocket;
   jcr->store_bsock = stored_sock;
-  stored_sock->message_length = 0;
 
   DummyFdFilesetSocket* filed_sock = new DummyFdFilesetSocket;
 
   filed_sock->jcr = jcr;
   jcr->file_bsock = filed_sock;
 
-  InitMsg(nullptr, nullptr);
-  jcr->JobId = 1;  // helps send messages to to std::out instead of socket
+  jcr->JobId = 1;  // helps send messages to to log directory instead of to the
+                   // director through a the dummy socket
 
   crypto_cipher_t cipher = CRYPTO_CIPHER_NONE;
   GetWantedCryptoCipher(jcr, &cipher);
@@ -83,7 +79,4 @@ void ProcessFileset(directordaemon::FilesetResource* director_fileset,
   jcr->file_bsock = nullptr;
   CleanupFileset(jcr);
   FreeJcr(jcr);
-  TermMsg();
-
-  if (me->secure_erase_cmdline) { FreePoolMemory(me->secure_erase_cmdline); }
 }
