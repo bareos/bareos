@@ -79,7 +79,6 @@ core/src/cats/grant_bareos_privileges
 core/src/cats/install-default-backend
 core/src/cats/make_bareos_tables
 core/src/cats/make_catalog_backup
-core/src/cats/make_catalog_backup.pl
 core/src/cats/update_bareos_tables
 core/src/console/bconsole.conf
 core/src/defaultconfigs/bareos-dir.d/catalog/MyCatalog.conf

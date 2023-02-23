@@ -6,8 +6,8 @@ Job {
   FileSet="Catalog"
 
   # This creates an ASCII copy of the catalog
-  # Arguments to make_catalog_backup.pl are:
-  #  make_catalog_backup <catalog-name>
+  # Arguments to make_catalog_backup are:
+  # make_catalog_backup <catalog-name>
   RunBeforeJob = "@scriptdir@/make_catalog_backup MyCatalog"
 
   # This deletes the copy of the catalog
