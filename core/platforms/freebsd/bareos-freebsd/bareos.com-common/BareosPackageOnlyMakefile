@@ -3,16 +3,34 @@ NO_INSTALL=     yes
 NO_BUILD=       yes
 NO_LICENSES_INSTALL= yes
 
-build:
-	echo build
+do-fetch:
+	@echo fetch ${PORTNAME}${PKGNAMESUFFIX} via master package in ${MASTERDIR}
+	@make -C ${MASTERDIR} fetch
 
-stage:
-	@echo building master package in ${MASTERDIR}
+do-extract:
+	@echo extract ${PORTNAME}${PKGNAMESUFFIX} via master package in ${MASTERDIR}
+	@make -C ${MASTERDIR} extract
+
+do-patch:
+	@echo patch ${PORTNAME}${PKGNAMESUFFIX} via master package in ${MASTERDIR}
+	@make -C ${MASTERDIR} patch
+
+do-configure:
+	@echo configure ${PORTNAME}${PKGNAMESUFFIX} via master package in ${MASTERDIR}
+	@make -C ${MASTERDIR} configure
+
+do-build:
+	@echo build ${PORTNAME}${PKGNAMESUFFIX} via master package in ${MASTERDIR}
+	@make -C ${MASTERDIR} build
+
+#do-install:
+#	@echo install ${PORTNAME}${PKGNAMESUFFIX} via  master package in ${MASTERDIR}
+#	@make -C ${MASTERDIR} install
+
+do-stage:
+	@echo stage ${PORTNAME}${PKGNAMESUFFIX} via master package in ${MASTERDIR}
+	@make -C ${MASTERDIR} stage
+
+pre-package:
+	@echo package ${PORTNAME}${PKGNAMESUFFIX} via master package in ${MASTERDIR}
 	@make -C ${MASTERDIR} package
-	@echo running fake stage: packaging built binaries from ${MASTERDIR}
-	@echo copying ${MASTERDIR}/work/stage ${WRKDIR}
-	@mkdir -p ${WRKDIR}
-	@cp -a ${MASTERDIR}/work/stage ${WRKDIR}
-	@mkdir -p ${WRKDIR}/.metadir
-	@[ -e pkg-install ] && cp -a pkg-install ${WRKDIR}/.metadir/+INSTALL || touch ${WRKDIR}/.metadir/+INSTALL
-	@[ -e pkg-message ] && cp -a pkg-message ${WRKDIR}/.metadir/+DISPLAY || touch ${WRKDIR}/.metadir/+DISPLAY

@@ -6,10 +6,13 @@ PLIST=		${PKGDIR}/pkg-plist.database-postgresql
 MASTERDIR=	${.CURDIR}/../bareos.com-common
 
 LIB_DEPENDS+=  libbareos.so:sysutils/bareos.com-common
-LIB_DEPENDS+=  libbareosql.so:sysutils/bareos.com-database-common
+LIB_DEPENDS+=  libbareossql.so:sysutils/bareos.com-database-common
 LIB_DEPENDS+=  libbareoscats.so:sysutils/bareos.com-database-common
 
 USES+=pgsql
+
+# optional overrides, used by build system.
+.-include "overrides.mk"
 
 .include "${MASTERDIR}/BareosPackageOnlyMakefile"
 .include "${MASTERDIR}/BareosCommonMakefile"

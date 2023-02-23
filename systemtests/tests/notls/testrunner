@@ -34,7 +34,6 @@ cat <<END_OF_DATA >$tmp/bconcmds
 messages
 @$out $tmp/log1.out
 setdebug level=1000 storage=File trace=1
-label volume=TestVolume001 storage=File pool=Full
 run job=$JobName yes
 run job=$JobName yes
 run job=$JobName yes
@@ -55,7 +54,7 @@ messages
 @#
 @$out $tmp/log2.out
 wait
-restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done
+restore client=bareos-fd where=$tmp/bareos-restores select all done
 yes
 wait
 messages
