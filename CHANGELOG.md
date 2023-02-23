@@ -5,6 +5,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Changed
+- FreeBSD: build cleanup [PR #1382]
+
 ## [20.0.8] - 2022-11-09
 
 ### Breaking Changes
@@ -541,4 +544,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1290]: https://github.com/bareos/bareos/pull/1290
 [PR #1292]: https://github.com/bareos/bareos/pull/1292
 [PR #1304]: https://github.com/bareos/bareos/pull/1304
+[PR #1382]: https://github.com/bareos/bareos/pull/1382
 [unreleased]: https://github.com/bareos/bareos/tree/master
