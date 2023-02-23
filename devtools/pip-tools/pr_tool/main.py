@@ -388,6 +388,8 @@ def get_changelog_section(pr):
         return "Documentation"
     if "bugfix" in labels:
         return "Fixed"
+    if "removal" in labels:
+        return "Removed"
     return guess_section(pr["title"])
 
 
