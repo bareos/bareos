@@ -10,7 +10,8 @@ LIB_DEPENDS+=  libbareos.so:sysutils/bareos.com-common
 LIB_DEPENDS+=  libbareoslmdb.so:sysutils/bareos.com-common
 LIB_DEPENDS+=  libbareosfind.so:sysutils/bareos.com-common
 
-USES=ssl
+# optional overrides, used by build system.
+.-include "overrides.mk"
 
 .include "${MASTERDIR}/BareosPackageOnlyMakefile"
 .include "${MASTERDIR}/BareosCommonMakefile"

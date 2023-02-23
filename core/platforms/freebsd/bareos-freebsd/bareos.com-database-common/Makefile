@@ -8,5 +8,8 @@ MASTERDIR=	${.CURDIR}/../bareos.com-common
 LIB_DEPENDS+=  libbareos.so:sysutils/baroes.com-common
 
 
+# optional overrides, used by build system.
+.-include "overrides.mk"
+
 .include "${MASTERDIR}/BareosPackageOnlyMakefile"
 .include "${MASTERDIR}/BareosCommonMakefile"
