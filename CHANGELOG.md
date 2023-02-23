@@ -21,6 +21,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - ua_restore: Add additional client info for restore report [PR #1374]
 - restore: fix failed restores showing Restore ok with warning [PR #1387]
 - FreeBSD: build cleanup [PR #1336]
+- improvements to pr-tool [PR #1389]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -61,4 +62,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1374]: https://github.com/bareos/bareos/pull/1374
 [PR #1378]: https://github.com/bareos/bareos/pull/1378
 [PR #1387]: https://github.com/bareos/bareos/pull/1387
+[PR #1389]: https://github.com/bareos/bareos/pull/1389
 [unreleased]: https://github.com/bareos/bareos/tree/master
