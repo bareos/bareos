@@ -215,7 +215,9 @@ class CommitAnalyzer:
     def check_commit(self, commit):
         headline, *messageBody = commit.message.split("\n")
         issues = []
-        if messageBody[0] == "":
+        if len(messageBody) == 0:
+            issues.append("missing newline at end of headline")
+        elif messageBody[0] == "":
             messageBody.pop(0)
         else:
             issues.append("missing empty line after headline")
