@@ -20,6 +20,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - bsmtp: fix and update code, and change CLI parsing to CLI11 [PR #1316]
 - ua_restore: Add additional client info for restore report [PR #1374]
 - restore: fix failed restores showing Restore ok with warning [PR #1387]
+- FreeBSD: build cleanup [PR #1336]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -42,6 +43,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1316]: https://github.com/bareos/bareos/pull/1316
 [PR #1325]: https://github.com/bareos/bareos/pull/1325
 [PR #1335]: https://github.com/bareos/bareos/pull/1335
+[PR #1336]: https://github.com/bareos/bareos/pull/1336
 [PR #1339]: https://github.com/bareos/bareos/pull/1339
 [PR #1343]: https://github.com/bareos/bareos/pull/1343
 [PR #1346]: https://github.com/bareos/bareos/pull/1346
