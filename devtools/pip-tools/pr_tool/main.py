@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2022-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -215,7 +215,9 @@ class CommitAnalyzer:
     def check_commit(self, commit):
         headline, *messageBody = commit.message.split("\n")
         issues = []
-        if messageBody[0] == "":
+        if len(messageBody) == 0:
+            issues.append("missing newline at end of headline")
+        elif messageBody[0] == "":
             messageBody.pop(0)
         else:
             issues.append("missing empty line after headline")
@@ -386,6 +388,10 @@ def get_changelog_section(pr):
     labels = get_plain_label_list(pr["labels"])
     if "documentation" in labels:
         return "Documentation"
+    if "bugfix" in labels:
+        return "Fixed"
+    if "removal" in labels:
+        return "Removed"
     return guess_section(pr["title"])
 
 
@@ -594,7 +600,7 @@ def get_remote_ref(branch, owner="{owner}", repo="{repo}"):
 def repo_up_to_date(repo, pr_data, remote_ref):
     local_head = repo.commit(pr_data["_base_branch"])
     remote_head = remote_ref["object"]["sha"]
-    return local_head != remote_head
+    return str(local_head) == str(remote_head)
 
 
 def setup_logging(*, verbose, debug):
@@ -669,6 +675,11 @@ def main():
                 git_remote
             )
         )
+        if args.subcommand == "merge":
+            logging.critical(
+                "Merge will probably fail with an out-of-date repository, exiting"
+            )
+            return 2
 
     if args.subcommand == "check":
         ret = check_merge_prereq(repo, pr_data)
