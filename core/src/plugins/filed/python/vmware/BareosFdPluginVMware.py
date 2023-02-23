@@ -110,7 +110,14 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             "restore_resourcepool",
             "restore_datastore",
             "restore_powerstate",
+            "poweron_timeout",
+            "config_file",
         ]
+        self.allowed_options = (
+            self.mandatory_options_default
+            + self.mandatory_options_vmname
+            + self.optional_options
+        )
         self.utf8_options = ["vmname", "folder"]
         self.config = None
         self.config_parsed = False
@@ -175,11 +182,6 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         """
         bareosfd.DebugMessage(100, "BareosFdPluginVMware: check_config()\n")
         mandatory_sections = ["vmware_plugin_options"]
-        allowed_options = (
-            self.mandatory_options_default
-            + self.mandatory_options_vmname
-            + self.optional_options
-        )
 
         for section in mandatory_sections:
             if not self.config.has_section(section):
@@ -191,7 +193,7 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 return False
 
             for option in self.config.options(section):
-                if option not in allowed_options:
+                if option not in self.allowed_options:
                     bareosfd.JobMessage(
                         bareosfd.M_FATAL,
                         "BareosFdPluginVMware: Invalid option %s in Section [%s] in config file %s\n"
@@ -265,6 +267,15 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 )
 
                 return bareosfd.bRC_Error
+
+        invalid_options = ",".join(list(set(self.options) - set(self.allowed_options)))
+        if invalid_options:
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL,
+                "BareosFdPluginVMware: Invalid plugin options: %s\n"
+                % (invalid_options),
+            )
+            return bareosfd.bRC_Error
 
         for option in self.utf8_options:
             if self.options.get(option):
@@ -1442,7 +1453,9 @@ class BareosVADPWrapper(object):
                 return False
             self.vmfs_vm_path_changed = True
 
-        config = transformer.transform(target_datastore_name=datastore_name)
+        config = transformer.transform(
+            target_datastore_name=datastore_name, target_vm_name=self.options["vmname"]
+        )
 
         for child in self.si.content.rootFolder.childEntity:
             if child.name == self.options["dc"]:
@@ -2626,7 +2639,7 @@ class BareosVmConfigInfoToSpec(object):
         self.backing_filename_snapshot_rex = re.compile(r"(-\d{6})\.vmdk$")
         self.target_datastore_name = None
 
-    def transform(self, target_datastore_name=None):
+    def transform(self, target_datastore_name=None, target_vm_name=None):
         config_spec = vim.vm.ConfigSpec()
         self.target_datastore_name = target_datastore_name
         config_spec.alternateGuestName = self.config_info["alternateGuestName"]
@@ -2668,6 +2681,8 @@ class BareosVmConfigInfoToSpec(object):
         ]
         config_spec.migrateEncryption = self.config_info["migrateEncryption"]
         config_spec.name = self.config_info["name"]
+        if target_vm_name:
+            config_spec.name = target_vm_name
         config_spec.nestedHVEnabled = self.config_info["nestedHVEnabled"]
         config_spec.numCoresPerSocket = self.config_info["hardware"][
             "numCoresPerSocket"
@@ -3408,7 +3423,6 @@ class BareosVmConfigInfoToSpec(object):
         return vapp_config_spec
 
     def _transform_VAppIpAssignmentInfo(self, ip_assignment_info):
-
         ip_assignment = vim.vApp.IPAssignmentInfo()
         ip_assignment.ipAllocationPolicy = ip_assignment_info["ipAllocationPolicy"]
         ip_assignment.ipProtocol = ip_assignment_info["ipProtocol"]
