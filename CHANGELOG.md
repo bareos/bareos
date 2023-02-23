@@ -8,6 +8,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Changed
 - bsmtp: fix and update code change cli parsing to cli11 [PR #1376]
 - restore: fix failed restores showing `Restore ok with warning` [PR #1388]
+- FreeBSD: build cleanup [PR #1380]
 
 ## [22.0.2] - 2023-02-07
 
@@ -455,5 +456,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1368]: https://github.com/bareos/bareos/pull/1368
 [PR #1369]: https://github.com/bareos/bareos/pull/1369
 [PR #1376]: https://github.com/bareos/bareos/pull/1376
+[PR #1380]: https://github.com/bareos/bareos/pull/1380
 [PR #1388]: https://github.com/bareos/bareos/pull/1388
 [unreleased]: https://github.com/bareos/bareos/tree/master

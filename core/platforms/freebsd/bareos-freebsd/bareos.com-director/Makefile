@@ -22,7 +22,8 @@ LIB_DEPENDS+=  libbareoscats.so:sysutils/bareos.com-database-common
 
 RUN_DEPENDS+=  bareos-dbcheck:sysutils/bareos.com-database-tools
 
-USES=ssl
+# optional overrides, used by build system.
+.-include "overrides.mk"
 
 .include "${MASTERDIR}/BareosPackageOnlyMakefile"
 .include "${MASTERDIR}/BareosCommonMakefile"
