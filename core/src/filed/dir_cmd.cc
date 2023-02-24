@@ -1984,7 +1984,7 @@ static bool BackupCmd(JobControlRecord* jcr)
 
   // Send Files to Storage daemon
   Dmsg1(110, "begin blast ff=%p\n", (FindFilesPacket*)jcr->fd_impl->ff);
-  if (!BlastDataToStorageDaemon(jcr, nullptr, cipher)) {
+  if (!BlastDataToStorageDaemon(jcr, cipher)) {
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     BnetSuppressErrorMessages(sd, 1);
     Dmsg0(110, "Error in blast_data.\n");
