@@ -1,0 +1,79 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# Check wether hints are issued when trying to restore
+# backups, but none of the right type exist.
+# (i.e. an archive exists, but a non-archive is wanted.)
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+#shellcheck source=functions
+. functions
+
+start_test
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $log_home/setup.out
+setdebug level=100 storage=File
+status director
+status client
+status storage=File
+wait
+messages
+@$out $log_home/jobs.out
+list jobs
+@$out $log_home/should-hint-non-archive.out
+restore archive client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done yes
+wait
+messages
+@$out $log_home/should-hint-archive.out
+update jobid=1 jobtype=A
+restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done yes
+wait
+messages
+update jobid=1 jobtype=B
+quit
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File
+
+check_preconditions
+
+
+expect_grep "Try" \
+	    "$log_home/should-hint-non-archive.out" \
+	    "Expected hint to restore from archive not issued."
+
+expect_grep "No Full backup" \
+	    "$log_home/should-hint-non-archive.out" \
+	    "Restore should not be able to restore archives."
+
+expect_not_grep "full backup archive" \
+		"$log_home/should-hint-non-archive.out" \
+		"Did not display correct 'restore' hint."
+
+expect_grep "Try" \
+	    "$log_home/should-hint-archive.out" \
+	    "Expected hint to restore from archive not issued."
+
+expect_grep "No Full backup" \
+	    "$log_home/should-hint-archive.out" \
+	    "Restore should not be able to restore archives."
+
+expect_grep "full backup archive" \
+	    "$log_home/should-hint-archive.out" \
+	    "Did not display correct 'restore archive' hint."
+
+end_test
