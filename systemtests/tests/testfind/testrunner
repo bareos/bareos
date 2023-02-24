@@ -17,29 +17,33 @@ zstat=0
 
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
+"${rscripts}"/cleanup
+
 setup_data
 
-selftest_log=$tmp/selftest_log.out
-wildcard_log=$tmp/wildcard_log.out
+selftest_log="$tmp"/selftest_log.out
+wildcard_log="$tmp"/wildcard_log.out
+error_log="$logdir"/bareos.log
 
-job_log=$logdir/bareos.log
+./sbin/testfind-testfind -c etc/bareos -f SelfTest > "$selftest_log"
 
-rm -f $selftest_log
-rm -f $job_log
-
-./sbin/testfind-testfind -c etc/bareos -f SelfTest | tee  "$selftest_log"
-./sbin/testfind-testfind -c etc/bareos -f Wildtest | tee  "$wildcard_log"
-
-expect_grep "Total files.*50" \
+expect_grep "Number of files examined: 55" \
             "$selftest_log" \
             "Number of files is incorrect."
 
-expect_grep "Hard links.*2" \
-            "$selftest_log" \
-            "Number of files is incorrect."
+unopenable_dir=${tmp}/data/unopenable_dir
+mkdir -m 000 "$unopenable_dir"
 
-expect_grep "Total files.*18" \
+./sbin/testfind-testfind -c etc/bareos -f Wildtest > "$wildcard_log"
+
+expect_grep "Number of files examined: 19" \
             "$wildcard_log" \
             "Number of files is incorrect."
+
+if [ $(whoami) != "root" ]; then
+    expect_grep "\"$unopenable_dir\": ERR=Permission denied" \
+                "$error_log" \
+                "Error on faulty directory not detected."
+fi
 
 end_test
