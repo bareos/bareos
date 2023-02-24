@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -34,7 +34,6 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir);
 void* handle_director_connection(BareosSocket* dir);
 bool StartConnectToDirectorThreads();
 bool StopConnectToDirectorThreads(bool wait = false);
-JobControlRecord* NewFiledJcr();
 bool GetWantedCryptoCipher(JobControlRecord* jcr, crypto_cipher_t* cipher);
 void CleanupFileset(JobControlRecord* jcr);
 } /* namespace filedaemon */

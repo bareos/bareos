@@ -378,7 +378,7 @@ static inline bool AreMaxConcurrentJobsExceeded()
   return (cnt >= me->MaxConcurrentJobs) ? true : false;
 }
 
-JobControlRecord* NewFiledJcr()
+static inline JobControlRecord* NewFiledJcr()
 {
   JobControlRecord* jcr = new_jcr(FiledFreeJcr);
   jcr->fd_impl = new FiledJcrImpl;
