@@ -73,7 +73,7 @@ void ProcessFileset(directordaemon::FilesetResource* director_fileset,
   directordaemon::SendIncludeExcludeItems(jcr, director_fileset);
   TermFileset(jcr);
 
-  BlastDataToStorageDaemon(jcr, cipher, DEFAULT_NETWORK_BUFFER_SIZE, SaveFile);
+  BlastDataToStorageDaemon(jcr, nullptr, cipher);
 
   std::cout << "\nNumber of files examined: "
             << jcr->fd_impl->num_files_examined << "\n\n";

@@ -3,7 +3,7 @@
 
    Copyright (C) 2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -62,12 +62,7 @@ struct b_ctx {
   CIPHER_CONTEXT* cipher_ctx;  /* Cipher context */
 };
 
-bool BlastDataToStorageDaemon(JobControlRecord* jcr,
-                              crypto_cipher_t cipher,
-                              uint32_t buf_size,
-                              int callback(JobControlRecord* jcr,
-                                           FindFilesPacket* ff_pkt,
-                                           bool top_level));
+bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher);
 bool EncodeAndSendAttributes(JobControlRecord* jcr,
                              FindFilesPacket* ff_pkt,
                              int& data_stream);

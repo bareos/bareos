@@ -1803,11 +1803,6 @@ static bool BackupCmd(JobControlRecord* jcr)
   BareosSocket* sd = jcr->store_bsock;
   crypto_cipher_t cipher = CRYPTO_CIPHER_NONE;
 
-  ClientResource* client = nullptr;
-  {
-    ResLocker _{my_config};
-    client = (ClientResource*)my_config->GetNextRes(R_CLIENT, NULL);
-  }
   /* See if we are in restore only mode then we don't allow a backup to be
    * initiated. */
   if (restore_only_mode) {
@@ -1989,8 +1984,7 @@ static bool BackupCmd(JobControlRecord* jcr)
 
   // Send Files to Storage daemon
   Dmsg1(110, "begin blast ff=%p\n", (FindFilesPacket*)jcr->fd_impl->ff);
-  if (!BlastDataToStorageDaemon(jcr, cipher, client->max_network_buffer_size,
-                                SaveFile)) {
+  if (!BlastDataToStorageDaemon(jcr, nullptr, cipher)) {
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     BnetSuppressErrorMessages(sd, 1);
     Dmsg0(110, "Error in blast_data.\n");
