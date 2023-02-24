@@ -34,6 +34,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Fixed
 - Fix gcc warnings in ndmjob program [PR #1343]
 - filed: avoid reading from ephemeral buffer [PR #1373]
+- checkpoints: fix performance drop on big volume restores [PR #1345]
 
 ### Documentation
 - add explanation about binary version numbers [PR #1354]
@@ -48,6 +49,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1336]: https://github.com/bareos/bareos/pull/1336
 [PR #1339]: https://github.com/bareos/bareos/pull/1339
 [PR #1343]: https://github.com/bareos/bareos/pull/1343
+[PR #1345]: https://github.com/bareos/bareos/pull/1345
 [PR #1346]: https://github.com/bareos/bareos/pull/1346
 [PR #1348]: https://github.com/bareos/bareos/pull/1348
 [PR #1351]: https://github.com/bareos/bareos/pull/1351
