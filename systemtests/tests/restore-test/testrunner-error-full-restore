@@ -1,0 +1,70 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# Provoke a fatal error during a restore and check that the right
+# termination text is displayed.
+# The error is provoked by temporarily renaming the volume.
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+#shellcheck source=functions
+. functions
+
+start_test
+
+# we must ensure that the restore directory exists before we try to make it
+# read only.
+
+mv storage/TestVolume001{,.c}
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $log_home/setup.out
+setdebug level=100 storage=File
+status director
+status client
+status storage=File
+wait
+messages
+@$out $log_home/jobs.out
+list jobs
+@$out $log_home/should-hang.out
+restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done yes
+@sleep 3
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+bin/bareos restart
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $log_home/should-show-error.out
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File
+
+check_preconditions
+
+expect_grep "*** Restore Error ***" \
+            "$log_home/should-show-error.out" \
+            "Restore of job in removed volume was not set as failed!"
+
+mv storage/TestVolume001{.c,}
+
+end_test

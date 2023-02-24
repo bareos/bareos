@@ -1,0 +1,31 @@
+#!/bin/bash -x
+#
+# Utility functions for the testrunners in restore-test
+#
+runner_name="$(basename "$0")"
+log_home="${tmp}/${runner_name}"
+mkdir -p "${log_home}"
+default_joblist="${log_home}/jobs.out"
+check_preconditions ()
+{
+	joblist="${1:-${default_joblist}}"
+	# check that job with jobid=1 is a backuvp
+	if ! grep "1 | backup-bareos-fd" "${joblist}" | tail -n 1 | grep "| B" > /dev/null; then
+	   echo "Job 1 has to always be a backup job at the start of a test."
+	   exit 5
+	fi
+	# check that only one backup exists
+	# note: on multiple manually run calls,
+	# the new jobs list will be appended to the joblist file.
+	# Since all jobs are ordered by their job id in the
+	# list, we can just search for the last backup job and check
+	# whether that has jobid 1.
+	# Do note that this will not work when the new job list is empty.
+	# We might generate a false positive in that case, but this will be
+	# caught the automated tests, since they start with a fresh
+        # joblist file.
+	if ! grep "| B" "${joblist}" | tail -n 1 | grep "1 | backup-bareos-fd" > /dev/null; then
+	   echo "The only backup job is supposed to be the job with jobid=1."
+	   exit 6
+	fi
+}
