@@ -1443,6 +1443,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %dir %{script_dir}/ddl/drops
 %dir %{script_dir}/ddl/grants
 %dir %{script_dir}/ddl/updates
+%{script_dir}/setup_bareos_database
 %{script_dir}/create_bareos_database
 %{script_dir}/drop_bareos_database
 %{script_dir}/drop_bareos_tables

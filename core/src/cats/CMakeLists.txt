@@ -75,9 +75,9 @@ install(
 install(TARGETS bareossql DESTINATION ${libdir})
 
 install(
-  FILES create_bareos_database update_bareos_tables make_bareos_tables
-        grant_bareos_privileges drop_bareos_tables drop_bareos_database
-        make_catalog_backup delete_catalog_backup
+  FILES setup_bareos_database create_bareos_database update_bareos_tables
+        make_bareos_tables grant_bareos_privileges drop_bareos_tables
+        drop_bareos_database make_catalog_backup delete_catalog_backup
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
               WORLD_READ WORLD_EXECUTE
   DESTINATION ${scriptdir}

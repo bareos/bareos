@@ -6,10 +6,8 @@
 print_debug "drop database \"${db_name}\" (${DBTYPE})"
 "${scripts}/drop_bareos_database" "${DBTYPE}" >/dev/null 2>&1
 
-print_debug "creating database \"${db_name}\" (${DBTYPE})"
-"${scripts}/create_bareos_database" "${DBTYPE}" >/dev/null 2>&1
-"${scripts}/make_bareos_tables" "${DBTYPE}" >/dev/null 2>&1
-"${scripts}/grant_bareos_privileges" "${DBTYPE}" >/dev/null 2>&1
+print_debug "setu database \"${db_name}\" (${DBTYPE})"
+"${scripts}/setup_bareos_database" "${DBTYPE}" >/dev/null 2>&1
 
 if lsof="$(command -v lsof)"; then
   for port in $BASEPORT $BAREOS_DIRECTOR_PORT $BAREOS_STORAGE_PORT \
