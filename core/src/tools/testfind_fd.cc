@@ -47,36 +47,33 @@ void ProcessFileset(directordaemon::FilesetResource* director_fileset,
     return;
   }
 
-  JobControlRecord* jcr;
-  EmptySocket* dird_sock = new EmptySocket;
-  jcr = create_new_director_session(dird_sock);
+  struct jcr_deleter {
+    void operator()(JobControlRecord* jcr) const
+    {
+      CleanupFileset(jcr);
+      FreeJcr(jcr);
+    }
+  };
 
-  EmptySocket* stored_sock = new EmptySocket;
-  jcr->store_bsock = stored_sock;
+  std::unique_ptr<JobControlRecord, jcr_deleter> jcr(
+      create_new_director_session(new EmptySocket), jcr_deleter{});
+  jcr->store_bsock = new EmptySocket;
+  auto filed_sock = std::make_unique<DummyFdFilesetSocket>();
+  filed_sock->jcr = jcr.get();
+  jcr->file_bsock = filed_sock.get();
 
-  DummyFdFilesetSocket* filed_sock = new DummyFdFilesetSocket;
-
-  filed_sock->jcr = jcr;
-  jcr->file_bsock = filed_sock;
-
-  jcr->JobId = 1;  // helps send messages to to log directory instead of to the
-                   // director through a the dummy socket
+  jcr->JobId = 1;  // helps send messages to to the log directory, instead of
+                   // the director through the socket
 
   crypto_cipher_t cipher = CRYPTO_CIPHER_NONE;
-  GetWantedCryptoCipher(jcr, &cipher);
+  GetWantedCryptoCipher(jcr.get(), &cipher);
 
-  InitFileset(jcr);
-  directordaemon::SendIncludeExcludeItems(jcr, director_fileset);
-  TermFileset(jcr);
+  InitFileset(jcr.get());
+  directordaemon::SendIncludeExcludeItems(jcr.get(), director_fileset);
+  TermFileset(jcr.get());
 
-  BlastDataToStorageDaemon(jcr, cipher);
+  BlastDataToStorageDaemon(jcr.get(), cipher);
 
   std::cout << "\nNumber of files examined: "
             << jcr->fd_impl->num_files_examined << "\n\n";
-
-  jcr->file_bsock->close();
-  delete jcr->file_bsock;
-  jcr->file_bsock = nullptr;
-  CleanupFileset(jcr);
-  FreeJcr(jcr);
 }
