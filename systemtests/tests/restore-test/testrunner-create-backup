@@ -32,11 +32,16 @@ status client
 status storage=File
 wait
 messages
+@$out $log_home/jobs.out
+list jobs
 quit
 END_OF_DATA
 
 run_bconsole
 check_for_zombie_jobs storage=File
+
+# technically these are post conditions for this test
+check_preconditions
 
 expect_grep "No prior Full backup Job record found." \
 	    "$log_home/create-backup.out" \
