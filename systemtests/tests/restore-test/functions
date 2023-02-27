@@ -9,7 +9,7 @@ default_joblist="${log_home}/jobs.out"
 check_preconditions ()
 {
 	joblist="${1:-${default_joblist}}"
-	# check that job with jobid=1 is a backuvp
+	# check that job with jobid=1 is a backup
 	if ! grep "1 | backup-bareos-fd" "${joblist}" | tail -n 1 | grep "| B" > /dev/null; then
 	   echo "Job 1 has to always be a backup job at the start of a test."
 	   exit 5
