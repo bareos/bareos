@@ -50,4 +50,8 @@ expect_grep "Backup OK" \
 	    "$log_home/create-backup.out" \
 	    "Backup was not created correctly."
 
+expect_not_grep "warning" \
+		"$log_home/create-backup.out" \
+		"Backup was not created correctly."
+
 end_test
