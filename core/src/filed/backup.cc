@@ -301,6 +301,9 @@ static inline bool SetupEncryptionDigests(b_save_ctx& bsctx)
   } else if (BitIsSet(FO_SHA512, bsctx.ff_pkt->flags)) {
     bsctx.digest = crypto_digest_new(bsctx.jcr, CRYPTO_DIGEST_SHA512);
     bsctx.digest_stream = STREAM_SHA512_DIGEST;
+  } else if (BitIsSet(FO_XXH128, bsctx.ff_pkt->flags)) {
+    bsctx.digest = crypto_digest_new(bsctx.jcr, CRYPTO_DIGEST_XXH128);
+    bsctx.digest_stream = STREAM_XXH128_DIGEST;
   }
 
   // Did digest initialization fail?

@@ -243,6 +243,16 @@ void DoVerifyVolume(JobControlRecord* jcr)
               dir->msg);
         break;
 
+      case STREAM_XXH128_DIGEST:
+        BinToBase64(digest, sizeof(digest), (char*)sd->msg,
+                    CRYPTO_DIGEST_XXH128_SIZE, true);
+        Dmsg2(400, "send inx=%d XXH128=%s\n", jcr->JobFiles, digest);
+        dir->fsend("%d %d %s *XXH128-%d*", jcr->JobFiles, STREAM_XXH128_DIGEST,
+                   digest, jcr->JobFiles);
+        Dmsg2(20, "filed>dir: XXH128 len=%d: msg=%s\n", dir->message_length,
+              dir->msg);
+        break;
+
       case STREAM_RESTORE_OBJECT:
         jcr->lock();
         jcr->JobFiles++;

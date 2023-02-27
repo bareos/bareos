@@ -22,6 +22,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - restore: fix failed restores showing Restore ok with warning [PR #1387]
 - FreeBSD: build cleanup [PR #1336]
 - improvements to pr-tool [PR #1389]
+- file checksums: add new signature algorithm xxh128 [PR #1359]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -56,6 +57,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1352]: https://github.com/bareos/bareos/pull/1352
 [PR #1354]: https://github.com/bareos/bareos/pull/1354
 [PR #1356]: https://github.com/bareos/bareos/pull/1356
+[PR #1359]: https://github.com/bareos/bareos/pull/1359
 [PR #1361]: https://github.com/bareos/bareos/pull/1361
 [PR #1365]: https://github.com/bareos/bareos/pull/1365
 [PR #1366]: https://github.com/bareos/bareos/pull/1366

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -202,6 +202,10 @@ static const char* record_digest_to_str(PoolMem& resultbuffer,
       BinToBase64(digest, sizeof(digest), (char*)rec->data,
                   CRYPTO_DIGEST_SHA512_SIZE, true);
       break;
+    case STREAM_XXH128_DIGEST:
+      BinToBase64(digest, sizeof(digest), (char*)rec->data,
+                  CRYPTO_DIGEST_XXH128_SIZE, true);
+      break;
     default:
       return "";
   }
@@ -275,6 +279,8 @@ const char* stream_to_ascii(char* buf, int stream, int fi)
         return "contSHA256";
       case STREAM_SHA512_DIGEST:
         return "contSHA512";
+      case STREAM_XXH128_DIGEST:
+        return "contXXH128";
       case STREAM_SIGNED_DIGEST:
         return "contSIGNED-DIGEST";
       case STREAM_ENCRYPTED_SESSION_DATA:
@@ -344,6 +350,8 @@ const char* stream_to_ascii(char* buf, int stream, int fi)
       return "SHA256";
     case STREAM_SHA512_DIGEST:
       return "SHA512";
+    case STREAM_XXH128_DIGEST:
+      return "XXH128";
     case STREAM_SIGNED_DIGEST:
       return "SIGNED-DIGEST";
     case STREAM_ENCRYPTED_SESSION_DATA:
@@ -433,6 +441,7 @@ static const char* get_record_short_info(PoolMem& resultbuffer,
     case STREAM_SHA1_DIGEST:
     case STREAM_SHA256_DIGEST:
     case STREAM_SHA512_DIGEST:
+    case STREAM_XXH128_DIGEST:
       record_digest_to_str(resultbuffer, rec);
       break;
     case STREAM_PLUGIN_NAME: {
@@ -647,12 +656,10 @@ bool DeviceControlRecord::WriteRecord()
     goto bail_out;
   }
 
-  /*
-   * The record got translated when we got an after_rec pointer after calling
+  /* The record got translated when we got an after_rec pointer after calling
    * the bSdEventWriteRecordTranslation plugin event. If no translation has
    * taken place we just point the after_rec pointer to same DeviceRecord as in
-   * the before_rec pointer.
-   */
+   * the before_rec pointer. */
   if (!after_rec) {
     after_rec = before_rec;
   } else {
@@ -713,10 +720,8 @@ bool WriteRecordToBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
   char buf1[100], buf2[100];
   DeviceBlock* block = dcr->block;
 
-  /*
-   * After this point the record is in nrec not rec e.g. its either converted
-   * or is just a pointer to the same as the rec pointer being passed in.
-   */
+  /* After this point the record is in nrec not rec e.g. its either converted
+   * or is just a pointer to the same as the rec pointer being passed in. */
 
   while (1) {
     ASSERT(block->binbuf == (uint32_t)(block->bufp - block->buf));
@@ -741,28 +746,23 @@ bool WriteRecordToBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
         // Write header
         n = WriteHeaderToBlock(block, rec, rec->Stream);
         if (n < 0) {
-          /*
-           * the header did not fit into the block, so flush the current
+          /* the header did not fit into the block, so flush the current
            * block and come back to st_header and try again on the next block.
            */
           return false;
         }
 
         if (BlockWriteNavail(block) == 0) {
-          /*
-           * The header fit, but no bytes of data will fit,
+          /* The header fit, but no bytes of data will fit,
            * so flush this block and start the next block with a
-           * continuation header.
-           */
+           * continuation header. */
           rec->state = st_header_cont;
           return false;
         }
 
-        /*
-         * The header fit, and at least one byte of data will fit,
+        /* The header fit, and at least one byte of data will fit,
          * so move to the st_data state and start filling the block
-         * with data bytes
-         */
+         * with data bytes */
         rec->state = st_data;
         continue;
 
@@ -770,55 +770,43 @@ bool WriteRecordToBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
         // Write continuation header
         n = WriteHeaderToBlock(block, rec, -rec->Stream);
         if (n < 0) {
-          /*
-           * The continuation header wouldn't fit, which is impossible
-           * unless something is broken
-           */
+          /* The continuation header wouldn't fit, which is impossible
+           * unless something is broken */
           Emsg0(M_ABORT, 0, _("couldn't write continuation header\n"));
         }
 
-        /*
-         * After successfully writing a continuation header, we always start
-         * writing data, even if none will fit into this block.
-         */
+        /* After successfully writing a continuation header, we always start
+         * writing data, even if none will fit into this block. */
         rec->state = st_data;
 
         if (BlockWriteNavail(block) == 0) {
-          /*
-           * The header fit, but no bytes of data will fit,
+          /* The header fit, but no bytes of data will fit,
            * so flush the block and start the next block with
-           * data bytes
-           */
+           * data bytes */
           return false; /* Partial transfer */
         }
 
         continue;
 
       case st_data:
-        /*
-         * Write normal data
+        /* Write normal data
          *
          * Part of it may have already been transferred, and we
-         * may not have enough room to transfer the whole this time.
-         */
+         * may not have enough room to transfer the whole this time. */
         if (rec->remainder > 0) {
           n = WriteDataToBlock(block, rec);
           if (n < 0) {
-            /*
-             * error appending data to block should be impossible
-             * unless something is broken
-             */
+            /* error appending data to block should be impossible
+             * unless something is broken */
             Emsg0(M_ABORT, 0, _("data write error\n"));
           }
 
           rec->remainder -= n;
 
           if (rec->remainder > 0) {
-            /*
-             * Could not fit all of the data bytes into this block, so
+            /* Could not fit all of the data bytes into this block, so
              * flush the current block, and start the next block with a
-             * continuation header
-             */
+             * continuation header */
             rec->state = st_header_cont;
             return false;
           }
@@ -884,10 +872,8 @@ bool ReadRecordFromBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
   rec->Block = ((Device*)(dcr->block->dev))->EndBlock;
   rec->File = ((Device*)(dcr->block->dev))->EndFile;
 
-  /*
-   * Get the header. There is always a full header, otherwise we find it in the
-   * next block.
-   */
+  /* Get the header. There is always a full header, otherwise we find it in the
+   * next block. */
   Dmsg3(450, "Block=%d Ver=%d size=%u\n", dcr->block->BlockNumber,
         dcr->block->BlockVer, dcr->block->block_len);
   if (dcr->block->BlockVer == 1) {
@@ -916,10 +902,8 @@ bool ReadRecordFromBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
     dcr->block->binbuf -= rhl;
     remlen -= rhl;
 
-    /*
-     * If we are looking for more (remainder!=0), we reject anything
-     * where the VolSessionId and VolSessionTime don't agree
-     */
+    /* If we are looking for more (remainder!=0), we reject anything
+     * where the VolSessionId and VolSessionTime don't agree */
     if (rec->remainder
         && (rec->VolSessionId != VolSessionId
             || rec->VolSessionTime != VolSessionTime)) {
@@ -928,10 +912,8 @@ bool ReadRecordFromBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
       return false; /* This is from some other Session */
     }
 
-    /*
-     * If Stream is negative, it means that this is a continuation
-     * of a previous partially written record.
-     */
+    /* If Stream is negative, it means that this is a continuation
+     * of a previous partially written record. */
     if (Stream < 0) { /* continuation record? */
       Dmsg1(500, "Got negative Stream => continuation. remainder=%d\n",
             rec->remainder);
@@ -964,14 +946,12 @@ bool ReadRecordFromBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
           stream_to_ascii(buf2, rec->Stream, rec->FileIndex), data_bytes,
           remlen, rec->data_len);
   } else {
-    /*
-     * No more records in this block because the number
+    /* No more records in this block because the number
      * of remaining bytes are less than a record header
      * length, so return empty handed, but indicate that
      * he must read again. By returning, we allow the
      * higher level routine to fetch the next block and
-     * then reread.
-     */
+     * then reread. */
     Dmsg0(450, "read_record_block: nothing\n");
     SetBit(REC_NO_HEADER, rec->state_bits);
     SetBit(REC_BLOCK_EMPTY, rec->state_bits);
@@ -981,10 +961,8 @@ bool ReadRecordFromBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
 
   /* Sanity check */
   if (data_bytes >= MAX_BLOCK_LENGTH) {
-    /*
-     * Something is wrong, force read of next block, abort
-     *   continuing with this block.
-     */
+    /* Something is wrong, force read of next block, abort
+     *   continuing with this block. */
     SetBit(REC_NO_HEADER, rec->state_bits);
     SetBit(REC_BLOCK_EMPTY, rec->state_bits);
     EmptyBlock(dcr->block);
@@ -996,14 +974,12 @@ bool ReadRecordFromBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
 
   rec->data = CheckPoolMemorySize(rec->data, rec->data_len + data_bytes);
 
-  /*
-   * At this point, we have read the header, now we
+  /* At this point, we have read the header, now we
    * must transfer as much of the data record as
    * possible taking into account: 1. A partial
    * data record may have previously been transferred,
    * 2. The current block may not contain the whole data
-   * record.
-   */
+   * record. */
   if (remlen >= data_bytes) {
     // Got whole record
     memcpy(rec->data + rec->data_len, dcr->block->bufp, data_bytes);

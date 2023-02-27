@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -278,11 +278,13 @@ void AddFnameToIncludeList(FindFilesPacket* ff, int prefixed, const char* fname)
               rp++;
               break;
 #endif
+            case '4':
+              SetBit(FO_XXH128, inc->options);
+              rp++;
+              break;
             default:
-              /*
-               * If 2 or 3 is seen here, SHA2 is not configured, so
-               *  eat the option, and drop back to SHA-1.
-               */
+              /* If 2 or 3 is seen here, SHA2 is not configured, so
+               *  eat the option, and drop back to SHA-1. */
               if (rp[1] == '2' || rp[1] == '3') { rp++; }
               SetBit(FO_SHA1, inc->options);
               break;
@@ -477,10 +479,8 @@ bool FileIsIncluded(FindFilesPacket* ff, const char* file)
       }
       continue;
     }
-    /*
-     * No wild cards. We accept a match to the
-     *  end of any component.
-     */
+    /* No wild cards. We accept a match to the
+     *  end of any component. */
     Dmsg2(900, "pat=%s file=%s\n", inc->fname, file);
     len = strlen(file);
     if (inc->len == len && bstrcmp(inc->fname, file)) { return true; }
@@ -520,10 +520,8 @@ bool FileIsExcluded(FindFilesPacket* ff, const char* file)
   const char* p;
 
 #if defined(HAVE_WIN32)
-  /*
-   *  ***NB*** this removes the drive from the exclude
-   *  rule.  Why?????
-   */
+  /*  ***NB*** this removes the drive from the exclude
+   *  rule.  Why????? */
   if (file[1] == ':') { file += 2; }
 #endif
 
@@ -547,21 +545,17 @@ bool ParseSizeMatch(const char* size_match_pattern,
   bool retval = false;
   char *private_copy, *bp;
 
-  /*
-   * Make a private copy of the input string.
+  /* Make a private copy of the input string.
    * As we manipulate the input and size_to_uint64
-   * eats its input.
-   */
+   * eats its input. */
   private_copy = strdup(size_match_pattern);
 
   // Empty the matching arguments.
   *size_matching = s_sz_matching{};
 
-  /*
-   * See if the size is a range e.g. there is a - in the
+  /* See if the size is a range e.g. there is a - in the
    * match pattern. As a size of a file can never be negative
-   * this is a workable solution.
-   */
+   * this is a workable solution. */
   if ((bp = strchr(private_copy, '-')) != NULL) {
     *bp++ = '\0';
     size_matching->type = size_match_range;

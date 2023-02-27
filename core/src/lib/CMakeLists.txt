@@ -53,8 +53,6 @@ set(BAREOS_SRCS
     cram_md5.cc
     crypto.cc
     crypto_cache.cc
-    crypto_none.cc
-    crypto_nss.cc
     crypto_openssl.cc
     crypto_wrap.cc
     daemon.cc
@@ -104,6 +102,7 @@ set(BAREOS_SRCS
     var.cc
     watchdog.cc
     watchdog_timer.cc
+    xxhash.cc
 )
 
 if(HAVE_WIN32)
@@ -155,7 +154,7 @@ target_compile_definitions(
 target_link_libraries(
   bareos
   PRIVATE bareosfastlz ${OPENSSL_LIBRARIES} Threads::Threads ${ZLIB_LIBRARIES}
-          ${LZO2_LIBRARIES} ${CAM_LIBRARIES} CLI11::CLI11
+          ${LZO2_LIBRARIES} ${CAM_LIBRARIES} CLI11::CLI11 xxHash::xxhash
 )
 
 if(CMAKE_CXX_FLAGS MATCHES "-fsanitize=address"
