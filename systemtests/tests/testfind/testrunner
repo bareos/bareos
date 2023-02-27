@@ -40,7 +40,7 @@ expect_grep "Number of files examined: 19" \
             "$wildcard_log" \
             "Number of files is incorrect."
 
-if [ $(whoami) != "root" ]; then
+if [ ! -r "$unopenable_dir" ]; then
     expect_grep "\"$unopenable_dir\": ERR=Permission denied" \
                 "$error_log" \
                 "Error on faulty directory not detected."
