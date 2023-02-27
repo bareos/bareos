@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -60,7 +60,7 @@ add_subdirectory(py2plug-fd-percona-xtrabackup)
 add_subdirectory(py2plug-fd-postgres)
 add_subdirectory(py2plug-fd-vmware)
 add_subdirectory(py2plug-sd)
-add_subdirectory(python-bareos)
+add_subdirectory(py3plug-fd-basic)
 add_subdirectory(python-pam)
 add_subdirectory(quota-softquota)
 add_subdirectory(reload)

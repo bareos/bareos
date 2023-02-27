@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2020 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2023 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -26,8 +26,27 @@
 # are intended to pass the call to a method of an object of type
 # BareosFdPluginBaseclass (or derived)
 
+from bareosfd import bRC_OK, bRC_Error, JobMessage, M_ERROR
+
 # use this as global plugin object among your python-fd-plugin modules
 bareos_fd_plugin_object = None
+_plugin_class = None
+
+
+def BareosPlugin(plugin_class):
+    global _plugin_class
+    _plugin_class = plugin_class
+
+
+def load_bareos_plugin(plugindef):
+    global _plugin_class
+    global bareos_fd_plugin_object
+    try:
+        bareos_fd_plugin_object = _plugin_class(plugindef)
+        return bRC_OK
+    except Exception as e:
+        JobMessage(M_ERROR, "load_bareos_plugin() failed: {}\n".format(e))
+        return bRC_Error
 
 
 def parse_plugin_definition(plugindef):
