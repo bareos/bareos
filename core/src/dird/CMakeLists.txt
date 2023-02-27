@@ -182,8 +182,6 @@ if(HAVE_PAM)
   target_link_libraries(dird_objects PRIVATE ${PAM_LIBRARIES})
 endif()
 
-# add_subdirectory(dbcopy)
-
 add_executable(bareos-dbcheck ${DBCHKSRCS})
 
 target_link_libraries(

@@ -1458,7 +1458,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{backend_dir}/libbareoscats-postgresql.so*
 
 %files database-tools
-# dbtools with link to db libs (dbcheck, bscan, dbcopy)
+# dbtools with link to db libs (dbcheck, bscan)
 %defattr(-, root, root)
 %{_sbindir}/bareos-dbcheck
 %{_sbindir}/bscan

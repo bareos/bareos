@@ -350,18 +350,11 @@ linkcheck_rate_limit_timeout = 300.00
 
 # -- Options for manual page output ---------------------------------------
 
-man_bareos_dbcopy = "man/bareos-dbcopy"
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (
-        man_bareos_dbcopy,
-        "bareos-dbcopy",
-        "Copy the Bareos catalog database between catalog backends",
-        [author],
-        8,
-    )
+
 ]
 
 

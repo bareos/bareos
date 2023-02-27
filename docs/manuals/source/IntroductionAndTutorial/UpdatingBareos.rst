@@ -353,7 +353,7 @@ Upgrading Bareos to a new major release
    pair: Bareos; Upgrade
    pair: Upgrade; Major
 
-In most cases, a Bareos major upgrade can be achieve by:
+In most cases, a Bareos major upgrade can be achieved by:
 
 - Add new major repository (subscription only)
 - Package upgrade of the distribution.
