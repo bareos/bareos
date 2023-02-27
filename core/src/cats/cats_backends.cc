@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -170,10 +170,8 @@ BareosDb* db_init_database(JobControlRecord* jcr,
          _("Driver type not specified in Catalog resource.\n"));
   }
 
-  /*
-   * If we didn't find a mapping its fatal because we don't know what database
-   * backend to use.
-   */
+  /* If we didn't find a mapping its fatal because we don't know what database
+   * backend to use. */
   backend_interface_mapping = lookup_backend_interface_mapping(db_driver);
   if (backend_interface_mapping == NULL) {
     Jmsg(jcr, M_ERROR_TERM, 0, _("Unknown database driver: %s\n"), db_driver);
@@ -193,10 +191,8 @@ BareosDb* db_init_database(JobControlRecord* jcr,
     }
   }
 
-  /*
-   * This is a new backend try to use dynamic loading to load the backend
-   * library.
-   */
+  /* This is a new backend try to use dynamic loading to load the backend
+   * library. */
 
 #    if defined HAVE_WIN32
   Mmsg(shared_library_name, "libbareoscats-%s%s",
@@ -227,10 +223,8 @@ BareosDb* db_init_database(JobControlRecord* jcr,
 #    endif
 
   if (backend_shared_library) {
-    /*
-     * Create a new loaded shared library entry and tack it onto the list of
-     * loaded backend shared libs.
-     */
+    /* Create a new loaded shared library entry and tack it onto the list of
+     * loaded backend shared libs. */
 
     if (loaded_backends == NULL) {
       loaded_backends

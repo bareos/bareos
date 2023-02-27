@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1255,11 +1255,9 @@ bool BareosDb::GetFileList(JobControlRecord*,
               jobids, jobids, jobids);
   }
 
-  /*
-   * BootStrapRecord code is optimized for JobId sorted, with Delta, we need to
+  /* BootStrapRecord code is optimized for JobId sorted, with Delta, we need to
    * get them ordered by date. JobTDate and JobId can be mixed if using Copy or
-   * Migration
-   */
+   * Migration */
   Mmsg(query,
        "SELECT Path.Path, T1.Name, T1.FileIndex, T1.JobId, LStat, DeltaSeq, "
        "MD5, Fhinfo, Fhnode "
@@ -1371,8 +1369,7 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
 
     if (!SqlQuery(query.c_str())) { goto bail_out; }
 
-    /*
-     * We just have to take all incremental after the last Full/Diff
+    /* We just have to take all incremental after the last Full/Diff
      *
      * If we are doing always incremental, we need to limit the search to
      * only include incrementals that are older than (now -
@@ -1512,11 +1509,9 @@ bool BareosDb::get_quota_jobbytes(JobControlRecord* jcr,
   now = time(NULL);
   schedtime = now - JobRetention;
 
-  /*
-   * Bugfix, theres a small timing bug in the scheduler.
+  /* Bugfix, theres a small timing bug in the scheduler.
    * Add 5 seconds to the schedtime to ensure the
-   * last job from the job retention gets excluded.
-   */
+   * last job from the job retention gets excluded. */
   schedtime += 5;
 
   bstrutime(dt, sizeof(dt), schedtime);
@@ -1563,11 +1558,9 @@ bool BareosDb::get_quota_jobbytes_nofailed(JobControlRecord* jcr,
   now = time(NULL);
   schedtime = now - JobRetention;
 
-  /*
-   * Bugfix, theres a small timing bug in the scheduler.
+  /* Bugfix, theres a small timing bug in the scheduler.
    * Add 5 seconds to the schedtime to ensure the
-   * last job from the job retention gets excluded.
-   */
+   * last job from the job retention gets excluded. */
   schedtime += 5;
 
   bstrutime(dt, sizeof(dt), schedtime);
@@ -1813,13 +1806,11 @@ bool BareosDb::PrepareMediaSqlQuery(JobControlRecord* jcr,
   char esc[MAX_NAME_LENGTH * 2 + 1];
   PoolMem buf(PM_MESSAGE);
 
-  /*
-   * columns we care of.
+  /* columns we care of.
    * Reduced, to be better displayable.
    * Important:
    * column 2: pool.name, column 3: storage.name,
-   * as this is used for ACL handling (counting starts at 0).
-   */
+   * as this is used for ACL handling (counting starts at 0). */
   const char* columns
       = "Media.MediaId,"
         "Media.VolumeName,"

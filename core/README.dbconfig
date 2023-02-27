@@ -81,5 +81,3 @@ postgresql
   * update from 13.2:
     * db_version is already 2002. It detects, nothing to do.
   * update dbconfig already configured
-
-

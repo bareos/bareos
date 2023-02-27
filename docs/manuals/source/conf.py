@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -353,9 +353,7 @@ linkcheck_rate_limit_timeout = 300.00
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-
-]
+man_pages = []
 
 
 # -- Options for Texinfo output -------------------------------------------

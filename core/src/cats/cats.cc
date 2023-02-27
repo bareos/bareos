@@ -3,7 +3,7 @@
 
    Copyright (C) 2011-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -64,19 +64,15 @@ BareosDb* BareosDb::CloneDatabaseConnection(JobControlRecord* jcr,
                                             bool get_pooled_connection,
                                             bool need_private)
 {
-  /*
-   * See if its a simple clone e.g. with mult_db_connections set to false
-   * then we just return the calling class pointer.
-   */
+  /* See if its a simple clone e.g. with mult_db_connections set to false
+   * then we just return the calling class pointer. */
   if (!mult_db_connections && !need_private) {
     ref_count_++;
     return this;
   }
 
-  /*
-   * A bit more to do here just open a new session to the database.
-   * See if we need to get a pooled or non pooled connection.
-   */
+  /* A bit more to do here just open a new session to the database.
+   * See if we need to get a pooled or non pooled connection. */
   if (get_pooled_connection) {
     return DbSqlGetPooledConnection(
         jcr, db_driver_, db_name_, db_user_, db_password_, db_address_,
@@ -209,10 +205,8 @@ void BareosDb::UnescapeObject(JobControlRecord*,
   }
 
   dest = CheckPoolMemorySize(dest, expected_len + 1);
-  /*
-   * Note: Base64ToBin() does not check the expected length correctly,
-   * so we must add 2 to make sure it works.
-   */
+  /* Note: Base64ToBin() does not check the expected length correctly,
+   * so we must add 2 to make sure it works. */
   Base64ToBin(dest, expected_len + 2, from, strlen(from));
   *dest_len = expected_len;
   dest[expected_len] = '\0';
