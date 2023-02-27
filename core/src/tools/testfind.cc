@@ -25,32 +25,17 @@
  * Test program for find files
  */
 
-
 #include "include/bareos.h"
-#include "include/ch.h"
 
-#include "dird/dird_conf.h"
 #include "dird/dird_globals.h"
-#include "dird/jcr_util.h"
-#include "dird/testfind_jcr.h"
-#include "filed/fileset.h"
-
-#include "lib/mntent_cache.h"
 #include "lib/parse_conf.h"
 #include "lib/cli.h"
-#include "dird/jcr_util.h"
-#include "dird/dird_globals.h"
-#include "dird/dird_conf.h"
-#include "dird/director_jcr_impl.h"
-#include "lib/recent_job_results_list.h"
-#include "lib/tree.h"
-#include "findlib/find.h"
-#include "findlib/attribs.h"
+#include "lib/mntent_cache.h"
+#include "tools/testfind_fd.h"
 
 #if defined(HAVE_WIN32)
 #  define isatty(fd) (fd == 0)
 #endif
-
 
 using namespace directordaemon;
 
@@ -88,31 +73,40 @@ int main(int argc, char* const* argv)
   CLI11_PARSE(testfind_app, argc, argv);
 
   directordaemon::my_config = InitDirConfig(configfile.c_str(), M_ERROR_TERM);
-  directordaemon::my_config->ParseConfig();
+
+  if (!directordaemon::my_config) {
+    fprintf(stderr, "Error parsing configuration!\n");
+    exit(2);
+  }
+  if (!directordaemon::my_config->ParseConfig()) {
+    fprintf(stderr, "Error parsing configuration!\n");
+    exit(3);
+  }
 
   FilesetResource* dir_fileset = (FilesetResource*)my_config->GetResWithName(
       R_FILESET, filesetname.c_str());
 
+  InitMsg(nullptr, nullptr);
+
   if (!dir_fileset) {
     fprintf(stderr, "%s: Fileset not found\n", filesetname.c_str());
     FilesetResource* var;
-
     fprintf(stderr, "Valid FileSets:\n");
-
     foreach_res (var, R_FILESET) {
       fprintf(stderr, "    %s\n", var->resource_name_);
     }
-
     exit(1);
   }
 
-  launchFileDaemonLogic(dir_fileset, configfile.c_str(), print_attributes);
+  ProcessFileset(dir_fileset, configfile.c_str(), print_attributes);
 
   if (my_config) {
     delete my_config;
     my_config = NULL;
   }
+
   FlushMntentCache();
+  TermMsg();
 
   exit(0);
 }

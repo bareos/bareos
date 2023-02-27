@@ -18,31 +18,29 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-// Testfind Sockets abstraction.
 
-#include "lib/bsock_testfind.h"
+#ifndef BAREOS_LIB_BSOCK_TESTFIND_H_
+#define BAREOS_LIB_BSOCK_TESTFIND_H_
 
+#include "lib/bsock_tcp.h"
+#include "include/jcr.h"
 
-#ifndef ENODATA /* not defined on BSD systems */
-#  define ENODATA EPIPE
-#endif
+class EmptySocket : public BareosSocketTCP {
+ public:
+  EmptySocket();
+  ~EmptySocket();
 
-#ifndef SOL_TCP
-#  define SOL_TCP IPPROTO_TCP
-#endif
+  bool send() override;
+};
 
-#ifdef HAVE_WIN32
-#  define socketRead(fd, buf, len) ::recv(fd, buf, len, 0)
-#  define socketWrite(fd, buf, len) ::send(fd, buf, len, 0)
-#  define socketClose(fd) ::closesocket(fd)
-#else
-#  define socketRead(fd, buf, len) ::read(fd, buf, len)
-#  define socketWrite(fd, buf, len) ::write(fd, buf, len)
-#  define socketClose(fd) ::close(fd)
-#endif
+class DummyFdFilesetSocket : public BareosSocketTCP {
+ public:
+  DummyFdFilesetSocket();
+  ~DummyFdFilesetSocket();
 
-BareosSocketTestfind::BareosSocketTestfind() : BareosSocketTCP() {}
+  JobControlRecord* jcr;
 
-BareosSocketTestfind::~BareosSocketTestfind() { destroy(); }
+  bool send() override;
+};
 
-bool BareosSocketTestfind::send() { return true; }
+#endif  // BAREOS_LIB_BSOCK_TESTFIND_H_

@@ -18,18 +18,24 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
+// Testfind Sockets abstraction.
 
-#ifndef BAREOS_LIB_BSOCK_TESTFIND_H_
-#define BAREOS_LIB_BSOCK_TESTFIND_H_
+#include "tools/dummysockets.h"
+#include "filed/fileset.h"
 
-#include "lib/bsock_tcp.h"
+EmptySocket::EmptySocket() : BareosSocketTCP() {}
 
-class BareosSocketTestfind : public BareosSocketTCP {
- public:
-  BareosSocketTestfind();
-  ~BareosSocketTestfind();
+EmptySocket::~EmptySocket() { destroy(); }
 
-  bool send() override;
-};
+bool EmptySocket::send() { return true; }
 
-#endif  // BAREOS_LIB_BSOCK_TESTFIND_H_
+DummyFdFilesetSocket::DummyFdFilesetSocket() : BareosSocketTCP() {}
+
+DummyFdFilesetSocket::~DummyFdFilesetSocket() { destroy(); }
+
+bool DummyFdFilesetSocket::send()
+{
+  StripTrailingJunk(msg);
+  filedaemon::AddFileset(jcr, msg);
+  return true;
+}

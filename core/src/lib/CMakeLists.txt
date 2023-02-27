@@ -43,7 +43,6 @@ set(BAREOS_SRCS
     bsnprintf.cc
     bsock.cc
     bsock_tcp.cc
-    bsock_testfind.cc
     bstringlist.cc
     bsys.cc
     btime.cc

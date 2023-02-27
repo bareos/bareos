@@ -2,4 +2,5 @@ Messages {
   Name = Standard
   Director = bareos-dir = all, !skipped, !restored
   Description = "Send relevant messages to the Director."
+  append = "@logdir@/bareos.log" = all, !skipped, !saved, !audit
 }

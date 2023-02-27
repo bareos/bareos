@@ -64,6 +64,13 @@ if(NOT HAVE_WIN32)
   list(APPEND TOOLS_SBIN bpluginfo btestls)
 endif()
 
+if(NOT client-only)
+  set(TSTFNDSRCS testfind.cc testfind_fd.cc dummysockets.cc)
+  add_executable(testfind ${TSTFNDSRCS})
+  target_link_libraries(testfind dird_objects fd_objects bareosfind CLI11::CLI11)
+  list(APPEND TOOLS_SBIN testfind)
+endif()
+
 install(TARGETS ${TOOLS_BIN} DESTINATION "${bindir}")
 install(TARGETS ${TOOLS_SBIN} DESTINATION "${sbindir}")
 
