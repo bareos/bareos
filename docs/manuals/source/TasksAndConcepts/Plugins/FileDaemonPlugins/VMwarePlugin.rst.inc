@@ -39,6 +39,10 @@ Current limitations amongst others are:
    When creating a VM from template or OVA, the parameter **ddb.adaptertype** in the .vmdk file is changed from **lsilogic** to **buslogic** although SCSI adapter type is VMware Paravirtual or LSI Logic. Restore works to the same still existing VM, but when such a VM was completely removed so that the plugin recreates it via vSphere API, the newly created disk will have **ddb.adaptertype** set to **lsilogic** with different numbers of cylinders and heads which causes the restore to fail due to disk geometry mismatch. Currently there's no known workaround.
 
 
+.. limitation:: VMware Plugin: Restore to different vCenter Server is unsupported.
+
+   Restore to a different vCenter Server was not tested, it will probably not work, so it is currently unsupported.
+
 
 Requirements
 ^^^^^^^^^^^^
@@ -338,6 +342,35 @@ Since :sinceVersion:`22.0.0: VMware Plugin: recreate VMs` the plugin will recrea
 
    When restoring a VM to a different location while the backed up VM still exists and a static IP is configured within the VM: To avoid IP address conflicts, make sure to also add the plugin option :command:`restore_powerstate=off` and disable or change the network adapter configuration of the VM before powering it on.
 
+To restore to a different folder, datacenter, host, cluster, resource pool or datastore, the corresponding plugin options must be passed. All plugin options which have been effective at backup time will be passed on restore and each individual option can be overridden by passing an options string at restore time. For example, to restore to a different VM name and different datastore, pass the following plugin option string:
+
+.. code-block:: bconsole
+   :caption: Example restore plugin options string
+
+   python:datastore=datastore2:vmname=testvm1restored
+
+All other plugin options which are not passed explicitily on restore will be the same as at backup time.
+
+Note that most plugin options are used for backup and restore, but there are some which can be only used on restore, for example to prevent from powering on the VM automatically after restore if it was powered on at backup time, use this plugin options string:
+
+.. code-block:: bconsole
+   :caption: Example restore plugin options string with powerstate
+
+   python:restore_datastore=datastore2:vmname=testvm1restored:restore_powerstate=off
+
+See below for a complete restore example and description of all plugin options.
+
+
+Restore using Bareos WebUI
+''''''''''''''''''''''''''
+
+Since :sinceVersion:`22.0.0: VMware Plugin: Restore using WebUI` it is possible to use the Bareos WebUI to restore VMware Plugin jobs.
+
+When using the WebUI to restore a VMware Plugin job, it is **important** to set *Merge all client file sets* to **no** and *Merge all jobs up to the last full backup together* to **yes**. In the *File selection* all files must be selected. Only restoring selected virtual disks will probably not work and is currently unsupported. The Bareos WebUI will detect if a plugin based jobs is restore and will then show an additional *Plugin options* field, here a plugin options string starting with ``python:`` as described above can be entered.
+
+.. image:: /include/images/bareos-webui-restore-with-pluginoptions.*
+   :width: 80.0%
+
 Restore to local VMDK File
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -484,8 +517,10 @@ After the restore process has finished, the restored VMDK files can be found und
 Description of all Plugin Options
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Note that all plugin options that have been used at backup time, are passed on restore. The VM metadata is saved in restoreobjects both in the catalog DB and volume, it is used on restore if the VM must be recreated. Most options are used for both backup and restore, some which can be only used for restore start with **restore_**. Where nothing special is mentioned regarding restore, it is normally not necessary or useful to override that option on restore.
+
 vcserver (mandatory on backup)
-   Hostname (FQDN) or IP address of vCenter server
+   Hostname (FQDN) or IP address of vCenter server. Restore to different vCenter Server is unsupported.
 
 vcuser (mandatory on backup)
    Username for API access to vCenter, eg. administrator@vsphere.local
@@ -494,13 +529,13 @@ vcpass (mandatory on backup)
    Password for API access to vCenter
 
 dc (mandatory on backup)
-   Datacenter name
+   Datacenter name. This can be optionally passed on restore to recreate the VM in a different datacenter.
 
 folder (mandatory on backup)
-   The VM folder in which the VM to be backed up resides. This must be given like a UNIX path with ``/`` as separator.
+   The VM folder in which the VM to be backed up resides. This must be given like a UNIX path with ``/`` as separator. On restore if defined will recreate the VM in a different folder. The given folder must exist before starting the restore.
 
 vmname (mandatory on backup)
-   The name of the VM to be backed up.
+   The name of the VM to be backed up. On restore it is possible to override this option in order to recreate the VM with a different name.
 
 vcthumbprint (optional)
    Thumbprint of the vCenter SSL Certificate, which is the SHA1 checksum of the SSL Certificate
