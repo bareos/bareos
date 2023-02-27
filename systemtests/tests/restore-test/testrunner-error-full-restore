@@ -61,7 +61,7 @@ check_for_zombie_jobs storage=File
 
 check_preconditions
 
-expect_grep "*** Restore Error ***" \
+expect_grep "Termination:.*Restore Error" \
             "$log_home/should-show-error.out" \
             "Restore of job in removed volume was not set as failed!"
 
