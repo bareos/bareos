@@ -1344,10 +1344,12 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
   bstrutime(date, sizeof(date), StartTime + 1);
   jobids->clear();
 
+  char job_type = jr->JobType == JT_ARCHIVE ? 'A' : 'B';
+  Dmsg1(300, "AccurateGetJobids: Looking for jobs of type '%c'.\n", job_type);
   // First, find the last good Full backup for this job/client/fileset
   FillQuery(query, SQL_QUERY::create_temp_accurate_jobids,
             edit_uint64(jcr->JobId, jobid), edit_uint64(jr->ClientId, clientid),
-            date, edit_uint64(jr->FileSetId, filesetid));
+            job_type, date, edit_uint64(jr->FileSetId, filesetid));
 
   if (!SqlQuery(query.c_str())) { goto bail_out; }
 
@@ -1360,14 +1362,14 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
          "FROM Job JOIN FileSet USING (FileSetId) "
          "WHERE ClientId = %s "
          "AND JobFiles > 0 "
-         "AND Level='D' AND JobStatus IN ('T','W') AND Type='B' "
+         "AND Level='D' AND JobStatus IN ('T','W') AND Type='%c' "
          "AND StartTime > (SELECT EndTime FROM btemp3%s ORDER BY EndTime DESC "
          "LIMIT 1) "
          "AND StartTime < '%s' "
          "AND FileSet.FileSet= (SELECT FileSet FROM FileSet WHERE FileSetId = "
          "%s) "
          "ORDER BY Job.JobTDate DESC LIMIT 1 ",
-         jobid, clientid, jobid, date, filesetid);
+         jobid, clientid, job_type, jobid, date, filesetid);
 
     if (!SqlQuery(query.c_str())) { goto bail_out; }
 
@@ -1384,14 +1386,14 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
          "SELECT JobId, StartTime, EndTime, JobTDate, PurgedFiles "
          "FROM Job JOIN FileSet USING (FileSetId) "
          "WHERE ClientId = %s "
-         "AND Level='I' AND JobStatus IN ('T','W') AND Type='B' "
+         "AND Level='I' AND JobStatus IN ('T','W') AND Type='%c' "
          "AND StartTime > (SELECT EndTime FROM btemp3%s ORDER BY EndTime DESC "
          "LIMIT 1) "
          "AND StartTime < '%s' "
          "AND FileSet.FileSet= (SELECT FileSet FROM FileSet WHERE FileSetId = "
          "%s) "
          "ORDER BY Job.JobTDate DESC ",
-         jobid, clientid, jobid, date, filesetid);
+         jobid, clientid, job_type, jobid, date, filesetid);
     if (!SqlQuery(query.c_str())) { goto bail_out; }
   }
 
