@@ -345,7 +345,7 @@ Since :sinceVersion:`22.0.0: VMware Plugin: recreate VMs` the plugin will recrea
 To restore to a different folder, datacenter, host, cluster, resource pool or datastore, the corresponding plugin options must be passed. All plugin options which have been effective at backup time will be passed on restore and each individual option can be overridden by passing an options string at restore time. For example, to restore to a different VM name and different datastore, pass the following plugin option string:
 
 .. code-block:: bconsole
-   :caption: Example plugin options string
+   :caption: Example restore plugin options string
 
    python:datastore=datastore2:vmname=testvm1restored
 
@@ -354,9 +354,9 @@ All other plugin options which are not passed explicitily on restore will be the
 Note that most plugin options are used for backup and restore, but there are some which can be only used on restore, for example to prevent from powering on the VM automatically after restore if it was powered on at backup time, use this plugin options string:
 
 .. code-block:: bconsole
-   :caption: Example plugin options string with powerstate
+   :caption: Example restore plugin options string with powerstate
 
-   python:datastore=datastore2:vmname=testvm1restored:restore_powerstate=off
+   python:restore_datastore=datastore2:vmname=testvm1restored:restore_powerstate=off
 
 See below for a complete restore example and description of all plugin options.
 
@@ -515,10 +515,10 @@ After the restore process has finished, the restored VMDK files can be found und
 Description of all Plugin Options
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Note that all plugin options that have been used at backup time, are passed on restore. The VM metadata is saved in restoreobjects both in the catalog DB and volume, it is used on restore if the VM must be recreated. Most options are used for both backup and restore, some which can be only used for restore start with **restore_**. Where nothing special is mentioned regarding restore, it is normally not necessary or useful to ovirride that option on restore.
+Note that all plugin options that have been used at backup time, are passed on restore. The VM metadata is saved in restoreobjects both in the catalog DB and volume, it is used on restore if the VM must be recreated. Most options are used for both backup and restore, some which can be only used for restore start with **restore_**. Where nothing special is mentioned regarding restore, it is normally not necessary or useful to override that option on restore.
 
 vcserver (mandatory on backup)
-   Hostname (FQDN) or IP address of vCenter server. This should not be overridden on restore, as it is currently unknown if this works, so restore to a different vCenter is currently not supported.
+   Hostname (FQDN) or IP address of vCenter server. Restore to different vCenter Server is unsupported.
 
 vcuser (mandatory on backup)
    Username for API access to vCenter, eg. administrator@vsphere.local
@@ -530,7 +530,7 @@ dc (mandatory on backup)
    Datacenter name. This can be optionally passed on restore to recreate the VM in a different datacenter.
 
 folder (mandatory on backup)
-   The VM folder in which the VM to be backed up resides. This must be given like a UNIX path with ``/`` as separator. On restore it is possible to recreate the VM in a different folder by passing this option, note thathe plugin will not create any folder, please make sure that the folder already exists before starting the restore.
+   The VM folder in which the VM to be backed up resides. This must be given like a UNIX path with ``/`` as separator. On restore if defined will recreate the VM in a different folder. The given folder must exist before starting the restore.
 
 vmname (mandatory on backup)
    The name of the VM to be backed up. On restore it is possible to override this option in order to recreate the VM with a different name.
