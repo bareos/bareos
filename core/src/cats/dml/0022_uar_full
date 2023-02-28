@@ -5,7 +5,7 @@ SELECT Job.JobId, Job.JobTDate, Job.ClientId, Job.Level, Job.JobFiles, Job.JobBy
  WHERE temp1.JobId      = Job.JobId
    AND Level            = 'F'
    AND JobStatus IN ('T','W')
-   AND Type             = 'B'
+   AND Type             = '%c'
    AND Media.Enabled    = 1
    AND JobMedia.JobId   = Job.JobId
    AND JobMedia.MediaId = Media.MediaId
