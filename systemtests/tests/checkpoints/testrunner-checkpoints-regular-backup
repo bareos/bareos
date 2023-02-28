@@ -30,7 +30,7 @@ cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
 messages
 @$out $backup_log
-run job=$slowjob yes
+run job=$slowjob fileset=SelfTest yes
 status director
 status client
 status storage=File

@@ -33,7 +33,7 @@ cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
 messages
 @$out $backup_log
-run job=$slowjob level=Full yes
+run job=$slowjob fileset=bigfileset level=Full yes
 quit
 END_OF_DATA
 

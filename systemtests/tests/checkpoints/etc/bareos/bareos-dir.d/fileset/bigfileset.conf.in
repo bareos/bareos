@@ -1,6 +1,6 @@
 FileSet {
-  Name = "SelfTest"
-  Description = "fileset just to backup some files for selftest"
+  Name = "bigfileset"
+  Description = "fileset that contains the systemtest directory of the source directory"
   Include {
     Options {
       Signature = MD5 # calculate md5 checksum per file
@@ -14,7 +14,6 @@ FileSet {
       fstype = zfs
       fstype = btrfs
     }
-    File=<@tmpdir@/file-list
-
+    File = "@PROJECT_SOURCE_DIR@/tests/"
   }
 }

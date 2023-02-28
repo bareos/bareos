@@ -29,7 +29,7 @@ cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
 messages
 @$out $backup_log
-run job=$slowjob level=Full spooldata=yes yes
+run job=$slowjob fileset=SelfTest level=Full spooldata=yes yes
 wait
 messages
 quit

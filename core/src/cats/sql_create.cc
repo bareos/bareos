@@ -104,64 +104,32 @@ bool BareosDb::CreateJobmediaRecord(JobControlRecord* jcr, JobMediaDbRecord* jm)
 {
   DbLocker _{this};
 
+  Mmsg(cmd, "SELECT count(*) from JobMedia WHERE JobId=%lu", jm->JobId);
+  int count = GetSqlRecordMax(jcr);
+  if (count < 0) { count = 0; }
+  count++;
+
   /* clang-format off */
   Mmsg(cmd,
-       "UPDATE JobMedia SET "
-       "FirstIndex = (CASE WHEN firstindex=0 THEN %lu ELSE firstindex END), "
-       "StartBlock = (CASE WHEN startblock=0 THEN %lu ELSE startblock END), "
-       "LastIndex=%lu, EndFile=%lu, EndBlock=%lu, JobBytes=%llu "
-       "WHERE JobId=%lu AND MediaId=%lu",
-       jm->FirstIndex,
-       jm->StartBlock,
-       jm->LastIndex,
-       jm->EndFile,
-       jm->EndBlock,
-       jm->JobBytes,
+       "INSERT INTO JobMedia (JobId,MediaId,FirstIndex,LastIndex,"
+       "StartFile,EndFile,StartBlock,EndBlock,VolIndex,JobBytes) "
+       "VALUES (%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%llu)",
        jm->JobId,
-       jm->MediaId);
+       jm->MediaId,
+       jm->FirstIndex, jm->LastIndex,
+       jm->StartFile, jm->EndFile,
+       jm->StartBlock, jm->EndBlock,
+       count,
+       jm->JobBytes);
   /* clang-format on */
 
-  bool update_result = false;
-  bool insert_result = false;
   Dmsg0(300, cmd);
-
-  if (UPDATE_DB(jcr, cmd) <= 0) {
-    Dmsg2(200,
-          "Update JobMedia record %s failed: ERR=%s. Trying now to insert: \n",
-          cmd, sql_strerror());
-
-    Mmsg(cmd, "SELECT count(*) from JobMedia WHERE JobId=%lu", jm->JobId);
-    int count = GetSqlRecordMax(jcr);
-    if (count < 0) { count = 0; }
-    count++;
-
-    /* clang-format off */
-    Mmsg(cmd,
-         "INSERT INTO JobMedia (JobId,MediaId,FirstIndex,LastIndex,"
-         "StartFile,EndFile,StartBlock,EndBlock,VolIndex,JobBytes) "
-         "VALUES (%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%llu)",
-         jm->JobId,
-         jm->MediaId,
-         jm->FirstIndex, jm->LastIndex,
-         jm->StartFile, jm->EndFile,
-         jm->StartBlock, jm->EndBlock,
-         count,
-         jm->JobBytes);
-    /* clang-format on */
-
-    if (INSERT_DB(jcr, cmd) != 1) {
-      Mmsg2(errmsg, _("Create JobMedia record %s failed: ERR=%s\n"), cmd,
-            sql_strerror());
-    } else {
-      insert_result = true;
-    }
+  if (INSERT_DB(jcr, cmd) != 1) {
+    Mmsg2(errmsg, _("Create JobMedia record %s failed: ERR=%s\n"), cmd,
+          sql_strerror());
   } else {
-    update_result = true;
-  }
-
-  if (update_result || insert_result) {
     // Worked, now update the Media record with the EndFile and EndBlock
-    Mmsg(cmd, "UPDATE Media SET EndFile=%u, EndBlock=%u WHERE MediaId=%u",
+    Mmsg(cmd, "UPDATE Media SET EndFile=%lu, EndBlock=%lu WHERE MediaId=%lu",
          jm->EndFile, jm->EndBlock, jm->MediaId);
     if (UPDATE_DB(jcr, cmd) == -1) {
       Mmsg2(errmsg, _("Update Media record %s failed: ERR=%s\n"), cmd,

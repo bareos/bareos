@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,6 +28,7 @@
 #include "stored/append.h"
 #include "stored/stored.h"
 #include "stored/acquire.h"
+#include "stored/checkpoint_handler.h"
 #include "stored/fd_cmds.h"
 #include "stored/stored_globals.h"
 #include "stored/stored_jcr_impl.h"
@@ -45,11 +46,6 @@ namespace storagedaemon {
 static char OK_data[] = "3000 OK data\n";
 static char OK_append[] = "3000 OK append data\n";
 static char OK_replicate[] = "3000 OK replicate data\n";
-
-/* Forward referenced functions */
-
-void PossibleIncompleteJob(JobControlRecord*, int32_t) {}
-
 
 ProcessedFileData::ProcessedFileData(DeviceRecord* record)
     : volsessionid_(record->VolSessionId)
@@ -98,53 +94,9 @@ bool IsAttribute(DeviceRecord* record)
          || CryptoDigestStreamType(record->maskedStream) != CRYPTO_DIGEST_NONE;
 }
 
-static void UpdateFileList(JobControlRecord* jcr)
-{
-  Dmsg0(100, _("... update file list\n"));
-  jcr->sd_impl->dcr->DirAskToUpdateFileList();
-}
-
-static void UpdateJobmediaRecord(JobControlRecord* jcr)
-{
-  Dmsg0(100, _("... create job media record\n"));
-  jcr->sd_impl->dcr->DirCreateJobmediaRecord(false);
-}
-
-static void UpdateJobrecord(JobControlRecord* jcr)
-{
-  Dmsg2(100, _("... update job record: %llu bytes %lu files\n"), jcr->JobBytes,
-        jcr->JobFiles);
-  jcr->sd_impl->dcr->DirAskToUpdateJobRecord();
-}
-
-void DoBackupCheckpoint(JobControlRecord* jcr)
-{
-  Dmsg0(100, _("Checkpoint: Syncing current backup status to catalog\n"));
-  UpdateJobrecord(jcr);
-  UpdateFileList(jcr);
-  UpdateJobmediaRecord(jcr);
-  Dmsg0(100, _("Checkpoint completed\n"));
-}
-
-static time_t DoTimedCheckpoint(JobControlRecord* jcr,
-                                time_t checkpoint_time,
-                                time_t checkpoint_interval)
-{
-  const time_t now
-      = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-  if (now > checkpoint_time) {
-    while (checkpoint_time <= now) { checkpoint_time += checkpoint_interval; }
-    Jmsg(jcr, M_INFO, 0,
-         _("Doing timed backup checkpoint. Next checkpoint in %d seconds\n"),
-         checkpoint_interval);
-    DoBackupCheckpoint(jcr);
-  }
-
-  return checkpoint_time;
-}
-
-static void SaveFullyProcessedFiles(JobControlRecord* jcr,
-                                    std::vector<ProcessedFile>& processed_files)
+static bool SaveFullyProcessedFilesAttributes(
+    JobControlRecord* jcr,
+    std::vector<ProcessedFile>& processed_files)
 {
   if (!processed_files.empty()) {
     for_each(
@@ -152,7 +104,9 @@ static void SaveFullyProcessedFiles(JobControlRecord* jcr,
         [&jcr](ProcessedFile& file) { file.SendAttributesToDirector(jcr); });
     jcr->JobFiles = processed_files.back().GetFileIndex();
     processed_files.clear();
+    return true;
   }
+  return false;
 }
 
 // Append Data sent from File daemon
@@ -239,8 +193,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     ok = false;
   }
 
-  /*
-   * Get Data from daemon, write to device.  To clarify what is
+  /* Get Data from daemon, write to device.  To clarify what is
    * going on here.  We expect:
    * - A stream header
    * - Multiple records of data
@@ -254,14 +207,12 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
    *
    * So we get the (stream header, data, EOD) three time for each
    * file. 1. for the Attributes, 2. for the file data if any,
-   * and 3. for the MD5 if any.
-   */
+   * and 3. for the MD5 if any. */
   jcr->sd_impl->dcr->VolFirstIndex = jcr->sd_impl->dcr->VolLastIndex = 0;
   jcr->run_time = time(NULL); /* start counting time for rates */
 
-  auto now
-      = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-  time_t next_checkpoint_time = now + me->checkpoint_interval;
+  const bool checkpoints_enabled = me->checkpoint_interval > 0;
+  CheckpointHandler checkpoint_handler(me->checkpoint_interval);
 
   std::vector<ProcessedFile> processed_files{};
   int64_t current_volumeid = jcr->sd_impl->dcr->VolMediaId;
@@ -270,22 +221,19 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   uint32_t current_block_number = jcr->sd_impl->dcr->block->BlockNumber;
 
   for (last_file_index = 0; ok && !jcr->IsJobCanceled();) {
-    /*
-     * Read Stream header from the daemon.
+    /* Read Stream header from the daemon.
      *
      * The stream header consists of the following:
      * - file_index (sequential Bareos file index, base 1)
      * - stream     (Bareos number to distinguish parts of data)
      * - info       (Info for Storage daemon -- compressed, encrypted, ...)
-     *               info is not currently used, so is read, but ignored!
-     */
+     *               info is not currently used, so is read, but ignored! */
     if ((n = BgetMsg(bs)) <= 0) {
       if (n == BNET_SIGNAL && bs->message_length == BNET_EOD) {
         break; /* end of data */
       }
       Jmsg2(jcr, M_FATAL, 0, _("Error reading data header from %s. ERR=%s\n"),
             what, bs->bstrerror());
-      PossibleIncompleteJob(jcr, last_file_index);
       ok = false;
       break;
     }
@@ -294,17 +242,14 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       Jmsg2(jcr, M_FATAL, 0, _("Malformed data header from %s: %s\n"), what,
             bs->msg);
       ok = false;
-      PossibleIncompleteJob(jcr, last_file_index);
       break;
     }
 
     Dmsg2(890, "<filed: Header FilInx=%d stream=%d\n", file_index, stream);
 
-    /*
-     * We make sure the file_index is advancing sequentially.
+    /* We make sure the file_index is advancing sequentially.
      * An incomplete job can start the file_index at any number.
-     * otherwise, it must start at 1.
-     */
+     * otherwise, it must start at 1. */
 
     bool incomplete_job_rerun_fileindex_positive
         = jcr->rerunning && file_index > 0 && last_file_index == 0;
@@ -316,7 +261,6 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       Jmsg3(jcr, M_FATAL, 0,
             _("FileIndex=%d from %s not positive or sequential=%d\n"),
             file_index, what, last_file_index);
-      PossibleIncompleteJob(jcr, last_file_index);
       ok = false;
       break;
     }
@@ -329,11 +273,9 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       file_currently_processed = ProcessedFile{file_index};
     }
 
-    /*
-     * Read data stream from the daemon. The data stream is just raw bytes.
+    /* Read data stream from the daemon. The data stream is just raw bytes.
      * We save the original data pointer from the record so we can restore
-     * that after the loop ends.
-     */
+     * that after the loop ends. */
     rec_data = jcr->sd_impl->dcr->rec->data;
     while ((n = BgetMsg(bs)) > 0 && !jcr->IsJobCanceled()) {
       jcr->sd_impl->dcr->rec->VolSessionId = jcr->VolSessionId;
@@ -364,25 +306,32 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
         file_currently_processed.AddAttribute(jcr->sd_impl->dcr->rec);
       }
 
+      const bool block_changed
+          = current_block_number != jcr->sd_impl->dcr->block->BlockNumber;
+      const bool volume_changed
+          = jcr->sd_impl->dcr->VolMediaId != current_volumeid && block_changed;
+
       if (AttributesAreSpooled(jcr)) {
-        SaveFullyProcessedFiles(jcr, processed_files);
+        SaveFullyProcessedFilesAttributes(jcr, processed_files);
       } else {
-        if (current_block_number != jcr->sd_impl->dcr->block->BlockNumber) {
+        if (block_changed) {
           current_block_number = jcr->sd_impl->dcr->block->BlockNumber;
-          SaveFullyProcessedFiles(jcr, processed_files);
+          if (SaveFullyProcessedFilesAttributes(jcr, processed_files)) {
+            if (checkpoints_enabled) {
+              checkpoint_handler.SetReadyForCheckpoint();
+            }
+          }
         }
-        if (me->checkpoint_interval) {
-          if (jcr->sd_impl->dcr->VolMediaId != current_volumeid) {
-            Jmsg0(jcr, M_INFO, 0, _("Volume changed, doing checkpoint:\n"));
-            DoBackupCheckpoint(jcr);
+
+        if (checkpoints_enabled && checkpoint_handler.IsReadyForCheckpoint()) {
+          if (volume_changed) {
+            checkpoint_handler.DoVolumeChangeBackupCheckpoint(jcr);
             current_volumeid = jcr->sd_impl->dcr->VolMediaId;
           } else {
-            next_checkpoint_time = DoTimedCheckpoint(jcr, next_checkpoint_time,
-                                                     me->checkpoint_interval);
+            checkpoint_handler.DoTimedCheckpoint(jcr);
           }
         }
       }
-
 
       Dmsg0(650, "Enter bnet_get\n");
     }
@@ -397,7 +346,6 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
               bs->bstrerror());
         Jmsg2(jcr, M_FATAL, 0, _("Network error reading from %s. ERR=%s\n"),
               what, bs->bstrerror());
-        PossibleIncompleteJob(jcr, last_file_index);
       }
       ok = false;
       break;
@@ -419,17 +367,14 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
 
   Dmsg1(200, "Write EOS label JobStatus=%c\n", jcr->getJobStatus());
 
-  /*
-   * Check if we can still write. This may not be the case
-   * if we are at the end of the tape or we got a fatal I/O error.
-   */
+  /* Check if we can still write. This may not be the case
+   * if we are at the end of the tape or we got a fatal I/O error. */
   if (ok || dev->CanWrite()) {
     if (!WriteSessionLabel(jcr->sd_impl->dcr, EOS_LABEL)) {
       // Print only if ok and not cancelled to avoid spurious messages
       if (ok && !jcr->IsJobCanceled()) {
         Jmsg1(jcr, M_FATAL, 0, _("Error writing end session label. ERR=%s\n"),
               dev->bstrerror());
-        PossibleIncompleteJob(jcr, last_file_index);
       }
       jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
       ok = false;
@@ -443,7 +388,6 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
         Jmsg2(jcr, M_FATAL, 0, _("Fatal append error on device %s: ERR=%s\n"),
               dev->print_name(), dev->bstrerror());
         Dmsg0(100, _("Set ok=FALSE after WriteBlockToDevice.\n"));
-        PossibleIncompleteJob(jcr, last_file_index);
       }
       jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
       ok = false;
@@ -452,7 +396,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       if (file_currently_processed.GetFileIndex() > 0) {
         processed_files.push_back(std::move(file_currently_processed));
       }
-      SaveFullyProcessedFiles(jcr, processed_files);
+      SaveFullyProcessedFilesAttributes(jcr, processed_files);
     }
   }
 
@@ -466,10 +410,8 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   // Release the device -- and send final Vol info to DIR and unlock it.
   ReleaseDevice(jcr->sd_impl->dcr);
 
-  /*
-   * Don't use time_t for job_elapsed as time_t can be 32 or 64 bits,
-   * and the subsequent Jmsg() editing will break
-   */
+  /* Don't use time_t for job_elapsed as time_t can be 32 or 64 bits,
+   * and the subsequent Jmsg() editing will break */
   job_elapsed = time(NULL) - jcr->run_time;
   if (job_elapsed <= 0) { job_elapsed = 1; }
 
