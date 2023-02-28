@@ -755,7 +755,7 @@ std::optional<std::vector<std::vector<std::string>>> ListFiles(JobControlRecord*
       }
     }
 
-    // todo: delete ff here
+    TermFindFiles(ff);
     return lists;
   }
   else
