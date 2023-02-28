@@ -34,6 +34,7 @@
 #include "lib/htable.h"
 #include "lib/dlist.h"
 #include "lib/alist.h"
+#include "lib/channel.h"
 
 #include <dirent.h>
 #define NAMELEN(dirent) (strlen((dirent)->d_name))
@@ -196,7 +197,7 @@ using LinkHash
  */
 /* clang-format off */
 struct FindFilesPacket {
-  std::vector<std::string>* file_list{nullptr}; /**< temporary storage for past ffps */
+	channel::in<std::string>* channel{nullptr}; /**< temporary storage for past ffps */
   char* top_fname{nullptr};          /**< Full filename before descending */
   char* fname{nullptr};              /**< Full filename */
   char* link{nullptr};               /**< Link if file linked */
@@ -275,14 +276,13 @@ int FindFiles(JobControlRecord* jcr,
               FindFilesPacket* ff,
               int file_sub(JobControlRecord*, FindFilesPacket* ff_pkt, bool),
               int PluginSub(JobControlRecord*, FindFilesPacket* ff_pkt, bool));
-std::optional<std::vector<std::vector<std::string>>>
-ListFiles(JobControlRecord* jcr,
-	  findFILESET* fileset,
-	  bool incremental);
-
+bool ListFiles(JobControlRecord* jcr,
+	       findFILESET* fileset,
+	       bool incremental,
+	       std::vector<channel::in<std::string>> ins);
 int SendFiles(JobControlRecord* jcr,
               FindFilesPacket* ff,
-	      std::vector<std::vector<std::string>> file_lists,
+	      std::vector<channel::out<std::string>> outs,
               int file_sub(JobControlRecord*, FindFilesPacket* ff_pkt, bool),
               int PluginSub(JobControlRecord*, FindFilesPacket* ff_pkt, bool));
 bool MatchFiles(JobControlRecord* jcr,

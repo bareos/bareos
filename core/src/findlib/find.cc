@@ -675,21 +675,21 @@ int SaveInList(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
   }
 
   try {
-	  ff_pkt->file_list->emplace_back(ff_pkt->fname);
+	  ff_pkt->channel->put(ff_pkt->fname);
   } catch (...) {
 	  return 0;
   }
   return 1;
 }
 
-std::optional<std::vector<std::vector<std::string>>> ListFiles(JobControlRecord* jcr,
-							       findFILESET* fileset,
-							       bool incremental)
+bool ListFiles(JobControlRecord* jcr,
+	       findFILESET* fileset,
+	       bool incremental,
+	       std::vector<channel::in<std::string>> ins)
 {
-	using filelist = std::vector<std::string>;
+    ASSERT(ins.size() == (std::size_t)fileset->include_list.size());
   /* This is the new way */
   if (fileset) {
-    std::vector<filelist> lists;
     FindFilesPacket* ff = init_find_files();
     ff->fileset = fileset;
     ff->incremental = incremental;
@@ -745,36 +745,34 @@ std::optional<std::vector<std::vector<std::string>>> ListFiles(JobControlRecord*
       }
       Dmsg4(50, "Verify=<%s> Accurate=<%s> BaseJob=<%s> flags=<%d>\n",
             ff->VerifyOpts, ff->AccurateOpts, ff->BaseJobOpts, ff->flags);
+      channel::in in = std::move(ins[i]);
 
-      try {
-	      ff->file_list = &lists.emplace_back();
-      } catch (...) {
-	      return std::nullopt;
-      }
+      ff->channel = &in;
+
       foreach_dlist (node, &incexe->name_list) {
 	      char* fname = (char *) node->c_str();
         Dmsg1(debuglevel, "F %s\n", fname);
         ff->top_fname = fname;
         if (FindOneFile(jcr, ff, OurCallback, ff->top_fname, (dev_t)-1, true)
             == 0) {
-		return std::nullopt; /* error return */
+		return false; /* error return */
         }
-        if (JobCanceled(jcr)) { return std::nullopt; }
+        if (JobCanceled(jcr)) { return false; }
       }
     }
 
     TermFindFiles(ff);
-    return lists;
+    return true;
   }
   else
   {
-	  return std::nullopt;
+	  return false;
   }
 }
 
 int SendFiles(JobControlRecord* jcr,
               FindFilesPacket* ff,
-	      std::vector<std::vector<std::string>> file_lists,
+	      std::vector<channel::out<std::string>> outs,
               int FileSave(JobControlRecord*, FindFilesPacket* ff_pkt, bool),
               int PluginSave(JobControlRecord*, FindFilesPacket* ff_pkt, bool))
 {
@@ -790,7 +788,7 @@ int SendFiles(JobControlRecord* jcr,
      * at this place flags options are "concatenated" accross Include {} blocks
      * (not only Options{} blocks inside a Include{})
      */
-    ASSERT(file_lists.size() == (std::size_t)fileset->include_list.size());
+    ASSERT(outs.size() == (std::size_t)fileset->include_list.size());
     ClearAllBits(FO_MAX, ff->flags);
     for (i = 0; i < fileset->include_list.size(); i++) {
       dlistString* node;
@@ -836,13 +834,16 @@ int SendFiles(JobControlRecord* jcr,
       }
       Dmsg4(50, "Verify=<%s> Accurate=<%s> BaseJob=<%s> flags=<%d>\n",
             ff->VerifyOpts, ff->AccurateOpts, ff->BaseJobOpts, ff->flags);
+      // we only send the files that were supplied to us.
+      // for this reason we disable recursion here!
       SetBit(FO_NO_RECURSION, ff->flags);
 
-      std::vector<std::string>& list = file_lists[i];
-      for (auto& name : list) {
+      channel::out<std::string> list = std::move(outs[i]);
+      std::optional<std::string> name;
+      while ((name = list.get())) {
 	      // ff->top_fname is const in everything but type
 	      // adding const there would change a lot of function signatures
-	      char* fname = (char *)name.c_str();
+	      char* fname = (char *)name->c_str();
         Dmsg1(debuglevel, "F %s\n", fname);
         ff->top_fname = (char *) fname;
         if (FindOneFile(jcr, ff, OurCallback, ff->top_fname, (dev_t)-1, false)

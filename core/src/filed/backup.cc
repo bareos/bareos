@@ -45,6 +45,9 @@
 #include "lib/btimers.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
+#include "lib/channel.h"
+
+#include <thread>
 
 namespace filedaemon {
 
@@ -110,6 +113,26 @@ FindFilesPacket* DeepCopyImportant(FindFilesPacket* ff_pkt)
   packet->link_save = NULL;
   packet->ignoredir_fname = NULL;
   return packet;
+}
+
+std::pair<std::vector<channel::in<std::string>>,
+	  std::vector<channel::out<std::string>>> CreateNecessaryChannels(findFILESET* fileset,
+									  std::size_t buffer_size)
+{
+	// Each include list in the fileset needs its own
+	// channel.  These get created here.
+	std::vector<channel::in<std::string>> channel_ins;
+	std::vector<channel::out<std::string>> channel_outs;
+
+	for (int i = 0; i < fileset->include_list.size(); ++i)
+	{
+		// channel ins/outs cannot be copied/ can only be moved.
+		auto [in, out] = channel::CreateBufferedChannel<std::string>(buffer_size);
+		channel_ins.emplace_back(std::move(in));
+		channel_outs.emplace_back(std::move(out));
+	}
+
+	return {std::move(channel_ins), std::move(channel_outs)};
 }
 
 /**
@@ -183,10 +206,32 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
     jcr->fd_impl->xattr_data->u.build->content = GetPoolMemory(PM_MESSAGE);
   }
 
-  std::optional FileLists = ListFiles(jcr, jcr->fd_impl->ff->fileset,
-				      jcr->fd_impl->ff->incremental);
-  if (!FileLists || !SendFiles(jcr, jcr->fd_impl->ff, std::move(*FileLists),
-			       SaveFile, PluginSave))
+  // buffer size chosen at random
+  // todo: is there a better buffer size maybe ?
+  auto [ins, outs] = CreateNecessaryChannels(jcr->fd_impl->ff->fileset, 50);
+  bool list_ok = true;
+  bool send_ok = true;
+  std::thread list_thread{[](JobControlRecord* jcr,
+			     findFILESET* ff,
+			     bool incremental,
+			     auto ins,
+			     bool& ok) {
+	  ok = ListFiles(jcr, ff, incremental, std::move(ins));
+  },
+			  jcr, jcr->fd_impl->ff->fileset,
+			  jcr->fd_impl->ff->incremental,
+			  std::move(ins),
+			  std::ref(list_ok)};
+  if (!SendFiles(jcr, jcr->fd_impl->ff, std::move(outs),
+		 SaveFile, PluginSave))
+  {
+	  send_ok = false;
+  }
+
+  list_thread.join();
+
+  // join synchronizes threads, so its safe to read from list_ok now!
+  if (!list_ok || !send_ok)
   {
     ok = false; /* error */
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
