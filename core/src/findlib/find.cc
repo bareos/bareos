@@ -39,6 +39,8 @@
 #include "lib/util.h"
 #include "lib/berrno.h"
 
+#include <memory> // unique_ptr
+
 #if defined(HAVE_DARWIN_OS)
 /* the MacOS linker wants symbols for the destructors of these two types, so we
  * have to force template instantiation. */
@@ -682,7 +684,9 @@ bool ListFiles(JobControlRecord* jcr,
     ASSERT(ins.size() == (std::size_t)fileset->include_list.size());
   /* This is the new way */
   if (fileset) {
-    FindFilesPacket* ff = init_find_files();
+
+	  struct ff_cleanup { void operator()(FindFilesPacket* ff) { TermFindFiles(ff); }};
+	  std::unique_ptr<FindFilesPacket, ff_cleanup> ff(init_find_files(), ff_cleanup{});
     ff->fileset = fileset;
     ff->incremental = incremental;
     ff->FileSave = SaveInList;
@@ -745,7 +749,7 @@ bool ListFiles(JobControlRecord* jcr,
 	      char* fname = (char *) node->c_str();
         Dmsg1(debuglevel, "F %s\n", fname);
         ff->top_fname = fname;
-        if (FindOneFile(jcr, ff, OurCallback, ff->top_fname, (dev_t)-1, true)
+        if (FindOneFile(jcr, ff.get(), OurCallback, ff->top_fname, (dev_t)-1, true)
             == 0) {
 		return false; /* error return */
         }
@@ -753,7 +757,6 @@ bool ListFiles(JobControlRecord* jcr,
       }
     }
 
-    TermFindFiles(ff);
     return true;
   }
   else
