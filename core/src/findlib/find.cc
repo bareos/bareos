@@ -683,13 +683,16 @@ int SaveInList(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 }
 
 std::optional<std::vector<std::vector<std::string>>> ListFiles(JobControlRecord* jcr,
-							       FindFilesPacket* ff)
+							       findFILESET* fileset,
+							       bool incremental)
 {
 	using filelist = std::vector<std::string>;
-	std::vector<filelist> lists;
   /* This is the new way */
-  findFILESET* fileset = ff->fileset;
   if (fileset) {
+    std::vector<filelist> lists;
+    FindFilesPacket* ff = init_find_files();
+    ff->fileset = fileset;
+    ff->incremental = incremental;
     int i, j;
     /*
      * TODO: We probably need be move the initialization in the fileset loop,
@@ -758,9 +761,14 @@ std::optional<std::vector<std::vector<std::string>>> ListFiles(JobControlRecord*
         if (JobCanceled(jcr)) { return std::nullopt; }
       }
     }
-  }
-  return lists;
 
+    // todo: delete ff here
+    return lists;
+  }
+  else
+  {
+	  return std::nullopt;
+  }
 }
 
 int SendFiles(JobControlRecord* jcr,

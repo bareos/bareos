@@ -277,7 +277,8 @@ int FindFiles(JobControlRecord* jcr,
               int PluginSub(JobControlRecord*, FindFilesPacket* ff_pkt, bool));
 std::optional<std::vector<std::vector<std::string>>>
 ListFiles(JobControlRecord* jcr,
-          FindFilesPacket* ff);
+	  findFILESET* fileset,
+	  bool incremental);
 
 int SendFiles(JobControlRecord* jcr,
               FindFilesPacket* ff,
