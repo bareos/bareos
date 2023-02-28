@@ -62,7 +62,7 @@ class DeviceResource : public BareosResource {
   uint32_t max_open_vols{1};     /**< Maximum simultaneous open volumes */
   uint32_t label_block_size{64512};    /**< block size of the label block*/
   uint32_t min_block_size{0};          /**< Current Minimum block size */
-  uint32_t max_block_size{0};          /**< Current Maximum block size */
+  uint32_t max_block_size{1048576};    /**< Current Maximum block size */
   uint32_t max_network_buffer_size{0}; /**< Max network buf size */
   uint32_t max_concurrent_jobs{0};   /**< Maximum concurrent jobs this drive */
   uint32_t autodeflate_algorithm{0}; /**< Compression algorithm to use for
