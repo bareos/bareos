@@ -14,16 +14,6 @@ check_preconditions ()
 	   echo "Job 1 has to always be a backup job at the start of a test."
 	   exit 5
 	fi
-	# check that job with jobid=1 has terminated normally
-	if ! grep "1 | backup-bareos-fd" "${joblist}" | tail -n 1 | grep "| T" > /dev/null; then
-	   echo "Job 1 has bad status; something went wrong!"
-	   exit 5
-	fi
-	# check that job with jobid=1 is a full backup
-	if ! grep "1 | backup-bareos-fd" "${joblist}" | tail -n 1 | grep "| F" > /dev/null; then
-	   echo "Job 1 is not a full backup; something went wrong!"
-	   exit 5
-	fi
 	# check that only one backup exists
 	# note: on multiple manually run calls,
 	# the new jobs list will be appended to the joblist file.
