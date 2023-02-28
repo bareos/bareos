@@ -3,7 +3,7 @@ As a consequence, this statement specifies both the default block size and the m
 The size written never exceeds the given size.
 If adding data to a block would cause it to exceed the given maximum size, the block will be written to the archive device, and the new data will begin a new block.
 
-If no value is specified or zero is specified, the Storage daemon will use a default block size of 64,512 bytes (126 \* 512).
+In Bareos :sinceVersion:`23.0.0: increase default block size` the default value is 1 MiB (1.048.576 bytes). Volumes written with older versions (and the smaller default block size) are still readable and will be rewritten with the larger block size.
 
 Please read chapter :ref:`Tapespeed and blocksizes`, to see how to tune this value in a safe manner.
 
