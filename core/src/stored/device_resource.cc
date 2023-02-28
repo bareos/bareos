@@ -29,62 +29,6 @@
 
 namespace storagedaemon {
 
-DeviceResource::DeviceResource()
-    : BareosResource()
-    , media_type(nullptr)
-    , archive_device_string(nullptr)
-    , device_options(nullptr)
-    , diag_device_name(nullptr)
-    , changer_name(nullptr)
-    , changer_command(nullptr)
-    , alert_command(nullptr)
-    , spool_directory(nullptr)
-    , device_type(DeviceType::B_UNKNOWN_DEV)
-    , label_type(B_BAREOS_LABEL)
-    , autoselect(true)
-    , norewindonclose(true)
-    , drive_tapealert_enabled(false)
-    , drive_crypto_enabled(false)
-    , query_crypto_status(false)
-    , collectstats(false)
-    , eof_on_error_is_eot(false)
-    , drive(0)
-    , drive_index(0)
-    , cap_bits{0}
-    , max_changer_wait(300)
-    , max_rewind_wait(300)
-    , max_open_wait(300)
-    , max_open_vols(1)
-    , label_block_size(64512)
-    , min_block_size(0)
-    , max_block_size(0)
-    , max_network_buffer_size(0)
-    , max_concurrent_jobs(0)
-    , autodeflate_algorithm(0)
-    , autodeflate_level(6)
-    , autodeflate(AutoXflateMode::IO_DIRECTION_NONE)
-    , autoinflate(AutoXflateMode::IO_DIRECTION_NONE)
-    , vol_poll_interval(300)
-    , max_file_size(1000000000)
-    , volume_capacity(0)
-    , max_spool_size(0)
-    , max_job_spool_size(0)
-
-    , mount_point(nullptr)
-    , mount_command(nullptr)
-    , unmount_command(nullptr)
-    , count(1)
-    , multiplied_device_resource(nullptr)
-
-    , dev(nullptr)
-    , changer_res(nullptr)
-
-    /* private: */
-    , temporarily_swapped_numbered_name(nullptr)
-{
-  return;
-}
-
 DeviceResource::DeviceResource(const DeviceResource& other)
     : BareosResource(other)
     , media_type(nullptr)
