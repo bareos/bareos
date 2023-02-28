@@ -10,7 +10,7 @@ developers and system administrators who want or need to know more of
 the working details of **Bareos**.
 
 We only support PostgreSQL. 
-Support for SQLite or MySQL has been discontinued in :sinceVersion:`21.0.0:MySQL backend removed`.
+Support for SQLite or MySQL has been discontinued in :sinceVersion:`21.0.0:MySQL backend removed`. Remaining code has been deleted :sinceVersion:`23.0.0:MySql code removed`.
 PostgreSQL was chosen because it is a full-featured, very mature database.
 
 Filenames and Maximum Filename Length

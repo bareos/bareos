@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -445,20 +445,13 @@ class db_list_ctx : public BStringList {
 
 typedef enum
 {
-  SQL_INTERFACE_TYPE_MYSQL = 0,
   SQL_INTERFACE_TYPE_POSTGRESQL = 1,
-  SQL_INTERFACE_TYPE_SQLITE3 = 2,
-  SQL_INTERFACE_TYPE_INGRES = 3,
-  SQL_INTERFACE_TYPE_DBI = 4,
   SQL_INTERFACE_TYPE_UNKNOWN = 99
 } SQL_INTERFACETYPE;
 
 typedef enum
 {
-  SQL_TYPE_MYSQL = 0,
   SQL_TYPE_POSTGRESQL = 1,
-  SQL_TYPE_SQLITE3 = 2,
-  SQL_TYPE_INGRES = 3,
   SQL_TYPE_UNKNOWN = 99
 } SQL_DBTYPE;
 

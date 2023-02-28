@@ -3,7 +3,7 @@
 
    Copyright (C) 2011-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,7 +28,7 @@
 
 #include "include/bareos.h"
 
-#if HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI
+#if HAVE_POSTGRESQL
 
 #  include "cats.h"
 #  include "sql_pooling.h"
@@ -64,19 +64,15 @@ BareosDb* BareosDb::CloneDatabaseConnection(JobControlRecord* jcr,
                                             bool get_pooled_connection,
                                             bool need_private)
 {
-  /*
-   * See if its a simple clone e.g. with mult_db_connections set to false
-   * then we just return the calling class pointer.
-   */
+  /* See if its a simple clone e.g. with mult_db_connections set to false
+   * then we just return the calling class pointer. */
   if (!mult_db_connections && !need_private) {
     ref_count_++;
     return this;
   }
 
-  /*
-   * A bit more to do here just open a new session to the database.
-   * See if we need to get a pooled or non pooled connection.
-   */
+  /* A bit more to do here just open a new session to the database.
+   * See if we need to get a pooled or non pooled connection. */
   if (get_pooled_connection) {
     return DbSqlGetPooledConnection(
         jcr, db_driver_, db_name_, db_user_, db_password_, db_address_,
@@ -93,27 +89,8 @@ BareosDb* BareosDb::CloneDatabaseConnection(JobControlRecord* jcr,
 const char* BareosDb::GetType(void)
 {
   switch (db_interface_type_) {
-    case SQL_INTERFACE_TYPE_MYSQL:
-      return "MySQL";
     case SQL_INTERFACE_TYPE_POSTGRESQL:
       return "PostgreSQL";
-    case SQL_INTERFACE_TYPE_SQLITE3:
-      return "SQLite3";
-    case SQL_INTERFACE_TYPE_INGRES:
-      return "Ingres";
-    case SQL_INTERFACE_TYPE_DBI:
-      switch (db_type_) {
-        case SQL_TYPE_MYSQL:
-          return "DBI:MySQL";
-        case SQL_TYPE_POSTGRESQL:
-          return "DBI:PostgreSQL";
-        case SQL_TYPE_SQLITE3:
-          return "DBI:SQLite3";
-        case SQL_TYPE_INGRES:
-          return "DBI:Ingres";
-        default:
-          return "DBI:Unknown";
-      }
     default:
       return "Unknown";
   }
@@ -228,14 +205,11 @@ void BareosDb::UnescapeObject(JobControlRecord*,
   }
 
   dest = CheckPoolMemorySize(dest, expected_len + 1);
-  /*
-   * Note: Base64ToBin() does not check the expected length correctly,
-   * so we must add 2 to make sure it works.
-   */
+  /* Note: Base64ToBin() does not check the expected length correctly,
+   * so we must add 2 to make sure it works. */
   Base64ToBin(dest, expected_len + 2, from, strlen(from));
   *dest_len = expected_len;
   dest[expected_len] = '\0';
 }
 
-#endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || \
-          HAVE_DBI */
+#endif /* HAVE_POSTGRESQL */

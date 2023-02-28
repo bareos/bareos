@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -162,19 +162,5 @@ list(FIND db_backends "postgresql" _index)
 if(${_index} GREATER -1)
   bareos_install_sql_files_to_dbconfig_common(
     BAREOS_DB_NAME postgresql DEBIAN_DB_NAME pgsql
-  )
-endif()
-
-list(FIND db_backends "sqlite3" _index)
-if(${_index} GREATER -1)
-  bareos_install_sql_files_to_dbconfig_common(
-    BAREOS_DB_NAME sqlite3 DEBIAN_DB_NAME sqlite3
-  )
-endif()
-
-list(FIND db_backends "mysql" _index)
-if(${_index} GREATER -1)
-  bareos_install_sql_files_to_dbconfig_common(
-    BAREOS_DB_NAME mysql DEBIAN_DB_NAME mysql
   )
 endif()

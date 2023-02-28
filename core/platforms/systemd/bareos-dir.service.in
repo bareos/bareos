@@ -1,12 +1,12 @@
 #
-# Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+# Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 # Copyright (c) 2011 Free Software Foundation Europe e.V., Author: Bruno Friedmann
 #
 [Unit]
 Description=Bareos Director Daemon service
 Documentation=man:bareos-dir(8)
 Requires=network.target nss-lookup.target time-sync.target
-After=network-online.target nss-lookup.target remote-fs.target time-sync.target postgresql.service mysql.service mariadb.service
+After=network-online.target nss-lookup.target remote-fs.target time-sync.target postgresql.service
 # Dependency about the database
 # We let administrators decide if they need it (if local db instance)
 # Wants=@DEFAULT_DB_TYPE@.service

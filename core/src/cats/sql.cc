@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,12 +27,12 @@
  *
  * Almost generic set of SQL database interface routines
  * (with a little more work) SQL engine specific routines are in
- * mysql.c, postgresql.c, sqlite.c, ...
+ * postgresql.c, ...
  */
 
 #include "include/bareos.h"
 
-#if HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI
+#if HAVE_POSTGRESQL
 
 #  include "cats.h"
 #  include "lib/edit.h"
@@ -129,17 +129,9 @@ struct max_connections_context {
 static inline int DbMaxConnectionsHandler(void* ctx, int, char** row)
 {
   struct max_connections_context* context;
-  uint32_t index;
 
   context = (struct max_connections_context*)ctx;
-  switch (context->db->GetTypeIndex()) {
-    case SQL_TYPE_MYSQL:
-      index = 1;
-      break;
-    default:
-      index = 0;
-      break;
-  }
+  uint32_t index = 0;
 
   if (row[index]) {
     context->nr_connections = str_to_int64(row[index]);
@@ -448,10 +440,8 @@ int BareosDb::ListResult(void* vctx, int, char** row)
   switch (type) {
     case NF_LIST:
     case RAW_LIST:
-      /*
-       * No need to calculate things like maximum field lenght for
-       * unformated or raw output.
-       */
+      /* No need to calculate things like maximum field lenght for
+       * unformated or raw output. */
       break;
     case HORZ_LIST:
     case VERT_LIST:
@@ -656,10 +646,8 @@ int BareosDb::ListResult(JobControlRecord* jcr,
     case E_LIST_INIT:
     case NF_LIST:
     case RAW_LIST:
-      /*
-       * No need to calculate things like column widths for unformatted or raw
-       * output.
-       */
+      /* No need to calculate things like column widths for unformatted or raw
+       * output. */
       break;
     case HORZ_LIST:
     case VERT_LIST:
@@ -698,11 +686,9 @@ int BareosDb::ListResult(JobControlRecord* jcr,
 
   Dmsg0(800, "ListResult finished first loop\n");
 
-  /*
-   * See if filters are enabled for this list function.
+  /* See if filters are enabled for this list function.
    * We use this to shortcut for calling the FilterData() method in the
-   * OutputFormatter class.
-   */
+   * OutputFormatter class. */
   filters_enabled = send->HasFilters();
 
   switch (type) {
@@ -909,5 +895,4 @@ void DbDebugPrint(JobControlRecord* jcr, FILE* fp)
 
   mdb->DbDebugPrint(fp);
 }
-#endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || \
-          HAVE_DBI */
+#endif /* HAVE_POSTGRESQL */

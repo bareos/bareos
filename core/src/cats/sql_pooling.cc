@@ -3,7 +3,7 @@
 
    Copyright (C) 2010-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,7 +28,7 @@
 
 #include "include/bareos.h"
 
-#if HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI
+#if HAVE_POSTGRESQL
 
 #  include "cats.h"
 #  include "cats_backends.h"
@@ -148,5 +148,4 @@ void DbSqlClosePooledConnection(JobControlRecord* jcr, BareosDb* mdb, bool)
   mdb->CloseDatabase(jcr);
 }
 
-#endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || \
-          HAVE_DBI */
+#endif /* HAVE_POSTGRESQL */

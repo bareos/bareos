@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2013 Free Software Foundation Europe e.V.
    Copyright (C) 2010-2017 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -65,12 +65,6 @@ extern const struct BareosVersionStrings kBareosVersionStrings;
 #ifdef DEVELOPER
 #  define SMCHECK
 #endif
-
-// for fastest speed but you must have a UPS to avoid unwanted shutdowns
-//#define SQLITE3_INIT_QUERY "PRAGMA synchronous = OFF"
-
-// for more safety, but is 30 times slower than above
-#define SQLITE3_INIT_QUERY "PRAGMA synchronous = NORMAL"
 
 /* Debug flags not normally turned on */
 

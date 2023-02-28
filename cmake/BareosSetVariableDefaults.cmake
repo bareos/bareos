@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -566,7 +566,6 @@ if(${CMAKE_COMPILER_IS_GNUCC})
   set(HAVE_GCC 1)
 endif()
 
-set(HAVE_MYSQL_THREAD_SAFE 1)
 set(HAVE_SHA2 1)
 set(HAVE_PQISTHREADSAFE 1)
 
@@ -574,7 +573,6 @@ set(_LARGEFILE_SOURCE 1)
 set(_LARGE_FILES 1)
 set(_FILE_OFFSET_BITS 64)
 set(HAVE_COMPRESS_BOUND 1)
-set(HAVE_SQLITE3_THREADSAFE 1)
 
 set(PACKAGE_NAME "\"${CMAKE_PROJECT_NAME}\"")
 set(PACKAGE_STRING "\"${CMAKE_PROJECT_NAME} ${BAREOS_NUMERIC_VERSION}\"")

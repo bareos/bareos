@@ -21,8 +21,6 @@ mingw32-runtime
 mingw32-zlib-devel
 mingw32-libqt4
 mingw32-libqt4-devel
-mingw32-libsqlite
-mingw32-libsqlite-devel
 
 For mingw64:
 
@@ -41,8 +39,6 @@ mingw64-readline-devel
 mingw64-runtime
 mingw64-zlib-devel
 mingw64-libqt4-devel
-mingw64-libsqlite
-mingw64-libsqlite-devel
 
 The Makefiles in this directory are setup to work with this setup. As the are
 seriously simple adapting to another mingw install should be rather simple.

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,7 +32,7 @@
 
 #include "include/bareos.h"
 
-#if HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI
+#if HAVE_POSTGRESQL
 
 #  include "cats.h"
 #  include "lib/edit.h"
@@ -84,12 +84,10 @@ bool BareosDb::FindJobStartTime(JobControlRecord* jcr,
 
       /* Incremental is since last Full, Incremental, or Differential */
     } else if (jr->JobLevel == L_INCREMENTAL) {
-      /*
-       * For an Incremental job, we must first ensure
+      /* For an Incremental job, we must first ensure
        *  that a Full backup was done (cmd edited above)
        *  then we do a second look to find the most recent
-       *  backup
-       */
+       *  backup */
       if (!QUERY_DB(jcr, cmd)) {
         Mmsg2(errmsg, _("Query error for start time request: ERR=%s\nCMD=%s\n"),
               sql_strerror(), cmd);
@@ -536,11 +534,9 @@ retry_fetch:
       return num_rows;
     }
 
-    /*
-     * Skip if volume is on unwanted volumes list.
+    /* Skip if volume is on unwanted volumes list.
      * We need to reduce the number of rows by one
-     * and jump out if no more rows are available
-     */
+     * and jump out if no more rows are available */
     if (unwanted_volumes
         && is_on_unwanted_volumes_list(row[1], unwanted_volumes)) {
       Dmsg1(50, "Volume %s is on unwanted_volume_list, skipping\n", row[1]);
@@ -621,5 +617,4 @@ retry_fetch:
   Dmsg1(050, "Rtn numrows=%d\n", num_rows);
   return num_rows;
 }
-#endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || \
-          HAVE_DBI */
+#endif /* HAVE_POSTGRESQL */

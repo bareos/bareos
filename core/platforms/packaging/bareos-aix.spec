@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -52,7 +52,6 @@ Vendor: 	The Bareos Team
 # default settings
 %define client_only 1
 %define build_qt_monitor 0
-%define build_sqlite3 1
 %define check_cmocka 1
 %define glusterfs 0
 %define objectstorage 0
@@ -190,7 +189,6 @@ for F in  \
     %{_mandir}/man1/bsmtp.1.gz \
     %{_mandir}/man1/bwild.1.gz \
     %{_mandir}/man8/bareos-dbcheck.8.gz \
-    %{_mandir}/man8/bareos-dbcopy.8.gz \
     %{_mandir}/man8/bareos-dir.8.gz \
     %{_mandir}/man8/bareos-sd.8.gz \
     %{_mandir}/man8/bareos.8.gz \

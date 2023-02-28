@@ -42,7 +42,7 @@ Public Domain
 
 :index:`\ <single: License; Public Domain>`\
 
-Some of the Bareos code, or code that Bareos references, has been released to the public domain. E.g. md5.c, SQLite.
+Some of the Bareos code, or code that Bareos references, has been released to the public domain. E.g. md5.c.
 
 Trademark
 ~~~~~~~~~

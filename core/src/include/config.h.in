@@ -3,7 +3,7 @@
 
    Copyright (C) 2012-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -337,12 +337,6 @@ extern char win_os[];
 // Define to 1 if you have the <mtio.h> header file
 #cmakedefine HAVE_MTIO_H @HAVE_MTIO_H@
 
-// Set if you have an MySQL Database
-#cmakedefine HAVE_MYSQL @HAVE_MYSQL@
-
-// Set if have mysql_thread_safe
-#cmakedefine HAVE_MYSQL_THREAD_SAFE @HAVE_MYSQL_THREAD_SAFE@
-
 // Define to 1 if you have the `nanosleep' function
 #cmakedefine HAVE_NANOSLEEP @HAVE_NANOSLEEP@
 
@@ -420,12 +414,6 @@ extern char win_os[];
 
 // Define to 1 if you have the `sizeof_proplist_entry' function
 #cmakedefine HAVE_SIZEOF_PROPLIST_ENTRY @HAVE_SIZEOF_PROPLIST_ENTRY@
-
-// Set if you have an SQLite3 Database
-#cmakedefine HAVE_SQLITE3 @HAVE_SQLITE3@
-
-// Define to 1 if you have the `sqlite3_threadsafe' function
-#cmakedefine HAVE_SQLITE3_THREADSAFE @HAVE_SQLITE3_THREADSAFE@
 
 // Define to 1 if you are running Solaris
 #cmakedefine HAVE_SUN_OS @HAVE_SUN_OS@

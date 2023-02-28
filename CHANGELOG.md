@@ -27,6 +27,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Removed
 - remove no longer used pkglists [PR #1335]
 - core: remove deprecated make_catalog_backup.pl [PR #1378]
+- cats: remove remains of deprecated databases [PR #1377]
 
 ### Changed
 - cats: fix issue where `startfile` field gets wrongly updated [PR #1346]
@@ -64,6 +65,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1367]: https://github.com/bareos/bareos/pull/1367
 [PR #1373]: https://github.com/bareos/bareos/pull/1373
 [PR #1374]: https://github.com/bareos/bareos/pull/1374
+[PR #1377]: https://github.com/bareos/bareos/pull/1377
 [PR #1378]: https://github.com/bareos/bareos/pull/1378
 [PR #1387]: https://github.com/bareos/bareos/pull/1387
 [PR #1389]: https://github.com/bareos/bareos/pull/1389

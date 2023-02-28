@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -152,12 +152,6 @@
 
 /* Define to 1 if DB batch insert code enabled */
 #define USE_BATCH_FILE_INSERT 1
-
-/* Set if you have an SQLite3 Database */
-#define HAVE_SQLITE3 1
-
-/* Define to 1 if you have the `sqlite3_threadsafe' function. */
-#define HAVE_SQLITE3_THREADSAFE 1
 
 /* Set if you have an PostgreSQL Database */
 #define HAVE_POSTGRESQL 1
