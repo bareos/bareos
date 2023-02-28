@@ -693,6 +693,7 @@ std::optional<std::vector<std::vector<std::string>>> ListFiles(JobControlRecord*
     FindFilesPacket* ff = init_find_files();
     ff->fileset = fileset;
     ff->incremental = incremental;
+    ff->FileSave = SaveInList;
     int i, j;
     /*
      * TODO: We probably need be move the initialization in the fileset loop,
@@ -754,7 +755,7 @@ std::optional<std::vector<std::vector<std::string>>> ListFiles(JobControlRecord*
 	      char* fname = (char *) node->c_str();
         Dmsg1(debuglevel, "F %s\n", fname);
         ff->top_fname = fname;
-        if (FindOneFile(jcr, ff, SaveInList, ff->top_fname, (dev_t)-1, true)
+        if (FindOneFile(jcr, ff, OurCallback, ff->top_fname, (dev_t)-1, true)
             == 0) {
 		return std::nullopt; /* error return */
         }
