@@ -368,6 +368,8 @@ Since :sinceVersion:`22.0.0: VMware Plugin: Restore using WebUI` it is possible 
 
 When using the WebUI to restore a VMware Plugin job, it is **important** to set *Merge all client file sets* to **no** and *Merge all jobs up to the last full backup together* to **yes**. In the *File selection* all files must be selected. Only restoring selected virtual disks will probably not work and is currently unsupported. The Bareos WebUI will detect if a plugin based jobs is restore and will then show an additional *Plugin options* field, here a plugin options string starting with ``python:`` as described above can be entered.
 
+.. image:: /include/images/bareos-webui-restore-with-pluginoptions.*
+   :width: 80.0%
 
 Restore to local VMDK File
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
