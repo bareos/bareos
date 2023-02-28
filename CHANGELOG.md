@@ -10,6 +10,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - restore: fix failed restores showing `Restore ok with warning` [PR #1388]
 - FreeBSD: build cleanup [PR #1380]
 - filed: avoid reading from ephemeral buffer [PR #1384]
+- checkpoints: fix performance drop on big volume restores [PR #1393]
 
 ## [22.0.2] - 2023-02-07
 
@@ -460,4 +461,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1380]: https://github.com/bareos/bareos/pull/1380
 [PR #1384]: https://github.com/bareos/bareos/pull/1384
 [PR #1388]: https://github.com/bareos/bareos/pull/1388
+[PR #1393]: https://github.com/bareos/bareos/pull/1393
 [unreleased]: https://github.com/bareos/bareos/tree/master
