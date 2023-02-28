@@ -572,7 +572,8 @@ static inline int process_directory(JobControlRecord* jcr,
   link[len] = 0;
 
   ff_pkt->link = link;
-  if (!CheckChanges(jcr, ff_pkt)) {
+  bool has_changed = CheckChanges(jcr, ff_pkt);
+  if (!has_changed) {
     // Incremental/Full+Base option, directory entry not changed
     ff_pkt->type = FT_DIRNOCHG;
   } else {
@@ -642,7 +643,11 @@ static inline int process_directory(JobControlRecord* jcr,
 
   // If not recursing, just backup dir and return
   if (!recurse) {
-    rtn_stat = HandleFile(jcr, ff_pkt, top_level);
+	  if (has_changed)
+	  {
+		  // only backup the directory if it has changed!
+		  rtn_stat = HandleFile(jcr, ff_pkt, top_level);
+	  }
     if (ff_pkt->linked) { ff_pkt->linked->FileIndex = ff_pkt->FileIndex; }
     free(link);
     FreeDirFfPkt(dir_ff_pkt);
