@@ -21,60 +21,60 @@ get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
 
 set_tests_properties(
-  system:restore-test:create-backup
-  PROPERTIES FIXTURES_SETUP "system:restore-test:backup-job-fixture"
+  system:restore:create-backup
+  PROPERTIES FIXTURES_SETUP "system:restore:backup-job-fixture"
 )
 set_tests_properties(
-  system:restore-test:archive-restore-file
+  system:restore:archive-restore-file
   PROPERTIES
     FIXTURES_REQUIRED
-    "system:restore-test:backup-job-fixture;system:restore-test-fixture"
+    "system:restore:backup-job-fixture;system:restore-fixture"
 )
 set_tests_properties(
-  system:restore-test:archive-restore-dir
+  system:restore:archive-restore-dir
   PROPERTIES
     FIXTURES_REQUIRED
-    "system:restore-test:backup-job-fixture;system:restore-test-fixture"
+    "system:restore:backup-job-fixture;system:restore-fixture"
 )
 set_tests_properties(
-  system:restore-test:archive-full-restore
+  system:restore:archive-full-restore
   PROPERTIES
     FIXTURES_REQUIRED
-    "system:restore-test:backup-job-fixture;system:restore-test-fixture"
+    "system:restore:backup-job-fixture;system:restore-fixture"
 )
 set_tests_properties(
-  system:restore-test:restore-file
+  system:restore:restore-file
   PROPERTIES
     FIXTURES_REQUIRED
-    "system:restore-test:backup-job-fixture;system:restore-test-fixture"
+    "system:restore:backup-job-fixture;system:restore-fixture"
 )
 set_tests_properties(
-  system:restore-test:restore-dir
+  system:restore:restore-dir
   PROPERTIES
     FIXTURES_REQUIRED
-    "system:restore-test:backup-job-fixture;system:restore-test-fixture"
+    "system:restore:backup-job-fixture;system:restore-fixture"
 )
 set_tests_properties(
-  system:restore-test:full-restore
+  system:restore:full-restore
   PROPERTIES
     FIXTURES_REQUIRED
-    "system:restore-test:backup-job-fixture;system:restore-test-fixture"
+    "system:restore:backup-job-fixture;system:restore-fixture"
 )
 set_tests_properties(
-  system:restore-test:check-hints
+  system:restore:check-hints
   PROPERTIES
     FIXTURES_REQUIRED
-    "system:restore-test:backup-job-fixture;system:restore-test-fixture"
+    "system:restore:backup-job-fixture;system:restore-fixture"
 )
 set_tests_properties(
-  system:restore-test:restore-old-archive
+  system:restore:restore-old-archive
   PROPERTIES
     FIXTURES_REQUIRED
-    "system:restore-test:backup-job-fixture;system:restore-test-fixture"
+    "system:restore:backup-job-fixture;system:restore-fixture"
 )
 set_tests_properties(
-  system:restore-test:error-full-restore
+  system:restore:error-full-restore
   PROPERTIES
     FIXTURES_REQUIRED
-    "system:restore-test:backup-job-fixture;system:restore-test-fixture"
+    "system:restore:backup-job-fixture;system:restore-fixture"
 )
