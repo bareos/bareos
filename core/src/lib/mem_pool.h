@@ -84,11 +84,25 @@ class PoolMem {
     strcpy(str);
   }
   explicit PoolMem(const std::string& str) : PoolMem(str.c_str()) {}
+
   ~PoolMem()
   {
-    FreePoolMemory(mem);
-    mem = NULL;
+	  // handle the moved out case!
+	  if (mem) {
+		  FreePoolMemory(mem);
+		  mem = NULL;
+	  }
   }
+	// needed since we have a custom destructor
+	PoolMem(PoolMem&& moved) : mem{nullptr} {
+		std::swap(moved.mem, mem);
+	};
+	PoolMem& operator=(PoolMem&& moved) {
+		FreePoolMemory(mem);
+		mem = moved.mem;
+		moved.mem = nullptr;
+		return *this;
+	}
   char* c_str() const { return mem; }
   POOLMEM*& addr() { return mem; }
   int size() const { return SizeofPoolMemory(mem); }
