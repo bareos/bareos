@@ -61,8 +61,6 @@ bool MatchFiles(JobControlRecord* jcr,
                 FindFilesPacket* ff,
                 int FileSave(JobControlRecord*, FindFilesPacket* ff_pkt, bool))
 {
-  ff->FileSave = FileSave;
-
   struct s_included_file* inc = NULL;
 
   /* This is the old deprecated way */

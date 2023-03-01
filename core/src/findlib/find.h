@@ -176,7 +176,6 @@ struct HfsPlusInfo {
  */
 /* clang-format off */
 struct FindFilesPacket {
-	channel::in<std::string>* channel{nullptr}; /**< temporary storage for past ffps */
   char* top_fname{nullptr};          /**< Full filename before descending */
   char* fname{nullptr};              /**< Full filename */
   char* link{nullptr};               /**< Link if file linked */
@@ -209,12 +208,6 @@ struct FindFilesPacket {
   struct s_excluded_file* excluded_files_list{nullptr};
   struct s_excluded_file* excluded_paths_list{nullptr};
   findFILESET* fileset{nullptr};
-  int (*FileSave)(JobControlRecord*,
-                  FindFilesPacket*,
-                  bool){};   /**< User's callback */
-  int (*PluginSave)(JobControlRecord*,
-                    FindFilesPacket*,
-                    bool){}; /**< User's callback */
   bool (*CheckFct)(
       JobControlRecord*,
       FindFilesPacket*){};   /**< Optional user fct to check file changes */
