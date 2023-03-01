@@ -99,11 +99,6 @@ else
 endif
 
 
-override_dh_install:
-	chrpath -d $(CURDIR)/debian/tmp/usr/lib/bareos/backends/libbareoscats-postgresql* || true
-	dh_install
-
-
 override_dh_systemd_enable:
 ifeq (build-universal-client,$(filter build-universal-client,$(DEB_BUILD_OPTIONS)))
 	dh_systemd_enable --name bareos-filedaemon

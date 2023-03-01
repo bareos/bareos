@@ -704,7 +704,6 @@ SectionIn 2 3
   File "testfind.exe"
   File "bregex.exe"
   File "bwild.exe"
-  File "libbareoscats.dll"
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\bareos-dir.d"
@@ -722,7 +721,6 @@ SectionIn 2 3
   SetShellVarContext all
 
   SetOutPath "$INSTDIR"
-  File "libbareoscats-postgresql.dll"
 
   # edit sql ddl files
   nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\postgres.sed" -i-template "$PLUGINSDIR\postgresql-grant.sql"'
@@ -2032,8 +2030,6 @@ ConfDeleteSkip:
   Delete "$INSTDIR\libbareosfind.dll"
   Delete "$INSTDIR\libbareoslmdb.dll"
   Delete "$INSTDIR\libbareossql.dll"
-  Delete "$INSTDIR\libbareoscats.dll"
-  Delete "$INSTDIR\libbareoscats-postgresql.dll"
 
   Delete "$INSTDIR\libcrypto-*.dll"
   Delete "$INSTDIR\libgcc_s_*-1.dll"
