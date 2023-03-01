@@ -1299,19 +1299,14 @@ static bool SendRestoreObject(BareosSocket* sd,
       return sd->send();
 }
 
-static const char* GetCanonicalName(int type, const char* fname, const char* link)
+static const char* GetCanonicalName(const struct stat& statp, const char* fname, const char* link)
 {
 	const char* selected;
-	switch (type)
-	{
-	case FT_DIREND:
-	case FT_REPARSE:
+	if (S_ISDIR(statp.st_mode))
 	{
 		selected = link;
-	} break;
-	default: {
+	} else {
 		selected = fname;
-	} break;
 	}
 
 	return selected;
@@ -1444,7 +1439,7 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
 
 	  if (file_stripped || link_stripped)
 	  {
-		  file_name = GetCanonicalName(ff_pkt->type, StrippedFile.c_str(),
+		  file_name = GetCanonicalName(ff_pkt->statp, StrippedFile.c_str(),
 					       StrippedLink.c_str());
 		  link_name = GetLinkName(ff_pkt->type,
 					  StrippedFile.c_str(),
@@ -1456,7 +1451,7 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
 
   if (!file_name)
   {
-	  file_name = GetCanonicalName(ff_pkt->type, ff_pkt->fname,
+	  file_name = GetCanonicalName(ff_pkt->statp, ff_pkt->fname,
 				       ff_pkt->link);
 	  link_name = GetLinkName(ff_pkt->type, ff_pkt->fname, ff_pkt->link);
   }
