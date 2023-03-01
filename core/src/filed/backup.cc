@@ -1299,6 +1299,45 @@ static bool SendRestoreObject(BareosSocket* sd,
       return sd->send();
 }
 
+static const char* GetCanonicalName(int type, const char* fname, const char* link)
+{
+	const char* selected;
+	switch (type)
+	{
+	case FT_DIREND:
+	case FT_REPARSE:
+	{
+		selected = link;
+	} break;
+	default: {
+		selected = fname;
+	} break;
+	}
+
+	return selected;
+}
+
+static const char* GetLinkName(int type, const char* fname [[maybe_unused]],
+			       const char* link)
+{
+	const char* selected;
+	switch (type)
+	{
+	case FT_JUNCTION:
+	case FT_LNK:
+	case FT_LNKSAVED:
+	{
+		selected = link;
+	} break;
+	default: {
+		// should we return nullptr here instead ?
+		selected = "";
+	} break;
+	}
+
+	return selected;
+}
+
 bool EncodeAndSendAttributes(JobControlRecord* jcr,
                              FindFilesPacket* ff_pkt,
                              int& data_stream)
@@ -1383,8 +1422,8 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
    * slash. For a linked file, link is the link. */
 
   PoolMem StrippedFile, StrippedLink;
-  const char* file_name = ff_pkt->fname;
-  const char* link_name = ff_pkt->link;
+  const char* file_name = nullptr;
+  const char* link_name = nullptr;
 /**
  * If requested strip leading components of the path so that we can
  * save file as if it came from a subdirectory.  This is most useful
@@ -1392,9 +1431,9 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
  * in handling vendor migrations where files have been restored with
  * a vendor product into a subdirectory.
  */
-	if (!IS_FT_OBJECT(ff_pkt->type)
-	    && ff_pkt->type != FT_DELETED
-	    && ShouldStripPaths(ff_pkt)) { /* already stripped */
+  if (!IS_FT_OBJECT(ff_pkt->type)
+      && ff_pkt->type != FT_DELETED
+      && ShouldStripPaths(ff_pkt)) { /* already stripped */
 	  StrippedFile = PoolMem(PM_FNAME);
 	  StrippedLink = PoolMem(PM_FNAME);
 
@@ -1408,11 +1447,40 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
 
 	  if (file_stripped || link_stripped)
 	  {
-		  file_name = StrippedFile.c_str();
-		  link_name = StrippedLink.c_str();
+		  file_name = GetCanonicalName(ff_pkt->type, StrippedFile.c_str(),
+					       StrippedLink.c_str());
+		  link_name = GetLinkName(ff_pkt->type,
+					  StrippedFile.c_str(),
+					  StrippedLink.c_str());
 		  Dmsg3(100, "fname=%s stripped=%s link=%s\n", ff_pkt->fname,
-			file_name, link_name);
+			StrippedFile.c_str(), StrippedLink.c_str());
 	  }
+  }
+
+  if (!file_name)
+  {
+	  file_name = GetCanonicalName(ff_pkt->type, ff_pkt->fname,
+				       ff_pkt->link);
+	  link_name = GetLinkName(ff_pkt->type, ff_pkt->fname, ff_pkt->link);
+  }
+
+  if ((ff_pkt->type == FT_PLUGIN_CONFIG) ||
+      (ff_pkt->type == FT_RESTORE_FIRST))
+  {
+	  status = SendRestoreObject(sd,
+				     ff_pkt->FileIndex,
+				     ff_pkt->type,
+				     file_name,
+				     ff_pkt->object_name,
+				     ff_pkt->object_index,
+				     ff_pkt->object_len,
+				     ff_pkt->object);
+  }
+  else
+  {
+	  status = SendFileHeader(sd, ff_pkt->FileIndex, ff_pkt->type, file_name,
+				  attribs.c_str(), link_name, attribsEx,
+				  ff_pkt->delta_seq);
   }
 
   switch (ff_pkt->type) {
@@ -1422,41 +1490,6 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
     {
       Dmsg3(300, "Link %d %s to %s\n", ff_pkt->FileIndex, file_name,
             link_name);
-      status = SendFileHeader(sd, ff_pkt->FileIndex, ff_pkt->type, file_name,
-			      attribs.c_str(), link_name, attribsEx,
-			      ff_pkt->delta_seq);
-    } break;
-    case FT_DIREND:
-    case FT_REPARSE:
-    {
-      /* Here link is the canonical filename (i.e. with trailing slash) */
-	    status = SendFileHeader(sd, ff_pkt->FileIndex, ff_pkt->type, link_name,
-			      attribs.c_str(), /* link */ nullptr, attribsEx,
-			      ff_pkt->delta_seq);
-    } break;
-    case FT_PLUGIN_CONFIG:
-    case FT_RESTORE_FIRST:
-    {
-	    status = SendRestoreObject(sd,
-				       ff_pkt->FileIndex,
-				       ff_pkt->type,
-				       file_name,
-				       ff_pkt->object_name,
-				       ff_pkt->object_index,
-				       ff_pkt->object_len,
-				       ff_pkt->object);
-    } break;
-    case FT_REG:
-    {
-	    status = SendFileHeader(sd, ff_pkt->FileIndex, ff_pkt->type, file_name,
-			      attribs.c_str(), /* link */ nullptr, attribsEx,
-			      ff_pkt->delta_seq);
-    } break;
-    default:
-    {
-	    status = SendFileHeader(sd, ff_pkt->FileIndex, ff_pkt->type, file_name,
-			      attribs.c_str(), /* link */ nullptr, attribsEx,
-			      ff_pkt->delta_seq);
     } break;
   }
 
