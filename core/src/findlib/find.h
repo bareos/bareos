@@ -235,6 +235,8 @@ struct FindFilesPacket {
       JobControlRecord*,
       FindFilesPacket*){};   /**< Optional user fct to check file changes */
 
+  bool silent{false}; /**< Used by SaveFile to decide if it should warn or not */
+
   // Values set by AcceptFile while processing Options
   char flags[FOPTS_BYTES]{}; /**< Backup options */
   uint32_t Compress_algo{0}; /**< Compression algorithm. 4 letters stored as an integer */

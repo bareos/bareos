@@ -604,14 +604,17 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       jcr->fd_impl->num_files_examined--; /* correct file count */
       return 1;                           /* not used */
     case FT_NORECURSE:
-      Jmsg(jcr, M_INFO, 1,
-           _("     Recursion turned off. Will not descend from %s into %s\n"),
-           ff_pkt->top_fname, ff_pkt->fname);
+	    if (!ff_pkt->silent)
+	    {
+		    Jmsg(jcr, M_INFO, 1,
+			 _("     Recursion turned off. Will not descend from %s into %s\n"),
+			 ff_pkt->top_fname, ff_pkt->fname);
+	    }
       ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
       break;
     case FT_NOFSCHG:
       /* Suppress message for /dev filesystems */
-      if (!IsInFileset(ff_pkt)) {
+      if (!IsInFileset(ff_pkt) && !ff_pkt->silent) {
         Jmsg(jcr, M_INFO, 1,
              _("     %s is a different filesystem. Will not descend from %s "
                "into it.\n"),
@@ -620,15 +623,21 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
       break;
     case FT_INVALIDFS:
-      Jmsg(jcr, M_INFO, 1,
-           _("     Disallowed filesystem. Will not descend from %s into %s\n"),
-           ff_pkt->top_fname, ff_pkt->fname);
+	    if (!ff_pkt->silent)
+	    {
+		    Jmsg(jcr, M_INFO, 1,
+			 _("     Disallowed filesystem. Will not descend from %s into %s\n"),
+			 ff_pkt->top_fname, ff_pkt->fname);
+	    }
       ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
       break;
     case FT_INVALIDDT:
-      Jmsg(jcr, M_INFO, 1,
-           _("     Disallowed drive type. Will not descend into %s\n"),
-           ff_pkt->fname);
+	    if (!ff_pkt->silent)
+	    {
+		    Jmsg(jcr, M_INFO, 1,
+			 _("     Disallowed drive type. Will not descend into %s\n"),
+			 ff_pkt->fname);
+	    }
       break;
     case FT_REPARSE:
     case FT_JUNCTION:
