@@ -272,6 +272,8 @@ int FindFiles(JobControlRecord* jcr,
 bool ListFiles(JobControlRecord* jcr,
                findFILESET* fileset,
                bool incremental,
+	       time_t saved_time,
+	       std::optional<bool (*)(JobControlRecord*, FindFilesPacket*)> check_changed,
                std::vector<channel::in<std::string>> ins);
 int SendFiles(JobControlRecord* jcr,
               FindFilesPacket* ff,

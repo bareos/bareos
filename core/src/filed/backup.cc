@@ -209,11 +209,17 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
   bool list_ok = true;
   bool send_ok = true;
   std::thread list_thread{
-      [](JobControlRecord* jcr, findFILESET* ff, bool incremental, auto ins,
-         bool& ok) { ok = ListFiles(jcr, ff, incremental, std::move(ins)); },
+      [](JobControlRecord* jcr, findFILESET* ff, bool incremental,
+	 time_t save_time,
+	 std::optional<bool (*)(JobControlRecord*, FindFilesPacket*)> chk,
+	 auto ins,
+         bool& ok) { ok = ListFiles(jcr, ff, incremental, save_time, chk,
+				    std::move(ins)); },
       jcr,
       jcr->fd_impl->ff->fileset,
-      jcr->fd_impl->ff->incremental,
+      jcr->fd_impl->incremental,
+      jcr->fd_impl->since_time,
+      (jcr->accurate) ? std::optional{&AccurateCheckFile} : std::nullopt,
       std::move(ins),
       std::ref(list_ok)};
   if (!SendFiles(jcr, jcr->fd_impl->ff, std::move(outs), SaveFile,

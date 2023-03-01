@@ -692,6 +692,8 @@ auto SaveInList(channel::in<std::string>& in)
 bool ListFiles(JobControlRecord* jcr,
                findFILESET* fileset,
                bool incremental,
+	       time_t save_time,
+	       std::optional<bool (*)(JobControlRecord*, FindFilesPacket*)> check_changed,
                std::vector<channel::in<std::string>> ins)
 {
   ASSERT(ins.size() == (std::size_t)fileset->include_list.size());
@@ -702,9 +704,11 @@ bool ListFiles(JobControlRecord* jcr,
     };
     std::unique_ptr<FindFilesPacket, ff_cleanup> ff(init_find_files(),
                                                     ff_cleanup{});
-    ff->fileset = fileset;
-    ff->incremental = incremental;
-    /* TODO: We probably need be move the initialization in the fileset loop,
+    ff->fileset     = fileset;
+    auto ff_pkt = ff.get();
+    SetFindOptions(ff_pkt, incremental, save_time);
+    if (check_changed) SetFindChangedFunction(ff_pkt, check_changed.value());
+	    /* TODO: We probably need be move the initialization in the fileset loop,
      * at this place flags options are "concatenated" accross Include {} blocks
      * (not only Options{} blocks inside a Include{}) */
     ClearAllBits(FO_MAX, ff->flags);
@@ -719,11 +723,12 @@ bool ListFiles(JobControlRecord* jcr,
             ff->VerifyOpts, ff->AccurateOpts, ff->BaseJobOpts, ff->flags);
       channel::in in = std::move(ins[i]);
 
+      auto callback = CreateCallback(SaveInList(in));
       foreach_dlist (node, &incexe->name_list) {
         char* fname = (char*)node->c_str();
         Dmsg1(debuglevel, "F %s\n", fname);
         ff->top_fname = fname;
-        if (FindOneFile(jcr, ff.get(), CreateCallback(SaveInList(in)),
+        if (FindOneFile(jcr, ff_pkt, callback,
                         ff->top_fname, (dev_t)-1, true)
             == 0) {
           return false; /* error return */
