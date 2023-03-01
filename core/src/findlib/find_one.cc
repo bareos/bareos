@@ -393,7 +393,6 @@ static inline int process_hfsattributes(
     std::function<int(JobControlRecord* jcr,
                       FindFilesPacket* ff,
                       bool top_level)> HandleFile,
-    int HandleFile(JobControlRecord* jcr, FindFilesPacket* ff, bool top_level),
     char* fname,
     bool top_level)
 {
