@@ -389,6 +389,9 @@ static inline void RestoreFileTimes(FindFilesPacket* ff_pkt, char* fname)
 // Handling of a HFS+ attributes.
 static inline int process_hfsattributes(JobControlRecord* jcr,
                                         FindFilesPacket* ff_pkt,
+		std::function<int(JobControlRecord* jcr,
+		FindFilesPacket* ff,
+		bool top_level)> HandleFile,
                                         int HandleFile(JobControlRecord* jcr,
                                                        FindFilesPacket* ff,
                                                        bool top_level),
@@ -417,9 +420,9 @@ static inline int process_hfsattributes(JobControlRecord* jcr,
 // Handling of a hardlinked file.
 static inline int process_hardlink(JobControlRecord* jcr,
                                    FindFilesPacket* ff_pkt,
-                                   int HandleFile(JobControlRecord* jcr,
-                                                  FindFilesPacket* ff,
-                                                  bool top_level),
+		std::function<int(JobControlRecord* jcr,
+		FindFilesPacket* ff,
+		bool top_level)> HandleFile,
                                    char* fname,
                                    bool top_level,
                                    bool* done)
@@ -464,9 +467,9 @@ static inline int process_hardlink(JobControlRecord* jcr,
 // Handling of a regular file.
 static inline int process_regular_file(JobControlRecord* jcr,
                                        FindFilesPacket* ff_pkt,
-                                       int HandleFile(JobControlRecord* jcr,
-                                                      FindFilesPacket* ff,
-                                                      bool top_level),
+		std::function<int(JobControlRecord* jcr,
+		FindFilesPacket* ff,
+		bool top_level)> HandleFile,
                                        char* fname,
                                        bool top_level)
 {
@@ -500,9 +503,9 @@ static inline int process_regular_file(JobControlRecord* jcr,
 // Handling of a symlink.
 static inline int process_symlink(JobControlRecord* jcr,
                                   FindFilesPacket* ff_pkt,
-                                  int HandleFile(JobControlRecord* jcr,
-                                                 FindFilesPacket* ff,
-                                                 bool top_level),
+		std::function<int(JobControlRecord* jcr,
+		FindFilesPacket* ff,
+		bool top_level)> HandleFile,
                                   char* fname,
                                   bool top_level)
 {
@@ -533,9 +536,9 @@ static inline int process_symlink(JobControlRecord* jcr,
 // Handling of a directory.
 static inline int process_directory(JobControlRecord* jcr,
                                     FindFilesPacket* ff_pkt,
-                                    int HandleFile(JobControlRecord* jcr,
-                                                   FindFilesPacket* ff,
-                                                   bool top_level),
+		std::function<int(JobControlRecord* jcr,
+		FindFilesPacket* ff,
+		bool top_level)> HandleFile,
                                     char* fname,
                                     dev_t parent_device,
                                     bool top_level)
@@ -789,9 +792,9 @@ static inline int process_directory(JobControlRecord* jcr,
 // Handling of a special file.
 static inline int process_special_file(JobControlRecord* jcr,
                                        FindFilesPacket* ff_pkt,
-                                       int HandleFile(JobControlRecord* jcr,
-                                                      FindFilesPacket* ff,
-                                                      bool top_level),
+		std::function<int(JobControlRecord* jcr,
+		FindFilesPacket* ff,
+		bool top_level)> HandleFile,
                                        char*,
                                        bool top_level)
 {
@@ -889,9 +892,9 @@ static inline bool NeedsProcessing(JobControlRecord* jcr,
  */
 int FindOneFile(JobControlRecord* jcr,
                 FindFilesPacket* ff_pkt,
-                int HandleFile(JobControlRecord* jcr,
-                               FindFilesPacket* ff,
-                               bool top_level),
+		std::function<int(JobControlRecord* jcr,
+		FindFilesPacket* ff,
+		bool top_level)> HandleFile,
                 char* fname,
                 dev_t parent_device,
                 bool top_level)

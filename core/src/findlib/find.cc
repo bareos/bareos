@@ -51,10 +51,6 @@ static const int debuglevel = 450;
 int32_t name_max; /* filename max length */
 int32_t path_max; /* path name max length */
 
-static int OurCallback(JobControlRecord* jcr,
-                       FindFilesPacket* ff,
-                       bool top_level);
-
 static const int fnmode = 0;
 
 // Initialize the find files "global" variables
@@ -140,6 +136,61 @@ static void SetupFlags(FindFilesPacket* ff,
 }
 
 /**
+ * The code comes here for each file examined.
+ * We filter the files, then call the user's callback if the file is included.
+ */
+#include <functional>
+static auto CreateCallback(std::function<int(JobControlRecord* jcr,
+				     FindFilesPacket* ff,
+				     bool top_level)> SaveFile)
+{
+	return [SaveFile](JobControlRecord* jcr,
+			  FindFilesPacket* ff,
+			  bool top_level)
+		{
+			if (top_level) { return SaveFile(jcr, ff, top_level); /* accept file */ }
+			switch (ff->type) {
+			case FT_NOACCESS:
+			case FT_NOFOLLOW:
+			case FT_NOSTAT:
+			case FT_NOCHG:
+			case FT_ISARCH:
+			case FT_NORECURSE:
+			case FT_NOFSCHG:
+			case FT_INVALIDFS:
+			case FT_INVALIDDT:
+			case FT_NOOPEN:
+				//    return ff->FileSave(jcr, ff, top_level);
+
+				/* These items can be filtered */
+			case FT_LNKSAVED:
+			case FT_REGE:
+			case FT_REG:
+			case FT_LNK:
+			case FT_DIRBEGIN:
+			case FT_DIREND:
+			case FT_RAW:
+			case FT_FIFO:
+			case FT_SPEC:
+			case FT_DIRNOCHG:
+			case FT_REPARSE:
+			case FT_JUNCTION:
+				if (AcceptFile(ff)) {
+					return SaveFile(jcr, ff, top_level);
+				} else {
+					Dmsg1(debuglevel, "Skip file %s\n", ff->fname);
+					return -1; /* ignore this file */
+				}
+
+			default:
+				Dmsg1(000, "Unknown FT code %d\n", ff->type);
+				return 0;
+			}
+		};
+}
+
+
+/**
  * Call this subroutine with a callback subroutine as the first
  * argument and a packet as the second argument, this packet
  * will be passed back to the callback subroutine as the last
@@ -154,9 +205,6 @@ int FindFiles(JobControlRecord* jcr,
                              FindFilesPacket* ff_pkt,
                              bool top_level))
 {
-  ff->FileSave = FileSave;
-  ff->PluginSave = PluginSave;
-
   /* This is the new way */
   findFILESET* fileset = ff->fileset;
   if (fileset) {
@@ -181,7 +229,7 @@ int FindFiles(JobControlRecord* jcr,
 
         Dmsg1(debuglevel, "F %s\n", fname);
         ff->top_fname = fname;
-        if (FindOneFile(jcr, ff, OurCallback, ff->top_fname, (dev_t)-1, true)
+        if (FindOneFile(jcr, ff, CreateCallback(FileSave), ff->top_fname, (dev_t)-1, true)
             == 0) {
           return 0; /* error return */
         }
@@ -399,54 +447,6 @@ bool AcceptFile(FindFilesPacket* ff)
   return true;
 }
 
-/**
- * The code comes here for each file examined.
- * We filter the files, then call the user's callback if the file is included.
- */
-static int OurCallback(JobControlRecord* jcr,
-                       FindFilesPacket* ff,
-                       bool top_level)
-{
-  if (top_level) { return ff->FileSave(jcr, ff, top_level); /* accept file */ }
-  switch (ff->type) {
-    case FT_NOACCESS:
-    case FT_NOFOLLOW:
-    case FT_NOSTAT:
-    case FT_NOCHG:
-    case FT_ISARCH:
-    case FT_NORECURSE:
-    case FT_NOFSCHG:
-    case FT_INVALIDFS:
-    case FT_INVALIDDT:
-    case FT_NOOPEN:
-      //    return ff->FileSave(jcr, ff, top_level);
-
-    /* These items can be filtered */
-    case FT_LNKSAVED:
-    case FT_REGE:
-    case FT_REG:
-    case FT_LNK:
-    case FT_DIRBEGIN:
-    case FT_DIREND:
-    case FT_RAW:
-    case FT_FIFO:
-    case FT_SPEC:
-    case FT_DIRNOCHG:
-    case FT_REPARSE:
-    case FT_JUNCTION:
-      if (AcceptFile(ff)) {
-        return ff->FileSave(jcr, ff, top_level);
-      } else {
-        Dmsg1(debuglevel, "Skip file %s\n", ff->fname);
-        return -1; /* ignore this file */
-      }
-
-    default:
-      Dmsg1(000, "Unknown FT code %d\n", ff->type);
-      return 0;
-  }
-}
-
 // Terminate FindFiles() and release all allocated memory
 void TermFindFiles(FindFilesPacket* ff)
 {
@@ -560,130 +560,132 @@ void NewOptions(FindFilesPacket* ff, findIncludeExcludeItem* incexe)
   ff->fileset->state = state_options;
 }
 
-int SaveInList(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
-{
-  switch (ff_pkt->type) {
-    case FT_LNKSAVED: /* Hard linked, file already saved */
-      Dmsg2(130, "FT_LNKSAVED hard link: %s => %s\n", ff_pkt->fname,
-            ff_pkt->link);
-      break;
-    case FT_REGE:
-      Dmsg1(130, "FT_REGE saving: %s\n", ff_pkt->fname);
-      break;
-    case FT_REG:
-      Dmsg1(130, "FT_REG saving: %s\n", ff_pkt->fname);
-      break;
-    case FT_LNK:
-      Dmsg2(130, "FT_LNK saving: %s -> %s\n", ff_pkt->fname, ff_pkt->link);
-      break;
-    case FT_RESTORE_FIRST:
-      Dmsg1(100, "FT_RESTORE_FIRST saving: %s\n", ff_pkt->fname);
-      break;
-    case FT_PLUGIN_CONFIG:
-      Dmsg1(100, "FT_PLUGIN_CONFIG saving: %s\n", ff_pkt->fname);
-      break;
-    case FT_DIRBEGIN:
-      return 1;                           /* not used */
-    case FT_NORECURSE:
-      Jmsg(jcr, M_INFO, 1,
-           _("     Recursion turned off. Will not descend from %s into %s\n"),
-           ff_pkt->top_fname, ff_pkt->fname);
-      ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
-      break;
-    case FT_NOFSCHG:
-      /* Suppress message for /dev filesystems */
-      if (!IsInFileset(ff_pkt)) {
-        Jmsg(jcr, M_INFO, 1,
-             _("     %s is a different filesystem. Will not descend from %s "
-               "into it.\n"),
-             ff_pkt->fname, ff_pkt->top_fname);
-      }
-      ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
-      break;
-    case FT_INVALIDFS:
-      Jmsg(jcr, M_INFO, 1,
-           _("     Disallowed filesystem. Will not descend from %s into %s\n"),
-           ff_pkt->top_fname, ff_pkt->fname);
-      ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
-      break;
-    case FT_INVALIDDT:
-      Jmsg(jcr, M_INFO, 1,
-           _("     Disallowed drive type. Will not descend into %s\n"),
-           ff_pkt->fname);
-      break;
-    case FT_REPARSE:
-    case FT_JUNCTION:
-    case FT_DIREND:
-      Dmsg1(130, "FT_DIREND: %s\n", ff_pkt->link);
-      break;
-    case FT_SPEC:
-      Dmsg1(130, "FT_SPEC saving: %s\n", ff_pkt->fname);
-      if (S_ISSOCK(ff_pkt->statp.st_mode)) {
-        Jmsg(jcr, M_SKIPPED, 1, _("     Socket file skipped: %s\n"),
-             ff_pkt->fname);
-        return 1;
-      }
-      break;
-    case FT_RAW:
-      Dmsg1(130, "FT_RAW saving: %s\n", ff_pkt->fname);
-      break;
-    case FT_FIFO:
-      Dmsg1(130, "FT_FIFO saving: %s\n", ff_pkt->fname);
-      break;
-    case FT_NOACCESS: {
-      BErrNo be;
-      Jmsg(jcr, M_NOTSAVED, 0, _("     Could not access \"%s\": ERR=%s\n"),
-           ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
-      jcr->JobErrors++;
-      return 1;
-    }
-    case FT_NOFOLLOW: {
-      BErrNo be;
-      Jmsg(jcr, M_NOTSAVED, 0, _("     Could not follow link \"%s\": ERR=%s\n"),
-           ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
-      jcr->JobErrors++;
-      return 1;
-    }
-    case FT_NOSTAT: {
-      BErrNo be;
-      Jmsg(jcr, M_NOTSAVED, 0, _("     Could not stat \"%s\": ERR=%s\n"),
-           ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
-      jcr->JobErrors++;
-      return 1;
-    }
-    case FT_DIRNOCHG:
-    case FT_NOCHG:
-      Jmsg(jcr, M_SKIPPED, 1, _("     Unchanged file skipped: %s\n"),
-           ff_pkt->fname);
-      return 1;
-    case FT_ISARCH:
-      Jmsg(jcr, M_NOTSAVED, 0, _("     Archive file not saved: %s\n"),
-           ff_pkt->fname);
-      return 1;
-    case FT_NOOPEN: {
-      BErrNo be;
-      Jmsg(jcr, M_NOTSAVED, 0,
-           _("     Could not open directory \"%s\": ERR=%s\n"), ff_pkt->fname,
-           be.bstrerror(ff_pkt->ff_errno));
-      jcr->JobErrors++;
-      return 1;
-    }
-    case FT_DELETED:
-      Dmsg1(130, "FT_DELETED: %s\n", ff_pkt->fname);
-      break;
-    default:
-      Jmsg(jcr, M_NOTSAVED, 0, _("     Unknown file type %d; not saved: %s\n"),
-           ff_pkt->type, ff_pkt->fname);
-      jcr->JobErrors++;
-      return 1;
-  }
+auto SaveInList(channel::in<std::string>& in) {
+ return [&in](JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
+	 {
+		 switch (ff_pkt->type) {
+		 case FT_LNKSAVED: /* Hard linked, file already saved */
+			 Dmsg2(130, "FT_LNKSAVED hard link: %s => %s\n", ff_pkt->fname,
+			       ff_pkt->link);
+			 break;
+		 case FT_REGE:
+			 Dmsg1(130, "FT_REGE saving: %s\n", ff_pkt->fname);
+			 break;
+		 case FT_REG:
+			 Dmsg1(130, "FT_REG saving: %s\n", ff_pkt->fname);
+			 break;
+		 case FT_LNK:
+			 Dmsg2(130, "FT_LNK saving: %s -> %s\n", ff_pkt->fname, ff_pkt->link);
+			 break;
+		 case FT_RESTORE_FIRST:
+			 Dmsg1(100, "FT_RESTORE_FIRST saving: %s\n", ff_pkt->fname);
+			 break;
+		 case FT_PLUGIN_CONFIG:
+			 Dmsg1(100, "FT_PLUGIN_CONFIG saving: %s\n", ff_pkt->fname);
+			 break;
+		 case FT_DIRBEGIN:
+			 return 1;                           /* not used */
+		 case FT_NORECURSE:
+			 Jmsg(jcr, M_INFO, 1,
+			      _("     Recursion turned off. Will not descend from %s into %s\n"),
+			      ff_pkt->top_fname, ff_pkt->fname);
+			 ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
+			 break;
+		 case FT_NOFSCHG:
+			 /* Suppress message for /dev filesystems */
+			 if (!IsInFileset(ff_pkt)) {
+				 Jmsg(jcr, M_INFO, 1,
+				      _("     %s is a different filesystem. Will not descend from %s "
+					"into it.\n"),
+				      ff_pkt->fname, ff_pkt->top_fname);
+			 }
+			 ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
+			 break;
+		 case FT_INVALIDFS:
+			 Jmsg(jcr, M_INFO, 1,
+			      _("     Disallowed filesystem. Will not descend from %s into %s\n"),
+			      ff_pkt->top_fname, ff_pkt->fname);
+			 ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
+			 break;
+		 case FT_INVALIDDT:
+			 Jmsg(jcr, M_INFO, 1,
+			      _("     Disallowed drive type. Will not descend into %s\n"),
+			      ff_pkt->fname);
+			 break;
+		 case FT_REPARSE:
+		 case FT_JUNCTION:
+		 case FT_DIREND:
+			 Dmsg1(130, "FT_DIREND: %s\n", ff_pkt->link);
+			 break;
+		 case FT_SPEC:
+			 Dmsg1(130, "FT_SPEC saving: %s\n", ff_pkt->fname);
+			 if (S_ISSOCK(ff_pkt->statp.st_mode)) {
+				 Jmsg(jcr, M_SKIPPED, 1, _("     Socket file skipped: %s\n"),
+				      ff_pkt->fname);
+				 return 1;
+			 }
+			 break;
+		 case FT_RAW:
+			 Dmsg1(130, "FT_RAW saving: %s\n", ff_pkt->fname);
+			 break;
+		 case FT_FIFO:
+			 Dmsg1(130, "FT_FIFO saving: %s\n", ff_pkt->fname);
+			 break;
+		 case FT_NOACCESS: {
+			 BErrNo be;
+			 Jmsg(jcr, M_NOTSAVED, 0, _("     Could not access \"%s\": ERR=%s\n"),
+			      ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
+			 jcr->JobErrors++;
+			 return 1;
+		 }
+		 case FT_NOFOLLOW: {
+			 BErrNo be;
+			 Jmsg(jcr, M_NOTSAVED, 0, _("     Could not follow link \"%s\": ERR=%s\n"),
+			      ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
+			 jcr->JobErrors++;
+			 return 1;
+		 }
+		 case FT_NOSTAT: {
+			 BErrNo be;
+			 Jmsg(jcr, M_NOTSAVED, 0, _("     Could not stat \"%s\": ERR=%s\n"),
+			      ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
+			 jcr->JobErrors++;
+			 return 1;
+		 }
+		 case FT_DIRNOCHG:
+		 case FT_NOCHG:
+			 Jmsg(jcr, M_SKIPPED, 1, _("     Unchanged file skipped: %s\n"),
+			      ff_pkt->fname);
+			 return 1;
+		 case FT_ISARCH:
+			 Jmsg(jcr, M_NOTSAVED, 0, _("     Archive file not saved: %s\n"),
+			      ff_pkt->fname);
+			 return 1;
+		 case FT_NOOPEN: {
+			 BErrNo be;
+			 Jmsg(jcr, M_NOTSAVED, 0,
+			      _("     Could not open directory \"%s\": ERR=%s\n"), ff_pkt->fname,
+			      be.bstrerror(ff_pkt->ff_errno));
+			 jcr->JobErrors++;
+			 return 1;
+		 }
+		 case FT_DELETED:
+			 Dmsg1(130, "FT_DELETED: %s\n", ff_pkt->fname);
+			 break;
+		 default:
+			 Jmsg(jcr, M_NOTSAVED, 0, _("     Unknown file type %d; not saved: %s\n"),
+			      ff_pkt->type, ff_pkt->fname);
+			 jcr->JobErrors++;
+			 return 1;
+		 }
 
-  try {
-	  ff_pkt->channel->put(ff_pkt->fname);
-  } catch (...) {
-	  return 0;
-  }
-  return 1;
+		 try {
+			 in.put(ff_pkt->fname);
+		 } catch (...) {
+			 return 0;
+		 }
+		 return 1;
+	 };
 }
 
 
@@ -700,7 +702,6 @@ bool ListFiles(JobControlRecord* jcr,
 	  std::unique_ptr<FindFilesPacket, ff_cleanup> ff(init_find_files(), ff_cleanup{});
     ff->fileset = fileset;
     ff->incremental = incremental;
-    ff->FileSave = SaveInList;
     /*
      * TODO: We probably need be move the initialization in the fileset loop,
      * at this place flags options are "concatenated" accross Include {} blocks
@@ -718,13 +719,11 @@ bool ListFiles(JobControlRecord* jcr,
             ff->VerifyOpts, ff->AccurateOpts, ff->BaseJobOpts, ff->flags);
       channel::in in = std::move(ins[i]);
 
-      ff->channel = &in;
-
       foreach_dlist (node, &incexe->name_list) {
 	      char* fname = (char *) node->c_str();
         Dmsg1(debuglevel, "F %s\n", fname);
         ff->top_fname = fname;
-        if (FindOneFile(jcr, ff.get(), OurCallback, ff->top_fname, (dev_t)-1, true)
+        if (FindOneFile(jcr, ff.get(), CreateCallback(SaveInList(in)), ff->top_fname, (dev_t)-1, true)
             == 0) {
 		return false; /* error return */
         }
@@ -747,9 +746,6 @@ int SendFiles(JobControlRecord* jcr,
               int FileSave(JobControlRecord*, FindFilesPacket* ff_pkt, bool),
               int PluginSave(JobControlRecord*, FindFilesPacket* ff_pkt, bool))
 {
-  ff->FileSave = FileSave;
-  ff->PluginSave = PluginSave;
-
   /* This is the new way */
   findFILESET* fileset = ff->fileset;
   if (fileset) {
@@ -782,7 +778,7 @@ int SendFiles(JobControlRecord* jcr,
 	      char* fname = (char *)name->c_str();
         Dmsg1(debuglevel, "F %s\n", fname);
         ff->top_fname = (char *) fname;
-        if (FindOneFile(jcr, ff, OurCallback, ff->top_fname, (dev_t)-1, false)
+        if (FindOneFile(jcr, ff, CreateCallback(FileSave), ff->top_fname, (dev_t)-1, false)
             == 0) {
           return 0; /* error return */
         }
