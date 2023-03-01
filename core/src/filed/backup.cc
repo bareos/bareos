@@ -1234,15 +1234,15 @@ bail_out:
   return 0;
 }
 
-bool SendFileHeader(BareosSocket* sd,
-		    int32_t file_index, // attention: is 32bit, gets send with %ld
-		    int type,
-		    const char* canonical_name,
-		    const char* encoded_attributes,
-		    const char* link_name,
-		    const char* encoded_ex_attributes,
-		    int32_t delta_seq // attention: is signed, gets send as unsigned
-		   )
+static bool SendFileHeader(BareosSocket* sd,
+			   int32_t file_index, // attention: is 32bit, gets send with %ld
+			   int type,
+			   const char* canonical_name,
+			   const char* encoded_attributes,
+			   const char* link_name,
+			   const char* encoded_ex_attributes,
+			   int32_t delta_seq // attention: is signed, gets send as unsigned
+			  )
 {
 	// fsend already would already do these substitutions for us,
 	// but this makes it clearer.
@@ -1256,14 +1256,14 @@ bool SendFileHeader(BareosSocket* sd,
 	return status;
 }
 
-bool SendRestoreObject(BareosSocket* sd,
-		       int32_t file_index,
-		       int file_type,
-		       const char* file_name,
-		       const char* object_name,
-		       int32_t object_index,
-		       int32_t object_len,
-		       char* object_data)
+static bool SendRestoreObject(BareosSocket* sd,
+			      int32_t file_index,
+			      int file_type,
+			      const char* file_name,
+			      const char* object_name,
+			      int32_t object_index,
+			      int32_t object_len,
+			      char* object_data)
 {
       int comp_len = object_len;
       bool object_compression = 0;
@@ -1471,7 +1471,6 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
   return status;
 }
 
-// Do in place strip of path
 bool do_strip(int count, const char* in, char* out)
 {
   int stripped;
@@ -1508,12 +1507,11 @@ bool do_strip(int count, const char* in, char* out)
 
 bool ShouldStripPaths(const FindFilesPacket* ff_pkt)
 {
-		if (!BitIsSet(FO_STRIPPATH, ff_pkt->flags) || ff_pkt->StripPath <= 0) {
-			Dmsg1(200, "No strip for %s\n", ff_pkt->fname);
-			return false;
-		}
-		return true;
-	return false;
+	if (!BitIsSet(FO_STRIPPATH, ff_pkt->flags) || ff_pkt->StripPath <= 0) {
+		Dmsg1(200, "No strip for %s\n", ff_pkt->fname);
+		return false;
+	}
+	return true;
 }
 
 /**
