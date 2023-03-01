@@ -1478,12 +1478,10 @@ bool do_strip(int count, const char* in, char* out)
 
   // Copy to first path separator -- Win32 might have c: ...
   while (*in && !IsPathSeparator(*in)) {
-    out++;
-    in++;
+    *out++ = *in++;
   }
   if (*in) { /* Not at the end of the string */
-    out++;
-    in++;
+    *out++ = *in++;
     numsep++; /* one separator seen */
   }
   for (stripped = 0; stripped < count && *in; stripped++) {
