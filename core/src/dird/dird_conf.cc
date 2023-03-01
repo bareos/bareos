@@ -217,7 +217,7 @@ static ResourceItem user_items[] = {
   {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 
-static ResourceItem cli_items[] = {
+static ResourceItem client_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_client, resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL,
      "The name of the resource." },
   { "Description", CFG_TYPE_STR, ITEM(res_client, description_), 0, 0, NULL, NULL, NULL },
@@ -519,7 +519,7 @@ static ResourceItem counter_items[] = {
 static ResourceTable resources[] = {
   { "Director", "Directors", dir_items, R_DIRECTOR, sizeof(DirectorResource),
       [] (){ res_dir = new DirectorResource(); }, reinterpret_cast<BareosResource**>(&res_dir) },
-  { "Client", "Clients", cli_items, R_CLIENT, sizeof(ClientResource),
+  { "Client", "Clients", client_items, R_CLIENT, sizeof(ClientResource),
       [] (){ res_client = new ClientResource(); }, reinterpret_cast<BareosResource**>(&res_client)  },
   { "JobDefs", "JobDefs", job_items, R_JOBDEFS, sizeof(JobResource),
       [] (){ res_job = new JobResource(); }, reinterpret_cast<BareosResource**>(&res_job) },

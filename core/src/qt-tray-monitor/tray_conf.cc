@@ -115,7 +115,7 @@ static ResourceItem dir_items[] = {
  *
  * name handler value code flags default_value
  */
-static ResourceItem cli_items[] = {
+static ResourceItem client_items[] = {
   {"Name", CFG_TYPE_NAME, ITEM(res_client,resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
   {"Description", CFG_TYPE_STR, ITEM(res_client,description_), 0, 0, NULL, NULL, NULL},
   {"Address", CFG_TYPE_STR, ITEM(res_client,address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
@@ -170,7 +170,7 @@ static ResourceTable resource_definitions[] = {
       []() { res_monitor = new MonitorResource(); }, reinterpret_cast<BareosResource**>(&res_monitor)},
   {"Director", "Directors", dir_items, R_DIRECTOR, sizeof(DirectorResource),
       []() { res_dir = new DirectorResource(); }, reinterpret_cast<BareosResource**>(&res_dir)},
-  {"Client", "Clients", cli_items, R_CLIENT, sizeof(ClientResource),
+  {"Client", "Clients", client_items, R_CLIENT, sizeof(ClientResource),
       []() { res_client = new ClientResource(); }, reinterpret_cast<BareosResource**>(&res_client)},
   {"Storage", "Storages", store_items, R_STORAGE, sizeof(StorageResource),
       []() { res_store = new StorageResource(); }, reinterpret_cast<BareosResource**>(&res_store)},
