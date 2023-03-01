@@ -1421,7 +1421,7 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
    * For a directory, link is the same as fname, but with trailing
    * slash. For a linked file, link is the link. */
 
-  PoolMem StrippedFile, StrippedLink;
+  PoolMem StrippedFile(PM_FNAME), StrippedLink(PM_FNAME);
   const char* file_name = nullptr;
   const char* link_name = nullptr;
 /**
@@ -1434,9 +1434,6 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
   if (!IS_FT_OBJECT(ff_pkt->type)
       && ff_pkt->type != FT_DELETED
       && ShouldStripPaths(ff_pkt)) { /* already stripped */
-	  StrippedFile = PoolMem(PM_FNAME);
-	  StrippedLink = PoolMem(PM_FNAME);
-
 	  bool file_stripped = do_strip(ff_pkt->StripPath,
 					ff_pkt->fname,
 					StrippedFile.c_str());
