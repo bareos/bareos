@@ -183,49 +183,35 @@ template <typename T> bool in<T>::put(const T& val)
 {
   if (closed) return false;
   bool success = false;
+  bool took_fast_path = false;
   if (old_size < capacity)  // size <= old_size is always true!
   {
     // fast path: copy first, then take the lock
     shared->storage[write_pos] = val;
-    {
-      std::unique_lock lock(shared->mutex);
-      shared->cv.wait(lock,
-                      // only wake up if either there is
-                      // space in the queue, or
-                      // the in announced his death
-                      [this] {
-                        return this->shared->size < this->capacity
-                               || !this->shared->out_alive;
-                      });
-      if (shared->out_alive) {
-        shared->size += 1;
-        old_size = shared->size;
-        success = true;
-      } else {
-        shared->in_alive = false;
-        closed = true;
-      }
-    }
-  } else {
-    // slow path: take the lock, then copy
-    std::unique_lock lock(shared->mutex);
-    shared->cv.wait(lock, [this] {
-      return this->shared->size < this->capacity || !this->shared->out_alive;
-    });
-
-    if (shared->out_alive) {
-      // since the out is still alive, we know that
-      // there is some space free in the storage
-      shared->storage[write_pos] = val;
-      shared->size += 1;
-      old_size = shared->size; // update the cache!
-      success = true;
-    } else {
-      shared->in_alive = false;
-      old_size = this->capacity; // update the cache!
-      closed = true;
-    }
+    took_fast_path = true;
   }
+  // slow path: take the lock, then copy
+  std::unique_lock lock(shared->mutex);
+  shared->cv.wait(lock, [this] {
+	  return this->shared->size < this->capacity || !this->shared->out_alive;
+  });
+
+  if (shared->out_alive) {
+	  // since the out is still alive, we know that
+	  // there is some space free in the storage
+	  if (!took_fast_path)
+	  {
+		  shared->storage[write_pos] = val;
+	  }
+	  shared->size += 1;
+	  old_size = shared->size; // update the cache!
+	  success = true;
+  } else {
+	  shared->in_alive = false;
+	  old_size = this->capacity; // update the cache!
+	  closed = true;
+  }
+
   shared->cv.notify_one();
   if (success) { write_pos = wrapping_inc(write_pos, capacity); }
   return success;
@@ -235,48 +221,34 @@ template <typename T> bool in<T>::put(T&& val)
 {
   if (closed) return false;
   bool success = false;
+  bool took_fast_path = false;
   if (old_size < capacity)  // size <= old_size is always true!
   {
     // fast path: copy first, then take the lock
     shared->storage[write_pos] = std::move(val);
-    {
-      std::unique_lock lock(shared->mutex);
-      shared->cv.wait(lock,
-                      // only wake up if either there is
-                      // space in the queue, or
-                      // the in announced his death
-                      [this] {
-                        return this->shared->size < this->capacity
-                               || !this->shared->out_alive;
-                      });
-      if (shared->out_alive) {
-        shared->size += 1;
-        old_size = shared->size;
-        success = true;
-      } else {
-        shared->in_alive = false;
-        closed = true;
-      }
-    }
-  } else {
-    // slow path: take the lock, then copy
-    std::unique_lock lock(shared->mutex);
-    shared->cv.wait(lock, [this] {
-      return this->shared->size < this->capacity || !this->shared->out_alive;
-    });
-
-    if (shared->out_alive) {
-      // since the out is still alive, we know that
-      // there is some space free in the storage
-      shared->storage[write_pos] = std::move(val);
-      shared->size += 1;
-      old_size = shared->size;
-      success = true;
-    } else {
-      shared->in_alive = false;
-      closed = true;
-    }
+    took_fast_path = true;
   }
+  // slow path: take the lock, then copy
+  std::unique_lock lock(shared->mutex);
+  shared->cv.wait(lock, [this] {
+	  return this->shared->size < this->capacity || !this->shared->out_alive;
+  });
+
+  if (shared->out_alive) {
+	  // since the out is still alive, we know that
+	  // there is some space free in the storage
+	  if (!took_fast_path)
+	  {
+		  shared->storage[write_pos] = std::move(val);
+	  }
+	  shared->size += 1;
+	  old_size = shared->size;
+	  success = true;
+  } else {
+	  shared->in_alive = false;
+	  closed = true;
+  }
+
   shared->cv.notify_one();
   if (success) { write_pos = wrapping_inc(write_pos, capacity); }
   return success;
