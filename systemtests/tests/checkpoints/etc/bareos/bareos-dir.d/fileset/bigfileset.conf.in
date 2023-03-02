@@ -14,6 +14,6 @@ FileSet {
       fstype = zfs
       fstype = btrfs
     }
-    File = "@PROJECT_SOURCE_DIR@/tests/"
+    File=<@tmpdir@/bigdata-list
   }
 }
