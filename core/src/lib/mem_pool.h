@@ -84,6 +84,8 @@ class PoolMem {
     strcpy(str);
   }
   explicit PoolMem(const std::string& str) : PoolMem(str.c_str()) {}
+  PoolMem(const PoolMem&) = delete;
+  PoolMem& operator=(const PoolMem&) = delete;
 
   ~PoolMem()
   {
