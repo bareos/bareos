@@ -5,7 +5,7 @@ SELECT Job.JobId, JobTdate
    AND Job.StartTime    < '%s'
    AND Level            = 'F'
    AND JobStatus IN ('T','W')
-   AND Type             = 'B'
+   AND Type             = '%c'
    AND JobMedia.JobId   = Job.JobId
    AND Media.Enabled    = 1
    AND JobMedia.MediaId = Media.MediaId

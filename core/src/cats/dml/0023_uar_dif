@@ -10,7 +10,7 @@ SELECT Job.JobId, Job.JobTDate, Job.ClientId, Job.Level, Job.JobFiles, Job.JobBy
    AND JobMedia.MediaId = Media.MediaId
    AND Job.Level        = 'D'
    AND JobStatus IN ('T','W')
-   AND Type             = 'B'
+   AND Type             = '%c'
    AND Job.FileSetId    = FileSet.FileSetId
    AND FileSet.FileSet  = '%s' %s
  ORDER BY Job.JobTDate DESC LIMIT 1

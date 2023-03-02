@@ -1,0 +1,99 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# restore some single files from archives
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+#shellcheck source=functions
+. functions
+
+start_test
+
+file1="$(pwd)/tmp/data/weird-files/socket.pl"
+file2="$(pwd)/tmp/data/weird-files/softlinkee"
+file3="$(pwd)/tmp/data/weird-files/softlink-to-softlinkee"
+for f in "$file1" "$file2" "$file3" ; do
+    if [[ -f "$tmp/bareos-restores/$f" ]]; then
+	rm "$tmp/bareos-restores/$f"
+    fi;
+done
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+setdebug level=100 storage=File
+@$out $log_home/log1.out
+status director
+status client
+status storage=File
+wait
+messages
+@$out $log_home/jobs.out
+list jobs
+@$out $log_home/should-work.out
+restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores \
+	file=$file1 \
+	done yes
+wait
+messages
+@$out $log_home/restore-from-selected-job.out
+restore
+12
+1
+mark $file2
+done
+yes
+wait
+messages
+@$out $log_home/restore-from-list-and-time.out
+restore
+8
+$(( $(date +%Y) + 1))
+$file3
+
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File
+
+check_preconditions
+
+expect_grep "Start Restore Job" \
+	    "$log_home/should-work.out" \
+	    "The first restore job was not started."
+
+expect_grep "Start Restore Job" \
+	    "$log_home/restore-from-selected-job.out" \
+	    "The second restore job was not started."
+
+expect_grep "Start Restore Job" \
+	    "$log_home/restore-from-list-and-time.out" \
+	    "The third restore job was not started."
+
+expect_grep "1 file selected to be restored." \
+	    "$log_home/should-work.out" \
+ 	    "Expected success; found failure"
+
+if ! cmp -s "$tmp/bareos-restores/$file1" "$file1"; then
+    exit 2
+fi
+
+if ! cmp -s "$tmp/bareos-restores/$file2" "$file2"; then
+    exit 3
+fi
+
+if ! cmp -s "$tmp/bareos-restores/$file3" "$file3"; then
+    exit 4
+fi
+end_test

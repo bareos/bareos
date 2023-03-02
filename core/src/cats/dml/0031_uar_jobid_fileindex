@@ -16,6 +16,6 @@ WHERE Job.JobId=File.JobId
   AND Path.PathId=File.PathId
   AND JobStatus IN ('T',
                     'W')
-  AND TYPE='B'
+  AND TYPE='%c'
 ORDER BY Job.StartTime DESC
 LIMIT 1

@@ -14,7 +14,7 @@ WHERE ClientId = %s
   AND Level = 'F'
   AND JobStatus IN ('T',
                     'W')
-  AND Type = 'B'
+  AND Type = '%c'
   AND StartTime < '%s'
   AND FileSet.FileSetId = %s
 ORDER BY Job.JobId DESC,

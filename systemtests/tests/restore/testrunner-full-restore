@@ -1,0 +1,51 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# Do a full restore from an archive job.
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+#shellcheck source=functions
+. functions
+
+start_test
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $log_home/setup.out
+setdebug level=100 storage=File
+status director
+status client
+status storage=File
+wait
+messages
+@$out $log_home/jobs.out
+list jobs
+@$out $log_home/backup-full.out
+restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File
+
+check_preconditions
+
+expect_grep "Start Restore Job" \
+	    "$log_home/backup-full.out" \
+	    "Required restore job was not started."
+
+check_restore_diff "${BackupDirectory}"
+end_test
