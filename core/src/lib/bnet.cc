@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -164,10 +164,8 @@ bool BnetTlsClient(BareosSocket* bsock,
   if (!bsock->tls_conn_init->TlsBsockConnect(bsock)) { goto err; }
 
   if (VerifyPeer) {
-    /*
-     * If there's an Allowed CN verify list, use that to validate the remote
-     * certificate's CN. Otherwise, we use standard host/CN matching.
-     */
+    /* If there's an Allowed CN verify list, use that to validate the remote
+     * certificate's CN. Otherwise, we use standard host/CN matching. */
     if (!verify_list.empty()) {
       if (!bsock->tls_conn_init->TlsPostconnectVerifyCn(jcr, verify_list)) {
         Qmsg1(bsock->jcr(), M_FATAL, 0,
@@ -274,27 +272,23 @@ const char* resolv_host(int family, const char* host, dlist<IPADDR>* addr_list)
       case AF_INET:
         addr = new IPADDR(rp->ai_addr->sa_family);
         addr->SetType(IPADDR::R_MULTIPLE);
-        /*
-         * Some serious casting to get the struct in_addr *
+        /* Some serious casting to get the struct in_addr *
          * rp->ai_addr == struct sockaddr
          * as this is AF_INET family we can cast that
          * to struct_sockaddr_in. Of that we need the
          * address of the sin_addr member which contains a
-         * struct in_addr
-         */
+         * struct in_addr */
         addr->SetAddr4(&(((struct sockaddr_in*)rp->ai_addr)->sin_addr));
         break;
       case AF_INET6:
         addr = new IPADDR(rp->ai_addr->sa_family);
         addr->SetType(IPADDR::R_MULTIPLE);
-        /*
-         * Some serious casting to get the struct in6_addr *
+        /* Some serious casting to get the struct in6_addr *
          * rp->ai_addr == struct sockaddr
          * as this is AF_INET6 family we can cast that
          * to struct_sockaddr_in6. Of that we need the
          * address of the sin6_addr member which contains a
-         * struct in6_addr
-         */
+         * struct in6_addr */
         addr->SetAddr6(&(((struct sockaddr_in6*)rp->ai_addr)->sin6_addr));
         break;
       default:
@@ -634,7 +628,7 @@ bool BareosSocket::FormatAndSendResponseMessage(
 
   StartTimer(30);  // 30 seconds
   if (send(m.c_str(), m.size()) <= 0) {
-    Dmsg1(100, "Could not send response message: %d\n", m.c_str());
+    Dmsg1(100, "Could not send response message: %s\n", m.c_str());
     StopTimer();
     return false;
   }

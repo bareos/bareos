@@ -23,6 +23,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - FreeBSD: build cleanup [PR #1336]
 - improvements to pr-tool [PR #1389]
 - file checksums: add new signature algorithm xxh128 [PR #1359]
+- stored: remove warning for maximum block size for tapes [PR #1375]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -67,6 +68,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1367]: https://github.com/bareos/bareos/pull/1367
 [PR #1373]: https://github.com/bareos/bareos/pull/1373
 [PR #1374]: https://github.com/bareos/bareos/pull/1374
+[PR #1375]: https://github.com/bareos/bareos/pull/1375
 [PR #1377]: https://github.com/bareos/bareos/pull/1377
 [PR #1378]: https://github.com/bareos/bareos/pull/1378
 [PR #1386]: https://github.com/bareos/bareos/pull/1386

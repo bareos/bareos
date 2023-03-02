@@ -4013,7 +4013,9 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
       break;
     default:
       // Ensure that all required items are present
-      if (!ValidateResource(type, items, allocated_resource)) { return false; }
+      if (pass == 1 && !ValidateResource(type, items, allocated_resource)) {
+        return false;
+      }
       break;
   }
 
@@ -4023,7 +4025,20 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
    * record. */
   if (pass == 2) {
     bool ret = UpdateResourcePointer(type, items);
-    return ret;
+    bool validation = true;
+    switch (type) {
+      case R_JOBDEFS:
+      case R_JOB:
+      case R_DIRECTOR:
+        break;
+      default: {
+        BareosResource* pass1_resource = my_config->GetResWithName(
+            type, allocated_resource->resource_name_);
+        validation = ValidateResource(type, items, pass1_resource);
+      } break;
+    }
+
+    return validation && ret;
   }
 
   if (!AddResourceCopyToEndOfChain(type)) { return false; }
