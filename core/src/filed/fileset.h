@@ -35,7 +35,7 @@ findIncludeExcludeItem* get_incexe(JobControlRecord* jcr);
 void SetIncexe(JobControlRecord* jcr, findIncludeExcludeItem* incexe);
 int AddRegexToFileset(JobControlRecord* jcr, const char* item, int type);
 int AddWildToFileset(JobControlRecord* jcr, const char* item, int type);
-int AddOptionsToFileset(JobControlRecord* jcr, const char* item);
+int AddOptionsFlagsToFileset(JobControlRecord* jcr, const char* item);
 void AddFileset(JobControlRecord* jcr, const char* item);
 bool TermFileset(JobControlRecord* jcr);
 

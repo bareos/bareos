@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,24 +18,24 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
+// Testfind Sockets abstraction.
 
-#ifndef BAREOS_FILED_DIR_CMD_H_
-#define BAREOS_FILED_DIR_CMD_H_
+#include "tools/dummysockets.h"
+#include "filed/fileset.h"
 
-#include "lib/crypto.h"
+EmptySocket::EmptySocket() : BareosSocketTCP() {}
 
-class JobControlRecord;
-class BareosSocket;
+EmptySocket::~EmptySocket() { destroy(); }
 
-namespace filedaemon {
+bool EmptySocket::send() { return true; }
 
-JobControlRecord* create_new_director_session(BareosSocket* dir);
-void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir);
-void* handle_director_connection(BareosSocket* dir);
-bool StartConnectToDirectorThreads();
-bool StopConnectToDirectorThreads(bool wait = false);
-bool GetWantedCryptoCipher(JobControlRecord* jcr, crypto_cipher_t* cipher);
-void CleanupFileset(JobControlRecord* jcr);
-} /* namespace filedaemon */
+DummyFdFilesetSocket::DummyFdFilesetSocket() : BareosSocketTCP() {}
 
-#endif  // BAREOS_FILED_DIR_CMD_H_
+DummyFdFilesetSocket::~DummyFdFilesetSocket() { destroy(); }
+
+bool DummyFdFilesetSocket::send()
+{
+  StripTrailingJunk(msg);
+  filedaemon::AddFileset(jcr, msg);
+  return true;
+}

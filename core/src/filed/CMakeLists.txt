@@ -48,6 +48,7 @@ set(FDSRCS
     filed_conf.cc
     restore.cc
     status.cc
+    filed_utils.cc
 )
 
 if(HAVE_WIN32)

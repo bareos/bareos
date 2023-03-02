@@ -1,9 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2001-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,37 +18,29 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Bareos File Daemon specific configuration and defines
- *
- * Kern Sibbald, Jan MMI
- */
 
-#ifndef BAREOS_FILED_FILED_H_
-#define BAREOS_FILED_FILED_H_
+#ifndef BAREOS_TOOLS_DUMMYSOCKETS_H_
+#define BAREOS_TOOLS_DUMMYSOCKETS_H_
 
-#define FILE_DAEMON 1
-#include "filed_conf.h"
-#ifdef HAVE_WIN32
-#  include "vss.h"
-#endif
+#include "lib/bsock_tcp.h"
 #include "include/jcr.h"
-#include "lib/breg.h"
-#include "lib/htable.h"
-#include "lib/runscript.h"
-#include "findlib/find.h"
-#include "fd_plugins.h"
-#include "include/ch.h"
-#include "filed/backup.h"
-#include "filed/restore.h"
 
-namespace filedaemon {
+class EmptySocket : public BareosSocketTCP {
+ public:
+  EmptySocket();
+  ~EmptySocket();
 
-void TerminateFiled(int sig);
+  bool send() override;
+};
 
+class DummyFdFilesetSocket : public BareosSocketTCP {
+ public:
+  DummyFdFilesetSocket();
+  ~DummyFdFilesetSocket();
 
-// File Daemon protocol version
-const int FD_PROTOCOL_VERSION = 54;
+  JobControlRecord* jcr;
 
-} /* namespace filedaemon */
-#endif  // BAREOS_FILED_FILED_H_
+  bool send() override;
+};
+
+#endif  // BAREOS_TOOLS_DUMMYSOCKETS_H_

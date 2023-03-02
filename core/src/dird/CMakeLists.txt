@@ -43,6 +43,7 @@ set(DIRD_OBJECTS_SRCS
     dird_conf.cc
     expand.cc
     fd_cmds.cc
+    fd_sendfileset.cc
     get_database_connection.cc
     getmsg.cc
     inc_conf.cc
@@ -132,8 +133,6 @@ if(HAVE_WIN32)
   list(APPEND DBCHKSRCS ../win32/dird/dbcheckres.rc)
 endif()
 
-set(TSTFNDSRCS testfind.cc)
-
 set(DIRD_RESTYPES
     catalog
     client
@@ -189,12 +188,7 @@ target_link_libraries(
                          CLI11::CLI11
 )
 
-# is not built by default
-if(NOT client-only)
-  add_executable(testfind ${TSTFNDSRCS})
-  target_link_libraries(testfind dird_objects bareosfind)
-endif()
-install(TARGETS bareos-dir bareos-dbcheck testfind DESTINATION "${sbindir}")
+install(TARGETS bareos-dir bareos-dbcheck DESTINATION "${sbindir}")
 
 install(FILES query.sql DESTINATION "${scriptdir}")
 

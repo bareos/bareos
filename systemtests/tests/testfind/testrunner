@@ -2,10 +2,7 @@
 set -e
 set -o pipefail
 set -u
-#
-# Run a simple backup
-#   then restore it.
-#
+
 TestName="$(basename "$(pwd)")"
 export TestName
 
@@ -20,23 +17,33 @@ zstat=0
 
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
+"${rscripts}"/cleanup
+
 setup_data
 
-testfind_log=$tmp/testfind.out
+selftest_log="$tmp"/selftest_log.out
+wildcard_log="$tmp"/wildcard_log.out
+error_log="$logdir"/bareos.log
 
-rm -f $testfind_log
-./sbin/testfind-testfind -c etc/bareos | tee  "$testfind_log"
+./sbin/testfind-testfind -c etc/bareos -f SelfTest > "$selftest_log"
 
-expect_grep "Total files    : 68" \
-            "$testfind_log" \
+expect_grep "Number of files examined: 55" \
+            "$selftest_log" \
             "Number of files is incorrect."
 
-expect_grep "Max file length: 148" \
-            "$testfind_log" \
-            "Max file length is incorrect."
+unopenable_dir=${tmp}/data/unopenable_dir
+mkdir -m 000 "$unopenable_dir"
 
-expect_grep "Hard links     : 2" \
-            "$testfind_log" \
-            "Number of hard links is incorrect."
+./sbin/testfind-testfind -c etc/bareos -f Wildtest > "$wildcard_log"
+
+expect_grep "Number of files examined: 19" \
+            "$wildcard_log" \
+            "Number of files is incorrect."
+
+if [ ! -r "$unopenable_dir" ]; then
+    expect_grep "\"$unopenable_dir\": ERR=Permission denied" \
+                "$error_log" \
+                "Error on faulty directory not detected."
+fi
 
 end_test

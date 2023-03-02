@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,7 +29,7 @@ int FindOneFile(JobControlRecord* jcr,
                 char* p,
                 dev_t parent_device,
                 bool top_level);
-int TermFindOne(FindFilesPacket* ff);
+void TermFindOne(FindFilesPacket* ff);
 bool HasFileChanged(JobControlRecord* jcr, FindFilesPacket* ff_pkt);
 bool CheckChanges(JobControlRecord* jcr, FindFilesPacket* ff_pkt);
 

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -36,6 +36,7 @@
 #include "dird.h"
 #include "dird/dird_globals.h"
 #include "dird/director_jcr_impl.h"
+#include "dird/fd_sendfileset.h"
 #include "findlib/find.h"
 #include "dird/authenticate.h"
 #include "dird/fd_cmds.h"
@@ -86,17 +87,8 @@ static char OKBandwidth[] = "2000 OK Bandwidth\n";
 static char OKPluginOptions[] = "2000 OK PluginOptions\n";
 static char OKgetSecureEraseCmd[] = "2000 OK FDSecureEraseCmd %s\n";
 
-/* Forward referenced functions */
-static bool SendListItem(JobControlRecord* jcr,
-                         const char* code,
-                         char* item,
-                         BareosSocket* fd);
-
 /* External functions */
 extern DirectorResource* director;
-
-#define INC_LIST 0
-#define EXC_LIST 1
 
 static utime_t get_heartbeat_interval(ClientResource* res)
 {
@@ -536,260 +528,34 @@ bool SendLevelCommand(JobControlRecord* jcr)
 }
 
 // Send either an Included or an Excluded list to FD
-static bool SendFileset(JobControlRecord* jcr)
+static bool SendFileset(JobControlRecord* jcr, FilesetResource* fileset)
 {
-  FilesetResource* fileset = jcr->dir_impl->res.fileset;
   BareosSocket* fd = jcr->file_bsock;
-  StorageResource* store = jcr->dir_impl->res.write_storage;
-  int num;
-  bool include = true;
 
-  while (1) {
-    if (include) {
-      num = fileset->include_items.size();
-    } else {
-      num = fileset->exclude_items.size();
-    }
-    for (int i = 0; i < num; i++) {
-      char* item;
-      IncludeExcludeItem* ie;
-
-      if (include) {
-        ie = fileset->include_items[i];
-        fd->fsend("I\n");
-      } else {
-        ie = fileset->exclude_items[i];
-        fd->fsend("E\n");
-      }
-
-      for (int j = 0; j < ie->ignoredir.size(); j++) {
-        fd->fsend("Z %s\n", ie->ignoredir.get(j));
-      }
-
-      for (std::size_t j = 0; j < ie->file_options_list.size(); j++) {
-        FileOptions* fo = ie->file_options_list[j];
-        bool enhanced_wild = false;
-
-        for (int k = 0; fo->opts[k] != '\0'; k++) {
-          if (fo->opts[k] == 'W') {
-            enhanced_wild = true;
-            break;
-          }
-        }
-
-        // Strip out compression option Zn if disallowed for this Storage
-        if (store && !store->AllowCompress) {
-          char newopts[MAX_FOPTS];
-          bool done
-              = false; /* print warning only if compression enabled in FS */
-          int l = 0;
-
-          for (int k = 0; fo->opts[k] != '\0'; k++) {
-            /*
-             * Z compress option is followed by the single-digit compress level
-             * or 'o' For fastlz its Zf with a single char selecting the actual
-             * compression algo.
-             */
-            if (fo->opts[k] == 'Z' && fo->opts[k + 1] == 'f') {
-              done = true;
-              k += 2; /* skip option */
-            } else if (fo->opts[k] == 'Z') {
-              done = true;
-              k++; /* skip option and level */
-            } else {
-              newopts[l] = fo->opts[k];
-              l++;
-            }
-          }
-          newopts[l] = '\0';
-
-          if (done) {
-            Jmsg(jcr, M_INFO, 0,
-                 _("FD compression disabled for this Job because "
-                   "AllowCompress=No in Storage resource.\n"));
-          }
-
-          // Send the new trimmed option set without overwriting fo->opts
-          fd->fsend("O %s\n", newopts);
-        } else {
-          // Send the original options
-          fd->fsend("O %s\n", fo->opts);
-        }
-
-        for (int k = 0; k < fo->regex.size(); k++) {
-          fd->fsend("R %s\n", fo->regex.get(k));
-        }
-
-        for (int k = 0; k < fo->regexdir.size(); k++) {
-          fd->fsend("RD %s\n", fo->regexdir.get(k));
-        }
-
-        for (int k = 0; k < fo->regexfile.size(); k++) {
-          fd->fsend("RF %s\n", fo->regexfile.get(k));
-        }
-
-        for (int k = 0; k < fo->wild.size(); k++) {
-          fd->fsend("W %s\n", fo->wild.get(k));
-        }
-
-        for (int k = 0; k < fo->wilddir.size(); k++) {
-          fd->fsend("WD %s\n", fo->wilddir.get(k));
-        }
-
-        for (int k = 0; k < fo->wildfile.size(); k++) {
-          fd->fsend("WF %s\n", fo->wildfile.get(k));
-        }
-
-        for (int k = 0; k < fo->wildbase.size(); k++) {
-          fd->fsend("W%c %s\n", enhanced_wild ? 'B' : 'F', fo->wildbase.get(k));
-        }
-
-        for (int k = 0; k < fo->base.size(); k++) {
-          fd->fsend("B %s\n", fo->base.get(k));
-        }
-
-        for (int k = 0; k < fo->fstype.size(); k++) {
-          fd->fsend("X %s\n", fo->fstype.get(k));
-        }
-
-        for (int k = 0; k < fo->Drivetype.size(); k++) {
-          fd->fsend("XD %s\n", fo->Drivetype.get(k));
-        }
-
-        if (fo->plugin) { fd->fsend("G %s\n", fo->plugin); }
-
-        if (fo->reader) { fd->fsend("D %s\n", fo->reader); }
-
-        if (fo->writer) { fd->fsend("T %s\n", fo->writer); }
-
-        fd->fsend("N\n");
-      }
-
-      for (int j = 0; j < ie->name_list.size(); j++) {
-        item = (char*)ie->name_list.get(j);
-        if (!SendListItem(jcr, "F ", item, fd)) { goto bail_out; }
-      }
-      fd->fsend("N\n");
-
-      for (int j = 0; j < ie->plugin_list.size(); j++) {
-        item = (char*)ie->plugin_list.get(j);
-        if (!SendListItem(jcr, "P ", item, fd)) { goto bail_out; }
-      }
-      fd->fsend("N\n");
-    }
-
-    if (!include) { /* If we just did excludes */
-      break;        /*   all done */
-    }
-
-    include = false; /* Now do excludes */
+  if (!SendIncludeExcludeItems(jcr, fileset)) {
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+    return false;
   }
 
   fd->signal(BNET_EOD); /* end of data */
-  if (!response(jcr, fd, OKinc, "Include", DISPLAY_ERROR)) { goto bail_out; }
-  return true;
-
-bail_out:
-  jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
-  return false;
-}
-
-static bool SendListItem(JobControlRecord* jcr,
-                         const char* code,
-                         char* item,
-                         BareosSocket* fd)
-{
-  Bpipe* bpipe;
-  FILE* ffd;
-  char buf[2000];
-  int optlen, status;
-  char* p = item;
-
-  switch (*p) {
-    case '|':
-      p++; /* skip over the | */
-      fd->msg = edit_job_codes(jcr, fd->msg, p, "");
-      bpipe = OpenBpipe(fd->msg, 0, "r");
-      if (!bpipe) {
-        BErrNo be;
-        Jmsg(jcr, M_FATAL, 0, _("Cannot run program: %s. ERR=%s\n"), p,
-             be.bstrerror());
-        return false;
-      }
-      bstrncpy(buf, code, sizeof(buf));
-      Dmsg1(500, "code=%s\n", buf);
-      optlen = strlen(buf);
-      while (fgets(buf + optlen, sizeof(buf) - optlen, bpipe->rfd)) {
-        fd->message_length = Mmsg(fd->msg, "%s", buf);
-        Dmsg2(500, "Inc/exc len=%d: %s", fd->message_length, fd->msg);
-        if (!BnetSend(fd)) {
-          Jmsg(jcr, M_FATAL, 0, _(">filed: write error on socket\n"));
-          return false;
-        }
-      }
-      if ((status = CloseBpipe(bpipe)) != 0) {
-        BErrNo be;
-        Jmsg(jcr, M_FATAL, 0, _("Error running program: %s. ERR=%s\n"), p,
-             be.bstrerror(status));
-        return false;
-      }
-      break;
-    case '<':
-      p++; /* skip over < */
-      if ((ffd = fopen(p, "rb")) == NULL) {
-        BErrNo be;
-        Jmsg(jcr, M_FATAL, 0, _("Cannot open included file: %s. ERR=%s\n"), p,
-             be.bstrerror());
-        return false;
-      }
-      bstrncpy(buf, code, sizeof(buf));
-      Dmsg1(500, "code=%s\n", buf);
-      optlen = strlen(buf);
-      while (fgets(buf + optlen, sizeof(buf) - optlen, ffd)) {
-        fd->message_length = Mmsg(fd->msg, "%s", buf);
-        if (!BnetSend(fd)) {
-          Jmsg(jcr, M_FATAL, 0, _(">filed: write error on socket\n"));
-          fclose(ffd);
-          return false;
-        }
-      }
-      fclose(ffd);
-      break;
-    case '\\':
-      p++; /* skip over \ */
-      [[fallthrough]];
-    default:
-      PmStrcpy(fd->msg, code);
-      fd->message_length = PmStrcat(fd->msg, p);
-      Dmsg1(500, "Inc/Exc name=%s\n", fd->msg);
-      if (!fd->send()) {
-        Jmsg(jcr, M_FATAL, 0, _(">filed: write error on socket\n"));
-        return false;
-      }
-      break;
+  if (!response(jcr, fd, OKinc, "Include", DISPLAY_ERROR)) {
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+    return false;
   }
   return true;
 }
 
 // Send include list to File daemon
-bool SendIncludeList(JobControlRecord* jcr)
+bool SendIncludeExcludeLists(JobControlRecord* jcr)
 {
   BareosSocket* fd = jcr->file_bsock;
   if (jcr->dir_impl->res.fileset->new_include) {
     fd->fsend(filesetcmd,
               jcr->dir_impl->res.fileset->enable_vss ? " vss=1" : "");
-    return SendFileset(jcr);
+    return SendFileset(jcr, jcr->dir_impl->res.fileset);
   }
   return true;
 }
-
-/**
- * Send exclude list to File daemon
- *   Under the new scheme, the Exclude list
- *   is part of the FileSet sent with the
- *   "include_list" above.
- */
-bool SendExcludeList(JobControlRecord*) { return true; }
 
 // This checks to see if there are any non local runscripts for this job.
 static bool HaveClientRunscripts(alist<RunScript*>* RunScripts)
@@ -1036,10 +802,8 @@ bool SendRestoreObjects(JobControlRecord* jcr, JobId_t JobId, bool send_global)
     SendJobSpecificRestoreObjects(jcr, JobId, &octx);
   }
 
-  /*
-   * Send to FD only if we have at least one restore object.
-   * This permits backward compatibility with older FDs.
-   */
+  /* Send to FD only if we have at least one restore object.
+   * This permits backward compatibility with older FDs. */
   if (octx.count > 0) {
     fd = jcr->file_bsock;
     fd->fsend(restoreobjectendcmd);
@@ -1139,12 +903,10 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
     } else if (CryptoDigestStreamType(stream) != CRYPTO_DIGEST_NONE) {
       size_t length;
 
-      /*
-       * First, get STREAM_UNIX_ATTRIBUTES and fill AttributesDbRecord structure
+      /* First, get STREAM_UNIX_ATTRIBUTES and fill AttributesDbRecord structure
        * Next, we CAN have a CRYPTO_DIGEST, so we fill AttributesDbRecord with
        * it (or not) When we get a new STREAM_UNIX_ATTRIBUTES, we known that we
-       * can add file to the catalog At the end, we have to add the last file
-       */
+       * can add file to the catalog At the end, we have to add the last file */
       if (jcr->dir_impl->FileIndex != (uint32_t)file_index) {
         Jmsg3(jcr, M_ERROR, 0, _("%s index %d not same as attributes %d\n"),
               stream_to_ascii(stream), file_index, jcr->dir_impl->FileIndex);
@@ -1351,10 +1113,8 @@ void* HandleFiledConnection(ConnectionPool* connections,
 
   RunOnIncomingConnectInterval(client_name).Run();
 
-  /*
-   * The connection is now kept in the connection_pool.
-   * This thread is no longer required and will end now.
-   */
+  /* The connection is now kept in the connection_pool.
+   * This thread is no longer required and will end now. */
   socket_guard.Release();
   return NULL;
 }

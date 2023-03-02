@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -121,10 +121,8 @@ int SelectDataStream(FindFilesPacket* ff_pkt, bool compatible)
           stream = STREAM_GZIP_DATA;
           break;
         default:
-          /**
-           * All stream types that do not support compression should clear out
-           * FO_COMPRESS above, and this code block should be unreachable.
-           */
+          /* All stream types that do not support compression should clear out
+           * FO_COMPRESS above, and this code block should be unreachable. */
           ASSERT(!BitIsSet(FO_COMPRESS, ff_pkt->flags));
           return STREAM_NONE;
       }
@@ -140,10 +138,8 @@ int SelectDataStream(FindFilesPacket* ff_pkt, bool compatible)
           stream = STREAM_COMPRESSED_DATA;
           break;
         default:
-          /*
-           * All stream types that do not support compression should clear out
-           * FO_COMPRESS above, and this code block should be unreachable.
-           */
+          /* All stream types that do not support compression should clear out
+           * FO_COMPRESS above, and this code block should be unreachable. */
           ASSERT(!BitIsSet(FO_COMPRESS, ff_pkt->flags));
           return STREAM_NONE;
       }
@@ -172,10 +168,8 @@ int SelectDataStream(FindFilesPacket* ff_pkt, bool compatible)
         stream = STREAM_ENCRYPTED_FILE_COMPRESSED_DATA;
         break;
       default:
-        /*
-         * All stream types that do not support encryption should clear out
-         * FO_ENCRYPT above, and this code block should be unreachable.
-         */
+        /* All stream types that do not support encryption should clear out
+         * FO_ENCRYPT above, and this code block should be unreachable. */
         ASSERT(!BitIsSet(FO_ENCRYPT, ff_pkt->flags));
         return STREAM_NONE;
     }
@@ -385,10 +379,8 @@ bool SetAttributes(JobControlRecord* jcr,
     return true;
   }
 
-  /**
-   * If Windows stuff failed, e.g. attempt to restore Unix file to Windows,
-   * simply fall through and we will do it the universal way.
-   */
+  /* If Windows stuff failed, e.g. attempt to restore Unix file to Windows,
+   * simply fall through and we will do it the universal way. */
 #endif
 
   old_mask = umask(0);
@@ -425,10 +417,8 @@ bool SetAttributes(JobControlRecord* jcr,
   if (attr->type == FT_SPEC && S_ISSOCK(attr->statp.st_mode)) { goto bail_out; }
 
   /* ***FIXME**** optimize -- don't do if already correct */
-  /**
-   * For link, change owner of link using lchown, but don't try to do a chmod as
-   * that will update the file behind it.
-   */
+  /* For link, change owner of link using lchown, but don't try to do a chmod as
+   * that will update the file behind it. */
   if (attr->type == FT_LNK) {
     // Change owner of link, not of real file
     if (lchown(attr->ofname, attr->statp.st_uid, attr->statp.st_gid) < 0
@@ -454,13 +444,11 @@ bool SetAttributes(JobControlRecord* jcr,
       ok = RestoreFileAttributes(jcr, attr, ofd);
 
 #ifdef HAVE_CHFLAGS
-      /**
-       * FreeBSD user flags
+      /* FreeBSD user flags
        *
        * Note, this should really be done before the utime() above,
        * but if the immutable bit is set, it will make the utimes()
-       * fail.
-       */
+       * fail. */
       if (chflags(attr->ofname, attr->statp.st_flags) < 0 && !suppress_errors) {
         BErrNo be;
         Jmsg2(jcr, M_ERROR, 0, _("Unable to set file flags %s: ERR=%s\n"),
@@ -501,10 +489,8 @@ int encode_attribsEx(JobControlRecord* jcr,
                      char* attribsEx,
                      FindFilesPacket* ff_pkt)
 {
-  /**
-   * We save the Mac resource fork length so that on a
-   * restore, we can be sure we put back the whole resource.
-   */
+  /* We save the Mac resource fork length so that on a
+   * restore, we can be sure we put back the whole resource. */
   char* p;
 
   *attribsEx = 0; /* no extended attributes (yet) */
@@ -569,11 +555,9 @@ int encode_attribsEx(JobControlRecord* jcr,
     }
   }
 
-  /*
-   * Instead of using the current dwFileAttributes use the
+  /* Instead of using the current dwFileAttributes use the
    * ff_pkt->statp.st_rdev which contains the actual fileattributes we
-   * want to save for this file.
-   */
+   * want to save for this file. */
   atts.dwFileAttributes = ff_pkt->statp.st_rdev;
 
   p += ToBase64((uint64_t)atts.dwFileAttributes, p);
