@@ -45,17 +45,19 @@ template <typename T> struct out {
   void close();
   ~out();
 
-  out() = default;
   out(std::shared_ptr<data<T>> shared_);
   out(const out&) = delete;
+  out& operator=(out&) = delete;
+
   out(out&& moved);
-  void operator=(out&& moved);
+  out& operator=(out&& moved);
 
  private:
   std::shared_ptr<data<T>> shared;
-  std::size_t read_pos{0};
+  std::size_t read_pos;
+  std::size_t old_size;
   std::size_t capacity;
-  bool closed{false};
+  bool closed;
 };
 
 template <typename T> struct in {
@@ -103,6 +105,10 @@ template <typename T> std::optional<T> out<T>::get()
   if (closed) {
     return result;
   } else {
+	  if (old_size > 0)
+	  {
+		  result = std::move(shared->storage[read_pos]);
+	  }
     std::unique_lock lock(shared->mutex);
     shared->cv.wait(
         lock,
@@ -112,12 +118,15 @@ template <typename T> std::optional<T> out<T>::get()
         [this] { return this->shared->size > 0 || !this->shared->in_alive; });
 
     if (this->shared->size > 0) {
-      result = std::move(shared->storage[read_pos]);
+	    // if we did not take the fast path, take it now
+	    if (!result) { result = std::move(shared->storage[read_pos]); }
       shared->size -= 1;
+      old_size = shared->size; // update the cache
       read_pos = wrapping_inc(read_pos, capacity);
     } else {
       // if the in is dead and the queue is empty we also close
       shared->out_alive = false;
+      old_size = 0;
       closed = true;
     }
   }
@@ -144,7 +153,7 @@ template <typename T> out<T>::~out()
 
 template <typename T>
 out<T>::out(std::shared_ptr<data<T>> shared_)
-    : shared(shared_), read_pos(0), capacity(shared_->capacity), closed(false)
+	: shared(shared_), read_pos(0), old_size(0), capacity(shared_->capacity), closed(false)
 {
   std::unique_lock lock(shared->mutex);
   shared->out_alive = true;
@@ -154,17 +163,20 @@ template <typename T>
 out<T>::out(out&& moved)
     : shared(std::move(moved.shared))
     , read_pos(moved.read_pos)
+    , old_size(moved.old_size)
     , capacity(moved.capacity)
     , closed(moved.closed)
 {
 }
 
-template <typename T> void out<T>::operator=(out&& moved)
+template <typename T> out<T>& out<T>::operator=(out&& moved)
 {
   shared = std::move(moved.shared);
   read_pos = moved.read_pos;
   capacity = moved.capacity;
+  old_size = moved.old_size;
   closed = moved.closed;
+  return *this;
 }
 
 template <typename T> bool in<T>::put(const T& val)
@@ -206,10 +218,11 @@ template <typename T> bool in<T>::put(const T& val)
       // there is some space free in the storage
       shared->storage[write_pos] = val;
       shared->size += 1;
-      old_size = shared->size;
+      old_size = shared->size; // update the cache!
       success = true;
     } else {
       shared->in_alive = false;
+      old_size = this->capacity; // update the cache!
       closed = true;
     }
   }

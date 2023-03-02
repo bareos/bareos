@@ -206,6 +206,8 @@ struct FindFilesPacket {
   POOLMEM* sys_fname{nullptr};       /**< System filename */
   POOLMEM* ignoredir_fname{nullptr}; /**< Used to ignore directories */
   char* digest{nullptr};  /**< Set to file digest when the file is a hardlink */
+	// todo: make it an optional instead
+	bool has_stats{false};
   struct stat statp{};    /**< Stat packet */
   uint32_t digest_len{0}; /**< Set to the digest len when the file is a hardlink*/
   int32_t digest_stream{0}; /**< Set to digest type when the file is hardlink */
@@ -265,6 +267,8 @@ void SetFindOptions(FindFilesPacket* ff, bool incremental, time_t mtime);
 void SetFindChangedFunction(FindFilesPacket* ff,
                             bool CheckFct(JobControlRecord* jcr,
                                           FindFilesPacket* ff));
+
+using stated_file = std::pair<std::string, struct stat>;
 int FindFiles(JobControlRecord* jcr,
               FindFilesPacket* ff,
               int file_sub(JobControlRecord*, FindFilesPacket* ff_pkt, bool),
@@ -274,10 +278,10 @@ bool ListFiles(JobControlRecord* jcr,
                bool incremental,
 	       time_t saved_time,
 	       std::optional<bool (*)(JobControlRecord*, FindFilesPacket*)> check_changed,
-               std::vector<channel::in<std::string>> ins);
+               std::vector<channel::in<stated_file>> ins);
 int SendFiles(JobControlRecord* jcr,
               FindFilesPacket* ff,
-              std::vector<channel::out<std::string>> outs,
+              std::vector<channel::out<stated_file>> outs,
               int file_sub(JobControlRecord*, FindFilesPacket* ff_pkt, bool),
               int PluginSub(JobControlRecord*, FindFilesPacket* ff_pkt, bool));
 bool MatchFiles(JobControlRecord* jcr,

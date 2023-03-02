@@ -557,7 +557,7 @@ void NewOptions(FindFilesPacket* ff, findIncludeExcludeItem* incexe)
   ff->fileset->state = state_options;
 }
 
-auto SaveInList(channel::in<std::string>& in)
+auto SaveInList(channel::in<stated_file>& in)
 {
   return [&in](JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool) {
     switch (ff_pkt->type) {
@@ -680,7 +680,7 @@ auto SaveInList(channel::in<std::string>& in)
     }
 
     try {
-      in.put(ff_pkt->fname);
+	    in.put({ff_pkt->fname, ff_pkt->statp});
     } catch (...) {
       return 0;
     }
@@ -694,7 +694,7 @@ bool ListFiles(JobControlRecord* jcr,
                bool incremental,
 	       time_t save_time,
 	       std::optional<bool (*)(JobControlRecord*, FindFilesPacket*)> check_changed,
-               std::vector<channel::in<std::string>> ins)
+               std::vector<channel::in<stated_file>> ins)
 {
   ASSERT(ins.size() == (std::size_t)fileset->include_list.size());
   /* This is the new way */
@@ -746,7 +746,7 @@ bool ListFiles(JobControlRecord* jcr,
 
 int SendFiles(JobControlRecord* jcr,
               FindFilesPacket* ff,
-              std::vector<channel::out<std::string>> outs,
+              std::vector<channel::out<stated_file>> outs,
               int FileSave(JobControlRecord*, FindFilesPacket* ff_pkt, bool),
               int PluginSave(JobControlRecord*, FindFilesPacket* ff_pkt, bool))
 {
@@ -784,14 +784,16 @@ int SendFiles(JobControlRecord* jcr,
       // for this reason we disable recursion here!
       SetBit(FO_NO_RECURSION, ff->flags);
 
-      channel::out<std::string> list = std::move(outs[i]);
-      std::optional<std::string> name;
-      while ((name = list.get())) {
+      channel::out<stated_file> list = std::move(outs[i]);
+      std::optional<stated_file> file;
+      while ((file = list.get())) {
         // ff->top_fname is const in everything but type
         // adding const there would change a lot of function signatures
-        char* fname = (char*)name->c_str();
+        char* fname = (char*)file->first.c_str();
         Dmsg1(debuglevel, "F %s\n", fname);
         ff->top_fname = (char*)fname;
+	ff->statp = file->second;
+	ff->has_stats = true;
         if (FindOneFile(jcr, ff, CreateCallback(FileSave), ff->top_fname,
                         (dev_t)-1, false)
             == 0) {

@@ -113,18 +113,18 @@ FindFilesPacket* DeepCopyImportant(FindFilesPacket* ff_pkt)
   return packet;
 }
 
-std::pair<std::vector<channel::in<std::string>>,
-          std::vector<channel::out<std::string>>>
+std::pair<std::vector<channel::in<stated_file>>,
+          std::vector<channel::out<stated_file>>>
 CreateNecessaryChannels(findFILESET* fileset, std::size_t buffer_size)
 {
   // Each include list in the fileset needs its own
   // channel.  These get created here.
-  std::vector<channel::in<std::string>> channel_ins;
-  std::vector<channel::out<std::string>> channel_outs;
+  std::vector<channel::in<stated_file>> channel_ins;
+  std::vector<channel::out<stated_file>> channel_outs;
 
   for (int i = 0; i < fileset->include_list.size(); ++i) {
     // channel ins/outs cannot be copied/ can only be moved.
-    auto [in, out] = channel::CreateBufferedChannel<std::string>(buffer_size);
+    auto [in, out] = channel::CreateBufferedChannel<stated_file>(buffer_size);
     channel_ins.emplace_back(std::move(in));
     channel_outs.emplace_back(std::move(out));
   }
