@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -307,10 +307,8 @@ TEST(ConfigParser_Dir, CFG_TYPE_ALIST_RES)
 
 void test_CFG_TYPE_STR(DirectorResource* me)
 {
-  /*
-   * Only the first entry from the last "Description" config directive is taken.
-   * This can be considered as a bug.
-   */
+  /* Only the first entry from the last "Description" config directive is taken.
+   * This can be considered as a bug. */
   EXPECT_STREQ(me->description_, "item31");
 }
 

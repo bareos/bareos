@@ -3,7 +3,7 @@
 
    Copyright (C) 2009-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,8 +20,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef BAREOS_CATS_BDB_POSTGRESQL_H_
-#define BAREOS_CATS_BDB_POSTGRESQL_H_
+#ifndef BAREOS_CATS_POSTGRESQL_H_
+#define BAREOS_CATS_POSTGRESQL_H_
 
 #include "include/bareos.h"
 
@@ -126,4 +126,4 @@ class BareosDbPostgresql : public BareosDb {
 };
 
 #endif  /* HAVE_POSTGRESQL */
-#endif  // BAREOS_CATS_BDB_POSTGRESQL_H_
+#endif  // BAREOS_CATS_POSTGRESQL_H_
