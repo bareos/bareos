@@ -111,21 +111,11 @@ core/src/tests/configs/bareos-configparser-tests/bareos-dir-CFG_TYPE_STR_VECTOR_
 core/src/tests/configs/bareos-configparser-tests/bareos-sd.d/storage/bareos-sd.conf
 core/src/tests/configs/catalog/bareos-dir.d/catalog/MyCatalog.conf
 core/src/tests/configs/console-director/tls_disabled/bareos-dir.d/director/bareos-dir.conf
-core/src/tests/configs/console-director/tls_disabled/bareos-dir.d/fileset/Catalog.conf
-core/src/tests/configs/console-director/tls_disabled/bareos-dir.d/fileset/LinuxAll.conf
 core/src/tests/configs/console-director/tls_disabled/bareos-dir.d/fileset/SelfTest.conf
-core/src/tests/configs/console-director/tls_disabled/bareos-dir.d/job/BackupCatalog.conf
 core/src/tests/configs/console-director/tls_disabled/bareos-dir.d/jobdefs/DefaultJob.conf
-core/src/tests/configs/console-director/tls_disabled/bareos-dir.d/messages/Daemon.conf
-core/src/tests/configs/console-director/tls_disabled/bareos-dir.d/messages/Standard.conf
 core/src/tests/configs/console-director/tls_psk_default_enabled/bareos-dir.d/director/bareos-dir.conf
-core/src/tests/configs/console-director/tls_psk_default_enabled/bareos-dir.d/fileset/Catalog.conf
-core/src/tests/configs/console-director/tls_psk_default_enabled/bareos-dir.d/fileset/LinuxAll.conf
 core/src/tests/configs/console-director/tls_psk_default_enabled/bareos-dir.d/fileset/SelfTest.conf
-core/src/tests/configs/console-director/tls_psk_default_enabled/bareos-dir.d/job/BackupCatalog.conf
 core/src/tests/configs/console-director/tls_psk_default_enabled/bareos-dir.d/jobdefs/DefaultJob.conf
-core/src/tests/configs/console-director/tls_psk_default_enabled/bareos-dir.d/messages/Daemon.conf
-core/src/tests/configs/console-director/tls_psk_default_enabled/bareos-dir.d/messages/Standard.conf
 core/src/tests/configs/droplet_backend/bareos-sd.d/device/droplet.conf
 core/src/tests/configs/droplet_backend/bareos-sd.d/storage/myself.conf
 core/src/tests/configs/droplet_backend/droplet.profile
@@ -169,7 +159,6 @@ debian/bareos-director-python2-plugin.install
 debian/bareos-director-python3-plugin.install
 debian/bareos-director-python-plugins-common.install
 debian/bareos-director.service
-debian/bareos-filedaemon-ceph-plugin.install
 debian/bareos-filedaemon-glusterfs-plugin.install
 debian/bareos-filedaemon.install
 debian/bareos-filedaemon-ldap-python-plugin.install
@@ -183,7 +172,6 @@ debian/bareos-filedaemon-python2-plugin.install
 debian/bareos-filedaemon-python3-plugin.install
 debian/bareos-filedaemon-python-plugins-common.install
 debian/bareos-filedaemon.service
-debian/bareos-storage-ceph.install
 debian/bareos-storage-droplet.install
 debian/bareos-storage-fifo.install
 debian/bareos-storage-glusterfs.install
