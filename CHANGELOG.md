@@ -24,6 +24,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - improvements to pr-tool [PR #1389]
 - file checksums: add new signature algorithm xxh128 [PR #1359]
 - stored: remove warning for maximum block size for tapes [PR #1375]
+- ua_restore: enable restore from archive [PR #1372]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -66,6 +67,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1365]: https://github.com/bareos/bareos/pull/1365
 [PR #1366]: https://github.com/bareos/bareos/pull/1366
 [PR #1367]: https://github.com/bareos/bareos/pull/1367
+[PR #1372]: https://github.com/bareos/bareos/pull/1372
 [PR #1373]: https://github.com/bareos/bareos/pull/1373
 [PR #1374]: https://github.com/bareos/bareos/pull/1374
 [PR #1375]: https://github.com/bareos/bareos/pull/1375
