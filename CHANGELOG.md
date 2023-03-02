@@ -26,6 +26,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - stored: remove warning for maximum block size for tapes [PR #1375]
 - ua_restore: enable restore from archive [PR #1372]
 - testfind: reuse filedaemon logic [PR #1234]
+- dird: enable default options in `fileset` config when no options are explicitly specified [PR #1357]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -65,6 +66,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1352]: https://github.com/bareos/bareos/pull/1352
 [PR #1354]: https://github.com/bareos/bareos/pull/1354
 [PR #1356]: https://github.com/bareos/bareos/pull/1356
+[PR #1357]: https://github.com/bareos/bareos/pull/1357
 [PR #1359]: https://github.com/bareos/bareos/pull/1359
 [PR #1361]: https://github.com/bareos/bareos/pull/1361
 [PR #1365]: https://github.com/bareos/bareos/pull/1365

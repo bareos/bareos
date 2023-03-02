@@ -292,6 +292,12 @@ ResourceItem options_items[] = {
 
 /* clang-format on */
 
+
+struct OptionsDefaultValues {
+  std::map<int, options_default_value_s> option_default_values
+      = {{INC_KW_ACL, {false, "A"}}, {INC_KW_XATTR, {false, "X"}}};
+};
+
 // determine used compression algorithms
 void FindUsedCompressalgos(PoolMem* compressalgos, JobControlRecord* jcr)
 {
@@ -442,7 +448,7 @@ static void ScanIncludeOptions(LEX* lc, int keyword, char* opts, int optlen)
 }
 
 // Store regex info
-static void StoreRegex(LEX* lc, ResourceItem* item, int, int pass)
+static void StoreRegex(LEX* lc, ResourceItem* item, int pass)
 {
   int token, rc;
   regex_t preg{};
@@ -491,7 +497,7 @@ static void StoreRegex(LEX* lc, ResourceItem* item, int, int pass)
 }
 
 // Store Base info
-static void StoreBase(LEX* lc, ResourceItem*, int, int pass)
+static void StoreBase(LEX* lc, ResourceItem*, int pass)
 {
   LexGetToken(lc, BCT_NAME);
   if (pass == 1) {
@@ -502,7 +508,7 @@ static void StoreBase(LEX* lc, ResourceItem*, int, int pass)
 }
 
 // Store reader info
-static void StorePlugin(LEX* lc, ResourceItem*, int, int pass)
+static void StorePlugin(LEX* lc, ResourceItem*, int pass)
 {
   LexGetToken(lc, BCT_NAME);
   if (pass == 1) {
@@ -513,7 +519,7 @@ static void StorePlugin(LEX* lc, ResourceItem*, int, int pass)
 }
 
 // Store Wild-card info
-static void StoreWild(LEX* lc, ResourceItem* item, int, int pass)
+static void StoreWild(LEX* lc, ResourceItem* item, int pass)
 {
   int token;
   const char* type;
@@ -557,7 +563,7 @@ static void StoreWild(LEX* lc, ResourceItem* item, int, int pass)
 }
 
 // Store fstype info
-static void StoreFstype(LEX* lc, ResourceItem*, int, int pass)
+static void StoreFstype(LEX* lc, ResourceItem*, int pass)
 {
   int token;
 
@@ -581,7 +587,7 @@ static void StoreFstype(LEX* lc, ResourceItem*, int, int pass)
 }
 
 // Store Drivetype info
-static void StoreDrivetype(LEX* lc, ResourceItem*, int, int pass)
+static void StoreDrivetype(LEX* lc, ResourceItem*, int pass)
 {
   int token;
 
@@ -604,7 +610,7 @@ static void StoreDrivetype(LEX* lc, ResourceItem*, int, int pass)
   ScanToEol(lc);
 }
 
-static void StoreMeta(LEX* lc, ResourceItem*, int, int pass)
+static void StoreMeta(LEX* lc, ResourceItem*, int pass)
 {
   int token;
 
@@ -631,7 +637,6 @@ static void StoreMeta(LEX* lc, ResourceItem*, int, int pass)
 static void StoreOption(
     LEX* lc,
     ResourceItem* item,
-    int,
     int pass,
     std::map<int, options_default_value_s>& option_default_values)
 {
@@ -688,12 +693,33 @@ static void SetupCurrentOpts(void)
   res_incexe->file_options_list.push_back(fo);
 }
 
-// Come here when Options seen in Include/Exclude
-static void StoreOptionsRes(LEX* lc, ResourceItem*, int, int pass, bool exclude)
+static void ApplyDefaultValuesForUnsetOptions(
+    OptionsDefaultValues default_values)
 {
-  int token, i;
-  std::map<int, options_default_value_s> option_default_values
-      = {{INC_KW_ACL, {false, "A"}}, {INC_KW_XATTR, {false, "X"}}};
+  for (auto const& option : default_values.option_default_values) {
+    int keyword_id = option.first;
+    bool was_set_in_config = option.second.configured;
+    std::string default_value = option.second.default_value;
+    if (!was_set_in_config) {
+      bstrncat(res_incexe->current_opts->opts, default_value.c_str(),
+               MAX_FOPTS);
+      Dmsg2(900, "setting default value for keyword-id=%d, %s\n", keyword_id,
+            default_value.c_str());
+    }
+  }
+}
+
+static void StoreDefaultOptions()
+{
+  SetupCurrentOpts();
+  ApplyDefaultValuesForUnsetOptions(OptionsDefaultValues{});
+}
+
+// Come here when Options seen in Include/Exclude
+static void StoreOptionsRes(LEX* lc, ResourceItem*, int pass, bool exclude)
+{
+  int token;
+  OptionsDefaultValues default_values;
 
   if (exclude) {
     scan_err0(lc, _("Options section not permitted in Exclude\n"));
@@ -715,7 +741,7 @@ static void StoreOptionsRes(LEX* lc, ResourceItem*, int, int pass, bool exclude)
       return;
     }
     bool found = false;
-    for (i = 0; options_items[i].name; i++) {
+    for (int i = 0; options_items[i].name; i++) {
       if (Bstrcasecmp(options_items[i].name, lc->str)) {
         token = LexGetToken(lc, BCT_SKIP_EOL);
         if (token != BCT_EQUALS) {
@@ -725,28 +751,29 @@ static void StoreOptionsRes(LEX* lc, ResourceItem*, int, int pass, bool exclude)
         /* Call item handler */
         switch (options_items[i].type) {
           case CFG_TYPE_OPTION:
-            StoreOption(lc, &options_items[i], i, pass, option_default_values);
+            StoreOption(lc, &options_items[i], pass,
+                        default_values.option_default_values);
             break;
           case CFG_TYPE_REGEX:
-            StoreRegex(lc, &options_items[i], i, pass);
+            StoreRegex(lc, &options_items[i], pass);
             break;
           case CFG_TYPE_BASE:
-            StoreBase(lc, &options_items[i], i, pass);
+            StoreBase(lc, &options_items[i], pass);
             break;
           case CFG_TYPE_WILD:
-            StoreWild(lc, &options_items[i], i, pass);
+            StoreWild(lc, &options_items[i], pass);
             break;
           case CFG_TYPE_PLUGIN:
-            StorePlugin(lc, &options_items[i], i, pass);
+            StorePlugin(lc, &options_items[i], pass);
             break;
           case CFG_TYPE_FSTYPE:
-            StoreFstype(lc, &options_items[i], i, pass);
+            StoreFstype(lc, &options_items[i], pass);
             break;
           case CFG_TYPE_DRIVETYPE:
-            StoreDrivetype(lc, &options_items[i], i, pass);
+            StoreDrivetype(lc, &options_items[i], pass);
             break;
           case CFG_TYPE_META:
-            StoreMeta(lc, &options_items[i], i, pass);
+            StoreMeta(lc, &options_items[i], pass);
             break;
           default:
             break;
@@ -761,20 +788,7 @@ static void StoreOptionsRes(LEX* lc, ResourceItem*, int, int pass, bool exclude)
     }
   }
 
-  /* apply default values for unset options */
-  if (pass == 1) {
-    for (auto const& o : option_default_values) {
-      int keyword_id = o.first;
-      bool was_set_in_config = o.second.configured;
-      std::string default_value = o.second.default_value;
-      if (!was_set_in_config) {
-        bstrncat(res_incexe->current_opts->opts, default_value.c_str(),
-                 MAX_FOPTS);
-        Dmsg2(900, "setting default value for keyword-id=%d, %s\n", keyword_id,
-              default_value.c_str());
-      }
-    }
-  }
+  if (pass == 1) { ApplyDefaultValuesForUnsetOptions(default_values); }
 }
 
 static FilesetResource* GetStaticFilesetResource()
@@ -792,7 +806,7 @@ static FilesetResource* GetStaticFilesetResource()
  * always increase the name buffer by 10 items because we expect
  * to add more entries.
  */
-static void StoreFname(LEX* lc, ResourceItem*, int, int pass, bool)
+static void StoreFname(LEX* lc, ResourceItem*, int pass, bool)
 {
   int token;
 
@@ -838,7 +852,7 @@ static void StoreFname(LEX* lc, ResourceItem*, int, int pass, bool)
  * always increase the name buffer by 10 items because we expect
  * to add more entries.
  */
-static void StorePluginName(LEX* lc, ResourceItem*, int, int pass, bool exclude)
+static void StorePluginName(LEX* lc, ResourceItem*, int pass, bool exclude)
 {
   int token;
 
@@ -883,7 +897,7 @@ static void StorePluginName(LEX* lc, ResourceItem*, int, int pass, bool exclude)
 }
 
 // Store exclude directory containing info
-static void StoreExcludedir(LEX* lc, ResourceItem*, int, int pass, bool exclude)
+static void StoreExcludedir(LEX* lc, ResourceItem*, int pass, bool exclude)
 {
   if (exclude) {
     scan_err0(lc,
@@ -922,6 +936,7 @@ static void StoreNewinc(LEX* lc, ResourceItem* item, int index, int pass)
   }
   res_fs->new_include = true;
   int token;
+  bool has_options = false;
   while ((token = LexGetToken(lc, BCT_SKIP_EOL)) != BCT_EOF) {
     if (token == BCT_EOB) { break; }
     if (token != BCT_IDENTIFIER) {
@@ -941,16 +956,17 @@ static void StoreNewinc(LEX* lc, ResourceItem* item, int index, int pass)
         }
         switch (newinc_items[i].type) {
           case CFG_TYPE_FNAME:
-            StoreFname(lc, &newinc_items[i], i, pass, item->code);
+            StoreFname(lc, &newinc_items[i], pass, item->code);
             break;
           case CFG_TYPE_PLUGINNAME:
-            StorePluginName(lc, &newinc_items[i], i, pass, item->code);
+            StorePluginName(lc, &newinc_items[i], pass, item->code);
             break;
           case CFG_TYPE_EXCLUDEDIR:
-            StoreExcludedir(lc, &newinc_items[i], i, pass, item->code);
+            StoreExcludedir(lc, &newinc_items[i], pass, item->code);
             break;
           case CFG_TYPE_OPTIONS:
-            StoreOptionsRes(lc, &newinc_items[i], i, pass, item->code);
+            StoreOptionsRes(lc, &newinc_items[i], pass, item->code);
+            has_options = true;
             break;
           default:
             break;
@@ -963,6 +979,10 @@ static void StoreNewinc(LEX* lc, ResourceItem* item, int index, int pass)
       scan_err1(lc, _("Keyword %s not permitted in this resource"), lc->str);
       return;
     }
+  }
+
+  if (!has_options) {
+    if (pass == 1) { StoreDefaultOptions(); }
   }
 
   if (pass == 1) {

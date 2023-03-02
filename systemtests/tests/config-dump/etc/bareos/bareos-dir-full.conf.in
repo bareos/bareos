@@ -1440,9 +1440,17 @@ FileSet {
   Name = "FsMultiInclude"
   Description = "fileset with multiple blocks."
   Include {
+    Options {
+      AclSupport = Yes
+      XattrSupport = Yes
+    }
     File = "/tmp/dir11"
   }
   Include {
+    Options {
+      AclSupport = Yes
+      XattrSupport = Yes
+    }
     File = "/tmp/dir22"
   }
 }
@@ -1471,6 +1479,10 @@ FileSet {
     File = "/tmp/data"
   }
   Include {
+    Options {
+      AclSupport = Yes
+      XattrSupport = Yes
+    }
     File = "/tmp/dir22"
   }
 }
