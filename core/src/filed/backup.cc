@@ -72,7 +72,8 @@ const bool have_xattr = false;
 #endif
 
 /* Forward referenced functions */
-
+static bool ShouldStripPaths(const FindFilesPacket* ff_pkt);
+static bool do_strip(int count, const char* in, char* out);
 static int send_data(JobControlRecord* jcr,
                      int stream,
                      FindFilesPacket* ff_pkt,
@@ -1307,9 +1308,38 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
    *
    * For a directory, link is the same as fname, but with trailing
    * slash. For a linked file, link is the link. */
-  if (!IS_FT_OBJECT(ff_pkt->type)
-      && ff_pkt->type != FT_DELETED) { /* already stripped */
-    StripPath(ff_pkt);
+
+  PoolMem StrippedFile, StrippedLink;
+  const char* file_name = ff_pkt->fname;
+  const char* link_name = ff_pkt->link;
+/**
+ * If requested strip leading components of the path so that we can
+ * save file as if it came from a subdirectory.  This is most useful
+ * for dealing with snapshots, by removing the snapshot directory, or
+ * in handling vendor migrations where files have been restored with
+ * a vendor product into a subdirectory.
+ */
+	if (!IS_FT_OBJECT(ff_pkt->type)
+	    && ff_pkt->type != FT_DELETED
+	    && ShouldStripPaths(ff_pkt)) { /* already stripped */
+	  StrippedFile = PoolMem(PM_FNAME);
+	  StrippedLink = PoolMem(PM_FNAME);
+
+	  bool file_stripped = do_strip(ff_pkt->StripPath,
+					ff_pkt->fname,
+					StrippedFile.c_str());
+
+	  bool link_stripped = do_strip(ff_pkt->StripPath,
+					ff_pkt->link,
+					StrippedLink.c_str());
+
+	  if (file_stripped || link_stripped)
+	  {
+		  file_name = StrippedFile.c_str();
+		  link_name = StrippedLink.c_str();
+		  Dmsg3(100, "fname=%s stripped=%s link=%s\n", ff_pkt->fname,
+			file_name, link_name);
+	  }
   }
 
   switch (ff_pkt->type) {
@@ -1317,17 +1347,17 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
     case FT_LNK:
     case FT_LNKSAVED:
     {
-      Dmsg3(300, "Link %d %s to %s\n", ff_pkt->FileIndex, ff_pkt->fname,
-            ff_pkt->link);
-      status = SendFileHeader(sd, ff_pkt->FileIndex, ff_pkt->type, ff_pkt->fname,
-			      attribs.c_str(), ff_pkt->link, attribsEx,
+      Dmsg3(300, "Link %d %s to %s\n", ff_pkt->FileIndex, file_name,
+            link_name);
+      status = SendFileHeader(sd, ff_pkt->FileIndex, ff_pkt->type, file_name,
+			      attribs.c_str(), link_name, attribsEx,
 			      ff_pkt->delta_seq);
     } break;
     case FT_DIREND:
     case FT_REPARSE:
     {
       /* Here link is the canonical filename (i.e. with trailing slash) */
-	    status = SendFileHeader(sd, ff_pkt->FileIndex, ff_pkt->type, ff_pkt->link,
+	    status = SendFileHeader(sd, ff_pkt->FileIndex, ff_pkt->type, link_name,
 			      attribs.c_str(), /* link */ nullptr, attribsEx,
 			      ff_pkt->delta_seq);
     } break;
@@ -1337,7 +1367,7 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
 	    status = SendRestoreObject(sd,
 				       ff_pkt->FileIndex,
 				       ff_pkt->type,
-				       ff_pkt->fname,
+				       file_name,
 				       ff_pkt->object_name,
 				       ff_pkt->object_index,
 				       ff_pkt->object_len,
@@ -1345,20 +1375,16 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
     } break;
     case FT_REG:
     {
-	    status = SendFileHeader(sd, ff_pkt->FileIndex, ff_pkt->type, ff_pkt->fname,
+	    status = SendFileHeader(sd, ff_pkt->FileIndex, ff_pkt->type, file_name,
 			      attribs.c_str(), /* link */ nullptr, attribsEx,
 			      ff_pkt->delta_seq);
     } break;
     default:
     {
-	    status = SendFileHeader(sd, ff_pkt->FileIndex, ff_pkt->type, ff_pkt->fname,
+	    status = SendFileHeader(sd, ff_pkt->FileIndex, ff_pkt->type, file_name,
 			      attribs.c_str(), /* link */ nullptr, attribsEx,
 			      ff_pkt->delta_seq);
     } break;
-  }
-
-  if (!IS_FT_OBJECT(ff_pkt->type) && ff_pkt->type != FT_DELETED) {
-    UnstripPath(ff_pkt);
   }
 
   Dmsg2(300, ">stored: attr len=%d: %s\n", sd->message_length, sd->msg);
@@ -1373,7 +1399,7 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
 }
 
 // Do in place strip of path
-static bool do_strip(int count, const char* in, char* out)
+bool do_strip(int count, const char* in, char* out)
 {
   int stripped;
   int numsep = 0;
@@ -1405,6 +1431,16 @@ static bool do_strip(int count, const char* in, char* out)
   Dmsg4(500, "stripped=%d count=%d numsep=%d sep>count=%d\n", stripped, count,
         numsep, numsep > count);
   return stripped == count && numsep > count;
+}
+
+bool ShouldStripPaths(const FindFilesPacket* ff_pkt)
+{
+		if (!BitIsSet(FO_STRIPPATH, ff_pkt->flags) || ff_pkt->StripPath <= 0) {
+			Dmsg1(200, "No strip for %s\n", ff_pkt->fname);
+			return false;
+		}
+		return true;
+	return false;
 }
 
 /**
