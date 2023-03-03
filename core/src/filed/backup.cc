@@ -74,6 +74,8 @@ const bool have_xattr = false;
 /* Forward referenced functions */
 static bool ShouldStripPaths(const FindFilesPacket* ff_pkt);
 static bool do_strip(int count, const char* in, char* out);
+int SaveFileInList(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level);
+int PluginSaveInList(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level);
 static int send_data(JobControlRecord* jcr,
                      int stream,
                      FindFilesPacket* ff_pkt,
@@ -85,7 +87,28 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
 #if defined(WIN32_VSS)
 static void CloseVssBackupSession(JobControlRecord* jcr);
 #endif
+FindFilesPacket* DeepCopyImportant(FindFilesPacket* ff_pkt)
+{
+	FindFilesPacket* packet = new FindFilesPacket;
+	*packet = *ff_pkt;
 
+	if (ff_pkt->top_fname) packet->top_fname = strdup(ff_pkt->top_fname);
+	if (ff_pkt->fname)     packet->fname = strdup(ff_pkt->fname);
+	if (ff_pkt->link)      packet->link = strdup(ff_pkt->link);
+	if (ff_pkt->digest)    packet->digest = strdup(ff_pkt->digest);
+	if (ff_pkt->object_name) packet->object_name = strdup(ff_pkt->object_name);
+	if (ff_pkt->object) packet->object = strdup(ff_pkt->object);
+
+	packet->included_files_list = nullptr;
+	packet->excluded_files_list = nullptr;
+	packet->excluded_paths_list = nullptr;
+
+	//packet->linkhash = NULL;
+   packet->fname_save = NULL;
+   packet->link_save = NULL;
+   packet->ignoredir_fname = NULL;
+	return packet;
+}
 /**
  * Find all the requested files and send them
  * to the Storage daemon.
@@ -157,12 +180,28 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
     jcr->fd_impl->xattr_data->u.build->content = GetPoolMemory(PM_MESSAGE);
   }
 
+  std::vector<saved_ffp> files;
+  jcr->fd_impl->ff->file_list = &files;
   // Subroutine SaveFile() is called for each file
-  if (!FindFiles(jcr, (FindFilesPacket*)jcr->fd_impl->ff, SaveFile,
-                 PluginSave)) {
+  if (!FindFiles(jcr, (FindFilesPacket*)jcr->fd_impl->ff, SaveFileInList,
+		 PluginSaveInList)) {
     ok = false; /* error */
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   }
+
+  for (auto [plugin, file_ff] : files)
+  {
+	  if (plugin)
+	  {
+		  PluginSave(jcr, file_ff, 1);
+	  }
+	  else
+	  {
+		  SaveFile(jcr, file_ff, 1);
+	  }
+	  // FindOneFile(jcr, jcr->fd_impl->ff, SaveFile, file.data(), -1, 1);
+  }
+  //jcr->fd_impl->ff->linkhash = NULL;
 
   if (have_acl && jcr->fd_impl->acl_data->u.build->nr_errors > 0) {
     Jmsg(jcr, M_WARNING, 0,
@@ -833,6 +872,152 @@ bail_out:
   return rtnstat;
 }
 
+int PluginSaveInList(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
+{
+	saved_ffp New;
+	New.plugin = true;
+	New.copy = DeepCopyImportant(ff_pkt);
+	ff_pkt->file_list->push_back(New);
+  return !JobCanceled(jcr);
+}
+int SaveFileInList(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
+{
+  bool has_file_data = false;
+
+  (void) has_file_data;
+  if (jcr->IsCanceled() || jcr->IsIncomplete()) { return 0; }
+
+  jcr->fd_impl->num_files_examined++; /* bump total file count */
+
+  switch (ff_pkt->type) {
+    case FT_LNKSAVED: /* Hard linked, file already saved */
+      Dmsg2(130, "FT_LNKSAVED hard link: %s => %s\n", ff_pkt->fname,
+            ff_pkt->link);
+      break;
+    case FT_REGE:
+      Dmsg1(130, "FT_REGE saving: %s\n", ff_pkt->fname);
+      has_file_data = true;
+      break;
+    case FT_REG:
+      Dmsg1(130, "FT_REG saving: %s\n", ff_pkt->fname);
+      has_file_data = true;
+      break;
+    case FT_LNK:
+      Dmsg2(130, "FT_LNK saving: %s -> %s\n", ff_pkt->fname, ff_pkt->link);
+      break;
+    case FT_RESTORE_FIRST:
+      Dmsg1(100, "FT_RESTORE_FIRST saving: %s\n", ff_pkt->fname);
+      break;
+    case FT_PLUGIN_CONFIG:
+      Dmsg1(100, "FT_PLUGIN_CONFIG saving: %s\n", ff_pkt->fname);
+      break;
+    case FT_DIRBEGIN:
+      jcr->fd_impl->num_files_examined--; /* correct file count */
+      return 1;                           /* not used */
+    case FT_NORECURSE:
+      Jmsg(jcr, M_INFO, 1,
+           _("     Recursion turned off. Will not descend from %s into %s\n"),
+           ff_pkt->top_fname, ff_pkt->fname);
+      ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
+      break;
+    case FT_NOFSCHG:
+      /* Suppress message for /dev filesystems */
+      if (!IsInFileset(ff_pkt)) {
+        Jmsg(jcr, M_INFO, 1,
+             _("     %s is a different filesystem. Will not descend from %s "
+               "into it.\n"),
+             ff_pkt->fname, ff_pkt->top_fname);
+      }
+      ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
+      break;
+    case FT_INVALIDFS:
+      Jmsg(jcr, M_INFO, 1,
+           _("     Disallowed filesystem. Will not descend from %s into %s\n"),
+           ff_pkt->top_fname, ff_pkt->fname);
+      ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
+      break;
+    case FT_INVALIDDT:
+      Jmsg(jcr, M_INFO, 1,
+           _("     Disallowed drive type. Will not descend into %s\n"),
+           ff_pkt->fname);
+      break;
+    case FT_REPARSE:
+    case FT_JUNCTION:
+    case FT_DIREND:
+      Dmsg1(130, "FT_DIREND: %s\n", ff_pkt->link);
+      break;
+    case FT_SPEC:
+      Dmsg1(130, "FT_SPEC saving: %s\n", ff_pkt->fname);
+      if (S_ISSOCK(ff_pkt->statp.st_mode)) {
+        Jmsg(jcr, M_SKIPPED, 1, _("     Socket file skipped: %s\n"),
+             ff_pkt->fname);
+        return 1;
+      }
+      break;
+    case FT_RAW:
+      Dmsg1(130, "FT_RAW saving: %s\n", ff_pkt->fname);
+      has_file_data = true;
+      break;
+    case FT_FIFO:
+      Dmsg1(130, "FT_FIFO saving: %s\n", ff_pkt->fname);
+      break;
+    case FT_NOACCESS: {
+      BErrNo be;
+      Jmsg(jcr, M_NOTSAVED, 0, _("     Could not access \"%s\": ERR=%s\n"),
+           ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
+      jcr->JobErrors++;
+      return 1;
+    }
+    case FT_NOFOLLOW: {
+      BErrNo be;
+      Jmsg(jcr, M_NOTSAVED, 0, _("     Could not follow link \"%s\": ERR=%s\n"),
+           ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
+      jcr->JobErrors++;
+      return 1;
+    }
+    case FT_NOSTAT: {
+      BErrNo be;
+      Jmsg(jcr, M_NOTSAVED, 0, _("     Could not stat \"%s\": ERR=%s\n"),
+           ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
+      jcr->JobErrors++;
+      return 1;
+    }
+    case FT_DIRNOCHG:
+    case FT_NOCHG:
+      Jmsg(jcr, M_SKIPPED, 1, _("     Unchanged file skipped: %s\n"),
+           ff_pkt->fname);
+      return 1;
+    case FT_ISARCH:
+      Jmsg(jcr, M_NOTSAVED, 0, _("     Archive file not saved: %s\n"),
+           ff_pkt->fname);
+      return 1;
+    case FT_NOOPEN: {
+      BErrNo be;
+      Jmsg(jcr, M_NOTSAVED, 0,
+           _("     Could not open directory \"%s\": ERR=%s\n"), ff_pkt->fname,
+           be.bstrerror(ff_pkt->ff_errno));
+      jcr->JobErrors++;
+      return 1;
+    }
+    case FT_DELETED:
+      Dmsg1(130, "FT_DELETED: %s\n", ff_pkt->fname);
+      break;
+    default:
+      Jmsg(jcr, M_NOTSAVED, 0, _("     Unknown file type %d; not saved: %s\n"),
+           ff_pkt->type, ff_pkt->fname);
+      jcr->JobErrors++;
+      return 1;
+  }
+
+  Dmsg1(130, "filed: saving %s to list\n", ff_pkt->fname);
+
+	saved_ffp New;
+	New.plugin = false;
+	New.copy = DeepCopyImportant(ff_pkt);
+	ff_pkt->file_list->push_back(New);
+
+  return !JobCanceled(jcr);
+}
 /**
  * Handle the data just read and send it to the SD after doing any
  * postprocessing needed.
