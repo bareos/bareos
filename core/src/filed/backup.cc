@@ -176,14 +176,12 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
 
   if (!CryptoSessionStart(jcr, cipher)) { return false; }
 
-  SetFindOptions((FindFilesPacket*)jcr->fd_impl->ff, jcr->fd_impl->incremental,
+  // jcr->fd_impl->ff is only used by the sending thread
+  // since it should just send the files it was given, we set
+  // incremental & accurate to false so it does not double check them
+  SetFindOptions((FindFilesPacket*)jcr->fd_impl->ff, false,
                  jcr->fd_impl->since_time);
 
-  // In accurate mode, we overload the find_one check function
-  if (jcr->accurate) {
-    SetFindChangedFunction((FindFilesPacket*)jcr->fd_impl->ff,
-                           AccurateCheckFile);
-  }
 
   StartHeartbeatMonitor(jcr);
 
