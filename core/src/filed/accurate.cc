@@ -162,27 +162,15 @@ bool AccurateCheckFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 
   if (!jcr->fd_impl->file_list) { return true; /** Not initialized properly */ }
 
+  PoolMem saved_name = GetStrippedCanonicalName(ff_pkt);
+  fname = saved_name.c_str();
+
   // Apply path stripping for lookup in accurate data.
-  StripPath(ff_pkt);
-
-  if (S_ISDIR(ff_pkt->statp.st_mode)) {
-    fname = ff_pkt->link;
-  } else {
-    fname = ff_pkt->fname;
-  }
-
   if (!AccurateLookup(jcr, fname, &payload)) {
     Dmsg1(debuglevel, "accurate %s (not found)\n", fname);
     status = true;
-    UnstripPath(ff_pkt);
     goto bail_out;
   }
-
-  /* Restore original name so we can check the actual file when we check
-   * the accurate options later on. This is mostly important for the
-   * CalculateAndCompareFileChksum() function as that needs to calulate
-   * the checksum of the real file and not try to open the stripped pathname. */
-  UnstripPath(ff_pkt);
 
   ff_pkt->accurate_found = true;
   ff_pkt->delta_seq = payload->delta_seq;

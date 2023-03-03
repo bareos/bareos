@@ -109,8 +109,6 @@ FindFilesPacket* DeepCopyImportant(FindFilesPacket* ff_pkt)
   packet->excluded_paths_list = nullptr;
 
   // packet->linkhash = NULL;
-  packet->fname_save = NULL;
-  packet->link_save = NULL;
   packet->ignoredir_fname = NULL;
   return packet;
 }
@@ -1537,56 +1535,24 @@ bool ShouldStripPaths(const FindFilesPacket* ff_pkt)
 	return true;
 }
 
-/**
- * If requested strip leading components of the path so that we can
- * save file as if it came from a subdirectory.  This is most useful
- * for dealing with snapshots, by removing the snapshot directory, or
- * in handling vendor migrations where files have been restored with
- * a vendor product into a subdirectory.
- */
-void StripPath(FindFilesPacket* ff_pkt)
+PoolMem GetStrippedCanonicalName(const FindFilesPacket* ff_pkt)
 {
-  if (!BitIsSet(FO_STRIPPATH, ff_pkt->flags) || ff_pkt->StripPath <= 0) {
-    Dmsg1(200, "No strip for %s\n", ff_pkt->fname);
-    return;
-  }
+	PoolMem stripped_name(PM_FNAME);
 
-  if (!ff_pkt->fname_save) {
-	  std::swap(ff_pkt->fname, ff_pkt->fname_save);
-	  ff_pkt->fname = GetPoolMemory(PM_FNAME);
-	  std::swap(ff_pkt->link, ff_pkt->link_save);
-	  ff_pkt->link = GetPoolMemory(PM_FNAME);
-  }
+	const char* name = GetCanonicalName(ff_pkt->statp,
+					    ff_pkt->fname,
+					    ff_pkt->link);
 
-  /* Strip path. If it doesn't succeed put it back. If it does, and there
-   * is a different link string, attempt to strip the link. If it fails,
-   * back them both back. Do not strip symlinks. I.e. if either stripping
-   * fails don't strip anything. */
-  if (!do_strip(ff_pkt->StripPath, ff_pkt->fname_save, ff_pkt->fname)) {
-    UnstripPath(ff_pkt);
-    goto rtn;
-  }
+	if (ShouldStripPaths(ff_pkt))
+	{
+		do_strip(ff_pkt->StripPath, name, stripped_name.c_str());
+	}
+	else
+	{
+		stripped_name.strcpy(name);
+	}
 
-  // Strip links but not symlinks
-  if (ff_pkt->type != FT_LNK && ff_pkt->fname != ff_pkt->link) {
-	  if (!do_strip(ff_pkt->StripPath, ff_pkt->link_save, ff_pkt->link)) { UnstripPath(ff_pkt); }
-  }
-
-rtn:
-  Dmsg3(100, "fname=%s stripped=%s link=%s\n", ff_pkt->fname_save,
-        ff_pkt->fname, ff_pkt->link);
-}
-
-void UnstripPath(FindFilesPacket* ff_pkt)
-{
-  if (!BitIsSet(FO_STRIPPATH, ff_pkt->flags) || ff_pkt->StripPath <= 0) {
-    return;
-  }
-  std::swap(ff_pkt->fname, ff_pkt->fname_save);
-  FreeAndNullPoolMemory(ff_pkt->fname_save);
-
-  std::swap(ff_pkt->link, ff_pkt->link_save);
-  FreeAndNullPoolMemory(ff_pkt->link_save);
+	return stripped_name;
 }
 
 #if defined(WIN32_VSS)

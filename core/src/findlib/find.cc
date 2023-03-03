@@ -452,8 +452,6 @@ void TermFindFiles(FindFilesPacket* ff)
 {
   if (ff) {
     FreePoolMemory(ff->sys_fname);
-    if (ff->fname_save) { FreePoolMemory(ff->fname_save); }
-    if (ff->link_save) { FreePoolMemory(ff->link_save); }
     if (ff->ignoredir_fname) { FreePoolMemory(ff->ignoredir_fname); }
     TermFindOne(ff);
     free(ff);
