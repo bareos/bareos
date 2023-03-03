@@ -169,21 +169,13 @@ struct HfsPlusInfo {
   off_t rsrclength{0};     /**< Size of resource fork */
 };
 
-struct FindFilesPacket;
-struct saved_ffp {
-  bool plugin;
-  bool has_file_data;
-  bool top_level;
-  FindFilesPacket* copy;
-};
-
 /**
  * Definition of the FindFiles packet passed as the
  * first argument to the FindFiles callback subroutine.
  */
 /* clang-format off */
 struct FindFilesPacket {
-  std::vector<saved_ffp>* file_list{nullptr}; /**< temporary storage for past ffps */
+  std::vector<std::string>* file_list{nullptr}; /**< temporary storage for past ffps */
   char* top_fname{nullptr};          /**< Full filename before descending */
   char* fname{nullptr};              /**< Full filename */
   char* link{nullptr};               /**< Link if file linked */
@@ -257,6 +249,15 @@ void SetFindChangedFunction(FindFilesPacket* ff,
                                           FindFilesPacket* ff));
 int FindFiles(JobControlRecord* jcr,
               FindFilesPacket* ff,
+              int file_sub(JobControlRecord*, FindFilesPacket* ff_pkt, bool),
+              int PluginSub(JobControlRecord*, FindFilesPacket* ff_pkt, bool));
+std::optional<std::vector<std::vector<std::string>>>
+ListFiles(JobControlRecord* jcr,
+          FindFilesPacket* ff);
+
+int SendFiles(JobControlRecord* jcr,
+              FindFilesPacket* ff,
+	      std::vector<std::vector<std::string>> file_lists,
               int file_sub(JobControlRecord*, FindFilesPacket* ff_pkt, bool),
               int PluginSub(JobControlRecord*, FindFilesPacket* ff_pkt, bool));
 bool MatchFiles(JobControlRecord* jcr,
