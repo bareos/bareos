@@ -46,4 +46,6 @@ if [ ! -r "$unopenable_dir" ]; then
                 "Error on faulty directory not detected."
 fi
 
+rmdir "${unopenable_dir}"
+
 end_test
