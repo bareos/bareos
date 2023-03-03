@@ -802,36 +802,43 @@ int SendFiles(JobControlRecord* jcr,
     ClearAllBits(FO_MAX, ff->flags);
     SendPluginInfo(jcr, ff, PluginSave);
     ClearAllBits(FO_MAX, ff->flags);
-    for (int i = 0; i < fileset->include_list.size(); i++) {
-      findIncludeExcludeItem* incexe
-          = (findIncludeExcludeItem*)fileset->include_list.get(i);
-      fileset->incexe = incexe;
+    int closed_channels = 0;
+    while (closed_channels != fileset->include_list.size())
+    {
+	    for (int i = 0; i < fileset->include_list.size(); i++) {
+		    channel::out<stated_file>& list = outs[i];
+		    if (list.empty()) continue;
+		    findIncludeExcludeItem* incexe
+			    = (findIncludeExcludeItem*)fileset->include_list.get(i);
+		    fileset->incexe = incexe;
 
-      SetupFlags(ff, incexe);
+		    SetupFlags(ff, incexe);
 
-      Dmsg4(50, "Verify=<%s> Accurate=<%s> BaseJob=<%s> flags=<%d>\n",
-            ff->VerifyOpts, ff->AccurateOpts, ff->BaseJobOpts, ff->flags);
-      // we only send the files that were supplied to us.
-      // for this reason we disable recursion here!
-      SetBit(FO_NO_RECURSION, ff->flags);
+		    Dmsg4(50, "Verify=<%s> Accurate=<%s> BaseJob=<%s> flags=<%d>\n",
+			  ff->VerifyOpts, ff->AccurateOpts, ff->BaseJobOpts, ff->flags);
+		    // we only send the files that were supplied to us.
+		    // for this reason we disable recursion here!
+		    SetBit(FO_NO_RECURSION, ff->flags);
 
-      channel::out<stated_file> list = std::move(outs[i]);
-      std::optional<stated_file> file;
-      while ((file = list.get())) {
-        // ff->top_fname is const in everything but type
-        // adding const there would change a lot of function signatures
-        char* fname = (char*)file->first.c_str();
-        Dmsg1(debuglevel, "F %s\n", fname);
-        ff->top_fname = (char*)fname;
-	ff->statp = file->second;
-	ff->has_stats = true;
-        if (FindOneFile(jcr, ff, CreateCallback(FileSave), ff->top_fname,
-                        (dev_t)-1, false)
-            == 0) {
-          return 0; /* error return */
-        }
-        if (JobCanceled(jcr)) { return 0; }
-      }
+		    std::optional<stated_file> file;
+		    while ((file = list.get())) {
+			    // ff->top_fname is const in everything but type
+			    // adding const there would change a lot of function signatures
+			    char* fname = (char*)file->first.c_str();
+			    Dmsg1(debuglevel, "F %s\n", fname);
+			    ff->top_fname = (char*)fname;
+			    ff->statp = file->second;
+			    ff->has_stats = true;
+			    if (FindOneFile(jcr, ff, CreateCallback(FileSave), ff->top_fname,
+					    (dev_t)-1, false)
+				== 0) {
+				    return 0; /* error return */
+			    }
+			    if (JobCanceled(jcr)) { return 0; }
+		    }
+		    if (list.empty()) closed_channels += 1;
+	    }
+
     }
   }
   return 1;
