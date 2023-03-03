@@ -821,7 +821,7 @@ int SendFiles(JobControlRecord* jcr,
 		    SetBit(FO_NO_RECURSION, ff->flags);
 
 		    std::optional<stated_file> file;
-		    while ((file = list.get())) {
+		    while ((file = list.try_get())) {
 			    // ff->top_fname is const in everything but type
 			    // adding const there would change a lot of function signatures
 			    char* fname = file->first.data();
