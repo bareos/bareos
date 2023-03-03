@@ -102,38 +102,9 @@ void SetFindChangedFunction(FindFilesPacket* ff,
   ff->CheckFct = CheckFct;
 }
 
-/**
- * Call this subroutine with a callback subroutine as the first
- * argument and a packet as the second argument, this packet
- * will be passed back to the callback subroutine as the last
- * argument.
- */
-int FindFiles(JobControlRecord* jcr,
-              FindFilesPacket* ff,
-              int FileSave(JobControlRecord* jcr,
-                           FindFilesPacket* ff_pkt,
-                           bool top_level),
-              int PluginSave(JobControlRecord* jcr,
-                             FindFilesPacket* ff_pkt,
-                             bool top_level))
+static void SetupFlags(FindFilesPacket* ff,
+		      findIncludeExcludeItem* incexe)
 {
-  ff->FileSave = FileSave;
-  ff->PluginSave = PluginSave;
-
-  /* This is the new way */
-  findFILESET* fileset = ff->fileset;
-  if (fileset) {
-    int i, j;
-    /* TODO: We probably need be move the initialization in the fileset loop,
-     * at this place flags options are "concatenated" accross Include {} blocks
-     * (not only Options{} blocks inside a Include{}) */
-    ClearAllBits(FO_MAX, ff->flags);
-    for (i = 0; i < fileset->include_list.size(); i++) {
-      dlistString* node;
-      findIncludeExcludeItem* incexe
-          = (findIncludeExcludeItem*)fileset->include_list.get(i);
-      fileset->incexe = incexe;
-
       // Here, we reset some values between two different Include{}
       strcpy(ff->VerifyOpts, "V");
       strcpy(ff->AccurateOpts, "Cmcs");  /* mtime+ctime+size by default */
@@ -143,10 +114,8 @@ int FindFiles(JobControlRecord* jcr,
 
       /* By setting all options, we in effect OR the global options which is
        * what we want. */
-      for (j = 0; j < incexe->opts_list.size(); j++) {
-        findFOPTS* fo;
-
-        fo = (findFOPTS*)incexe->opts_list.get(j);
+      for (int j = 0; j < incexe->opts_list.size(); j++) {
+        findFOPTS* fo = (findFOPTS*)incexe->opts_list.get(j);
         CopyBits(FO_MAX, fo->flags, ff->flags);
         ff->Compress_algo = fo->Compress_algo;
         ff->Compress_level = fo->Compress_level;
@@ -168,6 +137,41 @@ int FindFiles(JobControlRecord* jcr,
           bstrncpy(ff->BaseJobOpts, fo->BaseJobOpts, sizeof(ff->BaseJobOpts));
         }
       }
+}
+
+/**
+ * Call this subroutine with a callback subroutine as the first
+ * argument and a packet as the second argument, this packet
+ * will be passed back to the callback subroutine as the last
+ * argument.
+ */
+int FindFiles(JobControlRecord* jcr,
+              FindFilesPacket* ff,
+              int FileSave(JobControlRecord* jcr,
+                           FindFilesPacket* ff_pkt,
+                           bool top_level),
+              int PluginSave(JobControlRecord* jcr,
+                             FindFilesPacket* ff_pkt,
+                             bool top_level))
+{
+  ff->FileSave = FileSave;
+  ff->PluginSave = PluginSave;
+
+  /* This is the new way */
+  findFILESET* fileset = ff->fileset;
+  if (fileset) {
+    /*
+     * TODO: We probably need be move the initialization in the fileset loop,
+     * at this place flags options are "concatenated" accross Include {} blocks
+     * (not only Options{} blocks inside a Include{})
+     */
+    ClearAllBits(FO_MAX, ff->flags);
+    for (int i = 0; i < fileset->include_list.size(); i++) {
+      dlistString* node;
+      findIncludeExcludeItem* incexe
+          = (findIncludeExcludeItem*)fileset->include_list.get(i);
+      fileset->incexe = incexe;
+      SetupFlags(ff, incexe);
 
       Dmsg4(50, "Verify=<%s> Accurate=<%s> BaseJob=<%s> flags=<%d>\n",
             ff->VerifyOpts, ff->AccurateOpts, ff->BaseJobOpts, ff->flags);
@@ -684,6 +688,7 @@ int SaveInList(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
   return 1;
 }
 
+
 bool ListFiles(JobControlRecord* jcr,
 	       findFILESET* fileset,
 	       bool incremental,
@@ -698,55 +703,19 @@ bool ListFiles(JobControlRecord* jcr,
     ff->fileset = fileset;
     ff->incremental = incremental;
     ff->FileSave = SaveInList;
-    int i, j;
     /*
      * TODO: We probably need be move the initialization in the fileset loop,
      * at this place flags options are "concatenated" accross Include {} blocks
      * (not only Options{} blocks inside a Include{})
      */
     ClearAllBits(FO_MAX, ff->flags);
-    for (i = 0; i < fileset->include_list.size(); i++) {
+    for (int i = 0; i < fileset->include_list.size(); i++) {
       dlistString* node;
       findIncludeExcludeItem* incexe
           = (findIncludeExcludeItem*)fileset->include_list.get(i);
       fileset->incexe = incexe;
+      SetupFlags(ff.get(), incexe);
 
-      // Here, we reset some values between two different Include{}
-      strcpy(ff->VerifyOpts, "V");
-      strcpy(ff->AccurateOpts, "Cmcs");  /* mtime+ctime+size by default */
-      strcpy(ff->BaseJobOpts, "Jspug5"); /* size+perm+user+group+chk  */
-      ff->plugin = NULL;
-      ff->opt_plugin = false;
-
-      /*
-       * By setting all options, we in effect OR the global options which is
-       * what we want.
-       */
-      for (j = 0; j < incexe->opts_list.size(); j++) {
-        findFOPTS* fo;
-
-        fo = (findFOPTS*)incexe->opts_list.get(j);
-        CopyBits(FO_MAX, fo->flags, ff->flags);
-        ff->Compress_algo = fo->Compress_algo;
-        ff->Compress_level = fo->Compress_level;
-        ff->StripPath = fo->StripPath;
-        ff->size_match = fo->size_match;
-        ff->fstypes = fo->fstype;
-        ff->drivetypes = fo->Drivetype;
-        if (fo->plugin != NULL) {
-          ff->plugin = fo->plugin; /* TODO: generate a plugin event ? */
-          ff->opt_plugin = true;
-        }
-        bstrncat(ff->VerifyOpts, fo->VerifyOpts,
-                 sizeof(ff->VerifyOpts)); /* TODO: Concat or replace? */
-        if (fo->AccurateOpts[0]) {
-          bstrncpy(ff->AccurateOpts, fo->AccurateOpts,
-                   sizeof(ff->AccurateOpts));
-        }
-        if (fo->BaseJobOpts[0]) {
-          bstrncpy(ff->BaseJobOpts, fo->BaseJobOpts, sizeof(ff->BaseJobOpts));
-        }
-      }
       Dmsg4(50, "Verify=<%s> Accurate=<%s> BaseJob=<%s> flags=<%d>\n",
             ff->VerifyOpts, ff->AccurateOpts, ff->BaseJobOpts, ff->flags);
       channel::in in = std::move(ins[i]);
@@ -773,6 +742,7 @@ bool ListFiles(JobControlRecord* jcr,
   }
 }
 
+
 int SendFiles(JobControlRecord* jcr,
               FindFilesPacket* ff,
 	      std::vector<channel::out<std::string>> outs,
@@ -785,7 +755,6 @@ int SendFiles(JobControlRecord* jcr,
   /* This is the new way */
   findFILESET* fileset = ff->fileset;
   if (fileset) {
-    int i, j;
     /*
      * TODO: We probably need be move the initialization in the fileset loop,
      * at this place flags options are "concatenated" accross Include {} blocks
@@ -793,48 +762,14 @@ int SendFiles(JobControlRecord* jcr,
      */
     ASSERT(outs.size() == (std::size_t)fileset->include_list.size());
     ClearAllBits(FO_MAX, ff->flags);
-    for (i = 0; i < fileset->include_list.size(); i++) {
+    for (int i = 0; i < fileset->include_list.size(); i++) {
       dlistString* node;
       findIncludeExcludeItem* incexe
           = (findIncludeExcludeItem*)fileset->include_list.get(i);
       fileset->incexe = incexe;
 
-      // Here, we reset some values between two different Include{}
-      strcpy(ff->VerifyOpts, "V");
-      strcpy(ff->AccurateOpts, "Cmcs");  /* mtime+ctime+size by default */
-      strcpy(ff->BaseJobOpts, "Jspug5"); /* size+perm+user+group+chk  */
-      ff->plugin = NULL;
-      ff->opt_plugin = false;
+      SetupFlags(ff, incexe);
 
-      /*
-       * By setting all options, we in effect OR the global options which is
-       * what we want.
-       */
-      for (j = 0; j < incexe->opts_list.size(); j++) {
-        findFOPTS* fo;
-
-        fo = (findFOPTS*)incexe->opts_list.get(j);
-        CopyBits(FO_MAX, fo->flags, ff->flags);
-        ff->Compress_algo = fo->Compress_algo;
-        ff->Compress_level = fo->Compress_level;
-        ff->StripPath = fo->StripPath;
-        ff->size_match = fo->size_match;
-        ff->fstypes = fo->fstype;
-        ff->drivetypes = fo->Drivetype;
-        if (fo->plugin != NULL) {
-          ff->plugin = fo->plugin; /* TODO: generate a plugin event ? */
-          ff->opt_plugin = true;
-        }
-        bstrncat(ff->VerifyOpts, fo->VerifyOpts,
-                 sizeof(ff->VerifyOpts)); /* TODO: Concat or replace? */
-        if (fo->AccurateOpts[0]) {
-          bstrncpy(ff->AccurateOpts, fo->AccurateOpts,
-                   sizeof(ff->AccurateOpts));
-        }
-        if (fo->BaseJobOpts[0]) {
-          bstrncpy(ff->BaseJobOpts, fo->BaseJobOpts, sizeof(ff->BaseJobOpts));
-        }
-      }
       Dmsg4(50, "Verify=<%s> Accurate=<%s> BaseJob=<%s> flags=<%d>\n",
             ff->VerifyOpts, ff->AccurateOpts, ff->BaseJobOpts, ff->flags);
       // we only send the files that were supplied to us.
