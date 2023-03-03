@@ -52,6 +52,10 @@ template <typename T> struct out {
   out(out&& moved) = default;
   out& operator=(out&& moved) = default;
 
+	bool empty() const {
+		return closed;
+	}
+
  private:
   std::shared_ptr<data<T>> shared;
   std::size_t read_pos;
