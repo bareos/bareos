@@ -42,6 +42,7 @@ template <typename T> struct data {
 
 template <typename T> struct out {
   std::optional<T> get();
+  std::optional<T> try_get();
   void close();
   ~out();
 
@@ -109,11 +110,10 @@ data<T>::data(std::size_t capacity)
 template <typename T> std::optional<T> out<T>::get()
 {
   std::optional<T> result = std::nullopt;
-  if (closed) {
-    return result;
-  } else {
+  if (!closed) {
 	  if (old_size > 0)
 	  {
+		  // take the fast path
 		  result = std::move(shared->storage[read_pos]);
 	  }
     std::unique_lock lock(shared->mutex);
@@ -136,8 +136,43 @@ template <typename T> std::optional<T> out<T>::get()
       old_size = 0;
       closed = true;
     }
+    shared->cv.notify_one();
   }
-  shared->cv.notify_one();
+  return result;
+}
+
+template <typename T> std::optional<T> out<T>::try_get()
+{
+  std::optional<T> result = std::nullopt;
+  if (!closed) {
+	  bool something_changed = false;
+	  if (old_size > 0)
+	  {
+		  // take the fast path
+		  something_changed = true;
+		  result = std::move(shared->storage[read_pos]);
+	  }
+    std::unique_lock lock(shared->mutex);
+    if (this->shared->size > 0) {
+	    // if we did not take the fast path, take it now
+	    if (!result) {
+		    something_changed = true;
+		    result = std::move(shared->storage[read_pos]);
+	    }
+      shared->size -= 1;
+      old_size = shared->size; // update the cache
+      read_pos = wrapping_inc(read_pos, capacity);
+    } else if (!shared->in_alive) {
+      // if the in is dead and the queue is empty we also close
+	    something_changed = true;
+      shared->out_alive = false;
+      old_size = 0;
+      closed = true;
+    }
+    // only notify waiting threads if we actually did something to
+    // the shared state!
+    if (something_changed) shared->cv.notify_one();
+  }
   return result;
 }
 
