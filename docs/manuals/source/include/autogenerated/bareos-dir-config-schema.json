@@ -107,7 +107,7 @@
         "MaximumConnections": {
           "datatype": "PINT32",
           "code": 0,
-          "default_value": "30",
+          "default_value": "100000",
           "equals": true
         },
         "MaximumConsoleConnections": {

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -93,7 +93,7 @@ static ResourceItem cli_items[] = {
   {"PluginNames", CFG_TYPE_PLUGIN_NAMES, ITEM(res_client, plugin_names), 0, 0, NULL, NULL, NULL},
   {"ScriptsDirectory", CFG_TYPE_DIR, ITEM(res_client, scripts_directory), 0, 0, NULL, NULL, NULL},
   {"MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_client, MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "20", NULL, NULL},
-  {"MaximumConnections", CFG_TYPE_PINT32, ITEM(res_client, MaxConnections), 0, CFG_ITEM_DEFAULT, "42", "15.2.3-", NULL},
+  {"MaximumConnections", CFG_TYPE_PINT32, ITEM(res_client, MaxConnections), 0, CFG_ITEM_DEFAULT, "100000", "15.2.3-", NULL},
   {"Messages", CFG_TYPE_RES, ITEM(res_client, messages), R_MSGS, 0, NULL, NULL, NULL},
   {"SdConnectTimeout", CFG_TYPE_TIME, ITEM(res_client, SDConnectTimeout), 0, CFG_ITEM_DEFAULT, "1800" /* 30 minutes */, NULL, NULL},
   {"HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_client, heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL},
@@ -381,9 +381,7 @@ static void FreeResource(BareosResource* res, int type)
       if (p->pki_signing_key_files) { delete p->pki_signing_key_files; }
       if (p->pki_signers) {
         X509_KEYPAIR* keypair = nullptr;
-        foreach_alist (keypair, p->pki_signers) {
-          CryptoKeypairFree(keypair);
-        }
+        foreach_alist (keypair, p->pki_signers) { CryptoKeypairFree(keypair); }
         delete p->pki_signers;
       }
       if (p->pki_master_key_files) { delete p->pki_master_key_files; }
