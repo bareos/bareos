@@ -35,6 +35,7 @@
 #include "find.h"
 #include "findlib/find_one.h"
 #include "lib/util.h"
+#include "lib/berrno.h"
 
 #if defined(HAVE_DARWIN_OS)
 /* the MacOS linker wants symbols for the destructors of these two types, so we
@@ -553,4 +554,310 @@ void NewOptions(FindFilesPacket* ff, findIncludeExcludeItem* incexe)
   incexe->current_opts = fo;
   incexe->opts_list.prepend(fo);
   ff->fileset->state = state_options;
+}
+
+int SaveInList(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
+{
+  switch (ff_pkt->type) {
+    case FT_LNKSAVED: /* Hard linked, file already saved */
+      Dmsg2(130, "FT_LNKSAVED hard link: %s => %s\n", ff_pkt->fname,
+            ff_pkt->link);
+      break;
+    case FT_REGE:
+      Dmsg1(130, "FT_REGE saving: %s\n", ff_pkt->fname);
+      break;
+    case FT_REG:
+      Dmsg1(130, "FT_REG saving: %s\n", ff_pkt->fname);
+      break;
+    case FT_LNK:
+      Dmsg2(130, "FT_LNK saving: %s -> %s\n", ff_pkt->fname, ff_pkt->link);
+      break;
+    case FT_RESTORE_FIRST:
+      Dmsg1(100, "FT_RESTORE_FIRST saving: %s\n", ff_pkt->fname);
+      break;
+    case FT_PLUGIN_CONFIG:
+      Dmsg1(100, "FT_PLUGIN_CONFIG saving: %s\n", ff_pkt->fname);
+      break;
+    case FT_DIRBEGIN:
+      return 1;                           /* not used */
+    case FT_NORECURSE:
+      Jmsg(jcr, M_INFO, 1,
+           _("     Recursion turned off. Will not descend from %s into %s\n"),
+           ff_pkt->top_fname, ff_pkt->fname);
+      ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
+      break;
+    case FT_NOFSCHG:
+      /* Suppress message for /dev filesystems */
+      if (!IsInFileset(ff_pkt)) {
+        Jmsg(jcr, M_INFO, 1,
+             _("     %s is a different filesystem. Will not descend from %s "
+               "into it.\n"),
+             ff_pkt->fname, ff_pkt->top_fname);
+      }
+      ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
+      break;
+    case FT_INVALIDFS:
+      Jmsg(jcr, M_INFO, 1,
+           _("     Disallowed filesystem. Will not descend from %s into %s\n"),
+           ff_pkt->top_fname, ff_pkt->fname);
+      ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
+      break;
+    case FT_INVALIDDT:
+      Jmsg(jcr, M_INFO, 1,
+           _("     Disallowed drive type. Will not descend into %s\n"),
+           ff_pkt->fname);
+      break;
+    case FT_REPARSE:
+    case FT_JUNCTION:
+    case FT_DIREND:
+      Dmsg1(130, "FT_DIREND: %s\n", ff_pkt->link);
+      break;
+    case FT_SPEC:
+      Dmsg1(130, "FT_SPEC saving: %s\n", ff_pkt->fname);
+      if (S_ISSOCK(ff_pkt->statp.st_mode)) {
+        Jmsg(jcr, M_SKIPPED, 1, _("     Socket file skipped: %s\n"),
+             ff_pkt->fname);
+        return 1;
+      }
+      break;
+    case FT_RAW:
+      Dmsg1(130, "FT_RAW saving: %s\n", ff_pkt->fname);
+      break;
+    case FT_FIFO:
+      Dmsg1(130, "FT_FIFO saving: %s\n", ff_pkt->fname);
+      break;
+    case FT_NOACCESS: {
+      BErrNo be;
+      Jmsg(jcr, M_NOTSAVED, 0, _("     Could not access \"%s\": ERR=%s\n"),
+           ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
+      jcr->JobErrors++;
+      return 1;
+    }
+    case FT_NOFOLLOW: {
+      BErrNo be;
+      Jmsg(jcr, M_NOTSAVED, 0, _("     Could not follow link \"%s\": ERR=%s\n"),
+           ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
+      jcr->JobErrors++;
+      return 1;
+    }
+    case FT_NOSTAT: {
+      BErrNo be;
+      Jmsg(jcr, M_NOTSAVED, 0, _("     Could not stat \"%s\": ERR=%s\n"),
+           ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
+      jcr->JobErrors++;
+      return 1;
+    }
+    case FT_DIRNOCHG:
+    case FT_NOCHG:
+      Jmsg(jcr, M_SKIPPED, 1, _("     Unchanged file skipped: %s\n"),
+           ff_pkt->fname);
+      return 1;
+    case FT_ISARCH:
+      Jmsg(jcr, M_NOTSAVED, 0, _("     Archive file not saved: %s\n"),
+           ff_pkt->fname);
+      return 1;
+    case FT_NOOPEN: {
+      BErrNo be;
+      Jmsg(jcr, M_NOTSAVED, 0,
+           _("     Could not open directory \"%s\": ERR=%s\n"), ff_pkt->fname,
+           be.bstrerror(ff_pkt->ff_errno));
+      jcr->JobErrors++;
+      return 1;
+    }
+    case FT_DELETED:
+      Dmsg1(130, "FT_DELETED: %s\n", ff_pkt->fname);
+      break;
+    default:
+      Jmsg(jcr, M_NOTSAVED, 0, _("     Unknown file type %d; not saved: %s\n"),
+           ff_pkt->type, ff_pkt->fname);
+      jcr->JobErrors++;
+      return 1;
+  }
+
+  try {
+	  ff_pkt->file_list->emplace_back(ff_pkt->fname);
+  } catch (...) {
+	  return 0;
+  }
+  return 1;
+}
+
+std::optional<std::vector<std::vector<std::string>>> ListFiles(JobControlRecord* jcr,
+							       FindFilesPacket* ff)
+{
+	using filelist = std::vector<std::string>;
+	std::vector<filelist> lists;
+  /* This is the new way */
+  findFILESET* fileset = ff->fileset;
+  if (fileset) {
+    int i, j;
+    /*
+     * TODO: We probably need be move the initialization in the fileset loop,
+     * at this place flags options are "concatenated" accross Include {} blocks
+     * (not only Options{} blocks inside a Include{})
+     */
+    ClearAllBits(FO_MAX, ff->flags);
+    for (i = 0; i < fileset->include_list.size(); i++) {
+      dlistString* node;
+      findIncludeExcludeItem* incexe
+          = (findIncludeExcludeItem*)fileset->include_list.get(i);
+      fileset->incexe = incexe;
+
+      // Here, we reset some values between two different Include{}
+      strcpy(ff->VerifyOpts, "V");
+      strcpy(ff->AccurateOpts, "Cmcs");  /* mtime+ctime+size by default */
+      strcpy(ff->BaseJobOpts, "Jspug5"); /* size+perm+user+group+chk  */
+      ff->plugin = NULL;
+      ff->opt_plugin = false;
+
+      /*
+       * By setting all options, we in effect OR the global options which is
+       * what we want.
+       */
+      for (j = 0; j < incexe->opts_list.size(); j++) {
+        findFOPTS* fo;
+
+        fo = (findFOPTS*)incexe->opts_list.get(j);
+        CopyBits(FO_MAX, fo->flags, ff->flags);
+        ff->Compress_algo = fo->Compress_algo;
+        ff->Compress_level = fo->Compress_level;
+        ff->StripPath = fo->StripPath;
+        ff->size_match = fo->size_match;
+        ff->fstypes = fo->fstype;
+        ff->drivetypes = fo->Drivetype;
+        if (fo->plugin != NULL) {
+          ff->plugin = fo->plugin; /* TODO: generate a plugin event ? */
+          ff->opt_plugin = true;
+        }
+        bstrncat(ff->VerifyOpts, fo->VerifyOpts,
+                 sizeof(ff->VerifyOpts)); /* TODO: Concat or replace? */
+        if (fo->AccurateOpts[0]) {
+          bstrncpy(ff->AccurateOpts, fo->AccurateOpts,
+                   sizeof(ff->AccurateOpts));
+        }
+        if (fo->BaseJobOpts[0]) {
+          bstrncpy(ff->BaseJobOpts, fo->BaseJobOpts, sizeof(ff->BaseJobOpts));
+        }
+      }
+      Dmsg4(50, "Verify=<%s> Accurate=<%s> BaseJob=<%s> flags=<%d>\n",
+            ff->VerifyOpts, ff->AccurateOpts, ff->BaseJobOpts, ff->flags);
+
+      try {
+	      ff->file_list = &lists.emplace_back();
+      } catch (...) {
+	      return std::nullopt;
+      }
+      foreach_dlist (node, &incexe->name_list) {
+	      char* fname = (char *) node->c_str();
+        Dmsg1(debuglevel, "F %s\n", fname);
+        ff->top_fname = fname;
+        if (FindOneFile(jcr, ff, SaveInList, ff->top_fname, (dev_t)-1, true)
+            == 0) {
+		return std::nullopt; /* error return */
+        }
+        if (JobCanceled(jcr)) { return std::nullopt; }
+      }
+    }
+  }
+  return lists;
+
+}
+
+int SendFiles(JobControlRecord* jcr,
+              FindFilesPacket* ff,
+	      std::vector<std::vector<std::string>> file_lists,
+              int FileSave(JobControlRecord*, FindFilesPacket* ff_pkt, bool),
+              int PluginSave(JobControlRecord*, FindFilesPacket* ff_pkt, bool))
+{
+  ff->FileSave = FileSave;
+  ff->PluginSave = PluginSave;
+
+  /* This is the new way */
+  findFILESET* fileset = ff->fileset;
+  if (fileset) {
+    int i, j;
+    /*
+     * TODO: We probably need be move the initialization in the fileset loop,
+     * at this place flags options are "concatenated" accross Include {} blocks
+     * (not only Options{} blocks inside a Include{})
+     */
+    ASSERT(file_lists.size() == (std::size_t)fileset->include_list.size());
+    ClearAllBits(FO_MAX, ff->flags);
+    for (i = 0; i < fileset->include_list.size(); i++) {
+      dlistString* node;
+      findIncludeExcludeItem* incexe
+          = (findIncludeExcludeItem*)fileset->include_list.get(i);
+      fileset->incexe = incexe;
+
+      // Here, we reset some values between two different Include{}
+      strcpy(ff->VerifyOpts, "V");
+      strcpy(ff->AccurateOpts, "Cmcs");  /* mtime+ctime+size by default */
+      strcpy(ff->BaseJobOpts, "Jspug5"); /* size+perm+user+group+chk  */
+      ff->plugin = NULL;
+      ff->opt_plugin = false;
+
+      /*
+       * By setting all options, we in effect OR the global options which is
+       * what we want.
+       */
+      for (j = 0; j < incexe->opts_list.size(); j++) {
+        findFOPTS* fo;
+
+        fo = (findFOPTS*)incexe->opts_list.get(j);
+        CopyBits(FO_MAX, fo->flags, ff->flags);
+        ff->Compress_algo = fo->Compress_algo;
+        ff->Compress_level = fo->Compress_level;
+        ff->StripPath = fo->StripPath;
+        ff->size_match = fo->size_match;
+        ff->fstypes = fo->fstype;
+        ff->drivetypes = fo->Drivetype;
+        if (fo->plugin != NULL) {
+          ff->plugin = fo->plugin; /* TODO: generate a plugin event ? */
+          ff->opt_plugin = true;
+        }
+        bstrncat(ff->VerifyOpts, fo->VerifyOpts,
+                 sizeof(ff->VerifyOpts)); /* TODO: Concat or replace? */
+        if (fo->AccurateOpts[0]) {
+          bstrncpy(ff->AccurateOpts, fo->AccurateOpts,
+                   sizeof(ff->AccurateOpts));
+        }
+        if (fo->BaseJobOpts[0]) {
+          bstrncpy(ff->BaseJobOpts, fo->BaseJobOpts, sizeof(ff->BaseJobOpts));
+        }
+      }
+      Dmsg4(50, "Verify=<%s> Accurate=<%s> BaseJob=<%s> flags=<%d>\n",
+            ff->VerifyOpts, ff->AccurateOpts, ff->BaseJobOpts, ff->flags);
+      SetBit(FO_NO_RECURSION, ff->flags);
+
+      std::vector<std::string>& list = file_lists[i];
+      for (auto& name : list) {
+	      // ff->top_fname is const in everything but type
+	      // adding const there would change a lot of function signatures
+	      char* fname = (char *)name.c_str();
+        Dmsg1(debuglevel, "F %s\n", fname);
+        ff->top_fname = (char *) fname;
+        if (FindOneFile(jcr, ff, OurCallback, ff->top_fname, (dev_t)-1, false)
+            == 0) {
+          return 0; /* error return */
+        }
+        if (JobCanceled(jcr)) { return 0; }
+      }
+
+      foreach_dlist (node, &incexe->plugin_list) {
+        char* fname = node->c_str();
+
+        if (!PluginSave) {
+          Jmsg(jcr, M_FATAL, 0, _("Plugin: \"%s\" not found.\n"), fname);
+          return 0;
+        }
+        Dmsg1(debuglevel, "PluginCommand: %s\n", fname);
+        ff->top_fname = fname;
+        ff->cmd_plugin = true;
+        PluginSave(jcr, ff, true);
+        ff->cmd_plugin = false;
+        if (JobCanceled(jcr)) { return 0; }
+      }
+    }
+  }
+  return 1;
 }

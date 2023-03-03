@@ -74,16 +74,10 @@ const bool have_xattr = false;
 /* Forward referenced functions */
 static bool ShouldStripPaths(const FindFilesPacket* ff_pkt);
 static bool do_strip(int count, const char* in, char* out);
-int SaveFile2(JobControlRecord* jcr,
-              FindFilesPacket* ff_pkt,
-              bool has_file_data,
-              bool top_level);
+bool do_strip(int count, const char* in, char* out);
 int SaveFileInList(JobControlRecord* jcr,
                    FindFilesPacket* ff_pkt,
                    bool top_level);
-int PluginSaveInList(JobControlRecord* jcr,
-                     FindFilesPacket* ff_pkt,
-                     bool top_level);
 static int send_data(JobControlRecord* jcr,
                      int stream,
                      FindFilesPacket* ff_pkt,
@@ -117,6 +111,7 @@ FindFilesPacket* DeepCopyImportant(FindFilesPacket* ff_pkt)
   packet->ignoredir_fname = NULL;
   return packet;
 }
+
 /**
  * Find all the requested files and send them
  * to the Storage daemon.
@@ -188,23 +183,14 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
     jcr->fd_impl->xattr_data->u.build->content = GetPoolMemory(PM_MESSAGE);
   }
 
-  std::vector<saved_ffp> files;
-  jcr->fd_impl->ff->file_list = &files;
-  // Subroutine SaveFile() is called for each file
-  if (!FindFiles(jcr, (FindFilesPacket*)jcr->fd_impl->ff, SaveFileInList,
-                 PluginSave)) {
+  std::optional FileLists = ListFiles(jcr, jcr->fd_impl->ff);
+  jcr->fd_impl->ff->linkhash = NULL;
+  if (!FileLists || !SendFiles(jcr, jcr->fd_impl->ff, std::move(*FileLists),
+			       SaveFile, PluginSave))
+  {
     ok = false; /* error */
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   }
-
-  for (auto [plugin, has_file_data, top_level, file_ff] : files) {
-    if (plugin) {
-      PluginSave(jcr, file_ff, top_level);
-    } else {
-      SaveFile2(jcr, file_ff, top_level, has_file_data);
-    }
-  }
-  // jcr->fd_impl->ff->linkhash = NULL;
 
   if (have_acl && jcr->fd_impl->acl_data->u.build->nr_errors > 0) {
     Jmsg(jcr, M_WARNING, 0,
@@ -527,224 +513,6 @@ static inline bool DoBackupXattr(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
   }
 
   return true;
-}
-
-int SaveFile2(JobControlRecord* jcr,
-              FindFilesPacket* ff_pkt,
-              bool,
-              bool has_file_data)
-{
-  b_save_ctx bsctx;
-  bool do_plugin_set = false;
-  bool plugin_started = false;
-  int data_stream;
-  int rtnstat = 0;
-  bool do_read = false;
-  save_pkt sp; /* use by option plugin */
-  BareosSocket* sd = jcr->store_bsock;
-  Dmsg1(130, "filed: sending %s to stored\n", ff_pkt->fname);
-
-  // Setup backup signing context.
-  memset(&bsctx, 0, sizeof(b_save_ctx));
-  bsctx.digest_stream = STREAM_NONE;
-  bsctx.jcr = jcr;
-  bsctx.ff_pkt = ff_pkt;
-
-  // Digests and encryption are only useful if there's file data
-  if (has_file_data) {
-    if (!SetupEncryptionDigests(bsctx)) { goto good_rtn; }
-  }
-
-  // Initialize the file descriptor we use for data and other streams.
-  binit(&ff_pkt->bfd);
-  if (BitIsSet(FO_PORTABLE, ff_pkt->flags)) {
-    SetPortableBackup(&ff_pkt->bfd); /* disable Win32 BackupRead() */
-  }
-
-  // Option and cmd plugin are not compatible together
-  if (ff_pkt->cmd_plugin) {
-    do_plugin_set = true;
-  } else if (ff_pkt->opt_plugin) {
-    // Ask the option plugin what to do with this file
-    switch (PluginOptionHandleFile(jcr, ff_pkt, &sp)) {
-      case bRC_OK:
-        Dmsg2(10, "Option plugin %s will be used to backup %s\n",
-              ff_pkt->plugin, ff_pkt->fname);
-        jcr->opt_plugin = true;
-        jcr->fd_impl->plugin_sp = &sp;
-        PluginUpdateFfPkt(ff_pkt, &sp);
-        do_plugin_set = true;
-        break;
-      case bRC_Skip:
-        Dmsg2(10, "Option plugin %s decided to skip %s\n", ff_pkt->plugin,
-              ff_pkt->fname);
-        goto good_rtn;
-      case bRC_Core:
-        Dmsg2(10, "Option plugin %s decided to let bareos handle %s\n",
-              ff_pkt->plugin, ff_pkt->fname);
-        break;
-      default:
-        goto bail_out;
-    }
-  }
-
-  if (do_plugin_set) {
-    // Tell bfile that it needs to call plugin
-    if (!SetCmdPlugin(&ff_pkt->bfd, jcr)) { goto bail_out; }
-    SendPluginName(jcr, sd, true); /* signal start of plugin data */
-    plugin_started = true;
-  }
-
-  // Send attributes -- must be done after binit()
-  if (!EncodeAndSendAttributes(jcr, ff_pkt, data_stream)) { goto bail_out; }
-
-  // Meta data only for restore object
-  if (IS_FT_OBJECT(ff_pkt->type)) { goto good_rtn; }
-
-  // Meta data only for deleted files
-  if (ff_pkt->type == FT_DELETED) { goto good_rtn; }
-
-  // Set up the encryption context and send the session data to the SD
-  if (has_file_data && jcr->fd_impl->crypto.pki_encrypt) {
-    if (!CryptoSessionSend(jcr, sd)) { goto bail_out; }
-  }
-
-  /* For a command plugin use the setting from the plugins savepkt no_read field
-   * which is saved in the ff_pkt->no_read variable. do_read is the inverted
-   * value of this variable as no_read == TRUE means do_read == FALSE */
-  if (ff_pkt->cmd_plugin) {
-    do_read = !ff_pkt->no_read;
-  } else {
-    /* Open any file with data that we intend to save, then save it.
-     *
-     * Note, if is_win32_backup, we must open the Directory so that
-     * the BackupRead will save its permissions and ownership streams. */
-    if (ff_pkt->type != FT_LNKSAVED && S_ISREG(ff_pkt->statp.st_mode)) {
-#ifdef HAVE_WIN32
-      do_read = !IsPortableBackup(&ff_pkt->bfd) || ff_pkt->statp.st_size > 0;
-#else
-      do_read = ff_pkt->statp.st_size > 0;
-#endif
-    } else if (ff_pkt->type == FT_RAW || ff_pkt->type == FT_FIFO
-               || ff_pkt->type == FT_REPARSE || ff_pkt->type == FT_JUNCTION
-               || (!IsPortableBackup(&ff_pkt->bfd)
-                   && ff_pkt->type == FT_DIREND)) {
-      do_read = true;
-    }
-  }
-
-  Dmsg2(150, "type=%d do_read=%d\n", ff_pkt->type, do_read);
-  if (do_read) {
-    btimer_t* tid;
-    int noatime;
-
-    if (ff_pkt->type == FT_FIFO) {
-      tid = start_thread_timer(jcr, pthread_self(), 60);
-    } else {
-      tid = NULL;
-    }
-
-    noatime = BitIsSet(FO_NOATIME, ff_pkt->flags) ? O_NOATIME : 0;
-    ff_pkt->bfd.reparse_point
-        = (ff_pkt->type == FT_REPARSE || ff_pkt->type == FT_JUNCTION);
-
-    if (bopen(&ff_pkt->bfd, ff_pkt->fname, O_RDONLY | O_BINARY | noatime, 0,
-              ff_pkt->statp.st_rdev)
-        < 0) {
-      ff_pkt->ff_errno = errno;
-      BErrNo be;
-      Jmsg(jcr, M_NOTSAVED, 0, _("     Cannot open \"%s\": ERR=%s.\n"),
-           ff_pkt->fname, be.bstrerror());
-      jcr->JobErrors++;
-      if (tid) {
-        StopThreadTimer(tid);
-        tid = NULL;
-      }
-      goto good_rtn;
-    }
-
-    if (tid) {
-      StopThreadTimer(tid);
-      tid = NULL;
-    }
-
-    int status = send_data(jcr, data_stream, ff_pkt, bsctx.digest,
-                           bsctx.signing_digest);
-
-    if (BitIsSet(FO_CHKCHANGES, ff_pkt->flags)) { HasFileChanged(jcr, ff_pkt); }
-
-    bclose(&ff_pkt->bfd);
-
-    if (!status) { goto bail_out; }
-  }
-
-  if (have_darwin_os) {
-    // Regular files can have resource forks and Finder Info
-    if (ff_pkt->type != FT_LNKSAVED
-        && (S_ISREG(ff_pkt->statp.st_mode)
-            && BitIsSet(FO_HFSPLUS, ff_pkt->flags))) {
-      if (!SaveRsrcAndFinder(bsctx)) { goto bail_out; }
-    }
-  }
-
-  // Save ACLs when requested and available for anything not being a symlink.
-  if (have_acl) {
-    if (BitIsSet(FO_ACL, ff_pkt->flags) && ff_pkt->type != FT_LNK) {
-      if (!DoBackupAcl(jcr, ff_pkt)) { goto bail_out; }
-    }
-  }
-
-  // Save Extended Attributes when requested and available for all files.
-  if (have_xattr) {
-    if (BitIsSet(FO_XATTR, ff_pkt->flags)) {
-      if (!DoBackupXattr(jcr, ff_pkt)) { goto bail_out; }
-    }
-  }
-
-  // Terminate the signing digest and send it to the Storage daemon
-  if (bsctx.signing_digest) {
-    if (!TerminateSigningDigest(bsctx)) { goto bail_out; }
-  }
-
-  // Terminate any digest and send it to Storage daemon
-  if (bsctx.digest) {
-    if (!TerminateDigest(bsctx)) { goto bail_out; }
-  }
-
-  // Check if original file has a digest, and send it
-  if (ff_pkt->type == FT_LNKSAVED && ff_pkt->linkhash) {
-	  CurLink* hl = lookup_hardlink(jcr, ff_pkt, ff_pkt->statp.st_ino,
-				      ff_pkt->statp.st_dev);
-	  if (hl && !bstrcmp(ff_pkt->fname, hl->name))
-	  {
-		  Dmsg2(300, "Link %s digest %d\n", ff_pkt->fname, hl->digest_len);
-		  sd->fsend("%ld %d 0", jcr->JobFiles, hl->digest_stream);
-
-		  sd->msg = CheckPoolMemorySize(sd->msg, hl->digest_len);
-		  memcpy(sd->msg, hl->digest, hl->digest_len);
-		  sd->message_length = hl->digest_len;
-		  sd->send();
-
-		  sd->signal(BNET_EOD); /* end of hardlink record */
-	  }
-  }
-
-good_rtn:
-  rtnstat = jcr->IsCanceled() ? 0 : 1; /* good return if not canceled */
-
-bail_out:
-  if (jcr->IsIncomplete() || jcr->IsCanceled()) { rtnstat = 0; }
-  if (plugin_started) {
-    SendPluginName(jcr, sd, false); /* signal end of plugin data */
-  }
-  if (ff_pkt->opt_plugin) {
-    jcr->fd_impl->plugin_sp = NULL; /* sp is local to this function */
-    jcr->opt_plugin = false;
-  }
-  if (bsctx.digest) { CryptoDigestFree(bsctx.digest); }
-  if (bsctx.signing_digest) { CryptoDigestFree(bsctx.signing_digest); }
-
-  return rtnstat;
 }
 
 /**
@@ -1093,161 +861,6 @@ bail_out:
   return rtnstat;
 }
 
-int PluginSaveInList(JobControlRecord* jcr,
-                     FindFilesPacket* ff_pkt,
-                     bool top_level)
-{
-  saved_ffp New;
-  New.plugin = true;
-  New.copy = DeepCopyImportant(ff_pkt);
-  New.has_file_data = false;  // not used?
-  New.top_level = top_level;  // maybe unused
-  ff_pkt->file_list->push_back(New);
-  return !JobCanceled(jcr);
-}
-
-int SaveFileInList(JobControlRecord* jcr,
-                   FindFilesPacket* ff_pkt,
-                   bool top_level)
-{
-  bool has_file_data = false;
-
-  (void)has_file_data;
-  if (jcr->IsCanceled() || jcr->IsIncomplete()) { return 0; }
-
-  jcr->fd_impl->num_files_examined++; /* bump total file count */
-
-  switch (ff_pkt->type) {
-    case FT_LNKSAVED: /* Hard linked, file already saved */
-      Dmsg2(130, "FT_LNKSAVED hard link: %s => %s\n", ff_pkt->fname,
-            ff_pkt->link);
-      break;
-    case FT_REGE:
-      Dmsg1(130, "FT_REGE saving: %s\n", ff_pkt->fname);
-      has_file_data = true;
-      break;
-    case FT_REG:
-      Dmsg1(130, "FT_REG saving: %s\n", ff_pkt->fname);
-      has_file_data = true;
-      break;
-    case FT_LNK:
-      Dmsg2(130, "FT_LNK saving: %s -> %s\n", ff_pkt->fname, ff_pkt->link);
-      break;
-    case FT_RESTORE_FIRST:
-      Dmsg1(100, "FT_RESTORE_FIRST saving: %s\n", ff_pkt->fname);
-      break;
-    case FT_PLUGIN_CONFIG:
-      Dmsg1(100, "FT_PLUGIN_CONFIG saving: %s\n", ff_pkt->fname);
-      break;
-    case FT_DIRBEGIN:
-      jcr->fd_impl->num_files_examined--; /* correct file count */
-      return 1;                           /* not used */
-    case FT_NORECURSE:
-      Jmsg(jcr, M_INFO, 1,
-           _("     Recursion turned off. Will not descend from %s into %s\n"),
-           ff_pkt->top_fname, ff_pkt->fname);
-      ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
-      break;
-    case FT_NOFSCHG:
-      /* Suppress message for /dev filesystems */
-      if (!IsInFileset(ff_pkt)) {
-        Jmsg(jcr, M_INFO, 1,
-             _("     %s is a different filesystem. Will not descend from %s "
-               "into it.\n"),
-             ff_pkt->fname, ff_pkt->top_fname);
-      }
-      ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
-      break;
-    case FT_INVALIDFS:
-      Jmsg(jcr, M_INFO, 1,
-           _("     Disallowed filesystem. Will not descend from %s into %s\n"),
-           ff_pkt->top_fname, ff_pkt->fname);
-      ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
-      break;
-    case FT_INVALIDDT:
-      Jmsg(jcr, M_INFO, 1,
-           _("     Disallowed drive type. Will not descend into %s\n"),
-           ff_pkt->fname);
-      break;
-    case FT_REPARSE:
-    case FT_JUNCTION:
-    case FT_DIREND:
-      Dmsg1(130, "FT_DIREND: %s\n", ff_pkt->link);
-      break;
-    case FT_SPEC:
-      Dmsg1(130, "FT_SPEC saving: %s\n", ff_pkt->fname);
-      if (S_ISSOCK(ff_pkt->statp.st_mode)) {
-        Jmsg(jcr, M_SKIPPED, 1, _("     Socket file skipped: %s\n"),
-             ff_pkt->fname);
-        return 1;
-      }
-      break;
-    case FT_RAW:
-      Dmsg1(130, "FT_RAW saving: %s\n", ff_pkt->fname);
-      has_file_data = true;
-      break;
-    case FT_FIFO:
-      Dmsg1(130, "FT_FIFO saving: %s\n", ff_pkt->fname);
-      break;
-    case FT_NOACCESS: {
-      BErrNo be;
-      Jmsg(jcr, M_NOTSAVED, 0, _("     Could not access \"%s\": ERR=%s\n"),
-           ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
-      jcr->JobErrors++;
-      return 1;
-    }
-    case FT_NOFOLLOW: {
-      BErrNo be;
-      Jmsg(jcr, M_NOTSAVED, 0, _("     Could not follow link \"%s\": ERR=%s\n"),
-           ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
-      jcr->JobErrors++;
-      return 1;
-    }
-    case FT_NOSTAT: {
-      BErrNo be;
-      Jmsg(jcr, M_NOTSAVED, 0, _("     Could not stat \"%s\": ERR=%s\n"),
-           ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
-      jcr->JobErrors++;
-      return 1;
-    }
-    case FT_DIRNOCHG:
-    case FT_NOCHG:
-      Jmsg(jcr, M_SKIPPED, 1, _("     Unchanged file skipped: %s\n"),
-           ff_pkt->fname);
-      return 1;
-    case FT_ISARCH:
-      Jmsg(jcr, M_NOTSAVED, 0, _("     Archive file not saved: %s\n"),
-           ff_pkt->fname);
-      return 1;
-    case FT_NOOPEN: {
-      BErrNo be;
-      Jmsg(jcr, M_NOTSAVED, 0,
-           _("     Could not open directory \"%s\": ERR=%s\n"), ff_pkt->fname,
-           be.bstrerror(ff_pkt->ff_errno));
-      jcr->JobErrors++;
-      return 1;
-    }
-    case FT_DELETED:
-      Dmsg1(130, "FT_DELETED: %s\n", ff_pkt->fname);
-      break;
-    default:
-      Jmsg(jcr, M_NOTSAVED, 0, _("     Unknown file type %d; not saved: %s\n"),
-           ff_pkt->type, ff_pkt->fname);
-      jcr->JobErrors++;
-      return 1;
-  }
-
-  Dmsg1(130, "filed: saving %s to list\n", ff_pkt->fname);
-
-  saved_ffp New;
-  New.plugin = false;
-  New.copy = DeepCopyImportant(ff_pkt);
-  New.has_file_data = has_file_data;
-  New.top_level = top_level;  // maybe unused
-  ff_pkt->file_list->push_back(New);
-
-  return !JobCanceled(jcr);
-}
 /**
  * Handle the data just read and send it to the SD after doing any
  * postprocessing needed.
