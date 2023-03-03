@@ -743,6 +743,36 @@ bool ListFiles(JobControlRecord* jcr,
   }
 }
 
+int SendPluginInfo(JobControlRecord* jcr,
+		   FindFilesPacket* ff,
+		   int PluginSave(JobControlRecord*, FindFilesPacket*, bool))
+{
+	findFILESET* fileset = ff->fileset;
+    for (int i = 0; i < fileset->include_list.size(); i++) {
+      dlistString* node;
+      findIncludeExcludeItem* incexe
+          = (findIncludeExcludeItem*)fileset->include_list.get(i);
+      fileset->incexe = incexe;
+      SetupFlags(ff, incexe);
+      foreach_dlist (node, &incexe->plugin_list) {
+        char* fname = node->c_str();
+
+        if (!PluginSave) {
+          Jmsg(jcr, M_FATAL, 0, _("Plugin: \"%s\" not found.\n"), fname);
+          return 0;
+        }
+        Dmsg1(debuglevel, "PluginCommand: %s\n", fname);
+        ff->top_fname = fname;
+        ff->cmd_plugin = true;
+        PluginSave(jcr, ff, true);
+        ff->cmd_plugin = false;
+        if (JobCanceled(jcr)) { return 0; }
+      }
+    }
+
+    return 1;
+}
+
 
 int SendFiles(JobControlRecord* jcr,
               FindFilesPacket* ff,
@@ -770,8 +800,9 @@ int SendFiles(JobControlRecord* jcr,
      * (not only Options{} blocks inside a Include{}) */
     ASSERT(outs.size() == (std::size_t)fileset->include_list.size());
     ClearAllBits(FO_MAX, ff->flags);
+    SendPluginInfo(jcr, ff, PluginSave);
+    ClearAllBits(FO_MAX, ff->flags);
     for (int i = 0; i < fileset->include_list.size(); i++) {
-      dlistString* node;
       findIncludeExcludeItem* incexe
           = (findIncludeExcludeItem*)fileset->include_list.get(i);
       fileset->incexe = incexe;
@@ -799,21 +830,6 @@ int SendFiles(JobControlRecord* jcr,
             == 0) {
           return 0; /* error return */
         }
-        if (JobCanceled(jcr)) { return 0; }
-      }
-
-      foreach_dlist (node, &incexe->plugin_list) {
-        char* fname = node->c_str();
-
-        if (!PluginSave) {
-          Jmsg(jcr, M_FATAL, 0, _("Plugin: \"%s\" not found.\n"), fname);
-          return 0;
-        }
-        Dmsg1(debuglevel, "PluginCommand: %s\n", fname);
-        ff->top_fname = fname;
-        ff->cmd_plugin = true;
-        PluginSave(jcr, ff, true);
-        ff->cmd_plugin = false;
         if (JobCanceled(jcr)) { return 0; }
       }
     }
