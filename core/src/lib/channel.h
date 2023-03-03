@@ -45,12 +45,12 @@ template <typename T> struct out {
   void close();
   ~out();
 
-  out(std::shared_ptr<data<T>> shared_);
+  out(std::shared_ptr<data<T>> shared);
   out(const out&) = delete;
   out& operator=(out&) = delete;
 
-  out(out&& moved);
-  out& operator=(out&& moved);
+  out(out&& moved) = default;
+  out& operator=(out&& moved) = default;
 
  private:
   std::shared_ptr<data<T>> shared;
@@ -65,9 +65,12 @@ template <typename T> struct in {
   bool put(T&& val);
   void close();
   ~in();
-  in(std::shared_ptr<data<T>> shared_);
+  in(std::shared_ptr<data<T>> shared);
   in(const in&) = delete;
-  in(in&& moved);
+  in& operator=(in&) = delete;
+
+  in(in&& moved) = default;
+  in& operator=(in&& moved) = default;
 
  private:
   std::shared_ptr<data<T>> shared;
@@ -157,26 +160,6 @@ out<T>::out(std::shared_ptr<data<T>> shared_)
 {
   std::unique_lock lock(shared->mutex);
   shared->out_alive = true;
-}
-
-template <typename T>
-out<T>::out(out&& moved)
-    : shared(std::move(moved.shared))
-    , read_pos(moved.read_pos)
-    , old_size(moved.old_size)
-    , capacity(moved.capacity)
-    , closed(moved.closed)
-{
-}
-
-template <typename T> out<T>& out<T>::operator=(out&& moved)
-{
-  shared = std::move(moved.shared);
-  read_pos = moved.read_pos;
-  capacity = moved.capacity;
-  old_size = moved.old_size;
-  closed = moved.closed;
-  return *this;
 }
 
 template <typename T> bool in<T>::put(const T& val)
@@ -281,16 +264,6 @@ in<T>::in(std::shared_ptr<data<T>> shared_)
 {
   std::unique_lock lock(shared->mutex);
   shared->in_alive = true;
-}
-
-template <typename T>
-in<T>::in(in&& moved)
-    : shared(std::move(moved.shared))
-    , write_pos(moved.write_pos)
-    , old_size(moved.old_size)
-    , capacity(moved.capacity)
-    , closed(moved.closed)
-{
 }
 
 template <typename T>
