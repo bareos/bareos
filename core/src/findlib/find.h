@@ -191,10 +191,11 @@ using LinkHash
 
 
 struct FindFilesPacket;
-struct saved_ffp
-{
-	bool plugin;
-	FindFilesPacket* copy;
+struct saved_ffp {
+  bool plugin;
+  bool has_file_data;
+  bool top_level;
+  FindFilesPacket* copy;
 };
 /**
  * Definition of the FindFiles packet passed as the
@@ -202,7 +203,7 @@ struct saved_ffp
  */
 /* clang-format off */
 struct FindFilesPacket {
-	std::vector<saved_ffp>* file_list{nullptr};
+  std::vector<saved_ffp>* file_list{nullptr}; /**< temporary storage for past ffps */
   char* top_fname{nullptr};          /**< Full filename before descending */
   char* fname{nullptr};              /**< Full filename */
   char* link{nullptr};               /**< Link if file linked */
