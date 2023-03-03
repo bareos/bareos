@@ -557,9 +557,9 @@ void NewOptions(FindFilesPacket* ff, findIncludeExcludeItem* incexe)
   ff->fileset->state = state_options;
 }
 
-auto SaveInList(channel::in<stated_file>& in)
+auto SaveInList(channel::in<stated_file>& in, std::atomic<std::size_t>& num_skipped)
 {
-  return [&in](JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool) {
+  return [&in, &num_skipped](JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool) {
     switch (ff_pkt->type) {
       case FT_LNKSAVED: /* Hard linked, file already saved */
         Dmsg2(130, "FT_LNKSAVED hard link: %s => %s\n", ff_pkt->fname,
@@ -581,6 +581,7 @@ auto SaveInList(channel::in<stated_file>& in)
         Dmsg1(100, "FT_PLUGIN_CONFIG saving: %s\n", ff_pkt->fname);
         break;
       case FT_DIRBEGIN:
+	/* this is skipped, so num_skipped is not increased */
         return 1; /* not used */
       case FT_NORECURSE:
         Jmsg(jcr, M_INFO, 1,
@@ -620,6 +621,7 @@ auto SaveInList(channel::in<stated_file>& in)
         if (S_ISSOCK(ff_pkt->statp.st_mode)) {
           Jmsg(jcr, M_SKIPPED, 1, _("     Socket file skipped: %s\n"),
                ff_pkt->fname);
+	  num_skipped++;
           return 1;
         }
         break;
@@ -634,6 +636,7 @@ auto SaveInList(channel::in<stated_file>& in)
         Jmsg(jcr, M_NOTSAVED, 0, _("     Could not access \"%s\": ERR=%s\n"),
              ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
         jcr->JobErrors++;
+	num_skipped++;
         return 1;
       }
       case FT_NOFOLLOW: {
@@ -642,6 +645,7 @@ auto SaveInList(channel::in<stated_file>& in)
              _("     Could not follow link \"%s\": ERR=%s\n"), ff_pkt->fname,
              be.bstrerror(ff_pkt->ff_errno));
         jcr->JobErrors++;
+	num_skipped++;
         return 1;
       }
       case FT_NOSTAT: {
@@ -649,12 +653,14 @@ auto SaveInList(channel::in<stated_file>& in)
         Jmsg(jcr, M_NOTSAVED, 0, _("     Could not stat \"%s\": ERR=%s\n"),
              ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
         jcr->JobErrors++;
+	num_skipped++;
         return 1;
       }
       case FT_DIRNOCHG:
       case FT_NOCHG:
         Jmsg(jcr, M_SKIPPED, 1, _("     Unchanged file skipped: %s\n"),
              ff_pkt->fname);
+	num_skipped++;
         return 1;
       case FT_ISARCH:
         Jmsg(jcr, M_NOTSAVED, 0, _("     Archive file not saved: %s\n"),
@@ -666,6 +672,7 @@ auto SaveInList(channel::in<stated_file>& in)
              _("     Could not open directory \"%s\": ERR=%s\n"), ff_pkt->fname,
              be.bstrerror(ff_pkt->ff_errno));
         jcr->JobErrors++;
+	num_skipped++;
         return 1;
       }
       case FT_DELETED:
@@ -676,27 +683,30 @@ auto SaveInList(channel::in<stated_file>& in)
              _("     Unknown file type %d; not saved: %s\n"), ff_pkt->type,
              ff_pkt->fname);
         jcr->JobErrors++;
+	num_skipped++;
         return 1;
     }
 
     try {
 	    in.put({ff_pkt->fname, ff_pkt->statp});
     } catch (...) {
+      num_skipped++;
       return 0;
     }
     return 1;
   };
 }
 
-
-bool ListFiles(JobControlRecord* jcr,
-               findFILESET* fileset,
-               bool incremental,
-	       time_t save_time,
-	       std::optional<bool (*)(JobControlRecord*, FindFilesPacket*)> check_changed,
-               std::vector<channel::in<stated_file>> ins)
+std::optional<std::size_t>
+ListFiles(JobControlRecord* jcr,
+	  findFILESET* fileset,
+	  bool incremental,
+	  time_t save_time,
+	  std::optional<bool (*)(JobControlRecord*, FindFilesPacket*)> check_changed,
+	  std::vector<channel::in<stated_file>> ins)
 {
   ASSERT(ins.size() == (std::size_t)fileset->include_list.size());
+  std::atomic<std::size_t> num_skipped{0};
   /* This is the new way */
   if (fileset) {
     struct ff_cleanup {
@@ -723,7 +733,7 @@ bool ListFiles(JobControlRecord* jcr,
             ff->VerifyOpts, ff->AccurateOpts, ff->BaseJobOpts, ff->flags);
       channel::in in = std::move(ins[i]);
 
-      auto callback = CreateCallback(SaveInList(in));
+      auto callback = CreateCallback(SaveInList(in, num_skipped));
       foreach_dlist (node, &incexe->name_list) {
         char* fname = (char*)node->c_str();
         Dmsg1(debuglevel, "F %s\n", fname);
@@ -733,13 +743,13 @@ bool ListFiles(JobControlRecord* jcr,
             == 0) {
           return false; /* error return */
         }
-        if (JobCanceled(jcr)) { return false; }
+        if (JobCanceled(jcr)) { return std::nullopt; }
       }
     }
 
-    return true;
+    return std::optional{num_skipped.load()};
   } else {
-    return false;
+    return std::nullopt;
   }
 }
 

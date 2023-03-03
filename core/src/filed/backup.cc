@@ -201,7 +201,7 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
     jcr->fd_impl->xattr_data->u.build->content = GetPoolMemory(PM_MESSAGE);
   }
 
-  bool list_ok = true;
+  std::optional<std::size_t> list_ok = std::nullopt;
   bool send_ok = true;
   try {
   // buffer size chosen at random
@@ -212,8 +212,8 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
 	 time_t save_time,
 	 std::optional<bool (*)(JobControlRecord*, FindFilesPacket*)> chk,
 	 auto ins,
-         bool& ok) { ok = ListFiles(jcr, ff, incremental, save_time, chk,
-				    std::move(ins)); },
+         std::optional<std::size_t>& ok) { ok = ListFiles(jcr, ff, incremental, save_time, chk,
+							  std::move(ins)); },
       jcr,
       jcr->fd_impl->ff->fileset,
       jcr->fd_impl->incremental,
@@ -230,13 +230,18 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
   } catch (const std::exception& ex)
   {
 	  send_ok = false;
-	  list_ok = false;
+	  list_ok = std::nullopt;
 	  Dmsg1(500, "Uncaught exception! Aborting.\n Message: %s\n", ex.what());
   } catch (...)
   {
 	  send_ok = false;
-	  list_ok = false;
+	  list_ok = std::nullopt;
 	  Dmsg1(500, "Uncaught unknown exception! Aborting.\n");
+  }
+
+  if (list_ok)
+  {
+	  jcr->fd_impl->num_files_examined += list_ok.value();
   }
 
   // join synchronizes threads, so its safe to read from list_ok now!
