@@ -824,7 +824,7 @@ int SendFiles(JobControlRecord* jcr,
 		    while ((file = list.get())) {
 			    // ff->top_fname is const in everything but type
 			    // adding const there would change a lot of function signatures
-			    char* fname = (char*)file->first.c_str();
+			    char* fname = file->first.data();
 			    Dmsg1(debuglevel, "F %s\n", fname);
 			    ff->top_fname = (char*)fname;
 			    ff->statp = file->second;
