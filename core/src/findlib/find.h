@@ -169,12 +169,20 @@ struct HfsPlusInfo {
   off_t rsrclength{0};     /**< Size of resource fork */
 };
 
+struct FindFilesPacket;
+struct saved_ffp
+{
+	bool plugin;
+	FindFilesPacket* copy;
+};
+
 /**
  * Definition of the FindFiles packet passed as the
  * first argument to the FindFiles callback subroutine.
  */
 /* clang-format off */
 struct FindFilesPacket {
+	std::vector<saved_ffp>* file_list{nullptr};
   char* top_fname{nullptr};          /**< Full filename before descending */
   char* fname{nullptr};              /**< Full filename */
   char* link{nullptr};               /**< Link if file linked */
