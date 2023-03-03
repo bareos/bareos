@@ -205,8 +205,6 @@ struct FindFilesPacket {
   char* object{nullptr};             /**< Restore object */
   char* plugin{nullptr};             /**< Current Options{Plugin=} name */
   POOLMEM* sys_fname{nullptr};       /**< System filename */
-  POOLMEM* fname_save{nullptr};      /**< Save when stripping path */
-  POOLMEM* link_save{nullptr};       /**< Save when stripping path */
   POOLMEM* ignoredir_fname{nullptr}; /**< Used to ignore directories */
   char* digest{nullptr};  /**< Set to file digest when the file is a hardlink */
   struct stat statp{};    /**< Stat packet */
