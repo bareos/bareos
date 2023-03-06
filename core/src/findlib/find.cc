@@ -697,6 +697,49 @@ auto SaveInList(channel::in<stated_file>& in, std::atomic<std::size_t>& num_skip
   };
 }
 
+#include <thread>
+
+class bomb {
+public:
+	bomb(std::atomic<bool>& ref) : target(ref), defused(false) {}
+	void defuse() { defused = true; }
+	~bomb() { if (!defused) { target = false; } }
+private:
+	std::atomic<bool>& target;
+	bool defused;
+};
+
+static void ListFromIncexe(JobControlRecord* jcr,
+			   findFILESET* fileset,
+			   FindFilesPacket* ff,
+			   findIncludeExcludeItem* incexe,
+			   channel::in<stated_file> in,
+			   std::atomic<bool>& all_ok,
+			   std::atomic<std::size_t>& num_skipped)
+{
+	bomb b(all_ok);
+	dlistString* node;
+	fileset->incexe = incexe;
+	SetupFlags(ff, incexe);
+
+	Dmsg4(50, "Verify=<%s> Accurate=<%s> BaseJob=<%s> flags=<%d>\n",
+	      ff->VerifyOpts, ff->AccurateOpts, ff->BaseJobOpts, ff->flags);
+
+	auto callback = CreateCallback(SaveInList(in, num_skipped));
+	foreach_dlist (node, &incexe->name_list) {
+		char* fname = (char*)node->c_str();
+		Dmsg1(debuglevel, "F %s\n", fname);
+		ff->top_fname = fname;
+		if (FindOneFile(jcr, ff, callback,
+				ff->top_fname, (dev_t)-1, true)
+		    == 0) {
+			return;
+		}
+		if (JobCanceled(jcr)) { return; }
+	}
+	b.defuse();
+}
+
 std::optional<std::size_t>
 ListFiles(JobControlRecord* jcr,
 	  findFILESET* fileset,
@@ -707,47 +750,45 @@ ListFiles(JobControlRecord* jcr,
 {
   ASSERT(ins.size() == (std::size_t)fileset->include_list.size());
   std::atomic<std::size_t> num_skipped{0};
+  std::atomic<bool> all_ok = true;
   /* This is the new way */
   if (fileset) {
     struct ff_cleanup {
       void operator()(FindFilesPacket* ff) { TermFindFiles(ff); }
     };
-    std::unique_ptr<FindFilesPacket, ff_cleanup> ff(init_find_files(),
-                                                    ff_cleanup{});
-    ff->fileset     = fileset;
-    auto ff_pkt = ff.get();
-    SetFindOptions(ff_pkt, incremental, save_time);
-    if (check_changed) SetFindChangedFunction(ff_pkt, check_changed.value());
+    std::vector<std::unique_ptr<FindFilesPacket, ff_cleanup>> ffs;
+    std::vector<std::thread> listing_threads;
 	    /* TODO: We probably need be move the initialization in the fileset loop,
      * at this place flags options are "concatenated" accross Include {} blocks
      * (not only Options{} blocks inside a Include{}) */
-    ClearAllBits(FO_MAX, ff->flags);
     for (int i = 0; i < fileset->include_list.size(); i++) {
-      dlistString* node;
-      findIncludeExcludeItem* incexe
-          = (findIncludeExcludeItem*)fileset->include_list.get(i);
-      fileset->incexe = incexe;
-      SetupFlags(ff.get(), incexe);
+	    auto ff_pkt = ffs.emplace_back(init_find_files(),
+					   ff_cleanup{}).get();
+	    ClearAllBits(FO_MAX, ff_pkt->flags);
+	    ff_pkt->fileset     = fileset;
+	    SetFindOptions(ff_pkt, incremental, save_time);
+	    if (check_changed) SetFindChangedFunction(ff_pkt, check_changed.value());
 
-      Dmsg4(50, "Verify=<%s> Accurate=<%s> BaseJob=<%s> flags=<%d>\n",
-            ff->VerifyOpts, ff->AccurateOpts, ff->BaseJobOpts, ff->flags);
-      channel::in in = std::move(ins[i]);
 
-      auto callback = CreateCallback(SaveInList(in, num_skipped));
-      foreach_dlist (node, &incexe->name_list) {
-        char* fname = (char*)node->c_str();
-        Dmsg1(debuglevel, "F %s\n", fname);
-        ff->top_fname = fname;
-        if (FindOneFile(jcr, ff_pkt, callback,
-                        ff->top_fname, (dev_t)-1, true)
-            == 0) {
-          return false; /* error return */
-        }
-        if (JobCanceled(jcr)) { return std::nullopt; }
-      }
+	    listing_threads.emplace_back(ListFromIncexe,
+					 jcr,
+					 fileset,
+					 ff_pkt,
+					 (findIncludeExcludeItem*)fileset->include_list.get(i),
+					 std::move(ins[i]),
+					 std::ref(all_ok),
+					 std::ref(num_skipped)
+					);
+
     }
-
-    return std::optional{num_skipped.load()};
+    for (auto& thread : listing_threads)
+    {
+	    thread.join();
+    }
+    if (!all_ok)
+	    return std::nullopt;
+    else
+	    return std::optional{num_skipped.load()};
   } else {
     return std::nullopt;
   }
@@ -782,7 +823,6 @@ int SendPluginInfo(JobControlRecord* jcr,
 
     return 1;
 }
-
 
 int SendFiles(JobControlRecord* jcr,
               FindFilesPacket* ff,
