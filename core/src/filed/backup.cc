@@ -78,9 +78,6 @@ const bool have_xattr = false;
 static bool ShouldStripPaths(const FindFilesPacket* ff_pkt);
 static bool do_strip(int count, const char* in, char* out);
 bool do_strip(int count, const char* in, char* out);
-int SaveFileInList(JobControlRecord* jcr,
-                   FindFilesPacket* ff_pkt,
-                   bool top_level);
 static int send_data(JobControlRecord* jcr,
                      int stream,
                      FindFilesPacket* ff_pkt,
