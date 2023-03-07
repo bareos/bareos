@@ -564,8 +564,8 @@ static inline int process_directory(
 
   // Build a canonical directory name with a trailing slash in link var
   len = strlen(fname);
-  link_len = len + 200;
-  link = (char*)malloc(link_len + 2);
+  link_len = len + 2;
+  link = (char*)malloc(link_len);
   bstrncpy(link, fname, link_len);
 
   // Strip all trailing slashes
