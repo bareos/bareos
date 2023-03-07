@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2022 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  * @author    Frank Bergkemper
  *
@@ -30,40 +30,40 @@ echo $this->doctype();
 
 <html lang="en">
 
-    <head>
-   <meta charset="utf-8">
-   <?php echo $this->headTitle('Bareos','PREPEND')->setSeparator(' - ')->setAutoEscape(false) ?>
+<head>
+    <meta charset="utf-8">
+    <?php echo $this->headTitle('Bareos', 'PREPEND')->setSeparator(' - ')->setAutoEscape(false) ?>
 
-   <?php echo $this->headMeta()
-       ->appendName('viewport', 'width=device-width, initial-scale=1.0')
-       ->appendHttpEquiv('X-UA-Compatible', 'IE=edge')
-   ?>
+    <?php echo $this->headMeta()
+        ->appendName('viewport', 'width=device-width, initial-scale=1.0')
+        ->appendHttpEquiv('X-UA-Compatible', 'IE=edge')
+    ?>
 
-   <!-- Styles -->
-   <?php echo $this->headLink(array('rel' => 'shortcut icon', 'type' => 'image/vnd.microsoft.icon', 'href' => $this->basePath() . '/themes/'.$_SESSION['bareos']['theme'].'/img/favicon.ico'))
-         ->prependStylesheet($this->basePath() . '/themes/'.$_SESSION['bareos']['theme'].'/css/main.css')
-         ->prependStylesheet($this->basePath() . '/themes/'.$_SESSION['bareos']['theme'].'/css/bootstrap.min.css')
-   ?>
+    <!-- Styles -->
+    <?php echo $this->headLink(array('rel' => 'shortcut icon', 'type' => 'image/vnd.microsoft.icon', 'href' => $this->basePath() . '/themes/' . $_SESSION['bareos']['theme'] . '/img/favicon.ico'))
+        ->prependStylesheet($this->basePath() . '/css/main.css')
+        ->prependStylesheet($this->basePath() . '/css/bootstrap.min.css');
+    ?>
 
-   <!-- Scripts -->
-   <?php echo $this->headScript()
-       ->prependFile($this->basePath() . '/js/bootstrap.min.js')
-       ->prependFile($this->basePath() . '/js/excanvas.min.js')
-       ->prependFile($this->basePath() . '/js/jquery.min.js')
-       ->prependFile($this->basePath() . '/js/respond.min.js', 'text/javascript', array('conditional' => 'lt IE 9',))
-       ->prependFile($this->basePath() . '/js/html5shiv.js',   'text/javascript', array('conditional' => 'lt IE 9',));
-   ?>
+    <!-- Scripts -->
+    <?php echo $this->headScript()
+        ->prependFile($this->basePath() . '/js/bootstrap.min.js')
+        ->prependFile($this->basePath() . '/js/excanvas.min.js')
+        ->prependFile($this->basePath() . '/js/jquery.min.js')
+        ->prependFile($this->basePath() . '/js/respond.min.js', 'text/javascript', array('conditional' => 'lt IE 9',))
+        ->prependFile($this->basePath() . '/js/html5shiv.js', 'text/javascript', array('conditional' => 'lt IE 9',));
+    ?>
 
-    </head>
+</head>
 
-    <body>
+<body>
 
-   <div class="container">
-      <?php echo $this->content; ?>
-   </div>
+    <div class="container">
+        <?php echo $this->content; ?>
+    </div>
 
     <?php echo $this->inlineScript() ?>
 
-   </body>
+</body>
 
 </html>
