@@ -28,5 +28,6 @@ Developer Guide
    DeveloperGuide/reservation.rst
    DeveloperGuide/jobexec.rst
    DeveloperGuide/Python.rst
+   DeveloperGuide/PHP.rst
    DeveloperGuide/PythonBareos.rst
    DeveloperGuide/Webui.rst
