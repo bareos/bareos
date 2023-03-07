@@ -1003,12 +1003,21 @@ int SendFiles(JobControlRecord* jcr,
 			    if(!SetupFFPkt(jcr, ff, fname, file->statp, file->delta_seq,
 					   file->type, file->hfsinfo))
 			    {
+				    Dmsg1(debuglevel, "Error: Could not setup ffpkt for file %s",
+					  ff->fname);
 				    return 0;
 			    }
-			    AcceptFile(ff);
+			    if (!AcceptFile(ff))
+			    {
+				    Dmsg1(debuglevel, "Did not accept file %s; skipping.",
+					 ff->fname);
+				    continue;
+			    }
 			    if (!FileSave(jcr, ff, false))
 			    {
 				    CleanupLink(ff);
+				    Dmsg1(debuglevel, "Error: Could not save file %s",
+					  ff->fname);
 				    return 0;
 			    }
 			    else
