@@ -994,6 +994,7 @@ int SendFiles(JobControlRecord* jcr,
 			    {
 				    return 0;
 			    }
+			    AcceptFile(ff);
 			    if (!FileSave(jcr, ff, false))
 			    {
 				    CleanupLink(ff);
