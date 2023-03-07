@@ -753,7 +753,7 @@ class JobController extends AbstractActionController
                         case 'R':
                         case 'l':
                             $fillcolor = "#5bc0de";
-                            $endtime = new \DateTime(null, new \DateTimeZone('UTC'));
+                            $endtime = new \DateTime("now", new \DateTimeZone('UTC'));
                             $endtime = $endtime->format('U') * 1000;
                             break;
                             // FAILED
@@ -776,7 +776,7 @@ class JobController extends AbstractActionController
                         case 'p':
                         case 'q':
                             $fillcolor = "#555555";
-                            $endtime = new \DateTime(null, new \DateTimeZone('UTC'));
+                            $endtime = new \DateTime("now", new \DateTimeZone('UTC'));
                             $endtime = $endtime->format('U') * 1000;
                             break;
                         default:
