@@ -206,8 +206,6 @@ struct FindFilesPacket {
   POOLMEM* sys_fname{nullptr};       /**< System filename */
   POOLMEM* ignoredir_fname{nullptr}; /**< Used to ignore directories */
   char* digest{nullptr};  /**< Set to file digest when the file is a hardlink */
-	// todo: make it an optional instead
-	bool has_stats{false};
   struct stat statp{};    /**< Stat packet */
   uint32_t digest_len{0}; /**< Set to the digest len when the file is a hardlink*/
   int32_t digest_stream{0}; /**< Set to digest type when the file is hardlink */
