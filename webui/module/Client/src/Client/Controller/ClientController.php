@@ -437,8 +437,18 @@ class ClientController extends AbstractActionController
                         $endtime += 1000;
                     }
 
-                    $item = '{"x":"' . $job['client'] . '","y":["' . $starttime . '","' . $endtime . '"],"fillColor":"' . $fillcolor . '","name":"' . $job['name'] . '","jobid":"' . $job['jobid'] . '","starttime":"' . $job['starttime'] . '","endtime":"' . $job['endtime'] . '","schedtime":"' . $job['schedtime'] . '","client":"' . $job['client'] . '"}';
-                    array_push($jobs, json_decode($item));
+                    $item = new \stdClass();
+                    $item->x = $job["client"];
+                    $item->y = array($starttime, $endtime);
+                    $item->fillColor = $fillcolor;
+                    $item->name = $job["name"];
+                    $item->jobid = $job["jobid"];
+                    $item->starttime = $job["starttime"];
+                    $item->endtime = $job["endtime"];
+                    $item->schedtime = $job["schedtime"];
+                    $item->client = $job["client"];
+
+                    array_push($jobs, $item);
                 }
 
                 $result = $jobs;
