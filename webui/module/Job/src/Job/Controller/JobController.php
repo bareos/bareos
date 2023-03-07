@@ -674,7 +674,7 @@ class JobController extends AbstractActionController
                     $jobs_R
                 );
             } catch (Exception $e) {
-                echo $e->getMessages();
+                echo $e->getMessage();
             }
         } elseif ($data == "details") {
             try {
@@ -698,7 +698,7 @@ class JobController extends AbstractActionController
             try {
                 $result = $this->getJobModel()->getJobsToRerun($this->bsock, $period, null);
             } catch (Exception $e) {
-                echo $e->getMessages();
+                echo $e->getMessage();
             }
         } elseif ($data == "job-rerun") {
             try {
@@ -795,7 +795,7 @@ class JobController extends AbstractActionController
 
                 $result = $jobs;
             } catch (Exception $e) {
-                echo $e->getMessages();
+                echo $e->getMessage();
             }
         }
 
