@@ -15,6 +15,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Fixed
 - VMware Plugin: fix restore to different vmname [PR #1397]
 
+### Documentation
+- docs: catalog maintenance improvements [PR #1399]
+
 ## [22.0.2] - 2023-02-07
 
 ### Changed
@@ -466,4 +469,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1388]: https://github.com/bareos/bareos/pull/1388
 [PR #1393]: https://github.com/bareos/bareos/pull/1393
 [PR #1397]: https://github.com/bareos/bareos/pull/1397
+[PR #1399]: https://github.com/bareos/bareos/pull/1399
 [unreleased]: https://github.com/bareos/bareos/tree/master
