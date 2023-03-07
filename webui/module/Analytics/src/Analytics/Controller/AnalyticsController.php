@@ -28,6 +28,7 @@ namespace Analytics\Controller;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
 use Zend\Json\Json;
+use Exception;
 
 class AnalyticsController extends AbstractActionController
 {

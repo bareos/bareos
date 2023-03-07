@@ -30,6 +30,7 @@ use Zend\View\Model\ViewModel;
 use Zend\Json\Json;
 use Storage\Form\StorageForm;
 use Storage\Model\Storage;
+use Exception;
 
 class StorageController extends AbstractActionController
 {

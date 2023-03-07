@@ -27,10 +27,10 @@ namespace Restore\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
-use Zend\View\Model\JsonModel;
 use Zend\Json\Json;
 use Restore\Model\Restore;
 use Restore\Form\RestoreForm;
+use Exception;
 
 class RestoreController extends AbstractActionController
 {

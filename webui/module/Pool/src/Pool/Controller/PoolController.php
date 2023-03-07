@@ -28,6 +28,7 @@ namespace Pool\Controller;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
 use Zend\Json\Json;
+use Exception;
 
 class PoolController extends AbstractActionController
 {
