@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -29,19 +29,19 @@ use Zend\Mvc\Controller\Plugin\AbstractPlugin;
 
 class RequestURIPlugin extends AbstractPlugin
 {
-   private $requestURI;
+    private $requestURI;
 
-   public function setRequestURI()
-   {
-      $r = "";
-      if(array_key_exists('REQUEST_URI', $_SERVER)) {
-         $r = $_SERVER['REQUEST_URI'];
-      }
-      $this->requestURI = $r;
-   }
+    public function setRequestURI()
+    {
+        $r = "";
+        if (array_key_exists('REQUEST_URI', $_SERVER)) {
+            $r = $_SERVER['REQUEST_URI'];
+        }
+        $this->requestURI = $r;
+    }
 
-   public function getRequestURI()
-   {
-      return $this->requestURI;
-   }
+    public function getRequestURI()
+    {
+        return $this->requestURI;
+    }
 }

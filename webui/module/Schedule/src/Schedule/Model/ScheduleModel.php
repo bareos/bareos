@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -30,122 +30,115 @@ use Zend\ServiceManager\ServiceLocatorInterface;
 
 class ScheduleModel
 {
+    /**
+     * Get Schedules
+     *
+     * @param $bsock
+     *
+     * @return array
+     */
+    public function getSchedules(&$bsock = null)
+    {
+        if (isset($bsock)) {
+            $cmd = '.schedule';
+            $result = $bsock->send_command($cmd, 2);
+            $schedules = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            return $schedules['result']['schedules'];
+        } else {
+            throw new \Exception('Missing argument.');
+        }
+    }
 
-   /**
-    * Get Schedules
-    *
-    * @param $bsock
-    *
-    * @return array
-    */
-   public function getSchedules(&$bsock=null)
-   {
-      if(isset($bsock)) {
-         $cmd = '.schedule';
-         $result = $bsock->send_command($cmd, 2);
-         $schedules = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-         return $schedules['result']['schedules'];
-      }
-      else {
-         throw new \Exception('Missing argument.');
-      }
-   }
+    /**
+     * Show Schedules
+     *
+     * @param $bsock
+     *
+     * @return string
+     */
+    public function showSchedules(&$bsock = null)
+    {
+        if (isset($bsock)) {
+            $cmd = 'show schedule';
+            $result = $bsock->send_command($cmd, 0);
+            return $result;
+        } else {
+            throw new \Exception('Missing argument.');
+        }
+    }
 
-   /**
-    * Show Schedules
-    *
-    * @param $bsock
-    *
-    * @return string
-    */
-   public function showSchedules(&$bsock=null)
-   {
-      if(isset($bsock)) {
-         $cmd = 'show schedule';
-         $result = $bsock->send_command($cmd, 0);
-         return $result;
-      }
-      else {
-         throw new \Exception('Missing argument.');
-      }
-   }
+    /**
+     * Get Full Schedule Status
+     *
+     * @param $bsock
+     *
+     * @return string
+     */
+    public function getFullScheduleStatus(&$bsock = null)
+    {
+        if (isset($bsock)) {
+            $cmd = 'status scheduler';
+            $result = $bsock->send_command($cmd, 0);
+            return $result;
+        } else {
+            throw new \Exception('Missing argument.');
+        }
+    }
 
-   /**
-    * Get Full Schedule Status
-    *
-    * @param $bsock
-    *
-    * @return string
-    */
-   public function getFullScheduleStatus(&$bsock=null)
-   {
-      if(isset($bsock)) {
-         $cmd = 'status scheduler';
-         $result = $bsock->send_command($cmd, 0);
-         return $result;
-      }
-      else {
-         throw new \Exception('Missing argument.');
-      }
-   }
+    /**
+     * Get Schedule Status
+     *
+     * @param $bsock
+     * @param $name
+     *
+     * @return string
+     */
+    public function getScheduleStatus(&$bsock = null, $name = null)
+    {
+        if (isset($bsock, $name)) {
+            $cmd = 'status scheduler schedule="' . $name;
+            $result = $bsock->send_command($cmd, 0);
+            return $result;
+        } else {
+            throw new \Exception('Missing argument.');
+        }
+    }
 
-   /**
-    * Get Schedule Status
-    *
-    * @param $bsock
-    * @param $name
-    *
-    * @return string
-    */
-   public function getScheduleStatus(&$bsock=null, $name=null)
-   {
-      if(isset($bsock, $name)) {
-         $cmd = 'status scheduler schedule="'.$name;
-         $result = $bsock->send_command($cmd, 0);
-         return $result;
-      }
-      else {
-         throw new \Exception('Missing argument.');
-      }
-   }
+    /**
+     * Enable Schedule
+     *
+     * @param $bsock
+     * @param $name
+     *
+     * @return string
+     */
+    public function enableSchedule(&$bsock = null, $name = null)
+    {
+        if (isset($bsock, $name)) {
+            $cmd = 'enable schedule="' . $name . '" yes';
+            $result = $bsock->send_command($cmd, 0);
+            return $result;
+        } else {
+            throw new \Exception('Missing argument.');
+        }
+    }
 
-   /**
-    * Enable Schedule
-    *
-    * @param $bsock
-    * @param $name
-    *
-    * @return string
-    */
-   public function enableSchedule(&$bsock=null, $name=null)
-   {
-      if(isset($bsock, $name)) {
-         $cmd = 'enable schedule="'.$name.'" yes';
-         $result = $bsock->send_command($cmd, 0);
-         return $result;
-      }
-      else {
-         throw new \Exception('Missing argument.');
-      }
-   }
-
-   /**
-    * Disable Schedule
-    *
-    * @param $bsock
-    * @param $name
-    *
-    * @return string
-    */
-   public function disableSchedule(&$bsock=null, $name=null)
-   {
-      if(isset($bsock, $name)) {
-         $cmd = 'disable schedule="'.$name.'" yes';
-         $result = $bsock->send_command($cmd, 0);
-         return $result;
-      }
-      else {
-         throw new \Exception('Missing argument.');
-      }
-   }
+    /**
+     * Disable Schedule
+     *
+     * @param $bsock
+     * @param $name
+     *
+     * @return string
+     */
+    public function disableSchedule(&$bsock = null, $name = null)
+    {
+        if (isset($bsock, $name)) {
+            $cmd = 'disable schedule="' . $name . '" yes';
+            $result = $bsock->send_command($cmd, 0);
+            return $result;
+        } else {
+            throw new \Exception('Missing argument.');
+        }
+    }
 }

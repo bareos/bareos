@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2022 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -31,195 +31,188 @@ use Zend\Json\Json;
 
 class MediaController extends AbstractActionController
 {
-  /**
-   * Variables
-   */
-  protected $mediaModel = null;
-  protected $bsock = null;
-  protected $acl_alert = false;
+    /**
+     * Variables
+     */
+    protected $mediaModel = null;
+    protected $bsock = null;
+    protected $acl_alert = false;
 
-  /**
-   * Index Action
-   *
-   * @return object
-   */
-  public function indexAction()
-  {
-    $this->RequestURIPlugin()->setRequestURI();
+    /**
+     * Index Action
+     *
+     * @return object
+     */
+    public function indexAction()
+    {
+        $this->RequestURIPlugin()->setRequestURI();
 
-    if(!$this->SessionTimeoutPlugin()->isValid()) {
-      return $this->redirect()->toRoute(
-        'auth',
-        array(
-          'action' => 'login'
-        ),
-        array(
-          'query' => array(
-            'req' => $this->RequestURIPlugin()->getRequestURI(),
-            'dird' => $_SESSION['bareos']['director']
-          )
-        )
-      );
+        if (!$this->SessionTimeoutPlugin()->isValid()) {
+            return $this->redirect()->toRoute(
+                'auth',
+                array(
+                    'action' => 'login'
+                ),
+                array(
+                    'query' => array(
+                        'req' => $this->RequestURIPlugin()->getRequestURI(),
+                        'dird' => $_SESSION['bareos']['director']
+                    )
+                )
+            );
+        }
+
+        $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
+        $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
+            $module_config['console_commands']['Media']['mandatory']
+        );
+        if (count($invalid_commands) > 0) {
+            $this->acl_alert = true;
+            return new ViewModel(
+                array(
+                    'acl_alert' => $this->acl_alert,
+                    'invalid_commands' => implode(",", $invalid_commands)
+                )
+            );
+        }
+
+        try {
+            $this->bsock = $this->getServiceLocator()->get('director');
+            $volumes = $this->getMediaModel()->getVolumes($this->bsock);
+            $this->bsock->disconnect();
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
+
+        return new ViewModel(
+            array(
+                'volumes' => $volumes,
+            )
+        );
     }
 
-    $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
-    $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
-      $module_config['console_commands']['Media']['mandatory']
-    );
-    if(count($invalid_commands) > 0) {
-      $this->acl_alert = true;
-      return new ViewModel(
-        array(
-          'acl_alert' => $this->acl_alert,
-          'invalid_commands' => implode(",", $invalid_commands)
-        )
-      );
+    /**
+     * Details Action
+     *
+     * @return object
+     */
+    public function detailsAction()
+    {
+        $this->RequestURIPlugin()->setRequestURI();
+
+        if (!$this->SessionTimeoutPlugin()->isValid()) {
+            return $this->redirect()->toRoute(
+                'auth',
+                array(
+                    'action' => 'login'
+                ),
+                array(
+                    'query' => array(
+                        'req' => $this->RequestURIPlugin()->getRequestURI(),
+                        'dird' => $_SESSION['bareos']['director']
+                    )
+                )
+            );
+        }
+
+        $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
+        $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
+            $module_config['console_commands']['Media']['mandatory']
+        );
+        if (count($invalid_commands) > 0) {
+            $this->acl_alert = true;
+            return new ViewModel(
+                array(
+                    'acl_alert' => $this->acl_alert,
+                    'invalid_commands' => implode(",", $invalid_commands)
+                )
+            );
+        }
+
+        $volumename = $this->params()->fromQuery('volume');
+
+        return new ViewModel(array(
+            'volume' => $volumename,
+        ));
     }
 
-    try {
-      $this->bsock = $this->getServiceLocator()->get('director');
-      $volumes = $this->getMediaModel()->getVolumes($this->bsock);
-      $this->bsock->disconnect();
-    }
-    catch(Exception $e) {
-      echo $e->getMessage();
-    }
+    /**
+     * Get Data Action
+     *
+     * @return object
+     */
+    public function getDataAction()
+    {
+        $this->RequestURIPlugin()->setRequestURI();
 
-    return new ViewModel(
-      array(
-        'volumes' => $volumes,
-      )
-    );
-  }
+        if (!$this->SessionTimeoutPlugin()->isValid()) {
+            return $this->redirect()->toRoute(
+                'auth',
+                array(
+                    'action' => 'login'
+                ),
+                array(
+                    'query' => array(
+                        'req' => $this->RequestURIPlugin()->getRequestURI(),
+                        'dird' => $_SESSION['bareos']['director']
+                    )
+                )
+            );
+        }
 
-  /**
-   * Details Action
-   *
-   * @return object
-   */
-  public function detailsAction()
-  {
-    $this->RequestURIPlugin()->setRequestURI();
+        $result = null;
 
-    if(!$this->SessionTimeoutPlugin()->isValid()) {
-      return $this->redirect()->toRoute(
-        'auth',
-        array(
-          'action' => 'login'
-        ),
-        array(
-          'query' => array(
-            'req' => $this->RequestURIPlugin()->getRequestURI(),
-            'dird' => $_SESSION['bareos']['director']
-          )
-        )
-      );
-    }
+        $data = $this->params()->fromQuery('data');
+        $volume = $this->params()->fromQuery('volume');
 
-    $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
-    $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
-      $module_config['console_commands']['Media']['mandatory']
-    );
-    if(count($invalid_commands) > 0) {
-      $this->acl_alert = true;
-      return new ViewModel(
-        array(
-          'acl_alert' => $this->acl_alert,
-          'invalid_commands' => implode(",", $invalid_commands)
-        )
-      );
-    }
+        if ($data == "all") {
+            try {
+                $this->bsock = $this->getServiceLocator()->get('director');
+                $result = $this->getMediaModel()->getVolumes($this->bsock);
+                $this->bsock->disconnect();
+            } catch (Exception $e) {
+                echo $e->getMessage();
+            }
+        } elseif ($data == "details") {
+            try {
+                $this->bsock = $this->getServiceLocator()->get('director');
+                // workaround until llist volume returns array instead of object
+                $result[0] = $this->getMediaModel()->getVolume($this->bsock, $volume);
+                $this->bsock->disconnect();
+            } catch (Exception $e) {
+                echo $e->getMessage();
+            }
+        } elseif ($data == "jobs") {
+            try {
+                $this->bsock = $this->getServiceLocator()->get('director');
+                $result = $this->getMediaModel()->getVolumeJobs($this->bsock, $volume);
+                $this->bsock->disconnect();
+            } catch (Exception $e) {
+                echo $e->getMessage();
+            }
+        }
 
-    $volumename = $this->params()->fromQuery('volume');
+        $response = $this->getResponse();
+        $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
 
-    return new ViewModel(array(
-      'volume' => $volumename,
-    ));
-  }
+        if (isset($result)) {
+            $response->setContent(JSON::encode($result));
+        }
 
-  /**
-   * Get Data Action
-   *
-   * @return object
-   */
-  public function getDataAction()
-  {
-    $this->RequestURIPlugin()->setRequestURI();
-
-    if(!$this->SessionTimeoutPlugin()->isValid()) {
-      return $this->redirect()->toRoute(
-        'auth',
-        array(
-          'action' => 'login'
-        ),
-        array(
-          'query' => array(
-            'req' => $this->RequestURIPlugin()->getRequestURI(),
-            'dird' => $_SESSION['bareos']['director']
-          )
-        )
-      );
+        return $response;
     }
 
-    $result = null;
-
-    $data = $this->params()->fromQuery('data');
-    $volume = $this->params()->fromQuery('volume');
-
-    if($data == "all") {
-      try {
-        $this->bsock = $this->getServiceLocator()->get('director');
-        $result = $this->getMediaModel()->getVolumes($this->bsock);
-        $this->bsock->disconnect();
-      }
-      catch(Exception $e) {
-        echo $e->getMessage();
-      }
+    /**
+     * Get Media Model
+     *
+     * @return object
+     */
+    public function getMediaModel()
+    {
+        if (!$this->mediaModel) {
+            $sm = $this->getServiceLocator();
+            $this->mediaModel = $sm->get('Media\Model\MediaModel');
+        }
+        return $this->mediaModel;
     }
-    elseif($data == "details") {
-      try {
-        $this->bsock = $this->getServiceLocator()->get('director');
-        // workaround until llist volume returns array instead of object
-        $result[0] = $this->getMediaModel()->getVolume($this->bsock, $volume);
-        $this->bsock->disconnect();
-      }
-      catch(Exception $e) {
-        echo $e->getMessage();
-      }
-    }
-    elseif($data == "jobs") {
-      try {
-        $this->bsock = $this->getServiceLocator()->get('director');
-        $result = $this->getMediaModel()->getVolumeJobs($this->bsock, $volume);
-        $this->bsock->disconnect();
-      }
-      catch(Exception $e) {
-        echo $e->getMessage();
-      }
-    }
-
-    $response = $this->getResponse();
-    $response->getHeaders()->addHeaderLine('Content-Type','application/json');
-
-    if(isset($result)) {
-      $response->setContent(JSON::encode($result));
-    }
-
-    return $response;
-  }
-
-  /**
-   * Get Media Model
-   *
-   * @return object
-   */
-  public function getMediaModel()
-  {
-    if(!$this->mediaModel) {
-      $sm = $this->getServiceLocator();
-      $this->mediaModel = $sm->get('Media\Model\MediaModel');
-    }
-    return $this->mediaModel;
-  }
-
 }

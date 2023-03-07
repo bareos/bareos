@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2022 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,31 +27,29 @@ namespace Analytics\Model;
 
 class AnalyticsModel
 {
-  public function getJobTotals(&$bsock=null)
-   {
-      if(isset($bsock)) {
-         $cmd = 'list jobtotals';
-         $result = $bsock->send_command($cmd, 2);
-         $jobtotals = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-         $children = array("children" => $jobtotals['result']['jobs']);
-         return $children;
-      }
-      else {
-         throw new \Exception('Missing argument.');
-      }
-   }
+    public function getJobTotals(&$bsock = null)
+    {
+        if (isset($bsock)) {
+            $cmd = 'list jobtotals';
+            $result = $bsock->send_command($cmd, 2);
+            $jobtotals = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $children = array("children" => $jobtotals['result']['jobs']);
+            return $children;
+        } else {
+            throw new \Exception('Missing argument.');
+        }
+    }
 
-   public function getOverallJobTotals(&$bsock=null)
-   {
-      if(isset($bsock)) {
-         $cmd = 'list jobtotals';
-         $result = $bsock->send_command($cmd, 2);
-         $jobtotals = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-         $result = $jobtotals['result']['jobtotals'];
-         return $result;
-      }
-      else {
-         throw new \Exception('Missing argument.');
-      }
-   }
+    public function getOverallJobTotals(&$bsock = null)
+    {
+        if (isset($bsock)) {
+            $cmd = 'list jobtotals';
+            $result = $bsock->send_command($cmd, 2);
+            $jobtotals = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $result = $jobtotals['result']['jobtotals'];
+            return $result;
+        } else {
+            throw new \Exception('Missing argument.');
+        }
+    }
 }
