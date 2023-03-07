@@ -262,13 +262,20 @@ struct FindFilesPacket {
 };
 /* clang-format on */
 
+struct stated_file
+{
+	std::string name;
+	struct stat statp;
+	int delta_seq;
+	int type;
+	std::optional<HfsPlusInfo> hfsinfo;
+};
 FindFilesPacket* init_find_files();
 void SetFindOptions(FindFilesPacket* ff, bool incremental, time_t mtime);
 void SetFindChangedFunction(FindFilesPacket* ff,
                             bool CheckFct(JobControlRecord* jcr,
                                           FindFilesPacket* ff));
 
-using stated_file = std::pair<std::string, struct stat>;
 int FindFiles(JobControlRecord* jcr,
               FindFilesPacket* ff,
               int file_sub(JobControlRecord*, FindFilesPacket* ff_pkt, bool),
