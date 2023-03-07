@@ -287,10 +287,31 @@ bool IsInFileset(FindFilesPacket* ff)
   return false;
 }
 
+std::optional<const char*> FindMatch(int (*match_func)(const char* pattern, const char* str, int flags),
+		   alist<const char*>& patterns, const char* str, int flags)
+{
+      for (int k = 0; k < patterns.size(); k++) {
+	const char* pattern = patterns.get(k);
+        if (match_func((char*)pattern, str, flags) == 0) {
+		return std::make_optional(pattern);
+        }
+      }
+      return std::nullopt;
+}
+
+std::optional<const regex_t*> FindRegexMatch(alist<regex_t*>& regexs, const char* str)
+{
+      for (int k = 0; k < regexs.size(); k++) {
+	regex_t* regex = regexs.get(k);
+        if (regexec(regex, str, 0, NULL, 0) == 0) {
+		return std::make_optional(regex);
+	}
+      }
+      return std::nullopt;
+}
+
 bool AcceptFile(FindFilesPacket* ff)
 {
-  int i, j, k;
-  int fnm_flags;
   const char* basename;
   findFILESET* fileset = ff->fileset;
   findIncludeExcludeItem* incexe = fileset->incexe;
@@ -308,101 +329,83 @@ bool AcceptFile(FindFilesPacket* ff)
     basename = ff->fname;
   }
 
-  for (j = 0; j < incexe->opts_list.size(); j++) {
-    findFOPTS* fo;
-
-    fo = (findFOPTS*)incexe->opts_list.get(j);
+  for (int j = 0; j < incexe->opts_list.size(); j++) {
+    findFOPTS* fo = (findFOPTS*)incexe->opts_list.get(j);
     CopyBits(FO_MAX, fo->flags, ff->flags);
     ff->Compress_algo = fo->Compress_algo;
     ff->Compress_level = fo->Compress_level;
     ff->fstypes = fo->fstype;
     ff->drivetypes = fo->Drivetype;
 
-    fnm_flags = BitIsSet(FO_IGNORECASE, ff->flags) ? FNM_CASEFOLD : 0;
-    fnm_flags |= BitIsSet(FO_ENHANCEDWILD, ff->flags) ? FNM_PATHNAME : 0;
+    const int fnm_flags = (BitIsSet(FO_IGNORECASE, ff->flags) ? FNM_CASEFOLD : 0)
+	    | (BitIsSet(FO_ENHANCEDWILD, ff->flags) ? FNM_PATHNAME : 0);
+
+    bool do_exclude = BitIsSet(FO_EXCLUDE, ff->flags);
 
     if (S_ISDIR(ff->statp.st_mode)) {
-      for (k = 0; k < fo->wilddir.size(); k++) {
-        if (match_func((char*)fo->wilddir.get(k), ff->fname, fnmode | fnm_flags)
-            == 0) {
-          if (BitIsSet(FO_EXCLUDE, ff->flags)) {
-            Dmsg2(debuglevel, "Exclude wilddir: %s file=%s\n",
-                  (char*)fo->wilddir.get(k), ff->fname);
-            return false; /* reject dir */
-          }
-          return true; /* accept dir */
-        }
-      }
+	    for (auto [patterns, name] : std::array<std::pair<alist<const char*>*, const char*>, 2>{{
+			    {&fo->wilddir, "wilddir"},
+			    {&fo->wild, "wild"}
+			    }})
+	    {
+		    if (std::optional match = FindMatch(match_func, *patterns, ff->fname, fnmode | fnm_flags); match)
+		    {
+			    if (do_exclude) {
+				    Dmsg2(debuglevel, "Exclude %s: %s file=%s\n",
+					  name, (char*)match.value(), ff->fname);
+			    }
+			    return !do_exclude;
+		    }
+	    }
+
+	    for (auto [patterns, name] : std::array<std::pair<alist<regex_t*>*, const char*>, 2>{{
+			    {&fo->regexdir, "regexdir"},
+			    {&fo->regex, "regex"}
+			    }})
+	    {
+		    if (std::optional match = FindRegexMatch(*patterns, ff->fname); match)
+		    {
+			    if (do_exclude) {
+				    Dmsg2(debuglevel, "Exclude %s: file=%s\n",
+					  name, ff->fname);
+			    }
+			    return !do_exclude;
+		    }
+	    }
     } else {
-      for (k = 0; k < fo->wildfile.size(); k++) {
-        if (match_func((char*)fo->wildfile.get(k), ff->fname,
-                       fnmode | fnm_flags)
-            == 0) {
-          if (BitIsSet(FO_EXCLUDE, ff->flags)) {
-            Dmsg2(debuglevel, "Exclude wildfile: %s file=%s\n",
-                  (char*)fo->wildfile.get(k), ff->fname);
-            return false; /* reject file */
-          }
-          return true; /* accept file */
-        }
-      }
-
-      for (k = 0; k < fo->wildbase.size(); k++) {
-        if (match_func((char*)fo->wildbase.get(k), basename, fnmode | fnm_flags)
-            == 0) {
-          if (BitIsSet(FO_EXCLUDE, ff->flags)) {
-            Dmsg2(debuglevel, "Exclude wildbase: %s file=%s\n",
-                  (char*)fo->wildbase.get(k), basename);
-            return false; /* reject file */
-          }
-          return true; /* accept file */
-        }
-      }
-    }
-
-    for (k = 0; k < fo->wild.size(); k++) {
-      if (match_func((char*)fo->wild.get(k), ff->fname, fnmode | fnm_flags)
-          == 0) {
-        if (BitIsSet(FO_EXCLUDE, ff->flags)) {
-          Dmsg2(debuglevel, "Exclude wild: %s file=%s\n",
-                (char*)fo->wild.get(k), ff->fname);
-          return false; /* reject file */
-        }
-        return true; /* accept file */
-      }
-    }
-
-    if (S_ISDIR(ff->statp.st_mode)) {
-      for (k = 0; k < fo->regexdir.size(); k++) {
-        if (regexec((regex_t*)fo->regexdir.get(k), ff->fname, 0, NULL, 0)
-            == 0) {
-          if (BitIsSet(FO_EXCLUDE, ff->flags)) {
-            return false; /* reject file */
-          }
-          return true; /* accept file */
-        }
-      }
-    } else {
-      for (k = 0; k < fo->regexfile.size(); k++) {
-        if (regexec((regex_t*)fo->regexfile.get(k), ff->fname, 0, NULL, 0)
-            == 0) {
-          if (BitIsSet(FO_EXCLUDE, ff->flags)) {
-            return false; /* reject file */
-          }
-          return true; /* accept file */
-        }
-      }
-    }
-
-    for (k = 0; k < fo->regex.size(); k++) {
-      if (regexec((regex_t*)fo->regex.get(k), ff->fname, 0, NULL, 0) == 0) {
-        if (BitIsSet(FO_EXCLUDE, ff->flags)) { return false; /* reject file */ }
-        return true; /* accept file */
-      }
+	    for (auto [patterns, name] : std::array<std::pair<alist<const char*>*, const char*>, 3>{{
+			    {&fo->wildfile, "wildfile"},
+			    {&fo->wildbase, "wildbase"},
+			    {&fo->wild, "wild"}
+			    }})
+	    {
+		    if (std::optional match = FindMatch(match_func, *patterns, ff->fname, fnmode | fnm_flags); match)
+		    {
+			    if (do_exclude) {
+				    Dmsg2(debuglevel, "Exclude %s: %s file=%s\n",
+					  name, (char*)match.value(), ff->fname);
+			    }
+			    return !do_exclude;
+		    }
+	    }
+	    for (auto [patterns, name] : std::array<std::pair<alist<regex_t*>*, const char*>, 2>{{
+			    {&fo->regexfile, "regexfile"},
+			    {&fo->regex, "regex"}
+			    }})
+	    {
+		    if (std::optional match = FindRegexMatch(*patterns, ff->fname); match)
+		    {
+			    if (do_exclude) {
+				    Dmsg2(debuglevel, "Exclude %s: file=%s\n",
+					  name, ff->fname);
+			    }
+			    return !do_exclude;
+		    }
+	    }
     }
 
     // If we have an empty Options clause with exclude, then exclude the file
-    if (BitIsSet(FO_EXCLUDE, ff->flags) && fo->regex.size() == 0
+    if (do_exclude && fo->regex.size() == 0
         && fo->wild.size() == 0 && fo->regexdir.size() == 0
         && fo->wilddir.size() == 0 && fo->regexfile.size() == 0
         && fo->wildfile.size() == 0 && fo->wildbase.size() == 0) {
@@ -412,15 +415,15 @@ bool AcceptFile(FindFilesPacket* ff)
   }
 
   // Now apply the Exclude { } directive
-  for (i = 0; i < fileset->exclude_list.size(); i++) {
+  for (int i = 0; i < fileset->exclude_list.size(); i++) {
     dlistString* node;
     findIncludeExcludeItem* incexe
         = (findIncludeExcludeItem*)fileset->exclude_list.get(i);
 
-    for (j = 0; j < incexe->opts_list.size(); j++) {
+    for (int j = 0; j < incexe->opts_list.size(); j++) {
       findFOPTS* fo = (findFOPTS*)incexe->opts_list.get(j);
-      fnm_flags = BitIsSet(FO_IGNORECASE, fo->flags) ? FNM_CASEFOLD : 0;
-      for (k = 0; k < fo->wild.size(); k++) {
+      const int fnm_flags = BitIsSet(FO_IGNORECASE, fo->flags) ? FNM_CASEFOLD : 0;
+      for (int k = 0; k < fo->wild.size(); k++) {
         if (fnmatch((char*)fo->wild.get(k), ff->fname, fnmode | fnm_flags)
             == 0) {
           Dmsg1(debuglevel, "Reject wild1: %s\n", ff->fname);
@@ -428,10 +431,10 @@ bool AcceptFile(FindFilesPacket* ff)
         }
       }
     }
-    fnm_flags = (incexe->current_opts != NULL
-                 && BitIsSet(FO_IGNORECASE, incexe->current_opts->flags))
-                    ? FNM_CASEFOLD
-                    : 0;
+    const int fnm_flags = (incexe->current_opts != NULL
+			   && BitIsSet(FO_IGNORECASE, incexe->current_opts->flags))
+	    ? FNM_CASEFOLD
+	    : 0;
     foreach_dlist (node, &incexe->name_list) {
       char* fname = node->c_str();
 
