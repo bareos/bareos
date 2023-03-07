@@ -75,7 +75,7 @@ Make sure to add or enable the following settings in your |fd| configuration:
    Client {
      ...
      Plugin Directory = /usr/lib/bareos/plugins
-     Plugin Names = python
+     Plugin Names = python3
      ...
    }
 
