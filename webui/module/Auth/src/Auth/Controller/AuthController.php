@@ -27,9 +27,10 @@ namespace Auth\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
+use Zend\Session\Container;
+use Exception;
 use Auth\Model\Auth;
 use Auth\Form\LoginForm;
-use Zend\Session\Container;
 
 class AuthController extends AbstractActionController
 {
