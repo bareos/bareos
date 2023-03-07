@@ -41,6 +41,8 @@
 #include "hardlink.h"
 
 #include <memory>  // unique_ptr
+#include <initializer_list>
+#include <utility> // pair
 
 #if defined(HAVE_DARWIN_OS)
 /* the MacOS linker wants symbols for the destructors of these two types, so we
@@ -345,12 +347,12 @@ bool AcceptFile(FindFilesPacket* ff)
     bool do_exclude = BitIsSet(FO_EXCLUDE, ff->flags);
 
     if (S_ISDIR(ff->statp.st_mode)) {
-	    for (auto [patterns, name] : std::array<std::pair<alist<const char*>*, const char*>, 2>{{
-			    {&fo->wilddir, "wilddir"},
-			    {&fo->wild, "wild"}
-			    }})
+	    for (auto [patterns, name] : std::initializer_list<std::pair<alist<const char*>&, const char*>>{
+			    {fo->wilddir, "wilddir"},
+			    {fo->wild, "wild"}
+			    })
 	    {
-		    if (std::optional match = FindMatch(match_func, *patterns, ff->fname, fnmode | fnm_flags); match)
+		    if (std::optional match = FindMatch(match_func, patterns, ff->fname, fnmode | fnm_flags); match)
 		    {
 			    if (do_exclude) {
 				    Dmsg2(debuglevel, "Exclude %s: %s file=%s\n",
@@ -360,12 +362,12 @@ bool AcceptFile(FindFilesPacket* ff)
 		    }
 	    }
 
-	    for (auto [patterns, name] : std::array<std::pair<alist<regex_t*>*, const char*>, 2>{{
-			    {&fo->regexdir, "regexdir"},
-			    {&fo->regex, "regex"}
-			    }})
+	    for (auto [patterns, name] : std::initializer_list<std::pair<alist<regex_t*>&, const char*>>{
+			    {fo->regexdir, "regexdir"},
+			    {fo->regex, "regex"}
+			    })
 	    {
-		    if (std::optional match = FindRegexMatch(*patterns, ff->fname); match)
+		    if (std::optional match = FindRegexMatch(patterns, ff->fname); match)
 		    {
 			    if (do_exclude) {
 				    Dmsg2(debuglevel, "Exclude %s: file=%s\n",
@@ -375,13 +377,13 @@ bool AcceptFile(FindFilesPacket* ff)
 		    }
 	    }
     } else {
-	    for (auto [patterns, name] : std::array<std::pair<alist<const char*>*, const char*>, 3>{{
-			    {&fo->wildfile, "wildfile"},
-			    {&fo->wildbase, "wildbase"},
-			    {&fo->wild, "wild"}
-			    }})
+	    for (auto [patterns, name] : std::initializer_list<std::pair<alist<const char*>&, const char*>>{
+			    {fo->wildfile, "wildfile"},
+			    {fo->wildbase, "wildbase"},
+			    {fo->wild, "wild"}
+			    })
 	    {
-		    if (std::optional match = FindMatch(match_func, *patterns, ff->fname, fnmode | fnm_flags); match)
+		    if (std::optional match = FindMatch(match_func, patterns, ff->fname, fnmode | fnm_flags); match)
 		    {
 			    if (do_exclude) {
 				    Dmsg2(debuglevel, "Exclude %s: %s file=%s\n",
@@ -390,12 +392,12 @@ bool AcceptFile(FindFilesPacket* ff)
 			    return !do_exclude;
 		    }
 	    }
-	    for (auto [patterns, name] : std::array<std::pair<alist<regex_t*>*, const char*>, 2>{{
-			    {&fo->regexfile, "regexfile"},
-			    {&fo->regex, "regex"}
-			    }})
+	    for (auto [patterns, name] : std::initializer_list<std::pair<alist<regex_t*>&, const char*>>{
+			    {fo->regexfile, "regexfile"},
+			    {fo->regex, "regex"}
+			    })
 	    {
-		    if (std::optional match = FindRegexMatch(*patterns, ff->fname); match)
+		    if (std::optional match = FindRegexMatch(patterns, ff->fname); match)
 		    {
 			    if (do_exclude) {
 				    Dmsg2(debuglevel, "Exclude %s: file=%s\n",
