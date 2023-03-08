@@ -89,26 +89,6 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
 #if defined(WIN32_VSS)
 static void CloseVssBackupSession(JobControlRecord* jcr);
 #endif
-FindFilesPacket* DeepCopyImportant(FindFilesPacket* ff_pkt)
-{
-  FindFilesPacket* packet = new FindFilesPacket;
-  *packet = *ff_pkt;
-
-  if (ff_pkt->top_fname) packet->top_fname = strdup(ff_pkt->top_fname);
-  if (ff_pkt->fname) packet->fname = strdup(ff_pkt->fname);
-  if (ff_pkt->link) packet->link = strdup(ff_pkt->link);
-  if (ff_pkt->digest) packet->digest = strdup(ff_pkt->digest);
-  if (ff_pkt->object_name) packet->object_name = strdup(ff_pkt->object_name);
-  if (ff_pkt->object) packet->object = strdup(ff_pkt->object);
-
-  packet->included_files_list = nullptr;
-  packet->excluded_files_list = nullptr;
-  packet->excluded_paths_list = nullptr;
-
-  // packet->linkhash = NULL;
-  packet->ignoredir_fname = NULL;
-  return packet;
-}
 
 std::pair<std::vector<channel::in<stated_file>>,
           std::vector<channel::out<stated_file>>>
