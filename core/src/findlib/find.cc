@@ -876,6 +876,10 @@ static bool SetupLink(FindFilesPacket* ff)
 		}
 		ff->link[size] = 0;
 	} break;
+	default: {
+		// this check is *should* be the same as ff->type != LNKSAVED
+		if (ff->link == nullptr) ff->link = ff->fname;
+	} break;
 	}
 	return true;
 }
