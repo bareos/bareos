@@ -77,7 +77,6 @@ const bool have_xattr = false;
 /* Forward referenced functions */
 static bool ShouldStripPaths(const FindFilesPacket* ff_pkt);
 static bool do_strip(int count, const char* in, char* out);
-bool do_strip(int count, const char* in, char* out);
 static int send_data(JobControlRecord* jcr,
                      int stream,
                      FindFilesPacket* ff_pkt,
