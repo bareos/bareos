@@ -959,18 +959,6 @@ int SendFiles(JobControlRecord* jcr,
               int FileSave(JobControlRecord*, FindFilesPacket* ff_pkt, bool),
               int PluginSave(JobControlRecord*, FindFilesPacket* ff_pkt, bool))
 {
-	struct temporary_true
-	{
-		bool old;
-		bool& val;
-		temporary_true(bool& loc) : old(loc), val(loc) {
-			loc = true;
-		}
-		~temporary_true() { val = old; }
-	};
-	// ignore infos; those were already send out during the listing part
-	// reset when leaving this function!
-	temporary_true tmp(ff->silent);
   /* This is the new way */
   findFILESET* fileset = ff->fileset;
   if (fileset) {
