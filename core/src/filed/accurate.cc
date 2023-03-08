@@ -162,8 +162,8 @@ bool AccurateCheckFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 
   if (!jcr->fd_impl->file_list) { return true; /** Not initialized properly */ }
 
-  PoolMem saved_name = GetStrippedCanonicalName(ff_pkt);
-  fname = saved_name.c_str();
+  std::string saved_name = GetStrippedCanonicalName(ff_pkt);
+  fname = saved_name.data();
 
   // Apply path stripping for lookup in accurate data.
   if (!AccurateLookup(jcr, fname, &payload)) {

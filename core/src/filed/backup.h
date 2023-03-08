@@ -24,6 +24,7 @@
 #ifndef BAREOS_FILED_BACKUP_H_
 #define BAREOS_FILED_BACKUP_H_
 
+#include <string>
 namespace filedaemon {
 
 struct b_save_ctx {
@@ -68,6 +69,6 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
                              int& data_stream);
 int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level);
 
-PoolMem GetStrippedCanonicalName(const FindFilesPacket* ff_pkt);
+std::string GetStrippedCanonicalName(const FindFilesPacket* ff_pkt);
 } /* namespace filedaemon */
 #endif  // BAREOS_FILED_BACKUP_H_

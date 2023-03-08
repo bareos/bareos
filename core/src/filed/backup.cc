@@ -76,7 +76,7 @@ const bool have_xattr = false;
 
 /* Forward referenced functions */
 static bool ShouldStripPaths(const FindFilesPacket* ff_pkt);
-static bool do_strip(int count, const char* in, char* out);
+static bool do_strip(int count, const char* in, std::string& out);
 static int send_data(JobControlRecord* jcr,
                      int stream,
                      FindFilesPacket* ff_pkt,
@@ -1342,7 +1342,7 @@ static const char* GetLinkName(int type,
     } break;
     default: {
       // should we return nullptr here instead ?
-      selected = "";
+      selected = link;
     } break;
   }
 
@@ -1432,7 +1432,7 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
    * For a directory, link is the same as fname, but with trailing
    * slash. For a linked file, link is the link. */
 
-  PoolMem StrippedFile(PM_FNAME), StrippedLink(PM_FNAME);
+  std::string StrippedFile, StrippedLink;
   const char* file_name = nullptr;
   const char* link_name = nullptr;
   /* If requested strip leading components of the path so that we can
@@ -1440,22 +1440,40 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
    * for dealing with snapshots, by removing the snapshot directory, or
    * in handling vendor migrations where files have been restored with
    * a vendor product into a subdirectory. */
+  bool do_strip_link = (ff_pkt->type != FT_LNK) && (ff_pkt->fname != ff_pkt->link);
   if (!IS_FT_OBJECT(ff_pkt->type) && ff_pkt->type != FT_DELETED
       && ShouldStripPaths(ff_pkt)) { /* already stripped */
     bool file_stripped
-        = do_strip(ff_pkt->StripPath, ff_pkt->fname, StrippedFile.c_str());
+        = do_strip(ff_pkt->StripPath, ff_pkt->fname, StrippedFile);
 
-    bool link_stripped
-        = do_strip(ff_pkt->StripPath, ff_pkt->link, StrippedLink.c_str());
+    if (do_strip_link)
+    {
+	    bool link_stripped
+		    = do_strip(ff_pkt->StripPath, ff_pkt->link, StrippedLink);
 
-    if (file_stripped || link_stripped) {
-      file_name = GetCanonicalName(ff_pkt->statp, StrippedFile.c_str(),
-                                   StrippedLink.c_str());
-      link_name = GetLinkName(ff_pkt->type, StrippedFile.c_str(),
-                              StrippedLink.c_str());
-      Dmsg3(100, "fname=%s stripped=%s link=%s\n", ff_pkt->fname,
-            StrippedFile.c_str(), StrippedLink.c_str());
+	    if (file_stripped || link_stripped) {
+		    file_name = GetCanonicalName(ff_pkt->statp, StrippedFile.c_str(),
+						 StrippedLink.c_str());
+		    link_name = GetLinkName(ff_pkt->type, StrippedFile.c_str(),
+					    StrippedLink.c_str());
+		    Dmsg3(100, "fname=%s stripped=%s link=%s\n", ff_pkt->fname,
+			  StrippedFile.c_str(), StrippedLink.c_str());
+	    }
     }
+    else
+    {
+	    if (file_stripped)
+	    {
+		    file_name = GetCanonicalName(ff_pkt->statp, StrippedFile.c_str(),
+						 ff_pkt->link);
+		    link_name = GetLinkName(ff_pkt->type, StrippedFile.c_str(),
+					    ff_pkt->link);
+		    Dmsg3(100, "fname=%s stripped=%s link=%s\n", ff_pkt->fname,
+			  StrippedFile.c_str(), StrippedLink.c_str());
+
+	    }
+    }
+
   }
 
   if (!file_name) {
@@ -1500,15 +1518,15 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
 //          (C:\Windows\Test, 1) -> (C:\Test); ~> [C:\; Windows\; Test\]
 // if n is bigger than the number of segments in the path then only the
 // first segment is copied
-bool do_strip(int count, const char* in, char* out)
+bool do_strip(int count, const char* in, std::string& out)
 {
   int stripped;
   int numsep = 0;
 
   // Copy to first path separator -- Win32 might have c: ...
-  while (*in && !IsPathSeparator(*in)) { *out++ = *in++; }
+  while (*in && !IsPathSeparator(*in)) { out.push_back(*in++); }
   if (*in) { /* Not at the end of the string */
-    *out++ = *in++;
+	  out.push_back(*in++);
     numsep++; /* one separator seen */
   }
   for (stripped = 0; stripped < count && *in; stripped++) {
@@ -1522,9 +1540,8 @@ bool do_strip(int count, const char* in, char* out)
   // Copy to end
   while (*in) { /* copy to end */
     if (IsPathSeparator(*in)) { numsep++; }
-    *out++ = *in++;
+    out.push_back(*in++);
   }
-  *out = 0;
   Dmsg4(500, "stripped=%d count=%d numsep=%d sep>count=%d\n", stripped, count,
         numsep, numsep > count);
   return stripped == count && numsep > count;
@@ -1539,17 +1556,17 @@ bool ShouldStripPaths(const FindFilesPacket* ff_pkt)
   return true;
 }
 
-PoolMem GetStrippedCanonicalName(const FindFilesPacket* ff_pkt)
+std::string GetStrippedCanonicalName(const FindFilesPacket* ff_pkt)
 {
-  PoolMem stripped_name(PM_FNAME);
+	std::string stripped_name;
 
   const char* name
       = GetCanonicalName(ff_pkt->statp, ff_pkt->fname, ff_pkt->link);
 
   if (ShouldStripPaths(ff_pkt)) {
-    do_strip(ff_pkt->StripPath, name, stripped_name.c_str());
+    do_strip(ff_pkt->StripPath, name, stripped_name);
   } else {
-    stripped_name.strcpy(name);
+    stripped_name = std::string{name};
   }
 
   return stripped_name;
