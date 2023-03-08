@@ -991,10 +991,6 @@ int SendFiles(JobControlRecord* jcr,
 			    = (findIncludeExcludeItem*)fileset->include_list.get(i);
 		    fileset->incexe = incexe;
 
-		    SetupFlags(ff, incexe);
-
-		    Dmsg4(50, "Verify=<%s> Accurate=<%s> BaseJob=<%s> flags=<%d>\n",
-			  ff->VerifyOpts, ff->AccurateOpts, ff->BaseJobOpts, ff->flags);
 		    // we only send the files that were supplied to us.
 		    // for this reason we disable recursion here!
 
@@ -1014,6 +1010,10 @@ int SendFiles(JobControlRecord* jcr,
 				    Dmsg1(debuglevel, "Did not accept file %s; skipping.",
 					 ff->fname);
 				    continue;
+			    }
+			    else
+			    {
+				    Dmsg4(50, "flags=<%d>\n", ff->flags);
 			    }
 			    if (!FileSave(jcr, ff, false))
 			    {
