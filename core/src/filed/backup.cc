@@ -1523,6 +1523,13 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
   return status;
 }
 
+// given a path and a number of path segments to skip
+// this function returns a copy of the given path, except it removes
+// the segments 2, 3, 4, ..., n, where n was the given number.
+// example: (/a/b/c/d, 2) -> (/c/d); think of the path as [/; a/; b/; c/; d]
+//          (C:\Windows\Test, 1) -> (C:\Test); ~> [C:\; Windows\; Test\]
+// if n is bigger than the number of segments in the path then only the
+// first segment is copied
 bool do_strip(int count, const char* in, char* out)
 {
   int stripped;
