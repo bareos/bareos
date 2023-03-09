@@ -1,0 +1,41 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# Run a simple backup
+#   then restore it.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-bareos-fd-stripped
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+run job=$JobName yes
+wait
+messages
+@$out $tmp/log2.out
+restore client=bareos-fd fileset=StripTest where=$tmp/bareos-restores/check-strip/$(echo "$tmp" | cut -d/ -f2) select all done yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File
+
+check_two_logs
+check_restore_diff "${BackupDirectory}" "$tmp/bareos-restores/check-strip"
+end_test
