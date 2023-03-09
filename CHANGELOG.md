@@ -9,6 +9,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - systemtests: `rename virtualfull` -> `virtualfull-basic` ,`bareos` -> `bareos-basic`, `bconsole` -> `bconsole-basic` [PR #1364]
 - FreeBSD: build cleanup [PR #1381]
 - filed: avoid reading from ephemeral buffer [PR #1385]
+- config: set `Maximum Connections` to a high default value [PR #1400]
 
 ### Fixed
 - stored: fix crashes of storage tools when autoxflate plugin is loaded [PR #1370]
@@ -656,4 +657,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1370]: https://github.com/bareos/bareos/pull/1370
 [PR #1381]: https://github.com/bareos/bareos/pull/1381
 [PR #1385]: https://github.com/bareos/bareos/pull/1385
+[PR #1400]: https://github.com/bareos/bareos/pull/1400
 [unreleased]: https://github.com/bareos/bareos/tree/master
