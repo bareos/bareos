@@ -107,7 +107,6 @@ class StorageResource
   char* scripts_directory = nullptr;
   std::vector<std::string> backend_directories;
   uint32_t MaxConcurrentJobs = 0;      /**< Maximum concurrent jobs to run */
-  uint32_t MaxConnections = 0;         /**< Maximum connections to allow */
   uint32_t ndmploglevel = 0;           /**< Initial NDMP log level */
   uint32_t jcr_watchdog_time = 0;      /**< Absolute time after which a Job gets
                                       terminated regardless of its progress */

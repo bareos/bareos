@@ -48,7 +48,7 @@
 #  include <arpa/nameser.h>
 #endif
 #ifdef HAVE_RESOLV_H
-//#include <resolv.h>
+// #include <resolv.h>
 #endif
 
 #ifdef HAVE_POLL_H
@@ -289,7 +289,7 @@ void BnetThreadServerTcp(
       return;
     }
 
-    listen(fd_ptr->fd, 50); /* tell system we are ready */
+    listen(fd_ptr->fd, kListenBacklog); /* tell system we are ready */
     sockfds->append(fd_ptr);
 
 #ifdef HAVE_POLL
