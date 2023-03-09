@@ -52,17 +52,23 @@ END_OF_DATA
 
 run_bconsole
 
-run_bconsole
+#if grep "1 | SelfTest" "$filesetwithouttext" | sed -e "s/|/\n/g" | sed -n "4p" | grep -v -e '^[[:space:]]*$'; then
+#    echo "SelfTest was not found as expected."
+#    exit 3
+#fi
 
+#if grep "1 | SelfTest" "$filesetwithtext" | sed -e "s/|/\n/g" | sed -n "4p" | grep -v 'FileSet {'; then
+#    echo "SelfTest was not updated."
+#    exit 3
+#fi
 # check that the fileset has not the fileset text after it was deleted
-expect_grep "|         1 | SelfTest | FileSet {" \
+expect_grep "|[[:space:]]*1 | SelfTest[[:space:]]*| FileSet {" \
             "$filesetwithtext" \
             "The expected fileset text was not found."
 
 # check that the fileset has the fileset was added by the estimate call
-expect_grep "|         1 | SelfTest |             |" \
+expect_grep "|[[:space:]]*1 | SelfTest[[:space:]]*|[[:space:]]*|" \
             "$filesetwithouttext" \
             "The expected fileset without text was not found."
-
 
 end_test

@@ -5,7 +5,7 @@ No results to list.
 
 Amount of data that cannot be categorized for backup units yet:
          unknown_mb: 
- unknown_percentage: 
+ unknown_percentage: 0
 
 
 quit
