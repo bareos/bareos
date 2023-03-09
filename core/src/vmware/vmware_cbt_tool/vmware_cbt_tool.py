@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2020 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2023 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -27,7 +27,7 @@ Python program for enabling/disabling/resetting CBT on a VMware VM
 
 from __future__ import print_function
 
-from pyVim.connect import SmartConnect, SmartConnectNoSSL, Disconnect
+from pyVim.connect import SmartConnect, Disconnect
 from pyVmomi import vim, vmodl
 
 import argparse
@@ -149,7 +149,6 @@ def main():
         )
 
     try:
-
         si = None
         retry_no_ssl_verify = False
         try:
@@ -172,8 +171,12 @@ def main():
 
         if retry_no_ssl_verify:
             try:
-                si = SmartConnectNoSSL(
-                    host=args.host, user=args.user, pwd=password, port=int(args.port)
+                si = SmartConnect(
+                    host=args.host,
+                    user=args.user,
+                    pwd=password,
+                    port=int(args.port),
+                    disableSslCertValidation=True,
                 )
             except IOError as e:
                 print(
@@ -211,7 +214,6 @@ def main():
         vm = None
 
         for vm in get_vm_list(args, dcftree):
-
             print(
                 "INFO: VM %s CBT supported: %s"
                 % (
