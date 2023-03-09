@@ -14,6 +14,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Fixed
 - VMware Plugin: fix restore to different vmname [PR #1397]
+- vmware_cbt_tool.py: pyVmomi 8.x compatibility [PR #1391]
 
 ### Documentation
 - docs: catalog maintenance improvements [PR #1399]
@@ -467,6 +468,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1380]: https://github.com/bareos/bareos/pull/1380
 [PR #1384]: https://github.com/bareos/bareos/pull/1384
 [PR #1388]: https://github.com/bareos/bareos/pull/1388
+[PR #1391]: https://github.com/bareos/bareos/pull/1391
 [PR #1393]: https://github.com/bareos/bareos/pull/1393
 [PR #1397]: https://github.com/bareos/bareos/pull/1397
 [PR #1399]: https://github.com/bareos/bareos/pull/1399
