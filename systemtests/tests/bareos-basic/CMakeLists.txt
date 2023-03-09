@@ -55,8 +55,28 @@ set_tests_properties(
     "system:bareos-basic:backup-job-fixture;system:bareos-basic-fixture"
 )
 set_tests_properties(
+  system:bareos-basic:filesettext-is-updated
+  PROPERTIES
+    FIXTURES_REQUIRED
+    "system:bareos-basic:backup-job-fixture;system:bareos-basic-fixture"
+)
+set_tests_properties(
   system:bareos-basic:hardlinks
   PROPERTIES
     FIXTURES_REQUIRED
     "system:bareos-basic:backup-job-fixture;system:bareos-basic-fixture"
+)
+set_tests_properties(
+  system:bareos-basic:check-size
+  PROPERTIES
+    FIXTURES_REQUIRED
+    "system:bareos-basic-fixture"
+  DEPENDS system:bareos-basic:filesettext-is-updated
+)
+set_tests_properties(
+  system:bareos-basic:check-strip
+  PROPERTIES
+    FIXTURES_REQUIRED
+    "system:bareos-basic-fixture"
+  DEPENDS system:bareos-basic:filesettext-is-updated
 )

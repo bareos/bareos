@@ -1054,7 +1054,10 @@ const char *BareosDbPostgresql::query_definitions[] = {
 /* 0083_subscription_select_unclassified_amount_data_0 */
 "SELECT "
   "SUM(unknown_mb) AS unknown_mb, "
-  "ROUND(sum(unknown_mb)/sum(total_mb) * 100, 2) AS unknown_percentage "
+  "CASE "
+    "WHEN sum(total_mb) = 0 THEN 0 "
+    "ELSE ROUND(sum(unknown_mb) / sum(total_mb) * 100, 2) "
+  "END AS unknown_percentage "
 "FROM latest_full_size_categorized; "
 ,
 
