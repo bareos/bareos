@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -31,80 +31,79 @@ use Zend\InputFilter\InputFilterInterface;
 
 class Storage implements InputFilterAwareInterface
 {
+    protected $storage = null;
+    protected $pool = null;
+    protected $drive = null;
 
-   protected $storage = null;
-   protected $pool = null;
-   protected $drive = null;
+    protected $inputFilter = null;
 
-   protected $inputFilter = null;
+    public function setInputFilter(InputFilterInterface $inputFilter)
+    {
+        throw new \Exception("setInputFiler() not used");
+    }
 
-   public function setInputFilter(InputFilterInterface $inputFilter)
-   {
-      throw new \Exception("setInputFiler() not used");
-   }
+    public function getInputFilter()
+    {
+        if (!$this->inputFilter) {
+            $inputFilter = new InputFilter();
 
-   public function getInputFilter()
-   {
-      if(!$this->inputFilter) {
-         $inputFilter = new InputFilter();
+            $inputFilter->add(array(
+                'name' => 'pool',
+                'required' => true,
+                'filters' => array(
+                    array('name' => 'StripTags'),
+                    array('name' => 'StringTrim'),
+                ),
+                'validators' => array(
+                    array(
+                        'name' => 'StringLength',
+                        'options' => array(
+                            'encoding' => 'UTF-8',
+                            'min' => 1,
+                            'max' => 64
+                        )
+                    )
+                )
+            ));
 
-         $inputFilter->add(array(
-            'name' => 'pool',
-            'required' => true,
-            'filters' => array(
-               array('name' => 'StripTags'),
-               array('name' => 'StringTrim'),
-            ),
-            'validators' => array(
-               array(
-                  'name' => 'StringLength',
-                  'options' => array(
-                     'encoding' => 'UTF-8',
-                     'min' => 1,
-                     'max' => 64
-                  )
-               )
-            )
-         ));
+            $inputFilter->add(array(
+                'name' => 'drive',
+                'required' => true,
+                'filters' => array(
+                    array('name' => 'StripTags'),
+                    array('name' => 'StringTrim'),
+                ),
+                'validators' => array(
+                    array(
+                        'name' => 'StringLength',
+                        'options' => array(
+                            'encoding' => 'UTF-8',
+                            'min' => 1,
+                            'max' => 64
+                        )
+                    )
+                )
+            ));
 
-         $inputFilter->add(array(
-            'name' => 'drive',
-            'required' => true,
-            'filters' => array(
-               array('name' => 'StripTags'),
-               array('name' => 'StringTrim'),
-            ),
-            'validators' => array(
-               array(
-                  'name' => 'StringLength',
-                  'options' => array(
-                     'encoding' => 'UTF-8',
-                     'min' => 1,
-                     'max' => 64
-                  )
-               )
-            )
-         ));
+            $inputFilter->add(array(
+                'name' => 'storage',
+                'required' => true,
+                'filters' => array(
+                    array('name' => 'StripTags'),
+                    array('name' => 'StringTrim'),
+                ),
+                'validators' => array(
+                    array(
+                        'name' => 'StringLength',
+                        'options' => array(
+                            'encoding' => 'UTF-8'
+                        )
+                    )
+                )
+            ));
 
-         $inputFilter->add(array(
-            'name' => 'storage',
-            'required' => true,
-            'filters' => array(
-               array('name' => 'StripTags'),
-               array('name' => 'StringTrim'),
-            ),
-            'validators' => array(
-               array(
-                  'name' => 'StringLength',
-                  'options' => array(
-                     'encoding' => 'UTF-8'
-                  )
-               )
-            )
-         ));
-
-         $this->inputFilter = $inputFilter;
-      }
-      return $inputFilter;
-   }
+            $this->inputFilter = $inputFilter;
+        }
+        return $inputFilter;
+    }
 }

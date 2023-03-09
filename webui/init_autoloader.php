@@ -1,10 +1,11 @@
 <?php
+
 /**
  * Zend Framework (http://framework.zend.com/)
  *
  * @link      http://github.com/zendframework/ZendSkeletonApplication for the canonical source repository
  * @copyright Copyright (c) 2005-2013 Zend Technologies USA Inc. (http://www.zend.com)
- * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG
+ * @copyright Copyright (c) 2013-2023 Bareos GmbH & Co. KG
  * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
 
@@ -35,24 +36,24 @@ if (is_dir('vendor/zendframework')) {
 
 if ($zf2Path) {
     if (isset($loader)) {
-   $loader->add('Zend', $zf2Path);
+        $loader->add('Zend', $zf2Path);
     } else {
-   include $zf2Path . '/Zend/Loader/AutoloaderFactory.php';
-   Zend\Loader\AutoloaderFactory::factory(array(
-       'Zend\Loader\StandardAutoloader' => array(
-      'autoregister_zf' => true
-       )
-   ));
+        include $zf2Path . '/Zend/Loader/AutoloaderFactory.php';
+        Zend\Loader\AutoloaderFactory::factory(array(
+            'Zend\Loader\StandardAutoloader' => array(
+                'autoregister_zf' => true
+            )
+        ));
     }
 } else {
     // Zend Framework available in normal include path? Use it.
-    if( stream_resolve_include_path("Zend/Loader/AutoloaderFactory.php") ) {
-   include 'Zend/Loader/AutoloaderFactory.php';
-   Zend\Loader\AutoloaderFactory::factory(array(
-      'Zend\Loader\StandardAutoloader' => array(
-          'autoregister_zf' => true
-      )
-       ));
+    if (stream_resolve_include_path("Zend/Loader/AutoloaderFactory.php")) {
+        include 'Zend/Loader/AutoloaderFactory.php';
+        Zend\Loader\AutoloaderFactory::factory(array(
+            'Zend\Loader\StandardAutoloader' => array(
+                'autoregister_zf' => true
+            )
+        ));
     }
 }
 

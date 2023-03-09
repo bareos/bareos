@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2022 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,145 +27,137 @@ namespace Director\Model;
 
 class DirectorModel
 {
-   /**
-    * Get Available Commands
-    *
-    * @param $bsock
-    *
-    * @return array
-    */
-   public function getAvailableCommands(&$bsock=null)
-   {
-      if(isset($bsock)) {
-         $cmd = '.help';
-         $result = $bsock->send_command($cmd, 2);
-         $messages = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-         return $messages['result'];
-      }
-      else {
-         throw new \Exception('Missing argument.');
-      }
-   }
+    /**
+     * Get Available Commands
+     *
+     * @param $bsock
+     *
+     * @return array
+     */
+    public function getAvailableCommands(&$bsock = null)
+    {
+        if (isset($bsock)) {
+            $cmd = '.help';
+            $result = $bsock->send_command($cmd, 2);
+            $messages = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            return $messages['result'];
+        } else {
+            throw new \Exception('Missing argument.');
+        }
+    }
 
-   /**
-    * Get Director Version
-    *
-    * @param $bsock
-    *
-    * @return array
-    */
-   public function getDirectorVersion(&$bsock=null)
-   {
-      if(isset($bsock)) {
-         $cmd = 'version';
-         $result = $bsock->send_command($cmd, 2);
-         $version = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-         return $version['result']['version'];
-      }
-      else {
-         throw new \Exception('Missing argument.');
-      }
-   }
+    /**
+     * Get Director Version
+     *
+     * @param $bsock
+     *
+     * @return array
+     */
+    public function getDirectorVersion(&$bsock = null)
+    {
+        if (isset($bsock)) {
+            $cmd = 'version';
+            $result = $bsock->send_command($cmd, 2);
+            $version = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            return $version['result']['version'];
+        } else {
+            throw new \Exception('Missing argument.');
+        }
+    }
 
-   /**
-    * Get Director Status
-    *
-    * @param $bsock
-    *
-    * @return string
-    */
-   public function getDirectorStatus(&$bsock=null)
-   {
-      if(isset($bsock)) {
-         $cmd = 'status director';
-         $result = $bsock->send_command($cmd, 0);
-         return $result;
-      }
-      else {
-         throw new \Exception('Missing argument.');
-      }
-   }
+    /**
+     * Get Director Status
+     *
+     * @param $bsock
+     *
+     * @return string
+     */
+    public function getDirectorStatus(&$bsock = null)
+    {
+        if (isset($bsock)) {
+            $cmd = 'status director';
+            $result = $bsock->send_command($cmd, 0);
+            return $result;
+        } else {
+            throw new \Exception('Missing argument.');
+        }
+    }
 
-   public function getBackupUnitReport(&$bsock=null, $api=0, $options=null)
-   {
-      if (!isset($bsock, $options)) {
-         throw new \Exception('Missing argument.');
-      }
+    public function getBackupUnitReport(&$bsock = null, $api = 0, $options = null)
+    {
+        if (!isset($bsock, $options)) {
+            throw new \Exception('Missing argument.');
+        }
 
-      // check for proper ACL settings
-      if ($api != 2) {
-         $cmd = 'status subscription';
-         $result = $bsock->send_command($cmd, 2);
-         $status = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-         if (empty($status['result'])) {
-            return false;
-         }
-      }
+        // check for proper ACL settings
+        if ($api != 2) {
+            $cmd = 'status subscription';
+            $result = $bsock->send_command($cmd, 2);
+            $status = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            if (empty($status['result'])) {
+                return false;
+            }
+        }
 
-      $cmd = sprintf("status subscription %s", $options);
-      $result = $bsock->send_command($cmd, $api);
+        $cmd = sprintf("status subscription %s", $options);
+        $result = $bsock->send_command($cmd, $api);
 
-      if ($api == 2) {
-         $status = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-         if (isset($status['error'])) {
-           return false;
-         }
-         return $status['result'];
-      } else {
-         return $result;
-      }
-   }
+        if ($api == 2) {
+            $status = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            if (isset($status['error'])) {
+                return false;
+            }
+            return $status['result'];
+        } else {
+            return $result;
+        }
+    }
 
-   /**
-    * Get Director Messages
-    *
-    * @param $bsock
-    * @param $limit
-    * @param $offset
-    * @param $reverse
-    *
-    * @return array
-    */
-   public function getDirectorMessages(&$bsock=null, $limit=null, $offset=null, $reverse=null)
-   {
-      if(isset($bsock, $limit)) {
-         if($reverse && $offset == null) {
-            $cmd = 'list log limit='.$limit.' reverse';
-         }
-         else if($reverse && $offset != null) {
-            $cmd = 'list log limit='.$limit.' offset='.$offset.' reverse';
-         }
-         else if(!$reverse && $offset != null) {
-            $cmd = 'list log limit='.$limit.' offset='.$offset;
-         }
-         else if(!$reverse && $offset == null) {
-            $cmd = 'list log limit='.$limit;
-         }
-         $result = $bsock->send_command($cmd, 2);
-         $messages = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-         return $messages['result']['log'];
-      }
-      else {
-         throw new \Exception('Missing argument.');
-      }
-   }
+    /**
+     * Get Director Messages
+     *
+     * @param $bsock
+     * @param $limit
+     * @param $offset
+     * @param $reverse
+     *
+     * @return array
+     */
+    public function getDirectorMessages(&$bsock = null, $limit = null, $offset = null, $reverse = null)
+    {
+        if (isset($bsock, $limit)) {
+            if ($reverse && $offset == null) {
+                $cmd = 'list log limit=' . $limit . ' reverse';
+            } elseif ($reverse && $offset != null) {
+                $cmd = 'list log limit=' . $limit . ' offset=' . $offset . ' reverse';
+            } elseif (!$reverse && $offset != null) {
+                $cmd = 'list log limit=' . $limit . ' offset=' . $offset;
+            } elseif (!$reverse && $offset == null) {
+                $cmd = 'list log limit=' . $limit;
+            }
+            $result = $bsock->send_command($cmd, 2);
+            $messages = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            return $messages['result']['log'];
+        } else {
+            throw new \Exception('Missing argument.');
+        }
+    }
 
-   /**
-    * Send Director Command
-    *
-    * @param $bsock
-    * @param $cmd
-    *
-    * @return  string
-    */
-   public function sendDirectorCommand(&$bsock=null, $cmd=null)
-   {
-      if(isset($bsock, $cmd)) {
-         $result = $bsock->send_command($cmd, 0);
-         return $result;
-      }
-      else {
-         throw new \Exception('Missing argument.');
-      }
-   }
+    /**
+     * Send Director Command
+     *
+     * @param $bsock
+     * @param $cmd
+     *
+     * @return  string
+     */
+    public function sendDirectorCommand(&$bsock = null, $cmd = null)
+    {
+        if (isset($bsock, $cmd)) {
+            $result = $bsock->send_command($cmd, 0);
+            return $result;
+        } else {
+            throw new \Exception('Missing argument.');
+        }
+    }
 }

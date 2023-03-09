@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2022 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,65 +27,61 @@ namespace Fileset\Model;
 
 class FilesetModel
 {
+    /**
+     * Get all Filesets
+     *
+     * @param $bsock
+     *
+     * @return array
+     */
+    public function getFilesets(&$bsock = null)
+    {
+        if (isset($bsock)) {
+            $cmd = 'list filesets';
+            $result = $bsock->send_command($cmd, 2);
+            $filesets = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            return $filesets['result']['filesets'];
+        } else {
+            throw new \Exception('Missing argument.');
+        }
+    }
 
-   /**
-    * Get all Filesets
-    *
-    * @param $bsock
-    *
-    * @return array
-    */
-   public function getFilesets(&$bsock=null)
-   {
-      if(isset($bsock)) {
-         $cmd = 'list filesets';
-         $result = $bsock->send_command($cmd, 2);
-         $filesets = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-         return $filesets['result']['filesets'];
-      }
-      else {
-         throw new \Exception('Missing argument.');
-      }
-   }
+    /**
+     * Get a single Fileset
+     *
+     * @param $bsock
+     * @param $id
+     *
+     * @return array
+     */
+    public function getFileset(&$bsock = null, $id = null)
+    {
+        if (isset($bsock, $id)) {
+            $cmd = 'llist fileset filesetid=' . $id . '';
+            $result = $bsock->send_command($cmd, 2);
+            $fileset = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            return $fileset['result']['filesets'];
+        } else {
+            throw new \Exception('Missing argument.');
+        }
+    }
 
-   /**
-    * Get a single Fileset
-    *
-    * @param $bsock
-    * @param $id
-    *
-    * @return array
-    */
-   public function getFileset(&$bsock=null, $id=null)
-   {
-      if(isset($bsock, $id)) {
-         $cmd = 'llist fileset filesetid='.$id.'';
-         $result = $bsock->send_command($cmd, 2);
-         $fileset = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-         return $fileset['result']['filesets'];
-      }
-      else {
-         throw new \Exception('Missing argument.');
-      }
-   }
-
-   /**
-    * Get all Filesets by .filesets command
-    *
-    * @param $bsock
-    *
-    * @return array
-    */
-   public function getDotFilesets(&$bsock=null)
-   {
-      if(isset($bsock)) {
-         $cmd = '.filesets';
-         $result = $bsock->send_command($cmd, 2);
-         $filesets = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-         return $filesets['result']['filesets'];
-      }
-      else {
-         throw new \Exception('Missing argument.');
-      }
-   }
+    /**
+     * Get all Filesets by .filesets command
+     *
+     * @param $bsock
+     *
+     * @return array
+     */
+    public function getDotFilesets(&$bsock = null)
+    {
+        if (isset($bsock)) {
+            $cmd = '.filesets';
+            $result = $bsock->send_command($cmd, 2);
+            $filesets = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            return $filesets['result']['filesets'];
+        } else {
+            throw new \Exception('Missing argument.');
+        }
+    }
 }

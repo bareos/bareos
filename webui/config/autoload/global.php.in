@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2022 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -35,249 +35,230 @@
  * file.
  */
 
-if(strlen(getenv('BAREOS_WEBUI_CONFDIR')) > 0) {
-   $directors_ini = getenv('BAREOS_WEBUI_CONFDIR')."/directors.ini";
-   $configuration_ini = getenv('BAREOS_WEBUI_CONFDIR')."/configuration.ini";
+if (strlen(getenv('BAREOS_WEBUI_CONFDIR')) > 0) {
+    $directors_ini = getenv('BAREOS_WEBUI_CONFDIR') . "/directors.ini";
+    $configuration_ini = getenv('BAREOS_WEBUI_CONFDIR') . "/configuration.ini";
 } else {
-   $directors_ini = "@WEBUICONFDIR@/directors.ini";
-   $configuration_ini = "@WEBUICONFDIR@/configuration.ini";
+    $directors_ini = "@WEBUICONFDIR@/directors.ini";
+    $configuration_ini = "@WEBUICONFDIR@/configuration.ini";
 }
 
 $directors = null;
 
 // Check for existing directors.ini and parse if present
-if(!file_exists($directors_ini)) {
-   echo "Error: Missing configuration file ".$directors_ini.".";
-   exit();
+if (!file_exists($directors_ini)) {
+    echo "Error: Missing configuration file " . $directors_ini . ".";
+    exit();
 } else {
-   // As of PHP 5.6.1 can also be specified as INI_SCANNER_TYPED. In this mode boolean,
-   // null and integer types are preserved when possible. String values "true", "on" and
-   // "yes" are converted to TRUE. "false", "off", "no" and "none" are considered FALSE.
-   // "null" is converted to NULL in typed mode. Also, all numeric strings are converted
-   // to integer type if it is possible.
-   //
-   // In future we might want to apply the INI_SCANNER_TYPED mode to simplify things.
-   //
-   // See: http://php.net/manual/en/function.parse-ini-file.php
-   $directors = parse_ini_file($directors_ini, true, INI_SCANNER_NORMAL);
+    // As of PHP 5.6.1 can also be specified as INI_SCANNER_TYPED. In this mode boolean,
+    // null and integer types are preserved when possible. String values "true", "on" and
+    // "yes" are converted to TRUE. "false", "off", "no" and "none" are considered FALSE.
+    // "null" is converted to NULL in typed mode. Also, all numeric strings are converted
+    // to integer type if it is possible.
+    //
+    // In future we might want to apply the INI_SCANNER_TYPED mode to simplify things.
+    //
+    // See: http://php.net/manual/en/function.parse-ini-file.php
+    $directors = parse_ini_file($directors_ini, true, INI_SCANNER_NORMAL);
 }
 
 // read configuration.ini
 function read_configuration_ini($configuration_ini)
 {
-   // Set defaults.
-   $result = array(
-     'session' => array(
-        'timeout' => 3600
-      ),
-      'tables' => array(
-        'pagination_values' => "10,25,50,100",
-        'pagination_default_value' => 25,
-        'save_previous_state' => false,
-      ),
-      /*
+    // Set defaults.
+    $result = array(
+        'session' => array(
+            'timeout' => 3600
+        ),
+        'tables' => array(
+            'pagination_values' => "10,25,50,100",
+            'pagination_default_value' => 25,
+            'save_previous_state' => false,
+        ),
+        /*
       'autochanger' => array(
         'labelpooltype' => <NODEFAULT>,
       ),
       */
-      'dashboard' => array(
-        'autorefresh_interval' => 60000,
-      ),
-      'restore' => array(
-        'filetree_refresh_timeout' => 120000,
-      ),
-      'theme' => array(
-         'name' => "sunflower"
-      )
-   );
- 
-   // Check for existing configuration.ini and parse if present
-   if(file_exists($configuration_ini)) {
+        'dashboard' => array(
+            'autorefresh_interval' => 60000,
+        ),
+        'restore' => array(
+            'filetree_refresh_timeout' => 120000,
+        ),
+        'theme' => array(
+            'name' => "sunflower"
+        )
+    );
+
+    // Check for existing configuration.ini and parse if present
+    if (file_exists($configuration_ini)) {
         $configuration = parse_ini_file($configuration_ini, true, INI_SCANNER_NORMAL);
 
         // this also works fine: $result = array_merge($defaults, $configuration);
-        if(isset($configuration['session']['timeout'])) {
+        if (isset($configuration['session']['timeout'])) {
             $result['session']['timeout'] = $configuration['session']['timeout'];
         }
-        if(isset($configuration['tables']['pagination_values'])) {
+        if (isset($configuration['tables']['pagination_values'])) {
             $result['tables']['pagination_values'] = $configuration['tables']['pagination_values'];
         }
-        if(isset($configuration['tables']['pagination_default_value'])) {
+        if (isset($configuration['tables']['pagination_default_value'])) {
             $result['tables']['pagination_default_value'] = $configuration['tables']['pagination_default_value'];
         }
-        if(isset($configuration['tables']['save_previous_state'])) {
+        if (isset($configuration['tables']['save_previous_state'])) {
             $result['tables']['save_previous_state'] = $configuration['tables']['save_previous_state'];
         }
-        if(isset($configuration['autochanger']['labelpooltype'])) {
+        if (isset($configuration['autochanger']['labelpooltype'])) {
             $result['autochanger']['labelpooltype'] = $configuration['autochanger']['labelpooltype'];
         }
-        if(isset($configuration['dashboard']['autorefresh_interval'])) {
+        if (isset($configuration['dashboard']['autorefresh_interval'])) {
             $result['dashboard']['autorefresh_interval'] = $configuration['dashboard']['autorefresh_interval'];
         }
-        if(isset($configuration['restore']['filetree_refresh_timeout'])) {
+        if (isset($configuration['restore']['filetree_refresh_timeout'])) {
             $result['restore']['filetree_refresh_timeout'] = $configuration['restore']['filetree_refresh_timeout'];
         }
-        if(isset($configuration['theme']['name'])) {
+        if (isset($configuration['theme']['name'])) {
             $result['theme']['name'] = $configuration['theme']['name'];
         }
-   }
-   
-   return $result;
-   
+    }
+
+    return $result;
 }
 
 // read directors.ini
 function read_directors_ini($directors, $directors_ini)
 {
+    $arr = array();
 
-   $arr = array();
+    foreach ($directors as $instance) {
+        if (
+            array_key_exists('enabled', $instance) && isset($instance['enabled']) &&
+            (strtolower($instance['enabled']) === "yes" || strtolower($instance['enabled']) === "true" || $instance['enabled'] == 1)
+        ) {
+            if (array_key_exists('diraddress', $instance) && isset($instance['diraddress'])) {
+                $arr[key($directors)] = array();
+                $arr[key($directors)]['host'] = $instance['diraddress'];
+            } else {
+                echo "Error: Missing parameter 'diraddress' in directors.ini, section " . key($directors) . ".";
+                exit();
+            }
 
-   foreach($directors as $instance) {
+            if (array_key_exists('dirport', $instance) && isset($instance['dirport'])) {
+                $arr[key($directors)]['port'] = $instance['dirport'];
+            } else {
+                $arr[key($directors)]['port'] = "@dirport@";
+            }
 
-      if(array_key_exists('enabled', $instance) && isset($instance['enabled']) &&
-         (strtolower($instance['enabled']) === "yes" || strtolower($instance['enabled']) === "true" || $instance['enabled'] == 1)) {
+            if (array_key_exists('tls_verify_peer', $instance) && isset($instance['tls_verify_peer'])) {
+                $arr[key($directors)]['tls_verify_peer'] = $instance['tls_verify_peer'];
+            } else {
+                $arr[key($directors)]['tls_verify_peer'] = false;
+            }
 
-         if(array_key_exists('diraddress', $instance) && isset($instance['diraddress'])) {
-            $arr[key($directors)] = array();
-            $arr[key($directors)]['host'] = $instance['diraddress'];
-         }
-         else {
-            echo "Error: Missing parameter 'diraddress' in ".$file.", section ".key($directors).".";
-            exit();
-         }
+            if (array_key_exists('server_can_do_tls', $instance) && isset($instance['server_can_do_tls'])) {
+                $arr[key($directors)]['server_can_do_tls'] = $instance['server_can_do_tls'];
+            } else {
+            }
 
-         if(array_key_exists('dirport', $instance) && isset($instance['dirport'])) {
-            $arr[key($directors)]['port'] = $instance['dirport'];
-         }
-         else {
-            $arr[key($directors)]['port'] = @dirport@;
-         }
+            if (array_key_exists('server_requires_tls', $instance) && isset($instance['server_requires_tls'])) {
+                $arr[key($directors)]['server_requires_tls'] = $instance['server_requires_tls'];
+            } else {
+                $arr[key($directors)]['server_requires_tls'] = false;
+            }
 
-         if(array_key_exists('tls_verify_peer', $instance) && isset($instance['tls_verify_peer'])) {
-            $arr[key($directors)]['tls_verify_peer'] = $instance['tls_verify_peer'];
-         }
-         else {
-            $arr[key($directors)]['tls_verify_peer'] = false;
-         }
+            if (array_key_exists('client_can_do_tls', $instance) && isset($instance['client_can_do_tls'])) {
+                $arr[key($directors)]['client_can_do_tls'] = $instance['client_can_do_tls'];
+            } else {
+                $arr[key($directors)]['client_can_do_tls'] = false;
+            }
 
-         if(array_key_exists('server_can_do_tls', $instance) && isset($instance['server_can_do_tls'])) {
-            $arr[key($directors)]['server_can_do_tls'] = $instance['server_can_do_tls'];
-         }
-         else {
-         }
+            if (array_key_exists('client_requires_tls', $instance) && isset($instance['client_requires_tls'])) {
+                $arr[key($directors)]['client_requires_tls'] = $instance['client_requires_tls'];
+            } else {
+                $arr[key($directors)]['client_requires_tls'] = false;
+            }
 
-         if(array_key_exists('server_requires_tls', $instance) && isset($instance['server_requires_tls'])) {
-            $arr[key($directors)]['server_requires_tls'] = $instance['server_requires_tls'];
-         }
-         else {
-            $arr[key($directors)]['server_requires_tls'] = false;
-         }
+            if (array_key_exists('ca_file', $instance) && isset($instance['ca_file'])) {
+                $arr[key($directors)]['ca_file'] = $instance['ca_file'];
+            } else {
+                $arr[key($directors)]['ca_file'] = null;
+            }
 
-         if(array_key_exists('client_can_do_tls', $instance) && isset($instance['client_can_do_tls'])) {
-            $arr[key($directors)]['client_can_do_tls'] = $instance['client_can_do_tls'];
-         }
-         else {
-            $arr[key($directors)]['client_can_do_tls'] = false;
-         }
+            if (array_key_exists('cert_file', $instance) && isset($instance['cert_file'])) {
+                $arr[key($directors)]['cert_file'] = $instance['cert_file'];
+            } else {
+                $arr[key($directors)]['cert_file'] = null;
+            }
 
-         if(array_key_exists('client_requires_tls', $instance) && isset($instance['client_requires_tls'])) {
-            $arr[key($directors)]['client_requires_tls'] = $instance['client_requires_tls'];
-         }
-         else {
-            $arr[key($directors)]['client_requires_tls'] = false;
-         }
+            if (array_key_exists('cert_file_passphrase', $instance) && isset($instance['cert_file_passphrase'])) {
+                $arr[key($directors)]['cert_file_passphrase'] = $instance['cert_file_passphrase'];
+            } else {
+                $arr[key($directors)]['cert_file_passphrase'] = null;
+            }
 
-         if(array_key_exists('ca_file', $instance) && isset($instance['ca_file'])) {
-            $arr[key($directors)]['ca_file'] = $instance['ca_file'];
-         }
-         else {
-            $arr[key($directors)]['ca_file'] = null;
-         }
+            if (array_key_exists('allowed_cns', $instance) && isset($instance['allowed_cns'])) {
+                $arr[key($directors)]['allowed_cns'] = $instance['allowed_cns'];
+            } else {
+                $arr[key($directors)]['allowed_cns'] = null;
+            }
 
-         if(array_key_exists('cert_file', $instance) && isset($instance['cert_file'])) {
-            $arr[key($directors)]['cert_file'] = $instance['cert_file'];
-         }
-         else {
-            $arr[key($directors)]['cert_file'] = null;
-         }
+            if (array_key_exists('catalog', $instance) && isset($instance['catalog'])) {
+                $arr[key($directors)]['catalog'] = $instance['catalog'];
+            } else {
+                $arr[key($directors)]['catalog'] = null;
+            }
 
-         if(array_key_exists('cert_file_passphrase', $instance) && isset($instance['cert_file_passphrase'])) {
-            $arr[key($directors)]['cert_file_passphrase'] = $instance['cert_file_passphrase'];
-         }
-         else {
-            $arr[key($directors)]['cert_file_passphrase'] = null;
-         }
+            if (array_key_exists('pam_console_name', $instance) && isset($instance['pam_console_name'])) {
+                $arr[key($directors)]['console_name'] = $instance['pam_console_name'];
+                $arr[key($directors)]['UsePamAuthentication'] = true;
+            } else {
+                $arr[key($directors)]['console_name'] = null;
+            }
 
-         if(array_key_exists('allowed_cns', $instance) && isset($instance['allowed_cns'])) {
-            $arr[key($directors)]['allowed_cns'] = $instance['allowed_cns'];
-         }
-         else {
-            $arr[key($directors)]['allowed_cns'] = null;
-         }
+            if (array_key_exists('pam_console_password', $instance) && isset($instance['pam_console_password'])) {
+                $arr[key($directors)]['password'] = $instance['pam_console_password'];
+                $arr[key($directors)]['UsePamAuthentication'] = true;
+            } else {
+                $arr[key($directors)]['password'] = null;
+            }
+        }
 
-         if(array_key_exists('catalog', $instance) && isset($instance['catalog'])) {
-            $arr[key($directors)]['catalog'] = $instance['catalog'];
-         }
-         else {
-            $arr[key($directors)]['catalog'] = null;
-         }
+        next($directors);
+    }
 
-         if(array_key_exists('pam_console_name', $instance) && isset($instance['pam_console_name'])) {
-            $arr[key($directors)]['console_name'] = $instance['pam_console_name'];
-            $arr[key($directors)]['UsePamAuthentication'] = true;
-         }
-         else {
-            $arr[key($directors)]['console_name'] = null;
-         }
-
-         if(array_key_exists('pam_console_password', $instance) && isset($instance['pam_console_password'])) {
-            $arr[key($directors)]['password'] = $instance['pam_console_password'];
-            $arr[key($directors)]['UsePamAuthentication'] = true;
-         }
-         else {
-            $arr[key($directors)]['password'] = null;
-         }
-
-      }
-
-      next($directors);
-
-   }
-
-   return $arr;
-
+    return $arr;
 }
 
 return array(
-   'directors' => read_directors_ini($directors, $directors_ini),
-   'configuration' => read_configuration_ini($configuration_ini),
-   'service_manager' => array(
-      'factories' => array(
-         'Zend\Session\Config\ConfigInterface' => 'Zend\Session\Service\SessionConfigFactory',
-         //'Zend\Db\Adapter\Adapter' => 'Zend\Db\Adapter\AdapterServiceFactory',
-      ),
-      'abstract_factories' => array(
-         // to allow other adapters to be called by $sm->get('adaptername')
-         //'Zend\Db\Adapter\AdapterAbstractServiceFactory',
-      ),
-   ),
-   'session' => array(
-      'config' => array(
-         'class' => 'Zend\Session\Config\SessionConfig',
-         'options' => array(
-            'name' => 'bareos',
-            'use_cookies' => true,
-            'cookie_lifetime' => '0', // to reset lifetime to maximum at every click
-            'gc_maxlifetime' => '3600',
-            'cache_expire' => 3600,
-            'remember_me_seconds' => 3600,
-            'use_cookies' => true
-         ),
-   ),
-   'storage' => 'Zend\Session\Storage\SessionArrayStorage',
-   'validators' => array(
-       'Zend\Session\Validator\RemoteAddr',
-       'Zend\Session\Validator\HttpUserAgent',
-   ),
+    'directors' => read_directors_ini($directors, $directors_ini),
+    'configuration' => read_configuration_ini($configuration_ini),
+    'service_manager' => array(
+        'factories' => array(
+            'Zend\Session\Config\ConfigInterface' => 'Zend\Session\Service\SessionConfigFactory',
+            //'Zend\Db\Adapter\Adapter' => 'Zend\Db\Adapter\AdapterServiceFactory',
+        ),
+        'abstract_factories' => array(
+            // to allow other adapters to be called by $sm->get('adaptername')
+            //'Zend\Db\Adapter\AdapterAbstractServiceFactory',
+        ),
+    ),
+    'session' => array(
+        'config' => array(
+            'class' => 'Zend\Session\Config\SessionConfig',
+            'options' => array(
+                'name' => 'bareos',
+                'use_cookies' => true,
+                'cookie_lifetime' => '0', // to reset lifetime to maximum at every click
+                'gc_maxlifetime' => '3600',
+                'cache_expire' => 3600,
+                'remember_me_seconds' => 3600,
+                'use_cookies' => true
+            ),
+        ),
+        'storage' => 'Zend\Session\Storage\SessionArrayStorage',
+        'validators' => array(
+            'Zend\Session\Validator\RemoteAddr',
+            'Zend\Session\Validator\HttpUserAgent',
+        ),
     ),
 );
