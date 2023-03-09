@@ -1,0 +1,49 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# Run a simple backup
+#   then restore it.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-small-files-bareos-fd
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+run job=$JobName yes
+wait
+messages
+@$out $tmp/log2.out
+restore client=bareos-fd fileset=SizeTest where=$tmp/bareos-restores/check-size select all done yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File
+
+check_two_logs
+if [[ ! -z "$(find $tmp/bareos-restores -type f -size +1024)" ]]; then
+    echo "found files that are too big in the restore directory"
+    exit 6
+fi
+
+if [[ "$(find $tmp/bareos-restores -type f -size -1024)" == "$(find $tmp/data -type f -size -1024)" ]]; then
+    echo "Some files are missing."
+    exit 6
+fi
+end_test
