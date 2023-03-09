@@ -3,16 +3,7 @@ FileSet {
   Description = "fileset that contains the systemtest directory of the source directory"
   Include {
     Options {
-      Signature = MD5 # calculate md5 checksum per file
-      fstype = ext2
-      fstype = ext3
-      fstype = ext4
-      fstype = overlay
-      fstype = jfs
-      fstype = ufs
-      fstype = xfs
-      fstype = zfs
-      fstype = btrfs
+      Signature = MD5
     }
     File = "@PROJECT_SOURCE_DIR@/tests/"
   }

@@ -3,17 +3,7 @@ FileSet {
   Description = "fileset just to backup some files for selftest"
   Include {
     Options {
-      Signature = MD5 # calculate md5 checksum per file
-      fstype = ext2
-      fstype = ext3
-      fstype = ext4
-      fstype = overlay
-      fstype = jfs
-      fstype = ufs
-      fstype = xfs
-      fstype = zfs
-      fstype = btrfs
-      fstype = vfat
+      Signature = MD5
     }
     File=<@wine_drive_prefix@@tmpdir@/file-list
   }

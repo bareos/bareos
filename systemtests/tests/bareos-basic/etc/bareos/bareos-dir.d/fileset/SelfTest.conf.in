@@ -4,18 +4,7 @@ FileSet {
   Include {
     Options {
       Signature = xxh128
-      fstype = ext2
-      fstype = ext3
-      fstype = ext4
-      fstype = overlay
-      fstype = jfs
-      fstype = ufs
-      fstype = xfs
-      fstype = zfs
-      fstype = btrfs
-      fstype = vfat
     }
-   #File = "@sbindir@"
-    File=<@tmpdir@/file-list
+    File=<@wine_drive_prefix@@tmpdir@/file-list
   }
 }
