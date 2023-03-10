@@ -124,6 +124,7 @@ template <typename T> std::optional<T> out<T>::get()
         // the in announced his death
         [this] { return this->shared->size > 0 || !this->shared->in_alive; });
 
+    bool in_alive = this->shared->in_alive;
     if (this->shared->size > 0) {
 	    // if we did not take the fast path, take it now
 	    if (!result) { result = std::move(shared->storage[read_pos]); }
@@ -137,6 +138,14 @@ template <typename T> std::optional<T> out<T>::get()
       closed = true;
     }
     shared->cv.notify_one();
+    Dmsg4(1000, "size remaining: %d,"
+	  " in: %s, out: %s, sucess: %d .\n",
+	  old_size, in_alive ? "alive" : "dead",
+	  closed ? "dead" : "alive", result.has_value());
+  }
+  else
+  {
+	  Dmsg0(1000, "channel is closed.\n");
   }
   return result;
 }
@@ -152,26 +161,51 @@ template <typename T> std::optional<T> out<T>::try_get()
 		  something_changed = true;
 		  result = std::move(shared->storage[read_pos]);
 	  }
-    std::unique_lock lock(shared->mutex);
-    if (this->shared->size > 0) {
-	    // if we did not take the fast path, take it now
-	    if (!result) {
-		    something_changed = true;
-		    result = std::move(shared->storage[read_pos]);
-	    }
-      shared->size -= 1;
-      old_size = shared->size; // update the cache
-      read_pos = wrapping_inc(read_pos, capacity);
-    } else if (!shared->in_alive) {
-      // if the in is dead and the queue is empty we also close
-	    something_changed = true;
-      shared->out_alive = false;
-      old_size = 0;
-      closed = true;
-    }
+	  bool had_lock = true;
+	  bool in_alive = true; // only used if had_lock
+	  // TODO: should we use try_lock here instead ?
+	  if (std::unique_lock lock(shared->mutex); lock.owns_lock())
+	  {
+		  in_alive = shared->in_alive;
+		  if (this->shared->size > 0) {
+			  // if we did not take the fast path, take it now
+			  if (!result) {
+				  something_changed = true;
+				  result = std::move(shared->storage[read_pos]);
+			  }
+			  shared->size -= 1;
+			  old_size = shared->size; // update the cache
+			  read_pos = wrapping_inc(read_pos, capacity);
+		  } else if (!shared->in_alive) {
+			  // if the in is dead and the queue is empty we also close
+			  something_changed = true;
+			  shared->out_alive = false;
+			  old_size = 0;
+			  closed = true;
+		  }
+	  }
+	  else
+	  {
+		  had_lock = false;
+	  }
+	  if (had_lock)
+	  {
+		  Dmsg4(1000, "size remaining: %d, in: %s, out: %s, sucess: %d.\n",
+			old_size, in_alive ? "alive" : "dead",
+			closed ? "dead" : "alive",
+			result.has_value());
+	  }
+	  else
+	  {
+		  Dmsg0(1000, "Failed to acquire lock.\n");
+	  }
     // only notify waiting threads if we actually did something to
     // the shared state!
     if (something_changed) shared->cv.notify_one();
+  }
+  else
+  {
+	  Dmsg0(1000, "channel is closed.\n");
   }
   return result;
 }
