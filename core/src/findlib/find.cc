@@ -732,12 +732,11 @@ static void ListFromIncexe(JobControlRecord* jcr,
 	Dmsg4(50, "Verify=<%s> Accurate=<%s> BaseJob=<%s> flags=<%d>\n",
 	      ff->VerifyOpts, ff->AccurateOpts, ff->BaseJobOpts, ff->flags);
 
-	auto callback = CreateCallback(SaveInList(in, num_skipped));
 	foreach_dlist (node, &incexe->name_list) {
 		char* fname = (char*)node->c_str();
 		Dmsg1(debuglevel, "F %s\n", fname);
 		ff->top_fname = fname;
-		if (FindOneFile(jcr, ff, callback,
+		if (FindOneFile(jcr, ff, CreateCallback(SaveInList(in, num_skipped)),
 				ff->top_fname, (dev_t)-1, true)
 		    == 0) {
 			return;
