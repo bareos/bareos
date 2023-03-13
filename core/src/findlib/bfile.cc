@@ -1091,12 +1091,20 @@ int bopen(BareosFilePacket* bfd,
   bfd->win32Decomplugin_private_context.bIsInData = false;
   bfd->win32Decomplugin_private_context.liNextHeader = 0;
 
-#  if defined(HAVE_POSIX_FADVISE) && defined(POSIX_FADV_WILLNEED)
+#  if defined(HAVE_POSIX_FADVISE)
   /* If not RDWR or WRONLY must be Read Only */
   if (bfd->filedes != -1 && !(flags & (O_RDWR | O_WRONLY))) {
-    int status = posix_fadvise(bfd->filedes, 0, 0, POSIX_FADV_WILLNEED);
+    int status = 0;
+#if defined(POSIX_FADV_WILLNEED)
+    status = posix_fadvise(bfd->filedes, 0, 0, POSIX_FADV_WILLNEED);
     Dmsg3(400, "Did posix_fadvise WILLNEED on %s filedes=%d status=%d\n", fname,
           bfd->filedes, status);
+#endif
+#if defined(POSIX_FADV_SEQUENTIAL)
+    status = posix_fadvise(bfd->filedes, 0, 0, POSIX_FADV_SEQUENTIAL);
+    Dmsg3(400, "Did posix_fadvise SEQUENTIAL on %s filedes=%d status=%d\n", fname,
+          bfd->filedes, status);
+#endif
   }
 #  endif
 
