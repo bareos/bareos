@@ -251,7 +251,7 @@ class CatalogResource : public BareosResource {
   s_password db_password;
   char* db_user = nullptr;
   char* db_name = nullptr;
-  char* db_driver = nullptr;        /**< Select appropriate driver */
+  const char* db_driver = "postgresql"; /**< Select appropriate driver */
   uint32_t mult_db_connections = 0; /**< Set if multiple connections wanted */
   bool disable_batch_insert
       = false;                /**< Set if batch inserts should be disabled */

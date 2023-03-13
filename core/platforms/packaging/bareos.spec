@@ -986,7 +986,6 @@ cmake  .. \
   -Dsystemd=yes \
 %endif
   -Dincludes=yes \
-  -Ddefault_db_backend="XXX_REPLACE_WITH_DATABASE_DRIVER_XXX" \
 %if !0%{?webui}
   -DENABLE_WEBUI=no \
 %endif

@@ -106,7 +106,6 @@ Var IsPostgresInstalled
 Var PostgresPath
 Var PostgresBinPath
 var PostgresPsqlExeFullPath
-Var DbDriver
 Var DbPassword
 Var DbPort
 Var DbUser
@@ -1101,8 +1100,6 @@ Section -ConfigureConfiguration
   FileWrite $R1 "s#bareos-mon#$HostName-mon#g$\r$\n"
   FileWrite $R1 "s#@basename@-sd#$StorageDaemonName#g$\r$\n"
 
-  FileWrite $R1 "s#XXX_REPLACE_WITH_DATABASE_DRIVER_XXX#$DbDriver#g$\r$\n"
-
   # add "Working Directory" directive
   FileWrite $R1 "s#QueryFile = #Working Directory = $\"$BareosAppdata/working$\"\n  QueryFile = #g$\r$\n"
 
@@ -1120,7 +1117,6 @@ Section -ConfigureConfiguration
   # find -type f -exec sed -r -n 's/.*(@.*@).*/  FileWrite $R1 "s#\1##g\$\\r\$\\n"/p' {} \; | sort | uniq
   #
 
-  FileWrite $R1 "s#@DEFAULT_DB_TYPE@#$DbDriver#g$\r$\n"
   # FileWrite $R1 "s#@DISTVER@##g$\r$\n"
   # FileWrite $R1 "s#@TAPEDRIVE@##g$\r$\n"
   FileWrite $R1 "s#@basename@#$HostName#g$\r$\n"
@@ -1187,20 +1183,19 @@ Section -StartDaemon
 
   ${If} ${SectionIsSelected} ${SEC_DIR}
 
-     ${If} $DbDriver == postgresql
-       #  MessageBox MB_OK|MB_ICONINFORMATION "To setup the bareos database, please run the script$\r$\n\
-       #                 $APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat$\r$\n \
-       #                 with administrator rights now." /SD IDOK
-       LogText "### Executing $APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat"
-       StrCmp $WriteLogs "yes" 0 +2
-          LogEx::Init false $INSTDIR\sql.log
-       StrCmp $WriteLogs "yes" 0 +2
-          LogEx::Write "Now executing $APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat"
-       nsExec::ExecToLog "$APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat > $PLUGINSDIR\db_setup_output.log"
-       StrCmp $WriteLogs "yes" 0 +2
-          LogEx::AddFile "   >" "$PLUGINSDIR\db_setup_output.log"
+      #  MessageBox MB_OK|MB_ICONINFORMATION "To setup the bareos database, please run the script$\r$\n\
+      #                 $APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat$\r$\n \
+      #                 with administrator rights now." /SD IDOK
+      LogText "### Executing $APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat"
+      StrCmp $WriteLogs "yes" 0 +2
+         LogEx::Init false $INSTDIR\sql.log
+      StrCmp $WriteLogs "yes" 0 +2
+         LogEx::Write "Now executing $APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat"
+      nsExec::ExecToLog "$APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat > $PLUGINSDIR\db_setup_output.log"
+      StrCmp $WriteLogs "yes" 0 +2
+         LogEx::AddFile "   >" "$PLUGINSDIR\db_setup_output.log"
 
-     ${EndIf}
+
 
       LogText "### Executing net start bareos-dir"
       nsExec::ExecToLog "net start bareos-dir"
@@ -1465,13 +1460,6 @@ done:
 
   ${GetOptions} $cmdLineParams "/WEBUIPASSWORD=" $WebUIPassword
   ClearErrors
-
-
-  ${GetOptions} $cmdLineParams "/DBDRIVER=" $DbDriver
-  ClearErrors
-
-  strcmp $DbDriver "" +1 +2
-  StrCpy $DbDriver "postgresql"
 
   StrCpy $InstallDirector "yes"
   ${GetOptions} $cmdLineParams "/INSTALLDIRECTOR" $R0
@@ -2193,7 +2181,6 @@ Function .onSelChange
   SectionGetFlags ${SEC_DIR_POSTGRES} $R0
   IntOp $R0 $R0 & ${SF_SELECTED}
   StrCmp $R0 ${SF_SELECTED} 0 +2
-  StrCpy $DbDriver "postgresql"
 
   Pop $R1
   Pop $R0

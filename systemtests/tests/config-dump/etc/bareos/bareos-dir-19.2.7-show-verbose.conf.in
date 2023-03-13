@@ -272,7 +272,6 @@ Catalog {
   DbPassword = "@db_password@"
   DbUser = "@db_user@"
   DbName = "@db_name@"
-  # DbDriver = "XXX_REPLACE_WITH_DATABASE_DRIVER_XXX"
   # MultipleConnections = no
   # DisableBatchInsert = no
   # Reconnect = no

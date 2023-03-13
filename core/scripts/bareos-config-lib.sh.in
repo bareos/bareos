@@ -741,10 +741,6 @@ get_database_param()
 
     # Check if PARAM is valid
     case "${PARAM}" in
-        "dbdriver")
-            echo "postgresql"
-            return 0
-            ;;
         "dbaddress")
             ;;
         "dbsocket")

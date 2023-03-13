@@ -306,11 +306,6 @@ static ResourceItem cat_items[] = {
   { "DbUser", CFG_TYPE_STR, ITEM(res_cat, db_user), 0, 0, NULL, NULL, NULL },
   { "User", CFG_TYPE_STR, ITEM(res_cat, db_user), 0, CFG_ITEM_ALIAS, NULL, NULL, NULL },
   { "DbName", CFG_TYPE_STR, ITEM(res_cat, db_name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
-#ifdef HAVE_DYNAMIC_CATS_BACKENDS
-  { "DbDriver", CFG_TYPE_STR, ITEM(res_cat, db_driver), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "postgresql", NULL, NULL },
-#else
-  { "DbDriver", CFG_TYPE_STR, ITEM(res_cat, db_driver), 0, 0, NULL, NULL, NULL },
-#endif
   { "DbSocket", CFG_TYPE_STR, ITEM(res_cat, db_socket), 0, 0, NULL, NULL, NULL },
    /* Turned off for the moment */
   { "MultipleConnections", CFG_TYPE_BIT, ITEM(res_cat, mult_db_connections), 0, 0, NULL, NULL, NULL },
@@ -3890,7 +3885,6 @@ static void FreeResource(BareosResource* res, int type)
       if (p->db_socket) { free(p->db_socket); }
       if (p->db_user) { free(p->db_user); }
       if (p->db_name) { free(p->db_name); }
-      if (p->db_driver) { free(p->db_driver); }
       if (p->db_password.value) { free(p->db_password.value); }
       delete p;
       break;
