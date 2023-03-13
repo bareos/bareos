@@ -27,7 +27,6 @@
  */
 
 #include "include/bareos.h"
-#include "cats/cats_backends.h"
 #include "cats/sql.h"
 #include "cats/sql_pooling.h"
 #include "dird.h"
@@ -315,13 +314,6 @@ int main(int argc, char* argv[])
 
   SetJcrInThreadSpecificData(nullptr);
 
-#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-  for (const auto& backend_dir : me->backend_directories) {
-    Dmsg1(100, "backend path: %s\n", backend_dir.c_str());
-  }
-
-  DbSetBackendDirs(me->backend_directories);
-#endif
   LoadDirPlugins(me->plugin_directory, me->plugin_names);
 
 
@@ -410,7 +402,6 @@ static
   StopStatisticsThread();
   StopWatchdog();
   DbSqlPoolDestroy();
-  DbFlushBackends();
   UnloadDirPlugins();
   if (!test_config && me) { /* we don't need to do this block in test mode */
     WriteStateFile(me->working_directory, "bareos-dir",

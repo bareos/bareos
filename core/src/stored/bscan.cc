@@ -35,7 +35,6 @@
 #include "lib/crypto_cache.h"
 #include "findlib/find.h"
 #include "cats/cats.h"
-#include "cats/cats_backends.h"
 #include "cats/sql.h"
 #include "stored/acquire.h"
 #include "stored/butil.h"
@@ -129,10 +128,6 @@ static int num_restoreobjects = 0;
 
 int main(int argc, char* argv[])
 {
-#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-  std::vector<std::string> backend_directories;
-#endif
-
   setlocale(LC_ALL, "");
   tzset();
   bindtextdomain("bareos", LOCALEDIR);
@@ -322,11 +317,6 @@ int main(int argc, char* argv[])
           edit_uint64(currentVolumeSize, ed1));
   }
 
-#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-  backend_directories.emplace_back(backend_directory);
-  DbSetBackendDirs(backend_directories);
-#endif
-
   std::string db_driver = "postgresql";
   db = db_init_database(nullptr, db_driver.c_str(), db_name.c_str(),
                         db_user.c_str(), db_password.c_str(), db_host.c_str(),
@@ -354,7 +344,6 @@ int main(int argc, char* argv[])
         num_media, num_pools, num_jobs, num_files, num_restoreobjects);
   }
   db->CloseDatabase(bjcr);
-  DbFlushBackends();
   CleanDevice(bjcr->sd_impl->dcr);
   delete dev;
   FreeDeviceControlRecord(bjcr->sd_impl->dcr);

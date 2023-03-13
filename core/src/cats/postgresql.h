@@ -24,25 +24,42 @@
 #define BAREOS_CATS_BDB_POSTGRESQL_H_
 
 #include "include/bareos.h"
-#include "cats/column_data.h"
 
-#include <string>
-#include <vector>
+
+#ifdef HAVE_POSTGRESQL
+
+#  include "cats/column_data.h"
+#  include "cats.h"
+#  include "libpq-fe.h"
+
+#  include <string>
+#  include <vector>
 
 struct AttributesDbRecord;
 class JobControlRecord;
 
-class BareosDbPostgresql : public BareosDbPrivateInterface {
+class BareosDbPostgresql : public BareosDb {
  public:
+  BareosDbPostgresql(JobControlRecord* jcr,
+                     const char* db_driver,
+                     const char* db_name,
+                     const char* db_user,
+                     const char* db_password,
+                     const char* db_address,
+                     int db_port,
+                     const char* db_socket,
+                     bool mult_db_connections,
+                     bool disable_batch_insert,
+                     bool try_reconnect,
+                     bool exit_on_fatal,
+                     bool need_private);
+  ~BareosDbPostgresql();
+
   dlink<BareosDbPostgresql> link; /**< Queue control */
- private:
-  PGconn* db_handle_;
-  PGresult* result_;
-  POOLMEM* buf_; /**< Buffer to manipulate queries */
-  static const char*
-      query_definitions[]; /**< table of predefined sql queries */
 
  private:
+  void SqlFieldSeek(int field) override { field_number_ = field; }
+  int SqlNumFields(void) override { return num_fields_; }
   bool OpenDatabase(JobControlRecord* jcr) override;
   void CloseDatabase(JobControlRecord* jcr) override;
   bool ValidateConnection(void) override;
@@ -90,21 +107,23 @@ class BareosDbPostgresql : public BareosDbPrivateInterface {
 
   bool CheckDatabaseEncoding(JobControlRecord* jcr);
 
- public:
-  BareosDbPostgresql(JobControlRecord* jcr,
-                     const char* db_driver,
-                     const char* db_name,
-                     const char* db_user,
-                     const char* db_password,
-                     const char* db_address,
-                     int db_port,
-                     const char* db_socket,
-                     bool mult_db_connections,
-                     bool disable_batch_insert,
-                     bool try_reconnect,
-                     bool exit_on_fatal,
-                     bool need_private);
-  ~BareosDbPostgresql();
+  int status_ = 0;              /**< Status */
+  int num_fields_ = 0;          /**< Number of fields returned by last query */
+  int rows_size_ = 0;           /**< Size of malloced rows */
+  int fields_size_ = 0;         /**< Size of malloced fields */
+  int row_number_ = 0;          /**< Row number from xx_data_seek */
+  int field_number_ = 0;        /**< Field number from SqlFieldSeek */
+  SQL_ROW rows_ = nullptr;      /**< Defined rows */
+  SQL_FIELD* fields_ = nullptr; /**< Defined fields */
+  bool allow_transactions_ = false; /**< Transactions allowed ? */
+  bool transaction_ = false;        /**< Transaction started ? */
+
+  PGconn* db_handle_;
+  PGresult* result_;
+  POOLMEM* buf_; /**< Buffer to manipulate queries */
+  static const char*
+      query_definitions[]; /**< table of predefined sql queries */
 };
 
+#endif  /* HAVE_POSTGRESQL */
 #endif  // BAREOS_CATS_BDB_POSTGRESQL_H_

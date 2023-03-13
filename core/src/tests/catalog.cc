@@ -21,7 +21,6 @@
 
 #include "include/bareos.h"
 #include "cats/cats.h"
-#include "cats/cats_backends.h"
 #include "cats/sql_pooling.h"
 #include "dird/get_database_connection.h"
 #include "dird/dird_conf.h"
@@ -105,9 +104,6 @@ void CatalogTest::SetUp()
 
     ASSERT_NE(jcr->dir_impl->res.catalog, nullptr);
 
-    auto backenddir = std::vector<std::string>{backend_dir};
-    DbSetBackendDirs(backenddir);
-
     db = directordaemon::GetDatabaseConnection(jcr);
 
     ASSERT_NE(db, nullptr);
@@ -118,7 +114,6 @@ void CatalogTest::TearDown()
 {
   db->CloseDatabase(jcr);
   DbSqlPoolDestroy();
-  DbFlushBackends();
 
   if (jcr) {
     FreeJcr(jcr);

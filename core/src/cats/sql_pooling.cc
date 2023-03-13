@@ -31,7 +31,6 @@
 #if HAVE_POSTGRESQL
 
 #  include "cats.h"
-#  include "cats_backends.h"
 
 /**
  * Get a non-pooled connection used when either sql pooling is
@@ -53,18 +52,11 @@ BareosDb* DbSqlGetNonPooledConnection(JobControlRecord* jcr,
                                       bool need_private)
 {
   BareosDb* mdb;
-
-#  if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-  Dmsg2(100,
-        "DbSqlGetNonPooledConnection allocating 1 new non pooled database "
-        "connection to database %s, backend type %s\n",
-        db_name, db_drivername);
-#  else
   Dmsg1(100,
         "DbSqlGetNonPooledConnection allocating 1 new non pooled database "
         "connection to database %s\n",
         db_name);
-#  endif
+
   mdb = db_init_database(jcr, db_drivername, db_name, db_user, db_password,
                          db_address, db_port, db_socket, mult_db_connections,
                          disable_batch_insert, try_reconnect, exit_on_fatal,

@@ -39,7 +39,7 @@
 #  include "libpq-fe.h"
 #  include "postgres_ext.h"     /* needed for NAMEDATALEN */
 #  include "pg_config_manual.h" /* get NAMEDATALEN on version 8.3 or later */
-#  include "bdb_postgresql.h"
+#  include "postgresql.h"
 #  include "lib/edit.h"
 #  include "lib/berrno.h"
 #  include "lib/dlist.h"
@@ -903,21 +903,7 @@ bool BareosDbPostgresql::SqlFieldIsNumeric(int field_type)
  * Initialize database data structure. In principal this should
  * never have errors, or it is really fatal.
  */
-#  ifdef HAVE_DYNAMIC_CATS_BACKENDS
-extern "C" BareosDb* backend_instantiate(JobControlRecord* jcr,
-                                         const char* db_driver,
-                                         const char* db_name,
-                                         const char* db_user,
-                                         const char* db_password,
-                                         const char* db_address,
-                                         int db_port,
-                                         const char* db_socket,
-                                         bool mult_db_connections,
-                                         bool disable_batch_insert,
-                                         bool try_reconnect,
-                                         bool exit_on_fatal,
-                                         bool need_private)
-#  else
+
 BareosDb* db_init_database(JobControlRecord* jcr,
                            const char* db_driver,
                            const char* db_name,
@@ -931,7 +917,7 @@ BareosDb* db_init_database(JobControlRecord* jcr,
                            bool try_reconnect,
                            bool exit_on_fatal,
                            bool need_private)
-#  endif
+
 {
   BareosDbPostgresql* mdb = NULL;
 
@@ -962,14 +948,6 @@ BareosDb* db_init_database(JobControlRecord* jcr,
 bail_out:
   unlock_mutex(mutex);
   return mdb;
-}
-
-#  ifdef HAVE_DYNAMIC_CATS_BACKENDS
-extern "C" void flush_backend(void)
-#  else
-void DbFlushBackends(void)
-#  endif
-{
 }
 
 #endif /* HAVE_POSTGRESQL */

@@ -214,6 +214,44 @@ class MockDatabase : public BareosDb {
 
  private:
   Mode mode_{};
+
+  void SqlFieldSeek(int) override {}
+  int SqlNumFields(void) override { return 0; }
+  virtual void SqlFreeResult(void) override {}
+  virtual SQL_ROW SqlFetchRow(void) override { return nullptr; }
+  virtual bool SqlQueryWithHandler(const char*,
+                                   DB_RESULT_HANDLER*,
+                                   void*) override
+  {
+    return true;
+  }
+  virtual bool SqlQueryWithoutHandler(const char*, int) override
+  {
+    return true;
+  }
+  virtual const char* sql_strerror(void) override { return ""; }
+  virtual void SqlDataSeek(int) override {}
+  virtual int SqlAffectedRows(void) override { return 0; }
+  virtual uint64_t SqlInsertAutokeyRecord(const char*, const char*) override
+  {
+    return true;
+  }
+  virtual SQL_FIELD* SqlFetchField(void) override { return nullptr; }
+  virtual bool SqlFieldIsNotNull(int) override { return true; }
+  virtual bool SqlFieldIsNumeric(int) override { return true; }
+  virtual bool SqlBatchStartFileTable(JobControlRecord*) override
+  {
+    return true;
+  }
+  virtual bool SqlBatchEndFileTable(JobControlRecord*, const char*) override
+  {
+    return true;
+  }
+  virtual bool SqlBatchInsertFileTable(JobControlRecord*,
+                                       AttributesDbRecord*) override
+  {
+    return true;
+  }
 };
 
 static void scheduler_loop(Scheduler* scheduler) { scheduler->Run(); }

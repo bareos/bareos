@@ -470,7 +470,6 @@ class pathid_cache;
 // Current database version number for all drivers
 #define BDB_VERSION 2210
 
-#ifdef _BDB_PRIV_INTERFACE_
 typedef char** SQL_ROW;
 
 typedef struct sql_field {
@@ -479,7 +478,6 @@ typedef struct sql_field {
   uint32_t type = 0;    /* type */
   uint32_t flags = 0;   /* flags */
 } SQL_FIELD;
-#endif
 
 class BareosSqlError : public std::runtime_error {
  public:
@@ -977,7 +975,6 @@ class BareosDb : public BareosDbQueryEnum {
   virtual bool SqlCopyInsert(const std::vector<DatabaseField>& data_fields) = 0;
   virtual bool SqlCopyEnd() = 0;
 
-#ifdef _BDB_PRIV_INTERFACE_
  private:
   virtual void SqlFieldSeek(int field) = 0;
   virtual int SqlNumFields(void) = 0;
@@ -1003,12 +1000,21 @@ class BareosDb : public BareosDbQueryEnum {
   virtual bool SqlBatchInsertFileTable(JobControlRecord* jcr,
                                        AttributesDbRecord* ar)
       = 0;
-#endif
 };
 
-#ifdef _BDB_PRIV_INTERFACE_
-#  include "bdb_priv.h"
-#endif
+BareosDb* db_init_database(JobControlRecord* jcr,
+                           const char* db_driver,
+                           const char* db_name,
+                           const char* db_user,
+                           const char* db_password,
+                           const char* db_address,
+                           int db_port,
+                           const char* db_socket,
+                           bool mult_db_connections,
+                           bool disable_batch_insert,
+                           bool try_reconnect,
+                           bool exit_on_fatal,
+                           bool need_private = false);
 
 /* SqlQuery Query Flags */
 #define QF_STORE_RESULT 0x01

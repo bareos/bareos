@@ -59,7 +59,6 @@
 #include "dird/ndmp_dma_restore_NDMP_BAREOS.h"
 #include "dird/ndmp_dma_restore_NDMP_NATIVE.h"
 
-#include "cats/cats_backends.h"
 #include "cats/sql_pooling.h"
 #include "lib/berrno.h"
 #include "lib/edit.h"

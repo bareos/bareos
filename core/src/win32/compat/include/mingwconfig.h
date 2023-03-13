@@ -147,9 +147,6 @@
 /* Default path for Bareos Python modules */
 #define PYTHON_MODULE_PATH "."
 
-/* Define to 1 if dynamic loading of catalog backends is enabled */
-#define HAVE_DYNAMIC_CATS_BACKENDS 1
-
 /* Define to 1 if DB batch insert code enabled */
 #define USE_BATCH_FILE_INSERT 1
 

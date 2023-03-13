@@ -171,7 +171,6 @@ macro(find_systemtests_binary_paths SYSTEMTESTS_BINARIES)
     endif()
     set(DIR_PLUGINS_DIR_TO_TEST ${CMAKE_BINARY_DIR}/core/src/plugins/dird)
 
-    get_target_property(BACKEND_DIR_TO_TEST bareoscats-postgresql BINARY_DIR)
     set(SCRIPTS_DIR_TO_TEST ${CMAKE_BINARY_DIR}/core/scripts)
     set(WEBUI_PUBLIC_DIR_TO_TEST ${PROJECT_SOURCE_DIR}/../webui/public)
 
