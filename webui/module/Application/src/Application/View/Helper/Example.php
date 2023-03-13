@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  * @author    Frank Bergkemper
  *
@@ -23,21 +23,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+
 namespace Application\View\Helper;
 
 use Zend\View\Helper\AbstractHelper;
 
 class Example extends AbstractHelper
 {
+    protected $result;
 
-   protected $result;
+    public function __invoke($var)
+    {
+        $this->result = $var;
 
-   public function __invoke($var)
-   {
-      $this->result = $var;
+        // DO SOMETHING
 
-      // DO SOMETHING
-
-      return $this->result;
-   }
+        return $this->result;
+    }
 }

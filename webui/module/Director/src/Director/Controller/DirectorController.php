@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -31,169 +31,167 @@ use Zend\Json\Json;
 
 class DirectorController extends AbstractActionController
 {
-  /**
-   * Variables
-   */
-  protected $directorModel = null;
-  protected $bsock = null;
-  protected $acl_alert = false;
+    /**
+     * Variables
+     */
+    protected $directorModel = null;
+    protected $bsock = null;
+    protected $acl_alert = false;
 
-  /**
-   * Index Action
-   *
-   * @return object
-   */
-  public function indexAction()
-  {
-    $this->RequestURIPlugin()->setRequestURI();
+    /**
+     * Index Action
+     *
+     * @return object
+     */
+    public function indexAction()
+    {
+        $this->RequestURIPlugin()->setRequestURI();
 
-    if(!$this->SessionTimeoutPlugin()->isValid()) {
-      return $this->redirect()->toRoute(
-        'auth',
-        array(
-          'action' => 'login'
-        ),
-        array(
-          'query' => array(
-            'req' => $this->RequestURIPlugin()->getRequestURI(),
-            'dird' => $_SESSION['bareos']['director']
-          )
-        )
-      );
+        if (!$this->SessionTimeoutPlugin()->isValid()) {
+            return $this->redirect()->toRoute(
+                'auth',
+                array(
+                    'action' => 'login'
+                ),
+                array(
+                    'query' => array(
+                        'req' => $this->RequestURIPlugin()->getRequestURI(),
+                        'dird' => $_SESSION['bareos']['director']
+                    )
+                )
+            );
+        }
+
+        $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
+        $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
+            $module_config['console_commands']['Director']['optional']
+        );
+        if (count($invalid_commands) > 0) {
+            $this->acl_alert = true;
+            return new ViewModel(
+                array(
+                    'acl_alert' => $this->acl_alert,
+                    'invalid_commands' => implode(",", $invalid_commands)
+                )
+            );
+        }
+
+        try {
+            $this->bsock = $this->getServiceLocator()->get('director');
+            $result = $this->getDirectorModel()->getDirectorStatus($this->bsock);
+            $this->bsock->disconnect();
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
+
+        return new ViewModel(array(
+            'directorOutput' => $result
+        ));
     }
 
-    $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
-    $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
-      $module_config['console_commands']['Director']['optional']
-    );
-    if(count($invalid_commands) > 0) {
-      $this->acl_alert = true;
-      return new ViewModel(
-        array(
-          'acl_alert' => $this->acl_alert,
-          'invalid_commands' => implode(",", $invalid_commands)
-        )
-      );
+    /**
+     * Message Action
+     *
+     * @return object
+     */
+    public function messagesAction()
+    {
+        $this->RequestURIPlugin()->setRequestURI();
+
+        if (!$this->SessionTimeoutPlugin()->isValid()) {
+            return $this->redirect()->toRoute(
+                'auth',
+                array(
+                    'action' => 'login'
+                ),
+                array(
+                    'query' => array(
+                        'req' => $this->RequestURIPlugin()->getRequestURI(),
+                        'dird' => $_SESSION['bareos']['director']
+                    )
+                )
+            );
+        }
+
+        $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
+        $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
+            $module_config['console_commands']['Director']['optional']
+        );
+        if (count($invalid_commands) > 0 && in_array('messages', $invalid_commands)) {
+            $this->acl_alert = true;
+            return new ViewModel(
+                array(
+                    'acl_alert' => $this->acl_alert,
+                    'invalid_commands' => implode(",", 'messages')
+                )
+            );
+        }
+
+        return new ViewModel();
     }
 
-    try {
-      $this->bsock = $this->getServiceLocator()->get('director');
-      $result = $this->getDirectorModel()->getDirectorStatus($this->bsock);
-      $this->bsock->disconnect();
-    }
-    catch(Exception $e) {
-      echo $e->getMessage();
-    }
+    /**
+     * Get Data Action
+     *
+     * @return object
+     */
+    public function getDataAction()
+    {
+        $this->RequestURIPlugin()->setRequestURI();
 
-    return new ViewModel(array(
-      'directorOutput' => $result
-    ));
-  }
+        if (!$this->SessionTimeoutPlugin()->isValid()) {
+            return $this->redirect()->toRoute(
+                'auth',
+                array(
+                    'action' => 'login'
+                ),
+                array(
+                    'query' => array(
+                        'req' => $this->RequestURIPlugin()->getRequestURI(),
+                        'dird' => $_SESSION['bareos']['director']
+                    )
+                )
+            );
+        }
 
-  /**
-   * Message Action
-   *
-   * @return object
-   */
-  public function messagesAction()
-  {
-    $this->RequestURIPlugin()->setRequestURI();
+        $result = null;
 
-    if(!$this->SessionTimeoutPlugin()->isValid()) {
-      return $this->redirect()->toRoute(
-        'auth',
-        array(
-          'action' => 'login'
-        ),
-        array(
-          'query' => array(
-            'req' => $this->RequestURIPlugin()->getRequestURI(),
-            'dird' => $_SESSION['bareos']['director']
-          )
-        )
-      );
-    }
+        $data = $this->params()->fromQuery('data');
+        $limit = $this->params()->fromQuery('limit');
+        $offset = $this->params()->fromQuery('offset');
+        $reverse = $this->params()->fromQuery('reverse');
 
-    $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
-    $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
-      $module_config['console_commands']['Director']['optional']
-    );
-    if(count($invalid_commands) > 0 && in_array('messages', $invalid_commands)) {
-      $this->acl_alert = true;
-      return new ViewModel(
-        array(
-          'acl_alert' => $this->acl_alert,
-          'invalid_commands' => implode(",", 'messages')
-        )
-      );
-    }
+        if ($data == "messages") {
+            try {
+                $this->bsock = $this->getServiceLocator()->get('director');
+                $result = $this->getDirectorModel()->getDirectorMessages($this->bsock, $limit, $offset, $reverse);
+                $this->bsock->disconnect();
+            } catch (Exception $e) {
+                echo $e->getMessage();
+            }
+        }
 
-    return new ViewModel();
-  }
+        $response = $this->getResponse();
+        $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
 
-  /**
-   * Get Data Action
-   *
-   * @return object
-   */
-  public function getDataAction()
-  {
-    $this->RequestURIPlugin()->setRequestURI();
+        if (isset($result)) {
+            $response->setContent(JSON::encode($result));
+        }
 
-    if(!$this->SessionTimeoutPlugin()->isValid()) {
-      return $this->redirect()->toRoute(
-        'auth',
-        array(
-          'action' => 'login'
-        ),
-        array(
-          'query' => array(
-            'req' => $this->RequestURIPlugin()->getRequestURI(),
-            'dird' => $_SESSION['bareos']['director']
-          )
-        )
-      );
+        return $response;
     }
 
-    $result = null;
-
-    $data = $this->params()->fromQuery('data');
-    $limit = $this->params()->fromQuery('limit');
-    $offset = $this->params()->fromQuery('offset');
-    $reverse = $this->params()->fromQuery('reverse');
-
-    if($data == "messages") {
-      try {
-        $this->bsock = $this->getServiceLocator()->get('director');
-        $result = $this->getDirectorModel()->getDirectorMessages($this->bsock, $limit, $offset, $reverse);
-        $this->bsock->disconnect();
-      }
-      catch(Exception $e) {
-        echo $e->getMessage();
-      }
+    /**
+     * Get Director Model
+     *
+     * @return object
+     */
+    public function getDirectorModel()
+    {
+        if (!$this->directorModel) {
+            $sm = $this->getServiceLocator();
+            $this->directorModel = $sm->get('Director\Model\DirectorModel');
+        }
+        return $this->directorModel;
     }
-
-    $response = $this->getResponse();
-    $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
-
-    if(isset($result)) {
-      $response->setContent(JSON::encode($result));
-    }
-
-    return $response;
-  }
-
-  /**
-   * Get Director Model
-   *
-   * @return object
-   */
-  public function getDirectorModel()
-  {
-    if(!$this->directorModel) {
-      $sm = $this->getServiceLocator();
-      $this->directorModel = $sm->get('Director\Model\DirectorModel');
-    }
-    return $this->directorModel;
-  }
 }

@@ -4,7 +4,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -56,18 +56,17 @@ $config = array(
 $bsock = new BareosBSock();
 
 foreach ($config as $key => $value) {
-   $bsock->set_config_param($key, $value);
+    $bsock->set_config_param($key, $value);
 }
 
 if ($argv[1] === 1) {
-   var_dump($bsock);
+    var_dump($bsock);
 }
 
 $result = $bsock->connect_and_authenticate();
 
-if($result)
-   exit(0);
-else
-   exit(1);
-
-?>
+if ($result) {
+    exit(0);
+} else {
+    exit(1);
+}

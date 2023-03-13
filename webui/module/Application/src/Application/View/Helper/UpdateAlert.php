@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2020 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  * @author    Frank Bergkemper
  *
@@ -23,25 +23,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+
 namespace Application\View\Helper;
 
 use Zend\View\Helper\AbstractHelper;
 
 class UpdateAlert extends AbstractHelper
 {
-   protected $value;
-   protected $result;
+    protected $value;
+    protected $result;
 
-   public function __invoke($product_updates_status=null, $dird_update_available=null)
-   {
-      if($product_updates_status === false) {
-         $this->result = '<a data-toggle="tooltip" data-placement="bottom" href="http://download.bareos.com/" target="_blank"title="Update informaton could not be retrieved"><span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span></a>';
+    public function __invoke($product_updates_status = null, $dird_update_available = null)
+    {
+        if ($product_updates_status === false) {
+            $this->result = '<a data-toggle="tooltip" data-placement="bottom" href="http://download.bareos.com/" target="_blank"title="Update informaton could not be retrieved"><span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span></a>';
             return $this->result;
-      }
+        }
 
-      if($dird_update_available === true) {
+        if ($dird_update_available === true) {
             $this->result = '<a data-toggle="tooltip" data-placement="bottom" href="http://download.bareos.com/" target="_blank"title="Updates available"><span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span></a>';
             return $this->result;
-      }
-   }
+        }
+    }
 }
