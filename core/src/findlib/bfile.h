@@ -108,7 +108,7 @@ HANDLE BgetHandle(BareosFilePacket* bfd);
 /* Basic Unix low level I/O file packet */
 /* clang-format off */
 struct BareosFilePacket {
-  int filedes{0};                 /**< filedescriptor on Unix */
+  int filedes{kInvalidFiledescriptor};                 /**< filedescriptor on Unix */
   int flags_{0};                  /**< open flags */
   int BErrNo{0};                  /**< errno */
   int32_t lerror{0};              /**< not used - simplifies Win32 builds */
