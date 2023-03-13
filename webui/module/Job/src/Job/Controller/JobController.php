@@ -640,7 +640,7 @@ class JobController extends AbstractActionController
                     $jobs_R
                 );
             } catch (Exception $e) {
-                echo $e->getMessages();
+                echo $e->getMessage();
             }
         } elseif ($data == "details") {
             try {
@@ -741,7 +741,7 @@ class JobController extends AbstractActionController
 
                 $result = $jobs;
             } catch (Exception $e) {
-                echo $e->getMessages();
+                echo $e->getMessage();
             }
         }
 
