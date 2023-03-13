@@ -989,8 +989,8 @@ int SendFiles(JobControlRecord* jcr,
 		    while ((file = list.try_get())) {
 			    char* fname = file->name.data();
 			    Dmsg1(debuglevel, "F %s\n", fname);
-			    if(!SetupFFPkt(jcr, ff, fname, file->statp, file->delta_seq,
-					   file->type, file->hfsinfo))
+			    if (!SetupFFPkt(jcr, ff, fname, file->statp, file->delta_seq,
+					    file->type, file->hfsinfo))
 			    {
 				    Dmsg1(debuglevel, "Error: Could not setup ffpkt for file %s",
 					  ff->fname);
@@ -1006,8 +1006,59 @@ int SendFiles(JobControlRecord* jcr,
 			    {
 				    Dmsg4(50, "flags=<%d>\n", ff->flags);
 			    }
+			    bool do_read = false;
+			    {
+				    /* Open any file with data that we intend to save, then save it.
+				     *
+				     * Note, if is_win32_backup, we must open the Directory so that
+				     * the BackupRead will save its permissions and ownership streams. */
+				    if (ff->type != FT_LNKSAVED && S_ISREG(ff->statp.st_mode)) {
+#ifdef HAVE_WIN32
+					    do_read = !IsPortableBackup(&ff->bfd) || ff->statp.st_size > 0;
+#else
+					    do_read = ff->statp.st_size > 0;
+#endif
+				    } else if (ff->type == FT_RAW || ff->type == FT_FIFO
+					       || ff->type == FT_REPARSE || ff->type == FT_JUNCTION
+					       || (!IsPortableBackup(&ff->bfd)
+						   && ff->type == FT_DIREND)) {
+					    do_read = true;
+				    }
+			    }
+			    // fifos will block on open until some data is
+			    // written
+			    // insead of handling this here, we handle it in
+			    // the FileSave procedure
+			    // is this a good idea ?
+			    if (do_read && ff->type != FT_FIFO)
+			    {
+				    binit(&ff->bfd);
+				    if (BitIsSet(FO_PORTABLE, ff->flags)) {
+					    SetPortableBackup(&ff->bfd); /* disable Win32 BackupRead() */
+				    }
+				    int noatime = BitIsSet(FO_NOATIME, ff->flags) ? O_NOATIME : 0;
+				    if (bopen(&ff->bfd, ff->fname, O_RDONLY | O_BINARY | noatime, 0,
+					      ff->statp.st_rdev) < 0)
+				    {
+					    ff->ff_errno = errno;
+					    BErrNo be;
+					    Jmsg(jcr, M_NOTSAVED, 0, _("     Cannot open \"%s\": ERR=%s.\n"),
+						 ff->fname, be.bstrerror());
+					    jcr->JobErrors++;
+					    CleanupLink(ff);
+					    continue;
+				    }
+				    else
+				    {
+					    // fadvise
+				    }
+			    }
 			    if (!FileSave(jcr, ff, false))
 			    {
+				    if (IsBopen(&ff->bfd))
+				    {
+					    bclose(&ff->bfd);
+				    }
 				    CleanupLink(ff);
 				    Dmsg1(debuglevel, "Error: Could not save file %s",
 					  ff->fname);
