@@ -28,6 +28,7 @@ namespace Director\Controller;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
 use Zend\Json\Json;
+use Exception;
 
 class DirectorController extends AbstractActionController
 {

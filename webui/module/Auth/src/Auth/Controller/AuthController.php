@@ -30,6 +30,7 @@ use Zend\View\Model\ViewModel;
 use Auth\Model\Auth;
 use Auth\Form\LoginForm;
 use Zend\Session\Container;
+use Exception;
 
 class AuthController extends AbstractActionController
 {

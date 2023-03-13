@@ -31,6 +31,7 @@ use Zend\View\Model\JsonModel;
 use Zend\Json\Json;
 use Restore\Model\Restore;
 use Restore\Form\RestoreForm;
+use Exception;
 
 class RestoreController extends AbstractActionController
 {

@@ -31,6 +31,7 @@ use Zend\Json\Json;
 use Job\Form\JobForm;
 use Job\Form\RunJobForm;
 use Job\Model\Job;
+use Exception;
 
 class JobController extends AbstractActionController
 {
