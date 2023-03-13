@@ -33,6 +33,8 @@ use Exception;
 class AnalyticsController extends AbstractActionController
 {
     protected $analyticsModel = null;
+    protected $bsock = null;
+    protected $acl_alert = false;
 
     public function indexAction()
     {
