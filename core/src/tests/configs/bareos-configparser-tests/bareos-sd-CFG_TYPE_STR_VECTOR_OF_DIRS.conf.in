@@ -1,0 +1,14 @@
+Storage {
+  Name = bareos-sd
+  Maximum Concurrent Jobs = 20
+
+  Working Directory =  "/tmp/tests/backup-bareos-test/working"
+  SD Port = 42003
+
+  BackendDirectory = @PATH_BAREOS_BACKENDDIR@        # default value, 1 entry
+  BackendDirectory = item01,item02                   # 2 entries
+  BackendDirectory = item11, item12                  # 2 entries
+  BackendDirectory = item21, "item22"                # 2 entries
+  BackendDirectory = "item31", "item32"              # 2 entries
+
+}
