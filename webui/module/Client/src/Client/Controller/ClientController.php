@@ -520,7 +520,7 @@ class ClientController extends AbstractActionController
                         case 'R':
                         case 'l':
                             $fillcolor = "#5bc0de";
-                            $endtime = new \DateTime(null);
+                            $endtime = new \DateTime("now");
                             $endtime = $endtime->format('U') * 1000;
                             break;
                             // FAILED
@@ -543,7 +543,7 @@ class ClientController extends AbstractActionController
                         case 'p':
                         case 'q':
                             $fillcolor = "#555555";
-                            $endtime = new \DateTime(null);
+                            $endtime = new \DateTime("now");
                             $endtime = $endtime->format('U') * 1000;
                             break;
                         default:
