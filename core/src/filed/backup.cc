@@ -736,10 +736,13 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
     if (!SetupEncryptionDigests(bsctx)) { goto good_rtn; }
   }
 
-  // Initialize the file descriptor we use for data and other streams.
-  binit(&ff_pkt->bfd);
-  if (BitIsSet(FO_PORTABLE, ff_pkt->flags)) {
-    SetPortableBackup(&ff_pkt->bfd); /* disable Win32 BackupRead() */
+  if (!IsBopen(&ff_pkt->bfd))
+  {
+	  // Initialize the file descriptor we use for data and other streams.
+	  binit(&ff_pkt->bfd);
+	  if (BitIsSet(FO_PORTABLE, ff_pkt->flags)) {
+		  SetPortableBackup(&ff_pkt->bfd); /* disable Win32 BackupRead() */
+	  }
   }
 
   // Option and cmd plugin are not compatible together
@@ -829,9 +832,8 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
     ff_pkt->bfd.reparse_point
         = (ff_pkt->type == FT_REPARSE || ff_pkt->type == FT_JUNCTION);
 
-    if (bopen(&ff_pkt->bfd, ff_pkt->fname, O_RDONLY | O_BINARY | noatime, 0,
-              ff_pkt->statp.st_rdev)
-        < 0) {
+    if (!IsBopen(&ff_pkt->bfd) && (bopen(&ff_pkt->bfd, ff_pkt->fname, O_RDONLY | O_BINARY | noatime, 0,
+					 ff_pkt->statp.st_rdev) < 0)) {
       ff_pkt->ff_errno = errno;
       BErrNo be;
       Jmsg(jcr, M_NOTSAVED, 0, _("     Cannot open \"%s\": ERR=%s.\n"),
