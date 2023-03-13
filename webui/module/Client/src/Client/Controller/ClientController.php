@@ -498,9 +498,9 @@ class ClientController extends AbstractActionController
                 date_default_timezone_set(@date_default_timezone_get());
 
                 foreach ($result as $job) {
-                    $starttime = new \DateTime($job['starttime']);
-                    $endtime = new \DateTime($job['endtime']);
-                    $schedtime = new \DateTime($job['schedtime']);
+                    $starttime = new \DateTime($job['starttime'], new \DateTimeZone('UTC'));
+                    $endtime = new \DateTime($job['endtime'], new \DateTimeZone('UTC'));
+                    $schedtime = new \DateTime($job['schedtime'], new \DateTimeZone('UTC'));
 
                     $starttime = $starttime->format('U') * 1000;
                     $endtime = $endtime->format('U') * 1000;
@@ -520,7 +520,7 @@ class ClientController extends AbstractActionController
                         case 'R':
                         case 'l':
                             $fillcolor = "#5bc0de";
-                            $endtime = new \DateTime("now");
+                            $endtime = new \DateTime("now", new \DateTimeZone('UTC'));
                             $endtime = $endtime->format('U') * 1000;
                             break;
                             // FAILED
@@ -543,7 +543,7 @@ class ClientController extends AbstractActionController
                         case 'p':
                         case 'q':
                             $fillcolor = "#555555";
-                            $endtime = new \DateTime("now");
+                            $endtime = new \DateTime("now", new \DateTimeZone('UTC'));
                             $endtime = $endtime->format('U') * 1000;
                             break;
                         default:
