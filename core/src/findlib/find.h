@@ -184,7 +184,7 @@ struct CurLink {
   int32_t digest_stream; /**< Digest type if needed */
   uint32_t digest_len;   /**< Digest len if needed */
   char* digest;          /**< Checksum of the file if needed */
-  char name[1];          /**< The name */
+  char* name;            /**< The name */
 };
 
 using LinkHash
