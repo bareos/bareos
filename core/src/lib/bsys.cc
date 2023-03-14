@@ -218,21 +218,24 @@ char* bstrinlinecpy(char* dest, const char* src)
  */
 char* bstrncpy(char* dest, const char* src, int maxlen)
 {
-  std::string tmp;
-
   if ((src == nullptr) || (maxlen <= 1)) {
     dest[0] = 0;
     return dest;
   }
 
-  if ((dest <= src) && ((dest + (maxlen - 1) * sizeof(char)) >= src)) {
-    Dmsg0(100, "Overlapping strings found, using copy.\n");
-    tmp.assign(src);
-    src = tmp.c_str();
-  }
+  int len = strnlen(src, maxlen-1);
 
-  strncpy(dest, src, maxlen - 1);
-  dest[maxlen - 1] = 0;
+  if ((dest < src + len) && (src < dest + len)) {
+    Dmsg0(100, "Overlapping strings found, using memmove.\n");
+    memmove(dest, src, len);
+  }
+  else
+  {
+    memcpy(dest, src, len);
+  }
+  // maxlen is always at least one bigger than len
+  memset(dest + len, 0, maxlen - len);
+
   return dest;
 }
 
@@ -249,15 +252,8 @@ char* bstrncpy(char* dest, PoolMem& src, int maxlen)
  */
 char* bstrncat(char* dest, const char* src, int maxlen)
 {
-  std::string tmp;
   int len = strlen(dest);
-
-  if ((dest <= src) && ((dest + (maxlen - 1) * sizeof(char)) >= src)) {
-    Dmsg0(100, "Overlapping strings found, using copy.\n");
-    tmp.assign(src);
-    src = tmp.c_str();
-  }
-
+  // bstrncpy will handle the overlap
   if (len < maxlen - 1) { bstrncpy(dest + len, src, maxlen - len); }
   return dest;
 }
