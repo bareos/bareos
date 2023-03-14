@@ -438,19 +438,31 @@ static inline int process_hardlink(
       *done = true;
       return 1; /* ignore */
     }
+    if (hl->digest) {
+      ff_pkt->link = hl->name;
+      ff_pkt->type = FT_LNKSAVED; /* Handle link, file already saved */
+      ff_pkt->LinkFI = hl->FileIndex;
+      ff_pkt->linked = NULL;
+      ff_pkt->digest = hl->digest;
+      ff_pkt->digest_stream = hl->digest_stream;
+      ff_pkt->digest_len = hl->digest_len;
 
-    ff_pkt->link = hl->name;
-    ff_pkt->type = FT_LNKSAVED; /* Handle link, file already saved */
-    ff_pkt->LinkFI = hl->FileIndex;
-    ff_pkt->linked = NULL;
-    ff_pkt->digest = hl->digest;
-    ff_pkt->digest_stream = hl->digest_stream;
-    ff_pkt->digest_len = hl->digest_len;
+      rtn_stat = HandleFile(jcr, ff_pkt, top_level);
+      Dmsg3(400, "FT_LNKSAVED FI=%d LinkFI=%d file=%s\n", ff_pkt->FileIndex,
+	    hl->FileIndex, hl->name);
+      *done = true;
+    } else {
+      // if digest does not exist then whatever file created the
+      // hardlink was not backed up (correctly).  Try again here:
 
-    rtn_stat = HandleFile(jcr, ff_pkt, top_level);
-    Dmsg3(400, "FT_LNKSAVED FI=%d LinkFI=%d file=%s\n", ff_pkt->FileIndex,
-          hl->FileIndex, hl->name);
-    *done = true;
+      int len = strlen(fname) + 1;
+      hl->name   = (char*) ff_pkt->linkhash->hash_malloc(len);
+      bstrncpy(hl->name, fname, len);
+      ff_pkt->linked = hl; /* Mark saved link */
+      Dmsg2(400, "Added to hash FI=%d file=%s\n", ff_pkt->FileIndex, hl->name);
+      *done = false;
+    }
+
   } else {
     // File not previously dumped. Chain it into our list.
     hl = new_hardlink(jcr, ff_pkt, fname, ff_pkt->statp.st_ino,
