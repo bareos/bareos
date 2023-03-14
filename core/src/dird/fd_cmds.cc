@@ -294,15 +294,20 @@ bool ConnectToFileDaemon(JobControlRecord* jcr,
               jcr->file_bsock = nullptr;
             }
             jcr->setJobStatus(JS_Running);
-            jcr->dir_impl->connection_handshake_try_
-                = ClientConnectionHandshakeMode::kCleartextFirst;
+            if (!IsClientTlsRequired(jcr)) {
+              jcr->dir_impl->connection_handshake_try_
+                  = ClientConnectionHandshakeMode::kCleartextFirst;
+            } else {
+              jcr->dir_impl->connection_handshake_try_
+                  = ClientConnectionHandshakeMode::kFailed;
+            }
             break;
           case ClientConnectionHandshakeMode::kCleartextFirst:
             jcr->dir_impl->connection_handshake_try_
                 = ClientConnectionHandshakeMode::kFailed;
             break;
           case ClientConnectionHandshakeMode::kFailed:
-          default: /* should bei one of class ClientConnectionHandshakeMode */
+          default: /* should be one of class ClientConnectionHandshakeMode */
             ASSERT(false);
             break;
         }
