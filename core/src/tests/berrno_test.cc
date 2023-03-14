@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2021-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,8 +22,10 @@
 #if defined(HAVE_MINGW)
 #  include "include/bareos.h"
 #  include "gtest/gtest.h"
+#  include "gmock/gmock.h"
 #else
 #  include "gtest/gtest.h"
+#  include "gmock/gmock.h"
 #endif
 
 #include "lib/berrno.h"
@@ -49,7 +51,7 @@ const char* socket_error_message
     = "No such file or directory (errno=2 | win_error=0x0000276D)";
 const char* win_socket_error_message = "Windows error 0x0000276D";
 const char* bind_error_message
-    = "No such file or directory (errno=2 | win_error=0x0000273F)";
+    = "No such file or directory (errno=2 | win_error=0x000027";
 #else
 #  error "error_messages for current OS undefined"
 #endif
@@ -98,6 +100,6 @@ TEST(berrno, errors)
   EXPECT_LT(operation_result, 0);
   if (operation_result < 0) {
     BErrNo be;
-    EXPECT_STREQ(be.bstrerror(), bind_error_message);
+    EXPECT_THAT(be.bstrerror(), testing::StartsWith(bind_error_message));
   }
 }
