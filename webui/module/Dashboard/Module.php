@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -30,36 +30,34 @@ use Dashboard\Model\DashboardModel;
 
 class Module
 {
-
-   public function getAutoloaderConfig()
-   {
-      return array(
-         'Zend\Loader\ClassMapAutoloader' => array(
-            __DIR__ . '/autoload_classmap.php',
-         ),
-         'Zend\Loader\StandardAutoloader' => array(
-            'namespaces' => array(
-               __NAMESPACE__ => __DIR__ . '/src/' . __NAMESPACE__,
+    public function getAutoloaderConfig()
+    {
+        return array(
+            'Zend\Loader\ClassMapAutoloader' => array(
+                __DIR__ . '/autoload_classmap.php',
             ),
-         ),
-      );
-   }
+            'Zend\Loader\StandardAutoloader' => array(
+                'namespaces' => array(
+                    __NAMESPACE__ => __DIR__ . '/src/' . __NAMESPACE__,
+                ),
+            ),
+        );
+    }
 
-   public function getConfig()
-   {
-     return include __DIR__ . '/config/module.config.php';
-   }
+    public function getConfig()
+    {
+        return include __DIR__ . '/config/module.config.php';
+    }
 
-   public function getServiceConfig()
-   {
-      return array(
-         'factories' => array(
-            'Dashboard\Model\DashboardModel' => function() {
-               $model = new DashboardModel();
-               return $model;
-            },
-         ),
-      );
-   }
-
+    public function getServiceConfig()
+    {
+        return array(
+            'factories' => array(
+                'Dashboard\Model\DashboardModel' => function () {
+                    $model = new DashboardModel();
+                    return $model;
+                },
+            ),
+        );
+    }
 }

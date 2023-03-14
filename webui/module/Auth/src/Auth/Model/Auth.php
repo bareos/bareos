@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -31,75 +31,70 @@ use Zend\InputFilter\InputFilterInterface;
 
 class Auth implements InputFilterAwareInterface
 {
+    public $director;
+    public $consolename;
+    public $password;
 
-   public $director;
-   public $consolename;
-   public $password;
+    protected $inputFilter;
 
-   protected $inputFilter;
+    public function setInputFilter(InputFilterInterface $inputFilter)
+    {
+        throw new \Exception("setInputFilter() not used");
+    }
 
-   public function setInputFilter(InputFilterInterface $inputFilter)
-   {
-      throw new \Exception("setInputFilter() not used");
-   }
+    public function getInputFilter()
+    {
+        if (!$this->inputFilter) {
+            $inputFilter = new InputFilter();
 
-   public function getInputFilter()
-   {
-      if (!$this->inputFilter) {
+            $inputFilter->add(array(
+                'name' => 'director',
+                'required' => true,
+                'filters' => array(
+                    array('name' => 'StripTags'),
+                    array('name' => 'StringTrim'),
+                ),
+                'validators' => array(),
+            ));
 
-         $inputFilter = new InputFilter();
+            $inputFilter->add(array(
+                'name' => 'consolename',
+                'required' => true,
+                'filters' => array(
+                    array('name' => 'StripTags'),
+                    array('name' => 'StringTrim'),
+                ),
+                'validators' => array(
+                    array(
+                        'name' => 'StringLength',
+                        'options' => array(
+                            'encoding' => 'UTF-8',
+                            'min' => 1,
+                            'max' => 64,
+                        ),
+                    ),
+                ),
+            ));
 
-         $inputFilter->add(array(
-            'name' => 'director',
-            'required' => true,
-            'filters' => array(
-               array('name' => 'StripTags'),
-               array('name' => 'StringTrim'),
-            ),
-            'validators' => array(),
-         ));
+            $inputFilter->add(array(
+                'name' => 'password',
+                'required' => true,
+                'filters' => array(),
+                'validators' => array(
+                    array(
+                        'name' => 'StringLength',
+                        'options' => array(
+                            'encoding' => 'UTF-8',
+                            'min' => 1,
+                            'max' => 64,
+                        ),
+                    ),
+                ),
+            ));
 
-         $inputFilter->add(array(
-            'name' => 'consolename',
-            'required' => true,
-            'filters' => array(
-               array('name' => 'StripTags'),
-               array('name' => 'StringTrim'),
-            ),
-            'validators' => array(
-               array(
-                  'name' => 'StringLength',
-                  'options' => array(
-                     'encoding' => 'UTF-8',
-                     'min' => 1,
-                     'max' => 64,
-                  ),
-               ),
-            ),
-         ));
+            $this->inputFilter = $inputFilter;
+        }
 
-         $inputFilter->add(array(
-            'name' => 'password',
-      'required' => true,
-      'filters' => array(),
-      'validators' => array(
-          array(
-         'name' => 'StringLength',
-         'options' => array(
-             'encoding' => 'UTF-8',
-             'min' => 1,
-             'max' => 64,
-         ),
-          ),
-      ),
-         ));
-
-         $this->inputFilter = $inputFilter;
-
-      }
-
-      return $this->inputFilter;
-
-   }
-
+        return $this->inputFilter;
+    }
 }
