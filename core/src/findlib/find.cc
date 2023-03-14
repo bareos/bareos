@@ -728,6 +728,9 @@ static void ListFromIncexe(JobControlRecord* jcr,
 	dlistString* node;
 	fileset->incexe = incexe;
 	SetupFlags(ff, incexe);
+	// we do not need to follow hardlinks, as they will be handled
+	// by the sending thread
+	SetBit(FO_NO_HARDLINK, ff->flags);
 
 	Dmsg4(50, "Verify=<%s> Accurate=<%s> BaseJob=<%s> flags=<%d>\n",
 	      ff->VerifyOpts, ff->AccurateOpts, ff->BaseJobOpts, ff->flags);
@@ -1012,13 +1015,13 @@ int SendFiles(JobControlRecord* jcr,
 			    if (!SetupFFPkt(jcr, ff, fname, file->statp, file->delta_seq,
 					    file->type, file->hfsinfo))
 			    {
-				    Dmsg1(debuglevel, "Error: Could not setup ffpkt for file %s",
+				    Dmsg1(debuglevel, "Error: Could not setup ffpkt for file '%s'\n",
 					  ff->fname);
 				    return 0;
 			    }
 			    if (!AcceptFile(ff))
 			    {
-				    Dmsg1(debuglevel, "Did not accept file %s; skipping.",
+				    Dmsg1(debuglevel, "Did not accept file '%s'; skipping.\n",
 					 ff->fname);
 				    continue;
 			    }
