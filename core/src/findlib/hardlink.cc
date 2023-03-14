@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -57,7 +57,6 @@ CurLink* new_hardlink(JobControlRecord* jcr,
                       ino_t ino,
                       dev_t dev)
 {
-  int len;
   CurLink* hl = NULL;
   uint64_t binary_search_key[2];
   uint8_t* new_key;
@@ -67,15 +66,17 @@ CurLink* new_hardlink(JobControlRecord* jcr,
     ff_pkt->linkhash->init(hl, &hl->link, 10000, 480);
   }
 
-  len = strlen(fname) + 1;
-  hl = (CurLink*)ff_pkt->linkhash->hash_malloc(sizeof(CurLink) + len);
+  int len = strlen(fname) + 1;
+  hl = (CurLink*)ff_pkt->linkhash->hash_malloc(sizeof(CurLink));
+  hl->name = (char*)ff_pkt->linkhash->hash_malloc(len);
+  bstrncpy(hl->name, fname, len);
+  hl->ino = ino;
+  hl->dev = dev;
+
   hl->digest = NULL;     /* Set later */
   hl->digest_stream = 0; /* Set later */
   hl->digest_len = 0;    /* Set later */
-  hl->ino = ino;
-  hl->dev = dev;
-  hl->FileIndex = 0; /* Set later */
-  bstrncpy(hl->name, fname, len);
+  hl->FileIndex = 0;     /* Set later */
 
   memset(binary_search_key, 0, sizeof(binary_search_key));
   binary_search_key[0] = dev;

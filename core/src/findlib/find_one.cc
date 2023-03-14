@@ -439,18 +439,36 @@ static inline int process_hardlink(JobControlRecord* jcr,
       return 1; /* ignore */
     }
 
-    ff_pkt->link = hl->name;
-    ff_pkt->type = FT_LNKSAVED; /* Handle link, file already saved */
-    ff_pkt->LinkFI = hl->FileIndex;
-    ff_pkt->linked = NULL;
-    ff_pkt->digest = hl->digest;
-    ff_pkt->digest_stream = hl->digest_stream;
-    ff_pkt->digest_len = hl->digest_len;
+    // We need to ensure that at least one hardlinked file was send.
+    // Since only files that were sent have FileIndex > 0, we can
+    // use hl->FileIndex to see whether a file was send already or not.
+    // If no file was send yet (this can happen if the file was excluded for
+    // example), we overwrite the name and fileindex inside the hl entry.
 
-    rtn_stat = HandleFile(jcr, ff_pkt, top_level);
-    Dmsg3(400, "FT_LNKSAVED FI=%d LinkFI=%d file=%s\n", ff_pkt->FileIndex,
-          hl->FileIndex, hl->name);
-    *done = true;
+    if (hl->FileIndex > 0) {
+      ff_pkt->link = hl->name;
+      ff_pkt->type = FT_LNKSAVED; /* Handle link, file already saved */
+      ff_pkt->LinkFI = hl->FileIndex;
+      ff_pkt->linked = NULL;
+      ff_pkt->digest = hl->digest;
+      ff_pkt->digest_stream = hl->digest_stream;
+      ff_pkt->digest_len = hl->digest_len;
+
+      rtn_stat = HandleFile(jcr, ff_pkt, top_level);
+      Dmsg3(400, "FT_LNKSAVED FI=%d LinkFI=%d file=%s\n", ff_pkt->FileIndex,
+            hl->FileIndex, hl->name);
+      *done = true;
+    } else {
+      // if FileIndex is <= 0, then no file data was send yet.  Send it now
+      // and update the name
+      int len = strlen(fname) + 1;
+      hl->name = (char*)ff_pkt->linkhash->hash_malloc(len);
+      bstrncpy(hl->name, fname, len);
+      ff_pkt->linked = hl; /* Mark saved link */
+      Dmsg2(400, "Added to hash FI=%d file=%s\n", ff_pkt->FileIndex, hl->name);
+      *done = false;
+    }
+
   } else {
     // File not previously dumped. Chain it into our list.
     hl = new_hardlink(jcr, ff_pkt, fname, ff_pkt->statp.st_ino,
