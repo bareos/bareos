@@ -375,7 +375,7 @@ extern "C" HANDLE get_osfhandle(int fd);
 void binit(BareosFilePacket* bfd)
 {
   new (bfd) BareosFilePacket();
-  bfd->filedes = -1;
+  bfd->filedes = kInvalidFiledescriptor;
   bfd->use_backup_api = have_win32_api();
 }
 
@@ -1067,19 +1067,19 @@ int bopen(BareosFilePacket* bfd,
   bfd->filedes = open(fname, flags & ~O_NOATIME, mode);
 
   /* Set O_NOATIME if possible */
-  if (bfd->filedes != -1 && flags & O_NOATIME) {
+  if (bfd->filedes != kInvalidFiledescriptor && flags & O_NOATIME) {
     int oldflags = fcntl(bfd->filedes, F_GETFL, 0);
     if (oldflags == -1) {
       bfd->BErrNo = errno;
       close(bfd->filedes);
-      bfd->filedes = -1;
+      bfd->filedes = kInvalidFiledescriptor;
     } else {
       int ret = fcntl(bfd->filedes, F_SETFL, oldflags | O_NOATIME);
       /* EPERM means setting O_NOATIME was not allowed  */
       if (ret == -1 && errno != EPERM) {
         bfd->BErrNo = errno;
         close(bfd->filedes);
-        bfd->filedes = -1;
+        bfd->filedes = kInvalidFiledescriptor;
       }
     }
   }
@@ -1093,7 +1093,7 @@ int bopen(BareosFilePacket* bfd,
 
 #  if defined(HAVE_POSIX_FADVISE)
   /* If not RDWR or WRONLY must be Read Only */
-  if (bfd->filedes != -1 && !(flags & (O_RDWR | O_WRONLY))) {
+  if (bfd->filedes != kInvalidFiledescriptor && !(flags & (O_RDWR | O_WRONLY))) {
     int status = 0;
 #if defined(POSIX_FADV_WILLNEED)
     status = posix_fadvise(bfd->filedes, 0, 0, POSIX_FADV_WILLNEED);
@@ -1133,13 +1133,13 @@ int bclose(BareosFilePacket* bfd)
 {
   int status;
 
-  if (bfd->filedes == -1) { return 0; }
+  if (bfd->filedes == kInvalidFiledescriptor) { return 0; }
 
   Dmsg1(400, "Close file %d\n", bfd->filedes);
 
   if (bfd->cmd_plugin && plugin_bclose) {
     status = plugin_bclose(bfd);
-    bfd->filedes = -1;
+    bfd->filedes = kInvalidFiledescriptor;
     bfd->do_io_in_core = false;
     bfd->cmd_plugin = false;
   } else {
@@ -1155,7 +1155,7 @@ int bclose(BareosFilePacket* bfd)
     /* Close normal file */
     status = close(bfd->filedes);
     bfd->BErrNo = errno;
-    bfd->filedes = -1;
+    bfd->filedes = kInvalidFiledescriptor;
     bfd->cmd_plugin = false;
     bfd->do_io_in_core = false;
   }
