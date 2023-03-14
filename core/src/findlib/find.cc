@@ -1006,6 +1006,10 @@ int SendFiles(JobControlRecord* jcr,
 			    {
 				    Dmsg4(50, "flags=<%d>\n", ff->flags);
 			    }
+			    binit(&ff->bfd);
+			    if (BitIsSet(FO_PORTABLE, ff->flags)) {
+				    SetPortableBackup(&ff->bfd); /* disable Win32 BackupRead() */
+			    }
 			    bool do_read = false;
 			    {
 				    /* Open any file with data that we intend to save, then save it.
@@ -1032,10 +1036,6 @@ int SendFiles(JobControlRecord* jcr,
 			    // is this a good idea ?
 			    if (do_read && ff->type != FT_FIFO)
 			    {
-				    binit(&ff->bfd);
-				    if (BitIsSet(FO_PORTABLE, ff->flags)) {
-					    SetPortableBackup(&ff->bfd); /* disable Win32 BackupRead() */
-				    }
 				    int noatime = BitIsSet(FO_NOATIME, ff->flags) ? O_NOATIME : 0;
 				    if (bopen(&ff->bfd, ff->fname, O_RDONLY | O_BINARY | noatime, 0,
 					      ff->statp.st_rdev) < 0)
@@ -1047,10 +1047,6 @@ int SendFiles(JobControlRecord* jcr,
 					    jcr->JobErrors++;
 					    CleanupLink(ff);
 					    continue;
-				    }
-				    else
-				    {
-					    // fadvise
 				    }
 			    }
 			    if (!FileSave(jcr, ff, false))
