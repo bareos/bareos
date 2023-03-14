@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -571,9 +571,14 @@ function(add_systemtest_from_directory tests_basedir prefix test_subdir)
     add_systemtest(${test_basename}:${test} ${test_dir}/${testfilename})
     set_tests_properties(
       "${test_basename}:${test}"
-      PROPERTIES FIXTURES_REQUIRED "${test_basename}-fixture"
+      PROPERTIES FIXTURES_REQUIRED
+                 "${test_basename}-fixture"
+                 # add a SETUP fixture, so we can express ordering requirements
+                 FIXTURES_SETUP
+                 "${test_basename}/${test}-fixture"
                  # use RESOURCE_LOCK to run tests sequential
-                 RESOURCE_LOCK "${test_basename}-lock"
+                 RESOURCE_LOCK
+                 "${test_basename}-lock"
     )
   endforeach()
 
@@ -590,9 +595,14 @@ function(add_systemtest_from_directory tests_basedir prefix test_subdir)
     add_systemtest(${test_basename}:${test} ${test_dir}/${testfilename} PYTHON)
     set_tests_properties(
       "${test_basename}:${test}"
-      PROPERTIES FIXTURES_REQUIRED "${test_basename}-fixture"
+      PROPERTIES FIXTURES_REQUIRED
+                 "${test_basename}-fixture"
+                 # add a SETUP fixture, so we can express ordering requirements
+                 FIXTURES_SETUP
+                 "${test_basename}/${test}-fixture"
                  # use RESOURCE_LOCK to run tests sequential
-                 RESOURCE_LOCK "${test_basename}-lock"
+                 RESOURCE_LOCK
+                 "${test_basename}-lock"
     )
   endforeach()
 
@@ -649,3 +659,17 @@ macro(create_systemtest prefix test_subdir)
     )
   endif()
 endmacro()
+
+function(systemtest_requires test required_test)
+  get_filename_component(basename ${CMAKE_CURRENT_BINARY_DIR} NAME)
+  get_test_property(
+    "${SYSTEMTEST_PREFIX}${basename}:${test}" FIXTURES_REQUIRED _fixtures
+  )
+  list(APPEND _fixtures
+       "${SYSTEMTEST_PREFIX}${basename}/${required_test}-fixture"
+  )
+  set_tests_properties(
+    "${SYSTEMTEST_PREFIX}${basename}:${test}" PROPERTIES FIXTURES_REQUIRED
+                                                         "${_fixtures}"
+  )
+endfunction()
