@@ -26,7 +26,7 @@ tries=60
 echo "umounting glusterfs..."
 while "${SUDO}" mount | grep "${gfapi_fd_host}:/testvol" >/dev/null 2>&1; do
   [ $((tries-=1)) -eq 0 ] && {
-    echo "could not umount glusterfs "${gfapi_fd_host}:/testvol"
+    echo "could not umount glusterfs ${gfapi_fd_host}:/testvol"
     exit 1
   }
   "${SUDO}" umount "${gfapi_fd_host}:/testvol"
