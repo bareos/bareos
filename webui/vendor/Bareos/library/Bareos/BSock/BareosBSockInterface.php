@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2014-2015 Bareos GmbH & Co. KG
+ * @copyright Copyright (c) 2014-2023 Bareos GmbH & Co. KG
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,43 +27,42 @@ namespace Bareos\BSock;
 
 interface BareosBSockInterface
 {
-   /**
-    * Authenticate
-    *
-    * @param $console
-    * @param $password
-    * @return boolean
-    */
-   public function connect_and_authenticate();
+    /**
+     * Authenticate
+     *
+     * @param $console
+     * @param $password
+     * @return boolean
+     */
+    public function connect_and_authenticate();
 
-   /**
-    * Set user credentials
-    *
-    * @param $username
-    * @param password
-    */
-   public function set_user_credentials($username, $password);
+    /**
+     * Set user credentials
+     *
+     * @param $username
+     * @param password
+     */
+    public function set_user_credentials($username, $password);
 
-   /**
-    * Set configuration
-    *
-    * @param $config
-    */
-   public function set_config($config);
+    /**
+     * Set configuration
+     *
+     * @param $config
+     */
+    public function set_config($config);
 
-   /**
-    * Disconnect
-    *
-    * @return boolean
-    */
-   public function disconnect();
+    /**
+     * Disconnect
+     *
+     * @return boolean
+     */
+    public function disconnect();
 
-   /**
-    * Send command
-    *
-    * @param $cmd
-    * @return string
-    */
-   public function send_command($cmd);
-
+    /**
+     * Send command
+     *
+     * @param $cmd
+     * @return string
+     */
+    public function send_command($cmd);
 }

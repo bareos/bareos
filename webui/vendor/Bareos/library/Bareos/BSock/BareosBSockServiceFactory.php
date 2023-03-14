@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2014-2015 Bareos GmbH & Co. KG
+ * @copyright Copyright (c) 2014-2023 Bareos GmbH & Co. KG
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -30,21 +30,21 @@ use Zend\ServiceManager\ServiceLocatorInterface;
 
 class BareosBSockServiceFactory implements FactoryInterface
 {
-   protected $bsock;
+    protected $bsock;
 
-   /**
-    */
-   public function createService(ServiceLocatorInterface $serviceLocator)
-   {
-      $config = $serviceLocator->get('Config');
-      $this->bsock = new BareosBSock($config['directors']);
+    /**
+     */
+    public function createService(ServiceLocatorInterface $serviceLocator)
+    {
+        $config = $serviceLocator->get('Config');
+        $this->bsock = new BareosBSock($config['directors']);
 
-      if (isset($_SESSION['bareos']['director'])) {
-         $this->bsock->set_config($config['directors'][$_SESSION['bareos']['director']]);
-         $this->bsock->set_user_credentials($_SESSION['bareos']['username'], $_SESSION['bareos']['password']);
-         $this->bsock->connect_and_authenticate();
-      }
+        if (isset($_SESSION['bareos']['director'])) {
+            $this->bsock->set_config($config['directors'][$_SESSION['bareos']['director']]);
+            $this->bsock->set_user_credentials($_SESSION['bareos']['username'], $_SESSION['bareos']['password']);
+            $this->bsock->connect_and_authenticate();
+        }
 
-      return $this->bsock;
-   }
+        return $this->bsock;
+    }
 }

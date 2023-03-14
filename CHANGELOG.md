@@ -11,6 +11,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - FreeBSD: build cleanup [PR #1380]
 - filed: avoid reading from ephemeral buffer [PR #1384]
 - checkpoints: fix performance drop on big volume restores [PR #1393]
+- introduce php-cs-fixer and apply PSR-12 guidelines [PR #1405]
 
 ### Fixed
 - VMware Plugin: fix restore to different vmname [PR #1397]
@@ -472,4 +473,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1393]: https://github.com/bareos/bareos/pull/1393
 [PR #1397]: https://github.com/bareos/bareos/pull/1397
 [PR #1399]: https://github.com/bareos/bareos/pull/1399
+[PR #1405]: https://github.com/bareos/bareos/pull/1405
 [unreleased]: https://github.com/bareos/bareos/tree/master

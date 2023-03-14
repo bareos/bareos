@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,20 +27,18 @@ namespace Fileset\Model;
 
 class Fileset
 {
+    public $filesetid;
+    public $fileset;
+    public $md5;
+    public $createtime;
 
-   public $filesetid;
-   public $fileset;
-   public $md5;
-   public $createtime;
+    public function exchangeArray($data)
+    {
+        $data = array_change_key_case($data, CASE_LOWER);
 
-   public function exchangeArray($data)
-   {
-      $data = array_change_key_case($data, CASE_LOWER);
-
-      $this->filesetid = (!empty($data['filesetid'])) ? $data['filesetid'] : null;
-      $this->fileset = (!empty($data['fileset'])) ? $data['fileset'] : null;
-      $this->md5 = (!empty($data['md5'])) ? $data['md5'] : null;
-      $this->createtime = (!empty($data['createtime'])) ? $data['createtime'] : null;
-   }
-
+        $this->filesetid = (!empty($data['filesetid'])) ? $data['filesetid'] : null;
+        $this->fileset = (!empty($data['fileset'])) ? $data['fileset'] : null;
+        $this->md5 = (!empty($data['md5'])) ? $data['md5'] : null;
+        $this->createtime = (!empty($data['createtime'])) ? $data['createtime'] : null;
+    }
 }
