@@ -901,36 +901,56 @@ static bool SetupFFPkt(JobControlRecord* jcr,
 	ff->link    = nullptr; // we may need to allocate memory here instead
 	if (!BitIsSet(FO_NO_HARDLINK, ff->flags) && statp.st_nlink > 1
 	    && CanBeHardLinked(statp)) {
-		CurLink* hl = lookup_hardlink(jcr, ff, statp.st_ino,
-					      statp.st_dev);
-		if (hl) {
-			/* If we have already backed up the hard linked file don't do it
-			 * again */
-			if (bstrcmp(hl->name, fname)) {
-				Dmsg2(400, "== Name identical skip FI=%d file=%s\n",
-				      hl->FileIndex, fname);
-				return false;
-			} else {
-				ff->link = hl->name;
-				ff->type
-					= FT_LNKSAVED; /* Handle link, file already saved */
-				ff->LinkFI = hl->FileIndex;
-				ff->linked = NULL;
-				ff->digest = hl->digest;
-				ff->digest_stream = hl->digest_stream;
-				ff->digest_len = hl->digest_len;
+	  CurLink* hl = lookup_hardlink(jcr, ff, statp.st_ino,
+					statp.st_dev);
+	  if (hl) {
+	    /* If we have already backed up the hard linked file don't do it
+	     * again */
+	    if (bstrcmp(hl->name, fname)) {
+	      Dmsg2(400, "== Name identical skip FI=%d file=%s\n",
+		    hl->FileIndex, fname);
+	      return false;
+	    } else {
+	      if (hl->FileIndex) {
+		ff->link = hl->name;
+		ff->type
+		  = FT_LNKSAVED; /* Handle link, file already saved */
+		ff->LinkFI = hl->FileIndex;
+		ff->linked = NULL;
+		ff->digest = hl->digest;
+		ff->digest_stream = hl->digest_stream;
+		ff->digest_len = hl->digest_len;
 
-				Dmsg3(400, "FT_LNKSAVED FI=%d LinkFI=%d file=%s\n",
-				      ff->FileIndex, hl->FileIndex, hl->name);
-			}
-		} else {
-			// File not previously dumped. Chain it into our list.
-			hl = new_hardlink(jcr, ff, fname, ff->statp.st_ino,
-					  ff->statp.st_dev);
-			ff->linked = hl; /* Mark saved link */
-			Dmsg2(400, "Added to hash FI=%d file=%s\n", ff->FileIndex,
-			      hl->name);
+		Dmsg3(400, "FT_LNKSAVED FI=%d LinkFI=%d file=%s\n",
+		      ff->FileIndex, hl->FileIndex, hl->name);
+	      } else {
+		// if digest does not exist then whatever file created the
+		// hardlink was not backed up (correctly). Try again here:
+
+		if (ff->type == FT_LNKSAVED) {
+		  // this should only happen if something went wrong.
+		  // we cannot base our hardlink on FT_LNKSAVED
+		  // as that will not send any data.  We just have to
+		  // throw an error here
+		  return false;
 		}
+
+		int len = strlen(fname) + 1;
+		hl->name   = (char*) ff->linkhash->hash_malloc(len);
+		bstrncpy(hl->name, fname, len);
+		ff->linked = hl; /* Mark saved link */
+		Dmsg2(400, "Added to hash FI=%d file=%s\n", ff->FileIndex,
+		      hl->name);
+	      }
+	    }
+	  } else {
+	    // File not previously dumped. Chain it into our list.
+	    hl = new_hardlink(jcr, ff, fname, ff->statp.st_ino,
+			      ff->statp.st_dev);
+	    ff->linked = hl; /* Mark saved link */
+	    Dmsg2(400, "Added to hash FI=%d file=%s\n", ff->FileIndex,
+		  hl->name);
+	  }
 	}
 
 	if (!SetupLink(ff)) return false;
