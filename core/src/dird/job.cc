@@ -381,6 +381,11 @@ bool IsConnectFromClientAllowed(ClientResource* res)
   return res->conn_from_fd_to_dir;
 }
 
+bool IsClientTlsRequired(JobControlRecord* jcr)
+{
+  return jcr->dir_impl->res.client->GetPolicy() == TlsPolicy::kBnetTlsRequired;
+}
+
 bool IsConnectFromClientAllowed(JobControlRecord* jcr)
 {
   return IsConnectFromClientAllowed(jcr->dir_impl->res.client);

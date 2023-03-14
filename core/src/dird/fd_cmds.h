@@ -60,6 +60,7 @@ void* HandleFiledConnection(ConnectionPool* connections,
 ConnectionPool* get_client_connections();
 bool IsConnectingToClientAllowed(ClientResource* res);
 bool IsConnectingToClientAllowed(JobControlRecord* jcr);
+bool IsClientTlsRequired(JobControlRecord* jcr);
 bool IsConnectFromClientAllowed(ClientResource* res);
 bool IsConnectFromClientAllowed(JobControlRecord* jcr);
 bool UseWaitingClient(JobControlRecord* jcr_job, int timeout);
