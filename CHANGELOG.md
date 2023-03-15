@@ -29,6 +29,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - dird: enable default options in `fileset` config when no options are explicitly specified [PR #1357]
 - introduce php-cs-fixer and apply PSR-12 guidelines [PR #1403]
 - berrno_test.cc: accept both 271E and 273E [PR #1407]
+- Sanitizers: add ASAN options to avoid crashes [PR #1410]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -89,4 +90,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1390]: https://github.com/bareos/bareos/pull/1390
 [PR #1403]: https://github.com/bareos/bareos/pull/1403
 [PR #1407]: https://github.com/bareos/bareos/pull/1407
+[PR #1410]: https://github.com/bareos/bareos/pull/1410
 [unreleased]: https://github.com/bareos/bareos/tree/master
