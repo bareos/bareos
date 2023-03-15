@@ -381,6 +381,7 @@ bool DoNativeVbackup(JobControlRecord* jcr)
     Jmsg(jcr, M_INFO, 0,
          _("purged JobIds %s as they were consolidated into Job %lu\n"),
          jobids.c_str(), jcr->JobId);
+    FreeUaContext(ua);
   }
   return true;
 }
