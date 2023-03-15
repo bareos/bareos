@@ -766,7 +766,6 @@ ListFiles(JobControlRecord* jcr,
   // these are only shallow copies, so we need to free them and not call
   // their destructor!
   std::unique_ptr<findFILESET[], free_on_delete> fileset_copies(nullptr, free_on_delete{});
-  /* This is the new way */
   if (fileset) {
     struct ff_cleanup {
       void operator()(FindFilesPacket* ff) { TermFindFiles(ff); }
@@ -774,9 +773,6 @@ ListFiles(JobControlRecord* jcr,
     std::vector<std::unique_ptr<FindFilesPacket, ff_cleanup>> ffs;
     std::vector<std::thread> listing_threads;
     fileset_copies.reset((findFILESET*)malloc(sizeof(findFILESET) * fileset->include_list.size()));
-	    /* TODO: We probably need be move the initialization in the fileset loop,
-     * at this place flags options are "concatenated" accross Include {} blocks
-     * (not only Options{} blocks inside a Include{}) */
     for (int i = 0; i < fileset->include_list.size(); i++) {
       findFILESET* my_fileset = &fileset_copies[i];
       *my_fileset = *fileset; // do a shallow copy
@@ -803,10 +799,8 @@ ListFiles(JobControlRecord* jcr,
     {
 	    thread.join();
     }
-    if (!all_ok)
-	    return std::nullopt;
-    else
-	    return std::optional{num_skipped.load()};
+    if (!all_ok) { return std::nullopt; }
+    else         { return std::optional{num_skipped.load()}; }
   } else {
     return std::nullopt;
   }
