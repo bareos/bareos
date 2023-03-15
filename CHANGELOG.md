@@ -13,6 +13,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - checkpoints: fix performance drop on big volume restores [PR #1393]
 - introduce php-cs-fixer and apply PSR-12 guidelines [PR #1405]
 - berrno_test.cc: accept both 271E and 273E [PR #1408]
+- Sanitizers: add ASAN options to avoid crashes [PR #1411]
 
 ### Fixed
 - VMware Plugin: fix restore to different vmname [PR #1397]
@@ -476,4 +477,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1399]: https://github.com/bareos/bareos/pull/1399
 [PR #1405]: https://github.com/bareos/bareos/pull/1405
 [PR #1408]: https://github.com/bareos/bareos/pull/1408
+[PR #1411]: https://github.com/bareos/bareos/pull/1411
 [unreleased]: https://github.com/bareos/bareos/tree/master
