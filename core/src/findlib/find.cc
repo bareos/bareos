@@ -760,6 +760,12 @@ ListFiles(JobControlRecord* jcr,
   ASSERT(ins.size() == (std::size_t)fileset->include_list.size());
   std::atomic<std::size_t> num_skipped{0};
   std::atomic<bool> all_ok = true;
+  struct free_on_delete {
+    void operator()(findFILESET* copies) { if (copies) free(copies); }
+  };
+  // these are only shallow copies, so we need to free them and not call
+  // their destructor!
+  std::unique_ptr<findFILESET[], free_on_delete> fileset_copies(nullptr, free_on_delete{});
   /* This is the new way */
   if (fileset) {
     struct ff_cleanup {
@@ -767,27 +773,30 @@ ListFiles(JobControlRecord* jcr,
     };
     std::vector<std::unique_ptr<FindFilesPacket, ff_cleanup>> ffs;
     std::vector<std::thread> listing_threads;
+    fileset_copies.reset((findFILESET*)malloc(sizeof(findFILESET) * fileset->include_list.size()));
 	    /* TODO: We probably need be move the initialization in the fileset loop,
      * at this place flags options are "concatenated" accross Include {} blocks
      * (not only Options{} blocks inside a Include{}) */
     for (int i = 0; i < fileset->include_list.size(); i++) {
-	    auto ff_pkt = ffs.emplace_back(init_find_files(),
-					   ff_cleanup{}).get();
-	    ClearAllBits(FO_MAX, ff_pkt->flags);
-	    ff_pkt->fileset     = fileset;
-	    SetFindOptions(ff_pkt, incremental, save_time);
-	    if (check_changed) SetFindChangedFunction(ff_pkt, check_changed.value());
+      findFILESET* my_fileset = &fileset_copies[i];
+      *my_fileset = *fileset; // do a shallow copy
+      auto ff_pkt = ffs.emplace_back(init_find_files(),
+				     ff_cleanup{}).get();
+      ClearAllBits(FO_MAX, ff_pkt->flags);
+      ff_pkt->fileset     = my_fileset;
+      SetFindOptions(ff_pkt, incremental, save_time);
+      if (check_changed) SetFindChangedFunction(ff_pkt, check_changed.value());
 
 
-	    listing_threads.emplace_back(ListFromIncexe,
-					 jcr,
-					 fileset,
-					 ff_pkt,
-					 (findIncludeExcludeItem*)fileset->include_list.get(i),
-					 std::move(ins[i]),
-					 std::ref(all_ok),
-					 std::ref(num_skipped)
-					);
+      listing_threads.emplace_back(ListFromIncexe,
+				   jcr,
+				   my_fileset,
+				   ff_pkt,
+				   my_fileset->include_list.get(i),
+				   std::move(ins[i]),
+				   std::ref(all_ok),
+				   std::ref(num_skipped)
+				  );
 
     }
     for (auto& thread : listing_threads)
@@ -1001,9 +1010,7 @@ int SendFiles(JobControlRecord* jcr,
 	    for (int i = 0; i < fileset->include_list.size(); i++) {
 		    channel::out<stated_file>& list = outs[i];
 		    if (list.empty()) continue;
-		    findIncludeExcludeItem* incexe
-			    = (findIncludeExcludeItem*)fileset->include_list.get(i);
-		    fileset->incexe = incexe;
+		    fileset->incexe = fileset->include_list.get(i);
 
 		    // we only send the files that were supplied to us.
 		    // for this reason we disable recursion here!
