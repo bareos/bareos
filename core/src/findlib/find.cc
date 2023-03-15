@@ -101,38 +101,46 @@ void SetFindChangedFunction(FindFilesPacket* ff,
   ff->CheckFct = CheckFct;
 }
 
-static void SetupFlags(FindFilesPacket* ff, findIncludeExcludeItem* incexe)
+static void SetupLastOptionBlock(FindFilesPacket* ff, findIncludeExcludeItem* incexe)
 {
-  // Here, we reset some values between two different Include{}
-  strcpy(ff->VerifyOpts, "V");
-  strcpy(ff->AccurateOpts, "Cmcs");  /* mtime+ctime+size by default */
-  strcpy(ff->BaseJobOpts, "Jspug5"); /* size+perm+user+group+chk  */
-  ff->plugin = NULL;
-  ff->opt_plugin = false;
 
   /* By setting all options, we in effect OR the global options which is
    * what we want. */
+  findFOPTS* fo = (findFOPTS*)incexe->opts_list.get(incexe->opts_list.size() - 1);
+  CopyBits(FO_MAX, fo->flags, ff->flags);
+  ff->Compress_algo = fo->Compress_algo;
+  ff->Compress_level = fo->Compress_level;
+  ff->StripPath = fo->StripPath;
+  ff->size_match = fo->size_match;
+  ff->fstypes = fo->fstype;
+  ff->drivetypes = fo->Drivetype;
+
+
+  // reset plugins
+  ff->plugin = NULL;
+  ff->opt_plugin = false;
   for (int j = 0; j < incexe->opts_list.size(); j++) {
     findFOPTS* fo = (findFOPTS*)incexe->opts_list.get(j);
-    CopyBits(FO_MAX, fo->flags, ff->flags);
-    ff->Compress_algo = fo->Compress_algo;
-    ff->Compress_level = fo->Compress_level;
-    ff->StripPath = fo->StripPath;
-    ff->size_match = fo->size_match;
-    ff->fstypes = fo->fstype;
-    ff->drivetypes = fo->Drivetype;
     if (fo->plugin != NULL) {
       ff->plugin = fo->plugin; /* TODO: generate a plugin event ? */
       ff->opt_plugin = true;
     }
-    bstrncat(ff->VerifyOpts, fo->VerifyOpts,
-             sizeof(ff->VerifyOpts)); /* TODO: Concat or replace? */
+  }
+
+  // reset opts
+  strcpy(ff->VerifyOpts, "V");
+  strcpy(ff->AccurateOpts, "Cmcs");  /* mtime+ctime+size by default */
+  strcpy(ff->BaseJobOpts, "Jspug5"); /* size+perm+user+group+chk  */
+  for (int j = 0; j < incexe->opts_list.size(); j++) {
+    findFOPTS* fo = (findFOPTS*)incexe->opts_list.get(j);
     if (fo->AccurateOpts[0]) {
       bstrncpy(ff->AccurateOpts, fo->AccurateOpts, sizeof(ff->AccurateOpts));
     }
     if (fo->BaseJobOpts[0]) {
       bstrncpy(ff->BaseJobOpts, fo->BaseJobOpts, sizeof(ff->BaseJobOpts));
     }
+    bstrncat(ff->VerifyOpts, fo->VerifyOpts,
+             sizeof(ff->VerifyOpts)); /* TODO: Concat or replace? */
   }
 }
 
@@ -218,7 +226,7 @@ int FindFiles(JobControlRecord* jcr,
       findIncludeExcludeItem* incexe
           = (findIncludeExcludeItem*)fileset->include_list.get(i);
       fileset->incexe = incexe;
-      SetupFlags(ff, incexe);
+      SetupLastOptionBlock(ff, incexe);
 
       Dmsg4(50, "Verify=<%s> Accurate=<%s> BaseJob=<%s> flags=<%d>\n",
             ff->VerifyOpts, ff->AccurateOpts, ff->BaseJobOpts, ff->flags);
@@ -727,7 +735,7 @@ static void ListFromIncexe(JobControlRecord* jcr,
 	bomb b(all_ok);
 	dlistString* node;
 	fileset->incexe = incexe;
-	SetupFlags(ff, incexe);
+	SetupLastOptionBlock(ff, incexe);
 	// we do not need to follow hardlinks, as they will be handled
 	// by the sending thread
 	SetBit(FO_NO_HARDLINK, ff->flags);
@@ -816,7 +824,7 @@ int SendPluginInfo(JobControlRecord* jcr,
       findIncludeExcludeItem* incexe
           = (findIncludeExcludeItem*)fileset->include_list.get(i);
       fileset->incexe = incexe;
-      SetupFlags(ff, incexe);
+      SetupLastOptionBlock(ff, incexe);
       foreach_dlist (node, &incexe->plugin_list) {
         char* fname = node->c_str();
 
@@ -1005,6 +1013,7 @@ int SendFiles(JobControlRecord* jcr,
 		    channel::out<stated_file>& list = outs[i];
 		    if (list.empty()) continue;
 		    fileset->incexe = fileset->include_list.get(i);
+		    SetupLastOptionBlock(ff, fileset->incexe);
 
 		    // we only send the files that were supplied to us.
 		    // for this reason we disable recursion here!
