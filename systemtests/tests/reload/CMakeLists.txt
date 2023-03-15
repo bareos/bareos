@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -19,15 +19,3 @@
 
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
-
-get_property(
-  test_names
-  DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-  PROPERTY TESTS
-)
-set_tests_properties(
-  system:reload:add-second-director system:reload:add-uncommented-string
-  system:reload:unchanged-config PROPERTIES LABELS
-                                            broken_with_enabled_sanitzers
-)
-# message(FATAL_ERROR ${test_names})
