@@ -11,6 +11,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - filed: avoid reading from ephemeral buffer [PR #1385]
 - config: set `Maximum Connections` to a high default value [PR #1400]
 - introduce php-cs-fixer and apply PSR-12 guidelines [PR #1406]
+- berrno_test.cc: accept both 271E and 273E [PR #1409]
 
 ### Fixed
 - stored: fix crashes of storage tools when autoxflate plugin is loaded [PR #1370]
@@ -660,4 +661,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1385]: https://github.com/bareos/bareos/pull/1385
 [PR #1400]: https://github.com/bareos/bareos/pull/1400
 [PR #1406]: https://github.com/bareos/bareos/pull/1406
+[PR #1409]: https://github.com/bareos/bareos/pull/1409
 [unreleased]: https://github.com/bareos/bareos/tree/master
