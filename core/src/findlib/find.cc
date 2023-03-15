@@ -1084,12 +1084,20 @@ int SendFiles(JobControlRecord* jcr,
     auto [in, out] = channel::CreateBufferedChannel<stated_opened_file>(max_open_files);
     std::thread opener(PrepareFileForSending, jcr, std::move(outs), std::move(in));
 
+    // some values are not overwritten for each file inside an include block
+    // but are "cached" from one run to the next.  As we now send send them
+    // out of order (between different include blocks), we need to ensure
+    // that we restore them if needed
+    struct cached_vals { int StripPath; char* top_fname; };
+    std::vector<cached_vals> cached_values(outs.size()); // initialized to 0
     while (1) {
       if (std::optional opened_file = out.get(); opened_file) {
 	auto& [file, bfd, fileset_idx] = opened_file.value();
 	fileset->incexe = fileset->include_list.get(fileset_idx);
 	char* fname = file.name.data();
 	SetupLastOptionBlock(ff, fileset->incexe);
+	ff->StripPath = cached_values[fileset_idx].StripPath;
+	ff->top_fname = cached_values[fileset_idx].top_fname;
 	if (!SetupFFPkt(jcr, ff, fname, file.statp, file.delta_seq,
 			file.type, file.hfsinfo)) {
 	  Dmsg1(debuglevel, "Error: Could not setup ffpkt for file '%s'\n",
@@ -1122,6 +1130,8 @@ int SendFiles(JobControlRecord* jcr,
 	} else {
 	  CleanupLink(ff);
 	  if (ff->linked) { ff->linked->FileIndex = ff->FileIndex; }
+	  cached_values[fileset_idx].StripPath = ff->StripPath;
+	  cached_values[fileset_idx].top_fname = ff->top_fname;
 	}
 	if (JobCanceled(jcr)) { ret_val = 0; break; }
       } else {
@@ -1131,104 +1141,6 @@ int SendFiles(JobControlRecord* jcr,
 
     out.close();
     opener.join();
-
-//     int closed_channels = 0;
-//     while (closed_channels != fileset->include_list.size())
-//     {
-// 	    for (int i = 0; i < fileset->include_list.size(); i++) {
-// 		    channel::out<stated_file>& list = outs[i];
-// 		    if (list.empty()) continue;
-// 		    fileset->incexe = fileset->include_list.get(i);
-// 		    SetupLastOptionBlock(ff, fileset->incexe);
-
-// 		    // we only send the files that were supplied to us.
-// 		    // for this reason we disable recursion here!
-
-// 		    std::optional<stated_file> file;
-// 		    while ((file = list.try_get())) {
-// 			    char* fname = file->name.data();
-// 			    Dmsg1(debuglevel, "F %s\n", fname);
-// 			    if (!SetupFFPkt(jcr, ff, fname, file->statp, file->delta_seq,
-// 					    file->type, file->hfsinfo))
-// 			    {
-// 				    Dmsg1(debuglevel, "Error: Could not setup ffpkt for file '%s'\n",
-// 					  ff->fname);
-// 				    return 0;
-// 			    }
-// 			    if (!AcceptFile(ff))
-// 			    {
-// 				    Dmsg1(debuglevel, "Did not accept file '%s'; skipping.\n",
-// 					 ff->fname);
-// 				    continue;
-// 			    }
-// 			    else
-// 			    {
-// 				    Dmsg4(50, "flags=<%d>\n", ff->flags);
-// 			    }
-// 			    binit(&ff->bfd);
-// 			    if (BitIsSet(FO_PORTABLE, ff->flags)) {
-// 				    SetPortableBackup(&ff->bfd); /* disable Win32 BackupRead() */
-// 			    }
-// 			    bool do_read = false;
-// 			    {
-// 				    /* Open any file with data that we intend to save, then save it.
-// 				     *
-// 				     * Note, if is_win32_backup, we must open the Directory so that
-// 				     * the BackupRead will save its permissions and ownership streams. */
-// 				    if (ff->type != FT_LNKSAVED && S_ISREG(ff->statp.st_mode)) {
-// #ifdef HAVE_WIN32
-// 					    do_read = !IsPortableBackup(&ff->bfd) || ff->statp.st_size > 0;
-// #else
-// 					    do_read = ff->statp.st_size > 0;
-// #endif
-// 				    } else if (ff->type == FT_RAW || ff->type == FT_FIFO
-// 					       || ff->type == FT_REPARSE || ff->type == FT_JUNCTION
-// 					       || (!IsPortableBackup(&ff->bfd)
-// 						   && ff->type == FT_DIREND)) {
-// 					    do_read = true;
-// 				    }
-// 			    }
-// 			    // fifos will block on open until some data is
-// 			    // written
-// 			    // insead of handling this here, we handle it in
-// 			    // the FileSave procedure
-// 			    // is this a good idea ?
-// 			    if (do_read && ff->type != FT_FIFO)
-// 			    {
-// 				    int noatime = BitIsSet(FO_NOATIME, ff->flags) ? O_NOATIME : 0;
-// 				    if (bopen(&ff->bfd, ff->fname, O_RDONLY | O_BINARY | noatime, 0,
-// 					      ff->statp.st_rdev) < 0)
-// 				    {
-// 					    ff->ff_errno = errno;
-// 					    BErrNo be;
-// 					    Jmsg(jcr, M_NOTSAVED, 0, _("     Cannot open \"%s\": ERR=%s.\n"),
-// 						 ff->fname, be.bstrerror());
-// 					    jcr->JobErrors++;
-// 					    CleanupLink(ff);
-// 					    continue;
-// 				    }
-// 			    }
-// 			    if (!FileSave(jcr, ff, false))
-// 			    {
-// 				    if (IsBopen(&ff->bfd))
-// 				    {
-// 					    bclose(&ff->bfd);
-// 				    }
-// 				    CleanupLink(ff);
-// 				    Dmsg1(debuglevel, "Error: Could not save file %s",
-// 					  ff->fname);
-// 				    return 0;
-// 			    }
-// 			    else
-// 			    {
-// 				    CleanupLink(ff);
-// 				    if (ff->linked) { ff->linked->FileIndex = ff->FileIndex; }
-// 			    }
-// 			    if (JobCanceled(jcr)) { return 0; }
-// 		    }
-// 		    if (list.empty()) closed_channels += 1;
-// 	    }
-//    }
   }
   return ret_val;
 }
