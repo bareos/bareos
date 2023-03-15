@@ -28,6 +28,10 @@ cmake \
   -Dpostgresql=yes
 cmake --build cmake-build
 
+# avoid problems in containers with sanitizers
+# see https://github.com/google/sanitizers/issues/1322
+export ASAN_OPTIONS=intercept_tls_get_addr=0
+
 cd cmake-build
 export REGRESS_DEBUG=1
 ctest \
