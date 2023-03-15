@@ -1138,7 +1138,9 @@ int SendFiles(JobControlRecord* jcr,
 	break;
       }
     }
-
+    // this will close the opener regardless of whether
+    // there are still files getting listed or not
+    // since currently the opener will spin if it isnt fed fast enough
     out.close();
     opener.join();
   }
