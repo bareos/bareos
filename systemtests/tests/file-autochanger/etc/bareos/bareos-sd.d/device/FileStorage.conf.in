@@ -1,11 +1,32 @@
 Device {
-  Name = FileStorage
+  Name = File1
   Media Type = File
-  Archive Device = @wine_drive_prefix@@archivedir@
+  Device Type = autochanger_test
+  Archive Device = @wine_drive_prefix@@archivedir@/drv_0
   LabelMedia = yes;                   # lets Bareos label unlabeled media
   Random Access = yes;
   AutomaticMount = yes;               # when device opened, read it
   RemovableMedia = no;
-  AlwaysOpen = no;
+  AlwaysOpen = yes;
   Description = "File device. A connecting Director must have the same Name and MediaType."
+  Maximum Concurrent Jobs = 1
+  AutoChanger = yes
+  Drive Index = 0
+}
+
+Device {
+  Name = File2
+  Media Type = File
+  Device Type = autochanger_test
+  Archive Device = @wine_drive_prefix@@archivedir@/drv_1
+  LabelMedia = yes;                   # lets Bareos label unlabeled media
+  Random Access = yes;
+  AutomaticMount = yes;               # when device opened, read it
+  RemovableMedia = no;
+  AlwaysOpen = yes;
+  Description = "File device. A connecting Director must have the same Name and MediaType."
+  Maximum Concurrent Jobs = 1
+  AutoChanger = yes
+  Drive Index = 1
+  Autoselect = no
 }
