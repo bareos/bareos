@@ -76,10 +76,10 @@ function read_configuration_ini($configuration_ini)
             'save_previous_state' => false,
         ),
         /*
-      'autochanger' => array(
-        'labelpooltype' => <NODEFAULT>,
-      ),
-      */
+        'autochanger' => array(
+            'labelpooltype' => <NODEFAULT>,
+        ),
+        */
         'dashboard' => array(
             'autorefresh_interval' => 60000,
         ),
@@ -88,6 +88,9 @@ function read_configuration_ini($configuration_ini)
         ),
         'theme' => array(
             'name' => "sunflower"
+        ),
+        'experimental' => array(
+            'configuration_resource_graph' => false
         )
     );
 
@@ -119,6 +122,9 @@ function read_configuration_ini($configuration_ini)
         }
         if (isset($configuration['theme']['name'])) {
             $result['theme']['name'] = $configuration['theme']['name'];
+        }
+        if (isset($configuration['experimental']['configuration_resource_graph'])) {
+            $result['experimental']['configuration_resource_graph'] = $configuration['experimental']['configuration_resource_graph'];
         }
     }
 

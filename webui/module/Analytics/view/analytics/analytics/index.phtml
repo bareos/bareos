@@ -32,7 +32,13 @@ $this->headTitle($title);
 
 <ul class="nav nav-tabs">
   <li class="active"><a href="<?php echo $this->url('analytics', array('action'=>'index')); ?>"><?php echo $this->translate('Stored Data'); ?></a></li>
-  <li><a href="<?php echo $this->url('analytics', array('action'=>'configuration')); ?>"><?php echo $this->translate('Configuration'); ?></a></li>
+  <?php
+    if ($_SESSION['bareos']['configuration_resource_graph']) {
+        $url = $this->url('analytics', array('action'=>'configuration'));
+        $text = $this->translate('Configuration');
+        echo '<li><a href="'.$url.'">'.$text.'</a></li>';
+    }
+  ?>
 </ul>
 
 <br />
