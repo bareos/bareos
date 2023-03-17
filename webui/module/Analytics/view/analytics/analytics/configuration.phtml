@@ -1,0 +1,376 @@
+<?php
+
+/**
+ *
+ * bareos-webui - Bareos Web-Frontend
+ *
+ * @link      https://github.com/bareos/bareos for the canonical source repository
+ * @copyright Copyright (c) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+$title = _('Analytics');
+$this->headTitle($title);
+
+?>
+
+<?php if($this->acl_alert) : echo $this->ACLAlert($this->invalid_commands); elseif(!$this->acl_alert) : ?>
+
+<ul class="nav nav-tabs">
+   <li><a href="<?php echo $this->url('analytics', array('action'=>'index')); ?>"><?php echo $this->translate('Stored Data'); ?></a></li>
+   <li class="active"><a href="<?php echo $this->url('analytics', array('action'=>'configuration')); ?>"><?php echo $this->translate('Configuration'); ?></a></li>
+</ul>
+
+<br />
+
+<div class="row">
+  <div class="col-md-9">
+    <svg></svg>
+  </div>
+  <div class="col-md-3">
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h3 class="panel-title"><?php echo $this->translate("Configuration Resource"); ?></h3>
+      </div>
+      <div class="panel-body">
+        <div><pre id="resource"></pre></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<?php
+    echo $this->headScript()->prependFile($this->basePath() . '/js/d3/d3.min.js');
+?>
+
+<style>
+#resource {
+    height: 450px;
+    overflow-x: scroll;
+    overflow-y: scroll;
+    font-size: 8pt;
+}
+</style>
+
+<script>
+
+d3.json("<?php echo $this->url('analytics', array('action' => 'getData'), null) . '?data=config-resource-graph'; ?>").then(function(data) {
+
+function ticked() {
+  link
+    .attr("x1", function(d) { return d.source.x; })
+    .attr("y1", function(d) { return d.source.y; })
+    .attr("x2", function(d) { return d.target.x; })
+    .attr("y2", function(d) { return d.target.y; });
+
+  node
+    .attr("cx", function(d) { return d.x; })
+    .attr("cy", function(d) { return d.y; });
+
+  circle
+    .attr("cx", function(d) { return d.x; })
+    .attr("cy", function(d) { return d.y; });
+
+  label
+    .attr("x", function(d) { return d.x; })
+    .attr("y", function(d) { return d.y; });
+}
+
+function getColorForResourceType(type)
+{
+    if (type === "client") {
+      return "#5cb85c"
+    } else if (type === "job") {
+      return "#f0d54e"
+    } else if (type === "jobdefs") {
+      return "#f0ad4e"
+    } else if (type === "fileset") {
+      return "#a85d7f"
+    } else if (type === "schedule") {
+       return "#aab14d"
+    } else {
+      return "#cccccc"
+    }
+}
+
+drag = simulation => {
+
+  function dragstarted(event, d) {
+    if (!event.active) simulation.alphaTarget(0.3).restart();
+    d.fx = d.x;
+    d.fy = d.y;
+  }
+
+  function dragged(event, d) {
+    d.fx = event.x;
+    d.fy = event.y;
+  }
+
+  function dragended(event, d) {
+    if (!event.active) simulation.alphaTarget(0);
+    d.fx = null;
+    d.fy = null;
+  }
+
+  return d3.drag()
+    .on("start", dragstarted)
+    .on("drag", dragged)
+    .on("end", dragended);
+}
+
+const links = data.links;
+const nodes = data.nodes;
+
+var width = window.screen.width - (window.screen.width / 4) - 50, height = window.screen.height - 325;
+var linkdistance = 24;
+
+var svg = d3.select("svg")
+  .attr("width", width)
+  .attr("height", height);
+
+const simulation = d3.forceSimulation(nodes)
+  .force("link", d3.forceLink(links).distance(linkdistance).id(d => d.id))
+  .force("charge", d3.forceManyBody().strength(-32))
+  .force("collide", d3.forceCollide(d => 32))
+  .force("center", d3.forceCenter(width / 2, height / 2))
+  .force("x", d3.forceX().strength(0.1))
+  .force("y", d3.forceY().strength(0.25));
+
+var link = svg.selectAll("line")
+  .data(links)
+  .enter()
+  .append("line")
+  .attr("stroke", "#999999")
+  .attr("stroke-width", 1.0)
+  .attr("stroke-opacity", 0.25)
+  .attr("class", function(d) {
+    var linkclass = "line source_" + d.source.id;
+    if (d.target !== undefined) {
+      linkclass += " target_" + d.target.id;
+    }
+    return linkclass;
+  });
+
+var node = svg.selectAll(".node")
+  .data(nodes)
+  .enter().append("g")
+  .call(drag(simulation));
+
+var circle = node.append("circle")
+  .attr("class", function(d) {
+    var nodeclass = "node node_" + d.id;
+    return nodeclass;
+  })
+  .attr("id", d => d.id)
+  .attr("r", 8)
+  .attr("fill", function(d, i) {
+    return getColorForResourceType(d.type);
+  })
+  .style("fill-opacity", 0.5);
+
+var label = node.append("text")
+  .text(d => d.name)
+  .attr("class", function(d) {
+    var labelclass = "nodelabel nodelabel_" + d.id;
+    return labelclass;
+  })
+  .attr("fill", "#999999")
+  .attr("font-size", 10)
+  .attr("font-family", "Helvetica")
+  .attr("x", 15)
+  .attr("y", 15)
+  .attr("dx", 20)
+  .attr("dy", 0);
+
+node.append("title")
+  .text(d => d.name);
+
+circle.on("mouseover", function(d) {
+
+    d3.selectAll(".node")
+      .attr("r", 8)
+      .style("stroke", "#ffffff")
+      .style("stroke-width", 0)
+      .style("stroke-opacity", 0)
+      .style("fill-opacity", 0.5)
+    d3.selectAll(".line")
+      .attr("stroke", "#999999")
+      .attr("stroke-width", 1)
+      .attr("stroke-opacity", 0.25)
+    d3.selectAll(".nodelabel")
+      .attr("font-size", 10)
+      .attr("font-weight", "normal")
+      .attr("fill", "#999999")
+    d3.selectAll(".nodelabel_" + d.target.id)
+      .attr("font-size", 14)
+      .attr("font-weight", "bold")
+      .attr("fill", "#000000")
+      .style("fill-opacity", 1)
+    d3.select(this)
+      .attr("r", 16)
+      .style("stroke", "#cccccc")
+      .style("stroke-width", 8)
+      .style("stroke-opacity", 0.5)
+      .style("fill-opacity", 1)
+
+    for (var i = 0; i < links.length; i++) {
+
+      if (links[i].target.id === d.target.id) {
+        console.log(d.target.id)
+        d3.selectAll(".node_" + links[i].source.id)
+          .attr("r", 16)
+          .style("stroke", "#cccccc")
+          .style("stroke-width", 8)
+          .style("stroke-opacity", 0.5)
+          .style("fill-opacity", 1)
+        d3.selectAll(".target_" + links[i].target.id)
+          .attr("stroke-width", 1)
+          .attr("stroke-opacity", 1)
+          .attr("stroke", "#000000")
+        d3.selectAll(".nodelabel_" + links[i].source.id)
+          .attr("font-size", 14)
+          .attr("font-weight", "bold")
+          .attr("fill", "#000000")
+      }
+      if (links[i].source.id === d.target.id) {
+        d3.selectAll(".node_" + links[i].target.id)
+          .attr("r", 16)
+          .style("stroke", "#cccccc")
+          .style("stroke-width", 8)
+          .style("stroke-opacity", 0.5)
+          .style("fill-opacity", 1)
+        d3.selectAll(".source_" + links[i].source.id)
+          .attr("stroke-width", 1)
+          .attr("stroke-opacity", 1)
+          .attr("stroke", "#000000")
+        d3.selectAll(".nodelabel_" + links[i].target.id)
+          .attr("font-size", 14)
+          .attr("font-weight", "bold")
+          .attr("fill", "#000000")
+      }
+    }
+
+    const node = nodes.find(node => node.id === d.target.id);
+
+    if (node) {
+        d3.select("#resource")
+            .text(JSON.stringify(node.resource, null, "  "));
+    }
+
+    simulation.force("collide", d3.forceCollide(function(d2) {
+      if (d2.id === d.target.id) {
+          return 128;
+      }
+      return 32;
+    }))
+
+    if (!event.active)
+      simulation.alphaTarget(0.01).restart();
+
+});
+
+simulation
+  .nodes(nodes)
+  .on("tick", ticked);
+
+simulation.force("link")
+  .links(links);
+
+// LEGEND
+const legend = svg.append("g")
+  .attr("transform", `translate(20, 20)`);
+
+  // GROUP Client
+  legend.append("circle")
+    .attr("r", 5)
+    .attr("cx", 0)
+    .attr("cy", 0)
+    .style("stroke", "#000000")
+    .style("stroke-opacity", 0)
+    .style("stroke-width", 1)
+    .style("fill", getColorForResourceType("client"))
+
+  legend.append("text")
+     .attr("x",15)
+     .attr("y",5)
+     .text("Client");
+
+  // GROUP Job
+  legend.append("circle")
+    .attr("r", 5)
+    .attr("cx", 0)
+    .attr("cy", 20)
+    .style("stroke", "#000000")
+    .style("stroke-opacity",0)
+    .style("stroke-width", 1)
+    .style("fill", getColorForResourceType("job"))
+
+  legend.append("text")
+     .attr("x",15)
+     .attr("y",25)
+     .text("Job");
+
+  // GROUP Jobdefs
+  legend.append("circle")
+    .attr("r", 5)
+    .attr("cx", 0)
+    .attr("cy", 40)
+    .style("stroke", "#000000")
+    .style("stroke-opacity",0)
+    .style("stroke-width", 1)
+    .style("fill", getColorForResourceType("jobdefs"))
+
+  legend.append("text")
+     .attr("x",15)
+     .attr("y",45)
+     .text("Jobdefs");
+
+  // GROUP Fileset
+  legend.append("circle")
+    .attr("r", 5)
+    .attr("cx", 0)
+    .attr("cy", 60)
+    .style("stroke", "#000000")
+    .style("stroke-opacity",0)
+    .style("stroke-width", 1)
+    .style("fill", getColorForResourceType("fileset"))
+
+  legend.append("text")
+     .attr("x",15)
+     .attr("y",65)
+     .text("Fileset");
+
+  // GROUP Schedule
+  legend.append("circle")
+    .attr("r", 5)
+    .attr("cx", 0)
+    .attr("cy", 80)
+    .style("stroke", "#000000")
+    .style("stroke-opacity",0)
+    .style("stroke-width", 1)
+    .style("fill", getColorForResourceType("schedule"))
+
+  legend.append("text")
+     .attr("x",15)
+     .attr("y",85)
+     .text("Schedule");
+
+});
+
+</script>
+
+<?php endif; ?>
