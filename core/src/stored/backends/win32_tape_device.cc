@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2013 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1039,9 +1039,10 @@ static DWORD GetDensityBlockSize(HANDLE hDevice,
       GET_MEDIA_TYPES* pNewBuffer
           = (GET_MEDIA_TYPES*)realloc(pGetMediaTypes, dwBufferSize);
       if (pNewBuffer != pGetMediaTypes) {
-        free(pGetMediaTypes);
-
-        if (pNewBuffer == NULL) { return ERROR_OUTOFMEMORY; }
+        if (pNewBuffer == NULL) {
+          free(pGetMediaTypes);
+          return ERROR_OUTOFMEMORY;
+        }
 
         pGetMediaTypes = pNewBuffer;
       }
