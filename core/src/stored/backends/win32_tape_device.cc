@@ -105,20 +105,20 @@ static inline ULONG Read32BitUnsigned(const unsigned char* pValue)
 
 static inline LONGLONG Read64BitSigned(const unsigned char* pValue)
 {
-  return (LONGLONG)(
-      ((ULONGLONG)pValue[0] << 56) | ((ULONGLONG)pValue[1] << 48)
-      | ((ULONGLONG)pValue[2] << 40) | ((ULONGLONG)pValue[3] << 32)
-      | ((ULONGLONG)pValue[4] << 24) | ((ULONGLONG)pValue[5] << 16)
-      | ((ULONGLONG)pValue[6] << 8) | (ULONGLONG)pValue[7]);
+  return (
+      (LONGLONG)(((ULONGLONG)pValue[0] << 56) | ((ULONGLONG)pValue[1] << 48)
+                 | ((ULONGLONG)pValue[2] << 40) | ((ULONGLONG)pValue[3] << 32)
+                 | ((ULONGLONG)pValue[4] << 24) | ((ULONGLONG)pValue[5] << 16)
+                 | ((ULONGLONG)pValue[6] << 8) | (ULONGLONG)pValue[7]));
 }
 
 static inline ULONGLONG Read64BitUnsigned(const unsigned char* pValue)
 {
-  return (LONGLONG)(
-      ((ULONGLONG)pValue[0] << 56) | ((ULONGLONG)pValue[1] << 48)
-      | ((ULONGLONG)pValue[2] << 40) | ((ULONGLONG)pValue[3] << 32)
-      | ((ULONGLONG)pValue[4] << 24) | ((ULONGLONG)pValue[5] << 16)
-      | ((ULONGLONG)pValue[6] << 8) | (ULONGLONG)pValue[7]);
+  return (
+      (LONGLONG)(((ULONGLONG)pValue[0] << 56) | ((ULONGLONG)pValue[1] << 48)
+                 | ((ULONGLONG)pValue[2] << 40) | ((ULONGLONG)pValue[3] << 32)
+                 | ((ULONGLONG)pValue[4] << 24) | ((ULONGLONG)pValue[5] << 16)
+                 | ((ULONGLONG)pValue[6] << 8) | (ULONGLONG)pValue[7]));
 }
 
 typedef struct _TAPE_POSITION_INFO {
@@ -947,8 +947,9 @@ static DWORD GetTapePositionInfo(HANDLE hDevice,
         && dwBytesReturned >= (offsetof(SCSI_PASS_THROUGH, ScsiStatus)
                                + sizeof(ScsiPassThrough->ScsiStatus))) {
       if (ScsiPassThrough->ScsiStatus == SCSISTAT_GOOD) {
-        PREAD_POSITION_RESULT pPosResult = (PREAD_POSITION_RESULT)(
-            (PUCHAR)ScsiPassThrough + ScsiPassThrough->DataBufferOffset);
+        PREAD_POSITION_RESULT pPosResult
+            = (PREAD_POSITION_RESULT)((PUCHAR)ScsiPassThrough
+                                      + ScsiPassThrough->DataBufferOffset);
 
         switch (pass) {
           case 0: {
