@@ -256,12 +256,18 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
 
   auto send_total = jcr->fd_impl->ff->send_total;
   auto accept_total = jcr->fd_impl->ff->accept_total;
+  auto checksum_total = jcr->fd_impl->ff->checksum_total;
+  auto signing_total = jcr->fd_impl->ff->signing_total;
   auto total_ns = total_time.count();
   auto send_ns = send_total.count();
   auto accept_ns = accept_total.count();
+  auto checksum_ns = checksum_total.count();
+  auto signing_ns = signing_total.count();
 
   double accept_pc = (double) accept_ns / (double) total_ns;
   double send_pc = (double) send_ns / (double) total_ns;
+  double checksum_pc = (double) checksum_ns / (double) send_ns;
+  double signing_pc = (double) signing_ns / (double) send_ns;
 
   int64_t job_bytes = jcr->JobBytes;
   // from B/ns -> MB/s
@@ -274,15 +280,19 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
   Dmsg9(400,
 	"FindFiles jobid=%u\n"
 	"  *Time spent\n"
-	"    -Total:     %20.2lfs\n"
-	"    -Sending:   %20.2lfs (%.2lf%%)\n"
-	"    -Accepting: %20.2lfs (%.2lf%%)\n"
+	"    -Total:      %20.2lfs\n"
+	"    -Sending:    %20.2lfs (%.2lf%%)\n"
+	"      -Checksum: %20.2lfs (%.2lf%%)\n"
+	"      -Signing:  %20.2lfs (%.2lf%%)\n"
+	"    -Accepting:  %20.2lfs (%.2lf%%)\n"
 	"  *Throughput (send %lld bytes)\n"
-	"    -Total:     %20.2lfMB/s\n"
-	"    -Sending:   %20.2lfMB/s\n",
+	"    -Total:      %20.2lfMB/s\n"
+	"    -Sending:    %20.2lfMB/s\n",
 	jcr->JobId,
 	std::chrono::duration_cast<seconds_double>(total_time).count(),
 	std::chrono::duration_cast<seconds_double>(send_total).count(), 100 * send_pc,
+	std::chrono::duration_cast<seconds_double>(checksum_total).count(), 100 * checksum_pc,
+	std::chrono::duration_cast<seconds_double>(signing_total).count(), 100 * signing_pc,
 	std::chrono::duration_cast<seconds_double>(accept_total).count(), 100 * accept_pc,
 	job_bytes, total_tp, send_tp);
 
@@ -1054,13 +1064,19 @@ static inline bool SendDataToSd(b_ctx* bctx)
 
   // Update checksum if requested
   if (bctx->digest) {
+    std::chrono::time_point<std::chrono::steady_clock> start = std::chrono::steady_clock::now();
     CryptoDigestUpdate(bctx->digest, (uint8_t*)bctx->rbuf, sd->message_length);
+    std::chrono::time_point<std::chrono::steady_clock> end = std::chrono::steady_clock::now();
+    bctx->ff_pkt->checksum_total += end - start;
   }
 
   // Update signing digest if requested
   if (bctx->signing_digest) {
+    std::chrono::time_point<std::chrono::steady_clock> start = std::chrono::steady_clock::now();
     CryptoDigestUpdate(bctx->signing_digest, (uint8_t*)bctx->rbuf,
                        sd->message_length);
+    std::chrono::time_point<std::chrono::steady_clock> end = std::chrono::steady_clock::now();
+    bctx->ff_pkt->signing_total += end - start;
   }
 
   // Compress the data.
