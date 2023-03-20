@@ -112,7 +112,7 @@ struct save_file_timing {
 
       using seconds_double = std::chrono::duration<double>;
       Dmsg4(400,
-	    "SendFile %s\n"
+	    "SaveFile %s\n"
 	    "  -Time spent:            %5.2lfs\n"
 	    "     -computing checksum: %5.2lfs (%.2lf%%)\n"
 	    "     -computing signage:  %5.2lfs (%.2lf%%)\n"
