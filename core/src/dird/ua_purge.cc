@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -92,15 +92,13 @@ bool PurgeCmd(UaContext* ua, const char*)
         "PRUNE command, which respects retention periods.\n"
         "This command requires full access to all resources.\n"));
 
-  /*
-   * Check for console ACL permissions.
+  /* Check for console ACL permissions.
    * These permission might be harder than required.
    * However, otherwise it gets hard to figure out the correct permission.
    * E.g. when purging a volume, this volume can contain
    * different jobs from different client, stored in different pools and
    * storages. Instead of checking all of this, we require full permissions to
-   * all of these resources.
-   */
+   * all of these resources. */
   if (ua->AclHasRestrictions(Client_ACL)) {
     ua->ErrorMsg(permission_denied_message, "client");
     return false;
@@ -176,11 +174,9 @@ bool PurgeCmd(UaContext* ua, const char*)
         *ua->argk[i] = 0; /* zap keyword already seen */
         ua->SendMsg("\n");
 
-        /*
-         * Add volume=mr.VolumeName to cmd_holder if we have a new volume name
+        /* Add volume=mr.VolumeName to cmd_holder if we have a new volume name
          * from interactive selection. In certain cases this can produce
-         * duplicates, which we don't prevent as there are no side effects.
-         */
+         * duplicates, which we don't prevent as there are no side effects. */
         if (!bstrcmp(ua->cmd, cmd_holder.c_str())) {
           PmStrcat(cmd_holder, " volume=");
           PmStrcat(cmd_holder, mr.VolumeName);
@@ -600,10 +596,8 @@ static void do_truncate_on_purge(UaContext* ua,
     return;
   }
 
-  /*
-   * Send the command to truncate the volume after purge. If this feature
-   * is disabled for the specific device, this will be a no-op.
-   */
+  /* Send the command to truncate the volume after purge. If this feature
+   * is disabled for the specific device, this will be a no-op. */
 
   // Protect us from spaces
   BashSpaces(mr->VolumeName);
@@ -726,10 +720,8 @@ static bool ActionOnPurgeCmd(UaContext* ua, const char*)
     mr.PoolId = pr.PoolId;
   }
 
-  /*
-   * Look for all Purged volumes that can be recycled, are enabled and have
-   * more the 10,000 bytes.
-   */
+  /* Look for all Purged volumes that can be recycled, are enabled and have
+   * more the 10,000 bytes. */
   mr.Recycle = 1;
   mr.Enabled = VOL_ENABLED;
   mr.VolBytes = 10000;

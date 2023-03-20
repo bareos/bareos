@@ -1375,8 +1375,7 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
      *
      * If we are doing always incremental, we need to limit the search to
      * only include incrementals that are older than (now -
-     * AlwaysIncrementalInterval) and leave AlwaysIncrementalNumber incrementals
-     */
+     * AlwaysIncrementalInterval) and leave AlwaysIncrementalNumber incrementals */
     Mmsg(query,
          "INSERT INTO btemp3%s (JobId, StartTime, EndTime, JobTDate, "
          "PurgedFiles) "
