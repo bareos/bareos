@@ -49,6 +49,8 @@
 
 #include <thread>
 
+#include <fmt/format.h>
+
 namespace filedaemon {
 
 #ifdef HAVE_DARWIN_OS
@@ -73,6 +75,35 @@ const bool have_xattr = false;
 #  define compressBound(sourceLen) \
     (sourceLen + (sourceLen >> 12) + (sourceLen >> 14) + (sourceLen >> 25) + 13)
 #endif
+
+template <typename Duration>
+std::tuple<std::chrono::hours, std::chrono::minutes, std::chrono::seconds,
+	   std::chrono::milliseconds, std::chrono::microseconds,
+	   std::chrono::nanoseconds> SplitDuration(Duration d)
+{
+  using namespace std::chrono;
+
+  auto hs = duration_cast<hours>(d);        d -= hs;
+  auto ts = duration_cast<minutes>(d);      d -= ts;
+  auto ss = duration_cast<seconds>(d);      d -= ss;
+  auto ms = duration_cast<milliseconds>(d); d -= ms;
+  auto us = duration_cast<microseconds>(d); d -= us;
+  auto ns = duration_cast<nanoseconds>(d);
+
+  return {hs, ts, ss, ms, us, ns};
+}
+
+template <typename Duration>
+std::string FormatDuration(Duration d)
+{
+  auto split = SplitDuration(d);
+  return fmt::format("{:4}:{:02}:{:02}.{:03}-{:03}",
+		     std::get<std::chrono::hours>(split).count(),
+		     std::get<std::chrono::minutes>(split).count(),
+		     std::get<std::chrono::seconds>(split).count(),
+		     std::get<std::chrono::milliseconds>(split).count(),
+		     std::get<std::chrono::microseconds>(split).count());
+}
 
 struct save_file_timing {
   save_file_timing(FindFilesPacket* ff_pkt) : start{std::nullopt}
@@ -110,24 +141,28 @@ struct save_file_timing {
       double tp = ff_pkt->statp.st_size / (ns / mbps);
       double read_tp = ff_pkt->statp.st_size / (reading.count() / mbps);
 
-      using seconds_double = std::chrono::duration<double>;
+      std::chrono::nanoseconds checksum_(0);
+      if (checksum) checksum = *checksum;
+      std::chrono::nanoseconds signing_(0);
+      if (signing) signing = *signing;
+
       Dmsg4(400,
 	    "SaveFile %s\n"
-	    "  -Time spent:            %5.2lfs\n"
-	    "     -computing checksum: %5.2lfs (%.2lf%%)\n"
-	    "     -computing signage:  %5.2lfs (%.2lf%%)\n"
-	    "     -reading the file:   %5.2lfs (%.2lf%%)\n"
+	    "  -Time spent:            %s\n"
+	    "     -computing checksum: %s (%.2lf%%)\n"
+	    "     -computing signage:  %s (%.2lf%%)\n"
+	    "     -reading the file:   %s (%.2lf%%)\n"
 	    "  -Data sent:             %s\n"
 	    "  -Throughput (send %lld bytes)\n"
-	    "    -Total:               %.2lfMB/s\n"
-	    "    -Reading:             %.2lfMB/s\n",
+	    "    -Total:               %6.2lfMB/s\n"
+	    "    -Reading:             %6.2lfMB/s\n",
 	    ff_pkt->fname,
-	    std::chrono::duration_cast<seconds_double>(total).count(),
-	    checksum ? std::chrono::duration_cast<seconds_double>(*checksum).count() : 0,
+	    FormatDuration(total).c_str(),
+	    FormatDuration(checksum_).c_str(),
 	    (checksum ? checksum->count() : 0) / (double) ns,
-	    signing ? std::chrono::duration_cast<seconds_double>(*signing).count() : 0,
+	    FormatDuration(signing_).c_str(),
 	    (signing ? signing->count() : 0) / (double) ns,
-	    std::chrono::duration_cast<seconds_double>(reading).count(),
+	    FormatDuration(reading).c_str(),
 	    reading.count() / (double) ns,
 	    data_sent ? "yes" : "no",
 	    data_sent ? ff_pkt->statp.st_size : 0,
@@ -356,26 +391,25 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
   double total_tp = job_bytes / (total_ns / mbps);
   double send_tp = job_bytes / (send_ns / mbps);
 
-  using seconds_double = std::chrono::duration<double>;
   Dmsg9(400,
-	"FindFiles jobid=%u\n"
+	"FindFiles jobid=%u mpbs=%lf\n"
 	"  *Time spent\n"
-	"    -Total:      %20.2lfs\n"
-	"    -Sending:    %20.2lfs (%.2lf%%)\n"
-	"      -Checksum: %20.2lfs (%.2lf%%)\n"
-	"      -Signing:  %20.2lfs (%.2lf%%)\n"
-	"      -Reading:  %20.2lfs (%.2lf%%)\n"
-	"    -Accepting:  %20.2lfs (%.2lf%%)\n"
+	"    -Total:      %s\n"
+	"    -Sending:    %s (%.2lf%%)\n"
+	"      -Checksum: %s (%.2lf%%)\n"
+	"      -Signing:  %s (%.2lf%%)\n"
+	"      -Reading:  %s (%.2lf%%)\n"
+	"    -Accepting:  %s (%.2lf%%)\n"
 	"  *Throughput (send %lld bytes)\n"
 	"    -Total:      %20.2lfMB/s\n"
 	"    -Sending:    %20.2lfMB/s\n",
-	jcr->JobId,
-	std::chrono::duration_cast<seconds_double>(total_time).count(),
-	std::chrono::duration_cast<seconds_double>(send_total).count(), 100 * send_pc,
-	std::chrono::duration_cast<seconds_double>(checksum_total).count(), 100 * checksum_pc,
-	std::chrono::duration_cast<seconds_double>(signing_total).count(), 100 * signing_pc,
-	std::chrono::duration_cast<seconds_double>(reading_total).count(), 100 * reading_pc,
-	std::chrono::duration_cast<seconds_double>(accept_total).count(), 100 * accept_pc,
+	jcr->JobId, mbps,
+	FormatDuration(total_time).c_str(),
+	FormatDuration(send_total).c_str(), 100 * send_pc,
+	FormatDuration(checksum_total).c_str(), 100 * checksum_pc,
+	FormatDuration(signing_total).c_str(), 100 * signing_pc,
+	FormatDuration(reading_total).c_str(), 100 * reading_pc,
+	FormatDuration(accept_total).c_str(), 100 * accept_pc,
 	job_bytes, total_tp, send_tp);
 
   using namespace std::literals::chrono_literals;
