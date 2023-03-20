@@ -645,11 +645,12 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 	      "Stats for file %s\n"
 	      "  -Time spent: %lldns\n"
 	      "  -Data sent:  %s\n"
-	      "  -Throughput: %.2lfMB/s\n",
+	      "  -Throughput: %.2lfMB/s (%lld bytes total)\n",
 	      ff_pkt->fname,
 	      ns,
 	      data_sent ? "yes" : "no",
-	      data_sent ? tp : 0);
+	      data_sent ? tp : 0,
+	      data_sent ? ff_pkt->statp.st_size : 0);
 	ff_pkt->send_total += total;
       }
     }
