@@ -4,6 +4,42 @@
 Webui
 =====
 
+.. _section-dev-webui-translation:
+
+Translation
+-----------
+
+Where do I find the translation?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The localization files are located in `webui/module/Application/language`. You can find the languages that are currently
+in translation in our online project, which is addressed in the next section.
+
+How should I edit translation files?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You need to join our online project for translating the Bareos WebUI. We use https://poeditor.com.
+The following link will redirect you to the right project. You are welcome to join our translation
+community as a contributor there.
+
+https://poeditor.com/join/project/ELnLNbvQJb
+
+How can I add a new language?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Please contact us, if you want to contribute a new language. We will prepare https://poeditor.com for that.
+
+Where can I find further information?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+See https://poeditor.com for more info on POEditor.
+
+How to update files in `module/Application/language` if there were changes in source that affect translation?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Run the script `webui/scripts/localization_update.sh` to scan for changes and generate new \*.po(t) files.
+The Bareos Team takes care of this task and the synchronization with POEditor.
+
 .. _section-dev-webui-command-usage-in-modules:
 
 Command usage in modules and the according ACL requirements
