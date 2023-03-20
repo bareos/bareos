@@ -65,7 +65,7 @@ endif()
 include_directories(${OPENSSL_INCLUDE_DIR})
 
 add_library(fd_objects STATIC ${FDSRCS})
-target_link_libraries(fd_objects PRIVATE bareos bareosfastlz ${ZLIB_LIBRARIES})
+target_link_libraries(fd_objects PRIVATE bareos bareosfastlz ${ZLIB_LIBRARIES} fmt::fmt-header-only)
 
 if(HAVE_LMDB)
   target_link_libraries(fd_objects PRIVATE bareoslmdb)
