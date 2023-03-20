@@ -162,7 +162,9 @@ NDMP_DATA_AGENT_ADDRESS=@ndmp_data_agent_address@
 #
 # Wine
 #
-export WINEPREFIX="${CMAKE_BINARY_DIR}/wine/"
+# don't set WINEPREFIX below CMAKE_BINARY_DIR,
+# because than cmake_coverage will scan wine/dosdevices/z: => /.
+export WINEPREFIX="${CMAKE_BINARY_DIR}/../wine/"
 export WINEPATH="@WINEPATH@"
 export WINEDEBUG="fixme-all"
 export WINE_DRIVE_PREFIX="@wine_drive_prefix@"

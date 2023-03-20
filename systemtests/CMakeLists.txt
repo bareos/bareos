@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -34,8 +34,8 @@ option(SYSTEMTESTS_USE_WINE
 set(wine_drive_prefix "")
 if(${SYSTEMTESTS_USE_WINE})
   set(wine_drive_prefix "Z:")
-  # Wine must use same DLLs installed on the cross-build system.
-  # These are located in CMAKE_BINARY_DIR.
+  # Wine must use same DLLs installed on the cross-build system. These are
+  # located in CMAKE_BINARY_DIR.
   string(APPEND WINEPATH "Z:${CMAKE_BINARY_DIR}\\;")
   string(REPLACE "/" "\\" WINEPATH ${WINEPATH})
 endif()
