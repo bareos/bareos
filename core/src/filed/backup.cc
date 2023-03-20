@@ -1182,14 +1182,14 @@ static inline bool SendDataToSd(b_ctx* bctx)
 #ifdef HAVE_WIN32
 struct callback_context {
   b_ctx* bctx;
-  std::chrono::timepoint<std::chrono::steady_clock> read_start;
+  std::chrono::time_point<std::chrono::steady_clock> read_start;
 };
 // Callback method for ReadEncryptedFileRaw()
 static DWORD WINAPI send_efs_data(PBYTE pbData,
                                   PVOID pvCallbackContext,
                                   ULONG ulLength)
 {
-  callback_ctx* ctx = (callback_context*) pvCallbackContext;
+  callback_context* ctx = (callback_context*) pvCallbackContext;
   b_ctx* bctx = ctx->bctx;
   BareosSocket* sd = bctx->jcr->store_bsock;
 
