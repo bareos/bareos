@@ -79,13 +79,9 @@ const bool have_xattr = false;
 template <typename Duration> std::string FormatDuration(Duration d)
 {
   SplitDuration split(d);
-  return fmt::format("{:4}:{:02}:{:02}.{:03}-{:03}",
-		     split.h.count(),
-		     split.m.count(),
-		     split.s.count(),
-		     split.ms.count(),
-		     split.us.count(),
-		     split.ns.count());
+  return fmt::format("{:4}:{:02}:{:02}.{:03}-{:03}", split.h.count(),
+                     split.m.count(), split.s.count(), split.ms.count(),
+                     split.us.count(), split.ns.count());
 }
 
 struct save_file_timing {
@@ -109,47 +105,61 @@ struct save_file_timing {
 
   ~save_file_timing()
   {
-    if (start) {
-      std::chrono::time_point<std::chrono::steady_clock> end
-          = std::chrono::steady_clock::now();
-      std::chrono::nanoseconds total
-          = std::chrono::duration_cast<std::chrono::nanoseconds>(end - *start);
-      auto ns = total.count();
-      // from B/ns -> MB/s
-      constexpr double mbps = (double)1e9 / (double)(1024 * 1024);
+    if (!start) return;
+    std::chrono::time_point<std::chrono::steady_clock> end
+        = std::chrono::steady_clock::now();
+    std::chrono::nanoseconds total
+        = std::chrono::duration_cast<std::chrono::nanoseconds>(end - *start);
+    auto ns = total.count();
+    // from B/ns -> MB/s
+    constexpr double mbps = (double)1e9 / (double)(1024 * 1024);
 
+
+    std::string checksum_str{};
+    std::string signing_str{};
+    std::string read_str{};
+    std::string throughput_str{};
+
+    if (checksum) {
+      std::chrono::nanoseconds dur = *checksum;
+      // 100.00 are 6 characters
+      checksum_str = fmt::format("     -computing checksum: {} ({:6.2f}%)\n",
+                                 FormatDuration(dur).c_str(),
+                                 (checksum ? dur.count() : 0) / (double)ns);
+    }
+
+    if (signing) {
+      std::chrono::nanoseconds dur = *signing;
+      signing_str = fmt::format("     -computing signage: {} ({:6.2f}%)\n",
+                                FormatDuration(dur).c_str(),
+                                (checksum ? dur.count() : 0) / (double)ns);
+    }
+
+    if (data_sent) {
+      read_str = fmt::format("     -reading the file:   {} ({:6.2f}%)\n",
+                             FormatDuration(reading).c_str(),
+                             reading.count() / (double)ns);
       double tp = ff_pkt->statp.st_size / (ns / mbps);
       double read_tp = ff_pkt->statp.st_size / (reading.count() / mbps);
-
-      std::chrono::nanoseconds checksum_(0);
-      if (checksum) checksum = *checksum;
-      std::chrono::nanoseconds signing_(0);
-      if (signing) signing = *signing;
-
-      Dmsg11(400,
-            "SaveFile %s\n"
-            "  -Time spent:            %s\n"
-            "     -computing checksum: %s (%.2lf%%)\n"
-            "     -computing signage:  %s (%.2lf%%)\n"
-            "     -reading the file:   %s (%.2lf%%)\n"
-            "  -Data sent:             %6s\n"
-            "  -Throughput (send %lld bytes)\n"
-            "    -Total:               %6.2lfMB/s\n"
-            "    -Reading:             %6.2lfMB/s\n",
-            ff_pkt->fname, FormatDuration(total).c_str(),
-            FormatDuration(checksum_).c_str(),
-            (checksum ? checksum->count() : 0) / (double)ns,
-            FormatDuration(signing_).c_str(),
-            (signing ? signing->count() : 0) / (double)ns,
-            FormatDuration(reading).c_str(), reading.count() / (double)ns,
-            data_sent ? "yes" : "no", data_sent ? ff_pkt->statp.st_size : 0,
-	     data_sent ? tp : 0, data_sent ? read_tp : 0);
-      ff_pkt->send_total += total;
-      using namespace std::literals::chrono_literals;
-      ff_pkt->checksum_total += checksum.value_or(0ns);
-      ff_pkt->signing_total += signing.value_or(0ns);
-      ff_pkt->reading_total += reading;
+      throughput_str = fmt::format(
+          "  -Throughput (send {} bytes)\n"
+          "    -Total:               {:10.2f}MB/s\n"
+          "    -Reading:             {:10.2f}MB/s\n",
+          ff_pkt->statp.st_size, tp, read_tp);
     }
+
+    Dmsg7(400,
+          "SaveFile %s\n"
+          "  -Time spent:            %s\n%s%s%s"
+          "  -Data sent:             %6s\n%s",
+          ff_pkt->fname, FormatDuration(total).c_str(), checksum_str.c_str(),
+          signing_str.c_str(), read_str.c_str(), data_sent ? "yes" : "no",
+          throughput_str.c_str());
+    ff_pkt->send_total += total;
+    using namespace std::literals::chrono_literals;
+    ff_pkt->checksum_total += checksum.value_or(0ns);
+    ff_pkt->signing_total += signing.value_or(0ns);
+    ff_pkt->reading_total += reading;
   }
 
   std::optional<std::chrono::time_point<std::chrono::steady_clock>> start;
@@ -369,13 +379,12 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
 
   Dmsg9(400,
         "FindFiles jobid=%u mpbs=%lf\n"
-        "  *Time spent\n"
-        "    -Total:      %s\n"
-        "    -Sending:    %s (%.2lf%%)\n"
-        "      -Checksum: %s (%.2lf%%)\n"
-        "      -Signing:  %s (%.2lf%%)\n"
-        "      -Reading:  %s (%.2lf%%)\n"
-        "    -Accepting:  %s (%.2lf%%)\n"
+        "  *Time spent    %s\n"
+        "    -Sending:    %s (%6.2lf%%)\n"
+        "      -Checksum: %s (%6.2lf%%)\n"
+        "      -Signing:  %s (%6.2lf%%)\n"
+        "      -Reading:  %s (%6.2lf%%)\n"
+        "    -Accepting:  %s (%6.2lf%%)\n"
         "  *Throughput (send %lld bytes)\n"
         "    -Total:      %20.2lfMB/s\n"
         "    -Sending:    %20.2lfMB/s\n",
