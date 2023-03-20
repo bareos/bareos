@@ -332,12 +332,13 @@ bool AcceptFile(FindFilesPacket* ff)
     ~accept_file_timing() {
       std::chrono::time_point<std::chrono::steady_clock> end = std::chrono::steady_clock::now();
       std::chrono::nanoseconds diff = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+      using seconds_double = std::chrono::duration<double>;
       Dmsg2(400,
 	    "AcceptFile %s\n"
-	    "  -Time: %lldns\n"
+	    "  -Time: %.2lfs\n"
 	    "  -Result: %s\n",
 	    ff_pkt->fname,
-	    diff.count(),
+	    std::chrono::duration_cast<seconds_double>(diff).count(),
 	    result ? "accept" : "reject");
       ff_pkt->accept_total += diff;
     }

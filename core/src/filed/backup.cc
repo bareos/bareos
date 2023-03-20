@@ -254,9 +254,11 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
   auto end = std::chrono::steady_clock::now();
   std::chrono::nanoseconds total_time = end - start;
 
+  auto send_total = jcr->fd_impl->ff->send_total;
+  auto accept_total = jcr->fd_impl->ff->accept_total;
   auto total_ns = total_time.count();
-  auto send_ns = jcr->fd_impl->ff->send_total.count();
-  auto accept_ns = jcr->fd_impl->ff->accept_total.count();
+  auto send_ns = send_total.count();
+  auto accept_ns = accept_total.count();
 
   double accept_pc = (double) accept_ns / (double) total_ns;
   double send_pc = (double) send_ns / (double) total_ns;
@@ -267,17 +269,21 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
 
   double total_tp = job_bytes / (total_ns / mbps);
   double send_tp = job_bytes / (send_ns / mbps);
+
+  using seconds_double = std::chrono::duration<double>;
   Dmsg9(400,
 	"FindFiles jobid=%u\n"
 	"  *Time spent\n"
-	"    -Total:     %20lldns\n"
-	"    -Sending:   %20lldns (%.2lf%%)\n"
-	"    -Accepting: %20lldns (%.2lf%%)\n"
+	"    -Total:     %20.2lfs\n"
+	"    -Sending:   %20.2lfs (%.2lf%%)\n"
+	"    -Accepting: %20.2lfs (%.2lf%%)\n"
 	"  *Throughput (send %lld bytes)\n"
 	"    -Total:     %20.2lfMB/s\n"
 	"    -Sending:   %20.2lfMB/s\n",
 	jcr->JobId,
-	total_ns, send_ns, 100 * send_pc, accept_ns, 100 * accept_pc,
+	std::chrono::duration_cast<seconds_double>(total_time).count(),
+	std::chrono::duration_cast<seconds_double>(send_total).count(), 100 * send_pc,
+	std::chrono::duration_cast<seconds_double>(accept_total).count(), 100 * accept_pc,
 	job_bytes, total_tp, send_tp);
 
   using namespace std::literals::chrono_literals;
@@ -643,13 +649,14 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 
 	double tp = ff_pkt->statp.st_size / (ns / mbps);
 
+	using seconds_double = std::chrono::duration<double>;
 	Dmsg4(400,
 	      "SendFile %s\n"
-	      "  -Time spent: %lldns\n"
+	      "  -Time spent: %.2lfs\n"
 	      "  -Data sent:  %s\n"
 	      "  -Throughput: %.2lfMB/s (%lld bytes total)\n",
 	      ff_pkt->fname,
-	      ns,
+	      std::chrono::duration_cast<seconds_double>(total).count(),
 	      data_sent ? "yes" : "no",
 	      data_sent ? tp : 0,
 	      data_sent ? ff_pkt->statp.st_size : 0);
