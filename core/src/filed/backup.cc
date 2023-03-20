@@ -79,9 +79,9 @@ const bool have_xattr = false;
 template <typename Duration> std::string FormatDuration(Duration d)
 {
   SplitDuration split(d);
-  return fmt::format("{:4}:{:02}:{:02}.{:03}-{:03}", split.h.count(),
-                     split.m.count(), split.s.count(), split.ms.count(),
-                     split.us.count(), split.ns.count());
+  return fmt::format("{:4}:{:02}:{:02}.{:03}-{:03}", split.hours(),
+                     split.minutes(), split.seconds(), split.millis(),
+                     split.micros());
 }
 
 struct save_file_timing {

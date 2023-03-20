@@ -103,18 +103,24 @@ struct SplitDuration {
 
   template <typename Duration> SplitDuration(Duration d)
   {
-    using namespace std::chrono;
-    h = duration_cast<hours>(d);
+    h = std::chrono::duration_cast<std::chrono::hours>(d);
     d -= h;
-    m = duration_cast<minutes>(d);
+    m = std::chrono::duration_cast<std::chrono::minutes>(d);
     d -= m;
-    s = duration_cast<seconds>(d);
+    s = std::chrono::duration_cast<std::chrono::seconds>(d);
     d -= s;
-    ms = duration_cast<milliseconds>(d);
+    ms = std::chrono::duration_cast<std::chrono::milliseconds>(d);
     d -= ms;
-    us = duration_cast<microseconds>(d);
+    us = std::chrono::duration_cast<std::chrono::microseconds>(d);
     d -= us;
-    ns = duration_cast<nanoseconds>(d);
+    ns = std::chrono::duration_cast<std::chrono::nanoseconds>(d);
   }
+
+  int64_t hours() { return h.count(); }
+  int64_t minutes() { return m.count(); }
+  int64_t seconds() { return s.count(); }
+  int64_t millis() { return ms.count(); }
+  int64_t micros() { return us.count(); }
+  int64_t nanos() { return ns.count(); }
 };
 #endif  // BAREOS_LIB_UTIL_H_

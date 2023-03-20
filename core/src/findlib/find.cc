@@ -339,10 +339,10 @@ bool AcceptFile(FindFilesPacket* ff)
       SplitDuration split{diff};
       Dmsg2(400,
             "AcceptFile %s\n"
-            "  -Time: %4lld:%02lld:%02lld.%03lld-%03lld\n"
+            "  -Time:  %4lld:%02lld:%02lld.%03lld-%03lld\n"
             "  -Result: %s\n",
-            ff_pkt->fname, split.h.count(), split.m.count(), split.s.count(),
-            split.ms.count(), split.us.count(), result ? "accept" : "reject");
+            ff_pkt->fname, split.hours(), split.minutes(), split.seconds(),
+            split.millis(), split.micros(), result ? "accept" : "reject");
       ff_pkt->accept_total += diff;
     }
 
