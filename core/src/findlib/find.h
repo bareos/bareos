@@ -256,11 +256,11 @@ struct FindFilesPacket {
   bool volhas_attrlist{false};  /**< Volume supports getattrlist() */
   HfsPlusInfo hfsinfo;          /**< Finder Info and resource fork size */
 
-  std::chrono::nanoseconds accept_total{0};
-  std::chrono::nanoseconds send_total{0};
-  std::chrono::nanoseconds checksum_total{0};
-  std::chrono::nanoseconds signing_total{0};
-  std::chrono::nanoseconds reading_total{0};
+  std::chrono::nanoseconds accept_total{0};  /**< total amount of time spent in AcceptFiles */
+  std::chrono::nanoseconds send_total{0};    /**< total amount of time spent in SaveFile */
+  std::chrono::nanoseconds checksum_total{0};/**< total amount of time used creating checksum */
+  std::chrono::nanoseconds signing_total{0}; /**< total amount of time spent signing */
+  std::chrono::nanoseconds reading_total{0}; /**< total amount of time spent reading files */
 };
 /* clang-format on */
 
