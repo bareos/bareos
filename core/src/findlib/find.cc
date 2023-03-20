@@ -323,23 +323,27 @@ std::optional<const regex_t*> FindRegexMatch(alist<regex_t*>& regexs, const char
 bool AcceptFile(FindFilesPacket* ff)
 {
   struct accept_file_timing {
-    accept_file_timing(FindFilesPacket* ff_pkt,
-		       bool& result) : start(std::chrono::steady_clock::now())
-				     , ff_pkt(ff_pkt)
-				     , result(result)
-    {}
+    accept_file_timing(FindFilesPacket* ff_pkt, bool& result)
+        : start(std::chrono::steady_clock::now())
+        , ff_pkt(ff_pkt)
+        , result(result)
+    {
+    }
 
-    ~accept_file_timing() {
-      std::chrono::time_point<std::chrono::steady_clock> end = std::chrono::steady_clock::now();
-      std::chrono::nanoseconds diff = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+    ~accept_file_timing()
+    {
+      std::chrono::time_point<std::chrono::steady_clock> end
+          = std::chrono::steady_clock::now();
+      std::chrono::nanoseconds diff
+          = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
       using seconds_double = std::chrono::duration<double>;
       Dmsg2(400,
-	    "AcceptFile %s\n"
-	    "  -Time: %.2lfs\n"
-	    "  -Result: %s\n",
-	    ff_pkt->fname,
-	    std::chrono::duration_cast<seconds_double>(diff).count(),
-	    result ? "accept" : "reject");
+            "AcceptFile %s\n"
+            "  -Time: %.2lfs\n"
+            "  -Result: %s\n",
+            ff_pkt->fname,
+            std::chrono::duration_cast<seconds_double>(diff).count(),
+            result ? "accept" : "reject");
       ff_pkt->accept_total += diff;
     }
 
@@ -442,6 +446,7 @@ bool AcceptFile(FindFilesPacket* ff)
 	      return (rtn = !do_exclude);
 	    }
 	}
+    }
     // If we have an empty Options clause with exclude, then exclude the file
     if (do_exclude && fo->regex.size() == 0
         && fo->wild.size() == 0 && fo->regexdir.size() == 0

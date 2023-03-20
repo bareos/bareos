@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -65,7 +65,9 @@ endif()
 include_directories(${OPENSSL_INCLUDE_DIR})
 
 add_library(fd_objects STATIC ${FDSRCS})
-target_link_libraries(fd_objects PRIVATE bareos bareosfastlz ${ZLIB_LIBRARIES} fmt::fmt-header-only)
+target_link_libraries(
+  fd_objects PRIVATE bareos bareosfastlz ${ZLIB_LIBRARIES} fmt::fmt-header-only
+)
 
 if(HAVE_LMDB)
   target_link_libraries(fd_objects PRIVATE bareoslmdb)

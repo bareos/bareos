@@ -77,66 +77,71 @@ const bool have_xattr = false;
 #endif
 
 template <typename Duration>
-std::tuple<std::chrono::hours, std::chrono::minutes, std::chrono::seconds,
-	   std::chrono::milliseconds, std::chrono::microseconds,
-	   std::chrono::nanoseconds> SplitDuration(Duration d)
+std::tuple<std::chrono::hours,
+           std::chrono::minutes,
+           std::chrono::seconds,
+           std::chrono::milliseconds,
+           std::chrono::microseconds,
+           std::chrono::nanoseconds>
+SplitDuration(Duration d)
 {
   using namespace std::chrono;
 
-  auto hs = duration_cast<hours>(d);        d -= hs;
-  auto ts = duration_cast<minutes>(d);      d -= ts;
-  auto ss = duration_cast<seconds>(d);      d -= ss;
-  auto ms = duration_cast<milliseconds>(d); d -= ms;
-  auto us = duration_cast<microseconds>(d); d -= us;
+  auto hs = duration_cast<hours>(d);
+  d -= hs;
+  auto ts = duration_cast<minutes>(d);
+  d -= ts;
+  auto ss = duration_cast<seconds>(d);
+  d -= ss;
+  auto ms = duration_cast<milliseconds>(d);
+  d -= ms;
+  auto us = duration_cast<microseconds>(d);
+  d -= us;
   auto ns = duration_cast<nanoseconds>(d);
 
   return {hs, ts, ss, ms, us, ns};
 }
 
-template <typename Duration>
-std::string FormatDuration(Duration d)
+template <typename Duration> std::string FormatDuration(Duration d)
 {
   auto split = SplitDuration(d);
   return fmt::format("{:4}:{:02}:{:02}.{:03}-{:03}",
-		     std::get<std::chrono::hours>(split).count(),
-		     std::get<std::chrono::minutes>(split).count(),
-		     std::get<std::chrono::seconds>(split).count(),
-		     std::get<std::chrono::milliseconds>(split).count(),
-		     std::get<std::chrono::microseconds>(split).count());
+                     std::get<std::chrono::hours>(split).count(),
+                     std::get<std::chrono::minutes>(split).count(),
+                     std::get<std::chrono::seconds>(split).count(),
+                     std::get<std::chrono::milliseconds>(split).count(),
+                     std::get<std::chrono::microseconds>(split).count());
 }
 
 struct save_file_timing {
-  save_file_timing(FindFilesPacket* ff_pkt) : start{std::nullopt}
-					    , ff_pkt{ff_pkt}
-					    , data_sent{false}
-					    , checksum{std::nullopt}
-					    , signing{std::nullopt}
-					    , reading(0)
-  {}
-
-  void start_clock() {
-    start = std::chrono::steady_clock::now();
+  save_file_timing(FindFilesPacket* ff_pkt)
+      : start{std::nullopt}
+      , ff_pkt{ff_pkt}
+      , data_sent{false}
+      , checksum{std::nullopt}
+      , signing{std::nullopt}
+      , reading(0)
+  {
   }
 
-  void send_data(bool did_send_data) {
-    data_sent = did_send_data;
-  }
+  void start_clock() { start = std::chrono::steady_clock::now(); }
 
-  void check(std::chrono::nanoseconds time) {
-    checksum = time;
-  }
+  void send_data(bool did_send_data) { data_sent = did_send_data; }
 
-  void sign(std::chrono::nanoseconds time) {
-    signing = time;
-  }
+  void check(std::chrono::nanoseconds time) { checksum = time; }
 
-  ~save_file_timing() {
+  void sign(std::chrono::nanoseconds time) { signing = time; }
+
+  ~save_file_timing()
+  {
     if (start) {
-      std::chrono::time_point<std::chrono::steady_clock> end = std::chrono::steady_clock::now();
-      std::chrono::nanoseconds total = std::chrono::duration_cast<std::chrono::nanoseconds>(end - *start);
+      std::chrono::time_point<std::chrono::steady_clock> end
+          = std::chrono::steady_clock::now();
+      std::chrono::nanoseconds total
+          = std::chrono::duration_cast<std::chrono::nanoseconds>(end - *start);
       auto ns = total.count();
       // from B/ns -> MB/s
-      constexpr double  mbps      = (double) 1e9 / (double)(1024 * 1024);
+      constexpr double mbps = (double)1e9 / (double)(1024 * 1024);
 
       double tp = ff_pkt->statp.st_size / (ns / mbps);
       double read_tp = ff_pkt->statp.st_size / (reading.count() / mbps);
@@ -147,32 +152,28 @@ struct save_file_timing {
       if (signing) signing = *signing;
 
       Dmsg4(400,
-	    "SaveFile %s\n"
-	    "  -Time spent:            %s\n"
-	    "     -computing checksum: %s (%.2lf%%)\n"
-	    "     -computing signage:  %s (%.2lf%%)\n"
-	    "     -reading the file:   %s (%.2lf%%)\n"
-	    "  -Data sent:             %s\n"
-	    "  -Throughput (send %lld bytes)\n"
-	    "    -Total:               %6.2lfMB/s\n"
-	    "    -Reading:             %6.2lfMB/s\n",
-	    ff_pkt->fname,
-	    FormatDuration(total).c_str(),
-	    FormatDuration(checksum_).c_str(),
-	    (checksum ? checksum->count() : 0) / (double) ns,
-	    FormatDuration(signing_).c_str(),
-	    (signing ? signing->count() : 0) / (double) ns,
-	    FormatDuration(reading).c_str(),
-	    reading.count() / (double) ns,
-	    data_sent ? "yes" : "no",
-	    data_sent ? ff_pkt->statp.st_size : 0,
-	    data_sent ? tp : 0,
-	    read_tp);
+            "SaveFile %s\n"
+            "  -Time spent:            %s\n"
+            "     -computing checksum: %s (%.2lf%%)\n"
+            "     -computing signage:  %s (%.2lf%%)\n"
+            "     -reading the file:   %s (%.2lf%%)\n"
+            "  -Data sent:             %s\n"
+            "  -Throughput (send %lld bytes)\n"
+            "    -Total:               %6.2lfMB/s\n"
+            "    -Reading:             %6.2lfMB/s\n",
+            ff_pkt->fname, FormatDuration(total).c_str(),
+            FormatDuration(checksum_).c_str(),
+            (checksum ? checksum->count() : 0) / (double)ns,
+            FormatDuration(signing_).c_str(),
+            (signing ? signing->count() : 0) / (double)ns,
+            FormatDuration(reading).c_str(), reading.count() / (double)ns,
+            data_sent ? "yes" : "no", data_sent ? ff_pkt->statp.st_size : 0,
+            data_sent ? tp : 0, read_tp);
       ff_pkt->send_total += total;
       using namespace std::literals::chrono_literals;
       ff_pkt->checksum_total += checksum.value_or(0ns);
-      ff_pkt->signing_total  += signing.value_or(0ns);
-      ff_pkt->reading_total  += reading;
+      ff_pkt->signing_total += signing.value_or(0ns);
+      ff_pkt->reading_total += reading;
     }
   }
 
@@ -192,7 +193,7 @@ static int send_data(JobControlRecord* jcr,
                      FindFilesPacket* ff_pkt,
                      DIGEST* digest,
                      DIGEST* signature_digest,
-		     save_file_timing* timing);
+                     save_file_timing* timing);
 
 bool EncodeAndSendAttributes(JobControlRecord* jcr,
                              FindFilesPacket* ff_pkt,
@@ -378,39 +379,38 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
   auto signing_ns = signing_total.count();
   auto reading_ns = reading_total.count();
 
-  double accept_pc = (double) accept_ns / (double) total_ns;
-  double send_pc = (double) send_ns / (double) total_ns;
-  double checksum_pc = (double) checksum_ns / (double) send_ns;
-  double signing_pc = (double) signing_ns / (double) send_ns;
-  double reading_pc = (double) reading_ns / (double) send_ns;
+  double accept_pc = (double)accept_ns / (double)total_ns;
+  double send_pc = (double)send_ns / (double)total_ns;
+  double checksum_pc = (double)checksum_ns / (double)send_ns;
+  double signing_pc = (double)signing_ns / (double)send_ns;
+  double reading_pc = (double)reading_ns / (double)send_ns;
 
   int64_t job_bytes = jcr->JobBytes;
   // from B/ns -> MB/s
-  constexpr double  mbps      = (double) 1e9 / (double)(1024 * 1024);
+  constexpr double mbps = (double)1e9 / (double)(1024 * 1024);
 
   double total_tp = job_bytes / (total_ns / mbps);
   double send_tp = job_bytes / (send_ns / mbps);
 
   Dmsg9(400,
-	"FindFiles jobid=%u mpbs=%lf\n"
-	"  *Time spent\n"
-	"    -Total:      %s\n"
-	"    -Sending:    %s (%.2lf%%)\n"
-	"      -Checksum: %s (%.2lf%%)\n"
-	"      -Signing:  %s (%.2lf%%)\n"
-	"      -Reading:  %s (%.2lf%%)\n"
-	"    -Accepting:  %s (%.2lf%%)\n"
-	"  *Throughput (send %lld bytes)\n"
-	"    -Total:      %20.2lfMB/s\n"
-	"    -Sending:    %20.2lfMB/s\n",
-	jcr->JobId, mbps,
-	FormatDuration(total_time).c_str(),
-	FormatDuration(send_total).c_str(), 100 * send_pc,
-	FormatDuration(checksum_total).c_str(), 100 * checksum_pc,
-	FormatDuration(signing_total).c_str(), 100 * signing_pc,
-	FormatDuration(reading_total).c_str(), 100 * reading_pc,
-	FormatDuration(accept_total).c_str(), 100 * accept_pc,
-	job_bytes, total_tp, send_tp);
+        "FindFiles jobid=%u mpbs=%lf\n"
+        "  *Time spent\n"
+        "    -Total:      %s\n"
+        "    -Sending:    %s (%.2lf%%)\n"
+        "      -Checksum: %s (%.2lf%%)\n"
+        "      -Signing:  %s (%.2lf%%)\n"
+        "      -Reading:  %s (%.2lf%%)\n"
+        "    -Accepting:  %s (%.2lf%%)\n"
+        "  *Throughput (send %lld bytes)\n"
+        "    -Total:      %20.2lfMB/s\n"
+        "    -Sending:    %20.2lfMB/s\n",
+        jcr->JobId, mbps, FormatDuration(total_time).c_str(),
+        FormatDuration(send_total).c_str(), 100 * send_pc,
+        FormatDuration(checksum_total).c_str(), 100 * checksum_pc,
+        FormatDuration(signing_total).c_str(), 100 * signing_pc,
+        FormatDuration(reading_total).c_str(), 100 * reading_pc,
+        FormatDuration(accept_total).c_str(), 100 * accept_pc, job_bytes,
+        total_tp, send_tp);
 
   using namespace std::literals::chrono_literals;
   jcr->fd_impl->ff->send_total = 0ns;
@@ -461,7 +461,7 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
 
 // Save OSX specific resource forks and finder info.
 static inline bool SaveRsrcAndFinder(b_save_ctx& bsctx,
-				     save_file_timing* timing)
+                                     save_file_timing* timing)
 {
   char flags[FOPTS_BYTES];
   int rsrc_stream;
@@ -1138,19 +1138,23 @@ static inline bool SendDataToSd(b_ctx* bctx)
 
   // Update checksum if requested
   if (bctx->digest) {
-    std::chrono::time_point<std::chrono::steady_clock> start = std::chrono::steady_clock::now();
+    std::chrono::time_point<std::chrono::steady_clock> start
+        = std::chrono::steady_clock::now();
     CryptoDigestUpdate(bctx->digest, (uint8_t*)bctx->rbuf, sd->message_length);
-    std::chrono::time_point<std::chrono::steady_clock> end = std::chrono::steady_clock::now();
+    std::chrono::time_point<std::chrono::steady_clock> end
+        = std::chrono::steady_clock::now();
     if (bctx->timing) bctx->timing.value()->check(end - start);
     // bctx->ff_pkt->checksum_total += end - start;
   }
 
   // Update signing digest if requested
   if (bctx->signing_digest) {
-    std::chrono::time_point<std::chrono::steady_clock> start = std::chrono::steady_clock::now();
+    std::chrono::time_point<std::chrono::steady_clock> start
+        = std::chrono::steady_clock::now();
     CryptoDigestUpdate(bctx->signing_digest, (uint8_t*)bctx->rbuf,
                        sd->message_length);
-    std::chrono::time_point<std::chrono::steady_clock> end = std::chrono::steady_clock::now();
+    std::chrono::time_point<std::chrono::steady_clock> end
+        = std::chrono::steady_clock::now();
     if (bctx->timing) bctx->timing.value()->sign(end - start);
   }
 
@@ -1223,13 +1227,14 @@ static DWORD WINAPI send_efs_data(PBYTE pbData,
                                   PVOID pvCallbackContext,
                                   ULONG ulLength)
 {
-  callback_context* ctx = (callback_context*) pvCallbackContext;
+  callback_context* ctx = (callback_context*)pvCallbackContext;
   b_ctx* bctx = ctx->bctx;
   BareosSocket* sd = bctx->jcr->store_bsock;
 
   auto read_end = std::chrono::steady_clock::now();
 
-  if (bctx->timing) bctx->timing.value()->reading += (read_end - ctx->read_start);
+  if (bctx->timing)
+    bctx->timing.value()->reading += (read_end - ctx->read_start);
 
   if (ulLength == 0) { return ERROR_SUCCESS; }
 
@@ -1272,7 +1277,7 @@ static inline bool SendEncryptedData(b_ctx& bctx)
    *
    * So ReadEncryptedFileRaw() will not return until it has read the whole file.
    */
-  callback_context ctx{ &bctx, std::chrono::steady_clock::now() };
+  callback_context ctx{&bctx, std::chrono::steady_clock::now()};
   if (p_ReadEncryptedFileRaw((PFE_EXPORT_FUNC)send_efs_data, &ctx,
                              bctx.ff_pkt->bfd.pvContext)) {
     goto bail_out;
@@ -1454,7 +1459,7 @@ static int send_data(JobControlRecord* jcr,
                      FindFilesPacket* ff_pkt,
                      DIGEST* digest,
                      DIGEST* signing_digest,
-		     save_file_timing *timing)
+                     save_file_timing* timing)
 {
   b_ctx bctx = {};
   BareosSocket* sd = jcr->store_bsock;
