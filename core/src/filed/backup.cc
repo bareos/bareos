@@ -76,41 +76,16 @@ const bool have_xattr = false;
     (sourceLen + (sourceLen >> 12) + (sourceLen >> 14) + (sourceLen >> 25) + 13)
 #endif
 
-template <typename Duration>
-std::tuple<std::chrono::hours,
-           std::chrono::minutes,
-           std::chrono::seconds,
-           std::chrono::milliseconds,
-           std::chrono::microseconds,
-           std::chrono::nanoseconds>
-SplitDuration(Duration d)
-{
-  using namespace std::chrono;
-
-  auto hs = duration_cast<hours>(d);
-  d -= hs;
-  auto ts = duration_cast<minutes>(d);
-  d -= ts;
-  auto ss = duration_cast<seconds>(d);
-  d -= ss;
-  auto ms = duration_cast<milliseconds>(d);
-  d -= ms;
-  auto us = duration_cast<microseconds>(d);
-  d -= us;
-  auto ns = duration_cast<nanoseconds>(d);
-
-  return {hs, ts, ss, ms, us, ns};
-}
-
 template <typename Duration> std::string FormatDuration(Duration d)
 {
-  auto split = SplitDuration(d);
+  SplitDuration split(d);
   return fmt::format("{:4}:{:02}:{:02}.{:03}-{:03}",
-                     std::get<std::chrono::hours>(split).count(),
-                     std::get<std::chrono::minutes>(split).count(),
-                     std::get<std::chrono::seconds>(split).count(),
-                     std::get<std::chrono::milliseconds>(split).count(),
-                     std::get<std::chrono::microseconds>(split).count());
+		     split.h.count(),
+		     split.m.count(),
+		     split.s.count(),
+		     split.ms.count(),
+		     split.us.count(),
+		     split.ns.count());
 }
 
 struct save_file_timing {
@@ -151,13 +126,13 @@ struct save_file_timing {
       std::chrono::nanoseconds signing_(0);
       if (signing) signing = *signing;
 
-      Dmsg4(400,
+      Dmsg11(400,
             "SaveFile %s\n"
             "  -Time spent:            %s\n"
             "     -computing checksum: %s (%.2lf%%)\n"
             "     -computing signage:  %s (%.2lf%%)\n"
             "     -reading the file:   %s (%.2lf%%)\n"
-            "  -Data sent:             %s\n"
+            "  -Data sent:             %6s\n"
             "  -Throughput (send %lld bytes)\n"
             "    -Total:               %6.2lfMB/s\n"
             "    -Reading:             %6.2lfMB/s\n",
@@ -168,7 +143,7 @@ struct save_file_timing {
             (signing ? signing->count() : 0) / (double)ns,
             FormatDuration(reading).c_str(), reading.count() / (double)ns,
             data_sent ? "yes" : "no", data_sent ? ff_pkt->statp.st_size : 0,
-            data_sent ? tp : 0, read_tp);
+	     data_sent ? tp : 0, data_sent ? read_tp : 0);
       ff_pkt->send_total += total;
       using namespace std::literals::chrono_literals;
       ff_pkt->checksum_total += checksum.value_or(0ns);

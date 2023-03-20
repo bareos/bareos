@@ -336,13 +336,13 @@ bool AcceptFile(FindFilesPacket* ff)
           = std::chrono::steady_clock::now();
       std::chrono::nanoseconds diff
           = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-      using seconds_double = std::chrono::duration<double>;
+      SplitDuration split{diff};
       Dmsg2(400,
             "AcceptFile %s\n"
-            "  -Time: %.2lfs\n"
+            "  -Time: %4lld:%02lld:%02lld.%03lld-%03lld\n"
             "  -Result: %s\n",
             ff_pkt->fname,
-            std::chrono::duration_cast<seconds_double>(diff).count(),
+	    split.h.count(), split.m.count(), split.s.count(), split.ms.count(), split.us.count(),
             result ? "accept" : "reject");
       ff_pkt->accept_total += diff;
     }
