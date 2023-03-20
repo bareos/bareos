@@ -1,25 +1,104 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: bareos-webui\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-03-20 12:05+0100\n"
-"Language: zh-CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: POEditor.com\n"
+"Project-Id-Version: bareos-webui\n"
+"Language: zh-CN\n"
 
-#: ../module/Console/view/console/console/index.phtml:36
-msgid "bconsole (batch-mode), please handle with care."
-msgstr "bconsole（批量模式）,请小心处理."
+#: ../module/Dashboard/view/dashboard/dashboard/index.phtml:26
+#: ../module/Application/config/module.config.php:123
+msgid "Dashboard"
+msgstr "主页"
 
-#: ../module/Console/view/console/console/index.phtml:36
-msgid "All commands have to be a one liner, dialogs are not working."
-msgstr "所有命令必须是一个线程,对话框不工作."
+#: ../module/Dashboard/view/partial/JobTotals.phtml:40
+#: ../module/Application/config/module.config.php:128
+msgid "Jobs"
+msgstr "作业"
 
-#: ../module/Console/view/console/console/index.phtml:36
-msgid "Type help for a list of commands."
-msgstr "键入命令列表的帮助."
+#: ../module/Schedule/view/schedule/schedule/details.phtml:33
+#: ../module/Schedule/view/schedule/schedule/status.phtml:32
+#: ../module/Schedule/view/schedule/schedule/overview.phtml:33
+#: ../module/Schedule/view/schedule/schedule/index.phtml:33
+#: ../module/Application/config/module.config.php:133
+msgid "Overview"
+msgstr "概述"
+
+#: ../module/Job/view/job/job/run.phtml:34
+#: ../module/Job/view/job/job/details.phtml:34
+#: ../module/Job/view/job/job/actions.phtml:34
+#: ../module/Job/view/job/job/timeline.phtml:34
+#: ../module/Job/view/job/job/index.phtml:34
+#: ../module/Job/view/job/job/rerun.phtml:34
+#: ../module/Application/config/module.config.php:138
+#: ../public/js/bootstrap-table-formatter.js:578
+msgid "Run"
+msgstr "运行"
+
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:607
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:620
+#: ../module/Restore/view/restore/restore/versions.phtml:26
+#: ../module/Restore/view/restore/restore/index.phtml:26
+#: ../module/Application/config/module.config.php:145
+#: ../public/js/bootstrap-table-formatter.js:53
+#: ../public/js/bootstrap-table-formatter.js:482
+#: ../public/js/bootstrap-table-formatter.js:495
+#: ../public/js/bootstrap-table-formatter.js:515
+msgid "Restore"
+msgstr "恢复"
+
+#: ../module/Client/view/client/client/index.phtml:26
+#: ../module/Client/view/client/client/index.phtml:46
+#: ../module/Application/config/module.config.php:150
+msgid "Clients"
+msgstr "客户端"
+
+#: ../module/Schedule/view/schedule/schedule/overview.phtml:26
+#: ../module/Schedule/view/schedule/schedule/overview.phtml:47
+#: ../module/Schedule/view/schedule/schedule/index.phtml:26
+#: ../module/Schedule/view/schedule/schedule/index.phtml:68
+#: ../module/Application/config/module.config.php:155
+msgid "Schedules"
+msgstr "时间表"
+
+#: ../module/Storage/view/storage/storage/index.phtml:26
+#: ../module/Application/config/module.config.php:160
+msgid "Storages"
+msgstr "存储"
+
+#: ../module/Media/view/media/media/details.phtml:56
+#: ../module/Media/view/media/media/index.phtml:67
+#: ../module/Media/view/media/media/index.phtml:68
+#: ../module/Job/src/Job/Form/RunJobForm.php:196
+#: ../module/Job/src/Job/Form/RunJobForm.php:212
+#: ../module/Job/view/job/job/details.phtml:157
+#: ../module/Job/view/job/job/index.phtml:312
+#: ../module/Pool/view/pool/pool/details.phtml:48
+#: ../module/Storage/src/Storage/Form/StorageForm.php:60
+#: ../module/Storage/view/storage/storage/details.phtml:159
+#: ../module/Application/config/module.config.php:165
+#: ../module/Application/config/module.config.php:170
+msgid "Pool"
+msgstr "池"
+
+#: ../module/Media/view/media/media/details.phtml:34
+#: ../module/Media/view/media/media/index.phtml:26
+#: ../module/Media/view/media/media/index.phtml:34
+#: ../module/Media/view/media/media/index.phtml:47
+#: ../module/Pool/view/pool/pool/details.phtml:34
+#: ../module/Pool/view/pool/pool/details.phtml:58
+#: ../module/Pool/view/pool/pool/details.phtml:79
+#: ../module/Pool/view/pool/pool/index.phtml:34
+#: ../module/Pool/view/pool/pool/index.phtml:73
+#: ../module/Pool/view/pool/pool/index.phtml:74
+#: ../module/Storage/view/storage/storage/details.phtml:34
+#: ../module/Storage/view/storage/storage/status.phtml:34
+#: ../module/Storage/view/storage/storage/index.phtml:34
+#: ../module/Application/config/module.config.php:175
+#: ../module/Application/config/module.config.php:180
+msgid "Volumes"
+msgstr "卷"
 
 #: ../module/Director/view/director/director/subscription.phtml:26
 #: ../module/Director/view/director/director/messages.phtml:26
@@ -28,95 +107,153 @@ msgstr "键入命令列表的帮助."
 msgid "Director"
 msgstr "主控端"
 
-#: ../module/Director/view/director/director/subscription.phtml:31
-#: ../module/Director/view/director/director/messages.phtml:31
-#: ../module/Director/view/director/director/index.phtml:32
-#: ../module/Media/view/media/media/details.phtml:60
-#: ../module/Media/view/media/media/index.phtml:91
-#: ../module/Media/view/media/media/index.phtml:92
-#: ../module/Job/src/Job/Form/JobForm.php:94
-#: ../module/Job/view/job/job/details.phtml:67
-#: ../module/Job/view/job/job/actions.phtml:91
-#: ../module/Job/view/job/job/actions.phtml:92
-#: ../module/Job/view/job/job/index.phtml:150
-#: ../module/Job/view/job/job/index.phtml:151
-#: ../module/Job/view/job/job/rerun.phtml:106
-#: ../module/Client/view/client/client/details.phtml:148
-#: ../module/Client/view/client/client/details.phtml:149
-#: ../module/Client/view/client/client/index.phtml:78
-#: ../module/Client/view/client/client/index.phtml:79
-#: ../module/Pool/view/pool/pool/details.phtml:117
-#: ../module/Pool/view/pool/pool/details.phtml:118
-#: ../module/Storage/view/storage/storage/details.phtml:157
-#: ../module/Schedule/view/schedule/schedule/index.phtml:88
-#: ../module/Schedule/view/schedule/schedule/index.phtml:89
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:40
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:41
-#: ../public/js/bootstrap-table-formatter.js:483
-#: ../public/js/bootstrap-table-formatter.js:496
-#: ../public/js/bootstrap-table-formatter.js:590
-msgid "Status"
-msgstr "状态"
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:37
+msgid "Sorry, it seems you are not authorized to run this module. If you think this is an error, please contact your local administrator."
+msgstr "很抱歉，您似乎无权运行此模块。 如果您认为这是一个错误，请与当地管理员联系。"
 
-#: ../module/Director/view/director/director/subscription.phtml:32
-#: ../module/Director/view/director/director/messages.phtml:32
-#: ../module/Director/view/director/director/index.phtml:33
-#: ../module/Job/view/job/job/details.phtml:83
-msgid "Messages"
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:38
+msgid "Please read the <a href=\"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#sec:webui-console\" target=\"_blank\">Bareos documentation</a> for any additional information on how to configure the Command ACL directive of your Console/Profile resources. Following is a list of required commands which need to be in your Command ACL to run this module properly:"
+msgstr "请读 <a href=\"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#sec:webui-console\" target=\"_blank\">Bareos文档</a>有关如何配置控制台/配置文件资源的Command ACL指令的任何其他信息。 以下是需要在您的命令ACL中正确运行此模块的必需命令的列表："
+
+#: ../module/Application/view/error/404.phtml:3
+msgid "A 404 error occurred"
+msgstr "发生了一个404错误"
+
+#: ../module/Application/view/error/404.phtml:12
+msgid "The requested controller was unable to dispatch the request."
+msgstr "所请求的控制器无法发送请求。"
+
+#: ../module/Application/view/error/404.phtml:15
+msgid "The requested controller could not be mapped to an existing controller class."
+msgstr "所请求的控制器不能映射到现有的控制器类。"
+
+#: ../module/Application/view/error/404.phtml:18
+msgid "The requested controller was not dispatchable."
+msgstr "请求的控制器不可分派。"
+
+#: ../module/Application/view/error/404.phtml:21
+msgid "The requested URL could not be matched by routing."
+msgstr "请求的网址无法通过路由进行匹配。"
+
+#: ../module/Application/view/error/404.phtml:24
+msgid "We cannot determine at this time why a 404 was generated."
+msgstr "我们目前无法确定为什么生成404错误。"
+
+#: ../module/Application/view/error/404.phtml:36
+msgid "Controller"
+msgstr "控制器"
+
+#: ../module/Application/view/error/404.phtml:43
+msgid "resolves to %s"
+msgstr "解析为%s"
+
+#: ../module/Application/view/error/404.phtml:55
+#: ../module/Application/view/error/index.phtml:11
+msgid "Additional information"
+msgstr "附加信息"
+
+#: ../module/Application/view/error/404.phtml:58
+#: ../module/Application/view/error/404.phtml:82
+#: ../module/Application/view/error/index.phtml:14
+#: ../module/Application/view/error/index.phtml:38
+msgid "File"
+msgstr "文件"
+
+#: ../module/Job/view/job/job/details.phtml:90
+#: ../module/Application/view/error/404.phtml:62
+#: ../module/Application/view/error/404.phtml:86
+#: ../module/Application/view/error/index.phtml:18
+#: ../module/Application/view/error/index.phtml:42
+msgid "Message"
 msgstr "信息"
+
+#: ../module/Application/view/error/404.phtml:66
+#: ../module/Application/view/error/404.phtml:90
+#: ../module/Application/view/error/index.phtml:22
+#: ../module/Application/view/error/index.phtml:46
+msgid "Stack trace"
+msgstr "堆栈轨迹"
+
+#: ../module/Application/view/error/404.phtml:76
+#: ../module/Application/view/error/index.phtml:32
+msgid "Previous exceptions"
+msgstr "上一个例外"
+
+#: ../module/Application/view/error/404.phtml:105
+#: ../module/Application/view/error/index.phtml:61
+msgid "No Exception available"
+msgstr "无异常"
+
+#: ../module/Application/view/error/index.phtml:4
+msgid "An error occurred"
+msgstr "发生错误"
+
+#: ../module/Application/view/layout/layout.phtml:110
+msgid "Documentation"
+msgstr "文档"
+
+#: ../module/Application/view/layout/layout.phtml:111
+msgid "Mailinglists"
+msgstr "邮件列表"
+
+#: ../module/Application/view/layout/layout.phtml:112
+msgid "Bugtracker"
+msgstr "错误跟踪器"
+
+#: ../module/Application/view/layout/layout.phtml:113
+msgid "Support"
+msgstr "支持"
 
 #: ../module/Director/view/director/director/subscription.phtml:33
 #: ../module/Director/view/director/director/messages.phtml:33
 #: ../module/Director/view/director/director/index.phtml:34
 #: ../module/Application/view/layout/layout.phtml:114
 msgid "Subscription"
-msgstr ""
+msgstr "订阅"
 
-#: ../module/Director/view/director/director/subscription.phtml:60
-msgid "Backup Unit Report"
-msgstr ""
+#: ../module/Application/view/layout/layout.phtml:116
+msgid "Logout"
+msgstr "登出"
 
-#: ../module/Director/view/director/director/subscription.phtml:77
-msgid "Insufficient permission!"
-msgstr ""
+#: ../module/Job/view/job/job/run.phtml:32
+#: ../module/Job/view/job/job/details.phtml:32
+#: ../module/Job/view/job/job/actions.phtml:32
+#: ../module/Job/view/job/job/timeline.phtml:32
+#: ../module/Job/view/job/job/index.phtml:32
+#: ../module/Job/view/job/job/rerun.phtml:32
+#: ../module/Client/view/client/client/details.phtml:32
+#: ../module/Client/view/client/client/status.phtml:32
+#: ../module/Client/view/client/client/timeline.phtml:32
+#: ../module/Client/view/client/client/index.phtml:32
+#: ../module/Schedule/view/schedule/schedule/details.phtml:32
+#: ../module/Schedule/view/schedule/schedule/status.phtml:31
+#: ../module/Schedule/view/schedule/schedule/overview.phtml:32
+#: ../module/Schedule/view/schedule/schedule/index.phtml:32
+msgid "Show"
+msgstr "显示"
 
-#: ../module/Director/view/director/director/subscription.phtml:79
-msgid ""
-"For a Backup Unit Report, access to all job, client and fileset resources is "
-"required."
-msgstr ""
+#: ../module/Client/view/client/client/status.phtml:46
+msgid "Client Status"
+msgstr "客户端状态"
 
-#: ../module/Director/view/director/director/messages.phtml:43
-msgid "Refresh"
-msgstr "刷新"
+#: ../module/Client/view/client/client/details.phtml:26
+msgid "Client details"
+msgstr "客户端详情"
 
-#: ../module/Director/view/director/director/messages.phtml:50
-msgid "Director messages"
-msgstr "主控端信息"
-
-#: ../module/Director/view/director/director/index.phtml:47
-msgid "Director Status"
-msgstr "主控端状态"
-
-#: ../module/Fileset/view/fileset/fileset/details.phtml:26
-msgid "Fileset details"
-msgstr "文件详情"
-
-#: ../module/Fileset/view/fileset/fileset/details.phtml:39
-#: ../module/Job/src/Job/Form/RunJobForm.php:126
-#: ../module/Job/src/Job/Form/RunJobForm.php:142
-#: ../module/Job/view/job/job/details.phtml:153
-#: ../module/Job/view/job/job/index.phtml:308
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:178
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:192
-#: ../module/Client/view/client/client/details.phtml:120
-#: ../module/Client/view/client/client/details.phtml:121
-msgid "Fileset"
-msgstr "文件集"
-
-#: ../module/Fileset/view/fileset/fileset/details.phtml:47
-msgid "Id"
-msgstr "ID号"
+#: ../module/Media/view/media/media/details.phtml:105
+#: ../module/Media/view/media/media/details.phtml:106
+#: ../module/Job/src/Job/Form/RunJobForm.php:56
+#: ../module/Job/src/Job/Form/RunJobForm.php:72
+#: ../module/Job/view/job/job/details.phtml:61
+#: ../module/Job/view/job/job/index.phtml:87
+#: ../module/Job/view/job/job/index.phtml:88
+#: ../module/Job/view/job/job/rerun.phtml:76
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:92
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:108
+#: ../module/Client/view/client/client/details.phtml:46
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:43
+msgid "Client"
+msgstr "客户"
 
 #: ../module/Fileset/view/fileset/fileset/details.phtml:48
 #: ../module/Media/view/media/media/details.phtml:55
@@ -141,165 +278,47 @@ msgstr "ID号"
 msgid "Name"
 msgstr "名称"
 
-#: ../module/Fileset/view/fileset/fileset/details.phtml:49
-msgid "MD5 checksum"
-msgstr "MD5校验和"
+#: ../module/Client/view/client/client/details.phtml:54
+#: ../module/Client/view/client/client/index.phtml:72
+#: ../module/Client/view/client/client/index.phtml:73
+msgid "Version"
+msgstr "版本"
 
-#: ../module/Fileset/view/fileset/fileset/details.phtml:50
-msgid "Creation time"
-msgstr "创建时间"
+#: ../module/Client/view/client/client/details.phtml:55
+msgid "Autoprune"
+msgstr "自动修剪"
 
-#: ../module/Fileset/view/fileset/fileset/index.phtml:26
-msgid "Filesets"
-msgstr "文件集"
+#: ../module/Client/view/client/client/details.phtml:56
+msgid "Fileretention"
+msgstr "文件保留"
 
-#: ../module/Analytics/view/analytics/analytics/index.phtml:26
-#: ../module/Application/config/module.config.php:192
-msgid "Analytics"
-msgstr ""
-
-#: ../module/Analytics/view/analytics/analytics/index.phtml:34
-#, fuzzy
-msgid "Stored Data"
-msgstr "存储状态"
-
-#: ../module/Analytics/view/analytics/analytics/index.phtml:44
-msgid "Overall"
-msgstr ""
-
-#: ../module/Analytics/view/analytics/analytics/index.phtml:55
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:57
-msgid "Backup jobs"
-msgstr "备份作业"
-
-#: ../module/Media/view/media/media/details.phtml:26
-msgid "Volume details"
-msgstr "卷详细信息"
-
-#: ../module/Media/view/media/media/details.phtml:32
-#: ../module/Media/view/media/media/index.phtml:32
-#: ../module/Pool/view/pool/pool/details.phtml:32
-#: ../module/Pool/view/pool/pool/index.phtml:32
-#: ../module/Storage/view/storage/storage/details.phtml:32
-#: ../module/Storage/view/storage/storage/status.phtml:32
-#: ../module/Storage/view/storage/storage/index.phtml:32
-msgid "Devices"
-msgstr "设备"
-
-#: ../module/Media/view/media/media/details.phtml:33
-#: ../module/Media/view/media/media/index.phtml:33
-#: ../module/Pool/view/pool/pool/details.phtml:33
-#: ../module/Pool/view/pool/pool/index.phtml:26
-#: ../module/Pool/view/pool/pool/index.phtml:33
-#: ../module/Pool/view/pool/pool/index.phtml:47
-#: ../module/Storage/view/storage/storage/details.phtml:33
-#: ../module/Storage/view/storage/storage/status.phtml:33
-#: ../module/Storage/view/storage/storage/index.phtml:33
-msgid "Pools"
-msgstr "池"
-
-#: ../module/Media/view/media/media/details.phtml:34
-#: ../module/Media/view/media/media/index.phtml:26
-#: ../module/Media/view/media/media/index.phtml:34
-#: ../module/Media/view/media/media/index.phtml:47
-#: ../module/Pool/view/pool/pool/details.phtml:34
-#: ../module/Pool/view/pool/pool/details.phtml:58
-#: ../module/Pool/view/pool/pool/details.phtml:79
-#: ../module/Pool/view/pool/pool/index.phtml:34
-#: ../module/Pool/view/pool/pool/index.phtml:73
-#: ../module/Pool/view/pool/pool/index.phtml:74
-#: ../module/Storage/view/storage/storage/details.phtml:34
-#: ../module/Storage/view/storage/storage/status.phtml:34
-#: ../module/Storage/view/storage/storage/index.phtml:34
-#: ../module/Application/config/module.config.php:175
-#: ../module/Application/config/module.config.php:180
-msgid "Volumes"
-msgstr "卷"
-
-#: ../module/Media/view/media/media/details.phtml:56
-#: ../module/Media/view/media/media/index.phtml:67
-#: ../module/Media/view/media/media/index.phtml:68
-#: ../module/Job/src/Job/Form/RunJobForm.php:196
-#: ../module/Job/src/Job/Form/RunJobForm.php:212
-#: ../module/Job/view/job/job/details.phtml:157
-#: ../module/Job/view/job/job/index.phtml:312
-#: ../module/Pool/view/pool/pool/details.phtml:48
-#: ../module/Storage/src/Storage/Form/StorageForm.php:60
-#: ../module/Storage/view/storage/storage/details.phtml:159
-#: ../module/Application/config/module.config.php:165
-#: ../module/Application/config/module.config.php:170
-msgid "Pool"
-msgstr "池"
-
-#: ../module/Media/view/media/media/details.phtml:57
-#: ../module/Media/view/media/media/index.phtml:73
-#: ../module/Media/view/media/media/index.phtml:74
-#: ../module/Job/src/Job/Form/RunJobForm.php:161
-#: ../module/Job/src/Job/Form/RunJobForm.php:177
-#: ../module/Pool/view/pool/pool/details.phtml:99
-#: ../module/Pool/view/pool/pool/details.phtml:100
-msgid "Storage"
-msgstr "存储"
-
-#: ../module/Media/view/media/media/details.phtml:58
-#: ../module/Media/view/media/media/details.phtml:111
-#: ../module/Media/view/media/media/details.phtml:112
-#: ../module/Media/view/media/media/index.phtml:79
-#: ../module/Media/view/media/media/index.phtml:80
-#: ../module/Job/src/Job/Form/RunJobForm.php:280
-#: ../module/Job/src/Job/Form/RunJobForm.php:295
-#: ../module/Job/view/job/job/details.phtml:62
-#: ../module/Job/view/job/job/index.phtml:94
-#: ../module/Job/view/job/job/index.phtml:95
-#: ../module/Job/view/job/job/rerun.phtml:81
-#: ../module/Pool/view/pool/pool/details.phtml:57
-#: ../module/Pool/view/pool/pool/details.phtml:105
-#: ../module/Pool/view/pool/pool/details.phtml:106
-#: ../module/Pool/view/pool/pool/index.phtml:67
-#: ../module/Pool/view/pool/pool/index.phtml:68
-msgid "Type"
-msgstr "类型"
-
-#: ../module/Media/view/media/media/details.phtml:59
-#: ../module/Media/view/media/media/details.phtml:352
-#: ../module/Media/view/media/media/index.phtml:85
-#: ../module/Media/view/media/media/index.phtml:86
-#: ../module/Media/view/media/media/index.phtml:269
-#: ../module/Pool/view/pool/pool/details.phtml:111
-#: ../module/Pool/view/pool/pool/details.phtml:112
-#: ../module/Pool/view/pool/pool/details.phtml:319
-#: ../module/Storage/view/storage/storage/details.phtml:155
-msgid "Last written"
-msgstr "最后写入"
-
-#: ../module/Media/view/media/media/details.phtml:61
-#: ../module/Media/view/media/media/index.phtml:103
-#: ../module/Media/view/media/media/index.phtml:104
-#: ../module/Pool/view/pool/pool/details.phtml:129
-#: ../module/Pool/view/pool/pool/details.phtml:130
-#, fuzzy
-msgid "Retention"
+#: ../module/Client/view/client/client/details.phtml:57
+msgid "Jobretention"
 msgstr "作业保留"
 
-#: ../module/Media/view/media/media/details.phtml:62
-#: ../module/Media/view/media/media/index.phtml:109
-#: ../module/Media/view/media/media/index.phtml:110
-#: ../module/Pool/view/pool/pool/details.phtml:135
-#: ../module/Pool/view/pool/pool/details.phtml:136
-msgid "Maximum bytes"
-msgstr "最大字节数"
+#: ../module/Job/view/job/job/run.phtml:33
+#: ../module/Job/view/job/job/details.phtml:33
+#: ../module/Job/view/job/job/details.phtml:68
+#: ../module/Job/view/job/job/actions.phtml:33
+#: ../module/Job/view/job/job/actions.phtml:95
+#: ../module/Job/view/job/job/timeline.phtml:33
+#: ../module/Job/view/job/job/index.phtml:33
+#: ../module/Job/view/job/job/index.phtml:154
+#: ../module/Job/view/job/job/rerun.phtml:33
+#: ../module/Client/view/client/client/details.phtml:58
+#: ../module/Client/view/client/client/details.phtml:153
+#: ../module/Client/view/client/client/index.phtml:82
+#: ../module/Storage/view/storage/storage/details.phtml:113
+#: ../module/Storage/view/storage/storage/details.phtml:129
+#: ../module/Storage/view/storage/storage/details.phtml:162
+#: ../module/Storage/view/storage/storage/index.phtml:71
+#: ../module/Schedule/view/schedule/schedule/index.phtml:92
+msgid "Actions"
+msgstr "动作"
 
-#: ../module/Media/view/media/media/details.phtml:63
-#: ../module/Media/view/media/media/index.phtml:115
-#: ../module/Media/view/media/media/index.phtml:116
-#: ../module/Pool/view/pool/pool/details.phtml:141
-#: ../module/Pool/view/pool/pool/details.phtml:142
-msgid "Current bytes"
-msgstr "当前字节"
-
-#: ../module/Media/view/media/media/details.phtml:79
-msgid "Jobs on volume"
-msgstr "卷中的作业"
+#: ../module/Client/view/client/client/details.phtml:69
+msgid "Last successful backups"
+msgstr "上次的成功备份"
 
 #: ../module/Media/view/media/media/details.phtml:93
 #: ../module/Media/view/media/media/details.phtml:94
@@ -328,20 +347,21 @@ msgstr "作业ID"
 msgid "Job name"
 msgstr "作业名称"
 
-#: ../module/Media/view/media/media/details.phtml:105
-#: ../module/Media/view/media/media/details.phtml:106
-#: ../module/Job/src/Job/Form/RunJobForm.php:56
-#: ../module/Job/src/Job/Form/RunJobForm.php:72
-#: ../module/Job/view/job/job/details.phtml:61
-#: ../module/Job/view/job/job/index.phtml:87
-#: ../module/Job/view/job/job/index.phtml:88
-#: ../module/Job/view/job/job/rerun.phtml:76
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:92
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:108
-#: ../module/Client/view/client/client/details.phtml:46
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:43
-msgid "Client"
-msgstr "客户"
+#: ../module/Job/view/job/job/details.phtml:89
+msgid "Timestamp"
+msgstr "时间戳"
+
+#: ../module/Fileset/view/fileset/fileset/details.phtml:39
+#: ../module/Job/src/Job/Form/RunJobForm.php:126
+#: ../module/Job/src/Job/Form/RunJobForm.php:142
+#: ../module/Job/view/job/job/details.phtml:153
+#: ../module/Job/view/job/job/index.phtml:308
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:178
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:192
+#: ../module/Client/view/client/client/details.phtml:120
+#: ../module/Client/view/client/client/details.phtml:121
+msgid "Fileset"
+msgstr "文件集"
 
 #: ../module/Media/view/media/media/details.phtml:117
 #: ../module/Media/view/media/media/details.phtml:118
@@ -381,27 +401,350 @@ msgstr "文件"
 msgid "Bytes"
 msgstr "字节"
 
-#: ../module/Media/view/media/media/details.phtml:135
-#: ../module/Media/view/media/media/details.phtml:136
-msgid "Starttime"
-msgstr "开始时间"
+#: ../module/Director/view/director/director/subscription.phtml:31
+#: ../module/Director/view/director/director/messages.phtml:31
+#: ../module/Director/view/director/director/index.phtml:32
+#: ../module/Media/view/media/media/details.phtml:60
+#: ../module/Media/view/media/media/index.phtml:91
+#: ../module/Media/view/media/media/index.phtml:92
+#: ../module/Job/src/Job/Form/JobForm.php:94
+#: ../module/Job/view/job/job/details.phtml:67
+#: ../module/Job/view/job/job/actions.phtml:91
+#: ../module/Job/view/job/job/actions.phtml:92
+#: ../module/Job/view/job/job/index.phtml:150
+#: ../module/Job/view/job/job/index.phtml:151
+#: ../module/Job/view/job/job/rerun.phtml:106
+#: ../module/Client/view/client/client/details.phtml:148
+#: ../module/Client/view/client/client/details.phtml:149
+#: ../module/Client/view/client/client/index.phtml:78
+#: ../module/Client/view/client/client/index.phtml:79
+#: ../module/Pool/view/pool/pool/details.phtml:117
+#: ../module/Pool/view/pool/pool/details.phtml:118
+#: ../module/Storage/view/storage/storage/details.phtml:157
+#: ../module/Schedule/view/schedule/schedule/index.phtml:88
+#: ../module/Schedule/view/schedule/schedule/index.phtml:89
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:40
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:41
+#: ../public/js/bootstrap-table-formatter.js:483
+#: ../public/js/bootstrap-table-formatter.js:496
+#: ../public/js/bootstrap-table-formatter.js:590
+msgid "Status"
+msgstr "状态"
 
-#: ../module/Media/view/media/media/details.phtml:141
-#: ../module/Media/view/media/media/details.phtml:142
-msgid "Endtime"
-msgstr "结束时间"
+#: ../module/Client/view/client/client/details.phtml:221
+msgid "Show Files"
+msgstr "显示文件"
 
-#: ../module/Media/view/media/media/details.phtml:147
-#: ../module/Media/view/media/media/details.phtml:148
-#: ../module/Job/view/job/job/details.phtml:173
-#: ../module/Job/view/job/job/index.phtml:122
-#: ../module/Job/view/job/job/index.phtml:123
-#: ../module/Client/view/client/client/details.phtml:114
-#: ../module/Client/view/client/client/details.phtml:115
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:47
+#: ../module/Media/view/media/media/details.phtml:184
+#: ../module/Media/view/media/media/index.phtml:151
+#: ../module/Job/view/job/job/details.phtml:137
+#: ../module/Job/view/job/job/actions.phtml:57
+#: ../module/Job/view/job/job/index.phtml:179
+#: ../module/Job/view/job/job/index.phtml:200
+#: ../module/Job/view/job/job/rerun.phtml:150
+#: ../module/Restore/view/restore/restore/versions.phtml:53
+#: ../module/Restore/view/restore/restore/versions.phtml:77
+#: ../module/Restore/view/restore/restore/index.phtml:53
+#: ../module/Restore/view/restore/restore/index.phtml:76
+#: ../module/Client/view/client/client/index.phtml:119
+#: ../module/Pool/view/pool/pool/details.phtml:177
+#: ../module/Storage/view/storage/storage/details.phtml:57
+#: ../module/Schedule/view/schedule/schedule/index.phtml:55
+msgid "Close"
+msgstr "关闭"
+
+#: ../module/Media/view/media/media/details.phtml:412
+#: ../public/js/bootstrap-table-formatter.js:364
+msgid "Enabled"
+msgstr "启用"
+
+#: ../public/js/bootstrap-table-formatter.js:366
+msgid "Disabled"
+msgstr "被禁用"
+
+#: ../public/js/bootstrap-table-formatter.js:484
+#: ../public/js/bootstrap-table-formatter.js:502
+#: ../public/js/bootstrap-table-formatter.js:580
+msgid "Disable"
+msgstr "禁用"
+
+#: ../public/js/bootstrap-table-formatter.js:485
+#: ../public/js/bootstrap-table-formatter.js:503
+#: ../public/js/bootstrap-table-formatter.js:579
+msgid "Enable"
+msgstr "启用"
+
+#: ../module/Dashboard/view/dashboard/dashboard/index.phtml:269
+msgid "Not enough data to estimate progress or statistics collection is disabled."
+msgstr "没有足够的数据来估计进度或禁用数据收集。"
+
+#: ../module/Dashboard/view/dashboard/dashboard/index.phtml:277
+msgid "There are no jobs running."
+msgstr "无正在运行的作业."
+
+#: ../module/Dashboard/view/partial/JobTotals.phtml:31
+msgid "Job Totals"
+msgstr "作业总计"
+
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:31
+msgid "Most recent job status per job name"
+msgstr "每个作业名称的最近工作状态"
+
+#: ../module/Job/view/job/job/details.phtml:165
+#: ../module/Job/view/job/job/index.phtml:108
+#: ../module/Job/view/job/job/index.phtml:109
+#: ../module/Job/view/job/job/rerun.phtml:91
+#: ../module/Client/view/client/client/details.phtml:100
+#: ../module/Client/view/client/client/details.phtml:101
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:45
+msgid "Start"
+msgstr "开始"
+
+#: ../module/Job/view/job/job/details.phtml:169
+#: ../module/Job/view/job/job/index.phtml:115
+#: ../module/Job/view/job/job/index.phtml:116
+#: ../module/Job/view/job/job/rerun.phtml:96
+#: ../module/Client/view/client/client/details.phtml:107
+#: ../module/Client/view/client/client/details.phtml:108
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:46
+msgid "End"
+msgstr "结束"
+
+#: ../module/Dashboard/view/partial/JobsPast24h.phtml:31
+msgid "Jobs started during the past 24 hours"
+msgstr "作业开始在过去24小时"
+
+#: ../module/Job/view/job/job/timeline.phtml:106
+#: ../module/Client/view/client/client/timeline.phtml:103
+#: ../module/Dashboard/view/partial/JobsPast24h.phtml:46
+#: ../public/js/bootstrap-table-formatter.js:247
+#: ../public/js/bootstrap-table-formatter.js:248
+#: ../public/js/bootstrap-table-formatter.js:323
+#: ../public/js/bootstrap-table-formatter.js:328
+#: ../public/js/bootstrap-table-formatter.js:338
+#: ../public/js/bootstrap-table-formatter.js:348
+msgid "Running"
+msgstr "运行"
+
+#: ../module/Job/view/job/job/timeline.phtml:107
+#: ../module/Client/view/client/client/timeline.phtml:104
+#: ../module/Dashboard/view/partial/JobsPast24h.phtml:57
+#: ../public/js/bootstrap-table-formatter.js:253
+#: ../public/js/bootstrap-table-formatter.js:273
+#: ../public/js/bootstrap-table-formatter.js:278
+#: ../public/js/bootstrap-table-formatter.js:283
+#: ../public/js/bootstrap-table-formatter.js:288
+#: ../public/js/bootstrap-table-formatter.js:293
+#: ../public/js/bootstrap-table-formatter.js:298
+#: ../public/js/bootstrap-table-formatter.js:303
+#: ../public/js/bootstrap-table-formatter.js:308
+#: ../public/js/bootstrap-table-formatter.js:313
+#: ../public/js/bootstrap-table-formatter.js:318
+#: ../public/js/bootstrap-table-formatter.js:353
+msgid "Waiting"
+msgstr "等待"
+
+#: ../module/Job/view/job/job/timeline.phtml:104
+#: ../module/Client/view/client/client/timeline.phtml:101
+#: ../module/Dashboard/view/partial/JobsPast24h.phtml:68
+msgid "Successful"
+msgstr "成功"
+
+#: ../module/Job/view/job/job/timeline.phtml:108
+#: ../module/Client/view/client/client/timeline.phtml:105
+#: ../module/Dashboard/view/partial/JobsPast24h.phtml:90
+msgid "Failed"
+msgstr "失败"
+
+#: ../module/Dashboard/view/partial/LastDirectorMessages.phtml:32
+msgid "Current Director messages"
+msgstr "当前主管信息"
+
+#: ../module/Dashboard/view/partial/RunningJobs.phtml:31
+msgid "Running Jobs"
+msgstr "运行作业"
+
+#: ../module/Director/view/director/director/subscription.phtml:32
+#: ../module/Director/view/director/director/messages.phtml:32
+#: ../module/Director/view/director/director/index.phtml:33
+#: ../module/Job/view/job/job/details.phtml:83
+msgid "Messages"
+msgstr "信息"
+
+#: ../module/Application/view/layout/layout.phtml:102
+msgid "Console"
+msgstr "控制台"
+
+#: ../module/Console/view/console/console/index.phtml:36
+msgid "bconsole (batch-mode), please handle with care."
+msgstr "操作启动控制台（批量模式）,请小心处理."
+
+#: ../module/Console/view/console/console/index.phtml:36
+msgid "All commands have to be a one liner, dialogs are not working."
+msgstr "所有命令必须是一行,对话框不起作用."
+
+#: ../module/Console/view/console/console/index.phtml:36
+msgid "Type help for a list of commands."
+msgstr "键入命令列表的帮助."
+
+#: ../module/Director/view/director/director/index.phtml:47
+msgid "Director Status"
+msgstr "主管状态"
+
+#: ../module/Director/view/director/director/messages.phtml:43
+msgid "Refresh"
+msgstr "刷新"
+
+#: ../module/Director/view/director/director/messages.phtml:50
+msgid "Director messages"
+msgstr "主管信息"
+
+#: ../module/Fileset/view/fileset/fileset/index.phtml:26
+msgid "Filesets"
+msgstr "文件集"
+
+#: ../module/Fileset/view/fileset/fileset/details.phtml:26
+msgid "Fileset details"
+msgstr "文件详情"
+
+#: ../module/Fileset/view/fileset/fileset/details.phtml:47
+msgid "Id"
+msgstr "ID号"
+
+#: ../module/Fileset/view/fileset/fileset/details.phtml:49
+msgid "MD5 checksum"
+msgstr "MD5校验总和"
+
+#: ../module/Fileset/view/fileset/fileset/details.phtml:50
+msgid "Creation time"
+msgstr "创建时间"
+
+#: ../module/Job/src/Job/Form/JobForm.php:59
+msgid "jobname"
+msgstr "作业名称"
+
+#: ../module/Job/src/Job/Form/JobForm.php:70
+msgid "Time period"
+msgstr "时间段"
+
+#: ../module/Job/src/Job/Form/JobForm.php:72
+msgid "last 24 hours"
+msgstr "最近24小时"
+
+#: ../module/Job/src/Job/Form/JobForm.php:73
+msgid "last 3 days"
+msgstr "最后3天"
+
+#: ../module/Job/src/Job/Form/JobForm.php:74
+msgid "last week"
+msgstr "上个星期"
+
+#: ../module/Job/src/Job/Form/JobForm.php:75
+msgid "last month"
+msgstr "上个月"
+
+#: ../module/Job/src/Job/Form/JobForm.php:76
+msgid "last year"
+msgstr "去年"
+
+#: ../module/Job/src/Job/Form/JobForm.php:77
+msgid "unlimited"
+msgstr "无限"
+
+#: ../module/Job/src/Job/Form/JobForm.php:83
+msgid "period"
+msgstr "周期"
+
+#: ../module/Job/src/Job/Form/JobForm.php:96
+msgid "all"
+msgstr "全部"
+
+#: ../module/Job/src/Job/Form/JobForm.php:97
+msgid "running"
+msgstr "运行"
+
+#: ../module/Job/src/Job/Form/JobForm.php:98
+msgid "waiting"
+msgstr "等待"
+
+#: ../module/Job/src/Job/Form/JobForm.php:99
+msgid "terminated unsuccessfully"
+msgstr "终止失败"
+
+#: ../module/Job/src/Job/Form/JobForm.php:100
+msgid "terminated successfully"
+msgstr "终止成功"
+
+#: ../module/Job/src/Job/Form/RunJobForm.php:91
+#: ../module/Job/src/Job/Form/RunJobForm.php:107
+#: ../module/Job/view/job/job/details.phtml:51
+msgid "Job"
+msgstr "作业"
+
+#: ../module/Media/view/media/media/details.phtml:57
+#: ../module/Media/view/media/media/index.phtml:73
+#: ../module/Media/view/media/media/index.phtml:74
+#: ../module/Job/src/Job/Form/RunJobForm.php:161
+#: ../module/Job/src/Job/Form/RunJobForm.php:177
+#: ../module/Pool/view/pool/pool/details.phtml:99
+#: ../module/Pool/view/pool/pool/details.phtml:100
+msgid "Storage"
+msgstr "存储"
+
+#: ../module/Job/src/Job/Form/RunJobForm.php:265
+msgid "Priority"
+msgstr "优先级"
+
+#: ../module/Job/src/Job/Form/RunJobForm.php:363
 #, fuzzy
-msgid "Duration"
-msgstr "到期"
+msgid "When"
+msgstr "作业执行时间"
+
+#: ../module/Job/src/Job/Form/RunJobForm.php:378
+#: ../module/Storage/src/Storage/Form/StorageForm.php:92
+msgid "Submit"
+msgstr "提交"
+
+#: ../module/Job/view/job/job/actions.phtml:71
+msgid "Job Actions"
+msgstr "作业操作"
+
+#: ../module/Media/view/media/media/details.phtml:58
+#: ../module/Media/view/media/media/details.phtml:111
+#: ../module/Media/view/media/media/details.phtml:112
+#: ../module/Media/view/media/media/index.phtml:79
+#: ../module/Media/view/media/media/index.phtml:80
+#: ../module/Job/src/Job/Form/RunJobForm.php:280
+#: ../module/Job/src/Job/Form/RunJobForm.php:295
+#: ../module/Job/view/job/job/details.phtml:62
+#: ../module/Job/view/job/job/index.phtml:94
+#: ../module/Job/view/job/job/index.phtml:95
+#: ../module/Job/view/job/job/rerun.phtml:81
+#: ../module/Pool/view/pool/pool/details.phtml:57
+#: ../module/Pool/view/pool/pool/details.phtml:105
+#: ../module/Pool/view/pool/pool/details.phtml:106
+#: ../module/Pool/view/pool/pool/index.phtml:67
+#: ../module/Pool/view/pool/pool/index.phtml:68
+msgid "Type"
+msgstr "类型"
+
+#: ../module/Job/view/job/job/details.phtml:66
+#: ../module/Job/view/job/job/index.phtml:143
+#: ../module/Job/view/job/job/index.phtml:144
+#: ../module/Job/view/job/job/rerun.phtml:101
+msgid "Errors"
+msgstr "错误"
+
+#: ../module/Job/view/job/job/details.phtml:100
+msgid "Used Volumes"
+msgstr "已用卷"
+
+#: ../module/Job/view/job/job/details.phtml:105
+#: ../module/Storage/view/storage/storage/details.phtml:112
+#: ../module/Storage/view/storage/storage/details.phtml:128
+#: ../module/Storage/view/storage/storage/details.phtml:153
+msgid "Volume"
+msgstr "卷"
 
 #: ../module/Media/view/media/media/details.phtml:177
 #: ../module/Media/view/media/media/index.phtml:144
@@ -431,25 +774,130 @@ msgstr "从主控端收到的错误消息："
 #: ../module/Pool/view/pool/pool/details.phtml:174
 #, fuzzy
 msgid "Failed to send result as json. Maybe the result message is too long?"
-msgstr "无法将结果作为json发送。 可能结果消息长？"
+msgstr "无法将结果作为json发送。 可能结果信息过长？"
 
-#: ../module/Media/view/media/media/details.phtml:184
-#: ../module/Media/view/media/media/index.phtml:151
-#: ../module/Job/view/job/job/details.phtml:137
-#: ../module/Job/view/job/job/actions.phtml:57
-#: ../module/Job/view/job/job/index.phtml:179
-#: ../module/Job/view/job/job/index.phtml:200
-#: ../module/Job/view/job/job/rerun.phtml:150
-#: ../module/Restore/view/restore/restore/versions.phtml:53
-#: ../module/Restore/view/restore/restore/versions.phtml:77
-#: ../module/Restore/view/restore/restore/index.phtml:53
-#: ../module/Restore/view/restore/restore/index.phtml:76
-#: ../module/Client/view/client/client/index.phtml:119
-#: ../module/Pool/view/pool/pool/details.phtml:177
-#: ../module/Storage/view/storage/storage/details.phtml:57
-#: ../module/Schedule/view/schedule/schedule/index.phtml:55
-msgid "Close"
-msgstr "关闭"
+#: ../module/Job/view/job/job/details.phtml:161
+#: ../module/Job/view/job/job/index.phtml:316
+msgid "Scheduled"
+msgstr "计划"
+
+#: ../module/Job/view/job/job/details.phtml:180
+msgid "First Index"
+msgstr "首个索引"
+
+#: ../module/Job/view/job/job/details.phtml:184
+msgid "Last Index"
+msgstr "最后索引"
+
+#: ../module/Job/view/job/job/details.phtml:188
+msgid "Start Block"
+msgstr "开始块"
+
+#: ../module/Job/view/job/job/details.phtml:192
+msgid "End Block"
+msgstr "结束块"
+
+#: ../module/Job/view/job/job/run.phtml:35
+#: ../module/Job/view/job/job/details.phtml:35
+#: ../module/Job/view/job/job/actions.phtml:35
+#: ../module/Job/view/job/job/timeline.phtml:35
+#: ../module/Job/view/job/job/index.phtml:35
+#: ../module/Job/view/job/job/rerun.phtml:35
+#: ../public/js/bootstrap-table-formatter.js:514
+msgid "Rerun"
+msgstr "重新运行"
+
+#: ../module/Restore/view/restore/restore/versions.phtml:98
+#: ../module/Restore/view/restore/restore/index.phtml:97
+#: ../module/Storage/view/storage/storage/details.phtml:88
+#: ../public/js/bootstrap-table-formatter.js:516
+msgid "Cancel"
+msgstr "取消"
+
+#: ../module/Job/view/job/job/index.phtml:50
+#: ../module/Client/view/client/client/details.phtml:72
+msgid "Job list"
+msgstr "作业列表"
+
+#: ../module/Job/view/job/job/index.phtml:110
+msgid "Please try to reduce the amount of data to display, e.g. reduce time period."
+msgstr "请尝试减少要显示的数据量，例如 减少时间。"
+
+#: ../module/Media/view/media/media/details.phtml:26
+msgid "Volume details"
+msgstr "卷详细信息"
+
+#: ../module/Media/view/media/media/details.phtml:32
+#: ../module/Media/view/media/media/index.phtml:32
+#: ../module/Pool/view/pool/pool/details.phtml:32
+#: ../module/Pool/view/pool/pool/index.phtml:32
+#: ../module/Storage/view/storage/storage/details.phtml:32
+#: ../module/Storage/view/storage/storage/status.phtml:32
+#: ../module/Storage/view/storage/storage/index.phtml:32
+msgid "Devices"
+msgstr "设备"
+
+#: ../module/Media/view/media/media/details.phtml:33
+#: ../module/Media/view/media/media/index.phtml:33
+#: ../module/Pool/view/pool/pool/details.phtml:33
+#: ../module/Pool/view/pool/pool/index.phtml:26
+#: ../module/Pool/view/pool/pool/index.phtml:33
+#: ../module/Pool/view/pool/pool/index.phtml:47
+#: ../module/Storage/view/storage/storage/details.phtml:33
+#: ../module/Storage/view/storage/storage/status.phtml:33
+#: ../module/Storage/view/storage/storage/index.phtml:33
+msgid "Pools"
+msgstr "池"
+
+#: ../module/Media/view/media/media/details.phtml:59
+#: ../module/Media/view/media/media/details.phtml:352
+#: ../module/Media/view/media/media/index.phtml:85
+#: ../module/Media/view/media/media/index.phtml:86
+#: ../module/Media/view/media/media/index.phtml:269
+#: ../module/Pool/view/pool/pool/details.phtml:111
+#: ../module/Pool/view/pool/pool/details.phtml:112
+#: ../module/Pool/view/pool/pool/details.phtml:319
+#: ../module/Storage/view/storage/storage/details.phtml:155
+msgid "Last written"
+msgstr "最后写入"
+
+#: ../module/Media/view/media/media/index.phtml:91
+#: ../module/Media/view/media/media/index.phtml:92
+#: ../module/Media/view/media/media/details.phtml:60
+#: ../module/Pool/view/pool/pool/details.phtml:123
+#: ../module/Pool/view/pool/pool/details.phtml:124
+msgid "Retention/Expiration"
+msgstr "保留/到期"
+
+#: ../module/Media/view/media/media/details.phtml:62
+#: ../module/Media/view/media/media/index.phtml:109
+#: ../module/Media/view/media/media/index.phtml:110
+#: ../module/Pool/view/pool/pool/details.phtml:135
+#: ../module/Pool/view/pool/pool/details.phtml:136
+msgid "Maximum bytes"
+msgstr "最大字节数"
+
+#: ../module/Media/view/media/media/details.phtml:63
+#: ../module/Media/view/media/media/index.phtml:115
+#: ../module/Media/view/media/media/index.phtml:116
+#: ../module/Pool/view/pool/pool/details.phtml:141
+#: ../module/Pool/view/pool/pool/details.phtml:142
+msgid "Current bytes"
+msgstr "当前字节"
+
+#: ../module/Media/view/media/media/details.phtml:79
+msgid "Jobs on volume"
+msgstr "卷中的作业"
+
+#: ../module/Media/view/media/media/details.phtml:135
+#: ../module/Media/view/media/media/details.phtml:136
+msgid "Starttime"
+msgstr "开始时间"
+
+#: ../module/Media/view/media/media/details.phtml:141
+#: ../module/Media/view/media/media/details.phtml:142
+msgid "Endtime"
+msgstr "结束时间"
 
 #: ../module/Media/view/media/media/details.phtml:344
 #: ../module/Media/view/media/media/index.phtml:261
@@ -529,11 +977,6 @@ msgstr "卷容量字节"
 msgid "Volume errors"
 msgstr "卷错误"
 
-#: ../module/Media/view/media/media/details.phtml:412
-#: ../public/js/bootstrap-table-formatter.js:364
-msgid "Enabled"
-msgstr "使能"
-
 #: ../module/Media/view/media/media/details.phtml:416
 msgid "Max. volume files"
 msgstr "最大卷文件"
@@ -544,7 +987,7 @@ msgstr "结束文件"
 
 #: ../module/Media/view/media/media/details.phtml:424
 msgid "Endblock"
-msgstr "结束块"
+msgstr "端块"
 
 #: ../module/Media/view/media/media/details.phtml:428
 msgid "Labeltype"
@@ -579,342 +1022,42 @@ msgstr "回收池ID"
 msgid "Comment"
 msgstr "评论"
 
-#: ../module/Job/src/Job/Form/RunJobForm.php:91
-#: ../module/Job/src/Job/Form/RunJobForm.php:107
-#: ../module/Job/view/job/job/details.phtml:51
-msgid "Job"
-msgstr "作业"
+#: ../module/Pool/view/pool/pool/details.phtml:26
+msgid "Pool details"
+msgstr "池详情"
 
-#: ../module/Job/src/Job/Form/RunJobForm.php:265
-msgid "Priority"
-msgstr "优先级"
+#: ../module/Pool/view/pool/pool/details.phtml:59
+#: ../module/Pool/view/pool/pool/index.phtml:79
+#: ../module/Pool/view/pool/pool/index.phtml:80
+msgid "Maximum volumes"
+msgstr "最大卷"
 
-#: ../module/Job/src/Job/Form/RunJobForm.php:313
-#: ../module/Job/src/Job/Form/RunJobForm.php:329
-#, fuzzy
-msgid "Next Pool"
-msgstr "池"
+#: ../module/Pool/view/pool/pool/details.phtml:60
+#: ../module/Pool/view/pool/pool/index.phtml:85
+#: ../module/Pool/view/pool/pool/index.phtml:86
+msgid "Volume retention"
+msgstr "卷保留"
 
-#: ../module/Job/src/Job/Form/RunJobForm.php:363
-#, fuzzy
-msgid "When"
-msgstr "作业执行时间"
+#: ../module/Pool/view/pool/pool/details.phtml:61
+#: ../module/Pool/view/pool/pool/index.phtml:91
+#: ../module/Pool/view/pool/pool/index.phtml:92
+msgid "Maximum volume jobs"
+msgstr "最大卷作业"
 
-#: ../module/Job/src/Job/Form/RunJobForm.php:378
-#: ../module/Storage/src/Storage/Form/StorageForm.php:92
-msgid "Submit"
-msgstr "提交"
+#: ../module/Pool/view/pool/pool/details.phtml:62
+#: ../module/Pool/view/pool/pool/index.phtml:97
+#: ../module/Pool/view/pool/pool/index.phtml:98
+msgid "Maximum volume bytes"
+msgstr "最大卷字节"
 
-#: ../module/Job/src/Job/Form/JobForm.php:59
-#, fuzzy
-msgid "jobname"
-msgstr "作业名称"
-
-#: ../module/Job/src/Job/Form/JobForm.php:70
-msgid "Time period"
-msgstr "时间段"
-
-#: ../module/Job/src/Job/Form/JobForm.php:72
-msgid "last 24 hours"
-msgstr "最近24小时"
-
-#: ../module/Job/src/Job/Form/JobForm.php:73
-msgid "last 3 days"
-msgstr "最后3天"
-
-#: ../module/Job/src/Job/Form/JobForm.php:74
-msgid "last week"
-msgstr "上星期"
-
-#: ../module/Job/src/Job/Form/JobForm.php:75
-msgid "last month"
-msgstr "上月"
-
-#: ../module/Job/src/Job/Form/JobForm.php:76
-msgid "last year"
-msgstr "去年"
-
-#: ../module/Job/src/Job/Form/JobForm.php:77
-msgid "unlimited"
-msgstr "无限"
-
-#: ../module/Job/src/Job/Form/JobForm.php:83
-msgid "period"
-msgstr "周期"
-
-#: ../module/Job/src/Job/Form/JobForm.php:96
-msgid "all"
-msgstr "所有"
-
-#: ../module/Job/src/Job/Form/JobForm.php:97
-msgid "running"
-msgstr "运行"
-
-#: ../module/Job/src/Job/Form/JobForm.php:98
-msgid "waiting"
-msgstr "等待"
-
-#: ../module/Job/src/Job/Form/JobForm.php:99
-msgid "terminated unsuccessfully"
-msgstr "终止失败"
-
-#: ../module/Job/src/Job/Form/JobForm.php:100
-msgid "terminated successfully"
-msgstr "已成功终止"
-
-#: ../module/Job/src/Job/Form/JobForm.php:101
-msgid "warning"
-msgstr "警告"
-
-#: ../module/Job/view/job/job/run.phtml:32
-#: ../module/Job/view/job/job/details.phtml:32
-#: ../module/Job/view/job/job/actions.phtml:32
-#: ../module/Job/view/job/job/timeline.phtml:32
-#: ../module/Job/view/job/job/index.phtml:32
-#: ../module/Job/view/job/job/rerun.phtml:32
-#: ../module/Client/view/client/client/details.phtml:32
-#: ../module/Client/view/client/client/status.phtml:32
-#: ../module/Client/view/client/client/timeline.phtml:32
-#: ../module/Client/view/client/client/index.phtml:32
-#: ../module/Schedule/view/schedule/schedule/details.phtml:32
-#: ../module/Schedule/view/schedule/schedule/status.phtml:31
-#: ../module/Schedule/view/schedule/schedule/overview.phtml:32
-#: ../module/Schedule/view/schedule/schedule/index.phtml:32
-msgid "Show"
-msgstr "显示"
-
-#: ../module/Job/view/job/job/run.phtml:33
-#: ../module/Job/view/job/job/details.phtml:33
-#: ../module/Job/view/job/job/details.phtml:68
-#: ../module/Job/view/job/job/actions.phtml:33
-#: ../module/Job/view/job/job/actions.phtml:95
-#: ../module/Job/view/job/job/timeline.phtml:33
-#: ../module/Job/view/job/job/index.phtml:33
-#: ../module/Job/view/job/job/index.phtml:154
-#: ../module/Job/view/job/job/rerun.phtml:33
-#: ../module/Client/view/client/client/details.phtml:58
-#: ../module/Client/view/client/client/details.phtml:153
-#: ../module/Client/view/client/client/index.phtml:82
-#: ../module/Storage/view/storage/storage/details.phtml:113
-#: ../module/Storage/view/storage/storage/details.phtml:129
-#: ../module/Storage/view/storage/storage/details.phtml:162
-#: ../module/Storage/view/storage/storage/index.phtml:71
-#: ../module/Schedule/view/schedule/schedule/index.phtml:92
-msgid "Actions"
-msgstr "动作"
-
-#: ../module/Job/view/job/job/run.phtml:34
-#: ../module/Job/view/job/job/details.phtml:34
-#: ../module/Job/view/job/job/actions.phtml:34
-#: ../module/Job/view/job/job/timeline.phtml:34
-#: ../module/Job/view/job/job/index.phtml:34
-#: ../module/Job/view/job/job/rerun.phtml:34
-#: ../module/Application/config/module.config.php:138
-#: ../public/js/bootstrap-table-formatter.js:578
-msgid "Run"
-msgstr "运行"
-
-#: ../module/Job/view/job/job/run.phtml:35
-#: ../module/Job/view/job/job/details.phtml:35
-#: ../module/Job/view/job/job/actions.phtml:35
-#: ../module/Job/view/job/job/timeline.phtml:35
-#: ../module/Job/view/job/job/index.phtml:35
-#: ../module/Job/view/job/job/rerun.phtml:35
-#: ../public/js/bootstrap-table-formatter.js:514
-msgid "Rerun"
-msgstr "重新运行"
-
-#: ../module/Job/view/job/job/run.phtml:36
-#: ../module/Job/view/job/job/details.phtml:36
-#: ../module/Job/view/job/job/actions.phtml:36
-#: ../module/Job/view/job/job/timeline.phtml:36
-#: ../module/Job/view/job/job/timeline.phtml:95
-#: ../module/Job/view/job/job/index.phtml:36
-#: ../module/Job/view/job/job/rerun.phtml:36
-#: ../module/Client/view/client/client/details.phtml:33
-#: ../module/Client/view/client/client/status.phtml:33
-#: ../module/Client/view/client/client/timeline.phtml:33
-#: ../module/Client/view/client/client/timeline.phtml:92
-#: ../module/Client/view/client/client/index.phtml:33
-msgid "Timeline"
-msgstr ""
-
-#: ../module/Job/view/job/job/details.phtml:66
-#: ../module/Job/view/job/job/index.phtml:143
-#: ../module/Job/view/job/job/index.phtml:144
-#: ../module/Job/view/job/job/rerun.phtml:101
-msgid "Errors"
-msgstr "错误"
-
-#: ../module/Job/view/job/job/details.phtml:89
-msgid "Timestamp"
-msgstr "时间戳"
-
-#: ../module/Job/view/job/job/details.phtml:90
-#: ../module/Application/view/error/404.phtml:62
-#: ../module/Application/view/error/404.phtml:86
-#: ../module/Application/view/error/index.phtml:18
-#: ../module/Application/view/error/index.phtml:42
-msgid "Message"
-msgstr "信息"
-
-#: ../module/Job/view/job/job/details.phtml:100
-#, fuzzy
-msgid "Used Volumes"
-msgstr "卷"
-
-#: ../module/Job/view/job/job/details.phtml:105
-#: ../module/Storage/view/storage/storage/details.phtml:112
-#: ../module/Storage/view/storage/storage/details.phtml:128
-#: ../module/Storage/view/storage/storage/details.phtml:153
-msgid "Volume"
-msgstr "卷"
-
-#: ../module/Job/view/job/job/details.phtml:161
-#: ../module/Job/view/job/job/index.phtml:316
-msgid "Scheduled"
-msgstr "计划"
-
-#: ../module/Job/view/job/job/details.phtml:165
-#: ../module/Job/view/job/job/index.phtml:108
-#: ../module/Job/view/job/job/index.phtml:109
-#: ../module/Job/view/job/job/rerun.phtml:91
-#: ../module/Client/view/client/client/details.phtml:100
-#: ../module/Client/view/client/client/details.phtml:101
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:45
-msgid "Start"
-msgstr "开始"
-
-#: ../module/Job/view/job/job/details.phtml:169
-#: ../module/Job/view/job/job/index.phtml:115
-#: ../module/Job/view/job/job/index.phtml:116
-#: ../module/Job/view/job/job/rerun.phtml:96
-#: ../module/Client/view/client/client/details.phtml:107
-#: ../module/Client/view/client/client/details.phtml:108
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:46
-msgid "End"
-msgstr "结束"
-
-#: ../module/Job/view/job/job/actions.phtml:71
-msgid "Job Actions"
-msgstr "作业操作"
-
-#: ../module/Job/view/job/job/timeline.phtml:53
-#: ../module/Job/view/job/job/rerun.phtml:166
-msgid "Please select at least one job."
-msgstr ""
-
-#: ../module/Job/view/job/job/timeline.phtml:56
-#: ../module/Job/view/job/job/rerun.phtml:169
-#: ../module/Restore/view/restore/restore/versions.phtml:99
-#: ../module/Restore/view/restore/restore/versions.phtml:118
-#: ../module/Restore/view/restore/restore/versions.phtml:137
-#: ../module/Restore/view/restore/restore/index.phtml:98
-#: ../module/Restore/view/restore/restore/index.phtml:117
-#: ../module/Restore/view/restore/restore/index.phtml:136
-#: ../module/Client/view/client/client/timeline.phtml:53
-msgid "OK"
-msgstr "确定"
-
-#: ../module/Job/view/job/job/timeline.phtml:68
-#: ../module/Client/view/client/client/timeline.phtml:65
-#, fuzzy
-msgid "Selection"
-msgstr "文件选择"
-
-#: ../module/Job/view/job/job/timeline.phtml:104
-#: ../module/Client/view/client/client/timeline.phtml:101
-#: ../module/Dashboard/view/partial/JobsPast24h.phtml:68
-msgid "Successful"
-msgstr "成功"
-
-#: ../module/Job/view/job/job/timeline.phtml:105
-#: ../module/Client/view/client/client/timeline.phtml:102
-#: ../module/Dashboard/view/partial/JobsPast24h.phtml:79
-#: ../public/js/bootstrap-table-formatter.js:343
-msgid "Warning"
-msgstr "警告"
-
-#: ../module/Job/view/job/job/timeline.phtml:106
-#: ../module/Client/view/client/client/timeline.phtml:103
-#: ../module/Dashboard/view/partial/JobsPast24h.phtml:46
-#: ../public/js/bootstrap-table-formatter.js:247
-#: ../public/js/bootstrap-table-formatter.js:248
-#: ../public/js/bootstrap-table-formatter.js:323
-#: ../public/js/bootstrap-table-formatter.js:328
-#: ../public/js/bootstrap-table-formatter.js:338
-#: ../public/js/bootstrap-table-formatter.js:348
-msgid "Running"
-msgstr "运行"
-
-#: ../module/Job/view/job/job/timeline.phtml:107
-#: ../module/Client/view/client/client/timeline.phtml:104
-#: ../module/Dashboard/view/partial/JobsPast24h.phtml:57
-#: ../public/js/bootstrap-table-formatter.js:253
-#: ../public/js/bootstrap-table-formatter.js:273
-#: ../public/js/bootstrap-table-formatter.js:278
-#: ../public/js/bootstrap-table-formatter.js:283
-#: ../public/js/bootstrap-table-formatter.js:288
-#: ../public/js/bootstrap-table-formatter.js:293
-#: ../public/js/bootstrap-table-formatter.js:298
-#: ../public/js/bootstrap-table-formatter.js:303
-#: ../public/js/bootstrap-table-formatter.js:308
-#: ../public/js/bootstrap-table-formatter.js:313
-#: ../public/js/bootstrap-table-formatter.js:318
-#: ../public/js/bootstrap-table-formatter.js:353
-msgid "Waiting"
-msgstr "等待"
-
-#: ../module/Job/view/job/job/timeline.phtml:108
-#: ../module/Client/view/client/client/timeline.phtml:105
-#: ../module/Dashboard/view/partial/JobsPast24h.phtml:90
-msgid "Failed"
-msgstr "失败"
-
-#: ../module/Job/view/job/job/index.phtml:50
-#: ../module/Client/view/client/client/details.phtml:72
-msgid "Job list"
-msgstr "作业列表"
-
-#: ../module/Job/view/job/job/index.phtml:58
-#, fuzzy
-msgid "Clear search filters"
-msgstr "请选择一个文件集"
-
-#: ../module/Job/view/job/job/index.phtml:174
-#: ../module/Job/view/job/job/rerun.phtml:145
-#, fuzzy
-msgid "Please try to reduce the amount of data to display."
-msgstr "请尝试减少要显示的数据量，例如 减少时间。"
-
-#: ../module/Job/view/job/job/rerun.phtml:50
-#, fuzzy
-msgid "Rerun Jobs"
-msgstr "运行"
-
-#: ../module/Job/view/job/job/rerun.phtml:126
-#, fuzzy
-msgid "Director Messages"
-msgstr "主控端信息"
-
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:58
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:74
-#, fuzzy
-msgid "Please choose a backup"
-msgstr "请选择一个文件集"
+#: ../module/Analytics/view/analytics/analytics/index.phtml:55
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:57
+msgid "Backup jobs"
+msgstr "备份作业"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:73
 msgid "Backups"
 msgstr "备份"
-
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:93
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:109
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:128
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:144
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:160
-#, fuzzy
-msgid "Please choose a client"
-msgstr "请选择一个文件集"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:127
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:143
@@ -935,12 +1078,6 @@ msgstr "请选择一个文件集"
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:241
 msgid "Restore job"
 msgstr "还原作业"
-
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:226
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:242
-#, fuzzy
-msgid "Please choose a restore job"
-msgstr "请选择一个文件集"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:262
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:281
@@ -969,7 +1106,7 @@ msgstr "否"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:304
 msgid "Merge all related jobs to last full backup of selected backup job"
-msgstr "合并所有相关作业以完成所选备份作业的完整备份"
+msgstr "将所有相关作业合并到所选备份作业的最后一次完整备份"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:323
 msgid "Merge jobs"
@@ -1004,26 +1141,13 @@ msgstr "如果要还原的文件比现有文件旧"
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:373
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:394
 msgid "if file being restored is newer than existing file"
-msgstr "如果要还原的文件比现有文件更新"
-
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:409
-msgid ""
-"e.g. <plugin>:file=<filepath>:reader=<readprogram>:writer=<writeprogram>"
-msgstr ""
-
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:423
-msgid "Plugin options"
-msgstr ""
-
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:460
-msgid "Plugin Options"
-msgstr ""
+msgstr "如果要还原的文件比现有文件较新"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:497
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:516
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:534
 msgid "Restore location on client"
-msgstr "要恢复到客户端的位置"
+msgstr "恢复到客户端的位置"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:504
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:523
@@ -1031,39 +1155,29 @@ msgstr "要恢复到客户端的位置"
 msgid "e.g. / or /tmp/bareos-restores/"
 msgstr "例如. / 或者/tmp/bareos-restores/"
 
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:439
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:456
+msgid "Path"
+msgstr "路径"
+
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:475
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:492
+msgid "Limit"
+msgstr "限制"
+
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:511
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:528
+msgid "Offset"
+msgstr "偏移"
+
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:567
 msgid "Related jobs for a most recent full restore"
 msgstr "最近完全还原的相关作业"
 
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:607
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:620
-#: ../module/Restore/view/restore/restore/versions.phtml:26
-#: ../module/Restore/view/restore/restore/index.phtml:26
-#: ../module/Application/config/module.config.php:145
-#: ../public/js/bootstrap-table-formatter.js:53
-#: ../public/js/bootstrap-table-formatter.js:482
-#: ../public/js/bootstrap-table-formatter.js:495
-#: ../public/js/bootstrap-table-formatter.js:515
-msgid "Restore"
-msgstr "还原"
-
-#: ../module/Restore/view/restore/restore/versions.phtml:32
-#: ../module/Restore/view/restore/restore/index.phtml:32
-#, fuzzy
-msgid "Restore multiple files"
-msgstr "还原到客户端"
-
-#: ../module/Restore/view/restore/restore/versions.phtml:33
-#: ../module/Restore/view/restore/restore/index.phtml:33
-#, fuzzy
-msgid "Restore specific file version"
-msgstr "还原到客户端"
-
 #: ../module/Restore/view/restore/restore/versions.phtml:49
 #: ../module/Restore/view/restore/restore/index.phtml:49
-#, fuzzy
 msgid "Error message received:"
-msgstr "从主控端收到的错误消息："
+msgstr "收到的错误消息:"
 
 #: ../module/Restore/view/restore/restore/versions.phtml:67
 #: ../module/Restore/view/restore/restore/index.phtml:66
@@ -1071,59 +1185,10 @@ msgstr "从主控端收到的错误消息："
 msgid "Director message"
 msgstr "主控端信息"
 
-#: ../module/Restore/view/restore/restore/versions.phtml:76
-#: ../module/Restore/view/restore/restore/index.phtml:75
-#, fuzzy
-msgid "Job report"
-msgstr "作业列表"
-
-#: ../module/Restore/view/restore/restore/versions.phtml:90
-#: ../module/Restore/view/restore/restore/index.phtml:89
-msgid "Confirm restore job submit"
-msgstr ""
-
-#: ../module/Restore/view/restore/restore/versions.phtml:98
-#: ../module/Restore/view/restore/restore/index.phtml:97
-#: ../module/Storage/view/storage/storage/details.phtml:88
-#: ../public/js/bootstrap-table-formatter.js:516
-msgid "Cancel"
-msgstr "取消"
-
-#: ../module/Restore/view/restore/restore/versions.phtml:115
-msgid "No file selected to restore!"
-msgstr ""
-
-#: ../module/Restore/view/restore/restore/versions.phtml:131
-#: ../module/Restore/view/restore/restore/index.phtml:130
-#, fuzzy
-msgid "Notification"
-msgstr "位置ID"
-
-#: ../module/Restore/view/restore/restore/versions.phtml:134
-#: ../module/Restore/view/restore/restore/index.phtml:133
-msgid ""
-"Restoring NDMP backups is currently not supported by Bareos WebUI. Please "
-"use the bconsole instead."
-msgstr ""
-
 #: ../module/Restore/view/restore/restore/versions.phtml:199
 #: ../module/Restore/view/restore/restore/index.phtml:201
 msgid "File selection"
 msgstr "文件选择"
-
-#: ../module/Restore/view/restore/restore/versions.phtml:211
-msgid "Selected file"
-msgstr "已选择的文件"
-
-#: ../module/Restore/view/restore/restore/versions.phtml:219
-msgid "Available versions"
-msgstr ""
-
-#: ../module/Restore/view/restore/restore/versions.phtml:232
-#: ../module/Restore/view/restore/restore/versions.phtml:591
-#: ../module/Restore/view/restore/restore/index.phtml:472
-msgid "Last modification"
-msgstr ""
 
 #: ../module/Restore/view/restore/restore/versions.phtml:233
 #: ../module/Restore/view/restore/restore/versions.phtml:582
@@ -1131,101 +1196,18 @@ msgstr ""
 msgid "Size"
 msgstr "大小"
 
-#: ../module/Restore/view/restore/restore/versions.phtml:234
-#, fuzzy
-msgid "Checksum"
-msgstr "MD5校验和"
-
-#: ../module/Restore/view/restore/restore/index.phtml:114
-msgid "No files or directories selected to restore!"
-msgstr ""
-
-#: ../module/Restore/view/restore/restore/index.phtml:436
-msgid "Mode"
-msgstr ""
-
-#: ../module/Restore/view/restore/restore/index.phtml:445
-msgid "User"
-msgstr ""
-
-#: ../module/Restore/view/restore/restore/index.phtml:454
-msgid "Group"
-msgstr ""
-
-#: ../module/Client/view/client/client/details.phtml:26
-msgid "Client details"
-msgstr "客户端详情"
-
-#: ../module/Client/view/client/client/details.phtml:54
-#: ../module/Client/view/client/client/index.phtml:72
-#: ../module/Client/view/client/client/index.phtml:73
-msgid "Version"
-msgstr "版本"
-
-#: ../module/Client/view/client/client/details.phtml:55
-msgid "Autoprune"
-msgstr "自动修剪"
-
-#: ../module/Client/view/client/client/details.phtml:56
-msgid "Fileretention"
-msgstr "文件保留"
-
-#: ../module/Client/view/client/client/details.phtml:57
-msgid "Jobretention"
-msgstr "作业保留"
-
-#: ../module/Client/view/client/client/status.phtml:46
-msgid "Client Status"
-msgstr "客户端状态"
-
-#: ../module/Client/view/client/client/timeline.phtml:50
-#, fuzzy
-msgid "Please select at least one client."
-msgstr "要恢复到客户端的位置"
-
-#: ../module/Client/view/client/client/index.phtml:26
-#: ../module/Client/view/client/client/index.phtml:46
-#: ../module/Application/config/module.config.php:150
-msgid "Clients"
-msgstr "客户端"
-
-#: ../module/Client/view/client/client/index.phtml:66
-#: ../module/Client/view/client/client/index.phtml:67
-msgid "OS"
-msgstr "系统"
-
-#: ../module/Pool/view/pool/pool/details.phtml:26
-msgid "Pool details"
-msgstr "池详情"
-
-#: ../module/Pool/view/pool/pool/details.phtml:59
-#: ../module/Pool/view/pool/pool/index.phtml:79
-#: ../module/Pool/view/pool/pool/index.phtml:80
-msgid "Maximum volumes"
-msgstr "最大卷"
-
-#: ../module/Pool/view/pool/pool/details.phtml:60
-#: ../module/Pool/view/pool/pool/index.phtml:85
-#: ../module/Pool/view/pool/pool/index.phtml:86
-msgid "Volume retention"
-msgstr "卷保留"
-
-#: ../module/Pool/view/pool/pool/details.phtml:61
-#: ../module/Pool/view/pool/pool/index.phtml:91
-#: ../module/Pool/view/pool/pool/index.phtml:92
-msgid "Maximum volume jobs"
-msgstr "最大卷作业"
-
-#: ../module/Pool/view/pool/pool/details.phtml:62
-#: ../module/Pool/view/pool/pool/index.phtml:97
-#: ../module/Pool/view/pool/pool/index.phtml:98
-msgid "Maximum volume bytes"
-msgstr "卷容量字节"
+#: ../../../module/Restore/view/restore/restore/index.phtml:321
+msgid "Date"
+msgstr "日期"
 
 #: ../module/Storage/src/Storage/Form/StorageForm.php:76
 #: ../module/Storage/view/storage/storage/details.phtml:126
 msgid "Drive"
 msgstr "驱动"
+
+#: ../module/Storage/view/storage/storage/status.phtml:47
+msgid "Storage Status"
+msgstr "存储状态"
 
 #: ../module/Storage/view/storage/storage/details.phtml:26
 msgid "Storage details"
@@ -1292,15 +1274,6 @@ msgstr "不在目录中"
 msgid "Export"
 msgstr "导出"
 
-#: ../module/Storage/view/storage/storage/status.phtml:47
-msgid "Storage Status"
-msgstr "存储状态"
-
-#: ../module/Storage/view/storage/storage/index.phtml:26
-#: ../module/Application/config/module.config.php:160
-msgid "Storages"
-msgstr "存储"
-
 #: ../module/Storage/view/storage/storage/index.phtml:47
 msgid "Storage Devices"
 msgstr "存储设备"
@@ -1308,20 +1281,16 @@ msgstr "存储设备"
 #: ../module/Storage/view/storage/storage/index.phtml:67
 #: ../module/Storage/view/storage/storage/index.phtml:68
 msgid "Autochanger"
-msgstr "自动转换"
+msgstr "自动转换器"
+
+#: ../public/js/bootstrap-table-formatter.js:591
+msgid "Manage autochanger"
+msgstr "管理自动转换"
 
 #: ../module/Schedule/view/schedule/schedule/details.phtml:26
 #: ../module/Schedule/view/schedule/schedule/details.phtml:47
 msgid "Schedule Details"
 msgstr "时间调度详细信息"
-
-#: ../module/Schedule/view/schedule/schedule/details.phtml:33
-#: ../module/Schedule/view/schedule/schedule/status.phtml:32
-#: ../module/Schedule/view/schedule/schedule/overview.phtml:33
-#: ../module/Schedule/view/schedule/schedule/index.phtml:33
-#: ../module/Application/config/module.config.php:133
-msgid "Overview"
-msgstr "概述"
 
 #: ../module/Schedule/view/schedule/schedule/details.phtml:34
 #: ../module/Schedule/view/schedule/schedule/status.phtml:33
@@ -1333,174 +1302,7 @@ msgstr "调度程序状态"
 #: ../module/Schedule/view/schedule/schedule/status.phtml:26
 #: ../module/Schedule/view/schedule/schedule/status.phtml:46
 msgid "Status Scheduler"
-msgstr "时间调度状态"
-
-#: ../module/Schedule/view/schedule/schedule/overview.phtml:26
-#: ../module/Schedule/view/schedule/schedule/overview.phtml:47
-#: ../module/Schedule/view/schedule/schedule/index.phtml:26
-#: ../module/Schedule/view/schedule/schedule/index.phtml:68
-#: ../module/Application/config/module.config.php:155
-msgid "Schedules"
-msgstr "时间表"
-
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:31
-msgid "Most recent job status per job name"
-msgstr "每个作业名称的最近工作状态"
-
-#: ../module/Dashboard/view/partial/JobTotals.phtml:31
-#, fuzzy
-msgid "Job Totals"
-msgstr "作业列表"
-
-#: ../module/Dashboard/view/partial/JobTotals.phtml:40
-#: ../module/Application/config/module.config.php:128
-msgid "Jobs"
-msgstr "作业"
-
-#: ../module/Dashboard/view/partial/RunningJobs.phtml:31
-#, fuzzy
-msgid "Running Jobs"
-msgstr "运行"
-
-#: ../module/Dashboard/view/partial/JobsPast24h.phtml:31
-msgid "Jobs started during the past 24 hours"
-msgstr "工作开始在过去24小时"
-
-#: ../module/Dashboard/view/partial/LastDirectorMessages.phtml:32
-msgid "Current Director messages"
-msgstr "当前设备信息"
-
-#: ../module/Dashboard/view/dashboard/dashboard/index.phtml:26
-#: ../module/Application/config/module.config.php:123
-msgid "Dashboard"
-msgstr "主页"
-
-#: ../module/Dashboard/view/dashboard/dashboard/index.phtml:269
-msgid ""
-"Not enough data to estimate progress or statistics collection is disabled."
-msgstr "数据不足或数据收集被禁用"
-
-#: ../module/Dashboard/view/dashboard/dashboard/index.phtml:277
-msgid "There are no jobs running."
-msgstr "无正在运行作业"
-
-#: ../module/Application/src/Application/View/Helper/ACLAlert.php:37
-msgid ""
-"<b>Access denied</b><br><br>Permission to execute the following commands is "
-"required:<br><br><kbd>"
-msgstr ""
-
-#: ../module/Application/src/Application/View/Helper/ACLAlert.php:39
-msgid "Access denied"
-msgstr ""
-
-#: ../module/Application/src/Application/View/Helper/ACLAlert.php:41
-#, php-format
-msgid ""
-"Read the <a href=\"%s\" target=\"_blank\">Bareos documentation</a> on how to "
-"configure ACL settings in your Console/Profile resources."
-msgstr ""
-
-#: ../module/Application/src/Application/View/Helper/ACLAlert.php:43
-#, fuzzy
-msgid "Back"
-msgstr "备份"
-
-#: ../module/Application/view/error/404.phtml:3
-msgid "A 404 error occurred"
-msgstr "一个404错误发生"
-
-#: ../module/Application/view/error/404.phtml:12
-msgid "The requested controller was unable to dispatch the request."
-msgstr "请求的控制器无法分派请求。"
-
-#: ../module/Application/view/error/404.phtml:15
-msgid ""
-"The requested controller could not be mapped to an existing controller class."
-msgstr "请求的控制器无法映射到现有的控制器类。"
-
-#: ../module/Application/view/error/404.phtml:18
-msgid "The requested controller was not dispatchable."
-msgstr "请求的控制器不可分派。"
-
-#: ../module/Application/view/error/404.phtml:21
-msgid "The requested URL could not be matched by routing."
-msgstr "请求的网址无法通过路由进行匹配。"
-
-#: ../module/Application/view/error/404.phtml:24
-msgid "We cannot determine at this time why a 404 was generated."
-msgstr "我们目前无法确定为什么生成404错误。"
-
-#: ../module/Application/view/error/404.phtml:36
-msgid "Controller"
-msgstr "控制器"
-
-#: ../module/Application/view/error/404.phtml:43
-#, php-format
-msgid "resolves to %s"
-msgstr "解析为%s"
-
-#: ../module/Application/view/error/404.phtml:55
-#: ../module/Application/view/error/index.phtml:11
-msgid "Additional information"
-msgstr "附加信息"
-
-#: ../module/Application/view/error/404.phtml:58
-#: ../module/Application/view/error/404.phtml:82
-#: ../module/Application/view/error/index.phtml:14
-#: ../module/Application/view/error/index.phtml:38
-msgid "File"
-msgstr "文件"
-
-#: ../module/Application/view/error/404.phtml:66
-#: ../module/Application/view/error/404.phtml:90
-#: ../module/Application/view/error/index.phtml:22
-#: ../module/Application/view/error/index.phtml:46
-msgid "Stack trace"
-msgstr "堆栈跟踪"
-
-#: ../module/Application/view/error/404.phtml:76
-#: ../module/Application/view/error/index.phtml:32
-msgid "Previous exceptions"
-msgstr "上一个例外"
-
-#: ../module/Application/view/error/404.phtml:105
-#: ../module/Application/view/error/index.phtml:61
-msgid "No Exception available"
-msgstr "无异常"
-
-#: ../module/Application/view/error/index.phtml:4
-msgid "An error occurred"
-msgstr "发生错误"
-
-#: ../module/Application/view/layout/layout.phtml:102
-msgid "Console"
-msgstr "控制台"
-
-#: ../module/Application/view/layout/layout.phtml:110
-msgid "Documentation"
-msgstr "卷保留"
-
-#: ../module/Application/view/layout/layout.phtml:111
-msgid "Mailinglists"
-msgstr ""
-
-#: ../module/Application/view/layout/layout.phtml:112
-msgid "Bugtracker"
-msgstr ""
-
-#: ../module/Application/view/layout/layout.phtml:113
-msgid "Support"
-msgstr "导出"
-
-#: ../module/Application/view/layout/layout.phtml:116
-msgid "Logout"
-msgstr "登出"
-
-#: ../public/js/bootstrap-table-formatter.js:25
-#: ../public/js/bootstrap-table-formatter.js:513
-msgid "View Job Details"
-msgstr "查看作业细节"
+msgstr "状态调度器"
 
 #: ../public/js/bootstrap-table-formatter.js:44
 msgid "Backup"
@@ -1528,7 +1330,7 @@ msgstr "管理"
 
 #: ../public/js/bootstrap-table-formatter.js:65
 msgid "Archive"
-msgstr "未归档"
+msgstr "档案文件"
 
 #: ../public/js/bootstrap-table-formatter.js:68
 msgid "Copy of a job"
@@ -1564,6 +1366,7 @@ msgid "Incremental"
 msgstr "增量"
 
 #: ../public/js/bootstrap-table-formatter.js:98
+#, fuzzy
 msgid "VirtualFull"
 msgstr "虚拟完全"
 
@@ -1617,21 +1420,42 @@ msgstr "小时"
 msgid "second(s)"
 msgstr "秒"
 
+#: ../public/js/bootstrap-table-formatter.js:140
+#: ../public/js/bootstrap-table-formatter.js:170
+msgid "Used"
+msgstr "已使用"
+
+#: ../public/js/bootstrap-table-formatter.js:152
+msgid "expired"
+msgstr "已过期"
+
+#: ../public/js/bootstrap-table-formatter.js:156
+msgid "expires in 1 day"
+msgstr "将在1天后到期"
+
+#: ../public/js/bootstrap-table-formatter.js:160
+msgid "expires in"
+msgstr "过期日期在"
+
+#: ../public/js/bootstrap-table-formatter.js:160
+msgid "days"
+msgstr "天数"
+
 #: ../public/js/bootstrap-table-formatter.js:150
 msgid "today"
 msgstr "今天"
 
 #: ../public/js/bootstrap-table-formatter.js:153
 msgid "day(s) ago"
-msgstr "天前"
+msgstr "1（几）天前"
 
 #: ../public/js/bootstrap-table-formatter.js:156
 msgid "month(s) ago"
-msgstr "月前"
+msgstr "1（几）月前"
 
 #: ../public/js/bootstrap-table-formatter.js:159
 msgid "year(s) ago"
-msgstr "年前"
+msgstr "1（几）年前"
 
 #: ../public/js/bootstrap-table-formatter.js:192
 msgid "enabled"
@@ -1641,125 +1465,55 @@ msgstr "已启用"
 msgid "disabled"
 msgstr "已禁用"
 
-#: ../public/js/bootstrap-table-formatter.js:227
-msgid "Non-fatal error"
-msgstr "无致命错误"
-
 #: ../public/js/bootstrap-table-formatter.js:228
 #: ../public/js/bootstrap-table-formatter.js:233
 #: ../public/js/bootstrap-table-formatter.js:238
 msgid "Failure"
 msgstr "失败"
 
-#: ../public/js/bootstrap-table-formatter.js:232
-msgid "Job terminated in error"
-msgstr "作业因错误终止"
-
-#: ../public/js/bootstrap-table-formatter.js:237
-msgid "Fatal error"
-msgstr "致命错误"
-
-#: ../public/js/bootstrap-table-formatter.js:242
-msgid "Terminated normally"
-msgstr "正常终止"
-
 #: ../public/js/bootstrap-table-formatter.js:243
 msgid "Success"
 msgstr "成功"
 
-#: ../public/js/bootstrap-table-formatter.js:252
-msgid "Created but not yet running"
-msgstr "新建尚未执行"
+#: ../public/js/bootstrap-table-formatter.js:297
+msgid "Queued"
+msgstr "等候处理"
 
 #: ../public/js/bootstrap-table-formatter.js:257
 #: ../public/js/bootstrap-table-formatter.js:258
 msgid "Blocked"
 msgstr "已阻止"
 
-#: ../public/js/bootstrap-table-formatter.js:262
-msgid "Verify differences"
-msgstr "验证差异"
-
 #: ../public/js/bootstrap-table-formatter.js:263
 msgid "Verify found differences"
 msgstr "验证发现的差异"
-
-#: ../public/js/bootstrap-table-formatter.js:267
-msgid "Canceled by user"
-msgstr "用户取消"
 
 #: ../public/js/bootstrap-table-formatter.js:268
 msgid "Canceled"
 msgstr "已取消"
 
-#: ../public/js/bootstrap-table-formatter.js:272
-msgid "Waiting on File daemon"
-msgstr "正在等待FD"
-
-#: ../public/js/bootstrap-table-formatter.js:277
-msgid "Waiting on the Storage daemon"
-msgstr "正在等待SD"
-
-#: ../public/js/bootstrap-table-formatter.js:282
-msgid "Waiting for new media"
-msgstr "正在等待存储媒介"
-
-#: ../public/js/bootstrap-table-formatter.js:287
-msgid "Waiting for Mount"
-msgstr "正在等待挂载"
-
-#: ../public/js/bootstrap-table-formatter.js:292
-msgid "Waiting for storage resource"
-msgstr "正在等待储存资源"
-
-#: ../public/js/bootstrap-table-formatter.js:297
-msgid "Waiting for job resource"
-msgstr "正在等待作业资源"
-
-#: ../public/js/bootstrap-table-formatter.js:302
-msgid "Waiting for Client resource"
-msgstr "正在等待客户资源"
-
-#: ../public/js/bootstrap-table-formatter.js:307
-#, fuzzy
-msgid "Waiting for maximum jobs"
-msgstr "正在等待作业资源"
-
-#: ../public/js/bootstrap-table-formatter.js:312
-#, fuzzy
-msgid "Waiting for start time"
-msgstr "正在等待存储媒介"
-
-#: ../public/js/bootstrap-table-formatter.js:317
-msgid "Waiting for higher priority jobs to finish"
-msgstr ""
-
 #: ../public/js/bootstrap-table-formatter.js:322
 msgid "SD despooling attributes"
-msgstr "SD去除连接属性"
+msgstr "SD脱离连接属性"
 
 #: ../public/js/bootstrap-table-formatter.js:327
 msgid "Doing batch insert file records"
 msgstr "执行批处理插入文件记录"
 
-#: ../public/js/bootstrap-table-formatter.js:332
-#, fuzzy
-msgid "Incomplete Job"
-msgstr "不完整"
-
 #: ../public/js/bootstrap-table-formatter.js:333
 msgid "Incomplete"
 msgstr "不完整"
 
-#: ../public/js/bootstrap-table-formatter.js:337
-#, fuzzy
-msgid "Committing data (last despool)"
+#: ../public/js/bootstrap-table-formatter.js:382
+msgid "Committing data"
 msgstr "提交数据"
 
-#: ../public/js/bootstrap-table-formatter.js:342
-#, fuzzy
-msgid "Terminated normally with warnings"
-msgstr "正常终止"
+#: ../module/Job/view/job/job/timeline.phtml:105
+#: ../module/Client/view/client/client/timeline.phtml:102
+#: ../module/Dashboard/view/partial/JobsPast24h.phtml:79
+#: ../public/js/bootstrap-table-formatter.js:343
+msgid "Warning"
+msgstr "警告"
 
 #: ../public/js/bootstrap-table-formatter.js:347
 msgid "Doing data despooling"
@@ -1769,113 +1523,235 @@ msgstr "执行数据去除连接"
 msgid "Queued waiting for device"
 msgstr "排队等待设备"
 
-#: ../public/js/bootstrap-table-formatter.js:366
-msgid "Disabled"
-msgstr "禁用"
+#: ../public/js/bootstrap-table-formatter.js:25
+#: ../public/js/bootstrap-table-formatter.js:513
+msgid "View Job Details"
+msgstr "查看作业细节"
 
-#: ../public/js/bootstrap-table-formatter.js:484
-#: ../public/js/bootstrap-table-formatter.js:502
-#: ../public/js/bootstrap-table-formatter.js:580
-msgid "Disable"
-msgstr "禁用"
+#: ../module/Job/src/Job/Form/JobForm.php:101
+msgid "warning"
+msgstr "警告"
 
-#: ../public/js/bootstrap-table-formatter.js:485
-#: ../public/js/bootstrap-table-formatter.js:503
-#: ../public/js/bootstrap-table-formatter.js:579
-msgid "Enable"
-msgstr "使能"
+#: ../public/js/bootstrap-table-formatter.js:227
+msgid "Non-fatal error"
+msgstr "非致命错误"
 
-#: ../public/js/bootstrap-table-formatter.js:591
-msgid "Manage autochanger"
-msgstr "管理自动转换"
+#: ../public/js/bootstrap-table-formatter.js:232
+msgid "Job terminated in error"
+msgstr "作业因错误而终止"
 
-#~ msgid ""
-#~ "Sorry, it seems you are not authorized to run this module. If you think "
-#~ "this is an error, please contact your local administrator."
-#~ msgstr ""
-#~ "很抱歉，您似乎无权运行此模块。 如果您认为这是一个错误，请与当地管理员联"
-#~ "系。"
+#: ../public/js/bootstrap-table-formatter.js:237
+msgid "Fatal error"
+msgstr "致命错误"
 
-#~ msgid ""
-#~ "Please read the <a href=\"http://doc.bareos.org/master/html/bareos-manual-"
-#~ "main-reference.html#sec:webui-console\" target=\"_blank\">Bareos "
-#~ "documentation</a> for any additional information on how to configure the "
-#~ "Command ACL directive of your Console/Profile resources. Following is a "
-#~ "list of required commands which need to be in your Command ACL to run "
-#~ "this module properly:"
-#~ msgstr ""
-#~ "请读 <a href=\"http://doc.bareos.org/master/html/bareos-manual-main-"
-#~ "reference.html#sec:webui-console\" target=\"_blank\">Bareos文档</a>有关如"
-#~ "何配置控制台/配置文件资源的Command ACL指令的任何其他信息。 以下是需要在您"
-#~ "的命令ACL中正确运行此模块的必需命令的列表："
+#: ../public/js/bootstrap-table-formatter.js:242
+msgid "Terminated normally"
+msgstr "正常终止"
 
+#: ../public/js/bootstrap-table-formatter.js:252
+msgid "Created but not yet running"
+msgstr "新创建尚未执行"
+
+#: ../public/js/bootstrap-table-formatter.js:262
+msgid "Verify differences"
+msgstr "验证差异"
+
+#: ../public/js/bootstrap-table-formatter.js:267
+msgid "Canceled by user"
+msgstr "被用户取消"
+
+#: ../public/js/bootstrap-table-formatter.js:272
+msgid "Waiting on File daemon"
+msgstr "等待文件守护线程（FD）"
+
+#: ../public/js/bootstrap-table-formatter.js:277
+msgid "Waiting on the Storage daemon"
+msgstr "等待存储守护线程（SD）"
+
+#: ../public/js/bootstrap-table-formatter.js:282
+msgid "Waiting for new media"
+msgstr "等待新媒体"
+
+#: ../public/js/bootstrap-table-formatter.js:287
+msgid "Waiting for Mount"
+msgstr "等待挂载"
+
+#: ../public/js/bootstrap-table-formatter.js:292
+msgid "Waiting for storage resource"
+msgstr "等待储存资源"
+
+#: ../public/js/bootstrap-table-formatter.js:297
+msgid "Waiting for job resource"
+msgstr "等待作业资源"
+
+#: ../public/js/bootstrap-table-formatter.js:302
+msgid "Waiting for Client resource"
+msgstr "等待客户端资源"
+
+#: ../public/js/bootstrap-table-formatter.js:307
 #, fuzzy
-#~ msgid "Last successful backups"
-#~ msgstr "上次备份"
+msgid "Waiting for maximum jobs"
+msgstr "正在等待作业资源"
 
-#~ msgid "Show Files"
-#~ msgstr "显示文件"
-
-#~ msgid "First Index"
-#~ msgstr "首个索引"
-
-#~ msgid "Last Index"
-#~ msgstr "最后索引"
-
+#: ../public/js/bootstrap-table-formatter.js:312
 #, fuzzy
-#~ msgid "Start Block"
-#~ msgstr "开始"
+msgid "Waiting for start time"
+msgstr "等待开始时间"
 
+#: ../public/js/bootstrap-table-formatter.js:317
+msgid "Waiting for higher priority jobs to finish"
+msgstr "等待更高优先级的作业完成"
+
+#: ../public/js/bootstrap-table-formatter.js:332
 #, fuzzy
-#~ msgid "End Block"
-#~ msgstr "结束块"
+msgid "Incomplete Job"
+msgstr "未完成的作业"
 
-#~ msgid "Retention/Expiration"
-#~ msgstr "保留/到期"
+#: ../public/js/bootstrap-table-formatter.js:337
+#, fuzzy
+msgid "Committing data (last despool)"
+msgstr "提交数据 （最后一次解包)"
 
-#~ msgid "Path"
-#~ msgstr "路径"
+#: ../public/js/bootstrap-table-formatter.js:342
+#, fuzzy
+msgid "Terminated normally with warnings"
+msgstr "正常终止时发出警告"
 
-#~ msgid "Limit"
-#~ msgstr "限制"
+#: ../module/Restore/view/restore/restore/versions.phtml:32
+#: ../module/Restore/view/restore/restore/index.phtml:32
+msgid "Restore multiple files"
+msgstr "恢复多个文件"
 
-#~ msgid "Offset"
-#~ msgstr "偏移"
+#: ../module/Restore/view/restore/restore/versions.phtml:33
+#: ../module/Restore/view/restore/restore/index.phtml:33
+msgid "Restore specific file version"
+msgstr "恢复特定文件版本"
 
-#~ msgid "Date"
-#~ msgstr "日期"
+#: ../module/Restore/view/restore/restore/versions.phtml:76
+#: ../module/Restore/view/restore/restore/index.phtml:75
+msgid "Job report"
+msgstr "作业报告"
 
-#~ msgid "Used"
-#~ msgstr "已使用"
+#: ../module/Restore/view/restore/restore/versions.phtml:90
+#: ../module/Restore/view/restore/restore/index.phtml:89
+msgid "Confirm restore job submit"
+msgstr "确认恢复作业提交"
 
-#~ msgid "expired"
-#~ msgstr "已过期"
+#: ../module/Job/view/job/job/timeline.phtml:56
+#: ../module/Job/view/job/job/rerun.phtml:169
+#: ../module/Restore/view/restore/restore/versions.phtml:99
+#: ../module/Restore/view/restore/restore/versions.phtml:118
+#: ../module/Restore/view/restore/restore/versions.phtml:137
+#: ../module/Restore/view/restore/restore/index.phtml:98
+#: ../module/Restore/view/restore/restore/index.phtml:117
+#: ../module/Restore/view/restore/restore/index.phtml:136
+#: ../module/Client/view/client/client/timeline.phtml:53
+msgid "OK"
+msgstr "确定"
 
-#~ msgid "expires in 1 day"
-#~ msgstr "将在1天后到期"
+#: ../module/Restore/view/restore/restore/index.phtml:114
+msgid "No files or directories selected to restore!"
+msgstr "没有选择要恢复的文件或目录！"
 
-#~ msgid "expires in"
-#~ msgstr "过期日期在"
+#: ../module/Restore/view/restore/restore/versions.phtml:232
+#: ../module/Restore/view/restore/restore/versions.phtml:591
+#: ../module/Restore/view/restore/restore/index.phtml:472
+msgid "Last modification"
+msgstr "最后修改"
 
-#~ msgid "days"
-#~ msgstr "天数"
+#: ../module/Restore/view/restore/restore/versions.phtml:115
+msgid "No file selected to restore!"
+msgstr "没有选择要恢复的文件！"
 
-#~ msgid "Queued"
-#~ msgstr "排队"
+#: ../module/Restore/view/restore/restore/versions.phtml:211
+msgid "Selected file"
+msgstr "已选择的文件"
 
-#~ msgid "Committing data"
-#~ msgstr "提交数据"
+#: ../module/Restore/view/restore/restore/versions.phtml:219
+msgid "Available versions"
+msgstr "可用版本"
 
-#~ msgid ""
-#~ "Please read the <a href=\"%s\" target=\"_blank\">Bareos documentation</a> "
-#~ "for any additional information on how to configure the Command ACL "
-#~ "directive of your Console/Profile resources. Following is a list of "
-#~ "required commands which need to be in your Command ACL to run this module "
-#~ "properly:"
-#~ msgstr ""
-#~ "请读 <a href=\"%s\" target=\"_blank\">Bareos文档</a>有关如何配置控制台/配"
-#~ "置文件资源的Command ACL指令的任何其他信息。 以下是需要在您的命令ACL中正确"
-#~ "运行此模块的必需命令的列表："
+#: ../module/Restore/view/restore/restore/versions.phtml:234
+#, fuzzy
+msgid "Checksum"
+msgstr "MD5校验和"
 
-#~ msgid "Download update"
-#~ msgstr "下载更新"
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:38
+msgid "Please read the <a href=\"%s\" target=\"_blank\">Bareos documentation</a> for any additional information on how to configure the Command ACL directive of your Console/Profile resources. Following is a list of required commands which need to be in your Command ACL to run this module properly:"
+msgstr "请读 <a href=\"%s\" target=\"_blank\">Bareos文档</a>有关如何配置控制台/配置文件资源的Command ACL指令的任何其他信息。 以下是需要在您的命令ACL中正确运行此模块的必需命令的列表："
+
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:58
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:74
+msgid "Please choose a backup"
+msgstr "请选择一个备份"
+
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:93
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:109
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:128
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:144
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:160
+msgid "Please choose a client"
+msgstr "请选择一个客户"
+
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:226
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:242
+msgid "Please choose a restore job"
+msgstr "请选择恢复作业"
+
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:39
+msgid "Access denied"
+msgstr "拒绝访问"
+
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:43
+msgid "Back"
+msgstr "返回"
+
+#: ../module/Job/view/job/job/index.phtml:58
+msgid "Clear search filters"
+msgstr "清除搜索过滤器"
+
+#: ../module/Client/view/client/client/index.phtml:66
+#: ../module/Client/view/client/client/index.phtml:67
+msgid "OS"
+msgstr "系统"
+
+#: ../public/js/bootstrap-table-formatter.js:507
+msgid "Download update"
+msgstr "下载更新"
+
+#: ../module/Job/src/Job/Form/RunJobForm.php:313
+#: ../module/Job/src/Job/Form/RunJobForm.php:329
+msgid "Next Pool"
+msgstr "下一个池"
+
+#: ../module/Restore/view/restore/restore/index.phtml:436
+msgid "Mode"
+msgstr "模式"
+
+#: ../module/Restore/view/restore/restore/index.phtml:445
+msgid "User"
+msgstr "用户"
+
+#: ../module/Restore/view/restore/restore/index.phtml:454
+msgid "Group"
+msgstr "组"
+
+#: ../module/Media/view/media/media/details.phtml:147
+#: ../module/Media/view/media/media/details.phtml:148
+#: ../module/Job/view/job/job/details.phtml:173
+#: ../module/Job/view/job/job/index.phtml:122
+#: ../module/Job/view/job/job/index.phtml:123
+#: ../module/Client/view/client/client/details.phtml:114
+#: ../module/Client/view/client/client/details.phtml:115
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:47
+msgid "Duration"
+msgstr "时间"
+
+#: ../module/Media/view/media/media/details.phtml:61
+#: ../module/Media/view/media/media/index.phtml:103
+#: ../module/Media/view/media/media/index.phtml:104
+#: ../module/Pool/view/pool/pool/details.phtml:129
+#: ../module/Pool/view/pool/pool/details.phtml:130
+msgid "Retention"
+msgstr "保留"
+
