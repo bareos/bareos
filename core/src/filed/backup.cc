@@ -642,7 +642,7 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 	double tp = ff_pkt->statp.st_size / (ns / mbps);
 
 	Dmsg4(400,
-	      "Stats for file %s\n"
+	      "SendFile %s\n"
 	      "  -Time spent: %lldns\n"
 	      "  -Data sent:  %s\n"
 	      "  -Throughput: %.2lfMB/s (%lld bytes total)\n",
