@@ -323,24 +323,34 @@ std::optional<const regex_t*> FindRegexMatch(alist<regex_t*>& regexs, const char
 bool AcceptFile(FindFilesPacket* ff)
 {
   struct accept_file_timing {
-    accept_file_timing(FindFilesPacket* ff_pkt) : start(std::chrono::steady_clock::now())
-					      , ff_pkt(ff_pkt)
+    accept_file_timing(FindFilesPacket* ff_pkt,
+		       bool& result) : start(std::chrono::steady_clock::now())
+				     , ff_pkt(ff_pkt)
+				     , result(result)
     {}
 
     ~accept_file_timing() {
       std::chrono::time_point<std::chrono::steady_clock> end = std::chrono::steady_clock::now();
       std::chrono::nanoseconds diff = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
       Dmsg2(400,
-	    "AcceptFile took %lldns (%s)\n",
+	    "AcceptFile %s\n"
+	    "  -Time: %lldns\n"
+	    "  -Result: %s\n",
+	    ff_pkt->fname,
 	    diff.count(),
-	    ff_pkt->fname);
+	    result ? "accept" : "reject");
       ff_pkt->accept_total += diff;
     }
 
     std::chrono::time_point<std::chrono::steady_clock> start;
     FindFilesPacket* ff_pkt;
+    bool& result;
   };
+  accept_file_timing timing{ff, rtn};
   accept_file_timing timing{ff};
+  bool rtn = false;
+  int i, j, k;
+  int fnm_flags;
   const char* basename;
   findFILESET* fileset = ff->fileset;
   findIncludeExcludeItem* incexe = fileset->incexe;
@@ -372,74 +382,72 @@ bool AcceptFile(FindFilesPacket* ff)
     bool do_exclude = BitIsSet(FO_EXCLUDE, ff->flags);
 
     if (S_ISDIR(ff->statp.st_mode)) {
-	    for (auto [patterns, name] : std::initializer_list<std::pair<alist<const char*>&, const char*>>{
-			    {fo->wilddir, "wilddir"},
-			    {fo->wild, "wild"}
-			    })
+      for (auto [patterns, name] : std::initializer_list<std::pair<alist<const char*>&, const char*>>{
+	  {fo->wilddir, "wilddir"},
+	  {fo->wild, "wild"}
+	})
+	{
+	  if (std::optional match = FindMatch(match_func, patterns, ff->fname, fnmode | fnm_flags); match)
 	    {
-		    if (std::optional match = FindMatch(match_func, patterns, ff->fname, fnmode | fnm_flags); match)
-		    {
-			    if (do_exclude) {
-				    Dmsg2(debuglevel, "Exclude %s: %s file=%s\n",
-					  name, (char*)match.value(), ff->fname);
-			    }
-			    return !do_exclude;
-		    }
+	      if (do_exclude) {
+		Dmsg2(debuglevel, "Exclude %s: %s file=%s\n",
+		      name, (char*)match.value(), ff->fname);
+	      }
+	      return (rtn = !do_exclude);
 	    }
+	}
 
-	    for (auto [patterns, name] : std::initializer_list<std::pair<alist<regex_t*>&, const char*>>{
-			    {fo->regexdir, "regexdir"},
-			    {fo->regex, "regex"}
-			    })
+      for (auto [patterns, name] : std::initializer_list<std::pair<alist<regex_t*>&, const char*>>{
+	  {fo->regexdir, "regexdir"},
+	  {fo->regex, "regex"}
+	})
+	{
+	  if (std::optional match = FindRegexMatch(patterns, ff->fname); match)
 	    {
-		    if (std::optional match = FindRegexMatch(patterns, ff->fname); match)
-		    {
-			    if (do_exclude) {
-				    Dmsg2(debuglevel, "Exclude %s: file=%s\n",
-					  name, ff->fname);
-			    }
-			    return !do_exclude;
-		    }
+	      if (do_exclude) {
+		Dmsg2(debuglevel, "Exclude %s: file=%s\n",
+		      name, ff->fname);
+	      }
+	      return (rtn = !do_exclude);
 	    }
+	}
     } else {
-	    for (auto [patterns, name] : std::initializer_list<std::pair<alist<const char*>&, const char*>>{
-			    {fo->wildfile, "wildfile"},
-			    {fo->wildbase, "wildbase"},
-			    {fo->wild, "wild"}
-			    })
+      for (auto [patterns, name] : std::initializer_list<std::pair<alist<const char*>&, const char*>>{
+	  {fo->wildfile, "wildfile"},
+	  {fo->wildbase, "wildbase"},
+	  {fo->wild, "wild"}
+	})
+	{
+	  if (std::optional match = FindMatch(match_func, patterns, ff->fname, fnmode | fnm_flags); match)
 	    {
-		    if (std::optional match = FindMatch(match_func, patterns, ff->fname, fnmode | fnm_flags); match)
-		    {
-			    if (do_exclude) {
-				    Dmsg2(debuglevel, "Exclude %s: %s file=%s\n",
-					  name, (char*)match.value(), ff->fname);
-			    }
-			    return !do_exclude;
-		    }
+	      if (do_exclude) {
+		Dmsg2(debuglevel, "Exclude %s: %s file=%s\n",
+		      name, (char*)match.value(), ff->fname);
+	      }
+	      return (rtn = !do_exclude);
 	    }
-	    for (auto [patterns, name] : std::initializer_list<std::pair<alist<regex_t*>&, const char*>>{
-			    {fo->regexfile, "regexfile"},
-			    {fo->regex, "regex"}
-			    })
+	}
+      for (auto [patterns, name] : std::initializer_list<std::pair<alist<regex_t*>&, const char*>>{
+	  {fo->regexfile, "regexfile"},
+	  {fo->regex, "regex"}
+	})
+	{
+	  if (std::optional match = FindRegexMatch(patterns, ff->fname); match)
 	    {
-		    if (std::optional match = FindRegexMatch(patterns, ff->fname); match)
-		    {
-			    if (do_exclude) {
-				    Dmsg2(debuglevel, "Exclude %s: file=%s\n",
-					  name, ff->fname);
-			    }
-			    return !do_exclude;
-		    }
+	      if (do_exclude) {
+		Dmsg2(debuglevel, "Exclude %s: file=%s\n",
+		      name, ff->fname);
+	      }
+	      return (rtn = !do_exclude);
 	    }
-    }
-
+	}
     // If we have an empty Options clause with exclude, then exclude the file
     if (do_exclude && fo->regex.size() == 0
         && fo->wild.size() == 0 && fo->regexdir.size() == 0
         && fo->wilddir.size() == 0 && fo->regexfile.size() == 0
         && fo->wildfile.size() == 0 && fo->wildbase.size() == 0) {
       Dmsg1(debuglevel, "Empty options, rejecting: %s\n", ff->fname);
-      return false; /* reject file */
+      return (rtn = false); /* reject file */
     }
   }
 
@@ -456,7 +464,7 @@ bool AcceptFile(FindFilesPacket* ff)
         if (fnmatch((char*)fo->wild.get(k), ff->fname, fnmode | fnm_flags)
             == 0) {
           Dmsg1(debuglevel, "Reject wild1: %s\n", ff->fname);
-          return false; /* reject file */
+          return (rtn = false); /* reject file */
         }
       }
     }
@@ -469,12 +477,12 @@ bool AcceptFile(FindFilesPacket* ff)
 
       if (fnmatch(fname, ff->fname, fnmode | fnm_flags) == 0) {
         Dmsg1(debuglevel, "Reject wild2: %s\n", ff->fname);
-        return false; /* reject file */
+        return (rtn = false); /* reject file */
       }
     }
   }
 
-  return true;
+  return (rtn = true);
 }
 
 // Terminate FindFiles() and release all allocated memory
