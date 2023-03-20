@@ -267,14 +267,16 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
 
   double total_tp = job_bytes / (total_ns / mbps);
   double send_tp = job_bytes / (send_ns / mbps);
-  Dmsg3(400,
-	"Time spent\n"
-	"  -Total:     %20lldns\n"
-	"  -Sending:   %20lldns (%.2lf%%)\n"
-	"  -Accepting: %20lldns (%.2lf%%)\n"
-	"Throughput (send %lld bytes)\n"
-	"  -Total:     %20.2lfMB/s\n"
-	"  -Sending:   %20.2lfMB/s\n",
+  Dmsg9(400,
+	"FindFiles jobid=%u\n"
+	"  *Time spent\n"
+	"    -Total:     %20lldns\n"
+	"    -Sending:   %20lldns (%.2lf%%)\n"
+	"    -Accepting: %20lldns (%.2lf%%)\n"
+	"  *Throughput (send %lld bytes)\n"
+	"    -Total:     %20.2lfMB/s\n"
+	"    -Sending:   %20.2lfMB/s\n",
+	jcr->JobId,
 	total_ns, send_ns, 100 * send_pc, accept_ns, 100 * accept_pc,
 	job_bytes, total_tp, send_tp);
 
