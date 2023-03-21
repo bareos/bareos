@@ -350,11 +350,8 @@ bool AcceptFile(FindFilesPacket* ff)
     FindFilesPacket* ff_pkt;
     bool& result;
   };
-  accept_file_timing timing{ff, rtn};
-  accept_file_timing timing{ff};
   bool rtn = false;
-  int i, j, k;
-  int fnm_flags;
+  accept_file_timing timing{ff, rtn};
   const char* basename;
   findFILESET* fileset = ff->fileset;
   findIncludeExcludeItem* incexe = fileset->incexe;
@@ -734,8 +731,8 @@ auto SaveInList(channel::in<stated_file>& in, std::atomic<std::size_t>& num_skip
     }
 
     try {
-	    in.put({ff_pkt->fname, ff_pkt->statp, ff_pkt->delta_seq, ff_pkt->type,
-			    ff_pkt->volhas_attrlist ? std::make_optional(ff_pkt->hfsinfo) : std::nullopt});
+      in.put({ff_pkt->fname, ff_pkt->statp, ff_pkt->delta_seq, ff_pkt->type,
+	  ff_pkt->volhas_attrlist ? std::make_optional(ff_pkt->hfsinfo) : std::nullopt});
     } catch (...) {
       num_skipped++;
       return 0;
