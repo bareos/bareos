@@ -106,6 +106,18 @@ After adding the repository simply install the bareos-webui package via your pac
 
       apt-get install bareos-webui
 
+Because php-fpm support is not automatically added to Apache2 on Debian like platforms, you have to issue those commands to enable it.
+Replace :command:`php8.1-fpm` by the version you have installed.
+
+.. code-block:: shell-session
+   :caption: Debian, Ubuntu enabling php8-fpm support on Apache2 example
+
+   a2enmod proxy_fcgi setenvif
+   a2enconf php8.1-fpm
+   systemctl reload apache2
+
+
+
 Minimal Configuration
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -163,6 +175,7 @@ Debian, Ubuntu, Univention
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Please use `apt` instead of `apt-get` to upgrade automatically.
+
 
 SUSE Linux Enterprise Server (SLES), openSUSE
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
