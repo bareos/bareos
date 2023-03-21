@@ -377,8 +377,8 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
   double total_tp = job_bytes / (total_ns / mbps);
   double send_tp = job_bytes / (send_ns / mbps);
 
-  Dmsg9(400,
-        "FindFiles jobid=%u mpbs=%lf\n"
+  Dmsg0(400,
+        "FindFiles jobid=%u\n"
         "  *Time spent    %s\n"
         "    -Sending:    %s (%6.2lf%%)\n"
         "      -Checksum: %s (%6.2lf%%)\n"
@@ -388,7 +388,7 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
         "  *Throughput (send %lld bytes)\n"
         "    -Total:      %20.2lfMB/s\n"
         "    -Sending:    %20.2lfMB/s\n",
-        jcr->JobId, mbps, FormatDuration(total_time).c_str(),
+        jcr->JobId, FormatDuration(total_time).c_str(),
         FormatDuration(send_total).c_str(), 100 * send_pc,
         FormatDuration(checksum_total).c_str(), 100 * checksum_pc,
         FormatDuration(signing_total).c_str(), 100 * signing_pc,
