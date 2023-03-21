@@ -396,6 +396,25 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
         FormatDuration(accept_total).c_str(), 100 * accept_pc, job_bytes,
         total_tp, send_tp);
 
+  Jmsg(jcr, M_INFO, 0,
+        "performance info jobid=%u\n"
+        "  *Time spent    %s\n"
+        "    -Sending:    %s (%6.2lf%%)\n"
+        "      -Checksum: %s (%6.2lf%%)\n"
+        "      -Signing:  %s (%6.2lf%%)\n"
+        "      -Reading:  %s (%6.2lf%%)\n"
+        "    -Accepting:  %s (%6.2lf%%)\n"
+        "  *Throughput (send %lld bytes)\n"
+        "    -Total:      %20.2lfMB/s\n"
+        "    -Sending:    %20.2lfMB/s\n",
+        jcr->JobId, FormatDuration(total_time).c_str(),
+        FormatDuration(send_total).c_str(), 100 * send_pc,
+        FormatDuration(checksum_total).c_str(), 100 * checksum_pc,
+        FormatDuration(signing_total).c_str(), 100 * signing_pc,
+        FormatDuration(reading_total).c_str(), 100 * reading_pc,
+        FormatDuration(accept_total).c_str(), 100 * accept_pc, job_bytes,
+        total_tp, send_tp);
+
   using namespace std::literals::chrono_literals;
   jcr->fd_impl->ff->send_total = 0ns;
   jcr->fd_impl->ff->accept_total = 0ns;
