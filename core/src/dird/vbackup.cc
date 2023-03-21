@@ -3,7 +3,7 @@
 
    Copyright (C) 2008-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -136,12 +136,10 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
     return false;
   }
 
-  /*
-   * Note, at this point, pool is the pool for this job.
+  /* Note, at this point, pool is the pool for this job.
    * We transfer it to rpool (read pool), and a bit later,
    * pool will be changed to point to the write pool,
-   * which comes from pool->NextPool.
-   */
+   * which comes from pool->NextPool. */
   jcr->dir_impl->res.rpool = jcr->dir_impl->res.pool; /* save read pool */
   PmStrcpy(jcr->dir_impl->res.rpool_source, jcr->dir_impl->res.pool_source);
 
@@ -181,11 +179,9 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
     }
   }
 
-  /*
-   * If the original backup pool has a NextPool, make sure a
+  /* If the original backup pool has a NextPool, make sure a
    * record exists in the database. Note, in this case, we
-   * will be migrating from pool to pool->NextPool.
-   */
+   * will be migrating from pool to pool->NextPool. */
   if (jcr->dir_impl->res.next_pool) {
     jcr->dir_impl->jr.PoolId = GetOrCreatePoolRecord(
         jcr, jcr->dir_impl->res.next_pool->resource_name_);
@@ -293,12 +289,10 @@ bool DoNativeVbackup(JobControlRecord* jcr)
   Dmsg2(10, "Level of first consolidated job %d: %s\n", tmp_jr.JobId,
         job_level_to_str(JobLevel_of_first_job));
 
-  /*
-   * Now we find the newest job that ran and store its info in
+  /* Now we find the newest job that ran and store its info in
    * the previous_jr record. We will set our times to the
    * values from that job so that anything changed after that
-   * time will be picked up on the next backup.
-   */
+   * time will be picked up on the next backup. */
   jcr->dir_impl->previous_jr = JobDbRecord{};
   jcr->dir_impl->previous_jr.JobId = str_to_int64(jobid_list.back().c_str());
   Dmsg1(10, "Previous JobId=%s\n", jobid_list.back().c_str());
@@ -318,10 +312,8 @@ bool DoNativeVbackup(JobControlRecord* jcr)
   Jmsg(jcr, M_INFO, 0, _("Consolidating JobIds %s containing %d files\n"),
        jobids.c_str(), jcr->dir_impl->ExpectedFiles);
 
-  /*
-   * Open a message channel connection with the Storage
-   * daemon.
-   */
+  /* Open a message channel connection with the Storage
+   * daemon. */
   Dmsg0(110, "Open connection with storage daemon\n");
   jcr->setJobStatusWithPriorityCheck(JS_WaitSD);
 
@@ -338,16 +330,14 @@ bool DoNativeVbackup(JobControlRecord* jcr)
   }
   Dmsg0(100, "Storage daemon connection OK\n");
 
-  /*
-   * We re-update the job start record so that the start
+  /* We re-update the job start record so that the start
    * time is set after the run before job.  This avoids
    * that any files created by the run before job will
    * be saved twice.  They will be backed up in the current
    * job, but not in the next one unless they are changed.
    * Without this, they will be backed up in this job and
    * in the next job run because in that case, their date
-   * is after the start of this run.
-   */
+   * is after the start of this run. */
   jcr->start_time = time(NULL);
   jcr->dir_impl->jr.StartTime = jcr->start_time;
   jcr->dir_impl->jr.JobTDate = jcr->start_time;
@@ -362,11 +352,9 @@ bool DoNativeVbackup(JobControlRecord* jcr)
   // Declare the job started to start the MaxRunTime check
   jcr->setJobStarted();
 
-  /*
-   * Start the job prior to starting the message thread below
+  /* Start the job prior to starting the message thread below
    * to avoid two threads from using the BareosSocket structure at
-   * the same time.
-   */
+   * the same time. */
   if (!jcr->store_bsock->fsend("run")) { return false; }
 
   // Now start a Storage daemon message thread
@@ -374,10 +362,8 @@ bool DoNativeVbackup(JobControlRecord* jcr)
 
   jcr->setJobStatusWithPriorityCheck(JS_Running);
 
-  /*
-   * Pickup Job termination data
-   * Note, the SD stores in jcr->JobFiles/ReadBytes/JobBytes/JobErrors
-   */
+  /* Pickup Job termination data
+   * Note, the SD stores in jcr->JobFiles/ReadBytes/JobBytes/JobErrors */
   WaitForStorageDaemonTermination(jcr);
   jcr->setJobStatusWithPriorityCheck(jcr->dir_impl->SDJobStatus);
   jcr->db_batch->WriteBatchFileRecords(
@@ -395,6 +381,7 @@ bool DoNativeVbackup(JobControlRecord* jcr)
     Jmsg(jcr, M_INFO, 0,
          _("purged JobIds %s as they were consolidated into Job %lu\n"),
          jobids.c_str(), jcr->JobId);
+    FreeUaContext(ua);
   }
   return true;
 }
@@ -450,6 +437,27 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
          _("Error getting Job record for Job report: ERR=%s\n"),
          jcr->db->strerror());
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+  }
+
+  if (jcr->dir_impl->vf_jobids && jcr->dir_impl->vf_jobids[0] != '\0') {
+    using namespace std::string_literals;
+    Jmsg(jcr, M_INFO, 0,
+         "Replicating deleted files from jobids %s to jobid %d\n",
+         jcr->dir_impl->vf_jobids, jcr->JobId);
+    PoolMem q1(PM_MESSAGE);
+    jcr->db->FillQuery(
+        q1, BareosDbQueryEnum::SQL_QUERY::select_recent_version_with_basejob,
+        jcr->dir_impl->vf_jobids, jcr->dir_impl->vf_jobids,
+        jcr->dir_impl->vf_jobids, jcr->dir_impl->vf_jobids);
+    std::string query
+        = "INSERT INTO File (FileIndex, JobId, PathId, LStat, MD5, Name) "s
+          + "SELECT FileIndex, "s + std::to_string(jcr->JobId) + " AS JobId, "s
+          + "PathId, LStat, MD5, Name FROM ("s + q1.c_str() + ") T "s
+          + "WHERE FileIndex = 0"s;
+    if (!jcr->db->SqlQuery(query.c_str())) {
+      Jmsg(jcr, M_WARNING, 0, "Error replicating deleted files: ERR=%s\n",
+           jcr->db->strerror());
+    }
   }
 
   bstrncpy(cr.Name, jcr->dir_impl->res.client->resource_name_, sizeof(cr.Name));

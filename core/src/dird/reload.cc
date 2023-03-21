@@ -256,29 +256,20 @@ bool DoReloadConfig()
   if (ok && CheckResources() && CheckCatalog(UPDATE_CATALOG)
       && InitializeSqlPooling()) {
     Scheduler::GetMainScheduler().ClearQueue();
-
     reloaded = true;
-
-    SetWorkingDirectory(me->working_directory);
     Dmsg0(10, "Director's configuration file reread successfully.\n");
-    Dmsg0(10, "Releasing previous configuration resource table.\n");
-
-    StartStatisticsThread();
-
   } else {  // parse config failed
     Jmsg(nullptr, M_ERROR, 0, _("Please correct the configuration in %s\n"),
          my_config->get_base_config_path().c_str());
-
     Jmsg(nullptr, M_ERROR, 0, _("Resetting to previous configuration.\n"));
     my_config->RestoreResourcesContainer(std::move(backup_container));
     // me is changed above by CheckResources()
     me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
     assert(me);
     my_config->own_resource_ = me;
-
-    StartStatisticsThread();
   }
-
+  SetWorkingDirectory(me->working_directory);
+  StartStatisticsThread();
   UnlockJobs();
   is_reloading = false;
   return reloaded;
