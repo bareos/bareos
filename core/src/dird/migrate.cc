@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -246,10 +246,8 @@ static inline bool SetMigrationNextPool(JobControlRecord* jcr,
   PoolResource* pool;
   const char* storage_source;
 
-  /*
-   * Get the PoolId used with the original job. Then
-   * find the pool name from the database record.
-   */
+  /* Get the PoolId used with the original job. Then
+   * find the pool name from the database record. */
   pr.PoolId = jcr->dir_impl->jr.PoolId;
   if (!jcr->db->GetPoolRecord(jcr, &pr)) {
     Jmsg(jcr, M_FATAL, 0, _("Pool for JobId %s not in database. ERR=%s\n"),
@@ -288,11 +286,9 @@ static inline bool SetMigrationNextPool(JobControlRecord* jcr,
     }
   }
 
-  /*
-   * If the original backup pool has a NextPool, make sure a
+  /* If the original backup pool has a NextPool, make sure a
    * record exists in the database. Note, in this case, we
-   * will be migrating from pool to pool->NextPool.
-   */
+   * will be migrating from pool to pool->NextPool. */
   if (jcr->dir_impl->res.next_pool) {
     jcr->dir_impl->jr.PoolId = GetOrCreatePoolRecord(
         jcr, jcr->dir_impl->res.next_pool->resource_name_);
@@ -671,11 +667,9 @@ static bool regex_find_jobids(JobControlRecord* jcr,
     goto bail_out; /* skip regex match */
   }
 
-  /*
-   * At this point, we have a list of items in item_chain
+  /* At this point, we have a list of items in item_chain
    * that have been matched by the regex, so now we need
-   * to look up their jobids.
-   */
+   * to look up their jobids. */
   ids->count = 0;
   foreach_dlist (item, item_chain) {
     Dmsg2(dbglevel, "Got %s: %s\n", type, item->item);
@@ -1004,24 +998,20 @@ bool DoMigrationInit(JobControlRecord* jcr)
     return false;
   }
 
-  /*
-   * Note, at this point, pool is the pool for this job.
+  /* Note, at this point, pool is the pool for this job.
    * We transfer it to rpool (read pool), and a bit later,
    * pool will be changed to point to the write pool,
-   * which comes from pool->NextPool.
-   */
+   * which comes from pool->NextPool. */
   jcr->dir_impl->res.rpool = jcr->dir_impl->res.pool; /* save read pool */
   PmStrcpy(jcr->dir_impl->res.rpool_source, jcr->dir_impl->res.pool_source);
   Dmsg2(dbglevel, "Read pool=%s (From %s)\n",
         jcr->dir_impl->res.rpool->resource_name_,
         jcr->dir_impl->res.rpool_source);
 
-  /*
-   * See if this is a control job e.g. the one that selects the Jobs to Migrate
+  /* See if this is a control job e.g. the one that selects the Jobs to Migrate
    * or Copy or one of the worker Jobs that do the actual Migration or Copy. If
    * jcr->dir_impl_->MigrateJobId is set we know that its an actual Migration or
-   * Copy Job.
-   */
+   * Copy Job. */
   if (jcr->dir_impl->MigrateJobId != 0) {
     Dmsg1(dbglevel, "At Job start previous jobid=%u\n",
           jcr->dir_impl->MigrateJobId);
@@ -1088,35 +1078,27 @@ bool DoMigrationInit(JobControlRecord* jcr)
       return false;
     }
 
-    /*
-     * Copy the actual level setting of the previous Job to this Job.
+    /* Copy the actual level setting of the previous Job to this Job.
      * This overrides the dummy backup level given to the migrate/copy Job and
-     * replaces it with the actual level the backup run at.
-     */
+     * replaces it with the actual level the backup run at. */
     jcr->setJobLevel(prev_job->JobLevel);
 
-    /*
-     * If the current Job has no explicit client set use the client setting of
-     * the previous Job.
-     */
+    /* If the current Job has no explicit client set use the client setting of
+     * the previous Job. */
     if (!jcr->dir_impl->res.client && prev_job->client) {
       jcr->dir_impl->res.client = prev_job->client;
       if (!jcr->client_name) { jcr->client_name = GetPoolMemory(PM_NAME); }
       PmStrcpy(jcr->client_name, jcr->dir_impl->res.client->resource_name_);
     }
 
-    /*
-     * If the current Job has no explicit fileset set use the client setting of
-     * the previous Job.
-     */
+    /* If the current Job has no explicit fileset set use the client setting of
+     * the previous Job. */
     if (!jcr->dir_impl->res.fileset) {
       jcr->dir_impl->res.fileset = prev_job->fileset;
     }
 
-    /*
-     * See if spooling data is not enabled yet. If so turn on spooling if
-     * requested in job
-     */
+    /* See if spooling data is not enabled yet. If so turn on spooling if
+     * requested in job */
     if (!jcr->dir_impl->spool_data) {
       jcr->dir_impl->spool_data = job->spool_data;
     }
@@ -1127,8 +1109,7 @@ bool DoMigrationInit(JobControlRecord* jcr)
     memcpy(&mig_jcr->dir_impl->previous_jr, &jcr->dir_impl->previous_jr,
            sizeof(mig_jcr->dir_impl->previous_jr));
 
-    /*
-     * Turn the mig_jcr into a "real" job that takes on the aspects of
+    /* Turn the mig_jcr into a "real" job that takes on the aspects of
      * the previous backup job "prev_job". We only don't want it to
      * ever send any messages to the database or mail messages when
      * we are doing a migrate or copy to a remote storage daemon. When
@@ -1136,8 +1117,7 @@ bool DoMigrationInit(JobControlRecord* jcr)
      * the remote state and it might want to send some captured state
      * info on tear down of the mig_jcr so we call SetupJob with the
      * suppress_output argument set to true (e.g. don't init messages
-     * and set the jcr suppress_output boolean to true).
-     */
+     * and set the jcr suppress_output boolean to true). */
     SetJcrDefaults(mig_jcr, prev_job);
 
     // Time value on this Job
@@ -1146,10 +1126,8 @@ bool DoMigrationInit(JobControlRecord* jcr)
     // Don't check for duplicates on migration and copy jobs
     mig_jcr->dir_impl->IgnoreDuplicateJobChecking = true;
 
-    /*
-     * Copy some overwrites back from the Control Job to the migration and copy
-     * job.
-     */
+    /* Copy some overwrites back from the Control Job to the migration and copy
+     * job. */
     mig_jcr->dir_impl->spool_data = jcr->dir_impl->spool_data;
     mig_jcr->dir_impl->spool_size = jcr->dir_impl->spool_size;
 
@@ -1180,21 +1158,17 @@ bool DoMigrationInit(JobControlRecord* jcr)
       mig_jcr->dir_impl->jr.PoolId = jcr->dir_impl->jr.PoolId;
     }
 
-    /*
-     * Get the storage that was used for the original Job.
+    /* Get the storage that was used for the original Job.
      * This only happens when the original pool used doesn't have an explicit
-     * storage.
-     */
+     * storage. */
     if (!jcr->dir_impl->res.read_storage_list) {
       CopyRstorage(jcr, prev_job->storage, _("previous Job"));
     }
 
-    /*
-     * See if the read and write storage is the same.
+    /* See if the read and write storage is the same.
      * When they are we do the migrate/copy over one SD connection
      * otherwise we open a connection to the reading SD and a second
-     * one to the writing SD.
-     */
+     * one to the writing SD. */
     jcr->dir_impl->remote_replicate = !IsSameStorageDaemon(
         jcr->dir_impl->res.read_storage, jcr->dir_impl->res.write_storage);
 
@@ -1273,10 +1247,8 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
   Jmsg(jcr, M_INFO, 0, _("Start %s JobId %s, Job=%s\n"),
        jcr->get_OperationName(), edit_uint64(jcr->JobId, ed1), jcr->Job);
 
-  /*
-   * See if the read storage is paired NDMP storage, if so setup
-   * the Job to use the native storage instead.
-   */
+  /* See if the read storage is paired NDMP storage, if so setup
+   * the Job to use the native storage instead. */
   if (HasPairedStorage(jcr)) { SetPairedStorage(jcr); }
 
   Dmsg2(dbglevel, "Read store=%s, write store=%s\n",
@@ -1288,13 +1260,11 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
   if (jcr->dir_impl->remote_replicate) {
     alist<StorageResource*>* write_storage_list;
 
-    /*
-     * See if we need to apply any bandwidth limiting.
+    /* See if we need to apply any bandwidth limiting.
      * We search the bandwidth limiting in the following way:
      * - Job bandwidth limiting
      * - Writing Storage Daemon bandwidth limiting
-     * - Reading Storage Daemon bandwidth limiting
-     */
+     * - Reading Storage Daemon bandwidth limiting */
     if (jcr->dir_impl->res.job->max_bandwidth > 0) {
       jcr->max_bandwidth = jcr->dir_impl->res.job->max_bandwidth;
     } else if (jcr->dir_impl->res.write_storage->max_bandwidth > 0) {
@@ -1306,11 +1276,9 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
     // Open a message channel connection to the Reading Storage daemon.
     Dmsg0(110, "Open connection with reading storage daemon\n");
 
-    /*
-     * Clear the write_storage of the jcr and assign it to the mig_jcr so
+    /* Clear the write_storage of the jcr and assign it to the mig_jcr so
      * the jcr is connected to the reading storage daemon and the
-     * mig_jcr to the writing storage daemon.
-     */
+     * mig_jcr to the writing storage daemon. */
     mig_jcr->dir_impl->res.write_storage = jcr->dir_impl->res.write_storage;
     jcr->dir_impl->res.write_storage = NULL;
 
@@ -1377,16 +1345,14 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
     Dmsg0(150, "Storage daemon connection OK\n");
   }
 
-  /*
-   * We re-update the job start record so that the start
+  /* We re-update the job start record so that the start
    * time is set after the run before job.  This avoids
    * that any files created by the run before job will
    * be saved twice.  They will be backed up in the current
    * job, but not in the next one unless they are changed.
    * Without this, they will be backed up in this job and
    * in the next job run because in that case, their date
-   * is after the start of this run.
-   */
+   * is after the start of this run. */
   jcr->start_time = time(NULL);
   jcr->dir_impl->jr.StartTime = jcr->start_time;
   jcr->dir_impl->jr.JobTDate = jcr->start_time;
@@ -1416,11 +1382,9 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
         mig_jcr->dir_impl->jr.Name, (int)mig_jcr->dir_impl->jr.JobId,
         mig_jcr->dir_impl->jr.JobType, mig_jcr->dir_impl->jr.JobLevel);
 
-  /*
-   * If we are connected to two different SDs tell the writing one
+  /* If we are connected to two different SDs tell the writing one
    * to be ready to receive the data and tell the reading one
-   * to replicate to the other.
-   */
+   * to replicate to the other. */
   if (jcr->dir_impl->remote_replicate) {
     StorageResource* write_storage = mig_jcr->dir_impl->res.write_storage;
     StorageResource* read_storage = jcr->dir_impl->res.read_storage;
@@ -1429,11 +1393,9 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
 
     if (jcr->max_bandwidth > 0) { SendBwlimitToSd(jcr, jcr->Job); }
 
-    /*
-     * Start the job prior to starting the message thread below
+    /* Start the job prior to starting the message thread below
      * to avoid two threads from using the BareosSocket structure at
-     * the same time.
-     */
+     * the same time. */
     if (!mig_jcr->store_bsock->fsend("listen")) { goto bail_out; }
 
     if (!StartStorageDaemonMessageThread(mig_jcr)) { goto bail_out; }
@@ -1458,11 +1420,9 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
     if (received != OK_replicate) { goto bail_out; }
   }
 
-  /*
-   * Start the job prior to starting the message thread below
+  /* Start the job prior to starting the message thread below
    * to avoid two threads from using the BareosSocket structure at
-   * the same time.
-   */
+   * the same time. */
   if (!jcr->store_bsock->fsend("run")) { goto bail_out; }
 
   // Now start a Storage daemon message thread
@@ -1471,12 +1431,10 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
   jcr->setJobStatusWithPriorityCheck(JS_Running);
   mig_jcr->setJobStatusWithPriorityCheck(JS_Running);
 
-  /*
-   * Pickup Job termination data
+  /* Pickup Job termination data
    * Note, the SD stores in jcr->JobFiles/ReadBytes/JobBytes/JobErrors or
    * mig_jcr->JobFiles/ReadBytes/JobBytes/JobErrors when replicating to
-   * a remote storage daemon.
-   */
+   * a remote storage daemon. */
   if (jcr->dir_impl->remote_replicate) {
     WaitForStorageDaemonTermination(jcr);
     WaitForStorageDaemonTermination(mig_jcr);
@@ -1500,14 +1458,12 @@ bail_out:
         = jcr->dir_impl->res.write_storage_list;
     jcr->dir_impl->res.write_storage_list = write_storage_list;
 
-    /*
-     * Undo the clear of the write_storage in the jcr and assign the mig_jcr
+    /* Undo the clear of the write_storage in the jcr and assign the mig_jcr
      * write_storage back to the jcr. This is an undo of the clearing we did
      * earlier as we want the jcr connected to the reading storage daemon and
      * the mig_jcr to the writing jcr. By clearing the write_storage of the jcr
      * the ConnectToStorageDaemon function will do the right thing e.g. connect
-     * the jcrs in the way we want them to.
-     */
+     * the jcrs in the way we want them to. */
     jcr->dir_impl->res.write_storage = mig_jcr->dir_impl->res.write_storage;
     mig_jcr->dir_impl->res.write_storage = NULL;
   }
@@ -1540,11 +1496,9 @@ static inline bool DoMigrationSelection(JobControlRecord* jcr)
 
 bool DoMigration(JobControlRecord* jcr)
 {
-  /*
-   * See if this is a control job e.g. the one that selects the Jobs to Migrate
+  /* See if this is a control job e.g. the one that selects the Jobs to Migrate
    * or Copy or one of the worker Jobs that do the actual Migration or Copy. If
-   * jcr->dir_impl_->MigrateJobId is unset we know that its the control job.
-   */
+   * jcr->dir_impl_->MigrateJobId is unset we know that its the control job. */
   if (jcr->dir_impl->MigrateJobId == 0) {
     return DoMigrationSelection(jcr);
   } else {
@@ -1691,10 +1645,8 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
   Dmsg2(100, "Enter migrate_cleanup %d %c\n", TermCode, TermCode);
   UpdateJobEnd(jcr, TermCode);
 
-  /*
-   * Check if we actually did something.
-   * mig_jcr is jcr of the newly migrated job.
-   */
+  /* Check if we actually did something.
+   * mig_jcr is jcr of the newly migrated job. */
   if (mig_jcr) {
     char old_jobid[50], new_jobid[50];
 
@@ -1707,11 +1659,9 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
          jcr->JobId);
     jcr->db->SqlQuery(query.c_str());
 
-    /*
-     * See if we used a remote SD if so the mig_jcr contains
+    /* See if we used a remote SD if so the mig_jcr contains
      * the jobfiles and jobbytes and the new volsessionid
-     * and volsessiontime as the writing SD generates this info.
-     */
+     * and volsessiontime as the writing SD generates this info. */
     if (jcr->dir_impl->remote_replicate) {
       mig_jcr->JobFiles = jcr->JobFiles = mig_jcr->dir_impl->SDJobFiles;
       mig_jcr->JobBytes = jcr->JobBytes = mig_jcr->dir_impl->SDJobBytes;
@@ -1745,13 +1695,11 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
 
       switch (jcr->getJobType()) {
         case JT_MIGRATE:
-          /*
-           * If we terminated a Migration Job successfully we should:
+          /* If we terminated a Migration Job successfully we should:
            * - Mark the previous job as migrated
            * - Move any Log records to the new JobId
            * - Move any MetaData of a NDMP backup
-           * - Purge the File records from the previous job
-           */
+           * - Purge the File records from the previous job */
           Mmsg(query, "UPDATE Job SET Type='%c' WHERE JobId=%s",
                (char)JT_MIGRATED_JOB, old_jobid);
           mig_jcr->db->SqlQuery(query.c_str());
@@ -1761,13 +1709,11 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
                old_jobid);
           mig_jcr->db->SqlQuery(query.c_str());
 
-          /*
-           * If we just migrated a NDMP job, we need to move the file MetaData
+          /* If we just migrated a NDMP job, we need to move the file MetaData
            * to the new job. The file MetaData is stored as hardlinks to the
            * NDMP archive itself. And as we only clone the actual data in the
            * storage daemon we need to add data normally send to the director
-           * via the FHDB interface here.
-           */
+           * via the FHDB interface here. */
           switch (jcr->dir_impl->res.client->Protocol) {
             case APT_NDMPV2:
             case APT_NDMPV3:
@@ -1792,25 +1738,21 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
           FreeUaContext(ua);
           break;
         case JT_COPY:
-          /*
-           * If we terminated a Copy Job successfully we should:
+          /* If we terminated a Copy Job successfully we should:
            * - Copy any Log records to the new JobId
            * - Copy any MetaData of a NDMP backup
-           * - Set type="Job Copy" for the new job
-           */
+           * - Set type="Job Copy" for the new job */
           Mmsg(query,
                "INSERT INTO Log (JobId, Time, LogText ) "
                "SELECT %s, Time, LogText FROM Log WHERE JobId=%s",
                new_jobid, old_jobid);
           mig_jcr->db->SqlQuery(query.c_str());
 
-          /*
-           * If we just copied a NDMP job, we need to copy the file MetaData
+          /* If we just copied a NDMP job, we need to copy the file MetaData
            * to the new job. The file MetaData is stored as hardlinks to the
            * NDMP archive itself. And as we only clone the actual data in the
            * storage daemon we need to add data normally send to the director
-           * via the FHDB interface here.
-           */
+           * via the FHDB interface here. */
           switch (jcr->dir_impl->res.client->Protocol) {
             case APT_NDMPV2:
             case APT_NDMPV3:
@@ -1843,12 +1785,10 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
 
     if (!mig_jcr->db->GetJobVolumeNames(mig_jcr, mig_jcr->dir_impl->jr.JobId,
                                         mig_jcr->VolumeName)) {
-      /*
-       * Note, if the job has failed, most likely it did not write any
+      /* Note, if the job has failed, most likely it did not write any
        * tape, so suppress this "error" message since in that case
        * it is normal. Or look at it the other way, only for a
-       * normal exit should we complain about this error.
-       */
+       * normal exit should we complain about this error. */
       if (jcr->IsTerminatedOk() && jcr->dir_impl->jr.JobBytes) {
         Jmsg(jcr, M_ERROR, 0, "%s", mig_jcr->db->strerror());
       }
@@ -1881,12 +1821,10 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
       case JS_FatalError:
       case JS_ErrorTerminated:
       case JS_Canceled:
-        /*
-         * We catch any error here as the close of the SD sessions is mandatory
+        /* We catch any error here as the close of the SD sessions is mandatory
          * for each failure path. The termination message and the message type
          * can be different so that is why we do a second switch inside the
-         * switch on the JobStatus.
-         */
+         * switch on the JobStatus. */
         switch (jcr->getJobStatus()) {
           case JS_Canceled:
             TermMsg = _("%s Canceled");
