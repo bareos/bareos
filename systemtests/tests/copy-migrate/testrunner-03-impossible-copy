@@ -32,6 +32,9 @@ cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
 messages
 @$out $log
+run job=backup-bareos-fd level=Full yes
+wait
+update volume=TestVolume001 volstatus=Used
 sqlquery
 UPDATE Media SET mediatype = 'NoSuchType' WHERE volumename = 'TestVolume001';
 
