@@ -1089,7 +1089,8 @@ int SendFiles(JobControlRecord* jcr,
     // out of order (between different include blocks), we need to ensure
     // that we restore them if needed
     struct cached_vals { int StripPath; char* top_fname; };
-    std::vector<cached_vals> cached_values(outs.size()); // initialized to 0
+    // everything is set to 0
+    std::vector<cached_vals> cached_values(fileset->include_list.size());
     while (1) {
       if (std::optional opened_file = out.get(); opened_file) {
 	auto& [file, bfd, fileset_idx] = opened_file.value();
