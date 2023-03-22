@@ -39,9 +39,9 @@ A migration job can be started manually or from a Schedule, like a backup job. I
 
 Normally four jobs are involved during a migration/copy:
 
--  The migration/copy **control job**: This job checks for jobs that need to be copied/migrated and starts a copy/migrate worker job for each of these jobs. The migration/copy control job gets removed from the catalog database at the end of the operation.
+-  The migration/copy **control job**: This job checks for jobs that need to be copied/migrated and starts a copy/migrate worker job for each of these jobs.
 
--  The migration/copy **worker jobs**: They copy the data of one original job to the resulting destination job. The worker jobs are removed from the database when the destination job (the job that is the result of the copying) is pruned from the catalog database.
+-  The migration/copy **worker jobs**: They copy the data of one original job to the resulting destination job. The worker jobs are removed from the database when the destination job (the job that is the result of the copying) is pruned from the catalog database, or, in case of a copy, when the new copy is upgraded to become a backup.
 
 -  The **previous (original) Backup job** (*already run and being copied*): The File records of this job are purged when the migration/copy job terminates successfully. The data remain on the volume until it is recycled.
 
