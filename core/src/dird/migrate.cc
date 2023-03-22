@@ -696,9 +696,7 @@ static bool regex_find_jobids(JobControlRecord* jcr,
 
 bail_out:
   Dmsg2(dbglevel, "Count=%d Jobids=%s\n", ids->count, ids->list);
-  foreach_dlist (item, item_chain) {
-    free(item->item);
-  }
+  foreach_dlist (item, item_chain) { free(item->item); }
   delete item_chain;
   return ok;
 }
@@ -1691,15 +1689,13 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
   PoolMem query(PM_MESSAGE);
 
   Dmsg2(100, "Enter migrate_cleanup %d %c\n", TermCode, TermCode);
-
+  UpdateJobEnd(jcr, TermCode);
 
   /*
    * Check if we actually did something.
    * mig_jcr is jcr of the newly migrated job.
    */
   if (mig_jcr) {
-    UpdateJobEnd(jcr, TermCode);
-
     char old_jobid[50], new_jobid[50];
 
     edit_uint64(jcr->dir_impl->previous_jr.JobId, old_jobid);
@@ -1922,9 +1918,6 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
         break;
     }
   } else if (jcr->dir_impl->HasSelectedJobs) {
-    Mmsg(query, "DELETE FROM job WHERE JobId=%d", jcr->JobId);
-    jcr->db->SqlQuery(query.c_str());
-
     switch (jcr->getJobStatus()) {
       case JS_Terminated:
         TermMsg = _("%s OK");
@@ -1945,8 +1938,6 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
         break;
     }
   } else {
-    Mmsg(query, "DELETE FROM job WHERE JobId=%d", jcr->JobId);
-    jcr->db->SqlQuery(query.c_str());
     TermMsg = _("%s -- no files to %s");
   }
 
