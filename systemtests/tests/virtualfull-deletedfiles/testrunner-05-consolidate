@@ -1,0 +1,52 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+myname=$(basename "$0")
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+find "${tmp}/data/" -type f -delete
+echo "$0" >"${tmp}/data/$myname"
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $tmp/$myname.log
+run job=backup-bareos-fd level=VirtualFull jobid=3,4 yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+# we expect 4 files: the added file, the changed directory and from each of the
+# two jobs a deleted file
+# however, with the catalog-only fix the deleted files will not be visible, so
+# we can only check for 2 files here.
+if ! grep -q 'Consolidating JobIds .* containing 2 files' "$tmp/$myname.log"; then
+  echo "Unexpected number of files to be consolidated"
+  exit 2
+fi
+if ! grep -q 'Replicating deleted files from jobids' "$tmp/$myname.log"; then
+  echo "Missing deleted file replication"
+  exit 2
+fi
+
+if ! grep -q 'SD Files Written:.*2' "$tmp/$myname.log"; then
+  echo "Number of files mismatch!"
+  exit 2
+fi
+
+end_test
