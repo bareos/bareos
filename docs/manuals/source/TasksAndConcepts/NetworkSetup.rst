@@ -123,22 +123,6 @@ To use this new feature, just configure :config:option:`dir/client/Passive`\ =ye
       [...]
    }
 
-Also, prior to bareos version 15, you need to set :config:option:`fd/client/Compatible`\ =no in the :file:`bareos-fd.conf` configuration file. Since Bareos Version 15, the compatible option is set to no per default and does not need to be specified anymore.
-
-.. code-block:: bareosconfig
-   :caption: Disable compatible mode for the |fd| in bareos-fd.conf
-
-   Director {
-     Name = bareos-dir
-     Password = "secretpassword"
-   }
-
-   Client {
-      Name = client1-fd
-      [...]
-      <input>Compatible = no</input>
-   }
-
 .. _LanAddress:
 
 Using different IP Adresses for SD – FD Communication

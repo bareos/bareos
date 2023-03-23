@@ -165,7 +165,7 @@ Tape Labels: ANSI or IBM
    single: Tape; Label; ANSI
    single: Tape; Label; IBM
 
-By default, Bareos uses its own tape label (see :ref:`backward-compatibility-tape-format` and :config:option:`dir/pool/LabelType`\ ). However, Bareos also supports reading and writing ANSI and IBM tape labels.
+By default, Bareos uses its own tape label (:config:option:`dir/pool/LabelType`\ ). However, Bareos also supports reading and writing ANSI and IBM tape labels.
 
 Reading
 ~~~~~~~
