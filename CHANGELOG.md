@@ -15,6 +15,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Fixed
 - stored: fix crashes of storage tools when autoxflate plugin is loaded [PR #1370]
+- dird: Fix problem with reoccuring files in always incremental [PR #1417]
 
 ## [21.1.6] - 2022-12-12
 
@@ -662,4 +663,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1400]: https://github.com/bareos/bareos/pull/1400
 [PR #1406]: https://github.com/bareos/bareos/pull/1406
 [PR #1409]: https://github.com/bareos/bareos/pull/1409
+[PR #1417]: https://github.com/bareos/bareos/pull/1417
 [unreleased]: https://github.com/bareos/bareos/tree/master
