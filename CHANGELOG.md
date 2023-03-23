@@ -18,6 +18,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Fixed
 - VMware Plugin: fix restore to different vmname [PR #1397]
 - vmware_cbt_tool.py: pyVmomi 8.x compatibility [PR #1391]
+- dird: Fix problem with reoccuring files in always incremental [PR #1416]
 
 ### Documentation
 - docs: catalog maintenance improvements [PR #1399]
@@ -478,4 +479,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1405]: https://github.com/bareos/bareos/pull/1405
 [PR #1408]: https://github.com/bareos/bareos/pull/1408
 [PR #1411]: https://github.com/bareos/bareos/pull/1411
+[PR #1416]: https://github.com/bareos/bareos/pull/1416
 [unreleased]: https://github.com/bareos/bareos/tree/master
