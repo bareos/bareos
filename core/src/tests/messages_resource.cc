@@ -101,12 +101,10 @@ TEST(messages_resource, send_message_to_all_configured_destinations)
   std::string config_dir = getenv_std_string("BAREOS_CONFIG_DIR");
   std::string working_dir = getenv_std_string("BAREOS_WORKING_DIR");
   std::string log_dir = getenv_std_string("BAREOS_LOG_DIR");
-  std::string backend_dir = getenv_std_string("backenddir");
 
   ASSERT_FALSE(config_dir.empty());
   ASSERT_FALSE(working_dir.empty());
   ASSERT_FALSE(log_dir.empty());
-  ASSERT_FALSE(backend_dir.empty());
 
   std::string regress_debug = getenv_std_string("REGRESS_DEBUG");
 

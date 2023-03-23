@@ -9,7 +9,6 @@ Director {
   }
   QueryFile = "@scriptdir@/query.sql"
   WorkingDirectory = "@working_dir@"
-  BackendDirectory = "@backenddir@"
   # Subscriptions = 0
   MaximumConcurrentJobs = 10
   # MaximumConsoleConnections = 20

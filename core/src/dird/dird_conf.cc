@@ -2223,7 +2223,6 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       } else {
         p->plugin_names = res_dir->plugin_names;
         p->messages = res_dir->messages;
-        p->backend_directories = res_dir->backend_directories;
         p->tls_cert_.allowed_certificate_common_names_
             = std::move(res_dir->tls_cert_.allowed_certificate_common_names_);
       }

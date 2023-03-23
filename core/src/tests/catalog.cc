@@ -49,9 +49,7 @@ int main(int argc, char** argv)
 
 class CatalogTest : public ::testing::Test {
  protected:
-  std::set<std::string> testable_catalog_backends{"postgresql"};
   std::string catalog_backend_name;
-  std::string backend_dir;
   std::string config_dir;
   std::string working_dir;
 
@@ -67,17 +65,13 @@ void CatalogTest::SetUp()
   // get environment
   {
     catalog_backend_name = getenv_std_string("DBTYPE");
-    backend_dir = getenv_std_string("backenddir");
     config_dir = getenv_std_string("BAREOS_CONFIG_DIR");
     working_dir = getenv_std_string("BAREOS_WORKING_DIR");
 
-    ASSERT_NE(testable_catalog_backends.find(catalog_backend_name),
-              testable_catalog_backends.end())
-        << "Environment variable DBTYPE does not contain a name for a "
-           "testable catalog backend: "
+    ASSERT_EQ(catalog_backend_name, "postgresql")
+        << "Environment variable DBTYPE does not contain correct database "
+           "backend: "
         << "<" << catalog_backend_name << ">";
-    ASSERT_FALSE(backend_dir.empty())
-        << "Environment variable backenddir not set.";
     ASSERT_FALSE(config_dir.empty())
         << "Environment variable BAREOS_CONFIG_DIR not set.";
     ASSERT_FALSE(working_dir.empty())
