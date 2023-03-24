@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -120,20 +120,16 @@ bool SetupCompressionContext(b_ctx& bctx)
     bctx.ch.magic = bctx.ff_pkt->Compress_algo;
     bctx.ch.version = COMP_HEAD_VERSION;
 
-    /*
-     * Do compression specific actions and set the magic, header version and
-     * compression level.
-     */
+    /* Do compression specific actions and set the magic, header version and
+     * compression level. */
     switch (bctx.ff_pkt->Compress_algo) {
 #if defined(HAVE_LIBZ)
       case COMPRESS_GZIP: {
         z_stream* pZlibStream;
 
-        /**
-         * Only change zlib parameters if there is no pending operation.
+        /* Only change zlib parameters if there is no pending operation.
          * This should never happen as deflateReset is called after each
-         * deflate.
-         */
+         * deflate. */
         pZlibStream = (z_stream*)bctx.jcr->compress.workset.pZLIB;
         if (pZlibStream->total_in == 0) {
           int zstat;
@@ -163,11 +159,9 @@ bool SetupCompressionContext(b_ctx& bctx)
         zfast_stream* pZfastStream;
         zfast_stream_compressor compressor = COMPRESSOR_FASTLZ;
 
-        /**
-         * Only change fastlz parameters if there is no pending operation.
+        /* Only change fastlz parameters if there is no pending operation.
          * This should never happen as fastlzlibCompressReset is called after
-         * each fastlzlibCompress.
-         */
+         * each fastlzlibCompress. */
         pZfastStream = (zfast_stream*)bctx.jcr->compress.workset.pZFAST;
         if (pZfastStream->total_in == 0) {
           switch (bctx.ff_pkt->Compress_algo) {

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -76,10 +76,8 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
   bool want_ansi_label;
   bool have_ansi_label = false;
 
-  /*
-   * We always write the label in an 64512 byte / 63k block.
-   * so we never have problems reading the volume label.
-   */
+  /* We always write the label in an 64512 byte / 63k block.
+   * so we never have problems reading the volume label. */
   dcr->dev->SetLabelBlocksize(dcr);
 
   Dmsg5(100,
@@ -108,10 +106,8 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
   }
   bstrncpy(dcr->dev->VolHdr.Id, "**error**", sizeof(dcr->dev->VolHdr.Id));
 
-  /*
-   * The stored plugin handling the bSdEventLabelRead event can abort
-   * the reading of the label by returning a non bRC_OK.
-   */
+  /* The stored plugin handling the bSdEventLabelRead event can abort
+   * the reading of the label by returning a non bRC_OK. */
   if (GeneratePluginEvent(jcr, bSdEventLabelRead, dcr) != bRC_OK) {
     Dmsg0(200, "Error from bSdEventLabelRead plugin event.\n");
     return VOL_NO_MEDIA;
@@ -180,11 +176,9 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
     goto bail_out;
   }
 
-  /*
-   * At this point, we have read the first Bareos block, and
+  /* At this point, we have read the first Bareos block, and
    * then read the Bareos Volume label. Now we need to
-   * make sure we have the right Volume.
-   */
+   * make sure we have the right Volume. */
   if (dcr->dev->VolHdr.VerNum != BareosTapeVersion) {
     Mmsg(jcr->errmsg,
          _("Volume on %s has wrong Bareos version. Wanted %d got %d\n"),
@@ -194,10 +188,8 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
     goto bail_out;
   }
 
-  /*
-   * We are looking for either an unused Bareos tape (PRE_LABEL) or
-   * a Bareos volume label (VOL_LABEL)
-   */
+  /* We are looking for either an unused Bareos tape (PRE_LABEL) or
+   * a Bareos volume label (VOL_LABEL) */
   if (dcr->dev->VolHdr.LabelType != PRE_LABEL
       && dcr->dev->VolHdr.LabelType != VOL_LABEL) {
     Mmsg(jcr->errmsg, _("Volume on %s has bad Bareos label type: %x\n"),
@@ -222,10 +214,8 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
          _("Wrong Volume mounted on device %s: Wanted %s have %s\n"),
          dcr->dev->print_name(), VolName, dcr->dev->VolHdr.VolumeName);
     Dmsg1(130, "%s", jcr->errmsg);
-    /*
-     * Cancel Job if too many label errors
-     *  => we are in a loop
-     */
+    /* Cancel Job if too many label errors
+     *  => we are in a loop */
     if (!dcr->dev->poll && jcr->sd_impl->label_errors++ > 100) {
       Jmsg(jcr, M_FATAL, 0, "Too many tries: %s", jcr->errmsg);
     }
@@ -258,14 +248,12 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
   }
 
 ok_out:
-  /*
-   * The stored plugin handling the bSdEventLabelVerified event can override
+  /* The stored plugin handling the bSdEventLabelVerified event can override
    * the return value e.g. although we think the volume label is ok the plugin
    * has reasons to override that. So when the plugin returns something else
    * then bRC_OK it want to tell us the volume is not OK to use and as
    * such we return VOL_NAME_ERROR as error although it might not be the
-   * best error it should be sufficient.
-   */
+   * best error it should be sufficient. */
   if (GeneratePluginEvent(jcr, bSdEventLabelVerified, dcr) != bRC_OK) {
     Dmsg0(200, "Error from bSdEventLabelVerified plugin event.\n");
     status = VOL_NAME_ERROR;
@@ -273,10 +261,8 @@ ok_out:
   }
   EmptyBlock(dcr->block);
 
-  /*
-   * Reset blocksizes from volinfo to device as we set blocksize to
-   * DEFAULT_BLOCK_SIZE to read the label
-   */
+  /* Reset blocksizes from volinfo to device as we set blocksize to
+   * DEFAULT_BLOCK_SIZE to read the label */
   dcr->dev->SetBlocksizes(dcr);
 
   return VOL_OK;
@@ -374,10 +360,8 @@ bool WriteNewVolumeLabelToDev(DeviceControlRecord* dcr,
   }
   Dmsg1(150, "Label type=%d\n", dev->label_type);
 
-  /*
-   * Let any stored plugin know that we are about to write a new label to the
-   * volume.
-   */
+  /* Let any stored plugin know that we are about to write a new label to the
+   * volume. */
   if (GeneratePluginEvent(jcr, bSdEventLabelWrite, dcr) != bRC_OK) {
     Dmsg0(200, "Error from bSdEventLabelWrite plugin event.\n");
     goto bail_out;
@@ -396,11 +380,9 @@ bool WriteNewVolumeLabelToDev(DeviceControlRecord* dcr,
   /* Create PRE_LABEL */
   CreateVolumeLabel(dev, VolName, PoolName);
 
-  /*
-   * If we have already detected an ANSI label, re-read it
+  /* If we have already detected an ANSI label, re-read it
    *   to skip past it. Otherwise, we write a new one if
-   *   so requested.
-   */
+   *   so requested. */
   if (dev->label_type != B_BAREOS_LABEL) {
     if (ReadAnsiIbmLabel(dcr) != VOL_OK) {
       dev->rewind(dcr);
@@ -453,10 +435,8 @@ bool WriteNewVolumeLabelToDev(DeviceControlRecord* dcr,
 
   dev->ClearAppend(); /* remove append since this is PRE_LABEL */
 
-  /*
-   * Reset blocksizes from volinfo to device as we set blocksize to
-   * DEFAULT_BLOCK_SIZE to read the label.
-   */
+  /* Reset blocksizes from volinfo to device as we set blocksize to
+   * DEFAULT_BLOCK_SIZE to read the label. */
   dev->SetBlocksizes(dcr);
 
   return true;
@@ -654,13 +634,11 @@ bool WriteSessionLabel(DeviceControlRecord* dcr, int label)
   CreateSessionLabel(dcr, rec, label);
   rec->FileIndex = label;
 
-  /*
-   * We guarantee that the session record can totally fit
+  /* We guarantee that the session record can totally fit
    *  into a block. If not, write the block, and put it in
    *  the next block. Having the sesssion record totally in
    *  one block makes reading them much easier (no need to
-   *  read the next block).
-   */
+   *  read the next block). */
   if (!CanWriteRecordToBlock(block, rec)) {
     Dmsg0(150, "Cannot write session label to block.\n");
     if (!dcr->WriteBlockToDevice()) {
@@ -1069,13 +1047,11 @@ bool DeviceControlRecord::RewriteVolumeLabel(bool recycle)
   dev->setVolCatInfo(false);
   dev->VolCatInfo.VolCatBytes = 0; /* reset byte count */
 
-  /*
-   * If we are not dealing with a streaming device,
+  /* If we are not dealing with a streaming device,
    *  write the block now to ensure we have write permission.
    *  It is better to find out now rather than later.
    * We do not write the block now if this is an ANSI label. This
-   *  avoids re-writing the ANSI label, which we do not want to do.
-   */
+   *  avoids re-writing the ANSI label, which we do not want to do. */
   if (!dev->HasCap(CAP_STREAM)) {
     if (!dev->rewind(dcr)) {
       Jmsg2(jcr, M_FATAL, 0, _("Rewind error on device %s: ERR=%s\n"),
@@ -1097,11 +1073,9 @@ bool DeviceControlRecord::RewriteVolumeLabel(bool recycle)
       }
     }
 
-    /*
-     * If we have already detected an ANSI label, re-read it
+    /* If we have already detected an ANSI label, re-read it
      *   to skip past it. Otherwise, we write a new one if
-     *   so requested.
-     */
+     *   so requested. */
     if (dev->label_type != B_BAREOS_LABEL) {
       if (ReadAnsiIbmLabel(dcr) != VOL_OK) {
         dev->rewind(dcr);
@@ -1155,22 +1129,16 @@ bool DeviceControlRecord::RewriteVolumeLabel(bool recycle)
          _("Wrote label to prelabeled Volume \"%s\" on device %s\n"),
          dcr->VolumeName, dev->print_name());
   }
-  /*
-   * End writing real Volume label (from pre-labeled tape), or recycling
-   *  the volume.
-   */
+  /* End writing real Volume label (from pre-labeled tape), or recycling
+   *  the volume. */
   Dmsg1(150, "OK from rewrite vol label. Vol=%s\n", dcr->VolumeName);
 
-  /*
-   * reset blocksizes from volinfo to device as we set blocksize to
-   * DEFAULT_BLOCK_SIZE to write the label
-   */
+  /* reset blocksizes from volinfo to device as we set blocksize to
+   * DEFAULT_BLOCK_SIZE to write the label */
   dev->SetBlocksizes(dcr);
 
-  /*
-   * Let any stored plugin know the label was rewritten and as such is verified
-   * .
-   */
+  /* Let any stored plugin know the label was rewritten and as such is verified
+   * . */
   if (GeneratePluginEvent(jcr, bSdEventLabelVerified, dcr) != bRC_OK) {
     Dmsg0(200, "Error from bSdEventLabelVerified plugin event.\n");
     return false;

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -116,8 +116,7 @@ bool SetupCompressionBuffers(JobControlRecord* jcr,
     case COMPRESS_GZIP: {
       z_stream* pZlibStream;
 
-      /**
-       * Use compressBound() to get an idea what zlib thinks
+      /* Use compressBound() to get an idea what zlib thinks
        * what the upper limit is of what it needs to compress
        * a buffer of x bytes. To that we add 18 bytes and the size
        * of an compression header.
@@ -128,8 +127,7 @@ bool SetupCompressionBuffers(JobControlRecord* jcr,
        *
        * The zlib compression workset is initialized here to minimize
        * the "per file" load. The jcr member is only set, if the init
-       * was successful.
-       */
+       * was successful. */
       wanted_compress_buf_size
           = compressBound(jcr->buf_size) + 18 + (int)sizeof(comp_stream_header);
       if (wanted_compress_buf_size > *compress_buf_size) {
@@ -160,15 +158,13 @@ bool SetupCompressionBuffers(JobControlRecord* jcr,
     case COMPRESS_LZO1X: {
       lzo_voidp pLzoMem;
 
-      /**
-       * For LZO1X compression the recommended value is:
+      /* For LZO1X compression the recommended value is:
        *    output_block_size = input_block_size + (input_block_size / 16) + 64
        * + 3 + sizeof(comp_stream_header)
        *
        * The LZO compression workset is initialized here to minimize
        * the "per file" load. The jcr member is only set, if the init
-       * was successful.
-       */
+       * was successful. */
       wanted_compress_buf_size = jcr->buf_size + (jcr->buf_size / 16) + 64 + 3
                                  + (int)sizeof(comp_stream_header);
       if (wanted_compress_buf_size > *compress_buf_size) {
@@ -203,15 +199,13 @@ bool SetupCompressionBuffers(JobControlRecord* jcr,
         level = Z_BEST_SPEED;
       }
 
-      /*
-       * For FASTLZ compression the recommended value is:
+      /* For FASTLZ compression the recommended value is:
        *    output_block_size = input_block_size + (input_block_size / 10 + 16 *
        * 2) + sizeof(comp_stream_header)
        *
        * The FASTLZ compression workset is initialized here to minimize
        * the "per file" load. The jcr member is only set, if the init
-       * was successful.
-       */
+       * was successful. */
       wanted_compress_buf_size = jcr->buf_size + (jcr->buf_size / 10 + 16 * 2)
                                  + (int)sizeof(comp_stream_header);
       if (wanted_compress_buf_size > *compress_buf_size) {
@@ -443,11 +437,9 @@ static bool decompress_with_zlib(JobControlRecord* jcr,
   char* wbuf;
   int status, real_compress_len;
 
-  /*
-   * NOTE! We only use uLong and Byte because they are
+  /* NOTE! We only use uLong and Byte because they are
    * needed by the zlib routines, they should not otherwise
-   * be used in Bareos.
-   */
+   * be used in Bareos. */
   if (sparse && want_data_stream) {
     wbuf = jcr->compress.inflate_buffer + OFFSET_FADDR_SIZE;
     compress_len = jcr->compress.inflate_buffer_size - OFFSET_FADDR_SIZE;
@@ -494,10 +486,8 @@ static bool decompress_with_zlib(JobControlRecord* jcr,
     return false;
   }
 
-  /*
-   * We return a decompressed data stream with the fileoffset encoded when this
-   * was a sparse stream.
-   */
+  /* We return a decompressed data stream with the fileoffset encoded when this
+   * was a sparse stream. */
   if (sparse && want_data_stream) {
     memcpy(jcr->compress.inflate_buffer, *data, OFFSET_FADDR_SIZE);
   }
@@ -564,10 +554,8 @@ static bool decompress_with_lzo(JobControlRecord* jcr,
     return false;
   }
 
-  /*
-   * We return a decompressed data stream with the fileoffset encoded when this
-   * was a sparse stream.
-   */
+  /* We return a decompressed data stream with the fileoffset encoded when this
+   * was a sparse stream. */
   if (sparse && want_data_stream) {
     memcpy(jcr->compress.inflate_buffer, *data, OFFSET_FADDR_SIZE);
   }
@@ -602,11 +590,9 @@ static bool decompress_with_fastlz(JobControlRecord* jcr,
       break;
   }
 
-  /*
-   * NOTE! We only use uInt and Bytef because they are
+  /* NOTE! We only use uInt and Bytef because they are
    * needed by the fastlz routines, they should not otherwise
-   * be used in Bareos.
-   */
+   * be used in Bareos. */
   memset(&stream, 0, sizeof(stream));
   stream.next_in = (Bytef*)*data + sizeof(comp_stream_header);
   stream.avail_in = (uInt)*length - sizeof(comp_stream_header);
@@ -656,10 +642,8 @@ static bool decompress_with_fastlz(JobControlRecord* jcr,
     break;
   }
 
-  /*
-   * We return a decompressed data stream with the fileoffset encoded when this
-   * was a sparse stream.
-   */
+  /* We return a decompressed data stream with the fileoffset encoded when this
+   * was a sparse stream. */
   if (sparse && want_data_stream) {
     memcpy(jcr->compress.inflate_buffer, *data, OFFSET_FADDR_SIZE);
   }
@@ -727,10 +711,8 @@ bool DecompressData(JobControlRecord* jcr,
         return false;
       }
 
-      /*
-       * Based on the compression used perform the actual decompression of the
-       * data.
-       */
+      /* Based on the compression used perform the actual decompression of the
+       * data. */
       switch (comp_magic) {
 #ifdef HAVE_LIBZ
         case COMPRESS_GZIP:

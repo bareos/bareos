@@ -3,7 +3,7 @@
 
    Copyright (C) 2005-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -63,10 +63,8 @@ int ReadAnsiIbmLabel(DeviceControlRecord* dcr)
   char* VolName = dcr->VolumeName;
   bool ok = false;
 
-  /*
-   * Read VOL1, HDR1, HDR2 labels, but ignore the data
-   * If tape read the following EOF mark, on disk do not read.
-   */
+  /* Read VOL1, HDR1, HDR2 labels, but ignore the data
+   * If tape read the following EOF mark, on disk do not read. */
   Dmsg0(100, "Read ansi label.\n");
   if (!dcr->dev->IsTape()) { return VOL_OK; }
 
@@ -285,10 +283,8 @@ bool WriteAnsiIbmLabels(DeviceControlRecord* dcr, int type, const char* VolName)
   time_t now;
   int len, status, label_type;
 
-  /*
-   * If the Device requires a specific label type use it,
-   * otherwise, use the type requested by the Director
-   */
+  /* If the Device requires a specific label type use it,
+   * otherwise, use the type requested by the Director */
   if (dcr->device_resource->label_type != B_BAREOS_LABEL) {
     label_type = dcr->device_resource->label_type; /* force label type */
   } else {
@@ -310,10 +306,8 @@ bool WriteAnsiIbmLabels(DeviceControlRecord* dcr, int type, const char* VolName)
         return false;
       }
 
-      /*
-       * ANSI labels have 6 characters, and are padded with spaces 'vol1\0' =>
-       * 'vol1   \0'
-       */
+      /* ANSI labels have 6 characters, and are padded with spaces 'vol1\0' =>
+       * 'vol1   \0' */
       strcpy(ansi_volname, VolName);
       for (int i = len; i < 6; i++) { ansi_volname[i] = ' '; }
       ansi_volname[6] = '\0'; /* only for debug */

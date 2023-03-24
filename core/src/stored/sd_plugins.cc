@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -267,12 +267,10 @@ static inline bool trigger_plugin_event(JobControlRecord*,
       case bRC_More:
         break;
       case bRC_Term:
-        /*
-         * Request to unload this plugin.
+        /* Request to unload this plugin.
          * As we remove the plugin from the list of plugins we decrement
          * the running index value so the next plugin gets triggered as
-         * that moved back a position in the alist.
-         */
+         * that moved back a position in the alist. */
         if (index) {
           UnloadPlugin(sd_plugin_list, ctx->plugin, *index);
           *index = ((*index) - 1);
@@ -559,10 +557,8 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
 
       len = strlen(plugin_name);
 
-      /*
-       * See if this plugin options are for an already instantiated plugin
-       * instance.
-       */
+      /* See if this plugin options are for an already instantiated plugin
+       * instance. */
       if (jcr->plugin_ctx_list) {
         foreach_alist (ctx, jcr->plugin_ctx_list) {
           if (ctx->instance == instance && ctx->plugin->file_len == len
