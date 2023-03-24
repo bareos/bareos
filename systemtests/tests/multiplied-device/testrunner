@@ -55,11 +55,11 @@ messages
 @# now purge and truncate
 @#
 @$out $tmp/log3.out
-purge volume=Full-0001
+purge volume=Full-0001 yes
 truncate volstatus=Purged drive=0 yes
-purge volume=Full-0002
+purge volume=Full-0002 yes
 truncate volstatus=Purged drive=1 yes
-purge volume=Full-0003
+purge volume=Full-0003 yes
 truncate volstatus=Purged drive=2 yes
 messages
 quit

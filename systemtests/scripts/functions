@@ -1052,26 +1052,30 @@ esac
 expect_grep()
 {
 
-local usage="Usage: ${FUNCNAME[0]} <expected_result> <log_file> [error message]\n    Find expected_result in log_file. Optionally display custom error_message if not found."
+local usage="Usage: ${FUNCNAME[0]} <expected_result> <log_file> [error message] [alternative result]\n    Find expected_result in log_file. Optionally, if not found, display custom error_message and/or grep for alternative that could be there instead."
 local expected_result="$1"
 local target_file="$2"
-local error_message="$3"
+local error_message=${3:-""}
+local possible_alternative=${4:-""}
 
-if [ $# -lt 2  ] || [ $# -gt 3  ]; then
+if [ $# -lt 2  ] || [ $# -gt 4  ]; then
     echo -e "${FUNCNAME[0]} : wrong number of parameters.\n${usage}"
     exit 1
 fi
 
 if [ ! -f ${target_file} ]; then
-    echo "\"${target_file}\" does not exist or is not a file."
+    echo "\"${target_file}\" does not exist or is not a file.\n"
     exit 1
 fi
 
 if ! grep -q "${expected_result}" "${target_file}"; then
-  echo "Fail: Expected line \"${expected_result}\" was not found in log file \"${target_file}\"." >&2
+  echo -e "\n*** Fail: Expected line \"${expected_result}\" was not found in log file \"${target_file}\"." >&2
   estat=1
   if [ "${error_message}" != "" ]; then
-    echo "-->${error_message}" >&2
+    echo "---Error--->${error_message}\n" >&2
+  fi
+  if [ "${possible_alternative}" != "" ]; then
+    echo -e "---Found instead--->$(grep "${possible_alternative}" ${target_file})\n" >&2
   fi
 fi
 }
@@ -1079,7 +1083,7 @@ fi
 expect_not_grep()
 {
 
-local usage="Usage: ${FUNCNAME[0]} <non_expected_result> <log_file> [error message]\n    Make sure non_expected_result is not in log_file. Optionally display custom error_message if not found."
+local usage="Usage: ${FUNCNAME[0]} <non_expected_result> <log_file> [error message]\n    Make sure non_expected_result is not in log_file. Optionally display custom error_message if found."
 local non_expected_result="$1"
 local target_file="$2"
 local error_message="$3"

@@ -30,6 +30,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - introduce php-cs-fixer and apply PSR-12 guidelines [PR #1403]
 - berrno_test.cc: accept both 271E and 273E [PR #1407]
 - Sanitizers: add ASAN options to avoid crashes [PR #1410]
+- dird: cats: adapt `purge` command to delete jobs with specific jobstatus and/or from specific pool [PR #1349]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -68,6 +69,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1345]: https://github.com/bareos/bareos/pull/1345
 [PR #1346]: https://github.com/bareos/bareos/pull/1346
 [PR #1348]: https://github.com/bareos/bareos/pull/1348
+[PR #1349]: https://github.com/bareos/bareos/pull/1349
 [PR #1351]: https://github.com/bareos/bareos/pull/1351
 [PR #1352]: https://github.com/bareos/bareos/pull/1352
 [PR #1354]: https://github.com/bareos/bareos/pull/1354

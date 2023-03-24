@@ -53,8 +53,8 @@ wait
 messages
 list jobs
 @# make sure we really restore the virtualfull
-purge volume=TestVolume001
-purge volume=TestVolume002
+purge volume=TestVolume001 yes
+purge volume=TestVolume002 yes
 status director
 status client
 status storage=File

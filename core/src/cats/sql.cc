@@ -117,6 +117,14 @@ int DbListHandler(void* ctx, int num_fields, char** row)
   return 0;
 }
 
+// Use to build a vector of Ids from a query.
+int DbIdListHandler(void* ctx, int num_fields, char** row)
+{
+  std::vector<DBId_t>* lctx = (std::vector<DBId_t>*)ctx;
+  if (num_fields == 1 && row[0]) { lctx->push_back(std::stoul(row[0])); }
+  return 0;
+}
+
 /**
  * specific context passed from db_check_max_connections to
  * DbMaxConnectionsHandler.
