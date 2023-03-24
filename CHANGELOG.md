@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and since Bareos version 20 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [22.0.3] - 2023-03-24
 
 ### Changed
 - bsmtp: fix and update code change cli parsing to cli11 [PR #1376]
@@ -273,6 +273,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [22.0.0]: https://github.com/bareos/bareos/releases/tag/Release%2F22.0.0
 [22.0.1]: https://github.com/bareos/bareos/releases/tag/Release%2F22.0.1
 [22.0.2]: https://github.com/bareos/bareos/releases/tag/Release%2F22.0.2
+[22.0.3]: https://github.com/bareos/bareos/releases/tag/Release%2F22.0.3
 [Issue #1429]: https://bugs.bareos.org/view.php?id=1429
 [Issue #1445]: https://bugs.bareos.org/view.php?id=1445
 [Issue #1450]: https://bugs.bareos.org/view.php?id=1450
@@ -480,4 +481,3 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1408]: https://github.com/bareos/bareos/pull/1408
 [PR #1411]: https://github.com/bareos/bareos/pull/1411
 [PR #1416]: https://github.com/bareos/bareos/pull/1416
-[unreleased]: https://github.com/bareos/bareos/tree/master
