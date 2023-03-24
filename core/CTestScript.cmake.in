@@ -21,7 +21,6 @@ set(CTEST_BINARY_DIRECTORY @CMAKE_BINARY_DIR@)
 
 ctest_start("Continuous")
 ctest_test(EXCLUDE_LABEL broken
-           PARALLEL_LEVEL 5
            @REPEAT_UNTIL@
            )
 ctest_coverage()
