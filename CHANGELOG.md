@@ -7,17 +7,17 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Changed
 - bsmtp: fix and update code change cli parsing to cli11 [PR #1376]
-- restore: fix failed restores showing `Restore ok with warning` [PR #1388]
 - FreeBSD: build cleanup [PR #1380]
-- filed: avoid reading from ephemeral buffer [PR #1384]
-- checkpoints: fix performance drop on big volume restores [PR #1393]
 - introduce php-cs-fixer and apply PSR-12 guidelines [PR #1405]
 - berrno_test.cc: accept both 271E and 273E [PR #1408]
 - Sanitizers: add ASAN options to avoid crashes [PR #1411]
 
 ### Fixed
-- VMware Plugin: fix restore to different vmname [PR #1397]
+- filed: avoid reading from ephemeral buffer [PR #1384]
+- restore: fix failed restores showing `Restore ok with warning` [PR #1388]
 - vmware_cbt_tool.py: pyVmomi 8.x compatibility [PR #1391]
+- checkpoints: fix performance drop on big volume restores [PR #1393]
+- VMware Plugin: fix restore to different vmname [PR #1397]
 - dird: Fix problem with reoccuring files in always incremental [PR #1416]
 
 ### Documentation
