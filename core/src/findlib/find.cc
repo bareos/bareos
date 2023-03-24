@@ -1003,11 +1003,13 @@ void PrepareFileForSending(JobControlRecord* jcr,
 {
   std::size_t closed_channels = 0;
   while (closed_channels != outs.size()) {
+    bool found_file = false;
     for (int i = 0; i < (int)outs.size(); ++i) {
       auto& out = outs[i];
       if (out.empty()) continue;
       std::optional<stated_file> file;
       while ((file = out.try_get())) {
+	found_file = true;
 	stated_file& f = file.value();
 	BareosFilePacket bfd;
 	binit(&bfd);
@@ -1060,6 +1062,9 @@ void PrepareFileForSending(JobControlRecord* jcr,
 	closed_channels += 1;
       }
     }
+    // if we have not gotten any file then sleep for a bit instead
+    // of spinning here
+    if (!found_file) { std::this_thread::sleep_for(std::chrono::milliseconds(30)); }
   }
 }
 
