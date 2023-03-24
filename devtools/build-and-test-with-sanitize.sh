@@ -31,9 +31,8 @@ fi
 
 nproc="$(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu)"
 
-if [ -z ${CTEST_PARALLEL_LEVEL+x} ]; then
-  export CTEST_PARALLEL_LEVEL="$nproc"
-fi
+export CTEST_PARALLEL_LEVEL=20
+
 if [ -z ${CMAKE_BUILD_PARALLEL_LEVEL+x} ]; then
   export CMAKE_BUILD_PARALLEL_LEVEL="$nproc"
 fi
@@ -52,6 +51,11 @@ cmake --build cmake-build
 export ASAN_OPTIONS=intercept_tls_get_addr=0
 
 cd cmake-build
+
+# preset CTestCostData.txt
+mkdir -p Temporary/Testing
+cp ../CTestCostData.txt Temporary/Testing
+
 export REGRESS_DEBUG=1
 ctest \
   --script CTestScript.cmake \
