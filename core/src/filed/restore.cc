@@ -468,14 +468,12 @@ void DoRestore(JobControlRecord* jcr)
   if (have_acl) {
     jcr->fd_impl->acl_data = std::make_unique<AclData>();
     jcr->fd_impl->acl_data->u.parse
-        = (acl_parse_data_t*)malloc(sizeof(acl_parse_data_t));
-    memset(jcr->fd_impl->acl_data->u.parse, 0, sizeof(acl_parse_data_t));
+      = (acl_parse_data_t*)calloc(1, sizeof(acl_parse_data_t));
   }
   if (have_xattr) {
     jcr->fd_impl->xattr_data = std::make_unique<XattrData>();
     jcr->fd_impl->xattr_data->u.parse
-        = (xattr_parse_data_t*)malloc(sizeof(xattr_parse_data_t));
-    memset(jcr->fd_impl->xattr_data->u.parse, 0, sizeof(xattr_parse_data_t));
+      = (xattr_parse_data_t*)calloc(1, sizeof(xattr_parse_data_t));
   }
 
   while (BgetMsg(sd) >= 0 && !JobCanceled(jcr)) {

@@ -88,20 +88,22 @@ struct save_file_timing {
   save_file_timing(FindFilesPacket* ff_pkt)
       : start{std::nullopt}
       , ff_pkt{ff_pkt}
-      , data_sent{false}
-      , checksum{std::nullopt}
-      , signing{std::nullopt}
+      , checksum{0}
+      , signing{0}
+      , sending{0}
       , reading(0)
+      , acling{0}
+      , xattring{0}
   {
   }
 
   void start_clock() { start = std::chrono::steady_clock::now(); }
 
-  void send_data(bool did_send_data) { data_sent = did_send_data; }
-
-  void check(std::chrono::nanoseconds time) { checksum = time; }
-
-  void sign(std::chrono::nanoseconds time) { signing = time; }
+  void send(std::chrono::nanoseconds time) { sending += time; }
+  void check(std::chrono::nanoseconds time) { checksum += time; }
+  void sign(std::chrono::nanoseconds time) { signing += time; }
+  void acl(std::chrono::nanoseconds time) { acling += time; }
+  void xattr(std::chrono::nanoseconds time) { xattring += time; }
 
   ~save_file_timing()
   {
@@ -120,22 +122,20 @@ struct save_file_timing {
     std::string read_str{};
     std::string throughput_str{};
 
-    if (checksum) {
-      std::chrono::nanoseconds dur = *checksum;
+    if (checksum.count()) {
       // 100.00 are 6 characters
       checksum_str = fmt::format("     -computing checksum: {} ({:6.2f}%)\n",
-                                 FormatDuration(dur).c_str(),
-                                 (checksum ? dur.count() : 0) / (double)ns);
+                                 FormatDuration(checksum).c_str(),
+                                 checksum.count() / (double)ns);
     }
 
-    if (signing) {
-      std::chrono::nanoseconds dur = *signing;
+    if (signing.count()) {
       signing_str = fmt::format("     -computing signage: {} ({:6.2f}%)\n",
-                                FormatDuration(dur).c_str(),
-                                (checksum ? dur.count() : 0) / (double)ns);
+                                FormatDuration(signing).c_str(),
+                                signing.count() / (double)ns);
     }
 
-    if (data_sent) {
+    if (sending.count()) {
       read_str = fmt::format("     -reading the file:   {} ({:6.2f}%)\n",
                              FormatDuration(reading).c_str(),
                              reading.count() / (double)ns);
@@ -153,21 +153,25 @@ struct save_file_timing {
           "  -Time spent:            %s\n%s%s%s"
           "  -Data sent:             %6s\n%s",
           ff_pkt->fname, FormatDuration(total).c_str(), checksum_str.c_str(),
-          signing_str.c_str(), read_str.c_str(), data_sent ? "yes" : "no",
+          signing_str.c_str(), read_str.c_str(), sending.count() ? "yes" : "no",
           throughput_str.c_str());
-    ff_pkt->send_total += total;
-    using namespace std::literals::chrono_literals;
-    ff_pkt->checksum_total += checksum.value_or(0ns);
-    ff_pkt->signing_total += signing.value_or(0ns);
+    ff_pkt->saving_total += total;
+    ff_pkt->checksum_total += checksum;
+    ff_pkt->signing_total += signing;
     ff_pkt->reading_total += reading;
+    ff_pkt->sending_total += sending;
+    ff_pkt->xattr_total += xattring;
+    ff_pkt->acl_total += acling;
   }
 
   std::optional<std::chrono::time_point<std::chrono::steady_clock>> start;
   FindFilesPacket* ff_pkt;
-  bool data_sent;
-  std::optional<std::chrono::nanoseconds> checksum;
-  std::optional<std::chrono::nanoseconds> signing;
+  std::chrono::nanoseconds checksum;
+  std::chrono::nanoseconds signing;
+  std::chrono::nanoseconds sending;
   std::chrono::nanoseconds reading;
+  std::chrono::nanoseconds acling;
+  std::chrono::nanoseconds xattring;
 };
 
 /* Forward referenced functions */
@@ -352,71 +356,93 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
   auto end = std::chrono::steady_clock::now();
   std::chrono::nanoseconds total_time = end - start;
 
-  auto send_total = jcr->fd_impl->ff->send_total;
+  auto saving_total = jcr->fd_impl->ff->saving_total;
+  auto sending_total = jcr->fd_impl->ff->sending_total;
+  auto xattr_total = jcr->fd_impl->ff->xattr_total;
+  auto acl_total = jcr->fd_impl->ff->acl_total;
   auto accept_total = jcr->fd_impl->ff->accept_total;
   auto checksum_total = jcr->fd_impl->ff->checksum_total;
   auto signing_total = jcr->fd_impl->ff->signing_total;
   auto reading_total = jcr->fd_impl->ff->reading_total;
+
   auto total_ns = total_time.count();
-  auto send_ns = send_total.count();
+  auto saving_ns = saving_total.count();
   auto accept_ns = accept_total.count();
   auto checksum_ns = checksum_total.count();
   auto signing_ns = signing_total.count();
   auto reading_ns = reading_total.count();
+  auto sending_ns = sending_total.count();
+  auto xattr_ns = xattr_total.count();
+  auto acl_ns = acl_total.count();
 
   double accept_pc = (double)accept_ns / (double)total_ns;
-  double send_pc = (double)send_ns / (double)total_ns;
-  double checksum_pc = (double)checksum_ns / (double)send_ns;
-  double signing_pc = (double)signing_ns / (double)send_ns;
-  double reading_pc = (double)reading_ns / (double)send_ns;
+  double saving_pc = (double)saving_ns / (double)total_ns;
+  double checksum_pc = (double)checksum_ns / (double)saving_ns;
+  double signing_pc = (double)signing_ns / (double)saving_ns;
+  double reading_pc = (double)reading_ns / (double)saving_ns;
+  double sending_pc = (double)sending_ns / (double)saving_ns;
+  double xattr_pc = (double)xattr_ns / (double)saving_ns;
+  double acl_pc = (double)acl_ns / (double)saving_ns;
 
   int64_t job_bytes = jcr->JobBytes;
   // from B/ns -> MB/s
   constexpr double mbps = (double)1e9 / (double)(1024 * 1024);
 
   double total_tp = job_bytes / (total_ns / mbps);
-  double send_tp = job_bytes / (send_ns / mbps);
+  double saving_tp = job_bytes / (saving_ns / mbps);
 
   Dmsg0(400,
         "FindFiles jobid=%u\n"
         "  *Time spent    %s\n"
-        "    -Sending:    %s (%6.2lf%%)\n"
+        "    -Saving:     %s (%6.2lf%%)\n"
+        "      -Sending:  %s (%6.2lf%%)\n"
         "      -Checksum: %s (%6.2lf%%)\n"
         "      -Signing:  %s (%6.2lf%%)\n"
         "      -Reading:  %s (%6.2lf%%)\n"
+        "      -Xattr:    %s (%6.2lf%%)\n"
+        "      -Acl:      %s (%6.2lf%%)\n"
         "    -Accepting:  %s (%6.2lf%%)\n"
         "  *Throughput (send %lld bytes)\n"
         "    -Total:      %20.2lfMB/s\n"
         "    -Sending:    %20.2lfMB/s\n",
         jcr->JobId, FormatDuration(total_time).c_str(),
-        FormatDuration(send_total).c_str(), 100 * send_pc,
+        FormatDuration(saving_total).c_str(), 100 * saving_pc,
+        FormatDuration(sending_total).c_str(), 100 * sending_pc,
         FormatDuration(checksum_total).c_str(), 100 * checksum_pc,
         FormatDuration(signing_total).c_str(), 100 * signing_pc,
         FormatDuration(reading_total).c_str(), 100 * reading_pc,
+        FormatDuration(xattr_total).c_str(), 100 * xattr_pc,
+        FormatDuration(acl_total).c_str(), 100 * acl_pc,
         FormatDuration(accept_total).c_str(), 100 * accept_pc, job_bytes,
-        total_tp, send_tp);
+        total_tp, saving_tp);
 
   Jmsg(jcr, M_INFO, 0,
         "performance info jobid=%u\n"
         "  *Time spent    %s\n"
-        "    -Sending:    %s (%6.2lf%%)\n"
+        "    -Saving:     %s (%6.2lf%%)\n"
+        "      -Sending:  %s (%6.2lf%%)\n"
         "      -Checksum: %s (%6.2lf%%)\n"
         "      -Signing:  %s (%6.2lf%%)\n"
         "      -Reading:  %s (%6.2lf%%)\n"
+        "      -Xattr:    %s (%6.2lf%%)\n"
+        "      -Acl:      %s (%6.2lf%%)\n"
         "    -Accepting:  %s (%6.2lf%%)\n"
         "  *Throughput (send %lld bytes)\n"
         "    -Total:      %20.2lfMB/s\n"
         "    -Sending:    %20.2lfMB/s\n",
         jcr->JobId, FormatDuration(total_time).c_str(),
-        FormatDuration(send_total).c_str(), 100 * send_pc,
+        FormatDuration(saving_total).c_str(), 100 * saving_pc,
+        FormatDuration(sending_total).c_str(), 100 * sending_pc,
         FormatDuration(checksum_total).c_str(), 100 * checksum_pc,
         FormatDuration(signing_total).c_str(), 100 * signing_pc,
         FormatDuration(reading_total).c_str(), 100 * reading_pc,
+        FormatDuration(xattr_total).c_str(), 100 * xattr_pc,
+        FormatDuration(acl_total).c_str(), 100 * acl_pc,
         FormatDuration(accept_total).c_str(), 100 * accept_pc, job_bytes,
-        total_tp, send_tp);
+        total_tp, saving_tp);
 
   using namespace std::literals::chrono_literals;
-  jcr->fd_impl->ff->send_total = 0ns;
+  jcr->fd_impl->ff->saving_total = 0ns;
   jcr->fd_impl->ff->accept_total = 0ns;
 
   if (have_acl && jcr->fd_impl->acl_data->u.build->nr_errors > 0) {
@@ -900,7 +926,12 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 
   // Digests and encryption are only useful if there's file data
   if (has_file_data) {
+    std::chrono::time_point<std::chrono::steady_clock> start
+        = std::chrono::steady_clock::now();
     if (!SetupEncryptionDigests(bsctx)) { goto good_rtn; }
+    std::chrono::time_point<std::chrono::steady_clock> end
+        = std::chrono::steady_clock::now();
+    timing.check(end - start);
   }
 
   if (!IsBopen(&ff_pkt->bfd))
@@ -1020,9 +1051,15 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       tid = NULL;
     }
 
-    timing.send_data(true);
+    std::chrono::time_point<std::chrono::steady_clock> start
+        = std::chrono::steady_clock::now();
     status = send_data(jcr, data_stream, ff_pkt, bsctx.digest,
                        bsctx.signing_digest, &timing);
+    std::chrono::time_point<std::chrono::steady_clock> end
+        = std::chrono::steady_clock::now();
+
+    std::chrono::nanoseconds time_taken = end - start;
+    timing.send(time_taken);
 
     if (BitIsSet(FO_CHKCHANGES, ff_pkt->flags)) { HasFileChanged(jcr, ff_pkt); }
 
@@ -1043,25 +1080,49 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
   // Save ACLs when requested and available for anything not being a symlink.
   if (have_acl) {
     if (BitIsSet(FO_ACL, ff_pkt->flags) && ff_pkt->type != FT_LNK) {
+    std::chrono::time_point<std::chrono::steady_clock> start
+        = std::chrono::steady_clock::now();
       if (!DoBackupAcl(jcr, ff_pkt)) { goto bail_out; }
+    std::chrono::time_point<std::chrono::steady_clock> end
+        = std::chrono::steady_clock::now();
+
+    timing.acl(end - start);
     }
   }
 
   // Save Extended Attributes when requested and available for all files.
   if (have_xattr) {
     if (BitIsSet(FO_XATTR, ff_pkt->flags)) {
+      std::chrono::time_point<std::chrono::steady_clock> start
+        = std::chrono::steady_clock::now();
       if (!DoBackupXattr(jcr, ff_pkt)) { goto bail_out; }
+      std::chrono::time_point<std::chrono::steady_clock> end
+        = std::chrono::steady_clock::now();
+
+      timing.xattr(end - start);
     }
   }
 
   // Terminate the signing digest and send it to the Storage daemon
   if (bsctx.signing_digest) {
+    std::chrono::time_point<std::chrono::steady_clock> start
+        = std::chrono::steady_clock::now();
     if (!TerminateSigningDigest(bsctx)) { goto bail_out; }
+    std::chrono::time_point<std::chrono::steady_clock> end
+        = std::chrono::steady_clock::now();
+
+    timing.sign(end - start);
   }
 
   // Terminate any digest and send it to Storage daemon
   if (bsctx.digest) {
+    std::chrono::time_point<std::chrono::steady_clock> start
+        = std::chrono::steady_clock::now();
     if (!TerminateDigest(bsctx)) { goto bail_out; }
+    std::chrono::time_point<std::chrono::steady_clock> end
+        = std::chrono::steady_clock::now();
+
+    timing.check(end - start);
   }
 
   // Check if original file has a digest, and send it
