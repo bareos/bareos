@@ -8,7 +8,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Changed
 - systemtests: `rename virtualfull` -> `virtualfull-basic` ,`bareos` -> `bareos-basic`, `bconsole` -> `bconsole-basic` [PR #1364]
 - FreeBSD: build cleanup [PR #1381]
-- filed: avoid reading from ephemeral buffer [PR #1385]
 - config: set `Maximum Connections` to a high default value [PR #1400]
 - introduce php-cs-fixer and apply PSR-12 guidelines [PR #1406]
 - berrno_test.cc: accept both 271E and 273E [PR #1409]
@@ -16,6 +15,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Fixed
 - stored: fix crashes of storage tools when autoxflate plugin is loaded [PR #1370]
 - dird: Fix problem with reoccuring files in always incremental [PR #1417]
+- filed: avoid reading from ephemeral buffer [PR #1385]
 
 ## [21.1.6] - 2022-12-12
 
