@@ -56,10 +56,7 @@ class Device; /* for forward reference */
 
 /* Tape label and version definitions */
 #define BareosId "Bareos 2.0 immortal\n"
-#define OldBaculaId "Bacula 1.0 immortal\n"
-#define OlderBaculaId "Bacula 0.9 mortal\n"
 #define BareosTapeVersion 20
-#define OldCompatibleBareosTapeVersion1 11
 
 /**
  * This is the Media structure for a block header

@@ -102,7 +102,6 @@ class ClientResource
   uint32_t max_network_buffer_size = 0; /* Max network buf size */
   uint32_t jcr_watchdog_time = 0;       /* Absolute time after which a Job gets
                                        terminated       regardless of its progress */
-  bool compatible = false;              /* Support old protocol keywords */
   bool allow_bw_bursting = false; /* Allow bursting with bandwidth limiting */
   bool pki_sign
       = false; /* Enable Data Integrity Verification via Digital Signatures */

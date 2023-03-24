@@ -163,27 +163,13 @@ int ReadAnsiIbmLabel(DeviceControlRecord* dcr)
           return VOL_LABEL_ERROR;
         }
 
-        if (me->compatible) {
-          if (!bstrncmp("BACULA.DATA", &label[4], 11)
-              && !bstrncmp("BAREOS.DATA", &label[4], 11)) {
-            Dmsg1(100,
-                  "HD1 not Bacula/Bareos label. Wanted BACULA.DATA/BAREOS.DATA "
-                  "got %11s\n",
-                  &label[4]);
-            Mmsg1(jcr->errmsg,
-                  _("ANSI/IBM Volume \"%s\" does not belong to Bareos.\n"),
-                  dcr->dev->VolHdr.VolumeName);
-            return VOL_NAME_ERROR; /* Not a Bareos label */
-          }
-        } else {
-          if (!bstrncmp("BAREOS.DATA", &label[4], 11)) {
-            Dmsg1(100, "HD1 not Bareos label. Wanted BAREOS.DATA got %11s\n",
-                  &label[4]);
-            Mmsg1(jcr->errmsg,
-                  _("ANSI/IBM Volume \"%s\" does not belong to Bareos.\n"),
-                  dcr->dev->VolHdr.VolumeName);
-            return VOL_NAME_ERROR; /* Not a Bareos label */
-          }
+        if (!bstrncmp("BAREOS.DATA", &label[4], 11)) {
+          Dmsg1(100, "HD1 not Bareos label. Wanted BAREOS.DATA got %11s\n",
+                &label[4]);
+          Mmsg1(jcr->errmsg,
+                _("ANSI/IBM Volume \"%s\" does not belong to Bareos.\n"),
+                dcr->dev->VolHdr.VolumeName);
+          return VOL_NAME_ERROR; /* Not a Bareos label */
         }
         Dmsg0(100, "Got HDR1 label\n");
         break;
@@ -360,11 +346,8 @@ bool WriteAnsiIbmLabels(DeviceControlRecord* dcr, int type, const char* VolName)
       SerBegin(label, sizeof(label));
       SerBytes(labels[type], 3);
       SerBytes("1", 1);
-      if (me->compatible) {
-        SerBytes("BACULA.DATA", 11); /* Filename field */
-      } else {
-        SerBytes("BAREOS.DATA", 11); /* Filename field */
-      }
+      SerBytes("BAREOS.DATA", 11); /* Filename field */
+
       SerBegin(&label[21], sizeof(label) - 21); /* fileset field */
       SerBytes(ansi_volname, 6);                /* write Vol Ser No. */
       SerBegin(&label[27], sizeof(label) - 27);

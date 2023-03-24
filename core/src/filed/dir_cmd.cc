@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -817,8 +817,8 @@ static bool SetbandwidthCmd(JobControlRecord* jcr)
       }
       FreeJcr(cjcr);
     }
-  } else {                          /* No job requested, apply globally */
-    me->max_bandwidth_per_job = bw; /* Overwrite directive */
+  } else {                           // No job requested, apply globally
+    me->max_bandwidth_per_job = bw;  // Overwrite directive
   }
 
   return dir->fsend(OKBandwidth);
@@ -948,11 +948,6 @@ static bool RunbeforeCmd(JobControlRecord* jcr)
   RunScript* script;
   BareosSocket* dir = jcr->dir_bsock;
 
-  if (!me->compatible) {
-    dir->fsend(BadRunBeforeJob);
-    return false;
-  }
-
   Dmsg1(100, "RunbeforeCmd: %s", dir->msg);
   cmd = GetMemory(dir->message_length + 1);
   if (sscanf(dir->msg, runbeforecmd, cmd) != 1) {
@@ -1011,11 +1006,6 @@ static bool RunafterCmd(JobControlRecord* jcr)
   BareosSocket* dir = jcr->dir_bsock;
   POOLMEM* cmd;
   RunScript* script;
-
-  if (!me->compatible) {
-    dir->fsend(BadRunAfterJob);
-    return false;
-  }
 
   Dmsg1(100, "RunafterCmd: %s", dir->msg);
   cmd = GetMemory(dir->message_length + 1);
@@ -1775,10 +1765,6 @@ bool GetWantedCryptoCipher(JobControlRecord* jcr, crypto_cipher_t* cipher)
 
   // See if fileset forced a certain cipher.
   if (wanted_cipher == CRYPTO_CIPHER_NONE) { wanted_cipher = me->pki_cipher; }
-
-  /* See if we are in compatible mode then we are hardcoded to
-   * CRYPTO_CIPHER_AES_128_CBC. */
-  if (me->compatible) { wanted_cipher = CRYPTO_CIPHER_AES_128_CBC; }
 
   /* See if FO_FORCE_ENCRYPT is set and encryption is not configured for the
    * filed. */

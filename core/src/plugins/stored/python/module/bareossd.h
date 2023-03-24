@@ -130,8 +130,7 @@ MOD_INIT(bareossd)
   ConstSet_StrLong(pDictsdVariable, bsdVarJobErrors, 13);
   ConstSet_StrLong(pDictsdVariable, bsdVarJobFiles, 14);
   ConstSet_StrLong(pDictsdVariable, bsdVarJobBytes, 15);
-  ConstSet_StrLong(pDictsdVariable, bsdVarCompatible, 16);
-  ConstSet_StrLong(pDictsdVariable, bsdVarPluginDir, 17);
+  ConstSet_StrLong(pDictsdVariable, bsdVarPluginDir, 16);
   if (PyModule_AddObject(m, bsdVariable, pDictsdVariable)) {
     return MOD_ERROR_VAL;
   }

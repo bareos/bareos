@@ -53,7 +53,6 @@ const int debuglevel = 50;
  *  53 02Apr15 - Added setdebug timestamp
  *  54 29Oct15 - Added getSecureEraseCmd
  */
-static char OK_hello_compat[] = "2000 OK Hello 5\n";
 static char OK_hello[] = "2000 OK Hello 54\n";
 
 static char Dir_sorry[] = "2999 Authentication failed.\n";
@@ -148,7 +147,7 @@ bool AuthenticateDirector(JobControlRecord* jcr)
 
   jcr->fd_impl->director = director;
 
-  return dir->fsend("%s", (me->compatible) ? OK_hello_compat : OK_hello);
+  return dir->fsend("%s", OK_hello);
 }
 
 // Authenticate with a remote director.

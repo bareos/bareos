@@ -159,9 +159,7 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
     Mmsg(jcr->errmsg, _("Could not UnSerialize Volume label: ERR=%s\n"),
          dcr->dev->print_errmsg());
     Dmsg1(130, "%s", jcr->errmsg);
-  } else if (!bstrcmp(dcr->dev->VolHdr.Id, BareosId)
-             && !bstrcmp(dcr->dev->VolHdr.Id, OldBaculaId)
-             && !bstrcmp(dcr->dev->VolHdr.Id, OlderBaculaId)) {
+  } else if (!bstrcmp(dcr->dev->VolHdr.Id, BareosId)) {
     Mmsg(jcr->errmsg, _("Volume Header Id bad: %s\n"), dcr->dev->VolHdr.Id);
     Dmsg1(130, "%s", jcr->errmsg);
   } else {
@@ -187,8 +185,7 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
    * then read the Bareos Volume label. Now we need to
    * make sure we have the right Volume.
    */
-  if (dcr->dev->VolHdr.VerNum != BareosTapeVersion
-      && dcr->dev->VolHdr.VerNum != OldCompatibleBareosTapeVersion1) {
+  if (dcr->dev->VolHdr.VerNum != BareosTapeVersion) {
     Mmsg(jcr->errmsg,
          _("Volume on %s has wrong Bareos version. Wanted %d got %d\n"),
          dcr->dev->print_name(), BareosTapeVersion, dcr->dev->VolHdr.VerNum);
@@ -537,13 +534,9 @@ void CreateVolumeLabel(Device* dev, const char* VolName, const char* PoolName)
 
   dev->ClearVolhdr(); /* clear any old volume info */
 
-  if (me->compatible) {
-    bstrncpy(dev->VolHdr.Id, OldBaculaId, sizeof(dev->VolHdr.Id));
-    dev->VolHdr.VerNum = OldCompatibleBareosTapeVersion1;
-  } else {
-    bstrncpy(dev->VolHdr.Id, BareosId, sizeof(dev->VolHdr.Id));
-    dev->VolHdr.VerNum = BareosTapeVersion;
-  }
+  bstrncpy(dev->VolHdr.Id, BareosId, sizeof(dev->VolHdr.Id));
+  dev->VolHdr.VerNum = BareosTapeVersion;
+
   dev->VolHdr.LabelType = PRE_LABEL; /* Mark tape as unused */
   bstrncpy(dev->VolHdr.VolumeName, VolName, sizeof(dev->VolHdr.VolumeName));
   bstrncpy(dev->VolHdr.PoolName, PoolName, sizeof(dev->VolHdr.PoolName));
@@ -587,13 +580,9 @@ static void CreateSessionLabel(DeviceControlRecord* dcr,
 
   rec->data = CheckPoolMemorySize(rec->data, SER_LENGTH_Session_Label);
   SerBegin(rec->data, SER_LENGTH_Session_Label);
-  if (me->compatible) {
-    SerString(OldBaculaId);
-    ser_uint32(OldCompatibleBareosTapeVersion1);
-  } else {
-    SerString(BareosId);
-    ser_uint32(BareosTapeVersion);
-  }
+  SerString(BareosId);
+  ser_uint32(BareosTapeVersion);
+
 
   ser_uint32(jcr->JobId);
 

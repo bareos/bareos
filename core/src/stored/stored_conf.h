@@ -119,9 +119,8 @@ class StorageResource
   utime_t client_wait = {0};            /**< Time to wait for FD to connect */
   uint32_t max_network_buffer_size = 0; /**< Max network buf size */
   bool autoxflateonreplication
-      = false;             /**< Perform autoxflation when replicating data
-                            */
-  bool compatible = false; /**< Write compatible format */
+      = false; /**< Perform autoxflation when replicating data
+                */
   bool allow_bw_bursting = false; /**< Allow bursting with bandwidth limiting */
   bool ndmp_enable = false;       /**< Enable NDMP protocol listener */
   bool ndmp_snooping = false;     /**< Enable NDMP protocol snooping */

@@ -238,18 +238,6 @@ static PyObject* PyBareosGetValue(PyObject*, PyObject* args)
       }
       break;
     }
-    case bsdVarCompatible: {
-      bool value;
-
-      if (bareos_core_functions->getBareosValue(NULL, (bsdrVariable)var, &value)
-          == bRC_OK) {
-        long bool_value;
-
-        bool_value = (value) ? 1 : 0;
-        pRetVal = PyBool_FromLong(bool_value);
-      }
-      break;
-    }
     case bsdVarPluginDir: {
       char* value = NULL;
 

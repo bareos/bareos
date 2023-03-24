@@ -346,9 +346,6 @@ char* win32_cgets(char* buffer, int len);
 
 int WSA_Init(void);
 void Win32TSDCleanup();
-void Win32ClearCompatible();
-void Win32SetCompatible();
-bool Win32IsCompatible();
 
 #if defined(HAVE_MINGW)
 void closelog();

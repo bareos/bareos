@@ -27,6 +27,6 @@ int encode_attribsEx(JobControlRecord* jcr,
 bool SetAttributes(JobControlRecord* jcr,
                    Attributes* attr,
                    BareosFilePacket* ofd);
-int SelectDataStream(FindFilesPacket* ff_pkt, bool compatible);
+int SelectDataStream(FindFilesPacket* ff_pkt);
 
 #endif  // BAREOS_FINDLIB_ATTRIBS_H_

@@ -290,15 +290,6 @@ void Win32TSDCleanup()
   unlock_mutex(tsd_mutex);
 }
 
-// Special flag used to enable or disable Bacula compatible win32 encoding.
-static bool win32_bacula_compatible = true;
-
-void Win32ClearCompatible() { win32_bacula_compatible = false; }
-
-void Win32SetCompatible() { win32_bacula_compatible = true; }
-
-bool Win32IsCompatible() { return win32_bacula_compatible; }
-
 // Forward referenced functions
 const char* errorString(void);
 
@@ -1182,23 +1173,6 @@ static inline ssize_t GetSymlinkData(const char* filename,
   return nrconverted;
 }
 
-// Encode file sttributes using the old Bacula method.
-static inline void EncodeWindowsFlagsCompatible(DWORD pdwFileAttributes,
-                                                struct stat* sb)
-{
-  if (pdwFileAttributes & FILE_ATTRIBUTE_READONLY) {
-    sb->st_mode &= ~(S_IRUSR | S_IRGRP | S_IROTH); /* Clear all read bits */
-  }
-
-  if (pdwFileAttributes & FILE_ATTRIBUTE_SYSTEM) {
-    sb->st_mode &= ~S_IRWXO; /* Remove everything for other */
-  }
-
-  if (pdwFileAttributes & FILE_ATTRIBUTE_HIDDEN) {
-    sb->st_mode |= S_ISVTX; /* Use sticky bit -> hidden */
-  }
-}
-
 /**
  * This is called for directories, and reparse points and is used to
  * get some special attributes like the type of reparse point etc..
@@ -1338,13 +1312,8 @@ static int GetWindowsFileInfo(const char* filename,
 
   sb->st_mode = 0777;
 
-  // See if we need to encode in the old Bacula compatible way.
-  if (win32_bacula_compatible) {
-    EncodeWindowsFlagsCompatible(*pdwFileAttributes, sb);
-  } else {
-    // We store the full windows file attributes into st_rdev.
-    sb->st_rdev = *pdwFileAttributes;
-  }
+  // We store the full windows file attributes into st_rdev.
+  sb->st_rdev = *pdwFileAttributes;
 
   if (is_directory) {
     // Directory
@@ -1483,13 +1452,8 @@ int fstat(intptr_t fd, struct stat* sb)
   sb->st_mode = 0777;
   sb->st_mode |= S_IFREG;
 
-  // See if we need to encode in the old Bacula compatible way.
-  if (win32_bacula_compatible) {
-    EncodeWindowsFlagsCompatible(info.dwFileAttributes, sb);
-  } else {
-    // We store the full windows file attributes into st_rdev.
-    sb->st_rdev = info.dwFileAttributes;
-  }
+  // We store the full windows file attributes into st_rdev.
+  sb->st_rdev = info.dwFileAttributes;
 
   Dmsg3(debuglevel, "st_rdev=%d sizino=%d ino=%lld\n", sb->st_rdev,
         sizeof(sb->st_ino), (long long)sb->st_ino);
@@ -1664,11 +1628,6 @@ int stat(const char* filename, struct stat* sb)
     bool use_fallback_data = true;
 
     sb->st_mode = 0777;
-
-    // See if we need to encode in the old Bacula compatible way.
-    if (win32_bacula_compatible) {
-      EncodeWindowsFlagsCompatible(data.dwFileAttributes, sb);
-    }
 
     // We store the full windows file attributes into st_rdev.
     sb->st_rdev = data.dwFileAttributes;

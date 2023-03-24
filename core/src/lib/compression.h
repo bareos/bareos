@@ -23,7 +23,6 @@
 
 const char* cmprs_algo_to_text(uint32_t compression_algorithm);
 bool SetupCompressionBuffers(JobControlRecord* jcr,
-                             bool compatible,
                              uint32_t compression_algorithm,
                              uint32_t* compress_buf_size);
 bool SetupDecompressionBuffers(JobControlRecord* jcr,

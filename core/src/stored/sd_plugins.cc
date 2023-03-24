@@ -650,11 +650,6 @@ static bRC bareosGetValue(PluginContext* ctx, bsdrVariable var, void* value)
   if (!value) { return bRC_Error; }
 
   switch (var) { /* General variables, no need of ctx */
-    case bsdVarCompatible:
-      *((bool*)value) = me->compatible;
-      Dmsg1(debuglevel, "sd-plugin: return bsdVarCompatible=%s\n",
-            (me->compatible) ? "true" : "false");
-      break;
     case bsdVarPluginDir:
       *((char**)value) = me->plugin_directory;
       Dmsg1(debuglevel, "sd-plugin: return bsdVarPluginDir=%s\n",

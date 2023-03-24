@@ -68,8 +68,7 @@ typedef enum
   bsdVarJobErrors = 13,
   bsdVarJobFiles = 14,
   bsdVarJobBytes = 15,
-  bsdVarCompatible = 16,
-  bsdVarPluginDir = 17
+  bsdVarPluginDir = 16
 } bsdrVariable;
 
 // Bareos Variable Ids (Write)
