@@ -41,6 +41,8 @@
 #include "lib/output_formatter.h"
 
 #include <string>
+#include <stdexcept>
+#include <system_error>
 #include <vector>
 template <typename T> class dlist;
 
