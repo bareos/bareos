@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,6 +22,8 @@
 #ifndef BAREOS_LIB_THREAD_SPECIFIC_DATA_KEY_H_
 #define BAREOS_LIB_THREAD_SPECIFIC_DATA_KEY_H_
 
+
+#include <system_error>
 #include "lib/berrno.h"
 
 #include <mutex>
