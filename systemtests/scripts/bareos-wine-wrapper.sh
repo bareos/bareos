@@ -62,7 +62,7 @@ run_bconsole()
     # neither interactively nor as batch
     # (wine bconsole.exe, wine start bconsole.exe, wineconsole bconsole).
     # Tested on Ubuntu 20.04 (wine-7.19), Fedora 35 (wine-6.18).
-    # While it seams to connect, no input prompt appears.
+    # While it seems to connect, no input prompt appears.
     # Therefore we use the bconsole command (hopefully) installed on the system.
     # However, there are reports it works with  Fedora 36 (wine-7.18, wine-7.18-2.fc36.x86_64).
 
