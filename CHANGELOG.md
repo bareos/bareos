@@ -36,6 +36,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - core: remove deprecated make_catalog_backup.pl [PR #1378]
 - cats: remove remains of deprecated databases [PR #1377]
 - dird: filed: stored: remove deprecated `maxconnections` option from configuration [PR #1340]
+- cats: remove dynamic catalog backends [PR #1392]
 
 ### Changed
 - cats: fix issue where `startfile` field gets wrongly updated [PR #1346]
@@ -89,6 +90,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1387]: https://github.com/bareos/bareos/pull/1387
 [PR #1389]: https://github.com/bareos/bareos/pull/1389
 [PR #1390]: https://github.com/bareos/bareos/pull/1390
+[PR #1392]: https://github.com/bareos/bareos/pull/1392
 [PR #1395]: https://github.com/bareos/bareos/pull/1395
 [PR #1403]: https://github.com/bareos/bareos/pull/1403
 [PR #1407]: https://github.com/bareos/bareos/pull/1407
