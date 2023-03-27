@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,7 +32,7 @@
 
 namespace storagedaemon {
 
-TEST(ConfigParser, test_stored_config)
+TEST(ConfigParser_SD, test_stored_config)
 {
   OSDependentInit();
 
@@ -45,5 +45,51 @@ TEST(ConfigParser, test_stored_config)
 
   delete my_config;
 }
+
+void test_CFG_TYPE_STR_VECTOR_OF_DIRS(StorageResource* me)
+{
+  EXPECT_EQ(me->backend_directories.size(), 9);
+  /*  WIN32:
+   *  cmake uses some value for PATH_BAREOS_BACKENDDIR,
+   *  which ends up in the configuration files
+   *  but this is later overwritten in the Director Daemon with ".".
+   *  Therefore we skip this test. */
+#if !defined(HAVE_WIN32)
+  EXPECT_EQ(me->backend_directories.at(0), PATH_BAREOS_BACKENDDIR);
+#endif
+}
+
+#if HAVE_DYNAMIC_SD_BACKENDS
+TEST(ConfigParser_SD, CFG_TYPE_STR_VECTOR_OF_DIRS)
+{
+  std::string test_name = std::string(
+      ::testing::UnitTest::GetInstance()->current_test_info()->name());
+
+  OSDependentInit();
+
+  InitMsg(nullptr, nullptr);
+
+  std::string path_to_config_file
+      = std::string(RELATIVE_PROJECT_SOURCE_DIR
+                    "/configs/bareos-configparser-tests/bareos-sd-")
+        + test_name + std::string(".conf");
+  my_config = InitSdConfig(path_to_config_file.c_str(), M_ERROR_TERM);
+  ASSERT_TRUE(my_config->ParseConfig());
+
+  my_config->DumpResources(PrintMessage, NULL);
+
+  std::string sd_resource_name = "bareos-sd";
+
+  StorageResource* me
+      = static_cast<StorageResource*>(my_config->GetNextRes(R_STORAGE, NULL));
+  EXPECT_EQ(sd_resource_name, me->resource_name_);
+
+  test_CFG_TYPE_STR_VECTOR_OF_DIRS(me);
+
+  TermMsg();
+
+  delete my_config;
+}
+#endif
 
 }  // namespace storagedaemon

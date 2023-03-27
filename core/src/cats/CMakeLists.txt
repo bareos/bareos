@@ -20,8 +20,6 @@ message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 include_directories(${PostgreSQL_INCLUDE_DIR})
 
-add_definitions(-D_BDB_PRIV_INTERFACE_)
-
 add_library(bareossql SHARED)
 target_sources(
   bareossql
@@ -36,34 +34,15 @@ target_sources(
           sql_pooling.cc
           sql_query.cc
           sql_update.cc
+          postgresql.cc
+          postgresql_batch.cc
 )
-target_link_libraries(bareossql PUBLIC bareoscats)
+target_link_libraries(bareossql PUBLIC bareos ${PostgreSQL_LIBRARY})
 
 set_target_properties(
   bareossql PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
                        SOVERSION "${BAREOS_VERSION_MAJOR}"
 )
-
-add_library(bareoscats SHARED)
-target_sources(bareoscats PRIVATE cats_backends.cc)
-target_link_libraries(bareoscats bareos)
-set_target_properties(
-  bareoscats PROPERTIES VERSION ${BAREOS_NUMERIC_VERSION}
-                        SOVERSION "${BAREOS_VERSION_MAJOR}"
-)
-install(TARGETS bareoscats DESTINATION ${libdir})
-
-list(LENGTH db_backends nr_db_backends)
-
-add_library(bareoscats-postgresql SHARED)
-target_sources(
-  bareoscats-postgresql PRIVATE postgresql.cc postgresql_batch.cc
-                                cats_backends.cc
-)
-target_link_libraries(
-  bareoscats-postgresql PRIVATE bareos bareossql ${PostgreSQL_LIBRARY}
-)
-install(TARGETS bareoscats-postgresql DESTINATION ${backenddir})
 
 install(
   DIRECTORY ddl
@@ -90,18 +69,3 @@ install(
   PATTERN *.in EXCLUDE
   PATTERN *.sql EXCLUDE
 )
-
-if(${nr_db_backends} EQUAL 1)
-  install(CODE "set(libdir \"${libdir}\")")
-  install(CODE "set(backenddir \"${backenddir}\")")
-  install(CODE "set(default_db_backend \"${default_db_backend}\")")
-  install(
-    CODE "set(CMAKE_SHARED_LIBRARY_SUFFIX \"${CMAKE_SHARED_LIBRARY_SUFFIX}\")"
-  )
-  install(CODE "set(VERSION \"${BAREOS_NUMERIC_VERSION}\")")
-  install(CODE "set(SRC_DIR \"${PROJECT_SOURCE_DIR}\")")
-
-  install(
-    SCRIPT ${PROJECT_SOURCE_DIR}/cmake/bareos-symlink-default-db-backend.cmake
-  )
-endif()

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,7 +23,6 @@
 
 #include "include/bareos.h"
 #include "cats/cats.h"
-#include "cats/cats_backends.h"
 #include "dird/check_catalog.h"
 #include "dird/dird.h"
 #include "dird/dird_conf.h"
@@ -49,10 +48,8 @@ bool CheckCatalog(cat_op mode)
   foreach_res (catalog, R_CATALOG) {
     BareosDb* db;
 
-    /*
-     * Make sure we can open catalog, otherwise print a warning
-     * message because the server is probably not running.
-     */
+    /* Make sure we can open catalog, otherwise print a warning
+     * message because the server is probably not running. */
     db = db_init_database(NULL, catalog->db_driver, catalog->db_name,
                           catalog->db_user, catalog->db_password.value,
                           catalog->db_address, catalog->db_port,
@@ -91,10 +88,8 @@ bool CheckCatalog(cat_op mode)
     /* Loop over all pools, defining/updating them in each database */
     PoolResource* pool;
     foreach_res (pool, R_POOL) {
-      /*
-       * If the Pool has a catalog resource create the pool only
-       *   in that catalog.
-       */
+      /* If the Pool has a catalog resource create the pool only
+       *   in that catalog. */
       if (!pool->catalog || pool->catalog == catalog) {
         CreatePool(NULL, db, pool, POOL_OP_UPDATE); /* update request */
       }
@@ -104,10 +99,8 @@ bool CheckCatalog(cat_op mode)
      * references (RecyclePool)
      */
     foreach_res (pool, R_POOL) {
-      /*
-       * If the Pool has a catalog resource update the pool only
-       *   in that catalog.
-       */
+      /* If the Pool has a catalog resource update the pool only
+       *   in that catalog. */
       if (!pool->catalog || pool->catalog == catalog) {
         UpdatePoolReferences(NULL, db, pool);
       }

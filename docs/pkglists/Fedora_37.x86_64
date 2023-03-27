@@ -1,7 +1,6 @@
 debug/x86_64/bareos-bconsole-debuginfo
 debug/x86_64/bareos-common-debuginfo
 debug/x86_64/bareos-database-common-debuginfo
-debug/x86_64/bareos-database-postgresql-debuginfo
 debug/x86_64/bareos-database-tools-debuginfo
 debug/x86_64/bareos-debuginfo
 debug/x86_64/bareos-debugsource

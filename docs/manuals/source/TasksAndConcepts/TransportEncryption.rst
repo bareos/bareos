@@ -466,9 +466,6 @@ Configuration example
       #
       # Heartbeat Interval = 1 min
 
-      # remove comment in next line to load dynamic backends from specified directory
-      # Backend Directory = /usr/lib64/bareos/backends
-
       # remove comment from "Plugin Directory" to load plugins from specified directory.
       # if "Plugin Names" is defined, only the specified plugins will be loaded,
       # otherwise all director plugins (*-dir.so) from the "Plugin Directory".

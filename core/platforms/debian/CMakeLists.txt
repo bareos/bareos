@@ -158,9 +158,6 @@ macro(bareos_install_sql_files_to_dbconfig_common)
 
 endmacro()
 
-list(FIND db_backends "postgresql" _index)
-if(${_index} GREATER -1)
-  bareos_install_sql_files_to_dbconfig_common(
-    BAREOS_DB_NAME postgresql DEBIAN_DB_NAME pgsql
-  )
-endif()
+bareos_install_sql_files_to_dbconfig_common(
+  BAREOS_DB_NAME postgresql DEBIAN_DB_NAME pgsql
+)

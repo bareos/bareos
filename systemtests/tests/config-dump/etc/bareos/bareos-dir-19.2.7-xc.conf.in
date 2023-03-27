@@ -3,7 +3,6 @@ Director {
   Messages = "Daemon"
   QueryFile = "@scriptdir@/query.sql"
   WorkingDirectory = "@working_dir@"
-  BackendDirectory = "@backenddir@"
   MaximumConcurrentJobs = 10
   Password = "@dir_password@"
   Auditing = yes
@@ -78,7 +77,6 @@ Catalog {
   DbPassword = "@db_password@"
   DbUser = "@db_user@"
   DbName = "@db_name@"
-  # DbDriver = "XXX_REPLACE_WITH_DATABASE_DRIVER_XXX"
 }
 
 Schedule {

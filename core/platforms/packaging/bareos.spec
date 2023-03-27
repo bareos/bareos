@@ -986,7 +986,6 @@ cmake  .. \
   -Dsystemd=yes \
 %endif
   -Dincludes=yes \
-  -Ddefault_db_backend="XXX_REPLACE_WITH_DATABASE_DRIVER_XXX" \
 %if !0%{?webui}
   -DENABLE_WEBUI=no \
 %endif
@@ -1437,7 +1436,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 # catalog independent files
 %defattr(-, root, root)
 %{library_dir}/libbareossql*.so.*
-%{library_dir}/libbareoscats*.so.*
 %dir %{script_dir}/ddl
 %dir %{script_dir}/ddl/creates
 %dir %{script_dir}/ddl/drops
@@ -1455,7 +1453,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 # postgresql catalog files
 %defattr(-, root, root)
 %{script_dir}/ddl/*/postgresql*.sql
-%{backend_dir}/libbareoscats-postgresql.so*
 
 %files database-tools
 # dbtools with link to db libs (dbcheck, bscan)

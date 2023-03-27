@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,7 +27,6 @@
  */
 
 #include "include/bareos.h"
-#include "cats/cats_backends.h"
 #include "cats/sql.h"
 #include "cats/sql_pooling.h"
 #include "dird.h"
@@ -315,13 +314,6 @@ int main(int argc, char* argv[])
 
   SetJcrInThreadSpecificData(nullptr);
 
-#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-  for (const auto& backend_dir : me->backend_directories) {
-    Dmsg1(100, "backend path: %s\n", backend_dir.c_str());
-  }
-
-  DbSetBackendDirs(me->backend_directories);
-#endif
   LoadDirPlugins(me->plugin_directory, me->plugin_names);
 
 
@@ -410,7 +402,6 @@ static
   StopStatisticsThread();
   StopWatchdog();
   DbSqlPoolDestroy();
-  DbFlushBackends();
   UnloadDirPlugins();
   if (!test_config && me) { /* we don't need to do this block in test mode */
     WriteStateFile(me->working_directory, "bareos-dir",
@@ -443,10 +434,8 @@ extern "C" void SighandlerReloadConfig(int, siginfo_t*, void*)
   static bool is_reloading = false;
 
   if (is_reloading) {
-    /*
-     * Note: don't use Jmsg here, as it could produce a race condition
-     * on multiple parallel reloads
-     */
+    /* Note: don't use Jmsg here, as it could produce a race condition
+     * on multiple parallel reloads */
     Qmsg(nullptr, M_ERROR, 0, _("Already reloading. Request ignored.\n"));
     return;
   }
@@ -463,10 +452,8 @@ static bool InitSighandlerSighup()
   sigset_t block_mask;
   struct sigaction action = {};
 
-  /*
-   *  while handling SIGHUP signal,
-   *  ignore further SIGHUP signals.
-   */
+  /*  while handling SIGHUP signal,
+   *  ignore further SIGHUP signals. */
   sigemptyset(&block_mask);
   sigaddset(&block_mask, SIGHUP);
 

@@ -385,14 +385,6 @@ if((NOT DEFINED batch-insert) OR (${batch-insert}))
   set(USE_BATCH_FILE_INSERT 1)
 endif()
 
-# dynamic-cats-backends
-option(dynamic-cats-backends "enable dynamic catalog backends" ON)
-if(dynamic-cats-backends)
-  set(HAVE_DYNAMIC_CATS_BACKENDS 1)
-else()
-  set(HAVE_DYNAMIC_CATS_BACKENDS 0)
-endif()
-
 # dynamic-storage-backends
 if(NOT DEFINED dynamic-storage-backends OR dynamic-storage-backends)
   set(dynamic-storage-backends ON)
@@ -465,33 +457,11 @@ if(NOT LIBZ_FOUND)
   set(ZLIB_LIBRARY "")
 endif()
 
-set(db_backends "")
-
 if(NOT client-only)
-
   if(${postgresql})
     set(HAVE_POSTGRESQL 1)
-    list(APPEND db_backends postgresql)
+    set(DEFAULT_DB_TYPE postgresql)
   endif()
-
-  if(NOT DEFINED default_db_backend)
-    # set first entry as default db backend if not already defined
-    list(GET db_backends 0 default_db_backend)
-  endif()
-  # set first backend to be tested by systemtests
-  list(GET db_backends 0 db_backend_to_test)
-  get_directory_property(hasParent PARENT_DIRECTORY)
-  if(hasParent)
-    set(db_backend_to_test
-        ${db_backend_to_test}
-        PARENT_SCOPE
-    )
-    set(DEFAULT_DB_TYPE
-        ${default_db_backend}
-        PARENT_SCOPE
-    )
-  endif()
-  set(DEFAULT_DB_TYPE ${default_db_backend})
 endif()
 
 # systemd

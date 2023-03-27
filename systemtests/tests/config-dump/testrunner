@@ -38,7 +38,6 @@ strip_config()
 {
     # removes files that are known to differ.
     # Password: will be shown as MD5
-    # DbDriver: postgresql is default, therefore verbose prepend a comment sign.
     source="$1"
 
     if ! [ -e "${configfile}" ]; then
@@ -46,7 +45,7 @@ strip_config()
         exit 1
     fi
 
-    grep -v -e "Password = " -e "DbDriver = " "${source}"
+    grep -v -e "Password = " "${source}"
 }
 
 dump_config()

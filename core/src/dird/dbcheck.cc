@@ -25,7 +25,6 @@
 
 #include "include/bareos.h"
 #include "cats/cats.h"
-#include "cats/cats_backends.h"
 #include "lib/runscript.h"
 #include "lib/cli.h"
 #include "dird/dird_conf.h"
@@ -49,9 +48,6 @@ static NameList name_list;
 static char buf[20000];
 static bool quit = false;
 static const char* idx_tmp_name;
-#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-static const char* backend_directory = PATH_BAREOS_BACKENDDIR;
-#endif
 
 // Forward referenced functions
 static void set_quit();
@@ -861,9 +857,6 @@ int main(int argc, char* argv[])
   CLI11_PARSE(dbcheck_app, argc, argv);
 
   const char* db_driver = "postgresql";
-#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-  std::vector<std::string> backend_directories;
-#endif
 
   if (!configfile.empty() || manual_args->count_all() == 0) {
     CatalogResource* catalog = nullptr;
@@ -909,9 +902,6 @@ int main(int argc, char* argv[])
       }
 
       SetWorkingDirectory(me->working_directory);
-#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-      DbSetBackendDirs(me->backend_directories);
-#endif
 
       // Print catalog information and exit (-B)
       if (print_catalog) {
@@ -929,11 +919,6 @@ int main(int argc, char* argv[])
     }
   } else {
     working_directory = workingdir.c_str();
-
-#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-    backend_directories.emplace_back(backend_directory);
-    DbSetBackendDirs(backend_directories);
-#endif
   }
 
   // Open database
@@ -958,7 +943,6 @@ int main(int argc, char* argv[])
   DropTmpIdx("idxPIchk", "File");
 
   db->CloseDatabase(nullptr);
-  DbFlushBackends();
   CloseMsg(nullptr);
   TermMsg();
 

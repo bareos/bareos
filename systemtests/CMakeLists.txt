@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -117,8 +117,6 @@ file(STRINGS ${CMAKE_SOURCE_DIR}/core/src/cats/cats.h DB_VERSION_STRING
 string(REGEX MATCH [0-9]+ BDB_VERSION ${DB_VERSION_STRING})
 message(STATUS "db version from cats.h is ${BDB_VERSION}")
 
-# set variable values to be replaced by configure_file set(DEFAULT_DB_TYPE
-# ${default_db_backend}) message(STATUS "DEFAULT_DB_TYPE is ${DEFAULT_DB_TYPE}")
 cmake_print_variables(DEFAULT_DB_TYPE)
 
 # set(TAPEDRIVE "TAPEDRIVE")

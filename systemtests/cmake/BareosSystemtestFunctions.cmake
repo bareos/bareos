@@ -130,10 +130,6 @@ macro(find_systemtests_binary_paths SYSTEMTESTS_BINARIES)
       PYTHON_PLUGINS_DIR_TO_TEST BareosFdWrapper.py
       PATHS /usr/lib/bareos/plugins /usr/lib64/bareos/plugins
     )
-    find_program(
-      BACKEND_DIR_TO_TEST libbareoscats-${DEFAULT_DB_TYPE}.so
-      PATHS /usr/lib/bareos/backends /usr/lib64/bareos/backends
-    )
 
     get_filename_component(
       PLUGINS_DIR_TO_TEST ${PYTHON_PLUGIN_TO_TEST} DIRECTORY
@@ -144,12 +140,10 @@ macro(find_systemtests_binary_paths SYSTEMTESTS_BINARIES)
     get_filename_component(
       SCRIPTS_DIR_TO_TEST ${CREATE_BAREOS_DATABASE_TO_TEST} DIRECTORY
     )
-    get_filename_component(BACKEND_DIR_TO_TEST ${BACKEND_DIR_TO_TEST} DIRECTORY)
 
     set(FD_PLUGINS_DIR_TO_TEST ${PLUGINS_DIR_TO_TEST})
     set(SD_PLUGINS_DIR_TO_TEST ${PLUGINS_DIR_TO_TEST})
     set(DIR_PLUGINS_DIR_TO_TEST ${PLUGINS_DIR_TO_TEST})
-    set(BACKEND_DIR_TO_TEST ${BACKEND_DIR_TO_TEST})
     set(WEBUI_PUBLIC_DIR_TO_TEST /usr/share/bareos-webui/public)
 
   else() # run systemtests on source and compiled files
@@ -171,7 +165,6 @@ macro(find_systemtests_binary_paths SYSTEMTESTS_BINARIES)
     endif()
     set(DIR_PLUGINS_DIR_TO_TEST ${CMAKE_BINARY_DIR}/core/src/plugins/dird)
 
-    get_target_property(BACKEND_DIR_TO_TEST bareoscats-postgresql BINARY_DIR)
     set(SCRIPTS_DIR_TO_TEST ${CMAKE_BINARY_DIR}/core/scripts)
     set(WEBUI_PUBLIC_DIR_TO_TEST ${PROJECT_SOURCE_DIR}/../webui/public)
 
@@ -180,7 +173,6 @@ macro(find_systemtests_binary_paths SYSTEMTESTS_BINARIES)
   cmake_print_variables(FD_PLUGINS_DIR_TO_TEST)
   cmake_print_variables(SD_PLUGINS_DIR_TO_TEST)
   cmake_print_variables(DIR_PLUGINS_DIR_TO_TEST)
-  cmake_print_variables(BACKEND_DIR_TO_TEST)
   cmake_print_variables(SD_BACKEND_DIR_TO_TEST)
   cmake_print_variables(WEBUI_PUBLIC_DIR_TO_TEST)
 
@@ -342,7 +334,6 @@ macro(prepare_testdir_for_daemon_run)
   set(working_dir ${current_test_directory}/working)
   set(piddir ${current_test_directory}/piddir)
 
-  set(backenddir ${BACKEND_DIR_TO_TEST})
   set(sd_backenddir ${SD_BACKEND_DIR_TO_TEST})
   # the SD will not suppot the BackendDirectory setting if it was not built with
   # HAVE_DYNAMIC_SD_BACKENDS, thus we declare `sd_backend_config` that will

@@ -84,13 +84,6 @@
           "equals": true,
           "description": "This directive is currently unused."
         },
-        "BackendDirectory": {
-          "datatype": "DIRECTORY_LIST",
-          "code": 0,
-          "default_value": "/usr/lib/bareos/backends",
-          "platform_specific": true,
-          "equals": true
-        },
         "Subscriptions": {
           "datatype": "PINT32",
           "code": 0,
@@ -1864,13 +1857,6 @@
           "code": 0,
           "equals": true,
           "required": true
-        },
-        "DbDriver": {
-          "datatype": "STRING",
-          "code": 0,
-          "default_value": "postgresql",
-          "deprecated": true,
-          "equals": true
         },
         "DbSocket": {
           "datatype": "STRING",

@@ -13,7 +13,6 @@ Director {
   PluginDirectory = "@tmpdir@"
   # PluginNames =
   ScriptsDirectory = "@tmpdir@"
-  BackendDirectory = "@backenddir@"
   Subscriptions = 10
   MaximumConcurrentJobs = 100
   MaximumConsoleConnections = 200
@@ -1311,7 +1310,6 @@ Catalog {
   DbPassword = "@db_password@"
   DbUser = "@db_user@"
   DbName = "@db_name@"
-  # DbDriver = "XXX_REPLACE_WITH_DATABASE_DRIVER_XXX"
   # DbSocket =
   # MultipleConnections = No
   # DisableBatchInsert = No

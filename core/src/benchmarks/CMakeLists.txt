@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -57,7 +57,7 @@ endmacro()
 
 bareos_add_benchmark(
   restore_browser_stress_test LINK_LIBRARIES bareos dird_objects bareosfind
-  bareoscats bareossql benchmark::benchmark_main
+  bareossql benchmark::benchmark_main
 )
 
 bareos_add_benchmark(

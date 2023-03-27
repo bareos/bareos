@@ -769,7 +769,6 @@ else()
 endif()
 
 set(support_systemd "")
-set(batch_insert_db_backends "")
 set(have_cmocka "")
 
 set(PATH_BAREOS_BACKENDDIR \"${backenddir}\")
@@ -849,9 +848,6 @@ message("   Statically Linked FD:         ${support_static_fd} ")
 message("   Statically Linked SD:         ${support_static_sd} ")
 message("   Statically Linked DIR:        ${support_static_dir} ")
 message("   Statically Linked CONS:       ${support_static_cons} ")
-message("   Database backends:            ${db_backends} ")
-message("   default_db_backend:           ${default_db_backend} ")
-message("   db_backend_to_test:           ${db_backend_to_test} ")
 message("   Database port:                ${db_port} ")
 message("   Database name:                ${db_name} ")
 message("   Database user:                ${db_user} ")
@@ -935,10 +931,6 @@ message("   PostgreSQL Version:           ${PostgreSQL_VERSION_STRING} ")
 message("   GTest enabled:                ${GTest_FOUND}")
 message(
   "   Intl support:                 ${Intl_FOUND} ${INTLINCLUDE_DIRS} ${INTL_LIBRARIES}"
-)
-
-message(
-  "   Dynamic cats backends:        ${dynamic-cats-backends} ${HAVE_DYNAMIC_CATS_BACKENDS} "
 )
 message(
   "   Dynamic storage backends:     ${dynamic-storage-backends} ${HAVE_DYNAMIC_SD_BACKENDS} ${BACKENDS} "

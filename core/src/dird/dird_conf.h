@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -117,8 +117,7 @@ class DirectorResource
   char* plugin_directory = nullptr;     /* Plugin Directory */
   alist<const char*>* plugin_names = nullptr; /* Plugin names to load */
   char* pid_directory = nullptr;              /* PidDirectory */
-  std::vector<std::string> backend_directories;
-  MessagesResource* messages = nullptr; /* Daemon message handler */
+  MessagesResource* messages = nullptr;       /* Daemon message handler */
   uint32_t MaxConcurrentJobs = 0; /* Max concurrent jobs for whole director */
   uint32_t MaxConsoleConnections = 0; /* Max concurrent console connections */
   utime_t FDConnectTimeout = {0};     /* Timeout for connect in seconds */
@@ -251,7 +250,7 @@ class CatalogResource : public BareosResource {
   s_password db_password;
   char* db_user = nullptr;
   char* db_name = nullptr;
-  char* db_driver = nullptr;        /**< Select appropriate driver */
+  const char* db_driver = "postgresql"; /**< Select appropriate driver */
   uint32_t mult_db_connections = 0; /**< Set if multiple connections wanted */
   bool disable_batch_insert
       = false;                /**< Set if batch inserts should be disabled */

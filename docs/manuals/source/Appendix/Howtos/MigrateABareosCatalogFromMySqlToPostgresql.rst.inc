@@ -16,7 +16,7 @@ Migrate a Bareos Catalog from |mysql| to |postgresql|
 
 Since Bareos :sinceVersion:`21.0.0: MySQL backend removed` the |mysql| database backend is not shipped anymore.
 Therefore you need to use Bareos 20 to migrate an existing |mysql| Bareos Catalog to |postgresql|.
-To do so, upgrade to Bareos 20 first and use :ref:`program-bareos-dbcopy` to copy the whole Bareos MySQL catalog into a new |postgresql| catalog database.
+To do so, upgrade to Bareos 20 first and use `bareos-dbcopy` to copy the whole Bareos MySQL catalog into a new |postgresql| catalog database.
 This chapter describes how to do a migration using :command:`bareos-dbcopy`.
 
 Make a backup of your old database

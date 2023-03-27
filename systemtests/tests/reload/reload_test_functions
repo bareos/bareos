@@ -109,7 +109,6 @@ Director {                            # define myself
   Password = "@dir_password@"         # Console password
   Messages = Daemon
   Auditing = yes
-#  Backend Directory = @backenddir@
   Working Directory =  "@working_dir@"
 }
 END_OF_DATA4

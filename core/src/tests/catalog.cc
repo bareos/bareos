@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,7 +21,6 @@
 
 #include "include/bareos.h"
 #include "cats/cats.h"
-#include "cats/cats_backends.h"
 #include "cats/sql_pooling.h"
 #include "dird/get_database_connection.h"
 #include "dird/dird_conf.h"
@@ -50,9 +49,7 @@ int main(int argc, char** argv)
 
 class CatalogTest : public ::testing::Test {
  protected:
-  std::set<std::string> testable_catalog_backends{"postgresql"};
   std::string catalog_backend_name;
-  std::string backend_dir;
   std::string config_dir;
   std::string working_dir;
 
@@ -68,17 +65,13 @@ void CatalogTest::SetUp()
   // get environment
   {
     catalog_backend_name = getenv_std_string("DBTYPE");
-    backend_dir = getenv_std_string("backenddir");
     config_dir = getenv_std_string("BAREOS_CONFIG_DIR");
     working_dir = getenv_std_string("BAREOS_WORKING_DIR");
 
-    ASSERT_NE(testable_catalog_backends.find(catalog_backend_name),
-              testable_catalog_backends.end())
-        << "Environment variable DBTYPE does not contain a name for a "
-           "testable catalog backend: "
+    ASSERT_EQ(catalog_backend_name, "postgresql")
+        << "Environment variable DBTYPE does not contain correct database "
+           "backend: "
         << "<" << catalog_backend_name << ">";
-    ASSERT_FALSE(backend_dir.empty())
-        << "Environment variable backenddir not set.";
     ASSERT_FALSE(config_dir.empty())
         << "Environment variable BAREOS_CONFIG_DIR not set.";
     ASSERT_FALSE(working_dir.empty())
@@ -105,9 +98,6 @@ void CatalogTest::SetUp()
 
     ASSERT_NE(jcr->dir_impl->res.catalog, nullptr);
 
-    auto backenddir = std::vector<std::string>{backend_dir};
-    DbSetBackendDirs(backenddir);
-
     db = directordaemon::GetDatabaseConnection(jcr);
 
     ASSERT_NE(db, nullptr);
@@ -118,7 +108,6 @@ void CatalogTest::TearDown()
 {
   db->CloseDatabase(jcr);
   DbSqlPoolDestroy();
-  DbFlushBackends();
 
   if (jcr) {
     FreeJcr(jcr);

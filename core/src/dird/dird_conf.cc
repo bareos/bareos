@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -128,9 +128,6 @@ static ResourceItem dir_items[] = {
   { "PluginNames", CFG_TYPE_PLUGIN_NAMES, ITEM(res_dir, plugin_names), 0, 0, NULL,
       "14.2.0-", "List of plugins, that should get loaded from 'Plugin Directory' (only basenames, '-dir.so' is added automatically). If empty, all plugins will get loaded." },
   { "ScriptsDirectory", CFG_TYPE_DIR, ITEM(res_dir, scripts_directory), 0, 0, NULL, NULL, "This directive is currently unused." },
-#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-  { "BackendDirectory", CFG_TYPE_STR_VECTOR_OF_DIRS, ITEM(res_dir, backend_directories), 0, CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, PATH_BAREOS_BACKENDDIR, NULL, NULL },
-#endif
   { "Subscriptions", CFG_TYPE_PINT32, ITEM(res_dir, subscriptions), 0, CFG_ITEM_DEFAULT, "0", "12.4.4-", NULL },
   { "MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_dir, MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "1", NULL, NULL },
   { "MaximumConsoleConnections", CFG_TYPE_PINT32, ITEM(res_dir, MaxConsoleConnections), 0, CFG_ITEM_DEFAULT, "20", NULL, NULL },
@@ -306,11 +303,6 @@ static ResourceItem cat_items[] = {
   { "DbUser", CFG_TYPE_STR, ITEM(res_cat, db_user), 0, 0, NULL, NULL, NULL },
   { "User", CFG_TYPE_STR, ITEM(res_cat, db_user), 0, CFG_ITEM_ALIAS, NULL, NULL, NULL },
   { "DbName", CFG_TYPE_STR, ITEM(res_cat, db_name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
-#ifdef HAVE_DYNAMIC_CATS_BACKENDS
-  { "DbDriver", CFG_TYPE_STR, ITEM(res_cat, db_driver), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "postgresql", NULL, NULL },
-#else
-  { "DbDriver", CFG_TYPE_STR, ITEM(res_cat, db_driver), 0, 0, NULL, NULL, NULL },
-#endif
   { "DbSocket", CFG_TYPE_STR, ITEM(res_cat, db_socket), 0, 0, NULL, NULL, NULL },
    /* Turned off for the moment */
   { "MultipleConnections", CFG_TYPE_BIT, ITEM(res_cat, mult_db_connections), 0, 0, NULL, NULL, NULL },
@@ -2231,7 +2223,6 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       } else {
         p->plugin_names = res_dir->plugin_names;
         p->messages = res_dir->messages;
-        p->backend_directories = res_dir->backend_directories;
         p->tls_cert_.allowed_certificate_common_names_
             = std::move(res_dir->tls_cert_.allowed_certificate_common_names_);
       }
@@ -3890,7 +3881,6 @@ static void FreeResource(BareosResource* res, int type)
       if (p->db_socket) { free(p->db_socket); }
       if (p->db_user) { free(p->db_user); }
       if (p->db_name) { free(p->db_name); }
-      if (p->db_driver) { free(p->db_driver); }
       if (p->db_password.value) { free(p->db_password.value); }
       delete p;
       break;

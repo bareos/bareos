@@ -62,7 +62,6 @@ define CONFIGURE_COMMON
   -Dhostname="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
   -Dincludes=yes \
   -Drpath=no \
-  -Ddefault_db_backend="XXX_REPLACE_WITH_DATABASE_DRIVER_XXX" \
   -DVERSION_STRING=$(BAREOS_VERSION)
 endef
 
@@ -98,11 +97,6 @@ ifeq (build-universal-client,$(filter build-universal-client,$(DEB_BUILD_OPTIONS
 else
 	dh_strip --dbg-package=bareos-dbg
 endif
-
-
-override_dh_install:
-	chrpath -d $(CURDIR)/debian/tmp/usr/lib/bareos/backends/libbareoscats-postgresql* || true
-	dh_install
 
 
 override_dh_systemd_enable:

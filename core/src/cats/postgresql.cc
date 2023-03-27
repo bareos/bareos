@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -39,7 +39,7 @@
 #  include "libpq-fe.h"
 #  include "postgres_ext.h"     /* needed for NAMEDATALEN */
 #  include "pg_config_manual.h" /* get NAMEDATALEN on version 8.3 or later */
-#  include "bdb_postgresql.h"
+#  include "postgresql.h"
 #  include "lib/edit.h"
 #  include "lib/berrno.h"
 #  include "lib/dlist.h"
@@ -155,10 +155,8 @@ bool BareosDbPostgresql::CheckDatabaseEncoding(JobControlRecord* jcr)
     retval = bstrcmp(row[0], "SQL_ASCII");
 
     if (retval) {
-      /*
-       * If we are in SQL_ASCII, we can force the client_encoding to SQL_ASCII
-       * too
-       */
+      /* If we are in SQL_ASCII, we can force the client_encoding to SQL_ASCII
+       * too */
       SqlQueryWithoutHandler("SET client_encoding TO 'SQL_ASCII'");
     } else {
       // Something is wrong with database encoding
@@ -241,11 +239,9 @@ bool BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
   SqlQueryWithoutHandler("SET datestyle TO 'ISO, YMD'");
   SqlQueryWithoutHandler("SET cursor_tuple_fraction=1");
 
-  /*
-   * Tell PostgreSQL we are using standard conforming strings
+  /* Tell PostgreSQL we are using standard conforming strings
    * and avoid warnings such as:
-   *  WARNING:  nonstandard use of \\ in a string literal
-   */
+   *  WARNING:  nonstandard use of \\ in a string literal */
   SqlQueryWithoutHandler("SET standard_conforming_strings=on");
 
   // Check that encoding is SQL_ASCII
@@ -434,10 +430,8 @@ void BareosDbPostgresql::StartTransaction(JobControlRecord* jcr)
     jcr->ar = (AttributesDbRecord*)malloc(sizeof(AttributesDbRecord));
   }
 
-  /*
-   * This is turned off because transactions break
-   * if multiple simultaneous jobs are run.
-   */
+  /* This is turned off because transactions break
+   * if multiple simultaneous jobs are run. */
   if (!allow_transactions_) { return; }
 
   DbLocker _{this};
@@ -626,11 +620,9 @@ retry_query:
       }
 
       if (try_reconnect_ && !transaction_) {
-        /*
-         * Only try reconnecting when no transaction is pending.
+        /* Only try reconnecting when no transaction is pending.
          * Reconnecting within a transaction will lead to an aborted
-         * transaction anyway so we better follow our old error path.
-         */
+         * transaction anyway so we better follow our old error path. */
         if (retry) {
           PQreset(db_handle_);
 
@@ -766,8 +758,7 @@ uint64_t BareosDbPostgresql::SqlInsertAutokeyRecord(const char* query,
 
   changes++;
 
-  /*
-   * Obtain the current value of the sequence that
+  /* Obtain the current value of the sequence that
    * provides the serial value for primary key of the table.
    *
    * currval is local to our session.  It is not affected by
@@ -781,8 +772,7 @@ uint64_t BareosDbPostgresql::SqlInsertAutokeyRecord(const char* query,
    * Except for basefiles which has a primary key on baseid.
    * Therefore, we need to special case that one table.
    *
-   * everything else can use the PostgreSQL formula.
-   */
+   * everything else can use the PostgreSQL formula. */
   if (Bstrcasecmp(table_name, "basefiles")) {
     bstrncpy(sequence, "basefiles_baseid", sizeof(sequence));
   } else {
@@ -903,21 +893,7 @@ bool BareosDbPostgresql::SqlFieldIsNumeric(int field_type)
  * Initialize database data structure. In principal this should
  * never have errors, or it is really fatal.
  */
-#  ifdef HAVE_DYNAMIC_CATS_BACKENDS
-extern "C" BareosDb* backend_instantiate(JobControlRecord* jcr,
-                                         const char* db_driver,
-                                         const char* db_name,
-                                         const char* db_user,
-                                         const char* db_password,
-                                         const char* db_address,
-                                         int db_port,
-                                         const char* db_socket,
-                                         bool mult_db_connections,
-                                         bool disable_batch_insert,
-                                         bool try_reconnect,
-                                         bool exit_on_fatal,
-                                         bool need_private)
-#  else
+
 BareosDb* db_init_database(JobControlRecord* jcr,
                            const char* db_driver,
                            const char* db_name,
@@ -931,7 +907,7 @@ BareosDb* db_init_database(JobControlRecord* jcr,
                            bool try_reconnect,
                            bool exit_on_fatal,
                            bool need_private)
-#  endif
+
 {
   BareosDbPostgresql* mdb = NULL;
 
@@ -962,14 +938,6 @@ BareosDb* db_init_database(JobControlRecord* jcr,
 bail_out:
   unlock_mutex(mutex);
   return mdb;
-}
-
-#  ifdef HAVE_DYNAMIC_CATS_BACKENDS
-extern "C" void flush_backend(void)
-#  else
-void DbFlushBackends(void)
-#  endif
-{
 }
 
 #endif /* HAVE_POSTGRESQL */

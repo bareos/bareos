@@ -9,7 +9,6 @@ Director {                            # define myself
   NDMP Log Level = 7
   NDMP Snooping = yes
 
-  Backend Directory = @backenddir@
   Working Directory = "@working_dir@"
   DirPort = @dir_port@
 }

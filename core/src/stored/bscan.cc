@@ -35,7 +35,6 @@
 #include "lib/crypto_cache.h"
 #include "findlib/find.h"
 #include "cats/cats.h"
-#include "cats/cats_backends.h"
 #include "cats/sql.h"
 #include "stored/acquire.h"
 #include "stored/butil.h"
@@ -129,10 +128,6 @@ static int num_restoreobjects = 0;
 
 int main(int argc, char* argv[])
 {
-#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-  std::vector<std::string> backend_directories;
-#endif
-
   setlocale(LC_ALL, "");
   tzset();
   bindtextdomain("bareos", LOCALEDIR);
@@ -146,19 +141,6 @@ int main(int argc, char* argv[])
 
   CLI::App bscan_app;
   InitCLIApp(bscan_app, "The Bareos Database Scan tool.", 2001);
-
-  std::string backend_directory = PATH_BAREOS_BACKENDDIR;
-  bscan_app
-      .add_option(
-          "-a,--backend-directory", backend_directory,
-          "Specify a directory from where Bareos backends can be loaded.")
-      ->type_name("<directory>");
-
-  std::string ignored_B;
-  bscan_app
-      .add_option("-B,--dbdriver", ignored_B,
-                  "Exists for backwards compatibility and is ignored.")
-      ->type_name("<dbdriver>");
 
   bscan_app
       .add_option(
@@ -322,11 +304,6 @@ int main(int argc, char* argv[])
           edit_uint64(currentVolumeSize, ed1));
   }
 
-#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-  backend_directories.emplace_back(backend_directory);
-  DbSetBackendDirs(backend_directories);
-#endif
-
   std::string db_driver = "postgresql";
   db = db_init_database(nullptr, db_driver.c_str(), db_name.c_str(),
                         db_user.c_str(), db_password.c_str(), db_host.c_str(),
@@ -354,7 +331,6 @@ int main(int argc, char* argv[])
         num_media, num_pools, num_jobs, num_files, num_restoreobjects);
   }
   db->CloseDatabase(bjcr);
-  DbFlushBackends();
   CleanDevice(bjcr->sd_impl->dcr);
   delete dev;
   FreeDeviceControlRecord(bjcr->sd_impl->dcr);

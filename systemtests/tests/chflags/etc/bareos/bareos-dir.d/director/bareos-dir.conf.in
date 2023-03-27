@@ -6,7 +6,6 @@ Director {                            # define myself
   Messages = Daemon
   Auditing = yes
 
-  Backend Directory = @backenddir@
   Working Directory =  "@working_dir@"
   DirPort = @dir_port@
 }

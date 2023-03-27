@@ -7,8 +7,6 @@ Director {                            # define myself
   Auditing = yes
   Subscriptions = 10
 
-  Backend Directory = @backenddir@
-
   Working Directory =  "@working_dir@"
   DirPort = @dir_port@
 }
