@@ -391,7 +391,7 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
   double saving_pc = (double)saving_ns / (double)total_ns;
   double checksum_pc = (double)checksum_ns / (double)saving_ns;
   double signing_pc = (double)signing_ns / (double)saving_ns;
-  double reading_pc = (double)reading_ns / (double)saving_ns;
+  double reading_pc = (double)reading_ns / (double)sending_ns;
   double sending_pc = (double)sending_ns / (double)saving_ns;
   double sd_pc = (double)sd_ns / (double)sending_ns;
   double xattr_pc = (double)xattr_ns / (double)saving_ns;
@@ -402,61 +402,64 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
   constexpr double mbps = (double)1e9 / (double)(1024 * 1024);
 
   double total_tp = job_bytes / (total_ns / mbps);
-  double saving_tp = job_bytes / (saving_ns / mbps);
+  double sd_tp = job_bytes / (sd_ns / mbps);
+  double reading_tp = job_bytes / (reading_ns / mbps);
 
   Dmsg0(400,
         "FindFiles jobid=%u\n"
-        "  *Time spent    %s\n"
-        "    -Saving:     %s (%6.2lf%%)\n"
-        "      -Sending:  %s (%6.2lf%%)\n"
-        "        -To Sd:  %s (%6.2lf%%)\n"
-        "      -Checksum: %s (%6.2lf%%)\n"
-        "      -Signing:  %s (%6.2lf%%)\n"
-        "      -Reading:  %s (%6.2lf%%)\n"
-        "      -Xattr:    %s (%6.2lf%%)\n"
-        "      -Acl:      %s (%6.2lf%%)\n"
-        "    -Accepting:  %s (%6.2lf%%)\n"
+        "  *Time spent     %s\n"
+        "    -Saving:      %s (%6.2lf%%)\n"
+        "      -Sending:   %s (%6.2lf%%)\n"
+        "        -Reading: %s (%6.2lf%%)\n"
+        "        -To Sd:   %s (%6.2lf%%)\n"
+        "      -Checksum:  %s (%6.2lf%%)\n"
+        "      -Signing:   %s (%6.2lf%%)\n"
+        "      -Xattr:     %s (%6.2lf%%)\n"
+        "      -Acl:       %s (%6.2lf%%)\n"
+        "    -Accepting:   %s (%6.2lf%%)\n"
         "  *Throughput (send %lld bytes)\n"
-        "    -Total:      %20.2lfMB/s\n"
-        "    -Sending:    %20.2lfMB/s\n",
+        "    -Total:       %20.2lfMB/s\n"
+        "      -Reading:   %20.2lfMB/s\n"
+        "      -To Sd:     %20.2lfMB/s\n",
         jcr->JobId, FormatDuration(total_time).c_str(),
         FormatDuration(saving_total).c_str(), 100 * saving_pc,
         FormatDuration(sending_total).c_str(), 100 * sending_pc,
+        FormatDuration(reading_total).c_str(), 100 * reading_pc,
         FormatDuration(sd_total).c_str(), 100 * sd_pc,
         FormatDuration(checksum_total).c_str(), 100 * checksum_pc,
         FormatDuration(signing_total).c_str(), 100 * signing_pc,
-        FormatDuration(reading_total).c_str(), 100 * reading_pc,
         FormatDuration(xattr_total).c_str(), 100 * xattr_pc,
         FormatDuration(acl_total).c_str(), 100 * acl_pc,
         FormatDuration(accept_total).c_str(), 100 * accept_pc, job_bytes,
-        total_tp, saving_tp);
+        total_tp, reading_tp, sd_tp);
 
   Jmsg(jcr, M_INFO, 0,
-        "performance info jobid=%u\n"
-        "  *Time spent    %s\n"
-        "    -Saving:     %s (%6.2lf%%)\n"
-        "      -Sending:  %s (%6.2lf%%)\n"
-        "        -To Sd:  %s (%6.2lf%%)\n"
-        "      -Checksum: %s (%6.2lf%%)\n"
-        "      -Signing:  %s (%6.2lf%%)\n"
-        "      -Reading:  %s (%6.2lf%%)\n"
-        "      -Xattr:    %s (%6.2lf%%)\n"
-        "      -Acl:      %s (%6.2lf%%)\n"
-        "    -Accepting:  %s (%6.2lf%%)\n"
+        "FindFiles jobid=%u\n"
+        "  *Time spent     %s\n"
+        "    -Saving:      %s (%6.2lf%%)\n"
+        "      -Sending:   %s (%6.2lf%%)\n"
+        "        -Reading: %s (%6.2lf%%)\n"
+        "        -To Sd:   %s (%6.2lf%%)\n"
+        "      -Checksum:  %s (%6.2lf%%)\n"
+        "      -Signing:   %s (%6.2lf%%)\n"
+        "      -Xattr:     %s (%6.2lf%%)\n"
+        "      -Acl:       %s (%6.2lf%%)\n"
+        "    -Accepting:   %s (%6.2lf%%)\n"
         "  *Throughput (send %lld bytes)\n"
-        "    -Total:      %20.2lfMB/s\n"
-        "    -Sending:    %20.2lfMB/s\n",
+        "    -Total:       %20.2lfMB/s\n"
+        "      -Reading:   %20.2lfMB/s\n"
+        "      -To Sd:     %20.2lfMB/s\n",
         jcr->JobId, FormatDuration(total_time).c_str(),
         FormatDuration(saving_total).c_str(), 100 * saving_pc,
         FormatDuration(sending_total).c_str(), 100 * sending_pc,
+        FormatDuration(reading_total).c_str(), 100 * reading_pc,
         FormatDuration(sd_total).c_str(), 100 * sd_pc,
         FormatDuration(checksum_total).c_str(), 100 * checksum_pc,
         FormatDuration(signing_total).c_str(), 100 * signing_pc,
-        FormatDuration(reading_total).c_str(), 100 * reading_pc,
         FormatDuration(xattr_total).c_str(), 100 * xattr_pc,
         FormatDuration(acl_total).c_str(), 100 * acl_pc,
         FormatDuration(accept_total).c_str(), 100 * accept_pc, job_bytes,
-        total_tp, saving_tp);
+        total_tp, reading_tp, sd_tp);
 
   using namespace std::literals::chrono_literals;
   jcr->fd_impl->ff->saving_total = 0ns;
