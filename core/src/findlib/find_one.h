@@ -23,12 +23,14 @@
 
 #include <functional>
 
-int FindOneFile(JobControlRecord* jcr,
-                FindFilesPacket* ff,
-		std::function<int(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)>,
-                char* p,
-                dev_t parent_device,
-                bool top_level);
+int FindOneFile(
+    JobControlRecord* jcr,
+    FindFilesPacket* ff,
+    std::function<
+        int(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)>,
+    char* p,
+    dev_t parent_device,
+    bool top_level);
 void TermFindOne(FindFilesPacket* ff);
 bool HasFileChanged(JobControlRecord* jcr, FindFilesPacket* ff_pkt);
 bool CheckChanges(JobControlRecord* jcr, FindFilesPacket* ff_pkt);

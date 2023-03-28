@@ -268,12 +268,12 @@ int FindFiles(JobControlRecord* jcr,
               int file_sub(JobControlRecord*, FindFilesPacket* ff_pkt, bool),
               int PluginSub(JobControlRecord*, FindFilesPacket* ff_pkt, bool));
 bool ListFiles(JobControlRecord* jcr,
-	       findFILESET* fileset,
-	       bool incremental,
-	       std::vector<channel::in<std::string>> ins);
+               findFILESET* fileset,
+               bool incremental,
+               std::vector<channel::in<std::string>> ins);
 int SendFiles(JobControlRecord* jcr,
               FindFilesPacket* ff,
-	      std::vector<channel::out<std::string>> outs,
+              std::vector<channel::out<std::string>> outs,
               int file_sub(JobControlRecord*, FindFilesPacket* ff_pkt, bool),
               int PluginSub(JobControlRecord*, FindFilesPacket* ff_pkt, bool));
 bool MatchFiles(JobControlRecord* jcr,

@@ -37,7 +37,7 @@
 #include "lib/util.h"
 #include "lib/berrno.h"
 
-#include <memory> // unique_ptr
+#include <memory>  // unique_ptr
 
 #if defined(HAVE_DARWIN_OS)
 /* the MacOS linker wants symbols for the destructors of these two types, so we
@@ -98,41 +98,39 @@ void SetFindChangedFunction(FindFilesPacket* ff,
   ff->CheckFct = CheckFct;
 }
 
-static void SetupFlags(FindFilesPacket* ff,
-		      findIncludeExcludeItem* incexe)
+static void SetupFlags(FindFilesPacket* ff, findIncludeExcludeItem* incexe)
 {
-      // Here, we reset some values between two different Include{}
-      strcpy(ff->VerifyOpts, "V");
-      strcpy(ff->AccurateOpts, "Cmcs");  /* mtime+ctime+size by default */
-      strcpy(ff->BaseJobOpts, "Jspug5"); /* size+perm+user+group+chk  */
-      ff->plugin = NULL;
-      ff->opt_plugin = false;
+  // Here, we reset some values between two different Include{}
+  strcpy(ff->VerifyOpts, "V");
+  strcpy(ff->AccurateOpts, "Cmcs");  /* mtime+ctime+size by default */
+  strcpy(ff->BaseJobOpts, "Jspug5"); /* size+perm+user+group+chk  */
+  ff->plugin = NULL;
+  ff->opt_plugin = false;
 
-      /* By setting all options, we in effect OR the global options which is
-       * what we want. */
-      for (int j = 0; j < incexe->opts_list.size(); j++) {
-        findFOPTS* fo = (findFOPTS*)incexe->opts_list.get(j);
-        CopyBits(FO_MAX, fo->flags, ff->flags);
-        ff->Compress_algo = fo->Compress_algo;
-        ff->Compress_level = fo->Compress_level;
-        ff->StripPath = fo->StripPath;
-        ff->size_match = fo->size_match;
-        ff->fstypes = fo->fstype;
-        ff->drivetypes = fo->Drivetype;
-        if (fo->plugin != NULL) {
-          ff->plugin = fo->plugin; /* TODO: generate a plugin event ? */
-          ff->opt_plugin = true;
-        }
-        bstrncat(ff->VerifyOpts, fo->VerifyOpts,
-                 sizeof(ff->VerifyOpts)); /* TODO: Concat or replace? */
-        if (fo->AccurateOpts[0]) {
-          bstrncpy(ff->AccurateOpts, fo->AccurateOpts,
-                   sizeof(ff->AccurateOpts));
-        }
-        if (fo->BaseJobOpts[0]) {
-          bstrncpy(ff->BaseJobOpts, fo->BaseJobOpts, sizeof(ff->BaseJobOpts));
-        }
-      }
+  /* By setting all options, we in effect OR the global options which is
+   * what we want. */
+  for (int j = 0; j < incexe->opts_list.size(); j++) {
+    findFOPTS* fo = (findFOPTS*)incexe->opts_list.get(j);
+    CopyBits(FO_MAX, fo->flags, ff->flags);
+    ff->Compress_algo = fo->Compress_algo;
+    ff->Compress_level = fo->Compress_level;
+    ff->StripPath = fo->StripPath;
+    ff->size_match = fo->size_match;
+    ff->fstypes = fo->fstype;
+    ff->drivetypes = fo->Drivetype;
+    if (fo->plugin != NULL) {
+      ff->plugin = fo->plugin; /* TODO: generate a plugin event ? */
+      ff->opt_plugin = true;
+    }
+    bstrncat(ff->VerifyOpts, fo->VerifyOpts,
+             sizeof(ff->VerifyOpts)); /* TODO: Concat or replace? */
+    if (fo->AccurateOpts[0]) {
+      bstrncpy(ff->AccurateOpts, fo->AccurateOpts, sizeof(ff->AccurateOpts));
+    }
+    if (fo->BaseJobOpts[0]) {
+      bstrncpy(ff->BaseJobOpts, fo->BaseJobOpts, sizeof(ff->BaseJobOpts));
+    }
+  }
 }
 
 /**
@@ -141,52 +139,52 @@ static void SetupFlags(FindFilesPacket* ff,
  */
 #include <functional>
 static auto CreateCallback(std::function<int(JobControlRecord* jcr,
-				     FindFilesPacket* ff,
-				     bool top_level)> SaveFile)
+                                             FindFilesPacket* ff,
+                                             bool top_level)> SaveFile)
 {
-	return [SaveFile](JobControlRecord* jcr,
-			  FindFilesPacket* ff,
-			  bool top_level)
-		{
-			if (top_level) { return SaveFile(jcr, ff, top_level); /* accept file */ }
-			switch (ff->type) {
-			case FT_NOACCESS:
-			case FT_NOFOLLOW:
-			case FT_NOSTAT:
-			case FT_NOCHG:
-			case FT_ISARCH:
-			case FT_NORECURSE:
-			case FT_NOFSCHG:
-			case FT_INVALIDFS:
-			case FT_INVALIDDT:
-			case FT_NOOPEN:
-				//    return ff->FileSave(jcr, ff, top_level);
+  return
+      [SaveFile](JobControlRecord* jcr, FindFilesPacket* ff, bool top_level) {
+        if (top_level) {
+          return SaveFile(jcr, ff, top_level); /* accept file */
+        }
+        switch (ff->type) {
+          case FT_NOACCESS:
+          case FT_NOFOLLOW:
+          case FT_NOSTAT:
+          case FT_NOCHG:
+          case FT_ISARCH:
+          case FT_NORECURSE:
+          case FT_NOFSCHG:
+          case FT_INVALIDFS:
+          case FT_INVALIDDT:
+          case FT_NOOPEN:
+            //    return ff->FileSave(jcr, ff, top_level);
 
-				/* These items can be filtered */
-			case FT_LNKSAVED:
-			case FT_REGE:
-			case FT_REG:
-			case FT_LNK:
-			case FT_DIRBEGIN:
-			case FT_DIREND:
-			case FT_RAW:
-			case FT_FIFO:
-			case FT_SPEC:
-			case FT_DIRNOCHG:
-			case FT_REPARSE:
-			case FT_JUNCTION:
-				if (AcceptFile(ff)) {
-					return SaveFile(jcr, ff, top_level);
-				} else {
-					Dmsg1(debuglevel, "Skip file %s\n", ff->fname);
-					return -1; /* ignore this file */
-				}
+            /* These items can be filtered */
+          case FT_LNKSAVED:
+          case FT_REGE:
+          case FT_REG:
+          case FT_LNK:
+          case FT_DIRBEGIN:
+          case FT_DIREND:
+          case FT_RAW:
+          case FT_FIFO:
+          case FT_SPEC:
+          case FT_DIRNOCHG:
+          case FT_REPARSE:
+          case FT_JUNCTION:
+            if (AcceptFile(ff)) {
+              return SaveFile(jcr, ff, top_level);
+            } else {
+              Dmsg1(debuglevel, "Skip file %s\n", ff->fname);
+              return -1; /* ignore this file */
+            }
 
-			default:
-				Dmsg1(000, "Unknown FT code %d\n", ff->type);
-				return 0;
-			}
-		};
+          default:
+            Dmsg1(000, "Unknown FT code %d\n", ff->type);
+            return 0;
+        }
+      };
 }
 
 
@@ -208,11 +206,9 @@ int FindFiles(JobControlRecord* jcr,
   /* This is the new way */
   findFILESET* fileset = ff->fileset;
   if (fileset) {
-    /*
-     * TODO: We probably need be move the initialization in the fileset loop,
+    /* TODO: We probably need be move the initialization in the fileset loop,
      * at this place flags options are "concatenated" accross Include {} blocks
-     * (not only Options{} blocks inside a Include{})
-     */
+     * (not only Options{} blocks inside a Include{}) */
     ClearAllBits(FO_MAX, ff->flags);
     for (int i = 0; i < fileset->include_list.size(); i++) {
       dlistString* node;
@@ -229,7 +225,8 @@ int FindFiles(JobControlRecord* jcr,
 
         Dmsg1(debuglevel, "F %s\n", fname);
         ff->top_fname = fname;
-        if (FindOneFile(jcr, ff, CreateCallback(FileSave), ff->top_fname, (dev_t)-1, true)
+        if (FindOneFile(jcr, ff, CreateCallback(FileSave), ff->top_fname,
+                        (dev_t)-1, true)
             == 0) {
           return 0; /* error return */
         }
@@ -560,153 +557,156 @@ void NewOptions(FindFilesPacket* ff, findIncludeExcludeItem* incexe)
   ff->fileset->state = state_options;
 }
 
-auto SaveInList(channel::in<std::string>& in) {
- return [&in](JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
-	 {
-		 switch (ff_pkt->type) {
-		 case FT_LNKSAVED: /* Hard linked, file already saved */
-			 Dmsg2(130, "FT_LNKSAVED hard link: %s => %s\n", ff_pkt->fname,
-			       ff_pkt->link);
-			 break;
-		 case FT_REGE:
-			 Dmsg1(130, "FT_REGE saving: %s\n", ff_pkt->fname);
-			 break;
-		 case FT_REG:
-			 Dmsg1(130, "FT_REG saving: %s\n", ff_pkt->fname);
-			 break;
-		 case FT_LNK:
-			 Dmsg2(130, "FT_LNK saving: %s -> %s\n", ff_pkt->fname, ff_pkt->link);
-			 break;
-		 case FT_RESTORE_FIRST:
-			 Dmsg1(100, "FT_RESTORE_FIRST saving: %s\n", ff_pkt->fname);
-			 break;
-		 case FT_PLUGIN_CONFIG:
-			 Dmsg1(100, "FT_PLUGIN_CONFIG saving: %s\n", ff_pkt->fname);
-			 break;
-		 case FT_DIRBEGIN:
-			 return 1;                           /* not used */
-		 case FT_NORECURSE:
-			 Jmsg(jcr, M_INFO, 1,
-			      _("     Recursion turned off. Will not descend from %s into %s\n"),
-			      ff_pkt->top_fname, ff_pkt->fname);
-			 ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
-			 break;
-		 case FT_NOFSCHG:
-			 /* Suppress message for /dev filesystems */
-			 if (!IsInFileset(ff_pkt)) {
-				 Jmsg(jcr, M_INFO, 1,
-				      _("     %s is a different filesystem. Will not descend from %s "
-					"into it.\n"),
-				      ff_pkt->fname, ff_pkt->top_fname);
-			 }
-			 ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
-			 break;
-		 case FT_INVALIDFS:
-			 Jmsg(jcr, M_INFO, 1,
-			      _("     Disallowed filesystem. Will not descend from %s into %s\n"),
-			      ff_pkt->top_fname, ff_pkt->fname);
-			 ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
-			 break;
-		 case FT_INVALIDDT:
-			 Jmsg(jcr, M_INFO, 1,
-			      _("     Disallowed drive type. Will not descend into %s\n"),
-			      ff_pkt->fname);
-			 break;
-		 case FT_REPARSE:
-		 case FT_JUNCTION:
-		 case FT_DIREND:
-			 Dmsg1(130, "FT_DIREND: %s\n", ff_pkt->link);
-			 break;
-		 case FT_SPEC:
-			 Dmsg1(130, "FT_SPEC saving: %s\n", ff_pkt->fname);
-			 if (S_ISSOCK(ff_pkt->statp.st_mode)) {
-				 Jmsg(jcr, M_SKIPPED, 1, _("     Socket file skipped: %s\n"),
-				      ff_pkt->fname);
-				 return 1;
-			 }
-			 break;
-		 case FT_RAW:
-			 Dmsg1(130, "FT_RAW saving: %s\n", ff_pkt->fname);
-			 break;
-		 case FT_FIFO:
-			 Dmsg1(130, "FT_FIFO saving: %s\n", ff_pkt->fname);
-			 break;
-		 case FT_NOACCESS: {
-			 BErrNo be;
-			 Jmsg(jcr, M_NOTSAVED, 0, _("     Could not access \"%s\": ERR=%s\n"),
-			      ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
-			 jcr->JobErrors++;
-			 return 1;
-		 }
-		 case FT_NOFOLLOW: {
-			 BErrNo be;
-			 Jmsg(jcr, M_NOTSAVED, 0, _("     Could not follow link \"%s\": ERR=%s\n"),
-			      ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
-			 jcr->JobErrors++;
-			 return 1;
-		 }
-		 case FT_NOSTAT: {
-			 BErrNo be;
-			 Jmsg(jcr, M_NOTSAVED, 0, _("     Could not stat \"%s\": ERR=%s\n"),
-			      ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
-			 jcr->JobErrors++;
-			 return 1;
-		 }
-		 case FT_DIRNOCHG:
-		 case FT_NOCHG:
-			 Jmsg(jcr, M_SKIPPED, 1, _("     Unchanged file skipped: %s\n"),
-			      ff_pkt->fname);
-			 return 1;
-		 case FT_ISARCH:
-			 Jmsg(jcr, M_NOTSAVED, 0, _("     Archive file not saved: %s\n"),
-			      ff_pkt->fname);
-			 return 1;
-		 case FT_NOOPEN: {
-			 BErrNo be;
-			 Jmsg(jcr, M_NOTSAVED, 0,
-			      _("     Could not open directory \"%s\": ERR=%s\n"), ff_pkt->fname,
-			      be.bstrerror(ff_pkt->ff_errno));
-			 jcr->JobErrors++;
-			 return 1;
-		 }
-		 case FT_DELETED:
-			 Dmsg1(130, "FT_DELETED: %s\n", ff_pkt->fname);
-			 break;
-		 default:
-			 Jmsg(jcr, M_NOTSAVED, 0, _("     Unknown file type %d; not saved: %s\n"),
-			      ff_pkt->type, ff_pkt->fname);
-			 jcr->JobErrors++;
-			 return 1;
-		 }
+auto SaveInList(channel::in<std::string>& in)
+{
+  return [&in](JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool) {
+    switch (ff_pkt->type) {
+      case FT_LNKSAVED: /* Hard linked, file already saved */
+        Dmsg2(130, "FT_LNKSAVED hard link: %s => %s\n", ff_pkt->fname,
+              ff_pkt->link);
+        break;
+      case FT_REGE:
+        Dmsg1(130, "FT_REGE saving: %s\n", ff_pkt->fname);
+        break;
+      case FT_REG:
+        Dmsg1(130, "FT_REG saving: %s\n", ff_pkt->fname);
+        break;
+      case FT_LNK:
+        Dmsg2(130, "FT_LNK saving: %s -> %s\n", ff_pkt->fname, ff_pkt->link);
+        break;
+      case FT_RESTORE_FIRST:
+        Dmsg1(100, "FT_RESTORE_FIRST saving: %s\n", ff_pkt->fname);
+        break;
+      case FT_PLUGIN_CONFIG:
+        Dmsg1(100, "FT_PLUGIN_CONFIG saving: %s\n", ff_pkt->fname);
+        break;
+      case FT_DIRBEGIN:
+        return 1; /* not used */
+      case FT_NORECURSE:
+        Jmsg(jcr, M_INFO, 1,
+             _("     Recursion turned off. Will not descend from %s into %s\n"),
+             ff_pkt->top_fname, ff_pkt->fname);
+        ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
+        break;
+      case FT_NOFSCHG:
+        /* Suppress message for /dev filesystems */
+        if (!IsInFileset(ff_pkt)) {
+          Jmsg(jcr, M_INFO, 1,
+               _("     %s is a different filesystem. Will not descend from %s "
+                 "into it.\n"),
+               ff_pkt->fname, ff_pkt->top_fname);
+        }
+        ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
+        break;
+      case FT_INVALIDFS:
+        Jmsg(
+            jcr, M_INFO, 1,
+            _("     Disallowed filesystem. Will not descend from %s into %s\n"),
+            ff_pkt->top_fname, ff_pkt->fname);
+        ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
+        break;
+      case FT_INVALIDDT:
+        Jmsg(jcr, M_INFO, 1,
+             _("     Disallowed drive type. Will not descend into %s\n"),
+             ff_pkt->fname);
+        break;
+      case FT_REPARSE:
+      case FT_JUNCTION:
+      case FT_DIREND:
+        Dmsg1(130, "FT_DIREND: %s\n", ff_pkt->link);
+        break;
+      case FT_SPEC:
+        Dmsg1(130, "FT_SPEC saving: %s\n", ff_pkt->fname);
+        if (S_ISSOCK(ff_pkt->statp.st_mode)) {
+          Jmsg(jcr, M_SKIPPED, 1, _("     Socket file skipped: %s\n"),
+               ff_pkt->fname);
+          return 1;
+        }
+        break;
+      case FT_RAW:
+        Dmsg1(130, "FT_RAW saving: %s\n", ff_pkt->fname);
+        break;
+      case FT_FIFO:
+        Dmsg1(130, "FT_FIFO saving: %s\n", ff_pkt->fname);
+        break;
+      case FT_NOACCESS: {
+        BErrNo be;
+        Jmsg(jcr, M_NOTSAVED, 0, _("     Could not access \"%s\": ERR=%s\n"),
+             ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
+        jcr->JobErrors++;
+        return 1;
+      }
+      case FT_NOFOLLOW: {
+        BErrNo be;
+        Jmsg(jcr, M_NOTSAVED, 0,
+             _("     Could not follow link \"%s\": ERR=%s\n"), ff_pkt->fname,
+             be.bstrerror(ff_pkt->ff_errno));
+        jcr->JobErrors++;
+        return 1;
+      }
+      case FT_NOSTAT: {
+        BErrNo be;
+        Jmsg(jcr, M_NOTSAVED, 0, _("     Could not stat \"%s\": ERR=%s\n"),
+             ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
+        jcr->JobErrors++;
+        return 1;
+      }
+      case FT_DIRNOCHG:
+      case FT_NOCHG:
+        Jmsg(jcr, M_SKIPPED, 1, _("     Unchanged file skipped: %s\n"),
+             ff_pkt->fname);
+        return 1;
+      case FT_ISARCH:
+        Jmsg(jcr, M_NOTSAVED, 0, _("     Archive file not saved: %s\n"),
+             ff_pkt->fname);
+        return 1;
+      case FT_NOOPEN: {
+        BErrNo be;
+        Jmsg(jcr, M_NOTSAVED, 0,
+             _("     Could not open directory \"%s\": ERR=%s\n"), ff_pkt->fname,
+             be.bstrerror(ff_pkt->ff_errno));
+        jcr->JobErrors++;
+        return 1;
+      }
+      case FT_DELETED:
+        Dmsg1(130, "FT_DELETED: %s\n", ff_pkt->fname);
+        break;
+      default:
+        Jmsg(jcr, M_NOTSAVED, 0,
+             _("     Unknown file type %d; not saved: %s\n"), ff_pkt->type,
+             ff_pkt->fname);
+        jcr->JobErrors++;
+        return 1;
+    }
 
-		 try {
-			 in.put(ff_pkt->fname);
-		 } catch (...) {
-			 return 0;
-		 }
-		 return 1;
-	 };
+    try {
+      in.put(ff_pkt->fname);
+    } catch (...) {
+      return 0;
+    }
+    return 1;
+  };
 }
 
 
 bool ListFiles(JobControlRecord* jcr,
-	       findFILESET* fileset,
-	       bool incremental,
-	       std::vector<channel::in<std::string>> ins)
+               findFILESET* fileset,
+               bool incremental,
+               std::vector<channel::in<std::string>> ins)
 {
-    ASSERT(ins.size() == (std::size_t)fileset->include_list.size());
+  ASSERT(ins.size() == (std::size_t)fileset->include_list.size());
   /* This is the new way */
   if (fileset) {
-
-	  struct ff_cleanup { void operator()(FindFilesPacket* ff) { TermFindFiles(ff); }};
-	  std::unique_ptr<FindFilesPacket, ff_cleanup> ff(init_find_files(), ff_cleanup{});
+    struct ff_cleanup {
+      void operator()(FindFilesPacket* ff) { TermFindFiles(ff); }
+    };
+    std::unique_ptr<FindFilesPacket, ff_cleanup> ff(init_find_files(),
+                                                    ff_cleanup{});
     ff->fileset = fileset;
     ff->incremental = incremental;
-    /*
-     * TODO: We probably need be move the initialization in the fileset loop,
+    /* TODO: We probably need be move the initialization in the fileset loop,
      * at this place flags options are "concatenated" accross Include {} blocks
-     * (not only Options{} blocks inside a Include{})
-     */
+     * (not only Options{} blocks inside a Include{}) */
     ClearAllBits(FO_MAX, ff->flags);
     for (int i = 0; i < fileset->include_list.size(); i++) {
       dlistString* node;
@@ -720,40 +720,37 @@ bool ListFiles(JobControlRecord* jcr,
       channel::in in = std::move(ins[i]);
 
       foreach_dlist (node, &incexe->name_list) {
-	      char* fname = (char *) node->c_str();
+        char* fname = (char*)node->c_str();
         Dmsg1(debuglevel, "F %s\n", fname);
         ff->top_fname = fname;
-        if (FindOneFile(jcr, ff.get(), CreateCallback(SaveInList(in)), ff->top_fname, (dev_t)-1, true)
+        if (FindOneFile(jcr, ff.get(), CreateCallback(SaveInList(in)),
+                        ff->top_fname, (dev_t)-1, true)
             == 0) {
-		return false; /* error return */
+          return false; /* error return */
         }
         if (JobCanceled(jcr)) { return false; }
       }
     }
 
     return true;
-  }
-  else
-  {
-	  return false;
+  } else {
+    return false;
   }
 }
 
 
 int SendFiles(JobControlRecord* jcr,
               FindFilesPacket* ff,
-	      std::vector<channel::out<std::string>> outs,
+              std::vector<channel::out<std::string>> outs,
               int FileSave(JobControlRecord*, FindFilesPacket* ff_pkt, bool),
               int PluginSave(JobControlRecord*, FindFilesPacket* ff_pkt, bool))
 {
   /* This is the new way */
   findFILESET* fileset = ff->fileset;
   if (fileset) {
-    /*
-     * TODO: We probably need be move the initialization in the fileset loop,
+    /* TODO: We probably need be move the initialization in the fileset loop,
      * at this place flags options are "concatenated" accross Include {} blocks
-     * (not only Options{} blocks inside a Include{})
-     */
+     * (not only Options{} blocks inside a Include{}) */
     ASSERT(outs.size() == (std::size_t)fileset->include_list.size());
     ClearAllBits(FO_MAX, ff->flags);
     for (int i = 0; i < fileset->include_list.size(); i++) {
@@ -773,12 +770,13 @@ int SendFiles(JobControlRecord* jcr,
       channel::out<std::string> list = std::move(outs[i]);
       std::optional<std::string> name;
       while ((name = list.get())) {
-	      // ff->top_fname is const in everything but type
-	      // adding const there would change a lot of function signatures
-	      char* fname = (char *)name->c_str();
+        // ff->top_fname is const in everything but type
+        // adding const there would change a lot of function signatures
+        char* fname = (char*)name->c_str();
         Dmsg1(debuglevel, "F %s\n", fname);
-        ff->top_fname = (char *) fname;
-        if (FindOneFile(jcr, ff, CreateCallback(FileSave), ff->top_fname, (dev_t)-1, false)
+        ff->top_fname = (char*)fname;
+        if (FindOneFile(jcr, ff, CreateCallback(FileSave), ff->top_fname,
+                        (dev_t)-1, false)
             == 0) {
           return 0; /* error return */
         }

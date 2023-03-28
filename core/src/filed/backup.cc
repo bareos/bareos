@@ -114,23 +114,22 @@ FindFilesPacket* DeepCopyImportant(FindFilesPacket* ff_pkt)
 }
 
 std::pair<std::vector<channel::in<std::string>>,
-	  std::vector<channel::out<std::string>>> CreateNecessaryChannels(findFILESET* fileset,
-									  std::size_t buffer_size)
+          std::vector<channel::out<std::string>>>
+CreateNecessaryChannels(findFILESET* fileset, std::size_t buffer_size)
 {
-	// Each include list in the fileset needs its own
-	// channel.  These get created here.
-	std::vector<channel::in<std::string>> channel_ins;
-	std::vector<channel::out<std::string>> channel_outs;
+  // Each include list in the fileset needs its own
+  // channel.  These get created here.
+  std::vector<channel::in<std::string>> channel_ins;
+  std::vector<channel::out<std::string>> channel_outs;
 
-	for (int i = 0; i < fileset->include_list.size(); ++i)
-	{
-		// channel ins/outs cannot be copied/ can only be moved.
-		auto [in, out] = channel::CreateBufferedChannel<std::string>(buffer_size);
-		channel_ins.emplace_back(std::move(in));
-		channel_outs.emplace_back(std::move(out));
-	}
+  for (int i = 0; i < fileset->include_list.size(); ++i) {
+    // channel ins/outs cannot be copied/ can only be moved.
+    auto [in, out] = channel::CreateBufferedChannel<std::string>(buffer_size);
+    channel_ins.emplace_back(std::move(in));
+    channel_outs.emplace_back(std::move(out));
+  }
 
-	return {std::move(channel_ins), std::move(channel_outs)};
+  return {std::move(channel_ins), std::move(channel_outs)};
 }
 
 /**
@@ -209,28 +208,23 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
   auto [ins, outs] = CreateNecessaryChannels(jcr->fd_impl->ff->fileset, 50);
   bool list_ok = true;
   bool send_ok = true;
-  std::thread list_thread{[](JobControlRecord* jcr,
-			     findFILESET* ff,
-			     bool incremental,
-			     auto ins,
-			     bool& ok) {
-	  ok = ListFiles(jcr, ff, incremental, std::move(ins));
-  },
-			  jcr, jcr->fd_impl->ff->fileset,
-			  jcr->fd_impl->ff->incremental,
-			  std::move(ins),
-			  std::ref(list_ok)};
-  if (!SendFiles(jcr, jcr->fd_impl->ff, std::move(outs),
-		 SaveFile, PluginSave))
-  {
-	  send_ok = false;
+  std::thread list_thread{
+      [](JobControlRecord* jcr, findFILESET* ff, bool incremental, auto ins,
+         bool& ok) { ok = ListFiles(jcr, ff, incremental, std::move(ins)); },
+      jcr,
+      jcr->fd_impl->ff->fileset,
+      jcr->fd_impl->ff->incremental,
+      std::move(ins),
+      std::ref(list_ok)};
+  if (!SendFiles(jcr, jcr->fd_impl->ff, std::move(outs), SaveFile,
+                 PluginSave)) {
+    send_ok = false;
   }
 
   list_thread.join();
 
   // join synchronizes threads, so its safe to read from list_ok now!
-  if (!list_ok || !send_ok)
-  {
+  if (!list_ok || !send_ok) {
     ok = false; /* error */
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   }
@@ -1232,103 +1226,102 @@ bail_out:
   return 0;
 }
 
-static bool SendFileHeader(BareosSocket* sd,
-			   int32_t file_index, // attention: is 32bit, gets send with %ld
-			   int type,
-			   const char* canonical_name,
-			   const char* encoded_attributes,
-			   const char* link_name,
-			   const char* encoded_ex_attributes,
-			   int32_t delta_seq // attention: is signed, gets send as unsigned
-			  )
+static bool SendFileHeader(
+    BareosSocket* sd,
+    int32_t file_index,  // attention: is 32bit, gets send with %ld
+    int type,
+    const char* canonical_name,
+    const char* encoded_attributes,
+    const char* link_name,
+    const char* encoded_ex_attributes,
+    int32_t delta_seq  // attention: is signed, gets send as unsigned
+)
 {
-	// fsend already would already do these substitutions for us,
-	// but this makes it clearer.
-	if (!canonical_name) canonical_name = "";
-	if (!encoded_attributes) encoded_attributes = "";
-	if (!link_name) link_name = "";
-	if (!encoded_ex_attributes) encoded_ex_attributes = "";
-	bool status = sd->fsend("%ld %d %s%c%s%c%s%c%s%c%u%c", file_index,
-				type, canonical_name, 0, encoded_attributes, 0,
-				link_name, 0, encoded_ex_attributes, 0, delta_seq, 0);
-	return status;
+  // fsend already would already do these substitutions for us,
+  // but this makes it clearer.
+  if (!canonical_name) canonical_name = "";
+  if (!encoded_attributes) encoded_attributes = "";
+  if (!link_name) link_name = "";
+  if (!encoded_ex_attributes) encoded_ex_attributes = "";
+  bool status = sd->fsend("%ld %d %s%c%s%c%s%c%s%c%u%c", file_index, type,
+                          canonical_name, 0, encoded_attributes, 0, link_name,
+                          0, encoded_ex_attributes, 0, delta_seq, 0);
+  return status;
 }
 
 static bool SendRestoreObject(BareosSocket* sd,
-			      int32_t file_index,
-			      int file_type,
-			      const char* file_name,
-			      const char* object_name,
-			      int32_t object_index,
-			      int32_t object_len,
-			      char* object_data)
+                              int32_t file_index,
+                              int file_type,
+                              const char* file_name,
+                              const char* object_name,
+                              int32_t object_index,
+                              int32_t object_len,
+                              char* object_data)
 {
-      int comp_len = object_len;
-      bool object_compression = 0;
+  int comp_len = object_len;
+  bool object_compression = 0;
 
-      char* send_data = object_data;
-      PoolMem compressed_object;
+  char* send_data = object_data;
+  PoolMem compressed_object;
 
-      if (object_len > 1000) {
-        // Big object, compress it
-        comp_len = compressBound(object_len);
-        // FIXME: check Zdeflate error
-        Zdeflate((char *)object_data, object_len,
-		 compressed_object.check_size(comp_len),
-		 comp_len);
-        if (comp_len < object_len) {
-		// compressed object is smaller; use it
-		send_data = compressed_object.c_str();
-          object_compression = 1; /* zlib level 9 compression */
-	  Dmsg2(100, "Object compressed from %d to %d bytes\n",
-		object_len, comp_len);
-        }
-      }
+  if (object_len > 1000) {
+    // Big object, compress it
+    comp_len = compressBound(object_len);
+    // FIXME: check Zdeflate error
+    Zdeflate((char*)object_data, object_len,
+             compressed_object.check_size(comp_len), comp_len);
+    if (comp_len < object_len) {
+      // compressed object is smaller; use it
+      send_data = compressed_object.c_str();
+      object_compression = 1; /* zlib level 9 compression */
+      Dmsg2(100, "Object compressed from %d to %d bytes\n", object_len,
+            comp_len);
+    }
+  }
 
-      sd->message_length = Mmsg(
-          sd->msg, "%d %d %d %d %d %d %s%c%s%c", file_index, file_type,
-          object_index, comp_len, object_len,
-          object_compression, file_name, 0, object_name, 0);
-      sd->msg = CheckPoolMemorySize(sd->msg, sd->message_length + comp_len + 2);
-      memcpy(sd->msg + sd->message_length, send_data, comp_len);
+  sd->message_length = Mmsg(sd->msg, "%d %d %d %d %d %d %s%c%s%c", file_index,
+                            file_type, object_index, comp_len, object_len,
+                            object_compression, file_name, 0, object_name, 0);
+  sd->msg = CheckPoolMemorySize(sd->msg, sd->message_length + comp_len + 2);
+  memcpy(sd->msg + sd->message_length, send_data, comp_len);
 
-      // Note we send one extra byte so Dir can store zero after object
-      sd->message_length += comp_len + 1;
-      return sd->send();
+  // Note we send one extra byte so Dir can store zero after object
+  sd->message_length += comp_len + 1;
+  return sd->send();
 }
 
-static const char* GetCanonicalName(const struct stat& statp, const char* fname, const char* link)
+static const char* GetCanonicalName(const struct stat& statp,
+                                    const char* fname,
+                                    const char* link)
 {
-	const char* selected;
-	if (S_ISDIR(statp.st_mode))
-	{
-		selected = link;
-	} else {
-		selected = fname;
-	}
+  const char* selected;
+  if (S_ISDIR(statp.st_mode)) {
+    selected = link;
+  } else {
+    selected = fname;
+  }
 
-	return selected;
+  return selected;
 }
 
-static const char* GetLinkName(int type, const char* fname [[maybe_unused]],
-			       const char* link)
+static const char* GetLinkName(int type,
+                               const char* fname [[maybe_unused]],
+                               const char* link)
 {
-	const char* selected;
-	switch (type)
-	{
-	case FT_JUNCTION:
-	case FT_LNK:
-	case FT_LNKSAVED:
-	{
-		selected = link;
-	} break;
-	default: {
-		// should we return nullptr here instead ?
-		selected = "";
-	} break;
-	}
+  const char* selected;
+  switch (type) {
+    case FT_JUNCTION:
+    case FT_LNK:
+    case FT_LNKSAVED: {
+      selected = link;
+    } break;
+    default: {
+      // should we return nullptr here instead ?
+      selected = "";
+    } break;
+  }
 
-	return selected;
+  return selected;
 }
 
 bool EncodeAndSendAttributes(JobControlRecord* jcr,
@@ -1417,69 +1410,50 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
   PoolMem StrippedFile(PM_FNAME), StrippedLink(PM_FNAME);
   const char* file_name = nullptr;
   const char* link_name = nullptr;
-/**
- * If requested strip leading components of the path so that we can
- * save file as if it came from a subdirectory.  This is most useful
- * for dealing with snapshots, by removing the snapshot directory, or
- * in handling vendor migrations where files have been restored with
- * a vendor product into a subdirectory.
- */
-  if (!IS_FT_OBJECT(ff_pkt->type)
-      && ff_pkt->type != FT_DELETED
+  /* If requested strip leading components of the path so that we can
+   * save file as if it came from a subdirectory.  This is most useful
+   * for dealing with snapshots, by removing the snapshot directory, or
+   * in handling vendor migrations where files have been restored with
+   * a vendor product into a subdirectory. */
+  if (!IS_FT_OBJECT(ff_pkt->type) && ff_pkt->type != FT_DELETED
       && ShouldStripPaths(ff_pkt)) { /* already stripped */
-	  bool file_stripped = do_strip(ff_pkt->StripPath,
-					ff_pkt->fname,
-					StrippedFile.c_str());
+    bool file_stripped
+        = do_strip(ff_pkt->StripPath, ff_pkt->fname, StrippedFile.c_str());
 
-	  bool link_stripped = do_strip(ff_pkt->StripPath,
-					ff_pkt->link,
-					StrippedLink.c_str());
+    bool link_stripped
+        = do_strip(ff_pkt->StripPath, ff_pkt->link, StrippedLink.c_str());
 
-	  if (file_stripped || link_stripped)
-	  {
-		  file_name = GetCanonicalName(ff_pkt->statp, StrippedFile.c_str(),
-					       StrippedLink.c_str());
-		  link_name = GetLinkName(ff_pkt->type,
-					  StrippedFile.c_str(),
-					  StrippedLink.c_str());
-		  Dmsg3(100, "fname=%s stripped=%s link=%s\n", ff_pkt->fname,
-			StrippedFile.c_str(), StrippedLink.c_str());
-	  }
+    if (file_stripped || link_stripped) {
+      file_name = GetCanonicalName(ff_pkt->statp, StrippedFile.c_str(),
+                                   StrippedLink.c_str());
+      link_name = GetLinkName(ff_pkt->type, StrippedFile.c_str(),
+                              StrippedLink.c_str());
+      Dmsg3(100, "fname=%s stripped=%s link=%s\n", ff_pkt->fname,
+            StrippedFile.c_str(), StrippedLink.c_str());
+    }
   }
 
-  if (!file_name)
-  {
-	  file_name = GetCanonicalName(ff_pkt->statp, ff_pkt->fname,
-				       ff_pkt->link);
-	  link_name = GetLinkName(ff_pkt->type, ff_pkt->fname, ff_pkt->link);
+  if (!file_name) {
+    file_name = GetCanonicalName(ff_pkt->statp, ff_pkt->fname, ff_pkt->link);
+    link_name = GetLinkName(ff_pkt->type, ff_pkt->fname, ff_pkt->link);
   }
 
-  if ((ff_pkt->type == FT_PLUGIN_CONFIG) ||
-      (ff_pkt->type == FT_RESTORE_FIRST))
-  {
-	  status = SendRestoreObject(sd,
-				     ff_pkt->FileIndex,
-				     ff_pkt->type,
-				     file_name,
-				     ff_pkt->object_name,
-				     ff_pkt->object_index,
-				     ff_pkt->object_len,
-				     ff_pkt->object);
-  }
-  else
-  {
-	  status = SendFileHeader(sd, ff_pkt->FileIndex, ff_pkt->type, file_name,
-				  attribs.c_str(), link_name, attribsEx,
-				  ff_pkt->delta_seq);
+  if ((ff_pkt->type == FT_PLUGIN_CONFIG)
+      || (ff_pkt->type == FT_RESTORE_FIRST)) {
+    status = SendRestoreObject(sd, ff_pkt->FileIndex, ff_pkt->type, file_name,
+                               ff_pkt->object_name, ff_pkt->object_index,
+                               ff_pkt->object_len, ff_pkt->object);
+  } else {
+    status = SendFileHeader(sd, ff_pkt->FileIndex, ff_pkt->type, file_name,
+                            attribs.c_str(), link_name, attribsEx,
+                            ff_pkt->delta_seq);
   }
 
   switch (ff_pkt->type) {
     case FT_JUNCTION:
     case FT_LNK:
-    case FT_LNKSAVED:
-    {
-      Dmsg3(300, "Link %d %s to %s\n", ff_pkt->FileIndex, file_name,
-            link_name);
+    case FT_LNKSAVED: {
+      Dmsg3(300, "Link %d %s to %s\n", ff_pkt->FileIndex, file_name, link_name);
     } break;
   }
 
@@ -1500,9 +1474,7 @@ bool do_strip(int count, const char* in, char* out)
   int numsep = 0;
 
   // Copy to first path separator -- Win32 might have c: ...
-  while (*in && !IsPathSeparator(*in)) {
-    *out++ = *in++;
-  }
+  while (*in && !IsPathSeparator(*in)) { *out++ = *in++; }
   if (*in) { /* Not at the end of the string */
     *out++ = *in++;
     numsep++; /* one separator seen */
@@ -1528,31 +1500,27 @@ bool do_strip(int count, const char* in, char* out)
 
 bool ShouldStripPaths(const FindFilesPacket* ff_pkt)
 {
-	if (!BitIsSet(FO_STRIPPATH, ff_pkt->flags) || ff_pkt->StripPath <= 0) {
-		Dmsg1(200, "No strip for %s\n", ff_pkt->fname);
-		return false;
-	}
-	return true;
+  if (!BitIsSet(FO_STRIPPATH, ff_pkt->flags) || ff_pkt->StripPath <= 0) {
+    Dmsg1(200, "No strip for %s\n", ff_pkt->fname);
+    return false;
+  }
+  return true;
 }
 
 PoolMem GetStrippedCanonicalName(const FindFilesPacket* ff_pkt)
 {
-	PoolMem stripped_name(PM_FNAME);
+  PoolMem stripped_name(PM_FNAME);
 
-	const char* name = GetCanonicalName(ff_pkt->statp,
-					    ff_pkt->fname,
-					    ff_pkt->link);
+  const char* name
+      = GetCanonicalName(ff_pkt->statp, ff_pkt->fname, ff_pkt->link);
 
-	if (ShouldStripPaths(ff_pkt))
-	{
-		do_strip(ff_pkt->StripPath, name, stripped_name.c_str());
-	}
-	else
-	{
-		stripped_name.strcpy(name);
-	}
+  if (ShouldStripPaths(ff_pkt)) {
+    do_strip(ff_pkt->StripPath, name, stripped_name.c_str());
+  } else {
+    stripped_name.strcpy(name);
+  }
 
-	return stripped_name;
+  return stripped_name;
 }
 
 #if defined(WIN32_VSS)
