@@ -62,9 +62,9 @@ TEST(DirectorToClientConnection, DoesNotDowngradeToClearTextWhenTlsRequired)
   jcr->dir_impl->res.client = static_cast<directordaemon::ClientResource*>(
       directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT,
                                                 "fd-no-downgrade"));
-  jcr->file_bsock = new BareosSocketTCP;
 
-  EXPECT_FALSE(directordaemon::ConnectToFileDaemon(jcr, 0, 0, false, nullptr));
+  directordaemon::SetConnectionHandshakeMode(jcr, nullptr);
+  directordaemon::UpdateFailedConnectionHandshakeMode(jcr);
   EXPECT_TRUE(jcr->dir_impl->connection_handshake_try_
               == directordaemon::ClientConnectionHandshakeMode::kFailed);
   FreeJcr(jcr);
@@ -86,9 +86,9 @@ TEST(DirectorToClientConnection, DowngradesToClearTextWhenTlsNotRequired)
   jcr->dir_impl->res.client = static_cast<directordaemon::ClientResource*>(
       directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT,
                                                 "fd-allow-downgrade"));
-  jcr->file_bsock = new BareosSocketTCP;
 
-  EXPECT_FALSE(directordaemon::ConnectToFileDaemon(jcr, 0, 0, false, nullptr));
+  directordaemon::SetConnectionHandshakeMode(jcr, nullptr);
+  directordaemon::UpdateFailedConnectionHandshakeMode(jcr);
   EXPECT_TRUE(
       jcr->dir_impl->connection_handshake_try_
       == directordaemon::ClientConnectionHandshakeMode::kCleartextFirst);
