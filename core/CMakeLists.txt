@@ -244,6 +244,9 @@ endif()
 
 include(BareosFindAllLibraries)
 include(BareosFindPrograms)
+if (ENABLE_SANITIZERS)
+  find_program(GCORE false)
+endif()
 
 if(NOT ${OPENSSL_FOUND})
   message(FATAL_ERROR "FATAL ERROR: OpenSSL is required but was not found.")
