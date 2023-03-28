@@ -29,6 +29,8 @@ bool ConnectToFileDaemon(JobControlRecord* jcr,
                          int max_retry_time,
                          bool verbose,
                          UaContext* ua = nullptr);
+void UpdateFailedConnectionHandshakeMode(JobControlRecord* jcr);
+void SetConnectionHandshakeMode(JobControlRecord* jcr, UaContext *ua);
 int SendJobInfoToFileDaemon(JobControlRecord* jcr);
 bool SendIncludeList(JobControlRecord* jcr);
 bool SendExcludeList(JobControlRecord* jcr);
