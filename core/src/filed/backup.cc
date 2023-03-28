@@ -457,7 +457,7 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
         "    -Total:       %20.2lfMB/s\n"
         "      -Reading:   %20.2lfMB/s\n"
         "      -To Sd:     %20.2lfMB/s\n",
-        jcr->JobId, FormatDuration(total_time).c_str(),
+        FormatDuration(total_time).c_str(),
         FormatDuration(saving_total).c_str(), 100 * saving_pc,
         FormatDuration(sending_total).c_str(), 100 * sending_pc,
         FormatDuration(reading_total).c_str(), 100 * reading_pc,
