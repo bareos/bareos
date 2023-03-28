@@ -387,23 +387,31 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
   auto xattr_ns = xattr_total.count();
   auto acl_ns = acl_total.count();
 
-  double accept_pc = (double)accept_ns / (double)total_ns;
-  double saving_pc = (double)saving_ns / (double)total_ns;
-  double checksum_pc = (double)checksum_ns / (double)saving_ns;
-  double signing_pc = (double)signing_ns / (double)saving_ns;
-  double reading_pc = (double)reading_ns / (double)sending_ns;
-  double sending_pc = (double)sending_ns / (double)saving_ns;
-  double sd_pc = (double)sd_ns / (double)sending_ns;
-  double xattr_pc = (double)xattr_ns / (double)saving_ns;
-  double acl_pc = (double)acl_ns / (double)saving_ns;
+  auto save_div = [](int64_t a, int64_t b) -> double {
+    if (b != 0) {
+      return (double) a / (double) b;
+    } else {
+      return 0.0;
+    }
+  };
+
+  double accept_pc   = save_div(accept_ns, (double)total_ns);
+  double saving_pc   = save_div(saving_ns, (double)total_ns);
+  double checksum_pc = save_div(checksum_ns, (double)saving_ns);
+  double signing_pc  = save_div(signing_ns, (double)saving_ns);
+  double reading_pc  = save_div(reading_ns, (double)sending_ns);
+  double sending_pc  = save_div(sending_ns, (double)saving_ns);
+  double sd_pc       = save_div(sd_ns, (double)sending_ns);
+  double xattr_pc    = save_div(xattr_ns, (double)saving_ns);
+  double acl_pc      = save_div(acl_ns, (double)saving_ns);
 
   int64_t job_bytes = jcr->JobBytes;
   // from B/ns -> MB/s
   constexpr double mbps = (double)1e9 / (double)(1024 * 1024);
 
-  double total_tp = job_bytes / (total_ns / mbps);
-  double sd_tp = job_bytes / (sd_ns / mbps);
-  double reading_tp = job_bytes / (reading_ns / mbps);
+  double total_tp = total_ns ? job_bytes / (total_ns / mbps) : 0.0;
+  double sd_tp = sd_ns ? job_bytes / (sd_ns / mbps) : 0.0;
+  double reading_tp = reading_ns ? job_bytes / (reading_ns / mbps) : 0.0;
 
   Dmsg0(400,
         "FindFiles jobid=%u\n"
@@ -434,7 +442,7 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
         total_tp, reading_tp, sd_tp);
 
   Jmsg(jcr, M_INFO, 0,
-        "FindFiles jobid=%u\n"
+        "performance info\n"
         "  *Time spent     %s\n"
         "    -Saving:      %s (%6.2lf%%)\n"
         "      -Sending:   %s (%6.2lf%%)\n"
