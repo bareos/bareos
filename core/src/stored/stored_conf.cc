@@ -79,7 +79,6 @@ static ResourceItem store_items[] = {
   {"SdSourceAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_store, SDsrc_addr), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL},
   {"WorkingDirectory", CFG_TYPE_DIR, ITEM(res_store, working_directory), 0,
       CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, PATH_BAREOS_WORKINGDIR, NULL, NULL},
-  {"PidDirectory", CFG_TYPE_DIR, ITEM(res_store, pid_directory), 0, CFG_ITEM_DEPRECATED, NULL, NULL, NULL},
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
   {"BackendDirectory", CFG_TYPE_STR_VECTOR_OF_DIRS, ITEM(res_store, backend_directories), 0,
       CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, PATH_BAREOS_BACKENDDIR, NULL, NULL},
@@ -920,7 +919,6 @@ static void FreeResource(BareosResource* res, int type)
       if (p->SDsrc_addr) { FreeAddresses(p->SDsrc_addr); }
       if (p->NDMPaddrs) { FreeAddresses(p->NDMPaddrs); }
       if (p->working_directory) { free(p->working_directory); }
-      if (p->pid_directory) { free(p->pid_directory); }
       if (p->plugin_directory) { free(p->plugin_directory); }
       if (p->plugin_names) { delete p->plugin_names; }
       if (p->scripts_directory) { free(p->scripts_directory); }

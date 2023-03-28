@@ -202,12 +202,6 @@
           "platform_specific": true,
           "equals": true
         },
-        "PidDirectory": {
-          "datatype": "DIRECTORY",
-          "code": 0,
-          "deprecated": true,
-          "equals": true
-        },
         "BackendDirectory": {
           "datatype": "DIRECTORY_LIST",
           "code": 0,
