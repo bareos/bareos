@@ -65,7 +65,7 @@ System Requirements
 
 -  PHP 7 or newer is recommended.
 
--  On SUSE Linux Enterprise 12 you need the additional SUSE Linux Enterprise Module for Web Scripting 12.
+-  On SUSE Linux Enterprise 12 you need the additional SUSE Linux Enterprise Module for Web Scripting 12 and additional repository :strong:`Package Hub` to satisfy apache2-mod-fcgid requirement.
 
 .. _section-install-webui:
 
