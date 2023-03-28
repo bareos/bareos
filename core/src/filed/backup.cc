@@ -1100,21 +1100,85 @@ bail_out:
 }
 #endif
 
+struct buffer {
+  std::size_t size;
+  char*       data;
+
+  buffer() : size(0)
+	   , data(nullptr)
+  {}
+
+  buffer(std::size_t size,
+	 char*& data_) : size(size)
+		       , data(data_)
+  {
+    data_ = nullptr;
+  }
+
+  buffer(buffer&& buf) : size(0)
+		       , data(nullptr)
+  {
+    std::swap(size, buf.size);
+    std::swap(data, buf.data);
+  }
+
+  buffer& operator=(const buffer&) = delete;
+  buffer& operator=(buffer&& buf) {
+    std::swap(size, buf.size);
+    std::swap(data, buf.data);
+    return *this;
+  }
+
+  ~buffer() {
+    if (data) {
+      free(data);
+    }
+  }
+};
+
+static void ReadData(channel::in<buffer> data, BareosFilePacket* bfd,
+		     std::size_t buflen)
+{
+  while (1) {
+    char* buf = (char*) malloc(buflen);
+    if (!buf) { break; }
+    ssize_t num_read = bread(bfd, buf, buflen);
+    if (num_read > 0) {
+      if (!data.put(std::move(buffer{(std::size_t) num_read, buf}))) {
+	break;
+      }
+    } else {
+      free(buf);
+      break;
+    }
+  }
+}
+
 // Send the content of a file on anything but an EFS filesystem.
 static inline bool SendPlainData(b_ctx& bctx)
 {
-  bool retval = false;
+  bool retval = true;
   BareosSocket* sd = bctx.jcr->store_bsock;
 
-  // Read the file data
-  while ((sd->message_length
-          = (uint32_t)bread(&bctx.ff_pkt->bfd, bctx.rbuf, bctx.rsize))
-         > 0) {
-    if (!SendDataToSd(&bctx)) { goto bail_out; }
-  }
-  retval = true;
+  auto [in, out] = channel::CreateBufferedChannel<buffer>(4);
 
-bail_out:
+  std::thread reader(ReadData, std::move(in), &bctx.ff_pkt->bfd,
+		     bctx.rsize);
+
+  std::optional<buffer> buf;
+
+  while ((buf = out.get())) {
+
+    memcpy(bctx.rbuf, buf->data, buf->size);
+    sd->message_length = buf->size;
+    if (!SendDataToSd(&bctx)) {
+      retval = false;
+      out.close();
+      break;
+    }
+  }
+  reader.join();
+
   return retval;
 }
 
