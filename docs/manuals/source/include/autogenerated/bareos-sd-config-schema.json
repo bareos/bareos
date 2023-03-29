@@ -727,6 +727,7 @@
         "MaximumConcurrentJobs": {
           "datatype": "PINT32",
           "code": 0,
+          "default_value": "1",
           "equals": true
         },
         "SpoolDirectory": {

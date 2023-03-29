@@ -189,7 +189,7 @@ static ResourceItem dev_items[] = {
   {"MaximumBlockSize", CFG_TYPE_MAXBLOCKSIZE, ITEM(res_dev, max_block_size), 0, 0, NULL, NULL, NULL},
   {"MaximumFileSize", CFG_TYPE_SIZE64, ITEM(res_dev, max_file_size), 0, CFG_ITEM_DEFAULT, "1000000000", NULL, NULL},
   {"VolumeCapacity", CFG_TYPE_SIZE64, ITEM(res_dev, volume_capacity), 0, 0, NULL, NULL, NULL},
-  {"MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_dev, max_concurrent_jobs), 0, 0, NULL, NULL, NULL},
+  {"MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_dev, max_concurrent_jobs), 0, CFG_ITEM_DEFAULT, "1", NULL, NULL},
   {"SpoolDirectory", CFG_TYPE_DIR, ITEM(res_dev, spool_directory), 0, 0, NULL, NULL, NULL},
   {"MaximumSpoolSize", CFG_TYPE_SIZE64, ITEM(res_dev, max_spool_size), 0, 0, NULL, NULL, NULL},
   {"MaximumJobSpoolSize", CFG_TYPE_SIZE64, ITEM(res_dev, max_job_spool_size), 0, 0, NULL, NULL, NULL},
