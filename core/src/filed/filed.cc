@@ -226,14 +226,6 @@ int main(int argc, char* argv[])
 
   SetWorkingDirectory(me->working_directory);
 
-#if defined(HAVE_WIN32)
-  if (me->compatible) {
-    Win32SetCompatible();
-  } else {
-    Win32ClearCompatible();
-  }
-#endif
-
   if (test_config) { TerminateFiled(0); }
 
   /* Maximum 1 daemon at a time */

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2007 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -102,7 +102,6 @@ class ClientResource
   uint32_t max_network_buffer_size = 0; /* Max network buf size */
   uint32_t jcr_watchdog_time = 0;       /* Absolute time after which a Job gets
                                        terminated       regardless of its progress */
-  bool compatible = false;              /* Support old protocol keywords */
   bool allow_bw_bursting = false; /* Allow bursting with bandwidth limiting */
   bool pki_sign
       = false; /* Enable Data Integrity Verification via Digital Signatures */

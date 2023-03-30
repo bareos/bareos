@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -56,10 +56,7 @@ class Device; /* for forward reference */
 
 /* Tape label and version definitions */
 #define BareosId "Bareos 2.0 immortal\n"
-#define OldBaculaId "Bacula 1.0 immortal\n"
-#define OlderBaculaId "Bacula 0.9 mortal\n"
 #define BareosTapeVersion 20
-#define OldCompatibleBareosTapeVersion1 11
 
 /**
  * This is the Media structure for a block header

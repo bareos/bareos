@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -96,7 +96,6 @@ static ResourceItem store_items[] = {
   {"MaximumNetworkBufferSize", CFG_TYPE_PINT32, ITEM(res_store, max_network_buffer_size), 0, 0, NULL, NULL, NULL},
   {"ClientConnectWait", CFG_TYPE_TIME, ITEM(res_store, client_wait), 0, CFG_ITEM_DEFAULT, "1800" /* 30 minutes */, NULL, NULL},
   {"VerId", CFG_TYPE_STR, ITEM(res_store, verid), 0, 0, NULL, NULL, NULL},
-  {"Compatible", CFG_TYPE_BOOL, ITEM(res_store, compatible), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "false", NULL, NULL},
   {"MaximumBandwidthPerJob", CFG_TYPE_SPEED, ITEM(res_store, max_bandwidth_per_job), 0, 0, NULL, NULL, NULL},
   {"AllowBandwidthBursting", CFG_TYPE_BOOL, ITEM(res_store, allow_bw_bursting), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL},
   {"NdmpEnable", CFG_TYPE_BOOL, ITEM(res_store, ndmp_enable), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL},

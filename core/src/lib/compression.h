@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,7 +23,6 @@
 
 const char* cmprs_algo_to_text(uint32_t compression_algorithm);
 bool SetupCompressionBuffers(JobControlRecord* jcr,
-                             bool compatible,
                              uint32_t compression_algorithm,
                              uint32_t* compress_buf_size);
 bool SetupDecompressionBuffers(JobControlRecord* jcr,

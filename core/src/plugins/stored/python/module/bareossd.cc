@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -235,18 +235,6 @@ static PyObject* PyBareosGetValue(PyObject*, PyObject* args)
                                                 &value)
           == bRC_OK) {
         if (value) { pRetVal = PyUnicode_FromString(value); }
-      }
-      break;
-    }
-    case bsdVarCompatible: {
-      bool value;
-
-      if (bareos_core_functions->getBareosValue(NULL, (bsdrVariable)var, &value)
-          == bRC_OK) {
-        long bool_value;
-
-        bool_value = (value) ? 1 : 0;
-        pRetVal = PyBool_FromLong(bool_value);
       }
       break;
     }

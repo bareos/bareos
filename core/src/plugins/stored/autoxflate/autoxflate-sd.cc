@@ -78,9 +78,6 @@ static bool SetupAutoInflation(PluginContext* ctx, DeviceControlRecord* dcr);
 static bool AutoDeflateRecord(PluginContext* ctx, DeviceControlRecord* dcr);
 static bool AutoInflateRecord(PluginContext* ctx, DeviceControlRecord* dcr);
 
-// Is the SD in compatible mode or not.
-static bool sd_enabled_compatible = false;
-
 // Pointers to Bareos functions
 static CoreFunctions* bareos_core_functions = NULL;
 static PluginApiDefinition* bareos_plugin_interface_version = NULL;
@@ -162,10 +159,6 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
   bareos_plugin_interface_version = lbareos_plugin_interface_version;
   *plugin_information = &pluginInfo; /* return pointer to our info */
   *plugin_functions = &pluginFuncs;  /* return pointer to our functions */
-
-  // Get the current setting of the compatible flag.
-  bareos_core_functions->getBareosValue(NULL, bsdVarCompatible,
-                                        (void*)&sd_enabled_compatible);
 
   return bRC_OK;
 }
@@ -446,8 +439,7 @@ static bool SetupAutoDeflation(PluginContext* ctx, DeviceControlRecord* dcr)
 
   if (jcr->buf_size == 0) { jcr->buf_size = DEFAULT_NETWORK_BUFFER_SIZE; }
 
-  if (!SetupCompressionBuffers(jcr, sd_enabled_compatible,
-                               dcr->device_resource->autodeflate_algorithm,
+  if (!SetupCompressionBuffers(jcr, dcr->device_resource->autodeflate_algorithm,
                                &compress_buf_size)) {
     goto bail_out;
   }

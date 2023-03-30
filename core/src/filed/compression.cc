@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -57,7 +57,7 @@ bool AdjustCompressionBuffers(JobControlRecord* jcr)
       for (j = 0; j < incexe->opts_list.size(); j++) {
         findFOPTS* fo = (findFOPTS*)incexe->opts_list.get(j);
 
-        if (!SetupCompressionBuffers(jcr, me->compatible, fo->Compress_algo,
+        if (!SetupCompressionBuffers(jcr, fo->Compress_algo,
                                      &compress_buf_size)) {
           return false;
         }
@@ -93,69 +93,43 @@ bool SetupCompressionContext(b_ctx& bctx)
   bool retval = false;
 
   if (BitIsSet(FO_COMPRESS, bctx.ff_pkt->flags)) {
-    // See if we need to be compatible with the old GZIP stream encoding.
-    if (!me->compatible || bctx.ff_pkt->Compress_algo != COMPRESS_GZIP) {
-      memset(&bctx.ch, 0, sizeof(comp_stream_header));
+    memset(&bctx.ch, 0, sizeof(comp_stream_header));
 
-      // Calculate buffer offsets.
-      if (BitIsSet(FO_SPARSE, bctx.ff_pkt->flags)
-          || BitIsSet(FO_OFFSETS, bctx.ff_pkt->flags)) {
-        bctx.chead
-            = (uint8_t*)bctx.jcr->compress.deflate_buffer + OFFSET_FADDR_SIZE;
-        bctx.cbuf = (uint8_t*)bctx.jcr->compress.deflate_buffer
-                    + OFFSET_FADDR_SIZE + sizeof(comp_stream_header);
-        bctx.max_compress_len
-            = bctx.jcr->compress.deflate_buffer_size
-              - (sizeof(comp_stream_header) + OFFSET_FADDR_SIZE);
-      } else {
-        bctx.chead = (uint8_t*)bctx.jcr->compress.deflate_buffer;
-        bctx.cbuf = (uint8_t*)bctx.jcr->compress.deflate_buffer
-                    + sizeof(comp_stream_header);
-        bctx.max_compress_len = bctx.jcr->compress.deflate_buffer_size
-                                - sizeof(comp_stream_header);
-      }
-
-      bctx.wbuf
-          = bctx.jcr->compress.deflate_buffer; /* compressed output here */
-      bctx.cipher_input
-          = (uint8_t*)
-                bctx.jcr->compress.deflate_buffer; /* encrypt compressed data */
-      bctx.ch.magic = bctx.ff_pkt->Compress_algo;
-      bctx.ch.version = COMP_HEAD_VERSION;
+    // Calculate buffer offsets.
+    if (BitIsSet(FO_SPARSE, bctx.ff_pkt->flags)
+        || BitIsSet(FO_OFFSETS, bctx.ff_pkt->flags)) {
+      bctx.chead
+          = (uint8_t*)bctx.jcr->compress.deflate_buffer + OFFSET_FADDR_SIZE;
+      bctx.cbuf = (uint8_t*)bctx.jcr->compress.deflate_buffer
+                  + OFFSET_FADDR_SIZE + sizeof(comp_stream_header);
+      bctx.max_compress_len
+          = bctx.jcr->compress.deflate_buffer_size
+            - (sizeof(comp_stream_header) + OFFSET_FADDR_SIZE);
     } else {
-      // Calculate buffer offsets.
-      bctx.chead = NULL;
-      if (BitIsSet(FO_SPARSE, bctx.ff_pkt->flags)
-          || BitIsSet(FO_OFFSETS, bctx.ff_pkt->flags)) {
-        bctx.cbuf
-            = (uint8_t*)bctx.jcr->compress.deflate_buffer + OFFSET_FADDR_SIZE;
-        bctx.max_compress_len
-            = bctx.jcr->compress.deflate_buffer_size - OFFSET_FADDR_SIZE;
-      } else {
-        bctx.cbuf = (uint8_t*)bctx.jcr->compress.deflate_buffer;
-        bctx.max_compress_len = bctx.jcr->compress.deflate_buffer_size;
-      }
-      bctx.wbuf
-          = bctx.jcr->compress.deflate_buffer; /* compressed output here */
-      bctx.cipher_input
-          = (uint8_t*)
-                bctx.jcr->compress.deflate_buffer; /* encrypt compressed data */
+      bctx.chead = (uint8_t*)bctx.jcr->compress.deflate_buffer;
+      bctx.cbuf = (uint8_t*)bctx.jcr->compress.deflate_buffer
+                  + sizeof(comp_stream_header);
+      bctx.max_compress_len
+          = bctx.jcr->compress.deflate_buffer_size - sizeof(comp_stream_header);
     }
 
-    /*
-     * Do compression specific actions and set the magic, header version and
-     * compression level.
-     */
+    bctx.wbuf = bctx.jcr->compress.deflate_buffer; /* compressed output here */
+    bctx.cipher_input
+        = (uint8_t*)
+              bctx.jcr->compress.deflate_buffer; /* encrypt compressed data */
+    bctx.ch.magic = bctx.ff_pkt->Compress_algo;
+    bctx.ch.version = COMP_HEAD_VERSION;
+
+    /* Do compression specific actions and set the magic, header version and
+     * compression level. */
     switch (bctx.ff_pkt->Compress_algo) {
 #if defined(HAVE_LIBZ)
       case COMPRESS_GZIP: {
         z_stream* pZlibStream;
 
-        /**
-         * Only change zlib parameters if there is no pending operation.
+        /* Only change zlib parameters if there is no pending operation.
          * This should never happen as deflateReset is called after each
-         * deflate.
-         */
+         * deflate. */
         pZlibStream = (z_stream*)bctx.jcr->compress.workset.pZLIB;
         if (pZlibStream->total_in == 0) {
           int zstat;
@@ -185,11 +159,9 @@ bool SetupCompressionContext(b_ctx& bctx)
         zfast_stream* pZfastStream;
         zfast_stream_compressor compressor = COMPRESSOR_FASTLZ;
 
-        /**
-         * Only change fastlz parameters if there is no pending operation.
+        /* Only change fastlz parameters if there is no pending operation.
          * This should never happen as fastlzlibCompressReset is called after
-         * each fastlzlibCompress.
-         */
+         * each fastlzlibCompress. */
         pZfastStream = (zfast_stream*)bctx.jcr->compress.workset.pZFAST;
         if (pZfastStream->total_in == 0) {
           switch (bctx.ff_pkt->Compress_algo) {

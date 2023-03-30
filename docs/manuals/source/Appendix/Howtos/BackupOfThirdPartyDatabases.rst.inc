@@ -72,7 +72,7 @@ For Bareos < 14.2, install the Bareos MSSQL plugin onto the MSSQL server you wan
 Bareos Windows-Installer
 ''''''''''''''''''''''''
 
-Install the Bareos filedaemon including the component "Bareos FileDameon Plugins". Make sure, that you install the file daemon without the "compatible" option.
+Install the Bareos filedaemon including the component "Bareos FileDameon Plugins".
 
 Manual install
 ''''''''''''''
@@ -90,7 +90,6 @@ After downloading the plugin you need to copy it into :file:`C:\\Program Files\\
      Plugin Directory = "C:/Program Files/Bareos/Plugins"
 
      Plugin Names = "mssqlvdi"
-     compatible = no  # this is the default since bareos 15
    }
 
 Plugin Test

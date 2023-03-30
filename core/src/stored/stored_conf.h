@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -119,9 +119,8 @@ class StorageResource
   utime_t client_wait = {0};            /**< Time to wait for FD to connect */
   uint32_t max_network_buffer_size = 0; /**< Max network buf size */
   bool autoxflateonreplication
-      = false;             /**< Perform autoxflation when replicating data
-                            */
-  bool compatible = false; /**< Write compatible format */
+      = false; /**< Perform autoxflation when replicating data
+                */
   bool allow_bw_bursting = false; /**< Allow bursting with bandwidth limiting */
   bool ndmp_enable = false;       /**< Enable NDMP protocol listener */
   bool ndmp_snooping = false;     /**< Enable NDMP protocol snooping */

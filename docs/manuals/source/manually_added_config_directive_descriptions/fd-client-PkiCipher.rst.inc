@@ -1,6 +1,6 @@
 See the :ref:`DataEncryption` chapter of this manual.
 
-Depending on the openssl library version different ciphers are available. To choose the desired cipher, you can use the PKI Cipher option in the filedaemon configuration. Note that you have to set :config:option:`fd/client/Compatible`\  = no:
+Depending on the openssl library version different ciphers are available. To choose the desired cipher, you can use the PKI Cipher option in the filedaemon configuration.
 
 
 

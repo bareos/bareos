@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -109,9 +109,7 @@ static bool FilesetCmd(JobControlRecord* jcr);
 static bool job_cmd(JobControlRecord* jcr);
 static bool LevelCmd(JobControlRecord* jcr);
 static bool PluginoptionsCmd(JobControlRecord* jcr);
-static bool RunafterCmd(JobControlRecord* jcr);
 static bool RunbeforenowCmd(JobControlRecord* jcr);
-static bool RunbeforeCmd(JobControlRecord* jcr);
 static bool RunscriptCmd(JobControlRecord* jcr);
 static bool ResolveCmd(JobControlRecord* jcr);
 static bool RestoreObjectCmd(JobControlRecord* jcr);
@@ -165,9 +163,7 @@ static struct s_fd_dir_cmds cmds[] = {
     {"JobId=", job_cmd, false},
     {"level = ", LevelCmd, false},
     {"pluginoptions", PluginoptionsCmd, false},
-    {"RunAfterJob", RunafterCmd, false},
     {"RunBeforeNow", RunbeforenowCmd, false},
-    {"RunBeforeJob", RunbeforeCmd, false},
     {"Run", RunscriptCmd, false},
     {"restoreobject", RestoreObjectCmd, false},
     {"restore ", RestoreCmd, false},
@@ -209,8 +205,6 @@ static char endrestoreobjectcmd[] = "restoreobject end\n";
 static char pluginoptionscmd[] = "pluginoptions %s";
 static char verifycmd[] = "verify level=%30s";
 static char Estimatecmd[] = "estimate listing=%d";
-static char runbeforecmd[] = "RunBeforeJob %s";
-static char runaftercmd[] = "RunAfterJob %s";
 static char runscriptcmd[]
     = "Run OnSuccess=%d OnFailure=%d AbortOnError=%d When=%d Command=%s";
 static char resolvecmd[] = "resolve %s";
@@ -241,13 +235,9 @@ static char BADjob[] = "2901 Bad Job\n";
 static char EndJob[]
     = "2800 End Job TermCode=%d JobFiles=%u ReadBytes=%s"
       " JobBytes=%s Errors=%u VSS=%d Encrypt=%d\n";
-static char OKRunBefore[] = "2000 OK RunBefore\n";
 static char OKRunBeforeNow[] = "2000 OK RunBeforeNow\n";
-static char OKRunAfter[] = "2000 OK RunAfter\n";
 static char OKRunScript[] = "2000 OK RunScript\n";
-static char BadRunBeforeJob[] = "2905 Bad RunBeforeJob command.\n";
 static char FailedRunScript[] = "2905 Failed RunScript\n";
-static char BadRunAfterJob[] = "2905 Bad RunAfterJob command.\n";
 static char BADcmd[] = "2902 Bad %s\n";
 static char OKRestoreObject[] = "2000 OK ObjectRestored\n";
 static char OKPluginOptions[] = "2000 OK PluginOptions\n";
@@ -817,8 +807,8 @@ static bool SetbandwidthCmd(JobControlRecord* jcr)
       }
       FreeJcr(cjcr);
     }
-  } else {                          /* No job requested, apply globally */
-    me->max_bandwidth_per_job = bw; /* Overwrite directive */
+  } else {                           // No job requested, apply globally
+    me->max_bandwidth_per_job = bw;  // Overwrite directive
   }
 
   return dir->fsend(OKBandwidth);
@@ -941,50 +931,6 @@ static bool job_cmd(JobControlRecord* jcr)
                     kBareosVersionStrings.GetOsInfo(), BAREOS_PLATFORM);
 }
 
-static bool RunbeforeCmd(JobControlRecord* jcr)
-{
-  bool ok;
-  POOLMEM* cmd;
-  RunScript* script;
-  BareosSocket* dir = jcr->dir_bsock;
-
-  if (!me->compatible) {
-    dir->fsend(BadRunBeforeJob);
-    return false;
-  }
-
-  Dmsg1(100, "RunbeforeCmd: %s", dir->msg);
-  cmd = GetMemory(dir->message_length + 1);
-  if (sscanf(dir->msg, runbeforecmd, cmd) != 1) {
-    PmStrcpy(jcr->errmsg, dir->msg);
-    Jmsg1(jcr, M_FATAL, 0, _("Bad RunBeforeJob command: %s\n"), jcr->errmsg);
-    dir->fsend(BadRunBeforeJob);
-    FreeMemory(cmd);
-    return false;
-  }
-  UnbashSpaces(cmd);
-
-  // Run the command now
-
-  Dmsg0(500, "runscript: creating new RunScript object\n");
-  script = new RunScript;
-  script->SetJobCodeCallback(job_code_callback_filed);
-  script->SetCommand(cmd);
-  script->when = SCRIPT_Before;
-  FreeMemory(cmd);
-
-  ok = script->Run(jcr, "ClientRunBeforeJob");
-  FreeRunscript(script);
-
-  if (ok) {
-    dir->fsend(OKRunBefore);
-    return true;
-  } else {
-    dir->fsend(BadRunBeforeJob);
-    return false;
-  }
-}
-
 static bool RunbeforenowCmd(JobControlRecord* jcr)
 {
   BareosSocket* dir = jcr->dir_bsock;
@@ -1004,42 +950,6 @@ static bool RunbeforenowCmd(JobControlRecord* jcr)
     Dmsg0(100, "Back from RunScripts ClientBeforeJob now: OK\n");
     return true;
   }
-}
-
-static bool RunafterCmd(JobControlRecord* jcr)
-{
-  BareosSocket* dir = jcr->dir_bsock;
-  POOLMEM* cmd;
-  RunScript* script;
-
-  if (!me->compatible) {
-    dir->fsend(BadRunAfterJob);
-    return false;
-  }
-
-  Dmsg1(100, "RunafterCmd: %s", dir->msg);
-  cmd = GetMemory(dir->message_length + 1);
-  if (sscanf(dir->msg, runaftercmd, cmd) != 1) {
-    PmStrcpy(jcr->errmsg, dir->msg);
-    Jmsg1(jcr, M_FATAL, 0, _("Bad RunAfter command: %s\n"), jcr->errmsg);
-    dir->fsend(BadRunAfterJob);
-    FreeMemory(cmd);
-    return false;
-  }
-  UnbashSpaces(cmd);
-
-  Dmsg0(500, "runscript: creating new RunScript object\n");
-  script = new RunScript;
-  script->SetJobCodeCallback(job_code_callback_filed);
-  script->SetCommand(cmd);
-  script->on_success = true;
-  script->on_failure = false;
-  script->when = SCRIPT_After;
-  FreeMemory(cmd);
-
-  jcr->fd_impl->RunScripts->append(script);
-
-  return dir->fsend(OKRunAfter);
 }
 
 static bool RunscriptCmd(JobControlRecord* jcr)
@@ -1775,10 +1685,6 @@ bool GetWantedCryptoCipher(JobControlRecord* jcr, crypto_cipher_t* cipher)
 
   // See if fileset forced a certain cipher.
   if (wanted_cipher == CRYPTO_CIPHER_NONE) { wanted_cipher = me->pki_cipher; }
-
-  /* See if we are in compatible mode then we are hardcoded to
-   * CRYPTO_CIPHER_AES_128_CBC. */
-  if (me->compatible) { wanted_cipher = CRYPTO_CIPHER_AES_128_CBC; }
 
   /* See if FO_FORCE_ENCRYPT is set and encryption is not configured for the
    * filed. */

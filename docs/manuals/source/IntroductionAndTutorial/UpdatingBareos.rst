@@ -53,7 +53,7 @@ Now you can safely apply the update or upgrade.
 .. warning::
 
    Please remind, that |dir| and |sd| must always have the same version.
-   The version of the |fd| may differ, see chapter about :ref:`backward compatibility <backward-compatibility>`.
+   The version of the |fd| may differ.
 
 
 .. note::

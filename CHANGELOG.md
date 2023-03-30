@@ -31,6 +31,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - berrno_test.cc: accept both 271E and 273E [PR #1407]
 - Sanitizers: add ASAN options to avoid crashes [PR #1410]
 - dird: cats: adapt `purge` command to delete jobs with specific jobstatus and/or from specific pool [PR #1349]
+- filed: stored: remove deprecated `compatible` option from configuration  [PR #1341]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -66,6 +67,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1336]: https://github.com/bareos/bareos/pull/1336
 [PR #1339]: https://github.com/bareos/bareos/pull/1339
 [PR #1340]: https://github.com/bareos/bareos/pull/1340
+[PR #1341]: https://github.com/bareos/bareos/pull/1341
 [PR #1343]: https://github.com/bareos/bareos/pull/1343
 [PR #1345]: https://github.com/bareos/bareos/pull/1345
 [PR #1346]: https://github.com/bareos/bareos/pull/1346

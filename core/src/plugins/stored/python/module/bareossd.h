@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can modify it under the terms of
    version three of the GNU Affero General Public License as published by the
@@ -130,8 +130,7 @@ MOD_INIT(bareossd)
   ConstSet_StrLong(pDictsdVariable, bsdVarJobErrors, 13);
   ConstSet_StrLong(pDictsdVariable, bsdVarJobFiles, 14);
   ConstSet_StrLong(pDictsdVariable, bsdVarJobBytes, 15);
-  ConstSet_StrLong(pDictsdVariable, bsdVarCompatible, 16);
-  ConstSet_StrLong(pDictsdVariable, bsdVarPluginDir, 17);
+  ConstSet_StrLong(pDictsdVariable, bsdVarPluginDir, 16);
   if (PyModule_AddObject(m, bsdVariable, pDictsdVariable)) {
     return MOD_ERROR_VAL;
   }
