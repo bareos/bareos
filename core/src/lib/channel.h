@@ -66,8 +66,8 @@ template <typename T> struct out {
 };
 
 template <typename T> struct in {
-  bool put(const T& val);
-  bool put(T&& val);
+  bool put(const T& val, double freepc = 0.0);
+  bool put(T&& val, double freepc = 0.0);
   void close();
   ~in();
   in(std::shared_ptr<data<T>> shared);
@@ -235,7 +235,7 @@ out<T>::out(std::shared_ptr<data<T>> shared_)
   shared->out_alive = true;
 }
 
-template <typename T> bool in<T>::put(const T& val)
+template <typename T> bool in<T>::put(const T& val, double freepc)
 {
   if (closed) return false;
   bool success = false;
@@ -248,9 +248,13 @@ template <typename T> bool in<T>::put(const T& val)
   }
   // slow path: take the lock, then copy
   std::unique_lock lock(shared->mutex);
-  shared->cv.wait(lock, [this] {
-	  return this->shared->size < this->capacity || !this->shared->out_alive;
-  });
+  if (this->shared->size == this->capacity) {
+    shared->cv.wait(lock, [freepc, this] {
+      auto free = this->capacity - this->shared->size;
+      double current_freepc = (double) free / (double) this->shared->size;
+      return this->shared->size == 0 || current_freepc > freepc || !this->shared->out_alive;
+    });
+  }
 
   if (shared->out_alive) {
 	  // since the out is still alive, we know that
@@ -273,7 +277,7 @@ template <typename T> bool in<T>::put(const T& val)
   return success;
 }
 
-template <typename T> bool in<T>::put(T&& val)
+template <typename T> bool in<T>::put(T&& val, double freepc)
 {
   if (closed) return false;
   bool success = false;
@@ -286,9 +290,13 @@ template <typename T> bool in<T>::put(T&& val)
   }
   // slow path: take the lock, then copy
   std::unique_lock lock(shared->mutex);
-  shared->cv.wait(lock, [this] {
-	  return this->shared->size < this->capacity || !this->shared->out_alive;
-  });
+  if (this->shared->size == this->capacity) {
+    shared->cv.wait(lock, [freepc, this] {
+      auto free = this->capacity - this->shared->size;
+      double current_freepc = (double) free / (double) this->shared->size;
+      return this->shared->size == 0 || current_freepc > freepc || !this->shared->out_alive;
+    });
+  }
 
   if (shared->out_alive) {
 	  // since the out is still alive, we know that
