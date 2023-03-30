@@ -53,6 +53,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - add explanation about binary version numbers [PR #1354]
 - docs: improve bareos-webui documentation [PR #1366]
 - docs: catalog maintenance improvements [PR #1379]
+- doc: improve plugin, webui, virtualfull chapters [PR #1401]
 
 [PR #935]: https://github.com/bareos/bareos/pull/935
 [PR #1011]: https://github.com/bareos/bareos/pull/1011
@@ -90,6 +91,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1389]: https://github.com/bareos/bareos/pull/1389
 [PR #1390]: https://github.com/bareos/bareos/pull/1390
 [PR #1395]: https://github.com/bareos/bareos/pull/1395
+[PR #1401]: https://github.com/bareos/bareos/pull/1401
 [PR #1403]: https://github.com/bareos/bareos/pull/1403
 [PR #1407]: https://github.com/bareos/bareos/pull/1407
 [PR #1410]: https://github.com/bareos/bareos/pull/1410
