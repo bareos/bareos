@@ -210,25 +210,40 @@ static void SendInfoSuccess(JobControlRecord* jcr, UaContext* ua)
   }
 }
 
-bool ConnectToFileDaemon(JobControlRecord* jcr,
-                         int retry_interval,
-                         int max_retry_time,
-                         bool verbose,
-                         UaContext* ua)
+void UpdateFailedConnectionHandshakeMode(JobControlRecord* jcr)
 {
-  if (!IsConnectingToClientAllowed(jcr) && !IsConnectFromClientAllowed(jcr)) {
-    Emsg1(M_WARNING, 0, _("Connecting to %s is not allowed.\n"),
-          jcr->dir_impl->res.client->resource_name_);
-    return false;
+  switch (jcr->dir_impl->connection_handshake_try_) {
+    case ClientConnectionHandshakeMode::kTlsFirst:
+      if (jcr->file_bsock) {
+        jcr->file_bsock->close();
+        delete jcr->file_bsock;
+        jcr->file_bsock = nullptr;
+      }
+      jcr->setJobStatus(JS_Running);
+      if (!IsClientTlsRequired(jcr)) {
+        jcr->dir_impl->connection_handshake_try_
+            = ClientConnectionHandshakeMode::kCleartextFirst;
+      } else {
+        jcr->dir_impl->connection_handshake_try_
+            = ClientConnectionHandshakeMode::kFailed;
+      }
+      break;
+    case ClientConnectionHandshakeMode::kCleartextFirst:
+      jcr->dir_impl->connection_handshake_try_
+          = ClientConnectionHandshakeMode::kFailed;
+      break;
+    case ClientConnectionHandshakeMode::kFailed:
+    default: /* should be one of class ClientConnectionHandshakeMode */
+      ASSERT(false);
+      break;
   }
-  bool success = false;
-  bool tcp_connect_failed = false;
-  int connect_tries
-      = 3; /* as a finish-hook for the UseWaitingClient mechanism */
+}
 
-  /* try the connection modes starting with tls directly,
-   * in case there is a client that cannot do Tls immediately then
-   * fall back to cleartext md5-handshake */
+/* try the connection modes starting with tls directly,
+ * in case there is a client that cannot do Tls immediately then
+ * fall back to cleartext md5-handshake */
+void SetConnectionHandshakeMode(JobControlRecord* jcr, UaContext* ua)
+{
   OutputMessageForConnectionTry(jcr, ua);
   if (jcr->dir_impl->res.client->connection_successful_handshake_
           == ClientConnectionHandshakeMode::kUndefined
@@ -248,6 +263,25 @@ bool ConnectToFileDaemon(JobControlRecord* jcr,
         = jcr->dir_impl->res.client->connection_successful_handshake_;
     jcr->is_passive_client_connection_probing = false;
   }
+}
+
+bool ConnectToFileDaemon(JobControlRecord* jcr,
+                         int retry_interval,
+                         int max_retry_time,
+                         bool verbose,
+                         UaContext* ua)
+{
+  if (!IsConnectingToClientAllowed(jcr) && !IsConnectFromClientAllowed(jcr)) {
+    Emsg1(M_WARNING, 0, _("Connecting to %s is not allowed.\n"),
+          jcr->dir_impl->res.client->resource_name_);
+    return false;
+  }
+  bool success = false;
+  bool tcp_connect_failed = false;
+  int connect_tries
+      = 3; /* as a finish-hook for the UseWaitingClient mechanism */
+
+  SetConnectionHandshakeMode(jcr, ua);
 
   do { /* while (tcp_connect_failed ...) */
     /* connect the tcp socket */
@@ -278,26 +312,7 @@ bool ConnectToFileDaemon(JobControlRecord* jcr,
          * - tls mismatch or
          * - if an old client cannot do tls- before md5-handshake
          * */
-        switch (jcr->dir_impl->connection_handshake_try_) {
-          case ClientConnectionHandshakeMode::kTlsFirst:
-            if (jcr->file_bsock) {
-              jcr->file_bsock->close();
-              delete jcr->file_bsock;
-              jcr->file_bsock = nullptr;
-            }
-            jcr->setJobStatus(JS_Running);
-            jcr->dir_impl->connection_handshake_try_
-                = ClientConnectionHandshakeMode::kCleartextFirst;
-            break;
-          case ClientConnectionHandshakeMode::kCleartextFirst:
-            jcr->dir_impl->connection_handshake_try_
-                = ClientConnectionHandshakeMode::kFailed;
-            break;
-          case ClientConnectionHandshakeMode::kFailed:
-          default: /* should bei one of class ClientConnectionHandshakeMode */
-            ASSERT(false);
-            break;
-        }
+        UpdateFailedConnectionHandshakeMode(jcr);
       }
     } else {
       Jmsg(jcr, M_FATAL, 0, "\nFailed to connect to client \"%s\".\n",

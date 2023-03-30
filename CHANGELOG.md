@@ -33,6 +33,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - dird: cats: adapt `purge` command to delete jobs with specific jobstatus and/or from specific pool [PR #1349]
 - filed: stored: remove deprecated `compatible` option from configuration  [PR #1341]
 - webui: remove some development leftovers and artefacts [PR #1422]
+- dird: allow to disable TLS-PSK downgrades [PR #1398]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -99,6 +100,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1390]: https://github.com/bareos/bareos/pull/1390
 [PR #1392]: https://github.com/bareos/bareos/pull/1392
 [PR #1395]: https://github.com/bareos/bareos/pull/1395
+[PR #1398]: https://github.com/bareos/bareos/pull/1398
 [PR #1401]: https://github.com/bareos/bareos/pull/1401
 [PR #1403]: https://github.com/bareos/bareos/pull/1403
 [PR #1407]: https://github.com/bareos/bareos/pull/1407
