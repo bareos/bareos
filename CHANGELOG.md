@@ -32,6 +32,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Sanitizers: add ASAN options to avoid crashes [PR #1410]
 - dird: cats: adapt `purge` command to delete jobs with specific jobstatus and/or from specific pool [PR #1349]
 - filed: stored: remove deprecated `compatible` option from configuration  [PR #1341]
+- webui: remove some development leftovers and artefacts [PR #1422]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -103,4 +104,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1407]: https://github.com/bareos/bareos/pull/1407
 [PR #1410]: https://github.com/bareos/bareos/pull/1410
 [PR #1415]: https://github.com/bareos/bareos/pull/1415
+[PR #1422]: https://github.com/bareos/bareos/pull/1422
 [unreleased]: https://github.com/bareos/bareos/tree/master
