@@ -407,6 +407,7 @@ Usually, it is desired to be able to store a certain backup for a longer time, e
 
 There are two options to achieve this goal.
 
+
 Copy Jobs
 ~~~~~~~~~
 
@@ -467,3 +468,7 @@ To make sure the longterm :config:option:`dir/job/Level = VirtualFull`\  is not 
 As can be seen on the plot, the :config:option:`dir/job/Level = VirtualFull`\  archives the current data, i.e. it consolidates the full and all incrementals that are currently available.
 
 .. image:: /include/images/always-incremental-virtualfull-job-archiving.*
+
+.. warning::
+
+   With Virtual Full, you are restricted to use the same |sd| for the source and the destination, because the restore bsr file created for the job can only be read by one storage daemon at a time.

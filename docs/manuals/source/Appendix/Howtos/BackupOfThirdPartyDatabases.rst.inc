@@ -879,7 +879,7 @@ Following settings must be done on the Bareos client (|fd|):
    Client {
      ...
      Plugin Directory = /usr/lib64/bareos/plugins
-     Plugin Names = "python"
+     Plugin Names = "python3"
    }
 
 Configure the plugin in the |dir|:
