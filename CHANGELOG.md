@@ -57,6 +57,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - docs: improve bareos-webui documentation [PR #1366]
 - docs: catalog maintenance improvements [PR #1379]
 - doc: improve plugin, webui, virtualfull chapters [PR #1401]
+- docs: move and update localization documentation [PR #1415]
 
 [PR #935]: https://github.com/bareos/bareos/pull/935
 [PR #1011]: https://github.com/bareos/bareos/pull/1011
@@ -101,4 +102,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1403]: https://github.com/bareos/bareos/pull/1403
 [PR #1407]: https://github.com/bareos/bareos/pull/1407
 [PR #1410]: https://github.com/bareos/bareos/pull/1410
+[PR #1415]: https://github.com/bareos/bareos/pull/1415
 [unreleased]: https://github.com/bareos/bareos/tree/master
