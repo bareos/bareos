@@ -30,7 +30,7 @@ bool ConnectToFileDaemon(JobControlRecord* jcr,
                          bool verbose,
                          UaContext* ua = nullptr);
 void UpdateFailedConnectionHandshakeMode(JobControlRecord* jcr);
-void SetConnectionHandshakeMode(JobControlRecord* jcr, UaContext *ua);
+void SetConnectionHandshakeMode(JobControlRecord* jcr, UaContext* ua);
 int SendJobInfoToFileDaemon(JobControlRecord* jcr);
 bool SendIncludeList(JobControlRecord* jcr);
 bool SendExcludeList(JobControlRecord* jcr);
