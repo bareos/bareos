@@ -1123,7 +1123,18 @@ int SendFiles(JobControlRecord* jcr,
 	  continue;
 	}
 	if (bfd) {
-	  ff->bfd = bfd.value();
+	  if (ff->type == FT_LNKSAVED) {
+	    // we should probably find a way in which we do not open
+	    // files that we dont plan on reading!
+	    // maybe do the hardlink detection in the preparing thread
+	    // WARNING: the current hardlink lookup is not reentrant!
+	    //          its not possible to safely search inside it from
+	    //          two threads at the same time!!
+	    //          This can only be achieved by redoing that part!
+	    bclose(&bfd.value());
+	  } else {
+	    ff->bfd = bfd.value();
+	  }
 	} else {
 	  // restore to default values
 	  ff->bfd = BareosFilePacket{};
