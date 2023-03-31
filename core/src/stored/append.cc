@@ -114,20 +114,46 @@ static bool SaveFullyProcessedFilesAttributes(
   return false;
 }
 
-static void ReadMsg(channel::in<PoolMem> in, BareosSocket* bs,
+struct Packet {
+  POOLMEM* msg{nullptr};
+  std::int32_t size{0};
+
+  Packet() = default;
+  Packet(POOLMEM* msg, std::int32_t size) : msg(msg), size(size) {}
+
+  Packet(const Packet&) = delete;
+  Packet(Packet&& p) : Packet() {
+    std::swap(msg, p.msg);
+    std::swap(size, p.size);
+  }
+
+  Packet& operator=(const Packet&) = delete;
+  Packet& operator=(Packet&& p) {
+    std::swap(msg, p.msg);
+    std::swap(size, p.size);
+
+    return *this;
+  }
+
+  ~Packet() {
+    if (msg) { FreePoolMemory(msg); }
+    msg = nullptr;
+  }
+};
+
+static void ReadMsg(channel::in<Packet> in, BareosSocket* bs,
 		    JobControlRecord *jcr) {
     while (BgetMsg(bs) > 0 && !jcr->IsJobCanceled()) {
-      PoolMem msg(PM_MESSAGE);
+      POOLMEM* msg = GetPoolMemory(PM_MESSAGE);
       PmMemcpy(msg, bs->msg, bs->message_length);
       // set to correct size
-      ReallocPoolMemory(msg.addr(), bs->message_length);
-      if(!in.put(std::move(msg))) {
+      if(!in.put(Packet{msg, bs->message_length})) {
 	break;
       }
     }
 }
 
-static void WaitForReading(channel::out<channel::in<PoolMem>*> chan,
+static void WaitForReading(channel::out<channel::in<Packet>*> chan,
 			   BareosSocket* bs, JobControlRecord* jcr)
 {
   for (std::optional in = chan.get(); in; in = chan.get()) {
@@ -244,7 +270,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   std::vector<ProcessedFile> processed_files{};
   int64_t current_volumeid = jcr->sd_impl->dcr->VolMediaId;
 
-  auto [read_in, read_out] = channel::CreateBufferedChannel<channel::in<PoolMem>*>(1);
+  auto [read_in, read_out] = channel::CreateBufferedChannel<channel::in<Packet>*>(1);
   std::thread reader(WaitForReading, std::move(read_out), bs, jcr);
 
   ProcessedFile file_currently_processed;
@@ -308,7 +334,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
      * that after the loop ends. */
     rec_data_len = jcr->sd_impl->dcr->rec->data_len;
     rec_data = jcr->sd_impl->dcr->rec->data;
-    auto [in, out] = channel::CreateBufferedChannel<PoolMem>(20);
+    auto [in, out] = channel::CreateBufferedChannel<Packet>(20);
     if (!read_in.put(&in)) {
       Jmsg(jcr, M_FATAL, 0,
 	   "Could not submit new channel.\n");
@@ -324,8 +350,8 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       jcr->sd_impl->dcr->rec->Stream = stream;
       jcr->sd_impl->dcr->rec->maskedStream
           = stream & STREAMMASK_TYPE; /* strip high bits */
-      jcr->sd_impl->dcr->rec->data_len = buf->size();
-      jcr->sd_impl->dcr->rec->data = buf->addr();
+      jcr->sd_impl->dcr->rec->data_len = buf->size;
+      jcr->sd_impl->dcr->rec->data = buf->msg;
 
       Dmsg4(850, "before writ_rec FI=%d SessId=%d Strm=%s len=%d\n",
             jcr->sd_impl->dcr->rec->FileIndex,
