@@ -1149,7 +1149,7 @@ static void ReadData(channel::in<buffer> data, BareosFilePacket* bfd,
     if (!buf) { break; }
     ssize_t num_read = bread(bfd, buf, buflen);
     if (num_read > 0) {
-      if (!data.put(std::move(buffer{(std::size_t) num_read, buf}))) {
+      if (!data.put(buffer{(std::size_t) num_read, buf})) {
 	break;
       }
     } else {
