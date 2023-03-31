@@ -1159,6 +1159,25 @@ static void ReadData(channel::in<buffer> data, BareosFilePacket* bfd,
   }
 }
 
+static void DigestData(channel::out<buffer> out, channel::in<buffer> in,
+		       DIGEST* digest, DIGEST* signing_digest)
+{
+
+  for (std::optional buf = out.get(); buf; buf = out.get()) {
+    // Update checksum if requested
+    if (digest) {
+      CryptoDigestUpdate(digest, (uint8_t*) buf->data, buf->size);
+    }
+
+    // Update signing digest if requested
+    if (signing_digest) {
+      CryptoDigestUpdate(signing_digest, (uint8_t*)buf->data, buf->size);
+    }
+
+    in.put(std::move(*buf));
+  }
+}
+
 // Send the content of a file on anything but an EFS filesystem.
 static inline bool SendPlainData(b_ctx& bctx)
 {
@@ -1166,13 +1185,24 @@ static inline bool SendPlainData(b_ctx& bctx)
   BareosSocket* sd = bctx.jcr->store_bsock;
 
   auto [in, out] = channel::CreateBufferedChannel<buffer>(4);
+  auto [din, dout] = channel::CreateBufferedChannel<buffer>(4);
 
   std::thread reader(ReadData, std::move(in), &bctx.ff_pkt->bfd,
 		     bctx.rsize);
 
+  DIGEST* digest = nullptr;
+  DIGEST* signing = nullptr;
+
+  // disable digesting inside SendDataToSd
+  std::swap(digest, bctx.digest);
+  std::swap(signing, bctx.signing_digest);
+
+  std::thread digester(DigestData, std::move(out), std::move(din),
+		       digest, signing);
+
   std::optional<buffer> buf;
 
-  while ((buf = out.get())) {
+  while ((buf = dout.get())) {
 
     memcpy(bctx.rbuf, buf->data, buf->size);
     sd->message_length = buf->size;
@@ -1182,7 +1212,10 @@ static inline bool SendPlainData(b_ctx& bctx)
       break;
     }
   }
+  digester.join();
   reader.join();
+  std::swap(digest, bctx.digest);
+  std::swap(signing, bctx.signing_digest);
 
   return retval;
 }
