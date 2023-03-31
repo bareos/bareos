@@ -1173,14 +1173,55 @@ static void DigestData(channel::out<buffer> out, channel::in<buffer> in,
   }
 }
 
-// Send the content of a file on anything but an EFS filesystem.
-static inline bool SendPlainData(b_ctx& bctx)
-{
+static inline bool SendPlainDataSerially(b_ctx& bctx) {
   bool retval = true;
   BareosSocket* sd = bctx.jcr->store_bsock;
 
-  auto [in, out] = channel::CreateBufferedChannel<buffer>(4);
-  auto [din, dout] = channel::CreateBufferedChannel<buffer>(4);
+  ssize_t num_read;
+  while ((num_read = bread(&bctx.ff_pkt->bfd, bctx.rbuf, bctx.rsize)) > 0) {
+    sd->message_length = (uint32_t) num_read;
+    if (!SendDataToSd(&bctx)) {
+      retval = false;
+      break;
+    }
+  }
+
+  return retval;
+}
+
+// Send the content of a file on anything but an EFS filesystem.
+static inline bool SendPlainData(b_ctx& bctx)
+{
+  if (!bctx.ff_pkt->bfd.do_io_in_core) {
+    return SendPlainDataSerially(bctx);
+  }
+
+  std::size_t buflen = bctx.rsize;
+  std::size_t filesize = bctx.ff_pkt->statp.st_size;
+
+  std::size_t maxbuffered = 512 * 1024 * 1024; // 512 MB
+  std::size_t max_num_bufs = 80;
+
+  // do not buffer for much mor than maxbuffered bytes
+  // and create at most max_num_bufs buffers
+
+  std::size_t bufferedsize = std::min(filesize, maxbuffered);
+  std::size_t num_buffers  = (bufferedsize + buflen - 1) / buflen;
+
+  std::size_t actual_buf_count = std::min(num_buffers, max_num_bufs);
+
+  // do not bother creating threads if we have less
+  // than buffer_threshold buffers to push!
+  constexpr std::size_t buffer_threshold = 5;
+  if (actual_buf_count < buffer_threshold) {
+    return SendPlainDataSerially(bctx);
+  }
+
+  bool retval = true;
+  BareosSocket* sd = bctx.jcr->store_bsock;
+
+  auto [in, out] = channel::CreateBufferedChannel<buffer>(actual_buf_count);
+  auto [din, dout] = channel::CreateBufferedChannel<buffer>(actual_buf_count);
 
   std::thread reader(ReadData, std::move(in), &bctx.ff_pkt->bfd,
 		     bctx.rsize);
