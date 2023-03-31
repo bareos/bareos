@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -84,10 +84,23 @@ class PoolMem {
     strcpy(str);
   }
   explicit PoolMem(const std::string& str) : PoolMem(str.c_str()) {}
+  PoolMem(const PoolMem&) = delete;
+  PoolMem& operator=(const PoolMem&) = delete;
+
   ~PoolMem()
   {
-    FreePoolMemory(mem);
-    mem = NULL;
+    // handle the moved out case!
+    if (mem) {
+      FreePoolMemory(mem);
+      mem = NULL;
+    }
+  }
+  // needed since we have a custom destructor
+  PoolMem(PoolMem&& moved) : mem{nullptr} { std::swap(moved.mem, mem); };
+  PoolMem& operator=(PoolMem&& moved)
+  {
+    std::swap(mem, moved.mem);
+    return *this;
   }
   char* c_str() const { return mem; }
   POOLMEM*& addr() { return mem; }
