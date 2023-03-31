@@ -141,6 +141,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   char buf1[100];
   Device* dev;
   POOLMEM* rec_data;
+  std::size_t rec_data_len;
   char ec[50];
 
   if (!jcr->sd_impl->dcr) {
@@ -303,6 +304,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     /* Read data stream from the daemon. The data stream is just raw bytes.
      * We save the original data pointer from the record so we can restore
      * that after the loop ends. */
+    rec_data_len = jcr->sd_impl->dcr->rec->data_len;
     rec_data = jcr->sd_impl->dcr->rec->data;
     auto [in, out] = channel::CreateBufferedChannel<PoolMem>(20);
     if (!read_in.put(&in)) {
@@ -312,16 +314,16 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       break;
     }
 
-    std::optional<PoolMem> buf;
-    while ((buf = out.get()) && !jcr->IsJobCanceled()) {
+    for (std::optional buf = out.get(); !jcr->IsJobCanceled() && buf;
+	 buf = out.get()) {
       jcr->sd_impl->dcr->rec->VolSessionId = jcr->VolSessionId;
       jcr->sd_impl->dcr->rec->VolSessionTime = jcr->VolSessionTime;
       jcr->sd_impl->dcr->rec->FileIndex = file_index;
       jcr->sd_impl->dcr->rec->Stream = stream;
       jcr->sd_impl->dcr->rec->maskedStream
           = stream & STREAMMASK_TYPE; /* strip high bits */
-      jcr->sd_impl->dcr->rec->data_len = buf->size(); //bs->message_length;
-      jcr->sd_impl->dcr->rec->data = buf->addr(); //bs->msg; /* use message buffer */
+      jcr->sd_impl->dcr->rec->data_len = buf->size();
+      jcr->sd_impl->dcr->rec->data = buf->addr();
 
       Dmsg4(850, "before writ_rec FI=%d SessId=%d Strm=%s len=%d\n",
             jcr->sd_impl->dcr->rec->FileIndex,
@@ -375,6 +377,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
 
     // Restore the original data pointer.
     jcr->sd_impl->dcr->rec->data = rec_data;
+    jcr->sd_impl->dcr->rec->data_len = rec_data_len;
 
     if (bs->IsError()) {
       if (!jcr->IsJobCanceled()) {
