@@ -420,7 +420,7 @@ class RestoreForm extends Form
                         'name' => 'pluginoptions',
                         'type' => 'text',
                         'options' => array(
-                            'label' => _('Plugin options')
+                            'label' => _('Plugin Options')
                         ),
                         'attributes' => array(
                             'class' => 'form-control selectpicker show-tick',
