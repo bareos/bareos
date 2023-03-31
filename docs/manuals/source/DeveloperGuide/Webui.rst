@@ -12,22 +12,24 @@ Translation
 Where do I find the translation?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The localization files are located in `webui/module/Application/language`. You can find the languages that are currently
+The localization files are located in file:`webui/module/Application/language`.
+You can find the languages that are currently
 in translation in our online project, which is addressed in the next section.
 
 How should I edit translation files?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You need to join our online project for translating the Bareos WebUI. We use https://poeditor.com.
-The following link will redirect you to the right project. You are welcome to join our translation
-community as a contributor there.
-
-https://poeditor.com/join/project/ELnLNbvQJb
+You are welcome to join our translation community via https://poeditor.com/join/project/ELnLNbvQJb.
+After selecting the languages you want to contribute to,
+you can add and modify translation strings.
+You can mark strings as fuzzy and leave comments, in case there is need for further discussions.
+In doubt, contact us via bareos-devel@googlegroups.com.
 
 How can I add a new language?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Please contact us, if you want to contribute a new language. We will prepare https://poeditor.com for that.
+Via https://poeditor.com/join/project/ELnLNbvQJb you can also add new languages.
+When this is done, we make the necessary adjustments to the |webui|.
 
 Where can I find further information?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -38,7 +40,7 @@ How to update files in `module/Application/language` if there were changes in so
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Run the script `webui/scripts/localization_update.sh` to scan for changes and generate new \*.po(t) files.
-The Bareos Team takes care of this task and the synchronization with POEditor.
+The Bareos team takes care of this task and the synchronization with POEditor.
 
 .. _section-dev-webui-command-usage-in-modules:
 
