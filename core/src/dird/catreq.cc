@@ -245,15 +245,31 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       if (mr.InitialWrite == 0) { mr.InitialWrite = jcr->start_time; }
       Dmsg2(400, "label=%d labeldate=%d\n", label, mr.LabelDate);
     } else {
-      // Insanity check for VolFiles get set to a smaller value
+      // Sanity check for VolFiles to be increasing
       if (sdmr.VolFiles < mr.VolFiles) {
-        Jmsg(jcr, M_FATAL, 0,
-             _("Volume Files at %u being set to %u"
-               " for Volume \"%s\". This is incorrect.\n"),
+        Jmsg(jcr, M_INFO, 0,
+             _("Ignoring Volume Files at %u being set to %u"
+               " for Volume \"%s\".\n"),
              mr.VolFiles, sdmr.VolFiles, mr.VolumeName);
-        bs->fsend(_("1992 Update Media error. VolFiles=%u, CatFiles=%u\n"),
-                  sdmr.VolFiles, mr.VolFiles);
-        goto bail_out;
+        sdmr.VolFiles = mr.VolFiles;
+      }
+
+      // Sanity check for VolBlocks to be increasing
+      if (sdmr.VolBlocks < mr.VolBlocks) {
+        Jmsg(jcr, M_INFO, 0,
+             _("Ignoring Volume Blocks at %u being set to %u"
+               " for Volume \"%s\".\n"),
+             mr.VolBlocks, sdmr.VolBlocks, mr.VolumeName);
+        sdmr.VolBlocks = mr.VolBlocks;
+      }
+
+      // Sanity check for VolBytes to be increasing
+      if (sdmr.VolBytes < mr.VolBytes) {
+        Jmsg(jcr, M_INFO, 0,
+             _("Ignoring Volume Bytes at %lld being set to %lld"
+               " for Volume \"%s\".\n"),
+             mr.VolBytes, sdmr.VolBytes, mr.VolumeName);
+        sdmr.VolBytes = mr.VolBytes;
       }
     }
     Dmsg2(400, "Update media: BefVolJobs=%u After=%u\n", mr.VolJobs,
@@ -347,7 +363,6 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       Jmsg(jcr, M_WARNING, 0,
            _("Batch database connection not found. Cannot update file list\n"));
     }
-
   } else if (sscanf(bs->msg, Update_jobrecord, &Job, &update_jobfiles,
                     &update_jobbytes)
              == 3) {
