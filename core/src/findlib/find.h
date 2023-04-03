@@ -255,6 +255,9 @@ struct FindFilesPacket {
   BareosFilePacket rsrc_bfd; /**< Fd for resource forks */
   bool volhas_attrlist{false};  /**< Volume supports getattrlist() */
   HfsPlusInfo hfsinfo;          /**< Finder Info and resource fork size */
+
+  std::chrono::nanoseconds accept_total{0};
+  std::chrono::nanoseconds send_total{0};
 };
 /* clang-format on */
 

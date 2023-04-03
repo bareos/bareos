@@ -153,7 +153,6 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
   if (!CryptoSessionStart(jcr, cipher)) { return false; }
 
 
-
   StartHeartbeatMonitor(jcr);
 
   if (have_acl) {
@@ -177,7 +176,6 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
   // incremental & accurate to false so it does not double check them
   SetFindOptions((FindFilesPacket*)jcr->fd_impl->ff, false,
                  jcr->fd_impl->since_time);
-
   std::optional<std::size_t> list_ok = std::nullopt;
   bool send_ok = true;
   try {
@@ -253,6 +251,36 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
   }
 #endif
+  auto end = std::chrono::steady_clock::now();
+  std::chrono::nanoseconds total_time = end - start;
+
+  auto total_ns = total_time.count();
+  auto send_ns = jcr->fd_impl->ff->send_total.count();
+  auto accept_ns = jcr->fd_impl->ff->accept_total.count();
+
+  double accept_pc = (double) accept_ns / (double) total_ns;
+  double send_pc = (double) send_ns / (double) total_ns;
+
+  int64_t job_bytes = jcr->JobBytes;
+  // from B/ns -> MB/s
+  constexpr double  mbps      = (double) 1e9 / (double)(1024 * 1024);
+
+  double total_tp = job_bytes / (total_ns / mbps);
+  double send_tp = job_bytes / (send_ns / mbps);
+  Dmsg3(400,
+	"Time spent\n"
+	"  -Total:     %20lldns\n"
+	"  -Sending:   %20lldns (%.2lf%%)\n"
+	"  -Accepting: %20lldns (%.2lf%%)\n"
+	"Throughput (send %lld bytes)\n"
+	"  -Total:     %20.2lfMB/s\n"
+	"  -Sending:   %20.2lfMB/s\n",
+	total_ns, send_ns, 100 * send_pc, accept_ns, 100 * accept_pc,
+	job_bytes, total_tp, send_tp);
+
+  using namespace std::literals::chrono_literals;
+  jcr->fd_impl->ff->send_total = 0ns;
+  jcr->fd_impl->ff->accept_total = 0ns;
 
   if (have_acl && jcr->fd_impl->acl_data->u.build->nr_errors > 0) {
     Jmsg(jcr, M_WARNING, 0,
@@ -589,6 +617,48 @@ static inline bool DoBackupXattr(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
  */
 int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 {
+  struct save_file_timing {
+    save_file_timing(FindFilesPacket* ff_pkt) : start(std::nullopt)
+					      , ff_pkt(ff_pkt)
+					      , data_sent(false)
+    {}
+
+    void start_clock() {
+      start = std::chrono::steady_clock::now();
+    }
+
+    void send_data(bool did_send_data) {
+      data_sent = did_send_data;
+    }
+
+    ~save_file_timing() {
+      if (start) {
+	std::chrono::time_point<std::chrono::steady_clock> end = std::chrono::steady_clock::now();
+	std::chrono::nanoseconds total = std::chrono::duration_cast<std::chrono::nanoseconds>(end - *start);
+	auto ns = total.count();
+	// from B/ns -> MB/s
+	constexpr double  mbps      = (double) 1e9 / (double)(1024 * 1024);
+
+	double tp = ff_pkt->statp.st_size / (ns / mbps);
+
+	Dmsg4(400,
+	      "Stats for file %s\n"
+	      "  -Time spent: %lldns\n"
+	      "  -Data sent:  %s\n"
+	      "  -Throughput: %.2lfMB/s\n",
+	      ff_pkt->fname,
+	      ns,
+	      data_sent ? "yes" : "no",
+	      data_sent ? tp : 0);
+	ff_pkt->send_total += total;
+      }
+    }
+
+    std::optional<std::chrono::time_point<std::chrono::steady_clock>> start;
+    FindFilesPacket* ff_pkt;
+    bool data_sent;
+  };
+  save_file_timing timing{ff_pkt};
   bool do_read = false;
   bool plugin_started = false;
   bool do_plugin_set = false;
@@ -772,6 +842,8 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
     }
   }
 
+  timing.start_clock();
+
   if (do_plugin_set) {
     // Tell bfile that it needs to call plugin
     if (!SetCmdPlugin(&ff_pkt->bfd, jcr)) { goto bail_out; }
@@ -851,6 +923,7 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       tid = NULL;
     }
 
+    timing.send_data(true);
     status = send_data(jcr, data_stream, ff_pkt, bsctx.digest,
                        bsctx.signing_digest);
 

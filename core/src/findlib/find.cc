@@ -322,6 +322,25 @@ std::optional<const regex_t*> FindRegexMatch(alist<regex_t*>& regexs, const char
 
 bool AcceptFile(FindFilesPacket* ff)
 {
+  struct accept_file_timing {
+    accept_file_timing(FindFilesPacket* ff_pkt) : start(std::chrono::steady_clock::now())
+					      , ff_pkt(ff_pkt)
+    {}
+
+    ~accept_file_timing() {
+      std::chrono::time_point<std::chrono::steady_clock> end = std::chrono::steady_clock::now();
+      std::chrono::nanoseconds diff = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+      Dmsg2(400,
+	    "AcceptFile took %lldns (%s)\n",
+	    diff.count(),
+	    ff_pkt->fname);
+      ff_pkt->accept_total += diff;
+    }
+
+    std::chrono::time_point<std::chrono::steady_clock> start;
+    FindFilesPacket* ff_pkt;
+  };
+  accept_file_timing timing{ff};
   const char* basename;
   findFILESET* fileset = ff->fileset;
   findIncludeExcludeItem* incexe = fileset->incexe;
