@@ -1458,12 +1458,17 @@ static inline bool SendPlainDataSerially(b_ctx& bctx) {
   BareosSocket* sd = bctx.jcr->store_bsock;
 
   ssize_t num_read;
+  auto read_start = std::chrono::steady_clock::now();
   while ((num_read = bread(&bctx.ff_pkt->bfd, bctx.rbuf, bctx.rsize)) > 0) {
     sd->message_length = (uint32_t) num_read;
+    auto read_end = std::chrono::steady_clock::now();
+    if (bctx.timing) bctx.timing.value()->reading += (read_end - read_start);
     if (!SendDataToSd(&bctx)) {
       retval = false;
       break;
     }
+    read_start = std::chrono::steady_clock::now();
+    if (bctx.timing) bctx.timing.value()->reading += (read_start - read_end);
   }
 
   return retval;
@@ -1472,7 +1477,7 @@ static inline bool SendPlainDataSerially(b_ctx& bctx) {
 // Send the content of a file on anything but an EFS filesystem.
 static inline bool SendPlainData(b_ctx& bctx)
 {
-  if (!bctx.ff_pkt->bfd.do_io_in_core) {
+  if (bctx.ff_pkt->bfd.cmd_plugin) {
     return SendPlainDataSerially(bctx);
   }
 
@@ -1518,8 +1523,8 @@ static inline bool SendPlainData(b_ctx& bctx)
 
   std::optional<buffer> buf;
 
-  while ((buf = dout.get())) {
   auto read_start = std::chrono::steady_clock::now();
+  while ((buf = dout.get())) {
     memcpy(bctx.rbuf, buf->data, buf->size);
     sd->message_length = buf->size;
     auto read_end = std::chrono::steady_clock::now();
