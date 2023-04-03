@@ -74,6 +74,81 @@ const bool have_xattr = false;
     (sourceLen + (sourceLen >> 12) + (sourceLen >> 14) + (sourceLen >> 25) + 13)
 #endif
 
+struct save_file_timing {
+  save_file_timing(FindFilesPacket* ff_pkt) : start{std::nullopt}
+					    , ff_pkt{ff_pkt}
+					    , data_sent{false}
+					    , checksum{std::nullopt}
+					    , signing{std::nullopt}
+					    , reading(0)
+  {}
+
+  void start_clock() {
+    start = std::chrono::steady_clock::now();
+  }
+
+  void send_data(bool did_send_data) {
+    data_sent = did_send_data;
+  }
+
+  void check(std::chrono::nanoseconds time) {
+    checksum = time;
+  }
+
+  void sign(std::chrono::nanoseconds time) {
+    signing = time;
+  }
+
+  ~save_file_timing() {
+    if (start) {
+      std::chrono::time_point<std::chrono::steady_clock> end = std::chrono::steady_clock::now();
+      std::chrono::nanoseconds total = std::chrono::duration_cast<std::chrono::nanoseconds>(end - *start);
+      auto ns = total.count();
+      // from B/ns -> MB/s
+      constexpr double  mbps      = (double) 1e9 / (double)(1024 * 1024);
+
+      double tp = ff_pkt->statp.st_size / (ns / mbps);
+      double read_tp = ff_pkt->statp.st_size / (reading.count() / mbps);
+
+      using seconds_double = std::chrono::duration<double>;
+      Dmsg4(400,
+	    "SendFile %s\n"
+	    "  -Time spent:            %5.2lfs\n"
+	    "     -computing checksum: %5.2lfs (%.2lf%%)\n"
+	    "     -computing signage:  %5.2lfs (%.2lf%%)\n"
+	    "     -reading the file:   %5.2lfs (%.2lf%%)\n"
+	    "  -Data sent:             %s\n"
+	    "  -Throughput (send %lld bytes)\n"
+	    "    -Total:               %.2lfMB/s\n"
+	    "    -Reading:             %.2lfMB/s\n",
+	    ff_pkt->fname,
+	    std::chrono::duration_cast<seconds_double>(total).count(),
+	    checksum ? std::chrono::duration_cast<seconds_double>(*checksum).count() : 0,
+	    (checksum ? checksum->count() : 0) / (double) ns,
+	    signing ? std::chrono::duration_cast<seconds_double>(*signing).count() : 0,
+	    (signing ? signing->count() : 0) / (double) ns,
+	    std::chrono::duration_cast<seconds_double>(reading).count(),
+	    reading.count() / (double) ns,
+	    data_sent ? "yes" : "no",
+	    data_sent ? ff_pkt->statp.st_size : 0,
+	    data_sent ? tp : 0,
+	    read_tp);
+      ff_pkt->send_total += total;
+      using namespace std::literals::chrono_literals;
+      ff_pkt->checksum_total += checksum.value_or(0ns);
+      ff_pkt->signing_total  += signing.value_or(0ns);
+      ff_pkt->reading_total  += reading;
+    }
+  }
+
+  std::optional<std::chrono::time_point<std::chrono::steady_clock>> start;
+  FindFilesPacket* ff_pkt;
+  bool data_sent;
+  std::optional<std::chrono::nanoseconds> checksum;
+  std::optional<std::chrono::nanoseconds> signing;
+  std::chrono::nanoseconds reading;
+};
+
 /* Forward referenced functions */
 static bool ShouldStripPaths(const FindFilesPacket* ff_pkt);
 static bool do_strip(int count, const char* in, std::string& out);
@@ -81,7 +156,9 @@ static int send_data(JobControlRecord* jcr,
                      int stream,
                      FindFilesPacket* ff_pkt,
                      DIGEST* digest,
-                     DIGEST* signature_digest);
+                     DIGEST* signature_digest,
+		     save_file_timing* timing);
+
 bool EncodeAndSendAttributes(JobControlRecord* jcr,
                              FindFilesPacket* ff_pkt,
                              int& data_stream);
@@ -152,7 +229,6 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
 
   if (!CryptoSessionStart(jcr, cipher)) { return false; }
 
-
   StartHeartbeatMonitor(jcr);
 
   if (have_acl) {
@@ -170,6 +246,7 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
     memset(jcr->fd_impl->xattr_data->u.build, 0, sizeof(xattr_build_data_t));
     jcr->fd_impl->xattr_data->u.build->content = GetPoolMemory(PM_MESSAGE);
   }
+  auto start = std::chrono::steady_clock::now();
 #if 1 && !defined(SEND_SERIAL)
   // jcr->fd_impl->ff is only used by the sending thread
   // since it should just send the files it was given, we set
@@ -258,16 +335,19 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
   auto accept_total = jcr->fd_impl->ff->accept_total;
   auto checksum_total = jcr->fd_impl->ff->checksum_total;
   auto signing_total = jcr->fd_impl->ff->signing_total;
+  auto reading_total = jcr->fd_impl->ff->reading_total;
   auto total_ns = total_time.count();
   auto send_ns = send_total.count();
   auto accept_ns = accept_total.count();
   auto checksum_ns = checksum_total.count();
   auto signing_ns = signing_total.count();
+  auto reading_ns = reading_total.count();
 
   double accept_pc = (double) accept_ns / (double) total_ns;
   double send_pc = (double) send_ns / (double) total_ns;
   double checksum_pc = (double) checksum_ns / (double) send_ns;
   double signing_pc = (double) signing_ns / (double) send_ns;
+  double reading_pc = (double) reading_ns / (double) send_ns;
 
   int64_t job_bytes = jcr->JobBytes;
   // from B/ns -> MB/s
@@ -284,6 +364,7 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
 	"    -Sending:    %20.2lfs (%.2lf%%)\n"
 	"      -Checksum: %20.2lfs (%.2lf%%)\n"
 	"      -Signing:  %20.2lfs (%.2lf%%)\n"
+	"      -Reading:  %20.2lfs (%.2lf%%)\n"
 	"    -Accepting:  %20.2lfs (%.2lf%%)\n"
 	"  *Throughput (send %lld bytes)\n"
 	"    -Total:      %20.2lfMB/s\n"
@@ -293,6 +374,7 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
 	std::chrono::duration_cast<seconds_double>(send_total).count(), 100 * send_pc,
 	std::chrono::duration_cast<seconds_double>(checksum_total).count(), 100 * checksum_pc,
 	std::chrono::duration_cast<seconds_double>(signing_total).count(), 100 * signing_pc,
+	std::chrono::duration_cast<seconds_double>(reading_total).count(), 100 * reading_pc,
 	std::chrono::duration_cast<seconds_double>(accept_total).count(), 100 * accept_pc,
 	job_bytes, total_tp, send_tp);
 
@@ -344,7 +426,8 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
 }
 
 // Save OSX specific resource forks and finder info.
-static inline bool SaveRsrcAndFinder(b_save_ctx& bsctx)
+static inline bool SaveRsrcAndFinder(b_save_ctx& bsctx,
+				     save_file_timing* timing)
 {
   char flags[FOPTS_BYTES];
   int rsrc_stream;
@@ -374,7 +457,7 @@ static inline bool SaveRsrcAndFinder(b_save_ctx& bsctx)
                         : STREAM_MACOS_FORK_DATA;
 
       status = send_data(bsctx.jcr, rsrc_stream, bsctx.ff_pkt, bsctx.digest,
-                         bsctx.signing_digest);
+                         bsctx.signing_digest, timing);
 
       memcpy(bsctx.ff_pkt->flags, flags, sizeof(flags));
       bclose(&bsctx.ff_pkt->bfd);
@@ -635,49 +718,6 @@ static inline bool DoBackupXattr(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
  */
 int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 {
-  struct save_file_timing {
-    save_file_timing(FindFilesPacket* ff_pkt) : start(std::nullopt)
-					      , ff_pkt(ff_pkt)
-					      , data_sent(false)
-    {}
-
-    void start_clock() {
-      start = std::chrono::steady_clock::now();
-    }
-
-    void send_data(bool did_send_data) {
-      data_sent = did_send_data;
-    }
-
-    ~save_file_timing() {
-      if (start) {
-	std::chrono::time_point<std::chrono::steady_clock> end = std::chrono::steady_clock::now();
-	std::chrono::nanoseconds total = std::chrono::duration_cast<std::chrono::nanoseconds>(end - *start);
-	auto ns = total.count();
-	// from B/ns -> MB/s
-	constexpr double  mbps      = (double) 1e9 / (double)(1024 * 1024);
-
-	double tp = ff_pkt->statp.st_size / (ns / mbps);
-
-	using seconds_double = std::chrono::duration<double>;
-	Dmsg4(400,
-	      "SendFile %s\n"
-	      "  -Time spent: %.2lfs\n"
-	      "  -Data sent:  %s\n"
-	      "  -Throughput: %.2lfMB/s (%lld bytes total)\n",
-	      ff_pkt->fname,
-	      std::chrono::duration_cast<seconds_double>(total).count(),
-	      data_sent ? "yes" : "no",
-	      data_sent ? tp : 0,
-	      data_sent ? ff_pkt->statp.st_size : 0);
-	ff_pkt->send_total += total;
-      }
-    }
-
-    std::optional<std::chrono::time_point<std::chrono::steady_clock>> start;
-    FindFilesPacket* ff_pkt;
-    bool data_sent;
-  };
   save_file_timing timing{ff_pkt};
   bool do_read = false;
   bool plugin_started = false;
@@ -945,7 +985,7 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 
     timing.send_data(true);
     status = send_data(jcr, data_stream, ff_pkt, bsctx.digest,
-                       bsctx.signing_digest);
+                       bsctx.signing_digest, &timing);
 
     if (BitIsSet(FO_CHKCHANGES, ff_pkt->flags)) { HasFileChanged(jcr, ff_pkt); }
 
@@ -959,7 +999,7 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
     if (ff_pkt->type != FT_LNKSAVED
         && (S_ISREG(ff_pkt->statp.st_mode)
             && BitIsSet(FO_HFSPLUS, ff_pkt->flags))) {
-      if (!SaveRsrcAndFinder(bsctx)) { goto bail_out; }
+      if (!SaveRsrcAndFinder(bsctx, &timing)) { goto bail_out; }
     }
   }
 
@@ -1067,7 +1107,8 @@ static inline bool SendDataToSd(b_ctx* bctx)
     std::chrono::time_point<std::chrono::steady_clock> start = std::chrono::steady_clock::now();
     CryptoDigestUpdate(bctx->digest, (uint8_t*)bctx->rbuf, sd->message_length);
     std::chrono::time_point<std::chrono::steady_clock> end = std::chrono::steady_clock::now();
-    bctx->ff_pkt->checksum_total += end - start;
+    if (bctx->timing) bctx->timing.value()->check(end - start);
+    // bctx->ff_pkt->checksum_total += end - start;
   }
 
   // Update signing digest if requested
@@ -1076,7 +1117,7 @@ static inline bool SendDataToSd(b_ctx* bctx)
     CryptoDigestUpdate(bctx->signing_digest, (uint8_t*)bctx->rbuf,
                        sd->message_length);
     std::chrono::time_point<std::chrono::steady_clock> end = std::chrono::steady_clock::now();
-    bctx->ff_pkt->signing_total += end - start;
+    if (bctx->timing) bctx->timing.value()->sign(end - start);
   }
 
   // Compress the data.
@@ -1139,13 +1180,22 @@ static inline bool SendDataToSd(b_ctx* bctx)
 }
 
 #ifdef HAVE_WIN32
+struct callback_context {
+  b_ctx* bctx;
+  std::chrono::timepoint<std::chrono::steady_clock> read_start;
+};
 // Callback method for ReadEncryptedFileRaw()
 static DWORD WINAPI send_efs_data(PBYTE pbData,
                                   PVOID pvCallbackContext,
                                   ULONG ulLength)
 {
-  b_ctx* bctx = (b_ctx*)pvCallbackContext;
+  callback_ctx* ctx = (callback_context*) pvCallbackContext;
+  b_ctx* bctx = ctx->bctx;
   BareosSocket* sd = bctx->jcr->store_bsock;
+
+  auto read_end = std::chrono::steady_clock::now();
+
+  if (bctx->timing) bctx->timing.value()->reading += (read_end - ctx->read_start);
 
   if (ulLength == 0) { return ERROR_SUCCESS; }
 
@@ -1188,7 +1238,8 @@ static inline bool SendEncryptedData(b_ctx& bctx)
    *
    * So ReadEncryptedFileRaw() will not return until it has read the whole file.
    */
-  if (p_ReadEncryptedFileRaw((PFE_EXPORT_FUNC)send_efs_data, &bctx,
+  callback_context ctx{ &bctx, std::chrono::steady_clock::now() };
+  if (p_ReadEncryptedFileRaw((PFE_EXPORT_FUNC)send_efs_data, &ctx,
                              bctx.ff_pkt->bfd.pvContext)) {
     goto bail_out;
   }
@@ -1243,7 +1294,7 @@ static void ReadData(channel::in<buffer> data, BareosFilePacket* bfd,
     if (!buf) { break; }
     ssize_t num_read = bread(bfd, buf, buflen);
     if (num_read > 0) {
-      if (!data.put(buffer{(std::size_t) num_read, buf})) {
+      if (!data.put(std::move(buffer{(std::size_t) num_read, buf}))) {
 	break;
       }
     } else {
@@ -1338,7 +1389,6 @@ static inline bool SendPlainData(b_ctx& bctx)
   std::optional<buffer> buf;
 
   while ((buf = dout.get())) {
-
     memcpy(bctx.rbuf, buf->data, buf->size);
     sd->message_length = buf->size;
     if (!SendDataToSd(&bctx)) {
@@ -1369,16 +1419,17 @@ static int send_data(JobControlRecord* jcr,
                      int stream,
                      FindFilesPacket* ff_pkt,
                      DIGEST* digest,
-                     DIGEST* signing_digest)
+                     DIGEST* signing_digest,
+		     save_file_timing *timing)
 {
-  b_ctx bctx;
+  b_ctx bctx = {};
   BareosSocket* sd = jcr->store_bsock;
 #ifdef FD_NO_SEND_TEST
   return 1;
 #endif
 
   // Setup backup context.
-  memset(&bctx, 0, sizeof(b_ctx));
+  // memset(&bctx, 0, sizeof(b_ctx));
   bctx.jcr = jcr;
   bctx.ff_pkt = ff_pkt;
   bctx.msgsave = sd->msg;                  /* save the original sd buffer */
@@ -1388,6 +1439,7 @@ static int send_data(JobControlRecord* jcr,
   bctx.cipher_input = (uint8_t*)bctx.rbuf; /* encrypt uncompressed data */
   bctx.digest = digest;                    /* encryption digest */
   bctx.signing_digest = signing_digest;    /* signing digest */
+  bctx.timing = timing;
 
   Dmsg1(300, "Saving data, type=%d\n", ff_pkt->type);
 

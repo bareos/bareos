@@ -260,6 +260,7 @@ struct FindFilesPacket {
   std::chrono::nanoseconds send_total{0};
   std::chrono::nanoseconds checksum_total{0};
   std::chrono::nanoseconds signing_total{0};
+  std::chrono::nanoseconds reading_total{0};
 };
 /* clang-format on */
 

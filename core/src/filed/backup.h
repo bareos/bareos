@@ -35,6 +35,8 @@ struct b_save_ctx {
   int digest_stream;       /* Type of Signing Digest */
 };
 
+struct save_file_timing;
+
 struct b_ctx {
   JobControlRecord* jcr;   /* Current Job Control Record */
   FindFilesPacket* ff_pkt; /* File being processed */
@@ -61,6 +63,8 @@ struct b_ctx {
   DIGEST* digest;              /* Encryption Digest */
   DIGEST* signing_digest;      /* Signing Digest */
   CIPHER_CONTEXT* cipher_ctx;  /* Cipher context */
+
+  std::optional<save_file_timing*> timing;
 };
 
 bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher);
