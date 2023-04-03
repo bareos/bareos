@@ -34,6 +34,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - filed: stored: remove deprecated `compatible` option from configuration  [PR #1341]
 - webui: remove some development leftovers and artefacts [PR #1422]
 - dird: allow to disable TLS-PSK downgrades [PR #1398]
+- core: fixes for gcc-13 support [PR #1424]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -107,4 +108,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1410]: https://github.com/bareos/bareos/pull/1410
 [PR #1415]: https://github.com/bareos/bareos/pull/1415
 [PR #1422]: https://github.com/bareos/bareos/pull/1422
+[PR #1424]: https://github.com/bareos/bareos/pull/1424
 [unreleased]: https://github.com/bareos/bareos/tree/master
