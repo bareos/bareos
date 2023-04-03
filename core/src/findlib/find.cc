@@ -1030,7 +1030,12 @@ void PrepareFileForSending(JobControlRecord* jcr,
 			   std::vector<channel::out<stated_file>> outs,
 			   channel::in<stated_opened_file> in)
 {
+  auto start = std::chrono::steady_clock::now();
   std::size_t closed_channels = 0;
+  std::chrono::nanoseconds total{0};
+  std::chrono::nanoseconds full{0};
+  std::chrono::nanoseconds nothing{0};
+  std::size_t num = 0;
   while (closed_channels != outs.size()) {
     bool found_file = false;
     for (int i = 0; i < (int)outs.size(); ++i) {
@@ -1077,14 +1082,20 @@ void PrepareFileForSending(JobControlRecord* jcr,
 		 f.name.c_str(), be.bstrerror());
 	    jcr->JobErrors++;
 	  } else {
+	    auto waits = std::chrono::steady_clock::now();
 	    if (!in.put({f, std::make_optional(bfd), i})) {
 	      return;
 	    }
+	    auto waite = std::chrono::steady_clock::now();
+	    full += (waite - waits);
 	  }
 	} else {
+	  auto waits = std::chrono::steady_clock::now();
 	  if (!in.put({f, std::nullopt, i})) {
 	    return;
 	  }
+	  auto waite = std::chrono::steady_clock::now();
+	  full += (waite - waits);
 	}
       }
       if (out.empty()) {
@@ -1093,8 +1104,28 @@ void PrepareFileForSending(JobControlRecord* jcr,
     }
     // if we have not gotten any file then sleep for a bit instead
     // of spinning here
-    if (!found_file) { std::this_thread::sleep_for(std::chrono::milliseconds(30)); }
+    if (!found_file) {
+      num += 1;
+      auto ns = std::chrono::steady_clock::now();
+      std::this_thread::sleep_for(std::chrono::milliseconds(30));
+      auto ne = std::chrono::steady_clock::now();
+      nothing += (ne - ns);
+    }
   }
+
+  auto end = std::chrono::steady_clock::now();
+  total = (end - start);
+  SplitDuration st{total};
+  SplitDuration sf{full};
+  SplitDuration sn{nothing};
+  Jmsg(jcr, M_INFO, 0,
+       "-Total:   %4lld:%02lld:%02lld.%03lld-%03lld\n"
+       "  -Full:  %4lld:%02lld:%02lld.%03lld-%03lld\n"
+       "  -Noth:  %4lld:%02lld:%02lld.%03lld-%03lld (%llu)\n",
+       st.hours(), st.minutes(), st.seconds(), st.millis(), st.micros(),
+       sf.hours(), sf.minutes(), sf.seconds(), sf.millis(), sf.micros(),
+       sn.hours(), sn.minutes(), sn.seconds(), sn.millis(), sn.micros(), num
+      );
 }
 
 int SendFiles(JobControlRecord* jcr,
@@ -1106,6 +1137,11 @@ int SendFiles(JobControlRecord* jcr,
   /* This is the new way */
   findFILESET* fileset = ff->fileset;
   int ret_val = 1;
+  std::chrono::nanoseconds work{0};
+  std::chrono::nanoseconds stop{0};
+  std::chrono::nanoseconds total{0};
+  std::chrono::nanoseconds wait{0};
+  auto start = std::chrono::steady_clock::now();
   if (fileset) {
     /* TODO: We probably need be move the initialization in the fileset loop,
      * at this place flags options are "concatenated" accross Include {} blocks
@@ -1131,7 +1167,11 @@ int SendFiles(JobControlRecord* jcr,
 	cached_values[i].StripPath = ff->StripPath;
     }
     while (1) {
+      auto waits = std::chrono::steady_clock::now();
       if (std::optional opened_file = out.get(); opened_file) {
+	auto waite = std::chrono::steady_clock::now();
+	wait += (waite - waits);
+	auto start = std::chrono::steady_clock::now();
 	auto& [file, bfd, fileset_idx] = opened_file.value();
 	fileset->incexe = fileset->include_list.get(fileset_idx);
 	char* fname = file.name.data();
@@ -1184,6 +1224,8 @@ int SendFiles(JobControlRecord* jcr,
 	  if (ff->linked) { ff->linked->FileIndex = ff->FileIndex; }
 	}
 	if (JobCanceled(jcr)) { ret_val = 0; break; }
+	auto end = std::chrono::steady_clock::now();
+	work += (end - start);
       } else {
 	break;
       }
@@ -1191,8 +1233,28 @@ int SendFiles(JobControlRecord* jcr,
     // this will close the opener regardless of whether
     // there are still files getting listed or not
     // since currently the opener will spin if it isnt fed fast enough
+    auto start = std::chrono::steady_clock::now();
     out.close();
     opener.join();
+    auto end = std::chrono::steady_clock::now();
+    stop = (end - start);
   }
+  auto end = std::chrono::steady_clock::now();
+  total = (end - start);
+
+  SplitDuration st{total};
+  SplitDuration sc{stop};
+  SplitDuration sw{work};
+  SplitDuration sa{wait};
+  Jmsg(jcr, M_INFO, 0,
+       "-Total:   %4lld:%02lld:%02lld.%03lld-%03lld\n"
+       "  -Work:  %4lld:%02lld:%02lld.%03lld-%03lld\n"
+       "  -Wait:  %4lld:%02lld:%02lld.%03lld-%03lld\n"
+       "  -Close: %4lld:%02lld:%02lld.%03lld-%03lld\n",
+       st.hours(), st.minutes(), st.seconds(), st.millis(), st.micros(),
+       sw.hours(), sw.minutes(), sw.seconds(), sw.millis(), sw.micros(),
+       sa.hours(), sa.minutes(), sa.seconds(), sa.millis(), sa.micros(),
+       sc.hours(), sc.minutes(), sc.seconds(), sc.millis(), sc.micros()
+      );
   return ret_val;
 }
