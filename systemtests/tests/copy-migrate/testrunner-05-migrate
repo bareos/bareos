@@ -53,7 +53,7 @@ if [[ $(grep -c "Termination:.*Migration OK" "$log") -ne "4" ]]; then
 fi
 
 if [[ $(grep -c "|.*M.*|" "$query_results") -ne "3" ]]; then
-    echo "Former backup jobs were not succesfully converted to 'Migrated Jobs'."
+    echo "Former backup jobs were not successfully converted to 'Migrated Jobs'."
     estat=2
 fi
 
