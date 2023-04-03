@@ -1,4 +1,5 @@
 Device {
+  Description = "Multiplied file device. A connecting Director must have the same Name and MediaType."
   Name = FileStorage
   Media Type = File
   Archive Device = @archivedir@
@@ -7,5 +8,6 @@ Device {
   AutomaticMount = yes;               # when device opened, read it
   RemovableMedia = no;
   AlwaysOpen = no;
-  Description = "File device. A connecting Director must have the same Name and MediaType."
+  Count = 10                          # Number of instances
+  MaximumConcurrentJobs = 1
 }
