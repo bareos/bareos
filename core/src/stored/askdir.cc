@@ -273,7 +273,8 @@ get_out:
  * back to the director. The information comes from the
  * dev record.
  */
-bool StorageDaemonDeviceControlRecord::DirUpdateVolumeInfo(bool label, bool)
+bool StorageDaemonDeviceControlRecord::DirUpdateVolumeInfo(
+    is_labeloperation label)
 {
   BareosSocket* dir = jcr->dir_bsock;
   VolumeCatalogInfo* vol = &dev->VolCatInfo;
@@ -296,7 +297,7 @@ bool StorageDaemonDeviceControlRecord::DirUpdateVolumeInfo(bool label, bool)
   Dmsg1(debuglevel, "Update cat VolBytes=%lld\n", vol->VolCatBytes);
 
   // Just labeled or relabeled the tape
-  if (label) {
+  if (label == is_labeloperation::True) {
     bstrncpy(vol->VolCatStatus, "Append", sizeof(vol->VolCatStatus));
   }
   vol->VolLastWritten = time(NULL);

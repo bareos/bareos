@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -130,19 +130,18 @@ bool FixupDeviceBlockWriteError(DeviceControlRecord* dcr, int retries)
   Dmsg2(050, "MustUnload=%d dev=%s\n", dev->MustUnload(), dev->print_name());
   dev->Lock(); /* lock again */
 
-  dev->VolCatInfo.VolCatJobs++;           /* increment number of jobs on vol */
-  dcr->DirUpdateVolumeInfo(false, false); /* send Volume info to Director */
+  dev->VolCatInfo.VolCatJobs++; /* increment number of jobs on vol */
+  dcr->DirUpdateVolumeInfo(
+      is_labeloperation::False); /* send Volume info to Director */
 
   Jmsg(jcr, M_INFO, 0, _("New volume \"%s\" mounted on device %s at %s.\n"),
        dcr->VolumeName, dev->print_name(),
        bstrftime(dt, sizeof(dt), time(NULL)));
 
-  /*
-   * If this is a new tape, the label_blk will contain the
+  /* If this is a new tape, the label_blk will contain the
    *  label, so write it now. If this is a previously
    *  used tape, MountNextWriteVolume() will return an
-   *  empty label_blk, and nothing will be written.
-   */
+   *  empty label_blk, and nothing will be written. */
   Dmsg0(190, "write label block to dev\n");
   if (!dcr->WriteBlockToDev()) {
     BErrNo be;
@@ -190,11 +189,9 @@ bool FixupDeviceBlockWriteError(DeviceControlRecord* dcr, int retries)
   ok = true;
 
 bail_out:
-  /*
-   * At this point, the device is locked and blocked.
+  /* At this point, the device is locked and blocked.
    * Unblock the device, restore any entry blocked condition, then
-   *   return leaving the device locked (as it was on entry).
-   */
+   *   return leaving the device locked (as it was on entry). */
   UnblockDevice(dev);
   if (blocked != BST_NOT_BLOCKED) { BlockDevice(dev, blocked); }
   return ok; /* device locked */
@@ -301,10 +298,8 @@ BootStrapRecord* PositionDeviceToFirstFile(JobControlRecord* jcr,
   BootStrapRecord* bsr = NULL;
   Device* dev = dcr->dev;
   uint32_t file, block;
-  /*
-   * Now find and position to first file and block
-   *   on this tape.
-   */
+  /* Now find and position to first file and block
+   *   on this tape. */
   if (jcr->sd_impl->read_session.bsr) {
     jcr->sd_impl->read_session.bsr->Reposition = true;
     bsr = find_next_bsr(jcr->sd_impl->read_session.bsr, dev);
@@ -346,11 +341,9 @@ bool TryDeviceRepositioning(JobControlRecord* jcr,
     return true;
   }
   if (bsr) {
-    /*
-     * ***FIXME*** gross kludge to make disk seeking work.  Remove
+    /* ***FIXME*** gross kludge to make disk seeking work.  Remove
      *   when find_next_bsr() is fixed not to return a bsr already
-     *   completed.
-     */
+     *   completed. */
     uint32_t block, file;
     /* TODO: use dev->file_addr ? */
     uint64_t dev_addr = (((uint64_t)dev->file) << 32) | dev->block_num;

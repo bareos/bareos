@@ -479,7 +479,8 @@ DeviceControlRecord* AcquireDeviceForAppend(DeviceControlRecord* dcr)
   dev->VolCatInfo.VolCatJobs++; /* increment number of jobs on vol */
   Dmsg4(100, "=== nwriters=%d nres=%d vcatjob=%d dev=%s\n", dev->num_writers,
         dev->NumReserved(), dev->VolCatInfo.VolCatJobs, dev->print_name());
-  dcr->DirUpdateVolumeInfo(false, false); /* send Volume info to Director */
+  dcr->DirUpdateVolumeInfo(
+      is_labeloperation::False); /* send Volume info to Director */
   retval = true;
 
 get_out:
@@ -547,7 +548,8 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
     Dmsg2(150, "dir_update_vol_info. label=%d Vol=%s\n", dev->IsLabeled(),
           vol->VolCatName);
     if (dev->IsLabeled() && vol->VolCatName[0] != 0) {
-      dcr->DirUpdateVolumeInfo(false, false); /* send Volume info to Director */
+      dcr->DirUpdateVolumeInfo(
+          is_labeloperation::False); /* send Volume info to Director */
       RemoveReadVolume(jcr, dcr->VolumeName);
       VolumeUnused(dcr);
     }
@@ -575,8 +577,8 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
         dev->VolCatInfo.VolCatFiles = dev->file; /* set number of files */
 
         // Note! do volume update before close, which zaps VolCatInfo
-        dcr->DirUpdateVolumeInfo(false,
-                                 false); /* send Volume info to Director */
+        dcr->DirUpdateVolumeInfo(
+            is_labeloperation::False); /* send Volume info to Director */
         Dmsg2(200, "dir_update_vol_info. Release vol=%s dev=%s\n",
               dev->getVolCatName(), dev->print_name());
       }

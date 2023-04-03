@@ -463,7 +463,7 @@ static bool TerminateWritingVolume(DeviceControlRecord* dcr)
            sizeof(dev->VolCatInfo.VolCatStatus));
   dev->VolCatInfo.VolCatFiles = dev->file; /* set number of files */
 
-  if (!dcr->DirUpdateVolumeInfo(false, true)) {
+  if (!dcr->DirUpdateVolumeInfo(is_labeloperation::False)) {
     Mmsg(dev->errmsg, _("Error sending Volume info to Director.\n"));
     ok = false;
     Dmsg0(50, "Error updating volume info.\n");
@@ -514,7 +514,7 @@ static bool DoNewFileBookkeeping(DeviceControlRecord* dcr)
     return false;
   }
   dev->VolCatInfo.VolCatFiles = dev->file;
-  if (!dcr->DirUpdateVolumeInfo(false, false)) {
+  if (!dcr->DirUpdateVolumeInfo(is_labeloperation::False)) {
     Dmsg0(50, "Error from update_vol_info.\n");
     TerminateWritingVolume(dcr);
     dev->dev_errno = EIO;
