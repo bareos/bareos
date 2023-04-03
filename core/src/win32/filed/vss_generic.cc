@@ -116,18 +116,18 @@ static void JmsgVssApiStatus(JobControlRecord* jcr,
             "an "
             "administrator.";
       break;
-    case VSS_E_INVALID_XML_DOCUMENT:
+    case static_cast<HRESULT>VSS_E_INVALID_XML_DOCUMENT:
       errmsg = "The XML document is not valid.";
       break;
-    case VSS_E_OBJECT_NOT_FOUND:
+    case static_cast<HRESULT>VSS_E_OBJECT_NOT_FOUND:
       errmsg = "The specified file does not exist.";
       break;
-    case VSS_E_BAD_STATE:
+    case static_cast<HRESULT>VSS_E_BAD_STATE:
       errmsg
           = "Object is not initialized; called during restore or not called in "
             "correct sequence.";
       break;
-    case VSS_E_WRITER_INFRASTRUCTURE:
+    case static_cast<HRESULT>VSS_E_WRITER_INFRASTRUCTURE:
       errmsg
           = "The writer infrastructure is not operating properly. Check that "
             "the "
