@@ -24,6 +24,7 @@ Make sure you check/merge the PR using `devtools/pr-tool` to have some simple au
 - [ ] Purpose of the PR is understood
 - [ ] Commit descriptions are understandable and well formatted
 - [ ] Check backport line
+- [ ] Required backport PRs have been created
 
 ##### Source code quality
 - [ ] Source code changes are understandable
