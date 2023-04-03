@@ -157,8 +157,6 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
 
   if (!CryptoSessionStart(jcr, cipher)) { return false; }
 
-
-
   StartHeartbeatMonitor(jcr);
 
   if (have_acl) {
@@ -1159,7 +1157,7 @@ static void ReadData(channel::in<buffer> data, BareosFilePacket* bfd,
   }
 }
 
-static void DigestData(channel::out<buffer> out, channel::in<buffer> in,
+static void DigestData(channel::out<buffer> out,
 		       DIGEST* digest, DIGEST* signing_digest)
 {
 
@@ -1173,8 +1171,6 @@ static void DigestData(channel::out<buffer> out, channel::in<buffer> in,
     if (signing_digest) {
       CryptoDigestUpdate(signing_digest, (uint8_t*)buf->data, buf->size);
     }
-
-    in.put(std::move(*buf));
   }
 }
 
@@ -1197,7 +1193,7 @@ static inline bool SendPlainDataSerially(b_ctx& bctx) {
 // Send the content of a file on anything but an EFS filesystem.
 static inline bool SendPlainData(b_ctx& bctx)
 {
-  if (!bctx.ff_pkt->bfd.do_io_in_core) {
+  if (bctx.ff_pkt->bfd.cmd_plugin) {
     return SendPlainDataSerially(bctx);
   }
 
@@ -1217,7 +1213,7 @@ static inline bool SendPlainData(b_ctx& bctx)
 
   // do not bother creating threads if we have less
   // than buffer_threshold buffers to push!
-  constexpr std::size_t buffer_threshold = 5;
+  constexpr std::size_t buffer_threshold = 1;
   if (actual_buf_count < buffer_threshold) {
     return SendPlainDataSerially(bctx);
   }
@@ -1226,7 +1222,7 @@ static inline bool SendPlainData(b_ctx& bctx)
   BareosSocket* sd = bctx.jcr->store_bsock;
 
   auto [in, out] = channel::CreateBufferedChannel<buffer>(actual_buf_count);
-  auto [din, dout] = channel::CreateBufferedChannel<buffer>(actual_buf_count);
+  auto [din, dout] = channel::CreateBufferedChannel<buffer>(num_buffers);
 
   std::thread reader(ReadData, std::move(in), &bctx.ff_pkt->bfd,
 		     bctx.rsize);
@@ -1238,21 +1234,22 @@ static inline bool SendPlainData(b_ctx& bctx)
   std::swap(digest, bctx.digest);
   std::swap(signing, bctx.signing_digest);
 
-  std::thread digester(DigestData, std::move(out), std::move(din),
+  std::thread digester(DigestData, std::move(dout),
 		       digest, signing);
 
   std::optional<buffer> buf;
 
-  while ((buf = dout.get())) {
-
+  while ((buf = out.get())) {
     memcpy(bctx.rbuf, buf->data, buf->size);
     sd->message_length = buf->size;
+    din.put(std::move(*buf));
     if (!SendDataToSd(&bctx)) {
       retval = false;
-      out.close();
       break;
     }
   }
+  out.close();
+  din.close();
   digester.join();
   reader.join();
   std::swap(digest, bctx.digest);
