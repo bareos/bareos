@@ -130,11 +130,6 @@ static void DeliveryError(const char* fmt, ...)
   FreeMemory(pool_buf);
 }
 
-void RegisterMessageCallback(void msg_callback(int type, const char* msg))
-{
-  message_callback = msg_callback;
-}
-
 /*
  * Set daemon name. Also, find canonical execution
  * path.  Note, exepath has spare room for tacking on

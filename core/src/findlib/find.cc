@@ -497,16 +497,6 @@ findIncludeExcludeItem* new_preinclude(findFILESET* fileset)
   return fileset->incexe;
 }
 
-// Create a new exclude block and prepend it to the list of exclude blocks.
-findIncludeExcludeItem* new_preexclude(findFILESET* fileset)
-{
-  // New pre-exclude
-  fileset->incexe = allocate_new_incexe();
-  fileset->exclude_list.prepend(fileset->incexe);
-
-  return fileset->incexe;
-}
-
 findFOPTS* start_options(FindFilesPacket* ff)
 {
   int state = ff->fileset->state;

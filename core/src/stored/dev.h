@@ -330,7 +330,6 @@ class Device {
   bool waiting_for_mount() const;
   bool MustUnload() const { return unload_; }
   bool must_load() const { return load_; }
-  const char* strerror() const;
   const char* archive_name() const;
   const char* name() const;
   const std::string& type() const { return device_type; }
@@ -510,7 +509,6 @@ class SpoolDevice :public Device
 };
 /* clang-format on */
 
-inline const char* Device::strerror() const { return errmsg; }
 inline const char* Device::archive_name() const
 {
   return archive_device_string;

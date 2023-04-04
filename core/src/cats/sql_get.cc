@@ -462,20 +462,6 @@ int BareosDb::GetJobVolumeParameters(JobControlRecord* jcr,
 }
 
 /**
- * Get the number of pool records
- *
- * Returns: -1 on failure
- *          number on success
- */
-int BareosDb::GetNumPoolRecords(JobControlRecord* jcr)
-{
-  DbLocker _{this};
-  Mmsg(cmd, "SELECT count(*) from Pool");
-
-  return GetSqlRecordMax(jcr);
-}
-
-/**
  * This function returns a list of all the Pool record ids.
  * The caller must free ids if non-NULL.
  *
@@ -897,22 +883,6 @@ int BareosDb::GetFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr)
   } else {
     Mmsg(errmsg, _("FileSet record not found in Catalog.\n"));
   }
-  return retval;
-}
-
-/**
- * Get the number of Media records
- *
- * Returns: -1 on failure
- *          number on success
- */
-int BareosDb::GetNumMediaRecords(JobControlRecord* jcr)
-{
-  int retval = 0;
-
-  DbLocker _{this};
-  Mmsg(cmd, "SELECT count(*) from Media");
-  retval = GetSqlRecordMax(jcr);
   return retval;
 }
 

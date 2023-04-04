@@ -28,7 +28,7 @@
 #ifndef BAREOS_LIB_BREG_H_
 #define BAREOS_LIB_BREG_H_
 
-//#undef HAVE_REGEX_H
+// #undef HAVE_REGEX_H
 
 #ifndef HAVE_REGEX_H
 #  include "bregex.h"
@@ -59,7 +59,6 @@ class BareosRegex {
   bool success = false;      /**< match is ok */
 
   char* replace(const char* fname); /**< return this.result */
-  void debug();
 
   /* private */
   POOLMEM* expr = nullptr;       /**< search epression */

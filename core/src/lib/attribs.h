@@ -27,6 +27,5 @@ void EncodeStat(char* buf,
                 int32_t LinkFI,
                 int data_stream);
 int DecodeStat(char* buf, struct stat* statp, int stat_size, int32_t* LinkFI);
-int32_t DecodeLinkFI(char* buf, struct stat* statp, int stat_size);
 
 #endif  // BAREOS_LIB_ATTRIBS_H_

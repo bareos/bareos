@@ -389,8 +389,6 @@ Bvfs::~Bvfs()
   jcr->DecUseCount();
 }
 
-void Bvfs::SetJobid(JobId_t id) { Mmsg(jobids, "%lld", (uint64_t)id); }
-
 void Bvfs::SetJobids(char* ids) { PmStrcpy(jobids, ids); }
 
 /*
@@ -466,9 +464,6 @@ char* bvfs_basename_dir(char* path)
   }
   return p;
 }
-
-
-void Bvfs::update_cache() { db->BvfsUpdatePathHierarchyCache(jcr, jobids); }
 
 // Change the current directory, returns true if the path exists
 bool Bvfs::ChDir(const char* path)

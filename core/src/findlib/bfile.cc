@@ -974,8 +974,6 @@ bool IsPortableBackup(BareosFilePacket*)
   return true; /* portable by definition */
 }
 
-bool set_prog(BareosFilePacket*, char*, JobControlRecord*) { return false; }
-
 bool SetCmdPlugin(BareosFilePacket* bfd, JobControlRecord* jcr)
 {
   bfd->cmd_plugin = true;

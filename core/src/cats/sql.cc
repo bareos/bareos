@@ -94,21 +94,6 @@ int db_int64_handler(void* ctx, int, char** row)
   return 0;
 }
 
-/**
- * Called here to retrieve a btime from the database.
- *   The returned integer will be extended to 64 bit.
- */
-int DbStrtimeHandler(void* ctx, int, char** row)
-{
-  db_int64_ctx* lctx = (db_int64_ctx*)ctx;
-
-  if (row[0]) {
-    lctx->value = StrToUtime(row[0]);
-    lctx->count++;
-  }
-  return 0;
-}
-
 // Use to build a comma separated list of values from a query. "10,20,30"
 int DbListHandler(void* ctx, int num_fields, char** row)
 {

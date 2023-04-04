@@ -112,16 +112,6 @@ static BootStrapRecord* find_smallest_volfile(BootStrapRecord* fbsr,
 
 /**
  *
- *  If possible, position the archive device (tape) to read the
- *  next block.
- */
-void PositionBsrBlock(BootStrapRecord*, DeviceBlock*)
-{
-  /* To be implemented */
-}
-
-/**
- *
  *  Do fast block rejection based on bootstrap records.
  *    use_fast_rejection will be set if we have VolSessionId and VolSessTime
  *    in each record. When BlockVer is >= 2, we have those in the block header

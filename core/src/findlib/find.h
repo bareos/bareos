@@ -285,7 +285,6 @@ findIncludeExcludeItem* allocate_new_incexe(void);
 findIncludeExcludeItem* new_exclude(findFILESET* fileset);
 findIncludeExcludeItem* new_include(findFILESET* fileset);
 findIncludeExcludeItem* new_preinclude(findFILESET* fileset);
-findIncludeExcludeItem* new_preexclude(findFILESET* fileset);
 findFOPTS* start_options(FindFilesPacket* ff);
 void NewOptions(FindFilesPacket* ff, findIncludeExcludeItem* incexe);
 

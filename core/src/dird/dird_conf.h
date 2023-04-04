@@ -392,8 +392,6 @@ class UnifiedStorageResource : public BareosResource {
     *store_source = 0;
   }
   ~UnifiedStorageResource() { destroy(); }
-
-  void SetSource(const char* where);
   void destroy();
 };
 
@@ -403,12 +401,6 @@ inline void UnifiedStorageResource::destroy()
     FreePoolMemory(store_source);
     store_source = nullptr;
   }
-}
-
-inline void UnifiedStorageResource::SetSource(const char* where)
-{
-  if (!store_source) { store_source = GetPoolMemory(PM_MESSAGE); }
-  PmStrcpy(store_source, where);
 }
 
 // Job Resource

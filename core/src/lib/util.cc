@@ -449,53 +449,6 @@ void JobstatusToAscii(int JobStatus, char* msg, int maxlen)
   bstrncpy(msg, jobstat, maxlen);
 }
 
-// Convert a JobStatus code into a human readable form - gui version
-void JobstatusToAsciiGui(int JobStatus, char* msg, int maxlen)
-{
-  const char* cnv = NULL;
-  switch (JobStatus) {
-    case JS_Terminated:
-      cnv = _("Completed successfully");
-      break;
-    case JS_Warnings:
-      cnv = _("Completed with warnings");
-      break;
-    case JS_ErrorTerminated:
-      cnv = _("Terminated with errors");
-      break;
-    case JS_FatalError:
-      cnv = _("Fatal error");
-      break;
-    case JS_Created:
-      cnv = _("Created, not yet running");
-      break;
-    case JS_Canceled:
-      cnv = _("Canceled by user");
-      break;
-    case JS_Differences:
-      cnv = _("Verify found differences");
-      break;
-    case JS_WaitFD:
-      cnv = _("Waiting for File daemon");
-      break;
-    case JS_WaitSD:
-      cnv = _("Waiting for Storage daemon");
-      break;
-    case JS_WaitPriority:
-      cnv = _("Waiting for higher priority jobs");
-      break;
-    case JS_AttrInserting:
-      cnv = _("Batch inserting file records");
-      break;
-  }
-
-  if (cnv) {
-    bstrncpy(msg, cnv, maxlen);
-  } else {
-    JobstatusToAscii(JobStatus, msg, maxlen);
-  }
-}
-
 // Convert Job Termination Status into a string
 const char* job_status_to_str(int stat)
 {
@@ -656,27 +609,6 @@ const char* job_level_to_str(int level)
       break;
   }
   return str;
-}
-
-const char* volume_status_to_str(const char* status)
-{
-  int pos;
-  const char* vs[] = {NT_("Append"), _("Append"),      NT_("Archive"),
-                      _("Archive"),  NT_("Disabled"),  _("Disabled"),
-                      NT_("Full"),   _("Full"),        NT_("Used"),
-                      _("Used"),     NT_("Cleaning"),  _("Cleaning"),
-                      NT_("Purged"), _("Purged"),      NT_("Recycle"),
-                      _("Recycle"),  NT_("Read-Only"), _("Read-Only"),
-                      NT_("Error"),  _("Error"),       NULL,
-                      NULL};
-
-  if (status) {
-    for (pos = 0; vs[pos]; pos += 2) {
-      if (bstrcmp(vs[pos], status)) { return vs[pos + 1]; }
-    }
-  }
-
-  return _("Invalid volume status");
 }
 
 // Encode the mode bits into a 10 character string like LS does
@@ -844,38 +776,6 @@ void MakeSessionKey(char* key, char* seed, int mode)
   }
 }
 #undef nextrand
-
-void EncodeSessionKey(char* encode, char* session, char* key, int maxlen)
-{
-  int i;
-
-  for (i = 0; (i < maxlen - 1) && session[i]; i++) {
-    if (session[i] == '-') {
-      encode[i] = '-';
-    } else {
-      encode[i] = ((session[i] - 'A' + key[i]) & 0xF) + 'A';
-    }
-  }
-  encode[i] = 0;
-  Dmsg3(000, "Session=%s key=%s encode=%s\n", session, key, encode);
-}
-
-void DecodeSessionKey(char* decode, char* session, char* key, int maxlen)
-{
-  int i, x;
-
-  for (i = 0; (i < maxlen - 1) && session[i]; i++) {
-    if (session[i] == '-') {
-      decode[i] = '-';
-    } else {
-      x = (session[i] - 'A' - key[i]) & 0xF;
-      if (x < 0) { x += 16; }
-      decode[i] = x + 'A';
-    }
-  }
-  decode[i] = 0;
-  Dmsg3(000, "Session=%s key=%s decode=%s\n", session, key, decode);
-}
 
 /*
  * Edit job codes into main command line
@@ -1166,20 +1066,6 @@ std::string TPAsString(const std::chrono::system_clock::time_point& tp)
   }
   std::string ts = str;
   return ts;
-}
-
-regex_t* StringToRegex(const char* input)
-{
-  regex_t* output;
-  int regCompare;
-
-  output = (regex_t*)malloc(sizeof(regex_t));
-  regCompare = regcomp(output, input, REG_EXTENDED);
-  if (regCompare != 0) {
-    regfree(output);
-    free(output);
-  }
-  return output;
 }
 
 void to_lower(std::string& s)

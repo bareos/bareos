@@ -71,12 +71,6 @@ char* bstrftimes(char* dt, int maxlen, utime_t utime)
   return bstrftime(dt, maxlen, utime, "%d-%b-%Y %H:%M:%S");
 }
 
-// Formatted time for user display: dd-Mon hh:mm
-char* bstrftime_ny(char* dt, int maxlen, utime_t utime)
-{
-  return bstrftime(dt, maxlen, utime, "%d-%b %H:%M");
-}
-
 // Formatted time for user display with weekday: weekday dd-Mon hh:mm
 char* bstrftime_wd(char* dt, int maxlen, utime_t utime)
 {
@@ -204,23 +198,6 @@ time_t BtimeToUnix(btime_t bt) { return (time_t)(bt / 1000000); }
 // Convert btime to utime
 utime_t BtimeToUtime(btime_t bt) { return (utime_t)(bt / 1000000); }
 
-/*
- * Return the week of the month, base 0 (wom)
- * given tm_mday and tm_wday. Value returned
- * can be from 0 to 4 => week1, ... week5
- */
-int tm_wom(int mday, int wday)
-{
-  int fs; /* first sunday */
-  int wom;
-
-  fs = (mday % 7) - wday;
-  if (fs <= 0) { fs += 7; }
-  if (mday <= fs) { return 0; }
-  wom = 1 + (mday - fs - 1) / 7;
-
-  return wom;
-}
 
 /*
  * Given a Unix date return the week of the year.

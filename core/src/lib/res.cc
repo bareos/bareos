@@ -1453,19 +1453,6 @@ bool ConfigurationParser::StoreResource(int type,
   return true;
 }
 
-void IndentConfigItem(PoolMem& cfg_str,
-                      int level,
-                      const char* config_item,
-                      bool inherited)
-{
-  for (int i = 0; i < level; i++) { PmStrcat(cfg_str, DEFAULT_INDENT_STRING); }
-  if (inherited) {
-    PmStrcat(cfg_str, "#");
-    PmStrcat(cfg_str, DEFAULT_INDENT_STRING);
-  }
-  PmStrcat(cfg_str, config_item);
-}
-
 std::string PrintNumberSiPrefixFormat(ResourceItem*, uint64_t value_in)
 {
   return SizeAsSiPrefixFormat(value_in);

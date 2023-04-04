@@ -188,9 +188,6 @@ LEX* lex_open_file(LEX* lf,
                    const char* fname,
                    LEX_ERROR_HANDLER* ScanError,
                    LEX_WARNING_HANDLER* scan_warning);
-LEX* lex_new_buffer(LEX* lf,
-                    LEX_ERROR_HANDLER* ScanError,
-                    LEX_WARNING_HANDLER* scan_warning);
 int LexGetChar(LEX* lf);
 void LexUngetChar(LEX* lf);
 const char* lex_tok_to_str(int token);

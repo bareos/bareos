@@ -111,11 +111,6 @@ inline uint32_t BlockWriteNavail(DeviceBlock* block)
   return ((block)->buf_len - (block)->binbuf);
 }
 
-inline bool block_is_empty(DeviceBlock* block)
-{
-  return ((block)->read_len == 0);
-}
-
 void DumpBlock(DeviceBlock* b, const char* msg);
 DeviceBlock* new_block(Device* dev);
 DeviceBlock* dup_block(DeviceBlock* eblock);

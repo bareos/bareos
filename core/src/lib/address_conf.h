@@ -92,8 +92,6 @@ void InitDefaultAddresses(dlist<IPADDR>** addr, const char* port);
 void EmptyAddressList(dlist<IPADDR>* addrs);
 void FreeAddresses(dlist<IPADDR>* addrs);
 
-const char* GetFirstAddress(dlist<IPADDR>* addrs, char* outputbuf, int outlen);
-int GetFirstPortNetOrder(dlist<IPADDR>* addrs);
 int GetFirstPortHostOrder(dlist<IPADDR>* addrs);
 
 int AddAddress(dlist<IPADDR>** out,
@@ -111,9 +109,6 @@ const char* BuildAddressesString(dlist<IPADDR>* addrs,
                                  char* buf,
                                  int blen,
                                  bool print_port = true);
-
-int SockaddrGetPortNetOrder(const struct sockaddr* sa);
-int SockaddrGetPort(const struct sockaddr* sa);
 char* SockaddrToAscii(const struct sockaddr* sa, char* buf, int len);
 #ifdef WIN32
 #  undef HAVE_OLD_SOCKOPT

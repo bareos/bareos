@@ -557,11 +557,9 @@ class BareosDb : public BareosDbQueryEnum {
   virtual ~BareosDb() {}
   const char* get_db_name(void) { return db_name_; }
   const char* get_db_user(void) { return db_user_; }
-  const char* get_errmsg(void) const { return errmsg; }
   bool IsConnected(void) { return connected_; }
   bool BatchInsertAvailable(void) { return have_batch_insert_; }
   bool IsPrivate(void) { return is_private_; }
-  void SetPrivate(bool IsPrivate) { is_private_ = IsPrivate; }
   void IncrementRefcount(void) { ref_count_++; }
 
   int SqlNumRows(void)
@@ -647,7 +645,6 @@ class BareosDb : public BareosDbQueryEnum {
   /* sql_delete.c */
   bool DeletePoolRecord(JobControlRecord* jcr, PoolDbRecord* pool_dbr);
   bool DeleteMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr);
-  bool PurgeMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr);
   void PurgeFiles(const char* jobids);
   void PurgeJobs(const char* jobids);
 
@@ -803,9 +800,6 @@ class BareosDb : public BareosDbQueryEnum {
                     const char* range,
                     OutputFormatter* sendit,
                     e_list_type type);
-  void ListStorageRecords(JobControlRecord* jcr,
-                          OutputFormatter* sendit,
-                          e_list_type type);
   void ListMediaRecords(JobControlRecord* jcr,
                         MediaDbRecord* mdbr,
                         const char* range,
@@ -1082,17 +1076,6 @@ class ListContext {
   bool once = false;               /**< Used to print header one time */
   BareosDb* mdb = nullptr;
   JobControlRecord* jcr = nullptr;
-
-  void empty()
-  {
-    once = false;
-    line[0] = '\0';
-  }
-
-  void send_dashes()
-  {
-    if (*line) { send->Decoration(line); }
-  }
 
   ListContext(JobControlRecord* j,
               BareosDb* m,

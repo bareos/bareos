@@ -219,9 +219,7 @@ static inline bool AreMaxConcurrentJobsExceeded()
   JobControlRecord* jcr;
   unsigned int cnt = 0;
 
-  foreach_jcr (jcr) {
-    cnt++;
-  }
+  foreach_jcr (jcr) { cnt++; }
   endeach_jcr(jcr);
 
   return (cnt >= me->MaxConcurrentJobs) ? true : false;
@@ -704,7 +702,6 @@ static bool DoLabel(JobControlRecord* jcr, bool relabel)
                  dev_name.c_str());
     }
   } else {
-    /* NB dir->msg gets clobbered in BnetFsend, so save command */
     PmStrcpy(jcr->errmsg, dir->msg);
     dir->fsend(_("3903 Error scanning label command: %s\n"), jcr->errmsg);
   }
@@ -1208,7 +1205,6 @@ static bool UnmountCmd(JobControlRecord* jcr)
                  devname.c_str());
     }
   } else {
-    /* NB dir->msg gets clobbered in BnetFsend, so save command */
     PmStrcpy(jcr->errmsg, dir->msg);
     dir->fsend(_("3907 Error scanning unmount command: %s\n"), jcr->errmsg);
   }
@@ -1278,7 +1274,6 @@ static bool ReleaseCmd(JobControlRecord* jcr)
                  devname.c_str());
     }
   } else {
-    /* NB dir->msg gets clobbered in BnetFsend, so save command */
     PmStrcpy(jcr->errmsg, dir->msg);
     dir->fsend(_("3927 Error scanning release command: %s\n"), jcr->errmsg);
   }

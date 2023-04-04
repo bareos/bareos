@@ -28,7 +28,6 @@
  * This object can be use to browse the catalog
  *
  * Bvfs fs;
- * fs.SetJobid(10);
  * fs.update_cache();
  * fs.ChDir("/");
  * fs.ls_dirs();
@@ -65,7 +64,6 @@ class Bvfs {
   Bvfs(JobControlRecord* j, BareosDb* mdb);
   virtual ~Bvfs();
 
-  void SetJobid(JobId_t id);
   void SetJobids(char* ids);
 
   void SetLimit(uint32_t max) { limit = max; }
@@ -102,8 +100,6 @@ class Bvfs {
                           const char* client);
   void GetAllFileVersions(DBId_t pathid, const char* fname, const char* client);
 
-  void update_cache();
-
   void SetSeeAllVersions(bool val) { see_all_versions = val; }
 
   void SetSeeCopies(bool val) { see_copies = val; }
@@ -114,15 +110,7 @@ class Bvfs {
     user_data = ctx;
   }
 
-  DBId_t get_pwd() { return pwd_id; }
-
-  Attributes* get_attr() { return attr; }
-
-  JobControlRecord* get_jcr() { return jcr; }
-
   void ResetOffset() { offset = 0; }
-
-  void next_offset() { offset += limit; }
 
   /* Clear all cache */
   void clear_cache();

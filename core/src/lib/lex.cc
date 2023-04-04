@@ -331,16 +331,6 @@ LEX* lex_open_file(LEX* lf,
   }
 }
 
-LEX* lex_new_buffer(LEX* lf,
-                    LEX_ERROR_HANDLER* ScanError,
-                    LEX_WARNING_HANDLER* scan_warning)
-{
-  lf = lex_add(lf, NULL, NULL, NULL, ScanError, scan_warning);
-  Dmsg1(debuglevel, "Return lex=%x\n", lf);
-
-  return lf;
-}
-
 /*
  * Get the next character from the input.
  *  Returns the character or

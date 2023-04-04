@@ -469,12 +469,6 @@ DatatypeName* GetDatatype(int number);
 const char* DatatypeToString(int type);
 const char* DatatypeToDescription(int type);
 
-// Resource routines
-void IndentConfigItem(PoolMem& cfg_str,
-                      int level,
-                      const char* config_item,
-                      bool inherited = false);
-
 /* this function is used as an initializer in foreach_res, so we can null
  * the pointer passed into and also get a reference to the configuration that
  * we then keep for the lifetime of the loop.

@@ -156,21 +156,6 @@ struct job_callback_item {
   void* ctx{};
 };
 
-// Push a job_callback_item onto the job end callback stack.
-void RegisterJobEndCallback(JobControlRecord* jcr,
-                            void JobEndCb(JobControlRecord* jcr, void*),
-                            void* ctx)
-{
-  job_callback_item* item;
-
-  item = (job_callback_item*)malloc(sizeof(job_callback_item));
-
-  item->JobEndCb = JobEndCb;
-  item->ctx = ctx;
-
-  jcr->job_end_callbacks.push(item);
-}
-
 // Pop each job_callback_item and process it.
 static void CallJobEndCallbacks(JobControlRecord* jcr)
 {

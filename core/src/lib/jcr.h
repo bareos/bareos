@@ -23,9 +23,6 @@
 class JobControlRecord;
 
 void WriteStateFile(const char* dir, const char* progname, int port);
-void RegisterJobEndCallback(JobControlRecord* jcr,
-                            void JobEndCb(JobControlRecord* jcr, void*),
-                            void* ctx);
 void LockJobs();
 void UnlockJobs();
 
