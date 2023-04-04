@@ -54,18 +54,6 @@ extern const struct BareosVersionStrings kBareosVersionStrings;
 };
 #endif
 
-/* If this is set stdout will not be closed on startup */
-/* #define DEVELOPER 1 */
-
-/*
- * SMCHECK does orphaned buffer checking (memory leaks)
- *  it can always be turned on, but has some minor performance
- *  penalties.
- */
-#ifdef DEVELOPER
-#  define SMCHECK
-#endif
-
 /* Debug flags not normally turned on */
 
 /* #define TRACE_JCR_CHAIN 1 */

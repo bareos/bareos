@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -102,9 +102,6 @@ static bool BootstrapCmd(JobControlRecord* jcr);
 static bool CancelCmd(JobControlRecord* jcr);
 static bool EndRestoreCmd(JobControlRecord* jcr);
 static bool EstimateCmd(JobControlRecord* jcr);
-#ifdef DEVELOPER
-static bool exit_cmd(JobControlRecord* jcr);
-#endif
 static bool FilesetCmd(JobControlRecord* jcr);
 static bool job_cmd(JobControlRecord* jcr);
 static bool LevelCmd(JobControlRecord* jcr);
@@ -156,9 +153,6 @@ static struct s_fd_dir_cmds cmds[] = {
     {"cancel", CancelCmd, false},
     {"endrestore", EndRestoreCmd, false},
     {"estimate", EstimateCmd, false},
-#ifdef DEVELOPER
-    {"exit", exit_cmd, false},
-#endif
     {"fileset", FilesetCmd, false},
     {"JobId=", job_cmd, false},
     {"level = ", LevelCmd, false},
@@ -724,16 +718,6 @@ static bool SecureerasereqCmd(JobControlRecord* jcr)
   Dmsg1(200, "Secure Erase Cmd Request: %s\n", setting);
   return dir->fsend(OKsecureerase, setting);
 }
-
-#ifdef DEVELOPER
-static bool exit_cmd(JobControlRecord* jcr)
-{
-  jcr->dir_bsock->fsend("2000 exit OK\n");
-  // terminate_filed(0);
-  StopSocketServer();
-  return false;
-}
-#endif
 
 // Cancel a Job
 static bool CancelCmd(JobControlRecord* jcr)

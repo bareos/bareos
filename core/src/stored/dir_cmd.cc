@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -131,7 +131,6 @@ static char setdevice_autoselect[] = "setdevice device=%127s autoselect=%d";
 static bool BootstrapCmd(JobControlRecord* jcr);
 static bool CancelCmd(JobControlRecord* cjcr);
 static bool ChangerCmd(JobControlRecord* jcr);
-static bool die_cmd(JobControlRecord* jcr);
 static bool LabelCmd(JobControlRecord* jcr);
 static bool ListenCmd(JobControlRecord* jcr);
 static bool MountCmd(JobControlRecord* jcr);
@@ -186,7 +185,6 @@ static struct s_sd_dir_cmds cmds[] = {
     {"autochanger", ChangerCmd, false},
     {"bootstrap", BootstrapCmd, false},
     {"cancel", CancelCmd, false},
-    {".die", die_cmd, false},
     {"finish", FinishCmd, false}, /**< End of backup */
     {"JobId=", job_cmd, false},   /**< Start Job */
     {"label", LabelCmd, false},   /**< Label a tape */
@@ -332,32 +330,6 @@ bail_out:
 
   return NULL;
 }
-
-/**
- * Force SD to die, and hopefully dump itself.  Turned on only in development
- * version.
- */
-static bool die_cmd(JobControlRecord*)
-{
-#ifdef DEVELOPER
-  JobControlRecord* djcr = NULL;
-  int a;
-  BareosSocket* dir = jcr->dir_bsock;
-  pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
-
-  if (strstr(dir->msg, "deadlock")) {
-    Pmsg0(000, "I have been requested to deadlock ...\n");
-    lock_mutex(m);
-    lock_mutex(m);
-  }
-
-  Pmsg1(000, "I have been requested to die ... (%s)\n", dir->msg);
-  a = djcr->JobId; /* ref NULL pointer */
-  djcr->JobId = a;
-#endif
-  return false;
-}
-
 
 /**
  * Handles the secureerase request
@@ -554,10 +526,8 @@ static bool CancelCmd(JobControlRecord* cjcr)
     ReleaseDeviceCond();
   }
 
-  /*
-   * See if the Job has a certain protocol.
-   * When canceling a NDMP job make sure we call the end_of_ndmp_* functions.
-   */
+  /* See if the Job has a certain protocol.
+   * When canceling a NDMP job make sure we call the end_of_ndmp_* functions. */
   switch (jcr->getJobProtocol()) {
     case PT_NDMP_BAREOS:
       switch (jcr->getJobType()) {
@@ -628,14 +598,12 @@ static bool DoLabel(JobControlRecord* jcr, bool relabel)
   bool ok = false;
   slot_number_t slot;
 
-  /*
-   * Determine the length of the temporary buffers.
+  /* Determine the length of the temporary buffers.
    * If the total length of the incoming message is less
    * then MAX_NAME_LENGTH we can use that as the upper limit.
    * If the incomming message is bigger then MAX_NAME_LENGTH
    * limit the temporary buffer to MAX_NAME_LENGTH bytes as
-   * we use a sscanf %127s for reading the temorary buffer.
-   */
+   * we use a sscanf %127s for reading the temorary buffer. */
   len = dir->message_length + 1;
   if (len > MAX_NAME_LENGTH) { len = MAX_NAME_LENGTH; }
 
@@ -1355,10 +1323,8 @@ static bool ChangerCmd(JobControlRecord* jcr)
   const char* cmd = NULL;
   bool ok = false;
   bool is_transfer = false;
-  /*
-   * A safe_cmd may call autochanger script but does not load/unload
-   *    slots so it can be done at the same time that the drive is open.
-   */
+  /* A safe_cmd may call autochanger script but does not load/unload
+   *    slots so it can be done at the same time that the drive is open. */
   bool safe_cmd = false;
 
   if (sscanf(dir->msg, "autochanger listall %127s", devname.c_str()) == 1) {

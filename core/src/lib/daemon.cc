@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -42,9 +42,6 @@ void daemon_start(const char*, int, std::string) { return; }
 
 #else  // !HAVE_WIN32
 
-#  if defined(DEVELOPER)
-static void SetupStdFileDescriptors() {}
-#  else
 static void SetupStdFileDescriptors()
 {
   extern int debug_level;
@@ -59,7 +56,6 @@ static void SetupStdFileDescriptors()
   dup2(fd, STDERR_FILENO);
   close(fd);
 }
-#  endif  // DEVELOPER
 
 void daemon_start(const char* progname,
                   int pidfile_fd,
@@ -90,4 +86,4 @@ void daemon_start(const char* progname,
 
   Dmsg0(900, "Exit daemon_start\n");
 }
-#endif    /* defined(HAVE_WIN32) */
+#endif /* defined(HAVE_WIN32) */

@@ -164,11 +164,6 @@ extern "C" void SignalHandler(int sig)
     }
     SecureErase(NULL, "./core"); /* get rid of any old core file */
 
-#  ifdef DEVELOPER /* When DEVELOPER not set, this is done below */
-    // Print information about the current state into working/<file>.bactrace
-    dbg_print_bareos();
-#  endif
-
     snprintf(pid_buf, 20, "%d", (int)main_pid);
     Dmsg1(300, "Working=%s\n", working_directory);
     Dmsg1(300, "btpath=%s\n", btpath);
@@ -228,10 +223,8 @@ extern "C" void SignalHandler(int sig)
         printf(" ==== End traceback output ====\n\n");
       }
     }
-#  ifndef DEVELOPER /* When DEVELOPER set, this is done above */
-    // Print information about the current state into working/<file>.bactrace
+
     dbg_print_bareos();
-#  endif
   }
   exit_handler(sig);
   Dmsg0(500, "Done exit_handler\n");

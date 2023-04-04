@@ -395,10 +395,6 @@ endif()
 
 include(FindIntl)
 
-if(developer)
-  add_definitions("-DDEVELOPER=1")
-endif()
-
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wall -Wextra")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra")
 
@@ -950,7 +946,6 @@ message("   MTX:                          ${MTX}")
 message("   MT:                           ${MT}")
 message("   MINIO:                        ${MINIO}")
 message("   S3CMD:                        ${S3CMD}")
-message("   DEVELOPER:                    ${developer}")
 message("   LocalBuildDefinitionsFile:    ${BareosLocalBuildDefinitionsFile}")
 message("   HAVE_IS_TRIVIALLY_COPYABLE:   ${HAVE_IS_TRIVIALLY_COPYABLE}")
 
