@@ -34,7 +34,6 @@ set(BAREOSFIND_SRCS
     xattr.cc
 )
 
-set_property(SOURCE find_one.cc PROPERTY COMPILE_FLAGS -Wno-stringop-overflow)
 
 if(HAVE_WIN32)
   list(APPEND BAREOSFIND_SRCS ../win32/findlib/win32.cc)
@@ -44,7 +43,10 @@ include_directories(${OPENSSL_INCLUDE_DIR})
 
 add_library(bareosfind SHARED ${BAREOSFIND_SRCS})
 
-set_target_properties(bareosfind PROPERTIES LINK_FLAGS -Wno-stringop-overflow)
+if (CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 13.0)
+  set_property(SOURCE find_one.cc PROPERTY COMPILE_FLAGS -Wno-stringop-overflow)
+  set_target_properties(bareosfind PROPERTIES LINK_FLAGS -Wno-stringop-overflow)
+endif()
 
 target_link_libraries(bareosfind PRIVATE bareos ${ACL_LIBRARIES})
 if(HAVE_DARWIN_OS)
