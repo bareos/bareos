@@ -24,7 +24,7 @@
 
 namespace filedaemon {
 
-bool AdjustCompressionBuffers(JobControlRecord* jcr);
+bool AdjustCompressionBuffers(JobControlRecord* jcr, CompressionContext& ctx);
 bool AdjustDecompressionBuffers(JobControlRecord* jcr);
 bool SetupCompressionContext(b_ctx& bctx);
 

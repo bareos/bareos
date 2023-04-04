@@ -44,7 +44,8 @@
 namespace filedaemon {
 
 // For compression we enable all used compressors in the fileset.
-bool AdjustCompressionBuffers(JobControlRecord* jcr)
+bool AdjustCompressionBuffers(JobControlRecord* jcr,
+			      CompressionContext& compress)
 {
   findFILESET* fileset = jcr->fd_impl->ff->fileset;
   uint32_t compress_buf_size = 0;
@@ -58,7 +59,7 @@ bool AdjustCompressionBuffers(JobControlRecord* jcr)
       for (j = 0; j < incexe->opts_list.size(); j++) {
         findFOPTS* fo = (findFOPTS*)incexe->opts_list.get(j);
 
-        if (!SetupCompressionBuffers(jcr, fo->Compress_algo,
+        if (!SetupCompressionBuffers(jcr, compress, fo->Compress_algo,
                                      &compress_buf_size)) {
           return false;
         }
@@ -66,8 +67,8 @@ bool AdjustCompressionBuffers(JobControlRecord* jcr)
     }
 
     if (compress_buf_size > 0) {
-      jcr->compress.deflate_buffer = GetMemory(compress_buf_size);
-      jcr->compress.deflate_buffer_size = compress_buf_size;
+      compress.deflate_buffer = GetMemory(compress_buf_size);
+      compress.deflate_buffer_size = compress_buf_size;
     }
   }
 
