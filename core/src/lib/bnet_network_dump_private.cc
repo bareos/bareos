@@ -33,7 +33,6 @@
 #include <set>
 
 std::string BnetDumpPrivate::filename_;
-bool BnetDumpPrivate::plantuml_mode_ = false;
 std::size_t BnetDumpPrivate::max_data_dump_bytes_ = 100;
 int BnetDumpPrivate::stack_level_start_ = 6;
 int BnetDumpPrivate::stack_level_amount_ = 0;
@@ -48,12 +47,6 @@ void BnetDumpPrivate::OpenFile()
 }
 
 void BnetDumpPrivate::CloseFile() { output_file_.close(); }
-
-bool BnetDumpPrivate::SetFilename(const char* filename)
-{
-  BnetDumpPrivate::filename_ = filename;
-  return true;
-}
 
 std::string BnetDumpPrivate::CreateDataString(int signal,
                                               const char* ptr,
@@ -82,23 +75,15 @@ std::string BnetDumpPrivate::CreateFormatStringForNetworkMessage(
     int signal) const
 {
   std::string s;
-  if (plantuml_mode_) {
-    if (signal > 998) {  // signal set to 999
-      s = "\"%s\" -> \"%s\": (>%3d) %s\\n";
-    } else if (signal < 0) {  // bnet signal
-      s = "\"%s\" -> \"%s\": (%4d) %s\\n";
-    } else {
-      s = "\"%s\" -> \"%s\": (%4d) %s\\n";
-    }
+
+  if (signal > 998) {  // signal set to 999
+    s = "%12s -> %-12s: (>%3d) %s\n";
+  } else if (signal < 0) {  // bnet signal
+    s = "%12s -> %-12s: (%4d) %s\n";
   } else {
-    if (signal > 998) {  // signal set to 999
-      s = "%12s -> %-12s: (>%3d) %s\n";
-    } else if (signal < 0) {  // bnet signal
-      s = "%12s -> %-12s: (%4d) %s\n";
-    } else {
-      s = "%12s -> %-12s: (%4d) %s\n";
-    }
+    s = "%12s -> %-12s: (%4d) %s\n";
   }
+
   return s;
 }
 
@@ -141,7 +126,7 @@ void BnetDumpPrivate::CreateAndWriteStacktraceToBuffer()
       Backtrace(stack_level_start_, stack_level_amount_));
 
   std::vector<char> buffer(1024);
-  const char* fmt = plantuml_mode_ ? "(T%3d) %s\\n" : "(T%3d) %s\n";
+  const char* fmt = "(T%3d) %s\n";
 
   for (const BacktraceInfo& bt : trace_lines) {
     std::string s(bt.function_call_.c_str(),
@@ -149,8 +134,6 @@ void BnetDumpPrivate::CreateAndWriteStacktraceToBuffer()
     snprintf(buffer.data(), buffer.size(), fmt, bt.frame_number_, s.c_str());
     output_buffer_ += buffer.data();
   }
-
-  if (plantuml_mode_) { output_buffer_ += "\n"; }
 }
 
 void BnetDumpPrivate::DumpToFile(const char* ptr, int nbytes)

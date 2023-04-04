@@ -915,8 +915,6 @@ int main(int argc, char* argv[])
 
   AddDeprecatedExportOptionsHelp(console_app);
 
-  AddNetworkDebuggingOption(console_app);
-
   CLI11_PARSE(console_app, argc, argv);
 
   if (!no_signals) { InitSignals(TerminateConsole); }

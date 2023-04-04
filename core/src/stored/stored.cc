@@ -187,8 +187,6 @@ int main(int argc, char* argv[])
 
   AddDeprecatedExportOptionsHelp(sd_app);
 
-  AddNetworkDebuggingOption(sd_app);
-
   CLI11_PARSE(sd_app, argc, argv);
 
   if (!no_signals) { InitSignals(TerminateStored); }

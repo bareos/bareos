@@ -144,8 +144,6 @@ int main(int argc, char* argv[])
 
   AddDeprecatedExportOptionsHelp(fd_app);
 
-  AddNetworkDebuggingOption(fd_app);
-
   CLI11_PARSE(fd_app, argc, argv);
 
   if (user.empty() && keep_readall_caps) {

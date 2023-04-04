@@ -37,15 +37,12 @@ class BnetDumpPrivate {
   BnetDumpPrivate() = default;
   ~BnetDumpPrivate() = default;
 
-  static bool SetFilename(const char* filename);
-
   void DumpToFile(const char* ptr, int nbytes);
   void SaveAndSendMessageIfNoDestinationDefined(const char* ptr, int nbytes);
   void OpenFile();
   void CloseFile();
 
   static std::string filename_;
-  static bool plantuml_mode_;
   static int stack_level_amount_;
 
   std::string own_qualified_name_;
