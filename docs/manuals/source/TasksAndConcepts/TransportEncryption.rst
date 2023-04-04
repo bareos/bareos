@@ -418,52 +418,8 @@ Please check the following configuration examples.  A complete table of the dire
    For |bareosWebui| the certificate file given by configuration parameter cert_file in directors.ini has to contain the certificate and the key in PEM encoding.
 
 
-Configuration example for Bareos 17.2
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: ini
-   :caption: :file:`/etc/bareos-webui/directors.ini`
-
-   ;------------------------------------------------------------------------------
-   ; Section backup.example.com
-   ;------------------------------------------------------------------------------
-   [backup.example.com]
-   enabled = "yes"
-   diraddress = "backup.example.com"
-   dirport = 9101
-   ;catalog = "MyCatalog"
-   tls_verify_peer = false
-   server_can_do_tls = true
-   server_requires_tls = false
-   client_can_do_tls = true
-   client_requires_tls = true
-   ca_file = "/etc/bareos-webui/tls/ca.crt"
-   cert_file = "/etc/bareos-webui/tls/client.pem"
-   ;cert_file_passphrase = ""
-   ;allowed_cns = ""
-
-.. code-block:: ini
-   :caption: :file:`/etc/bareos/bareos-dir.d/console/admin.conf`
-
-   #
-   # Restricted console used by bareos-webui
-   #
-   Console {
-     Name = admin
-     Password = "123456"
-     Profile = "webui-admin"
-     TLS Enable = yes
-     TLS Require = no
-     TLS Verify Peer = no
-     TLS CA Certificate File = /etc/bareos/tls/ca.crt
-     TLS Certificate = /etc/bareos/tls/server.crt
-     TLS Key = /etc/bareos/tls/server.pem
-   }
-
-
-
-Configuration example for Bareos 18.2
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Configuration example
+~~~~~~~~~~~~~~~~~~~~~
 
 .. versionchanged:: 18.2
 .. warning::
@@ -916,8 +872,3 @@ Conclusion
 ~~~~~~~~~~
 
 You are now able to configure TLS Protocol and cipher list to match your needs. Once this is in place we highly recommend comparing with real jobs the gain or loss of performance.
-
-.. note::
-
-   Publish here some numbers comparing PSK-AES128-GCM-SHA256 TLSv1.2
-   with defaulting TLS_CHACHA20_POLY1305_SHA256 TLSv1.3

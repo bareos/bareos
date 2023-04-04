@@ -5,6 +5,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Documentation
+- doc: improvements webui, plugins, virtualfull chapters [PR #1427]
+
 ## [22.0.3] - 2023-03-24
 
 ### Changed
@@ -483,4 +486,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1408]: https://github.com/bareos/bareos/pull/1408
 [PR #1411]: https://github.com/bareos/bareos/pull/1411
 [PR #1416]: https://github.com/bareos/bareos/pull/1416
+[PR #1427]: https://github.com/bareos/bareos/pull/1427
 [unreleased]: https://github.com/bareos/bareos/tree/master

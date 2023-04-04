@@ -51,7 +51,7 @@ Activate your plugin directory in the |fd| configuration. See :ref:`fdPlugins` f
    Client {
      ...
      Plugin Directory = /usr/lib64/bareos/plugins
-     Plugin Names = "python"
+     Plugin Names = "python3"
    }
 
 Now include the plugin as command-plugin in the Fileset resource:
