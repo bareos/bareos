@@ -189,10 +189,10 @@ function formatFreeBytes(maxvolbytes, volbytes) {
 
 function formatAutoprune(data) {
    if(data == 1) {
-      var a = '<span class="label label-success">' + iJS._("enabled") + '</span>';
+      var a = '<span class="label label-success">' + iJS._("Enabled") + '</span>';
    }
    else {
-      var a = '<span class="label label-danger">' + iJS._("disabled") + '</span>';
+      var a = '<span class="label label-danger">' + iJS._("Disabled") + '</span>';
    }
    return a;
 }

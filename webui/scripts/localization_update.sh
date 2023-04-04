@@ -1,7 +1,7 @@
 #!/bin/sh
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -22,19 +22,25 @@
 # This script serves as a helper to keep our POT and PO files up to date after source code changes.
 #
 
-POTFILE='../module/Application/language/webui.pot'
-LOCDIR='../module/Application/language/'
+set -e
+set -u
+
+cd "$(dirname $0)/.."
+
+POTFILE='module/Application/language/webui.pot'
+LOCDIR='module/Application/language/'
 
 echo 'Message lookup ...'
+find . \( -name "*.php" -o -name "*.phtml" \) -not -path "vendor/*" -not -path "tests/*" | sort | xargs xgettext --keyword=translate -L PHP --from-code=UTF-8 --sort-output -o $POTFILE
+xgettext --keyword=gettext --from-code=UTF-8 -j -o $POTFILE public/js/bootstrap-table-formatter.js public/js/custom-functions.js
 
-find ../ -regextype posix-egrep -regex '.*(php|phtml)$$' | grep -v vendor | grep -v tests | xargs xgettext --keyword=translate -L PHP --from-code=UTF-8 -o $POTFILE;
-find ../ -regextype posix-egrep -regex '.*(formatter.js|functions.js)$$' | xargs xgettext --keyword=gettext --from-code=UTF-8 -j -o $POTFILE;
 
 echo 'Message merge ...'
 cd $LOCDIR
-for i in cn_CN cs_CZ de_DE en_EN es_ES fr_FR hu_HU it_IT nl_BE pl_PL pt_BR ru_RU sk_SK tr_TR uk_UA; do echo $i && msgmerge --backup=none -U $i.po webui.pot && touch $i.po; done;
-
-#echo 'Message format ...'
-#for i in cn_CN cs_CZ de_DE en_EN es_ES fr_FR hu_HU it_IT nl_BE pl_PL pt_BR ru_RU sk_SK tr_TR uk_UA; do echo $i && msgfmt $i.po --output-file=$i.mo; done;
+for i in *.po; do
+    printf "%s " "$i"
+    msgmerge --backup=none --sort-output --update $i webui.pot
+    # msgfmt $i --output-file=$i.mo
+done
 
 echo 'Done'
