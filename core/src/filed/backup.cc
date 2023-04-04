@@ -56,6 +56,47 @@
 
 namespace filedaemon {
 
+struct buffer {
+  std::size_t size;
+  char*       data;
+
+  buffer() : size(0)
+	   , data(nullptr)
+  {}
+
+  buffer(std::size_t size) : size(size)
+			   , data(nullptr)
+  {
+    data = (char*)malloc(size);
+  }
+  buffer(std::size_t size,
+	 char*& data_) : size(size)
+		       , data(data_)
+  {
+    data_ = nullptr;
+  }
+
+  buffer(buffer&& buf) : size(0)
+		       , data(nullptr)
+  {
+    std::swap(size, buf.size);
+    std::swap(data, buf.data);
+  }
+
+  buffer& operator=(const buffer&) = delete;
+  buffer& operator=(buffer&& buf) {
+    std::swap(size, buf.size);
+    std::swap(data, buf.data);
+    return *this;
+  }
+
+  ~buffer() {
+    if (data) {
+      free(data);
+    }
+  }
+};
+
 #ifdef HAVE_DARWIN_OS
 const bool have_darwin_os = true;
 #else
@@ -928,11 +969,13 @@ bail_out:
   return rtnstat;
 }
 
+
+
 /**
  * Handle the data just read and send it to the SD after doing any
  * postprocessing needed.
  */
-static inline bool SendDataToSd(b_ctx* bctx)
+static inline bool SendDataToSd(b_ctx* bctx, std::optional<buffer> precompressed = std::nullopt)
 {
   BareosSocket* sd = bctx->jcr->store_bsock;
   bool need_more_data;
@@ -985,9 +1028,12 @@ static inline bool SendDataToSd(b_ctx* bctx)
 
   // Compress the data.
   if (BitIsSet(FO_COMPRESS, bctx->ff_pkt->flags)) {
-    if (!CompressData(bctx->jcr, bctx->ff_pkt->Compress_algo, bctx->rbuf,
-                      bctx->jcr->store_bsock->message_length, bctx->cbuf,
-                      bctx->max_compress_len, &bctx->compress_len)) {
+    if (precompressed) {
+      memcpy(bctx->cbuf, precompressed->data, precompressed->size);
+      bctx->compress_len = precompressed->size;
+    } else if (!CompressData(bctx->jcr, bctx->ff_pkt->Compress_algo, bctx->rbuf,
+			     bctx->jcr->store_bsock->message_length, bctx->cbuf,
+			     bctx->max_compress_len, &bctx->compress_len)) {
       return false;
     }
 
@@ -1103,43 +1149,7 @@ bail_out:
 }
 #endif
 
-struct buffer {
-  std::size_t size;
-  char*       data;
-
-  buffer() : size(0)
-	   , data(nullptr)
-  {}
-
-  buffer(std::size_t size,
-	 char*& data_) : size(size)
-		       , data(data_)
-  {
-    data_ = nullptr;
-  }
-
-  buffer(buffer&& buf) : size(0)
-		       , data(nullptr)
-  {
-    std::swap(size, buf.size);
-    std::swap(data, buf.data);
-  }
-
-  buffer& operator=(const buffer&) = delete;
-  buffer& operator=(buffer&& buf) {
-    std::swap(size, buf.size);
-    std::swap(data, buf.data);
-    return *this;
-  }
-
-  ~buffer() {
-    if (data) {
-      free(data);
-    }
-  }
-};
-
-static void ReadData(channel::in<buffer> data, BareosFilePacket* bfd,
+static void ReadData(channel::in<std::shared_ptr<const buffer>> data, BareosFilePacket* bfd,
 		     std::size_t buflen)
 {
   while (1) {
@@ -1147,7 +1157,7 @@ static void ReadData(channel::in<buffer> data, BareosFilePacket* bfd,
     if (!buf) { break; }
     ssize_t num_read = bread(bfd, buf, buflen);
     if (num_read > 0) {
-      if (!data.put(buffer{(std::size_t) num_read, buf})) {
+      if (!data.put(std::make_shared<const buffer>((std::size_t) num_read, buf))) {
 	break;
       }
     } else {
@@ -1157,19 +1167,40 @@ static void ReadData(channel::in<buffer> data, BareosFilePacket* bfd,
   }
 }
 
-static void DigestData(channel::out<buffer> out,
+static void DigestData(channel::out<std::shared_ptr<const buffer>> out,
 		       DIGEST* digest, DIGEST* signing_digest)
 {
 
   for (std::optional buf = out.get(); buf; buf = out.get()) {
     // Update checksum if requested
     if (digest) {
-      CryptoDigestUpdate(digest, (uint8_t*) buf->data, buf->size);
+      CryptoDigestUpdate(digest, (uint8_t*) buf.value()->data, buf.value()->size);
     }
 
     // Update signing digest if requested
     if (signing_digest) {
-      CryptoDigestUpdate(signing_digest, (uint8_t*)buf->data, buf->size);
+      CryptoDigestUpdate(signing_digest, (uint8_t*)buf.value()->data, buf.value()->size);
+    }
+  }
+}
+
+static void Compress(channel::out<std::shared_ptr<const buffer>> out,
+		     channel::in<std::pair<std::shared_ptr<const buffer>, buffer>> in,
+		     JobControlRecord* jcr,
+		     std::size_t max_compress_len,
+		     uint32_t compression)
+{
+  for (std::optional buf = out.get(); buf; buf = out.get()) {
+    buffer compressed(max_compress_len);
+    uint32_t size = 0;
+    if (CompressData(jcr, compression, buf.value()->data,
+		     buf.value()->size, (unsigned char*) compressed.data,
+		     max_compress_len,
+		     &size)) {
+      compressed.size = size;
+      in.put(std::pair(*buf, std::move(compressed)));
+    } else {
+      break;
     }
   }
 }
@@ -1190,11 +1221,83 @@ static inline bool SendPlainDataSerially(b_ctx& bctx) {
   return retval;
 }
 
+static inline bool SendCompressedData(b_ctx& bctx)
+{
+  std::size_t buflen = bctx.rsize;
+  std::size_t filesize = bctx.ff_pkt->statp.st_size;
+
+  std::size_t maxbuffered = 512 * 1024 * 1024; // 512 MB
+  std::size_t max_num_bufs = 80;
+
+  // do not buffer for much mor than maxbuffered bytes
+  // and create at most max_num_bufs buffers
+
+  std::size_t bufferedsize = std::min(filesize, maxbuffered);
+  std::size_t num_buffers  = (bufferedsize + buflen - 1) / buflen;
+
+  std::size_t actual_buf_count = std::min(num_buffers, max_num_bufs);
+
+  // do not bother creating threads if we have less
+  // than buffer_threshold buffers to push!
+  constexpr std::size_t buffer_threshold = 1;
+  if (actual_buf_count < buffer_threshold) {
+    return SendPlainDataSerially(bctx);
+  }
+
+  bool retval = true;
+  BareosSocket* sd = bctx.jcr->store_bsock;
+
+  using sbuf = std::shared_ptr<const buffer>;
+
+
+  auto [in, out] = channel::CreateBufferedChannel<sbuf>(actual_buf_count);
+  auto [cin, cout] = channel::CreateBufferedChannel<std::pair<sbuf, buffer>>(actual_buf_count);
+  std::thread compressor{Compress, std::move(out), std::move(cin),
+			 bctx.jcr, bctx.max_compress_len,
+			 bctx.ff_pkt->Compress_algo};
+  auto [din, dout] = channel::CreateBufferedChannel<sbuf>(num_buffers);
+
+  std::thread reader(ReadData, std::move(in), &bctx.ff_pkt->bfd,
+		     bctx.rsize);
+
+  DIGEST* digest = nullptr;
+  DIGEST* signing = nullptr;
+
+  // disable digesting inside SendDataToSd
+  std::swap(digest, bctx.digest);
+  std::swap(signing, bctx.signing_digest);
+
+  std::thread digester(DigestData, std::move(dout),
+		       digest, signing);
+
+  for (std::optional bufs = cout.get(); bufs; bufs = cout.get()) {
+    din.put(bufs->first);
+    memcpy(bctx.rbuf, bufs->first->data, bufs->first->size);
+    sd->message_length = bufs->first->size;
+    if (!SendDataToSd(&bctx, std::move(bufs->second))) {
+      retval = false;
+      break;
+    }
+  }
+  cout.close();
+  din.close();
+  digester.join();
+  compressor.join();
+  reader.join();
+  std::swap(digest, bctx.digest);
+  std::swap(signing, bctx.signing_digest);
+
+  return retval;
+}
 // Send the content of a file on anything but an EFS filesystem.
 static inline bool SendPlainData(b_ctx& bctx)
 {
   if (bctx.ff_pkt->bfd.cmd_plugin) {
     return SendPlainDataSerially(bctx);
+  }
+
+  if (BitIsSet(FO_COMPRESS, bctx.ff_pkt->flags)) {
+    return SendCompressedData(bctx);
   }
 
   std::size_t buflen = bctx.rsize;
@@ -1221,8 +1324,12 @@ static inline bool SendPlainData(b_ctx& bctx)
   bool retval = true;
   BareosSocket* sd = bctx.jcr->store_bsock;
 
-  auto [in, out] = channel::CreateBufferedChannel<buffer>(actual_buf_count);
-  auto [din, dout] = channel::CreateBufferedChannel<buffer>(num_buffers);
+  using sbuf = std::shared_ptr<const buffer>;
+
+  std::optional<std::thread> compressor;
+
+  auto [in, out] = channel::CreateBufferedChannel<sbuf>(actual_buf_count);
+  auto [din, dout] = channel::CreateBufferedChannel<sbuf>(num_buffers);
 
   std::thread reader(ReadData, std::move(in), &bctx.ff_pkt->bfd,
 		     bctx.rsize);
@@ -1237,12 +1344,10 @@ static inline bool SendPlainData(b_ctx& bctx)
   std::thread digester(DigestData, std::move(dout),
 		       digest, signing);
 
-  std::optional<buffer> buf;
-
-  while ((buf = out.get())) {
-    memcpy(bctx.rbuf, buf->data, buf->size);
-    sd->message_length = buf->size;
-    din.put(std::move(*buf));
+  for (std::optional buf = out.get(); buf; buf = out.get()) {
+    din.put(*buf);
+    memcpy(bctx.rbuf, buf.value()->data, buf.value()->size);
+    sd->message_length = buf.value()->size;
     if (!SendDataToSd(&bctx)) {
       retval = false;
       break;
