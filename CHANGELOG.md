@@ -35,6 +35,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: remove some development leftovers and artefacts [PR #1422]
 - dird: allow to disable TLS-PSK downgrades [PR #1398]
 - core: fixes for gcc-13 support [PR #1424]
+- webui: update localization [PR #1414]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -106,6 +107,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1403]: https://github.com/bareos/bareos/pull/1403
 [PR #1407]: https://github.com/bareos/bareos/pull/1407
 [PR #1410]: https://github.com/bareos/bareos/pull/1410
+[PR #1414]: https://github.com/bareos/bareos/pull/1414
 [PR #1415]: https://github.com/bareos/bareos/pull/1415
 [PR #1422]: https://github.com/bareos/bareos/pull/1422
 [PR #1424]: https://github.com/bareos/bareos/pull/1424
