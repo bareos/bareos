@@ -281,11 +281,16 @@ class Checklist:
         self.is_ok = False
         print("{} {}".format(Mark.FAIL, text))
 
-    def check(self, condition, ok_str, fail_str=None):
+    def softfail(self, text):
+        print("{} [optional] {}".format(Mark.FAIL, text))
+
+    def check(self, condition, ok_str, fail_str=None, optional=False):
         if not fail_str:
             fail_str = ok_str
         if condition:
             self.ok(ok_str)
+        elif optional:
+            self.softfail(fail_str)
         else:
             self.fail(fail_str)
 
@@ -332,11 +337,18 @@ def check_merge_prereq(repo, pr, ignore_status_checks=False):
 
     if not ignore_status_checks:
         for status_check in pr["statusCheckRollup"]:
+            optional = (
+                status_check["context"] != "continuous-integration/jenkins/pr-merge"
+            )
             cl.check(
                 status_check["state"] == "SUCCESS",
                 "Status check '{context}': {state}\n\t{targetUrl}".format(
                     **status_check
                 ),
+                "Status check '{context}': {state}\n\t{targetUrl}".format(
+                    **status_check
+                ),
+                optional,
             )
         cl.check(
             have_status_context(
