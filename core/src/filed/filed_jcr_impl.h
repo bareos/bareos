@@ -87,6 +87,8 @@ struct FiledJcrImpl {
 #ifdef HAVE_WIN32
   VSSClient* pVSSClient{};        /**< VSS Client Instance */
 #endif
+  // todo: type safety
+  void* internal{nullptr};
 };
 /* clang-format on */
 
