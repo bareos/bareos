@@ -76,6 +76,7 @@ template <typename T> struct in {
 
   in(in&& moved) = default;
   in& operator=(in&& moved) = default;
+  void wait_till_empty();
 
  private:
   std::shared_ptr<data<T>> shared;
@@ -308,6 +309,22 @@ template <typename T> bool in<T>::put(T&& val)
   shared->cv.notify_one();
   if (success) { write_pos = wrapping_inc(write_pos, capacity); }
   return success;
+}
+
+template <typename T> void in<T>::wait_till_empty() {
+  {
+    std::unique_lock lock(shared->mutex);
+    shared->cv.wait(lock, [this] {
+      return this->shared->size == 0 || !this->shared->out_alive;
+    });
+
+    old_size = shared->size;
+    if (!this->shared->out_alive) {
+      shared->in_alive = false;
+      closed = true;
+    }
+  }
+  this->shared->cv.notify_one();
 }
 
 template <typename T> void in<T>::close()
