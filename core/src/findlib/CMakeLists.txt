@@ -34,6 +34,8 @@ set(BAREOSFIND_SRCS
     xattr.cc
 )
 
+set_property(SOURCE find_one.cc PROPERTY COMPILE_FLAGS -Wno-stringop-overflow)
+
 if(HAVE_WIN32)
   list(APPEND BAREOSFIND_SRCS ../win32/findlib/win32.cc)
 endif()
@@ -41,6 +43,8 @@ endif()
 include_directories(${OPENSSL_INCLUDE_DIR})
 
 add_library(bareosfind SHARED ${BAREOSFIND_SRCS})
+
+set_target_properties(bareosfind PROPERTIES LINK_FLAGS -Wno-stringop-overflow)
 
 target_link_libraries(bareosfind PRIVATE bareos ${ACL_LIBRARIES})
 if(HAVE_DARWIN_OS)
