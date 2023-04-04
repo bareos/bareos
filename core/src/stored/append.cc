@@ -153,11 +153,11 @@ static void ReadMsg(channel::in<Packet> in, BareosSocket* bs,
     }
 }
 
-static void WaitForReading(channel::out<channel::in<Packet>*> chan,
+static void WaitForReading(channel::out<channel::in<Packet>> chan,
 			   BareosSocket* bs, JobControlRecord* jcr)
 {
   for (std::optional in = chan.get(); in; in = chan.get()) {
-    ReadMsg(std::move(*in.value()), bs, jcr);
+    ReadMsg(std::move(*in), bs, jcr);
   }
 }
 
@@ -270,7 +270,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   std::vector<ProcessedFile> processed_files{};
   int64_t current_volumeid = jcr->sd_impl->dcr->VolMediaId;
 
-  auto [read_in, read_out] = channel::CreateBufferedChannel<channel::in<Packet>*>(1);
+  auto [read_in, read_out] = channel::CreateBufferedChannel<channel::in<Packet>>(1);
   std::thread reader(WaitForReading, std::move(read_out), bs, jcr);
 
   ProcessedFile file_currently_processed;
@@ -335,7 +335,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     rec_data_len = jcr->sd_impl->dcr->rec->data_len;
     rec_data = jcr->sd_impl->dcr->rec->data;
     auto [in, out] = channel::CreateBufferedChannel<Packet>(20);
-    if (!read_in.put(&in)) {
+    if (!read_in.put(std::move(in))) {
       Jmsg(jcr, M_FATAL, 0,
 	   "Could not submit new channel.\n");
       ok = false;

@@ -46,6 +46,7 @@ template <typename T> struct out {
   void close();
   ~out();
 
+  out();
   out(std::shared_ptr<data<T>> shared);
   out(const out&) = delete;
   out& operator=(out&) = delete;
@@ -70,6 +71,7 @@ template <typename T> struct in {
   bool put(T&& val);
   void close();
   ~in();
+  in();
   in(std::shared_ptr<data<T>> shared);
   in(const in&) = delete;
   in& operator=(in&) = delete;
@@ -228,6 +230,11 @@ template <typename T> out<T>::~out()
 }
 
 template <typename T>
+out<T>::out()
+	: shared(nullptr), read_pos(0), old_size(0), capacity(0), closed(true)
+{}
+
+template <typename T>
 out<T>::out(std::shared_ptr<data<T>> shared_)
 	: shared(shared_), read_pos(0), old_size(0), capacity(shared_->capacity), closed(false)
 {
@@ -326,6 +333,15 @@ template <typename T> in<T>::~in()
 {
   if (shared) { close(); }
 }
+
+template <typename T>
+in<T>::in()
+    : shared(nullptr)
+    , write_pos(0)
+    , old_size(0)
+    , capacity(0)
+    , closed(true)
+{}
 
 template <typename T>
 in<T>::in(std::shared_ptr<data<T>> shared_)
