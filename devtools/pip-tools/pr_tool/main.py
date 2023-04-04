@@ -216,7 +216,8 @@ class CommitAnalyzer:
         headline, *messageBody = commit.message.split("\n")
         issues = []
         if len(messageBody) == 0:
-            issues.append("missing newline at end of headline")
+            if not "(POEditor.com)" in commit.message:
+                issues.append("missing newline at end of headline")
         elif messageBody[0] == "":
             messageBody.pop(0)
         else:
