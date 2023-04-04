@@ -104,12 +104,12 @@ void InitVolListLock()
 void TermVolListLock() { RwlDestroy(&vol_list_lock); }
 
 // This allows a given thread to recursively call to LockVolumes()
-void _lockVolumes(const char* file, int line)
+void _lockVolumes(const char*, int)
 {
   int errstat;
 
   vol_list_lock_count++;
-  if ((errstat = RwlWritelock_p(&vol_list_lock, file, line)) != 0) {
+  if ((errstat = RwlWritelock(&vol_list_lock)) != 0) {
     BErrNo be;
     Emsg2(M_ABORT, 0, "RwlWritelock failure. stat=%d: ERR=%s\n", errstat,
           be.bstrerror(errstat));

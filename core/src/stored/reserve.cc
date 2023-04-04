@@ -110,11 +110,11 @@ void TermReservationsLock()
 }
 
 // This applies to a drive and to Volumes
-void _lockReservations(const char* file, int line)
+void _lockReservations(const char*, int)
 {
   int errstat;
   reservations_lock_count++;
-  if ((errstat = RwlWritelock_p(&reservation_lock, file, line)) != 0) {
+  if ((errstat = RwlWritelock(&reservation_lock)) != 0) {
     BErrNo be;
     Emsg2(M_ABORT, 0, "RwlWritelock failure. stat=%d: ERR=%s\n", errstat,
           be.bstrerror(errstat));

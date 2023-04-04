@@ -76,9 +76,9 @@ class ReserveContext {
 
 void InitReservationsLock();
 void TermReservationsLock();
-void _lockReservations(const char* file = "**Unknown**", int line = 0);
+void _lockReservations(const char* = "**Unknown**", int = 0);
 void _unLockReservations();
-void _lockVolumes(const char* file = "**Unknown**", int line = 0);
+void _lockVolumes(const char* = "**Unknown**", int = 0);
 void _unLockVolumes();
 void _lockReadVolumes(const char* file = "**Unknown**", int line = 0);
 void _unLockReadVolumes();
