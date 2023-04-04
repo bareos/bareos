@@ -440,7 +440,8 @@ static bool SetupAutoDeflation(PluginContext* ctx, DeviceControlRecord* dcr)
 
   if (jcr->buf_size == 0) { jcr->buf_size = DEFAULT_NETWORK_BUFFER_SIZE; }
 
-  if (!SetupCompressionBuffers(jcr, dcr->device_resource->autodeflate_algorithm,
+  if (!SetupCompressionBuffers(jcr, jcr->compress,
+			       dcr->device_resource->autodeflate_algorithm,
                                &compress_buf_size)) {
     goto bail_out;
   }
@@ -616,7 +617,8 @@ static bool AutoDeflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
   }
 
   // Compress the data using the configured compression algorithm.
-  if (!CompressData(dcr->jcr, dcr->device_resource->autodeflate_algorithm,
+  if (!CompressData(dcr->jcr, dcr->jcr->compress,
+		    dcr->device_resource->autodeflate_algorithm,
                     rec->data, rec->data_len, data, max_compression_length,
                     &nrec->data_len)) {
     bareos_core_functions->FreeRecord(nrec);

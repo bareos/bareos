@@ -104,6 +104,7 @@ static inline void UnknownCompressionAlgorithm(JobControlRecord* jcr,
 }
 
 bool SetupCompressionBuffers(JobControlRecord* jcr,
+			     CompressionContext& compress,
                              uint32_t compression_algorithm,
                              uint32_t* compress_buf_size)
 {
@@ -136,7 +137,7 @@ bool SetupCompressionBuffers(JobControlRecord* jcr,
       }
 
       // See if this compression algorithm is already setup.
-      if (jcr->compress.workset.pZLIB) { return true; }
+      if (compress.workset.pZLIB) { return true; }
 
       pZlibStream = (z_stream*)malloc(sizeof(z_stream));
       memset(pZlibStream, 0, sizeof(z_stream));
@@ -146,7 +147,7 @@ bool SetupCompressionBuffers(JobControlRecord* jcr,
       pZlibStream->state = Z_NULL;
 
       if (deflateInit(pZlibStream, Z_DEFAULT_COMPRESSION) == Z_OK) {
-        jcr->compress.workset.pZLIB = pZlibStream;
+        compress.workset.pZLIB = pZlibStream;
       } else {
         Jmsg(jcr, M_FATAL, 0, _("Failed to initialize ZLIB compression\n"));
         free(pZlibStream);
@@ -173,13 +174,13 @@ bool SetupCompressionBuffers(JobControlRecord* jcr,
       }
 
       // See if this compression algorithm is already setup.
-      if (jcr->compress.workset.pLZO) { return true; }
+      if (compress.workset.pLZO) { return true; }
 
       pLzoMem = (lzo_voidp)malloc(LZO1X_1_MEM_COMPRESS);
       memset(pLzoMem, 0, LZO1X_1_MEM_COMPRESS);
 
       if (lzo_init() == LZO_E_OK) {
-        jcr->compress.workset.pLZO = pLzoMem;
+        compress.workset.pLZO = pLzoMem;
       } else {
         Jmsg(jcr, M_FATAL, 0, _("Failed to initialize LZO compression\n"));
         free(pLzoMem);
@@ -214,7 +215,7 @@ bool SetupCompressionBuffers(JobControlRecord* jcr,
       }
 
       // See if this compression algorithm is already setup.
-      if (jcr->compress.workset.pZFAST) { return true; }
+      if (compress.workset.pZFAST) { return true; }
 
       pZfastStream = (zfast_stream*)malloc(sizeof(zfast_stream));
       memset(pZfastStream, 0, sizeof(zfast_stream));
@@ -224,7 +225,7 @@ bool SetupCompressionBuffers(JobControlRecord* jcr,
       pZfastStream->state = Z_NULL;
 
       if ((zstat = fastlzlibCompressInit(pZfastStream, level)) == Z_OK) {
-        jcr->compress.workset.pZFAST = pZfastStream;
+        compress.workset.pZFAST = pZfastStream;
       } else {
         Jmsg(jcr, M_FATAL, 0, _("Failed to initialize FASTLZ compression\n"));
         free(pZfastStream);
@@ -265,6 +266,7 @@ bool SetupDecompressionBuffers(JobControlRecord* jcr,
 
 #ifdef HAVE_LIBZ
 static bool compress_with_zlib(JobControlRecord* jcr,
+			       CompressionContext& compress,
                                char* rbuf,
                                uint32_t rsize,
                                unsigned char* cbuf,
@@ -276,7 +278,7 @@ static bool compress_with_zlib(JobControlRecord* jcr,
 
   Dmsg3(400, "cbuf=0x%x rbuf=0x%x len=%u\n", cbuf, rbuf, rsize);
 
-  pZlibStream = (z_stream*)jcr->compress.workset.pZLIB;
+  pZlibStream = (z_stream*)compress.workset.pZLIB;
   pZlibStream->next_in = (Bytef*)rbuf;
   pZlibStream->avail_in = rsize;
   pZlibStream->next_out = (Bytef*)cbuf;
@@ -306,6 +308,7 @@ static bool compress_with_zlib(JobControlRecord* jcr,
 
 #ifdef HAVE_LZO
 static bool compress_with_lzo(JobControlRecord* jcr,
+			      CompressionContext& compress,
                               char* rbuf,
                               uint32_t rsize,
                               unsigned char* cbuf,
@@ -318,7 +321,7 @@ static bool compress_with_lzo(JobControlRecord* jcr,
   Dmsg3(400, "cbuf=0x%x rbuf=0x%x len=%u\n", cbuf, rbuf, rsize);
 
   lzores = lzo1x_1_compress((const unsigned char*)rbuf, rsize, cbuf, &len,
-                            jcr->compress.workset.pLZO);
+                            compress.workset.pLZO);
   *compress_len = len;
 
   if (lzores != LZO_E_OK || *compress_len > max_compress_len) {
@@ -336,6 +339,7 @@ static bool compress_with_lzo(JobControlRecord* jcr,
 #endif
 
 static bool compress_with_fastlz(JobControlRecord* jcr,
+				 CompressionContext& compress,
                                  char* rbuf,
                                  uint32_t rsize,
                                  unsigned char* cbuf,
@@ -347,7 +351,7 @@ static bool compress_with_fastlz(JobControlRecord* jcr,
 
   Dmsg3(400, "cbuf=0x%x rbuf=0x%x len=%u\n", cbuf, rbuf, rsize);
 
-  pZfastStream = (zfast_stream*)jcr->compress.workset.pZFAST;
+  pZfastStream = (zfast_stream*)compress.workset.pZFAST;
   pZfastStream->next_in = (Bytef*)rbuf;
   pZfastStream->avail_in = rsize;
   pZfastStream->next_out = (Bytef*)cbuf;
@@ -377,6 +381,7 @@ static bool compress_with_fastlz(JobControlRecord* jcr,
 }
 
 bool CompressData(JobControlRecord* jcr,
+		  CompressionContext& context,
                   uint32_t compression_algorithm,
                   char* rbuf,
                   uint32_t rsize,
@@ -389,7 +394,7 @@ bool CompressData(JobControlRecord* jcr,
 #ifdef HAVE_LIBZ
     case COMPRESS_GZIP:
       if (jcr->compress.workset.pZLIB) {
-        if (!compress_with_zlib(jcr, rbuf, rsize, cbuf, max_compress_len,
+        if (!compress_with_zlib(jcr, context, rbuf, rsize, cbuf, max_compress_len,
                                 compress_len)) {
           return false;
         }
@@ -399,7 +404,7 @@ bool CompressData(JobControlRecord* jcr,
 #ifdef HAVE_LZO
     case COMPRESS_LZO1X:
       if (jcr->compress.workset.pLZO) {
-        if (!compress_with_lzo(jcr, rbuf, rsize, cbuf, max_compress_len,
+        if (!compress_with_lzo(jcr, context, rbuf, rsize, cbuf, max_compress_len,
                                compress_len)) {
           return false;
         }
@@ -410,7 +415,7 @@ bool CompressData(JobControlRecord* jcr,
     case COMPRESS_FZ4L:
     case COMPRESS_FZ4H:
       if (jcr->compress.workset.pZFAST) {
-        if (!compress_with_fastlz(jcr, rbuf, rsize, cbuf, max_compress_len,
+        if (!compress_with_fastlz(jcr, context, rbuf, rsize, cbuf, max_compress_len,
                                   compress_len)) {
           return false;
         }

@@ -21,13 +21,17 @@
 #ifndef BAREOS_LIB_COMPRESSION_H_
 #define BAREOS_LIB_COMPRESSION_H_
 
+#include "include/compression_context.h"
+
 const char* cmprs_algo_to_text(uint32_t compression_algorithm);
 bool SetupCompressionBuffers(JobControlRecord* jcr,
+			     CompressionContext& compress,
                              uint32_t compression_algorithm,
                              uint32_t* compress_buf_size);
 bool SetupDecompressionBuffers(JobControlRecord* jcr,
                                uint32_t* decompress_buf_size);
 bool CompressData(JobControlRecord* jcr,
+		  CompressionContext& compress,
                   uint32_t compression_algorithm,
                   char* rbuf,
                   uint32_t rsize,

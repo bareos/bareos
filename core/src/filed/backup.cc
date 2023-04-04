@@ -279,7 +279,7 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
 
   jcr->buf_size = sd->message_length;
 
-  if (!AdjustCompressionBuffers(jcr)) { return false; }
+  if (!AdjustCompressionBuffers(jcr, jcr->compress)) { return false; }
 
   if (!CryptoSessionStart(jcr, cipher)) { return false; }
 
@@ -1121,7 +1121,8 @@ static inline bool SendDataToSd(b_ctx* bctx, std::optional<buffer> precompressed
     if (precompressed) {
       memcpy(bctx->cbuf, precompressed->data, precompressed->size);
       bctx->compress_len = precompressed->size;
-    } else if (!CompressData(bctx->jcr, bctx->ff_pkt->Compress_algo, bctx->rbuf,
+    } else if (!CompressData(bctx->jcr, bctx->jcr->compress,
+			     bctx->ff_pkt->Compress_algo, bctx->rbuf,
 			     bctx->jcr->store_bsock->message_length, bctx->cbuf,
 			     bctx->max_compress_len, &bctx->compress_len)) {
       return false;
@@ -1284,7 +1285,7 @@ static void Compress(channel::out<std::shared_ptr<const buffer>> out,
   for (std::optional buf = out.get(); buf; buf = out.get()) {
     buffer compressed(max_compress_len);
     uint32_t size = 0;
-    if (CompressData(jcr, compression, buf.value()->data,
+    if (CompressData(jcr, jcr->compress, compression, buf.value()->data,
 		     buf.value()->size, (unsigned char*) compressed.data,
 		     max_compress_len,
 		     &size)) {
