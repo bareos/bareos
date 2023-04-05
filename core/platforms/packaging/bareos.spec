@@ -1130,7 +1130,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %if 0%{?webui}
 %files webui
 %defattr(-,root,root,-)
-%doc webui/README.md webui/LICENSE
+%doc webui/README.md webui/copyright
 %doc webui/doc/README-TRANSLATION.md
 %doc webui/tests/selenium
 %{_datadir}/%{name}-webui/
@@ -1426,7 +1426,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{_mandir}/man8/btraceback.8.gz
 %attr(0770, %{daemon_user}, %{daemon_group}) %dir %{working_dir}
 %attr(0775, %{daemon_user}, %{daemon_group}) %dir /var/log/%{name}
-%doc core/AGPL-3.0.txt core/LICENSE core/README.*
+%doc core/AGPL-3.0.txt core/LICENSE core/README.* debian/copyright
 #TODO: cmake does not create build directory
 #doc build/
 

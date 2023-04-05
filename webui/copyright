@@ -1,0 +1,296 @@
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: Bareos
+Upstream-Contact: <info@bareos.org>
+Source: https://github.com/bareos/bareos
+Comment: BAREOS is a fork of the Bacula source code.
+  The original Bacula code was Copyright Kern Sibbald and John Walker.
+  After November 2004, it became Copyright Kern Sibbald, and finally,
+  the copyright was transferred to the Free Software Foundation Europe
+  on 15 November 2006. The license was changed from GPLv2 to AGPLv3
+  on 24 July 2010.
+  The name Bacula is a registered trademark of Kern Sibbald.
+  The name BAREOS is a registered trademark of Bareos GmbH & Co. KG
+
+Files:
+    webui/*
+Copyright: 2013-2023, Bareos GmbH & Co. KG
+License: AGPL-3.0-only
+
+Files:
+    webui/public/fonts/*
+    webui/public/css/Bootstrap-3.3.7/*
+    webui/public/css/boostrap.css
+    webui/public/css/boostrap.css.map
+    webui/public/css/boostrap.min.css
+    webui/public/css/boostrap.min.css.map
+    webui/public/css/boostrap-theme.css
+    webui/public/css/boostrap-theme.css.map
+    webui/public/css/boostrap-theme.min.css
+    webui/public/js/bootstrap.js
+    webui/public/js/bootstrap.min.js
+Copyright: 2011-2023, The Bootstrap Authors
+License: MIT-0
+
+Files:
+    webui/public/css/boostrap-datetimepicker.css
+    webui/public/css/boostrap-datetimepicker.min.css
+    webui/public/js/bootstrap-datetimepicker.min.js
+Copyright: 2015, Jonathan Peterson
+License: MIT-0
+
+Files:
+    webui/public/css/boostrap-select.css
+    webui/public/css/boostrap-select.css.map
+    webui/public/css/boostrap-select.min.css
+    webui/public/js/boostrap-select.js
+    webui/public/js/boostrap-select.js.map
+    webui/public/js/boostrap-select.min.js
+Copyright: 2013-2017, SnapAppointments, LLC
+License: MIT-0
+
+Files:
+    webui/public/css/bootstrap-slider.css
+    webui/public/css/bootstrap-slider.min.css
+    webui/public/js/bootstrap-slider.js
+    webui/public/js/bootstrap-slider.min.js
+Copyright: 2019, Kyle Kemp, Rohit Kalkur, and contributors
+License: MIT-0
+
+Files:
+    webui/public/css/bootstrap-table.css
+    webui/public/css/bootstrap-table.min.css
+    webui/public/js/bootstrap-table.js
+    webui/public/js/bootstrap-table.min.js
+    webui/public/js/bootstrap-table-cookie.js
+    webui/public/js/bootstrap-table-cookie.min.js
+    webui/public/js/bootstrap-table-locale.js
+    webui/public/js/bootstrap-table-locale.min.js
+    webui/public/css/bootstrap-table-filter-control.css
+    webui/public/cs/bootstrap-table-filter-control.min.css
+    webui/public/js/bootstrap-table-filter-control.js
+    webui/public/js/bootstrap-table-filter-control.min.js
+Copyright: 2012-2019, Zhixin Wen <wenzhixin2010@gmail.com>
+License: MIT-0
+
+Files:
+    webui/public/css/jstree.css public/css/jstree.min.css
+    webui/public/css/32px.png
+    webui/public/css/40px.png
+    webui/public/js/jstree.js
+    webui/public/js/jstree.min.js
+Copyright: 2014, Ivan Bozhanov
+License: MIT-0
+
+Files:
+    webui/public/js/jstree-grid.js
+Copyright: 2015, Avi Deitcher
+License: MIT-0
+
+Files:
+    webui/public/js/d3/*
+Copyright: 2010-2023 Mike Bostock
+License: ISC
+
+Files:
+    webui/public/js/jquery.js
+    webui/public/js/jquery.min.js
+    webui/public/js/jquery.min.map
+Copyright: OpenJS Foundation and other contributors
+License: MIT-0
+
+Files:
+    webui/public/js/jquery.cookie.js
+Copyright: 2013, Klaus Hartl
+License: MIT-0
+
+Files:
+    webui/public/js/jquery.jqplot.js
+    webui/public/js/jquery.jqplot.min.js
+Copyright: 2009-2016, Chris Leonello
+License: MIT-0
+
+Files:
+    webui/public/js/moment*
+Copyright: JS Foundation and other contributors
+License: MIT-0
+
+Files:
+    webui/public/js/excanvas.js
+    webui/public/js/excanvas.min.js
+Copyright: 2006, Google Inc.
+License: Apache-2.0
+
+Files:
+    webui/public/js/html5shiv.js
+Copyright: 2014, Alexander Farkas
+License: MIT-0
+
+Files:
+    webui/public/js/i_*
+    webui/public/js/partials/*
+Copyright: 2015, Tindo Ngoufo Arsel
+License: LGPL-2.1
+
+Files:
+    webui/public/js/respond.min.js
+Copyright: 2012, Scott Jehl, Paul Irish, Nicholas Zakas
+License: MIT-0
+
+Files:
+    webui/public/js/apexcharts.js
+    webui/public/js/apexcharts.min.js
+    webui/public/js/locales/*
+Copyright: 2018, ApexCharts
+License: MIT-0
+
+Files:
+    webui/vendor/*
+    webui/vendor/Bareos/*
+Copyright: 2013-2023, Bareos GmbH & Co. KG
+License: AGPL-3.0-only
+
+Files:
+    webui/vendor/composer/*
+Copyright: Nils Adermann, Jordi Boggiano
+License: MIT-0
+
+Files:
+    webui/vendor/container-interop/*
+Copyright: 2013, container-interop
+License: MIT-0
+
+Files:
+    webui/vendor/psr/*
+Copyright: 2013-2016, container-interop
+           2016, PHP Framework Interoperability Group
+License: MIT-0
+
+Files:
+    webui/vendor/zendframework/zend-cache/*
+Copyright: 2005-2016, Zend Technologies USA, Inc.
+License: BSD-3-Clause
+
+Files:
+    webui/vendor/zendframework/zend-config/*
+Copyright: 2005-2015, Zend Technologies USA, Inc.
+License: BSD-3-Clause
+
+Files:
+    webui/vendor/zendframework/zend-console/*
+Copyright: 2005-2015, Zend Technologies USA, Inc.
+License: BSD-3-Clause
+
+Files:
+    webui/vendor/zendframework/zend-escaper/*
+Copyright: 2005-2019, Zend Technologies USA, Inc.
+License: BSD-3-Clause
+
+Files:
+    webui/vendor/zendframework/zend-eventmanager/*
+Copyright: 2005-2015, Zend Technologies USA, Inc.
+License: BSD-3-Clause
+
+Files:
+    webui/vendor/zendframework/zend-filter/*
+Copyright: 2005-2015, Zend Technologies USA, Inc.
+License: BSD-3-Clause
+
+Files:
+    webui/vendor/zendframework/zend-form/*
+Copyright: 2005-2015, Zend Technologies USA, Inc.
+License: BSD-3-Clause
+
+Files:
+    webui/vendor/zendframework/zend-http/*
+Copyright: 2005-2018, Zend Technologies USA, Inc.
+License: BSD-3-Clause
+
+Files:
+    webui/vendor/zendframework/zend-hydrator/*
+Copyright: 2005-2015, Zend Technologies USA, Inc.
+License: BSD-3-Clause
+
+Files:
+    webui/vendor/zendframework/zend-i18n/*
+Copyright: 2005-2015, Zend Technologies USA, Inc.
+License: BSD-3-Clause
+
+Files:
+    webui/vendor/zendframework/zend-inputfilter/*
+Copyright: 2005-2015, Zend Technologies USA, Inc.
+License: BSD-3-Clause
+
+Files:
+    webui/vendor/zendframework/zend-json/*
+Copyright: 2005-2015, Zend Technologies USA, Inc.
+License: BSD-3-Clause
+
+Files:
+    webui/vendor/zendframework/zend-loader/*
+Copyright: 2005-2019, Zend Technologies USA, Inc.
+License: BSD-3-Clause
+
+Files:
+    webui/vendor/zendframework/zend-log/*
+Copyright: 2005-2015, Zend Technologies USA, Inc.
+License: BSD-3-Clause
+
+Files:
+    webui/vendor/zendframework/zend-math/*
+Copyright: 2005-2015, Zend Technologies USA, Inc.
+License: BSD-3-Clause
+
+Files:
+    webui/vendor/zendframework/zend-modulemanager/*
+Copyright: 2005-2015, Zend Technologies USA, Inc.
+License: BSD-3-Clause
+
+Files:
+    webui/vendor/zendframework/zend-mvc/*
+Copyright: 2005-2015, Zend Technologies USA, Inc.
+License: BSD-3-Clause
+
+Files:
+    webui/vendor/zendframework/zend-navigation/*
+Copyright: 2005-2015, Zend Technologies USA, Inc.
+License: BSD-3-Clause
+
+Files:
+    webui/vendor/zendframework/zend-serializer/*
+Copyright: 2005-2015, Zend Technologies USA, Inc.
+License: BSD-3-Clause
+
+Files:
+    webui/vendor/zendframework/zend-servicemanager/*
+Copyright: 2005-2015, Zend Technologies USA, Inc.
+License: BSD-3-Clause
+
+Files:
+    webui/vendor/zendframework/zend-session/*
+Copyright: 2005-2015, Zend Technologies USA, Inc.
+License: BSD-3-Clause
+
+Files:
+    webui/vendor/zendframework/zend-stdlib/*
+Copyright: 2005-2015, Zend Technologies USA, Inc.
+License: BSD-3-Clause
+
+Files:
+    webui/vendor/zendframework/zend-uri/*
+Copyright: 2005-2018, Zend Technologies USA, Inc.
+License: BSD-3-Clause
+
+Files:
+    webui/vendor/zendframework/zend-validator/*
+Copyright: 2005-2015, Zend Technologies USA, Inc.
+License: BSD-3-Clause
+
+Files:
+    webui/vendor/zendframework/zend-version/*
+Copyright: 2005-2015, Zend Technologies USA, Inc.
+License: BSD-3-Clause
+
+Files:
+    webui/vendor/zendframework/zend-view/*
+Copyright: 2005-2015, Zend Technologies USA, Inc.
+License: BSD-3-Clause

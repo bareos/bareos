@@ -1,4 +1,4 @@
-Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: Bareos
 Upstream-Contact: <info@bareos.org>
 Source: https://github.com/bareos/bareos
@@ -12,10 +12,15 @@ Comment: BAREOS is a fork of the Bacula source code.
   The name BAREOS is a registered trademark of Bareos GmbH & Co. KG
 
 
+Files: *
+Copyright: 2012-2023 Bareos GmbH & Co. KG
+License: AGPL-3.0-only
+
+
 Files: core/* docs/manuals/source/*
 Copyright: 2000-2012 Free Software Foundation Europe e.V.
            2011-2012 Planets Communications B.V.
-           2013-2022 Bareos GmbH & Co. KG
+           2013-2023 Bareos GmbH & Co. KG
 License: Bareos
     This is basically AGPL-3.0 with Bacula and other exceptions.
     This section is the reformated version of

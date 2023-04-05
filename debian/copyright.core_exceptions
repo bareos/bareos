@@ -1,4 +1,5 @@
 
+
 Files: core/src/lib/bmtio.h
 Copyright: 1982,1986,1993 The Regents of the University of California
 License: permissive
@@ -100,13 +101,13 @@ License: BSD-2-clause
 Files: core/src/lib/bregex.h core/src/lib/bregex.cc
 Copyright: 1991 Tatu Ylonen, Espoo, Finland
            2006-2010 Free Software Foundation Europe e.V.
-License: permissive and AGPL-3.0
+License: permissive and AGPL-3.0-only
 
 
 Files: core/src/lib/bsnprintf.cc
 Copyright: 1995 Patrick Powell
            2005-2012 Free Software Foundation Europe e.V.
-License: permissive and AGPL-3.0
+License: permissive and AGPL-3.0-only
 
 
 Files: core/src/tools/bsmtp.cc
@@ -125,7 +126,7 @@ Copyright: 2001-2002 Ralf S. Engelschall <rse@engelschall.com>
            2001-2002 The OSSP Project (http://www.ossp.org/)
            2001-2002 Cable & Wireless Deutschland (http://www.cw.com/de/)
            2003-2009 Free Software Foundation Europe e.V.
-License: permissive and AGPL-3.0
+License: permissive and AGPL-3.0-only
 
 
 Files: core/src/win32/compat/include/sys/mtio.h
@@ -157,10 +158,10 @@ License: permissive
 Files: core/src/win32/plugins/filed/mssqlvdi-fd.c
 Copyright:  2010 Zilvinas Krapavickas <zkrapavickas@gmail.com>
             2013-2013 Bareos GmbH & Co. KG
-License: AGPL-3.0
+License: AGPL-3.0-only
 
 Files: core/src/stored/crc32/crc32.cc core/src/stored/crc32/crc32.h
-Copyright:  2011-2016 Stephan Brumme
+Copyright:  2011-2019 Stephan Brumme
 License: Zlib
 
 Files: core/src/droplet/*
@@ -229,109 +230,3 @@ License:  BSD-3-clause
     ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-Files: *
-Copyright: 2012-2021 Bareos GmbH & Co. KG
-License: AGPL-3.0
-
-
-License: AGPL-3.0
-    The full text of the
-    GNU AFFERO GENERAL PUBLIC LICENSE
-    version 3 can be found in the file
-    `/usr/share/bareos-common/AGPL-3.0.txt'.
-
-
-License: BSD-3-clause
-    * Redistribution and use in source and binary forms, with or without
-    * modification, are permitted provided that the following conditions
-    * are met:
-    * 1. Redistributions of source code must retain the above copyright
-    *    notice, this list of conditions and the following disclaimer.
-    * 2. Redistributions in binary form must reproduce the above copyright
-    *    notice, this list of conditions and the following disclaimer in the
-    *    documentation and/or other materials provided with the distribution.
-    * 3. Neither the name of the University nor the names of its contributors
-    *    may be used to endorse or promote products derived from this software
-    *    without specific prior written permission.
-    *
-    * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
-    * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-    * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-    * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
-    * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-    * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-    * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-    * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-    * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-    * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-    * SUCH DAMAGE.
-
-
-License: LGPL-2.1+
-    On Debian systems, the full text of the GNU General Public
-    License version 2 can be found in the file
-    `/usr/share/common-licenses/LGPL-2.1'.
-
-
-License: GPL-2
-    On Debian systems, the full text of the GNU General Public
-    License version 2 can be found in the file
-    `/usr/share/common-licenses/GPL-2'.
-
-
-License: OpenLDAP
-    The OpenLDAP Public License
-    Version 2.8, 17 August 2003
-    .
-    Redistribution and use of this software and associated documentation
-    ("Software"), with or without modification, are permitted provided
-    that the following conditions are met:
-    .
-    1. Redistributions in source form must retain copyright statements
-    and notices,
-    .
-    2. Redistributions in binary form must reproduce applicable copyright
-    statements and notices, this list of conditions, and the following
-    disclaimer in the documentation and/or other materials provided
-    with the distribution, and
-    .
-    3. Redistributions must contain a verbatim copy of this document.
-    .
-    The OpenLDAP Foundation may revise this license from time to time.
-    Each revision is distinguished by a version number.  You may use
-    this Software under terms of this license revision or under the
-    terms of any subsequent revision of the license.
-    .
-    THIS SOFTWARE IS PROVIDED BY THE OPENLDAP FOUNDATION AND ITS
-    CONTRIBUTORS ``AS IS'' AND ANY EXPRESSED OR IMPLIED WARRANTIES,
-    INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
-    AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT
-    SHALL THE OPENLDAP FOUNDATION, ITS CONTRIBUTORS, OR THE AUTHOR(S)
-    OR OWNER(S) OF THE SOFTWARE BE LIABLE FOR ANY DIRECT, INDIRECT,
-    INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-    BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-    LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-    ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-    POSSIBILITY OF SUCH DAMAGE.
-    .
-    The names of the authors and copyright holders must not be used in
-    advertising or otherwise to promote the sale, use or other dealing
-    in this Software without specific, written prior permission.  Title
-    to copyright in this Software shall at all times remain with copyright
-    holders.
-    .
-    OpenLDAP is a registered trademark of the OpenLDAP Foundation.
-    .
-    Copyright 1999-2003 The OpenLDAP Foundation, Redwood City,
-    California, USA.  All Rights Reserved.  Permission to copy and
-    distribute verbatim copies of this document is granted.
-
-
-License: permissive
- Permission to use, copy, modify, and distribute this software for
- any purpose with or without fee is hereby granted, provided that
- the above copyright notice and this permission notice appear in all
- copies.
