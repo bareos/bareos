@@ -50,53 +50,56 @@ namespace websocketpp {
 namespace extensions {
 
 namespace error {
-enum value {
-    /// Catch all
-    general = 1,
+enum value
+{
+  /// Catch all
+  general = 1,
 
-    /// Extension disabled
-    disabled
+  /// Extension disabled
+  disabled
 };
 
 class category : public lib::error_category {
-public:
-    category() {}
+ public:
+  category() {}
 
-    const char *name() const _WEBSOCKETPP_NOEXCEPT_TOKEN_ {
-        return "websocketpp.extension";
-    }
+  const char* name() const _WEBSOCKETPP_NOEXCEPT_TOKEN_ override
+  {
+    return "websocketpp.extension";
+  }
 
-    std::string message(int value) const {
-        switch(value) {
-            case general:
-                return "Generic extension error";
-            case disabled:
-                return "Use of methods from disabled extension";
-            default:
-                return "Unknown permessage-compress error";
-        }
+  std::string message(int value) const override
+  {
+    switch (value) {
+      case general:
+        return "Generic extension error";
+      case disabled:
+        return "Use of methods from disabled extension";
+      default:
+        return "Unknown permessage-compress error";
     }
+  }
 };
 
-inline lib::error_category const & get_category() {
-    static category instance;
-    return instance;
+inline lib::error_category const& get_category()
+{
+  static category instance;
+  return instance;
 }
 
-inline lib::error_code make_error_code(error::value e) {
-    return lib::error_code(static_cast<int>(e), get_category());
+inline lib::error_code make_error_code(error::value e)
+{
+  return lib::error_code(static_cast<int>(e), get_category());
 }
 
-} // namespace error
-} // namespace extensions
-} // namespace websocketpp
+}  // namespace error
+}  // namespace extensions
+}  // namespace websocketpp
 
 _WEBSOCKETPP_ERROR_CODE_ENUM_NS_START_
-template<> struct is_error_code_enum
-    <websocketpp::extensions::error::value>
-{
-    static const bool value = true;
+template <> struct is_error_code_enum<websocketpp::extensions::error::value> {
+  static const bool value = true;
 };
 _WEBSOCKETPP_ERROR_CODE_ENUM_NS_END_
 
-#endif // WEBSOCKETPP_EXTENSION_HPP
+#endif  // WEBSOCKETPP_EXTENSION_HPP
