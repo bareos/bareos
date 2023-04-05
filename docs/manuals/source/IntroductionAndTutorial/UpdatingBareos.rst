@@ -314,11 +314,11 @@ To do so you can use the `-t` flag:
 .. code-block:: shell-session
    :caption: Shell example to check the Bareos configuration
 
-   root@host:~# su - bareos -s /bin/sh -c "bareos-dir -t"
-   root@host:~# su - bareos -s /bin/sh -c "bareos-sd -t"
    root@host:~# bareos-fd -t
+   root@host:~# su - bareos -s /bin/sh -c "bareos-sd -t"
+   root@host:~# su - bareos -s /bin/sh -c "bareos-dir -t"
    There are configuration warnings:
-      * using deprecated keyword PidDirectory on line 19 of file /etc/bareos/bareos-fd.d/client/myself.conf
+    * using deprecated keyword CollectStatistics on line 8 of file /etc/bareos/bareos-dir.d/storage/File.conf
 
 The same warnings are also shown on a regular start of the daemons.
 

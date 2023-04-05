@@ -334,7 +334,6 @@ Directory Structure (Build)
       |           |-- monitor
       |           `-- storage
       |-- log
-      |-- piddir
       |-- python-modules
       |-- sbin
       |-- storage

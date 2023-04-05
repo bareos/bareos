@@ -29,7 +29,6 @@ define CONFIGURE_COMMON
   -Dscriptdir=/usr/lib/bareos/scripts \
   -Dplugindir=/usr/lib/bareos/plugins \
   -Dworkingdir=/var/lib/bareos \
-  -Dpiddir=/var/lib/bareos \
   -Dbsrdir=/var/lib/bareos \
   -Dlogdir=/var/log/bareos \
   -Dsubsysdir=/var/lock \

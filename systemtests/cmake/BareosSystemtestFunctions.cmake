@@ -332,7 +332,6 @@ macro(prepare_testdir_for_daemon_run)
   set(tmpdir ${current_test_directory}/tmp)
   set(tmp ${tmpdir})
   set(working_dir ${current_test_directory}/working)
-  set(piddir ${current_test_directory}/piddir)
 
   set(sd_backenddir ${SD_BACKEND_DIR_TO_TEST})
   # the SD will not suppot the BackendDirectory setting if it was not built with
@@ -370,7 +369,6 @@ macro(prepare_testdir_for_daemon_run)
     )
   endif()
 
-  file(MAKE_DIRECTORY ${piddir})
   file(MAKE_DIRECTORY ${tmpdir})
   file(MAKE_DIRECTORY ${archivedir})
   file(MAKE_DIRECTORY ${logdir})
