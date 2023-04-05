@@ -22,9 +22,13 @@
 #ifndef BAREOS_DIRD_UA_STATUS_H_
 #define BAREOS_DIRD_UA_STATUS_H_
 
+#include "dird/ua.h"
+#include <string>
+
 namespace directordaemon {
 
 void ListDirStatusHeader(UaContext* ua);
+std::string createstatusheader();
 
 } /* namespace directordaemon */
 #endif  // BAREOS_DIRD_UA_STATUS_H_

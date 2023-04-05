@@ -51,6 +51,7 @@
 #include "lib/util.h"
 #include "lib/version.h"
 
+#include "fmt/format.h"
 #include <memory>
 
 #define DEFAULT_STATUS_SCHED_DAYS 7
@@ -338,34 +339,46 @@ static void DoAllStatus(UaContext* ua)
   free(unique_client);
 }
 
-void ListDirStatusHeader(UaContext* ua)
-{
-  int len;
-  char dt[MAX_TIME_LENGTH];
-  PoolMem msg(PM_FNAME);
 
-  ua->SendMsg(_("%s Version: %s (%s) %s\n"), my_name,
-              kBareosVersionStrings.Full, kBareosVersionStrings.Date,
-              kBareosVersionStrings.GetOsInfo());
+std::string createstatusheader()
+{
+  std::string header{};
+
+  char dt[MAX_TIME_LENGTH];
   bstrftime_nc(dt, sizeof(dt), daemon_start_time);
-  ua->SendMsg(_("Daemon started %s. Jobs: run=%d, running=%d db:postgresql, %s "
-                "binary\n"),
-              dt, num_jobs_run, JobCount(), kBareosVersionStrings.BinaryInfo);
+  header.append(fmt::format(FMT_STRING("{} Version: {} ({}) {}\n"), my_name,
+                            kBareosVersionStrings.Full,
+                            kBareosVersionStrings.Date,
+                            kBareosVersionStrings.GetOsInfo()));
+
+  header.append(fmt::format(
+      FMT_STRING(
+          "Daemon started {}. Jobs: run={}, running={} db:postgresql, {} "
+          "binary\n"),
+      dt, num_jobs_run, JobCount(), kBareosVersionStrings.BinaryInfo));
 
   if (me->secure_erase_cmdline) {
-    ua->SendMsg(_(" secure erase command='%s'\n"), me->secure_erase_cmdline);
+    header.append(fmt::format(FMT_STRING(" secure erase command='{}'\n"),
+                              me->secure_erase_cmdline));
   }
-
-  len = ListDirPlugins(msg);
-  if (len > 0) { ua->SendMsg("%s\n", msg.c_str()); }
+  PoolMem msg(PM_FNAME);
+  int len = ListDirPlugins(msg);
+  if (len > 0) { header.append(fmt::format("{}\n", msg.c_str())); }
 
   if (my_config->HasWarnings()) {
-    ua->SendMsg(
-        _("\n"
-          "There are WARNINGS for the director configuration!\n"
-          "See 'status configuration' for details.\n"
-          "\n"));
+    header.append(
+        "\n"
+        "There are WARNINGS for the director configuration!\n"
+        "See 'status configuration' for details.\n"
+        "\n");
   }
+
+  return header;
+}
+
+void ListDirStatusHeader(UaContext* ua)
+{
+  ua->SendMsg(_(createstatusheader().c_str()));
 }
 
 static bool show_scheduled_preview(UaContext*,
