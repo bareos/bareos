@@ -1316,7 +1316,8 @@ static void ReadData(channel::in<std::shared_ptr<const buffer>> data,
 		     BareosFilePacket* bfd,
 		     std::size_t buflen)
 {
-  while (1) {
+  ssize_t num_read = 0;
+  do {
     char* buf = (char*) malloc(buflen);
     if (!buf) { break; }
     ssize_t num_read = bread(bfd, buf, buflen);
@@ -1324,11 +1325,8 @@ static void ReadData(channel::in<std::shared_ptr<const buffer>> data,
       if (!data.put(std::make_shared<const buffer>((std::size_t) num_read, buf))) {
 	break;
       }
-    } else {
-      free(buf);
-      break;
     }
-  }
+  } while (num_read > 0);
 }
 
 static void DigestData(channel::out<std::shared_ptr<const buffer>> out,
@@ -1467,9 +1465,6 @@ static inline bool SendCompressedData(b_ctx& bctx)
 			 bctx.ff_pkt->Compress_level})) {
     return false;
   }
-
-  // std::thread reader(ReadData, std::move(in), &bctx.ff_pkt->bfd,
-  // 		     bctx.rsize);
 
   DIGEST* digest = nullptr;
   DIGEST* signing = nullptr;
