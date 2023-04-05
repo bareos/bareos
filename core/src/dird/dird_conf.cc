@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -899,12 +899,10 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
     d++;
   }
 
-  /*
-   * following datatypes are ignored:
+  /* following datatypes are ignored:
    * - VolumeStatus: only used in ua_dotcmds, not a datatype
    * - FS_option_kw: from inc_conf. Replaced by CFG_TYPE_OPTIONS",
-   * options_items.
-   */
+   * options_items. */
 
   PmStrcat(buffer, json_dumps(json, JSON_INDENT(2)));
   json_decref(json);
@@ -972,10 +970,8 @@ const char* GetUsageStringForConsoleConfigureCommand()
   if (configure_usage_string->strlen() == 0) {
     // subcommand: add
     for (int r = 0; resources[r].name; r++) {
-      /*
-       * Only one Director is allowed.
-       * If the resource have not items, there is no need to add it.
-       */
+      /* Only one Director is allowed.
+       * If the resource have not items, there is no need to add it. */
       if ((resources[r].rcode != R_DIRECTOR) && (resources[r].items)) {
         configure_usage_string->strcat("add ");
         resourcename.strcpy(resources[r].name);
@@ -1122,10 +1118,8 @@ static void PropagateResource(ResourceItem* items,
         case CFG_TYPE_REPLACE: {
           uint32_t *def_ivalue, *ivalue;
 
-          /*
-           * Handle integer fields
-           *    Note, our StoreBit does not handle bitmaped fields
-           */
+          /* Handle integer fields
+           *    Note, our StoreBit does not handle bitmaped fields */
           def_ivalue = (uint32_t*)((char*)(source) + offset);
           ivalue = (uint32_t*)((char*)dest + offset);
           *ivalue = *def_ivalue;
@@ -1216,12 +1210,10 @@ bool ValidateResource(int res_type, ResourceItem* items, BareosResource* res)
 
 bool JobResource::Validate()
 {
-  /*
-   * For Copy and Migrate we can have Jobs without a client or fileset.
+  /* For Copy and Migrate we can have Jobs without a client or fileset.
    * As for a copy we use the original Job as a reference for the Read storage
    * we also don't need to check if there is an explicit storage definition in
-   * either the Job or the Read pool.
-   */
+   * either the Job or the Read pool. */
   switch (JobType) {
     case JT_COPY:
     case JT_MIGRATE:
@@ -1519,10 +1511,8 @@ static std::string PrintConfigRun(RunResource* run)
   }
 
   if (run->accurate) {
-    /*
-     * TODO: You cannot distinct if accurate was not set or if it was set to
-     * no maybe we need an additional variable like "accurate_set".
-     */
+    /* TODO: You cannot distinct if accurate was not set or if it was set to
+     * no maybe we need an additional variable like "accurate_set". */
     Mmsg(temp, "accurate=\"%s\" ", "yes");
     PmStrcat(run_str, temp.c_str());
   }
@@ -1566,10 +1556,8 @@ static std::string PrintConfigRun(RunResource* run)
       }
     }
 
-    /*
-     * See if we are still in an interval and the last bit is also set then
-     * the interval stretches to the last item.
-     */
+    /* See if we are still in an interval and the last bit is also set then
+     * the interval stretches to the last item. */
     i = nr_items - 1;
     if (interval_start != -1 && BitIsSet(i, run->date_time_bitfield.mday)) {
       if ((i - interval_start) > 1) {
@@ -1584,11 +1572,9 @@ static std::string PrintConfigRun(RunResource* run)
     PmStrcat(run_str, temp.c_str() + 1); /* jump over first comma*/
   }
 
-  /*
-   * run->wom output is 1st, 2nd... 5th comma separated
+  /* run->wom output is 1st, 2nd... 5th comma separated
    *                    first, second, third... is also allowed
-   *                    but we ignore that for now
-   */
+   *                    but we ignore that for now */
   all_set = true;
   nr_items = 5;
   for (i = 0; i < nr_items; i++) {
@@ -1623,10 +1609,8 @@ static std::string PrintConfigRun(RunResource* run)
       }
     }
 
-    /*
-     * See if we are still in an interval and the last bit is also set then
-     * the interval stretches to the last item.
-     */
+    /* See if we are still in an interval and the last bit is also set then
+     * the interval stretches to the last item. */
     i = nr_items - 1;
     if (interval_start != -1 && BitIsSet(i, run->date_time_bitfield.wom)) {
       if ((i - interval_start) > 1) {
@@ -1676,10 +1660,8 @@ static std::string PrintConfigRun(RunResource* run)
       }
     }
 
-    /*
-     * See if we are still in an interval and the last bit is also set then
-     * the interval stretches to the last item.
-     */
+    /* See if we are still in an interval and the last bit is also set then
+     * the interval stretches to the last item. */
     i = nr_items - 1;
     if (interval_start != -1 && BitIsSet(i, run->date_time_bitfield.wday)) {
       if ((i - interval_start) > 1) {
@@ -1729,10 +1711,8 @@ static std::string PrintConfigRun(RunResource* run)
       }
     }
 
-    /*
-     * See if we are still in an interval and the last bit is also set then
-     * the interval stretches to the last item.
-     */
+    /* See if we are still in an interval and the last bit is also set then
+     * the interval stretches to the last item. */
     i = nr_items - 1;
     if (interval_start != -1 && BitIsSet(i, run->date_time_bitfield.month)) {
       if ((i - interval_start) > 1) {
@@ -1782,10 +1762,8 @@ static std::string PrintConfigRun(RunResource* run)
       }
     }
 
-    /*
-     * See if we are still in an interval and the last bit is also set then
-     * the interval stretches to the last item.
-     */
+    /* See if we are still in an interval and the last bit is also set then
+     * the interval stretches to the last item. */
     i = nr_items - 1;
     if (interval_start != -1 && BitIsSet(i, run->date_time_bitfield.woy)) {
       if ((i - interval_start) > 1) {
@@ -1800,10 +1778,8 @@ static std::string PrintConfigRun(RunResource* run)
     PmStrcat(run_str, temp.c_str() + 1); /* jump over first comma*/
   }
 
-  /*
-   * run->hour output is HH:MM for hour and minute though its a bitfield.
-   * only "hourly" sets all bits.
-   */
+  /* run->hour output is HH:MM for hour and minute though its a bitfield.
+   * only "hourly" sets all bits. */
   PmStrcpy(temp, "");
   for (i = 0; i < 24; i++) {
     if (BitIsSet(i, run->date_time_bitfield.hour)) {
@@ -1837,10 +1813,8 @@ static void PrintConfigRun(OutputFormatterResource& send,
 
 std::string FilesetResource::GetOptionValue(const char** option)
 {
-  /*
-   * Extract substring until next ":" chararcter.
-   * Modify the string pointer. Move it forward.
-   */
+  /* Extract substring until next ":" chararcter.
+   * Modify the string pointer. Move it forward. */
   std::string value;
   (*option)++; /* skip option key */
   for (; *option[0] && *option[0] != ':'; (*option)++) { value += *option[0]; }
@@ -2027,11 +2001,9 @@ void FilesetResource::PrintConfigIncludeExcludeOptions(
   send.KeyMultipleStringsOnePerLine("Wild", std::addressof(fo->wild));
   send.KeyMultipleStringsOnePerLine("WildDir", std::addressof(fo->wilddir));
   send.KeyMultipleStringsOnePerLine("WildFile", std::addressof(fo->wildfile));
-  /*
-   *  Wildbase is WildFile not containing a / or \\
+  /*  Wildbase is WildFile not containing a / or \\
    *  see  void StoreWild() in inc_conf.c
-   *  so we need to translate it back to a Wild File entry
-   */
+   *  so we need to translate it back to a Wild File entry */
   send.KeyMultipleStringsOnePerLine("WildBase", std::addressof(fo->wildbase));
   send.KeyMultipleStringsOnePerLine("Base", std::addressof(fo->base));
   send.KeyMultipleStringsOnePerLine("FsType", std::addressof(fo->fstype));
@@ -2191,15 +2163,13 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       // Resources not containing a resource
       break;
     case R_POOL: {
-      /*
-       * Resources containing another resource or alist. First
+      /* Resources containing another resource or alist. First
        * look up the resource which contains another resource. It
        * was written during pass 1.  Then stuff in the pointers to
        * the resources it contains, which were inserted this pass.
        * Finally, it will all be stored back.
        *
-       * Find resource saved in pass 1
-       */
+       * Find resource saved in pass 1 */
       PoolResource* p = dynamic_cast<PoolResource*>(
           my_config->GetResWithName(R_POOL, res_pool->resource_name_));
       if (!p) {
@@ -2340,13 +2310,11 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
               res_job->resource_name_, BitIsSet(69, res_job->inherit_content_),
               BitIsSet(69, p->inherit_content_));
 
-        /*
-         * TODO: JobDefs where/regexwhere doesn't work well (but this is not
+        /* TODO: JobDefs where/regexwhere doesn't work well (but this is not
          * very useful) We have to SetBit(index, item_present_); or
          * something like that
          *
-         * We take RegexWhere before all other options
-         */
+         * We take RegexWhere before all other options */
         if (!p->RegexWhere
             && (p->strip_prefix || p->add_suffix || p->add_prefix)) {
           int len = BregexpGetBuildWhereSize(p->strip_prefix, p->add_prefix,
@@ -2408,12 +2376,10 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
       break;
     }
     case R_SCHEDULE: {
-      /*
-       * Schedule is a bit different in that it contains a RunResource record
+      /* Schedule is a bit different in that it contains a RunResource record
        * chain which isn't a "named" resource. This chain was linked
        * in by run_conf.c during pass 2, so here we jam the pointer
-       * into the Schedule resource.
-       */
+       * into the Schedule resource. */
       ScheduleResource* p = dynamic_cast<ScheduleResource*>(
           my_config->GetResWithName(type, res_sch->resource_name_));
       if (!p) {
@@ -2519,10 +2485,8 @@ static void StoreActiononpurge(LEX* lc, ResourceItem* item, int index, int)
   uint32_t* destination = GetItemVariablePointer<uint32_t*>(*item);
 
   LexGetToken(lc, BCT_NAME);
-  /*
-   * Store the type both in pass 1 and pass 2
-   * Scan ActionOnPurge options
-   */
+  /* Store the type both in pass 1 and pass 2
+   * Scan ActionOnPurge options */
   bool found = false;
   for (int i = 0; ActionOnPurgeOptions[i].name; i++) {
     if (Bstrcasecmp(lc->str, ActionOnPurgeOptions[i].name)) {
@@ -2763,11 +2727,9 @@ static void StoreAutopassword(LEX* lc, ResourceItem* item, int index, int pass)
 {
   switch ((*item->allocated_resource)->rcode_) {
     case R_DIRECTOR:
-      /*
-       * As we need to store both clear and MD5 hashed within the same
+      /* As we need to store both clear and MD5 hashed within the same
        * resource class we use the item->code as a hint default is 0
-       * and for clear we need a code of 1.
-       */
+       * and for clear we need a code of 1. */
       switch (item->code) {
         case 1:
           my_config->StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index,
@@ -3020,12 +2982,10 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
 
   res_runscript = new RunScript();
 
-  /*
-   * Run on client by default.
+  /* Run on client by default.
    * Set this here, instead of in the class constructor,
    * as the class is also used by other daemon,
-   * where the default differs.
-   */
+   * where the default differs. */
   if (res_runscript->target.empty()) { res_runscript->SetTarget("%c"); }
 
   while ((token = LexGetToken(lc, BCT_SKIP_EOL)) != BCT_EOF) {
@@ -3158,10 +3118,8 @@ extern "C" char* job_code_callback_director(JobControlRecord* jcr,
       return my_name;
     case 'V':
       if (jcr) {
-        /*
-         * If this is a migration/copy we need the volume name from the
-         * mig_jcr.
-         */
+        /* If this is a migration/copy we need the volume name from the
+         * mig_jcr. */
         if (jcr->dir_impl->mig_jcr) { jcr = jcr->dir_impl->mig_jcr; }
 
         if (jcr->VolumeName) {
@@ -3364,10 +3322,8 @@ static bool HasDefaultValue(ResourceItem& item)
       break;
     }
     case CFG_TYPE_SHRTRUNSCRIPT:
-      /*
-       * We don't get here as this type is converted to a CFG_TYPE_RUNSCRIPT
-       * when parsed
-       */
+      /* We don't get here as this type is converted to a CFG_TYPE_RUNSCRIPT
+       * when parsed */
       break;
     case CFG_TYPE_ACL: {
       alist<const char*>** alistvalue
@@ -3477,10 +3433,8 @@ static void PrintConfigCb(ResourceItem& item,
       PrintConfigRunscript(send, item, inherited, verbose);
       break;
     case CFG_TYPE_SHRTRUNSCRIPT:
-      /*
-       * We don't get here as this type is converted to a CFG_TYPE_RUNSCRIPT
-       * when parsed
-       */
+      /* We don't get here as this type is converted to a CFG_TYPE_RUNSCRIPT
+       * when parsed */
       break;
     case CFG_TYPE_ACL: {
       alist<const char*>** alistvalue
@@ -4023,11 +3977,9 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
 
   switch (type) {
     case R_DIRECTOR: {
-      /*
-       * IP Addresses can be set by multiple directives.
+      /* IP Addresses can be set by multiple directives.
        * If they differ from the default,
-       * the set the main directive to be set.
-       */
+       * the set the main directive to be set. */
       if ((res_dir->DIRaddrs) && (res_dir->DIRaddrs->size() > 0)) {
         for (int i = 0; items[i].name; i++) {
           if (Bstrcasecmp(items[i].name, "DirAddresses")) {
@@ -4041,10 +3993,8 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
     case R_JOBDEFS:
       break;
     case R_JOB:
-      /*
-       * Check Job requirements after applying JobDefs
-       * Ensure that the name item is present however.
-       */
+      /* Check Job requirements after applying JobDefs
+       * Ensure that the name item is present however. */
       if (items[0].flags & CFG_ITEM_REQUIRED) {
         if (!BitIsSet(0, allocated_resource->item_present_)) {
           Emsg2(M_ERROR, 0,
@@ -4060,12 +4010,10 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
       break;
   }
 
-  /*
-   * During pass 2 in each "store" routine, we looked up pointers
+  /* During pass 2 in each "store" routine, we looked up pointers
    * to all the resources referenced in the current resource, now we
    * must copy their addresses from the static record to the allocated
-   * record.
-   */
+   * record. */
   if (pass == 2) {
     bool ret = UpdateResourcePointer(type, items);
     return ret;

@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -194,12 +194,10 @@ bool RestoreCmd(UaContext* ua, const char*)
     goto bail_out;
   }
 
-  /*
-   * Request user to select JobIds or files by various different methods
+  /* Request user to select JobIds or files by various different methods
    *  last 20 jobs, where File saved, most recent backup, ...
    *  In the end, a list of files are pumped into
-   *  AddFindex()
-   */
+   *  AddFindex() */
   switch (UserSelectJobidsOrFiles(ua, &rx)) {
     case 0: /* error */
       goto bail_out;
@@ -221,11 +219,9 @@ bool RestoreCmd(UaContext* ua, const char*)
   }
   if (!job) { goto bail_out; }
 
-  /*
-   * When doing NDMP_NATIVE restores, we don't create any bootstrap file
+  /* When doing NDMP_NATIVE restores, we don't create any bootstrap file
    * as we only send a namelist for restore. The storage handling is
-   * done by the NDMP state machine via robot and tape interface.
-   */
+   * done by the NDMP state machine via robot and tape interface. */
   if (job->Protocol == PT_NDMP_NATIVE) {
     ua->InfoMsg(
         _("Skipping BootStrapRecord creation as we are doing NDMP_NATIVE "
@@ -535,11 +531,9 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         done = true;
         break;
       case 1: /* current */
-        /*
-         * Note, we add one second here just to include any job
+        /* Note, we add one second here just to include any job
          *  that may have finished within the current second,
-         *  which happens a lot in scripting small jobs.
-         */
+         *  which happens a lot in scripting small jobs. */
         bstrutime(date, sizeof(date), now);
         have_date = true;
         break;
@@ -776,10 +770,8 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
   POOLMEM* JobIds = GetPoolMemory(PM_FNAME);
   *JobIds = 0;
   rx->TotalFiles = 0;
-  /*
-   * Find total number of files to be restored, and filter the JobId
-   *  list to contain only ones permitted by the ACL conditions.
-   */
+  /* Find total number of files to be restored, and filter the JobId
+   *  list to contain only ones permitted by the ACL conditions. */
   JobDbRecord jr;
   for (p = rx->JobIds;;) {
     char ed1[50];
@@ -1141,10 +1133,8 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
   tree.all = rx->all;
   last_JobId = 0;
 
-  /*
-   * For display purposes, the same JobId, with different volumes may
-   * appear more than once, however, we only insert it once.
-   */
+  /* For display purposes, the same JobId, with different volumes may
+   * appear more than once, however, we only insert it once. */
   p = rx->JobIds;
   tree.FileEstimate = 0;
 
@@ -1178,11 +1168,9 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
     PmStrcat(rx->JobIds, rx->BaseJobIds);
   }
 
-  /*
-   * Look at the first JobId on the list (presumably the oldest) and
+  /* Look at the first JobId on the list (presumably the oldest) and
    *  if it is marked purged, don't do the manual selection because
-   *  the Job was pruned, so the tree is incomplete.
-   */
+   *  the Job was pruned, so the tree is incomplete. */
   if (tree.FileCount != 0) {
     // Find out if any Job is purged
     Mmsg(rx->query, "SELECT SUM(PurgedFiles) FROM Job WHERE JobId IN (%s)",
@@ -1221,10 +1209,8 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
       OK = UserSelectFilesFromTree(&tree);
     }
 
-    /*
-     * Walk down through the tree finding all files marked to be
-     *  extracted making a bootstrap file.
-     */
+    /* Walk down through the tree finding all files marked to be
+     *  extracted making a bootstrap file. */
     if (OK) {
       for (TREE_NODE* node = FirstTreeNode(tree.root); node;
            node = NextTreeNode(node)) {
@@ -1243,11 +1229,9 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
     }
   }
 
-  /*
-   * We keep the tree with selected restore files.
+  /* We keep the tree with selected restore files.
    * For NDMP restores its used in the DMA to know what to restore.
-   * The tree is freed by the DMA when its done.
-   */
+   * The tree is freed by the DMA when its done. */
   ua->jcr->dir_impl->restore_tree_root = tree.root;
 
   return OK;
@@ -1386,10 +1370,8 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
     goto bail_out;
   }
 
-  /*
-   * Note, this is needed because I don't seem to get the callback from the call
-   * just above.
-   */
+  /* Note, this is needed because I don't seem to get the callback from the call
+   * just above. */
   rx->JobTDate = 0;
   ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_sel_all_temp1);
   if (!ua->db->SqlQuery(rx->query, LastFullHandler, (void*)rx)) {
@@ -1488,10 +1470,8 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
       if (ua->pint32_val) {
         PoolMem JobIds(PM_FNAME);
 
-        /*
-         * Change the list of jobs needed to do the restore to the copies of the
-         * Job.
-         */
+        /* Change the list of jobs needed to do the restore to the copies of the
+         * Job. */
         PmStrcpy(JobIds, rx->JobIds);
         rx->last_jobid[0] = rx->JobIds[0] = 0;
         ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_sel_jobid_copies,
