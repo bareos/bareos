@@ -290,11 +290,7 @@ static void WarnOnZeroMaxConcurrentJobs(int max_concurrent_jobs,
   if (max_concurrent_jobs == 0) {
     my_config->AddWarning(fmt::format(
         FMT_STRING("Device {:s}: unlimited (0) 'Maximum Concurrent Jobs' (the "
-                   "default) reduces the restore peformance."),
-        name));
-    my_config->AddWarning(fmt::format(
-        FMT_STRING("Device {:s}: the default value for 'Maximum Concurrent "
-                   "Jobs' will change from 0 (unlimited) to 1 in Bareos 23."),
+                   "default) reduces the restore performance."),
         name));
   }
 }

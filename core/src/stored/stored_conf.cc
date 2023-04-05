@@ -190,7 +190,7 @@ static ResourceItem dev_items[] = {
   {"MaximumBlockSize", CFG_TYPE_MAXBLOCKSIZE, ITEM(res_dev, max_block_size), 0, 0, NULL, NULL, NULL},
   {"MaximumFileSize", CFG_TYPE_SIZE64, ITEM(res_dev, max_file_size), 0, CFG_ITEM_DEFAULT, "1000000000", NULL, NULL},
   {"VolumeCapacity", CFG_TYPE_SIZE64, ITEM(res_dev, volume_capacity), 0, 0, NULL, NULL, NULL},
-  {"MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_dev, max_concurrent_jobs), 0, 0, NULL, NULL, NULL},
+  {"MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_dev, max_concurrent_jobs), 0, CFG_ITEM_DEFAULT, "1" ,NULL, NULL},
   {"SpoolDirectory", CFG_TYPE_DIR, ITEM(res_dev, spool_directory), 0, 0, NULL, NULL, NULL},
   {"MaximumSpoolSize", CFG_TYPE_SIZE64, ITEM(res_dev, max_spool_size), 0, 0, NULL, NULL, NULL},
   {"MaximumJobSpoolSize", CFG_TYPE_SIZE64, ITEM(res_dev, max_job_spool_size), 0, 0, NULL, NULL, NULL},
@@ -796,7 +796,9 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
           p->device_resources = res_changer->device_resources;
 
           DeviceResource* q = nullptr;
-          foreach_alist (q, p->device_resources) { q->changer_res = p; }
+          foreach_alist (q, p->device_resources) {
+            q->changer_res = p;
+          }
 
           int errstat;
           if ((errstat = RwlInit(&p->changer_lock, PRIO_SD_ACH_ACCESS)) != 0) {
