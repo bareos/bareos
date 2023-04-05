@@ -129,20 +129,72 @@ struct compress_input {
   channel::in<std::pair<std::shared_ptr<const buffer>, buffer>> in;
   JobControlRecord* jcr;
   std::size_t max_compress_len;
-  uint32_t compression;
+  uint32_t algorithm;
+  int      level;
 };
-static void Compress(channel::out<std::shared_ptr<const buffer>> out,
-		     channel::in<std::pair<std::shared_ptr<const buffer>, buffer>> in,
+
+struct compress_worker_input {
+  compress_input args;
+  std::mutex input{};
+  std::mutex output{};
+  std::condition_variable cv{};
+  std::uint64_t num_in{0};
+  std::uint64_t num_out{0};
+
+  compress_worker_input(compress_input args) : args{std::move(args)}
+  {}
+};
+
+static void Compress(CompressionContext& ctx,
+		     channel::out<std::shared_ptr<const buffer>>& out,
+		     std::mutex& input,
+		     channel::in<std::pair<std::shared_ptr<const buffer>, buffer>>& in,
+		     std::mutex& output,
+		     std::condition_variable& cv,
+		     std::uint64_t& nin,
+		     std::uint64_t& nout,
 		     JobControlRecord* jcr,
 		     std::size_t max_compress_len,
 		     uint32_t compression);
-void WaitForCompress(channel::out<compress_input> to_read) {
+void WaitForCompress(channel::out<compress_input> to_read,
+		     std::vector<channel::in<std::shared_ptr<compress_worker_input>>> pool) {
+  (void) pool;
   for (std::optional chan = to_read.get(); chan; chan = to_read.get()) {
-    Compress(std::move(chan->out),
-	     std::move(chan->in),
-	     chan->jcr,
-	     chan->max_compress_len,
-	     chan->compression);
+    auto args = std::make_shared<compress_worker_input>(std::move(chan.value()));
+    for (auto& worker : pool) {
+      worker.put(args);
+    }
+  }
+}
+static void CompressionWorker(channel::out<std::shared_ptr<compress_worker_input>> to_read,
+			      std::unique_ptr<CompressionContext> ctx) {
+  for (std::optional chan = to_read.get(); chan; chan = to_read.get()) {
+    compress_input* args = &chan.value()->args;
+    std::mutex& input = chan.value()->input;
+    std::mutex& output = chan.value()->output;
+    if (SetCompressionLevel(args->jcr,
+			    args->algorithm,
+			    args->level,
+			    *ctx) == LevelChangeResult::ERROR) {
+      chan.reset();
+      continue;
+    }
+    Compress(*ctx,
+	     args->out,
+	     input,
+	     args->in,
+	     output,
+	     chan.value()->cv,
+	     chan.value()->num_in,
+	     chan.value()->num_out,
+	     args->jcr,
+	     args->max_compress_len,
+	     args->algorithm);
+    // we need to explicitly drop the references to the channels
+    // here since otherwise that will only happen once we receive the next
+    // input packet; this leads to a deadlock since we only get a next packet
+    // once this finishes!
+    chan.reset();
   }
 }
 
@@ -150,24 +202,41 @@ struct useful_data {
   std::thread reader;
   std::thread digester;
   std::thread compressor;
+  std::vector<std::thread> compress_workers;
 
   channel::in<read_input> to_read;
   channel::in<digest_input> to_digest;
   channel::in<compress_input> to_compress;
 
 
-  useful_data() {
+  useful_data(JobControlRecord* jcr,
+	      std::size_t num_compress_workers) : compress_workers{} {
+    if (num_compress_workers == 0) {
+      // todo: warning message to jcr
+      num_compress_workers = 1;
+    }
+
+    std::vector<channel::in<std::shared_ptr<compress_worker_input>>> compress_inputs{};
+    for (std::size_t i = 0; i < num_compress_workers; ++i) {
+      auto ctx = std::make_unique<CompressionContext>();
+      auto [in, out] = channel::CreateBufferedChannel<std::shared_ptr<compress_worker_input>>(1);
+      compress_inputs.emplace_back(std::move(in));
+      AdjustCompressionBuffers(jcr, *ctx);
+      compress_workers.emplace_back(CompressionWorker, std::move(out), std::move(ctx));
+    }
+
     auto [rin, rout] = channel::CreateBufferedChannel<read_input>(1);
     auto [din, dout] = channel::CreateBufferedChannel<digest_input>(1);
     auto [cin, cout] = channel::CreateBufferedChannel<compress_input>(1);
 
     reader = std::thread{WaitForRead, std::move(rout)};
     digester = std::thread{WaitForDigest, std::move(dout)};
-    compressor = std::thread{WaitForCompress, std::move(cout)};
+    compressor = std::thread{WaitForCompress, std::move(cout), std::move(compress_inputs)};
 
     to_read = std::move(rin);
     to_digest = std::move(din);
     to_compress = std::move(cin);
+
   }
 
   ~useful_data() {
@@ -179,6 +248,9 @@ struct useful_data {
     reader.join();
     digester.join();
     compressor.join();
+    for (auto& worker : compress_workers) {
+      worker.join();
+    }
   }
 };
 
@@ -301,7 +373,7 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
     jcr->fd_impl->xattr_data->u.build->content = GetPoolMemory(PM_MESSAGE);
   }
 #if 1 && !defined(SEND_SERIAL)
-  useful_data data;
+  useful_data data(jcr, 8);
 
   jcr->fd_impl->internal = &data;
   // jcr->fd_impl->ff is only used by the sending thread
@@ -1276,26 +1348,67 @@ static void DigestData(channel::out<std::shared_ptr<const buffer>> out,
   }
 }
 
-static void Compress(channel::out<std::shared_ptr<const buffer>> out,
-		     channel::in<std::pair<std::shared_ptr<const buffer>, buffer>> in,
+static void Compress(CompressionContext& ctx,
+		     channel::out<std::shared_ptr<const buffer>>& out,
+		     std::mutex& input,
+		     channel::in<std::pair<std::shared_ptr<const buffer>, buffer>>& in,
+		     std::mutex& output,
+		     std::condition_variable& cv,
+		     std::uint64_t& num_in,
+		     std::uint64_t& num_out,
 		     JobControlRecord* jcr,
 		     std::size_t max_compress_len,
 		     uint32_t compression)
 {
-  for (std::optional buf = out.get(); buf; buf = out.get()) {
+  std::optional<std::shared_ptr<const buffer>> buf = std::nullopt;
+  (void) input;
+  (void) output;
+  (void) num_out;
+  for(;;) {
+    std::uint64_t block_num = 0;
+    (void) block_num;
+    {
+      std::unique_lock _(input);
+      buf = out.get();
+      block_num = num_in++;
+    }
+
+    if (!buf) {
+      break;
+    }
+
     buffer compressed(max_compress_len);
     uint32_t size = 0;
-    if (CompressData(jcr, jcr->compress, compression, buf.value()->data,
+    if (!CompressData(jcr, ctx, compression, buf.value()->data,
 		     buf.value()->size, (unsigned char*) compressed.data,
 		     max_compress_len,
 		     &size)) {
-      compressed.size = size;
-      in.put(std::pair(*buf, std::move(compressed)));
-    } else {
       break;
     }
+
+    compressed.size = size;
+    {
+      std::unique_lock lock(output);
+      cv.wait(lock, [&num_out, block_num]() { return block_num == num_out; });
+      in.put(std::pair(*buf, std::move(compressed)));
+      num_out++;
+    }
+    cv.notify_all();
   }
 }
+
+// static void Send(channel::out<buffer> out,
+// 		 b_ctx* bctx) {
+//   BareosSocket* sd = bctx->jcr->store_bsock;
+//   for (std::optional buf = out.get(); buf; buf = out.get()) {
+//     memcpy(bctx->rbuf, buf->data, buf->size);
+//     sd->message_length = buf->size;
+//     if (!SendDataToSd(bctx)) {
+//       retval = false;
+//       break;
+//     }
+//   }
+// }
 
 static inline bool SendPlainDataSerially(b_ctx& bctx) {
   bool retval = true;
@@ -1350,7 +1463,8 @@ static inline bool SendCompressedData(b_ctx& bctx)
   auto [cin, cout] = channel::CreateBufferedChannel<std::pair<sbuf, buffer>>(actual_buf_count);
   if (!((useful_data *)bctx.jcr->fd_impl->internal)->to_compress.put({std::move(out), std::move(cin),
 			 bctx.jcr, bctx.max_compress_len,
-			 bctx.ff_pkt->Compress_algo})) {
+			 bctx.ff_pkt->Compress_algo,
+			 bctx.ff_pkt->Compress_level})) {
     return false;
   }
 
