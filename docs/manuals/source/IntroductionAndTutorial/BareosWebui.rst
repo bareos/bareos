@@ -527,6 +527,13 @@ Some parameters of the |webui| can be configured in :file:`/etc/bareos-webui/con
    ; Default:
    ;name=sunflower
 
+   ;------------------------------------------------------------------------------
+   ; EXPERIMENTAL FEATURES
+   ;------------------------------------------------------------------------------
+   ;[experimental]
+   ; Configuration resource graph
+   ; Default:
+   ;configuration_resource_graph=false
 
 .. _section-updating-bvfs-cache-frequently:
 

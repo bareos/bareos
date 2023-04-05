@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2022 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -31,7 +31,14 @@ $this->headTitle($title);
 <?php if($this->acl_alert) : echo $this->ACLAlert($this->invalid_commands); elseif(!$this->acl_alert) : ?>
 
 <ul class="nav nav-tabs">
-   <li class="active"><a href="<?php echo $this->url('analytics', array('action'=>'index')); ?>"><?php echo $this->translate('Stored Data'); ?></a></li>
+  <li class="active"><a href="<?php echo $this->url('analytics', array('action'=>'index')); ?>"><?php echo $this->translate('Stored Data'); ?></a></li>
+  <?php
+    if ($_SESSION['bareos']['configuration_resource_graph']) {
+        $url = $this->url('analytics', array('action'=>'configuration'));
+        $text = $this->translate('Configuration');
+        echo '<li><a href="'.$url.'">'.$text.'</a></li>';
+    }
+  ?>
 </ul>
 
 <br />

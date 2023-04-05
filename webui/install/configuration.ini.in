@@ -8,7 +8,7 @@
 ; SESSION SETTINGS
 ;------------------------------------------------------------------------------
 ;
-;[session]
+[session]
 ; Session timeout in seconds
 ; Default:
 ;timeout=3600
@@ -16,7 +16,7 @@
 ;------------------------------------------------------------------------------
 ; DASHBOARD SETTINGS
 ;------------------------------------------------------------------------------
-;[dashboard]
+[dashboard]
 ; Autorefresh Interval in milliseconds
 ; Default:
 ;autorefresh_interval=60000
@@ -24,7 +24,7 @@
 ;------------------------------------------------------------------------------
 ; TABLE SETTINGS
 ;------------------------------------------------------------------------------
-;[tables]
+[tables]
 ; Possible values for pagination
 ; Default:
 ;pagination_values=10,25,50,100
@@ -41,12 +41,12 @@
 ;------------------------------------------------------------------------------
 ; VARIOUS SETTINGS
 ;------------------------------------------------------------------------------
-;[autochanger]
+[autochanger]
 ; Name of the pool used to label and assign new media, e.g. Scratch.
 ; Default:
 ;labelpooltype=
 
-;[restore]
+[restore]
 ; Restore filetree refresh timeout in milliseconds
 ; Default:
 ;filetree_refresh_timeout=120000
@@ -54,8 +54,15 @@
 ;------------------------------------------------------------------------------
 ; THEME SETTINGS
 ;------------------------------------------------------------------------------
-;[theme]
+[theme]
 ; Possible values: default, sunflower
 ; Default:
 ;name=sunflower
 
+;------------------------------------------------------------------------------
+; EXPERIMENTAL FEATURES
+;------------------------------------------------------------------------------
+[experimental]
+; Configuration resource graph
+; Default:
+;configuration_resource_graph=false
