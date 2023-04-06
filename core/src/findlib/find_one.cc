@@ -479,8 +479,7 @@ static inline int process_regular_file(JobControlRecord* jcr,
 
   /* Don't bother opening empty, world readable files. Also do not open
    * files when archive is meant for /dev/null. */
-  if (ff_pkt->null_output_device
-      || (sizeleft == 0 && MODE_RALL == (MODE_RALL & ff_pkt->statp.st_mode))) {
+  if (sizeleft == 0 && MODE_RALL == (MODE_RALL & ff_pkt->statp.st_mode)) {
     ff_pkt->type = FT_REGE;
   } else {
     ff_pkt->type = FT_REG;
