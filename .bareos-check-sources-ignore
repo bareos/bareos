@@ -6,9 +6,16 @@ core/src/ndmp/*.h
 core/src/stored/crc32
 debian/control
 devtools/pip-tools/check_sources.egg-info/*
-webui/vendor
+webui/vendor/composer/*
+webui/vendor/container-interop/*
+webui/vendor/psr/*
+webui/vendor/zendframework/*
+webui/vendor/autoload.php
+webui/vendor/README.md
 webui/module/Application/language
+webui/public/fonts/*
 webui/public/js/*.min.*
+webui/public/js/jstree*
 webui/public/js/apexcharts.js
 webui/public/js/partials/*.min.*
 webui/public/js/bootstrap-select.js.map
