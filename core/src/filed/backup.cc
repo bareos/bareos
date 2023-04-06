@@ -56,46 +56,23 @@
 
 namespace filedaemon {
 
-struct buffer {
-  std::size_t size;
-  char*       data;
+struct shared_buffer {
+  std::size_t size{0};
+  std::shared_ptr<char> data{nullptr};
 
-  buffer() : size(0)
-	   , data(nullptr)
+  shared_buffer() = default;
+
+  shared_buffer(std::size_t size) : size{size}
+			   , data{new char[size], std::default_delete<char[]>{}}
   {}
 
-  buffer(std::size_t size) : size(size)
-			   , data(nullptr)
-  {
-    data = (char*)malloc(size);
-  }
-  buffer(std::size_t size,
-	 char*& data_) : size(size)
-		       , data(data_)
-  {
-    data_ = nullptr;
-  }
-
-  buffer(buffer&& buf) : size(0)
-		       , data(nullptr)
-  {
-    std::swap(size, buf.size);
-    std::swap(data, buf.data);
-  }
-
-  buffer& operator=(const buffer&) = delete;
-  buffer& operator=(buffer&& buf) {
-    std::swap(size, buf.size);
-    std::swap(data, buf.data);
-    return *this;
-  }
-
-  ~buffer() {
-    if (data) {
-      free(data);
-    }
-  }
+  shared_buffer(std::shared_ptr<char>& lifetime,
+		std::size_t size,
+		char* data_) : size{size}
+			     , data{lifetime, data_}
+  {}
 };
+
 struct gate {
   std::mutex mutex{};
   std::condition_variable cv{};
@@ -115,13 +92,13 @@ struct gate {
   }
 };
 struct send_input {
-  channel::out<std::shared_ptr<const buffer>> block;
-  std::optional<channel::out<buffer>> compressed;
+  channel::out<shared_buffer> block;
+  std::optional<channel::out<shared_buffer>> compressed;
   b_ctx* bctx;
   gate* g;
 };
-static void SendData(channel::out<std::shared_ptr<const buffer>> block,
-		     std::optional<channel::out<buffer>> compressed,
+static void SendData(channel::out<shared_buffer> block,
+		     std::optional<channel::out<shared_buffer>> compressed,
 		     b_ctx* bctx,
 		     gate* g);
 void WaitForSend(channel::out<send_input> to_send) {
@@ -132,12 +109,12 @@ void WaitForSend(channel::out<send_input> to_send) {
 }
 
 struct digest_input {
-  channel::out<std::shared_ptr<const buffer>> data;
+  channel::out<shared_buffer> data;
   DIGEST* digest;
   DIGEST* signing_digest;
   gate* g;
 };
-static void DigestData(channel::out<std::shared_ptr<const buffer>> out,
+static void DigestData(channel::out<shared_buffer> out,
 		       DIGEST* digest, DIGEST* signing_digest,
 		       gate* g);
 void WaitForDigest(channel::out<digest_input> to_read) {
@@ -148,8 +125,8 @@ void WaitForDigest(channel::out<digest_input> to_read) {
 }
 
 struct compress_input {
-  channel::out<std::shared_ptr<const buffer>> out;
-  channel::in<buffer> in;
+  channel::out<shared_buffer> out;
+  channel::in<shared_buffer> in;
   JobControlRecord* jcr;
   std::size_t max_compress_len;
   uint32_t algorithm;
@@ -169,9 +146,9 @@ struct compress_worker_input {
 };
 
 static void Compress(CompressionContext& ctx,
-		     channel::out<std::shared_ptr<const buffer>>& out,
+		     channel::out<shared_buffer>& out,
 		     std::mutex& input,
-		     channel::in<buffer>& in,
+		     channel::in<shared_buffer>& in,
 		     std::mutex& output,
 		     std::condition_variable& cv,
 		     std::uint64_t& nin,
@@ -1159,7 +1136,7 @@ bail_out:
  * Handle the data just read and send it to the SD after doing any
  * postprocessing needed.
  */
-static inline bool SendDataToSd(b_ctx* bctx, std::optional<buffer> precompressed = std::nullopt)
+static inline bool SendDataToSd(b_ctx* bctx, std::optional<shared_buffer> precompressed = std::nullopt)
 {
   BareosSocket* sd = bctx->jcr->store_bsock;
   bool need_more_data;
@@ -1213,7 +1190,7 @@ static inline bool SendDataToSd(b_ctx* bctx, std::optional<buffer> precompressed
   // Compress the data.
   if (BitIsSet(FO_COMPRESS, bctx->ff_pkt->flags)) {
     if (precompressed) {
-      memcpy(bctx->cbuf, precompressed->data, precompressed->size);
+      memcpy(bctx->cbuf, precompressed->data.get(), precompressed->size);
       bctx->compress_len = precompressed->size;
     } else if (!CompressData(bctx->jcr, bctx->jcr->compress,
 			     bctx->ff_pkt->Compress_algo, bctx->rbuf,
@@ -1336,27 +1313,35 @@ bail_out:
 
 // read data from bfd into buflen sized chunks.  Submit a shared pointer
 // of each of them to each channel.
-static void ReadData(std::vector<channel::in<std::shared_ptr<const buffer>>> channels,
+static void ReadData(std::vector<channel::in<shared_buffer>> channels,
 		     BareosFilePacket* bfd,
 		     std::size_t buflen)
 {
-  ssize_t num_read = 0;
-  do {
-    char* buf = (char*) malloc(buflen);
-    if (!buf) { break; }
-    num_read = bread(bfd, buf, buflen);
-    if (num_read > 0) {
-      auto shared = std::make_shared<const buffer>((std::size_t) num_read, buf);
+  ssize_t readsize = 512 * 1024;
+  ASSERT(readsize % buflen == 0);
+  for (;;) {
+    auto mem = std::shared_ptr<char>(new char[readsize], std::default_delete<char[]>{});
+    if (!mem) { break; }
+    ssize_t num_read = bread(bfd, mem.get(), readsize);
+    bool last_run = num_read < readsize;
+
+    char* head = mem.get();
+    while (num_read > 0) {
+      std::size_t size = std::min(static_cast<std::size_t>(num_read), buflen);
+      auto buffer = shared_buffer(mem, size, head);
       for (auto& chan : channels) {
-	if (!chan.put(shared)) {
+	if (!chan.put(buffer)) {
 	  return;
 	}
       }
+      head += size;
+      num_read -= size;
     }
-  } while (num_read > 0);
+    if (last_run) break;
+  }
 }
 
-static void DigestData(channel::out<std::shared_ptr<const buffer>> out,
+static void DigestData(channel::out<shared_buffer> out,
 		       DIGEST* digest, DIGEST* signing_digest,
 		       gate* g)
 {
@@ -1373,20 +1358,20 @@ static void DigestData(channel::out<std::shared_ptr<const buffer>> out,
   for (std::optional buf = out.get(); buf; buf = out.get()) {
     // Update checksum if requested
     if (digest) {
-      CryptoDigestUpdate(digest, (uint8_t*) buf.value()->data, buf.value()->size);
+      CryptoDigestUpdate(digest, (uint8_t*) buf->data.get(), buf->size);
     }
 
     // Update signing digest if requested
     if (signing_digest) {
-      CryptoDigestUpdate(signing_digest, (uint8_t*)buf.value()->data, buf.value()->size);
+      CryptoDigestUpdate(signing_digest, (uint8_t*)buf->data.get(), buf->size);
     }
   }
 }
 
 static void Compress(CompressionContext& ctx,
-		     channel::out<std::shared_ptr<const buffer>>& out,
+		     channel::out<shared_buffer>& out,
 		     std::mutex& input,
-		     channel::in<buffer>& in,
+		     channel::in<shared_buffer>& in,
 		     std::mutex& output,
 		     std::condition_variable& cv,
 		     std::uint64_t& num_in,
@@ -1395,7 +1380,7 @@ static void Compress(CompressionContext& ctx,
 		     std::size_t max_compress_len,
 		     uint32_t compression)
 {
-  std::optional<std::shared_ptr<const buffer>> buf = std::nullopt;
+  std::optional<shared_buffer> buf = std::nullopt;
   for(;;) {
     std::uint64_t block_num = 0;
     (void) block_num;
@@ -1409,10 +1394,10 @@ static void Compress(CompressionContext& ctx,
       break;
     }
 
-    buffer compressed(max_compress_len);
+    shared_buffer compressed(max_compress_len);
     uint32_t size = 0;
-    if (!CompressData(jcr, ctx, compression, buf.value()->data,
-		     buf.value()->size, (unsigned char*) compressed.data,
+    if (!CompressData(jcr, ctx, compression, buf->data.get(),
+		      buf->size, (unsigned char*) compressed.data.get(),
 		     max_compress_len,
 		     &size)) {
       break;
@@ -1434,8 +1419,8 @@ static void Compress(CompressionContext& ctx,
   }
 }
 
-static void SendData(channel::out<std::shared_ptr<const buffer>> block,
-		     std::optional<channel::out<buffer>> compressed,
+static void SendData(channel::out<shared_buffer> block,
+		     std::optional<channel::out<shared_buffer>> compressed,
 		     b_ctx* bctx, gate* g) {
   struct passer{
     gate* g;
@@ -1449,9 +1434,9 @@ static void SendData(channel::out<std::shared_ptr<const buffer>> block,
 
   BareosSocket* sd = bctx->jcr->store_bsock;
   for (std::optional buf = block.get(); buf; buf = block.get()) {
-    memcpy(bctx->rbuf, buf.value()->data, buf.value()->size);
-    sd->message_length = buf.value()->size;
-    std::optional<buffer> comp = std::nullopt;
+    memcpy(bctx->rbuf, buf->data.get(), buf->size);
+    sd->message_length = buf->size;
+    std::optional<shared_buffer> comp = std::nullopt;
     if (compressed) {
       if (comp = compressed->get(); !comp) {
 	// todo set jcr to cancelled
@@ -1485,10 +1470,10 @@ static inline bool SendPlainData(b_ctx& bctx)
 
   bool retval = true;
 
-  using sbuf = std::shared_ptr<const buffer>;
+  using sbuf = shared_buffer;
 
   std::vector<channel::in<sbuf>> sinks;
-  std::optional<channel::out<buffer>> compression_out = std::nullopt;
+  std::optional<channel::out<shared_buffer>> compression_out = std::nullopt;
 
   // setup compressing
   if (BitIsSet(FO_COMPRESS, bctx.ff_pkt->flags)) {
@@ -1496,7 +1481,7 @@ static inline bool SendPlainData(b_ctx& bctx)
     auto [cr_in, cr_out] = channel::CreateBufferedChannel<sbuf>(actual_buf_count);
     sinks.emplace_back(std::move(cr_in));
     // connection between the compressing thread and the sending thread
-    auto [sc_in, sc_out] = channel::CreateBufferedChannel<buffer>(1);
+    auto [sc_in, sc_out] = channel::CreateBufferedChannel<shared_buffer>(1);
     if (!((useful_data *)bctx.jcr->fd_impl->internal)->to_compress.put({
 	  std::move(cr_out), std::move(sc_in),
 	  bctx.jcr, bctx.max_compress_len,
