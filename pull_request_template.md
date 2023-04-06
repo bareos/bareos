@@ -19,12 +19,11 @@ If you have any questions or problems, please give a comment in the PR.
 ### Checklist for the _reviewer_ of the PR (will be processed by the Bareos team)
 
 ##### General
-- [ ] PR name is meaningful
+- [ ] Is the PR title usable as CHANGELOG entry?
 - [ ] Purpose of the PR is understood
 - [ ] Commit descriptions are understandable and well formatted
 - [ ] Check backport line
-- [ ] Is the PR title usable as CHANGELOG entry?
-- [ ] Separate commit for CHANGELOG.md ("update CHANGELOG.md"). The PR number is correct.
+- [ ] Required backport PRs have been created
 
 ##### Source code quality
 
