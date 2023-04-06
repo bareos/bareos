@@ -5,6 +5,19 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Breaking changes
+- The following deprecated configuration options have been removed, make sure to update your configuration accordingly:
+   * Director daemon
+     * Pid Directory
+     
+   * File daemon
+     * Pid Directory
+     * Compatible
+     
+   * Storage daemon
+     * Pid Directory
+     * Compatible
+
 ### Changed
 - VMware Plugin: introduce pyVmomi 8.x compatibility [PR #1352]
 - devtools: add `pr-tool` to automate PR review and merge [PR #935]
