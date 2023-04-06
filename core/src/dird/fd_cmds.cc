@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -218,25 +218,40 @@ static void SendInfoSuccess(JobControlRecord* jcr, UaContext* ua)
   }
 }
 
-bool ConnectToFileDaemon(JobControlRecord* jcr,
-                         int retry_interval,
-                         int max_retry_time,
-                         bool verbose,
-                         UaContext* ua)
+void UpdateFailedConnectionHandshakeMode(JobControlRecord* jcr)
 {
-  if (!IsConnectingToClientAllowed(jcr) && !IsConnectFromClientAllowed(jcr)) {
-    Emsg1(M_WARNING, 0, _("Connecting to %s is not allowed.\n"),
-          jcr->dir_impl->res.client->resource_name_);
-    return false;
+  switch (jcr->dir_impl->connection_handshake_try_) {
+    case ClientConnectionHandshakeMode::kTlsFirst:
+      if (jcr->file_bsock) {
+        jcr->file_bsock->close();
+        delete jcr->file_bsock;
+        jcr->file_bsock = nullptr;
+      }
+      jcr->setJobStatus(JS_Running);
+      if (!IsClientTlsRequired(jcr)) {
+        jcr->dir_impl->connection_handshake_try_
+            = ClientConnectionHandshakeMode::kCleartextFirst;
+      } else {
+        jcr->dir_impl->connection_handshake_try_
+            = ClientConnectionHandshakeMode::kFailed;
+      }
+      break;
+    case ClientConnectionHandshakeMode::kCleartextFirst:
+      jcr->dir_impl->connection_handshake_try_
+          = ClientConnectionHandshakeMode::kFailed;
+      break;
+    case ClientConnectionHandshakeMode::kFailed:
+    default: /* should be one of class ClientConnectionHandshakeMode */
+      ASSERT(false);
+      break;
   }
-  bool success = false;
-  bool tcp_connect_failed = false;
-  int connect_tries
-      = 3; /* as a finish-hook for the UseWaitingClient mechanism */
+}
 
-  /* try the connection modes starting with tls directly,
-   * in case there is a client that cannot do Tls immediately then
-   * fall back to cleartext md5-handshake */
+/* try the connection modes starting with tls directly,
+ * in case there is a client that cannot do Tls immediately then
+ * fall back to cleartext md5-handshake */
+void SetConnectionHandshakeMode(JobControlRecord* jcr, UaContext* ua)
+{
   OutputMessageForConnectionTry(jcr, ua);
   if (jcr->dir_impl->res.client->connection_successful_handshake_
           == ClientConnectionHandshakeMode::kUndefined
@@ -256,6 +271,25 @@ bool ConnectToFileDaemon(JobControlRecord* jcr,
         = jcr->dir_impl->res.client->connection_successful_handshake_;
     jcr->is_passive_client_connection_probing = false;
   }
+}
+
+bool ConnectToFileDaemon(JobControlRecord* jcr,
+                         int retry_interval,
+                         int max_retry_time,
+                         bool verbose,
+                         UaContext* ua)
+{
+  if (!IsConnectingToClientAllowed(jcr) && !IsConnectFromClientAllowed(jcr)) {
+    Emsg1(M_WARNING, 0, _("Connecting to %s is not allowed.\n"),
+          jcr->dir_impl->res.client->resource_name_);
+    return false;
+  }
+  bool success = false;
+  bool tcp_connect_failed = false;
+  int connect_tries
+      = 3; /* as a finish-hook for the UseWaitingClient mechanism */
+
+  SetConnectionHandshakeMode(jcr, ua);
 
   do { /* while (tcp_connect_failed ...) */
     /* connect the tcp socket */
@@ -286,26 +320,7 @@ bool ConnectToFileDaemon(JobControlRecord* jcr,
          * - tls mismatch or
          * - if an old client cannot do tls- before md5-handshake
          * */
-        switch (jcr->dir_impl->connection_handshake_try_) {
-          case ClientConnectionHandshakeMode::kTlsFirst:
-            if (jcr->file_bsock) {
-              jcr->file_bsock->close();
-              delete jcr->file_bsock;
-              jcr->file_bsock = nullptr;
-            }
-            jcr->setJobStatus(JS_Running);
-            jcr->dir_impl->connection_handshake_try_
-                = ClientConnectionHandshakeMode::kCleartextFirst;
-            break;
-          case ClientConnectionHandshakeMode::kCleartextFirst:
-            jcr->dir_impl->connection_handshake_try_
-                = ClientConnectionHandshakeMode::kFailed;
-            break;
-          case ClientConnectionHandshakeMode::kFailed:
-          default: /* should bei one of class ClientConnectionHandshakeMode */
-            ASSERT(false);
-            break;
-        }
+        UpdateFailedConnectionHandshakeMode(jcr);
       }
     } else {
       Jmsg(jcr, M_FATAL, 0, "\nFailed to connect to client \"%s\".\n",
@@ -585,11 +600,9 @@ static bool SendFileset(JobControlRecord* jcr)
           int l = 0;
 
           for (int k = 0; fo->opts[k] != '\0'; k++) {
-            /*
-             * Z compress option is followed by the single-digit compress level
+            /* Z compress option is followed by the single-digit compress level
              * or 'o' For fastlz its Zf with a single char selecting the actual
-             * compression algo.
-             */
+             * compression algo. */
             if (fo->opts[k] == 'Z' && fo->opts[k + 1] == 'f') {
               done = true;
               k += 2; /* skip option */
@@ -1036,10 +1049,8 @@ bool SendRestoreObjects(JobControlRecord* jcr, JobId_t JobId, bool send_global)
     SendJobSpecificRestoreObjects(jcr, JobId, &octx);
   }
 
-  /*
-   * Send to FD only if we have at least one restore object.
-   * This permits backward compatibility with older FDs.
-   */
+  /* Send to FD only if we have at least one restore object.
+   * This permits backward compatibility with older FDs. */
   if (octx.count > 0) {
     fd = jcr->file_bsock;
     fd->fsend(restoreobjectendcmd);
@@ -1139,12 +1150,10 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
     } else if (CryptoDigestStreamType(stream) != CRYPTO_DIGEST_NONE) {
       size_t length;
 
-      /*
-       * First, get STREAM_UNIX_ATTRIBUTES and fill AttributesDbRecord structure
+      /* First, get STREAM_UNIX_ATTRIBUTES and fill AttributesDbRecord structure
        * Next, we CAN have a CRYPTO_DIGEST, so we fill AttributesDbRecord with
        * it (or not) When we get a new STREAM_UNIX_ATTRIBUTES, we known that we
-       * can add file to the catalog At the end, we have to add the last file
-       */
+       * can add file to the catalog At the end, we have to add the last file */
       if (jcr->dir_impl->FileIndex != (uint32_t)file_index) {
         Jmsg3(jcr, M_ERROR, 0, _("%s index %d not same as attributes %d\n"),
               stream_to_ascii(stream), file_index, jcr->dir_impl->FileIndex);
@@ -1351,10 +1360,8 @@ void* HandleFiledConnection(ConnectionPool* connections,
 
   RunOnIncomingConnectInterval(client_name).Run();
 
-  /*
-   * The connection is now kept in the connection_pool.
-   * This thread is no longer required and will end now.
-   */
+  /* The connection is now kept in the connection_pool.
+   * This thread is no longer required and will end now. */
   socket_guard.Release();
   return NULL;
 }

@@ -13,6 +13,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - ua_restore: enable restore from archive [PR #1420]
 - dird: keep copy and migration control/administrative jobs [PR #1436]
 - scripts: config-lib improve get_local_hostname fallback [PR #1438]
+-  dird: allow to disable TLS-PSK downgrades [PR #1428]
 
 ## [22.0.3] - 2023-03-24
 
@@ -494,6 +495,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1416]: https://github.com/bareos/bareos/pull/1416
 [PR #1420]: https://github.com/bareos/bareos/pull/1420
 [PR #1427]: https://github.com/bareos/bareos/pull/1427
+[PR #1428]: https://github.com/bareos/bareos/pull/1428
 [PR #1430]: https://github.com/bareos/bareos/pull/1430
 [PR #1436]: https://github.com/bareos/bareos/pull/1436
 [PR #1438]: https://github.com/bareos/bareos/pull/1438

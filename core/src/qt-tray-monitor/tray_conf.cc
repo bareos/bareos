@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -115,7 +115,7 @@ static ResourceItem dir_items[] = {
  *
  * name handler value code flags default_value
  */
-static ResourceItem cli_items[] = {
+static ResourceItem client_items[] = {
   {"Name", CFG_TYPE_NAME, ITEM(res_client,resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
   {"Description", CFG_TYPE_STR, ITEM(res_client,description_), 0, 0, NULL, NULL, NULL},
   {"Address", CFG_TYPE_STR, ITEM(res_client,address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
@@ -170,7 +170,7 @@ static ResourceTable resource_definitions[] = {
       []() { res_monitor = new MonitorResource(); }, reinterpret_cast<BareosResource**>(&res_monitor)},
   {"Director", "Directors", dir_items, R_DIRECTOR, sizeof(DirectorResource),
       []() { res_dir = new DirectorResource(); }, reinterpret_cast<BareosResource**>(&res_dir)},
-  {"Client", "Clients", cli_items, R_CLIENT, sizeof(ClientResource),
+  {"Client", "Clients", client_items, R_CLIENT, sizeof(ClientResource),
       []() { res_client = new ClientResource(); }, reinterpret_cast<BareosResource**>(&res_client)},
   {"Storage", "Storages", store_items, R_STORAGE, sizeof(StorageResource),
       []() { res_store = new StorageResource(); }, reinterpret_cast<BareosResource**>(&res_store)},
@@ -291,12 +291,10 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
     }
   }
 
-  /*
-   * During pass 2 in each "store" routine, we looked up pointers
+  /* During pass 2 in each "store" routine, we looked up pointers
    * to all the resource_definitions referrenced in the current resource, now we
    * must copy their addresses from the static record to the allocated
-   * record.
-   */
+   * record. */
   if (pass == 2) {
     switch (type) {
       case R_MONITOR:

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,6 +29,8 @@ bool ConnectToFileDaemon(JobControlRecord* jcr,
                          int max_retry_time,
                          bool verbose,
                          UaContext* ua = nullptr);
+void UpdateFailedConnectionHandshakeMode(JobControlRecord* jcr);
+void SetConnectionHandshakeMode(JobControlRecord* jcr, UaContext* ua);
 int SendJobInfoToFileDaemon(JobControlRecord* jcr);
 bool SendIncludeList(JobControlRecord* jcr);
 bool SendExcludeList(JobControlRecord* jcr);
@@ -58,6 +60,7 @@ void* HandleFiledConnection(ConnectionPool* connections,
 ConnectionPool* get_client_connections();
 bool IsConnectingToClientAllowed(ClientResource* res);
 bool IsConnectingToClientAllowed(JobControlRecord* jcr);
+bool IsClientTlsRequired(JobControlRecord* jcr);
 bool IsConnectFromClientAllowed(ClientResource* res);
 bool IsConnectFromClientAllowed(JobControlRecord* jcr);
 bool UseWaitingClient(JobControlRecord* jcr_job, int timeout);

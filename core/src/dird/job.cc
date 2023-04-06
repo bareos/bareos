@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -236,22 +236,18 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
 
   if (!jcr->JobReads()) { FreeRstorage(jcr); }
 
-  /*
-   * Now, do pre-run stuff, like setting job level (Inc/diff, ...)
+  /* Now, do pre-run stuff, like setting job level (Inc/diff, ...)
    *  this allows us to setup a proper job start record for restarting
-   *  in case of later errors.
-   */
+   *  in case of later errors. */
   switch (jcr->getJobType()) {
     case JT_BACKUP:
       if (!jcr->is_JobLevel(L_VIRTUAL_FULL)) {
         if (GetOrCreateFilesetRecord(jcr)) {
-          /*
-           * See if we need to upgrade the level. If GetLevelSinceTime returns
+          /* See if we need to upgrade the level. If GetLevelSinceTime returns
            * true it has updated the level of the backup and we run
            * apply_pool_overrides with the force flag so the correct pool (full,
            * diff, incr) is selected. For all others we respect any set ignore
-           * flags.
-           */
+           * flags. */
           if (GetLevelSinceTime(jcr)) {
             ApplyPoolOverrides(jcr, true);
           } else {
@@ -306,10 +302,8 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
           }
           break;
         default:
-          /*
-           * Any non NDMP restore is not interested at the items
-           * that were selected for restore so drop them now.
-           */
+          /* Any non NDMP restore is not interested at the items
+           * that were selected for restore so drop them now. */
           if (jcr->dir_impl->restore_tree_root) {
             FreeTree(jcr->dir_impl->restore_tree_root);
             jcr->dir_impl->restore_tree_root = NULL;
@@ -340,10 +334,8 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
         goto bail_out;
       }
 
-      /*
-       * If there is nothing to do the DoMigrationInit() function will set
-       * the termination status to JS_Terminated.
-       */
+      /* If there is nothing to do the DoMigrationInit() function will set
+       * the termination status to JS_Terminated. */
       if (JobTerminatedSuccessfully(jcr)) {
         MigrationCleanup(jcr, jcr->getJobStatus());
         goto bail_out;
@@ -355,10 +347,8 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
         goto bail_out;
       }
 
-      /*
-       * If there is nothing to do the do_consolidation_init() function will set
-       * the termination status to JS_Terminated.
-       */
+      /* If there is nothing to do the do_consolidation_init() function will set
+       * the termination status to JS_Terminated. */
       if (JobTerminatedSuccessfully(jcr)) {
         ConsolidateCleanup(jcr, jcr->getJobStatus());
         goto bail_out;
@@ -390,6 +380,11 @@ bool IsConnectingToClientAllowed(JobControlRecord* jcr)
 bool IsConnectFromClientAllowed(ClientResource* res)
 {
   return res->conn_from_fd_to_dir;
+}
+
+bool IsClientTlsRequired(JobControlRecord* jcr)
+{
+  return jcr->dir_impl->res.client->GetPolicy() == TlsPolicy::kBnetTlsRequired;
 }
 
 bool IsConnectFromClientAllowed(JobControlRecord* jcr)
@@ -480,15 +475,13 @@ static void* job_thread(void* arg)
   // Run any script BeforeJob on dird
   RunScripts(jcr, jcr->dir_impl->res.job->RunScripts, "BeforeJob");
 
-  /*
-   * We re-update the job start record so that the start time is set after the
+  /* We re-update the job start record so that the start time is set after the
    * run before job. This avoids that any files created by the run before job
    * will be saved twice. They will be backed up in the current job, but not in
    * the next one unless they are changed.
    *
    * Without this, they will be backed up in this job and in the next job run
-   * because in that case, their date is after the start of this run.
-   */
+   * because in that case, their date is after the start of this run. */
   jcr->start_time = time(NULL);
   jcr->dir_impl->jr.StartTime = jcr->start_time;
   if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->dir_impl->jr)) {
@@ -894,30 +887,24 @@ bool AllowDuplicateJob(JobControlRecord* jcr)
   bool cancel_dup = false;
   bool cancel_me = false;
 
-  /*
-   * See if AllowDuplicateJobs is set or
-   * if duplicate checking is disabled for this job.
-   */
+  /* See if AllowDuplicateJobs is set or
+   * if duplicate checking is disabled for this job. */
   if (job->AllowDuplicateJobs || jcr->dir_impl->IgnoreDuplicateJobChecking) {
     return true;
   }
 
   Dmsg0(800, "Enter AllowDuplicateJob\n");
 
-  /*
-   * After this point, we do not want to allow any duplicate
-   * job to run.
-   */
+  /* After this point, we do not want to allow any duplicate
+   * job to run. */
 
   foreach_jcr (djcr) {
     if (jcr == djcr || djcr->JobId == 0) {
       continue; /* do not cancel this job or consoles */
     }
 
-    /*
-     * See if this Job has the IgnoreDuplicateJobChecking flag set, ignore it
-     * for any checking against other jobs.
-     */
+    /* See if this Job has the IgnoreDuplicateJobChecking flag set, ignore it
+     * for any checking against other jobs. */
     if (djcr->dir_impl->IgnoreDuplicateJobChecking) { continue; }
 
     if (bstrcmp(job->resource_name_, djcr->dir_impl->res.job->resource_name_)) {
@@ -957,10 +944,8 @@ bool AllowDuplicateJob(JobControlRecord* jcr)
         }
       }
 
-      /*
-       * Cancel one of the two jobs (me or dup)
-       * If CancelQueuedDuplicates is set do so only if job is queued.
-       */
+      /* Cancel one of the two jobs (me or dup)
+       * If CancelQueuedDuplicates is set do so only if job is queued. */
       if (job->CancelQueuedDuplicates) {
         switch (djcr->getJobStatus()) {
           case JS_Created:
@@ -1046,10 +1031,8 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
   }
   jcr->dir_impl->PrevJob[0] = 0;
 
-  /*
-   * Lookup the last FULL backup job to get the time/date for a
-   * differential or incremental save.
-   */
+  /* Lookup the last FULL backup job to get the time/date for a
+   * differential or incremental save. */
   JobLevel = jcr->getJobLevel();
   switch (JobLevel) {
     case L_DIFFERENTIAL:
@@ -1060,10 +1043,8 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
       now = (utime_t)time(NULL);
       jcr->dir_impl->jr.JobId = 0; /* flag to return since time */
 
-      /*
-       * This is probably redundant, but some of the code below
-       * uses jcr->starttime_string, so don't remove unless you are sure.
-       */
+      /* This is probably redundant, but some of the code below
+       * uses jcr->starttime_string, so don't remove unless you are sure. */
       if (!jcr->db->FindJobStartTime(jcr, &jcr->dir_impl->jr,
                                      jcr->starttime_string,
                                      jcr->dir_impl->PrevJob)) {
@@ -1127,10 +1108,8 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
         jcr->setJobLevel(jcr->dir_impl->jr.JobLevel = L_FULL);
         pool_updated = true;
       } else if (do_vfull) {
-        /*
-         * No recent Full job found, and MaxVirtualFull is set so upgrade this
-         * one to Virtual Full
-         */
+        /* No recent Full job found, and MaxVirtualFull is set so upgrade this
+         * one to Virtual Full */
         Jmsg(jcr, M_INFO, 0, "%s", jcr->db->strerror());
         Jmsg(jcr, M_INFO, 0,
              _("No prior or suitable Full backup found in catalog. Doing "
@@ -1141,10 +1120,8 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
         jcr->setJobLevel(jcr->dir_impl->jr.JobLevel = L_VIRTUAL_FULL);
         pool_updated = true;
 
-        /*
-         * If we get upgraded to a Virtual Full we will be using a read pool so
-         * make sure we have a rpool_source.
-         */
+        /* If we get upgraded to a Virtual Full we will be using a read pool so
+         * make sure we have a rpool_source. */
         if (!jcr->dir_impl->res.rpool_source) {
           jcr->dir_impl->res.rpool_source = GetPoolMemory(PM_MESSAGE);
           PmStrcpy(jcr->dir_impl->res.rpool_source, _("unknown source"));
@@ -1181,10 +1158,8 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
       }
       jcr->dir_impl->jr.JobId = jcr->JobId;
 
-      /*
-       * Lookup the Job record of the previous Job and store it in
-       * jcr->dir_impl_->previous_jr.
-       */
+      /* Lookup the Job record of the previous Job and store it in
+       * jcr->dir_impl_->previous_jr. */
       if (jcr->dir_impl->PrevJob[0]) {
         bstrncpy(jcr->dir_impl->previous_jr.Job, jcr->dir_impl->PrevJob,
                  sizeof(jcr->dir_impl->previous_jr.Job));
@@ -1209,16 +1184,12 @@ void ApplyPoolOverrides(JobControlRecord* jcr, bool force)
   Dmsg0(100, "entering ApplyPoolOverrides()\n");
   bool pool_override = false;
 
-  /*
-   * If a cmdline pool override is given ignore any level pool overrides.
-   * Unless a force is given then we always apply any overrides.
-   */
+  /* If a cmdline pool override is given ignore any level pool overrides.
+   * Unless a force is given then we always apply any overrides. */
   if (!force && jcr->dir_impl->IgnoreLevelPoolOverrides) { return; }
 
-  /*
-   * If only a pool override and no level overrides are given in run entry
-   * choose this pool
-   */
+  /* If only a pool override and no level overrides are given in run entry
+   * choose this pool */
   if (jcr->dir_impl->res.run_pool_override
       && !jcr->dir_impl->res.run_full_pool_override
       && !jcr->dir_impl->res.run_vfull_pool_override
@@ -1484,10 +1455,8 @@ void CreateUniqueJobName(JobControlRecord* jcr, const char* base_name)
   unlock_mutex(mutex); /* allow creation of jobs */
   jcr->start_time = now;
 
-  /*
-   * Form Unique JobName
-   * Use only characters that are permitted in Windows filenames
-   */
+  /* Form Unique JobName
+   * Use only characters that are permitted in Windows filenames */
   bstrftime(dt, sizeof(dt), jcr->start_time, "%Y-%m-%d_%H.%M.%S");
 
   len = strlen(dt) + 5; /* dt + .%02d EOS */

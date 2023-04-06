@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -45,4 +45,53 @@ TEST(DirectorToClientConnection, DoesNotConnectWhenDisabled)
   directordaemon::UaContext* ua = nullptr;
 
   EXPECT_FALSE(ConnectToFileDaemon(jcr, 0, 0, false, ua));
+}
+
+TEST(DirectorToClientConnection, DoesNotDowngradeToClearTextWhenTlsRequired)
+{
+  InitDirGlobals();
+  std::string path_to_config
+      = std::string(RELATIVE_PROJECT_SOURCE_DIR
+                    "/configs/dir_fd_connection/dir_fd_no_tls_downgrade/");
+
+  PConfigParser director_config(DirectorPrepareResources(path_to_config));
+  InitMsg(nullptr, nullptr);
+  JobControlRecord* jcr
+      = directordaemon::NewDirectorJcr(directordaemon::DirdFreeJcr);
+
+  jcr->dir_impl->res.client = static_cast<directordaemon::ClientResource*>(
+      directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT,
+                                                "fd-no-downgrade"));
+
+  directordaemon::SetConnectionHandshakeMode(jcr, nullptr);
+  directordaemon::UpdateFailedConnectionHandshakeMode(jcr);
+  EXPECT_TRUE(jcr->dir_impl->connection_handshake_try_
+              == directordaemon::ClientConnectionHandshakeMode::kFailed);
+  FreeJcr(jcr);
+  TermMsg();
+}
+
+TEST(DirectorToClientConnection, DowngradesToClearTextWhenTlsNotRequired)
+{
+  InitDirGlobals();
+  std::string path_to_config
+      = std::string(RELATIVE_PROJECT_SOURCE_DIR
+                    "/configs/dir_fd_connection/dir_fd_allow_tls_downgrade/");
+
+  PConfigParser director_config(DirectorPrepareResources(path_to_config));
+  InitMsg(nullptr, nullptr);
+  JobControlRecord* jcr
+      = directordaemon::NewDirectorJcr(directordaemon::DirdFreeJcr);
+
+  jcr->dir_impl->res.client = static_cast<directordaemon::ClientResource*>(
+      directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT,
+                                                "fd-allow-downgrade"));
+
+  directordaemon::SetConnectionHandshakeMode(jcr, nullptr);
+  directordaemon::UpdateFailedConnectionHandshakeMode(jcr);
+  EXPECT_TRUE(
+      jcr->dir_impl->connection_handshake_try_
+      == directordaemon::ClientConnectionHandshakeMode::kCleartextFirst);
+  FreeJcr(jcr);
+  TermMsg();
 }
