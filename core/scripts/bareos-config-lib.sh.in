@@ -993,15 +993,15 @@ apply_dbconfig_settings()
 get_local_hostname()
 {
     # put actual short hostname in configuration files
-    # try to get short hostname
-    hname=$(hostname -s)
+    if [ -n "$(command -v uname)" ]; then
+        hname=$(uname -n)
+    fi
+    if [ -z "${hname}" ] && [ -f '/etc/hostname' ]; then
+        hname="$(cut -d '.' -f1 '/etc/hostname')"
+    fi
     if [ -z "${hname}" ]; then
-        # try to get long hostname
-        hname=$(hostname|sed 's/\..*//g')
-        if [ -z "${hname}" ]; then
-            # set to "localhost"
-            hname='localhost'
-        fi
+        # set to "localhost"
+        hname='localhost'
     fi
     echo "${hname}"
 }
