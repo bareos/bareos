@@ -1,18 +1,18 @@
 #
 # spec file for package bareos
 # Copyright (c) 2011-2012 Bruno Friedmann (Ioda-Net) and Philipp Storz (dass IT)
-#               2013-2022 Bareos GmbH & Co KG
+#               2013-2023 Bareos GmbH & Co KG
 #
 
-Name: 		bareos
-Version: 	0.0.0
-Release: 	0
-Group: 		Productivity/Archiving/Backup
-License: 	AGPL-3.0
-BuildRoot: 	%{_tmppath}/%{name}-root
-URL: 		https://www.bareos.org/
-Vendor: 	The Bareos Team
-#Packager: 	{_packager}
+Name:       bareos
+Version:    0.0.0
+Release:    0
+Group:      Productivity/Archiving/Backup
+License:    AGPL-3.0
+BuildRoot:  %{_tmppath}/%{name}-root
+URL:        https://www.bareos.org/
+Vendor:     The Bareos Team
+#Packager:  {_packager}
 
 %define library_dir    %{_libdir}/%{name}
 %define backend_dir    %{_libdir}/%{name}/backends
@@ -195,7 +195,7 @@ BuildRequires: python3-devel >= 3.4
 #   1110: SLE_11
 
 BuildRequires: distribution-release
-BuildRequires: pwdutils
+BuildRequires: shadow
 BuildRequires: update-desktop-files
 BuildRequires: pkgconfig(libxml-2.0)
 BuildRequires: pkgconfig(json-c)
@@ -294,7 +294,7 @@ Requires:   %{name}-common = %{version}
 Requires:   %{name}-database-common = %{version}
 Requires:   %{name}-database-tools
 %if 0%{?suse_version}
-Requires(pre): pwdutils
+Requires(pre): shadow
 # Don't use this option on anything other then SUSE derived distributions
 # as Fedora & others don't know this tag
 Recommends: logrotate
@@ -309,7 +309,7 @@ Group:      Productivity/Archiving/Backup
 Requires:   %{name}-common = %{version}
 Provides:   %{name}-sd
 %if 0%{?suse_version}
-Requires(pre): pwdutils
+Requires(pre): shadow
 Recommends: bareos-tools
 %else
 Requires(pre): shadow-utils
@@ -356,7 +356,7 @@ Group:      Productivity/Archiving/Backup
 Requires:   %{name}-common = %{version}
 Provides:   %{name}-fd
 %if 0%{?suse_version}
-Requires(pre): pwdutils
+Requires(pre): shadow
 %else
 Requires(pre): shadow-utils
 %endif
@@ -364,10 +364,16 @@ Requires(pre): shadow-utils
 %package    common
 Summary:    Common files, required by multiple Bareos packages
 Group:      Productivity/Archiving/Backup
-Requires:   openssl
+Requires(pre): coreutils
+Requires(pre): findutils
+Requires(pre): gawk
+Requires(pre): grep
+Requires(pre): openssl
+Requires(pre): sed
 %if 0%{?suse_version}
-Requires(pre): pwdutils
+Requires(pre): shadow
 %else
+Requires(pre): glibc-common
 Requires(pre): shadow-utils
 %endif
 Provides:   %{name}-libs
