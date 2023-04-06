@@ -10,6 +10,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Changed
 - core: fixes for gcc-13 support [PR #1430]
+- ua_restore: enable restore from archive [PR #1420]
 
 ## [22.0.3] - 2023-03-24
 
@@ -489,6 +490,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1408]: https://github.com/bareos/bareos/pull/1408
 [PR #1411]: https://github.com/bareos/bareos/pull/1411
 [PR #1416]: https://github.com/bareos/bareos/pull/1416
+[PR #1420]: https://github.com/bareos/bareos/pull/1420
 [PR #1427]: https://github.com/bareos/bareos/pull/1427
 [PR #1430]: https://github.com/bareos/bareos/pull/1430
 [unreleased]: https://github.com/bareos/bareos/tree/master
