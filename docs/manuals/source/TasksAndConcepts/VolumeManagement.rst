@@ -139,15 +139,7 @@ Automatic labeling discussed above brings up the problem of Volume management. W
 
 The tools Bareos gives you to help automatically manage these problems are the following:
 
--  :config:option:`dir/client/FileRetention`\ : catalog file record retention period.
-
--  :config:option:`dir/client/JobRetention`\ : catalog job record retention period.
-
--  :config:option:`dir/client/AutoPrune`\  = yes: permit the application of the above two retention periods.
-
--
-
-   :config:option:`dir/pool/VolumeRetention`\
+-  :config:option:`dir/pool/VolumeRetention`\
 
 -  :config:option:`dir/pool/AutoPrune`\  = yes: permit the application of the :config:option:`dir/pool/VolumeRetention`\  period.
 
