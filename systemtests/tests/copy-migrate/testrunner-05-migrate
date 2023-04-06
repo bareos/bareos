@@ -35,15 +35,14 @@ wait
 messages
 @$out $query_results
 sqlquery
-SELECT count(jobid) FROM job WHERE type='g';
-SELECT count(jobid) FROM job WHERE type='M';
-
+SELECT type from job where jobid in (11,12,13);
+.
 quit
 END_OF_DATA
 
 run_bconsole
 
-expect_grep "The following 3 JobIds were chosen to be migrated: 10,11,12" \
+expect_grep "The following 3 JobIds were chosen to be migrated: 11,12,13" \
             "$log" \
             "Expected jobs to be migrated do not match."
 
@@ -53,8 +52,8 @@ if [[ $(grep -c "Termination:.*Migration OK" "$log") -ne "4" ]]; then
     estat=1
 fi
 
-if [[ $(grep -c "|     3 |" "$query_results") -ne "2" ]]; then
-    echo "The necessary amount of migration related jobs are not available in the catalog."
+if [[ $(grep -c "|.*M.*|" "$query_results") -ne "3" ]]; then
+    echo "Former backup jobs were not successfully converted to 'Migrated Jobs'."
     estat=2
 fi
 
@@ -62,39 +61,24 @@ rm -f $query_results
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out $query_results
-prune volume=TestVolume002 yes
 sqlquery
-SELECT count(jobid) FROM job WHERE type='M';
-
-quit
-END_OF_DATA
-
-run_bconsole
-
-if ! grep "|     0 |" "$query_results" ; then
-    echo "Migrated jobs were not deleted appropriately after volume pruning."
-    estat=3
-fi
-
-rm -f $query_results
-
-cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out $query_results
+SELECT count(jobid) FROM job WHERE type='g';
+.
 update volume=$migration_volume volstatus=Used
 prune volume=$migration_volume yes
 sqlquery
 SELECT count(jobid) FROM job WHERE type='g';
-
+.
 quit
 END_OF_DATA
 
 run_bconsole
+expect_grep "|     4 |" \
+            "$query_results" \
+            "Number of migration admin and worker jobs not met."
 
-if ! grep "|     0 |" "$query_results" ; then
-    echo "Migration jobs were not deleted appropriately after volume pruning."
-    estat=4
-fi
-
-
+expect_grep "|     1 |" \
+            "$query_results" \
+            "Migration jobs were not deleted appropriately after pruning migration volume."
 
 end_test

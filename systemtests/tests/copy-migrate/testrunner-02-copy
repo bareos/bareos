@@ -11,44 +11,59 @@ TestName=02-copy
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
 
-log="$tmp/$TestName.log"
+copy_log="$tmp/copy_log.out"
 query_results="$tmp/query_results.out"
-
-check_log() {
-  if ! grep -q "$@" "$log"; then
-    echo "'$*' not found in $log" >&2
-    estat=1
-  fi
-}
 
 start_test
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
 messages
-@$out $log
+@$out $copy_log
 label volume=TestCopyVolume001 storage=File2 pool=FullCopy
 run copy yes
 wait
 messages
 @$out $query_results
 sqlquery
-SELECT count(jobid) FROM job WHERE type='c';
-SELECT count(jobid) FROM job WHERE type='C';
+SELECT type FROM job WHERE jobid=4;
+.
+quit
+END_OF_DATA
 
+
+run_bconsole "$tmp/bconcmds"
+
+expect_grep "Termination:.*Copying OK" \
+            "$copy_log" \
+            "Copy job did not finish well."
+
+expect_grep "|.*C.*|" \
+            "$query_results" \
+            "Copy job does not have the expected type."
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $query_results
+prune volume=TestVolume001 yes
+sqlquery
+SELECT count(jobid) FROM job WHERE type='c';
+SELECT type FROM job WHERE jobid=4;
+.
+messages
 quit
 END_OF_DATA
 
 run_bconsole "$tmp/bconcmds"
 
+
+expect_grep "|     1 |" \
+            "$query_results" \
+            "Copy jobs were not deleted appropriately after backup volume pruning."
+
+expect_grep "|.*B.*|" \
+            "$query_results" \
+            "Copy job was not upgraded to backup after original backup was pruned."
+
 check_for_zombie_jobs storage=File
-
-check_log -F 'Catalog record for Volume "TestCopyVolume001", Slot 0 successfully created.'
-check_log 'Termination:.*Copying OK'
-
-if [[ $(grep -c "|     1 |" "$query_results") -ne "2" ]]; then
-    echo "The expected amount of copy jobs in the catalog is not met."
-    estat=1
-fi
 
 end_test

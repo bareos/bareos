@@ -39,6 +39,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: improve localization process [PR #1429]
 - webui: add machine-readable copyright file [PR #1419]
 - webui: add config resource graph to analytics (experimental) [PR #1412]
+- dird: keep copy and migration control/administrative jobs [PR #1421]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -114,6 +115,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1414]: https://github.com/bareos/bareos/pull/1414
 [PR #1415]: https://github.com/bareos/bareos/pull/1415
 [PR #1419]: https://github.com/bareos/bareos/pull/1419
+[PR #1421]: https://github.com/bareos/bareos/pull/1421
 [PR #1422]: https://github.com/bareos/bareos/pull/1422
 [PR #1424]: https://github.com/bareos/bareos/pull/1424
 [PR #1429]: https://github.com/bareos/bareos/pull/1429
