@@ -2,5 +2,5 @@ SELECT JobId, Client.Name as Client, StartTime, Level as JobLevel, JobFiles, Job
   FROM Client, Job
  WHERE Client.ClientId = Job.ClientId
    AND JobStatus IN ('T','W')
-   AND Type            = 'B'
+   AND Type            = '%c'
  ORDER BY StartTime DESC LIMIT 20

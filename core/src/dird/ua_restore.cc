@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -144,6 +144,13 @@ bool RestoreCmd(UaContext* ua, const char*)
   i = FindArgWithValue(ua, "regexwhere");
   if (i >= 0) { rx.RegexWhere = ua->argv[i]; }
 
+  i = FindArg(ua, "archive");
+  if (i >= 0) {
+    rx.job_filter = RestoreContext::JobTypeFilter::Archive;
+  } else {
+    rx.job_filter = RestoreContext::JobTypeFilter::Backup;
+  }
+
   if (strip_prefix || add_suffix || add_prefix) {
     int len = BregexpGetBuildWhereSize(strip_prefix, add_prefix, add_suffix);
     regexp = (char*)malloc(len * sizeof(char));
@@ -187,12 +194,10 @@ bool RestoreCmd(UaContext* ua, const char*)
     goto bail_out;
   }
 
-  /*
-   * Request user to select JobIds or files by various different methods
+  /* Request user to select JobIds or files by various different methods
    *  last 20 jobs, where File saved, most recent backup, ...
    *  In the end, a list of files are pumped into
-   *  AddFindex()
-   */
+   *  AddFindex() */
   switch (UserSelectJobidsOrFiles(ua, &rx)) {
     case 0: /* error */
       goto bail_out;
@@ -214,11 +219,9 @@ bool RestoreCmd(UaContext* ua, const char*)
   }
   if (!job) { goto bail_out; }
 
-  /*
-   * When doing NDMP_NATIVE restores, we don't create any bootstrap file
+  /* When doing NDMP_NATIVE restores, we don't create any bootstrap file
    * as we only send a namelist for restore. The storage handling is
-   * done by the NDMP state machine via robot and tape interface.
-   */
+   * done by the NDMP state machine via robot and tape interface. */
   if (job->Protocol == PT_NDMP_NATIVE) {
     ua->InfoMsg(
         _("Skipping BootStrapRecord creation as we are doing NDMP_NATIVE "
@@ -502,6 +505,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
                       "restorejob",    /* 22 */
                       "replace",       /* 23 */
                       "pluginoptions", /* 24 */
+                      "archive",       /* 25 */
                       NULL};
 
   rx->JobIds[0] = 0;
@@ -527,11 +531,9 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         done = true;
         break;
       case 1: /* current */
-        /*
-         * Note, we add one second here just to include any job
+        /* Note, we add one second here just to include any job
          *  that may have finished within the current second,
-         *  which happens a lot in scripting small jobs.
-         */
+         *  which happens a lot in scripting small jobs. */
         bstrutime(date, sizeof(date), now);
         have_date = true;
         break;
@@ -588,6 +590,8 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
           "select which files from those JobIds are to be restored.\n\n"));
   }
 
+  char filter_name = RestoreContext::FilterIdentifier(rx->job_filter);
+
   /* If choice not already made above, prompt */
   for (; !done;) {
     char* fname;
@@ -603,17 +607,20 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
       case -1: /* error or cancel */
         return 0;
       case 0: /* list last 20 Jobs run */
+      {
+        PoolMem query;
+        ua->db->FillQuery(query, BareosDb::SQL_QUERY::uar_list_jobs,
+                          filter_name);
         if (!ua->AclAccessOk(Command_ACL, NT_("sqlquery"), true)) {
           ua->ErrorMsg(_("SQL query not authorized.\n"));
           return 0;
         }
         gui_save = ua->jcr->gui;
         ua->jcr->gui = true;
-        ua->db->ListSqlQuery(ua->jcr, BareosDb::SQL_QUERY::uar_list_jobs,
-                             ua->send, HORZ_LIST, true);
+        ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
         ua->jcr->gui = gui_save;
         done = false;
-        break;
+      } break;
       case 1: /* list where a file is saved */
         if (!GetClientName(ua, rx)) { return 0; }
         if (!GetCmd(ua, _("Enter Filename (no path):"))) { return 0; }
@@ -709,6 +716,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         } else if (GetCmd(ua,
                           _("Enter JobId(s), comma separated, to restore: "))) {
           if (*rx->JobIds != 0 && *ua->cmd) { PmStrcat(rx->JobIds, ","); }
+          bstrncpy(rx->last_jobid, ua->cmd, sizeof(rx->last_jobid));
           PmStrcat(rx->JobIds, ua->cmd);
         }
         if (*rx->JobIds == 0 || *rx->JobIds == '.') {
@@ -762,10 +770,8 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
   POOLMEM* JobIds = GetPoolMemory(PM_FNAME);
   *JobIds = 0;
   rx->TotalFiles = 0;
-  /*
-   * Find total number of files to be restored, and filter the JobId
-   *  list to contain only ones permitted by the ACL conditions.
-   */
+  /* Find total number of files to be restored, and filter the JobId
+   *  list to contain only ones permitted by the ACL conditions. */
   JobDbRecord jr;
   for (p = rx->JobIds;;) {
     char ed1[50];
@@ -937,12 +943,14 @@ static bool InsertFileIntoFindexList(UaContext* ua,
   StripTrailingNewline(file);
   SplitPathAndFilename(ua, rx, file);
 
+  char filter_name = RestoreContext::FilterIdentifier(rx->job_filter);
   if (*rx->JobIds == 0) {
     ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_jobid_fileindex, date,
-                      rx->path, rx->fname, rx->ClientName);
+                      rx->path, rx->fname, rx->ClientName, filter_name);
   } else {
     ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_jobids_fileindex,
-                      rx->JobIds, date, rx->path, rx->fname, rx->ClientName);
+                      rx->JobIds, date, rx->path, rx->fname, rx->ClientName,
+                      filter_name);
   }
 
   // Find and insert jobid and File Index
@@ -1125,10 +1133,8 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
   tree.all = rx->all;
   last_JobId = 0;
 
-  /*
-   * For display purposes, the same JobId, with different volumes may
-   * appear more than once, however, we only insert it once.
-   */
+  /* For display purposes, the same JobId, with different volumes may
+   * appear more than once, however, we only insert it once. */
   p = rx->JobIds;
   tree.FileEstimate = 0;
 
@@ -1162,11 +1168,9 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
     PmStrcat(rx->JobIds, rx->BaseJobIds);
   }
 
-  /*
-   * Look at the first JobId on the list (presumably the oldest) and
+  /* Look at the first JobId on the list (presumably the oldest) and
    *  if it is marked purged, don't do the manual selection because
-   *  the Job was pruned, so the tree is incomplete.
-   */
+   *  the Job was pruned, so the tree is incomplete. */
   if (tree.FileCount != 0) {
     // Find out if any Job is purged
     Mmsg(rx->query, "SELECT SUM(PurgedFiles) FROM Job WHERE JobId IN (%s)",
@@ -1205,10 +1209,8 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
       OK = UserSelectFilesFromTree(&tree);
     }
 
-    /*
-     * Walk down through the tree finding all files marked to be
-     *  extracted making a bootstrap file.
-     */
+    /* Walk down through the tree finding all files marked to be
+     *  extracted making a bootstrap file. */
     if (OK) {
       for (TREE_NODE* node = FirstTreeNode(tree.root); node;
            node = NextTreeNode(node)) {
@@ -1227,14 +1229,55 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
     }
   }
 
-  /*
-   * We keep the tree with selected restore files.
+  /* We keep the tree with selected restore files.
    * For NDMP restores its used in the DMA to know what to restore.
-   * The tree is freed by the DMA when its done.
-   */
+   * The tree is freed by the DMA when its done. */
   ua->jcr->dir_impl->restore_tree_root = tree.root;
 
   return OK;
+}
+
+/**
+ * This routine is used to insert the current full backup into the temporary
+ * table temp using another temporary table temp1.
+ * Returns wether the operations succeeded without errors regardless of
+ * wether a row was inserted or not!
+ */
+static bool InsertLastFullBackupOfType(UaContext* ua,
+                                       RestoreContext* rx,
+                                       RestoreContext::JobTypeFilter filter,
+                                       char* client_id,
+                                       char* date,
+                                       char* file_set,
+                                       char* pool_select)
+{
+  char filter_name = RestoreContext::FilterIdentifier(filter);
+  // Find JobId of last Full backup for this client, fileset
+  if (pool_select && pool_select[0]) {
+    ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_last_full, client_id,
+                      date, filter_name, file_set, pool_select);
+
+    if (!ua->db->SqlQuery(rx->query)) {
+      ua->ErrorMsg("%s\n", ua->db->strerror());
+      return false;
+    }
+  } else {
+    ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_last_full_no_pool,
+                      client_id, date, filter_name, file_set);
+    if (!ua->db->SqlQuery(rx->query)) {
+      ua->ErrorMsg("%s\n", ua->db->strerror());
+      return false;
+    }
+  }
+
+  // Find all Volumes used by that JobId
+  ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_full, filter_name);
+  if (!ua->db->SqlQuery(rx->query)) {
+    ua->ErrorMsg("%s\n", ua->db->strerror());
+    return false;
+  }
+
+  return true;
 }
 
 /**
@@ -1252,6 +1295,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
   char ed1[50], ed2[50];
   char pool_select[MAX_NAME_LENGTH];
   char fileset_name[MAX_NAME_LENGTH];
+  char filter_name = RestoreContext::FilterIdentifier(rx->job_filter);
 
   // Create temp tables
   ua->db->SqlQuery(BareosDb::SQL_QUERY::uar_del_temp);
@@ -1319,69 +1363,86 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
     }
   }
 
-  // Find JobId of last Full backup for this client, fileset
-  if (pool_select[0]) {
-    ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_last_full,
-                      edit_int64(cr.ClientId, ed1), date, fsr.FileSet,
-                      pool_select);
 
-    if (!ua->db->SqlQuery(rx->query)) {
-      ua->ErrorMsg("%s\n", ua->db->strerror());
-      goto bail_out;
-    }
-  } else {
-    ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_last_full_no_pool,
-                      edit_int64(cr.ClientId, ed1), date, fsr.FileSet);
-
-    if (!ua->db->SqlQuery(rx->query)) {
-      ua->ErrorMsg("%s\n", ua->db->strerror());
-      goto bail_out;
-    }
-  }
-
-  // Find all Volumes used by that JobId
-  if (!ua->db->SqlQuery(BareosDb::SQL_QUERY::uar_full)) {
-    ua->ErrorMsg("%s\n", ua->db->strerror());
+  if (!InsertLastFullBackupOfType(ua, rx, rx->job_filter,
+                                  edit_int64(cr.ClientId, ed1), date,
+                                  fsr.FileSet, pool_select)) {
     goto bail_out;
   }
 
-  /*
-   * Note, this is needed because I don't seem to get the callback from the call
-   * just above.
-   */
+  /* Note, this is needed because I don't seem to get the callback from the call
+   * just above. */
   rx->JobTDate = 0;
   ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_sel_all_temp1);
   if (!ua->db->SqlQuery(rx->query, LastFullHandler, (void*)rx)) {
     ua->WarningMsg("%s\n", ua->db->strerror());
   }
   if (rx->JobTDate == 0) {
-    ua->ErrorMsg(_("No Full backup before %s found.\n"), date);
+    ua->ErrorMsg(_("No Full backup%s before %s found.\n"),
+                 (rx->job_filter == RestoreContext::JobTypeFilter::Backup)
+                     ? ""
+                     : " archive",
+                 date);
+
+    // if no full backups were found while searching for archives/backups
+    // try to see if there are any valid full backups using the opposite filter.
+    // if there are send a message to the user that he can try restoring those.
+    RestoreContext::JobTypeFilter opposite
+        = RestoreContext::JobTypeFilter::Backup;
+    switch (rx->job_filter) {
+      case RestoreContext::JobTypeFilter::Archive: {
+        opposite = RestoreContext::JobTypeFilter::Backup;
+      } break;
+      case RestoreContext::JobTypeFilter::Backup: {
+        opposite = RestoreContext::JobTypeFilter::Archive;
+      } break;
+    }
+    if (InsertLastFullBackupOfType(ua, rx, opposite,
+                                   edit_int64(cr.ClientId, ed1), date,
+                                   fsr.FileSet, pool_select)) {
+      ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_sel_all_temp1);
+      if (!ua->db->SqlQuery(rx->query, LastFullHandler, (void*)rx)) {
+        // ignore warnings here, since they would not make any sense
+        // to the end user
+        goto bail_out;
+      }
+      if (rx->JobTDate != 0) {
+        const char* filter_addition
+            = (opposite == RestoreContext::JobTypeFilter::Backup) ? ""
+                                                                  : " archive";
+        const char* alternative_command
+            = (opposite == RestoreContext::JobTypeFilter::Backup)
+                  ? "normal restore"
+                  : "restore archive";
+        ua->SendMsg(
+            "A suitable full backup%s was found. Try %s <...> instead.\n",
+            filter_addition, alternative_command);
+      }
+    }
+
     goto bail_out;
   }
 
   // Now find most recent Differential Job after Full save, if any
   ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_dif,
                     edit_uint64(rx->JobTDate, ed1), date,
-                    edit_int64(cr.ClientId, ed2), fsr.FileSet, pool_select);
+                    edit_int64(cr.ClientId, ed2), filter_name, fsr.FileSet,
+                    pool_select);
   if (!ua->db->SqlQuery(rx->query)) {
     ua->WarningMsg("%s\n", ua->db->strerror());
   }
 
   // Now update JobTDate to look into Differential, if any
-  rx->JobTDate = 0;
   ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_sel_all_temp);
   if (!ua->db->SqlQuery(rx->query, LastFullHandler, (void*)rx)) {
     ua->WarningMsg("%s\n", ua->db->strerror());
-  }
-  if (rx->JobTDate == 0) {
-    ua->ErrorMsg(_("No Full backup before %s found.\n"), date);
-    goto bail_out;
   }
 
   // Now find all Incremental Jobs after Full/dif save
   ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_inc,
                     edit_uint64(rx->JobTDate, ed1), date,
-                    edit_int64(cr.ClientId, ed2), fsr.FileSet, pool_select);
+                    edit_int64(cr.ClientId, ed2), filter_name, fsr.FileSet,
+                    pool_select);
   if (!ua->db->SqlQuery(rx->query)) {
     ua->WarningMsg("%s\n", ua->db->strerror());
   }
@@ -1409,10 +1470,8 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
       if (ua->pint32_val) {
         PoolMem JobIds(PM_FNAME);
 
-        /*
-         * Change the list of jobs needed to do the restore to the copies of the
-         * Job.
-         */
+        /* Change the list of jobs needed to do the restore to the copies of the
+         * Job. */
         PmStrcpy(JobIds, rx->JobIds);
         rx->last_jobid[0] = rx->JobIds[0] = 0;
         ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_sel_jobid_copies,

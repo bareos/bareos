@@ -1,0 +1,86 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# check that bareos actually selects the archive
+#   to restore instead of just picking the newest one.
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-bareos-fd
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+#shellcheck source=functions
+. functions
+
+start_test
+
+file="$(pwd)/tmp/data/weird-files/socket.pl"
+if [[ -f "$tmp/bareos-restores/$file" ]]; then
+    rm "$tmp/bareos-restores/$file"
+fi;
+echo "i overwrite the file" > "$file"
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+setdebug level=100 storage=File
+@$out $log_home/log1.out
+status director
+status client
+status storage=File
+wait
+messages
+@$out $log_home/jobs.out
+list jobs
+@$out $log_home/create-newer-backup.out
+update jobid=1 jobtype=A
+run job=$JobName
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+# find the new job id
+backupid=$(grep 'Job queued. JobId=' "$log_home/create-newer-backup.out" | sed -n -e 's/^.*JobId=//p')
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+setdebug level=100 storage=File
+@$out $log_home/log1.out
+status director
+status client
+status storage=File
+wait
+@$out $log_home/restore-archive.out
+restore archive
+5
+mark $file
+done
+yes
+wait
+messages
+delete jobid=$backupid
+quit
+END_OF_DATA
+run_bconsole
+
+check_for_zombie_jobs storage=File
+
+check_preconditions
+
+# since we changed the file they cannot be the same!
+if cmp -s "$log_home/bareos-restores/$file" "$file"; then
+    exit 2
+fi
+
+# since the other tests do not care for the original contents
+# we just leave the changed file instead of changing it back.
+
+end_test

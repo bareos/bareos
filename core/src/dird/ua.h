@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -192,6 +192,13 @@ struct NameList {
 
 // Context for restore job.
 struct RestoreContext {
+  enum class JobTypeFilter
+  {
+    Backup,
+    Archive,
+  };
+  JobTypeFilter job_filter = JobTypeFilter::Backup;
+
   utime_t JobTDate = {0};
   uint32_t TotalFiles = 0;
   JobId_t JobId = 0;
@@ -223,6 +230,7 @@ struct RestoreContext {
 
   RestoreContext() = default;
   ~RestoreContext() = default;
+  static char FilterIdentifier(JobTypeFilter filter);
 };
 
 // Context for run job.
