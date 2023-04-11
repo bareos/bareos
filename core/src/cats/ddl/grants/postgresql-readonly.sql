@@ -1,33 +1,13 @@
 -- read-only access for third party applications
 CREATE USER @DB_USER@ @DB_PASS@;
 
-GRANT SELECT ON BaseFiles TO @DB_USER@;
-GRANT SELECT ON JobMedia TO @DB_USER@;
-GRANT SELECT ON File TO @DB_USER@;
-GRANT SELECT ON Job TO @DB_USER@;
-GRANT SELECT ON Media TO @DB_USER@;
-GRANT SELECT ON Client TO @DB_USER@;
-GRANT SELECT ON Pool TO @DB_USER@;
-GRANT SELECT ON Fileset TO @DB_USER@;
-GRANT SELECT ON Path TO @DB_USER@;
-GRANT SELECT ON Counters TO @DB_USER@;
-GRANT SELECT ON Version TO @DB_USER@;
-GRANT SELECT ON MediaType TO @DB_USER@;
-GRANT SELECT ON Storage TO @DB_USER@;
-GRANT SELECT ON Device TO @DB_USER@;
-GRANT SELECT ON Status TO @DB_USER@;
-GRANT SELECT ON Location TO @DB_USER@;
-GRANT SELECT ON LocationLog TO @DB_USER@;
-GRANT SELECT ON Log TO @DB_USER@;
-GRANT SELECT ON JobHisto TO @DB_USER@;
-GRANT SELECT ON PathHierarchy TO @DB_USER@;
-GRANT SELECT ON PathVisibility TO @DB_USER@;
-GRANT SELECT ON RestoreObject TO @DB_USER@;
-GRANT SELECT ON Quota TO @DB_USER@;
-GRANT SELECT ON NDMPLevelMap TO @DB_USER@;
-GRANT SELECT ON NDMPJobEnvironment TO @DB_USER@;
-GRANT SELECT ON DeviceStats TO @DB_USER@;
-GRANT SELECT ON JobStats TO @DB_USER@;
-GRANT SELECT ON TapeAlerts TO @DB_USER@;
-GRANT SELECT ON backup_unit_overview TO @DB_USER@;
-GRANT SELECT ON latest_full_size_categorized TO @DB_USER@;
+-- Allow access to used schema
+GRANT USAGE ON SCHEMA public TO @DB_USER@;
+
+-- Give read access to tables and views
+GRANT SELECT ON ALL TABLES IN SCHEMA public;
+-- and associated sequences
+GRANT USAGE ON ALL SEQUENCES IN SCHEMA public;
+
+-- Allow functions executions
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public;
