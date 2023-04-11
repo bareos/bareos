@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -297,6 +297,7 @@ static inline bool PySavePacketToNative(
     } else {
       goto bail_out;
     }
+    sp->save_time = pSavePkt->save_time;
 
     // Optional field.
     if (pSavePkt->link) {
