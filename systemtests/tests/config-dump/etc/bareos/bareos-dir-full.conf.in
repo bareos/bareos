@@ -66,10 +66,7 @@ Client {
   # SoftQuotaGracePeriod = 0
   # StrictQuotas = No
   # QuotaIncludeFailedJobs = Yes
-  # FileRetention = 2 months
-  # JobRetention = 6 months
   # HeartbeatInterval = 0
-  # AutoPrune = No
   # MaximumConcurrentJobs = 1
   # MaximumBandwidthPerJob = 0
   # NdmpLogLevel = 4
@@ -110,10 +107,7 @@ Client {
   # SoftQuotaGracePeriod = 0
   # StrictQuotas = No
   # QuotaIncludeFailedJobs = Yes
-  # FileRetention = 2 months
-  # JobRetention = 6 months
   # HeartbeatInterval = 0
-  # AutoPrune = No
   # MaximumConcurrentJobs = 1
   # MaximumBandwidthPerJob = 0
   # NdmpLogLevel = 4

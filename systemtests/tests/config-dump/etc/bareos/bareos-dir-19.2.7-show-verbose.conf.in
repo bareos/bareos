@@ -43,10 +43,7 @@ Client {
   # SoftQuotaGracePeriod = 0
   # StrictQuotas = no
   # QuotaIncludeFailedJobs = yes
-  # FileRetention = 2 months
-  # JobRetention = 6 months
   # HeartbeatInterval = 0
-  # AutoPrune = no
   # MaximumConcurrentJobs = 1
   # NdmpLogLevel = 4
   # NdmpBlockSize = 63 k

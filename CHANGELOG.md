@@ -41,6 +41,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: add config resource graph to analytics (experimental) [PR #1412]
 - dird: keep copy and migration control/administrative jobs [PR #1421]
 - scripts: config-lib improve get_local_hostname fallback [PR #1402]
+- dird: deprecate client `Autoprune`, `JobRetention`, and `FileRetention` [PR #1425]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -121,6 +122,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1421]: https://github.com/bareos/bareos/pull/1421
 [PR #1422]: https://github.com/bareos/bareos/pull/1422
 [PR #1424]: https://github.com/bareos/bareos/pull/1424
+[PR #1425]: https://github.com/bareos/bareos/pull/1425
 [PR #1429]: https://github.com/bareos/bareos/pull/1429
 [PR #1439]: https://github.com/bareos/bareos/pull/1439
 [unreleased]: https://github.com/bareos/bareos/tree/master
