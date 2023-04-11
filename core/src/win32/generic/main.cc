@@ -333,17 +333,5 @@ int BareosAppMain()
   _exit(0);
 }
 
-
-void PauseMsg(const char* file, const char* func, int line, const char* msg)
-{
-  char buf[1000];
-  if (msg) {
-    Bsnprintf(buf, sizeof(buf), "%s:%s:%d %s", file, func, line, msg);
-  } else {
-    Bsnprintf(buf, sizeof(buf), "%s:%s:%d", file, func, line);
-  }
-  MessageBox(NULL, buf, "Pause", MB_OK);
-}
-
 typedef void(WINAPI* PGNSI)(LPSYSTEM_INFO);
 typedef BOOL(WINAPI* PGPI)(DWORD, DWORD, DWORD, DWORD, PDWORD);

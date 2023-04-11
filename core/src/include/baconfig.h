@@ -547,14 +547,6 @@ inline const char* first_path_separator(const char* path)
 {
   return strpbrk(path, "/\\");
 }
-
-extern void PauseMsg(const char* file,
-                     const char* func,
-                     int line,
-                     const char* msg);
-#  define pause(msg) \
-    if (debug_level) PauseMsg(__FILE__, __func__, __LINE__, (msg))
-
 #else
 //   Unix/Linux
 #  define PathSeparator '/'
@@ -569,7 +561,6 @@ inline const char* first_path_separator(const char* path)
 {
   return strchr(path, '/');
 }
-#  define pause(msg)
 #endif
 
 

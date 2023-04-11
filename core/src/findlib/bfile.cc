@@ -53,19 +53,6 @@ boffset_t (*plugin_blseek)(BareosFilePacket* bfd, boffset_t offset, int whence)
 #  define fdatasync(fd)
 #endif
 
-#ifdef HAVE_WIN32
-void PauseMsg(const char* file, const char* func, int line, const char* msg)
-{
-  char buf[1000];
-  if (msg) {
-    Bsnprintf(buf, sizeof(buf), "%s:%s:%d %s", file, func, line, msg);
-  } else {
-    Bsnprintf(buf, sizeof(buf), "%s:%s:%d", file, func, line);
-  }
-  MessageBox(NULL, buf, "Pause", MB_OK);
-}
-#endif
-
 /* ===============================================================
  *
  *            U N I X   AND   W I N D O W S
