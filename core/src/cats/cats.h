@@ -460,9 +460,6 @@ typedef enum
 typedef void(DB_LIST_HANDLER)(void*, const char*);
 typedef int(DB_RESULT_HANDLER)(void*, int, char**);
 
-#define DbLock(mdb) mdb->LockDb(__FILE__, __LINE__)
-#define DbUnlock(mdb) mdb->UnlockDb(__FILE__, __LINE__)
-
 class pathid_cache;
 
 // Initial size of query hash table and hint for number of pages.
@@ -1027,8 +1024,15 @@ class DbLocker {
   BareosDb* db_handle_;
 
  public:
-  DbLocker(BareosDb* db_handle) : db_handle_(db_handle) { DbLock(db_handle_); }
-  ~DbLocker() { DbUnlock(db_handle_); }
+  DbLocker(BareosDb* db_handle) : db_handle_(db_handle)
+  {
+    db_handle_->LockDb(__FILE__, __LINE__);
+  }
+  ~DbLocker() { db_handle_->UnlockDb(__FILE__, __LINE__); }
+
+  DbLocker(const DbLocker& other) = delete;
+  DbLocker& operator=(const DbLocker&) = delete;
+  DbLocker(DbLocker&& other) = delete;
 };
 
 // Pooled backend connection.
