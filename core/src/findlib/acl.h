@@ -65,7 +65,7 @@ typedef enum
 #endif
 
 #if defined(HAVE_FREEBSD_OS) || defined(HAVE_DARWIN_OS) \
-    || defined(HAVE_HPUX_OS) || defined(HAVE_LINUX_OS)
+    || defined(HAVE_LINUX_OS)
 #  define BACL_ENOTSUP EOPNOTSUPP
 #elif defined(HAVE_IRIX_OS)
 #  define BACL_ENOTSUP ENOSYS

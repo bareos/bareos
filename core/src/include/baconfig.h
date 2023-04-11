@@ -563,27 +563,6 @@ inline const char* first_path_separator(const char* path)
 }
 #endif
 
-
-/** HP-UX 11 specific workarounds */
-
-#ifdef HAVE_HPUX_OS
-#  undef h_errno
-extern int h_errno;
-/** the {get,set}domainname() functions exist in HPUX's libc.
- * the configure script detects that correctly.
- * the problem is no system headers declares the prototypes for these functions
- * this is done below
- */
-#  ifdef __cplusplus
-extern "C" {
-#  endif /* __cplusplus */
-int Getdomainname(char* name, int namelen);
-int Setdomainname(char* name, int namelen);
-#  ifdef __cplusplus
-}
-#  endif /* __cplusplus */
-#endif   /* HAVE_HPUX_OS */
-
 #ifndef __GNUC__
 #  define __PRETTY_FUNCTION__ __func__
 #endif

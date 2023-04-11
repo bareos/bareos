@@ -76,7 +76,7 @@ bool fstype(const char* fname, char* fs, int fslen)
   return false;
 }
 
-#elif defined(HAVE_HPUX_OS) || defined(HAVE_IRIX_OS)
+#elif defined(HAVE_IRIX_OS)
 
 #  include <sys/types.h>
 #  include <sys/statvfs.h>

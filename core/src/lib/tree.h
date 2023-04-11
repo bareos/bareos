@@ -33,10 +33,6 @@
 
 #include "include/config.h"
 
-#ifdef HAVE_HPUX_OS
-#  pragma pack(push, 4)
-#endif
-
 struct s_mem {
   struct s_mem* next; /* next buffer */
   int rem;            /* remaining bytes */
@@ -151,10 +147,6 @@ struct s_tree_root {
   HardlinkTable hardlinks;     /* references to first occurence of hardlinks */
 };
 typedef struct s_tree_root TREE_ROOT;
-
-#ifdef HAVE_HPUX_OS
-#  pragma pack(pop)
-#endif
 
 /* type values */
 #define TN_ROOT 1    /* root node */

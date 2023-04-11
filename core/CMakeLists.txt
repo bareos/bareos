@@ -345,17 +345,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}")
 endif()
 
-# hpux
-if(${CMAKE_SYSTEM_NAME} MATCHES "HP-UX")
-  set(HAVE_HPUX_OS 1)
-  add_definitions(-D_XOPEN_SOURCE_EXTENDED=1)
-  add_definitions(-D_INCLUDE_XOPEN_SOURCE_EXTENDED=1)
-  add_definitions(-D_INCLUDE_LONGLONG=1)
-  include_directories(/usr/local/include/)
-  link_directories(/usr/lib/hpux32 /usr/local/lib/hpux32 /usr/local/lib)
-  link_libraries(dld intl)
-endif()
-
 if(${CMAKE_SYSTEM_NAME} MATCHES "AIX")
   set(HAVE_AIX_OS 1)
   set(lmdb 0FF)

@@ -43,10 +43,6 @@
 
 #include "include/config.h"
 
-#ifdef HAVE_HPUX_OS
-#  pragma pack(push, 4)
-#endif
-
 namespace filedaemon {
 
 struct accurate_payload {
@@ -107,10 +103,6 @@ struct CurFile {
   char* fname;
   accurate_payload payload;
 };
-
-#ifdef HAVE_HPUX_OS
-#  pragma pack(pop)
-#endif
 
 class BareosAccurateFilelistHtable : public BareosAccurateFilelist {
   using FileList = htable<char*, CurFile>;

@@ -82,12 +82,6 @@
 #  define _LINUX_SOURCE_COMPAT 1
 #endif
 
-#ifdef HAVE_HPUX_OS
-#  undef HAVE_LCHMOD
-#  undef HAVE_LCHOWN
-#  undef HAVE_POSIX_FADVISE
-#endif
-
 #define _REENTRANT 1
 #define _THREAD_SAFE 1
 #define _POSIX_PTHREAD_SEMANTICS 1
