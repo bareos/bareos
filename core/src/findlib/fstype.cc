@@ -35,8 +35,7 @@
  *
  * bool fstype(const char *fname, char *fs, int fslen);
  */
-#if defined(HAVE_DARWIN_OS) || defined(HAVE_FREEBSD_OS) \
-    || defined(HAVE_OPENBSD_OS)
+#if defined(HAVE_DARWIN_OS) || defined(HAVE_FREEBSD_OS)
 
 #  include <sys/param.h>
 #  include <sys/mount.h>

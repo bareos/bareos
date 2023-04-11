@@ -71,14 +71,9 @@
 #    include <sys/mnttab.h>
 #  endif /* HAVE_GETMNTENT */
 #elif defined(HAVE_GETMNTINFO)
-#  if defined(HAVE_OPENBSD_OS)
-#    include <sys/param.h>
-#    include <sys/mount.h>
-#  else
-#    include <sys/param.h>
-#    include <sys/ucred.h>
-#    include <sys/mount.h>
-#  endif
+#  include <sys/param.h>
+#  include <sys/ucred.h>
+#  include <sys/mount.h>
 #elif defined(HAVE_AIX_OS)
 #  include <fshelp.h>
 #  include <sys/vfs.h>

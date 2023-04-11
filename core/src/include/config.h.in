@@ -337,9 +337,6 @@ extern char win_os[];
 // Define to 1 if you have the `openat' function
 #cmakedefine HAVE_OPENAT @HAVE_OPENAT@
 
-// Define to 1 if you are running OpenBSD
-#cmakedefine HAVE_OPENBSD_OS @HAVE_OPENBSD_OS@
-
 // Define to 1 if OpenSSL library is available
 #cmakedefine HAVE_OPENSSL @HAVE_OPENSSL@
 

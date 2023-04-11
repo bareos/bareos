@@ -960,7 +960,7 @@ void generic_tape_device::SetOsDeviceParameters(DeviceControlRecord* dcr)
   return;
 #endif
 
-#if HAVE_FREEBSD_OS || HAVE_OPENBSD_OS
+#if HAVE_FREEBSD_OS
   mtop mt_com{};
   if (dev->min_block_size == dev->max_block_size
       && dev->min_block_size == 0) { /* variable block mode */

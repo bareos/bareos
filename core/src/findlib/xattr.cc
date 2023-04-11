@@ -1001,7 +1001,7 @@ static BxattrExitCode (*os_parse_xattr_streams)(JobControlRecord* jcr,
                                                 uint32_t content_length)
     = generic_parse_xattr_streams;
 
-#  elif defined(HAVE_FREEBSD_OS) || defined(HAVE_OPENBSD_OS)
+#  elif defined(HAVE_FREEBSD_OS)
 
 #    if (!defined(HAVE_EXTATTR_GET_LINK) && !defined(HAVE_EXTATTR_GET_FILE)) \
         || (!defined(HAVE_EXTATTR_SET_LINK)                                  \
@@ -1040,12 +1040,6 @@ static int os_default_xattr_namespaces[2]
 static const char* xattr_acl_skiplist[4]
     = {"system.posix1e.acl_access", "system.posix1e.acl_default",
        "system.nfs4.acl", NULL};
-static const char* xattr_skiplist[1] = {NULL};
-#    elif defined(HAVE_OPENBSD_OS)
-static int os_default_xattr_streams[1] = {STREAM_XATTR_OPENBSD};
-static int os_default_xattr_namespaces[2]
-    = {EXTATTR_NAMESPACE_USER, EXTATTR_NAMESPACE_SYSTEM};
-static const char* xattr_acl_skiplist[1] = {NULL};
 static const char* xattr_skiplist[1] = {NULL};
 #    endif
 
