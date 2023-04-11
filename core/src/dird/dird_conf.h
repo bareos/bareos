@@ -116,7 +116,6 @@ class DirectorResource
   char* scripts_directory = nullptr;    /* ScriptsDirectory */
   char* plugin_directory = nullptr;     /* Plugin Directory */
   alist<const char*>* plugin_names = nullptr; /* Plugin names to load */
-  char* pid_directory = nullptr;              /* PidDirectory */
   MessagesResource* messages = nullptr;       /* Daemon message handler */
   uint32_t MaxConcurrentJobs = 0; /* Max concurrent jobs for whole director */
   uint32_t MaxConsoleConnections = 0; /* Max concurrent console connections */

@@ -5,6 +5,19 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Breaking changes
+- The following deprecated configuration options have been removed, make sure to update your configuration accordingly:
+   * Director daemon
+     * Pid Directory
+     
+   * File daemon
+     * Pid Directory
+     * Compatible
+     
+   * Storage daemon
+     * Pid Directory
+     * Compatible
+
 ### Changed
 - VMware Plugin: introduce pyVmomi 8.x compatibility [PR #1352]
 - devtools: add `pr-tool` to automate PR review and merge [PR #935]
@@ -42,6 +55,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - dird: keep copy and migration control/administrative jobs [PR #1421]
 - scripts: config-lib improve get_local_hostname fallback [PR #1402]
 - dird: deprecate client `Autoprune`, `JobRetention`, and `FileRetention` [PR #1425]
+- daemons: remove deprecated `Pid Directory` config option, and update `Maximum Concurrent Jobs` default value to 1 [PR #1426]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -123,6 +137,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1422]: https://github.com/bareos/bareos/pull/1422
 [PR #1424]: https://github.com/bareos/bareos/pull/1424
 [PR #1425]: https://github.com/bareos/bareos/pull/1425
+[PR #1426]: https://github.com/bareos/bareos/pull/1426
 [PR #1429]: https://github.com/bareos/bareos/pull/1429
 [PR #1439]: https://github.com/bareos/bareos/pull/1439
 [unreleased]: https://github.com/bareos/bareos/tree/master

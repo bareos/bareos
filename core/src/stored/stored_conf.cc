@@ -79,7 +79,6 @@ static ResourceItem store_items[] = {
   {"SdSourceAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_store, SDsrc_addr), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL},
   {"WorkingDirectory", CFG_TYPE_DIR, ITEM(res_store, working_directory), 0,
       CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, PATH_BAREOS_WORKINGDIR, NULL, NULL},
-  {"PidDirectory", CFG_TYPE_DIR, ITEM(res_store, pid_directory), 0, CFG_ITEM_DEPRECATED, NULL, NULL, NULL},
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
   {"BackendDirectory", CFG_TYPE_STR_VECTOR_OF_DIRS, ITEM(res_store, backend_directories), 0,
       CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, PATH_BAREOS_BACKENDDIR, NULL, NULL},
@@ -190,7 +189,7 @@ static ResourceItem dev_items[] = {
   {"MaximumBlockSize", CFG_TYPE_MAXBLOCKSIZE, ITEM(res_dev, max_block_size), 0, 0, NULL, NULL, NULL},
   {"MaximumFileSize", CFG_TYPE_SIZE64, ITEM(res_dev, max_file_size), 0, CFG_ITEM_DEFAULT, "1000000000", NULL, NULL},
   {"VolumeCapacity", CFG_TYPE_SIZE64, ITEM(res_dev, volume_capacity), 0, 0, NULL, NULL, NULL},
-  {"MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_dev, max_concurrent_jobs), 0, 0, NULL, NULL, NULL},
+  {"MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_dev, max_concurrent_jobs), 0, CFG_ITEM_DEFAULT, "1", NULL, NULL},
   {"SpoolDirectory", CFG_TYPE_DIR, ITEM(res_dev, spool_directory), 0, 0, NULL, NULL, NULL},
   {"MaximumSpoolSize", CFG_TYPE_SIZE64, ITEM(res_dev, max_spool_size), 0, 0, NULL, NULL, NULL},
   {"MaximumJobSpoolSize", CFG_TYPE_SIZE64, ITEM(res_dev, max_job_spool_size), 0, 0, NULL, NULL, NULL},
@@ -920,7 +919,6 @@ static void FreeResource(BareosResource* res, int type)
       if (p->SDsrc_addr) { FreeAddresses(p->SDsrc_addr); }
       if (p->NDMPaddrs) { FreeAddresses(p->NDMPaddrs); }
       if (p->working_directory) { free(p->working_directory); }
-      if (p->pid_directory) { free(p->pid_directory); }
       if (p->plugin_directory) { free(p->plugin_directory); }
       if (p->plugin_names) { delete p->plugin_names; }
       if (p->scripts_directory) { free(p->scripts_directory); }

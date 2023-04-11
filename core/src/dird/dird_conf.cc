@@ -122,7 +122,6 @@ static ResourceItem dir_items[] = {
   { "DirSourceAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_dir,  DIRsrc_addr), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
   { "QueryFile", CFG_TYPE_DIR, ITEM(res_dir, query_file), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
   { "WorkingDirectory", CFG_TYPE_DIR, ITEM(res_dir, working_directory), 0, CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, PATH_BAREOS_WORKINGDIR, NULL, NULL },
-  { "PidDirectory", CFG_TYPE_DIR, ITEM(res_dir, pid_directory), 0, CFG_ITEM_DEPRECATED, NULL, NULL, NULL },
   { "PluginDirectory", CFG_TYPE_DIR, ITEM(res_dir, plugin_directory), 0, 0, NULL,
      "14.2.0-", "Plugins are loaded from this directory. To load only specific plugins, use 'Plugin Names'." },
   { "PluginNames", CFG_TYPE_PLUGIN_NAMES, ITEM(res_dir, plugin_names), 0, 0, NULL,
@@ -3767,7 +3766,6 @@ static void FreeResource(BareosResource* res, int type)
       if (p->scripts_directory) { free(p->scripts_directory); }
       if (p->plugin_directory) { free(p->plugin_directory); }
       if (p->plugin_names) { delete p->plugin_names; }
-      if (p->pid_directory) { free(p->pid_directory); }
       if (p->password_.value) { free(p->password_.value); }
       if (p->query_file) { free(p->query_file); }
       if (p->DIRaddrs) { FreeAddresses(p->DIRaddrs); }

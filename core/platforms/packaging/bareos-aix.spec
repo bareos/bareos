@@ -33,7 +33,6 @@ Vendor: 	The Bareos Team
 %define plugin_dir     /opt/freeware/lib/plugins
 %define script_dir     /opt/freeware/bareos/scripts
 %define working_dir    /opt/freeware/var/bareos/working
-%define pid_dir        /var/run
 %define bsr_dir        /opt/freeware/var/bareos/working
 # TODO: use /run ?
 %define _subsysdir     /var/lock

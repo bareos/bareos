@@ -19,7 +19,6 @@ Vendor:     The Bareos Team
 %define plugin_dir     %{_libdir}/%{name}/plugins
 %define script_dir     /usr/lib/%{name}/scripts
 %define working_dir    /var/lib/%{name}
-%define pid_dir        /var/lib/%{name}
 %define bsr_dir        /var/lib/%{name}
 # TODO: use /run ?
 %define _subsysdir     /var/lock
