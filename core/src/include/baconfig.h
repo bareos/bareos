@@ -584,19 +584,6 @@ int Setdomainname(char* name, int namelen);
 #  endif /* __cplusplus */
 #endif   /* HAVE_HPUX_OS */
 
-
-#ifdef HAVE_OSF1_OS
-#  ifdef __cplusplus
-extern "C" {
-#  endif /* __cplusplus */
-int fchdir(int filedes);
-long gethostid(void);
-int Getdomainname(char* name, int len);
-#  ifdef __cplusplus
-}
-#  endif /* __cplusplus */
-#endif   /* HAVE_OSF1_OS */
-
 #ifndef __GNUC__
 #  define __PRETTY_FUNCTION__ __func__
 #endif

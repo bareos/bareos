@@ -88,8 +88,6 @@
 #elif defined(HAVE_AIX_OS)
 #  include <fshelp.h>
 #  include <sys/vfs.h>
-#elif defined(HAVE_OSF1_OS)
-#  include <sys/mount.h>
 #endif
 
 // Protected data by mutex lock.
@@ -340,36 +338,6 @@ static void refresh_mount_cache([[maybe_unused]] mntent_cache_entry_t*
     cnt++;
   }
   free(entries);
-#elif defined(HAVE_OSF1_OS)
-  struct statfs *entries, *current;
-  struct stat st;
-  int n_entries, cnt;
-  int size;
-
-  if ((n_entries = getfsstat((struct statfs*)0, 0L, MNT_NOWAIT)) < 0) {
-    return;
-  }
-
-  size = (n_entries + 1) * sizeof(struct statfs);
-  entries = malloc(size);
-
-  if ((n_entries = getfsstat(entries, size, MNT_NOWAIT)) < 0) {
-    free(entries);
-    return;
-  }
-
-  cnt = 0;
-  current = entries;
-  while (cnt < n_entries) {
-    if (SkipFstype(current->f_fstypename)) { continue; }
-
-    if (stat(current->f_mntonname, &st) < 0) { continue; }
-    handle_entry(st.st_dev, current->f_mntfromname, current->f_mntonname,
-                 current->f_fstypename, NULL);
-    current++;
-    cnt++;
-  }
-  free(stats);
 #endif
 }
 
@@ -394,9 +362,7 @@ static void RepopulateMntentCache(void)
   mntent_cache_entry_t *mce, *next_mce;
 
   // Reset validated flag on all entries in the cache.
-  foreach_dlist (mce, mntent_cache_entries) {
-    mce->validated = false;
-  }
+  foreach_dlist (mce, mntent_cache_entries) { mce->validated = false; }
 
   // Refresh the cache.
   refresh_mount_cache(update_mntent_mapping);
@@ -443,9 +409,7 @@ void FlushMntentCache(void)
 
   if (mntent_cache_entries) {
     previous_cache_hit = NULL;
-    foreach_dlist (mce, mntent_cache_entries) {
-      DestroyMntentCacheEntry(mce);
-    }
+    foreach_dlist (mce, mntent_cache_entries) { DestroyMntentCacheEntry(mce); }
     mntent_cache_entries->destroy();
     delete mntent_cache_entries;
     mntent_cache_entries = NULL;

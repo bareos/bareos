@@ -526,8 +526,8 @@ static bacl_exit_code (*os_parse_acl_streams)(JobControlRecord* jcr,
     = aix_parse_acl_streams;
 
 #    elif defined(HAVE_DARWIN_OS) || defined(HAVE_FREEBSD_OS) \
-        || defined(HAVE_IRIX_OS) || defined(HAVE_OSF1_OS)     \
-        || defined(HAVE_LINUX_OS) || defined(HAVE_HURD_OS)
+        || defined(HAVE_IRIX_OS) || defined(HAVE_LINUX_OS)    \
+        || defined(HAVE_HURD_OS)
 
 #      include <sys/types.h>
 
@@ -625,8 +625,6 @@ static int AclCountEntries(acl_t acl)
   }
 #      elif defined(HAVE_IRIX_OS)
   count = acl->acl_cnt;
-#      elif defined(HAVE_OSF1_OS)
-  count = acl->acl_num;
 #      elif defined(HAVE_DARWIN_OS)
   acl_entry_t ace;
   int entry_available;
@@ -688,30 +686,6 @@ static bool AclIsTrivial(acl_t acl)
      */
     if (tag != ACL_USER_OBJ && tag != ACL_GROUP_OBJ && tag != ACL_OTHER_OBJ)
       return false;
-  }
-  return true;
-#        elif defined(HAVE_OSF1_OS)
-  int count;
-
-  ace = acl->acl_first;
-  count = acl->acl_num;
-
-  while (count > 0) {
-    tag = ace->entry->acl_type;
-    /*
-     * Anything other the ACL_USER_OBJ, ACL_GROUP_OBJ or ACL_OTHER breaks the
-     * spell.
-     */
-    if (tag != ACL_USER_OBJ && tag != ACL_GROUP_OBJ && tag != ACL_OTHER)
-      return false;
-    /*
-     * On Tru64, perm can also contain non-standard bits such as
-     * PERM_INSERT, PERM_DELETE, PERM_MODIFY, PERM_LOOKUP, ...
-     */
-    if ((ace->entry->acl_perm & ~(ACL_READ | ACL_WRITE | ACL_EXECUTE)))
-      return false;
-    ace = ace->next;
-    count--;
   }
   return true;
 #        endif
@@ -1318,80 +1292,6 @@ static bacl_exit_code (*os_parse_acl_streams)(JobControlRecord* jcr,
                                               char* content,
                                               uint32_t content_length)
     = generic_parse_acl_streams;
-
-#      elif defined(HAVE_OSF1_OS)
-
-// Define the supported ACL streams for this OS
-static int os_access_acl_streams[1] = {STREAM_ACL_TRU64_ACCESS_ACL};
-static int os_default_acl_streams[2]
-    = {STREAM_ACL_TRU64_DEFAULT_ACL, STREAM_ACL_TRU64_DEFAULT_DIR_ACL};
-
-static bacl_exit_code tru64_build_acl_streams(JobControlRecord* jcr,
-                                              AclData* acl_data,
-                                              FindFilesPacket* ff_pkt)
-{
-  // Read access ACLs for files, dirs and links
-  if (generic_get_acl_from_os(jcr, acl_data, BACL_TYPE_ACCESS)
-      == bacl_exit_fatal) {
-    return bacl_exit_error;
-    if (acl_data->u.build->content_length > 0) {
-      if (!SendAclStream(jcr, acl_data, STREAM_ACL_TRU64_ACCESS_ACL))
-        return bacl_exit_error;
-    }
-    // Directories can have default ACLs too
-    if (acl_data->filetype == FT_DIREND) {
-      if (generic_get_acl_from_os(jcr, acl_data, BACL_TYPE_DEFAULT)
-          == bacl_exit_fatal) {
-        return bacl_exit_error;
-        if (acl_data->u.build->content_length > 0) {
-          if (!SendAclStream(jcr, acl_data, STREAM_ACL_TRU64_DEFAULT_ACL))
-            return bacl_exit_error;
-        }
-        /**
-         * Tru64 has next to BACL_TYPE_DEFAULT also BACL_TYPE_DEFAULT_DIR acls.
-         * This is an inherited acl for all subdirs.
-         */
-        if (generic_get_acl_from_os(jcr, acl_data, BACL_TYPE_DEFAULT_DIR)
-            == bacl_exit_fatal) {
-          return bacl_exit_error;
-          if (acl_data->u.build->content_length > 0) {
-            if (!SendAclStream(jcr, acl_data, STREAM_ACL_TRU64_DEFAULT_DIR_ACL))
-              return bacl_exit_error;
-          }
-        }
-        return bacl_exit_ok;
-      }
-
-      static bacl_exit_code tru64_parse_acl_streams(
-          JobControlRecord * jcr, AclData * acl_data, int stream, char* content,
-          uint32_t content_length)
-      {
-        switch (stream) {
-          case STREAM_UNIX_ACCESS_ACL:
-          case STREAM_ACL_TRU64_ACCESS_ACL:
-            return generic_set_acl_on_os(jcr, acl_data, BACL_TYPE_ACCESS,
-                                         content, content_length);
-          case STREAM_UNIX_DEFAULT_ACL:
-          case STREAM_ACL_TRU64_DEFAULT_ACL:
-            return generic_set_acl_on_os(jcr, acl_data, BACL_TYPE_DEFAULT,
-                                         content, content_length);
-          case STREAM_ACL_TRU64_DEFAULT_DIR_ACL:
-            return generic_set_acl_on_os(jcr, acl_data, BACL_TYPE_DEFAULT_DIR,
-                                         content, content_length);
-        }
-
-        /**
-         * For this OS setup the build and parse function pointer to the OS
-         * specific functions.
-         */
-        static bacl_exit_code (*os_build_acl_streams)(JobControlRecord * jcr,
-                                                      AclData * acl_data,
-                                                      FindFilesPacket * ff_pkt)
-            = tru64_build_acl_streams;
-        static bacl_exit_code (*os_parse_acl_streams)(
-            JobControlRecord * jcr, AclData * acl_data, int stream,
-            char* content, uint32_t content_length)
-            = tru64_parse_acl_streams;
 
 #      endif
 

@@ -94,7 +94,7 @@ bool fstype(const char* fname, char* fs, int fslen)
   return false;
 }
 
-#elif defined(HAVE_LINUX_OS) || defined(HAVE_OSF1_OS)
+#elif defined(HAVE_LINUX_OS)
 
 #  include <sys/stat.h>
 #  include "lib/mntent_cache.h"
