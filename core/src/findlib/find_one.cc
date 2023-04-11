@@ -311,7 +311,7 @@ bool HasFileChanged(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 }
 
 /**
- * For incremental/diffential or accurate backups, we
+ * For incremental/differential or accurate backups, we
  * determine if the current file has changed.
  */
 bool CheckChanges(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
