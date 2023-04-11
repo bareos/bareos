@@ -251,19 +251,25 @@ bool AccurateCheckFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
         break;
       case 'a': /** Access time */
         if (statc.st_atime != ff_pkt->statp.st_atime) {
-          Dmsg1(debuglevel - 1, "%s      st_atime differs\n", fname);
+          Dmsg1(debuglevel - 1,
+                "%s      st_atime differs: statc:%ld, statp:%ld\n", fname,
+                statc.st_atime, ff_pkt->statp.st_atime);
           status = true;
         }
         break;
       case 'm': /** Modification time */
         if (statc.st_mtime != ff_pkt->statp.st_mtime) {
-          Dmsg1(debuglevel - 1, "%s      st_mtime differs\n", fname);
+          Dmsg1(debuglevel - 1,
+                "%s      st_mtime differs: statc:%ld, statp:%ld\n", fname,
+                statc.st_mtime, ff_pkt->statp.st_mtime);
           status = true;
         }
         break;
       case 'c': /** Change time */
         if (statc.st_ctime != ff_pkt->statp.st_ctime) {
-          Dmsg1(debuglevel - 1, "%s      st_ctime differs\n", fname);
+          Dmsg1(debuglevel - 1,
+                "%s      st_ctime differs: statc:%ld, statp:%ld\n", fname,
+                statc.st_ctime, ff_pkt->statp.st_ctime);
           status = true;
         }
         break;
