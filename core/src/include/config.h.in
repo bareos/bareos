@@ -328,9 +328,6 @@ extern char win_os[];
 // Define to 1 if NDMP support should be enabled
 #cmakedefine HAVE_NDMP @HAVE_NDMP@
 
-// Define to 1 if you are running NetBSD
-#cmakedefine HAVE_NETBSD_OS @HAVE_NETBSD_OS@
-
 // Define to 1 to when walkcontext does not work
 #cmakedefine HAVE_NON_WORKING_WALKCONTEXT @HAVE_NON_WORKING_WALKCONTEXT@
 

@@ -54,28 +54,6 @@ bool fstype(const char* fname, char* fs, int fslen)
   return false;
 }
 
-#elif defined(HAVE_NETBSD_OS)
-#  include <sys/param.h>
-#  include <sys/mount.h>
-#  ifdef HAVE_SYS_STATVFS_H
-#    include <sys/statvfs.h>
-#  else
-#    define statvfs statfs
-#  endif
-
-bool fstype(const char* fname, char* fs, int fslen)
-{
-  struct statvfs st;
-
-  if (statvfs(fname, &st) == 0) {
-    bstrncpy(fs, st.f_fstypename, fslen);
-    return true;
-  }
-
-  Dmsg1(50, "statfs() failed for \"%s\"\n", fname);
-  return false;
-}
-
 #elif defined(HAVE_LINUX_OS)
 
 #  include <sys/stat.h>

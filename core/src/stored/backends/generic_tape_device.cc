@@ -960,25 +960,6 @@ void generic_tape_device::SetOsDeviceParameters(DeviceControlRecord* dcr)
   return;
 #endif
 
-#ifdef HAVE_NETBSD_OS
-  mtop mt_com{};
-  if (dev->min_block_size == dev->max_block_size
-      && dev->min_block_size == 0) { /* variable block mode */
-    mt_com.mt_op = MTSETBSIZ;
-    mt_com.mt_count = 0;
-    if (dev->d_ioctl(dev->fd, MTIOCTOP, (char*)&mt_com) < 0) {
-      dev->clrerror(mt_com.mt_op);
-    }
-    /* Get notified at logical end of tape */
-    mt_com.mt_op = MTEWARN;
-    mt_com.mt_count = 1;
-    if (dev->d_ioctl(dev->fd, MTIOCTOP, (char*)&mt_com) < 0) {
-      dev->clrerror(mt_com.mt_op);
-    }
-  }
-  return;
-#endif
-
 #if HAVE_FREEBSD_OS || HAVE_OPENBSD_OS
   mtop mt_com{};
   if (dev->min_block_size == dev->max_block_size

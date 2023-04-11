@@ -384,13 +384,9 @@ bool send_scsi_cmd_page(int fd,
 
 bool CheckScsiAtEod(int fd) { return false; }
 
-#  elif defined(HAVE_NETBSD_OS) || defined(HAVE_OPENBSD_OS)
+#  elif defined(HAVE_OPENBSD_OS)
 
-#    if defined(HAVE_NETBSD_OS)
-#      include <dev/scsipi/scsipi_all.h>
-#    else
-#      include <scsi/uscsi_all.h>
-#    endif
+#    include <scsi/uscsi_all.h>
 
 #    ifndef LOBYTE
 #      define LOBYTE(_w) ((_w)&0xff)

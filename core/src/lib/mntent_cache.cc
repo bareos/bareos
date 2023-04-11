@@ -74,9 +74,6 @@
 #  if defined(HAVE_OPENBSD_OS)
 #    include <sys/param.h>
 #    include <sys/mount.h>
-#  elif defined(HAVE_NETBSD_OS)
-#    include <sys/types.h>
-#    include <sys/statvfs.h>
 #  else
 #    include <sys/param.h>
 #    include <sys/ucred.h>
@@ -265,11 +262,8 @@ static void refresh_mount_cache([[maybe_unused]] mntent_cache_entry_t*
 #elif defined(HAVE_GETMNTINFO)
   int cnt;
   struct stat st;
-#  if defined(HAVE_NETBSD_OS)
-  struct statvfs* mntinfo;
-#  else
   struct statfs* mntinfo;
-#  endif
+
 #  if defined(ST_NOWAIT)
   int flags = ST_NOWAIT;
 #  elif defined(MNT_NOWAIT)
