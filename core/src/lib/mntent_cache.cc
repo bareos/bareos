@@ -69,9 +69,6 @@
 #    include <mntent.h>
 #  elif defined(HAVE_SUN_OS)
 #    include <sys/mnttab.h>
-#  elif defined(HAVE_HURD_OS)
-#    include <hurd/paths.h>
-#    include <mntent.h>
 #  endif /* HAVE_GETMNTENT */
 #elif defined(HAVE_GETMNTINFO)
 #  if defined(HAVE_OPENBSD_OS)
@@ -230,7 +227,7 @@ static void refresh_mount_cache([[maybe_unused]] mntent_cache_entry_t*
 #if defined(HAVE_GETMNTENT)
   FILE* fp;
   struct stat st;
-#  if defined(HAVE_LINUX_OS) || defined(HAVE_AIX_OS) || defined(HAVE_HURD_OS)
+#  if defined(HAVE_LINUX_OS) || defined(HAVE_AIX_OS)
   struct mntent* mnt;
 
 #    if defined(HAVE_LINUX_OS)

@@ -526,7 +526,7 @@ static bacl_exit_code (*os_parse_acl_streams)(JobControlRecord* jcr,
     = aix_parse_acl_streams;
 
 #    elif defined(HAVE_DARWIN_OS) || defined(HAVE_FREEBSD_OS) \
-        || defined(HAVE_LINUX_OS) || defined(HAVE_HURD_OS)
+        || defined(HAVE_LINUX_OS)
 
 #      include <sys/types.h>
 
@@ -607,8 +607,7 @@ static acl_type_t BacToOsAcltype(bacl_type acltype)
 static int AclCountEntries(acl_t acl)
 {
   int count = 0;
-#      if defined(HAVE_FREEBSD_OS) || defined(HAVE_LINUX_OS) \
-          || defined(HAVE_HURD_OS)
+#      if defined(HAVE_FREEBSD_OS) || defined(HAVE_LINUX_OS)
   acl_entry_t ace;
   int entry_available;
 
@@ -645,8 +644,7 @@ static bool AclIsTrivial(acl_t acl)
    */
   acl_entry_t ace;
   acl_tag_t tag;
-#        if defined(HAVE_FREEBSD_OS) || defined(HAVE_LINUX_OS) \
-            || defined(HAVE_HURD_OS)
+#        if defined(HAVE_FREEBSD_OS) || defined(HAVE_LINUX_OS)
   int entry_available;
 
   entry_available = acl_get_entry(acl, ACL_FIRST_ENTRY, &ace);
@@ -1178,15 +1176,10 @@ static bacl_exit_code (*os_parse_acl_streams)(JobControlRecord* jcr,
                                               uint32_t content_length)
     = freebsd_parse_acl_streams;
 
-#      elif defined(HAVE_LINUX_OS) || defined(HAVE_HURD_OS)
-// Define the supported ACL streams for these OSes
-#        if defined(HAVE_LINUX_OS)
+#      elif defined(HAVE_LINUX_OS)
+// Define the supported ACL streams
 static int os_access_acl_streams[1] = {STREAM_ACL_LINUX_ACCESS_ACL};
 static int os_default_acl_streams[1] = {STREAM_ACL_LINUX_DEFAULT_ACL};
-#        elif defined(HAVE_HURD_OS)
-static int os_access_acl_streams[1] = {STREAM_ACL_HURD_ACCESS_ACL};
-static int os_default_acl_streams[1] = {STREAM_ACL_HURD_DEFAULT_ACL};
-#        endif
 
 static bacl_exit_code generic_build_acl_streams(JobControlRecord* jcr,
                                                 AclData* acl_data,

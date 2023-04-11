@@ -244,9 +244,6 @@ extern char win_os[];
 // Define to 1 if you have the <grp.h> header file
 #cmakedefine HAVE_GRP_H @HAVE_GRP_H@
 
-// Define to 1 if you are running GNU Hurd
-#cmakedefine HAVE_HURD_OS @HAVE_HURD_OS@
-
 // Define to 1 if you have the `inet_ntop' function
 #cmakedefine HAVE_INET_NTOP @HAVE_INET_NTOP@
 

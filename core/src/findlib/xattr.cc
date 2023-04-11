@@ -623,8 +623,7 @@ static BxattrExitCode (*os_parse_xattr_streams)(JobControlRecord* jcr,
                                                 uint32_t content_length)
     = aix_parse_xattr_streams;
 
-#  elif defined(HAVE_DARWIN_OS) || defined(HAVE_LINUX_OS) \
-      || defined(HAVE_HURD_OS)
+#  elif defined(HAVE_DARWIN_OS) || defined(HAVE_LINUX_OS)
 
 #    if (!defined(HAVE_LISTXATTR) && !defined(HAVE_LLISTXATTR))  \
         || (!defined(HAVE_GETXATTR) && !defined(HAVE_LGETXATTR)) \
@@ -652,10 +651,6 @@ static const char* xattr_skiplist[]
     = {"ceph.dir.entries",  "ceph.dir.files",    "ceph.dir.rbytes",
        "ceph.dir.rctime",   "ceph.dir.rentries", "ceph.dir.rfiles",
        "ceph.dir.rsubdirs", "ceph.dir.subdirs",  NULL};
-#    elif defined(HAVE_HURD_OS)
-static int os_default_xattr_streams[1] = {STREAM_XATTR_HURD};
-static const char* xattr_acl_skiplist[1] = {NULL};
-static const char* xattr_skiplist[1] = {NULL};
 #    endif
 
 /**
