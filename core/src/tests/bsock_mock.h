@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,6 +23,9 @@
  *
  */
 
+#ifndef BAREOS_TESTS_BSOCK_MOCK_H_
+#define BAREOS_TESTS_BSOCK_MOCK_H_
+
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -42,6 +45,9 @@
 /* ignore the suggest-override warnings caused by MOCK_METHODx */
 #    pragma GCC diagnostic push
 #    pragma GCC diagnostic ignored "-Wsuggest-override"
+#  else
+#    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Wdeprecated-copy"
 #  endif
 #endif
 
@@ -90,16 +96,16 @@ class BareosSocketMock : public BareosSocket {
                     utime_t,
                     int*));
 };
-#ifdef __GNUC__
-#  ifndef __clang__
-#    pragma GCC diagnostic pop
-#  endif
-#endif
 /* define a gmock action that fills bsock->msg so we can recv() a message */
 ACTION_P2(BareosSocket_Recv, bsock, msg)
 {
   Bsnprintf(bsock->msg, int32_t(strlen(msg) + 1), msg);
 }
+
+#ifdef __GNUC__
+#  pragma GCC diagnostic pop
+#endif
+
 #define BSOCK_RECV(bsock, msg) \
   DoAll(BareosSocket_Recv(bsock, msg), Return(strlen(msg)))
 
@@ -126,3 +132,5 @@ BareosSocketMock::~BareosSocketMock()
     src_addr = nullptr;
   }
 }
+
+#endif  // BAREOS_TESTS_BSOCK_MOCK_H_
