@@ -23,6 +23,9 @@
  *
  */
 
+#ifndef BAREOS_TESTS_BSOCK_MOCK_H_
+#define BAREOS_TESTS_BSOCK_MOCK_H_
+
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -129,3 +132,5 @@ BareosSocketMock::~BareosSocketMock()
     src_addr = nullptr;
   }
 }
+
+#endif  // BAREOS_TESTS_BSOCK_MOCK_H_
