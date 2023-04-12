@@ -152,11 +152,21 @@ target_compile_definitions(
           -DBAREOS_YEAR="${BAREOS_YEAR}"
 )
 
-target_link_libraries(
-  bareos
-  PRIVATE bareosfastlz ${OPENSSL_LIBRARIES} Threads::Threads ${ZLIB_LIBRARIES}
-          ${LZO2_LIBRARIES} ${CAM_LIBRARIES} CLI11::CLI11 xxHash::xxhash
-)
+if(NOT USE_SYSTEM_XXHASH)
+  target_link_libraries(
+    bareos
+    PRIVATE bareosfastlz ${OPENSSL_LIBRARIES} Threads::Threads
+            ${ZLIB_LIBRARIES} ${LZO2_LIBRARIES} ${CAM_LIBRARIES} CLI11::CLI11
+            xxHash::xxhash
+  )
+else()
+  target_link_libraries(
+    bareos
+    PRIVATE bareosfastlz ${OPENSSL_LIBRARIES} Threads::Threads
+            ${ZLIB_LIBRARIES} ${LZO2_LIBRARIES} ${CAM_LIBRARIES} CLI11::CLI11
+            ${XXHASH_LIBRARIES}
+  )
+endif()
 
 if(CMAKE_CXX_FLAGS MATCHES "-fsanitize=address"
    AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU"

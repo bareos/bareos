@@ -19,6 +19,12 @@
 
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
-add_subdirectory(CLI11 EXCLUDE_FROM_ALL)
-add_subdirectory(fmt EXCLUDE_FROM_ALL)
-include(./xxHash.cmake)
+if(NOT USE_SYSTEM_CLI11)
+  add_subdirectory(CLI11 EXCLUDE_FROM_ALL)
+endif()
+if(NOT USE_SYSTEM_FMT)
+  add_subdirectory(fmt EXCLUDE_FROM_ALL)
+endif()
+if(NOT USE_SYSTEM_XXHASH)
+  include(./xxHash.cmake)
+endif()
