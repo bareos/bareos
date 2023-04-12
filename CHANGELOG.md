@@ -56,6 +56,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - scripts: config-lib improve get_local_hostname fallback [PR #1402]
 - dird: deprecate client `Autoprune`, `JobRetention`, and `FileRetention` [PR #1425]
 - daemons: remove deprecated `Pid Directory` config option, and update `Maximum Concurrent Jobs` default value to 1 [PR #1426]
+- build: switch to FreeBSD 12.4 [PR #1440]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -140,4 +141,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1426]: https://github.com/bareos/bareos/pull/1426
 [PR #1429]: https://github.com/bareos/bareos/pull/1429
 [PR #1439]: https://github.com/bareos/bareos/pull/1439
+[PR #1440]: https://github.com/bareos/bareos/pull/1440
 [unreleased]: https://github.com/bareos/bareos/tree/master
