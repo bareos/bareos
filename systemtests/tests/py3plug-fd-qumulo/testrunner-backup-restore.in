@@ -1,0 +1,345 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+
+#
+# This systemtest tests the Qumulo plugin functionality
+# of the Bareos FD by using the supplied module
+#   BareosFdPluginQumulo.py
+#
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+#shellcheck source=functions
+. functions
+
+start_test
+
+
+# Prepare manual step
+#postgres -c /usr/lib/bareos/scripts/create_bareos_database
+#postgres -c /usr/lib/bareos/scripts/make_bareos_tables
+#postgres -c /usr/lib/bareos/scripts/grant_bareos_privileges
+
+# Deploy sample etc/bareos
+# tar -C / -cf /var/tmp/bareos_etc.tar.xf
+
+export TestName="$(basename "$(pwd)")"
+export LANG=en_US@UTF-8
+export LC_ALL=en_US@UTF-8
+
+QUMULO_INI=etc/bareos/qumulo.d/qumulo_testing.ini
+QUMULO_MOUNTPOINT=@qumulo_api_mountpoint@
+QUMULO_SHARE=@qumulo_share_name@
+QUMULO_FS_PATH=@qumulo_fs_path@
+QUMULO_SHARE_BASEDIR="${QUMULO_MOUNTPOINT}/${QUMULO_FS_PATH}"
+QUMULO_TESTS_ROOT="${QUMULO_SHARE_BASEDIR}/bareos-tests"
+
+RESTORE_ROOT="${tmp}/bareos-restores"
+RESTORE_DIR="${RESTORE_ROOT}/${QUMULO_FS_PATH}/bareos-tests"
+
+if ! df "${QUMULO_MOUNTPOINT}"; then
+  echo "ERROR: QUMULO_MOUNTPOINT ${QUMULO_MOUNTPOINT} is not mounted"
+  exit 1
+fi
+if  ! [ -d "${QUMULO_SHARE_BASEDIR}" ]; then
+  echo "ERROR: ${QUMULO_SHARE_BASEDIR} is not a directory"
+  exit 1
+fi
+
+echo "${QUMULO_INI}:"
+echo "---------------------"
+sed 's/password.*/password = ***/g' <  ${QUMULO_INI}
+echo "---------------------"
+
+
+# empty any console message
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $log_home/setup.out
+setdebug level=100 trace=1 timestamp=1 client=bareos-fd
+status director
+status client
+status storage=File
+wait
+messages
+quit
+END_OF_DATA
+run_bconsole
+
+
+# This test should be extended to be able to create itself the needed
+# nfs/cifs share, external snapshot policy.
+# Should test with and without share_name, fs_path
+
+
+#
+# Testing case with Accurate / No Accurate
+# ========================================
+#
+#
+# This tests needs to emulate the following situation,
+# where previously backup files are deleted (this deletion is recorded into bareos)
+# and then restored to their initial state. So the timestamps and stat look like the original.
+# Then a new backup is made.
+#
+# Can often occurs on git clone folders for example, but also restored files from a filesystem snapshot.
+#
+# The restore should be fully equal to the actual state.
+#
+# - Prepare on the api a dedicated share having a hourly snapshot
+#   the hourly snapshot can be deleted after 4 hours for example.
+#
+
+
+do_full () {
+  bconsole <<< "run job=qumulo_testing level=Full yes
+  wait "
+  bconsole <<< m
+  }
+
+do_incremental () {
+  bconsole <<< "run job=qumulo_testing level=Incremental yes
+  wait"
+  bconsole <<< m
+}
+
+do_restore () {
+  rm -rf ${RESTORE_ROOT}
+  bconsole <<< "restore client=bareos-fd fileset=qumulo_testing where=${RESTORE_ROOT} select all done yes
+  wait "
+  bconsole <<< m
+}
+
+
+do_data_step1 () {
+
+  cd ${QUMULO_SHARE_BASEDIR}
+  if [ -d ${QUMULO_TESTS_ROOT} ]; then
+    rm -rf ${QUMULO_TESTS_ROOT}
+  fi
+  mkdir -p ${QUMULO_TESTS_ROOT}/folder1
+  cd ${QUMULO_TESTS_ROOT}
+  for F in "a" "b" "folder1/c"; do
+    echo "create some content into file ${F}" > "${F}"
+    sleep 5
+  done
+
+  git init
+  git config user.email "noreply@bareos.com"
+  git config user.name "Bareos SystemTest"
+
+  git add a
+  git commit -m "First init"
+  git add b folder1/c
+  git commit -m "Adding more content file b and folder1/c"
+
+}
+
+do_data_step2 () {
+  echo "Adding new file and content into d" > d
+  git add d
+  git commit -m "Adding d" d
+  echo "Adding data to existing b" >> b
+  git commit -m "adding data to b" b
+}
+
+do_data_step3 () {
+  sed -i 's/^.*$//g' folder1/c
+  git rm a
+  git add -A
+  git commit -m "adjust c and remove a"
+}
+
+do_data_step4 () {
+  git reset --hard HEAD~1
+}
+
+# Comparing functions
+
+do_compare_diff () {
+  diff -rup "${QUMULO_TESTS_ROOT}" "${RESTORE_DIR}"
+}
+
+# First comparison of file
+do_compare_file_step1 () {
+  if ! cmp -s "${QUMULO_TESTS_ROOT}/b" "${RESTORE_DIR}/b"; then
+    echo "b Bad files differs";
+    exit 11
+  fi
+  if ! cmp -s "${QUMULO_TESTS_ROOT}/folder1/c" "${RESTORE_DIR}/folder1/c"; then
+    echo "$c Bad files differs";
+    exit 12
+  fi
+}
+
+do_compare_file_step2 () {
+  if ! cmp -s "${QUMULO_TESTS_ROOT}/b" "${RESTORE_DIR}/b"; then
+    echo "b files differs"
+    exit 21
+  fi
+  if ! cmp -s "${QUMULO_TESTS_ROOT}/d" "${RESTORE_DIR}/d"; then
+    echo "d files differs"
+    exit 22
+  fi
+}
+
+do_compare_file_step3 () {
+  if ! cmp -s "${QUMULO_TESTS_ROOT}/folder1/c" "${RESTORE_DIR}/folder1/c"; then
+    echo "c files differs"
+    exit 31
+  fi
+  if ! cmp -s "d" "${RESTORE_DIR}/d"; then
+    echo "d files differs"
+    exit 32
+  fi
+}
+
+do_compare_file_step4 () {
+  if ! cmp -s "${QUMULO_TESTS_ROOT}/b" "${RESTORE_DIR}/b"; then
+    echo "b files differs"
+    exit 41
+  fi
+  if ! cmp -s "${QUMULO_TESTS_ROOT}/folder1/c" "${RESTORE_DIR}/folder1/c"; then
+    echo "c files differs"
+    exit 42
+  fi
+  if ! cmp -s "${QUMULO_TESTS_ROOT}/a" "${RESTORE_DIR}/a"; then
+    echo "a files differs"
+    exit 43
+  fi
+}
+
+# Run plan
+
+# Step 1
+do_data_step1
+# Do a full backup
+do_full
+# Do a full restore
+do_restore
+# Do comparison
+# This step will always work, as the api only return new data, without offending commit
+# baf59c3 otherwise is will always failed due to wrong timestamps
+do_compare_diff
+do_compare_file_step1
+
+
+# Step 2
+# Do new data and changes
+do_data_step2
+# Do new incremental backup (2 files)
+do_incremental
+# Do another full restore
+do_restore
+# Do comparison
+do_compare_diff
+do_compare_file_step2
+
+# This step can start to show troubles as .git/index is changed
+# the api may consider this file deleted and recreated
+# so in db table file have 2 records also visible with
+# bconsole <<< "list files jobid=2"
+# /testing/bareos-tests/.git/index
+# /testing/bareos-tests/.git/refs/heads/master
+# /testing/bareos-tests/.git/COMMIT_EDITMSG
+# /testing/bareos-tests/.git/logs/HEAD
+# /testing/bareos-tests/.git/logs/refs/heads/master
+# /testing/bareos-tests/.git/refs/heads/master
+# /testing/bareos-tests/.git/index
+# /testing/bareos-tests/b
+# /testing/bareos-tests/d
+# /testing/bareos-tests/.git/objects/0e/3448f12c7662a3bfc94979678a1761ee0a5d05
+# /testing/bareos-tests/.git/objects/8d/dcd564556f45cf8e7ad474bac5d776393e3286
+# /testing/bareos-tests/.git/objects/05/665b48b73d0833db9dc6e837122e087ca7d583
+# /testing/bareos-tests/.git/objects/20/350494bf907b05a51268cbeb9691b4aafd05cd
+# /testing/bareos-tests/.git/objects/31/cdc3e4f25a61b325c1ac31d96b4b340f2d4709
+# /testing/bareos-tests/.git/objects/7d/7ee3be216d919cd807656f7cd9c7a58211f62b
+# /testing/bareos-tests/.git/objects/0e/
+# /testing/bareos-tests/.git/objects/8d/
+# /testing/bareos-tests/.git/objects/05/
+# /testing/bareos-tests/.git/objects/20/
+# /testing/bareos-tests/.git/objects/31/
+# /testing/bareos-tests/.git/objects/7d/
+# /testing/bareos-tests/.git/objects/
+# /testing/bareos-tests/.git/refs/heads/
+# /testing/bareos-tests/.git/
+# /testing/bareos-tests/
+
+
+# Step 3
+# Delete file a and remove content from c
+do_data_step3
+# Do another incremental
+do_incremental
+# Do new full restore
+do_restore
+# Comparison step 3
+do_compare_diff
+do_compare_file_step3
+
+# Only in /qumulo//testing/bareos-tests/.git: index
+# Only in /qumulo//testing/bareos-tests/.git/refs/heads: master
+
+# Same cause as previously, beware thet sometimes it is c that is not present in the restore.
+
+# bconsole <<< "sqlquery
+# select fileid,fileindex,jobid,pathid,name from file where jobid=6;
+# "
+# +--------+-----------+-------+--------+----------------------------------------+
+# | fileid | fileindex | jobid | pathid | name                                   |
+# +--------+-----------+-------+--------+----------------------------------------+
+# |    130 |         0 |     8 |     17 | c                                      |
+# |    131 |         0 |     8 |      2 | a                                      |
+# |    132 |         0 |     8 |     16 | index                                  |
+# |    133 |         0 |     8 |      3 | master                                 |
+# |    134 |         5 |     8 |     16 | COMMIT_EDITMSG                         |
+# |    135 |         6 |     8 |     19 | HEAD                                   |
+# |    136 |         7 |     8 |      4 | master                                 |
+# |    137 |         8 |     8 |      3 | master                                 |
+# |    138 |         9 |     8 |     16 | index                                  |
+# |    139 |        10 |     8 |     17 | c                                      |
+# |    140 |        11 |     8 |     31 | 137891791fe96927ad78e64b0aad7bded08bdc |
+# |    141 |        12 |     8 |     33 | 13752a4eed5c5fd301ba9da0685c67c5d8b168 |
+# |    142 |        13 |     8 |     34 | 366b2c7f9c6b259426dd76a183e4e90414d2f5 |
+# |    143 |        14 |     8 |     32 | 5d6b5d27bf976dc65a8a01c3755c247a9cb7f4 |
+# |    144 |        15 |     8 |     31 |                                        |
+# |    145 |        16 |     8 |     33 |                                        |
+# |    146 |        17 |     8 |     34 |                                        |
+# |    147 |        18 |     8 |     32 |                                        |
+# |    148 |        19 |     8 |     21 |                                        |
+# |    149 |        20 |     8 |      3 |                                        |
+# |    150 |        21 |     8 |     16 |                                        |
+# |    151 |        22 |     8 |     17 |                                        |
+# |    152 |        23 |     8 |      2 |                                        |
+# +--------+-----------+-------+--------+----------------------------------------+
+
+
+# Step 4
+# Reset files to their previous state (undelete) (step1)
+do_data_step4
+do_incremental
+do_restore
+# Failing again due to file being recorded as deleted and created.
+do_compare_diff
+do_compare_file_step4
+
+
+# Only in /qumulo//testing/bareos-tests/folder1: c
+# Only in /qumulo//testing/bareos-tests/.git: index
+# Only in /qumulo//testing/bareos-tests/.git/refs/heads: master
+
+
+
+# Step 5 to be continued
+# Test a file that is created then deleted then recreated then deleted again
+# so final state for this file is deleted.
+
+
+# Global for each backup we should check what number of file we have into the database.
