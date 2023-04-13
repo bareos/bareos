@@ -46,7 +46,6 @@
 #include "lib/dlink.h"
 #include "lib/path_list.h"
 
-#include <unordered_set>
 #include <atomic>
 
 struct job_callback_item;
@@ -76,13 +75,13 @@ typedef void(JCR_free_HANDLER)(JobControlRecord* jcr);
 /* clang-format off */
 class JobControlRecord {
  private:
-  pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; /**< Jcr mutex */
-  std::atomic<int32_t> _use_count{};                   /**< Use count */
-  std::atomic<int32_t> JobStatus{}; /**< ready, running, blocked, terminated */
+  pthread_mutex_t mutex_ = PTHREAD_MUTEX_INITIALIZER; /**< Jcr mutex */
+  std::atomic<int32_t> use_count_{};                   /**< Use count */
+  std::atomic<int32_t> JobStatus_{}; /**< ready, running, blocked, terminated */
   int32_t JobType_{};            /**< Backup, restore, verify ... */
   int32_t JobLevel_{};           /**< Job level */
   int32_t Protocol_{};           /**< Backup Protocol */
-  bool my_thread_killable{};
+  bool my_thread_killable_{};
  public:
   JobControlRecord();
   ~JobControlRecord();
@@ -91,36 +90,36 @@ class JobControlRecord {
   JobControlRecord& operator=(const JobControlRecord& other) = delete;
   JobControlRecord& operator=(const JobControlRecord&& other) = delete;
 
-  void lock() { lock_mutex(mutex); }
-  void unlock() { unlock_mutex(mutex); }
+  void lock() { lock_mutex(mutex_); }
+  void unlock() { unlock_mutex(mutex_); }
   void IncUseCount(void)
   {
-    ++_use_count;
+    ++use_count_;
   }
   void DecUseCount(void)
   {
-    --_use_count;
+    --use_count_;
   }
-  int32_t UseCount() const { return _use_count; }
-  void InitMutex(void) { pthread_mutex_init(&mutex, NULL); }
-  void DestroyMutex(void) { pthread_mutex_destroy(&mutex); }
-  bool IsJobCanceled() { return  JobStatus == JS_Canceled
-                              || JobStatus == JS_ErrorTerminated
-                              || JobStatus == JS_FatalError; }
+  int32_t UseCount() const { return use_count_; }
+  void InitMutex(void) { pthread_mutex_init(&mutex_, NULL); }
+  void DestroyMutex(void) { pthread_mutex_destroy(&mutex_); }
+  bool IsJobCanceled() { return  JobStatus_ == JS_Canceled
+                              || JobStatus_ == JS_ErrorTerminated
+                              || JobStatus_ == JS_FatalError; }
 
-  bool IsTerminatedOk() { return JobStatus == JS_Terminated || JobStatus == JS_Warnings; }
-  bool IsIncomplete() { return JobStatus == JS_Incomplete; }
+  bool IsTerminatedOk() { return JobStatus_ == JS_Terminated || JobStatus_ == JS_Warnings; }
+  bool IsIncomplete() { return JobStatus_ == JS_Incomplete; }
   bool is_JobLevel(int32_t JobLevel) { return JobLevel == JobLevel_; }
   bool is_JobType(int32_t JobType) { return JobType == JobType_; }
-  bool is_JobStatus(int32_t aJobStatus) { return aJobStatus == JobStatus; }
+  bool is_JobStatus(int32_t aJobStatus) { return aJobStatus == JobStatus_; }
   void setJobLevel(int32_t JobLevel) { JobLevel_ = JobLevel; }
   void setJobType(int32_t JobType) { JobType_ = JobType; }
   void setJobProtocol(int32_t JobProtocol) { Protocol_ = JobProtocol; }
-  void setJobStatus(int32_t aJobStatus) { JobStatus = aJobStatus; }
+  void setJobStatus(int32_t aJobStatus) { JobStatus_ = aJobStatus; }
   void setJobStarted();
   int32_t getJobType() const { return JobType_; }
   int32_t getJobLevel() const { return JobLevel_; }
-  int32_t getJobStatus() const { return JobStatus; }
+  int32_t getJobStatus() const { return JobStatus_; }
   int32_t getJobProtocol() const { return Protocol_; }
   bool NoClientUsed() const
   {
@@ -136,7 +135,7 @@ class JobControlRecord {
   bool JobReads();                               /**< in lib/jcr.c */
   void MyThreadSendSignal(int sig);              /**< in lib/jcr.c */
   void SetKillable(bool killable);               /**< in lib/jcr.c */
-  bool IsKillable() const { return my_thread_killable; }
+  bool IsKillable() const { return my_thread_killable_; }
 
   dlink<JobControlRecord> link;                     /**< JobControlRecord chain link */
   pthread_t my_thread_id{};       /**< Id of thread controlling jcr */

@@ -412,7 +412,7 @@ void JobControlRecord::SetKillable(bool killable)
 {
   lock();
 
-  my_thread_killable = killable;
+  my_thread_killable_ = killable;
   if (killable) {
     my_thread_id = pthread_self();
   } else {
@@ -744,7 +744,7 @@ void JobControlRecord::setJobStarted()
 void JobControlRecord::setJobStatusWithPriorityCheck(int newJobStatus)
 {
   int priority;
-  int oldJobStatus = JobStatus;
+  int oldJobStatus = JobStatus_;
   int old_priority = GetStatusPriority(oldJobStatus);
 
   priority = GetStatusPriority(newJobStatus);
@@ -770,10 +770,10 @@ void JobControlRecord::setJobStatusWithPriorityCheck(int newJobStatus)
   if (priority > old_priority || (priority == 0 && old_priority == 0)) {
     Dmsg4(800, "Set new stat. old: %c,%d new: %c,%d\n", oldJobStatus,
           old_priority, newJobStatus, priority);
-    JobStatus.compare_exchange_strong(oldJobStatus, newJobStatus);
+    JobStatus_.compare_exchange_strong(oldJobStatus, newJobStatus);
   }
 
-  if (oldJobStatus != JobStatus) {
+  if (oldJobStatus != JobStatus_) {
     Dmsg2(800, "leave setJobStatus old=%c new=%c\n", oldJobStatus,
           newJobStatus);
     //    GeneratePluginEvent(this, bEventStatusChange, nullptr);
