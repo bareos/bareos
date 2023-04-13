@@ -98,7 +98,7 @@ int WaitForSysop(DeviceControlRecord* dcr)
     dev->SetBlocked(BST_WAITING_FOR_SYSOP); /* indicate waiting for mount */
   }
 
-  while (!JobCanceled(jcr)) {
+  while (!jcr->IsJobCanceled()) {
     time_t now, start, total_waited;
 
     gettimeofday(&tv, &tz);

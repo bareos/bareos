@@ -262,7 +262,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
       dev->ClearLabeled();
     }
 
-    if (JobCanceled(jcr)) {
+    if (jcr->IsJobCanceled()) {
       char ed1[50];
       Mmsg1(dev->errmsg, _("Job %s canceled.\n"), edit_int64(jcr->JobId, ed1));
       Jmsg(jcr, M_INFO, 0, dev->errmsg);
@@ -475,7 +475,7 @@ DeviceControlRecord* AcquireDeviceForAppend(DeviceControlRecord* dcr)
     dev->Unlock();
     Dmsg1(190, "jid=%u Do mount_next_write_vol\n", (uint32_t)jcr->JobId);
     if (!dcr->MountNextWriteVolume()) {
-      if (!JobCanceled(jcr)) {
+      if (!jcr->IsJobCanceled()) {
         /* Reduce "noise" -- don't print if job canceled */
         Jmsg(jcr, M_FATAL, 0, _("Could not ready device %s for append.\n"),
              dev->print_name());
@@ -540,7 +540,7 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
    * A previous implementation did the flush inside dev->close(),
    * which resulted in various locking problems.
    */
-  if (!JobCanceled(jcr)) {
+  if (!jcr->IsJobCanceled()) {
     if (!dev->d_flush(dcr)) {
       Jmsg(jcr, M_FATAL, 0, "Failed to flush device %s.\n", dev->print_name());
     }
@@ -628,7 +628,7 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
   UnlockVolumes();
 
   // Fire off Alert command and include any output
-  if (!JobCanceled(jcr)) {
+  if (!jcr->IsJobCanceled()) {
     if (!dcr->device_resource->drive_tapealert_enabled
         && dcr->device_resource->alert_command) {
       int status = 1;

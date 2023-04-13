@@ -350,7 +350,7 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
 {
   VolumeReservationItem *vol, *nvol;
 
-  if (JobCanceled(dcr->jcr)) { return NULL; }
+  if (dcr->jcr->IsJobCanceled()) { return NULL; }
   ASSERT(dcr->dev != NULL);
 
   Dmsg2(debuglevel, "enter reserve_volume=%s drive=%s\n", VolumeName,
@@ -830,7 +830,7 @@ bool DeviceControlRecord::Can_i_use_volume()
   bool rtn = true;
   VolumeReservationItem* vol;
 
-  if (JobCanceled(jcr)) { return false; }
+  if (jcr->IsJobCanceled()) { return false; }
   LockVolumes();
   vol = find_volume(VolumeName);
   if (!vol) {

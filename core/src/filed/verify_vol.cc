@@ -89,7 +89,7 @@ void DoVerifyVolume(JobControlRecord* jcr)
   lname = GetPoolMemory(PM_FNAME);
 
   // Get a record from the Storage daemon
-  while (BgetMsg(sd) >= 0 && !JobCanceled(jcr)) {
+  while (BgetMsg(sd) >= 0 && !jcr->IsJobCanceled()) {
     // First we expect a Stream Record Header
     if (sscanf(sd->msg, rec_header, &VolSessionId, &VolSessionTime, &file_index,
                &stream, &size)

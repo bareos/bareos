@@ -428,7 +428,7 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
         Dmsg1(100, "Executing %s command.\n", cmds[i].cmd);
         if (!cmds[i].func(jcr)) { /* do command */
           quit = true;            /* error or fully terminated, get out */
-          Dmsg1(100, "Quit command loop. Canceled=%d\n", JobCanceled(jcr));
+          Dmsg1(100, "Quit command loop. Canceled=%d\n", jcr->IsJobCanceled());
         }
         break;
       }
@@ -925,7 +925,7 @@ static bool RunbeforenowCmd(JobControlRecord* jcr)
           ? jcr->fd_impl->director->allowed_script_dirs
           : me->allowed_script_dirs);
 
-  if (JobCanceled(jcr)) {
+  if (jcr->IsJobCanceled()) {
     dir->fsend(FailedRunScript);
     Dmsg0(100, "Back from RunScripts ClientBeforeJob now: FAILED\n");
     return false;
@@ -2250,7 +2250,7 @@ bail_out:
     retval = false; /* we stop here */
   }
 
-  if (JobCanceled(jcr)) { retval = false; /* we stop here */ }
+  if (jcr->IsJobCanceled()) { retval = false; /* we stop here */ }
 
   if (!retval) {
     EndRestoreCmd(jcr); /* stopping so send bEventEndRestoreJob */
@@ -2373,7 +2373,7 @@ bool response(JobControlRecord* jcr,
     Dmsg0(110, sd->msg);
     if (bstrcmp(sd->msg, resp)) { return true; }
   }
-  if (JobCanceled(jcr)) {
+  if (jcr->IsJobCanceled()) {
     return false; /* if canceled avoid useless error messages */
   }
   if (IsBnetError(sd)) {

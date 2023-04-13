@@ -331,10 +331,10 @@ static inline int NdmpWaitForJobTermination(JobControlRecord* jcr)
    * Force cancel in SD if failing, but not for Incomplete jobs
    * so that we let the SD despool.
    */
-  Dmsg4(100, "cancel=%d FDJS=%d JS=%d SDJS=%d\n", jcr->IsCanceled(),
+  Dmsg4(100, "cancel=%d FDJS=%d JS=%d SDJS=%d\n", jcr->IsJobCanceled(),
         jcr->dir_impl->FDJobStatus.load(), jcr->getJobStatus(),
         jcr->dir_impl->SDJobStatus.load());
-  if (jcr->IsCanceled()
+  if (jcr->IsJobCanceled()
       || (!jcr->dir_impl->res.job->RescheduleIncompleteJobs)) {
     Dmsg3(100, "FDJS=%d JS=%d SDJS=%d\n", jcr->dir_impl->FDJobStatus.load(),
           jcr->getJobStatus(), jcr->dir_impl->SDJobStatus.load());

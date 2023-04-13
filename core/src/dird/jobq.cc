@@ -182,7 +182,7 @@ extern "C" void* sched_wait(void* arg)
           wtime, jcr->UseCount());
     if (wtime > 30) { wtime = 30; }
     Bmicrosleep(wtime, 0);
-    if (JobCanceled(jcr)) { break; }
+    if (jcr->IsJobCanceled()) { break; }
     wtime = jcr->sched_time - time(NULL);
   }
   Dmsg1(200, "resched use=%d\n", jcr->UseCount());
@@ -227,7 +227,7 @@ int JobqAdd(jobq_t* jq, JobControlRecord* jcr)
   jcr->IncUseCount(); /* mark jcr in use by us */
   Dmsg3(2300, "JobqAdd jobid=%d jcr=0x%x UseCount=%d\n", jcr->JobId, jcr,
         jcr->UseCount());
-  if (!JobCanceled(jcr) && wtime > 0) {
+  if (!jcr->IsJobCanceled() && wtime > 0) {
     sched_pkt = (wait_pkt*)malloc(sizeof(wait_pkt));
     sched_pkt->jcr = jcr;
     sched_pkt->jq = jq;
@@ -250,7 +250,7 @@ int JobqAdd(jobq_t* jq, JobControlRecord* jcr)
 
   // While waiting in a queue this job is not attached to a thread
   SetJcrInThreadSpecificData(nullptr);
-  if (JobCanceled(jcr)) {
+  if (jcr->IsJobCanceled()) {
     // Add job to ready queue so that it is canceled quickly
     jq->ready_jobs->prepend(item);
     Dmsg1(2300, "Prepended job=%d to ready queue\n", jcr->JobId);
@@ -515,7 +515,7 @@ extern "C" void* jobq_server(void* arg)
 
         if (!AcquireResources(jcr)) {
           // If resource conflict, job is canceled
-          if (!JobCanceled(jcr)) {
+          if (!jcr->IsJobCanceled()) {
             je = jn; /* point to next waiting job */
             continue;
           }

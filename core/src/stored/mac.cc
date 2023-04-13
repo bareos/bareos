@@ -86,7 +86,7 @@ static bool response(JobControlRecord* jcr,
     Dmsg1(110, "<stored: %s", sd->msg);
     if (bstrcmp(sd->msg, resp)) { return true; }
   }
-  if (JobCanceled(jcr)) {
+  if (jcr->IsJobCanceled()) {
     return false; /* if canceled avoid useless error messages */
   }
   if (IsBnetError(sd)) {
@@ -693,7 +693,7 @@ bail_out:
          edit_uint64_with_suffix(jcr->JobBytes / job_elapsed, ec1));
 
     // send final Vol info to DIR
-    if (!ok || JobCanceled(jcr)) {
+    if (!ok || jcr->IsJobCanceled()) {
       DiscardAttributeSpool(jcr);
     } else {
       CommitAttributeSpool(jcr);

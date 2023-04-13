@@ -111,7 +111,7 @@ bool BareosSocketTCP::connect(JobControlRecord* jcr,
   for (i = 0; !open(jcr, name, host, service, port, heart_beat, &fatal);
        i -= retry_interval) {
     BErrNo be;
-    if (fatal || (jcr && JobCanceled(jcr))) { goto bail_out; }
+    if (fatal || (jcr && jcr->IsJobCanceled())) { goto bail_out; }
     Dmsg4(100, "Unable to connect to %s on %s:%d. ERR=%s\n", name, host, port,
           be.bstrerror());
     if (i < 0) {

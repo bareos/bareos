@@ -205,7 +205,7 @@ static int AccurateListHandler(void* ctx, int num_fields, char** row)
 {
   JobControlRecord* jcr = (JobControlRecord*)ctx;
 
-  if (JobCanceled(jcr)) { return 1; }
+  if (jcr->IsJobCanceled()) { return 1; }
 
   if (row[2][0] == '0') { /* discard when file_index == 0 */
     return 0;
@@ -297,7 +297,7 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
   db_list_ctx nb;
 
   // In base level, no previous job is used and no restart incomplete jobs
-  if (jcr->IsCanceled() || jcr->is_JobLevel(L_BASE)) { return true; }
+  if (jcr->IsJobCanceled() || jcr->is_JobLevel(L_BASE)) { return true; }
 
   if (!jcr->accurate) { return true; }
 
@@ -664,7 +664,7 @@ int WaitForJobTermination(JobControlRecord* jcr, int timeout)
         Jmsg(jcr, M_WARNING, 0, _("Unexpected Client Job message: %s\n"),
              fd->msg);
       }
-      if (JobCanceled(jcr)) { break; }
+      if (jcr->IsJobCanceled()) { break; }
     }
     if (tid) { StopBsockTimer(tid); }
 
@@ -673,7 +673,7 @@ int WaitForJobTermination(JobControlRecord* jcr, int timeout)
       Jmsg(jcr, M_FATAL, 0, _("Network error with FD during %s: ERR=%s\n"),
            job_type_to_str(jcr->getJobType()), fd->bstrerror());
       while (i++ < 10 && jcr->dir_impl->res.job->RescheduleIncompleteJobs
-             && jcr->IsCanceled()) {
+             && jcr->IsJobCanceled()) {
         Bmicrosleep(3, 0);
       }
     }
@@ -682,10 +682,10 @@ int WaitForJobTermination(JobControlRecord* jcr, int timeout)
 
   /* Force cancel in SD if failing, but not for Incomplete jobs so that we let
    * the SD despool. */
-  Dmsg5(100, "cancel=%d fd_ok=%d FDJS=%d JS=%d SDJS=%d\n", jcr->IsCanceled(),
+  Dmsg5(100, "cancel=%d fd_ok=%d FDJS=%d JS=%d SDJS=%d\n", jcr->IsJobCanceled(),
         fd_ok, jcr->dir_impl->FDJobStatus.load(), jcr->getJobStatus(),
         jcr->dir_impl->SDJobStatus.load());
-  if (jcr->IsCanceled()
+  if (jcr->IsJobCanceled()
       || (!jcr->dir_impl->res.job->RescheduleIncompleteJobs && !fd_ok)) {
     Dmsg4(100, "fd_ok=%d FDJS=%d JS=%d SDJS=%d\n", fd_ok,
           jcr->dir_impl->FDJobStatus.load(), jcr->getJobStatus(),

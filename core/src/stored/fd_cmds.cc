@@ -213,7 +213,7 @@ void DoFdCommands(JobControlRecord* jcr)
         jcr->errmsg[0] = 0;
         if (!fd_cmds[i].func(jcr)) { /* do command */
           // Note fd->msg command may be destroyed by comm activity
-          if (!JobCanceled(jcr)) {
+          if (!jcr->IsJobCanceled()) {
             if (jcr->errmsg[0]) {
               Jmsg1(jcr, M_FATAL, 0,
                     _("Command error with FD, hanging up. %s\n"), jcr->errmsg);
@@ -229,7 +229,7 @@ void DoFdCommands(JobControlRecord* jcr)
     }
 
     if (!found) { /* command not found */
-      if (!JobCanceled(jcr)) {
+      if (!jcr->IsJobCanceled()) {
         Jmsg1(jcr, M_FATAL, 0, _("FD command not found: %s\n"), fd->msg);
         Dmsg1(110, "<filed: Command not found: %s", fd->msg);
       }

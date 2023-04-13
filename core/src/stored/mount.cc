@@ -109,7 +109,7 @@ mount_next_vol:
           dev->must_load());
   }
 
-  if (JobCanceled(jcr)) {
+  if (jcr->IsJobCanceled()) {
     Jmsg(jcr, M_FATAL, 0, _("Job %d canceled.\n"), jcr->JobId);
     goto bail_out;
   }
@@ -123,7 +123,7 @@ mount_next_vol:
 
   if (!find_a_volume()) { goto bail_out; }
 
-  if (JobCanceled(jcr)) { goto bail_out; }
+  if (jcr->IsJobCanceled()) { goto bail_out; }
 
   Dmsg2(150, "After find_next_append. Vol=%s Slot=%d\n", getVolCatName(),
         VolCatInfo.Slot);
@@ -220,7 +220,7 @@ mount_next_vol:
     lock_mutex(mount_mutex);
   }
 
-  if (JobCanceled(jcr)) { goto bail_out; }
+  if (jcr->IsJobCanceled()) { goto bail_out; }
 
   Dmsg3(150, "want vol=%s devvol=%s dev=%s\n", VolumeName,
         dev->VolHdr.VolumeName, dev->print_name());
@@ -393,14 +393,14 @@ bool DeviceControlRecord::find_a_volume()
       Dmsg0(200, "Before DirFindNextAppendableVolume.\n");
       while (!dcr->DirFindNextAppendableVolume()) {
         Dmsg0(200, "not dir_find_next\n");
-        if (JobCanceled(jcr)) { return false; }
+        if (jcr->IsJobCanceled()) { return false; }
         unlock_mutex(mount_mutex);
         if (!dcr->DirAskSysopToCreateAppendableVolume()) {
           lock_mutex(mount_mutex);
           return false;
         }
         lock_mutex(mount_mutex);
-        if (JobCanceled(jcr)) { return false; }
+        if (jcr->IsJobCanceled()) { return false; }
         Dmsg0(150, "Again dir_find_next_append...\n");
       }
     }
@@ -427,7 +427,7 @@ int DeviceControlRecord::CheckVolumeLabel(bool& ask, bool& autochanger)
   } else {
     vol_label_status = ReadDevVolumeLabel(dcr);
   }
-  if (JobCanceled(jcr)) { goto check_bail_out; }
+  if (jcr->IsJobCanceled()) { goto check_bail_out; }
 
   Dmsg2(150, "Want dirVol=%s dirStat=%s\n", VolumeName,
         VolCatInfo.VolCatStatus);

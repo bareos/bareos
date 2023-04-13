@@ -394,7 +394,7 @@ bool ReadRecords(DeviceControlRecord* dcr,
   jcr->sd_impl->read_session.mount_next_volume = false;
 
   while (ok && !done) {
-    if (JobCanceled(jcr)) {
+    if (jcr->IsJobCanceled()) {
       ok = false;
       break;
     }

@@ -64,7 +64,7 @@ static int TallyFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 {
   Attributes attr;
 
-  if (JobCanceled(jcr)) { return 0; }
+  if (jcr->IsJobCanceled()) { return 0; }
   switch (ff_pkt->type) {
     case FT_LNKSAVED: /* Hard linked, file already saved */
     case FT_REGE:

@@ -2174,7 +2174,7 @@ static void fillcmd()
   } else {
     Pmsg1(-1, _("%s Begin writing Bareos records to first tape ...\n"), buf1);
   }
-  for (file_index = 0; ok && !JobCanceled(jcr);) {
+  for (file_index = 0; ok && !jcr->IsJobCanceled();) {
     rec.VolSessionId = jcr->VolSessionId;
     rec.VolSessionTime = jcr->VolSessionTime;
     rec.FileIndex = ++file_index;
@@ -2249,7 +2249,7 @@ static void fillcmd()
   if (vol_num > 1) {
     Dmsg0(100, "Write_end_session_label()\n");
     /* Create Job status for end of session label */
-    if (!JobCanceled(jcr) && ok) {
+    if (!jcr->IsJobCanceled() && ok) {
       jcr->setJobStatusWithPriorityCheck(JS_Terminated);
     } else if (!ok) {
       Pmsg0(000, _("Job canceled.\n"));

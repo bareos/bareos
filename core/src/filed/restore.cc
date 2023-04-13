@@ -478,7 +478,7 @@ void DoRestore(JobControlRecord* jcr)
     memset(jcr->fd_impl->xattr_data->u.parse, 0, sizeof(xattr_parse_data_t));
   }
 
-  while (BgetMsg(sd) >= 0 && !JobCanceled(jcr)) {
+  while (BgetMsg(sd) >= 0 && !jcr->IsJobCanceled()) {
     // Remember previous stream type
     rctx.prev_stream = rctx.stream;
 

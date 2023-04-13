@@ -64,7 +64,7 @@ int is_job_canceled_cb(struct ndm_session* sess)
   NIS* nis = (NIS*)sess->param->log.ctx;
   JobControlRecord* jcr = nis->jcr;
 
-  return jcr->IsCanceled();
+  return jcr->IsJobCanceled();
 }
 
 

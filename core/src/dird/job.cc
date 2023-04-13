@@ -222,7 +222,7 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
   DispatchNewPluginOptions(jcr);
   GeneratePluginEvent(jcr, bDirEventJobStart);
 
-  if (JobCanceled(jcr)) { goto bail_out; }
+  if (jcr->IsJobCanceled()) { goto bail_out; }
 
   if (jcr->JobReads() && !jcr->dir_impl->res.read_storage_list) {
     if (jcr->dir_impl->res.job->storage) {
@@ -493,7 +493,7 @@ static void* job_thread(void* arg)
     case JT_BACKUP:
       switch (jcr->getJobProtocol()) {
         case PT_NDMP_BAREOS:
-          if (!JobCanceled(jcr)) {
+          if (!jcr->IsJobCanceled()) {
             if (DoNdmpBackup(jcr)) {
               DoAutoprune(jcr);
             } else {
@@ -504,7 +504,7 @@ static void* job_thread(void* arg)
           }
           break;
         case PT_NDMP_NATIVE:
-          if (!JobCanceled(jcr)) {
+          if (!jcr->IsJobCanceled()) {
             if (DoNdmpBackupNdmpNative(jcr)) {
               DoAutoprune(jcr);
             } else {
@@ -515,7 +515,7 @@ static void* job_thread(void* arg)
           }
           break;
         default:
-          if (!JobCanceled(jcr)) {
+          if (!jcr->IsJobCanceled()) {
             if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {
               if (DoNativeVbackup(jcr)) {
                 DoAutoprune(jcr);
@@ -540,7 +540,7 @@ static void* job_thread(void* arg)
       }
       break;
     case JT_VERIFY:
-      if (!JobCanceled(jcr)) {
+      if (!jcr->IsJobCanceled()) {
         if (DoVerify(jcr)) {
           DoAutoprune(jcr);
         } else {
@@ -553,7 +553,7 @@ static void* job_thread(void* arg)
     case JT_RESTORE:
       switch (jcr->getJobProtocol()) {
         case PT_NDMP_BAREOS:
-          if (!JobCanceled(jcr)) {
+          if (!jcr->IsJobCanceled()) {
             if (DoNdmpRestore(jcr)) {
               DoAutoprune(jcr);
             } else {
@@ -564,7 +564,7 @@ static void* job_thread(void* arg)
           }
           break;
         case PT_NDMP_NATIVE:
-          if (!JobCanceled(jcr)) {
+          if (!jcr->IsJobCanceled()) {
             if (DoNdmpRestoreNdmpNative(jcr)) {
               DoAutoprune(jcr);
             } else {
@@ -575,7 +575,7 @@ static void* job_thread(void* arg)
           }
           break;
         default:
-          if (!JobCanceled(jcr)) {
+          if (!jcr->IsJobCanceled()) {
             if (DoNativeRestore(jcr)) {
               DoAutoprune(jcr);
             } else {
@@ -588,7 +588,7 @@ static void* job_thread(void* arg)
       }
       break;
     case JT_ADMIN:
-      if (!JobCanceled(jcr)) {
+      if (!jcr->IsJobCanceled()) {
         if (do_admin(jcr)) {
           DoAutoprune(jcr);
         } else {
@@ -599,7 +599,7 @@ static void* job_thread(void* arg)
       }
       break;
     case JT_ARCHIVE:
-      if (!JobCanceled(jcr)) {
+      if (!jcr->IsJobCanceled()) {
         if (DoArchive(jcr)) {
           DoAutoprune(jcr);
         } else {
@@ -611,7 +611,7 @@ static void* job_thread(void* arg)
       break;
     case JT_COPY:
     case JT_MIGRATE:
-      if (!JobCanceled(jcr)) {
+      if (!jcr->IsJobCanceled()) {
         if (DoMigration(jcr)) {
           DoAutoprune(jcr);
         } else {
@@ -622,7 +622,7 @@ static void* job_thread(void* arg)
       }
       break;
     case JT_CONSOLIDATE:
-      if (!JobCanceled(jcr)) {
+      if (!jcr->IsJobCanceled()) {
         if (DoConsolidate(jcr)) {
           DoAutoprune(jcr);
         } else {
@@ -730,7 +730,7 @@ static void JobMonitorWatchdog(watchdog_t* self)
   foreach_jcr (jcr) {
     bool cancel = false;
 
-    if (jcr->JobId == 0 || JobCanceled(jcr) || jcr->dir_impl->no_maxtime) {
+    if (jcr->JobId == 0 || jcr->IsJobCanceled() || jcr->dir_impl->no_maxtime) {
       Dmsg2(800, "Skipping JobControlRecord=%p Job=%s\n", jcr, jcr->Job);
       continue;
     }
@@ -801,7 +801,7 @@ static bool JobCheckMaxruntime(JobControlRecord* jcr)
   JobResource* job = jcr->dir_impl->res.job;
   utime_t run_time;
 
-  if (JobCanceled(jcr) || !jcr->job_started) { return false; }
+  if (jcr->IsJobCanceled() || !jcr->job_started) { return false; }
   if (job->MaxRunTime == 0 && job->FullMaxRunTime == 0
       && job->IncMaxRunTime == 0 && job->DiffMaxRunTime == 0) {
     return false;
@@ -837,7 +837,7 @@ static bool JobCheckMaxruntime(JobControlRecord* jcr)
  */
 static bool JobCheckMaxrunschedtime(JobControlRecord* jcr)
 {
-  if (jcr->dir_impl->MaxRunSchedTime == 0 || JobCanceled(jcr)) { return false; }
+  if (jcr->dir_impl->MaxRunSchedTime == 0 || jcr->IsJobCanceled()) { return false; }
   if ((watchdog_time - jcr->initial_sched_time)
       < jcr->dir_impl->MaxRunSchedTime) {
     Dmsg3(200, "Job %p (%s) with MaxRunSchedTime %d not expired\n", jcr,

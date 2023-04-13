@@ -250,7 +250,7 @@ bool BareosSocket::despool(void UpdateAttrSpoolSize(ssize_t size),
     }
 
     send();
-    if (jcr && JobCanceled(jcr)) { return false; }
+    if (jcr && jcr->IsJobCanceled()) { return false; }
   }
   UpdateAttrSpoolSize(tsize - last);
 
@@ -388,7 +388,7 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord* jcr,
 {
   bool auth_success = false;
 
-  if (jcr && JobCanceled(jcr)) {
+  if (jcr && jcr->IsJobCanceled()) {
     const char* fmt
         = _("TwoWayAuthenticate failed, because job was canceled.\n");
     Jmsg(jcr, M_FATAL, 0, fmt);
@@ -449,7 +449,7 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord* jcr,
       }
       fsend(_("1999 Authorization failed.\n"));
       Bmicrosleep(sleep_time_after_authentication_error, 0);
-    } else if (jcr && JobCanceled(jcr)) {
+    } else if (jcr && jcr->IsJobCanceled()) {
       const char* fmt
           = _("TwoWayAuthenticate failed, because job was canceled.\n");
       Jmsg(jcr, M_FATAL, 0, fmt);

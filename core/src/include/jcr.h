@@ -68,11 +68,6 @@ struct CopyThreadContext;
 
 typedef void(JCR_free_HANDLER)(JobControlRecord* jcr);
 
-#define JobCanceled(jcr)                        \
-  (jcr->getJobStatus() == JS_Canceled           \
-   || jcr->getJobStatus() == JS_ErrorTerminated \
-   || jcr->getJobStatus() == JS_FatalError)
-
 #define foreach_jcr(jcr) \
   for (jcr = jcr_walk_start(); jcr; (jcr = jcr_walk_next(jcr)))
 
@@ -109,8 +104,10 @@ class JobControlRecord {
   int32_t UseCount() const { return _use_count; }
   void InitMutex(void) { pthread_mutex_init(&mutex, NULL); }
   void DestroyMutex(void) { pthread_mutex_destroy(&mutex); }
-  bool IsJobCanceled() { return JobCanceled(this); }
-  bool IsCanceled() { return JobCanceled(this); }
+  bool IsJobCanceled() { return  JobStatus == JS_Canceled
+                              || JobStatus == JS_ErrorTerminated
+                              || JobStatus == JS_FatalError; }
+
   bool IsTerminatedOk() { return JobStatus == JS_Terminated || JobStatus == JS_Warnings; }
   bool IsIncomplete() { return JobStatus == JS_Incomplete; }
   bool is_JobLevel(int32_t JobLevel) { return JobLevel == JobLevel_; }

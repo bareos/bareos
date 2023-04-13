@@ -178,7 +178,7 @@ int FindFiles(JobControlRecord* jcr,
             == 0) {
           return 0; /* error return */
         }
-        if (JobCanceled(jcr)) { return 0; }
+        if (jcr->IsJobCanceled()) { return 0; }
       }
 
       foreach_dlist (node, &incexe->plugin_list) {
@@ -193,7 +193,7 @@ int FindFiles(JobControlRecord* jcr,
         ff->cmd_plugin = true;
         PluginSave(jcr, ff, true);
         ff->cmd_plugin = false;
-        if (JobCanceled(jcr)) { return 0; }
+        if (jcr->IsJobCanceled()) { return 0; }
       }
     }
   }

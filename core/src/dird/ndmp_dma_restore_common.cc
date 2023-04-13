@@ -184,7 +184,7 @@ void NdmpRestoreCleanup(JobControlRecord* jcr, int TermCode)
     jcr->dir_impl->unlink_bsr = false;
   }
 
-  if (JobCanceled(jcr)) { CancelStorageDaemonJob(jcr); }
+  if (jcr->IsJobCanceled()) { CancelStorageDaemonJob(jcr); }
 
   switch (TermCode) {
     case JS_Terminated:
