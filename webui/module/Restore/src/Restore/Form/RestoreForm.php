@@ -261,8 +261,8 @@ class RestoreForm extends Form
                     'options' => array(
                         'label' => _('Merge all client filesets'),
                         'value_options' => array(
-                            '0' => _('Yes'),
-                            '1' => _('No')
+                            '1' => _('Yes'),
+                            '0' => _('No')
                         )
                     ),
                     'attributes' => array(
@@ -280,14 +280,14 @@ class RestoreForm extends Form
                     'options' => array(
                         'label' => _('Merge all client filesets'),
                         'value_options' => array(
-                            '0' => _('Yes'),
-                            '1' => _('No')
+                            '1' => _('Yes'),
+                            '0' => _('No')
                         )
                     ),
                     'attributes' => array(
                         'class' => 'form-control selectpicker show-tick',
                         'id' => 'mergefilesets',
-                        'value' => '0',
+                        'value' => $_SESSION['bareos']['merge_filesets'] ? 1 : 0,
                         'disabled' => true
                     )
                 )
@@ -303,8 +303,8 @@ class RestoreForm extends Form
                     'options' => array(
                         'label' => _('Merge all related jobs to last full backup of selected backup job'),
                         'value_options' => array(
-                            '0' => _('Yes'),
-                            '1' => _('No')
+                            '1' => _('Yes'),
+                            '0' => _('No')
                         )
                     ),
                     'attributes' => array(
@@ -322,14 +322,14 @@ class RestoreForm extends Form
                     'options' => array(
                         'label' => _('Merge jobs'),
                         'value_options' => array(
-                            '0' => _('Yes'),
-                            '1' => _('No')
+                            '1' => _('Yes'),
+                            '0' => _('No')
                         )
                     ),
                     'attributes' => array(
                         'class' => 'form-control selectpicker show-tick',
                         'id' => 'mergejobs',
-                        'value' => '0',
+                        'value' => $_SESSION['bareos']['merge_jobs'] ? 1 : 0,
                         'disabled' => true
                     )
                 )

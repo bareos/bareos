@@ -512,7 +512,7 @@ function scheduleActionButtonsFormatter(value, row, index, basePath) {
 function jobActionButtonsFormatter(value, row, index, basePath) {
    let jobDetailsButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/job/details/' + row.jobid + '" title="' + iJS._("View Job Details") + '" id="btn-0"><span class="glyphicon glyphicon-search"></span></a>';
    let jobRerunButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/job/index?action=rerun&jobid=' + row.jobid + '" title="' + iJS._('Rerun') + '" id="btn-1" onclick="return confirm(\'Rerun Job ID ' + row.jobid + '?\')"><span class="glyphicon glyphicon-repeat"></span></a>';
-   let jobRestoreButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/restore/?mergefilesets=1&mergejobs=1&client=' + row.client + '&jobid=' + row.jobid + '" title="' + iJS._("Restore") + '" id="btn-1"><span class="glyphicon glyphicon-import"></span></a>';
+   let jobRestoreButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/restore/?mergefilesets=0&mergejobs=0&client=' + row.client + '&jobid=' + row.jobid + '" title="' + iJS._("Restore") + '" id="btn-1"><span class="glyphicon glyphicon-import"></span></a>';
    let jobCancelButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/job/cancel/' + row.jobid + '" title="' + iJS._("Cancel") + '" id="btn-1" onclick="return confirm(\'Cancel Job ID ' + row.jobid + '?\')"><span class="glyphicon glyphicon-remove"></span></a>';
 
    switch(row.jobstatus) {
