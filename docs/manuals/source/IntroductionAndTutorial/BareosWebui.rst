@@ -519,6 +519,14 @@ Some parameters of the |webui| can be configured in :file:`/etc/bareos-webui/con
    ; Default:
    ;filetree_refresh_timeout=120000
 
+   ; Merge jobs on client selection
+   ; Default:
+   ;merge_jobs=true
+
+   ; Merge filesets on client selection
+   ; Default:
+   ;merge_filesets=true
+
    ;------------------------------------------------------------------------------
    ; THEME SETTINGS
    ;------------------------------------------------------------------------------
