@@ -18,8 +18,8 @@ echo "---------------------"
 
 QUMULO_MOUNTPOINT=@qumulo_api_mountpoint@
 QUMULO_SHARE=@qumulo_share_name@
-QUMULO_SHARE_FILESYSTEM_PATH=@qumulo_fs_path@
-QUMULO_SHARE_BASEDIR="${QUMULO_MOUNTPOINT}/${QUMULO_SHARE_FILESYSTEM_PATH}"
+QUMULO_SHARE_FS_PATH=@qumulo_fs_path@
+QUMULO_SHARE_BASEDIR="${QUMULO_MOUNTPOINT}/${QUMULO_SHARE_FS_PATH}"
 
 if ! df "${QUMULO_MOUNTPOINT}"; then
   echo "ERROR: QUMULO_MOUNTPOINT ${QUMULO_MOUNTPOINT} is not mounted"
@@ -49,7 +49,7 @@ for f in\
    weird-files/'A-file-with-accents-'$'\303\243\303\240\303\242\303\241\303\244\303\241''-'$'\303\200\303\203\303\202\303\204\303\201\303\203\303\200' \
    weird-files/'dir-with-accents-'$'\303\250\303\251\303\244\303\261\303\273' \
    weird-files/'filename-with-non-utf8-bytestring->C'$'\303''N' \
-; 
+;
 do
    rm -vrf "${BackupDirectory}/${f}"
 done
