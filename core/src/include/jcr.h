@@ -68,9 +68,6 @@ struct CopyThreadContext;
 
 typedef void(JCR_free_HANDLER)(JobControlRecord* jcr);
 
-#define JobTerminatedSuccessfully(jcr) \
-  (jcr->getJobStatus() == JS_Terminated || jcr->getJobStatus() == JS_Warnings)
-
 #define JobCanceled(jcr)                        \
   (jcr->getJobStatus() == JS_Canceled           \
    || jcr->getJobStatus() == JS_ErrorTerminated \
@@ -114,7 +111,7 @@ class JobControlRecord {
   void DestroyMutex(void) { pthread_mutex_destroy(&mutex); }
   bool IsJobCanceled() { return JobCanceled(this); }
   bool IsCanceled() { return JobCanceled(this); }
-  bool IsTerminatedOk() { return JobTerminatedSuccessfully(this); }
+  bool IsTerminatedOk() { return JobStatus == JS_Terminated || JobStatus == JS_Warnings; }
   bool IsIncomplete() { return JobStatus == JS_Incomplete; }
   bool is_JobLevel(int32_t JobLevel) { return JobLevel == JobLevel_; }
   bool is_JobType(int32_t JobType) { return JobType == JobType_; }

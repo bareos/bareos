@@ -335,7 +335,7 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
 
       /* If there is nothing to do the DoMigrationInit() function will set
        * the termination status to JS_Terminated. */
-      if (JobTerminatedSuccessfully(jcr)) {
+      if (jcr->IsTerminatedOk()) {
         MigrationCleanup(jcr, jcr->getJobStatus());
         goto bail_out;
       }
@@ -348,7 +348,7 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
 
       /* If there is nothing to do the do_consolidation_init() function will set
        * the termination status to JS_Terminated. */
-      if (JobTerminatedSuccessfully(jcr)) {
+      if (jcr->IsTerminatedOk()) {
         ConsolidateCleanup(jcr, jcr->getJobStatus());
         goto bail_out;
       }
