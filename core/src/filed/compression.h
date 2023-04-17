@@ -29,7 +29,7 @@ bool AdjustDecompressionBuffers(JobControlRecord* jcr);
 bool SetupCompressionContext(b_ctx& bctx);
 
 enum class LevelChangeResult {
-  ERROR,
+  CHANGE_ERROR,
   CHANGE,
   NO_CHANGE
 };

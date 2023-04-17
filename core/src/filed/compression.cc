@@ -111,7 +111,7 @@ LevelChangeResult SetCompressionLevel(JobControlRecord* jcr,
 	Jmsg(jcr, M_FATAL, 0,
 	     _("Compression deflateParams error: %d\n"), zstat);
 	jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
-	result = LevelChangeResult::ERROR;
+	result = LevelChangeResult::CHANGE_ERROR;
       } else {
 	result = LevelChangeResult::CHANGE;
       }
@@ -145,7 +145,7 @@ LevelChangeResult SetCompressionLevel(JobControlRecord* jcr,
 	Jmsg(jcr, M_FATAL, 0,
 	     _("Compression fastlzlibSetCompressor error: %d\n"), zstat);
 	jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
-	result = LevelChangeResult::ERROR;
+	result = LevelChangeResult::CHANGE_ERROR;
       } else {
 	result = LevelChangeResult::CHANGE;
       }
@@ -198,7 +198,7 @@ bool SetupCompressionContext(b_ctx& bctx)
 				      bctx.jcr->compress);
 
     switch (result) {
-    case LevelChangeResult::ERROR: {
+    case LevelChangeResult::CHANGE_ERROR: {
       retval = false;
     } break;
     case LevelChangeResult::CHANGE: {
