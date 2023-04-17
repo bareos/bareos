@@ -1332,8 +1332,12 @@ static void ReadData(std::vector<channel::in<shared_buffer>> channels,
 		     BareosFilePacket* bfd,
 		     std::size_t buflen)
 {
-  ssize_t readsize = 512 * 1024;
+  ssize_t max_readsize = 512 * 1024;
+  ssize_t readsize = (max_readsize / buflen) * buflen;
+  ASSERT(readsize <= max_readsize);
   ASSERT(readsize % buflen == 0);
+  // prevent weird situations where max_readsize < buflen
+  if (readsize == 0) readsize = buflen;
   for (;;) {
     auto mem = std::shared_ptr<char>(new char[readsize], std::default_delete<char[]>{});
     if (!mem) { break; }
