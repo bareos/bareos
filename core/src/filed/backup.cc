@@ -175,7 +175,7 @@ static void CompressionWorker(channel::out<std::shared_ptr<compress_worker_input
     if (SetCompressionLevel(args->jcr,
 			    args->algorithm,
 			    args->level,
-			    *ctx) == LevelChangeResult::ERROR) {
+			    *ctx) == LevelChangeResult::CHANGE_ERROR) {
       chan.reset();
       continue;
     }
