@@ -26,6 +26,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/filetypes.h"
 #include "dird.h"
 #include "lib/rblist.h"
 #include "lib/htable.h"

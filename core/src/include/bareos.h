@@ -142,8 +142,6 @@ extern "C" {
 
 #include "lib/attribs.h"
 
-#include "streams.h"
-#include "filetypes.h"
 #include "baconfig.h"
 #include "lib/lib.h"
 #include "lib/compression.h"

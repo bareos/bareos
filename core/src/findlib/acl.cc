@@ -62,6 +62,8 @@
  */
 
 #include "include/bareos.h"
+#include "include/filetypes.h"
+#include "include/streams.h"
 #include "include/jcr.h"
 #include "lib/berrno.h"
 #include "lib/bsock.h"

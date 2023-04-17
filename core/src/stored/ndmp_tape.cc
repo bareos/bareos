@@ -58,6 +58,8 @@
 #  include "lib/bpoll.h"
 #  include "lib/parse_conf.h"
 #  include "lib/thread_list.h"
+#  include "include/filetypes.h"
+#  include "include/streams.h"
 #  include "include/auth_types.h"
 #  include "include/jcr.h"
 

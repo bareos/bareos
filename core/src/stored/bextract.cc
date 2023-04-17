@@ -28,6 +28,8 @@
 
 #include <unistd.h>
 #include "include/bareos.h"
+#include "include/filetypes.h"
+#include "include/streams.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
 #include "lib/crypto_cache.h"

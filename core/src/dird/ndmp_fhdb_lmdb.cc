@@ -26,6 +26,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/filetypes.h"
 #include "dird.h"
 
 #if defined(HAVE_NDMP) && defined(HAVE_LMDB)

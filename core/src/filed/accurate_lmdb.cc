@@ -24,6 +24,8 @@
 
 #include <unistd.h>
 #include "include/bareos.h"
+#include "include/filetypes.h"
+#include "include/streams.h"
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
 

@@ -32,6 +32,7 @@
 #include <netinet/in.h>
 
 #include "include/bareos.h"
+#include "include/streams.h"
 #include "find.h"
 #include "lib/berrno.h"
 

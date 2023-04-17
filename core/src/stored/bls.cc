@@ -28,6 +28,7 @@
 
 #include <unistd.h>
 #include "include/bareos.h"
+#include "include/streams.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
 #include "lib/berrno.h"

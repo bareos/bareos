@@ -26,8 +26,10 @@
  */
 
 #include "include/bareos.h"
+#include "include/streams.h"
 #include "dird.h"
 #include "include/protocol_types.h"
+#include "include/filetypes.h"
 
 #if HAVE_NDMP
 

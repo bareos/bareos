@@ -26,6 +26,7 @@
  */
 #include "include/bareos.h"
 #include "include/protocol_types.h"
+#include "include/streams.h"
 #include "stored/stored.h"
 #include "stored/device_control_record.h"
 

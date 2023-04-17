@@ -29,6 +29,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/streams.h"
 #include "stored/stored_jcr_impl.h"
 #include "stored/stored.h"
 #include "stored/device_control_record.h"

@@ -29,6 +29,8 @@
 #include <unistd.h>
 
 #include "include/bareos.h"
+#include "include/filetypes.h"
+#include "include/streams.h"
 #include "include/jcr.h"
 #include "find.h"
 #include "include/ch.h"

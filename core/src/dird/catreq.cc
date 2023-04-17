@@ -33,6 +33,8 @@
  */
 
 #include "include/bareos.h"
+#include "include/filetypes.h"
+#include "include/streams.h"
 #include "dird.h"
 #include "dird/next_vol.h"
 #include "dird/director_jcr_impl.h"

@@ -22,6 +22,7 @@
 */
 
 #include "include/bareos.h"
+#include "include/filetypes.h"
 #include "filed/filed.h"
 #include "filed/accurate.h"
 #include "filed/filed_globals.h"

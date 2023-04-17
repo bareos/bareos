@@ -33,6 +33,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/streams.h"
 #include "dird.h"
 #include "dird/dird_globals.h"
 #include "findlib/find.h"

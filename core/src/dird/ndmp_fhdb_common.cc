@@ -24,6 +24,7 @@
  * Functions common to mem and lmdb backends of fhdb handling
  */
 #include "include/bareos.h"
+#include "include/filetypes.h"
 #include "dird.h"
 
 #if defined(HAVE_NDMP)

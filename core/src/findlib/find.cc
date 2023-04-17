@@ -32,6 +32,7 @@
 
 #include <unistd.h>
 #include "include/bareos.h"
+#include "include/filetypes.h"
 #include "include/jcr.h"
 #include "find.h"
 #include "findlib/find_one.h"

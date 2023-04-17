@@ -49,6 +49,7 @@
 #include "filed/fd_plugins.h"
 #include "plugins/include/python3compat.h"
 
+#include "include/filetypes.h"
 #include "python-fd.h"
 #include "module/bareosfd.h"
 #include "lib/edit.h"

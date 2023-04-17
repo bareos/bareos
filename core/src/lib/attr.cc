@@ -27,6 +27,7 @@
 
 #include <unistd.h>
 #include "include/bareos.h"
+#include "include/filetypes.h"
 #include "include/jcr.h"
 #include "lib/breg.h"
 #include "lib/edit.h"

@@ -27,6 +27,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/filetypes.h"
 #include "filed/filed.h"
 #include "filed/filed_jcr_impl.h"
 #include "filed/accurate.h"

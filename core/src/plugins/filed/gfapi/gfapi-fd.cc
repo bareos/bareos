@@ -24,6 +24,7 @@
  * GlusterFS GFAPI plugin for the Bareos File Daemon
  */
 #include "include/bareos.h"
+#include "include/filetypes.h"
 #include "filed/fd_plugins.h"
 #include "plugins/include/common.h"
 #include "include/fileopts.h"
