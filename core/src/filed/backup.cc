@@ -198,7 +198,7 @@ static void CompressionWorker(channel::out<std::shared_ptr<compress_worker_input
   }
 }
 
-struct useful_data {
+struct SendContext {
   std::thread sender;
   std::thread digester;
   std::thread compressor;
@@ -209,7 +209,7 @@ struct useful_data {
   channel::in<compress_input> to_compress;
 
 
-  useful_data(JobControlRecord* jcr,
+  SendContext(JobControlRecord* jcr,
 	      std::size_t num_compress_workers) : compress_workers{} {
     if (num_compress_workers == 0) {
       // todo: warning message to jcr
@@ -238,7 +238,7 @@ struct useful_data {
     to_compress = std::move(cin);
   }
 
-  ~useful_data() {
+  ~SendContext() {
     // we have to join the threads before we can destruct them;
     // we have to close the channels before we can join them
     to_send.close();
@@ -373,8 +373,8 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
   }
 
   // setup sending threads
-  useful_data data(jcr, 8);
-  jcr->fd_impl->internal = &data;
+  SendContext data(jcr, 8);
+  jcr->fd_impl->send_ctx = &data;
 
 #if 1 && !defined(SEND_SERIAL)
 
@@ -438,7 +438,7 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
 	  jcr->fd_impl->num_files_examined += list_ok.value();
   }
 
-  jcr->fd_impl->internal = nullptr;
+  jcr->fd_impl->send_ctx = nullptr;
 
   // join synchronizes threads, so its safe to read from list_ok now!
   if (!list_ok || !send_ok) {
@@ -1509,7 +1509,7 @@ static inline bool SendPlainData(b_ctx& bctx)
     sinks.emplace_back(std::move(cr_in));
     // connection between the compressing thread and the sending thread
     auto [sc_in, sc_out] = channel::CreateBufferedChannel<shared_buffer>(1);
-    if (!((useful_data *)bctx.jcr->fd_impl->internal)->to_compress.put({
+    if (!bctx.jcr->fd_impl->send_ctx->to_compress.put({
 	  std::move(cr_out), std::move(sc_in),
 	  bctx.jcr, bctx.max_compress_len,
 	  bctx.ff_pkt->Compress_algo,
@@ -1525,7 +1525,7 @@ static inline bool SendPlainData(b_ctx& bctx)
     // connection between the reading thread and the sending thread
     auto [sr_in, sr_out] = channel::CreateBufferedChannel<sbuf>(actual_buf_count);
     sinks.emplace_back(std::move(sr_in));
-    if (!((useful_data *)bctx.jcr->fd_impl->internal)->to_send.put({
+    if (!bctx.jcr->fd_impl->send_ctx->to_send.put({
 	  std::move(sr_out),
 	  std::move(compression_out),
 	  &bctx, &sending})) {
@@ -1539,7 +1539,7 @@ static inline bool SendPlainData(b_ctx& bctx)
     // connection between the reading thread and the digesting thread
     auto [dr_in, dr_out] = channel::CreateBufferedChannel<sbuf>(actual_buf_count);
     sinks.emplace_back(std::move(dr_in));
-    if (!((useful_data *)bctx.jcr->fd_impl->internal)->to_digest.put({std::move(dr_out),
+    if (!bctx.jcr->fd_impl->send_ctx->to_digest.put({std::move(dr_out),
 	  bctx.digest, bctx.signing_digest, &digesting})) {
       return false;
     }
