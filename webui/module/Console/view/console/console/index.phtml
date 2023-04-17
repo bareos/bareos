@@ -63,18 +63,11 @@ function send(cmd) {
    $("<div class='output'> * "+cmd+"</div>").insertBefore(".prompt");
 
    if(cmd == "") {
-   }
-   else if(cmd == String.fromCharCode(112,105)) {
-      $("<div class='output'> * "+Math.PI+"</div>").insertBefore(".prompt");
-   }
-   else if(cmd == String.fromCharCode(101)) {
-      $("<div class='output'> * "+Math.E+"</div>").insertBefore(".prompt");
-   }
-   else {
+   } else {
       $('.prompt').hide();
       var request = $.ajax({
          method: "POST",
-         url: "<?php echo $this->url('console', array('action' => 'getData'), array('query' => array('data' => 'cli'))); ?>",
+         url: "<?php echo $this->url('api/console', array(), array()); ?>",
          data: {
             "command": cmd
          },
