@@ -317,6 +317,14 @@ setup_sd_user()
 
     getent group "${STORAGE_DAEMON_GROUP}" > /dev/null || groupadd -r "${STORAGE_DAEMON_GROUP}"
 
+    # Build list of additional groups the user should be in.
+    ADD_GROUPS=""
+    for sec_group in ${SEC_GROUPS}; do
+        if getent group "${sec_group}"; then
+            [ -z "${ADD_GROUPS}" ] && ADD_GROUPS="${sec_group}" || ADD_GROUPS="${ADD_GROUPS},${sec_group}"
+        fi
+    done
+
     #
     # If the user doesn't exist create a new one otherwise modify it to have the wanted secondary groups.
     #
@@ -328,64 +336,24 @@ setup_sd_user()
     if getent passwd "${STORAGE_DAEMON_USER}" > /dev/null; then
         if [ "${STORAGE_DAEMON_USER}" != "root" ]; then
             #
-            # Build a list of all groups the user is already in.
-            #
-            ADD_GROUPS=""
-            CUR_ADD_GROUPS=$(id -Gn "${STORAGE_DAEMON_USER}")
-            for sec_group in ${CUR_ADD_GROUPS}; do
-                [ -z "${USERMOD_CMDLINE}" ] && USERMOD_CMDLINE="usermod -G ${sec_group}" || USERMOD_CMDLINE="${USERMOD_CMDLINE},${sec_group}"
-            done
-
-            #
-            # See what secondary groups exist for the SD user to be added to.
-            #
-            for sec_group in ${SEC_GROUPS}; do
-                if getent group "${sec_group}" >/dev/null; then
-                    found=0
-                    for group in ${CUR_ADD_GROUPS}; do
-                        if [ "${group}" = "${sec_group}" ]; then
-                            found=1
-                        fi
-                    done
-
-                    if [ "${found}" = "0" ]; then
-                        [ -z "${ADD_GROUPS}" ] && ADD_GROUPS="${sec_group}" || ADD_GROUPS="${ADD_GROUPS} ${sec_group}"
-                        [ -z "${USERMOD_CMDLINE}" ] && USERMOD_CMDLINE="usermod -G ${sec_group}" || USERMOD_CMDLINE="${USERMOD_CMDLINE},${sec_group}"
-                    fi
-                fi
-            done
-
-            #
             # If the user was already created before,
             # Make sure the correct primary group is set otherwise fix it.
             #
             if [ "$(id -gn "${STORAGE_DAEMON_USER}")" != "${STORAGE_DAEMON_GROUP}" ]; then
                 usermod -g "${STORAGE_DAEMON_GROUP}" "${STORAGE_DAEMON_USER}" || warn "failed to add groups ${STORAGE_DAEMON_GROUP} to ${STORAGE_DAEMON_USER}"
             fi
-
             #
-            # Add the storage_daemon_user to additional groups (if needed)
+            # Add the storage_daemon_user to additional groups
             #
             if [ -n "${ADD_GROUPS}" ]; then
-                "${USERMOD_CMDLINE}" "${STORAGE_DAEMON_USER}" || warn "failed: ${USERMOD_CMDLINE} ${STORAGE_DAEMON_USER}"
+                usermod -a -G "${ADD_GROUPS}" "${STORAGE_DAEMON_USER}" || warn "failed: ${USERMOD_CMDLINE} ${STORAGE_DAEMON_USER}"
             fi
         fi
     else
         #
-        # User doesn't exist so create it.
-        # Determine additional groups the user should be in.
+        # User doesn't exist so create a new storage_daemon_user with additional groups
         #
-        NEW_ADD_GROUPS=""
-        for sec_group in ${SEC_GROUPS}; do
-            if getent group "${sec_group}"; then
-                [ -z "${NEW_ADD_GROUPS}" ] && NEW_ADD_GROUPS="-G ${sec_group}" || NEW_ADD_GROUPS="${NEW_ADD_GROUPS},${sec_group}"
-            fi
-        done
-
-        #
-        # Create a new storage_daemon_user
-        #
-        useradd -r --comment "bareos" --home "${BAREOS_WORKING_DIR}" -g "${STORAGE_DAEMON_GROUP}" "${NEW_ADD_GROUPS}" --shell /bin/false "${STORAGE_DAEMON_USER}" || warn "failed to create user ${STORAGE_DAEMON_USER}"
+        useradd -r --comment "bareos" --home "${BAREOS_WORKING_DIR}" -g "${STORAGE_DAEMON_GROUP}" -G "${ADD_GROUPS}" --shell /bin/false "${STORAGE_DAEMON_USER}" || warn "failed to create user ${STORAGE_DAEMON_USER}"
     fi
 }
 
