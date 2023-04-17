@@ -158,7 +158,6 @@ static void Compress(CompressionContext& ctx,
 		     uint32_t compression);
 void WaitForCompress(channel::out<compress_input> to_read,
 		     std::vector<channel::in<std::shared_ptr<compress_worker_input>>> pool) {
-  (void) pool;
   for (std::optional chan = to_read.get(); chan; chan = to_read.get()) {
     auto args = std::make_shared<compress_worker_input>(std::move(chan.value()));
     for (auto& worker : pool) {
@@ -192,7 +191,7 @@ static void CompressionWorker(channel::out<std::shared_ptr<compress_worker_input
 	     args->algorithm);
     // we need to explicitly drop the references to the channels
     // here since otherwise that will only happen once we receive the next
-    // input packet; this leads to a deadlock since we only get a next packet
+    // input packet; this leads to a deadlock since we only get the next packet
     // once this finishes!
     chan.reset();
   }
