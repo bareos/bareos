@@ -1473,19 +1473,27 @@ static void SendData(channel::out<shared_buffer> block,
 // Send the content of a file on anything but an EFS filesystem.
 static inline bool SendPlainData(b_ctx& bctx)
 {
-  std::size_t buflen = bctx.rsize;
-  std::size_t filesize = bctx.ff_pkt->statp.st_size;
+  std::size_t actual_buf_count;
+  {
+    std::size_t buflen = bctx.rsize;
+    std::size_t filesize = bctx.ff_pkt->statp.st_size;
 
-  std::size_t maxbuffered = 512 * 1024 * 1024; // 512 MB
-  std::size_t max_num_bufs = 80;
+    std::size_t maxbuffered = 512 * 1024 * 1024; // 512 MB
+    std::size_t max_num_bufs = 80;
+    // some plugins report the filesize as 0
+    // but still create data.
+    // to prevent dead locks by trying to insert a buffer into
+    // an empty queue, we always set up at least five buffers!
+    std::size_t min_num_bufs = 5;
 
-  // do not buffer for much mor than maxbuffered bytes
-  // and create at most max_num_bufs buffers
+    // do not buffer for much more than maxbuffered bytes
+    // and create at most max_num_bufs buffers and at least min_num_bufs buffers
 
-  std::size_t bufferedsize = std::min(filesize, maxbuffered);
-  std::size_t num_buffers  = (bufferedsize + buflen - 1) / buflen;
+    std::size_t bufferedsize = std::min(filesize, maxbuffered);
+    std::size_t num_buffers  = (bufferedsize + buflen - 1) / buflen;
 
-  std::size_t actual_buf_count = std::min(num_buffers, max_num_bufs);
+    actual_buf_count = std::clamp(num_buffers, min_num_bufs, max_num_bufs);
+  }
 
   bool retval = true;
 
@@ -1529,7 +1537,7 @@ static inline bool SendPlainData(b_ctx& bctx)
   gate digesting;
   {
     // connection between the reading thread and the digesting thread
-    auto [dr_in, dr_out] = channel::CreateBufferedChannel<sbuf>(num_buffers);
+    auto [dr_in, dr_out] = channel::CreateBufferedChannel<sbuf>(actual_buf_count);
     sinks.emplace_back(std::move(dr_in));
     if (!((useful_data *)bctx.jcr->fd_impl->internal)->to_digest.put({std::move(dr_out),
 	  bctx.digest, bctx.signing_digest, &digesting})) {
