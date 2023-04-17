@@ -15,6 +15,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - scripts: config-lib improve get_local_hostname fallback [PR #1438]
 -  dird: allow to disable TLS-PSK downgrades [PR #1428]
 - build: switch to FreeBSD 12.4 [PR #1442]
+- file checksums: add new signature algorithm xxh128 [PR #1394]
 
 ## [22.0.3] - 2023-03-24
 
@@ -488,6 +489,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1388]: https://github.com/bareos/bareos/pull/1388
 [PR #1391]: https://github.com/bareos/bareos/pull/1391
 [PR #1393]: https://github.com/bareos/bareos/pull/1393
+[PR #1394]: https://github.com/bareos/bareos/pull/1394
 [PR #1397]: https://github.com/bareos/bareos/pull/1397
 [PR #1399]: https://github.com/bareos/bareos/pull/1399
 [PR #1405]: https://github.com/bareos/bareos/pull/1405
