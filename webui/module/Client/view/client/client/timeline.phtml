@@ -237,7 +237,7 @@ elseif (!$this->acl_alert) : ?>
           data: []
         }]);
 
-        let url = "<?php echo $this->url('client', array('action' => 'getData'), null) . '?data=client-timeline&clients=" + s + "&period='; ?>" + p;
+        let url = "<?php echo $this->url('api/timeline', array(), array()) . '?module=client&clients=" + s + "&period='; ?>" + p;
 
         $.getJSON(url, function(response) {
           if (response.length === 0) {
@@ -281,7 +281,7 @@ elseif (!$this->acl_alert) : ?>
         locale: '<?php echo str_replace('_', '-', $_SESSION['bareos']['locale']); ?>',
         cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
         cookieIdTable: 'timeline_clients',
-        url: '<?php echo $this->url('client', array('action' => 'getData'), null) . '?data=all'; ?>',
+        url: '<?php echo $this->url('api/client', array(), array()); ?>',
         method: 'get',
         dataType: 'json',
         pagination: false,
