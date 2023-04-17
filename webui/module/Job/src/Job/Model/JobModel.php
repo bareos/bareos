@@ -199,7 +199,7 @@ class JobModel
             $result = $bsock->send_command($cmd, 2);
             $job = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
             if (empty($job['result'])) {
-                return false; // No matching records found
+                return array(); // No matching records found
             } else {
                 return $job['result']['jobs'];
             }
@@ -232,7 +232,7 @@ class JobModel
                 } else {
                     $log = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
                     if (empty($log['result'])) {
-                        return false; // No matching records found
+                        return array(); // No matching records found
                     }
                     if (empty($log['result']['joblog']) && $log['result']['meta']['range']['filtered'] === 0) {
                         return $retval;
