@@ -371,10 +371,13 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
     memset(jcr->fd_impl->xattr_data->u.build, 0, sizeof(xattr_build_data_t));
     jcr->fd_impl->xattr_data->u.build->content = GetPoolMemory(PM_MESSAGE);
   }
-#if 1 && !defined(SEND_SERIAL)
-  useful_data data(jcr, 8);
 
+  // setup sending threads
+  useful_data data(jcr, 8);
   jcr->fd_impl->internal = &data;
+
+#if 1 && !defined(SEND_SERIAL)
+
   // jcr->fd_impl->ff is only used by the sending thread
   // since it should just send the files it was given, we set
   // incremental & accurate to false so it does not double check them
