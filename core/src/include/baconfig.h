@@ -31,9 +31,6 @@
 #ifndef BAREOS_INCLUDE_BACONFIG_H_
 #define BAREOS_INCLUDE_BACONFIG_H_
 
-#include <arpa/inet.h>
-#include <string.h>
-
 #include "lib/message.h"
 
 /* Bareos common configuration defines */
