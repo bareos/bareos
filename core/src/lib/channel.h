@@ -48,7 +48,7 @@ template <typename T> struct out {
 
   out(std::shared_ptr<data<T>> shared);
   out(const out&) = delete;
-  out& operator=(out&) = delete;
+  out& operator=(const out&) = delete;
 
   out(out&& moved) = default;
   out& operator=(out&& moved) = default;
@@ -72,7 +72,7 @@ template <typename T> struct in {
   ~in();
   in(std::shared_ptr<data<T>> shared);
   in(const in&) = delete;
-  in& operator=(in&) = delete;
+  in& operator=(const in&) = delete;
 
   in(in&& moved) = default;
   in& operator=(in&& moved) = default;
