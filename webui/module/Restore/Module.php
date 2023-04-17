@@ -25,7 +25,6 @@
 
 namespace Restore;
 
-use Restore\Model\Restore;
 use Restore\Model\RestoreModel;
 
 class Module

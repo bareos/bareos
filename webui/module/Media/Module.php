@@ -25,7 +25,6 @@
 
 namespace Media;
 
-use Media\Model\Media;
 use Media\Model\MediaModel;
 
 class Module

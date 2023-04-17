@@ -25,7 +25,6 @@
 
 namespace Schedule;
 
-use Schedule\Model\Schedule;
 use Schedule\Model\ScheduleModel;
 
 class Module

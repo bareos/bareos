@@ -25,7 +25,6 @@
 
 namespace Fileset;
 
-use Fileset\Model\Fileset;
 use Fileset\Model\FilesetModel;
 
 class Module
