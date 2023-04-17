@@ -782,6 +782,60 @@ static inline bool DoBackupXattr(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
   return true;
 }
 
+static bool TerminateSaveFile(b_save_ctx& bsctx)
+{
+  FindFilesPacket* ff_pkt = bsctx.ff_pkt;
+  JobControlRecord* jcr = bsctx.jcr;
+  BareosSocket* sd = jcr->store_bsock;
+  if (have_darwin_os) {
+    // Regular files can have resource forks and Finder Info
+    if (ff_pkt->type != FT_LNKSAVED
+        && (S_ISREG(ff_pkt->statp.st_mode)
+            && BitIsSet(FO_HFSPLUS, ff_pkt->flags))) {
+      if (!SaveRsrcAndFinder(bsctx)) { return false; }
+    }
+  }
+
+  // Save ACLs when requested and available for anything not being a symlink.
+  if (have_acl) {
+    if (BitIsSet(FO_ACL, ff_pkt->flags) && ff_pkt->type != FT_LNK) {
+      if (!DoBackupAcl(jcr, ff_pkt)) { return false; }
+    }
+  }
+
+  // Save Extended Attributes when requested and available for all files.
+  if (have_xattr) {
+    if (BitIsSet(FO_XATTR, ff_pkt->flags)) {
+      if (!DoBackupXattr(jcr, ff_pkt)) { return false; }
+    }
+  }
+
+  // Terminate the signing digest and send it to the Storage daemon
+  if (bsctx.signing_digest) {
+    if (!TerminateSigningDigest(bsctx)) { return false; }
+  }
+
+  // Terminate any digest and send it to Storage daemon
+  if (bsctx.digest) {
+    if (!TerminateDigest(bsctx)) { return false; }
+  }
+
+  // Check if original file has a digest, and send it
+  if (ff_pkt->type == FT_LNKSAVED && ff_pkt->digest) {
+    Dmsg2(300, "Link %s digest %d\n", ff_pkt->fname, ff_pkt->digest_len);
+    sd->fsend("%ld %d 0", jcr->JobFiles, ff_pkt->digest_stream);
+
+    sd->msg = CheckPoolMemorySize(sd->msg, ff_pkt->digest_len);
+    memcpy(sd->msg, ff_pkt->digest, ff_pkt->digest_len);
+    sd->message_length = ff_pkt->digest_len;
+    sd->send();
+
+    sd->signal(BNET_EOD); /* end of hardlink record */
+  }
+
+  return true;
+}
+
 /**
  * Called here by find() for each file included.
  * This is a callback. The original is FindFiles() above.
@@ -1066,50 +1120,8 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
     if (!status) { goto bail_out; }
   }
 
-  if (have_darwin_os) {
-    // Regular files can have resource forks and Finder Info
-    if (ff_pkt->type != FT_LNKSAVED
-        && (S_ISREG(ff_pkt->statp.st_mode)
-            && BitIsSet(FO_HFSPLUS, ff_pkt->flags))) {
-      if (!SaveRsrcAndFinder(bsctx)) { goto bail_out; }
-    }
-  }
-
-  // Save ACLs when requested and available for anything not being a symlink.
-  if (have_acl) {
-    if (BitIsSet(FO_ACL, ff_pkt->flags) && ff_pkt->type != FT_LNK) {
-      if (!DoBackupAcl(jcr, ff_pkt)) { goto bail_out; }
-    }
-  }
-
-  // Save Extended Attributes when requested and available for all files.
-  if (have_xattr) {
-    if (BitIsSet(FO_XATTR, ff_pkt->flags)) {
-      if (!DoBackupXattr(jcr, ff_pkt)) { goto bail_out; }
-    }
-  }
-
-  // Terminate the signing digest and send it to the Storage daemon
-  if (bsctx.signing_digest) {
-    if (!TerminateSigningDigest(bsctx)) { goto bail_out; }
-  }
-
-  // Terminate any digest and send it to Storage daemon
-  if (bsctx.digest) {
-    if (!TerminateDigest(bsctx)) { goto bail_out; }
-  }
-
-  // Check if original file has a digest, and send it
-  if (ff_pkt->type == FT_LNKSAVED && ff_pkt->digest) {
-    Dmsg2(300, "Link %s digest %d\n", ff_pkt->fname, ff_pkt->digest_len);
-    sd->fsend("%ld %d 0", jcr->JobFiles, ff_pkt->digest_stream);
-
-    sd->msg = CheckPoolMemorySize(sd->msg, ff_pkt->digest_len);
-    memcpy(sd->msg, ff_pkt->digest, ff_pkt->digest_len);
-    sd->message_length = ff_pkt->digest_len;
-    sd->send();
-
-    sd->signal(BNET_EOD); /* end of hardlink record */
+  if (!TerminateSaveFile(bsctx)) {
+    goto bail_out;
   }
 
 good_rtn:
