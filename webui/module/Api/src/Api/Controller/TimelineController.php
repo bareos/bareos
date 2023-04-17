@@ -60,188 +60,129 @@ class TimelineController extends AbstractRestfulController
         $clients = $this->params()->fromQuery('clients');
         $period = $this->params()->fromQuery('period');
 
-        try{
-            if ($module === "client") {
-                $this->result = array();
-                $c = explode(",", $clients);
-
-                foreach ($c as $client) {
-                    $result = array_merge($this->result, $this->getJobModel()->getClientJobsForPeriod($this->bsock, $client, $period));
-                }
-
-                $jobs = array();
-
-                // Ensure a proper date.timezone setting for the job timeline.
-                // Surpress a possible error thrown by date_default_timezone_get()
-                // in older PHP versions with @ in front of the function call.
-                date_default_timezone_set(@date_default_timezone_get());
-
-                foreach ($result as $job) {
-                    $starttime = new \DateTime($job['starttime'], new \DateTimeZone('UTC'));
-                    $endtime = new \DateTime($job['endtime'], new \DateTimeZone('UTC'));
-                    $schedtime = new \DateTime($job['schedtime'], new \DateTimeZone('UTC'));
-
-                    $starttime = $starttime->format('U') * 1000;
-                    $endtime = $endtime->format('U') * 1000;
-                    $schedtime = $schedtime->format('U') * 1000;
-
-                    switch ($job['jobstatus']) {
-                        // SUCESS
-                        case 'T':
-                            $fillcolor = "#5cb85c";
-                            break;
-                            // WARNING
-                        case 'A':
-                        case 'W':
-                            $fillcolor = "#f0ad4e";
-                            break;
-                            // RUNNING
-                        case 'R':
-                        case 'l':
-                            $fillcolor = "#5bc0de";
-                            $endtime = new \DateTime("now", new \DateTimeZone('UTC'));
-                            $endtime = $endtime->format('U') * 1000;
-                            break;
-                            // FAILED
-                        case 'E':
-                        case 'e':
-                        case 'f':
-                            $fillcolor = "#d9534f";
-                            break;
-                            // WAITING
-                        case 'F':
-                        case 'S':
-                        case 's':
-                        case 'M':
-                        case 'm':
-                        case 'j':
-                        case 'C':
-                        case 'c':
-                        case 'd':
-                        case 't':
-                        case 'p':
-                        case 'q':
-                            $fillcolor = "#555555";
-                            $endtime = new \DateTime("now", new \DateTimeZone('UTC'));
-                            $endtime = $endtime->format('U') * 1000;
-                            break;
-                        default:
-                            $fillcolor = "#555555";
-                            break;
-                    }
-
-                    // workaround to display short job runs <= 1 sec.
-                    if ($starttime === $endtime) {
-                        $endtime += 1000;
-                    }
-
-                    $item = new \stdClass();
-                    $item->x = $job["client"];
-                    $item->y = array($starttime, $endtime);
-                    $item->fillColor = $fillcolor;
-                    $item->name = $job["name"];
-                    $item->jobid = $job["jobid"];
-                    $item->starttime = $job["starttime"];
-                    $item->endtime = $job["endtime"];
-                    $item->schedtime = $job["schedtime"];
-                    $item->client = $job["client"];
-
-                    array_push($jobs, $item);
-                }
-
-                $this->result = $jobs;
+        try {
+            switch ($module) {
+                case "client":
+                    $this->setResult($module, $clients, $period);
+                    break;
+                case "job":
+                    $this->setResult($module, $jobs, $period);
+                    break;
+                default:
+                    $this->result = array();
+                    break;
             }
-            elseif ($module === "job") {
-                $this->result = array();
-                $j = explode(",", $jobs);
-
-                foreach ($j as $jobname) {
-                    $this->result = array_merge($this->result, $this->getJobModel()->getJobsForPeriodByJobname($this->bsock, $jobname, $period));
-                }
-
-                $jobs = array();
-
-                foreach ($this->result as $job) {
-                    $starttime = new \DateTime($job['starttime'], new \DateTimeZone('UTC'));
-                    $endtime = new \DateTime($job['endtime'], new \DateTimeZone('UTC'));
-                    $schedtime = new \DateTime($job['schedtime'], new \DateTimeZone('UTC'));
-
-                    $starttime = $starttime->format('U') * 1000;
-                    $endtime = $endtime->format('U') * 1000;
-                    $schedtime = $schedtime->format('U') * 1000;
-
-                    switch ($job['jobstatus']) {
-                        // SUCESS
-                        case 'T':
-                            $fillcolor = "#5cb85c";
-                            break;
-                            // WARNING
-                        case 'A':
-                        case 'W':
-                            $fillcolor = "#f0ad4e";
-                            break;
-                            // RUNNING
-                        case 'R':
-                        case 'l':
-                            $fillcolor = "#5bc0de";
-                            $endtime = new \DateTime("now", new \DateTimeZone('UTC'));
-                            $endtime = $endtime->format('U') * 1000;
-                            break;
-                            // FAILED
-                        case 'E':
-                        case 'e':
-                        case 'f':
-                            $fillcolor = "#d9534f";
-                            break;
-                            // WAITING
-                        case 'F':
-                        case 'S':
-                        case 's':
-                        case 'M':
-                        case 'm':
-                        case 'j':
-                        case 'C':
-                        case 'c':
-                        case 'd':
-                        case 't':
-                        case 'p':
-                        case 'q':
-                            $fillcolor = "#555555";
-                            $endtime = new \DateTime("now", new \DateTimeZone('UTC'));
-                            $endtime = $endtime->format('U') * 1000;
-                            break;
-                        default:
-                            $fillcolor = "#555555";
-                            break;
-                    }
-
-                    // workaround to display short job runs <= 1 sec.
-                    if ($starttime === $endtime) {
-                        $endtime += 1000;
-                    }
-
-                    $item = new \stdClass();
-                    $item->x = $job["client"];
-                    $item->y = array($starttime, $endtime);
-                    $item->fillColor = $fillcolor;
-                    $item->name = $job["name"];
-                    $item->jobid = $job["jobid"];
-                    $item->starttime = $job["starttime"];
-                    $item->endtime = $job["endtime"];
-                    $item->schedtime = $job["schedtime"];
-                    $item->client = $job["client"];
-
-                    array_push($jobs, $item);
-                }
-
-                $this->result = $jobs;
-            }
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             $this->getResponse()->setStatusCode(500);
             error_log($e);
         }
 
         return new JsonModel($this->result);
+    }
+
+    private function setResult($module, $selection, $period)
+    {
+        $this->result = array();
+
+        if (!isset($module) && !isset($selection) && !isset($period)) {
+            return;
+        }
+
+        $items = explode(",", $selection);
+
+        if ($module === "client") {
+            foreach ($items as $client) {
+                $this->result = array_merge($this->result, $this->getJobModel()->getClientJobsForPeriod($this->bsock, $client, $period));
+            }
+        }
+
+        if ($module === "job") {
+            foreach ($items as $jobname) {
+                $this->result = array_merge($this->result, $this->getJobModel()->getJobsForPeriodByJobname($this->bsock, $jobname, $period));
+            }
+        }
+
+        // Ensure a proper date.timezone setting for the job timeline.
+        // Surpress a possible error thrown by date_default_timezone_get()
+        // in older PHP versions with @ in front of the function call.
+        date_default_timezone_set(@date_default_timezone_get());
+
+        $jobs = array();
+
+        foreach ($this->result as $job) {
+            $starttime = new \DateTime($job['starttime'], new \DateTimeZone('UTC'));
+            $endtime = new \DateTime($job['endtime'], new \DateTimeZone('UTC'));
+            $schedtime = new \DateTime($job['schedtime'], new \DateTimeZone('UTC'));
+
+            $starttime = $starttime->format('U') * 1000;
+            $endtime = $endtime->format('U') * 1000;
+            $schedtime = $schedtime->format('U') * 1000;
+
+            switch ($job['jobstatus']) {
+                // SUCESS
+                case 'T':
+                    $fillcolor = "#5cb85c";
+                    break;
+                    // WARNING
+                case 'A':
+                case 'W':
+                    $fillcolor = "#f0ad4e";
+                    break;
+                    // RUNNING
+                case 'R':
+                case 'l':
+                    $fillcolor = "#5bc0de";
+                    $endtime = new \DateTime("now", new \DateTimeZone('UTC'));
+                    $endtime = $endtime->format('U') * 1000;
+                    break;
+                    // FAILED
+                case 'E':
+                case 'e':
+                case 'f':
+                    $fillcolor = "#d9534f";
+                    break;
+                    // WAITING
+                case 'F':
+                case 'S':
+                case 's':
+                case 'M':
+                case 'm':
+                case 'j':
+                case 'C':
+                case 'c':
+                case 'd':
+                case 't':
+                case 'p':
+                case 'q':
+                    $fillcolor = "#555555";
+                    $endtime = new \DateTime("now", new \DateTimeZone('UTC'));
+                    $endtime = $endtime->format('U') * 1000;
+                    break;
+                default:
+                    $fillcolor = "#555555";
+                    break;
+            }
+
+            // workaround to display short job runs <= 1 sec.
+            if ($starttime === $endtime) {
+                $endtime += 1000;
+            }
+
+            $item = new \stdClass();
+            $item->x = $job["client"];
+            $item->y = array($starttime, $endtime);
+            $item->fillColor = $fillcolor;
+            $item->name = $job["name"];
+            $item->jobid = $job["jobid"];
+            $item->starttime = $job["starttime"];
+            $item->endtime = $job["endtime"];
+            $item->schedtime = $job["schedtime"];
+            $item->client = $job["client"];
+
+            array_push($jobs, $item);
+        }
+
+        $this->result = $jobs;
     }
 
     public function getJobModel()
