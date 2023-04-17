@@ -1404,7 +1404,7 @@ static void Compress(CompressionContext& ctx,
     std::uint64_t block_num = 0;
     (void) block_num;
     {
-      std::unique_lock _(input);
+      std::unique_lock lock(input);
       buf = out.get();
       block_num = num_in++;
     }
