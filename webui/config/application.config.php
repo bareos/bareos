@@ -39,7 +39,8 @@ $modules = array(
     'Restore',
     'Auth',
     'Console',
-    'Analytics'
+    'Analytics',
+    'Api'
 );
 
 // Use the $env value to determine which module to load
