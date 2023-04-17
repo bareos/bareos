@@ -359,6 +359,11 @@ in<T>::in(std::shared_ptr<data<T>> shared_)
 template <typename T>
 std::pair<in<T>, out<T>> CreateBufferedChannel(std::size_t capacity)
 {
+  if (capacity == 0) {
+    Dmsg0(100, "Tried to create a channel with zero capacity.  This will cause deadlocks."
+	"  Setting capacity to 1.");
+    capacity = 1;
+  }
   std::shared_ptr<data<T>> shared = std::make_shared<data<T>>(capacity);
   in<T> in(shared);
   out<T> out(shared);
