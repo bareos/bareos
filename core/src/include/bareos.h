@@ -71,11 +71,6 @@
 #ifndef BAREOS_INCLUDE_BAREOS_H_
 #define BAREOS_INCLUDE_BAREOS_H_
 
-#ifdef __cplusplus
-/* Workaround for SGI IRIX 6.5 */
-#  define _LANGUAGE_C_PLUS_PLUS 1
-#endif
-
 #include "config.h"
 
 #if HAVE_AIX_OS
@@ -87,9 +82,7 @@
 #define _POSIX_PTHREAD_SEMANTICS 1
 
 /* System includes */
-#ifndef __sgi
-#  include <stdint.h>
-#endif
+#include <stdint.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>

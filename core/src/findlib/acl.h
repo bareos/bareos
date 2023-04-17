@@ -67,8 +67,6 @@ typedef enum
 #if defined(HAVE_FREEBSD_OS) || defined(HAVE_DARWIN_OS) \
     || defined(HAVE_LINUX_OS)
 #  define BACL_ENOTSUP EOPNOTSUPP
-#elif defined(HAVE_IRIX_OS)
-#  define BACL_ENOTSUP ENOSYS
 #endif
 
 #define BACL_FLAG_SAVE_NATIVE 0x01

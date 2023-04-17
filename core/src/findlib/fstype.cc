@@ -76,24 +76,6 @@ bool fstype(const char* fname, char* fs, int fslen)
   return false;
 }
 
-#elif defined(HAVE_IRIX_OS)
-
-#  include <sys/types.h>
-#  include <sys/statvfs.h>
-
-bool fstype(const char* fname, char* fs, int fslen)
-{
-  struct statvfs st;
-
-  if (statvfs(fname, &st) == 0) {
-    bstrncpy(fs, st.f_basetype, fslen);
-    return true;
-  }
-
-  Dmsg1(50, "statfs() failed for \"%s\"\n", fname);
-  return false;
-}
-
 #elif defined(HAVE_LINUX_OS)
 
 #  include <sys/stat.h>

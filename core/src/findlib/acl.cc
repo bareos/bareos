@@ -526,8 +526,7 @@ static bacl_exit_code (*os_parse_acl_streams)(JobControlRecord* jcr,
     = aix_parse_acl_streams;
 
 #    elif defined(HAVE_DARWIN_OS) || defined(HAVE_FREEBSD_OS) \
-        || defined(HAVE_IRIX_OS) || defined(HAVE_LINUX_OS)    \
-        || defined(HAVE_HURD_OS)
+        || defined(HAVE_LINUX_OS) || defined(HAVE_HURD_OS)
 
 #      include <sys/types.h>
 
@@ -535,11 +534,6 @@ static bacl_exit_code (*os_parse_acl_streams)(JobControlRecord* jcr,
 #        include <sys/acl.h>
 #      else
 #        error "configure failed to detect availability of sys/acl.h"
-#      endif
-
-// On IRIX we can get shortened ACLs
-#      if defined(HAVE_IRIX_OS) && defined(BACL_WANT_SHORT_ACLS)
-#        define acl_to_text(acl, len) acl_to_short_text((acl), (len))
 #      endif
 
 // On Linux we can get numeric and/or shorted ACLs
@@ -623,8 +617,6 @@ static int AclCountEntries(acl_t acl)
     count++;
     entry_available = acl_get_entry(acl, ACL_NEXT_ENTRY, &ace);
   }
-#      elif defined(HAVE_IRIX_OS)
-  count = acl->acl_cnt;
 #      elif defined(HAVE_DARWIN_OS)
   acl_entry_t ace;
   int entry_available;
@@ -671,21 +663,6 @@ static bool AclIsTrivial(acl_t acl)
     if (tag != ACL_USER_OBJ && tag != ACL_GROUP_OBJ && tag != ACL_OTHER)
       return false;
     entry_available = acl_get_entry(acl, ACL_NEXT_ENTRY, &ace);
-  }
-  return true;
-#        elif defined(HAVE_IRIX_OS)
-  int n;
-
-  for (n = 0; n < acl->acl_cnt; n++) {
-    ace = &acl->acl_entry[n];
-    tag = ace->ae_tag;
-
-    /*
-     * Anything other the ACL_USER_OBJ, ACL_GROUP_OBJ or ACL_OTHER breaks the
-     * spell.
-     */
-    if (tag != ACL_USER_OBJ && tag != ACL_GROUP_OBJ && tag != ACL_OTHER_OBJ)
-      return false;
   }
   return true;
 #        endif
@@ -1201,13 +1178,9 @@ static bacl_exit_code (*os_parse_acl_streams)(JobControlRecord* jcr,
                                               uint32_t content_length)
     = freebsd_parse_acl_streams;
 
-#      elif defined(HAVE_IRIX_OS) || defined(HAVE_LINUX_OS) \
-          || defined(HAVE_HURD_OS)
+#      elif defined(HAVE_LINUX_OS) || defined(HAVE_HURD_OS)
 // Define the supported ACL streams for these OSes
-#        if defined(HAVE_IRIX_OS)
-static int os_access_acl_streams[1] = {STREAM_ACL_IRIX_ACCESS_ACL};
-static int os_default_acl_streams[1] = {STREAM_ACL_IRIX_DEFAULT_ACL};
-#        elif defined(HAVE_LINUX_OS)
+#        if defined(HAVE_LINUX_OS)
 static int os_access_acl_streams[1] = {STREAM_ACL_LINUX_ACCESS_ACL};
 static int os_default_acl_streams[1] = {STREAM_ACL_LINUX_DEFAULT_ACL};
 #        elif defined(HAVE_HURD_OS)
