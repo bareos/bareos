@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -104,6 +104,8 @@
 #define STREAM_WIN32_COMPRESSED_DATA           31       /**< Compressed Win32 BackupRead data */
 #define STREAM_ENCRYPTED_FILE_COMPRESSED_DATA  32       /**< Encrypted, compressed data */
 #define STREAM_ENCRYPTED_WIN32_COMPRESSED_DATA 33       /**< Encrypted, compressed Win32 BackupRead data */
+
+#define STREAM_XXH128_DIGEST                   40       /**< xxHash128 digest for the file */
 
 #define STREAM_NDMP_SEPARATOR                 999       /**< NDMP separator between multiple data streams of one job */
 

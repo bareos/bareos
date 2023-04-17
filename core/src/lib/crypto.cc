@@ -3,7 +3,7 @@
 
    Copyright (C) 2005-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,6 +27,8 @@
  */
 
 #include "include/bareos.h"
+#include "crypto_openssl.h"
+#include "xxhash.h"
 
 /*
  * BAREOS ASN.1 Syntax
@@ -137,6 +139,8 @@ const char* crypto_digest_name(crypto_digest_t type)
       return "SHA256";
     case CRYPTO_DIGEST_SHA512:
       return "SHA512";
+    case CRYPTO_DIGEST_XXH128:
+      return "XXH128";
     case CRYPTO_DIGEST_NONE:
       return "None";
     default:
@@ -159,6 +163,8 @@ crypto_digest_t CryptoDigestStreamType(int stream)
       return CRYPTO_DIGEST_SHA256;
     case STREAM_SHA512_DIGEST:
       return CRYPTO_DIGEST_SHA512;
+    case STREAM_XXH128_DIGEST:
+      return CRYPTO_DIGEST_XXH128;
     default:
       return CRYPTO_DIGEST_NONE;
   }
@@ -191,4 +197,21 @@ const char* crypto_strerror(crypto_error_t error)
     default:
       return _("Unknown error");
   }
+}
+
+DIGEST* crypto_digest_new(JobControlRecord* jcr, crypto_digest_t type)
+{
+  switch (type) {
+    case CRYPTO_DIGEST_MD5:
+    case CRYPTO_DIGEST_SHA1:
+    case CRYPTO_DIGEST_SHA256:
+    case CRYPTO_DIGEST_SHA512:
+      return OpensslDigestNew(jcr, type);
+    case CRYPTO_DIGEST_XXH128:
+      return XxhashDigestNew(jcr, type);
+    case CRYPTO_DIGEST_NONE:
+      Jmsg1(jcr, M_ERROR, 0, _("Unsupported digest type: %d\n"), type);
+      return nullptr;
+  }
+  return nullptr;  // never reached, but makes compiler happy
 }

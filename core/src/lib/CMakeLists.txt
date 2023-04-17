@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -53,8 +53,6 @@ set(BAREOS_SRCS
     cram_md5.cc
     crypto.cc
     crypto_cache.cc
-    crypto_none.cc
-    crypto_nss.cc
     crypto_openssl.cc
     crypto_wrap.cc
     daemon.cc
@@ -104,6 +102,7 @@ set(BAREOS_SRCS
     var.cc
     watchdog.cc
     watchdog_timer.cc
+    xxhash.cc
 )
 
 if(HAVE_WIN32)
@@ -156,7 +155,7 @@ set_target_properties(version-obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(
   bareos
   PRIVATE bareosfastlz ${OPENSSL_LIBRARIES} Threads::Threads ${ZLIB_LIBRARIES}
-          ${LZO2_LIBRARIES} ${CAM_LIBRARIES} CLI11::CLI11
+          ${LZO2_LIBRARIES} ${CAM_LIBRARIES} CLI11::CLI11 xxHash::xxhash
 )
 
 if(CMAKE_CXX_FLAGS MATCHES "-fsanitize=address"

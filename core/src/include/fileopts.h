@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -71,11 +71,12 @@ enum
   FO_PLUGIN = 29,      /**< Plugin data stream -- return to plugin on restore */
   FO_OFFSETS = 30,     /**< Keep I/O file offsets */
   FO_NO_AUTOEXCL = 31, /**< Don't use autoexclude methods */
-  FO_FORCE_ENCRYPT = 32 /**< Force encryption */
+  FO_FORCE_ENCRYPT = 32, /**< Force encryption */
+  FO_XXH128 = 33,        /**< Do xxHash128 checksum */
 };
 
 // Keep this set to the last entry in the enum.
-#define FO_MAX FO_FORCE_ENCRYPT
+#define FO_MAX FO_XXH128
 
 // Make sure you have enough bits to store all above bit fields.
 #define FOPTS_BYTES NbytesForBits(FO_MAX + 1)

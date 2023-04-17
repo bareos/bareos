@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -200,8 +200,7 @@ static int VerifyFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
   PmStrcpy(jcr->fd_impl->last_fname, ff_pkt->fname);
   jcr->unlock();
 
-  /*
-   * Send file attributes to Director
+  /* Send file attributes to Director
    *   File_index
    *   Stream
    *   Verify Options
@@ -209,8 +208,7 @@ static int VerifyFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
    *   Encoded attributes
    *   Link name (if type==FT_LNK)
    * For a directory, link is the same as fname, but with trailing
-   * slash. For a linked file, link is the link.
-   */
+   * slash. For a linked file, link is the link. */
   // Send file attributes to Director (note different format than for Storage)
   Dmsg2(400, "send Attributes inx=%d fname=%s\n", jcr->JobFiles, ff_pkt->fname);
   if (ff_pkt->type == FT_LNK || ff_pkt->type == FT_LNKSAVED) {
@@ -239,7 +237,8 @@ static int VerifyFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
   if (ff_pkt->type != FT_LNKSAVED && S_ISREG(ff_pkt->statp.st_mode)
       && (BitIsSet(FO_MD5, ff_pkt->flags) || BitIsSet(FO_SHA1, ff_pkt->flags)
           || BitIsSet(FO_SHA256, ff_pkt->flags)
-          || BitIsSet(FO_SHA512, ff_pkt->flags))) {
+          || BitIsSet(FO_SHA512, ff_pkt->flags)
+          || BitIsSet(FO_XXH128, ff_pkt->flags))) {
     int digest_stream = STREAM_NONE;
     DIGEST* digest = NULL;
     char* digest_buf = NULL;
@@ -387,10 +386,8 @@ static bool calculate_file_chksum(JobControlRecord* jcr,
                                   char** digest_buf,
                                   const char** digest_name)
 {
-  /*
-   * Create our digest context.
-   * If this fails, the digest will be set to NULL and not used.
-   */
+  /* Create our digest context.
+   * If this fails, the digest will be set to NULL and not used. */
   if (BitIsSet(FO_MD5, ff_pkt->flags)) {
     *digest = crypto_digest_new(jcr, CRYPTO_DIGEST_MD5);
     *digest_stream = STREAM_MD5_DIGEST;
@@ -403,6 +400,9 @@ static bool calculate_file_chksum(JobControlRecord* jcr,
   } else if (BitIsSet(FO_SHA512, ff_pkt->flags)) {
     *digest = crypto_digest_new(jcr, CRYPTO_DIGEST_SHA512);
     *digest_stream = STREAM_SHA512_DIGEST;
+  } else if (BitIsSet(FO_XXH128, ff_pkt->flags)) {
+    *digest = crypto_digest_new(jcr, CRYPTO_DIGEST_XXH128);
+    *digest_stream = STREAM_XXH128_DIGEST;
   }
 
   // compute MD5 or SHA1 hash
