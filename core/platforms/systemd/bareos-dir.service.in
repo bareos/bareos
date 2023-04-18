@@ -12,6 +12,11 @@ After=network-online.target nss-lookup.target remote-fs.target time-sync.target 
 # Wants=@DEFAULT_DB_TYPE@.service
 # Check if working dir exist and is a directory
 ConditionPathIsDirectory=@working_dir@
+# Limit the number of restart per day to 10
+# wait 3 minutes between each restart
+RestartSec=180
+StartLimitIntervalSec=1d
+StartLimitBurst=10
 
 [Service]
 Type=simple
@@ -22,15 +27,8 @@ ExecStart=@sbindir@/bareos-dir -f
 SuccessExitStatus=0 15
 ExecReload=@sbindir@/bareos-dir -t -f
 ExecReload=/bin/kill -HUP $MAINPID
-#Restart=on-failure
-# Allow unlimited restarts,
-# required for automatic restarting on Univention Corporate Servers (UCS).
-# Since systemd >= 230 this is a deprecated in favor for:
-# [Unit]
-# StartLimitIntervalSec=0
-# However, as this also have to work for systems with older version of systemd,
-# we stick to this old setting.
-StartLimitInterval=0
+# Increase the maximum number of open file descriptors
+LimitNOFILE=8192:524288
 
 [Install]
 Alias=bareos-director.service
