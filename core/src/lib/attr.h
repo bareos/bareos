@@ -28,6 +28,7 @@
 #ifndef BAREOS_LIB_ATTR_H_
 #define BAREOS_LIB_ATTR_H_
 
+#include "lib/jcr.h"
 
 struct Attributes {
   int32_t stream;      /**< attribute stream id */

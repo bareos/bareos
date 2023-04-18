@@ -21,6 +21,8 @@
 #ifndef BAREOS_FINDLIB_MAKEPATH_H_
 #define BAREOS_FINDLIB_MAKEPATH_H_
 
+#include "lib/attr.h"
+
 bool makepath(Attributes* attr,
               const char* path,
               mode_t mode,

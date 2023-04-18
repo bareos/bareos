@@ -34,6 +34,7 @@
 #include "find.h"
 #include "findlib/makepath.h"
 #include "findlib/create_file.h"
+#include "lib/attr.h"
 #include "lib/path_list.h"
 #include "lib/btimers.h"
 #include "lib/berrno.h"

@@ -24,6 +24,7 @@
 #ifndef BAREOS_CATS_BVFS_H_
 #define BAREOS_CATS_BVFS_H_
 
+#include "lib/attr.h"
 /*
  * This object can be use to browse the catalog
  *

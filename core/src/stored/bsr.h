@@ -33,6 +33,7 @@
 #else
 #  include <regex.h>
 #endif
+#include "lib/attr.h"
 
 namespace storagedaemon {
 

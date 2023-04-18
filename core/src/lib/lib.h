@@ -43,7 +43,6 @@
 #include <openssl/md5.h>
 #include <openssl/sha.h>
 #include "bpipe.h"
-#include "attr.h"
 #include "var.h"
 #include "guid_to_name.h"
 #include "jcr.h"
