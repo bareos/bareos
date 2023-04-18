@@ -696,8 +696,10 @@ auto SaveInList(channel::in<stated_file>& in, std::size_t& num_skipped)
     }
 
     try {
-	    in.put({ff_pkt->fname, ff_pkt->statp, ff_pkt->delta_seq, ff_pkt->type,
-			    ff_pkt->volhas_attrlist ? std::make_optional(ff_pkt->hfsinfo) : std::nullopt});
+      // take note that ff_pkt->fname actually gets copied here since stated_file
+      // uses a std::string instead of a char* to save the file name!
+      in.put({ff_pkt->fname, ff_pkt->statp, ff_pkt->delta_seq, ff_pkt->type,
+	  ff_pkt->volhas_attrlist ? std::make_optional(ff_pkt->hfsinfo) : std::nullopt});
     } catch (...) {
       num_skipped++;
       return 0;
