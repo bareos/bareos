@@ -35,6 +35,7 @@
 #include "lib/jcr.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
+#include "lib/version.h"
 #include "include/version_numbers.h"
 
 namespace directordaemon {

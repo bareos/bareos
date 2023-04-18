@@ -41,6 +41,7 @@
 #include "lib/bsock.h"
 #include "lib/recent_job_results_list.h"
 #include "lib/util.h"
+#include "lib/version.h"
 
 namespace storagedaemon {
 

@@ -32,6 +32,7 @@
 #include "monitoritemthread.h"
 #include "monitoritem.h"
 #include "monitortab.h"
+#include "lib/version.h"
 
 MainWindow* MainWindow::mainWindowSingleton = NULL;
 bool MainWindow::already_destroyed = false;

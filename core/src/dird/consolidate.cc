@@ -40,6 +40,7 @@
 #include "dird/dird_globals.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
+#include "lib/version.h"
 
 namespace directordaemon {
 

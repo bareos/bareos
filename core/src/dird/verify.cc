@@ -50,6 +50,7 @@
 #include "lib/bnet.h"
 #include "lib/edit.h"
 #include "lib/util.h"
+#include "lib/version.h"
 
 namespace directordaemon {
 

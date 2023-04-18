@@ -36,6 +36,7 @@
 #include "stored/label.h"
 #include "lib/edit.h"
 #include "include/jcr.h"
+#include "lib/version.h"
 
 namespace storagedaemon {
 

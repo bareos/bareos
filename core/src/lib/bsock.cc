@@ -36,6 +36,7 @@
 #include "lib/util.h"
 #include "lib/bstringlist.h"
 #include "lib/parse_conf.h"
+#include "lib/version.h"
 
 #include <algorithm>
 

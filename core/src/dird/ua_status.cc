@@ -49,6 +49,7 @@
 #include "lib/recent_job_results_list.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
+#include "lib/version.h"
 
 #include <memory>
 

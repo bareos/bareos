@@ -48,6 +48,7 @@
 #include "lib/bsock_tcp.h"
 #include "lib/bnet.h"
 #include "lib/bstringlist.h"
+#include "lib/version.h"
 
 #include "include/jcr.h"
 

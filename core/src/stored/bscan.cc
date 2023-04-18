@@ -53,6 +53,7 @@
 #include "lib/bsock.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
+#include "lib/version.h"
 
 /* Dummy functions */
 namespace storagedaemon {

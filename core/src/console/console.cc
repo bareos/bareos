@@ -40,6 +40,7 @@
 #include "lib/bstringlist.h"
 #include "lib/cli.h"
 #include "lib/qualified_resource_name_type_converter.h"
+#include "lib/version.h"
 #include "lib/watchdog.h"
 #include <stdio.h>
 #include <fstream>

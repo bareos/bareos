@@ -32,6 +32,7 @@
 #include "dird/job.h"
 #include "dird/director_jcr_impl.h"
 #include "dird/storage.h"
+#include "lib/version.h"
 
 namespace directordaemon {
 

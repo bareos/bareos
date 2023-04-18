@@ -44,6 +44,7 @@
 #include "lib/output_formatter.h"
 #include "lib/output_formatter_resource.h"
 #include "lib/implementation_factory.h"
+#include "lib/version.h"
 #include "include/auth_types.h"
 #include "include/jcr.h"
 

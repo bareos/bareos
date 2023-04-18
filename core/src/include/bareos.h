@@ -129,7 +129,6 @@ extern "C" {
 
 
 // Local Bareos includes. Be sure to put all the system includes before these.
-#include "lib/version.h"
 #include "bc_types.h"
 
 #if defined(HAVE_WIN32)
