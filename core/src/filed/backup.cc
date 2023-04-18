@@ -42,6 +42,7 @@
 #include "findlib/attribs.h"
 #include "findlib/hardlink.h"
 #include "findlib/find_one.h"
+#include "lib/attribs.h"
 #include "lib/berrno.h"
 #include "lib/bsock.h"
 #include "lib/btimers.h"

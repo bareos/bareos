@@ -41,6 +41,7 @@
 #include "findlib/create_file.h"
 #include "findlib/attribs.h"
 #include "findlib/find.h"
+#include "lib/attribs.h"
 #include "lib/berrno.h"
 #include "lib/bget_msg.h"
 #include "lib/bnet.h"

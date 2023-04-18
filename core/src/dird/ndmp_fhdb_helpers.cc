@@ -30,6 +30,7 @@
 #include "dird.h"
 #include "include/protocol_types.h"
 #include "include/filetypes.h"
+#include "lib/attribs.h"
 
 #if HAVE_NDMP
 

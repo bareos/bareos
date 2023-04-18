@@ -44,6 +44,7 @@
 #include "dird/ua_select.h"
 #include "dird/storage.h"
 #include "include/auth_protocol_types.h"
+#include "lib/attribs.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"

@@ -36,6 +36,7 @@
 #include "findlib/find.h"
 #include "dird/ua_input.h"
 #include "dird/ua_server.h"
+#include "lib/attribs.h"
 #include "lib/edit.h"
 #include "lib/tree.h"
 #include "lib/util.h"
@@ -373,9 +374,7 @@ static int SetExtract(UaContext* ua,
   // For a non-file (i.e. directory), we see all the children
   if (node->type != TN_FILE || (node->soft_link && TreeNodeHasChild(node))) {
     // Recursive set children within directory
-    foreach_child (n, node) {
-      count += SetExtract(ua, n, tree, extract);
-    }
+    foreach_child (n, node) { count += SetExtract(ua, n, tree, extract); }
 
     // Walk up tree marking any unextracted parent to be extracted.
     if (extract) {

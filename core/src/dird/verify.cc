@@ -46,6 +46,7 @@
 #include "dird/sd_cmds.h"
 #include "dird/storage.h"
 #include "dird/verify.h"
+#include "lib/attribs.h"
 #include "lib/berrno.h"
 #include "lib/bnet.h"
 #include "lib/edit.h"

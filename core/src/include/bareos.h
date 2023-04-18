@@ -126,8 +126,6 @@ extern "C" {
 #  define _GLIBCXX_GTHREAD_USE_WEAK 0
 #endif
 
-#include "lib/attribs.h"
-
 #include "baconfig.h"
 #include "lib/lib.h"
 #include "lib/compression.h"

@@ -28,6 +28,7 @@
 #include "include/streams.h"
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
+#include "lib/attribs.h"
 
 #ifdef HAVE_LMDB
 #  include "accurate.h"
