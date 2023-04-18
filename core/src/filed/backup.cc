@@ -121,8 +121,8 @@ struct compress_worker_input {
   std::mutex input{};
   std::mutex output{};
   std::condition_variable cv{};
-  std::uint64_t num_in{0};
-  std::uint64_t num_out{0};
+  std::int64_t num_in{0};
+  std::int64_t num_out{0};
 
   compress_worker_input(compress_input args) : args{std::move(args)}
   {}
@@ -134,8 +134,8 @@ static void Compress(CompressionContext& ctx,
 		     channel::in<shared_buffer>& in,
 		     std::mutex& output,
 		     std::condition_variable& cv,
-		     std::uint64_t& nin,
-		     std::uint64_t& nout,
+		     std::int64_t& nin,
+		     std::int64_t& nout,
 		     JobControlRecord* jcr,
 		     std::size_t max_compress_len,
 		     uint32_t compression);
@@ -1319,7 +1319,7 @@ static void ReadData(std::vector<channel::in<shared_buffer>> channels,
   ASSERT(readsize <= max_readsize);
   ASSERT(readsize % buflen == 0);
   // prevent weird situations where max_readsize < buflen
-  if (readsize == 0) readsize = buflen;
+  if (readsize == 0) { readsize = buflen; }
   for (;;) {
     auto mem = std::shared_ptr<char>(new char[readsize], std::default_delete<char[]>{});
     if (!mem) { break; }
@@ -1327,7 +1327,7 @@ static void ReadData(std::vector<channel::in<shared_buffer>> channels,
     // some plugins rely on the fact that bread gets called until
     // it returns 0;  the check num_read < readsize is not sufficient here
     // even if it saves some callback calls.
-    if (num_read == 0) break;
+    if (num_read == 0) { break; }
 
     char* head = mem.get();
     while (num_read > 0) {
@@ -1381,16 +1381,15 @@ static void Compress(CompressionContext& ctx,
 		     channel::in<shared_buffer>& in,
 		     std::mutex& output,
 		     std::condition_variable& cv,
-		     std::uint64_t& num_in,
-		     std::uint64_t& num_out,
+		     std::int64_t& num_in,
+		     std::int64_t& num_out,
 		     JobControlRecord* jcr,
 		     std::size_t max_compress_len,
 		     uint32_t compression)
 {
   std::optional<shared_buffer> buf = std::nullopt;
   for(;;) {
-    std::uint64_t block_num = 0;
-    (void) block_num;
+    std::int64_t block_num = 0;
     {
       std::unique_lock lock(input);
       buf = out.get();
@@ -1398,6 +1397,7 @@ static void Compress(CompressionContext& ctx,
     }
 
     if (!buf) {
+      // input is empty; we can stop now
       break;
     }
 
@@ -1407,6 +1407,11 @@ static void Compress(CompressionContext& ctx,
 		      buf->size, (unsigned char*) compressed.data.get(),
 		     max_compress_len,
 		     &size)) {
+      {
+	std::unique_lock lock(output);
+	num_out = -1;
+      }
+      cv.notify_all();
       break;
     }
 
@@ -1414,12 +1419,12 @@ static void Compress(CompressionContext& ctx,
     {
       std::unique_lock lock(output);
       cv.wait(lock, [&num_out, block_num]() {
-	// todo: what happens here if the put fails on another thread ?
-	return (block_num == num_out);
+	// if the put fails on another thread it will set num_out to
+	// -1.
+	return (block_num == num_out) || (num_out == -1);
       });
-      if (!in.put(std::move(compressed))) {
-	return;
-      }
+      if (num_out == -1) { return; }
+      if (!in.put(std::move(compressed))) { return; }
       num_out++;
     }
     cv.notify_all();
