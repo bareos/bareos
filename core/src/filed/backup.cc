@@ -1341,7 +1341,10 @@ static void ReadData(std::vector<channel::in<shared_buffer>> channels,
     auto mem = std::shared_ptr<char>(new char[readsize], std::default_delete<char[]>{});
     if (!mem) { break; }
     ssize_t num_read = bread(bfd, mem.get(), readsize);
-    bool last_run = num_read < readsize;
+    // some plugins rely on the fact that bread gets called until
+    // it returns 0;  the check num_read < readsize is not sufficient here
+    // even if it saves some callback calls.
+    if (num_read == 0) break;
 
     char* head = mem.get();
     while (num_read > 0) {
@@ -1355,7 +1358,6 @@ static void ReadData(std::vector<channel::in<shared_buffer>> channels,
       head += size;
       num_read -= size;
     }
-    if (last_run) break;
   }
 }
 
