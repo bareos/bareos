@@ -108,9 +108,6 @@ extern "C" {
 #if defined(HAVE_WIN32) & !defined(HAVE_MINGW)
 #  include <winsock2.h>
 #endif
-#if !defined(HAVE_WIN32) & !defined(HAVE_MINGW)
-#  include <sys/stat.h>
-#endif
 
 #if defined(HAVE_WIN32)
 /* we must include winsock2.h before windows.h, because that would implicitly
