@@ -43,6 +43,8 @@
 #include <memory>  // unique_ptr
 #include <initializer_list>
 #include <utility> // pair
+#include <thread>
+#include <future>
 
 #if defined(HAVE_DARWIN_OS)
 /* the MacOS linker wants symbols for the destructors of these two types, so we
@@ -563,7 +565,7 @@ void NewOptions(FindFilesPacket* ff, findIncludeExcludeItem* incexe)
   ff->fileset->state = state_options;
 }
 
-auto SaveInList(channel::in<stated_file>& in, std::atomic<std::size_t>& num_skipped)
+auto SaveInList(channel::in<stated_file>& in, std::size_t& num_skipped)
 {
   return [&in, &num_skipped](JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool) {
     switch (ff_pkt->type) {
@@ -704,49 +706,41 @@ auto SaveInList(channel::in<stated_file>& in, std::atomic<std::size_t>& num_skip
   };
 }
 
-#include <thread>
-
-class bomb {
-public:
-	bomb(std::atomic<bool>& ref) : target(ref), defused(false) {}
-	void defuse() { defused = true; }
-	~bomb() { if (!defused) { target = false; } }
-private:
-	std::atomic<bool>& target;
-	bool defused;
-};
 
 static void ListFromIncexe(JobControlRecord* jcr,
 			   findFILESET* fileset,
 			   FindFilesPacket* ff,
 			   findIncludeExcludeItem* incexe,
 			   channel::in<stated_file> in,
-			   std::atomic<bool>& all_ok,
-			   std::atomic<std::size_t>& num_skipped)
+			   std::promise<std::optional<std::size_t>> num_skipped)
 {
-	bomb b(all_ok);
-	dlistString* node;
-	fileset->incexe = incexe;
-	SetupLastOptionBlock(ff, incexe);
-	// we do not need to follow hardlinks, as they will be handled
-	// by the sending thread
-	SetBit(FO_NO_HARDLINK, ff->flags);
+  dlistString* node;
+  fileset->incexe = incexe;
+  SetupLastOptionBlock(ff, incexe);
+  // we do not need to follow hardlinks, as they will be handled
+  // by the sending thread
+  SetBit(FO_NO_HARDLINK, ff->flags);
 
-	Dmsg4(50, "Verify=<%s> Accurate=<%s> BaseJob=<%s> flags=<%d>\n",
-	      ff->VerifyOpts, ff->AccurateOpts, ff->BaseJobOpts, ff->flags);
+  Dmsg4(50, "Verify=<%s> Accurate=<%s> BaseJob=<%s> flags=<%d>\n",
+	ff->VerifyOpts, ff->AccurateOpts, ff->BaseJobOpts, ff->flags);
 
-	foreach_dlist (node, &incexe->name_list) {
-		char* fname = (char*)node->c_str();
-		Dmsg1(debuglevel, "F %s\n", fname);
-		ff->top_fname = fname;
-		if (FindOneFile(jcr, ff, CreateCallback(SaveInList(in, num_skipped)),
-				ff->top_fname, (dev_t)-1, true)
-		    == 0) {
-			return;
-		}
-		if (JobCanceled(jcr)) { return; }
-	}
-	b.defuse();
+  std::size_t local_num_skipped{0};
+  foreach_dlist (node, &incexe->name_list) {
+    char* fname = (char*)node->c_str();
+    Dmsg1(debuglevel, "F %s\n", fname);
+    ff->top_fname = fname;
+    if (FindOneFile(jcr, ff, CreateCallback(SaveInList(in, local_num_skipped)),
+		    ff->top_fname, (dev_t)-1, true)
+	== 0) {
+      num_skipped.set_value(std::nullopt);
+      return;
+    }
+    if (JobCanceled(jcr)) {
+      num_skipped.set_value(std::nullopt);
+      return;
+    }
+  }
+  num_skipped.set_value(local_num_skipped);
 }
 
 std::optional<std::size_t>
@@ -758,8 +752,6 @@ ListFiles(JobControlRecord* jcr,
 	  std::vector<channel::in<stated_file>> ins)
 {
   ASSERT(ins.size() == (std::size_t)fileset->include_list.size());
-  std::atomic<std::size_t> num_skipped{0};
-  std::atomic<bool> all_ok = true;
   struct free_on_delete {
     void operator()(findFILESET* copies) { if (copies) free(copies); }
   };
@@ -772,6 +764,7 @@ ListFiles(JobControlRecord* jcr,
     };
     std::vector<std::unique_ptr<FindFilesPacket, ff_cleanup>> ffs;
     std::vector<std::thread> listing_threads;
+    std::vector<std::future<std::optional<std::size_t>>> futures;
     fileset_copies.reset((findFILESET*)malloc(sizeof(findFILESET) * fileset->include_list.size()));
     for (int i = 0; i < fileset->include_list.size(); i++) {
       findFILESET* my_fileset = &fileset_copies[i];
@@ -783,6 +776,8 @@ ListFiles(JobControlRecord* jcr,
       SetFindOptions(ff_pkt, incremental, save_time);
       if (check_changed) SetFindChangedFunction(ff_pkt, check_changed.value());
 
+      std::promise<std::optional<std::size_t>> num_skipped{};
+      futures.emplace_back(num_skipped.get_future());
 
       listing_threads.emplace_back(ListFromIncexe,
 				   jcr,
@@ -790,8 +785,7 @@ ListFiles(JobControlRecord* jcr,
 				   ff_pkt,
 				   my_fileset->include_list.get(i),
 				   std::move(ins[i]),
-				   std::ref(all_ok),
-				   std::ref(num_skipped)
+				   std::move(num_skipped)
 				  );
 
     }
@@ -799,8 +793,17 @@ ListFiles(JobControlRecord* jcr,
     {
 	    thread.join();
     }
-    if (!all_ok) { return std::nullopt; }
-    else         { return std::optional{num_skipped.load()}; }
+    std::optional<std::size_t> num_skipped{0};
+    for (auto& future : futures)
+    {
+      if (std::optional local_num_skipped = future.get(); local_num_skipped) {
+	*num_skipped += *local_num_skipped;
+      } else {
+	num_skipped = std::nullopt;
+	break;
+      }
+    }
+    return num_skipped;
   } else {
     return std::nullopt;
   }
