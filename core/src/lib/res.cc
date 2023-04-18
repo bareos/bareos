@@ -27,6 +27,7 @@
  */
 
 #define NEED_JANSSON_NAMESPACE 1
+#include <openssl/md5.h>
 #include "include/bareos.h"
 #include "generic_res.h"
 #include "lib/edit.h"

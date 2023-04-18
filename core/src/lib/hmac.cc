@@ -29,6 +29,7 @@
 
 #include "include/bareos.h"
 #include "include/allow_deprecated.h"
+#include <openssl/md5.h>
 
 #define PAD_LEN 64 /* PAD length */
 #define SIG_LEN 16 /* MD5 digest length */

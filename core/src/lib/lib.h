@@ -40,8 +40,6 @@
 #include "serial.h"
 #include "lex.h"
 #include "fnmatch.h"
-#include <openssl/md5.h>
-#include <openssl/sha.h>
 #include "bpipe.h"
 #include "var.h"
 #include "guid_to_name.h"

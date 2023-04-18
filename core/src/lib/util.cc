@@ -25,6 +25,7 @@
  * Kern Sibbald, MM
  */
 #include <unistd.h>
+#include <openssl/md5.h>
 
 #include "include/bareos.h"
 #include "include/jcr.h"

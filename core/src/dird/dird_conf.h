@@ -28,6 +28,8 @@
 #ifndef BAREOS_DIRD_DIRD_CONF_H_
 #define BAREOS_DIRD_DIRD_CONF_H_
 
+#include <openssl/md5.h>
+
 #include "dird/client_connection_handshake_mode.h"
 #include "dird/date_time_bitfield.h"
 #include "lib/alist.h"
