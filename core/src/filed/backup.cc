@@ -53,6 +53,7 @@
 #include "lib/channel.h"
 
 #include <thread>
+#include <future>
 
 namespace filedaemon {
 
@@ -73,38 +74,20 @@ struct shared_buffer {
   {}
 };
 
-struct gate {
-  std::mutex mutex{};
-  std::condition_variable cv{};
-  bool passed{false};
-
-  void pass() {
-    {
-      std::unique_lock lock(mutex);
-      passed = true;
-    }
-    cv.notify_one();
-  }
-
-  void wait() {
-    std::unique_lock lock(mutex);
-    cv.wait(lock, [this] { return this->passed; });
-  }
-};
 struct send_input {
   channel::out<shared_buffer> block;
   std::optional<channel::out<shared_buffer>> compressed;
   b_ctx* bctx;
-  gate* g;
+  std::promise<void> barrier;
 };
 static void SendData(channel::out<shared_buffer> block,
 		     std::optional<channel::out<shared_buffer>> compressed,
 		     b_ctx* bctx,
-		     gate* g);
+		     std::promise<void> barrier);
 void WaitForSend(channel::out<send_input> to_send) {
   for (std::optional chan = to_send.get(); chan; chan = to_send.get()) {
     SendData(std::move(chan->block), std::move(chan->compressed),
-	     chan->bctx, chan->g);
+	     chan->bctx, std::move(chan->barrier));
   }
 }
 
@@ -112,15 +95,15 @@ struct digest_input {
   channel::out<shared_buffer> data;
   DIGEST* digest;
   DIGEST* signing_digest;
-  gate* g;
+  std::promise<void> barrier;
 };
 static void DigestData(channel::out<shared_buffer> out,
 		       DIGEST* digest, DIGEST* signing_digest,
-		       gate* g);
+		       std::promise<void> barrier);
 void WaitForDigest(channel::out<digest_input> to_read) {
   for (std::optional chan = to_read.get(); chan; chan = to_read.get()) {
     DigestData(std::move(chan->data), chan->digest, chan->signing_digest,
-	       chan->g);
+	       std::move(chan->barrier));
   }
 }
 
@@ -1363,17 +1346,21 @@ static void ReadData(std::vector<channel::in<shared_buffer>> channels,
 
 static void DigestData(channel::out<shared_buffer> out,
 		       DIGEST* digest, DIGEST* signing_digest,
-		       gate* g)
+		       std::promise<void> barrier)
 {
-  struct passer{
-    gate* g;
+  struct passer {
+    std::promise<void> barrier;
+
+    passer(std::promise<void> barrier) : barrier{std::move(barrier)}
+    {}
 
     ~passer() {
-      g->pass();
+      barrier.set_value();
     }
   };
 
-  passer _{g};
+  // notify the barrier once we finish (for any reason!)
+  passer p{std::move(barrier)};
 
   for (std::optional buf = out.get(); buf; buf = out.get()) {
     // Update checksum if requested
@@ -1441,16 +1428,16 @@ static void Compress(CompressionContext& ctx,
 
 static void SendData(channel::out<shared_buffer> block,
 		     std::optional<channel::out<shared_buffer>> compressed,
-		     b_ctx* bctx, gate* g) {
+		     b_ctx* bctx, std::promise<void> barrier) {
   struct passer{
-    gate* g;
+    std::promise<void> barrier;
 
     ~passer() {
-      g->pass();
+      barrier.set_value();
     }
   };
 
-  passer _{g};
+  passer p{std::move(barrier)};
 
   BareosSocket* sd = bctx->jcr->store_bsock;
   for (std::optional buf = block.get(); buf; buf = block.get()) {
@@ -1521,7 +1508,8 @@ static inline bool SendPlainData(b_ctx& bctx)
   }
 
   // setup sending
-  gate sending;
+  std::promise<void> send_barrier{};
+  std::future<void>  send_future = send_barrier.get_future();
   {
     // connection between the reading thread and the sending thread
     auto [sr_in, sr_out] = channel::CreateBufferedChannel<sbuf>(actual_buf_count);
@@ -1529,19 +1517,20 @@ static inline bool SendPlainData(b_ctx& bctx)
     if (!bctx.jcr->fd_impl->send_ctx->to_send.put({
 	  std::move(sr_out),
 	  std::move(compression_out),
-	  &bctx, &sending})) {
+	  &bctx, std::move(send_barrier)})) {
       return false;
     }
   }
 
   // setup digesting
-  gate digesting;
+  std::promise<void> digest_barrier{};
+  std::future<void>  digest_future = digest_barrier.get_future();
   {
     // connection between the reading thread and the digesting thread
     auto [dr_in, dr_out] = channel::CreateBufferedChannel<sbuf>(actual_buf_count);
     sinks.emplace_back(std::move(dr_in));
     if (!bctx.jcr->fd_impl->send_ctx->to_digest.put({std::move(dr_out),
-	  bctx.digest, bctx.signing_digest, &digesting})) {
+	  bctx.digest, bctx.signing_digest, std::move(digest_barrier)})) {
       return false;
     }
   }
@@ -1554,8 +1543,8 @@ static inline bool SendPlainData(b_ctx& bctx)
   std::swap(signing, bctx.signing_digest);
 
   ReadData(std::move(sinks), &bctx.ff_pkt->bfd, (std::size_t) bctx.rsize);
-  sending.wait();
-  digesting.wait();
+  send_future.wait();
+  digest_future.wait();
   std::swap(digest, bctx.digest);
   std::swap(signing, bctx.signing_digest);
 
