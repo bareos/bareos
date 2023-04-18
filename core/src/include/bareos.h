@@ -100,10 +100,6 @@ extern "C" {
 }
 #endif
 
-#include <sys/types.h>
-#ifdef HAVE_SYS_BITYPES_H
-#  include <sys/bitypes.h>
-#endif
 #include <sys/socket.h>
 #if defined(HAVE_WIN32) & !defined(HAVE_MINGW)
 #  include <winsock2.h>
