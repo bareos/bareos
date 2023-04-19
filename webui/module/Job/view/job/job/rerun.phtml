@@ -268,7 +268,7 @@ $this->headTitle($title);
          locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
          cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
          cookieIdTable: 'jobs_rerun',
-         url: '<?php echo $this->url('api/job', array(), array()) . '?filter=rerun&period='; ?>' + displayRange,
+         url: '<?php echo $this->url('api/job', array(), array("query" => array("rerun" => "rerun"))) . '&period='; ?>' + displayRange,
          method: 'get',
          dataType: 'json',
          pagination : false,

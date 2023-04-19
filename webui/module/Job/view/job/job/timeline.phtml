@@ -240,7 +240,7 @@ elseif (!$this->acl_alert) : ?>
           data: []
         }]);
 
-        let url = "<?php echo $this->url('api/timeline', array(), array()) . '?module=job&jobs=" + s + "&period='; ?>" + p;
+        let url = "<?php echo $this->url('api/timeline', array(), array("query" => array("module" => "job"))) . '&jobs=" + s + "&period='; ?>" + p;
 
         $.getJSON(url, function(response) {
           if (response.length === 0) {

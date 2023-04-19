@@ -195,7 +195,7 @@ $this->headTitle($title);
    function attachVolumeTable() {
       $('#volume').bootstrapTable({
          locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
-         url: '<?php echo $this->url('api/media', array(), array()) . '?volume=' . $this->volume; ?>',
+         url: '<?php echo $this->url('api/media', array(), array("query" => array("volume" => $this->volume))); ?>',
          method: 'get',
          dataType: 'json',
          detailView: true,
@@ -252,7 +252,7 @@ $this->headTitle($title);
          locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
          cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
          cookieIdTable: 'vol_jobs',
-         url: '<?php echo $this->url('api/media', array(), null) . '?filter=jobs&volume=' . $this->volume; ?>',
+         url: '<?php echo $this->url('api/media', array(), array("query" => array("filter" => "jobs", "volume" => $this->volume))); ?>',
          method: 'get',
          dataType: 'json',
          pagination : true,
