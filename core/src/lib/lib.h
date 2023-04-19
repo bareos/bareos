@@ -42,7 +42,6 @@
 #include "fnmatch.h"
 #include "bpipe.h"
 #include "var.h"
-#include "guid_to_name.h"
 #include "jcr.h"
 
 #endif  // BAREOS_LIB_LIB_H_

@@ -29,6 +29,7 @@
 #include <pwd.h>
 #include <grp.h>
 #include "include/bareos.h"
+#include "lib/guid_to_name.h"
 #include "lib/edit.h"
 #include "lib/dlist.h"
 

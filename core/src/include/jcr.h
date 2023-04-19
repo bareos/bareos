@@ -45,6 +45,7 @@
 #include "lib/breg.h"
 #include "lib/dlink.h"
 #include "lib/path_list.h"
+#include "lib/guid_to_name.h"
 
 #include <atomic>
 
