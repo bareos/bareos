@@ -46,6 +46,7 @@
 #include "lib/dlink.h"
 #include "lib/path_list.h"
 #include "lib/guid_to_name.h"
+#include "lib/jcr.h"
 
 #include <atomic>
 

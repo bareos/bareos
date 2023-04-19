@@ -52,6 +52,7 @@ char* bfgets(char* s, int size, FILE* fd);
 char* bfgets(POOLMEM*& s, FILE* fd);
 void MakeUniqueFilename(POOLMEM*& name, int Id, char* what);
 void ReadStateFile(const char* dir, const char* progname, int port);
+void WriteStateFile(const char* dir, const char* progname, int port);
 int b_strerror(int errnum, char* buf, size_t bufsiz);
 char* escape_filename(const char* file_path);
 int Zdeflate(char* in, int in_len, char* out, int& out_len);

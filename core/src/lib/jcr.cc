@@ -45,6 +45,7 @@
 
 #include "include/bareos.h"
 #include "include/jcr.h"
+#include "lib/jcr.h"
 #include "lib/berrno.h"
 #include "lib/bsignal.h"
 #include "lib/breg.h"
