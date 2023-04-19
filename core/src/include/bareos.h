@@ -126,8 +126,11 @@ extern "C" {
 #  define _GLIBCXX_GTHREAD_USE_WEAK 0
 #endif
 
+// Libraries widely used throughout the code
 #include "baconfig.h"
-#include "lib/lib.h"
+#include "lib/lockmgr.h"
+#include "lib/mem_pool.h"
+#include "lib/btime.h"
 #include "lib/compression.h"
 
 #if defined(HAVE_WIN32)
