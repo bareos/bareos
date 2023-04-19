@@ -39,6 +39,7 @@
 #include "lib/bsock.h"
 #include "lib/edit.h"
 #include "lib/serial.h"
+#include "lib/compression.h"
 
 namespace filedaemon {
 

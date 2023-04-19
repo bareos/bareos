@@ -49,6 +49,7 @@
 #include "lib/parse_conf.h"
 #include "lib/util.h"
 #include "lib/serial.h"
+#include "lib/compression.h"
 
 namespace filedaemon {
 

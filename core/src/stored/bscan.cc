@@ -54,6 +54,7 @@
 #include "lib/parse_conf.h"
 #include "lib/util.h"
 #include "lib/version.h"
+#include "lib/compression.h"
 
 /* Dummy functions */
 namespace storagedaemon {

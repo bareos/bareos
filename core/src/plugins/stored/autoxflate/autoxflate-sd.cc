@@ -30,6 +30,7 @@
 #include "stored/stored.h"
 #include "stored/device_control_record.h"
 #include "lib/serial.h"
+#include "lib/compression.h"
 
 #if defined(HAVE_LIBZ)
 #  include <zlib.h>

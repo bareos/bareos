@@ -39,6 +39,7 @@
 #include "lib/edit.h"
 #include "lib/parse_bsr.h"
 #include "lib/util.h"
+#include "lib/compression.h"
 #include "include/jcr.h"
 #include "include/protocol_types.h"
 

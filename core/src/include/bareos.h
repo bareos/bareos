@@ -131,7 +131,6 @@ extern "C" {
 #include "lib/lockmgr.h"
 #include "lib/mem_pool.h"
 #include "lib/btime.h"
-#include "lib/compression.h"
 
 #if defined(HAVE_WIN32)
 #  include "winapi.h"

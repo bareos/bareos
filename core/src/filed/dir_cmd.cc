@@ -56,6 +56,7 @@
 #include "lib/watchdog.h"
 #include "lib/util.h"
 #include "filed/backup.h"
+#include "lib/compression.h"
 
 #if defined(WIN32_VSS)
 #  include "win32/findlib/win32.h"

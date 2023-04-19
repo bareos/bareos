@@ -38,6 +38,7 @@
 #include "lib/parse_conf.h"
 #include "lib/base64.h"
 #include "lib/crypto.h"
+#include "lib/compression.h"
 
 namespace filedaemon {
 

@@ -50,6 +50,7 @@
 #include "lib/parse_conf.h"
 #include "lib/base64.h"
 #include "lib/serial.h"
+#include "lib/compression.h"
 
 #ifdef HAVE_WIN32
 #  include "win32/findlib/win32.h"
