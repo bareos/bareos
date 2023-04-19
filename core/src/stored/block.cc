@@ -41,6 +41,7 @@
 #include "lib/berrno.h"
 #include "lib/edit.h"
 #include "include/jcr.h"
+#include "lib/serial.h"
 
 namespace storagedaemon {
 

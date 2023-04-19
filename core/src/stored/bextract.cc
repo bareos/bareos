@@ -53,6 +53,7 @@
 #include "lib/parse_bsr.h"
 #include "lib/parse_conf.h"
 #include "include/jcr.h"
+#include "lib/serial.h"
 
 namespace storagedaemon {
 extern bool ParseSdConfig(const char* configfile, int exit_code);

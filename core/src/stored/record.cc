@@ -38,6 +38,7 @@
 #include "include/jcr.h"
 #include "lib/crypto.h"
 #include "lib/base64.h"
+#include "lib/serial.h"
 
 namespace storagedaemon {
 

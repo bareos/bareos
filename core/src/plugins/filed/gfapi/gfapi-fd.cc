@@ -32,6 +32,7 @@
 #include "lib/path_list.h"
 #include "lib/berrno.h"
 #include "lib/edit.h"
+#include "lib/serial.h"
 
 #include <glusterfs/api/glfs.h>
 

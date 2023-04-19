@@ -34,6 +34,7 @@
 #include "include/ch.h"
 #include "include/streams.h"
 #include "lib/edit.h"
+#include "lib/serial.h"
 
 #ifdef HAVE_LIBZ
 #  include <zlib.h>

@@ -41,6 +41,7 @@
 #include "lib/util.h"
 #include "lib/berrno.h"
 #include "lib/bsock.h"
+#include "lib/serial.h"
 
 namespace storagedaemon {
 

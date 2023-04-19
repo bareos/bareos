@@ -31,8 +31,6 @@
 
 #include "lockmgr.h"
 #include "mem_pool.h"
-#include "rwlock.h"
-#include "serial.h"
 #include "btime.h"
 #include "jcr.h"
 

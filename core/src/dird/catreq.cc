@@ -44,6 +44,7 @@
 #include "lib/berrno.h"
 #include "lib/edit.h"
 #include "lib/util.h"
+#include "lib/serial.h"
 
 namespace directordaemon {
 

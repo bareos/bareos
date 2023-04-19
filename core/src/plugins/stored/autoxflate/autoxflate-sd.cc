@@ -29,6 +29,7 @@
 #include "include/streams.h"
 #include "stored/stored.h"
 #include "stored/device_control_record.h"
+#include "lib/serial.h"
 
 #if defined(HAVE_LIBZ)
 #  include <zlib.h>

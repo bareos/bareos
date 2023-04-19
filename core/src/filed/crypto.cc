@@ -38,6 +38,7 @@
 #include "findlib/find_one.h"
 #include "lib/bsock.h"
 #include "lib/edit.h"
+#include "lib/serial.h"
 
 namespace filedaemon {
 

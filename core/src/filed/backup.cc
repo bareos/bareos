@@ -48,6 +48,7 @@
 #include "lib/btimers.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
+#include "lib/serial.h"
 
 namespace filedaemon {
 

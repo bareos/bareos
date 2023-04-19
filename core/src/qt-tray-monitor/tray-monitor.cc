@@ -38,6 +38,7 @@
 #include "lib/bsignal.h"
 #include "lib/parse_conf.h"
 #include "lib/cli.h"
+#include "lib/crypto.h"
 
 ConfigurationParser* my_config = nullptr;
 

@@ -62,6 +62,7 @@
 #include "lib/berrno.h"
 #include "lib/bsock.h"
 #include "include/jcr.h"
+#include "lib/serial.h"
 
 static std::string error_message_disabling_xattributes{
     _("Disabling restore of XATTRs on this filesystem, "

@@ -61,6 +61,7 @@
 #include "lib/util.h"
 #include "lib/watchdog.h"
 #include "include/jcr.h"
+#include "lib/serial.h"
 
 inline void read_with_check(int fd, void* buf, size_t count)
 {
