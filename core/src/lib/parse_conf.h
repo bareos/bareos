@@ -33,6 +33,8 @@
 #include "lib/keyword_table_s.h"
 #include "lib/message_destination_info.h"
 #include "lib/util.h"
+#include "lib/lex.h"
+#include "lib/bpipe.h"
 
 #include <functional>
 #include <memory>

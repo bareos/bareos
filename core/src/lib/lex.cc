@@ -31,6 +31,7 @@
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
 #include "lib/berrno.h"
+#include "lib/bpipe.h"
 #include <glob.h>
 
 extern int debug_level;

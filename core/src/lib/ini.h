@@ -23,6 +23,7 @@
 #define BAREOS_LIB_INI_H_
 
 #include <unistd.h>
+#include "lib/lex.h"
 
 // Standard global types with handlers defined in ini.c
 enum

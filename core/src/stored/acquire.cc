@@ -44,6 +44,7 @@
 #include "include/jcr.h"
 #include "stored/block.h"
 #include "stored/stored_jcr_impl.h"
+#include "lib/bpipe.h"
 
 #include <algorithm>
 

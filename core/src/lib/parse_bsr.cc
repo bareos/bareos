@@ -31,6 +31,7 @@
 #include "stored/bsr.h"
 #include "lib/berrno.h"
 #include "lib/parse_bsr.h"
+#include "lib/lex.h"
 
 namespace libbareos {
 

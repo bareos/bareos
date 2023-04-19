@@ -42,6 +42,7 @@
 #include "lib/qualified_resource_name_type_converter.h"
 #include "lib/version.h"
 #include "lib/watchdog.h"
+#include "lib/bpipe.h"
 #include <stdio.h>
 #include <fstream>
 #include <string>

@@ -30,6 +30,7 @@
 #include "runscript.h"
 #include "lib/berrno.h"
 #include "lib/util.h"
+#include "lib/bpipe.h"
 
 /*
  * This function pointer is set only by the Director (dird.c),
@@ -287,9 +288,7 @@ void FreeRunscripts(alist<RunScript*>* runscripts)
   Dmsg0(500, "runscript: freeing all RUNSCRIPTS object\n");
 
   RunScript* r = nullptr;
-  foreach_alist (r, runscripts) {
-    FreeRunscript(r);
-  }
+  foreach_alist (r, runscripts) { FreeRunscript(r); }
 }
 
 void RunScript::Debug() const

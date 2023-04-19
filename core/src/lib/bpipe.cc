@@ -33,6 +33,7 @@
 #include "lib/bsys.h"
 #include "lib/btimers.h"
 #include "lib/util.h"
+#include "lib/bpipe.h"
 
 int execvp_errors[]
     = {EACCES,  ENOEXEC, EFAULT, EINTR, E2BIG, ENAMETOOLONG, ENOMEM,

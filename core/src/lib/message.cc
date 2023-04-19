@@ -47,6 +47,7 @@
 #include "lib/message_destination_info.h"
 #include "lib/message_queue_item.h"
 #include "lib/thread_specific_data.h"
+#include "lib/bpipe.h"
 
 // globals
 const char* working_directory = NULL; /* working directory path stored here */

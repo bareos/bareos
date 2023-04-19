@@ -32,6 +32,7 @@
 #include "include/filetypes.h"
 #include "filed/fd_plugins.h"
 #include "plugins/include/common.h"
+#include "lib/bpipe.h"
 
 namespace filedaemon {
 

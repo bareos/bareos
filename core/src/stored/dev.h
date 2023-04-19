@@ -63,6 +63,7 @@
 #include "include/bareos.h"
 #include "stored/record.h"
 #include "stored/volume_catalog_info.h"
+#include "lib/btimers.h"
 
 #include <vector>
 #include <atomic>

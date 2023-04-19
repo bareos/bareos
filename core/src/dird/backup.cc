@@ -55,6 +55,7 @@
 #include "lib/berrno.h"
 #include "lib/util.h"
 #include "lib/version.h"
+#include "lib/bpipe.h"
 
 namespace directordaemon {
 

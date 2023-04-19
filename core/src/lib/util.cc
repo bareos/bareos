@@ -35,6 +35,7 @@
 #include "lib/qualified_resource_name_type_converter.h"
 #include "include/version_numbers.h"
 #include "include/allow_deprecated.h"
+#include "lib/bpipe.h"
 
 #include <algorithm>
 #include <cctype>

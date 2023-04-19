@@ -39,6 +39,7 @@
 #include "lib/parse_conf.h"
 #include "lib/bsock.h"
 #include "lib/berrno.h"
+#include "lib/bpipe.h"
 
 namespace storagedaemon {
 

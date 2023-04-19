@@ -39,6 +39,7 @@
 #else
 #  include <regex.h>
 #endif
+#include "lib/bpipe.h"
 
 #include <fstream>
 #include <type_traits>

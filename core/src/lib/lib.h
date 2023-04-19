@@ -38,10 +38,6 @@
 #include "mem_pool.h"
 #include "rwlock.h"
 #include "serial.h"
-#include "lex.h"
-#include "fnmatch.h"
-#include "bpipe.h"
-#include "var.h"
 #include "jcr.h"
 
 #endif  // BAREOS_LIB_LIB_H_

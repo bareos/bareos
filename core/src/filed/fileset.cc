@@ -39,6 +39,7 @@
 #include "lib/edit.h"
 #include "include/ch.h"
 #include "lib/util.h"
+#include "lib/bpipe.h"
 
 #ifdef HAVE_WIN32
 #  include "win32/findlib/win32.h"

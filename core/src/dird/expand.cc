@@ -34,6 +34,7 @@
 #include "lib/parse_conf.h"
 #include "lib/util.h"
 #include "lib/output_formatter.h"
+#include "lib/var.h"
 
 namespace directordaemon {
 
