@@ -440,7 +440,7 @@ static inline int process_hardlink(
       *done = true;
       return 1; /* ignore */
     }
-    if (hl->digest) {
+    if (hl->FileIndex) {
       ff_pkt->link = hl->name;
       ff_pkt->type = FT_LNKSAVED; /* Handle link, file already saved */
       ff_pkt->LinkFI = hl->FileIndex;
