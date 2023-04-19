@@ -33,6 +33,7 @@
 #include "lib/breg.h"
 #include "lib/edit.h"
 #include "lib/util.h"
+#include "lib/base64.h"
 
 static const int debuglevel = 150;
 

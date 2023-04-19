@@ -22,6 +22,8 @@
 #ifndef BAREOS_FILED_VERIFY_H_
 #define BAREOS_FILED_VERIFY_H_
 
+#include "lib/crypto.h"
+
 namespace filedaemon {
 
 int DigestFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, DIGEST* digest);

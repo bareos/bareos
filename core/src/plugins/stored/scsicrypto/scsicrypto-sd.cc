@@ -65,6 +65,7 @@
 #include "lib/berrno.h"
 #include "lib/crypto_wrap.h"
 #include "lib/scsi_crypto.h"
+#include "lib/base64.h"
 
 using namespace storagedaemon;
 

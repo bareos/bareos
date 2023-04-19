@@ -36,6 +36,8 @@
 #include "lib/attribs.h"
 #include "lib/util.h"
 #include "include/jcr.h"
+#include "lib/crypto.h"
+#include "lib/base64.h"
 
 namespace storagedaemon {
 

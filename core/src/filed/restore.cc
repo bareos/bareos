@@ -48,6 +48,7 @@
 #include "lib/bsock.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
+#include "lib/base64.h"
 
 #ifdef HAVE_WIN32
 #  include "win32/findlib/win32.h"

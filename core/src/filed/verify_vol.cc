@@ -36,6 +36,8 @@
 #include "lib/bget_msg.h"
 #include "lib/bnet.h"
 #include "lib/parse_conf.h"
+#include "lib/base64.h"
+#include "lib/crypto.h"
 
 namespace filedaemon {
 

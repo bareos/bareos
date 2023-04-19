@@ -39,6 +39,8 @@
 #include "cats/column_data.h"
 #include "lib/bstringlist.h"
 #include "lib/output_formatter.h"
+#include "lib/crypto.h"
+#include "lib/base64.h"
 
 #include <string>
 #include <stdexcept>

@@ -36,6 +36,7 @@
 #include "include/version_numbers.h"
 #include "include/allow_deprecated.h"
 #include "lib/bpipe.h"
+#include "lib/btime.h"
 
 #include <algorithm>
 #include <cctype>

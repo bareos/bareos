@@ -34,6 +34,7 @@
 #include "lib/crypto_wrap.h"
 #include "lib/passphrase.h"
 #include "lib/scsi_crypto.h"
+#include "lib/base64.h"
 
 static void usage()
 {

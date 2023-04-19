@@ -23,21 +23,17 @@
  * Library includes for BAREOS lib directory
  *
  * This file contains an include for each library file
- * that we use within Bareos. include/bareos.h includes this
- * file and thus picks up everything we need in lib.
+ * that is widely used within Bareos
  */
 
 #ifndef BAREOS_LIB_LIB_H_
 #define BAREOS_LIB_LIB_H_
 
 #include "lockmgr.h"
-#include "base64.h"
-#include "bits.h"
-#include "btime.h"
-#include "crypto.h"
 #include "mem_pool.h"
 #include "rwlock.h"
 #include "serial.h"
+#include "btime.h"
 #include "jcr.h"
 
 #endif  // BAREOS_LIB_LIB_H_

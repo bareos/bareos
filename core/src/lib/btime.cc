@@ -41,6 +41,7 @@
  */
 
 #include "include/bareos.h"
+#include "lib/btime.h"
 #include <math.h>
 
 void Blocaltime(const time_t* time, struct tm* tm)

@@ -30,6 +30,7 @@
 #include "lib/cram_md5.h"
 #include "lib/bsock.h"
 #include "lib/util.h"
+#include "lib/base64.h"
 
 
 CramMd5Handshake::CramMd5Handshake(BareosSocket* bs,

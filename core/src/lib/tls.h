@@ -30,6 +30,7 @@
 
 #include "include/bareos.h"
 #include "lib/get_tls_psk_by_fqname_callback.h"
+#include "lib/crypto.h"
 
 class BareosSocket;
 class JobControlRecord;

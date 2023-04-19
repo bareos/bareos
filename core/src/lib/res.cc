@@ -41,6 +41,7 @@
 #include "lib/address_conf.h"
 #include "lib/output_formatter.h"
 #include "include/allow_deprecated.h"
+#include "lib/crypto.h"
 
 // Set default indention e.g. 2 spaces.
 #define DEFAULT_INDENT_STRING "  "

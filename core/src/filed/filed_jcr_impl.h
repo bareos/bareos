@@ -25,6 +25,7 @@
 #define BAREOS_FILED_FILED_JCR_IMPL_H_
 
 #include "include/bareos.h"
+#include "lib/crypto.h"
 
 #include <atomic>
 

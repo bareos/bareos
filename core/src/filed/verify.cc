@@ -38,6 +38,7 @@
 #include "lib/bnet.h"
 #include "lib/bsock.h"
 #include "lib/util.h"
+#include "lib/base64.h"
 
 namespace filedaemon {
 

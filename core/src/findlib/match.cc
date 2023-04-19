@@ -44,6 +44,7 @@
 #include "findlib/match.h"
 #include "findlib/find_one.h"
 #include "lib/edit.h"
+#include "lib/crypto.h"
 
 #ifndef FNM_LEADING_DIR
 #  define FNM_LEADING_DIR 0
