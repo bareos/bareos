@@ -229,10 +229,10 @@ return array(
                             ),
                         ),
                     ),
-                    'analytics' => array(
+                    'analyse' => array(
                         'type' => Segment::class,
                         'options' => array(
-                            'route' => '/analytics[/][:id]',
+                            'route' => '/analyse[/][:id]',
                             'constraints' => array(
                                 'id' => '[a-zA-Z0-9][a-zA-Z0-9\._-]*',
                             ),
