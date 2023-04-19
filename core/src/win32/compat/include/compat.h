@@ -31,6 +31,7 @@
 #include <sys/types.h>
 #include <time.h>
 #include <syslog.h>
+#include "include/fcntl_def.h"
 #include "include/bc_types.h"
 
 // Copyright transferred from Raider Solutions, Inc to

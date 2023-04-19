@@ -34,6 +34,7 @@
 
 #include <unistd.h>
 
+#include "include/fcntl_def.h"
 #include "include/bareos.h"
 #include "lib/berrno.h"
 #include "lib/daemon.h"

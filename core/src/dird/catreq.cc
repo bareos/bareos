@@ -32,6 +32,7 @@
  *    Handle Catalog services.
  */
 
+#include "include/fcntl_def.h"
 #include "include/bareos.h"
 #include "include/filetypes.h"
 #include "include/streams.h"

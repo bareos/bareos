@@ -28,6 +28,7 @@
 #  include "gmock/gmock.h"
 #endif
 
+#include "include/fcntl_def.h"
 #include "lib/berrno.h"
 
 // Error message differ on supported OS

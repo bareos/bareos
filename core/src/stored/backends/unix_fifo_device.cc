@@ -31,6 +31,7 @@
 
 #include <unistd.h>
 
+#include "include/fcntl_def.h"
 #include "include/bareos.h"
 #include "stored/stored.h"
 #include "stored/sd_backends.h"

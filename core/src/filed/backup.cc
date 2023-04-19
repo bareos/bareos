@@ -26,7 +26,7 @@
  * Bareos File Daemon  backup.c  send file attributes and data to the Storage
  * daemon.
  */
-
+#include "include/fcntl_def.h"
 #include "include/bareos.h"
 #include "include/filetypes.h"
 #include "include/streams.h"

@@ -35,6 +35,7 @@
 #include <unistd.h>
 #include <syslog.h>
 
+#include "include/fcntl_def.h"
 #include "include/bareos.h"
 #include "include/jcr.h"
 #include "lib/berrno.h"

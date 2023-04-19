@@ -30,6 +30,7 @@
 
 
 #include <unistd.h>
+#include "include/fcntl_def.h"
 #include "include/bareos.h"
 #include "lib/berrno.h"
 #include "lib/recent_job_results_list.h"

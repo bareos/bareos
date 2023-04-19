@@ -27,6 +27,7 @@
 
 #include <unistd.h>
 
+#include "include/fcntl_def.h"
 #include "include/bareos.h"
 #include "include/filetypes.h"
 #include "filed/fd_plugins.h"

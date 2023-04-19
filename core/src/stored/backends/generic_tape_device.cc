@@ -29,8 +29,9 @@
  * @file
  * Generic Tape API device abstraction.
  */
-
 #include <unistd.h>
+
+#include "include/fcntl_def.h"
 #include "include/bareos.h"
 #include "stored/device_control_record.h"
 #include "stored/stored.h"
@@ -39,8 +40,6 @@
 #include "lib/scsi_lli.h"
 #include "lib/berrno.h"
 #include "lib/util.h"
-
-#include <string>
 
 namespace storagedaemon {
 

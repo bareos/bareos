@@ -31,6 +31,8 @@
 #include <chrono>
 #include <future>
 
+#include "include/fcntl_def.h"
+
 #define STORAGE_DAEMON 1
 #include "include/jcr.h"
 #include "lib/crypto_cache.h"

@@ -25,6 +25,8 @@
  * Spooling code
  */
 
+
+#include "include/fcntl_def.h"
 #include "include/bareos.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"

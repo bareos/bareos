@@ -28,6 +28,7 @@
  */
 
 #include <unistd.h>
+#include "include/fcntl_def.h"
 #include "include/bareos.h"
 #include "lib/crypto_cache.h"
 #include "lib/crypto_wrap.h"

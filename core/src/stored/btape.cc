@@ -33,6 +33,8 @@
  */
 
 #include <unistd.h>
+
+#include "include/fcntl_def.h"
 #include "include/bareos.h"
 #include "include/streams.h"
 #include "stored/stored.h"

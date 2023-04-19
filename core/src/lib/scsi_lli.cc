@@ -26,6 +26,7 @@
  * Marco van Wieringen, March 2012
  */
 #include <unistd.h>
+#include "include/fcntl_def.h"
 #include <sys/ioctl.h>
 #include <netdb.h>
 #include "include/bareos.h"

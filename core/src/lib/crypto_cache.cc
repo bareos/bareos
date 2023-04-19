@@ -25,6 +25,7 @@
  * Marco van Wieringen, April 2012
  */
 
+#include "include/fcntl_def.h"
 #include <unistd.h>
 #include "include/bareos.h"
 #include "crypto_cache.h"

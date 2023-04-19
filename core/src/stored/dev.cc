@@ -70,6 +70,7 @@
  * business with no lost data.
  */
 
+#include "include/fcntl_def.h"
 #include "include/bareos.h"
 #include "stored/block.h"
 #include "stored/stored.h"

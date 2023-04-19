@@ -27,6 +27,7 @@
 
 #include <unistd.h>
 
+#include "include/fcntl_def.h"
 #include "include/bareos.h"
 #include "lib/edit.h"
 #include "stored/device_status_information.h"

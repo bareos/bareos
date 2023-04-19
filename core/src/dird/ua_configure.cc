@@ -24,6 +24,7 @@
  * Interactive configuration engine for director.
  */
 
+#include "include/fcntl_def.h"
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/dird_globals.h"
