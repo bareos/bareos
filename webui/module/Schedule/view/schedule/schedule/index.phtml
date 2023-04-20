@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2020 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -121,7 +121,7 @@ $this->headTitle($title);
          locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
          cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
          cookieIdTable: 'schedules_index',
-         url: '<?php echo $this->url('schedule', array('action' => 'getData'), null) . '?data=all'; ?>',
+         url: '<?php echo $this->url('api/schedule', array(), array()); ?>',
          method: 'get',
          dataType: 'json',
          pagination : true,

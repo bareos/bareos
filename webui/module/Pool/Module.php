@@ -25,7 +25,6 @@
 
 namespace Pool;
 
-use Pool\Model\Pool;
 use Pool\Model\PoolModel;
 
 class Module

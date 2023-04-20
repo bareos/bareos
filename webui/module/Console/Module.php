@@ -25,7 +25,6 @@
 
 namespace Console;
 
-use Console\Model\Console;
 use Console\Model\ConsoleModel;
 
 class Module

@@ -25,7 +25,6 @@
 
 namespace Dashboard;
 
-use Dashboard\Model\Dashboard;
 use Dashboard\Model\DashboardModel;
 
 class Module

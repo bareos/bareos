@@ -27,7 +27,6 @@ namespace Fileset\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
-use Zend\Json\Json;
 use Exception;
 
 class FilesetController extends AbstractActionController
@@ -77,19 +76,7 @@ class FilesetController extends AbstractActionController
             );
         }
 
-        try {
-            $this->bsock = $this->getServiceLocator()->get('director');
-            $filesets = $this->getFilesetModel()->getFilesets($this->bsock);
-            $this->bsock->disconnect();
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
-
-        return new ViewModel(
-            array(
-                'filesets' => $filesets,
-            )
-        );
+        return new ViewModel();
     }
 
     /**
@@ -145,63 +132,6 @@ class FilesetController extends AbstractActionController
                 'fileset' => $fileset
             )
         );
-    }
-
-    /**
-     * Get Data Action
-     *
-     * @return object
-     */
-    public function getDataAction()
-    {
-        $this->RequestURIPlugin()->setRequestURI();
-
-        if (!$this->SessionTimeoutPlugin()->isValid()) {
-            return $this->redirect()->toRoute(
-                'auth',
-                array(
-                    'action' => 'login'
-                ),
-                array(
-                    'query' => array(
-                        'req' => $this->RequestURIPlugin()->getRequestURI(),
-                        'dird' => $_SESSION['bareos']['director']
-                    )
-                )
-            );
-        }
-
-        $result = null;
-
-        $data = $this->params()->fromQuery('data');
-        $fileset = $this->params()->fromQuery('fileset');
-
-        if ($data == "all") {
-            try {
-                $this->bsock = $this->getServiceLocator()->get('director');
-                $result = $this->getFilesetModel()->getFilesets($this->bsock);
-                $this->bsock->disconnect();
-            } catch (Exception $e) {
-                echo $e->getMessage();
-            }
-        } elseif ($data == "details" && isset($fileset)) {
-            try {
-                $this->bsock = $this->getServiceLocator()->get('director');
-                $result = $this->getFilesetModel()->getFileset($this->bsock, $fileset);
-                $this->bsock->disconnect();
-            } catch (Exception $e) {
-                echo $e->getMessage();
-            }
-        }
-
-        $response = $this->getResponse();
-        $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
-
-        if (isset($result)) {
-            $response->setContent(JSON::encode($result));
-        }
-
-        return $response;
     }
 
     /**

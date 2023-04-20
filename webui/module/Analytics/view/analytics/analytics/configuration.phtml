@@ -68,7 +68,7 @@ $this->headTitle($title);
 
 <script>
 
-d3.json("<?php echo $this->url('analytics', array('action' => 'getData'), null) . '?data=config-resource-graph'; ?>").then(function(data) {
+d3.json("<?php echo $this->url('api/analyse', array(), array("query" => array("type" => "config-resource-graph"))); ?>").then(function(data) {
 
 function ticked() {
   link

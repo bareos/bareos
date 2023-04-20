@@ -25,7 +25,6 @@
 
 namespace Job;
 
-use Job\Model\Job;
 use Job\Model\JobModel;
 
 class Module

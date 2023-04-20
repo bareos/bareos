@@ -80,7 +80,7 @@ $this->headTitle($title);
 <script>
 
   $.ajax({
-    url: '<?php echo $this->url('analytics', array('action' => 'getData'), null) . '?data=overall-jobtotals'; ?>',
+    url: '<?php echo $this->url('api/analyse', array(), array("query" => array("type" => "overall-jobtotals"))); ?>',
     dataType: 'json',
     timeout: 10000,
     success: function(data) {
@@ -113,7 +113,7 @@ $this->headTitle($title);
     .append("g")
     .attr("transform", `translate(${margin.left}, ${margin.top})`);
 
-  d3.json("<?php echo $this->url('analytics', array('action' => 'getData'), null) . '?data=jobtotals'; ?>").then(function(data) {
+  d3.json("<?php echo $this->url('api/analyse', array(), array("query" => array("type" => "jobtotals"))); ?>").then(function(data) {
 
     const root = d3.hierarchy(data).sum(d => d.bytes).sort((a, b) => b.value - a.value)
 

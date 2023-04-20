@@ -25,7 +25,6 @@
 
 namespace Analytics;
 
-use Analytics\Model\Analytics;
 use Analytics\Model\AnalyticsModel;
 
 class Module

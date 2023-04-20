@@ -25,7 +25,6 @@
 
 namespace Director;
 
-use Director\Model\Director;
 use Director\Model\DirectorModel;
 
 class Module

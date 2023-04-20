@@ -27,13 +27,9 @@ namespace Analytics\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
-use Zend\Json\Json;
-use Exception;
 
 class AnalyticsController extends AbstractActionController
 {
-    protected $analyticsModel = null;
-    protected $bsock = null;
     protected $acl_alert = false;
 
     public function indexAction()
@@ -108,73 +104,5 @@ class AnalyticsController extends AbstractActionController
         }
 
         return new ViewModel();
-    }
-
-    public function getDataAction()
-    {
-        $this->RequestURIPlugin()->setRequestURI();
-
-        if (!$this->SessionTimeoutPlugin()->isValid()) {
-            return $this->redirect()->toRoute(
-                'auth',
-                array(
-                    'action' => 'login'
-                ),
-                array(
-                    'query' => array(
-                        'req' => $this->RequestURIPlugin()->getRequestURI(),
-                        'dird' => $_SESSION['bareos']['director']
-                    )
-                )
-            );
-        }
-
-        $result = null;
-
-        $data = $this->params()->fromQuery('data');
-
-        if ($data == "jobtotals") {
-            try {
-                $this->bsock = $this->getServiceLocator()->get('director');
-                $result = $this->getAnalyticsModel()->getJobTotals($this->bsock);
-                $this->bsock->disconnect();
-            } catch (Exception $e) {
-                echo $e->getMessage();
-            }
-        } elseif ($data == "overall-jobtotals") {
-            try {
-                $this->bsock = $this->getServiceLocator()->get('director');
-                $result = $this->getAnalyticsModel()->getOverallJobTotals($this->bsock);
-                $this->bsock->disconnect();
-            } catch (Exception $e) {
-                echo $e->getMessage();
-            }
-        } elseif ($data == "config-resource-graph") {
-            try {
-                $this->bsock = $this->getServiceLocator()->get('director');
-                $result = $this->getAnalyticsModel()->getConfigResourceGraph($this->bsock);
-                $this->bsock->disconnect();
-            } catch (Exception $e) {
-                echo $e->getMessage();
-            }
-        }
-
-        $response = $this->getResponse();
-        $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
-
-        if (isset($result)) {
-            $response->setContent(JSON::encode($result));
-        }
-
-        return $response;
-    }
-
-    public function getAnalyticsModel()
-    {
-        if (!$this->analyticsModel) {
-            $sm = $this->getServiceLocator();
-            $this->analyticsModel = $sm->get('Analytics\Model\AnalyticsModel');
-        }
-        return $this->analyticsModel;
     }
 }

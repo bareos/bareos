@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -23,8 +23,32 @@
  *
  */
 
-namespace Client\Model;
+namespace Api\Controller;
 
-class Client
+use Zend\Mvc\Controller\AbstractRestfulController;
+use Zend\View\Model\JsonModel;
+
+class ApiController extends AbstractRestfulController
 {
+    public function getList()
+    {
+        $this->RequestURIPlugin()->setRequestURI();
+
+        if (!$this->SessionTimeoutPlugin()->isValid()) {
+            return $this->redirect()->toRoute(
+                'auth',
+                array(
+                    'action' => 'login'
+                ),
+                array(
+                    'query' => array(
+                        'req' => $this->RequestURIPlugin()->getRequestURI(),
+                        'dird' => $_SESSION['bareos']['director']
+                    )
+                )
+            );
+        }
+
+        return new JsonModel();
+    }
 }

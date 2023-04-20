@@ -25,7 +25,6 @@
 
 namespace Storage;
 
-use Storage\Model\Storage;
 use Storage\Model\StorageModel;
 
 class Module

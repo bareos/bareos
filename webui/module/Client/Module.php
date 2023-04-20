@@ -25,7 +25,6 @@
 
 namespace Client;
 
-use Client\Model\Client;
 use Client\Model\ClientModel;
 
 class Module

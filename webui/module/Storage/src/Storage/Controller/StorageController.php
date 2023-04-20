@@ -437,63 +437,6 @@ class StorageController extends AbstractActionController
     }
 
     /**
-     * Get Data Action
-     *
-     * @return object
-     */
-    public function getDataAction()
-    {
-        $this->RequestURIPlugin()->setRequestURI();
-
-        if (!$this->SessionTimeoutPlugin()->isValid()) {
-            return $this->redirect()->toRoute(
-                'auth',
-                array(
-                    'action' => 'login'
-                ),
-                array(
-                    'query' => array(
-                        'req' => $this->RequestURIPlugin()->getRequestURI(),
-                        'dird' => $_SESSION['bareos']['director']
-                    )
-                )
-            );
-        }
-
-        $result = null;
-
-        $data = $this->params()->fromQuery('data');
-        $storage = $this->params()->fromQuery('storage');
-
-        if ($data == "all") {
-            try {
-                $this->bsock = $this->getServiceLocator()->get('director');
-                $result = $this->getStorageModel()->getStorages($this->bsock);
-                $this->bsock->disconnect();
-            } catch (Exception $e) {
-                echo $e->getMessage();
-            }
-        } elseif ($data == "statusslots") {
-            try {
-                $this->bsock = $this->getServiceLocator()->get('director');
-                $result = $this->getStorageModel()->getStatusStorageSlots($this->bsock, $storage);
-                $this->bsock->disconnect();
-            } catch (Exception $e) {
-                echo $e->getMessage();
-            }
-        }
-
-        $response = $this->getResponse();
-        $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
-
-        if (isset($result)) {
-            $response->setContent(JSON::encode($result));
-        }
-
-        return $response;
-    }
-
-    /**
      * Get Storage Model
      *
      * @return object

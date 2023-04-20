@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link   https://github.com/bareos/bareos for the canonical source repository
- * @copyright   Copyright (C) 2013-2022 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright   Copyright (C) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -181,7 +181,7 @@ $this->headTitle($title);
    function attachJobDetailsTable() {
       $('#jobdetails').bootstrapTable({
          locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
-         url: '<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=details&jobid='.$this->jobid; ?>',
+         url: '<?php echo $this->url("api/job", array("id" => $this->jobid), array()); ?>',
          method: 'get',
          dataType: 'json',
          detailView: true,
@@ -247,7 +247,7 @@ $this->headTitle($title);
          locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
          cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
          cookieIdTable: 'job_table_job_log',
-         url: '<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=logs&jobid='.$this->jobid; ?>',
+         url: '<?php echo $this->url("api/joblog", array("id" => $this->jobid), array()); ?>',
          method: 'get',
          dataType: 'json',
          pagination : true,
@@ -280,7 +280,7 @@ $this->headTitle($title);
          locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
          cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
          cookieIdTable: 'job_table_job_media',
-         url: '<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=jobmedia&jobid='.$this->jobid; ?>',
+         url: '<?php echo $this->url('api/media', array(), array("query" => array("filter" => "jobid", "jobid" => $this->jobid))); ?>',
          method: 'get',
          dataType: 'json',
          pagination : true,

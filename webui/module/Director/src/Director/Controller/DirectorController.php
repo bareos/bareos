@@ -233,57 +233,6 @@ class DirectorController extends AbstractActionController
     }
 
     /**
-     * Get Data Action
-     *
-     * @return object
-     */
-    public function getDataAction()
-    {
-        $this->RequestURIPlugin()->setRequestURI();
-
-        if (!$this->SessionTimeoutPlugin()->isValid()) {
-            return $this->redirect()->toRoute(
-                'auth',
-                array(
-                    'action' => 'login'
-                ),
-                array(
-                    'query' => array(
-                        'req' => $this->RequestURIPlugin()->getRequestURI(),
-                        'dird' => $_SESSION['bareos']['director']
-                    )
-                )
-            );
-        }
-
-        $result = null;
-
-        $data = $this->params()->fromQuery('data');
-        $limit = $this->params()->fromQuery('limit');
-        $offset = $this->params()->fromQuery('offset');
-        $reverse = $this->params()->fromQuery('reverse');
-
-        if ($data == "messages") {
-            try {
-                $this->bsock = $this->getServiceLocator()->get('director');
-                $result = $this->getDirectorModel()->getDirectorMessages($this->bsock, $limit, $offset, $reverse);
-                $this->bsock->disconnect();
-            } catch (Exception $e) {
-                echo $e->getMessage();
-            }
-        }
-
-        $response = $this->getResponse();
-        $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
-
-        if (isset($result)) {
-            $response->setContent(JSON::encode($result));
-        }
-
-        return $response;
-    }
-
-    /**
      * Get Director Model
      *
      * @return object

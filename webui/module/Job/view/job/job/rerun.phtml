@@ -216,7 +216,7 @@ $this->headTitle($title);
    function refreshTableData() {
       $('#spinner').fadeIn('slow');
       $('#jobtable').bootstrapTable('refreshOptions', {
-         url: '<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=jobs-to-rerun&period='; ?>' + displayRange,
+         url: '<?php echo $this->url('api/job', array(), array()) . '?filter=rerun&period='; ?>' + displayRange,
       });
       $('#spinner').fadeOut('slow');
    }
@@ -236,12 +236,13 @@ $this->headTitle($title);
       if (s.length === 0) {
         $("#modal-004").modal();
       } else {
-         let url = "<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=job-rerun&jobs=" + s + "'; ?>";
+         let url = "<?php echo $this->url('api/execute', array(), array()) . '?command=rerun&jobs=" + s + "'; ?>";
 
          $('#dir-messages').empty()
 
          $.ajax({
             url: url,
+            type: 'POST',
             dataType: 'json',
             timeout: 10000,
             success: function(data) {
@@ -267,7 +268,7 @@ $this->headTitle($title);
          locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
          cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
          cookieIdTable: 'jobs_rerun',
-         url: '<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=jobs-to-rerun&period='; ?>' + displayRange,
+         url: '<?php echo $this->url('api/job', array(), array("query" => array("rerun" => "rerun"))) . '&period='; ?>' + displayRange,
          method: 'get',
          dataType: 'json',
          pagination : false,

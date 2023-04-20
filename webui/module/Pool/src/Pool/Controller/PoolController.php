@@ -27,7 +27,6 @@ namespace Pool\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
-use Zend\Json\Json;
 use Exception;
 
 class PoolController extends AbstractActionController
@@ -145,71 +144,6 @@ class PoolController extends AbstractActionController
                 'pool' => $poolname,
             )
         );
-    }
-
-    /**
-     * Get Data Action
-     *
-     * @return object
-     */
-    public function getDataAction()
-    {
-        $this->RequestURIPlugin()->setRequestURI();
-
-        if (!$this->SessionTimeoutPlugin()->isValid()) {
-            return $this->redirect()->toRoute(
-                'auth',
-                array(
-                    'action' => 'login'
-                ),
-                array(
-                    'query' => array(
-                        'req' => $this->RequestURIPlugin()->getRequestURI(),
-                        'dird' => $_SESSION['bareos']['director']
-                    )
-                )
-            );
-        }
-
-        $result = null;
-
-        $data = $this->params()->fromQuery('data');
-        $pool = $this->params()->fromQuery('pool');
-
-        if ($data == "all") {
-            try {
-                $this->bsock = $this->getServiceLocator()->get('director');
-                $result = $this->getPoolModel()->getPools($this->bsock);
-                $this->bsock->disconnect();
-            } catch (Exception $e) {
-                echo $e->getMessage();
-            }
-        } elseif ($data == "details" && isset($pool)) {
-            try {
-                $this->bsock = $this->getServiceLocator()->get('director');
-                $result = $this->getPoolModel()->getPool($this->bsock, $pool);
-                $this->bsock->disconnect();
-            } catch (Exception $e) {
-                echo $e->getMessage();
-            }
-        } elseif ($data == "volumes" && isset($pool)) {
-            try {
-                $this->bsock = $this->getServiceLocator()->get('director');
-                $result = $this->getPoolModel()->getPoolMedia($this->bsock, $pool);
-                $this->bsock->disconnect();
-            } catch (Exception $e) {
-                echo $e->getMessage();
-            }
-        }
-
-        $response = $this->getResponse();
-        $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
-
-        if (isset($result)) {
-            $response->setContent(JSON::encode($result));
-        }
-
-        return $response;
     }
 
     /**
