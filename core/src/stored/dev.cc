@@ -81,6 +81,7 @@
 #include "lib/btimers.h"
 #include "include/jcr.h"
 #include "lib/berrno.h"
+#include <stdexcept>
 
 #ifndef HAVE_DYNAMIC_SD_BACKENDS
 #  ifdef HAVE_GFAPI
