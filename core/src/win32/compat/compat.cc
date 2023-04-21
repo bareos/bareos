@@ -154,6 +154,7 @@ static void VSSPathConvertCleanup(void* arg)
   free(tvpc);
 }
 
+static std::optional<thread_vss_path_convert> global_convert{std::nullopt};
 bool SetVSSPathConvert(t_pVSSPathConvert pPathConvert,
                        t_pVSSPathConvertW pPathConvertW)
 {
@@ -162,6 +163,9 @@ bool SetVSSPathConvert(t_pVSSPathConvert pPathConvert,
 
   lock_mutex(tsd_mutex);
   if (!pc_tsd_initialized) {
+    if (!global_convert.has_value()) {
+      global_convert = thread_vss_path_convert { pPathConvert, pPathConvertW };
+    }
     status = pthread_key_create(&path_conversion_key, VSSPathConvertCleanup);
     if (status != 0) {
       unlock_mutex(tsd_mutex);
@@ -201,6 +205,11 @@ static thread_vss_path_convert* Win32GetPathConvert()
   lock_mutex(tsd_mutex);
   if (pc_tsd_initialized) {
     tvpc = (thread_vss_path_convert*)pthread_getspecific(path_conversion_key);
+    if (!tvpc) {
+      if (global_convert.has_value()) {
+	tvpc = &global_convert.value();
+      }
+    }
   }
   unlock_mutex(tsd_mutex);
 
