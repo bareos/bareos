@@ -38,6 +38,7 @@
 #include "findlib/find_one.h"
 #include "lib/util.h"
 #include "lib/berrno.h"
+#include "lib/thread_specific_data.h"
 #include "hardlink.h"
 
 #include <memory>  // unique_ptr
@@ -716,6 +717,7 @@ static void ListFromIncexe(JobControlRecord* jcr,
 			   channel::in<stated_file> in,
 			   std::promise<std::optional<std::size_t>> num_skipped)
 {
+  SetJcrInThreadSpecificData(jcr);
   dlistString* node;
   fileset->incexe = incexe;
   SetupLastOptionBlock(ff, incexe);
@@ -998,6 +1000,7 @@ void PrepareFileForSending(JobControlRecord* jcr,
 			   std::vector<channel::out<stated_file>> outs,
 			   channel::in<stated_opened_file> in)
 {
+  SetJcrInThreadSpecificData(jcr);
   std::size_t closed_channels = 0;
   while (closed_channels != outs.size()) {
     bool found_file = false;
