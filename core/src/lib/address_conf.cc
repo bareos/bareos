@@ -37,9 +37,6 @@
 #ifdef HAVE_ARPA_NAMESER_H
 #  include <arpa/nameser.h>
 #endif
-#ifdef HAVE_RESOLV_H
-//#include <resolv.h>
-#endif
 
 IPADDR::IPADDR()
     : type(R_UNDEFINED), saddr(nullptr), saddr4(nullptr), saddr6(nullptr)

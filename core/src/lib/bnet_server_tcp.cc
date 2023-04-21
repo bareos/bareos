@@ -47,9 +47,6 @@
 #ifdef HAVE_ARPA_NAMESER_H
 #  include <arpa/nameser.h>
 #endif
-#ifdef HAVE_RESOLV_H
-// #include <resolv.h>
-#endif
 
 #ifdef HAVE_POLL_H
 #  include <poll.h>
