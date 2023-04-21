@@ -970,43 +970,36 @@ static inline bool GetVolumeMountPointData(const char* filename,
                                            POOLMEM*& devicename)
 {
   HANDLE h = INVALID_HANDLE_VALUE;
+  PoolMem win32_fname(PM_FNAME);
+  unix_name_to_win32(win32_fname.addr(), filename);
 
   /* Now to find out if the directory is a mount point or a reparse point.
    * Explicitly open the file to read the reparse point, then call
    * DeviceIoControl to find out if it points to a Volume or to a directory. */
   if (p_GetFileAttributesW) {
-    POOLMEM* pwszBuf = GetPoolMemory(PM_FNAME);
-    make_win32_path_UTF8_2_wchar(pwszBuf, filename);
+    PoolMem pwszBuf(PM_FNAME);
+    make_win32_path_UTF8_2_wchar(pwszBuf.addr(), win32_fname.c_str());
 
     if (p_CreateFileW) {
       h = CreateFileW(
-          (LPCWSTR)pwszBuf, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+		      (LPCWSTR)pwszBuf.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
           FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
     }
 
     if (h == INVALID_HANDLE_VALUE) {
-      Dmsg1(debuglevel, "Invalid handle from CreateFileW(%s)\n", pwszBuf);
-      FreePoolMemory(pwszBuf);
+      Dmsg1(debuglevel, "Invalid handle from CreateFileW(%s)\n", pwszBuf.c_str());
       return false;
     }
 
-    FreePoolMemory(pwszBuf);
   } else if (p_GetFileAttributesA) {
-    POOLMEM* win32_fname;
 
-    win32_fname = GetPoolMemory(PM_FNAME);
-    unix_name_to_win32(win32_fname, filename);
-    h = CreateFileA(
-        win32_fname, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
-        FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
+    h = CreateFileA(win32_fname.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+		    FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
 
     if (h == INVALID_HANDLE_VALUE) {
-      Dmsg1(debuglevel, "Invalid handle from CreateFile(%s)\n", win32_fname);
-      FreePoolMemory(win32_fname);
+      Dmsg1(debuglevel, "Invalid handle from CreateFile(%s)\n", win32_fname.c_str());
       return false;
     }
-
-    FreePoolMemory(win32_fname);
   }
 
   if (h != INVALID_HANDLE_VALUE) {
@@ -1048,39 +1041,32 @@ static inline ssize_t GetSymlinkData(const char* filename,
 {
   ssize_t nrconverted = -1;
   HANDLE h = INVALID_HANDLE_VALUE;
+  PoolMem win32_fname(PM_FNAME);
+  unix_name_to_win32(win32_fname.addr(), filename);
 
   if (p_GetFileAttributesW) {
-    POOLMEM* pwszBuf = GetPoolMemory(PM_FNAME);
-    make_win32_path_UTF8_2_wchar(pwszBuf, filename);
+    PoolMem pwszBuf(PM_FNAME);
+    make_win32_path_UTF8_2_wchar(pwszBuf.addr(), win32_fname.c_str());
 
     if (p_CreateFileW) {
       h = CreateFileW(
-          (LPCWSTR)pwszBuf, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+		      (LPCWSTR)pwszBuf.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
           FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
     }
 
     if (h == INVALID_HANDLE_VALUE) {
-      Dmsg1(debuglevel, "Invalid handle from CreateFileW(%s)\n", pwszBuf);
-      FreePoolMemory(pwszBuf);
+      Dmsg1(debuglevel, "Invalid handle from CreateFileW(%s)\n", pwszBuf.c_str());
       return -1;
     }
-
-    FreePoolMemory(pwszBuf);
   } else if (p_GetFileAttributesA) {
-    POOLMEM* win32_fname;
-
-    win32_fname = GetPoolMemory(PM_FNAME);
-    unix_name_to_win32(win32_fname, filename);
     h = CreateFileA(
-        win32_fname, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+		    win32_fname.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
         FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
 
     if (h == INVALID_HANDLE_VALUE) {
-      Dmsg1(debuglevel, "Invalid handle from CreateFile(%s)\n", win32_fname);
-      FreePoolMemory(win32_fname);
+      Dmsg1(debuglevel, "Invalid handle from CreateFile(%s)\n", win32_fname.c_str());
       return -1;
     }
-    FreePoolMemory(win32_fname);
   }
   if (h != INVALID_HANDLE_VALUE) {
     bool ok;
@@ -1175,41 +1161,36 @@ static int GetWindowsFileInfo(const char* filename,
   FILETIME* pftLastWriteTime;
   FILETIME* pftCreationTime;
 
+  PoolMem win32_fname(PM_FNAME);
+  unix_name_to_win32(win32_fname.addr(), filename);
+
   // First get a findhandle and a file handle to the file.
   if (p_FindFirstFileW) { /* use unicode */
-    POOLMEM* pwszBuf = GetPoolMemory(PM_FNAME);
-    make_win32_path_UTF8_2_wchar(pwszBuf, filename);
+    PoolMem pwszBuf(PM_FNAME);
+    make_win32_path_UTF8_2_wchar(pwszBuf.addr(), win32_fname.c_str());
 
-    Dmsg1(debuglevel, "FindFirstFileW=%s\n", pwszBuf);
-    fh = p_FindFirstFileW((LPCWSTR)pwszBuf, &info_w);
+    Dmsg1(debuglevel, "FindFirstFileW=%s\n", pwszBuf.c_str());
+    fh = p_FindFirstFileW((LPCWSTR)pwszBuf.c_str(), &info_w);
 #if (_WIN32_WINNT >= 0x0600)
     if (fh != INVALID_HANDLE_VALUE) {
       h = p_CreateFileW(
-          (LPCWSTR)pwszBuf, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+			(LPCWSTR)pwszBuf.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
           FILE_FLAG_BACKUP_SEMANTICS, /* Required for directories */
           NULL);
     }
 #endif
 
-    FreePoolMemory(pwszBuf);
   } else if (p_FindFirstFileA) {  // use ASCII
-    POOLMEM* win32_fname;
-
-    win32_fname = GetPoolMemory(PM_FNAME);
-    unix_name_to_win32(win32_fname, filename);
-
-    Dmsg1(debuglevel, "FindFirstFileA=%s\n", win32_fname);
-    fh = p_FindFirstFileA(win32_fname, &info_a);
+    Dmsg1(debuglevel, "FindFirstFileA=%s\n", win32_fname.c_str());
+    fh = p_FindFirstFileA(win32_fname.c_str(), &info_a);
 #if (_WIN32_WINNT >= 0x0600)
     if (h != INVALID_HANDLE_VALUE) {
-      h = CreateFileA(win32_fname, GENERIC_READ, FILE_SHARE_READ, NULL,
+      h = CreateFileA(win32_fname.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL,
                       OPEN_EXISTING,
                       FILE_FLAG_BACKUP_SEMANTICS, /* Required for directories */
                       NULL);
     }
 #endif
-
-    FreePoolMemory(win32_fname);
   } else {
     Dmsg0(debuglevel, "No findFirstFile A or W found\n");
   }
@@ -1477,28 +1458,24 @@ static int stat2(const char* filename, struct stat* sb)
   HANDLE h = INVALID_HANDLE_VALUE;
   int rval = 0;
   DWORD attr = (DWORD)-1;
+  PoolMem win32_fname(PM_FNAME);
+  unix_name_to_win32(win32_fname.addr(), filename);
+
 
   if (p_GetFileAttributesW) {
-    POOLMEM* pwszBuf = GetPoolMemory(PM_FNAME);
+    PoolMem pwszBuf(PM_FNAME);
 
-    make_win32_path_UTF8_2_wchar(pwszBuf, filename);
-    attr = p_GetFileAttributesW((LPCWSTR)pwszBuf);
+    make_win32_path_UTF8_2_wchar(pwszBuf.addr(), win32_fname.c_str());
+    attr = p_GetFileAttributesW((LPCWSTR)pwszBuf.c_str());
     if (p_CreateFileW) {
-      h = CreateFileW((LPCWSTR)pwszBuf, GENERIC_READ, FILE_SHARE_READ, NULL,
+      h = CreateFileW((LPCWSTR)pwszBuf.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL,
                       OPEN_EXISTING, 0, NULL);
     }
-    FreePoolMemory(pwszBuf);
   } else if (p_GetFileAttributesA) {
-    POOLMEM* win32_fname;
-
-    win32_fname = GetPoolMemory(PM_FNAME);
-    unix_name_to_win32(win32_fname, filename);
-
-    attr = p_GetFileAttributesA(win32_fname);
-    h = CreateFileA(win32_fname, GENERIC_READ, FILE_SHARE_READ, NULL,
+    attr = p_GetFileAttributesA(win32_fname.c_str());
+    h = CreateFileA(win32_fname.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL,
                     OPEN_EXISTING, 0, NULL);
 
-    FreePoolMemory(win32_fname);
   } else {
     Emsg0(M_FATAL, 0,
           _("p_GetFileAttributesW and p_GetFileAttributesA undefined. "
@@ -1548,27 +1525,24 @@ bail_out:
 int stat(const char* filename, struct stat* sb)
 {
   int rval = 0;
-  POOLMEM* win32_fname = NULL;
   WIN32_FILE_ATTRIBUTE_DATA data;
 
   errno = 0;
   memset(sb, 0, sizeof(*sb));
 
+  PoolMem win32_fname(PM_FNAME);
+  unix_name_to_win32(win32_fname.addr(), filename);
   if (p_GetFileAttributesExW) {
     // Dynamically allocate enough space for UCS2 filename
-    POOLMEM* pwszBuf = GetPoolMemory(PM_FNAME);
-    make_win32_path_UTF8_2_wchar(pwszBuf, filename);
+    PoolMem pwszBuf(PM_FNAME);
+    make_win32_path_UTF8_2_wchar(pwszBuf.addr(), win32_fname.c_str());
 
-    BOOL b = p_GetFileAttributesExW((LPCWSTR)pwszBuf, GetFileExInfoStandard,
+    BOOL b = p_GetFileAttributesExW((LPCWSTR)pwszBuf.c_str(), GetFileExInfoStandard,
                                     &data);
-    FreePoolMemory(pwszBuf);
-
     if (!b) { goto bail_out; }
   } else if (p_GetFileAttributesExA) {
-    win32_fname = GetPoolMemory(PM_FNAME);
-    unix_name_to_win32(win32_fname, filename);
 
-    if (!p_GetFileAttributesExA(win32_fname, GetFileExInfoStandard, &data)) {
+    if (!p_GetFileAttributesExA(win32_fname.c_str(), GetFileExInfoStandard, &data)) {
       goto bail_out;
     }
   } else {
@@ -1617,17 +1591,13 @@ int stat(const char* filename, struct stat* sb)
       /* The GetFileInformationByHandleEx need a file handle so we have to
        * open the file or directory read-only. */
       if (p_CreateFileW) {
-        POOLMEM* pwszBuf;
+        PoolMem pwszBuf(PM_FNAME);
+        make_win32_path_UTF8_2_wchar(pwszBuf.addr(), win32_fname.c_str());
 
-        pwszBuf = GetPoolMemory(PM_FNAME);
-        make_win32_path_UTF8_2_wchar(pwszBuf, filename);
-
-        h = p_CreateFileW((LPCWSTR)pwszBuf, GENERIC_READ, FILE_SHARE_READ, NULL,
+        h = p_CreateFileW((LPCWSTR)pwszBuf.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL,
                           OPEN_EXISTING, 0, NULL);
-
-        FreePoolMemory(pwszBuf);
       } else {
-        h = CreateFileA(win32_fname, GENERIC_READ, FILE_SHARE_READ, NULL,
+        h = CreateFileA(win32_fname.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL,
                         OPEN_EXISTING, 0, NULL);
       }
 
@@ -1672,7 +1642,6 @@ int stat(const char* filename, struct stat* sb)
   return rval;
 
 bail_out:
-  if (win32_fname) { FreePoolMemory(win32_fname); }
 
   return stat2(filename, sb);
 }
@@ -1909,19 +1878,16 @@ typedef struct _dir {
 
 DIR* opendir(const char* path)
 {
-  POOLMEM* win32_path;
-  _dir* rval = NULL;
-
   if (path == NULL) {
     errno = ENOENT;
     return NULL;
   }
 
   Dmsg1(debuglevel, "Opendir path=%s\n", path);
-  rval = (_dir*)malloc(sizeof(_dir));
+  _dir* rval = (_dir*)malloc(sizeof(_dir));
   memset(rval, 0, sizeof(_dir));
 
-  win32_path = GetPoolMemory(PM_FNAME);
+  POOLMEM* win32_path = GetPoolMemory(PM_FNAME);
   unix_name_to_win32(win32_path, path);
   Dmsg1(debuglevel, "win32 path=%s\n", win32_path);
 
@@ -1936,13 +1902,11 @@ DIR* opendir(const char* path)
 
   // convert to wchar_t
   if (p_FindFirstFileW) {
-    POOLMEM* pwcBuf;
+    PoolMem pwcBuf(PM_FNAME);
 
-    pwcBuf = GetPoolMemory(PM_FNAME);
-    make_win32_path_UTF8_2_wchar(pwcBuf, rval->spec);
-    rval->dirh = p_FindFirstFileW((LPCWSTR)pwcBuf, &rval->data_w);
+    make_win32_path_UTF8_2_wchar(pwcBuf.addr(), rval->spec);
+    rval->dirh = p_FindFirstFileW((LPCWSTR)pwcBuf.c_str(), &rval->data_w);
     if (rval->dirh != INVALID_HANDLE_VALUE) { rval->valid_w = 1; }
-    FreePoolMemory(pwcBuf);
   } else if (p_FindFirstFileA) {
     rval->dirh = p_FindFirstFileA(rval->spec, &rval->data_a);
     if (rval->dirh != INVALID_HANDLE_VALUE) { rval->valid_a = 1; }
@@ -2495,24 +2459,19 @@ bool win32_restore_file_attributes(POOLMEM* ofname,
   bool retval = false;
 
   Dmsg1(100, "SetFileAtts %s\n", ofname);
+  PoolMem win32_ofile(PM_FNAME);
+
+  unix_name_to_win32(win32_ofile.addr(), ofname);
   if (p_SetFileAttributesW) {
-    BOOL b;
-    POOLMEM* pwszBuf = GetPoolMemory(PM_FNAME);
+    PoolMem pwszBuf(PM_FNAME);
 
-    make_win32_path_UTF8_2_wchar(pwszBuf, ofname);
-    b = p_SetFileAttributesW((LPCWSTR)pwszBuf,
+    make_win32_path_UTF8_2_wchar(pwszBuf.addr(), win32_ofile.c_str());
+
+    BOOL b = p_SetFileAttributesW((LPCWSTR)pwszBuf.c_str(),
                              atts->dwFileAttributes & SET_ATTRS);
-    FreePoolMemory(pwszBuf);
-
     if (!b) { goto bail_out; }
   } else {
-    BOOL b;
-    POOLMEM* win32_ofile = GetPoolMemory(PM_FNAME);
-
-    unix_name_to_win32(win32_ofile, ofname);
-    b = p_SetFileAttributesA(win32_ofile, atts->dwFileAttributes & SET_ATTRS);
-    FreePoolMemory(win32_ofile);
-
+    BOOL b = p_SetFileAttributesA(win32_ofile.c_str(), atts->dwFileAttributes & SET_ATTRS);
     if (!b) { goto bail_out; }
   }
 
