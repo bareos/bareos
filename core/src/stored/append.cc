@@ -371,6 +371,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   /* Check if we can still write. This may not be the case
    * if we are at the end of the tape or we got a fatal I/O error. */
   if (ok || dev->CanWrite()) {
+    jcr->JobFiles = file_currently_processed.GetFileIndex();
     if (!WriteSessionLabel(jcr->sd_impl->dcr, EOS_LABEL)) {
       // Print only if ok and not cancelled to avoid spurious messages
       if (ok && !jcr->IsJobCanceled()) {
