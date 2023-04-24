@@ -52,7 +52,9 @@ The decision was to use three Pools: one for Full saves, one for Differential sa
 Full Pool
 ~~~~~~~~~
 
-:index:`\ <single: Pool; Full>`\  :index:`\ <single: Full Pool>`\
+.. index::
+   single: Pool; Full
+   single: Full Pool
 
 Putting a single Full backup on each Volume, will require six Full save Volumes, and a retention period of six months. The Pool needed to do that is:
 
@@ -85,7 +87,9 @@ If you have two clients, you would want to set Maximum Volume Jobs to 2 instead 
 Differential Pool
 ~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Pool; Differential>`\  :index:`\ <single: Differential Pool>`\
+.. index::
+   single: Pool; Differential
+   single: Differential Pool
 
 For the Differential backup Pool, we choose a retention period of a bit longer than a month and ensure that there is at least one Volume for each of the maximum of five weeks in a month. So the following works:
 
@@ -118,7 +122,9 @@ See the discussion above concering the Full pool for how to handle multiple clie
 Incremental Pool
 ~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Incremental Pool>`\  :index:`\ <single: Pool; Incremental>`\
+.. index::
+   single: Incremental Pool
+   single: Pool; Incremental
 
 Finally, here is the resource for the Incremental Pool:
 
@@ -219,8 +225,8 @@ The Director’s configuration file is as follows:
      Name = "Full Set"
      Include = {
        Options {
-         signature=SHA1;
-         compression=GZIP9
+         Signature = XXH128
+         Compression = LZ4
        }
        File = /
        File = /usr

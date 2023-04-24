@@ -320,7 +320,7 @@ Please take note of the following items in the FileSet syntax:
 
       Include {
         Options {
-          compression=GZIP
+          Compression = LZ4
         }
         File = /
         File = /usr
@@ -342,7 +342,7 @@ Please take note of the following items in the FileSet syntax:
 
          Include {
            Options {
-             compression=GZIP
+             Compression = LZ4
            }
            @/home/files/my-files
          }
@@ -355,7 +355,7 @@ Please take note of the following items in the FileSet syntax:
 
          Include {
            Options {
-             signature = SHA1
+             Signature = XXH128
            }
            File = "</home/files/local-filelist"
          }
@@ -368,7 +368,7 @@ Please take note of the following items in the FileSet syntax:
 
          Include {
            Options {
-             Signature = SHA1
+             Signature = XXH128
            }
            File = "\\</home/xxx/filelist-on-client"
          }
@@ -391,7 +391,7 @@ Please take note of the following items in the FileSet syntax:
 
          Include {
             Options {
-              signature = SHA1
+              Signature = XXH128
             }
             File = "|sh -c 'df -l | grep \"^/dev/hd[ab]\" | grep -v \".*/tmp\" | awk \"{print \\$6}\"'"
          }
@@ -403,7 +403,7 @@ Please take note of the following items in the FileSet syntax:
 
          Include {
            Options {
-             signature=MD5
+             Signature = XXH128
            }
            File = "|my_partitions"
          }
@@ -427,7 +427,7 @@ Please take note of the following items in the FileSet syntax:
            Name = "All local partitions"
            Include {
              Options {
-               Signature=SHA1
+               Signature = XXH128
                OneFs=yes
              }
              File = "\\|bash -c \"df -klF ufs | tail +2 | awk '{print \$6}'\""
@@ -439,13 +439,15 @@ Please take note of the following items in the FileSet syntax:
       If you know what filesystems you have mounted on your system, e.g. for Linux only using ext2, ext3 or ext4, you can backup all local filesystems using something like:
 
       .. code-block:: bareosconfig
-         :caption: File Set to backup all extfs partions
+         :caption: File Set to backup all ext fs partitions
 
          Include {
             Options {
-              Signature = SHA1
-              OneFs=no
-              FsType=ext2
+              Signature = XXH128
+              OneFs = no
+              FsType = ext2
+              FsType = ext3
+              FsType = ext4
             }
             File = /
          }
@@ -463,8 +465,8 @@ Please take note of the following items in the FileSet syntax:
 
          Include {
            Options {
-             Signature=MD5
-             Sparse=yes
+             Signature = XXH128
+             Sparse = yes
            }
            File = /dev/hd6
          }
@@ -488,7 +490,7 @@ Please take note of the following items in the FileSet syntax:
         Name = "MyFileSet"
         Include {
           Options {
-            Signature = MD5
+            Signature = XXH128
           }
           File = /home
           Exclude Dir Containing = .nobackup
@@ -571,7 +573,7 @@ FileSet Exclude-Resources very similar to Include-Resources, except that they on
         Name = Exclusion_example
         Include {
           Options {
-            Signature = SHA1
+            Signature = XXH128
           }
           File = /
           File = /boot
@@ -636,45 +638,39 @@ The directives within an Options resource may be one of the following:
 
    Software compression gets important if you are writing to a device that does not support compression by itself
    (e.g. hard disks). Otherwise, all modern tape drive do support hardware compression.
+
    Software compression can also be helpful to reduce the required network bandwidth,
    as compression is done on the File Daemon.
+   In most cases, :strong:`LZ4` is the best choice, because it is relatively fast.
+   If the compression rate of :strong:`LZ4` isn't good enough,
+   you might consider :strong:`LZ4HC`.
    However, using Bareos software compression and device hardware compression together
    is not advised, as trying to compress precompressed data is a very CPU-intense task
    and probably end up in even larger data.
 
-   You can overwrite this option per Storage resource using the :config:option:`dir/storage/AllowCompression`\  = no option.
+   You can overwrite this option per Storage resource using the
+   :config:option:`dir/storage/AllowCompression = no` option.
 
    GZIP
         All files saved will be software compressed using the GNU ZIP
         compression format.
 
-        Specifying :strong:`GZIP` uses the default compression level 6 (i.e.  :strong:`
-        GZIP` is identical to :strong:`GZIP6`).  If you want a different compression
+        Specifying :strong:`GZIP` uses the default compression level 6
+        (i.e. :strong:`GZIP` is identical to :strong:`GZIP6`).
+        If you want a different compression
         level (1 through 9), you can specify it by appending the level number
-        with no intervening spaces to :strong:`GZIP`.  Thus :strong:`compression=GZIP1`
-        would give minimum compression but the fastest algorithm, and :strong:`
-        compression=GZIP9` would give the highest level of compression, but
-        requires more computation.  According to the GZIP documentation,
-        compression levels greater than six generally give very little extra
-        compression and are rather CPU intensive.
-
-   LZO
-        All files saved will be software compressed using the LZO
-        compression format. The compression is done on a file by file basis by
-        the File daemon. Everything else about GZIP is true for LZO.
-
-        LZO provides much faster compression and decompression speed but lower
-        compression ratio than GZIP. If your CPU is fast enough you should be able
-        to compress your data without making the backup duration longer.
-
-        Note that Bareos only use one compression level LZO1X-1 specified by LZO.
+        with no intervening spaces to :strong:`GZIP`.
+        Thus :strong:`compression=GZIP1` would give minimum compression
+        but the fastest algorithm, and :strong:`compression=GZIP9`
+        would give the highest level of compression, but requires more computation.
+        According to the GZIP documentation, compression levels greater than six
+        generally give very little extra compression and are rather CPU intensive.
 
    LZFAST
         .. deprecated:: 19.2
 
         All files saved will be software compressed using the LZFAST
-        compression format. The compression is done on a file by file basis by
-        the File daemon. Everything else about GZIP is true for LZFAST.
+        compression format.
 
         LZFAST provides much faster compression and decompression speed but lower
         compression ratio than GZIP. If your CPU is fast enough you should be able
@@ -682,11 +678,19 @@ The directives within an Options resource may be one of the following:
 
         .. warning:: This is a nonstandard compression algorithm and support for compressing backups using it may be removed in a future version. Please consider using one of the other algorithms instead.
 
+   LZO
+        All files saved will be software compressed using the LZO
+        compression format.
+
+        LZO provides much faster compression and decompression speed but lower
+        compression ratio than GZIP. If your CPU is fast enough you should be able
+        to compress your data without making the backup duration longer.
+
+        Note that Bareos only use one compression level LZO1X-1 specified by LZO.
 
    LZ4
         All files saved will be software compressed using the LZ4
-        compression format. The compression is done on a file by file basis by
-        the File daemon. Everything else about GZIP is true for LZ4.
+        compression format.
 
         LZ4 provides much faster compression and decompression speed but lower
         compression ratio than GZIP. If your CPU is fast enough you should be able
@@ -698,12 +702,11 @@ The directives within an Options resource may be one of the following:
 
    LZ4HC
         All files saved will be software compressed using the LZ4HC
-        compression format. The compression is done on a file by file basis by
-        the File daemon. Everything else about GZIP is true for LZ4.
+        compression format.
 
         LZ4HC is the High Compression version of the LZ4 compression. It has
         a higher compression ratio than LZ4 and is more comparable to GZIP-6
-        in both compression rate and cpu usage.
+        in both compression rate and CPU usage.
 
         Both LZ4 and LZ4HC have the same decompression speed which is about twice
         the speed of the LZO compression. So for a restore both LZ4 and LZ4HC are
@@ -1596,7 +1599,7 @@ The following is an example of a valid FileSet resource definition. Note, the fi
      }
    }
 
-In the above example, all the files contained in :file:`/etc/backup.list` will be compressed with GZIP compression, an SHA1 signature will be computed on the file’s contents (its data), and sparse file handling will apply.
+In the above example, all the files contained in :file:`/etc/backup.list` will be compressed with LZ4 compression, an XXH128 signature will be computed on the file’s contents (its data), and sparse file handling will apply.
 
 The two directories :file:`/root/myfile` and :file:`/usr/lib/another_file` will also be saved without any options, but all files in those directories with the extensions :file:`.o` and :file:`.exe` will be excluded.
 
@@ -1609,8 +1612,8 @@ Let’s say that you now want to exclude the directory :file:`/tmp`. The simples
      Name = "Full Set"
      Include {
        Options {
-         Compression=GZIP
-         signature=SHA1
+         Compression = LZ4
+         Signature = XXH128
          Sparse = yes
        }
        @/etc/backup.list

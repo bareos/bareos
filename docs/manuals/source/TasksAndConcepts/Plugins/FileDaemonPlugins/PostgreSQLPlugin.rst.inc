@@ -108,8 +108,8 @@ Now include the plugin as command-plugin in the fileset resource and define a jo
        Name = "postgres"
        Include  {
            Options {
-               compression=GZIP
-               signature = MD5
+               Compression = LZ4
+               Signature = XXH128
            }
            Plugin = "python"
                     ":module_name=bareos-fd-postgres"
