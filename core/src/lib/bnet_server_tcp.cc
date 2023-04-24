@@ -169,7 +169,7 @@ int OpenSocketAndBind(IPADDR* ipaddr,
     std::array<char, 256> buf1;
     std::vector<char> buf2(256 * addr_list->size());
 
-    Emsg3(M_ABORT, 0,
+    Emsg3(M_WARNING, 0,
           _("Cannot open stream socket. ERR=%s. Current %s All %s\n"),
           be.bstrerror(), ipaddr->build_address_str(buf1.data(), buf1.size()),
           BuildAddressesString(addr_list, buf2.data(), buf2.size()));
