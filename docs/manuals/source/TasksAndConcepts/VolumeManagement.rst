@@ -3,7 +3,9 @@
 Volume Management
 =================
 
-:index:`\ <single: Volume; Management>`\  :index:`\ <single: Disk Volumes>`\
+.. index::
+   single: Volume; Management
+   single: Disk Volumes
 
 This chapter presents most all the features needed to do Volume management. Most of the concepts apply equally well to both tape and disk Volumes. However, the chapter was originally written to explain backing up to disk, so you will see it is slanted in that direction, but all the directives presented here apply equally well whether your volume is disk or tape.
 
@@ -12,7 +14,8 @@ If you have a lot of hard disk storage or you absolutely must have your backups 
 Key Concepts and Resource Records
 ---------------------------------
 
-:index:`\ <single: Volume; Management; Key Concepts and Resource Records>`\
+.. index::
+   single: Volume; Management; Key Concepts and Resource Records
 
 Getting Bareos to write to disk rather than tape in the simplest case is rather easy. In the Storage daemon’s configuration file, you simply define an :config:option:`sd/device/ArchiveDevice`\  to be a directory. The default directory to store backups on disk is :file:`/var/lib/bareos/storage`:
 
@@ -58,7 +61,8 @@ In addition, if you want to use concurrent jobs that write to several different 
 Pool Options to Limit the Volume Usage
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Pool; Options to Limit the Volume Usage>`\
+.. index::
+   single: Pool; Options to Limit the Volume Usage
 
 Some of the options you have, all of which are specified in the Pool record, are:
 
@@ -221,8 +225,8 @@ The |dir| configuration is as follows:
      Name = "Example FileSet"
      Include {
        Options {
-         compression=GZIP
-         signature=SHA1
+         Compression = LZ4
+         Signature = XXH128
        }
        File = /etc
      }

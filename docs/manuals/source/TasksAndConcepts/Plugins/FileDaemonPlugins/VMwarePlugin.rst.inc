@@ -97,8 +97,8 @@ To define the backup of a VM in Bareos, a job definition and a fileset resource 
 
      Include {
        Options {
-            signature = MD5
-            Compression = GZIP
+            Signature = XXH128
+            Compression = LZ4
        }
        Plugin = "python"
                 ":module_name=bareos-fd-vmware"
@@ -202,8 +202,8 @@ Since :sinceVersion:`17.2.8: VMware Plugin: non-ascii characters` it is possible
 
      Include {
        Options {
-            signature = MD5
-            Compression = GZIP
+            Signature = XXH128
+            Compression = LZ4
        }
        Plugin = "python"
                 ":module_name=bareos-fd-vmware"
@@ -221,8 +221,8 @@ Since :sinceVersion:`17.2.8: VMware Plugin: non-ascii characters` it is possible
 
      Include {
        Options {
-            signature = MD5
-            Compression = GZIP
+            Signature = XXH128
+            Compression = LZ4
        }
        Plugin = "python"
                 ":module_name=bareos-fd-vmware"
@@ -247,8 +247,8 @@ Since :sinceVersion:`20: VMware Plugin: config file` it is optionally possible t
 
      Include {
        Options {
-            signature = MD5
-            Compression = GZIP
+            Signature = XXH128
+            Compression = LZ4
        }
        Plugin = "python"
                 ":module_name=bareos-fd-vmware"

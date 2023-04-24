@@ -69,8 +69,8 @@ a:
         Name = TestFS
         Include {
            Options {
-              Compression = GZIP1
-              Signature = MD5
+              Compression = LZ4
+              Signature = XXH128
               Wild = "*.txt"
               Plugin = <command-string>
            }
