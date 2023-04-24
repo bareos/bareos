@@ -112,13 +112,18 @@ class VSSClient {
   IUnknown* pVssObject_ = nullptr;
   GUID uidCurrentSnapshotSet_ = GUID_NULL;
 
-  /*
-   ! drive A will be stored on position 0, Z on pos. 25
-   */
-  wchar_t wszUniqueVolumeName_[26][MAX_PATH]{0};
-  wchar_t szShadowCopyName_[26][MAX_PATH]{0};
   wchar_t* metadata_ = nullptr;
 
+  // using MountPoint = std::string;
+  // using VssPath    = std::wstring; // uses wchar_t
+  // using VolumeName = std::wstring; // uses wchar_t
+  // sadly we need to construct a string here for lookups
+  // if we switch to c++20 we can use lookups without constructing strings!
+  // check: https://stackoverflow.com/a/71258936
+  // std::unordered_map<MountPoint, VssPath> mount_to_vss;
+  // std::unordered_map<VolumeName, MountPoint> vol_to_mount;
+  std::unordered_map<std::string, std::wstring> vol_to_vss;
+  std::unordered_map<std::wstring, std::wstring> vol_to_vss_w;
   struct WriterInfo {
     int state_ = 0;
     std::string info_text_;

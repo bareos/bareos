@@ -142,26 +142,73 @@ bool VSSClient::GetShadowPath(const char* szFilePath,
 {
   if (!bBackupIsInitialized_) return false;
 
-  // Check for valid pathname
-  bool bIsValidName;
+  int volsize = 64;
+  std::unique_ptr<char[]> volbuf = std::unique_ptr<char[]>{new char[volsize], std::default_delete<char[]>{}};
+  int size = 512;
+  std::unique_ptr<char[]> buf = std::unique_ptr<char[]>{new char[size], std::default_delete<char[]>{}};
+  int needed_size;
+  char* test = nullptr;
+  while (needed_size = GetFullPathNameA(szFilePath, size, buf.get(), &test),
+	 needed_size + 1 >= size) {
+    size *= 2;
+    buf = std::unique_ptr<char[]>{new char[size], std::default_delete<char[]>{}};
+  }
+  char* MountPoint = buf.get();
+  char* VolumeName = volbuf.get();
+  if (!GetVolumePathNameA(szFilePath,
+			  MountPoint,
+			  size)) {
 
-  bIsValidName = strlen(szFilePath) > 3;
-  if (bIsValidName)
-    bIsValidName &= isalpha(szFilePath[0]) && szFilePath[1] == ':'
-                    && szFilePath[2] == '\\';
+    DWORD lerror = GetLastError();
+    LPTSTR msg;
+    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
+		  NULL, lerror, 0, (LPTSTR)&msg, 0, NULL);
+    MessageBox(NULL, msg, "GetShadowPath", MB_OK);
+    goto bail_out;
+  }
+  {
+    // ensure that it ends with a backslash
+    // ending with a backslash is a precondition for
+    // GetVolumeNameForVolumeMountPoint
+    auto len = strlen(MountPoint);
+    if (len == 0) goto bail_out;
+    if (MountPoint[len-1] != '\\') {
+      MountPoint[len] = '\\';
+      MountPoint[len+1] = '\0';
+    }
+  }
+  {
+    char* tmp = MountPoint;
+    while (*tmp && *tmp == *szFilePath) {
+      szFilePath += 1;
+      tmp += 1;
+    }
+  }
+  if (!GetVolumeNameForVolumeMountPointA(MountPoint,
+					 VolumeName, volsize)) {
+    DWORD lerror = GetLastError();
+    LPTSTR msg;
+    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
+		  NULL, lerror, 0, (LPTSTR)&msg, 0, NULL);
+    MessageBox(NULL, msg, "GetShadowPath", MB_OK);
+    goto bail_out;
+  }
 
-  if (bIsValidName) {
-    int nDriveIndex = toupper(szFilePath[0]) - 'A';
-    if (szShadowCopyName_[nDriveIndex][0] != 0) {
-      if (WideCharToMultiByte(CP_UTF8, 0, szShadowCopyName_[nDriveIndex], -1,
-                              szShadowPath, nBuflen - 1, NULL, NULL)) {
-        nBuflen -= (int)strlen(szShadowPath);
-        bstrncat(szShadowPath, szFilePath + 2, nBuflen);
-        return true;
-      }
+  if (auto found = vol_to_vss.find(std::string{VolumeName});
+      found != vol_to_vss.end()) {
+    if (WideCharToMultiByte(CP_UTF8, 0, found->second.c_str(), -1,
+			    szShadowPath, nBuflen - 1, nullptr, nullptr)) {
+      auto len = strlen(szShadowPath);
+      szShadowPath[len] = '\\';
+      szShadowPath[len+1] = '\0';
+      nBuflen -= len + 1;
+
+      bstrncat(szShadowPath, szFilePath, nBuflen);
+      return true;
     }
   }
 
+ bail_out:
   bstrncpy(szShadowPath, szFilePath, nBuflen);
   errno = EINVAL;
   return false;
@@ -172,24 +219,6 @@ bool VSSClient::GetShadowPathW(const wchar_t* szFilePath,
                                int nBuflen)
 {
   if (!bBackupIsInitialized_) return false;
-
-  // Check for valid pathname
-  bool bIsValidName;
-
-  bIsValidName = wcslen(szFilePath) > 3;
-  if (bIsValidName)
-    bIsValidName &= iswalpha(szFilePath[0]) && szFilePath[1] == ':'
-                    && szFilePath[2] == '\\';
-
-  if (bIsValidName) {
-    int nDriveIndex = towupper(szFilePath[0]) - 'A';
-    if (szShadowCopyName_[nDriveIndex][0] != 0) {
-      wcsncpy(szShadowPath, szShadowCopyName_[nDriveIndex], nBuflen);
-      nBuflen -= (int)wcslen(szShadowCopyName_[nDriveIndex]);
-      wcsncat(szShadowPath, szFilePath + 2, nBuflen);
-      return true;
-    }
-  }
 
   wcsncpy(szShadowPath, szFilePath, nBuflen);
   errno = EINVAL;

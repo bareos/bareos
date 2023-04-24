@@ -666,8 +666,6 @@ void VSSClientGeneric::AddDriveSnapshots(IVssBackupComponents* pVssObj,
         Dmsg2(200, "%s added to snapshotset (Drive %s:\\)\n", szBuf, szDrive);
         FreePoolMemory(szBuf);
       }
-      wcsncpy(wszUniqueVolumeName_[szDriveLetters[i] - 'A'],
-              (LPWSTR)volume.c_str(), MAX_PATH);
     } else {
       szDriveLetters[i] = tolower(szDriveLetters[i]);
     }
@@ -922,8 +920,6 @@ void VSSClientGeneric::QuerySnapshotSet(GUID snapshotSetID)
     return;
   }
 
-  memset(szShadowCopyName_, 0, sizeof(szShadowCopyName_));
-
   if (snapshotSetID == GUID_NULL || pVssObject_ == NULL) {
     Jmsg(jcr_, M_FATAL, 0, "snapshotSetID == NULL or VssObject is NULL.\n");
     errno = ENOSYS;
@@ -958,14 +954,10 @@ void VSSClientGeneric::QuerySnapshotSet(GUID snapshotSetID)
 
     // Print the shadow copy (if not filtered out)
     if (Snap.m_SnapshotSetId == snapshotSetID) {
-      for (int ch = 'A' - 'A'; ch <= 'Z' - 'A'; ch++) {
-        if (wcscmp(Snap.m_pwszOriginalVolumeName, wszUniqueVolumeName_[ch])
-            == 0) {
-          wcsncpy(szShadowCopyName_[ch], Snap.m_pwszSnapshotDeviceObject,
-                  MAX_PATH - 1);
-          break;
-        }
-      }
+      PoolMem mem(PM_FNAME);
+      wchar_2_UTF8(mem.addr(), Snap.m_pwszOriginalVolumeName);
+      vol_to_vss.emplace(mem.c_str(), Snap.m_pwszSnapshotDeviceObject);
+      vol_to_vss_w.emplace(Snap.m_pwszOriginalVolumeName, Snap.m_pwszSnapshotDeviceObject);
     }
     VssFreeSnapshotProperties_(&Snap);
   }
