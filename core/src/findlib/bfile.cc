@@ -505,7 +505,7 @@ static inline int BopenEncrypted(BareosFilePacket* bfd,
 
   unix_name_to_win32(win32_fname, (char*)fname);
   if (p_OpenEncryptedFileRawW && p_MultiByteToWideChar) {
-    make_win32_path_UTF8_2_wchar(win32_fname_wchar, fname);
+    make_win32_path_UTF8_2_wchar(win32_fname_wchar, win32_fname);
   }
 
   // See if we open the file for create or read-write.
@@ -588,7 +588,7 @@ static inline int BopenNonencrypted(BareosFilePacket* bfd,
   }
 
   if (p_CreateFileW && p_MultiByteToWideChar) {
-    make_win32_path_UTF8_2_wchar(win32_fname_wchar, fname);
+    make_win32_path_UTF8_2_wchar(win32_fname_wchar, win32_fname);
   }
 
   if (flags & O_CREAT) { /* Create */
