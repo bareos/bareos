@@ -197,12 +197,61 @@ bool VSSClient::GetShadowPath(const char* szFilePath,
   return false;
 }
 
+static std::size_t AppendPathPartW(std::wstring& s, const wchar_t* path) {
+  for (std::size_t lookahead = 0; path[lookahead]; lookahead += 1) {
+    wchar_t cur = path[lookahead];
+    if (cur == L'\\') {
+      s.append(path, lookahead+1);
+      return lookahead+1;
+    }
+  }
+  return 0;
+}
+
+static std::pair<std::wstring, std::wstring> FindMountPointW(const wchar_t* path,
+							     std::unordered_map<std::wstring, std::wstring>& mount_to_vol)
+{
+  std::wstring current_volume{};
+  std::size_t offset{0};
+  std::size_t lookahead{0};
+  while (lookahead = AppendPathPartW(current_volume, path + offset),
+	 lookahead != 0) {
+    offset += lookahead;
+    if (auto found = mount_to_vol.find(current_volume);
+	found != mount_to_vol.end()) {
+      current_volume.assign(found->second);
+      path += offset;
+      offset = 0;
+    }
+  }
+  current_volume.resize(current_volume.size() - offset);
+  return {std::move(current_volume), path};
+}
 bool VSSClient::GetShadowPathW(const wchar_t* szFilePath,
                                wchar_t* szShadowPath,
                                int nBuflen)
 {
   if (!bBackupIsInitialized_) return false;
 
+  auto [volume, path] = FindMountPointW(szFilePath, this->mount_to_vol_w);
+
+  if (auto found = vol_to_vss_w.find(volume);
+      found != vol_to_vss_w.end()) {
+    wcsncpy(szShadowPath, found->second.c_str(), nBuflen);
+    auto len = wcslen(szShadowPath);
+    szShadowPath[len] = L'\\';
+    szShadowPath[len+1] = L'\0';
+    nBuflen -= len + 1;
+    wcsncat(szShadowPath, path.c_str(), nBuflen);
+    return true;
+  } else {
+    // TODO: how to do dmsg with wstrs ?
+    Dmsg4(50, "Could not find shadow volume.\n"
+	  "Falling back to live system!\n");
+    goto bail_out;
+  }
+
+ bail_out:
   wcsncpy(szShadowPath, szFilePath, nBuflen);
   errno = EINVAL;
   return false;

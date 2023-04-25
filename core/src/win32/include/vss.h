@@ -119,6 +119,7 @@ class VSSClient {
   // check: https://stackoverflow.com/a/71258936
   std::unordered_map<std::string, std::string> mount_to_vol{};
   std::unordered_map<std::string, std::string> vol_to_vss{};
+  std::unordered_map<std::wstring, std::wstring> mount_to_vol_w{};
   std::unordered_map<std::wstring, std::wstring> vol_to_vss_w{};
   struct WriterInfo {
     int state_ = 0;
