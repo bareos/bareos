@@ -85,6 +85,8 @@ function read_configuration_ini($configuration_ini)
         ),
         'restore' => array(
             'filetree_refresh_timeout' => 120000,
+            'merge_jobs' => true,
+            'merge_filesets' => true
         ),
         'theme' => array(
             'name' => "sunflower"
@@ -119,6 +121,12 @@ function read_configuration_ini($configuration_ini)
         }
         if (isset($configuration['restore']['filetree_refresh_timeout'])) {
             $result['restore']['filetree_refresh_timeout'] = $configuration['restore']['filetree_refresh_timeout'];
+        }
+        if (isset($configuration['restore']['merge_jobs'])) {
+            $result['restore']['merge_jobs'] = $configuration['restore']['merge_jobs'];
+        }
+        if (isset($configuration['restore']['merge_filesets'])) {
+            $result['restore']['merge_filesets'] = $configuration['restore']['merge_filesets'];
         }
         if (isset($configuration['theme']['name'])) {
             $result['theme']['name'] = $configuration['theme']['name'];
