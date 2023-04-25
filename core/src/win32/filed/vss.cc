@@ -136,12 +136,62 @@ bool VSSClient::InitializeForRestore(JobControlRecord* jcr)
   return Initialize(0, true /*=>Restore*/);
 }
 
+static std::size_t AppendPathPart(std::string& s, const char* path) {
+  for (std::size_t lookahead = 0; path[lookahead]; lookahead += 1) {
+    char cur = path[lookahead];
+    if (cur == '\\') {
+      s.append(path, lookahead+1);
+      return lookahead+1;
+    }
+  }
+  return 0;
+}
+
+static std::pair<std::string, std::string> FindMountPoint(const char* path,
+							  std::unordered_map<std::string, std::string>& mount_to_vol)
+{
+  std::string current_volume{};
+  std::size_t offset{0};
+  std::size_t lookahead{0};
+  while (lookahead = AppendPathPart(current_volume, path + offset),
+	 lookahead != 0) {
+    offset += lookahead;
+    if (auto found = mount_to_vol.find(current_volume);
+	found != mount_to_vol.end()) {
+      current_volume.assign(found->second);
+      path += offset;
+      offset = 0;
+    }
+  }
+  current_volume.resize(current_volume.size() - offset);
+  return {std::move(current_volume), path};
+}
+
 bool VSSClient::GetShadowPath(const char* szFilePath,
                               char* szShadowPath,
                               int nBuflen)
 {
   if (!bBackupIsInitialized_) return false;
 
+  auto [volume, path] = FindMountPoint(szFilePath, this->mount_to_vol);
+
+  if (auto found = vol_to_vss.find(volume);
+      found != vol_to_vss.end()) {
+    bstrncpy(szShadowPath, found->second.c_str(), nBuflen);
+    auto len = strlen(szShadowPath);
+    szShadowPath[len] = '\\';
+    szShadowPath[len+1] = '\0';
+    nBuflen -= len + 1;
+    bstrncat(szShadowPath, path.c_str(), nBuflen);
+    return true;
+  } else {
+    Dmsg4(50, "Could not find shadow volume for volume '%s' (path = '%s'; input = '%s').\n"
+	  "Falling back to live system!\n",
+	  volume.c_str(), path.c_str(), szFilePath);
+    goto bail_out;
+  }
+
+#if 0
   int volsize = 64;
   std::unique_ptr<char[]> volbuf = std::unique_ptr<char[]>{new char[volsize], std::default_delete<char[]>{}};
   int size = 512;
@@ -207,6 +257,7 @@ bool VSSClient::GetShadowPath(const char* szFilePath,
       return true;
     }
   }
+#endif
 
  bail_out:
   bstrncpy(szShadowPath, szFilePath, nBuflen);

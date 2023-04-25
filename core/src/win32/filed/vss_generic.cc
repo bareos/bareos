@@ -350,6 +350,8 @@ static inline POOLMEM* GetMountedVolumeForMountPointPath(POOLMEM* volumepath,
 }
 
 static inline bool HandleVolumeMountPoint(VSSClientGeneric* pVssClient,
+					  std::unordered_map<std::string, std::string>& mount_to_vol,
+					  LPWSTR parent,
                                           IVssBackupComponents* pVssObj,
                                           POOLMEM*& volumepath,
                                           POOLMEM*& mountpoint)
@@ -363,8 +365,17 @@ static inline bool HandleVolumeMountPoint(VSSClientGeneric* pVssClient,
   vol = GetMountedVolumeForMountPointPath(volumepath, mountpoint);
   hr = pVssObj->AddToSnapshotSet((LPWSTR)vol, GUID_NULL, &pid);
 
+
   pvol = GetPoolMemory(PM_FNAME);
   wchar_2_UTF8(pvol, (wchar_t*)vol);
+
+  PoolMem utf8_parent(PM_FNAME);
+  wchar_2_UTF8(utf8_parent.addr(), parent);
+  PoolMem path(PM_FNAME);
+  path.strcpy(utf8_parent.c_str());
+  path.strcat(mountpoint);
+
+  mount_to_vol.emplace(path.c_str(), pvol);
 
   if (SUCCEEDED(hr)) {
     pVssClient->AddVolumeMountPointSnapshots(pVssObj, (wchar_t*)vol);
@@ -666,6 +677,11 @@ void VSSClientGeneric::AddDriveSnapshots(IVssBackupComponents* pVssObj,
         Dmsg2(200, "%s added to snapshotset (Drive %s:\\)\n", szBuf, szDrive);
         FreePoolMemory(szBuf);
       }
+      char drive[4] = "_:\\";
+      drive[0] = szDriveLetters[i];
+      PoolMem uvol(PM_FNAME);
+      wchar_2_UTF8(uvol.addr(), volume.c_str());
+      mount_to_vol.emplace(drive, uvol.c_str());
     } else {
       szDriveLetters[i] = tolower(szDriveLetters[i]);
     }
@@ -705,7 +721,10 @@ void VSSClientGeneric::AddVolumeMountPointSnapshots(
   if (hMount != INVALID_HANDLE_VALUE) {
     // Count number of vmps.
     VMPs += 1;
-    if (HandleVolumeMountPoint(this, pVssObj, path, mp)) {
+    if (HandleVolumeMountPoint(this,
+			       this->mount_to_vol,
+			       volume,
+			       pVssObj, path, mp)) {
       // Count vmps that were snapshotted
       VMP_snapshots += 1;
     }
@@ -713,7 +732,10 @@ void VSSClientGeneric::AddVolumeMountPointSnapshots(
     while ((b = FindNextVolumeMountPoint(hMount, mp, len))) {
       // Count number of vmps.
       VMPs += 1;
-      if (HandleVolumeMountPoint(this, pVssObj, path, mp)) {
+      if (HandleVolumeMountPoint(this,
+				 this->mount_to_vol,
+				 volume,
+				 pVssObj, path, mp)) {
         // Count vmps that were snapshotted
         VMP_snapshots += 1;
       }
@@ -954,9 +976,12 @@ void VSSClientGeneric::QuerySnapshotSet(GUID snapshotSetID)
 
     // Print the shadow copy (if not filtered out)
     if (Snap.m_SnapshotSetId == snapshotSetID) {
-      PoolMem mem(PM_FNAME);
-      wchar_2_UTF8(mem.addr(), Snap.m_pwszOriginalVolumeName);
-      vol_to_vss.emplace(mem.c_str(), Snap.m_pwszSnapshotDeviceObject);
+      PoolMem vol(PM_FNAME);
+      PoolMem vss(PM_FNAME);
+      // m_pwszExposedName = mount path! e.g. C:, X:\MountC, ...
+      wchar_2_UTF8(vol.addr(), Snap.m_pwszOriginalVolumeName);
+      wchar_2_UTF8(vss.addr(), Snap.m_pwszSnapshotDeviceObject);
+      vol_to_vss.emplace(vol.c_str(), vss.c_str());
       vol_to_vss_w.emplace(Snap.m_pwszOriginalVolumeName, Snap.m_pwszSnapshotDeviceObject);
     }
     VssFreeSnapshotProperties_(&Snap);
