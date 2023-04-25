@@ -136,10 +136,11 @@ bool VSSClient::InitializeForRestore(JobControlRecord* jcr)
   return Initialize(0, true /*=>Restore*/);
 }
 
-static std::size_t AppendPathPart(std::string& s, const char* path) {
+template <typename CharT>
+static std::size_t AppendPathPart(std::basic_string<CharT>& s, const CharT* path) {
   for (std::size_t lookahead = 0; path[lookahead]; lookahead += 1) {
-    char cur = path[lookahead];
-    if (cur == '\\') {
+    CharT cur = path[lookahead];
+    if (cur == CharT{'\\'}) {
       s.append(path, lookahead+1);
       return lookahead+1;
     }
@@ -147,10 +148,11 @@ static std::size_t AppendPathPart(std::string& s, const char* path) {
   return 0;
 }
 
-static std::pair<std::string, std::string> FindMountPoint(const char* path,
-							  std::unordered_map<std::string, std::string>& mount_to_vol)
+template <typename CharT, typename String = std::basic_string<CharT>>
+static std::pair<String, String> FindMountPoint(const CharT* path,
+						std::unordered_map<String, String>& mount_to_vol)
 {
-  std::string current_volume{};
+  String current_volume{};
   std::size_t offset{0};
   std::size_t lookahead{0};
   while (lookahead = AppendPathPart(current_volume, path + offset),
@@ -197,43 +199,13 @@ bool VSSClient::GetShadowPath(const char* szFilePath,
   return false;
 }
 
-static std::size_t AppendPathPartW(std::wstring& s, const wchar_t* path) {
-  for (std::size_t lookahead = 0; path[lookahead]; lookahead += 1) {
-    wchar_t cur = path[lookahead];
-    if (cur == L'\\') {
-      s.append(path, lookahead+1);
-      return lookahead+1;
-    }
-  }
-  return 0;
-}
-
-static std::pair<std::wstring, std::wstring> FindMountPointW(const wchar_t* path,
-							     std::unordered_map<std::wstring, std::wstring>& mount_to_vol)
-{
-  std::wstring current_volume{};
-  std::size_t offset{0};
-  std::size_t lookahead{0};
-  while (lookahead = AppendPathPartW(current_volume, path + offset),
-	 lookahead != 0) {
-    offset += lookahead;
-    if (auto found = mount_to_vol.find(current_volume);
-	found != mount_to_vol.end()) {
-      current_volume.assign(found->second);
-      path += offset;
-      offset = 0;
-    }
-  }
-  current_volume.resize(current_volume.size() - offset);
-  return {std::move(current_volume), path};
-}
 bool VSSClient::GetShadowPathW(const wchar_t* szFilePath,
                                wchar_t* szShadowPath,
                                int nBuflen)
 {
   if (!bBackupIsInitialized_) return false;
 
-  auto [volume, path] = FindMountPointW(szFilePath, this->mount_to_vol_w);
+  auto [volume, path] = FindMountPoint(szFilePath, this->mount_to_vol_w);
 
   if (auto found = vol_to_vss_w.find(volume);
       found != vol_to_vss_w.end()) {
