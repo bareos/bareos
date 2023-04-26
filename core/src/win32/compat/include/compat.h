@@ -403,6 +403,7 @@ bool win32_restore_file_attributes(POOLMEM* ofname,
                                    HANDLE handle,
                                    WIN32_FILE_ATTRIBUTE_DATA* atts);
 
+void Win32ResetConversionCache();
 #undef ftruncate
 #define ftruncate win32_ftruncate
 

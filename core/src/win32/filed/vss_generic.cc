@@ -914,6 +914,11 @@ bool VSSClientGeneric::CloseBackup()
     bCoInitializeCalled_ = false;
   }
 
+  // from this point on we should only look at the vss snapshot
+  // since the "conversion" cache might still contain presnapshot
+  // conversions, we need to invalidate them here!
+
+  Win32ResetConversionCache();
   return bRet;
 }
 

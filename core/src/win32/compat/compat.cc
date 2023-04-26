@@ -272,7 +272,24 @@ bail_out:
   return NULL;
 }
 
-static thread_conversion_cache* Win32GetCache()
+void Win32ResetConversionCache()
+{
+  thread_conversion_cache* tcc = NULL;
+
+  lock_mutex(tsd_mutex);
+  if (cc_tsd_initialized) {
+    tcc = (thread_conversion_cache*)pthread_getspecific(conversion_cache_key);
+  }
+  unlock_mutex(tsd_mutex);
+
+  if (tcc) {
+    tcc->pWin32ConvUTF8Cache[0] = '\0';
+    // make sure thate even the empty string does not get matched!
+    tcc->dwWin32ConvUTF8strlen = -1;
+  }
+}
+
+thread_conversion_cache* Win32GetCache()
 {
   thread_conversion_cache* tcc = NULL;
 
