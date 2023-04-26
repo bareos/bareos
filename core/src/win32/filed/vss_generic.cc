@@ -299,67 +299,46 @@ static inline std::wstring GetUniqueVolumeNameForPath(const std::wstring& path)
   return volumeUniqueName;
 }
 
-static inline POOLMEM* GetMountedVolumeForMountPointPath(POOLMEM* volumepath,
-                                                         POOLMEM* mountpoint)
+static inline std::wstring GetMountedVolumeForMountPointPath(const wchar_t* volumepath,
+							     const wchar_t* mountpoint)
 {
-  POOLMEM *fullPath, *buf, *vol;
-  int len;
 
-  // GetUniqueVolumeNameForPath() should be used here
-  len = strlen(volumepath) + 1;
-  fullPath = GetPoolMemory(PM_FNAME);
-  PmStrcpy(fullPath, volumepath);
-  PmStrcat(fullPath, mountpoint);
+  std::wstring full_path{volumepath};
+  full_path.append(mountpoint);
 
-  buf = GetPoolMemory(PM_FNAME);
-  GetVolumeNameForVolumeMountPoint(fullPath, buf, len);
-
-  Dmsg3(200, "%s%s mounts volume %s\n", volumepath, mountpoint, buf);
-
-  vol = GetPoolMemory(PM_FNAME);
-  UTF8_2_wchar(vol, buf);
-
-  FreePoolMemory(fullPath);
-  FreePoolMemory(buf);
-
-  return vol;
+  return GetUniqueVolumeNameForPath(full_path);
 }
 
 static inline bool HandleVolumeMountPoint(VSSClientGeneric* pVssClient,
+                                          IVssBackupComponents* pVssObj,
 					  std::unordered_map<std::string, std::string>& mount_to_vol,
 					  std::unordered_set<std::wstring>& snapshoted_volumes,
 					  const std::wstring& parent,
-                                          IVssBackupComponents* pVssObj,
-                                          POOLMEM*& volumepath,
-                                          POOLMEM*& mountpoint)
+                                          const wchar_t* mountpoint)
 {
-  POOLMEM* pvol;
   VSS_ID pid;
 
   bool snapshot_success = false;
 
-  std::wstring vol{};
-  {
-    POOLMEM* vol_ = GetMountedVolumeForMountPointPath(volumepath, mountpoint);
-    vol.assign((wchar_t*)vol_);
-    FreePoolMemory(vol_);
-  }
-  pvol = GetPoolMemory(PM_FNAME);
-  wchar_2_UTF8(pvol, vol.c_str());
+  std::wstring vol = GetMountedVolumeForMountPointPath(parent.c_str(), mountpoint);
+  PoolMem pvol(PM_FNAME);
+  PoolMem utf8_mp(PM_FNAME);
+  wchar_2_UTF8(pvol.addr(), vol.c_str());
+  wchar_2_UTF8(utf8_mp.addr(), mountpoint);
   if (auto found = snapshoted_volumes.find(vol);
       found == snapshoted_volumes.end()) {
     HRESULT hr = pVssObj->AddToSnapshotSet(const_cast<LPWSTR>(vol.c_str()), GUID_NULL, &pid);
     if (SUCCEEDED(hr)) {
       pVssClient->AddVolumeMountPointSnapshots(pVssObj, vol,
 					       snapshoted_volumes);
-      Dmsg1(200, "%s added to snapshotset \n", pvol);
+      Dmsg1(200, "%s added to snapshotset \n", pvol.c_str());
       snapshot_success = true;
     } else if ((unsigned)hr == VSS_ERROR_OBJECT_ALREADY_EXISTS) {
-      Dmsg1(200, "%s already in snapshotset, skipping.\n", pvol);
+      Dmsg1(200, "%s already in snapshotset, skipping.\n", pvol.c_str());
     } else {
       Dmsg3(200,
 	    "%s with vmp %s could not be added to snapshotset, COM ERROR: 0x%X\n",
-	    vol, mountpoint, hr);
+	    pvol.c_str(), utf8_mp.c_str(), hr);
     }
   } else {
     snapshot_success = true;
@@ -367,16 +346,13 @@ static inline bool HandleVolumeMountPoint(VSSClientGeneric* pVssClient,
 
   if (snapshot_success) {
     PoolMem utf8_parent(PM_FNAME);
-    wchar_2_UTF8(utf8_parent.addr(), parent.c_str());
     PoolMem path(PM_FNAME);
+    wchar_2_UTF8(utf8_parent.addr(), parent.c_str());
     path.strcpy(utf8_parent.c_str());
-    path.strcat(mountpoint);
+    path.strcat(utf8_mp.c_str());
 
-    mount_to_vol.emplace(path.c_str(), pvol);
+    mount_to_vol.emplace(path.c_str(), pvol.c_str());
   }
-
-
-  FreePoolMemory(pvol);
 
   return snapshot_success;
 }
@@ -698,39 +674,30 @@ void VSSClientGeneric::AddVolumeMountPointSnapshots(
     const std::wstring& volume,
     std::unordered_set<std::wstring>& snapshoted_volumes)
 {
-  BOOL b;
-  int len;
-  HANDLE hMount;
-  POOLMEM *mp, *path;
+  PoolMem mp(PM_FNAME);
+  constexpr auto size = MAX_PATH;
+  mp.check_size(sizeof(wchar_t[size]));
+  wchar_t* mountpoint = reinterpret_cast<wchar_t*>(mp.addr());
 
-  mp = GetPoolMemory(PM_FNAME);
-  path = GetPoolMemory(PM_FNAME);
-
-  wchar_2_UTF8(path, volume.c_str());
-
-  len = volume.size() + 1;
-
-  hMount = FindFirstVolumeMountPoint(path, mp, len);
+  HANDLE hMount = FindFirstVolumeMountPointW(volume.c_str(), mountpoint, size);
   if (hMount != INVALID_HANDLE_VALUE) {
     // Count number of vmps.
     VMPs += 1;
-    if (HandleVolumeMountPoint(this,
+    if (HandleVolumeMountPoint(this, pVssObj,
 			       this->mount_to_vol,
 			       snapshoted_volumes,
-			       volume,
-			       pVssObj, path, mp)) {
+			       volume, mountpoint)) {
       // Count vmps that were snapshotted
       VMP_snapshots += 1;
     }
 
-    while ((b = FindNextVolumeMountPoint(hMount, mp, len))) {
+    while (FindNextVolumeMountPointW(hMount, mountpoint, size)) {
       // Count number of vmps.
       VMPs += 1;
-      if (HandleVolumeMountPoint(this,
+      if (HandleVolumeMountPoint(this, pVssObj,
 				 this->mount_to_vol,
 				 snapshoted_volumes,
-				 volume,
-				 pVssObj, path, mp)) {
+				 volume, mountpoint)) {
         // Count vmps that were snapshotted
         VMP_snapshots += 1;
       }
@@ -738,9 +705,6 @@ void VSSClientGeneric::AddVolumeMountPointSnapshots(
   }
 
   FindVolumeMountPointClose(hMount);
-
-  FreePoolMemory(path);
-  FreePoolMemory(mp);
 }
 
 void VSSClientGeneric::ShowVolumeMountPointStats(JobControlRecord* jcr)
