@@ -264,19 +264,6 @@ static void JmsgVssWriterStatus(JobControlRecord* jcr,
 
 // Some helper functions
 
-// strdup a wchar_t string.
-static inline wchar_t* wbstrdup(const wchar_t* str)
-{
-  int len;
-  wchar_t* dup;
-
-  len = wcslen(str) + 1;
-  dup = (wchar_t*)malloc(len * sizeof(wchar_t));
-  memcpy(dup, str, len * sizeof(wchar_t));
-
-  return dup;
-}
-
 // Get the unique volume name for the given path.
 static inline std::wstring GetUniqueVolumeNameForPath(const std::wstring& path)
 {
