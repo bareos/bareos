@@ -94,7 +94,6 @@ Device {
     AutomaticMount = yes
     MaximumFileSize = 10GB
     AlwaysOpen = Yes
-    MaximumBlockSize = 1M    # must be larger than real block size, otherwise bls crashes.
 }
 
 EOF
