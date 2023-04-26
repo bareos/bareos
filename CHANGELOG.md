@@ -16,6 +16,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 -  dird: allow to disable TLS-PSK downgrades [PR #1428]
 - build: switch to FreeBSD 12.4 [PR #1442]
 - file checksums: add new signature algorithm xxh128 [PR #1394]
+- stored: remove warning for maximum block size for tapes [PR #1423]
 
 ## [22.0.3] - 2023-03-24
 
@@ -497,6 +498,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1411]: https://github.com/bareos/bareos/pull/1411
 [PR #1416]: https://github.com/bareos/bareos/pull/1416
 [PR #1420]: https://github.com/bareos/bareos/pull/1420
+[PR #1423]: https://github.com/bareos/bareos/pull/1423
 [PR #1427]: https://github.com/bareos/bareos/pull/1427
 [PR #1428]: https://github.com/bareos/bareos/pull/1428
 [PR #1430]: https://github.com/bareos/bareos/pull/1430

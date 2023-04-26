@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -273,32 +273,73 @@ void DeviceResource::CreateAndAssignSerialNumber(uint16_t number)
   resource_name_ = strdup(tmp_name.c_str());
 }
 
-bool DeviceResource::Validate()
+static void WarnOnNonZeroBlockSize(int max_block_size, std::string_view name)
 {
-  if (max_block_size > 0 && device_type != DeviceType::B_TAPE_DEV) {
+  if (max_block_size > 0) {
     my_config->AddWarning(fmt::format(
         FMT_STRING(
             "Device {:s}: Setting 'Maximum Block Size' is only supported on  "
             "tape devices"),
-        resource_name_));
+        name));
   }
+}
 
+static void WarnOnZeroMaxConcurrentJobs(int max_concurrent_jobs,
+                                        std::string_view name)
+{
   if (max_concurrent_jobs == 0) {
     my_config->AddWarning(fmt::format(
         FMT_STRING("Device {:s}: unlimited (0) 'Maximum Concurrent Jobs' (the "
                    "default) reduces the restore peformance."),
-        resource_name_));
+        name));
     my_config->AddWarning(fmt::format(
         FMT_STRING("Device {:s}: the default value for 'Maximum Concurrent "
                    "Jobs' will change from 0 (unlimited) to 1 in Bareos 23."),
-        resource_name_));
-  } else if (max_concurrent_jobs > 1 && device_type != DeviceType::B_TAPE_DEV) {
+        name));
+  }
+}
+
+static void WarnOnGtOneMaxConcurrentJobs(int max_concurrent_jobs,
+                                         std::string_view name)
+{
+  if (max_concurrent_jobs > 1) {
     my_config->AddWarning(fmt::format(
         FMT_STRING(
             "Device {:s}: setting 'Maximum Concurrent Jobs' on "
             "device that are not of type tape to a value higher than 1 is not "
             "recommended as it will reduce the restore performance."),
-        resource_name_));
+        name));
+  }
+}
+
+static bool ValidateTapeDevice(const DeviceResource& resource)
+{
+  ASSERT(resource.device_type == DeviceType::B_TAPE_DEV);
+
+  WarnOnZeroMaxConcurrentJobs(resource.max_concurrent_jobs,
+                              resource.resource_name_);
+
+  return true;
+}
+
+static bool ValidateGenericDevice(const DeviceResource& resource)
+{
+  WarnOnNonZeroBlockSize(resource.max_block_size, resource.resource_name_);
+  WarnOnZeroMaxConcurrentJobs(resource.max_concurrent_jobs,
+                              resource.resource_name_);
+  WarnOnGtOneMaxConcurrentJobs(resource.max_concurrent_jobs,
+                               resource.resource_name_);
+  return true;
+}
+
+
+bool DeviceResource::Validate()
+{
+  to_lower(device_type);
+  if (device_type == DeviceType::B_TAPE_DEV) {
+    return ValidateTapeDevice(*this);
+  } else {
+    return ValidateGenericDevice(*this);
   }
   return true;
 }
