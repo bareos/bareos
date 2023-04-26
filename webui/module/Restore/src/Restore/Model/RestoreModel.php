@@ -195,21 +195,21 @@ class RestoreModel
      *
      * @return array
      */
-    public function getJobIds(&$bsock = null, $jobid = null, $mergefilesets = 0, $mergejobs = 0)
+    public function getJobIds(&$bsock = null, $jobid = null, $mergefilesets = 1, $mergejobs = 1)
     {
-        if (isset($bsock)) {
-            if ($mergefilesets == 1 && $mergejobs == 1) {
+        if (isset($bsock) && isset($jobid)) {
+            if ($mergejobs == 0) {
                 return $jobid;
             }
-            if ($mergefilesets == 0) {
+            if ($mergefilesets == 1) {
                 $cmd = '.bvfs_get_jobids jobid=' . $jobid . ' all';
             } else {
-                $cmd = '.bvfs_get_jobids jobid=' . $jobid . '';
+                $cmd = '.bvfs_get_jobids jobid=' . $jobid;
             }
             $result = $bsock->send_command($cmd, 2);
             $jobids = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
             $result = "";
-            if (!empty($jobids['result'])) {
+            if (isset($jobids['result']['jobids'])) {
                 $i = count($jobids['result']['jobids']);
                 foreach ($jobids['result']['jobids'] as $jobid) {
                     $result .= $jobid['id'];

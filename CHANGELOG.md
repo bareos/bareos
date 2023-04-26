@@ -17,6 +17,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - build: switch to FreeBSD 12.4 [PR #1442]
 - file checksums: add new signature algorithm xxh128 [PR #1394]
 - stored: remove warning for maximum block size for tapes [PR #1423]
+- webui: make restore merge options configurable [PR #1446]
 
 ## [22.0.3] - 2023-03-24
 
@@ -505,4 +506,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1436]: https://github.com/bareos/bareos/pull/1436
 [PR #1438]: https://github.com/bareos/bareos/pull/1438
 [PR #1442]: https://github.com/bareos/bareos/pull/1442
+[PR #1446]: https://github.com/bareos/bareos/pull/1446
 [unreleased]: https://github.com/bareos/bareos/tree/master

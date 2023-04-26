@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2022 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -487,19 +487,8 @@ function updateRestoreParams(k, v) {
    p['where'] = '<?php echo $this->restore_params['where']; ?>';
    p['pluginoptions'] = '<?php echo $this->restore_params['pluginoptions']; ?>';
    p['fileset'] = '<?php echo $this->restore_params['fileset']; ?>';
-
-   if (k === 'mergejobs' && v === '1') {
-      p['mergefilesets'] = '1';
-   } else {
-      p['mergefilesets'] = '<?php echo $this->restore_params['mergefilesets']; ?>';
-   }
-
-   if (k === 'mergefilesets' && v === '0') {
-      p['mergejobs'] = '0';
-   } else {
-      p['mergejobs'] = '<?php echo $this->restore_params['mergejobs']; ?>';
-   }
-
+   p['mergefilesets'] = '<?php echo $this->restore_params['mergefilesets']; ?>';
+   p['mergejobs'] = '<?php echo $this->restore_params['mergejobs']; ?>';
    p['limit'] = '<?php echo $this->restore_params['limit']; ?>';
 
    p[k] = v;
@@ -558,7 +547,7 @@ function showFileTree() {
                   'state': {'checkbox_disabled': true}
                };
             },
-            timeout: <?php echo $_SESSION['bareos']['filetree_refresh_timeout']; ?>,
+            'timeout': <?php echo $_SESSION['bareos']['filetree_refresh_timeout']; ?>,
          },
       },
       'state' : {

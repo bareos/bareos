@@ -398,14 +398,10 @@ class RestoreController extends AbstractActionController
 
     private function handleJobMerge()
     {
-        if (isset($this->restore_params['mergejobs']) && $this->restore_params['mergejobs'] == 1) {
-            $this->restore_params['jobids'] = $this->restore_params['jobid'];
-        } else {
-            try {
-                $this->restore_params['jobids'] = $this->getRestoreModel()->getJobIds($this->bsock, $this->restore_params['jobid'], $this->restore_params['mergefilesets']);
-            } catch (Exception $e) {
-                echo $e->getMessage();
-            }
+        try {
+            $this->restore_params['jobids'] = $this->getRestoreModel()->getJobIds($this->bsock, $this->restore_params['jobid'], $this->restore_params['mergefilesets']);
+        } catch (Exception $e) {
+            echo $e->getMessage();
         }
     }
 
@@ -692,16 +688,16 @@ class RestoreController extends AbstractActionController
             $this->restore_params['jobids'] = null;
         }
 
-        if ($this->params()->fromQuery('mergefilesets')) {
+        if ($this->params()->fromQuery('mergefilesets') !== null) {
             $this->restore_params['mergefilesets'] = $this->params()->fromQuery('mergefilesets');
         } else {
-            $this->restore_params['mergefilesets'] = 0;
+            $this->restore_params['mergefilesets'] = $_SESSION['bareos']['merge_filesets'] ? 1 : 0;
         }
 
-        if ($this->params()->fromQuery('mergejobs')) {
+        if ($this->params()->fromQuery('mergejobs') !== null) {
             $this->restore_params['mergejobs'] = $this->params()->fromQuery('mergejobs');
         } else {
-            $this->restore_params['mergejobs'] = 0;
+            $this->restore_params['mergejobs'] = $_SESSION['bareos']['merge_jobs'] ? 1 : 0;
         }
 
         if ($this->params()->fromQuery('replace')) {
@@ -721,6 +717,7 @@ class RestoreController extends AbstractActionController
         } else {
             $this->restore_params['versions'] = null;
         }
+
     }
 
     /**
