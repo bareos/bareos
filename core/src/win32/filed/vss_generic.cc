@@ -302,6 +302,7 @@ static inline std::wstring GetUniqueVolumeNameForPath(const std::wstring& path)
 static inline bool HandleVolumeMountPoint(VSSClientGeneric* pVssClient,
                                           IVssBackupComponents* pVssObj,
 					  std::unordered_map<std::string, std::string>& mount_to_vol,
+					  std::unordered_map<std::wstring, std::wstring>& mount_to_vol_w,
 					  std::unordered_set<std::wstring>& snapshoted_volumes,
 					  const std::wstring& parent,
                                           const wchar_t* mountpoint)
@@ -343,6 +344,7 @@ static inline bool HandleVolumeMountPoint(VSSClientGeneric* pVssClient,
     path.strcat(utf8_mp.c_str());
 
     mount_to_vol.emplace(path.c_str(), pvol.c_str());
+    mount_to_vol_w.emplace(full_path, vol);
   }
 
   return snapshot_success;
@@ -649,6 +651,7 @@ void VSSClientGeneric::AddVolumeSnapshots(IVssBackupComponents* pVssObj,
 
     if (snapshot_success) {
       mount_to_vol.emplace(utf_vol.c_str(), utf_unique.c_str());
+      mount_to_vol_w.emplace(volume, unique_name);
     }
   }
 }
@@ -676,6 +679,7 @@ void VSSClientGeneric::AddVolumeMountPointSnapshots(
     VMPs += 1;
     if (HandleVolumeMountPoint(this, pVssObj,
 			       this->mount_to_vol,
+			       this->mount_to_vol_w,
 			       snapshoted_volumes,
 			       volume, mountpoint)) {
       // Count vmps that were snapshotted
@@ -687,6 +691,7 @@ void VSSClientGeneric::AddVolumeMountPointSnapshots(
       VMPs += 1;
       if (HandleVolumeMountPoint(this, pVssObj,
 				 this->mount_to_vol,
+				 this->mount_to_vol_w,
 				 snapshoted_volumes,
 				 volume, mountpoint)) {
         // Count vmps that were snapshotted
