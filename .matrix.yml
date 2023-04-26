@@ -60,6 +60,7 @@ OS:
     "Leap_15.4":
       TYPE: rpm
       IMAGE: opensuse-leap154
+      CUSTOM_TEST_IMAGES: [ openSUSE-Leap_15.4 ]
       ARCH:
       - x86_64
       PROJECTPACKAGES:
@@ -84,6 +85,7 @@ OS:
     "15_SP4":
       TYPE: rpm
       IMAGE: sle154
+      CUSTOM_TEST_IMAGES: [ SLE-15_SP4 ]
       ARCH:
       - x86_64
       PROJECTPACKAGES:
@@ -93,6 +95,7 @@ OS:
     "15_SP3":
       TYPE: rpm
       IMAGE: sle153
+      CUSTOM_TEST_IMAGES: [ SLE-15_SP4 ]
       ARCH:
       - x86_64
       PROJECTPACKAGES:
@@ -102,6 +105,7 @@ OS:
     "15_SP2":
       TYPE: rpm
       IMAGE: sle152
+      CUSTOM_TEST_IMAGES: [ SLE-15_SP4 ]
       ARCH:
       - x86_64
       PROJECTPACKAGES:
