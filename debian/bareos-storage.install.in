@@ -2,6 +2,7 @@
 @backenddir@/libbareossd-file.so*
 @scriptdir@/disk-changer
 @configtemplatedir@/bareos-sd.d/device/FileStorage.conf
+@configtemplatedir@/bareos-sd.d/autochanger/filechanger.conf
 @configtemplatedir@/bareos-sd.d/director/bareos-dir.conf
 @configtemplatedir@/bareos-sd.d/director/bareos-mon.conf
 @configtemplatedir@/bareos-sd.d/messages/Standard.conf
