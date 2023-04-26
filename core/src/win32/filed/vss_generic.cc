@@ -277,39 +277,28 @@ static inline wchar_t* wbstrdup(const wchar_t* str)
   return dup;
 }
 
-// Append a backslash to the current string.
-static inline wstring AppendBackslash(wstring str)
-{
-  if (str.length() == 0) { return wstring(L"\\"); }
-  if (str[str.length() - 1] == L'\\') { return str; }
-  return str.append(L"\\");
-}
-
 // Get the unique volume name for the given path.
-static inline wstring GetUniqueVolumeNameForPath(wstring path)
+static inline std::wstring GetUniqueVolumeNameForPath(const std::wstring& path)
 {
-  wchar_t volumeRootPath[MAX_PATH];
+  std::wstring temp{};
   wchar_t volumeName[MAX_PATH];
   wchar_t volumeUniqueName[MAX_PATH];
 
-  if (path.length() <= 0) { return L""; }
+  if (path.size() <= 0) { return L""; }
 
+  const wchar_t* volumeRoot = path.c_str();
   // Add the backslash termination, if needed.
-  path = AppendBackslash(path);
-
-  // Get the root path of the volume.
-  if (!p_GetVolumePathNameW
-      || !p_GetVolumePathNameW((LPCWSTR)path.c_str(), volumeRootPath,
-                               MAX_PATH)) {
-    return L"";
+  if (path.back() != L'\\') {
+    temp.assign(path);
+    temp.push_back(L'\\');
+    volumeRoot = temp.c_str();
   }
-
   /*
    * Get the volume name alias (might be different from the unique volume name
    * in rare cases).
    */
   if (!p_GetVolumeNameForVolumeMountPointW
-      || !p_GetVolumeNameForVolumeMountPointW(volumeRootPath, volumeName,
+      || !p_GetVolumeNameForVolumeMountPointW(volumeRoot, volumeName,
                                               MAX_PATH)) {
     return L"";
   }
