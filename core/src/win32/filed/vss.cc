@@ -148,6 +148,12 @@ static std::size_t AppendPathPart(std::basic_string<CharT>& s, const CharT* path
   return 0;
 }
 
+// splits path into two sections:
+// 1) a 'maximal' mountpoint `current_volume`
+// 2) the rest of the path `path`
+// `current_volume is maximal in the sense that there are no mount points left
+// in `path` that registered in `mount_to_vol`.
+// We then return the volume guid of `current_volume` and the rest of the path.
 template <typename CharT, typename String = std::basic_string<CharT>>
 static std::pair<String, String> FindMountPoint(const CharT* path,
 						std::unordered_map<String, String>& mount_to_vol)
@@ -155,6 +161,14 @@ static std::pair<String, String> FindMountPoint(const CharT* path,
   String current_volume{};
   std::size_t offset{0};
   std::size_t lookahead{0};
+  // idea:
+  // we have { C:/ -> VolC, VolC/dir/mountD/ -> VolD } and path is
+  // C:/dir/mountD/path.   Then it goes like this:
+  // current_volume = C:/ -> VolC; path = dir/mountD/path; lock in path
+  // current_volume = VolC/dir/ -> X; path = mountD/path
+  // current_volume = VolC/did/mountD/ -> VolD; path = path; lock in path
+  // no more / found so reset to the last locked in path and return
+  // -> current_volume = VolD; path = path
   while (lookahead = AppendPathPart(current_volume, path + offset),
 	 lookahead != 0) {
     offset += lookahead;
@@ -166,6 +180,8 @@ static std::pair<String, String> FindMountPoint(const CharT* path,
     }
   }
   current_volume.resize(current_volume.size() - offset);
+  // TODO: we do not need new strings for that
+  // we could just return char pointers!
   return {std::move(current_volume), path};
 }
 
