@@ -299,16 +299,6 @@ static inline std::wstring GetUniqueVolumeNameForPath(const std::wstring& path)
   return volumeUniqueName;
 }
 
-static inline std::wstring GetMountedVolumeForMountPointPath(const wchar_t* volumepath,
-							     const wchar_t* mountpoint)
-{
-
-  std::wstring full_path{volumepath};
-  full_path.append(mountpoint);
-
-  return GetUniqueVolumeNameForPath(full_path);
-}
-
 static inline bool HandleVolumeMountPoint(VSSClientGeneric* pVssClient,
                                           IVssBackupComponents* pVssObj,
 					  std::unordered_map<std::string, std::string>& mount_to_vol,
@@ -320,7 +310,8 @@ static inline bool HandleVolumeMountPoint(VSSClientGeneric* pVssClient,
 
   bool snapshot_success = false;
 
-  std::wstring vol = GetMountedVolumeForMountPointPath(parent.c_str(), mountpoint);
+  std::wstring full_path = parent + mountpoint;
+  std::wstring vol = GetUniqueVolumeNameForPath(full_path);
   PoolMem pvol(PM_FNAME);
   PoolMem utf8_mp(PM_FNAME);
   wchar_2_UTF8(pvol.addr(), vol.c_str());
