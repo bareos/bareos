@@ -35,6 +35,8 @@
  * Created On      : Fri May 06 21:44:00 2006
  */
 
+#include <unordered_set>
+
 #ifndef b_errno_win32
 #  define b_errno_win32 (1 << 29)
 #endif
@@ -67,16 +69,17 @@ class VSSClient {
   // Backup Process
   bool InitializeForBackup(JobControlRecord* jcr);
   bool InitializeForRestore(JobControlRecord* jcr);
-  virtual void AddDriveSnapshots(IVssBackupComponents* pVssObj,
-                                 char* szDriveLetters,
-                                 bool onefs_disabled)
+  virtual void AddVolumeSnapshots(IVssBackupComponents* pVssObj,
+				  const std::vector<std::wstring>& volumes,
+				  bool onefs_disabled)
       = 0;
   virtual void AddVolumeMountPointSnapshots(IVssBackupComponents* pVssObj,
-                                            LPWSTR volume)
+                                            const std::wstring& volume,
+					    std::unordered_set<std::wstring>& snapshoted_volumes)
       = 0;
   virtual void ShowVolumeMountPointStats(JobControlRecord* jcr) = 0;
 
-  virtual bool CreateSnapshots(char* szDriveLetters, bool onefs_disabled) = 0;
+  virtual bool CreateSnapshots(const std::vector<std::wstring>& volumes, bool onefs_disabled) = 0;
   virtual bool CloseBackup() = 0;
   virtual bool CloseRestore() = 0;
   virtual WCHAR* GetMetadata() = 0;
@@ -140,13 +143,14 @@ class VSSClientXP : public VSSClient {
  public:
   VSSClientXP();
   virtual ~VSSClientXP();
-  virtual void AddDriveSnapshots(IVssBackupComponents* pVssObj,
-                                 char* szDriveLetters,
-                                 bool onefs_disabled) override;
+  virtual void AddVolumeSnapshots(IVssBackupComponents* pVssObj,
+				  const std::vector<std::wstring>& volumes,
+				  bool onefs_disabled) override;
   virtual void AddVolumeMountPointSnapshots(IVssBackupComponents* pVssObj,
-                                            LPWSTR volume) override;
+                                            const std::wstring& volume,
+					    std::unordered_set<std::wstring>& snapshoted_volumes) override;
   virtual void ShowVolumeMountPointStats(JobControlRecord* jcr) override;
-  virtual bool CreateSnapshots(char* szDriveLetters,
+  virtual bool CreateSnapshots(const std::vector<std::wstring>& volumes,
                                bool onefs_disabled) override;
   virtual bool CloseBackup() override;
   virtual bool CloseRestore() override;
@@ -168,13 +172,14 @@ class VSSClient2003 : public VSSClient {
  public:
   VSSClient2003();
   virtual ~VSSClient2003();
-  virtual void AddDriveSnapshots(IVssBackupComponents* pVssObj,
-                                 char* szDriveLetters,
-                                 bool onefs_disabled) override;
+  virtual void AddVolumeSnapshots(IVssBackupComponents* pVssObj,
+				  const std::vector<std::wstring>& volumes,
+				  bool onefs_disabled) override;
   virtual void AddVolumeMountPointSnapshots(IVssBackupComponents* pVssObj,
-                                            LPWSTR volume) override;
+                                            const std::wstring& volume,
+					    std::unordered_set<std::wstring>& snapshoted_volumes) override;
   virtual void ShowVolumeMountPointStats(JobControlRecord* jcr) override;
-  virtual bool CreateSnapshots(char* szDriveLetters,
+  virtual bool CreateSnapshots(const std::vector<std::wstring>& volumes,
                                bool onefs_disabled) override;
   virtual bool CloseBackup() override;
   virtual bool CloseRestore() override;
@@ -196,13 +201,14 @@ class VSSClientVista : public VSSClient {
  public:
   VSSClientVista();
   virtual ~VSSClientVista() override;
-  virtual void AddDriveSnapshots(IVssBackupComponents* pVssObj,
-                                 char* szDriveLetters,
-                                 bool onefs_disabled) override;
+  virtual void AddVolumeSnapshots(IVssBackupComponents* pVssObj,
+				  const std::vector<std::wstring>& volumes,
+				  bool onefs_disabled) override;
   virtual void AddVolumeMountPointSnapshots(IVssBackupComponents* pVssObj,
-                                            LPWSTR volume) override;
+                                            const std::wstring& volume,
+					    std::unordered_set<std::wstring>& snapshoted_volumes) override;
   virtual void ShowVolumeMountPointStats(JobControlRecord* jcr) override;
-  virtual bool CreateSnapshots(char* szDriveLetters,
+  virtual bool CreateSnapshots(const std::vector<std::wstring>& volumes,
                                bool onefs_disabled) override;
   virtual bool CloseBackup() override;
   virtual bool CloseRestore() override;

@@ -327,48 +327,58 @@ static inline POOLMEM* GetMountedVolumeForMountPointPath(POOLMEM* volumepath,
 
 static inline bool HandleVolumeMountPoint(VSSClientGeneric* pVssClient,
 					  std::unordered_map<std::string, std::string>& mount_to_vol,
-					  LPWSTR parent,
+					  std::unordered_set<std::wstring>& snapshoted_volumes,
+					  const std::wstring& parent,
                                           IVssBackupComponents* pVssObj,
                                           POOLMEM*& volumepath,
                                           POOLMEM*& mountpoint)
 {
-  bool retval = false;
-  HRESULT hr;
-  POOLMEM* vol = NULL;
   POOLMEM* pvol;
   VSS_ID pid;
 
-  vol = GetMountedVolumeForMountPointPath(volumepath, mountpoint);
-  hr = pVssObj->AddToSnapshotSet((LPWSTR)vol, GUID_NULL, &pid);
+  bool snapshot_success = false;
 
-
+  std::wstring vol{};
+  {
+    POOLMEM* vol_ = GetMountedVolumeForMountPointPath(volumepath, mountpoint);
+    vol.assign((wchar_t*)vol_);
+    FreePoolMemory(vol_);
+  }
   pvol = GetPoolMemory(PM_FNAME);
-  wchar_2_UTF8(pvol, (wchar_t*)vol);
-
-  PoolMem utf8_parent(PM_FNAME);
-  wchar_2_UTF8(utf8_parent.addr(), parent);
-  PoolMem path(PM_FNAME);
-  path.strcpy(utf8_parent.c_str());
-  path.strcat(mountpoint);
-
-  mount_to_vol.emplace(path.c_str(), pvol);
-
-  if (SUCCEEDED(hr)) {
-    pVssClient->AddVolumeMountPointSnapshots(pVssObj, (wchar_t*)vol);
-    Dmsg1(200, "%s added to snapshotset \n", pvol);
-    retval = true;
-  } else if ((unsigned)hr == VSS_ERROR_OBJECT_ALREADY_EXISTS) {
-    Dmsg1(200, "%s already in snapshotset, skipping.\n", pvol);
+  wchar_2_UTF8(pvol, vol.c_str());
+  if (auto found = snapshoted_volumes.find(vol);
+      found == snapshoted_volumes.end()) {
+    HRESULT hr = pVssObj->AddToSnapshotSet(const_cast<LPWSTR>(vol.c_str()), GUID_NULL, &pid);
+    if (SUCCEEDED(hr)) {
+      pVssClient->AddVolumeMountPointSnapshots(pVssObj, vol,
+					       snapshoted_volumes);
+      Dmsg1(200, "%s added to snapshotset \n", pvol);
+      snapshot_success = true;
+    } else if ((unsigned)hr == VSS_ERROR_OBJECT_ALREADY_EXISTS) {
+      Dmsg1(200, "%s already in snapshotset, skipping.\n", pvol);
+    } else {
+      Dmsg3(200,
+	    "%s with vmp %s could not be added to snapshotset, COM ERROR: 0x%X\n",
+	    vol, mountpoint, hr);
+    }
   } else {
-    Dmsg3(200,
-          "%s with vmp %s could not be added to snapshotset, COM ERROR: 0x%X\n",
-          vol, mountpoint, hr);
+    snapshot_success = true;
   }
 
-  FreePoolMemory(pvol);
-  if (vol) { FreePoolMemory(vol); }
+  if (snapshot_success) {
+    PoolMem utf8_parent(PM_FNAME);
+    wchar_2_UTF8(utf8_parent.addr(), parent.c_str());
+    PoolMem path(PM_FNAME);
+    path.strcpy(utf8_parent.c_str());
+    path.strcat(mountpoint);
 
-  return retval;
+    mount_to_vol.emplace(path.c_str(), pvol);
+  }
+
+
+  FreePoolMemory(pvol);
+
+  return snapshot_success;
 }
 
 // Helper macro for quick treatment of case statements for error codes
@@ -622,50 +632,56 @@ bool VSSClientGeneric::WaitAndCheckForAsyncOperation(IVssAsync* pAsync)
 }
 
 // Add all drive letters that need to be snapshotted.
-void VSSClientGeneric::AddDriveSnapshots(IVssBackupComponents* pVssObj,
-                                         char* szDriveLetters,
-                                         bool onefs_disabled)
+void VSSClientGeneric::AddVolumeSnapshots(IVssBackupComponents* pVssObj,
+					  const std::vector<std::wstring>& volumes,
+					  bool onefs_disabled)
 {
-  wstring volume;
-  wchar_t szDrive[3];
   VSS_ID pid;
-
-  szDrive[1] = ':';
-  szDrive[2] = 0;
+  std::unordered_set<std::wstring> snapshoted_volumes{};
 
   /*
    * szDriveLetters contains all drive letters in uppercase
    * If a drive can not being added, it's converted to lowercase in
    * szDriveLetters
    */
-  for (size_t i = 0; i < strlen(szDriveLetters); i++) {
-    szDrive[0] = szDriveLetters[i];
-    volume = GetUniqueVolumeNameForPath(szDrive);
+  for (const std::wstring& volume : volumes) {
+    std::wstring unique_name = GetUniqueVolumeNameForPath(volume);
 
-    // Store uniquevolumname.
+    PoolMem utf_unique(PM_FNAME);
+    PoolMem utf_vol(PM_FNAME);
+    wchar_2_UTF8(utf_unique.addr(), unique_name.c_str());
+    wchar_2_UTF8(utf_vol.addr(), volume.c_str());
 
-    if (SUCCEEDED(pVssObj->AddToSnapshotSet((LPWSTR)volume.c_str(), GUID_NULL,
-                                            &pid))) {
-      if (debug_level >= 200) {
-        POOLMEM* szBuf = GetPoolMemory(PM_FNAME);
+    bool snapshot_success = false;
 
-        wchar_2_UTF8(szBuf, volume.c_str());
-        Dmsg2(200, "%s added to snapshotset (Drive %s:\\)\n", szBuf, szDrive);
-        FreePoolMemory(szBuf);
+    // Store uniquevolumname if it doesnt already exist
+    if (auto found = snapshoted_volumes.find(unique_name);
+	found == snapshoted_volumes.end()) {
+      if (SUCCEEDED(pVssObj->AddToSnapshotSet(const_cast<LPWSTR>(unique_name.c_str()), GUID_NULL,
+					      &pid))) {
+	if (debug_level >= 200) {
+	  Dmsg2(200, "%s added to snapshotset (Path: %s)\n",
+		utf_unique.c_str(),
+		utf_vol.c_str());
+	}
+
+	snapshot_success = true;
+	snapshoted_volumes.emplace(unique_name.c_str());
       }
-      char drive[4] = "_:\\";
-      drive[0] = szDriveLetters[i];
-      PoolMem uvol(PM_FNAME);
-      wchar_2_UTF8(uvol.addr(), volume.c_str());
-      mount_to_vol.emplace(drive, uvol.c_str());
+
+      if (onefs_disabled) {
+	AddVolumeMountPointSnapshots(pVssObj, unique_name,
+				     snapshoted_volumes);
+      } else {
+	Jmsg(jcr_, M_INFO, 0,
+	     "VolumeMountpoints are not processed as onefs = yes.\n");
+      }
     } else {
-      szDriveLetters[i] = tolower(szDriveLetters[i]);
+      snapshot_success = true;
     }
-    if (onefs_disabled) {
-      AddVolumeMountPointSnapshots(pVssObj, (LPWSTR)volume.c_str());
-    } else {
-      Jmsg(jcr_, M_INFO, 0,
-           "VolumeMountpoints are not processed as onefs = yes.\n");
+
+    if (snapshot_success) {
+      mount_to_vol.emplace(utf_vol.c_str(), utf_unique.c_str());
     }
   }
 }
@@ -679,7 +695,8 @@ void VSSClientGeneric::AddDriveSnapshots(IVssBackupComponents* pVssObj,
  */
 void VSSClientGeneric::AddVolumeMountPointSnapshots(
     IVssBackupComponents* pVssObj,
-    LPWSTR volume)
+    const std::wstring& volume,
+    std::unordered_set<std::wstring>& snapshoted_volumes)
 {
   BOOL b;
   int len;
@@ -689,9 +706,9 @@ void VSSClientGeneric::AddVolumeMountPointSnapshots(
   mp = GetPoolMemory(PM_FNAME);
   path = GetPoolMemory(PM_FNAME);
 
-  wchar_2_UTF8(path, volume);
+  wchar_2_UTF8(path, volume.c_str());
 
-  len = wcslen(volume) + 1;
+  len = volume.size() + 1;
 
   hMount = FindFirstVolumeMountPoint(path, mp, len);
   if (hMount != INVALID_HANDLE_VALUE) {
@@ -699,6 +716,7 @@ void VSSClientGeneric::AddVolumeMountPointSnapshots(
     VMPs += 1;
     if (HandleVolumeMountPoint(this,
 			       this->mount_to_vol,
+			       snapshoted_volumes,
 			       volume,
 			       pVssObj, path, mp)) {
       // Count vmps that were snapshotted
@@ -710,6 +728,7 @@ void VSSClientGeneric::AddVolumeMountPointSnapshots(
       VMPs += 1;
       if (HandleVolumeMountPoint(this,
 				 this->mount_to_vol,
+				 snapshoted_volumes,
 				 volume,
 				 pVssObj, path, mp)) {
         // Count vmps that were snapshotted
@@ -733,7 +752,7 @@ void VSSClientGeneric::ShowVolumeMountPointStats(JobControlRecord* jcr)
   }
 }
 
-bool VSSClientGeneric::CreateSnapshots(char* szDriveLetters,
+bool VSSClientGeneric::CreateSnapshots(const std::vector<std::wstring>& volumes,
                                        bool onefs_disabled)
 {
   IVssBackupComponents* pVssObj;
@@ -771,8 +790,8 @@ bool VSSClientGeneric::CreateSnapshots(char* szDriveLetters,
   }
 
   // AddToSnapshotSet
-  if (szDriveLetters) {
-    AddDriveSnapshots(pVssObj, szDriveLetters, onefs_disabled);
+  if (volumes.size() > 0) {
+    AddVolumeSnapshots(pVssObj, volumes, onefs_disabled);
   }
 
   // PrepareForBackup
