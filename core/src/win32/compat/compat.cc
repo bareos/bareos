@@ -1883,20 +1883,25 @@ DIR* opendir(const char* path)
     return NULL;
   }
 
-  Dmsg1(debuglevel, "Opendir path=%s\n", path);
+  // unix_name_to_win32 works like this:
+  // C:/mountpoint -> ShadowCopyOfC/mountpoint
+  // C:/mountpoint/stuff -> ShadowCopyOfMountpoint/stuff
+  // since we are inspecting the contents of the mountpoint
+  // we want to ensure we are in the second case!
+  std::string dir_path{path};
+
+  if (dir_path.back() != '/') {
+    dir_path.push_back('/');
+  }
+  dir_path.push_back('*');
+
+  Dmsg1(debuglevel, "Opendir path=%s\n", dir_path.c_str());
   _dir* rval = (_dir*)malloc(sizeof(_dir));
   memset(rval, 0, sizeof(_dir));
 
   POOLMEM* win32_path = GetPoolMemory(PM_FNAME);
-  unix_name_to_win32(win32_path, path);
+  unix_name_to_win32(win32_path, dir_path.c_str());
   Dmsg1(debuglevel, "win32 path=%s\n", win32_path);
-
-  // Add backslash only if there is none yet (think of c:\)
-  if (win32_path[strlen(win32_path) - 1] != '\\') {
-    PmStrcat(win32_path, "\\*");
-  } else {
-    PmStrcat(win32_path, "*");
-  }
 
   rval->spec = win32_path;
 
