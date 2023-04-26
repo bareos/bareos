@@ -67,26 +67,6 @@ OS:
           - bareos
           - python-bareos
 
-    "Leap_15.3":
-      TYPE: rpm
-      IMAGE: opensuse-leap153
-      ARCH:
-      - x86_64
-      PROJECTPACKAGES:
-       x86_64:
-          - bareos
-          - python-bareos
-
-    "Leap_15.2":
-      TYPE: rpm
-      IMAGE: opensuse-leap152
-      ARCH:
-      - x86_64
-      PROJECTPACKAGES:
-       x86_64:
-          - bareos
-          - python-bareos
-
   Univention:
     "4.4":
       TYPE: deb
@@ -170,24 +150,6 @@ OS:
         x86_64:
            - bareos
            - python-bareos
-    "35":
-      TYPE: rpm
-      IMAGE: fedora35
-      ARCH:
-      - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - python-bareos
-    "34":
-      TYPE: rpm
-      IMAGE: fedora34
-      ARCH:
-      - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - python-bareos
   Debian:
     "11":
       TYPE: deb
@@ -210,22 +172,6 @@ OS:
            - bareos
            - bareos-webui
            - bareos-vmware
-           - python-bareos
-    "9.0":
-      TYPE: deb
-      IMAGE: "debian9.0"
-      ARCH:
-        - i586
-        - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-webui
-           - bareos-vmware
-           - python-bareos
-        i586:
-           - bareos
-           - bareos-webui
            - python-bareos
 
   EL:
@@ -292,8 +238,6 @@ OS:
         - sparc
       PROJECTPACKAGES:
         i386:
-           - bareos
-        sparc:
            - bareos
 
   win:
