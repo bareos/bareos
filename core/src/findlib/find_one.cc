@@ -314,16 +314,38 @@ bool HasFileChanged(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
  */
 bool CheckChanges(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 {
+  constexpr auto dmsg_debug_level = 750;
+  time_t since_time  = ff_pkt->save_time;
+  time_t mod_time    = ff_pkt->statp.st_mtime;
+  time_t create_time = ff_pkt->statp.st_ctime;
   /* In special mode (like accurate backup), the programmer can
    * choose his comparison function. */
-  if (ff_pkt->CheckFct) { return ff_pkt->CheckFct(jcr, ff_pkt); }
+  if (ff_pkt->CheckFct) {
+    bool changed = ff_pkt->CheckFct(jcr, ff_pkt);
+    Dmsg2(dmsg_debug_level, "custom check -> changed: %s\n",
+	  changed ? "true" : "false");
+    return changed;
+  }
 
   // For normal backups (incr/diff), we use this default behaviour
-  if (ff_pkt->incremental
-      && (ff_pkt->statp.st_mtime < ff_pkt->save_time
-          && (BitIsSet(FO_MTIMEONLY, ff_pkt->flags)
-              || ff_pkt->statp.st_ctime < ff_pkt->save_time))) {
-    return false;
+  if (ff_pkt->incremental) {
+    bool mtime_new = mod_time >= since_time;
+    bool ctime_new = create_time >= since_time;
+    bool changed = BitIsSet(FO_MTIMEONLY, ff_pkt->flags) ? mtime_new : mtime_new || ctime_new;
+
+    if (debug_level >= dmsg_debug_level) {
+      char mtime_str[MAX_TIME_LENGTH];
+      char ctime_str[MAX_TIME_LENGTH];
+      char stime_str[MAX_TIME_LENGTH];
+
+      Dmsg5(750, "default check -> changed: %s (since_time: %s, mtime: %s, ctime: %s)\n",
+	    changed ? "true" : "false",
+	    bstrftimes(stime_str, sizeof(stime_str), since_time),
+	    bstrftimes(mtime_str, sizeof(mtime_str), mod_time),
+	    bstrftimes(ctime_str, sizeof(ctime_str), create_time));
+    }
+
+    return changed;
   }
 
   return true;
