@@ -329,6 +329,7 @@ extern DWORD g_platform_id;
 extern DWORD g_MinorVersion;
 
 // From Microsoft SDK (KES) is the diff between Jan 1 1601 and Jan 1 1970
+// see https://learn.microsoft.com/en-us/windows/win32/api/minwinbase/ns-minwinbase-filetime
 #define WIN32_FILETIME_ADJUST 0x19DB1DED53E8000ULL
 
 #define WIN32_FILETIME_SCALE 10000000  // 100ns/second
