@@ -76,23 +76,16 @@ class ReserveContext {
 
 void InitReservationsLock();
 void TermReservationsLock();
-void _lockReservations(const char* = "**Unknown**", int = 0);
-void _unLockReservations();
-void _lockVolumes(const char* = "**Unknown**", int = 0);
-void _unLockVolumes();
-void _lockReadVolumes(const char* file = "**Unknown**", int line = 0);
-void _unLockReadVolumes();
+void LockReservations();
+void UnlockReservations();
+void LockVolumes();
+void UnlockVolumes();
+void LockReadVolumes();
+void UnlockReadVolumes();
 void UnreserveDevice(DeviceControlRecord* dcr);
 bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx);
 int SearchResForDevice(ReserveContext& rctx);
 void ReleaseReserveMessages(JobControlRecord* jcr);
-
-#define LockReservations() _lockReservations(__FILE__, __LINE__)
-#define UnlockReservations() _unLockReservations()
-#define LockVolumes() _lockVolumes(__FILE__, __LINE__)
-#define UnlockVolumes() _unLockVolumes()
-#define LockReadVolumes() _lockReadVolumes(__FILE__, __LINE__)
-#define UnlockReadVolumes() _unLockReadVolumes()
 
 bool use_cmd(JobControlRecord* jcr);
 

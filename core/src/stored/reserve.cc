@@ -110,7 +110,7 @@ void TermReservationsLock()
 }
 
 // This applies to a drive and to Volumes
-void _lockReservations(const char*, int)
+void LockReservations()
 {
   int errstat;
   reservations_lock_count++;
@@ -121,7 +121,7 @@ void _lockReservations(const char*, int)
   }
 }
 
-void _unLockReservations()
+void UnlockReservations()
 {
   int errstat;
   reservations_lock_count--;

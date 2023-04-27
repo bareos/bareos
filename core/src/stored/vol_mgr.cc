@@ -104,7 +104,7 @@ void InitVolListLock()
 void TermVolListLock() { RwlDestroy(&vol_list_lock); }
 
 // This allows a given thread to recursively call to LockVolumes()
-void _lockVolumes(const char*, int)
+void LockVolumes()
 {
   int errstat;
 
@@ -116,7 +116,7 @@ void _lockVolumes(const char*, int)
   }
 }
 
-void _unLockVolumes()
+void UnlockVolumes()
 {
   int errstat;
 
@@ -128,13 +128,13 @@ void _unLockVolumes()
   }
 }
 
-void _lockReadVolumes(const char*, int)
+void LockReadVolumes()
 {
   read_vol_list_lock_count++;
   pthread_mutex_lock(&read_vol_lock);
 }
 
-void _unLockReadVolumes()
+void UnlockReadVolumes()
 {
   read_vol_list_lock_count--;
   pthread_mutex_unlock(&read_vol_lock);
