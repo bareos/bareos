@@ -74,11 +74,9 @@ typedef uint64_t FileId_t;
 typedef uint32_t DBId_t; /* general DB id type */
 typedef uint32_t JobId_t;
 
-
 typedef char POOLMEM;
 
 typedef double float64_t;
-typedef float float32_t;
 
 /* Bareos time -- Unix time with microseconds */
 #define btime_t int64_t
