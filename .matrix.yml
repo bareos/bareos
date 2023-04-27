@@ -182,6 +182,7 @@ OS:
     "9":
       TYPE: rpm
       IMAGE: centos9
+      CUSTOM_TEST_IMAGES: [ Rocky, Alma, Oracle, Stream ]
       ARCH:
       - x86_64
       PROJECTPACKAGES:
@@ -192,6 +193,7 @@ OS:
     "8":
       TYPE: rpm
       IMAGE: rocky8
+      CUSTOM_TEST_IMAGES: [ Rocky, Alma, Oracle, Stream ]
       ARCH:
       - x86_64
       PROJECTPACKAGES:
