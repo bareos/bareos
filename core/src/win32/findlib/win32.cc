@@ -34,6 +34,9 @@
 #  include "findlib/fstype.h"
 #  include "win32/findlib/win32.h"
 
+#  include <locale>
+#  include <codecvt>
+
 /**
  * We need to analyze if a fileset contains onefs=no as option, because only
  * then we need to snapshot submounted vmps
@@ -59,16 +62,19 @@ bool win32_onefs_is_disabled(findFILESET* fileset)
  * snapshot of all used drives. This function returns the number of used drives
  * and fills szDrives with up to 26 (A..Z) drive names.
  */
-int get_win32_driveletters(findFILESET* fileset, char* szDrives)
+std::vector<std::wstring> get_win32_volumes(findFILESET* fileset)
 {
+  char szDrives[27] = {};
   int i;
   int nCount;
-  char *fname, ch;
+  char *fname;
   char drive[4], dt[16];
   struct stat sb;
   dlistString* node;
   findIncludeExcludeItem* incexe;
 
+  std::vector<std::wstring> volumes{};
+  std::wstring_convert<std::codecvt_utf8<wchar_t>> converter{};
   /*
    * szDrives must be at least 27 bytes long
    * Can be already filled by plugin, so check that all
@@ -122,14 +128,9 @@ int get_win32_driveletters(findFILESET* fileset, char* szDrives)
           if (Drivetype(drive, dt, sizeof(dt))) {
             if (bstrcmp(dt, "fixed")) {
               // Always add in uppercase
-              ch = toupper(fname[0]);
 
-              // If not found in string, add drive letter
-              if (!strchr(szDrives, ch)) {
-                szDrives[nCount] = ch;
-                szDrives[nCount + 1] = 0;
-                nCount++;
-              }
+	      std::wstring drive_w = converter.from_bytes(drive);
+	      volumes.emplace_back(std::move(drive_w));
             }
           }
         }
@@ -137,7 +138,7 @@ int get_win32_driveletters(findFILESET* fileset, char* szDrives)
     }
   }
 
-  return nCount;
+  return volumes;
 }
 
 static inline bool WantedDriveType(const char* drive,

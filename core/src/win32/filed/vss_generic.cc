@@ -106,6 +106,7 @@ class IXMLDOMDocument;
 
 #  include "vss.h"
 
+
 using namespace filedaemon;
 
 static void JmsgVssApiStatus(JobControlRecord* jcr,

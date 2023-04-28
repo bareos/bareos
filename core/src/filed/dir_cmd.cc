@@ -58,9 +58,6 @@
 #include "filed/backup.h"
 #include "lib/compression.h"
 
-#include <locale>
-#include <codecvt>
-
 #if defined(WIN32_VSS)
 #  include "win32/findlib/win32.h"
 #  include "vss.h"
@@ -1815,26 +1812,17 @@ static bool BackupCmd(JobControlRecord* jcr)
       // Plugin driver can return drive letters
       GeneratePluginEvent(jcr, bEventVssPrepareSnapshot, szWinDriveLetters);
 
-      drive_count = get_win32_driveletters(jcr->fd_impl->ff->fileset,
-                                           szWinDriveLetters);
+      std::vector<std::wstring> volumes = get_win32_volumes(jcr->fd_impl->ff->fileset);
 
       onefs_disabled = win32_onefs_is_disabled(jcr->fd_impl->ff->fileset);
 
+      drive_count = volumes.size();
       if (drive_count > 0) {
         Jmsg(jcr, M_INFO, 0,
-             _("Generate VSS snapshots. Driver=\"%s\", Drive(s)=\"%s\"\n"),
+             _("Generate VSS snapshots. Driver=\"%s\", Volume(s)=\"%s\"\n"),
              jcr->fd_impl->pVSSClient->GetDriverName(),
-             (drive_count) ? szWinDriveLetters : "None");
+             (drive_count) ? "Some" : "None");
 
-	std::vector<std::wstring> volumes{};
-	volumes.reserve(drive_count);
-	std::wstring_convert<std::codecvt_utf8<wchar_t>> converter{};
-	for (int i = 0; i < drive_count; ++i) {
-	  char drive[4] = "_:\\";
-	  drive[0] = szWinDriveLetters[i];
-	  std::wstring drive_w = converter.from_bytes(drive);
-	  volumes.emplace_back(std::move(drive_w));
-	}
         if (!jcr->fd_impl->pVSSClient->CreateSnapshots(volumes,
                                                        onefs_disabled)) {
           BErrNo be;
