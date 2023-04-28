@@ -1927,7 +1927,7 @@ DIR* opendir(const char* path)
   if (p_FindFirstFileW) {
     PoolMem pwcBuf(PM_FNAME);
 
-    make_win32_path_UTF8_2_wchar(pwcBuf.addr(), rval->spec);
+    make_win32_path_UTF8_2_wchar(pwcBuf.addr(), dir_path.c_str());
     rval->dirh = p_FindFirstFileW((LPCWSTR)pwcBuf.c_str(), &rval->data_w);
     if (rval->dirh != INVALID_HANDLE_VALUE) { rval->valid_w = 1; }
   } else if (p_FindFirstFileA) {
