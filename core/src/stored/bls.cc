@@ -132,8 +132,8 @@ int main(int argc, char* argv[])
           [&line, &fd](std::vector<std::string> val) {
             if ((fd = fopen(val.front().c_str(), "rb")) == nullptr) {
               BErrNo be;
-              Pmsg2(0, _("Could not open exclude file: %s, ERR=%s\n"), optarg,
-                    be.bstrerror());
+              Pmsg2(0, _("Could not open exclude file: %s, ERR=%s\n"),
+                    val.front().c_str(), be.bstrerror());
               exit(1);
             }
             while (fgets(line, sizeof(line), fd) != nullptr) {
@@ -150,11 +150,11 @@ int main(int argc, char* argv[])
   bls_app
       .add_option(
           "-i,--include-list",
-          [&line, &fd](std::vector<std::string>) {
-            if ((fd = fopen(optarg, "rb")) == nullptr) {
+          [&line, &fd](std::vector<std::string> val) {
+            if ((fd = fopen(val.front().c_str(), "rb")) == nullptr) {
               BErrNo be;
-              Pmsg2(0, _("Could not open include file: %s, ERR=%s\n"), optarg,
-                    be.bstrerror());
+              Pmsg2(0, _("Could not open include file: %s, ERR=%s\n"),
+                    val.front().c_str(), be.bstrerror());
               exit(1);
             }
             while (fgets(line, sizeof(line), fd) != nullptr) {
