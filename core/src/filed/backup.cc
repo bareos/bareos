@@ -897,15 +897,15 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
       break;
     case FT_INVALIDFS:
-		    Jmsg(jcr, M_INFO, 1,
-			 _("     Disallowed filesystem. Will not descend from %s into %s\n"),
-			 ff_pkt->top_fname, ff_pkt->fname);
+      Jmsg(jcr, M_INFO, 1,
+	   _("     Disallowed filesystem. Will not descend from %s into %s\n"),
+	   ff_pkt->top_fname, ff_pkt->fname);
       ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
       break;
     case FT_INVALIDDT:
-		    Jmsg(jcr, M_INFO, 1,
-			 _("     Disallowed drive type. Will not descend into %s\n"),
-			 ff_pkt->fname);
+      Jmsg(jcr, M_INFO, 1,
+	   _("     Disallowed drive type. Will not descend into %s\n"),
+	   ff_pkt->fname);
       break;
     case FT_REPARSE:
     case FT_JUNCTION:
