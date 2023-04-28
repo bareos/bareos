@@ -1908,7 +1908,7 @@ DIR* opendir(const char* path)
   // we want to ensure we are in the second case!
   std::string dir_path{path};
 
-  if (dir_path.back() != '/') {
+  if (!IsPathSeparator(dir_path.back())) {
     dir_path.push_back('/');
   }
   dir_path.push_back('*');
