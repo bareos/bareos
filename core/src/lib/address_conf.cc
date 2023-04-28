@@ -32,6 +32,7 @@
 #include "lib/bsys.h"
 #include "lib/edit.h"
 #include "lib/output_formatter_resource.h"
+#include "lib/berrno.h"
 
 
 #ifdef HAVE_ARPA_NAMESER_H
@@ -338,6 +339,32 @@ bool SetupPort(unsigned short& port,
   }
 }
 
+bool FamilyEnabled(int family)
+{
+  int tries = 0;
+  int fd;
+  do {
+    ++tries;
+    if ((fd = socket(family, SOCK_STREAM, 0)) < 0) { Bmicrosleep(5, 0); }
+  } while (fd < 0 && tries < 2);
+
+  std::string family_string(std::to_string(family));
+  if (family == AF_INET) {
+    family_string = "IPv4";
+  } else if (family == AF_INET6) {
+    family_string = "IPv6";
+  }
+
+  if (fd < 0) {
+    BErrNo be;
+    Emsg2(M_WARNING, 0, _("Cannot open %s stream socket. ERR=%s\n"),
+          family_string.c_str(), be.bstrerror());
+    return false;
+  }
+  close(fd);
+  return true;
+}
+
 int AddAddress(dlist<IPADDR>** out,
                IPADDR::i_type type,
                unsigned short defaultport,
@@ -366,6 +393,23 @@ int AddAddress(dlist<IPADDR>** out,
   }
 
   if (!SetupPort(port, defaultport, port_str, buf, buflen)) { return 0; }
+
+  if (family == 0) {
+    bool ipv4_enabled = FamilyEnabled(AF_INET);
+    bool ipv6_enabled = FamilyEnabled(AF_INET6);
+    if (!ipv4_enabled && ipv6_enabled) { family = AF_INET6; }
+    if (ipv4_enabled && !ipv6_enabled) { family = AF_INET; }
+    if (!ipv4_enabled && !ipv6_enabled) {
+      Bsnprintf(buf, buflen, _("Both IPv4 are IPv6 are disabled!"));
+      return 0;
+    }
+  } else if (family == AF_INET6 && !FamilyEnabled(AF_INET6)) {
+    Bsnprintf(buf, buflen, _("IPv6 address wanted but IPv6 is disabled!"));
+    return 0;
+  } else if (family == AF_INET && !FamilyEnabled(AF_INET)) {
+    Bsnprintf(buf, buflen, _("IPv4 address wanted but IPv4 is disabled!"));
+    return 0;
+  }
 
   const char* myerrstr;
   hostaddrs = BnetHost2IpAddrs(hostname_str, family, &myerrstr);
@@ -432,9 +476,23 @@ void InitDefaultAddresses(dlist<IPADDR>** out, const char* port)
   char buf[1024];
   unsigned short sport = str_to_int32(port);
 
-  if (!AddAddress(out, IPADDR::R_DEFAULT, htons(sport), 0, 0, 0, buf,
+  bool ipv4_added = true;
+  bool ipv6_added = true;
+
+  if (!AddAddress(out, IPADDR::R_DEFAULT, htons(sport), AF_INET, 0, 0, buf,
                   sizeof(buf))) {
-    Emsg1(M_ERROR_TERM, 0, _("Can't add default address (%s)\n"), buf);
+    Emsg1(M_WARNING, 0, _("Can't add default IPv4 address (%s)\n"), buf);
+    ipv4_added = false;
+  }
+
+  if (!AddAddress(out, IPADDR::R_DEFAULT, htons(sport), AF_INET6, 0, 0, buf,
+                  sizeof(buf))) {
+    Emsg1(M_WARNING, 0, _("Can't add default IPv6 address (%s)\n"), buf);
+    ipv6_added = false;
+  }
+
+  if (!ipv6_added && !ipv4_added) {
+    Emsg0(M_ERROR_TERM, 0, _("Can't add default IPv6 and IPv4 addresses\n"));
   }
 }
 
