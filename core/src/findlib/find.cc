@@ -571,23 +571,26 @@ auto SaveInList(channel::in<stated_file>& in, std::size_t& num_skipped)
   return [&in, &num_skipped](JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool) {
     switch (ff_pkt->type) {
       case FT_LNKSAVED: /* Hard linked, file already saved */
-        Dmsg2(130, "FT_LNKSAVED hard link: %s => %s\n", ff_pkt->fname,
+        Dmsg2(50, "FT_LNKSAVED hit while listing: %s => %s (ERROR)\n", ff_pkt->fname,
               ff_pkt->link);
+	return 0;
         break;
       case FT_REGE:
-        Dmsg1(130, "FT_REGE saving: %s\n", ff_pkt->fname);
+        Dmsg1(130, "found FT_REGE: %s\n", ff_pkt->fname);
         break;
       case FT_REG:
-        Dmsg1(130, "FT_REG saving: %s\n", ff_pkt->fname);
+        Dmsg1(130, "found FT_REG: %s\n", ff_pkt->fname);
         break;
       case FT_LNK:
-        Dmsg2(130, "FT_LNK saving: %s -> %s\n", ff_pkt->fname, ff_pkt->link);
+        Dmsg2(130, "found FT_LNK: %s -> %s\n", ff_pkt->fname, ff_pkt->link);
         break;
       case FT_RESTORE_FIRST:
-        Dmsg1(100, "FT_RESTORE_FIRST saving: %s\n", ff_pkt->fname);
+        Dmsg2(50, "FT_RESTORE_FIRST hit while listing: %s (ERROR)\n", ff_pkt->fname);
+	return 0;
         break;
       case FT_PLUGIN_CONFIG:
-        Dmsg1(100, "FT_PLUGIN_CONFIG saving: %s\n", ff_pkt->fname);
+        Dmsg2(50, "FT_PLUGIN_CONFIG hit while listing: %s (ERROR)\n", ff_pkt->fname);
+	return 0;
         break;
       case FT_DIRBEGIN:
 	/* this is skipped, so num_skipped is not increased */
@@ -597,6 +600,7 @@ auto SaveInList(channel::in<stated_file>& in, std::size_t& num_skipped)
              _("     Recursion turned off. Will not descend from %s into %s\n"),
              ff_pkt->top_fname, ff_pkt->fname);
         ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
+        Dmsg1(130, "found FT_DIREND (no recurse): %s\n", ff_pkt->link);
         break;
       case FT_NOFSCHG:
         /* Suppress message for /dev filesystems */
@@ -607,6 +611,7 @@ auto SaveInList(channel::in<stated_file>& in, std::size_t& num_skipped)
                ff_pkt->fname, ff_pkt->top_fname);
         }
         ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
+        Dmsg1(130, "found FT_DIREND (no fs change): %s\n", ff_pkt->link);
         break;
       case FT_INVALIDFS:
         Jmsg(
@@ -614,6 +619,7 @@ auto SaveInList(channel::in<stated_file>& in, std::size_t& num_skipped)
             _("     Disallowed filesystem. Will not descend from %s into %s\n"),
             ff_pkt->top_fname, ff_pkt->fname);
         ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
+        Dmsg1(130, "found FT_DIREND (invalid fs): %s\n", ff_pkt->link);
         break;
       case FT_INVALIDDT:
         Jmsg(jcr, M_INFO, 1,
@@ -623,10 +629,10 @@ auto SaveInList(channel::in<stated_file>& in, std::size_t& num_skipped)
       case FT_REPARSE:
       case FT_JUNCTION:
       case FT_DIREND:
-        Dmsg1(130, "FT_DIREND: %s\n", ff_pkt->link);
+        Dmsg1(130, "found FT_DIREND: %s\n", ff_pkt->link);
         break;
       case FT_SPEC:
-        Dmsg1(130, "FT_SPEC saving: %s\n", ff_pkt->fname);
+        Dmsg1(130, "found FT_SPEC: %s\n", ff_pkt->fname);
         if (S_ISSOCK(ff_pkt->statp.st_mode)) {
           Jmsg(jcr, M_SKIPPED, 1, _("     Socket file skipped: %s\n"),
                ff_pkt->fname);
@@ -635,10 +641,10 @@ auto SaveInList(channel::in<stated_file>& in, std::size_t& num_skipped)
         }
         break;
       case FT_RAW:
-        Dmsg1(130, "FT_RAW saving: %s\n", ff_pkt->fname);
+        Dmsg1(130, "found FT_RAW: %s\n", ff_pkt->fname);
         break;
       case FT_FIFO:
-        Dmsg1(130, "FT_FIFO saving: %s\n", ff_pkt->fname);
+        Dmsg1(130, "found FT_FIFO: %s\n", ff_pkt->fname);
         break;
       case FT_NOACCESS: {
         BErrNo be;
