@@ -98,6 +98,14 @@ class VSSClient {
   HMODULE GetVssDllHandle() { return hLib_; };
   IUnknown* GetVssObject() { return pVssObject_; };
 
+  // sadly we need to construct a string here for lookups
+  // if we switch to c++20 we can use lookups without constructing strings!
+  // check: https://stackoverflow.com/a/71258936
+  std::unordered_map<std::string, std::string> mount_to_vol{};
+  std::unordered_map<std::string, std::string> vol_to_vss{};
+  std::unordered_map<std::wstring, std::wstring> mount_to_vol_w{};
+  std::unordered_map<std::wstring, std::wstring> vol_to_vss_w{};
+
  private:
   virtual bool Initialize(DWORD dwContext, bool bDuringRestore = FALSE) = 0;
   virtual bool WaitAndCheckForAsyncOperation(IVssAsync* pAsync) = 0;
@@ -117,13 +125,6 @@ class VSSClient {
 
   wchar_t* metadata_ = nullptr;
 
-  // sadly we need to construct a string here for lookups
-  // if we switch to c++20 we can use lookups without constructing strings!
-  // check: https://stackoverflow.com/a/71258936
-  std::unordered_map<std::string, std::string> mount_to_vol{};
-  std::unordered_map<std::string, std::string> vol_to_vss{};
-  std::unordered_map<std::wstring, std::wstring> mount_to_vol_w{};
-  std::unordered_map<std::wstring, std::wstring> vol_to_vss_w{};
   struct WriterInfo {
     int state_ = 0;
     std::string info_text_;

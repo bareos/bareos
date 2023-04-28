@@ -1819,9 +1819,8 @@ static bool BackupCmd(JobControlRecord* jcr)
       drive_count = volumes.size();
       if (drive_count > 0) {
         Jmsg(jcr, M_INFO, 0,
-             _("Generate VSS snapshots. Driver=\"%s\", Volume(s)=\"%s\"\n"),
-             jcr->fd_impl->pVSSClient->GetDriverName(),
-             (drive_count) ? "Some" : "None");
+             _("Generate VSS snapshots. Driver=\"%s\""),
+             jcr->fd_impl->pVSSClient->GetDriverName());
 
         if (!jcr->fd_impl->pVSSClient->CreateSnapshots(volumes,
                                                        onefs_disabled)) {
@@ -1835,14 +1834,20 @@ static bool BackupCmd(JobControlRecord* jcr)
           // Inform about VMPs if we have them
           jcr->fd_impl->pVSSClient->ShowVolumeMountPointStats(jcr);
 
-          // Tell user if snapshot creation of a specific drive failed
-          for (int i = 0; i < (int)strlen(szWinDriveLetters); i++) {
-            if (islower(szWinDriveLetters[i])) {
-              Jmsg(jcr, M_FATAL, 0,
-                   _("Generate VSS snapshot of drive \"%c:\\\" failed.\n"),
-                   szWinDriveLetters[i]);
-            }
-          }
+	  VSSClient* client = jcr->fd_impl->pVSSClient;
+
+          // Tell the user about the created shadow copies
+	  for (auto [mount, vol] : client->mount_to_vol) {
+	    if (auto found = client->vol_to_vss.find(vol);
+		found != client->vol_to_vss.end()) {
+	      Jmsg(jcr, M_INFO, 0, "%s (aka. %s) -> %s\n",
+		   mount.c_str(), vol.c_str(), found->second.c_str());
+	    } else {
+	      Jmsg(jcr, M_FATAL, 0, "No snapshot for volume %s (aka. %s) was generated.\n",
+		   mount.c_str(), vol.c_str());
+
+	    }
+	  }
 
           // Inform user about writer states
           for (size_t i = 0; i < jcr->fd_impl->pVSSClient->GetWriterCount();
@@ -1856,7 +1861,7 @@ static bool BackupCmd(JobControlRecord* jcr)
 
       } else {
         Jmsg(jcr, M_FATAL, 0,
-             _("No drive letters found for generating VSS snapshots.\n"));
+             _("No volumes found for generating VSS snapshots.\n"));
       }
     } else {
       BErrNo be;
