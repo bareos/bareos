@@ -339,7 +339,17 @@ bool SetupPort(unsigned short& port,
   }
 }
 
-bool FamilyEnabled(int family)
+bool IsFamilyEnabled(int family)
+{
+  static bool ipv6_enabled = CheckIfFamilyEnabled(AF_INET6);
+  static bool ipv4_enabled = CheckIfFamilyEnabled(AF_INET);
+
+  if (family == AF_INET6) { return ipv6_enabled; }
+  if (family == AF_INET) { return ipv4_enabled; }
+  return false;
+}
+
+bool CheckIfFamilyEnabled(int family)
 {
   int tries = 0;
   int fd;
@@ -395,18 +405,18 @@ int AddAddress(dlist<IPADDR>** out,
   if (!SetupPort(port, defaultport, port_str, buf, buflen)) { return 0; }
 
   if (family == 0) {
-    bool ipv4_enabled = FamilyEnabled(AF_INET);
-    bool ipv6_enabled = FamilyEnabled(AF_INET6);
+    bool ipv4_enabled = IsFamilyEnabled(AF_INET);
+    bool ipv6_enabled = IsFamilyEnabled(AF_INET6);
     if (!ipv4_enabled && ipv6_enabled) { family = AF_INET6; }
     if (ipv4_enabled && !ipv6_enabled) { family = AF_INET; }
     if (!ipv4_enabled && !ipv6_enabled) {
       Bsnprintf(buf, buflen, _("Both IPv4 are IPv6 are disabled!"));
       return 0;
     }
-  } else if (family == AF_INET6 && !FamilyEnabled(AF_INET6)) {
+  } else if (family == AF_INET6 && !IsFamilyEnabled(AF_INET6)) {
     Bsnprintf(buf, buflen, _("IPv6 address wanted but IPv6 is disabled!"));
     return 0;
-  } else if (family == AF_INET && !FamilyEnabled(AF_INET)) {
+  } else if (family == AF_INET && !IsFamilyEnabled(AF_INET)) {
     Bsnprintf(buf, buflen, _("IPv4 address wanted but IPv4 is disabled!"));
     return 0;
   }
