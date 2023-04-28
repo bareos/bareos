@@ -98,7 +98,7 @@ int AddAddress(dlist<IPADDR>** out,
                const char* port_str,
                char* buf,
                int buflen);
-bool FamilyEnabled(int family);
+bool CheckIfFamilyEnabled(int family);
 
 bool IsSameIpAddress(IPADDR* first, IPADDR* second);
 const char* BuildAddressesString(dlist<IPADDR>* addrs,
