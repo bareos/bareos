@@ -61,6 +61,8 @@
 #if defined(WIN32_VSS)
 #  include "win32/findlib/win32.h"
 #  include "vss.h"
+#  include <locale>
+#  include <codecvt>
 #endif
 
 namespace filedaemon {
@@ -1813,6 +1815,19 @@ static bool BackupCmd(JobControlRecord* jcr)
       GeneratePluginEvent(jcr, bEventVssPrepareSnapshot, szWinDriveLetters);
 
       std::vector<std::wstring> volumes = get_win32_volumes(jcr->fd_impl->ff->fileset);
+
+      {
+	std::wstring_convert<std::codecvt_utf8<wchar_t>> converter{};
+	// GetDriveTypeW expects that there is no trailing slash!
+	char drive[] = "_:";
+	for (std::size_t i = 0; i < sizeof(szWinDriveLetters) && szWinDriveLetters[i]; ++i) {
+	  drive[0] = szWinDriveLetters[i];
+	  std::wstring wdrive = converter.from_bytes(drive);
+	  if (GetDriveTypeW(wdrive.c_str()) == DRIVE_FIXED) {
+	    volumes.emplace_back(std::move(wdrive));
+	  }
+	}
+      }
 
       onefs_disabled = win32_onefs_is_disabled(jcr->fd_impl->ff->fileset);
 
