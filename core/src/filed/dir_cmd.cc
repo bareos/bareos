@@ -1818,7 +1818,6 @@ static bool BackupCmd(JobControlRecord* jcr)
 
       {
 	std::wstring_convert<std::codecvt_utf8<wchar_t>> converter{};
-	// GetDriveTypeW expects that there is no trailing slash!
 	char drive[] = "_:";
 	for (std::size_t i = 0; i < sizeof(szWinDriveLetters) && szWinDriveLetters[i]; ++i) {
 	  drive[0] = szWinDriveLetters[i];

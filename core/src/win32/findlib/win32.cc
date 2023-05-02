@@ -58,9 +58,10 @@ bool win32_onefs_is_disabled(findFILESET* fileset)
 }
 
 /**
- * For VSS we need to know which windows drives are used, because we create a
- * snapshot of all used drives. This function returns the number of used drives
- * and fills szDrives with up to 26 (A..Z) drive names.
+ * For VSS we need to know which volumes are used, because we need to create a
+ * snapshot of them. This returns a vector of all volumes used in toplevel(!)
+ * declarations in the fileset.  It does not recursively search for volume
+ * mount points inside those volumes.
  */
 std::vector<std::wstring> get_win32_volumes(findFILESET* fileset)
 {
@@ -78,7 +79,7 @@ std::vector<std::wstring> get_win32_volumes(findFILESET* fileset)
         char* fname = node->c_str();
 
 	std::wstring wname = converter.from_bytes(fname);
-	std::wstring mountpoint(100, L'\0');
+	std::wstring mountpoint(256, L'\0');
 	if (DWORD needed = GetFullPathNameW(wname.c_str(), 0, mountpoint.data(), NULL);
 	    needed >= mountpoint.size()) {
 	  mountpoint.resize(needed + 1, '\0');
