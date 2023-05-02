@@ -1854,7 +1854,7 @@ static bool BackupCmd(JobControlRecord* jcr)
 	  for (auto [mount, vol] : client->mount_to_vol) {
 	    if (auto found = client->vol_to_vss.find(vol);
 		found != client->vol_to_vss.end()) {
-	      Jmsg(jcr, M_INFO, 0, "%s (aka. %s) -> %s\n",
+	      Jmsg(jcr, M_INFO, 0, "(%s)%s -> %s\n",
 		   mount.c_str(), vol.c_str(), found->second.c_str());
 	    } else {
 	      Jmsg(jcr, M_FATAL, 0, "No snapshot for volume %s (aka. %s) was generated.\n",
