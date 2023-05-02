@@ -1802,7 +1802,7 @@ static bool BackupCmd(JobControlRecord* jcr)
   // START VSS ON WIN32
   if (jcr->fd_impl->pVSSClient) {
     if (jcr->fd_impl->pVSSClient->InitializeForBackup(jcr)) {
-      int drive_count;
+      int volume_count;
       char szWinDriveLetters[27];
       bool onefs_disabled;
 
@@ -1831,10 +1831,10 @@ static bool BackupCmd(JobControlRecord* jcr)
 
       onefs_disabled = win32_onefs_is_disabled(jcr->fd_impl->ff->fileset);
 
-      drive_count = volumes.size();
-      if (drive_count > 0) {
+      volume_count = volumes.size();
+      if (volume_count > 0) {
         Jmsg(jcr, M_INFO, 0,
-             _("Generate VSS snapshots. Driver=\"%s\""),
+             _("Generate VSS snapshots. Driver=\"%s\"\n"),
              jcr->fd_impl->pVSSClient->GetDriverName());
 
         if (!jcr->fd_impl->pVSSClient->CreateSnapshots(volumes,
