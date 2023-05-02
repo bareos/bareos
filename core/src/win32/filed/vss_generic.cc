@@ -81,26 +81,10 @@ class IXMLDOMDocument;
 #  undef uuid
 #  define uuid(x)
 
-#  ifdef B_VSS_XP
-#    define VSSClientGeneric VSSClientXP
-#    include "WinXP/vss.h"
-#    include "WinXP/vswriter.h"
-#    include "WinXP/vsbackup.h"
-#  endif
-
-#  ifdef B_VSS_W2K3
-#    define VSSClientGeneric VSSClient2003
-#    include "Win2003/vss.h"
-#    include "Win2003/vswriter.h"
-#    include "Win2003/vsbackup.h"
-#  endif
-
-#  ifdef B_VSS_VISTA
-#    define VSSClientGeneric VSSClientVista
-#    include "Win2003/vss.h"
-#    include "Win2003/vswriter.h"
-#    include "Win2003/vsbackup.h"
-#  endif
+#  define VSSClientGeneric VSSClientVista
+#  include "Win2003/vss.h"
+#  include "Win2003/vswriter.h"
+#  include "Win2003/vsbackup.h"
 
 #  define VSS_ERROR_OBJECT_ALREADY_EXISTS 0x8004230D
 

@@ -80,14 +80,7 @@ void VSSInit(JobControlRecord* jcr)
 {
   // Decide which vss class to initialize
   if (g_MajorVersion == 5) {
-    switch (g_MinorVersion) {
-      case 1:
-        jcr->fd_impl->pVSSClient = new VSSClientXP();
-        break;
-      case 2:
-        jcr->fd_impl->pVSSClient = new VSSClient2003();
-        break;
-    }
+    Jmsg(jcr, M_FATAL, 0, "Your windows version is not supported anymore.\n");
     // Vista or Longhorn or later
   } else if (g_MajorVersion >= 6) {
     jcr->fd_impl->pVSSClient = new VSSClientVista();

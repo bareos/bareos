@@ -140,64 +140,6 @@ class VSSClient {
   int VMP_snapshots = 0; /* volume mount points that are snapshotted */
 };
 
-class VSSClientXP : public VSSClient {
- public:
-  VSSClientXP();
-  virtual ~VSSClientXP();
-  virtual void AddVolumeSnapshots(IVssBackupComponents* pVssObj,
-				  const std::vector<std::wstring>& volumes,
-				  bool onefs_disabled) override;
-  virtual void AddVolumeMountPointSnapshots(IVssBackupComponents* pVssObj,
-                                            const std::wstring& volume,
-					    std::unordered_set<std::wstring>& snapshoted_volumes) override;
-  virtual void ShowVolumeMountPointStats(JobControlRecord* jcr) override;
-  virtual bool CreateSnapshots(const std::vector<std::wstring>& volumes,
-                               bool onefs_disabled) override;
-  virtual bool CloseBackup() override;
-  virtual bool CloseRestore() override;
-  virtual WCHAR* GetMetadata() override;
-#  ifdef _WIN64
-  virtual const char* GetDriverName() override { return "Win64 VSS"; };
-#  else
-  virtual const char* GetDriverName() override { return "Win32 VSS"; };
-#  endif
-
- private:
-  virtual bool Initialize(DWORD dwContext, bool bDuringRestore) override;
-  virtual bool WaitAndCheckForAsyncOperation(IVssAsync* pAsync) override;
-  virtual void QuerySnapshotSet(GUID snapshotSetID) override;
-  bool CheckWriterStatus();
-};
-
-class VSSClient2003 : public VSSClient {
- public:
-  VSSClient2003();
-  virtual ~VSSClient2003();
-  virtual void AddVolumeSnapshots(IVssBackupComponents* pVssObj,
-				  const std::vector<std::wstring>& volumes,
-				  bool onefs_disabled) override;
-  virtual void AddVolumeMountPointSnapshots(IVssBackupComponents* pVssObj,
-                                            const std::wstring& volume,
-					    std::unordered_set<std::wstring>& snapshoted_volumes) override;
-  virtual void ShowVolumeMountPointStats(JobControlRecord* jcr) override;
-  virtual bool CreateSnapshots(const std::vector<std::wstring>& volumes,
-                               bool onefs_disabled) override;
-  virtual bool CloseBackup() override;
-  virtual bool CloseRestore() override;
-  virtual WCHAR* GetMetadata() override;
-#  ifdef _WIN64
-  virtual const char* GetDriverName() override { return "Win64 VSS"; };
-#  else
-  virtual const char* GetDriverName() override { return "Win32 VSS"; };
-#  endif
-
- private:
-  virtual bool Initialize(DWORD dwContext, bool bDuringRestore) override;
-  virtual bool WaitAndCheckForAsyncOperation(IVssAsync* pAsync) override;
-  virtual void QuerySnapshotSet(GUID snapshotSetID) override;
-  bool CheckWriterStatus();
-};
-
 class VSSClientVista : public VSSClient {
  public:
   VSSClientVista();
