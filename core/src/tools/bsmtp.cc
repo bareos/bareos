@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -80,6 +80,9 @@ enum resolv_type
 
 static FILE* sfp;
 static FILE* rfp;
+
+const int default_port = 25;
+const std::string default_mailhost = "localhost";
 
 /*
  * Take input that may have names and other stuff and strip
@@ -202,6 +205,24 @@ static void GetDateString(char* buf, int buf_len)
   strcat(buf, tzbuf); /* add (CEST) */
 }
 
+
+std::pair<std::string, int> ParseHostAndPort(std::string val)
+{
+  BStringList host_and_port;
+  if (val.at(0) == '[') {
+    host_and_port = BStringList(val, "]:");
+    host_and_port[0].erase(0, 1);
+  } else {
+    host_and_port = BStringList(val, ':');
+  }
+
+  if (host_and_port[0].back() == ']') { host_and_port[0].pop_back(); }
+  int mailport = default_port;
+  if (host_and_port.size() == 2) { mailport = atoi(host_and_port[1].c_str()); }
+  std::string mailhost{host_and_port[0]};
+  return std::make_pair(mailhost, mailport);
+}
+
 /*********************************************************************
  *
  *  Program to send email
@@ -250,33 +271,38 @@ int main(int argc, char* argv[])
   bsmtp_app.add_option("-f,--from", from_addr, "Set the From: field.")
       ->required();
 
-  int mailport = 25;
-  std::string mailhost{};
+  int mailport = default_port;
+  std::string mailhost = default_mailhost;
+
+  char* env_variable_smtpserver;
+  if ((env_variable_smtpserver = getenv("SMTPSERVER")) != nullptr) {
+    std::pair<std::string, int> host_and_port
+        = ParseHostAndPort(std::string(env_variable_smtpserver));
+    mailhost = host_and_port.first;
+    mailport = host_and_port.second;
+    Pmsg2(0,
+          "Taking host and mailport from the SMTPSERVER environment variable: "
+          "host=%s ; port=%d\n",
+          mailhost.c_str(), mailport);
+  }
+
   bsmtp_app
       .add_option(
           "-h,--mailhost",
           [&mailport, &mailhost](std::vector<std::string> val) {
-            Dmsg1(20, "host=%s\n", val[0].c_str());
-            BStringList host_and_port;
-            if (val[0].at(0) == '[') {
-              host_and_port = BStringList(val[0], "]:");
-              host_and_port[0].erase(0, 1);
-            } else {
-              host_and_port = BStringList(val[0], ':');
-            }
-
-            if (host_and_port.size() == 2) {
-              mailport = atoi(host_and_port[1].c_str());
-              Dmsg1(20, "port=%d\n", mailport);
-            }
-
-            if (host_and_port[0].back() == ']') { host_and_port[0].pop_back(); }
-            mailhost = host_and_port[0];
+            std::pair<std::string, int> host_and_port
+                = ParseHostAndPort(val[0]);
+            mailhost = host_and_port.first;
+            mailport = host_and_port.second;
+            Pmsg2(0,
+                  "Mailhost argument detected: Taking host and mailport from "
+                  "cli : host=%s ; port=%d\n",
+                  mailhost.c_str(), mailport);
             return true;
           },
           "Use mailhost:port as the SMTP server.")
-      ->type_name("<mailhost/IPv4_address:port>,<[mailhost/IPv6_address]:port>")
-      ->required();
+      ->type_name(
+          "<mailhost/IPv4_address:port>,<[mailhost/IPv6_address]:port>");
 
   std::string subject{};
   bsmtp_app.add_option("-s,--subject", subject, "Set the Subject: field.")
@@ -295,15 +321,6 @@ int main(int argc, char* argv[])
 
   CLI11_PARSE(bsmtp_app, argc, argv);
 
-  //  Determine SMTP server
-  char* cp;
-  if (mailhost.empty()) {
-    if ((cp = getenv("SMTPSERVER")) != NULL) {
-      mailhost = cp;
-    } else {
-      mailhost = "localhost";
-    }
-  }
 
 #if defined(HAVE_WIN32)
   WSADATA wsaData;
@@ -324,7 +341,7 @@ int main(int argc, char* argv[])
   int res;
   struct addrinfo hints;
   struct addrinfo *ai, *rp;
-  char mail_port[10];
+  char service_port[10];
 
   memset(&hints, 0, sizeof(struct addrinfo));
   hints.ai_family = AF_UNSPEC;
@@ -401,9 +418,9 @@ lookup_host:
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_protocol = 0;
   hints.ai_flags = 0;
-  snprintf(mail_port, sizeof(mail_port), "%d", mailport);
+  snprintf(service_port, sizeof(service_port), "%d", mailport);
 
-  if ((res = getaddrinfo(mailhost.c_str(), mail_port, &hints, &ai)) != 0) {
+  if ((res = getaddrinfo(mailhost.c_str(), service_port, &hints, &ai)) != 0) {
     Pmsg2(0, _("Error unknown mail host \"%s\": ERR=%s\n"), mailhost.c_str(),
           gai_strerror(res));
     if (!Bstrcasecmp(mailhost.c_str(), "localhost")) {
