@@ -70,8 +70,6 @@ std::vector<std::wstring> get_win32_volumes(findFILESET* fileset)
 
   if (fileset) {
     std::wstring_convert<std::codecvt_utf8<wchar_t>> converter{};
-    std::size_t buflen = 100;
-    std::unique_ptr<wchar_t[]> volume = std::unique_ptr<wchar_t[]>(new wchar_t[buflen], std::default_delete<wchar_t[]>{});
     for (int i = 0; i < fileset->include_list.size(); i++) {
       findIncludeExcludeItem* incexe = (findIncludeExcludeItem*)fileset->include_list.get(i);
 
@@ -80,30 +78,30 @@ std::vector<std::wstring> get_win32_volumes(findFILESET* fileset)
         char* fname = node->c_str();
 
 	std::wstring wname = converter.from_bytes(fname);
-	if (DWORD needed = GetFullPathNameW(wname.c_str(), 0, volume.get(), NULL);
-	    needed >= buflen) {
-	  buflen = needed + 1;
-	  volume.reset(new wchar_t[buflen]);
+	std::wstring volume(100, L'\0');
+	if (DWORD needed = GetFullPathNameW(wname.c_str(), 0, volume.data(), NULL);
+	    needed >= volume.size()) {
+	  volume.resize(needed + 1, '\0');
 	} else if (needed == 0) {
 	  Dmsg1(100, "Could not query the full path length of %s\n", fname);
 	  continue;
 	}
 
-	if (!GetVolumePathNameW(wname.c_str(), volume.get(), buflen)) {
+	if (!GetVolumePathNameW(wname.c_str(), volume.data(), volume.capacity())) {
 	  Dmsg1(100, "Could not find a mounted volume on %s\n", fname);
 	  continue;
+	} else {
+	  volume.resize(wcslen(volume.c_str()));
 	}
 
 	// GetDriveTypeW expects that there is no trailing slash!
+	if (volume.back() == L'\\')
 	{
-	  wchar_t* str = vol.get();
-	  std::size_t len = wcslen(str);
-	  if (len > 0 && str[len-1] == L'\\') {
-	    str[len-1] = '\0';
-	  }
+	  volume.pop_back();
 	}
-	if (GetDriveTypeW(volume.get()) == DRIVE_FIXED) {
-	  volumes.push_back(volume.get());
+
+	if (GetDriveTypeW(volume.c_str()) == DRIVE_FIXED) {
+	  volumes.emplace_back(std::move(volume));
 
 	}
       }
