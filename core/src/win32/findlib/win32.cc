@@ -78,30 +78,30 @@ std::vector<std::wstring> get_win32_volumes(findFILESET* fileset)
         char* fname = node->c_str();
 
 	std::wstring wname = converter.from_bytes(fname);
-	std::wstring volume(100, L'\0');
-	if (DWORD needed = GetFullPathNameW(wname.c_str(), 0, volume.data(), NULL);
-	    needed >= volume.size()) {
-	  volume.resize(needed + 1, '\0');
+	std::wstring mountpoint(100, L'\0');
+	if (DWORD needed = GetFullPathNameW(wname.c_str(), 0, mountpoint.data(), NULL);
+	    needed >= mountpoint.size()) {
+	  mountpoint.resize(needed + 1, '\0');
 	} else if (needed == 0) {
 	  Dmsg1(100, "Could not query the full path length of %s\n", fname);
 	  continue;
 	}
 
-	if (!GetVolumePathNameW(wname.c_str(), volume.data(), volume.capacity())) {
+	if (!GetVolumePathNameW(wname.c_str(), mountpoint.data(), mountpoint.capacity())) {
 	  Dmsg1(100, "Could not find a mounted volume on %s\n", fname);
 	  continue;
 	} else {
-	  volume.resize(wcslen(volume.c_str()));
+	  mountpoint.resize(wcslen(mountpoint.c_str()));
+	}
+	std::array<wchar_t, 50> volume;
+	if (!GetVolumeNameForVolumeMountPointW(mountpoint.c_str(), volume.data(), volume.size())) {
+	  Dmsg1(100, "Could not find the volume name for %s\n",
+		converter.to_bytes(mountpoint.c_str()).c_str());
+	  continue;
 	}
 
-	// GetDriveTypeW expects that there is no trailing slash!
-	if (volume.back() == L'\\')
-	{
-	  volume.pop_back();
-	}
-
-	if (GetDriveTypeW(volume.c_str()) == DRIVE_FIXED) {
-	  volumes.emplace_back(std::move(volume));
+	if (GetDriveTypeW(volume.data()) == DRIVE_FIXED) {
+	  volumes.emplace_back(std::move(mountpoint));
 
 	}
       }
