@@ -33,9 +33,9 @@
 #  include "findlib/drivetype.h"
 #  include "findlib/fstype.h"
 #  include "win32/findlib/win32.h"
-
 #  include <locale>
 #  include <codecvt>
+
 
 /**
  * We need to analyze if a fileset contains onefs=no as option, because only
@@ -64,76 +64,48 @@ bool win32_onefs_is_disabled(findFILESET* fileset)
  */
 std::vector<std::wstring> get_win32_volumes(findFILESET* fileset)
 {
-  char szDrives[27] = {};
-  int i;
-  int nCount;
-  char *fname;
-  char drive[4], dt[16];
-  struct stat sb;
   dlistString* node;
-  findIncludeExcludeItem* incexe;
 
   std::vector<std::wstring> volumes{};
-  std::wstring_convert<std::codecvt_utf8<wchar_t>> converter{};
-  /*
-   * szDrives must be at least 27 bytes long
-   * Can be already filled by plugin, so check that all
-   *   letters are in upper case. There should be no duplicates.
-   */
-  for (nCount = 0; nCount < 27 && szDrives[nCount]; nCount++) {
-    szDrives[nCount] = toupper(szDrives[nCount]);
-  }
-
-  /*
-   * First check if there are any non fixed drives in the list
-   * filled by the plugin. VSS can only snapshot fixed drives.
-   */
-  for (nCount = 0; nCount < 27 && szDrives[nCount]; nCount++) {
-    Bsnprintf(drive, sizeof(drive), "%c:\\", szDrives[nCount]);
-    if (Drivetype(drive, dt, sizeof(dt))) {
-      if (bstrcmp(dt, "fixed")) { continue; }
-
-      /*
-       * Inline copy the rest of the string over the current
-       * drive letter.
-       */
-      bstrinlinecpy(szDrives + nCount, szDrives + nCount + 1);
-    }
-  }
 
   if (fileset) {
-    for (i = 0; i < fileset->include_list.size(); i++) {
-      incexe = (findIncludeExcludeItem*)fileset->include_list.get(i);
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> converter{};
+    std::size_t buflen = 100;
+    std::unique_ptr<wchar_t[]> volume = std::unique_ptr<wchar_t[]>(new wchar_t[buflen], std::default_delete<wchar_t[]>{});
+    for (int i = 0; i < fileset->include_list.size(); i++) {
+      findIncludeExcludeItem* incexe = (findIncludeExcludeItem*)fileset->include_list.get(i);
 
       // Look through all files and check
       foreach_dlist (node, &incexe->name_list) {
-        fname = node->c_str();
+        char* fname = node->c_str();
 
-        /*
-         * See if the entry doesn't have the FILE_ATTRIBUTE_VOLUME_MOUNT_POINT
-         * flag set.
-         */
-        if (stat(fname, &sb) == 0) {
-          if (sb.st_rdev & FILE_ATTRIBUTE_VOLUME_MOUNT_POINT) { continue; }
-        }
+	std::wstring wname = converter.from_bytes(fname);
+	if (DWORD needed = GetFullPathNameW(wname.c_str(), 0, volume.get(), NULL);
+	    needed >= buflen) {
+	  buflen = needed + 1;
+	  volume.reset(new wchar_t[buflen]);
+	} else if (needed == 0) {
+	  Dmsg1(100, "Could not query the full path length of %s\n", fname);
+	  continue;
+	}
 
-        // fname should match x:/
-        if (strlen(fname) >= 2 && B_ISALPHA(fname[0]) && fname[1] == ':') {
-          // VSS can only snapshot fixed drives.
-          bstrncpy(drive, fname, sizeof(drive));
-          drive[2] = '\\';
-          drive[3] = '\0';
+	if (!GetVolumePathNameW(wname.c_str(), volume.get(), buflen)) {
+	  Dmsg1(100, "Could not find a mounted volume on %s\n", fname);
+	  continue;
+	}
 
-          // Lookup the drive type.
-          if (Drivetype(drive, dt, sizeof(dt))) {
-            if (bstrcmp(dt, "fixed")) {
-              // Always add in uppercase
+	// GetDriveTypeW expects that there is no trailing slash!
+	{
+	  wchar_t* str = vol.get();
+	  std::size_t len = wcslen(str);
+	  if (len > 0 && str[len-1] == L'\\') {
+	    str[len-1] = '\0';
+	  }
+	}
+	if (GetDriveTypeW(volume.get()) == DRIVE_FIXED) {
+	  volumes.push_back(volume.get());
 
-	      std::wstring drive_w = converter.from_bytes(drive);
-	      volumes.emplace_back(std::move(drive_w));
-            }
-          }
-        }
+	}
       }
     }
   }
