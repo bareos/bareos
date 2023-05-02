@@ -68,19 +68,6 @@ OS:
           - bareos
           - python-bareos
 
-  Univention:
-    "4.4":
-      TYPE: deb
-      IMAGE: univention4.4
-      ARCH:
-      - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-webui
-           - python-bareos
-
-
   SLE:
     "15_SP4":
       TYPE: rpm
