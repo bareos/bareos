@@ -41,6 +41,7 @@
  * #endif
  */
 #  include <windef.h>
+#  include <string>
 
 #  ifndef POOLMEM
 typedef char POOLMEM;
@@ -63,13 +64,14 @@ typedef char POOLMEM;
 // "\\?\" to the path. For more information, see Naming a File.
 #  define MAX_PATH_W 32767
 
+std::wstring FromUtf8(std::string_view utf8);
+std::string FromUtf16(std::wstring_view utf16);
 int wchar_2_UTF8(POOLMEM*& pszUTF, const wchar_t* pszUCS);
 int UTF8_2_wchar(POOLMEM*& pszUCS, const char* pszUTF);
 int wchar_2_UTF8(char* pszUTF, const wchar_t* pszUCS, int cchChar);
 BSTR str_2_BSTR(const char* pSrc);
 char* BSTR_2_str(const BSTR pSrc);
-int make_win32_path_UTF8_2_wchar(POOLMEM*& pszUCS,
-                                 const char* pszUTF);
+std::wstring make_win32_path_UTF8_2_wchar(std::string_view utf8);
 
 // init with win9x, but maybe set to NT in InitWinAPI
 extern DWORD g_platform_id;

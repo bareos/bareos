@@ -121,9 +121,8 @@ bail_out:
  * by using the cache this is reduced to 1 time
  */
 struct thread_conversion_cache {
-  POOLMEM* pWin32ConvUTF8Cache;
-  POOLMEM* pWin32ConvUCS2Cache;
-  DWORD dwWin32ConvUTF8strlen;
+  std::string utf8{};
+  std::wstring utf16{};
 };
 
 struct thread_vss_path_convert {
@@ -226,15 +225,13 @@ static void Win32ConvCleanupCache(void* arg)
       "Win32ConvCleanupCache: Cleanup of thread specific cache at address %p\n",
       tcc);
 
-  FreePoolMemory(tcc->pWin32ConvUCS2Cache);
-  FreePoolMemory(tcc->pWin32ConvUTF8Cache);
-  free(tcc);
+  delete tcc;
 }
 
 static thread_conversion_cache* Win32ConvInitCache()
 {
   int status;
-  thread_conversion_cache* tcc = NULL;
+  thread_conversion_cache* tcc = nullptr;
 
   lock_mutex(tsd_mutex);
   if (!cc_tsd_initialized) {
@@ -248,10 +245,7 @@ static thread_conversion_cache* Win32ConvInitCache()
   unlock_mutex(tsd_mutex);
 
   // Create a new cache.
-  tcc = (thread_conversion_cache*)malloc(sizeof(thread_conversion_cache));
-  tcc->pWin32ConvUTF8Cache = GetPoolMemory(PM_FNAME);
-  tcc->pWin32ConvUCS2Cache = GetPoolMemory(PM_FNAME);
-  tcc->dwWin32ConvUTF8strlen = 0;
+  tcc = new thread_conversion_cache{};
 
   status = pthread_setspecific(conversion_cache_key, (void*)tcc);
   if (status != 0) { goto bail_out; }
@@ -264,9 +258,7 @@ static thread_conversion_cache* Win32ConvInitCache()
 
 bail_out:
   if (tcc) {
-    FreePoolMemory(tcc->pWin32ConvUCS2Cache);
-    FreePoolMemory(tcc->pWin32ConvUTF8Cache);
-    free(tcc);
+    delete tcc;
   }
 
   return NULL;
@@ -283,9 +275,8 @@ void Win32ResetConversionCache()
   unlock_mutex(tsd_mutex);
 
   if (tcc) {
-    tcc->pWin32ConvUTF8Cache[0] = '\0';
-    // make sure thate even the empty string does not get matched!
-    tcc->dwWin32ConvUTF8strlen = -1;
+    tcc->utf8.clear();
+    tcc->utf16.clear();
   }
 }
 
@@ -419,7 +410,7 @@ void unix_name_to_win32(POOLMEM*& win32_name, const char* name)
   conv_unix_to_vss_win32_path(name, win32_name, dwSize);
 }
 
-[[maybe_unused]] static std::wstring FromUtf8(std::string_view utf8)
+std::wstring FromUtf8(std::string_view utf8)
 {
   // TODO: find out if there is a difference between this
   //       and std::wstring{std::begin(utf8), std::end(utf8)}
@@ -448,7 +439,7 @@ void unix_name_to_win32(POOLMEM*& win32_name, const char* name)
   return utf16;
 }
 
-[[maybe_unused]] static std::string FromUtf16(std::wstring_view utf16)
+std::string FromUtf16(std::wstring_view utf16)
 {
   // TODO: find out if there is a difference between this
   //       and std::string{std::begin(utf16), std::end(utf16)}
@@ -674,11 +665,9 @@ char* BSTR_2_str(const BSTR pSrc)
   return szOut;
 }
 
-int make_win32_path_UTF8_2_wchar(POOLMEM*& pszUCS,
-                                 const char* pszUTF)
+std::wstring make_win32_path_UTF8_2_wchar(std::string_view utf8)
 {
-  int nRet;
-  thread_conversion_cache* tcc;
+  thread_conversion_cache* tcc = nullptr;
 
   /* If we find the utf8 string in cache, we use the cached ucs2 version.
    * we compare the stringlength first (quick check) and then compare the
@@ -686,43 +675,29 @@ int make_win32_path_UTF8_2_wchar(POOLMEM*& pszUCS,
   tcc = Win32GetCache();
   if (!tcc) {
     tcc = Win32ConvInitCache();
-  } else if (tcc->dwWin32ConvUTF8strlen == strlen(pszUTF)) {
-    if (bstrcmp(pszUTF, tcc->pWin32ConvUTF8Cache)) {
-      int nBufSize;
-
-      // Return cached value
-      nBufSize = SizeofPoolMemory(tcc->pWin32ConvUCS2Cache);
-      pszUCS = CheckPoolMemorySize(pszUCS, nBufSize);
-      wcscpy((LPWSTR)pszUCS, (LPWSTR)tcc->pWin32ConvUCS2Cache);
-
-      return nBufSize / sizeof(WCHAR);
-    }
+  } else if (tcc->utf8 == utf8) {
+    return tcc->utf16;
   }
 
-  /* Helper to convert from utf-8 to UCS-2 and to complete a path for 32K path
+  /* Helper to convert from utf-8 to utf-16 and to complete a path for 32K path
    * syntax */
-  nRet = UTF8_2_wchar(pszUCS, pszUTF);
+  std::wstring utf16 = FromUtf8(utf8);
 
 #ifdef USE_WIN32_32KPATHCONVERSION
-  // Add \\?\ to support 32K long filepaths
-  std::wstring wstr = make_wchar_win32_path((wchar_t*)pszUCS);
-  pszUCS = CheckPoolMemorySize(pszUCS, wstr.size() * sizeof(wchar_t));
-  wcscpy((LPWSTR)pszUCS, wstr.c_str());
+  {
+    // Add \\?\ to support 32K long filepaths
+    std::wstring converted = make_wchar_win32_path(utf16);
+    std::swap(converted, utf16);
+  }
 #endif
 
   // Populate cache
   if (tcc) {
-    tcc->pWin32ConvUCS2Cache = CheckPoolMemorySize(tcc->pWin32ConvUCS2Cache,
-                                                   SizeofPoolMemory(pszUCS));
-    wcscpy((LPWSTR)tcc->pWin32ConvUCS2Cache, (LPWSTR)pszUCS);
-
-    tcc->dwWin32ConvUTF8strlen = strlen(pszUTF);
-    tcc->pWin32ConvUTF8Cache = CheckPoolMemorySize(
-        tcc->pWin32ConvUTF8Cache, tcc->dwWin32ConvUTF8strlen + 2);
-    bstrncpy(tcc->pWin32ConvUTF8Cache, pszUTF, tcc->dwWin32ConvUTF8strlen + 1);
+    tcc->utf8.assign(utf8);
+    tcc->utf16.assign(utf16);
   }
 
-  return nRet;
+  return utf16;
 }
 
 #if !defined(_MSC_VER) || (_MSC_VER < 1400)  // VC8+
@@ -948,17 +923,15 @@ static inline bool GetVolumeMountPointData(const char* filename,
    * Explicitly open the file to read the reparse point, then call
    * DeviceIoControl to find out if it points to a Volume or to a directory. */
   if (p_GetFileAttributesW) {
-    PoolMem pwszBuf(PM_FNAME);
-    make_win32_path_UTF8_2_wchar(pwszBuf.addr(), filename);
+    std::wstring utf16 = make_win32_path_UTF8_2_wchar(filename);
 
     if (p_CreateFileW) {
-      h = CreateFileW(
-		      (LPCWSTR)pwszBuf.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
-          FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
+      h = CreateFileW(utf16.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+		      FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
     }
 
     if (h == INVALID_HANDLE_VALUE) {
-      Dmsg1(debuglevel, "Invalid handle from CreateFileW(%s)\n", pwszBuf.c_str());
+      Dmsg1(debuglevel, "Invalid handle from CreateFileW(%s)\n", utf16.c_str());
       return false;
     }
 
@@ -1016,17 +989,15 @@ static inline ssize_t GetSymlinkData(const char* filename,
   HANDLE h = INVALID_HANDLE_VALUE;
 
   if (p_GetFileAttributesW) {
-    PoolMem pwszBuf(PM_FNAME);
-    make_win32_path_UTF8_2_wchar(pwszBuf.addr(), filename);
+    std::wstring utf16 = make_win32_path_UTF8_2_wchar(filename);
 
     if (p_CreateFileW) {
-      h = CreateFileW(
-		      (LPCWSTR)pwszBuf.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
-          FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
+      h = CreateFileW(utf16.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+		      FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
     }
 
     if (h == INVALID_HANDLE_VALUE) {
-      Dmsg1(debuglevel, "Invalid handle from CreateFileW(%s)\n", pwszBuf.c_str());
+      Dmsg1(debuglevel, "Invalid handle from CreateFileW(%s)\n", utf16.c_str());
       return -1;
     }
   } else if (p_GetFileAttributesA) {
@@ -1137,15 +1108,14 @@ static int GetWindowsFileInfo(const char* filename,
 
   // First get a findhandle and a file handle to the file.
   if (p_FindFirstFileW) { /* use unicode */
-    PoolMem pwszBuf(PM_FNAME);
-    make_win32_path_UTF8_2_wchar(pwszBuf.addr(), filename);
+    std::wstring utf16 = make_win32_path_UTF8_2_wchar(filename);
 
-    Dmsg1(debuglevel, "FindFirstFileW=%s\n", pwszBuf.c_str());
-    fh = p_FindFirstFileW((LPCWSTR)pwszBuf.c_str(), &info_w);
+    Dmsg1(debuglevel, "FindFirstFileW=%s\n", utf16.c_str());
+    fh = p_FindFirstFileW(utf16.c_str(), &info_w);
 #if (_WIN32_WINNT >= 0x0600)
     if (fh != INVALID_HANDLE_VALUE) {
       h = p_CreateFileW(
-			(LPCWSTR)pwszBuf.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+			utf16.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
           FILE_FLAG_BACKUP_SEMANTICS, /* Required for directories */
           NULL);
     }
@@ -1434,12 +1404,10 @@ static int stat2(const char* filename, struct stat* sb)
 
 
   if (p_GetFileAttributesW) {
-    PoolMem pwszBuf(PM_FNAME);
-
-    make_win32_path_UTF8_2_wchar(pwszBuf.addr(), filename);
-    attr = p_GetFileAttributesW((LPCWSTR)pwszBuf.c_str());
+    std::wstring utf16 = make_win32_path_UTF8_2_wchar(filename);
+    attr = p_GetFileAttributesW(utf16.c_str());
     if (p_CreateFileW) {
-      h = CreateFileW((LPCWSTR)pwszBuf.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL,
+      h = CreateFileW(utf16.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL,
                       OPEN_EXISTING, 0, NULL);
     }
   } else if (p_GetFileAttributesA) {
@@ -1506,11 +1474,10 @@ int stat(const char* filename, struct stat* sb)
   PoolMem win32_fname(PM_FNAME);
   unix_name_to_win32(win32_fname.addr(), filename);
 
-  PoolMem pwszBuf(PM_FNAME);
-  make_win32_path_UTF8_2_wchar(pwszBuf.addr(), filename);
+  std::wstring utf16 = make_win32_path_UTF8_2_wchar(filename);
 
   if (p_GetFileAttributesExW) {
-    BOOL b = p_GetFileAttributesExW((LPCWSTR)pwszBuf.c_str(), GetFileExInfoStandard,
+    BOOL b = p_GetFileAttributesExW(utf16.c_str(), GetFileExInfoStandard,
                                     &data);
     if (!b) { goto bail_out; }
   } else if (p_GetFileAttributesExA) {
@@ -1564,7 +1531,7 @@ int stat(const char* filename, struct stat* sb)
       /* The GetFileInformationByHandleEx need a file handle so we have to
        * open the file or directory read-only. */
       if (p_CreateFileW) {
-        h = p_CreateFileW((LPCWSTR)pwszBuf.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL,
+        h = p_CreateFileW(utf16.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL,
                           OPEN_EXISTING, 0, NULL);
       } else {
         h = CreateFileA(win32_fname.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL,
@@ -1743,21 +1710,12 @@ int win32_symlink(const char* name1, const char* name2, _dev_t st_rdev)
 
   Dmsg2(debuglevel, "symlink called name1=%s, name2=%s\n", name1, name2);
   if (p_CreateSymbolicLinkW) {
-    /* Dynamically allocate enough space for UCS2 filename
-     *
-     * pwszBuf1: lpTargetFileName
-     * pwszBuf2: lpSymlinkFileName */
-    POOLMEM* pwszBuf1 = GetPoolMemory(PM_FNAME);
-    POOLMEM* pwszBuf2 = GetPoolMemory(PM_FNAME);
-
-    if (!UTF8_2_wchar(pwszBuf1, name1)) { goto bail_out; }
-    make_win32_path_UTF8_2_wchar(pwszBuf2, name2);
+    std::wstring target = FromUtf8(name1);
+    if (target.size() == 0) { goto bail_out; }
+    std::wstring symlink = make_win32_path_UTF8_2_wchar(name2);
 
     BOOL b
-        = p_CreateSymbolicLinkW((LPCWSTR)pwszBuf2, (LPCWSTR)pwszBuf1, dwFlags);
-
-    FreePoolMemory(pwszBuf1);
-    FreePoolMemory(pwszBuf2);
+        = p_CreateSymbolicLinkW(symlink.c_str(), target.c_str(), dwFlags);
 
     if (!b) {
       Dmsg1(debuglevel, "CreateSymbolicLinkW failed:%s\n", errorString());
@@ -1877,10 +1835,8 @@ DIR* opendir(const char* path)
 
   // convert to wchar_t
   if (p_FindFirstFileW) {
-    PoolMem pwcBuf(PM_FNAME);
-
-    make_win32_path_UTF8_2_wchar(pwcBuf.addr(), dir_path.c_str());
-    rval->dirh = p_FindFirstFileW((LPCWSTR)pwcBuf.c_str(), &rval->data_w);
+    std::wstring utf16 = make_win32_path_UTF8_2_wchar(dir_path.c_str());
+    rval->dirh = p_FindFirstFileW(utf16.c_str(), &rval->data_w);
     if (rval->dirh != INVALID_HANDLE_VALUE) { rval->valid_w = 1; }
   } else if (p_FindFirstFileA) {
     rval->dirh = p_FindFirstFileA(rval->spec, &rval->data_a);
@@ -2142,17 +2098,13 @@ int win32_chmod(const char* path, mode_t mode, _dev_t rdev)
         (uint64_t)mode, (uint64_t)rdev);
 
   if (p_GetFileAttributesW) {
-    POOLMEM* pwszBuf;
-
-    pwszBuf = GetPoolMemory(PM_FNAME);
-    make_win32_path_UTF8_2_wchar(pwszBuf, path);
-    attr = p_GetFileAttributesW((LPCWSTR)pwszBuf);
+    std::wstring utf16 = make_win32_path_UTF8_2_wchar(path);
+    attr = p_GetFileAttributesW(utf16.c_str());
     if (attr != INVALID_FILE_ATTRIBUTES) {
       // Use Bareos mappings define in stat() above
       attr = fill_attribute(attr, mode, rdev);
-      ret = p_SetFileAttributesW((LPCWSTR)pwszBuf, attr);
+      ret = p_SetFileAttributesW(utf16.c_str(), attr);
     }
-    FreePoolMemory(pwszBuf);
     Dmsg0(debuglevel, "Leave win32_chmod. AttributesW\n");
   } else if (p_GetFileAttributesA) {
     attr = p_GetFileAttributesA(path);
@@ -2181,14 +2133,8 @@ int win32_chmod(const char* path, mode_t mode, _dev_t rdev)
 int win32_chdir(const char* dir)
 {
   if (p_SetCurrentDirectoryW) {
-    POOLMEM* pwszBuf;
-    BOOL b;
-
-    pwszBuf = GetPoolMemory(PM_FNAME);
-    make_win32_path_UTF8_2_wchar(pwszBuf, dir);
-    b = p_SetCurrentDirectoryW((LPCWSTR)pwszBuf);
-    FreePoolMemory(pwszBuf);
-    if (!b) {
+    std::wstring utf16 = make_win32_path_UTF8_2_wchar(dir);
+    if (!p_SetCurrentDirectoryW(utf16.c_str())) {
       errno = b_errno_win32;
       return -1;
     }
@@ -2208,13 +2154,8 @@ int win32_mkdir(const char* dir)
 {
   Dmsg1(debuglevel, "enter win32_mkdir. dir=%s\n", dir);
   if (p_wmkdir) {
-    int n;
-    POOLMEM* pwszBuf;
-
-    pwszBuf = GetPoolMemory(PM_FNAME);
-    make_win32_path_UTF8_2_wchar(pwszBuf, dir);
-    n = p_wmkdir((LPCWSTR)pwszBuf);
-    FreePoolMemory(pwszBuf);
+    std::wstring utf16 = make_win32_path_UTF8_2_wchar(dir);
+    int n = p_wmkdir(utf16.c_str());
     Dmsg0(debuglevel, "Leave win32_mkdir did wmkdir\n");
 
     return n;
@@ -2254,33 +2195,30 @@ char* win32_getcwd(char* buf, int maxlen)
 
 int win32_fputs(const char* string, FILE* stream)
 {
-  /* We use WriteConsoleA / WriteConsoleA so we can be sure that unicode support
+  /* We use WriteConsoleW / WriteConsoleA so we can be sure that unicode support
    * works on win32. with fallback if something fails */
   HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
   if (hOut && (hOut != INVALID_HANDLE_VALUE) && p_WideCharToMultiByte
       && p_MultiByteToWideChar && (stream == stdout)) {
-    POOLMEM* pwszBuf;
     POOLMEM* pszBuf;
     DWORD dwCharsWritten;
     DWORD dwChars;
 
-    pwszBuf = GetPoolMemory(PM_MESSAGE);
-    dwChars = UTF8_2_wchar(pwszBuf, string);
+    std::wstring utf16 = FromUtf8(string);
 
     // Try WriteConsoleW
-    if (WriteConsoleW(hOut, pwszBuf, dwChars - 1, &dwCharsWritten, NULL)) {
-      FreePoolMemory(pwszBuf);
+    if (WriteConsoleW(hOut, utf16.c_str(), utf16.size(), &dwCharsWritten, NULL)) {
       return dwCharsWritten;
     }
 
+
+    DWORD needed = p_WideCharToMultiByte(GetConsoleOutputCP(), 0, utf16.c_str(),
+					 -1, nullptr, 0, nullptr, nullptr);
     // Convert to local codepage and try WriteConsoleA
     pszBuf = GetPoolMemory(PM_MESSAGE);
-    pszBuf = CheckPoolMemorySize(pszBuf, dwChars + 1);
-
-    dwChars = p_WideCharToMultiByte(GetConsoleOutputCP(), 0, (LPCWSTR)pwszBuf,
-                                    -1, pszBuf, dwChars, NULL, NULL);
-    FreePoolMemory(pwszBuf);
-
+    pszBuf = CheckPoolMemorySize(pszBuf, needed);
+    dwChars = p_WideCharToMultiByte(GetConsoleOutputCP(), 0, utf16.c_str(),
+                                    -1, pszBuf, needed, NULL, NULL);
     if (WriteConsoleA(hOut, pszBuf, dwChars - 1, &dwCharsWritten, NULL)) {
       FreePoolMemory(pszBuf);
       return dwCharsWritten;
@@ -2352,22 +2290,19 @@ int win32_unlink(const char* filename)
 {
   int nRetCode;
   if (p_wunlink) {
-    POOLMEM* pwszBuf;
-
-    pwszBuf = GetPoolMemory(PM_FNAME);
-    make_win32_path_UTF8_2_wchar(pwszBuf, filename);
-    nRetCode = _wunlink((LPCWSTR)pwszBuf);
+    std::wstring utf16 = make_win32_path_UTF8_2_wchar(filename);
+    nRetCode = _wunlink(utf16.c_str());
 
     // Special case if file is readonly, we retry but unset attribute before
     if (nRetCode == -1 && errno == EACCES && p_SetFileAttributesW
         && p_GetFileAttributesW) {
-      DWORD dwAttr = p_GetFileAttributesW((LPCWSTR)pwszBuf);
+      DWORD dwAttr = p_GetFileAttributesW(utf16.c_str());
       if (dwAttr != INVALID_FILE_ATTRIBUTES) {
-        if (p_SetFileAttributesW((LPCWSTR)pwszBuf,
+        if (p_SetFileAttributesW(utf16.c_str(),
                                  dwAttr & ~FILE_ATTRIBUTE_READONLY)) {
-          nRetCode = _wunlink((LPCWSTR)pwszBuf);
+          nRetCode = _wunlink(utf16.c_str());
           /* reset to original if it didn't help */
-          if (nRetCode == -1) p_SetFileAttributesW((LPCWSTR)pwszBuf, dwAttr);
+          if (nRetCode == -1) p_SetFileAttributesW(utf16.c_str(), dwAttr);
         }
       }
     }
@@ -2376,7 +2311,7 @@ int win32_unlink(const char* filename)
      * remove file links) */
     if (nRetCode == -1) {
       Dmsg0(100, "_unlink failed, trying DeleteFileW \n");
-      if (DeleteFileW((LPCWSTR)pwszBuf) == 0) {  // 0 = fail
+      if (DeleteFileW(utf16.c_str()) == 0) {  // 0 = fail
         Dmsg0(100, "DeleteFileW failed\n");
         nRetCode = -1;
       } else {
@@ -2390,7 +2325,7 @@ int win32_unlink(const char* filename)
      * also can remove directory links) */
     if (nRetCode == -1) {
       Dmsg0(100, "DeleteFileW failed, trying RemoveDirectoryW \n");
-      if (RemoveDirectoryW((LPCWSTR)pwszBuf) == 0) {  // 0 = fail
+      if (RemoveDirectoryW(utf16.c_str()) == 0) {  // 0 = fail
         Dmsg0(100, "RemoveDirectoryW failed\n");
         nRetCode = -1;
       } else {
@@ -2398,9 +2333,6 @@ int win32_unlink(const char* filename)
         nRetCode = 0;
       }
     }
-
-    FreePoolMemory(pwszBuf);
-
   } else {
     nRetCode = _unlink(filename);
 
@@ -2436,12 +2368,9 @@ bool win32_restore_file_attributes(POOLMEM* ofname,
   Dmsg1(100, "SetFileAtts %s\n", ofname);
 
   if (p_SetFileAttributesW) {
-    PoolMem pwszBuf(PM_FNAME);
+    std::wstring utf16 = make_win32_path_UTF8_2_wchar(ofname);
 
-    make_win32_path_UTF8_2_wchar(pwszBuf.addr(), ofname);
-
-    BOOL b = p_SetFileAttributesW((LPCWSTR)pwszBuf.c_str(),
-                             atts->dwFileAttributes & SET_ATTRS);
+    BOOL b = p_SetFileAttributesW(utf16.c_str(), atts->dwFileAttributes & SET_ATTRS);
     if (!b) { goto bail_out; }
   } else {
     PoolMem win32_ofile(PM_FNAME);

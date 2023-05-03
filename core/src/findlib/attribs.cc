@@ -521,14 +521,10 @@ int encode_attribsEx(JobControlRecord* jcr,
   unix_name_to_win32(ff_pkt->sys_fname, ff_pkt->fname);
   if (p_GetFileAttributesExW) {
     // Try unicode version
-    POOLMEM* pwszBuf = GetPoolMemory(PM_FNAME);
-    make_win32_path_UTF8_2_wchar(pwszBuf, ff_pkt->fname);
+    std::wstring utf16 = make_win32_path_UTF8_2_wchar(ff_pkt->fname);
 
-    BOOL b = p_GetFileAttributesExW((LPCWSTR)pwszBuf, GetFileExInfoStandard,
-                                    (LPVOID)&atts);
-    FreePoolMemory(pwszBuf);
-
-    if (!b) {
+    if (!p_GetFileAttributesExW(utf16.c_str(), GetFileExInfoStandard,
+				(LPVOID)&atts)) {
       WinError(jcr, "GetFileAttributesExW:", ff_pkt->sys_fname);
       return STREAM_UNIX_ATTRIBUTES;
     }
