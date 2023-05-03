@@ -3086,12 +3086,16 @@ bail_out:
  * %C = Cloning (yes/no)
  * %D = Director name
  * %V = Volume name(s) (Destination)
+ * %m = Prev Backup JobId
+ * %M = New Backup JobId
  */
 extern "C" char* job_code_callback_director(JobControlRecord* jcr,
                                             const char* param)
 {
   static char yes[] = "yes";
   static char no[] = "no";
+  
+  static char str[50];
 
   switch (param[0]) {
     case 'f':
@@ -3131,6 +3135,23 @@ extern "C" char* job_code_callback_director(JobControlRecord* jcr,
         } else {
           return (char*)_("*None*");
         }
+      } else {
+        return (char*)_("*None*");
+      }
+      break;
+    case 'm': /* Migration/copy job prev jobid */
+      if (jcr && jcr->dir_impl && jcr->dir_impl->previous_jr.JobId) {
+        Bsnprintf(str, sizeof(str), "%d", jcr->dir_impl->previous_jr.JobId);
+        return str;
+      } else {
+        return (char*)_("*None*");
+      }
+      break;
+    case 'M': /* Migration/copy job new jobid */
+      if (jcr && jcr->dir_impl && jcr->dir_impl->mig_jcr && jcr->dir_impl->mig_jcr->dir_impl
+	      && jcr->dir_impl->mig_jcr->dir_impl->jr.JobId) {
+        Bsnprintf(str, sizeof(str), "%d", jcr->dir_impl->mig_jcr->dir_impl->jr.JobId);
+        return str;
       } else {
         return (char*)_("*None*");
       }
