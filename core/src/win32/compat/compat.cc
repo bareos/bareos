@@ -483,12 +483,13 @@ static std::wstring ConvertNormalized(std::wstring_view p)
 }
 
 /**
- * This function expects an UCS-encoded standard wchar_t in pszUCSPath and
- * will complete the input path to an absolue path of the form \\?\c:\path\file
+ * This function converts relative paths to absolute paths and prepend \\?\ if
+ * needed.  It also replaces all '/' with '\' and removes duplicates of them.
  *
  * With this trick, it is possible to have 32K characters long paths.
  *
  * Created 02/27/2006 Thorsten Engel
+ * Updated 05/03/2023 Sebastian Sura
  */
 static inline std::wstring make_wchar_win32_path(std::wstring_view path)
 {
@@ -514,7 +515,7 @@ static inline std::wstring make_wchar_win32_path(std::wstring_view path)
   return converted;
 }
 
-// Convert from WCHAR (UCS) to UTF-8
+// Convert from WCHAR (UTF-16) to UTF-8
 int wchar_2_UTF8(POOLMEM*& pszUTF, const WCHAR* pszUCS)
 {
   /* The return value is the number of bytes written to the buffer.
@@ -530,7 +531,7 @@ int wchar_2_UTF8(POOLMEM*& pszUTF, const WCHAR* pszUCS)
   }
 }
 
-// Convert from WCHAR (UCS) to UTF-8
+// Convert from WCHAR (UTF-16) to UTF-8
 int wchar_2_UTF8(char* pszUTF, const WCHAR* pszUCS, int cchChar)
 {
   /* The return value is the number of bytes written to the buffer.
