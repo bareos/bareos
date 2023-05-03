@@ -419,6 +419,69 @@ void unix_name_to_win32(POOLMEM*& win32_name, const char* name)
   conv_unix_to_vss_win32_path(name, win32_name, dwSize);
 }
 
+static bool IsLiteralPath(std::wstring_view path)
+{
+  using namespace std::literals;
+  // check if the path starts with //?/
+  return path.rfind(L"\\\\?\\"sv, 0) == 0;
+}
+
+static bool IsNormalizedPath(std::wstring_view path)
+{
+  using namespace std::literals;
+  // check if the path starts with //?/
+  return path.rfind(L"\\\\.\\"sv, 0) == 0;
+}
+
+static std::wstring AsLiteralFullPath(std::wstring_view p)
+{
+  using namespace std::literals;
+  constexpr std::wstring_view literal_prefix = L"\\\\?\\"sv;
+  DWORD chars_needed = GetFullPathNameW(p.data(), 0, NULL, NULL);
+  if (chars_needed == 0) {
+    Dmsg0(300, "Could not get full path length of path %s\n",
+	  std::string{std::begin(p), std::end(p)}.c_str());
+  }
+  std::wstring literal;
+  literal.reserve(literal_prefix.size() + chars_needed);
+  literal.append(literal_prefix);
+  DWORD chars_written = GetFullPathNameW(p.data(), chars_needed,
+					 &literal[literal_prefix.size()],
+					 NULL);
+
+  // chars_needed contains the terminating 0 but
+  // chars_written will not *if* the operation was successful.
+  if (chars_written != chars_needed - 1) {
+    Dmsg3(300, "Error while getting full path of %s; allocated %d chars but needed %d\n",
+	  std::string{std::begin(p), std::end(p)}.c_str(),
+	  chars_needed, chars_written);
+  }
+
+  return literal;
+}
+
+static std::wstring ConvertNormalized(std::wstring_view p)
+{
+  using namespace std::literals;
+  // the last slash is missing on purpose; it always gets added in the while
+  // loop (assuming p != '//./'; but this is not a real path anyways)
+  std::wstring converted = L"\\\\.";
+
+  // do not change the //./ at the start
+  p.remove_prefix(L"\\\\.\\"sv.size());
+  constexpr std::wstring_view path_separators = L"\\/";
+
+  while (p.size() > 0) {
+    std::size_t copy_until = std::min(p.find_first_of(path_separators), p.size());
+    converted.append(L"\\"sv);
+    converted.append(std::begin(p), std::begin(p) + copy_until);
+    std::size_t skip_until = std::min(p.find_first_not_of(path_separators, copy_until), p.size());
+    p.remove_prefix(skip_until);
+  }
+
+  return converted;
+}
+
 /**
  * This function expects an UCS-encoded standard wchar_t in pszUCSPath and
  * will complete the input path to an absolue path of the form \\?\c:\path\file
@@ -427,190 +490,28 @@ void unix_name_to_win32(POOLMEM*& win32_name, const char* name)
  *
  * Created 02/27/2006 Thorsten Engel
  */
-static inline POOLMEM* make_wchar_win32_path(POOLMEM* pszUCSPath)
+static inline std::wstring make_wchar_win32_path(std::wstring_view path)
 {
+  using namespace std::literals;
   Dmsg0(debuglevel, "Enter make_wchar_win32_path\n");
 
-  if (!p_GetCurrentDirectoryW) {
-    Dmsg0(debuglevel, "Leave make_wchar_win32_path no change \n");
-    return pszUCSPath;
-  }
-
-  wchar_t* name = (wchar_t*)pszUCSPath;
-
   // If it has already the desired form, exit without changes
-  if (wcslen(name) > 3 && wcsncmp(name, L"\\\\?\\", 4) == 0) {
+  if (IsLiteralPath(path)) {
     Dmsg0(debuglevel, "Leave make_wchar_win32_path no change \n");
-    return pszUCSPath;
+    return std::wstring{path};
   }
 
-  wchar_t* pwszBuf = (wchar_t*)GetPoolMemory(PM_FNAME);
-  wchar_t* pwszCurDirBuf = (wchar_t*)GetPoolMemory(PM_FNAME);
-  DWORD dwCurDirPathSize = 0;
+  std::wstring converted{};
 
-  // Get buffer with enough size (name+max 6. wchars+1 null terminator
-  DWORD dwBufCharsNeeded = (wcslen(name) + 7);
-  pwszBuf = (wchar_t*)CheckPoolMemorySize((POOLMEM*)pwszBuf,
-                                          dwBufCharsNeeded * sizeof(wchar_t));
-
-  /* Add \\?\ to support 32K long filepaths
-   * it is important to make absolute paths, so we add drive and
-   * current path if necessary */
-  BOOL bAddDrive = TRUE;
-  BOOL bAddCurrentPath = TRUE;
-  BOOL bAddPrefix = TRUE;
-
-  // Does path begin with drive? if yes, it is absolute
-  if (iswalpha(name[0]) && name[1] == ':' && IsPathSeparator(name[2])) {
-    bAddDrive = FALSE;
-    bAddCurrentPath = FALSE;
+  if (!IsNormalizedPath(path)) {
+    converted = AsLiteralFullPath(path);
+  } else {
+    converted = ConvertNormalized(path);
   }
 
-  // Is path absolute?
-  if (IsPathSeparator(name[0])) bAddCurrentPath = FALSE;
-
-  // Is path relative to itself?, if yes, skip ./
-  if (name[0] == '.' && IsPathSeparator(name[1])) { name += 2; }
-
-  // Is path of form '//./'?
-  if (IsPathSeparator(name[0]) && IsPathSeparator(name[1]) && name[2] == '.'
-      && IsPathSeparator(name[3])) {
-    bAddDrive = FALSE;
-    bAddCurrentPath = FALSE;
-    bAddPrefix = FALSE;
-  }
-
-  int nParseOffset = 0;
-
-  // Add 4 bytes header
-  if (bAddPrefix) {
-    nParseOffset = 4;
-    wcscpy(pwszBuf, L"\\\\?\\");
-  }
-
-  // Get current path if needed
-  if (bAddDrive || bAddCurrentPath) {
-    dwCurDirPathSize = p_GetCurrentDirectoryW(0, NULL);
-    if (dwCurDirPathSize > 0) {
-      /* Get directory into own buffer as it may either return c:\... or
-       * \\?\C:\.... */
-      pwszCurDirBuf = (wchar_t*)CheckPoolMemorySize(
-          (POOLMEM*)pwszCurDirBuf, (dwCurDirPathSize + 1) * sizeof(wchar_t));
-      p_GetCurrentDirectoryW(dwCurDirPathSize, pwszCurDirBuf);
-    } else {
-      // We have no info for doing so
-      bAddDrive = FALSE;
-      bAddCurrentPath = FALSE;
-    }
-  }
-
-  // Add drive if needed
-  if (bAddDrive && !bAddCurrentPath) {
-    wchar_t szDrive[3];
-
-    if (IsPathSeparator(pwszCurDirBuf[0]) && IsPathSeparator(pwszCurDirBuf[1])
-        && pwszCurDirBuf[2] == '?' && IsPathSeparator(pwszCurDirBuf[3])) {
-      // Copy drive character
-      szDrive[0] = pwszCurDirBuf[4];
-    } else {
-      // Copy drive character
-      szDrive[0] = pwszCurDirBuf[0];
-    }
-
-    szDrive[1] = ':';
-    szDrive[2] = 0;
-
-    wcscat(pwszBuf, szDrive);
-    nParseOffset += 2;
-  }
-
-  // Add path if needed
-  if (bAddCurrentPath) {
-    // The 1 additional character is for the eventually added backslash
-    dwBufCharsNeeded += dwCurDirPathSize + 1;
-    pwszBuf = (wchar_t*)CheckPoolMemorySize((POOLMEM*)pwszBuf,
-                                            dwBufCharsNeeded * sizeof(wchar_t));
-
-    /* Get directory into own buffer as it may either return c:\... or
-     * \\?\C:\.... */
-    if (IsPathSeparator(pwszCurDirBuf[0]) && IsPathSeparator(pwszCurDirBuf[1])
-        && pwszCurDirBuf[2] == '?' && IsPathSeparator(pwszCurDirBuf[3])) {
-      // Copy complete string
-      wcscpy(pwszBuf, pwszCurDirBuf);
-    } else {
-      // Append path
-      wcscat(pwszBuf, pwszCurDirBuf);
-    }
-
-    nParseOffset = wcslen((LPCWSTR)pwszBuf);
-
-    // Check if path ends with backslash, if not, add one
-    if (!IsPathSeparator(pwszBuf[nParseOffset - 1])) {
-      wcscat(pwszBuf, L"\\");
-      nParseOffset++;
-    }
-  }
-
-  wchar_t* win32_name = &pwszBuf[nParseOffset];
-  wchar_t* name_start = name;
-  wchar_t previous_char = 0;
-  wchar_t next_char = 0;
-
-  while (*name) {
-    /* Check for Unix separator and convert to Win32, eliminating duplicate
-     * separators. */
-    if (IsPathSeparator(*name)) {
-      // Don't add a trailing slash.
-      next_char = *(name + 1);
-      if (previous_char != ':' && next_char == '\0') {
-        name++;
-        continue;
-      }
-      previous_char = '\\';
-      *win32_name++ = '\\'; /* convert char */
-
-      /* Eliminate consecutive slashes, but not at the start so that \\.\ still
-       * works. */
-      if (name_start != name && IsPathSeparator(name[1])) { name++; }
-    } else {
-      previous_char = *name;
-      *win32_name++ = *name; /* copy character */
-    }
-    name++;
-  }
-
-  // NULL Terminate string
-  *win32_name = 0;
-
-  /* Here we convert to VSS specific file name which can get longer because VSS
-   * will make something like
-   * \\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy1\\bareos\\uninstall.exe
-   * from c:\bareos\uninstall.exe */
-  thread_vss_path_convert* tvpc = Win32GetPathConvert();
-  if (tvpc) {
-    // Is output buffer large enough?
-    pwszBuf = (wchar_t*)CheckPoolMemorySize(
-        (POOLMEM*)pwszBuf, (dwBufCharsNeeded + MAX_PATH) * sizeof(wchar_t));
-    // Create temp. buffer
-    wchar_t* pszBuf = (wchar_t*)GetPoolMemory(PM_FNAME);
-    pszBuf = (wchar_t*)CheckPoolMemorySize(
-        (POOLMEM*)pszBuf, (dwBufCharsNeeded + MAX_PATH) * sizeof(wchar_t));
-    if (bAddPrefix) {
-      nParseOffset = 4;
-    } else {
-      nParseOffset = 0;
-    }
-
-    wcsncpy(pszBuf, &pwszBuf[nParseOffset], wcslen(pwszBuf) + 1 - nParseOffset);
-    tvpc->pPathConvertW(pszBuf, pwszBuf, dwBufCharsNeeded + MAX_PATH);
-    FreePoolMemory((POOLMEM*)pszBuf);
-  }
-
-  FreePoolMemory(pszUCSPath);
-  FreePoolMemory((POOLMEM*)pwszCurDirBuf);
-
-  Dmsg1(debuglevel, "Leave make_wchar_win32_path=%s\n", pwszBuf);
-  return (POOLMEM*)pwszBuf;
+  Dmsg1(debuglevel, "Leave make_wchar_win32_path=%s\n", std::string{std::begin(converted),
+								    std::end(converted)}.c_str());
+  return converted;
 }
 
 // Convert from WCHAR (UCS) to UTF-8
