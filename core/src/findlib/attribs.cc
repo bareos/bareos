@@ -522,7 +522,7 @@ int encode_attribsEx(JobControlRecord* jcr,
   if (p_GetFileAttributesExW) {
     // Try unicode version
     POOLMEM* pwszBuf = GetPoolMemory(PM_FNAME);
-    make_win32_path_UTF8_2_wchar(pwszBuf, ff_pkt->sys_fname);
+    make_win32_path_UTF8_2_wchar(pwszBuf, ff_pkt->fname);
 
     BOOL b = p_GetFileAttributesExW((LPCWSTR)pwszBuf, GetFileExInfoStandard,
                                     (LPVOID)&atts);
