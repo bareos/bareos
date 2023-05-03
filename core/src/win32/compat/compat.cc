@@ -425,16 +425,11 @@ void unix_name_to_win32(POOLMEM*& win32_name, const char* name)
  *
  * With this trick, it is possible to have 32K characters long paths.
  *
- * Optionally one can use pBIsRawPath to determine id pszUCSPath contains a path
- * to a raw windows partition.
- *
  * Created 02/27/2006 Thorsten Engel
  */
-static inline POOLMEM* make_wchar_win32_path(POOLMEM* pszUCSPath,
-                                             BOOL* pBIsRawPath /*= NULL*/)
+static inline POOLMEM* make_wchar_win32_path(POOLMEM* pszUCSPath)
 {
   Dmsg0(debuglevel, "Enter make_wchar_win32_path\n");
-  if (pBIsRawPath) { *pBIsRawPath = FALSE; /* Initialize, set later */ }
 
   if (!p_GetCurrentDirectoryW) {
     Dmsg0(debuglevel, "Leave make_wchar_win32_path no change \n");
@@ -483,7 +478,6 @@ static inline POOLMEM* make_wchar_win32_path(POOLMEM* pszUCSPath,
     bAddDrive = FALSE;
     bAddCurrentPath = FALSE;
     bAddPrefix = FALSE;
-    if (pBIsRawPath) { *pBIsRawPath = TRUE; }
   }
 
   int nParseOffset = 0;
@@ -719,8 +713,7 @@ char* BSTR_2_str(const BSTR pSrc)
 }
 
 int make_win32_path_UTF8_2_wchar(POOLMEM*& pszUCS,
-                                 const char* pszUTF,
-                                 BOOL* pBIsRawPath /*= NULL*/)
+                                 const char* pszUTF)
 {
   int nRet;
   thread_conversion_cache* tcc;
@@ -750,9 +743,7 @@ int make_win32_path_UTF8_2_wchar(POOLMEM*& pszUCS,
 
 #ifdef USE_WIN32_32KPATHCONVERSION
   // Add \\?\ to support 32K long filepaths
-  pszUCS = make_wchar_win32_path(pszUCS, pBIsRawPath);
-#else
-  if (pBIsRawPath) { *pBIsRawPath = FALSE; }
+  pszUCS = make_wchar_win32_path(pszUCS);
 #endif
 
   // Populate cache
