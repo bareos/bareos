@@ -419,6 +419,66 @@ void unix_name_to_win32(POOLMEM*& win32_name, const char* name)
   conv_unix_to_vss_win32_path(name, win32_name, dwSize);
 }
 
+[[maybe_unused]] static std::wstring FromUtf8(std::string_view utf8)
+{
+  // TODO: find out if there is a difference between this
+  //       and std::wstring{std::begin(utf8), std::end(utf8)}
+  // if the buffer is to small the function returns the number of characters
+  // required
+  DWORD required = MultiByteToWideChar(CP_UTF8, 0, utf8.data(), utf8.size(), nullptr, 0);
+  if (required == 0) {
+    Dmsg1(300, "Can not convert %s to wide string.\n", utf8.data());
+    return {};
+  }
+  std::wstring utf16(required, '\0');
+
+  // if the buffer is big enough the function returns the number of
+  // characters written
+  DWORD written = MultiByteToWideChar(CP_UTF8, 0, utf8.data(), utf8.size(),
+				      utf16.data(), utf16.size());
+
+  if (written != required - 1) {
+    Dmsg1(300, "Error during conversion! Expected %d-1 chars but only got %d.\n",
+	  required, written);
+
+    return {};
+  }
+
+  utf16.resize(written);
+  return utf16;
+}
+
+[[maybe_unused]] static std::string FromUtf16(std::wstring_view utf16)
+{
+  // TODO: find out if there is a difference between this
+  //       and std::string{std::begin(utf16), std::end(utf16)}
+  // if the buffer is to small the function returns the number of bytes
+  // required
+  DWORD required = WideCharToMultiByte(CP_UTF8, 0, utf16.data(), utf16.size(),
+				       nullptr, 0, nullptr, nullptr);
+  if (required == 0) {
+    Dmsg0(300, "Encountered error in utf16 -> utf8 conversion.\n");
+    return {};
+  }
+  std::string utf8(required, '\0');
+
+  // if the buffer is big enough the function returns the number of
+  // bytes written
+  DWORD written = WideCharToMultiByte(CP_UTF8, 0, utf16.data(), utf16.size(),
+				      utf8.data(), utf8.size(),
+				      nullptr, nullptr);
+
+  if (written != required - 1) {
+    Dmsg1(300, "Error during conversion! Expected %d-1 chars but only got %d.\n",
+	  required, written);
+
+    return {};
+  }
+
+  utf8.resize(written);
+  return utf8;
+}
+
 static bool IsLiteralPath(std::wstring_view path)
 {
   using namespace std::literals;
