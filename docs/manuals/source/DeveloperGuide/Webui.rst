@@ -12,7 +12,7 @@ Translation
 Where do I find the translation?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The localization files are located in file:`webui/module/Application/language`.
+The localization files are located in :file:`webui/module/Application/language`.
 You can find the languages that are currently
 in translation in our online project, which is addressed in the next section.
 
