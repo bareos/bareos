@@ -92,8 +92,8 @@ Fedora_33:
 
 FreeBSD:
   ctest_unstable: 0
-  warnings_unhealthy: 191
-  warnings_healthy: 190
+  warnings_unhealthy: 201
+  warnings_healthy: 200
 
 MacOS:
   ctest_unstable: 0

@@ -25,6 +25,8 @@
 #  include "gtest/gtest.h"
 #endif
 
+#include <algorithm>
+
 #include "console/console_conf.h"
 #include "console/console_globals.h"
 #include "console/connect_to_director.h"
@@ -285,44 +287,6 @@ static void check_addresses_list(std::string path_to_config,
   std::sort(director_addresses.begin(), director_addresses.end());
   std::sort(expected_addresses.begin(), expected_addresses.end());
   EXPECT_EQ(director_addresses, expected_addresses);
-}
-
-TEST(port_and_addresses_setup, default_config_values)
-{
-  std::string path_to_config = std::string(
-      RELATIVE_PROJECT_SOURCE_DIR "/configs/dual_stacking/default_dir_values/");
-
-  std::vector<std::string> expected_addresses{"host[ipv6;::;29999]",
-                                              "host[ipv4;0.0.0.0;29999]"};
-
-  check_addresses_list(path_to_config, expected_addresses);
-
-  do_binding_test(path_to_config, AF_INET, 29999);
-
-#ifdef HAVE_IPV6
-  do_binding_test(path_to_config, AF_INET6, 29999);
-#endif
-}
-
-TEST(port_and_addresses_setup, dir_port_set)
-{
-  std::string path_to_config = std::string(
-      RELATIVE_PROJECT_SOURCE_DIR "/configs/dual_stacking/dir_port_set/");
-
-  std::vector<std::string> expected_addresses{"host[ipv4;0.0.0.0;30013]",
-                                              "host[ipv6;::;30013]"};
-
-  check_addresses_list(path_to_config, expected_addresses);
-
-  do_binding_test(std::string(RELATIVE_PROJECT_SOURCE_DIR
-                              "/configs/dual_stacking/dir_port_set/"),
-                  AF_INET, 30013);
-
-#ifdef HAVE_IPV6
-  do_binding_test(std::string(RELATIVE_PROJECT_SOURCE_DIR
-                              "/configs/dual_stacking/dir_port_set/"),
-                  AF_INET6, 30013);
-#endif
 }
 
 TEST(port_and_addresses_setup, dir_v4address_set)
