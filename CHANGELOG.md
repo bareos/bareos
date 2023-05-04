@@ -59,6 +59,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - build: switch to FreeBSD 12.4 [PR #1440]
 - webui: create internal api module [PR #1447]
 - webui: make restore merge options configurable [PR #1445]
+- webui: update German translation [PR #1437]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -143,6 +144,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1425]: https://github.com/bareos/bareos/pull/1425
 [PR #1426]: https://github.com/bareos/bareos/pull/1426
 [PR #1429]: https://github.com/bareos/bareos/pull/1429
+[PR #1437]: https://github.com/bareos/bareos/pull/1437
 [PR #1439]: https://github.com/bareos/bareos/pull/1439
 [PR #1440]: https://github.com/bareos/bareos/pull/1440
 [PR #1445]: https://github.com/bareos/bareos/pull/1445
