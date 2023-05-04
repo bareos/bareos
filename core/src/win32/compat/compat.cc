@@ -484,29 +484,41 @@ static bool IsNormalizedPath(std::wstring_view path)
   return path.rfind(L"\\\\.\\"sv, 0) == 0;
 }
 
+static void RemoveTrailingSlashes(std::wstring& str)
+{
+  // TODO think about this!
+  // we treat the case where str.size() <= 3 special here
+  // since we do not want to remove the slashes from paths like these: C:/
+  while (str.size() > 3 && IsPathSeparator(str.back())) {
+    str.pop_back();
+  }
+}
+
 static std::wstring AsLiteralFullPath(std::wstring_view p)
 {
   using namespace std::literals;
   constexpr std::wstring_view literal_prefix = L"\\\\?\\"sv;
-  DWORD chars_needed = GetFullPathNameW(p.data(), 0, NULL, NULL);
-  if (chars_needed == 0) {
+  DWORD required = GetFullPathNameW(p.data(), 0, NULL, NULL);
+  if (required == 0) {
     Dmsg0(300, "Could not get full path length of path %s\n",
-	  std::string{std::begin(p), std::end(p)}.c_str());
+	  FromUtf16(p).c_str());
   }
-  std::wstring literal;
-  literal.reserve(literal_prefix.size() + chars_needed);
-  literal.append(literal_prefix);
-  DWORD chars_written = GetFullPathNameW(p.data(), chars_needed,
-					 &literal[literal_prefix.size()],
-					 NULL);
+  std::wstring literal(literal_prefix);
+  literal.resize(literal_prefix.size() + required);
+  DWORD written = GetFullPathNameW(p.data(), required,
+				   &literal[literal_prefix.size()],
+				   NULL);
 
   // chars_needed contains the terminating 0 but
   // chars_written will not *if* the operation was successful.
-  if (chars_written != chars_needed - 1) {
+  if (written != required - 1) {
     Dmsg3(300, "Error while getting full path of %s; allocated %d chars but needed %d\n",
-	  std::string{std::begin(p), std::end(p)}.c_str(),
-	  chars_needed, chars_written);
+	  FromUtf16(p).c_str(),
+	  required, written);
   }
+
+  literal.resize(literal_prefix.size() + written);
+  RemoveTrailingSlashes(literal);
 
   return literal;
 }
@@ -529,6 +541,7 @@ static std::wstring ConvertNormalized(std::wstring_view p)
     std::size_t skip_until = std::min(p.find_first_not_of(path_separators, copy_until), p.size());
     p.remove_prefix(skip_until);
   }
+  RemoveTrailingSlashes(converted);
 
   return converted;
 }
