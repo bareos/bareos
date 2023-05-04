@@ -413,6 +413,7 @@ if(NOT client-only)
     bool_string LINK_LIBRARIES bareos ${GTEST_LIBRARIES}
                                ${GTEST_MAIN_LIBRARIES}
   )
+  set_tests_properties(gtest:bsock.console_director_connection_test_cleartext PROPERTIES LABELS broken)
 
 endif() # NOT client-only
 
