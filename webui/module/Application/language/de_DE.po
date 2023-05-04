@@ -113,7 +113,7 @@ msgstr "Entschuldigung, Sie dürfen dieses Modul nicht ausführen. Bitte kontakt
 
 #: ../module/Application/src/Application/View/Helper/ACLAlert.php:38
 msgid "Please read the <a href=\"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#sec:webui-console\" target=\"_blank\">Bareos documentation</a> for any additional information on how to configure the Command ACL directive of your Console/Profile resources. Following is a list of required commands which need to be in your Command ACL to run this module properly:"
-msgstr "Weitere Informationen zu den Command ACL Direktiven und zur Einrichtung Ihrer Console/Profile-Ressource enthält die <a href=\"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#sec:webui-console\" target=\"_blank\">Bareos-Dokumentation</a>. Hier ist eine Liste aller erforderlichen Befehle, die in der Command ACL stehen müssen, um das Modul auszuführen:"
+msgstr "Weitere Informationen zu den Command-ACL-Direktiven und zur Einrichtung Ihrer Console/Profile-Ressource enthält die <a href=\"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#sec:webui-console\" target=\"_blank\">Bareos-Dokumentation</a>. Hier ist eine Liste aller erforderlichen Befehle, die in der Command-ACL stehen müssen, um das Modul auszuführen:"
 
 #: ../module/Application/view/error/404.phtml:3
 msgid "A 404 error occurred"
@@ -558,7 +558,7 @@ msgstr "Fehlgeschlagen"
 
 #: ../module/Dashboard/view/partial/LastDirectorMessages.phtml:32
 msgid "Current Director messages"
-msgstr "Aktuelle Nachrichten des Directors"
+msgstr "Aktuelle Meldungen des Directors"
 
 #: ../module/Dashboard/view/partial/RunningJobs.phtml:31
 msgid "Running Jobs"
@@ -772,7 +772,7 @@ msgstr "Fehlermeldung vom Director:"
 #: ../module/Job/view/job/job/rerun.phtml:147
 #: ../module/Pool/view/pool/pool/details.phtml:174
 msgid "Failed to send result as json. Maybe the result message is too long?"
-msgstr "Senden der JSON-Datei fehlgeschlagen. Möglicherweise ist die Meldung zu lang?"
+msgstr "Senden der JSON-Daten fehlgeschlagen. Möglicherweise ist die Datenmenge zu groß?"
 
 #: ../module/Job/view/job/job/details.phtml:161
 #: ../module/Job/view/job/job/index.phtml:316
@@ -941,7 +941,7 @@ msgstr "Blöcke auf Medium"
 
 #: ../module/Media/view/media/media/details.phtml:380
 msgid "Volume use duration"
-msgstr "Nutzungszeitraum"
+msgstr "Nutzungsdauer"
 
 #: ../module/Media/view/media/media/details.phtml:384
 msgid "Volume Pool Id"
@@ -1009,11 +1009,11 @@ msgstr "Erster Schreibzugriff"
 
 #: ../module/Media/view/media/media/details.phtml:448
 msgid "Scratch Pool Id"
-msgstr "Pool-ID entfernen"
+msgstr "Scratch-Pool-ID"
 
 #: ../module/Media/view/media/media/details.phtml:452
 msgid "Recycle Pool Id"
-msgstr "Pool-ID recyceln"
+msgstr "Recycle-Pool-ID"
 
 #: ../module/Media/view/media/media/details.phtml:456
 msgid "Comment"
@@ -1039,7 +1039,7 @@ msgstr "Medienvorhaltezeit"
 #: ../module/Pool/view/pool/pool/index.phtml:91
 #: ../module/Pool/view/pool/pool/index.phtml:92
 msgid "Maximum volume jobs"
-msgstr "Maximale Aufträge pro Medium"
+msgstr "Maximale Jobs pro Medium"
 
 #: ../module/Pool/view/pool/pool/details.phtml:62
 #: ../module/Pool/view/pool/pool/index.phtml:97
@@ -1063,7 +1063,7 @@ msgstr "Client für Rücksicherung"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:159
 msgid "Restore to (another) client"
-msgstr "(Anderen) Client rücksichern"
+msgstr "Auf (anderen) Client rücksichern"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:179
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:193
@@ -1074,7 +1074,7 @@ msgstr "Bitte wählen Sie ein Fileset"
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:225
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:241
 msgid "Restore job"
-msgstr "Rücksicherungs-Job"
+msgstr "Rücksicherungsjob"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:262
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:281
@@ -1180,7 +1180,7 @@ msgstr "Fehlermeldung empfangen:"
 #: ../module/Restore/view/restore/restore/index.phtml:66
 #: ../module/Storage/view/storage/storage/details.phtml:51
 msgid "Director message"
-msgstr "Director-Nachrichten"
+msgstr "Director-Meldung"
 
 #: ../module/Restore/view/restore/restore/versions.phtml:199
 #: ../module/Restore/view/restore/restore/index.phtml:201
@@ -1521,7 +1521,7 @@ msgstr "Queued waiting for device"
 #: ../public/js/bootstrap-table-formatter.js:25
 #: ../public/js/bootstrap-table-formatter.js:513
 msgid "View Job Details"
-msgstr "Auftragsdetails"
+msgstr "Job-Details"
 
 #: ../module/Job/src/Job/Form/JobForm.php:101
 msgid "warning"
@@ -1685,7 +1685,7 @@ msgstr "Bitte wählen Sie einen Client"
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:226
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:242
 msgid "Please choose a restore job"
-msgstr "Bitte wählen Sie einen Rücksicherungsauftrag"
+msgstr "Bitte wählen Sie einen Rücksicherungsjob"
 
 #: ../module/Application/src/Application/View/Helper/ACLAlert.php:37
 msgid "<b>Access denied</b><br><br>Permission to execute the following commands is required:<br><br><kbd>"
@@ -1757,3 +1757,86 @@ msgstr "Dauer"
 msgid "Retention"
 msgstr "Vorhaltezeit"
 
+#: ../module/Director/view/director/director/subscription.phtml:60
+msgid "Backup Unit Report"
+msgstr "Backup-Einheiten-Report"
+
+#: ../module/Director/view/director/director/subscription.phtml:77
+msgid "Insufficient permission!"
+msgstr "Keine Berechtigung!"
+
+#: ../module/Director/view/director/director/subscription.phtml:79
+msgid "For a Backup Unit Report, access to all job, client and fileset resources is required."
+msgstr "Für einen Backup-Einheiten-Report ist die Berechtigung für alle Job-, Client- und Fileset-Ressourcen erforderlich."
+
+#: ../module/Analytics/view/analytics/analytics/index.phtml:26
+#: ../module/Application/config/module.config.php:192
+msgid "Analytics"
+msgstr "Statistiken"
+
+#: ../module/Analytics/view/analytics/analytics/index.phtml:34
+msgid "Stored Data"
+msgstr "Gespeicherte Daten"
+
+#: ../module/Analytics/view/analytics/analytics/index.phtml:44
+msgid "Overall"
+msgstr "Gesamt"
+
+#: ../module/Job/view/job/job/run.phtml:36
+#: ../module/Job/view/job/job/details.phtml:36
+#: ../module/Job/view/job/job/actions.phtml:36
+#: ../module/Job/view/job/job/timeline.phtml:36
+#: ../module/Job/view/job/job/timeline.phtml:95
+#: ../module/Job/view/job/job/index.phtml:36
+#: ../module/Job/view/job/job/rerun.phtml:36
+#: ../module/Client/view/client/client/details.phtml:33
+#: ../module/Client/view/client/client/status.phtml:33
+#: ../module/Client/view/client/client/timeline.phtml:33
+#: ../module/Client/view/client/client/timeline.phtml:92
+#: ../module/Client/view/client/client/index.phtml:33
+msgid "Timeline"
+msgstr "Zeitlicher Verlauf"
+
+#: ../module/Job/view/job/job/timeline.phtml:53
+#: ../module/Job/view/job/job/rerun.phtml:166
+msgid "Please select at least one job."
+msgstr "Bitte mindestens einen Job auswählen."
+
+#: ../module/Job/view/job/job/timeline.phtml:68
+#: ../module/Client/view/client/client/timeline.phtml:65
+msgid "Selection"
+msgstr "Auswahl"
+
+#: ../module/Job/view/job/job/rerun.phtml:50
+msgid "Rerun Jobs"
+msgstr "Jobs erneut ausführen"
+
+#: ../module/Job/view/job/job/rerun.phtml:126
+msgid "Director Messages"
+msgstr "Director-Meldungen"
+
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:409
+msgid "e.g. <plugin>:file=<filepath>:reader=<readprogram>:writer=<writeprogram>"
+msgstr "z.B. <plugin>:file=<filepath>:reader=<readprogram>:writer=<writeprogram>"
+
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:423
+msgid "Plugin options"
+msgstr "Plugin-Optionen"
+
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:460
+msgid "Plugin Options"
+msgstr "Plugin-Optionen"
+
+#: ../module/Restore/view/restore/restore/versions.phtml:131
+#: ../module/Restore/view/restore/restore/index.phtml:130
+msgid "Notification"
+msgstr "Benachrichtigung"
+
+#: ../module/Restore/view/restore/restore/versions.phtml:134
+#: ../module/Restore/view/restore/restore/index.phtml:133
+msgid "Restoring NDMP backups is currently not supported by Bareos WebUI. Please use the bconsole instead."
+msgstr "Die Wiederherstellung von NDMP-Backups wird aktuell von der Bareos-WebUI nicht unterstützt. Bitte verwenden Sie bconsole."
+
+#: ../module/Client/view/client/client/timeline.phtml:50
+msgid "Please select at least one client."
+msgstr "Bitte mindestens einen Client auswählen."
