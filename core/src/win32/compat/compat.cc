@@ -494,19 +494,17 @@ static void RemoveTrailingSlashes(std::wstring& str)
   }
 }
 
-static std::wstring AsLiteralFullPath(std::wstring_view p)
+static std::wstring AsFullPath(std::wstring_view p)
 {
   using namespace std::literals;
-  constexpr std::wstring_view literal_prefix = L"\\\\?\\"sv;
   DWORD required = GetFullPathNameW(p.data(), 0, NULL, NULL);
   if (required == 0) {
     Dmsg0(300, "Could not get full path length of path %s\n",
 	  FromUtf16(p).c_str());
   }
-  std::wstring literal(literal_prefix);
-  literal.resize(literal_prefix.size() + required);
+  std::wstring literal(required, L'\0');
   DWORD written = GetFullPathNameW(p.data(), required,
-				   &literal[literal_prefix.size()],
+				   literal.data(),
 				   NULL);
 
   // chars_needed contains the terminating 0 but
@@ -517,7 +515,7 @@ static std::wstring AsLiteralFullPath(std::wstring_view p)
 	  required, written);
   }
 
-  literal.resize(literal_prefix.size() + written);
+  literal.resize(written);
   RemoveTrailingSlashes(literal);
 
   return literal;
@@ -547,10 +545,12 @@ static std::wstring ConvertNormalized(std::wstring_view p)
 }
 
 /**
- * This function converts relative paths to absolute paths and prepend \\?\ if
+ * This function converts relative paths to absolute paths and prepends \\?\ if
  * needed.  It also replaces all '/' with '\' and removes duplicates of them.
  *
  * With this trick, it is possible to have 32K characters long paths.
+ *
+ * If availalbe it also converts the path to a vss path.
  *
  * Created 02/27/2006 Thorsten Engel
  * Updated 05/03/2023 Sebastian Sura
@@ -569,21 +569,25 @@ static inline std::wstring make_wchar_win32_path(std::wstring_view path)
   std::wstring converted{};
 
   if (!IsNormalizedPath(path)) {
-    converted = AsLiteralFullPath(path);
+    converted = AsFullPath(path);
+    auto tvpc = Win32GetPathConvert();
+    if (tvpc) {
+      if (wchar_t* shadow_path = tvpc->pPathConvertW(converted.c_str());
+	  shadow_path != nullptr) {
+	// we sadly need to copy here
+	// TODO: refactor path convert so that this is not necessary anymore
+	converted = std::wstring(shadow_path);
+	free(shadow_path);
+      } else {
+	converted.insert(0, L"\\\\?\\"sv);
+      }
+    } else {
+      converted.insert(0, L"\\\\?\\"sv);
+    }
   } else {
     converted = ConvertNormalized(path);
   }
 
-  auto tvpc = Win32GetPathConvert();
-  if (tvpc) {
-    if (wchar_t* shadow_path = tvpc->pPathConvertW(converted.c_str());
-	shadow_path != nullptr) {
-      // we sadly need to copy here
-      // TODO: refactor path convert so that this is not necessary anymore
-      converted = std::wstring(shadow_path);
-      free(shadow_path);
-    }
-  }
 
   Dmsg1(debuglevel, "Leave make_wchar_win32_path=%s\n", FromUtf16(converted).c_str());
   return converted;
