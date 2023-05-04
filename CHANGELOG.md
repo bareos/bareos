@@ -86,6 +86,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - doc: improve plugin, webui, virtualfull chapters [PR #1401]
 - docs: move and update localization documentation [PR #1415]
 - check-sources: update check-sources ignores [PR #1439]
+- docs: replace GZIP compression by LZ4 and MD5/SHA1 signature by XXH128 [PR #1453]
 
 [PR #935]: https://github.com/bareos/bareos/pull/935
 [PR #1011]: https://github.com/bareos/bareos/pull/1011
@@ -146,4 +147,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1440]: https://github.com/bareos/bareos/pull/1440
 [PR #1445]: https://github.com/bareos/bareos/pull/1445
 [PR #1447]: https://github.com/bareos/bareos/pull/1447
+[PR #1453]: https://github.com/bareos/bareos/pull/1453
 [unreleased]: https://github.com/bareos/bareos/tree/master
