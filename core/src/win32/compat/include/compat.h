@@ -228,9 +228,7 @@ const char* errorString(void);
 typedef bool (*t_pVSSPathConvert)(const char* szFilePath,
                                   char* szShadowPath,
                                   int nBuflen);
-typedef bool (*t_pVSSPathConvertW)(const wchar_t* szFilePath,
-                                   wchar_t* szShadowPath,
-                                   int nBuflen);
+typedef wchar_t* (*t_pVSSPathConvertW)(const wchar_t* szFilePath);
 bool SetVSSPathConvert(t_pVSSPathConvert pPathConvert,
                        t_pVSSPathConvertW pPathConvertW);
 

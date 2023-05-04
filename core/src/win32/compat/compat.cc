@@ -561,8 +561,18 @@ static inline std::wstring make_wchar_win32_path(std::wstring_view path)
     converted = ConvertNormalized(path);
   }
 
-  Dmsg1(debuglevel, "Leave make_wchar_win32_path=%s\n", std::string{std::begin(converted),
-								    std::end(converted)}.c_str());
+  auto tvpc = Win32GetPathConvert();
+  if (tvpc) {
+    if (wchar_t* shadow_path = tvpc->pPathConvertW(converted.c_str());
+	shadow_path != nullptr) {
+      // we sadly need to copy here
+      // TODO: refactor path convert so that this is not necessary anymore
+      converted = std::wstring(shadow_path);
+      free(shadow_path);
+    }
+  }
+
+  Dmsg1(debuglevel, "Leave make_wchar_win32_path=%s\n", FromUtf16(converted).c_str());
   return converted;
 }
 

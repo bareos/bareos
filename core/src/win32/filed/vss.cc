@@ -62,18 +62,15 @@ static bool VSSPathConvert(const char* szFilePath,
   return false;
 }
 
-static bool VSSPathConvertW(const wchar_t* szFilePath,
-                            wchar_t* szShadowPath,
-                            int nBuflen)
+static wchar_t* VSSPathConvertW(const wchar_t* szFilePath)
 {
   JobControlRecord* jcr = GetJcrFromThreadSpecificData();
 
   if (jcr && jcr->fd_impl->pVSSClient) {
-    return jcr->fd_impl->pVSSClient->GetShadowPathW(szFilePath, szShadowPath,
-                                                    nBuflen);
+    return jcr->fd_impl->pVSSClient->GetShadowPathW(szFilePath);
   }
 
-  return false;
+  return nullptr;
 }
 
 void VSSInit(JobControlRecord* jcr)
@@ -208,23 +205,30 @@ bool VSSClient::GetShadowPath(const char* szFilePath,
   return false;
 }
 
-bool VSSClient::GetShadowPathW(const wchar_t* szFilePath,
-                               wchar_t* szShadowPath,
-                               int nBuflen)
+wchar_t* VSSClient::GetShadowPathW(const wchar_t* szFilePath)
 {
-  if (!bBackupIsInitialized_) return false;
+  using namespace std::literals;
+  if (!bBackupIsInitialized_) return nullptr;
 
   auto [volume, path] = FindMountPoint(szFilePath, this->mount_to_vol_w);
 
   if (auto found = vol_to_vss_w.find(volume);
       found != vol_to_vss_w.end()) {
-    wcsncpy(szShadowPath, found->second.c_str(), nBuflen);
-    auto len = wcslen(szShadowPath);
-    szShadowPath[len] = L'\\';
-    szShadowPath[len+1] = L'\0';
-    nBuflen -= len + 1;
-    wcsncat(szShadowPath, path.c_str(), nBuflen);
-    return true;
+    // we need two extra chars; one for the null terminator and one for
+    // the backslash between the parts
+    constexpr std::wstring_view sep = L"\\"sv;
+    auto len = found->second.size() + sep.size() + path.size() + 1;
+    wchar_t* shadow_path = (wchar_t*)malloc(len * sizeof(*shadow_path));
+    shadow_path[len - 1] = '\0';
+    auto head = std::copy(std::begin(found->second), std::end(found->second),
+			  shadow_path);
+
+    head = std::copy(std::begin(sep), std::end(sep), head);
+
+    head = std::copy(std::begin(path), std::end(path), head);
+
+    ASSERT(head == shadow_path + len - 1);
+    return shadow_path;
   } else {
     // TODO: how to do dmsg with wstrs ?
     Dmsg4(50, "Could not find shadow volume.\n"
@@ -233,9 +237,7 @@ bool VSSClient::GetShadowPathW(const wchar_t* szFilePath,
   }
 
  bail_out:
-  wcsncpy(szShadowPath, szFilePath, nBuflen);
-  errno = EINVAL;
-  return false;
+  return nullptr;
 }
 
 size_t VSSClient::GetWriterCount() const { return writer_info_.size(); }
