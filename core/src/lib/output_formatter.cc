@@ -970,55 +970,35 @@ bool OutputFormatter::JsonSendErrorMessage(const char* message)
   return send_func(send_ctx, "%s", json_error_message.c_str());
 }
 
-void OutputFormatter::JsonFinalizeResult(bool result)
+void OutputFormatter::JsonFinalizeResult([[maybe_unused]] bool result)
 {
   json_t* msg_obj = json_object();
-  json_t* error_obj = NULL;
-  json_t* data_obj = NULL;
   json_t* meta_obj = NULL;
   json_t* range_obj = NULL;
   PoolMem ErrorMsg;
   char* string;
 
-  /*
-   * We mimic json-rpc result and error messages,
-   * To make it easier to implement real json-rpc later on.
-   */
-  json_object_set_new(msg_obj, "jsonrpc", json_string("2.0"));
-  json_object_set_new(msg_obj, "id", json_null());
+  json_object_update(msg_obj, result_json);
+  if (HasFilters()) {
+    meta_obj = json_object();
+    json_object_set_new(result_json, "meta", meta_obj);
 
-  if (!result || JsonHasErrorMessage()) {
-    error_obj = json_object();
-    json_object_set_new(error_obj, "code", json_integer(1));
-    json_object_set_new(error_obj, "message", json_string("failed"));
-    data_obj = json_object();
-    json_object_set(data_obj, "result", result_json);
-    json_object_set(data_obj, "messages", message_object_json);
-    json_object_set_new(error_obj, "data", data_obj);
-    json_object_set_new(msg_obj, "error", error_obj);
-  } else {
-    json_object_set(msg_obj, "result", result_json);
-    if (HasFilters()) {
-      meta_obj = json_object();
-      json_object_set_new(result_json, "meta", meta_obj);
+    range_obj = json_object();
 
-      range_obj = json_object();
-
-      of_filter_tuple* tuple = nullptr;
-      foreach_alist (tuple, filters) {
-        if (tuple->type == OF_FILTER_LIMIT) {
-          json_object_set_new(range_obj, "limit",
-                              json_integer(tuple->u.limit_filter.limit));
-        }
-        if (tuple->type == OF_FILTER_OFFSET) {
-          json_object_set_new(range_obj, "offset",
-                              json_integer(tuple->u.offset_filter.offset));
-        }
+    of_filter_tuple* tuple = nullptr;
+    foreach_alist (tuple, filters) {
+      if (tuple->type == OF_FILTER_LIMIT) {
+        json_object_set_new(range_obj, "limit",
+                            json_integer(tuple->u.limit_filter.limit));
       }
-      json_object_set_new(range_obj, "filtered",
-                          json_integer(get_num_rows_filtered()));
-      json_object_set_new(meta_obj, "range", range_obj);
+      if (tuple->type == OF_FILTER_OFFSET) {
+        json_object_set_new(range_obj, "offset",
+                            json_integer(tuple->u.offset_filter.offset));
+      }
     }
+    json_object_set_new(range_obj, "filtered",
+                        json_integer(get_num_rows_filtered()));
+    json_object_set_new(meta_obj, "range", range_obj);
   }
 
   if (compact) {
