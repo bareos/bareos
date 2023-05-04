@@ -428,7 +428,7 @@ std::wstring FromUtf8(std::string_view utf8)
   DWORD written = MultiByteToWideChar(CP_UTF8, 0, utf8.data(), utf8.size(),
 				      utf16.data(), utf16.size());
 
-  if (written != required - 1) {
+  if (written != required) {
     Dmsg1(300, "Error during conversion! Expected %d-1 chars but only got %d.\n",
 	  required, written);
 
@@ -459,7 +459,7 @@ std::string FromUtf16(std::wstring_view utf16)
 				      utf8.data(), utf8.size(),
 				      nullptr, nullptr);
 
-  if (written != required - 1) {
+  if (written != required) {
     Dmsg1(300, "Error during conversion! Expected %d-1 chars but only got %d.\n",
 	  required, written);
 
