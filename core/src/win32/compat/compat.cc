@@ -287,8 +287,6 @@ const char* errorString(void);
 // To allow the usage of the original version in this file here
 #undef fputs
 
-#define USE_WIN32_32KPATHCONVERSION 1
-
 extern DWORD g_platform_id;
 extern DWORD g_MinorVersion;
 
@@ -682,13 +680,14 @@ std::wstring make_win32_path_UTF8_2_wchar(std::string_view utf8)
    * syntax */
   std::wstring utf16 = FromUtf8(utf8);
 
-#ifdef USE_WIN32_32KPATHCONVERSION
   {
     // Add \\?\ to support 32K long filepaths
     std::wstring converted = make_wchar_win32_path(utf16);
+    // this is done for debugability;
+    // the compiler should optimize it as if it were
+    // utf16 = make_wchar_[...]
     std::swap(converted, utf16);
   }
-#endif
 
   // Populate cache
   if (tcc) {
