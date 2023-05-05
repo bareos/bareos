@@ -137,9 +137,8 @@ struct thread_vss_path_convert {
  */
 static pthread_mutex_t tsd_mutex = PTHREAD_MUTEX_INITIALIZER;
 static bool pc_tsd_initialized = false;
-static bool cc_tsd_initialized = false;
+
 static pthread_key_t path_conversion_key;
-static pthread_key_t conversion_cache_key;
 
 static void VSSPathConvertCleanup(void* arg)
 {
@@ -228,69 +227,48 @@ static void Win32ConvCleanupCache(void* arg)
   delete tcc;
 }
 
-static thread_conversion_cache* Win32ConvInitCache()
-{
+static class PathConversionCache {
+public:
+  PathConversionCache() {
+    status = pthread_key_create(&key, Win32ConvCleanupCache);
+  }
+  ~PathConversionCache() {
+    if (status != 0) return; // could not init thread specific data
+    pthread_key_delete(key);
+  }
+
+  thread_conversion_cache* GetThreadLocal() {
+    if (status != 0) return nullptr; // could not init thread specific data
+    auto tcc = static_cast<thread_conversion_cache*>(pthread_getspecific(key));
+    if (!tcc) { return CreateThreadLocal(); }
+    else      { return tcc; }
+  }
+
+  void ResetThreadLocal() {
+    if (status != 0) return; // could not init thread specific data
+    auto tcc = static_cast<thread_conversion_cache*>(pthread_getspecific(key));
+    if (tcc) { tcc->utf8.clear(); tcc->utf16.clear(); }
+  }
+private:
+
+  thread_conversion_cache* CreateThreadLocal() {
+      auto tcc = std::make_unique<thread_conversion_cache>();
+      if (pthread_setspecific(key, tcc.get()) == 0) {
+	Dmsg1(debuglevel,
+	      "Win32ConvInitCache: Setup of thread specific cache at address %p\n",
+	      tcc.get());
+	return tcc.release();
+      } else {
+	return nullptr;
+      }
+  }
+  pthread_key_t key;
   int status;
-  thread_conversion_cache* tcc = nullptr;
-
-  lock_mutex(tsd_mutex);
-  if (!cc_tsd_initialized) {
-    status = pthread_key_create(&conversion_cache_key, Win32ConvCleanupCache);
-    if (status != 0) {
-      unlock_mutex(tsd_mutex);
-      goto bail_out;
-    }
-    cc_tsd_initialized = true;
-  }
-  unlock_mutex(tsd_mutex);
-
-  // Create a new cache.
-  tcc = new thread_conversion_cache{};
-
-  status = pthread_setspecific(conversion_cache_key, (void*)tcc);
-  if (status != 0) { goto bail_out; }
-
-  Dmsg1(debuglevel,
-        "Win32ConvInitCache: Setup of thread specific cache at address %p\n",
-        tcc);
-
-  return tcc;
-
-bail_out:
-  if (tcc) {
-    delete tcc;
-  }
-
-  return NULL;
-}
+} path_conversion_cache;
 
 void Win32ResetConversionCache()
 {
-  thread_conversion_cache* tcc = NULL;
-
-  lock_mutex(tsd_mutex);
-  if (cc_tsd_initialized) {
-    tcc = (thread_conversion_cache*)pthread_getspecific(conversion_cache_key);
-  }
-  unlock_mutex(tsd_mutex);
-
-  if (tcc) {
-    tcc->utf8.clear();
-    tcc->utf16.clear();
-  }
-}
-
-thread_conversion_cache* Win32GetCache()
-{
-  thread_conversion_cache* tcc = NULL;
-
-  lock_mutex(tsd_mutex);
-  if (cc_tsd_initialized) {
-    tcc = (thread_conversion_cache*)pthread_getspecific(conversion_cache_key);
-  }
-  unlock_mutex(tsd_mutex);
-
-  return tcc;
+  path_conversion_cache.ResetThreadLocal();
 }
 
 void Win32TSDCleanup()
@@ -299,11 +277,6 @@ void Win32TSDCleanup()
   if (pc_tsd_initialized) {
     pthread_key_delete(path_conversion_key);
     pc_tsd_initialized = false;
-  }
-
-  if (cc_tsd_initialized) {
-    pthread_key_delete(conversion_cache_key);
-    cc_tsd_initialized = false;
   }
   unlock_mutex(tsd_mutex);
 }
@@ -699,10 +672,9 @@ std::wstring make_win32_path_UTF8_2_wchar(std::string_view utf8)
   /* If we find the utf8 string in cache, we use the cached ucs2 version.
    * we compare the stringlength first (quick check) and then compare the
    * content. */
-  tcc = Win32GetCache();
-  if (!tcc) {
-    tcc = Win32ConvInitCache();
-  } else if (tcc->utf8 == utf8) {
+  tcc = path_conversion_cache.GetThreadLocal();
+  if (tcc && tcc->utf8 == utf8) {
+    // this creates a copy!
     return tcc->utf16;
   }
 
