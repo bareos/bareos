@@ -223,6 +223,4 @@ void InitWinAPIWrapper()
     hLib = LoadLibraryA("SHFOLDER.DLL");
     if (hLib) { SET_API_POINTER_EX(SHGetFolderPath, SHGetFolderPathA); }
   }
-
-  atexit(Win32TSDCleanup);
 }

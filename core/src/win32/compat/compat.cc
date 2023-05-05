@@ -42,6 +42,8 @@
 #include "lib/bpipe.h"
 #include "vss.h"
 
+#include <shared_mutex>
+
 /**
  * Sanity check to make sure FILE_ATTRIBUTE_VALID_FLAGS is always smaller
  * than our define of FILE_ATTRIBUTE_VOLUME_MOUNT_POINT.
@@ -125,93 +127,43 @@ struct thread_conversion_cache {
   std::wstring utf16{};
 };
 
-struct thread_vss_path_convert {
-  t_pVSSPathConvert pPathConvert;
-  t_pVSSPathConvertW pPathConvertW;
-};
-
-/**
- * We use thread specific data using pthread_set_specific and
- * pthread_get_specific to have unique and separate data for each thread instead
- * of global variables.
- */
-static pthread_mutex_t tsd_mutex = PTHREAD_MUTEX_INITIALIZER;
-static bool pc_tsd_initialized = false;
-
-static pthread_key_t path_conversion_key;
-
-static void VSSPathConvertCleanup(void* arg)
-{
-  thread_vss_path_convert* tvpc = (thread_vss_path_convert*)arg;
-
-  Dmsg1(debuglevel,
-        "VSSPathConvertCleanup: Cleanup thread specific conversion pointers at "
-        "address %p\n",
-        tvpc);
-
-  free(tvpc);
-}
-
-static std::optional<thread_vss_path_convert> global_convert{std::nullopt};
-bool SetVSSPathConvert(t_pVSSPathConvert pPathConvert,
-                       t_pVSSPathConvertW pPathConvertW)
-{
-  int status;
-  thread_vss_path_convert* tvpc = NULL;
-
-  lock_mutex(tsd_mutex);
-  if (!pc_tsd_initialized) {
-    if (!global_convert.has_value()) {
-      global_convert = thread_vss_path_convert { pPathConvert, pPathConvertW };
-    }
-    status = pthread_key_create(&path_conversion_key, VSSPathConvertCleanup);
-    if (status != 0) {
-      unlock_mutex(tsd_mutex);
-      goto bail_out;
-    }
-    pc_tsd_initialized = true;
-  }
-  unlock_mutex(tsd_mutex);
-
-  tvpc = (thread_vss_path_convert*)pthread_getspecific(path_conversion_key);
-  if (!tvpc) {
-    tvpc = (thread_vss_path_convert*)malloc(sizeof(thread_vss_path_convert));
-    status = pthread_setspecific(path_conversion_key, (void*)tvpc);
-    if (status != 0) { goto bail_out; }
+static class VssPathConverter {
+public:
+  void SetConversions(t_pVSSPathConvert Convert, t_pVSSPathConvertW ConvertW) {
+    std::unique_lock write_lock(rw_mut); // unique write lock
+    convert_fn = Convert;
+    convert_w_fn = ConvertW;
   }
 
-  Dmsg1(debuglevel,
-        "SetVSSPathConvert: Setup thread specific conversion pointers at "
-        "address %p\n",
-        tvpc);
+  wchar_t* Convert(std::wstring_view str) {
+    std::shared_lock read_lock(rw_mut); // shared read lock
+    if (convert_w_fn) {
+      return convert_w_fn(str.data());
+    } else {
+      return nullptr;
+    }
+  }
 
-  tvpc->pPathConvert = pPathConvert;
-  tvpc->pPathConvertW = pPathConvertW;
+  char* Convert(std::string_view str [[maybe_unused]]) {
+    std::shared_lock read_lock(rw_mut); // shared read lock
+    if (convert_fn) {
+      return nullptr;
+    } else {
+      return nullptr;
+    }
+  }
 
+private:
+  // used for a read-write-lock
+  std::shared_mutex rw_mut{};
+
+  t_pVSSPathConvert convert_fn{nullptr};
+  t_pVSSPathConvertW convert_w_fn{nullptr};
+} vss_path_converter;
+
+bool SetVSSPathConvert(t_pVSSPathConvert Convert, t_pVSSPathConvertW ConvertW) {
+  vss_path_converter.SetConversions(Convert, ConvertW);
   return true;
-
-bail_out:
-  if (tvpc) { free(tvpc); }
-
-  return false;
-}
-
-static thread_vss_path_convert* Win32GetPathConvert()
-{
-  thread_vss_path_convert* tvpc = NULL;
-
-  lock_mutex(tsd_mutex);
-  if (pc_tsd_initialized) {
-    tvpc = (thread_vss_path_convert*)pthread_getspecific(path_conversion_key);
-    if (!tvpc) {
-      if (global_convert.has_value()) {
-	tvpc = &global_convert.value();
-      }
-    }
-  }
-  unlock_mutex(tsd_mutex);
-
-  return tvpc;
 }
 
 // UTF-8 to UCS2 path conversion caching.
@@ -271,16 +223,6 @@ void Win32ResetConversionCache()
   path_conversion_cache.ResetThreadLocal();
 }
 
-void Win32TSDCleanup()
-{
-  lock_mutex(tsd_mutex);
-  if (pc_tsd_initialized) {
-    pthread_key_delete(path_conversion_key);
-    pc_tsd_initialized = false;
-  }
-  unlock_mutex(tsd_mutex);
-}
-
 // Forward referenced functions
 const char* errorString(void);
 
@@ -302,15 +244,13 @@ extern DWORD g_MinorVersion;
  */
 static inline void conv_unix_to_vss_win32_path(const char* name,
                                                char* win32_name,
-                                               DWORD dwSize)
+                                               DWORD dwSize [[maybe_unused]])
 {
   const char* fname = name;
   char* tname = win32_name;
-  thread_vss_path_convert* tvpc;
 
   Dmsg0(debuglevel, "Enter convert_unix_to_win32_path\n");
 
-  tvpc = Win32GetPathConvert();
   if (IsPathSeparator(name[0]) && IsPathSeparator(name[1]) && name[2] == '.'
       && IsPathSeparator(name[3])) {
     *win32_name++ = '\\';
@@ -319,7 +259,7 @@ static inline void conv_unix_to_vss_win32_path(const char* name,
     *win32_name++ = '\\';
 
     name += 4;
-  } else if (g_platform_id != VER_PLATFORM_WIN32_WINDOWS && !tvpc) {
+  } else if (g_platform_id != VER_PLATFORM_WIN32_WINDOWS) {
     // Allow path to be 32767 bytes
     *win32_name++ = '\\';
     *win32_name++ = '\\';
@@ -350,20 +290,6 @@ static inline void conv_unix_to_vss_win32_path(const char* name,
     win32_name[-1] = 0;
   } else {
     *win32_name = 0;
-  }
-
-  /* Here we convert to VSS specific file name which
-   * can get longer because VSS will make something like
-   * \\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy1\\bareos\\uninstall.exe
-   * from c:\bareos\uninstall.exe */
-  Dmsg1(debuglevel, "path=%s\n", tname);
-  if (tvpc) {
-    POOLMEM* pszBuf = GetPoolMemory(PM_FNAME);
-
-    pszBuf = CheckPoolMemorySize(pszBuf, dwSize);
-    bstrncpy(pszBuf, tname, strlen(tname) + 1);
-    tvpc->pPathConvert(pszBuf, tname, dwSize);
-    FreePoolMemory(pszBuf);
   }
 
   Dmsg1(debuglevel, "Leave cvt_u_to_win32_path path=%s\n", tname);
@@ -541,17 +467,11 @@ static inline std::wstring make_wchar_win32_path(std::wstring_view path)
 
   if (!IsNormalizedPath(path)) {
     converted = AsFullPath(path);
-    auto tvpc = Win32GetPathConvert();
-    if (tvpc) {
-      if (wchar_t* shadow_path = tvpc->pPathConvertW(converted.c_str());
-	  shadow_path != nullptr) {
+    if (auto shadow_path = vss_path_converter.Convert(converted);
+	shadow_path != nullptr) {
 	// we sadly need to copy here
-	// TODO: refactor path convert so that this is not necessary anymore
-	converted = std::wstring(shadow_path);
+	converted.assign(shadow_path);
 	free(shadow_path);
-      } else {
-	converted.insert(0, L"\\\\?\\"sv);
-      }
     } else {
       converted.insert(0, L"\\\\?\\"sv);
     }
