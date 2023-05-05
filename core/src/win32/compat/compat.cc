@@ -127,6 +127,12 @@ struct thread_conversion_cache {
   std::wstring utf16{};
 };
 
+struct free_deleter {
+  void operator()(void* mem) {
+    free(mem);
+  }
+};
+
 static class VssPathConverter {
 public:
   void SetConversions(t_pVSSPathConvert Convert, t_pVSSPathConvertW ConvertW) {
@@ -135,19 +141,22 @@ public:
     convert_w_fn = ConvertW;
   }
 
-  wchar_t* Convert(std::wstring_view str) {
+  template <typename T>
+  using c_ptr = std::unique_ptr<T, free_deleter>;
+
+  c_ptr<wchar_t> Convert(std::wstring_view str) {
     std::shared_lock read_lock(rw_mut); // shared read lock
     if (convert_w_fn) {
-      return convert_w_fn(str.data());
+      return c_ptr<wchar_t>(convert_w_fn(str.data()));
     } else {
       return nullptr;
     }
   }
 
-  char* Convert(std::string_view str) {
+  c_ptr<char> Convert(std::string_view str) {
     std::shared_lock read_lock(rw_mut); // shared read lock
     if (convert_fn) {
-      return convert_fn(str.data());
+      return c_ptr<char>(convert_fn(str.data()));
     } else {
       return nullptr;
     }
@@ -296,10 +305,9 @@ static inline void conv_unix_to_vss_win32_path(const char* name,
     *win32_name = 0;
   }
   Dmsg1(debuglevel, "path = %s\n", tname);
-  if (char* shadow_path = vss_path_converter.Convert(tname + offset);
-      shadow_path != nullptr) {
-    bstrncpy(tname, shadow_path, dwSize);
-    free(shadow_path);
+  if (auto shadow_path = vss_path_converter.Convert(tname + offset);
+      shadow_path) {
+    bstrncpy(tname, shadow_path.get(), dwSize);
   }
 
   Dmsg1(debuglevel, "Leave cvt_u_to_win32_path path=%s\n", tname);
@@ -478,10 +486,9 @@ static inline std::wstring make_wchar_win32_path(std::wstring_view path)
   if (!IsNormalizedPath(path)) {
     converted = AsFullPath(path);
     if (auto shadow_path = vss_path_converter.Convert(converted);
-	shadow_path != nullptr) {
+	shadow_path) {
 	// we sadly need to copy here
-	converted.assign(shadow_path);
-	free(shadow_path);
+      converted.assign(shadow_path.get());
     } else {
       converted.insert(0, L"\\\\?\\"sv);
     }
