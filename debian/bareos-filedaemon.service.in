@@ -6,8 +6,8 @@
 Description=Bareos File Daemon service
 Documentation=man:bareos-fd(8)
 Requires=network.target nss-lookup.target time-sync.target
-# Check if working dir exist and is a directory
-ConditionPathIsDirectory=@working_dir@
+# Check if working dir exist
+ConditionPathExists=@working_dir@
 # Limit the number of restart per day to 10
 # wait 3 minutes between each restart
 RestartSec=180
