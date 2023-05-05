@@ -369,7 +369,7 @@ endif() # NOT HAVE_WIN32 AND NOT client-only
 
 if (HAVE_WIN32)
   bareos_add_test(
-    test_conversion
+    test_unicode_conversion
     LINK_LIBRARIES
     bareos
     GTest::gtest_main)
