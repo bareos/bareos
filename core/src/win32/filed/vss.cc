@@ -48,18 +48,15 @@ static const GUID VSS_SWPRV_ProviderID
        0x4925,
        {0xaf, 0x80, 0x51, 0xab, 0xd6, 0x0b, 0x20, 0xd5}};
 
-static bool VSSPathConvert(const char* szFilePath,
-                           char* szShadowPath,
-                           int nBuflen)
+static char* VSSPathConvert(const char* szFilePath)
 {
   JobControlRecord* jcr = GetJcrFromThreadSpecificData();
 
   if (jcr && jcr->fd_impl->pVSSClient) {
-    return jcr->fd_impl->pVSSClient->GetShadowPath(szFilePath, szShadowPath,
-                                                   nBuflen);
+    return jcr->fd_impl->pVSSClient->GetShadowPath(szFilePath);
   }
 
-  return false;
+  return nullptr;
 }
 
 static wchar_t* VSSPathConvertW(const wchar_t* szFilePath)
@@ -175,23 +172,28 @@ static std::pair<String, String> FindMountPoint(const CharT* path,
   return {std::move(current_volume), path};
 }
 
-bool VSSClient::GetShadowPath(const char* szFilePath,
-                              char* szShadowPath,
-                              int nBuflen)
+char* VSSClient::GetShadowPath(const char* szFilePath)
 {
-  if (!bBackupIsInitialized_) return false;
+  using namespace std::literals;
+  if (!bBackupIsInitialized_) return nullptr;
 
   auto [volume, path] = FindMountPoint(szFilePath, this->mount_to_vol);
 
   if (auto found = vol_to_vss.find(volume);
       found != vol_to_vss.end()) {
-    bstrncpy(szShadowPath, found->second.c_str(), nBuflen);
-    auto len = strlen(szShadowPath);
-    szShadowPath[len] = '\\';
-    szShadowPath[len+1] = '\0';
-    nBuflen -= len + 1;
-    bstrncat(szShadowPath, path.c_str(), nBuflen);
-    return true;
+    constexpr std::string_view sep = "\\"sv;
+    auto len = found->second.size() + sep.size() + path.size() + 1;
+    char* shadow_path = (char*)malloc(len * sizeof(*shadow_path));
+    shadow_path[len - 1] = '\0';
+    auto head = std::copy(std::begin(found->second), std::end(found->second),
+			  shadow_path);
+
+    head = std::copy(std::begin(sep), std::end(sep), head);
+
+    head = std::copy(std::begin(path), std::end(path), head);
+
+    ASSERT(head == shadow_path + len - 1);
+    return shadow_path;
   } else {
     Dmsg4(50, "Could not find shadow volume for volume '%s' (path = '%s'; input = '%s').\n"
 	  "Falling back to live system!\n",
@@ -200,9 +202,8 @@ bool VSSClient::GetShadowPath(const char* szFilePath,
   }
 
  bail_out:
-  bstrncpy(szShadowPath, szFilePath, nBuflen);
   errno = EINVAL;
-  return false;
+  return nullptr;
 }
 
 wchar_t* VSSClient::GetShadowPathW(const wchar_t* szFilePath)
@@ -237,6 +238,7 @@ wchar_t* VSSClient::GetShadowPathW(const wchar_t* szFilePath)
   }
 
  bail_out:
+  errno = EINVAL;
   return nullptr;
 }
 

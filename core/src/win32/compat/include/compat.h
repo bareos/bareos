@@ -225,9 +225,7 @@ bool InitializeComSecurity();
 bool CreateJunction(const char* szJunction, const char* szPath);
 const char* errorString(void);
 
-typedef bool (*t_pVSSPathConvert)(const char* szFilePath,
-                                  char* szShadowPath,
-                                  int nBuflen);
+typedef char* (*t_pVSSPathConvert)(const char* szFilePath);
 typedef wchar_t* (*t_pVSSPathConvertW)(const wchar_t* szFilePath);
 bool SetVSSPathConvert(t_pVSSPathConvert pPathConvert,
                        t_pVSSPathConvertW pPathConvertW);

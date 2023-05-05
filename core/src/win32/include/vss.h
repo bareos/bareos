@@ -84,7 +84,7 @@ class VSSClient {
   virtual bool CloseRestore() = 0;
   virtual WCHAR* GetMetadata() = 0;
   virtual const char* GetDriverName() = 0;
-  bool GetShadowPath(const char* szFilePath, char* szShadowPath, int nBuflen);
+  char* GetShadowPath(const char* szFilePath);
   wchar_t* GetShadowPathW(const wchar_t* szFilePath);
 
   size_t GetWriterCount() const;

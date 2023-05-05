@@ -144,10 +144,10 @@ public:
     }
   }
 
-  char* Convert(std::string_view str [[maybe_unused]]) {
+  char* Convert(std::string_view str) {
     std::shared_lock read_lock(rw_mut); // shared read lock
     if (convert_fn) {
-      return nullptr;
+      return convert_fn(str.data());
     } else {
       return nullptr;
     }
@@ -244,10 +244,12 @@ extern DWORD g_MinorVersion;
  */
 static inline void conv_unix_to_vss_win32_path(const char* name,
                                                char* win32_name,
-                                               DWORD dwSize [[maybe_unused]])
+                                               DWORD dwSize)
 {
   const char* fname = name;
   char* tname = win32_name;
+
+  int offset = 0;
 
   Dmsg0(debuglevel, "Enter convert_unix_to_win32_path\n");
 
@@ -265,6 +267,8 @@ static inline void conv_unix_to_vss_win32_path(const char* name,
     *win32_name++ = '\\';
     *win32_name++ = '?';
     *win32_name++ = '\\';
+
+    offset = 4; // skip this part during vss conversion
   }
 
   while (*name) {
@@ -290,6 +294,12 @@ static inline void conv_unix_to_vss_win32_path(const char* name,
     win32_name[-1] = 0;
   } else {
     *win32_name = 0;
+  }
+  Dmsg1(debuglevel, "path = %s\n", tname);
+  if (char* shadow_path = vss_path_converter.Convert(tname + offset);
+      shadow_path != nullptr) {
+    bstrncpy(tname, shadow_path, dwSize);
+    free(shadow_path);
   }
 
   Dmsg1(debuglevel, "Leave cvt_u_to_win32_path path=%s\n", tname);
