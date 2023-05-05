@@ -34,6 +34,8 @@
 #include <compat.h>
 #include <lib/mem_pool.h>
 
+#include "compat_old_conversion.h"
+
 template<typename CharT>
 bool ByteEq(std::basic_string_view<CharT> lhs,
 	    std::basic_string_view<CharT> rhs) {
@@ -101,7 +103,7 @@ void PrintTo(const VssStatus& status, std::ostream* os) {
   *os << VssStatusName(status);
 }
 
-class Vss : public ::testing::TestWithParam<VssStatus> {
+class Regression : public ::testing::TestWithParam<VssStatus> {
   void SetUp() override {
     switch (GetParam()) {
     case VssStatus::Enabled: {
@@ -124,42 +126,53 @@ class Vss : public ::testing::TestWithParam<VssStatus> {
   }
 };
 
-TEST_P(Vss, utf8_to_wchar_paths) {
+using namespace std::literals;
+const std::vector<std::string_view> paths{
+    "/"sv,
+    "C:"sv,
+    "C:\\"sv,
+    "C:/./.."sv,
+    "c:\\..\\\\/test//ab\\.x"sv,
+};
+
+std::string OldU2U(const char* name) {
+  PoolMem win32_name;
+  old_path_conversion::unix_name_to_win32(win32_name.addr(), name);
+  return std::string(win32_name.c_str());
+}
+
+std::wstring OldU2W(const char* name) {
+  PoolMem win32_name;
+  old_path_conversion::make_win32_path_UTF8_2_wchar(win32_name.addr(),
+						    name);
+  return std::wstring((wchar_t*)win32_name.c_str());
+}
+
+extern void unix_name_to_win32(POOLMEM*& win32_name, const char* name);
+
+TEST_P(Regression, utf8_to_utf8_paths) {
   using namespace std::literals;
-  std::vector<std::string_view> paths{
-    "/"sv, "C:"sv, "D:\\"sv, "D:/./.."sv,
-    "D:\\.."sv,
-  };
 
-  auto old_ver = OldU2W(paths);
-  auto new_ver = NewU2W(paths);
-  ASSERT_EQ(old_ver.size(), paths.size());
-  ASSERT_EQ(new_ver.size(), paths.size());
-
-  for (std::size_t i = 0; i < paths.size(); ++i) {
-    EXPECT_PRED2(ByteEq<wchar_t>, old_ver[i], new_ver[i]);
+  for (auto path : paths) {
+    PoolMem converted;
+    unix_name_to_win32(converted.addr(), path.data());
+    std::string new_str{converted.c_str()};
+    std::string old_str = OldU2U(path.data());
+    EXPECT_EQ(new_str, old_str) << "During Conversion of " << path << ".";
   }
 }
 
 
-TEST_P(Vss, wchar_to_utf8_paths) {
+TEST_P(Regression, utf8_to_wchar_paths) {
   using namespace std::literals;
-  std::vector<std::wstring_view> paths{
-    L"/"sv, L"C:"sv, L"D:\\"sv, L"D:/./.."sv,
-    L"D:\\.."sv,
-  };
-
-  auto old_ver = OldW2U(paths);
-  auto new_ver = NewW2U(paths);
-  ASSERT_EQ(old_ver.size(), paths.size());
-  ASSERT_EQ(new_ver.size(), paths.size());
-
-  for (std::size_t i = 0; i < paths.size(); ++i) {
-    EXPECT_PRED2(ByteEq<char>, old_ver[i], new_ver[i]);
+  for (auto path : paths) {
+    std::wstring new_str = make_win32_path_UTF8_2_wchar(path);
+    std::wstring old_str = OldU2W(path.data());
+    EXPECT_EQ(new_str, old_str) << "during conversion of '" << path << "'";
   }
 }
 
-INSTANTIATE_TEST_CASE_P(ShadowCopy, Vss, ::testing::Values(VssStatus::Enabled, VssStatus::Disabled),
-			[](const testing::TestParamInfo<Vss::ParamType>& info) -> std::string {
+INSTANTIATE_TEST_CASE_P(ShadowCopy, Regression, ::testing::Values(VssStatus::Enabled, VssStatus::Disabled),
+			[](const testing::TestParamInfo<Regression::ParamType>& info) -> std::string {
 			  return std::string(VssStatusName(info.param));
 			});

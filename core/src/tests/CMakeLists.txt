@@ -375,6 +375,8 @@ if (HAVE_WIN32)
     GTest::gtest_main)
   bareos_add_test(
     test_path_conversion
+    ADDITIONAL_SOURCES
+    compat_old_conversion.cc
     LINK_LIBRARIES
     bareos
     GTest::gtest_main)
