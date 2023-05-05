@@ -194,8 +194,9 @@ public:
     status = pthread_key_create(&key, Win32ConvCleanupCache);
   }
   ~PathConversionCache() {
-    if (status != 0) return; // could not init thread specific data
-    pthread_key_delete(key);
+    if (status == 0) {
+      pthread_key_delete(key);
+    }
   }
 
   thread_conversion_cache* GetThreadLocal() {
@@ -213,15 +214,16 @@ public:
 private:
 
   thread_conversion_cache* CreateThreadLocal() {
-      auto tcc = std::make_unique<thread_conversion_cache>();
-      if (pthread_setspecific(key, tcc.get()) == 0) {
-	Dmsg1(debuglevel,
-	      "Win32ConvInitCache: Setup of thread specific cache at address %p\n",
-	      tcc.get());
-	return tcc.release();
-      } else {
-	return nullptr;
-      }
+    ASSERT(status == 0);
+    auto tcc = std::make_unique<thread_conversion_cache>();
+    if (pthread_setspecific(key, tcc.get()) == 0) {
+      Dmsg1(debuglevel,
+	    "Win32ConvInitCache: Setup of thread specific cache at address %p\n",
+	    tcc.get());
+      return tcc.release();
+    } else {
+      return nullptr;
+    }
   }
   pthread_key_t key;
   int status;
