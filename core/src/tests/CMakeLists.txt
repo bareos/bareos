@@ -373,6 +373,11 @@ if (HAVE_WIN32)
     LINK_LIBRARIES
     bareos
     GTest::gtest_main)
+  bareos_add_test(
+    test_path_conversion
+    LINK_LIBRARIES
+    bareos
+    GTest::gtest_main)
 endif()
 if(ENABLE_BCONSOLE)
   bareos_add_test(
