@@ -10,8 +10,6 @@ After=network-online.target nss-lookup.target remote-fs.target time-sync.target
 # Check if working dir exist
 ConditionPathExists=@working_dir@
 # Limit the number of restart per day to 10
-# wait 3 minutes between each restart
-RestartSec=180
 StartLimitIntervalSec=1d
 StartLimitBurst=10
 
@@ -24,6 +22,12 @@ ExecStart=@sbindir@/bareos-sd -f
 SuccessExitStatus=0 15
 # Increase the the maximum number of open file descriptors
 LimitNOFILE=8192:524288
+# Restart on failure, wait 30 seconds
+Restart=on-failure
+RestartSec=30
+# Don't restart on wrong exec arguments and configuration errors.
+RestartPreventExitStatus=109 1
+
 
 [Install]
 Alias=bareos-storage.service
