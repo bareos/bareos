@@ -377,9 +377,9 @@ bool CheckIfFamilyEnabled(IpFamily family)
   do {
     ++tries;
     if ((fd = socket(GetFamily(family).value(), SOCK_STREAM, 0)) < 0) {
-      Bmicrosleep(5, 0);
+      Bmicrosleep(15, 0);
     }
-  } while (fd < 0 && tries < 2);
+  } while (fd < 0 && tries < 3);
 
   if (fd < 0) {
     BErrNo be;
