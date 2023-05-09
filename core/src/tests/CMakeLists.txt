@@ -286,8 +286,9 @@ if(NOT client-only)
   )
   bareos_add_test(sort_stringvector LINK_LIBRARIES bareos GTest::gtest_main)
   bareos_add_test(
-    test_config_parser_dir LINK_LIBRARIES dird_objects bareos bareosfind
-                                          testing_common bareossql GTest::gtest_main
+    test_config_parser_dir
+    LINK_LIBRARIES dird_objects bareos bareosfind testing_common bareossql
+                   GTest::gtest_main
   )
   set_tests_properties(
     gtest:ConfigParser_Dir.bareos_configparser_tests
