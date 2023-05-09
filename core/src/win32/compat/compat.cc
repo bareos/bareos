@@ -163,7 +163,8 @@ public:
   }
 
 private:
-  // used for a read-write-lock
+  // used for a read-write-lock that protects writes to
+  // convert_fn/convert_w_fn
   std::shared_mutex rw_mut{};
 
   t_pVSSPathConvert convert_fn{nullptr};
@@ -443,7 +444,6 @@ static std::wstring AsFullPath(std::wstring_view p)
   }
 
   literal.resize(written);
-  RemoveTrailingSlashes(literal);
 
   return literal;
 }
@@ -453,11 +453,11 @@ static std::wstring ConvertNormalized(std::wstring_view p)
   using namespace std::literals;
   // the last slash is missing on purpose; it always gets added in the while
   // loop (assuming p != '//./'; but this is not a real path anyways)
-  std::wstring converted = L"\\\\.";
+  std::wstring converted = L"\\\\."s;
 
   // do not change the //./ at the start
   p.remove_prefix(L"\\\\.\\"sv.size());
-  constexpr std::wstring_view path_separators = L"\\/";
+  constexpr std::wstring_view path_separators = L"\\/"sv;
 
   while (p.size() > 0) {
     std::size_t copy_until = std::min(p.find_first_of(path_separators), p.size());
@@ -466,7 +466,6 @@ static std::wstring ConvertNormalized(std::wstring_view p)
     std::size_t skip_until = std::min(p.find_first_not_of(path_separators, copy_until), p.size());
     p.remove_prefix(skip_until);
   }
-  RemoveTrailingSlashes(converted);
 
   return converted;
 }
@@ -507,6 +506,7 @@ static inline std::wstring make_wchar_win32_path(std::wstring_view path)
   } else {
     converted = ConvertNormalized(path);
   }
+  RemoveTrailingSlashes(converted);
 
 
   Dmsg1(debuglevel, "Leave make_wchar_win32_path=%s\n", FromUtf16(converted).c_str());
