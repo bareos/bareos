@@ -153,7 +153,13 @@ endif()
 # Keep alphabetically ordered
 if(NOT client-only)
   bareos_add_test(
-    addresses_and_ports
+    addresses_and_ports_config
+    LINK_LIBRARIES bareos dird_objects bareosfind bareossql testing_common
+                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
+  )
+
+  bareos_add_test(
+    addresses_and_ports_functions
     LINK_LIBRARIES bareos dird_objects bareosfind bareossql testing_common
                    $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
   )
