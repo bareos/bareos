@@ -207,3 +207,76 @@ INSTANTIATE_TEST_CASE_P(ShadowCopy, Regression, ::testing::Values(VssStatus::Ena
 			[](const testing::TestParamInfo<Regression::ParamType>& info) -> std::string {
 			  return std::string(VssStatusName(info.param));
 			});
+
+extern std::wstring ReplaceSlashes(std::wstring_view path);
+
+TEST(ReplaceSlashes, literal_paths) {
+  using namespace std::literals;
+  auto literal_paths = {
+    L"\\\\?\\path\\to\\somewhere"sv,
+    L"//?/path\\to\\somewhere"sv,
+    L"//?/path/to/somewhere"sv,
+    L"//?/path\\\\//\\to\\\\somewhere//////"sv,
+    L"//?/path\\\\//\\to\\\\somewhere///\\///"sv,
+  };
+
+  // strings have prettier output in gtest so they are used
+  // here instead of string_views
+  auto expected_no_slash = L"\\\\?\\path\\to\\somewhere"s;
+  auto expected_with_slash = L"\\\\?\\path\\to\\somewhere\\"s;
+
+  for (auto view : literal_paths) {
+    auto replaced = ReplaceSlashes(view);
+    auto& expected = (replaced.back() == L'\\') ? expected_with_slash
+      : expected_no_slash;
+    ASSERT_EQ(replaced, expected)
+      << "replacing slashes in " << FromUtf16(view).c_str();
+  }
+}
+
+TEST(ReplaceSlashes, normalized_paths) {
+  using namespace std::literals;
+
+  auto normalized_paths = {
+    L"\\\\.\\path\\to\\somewhere"sv,
+    L"//./path\\to\\somewhere"sv,
+    L"//./path/to/somewhere"sv,
+    L"//./path\\\\//\\to\\\\somewhere//////"sv,
+    L"//./path\\\\//\\to\\\\somewhere///\\///"sv,
+  };
+
+  auto expected_no_slash = L"\\\\.\\path\\to\\somewhere"s;
+  auto expected_with_slash = L"\\\\.\\path\\to\\somewhere\\"s;
+
+  for (auto view : normalized_paths) {
+    auto replaced = ReplaceSlashes(view);
+    auto& expected = (replaced.back() == L'\\') ? expected_with_slash
+      : expected_no_slash;
+    ASSERT_EQ(replaced, expected)
+      << "replacing slashes in " << FromUtf16(view).c_str();
+  }
+}
+
+TEST(ReplaceSlashes, full_paths) {
+  using namespace std::literals;
+
+  auto normalized_paths = {
+    L"C:\\path\\to\\somewhere"sv,
+    L"C:/path\\to\\somewhere"sv,
+    L"C:/path/to/somewhere"sv,
+    L"C:\\/\\/path\\to\\somewhere"sv,
+    L"C:/path\\\\//\\to\\\\somewhere//////"sv,
+    L"C:/path\\\\//\\to\\\\somewhere///\\///"sv,
+  };
+
+  auto expected_no_slash = L"C:\\path\\to\\somewhere"s;
+  auto expected_with_slash = L"C:\\path\\to\\somewhere\\"s;
+
+  for (auto view : normalized_paths) {
+    auto replaced = ReplaceSlashes(view);
+    auto& expected = (replaced.back() == L'\\') ? expected_with_slash
+      : expected_no_slash;
+    ASSERT_EQ(replaced, expected)
+      << "replacing slashes in " << FromUtf16(view).c_str();
+  }
+}
