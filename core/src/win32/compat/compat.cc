@@ -391,14 +391,24 @@ static bool IsLiteralPath(std::wstring_view path)
 {
   using namespace std::literals;
   // check if the path starts with //?/
-  return path.rfind(L"\\\\?\\"sv, 0) == 0;
+  return path.size() >= 4 &&
+    IsPathSeparator(path[0]) &&
+    IsPathSeparator(path[1]) &&
+    IsPathSeparator(path[3]) &&
+    path[2] == L'?';
+  // return path.rfind(L"\\\\?\\"sv, 0) == 0;
 }
 
 static bool IsNormalizedPath(std::wstring_view path)
 {
   using namespace std::literals;
   // check if the path starts with //?/
-  return path.rfind(L"\\\\.\\"sv, 0) == 0;
+  return path.size() >= 4 &&
+    IsPathSeparator(path[0]) &&
+    IsPathSeparator(path[1]) &&
+    IsPathSeparator(path[3]) &&
+    path[2] == L'.';
+  // return path.rfind(L"\\\\.\\"sv, 0) == 0;
 }
 
 static void RemoveTrailingSlashes(std::wstring& str)
