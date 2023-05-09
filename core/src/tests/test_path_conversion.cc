@@ -36,45 +36,6 @@
 
 #include "compat_old_conversion.h"
 
-template<typename CharT>
-bool ByteEq(std::basic_string_view<CharT> lhs,
-	    std::basic_string_view<CharT> rhs) {
-  return lhs.size() == rhs.size() &&
-    std::memcmp(lhs.data(), rhs.data(), rhs.size() * sizeof(CharT)) == 0;
-}
-
-std::vector<std::wstring> OldU2W(std::vector<std::string_view> strings) {
-  std::vector<std::wstring> result;
-  for (auto view : strings) {
-    result.emplace_back(std::begin(view), std::end(view));
-  }
-  return result;
-}
-
-std::vector<std::wstring> NewU2W(std::vector<std::string_view> strings) {
-  std::vector<std::wstring> result;
-  for (auto view : strings) {
-    result.emplace_back(std::move(FromUtf8(view)));
-  }
-  return result;
-}
-
-std::vector<std::string> OldW2U(std::vector<std::wstring_view> strings) {
-  std::vector<std::string> result;
-  for (auto view : strings) {
-    result.emplace_back(std::begin(view), std::end(view));
-  }
-  return result;
-}
-
-std::vector<std::string> NewW2U(std::vector<std::wstring_view> strings) {
-  std::vector<std::string> result;
-  for (auto view : strings) {
-    result.emplace_back(std::move(FromUtf16(view)));
-  }
-  return result;
-}
-
 class WindowsEnvironment : public ::testing::Environment {
   void SetUp() override { InitWinAPIWrapper(); }
 };
