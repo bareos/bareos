@@ -41,6 +41,7 @@
 #include "include/bareos.h"
 #include "include/jcr.h"
 #include "lib/parse_conf.h"
+#include "testing_dir_common.h"
 
 #include <algorithm>
 #include <chrono>
@@ -68,7 +69,7 @@ class RunOnIncomingConnectIntervalTest : public ::testing::Test {
 
 void RunOnIncomingConnectIntervalTest::SetUp()
 {
-  OSDependentInit();
+  InitDirGlobals();
 
   std::string path_to_config_file = std::string(
       RELATIVE_PROJECT_SOURCE_DIR "/configs/run-on-incoming-connect-interval/");

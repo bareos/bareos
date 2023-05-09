@@ -37,6 +37,7 @@
 #include "lib/parse_conf.h"
 #include "tests/scheduler_time_source.h"
 #include "dird/scheduler_system_time_source.h"
+#include "testing_dir_common.h"
 
 #include <atomic>
 #include <chrono>
@@ -64,7 +65,7 @@ static SimulatedTimeAdapter* time_adapter;
 class SchedulerTest : public ::testing::Test {
   void SetUp() override
   {
-    OSDependentInit();
+    InitDirGlobals();
     std::unique_ptr<SimulatedTimeAdapter> ta
         = std::make_unique<SimulatedTimeAdapter>();
     time_adapter = ta.get();

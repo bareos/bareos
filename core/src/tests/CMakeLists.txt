@@ -237,7 +237,7 @@ if(NOT client-only)
 
   bareos_add_test(
     run_on_incoming_connect_interval
-    LINK_LIBRARIES dird_objects bareos bareosfind bareossql
+    LINK_LIBRARIES dird_objects bareos bareosfind bareossql testing_common
                    $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
   )
   bareos_add_test(
@@ -246,7 +246,7 @@ if(NOT client-only)
   )
   bareos_add_test(
     scheduler
-    LINK_LIBRARIES dird_objects bareos bareosfind bareossql
+    LINK_LIBRARIES dird_objects bareos bareosfind bareossql testing_common
                    $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
   )
   bareos_add_test(
@@ -327,7 +327,7 @@ if(NOT client-only)
   )
   bareos_add_test(
     test_setdebug
-    LINK_LIBRARIES dird_objects bareos bareosfind bareossql
+    LINK_LIBRARIES dird_objects bareos bareosfind bareossql testing_common
                    $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
   )
   bareos_add_test(

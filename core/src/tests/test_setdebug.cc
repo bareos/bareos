@@ -32,6 +32,7 @@
 #include "dird/dird_globals.h"
 #include "dird/dird_conf.h"
 #include "dird/ua_cmds.h"
+#include "testing_dir_common.h"
 
 using namespace std;
 using namespace directordaemon;
@@ -61,7 +62,7 @@ static void DoStorageSetdebug(UaContext*, StorageResource* store, int, int, int)
 
 void SetdebugTest::SetUpTestCase()
 {
-  OSDependentInit();
+  InitDirGlobals();
   std::string path_to_config_file = std::string(
       RELATIVE_PROJECT_SOURCE_DIR "/configs/bareos-configparser-tests");
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
