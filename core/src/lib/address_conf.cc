@@ -339,36 +339,52 @@ bool SetupPort(unsigned short& port,
   }
 }
 
-bool IsFamilyEnabled(int family)
+bool IsFamilyEnabled(IpFamily fam)
 {
-  static bool ipv6_enabled = CheckIfFamilyEnabled(AF_INET6);
-  static bool ipv4_enabled = CheckIfFamilyEnabled(AF_INET);
-
-  if (family == AF_INET6) { return ipv6_enabled; }
-  if (family == AF_INET) { return ipv4_enabled; }
-  return false;
+  static bool family_enabled[] = {CheckIfFamilyEnabled(IpFamily::V4),
+                                  CheckIfFamilyEnabled(IpFamily::V6)};
+  return family_enabled[static_cast<std::underlying_type_t<IpFamily>>(fam)];
 }
 
-bool CheckIfFamilyEnabled(int family)
+std::optional<int> GetFamily(IpFamily family)
+{
+  switch (family) {
+    case IpFamily::V4:
+      return AF_INET;
+    case IpFamily::V6:
+      return AF_INET6;
+    default:
+      return std::nullopt;
+  }
+}
+
+const char* FamilyName(IpFamily fam)
+{
+  switch (fam) {
+    case IpFamily::V4:
+      return "IPv4";
+    case IpFamily::V6:
+      return "IPv6";
+    default:
+      return "*Unknown Protocol*";
+  }
+}
+
+bool CheckIfFamilyEnabled(IpFamily family)
 {
   int tries = 0;
   int fd;
   do {
     ++tries;
-    if ((fd = socket(family, SOCK_STREAM, 0)) < 0) { Bmicrosleep(5, 0); }
+    if ((fd = socket(GetFamily(family).value(), SOCK_STREAM, 0)) < 0) {
+      Bmicrosleep(5, 0);
+    }
   } while (fd < 0 && tries < 2);
-
-  std::string family_string(std::to_string(family));
-  if (family == AF_INET) {
-    family_string = "IPv4";
-  } else if (family == AF_INET6) {
-    family_string = "IPv6";
-  }
 
   if (fd < 0) {
     BErrNo be;
     Emsg2(M_WARNING, 0, _("Cannot open %s stream socket. ERR=%s\n"),
-          family_string.c_str(), be.bstrerror());
+          FamilyName(family), be.bstrerror());
     return false;
   }
   close(fd);
@@ -405,18 +421,18 @@ int AddAddress(dlist<IPADDR>** out,
   if (!SetupPort(port, defaultport, port_str, buf, buflen)) { return 0; }
 
   if (family == 0) {
-    bool ipv4_enabled = IsFamilyEnabled(AF_INET);
-    bool ipv6_enabled = IsFamilyEnabled(AF_INET6);
+    bool ipv4_enabled = IsFamilyEnabled(IpFamily::V4);
+    bool ipv6_enabled = IsFamilyEnabled(IpFamily::V6);
     if (!ipv4_enabled && ipv6_enabled) { family = AF_INET6; }
     if (ipv4_enabled && !ipv6_enabled) { family = AF_INET; }
     if (!ipv4_enabled && !ipv6_enabled) {
       Bsnprintf(buf, buflen, _("Both IPv4 are IPv6 are disabled!"));
       return 0;
     }
-  } else if (family == AF_INET6 && !IsFamilyEnabled(AF_INET6)) {
+  } else if (family == AF_INET6 && !IsFamilyEnabled(IpFamily::V6)) {
     Bsnprintf(buf, buflen, _("IPv6 address wanted but IPv6 is disabled!"));
     return 0;
-  } else if (family == AF_INET && !IsFamilyEnabled(AF_INET)) {
+  } else if (family == AF_INET && !IsFamilyEnabled(IpFamily::V4)) {
     Bsnprintf(buf, buflen, _("IPv4 address wanted but IPv4 is disabled!"));
     return 0;
   }

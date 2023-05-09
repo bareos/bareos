@@ -32,6 +32,12 @@
 
 class OutputFormatterResource;
 
+enum class IpFamily
+{
+  V4,
+  V6
+};
+
 /* clang-format off */
 class IPADDR {
  public:
@@ -98,7 +104,7 @@ int AddAddress(dlist<IPADDR>** out,
                const char* port_str,
                char* buf,
                int buflen);
-bool CheckIfFamilyEnabled(int family);
+bool CheckIfFamilyEnabled(IpFamily family);
 
 bool IsSameIpAddress(IPADDR* first, IPADDR* second);
 const char* BuildAddressesString(dlist<IPADDR>* addrs,
