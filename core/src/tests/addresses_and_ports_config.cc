@@ -157,12 +157,11 @@ static void check_addresses_list(std::string path_to_config,
   EXPECT_EQ(director_addresses, expected_addresses);
 }
 
-class AddressesAndPortsSetup : public ::testing::Test {
+class AddressesAndPortsConfigurationSetup : public ::testing::Test {
   void SetUp() override { InitDirGlobals(); }
 };
 
-
-TEST_F(AddressesAndPortsSetup, default_config_values)
+TEST_F(AddressesAndPortsConfigurationSetup, default_config_values)
 {
   std::string path_to_config
       = std::string(RELATIVE_PROJECT_SOURCE_DIR
@@ -175,7 +174,7 @@ TEST_F(AddressesAndPortsSetup, default_config_values)
   EXPECT_FALSE(try_binding_director_port(path_to_config, 0, 9101));
 }
 
-TEST_F(AddressesAndPortsSetup, OLD_STYLE_dir_port_set)
+TEST_F(AddressesAndPortsConfigurationSetup, OLD_STYLE_dir_port_set)
 {
   std::string path_to_config
       = std::string(RELATIVE_PROJECT_SOURCE_DIR
@@ -189,7 +188,7 @@ TEST_F(AddressesAndPortsSetup, OLD_STYLE_dir_port_set)
   EXPECT_FALSE(try_binding_director_port(path_to_config, 0, 29998));
 }
 
-TEST_F(AddressesAndPortsSetup, OLD_STYLE_dir_v4address_set)
+TEST_F(AddressesAndPortsConfigurationSetup, OLD_STYLE_dir_v4address_set)
 {
   std::string path_to_config = std::string(
       RELATIVE_PROJECT_SOURCE_DIR
@@ -200,7 +199,7 @@ TEST_F(AddressesAndPortsSetup, OLD_STYLE_dir_v4address_set)
   check_addresses_list(path_to_config, expected_addresses);
 }
 
-TEST_F(AddressesAndPortsSetup, OLD_STYLE_dir_v6address_set)
+TEST_F(AddressesAndPortsConfigurationSetup, OLD_STYLE_dir_v6address_set)
 {
   std::string path_to_config = std::string(
       RELATIVE_PROJECT_SOURCE_DIR
@@ -218,7 +217,8 @@ TEST_F(AddressesAndPortsSetup, OLD_STYLE_dir_v6address_set)
  different when DirPort comes before DirAddress in the config file, and vice
  versa.*/
 
-TEST_F(AddressesAndPortsSetup, OLD_STYLE_dir_v4port_and_address_set)
+TEST_F(AddressesAndPortsConfigurationSetup,
+       OLD_STYLE_dir_v4port_and_address_set)
 {
   std::string path_to_config = std::string(
       RELATIVE_PROJECT_SOURCE_DIR
@@ -231,7 +231,8 @@ TEST_F(AddressesAndPortsSetup, OLD_STYLE_dir_v4port_and_address_set)
   EXPECT_FALSE(try_binding_director_port(path_to_config, AF_INET, 29997));
 }
 
-TEST_F(AddressesAndPortsSetup, OLD_STYLE_dir_v4address_and_port_set)
+TEST_F(AddressesAndPortsConfigurationSetup,
+       OLD_STYLE_dir_v4address_and_port_set)
 {
   std::string path_to_config = std::string(
       RELATIVE_PROJECT_SOURCE_DIR
@@ -242,7 +243,7 @@ TEST_F(AddressesAndPortsSetup, OLD_STYLE_dir_v4address_and_port_set)
   check_addresses_list(path_to_config, expected_addresses);
 }
 
-TEST_F(AddressesAndPortsSetup, NEW_STYLE_dir_v6_address_set)
+TEST_F(AddressesAndPortsConfigurationSetup, NEW_STYLE_dir_v6_address_set)
 {
   std::string path_to_config
       = std::string(RELATIVE_PROJECT_SOURCE_DIR
@@ -253,7 +254,7 @@ TEST_F(AddressesAndPortsSetup, NEW_STYLE_dir_v6_address_set)
   check_addresses_list(path_to_config, expected_addresses);
 }
 
-TEST_F(AddressesAndPortsSetup, NEW_STYLE_dir_v6_and_v4_address_set)
+TEST_F(AddressesAndPortsConfigurationSetup, NEW_STYLE_dir_v6_and_v4_address_set)
 {
   std::string path_to_config = std::string(
       RELATIVE_PROJECT_SOURCE_DIR
@@ -265,7 +266,7 @@ TEST_F(AddressesAndPortsSetup, NEW_STYLE_dir_v6_and_v4_address_set)
   check_addresses_list(path_to_config, expected_addresses);
 }
 
-TEST_F(AddressesAndPortsSetup, NEW_STYLE_dir_ip_v4_address_set)
+TEST_F(AddressesAndPortsConfigurationSetup, NEW_STYLE_dir_ip_v4_address_set)
 {
   std::string path_to_config = std::string(
       RELATIVE_PROJECT_SOURCE_DIR
@@ -276,7 +277,7 @@ TEST_F(AddressesAndPortsSetup, NEW_STYLE_dir_ip_v4_address_set)
   check_addresses_list(path_to_config, expected_addresses);
 }
 
-TEST_F(AddressesAndPortsSetup, NEW_STYLE_dir_ip_v6_address_set)
+TEST_F(AddressesAndPortsConfigurationSetup, NEW_STYLE_dir_ip_v6_address_set)
 {
   std::string path_to_config = std::string(
       RELATIVE_PROJECT_SOURCE_DIR
