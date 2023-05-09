@@ -37,7 +37,9 @@
 #include "compat_old_conversion.h"
 
 class WindowsEnvironment : public ::testing::Environment {
-  void SetUp() override { InitWinAPIWrapper(); }
+  void SetUp() override {
+    InitWinAPIWrapper();
+  }
 };
 
 const testing::Environment* _global_env =
@@ -60,15 +62,50 @@ std::string_view VssStatusName(VssStatus status) {
   return "unreachble"sv;
 }
 
+// used by gtest to print VssStatus;
+// this is needed to be able to use VssStatus as test param
 void PrintTo(const VssStatus& status, std::ostream* os) {
   *os << VssStatusName(status);
+}
+
+bool OldConvert(const char* path, char* buf, int len) {
+  using namespace std::literals;
+  constexpr std::string_view s = "\\\\?\\vss\\"sv;
+  strncpy(buf, s.data(), len);
+  len -= s.size();
+  strncat(buf, path, len);
+  return true;
+}
+
+bool OldConvertW(const wchar_t* path, wchar_t *buf, int len) {
+  using namespace std::literals;
+  constexpr std::wstring_view s = L"\\\\?\\vss\\"sv;
+  wcsncpy(buf, s.data(), len);
+  len -= s.size();
+  wcsncat(buf, path, len);
+  return true;
+}
+
+char* NewConvert(const char* path) {
+  int len = strlen(path) + 100;
+  char* buf = (char*) malloc(len);
+  OldConvert(path, buf, len);
+  return buf;
+}
+
+wchar_t* NewConvertW(const wchar_t* path) {
+  int len = wcslen(path) + 100;
+  wchar_t* buf = (wchar_t*) malloc(len * sizeof(*path));
+  OldConvertW(path, buf, len);
+  return buf;
 }
 
 class Regression : public ::testing::TestWithParam<VssStatus> {
   void SetUp() override {
     switch (GetParam()) {
     case VssStatus::Enabled: {
-
+      old_path_conversion::Win32SetPathConvert(OldConvert, OldConvertW);
+      SetVSSPathConvert(NewConvert, NewConvertW);
     } break;
     case VssStatus::Disabled: {
 
@@ -78,7 +115,8 @@ class Regression : public ::testing::TestWithParam<VssStatus> {
   void TearDown() override {
     switch (GetParam()) {
     case VssStatus::Enabled: {
-
+      old_path_conversion::Win32SetPathConvert(nullptr, nullptr);
+      SetVSSPathConvert(nullptr, nullptr);
     } break;
     case VssStatus::Disabled: {
 
@@ -94,6 +132,18 @@ const std::vector<std::string_view> paths{
     "C:\\"sv,
     "C:/./.."sv,
     "c:\\..\\\\/test//ab\\.x"sv,
+    ""sv,
+    "C:/test"sv,
+    "//./normalized_path"sv,
+    "\\\\.\\normalized_path"sv,
+    "//?/literal_path"sv,
+    "\\\\?\\literal_path"sv,
+    "//./normalized_path/.\\..\\/test"sv,
+    "\\\\.\\normalized_path/.\\..\\/test"sv,
+    "//?/literal_path/.\\..\\/test"sv,
+    "\\\\?\\literal_path/.\\..\\/test"sv,
+    "//unc/path"sv,
+    "\\\\unc\\path"sv,
 };
 
 std::string OldU2U(const char* name) {
