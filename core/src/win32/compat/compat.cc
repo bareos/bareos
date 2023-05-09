@@ -412,6 +412,12 @@ static bool IsNormalizedPath(std::wstring_view path)
   // return path.rfind(L"\\\\.\\"sv, 0) == 0;
 }
 
+/**
+ * Removes all trailing slashes.  If the string only contains slashes
+ * all but the first one are removed!
+ * We also do not remove any slash if its precedet by a colon, i.e.
+ * 'C:\' does not get changed.
+ */
 static void RemoveTrailingSlashes(std::wstring& str)
 {
   // TODO think about this!
@@ -446,28 +452,6 @@ static std::wstring AsFullPath(std::wstring_view p)
   literal.resize(written);
 
   return literal;
-}
-
-static std::wstring ConvertNormalized(std::wstring_view p)
-{
-  using namespace std::literals;
-  // the last slash is missing on purpose; it always gets added in the while
-  // loop (assuming p != '//./'; but this is not a real path anyways)
-  std::wstring converted = L"\\\\."s;
-
-  // do not change the //./ at the start
-  p.remove_prefix(L"\\\\.\\"sv.size());
-  constexpr std::wstring_view path_separators = L"\\/"sv;
-
-  while (p.size() > 0) {
-    std::size_t copy_until = std::min(p.find_first_of(path_separators), p.size());
-    converted.append(L"\\"sv);
-    converted.append(std::begin(p), std::begin(p) + copy_until);
-    std::size_t skip_until = std::min(p.find_first_not_of(path_separators, copy_until), p.size());
-    p.remove_prefix(skip_until);
-  }
-
-  return converted;
 }
 
 /**
@@ -521,24 +505,19 @@ static inline std::wstring make_wchar_win32_path(std::wstring_view path)
   Dmsg0(debuglevel, "Enter make_wchar_win32_path\n");
 
   // If it has already the desired form, exit without changes
-  if (IsLiteralPath(path)) {
+  if (IsLiteralPath(path) || IsNormalizedPath(path)) {
     Dmsg0(debuglevel, "Leave make_wchar_win32_path no change \n");
     return ReplaceSlashes(path);
   }
 
-  std::wstring converted{};
-
-  if (!IsNormalizedPath(path)) {
-    converted = AsFullPath(path);
-    if (auto shadow_path = vss_path_converter.Convert(converted);
-	shadow_path) {
-	// we sadly need to copy here
-      converted.assign(shadow_path.get());
-    } else {
-      converted.insert(0, L"\\\\?\\"sv);
-    }
+  std::wstring converted = AsFullPath(path);
+  if (auto shadow_path = vss_path_converter.Convert(converted);
+      shadow_path) {
+    // we sadly need to copy here
+    converted.assign(shadow_path.get());
   } else {
-    converted = ConvertNormalized(path);
+    // add literal path prefix to allow 32k paths
+    converted.insert(0, L"\\\\?\\"sv);
   }
   RemoveTrailingSlashes(converted);
 
