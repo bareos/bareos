@@ -471,6 +471,40 @@ static std::wstring ConvertNormalized(std::wstring_view p)
 }
 
 /**
+ * Replace all forward slashes by backwards slashes.
+ * Also replaces all consecutive slashes by a single one unless they are
+ * right at the start.
+ */
+std::wstring ReplaceSlashes(std::wstring_view path)
+{
+  using namespace std::literals;
+  constexpr std::wstring_view path_separators = L"\\/"sv;
+
+  std::size_t end = path.size();
+  std::size_t head = std::min(path.find_first_not_of(path_separators),
+			      end);
+
+  std::wstring result(head, L'\\');
+
+
+  for (;;) {
+    std::size_t copy_until = std::min(path.find_first_of(path_separators, head), end);
+    result.append(std::begin(path) + head, std::begin(path) + copy_until);
+    head = std::min(path.find_first_not_of(path_separators, copy_until), end);
+
+    // if we encountered any slashes, replace them by a single backslash
+    if (head != copy_until) {
+      result.append(L"\\"sv);
+    } else {
+      ASSERT(head == end);
+      break;
+    }
+  }
+
+  return result;
+}
+
+/**
  * This function converts relative paths to absolute paths and prepends \\?\ if
  * needed.  It also replaces all '/' with '\' and removes duplicates of them.
  *
@@ -489,7 +523,7 @@ static inline std::wstring make_wchar_win32_path(std::wstring_view path)
   // If it has already the desired form, exit without changes
   if (IsLiteralPath(path)) {
     Dmsg0(debuglevel, "Leave make_wchar_win32_path no change \n");
-    return std::wstring{path};
+    return ReplaceSlashes(path);
   }
 
   std::wstring converted{};
