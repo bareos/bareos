@@ -183,6 +183,26 @@ TEST_P(Regression, utf8_to_wchar_paths) {
   }
 }
 
+TEST_P(Regression, utf8_long_path) {
+  // path bigger than 4K
+  std::string path = "C:/" + std::string(5000, 'a') + 'b';
+
+  PoolMem converted;
+  unix_name_to_win32(converted.addr(), path.data());
+  std::string new_str{converted.c_str()};
+  std::string old_str = OldU2U(path.data());
+  EXPECT_EQ(new_str, old_str);
+}
+
+TEST_P(Regression, wchar_long_path) {
+  // path bigger than 4K
+  std::string path = "C:/" + std::string(5000, 'a') + 'b';
+
+  std::wstring new_str = make_win32_path_UTF8_2_wchar(path);
+  std::wstring old_str = OldU2W(path.data());
+  EXPECT_EQ(new_str, old_str);
+}
+
 INSTANTIATE_TEST_CASE_P(ShadowCopy, Regression, ::testing::Values(VssStatus::Enabled, VssStatus::Disabled),
 			[](const testing::TestParamInfo<Regression::ParamType>& info) -> std::string {
 			  return std::string(VssStatusName(info.param));
