@@ -362,7 +362,11 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
 
   {
     // setup sending threads
-    SendContext data(jcr, 8);
+    int32_t num_compression_threads = 4; // default
+    if (client) {
+      num_compression_threads = client->CompressionThreads;
+    }
+    SendContext data(jcr, num_compression_threads);
     jcr->fd_impl->send_ctx = &data;
 
 #if 1 && !defined(SEND_SERIAL)

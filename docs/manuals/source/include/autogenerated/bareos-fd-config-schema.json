@@ -223,6 +223,12 @@
           "default_value": "20",
           "equals": true
         },
+        "CompressionThreads": {
+          "datatype": "PINT32",
+          "code": 0,
+          "default_value": "4",
+          "equals": true
+        },
         "Messages": {
           "datatype": "RES",
           "code": 2,
@@ -491,6 +497,12 @@
           "datatype": "PINT32",
           "code": 0,
           "default_value": "20",
+          "equals": true
+        },
+        "CompressionThreads": {
+          "datatype": "PINT32",
+          "code": 0,
+          "default_value": "4",
           "equals": true
         },
         "Messages": {
