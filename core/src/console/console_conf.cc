@@ -202,7 +202,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
                 res_dir->resource_name_);
         } else {
           p->tls_cert_.allowed_certificate_common_names_
-              = std::move(p->tls_cert_.allowed_certificate_common_names_);
+              = std::move(res_dir->tls_cert_.allowed_certificate_common_names_);
         }
         break;
       }

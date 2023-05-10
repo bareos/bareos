@@ -40,6 +40,7 @@
 #include "lib/bstringlist.h"
 #include "lib/output_formatter.h"
 
+#include <system_error>
 #include <string>
 #include <vector>
 template <typename T> class dlist;

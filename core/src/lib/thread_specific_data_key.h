@@ -23,6 +23,7 @@
 #define BAREOS_LIB_THREAD_SPECIFIC_DATA_KEY_H_
 
 #include "lib/berrno.h"
+#include <system_error>
 
 #include <mutex>
 
