@@ -122,6 +122,8 @@ class Regression : public ::testing::TestWithParam<VssStatus> {
 
     } break;
     }
+    // reset the conversion cache!
+    Win32ResetConversionCache();
   }
 };
 
