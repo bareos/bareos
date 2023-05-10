@@ -231,6 +231,8 @@ class Device {
   int oflags{};               /**< Read/write flags */
   DeviceMode open_mode{DeviceMode::kUndefined};
   std::string device_type{};
+  bool read_only{};           /**< Select for reading only */
+  bool write_only{};          /**< Select for writing only */
   bool autoselect{};          /**< Autoselect in autochanger */
   bool norewindonclose{};     /**< Don't rewind tape drive on close */
   bool initiated{};           /**< Set when FactoryCreateDevice() called */

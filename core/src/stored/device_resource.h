@@ -45,6 +45,8 @@ class DeviceResource : public BareosResource {
   char* spool_directory;       /**< Spool file directory */
   std::string device_type{DeviceType::B_UNKNOWN_DEV};
   uint32_t label_type{B_BAREOS_LABEL};
+  bool read_only{false};       /**< Select for reading only */
+  bool write_only{false};      /**< Select for writing only */
   bool autoselect{true};      /**< Automatically select from AutoChanger */
   bool norewindonclose{true}; /**< Don't rewind tape drive on close */
   bool drive_tapealert_enabled{false}; /**< Enable Tape Alert monitoring */

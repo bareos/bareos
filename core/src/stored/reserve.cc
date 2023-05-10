@@ -438,7 +438,12 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
           rctx.device_name = device_name;
           rctx.device_resource = vol->dev->device_resource;
 
-          if (vol->dev->AttachedToAutochanger()) {
+          if (rctx.device_resource->read_only) {
+            Dmsg1(debuglevel,
+                  "device=%s not suitable because it is read only\n",
+                  vol->dev->device_resource->resource_name_);
+            continue;
+          } else if (vol->dev->AttachedToAutochanger()) {
             Dmsg1(debuglevel, "vol=%s is in changer\n", vol->vol_name);
             if (!IsVolInAutochanger(rctx, vol) || !vol->dev->autoselect) {
               continue;
@@ -542,6 +547,14 @@ int SearchResForDevice(ReserveContext& rctx)
           Dmsg1(100, "Device %s not autoselect skipped.\n",
                 rctx.device_resource->resource_name_);
           continue; /* Device is not available */
+        } else if (rctx.append && rctx.device_resource->read_only) {
+          Dmsg1(debuglevel, "Device %s is read only.\n",
+                rctx.device_resource->resource_name_);
+          continue; /* Device is not available */
+        } else if (!rctx.append && rctx.device_resource->write_only) {
+          Dmsg1(debuglevel, "Device %s is write only.\n",
+                rctx.device_resource->resource_name_);
+          continue; /* Device is not available */
         }
         status = ReserveDevice(rctx);
         if (status != 1) { /* Try another device */
@@ -641,6 +654,17 @@ static int ReserveDevice(ReserveContext& rctx)
   Dmsg2(debuglevel, "chk MediaType device=%s request=%s\n",
         rctx.device_resource->media_type, rctx.store->media_type);
   if (!bstrcmp(rctx.device_resource->media_type, rctx.store->media_type)) {
+    return -1;
+  }
+
+  // Make sure device read_only and write_only match
+  Dmsg3(debuglevel,
+        "chk ReadOnly/WriteOnly append=%d read_only=%d write_only=%d\n",
+        rctx.append, rctx.device_resource->read_only,
+        rctx.device_resource->write_only);
+  if (rctx.append && rctx.device_resource->read_only) {
+    return -1;
+  } else if (!rctx.append && rctx.device_resource->write_only) {
     return -1;
   }
 
