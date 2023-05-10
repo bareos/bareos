@@ -35,11 +35,10 @@ std::vector<std::string> CreateAddressesFromAddAddress(
 {
   std::vector<std::string> newaddresses{};
   char buf[1024];
-  dlist<IPADDR>* addresses = new dlist<IPADDR>();
+  dlist<IPADDR>* addresses = nullptr;
 
-  dlist<IPADDR>** fake_resource_pointer = &addresses;
-  AddAddress(fake_resource_pointer, type, htons(default_port), family,
-             hostname_str, port_str, buf, sizeof(buf));
+  AddAddress(&addresses, type, htons(default_port), family, hostname_str,
+             port_str, buf, sizeof(buf));
 
   IPADDR* addr = nullptr;
   foreach_dlist (addr, addresses) {
