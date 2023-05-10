@@ -70,8 +70,6 @@ FindFilesPacket* init_find_files()
   FindFilesPacket empty_ff;
   *ff = empty_ff;
 
-  ff->sys_fname = GetPoolMemory(PM_FNAME);
-
   /* Get system path and filename maximum lengths */
   path_max = pathconf(".", _PC_PATH_MAX);
   if (path_max < 2048) { path_max = 2048; }
@@ -467,8 +465,6 @@ bool AcceptFile(FindFilesPacket* ff)
 void TermFindFiles(FindFilesPacket* ff)
 {
   if (ff) {
-    FreePoolMemory(ff->sys_fname);
-    if (ff->ignoredir_fname) { FreePoolMemory(ff->ignoredir_fname); }
     TermFindOne(ff);
     free(ff);
   }

@@ -65,12 +65,10 @@ static inline FindFilesPacket* new_dir_ff_pkt(FindFilesPacket* ff_pkt)
   *dir_ff_pkt = *ff_pkt;
   dir_ff_pkt->fname = strdup(ff_pkt->fname);
   dir_ff_pkt->link = strdup(ff_pkt->link);
-  dir_ff_pkt->sys_fname = GetPoolMemory(PM_FNAME);
   dir_ff_pkt->included_files_list = NULL;
   dir_ff_pkt->excluded_files_list = NULL;
   dir_ff_pkt->excluded_paths_list = NULL;
   dir_ff_pkt->linkhash = NULL;
-  dir_ff_pkt->ignoredir_fname = NULL;
 
   return dir_ff_pkt;
 }
@@ -80,12 +78,6 @@ static void FreeDirFfPkt(FindFilesPacket* dir_ff_pkt)
 {
   free(dir_ff_pkt->fname);
   free(dir_ff_pkt->link);
-  // we know that sys_fname is nonzero here because its initialised
-  // in new_dir_ff_pkt
-  FreePoolMemory(dir_ff_pkt->sys_fname);
-  if (dir_ff_pkt->ignoredir_fname) {
-    FreePoolMemory(dir_ff_pkt->ignoredir_fname);
-  }
   free(dir_ff_pkt);
 }
 
@@ -355,6 +347,7 @@ static inline bool HaveIgnoredir(FindFilesPacket* ff_pkt)
 {
   struct stat sb;
   char* ignoredir;
+  PoolMem ignoredir_fname(PM_FNAME);
 
   // Ensure that pointers are defined
   if (!ff_pkt->fileset || !ff_pkt->fileset->incexe) { return false; }
@@ -363,12 +356,9 @@ static inline bool HaveIgnoredir(FindFilesPacket* ff_pkt)
     ignoredir = (char*)ff_pkt->fileset->incexe->ignoredir.get(i);
 
     if (ignoredir) {
-      if (!ff_pkt->ignoredir_fname) {
-        ff_pkt->ignoredir_fname = GetPoolMemory(PM_FNAME);
-      }
-      Mmsg(ff_pkt->ignoredir_fname, "%s/%s", ff_pkt->fname, ignoredir);
-      if (stat(ff_pkt->ignoredir_fname, &sb) == 0) {
-        Dmsg2(100, "Directory '%s' ignored (found %s)\n", ff_pkt->fname,
+      Mmsg(ignoredir_fname, "%s/%s", ff_pkt->fname, ignoredir);
+      if (stat(ignoredir_fname.c_str(), &sb) == 0) {
+        Dmsg2(100, "Directory '%s' ignored (found %s inside)\n", ff_pkt->fname,
               ignoredir);
         return true; /* Just ignore this directory */
       }

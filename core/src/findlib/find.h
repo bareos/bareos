@@ -203,8 +203,6 @@ struct FindFilesPacket {
   char* object_name{nullptr};        /**< Object name */
   char* object{nullptr};             /**< Restore object */
   char* plugin{nullptr};             /**< Current Options{Plugin=} name */
-  POOLMEM* sys_fname{nullptr};       /**< System filename */
-  POOLMEM* ignoredir_fname{nullptr}; /**< Used to ignore directories */
   char* digest{nullptr};  /**< Set to file digest when the file is a hardlink */
   struct stat statp{};    /**< Stat packet */
   uint32_t digest_len{0}; /**< Set to the digest len when the file is a hardlink*/
