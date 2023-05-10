@@ -1168,6 +1168,7 @@ static int GetWindowsFileInfo(const char* filename,
      * not fallback to the normal info data returned by FindFirstFileW() or
      * FindFirstFileA() */
     if (use_fallback_data) {
+      Dmsg1(750, "Use fallback data for %s\n", filename);
       if (p_FindFirstFileW) { /* use unicode */
         pftLastAccessTime = &info_w.ftLastAccessTime;
         pftLastWriteTime = &info_w.ftLastWriteTime;
@@ -1377,6 +1378,7 @@ int fstat(intptr_t fd, struct stat* sb)
 #endif
 
   if (use_fallback_data) {
+    Dmsg1(750, "Use fallback data for %d\n", fd);
     sb->st_atime = CvtFtimeToUtime(info.ftLastAccessTime);
     sb->st_mtime = CvtFtimeToUtime(info.ftLastWriteTime);
     sb->st_ctime = CvtFtimeToUtime(info.ftLastWriteTime);
@@ -1550,6 +1552,7 @@ int stat(const char* filename, struct stat* sb)
 #endif
 
     if (use_fallback_data) {
+      Dmsg1(750, "Use fallback data for %s\n", filename);
       // Fall back to the GetFileAttributesEx data.
       sb->st_atime = CvtFtimeToUtime(data.ftLastAccessTime);
       sb->st_mtime = CvtFtimeToUtime(data.ftLastWriteTime);
