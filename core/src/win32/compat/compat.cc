@@ -1132,6 +1132,7 @@ static int GetWindowsFileInfo(const char* filename,
             pftCreationTime
                 = (FILETIME*)&basic_info.CreationTime;
           } else {
+	    Dmsg0(750, "Change time is newer.\n");
             pftCreationTime
                 = (FILETIME*)&basic_info.ChangeTime;
           }
@@ -1337,6 +1338,7 @@ int fstat(intptr_t fd, struct stat* sb)
         sb->st_ctime
             = CvtFtimeToUtime(basic_info.CreationTime);
       } else {
+	Dmsg0(750, "Change time is newer.\n");
         sb->st_ctime
             = CvtFtimeToUtime(basic_info.ChangeTime);
       }
@@ -1517,6 +1519,7 @@ int stat(const char* filename, struct stat* sb)
             sb->st_ctime
                 = CvtFtimeToUtime(basic_info.CreationTime);
           } else {
+	    Dmsg0(750, "Change time is newer.\n");
             sb->st_ctime
                 = CvtFtimeToUtime(basic_info.ChangeTime);
           }
