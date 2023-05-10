@@ -518,22 +518,23 @@ int encode_attribsEx(JobControlRecord* jcr,
     return STREAM_UNIX_ATTRIBUTES;
   }
 
-  unix_name_to_win32(ff_pkt->sys_fname, ff_pkt->fname);
+  PoolMem sys_fname(PM_FNAME);
+  unix_name_to_win32(sys_fname.addr(), ff_pkt->fname);
   if (p_GetFileAttributesExW) {
     // Try unicode version
     std::wstring utf16 = make_win32_path_UTF8_2_wchar(ff_pkt->fname);
 
     if (!p_GetFileAttributesExW(utf16.c_str(), GetFileExInfoStandard,
                                 (LPVOID)&atts)) {
-      WinError(jcr, "GetFileAttributesExW:", ff_pkt->sys_fname);
+      WinError(jcr, "GetFileAttributesExW:", sys_fname.addr());
       return STREAM_UNIX_ATTRIBUTES;
     }
   } else {
     if (!p_GetFileAttributesExA) return STREAM_UNIX_ATTRIBUTES;
 
-    if (!p_GetFileAttributesExA(ff_pkt->sys_fname, GetFileExInfoStandard,
+    if (!p_GetFileAttributesExA(sys_fname.c_str(), GetFileExInfoStandard,
                                 (LPVOID)&atts)) {
-      WinError(jcr, "GetFileAttributesExA:", ff_pkt->sys_fname);
+      WinError(jcr, "GetFileAttributesExA:", sys_fname.c_str());
       return STREAM_UNIX_ATTRIBUTES;
     }
   }
