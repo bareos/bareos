@@ -420,11 +420,12 @@ static bool IsNormalizedPath(std::wstring_view path)
  */
 static void RemoveTrailingSlashes(std::wstring& str)
 {
-  // TODO think about this!
-  // we treat the case where str.size() <= 3 special here
-  // since we do not want to remove the slashes from paths like these: C:/
-  while (str.size() > 3 && IsPathSeparator(str.back())) {
-    str.pop_back();
+  while (str.size() > 1 && IsPathSeparator(str.back())) {
+    if (str[str.size() - 2] == L':') {
+      break;
+    } else {
+      str.pop_back();
+    }
   }
 }
 
@@ -501,6 +502,9 @@ std::wstring ReplaceSlashes(std::wstring_view path)
  */
 static inline std::wstring make_wchar_win32_path(std::wstring_view path)
 {
+  // we want
+  // '/' -> //?/C:
+  // 'C:/' -> //?/C:/
   using namespace std::literals;
   Dmsg0(debuglevel, "Enter make_wchar_win32_path\n");
 
