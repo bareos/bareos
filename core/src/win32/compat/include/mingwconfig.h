@@ -75,9 +75,6 @@
 /* Define to 1 if you have the `Readdir_r' function. */
 /* #undef HAVE_READDIR_R */
 
-/* Define to 1 if you have the <resolv.h> header file. */
-/* #undef HAVE_RESOLV_H */
-
 /* Define to 1 if translation of program messages to the user's native
    language is requested. */
 #if (defined _MSC_VER) && (_MSC_VER >= 1400)  // VC8+

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2015-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -162,7 +162,7 @@ TEST(dlist, dynamic)
   FreeDlist(list);
 }
 
-TEST(dlist, dlist)
+TEST(dlist, RemoveAndReplacePrependedElement)
 {
   char buf[30];
   dlist<MYJCR>* jcr_chain;
@@ -197,6 +197,16 @@ TEST(dlist, dlist)
     free(jcr->buf);
   }
   delete jcr_chain;
+}
+
+TEST(dlist, RemoveAndReplaceAppendedElement)
+{
+  char buf[30];
+  dlist<MYJCR>* jcr_chain;
+  MYJCR* jcr = NULL;
+  MYJCR* save_jcr = NULL;
+  MYJCR* next_jcr;
+  int index = 0;
 
   /* The following may seem a bit odd, but we create a chaing
    *  of jcr objects.  Within a jcr object, there is a buf
@@ -227,7 +237,14 @@ TEST(dlist, dlist)
   }
 
   delete jcr_chain;
+}
 
+TEST(dlist, BinaryInsert)
+{
+  char buf[30];
+  dlist<MYJCR>* jcr_chain;
+  MYJCR* jcr = NULL;
+  MYJCR* jcr1;
 
   /* Now do a binary insert for the list */
   jcr_chain = new dlist<MYJCR>();
@@ -298,7 +315,6 @@ TEST(dlist, dlistString)
     buf[0]--;
   }
   dlistString* node;
-  foreach_dlist (node, chain) {
-  }
+  foreach_dlist (node, chain) {}
   chain->destroy();
 }
