@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -271,13 +271,11 @@ TEST_F(ConfigParser_Dir, CFG_TYPE_STR_VECTOR)
 void test_CFG_TYPE_STR_VECTOR_OF_DIRS(DirectorResource* me)
 {
   EXPECT_EQ(me->backend_directories.size(), 9);
-  /*
-   *  WIN32:
+  /*  WIN32:
    *  cmake uses some value for PATH_BAREOS_BACKENDDIR,
    *  which ends up in the configuration files
    *  but this is later overwritten in the Director Daemon with ".".
-   *  Therefore we skip this test.
-   */
+   *  Therefore we skip this test. */
 #if !defined(HAVE_WIN32)
   EXPECT_EQ(me->backend_directories.at(0), PATH_BAREOS_BACKENDDIR);
 #endif
@@ -326,10 +324,8 @@ TEST_F(ConfigParser_Dir, CFG_TYPE_ALIST_RES)
 
 void test_CFG_TYPE_STR(DirectorResource* me)
 {
-  /*
-   * Only the first entry from the last "Description" config directive is taken.
-   * This can be considered as a bug.
-   */
+  /* Only the first entry from the last "Description" config directive is taken.
+   * This can be considered as a bug. */
   EXPECT_STREQ(me->description_, "item31");
 }
 
