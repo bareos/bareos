@@ -67,9 +67,6 @@ static const int debuglevel = 500;
 
 #define MAX_PATHLENGTH 1024
 
-static pthread_mutex_t com_security_mutex = PTHREAD_MUTEX_INITIALIZER;
-static bool com_security_initialized = false;
-
 /**
  * The CoInitializeSecurity function initializes the security layer and sets the
  * specified values as the security default. If a process does not call
@@ -81,39 +78,39 @@ static bool com_security_initialized = false;
  */
 bool InitializeComSecurity()
 {
-  HRESULT hr;
-  bool retval = false;
+  class ComSecurityInitializer {
+  public:
+    ComSecurityInitializer() : h{CoInitializeSecurity(NULL, /*  Allow *all* VSS writers to communicate back! */
+						      -1,   /*  Default COM authentication service */
+						      NULL, /*  Default COM authorization service */
+						      NULL, /*  reserved parameter */
+						      RPC_C_AUTHN_LEVEL_PKT_PRIVACY, /*  Strongest COM authentication level */
+						      RPC_C_IMP_LEVEL_IDENTIFY,      /*  Minimal impersonation abilities */
+						      NULL,                          /*  Default COM authentication settings */
+						      EOAC_NONE,                     /*  No special options */
+						      NULL) /* reserved */ } {
+      if (!InitSuccessFull()) {
+	Dmsg1(0, "InitializeComSecurity: CoInitializeSecurity returned 0x%08X\n",
+	      h);
+      }
+    }
 
-  lock_mutex(com_security_mutex);
-  if (com_security_initialized) {
-    retval = true;
-    goto bail_out;
-  }
+    bool InitSuccessFull() const { return !FAILED(h); }
 
-  hr = CoInitializeSecurity(
-      NULL, /*  Allow *all* VSS writers to communicate back! */
-      -1,   /*  Default COM authentication service */
-      NULL, /*  Default COM authorization service */
-      NULL, /*  reserved parameter */
-      RPC_C_AUTHN_LEVEL_PKT_PRIVACY, /*  Strongest COM authentication level */
-      RPC_C_IMP_LEVEL_IDENTIFY,      /*  Minimal impersonation abilities */
-      NULL,                          /*  Default COM authentication settings */
-      EOAC_NONE,                     /*  No special options */
-      NULL);                         /*  Reserved parameter */
+  private:
+    HRESULT h;
+  };
+  // CoInitializeSecurity can only fail if the system is running out of memory
+  // in that case retrying it will probably not be a good idea anyways;
+  // as such we only attempt to initialize once
+  static const ComSecurityInitializer security{};
 
-  if (FAILED(hr)) {
-    Dmsg1(0, "InitializeComSecurity: CoInitializeSecurity returned 0x%08X\n",
-          hr);
+  if (!security.InitSuccessFull()) {
     errno = b_errno_win32;
-    goto bail_out;
+    return false;
   }
 
-  com_security_initialized = true;
-  retval = true;
-
-bail_out:
-  unlock_mutex(com_security_mutex);
-  return retval;
+  return true;
 }
 
 /**
@@ -127,11 +124,6 @@ struct thread_conversion_cache {
   std::wstring utf16{};
 };
 
-struct free_deleter {
-  void operator()(void* mem) {
-    free(mem);
-  }
-};
 
 static class VssPathConverter {
 public:
@@ -140,6 +132,12 @@ public:
     convert_fn = Convert;
     convert_w_fn = ConvertW;
   }
+
+  struct free_deleter {
+    void operator()(void* mem) {
+      free(mem);
+    }
+  };
 
   template <typename T>
   using c_ptr = std::unique_ptr<T, free_deleter>;
