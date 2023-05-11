@@ -187,7 +187,7 @@ struct NameList {
   int tot_ids = 0;       /**< Total to process */
 
   NameList() = default;
-  ~NameList() = default;
+  ~NameList();
 };
 
 // Context for restore job.
@@ -199,28 +199,28 @@ struct RestoreContext {
   };
   JobTypeFilter job_filter = JobTypeFilter::Backup;
 
+  StorageResource* store = nullptr;
+  JobResource* restore_job = nullptr;
+  PoolResource* pool = nullptr;
   utime_t JobTDate = {0};
   uint32_t TotalFiles = 0;
+  uint32_t selected_files = 0;
   JobId_t JobId = 0;
   char* backup_format = nullptr;
   char* ClientName = nullptr;        /**< Backup client */
   char* RestoreClientName = nullptr; /**< Restore client */
   char last_jobid[20]{0};
-  POOLMEM* JobIds = nullptr;     /**< User entered string of JobIds */
-  POOLMEM* BaseJobIds = nullptr; /**< Base jobids */
-  StorageResource* store = nullptr;
-  JobResource* restore_job = nullptr;
-  PoolResource* pool = nullptr;
   int restore_jobs = 0;
-  uint32_t selected_files = 0;
   char* comment = nullptr;
   char* where = nullptr;
   char* RegexWhere = nullptr;
   char* replace = nullptr;
   char* plugin_options = nullptr;
   std::unique_ptr<RestoreBootstrapRecord> bsr;
-  POOLMEM* fname = nullptr; /**< Filename only */
-  POOLMEM* path = nullptr;  /**< Path only */
+  POOLMEM* JobIds = nullptr;     /**< User entered string of JobIds */
+  POOLMEM* BaseJobIds = nullptr; /**< Base jobids */
+  POOLMEM* fname = nullptr;      /**< Filename only */
+  POOLMEM* path = nullptr;       /**< Path only */
   POOLMEM* query = nullptr;
   int fnl = 0; /**< Filename length */
   int pnl = 0; /**< Path length */
@@ -229,8 +229,13 @@ struct RestoreContext {
   NameList name_list;
 
   RestoreContext() = default;
-  ~RestoreContext() = default;
+  ~RestoreContext();
+
   static char FilterIdentifier(JobTypeFilter filter);
+  void BuildRegexWhere(char *strip_prefix, char *add_prefix, char *add_suffix);
+
+ private:
+  char* regexp = nullptr;
 };
 
 // Context for run job.

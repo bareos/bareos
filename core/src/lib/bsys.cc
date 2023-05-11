@@ -783,9 +783,12 @@ void MakeUniqueFilename(POOLMEM*& name, int Id, char* what)
   Mmsg(name, "%s/%s.%s.%d.tmp", working_directory, my_name, what, Id);
 }
 
-char* escape_filename(const char* file_path)
+std::string escape_filename(const char* file_path)
 {
-  if (file_path == NULL || strpbrk(file_path, "\"\\") == NULL) { return NULL; }
+  std::string escaped{};
+  if (file_path == nullptr || strpbrk(file_path, "\"\\") == nullptr) {
+    return escaped;
+  }
 
   char* escaped_path = (char*)malloc(2 * (strlen(file_path) + 1));
   char* cur_char = escaped_path;
@@ -798,7 +801,10 @@ char* escape_filename(const char* file_path)
 
   *cur_char = '\0';
 
-  return escaped_path;
+  escaped = escaped_path;
+  free(escaped_path);
+
+  return escaped;
 }
 
 bool PathExists(const char* path)
