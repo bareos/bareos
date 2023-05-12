@@ -356,65 +356,83 @@ bool AcceptFile(FindFilesPacket* ff)
     bool do_exclude = BitIsSet(FO_EXCLUDE, ff->flags);
 
     if (S_ISDIR(ff->statp.st_mode)) {
-	    for (auto [patterns, name] : std::initializer_list<std::pair<alist<const char*>&, const char*>>{
-			    {fo->wilddir, "wilddir"},
-			    {fo->wild, "wild"}
-			    })
-	    {
-		    if (std::optional match = FindMatch(match_func, patterns, ff->fname, fnmode | fnm_flags); match)
-		    {
-			    if (do_exclude) {
-				    Dmsg2(debuglevel, "Exclude %s: %s file=%s\n",
-					  name, (char*)match.value(), ff->fname);
-			    }
-			    return !do_exclude;
-		    }
-	    }
-
-	    for (auto [patterns, name] : std::initializer_list<std::pair<alist<regex_t*>&, const char*>>{
-			    {fo->regexdir, "regexdir"},
-			    {fo->regex, "regex"}
-			    })
-	    {
-		    if (std::optional match = FindRegexMatch(patterns, ff->fname); match)
-		    {
-			    if (do_exclude) {
-				    Dmsg2(debuglevel, "Exclude %s: file=%s\n",
-					  name, ff->fname);
-			    }
-			    return !do_exclude;
-		    }
-	    }
+      // wild matches
+      if (std::optional match = FindMatch(match_func, fo->wilddir, ff->fname, fnmode | fnm_flags);
+	  match.has_value()) {
+	if (do_exclude) {
+	  Dmsg2(debuglevel, "Exclude wilddir: %s file=%s\n",
+		match.value(), ff->fname);
+	}
+	return !do_exclude;
+      }
+      if (std::optional match = FindMatch(match_func, fo->wild, ff->fname, fnmode | fnm_flags);
+	  match.has_value()) {
+	if (do_exclude) {
+	  Dmsg2(debuglevel, "Exclude wild: %s file=%s\n",
+		match.value(), ff->fname);
+	}
+	return !do_exclude;
+      }
+      // regex matches
+      if (std::optional match = FindRegexMatch(fo->regexdir, ff->fname);
+	  match.has_value()) {
+	if (do_exclude) {
+	  Dmsg2(debuglevel, "Exclude regexdir: file=%s\n",
+		ff->fname);
+	}
+	return !do_exclude;
+      }
+      if (std::optional match = FindRegexMatch(fo->regex, ff->fname);
+	  match.has_value()) {
+	if (do_exclude) {
+	  Dmsg2(debuglevel, "Exclude regex: file=%s\n",
+		ff->fname);
+	}
+	return !do_exclude;
+      }
     } else {
-	    for (auto [patterns, name] : std::initializer_list<std::pair<alist<const char*>&, const char*>>{
-			    {fo->wildfile, "wildfile"},
-			    {fo->wildbase, "wildbase"},
-			    {fo->wild, "wild"}
-			    })
-	    {
-		    if (std::optional match = FindMatch(match_func, patterns, ff->fname, fnmode | fnm_flags); match)
-		    {
-			    if (do_exclude) {
-				    Dmsg2(debuglevel, "Exclude %s: %s file=%s\n",
-					  name, (char*)match.value(), ff->fname);
-			    }
-			    return !do_exclude;
-		    }
-	    }
-	    for (auto [patterns, name] : std::initializer_list<std::pair<alist<regex_t*>&, const char*>>{
-			    {fo->regexfile, "regexfile"},
-			    {fo->regex, "regex"}
-			    })
-	    {
-		    if (std::optional match = FindRegexMatch(patterns, ff->fname); match)
-		    {
-			    if (do_exclude) {
-				    Dmsg2(debuglevel, "Exclude %s: file=%s\n",
-					  name, ff->fname);
-			    }
-			    return !do_exclude;
-		    }
-	    }
+      // wild matches
+      if (std::optional match = FindMatch(match_func, fo->wildfile, ff->fname, fnmode | fnm_flags);
+	  match.has_value()) {
+	if (do_exclude) {
+	  Dmsg2(debuglevel, "Exclude wildfile: %s file=%s\n",
+		match.value(), ff->fname);
+	}
+	return !do_exclude;
+      }
+      if (std::optional match = FindMatch(match_func, fo->wildbase, basename, fnmode | fnm_flags);
+	  match.has_value()) {
+	if (do_exclude) {
+	  Dmsg2(debuglevel, "Exclude wildbase: %s file=%s\n",
+		match.value(), ff->fname);
+	}
+	return !do_exclude;
+      }
+      if (std::optional match = FindMatch(match_func, fo->wild, ff->fname, fnmode | fnm_flags);
+	  match.has_value()) {
+	if (do_exclude) {
+	  Dmsg2(debuglevel, "Exclude wild: %s file=%s\n",
+		match.value(), ff->fname);
+	}
+	return !do_exclude;
+      }
+      // regex matches
+      if (std::optional match = FindRegexMatch(fo->regexfile, ff->fname);
+	  match.has_value()) {
+	if (do_exclude) {
+	  Dmsg2(debuglevel, "Exclude regexfile: file=%s\n",
+		ff->fname);
+	}
+	return !do_exclude;
+      }
+      if (std::optional match = FindRegexMatch(fo->regex, ff->fname);
+	  match.has_value()) {
+	if (do_exclude) {
+	  Dmsg2(debuglevel, "Exclude regex: file=%s\n",
+		ff->fname);
+	}
+	return !do_exclude;
+      }
     }
 
     // If we have an empty Options clause with exclude, then exclude the file
@@ -436,12 +454,10 @@ bool AcceptFile(FindFilesPacket* ff)
     for (int j = 0; j < incexe->opts_list.size(); j++) {
       findFOPTS* fo = (findFOPTS*)incexe->opts_list.get(j);
       const int fnm_flags = BitIsSet(FO_IGNORECASE, fo->flags) ? FNM_CASEFOLD : 0;
-      for (int k = 0; k < fo->wild.size(); k++) {
-        if (fnmatch((char*)fo->wild.get(k), ff->fname, fnmode | fnm_flags)
-            == 0) {
-          Dmsg1(debuglevel, "Reject wild1: %s\n", ff->fname);
-          return false; /* reject file */
-        }
+      if (std::optional match = FindMatch(fnmatch, fo->wild, ff->fname, fnmode | fnm_flags);
+	  match.has_value()) {
+	Dmsg2(debuglevel, "Reject wild1: %s\n", ff->fname);
+	return false; /* reject file */
       }
     }
     const int fnm_flags = (incexe->current_opts != NULL
