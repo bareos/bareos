@@ -386,7 +386,7 @@ bool exclude_win32_not_to_backup_registry_entries(JobControlRecord* jcr,
                 }
                 *d = '\0';
                 Dmsg1(100, "    ->  \"%s\"\n", destination.c_str());
-                fo->wild.append(strdup(destination.c_str()));
+                fo->wild.emplace_back(destination.c_str());
                 wild_count++;
               }
             }

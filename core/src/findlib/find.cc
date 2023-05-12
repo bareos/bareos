@@ -300,27 +300,25 @@ bool IsInFileset(FindFilesPacket* ff)
   return false;
 }
 
-std::optional<const char*> FindMatch(int (*match_func)(const char* pattern, const char* str, int flags),
-		   alist<const char*>& patterns, const char* str, int flags)
-{
-      for (int k = 0; k < patterns.size(); k++) {
-	const char* pattern = patterns.get(k);
-        if (match_func((char*)pattern, str, flags) == 0) {
-		return std::make_optional(pattern);
-        }
-      }
-      return std::nullopt;
+static std::optional<const char*> FindMatch(int (*match_func)(const char* pattern, const char* str, int flags),
+					    const std::vector<std::string>& patterns,
+					    const char* str, int flags) {
+  for (auto& pattern : patterns) {
+    if (match_func(pattern.c_str(), str, flags) == 0) {
+      return std::make_optional(pattern.c_str());
+    }
+  }
+  return std::nullopt;
 }
 
-std::optional<const regex_t*> FindRegexMatch(alist<regex_t*>& regexs, const char* str)
-{
-      for (int k = 0; k < regexs.size(); k++) {
-	regex_t* regex = regexs.get(k);
-        if (regexec(regex, str, 0, NULL, 0) == 0) {
-		return std::make_optional(regex);
-	}
-      }
-      return std::nullopt;
+static std::optional<const regex_t*> FindRegexMatch(std::vector<regex_t>& regexs,
+						    const char* str) {
+  for (auto& regex : regexs) {
+    if (regexec(&regex, str, 0, NULL, 0) == 0) {
+      return std::make_optional(&regex);
+    }
+  }
+  return std::nullopt;
 }
 
 bool AcceptFile(FindFilesPacket* ff)
@@ -538,14 +536,7 @@ findFOPTS* start_options(FindFilesPacket* ff)
   if (state != state_options) {
     ff->fileset->state = state_options;
     findFOPTS* fo = (findFOPTS*)malloc(sizeof(findFOPTS));
-    *fo = findFOPTS{};
-    fo->regex.init(1, true);
-    fo->regexdir.init(1, true);
-    fo->regexfile.init(1, true);
-    fo->wild.init(1, true);
-    fo->wilddir.init(1, true);
-    fo->wildfile.init(1, true);
-    fo->wildbase.init(1, true);
+    new (fo) findFOPTS{};
     fo->base.init(1, true);
     fo->fstype.init(1, true);
     fo->Drivetype.init(1, true);
@@ -562,14 +553,7 @@ void NewOptions(FindFilesPacket* ff, findIncludeExcludeItem* incexe)
   findFOPTS* fo;
 
   fo = (findFOPTS*)malloc(sizeof(findFOPTS));
-  *fo = findFOPTS{};
-  fo->regex.init(1, true);
-  fo->regexdir.init(1, true);
-  fo->regexfile.init(1, true);
-  fo->wild.init(1, true);
-  fo->wilddir.init(1, true);
-  fo->wildfile.init(1, true);
-  fo->wildbase.init(1, true);
+  new (fo) findFOPTS{};
   fo->base.init(1, true);
   fo->fstype.init(1, true);
   fo->Drivetype.init(1, true);
