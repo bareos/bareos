@@ -304,9 +304,6 @@ void CleanupFileset(JobControlRecord* jcr)
           regfree(&regex);
         }
         if (fo->size_match) { free(fo->size_match); }
-        fo->base.destroy();
-        fo->fstype.destroy();
-        fo->Drivetype.destroy();
 	fo->~findFOPTS();
       }
       incexe->opts_list.destroy();
@@ -331,9 +328,6 @@ void CleanupFileset(JobControlRecord* jcr)
           regfree(&regex);
         }
         if (fo->size_match) { free(fo->size_match); }
-        fo->base.destroy();
-        fo->fstype.destroy();
-        fo->Drivetype.destroy();
 	fo->~findFOPTS();
       }
       incexe->opts_list.destroy();

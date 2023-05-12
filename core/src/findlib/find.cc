@@ -109,14 +109,14 @@ static void SetupLastOptionBlock(FindFilesPacket* ff, findIncludeExcludeItem* in
 
   /* By setting all options, we in effect OR the global options which is
    * what we want. */
-  findFOPTS* fo = (findFOPTS*)incexe->opts_list.get(incexe->opts_list.size() - 1);
+  findFOPTS* fo = incexe->opts_list.get(incexe->opts_list.size() - 1);
   CopyBits(FO_MAX, fo->flags, ff->flags);
   ff->Compress_algo = fo->Compress_algo;
   ff->Compress_level = fo->Compress_level;
   ff->StripPath = fo->StripPath;
   ff->size_match = fo->size_match;
-  ff->fstypes = fo->fstype;
-  ff->drivetypes = fo->Drivetype;
+  ff->fstypes = &fo->fstype;
+  ff->drivetypes = &fo->Drivetype;
 
 
   // reset plugins
@@ -345,8 +345,8 @@ bool AcceptFile(FindFilesPacket* ff)
     CopyBits(FO_MAX, fo->flags, ff->flags);
     ff->Compress_algo = fo->Compress_algo;
     ff->Compress_level = fo->Compress_level;
-    ff->fstypes = fo->fstype;
-    ff->drivetypes = fo->Drivetype;
+    ff->fstypes = &fo->fstype;
+    ff->drivetypes = &fo->Drivetype;
 
     const int fnm_flags = (BitIsSet(FO_IGNORECASE, ff->flags) ? FNM_CASEFOLD : 0)
 	    | (BitIsSet(FO_ENHANCEDWILD, ff->flags) ? FNM_PATHNAME : 0);
@@ -537,9 +537,6 @@ findFOPTS* start_options(FindFilesPacket* ff)
     ff->fileset->state = state_options;
     findFOPTS* fo = (findFOPTS*)malloc(sizeof(findFOPTS));
     new (fo) findFOPTS{};
-    fo->base.init(1, true);
-    fo->fstype.init(1, true);
-    fo->Drivetype.init(1, true);
     incexe->current_opts = fo;
     incexe->opts_list.append(fo);
   }
@@ -554,9 +551,6 @@ void NewOptions(FindFilesPacket* ff, findIncludeExcludeItem* incexe)
 
   fo = (findFOPTS*)malloc(sizeof(findFOPTS));
   new (fo) findFOPTS{};
-  fo->base.init(1, true);
-  fo->fstype.init(1, true);
-  fo->Drivetype.init(1, true);
   incexe->current_opts = fo;
   incexe->opts_list.prepend(fo);
   ff->fileset->state = state_options;

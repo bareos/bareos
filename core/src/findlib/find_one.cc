@@ -91,28 +91,30 @@ static bool AcceptFstype(FindFilesPacket*, void*) { return true; }
 #else
 static bool AcceptFstype(FindFilesPacket* ff, void*)
 {
-  int i;
   char fs[1000];
-  bool accept = true;
 
-  if (ff->fstypes.size()) {
-    accept = false;
-    if (!fstype(ff->fname, fs, sizeof(fs))) {
-      Dmsg1(50, "Cannot determine file system type for \"%s\"\n", ff->fname);
-    } else {
-      for (i = 0; i < ff->fstypes.size(); ++i) {
-        if (bstrcmp(fs, (char*)ff->fstypes.get(i))) {
-          Dmsg2(100, "Accepting fstype %s for \"%s\"\n", fs, ff->fname);
-          accept = true;
-          break;
-        }
-        Dmsg3(200, "fstype %s for \"%s\" does not match %s\n", fs, ff->fname,
-              ff->fstypes.get(i));
-      }
-    }
+  std::vector<std::string>* allowed_fs_types = ff->fstypes;
+
+  if (allowed_fs_types == nullptr) {
+    Dmsg0(0, "invariant ff->fstypes != nullptr is broken!\n");
+    return false; /* something is wrong; better to deny everything */
+  }
+  if (allowed_fs_types->size() == 0) { return true; /* accept everything */ }
+
+  if (!fstype(ff->fname, fs, sizeof(fs))) {
+    Dmsg1(50, "Cannot determine file system type for \"%s\"\n", ff->fname);
+    return false; /* fs type cannot be established */
   }
 
-  return accept;
+  if (std::find(std::begin(*allowed_fs_types),
+		std::end(*allowed_fs_types),
+		fs) != std::end(*allowed_fs_types)) {
+    Dmsg2(100, "Accepting fstype %s for \"%s\"\n", fs, ff->fname);
+    return true; /* fs type is allowed */
+  }
+
+  Dmsg2(100, "Refusing fstype %s for \"%s\"\n", fs, ff->fname);
+  return false; /* fs type not allowed */
 }
 #endif
 
@@ -123,23 +125,22 @@ static bool AcceptFstype(FindFilesPacket* ff, void*)
 #if defined(HAVE_WIN32)
 static inline bool AcceptDrivetype(FindFilesPacket* ff, void*)
 {
-  int i;
   char dt[100];
   bool accept = true;
 
-  if (ff->drivetypes.size()) {
+  if (ff->drivetypes->size()) {
     accept = false;
     if (!Drivetype(ff->fname, dt, sizeof(dt))) {
       Dmsg1(50, "Cannot determine drive type for \"%s\"\n", ff->fname);
     } else {
-      for (i = 0; i < ff->drivetypes.size(); ++i) {
-        if (bstrcmp(dt, (char*)ff->drivetypes.get(i))) {
+      for (std::size_t i = 0; i < ff->drivetypes->size(); ++i) {
+        if (bstrcmp(dt, ff->drivetypes->at(i).c_str())) {
           Dmsg2(100, "Accepting drive type %s for \"%s\"\n", dt, ff->fname);
           accept = true;
           break;
         }
         Dmsg3(200, "drive type %s for \"%s\" does not match %s\n", dt,
-              ff->fname, ff->drivetypes.get(i));
+              ff->fname, ff->drivetypes->at(i).c_str());
       }
     }
   }

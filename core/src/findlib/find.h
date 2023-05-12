@@ -141,9 +141,9 @@ struct findFOPTS {
   std::vector<std::string> wilddir{};    /**< Wild card strings for directories */
   std::vector<std::string> wildfile{};   /**< Wild card strings for files */
   std::vector<std::string> wildbase{};   /**< Wild card strings for basenames */
-  alist<const char*> base;       /**< List of base names */
-  alist<const char*> fstype;     /**< File system type limitation */
-  alist<const char*> Drivetype;  /**< Drive type limitation */
+  std::vector<std::string> base{};       /**< List of base names */
+  std::vector<std::string> fstype{};     /**< File system type limitation */
+  std::vector<std::string> Drivetype{};  /**< Drive type limitation */
 };
 
 // This is either an include item or an exclude item
@@ -218,8 +218,8 @@ struct FindFilesPacket {
   struct s_sz_matching* size_match{nullptr}; /**< Perform size matching ? */
   bool cmd_plugin{false}; /**< Set if we have a command plugin */
   bool opt_plugin{false}; /**< Set if we have an option plugin */
-  alist<const char*> fstypes;          /**< Allowed file system types */
-  alist<const char*> drivetypes;       /**< Allowed drive types */
+  std::vector<std::string>* fstypes{nullptr};          /**< Allowed file system types */
+  std::vector<std::string>* drivetypes{nullptr};       /**< Allowed drive types */
 
   // List of all hard linked files found
   LinkHash* linkhash{nullptr};       /**< Hard linked files */
