@@ -587,16 +587,16 @@ void AddFileset(JobControlRecord* jcr, const char* item)
       break;
     case 'B':
       current_opts = start_options(ff);
-      current_opts->base.append(strdup(item));
+      current_opts->base.emplace_back(item);
       state = state_options;
       break;
     case 'X': /* Filetype or Drive type */
       current_opts = start_options(ff);
       state = state_options;
       if (subcode == ' ') {
-        current_opts->fstype.append(strdup(item));
+        current_opts->fstype.emplace_back(item);
       } else if (subcode == 'D') {
-        current_opts->Drivetype.append(strdup(item));
+        current_opts->Drivetype.emplace_back(item);
       } else {
         state = state_error;
       }
