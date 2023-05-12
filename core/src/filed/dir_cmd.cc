@@ -294,26 +294,20 @@ void CleanupFileset(JobControlRecord* jcr)
       for (int j = 0; j < incexe->opts_list.size(); j++) {
         fo = (findFOPTS*)incexe->opts_list.get(j);
         if (fo->plugin) { free(fo->plugin); }
-        for (int k = 0; k < fo->regex.size(); k++) {
-          regfree((regex_t*)fo->regex.get(k));
+        for (auto& regex : fo->regex) {
+          regfree(&regex);
         }
-        for (int k = 0; k < fo->regexdir.size(); k++) {
-          regfree((regex_t*)fo->regexdir.get(k));
+        for (auto& regex : fo->regexdir) {
+          regfree(&regex);
         }
-        for (int k = 0; k < fo->regexfile.size(); k++) {
-          regfree((regex_t*)fo->regexfile.get(k));
+        for (auto& regex : fo->regexfile) {
+          regfree(&regex);
         }
         if (fo->size_match) { free(fo->size_match); }
-        fo->regex.destroy();
-        fo->regexdir.destroy();
-        fo->regexfile.destroy();
-        fo->wild.destroy();
-        fo->wilddir.destroy();
-        fo->wildfile.destroy();
-        fo->wildbase.destroy();
         fo->base.destroy();
         fo->fstype.destroy();
         fo->Drivetype.destroy();
+	fo->~findFOPTS();
       }
       incexe->opts_list.destroy();
       incexe->name_list.destroy();
@@ -327,17 +321,20 @@ void CleanupFileset(JobControlRecord* jcr)
       incexe = (findIncludeExcludeItem*)fileset->exclude_list.get(i);
       for (int j = 0; j < incexe->opts_list.size(); j++) {
         fo = (findFOPTS*)incexe->opts_list.get(j);
+        for (auto& regex : fo->regex) {
+          regfree(&regex);
+        }
+        for (auto& regex : fo->regexdir) {
+          regfree(&regex);
+        }
+        for (auto& regex : fo->regexfile) {
+          regfree(&regex);
+        }
         if (fo->size_match) { free(fo->size_match); }
-        fo->regex.destroy();
-        fo->regexdir.destroy();
-        fo->regexfile.destroy();
-        fo->wild.destroy();
-        fo->wilddir.destroy();
-        fo->wildfile.destroy();
-        fo->wildbase.destroy();
         fo->base.destroy();
         fo->fstype.destroy();
         fo->Drivetype.destroy();
+	fo->~findFOPTS();
       }
       incexe->opts_list.destroy();
       incexe->name_list.destroy();

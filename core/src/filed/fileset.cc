@@ -190,30 +190,33 @@ void SetIncexe(JobControlRecord* jcr, findIncludeExcludeItem* incexe)
 int AddRegexToFileset(JobControlRecord* jcr, const char* item, int type)
 {
   findFOPTS* current_opts = start_options(jcr->fd_impl->ff);
-  regex_t* preg;
+  std::vector<regex_t>* vec;
+  if (type == ' ') {
+    vec = &current_opts->regex;
+  } else if (type == 'D') {
+    vec = &current_opts->regexdir;
+  } else if (type == 'F') {
+    vec = &current_opts->regexfile;
+  } else {
+    return state_error;
+  }
+
+  regex_t* preg = &vec->emplace_back();
+
   int rc;
   char prbuf[500];
 
-  preg = (regex_t*)malloc(sizeof(regex_t));
   if (BitIsSet(FO_IGNORECASE, current_opts->flags)) {
     rc = regcomp(preg, item, REG_EXTENDED | REG_ICASE);
   } else {
     rc = regcomp(preg, item, REG_EXTENDED);
   }
+
   if (rc != 0) {
     regerror(rc, preg, prbuf, sizeof(prbuf));
     regfree(preg);
-    free(preg);
+    vec->pop_back();
     Jmsg(jcr, M_FATAL, 0, _("REGEX %s compile error. ERR=%s\n"), item, prbuf);
-    return state_error;
-  }
-  if (type == ' ') {
-    current_opts->regex.append(preg);
-  } else if (type == 'D') {
-    current_opts->regexdir.append(preg);
-  } else if (type == 'F') {
-    current_opts->regexfile.append(preg);
-  } else {
     return state_error;
   }
 
@@ -226,13 +229,13 @@ int AddWildToFileset(JobControlRecord* jcr, const char* item, int type)
   findFOPTS* current_opts = start_options(jcr->fd_impl->ff);
 
   if (type == ' ') {
-    current_opts->wild.append(strdup(item));
+    current_opts->wild.emplace_back(item);
   } else if (type == 'D') {
-    current_opts->wilddir.append(strdup(item));
+    current_opts->wilddir.emplace_back(item);
   } else if (type == 'F') {
-    current_opts->wildfile.append(strdup(item));
+    current_opts->wildfile.emplace_back(item);
   } else if (type == 'B') {
-    current_opts->wildbase.append(strdup(item));
+    current_opts->wildbase.emplace_back(item);
   } else {
     return state_error;
   }

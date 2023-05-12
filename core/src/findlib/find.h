@@ -134,13 +134,13 @@ struct findFOPTS {
   char AccurateOpts[MAX_OPTS]{}; /**< Accurate mode options */
   char BaseJobOpts[MAX_OPTS]{};  /**< Basejob mode options */
   char* plugin{};                /**< Plugin that handle this section */
-  alist<regex_t*> regex;         /**< Regex string(s) */
-  alist<regex_t*> regexdir;      /**< Regex string(s) for directories */
-  alist<regex_t*> regexfile;     /**< Regex string(s) for files */
-  alist<const char*> wild;       /**< Wild card strings */
-  alist<const char*> wilddir;    /**< Wild card strings for directories */
-  alist<const char*> wildfile;   /**< Wild card strings for files */
-  alist<const char*> wildbase;   /**< Wild card strings for basenames */
+  std::vector<regex_t> regex{};         /**< Regex string(s) */
+  std::vector<regex_t> regexdir{};      /**< Regex string(s) for directories */
+  std::vector<regex_t> regexfile{};     /**< Regex string(s) for files */
+  std::vector<std::string> wild{};       /**< Wild card strings */
+  std::vector<std::string> wilddir{};    /**< Wild card strings for directories */
+  std::vector<std::string> wildfile{};   /**< Wild card strings for files */
+  std::vector<std::string> wildbase{};   /**< Wild card strings for basenames */
   alist<const char*> base;       /**< List of base names */
   alist<const char*> fstype;     /**< File system type limitation */
   alist<const char*> Drivetype;  /**< Drive type limitation */
