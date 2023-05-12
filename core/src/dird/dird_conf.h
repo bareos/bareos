@@ -523,7 +523,16 @@ struct FileOptions {
   alist<const char*> wilddir;   /**< Wild card strings for directories */
   alist<const char*> wildfile;  /**< Wild card strings for files */
   alist<const char*> wildbase;  /**< Wild card strings for files without '/' */
-  alist<const char*> base;      /**< List of base names */
+  // base is filled with a list of "base job expressions",
+  // which are just normal strings, with
+  // Base = <text>
+  // inside the option block.  While they are parsed
+  // both by the director and the file daemon, they are
+  // as far as I can see not used at all.
+  // We should think about removing all references to them.
+  // Maybe this was a predecessor of JobResource->base ?
+  // - Sebastian Sura, 12.05.2023
+  alist<const char*> base;      /**< List of base names (unused) */
   alist<const char*> fstype;    /**< File system type limitation */
   alist<const char*> Drivetype; /**< Drive type limitation */
   alist<const char*> meta;      /**< Backup meta information */

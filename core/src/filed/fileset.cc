@@ -587,7 +587,10 @@ void AddFileset(JobControlRecord* jcr, const char* item)
       break;
     case 'B':
       current_opts = start_options(ff);
-      current_opts->base.emplace_back(item);
+      // here we used to set "base" names with the 'Base' option
+      // This was actually undocumented and we do not use it,
+      // so it was removed.  To keep compatibility with older directors
+      // this case is not removed, but we (mostly) ignore it.
       state = state_options;
       break;
     case 'X': /* Filetype or Drive type */

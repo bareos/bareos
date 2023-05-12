@@ -140,7 +140,6 @@ struct findFOPTS {
   std::vector<std::string> wilddir{};    /**< Wild card strings for directories */
   std::vector<std::string> wildfile{};   /**< Wild card strings for files */
   std::vector<std::string> wildbase{};   /**< Wild card strings for basenames */
-  std::vector<std::string> base{};       /**< List of base names */
   std::vector<std::string> fstype{};     /**< File system type limitation */
   std::vector<std::string> Drivetype{};  /**< Drive type limitation */
 };
