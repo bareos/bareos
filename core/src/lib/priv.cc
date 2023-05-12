@@ -20,6 +20,9 @@
    02110-1301, USA.
 */
 
+#include <pwd.h>
+#include <grp.h>
+#include <unistd.h>
 #include "include/bareos.h"
 #include "lib/berrno.h"
 

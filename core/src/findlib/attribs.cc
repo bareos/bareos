@@ -26,6 +26,8 @@
  * other non-Unix systems, or Unix systems with ACLs, ...
  */
 
+#include <unistd.h>
+
 #include "include/bareos.h"
 #include "include/jcr.h"
 #include "find.h"

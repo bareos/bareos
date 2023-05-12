@@ -25,7 +25,9 @@
  *
  * Marco van Wieringen, March 2012
  */
-
+#include <unistd.h>
+#include <sys/ioctl.h>
+#include <netdb.h>
 #include "include/bareos.h"
 #include "lib/berrno.h"
 #include "scsi_lli.h"

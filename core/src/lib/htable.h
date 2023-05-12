@@ -31,6 +31,8 @@
 #define foreach_htable(var, tbl) \
   for ((var) = (tbl)->first(); (var); (var) = (tbl)->next())
 
+#include <memory>
+
 #include "include/config.h"
 #include "monotonic_buffer.h"
 

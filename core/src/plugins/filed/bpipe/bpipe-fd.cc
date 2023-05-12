@@ -24,6 +24,9 @@
  * @file
  * A simple pipe plugin for the Bareos File Daemon
  */
+
+#include <unistd.h>
+
 #include "include/bareos.h"
 #include "filed/fd_plugins.h"
 #include "plugins/include/common.h"

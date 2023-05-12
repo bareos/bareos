@@ -30,6 +30,7 @@
  * routines for the new syntax Options resource.
  */
 
+#include <unistd.h>
 #include "include/bareos.h"
 #include "include/jcr.h"
 #include "find.h"

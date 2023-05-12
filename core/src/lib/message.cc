@@ -32,6 +32,8 @@
  */
 
 #include <vector>
+#include <unistd.h>
+#include <syslog.h>
 
 #include "include/bareos.h"
 #include "include/jcr.h"

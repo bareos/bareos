@@ -29,6 +29,8 @@
  * UNIX FILE API device abstraction.
  */
 
+#include <unistd.h>
+
 #include "include/bareos.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"

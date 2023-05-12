@@ -24,20 +24,19 @@
 #ifndef BAREOS_LIB_PARSE_CONF_H_
 #define BAREOS_LIB_PARSE_CONF_H_
 
-
 #include "include/bareos.h"
 #include "include/bc_types.h"
 #include "lib/bstringlist.h"
 #include "lib/parse_conf_callbacks.h"
 #include "lib/s_password.h"
 #include "lib/tls_conf.h"
-#include "lib/parse_conf.h"
 #include "lib/keyword_table_s.h"
 #include "lib/message_destination_info.h"
 #include "lib/util.h"
 
 #include <functional>
 #include <memory>
+#include <map>
 
 struct ResourceItem;
 class ConfigParserStateMachine;

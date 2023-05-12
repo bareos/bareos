@@ -25,6 +25,7 @@
 #include "include/bareos.h"
 #include "dird/job_trigger.h"
 
+#include <memory>
 #include <queue>
 #include <vector>
 

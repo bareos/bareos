@@ -28,6 +28,8 @@
 #endif
 
 
+#include <arpa/inet.h>
+
 #include "create_resource.h"
 #include "bsock_test.h"
 #include "bareos_test_sockets.h"

@@ -40,6 +40,8 @@
  * @file
  * UNIX Tape API device abstraction.
  */
+#include <sys/ioctl.h>
+#include <unistd.h>
 
 #include "include/bareos.h"
 #include "stored/stored.h"

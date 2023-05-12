@@ -26,6 +26,7 @@
  * Dumb program to extract files from a Bareos backup.
  */
 
+#include <unistd.h>
 #include "include/bareos.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"

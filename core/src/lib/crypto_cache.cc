@@ -25,6 +25,7 @@
  * Marco van Wieringen, April 2012
  */
 
+#include <unistd.h>
 #include "include/bareos.h"
 #include "crypto_cache.h"
 #include "lib/berrno.h"
@@ -348,9 +349,7 @@ void ResetCryptoCache(void)
   // Lock the cache.
   lock_mutex(crypto_cache_lock);
 
-  foreach_dlist (cce, cached_crypto_keys) {
-    cce->added = now;
-  }
+  foreach_dlist (cce, cached_crypto_keys) { cce->added = now; }
 
   unlock_mutex(crypto_cache_lock);
 }

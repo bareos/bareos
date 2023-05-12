@@ -28,6 +28,8 @@
  * BAREOS utility functions are in util.c
  */
 
+
+#include <unistd.h>
 #include "include/bareos.h"
 #include "lib/berrno.h"
 #include "lib/recent_job_results_list.h"

@@ -25,6 +25,8 @@
  * Kern Sibbald, November MMII
  */
 
+#include <sys/wait.h>
+#include <unistd.h>
 #include "include/bareos.h"
 #include "jcr.h"
 #include "lib/berrno.h"

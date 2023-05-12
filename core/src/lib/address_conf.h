@@ -28,6 +28,9 @@
 #ifndef BAREOS_LIB_ADDRESS_CONF_H_
 #define BAREOS_LIB_ADDRESS_CONF_H_
 
+#include <arpa/inet.h>
+#include <netinet/in.h>
+
 #include "lib/dlist.h"
 
 class OutputFormatterResource;

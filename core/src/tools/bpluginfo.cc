@@ -33,6 +33,7 @@
  * - Enabled functions, etc.
  */
 
+#include <unistd.h>
 #include "include/bareos.h"
 #include "filed/fd_plugins.h"
 #include "dird/dir_plugins.h"

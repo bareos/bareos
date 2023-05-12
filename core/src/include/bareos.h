@@ -82,11 +82,6 @@
 #define _POSIX_PTHREAD_SEMANTICS 1
 
 /* System includes */
-#include <stdint.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
 #if HAVE_UMEM_H
 #  include <umem.h>
 #endif
@@ -98,7 +93,6 @@
 #  include <direct.h>
 #  include <process.h>
 #endif
-#include <errno.h>
 #include <fcntl.h>
 
 /* O_NOATIME is defined at fcntl.h when supported */
@@ -112,23 +106,10 @@ extern "C" {
 }
 #endif
 
-#include <string.h>
-#include <strings.h>
-#include <signal.h>
-#include <ctype.h>
-#ifndef _SPLINT_
-#  include <syslog.h>
-#endif
-#include <limits.h>
-#include <pwd.h>
-#include <grp.h>
-#include <time.h>
-#include <netdb.h>
 #include <sys/types.h>
 #ifdef HAVE_SYS_BITYPES_H
 #  include <sys/bitypes.h>
 #endif
-#include <sys/ioctl.h>
 #include <sys/socket.h>
 #if defined(HAVE_WIN32) & !defined(HAVE_MINGW)
 #  include <winsock2.h>
@@ -136,11 +117,6 @@ extern "C" {
 #if !defined(HAVE_WIN32) & !defined(HAVE_MINGW)
 #  include <sys/stat.h>
 #endif
-#include <sys/time.h>
-#include <sys/wait.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <pthread.h>
 
 #if defined(HAVE_WIN32)
 /* we must include winsock2.h before windows.h, because that would implicitly
@@ -164,13 +140,7 @@ extern "C" {
 #  define _GLIBCXX_GTHREAD_USE_WEAK 0
 #endif
 
-#include <list>
-#include <vector>
-#include <map>
-#include <string>
-#include <memory>
 #include "lib/attribs.h"
-
 
 #include "streams.h"
 #include "filetypes.h"

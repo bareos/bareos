@@ -25,6 +25,7 @@
  * Program for determining drive type
  */
 
+#include <unistd.h>
 #include "include/bareos.h"
 #include "findlib/find.h"
 #include "findlib/drivetype.h"

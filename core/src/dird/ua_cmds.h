@@ -22,6 +22,8 @@
 #ifndef BAREOS_DIRD_UA_CMDS_H_
 #define BAREOS_DIRD_UA_CMDS_H_
 
+#include <map>
+
 namespace directordaemon {
 
 class ClientResource;

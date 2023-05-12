@@ -23,6 +23,7 @@
 #ifndef BAREOS_LIB_TLS_OPENSSL_PRIVATE_H_
 #define BAREOS_LIB_TLS_OPENSSL_PRIVATE_H_
 
+#include <map>
 #include "include/bareos.h"
 #include <string>
 

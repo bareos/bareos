@@ -26,6 +26,7 @@
  * Create a file, and reset the modes
  */
 
+#include <unistd.h>
 #include "include/bareos.h"
 #include "include/jcr.h"
 #include "find.h"

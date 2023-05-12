@@ -25,6 +25,8 @@
  * Marco van Wieringen, February 2015
  */
 
+#include <unistd.h>
+
 #include "include/bareos.h"
 #include "lib/edit.h"
 #include "stored/device_status_information.h"

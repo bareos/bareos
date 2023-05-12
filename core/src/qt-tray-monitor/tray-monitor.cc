@@ -27,6 +27,9 @@
 #include <QApplication>
 #include <QMessageBox>
 
+#include <signal.h>
+#include <unistd.h>
+
 #include "mainwindow.h"
 #include "tray-monitor.h"
 #include "authenticate.h"

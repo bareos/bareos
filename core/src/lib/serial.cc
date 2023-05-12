@@ -25,6 +25,9 @@
                           John Walker
 */
 
+#include <netdb.h>
+#include <netinet/in.h>
+
 #include "include/bareos.h"
 #include "serial.h"
 

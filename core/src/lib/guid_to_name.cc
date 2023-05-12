@@ -26,6 +26,8 @@
  * for preformance reasons.
  */
 
+#include <pwd.h>
+#include <grp.h>
 #include "include/bareos.h"
 #include "lib/edit.h"
 #include "lib/dlist.h"
@@ -56,12 +58,8 @@ guid_list* new_guid_list()
 void FreeGuidList(guid_list* list)
 {
   guitem* item;
-  foreach_dlist (item, list->uid_list) {
-    free(item->name);
-  }
-  foreach_dlist (item, list->gid_list) {
-    free(item->name);
-  }
+  foreach_dlist (item, list->uid_list) { free(item->name); }
+  foreach_dlist (item, list->gid_list) { free(item->name); }
   delete list->uid_list;
   delete list->gid_list;
   free(list);

@@ -29,6 +29,8 @@
  * UNIX FIFO API device abstraction.
  */
 
+#include <unistd.h>
+
 #include "include/bareos.h"
 #include "stored/stored.h"
 #include "stored/sd_backends.h"

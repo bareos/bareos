@@ -24,6 +24,7 @@
  *
  * Kern Sibbald, MM
  */
+#include <unistd.h>
 
 #include "include/bareos.h"
 #include "include/jcr.h"

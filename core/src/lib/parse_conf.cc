@@ -51,6 +51,8 @@
  * Kern Sibbald, January MM
  */
 
+#include <algorithm>
+
 #include "include/bareos.h"
 #include "include/jcr.h"
 #include "lib/address_conf.h"
@@ -65,7 +67,6 @@
 #include "lib/berrno.h"
 #include "lib/util.h"
 
-#include <algorithm>
 
 #if defined(HAVE_WIN32)
 #  include "shlobj.h"

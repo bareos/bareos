@@ -22,6 +22,7 @@
 // Marco van Wieringen, December 2013
 // This file contains the LMDB abstraction of the accurate payload storage.
 
+#include <unistd.h>
 #include "include/bareos.h"
 #include "filed/filed.h"
 #include "filed/filed_globals.h"

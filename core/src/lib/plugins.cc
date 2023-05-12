@@ -26,6 +26,7 @@
  * Kern Sibbald, October 2007
  */
 
+#include <unistd.h>
 #include "include/bareos.h"
 #include "lib/alist.h"
 #include "lib/berrno.h"

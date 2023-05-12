@@ -32,6 +32,7 @@
  * creating the path components.  Currently, it always starts at
  * the top, which can be rather inefficient for long path names.
  */
+#include <unistd.h>
 #include "include/bareos.h"
 #include "include/jcr.h"
 #include "lib/berrno.h"

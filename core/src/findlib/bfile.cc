@@ -28,6 +28,9 @@
  * I.e. on Windows, we use Windows APIs.
  */
 
+#include <unistd.h>
+#include <netinet/in.h>
+
 #include "include/bareos.h"
 #include "find.h"
 #include "lib/berrno.h"

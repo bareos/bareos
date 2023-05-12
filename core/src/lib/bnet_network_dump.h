@@ -22,6 +22,8 @@
 #ifndef BAREOS_LIB_BNET_NETWORK_DUMP_H_
 #define BAREOS_LIB_BNET_NETWORK_DUMP_H_
 
+#include <memory>
+
 class BareosResource;
 class QualifiedResourceNameTypeConverter;
 class BnetDumpPrivate;

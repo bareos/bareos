@@ -29,6 +29,7 @@
  * Thanks to the TAR programmers.
  */
 
+#include <unistd.h>
 #include "include/bareos.h"
 #include "include/jcr.h"
 #include "find.h"

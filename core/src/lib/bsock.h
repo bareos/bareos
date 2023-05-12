@@ -36,7 +36,10 @@
 #ifndef BAREOS_LIB_BSOCK_H_
 #define BAREOS_LIB_BSOCK_H_
 
-#include <include/bareos.h>
+
+#include <unistd.h>
+
+#include "include/bareos.h"
 #include "lib/address_conf.h"
 #include "lib/bnet_network_dump.h"
 #include "lib/tls.h"

@@ -30,6 +30,7 @@
  * Generic Tape API device abstraction.
  */
 
+#include <unistd.h>
 #include "include/bareos.h"
 #include "stored/device_control_record.h"
 #include "stored/stored.h"

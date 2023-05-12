@@ -32,6 +32,8 @@
 #  include "include/bareos.h"
 #endif
 
+#include <limits.h>
+
 #include "dird/dird.h"
 #include "dird/dird_globals.h"
 #include "dird/dir_plugins.h"

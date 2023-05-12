@@ -26,6 +26,7 @@
  * Dumb program to do an "ls" of a Bareos 2.0 mortal file.
  */
 
+#include <unistd.h>
 #include "include/bareos.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"

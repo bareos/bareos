@@ -27,6 +27,8 @@
 #ifndef BAREOS_LIB_WATCHDOG_H_
 #define BAREOS_LIB_WATCHDOG_H_
 
+#include <signal.h>
+
 #include "lib/dlist.h"
 
 enum

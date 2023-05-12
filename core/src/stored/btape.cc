@@ -32,6 +32,7 @@
  * talk to devices that are configured.
  */
 
+#include <unistd.h>
 #include "include/bareos.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
