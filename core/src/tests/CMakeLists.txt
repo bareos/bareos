@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -151,7 +151,13 @@ endif()
 # Keep alphabetically ordered
 if(NOT client-only)
   bareos_add_test(
-    addresses_and_ports
+    addresses_and_ports_config
+    LINK_LIBRARIES bareos dird_objects bareosfind bareossql testing_common
+                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
+  )
+
+  bareos_add_test(
+    addresses_and_ports_functions
     LINK_LIBRARIES bareos dird_objects bareosfind bareossql testing_common
                    $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
   )
@@ -231,7 +237,7 @@ if(NOT client-only)
 
   bareos_add_test(
     run_on_incoming_connect_interval
-    LINK_LIBRARIES dird_objects bareos bareosfind bareossql
+    LINK_LIBRARIES dird_objects bareos bareosfind bareossql testing_common
                    $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
   )
   bareos_add_test(
@@ -240,7 +246,7 @@ if(NOT client-only)
   )
   bareos_add_test(
     scheduler
-    LINK_LIBRARIES dird_objects bareos bareosfind bareossql
+    LINK_LIBRARIES dird_objects bareos bareosfind bareossql testing_common
                    $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
   )
   bareos_add_test(
@@ -278,8 +284,9 @@ if(NOT client-only)
   )
   bareos_add_test(sort_stringvector LINK_LIBRARIES bareos GTest::gtest_main)
   bareos_add_test(
-    test_config_parser_dir LINK_LIBRARIES dird_objects bareos bareosfind
-                                          bareossql GTest::gtest_main
+    test_config_parser_dir
+    LINK_LIBRARIES dird_objects bareos bareosfind testing_common bareossql
+                   GTest::gtest_main
   )
   set_tests_properties(
     gtest:ConfigParser_Dir.bareos_configparser_tests
@@ -320,7 +327,7 @@ if(NOT client-only)
   )
   bareos_add_test(
     test_setdebug
-    LINK_LIBRARIES dird_objects bareos bareosfind bareossql
+    LINK_LIBRARIES dird_objects bareos bareosfind bareossql testing_common
                    $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
   )
   bareos_add_test(

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -41,6 +41,7 @@
 #include "include/bareos.h"
 #include "include/jcr.h"
 #include "lib/parse_conf.h"
+#include "testing_dir_common.h"
 
 #include <algorithm>
 #include <chrono>
@@ -68,7 +69,7 @@ class RunOnIncomingConnectIntervalTest : public ::testing::Test {
 
 void RunOnIncomingConnectIntervalTest::SetUp()
 {
-  OSDependentInit();
+  InitDirGlobals();
 
   std::string path_to_config_file = std::string(
       RELATIVE_PROJECT_SOURCE_DIR "/configs/run-on-incoming-connect-interval/");

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,6 +30,7 @@
 #include "dird/dird_globals.h"
 #include "dird/dird_conf.h"
 #include "lib/output_formatter_resource.h"
+#include "testing_dir_common.h"
 
 #include <thread>
 #include <condition_variable>
@@ -53,10 +54,12 @@ bool sprintit(void*, const char* fmt, ...)
   return true;
 }
 
-TEST(ConfigParser_Dir, ParseSchedulerOddEvenDaysCorrectly)
-{
-  OSDependentInit();
+class ConfigParser_Dir : public ::testing::Test {
+  void SetUp() override { InitDirGlobals(); }
+};
 
+TEST_F(ConfigParser_Dir, ParseSchedulerOddEvenDaysCorrectly)
+{
   std::string path_to_config_file = std::string(
       RELATIVE_PROJECT_SOURCE_DIR "/configs/bareos-configparser-tests");
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
@@ -96,9 +99,8 @@ TEST(ConfigParser_Dir, ParseSchedulerOddEvenDaysCorrectly)
   EXPECT_EQ(sprintoutput, expected_output);
 }
 
-TEST(ConfigParser_Dir, bareos_configparser_tests)
+TEST_F(ConfigParser_Dir, bareos_configparser_tests)
 {
-  OSDependentInit();
   std::string path_to_config_file = std::string(
       RELATIVE_PROJECT_SOURCE_DIR "/configs/bareos-configparser-tests");
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
@@ -133,9 +135,8 @@ TEST(ConfigParser_Dir, bareos_configparser_tests)
   delete my_config;
 }
 
-TEST(ConfigParser_Dir, foreach_res_and_reload)
+TEST_F(ConfigParser_Dir, foreach_res_and_reload)
 {
-  OSDependentInit();
   std::string path_to_config_file = std::string(
       RELATIVE_PROJECT_SOURCE_DIR "/configs/bareos-configparser-tests");
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
@@ -190,10 +191,8 @@ TEST(ConfigParser_Dir, foreach_res_and_reload)
   delete my_config;
 }  // namespace directordaemon
 
-TEST(ConfigParser_Dir, runscript_test)
+TEST_F(ConfigParser_Dir, runscript_test)
 {
-  OSDependentInit();
-
   std::string path_to_config_file = std::string(
       RELATIVE_PROJECT_SOURCE_DIR "/configs/runscript-tests/bareos-dir.conf");
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
@@ -236,13 +235,11 @@ void test_config_directive_type(
 void test_CFG_TYPE_AUDIT(DirectorResource* me)
 {
   const char* val = nullptr;
-  foreach_alist (val, me->audit_events) {
-    printf("AuditEvents = %s\n", val);
-  }
+  foreach_alist (val, me->audit_events) { printf("AuditEvents = %s\n", val); }
   EXPECT_EQ(me->audit_events->size(), 8);
 }
 
-TEST(ConfigParser_Dir, CFG_TYPE_AUDIT)
+TEST_F(ConfigParser_Dir, CFG_TYPE_AUDIT)
 {
   test_config_directive_type(test_CFG_TYPE_AUDIT);
 }
@@ -251,13 +248,11 @@ TEST(ConfigParser_Dir, CFG_TYPE_AUDIT)
 void test_CFG_TYPE_PLUGIN_NAMES(DirectorResource* me)
 {
   const char* val = nullptr;
-  foreach_alist (val, me->plugin_names) {
-    printf("PluginNames = %s\n", val);
-  }
+  foreach_alist (val, me->plugin_names) { printf("PluginNames = %s\n", val); }
   EXPECT_EQ(me->plugin_names->size(), 16);
 }
 
-TEST(ConfigParser_Dir, CFG_TYPE_PLUGIN_NAMES)
+TEST_F(ConfigParser_Dir, CFG_TYPE_PLUGIN_NAMES)
 {
   test_config_directive_type(test_CFG_TYPE_PLUGIN_NAMES);
 }
@@ -268,7 +263,7 @@ void test_CFG_TYPE_STR_VECTOR(DirectorResource* me)
   EXPECT_EQ(me->tls_cert_.allowed_certificate_common_names_.size(), 8);
 }
 
-TEST(ConfigParser_Dir, CFG_TYPE_STR_VECTOR)
+TEST_F(ConfigParser_Dir, CFG_TYPE_STR_VECTOR)
 {
   test_config_directive_type(test_CFG_TYPE_STR_VECTOR);
 }
@@ -276,19 +271,17 @@ TEST(ConfigParser_Dir, CFG_TYPE_STR_VECTOR)
 void test_CFG_TYPE_STR_VECTOR_OF_DIRS(DirectorResource* me)
 {
   EXPECT_EQ(me->backend_directories.size(), 9);
-  /*
-   *  WIN32:
+  /*  WIN32:
    *  cmake uses some value for PATH_BAREOS_BACKENDDIR,
    *  which ends up in the configuration files
    *  but this is later overwritten in the Director Daemon with ".".
-   *  Therefore we skip this test.
-   */
+   *  Therefore we skip this test. */
 #if !defined(HAVE_WIN32)
   EXPECT_EQ(me->backend_directories.at(0), PATH_BAREOS_BACKENDDIR);
 #endif
 }
 
-TEST(ConfigParser_Dir, CFG_TYPE_STR_VECTOR_OF_DIRS)
+TEST_F(ConfigParser_Dir, CFG_TYPE_STR_VECTOR_OF_DIRS)
 {
   test_config_directive_type(test_CFG_TYPE_STR_VECTOR_OF_DIRS);
 }
@@ -309,7 +302,7 @@ void test_CFG_TYPE_ALIST_STR(DirectorResource*)
   EXPECT_EQ(job2->run_cmds->size(), 8);
 }
 
-TEST(ConfigParser_Dir, CFG_TYPE_ALIST_STR)
+TEST_F(ConfigParser_Dir, CFG_TYPE_ALIST_STR)
 {
   test_config_directive_type(test_CFG_TYPE_ALIST_STR);
 }
@@ -323,7 +316,7 @@ void test_CFG_TYPE_ALIST_RES(DirectorResource*)
   EXPECT_EQ(job1->base->size(), 8);
 }
 
-TEST(ConfigParser_Dir, CFG_TYPE_ALIST_RES)
+TEST_F(ConfigParser_Dir, CFG_TYPE_ALIST_RES)
 {
   test_config_directive_type(test_CFG_TYPE_ALIST_RES);
 }
@@ -331,14 +324,12 @@ TEST(ConfigParser_Dir, CFG_TYPE_ALIST_RES)
 
 void test_CFG_TYPE_STR(DirectorResource* me)
 {
-  /*
-   * Only the first entry from the last "Description" config directive is taken.
-   * This can be considered as a bug.
-   */
+  /* Only the first entry from the last "Description" config directive is taken.
+   * This can be considered as a bug. */
   EXPECT_STREQ(me->description_, "item31");
 }
 
-TEST(ConfigParser_Dir, CFG_TYPE_STR)
+TEST_F(ConfigParser_Dir, CFG_TYPE_STR)
 {
   test_config_directive_type(test_CFG_TYPE_STR);
 }
@@ -355,12 +346,10 @@ void test_CFG_TYPE_FNAME(DirectorResource*)
   alist<const char*>* files
       = std::addressof(fileset1->include_items.at(0)->name_list);
   const char* val = nullptr;
-  foreach_alist (val, files) {
-    printf("Files = %s\n", val);
-  }
+  foreach_alist (val, files) { printf("Files = %s\n", val); }
 }
 
-TEST(ConfigParser_Dir, CFG_TYPE_FNAME)
+TEST_F(ConfigParser_Dir, CFG_TYPE_FNAME)
 {
   test_config_directive_type(test_CFG_TYPE_FNAME);
 }
@@ -373,7 +362,7 @@ void test_CFG_TYPE_TIME(DirectorResource* me)
   EXPECT_EQ(me->heartbeat_interval, 38898367);
 }
 
-TEST(ConfigParser_Dir, CFG_TYPE_TIME)
+TEST_F(ConfigParser_Dir, CFG_TYPE_TIME)
 {
   test_config_directive_type(test_CFG_TYPE_TIME);
 }

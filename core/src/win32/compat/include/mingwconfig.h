@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -74,9 +74,6 @@
 
 /* Define to 1 if you have the `Readdir_r' function. */
 /* #undef HAVE_READDIR_R */
-
-/* Define to 1 if you have the <resolv.h> header file. */
-/* #undef HAVE_RESOLV_H */
 
 /* Define to 1 if translation of program messages to the user's native
    language is requested. */

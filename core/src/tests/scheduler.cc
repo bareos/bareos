@@ -1,7 +1,7 @@
 /*
   BAREOS® - Backup Archiving REcovery Open Sourced
 
-  Copyright (C) 2019-2022 Bareos GmbH & Co. KG
+  Copyright (C) 2019-2023 Bareos GmbH & Co. KG
 
   This program is Free Software; you can redistribute it and/or
   modify it under the terms of version three of the GNU Affero General Public
@@ -37,6 +37,7 @@
 #include "lib/parse_conf.h"
 #include "tests/scheduler_time_source.h"
 #include "dird/scheduler_system_time_source.h"
+#include "testing_dir_common.h"
 
 #include <atomic>
 #include <chrono>
@@ -64,7 +65,7 @@ static SimulatedTimeAdapter* time_adapter;
 class SchedulerTest : public ::testing::Test {
   void SetUp() override
   {
-    OSDependentInit();
+    InitDirGlobals();
     std::unique_ptr<SimulatedTimeAdapter> ta
         = std::make_unique<SimulatedTimeAdapter>();
     time_adapter = ta.get();
