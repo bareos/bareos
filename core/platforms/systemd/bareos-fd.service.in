@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+# Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 # Copyright (c) 2011 Free Software Foundation Europe e.V., Author: Bruno Friedmann
 #
 [Unit]
@@ -7,6 +7,11 @@ Description=Bareos File Daemon service
 Documentation=man:bareos-fd(8)
 Requires=network.target nss-lookup.target time-sync.target
 After=network-online.target nss-lookup.target remote-fs.target time-sync.target
+# Check if working dir exist
+ConditionPathExists=@working_dir@
+# Limit the number of restart per day to 10
+StartLimitIntervalSec=1d
+StartLimitBurst=10
 
 [Service]
 Type=simple
@@ -15,8 +20,15 @@ Group=@fd_group@
 WorkingDirectory=@working_dir@
 ExecStart=@sbindir@/bareos-fd -f
 SuccessExitStatus=0 15
-Restart=on-failure
 # IOSchedulingClass=idle
+# Increase the maximum number of open file descriptors
+LimitNOFILE=8192:524288
+# Restart on failure, wait 30 seconds
+Restart=on-failure
+RestartSec=30
+# Don't restart on wrong exec arguments and configuration errors.
+RestartPreventExitStatus=109 1
+
 
 [Install]
 Alias=bareos-filedaemon.service

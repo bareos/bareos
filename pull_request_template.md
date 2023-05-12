@@ -1,6 +1,6 @@
 ### Thank you for contributing to the Bareos Project!
 
-**Backport of PR #0000 to bareos-2x** (remove this line, if it no backport)
+**Backport of PR #0000 to bareos-2x** (remove this line if this is no backport; for backport use cherry-pick -x)
 
 #### Please check
 
