@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2015-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -163,7 +163,7 @@ void test_dlist_dynamic()
   FreeDlist(list);
 }
 
-TEST(dlist, dlist)
+TEST(dlist, RemoveAndReplacePrependedElement)
 {
   char buf[30];
   dlist<MYJCR>* jcr_chain;
@@ -171,7 +171,6 @@ TEST(dlist, dlist)
   MYJCR* jcr1;
   MYJCR* save_jcr = NULL;
   MYJCR* next_jcr;
-  int count;
   int index = 0;
 
   jcr_chain = (dlist<MYJCR>*)malloc(sizeof(dlist<MYJCR>));
@@ -201,6 +200,16 @@ TEST(dlist, dlist)
   }
   jcr_chain->destroy();
   free(jcr_chain);
+}
+
+TEST(dlist, RemoveAndReplaceAppendedElement)
+{
+  char buf[30];
+  dlist<MYJCR>* jcr_chain;
+  MYJCR* jcr = NULL;
+  MYJCR* save_jcr = NULL;
+  MYJCR* next_jcr;
+  int index = 0;
 
   /* The following may seem a bit odd, but we create a chaing
    *  of jcr objects.  Within a jcr object, there is a buf
@@ -231,7 +240,18 @@ TEST(dlist, dlist)
   }
 
   delete jcr_chain;
+}
 
+TEST(dlist, BinaryInsert)
+{
+  char buf[30];
+  dlist<MYJCR>* jcr_chain;
+  MYJCR* jcr = NULL;
+  MYJCR* jcr1;
+  int count;
+
+  jcr_chain = (dlist<MYJCR>*)malloc(sizeof(dlist<MYJCR>));
+  jcr_chain->init(jcr, &jcr->link);
 
   /* Now do a binary insert for the list */
   jcr_chain = new dlist<MYJCR>(jcr, &jcr->link);
@@ -278,6 +298,12 @@ TEST(dlist, dlist)
     jcr->buf = NULL;
   }
   delete jcr_chain;
+}
+
+TEST(dlist, DlistString)
+{
+  char buf[30];
+  int count;
 
   /* Finally, do a test using the dlistString string helper, which
    *  allocates a dlist node and stores the string directly in
@@ -302,8 +328,7 @@ TEST(dlist, dlist)
     buf[0]--;
   }
   dlistString* node;
-  foreach_dlist (node, chain) {
-  }
+  foreach_dlist (node, chain) {}
   chain->destroy();
 
   test_dlist_dynamic();

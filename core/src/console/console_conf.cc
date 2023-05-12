@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -202,7 +202,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
                 res_dir->resource_name_);
         } else {
           p->tls_cert_.allowed_certificate_common_names_
-              = std::move(p->tls_cert_.allowed_certificate_common_names_);
+              = std::move(res_dir->tls_cert_.allowed_certificate_common_names_);
         }
         break;
       }
