@@ -68,35 +68,52 @@ void PrintTo(const VssStatus& status, std::ostream* os) {
   *os << VssStatusName(status);
 }
 
-bool OldConvert(const char* path, char* buf, int len) {
+static bool MockVSSConvert_OldApi(const char* path, char* buf, int len) {
   using namespace std::literals;
   constexpr std::string_view s = "\\\\?\\vss\\"sv;
-  strncpy(buf, s.data(), len);
-  len -= s.size();
-  strncat(buf, path, len);
+  if (len <= 0) return false;
+  std::size_t ulen = static_cast<std::size_t>(len);
+  buf[0] = '\0';
+  // strncat can write up to n+1 bytes!
+  // using strncat ensures that we end up with proper strings, that is
+  // we ensure that we always have a zero terminator
+  strncat(buf, s.data(), ulen-1);
+  strncat(buf, path, ulen-1 - strlen(buf));
   return true;
 }
 
-bool OldConvertW(const wchar_t* path, wchar_t *buf, int len) {
+static bool MockVSSConvertW_OldApi(const wchar_t* path, wchar_t *buf, int len) {
   using namespace std::literals;
   constexpr std::wstring_view s = L"\\\\?\\vss\\"sv;
-  wcsncpy(buf, s.data(), len);
-  len -= s.size();
-  wcsncat(buf, path, len);
+  if (len <= 0) return false;
+  std::size_t ulen = static_cast<std::size_t>(len);
+  buf[0] = L'\0';
+
+  // wcsncat can write up to n+1 bytes!
+  // using wcsncat ensures that we end up with proper strings, that is
+  // we ensure that we always have a zero terminator
+  wcsncat(buf, s.data(), ulen-1);
+  wcsncat(buf, path, ulen-1 - wcslen(buf));
   return true;
 }
 
-char* NewConvert(const char* path) {
-  int len = strlen(path) + 100;
+// do the same thing as MockVSSConvert* except with the new required api
+static char* MockVSSConvert_NewApi(const char* path) {
+  // use a len thats big enough to fit path without
+  // relying on strlen(path) so as to not trigger
+  // a false strncat 'bound depends on source' warning
+  int len = 8000;
+  ASSERT(static_cast<std::size_t>(len) > strlen(path));
   char* buf = (char*) malloc(len);
-  OldConvert(path, buf, len);
+  MockVSSConvert_OldApi(path, buf, len);
   return buf;
 }
 
-wchar_t* NewConvertW(const wchar_t* path) {
-  int len = wcslen(path) + 100;
-  wchar_t* buf = (wchar_t*) malloc(len * sizeof(*path));
-  OldConvertW(path, buf, len);
+static wchar_t* MockVSSConvertW_NewApi(const wchar_t* path) {
+  int len = 8000;
+  ASSERT(static_cast<std::size_t>(len) > wcslen(path));
+  wchar_t* buf = (wchar_t*) malloc(len * sizeof(*buf));
+  MockVSSConvertW_OldApi(path, buf, len);
   return buf;
 }
 
@@ -104,8 +121,9 @@ class Regression : public ::testing::TestWithParam<VssStatus> {
   void SetUp() override {
     switch (GetParam()) {
     case VssStatus::Enabled: {
-      old_path_conversion::Win32SetPathConvert(OldConvert, OldConvertW);
-      SetVSSPathConvert(NewConvert, NewConvertW);
+      old_path_conversion::Win32SetPathConvert(MockVSSConvert_OldApi,
+					       MockVSSConvertW_OldApi);
+      SetVSSPathConvert(MockVSSConvert_NewApi, MockVSSConvertW_NewApi);
     } break;
     case VssStatus::Disabled: {
 
