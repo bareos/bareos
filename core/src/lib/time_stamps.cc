@@ -87,39 +87,20 @@ ThreadTimeKeeper& TimeKeeper::get_thread_local()
   }
 }
 
-static std::uint64_t AsNS(Event::time_point tp)
-{
-  return std::chrono::duration_cast<std::chrono::nanoseconds>(tp.time_since_epoch()).count();
-}
-
-static void GenerateTimingReport(std::ostringstream& report,
-			  std::chrono::steady_clock::time_point current,
-			  const std::vector<Event>& durations)
-{
-  for (auto& dur : durations) {
-    Event::time_point start = dur.start_point;
-    Event::time_point end   = dur.end_point_as_of(current);
-    report << dur.block->c_str() << ": " << AsNS(start) << " -- " << AsNS(end);
-    if (!dur.ended) {
-      report << " (still active)";
-    }
-    report << "\n";
-  }
-}
-
-std::string TimeKeeper::generate_report() const
+void TimeKeeper::generate_report(ReportGenerator* gen) const
 {
   auto current_time = std::chrono::steady_clock::now();
 
   std::unique_lock prevent_creations(alloc_mut);
-  std::ostringstream report;
-  report << "=== Performance Report ===\n";
 
+  gen->begin_report(current_time);
   for (auto& [thread_id, local] : keeper) {
-    report << "=== Thread: " << thread_id << " ===\n";
+    gen->begin_thread(thread_id);
     std::unique_lock _{local.vec_mut};
-    GenerateTimingReport(report, current_time, local.times);
+    for (auto& event : local.times) {
+      gen->add_event(event);
+    }
+    gen->end_thread();
   }
-
-  return report.str();
+  gen->end_report();
 }

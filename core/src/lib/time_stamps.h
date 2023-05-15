@@ -70,11 +70,22 @@ private:
   decltype(times)::iterator current;
 };
 
+class ReportGenerator {
+public:
+  virtual void begin_report(Event::time_point current [[maybe_unused]]) {};
+  virtual void end_report() {};
+
+  virtual void begin_thread(std::thread::id thread_id [[maybe_unused]]) {};
+  virtual void end_thread() {};
+
+  virtual void add_event(const Event& e [[maybe_unused]]) {};
+};
+
 class TimeKeeper
 {
 public:
   ThreadTimeKeeper& get_thread_local();
-  std::string generate_report() const;
+  void generate_report(ReportGenerator* gen) const;
 private:
   mutable std::shared_mutex alloc_mut{};
   std::unordered_map<std::thread::id, ThreadTimeKeeper> keeper{};
