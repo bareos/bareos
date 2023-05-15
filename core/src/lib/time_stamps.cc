@@ -5,8 +5,8 @@
 
 #include "include/baconfig.h"
 
-Duration::Duration(std::string_view name) : name{name}
-					  , start_point{std::chrono::steady_clock::now()}
+Duration::Duration(const BlockIdentity& block) : block{&block}
+					       , start_point{std::chrono::steady_clock::now()}
 {}
 
 Duration::time_point Duration::end_point_as_of(Duration::time_point current) const
@@ -26,14 +26,12 @@ void Duration::end()
 }
 
 ThreadTimeKeeper::ThreadTimeKeeper() : current{times.end()}
-{
-  enter("Thread");
-}
+{}
 
-void ThreadTimeKeeper::enter(std::string_view s)
+void ThreadTimeKeeper::enter(const BlockIdentity& block)
 {
   std::unique_lock _{vec_mut};
-  current = times.emplace(times.end(), s);
+  current = times.emplace(times.end(), block);
 }
 
 void ThreadTimeKeeper::exit()
@@ -52,16 +50,6 @@ void ThreadTimeKeeper::exit()
   if (current->ended) {
     current = times.end();
   }
-}
-
-TimedBlock::TimedBlock(ThreadTimeKeeper& keeper, std::string_view name) : keeper{keeper}
-{
-  keeper.enter(name);
-}
-
-TimedBlock::~TimedBlock()
-{
-  keeper.exit();
 }
 
 ThreadTimeKeeper& TimeKeeper::get_thread_local()
@@ -97,7 +85,7 @@ static void GenerateTimingReport(std::ostringstream& report,
   for (auto& dur : durations) {
     Duration::time_point start = dur.start_point;
     Duration::time_point end   = dur.end_point_as_of(current);
-    report << dur.name << ": " << AsNS(start) << " -- " << AsNS(end);
+    report << dur.block->c_str() << ": " << AsNS(start) << " -- " << AsNS(end);
     if (!dur.ended) {
       report << " (still active)";
     }

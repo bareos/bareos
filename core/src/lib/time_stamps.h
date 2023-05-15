@@ -28,14 +28,27 @@
 #include <unordered_map>
 #include <shared_mutex>
 
+class BlockIdentity {
+public:
+  //TODO: replace with source_location (with C++20)
+  constexpr explicit BlockIdentity(const char* name) : name(name)
+  {}
+
+  const char* c_str() const { return name; }
+private:
+  const char* name;
+};
+
 struct Duration
 {
   bool ended = false;
-  std::string_view name;
+  BlockIdentity const* block;
   using time_point = std::chrono::steady_clock::time_point;
   time_point start_point, end_point;
 
-  Duration(std::string_view name);
+  Duration(const BlockIdentity& block);
+  Duration(Duration&& d) = default;
+  Duration& operator=(Duration&& d) = default;
   time_point end_point_as_of(time_point current) const;
   void end();
 };
@@ -47,10 +60,7 @@ class ThreadTimeKeeper
   friend class TimeKeeper;
 public:
   ThreadTimeKeeper();
-  // only a reference to s is saved;
-  // take care to have s live at least as long as this
-  // object!
-  void enter(std::string_view s);
+  void enter(const BlockIdentity& block);
   void exit();
 protected:
   std::vector<Duration> times{};
@@ -72,11 +82,14 @@ private:
 class TimedBlock
 {
 public:
-  TimedBlock(ThreadTimeKeeper& keeper, std::string_view name);
-  ~TimedBlock();
+  TimedBlock(ThreadTimeKeeper& timer, const BlockIdentity& block) : timer{timer}
+  {
+    timer.enter(block);
+  }
+  ~TimedBlock() { timer.exit(); }
 
  private:
-  ThreadTimeKeeper& keeper;
+  ThreadTimeKeeper& timer;
 };
 
 #endif  // BAREOS_LIB_TIME_STAMPS_H_
