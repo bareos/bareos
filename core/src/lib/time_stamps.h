@@ -161,10 +161,13 @@ public:
 
   virtual void begin_thread(std::thread::id thread_id) override {
     report << "== Thread: " << thread_id << " ==\n";
+    thread_start = Event::time_point::max();
+    thread_end   = Event::time_point::min();
   }
 
   virtual void end_thread() override {
-    std::vector<std::pair<BlockIdentity const*, std::chrono::nanoseconds>> entries(cul_time.begin(), cul_time.end());
+    using namespace std::chrono;
+    std::vector<std::pair<BlockIdentity const*, nanoseconds>> entries(cul_time.begin(), cul_time.end());
     std::sort(entries.begin(), entries.end(), [](auto& p1, auto& p2) {
       if (p1.second > p2.second) { return true; }
       if ((p1.second == p2.second) &&
@@ -181,6 +184,7 @@ public:
       maxwidth = std::max(std::strlen(id->c_str()), maxwidth);
     }
 
+    auto max_time = duration_cast<nanoseconds>(thread_end - thread_start);
     for (auto [id, time] : entries) {
       SplitDuration d(time);
       report << std::setw(maxwidth)
@@ -188,6 +192,7 @@ public:
 	     << std::setfill('0')
 	     << std::setw(2) << d.hours() << ":" << std::setw(2) << d.minutes() << ":" << std::setw(2) << d.seconds() << "."
 	     << std::setw(3) << d.millis() << "-" << std::setw(3) << d.micros()
+	     << " (" << std::setw(3) << std::fixed << double(time.count() * 100) / double(max_time.count()) << "%%)"
 	     << std::setfill(' ')
 	     << "\n";
 
@@ -201,6 +206,10 @@ public:
     auto start = e.start_point;
     auto end   = e.end_point_as_of(now);
     cul_time[e.block] += duration_cast<nanoseconds>(end - start);
+
+    thread_start = std::min(start, thread_start);
+    thread_end   = std::max(end, thread_end);
+
   }
 
   OverviewReport(std::int32_t ShowTopN) : NumToShow{ShowTopN} {}
@@ -210,6 +219,7 @@ private:
   std::int32_t NumToShow;
   Event::time_point now;
   std::ostringstream report;
+  Event::time_point thread_start, thread_end;
   std::unordered_map<BlockIdentity const*, std::chrono::nanoseconds> cul_time;
 };
 
