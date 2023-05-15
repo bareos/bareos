@@ -61,6 +61,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: make restore merge options configurable [PR #1445]
 - webui: update German translation [PR #1437]
 - build: fix for gcc 13.1.1 [PR #1459]
+- packaging: systemd unit: set a limit of restart [PR #1450]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -152,6 +153,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1440]: https://github.com/bareos/bareos/pull/1440
 [PR #1445]: https://github.com/bareos/bareos/pull/1445
 [PR #1447]: https://github.com/bareos/bareos/pull/1447
+[PR #1450]: https://github.com/bareos/bareos/pull/1450
 [PR #1453]: https://github.com/bareos/bareos/pull/1453
 [PR #1454]: https://github.com/bareos/bareos/pull/1454
 [PR #1455]: https://github.com/bareos/bareos/pull/1455
