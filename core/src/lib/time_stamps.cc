@@ -55,6 +55,12 @@ void ThreadTimeKeeper::exit()
     }
   }
 
+  // current is set to times.end() if there is no open time
+  // block
+  // take note: since we never remove from times the end() iterator
+  // can only be invalidated by adding another block (to the end).
+  // This newly added block has to be open and will overwrite current.
+  // As such this "invariant" makes sense!
   if (current->ended) {
     current = times.end();
   }
