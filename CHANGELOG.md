@@ -62,6 +62,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: update German translation [PR #1437]
 - build: fix for gcc 13.1.1 [PR #1459]
 - packaging: systemd unit: set a limit of restart [PR #1450]
+- python-bareos: add missing `dirname` variable [PR #1460]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -158,4 +159,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1454]: https://github.com/bareos/bareos/pull/1454
 [PR #1455]: https://github.com/bareos/bareos/pull/1455
 [PR #1459]: https://github.com/bareos/bareos/pull/1459
+[PR #1460]: https://github.com/bareos/bareos/pull/1460
 [unreleased]: https://github.com/bareos/bareos/tree/master
