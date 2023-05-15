@@ -61,6 +61,7 @@ class ThreadTimeKeeper
 public:
   ThreadTimeKeeper();
   void enter(const BlockIdentity& block);
+  void switch_to(const BlockIdentity& block);
   void exit();
 protected:
   std::vector<Duration> times{};
@@ -87,6 +88,9 @@ public:
     timer.enter(block);
   }
   ~TimedBlock() { timer.exit(); }
+  void switch_to(const BlockIdentity& block) {
+    timer.switch_to(block);
+  }
 
  private:
   ThreadTimeKeeper& timer;
