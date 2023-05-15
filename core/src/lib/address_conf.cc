@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,13 +32,11 @@
 #include "lib/bsys.h"
 #include "lib/edit.h"
 #include "lib/output_formatter_resource.h"
+#include "lib/berrno.h"
 
 
 #ifdef HAVE_ARPA_NAMESER_H
 #  include <arpa/nameser.h>
-#endif
-#ifdef HAVE_RESOLV_H
-//#include <resolv.h>
 #endif
 
 IPADDR::IPADDR()
@@ -341,6 +339,58 @@ bool SetupPort(unsigned short& port,
   }
 }
 
+bool IsFamilyEnabled(IpFamily fam)
+{
+  static bool family_enabled[] = {CheckIfFamilyEnabled(IpFamily::V4),
+                                  CheckIfFamilyEnabled(IpFamily::V6)};
+  return family_enabled[static_cast<std::underlying_type_t<IpFamily>>(fam)];
+}
+
+std::optional<int> GetFamily(IpFamily family)
+{
+  switch (family) {
+    case IpFamily::V4:
+      return AF_INET;
+    case IpFamily::V6:
+      return AF_INET6;
+    default:
+      return std::nullopt;
+  }
+}
+
+const char* FamilyName(IpFamily fam)
+{
+  switch (fam) {
+    case IpFamily::V4:
+      return "IPv4";
+    case IpFamily::V6:
+      return "IPv6";
+    default:
+      return "*Unknown Protocol*";
+  }
+}
+
+bool CheckIfFamilyEnabled(IpFamily family)
+{
+  int tries = 0;
+  int fd;
+  do {
+    ++tries;
+    if ((fd = socket(GetFamily(family).value(), SOCK_STREAM, 0)) < 0) {
+      Bmicrosleep(15, 0);
+    }
+  } while (fd < 0 && tries < 3);
+
+  if (fd < 0) {
+    BErrNo be;
+    Emsg2(M_WARNING, 0, _("Cannot open %s stream socket. ERR=%s\n"),
+          FamilyName(family), be.bstrerror());
+    return false;
+  }
+  close(fd);
+  return true;
+}
+
 int AddAddress(dlist<IPADDR>** out,
                IPADDR::i_type type,
                unsigned short defaultport,
@@ -369,6 +419,23 @@ int AddAddress(dlist<IPADDR>** out,
   }
 
   if (!SetupPort(port, defaultport, port_str, buf, buflen)) { return 0; }
+
+  if (family == 0) {
+    bool ipv4_enabled = IsFamilyEnabled(IpFamily::V4);
+    bool ipv6_enabled = IsFamilyEnabled(IpFamily::V6);
+    if (!ipv4_enabled && ipv6_enabled) { family = AF_INET6; }
+    if (ipv4_enabled && !ipv6_enabled) { family = AF_INET; }
+    if (!ipv4_enabled && !ipv6_enabled) {
+      Bsnprintf(buf, buflen, _("Both IPv4 are IPv6 are disabled!"));
+      return 0;
+    }
+  } else if (family == AF_INET6 && !IsFamilyEnabled(IpFamily::V6)) {
+    Bsnprintf(buf, buflen, _("IPv6 address wanted but IPv6 is disabled!"));
+    return 0;
+  } else if (family == AF_INET && !IsFamilyEnabled(IpFamily::V4)) {
+    Bsnprintf(buf, buflen, _("IPv4 address wanted but IPv4 is disabled!"));
+    return 0;
+  }
 
   const char* myerrstr;
   hostaddrs = BnetHost2IpAddrs(hostname_str, family, &myerrstr);
@@ -435,9 +502,23 @@ void InitDefaultAddresses(dlist<IPADDR>** out, const char* port)
   char buf[1024];
   unsigned short sport = str_to_int32(port);
 
-  if (!AddAddress(out, IPADDR::R_DEFAULT, htons(sport), 0, 0, 0, buf,
+  bool ipv4_added = true;
+  bool ipv6_added = true;
+
+  if (!AddAddress(out, IPADDR::R_DEFAULT, htons(sport), AF_INET, 0, 0, buf,
                   sizeof(buf))) {
-    Emsg1(M_ERROR_TERM, 0, _("Can't add default address (%s)\n"), buf);
+    Emsg1(M_WARNING, 0, _("Can't add default IPv4 address (%s)\n"), buf);
+    ipv4_added = false;
+  }
+
+  if (!AddAddress(out, IPADDR::R_DEFAULT, htons(sport), AF_INET6, 0, 0, buf,
+                  sizeof(buf))) {
+    Emsg1(M_WARNING, 0, _("Can't add default IPv6 address (%s)\n"), buf);
+    ipv6_added = false;
+  }
+
+  if (!ipv6_added && !ipv4_added) {
+    Emsg0(M_ERROR_TERM, 0, _("Can't add default IPv6 and IPv4 addresses\n"));
   }
 }
 

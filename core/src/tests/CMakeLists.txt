@@ -153,7 +153,13 @@ endif()
 # Keep alphabetically ordered
 if(NOT client-only)
   bareos_add_test(
-    addresses_and_ports
+    addresses_and_ports_config
+    LINK_LIBRARIES bareos dird_objects bareosfind bareossql testing_common
+                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
+  )
+
+  bareos_add_test(
+    addresses_and_ports_functions
     LINK_LIBRARIES bareos dird_objects bareosfind bareossql testing_common
                    $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
   )
@@ -280,8 +286,9 @@ if(NOT client-only)
   )
   bareos_add_test(sort_stringvector LINK_LIBRARIES bareos GTest::gtest_main)
   bareos_add_test(
-    test_config_parser_dir LINK_LIBRARIES dird_objects bareos bareosfind
-                                          bareossql GTest::gtest_main
+    test_config_parser_dir
+    LINK_LIBRARIES dird_objects bareos bareosfind testing_common bareossql
+                   GTest::gtest_main
   )
   set_tests_properties(
     gtest:ConfigParser_Dir.bareos_configparser_tests

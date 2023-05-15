@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -46,9 +46,6 @@
 #include <netdb.h>
 #ifdef HAVE_ARPA_NAMESER_H
 #  include <arpa/nameser.h>
-#endif
-#ifdef HAVE_RESOLV_H
-// #include <resolv.h>
 #endif
 
 #ifdef HAVE_POLL_H
@@ -172,7 +169,7 @@ int OpenSocketAndBind(IPADDR* ipaddr,
     std::array<char, 256> buf1;
     std::vector<char> buf2(256 * addr_list->size());
 
-    Emsg3(M_ABORT, 0,
+    Emsg3(M_WARNING, 0,
           _("Cannot open stream socket. ERR=%s. Current %s All %s\n"),
           be.bstrerror(), ipaddr->build_address_str(buf1.data(), buf1.size()),
           BuildAddressesString(addr_list, buf2.data(), buf2.size()));

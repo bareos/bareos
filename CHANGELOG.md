@@ -79,6 +79,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - VMware Plugin: fix restore to different vmname [PR #1390]
 - vmware_cbt_tool.py: pyVmomi 8.x compatibility [PR #1386]
 - Fix problem with reoccuring files in always incremental [PR #1395]
+- bsmtp bls bextract: fixes for command line parsing [PR #1455]
+- daemons: update network handling when IP protocols unavailable [PR #1454]
 
 ### Documentation
 - add explanation about binary version numbers [PR #1354]
@@ -150,4 +152,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1445]: https://github.com/bareos/bareos/pull/1445
 [PR #1447]: https://github.com/bareos/bareos/pull/1447
 [PR #1453]: https://github.com/bareos/bareos/pull/1453
+[PR #1454]: https://github.com/bareos/bareos/pull/1454
+[PR #1455]: https://github.com/bareos/bareos/pull/1455
 [unreleased]: https://github.com/bareos/bareos/tree/master

@@ -39,7 +39,6 @@ Options:
         Set the From: field. 
 
     -h,--mailhost <mailhost/IPv4_address:port>,<[mailhost/IPv6_address]:port>
-        REQUIRED
         Use mailhost:port as the SMTP server. 
 
     -s,--subject TEXT
