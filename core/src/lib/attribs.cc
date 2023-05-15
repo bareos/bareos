@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -48,17 +48,13 @@ void EncodeStat(char* buf,
 {
   char* p = buf;
 
-  /*
-   * We read the stat packet so make sure the caller's conception
+  /* We read the stat packet so make sure the caller's conception
    *  is the same as ours.  They can be different if LARGEFILE is not
-   *  the same when compiling this library and the calling program.
-   */
+   *  the same when compiling this library and the calling program. */
   ASSERT(stat_size == (int)sizeof(struct stat));
 
-  /**
-   *  Encode a stat packet.  I should have done this more intelligently
-   *   with a length so that it could be easily expanded.
-   */
+  /*  Encode a stat packet.  I should have done this more intelligently
+   *   with a length so that it could be easily expanded. */
   p += ToBase64((int64_t)statp->st_dev, p);
   *p++ = ' '; /* separate fields with a space */
   p += ToBase64((int64_t)statp->st_ino, p);
@@ -119,11 +115,9 @@ int DecodeStat(char* buf, struct stat* statp, int stat_size, int32_t* LinkFI)
   char* p = buf;
   int64_t val;
 
-  /*
-   * We store into the stat packet so make sure the caller's conception
+  /* We store into the stat packet so make sure the caller's conception
    *  is the same as ours.  They can be different if LARGEFILE is not
-   *  the same when compiling this library and the calling program.
-   */
+   *  the same when compiling this library and the calling program. */
   ASSERT(stat_size == (int)sizeof(struct stat));
   memset(statp, 0, stat_size);
 

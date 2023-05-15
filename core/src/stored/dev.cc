@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -189,11 +189,9 @@ static void InitiateDevice(JobControlRecord* jcr, Device* dev)
 
   if (dev->GetSeekMode() == SeekMode::NOSEEK) { dev->SetCap(CAP_STREAM); }
 
-  /*
-   * If the device requires mount :
+  /* If the device requires mount :
    * - Check that the mount point is available
-   * - Check that (un)mount commands are defined
-   */
+   * - Check that (un)mount commands are defined */
   if (dev->RequiresMount()) {
     struct stat statp;
     if (!dev->device_resource->mount_point
@@ -423,11 +421,9 @@ void Device::SetBlocksizes(DeviceControlRecord* dcr)
   Dmsg3(100, "set minblocksize to %d, maxblocksize to %d on device %s\n",
         dev->min_block_size, dev->max_block_size, dev->print_name());
 
-  /*
-   * If blocklen is not dev->max_block_size create a new block with the right
+  /* If blocklen is not dev->max_block_size create a new block with the right
    * size. (as header is always dev->label_block_size which is preset with
-   * DEFAULT_BLOCK_SIZE)
-   */
+   * DEFAULT_BLOCK_SIZE) */
   if (dcr->block) {
     if (dcr->block->buf_len != dev->max_block_size) {
       Dmsg2(100, "created new block of buf_len: %u on device %s\n",
@@ -457,10 +453,8 @@ void Device::SetLabelBlocksize(DeviceControlRecord* dcr)
 
   dev->min_block_size = dev->device_resource->label_block_size;
   dev->max_block_size = dev->device_resource->label_block_size;
-  /*
-   * If blocklen is not dev->max_block_size create a new block with the right
-   * size (as header is always label_block_size)
-   */
+  /* If blocklen is not dev->max_block_size create a new block with the right
+   * size (as header is always label_block_size) */
   if (dcr->block) {
     if (dcr->block->buf_len != dev->max_block_size) {
       FreeBlock(dcr->block);
@@ -567,11 +561,9 @@ void Device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
   // Handle opening of File Archive (not a tape)
   PmStrcpy(archive_name, archive_device_string);
 
-  /*
-   * If this is a virtual autochanger (i.e. changer_res != NULL) we simply use
+  /* If this is a virtual autochanger (i.e. changer_res != NULL) we simply use
    * the device name, assuming it has been appropriately setup by the
-   * "autochanger".
-   */
+   * "autochanger". */
   if (!device_resource->changer_res
       || device_resource->changer_command[0] == 0) {
     if (VolCatInfo.VolCatName[0] == 0) {
@@ -801,13 +793,11 @@ bool Device::OfflineOrRewind()
   if (HasCap(CAP_OFFLINEUNMOUNT)) {
     return offline();
   } else {
-    /*
-     * Note, this rewind probably should not be here (it wasn't
+    /* Note, this rewind probably should not be here (it wasn't
      * in prior versions of Bareos), but on FreeBSD, this is
      * needed in the case the tape was "frozen" due to an error
      * such as backspacing after writing and EOF. If it is not
-     * done, all future references to the drive get and I/O error.
-     */
+     * done, all future references to the drive get and I/O error. */
     clrerror(MTREW);
     return rewind(NULL);
   }
@@ -964,11 +954,9 @@ bool Device::mount(DeviceControlRecord* dcr, int timeout)
 
   retval = MountBackend(dcr, timeout);
 
-  /*
-   * When the mount command succeeded sent a
+  /* When the mount command succeeded sent a
    * bSdEventDeviceMount plugin event so any plugin
-   * that want to do something can do things now.
-   */
+   * that want to do something can do things now. */
   if (retval
       && GeneratePluginEvent(dcr->jcr, bSdEventDeviceMount, dcr) != bRC_OK) {
     retval = false;
@@ -993,11 +981,9 @@ bool Device::unmount(DeviceControlRecord* dcr, int timeout)
   // See if the device is mounted.
   if (!IsMounted()) { return true; }
 
-  /*
-   * Before running the unmount program sent a
+  /* Before running the unmount program sent a
    * bSdEventDeviceUnmount plugin event so any plugin
-   * that want to do something can do things now.
-   */
+   * that want to do something can do things now. */
   if (dcr
       && GeneratePluginEvent(dcr->jcr, bSdEventDeviceUnmount, dcr) != bRC_OK) {
     retval = false;

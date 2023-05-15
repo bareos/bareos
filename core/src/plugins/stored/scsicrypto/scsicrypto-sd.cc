@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -157,8 +157,7 @@ static bRC newPlugin(PluginContext* ctx)
   bareos_core_functions->getBareosValue(ctx, bsdVarJobId, (void*)&JobId);
   Dmsg1(debuglevel, "scsicrypto-sd: newPlugin JobId=%d\n", JobId);
 
-  /*
-   * Only register plugin events we are interested in.
+  /* Only register plugin events we are interested in.
    *
    * bSdEventLabelRead - Read of volume label clear key as volume
    *                     labels are unencrypted (as we are in mixed
@@ -182,8 +181,7 @@ static bRC newPlugin(PluginContext* ctx)
    * bSdEventDriveStatus - plugin callback for encryption status
    *                       of the drive.
    * bSdEventVolumeStatus - plugin callback for encryption status
-   *                        of the volume loaded in the drive.
-   */
+   *                        of the volume loaded in the drive. */
   bareos_core_functions->registerBareosEvents(
       ctx, 7, bSdEventLabelRead, bSdEventLabelVerified, bSdEventLabelWrite,
       bSdEventVolumeUnload, bSdEventReadError, bSdEventDriveStatus,
@@ -253,21 +251,17 @@ static inline bool GetVolumeEncryptionKey(DeviceControlRecord* dcr,
     bstrncpy(VolEncrKey, dcr->VolCatInfo.VolEncrKey, MAX_NAME_LENGTH);
     return true;
   } else if (dcr->jcr && dcr->jcr->dir_bsock) {
-    /*
-     * No valid VolCatInfo but we can get the info as we have
-     * a connection to the director.
-     */
+    /* No valid VolCatInfo but we can get the info as we have
+     * a connection to the director. */
     if (bareos_core_functions->UpdateVolumeInfo(dcr)) {
       bstrncpy(VolEncrKey, dcr->VolCatInfo.VolEncrKey, MAX_NAME_LENGTH);
       return true;
     }
   } else {
-    /*
-     * No valid VolCatInfo and we have no connection to the director.
+    /* No valid VolCatInfo and we have no connection to the director.
      * Try to get the encryption key from the cache. The cached_key
      * is string dupped in the LookupCryptoKey function so we need to
-     * free it here.
-     */
+     * free it here. */
     char* cached_key;
 
     if ((cached_key
@@ -332,18 +326,14 @@ static bRC do_set_scsi_encryption_key(void* value)
     return bRC_OK;
   }
 
-  /*
-   * The key passed from the director to the storage daemon is always base64
-   * encoded.
-   */
+  /* The key passed from the director to the storage daemon is always base64
+   * encoded. */
   Base64ToBin(VolEncrKey, sizeof(VolEncrKey), StoredVolEncrKey,
               strlen(StoredVolEncrKey));
 
-  /*
-   * See if we have an key encryption key in the config then the passed key
+  /* See if we have an key encryption key in the config then the passed key
    * has been wrapped using RFC3394 key wrapping. We first copy the current
-   * wrapped key into a temporary variable for unwrapping.
-   */
+   * wrapped key into a temporary variable for unwrapping. */
   if (dcr->jcr && dcr->jcr->sd_impl->director) {
     director = dcr->jcr->sd_impl->director;
     if (director->keyencrkey.value) {
@@ -407,10 +397,8 @@ static bRC do_clear_scsi_encryption_key(void* value)
   if (!device_resource->drive_crypto_enabled) { return bRC_OK; }
 
   lock_mutex(crypto_operation_mutex);
-  /*
-   * See if we need to query the drive or use the tracked encryption status of
-   * the stored.
-   */
+  /* See if we need to query the drive or use the tracked encryption status of
+   * the stored. */
   if (device_resource->query_crypto_status) {
     need_to_clear
         = IsScsiEncryptionEnabled(dev->fd, dev->archive_device_string);
@@ -453,19 +441,15 @@ static bRC handle_read_error(void* value)
 
   // See if drive crypto is enabled.
   if (device_resource->drive_crypto_enabled) {
-    /*
-     * See if the read error is an EIO which can be returned when we try to read
+    /* See if the read error is an EIO which can be returned when we try to read
      * an encrypted block from a volume without decryption enabled or without a
-     * proper encryption key loaded.
-     */
+     * proper encryption key loaded. */
     switch (dev->dev_errno) {
       case EIO:
-        /*
-         * See if we need to query the drive or use the tracked encryption
+        /* See if we need to query the drive or use the tracked encryption
          * status of the stored. When we can query the drive we look at the next
          * block encryption state to see if we need decryption of the data on
-         * the volume.
-         */
+         * the volume. */
         if (device_resource->query_crypto_status) {
           lock_mutex(crypto_operation_mutex);
           if (NeedScsiCryptoKey(dev->fd, dev->archive_device_string, false)) {
@@ -478,10 +462,8 @@ static bRC handle_read_error(void* value)
           decryption_needed = dev->IsCryptoEnabled();
         }
 
-        /*
-         * Alter the error message so it known this error is most likely due to
-         * a failed decryption of the encrypted data on the volume.
-         */
+        /* Alter the error message so it known this error is most likely due to
+         * a failed decryption of the encrypted data on the volume. */
         if (decryption_needed) {
           BErrNo be;
 

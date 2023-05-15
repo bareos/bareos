@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -62,10 +62,8 @@ btimer_t* StartBsockTimer(BareosSocket* bs, uint32_t wait);
 void StopBsockTimer(btimer_t* wid);
 
 class BareosSocket {
-  /*
-   * Note, keep this public part before the private otherwise
-   *  bat breaks on some systems such as RedHat.
-   */
+  /* Note, keep this public part before the private otherwise
+   *  bat breaks on some systems such as RedHat. */
  public:
   int fd_;                         /* Socket file descriptor */
   uint64_t read_seqno;             /* Read sequence number */

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2015-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -49,10 +49,8 @@ extern "C" int BndmpFhdbAddFile(struct ndmlog* ixlog,
     int8_t FileType = 0;
     PoolMem attribs(PM_FNAME), pathname(PM_FNAME);
 
-    /*
-     * Every file entry is relative from the filesystem currently being backed
-     * up.
-     */
+    /* Every file entry is relative from the filesystem currently being backed
+     * up. */
     Dmsg2(100, "BndmpFhdbAddFile: New filename ==> %s%s\n", nis->filesystem,
           raw_name);
 
@@ -84,10 +82,8 @@ extern "C" int BndmpFhdbAddFile(struct ndmlog* ixlog,
       }
 
       if (FileType == FT_DIREND) {
-        /*
-         * A directory needs to end with a '/'
-         * so append it if it is missing
-         */
+        /* A directory needs to end with a '/'
+         * so append it if it is missing */
         if (!raw_name_ends_with_slash) { PmStrcat(pathname, "/"); }
       }
     }

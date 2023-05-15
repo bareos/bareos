@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2009 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version two of the GNU Lesser General
@@ -70,7 +70,8 @@ class Tls {
   virtual void TlsLogConninfo(JobControlRecord* jcr,
                               const char* host,
                               int port,
-                              const char* who) const = 0;
+                              const char* who) const
+      = 0;
   virtual std::string TlsCipherGetName() const { return std::string(); }
 
   virtual void SetCipherList(const std::string& cipherlist) = 0;

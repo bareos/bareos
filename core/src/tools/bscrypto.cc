@@ -3,7 +3,7 @@
 
    Copyright (C) 2012-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -223,10 +223,8 @@ int main(int argc, char* const* argv)
     // Load any keys currently in the cache.
     ReadCryptoCache(cache_file);
 
-    /*
-     * Read new entries from stdin and parse them to update
-     * the cache.
-     */
+    /* Read new entries from stdin and parse them to update
+     * the cache. */
     fprintf(stdout, _("Enter cache entrie(s) (close with ^D): "));
     fflush(stdout);
 
@@ -269,10 +267,8 @@ int main(int argc, char* const* argv)
   memset(wrapdata, 0, sizeof(wrapdata));
 
   if (wrapped_keys) {
-    /*
-     * Read the key bits from the keyfile.
-     * - == stdin
-     */
+    /* Read the key bits from the keyfile.
+     * - == stdin */
     if (bstrcmp(wrap_keyfile, "-")) {
       kfd = 0;
       fprintf(stdout, _("Enter Key Encryption Key: "));
@@ -295,10 +291,8 @@ int main(int argc, char* const* argv)
     Dmsg1(10, "Wrapped keydata = %s\n", wrapdata);
   }
 
-  /*
-   * Generate a new passphrase allow it to be wrapped using the given wrapkey
-   * and base64 if specified or when wrapped.
-   */
+  /* Generate a new passphrase allow it to be wrapped using the given wrapkey
+   * and base64 if specified or when wrapped. */
   if (generate_passphrase) {
     int cnt;
     char* passphrase;
@@ -327,10 +321,8 @@ int main(int argc, char* const* argv)
       length = DEFAULT_PASSPHRASE_LENGTH;
     }
 
-    /*
-     * See where to write the key.
-     * - == stdout
-     */
+    /* See where to write the key.
+     * - == stdout */
     if (bstrcmp(keyfile, "-")) {
       kfd = 1;
     } else {
@@ -374,10 +366,8 @@ int main(int argc, char* const* argv)
   if (show_keydata) {
     char* passphrase;
 
-    /*
-     * Read the key bits from the keyfile.
-     * - == stdin
-     */
+    /* Read the key bits from the keyfile.
+     * - == stdin */
     if (bstrcmp(keyfile, "-")) {
       kfd = 0;
       fprintf(stdout, _("Enter Encryption Key: "));
@@ -402,13 +392,11 @@ int main(int argc, char* const* argv)
     // See if we need to unwrap the passphrase.
     if (wrapped_keys) {
       char* wrapped_passphrase;
-      /*
-       * A wrapped key is base64 encoded after it was wrapped so first
+      /* A wrapped key is base64 encoded after it was wrapped so first
        * convert it from base64 to bin. As we first go from base64 to bin
        * and the Base64ToBin has a check if the decoded string will fit
        * we need to alocate some more bytes for the decoded buffer to be
-       * sure it will fit.
-       */
+       * sure it will fit. */
       length = DEFAULT_PASSPHRASE_LENGTH + 12;
       wrapped_passphrase = (char*)malloc(length);
       memset(wrapped_passphrase, 0, length);
@@ -441,11 +429,9 @@ int main(int argc, char* const* argv)
       free(wrapped_passphrase);
     } else {
       if (base64_transform) {
-        /*
-         * As we first go from base64 to bin and the Base64ToBin has a check
+        /* As we first go from base64 to bin and the Base64ToBin has a check
          * if the decoded string will fit we need to alocate some more bytes
-         * for the decoded buffer to be sure it will fit.
-         */
+         * for the decoded buffer to be sure it will fit. */
         length = DEFAULT_PASSPHRASE_LENGTH + 4;
         passphrase = (char*)malloc(length);
         memset(passphrase, 0, length);
@@ -492,10 +478,8 @@ int main(int argc, char* const* argv)
 
   // Load a new encryption key onto the given drive.
   if (set_encryption) {
-    /*
-     * Read the key bits from the keyfile.
-     * - == stdin
-     */
+    /* Read the key bits from the keyfile.
+     * - == stdin */
     if (bstrcmp(keyfile, "-")) {
       kfd = 0;
       fprintf(stdout, _("Enter Encryption Key (close with ^D): "));
@@ -524,10 +508,8 @@ int main(int argc, char* const* argv)
     }
   }
 
-  /*
-   * Get the volume encryption status of volume currently loaded in the given
-   * drive.
-   */
+  /* Get the volume encryption status of volume currently loaded in the given
+   * drive. */
   if (volume_encryption_status) {
     POOLMEM* encryption_status = GetPoolMemory(PM_MESSAGE);
 

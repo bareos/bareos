@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -357,13 +357,11 @@ static void RereadLastBlock(DeviceControlRecord* dcr)
   Device* dev = dcr->dev;
   JobControlRecord* jcr = dcr->jcr;
   DeviceBlock* block = dcr->block;
-  /*
-   * If the device is a tape and it supports backspace record,
+  /* If the device is a tape and it supports backspace record,
    *   we backspace over one or two eof marks depending on
    *   how many we just wrote, then over the last record,
    *   then re-read it and verify that the block number is
-   *   correct.
-   */
+   *   correct. */
   if (dev->IsTape() && dev->HasCap(CAP_BSR)) {
     // Now back up over what we wrote and read the last block
     if (!dev->bsf(1)) {
@@ -384,15 +382,13 @@ static void RereadLastBlock(DeviceControlRecord* dcr)
       ok = false;
       Jmsg(jcr, M_ERROR, 0, _("Backspace record at EOT failed. ERR=%s\n"),
            be.bstrerror(dev->dev_errno));
-      /*
-       *  On FreeBSD systems, if the user got here, it is likely that his/her
+      /*  On FreeBSD systems, if the user got here, it is likely that his/her
        *    tape drive is "frozen".  The correct thing to do is a
        *    rewind(), but if we do that, higher levels in cleaning up, will
        *    most likely write the EOS record over the beginning of the
        *    tape.  The rewind *is* done later in mount.c when another
        *    tape is requested. Note, the clrerror() call in bsr()
-       *    calls ioctl(MTCERRSTAT), which *should* fix the problem.
-       */
+       *    calls ioctl(MTCERRSTAT), which *should* fix the problem. */
     }
     if (ok) {
       DeviceBlock* lblock = new_block(dev);
@@ -403,10 +399,8 @@ static void RereadLastBlock(DeviceControlRecord* dcr)
         Jmsg(jcr, M_ERROR, 0, _("Re-read last block at EOT failed. ERR=%s"),
              dev->errmsg);
       } else {
-        /*
-         * If we wrote block and the block numbers don't agree
-         *  we have a possible problem.
-         */
+        /* If we wrote block and the block numbers don't agree
+         *  we have a possible problem. */
         if (lblock->BlockNumber != dev->LastBlock) {
           if (dev->LastBlock > (lblock->BlockNumber + 1)) {
             Jmsg(jcr, M_FATAL, 0,
@@ -477,10 +471,8 @@ static bool TerminateWritingVolume(DeviceControlRecord* dcr)
   Dmsg1(50, "DirUpdateVolumeInfo Terminate writing -- %s\n",
         ok ? "OK" : "ERROR");
 
-  /*
-   * Walk through all attached dcrs setting flag to call
-   * SetNewFileParameters() when that dcr is next used.
-   */
+  /* Walk through all attached dcrs setting flag to call
+   * SetNewFileParameters() when that dcr is next used. */
   for (auto mdcr : dev->attached_dcrs) {
     if (mdcr->jcr->JobId == 0) { continue; }
     mdcr->NewFile = true; /* set reminder to do set_new_file_params */
@@ -530,10 +522,8 @@ static bool DoNewFileBookkeeping(DeviceControlRecord* dcr)
   }
   Dmsg0(100, "DirUpdateVolumeInfo max file size -- OK\n");
 
-  /*
-   * Walk through all attached dcrs setting flag to call
-   * SetNewFileParameters() when that dcr is next used.
-   */
+  /* Walk through all attached dcrs setting flag to call
+   * SetNewFileParameters() when that dcr is next used. */
   for (auto mdcr : dev->attached_dcrs) {
     if (mdcr->jcr->JobId == 0) { continue; }
     mdcr->NewFile = true; /* set reminder to do set_new_file_params */
@@ -613,10 +603,8 @@ bool DeviceControlRecord::WriteBlockToDev()
     return false;
   }
 
-  /*
-   * Clear to the end of the buffer if it is not full,
-   * and on devices with CAP_ADJWRITESIZE set, apply min and fixed blocking.
-   */
+  /* Clear to the end of the buffer if it is not full,
+   * and on devices with CAP_ADJWRITESIZE set, apply min and fixed blocking. */
   if (wlen != block->buf_len) {
     uint32_t blen = wlen; /* current buffer length */
 
@@ -712,11 +700,9 @@ bool DeviceControlRecord::WriteBlockToDev()
   }
 #endif
 
-  /*
-   * Do write here,
+  /* Do write here,
    * make a somewhat feeble attempt to recover
-   * from the OS telling us it is busy.
-   */
+   * from the OS telling us it is busy. */
   int retry = 0;
   errno = 0;
   status = 0;
@@ -748,13 +734,11 @@ bool DeviceControlRecord::WriteBlockToDev()
 #endif
 
   if (status != (ssize_t)wlen) {
-    /*
-     * Some devices simply report EIO when the volume is full.
+    /* Some devices simply report EIO when the volume is full.
      * With a little more thought we may be able to check
      * capacity and distinguish real errors and EOT
      * conditions.  In any case, we probably want to
-     * simulate an End of Medium.
-     */
+     * simulate an End of Medium. */
     if (status == -1) {
       BErrNo be;
       dev->clrerror(-1);
@@ -866,13 +850,11 @@ bool DeviceControlRecord::WriteBlockToDevice()
     dev->rLock(); /* no, lock it */
   }
 
-  /*
-   * If a new volume has been mounted since our last write
+  /* If a new volume has been mounted since our last write
    * Create a JobMedia record for the previous volume written,
    * and set new parameters to write this volume
    *
-   * The same applies for if we are in a new file.
-   */
+   * The same applies for if we are in a new file. */
   if (dcr->NewVol || dcr->NewFile) {
     if (jcr->IsJobCanceled()) {
       status = false;
@@ -1064,11 +1046,9 @@ reread:
     return ReadStatus::Error;
   }
 
-  /*
-   * If the block is bigger than the buffer, we Reposition for
+  /* If the block is bigger than the buffer, we Reposition for
    *  re-reading the block, allocate a buffer of the correct size,
-   *  and go re-read.
-   */
+   *  and go re-read. */
   if (block->block_len > block->buf_len) {
     dev->dev_errno = EIO;
     Mmsg2(
@@ -1146,8 +1126,7 @@ reread:
   dev->file_addr += block->read_len;
   dev->file_size += block->read_len;
 
-  /*
-   * If we read a short block on disk,
+  /* If we read a short block on disk,
    * seek to beginning of next block. This saves us
    * from shuffling blocks around in the buffer. Take a
    * look at this from an efficiency stand point later, but
@@ -1157,8 +1136,7 @@ reread:
    *   years now. However, it seems that with the new off_t definition,
    *   it is not possible to seek negative amounts, so we use two
    *   lseek(). One to get the position, then the second to do an
-   *   absolute positioning -- so much for efficiency.  KES Sep 02.
-   */
+   *   absolute positioning -- so much for efficiency.  KES Sep 02. */
   Dmsg0(250, "At end of read block\n");
   if (block->read_len > block->block_len && !dev->IsTape()) {
     char ed1[50];

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -300,10 +300,8 @@ static void UpdateVolslot(UaContext* ua, char* val, MediaDbRecord* mr)
                  pr.MaxVols);
     return;
   }
-  /*
-   * Make sure to use db_update... rather than doing this directly,
-   * so that any Slot is handled correctly.
-   */
+  /* Make sure to use db_update... rather than doing this directly,
+   * so that any Slot is handled correctly. */
   SetStorageidInMr(NULL, mr);
   if (!ua->db->UpdateMediaRecord(ua->jcr, mr)) {
     ua->ErrorMsg(_("Error updating media record Slot: ERR=%s"),
@@ -721,10 +719,8 @@ static bool UpdateVolume(UaContext* ua)
                   mr.VolumeName);
         if (!GetYesno(ua, buf)) { return false; }
         mr.InChanger = ua->pint32_val;
-        /*
-         * Make sure to use db_update... rather than doing this directly,
-         *   so that any Slot is handled correctly.
-         */
+        /* Make sure to use db_update... rather than doing this directly,
+         *   so that any Slot is handled correctly. */
         SetStorageidInMr(NULL, &mr);
         if (!ua->db->UpdateMediaRecord(ua->jcr, &mr)) {
           ua->ErrorMsg(_("Error updating media record Slot: ERR=%s"),
@@ -1217,10 +1213,8 @@ void UpdateSlotsFromVolList(UaContext* ua,
         continue;
     }
 
-    /*
-     * There is something in the slot and it has a VolumeName so we can check
-     * the database and perform an update if needed.
-     */
+    /* There is something in the slot and it has a VolumeName so we can check
+     * the database and perform an update if needed. */
     {
       DbLocker _{ua->db};
       Dmsg4(100, "Before get MR: Vol=%s slot=%d inchanger=%d sid=%d\n",

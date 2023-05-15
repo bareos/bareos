@@ -3,7 +3,7 @@
 
    Copyright (C) 2009-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -344,10 +344,8 @@ static void RepopulateMntentCache(void)
   // Refresh the cache.
   refresh_mount_cache(update_mntent_mapping);
 
-  /**
-   * Remove any entry that is not validated in
-   * the previous refresh run.
-   */
+  /* Remove any entry that is not validated in
+   * the previous refresh run. */
   mce = (mntent_cache_entry_t*)mntent_cache_entries->first();
   while (mce) {
     next_mce = (mntent_cache_entry_t*)mntent_cache_entries->next(mce);
@@ -355,14 +353,12 @@ static void RepopulateMntentCache(void)
       // Invalidate the previous cache hit if we are removing it.
       if (previous_cache_hit == mce) { previous_cache_hit = NULL; }
 
-      /**
-       * See if this is an outstanding entry.
+      /* See if this is an outstanding entry.
        * e.g. when reference_count > 0 set
        * the entry to destroyed and remove it
        * from the list. But don't free the data
        * yet. The put_mntent_mapping function will
-       * handle these dangling entries.
-       */
+       * handle these dangling entries. */
       if (mce->reference_count == 0) {
         mntent_cache_entries->remove(mce);
         DestroyMntentCacheEntry(mce);
@@ -436,12 +432,10 @@ mntent_cache_entry_t* find_mntent_mapping(uint32_t dev)
     InitializeMntentCache();
     last_rescan = time(NULL);
   } else {
-    /**
-     * We rescan the mountlist when called when more then
+    /* We rescan the mountlist when called when more then
      * MNTENT_RESCAN_INTERVAL seconds have past since the
      * last rescan. This way we never work with data older
-     * then MNTENT_RESCAN_INTERVAL seconds.
-     */
+     * then MNTENT_RESCAN_INTERVAL seconds. */
     now = time(NULL);
     if ((now - last_rescan) > MNTENT_RESCAN_INTERVAL) {
       RepopulateMntentCache();
@@ -453,21 +447,17 @@ mntent_cache_entry_t* find_mntent_mapping(uint32_t dev)
   mce = (mntent_cache_entry_t*)mntent_cache_entries->binary_search(
       &lookup, CompareMntentMapping);
 
-  /**
-   * If we fail to lookup the mountpoint its probably a mountpoint added
+  /* If we fail to lookup the mountpoint its probably a mountpoint added
    * after we did our initial scan. Lets rescan the mountlist and try
-   * the lookup again.
-   */
+   * the lookup again. */
   if (!mce) {
     RepopulateMntentCache();
     mce = (mntent_cache_entry_t*)mntent_cache_entries->binary_search(
         &lookup, CompareMntentMapping);
   }
 
-  /**
-   * Store the last successfull lookup as the previous_cache_hit.
-   * And increment the reference count.
-   */
+  /* Store the last successfull lookup as the previous_cache_hit.
+   * And increment the reference count. */
   if (mce) {
     previous_cache_hit = mce;
     mce->reference_count++;

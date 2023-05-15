@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -212,11 +212,9 @@ static void s_warn(const char* file, int line, LEX* lc, const char* msg, ...)
 
 static inline bool IsFastRejectionOk(storagedaemon::BootStrapRecord* bsr)
 {
-  /*
-   * Although, this can be optimized, for the moment, require
+  /* Although, this can be optimized, for the moment, require
    *  all bsrs to have both sesstime and sessid set before
-   *  we do fast rejection.
-   */
+   *  we do fast rejection. */
   for (; bsr; bsr = bsr->next) {
     if (!(bsr->sesstime && bsr->sessid)) { return false; }
   }
@@ -225,11 +223,9 @@ static inline bool IsFastRejectionOk(storagedaemon::BootStrapRecord* bsr)
 
 static inline bool IsPositioningOk(storagedaemon::BootStrapRecord* bsr)
 {
-  /*
-   * Every bsr should have a volfile entry and a volblock entry
+  /* Every bsr should have a volfile entry and a volblock entry
    * or a VolAddr
-   *   if we are going to use positioning
-   */
+   *   if we are going to use positioning */
   for (; bsr; bsr = bsr->next) {
     if (!((bsr->volfile && bsr->volblock) || bsr->voladdr)) { return false; }
   }

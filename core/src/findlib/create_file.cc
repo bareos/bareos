@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -162,12 +162,10 @@ int CreateFile(JobControlRecord* jcr,
     case FT_SPEC: /* Fifo, ... to be backed up */
     case FT_REGE: /* Empty file */
     case FT_REG:  /* Regular file */
-      /*
-       * Note, we do not delete FT_RAW because these are device files
+      /* Note, we do not delete FT_RAW because these are device files
        * or FIFOs that should already exist. If we blow it away,
        * we may blow away a FIFO that is being used to read the
-       * restore data, or we may blow away a partition definition.
-       */
+       * restore data, or we may blow away a partition definition. */
       if (exists && attr->type != FT_RAW && attr->type != FT_FIFO) {
         /* Get rid of old copy */
         Dmsg1(400, "unlink %s\n", attr->ofname);
@@ -181,19 +179,15 @@ int CreateFile(JobControlRecord* jcr,
         }
       }
 
-      /*
-       * Here we do some preliminary work for all the above
+      /* Here we do some preliminary work for all the above
        *   types to create the path to the file if it does
        *   not already exist.  Below, we will split to
-       *   do the file type specific work
-       */
+       *   do the file type specific work */
       pnl = SeparatePathAndFile(jcr, attr->fname, attr->ofname);
       if (pnl < 0) { return CF_ERROR; }
 
-      /*
-       * If path length is <= 0 we are making a file in the root
-       *  directory. Assume that the directory already exists.
-       */
+      /* If path length is <= 0 we are making a file in the root
+       *  directory. Assume that the directory already exists. */
       if (pnl > 0) {
         char savechr;
         savechr = attr->ofname[pnl];
@@ -201,11 +195,9 @@ int CreateFile(JobControlRecord* jcr,
 
         if (!PathAlreadySeen(jcr, attr->ofname, pnl)) {
           Dmsg1(400, "Make path %s\n", attr->ofname);
-          /*
-           * If we need to make the directory, ensure that it is with
+          /* If we need to make the directory, ensure that it is with
            * execute bit set (i.e. parent_mode), and preserve what already
-           * exists. Normally, this should do nothing.
-           */
+           * exists. Normally, this should do nothing. */
           if (!makepath(attr, attr->ofname, parent_mode, parent_mode, uid, gid,
                         1)) {
             Dmsg1(10, "Could not make path. %s\n", attr->ofname);
@@ -276,10 +268,8 @@ int CreateFile(JobControlRecord* jcr,
           } else if ((S_ISBLK(attr->statp.st_mode)
                       || S_ISCHR(attr->statp.st_mode))
                      && !exists && isOnRoot) {
-            /*
-             * Fatal: Restoring a device on root-file system, but device node
-             * does not exist. Should not create a dump file.
-             */
+            /* Fatal: Restoring a device on root-file system, but device node
+             * does not exist. Should not create a dump file. */
             Qmsg1(jcr, M_ERROR, 0,
                   _("Device restore on root failed, device %s missing.\n"),
                   attr->fname);
@@ -300,12 +290,10 @@ int CreateFile(JobControlRecord* jcr,
             }
           }
 
-          /*
-           * Here we are going to attempt to restore to a FIFO, which
+          /* Here we are going to attempt to restore to a FIFO, which
            * means that the FIFO must already exist, AND there must
            * be some process already attempting to read from the
-           * FIFO, so we open it write-only.
-           */
+           * FIFO, so we open it write-only. */
           if (attr->type == FT_RAW || attr->type == FT_FIFO) {
             btimer_t* tid;
             Dmsg1(400, "FT_RAW|FT_FIFO %s\n", attr->ofname);
@@ -344,11 +332,9 @@ int CreateFile(JobControlRecord* jcr,
 #  ifdef HAVE_CHFLAGS
             struct stat s;
 
-            /*
-             * If using BSD user flags, maybe has a file flag preventing this.
+            /* If using BSD user flags, maybe has a file flag preventing this.
              * So attempt to disable, retry link, and reset flags.
-             * Note that BSD securelevel may prevent disabling flag.
-             */
+             * Note that BSD securelevel may prevent disabling flag. */
             if (stat(attr->olname, &s) == 0 && s.st_flags != 0) {
               if (chflags(attr->olname, 0) == 0) {
                 if (link(attr->olname, attr->ofname) != 0) {
@@ -392,13 +378,11 @@ int CreateFile(JobControlRecord* jcr,
 #endif /* HAVE_WIN32 */
 #ifdef HAVE_WIN32
         case FT_LNK:
-          /*
-           * Handle Windows Symlink-Like Reparse Points
+          /* Handle Windows Symlink-Like Reparse Points
            * - Directory Symlinks
            * - File Symlinks
            * - Volume Mount Points
-           * - Junctions
-           */
+           * - Junctions */
           Dmsg2(130, "FT_LNK should restore: %s -> %s\n", attr->ofname,
                 attr->olname);
           if (attr->statp.st_rdev & FILE_ATTRIBUTE_VOLUME_MOUNT_POINT) {

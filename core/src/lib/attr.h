@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -42,11 +42,9 @@ struct Attributes {
   POOLMEM* attrEx;     /**< extended attributes if any */
   POOLMEM* ofname;     /**< output filename */
   POOLMEM* olname;     /**< output link name */
-  /*
-   * Note the following three variables point into the
+  /* Note the following three variables point into the
    *  current BareosSocket record, so they are invalid after
-   *  the next socket read!
-   */
+   *  the next socket read! */
   char* attr;            /**< attributes position */
   char* fname;           /**< filename */
   char* lname;           /**< link name if any */

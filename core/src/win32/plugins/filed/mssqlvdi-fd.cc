@@ -3,7 +3,7 @@
 
    Copyright (C) 2010 Zilvinas Krapavickas <zkrapavickas@gmail.com>
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -427,10 +427,8 @@ static bRC startBackupFile(PluginContext* ctx, save_pkt* sp)
 // Done with backup of this file
 static bRC endBackupFile(PluginContext*)
 {
-  /*
-   * We would return bRC_More if we wanted startBackupFile to be called again to
-   * backup another file
-   */
+  /* We would return bRC_More if we wanted startBackupFile to be called again to
+   * backup another file */
   return bRC_OK;
 }
 
@@ -516,10 +514,8 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
 
   keep_existing = (p_ctx->plugin_options) ? true : false;
 
-  /*
-   * Parse the plugin definition.
-   * Make a private copy of the whole string.
-   */
+  /* Parse the plugin definition.
+   * Make a private copy of the whole string. */
   plugin_definition = strdup((char*)value);
 
   bp = strchr(plugin_definition, ':');
@@ -534,13 +530,11 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
   while (bp) {
     if (strlen(bp) == 0) { break; }
 
-    /*
-     * Each argument is in the form:
+    /* Each argument is in the form:
      *    <argument> = <argument_value>
      *
      * So we setup the right pointers here, argument to the beginning
-     * of the argument, argument_value to the beginning of the argument_value.
-     */
+     * of the argument, argument_value to the beginning of the argument_value. */
     argument = bp;
     argument_value = strchr(bp, '=');
     if (!argument_value) {
@@ -723,10 +717,8 @@ static void comReportError(PluginContext* ctx, HRESULT hrErr)
 
   if (description) { free(description); }
 
-  /*
-   * Generic cleanup (free the description and source as those are returned in
-   * dynamically allocated memory by the COM routines.)
-   */
+  /* Generic cleanup (free the description and source as those are returned in
+   * dynamically allocated memory by the COM routines.) */
   SysFreeString(pSource);
   SysFreeString(pDescription);
 
@@ -836,10 +828,8 @@ static void adoThreadSetError(PluginContext* ctx, _ADOConnection* adoConnection)
 
   if (!adoGetErrors(ctx, adoConnection, ado_errorstr)) { goto bail_out; }
 
-  /*
-   * Keep the errors in a buffer these will be printed by the adoReportError
-   * function.
-   */
+  /* Keep the errors in a buffer these will be printed by the adoReportError
+   * function. */
   p_ctx->ado_errorstr = strdup(ado_errorstr.c_str());
 
 bail_out:
@@ -905,22 +895,18 @@ static void* adoThread(void* data)
                         IID_IADOConnection, (void**)&ado_ctx.adoConnection);
   if (!SUCCEEDED(hr)) { goto bail_out; }
 
-  /*
-   * Make sure the connection doesn't timeout.
+  /* Make sure the connection doesn't timeout.
    * Default timeout is not long enough most of the time
    * for the backup or restore to finish and when it times
-   * out it will abort the action it was performing.
-   */
+   * out it will abort the action it was performing. */
   hr = ado_ctx.adoConnection->put_CommandTimeout(0);
   if (!SUCCEEDED(hr)) {
     adoThreadSetError(ctx, ado_ctx.adoConnection);
     goto bail_out;
   }
 
-  /*
-   * Open a connection to the database server with the defined connection
-   * string.
-   */
+  /* Open a connection to the database server with the defined connection
+   * string. */
   ado_ctx.ado_connect_string = str_2_BSTR(p_ctx->ado_connect_string);
   hr = ado_ctx.adoConnection->Open(ado_ctx.ado_connect_string);
   if (!SUCCEEDED(hr)) {
@@ -1106,10 +1092,8 @@ static inline bool RunAdoQuery(PluginContext* ctx, const char* query)
                         IID_IADOConnection, (void**)&adoConnection);
   if (!SUCCEEDED(hr)) { goto cleanup; }
 
-  /*
-   * Open a connection to the database server with the defined connection
-   * string.
-   */
+  /* Open a connection to the database server with the defined connection
+   * string. */
   ado_connect_string = str_2_BSTR(p_ctx->ado_connect_string);
   hr = adoConnection->Open(ado_connect_string);
   if (!SUCCEEDED(hr)) {
@@ -1228,17 +1212,13 @@ static inline bool SetupVdiDevice(PluginContext* ctx, io_pkt* io)
     PerformAdoBackup(ctx);
   }
 
-  /*
-   * Ask the database server to start a backup or restore via another thread.
-   * We create a new thread that handles the connection to the database.
-   */
+  /* Ask the database server to start a backup or restore via another thread.
+   * We create a new thread that handles the connection to the database. */
   status = pthread_create(&p_ctx->ADOThread, NULL, adoThread, (void*)ctx);
   if (status != 0) { return false; }
 
-  /*
-   * Track that we have started the thread and as such need to kill it when
-   * we perform a close of the VDI device.
-   */
+  /* Track that we have started the thread and as such need to kill it when
+   * we perform a close of the VDI device. */
   p_ctx->AdoThreadStarted = true;
 
   // GetConfiguration
@@ -1415,10 +1395,8 @@ static inline bool PerformVdiIo(PluginContext* ctx,
 
   switch (cmd->commandCode) {
     case VDC_Read:
-      /*
-       * Make sure the write to the VDIDevice will fit e.g. not a to big IO and
-       * that we are currently writing to the device.
-       */
+      /* Make sure the write to the VDIDevice will fit e.g. not a to big IO and
+       * that we are currently writing to the device. */
       if ((DWORD)io->count > cmd->size || io->func != IO_WRITE) {
         *completionCode = ERROR_BAD_ENVIRONMENT;
         goto bail_out;
@@ -1429,10 +1407,8 @@ static inline bool PerformVdiIo(PluginContext* ctx,
       }
       break;
     case VDC_Write:
-      /*
-       * Make sure the read from the VDIDevice will fit e.g. not a to big IO and
-       * that we are currently reading from the device.
-       */
+      /* Make sure the read from the VDIDevice will fit e.g. not a to big IO and
+       * that we are currently reading from the device. */
       if (cmd->size > (DWORD)io->count || io->func != IO_READ) {
         *completionCode = ERROR_BAD_ENVIRONMENT;
         goto bail_out;

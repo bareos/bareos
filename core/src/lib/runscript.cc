@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -75,21 +75,17 @@ static bool ScriptDirAllowed(JobControlRecord*,
     *bp = '\0';
   }
 
-  /*
-   * Make sure there are no relative path elements in script dir by which the
+  /* Make sure there are no relative path elements in script dir by which the
    * user tries to escape the allowed dir checking. For scripts we only allow
-   * absolute paths.
-   */
+   * absolute paths. */
   if (strstr(script_dir.c_str(), "..")) {
     Dmsg1(200, "ScriptDirAllowed: relative pathnames not allowed: %s\n",
           script_dir.c_str());
     return false;
   }
 
-  /*
-   * Match the path the script is in against the list of allowed script
-   * directories.
-   */
+  /* Match the path the script is in against the list of allowed script
+   * directories. */
   foreach_alist (allowed_script_dir, allowed_script_dirs) {
     if (Bstrcasecmp(script_dir.c_str(), allowed_script_dir)) {
       allowed = true;

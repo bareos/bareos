@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -282,10 +282,8 @@ static inline bool PySavePacketToNative(
   if (!is_options_plugin) {
     // Only copy back the arguments that are allowed to change.
     if (pSavePkt->fname) {
-      /*
-       * As this has to linger as long as the backup is running we save it in
-       * our plugin context.
-       */
+      /* As this has to linger as long as the backup is running we save it in
+       * our plugin context. */
       if (PyUnicode_Check(pSavePkt->fname)) {
         if (plugin_priv_ctx->fname) { free(plugin_priv_ctx->fname); }
 
@@ -301,10 +299,8 @@ static inline bool PySavePacketToNative(
 
     // Optional field.
     if (pSavePkt->link) {
-      /*
-       * As this has to linger as long as the backup is running we save it in
-       * our plugin context.
-       */
+      /* As this has to linger as long as the backup is running we save it in
+       * our plugin context. */
       if (PyUnicode_Check(pSavePkt->link)) {
         if (plugin_priv_ctx->link) { free(plugin_priv_ctx->link); }
         plugin_priv_ctx->link = strdup(PyUnicode_AsUTF8(pSavePkt->link));
@@ -341,10 +337,8 @@ static inline bool PySavePacketToNative(
     if (IS_FT_OBJECT(sp->type)) {
       // See if a proper restore object was created.
       if (pSavePkt->object_len > 0) {
-        /*
-         * As this has to linger as long as the backup is running we save it
-         * in our plugin context.
-         */
+        /* As this has to linger as long as the backup is running we save it
+         * in our plugin context. */
         if (pSavePkt->object_name && pSavePkt->object
             && PyUnicode_Check(pSavePkt->object_name)
             && PyByteArray_Check(pSavePkt->object)) {
@@ -1680,10 +1674,8 @@ static PyObject* PyBareosCheckChanges(PyObject*, PyObject* args)
   RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
 
 
-  /*
-   * CheckFile only has a need for a limited version of the PySavePacket so we
-   * handle that here separately and don't call PySavePacketToNative().
-   */
+  /* CheckFile only has a need for a limited version of the PySavePacket so we
+   * handle that here separately and don't call PySavePacketToNative(). */
   sp.type = pSavePkt->type;
   if (pSavePkt->fname) {
     if (PyUnicode_Check(pSavePkt->fname)) {
@@ -1730,10 +1722,8 @@ static PyObject* PyBareosAcceptFile(PyObject*, PyObject* args)
   }
   RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
 
-  /*
-   * Acceptfile only needs fname and statp from PySavePacket so we handle
-   * that here separately and don't call PySavePacketToNative().
-   */
+  /* Acceptfile only needs fname and statp from PySavePacket so we handle
+   * that here separately and don't call PySavePacketToNative(). */
   if (pSavePkt->fname) {
     if (PyUnicode_Check(pSavePkt->fname)) {
       sp.fname = const_cast<char*>(PyUnicode_AsUTF8(pSavePkt->fname));

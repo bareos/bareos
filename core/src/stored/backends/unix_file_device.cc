@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2013 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -278,16 +278,14 @@ bool unix_file_device::d_truncate(DeviceControlRecord* dcr)
     }
   }
 
-  /*
-   * Workaround supplied by Martin Schmid as a solution to bug #1011.
+  /* Workaround supplied by Martin Schmid as a solution to bug #1011.
    * Used when secure erase is configured or when ftruncate() doesn't have the
    * wanted result. As work around we perform the following steps:
    *
    * 1. close file
    * 2. delete file
    * 3. open new file with same mode
-   * 4. change ownership to original
-   */
+   * 4. change ownership to original */
   PmStrcpy(archive_name, archive_device_string);
   if (!IsPathSeparator(
           archive_name.c_str()[strlen(archive_name.c_str()) - 1])) {

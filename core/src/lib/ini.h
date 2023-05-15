@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2011 Bacula Systems(R) SA
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can modify it under the terms of
    version three of the GNU Affero General Public License as published by the
@@ -169,10 +169,8 @@ class ConfigFile {
   // Dump the item table to a file (used on plugin side)
   bool Serialize(const char* fname);
 
-  /*
-   * Dump the item table format to a buffer (used on plugin side)
-   * returns the length of the buffer, -1 if error
-   */
+  /* Dump the item table format to a buffer (used on plugin side)
+   * returns the length of the buffer, -1 if error */
   int Serialize(PoolMem* buf);
 
   // Dump the item table content to a buffer

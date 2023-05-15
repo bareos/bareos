@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -218,10 +218,8 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
   nis = (NIS*)malloc(sizeof(NIS));
   memset(nis, 0, sizeof(NIS));
 
-  /*
-   * Only one include set of the fileset  is allowed in NATIVE mode as
-   * in NDMP also per job only one filesystem can be backed up
-   */
+  /* Only one include set of the fileset  is allowed in NATIVE mode as
+   * in NDMP also per job only one filesystem can be backed up */
   fileset = jcr->dir_impl->res.fileset;
 
   if (fileset->include_items.size() > 1) {
@@ -232,10 +230,8 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
 
   ie = fileset->include_items[0];
 
-  /*
-   * only one file = entry is allowed
-   * and it is the ndmp filesystem to be backed up
-   */
+  /* only one file = entry is allowed
+   * and it is the ndmp filesystem to be backed up */
   if (ie->name_list.size() != 1) {
     Jmsg(jcr, M_ERROR, 0,
          "Exactly one  File specification is supported in NDMP NATIVE mode\n");
@@ -244,10 +240,8 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
 
   item = (char*)ie->name_list.first();
 
-  /*
-   * Perform the actual NDMP job.
-   * Initialize a new NDMP session
-   */
+  /* Perform the actual NDMP job.
+   * Initialize a new NDMP session */
   memset(&ndmp_sess, 0, sizeof(ndmp_sess));
   ndmp_sess.conn_snooping = (me->ndmp_snooping) ? 1 : 0;
   ndmp_sess.control_agent_enabled = 1;
@@ -275,11 +269,9 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
   // Copy the actual job to perform.
   memcpy(&ndmp_sess.control_acb->job, &ndmp_job, sizeof(struct ndm_job_param));
 
-  /*
-   * We can use the same private pointer used in the logging with the JCR in
+  /* We can use the same private pointer used in the logging with the JCR in
    * the file index generation. We don't setup a index_log.deliver
-   * function as we catch the index information via callbacks.
-   */
+   * function as we catch the index information via callbacks. */
   ndmp_sess.control_acb->job.index_log.ctx = ndmp_sess.param->log.ctx;
 
   if (!FillBackupEnvironment(jcr, ie, nis->filesystem,
@@ -290,11 +282,9 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
   ndmca_media_register_callbacks(&ndmp_sess, &media_callbacks);
   ndmca_jobcontrol_register_callbacks(&ndmp_sess, &jobcontrol_callbacks);
 
-  /*
-   * The full ndmp archive has a virtual filename, we need it to hardlink the
+  /* The full ndmp archive has a virtual filename, we need it to hardlink the
    * individual file records to it. So we allocate it here once so its available
-   * during the whole NDMP session.
-   */
+   * during the whole NDMP session. */
   if (Bstrcasecmp(jcr->dir_impl->backup_format, "dump")) {
     Mmsg(virtual_filename, "/@NDMP%s%%%d", nis->filesystem,
          jcr->dir_impl->DumpLevel);
@@ -360,12 +350,10 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
   retval = true;
 
 
-  /*
-   * If we do incremental backups it can happen that the backup is empty if
+  /* If we do incremental backups it can happen that the backup is empty if
    * nothing changed but we always write a filestream. So we use the counter
    * which counts the number of actual NDMP backup sessions we run to
-   * completion.
-   */
+   * completion. */
   if (jcr->JobFiles == 0) { jcr->JobFiles = 1; }
 
   // Jump to the generic cleanup done for every Job.
@@ -510,10 +498,8 @@ static inline bool extract_post_backup_stats_ndmp_native(
   // Update the Job statistics from the NDMP statistics.
   jcr->JobBytes += sess->control_acb->job.bytes_written;
 
-  /*
-   * After a successful backup we need to store all NDMP ENV variables
-   * for doing a successful restore operation.
-   */
+  /* After a successful backup we need to store all NDMP ENV variables
+   * for doing a successful restore operation. */
   ndm_ee = sess->control_acb->job.result_env_tab.head;
   while (ndm_ee) {
     if (!jcr->db->CreateNdmpEnvironmentString(
@@ -523,10 +509,8 @@ static inline bool extract_post_backup_stats_ndmp_native(
     ndm_ee = ndm_ee->next;
   }
 
-  /*
-   * If we are doing a backup type that uses dumplevels save the last used dump
-   * level.
-   */
+  /* If we are doing a backup type that uses dumplevels save the last used dump
+   * level. */
   if (nbf_options && nbf_options->uses_level) {
     jcr->db->UpdateNdmpLevelMapping(jcr, &jcr->dir_impl->jr, filesystem,
                                     sess->control_acb->job.bu_level);

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -113,12 +113,10 @@ bool Device::ScanDirectoryForVolume(DeviceControlRecord* dcr)
       continue; /* ignore directories & special files */
     }
 
-    /*
-     * OK, we got a different volume mounted. First save the
+    /* OK, we got a different volume mounted. First save the
      *  requested Volume info (dcr) structure, then query if
      *  this volume is really OK. If not, put back the desired
-     *  volume name, mark it not in changer and continue.
-     */
+     *  volume name, mark it not in changer and continue. */
     /* Check if this is a valid Volume in the pool */
     bstrncpy(dcr->VolumeName, result->d_name, sizeof(dcr->VolumeName));
     if (!dcr->DirGetVolumeInfo(GET_VOL_INFO_FOR_WRITE)) { continue; }

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -168,10 +168,8 @@ static int MatchFileregex(BootStrapRecord* bsr,
 
   if (bsr->attr == NULL) { bsr->attr = new_attr(jcr); }
 
-  /*
-   * The code breaks if the first record associated with a file is
-   * not of this type
-   */
+  /* The code breaks if the first record associated with a file is
+   * not of this type */
   if (rec->maskedStream == STREAM_UNIX_ATTRIBUTES
       || rec->maskedStream == STREAM_UNIX_ATTRIBUTES_EX) {
     bsr->skip_file = false;
@@ -206,19 +204,15 @@ int MatchBsr(BootStrapRecord* bsr,
 {
   int status;
 
-  /*
-   * The bsr->Reposition flag is set any time a bsr is done.
+  /* The bsr->Reposition flag is set any time a bsr is done.
    *   In this case, we can probably Reposition the
-   *   tape to the next available bsr position.
-   */
+   *   tape to the next available bsr position. */
   if (bsr) {
     bsr->Reposition = false;
     status = MatchAll(bsr, rec, volrec, sessrec, true, jcr);
-    /*
-     * Note, bsr->Reposition is set by MatchAll when
+    /* Note, bsr->Reposition is set by MatchAll when
      *  a bsr is done. We turn it off if a match was
-     *  found or if we cannot use positioning
-     */
+     *  found or if we cannot use positioning */
     if (status != 0 || !bsr->use_positioning) { bsr->Reposition = false; }
   } else {
     status = 1; /* no bsr => match all */
@@ -260,11 +254,9 @@ BootStrapRecord* find_next_bsr(BootStrapRecord* root_bsr, Device* dev)
       found_bsr = find_smallest_volfile(found_bsr, bsr);
     }
   }
-  /*
-   * If we get to this point and found no bsr, it means
+  /* If we get to this point and found no bsr, it means
    *  that any additional bsr's must apply to the next
-   *  tape, so set a flag.
-   */
+   *  tape, so set a flag. */
   if (found_bsr == NULL) { root_bsr->mount_next_volume = true; }
   return found_bsr;
 }
@@ -469,25 +461,21 @@ static int MatchAll(BootStrapRecord* bsr,
     goto no_match;
   }
 
-  /*
-   * If a count was specified and we have a FileIndex, assume
+  /* If a count was specified and we have a FileIndex, assume
    *   it is a Bareos created bsr (or the equivalent). We
    *   then save the bsr where the match occurred so that
    *   after processing the record or records, we can update
    *   the found count. I.e. rec->bsr points to the bsr that
-   *   satisfied the match.
-   */
+   *   satisfied the match. */
   if (bsr->count && bsr->FileIndex) {
     rec->bsr = bsr;
     Dmsg0(dbglevel, "Leave MatchAll 1\n");
     return 1; /* this is a complete match */
   }
 
-  /*
-   * The selections below are not used by Bareos's
+  /* The selections below are not used by Bareos's
    *   restore command, and don't work because of
-   *   the rec->bsr = bsr optimization above.
-   */
+   *   the rec->bsr = bsr optimization above. */
   if (!MatchJobid(bsr, bsr->JobId, sessrec, 1)) {
     Dmsg0(dbglevel, "fail on JobId\n");
     goto no_match;
@@ -605,11 +593,9 @@ static int MatchVolfile(BootStrapRecord* bsr,
                         bool done)
 {
   if (!volfile) { return 1; /* no specification matches all */ }
-  /**
-   * The following code is turned off because this should now work
+  /* The following code is turned off because this should now work
    *   with disk files too, though since a "volfile" is 4GB, it does
-   *   not improve performance much.
-   */
+   *   not improve performance much. */
   if (volfile->sfile <= rec->File && volfile->efile >= rec->File) { return 1; }
   /* Once we get past last efile, we are done */
   if (rec->File > volfile->efile) { volfile->done = true; /* set local done */ }

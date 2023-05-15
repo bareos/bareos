@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2015-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -107,11 +107,9 @@ static inline ResourceItem* config_get_res_item(UaContext* ua,
     }
   }
 
-  /*
-   * Check against dangerous characters ('@', ';').
+  /* Check against dangerous characters ('@', ';').
    * Could be less strict, if this characters are quoted,
-   * but it is easier to handle it like this.
-   */
+   * but it is easier to handle it like this. */
   if (strchr(value, '@')) { errorcharmsg = "'@' (include)"; }
   if (strchr(value, ';')) { errorcharmsg = "';' (end of directive)"; }
   if (errorcharmsg) {
@@ -183,11 +181,9 @@ static inline bool configure_create_resource_string(UaContext* ua,
   resource.strcat(res_table->name);
   resource.strcat(" {\n");
 
-  /*
-   * Is the name of the resource already given as value of the resource type?
+  /* Is the name of the resource already given as value of the resource type?
    * E.g. configure add client=newclient address=127.0.0.1 ...
-   * instead of configure add client name=newclient address=127.0.0.1 ...
-   */
+   * instead of configure add client name=newclient address=127.0.0.1 ... */
   if (ua->argv[first_parameter - 1]) {
     resourcename.strcat(ua->argv[first_parameter - 1]);
     if (!config_add_directive(ua, res_table, "name", resourcename.c_str(),
@@ -362,13 +358,11 @@ static inline bool ConfigureAddResource(UaContext* ua,
     return false;
   }
 
-  /*
-   * ParseConfigFile has already done some validation.
+  /* ParseConfigFile has already done some validation.
    * However, it skipped at least some checks for R_JOB
    * (reason: a job can get values from jobdefs,
    * and the value propagation happens after reading the full configuration)
-   * therefore we explicitly check the new resource here.
-   */
+   * therefore we explicitly check the new resource here. */
   if ((res_table->rcode == R_JOB) || (res_table->rcode == R_JOBDEFS)) {
     res = (JobResource*)my_config->GetResWithName(res_table->rcode,
                                                   name.c_str());

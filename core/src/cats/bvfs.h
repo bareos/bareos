@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -81,10 +81,8 @@ class Bvfs {
   /* Get the root point */
   DBId_t get_root();
 
-  /*
-   * It's much better to access Path though their PathId, it
-   * avoids mistakes with string encoding
-   */
+  /* It's much better to access Path though their PathId, it
+   * avoids mistakes with string encoding */
   void ChDir(DBId_t pathid)
   {
     ResetOffset();

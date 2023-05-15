@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2016 Planets Communications B.V.
-   Copyright (C) 2015-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -62,10 +62,8 @@ void NdmpStoreAttributeRecord(JobControlRecord* jcr,
   bool ndmp_bareos_backup;
 
   ndmp_bareos_backup = (jcr->getJobProtocol() == PT_NDMP_BAREOS);
-  /*
-   * when doing NDMP native backup, we do not get any attributes from the SD
-   * so we need to create an attribute record
-   */
+  /* when doing NDMP native backup, we do not get any attributes from the SD
+   * so we need to create an attribute record */
   if (!jcr->ar) {
     jcr->ar = (AttributesDbRecord*)malloc(sizeof(AttributesDbRecord));
     jcr->ar->Digest = NULL;
@@ -82,14 +80,12 @@ void NdmpStoreAttributeRecord(JobControlRecord* jcr,
     jcr->cached_attribute = false;
   }
 
-  /*
-   * When we do NDMP_BAREOS backup, we only update some fields of this structure
+  /* When we do NDMP_BAREOS backup, we only update some fields of this structure
    * the rest is already filled before by initial attributes saved by the tape
    * agent in the storage daemon.
    *
    * With NDMP_NATIVE Backup, we do not get any attributes before so we need to
-   * fill everything we need here
-   */
+   * fill everything we need here */
   if (ndmp_bareos_backup) {
     jcr->ar->fname = fname;
     jcr->ar->link = linked_fname;

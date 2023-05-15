@@ -837,7 +837,9 @@ static bool JobCheckMaxruntime(JobControlRecord* jcr)
  */
 static bool JobCheckMaxrunschedtime(JobControlRecord* jcr)
 {
-  if (jcr->dir_impl->MaxRunSchedTime == 0 || jcr->IsJobCanceled()) { return false; }
+  if (jcr->dir_impl->MaxRunSchedTime == 0 || jcr->IsJobCanceled()) {
+    return false;
+  }
   if ((watchdog_time - jcr->initial_sched_time)
       < jcr->dir_impl->MaxRunSchedTime) {
     Dmsg3(200, "Job %p (%s) with MaxRunSchedTime %d not expired\n", jcr,

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -156,11 +156,9 @@ bool BareosAccurateFilelistLmdb::AddFile(char* fname,
   // Make sure pay_load_ is large enough.
   pay_load_ = CheckPoolMemorySize(pay_load_, total_length);
 
-  /*
-   * We store the total pay load as:
+  /* We store the total pay load as:
    *
-   * accurate_payload structure\0lstat\0chksum\0
-   */
+   * accurate_payload structure\0lstat\0chksum\0 */
   payload = (accurate_payload*)pay_load_;
 
   payload->lstat = (char*)payload + sizeof(accurate_payload);
@@ -193,10 +191,8 @@ retry:
       retval = true;
       break;
     case MDB_TXN_FULL:
-      /*
-       * Seems we filled the transaction.
-       * Flush the current transaction start a new one and retry the put.
-       */
+      /* Seems we filled the transaction.
+       * Flush the current transaction start a new one and retry the put. */
       result = mdb_txn_commit(db_rw_txn_);
       if (result == 0) {
         result = mdb_txn_begin(db_env_, NULL, 0, &db_rw_txn_);
@@ -240,10 +236,8 @@ bool BareosAccurateFilelistLmdb::EndLoad()
     }
   }
 
-  /*
-   * From now on we also will be doing read transactions so create a read
-   * transaction context.
-   */
+  /* From now on we also will be doing read transactions so create a read
+   * transaction context. */
   if (!db_ro_txn_) {
     result = mdb_txn_begin(db_env_, NULL, MDB_RDONLY, &db_ro_txn_);
     if (result != 0) {
@@ -269,14 +263,12 @@ accurate_payload* BareosAccurateFilelistLmdb::lookup_payload(char* fname)
   result = mdb_get(db_ro_txn_, db_dbi_, &key, &data);
   switch (result) {
     case 0:
-      /*
-       * Success.
+      /* Success.
        *
        * We need to make a private copy of the LDMB data as we are not
        * allowed to change its content and we need to update the lstat
        * and chksum pointer to point to the actual lstat and chksum that
-       * is stored behind the accurate_payload structure in the LMDB.
-       */
+       * is stored behind the accurate_payload structure in the LMDB. */
       pay_load_ = CheckPoolMemorySize(pay_load_, data.mv_size);
 
       payload = (accurate_payload*)pay_load_;
@@ -285,11 +277,9 @@ accurate_payload* BareosAccurateFilelistLmdb::lookup_payload(char* fname)
       lstat_length = strlen(payload->lstat);
       payload->chksum = (char*)payload->lstat + lstat_length + 1;
 
-      /*
-       * We keep the transaction as short a possible so after a lookup
+      /* We keep the transaction as short a possible so after a lookup
        * and copying the actual data out we reset the read transaction
-       * and do a renew of the read transaction for a new run.
-       */
+       * and do a renew of the read transaction for a new run. */
       mdb_txn_reset(db_ro_txn_);
       result = mdb_txn_renew(db_ro_txn_);
       if (result != 0) {
@@ -323,11 +313,9 @@ bool BareosAccurateFilelistLmdb::UpdatePayload(char* fname,
   // Make sure pay_load_ is large enough.
   pay_load_ = CheckPoolMemorySize(pay_load_, total_length);
 
-  /*
-   * We store the total pay load as:
+  /* We store the total pay load as:
    *
-   * accurate_payload structure\0lstat\0chksum\0
-   */
+   * accurate_payload structure\0lstat\0chksum\0 */
   new_payload = (accurate_payload*)pay_load_;
 
   new_payload->lstat = (char*)payload + sizeof(accurate_payload);
@@ -368,10 +356,8 @@ retry:
       }
       break;
     case MDB_TXN_FULL:
-      /*
-       * Seems we filled the transaction.
-       * Flush the current transaction start a new one and retry the put.
-       */
+      /* Seems we filled the transaction.
+       * Flush the current transaction start a new one and retry the put. */
       result = mdb_txn_commit(db_rw_txn_);
       if (result == 0) {
         result = mdb_txn_begin(db_env_, NULL, 0, &db_rw_txn_);

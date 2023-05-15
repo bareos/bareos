@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2015-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -256,11 +256,9 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
          _("Despooling zero bytes. Your disk is probably FULL!\n"));
   }
 
-  /*
-   * Commit means that the job is done, so we commit, otherwise, we
+  /* Commit means that the job is done, so we commit, otherwise, we
    * are despooling because of user spool size max or some error
-   * (e.g. filesystem full).
-   */
+   * (e.g. filesystem full). */
   if (commit) {
     Jmsg(jcr, M_INFO, 0,
          _("Committing spooled data to Volume \"%s\". Despooling %s bytes "
@@ -277,19 +275,15 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
   jcr->sendJobStatus(JS_DataDespooling);
   dcr->despool_wait = true;
   dcr->spooling = false;
-  /*
-   * We work with device blocked, but not locked so that other threads
-   * e.g. reservations can lock the device structure.
-   */
+  /* We work with device blocked, but not locked so that other threads
+   * e.g. reservations can lock the device structure. */
   dcr->dblock(BST_DESPOOLING);
   dcr->despool_wait = false;
   dcr->despooling = true;
 
-  /*
-   * This is really quite kludgy and should be fixed some time.
+  /* This is really quite kludgy and should be fixed some time.
    * We create a dev structure to read from the spool file
-   * in rdev and rdcr.
-   */
+   * in rdev and rdcr. */
   auto rdev(std::make_unique<SpoolDevice>());
   rdev->archive_device_string = GetMemory(strlen(spool_name) + 1);
   bstrncpy(rdev->archive_device_string, spool_name,
@@ -342,11 +336,9 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
           block->LastIndex);
   }
 
-  /*
-   * If this Job is incomplete, we need to backup the FileIndex
+  /* If this Job is incomplete, we need to backup the FileIndex
    *  to the last correctly saved file so that the JobMedia
-   *  LastIndex is correct.
-   */
+   *  LastIndex is correct. */
   if (jcr->is_JobStatus(JS_Incomplete)) {
     dcr->VolLastIndex = dir->get_FileIndex();
     Dmsg1(100, "======= Set FI=%ld\n", dir->get_FileIndex());
@@ -361,11 +353,9 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
   /* Set new file/block parameters for current dcr */
   SetNewFileParameters(dcr);
 
-  /*
-   * Subtracting run_time give us elapsed time - wait_time since
+  /* Subtracting run_time give us elapsed time - wait_time since
    * we started despooling. Note, don't use time_t as it is 32 or 64
-   * bits depending on the OS and doesn't edit with %d
-   */
+   * bits depending on the OS and doesn't edit with %d */
   int32_t despool_elapsed = time(NULL) - despool_start - jcr->run_time;
 
   if (despool_elapsed <= 0) { despool_elapsed = 1; }
@@ -407,20 +397,16 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
     unlock_mutex(dcr->dev->spool_mutex);
   }
 
-  /*
-   * null the jcr
-   * rdev will be freed by its smart pointer
-   */
+  /* null the jcr
+   * rdev will be freed by its smart pointer */
   rdcr->jcr = NULL;
   rdcr->SetDev(NULL);
   FreeDeviceControlRecord(rdcr);
   dcr->spooling = true; /* turn on spooling again */
   dcr->despooling = false;
 
-  /*
-   * Note, if committing we leave the device blocked. It will be removed in
-   * ReleaseDevice();
-   */
+  /* Note, if committing we leave the device blocked. It will be removed in
+   * ReleaseDevice(); */
   if (!commit) { dcr->dev->dunblock(); }
   jcr->sendJobStatus(JS_Running);
 

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -346,21 +346,17 @@ static void TreeGetpathItem(TREE_NODE* node, POOLMEM*& path)
 
   TreeGetpathItem(node->parent, path);
 
-  /*
-   * Fixup for Win32. If we have a Win32 directory and
+  /* Fixup for Win32. If we have a Win32 directory and
    * there is only a / in the buffer, remove it since
-   * win32 names don't generally start with /
-   */
+   * win32 names don't generally start with / */
   if (node->type == TN_DIR_NLS && IsPathSeparator(path[0]) && path[1] == '\0') {
     PmStrcpy(path, "");
   }
   PmStrcat(path, node->fname);
 
-  /*
-   * Add a slash for all directories unless we are at the root,
+  /* Add a slash for all directories unless we are at the root,
    * also add a slash to a soft linked file if it has children
-   * i.e. it is linked to a directory.
-   */
+   * i.e. it is linked to a directory. */
   if ((node->type != TN_FILE && !(IsPathSeparator(path[0]) && path[1] == '\0'))
       || (node->soft_link && TreeNodeHasChild(node))) {
     PmStrcat(path, "/");

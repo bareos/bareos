@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -176,10 +176,8 @@ bool BareosSocketTCP::open(JobControlRecord* jcr,
   const char* errstr;
   int save_errno = 0;
 
-  /*
-   * Fill in the structure serv_addr with the address of
-   * the server that we want to connect with.
-   */
+  /* Fill in the structure serv_addr with the address of
+   * the server that we want to connect with. */
   if ((addr_list = BnetHost2IpAddrs(host, 0, &errstr)) == NULL) {
     // Note errstr is not malloc'ed
     Qmsg2(jcr, M_ERROR, 0,
@@ -226,19 +224,15 @@ bool BareosSocketTCP::open(JobControlRecord* jcr,
       switch (errno) {
 #ifdef EPFNOSUPPORT
         case EPFNOSUPPORT:
-          /*
-           * The name lookup of the host returned an address in a protocol
+          /* The name lookup of the host returned an address in a protocol
            * family we don't support. Suppress the error and try the next
-           * address.
-           */
+           * address. */
           break;
 #endif
 #ifdef EAFNOSUPPORT
         case EAFNOSUPPORT:
-          /*
-           * The name lookup of the host returned an address in a address family
-           * we don't support. Suppress the error and try the next address.
-           */
+          /* The name lookup of the host returned an address in a address family
+           * we don't support. Suppress the error and try the next address. */
           break;
 #endif
         default:
@@ -296,10 +290,8 @@ bool BareosSocketTCP::open(JobControlRecord* jcr,
     return false;
   }
 
-  /*
-   * Keep socket from timing out from inactivity
-   * Do this a second time out of paranoia
-   */
+  /* Keep socket from timing out from inactivity
+   * Do this a second time out of paranoia */
   if (setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, (sockopt_val_t)&value,
                  sizeof(value))
       < 0) {
@@ -432,21 +424,17 @@ bool BareosSocketTCP::SendPacket(int32_t* hdr, int32_t pktsiz)
  */
 bool BareosSocketTCP::send()
 {
-  /*
-   * Send msg (length: message_length).
+  /* Send msg (length: message_length).
    * As send() and recv() uses the same buffer (msg and message_length)
    * store the original message_length in an own variable,
-   * that will not be modifed by recv().
-   */
+   * that will not be modifed by recv(). */
   const int32_t o_msglen = message_length;
   int32_t pktsiz;
   int32_t written = 0;
   int32_t packet_msglen = 0;
   bool ok = true;
-  /*
-   * Store packet length at head of message -- note, we have reserved an int32_t
-   * just before msg, So we can store there
-   */
+  /* Store packet length at head of message -- note, we have reserved an int32_t
+   * just before msg, So we can store there */
   int32_t* hdr = (int32_t*)(msg - (int)header_length);
 
   if (errors) {
@@ -474,16 +462,12 @@ bool BareosSocketTCP::send()
     *hdr = htonl(o_msglen); /* store signal */
     ok = SendPacket(hdr, pktsiz);
   } else {
-    /*
-     * msg might be to long for a single Bareos packet.
-     * If so, send msg as multiple packages.
-     */
+    /* msg might be to long for a single Bareos packet.
+     * If so, send msg as multiple packages. */
     while (ok && (written < o_msglen)) {
       if ((o_msglen - written) > max_message_len) {
-        /*
-         * Message is to large for a single Bareos packet.
-         * Send it via multiple packets.
-         */
+        /* Message is to large for a single Bareos packet.
+         * Send it via multiple packets. */
         pktsiz = max_packet_size; /* header + data */
         packet_msglen = max_message_len;
       } else {
@@ -619,17 +603,13 @@ int32_t BareosSocketTCP::recv()
     goto get_out;
   }
 
-  /*
-   * Always add a zero by to properly Terminate any string that was send to us.
+  /* Always add a zero by to properly Terminate any string that was send to us.
    * Note, we ensured above that the buffer is at least one byte longer than
-   * the message length.
-   */
+   * the message length. */
   msg[nbytes] = 0; /* Terminate in case it is a string */
 
-  /*
-   * The following uses *lots* of resources so turn it on only for serious
-   * debugging.
-   */
+  /* The following uses *lots* of resources so turn it on only for serious
+   * debugging. */
 
 get_out:
   if (mutex_) { mutex_->unlock(); }
@@ -684,11 +664,9 @@ bool BareosSocketTCP::SetBufferSize(uint32_t size, int rw)
     return false;
   }
 
-  /*
-   * If user has not set the size, use the OS default -- i.e. do not
+  /* If user has not set the size, use the OS default -- i.e. do not
    * try to set it.  This allows sys admins to set the size they
-   * want in the OS, and BAREOS will comply. See bug #1493
-   */
+   * want in the OS, and BAREOS will comply. See bug #1493 */
   if (size == 0) {
     message_length = dbuf_size;
     return true;
@@ -950,10 +928,8 @@ int32_t BareosSocketTCP::read_nbytes(char* ptr, int32_t nbytes)
     if (IsTimedOut() || IsTerminated()) { return -1; }
 
 #ifdef HAVE_WIN32
-    /*
-     * For Windows, we must simulate Unix errno on a socket error in order to
-     * handle errors correctly.
-     */
+    /* For Windows, we must simulate Unix errno on a socket error in order to
+     * handle errors correctly. */
     if (nread == SOCKET_ERROR) {
       DWORD err = WSAGetLastError();
       nread = -1;
@@ -1023,10 +999,8 @@ int32_t BareosSocketTCP::write_nbytes(char* ptr, int32_t nbytes)
       if (IsTimedOut() || IsTerminated()) { return -1; }
 
 #ifdef HAVE_WIN32
-      /*
-       * For Windows, we must simulate Unix errno on a socket
-       *  error in order to handle errors correctly.
-       */
+      /* For Windows, we must simulate Unix errno on a socket
+       *  error in order to handle errors correctly. */
       if (nwritten == SOCKET_ERROR) {
         DWORD err = WSAGetLastError();
         nwritten = -1;
@@ -1042,11 +1016,9 @@ int32_t BareosSocketTCP::write_nbytes(char* ptr, int32_t nbytes)
 
     } while (nwritten == -1 && errno == EINTR);
 
-    /*
-     * If connection is non-blocking, we will get EAGAIN, so
+    /* If connection is non-blocking, we will get EAGAIN, so
      * use select()/poll() to keep from consuming all
-     * the CPU and try again.
-     */
+     * the CPU and try again. */
     if (nwritten == -1 && errno == EAGAIN) {
       WaitForWritableFd(fd_, 1, false);
       continue;

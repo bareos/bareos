@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -204,12 +204,10 @@ static bacl_exit_code aix_build_acl_streams(JobControlRecord* jcr,
         retval = bacl_exit_ok;
         goto bail_out;
       case ENOSYS:
-        /*
-         * If the filesystem reports it doesn't support ACLs we clear the
+        /* If the filesystem reports it doesn't support ACLs we clear the
          * BACL_FLAG_SAVE_NATIVE flag so we skip ACL saves on all other files
          * on the same filesystem. The BACL_FLAG_SAVE_NATIVE flag gets set again
-         * when we change from one filesystem to another.
-         */
+         * when we change from one filesystem to another. */
         acl_data->flags &= ~BACL_FLAG_SAVE_NATIVE;
         retval = bacl_exit_ok;
         goto bail_out;
@@ -279,11 +277,9 @@ static bacl_exit_code aix_build_acl_streams(JobControlRecord* jcr,
       < 0) {
     switch (errno) {
       case ENOSPC:
-        /*
-         * Our buffer is not big enough, acltxtsize should be updated with the
+        /* Our buffer is not big enough, acltxtsize should be updated with the
          * value the aclx_printStr really need. So we increase the buffer and
-         * try again.
-         */
+         * try again. */
         acl_data->u.build->content
             = CheckPoolMemorySize(acl_data->u.build->content, acltxtsize + 1);
         if (aclx_printStr(acl_data->u.build->content, &acltxtsize, aclbuf,
@@ -393,10 +389,8 @@ static bacl_exit_code aix_parse_acl_streams(JobControlRecord* jcr,
       goto bail_out;
   } /* end switch (stream) */
 
-  /*
-   * Set the acl buffer to an initial size. For now we set it
-   * to the same size as the ASCII representation.
-   */
+  /* Set the acl buffer to an initial size. For now we set it
+   * to the same size as the ASCII representation. */
   aclbuf = CheckPoolMemorySize(aclbuf, content_length);
   aclsize = content_length;
   if (aclx_scanStr(content, aclbuf, &aclsize, type) < 0) {
@@ -404,22 +398,18 @@ static bacl_exit_code aix_parse_acl_streams(JobControlRecord* jcr,
 
     switch (errno) {
       case ENOSPC:
-        /*
-         * The buffer isn't big enough. The man page doesn't say that aclsize
+        /* The buffer isn't big enough. The man page doesn't say that aclsize
          * is updated to the needed size as what is done with aclx_printStr.
          * So for now we try to increase the buffer a maximum of 3 times
-         * and retry the conversion.
-         */
+         * and retry the conversion. */
         for (cnt = 0; cnt < 3; cnt++) {
           aclsize = 2 * aclsize;
           aclbuf = CheckPoolMemorySize(aclbuf, aclsize);
 
           if (aclx_scanStr(content, aclbuf, &aclsize, type) == 0) { break; }
 
-          /*
-           * See why we failed this time, ENOSPC retry if max retries not met,
-           * otherwise abort.
-           */
+          /* See why we failed this time, ENOSPC retry if max retries not met,
+           * otherwise abort. */
           switch (errno) {
             case ENOSPC:
               if (cnt < 3) { continue; }
@@ -450,12 +440,10 @@ static bacl_exit_code aix_parse_acl_streams(JobControlRecord* jcr,
         retval = bacl_exit_ok;
         goto bail_out;
       case ENOSYS:
-        /*
-         * If the filesystem reports it doesn't support ACLs we clear the
+        /* If the filesystem reports it doesn't support ACLs we clear the
          * BACL_FLAG_RESTORE_NATIVE flag so we skip ACL restores on all other
          * files on the same filesystem. The BACL_FLAG_RESTORE_NATIVE flag gets
-         * set again when we change from one filesystem to another.
-         */
+         * set again when we change from one filesystem to another. */
         acl_data->flags &= ~BACL_FLAG_RESTORE_NATIVE;
         retval = bacl_exit_ok;
         goto bail_out;
@@ -596,10 +584,8 @@ static acl_type_t BacToOsAcltype(bacl_type acltype)
       break;
 #      endif
     default:
-      /*
-       * This should never happen, as the per OS version function only tries acl
-       * types supported on a certain platform.
-       */
+      /* This should never happen, as the per OS version function only tries acl
+       * types supported on a certain platform. */
       ostype = (acl_type_t)ACL_TYPE_NONE;
       break;
   }
@@ -638,12 +624,10 @@ static int AclCountEntries(acl_t acl)
  */
 static bool AclIsTrivial(acl_t acl)
 {
-  /*
-   * acl is trivial if it has only the following entries:
+  /* acl is trivial if it has only the following entries:
    * "user::",
    * "group::",
-   * "other::"
-   */
+   * "other::" */
   acl_entry_t ace;
   acl_tag_t tag;
 #        if defined(HAVE_FREEBSD_OS) || defined(HAVE_LINUX_OS)
@@ -651,15 +635,11 @@ static bool AclIsTrivial(acl_t acl)
 
   entry_available = acl_get_entry(acl, ACL_FIRST_ENTRY, &ace);
   while (entry_available == 1) {
-    /*
-     * Get the tag type of this acl entry.
-     * If we fail to get the tagtype we call the acl non-trivial.
-     */
+    /* Get the tag type of this acl entry.
+     * If we fail to get the tagtype we call the acl non-trivial. */
     if (acl_get_tag_type(ace, &tag) < 0) return true;
-    /*
-     * Anything other the ACL_USER_OBJ, ACL_GROUP_OBJ or ACL_OTHER breaks the
-     * spell.
-     */
+    /* Anything other the ACL_USER_OBJ, ACL_GROUP_OBJ or ACL_OTHER breaks the
+     * spell. */
     if (tag != ACL_USER_OBJ && tag != ACL_GROUP_OBJ && tag != ACL_OTHER)
       return false;
     entry_available = acl_get_entry(acl, ACL_NEXT_ENTRY, &ace);
@@ -682,24 +662,20 @@ static bacl_exit_code generic_get_acl_from_os(JobControlRecord* jcr,
   ostype = BacToOsAcltype(acltype);
   acl = acl_get_file(acl_data->last_fname, ostype);
   if (acl) {
-    /**
-     * From observation, IRIX's acl_get_file() seems to return a
+    /* From observation, IRIX's acl_get_file() seems to return a
      * non-NULL acl with a count field of -1 when a file has no ACL
      * defined, while IRIX's acl_to_text() returns NULL when presented
      * with such an ACL.
      *
      * For all other implmentations we check if there are more then
-     * zero entries in the acl returned.
-     */
+     * zero entries in the acl returned. */
     if (AclCountEntries(acl) <= 0) { goto bail_out; }
 
     // Make sure this is not just a trivial ACL.
 #      if !defined(HAVE_DARWIN_OS)
     if (acltype == BACL_TYPE_ACCESS && AclIsTrivial(acl)) {
-      /*
-       * The ACLs simply reflect the (already known) standard permissions
-       * So we don't send an ACL stream to the SD.
-       */
+      /* The ACLs simply reflect the (already known) standard permissions
+       * So we don't send an ACL stream to the SD. */
       goto bail_out;
     }
 #      endif
@@ -708,10 +684,8 @@ static bacl_exit_code generic_get_acl_from_os(JobControlRecord* jcr,
       int trivial;
       if (acl_is_trivial_np(acl, &trivial) == 0) {
         if (trivial == 1) {
-          /*
-           * The ACLs simply reflect the (already known) standard permissions
-           * So we don't send an ACL stream to the SD.
-           */
+          /* The ACLs simply reflect the (already known) standard permissions
+           * So we don't send an ACL stream to the SD. */
           goto bail_out;
         }
       }
@@ -742,12 +716,10 @@ static bacl_exit_code generic_get_acl_from_os(JobControlRecord* jcr,
     switch (errno) {
 #      if defined(BACL_ENOTSUP)
       case BACL_ENOTSUP:
-        /*
-         * If the filesystem reports it doesn't support ACLs we clear the
+        /* If the filesystem reports it doesn't support ACLs we clear the
          * BACL_FLAG_SAVE_NATIVE flag so we skip ACL saves on all other files
          * on the same filesystem. The BACL_FLAG_SAVE_NATIVE flag gets set again
-         * when we change from one filesystem to another.
-         */
+         * when we change from one filesystem to another. */
         acl_data->flags &= ~BACL_FLAG_SAVE_NATIVE;
         goto bail_out;
 #      endif
@@ -793,12 +765,10 @@ static bacl_exit_code generic_set_acl_on_os(JobControlRecord* jcr,
         return bacl_exit_ok;
 #      if defined(BACL_ENOTSUP)
       case BACL_ENOTSUP:
-        /*
-         * If the filesystem reports it doesn't support ACLs we clear the
+        /* If the filesystem reports it doesn't support ACLs we clear the
          * BACL_FLAG_RESTORE_NATIVE flag so we skip ACL restores on all other
          * files on the same filesystem. The BACL_FLAG_RESTORE_NATIVE flag gets
-         * set again when we change from one filesystem to another.
-         */
+         * set again when we change from one filesystem to another. */
         acl_data->flags &= ~BACL_FLAG_RESTORE_NATIVE;
         Mmsg1(jcr->errmsg,
               _("acl_delete_def_file error on file \"%s\": filesystem doesn't "
@@ -825,10 +795,8 @@ static bacl_exit_code generic_set_acl_on_os(JobControlRecord* jcr,
     return bacl_exit_error;
   }
 
-  /**
-   * Only validate POSIX acls the acl_valid interface is only implemented
-   * for checking POSIX acls on most platforms.
-   */
+  /* Only validate POSIX acls the acl_valid interface is only implemented
+   * for checking POSIX acls on most platforms. */
   switch (acltype) {
     case BACL_TYPE_NFS4:
       // Skip acl_valid tests on NFSv4 acls.
@@ -847,12 +815,10 @@ static bacl_exit_code generic_set_acl_on_os(JobControlRecord* jcr,
       break;
   }
 
-  /**
-   * Restore the ACLs, but don't complain about links which really should
+  /* Restore the ACLs, but don't complain about links which really should
    * not have attributes, and the file it is linked to may not yet be restored.
    * This is only true for the old acl streams as in the new implementation we
-   * don't save acls of symlinks (which cannot have acls anyhow)
-   */
+   * don't save acls of symlinks (which cannot have acls anyhow) */
   if (acl_set_file(acl_data->last_fname, ostype, acl) != 0
       && acl_data->filetype != FT_LNK) {
     BErrNo be;
@@ -863,12 +829,10 @@ static bacl_exit_code generic_set_acl_on_os(JobControlRecord* jcr,
         return bacl_exit_ok;
 #      if defined(BACL_ENOTSUP)
       case BACL_ENOTSUP:
-        /*
-         * If the filesystem reports it doesn't support ACLs we clear the
+        /* If the filesystem reports it doesn't support ACLs we clear the
          * BACL_FLAG_RESTORE_NATIVE flag so we skip ACL restores on all other
          * files on the same filesystem. The BACL_FLAG_RESTORE_NATIVE flag gets
-         * set again when we change from one filesystem to another.
-         */
+         * set again when we change from one filesystem to another. */
         acl_data->flags &= ~BACL_FLAG_RESTORE_NATIVE;
         Mmsg1(jcr->errmsg,
               _("acl_set_file error on file \"%s\": filesystem doesn't support "
@@ -905,15 +869,13 @@ static bacl_exit_code darwin_build_acl_streams(JobControlRecord* jcr,
                                                FindFilesPacket*)
 {
 #        if defined(HAVE_ACL_TYPE_EXTENDED)
-  /**
-   * On MacOS X, acl_get_file (name, ACL_TYPE_ACCESS)
+  /* On MacOS X, acl_get_file (name, ACL_TYPE_ACCESS)
    * and acl_get_file (name, ACL_TYPE_DEFAULT)
    * always return NULL / EINVAL.  There is no point in making
    * these two useless calls.  The real ACL is retrieved through
    * acl_get_file (name, ACL_TYPE_EXTENDED).
    *
-   * Read access ACLs for files, dirs and links
-   */
+   * Read access ACLs for files, dirs and links */
   if (generic_get_acl_from_os(jcr, acl_data, BACL_TYPE_EXTENDED)
       == bacl_exit_fatal)
     return bacl_exit_fatal;
@@ -1025,12 +987,10 @@ static bacl_exit_code freebsd_build_acl_streams(JobControlRecord* jcr,
     }
   }
 
-  /*
-   * If the filesystem reports it doesn't support ACLs we clear the
+  /* If the filesystem reports it doesn't support ACLs we clear the
    * BACL_FLAG_SAVE_NATIVE flag so we skip ACL saves on all other files
    * on the same filesystem. The BACL_FLAG_SAVE_NATIVE flag gets set again
-   * when we change from one filesystem to another.
-   */
+   * when we change from one filesystem to another. */
   if (acl_enabled == 0) {
     acl_data->flags &= ~BACL_FLAG_SAVE_NATIVE;
     PmStrcpy(acl_data->u.build->content, "");
@@ -1128,12 +1088,10 @@ static bacl_exit_code freebsd_parse_acl_streams(JobControlRecord* jcr,
       }
     }
     case 0:
-      /*
-       * If the filesystem reports it doesn't support ACLs we clear the
+      /* If the filesystem reports it doesn't support ACLs we clear the
        * BACL_FLAG_RESTORE_NATIVE flag so we skip ACL restores on all other
        * files on the same filesystem. The BACL_FLAG_RESTORE_NATIVE flag gets
-       * set again when we change from one filesystem to another.
-       */
+       * set again when we change from one filesystem to another. */
       acl_data->flags &= ~BACL_FLAG_SAVE_NATIVE;
       Mmsg2(jcr->errmsg,
             _("Trying to restore acl on file \"%s\" on filesystem without %s "
@@ -1325,12 +1283,10 @@ static bacl_exit_code solaris_build_acl_streams(JobControlRecord* jcr,
   acl_enabled = pathconf(acl_data->last_fname, _PC_ACL_ENABLED);
   switch (acl_enabled) {
     case 0:
-      /*
-       * If the filesystem reports it doesn't support ACLs we clear the
+      /* If the filesystem reports it doesn't support ACLs we clear the
        * BACL_FLAG_SAVE_NATIVE flag so we skip ACL saves on all other files
        * on the same filesystem. The BACL_FLAG_SAVE_NATIVE flag gets set again
-       * when we change from one filesystem to another.
-       */
+       * when we change from one filesystem to another. */
       acl_data->flags &= ~BACL_FLAG_SAVE_NATIVE;
       PmStrcpy(acl_data->u.build->content, "");
       acl_data->u.build->content_length = 0;
@@ -1370,10 +1326,8 @@ static bacl_exit_code solaris_build_acl_streams(JobControlRecord* jcr,
   }
 
   if (!aclp) {
-    /*
-     * The ACLs simply reflect the (already known) standard permissions
-     * So we don't send an ACL stream to the SD.
-     */
+    /* The ACLs simply reflect the (already known) standard permissions
+     * So we don't send an ACL stream to the SD. */
     PmStrcpy(acl_data->u.build->content, "");
     acl_data->u.build->content_length = 0;
     return bacl_exit_ok;
@@ -1424,12 +1378,10 @@ static bacl_exit_code solaris_parse_acl_streams(JobControlRecord* jcr,
       acl_enabled = pathconf(acl_data->last_fname, _PC_ACL_ENABLED);
       switch (acl_enabled) {
         case 0:
-          /*
-           * If the filesystem reports it doesn't support ACLs we clear the
+          /* If the filesystem reports it doesn't support ACLs we clear the
            * BACL_FLAG_RESTORE_NATIVE flag so we skip ACL restores on all other
            * files on the same filesystem. The BACL_FLAG_RESTORE_NATIVE flag
-           * gets set again when we change from one filesystem to another.
-           */
+           * gets set again when we change from one filesystem to another. */
           acl_data->flags &= ~BACL_FLAG_RESTORE_NATIVE;
           Mmsg1(jcr->errmsg,
                 _("Trying to restore acl on file \"%s\" on filesystem without "
@@ -1451,16 +1403,12 @@ static bacl_exit_code solaris_parse_acl_streams(JobControlRecord* jcr,
           }
         }
         default:
-          /*
-           * On a filesystem with ACL support make sure this particular ACL type
-           * can be restored.
-           */
+          /* On a filesystem with ACL support make sure this particular ACL type
+           * can be restored. */
           switch (stream) {
             case STREAM_ACL_SOLARIS_ACLENT:
-              /*
-               * An aclent can be restored on filesystems with
-               * _ACL_ACLENT_ENABLED or _ACL_ACE_ENABLED support.
-               */
+              /* An aclent can be restored on filesystems with
+               * _ACL_ACLENT_ENABLED or _ACL_ACE_ENABLED support. */
               if ((acl_enabled & (_ACL_ACLENT_ENABLED | _ACL_ACE_ENABLED))
                   == 0) {
                 Mmsg1(jcr->errmsg,
@@ -1471,10 +1419,8 @@ static bacl_exit_code solaris_parse_acl_streams(JobControlRecord* jcr,
               }
               break;
             case STREAM_ACL_SOLARIS_ACE:
-              /*
-               * An ace can only be restored on a filesystem with
-               * _ACL_ACE_ENABLED support.
-               */
+              /* An ace can only be restored on a filesystem with
+               * _ACL_ACE_ENABLED support. */
               if ((acl_enabled & _ACL_ACE_ENABLED) == 0) {
                 Mmsg1(jcr->errmsg,
                       _("Trying to restore NFSv4 acl on file \"%s\" on "
@@ -1484,10 +1430,8 @@ static bacl_exit_code solaris_parse_acl_streams(JobControlRecord* jcr,
               }
               break;
             default:
-              /*
-               * Stream id which doesn't describe the type of acl which is
-               * encoded.
-               */
+              /* Stream id which doesn't describe the type of acl which is
+               * encoded. */
               break;
           }
           break;
@@ -1526,13 +1470,11 @@ static bacl_exit_code solaris_parse_acl_streams(JobControlRecord* jcr,
           break;
       }
 
-      /**
-       * Restore the ACLs, but don't complain about links which really should
+      /* Restore the ACLs, but don't complain about links which really should
        * not have attributes, and the file it is linked to may not yet be
        * restored. This is only true for the old acl streams as in the new
        * implementation we don't save acls of symlinks (which cannot have acls
-       * anyhow)
-       */
+       * anyhow) */
       if ((error = acl_set(acl_data->last_fname, aclp)) == -1
           && acl_data->filetype != FT_LNK) {
         switch (errno) {
@@ -1596,10 +1538,8 @@ static bacl_exit_code solaris_build_acl_streams(JobControlRecord* jcr,
   acls = (aclent_t*)malloc(n * sizeof(aclent_t));
   if (acl(acl_data->last_fname, GETACL, n, acls) == n) {
     if (AclIsTrivial(n, acls)) {
-      /*
-       * The ACLs simply reflect the (already known) standard permissions
-       * So we don't send an ACL stream to the SD.
-       */
+      /* The ACLs simply reflect the (already known) standard permissions
+       * So we don't send an ACL stream to the SD. */
       free(acls);
       PmStrcpy(acl_data->u.build->content, "");
       acl_data->u.build->content_length = 0;
@@ -1645,10 +1585,8 @@ static bacl_exit_code solaris_parse_acl_streams(JobControlRecord* jcr,
     return bacl_exit_error;
   }
 
-  /*
-   * Restore the ACLs, but don't complain about links which really should
-   * not have attributes, and the file it is linked to may not yet be restored.
-   */
+  /* Restore the ACLs, but don't complain about links which really should
+   * not have attributes, and the file it is linked to may not yet be restored. */
   if (acl(acl_data->last_fname, SETACL, n, acls) == -1
       && acl_data->filetype != FT_LNK) {
     BErrNo be;
@@ -1715,10 +1653,8 @@ static bacl_exit_code afs_build_acl_streams(JobControlRecord* jcr,
   struct ViceIoctl vip;
   char acl_text[BUFSIZ];
 
-  /*
-   * AFS ACLs can only be set on a directory, so no need to try to
-   * request them for anything other then that.
-   */
+  /* AFS ACLs can only be set on a directory, so no need to try to
+   * request them for anything other then that. */
   if (ff_pkt->type != FT_DIREND) { return bacl_exit_ok; }
 
   vip.in = NULL;
@@ -1776,22 +1712,18 @@ bacl_exit_code BuildAclStreams(JobControlRecord* jcr,
                                AclData* acl_data,
                                FindFilesPacket* ff_pkt)
 {
-  /*
-   * See if we are changing from one device to another.
+  /* See if we are changing from one device to another.
    * We save the current device we are scanning and compare
    * it with the current st_dev in the last stat performed on
-   * the file we are currently storing.
-   */
+   * the file we are currently storing. */
   if (acl_data->first_dev || acl_data->current_dev != ff_pkt->statp.st_dev) {
     acl_data->flags = 0;
     acl_data->first_dev = false;
 
 #  if defined(HAVE_AFS_ACL)
-    /*
-     * AFS is a non OS specific filesystem so see if this path is on an AFS
+    /* AFS is a non OS specific filesystem so see if this path is on an AFS
      * filesystem Set the BACL_FLAG_SAVE_AFS flag if it is. If not set the
-     * BACL_FLAG_SAVE_NATIVE flag.
-     */
+     * BACL_FLAG_SAVE_NATIVE flag. */
     if (FstypeEquals(acl_data->last_fname, "afs")) {
       acl_data->flags |= BACL_FLAG_SAVE_AFS;
     } else {
@@ -1806,19 +1738,15 @@ bacl_exit_code BuildAclStreams(JobControlRecord* jcr,
   }
 
 #  if defined(HAVE_AFS_ACL)
-  /*
-   * See if the BACL_FLAG_SAVE_AFS flag is set which lets us know if we should
-   * save AFS ACLs.
-   */
+  /* See if the BACL_FLAG_SAVE_AFS flag is set which lets us know if we should
+   * save AFS ACLs. */
   if (acl_data->flags & BACL_FLAG_SAVE_AFS) {
     return afs_build_acl_streams(jcr, acl_data, ff_pkt);
   }
 #  endif
 #  if defined(HAVE_ACL)
-  /*
-   * See if the BACL_FLAG_SAVE_NATIVE flag is set which lets us know if we
-   * should save native ACLs.
-   */
+  /* See if the BACL_FLAG_SAVE_NATIVE flag is set which lets us know if we
+   * should save native ACLs. */
   if (acl_data->flags & BACL_FLAG_SAVE_NATIVE) {
     // Call the appropriate function.
     if (os_build_acl_streams) {
@@ -1841,12 +1769,10 @@ bacl_exit_code parse_acl_streams(JobControlRecord* jcr,
   struct stat st;
   unsigned int cnt;
 
-  /*
-   * See if we are changing from one device to another.
+  /* See if we are changing from one device to another.
    * We save the current device we are restoring to and compare
    * it with the current st_dev in the last stat performed on
-   * the file we are currently restoring.
-   */
+   * the file we are currently restoring. */
   ret = lstat(acl_data->last_fname, &st);
   switch (ret) {
     case -1: {
@@ -1872,11 +1798,9 @@ bacl_exit_code parse_acl_streams(JobControlRecord* jcr,
     acl_data->first_dev = false;
 
 #  if defined(HAVE_AFS_ACL)
-    /*
-     * AFS is a non OS specific filesystem so see if this path is on an AFS
+    /* AFS is a non OS specific filesystem so see if this path is on an AFS
      * filesystem Set the BACL_FLAG_RESTORE_AFS flag if it is. If not set the
-     * BACL_FLAG_RETORE_NATIVE flag.
-     */
+     * BACL_FLAG_RETORE_NATIVE flag. */
     if (FstypeEquals(acl_data->last_fname, "afs")) {
       acl_data->flags |= BACL_FLAG_RESTORE_AFS;
     } else {
@@ -1897,10 +1821,8 @@ bacl_exit_code parse_acl_streams(JobControlRecord* jcr,
         return afs_parse_acl_stream(jcr, acl_data, stream, content,
                                     content_length);
       } else {
-        /*
-         * Increment error count but don't log an error again for the same
-         * filesystem.
-         */
+        /* Increment error count but don't log an error again for the same
+         * filesystem. */
         acl_data->u.parse->nr_errors++;
         return bacl_exit_ok;
       }
@@ -1914,10 +1836,8 @@ bacl_exit_code parse_acl_streams(JobControlRecord* jcr,
         return os_parse_acl_streams(jcr, acl_data, stream, content,
                                     content_length);
       } else {
-        /*
-         * Increment error count but don't log an error again for the same
-         * filesystem.
-         */
+        /* Increment error count but don't log an error again for the same
+         * filesystem. */
         acl_data->u.parse->nr_errors++;
         return bacl_exit_ok;
       }
@@ -1925,10 +1845,8 @@ bacl_exit_code parse_acl_streams(JobControlRecord* jcr,
     default:
       if ((acl_data->flags & BACL_FLAG_RESTORE_NATIVE)
           && os_parse_acl_streams) {
-        /*
-         * Walk the os_access_acl_streams array with the supported Access ACL
-         * streams for this OS.
-         */
+        /* Walk the os_access_acl_streams array with the supported Access ACL
+         * streams for this OS. */
         for (cnt = 0; cnt < sizeof(os_access_acl_streams) / sizeof(int);
              cnt++) {
           if (os_access_acl_streams[cnt] == stream) {
@@ -1936,10 +1854,8 @@ bacl_exit_code parse_acl_streams(JobControlRecord* jcr,
                                         content_length);
           }
         }
-        /*
-         * Walk the os_default_acl_streams array with the supported Default ACL
-         * streams for this OS.
-         */
+        /* Walk the os_default_acl_streams array with the supported Default ACL
+         * streams for this OS. */
         for (cnt = 0; cnt < sizeof(os_default_acl_streams) / sizeof(int);
              cnt++) {
           if (os_default_acl_streams[cnt] == stream) {
@@ -1948,10 +1864,8 @@ bacl_exit_code parse_acl_streams(JobControlRecord* jcr,
           }
         }
       } else {
-        /*
-         * Increment error count but don't log an error again for the same
-         * filesystem.
-         */
+        /* Increment error count but don't log an error again for the same
+         * filesystem. */
         acl_data->u.parse->nr_errors++;
         return bacl_exit_ok;
       }

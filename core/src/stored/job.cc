@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -109,11 +109,9 @@ bool job_cmd(JobControlRecord* jcr)
   Dmsg4(100, "rerunning=%d VolSesId=%d VolSesTime=%d Protocol=%d\n",
         jcr->rerunning, jcr->VolSessionId, jcr->VolSessionTime,
         jcr->getJobProtocol());
-  /*
-   * Since this job could be rescheduled, we
+  /* Since this job could be rescheduled, we
    *  check to see if we have it already. If so
-   *  free the old jcr and use the new one.
-   */
+   *  free the old jcr and use the new one. */
   ojcr = get_jcr_by_full_name(job.c_str());
   if (ojcr && !ojcr->authenticated) {
     Dmsg2(100, "Found ojcr=0x%x Job %s\n", (unsigned)(intptr_t)ojcr,
@@ -122,11 +120,9 @@ bool job_cmd(JobControlRecord* jcr)
   }
   jcr->JobId = JobId;
   Dmsg2(800, "Start JobId=%d %p\n", JobId, jcr);
-  /*
-   * If job rescheduled because previous was incomplete,
+  /* If job rescheduled because previous was incomplete,
    * the Resched flag is set and VolSessionId and VolSessionTime
-   * are given to us (same as restarted job).
-   */
+   * are given to us (same as restarted job). */
   if (!jcr->rerunning) {
     jcr->VolSessionId = NewVolSessionId();
     jcr->VolSessionTime = vol_session_time;
@@ -189,11 +185,9 @@ bool DoJobRun(JobControlRecord* jcr)
         (int)(timeout.tv_sec - time(NULL)), jcr->sd_auth_key);
   Dmsg2(800, "Wait FD for jid=%d %p\n", jcr->JobId, jcr);
 
-  /*
-   * Wait for the File daemon to contact us to start the Job,
+  /* Wait for the File daemon to contact us to start the Job,
    * when he does, we will be released, unless the 30 minutes
-   * expires.
-   */
+   * expires. */
   lock_mutex(mutex);
   while (!jcr->authenticated && !jcr->IsJobCanceled()) {
     errstat = pthread_cond_timedwait(&jcr->sd_impl->job_start_wait, &mutex,
@@ -214,13 +208,11 @@ bool DoJobRun(JobControlRecord* jcr)
       if (jcr->authenticated && !jcr->IsJobCanceled()) {
         Dmsg2(800, "Running jid=%d %p\n", jcr->JobId, jcr);
 
-        /*
-         * Wait for the Job to finish. As we want exclusive access to
+        /* Wait for the Job to finish. As we want exclusive access to
          * things like the connection to the director we suspend this
          * thread and let the actual NDMP connection wake us after it
          * has performed the backup. E.g. instead of doing a busy wait
-         * we just hang on a conditional variable.
-         */
+         * we just hang on a conditional variable. */
         Dmsg2(800, "Wait for end job jid=%d %p\n", jcr->JobId, jcr);
         lock_mutex(mutex);
         pthread_cond_wait(&jcr->sd_impl->job_end_wait, &mutex);
@@ -228,10 +220,8 @@ bool DoJobRun(JobControlRecord* jcr)
       }
       Dmsg2(800, "Done jid=%d %p\n", jcr->JobId, jcr);
 
-      /*
-       * For a NDMP backup we expect the protocol to send us either a nextrun
-       * cmd or a finish cmd to let us know they are finished.
-       */
+      /* For a NDMP backup we expect the protocol to send us either a nextrun
+       * cmd or a finish cmd to let us know they are finished. */
       return true;
     default:
       // Handle the file daemon session.
@@ -241,10 +231,8 @@ bool DoJobRun(JobControlRecord* jcr)
       }
       Dmsg2(800, "Done jid=%d %p\n", jcr->JobId, jcr);
 
-      /*
-       * After a run cmd of a native backup we are done e.g.
-       * return false.
-       */
+      /* After a run cmd of a native backup we are done e.g.
+       * return false. */
       return false;
   }
 }
@@ -261,10 +249,8 @@ bool nextRunCmd(JobControlRecord* jcr)
 
   switch (jcr->getJobProtocol()) {
     case PT_NDMP_BAREOS:
-      /*
-       * We expect a next NDMP backup stream so clear the authenticated flag
-       * and start waiting for the Next backup to Start.
-       */
+      /* We expect a next NDMP backup stream so clear the authenticated flag
+       * and start waiting for the Next backup to Start. */
       jcr->authenticated = false;
 
       // Pass back a new authorization key for the File daemon
@@ -303,13 +289,11 @@ bool nextRunCmd(JobControlRecord* jcr)
       if (jcr->authenticated && !jcr->IsJobCanceled()) {
         Dmsg2(800, "Running jid=%d %p\n", jcr->JobId, jcr);
 
-        /*
-         * Wait for the Job to finish. As we want exclusive access to
+        /* Wait for the Job to finish. As we want exclusive access to
          * things like the connection to the director we suspend this
          * thread and let the actual NDMP connection wake us after it
          * has performed the backup. E.g. instead of doing a busy wait
-         * we just hang on a conditional variable.
-         */
+         * we just hang on a conditional variable. */
         Dmsg2(800, "Wait for end job jid=%d %p\n", jcr->JobId, jcr);
         lock_mutex(mutex);
         pthread_cond_wait(&jcr->sd_impl->job_end_wait, &mutex);
@@ -317,10 +301,8 @@ bool nextRunCmd(JobControlRecord* jcr)
       }
       Dmsg2(800, "Done jid=%d %p\n", jcr->JobId, jcr);
 
-      /*
-       * For a NDMP backup we expect the protocol to send us either a nextrun
-       * cmd or a finish cmd to let us know they are finished.
-       */
+      /* For a NDMP backup we expect the protocol to send us either a nextrun
+       * cmd or a finish cmd to let us know they are finished. */
       return true;
     default:
       Dmsg1(200, "NextRunCmd: %s", jcr->dir_bsock->msg);
@@ -337,10 +319,8 @@ bool FinishCmd(JobControlRecord* jcr)
   BareosSocket* dir = jcr->dir_bsock;
   char ec1[30];
 
-  /*
-   * See if the Job has a certain protocol. Some protocols allow the
-   * finish cmd some do not (Native backup for example does NOT)
-   */
+  /* See if the Job has a certain protocol. Some protocols allow the
+   * finish cmd some do not (Native backup for example does NOT) */
   switch (jcr->getJobProtocol()) {
     case PT_NDMP_BAREOS:
       Dmsg1(200, "Finish_cmd: %s", jcr->dir_bsock->msg);

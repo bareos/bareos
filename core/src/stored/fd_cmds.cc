@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -101,10 +101,8 @@ void* HandleFiledConnection(BareosSocket* fd, char* job_name)
 {
   JobControlRecord* jcr;
 
-  /**
-   * With the following Bmicrosleep on, running the
-   * SD under the debugger fails.
-   */
+  /* With the following Bmicrosleep on, running the
+   * SD under the debugger fails. */
   // Bmicrosleep(0, 50000);             /* wait 50 millisecs */
   if (!(jcr = get_jcr_by_full_name(job_name))) {
     Jmsg1(NULL, M_FATAL, 0, _("FD connect failed: Job name not found: %s\n"),
