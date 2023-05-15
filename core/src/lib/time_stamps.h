@@ -39,16 +39,16 @@ private:
   const char* name;
 };
 
-struct Duration
+struct Event
 {
   bool ended = false;
   BlockIdentity const* block;
   using time_point = std::chrono::steady_clock::time_point;
   time_point start_point, end_point;
 
-  Duration(const BlockIdentity& block);
-  Duration(Duration&& d) = default;
-  Duration& operator=(Duration&& d) = default;
+  Event(const BlockIdentity& block);
+  Event(Event&& d) = default;
+  Event& operator=(Event&& d) = default;
   time_point end_point_as_of(time_point current) const;
   void end();
 };
@@ -64,7 +64,7 @@ public:
   void switch_to(const BlockIdentity& block);
   void exit();
 protected:
-  std::vector<Duration> times{};
+  std::vector<Event> times{};
   mutable std::mutex vec_mut{};
 private:
   decltype(times)::iterator current;

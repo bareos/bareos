@@ -5,11 +5,11 @@
 
 #include "include/baconfig.h"
 
-Duration::Duration(const BlockIdentity& block) : block{&block}
-					       , start_point{std::chrono::steady_clock::now()}
+Event::Event(const BlockIdentity& block) : block{&block}
+					 , start_point{std::chrono::steady_clock::now()}
 {}
 
-Duration::time_point Duration::end_point_as_of(Duration::time_point current) const
+Event::time_point Event::end_point_as_of(Event::time_point current) const
 {
   if (ended) {
     return end_point;
@@ -18,7 +18,7 @@ Duration::time_point Duration::end_point_as_of(Duration::time_point current) con
   }
 }
 
-void Duration::end()
+void Event::end()
 {
     ASSERT(!ended);
     ended = true;
@@ -87,18 +87,18 @@ ThreadTimeKeeper& TimeKeeper::get_thread_local()
   }
 }
 
-static std::uint64_t AsNS(Duration::time_point tp)
+static std::uint64_t AsNS(Event::time_point tp)
 {
   return std::chrono::duration_cast<std::chrono::nanoseconds>(tp.time_since_epoch()).count();
 }
 
 static void GenerateTimingReport(std::ostringstream& report,
 			  std::chrono::steady_clock::time_point current,
-			  const std::vector<Duration>& durations)
+			  const std::vector<Event>& durations)
 {
   for (auto& dur : durations) {
-    Duration::time_point start = dur.start_point;
-    Duration::time_point end   = dur.end_point_as_of(current);
+    Event::time_point start = dur.start_point;
+    Event::time_point end   = dur.end_point_as_of(current);
     report << dur.block->c_str() << ": " << AsNS(start) << " -- " << AsNS(end);
     if (!dur.ended) {
       report << " (still active)";
