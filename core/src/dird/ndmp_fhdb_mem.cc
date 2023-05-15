@@ -493,7 +493,8 @@ static N_TREE_NODE* insert_metadata_parent_node(MetadataTable* meta_data,
   md_entry = (OOO_MD*)meta_data->lookup(dir_node);
   if (!md_entry || !md_entry->nt_node) {
     /* If we got called the parent node is not in the current tree if we
-     * also cannot find it in the metadata things are inconsistent so give up. */
+     * also cannot find it in the metadata things are inconsistent so give up.
+     */
     return (N_TREE_NODE*)NULL;
   }
 

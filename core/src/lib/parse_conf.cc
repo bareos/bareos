@@ -517,7 +517,8 @@ bool ConfigurationParser::RemoveResource(int rcode, const char* name)
    * Note: this is intended for removing a resource that has just been added,
    * but proven to be incorrect (added by console command "configure add").
    * For a general approach, a check if this resource is referenced by other
-   * resource_definitions must be added. If it is referenced, don't remove it. */
+   * resource_definitions must be added. If it is referenced, don't remove it.
+   */
   last = nullptr;
   for (BareosResource* res
        = config_resources_container_->configuration_resources_[rindex];

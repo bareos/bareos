@@ -1021,7 +1021,8 @@ static int CanReserveDrive(DeviceControlRecord* dcr, ReserveContext& rctx)
     }
 
     /* Check for exact Volume name match
-     * ***FIXME*** for Disk, we can accept any volume that goes with this drive. */
+     * ***FIXME*** for Disk, we can accept any volume that goes with this drive.
+     */
     if (rctx.exact_match && rctx.have_volume) {
       bool ok;
 

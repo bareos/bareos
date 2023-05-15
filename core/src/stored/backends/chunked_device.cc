@@ -375,7 +375,8 @@ bool ChunkedDevice::DequeueChunk()
   chunk_io_request* new_request;
 
   /* Loop while we are not done either due to the ordered circular buffer being
-   * flushed some fatal error or successfully dequeueing a chunk flush request. */
+   * flushed some fatal error or successfully dequeueing a chunk flush request.
+   */
   while (1) {
     /* See if we are in the flushing state then we just return and exit the
      * io-thread. */
@@ -978,7 +979,8 @@ ssize_t ChunkedDevice::ChunkedVolumeSize()
       }
 
       /* Chunk doesn't seem to be on the ordered circular buffer.
-       * Make sure there is also nothing inflight to the backing store anymore. */
+       * Make sure there is also nothing inflight to the backing store anymore.
+       */
       if (NrInflightChunks() > 0) {
         uint8_t retries = INFLIGHT_RETRIES;
 

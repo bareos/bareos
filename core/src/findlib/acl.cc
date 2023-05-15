@@ -1586,7 +1586,8 @@ static bacl_exit_code solaris_parse_acl_streams(JobControlRecord* jcr,
   }
 
   /* Restore the ACLs, but don't complain about links which really should
-   * not have attributes, and the file it is linked to may not yet be restored. */
+   * not have attributes, and the file it is linked to may not yet be restored.
+   */
   if (acl(acl_data->last_fname, SETACL, n, acls) == -1
       && acl_data->filetype != FT_LNK) {
     BErrNo be;

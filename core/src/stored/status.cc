@@ -145,7 +145,8 @@ static bool NeedToListDevice(const char* devicenames,
 {
   /* See if we are requested to list an explicit device name.
    * e.g. this happens when people address one particular device in
-   * a autochanger via its own storage definition or an non autochanger device. */
+   * a autochanger via its own storage definition or an non autochanger device.
+   */
   if (!NeedToListDevice(devicenames, device_resource->resource_name_)) {
     // See if this device is part of an autochanger.
     if (device_resource->changer_res) {

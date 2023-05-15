@@ -534,7 +534,8 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
      *    <argument> = <argument_value>
      *
      * So we setup the right pointers here, argument to the beginning
-     * of the argument, argument_value to the beginning of the argument_value. */
+     * of the argument, argument_value to the beginning of the argument_value.
+     */
     argument = bp;
     argument_value = strchr(bp, '=');
     if (!argument_value) {

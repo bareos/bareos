@@ -195,7 +195,8 @@ bool DoConsolidate(JobControlRecord* jcr)
       }
 
       /* Calculate limit for query. We specify how many incrementals should be
-       * left. the limit is total number of incrementals - number required - 1 */
+       * left. the limit is total number of incrementals - number required - 1
+       */
       Dmsg2(10, "Incrementals found/required. (%d/%d).\n", incrementals_total,
             job->AlwaysIncrementalKeepNumber);
       if (incrementals_total <= job->AlwaysIncrementalKeepNumber) {

@@ -242,7 +242,8 @@ extern "C" int bndmp_fhdb_lmdb_add_node(struct ndmlog* ixlog,
             break;
           case MDB_TXN_FULL:
             /* Seems we filled the transaction.
-             * Flush the current transaction start a new one and retry the put. */
+             * Flush the current transaction start a new one and retry the put.
+             */
             result = mdb_txn_commit(fhdb_state->db_rw_txn);
             if (result == 0) {
               result = mdb_txn_begin(fhdb_state->db_env, NULL, 0,
