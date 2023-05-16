@@ -203,12 +203,17 @@ public:
     current = &top;
     top.reset();
     report << "== Thread: " << thread_id << " ==\n";
+    thread_start = Event::time_point::max();
+    thread_end   = Event::time_point::min();
   }
 
   virtual void end_thread() override {
+    using namespace std::chrono;
+    auto threadns = duration_cast<nanoseconds>(thread_end - thread_start);
     for (auto& [id, node] : top.children) {
       PrintNodes(0,
 		 id->c_str(),
+		 threadns,
 		 &node,
 		 report);
 
@@ -219,6 +224,9 @@ public:
     using namespace std::chrono;
     auto start = e.start_point;
     auto end   = e.end_point_as_of(now);
+
+    thread_start = std::min(start, thread_start);
+    thread_end   = std::max(end,   thread_end);
 
     while (current->last_end <= start && current->parent) {
       current = current->parent;
@@ -238,6 +246,8 @@ public:
 private:
   std::int32_t MaxDepth;
   Event::time_point now;
+  Event::time_point thread_start;
+  Event::time_point thread_end;
   std::ostringstream report;
   class Node {
   public:
@@ -264,6 +274,7 @@ private:
 
   static void PrintNodes(std::int32_t depth,
 			 const char* name,
+			 std::chrono::nanoseconds parentns,
 			 Node* current,
 			 std::ostringstream& out) {
     using namespace std::chrono;
@@ -271,11 +282,16 @@ private:
     for (std::int32_t i = 0; i < depth; ++i) {
       out.put(' ');
     }
-    out << name << ": " << current->ns.count() << "\n";
+    out << name << ": " << current->ns.count();
+    if (parentns.count() != 0) {
+      out << " (" << std::setw(6) << std::fixed << std::setprecision(2) << double(current->ns.count() * 100) / double(parentns.count()) << "%%)";
+    }
+    out << "\n";
 
     for (auto& [id, node] : current->children) {
       PrintNodes(depth + 1,
 		 id->c_str(),
+		 current->ns,
 		 &node,
 		 out);
 
