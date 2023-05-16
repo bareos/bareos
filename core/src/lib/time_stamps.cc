@@ -5,50 +5,32 @@
 
 #include "include/baconfig.h"
 
-Event::Event(const BlockIdentity& block) : block{&block}
-					 , start_point{std::chrono::steady_clock::now()}
-{}
-
-Event::time_point Event::end_point_as_of(Event::time_point current) const
-{
-  if (ended) {
-    return end_point;
-  } else {
-    return current;
-  }
-}
-
-void Event::end()
-{
-    ASSERT(!ended);
-    ended = true;
-    end_point = std::chrono::steady_clock::now();
-}
-
 ThreadTimeKeeper::ThreadTimeKeeper()
 {}
 
 void ThreadTimeKeeper::enter(const BlockIdentity& block)
 {
   std::unique_lock _{vec_mut};
-  events.emplace_back(block);
-  stack.push_back(events.size() - 1);
+  // TODO: these have to be the same event!
+  auto& event = stack.emplace_back(block);
+  eventbuffer.emplace_back(event);
 }
 
 void ThreadTimeKeeper::switch_to(const BlockIdentity& block)
 {
   std::unique_lock _{vec_mut};
   ASSERT(stack.size() != 0);
-  events[stack.back()].end();
-  events.emplace_back(block);
-  stack.back() = events.size() - 1;
+  auto event = stack.back().close();
+  eventbuffer.emplace_back(event);
+  stack.back() = OpenEvent(block);
 }
 
 void ThreadTimeKeeper::exit()
 {
   std::unique_lock _{vec_mut};
   ASSERT(stack.size() != 0);
-  events[stack.back()].end();
+  auto event = stack.back().close();
+  eventbuffer.emplace_back(event);
   stack.pop_back();
 }
 
@@ -83,10 +65,14 @@ void TimeKeeper::generate_report(ReportGenerator* gen) const
   for (auto& [thread_id, local] : keeper) {
     gen->begin_thread(thread_id);
     std::unique_lock _{local.vec_mut};
-    for (auto& event : local.events) {
-      gen->add_event(event);
+    for (auto& event : local.eventbuffer) {
+      if (auto const* e = std::get_if<OpenEvent>(&event)) {
+	gen->begin_event(thread_id, *e);
+      } else if (auto* e = std::get_if<CloseEvent>(&event)) {
+	gen->end_event(thread_id, *e);
+      }
     }
-    gen->end_thread();
+    gen->end_thread(thread_id);
   }
   gen->end_report();
 }

@@ -27,6 +27,7 @@
 #include <vector>
 #include <unordered_map>
 #include <shared_mutex>
+#include <variant>
 
 struct SplitDuration {
   std::chrono::hours h;
@@ -70,20 +71,36 @@ private:
   const char* name;
 };
 
-struct Event
-{
-  using time_point = std::chrono::steady_clock::time_point;
+struct CloseEvent {
 
-  bool ended = false;
-  BlockIdentity const* block;
-  time_point start_point, end_point;
+  using clock = std::chrono::steady_clock;
+  BlockIdentity const* where;
+  clock::time_point end;
 
-  Event(const BlockIdentity& block);
-  Event(Event&& d) = default;
-  Event& operator=(Event&& d) = default;
-  time_point end_point_as_of(time_point current) const;
-  void end();
+  CloseEvent(BlockIdentity const* where) : where{where}
+					 , end{clock::now()}
+  {}
 };
+
+struct OpenEvent {
+  using clock = std::chrono::steady_clock;
+  BlockIdentity const* where;
+  clock::time_point start;
+
+  OpenEvent(BlockIdentity const& where) : where{&where}
+					, start{clock::now()}
+  {}
+
+  OpenEvent(const OpenEvent&) = default;
+  OpenEvent& operator=(const OpenEvent&) = default;
+  CloseEvent close() {
+    return CloseEvent{where};
+  }
+
+};
+
+
+using Event = std::variant<OpenEvent, CloseEvent>;
 
 class TimeKeeper;
 
@@ -96,21 +113,25 @@ public:
   void switch_to(const BlockIdentity& block);
   void exit();
 protected:
-  std::vector<Event> events{};
+  std::vector<Event> eventbuffer{};
   mutable std::mutex vec_mut{};
 private:
-  std::vector<std::int32_t> stack{};
+  std::vector<OpenEvent> stack{};
 };
 
 class ReportGenerator {
 public:
-  virtual void begin_report(Event::time_point current [[maybe_unused]]) {};
+  virtual void begin_report(std::chrono::steady_clock::time_point current [[maybe_unused]]) {};
   virtual void end_report() {};
 
   virtual void begin_thread(std::thread::id thread_id [[maybe_unused]]) {};
-  virtual void end_thread() {};
+  virtual void end_thread(std::thread::id thread_id [[maybe_unused]]) {};
 
-  virtual void add_event(const Event& e [[maybe_unused]]) {};
+  virtual void begin_event(std::thread::id thread_id [[maybe_unused]],
+			   OpenEvent e [[maybe_unused]]) {}
+
+  virtual void end_event(std::thread::id thread_id [[maybe_unused]],
+			 CloseEvent e [[maybe_unused]]) {};
 };
 
 class TimeKeeper
