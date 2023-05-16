@@ -190,27 +190,6 @@ private:
 };
 
 class CallstackReport : public ReportGenerator {
-  class Node {
-  public:
-    Node* parent{nullptr};
-    std::int32_t depth{0};
-    Event::time_point last_end{Event::time_point::max()};
-    std::chrono::nanoseconds ns{0};
-    std::unordered_map<BlockIdentity const*, Node> children{};
-    Node() = default;
-    Node(Node* parent) : parent{parent}
-		       , depth{parent->depth}
-    {}
-    Node(const Node&) = default;
-    Node(Node&&) = default;
-    Node& operator=(Node&&) = default;
-    Node& operator=(const Node&) = default;
-
-    void reset() {
-      children.clear();
-      ns = std::chrono::nanoseconds{0};
-    }
-  };
 public:
   virtual void begin_report(Event::time_point current) override {
     report << "=== Start Performance Report (Callstack) ===\n";
@@ -233,12 +212,15 @@ public:
   virtual void end_thread() override {
     using namespace std::chrono;
     auto threadns = duration_cast<nanoseconds>(thread_end - thread_start);
-    std::vector<std::pair<BlockIdentity const*, Node>> children(top.children.begin(),
-								top.children.end());
+    std::vector<std::pair<BlockIdentity const*, Node const*>> children;
+    children.reserve(top.children.size());
+    for (auto& pair : top.children) {
+      children.emplace_back(pair.first, pair.second.get());
+    }
 
     std::sort(children.begin(), children.end(), [](auto& p1, auto& p2) {
-      if (p1.second.ns > p2.second.ns) { return true; }
-      if ((p1.second.ns == p2.second.ns) &&
+      if (p1.second->ns > p2.second->ns) { return true; }
+      if ((p1.second->ns == p2.second->ns) &&
 	  (p1.first > p2.first)) { return true; }
       return false;
     });
@@ -246,11 +228,10 @@ public:
       PrintNodes(0,
 		 id->c_str(),
 		 threadns,
-		 &node,
+		 node,
 		 report,
 		 current_maxdepth,
 		 max_strlen);
-
     }
   }
 
@@ -267,13 +248,15 @@ public:
     }
 
     if (current->depth >= MaxDepth) return;
-    auto depth = current->depth;
-    auto [iter, _] = current->children.try_emplace(e.block, current);
+    // just using emplace with Node* will not work here
+    // since unique_ptr has its own constructor which takes a T*
+    // which is not the one we want!
+    std::unique_ptr node = std::make_unique<Node>(current);
+    auto [iter, _] = current->children.try_emplace(e.block, std::move(node));
 
-    current = &iter->second;
+    current = iter->second.get();
     current->ns += duration_cast<nanoseconds>(end - start);
     current->last_end = end;
-    current->depth = depth + 1;
     current_maxdepth = std::max(current->depth, current_maxdepth);
     max_strlen = std::max(std::strlen(e.block->c_str()), max_strlen);
   }
@@ -289,6 +272,27 @@ private:
   Event::time_point thread_start;
   Event::time_point thread_end;
   std::ostringstream report;
+  class Node {
+  public:
+    Node* parent{nullptr};
+    std::int32_t depth{0};
+    Event::time_point last_end{Event::time_point::max()};
+    std::chrono::nanoseconds ns{0};
+    std::unordered_map<BlockIdentity const*, std::unique_ptr<Node>> children{};
+    Node() = default;
+    Node(Node* parent) : parent{parent}
+		       , depth{parent->depth + 1}
+    {}
+    Node(const Node&) = default;
+    Node(Node&&) = default;
+    Node& operator=(Node&&) = default;
+    Node& operator=(const Node&) = default;
+
+    void reset() {
+      children.clear();
+      ns = std::chrono::nanoseconds{0};
+    }
+  };
 
   Node top{};
   Node* current{nullptr};
@@ -296,7 +300,7 @@ private:
   static void PrintNodes(std::int32_t depth,
 			 const char* name,
 			 std::chrono::nanoseconds parentns,
-			 Node* current,
+			 const Node* current,
 			 std::ostringstream& out,
 			 std::int32_t current_maxdepth,
 			 std::size_t max_strlen) {
@@ -314,12 +318,15 @@ private:
     }
     out << "\n";
 
-    std::vector<std::pair<BlockIdentity const*, Node>> children(current->children.begin(),
-								current->children.end());
+    std::vector<std::pair<BlockIdentity const*, Node const*>> children;
+    children.reserve(current->children.size());
+    for (auto& pair : current->children) {
+      children.emplace_back(pair.first, pair.second.get());
+    }
 
     std::sort(children.begin(), children.end(), [](auto& p1, auto& p2) {
-      if (p1.second.ns > p2.second.ns) { return true; }
-      if ((p1.second.ns == p2.second.ns) &&
+      if (p1.second->ns > p2.second->ns) { return true; }
+      if ((p1.second->ns == p2.second->ns) &&
 	  (p1.first > p2.first)) { return true; }
       return false;
     });
@@ -327,7 +334,7 @@ private:
       PrintNodes(depth + 1,
 		 id->c_str(),
 		 current->ns,
-		 &node,
+		 node,
 		 out,
 		 current_maxdepth,
 		 max_strlen);
