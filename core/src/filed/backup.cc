@@ -51,6 +51,11 @@
 #include "lib/serial.h"
 #include "lib/compression.h"
 
+#include <sstream>
+#include <algorithm>
+#include <iomanip>
+#include <cstring>
+
 namespace filedaemon {
 
 #ifdef HAVE_DARWIN_OS
@@ -75,6 +80,114 @@ const bool have_xattr = false;
 #  define compressBound(sourceLen) \
     (sourceLen + (sourceLen >> 12) + (sourceLen >> 14) + (sourceLen >> 25) + 13)
 #endif
+
+class EchoReport : public ReportGenerator {
+public:
+  virtual void begin_report(Event::time_point current) override {
+    report << "=== Start Performance Report (Echo) ===\n";
+    now = current;
+  }
+  virtual void end_report() override {
+    report << "=== End Performance Report ===\n";
+  }
+
+  virtual void begin_thread(std::thread::id thread_id) override {
+    report << "== Thread: " << thread_id << " ==\n";
+  }
+
+  virtual void add_event(const Event& e) override {
+    Event::time_point start = e.start_point;
+    Event::time_point end   = e.end_point_as_of(now);
+    std::uint64_t startns = std::chrono::duration_cast<std::chrono::nanoseconds>(start.time_since_epoch()).count();
+    std::uint64_t endns = std::chrono::duration_cast<std::chrono::nanoseconds>(end.time_since_epoch()).count();
+
+    report << e.block->c_str() << ": " << startns << " -- " << endns;
+    if (!e.ended) {
+      report << " (still active)";
+    }
+    report << "\n";
+  }
+
+  std::string str() const { return report.str(); }
+private:
+  Event::time_point now;
+  std::ostringstream report;
+};
+
+class OverviewReport : public ReportGenerator {
+public:
+  virtual void begin_report(Event::time_point current) override {
+    report << "=== Start Performance Report (Overview) ===\n";
+    now = current;
+  }
+  virtual void end_report() override {
+    report << "=== End Performance Report ===\n";
+  }
+
+  virtual void begin_thread(std::thread::id thread_id) override {
+    report << "== Thread: " << thread_id << " ==\n";
+    thread_start = Event::time_point::max();
+    thread_end   = Event::time_point::min();
+  }
+
+  virtual void end_thread() override {
+    using namespace std::chrono;
+    std::vector<std::pair<BlockIdentity const*, nanoseconds>> entries(cul_time.begin(), cul_time.end());
+    std::sort(entries.begin(), entries.end(), [](auto& p1, auto& p2) {
+      if (p1.second > p2.second) { return true; }
+      if ((p1.second == p2.second) &&
+	  (p1.first > p2.first)) { return true; }
+      return false;
+    });
+
+    if (NumToShow != ShowAll) {
+      entries.resize(NumToShow);
+    }
+
+    std::size_t maxwidth = 0;
+    for (auto [id, _] : entries) {
+      maxwidth = std::max(std::strlen(id->c_str()), maxwidth);
+    }
+
+    auto max_time = duration_cast<nanoseconds>(thread_end - thread_start);
+    for (auto [id, time] : entries) {
+      SplitDuration d(time);
+      // TODO(C++20): replace this with std::format
+      report << std::setw(maxwidth)
+	     << id->c_str() << ": "
+	     << std::setfill('0')
+	     << std::setw(2) << d.hours() << ":" << std::setw(2) << d.minutes() << ":" << std::setw(2) << d.seconds() << "."
+	     << std::setw(3) << d.millis() << "-" << std::setw(3) << d.micros()
+	     << std::setfill(' ')
+	// XXX.XX = 6 chars
+	     << " (" << std::setw(6) << std::fixed << std::setprecision(2) << double(time.count() * 100) / double(max_time.count()) << "%%)"
+	     << "\n";
+
+    }
+
+    cul_time.clear();
+  }
+
+  virtual void add_event(const Event& e) override {
+    using namespace std::chrono;
+    auto start = e.start_point;
+    auto end   = e.end_point_as_of(now);
+    cul_time[e.block] += duration_cast<nanoseconds>(end - start);
+
+    thread_start = std::min(start, thread_start);
+    thread_end   = std::max(end, thread_end);
+  }
+
+  OverviewReport(std::int32_t ShowTopN) : NumToShow{ShowTopN} {}
+  static constexpr std::int32_t ShowAll = -1;
+  std::string str() const { return report.str(); }
+private:
+  std::int32_t NumToShow;
+  Event::time_point now;
+  std::ostringstream report;
+  Event::time_point thread_start, thread_end;
+  std::unordered_map<BlockIdentity const*, std::chrono::nanoseconds> cul_time;
+};
 
 /* Forward referenced functions */
 
