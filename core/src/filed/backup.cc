@@ -342,6 +342,7 @@ static int send_data(JobControlRecord* jcr,
                      FindFilesPacket* ff_pkt,
                      DIGEST* digest,
                      DIGEST* signature_digest);
+
 bool EncodeAndSendAttributes(JobControlRecord* jcr,
                              FindFilesPacket* ff_pkt,
                              int& data_stream);
@@ -1066,8 +1067,8 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
   static constexpr BlockIdentity acl{"acl"};
   // Save ACLs when requested and available for anything not being a symlink.
   if (have_acl) {
-    TimedBlock block{timer, acl};
     if (BitIsSet(FO_ACL, ff_pkt->flags) && ff_pkt->type != FT_LNK) {
+      TimedBlock block{timer, acl};
       if (!DoBackupAcl(jcr, ff_pkt)) { goto bail_out; }
     }
   }
@@ -1075,8 +1076,8 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
   static constexpr BlockIdentity xattr{"xattr"};
   // Save Extended Attributes when requested and available for all files.
   if (have_xattr) {
-    TimedBlock block{timer, xattr};
     if (BitIsSet(FO_XATTR, ff_pkt->flags)) {
+      TimedBlock block{timer, xattr};
       if (!DoBackupXattr(jcr, ff_pkt)) { goto bail_out; }
     }
   }
@@ -1323,11 +1324,8 @@ static inline bool SendPlainData(b_ctx& bctx)
 	<= 0) {
       break;
     }
-
     read_and_send.switch_to(send);
-
     if (!SendDataToSd(&bctx)) { goto bail_out; }
-
     read_and_send.switch_to(read);
   }
   retval = true;
