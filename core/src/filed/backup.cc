@@ -189,6 +189,99 @@ private:
   std::unordered_map<BlockIdentity const*, std::chrono::nanoseconds> cul_time;
 };
 
+class CallstackReport : public ReportGenerator {
+public:
+  virtual void begin_report(Event::time_point current) override {
+    report << "=== Start Performance Report (Callstack) ===\n";
+    now = current;
+  }
+  virtual void end_report() override {
+    report << "=== End Performance Report ===\n";
+  }
+
+  virtual void begin_thread(std::thread::id thread_id) override {
+    current = &top;
+    top.reset();
+    report << "== Thread: " << thread_id << " ==\n";
+  }
+
+  virtual void end_thread() override {
+    for (auto& [id, node] : top.children) {
+      PrintNodes(0,
+		 id->c_str(),
+		 &node,
+		 report);
+
+    }
+  }
+
+  virtual void add_event(const Event& e) override {
+    using namespace std::chrono;
+    auto start = e.start_point;
+    auto end   = e.end_point_as_of(now);
+
+    while (current->last_end <= start && current->parent) {
+      current = current->parent;
+    }
+
+    if (current->depth >= MaxDepth) return;
+    auto [iter, _] = current->children.try_emplace(e.block, current);
+
+    current = &iter->second;
+    current->ns += duration_cast<nanoseconds>(end - start);
+    current->last_end = end;
+  }
+
+  CallstackReport(std::int32_t MaxDepth) : MaxDepth{MaxDepth} {}
+  static constexpr std::int32_t ShowAll = std::numeric_limits<int32_t>::max();
+  std::string str() const { return report.str(); }
+private:
+  std::int32_t MaxDepth;
+  Event::time_point now;
+  std::ostringstream report;
+  class Node {
+  public:
+    Node* parent{nullptr};
+    std::int32_t depth{0};
+    Event::time_point last_end{Event::time_point::max()};
+    std::chrono::nanoseconds ns{0};
+    std::unordered_map<BlockIdentity const*, Node> children{};
+    Node() = default;
+    Node(Node* parent) : parent{parent}
+		       , depth{parent->depth} {
+    };
+    Node(Node&&) = default;
+    Node& operator=(Node&&) = default;
+
+    void reset() {
+      children.clear();
+      ns = std::chrono::nanoseconds{0};
+    }
+  };
+
+  Node top{};
+  Node* current{nullptr};
+
+  static void PrintNodes(std::int32_t depth,
+			 const char* name,
+			 Node* current,
+			 std::ostringstream& out) {
+    using namespace std::chrono;
+
+    for (std::int32_t i = 0; i < depth; ++i) {
+      out.put(' ');
+    }
+    out << name << ": " << current->ns.count() << "\n";
+
+    for (auto& [id, node] : current->children) {
+      PrintNodes(depth + 1,
+		 id->c_str(),
+		 &node,
+		 out);
+
+    }
+  }
+};
 /* Forward referenced functions */
 
 static int send_data(JobControlRecord* jcr,
