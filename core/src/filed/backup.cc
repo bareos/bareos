@@ -233,11 +233,13 @@ public:
     }
 
     if (current->depth >= MaxDepth) return;
+    auto depth = current->depth;
     auto [iter, _] = current->children.try_emplace(e.block, current);
 
     current = &iter->second;
     current->ns += duration_cast<nanoseconds>(end - start);
     current->last_end = end;
+    current->depth = depth + 1;
   }
 
   CallstackReport(std::int32_t MaxDepth) : MaxDepth{MaxDepth} {}
