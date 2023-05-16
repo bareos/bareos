@@ -190,6 +190,27 @@ private:
 };
 
 class CallstackReport : public ReportGenerator {
+  class Node {
+  public:
+    Node* parent{nullptr};
+    std::int32_t depth{0};
+    Event::time_point last_end{Event::time_point::max()};
+    std::chrono::nanoseconds ns{0};
+    std::unordered_map<BlockIdentity const*, Node> children{};
+    Node() = default;
+    Node(Node* parent) : parent{parent}
+		       , depth{parent->depth}
+    {}
+    Node(const Node&) = default;
+    Node(Node&&) = default;
+    Node& operator=(Node&&) = default;
+    Node& operator=(const Node&) = default;
+
+    void reset() {
+      children.clear();
+      ns = std::chrono::nanoseconds{0};
+    }
+  };
 public:
   virtual void begin_report(Event::time_point current) override {
     report << "=== Start Performance Report (Callstack) ===\n";
@@ -268,27 +289,6 @@ private:
   Event::time_point thread_start;
   Event::time_point thread_end;
   std::ostringstream report;
-  class Node {
-  public:
-    Node* parent{nullptr};
-    std::int32_t depth{0};
-    Event::time_point last_end{Event::time_point::max()};
-    std::chrono::nanoseconds ns{0};
-    std::unordered_map<BlockIdentity const*, Node> children{};
-    Node() = default;
-    Node(Node* parent) : parent{parent}
-		       , depth{parent->depth} {
-    };
-    Node(const Node&) = default;
-    Node(Node&&) = default;
-    Node& operator=(Node&&) = default;
-    Node& operator=(const Node&) = default;
-
-    void reset() {
-      children.clear();
-      ns = std::chrono::nanoseconds{0};
-    }
-  };
 
   Node top{};
   Node* current{nullptr};
