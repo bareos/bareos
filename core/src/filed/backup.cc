@@ -212,7 +212,16 @@ public:
   virtual void end_thread() override {
     using namespace std::chrono;
     auto threadns = duration_cast<nanoseconds>(thread_end - thread_start);
-    for (auto& [id, node] : top.children) {
+    std::vector<std::pair<BlockIdentity const*, Node>> children(top.children.begin(),
+								top.children.end());
+
+    std::sort(children.begin(), children.end(), [](auto& p1, auto& p2) {
+      if (p1.second.ns > p2.second.ns) { return true; }
+      if ((p1.second.ns == p2.second.ns) &&
+	  (p1.first > p2.first)) { return true; }
+      return false;
+    });
+    for (auto& [id, node] : children) {
       PrintNodes(0,
 		 id->c_str(),
 		 threadns,
@@ -270,8 +279,10 @@ private:
     Node(Node* parent) : parent{parent}
 		       , depth{parent->depth} {
     };
+    Node(const Node&) = default;
     Node(Node&&) = default;
     Node& operator=(Node&&) = default;
+    Node& operator=(const Node&) = default;
 
     void reset() {
       children.clear();
@@ -303,7 +314,16 @@ private:
     }
     out << "\n";
 
-    for (auto& [id, node] : current->children) {
+    std::vector<std::pair<BlockIdentity const*, Node>> children(current->children.begin(),
+								current->children.end());
+
+    std::sort(children.begin(), children.end(), [](auto& p1, auto& p2) {
+      if (p1.second.ns > p2.second.ns) { return true; }
+      if ((p1.second.ns == p2.second.ns) &&
+	  (p1.first > p2.first)) { return true; }
+      return false;
+    });
+    for (auto& [id, node] : children) {
       PrintNodes(depth + 1,
 		 id->c_str(),
 		 current->ns,
