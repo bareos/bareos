@@ -25,45 +25,31 @@ void Event::end()
     end_point = std::chrono::steady_clock::now();
 }
 
-ThreadTimeKeeper::ThreadTimeKeeper() : current{times.end()}
+ThreadTimeKeeper::ThreadTimeKeeper()
 {}
 
 void ThreadTimeKeeper::enter(const BlockIdentity& block)
 {
   std::unique_lock _{vec_mut};
-  current = times.emplace(times.end(), block);
+  events.emplace_back(block);
+  stack.push_back(events.size() - 1);
 }
 
 void ThreadTimeKeeper::switch_to(const BlockIdentity& block)
 {
   std::unique_lock _{vec_mut};
-  ASSERT(current != times.end());
-  current->end();
-  current = times.emplace(times.end(), block);
+  ASSERT(stack.size() != 0);
+  events[stack.back()].end();
+  events.emplace_back(block);
+  stack.back() = events.size() - 1;
 }
 
 void ThreadTimeKeeper::exit()
 {
   std::unique_lock _{vec_mut};
-  ASSERT(current != times.end());
-  current->end();
-
-  while (current != times.begin()) {
-    --current;
-    if (!current->ended) {
-      break;
-    }
-  }
-
-  // current is set to times.end() if there is no open time
-  // block
-  // take note: since we never remove from times the end() iterator
-  // can only be invalidated by adding another block (to the end).
-  // This newly added block has to be open and will overwrite current.
-  // As such this "invariant" makes sense!
-  if (current->ended) {
-    current = times.end();
-  }
+  ASSERT(stack.size() != 0);
+  events[stack.back()].end();
+  stack.pop_back();
 }
 
 ThreadTimeKeeper& TimeKeeper::get_thread_local()
@@ -97,7 +83,7 @@ void TimeKeeper::generate_report(ReportGenerator* gen) const
   for (auto& [thread_id, local] : keeper) {
     gen->begin_thread(thread_id);
     std::unique_lock _{local.vec_mut};
-    for (auto& event : local.times) {
+    for (auto& event : local.events) {
       gen->add_event(event);
     }
     gen->end_thread();

@@ -96,10 +96,10 @@ public:
   void switch_to(const BlockIdentity& block);
   void exit();
 protected:
-  std::vector<Event> times{};
+  std::vector<Event> events{};
   mutable std::mutex vec_mut{};
 private:
-  decltype(times)::iterator current;
+  std::vector<std::int32_t> stack{};
 };
 
 class ReportGenerator {
