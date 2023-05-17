@@ -8,6 +8,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Changed
 - build: switch to FreeBSD 12.4 [PR #1443]
 - build: fix for gcc 13.1.1 [PR #1462]
+- build: remove EOL distros from build matrix [PR #1471]
 
 ## [21.1.7] - 2023-03-24
 
@@ -673,4 +674,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1417]: https://github.com/bareos/bareos/pull/1417
 [PR #1443]: https://github.com/bareos/bareos/pull/1443
 [PR #1462]: https://github.com/bareos/bareos/pull/1462
+[PR #1471]: https://github.com/bareos/bareos/pull/1471
 [unreleased]: https://github.com/bareos/bareos/tree/master

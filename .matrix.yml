@@ -60,50 +60,19 @@ OS:
     "Leap_15.4":
       TYPE: rpm
       IMAGE: opensuse-leap154
+      CUSTOM_TEST_IMAGES: [ openSUSE-Leap_15.4 ]
       ARCH:
       - x86_64
       PROJECTPACKAGES:
        x86_64:
           - bareos
           - python-bareos
-
-    "Leap_15.3":
-      TYPE: rpm
-      IMAGE: opensuse-leap153
-      ARCH:
-      - x86_64
-      PROJECTPACKAGES:
-       x86_64:
-          - bareos
-          - python-bareos
-
-    "Leap_15.2":
-      TYPE: rpm
-      IMAGE: opensuse-leap152
-      ARCH:
-      - x86_64
-      PROJECTPACKAGES:
-       x86_64:
-          - bareos
-          - python-bareos
-
-  Univention:
-    "4.4":
-      TYPE: deb
-      IMAGE: univention4.4
-      ARCH:
-      - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-webui
-           - python-bareos
-
 
   SLE:
     "15_SP4":
       TYPE: rpm
       IMAGE: sle154
+      CUSTOM_TEST_IMAGES: [ SLE-15_SP4 ]
       ARCH:
       - x86_64
       PROJECTPACKAGES:
@@ -113,6 +82,7 @@ OS:
     "15_SP3":
       TYPE: rpm
       IMAGE: sle153
+      CUSTOM_TEST_IMAGES: [ SLE-15_SP4 ]
       ARCH:
       - x86_64
       PROJECTPACKAGES:
@@ -122,6 +92,7 @@ OS:
     "15_SP2":
       TYPE: rpm
       IMAGE: sle152
+      CUSTOM_TEST_IMAGES: [ SLE-15_SP4 ]
       ARCH:
       - x86_64
       PROJECTPACKAGES:
@@ -170,24 +141,6 @@ OS:
         x86_64:
            - bareos
            - python-bareos
-    "35":
-      TYPE: rpm
-      IMAGE: fedora35
-      ARCH:
-      - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - python-bareos
-    "34":
-      TYPE: rpm
-      IMAGE: fedora34
-      ARCH:
-      - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - python-bareos
   Debian:
     "11":
       TYPE: deb
@@ -211,27 +164,12 @@ OS:
            - bareos-webui
            - bareos-vmware
            - python-bareos
-    "9.0":
-      TYPE: deb
-      IMAGE: "debian9.0"
-      ARCH:
-        - i586
-        - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-webui
-           - bareos-vmware
-           - python-bareos
-        i586:
-           - bareos
-           - bareos-webui
-           - python-bareos
 
   EL:
     "9":
       TYPE: rpm
       IMAGE: centos9
+      CUSTOM_TEST_IMAGES: [ Rocky, Alma, Oracle, Stream ]
       ARCH:
       - x86_64
       PROJECTPACKAGES:
@@ -242,6 +180,7 @@ OS:
     "8":
       TYPE: rpm
       IMAGE: rocky8
+      CUSTOM_TEST_IMAGES: [ Rocky, Alma, Oracle, Stream ]
       ARCH:
       - x86_64
       PROJECTPACKAGES:
@@ -292,8 +231,6 @@ OS:
         - sparc
       PROJECTPACKAGES:
         i386:
-           - bareos
-        sparc:
            - bareos
 
   win:
