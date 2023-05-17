@@ -5,32 +5,46 @@
 
 #include "include/baconfig.h"
 
-ThreadTimeKeeper::ThreadTimeKeeper()
-{}
+ThreadTimeKeeper::~ThreadTimeKeeper()
+{
+  keeper.handle_event_buffer(std::move(buffer));
+}
 
 void ThreadTimeKeeper::enter(const BlockIdentity& block)
 {
   std::unique_lock _{vec_mut};
-  // TODO: these have to be the same event!
+  if (buffer.events.size() > 20000) {
+    keeper.handle_event_buffer(std::move(buffer));
+    buffer = EventBuffer(this_id, 20000, stack);
+  }
   auto& event = stack.emplace_back(block);
-  eventbuffer.emplace_back(event);
+  buffer.events.emplace_back(event);
 }
 
 void ThreadTimeKeeper::switch_to(const BlockIdentity& block)
 {
   std::unique_lock _{vec_mut};
+  if (buffer.events.size() > 20000) {
+    keeper.handle_event_buffer(std::move(buffer));
+    buffer = EventBuffer(this_id, 20000, stack);
+  }
   ASSERT(stack.size() != 0);
   auto event = stack.back().close();
-  eventbuffer.emplace_back(event);
-  stack.back() = OpenEvent(block);
+  buffer.events.push_back(event);
+  stack.back() = event::OpenEvent(block);
+  buffer.events.push_back(stack.back());
 }
 
 void ThreadTimeKeeper::exit()
 {
   std::unique_lock _{vec_mut};
+  if (buffer.events.size() > 20000) {
+    keeper.handle_event_buffer(std::move(buffer));
+    buffer = EventBuffer(this_id, 20000, stack);
+  }
   ASSERT(stack.size() != 0);
   auto event = stack.back().close();
-  eventbuffer.emplace_back(event);
+  buffer.events.push_back(event);
   stack.pop_back();
 }
 
@@ -49,30 +63,28 @@ ThreadTimeKeeper& TimeKeeper::get_thread_local()
     std::unique_lock write_lock(alloc_mut);
     auto [iter, inserted] = keeper.emplace(std::piecewise_construct,
 					   std::forward_as_tuple(my_id),
-					   std::forward_as_tuple());
+					   std::forward_as_tuple(*this));
     ASSERT(inserted);
     return iter->second;
   }
 }
 
-void TimeKeeper::generate_report(ReportGenerator* gen) const
+void TimeKeeper::add_writer(std::shared_ptr<ReportGenerator> gen)
 {
-  auto current_time = std::chrono::steady_clock::now();
-
-  std::unique_lock prevent_creations(alloc_mut);
-
-  gen->begin_report(current_time);
-  for (auto& [thread_id, local] : keeper) {
-    gen->begin_thread(thread_id);
-    std::unique_lock _{local.vec_mut};
-    for (auto& event : local.eventbuffer) {
-      if (auto const* e = std::get_if<OpenEvent>(&event)) {
-	gen->begin_event(thread_id, *e);
-      } else if (auto* e = std::get_if<CloseEvent>(&event)) {
-	gen->end_event(thread_id, *e);
-      }
-    }
-    gen->end_thread(thread_id);
+  auto now = event::clock::now();
+  gen->begin_report(now);
+  {
+    std::unique_lock lock{gen_mut};
+    gens.emplace_back(std::move(gen));
   }
-  gen->end_report();
+}
+
+void TimeKeeper::remove_writer(std::shared_ptr<ReportGenerator> gen)
+{
+  {
+    std::unique_lock lock{gen_mut};
+    gens.erase(std::remove(gens.begin(), gens.end(), gen), gens.end());
+  }
+  auto now = event::clock::now();
+  gen->end_report(now);
 }

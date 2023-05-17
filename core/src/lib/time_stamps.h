@@ -26,8 +26,12 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <mutex>
+#include <condition_variable>
 #include <shared_mutex>
 #include <variant>
+#include <memory> // shared_ptr
+#include <deque>
 
 struct SplitDuration {
   std::chrono::hours h;
@@ -71,36 +75,66 @@ private:
   const char* name;
 };
 
-struct CloseEvent {
-
+namespace event {
   using clock = std::chrono::steady_clock;
-  BlockIdentity const* where;
-  clock::time_point end;
+  using time_point = clock::time_point;
 
-  CloseEvent(BlockIdentity const* where) : where{where}
-					 , end{clock::now()}
-  {}
+  struct CloseEvent {
+    BlockIdentity const* source;
+    time_point end;
+    CloseEvent(BlockIdentity const* source) : source{source}
+					    , end{clock::now()}
+    {}
+    CloseEvent(BlockIdentity const& source) : source{&source}
+					    , end{clock::now()}
+    {}
+
+    CloseEvent(const CloseEvent&) = default;
+    CloseEvent& operator=(const CloseEvent&) = default;
+  };
+
+  struct OpenEvent {
+    BlockIdentity const* source;
+    time_point start;
+
+    OpenEvent(BlockIdentity const* source) : source{source}
+					   , start{clock::now()}
+    {}
+    OpenEvent(BlockIdentity const& source) : source{&source}
+					   , start{clock::now()}
+    {}
+
+    OpenEvent(const OpenEvent&) = default;
+    OpenEvent& operator=(const OpenEvent&) = default;
+    CloseEvent close() const {
+      return CloseEvent{source};
+    }
+
+  };
+
+  using Event = std::variant<OpenEvent, CloseEvent>;
 };
 
-struct OpenEvent {
-  using clock = std::chrono::steady_clock;
-  BlockIdentity const* where;
-  clock::time_point start;
 
-  OpenEvent(BlockIdentity const& where) : where{&where}
-					, start{clock::now()}
-  {}
-
-  OpenEvent(const OpenEvent&) = default;
-  OpenEvent& operator=(const OpenEvent&) = default;
-  CloseEvent close() {
-    return CloseEvent{where};
+class EventBuffer {
+public:
+  EventBuffer() {}
+  EventBuffer(std::thread::id thread_id,
+	      std::size_t initial_size,
+	      const std::vector<event::OpenEvent>& current_stack) : thread_id{thread_id}
+								  , initial_stack{current_stack}
+  {
+    events.reserve(initial_size);
   }
-
+  EventBuffer(EventBuffer&&) = default;
+  EventBuffer& operator=(EventBuffer&&) = default;
+  std::vector<event::Event> events{};
+  const std::vector<event::OpenEvent>& stack() const { return initial_stack; }
+  const std::thread::id threadid() const { return thread_id; }
+private:
+  std::thread::id thread_id;
+  std::vector<event::OpenEvent> initial_stack{};
 };
-
-
-using Event = std::variant<OpenEvent, CloseEvent>;
 
 class TimeKeeper;
 
@@ -108,38 +142,129 @@ class ThreadTimeKeeper
 {
   friend class TimeKeeper;
 public:
-  ThreadTimeKeeper();
+  ThreadTimeKeeper(TimeKeeper& keeper) : buffer{std::this_thread::get_id(), 20000, {}}
+				       , this_id{std::this_thread::get_id()}
+				       , keeper{keeper} {}
+  ~ThreadTimeKeeper();
   void enter(const BlockIdentity& block);
   void switch_to(const BlockIdentity& block);
   void exit();
 protected:
-  std::vector<Event> eventbuffer{};
+  EventBuffer flush() {
+    std::unique_lock _{vec_mut};
+    EventBuffer new_buffer(this_id, 20000, stack);
+    std::swap(new_buffer, buffer);
+    return new_buffer;
+  }
+  EventBuffer buffer;
   mutable std::mutex vec_mut{};
 private:
-  std::vector<OpenEvent> stack{};
+  std::thread::id this_id;
+  TimeKeeper& keeper;
+  std::vector<event::OpenEvent> stack{};
 };
 
 class ReportGenerator {
 public:
-  virtual void begin_report(std::chrono::steady_clock::time_point current [[maybe_unused]]) {};
-  virtual void end_report() {};
+  virtual void begin_report(event::time_point start [[maybe_unused]]) {};
+  virtual void end_report(event::time_point end [[maybe_unused]]) {};
 
-  virtual void begin_thread(std::thread::id thread_id [[maybe_unused]]) {};
-  virtual void end_thread(std::thread::id thread_id [[maybe_unused]]) {};
-
-  virtual void begin_event(std::thread::id thread_id [[maybe_unused]],
-			   OpenEvent e [[maybe_unused]]) {}
-
-  virtual void end_event(std::thread::id thread_id [[maybe_unused]],
-			 CloseEvent e [[maybe_unused]]) {};
+  virtual void add_events(const EventBuffer& buf [[maybe_unused]]) {}
 };
+
+static void write_reports(bool* end,
+			  std::mutex* gen_mut,
+			  std::vector<std::shared_ptr<ReportGenerator>>* gens,
+			  std::mutex* buf_mut,
+			  std::condition_variable* buf_empty,
+			  std::condition_variable* buf_not_empty,
+			  std::deque<EventBuffer>* buf_queue)
+{
+  for (;;) {
+    EventBuffer buf;
+    bool now_empty = false;
+    {
+      std::unique_lock lock{*buf_mut};
+      buf_not_empty->wait(lock, [end, buf_queue]() { return *end || buf_queue->size() > 0; });
+
+      if (buf_queue->size() == 0) break;
+
+      buf = std::move(buf_queue->front());
+      buf_queue->pop_front();
+
+      if (buf_queue->size() == 0) now_empty = true;
+    }
+
+    // cannot notify while holding the lock!
+    if (now_empty) buf_empty->notify_all();
+
+    std::vector<std::shared_ptr<ReportGenerator>> local_copy;
+    {
+      std::unique_lock lock{*gen_mut};
+      local_copy = *gens;
+    }
+
+    for (auto& gen : local_copy) {
+      gen->add_events(buf);
+    }
+  }
+}
 
 class TimeKeeper
 {
 public:
   ThreadTimeKeeper& get_thread_local();
-  void generate_report(ReportGenerator* gen) const;
+  TimeKeeper() : report_writer{&write_reports, &end, &gen_mut, &gens,
+			       &buf_mut, &buf_empty, &buf_not_empty, &buf_queue} {}
+  ~TimeKeeper() {
+    auto now = event::clock::now();
+    flush();
+    {
+      std::unique_lock lock{gen_mut};
+      for (auto& gen : gens) {
+	gen->end_report(now);
+      }
+      gens.clear();
+    }
+    {
+      std::unique_lock lock{buf_mut};
+      end = true;
+    }
+    buf_not_empty.notify_one();
+    report_writer.join();
+  }
+  void add_writer(std::shared_ptr<ReportGenerator> gen);
+  void remove_writer(std::shared_ptr<ReportGenerator> gen);
+  void handle_event_buffer(EventBuffer buf) {
+    {
+      std::unique_lock{buf_mut};
+      buf_queue.emplace_back(std::move(buf));
+    }
+    buf_not_empty.notify_one();
+  }
+  void flush() {
+    {
+      std::unique_lock lock{alloc_mut};
+      for (auto& [_, thread] : keeper) {
+	auto buf = thread.flush();
+	handle_event_buffer(std::move(buf));
+      }
+    }
+    {
+      // TODO: we should somehow only wait until the above buffers were handled
+      std::unique_lock lock{buf_mut};
+      buf_empty.wait(lock, [this]() { return this->buf_queue.size() == 0; });
+    }
+  }
 private:
+  mutable std::mutex gen_mut{};
+  bool end{false};
+  std::vector<std::shared_ptr<ReportGenerator>> gens;
+  std::mutex buf_mut{};
+  std::condition_variable buf_empty{};
+  std::condition_variable buf_not_empty{};
+  std::deque<EventBuffer> buf_queue;
+  std::thread report_writer;
   mutable std::shared_mutex alloc_mut{};
   std::unordered_map<std::thread::id, ThreadTimeKeeper> keeper{};
 };

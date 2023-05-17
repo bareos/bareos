@@ -81,267 +81,406 @@ const bool have_xattr = false;
     (sourceLen + (sourceLen >> 12) + (sourceLen >> 14) + (sourceLen >> 25) + 13)
 #endif
 
-class EchoReport : public ReportGenerator {
+class ThreadOverviewReport {
 public:
-  virtual void begin_report(Event::time_point current) override {
-    report << "=== Start Performance Report (Echo) ===\n";
+  void begin_report(event::time_point current) {
+    std::unique_lock lock{mut};
     now = current;
   }
-  virtual void end_report() override {
-    report << "=== End Performance Report ===\n";
+
+  void begin_event(event::OpenEvent e) {
+    std::unique_lock lock{mut};
+    stack.push_back(e);
   }
 
-  virtual void begin_thread(std::thread::id thread_id) override {
-    report << "== Thread: " << thread_id << " ==\n";
+  void end_event(event::CloseEvent e) {
+    using namespace std::chrono;
+
+    std::unique_lock lock{mut};
+    ASSERT(stack.size() > 0);
+    ASSERT(stack.back().source == e.source);
+
+    auto start = stack.back().start;
+    auto end   = e.end;
+
+    cul_time[e.source] += duration_cast<nanoseconds>(end - start);
+
+    stack.pop_back();
   }
 
-  virtual void add_event(const Event& e) override {
-    Event::time_point start = e.start_point;
-    Event::time_point end   = e.end_point_as_of(now);
-    std::uint64_t startns = std::chrono::duration_cast<std::chrono::nanoseconds>(start.time_since_epoch()).count();
-    std::uint64_t endns = std::chrono::duration_cast<std::chrono::nanoseconds>(end.time_since_epoch()).count();
+  std::unordered_map<BlockIdentity const*, std::chrono::nanoseconds> as_of(event::time_point tp) const
+  {
+    using namespace std::chrono;
+    std::unordered_map<BlockIdentity const*, std::chrono::nanoseconds> result;
 
-    report << e.block->c_str() << ": " << startns << " -- " << endns;
-    if (!e.ended) {
-      report << " (still active)";
+    {
+      std::unique_lock lock{mut};
+      result = cul_time; // copy
+      for (auto& open : stack) {
+	if (open.start > tp) continue;
+	result[open.source] += duration_cast<nanoseconds>(tp - open.start);
+      }
     }
-    report << "\n";
+
+    return result;
   }
 
-  std::string str() const { return report.str(); }
 private:
-  Event::time_point now;
-  std::ostringstream report;
+  mutable std::mutex mut{};
+  std::vector<event::OpenEvent> stack{};
+  event::time_point now;
+  std::unordered_map<BlockIdentity const*, std::chrono::nanoseconds> cul_time;
 };
 
 class OverviewReport : public ReportGenerator {
 public:
-  virtual void begin_report(Event::time_point current) override {
-    report << "=== Start Performance Report (Overview) ===\n";
-    now = current;
+  virtual void begin_report(event::time_point now) override {
+    start = now;
   }
-  virtual void end_report() override {
-    report << "=== End Performance Report ===\n";
-  }
-
-  virtual void begin_thread(std::thread::id thread_id) override {
-    report << "== Thread: " << thread_id << " ==\n";
-    thread_start = Event::time_point::max();
-    thread_end   = Event::time_point::min();
+  virtual void end_report(event::time_point now) override {
+    end = now;
   }
 
-  virtual void end_thread() override {
-    using namespace std::chrono;
-    std::vector<std::pair<BlockIdentity const*, nanoseconds>> entries(cul_time.begin(), cul_time.end());
-    std::sort(entries.begin(), entries.end(), [](auto& p1, auto& p2) {
-      if (p1.second > p2.second) { return true; }
-      if ((p1.second == p2.second) &&
-	  (p1.first > p2.first)) { return true; }
-      return false;
-    });
+  virtual void add_events(const EventBuffer& buf) override {
+    std::unique_lock lock{threads_mut};
+    auto [iter, inserted] = threads.try_emplace(buf.threadid());
+    auto& thread = iter->second;
 
-    if (NumToShow != ShowAll) {
-      entries.resize(NumToShow);
+    if (inserted) {
+      thread.begin_report(start);
+      for (auto& open : buf.stack()) {
+	thread.begin_event(open);
+      }
     }
 
-    std::size_t maxwidth = 0;
-    for (auto [id, _] : entries) {
-      maxwidth = std::max(std::strlen(id->c_str()), maxwidth);
+    for (auto event : buf.events) {
+      if (auto* open = std::get_if<event::OpenEvent>(&event)) {
+	thread.begin_event(*open);
+      } else if (auto* close = std::get_if<event::CloseEvent>(&event)) {
+	thread.end_event(*close);
+      }
     }
-
-    auto max_time = duration_cast<nanoseconds>(thread_end - thread_start);
-    for (auto [id, time] : entries) {
-      SplitDuration d(time);
-      // TODO(C++20): replace this with std::format
-      report << std::setw(maxwidth)
-	     << id->c_str() << ": "
-	     << std::setfill('0')
-	     << std::setw(2) << d.hours() << ":" << std::setw(2) << d.minutes() << ":" << std::setw(2) << d.seconds() << "."
-	     << std::setw(3) << d.millis() << "-" << std::setw(3) << d.micros()
-	     << std::setfill(' ')
-	// XXX.XX = 6 chars
-	     << " (" << std::setw(6) << std::fixed << std::setprecision(2) << double(time.count() * 100) / double(max_time.count()) << "%%)"
-	     << "\n";
-
-    }
-
-    cul_time.clear();
-  }
-
-  virtual void add_event(const Event& e) override {
-    using namespace std::chrono;
-    auto start = e.start_point;
-    auto end   = e.end_point_as_of(now);
-    cul_time[e.block] += duration_cast<nanoseconds>(end - start);
-
-    thread_start = std::min(start, thread_start);
-    thread_end   = std::max(end, thread_end);
   }
 
   OverviewReport(std::int32_t ShowTopN) : NumToShow{ShowTopN} {}
   static constexpr std::int32_t ShowAll = -1;
-  std::string str() const { return report.str(); }
+  std::string str() const {
+    using namespace std::chrono;
+    std::ostringstream report{};
+    event::time_point now = event::clock::now();
+    report << "=== Start Performance Report (Overview) ===\n";
+    std::unique_lock lock{threads_mut};
+    for (auto& [id, reporter] : threads) {
+      report << "== Thread: " << id << " ==\n";
+      auto data = reporter.as_of(now);
+
+      std::vector<std::pair<BlockIdentity const*, nanoseconds>> entries(data.begin(), data.end());
+      std::sort(entries.begin(), entries.end(), [](auto& p1, auto& p2) {
+	if (p1.second > p2.second) { return true; }
+	if ((p1.second == p2.second) &&
+	    (p1.first > p2.first)) { return true; }
+	return false;
+      });
+
+      if (NumToShow != ShowAll) {
+	entries.resize(NumToShow);
+      }
+
+      std::size_t maxwidth = 0;
+      for (auto [id, _] : entries) {
+	maxwidth = std::max(std::strlen(id->c_str()), maxwidth);
+      }
+
+      auto max_time = duration_cast<nanoseconds>(now - start);
+      for (auto [id, time] : entries) {
+	SplitDuration d(time);
+	// TODO(C++20): replace this with std::format
+	report << std::setw(maxwidth)
+	       << id->c_str() << ": "
+	       << std::setfill('0')
+	       << std::setw(2) << d.hours() << ":" << std::setw(2) << d.minutes() << ":" << std::setw(2) << d.seconds() << "."
+	       << std::setw(3) << d.millis() << "-" << std::setw(3) << d.micros()
+	       << std::setfill(' ')
+	  // XXX.XX = 6 chars
+	       << " (" << std::setw(6) << std::fixed << std::setprecision(2) << double(time.count() * 100) / double(max_time.count()) << "%%)"
+	       << "\n";
+
+      }
+    }
+    report << "=== End Performance Report ===\n";
+    return report.str();
+  }
 private:
   std::int32_t NumToShow;
-  Event::time_point now;
-  std::ostringstream report;
-  Event::time_point thread_start, thread_end;
-  std::unordered_map<BlockIdentity const*, std::chrono::nanoseconds> cul_time;
+  event::time_point start, end;
+  mutable std::mutex threads_mut{};
+  std::unordered_map<std::thread::id, ThreadOverviewReport> threads{};
 };
 
-class CallstackReport : public ReportGenerator {
+class ThreadCallstackReport {
 public:
-  virtual void begin_report(Event::time_point current) override {
-    report << "=== Start Performance Report (Callstack) ===\n";
-    now = current;
-  }
-  virtual void end_report() override {
-    report << "=== End Performance Report ===\n";
-  }
-
-  virtual void begin_thread(std::thread::id thread_id) override {
-    current = &top;
-    top.reset();
-    report << "== Thread: " << thread_id << " ==\n";
-    thread_start = Event::time_point::max();
-    thread_end   = Event::time_point::min();
-    current_maxdepth = 0;
-    max_strlen = 0;
-  }
-
-  virtual void end_thread() override {
-    using namespace std::chrono;
-    auto threadns = duration_cast<nanoseconds>(thread_end - thread_start);
-    std::vector<std::pair<BlockIdentity const*, Node const*>> children;
-    children.reserve(top.children.size());
-    for (auto& pair : top.children) {
-      children.emplace_back(pair.first, pair.second.get());
-    }
-
-    std::sort(children.begin(), children.end(), [](auto& p1, auto& p2) {
-      if (p1.second->ns > p2.second->ns) { return true; }
-      if ((p1.second->ns == p2.second->ns) &&
-	  (p1.first > p2.first)) { return true; }
-      return false;
-    });
-    for (auto& [id, node] : children) {
-      PrintNodes(0,
-		 id->c_str(),
-		 threadns,
-		 node,
-		 report,
-		 current_maxdepth,
-		 max_strlen);
-    }
-  }
-
-  virtual void add_event(const Event& e) override {
-    using namespace std::chrono;
-    auto start = e.start_point;
-    auto end   = e.end_point_as_of(now);
-
-    thread_start = std::min(start, thread_start);
-    thread_end   = std::max(end,   thread_end);
-
-    while (current->last_end <= start && current->parent) {
-      current = current->parent;
-    }
-
-    if (current->depth >= MaxDepth) return;
-    // just using emplace with Node* will not work here
-    // since unique_ptr has its own constructor which takes a T*
-    // which is not the one we want!
-    std::unique_ptr node = std::make_unique<Node>(current);
-    auto [iter, _] = current->children.try_emplace(e.block, std::move(node));
-
-    current = iter->second.get();
-    current->ns += duration_cast<nanoseconds>(end - start);
-    current->last_end = end;
-    current_maxdepth = std::max(current->depth, current_maxdepth);
-    max_strlen = std::max(std::strlen(e.block->c_str()), max_strlen);
-  }
-
-  CallstackReport(std::int32_t MaxDepth) : MaxDepth{MaxDepth} {}
-  static constexpr std::int32_t ShowAll = std::numeric_limits<int32_t>::max();
-  std::string str() const { return report.str(); }
-private:
-  std::int32_t MaxDepth;
-  std::int32_t current_maxdepth;
-  std::size_t max_strlen;
-  Event::time_point now;
-  Event::time_point thread_start;
-  Event::time_point thread_end;
-  std::ostringstream report;
   class Node {
   public:
-    Node* parent{nullptr};
-    std::int32_t depth{0};
-    Event::time_point last_end{Event::time_point::max()};
-    std::chrono::nanoseconds ns{0};
-    std::unordered_map<BlockIdentity const*, std::unique_ptr<Node>> children{};
+    using childmap = std::unordered_map<BlockIdentity const*, std::unique_ptr<Node>>;
+    Node* parent() const { return parent_; }
+    Node* child(BlockIdentity const* source) {
+      std::unique_ptr child = std::make_unique<Node>(this);
+      auto [iter, _] = children.try_emplace(source, std::move(child));
+
+      return iter->second.get();
+    }
+    bool is_open() const {
+      return since.has_value();
+    }
+    void open(event::time_point at) {
+      ASSERT(!is_open());
+      since = at;
+    }
+    void close(event::time_point at) {
+      using namespace std::chrono;
+
+      ASSERT(is_open());
+      ns += duration_cast<nanoseconds>(at - since.value());
+      since.reset();
+    }
+    // creates a deep copy of this node, except every open node
+    // gets replaced by a closed node in the copy with the endtime being at
+    std::unique_ptr<Node> closed_deep_copy_at(event::time_point at) const {
+      using namespace std::chrono;
+      std::unique_ptr copy = std::make_unique<Node>();
+      copy->ns = ns;
+      copy->depth_ = depth_;
+      if (is_open() && at > since.value()) {
+	copy->ns += duration_cast<nanoseconds>(at - since.value());
+      }
+
+      for (auto& [source, child] : children) {
+	auto [child_copy, inserted] = copy->children.emplace(source, child->closed_deep_copy_at(at));
+	ASSERT(inserted);
+	child_copy->second->parent_ = copy.get();
+      }
+      return copy;
+    }
+
+    std::chrono::nanoseconds time_spent() const {
+      // this should only be called on closed nodes!
+      return ns;
+    }
+
+    std::int32_t depth() const { return depth_; }
     Node() = default;
-    Node(Node* parent) : parent{parent}
-		       , depth{parent->depth + 1}
+    Node(Node* parent) : parent_{parent}
+		       , depth_{parent_->depth_ + 1}
     {}
     Node(const Node&) = default;
     Node(Node&&) = default;
     Node& operator=(Node&&) = default;
     Node& operator=(const Node&) = default;
-
-    void reset() {
-      children.clear();
-      ns = std::chrono::nanoseconds{0};
-    }
+    const childmap& children_view() const { return children; }
+  private:
+    std::optional<event::time_point> since{std::nullopt};
+    Node* parent_{nullptr};
+    std::int32_t depth_{0};
+    std::chrono::nanoseconds ns{0};
+    childmap children{};
   };
 
-  Node top{};
-  Node* current{nullptr};
+  void begin_report(event::time_point now)
+  {
+    top.open(now);
+  }
 
-  static void PrintNodes(std::int32_t depth,
-			 const char* name,
-			 std::chrono::nanoseconds parentns,
-			 const Node* current,
-			 std::ostringstream& out,
-			 std::int32_t current_maxdepth,
-			 std::size_t max_strlen) {
-    // depth is (modulo a shared offset) equal to current->depth
-    std::size_t offset = (max_strlen - std::strlen(name))
-      + (current_maxdepth - depth);
-    SplitDuration d(current->ns);
-    out << std::setw(depth) << "" << name << ": " << std::setw(offset) << ""
-	<< std::setfill('0')
-	<< std::setw(2) << d.hours() << ":" << std::setw(2) << d.minutes() << ":" << std::setw(2) << d.seconds() << "."
-	<< std::setw(3) << d.millis() << "-" << std::setw(3) << d.micros()
-	<< std::setfill(' ');
-    if (parentns.count() != 0) {
-      out << " (" << std::setw(6) << std::fixed << std::setprecision(2) << double(current->ns.count() * 100) / double(parentns.count()) << "%%)";
-    }
-    out << "\n";
-
-    std::vector<std::pair<BlockIdentity const*, Node const*>> children;
-    children.reserve(current->children.size());
-    for (auto& pair : current->children) {
-      children.emplace_back(pair.first, pair.second.get());
-    }
-
-    std::sort(children.begin(), children.end(), [](auto& p1, auto& p2) {
-      if (p1.second->ns > p2.second->ns) { return true; }
-      if ((p1.second->ns == p2.second->ns) &&
-	  (p1.first > p2.first)) { return true; }
-      return false;
-    });
-    for (auto& [id, node] : children) {
-      PrintNodes(depth + 1,
-		 id->c_str(),
-		 current->ns,
-		 node,
-		 out,
-		 current_maxdepth,
-		 max_strlen);
-
+  void begin_event(event::OpenEvent e)
+  {
+    std::unique_lock lock{node_mut};
+    if (skipped_depth > 0) {
+      skipped_depth += 1;
+    } else if (current->depth() == max_depth) {
+      skipped_depth = 1;
+    } else {
+      current = current->child(e.source);
+      current->open(e.start);
     }
   }
+
+  void end_event(event::CloseEvent e)
+  {
+    std::unique_lock lock{node_mut};
+    if (skipped_depth > 0) {
+      skipped_depth -= 1;
+    } else {
+      current->close(e.end);
+      current = current->parent();
+      ASSERT(current != nullptr);
+    }
+  }
+
+  ThreadCallstackReport(std::int32_t max_depth) : max_depth{max_depth}
+						, current{&top}
+  {}
+  static constexpr std::int32_t ShowAll = std::numeric_limits<std::int32_t>::max();
+
+  std::unique_ptr<Node> as_of(event::time_point at) const {
+    std::unique_lock lock{node_mut};
+    return top.closed_deep_copy_at(at);
+  }
+private:
+  std::int32_t skipped_depth{0};
+  std::int32_t max_depth;
+  mutable std::mutex node_mut{};
+  Node top{};
+  Node* current{nullptr};
 };
+
+static auto max_child_values(const ThreadCallstackReport::Node* node)
+{
+  struct { std::size_t name_length; std::size_t depth; } max;
+  max.depth = node->depth();
+  max.name_length = 0;
+  auto& children = node->children_view();
+  // this looks weird but is necessary for return type deduction
+  // since we want to call this function recursively
+  if (children.size() == 0) return max;
+  for (auto& [source, child] : children) {
+    auto child_max = max_child_values(child.get());
+    auto child_max_name = std::max(std::strlen(source->c_str()), child_max.name_length);
+    max.name_length = std::max(max.name_length, child_max_name);
+    max.depth = std::max(max.depth, child_max.depth);
+  }
+  return max;
+}
+
+static void PrintNode(std::ostringstream& out,
+		      const char* name,
+		      std::size_t depth,
+		      std::chrono::nanoseconds parentns,
+		      std::size_t max_name_length,
+		      std::size_t max_depth,
+		      const ThreadCallstackReport::Node* node)
+{
+    // depth is (modulo a shared offset) equal to current->depth
+  std::size_t offset = (max_name_length - std::strlen(name))
+    + (max_depth - depth);
+  SplitDuration d(node->time_spent());
+  out << std::setw(depth) << "" << name << ": " << std::setw(offset) << ""
+      << std::setfill('0')
+      << std::setw(2) << d.hours() << ":" << std::setw(2) << d.minutes() << ":" << std::setw(2) << d.seconds() << "."
+      << std::setw(3) << d.millis() << "-" << std::setw(3) << d.micros()
+      << std::setfill(' ');
+  if (parentns.count() != 0) {
+    out << " (" << std::setw(6) << std::fixed << std::setprecision(2) << double(node->time_spent().count() * 100) / double(parentns.count()) << "%%)";
+  }
+  out << "\n";
+
+  std::vector<std::pair<BlockIdentity const*, ThreadCallstackReport::Node const*>> children;
+  auto& view = node->children_view();
+  children.reserve(view.size());
+  for (auto& [source, child] : view) {
+    children.emplace_back(source, child.get());
+  }
+
+  std::sort(children.begin(), children.end(), [](auto& p1, auto& p2) {
+    auto t1 = p1.second->time_spent();
+    auto t2 = p2.second->time_spent();
+    if (t1 > t2) { return true; }
+    if ((t1 == t2) &&
+	(p1.first > p2.first)) { return true; }
+    return false;
+  });
+  for (auto& [id, child] : children) {
+    PrintNode(out,
+	      id->c_str(),
+	      depth + 1,
+	      node->time_spent(),
+	      max_name_length,
+	      max_depth,
+	      child);
+  }
+}
+
+class CallstackReport : public ReportGenerator {
+public:
+  virtual void begin_report(event::time_point now) override {
+    start = now;
+  }
+  virtual void end_report(event::time_point now) override {
+    end = now;
+  }
+
+  virtual void add_events(const EventBuffer& buf) override {
+    ThreadCallstackReport* thread = nullptr;
+    auto thread_id = buf.threadid();
+    std::shared_lock lock{threads_mut};
+    bool inserted = false;
+    {
+      auto iter = threads.find(thread_id);
+      if (iter != threads.end()) {
+	thread = &iter->second;
+      }
+    }
+    if (thread == nullptr) {
+      lock.unlock();
+      std::unique_lock write_lock{threads_mut};
+      auto [_, did_insert] = threads.try_emplace(thread_id, max_depth);
+      ASSERT(did_insert);
+      inserted = did_insert;
+      write_lock.unlock();
+      lock.lock();
+      // since we unlock and then lock something couldve happened
+      // that rehashes the map; as such we need to search again and cannot
+      // use the result of emplace
+      auto iter = threads.find(thread_id);
+      ASSERT(iter != threads.end());
+      thread = &iter->second;
+    }
+    ASSERT(thread != nullptr);
+
+    if (inserted) {
+      thread->begin_report(start);
+      for (auto& open : buf.stack()) {
+	thread->begin_event(open);
+      }
+    }
+
+    for (auto event : buf.events) {
+      if (auto* open = std::get_if<event::OpenEvent>(&event)) {
+	thread->begin_event(*open);
+      } else if (auto* close = std::get_if<event::CloseEvent>(&event)) {
+	thread->end_event(*close);
+      }
+    }
+  }
+
+  CallstackReport(std::int32_t max_depth) : max_depth{max_depth} {}
+  static constexpr std::int32_t ShowAll = ThreadCallstackReport::ShowAll;
+  std::string str() const {
+    using namespace std::chrono;
+    event::time_point now = event::clock::now();
+    std::ostringstream report{};
+    report << "=== Start Performance Report (Callstack) ===\n";
+    std::shared_lock lock{threads_mut};
+    for (auto& [id, thread] : threads) {
+      report << "== Thread: " << id << " ==\n";
+      auto node = thread.as_of(now);
+      auto max_values = max_child_values(node.get());
+
+      PrintNode(report, "Thread",
+		0,
+		duration_cast<nanoseconds>(now - start),
+		std::max(std::size_t{6}, max_values.name_length),
+		max_values.depth,
+		node.get());
+    }
+    report << "=== End Performance Report ===\n";
+    return report.str();
+  }
+private:
+  std::int32_t max_depth;
+  event::time_point start, end;
+  mutable std::shared_mutex threads_mut{};
+  std::unordered_map<std::thread::id, ThreadCallstackReport> threads{};
+};
+
 /* Forward referenced functions */
 
 static int send_data(JobControlRecord* jcr,
@@ -370,6 +509,10 @@ static void CloseVssBackupSession(JobControlRecord* jcr);
  */
 bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
 {
+  auto writer = std::make_shared<OverviewReport>(OverviewReport::ShowAll);
+  auto writer2 = std::make_shared<CallstackReport>(CallstackReport::ShowAll);
+  jcr->timer.add_writer(writer);
+  jcr->timer.add_writer(writer2);
   auto& timer = jcr->timer.get_thread_local();
   static constexpr auto blockid = BlockIdentity{"BlastDataToStorageDaemon"};
   TimedBlock blast_data{timer, blockid};
@@ -459,15 +602,26 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
 
   sd->signal(BNET_EOD); /* end of sending data */
 
-  OverviewReport overview(OverviewReport::ShowAll);
-  jcr->timer.generate_report(&overview);
-  Jmsg(jcr, M_INFO, 0,
-       overview.str().c_str());
+  jcr->timer.flush();
+  jcr->timer.remove_writer(writer);
+  jcr->timer.remove_writer(writer2);
 
-  CallstackReport callstack(CallstackReport::ShowAll);
-  jcr->timer.generate_report(&callstack);
+  auto msg1 = writer->str();
+  auto msg2 = writer2->str();
   Jmsg(jcr, M_INFO, 0,
-       callstack.str().c_str());
+       msg1.c_str());
+  Jmsg(jcr, M_INFO, 0,
+       msg2.c_str());
+
+  // OverviewReport overview(OverviewReport::ShowAll);
+  // jcr->timer.generate_report(&overview);
+  // Jmsg(jcr, M_INFO, 0,
+  //      overview.str().c_str());
+
+  // CallstackReport callstack(CallstackReport::ShowAll);
+  // jcr->timer.generate_report(&callstack);
+  // Jmsg(jcr, M_INFO, 0,
+  //      callstack.str().c_str());
 
   if (have_acl && jcr->fd_impl->acl_data) {
     FreePoolMemory(jcr->fd_impl->acl_data->u.build->content);
