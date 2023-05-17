@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -21,13 +21,11 @@ message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 include_directories(${OPENSSL_INCLUDE_DIR})
 
 # clang 11.0.1 on FreBSD 13  fails to skip suggest-override for gtest
-if(CMAKE_C_COMPILER_ID MATCHES Clang AND CMAKE_C_COMPILER_VERSION
-                                         VERSION_EQUAL 11.0.1
+if(CMAKE_C_COMPILER_ID MATCHES Clang AND CMAKE_C_COMPILER_VERSION VERSION_EQUAL
+                                         11.0.1
 )
   add_compile_options(-Wno-suggest-override)
 endif()
-
-
 
 macro(bareos_gtest_add_tests testname)
   gtest_add_tests(
@@ -345,7 +343,9 @@ endif() # NOT client-only
 bareos_add_test(
   thread_list LINK_LIBRARIES bareos ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES}
 )
-set_tests_properties(gtest:thread_list.thread_list_startup_and_shutdown PROPERTIES LABELS broken)
+set_tests_properties(
+  gtest:thread_list.thread_list_startup_and_shutdown PROPERTIES LABELS broken
+)
 
 bareos_add_test(
   thread_specific_data LINK_LIBRARIES bareos ${GTEST_LIBRARIES}
@@ -412,6 +412,10 @@ if(NOT client-only)
   bareos_add_test(
     bool_string LINK_LIBRARIES bareos ${GTEST_LIBRARIES}
                                ${GTEST_MAIN_LIBRARIES}
+  )
+  set_tests_properties(
+    gtest:bsock.console_director_connection_test_cleartext PROPERTIES LABELS
+                                                                      broken
   )
 
 endif() # NOT client-only

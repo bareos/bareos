@@ -36,68 +36,19 @@ OS:
     "Leap_15.3":
       TYPE: rpm
       IMAGE: opensuse-leap153
+      CUSTOM_TEST_IMAGES: [ openSUSE-Leap_15.4 ]
       ARCH:
       - x86_64
       PROJECTPACKAGES:
        x86_64:
           - bareos
           - python-bareos
-
-    "Leap_15.2":
-      TYPE: rpm
-      IMAGE: opensuse-leap152
-      ARCH:
-      - x86_64
-      PROJECTPACKAGES:
-       x86_64:
-          - bareos
-          - bareos-webui
-          - libfastlz
-          - python-bareos
-
-  Univention:
-    "4.3":
-      TYPE: deb
-      IMAGE: univention4.3
-      ARCH:
-      - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-webui
-           - libfastlz
-           - python-bareos
-
-    "4.4":
-      TYPE: deb
-      IMAGE: univention4.4
-      ARCH:
-      - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-webui
-           - libfastlz
-           - python-bareos
-
 
   SLE:
 
     "15_SP3":
       TYPE: rpm
       IMAGE: sle153
-      ARCH:
-      - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-webui
-           - libfastlz
-           - python-bareos
-
-    "15_SP2":
-      TYPE: rpm
-      IMAGE: sle152
       ARCH:
       - x86_64
       PROJECTPACKAGES:
@@ -147,39 +98,6 @@ OS:
            - libfastlz
            - python-bareos
 
-  Fedora:
-    "33":
-      TYPE: rpm
-      IMAGE: fedora33
-      ARCH:
-      - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-webui
-           - python-bareos
-    "32":
-      TYPE: rpm
-      IMAGE: fedora32
-      ARCH:
-      - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-webui
-           - python-bareos
-
-    "31":
-      TYPE: rpm
-      IMAGE: fedora31
-      ARCH:
-      - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-webui
-           - python-bareos
-
   Debian:
     "11":
       TYPE: deb
@@ -204,29 +122,12 @@ OS:
            - bareos-webui
            - libfastlz
            - python-bareos
-    "9.0":
-      TYPE: deb
-      IMAGE: "debian9.0"
-      ARCH:
-        - i586
-        - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-vmware
-           - bareos-webui
-           - libfastlz
-           - python-bareos
-        i586:
-           - bareos
-           - bareos-webui
-           - libfastlz
-           - python-bareos
 
   CentOS:
     "8":
       TYPE: rpm
       IMAGE: centos8
+      CUSTOM_TEST_IMAGES: [ Rocky, Alma, Oracle, Stream ]
       ARCH:
       - x86_64
       PROJECTPACKAGES:
