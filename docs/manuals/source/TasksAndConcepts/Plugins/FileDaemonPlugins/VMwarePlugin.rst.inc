@@ -18,6 +18,11 @@ The Plugin can do full, differential and incremental backup and restore of VM di
 
 Since :sinceVersion:`22.0.0: VMware Plugin` it also backs up the VM configuration metadata so that it can recreate deleted VMs and then restore the VM disks.
 
+Since :sinceVersion:`22.1.0: VMware Plugin` it is possible to backup and restore VMs which have 2 or more disks on different datastores. See below for related limitations.
+
+Since :sinceVersion:`22.1.0: VMware Plugin` on backup the plugin will retry when taking the snapshot fails, this is configurable by using the options **snapshot_retries** and **snapshot_retry_wait**, see below for details.
+
+
 Current limitations amongst others are:
 
 .. limitation:: VMware Plugin: Normal VM disks can not be excluded from the backup.
@@ -43,6 +48,14 @@ Current limitations amongst others are:
 
    Restore to a different vCenter Server was not tested, it will probably not work, so it is currently unsupported.
 
+
+.. limitation:: VMware Plugin: Incremental or differential backups of disk which migrated to different datastore is currently unsupported.
+
+   When a disk of a VM was migrated to a different datastore, the plugin currently cannot handle incremental and differential backups properly. In that case, the plugin will detect it and fail the job. The job log will include an error message saying that full level backup of this job is required. Migrations of disks to other datastores can happen either manually or automatically when storage DRS is enabled.
+
+.. limitation:: VMware Plugin: Incremental or differential backups of removed and recreated disks or after CBT reset
+
+   When a disk of a VM was removed and then added again on the same datastore with the same name, or when a CBT reset happened, then the plugin will detect this and request the full level CBT information, and all allocated blocks of that disk will be backed up in an incremental or differential job as if it were a full level job. The restore of such a job will work, but it will take longer than necessary. The backup will terminate with a warning and a recommendation to run a full level job to optimize restore time.
 
 Requirements
 ^^^^^^^^^^^^
@@ -163,6 +176,8 @@ For additional security, there is a now plugin option :command:`vcthumbprint`, t
                 ":vcpass=Bak.Adm-1234"
                 ":vcthumbprint=AABBCCDDEEFF11223344556677889900AABBCCDD"
        ...
+
+If the **vcthumbprint** option is used and the thumbprint on the server changes, for example by renewing or replacing the SSL certificate but not adapting the vcthumbprint parameter in the Bareos configuration, backup jobs will fail and the API will only return an "unknown" error. Since :sinceVersion:`22.1.0: VMware Plugin:` the plugin will compare the configured with the server thumbprint and emit an appropriate error message and advice to update vcthumbprint parameter.
 
 For ease of use (but less secure) when the :command:`vcthumbprint` is not given, the plugin will retrieve the thumbprint.
 
@@ -568,13 +583,19 @@ restore_cluster (optional)
    Instead of specifying *restore_esxhost*, it is also possible to specify a cluster name using this option, the ESX host will be autoselected in that case, if DRS is configured properly. Since :sinceVersion:`22.0.0: VMware Plugin`
 
 restore_datastore (optional)
-   By default, if a VM to be restored does not exist, it will be recreated in the same datastore where it was stored at backup time. Use this option to restore on the given datastore. Since :sinceVersion:`22.0.0: VMware Plugin`
+   By default, if a VM to be restored does not exist, it will be recreated in the same datastore where it was stored at backup time. Use this option to restore on the given datastore. Since :sinceVersion:`22.0.0: VMware Plugin`. As :sinceVersion:`22.1.0: VMware Plugin` it is possible to backup and restore VMs with disks on multiple datastores, when using this option, it will only change the datastore of the disks which were stored in the same datastore than the VM, the other disks will be recreated on the same datastore they were backed up from.
 
 restore_resourcepool (optional)
    By default, if a VM to be restored does not exist, it will be recreated in the same resource pool which it has in been in at backup time. Using this option allows to override this and specify a different resource pool. Since :sinceVersion:`22.0.0: VMware Plugin`
 
 restore_powerstate (optional)
    By **default**, after restore a VM will be set to its **previous powerstate** which means the powerstate at backup time. When specifying ``restore_powerstate=off`` the VM will stay powered off after restore. Also can be forced to on with ``restore_powerstate=on``. Note that this will only work if DRS is configured to **fully automated**, otherwise the API request to power on a VM will be ignored. Since :sinceVersion:`22.0.0: VMware Plugin`
+
+snapshot_retries (optional)
+   Number of retries when taking a snapshot fails (default: 3). The most common cause of snapshot failure is error while quiescing the virtual machine. Mostly retrying helps. If not also check if a pre-freeze script is used on the VM, a non-zero exit code will cause a quiescing error. The pre-freeze and post-thaw scripts are executed by VMwareTools. Since :sinceVersion:`22.1.0: VMware Plugin`
+
+snapshot_retry_wait (optional)
+  Time in seconds to wait before the next snapshot retry (default: 5). Since :sinceVersion:`22.1.0: VMware Plugin`
 
 poweron_timeout (optional)
    Timeout in seconds to wait for a VM to be powered on after restore, default 15s. When a VM is powered on after restore (see also the option *restore_powerstate* above), the plugin will check if it succeeded by checking the power state. If it is not powered on within this timeout, the restore job will issue a warning message.
