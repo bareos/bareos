@@ -112,6 +112,8 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             "restore_powerstate",
             "poweron_timeout",
             "config_file",
+            "snapshot_retries",
+            "snapshot_retry_wait",
         ]
         self.allowed_options = (
             self.mandatory_options_default
@@ -328,6 +330,44 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         else:
             self.vadp.poweron_timeout = 15
 
+        if self.options.get("snapshot_retries"):
+            try:
+                self.vadp.snapshot_retries = int(self.options["snapshot_retries"])
+            except ValueError:
+                bareosfd.JobMessage(
+                    bareosfd.M_FATAL,
+                    "Invalid value '%s' for snapshot_retries, only digits allowed\n"
+                    % self.options["snapshot_retries"],
+                )
+                return bareosfd.bRC_Error
+
+            if self.vadp.snapshot_retries < 0:
+                bareosfd.JobMessage(
+                    bareosfd.M_FATAL,
+                    "Invalid value '%s' for snapshot_retries, negative values not allowed\n"
+                    % self.options["snapshot_retries"],
+                )
+                return bareosfd.bRC_Error
+
+        if self.options.get("snapshot_retry_wait"):
+            try:
+                self.vadp.snapshot_retry_wait = int(self.options["snapshot_retry_wait"])
+            except ValueError:
+                bareosfd.JobMessage(
+                    bareosfd.M_FATAL,
+                    "Invalid value '%s' for snapshot_retry_wait, only digits allowed\n"
+                    % self.options["snapshot_retry_wait"],
+                )
+                return bareosfd.bRC_Error
+
+            if self.vadp.snapshot_retry_wait < 0:
+                bareosfd.JobMessage(
+                    bareosfd.M_FATAL,
+                    "Invalid value '%s' for snapshot_retry_wait, negative values not allowed\n"
+                    % self.options["snapshot_retry_wait"],
+                )
+                return bareosfd.bRC_Error
+
         for options in self.options:
             bareosfd.DebugMessage(
                 100,
@@ -335,13 +375,36 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 % (option, StringCodec.encode(self.options[option])),
             )
 
-        if (
-            not self.options.get("localvmdk") == "yes"
-            and "vcthumbprint" not in self.options
-        ):
-            # if vcthumbprint is not given in options, retrieve it
-            if not self.vadp.retrieve_vcthumbprint():
-                return bareosfd.bRC_Error
+        for options in self.options:
+            bareosfd.DebugMessage(
+                100,
+                "Using Option %s=%s\n"
+                % (option, StringCodec.encode(self.options[option])),
+            )
+
+        if not self.options.get("localvmdk") == "yes":
+            if "vcthumbprint" in self.options:
+                # fetch the thumbprint and compare it with the passed thumbprint,
+                # warn if they don't match as VixDiskLib will return "unknown error"
+                # when running bareos-vadp-dumper
+                self.vadp.fetch_vcthumbprint()
+                if self.options["vcthumbprint"] != self.vadp.fetched_vcthumbprint:
+                    bareosfd.JobMessage(
+                        bareosfd.M_ERROR,
+                        "The configured vcthumbprint %s does not match the server thumbprint %s, "
+                        "check and update your config! Otherwise bareos_vadp_dumper will get the "
+                        "error message 'Unknown error' from the API\n"
+                        % (
+                            self.options["vcthumbprint"],
+                            self.vadp.fetched_vcthumbprint,
+                        ),
+                    )
+
+            else:
+                # if vcthumbprint is not given in options, retrieve it
+                if not self.vadp.retrieve_vcthumbprint():
+                    return bareosfd.bRC_Error
+
         return bareosfd.bRC_OK
 
     def start_backup_job(self):
@@ -503,14 +566,10 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         # be set to diskPathRoot
         cbt_data = self.vadp.restore_objects_by_objectname[objectname]["data"]
 
-        if self.vadp.vmfs_vm_path_changed:
-            cbt_data["DiskParams"][
-                "diskPathRoot"
-            ] = self.vadp.datastore_vm_path_rex.sub(
-                self.vadp.get_vmfs_vm_path(),
-                cbt_data["DiskParams"]["diskPathRoot"],
-                count=1,
-            )
+        if self.vadp.restore_disk_paths_map:
+            cbt_data["DiskParams"]["diskPathRoot"] = self.vadp.restore_disk_paths_map[
+                cbt_data["DiskParams"]["diskPathRoot"]
+            ]
 
         cbt_data["DiskParams"]["diskPath"] = cbt_data["DiskParams"]["diskPathRoot"]
 
@@ -945,6 +1004,10 @@ class BareosVADPWrapper(object):
         self.datastore_vm_path_rex = re.compile(r"\[(.+?)\] (.+)\/")
         self.slashes_rex = re.compile(r"\/+")
         self.poweron_timeout = None
+        self.restore_disk_paths_map = OrderedDict()
+        self.fetched_vcthumbprint = None
+        self.snapshot_retries = 3
+        self.snapshot_retry_wait = 5
 
     def connect_vmware(self):
         # this prevents from repeating on second call
@@ -1360,7 +1423,7 @@ class BareosVADPWrapper(object):
             stack.append(("/", resource_pool))
         while stack:
             folder, resource_pool = stack.pop()
-            path = self.poper_path(folder + "/" + resource_pool.name)
+            path = self.proper_path(folder + "/" + resource_pool.name)
             resource_pools[path] = resource_pool
             for sub_resource_pool in resource_pool.resourcePool:
                 stack.append((path, sub_resource_pool))
@@ -1431,20 +1494,31 @@ class BareosVADPWrapper(object):
         # prevent from duplicate UUID
         self.check_uuid(config_info)
 
-        transformer = BareosVmConfigInfoToSpec(config_info)
+        transformer = BareosVmConfigInfoToSpec(config_info, vadp=self)
         used_datastore_names = transformer.get_datastore_names()
         if len(used_datastore_names) > 1:
-            bareosfd.JobMessage(
-                bareosfd.M_FATAL,
-                "VM %s used multiple datastores (%s), restore not yet possible!\n"
+            bareosfd.DebugMessage(
+                100,
+                "Restoring VM %s using multiple datastores: %s\n"
                 % (
                     StringCodec.encode(self.options["vmname"]),
                     StringCodec.encode(used_datastore_names),
                 ),
             )
-            return False
+            bareosfd.DebugMessage(
+                100,
+                "Datastores in DC %s: %s\n"
+                % (
+                    StringCodec.encode(self.dc.name),
+                    StringCodec.encode([ds.name for ds in self.dc.datastore]),
+                ),
+            )
 
-        if datastore_name and datastore_name != used_datastore_names[0]:
+        config = transformer.transform(
+            target_datastore_name=datastore_name, target_vm_name=self.options["vmname"]
+        )
+
+        if datastore_name and datastore_name != transformer.orig_vm_datastore_name:
             if not self.find_managed_object_by_name([vim.Datastore], datastore_name):
                 bareosfd.JobMessage(
                     bareosfd.M_FATAL,
@@ -1452,10 +1526,6 @@ class BareosVADPWrapper(object):
                 )
                 return False
             self.vmfs_vm_path_changed = True
-
-        config = transformer.transform(
-            target_datastore_name=datastore_name, target_vm_name=self.options["vmname"]
-        )
 
         for child in self.si.content.rootFolder.childEntity:
             if child.name == self.options["dc"]:
@@ -1575,7 +1645,7 @@ class BareosVADPWrapper(object):
                     % (StringCodec.encode(self.options["vmname"])),
                 )
                 if datastore_name is None:
-                    datastore_name = used_datastore_names[0]
+                    datastore_name = transformer.new_vm_datastore_name
 
                 # Setting files.vmPathName to datastore name in square brackets only,
                 # this implicitly creates the dir on VMFS, including _n suffix if needed.
@@ -1601,12 +1671,19 @@ class BareosVADPWrapper(object):
         )
         self.vm = create_vm_task.info.result
 
+        # If transformer.disk_device_change_delayed is not empty, there are disks in other
+        # datastores that must be added one-by-one here after VM was created.
+        if transformer.disk_device_change_delayed:
+            self.add_disk_devices_to_vm(transformer.disk_device_change_delayed)
+
         return True
 
     def create_vm_snapshot(self):
         """
         Creates a snapshot
         """
+        snapshot_try_count = 0
+
         enable_quiescing = True
         if self.options.get("quiesce") == "no":
             enable_quiescing = False
@@ -1615,22 +1692,51 @@ class BareosVADPWrapper(object):
                 "Guest quescing on snapshot was disabled by configuration, backup may be inconsistent\n",
             )
 
-        try:
-            self.create_snap_task = self.vm.CreateSnapshot_Task(
-                name="BareosTmpSnap_jobId_%s" % (self.plugin.jobId),
-                description="Bareos Tmp Snap jobId %s jobName %s"
-                % (self.plugin.jobId, self.plugin.jobName),
-                memory=False,
-                quiesce=enable_quiescing,
-            )
-        except vmodl.MethodFault as e:
+        while snapshot_try_count <= self.snapshot_retries:
+            snapshot_try_count += 1
+            try:
+                self.create_snap_task = self.vm.CreateSnapshot_Task(
+                    name="BareosTmpSnap_jobId_%s" % (self.plugin.jobId),
+                    description="Bareos Tmp Snap jobId %s jobName %s"
+                    % (self.plugin.jobId, self.plugin.jobName),
+                    memory=False,
+                    quiesce=enable_quiescing,
+                )
+            except vmodl.MethodFault as e:
+                bareosfd.JobMessage(
+                    bareosfd.M_INFO,
+                    "Failed to create snapshot: %s Trying again in %s s\n"
+                    % (e.msgi, self.snapshot_retry_wait),
+                )
+                time.sleep(self.snapshot_retry_wait)
+                continue
+
+            try:
+                self.vmomi_WaitForTasks([self.create_snap_task])
+            except vim.fault.ApplicationQuiesceFault as quiescing_error:
+                bareosfd.JobMessage(
+                    bareosfd.M_INFO,
+                    "Snapshot error: %s Trying again in %s s\n"
+                    % (quiescing_error.msg, self.snapshot_retry_wait),
+                )
+                time.sleep(self.snapshot_retry_wait)
+                continue
+
+            break
+
+        else:
             bareosfd.JobMessage(
                 bareosfd.M_FATAL,
-                "Failed to create snapshot %s\n" % (e.msg),
+                "Snapshot failed after %s tries, giving up\n" % (snapshot_try_count),
             )
             return False
 
-        self.vmomi_WaitForTasks([self.create_snap_task])
+        if snapshot_try_count > 1:
+            bareosfd.JobMessage(
+                bareosfd.M_INFO,
+                "Snapshot succeeded after %s tries\n" % (snapshot_try_count),
+            )
+
         self.create_snap_result = self.create_snap_task.info.result
         self.create_snap_tstamp = time.time()
         return True
@@ -1722,10 +1828,19 @@ class BareosVADPWrapper(object):
         Get CBT Information
         """
         cbt_changeId = "*"
-        if (
-            self.disk_device_to_backup["fileNameRoot"]
-            in self.restore_objects_by_diskpath
-        ):
+        if chr(self.plugin.level) in ["I", "D"]:
+            if (
+                self.disk_device_to_backup["fileNameRoot"]
+                not in self.restore_objects_by_diskpath
+            ):
+                bareosfd.JobMessage(
+                    bareosfd.M_FATAL,
+                    "Disk %s not found in previous backup, migrating disks is not yet supported for "
+                    "incremental or differential. A new full level backup of this job is required.\n"
+                    % (self.disk_device_to_backup["fileNameRoot"]),
+                )
+                return False
+
             if (
                 len(
                     self.restore_objects_by_diskpath[
@@ -1736,7 +1851,7 @@ class BareosVADPWrapper(object):
             ):
                 bareosfd.JobMessage(
                     bareosfd.M_FATAL,
-                    "ERROR: more then one CBT info for Diff/Inc exists\n",
+                    "More than one CBT info for Diff/Inc exists\n",
                 )
                 return False
 
@@ -1781,7 +1896,7 @@ class BareosVADPWrapper(object):
                 bareosfd.JobMessage(bareosfd.M_INFO, "Successfully got full CBT\n")
                 bareosfd.JobMessage(
                     bareosfd.M_WARNING,
-                    "Recommendation: Run Full level job as soon as possible\n",
+                    "To minimize restore time, it is recommended to run this job at full level next time.\n",
                 )
 
         self.cbt2json()
@@ -1792,27 +1907,18 @@ class BareosVADPWrapper(object):
         Check if the backed up disks match selected VM disks
         """
         backed_up_disks = set()
-        vmfs_vm_path = self.get_vmfs_vm_path()
 
         for disk_path in self.restore_objects_by_diskpath.keys():
-            if self.vmfs_vm_path_changed:
+            if self.restore_disk_paths_map:
                 # adapt for restore to different datastore or different VMFS path
                 bareosfd.DebugMessage(
                     100,
-                    "check_vm_disks_match(): adapting disk path %s to vm path %s\n"
-                    % (disk_path, vmfs_vm_path),
+                    "check_vm_disks_match(): adapting disk path %s to recreated disk path %s\n"
+                    % (disk_path, self.restore_disk_paths_map[disk_path]),
                 )
-                disk_path = self.datastore_vm_path_rex.sub(
-                    vmfs_vm_path,
-                    disk_path,
-                    count=1,
-                )
-                bareosfd.DebugMessage(
-                    100,
-                    "check_vm_disks_match(): adapted disk path to %s\n" % (disk_path),
-                )
-
-            backed_up_disks.add(disk_path)
+                backed_up_disks.add(self.restore_disk_paths_map[disk_path])
+            else:
+                backed_up_disks.add(disk_path)
 
         vm_disks = set([disk_dev["fileNameRoot"] for disk_dev in self.disk_devices])
 
@@ -1868,16 +1974,22 @@ class BareosVADPWrapper(object):
         Check the vmconfig at backup time, warn about possible restore problems
         """
         config_info = json.loads(self.vm_config_info_json)
-        transformer = BareosVmConfigInfoToSpec(config_info)
+        transformer = BareosVmConfigInfoToSpec(config_info, vadp=self)
 
-        used_datastore_names = transformer.get_datastore_names()
-        if len(used_datastore_names) > 1:
+        # A job message was emitted here when multiple data stores were used,
+        # which is fixed now. So now try to transform the VM metadata as it
+        # would be done when recreating the VM for restore. Note that a job
+        # message with level M_ERROR will cause the backup job to terminate
+        # as Backup OK -- with warnings
+        try:
+            transformer.transform()
+        except Exception as transform_exception:
             bareosfd.JobMessage(
                 bareosfd.M_ERROR,
-                "VM %s is using multiple datastores (%s), restore will not yet be possible!\n"
+                "Failed to transform VM %s metadata: %s, recreating this VM will not be possible!\n"
                 % (
                     StringCodec.encode(self.options["vmname"]),
-                    StringCodec.encode(used_datastore_names),
+                    str(transform_exception),
                 ),
             )
             return False
@@ -2417,10 +2529,13 @@ class BareosVADPWrapper(object):
 
         return True
 
-    def retrieve_vcthumbprint(self):
+    def fetch_vcthumbprint(self):
         """
         Retrieve the SSL Cert thumbprint from VC Server
         """
+        if self.fetched_vcthumbprint:
+            return True
+
         success = True
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(1)
@@ -2442,10 +2557,21 @@ class BareosVADPWrapper(object):
         else:
             der_cert_bin = wrappedSocket.getpeercert(True)
             thumb_sha1 = hashlib.sha1(der_cert_bin).hexdigest()
-            self.options["vcthumbprint"] = thumb_sha1.upper()
+            self.fetched_vcthumbprint = thumb_sha1.upper()
 
         wrappedSocket.close()
         return success
+
+    def retrieve_vcthumbprint(self):
+        """
+        Retrieve the SSL Cert thumbprint from VC Server
+        and store it in options
+        """
+        if not self.fetch_vcthumbprint():
+            return False
+
+        self.options["vcthumbprint"] = self.fetched_vcthumbprint
+        return True
 
     def find_managed_object_by_name(
         self, object_types, object_name, start_folder=None, recursive=True
@@ -2597,6 +2723,44 @@ class BareosVADPWrapper(object):
 
         del config_info["uuid"]
 
+    def add_disk_devices_to_vm(self, device_changes):
+        """
+        Add devices to VM
+        """
+        disk_index = 0
+        for device_spec in device_changes:
+            config_spec = vim.vm.ConfigSpec()
+            device_spec.device.controllerKey = abs(device_spec.device.controllerKey)
+            config_spec.deviceChange = [device_spec]
+            device_created = False
+            backing_path_changed = False
+            while not device_created:
+                reconfig_task = self.vm.ReconfigVM_Task(spec=config_spec)
+                try:
+                    WaitForTask(reconfig_task)
+                    device_created = True
+                except vim.fault.FileAlreadyExists:
+                    device_spec.device.backing.fileName = (
+                        "[%s] " % device_spec.device.backing.datastore.name
+                    )
+                    backing_path_changed = True
+
+            # When handling the FileAlreadyExists exception, we only pass the datastore name
+            # and the backing path to the disk will be created by the API, then mapping in self.restore_disk_paths_map
+            # must be corrected. This is only possible by walking the VMs devices and detect the added disks path,
+            # because the task result does not contain it.
+            if backing_path_changed:
+                self.restore_disk_paths_map[
+                    list(self.restore_disk_paths_map)[disk_index]
+                ] = [
+                    device.backing.fileName
+                    for device in self.vm.config.hardware.device
+                    if type(device) == vim.vm.device.VirtualDisk
+                ][
+                    disk_index
+                ]
+            disk_index += 1
+
     # helper functions ############
 
     def mkdir(self, directory_name):
@@ -2633,15 +2797,23 @@ class BareosVmConfigInfoToSpec(object):
     into VirtualMachineConfigSpec(vim.vm.ConfigSpec)
     """
 
-    def __init__(self, config_info):
+    def __init__(self, config_info, vadp=None):
         self.config_info = config_info
         self.datastore_rex = re.compile(r"\[(.+?)\]")
         self.backing_filename_snapshot_rex = re.compile(r"(-\d{6})\.vmdk$")
         self.target_datastore_name = None
+        self.orig_vm_datastore_name = None
+        self.new_vm_datastore_name = None
+        self.disk_device_change_delayed = []
+        self.vadp = vadp
 
     def transform(self, target_datastore_name=None, target_vm_name=None):
         config_spec = vim.vm.ConfigSpec()
         self.target_datastore_name = target_datastore_name
+        self.orig_vm_datastore_name = self._get_vm_datastore_name()
+        self.new_vm_datastore_name = self.orig_vm_datastore_name
+        if target_datastore_name:
+            self.new_vm_datastore_name = target_datastore_name
         config_spec.alternateGuestName = self.config_info["alternateGuestName"]
         config_spec.annotation = self.config_info["annotation"]
         config_spec.bootOptions = self._transform_bootOptions()
@@ -2738,6 +2910,20 @@ class BareosVmConfigInfoToSpec(object):
                     datastore_names.add(ds_match.group(1))
 
         return list(datastore_names)
+
+    def _extract_datastore_name(self, backing_path):
+        backing_ds_match = self.vadp.datastore_rex.match(backing_path)
+        if backing_ds_match:
+            return backing_ds_match.group(1)
+        else:
+            raise RuntimeError(
+                "Error getting datastore name from backing path: %s" % (backing_path)
+            )
+
+        return None
+
+    def _get_vm_datastore_name(self):
+        return self._extract_datastore_name(self.config_info["files"]["vmPathName"])
 
     def _transform_bootOptions(self):
         config_info_boot_options = self.config_info["bootOptions"]
@@ -2877,6 +3063,7 @@ class BareosVmConfigInfoToSpec(object):
             device_spec = vim.vm.device.VirtualDeviceSpec()
             device_spec.operation = vim.vm.device.VirtualDeviceSpec.Operation().add
             add_device = None
+            add_disk_device_delayed = None
 
             if device["_vimtype"] in virtual_scsi_controllers:
                 add_device = self._transform_virtual_scsi_controller(device)
@@ -2890,7 +3077,16 @@ class BareosVmConfigInfoToSpec(object):
                 device_spec.fileOperation = (
                     vim.vm.device.VirtualDeviceSpec.FileOperation().create
                 )
-                add_device = self._transform_virtual_disk(device)
+                # As _transform_virtual_disk() will only change the backing datastore
+                # for disks which were in same datastore than VM, The backing datastore
+                # will remain unchanged for disks in other datastores. It does not work
+                # to create these together with the VM, they must be added delayed one-by-one
+                # after the VM was created.
+                # The best solution seems to be adding all disks delayed, to be able to create
+                # a proper map of backed up to created disks, no matter in which datastore they
+                # are.
+                add_device = None
+                add_disk_device_delayed = self._transform_virtual_disk(device)
             elif device["_vimtype"] in virtual_ethernet_cards:
                 add_device = self._transform_virtual_ethernet_card(device)
             elif device["_vimtype"] == "vim.vm.device.VirtualFloppy":
@@ -2904,6 +3100,10 @@ class BareosVmConfigInfoToSpec(object):
             if add_device:
                 device_spec.device = add_device
                 device_change.append(device_spec)
+
+            if add_disk_device_delayed:
+                device_spec.device = add_disk_device_delayed
+                self.disk_device_change_delayed.append(device_spec)
 
         return device_change
 
@@ -3075,18 +3275,44 @@ class BareosVmConfigInfoToSpec(object):
             == "vim.vm.device.VirtualDisk.FlatVer2BackingInfo"
         ):
             add_device.backing = vim.vm.device.VirtualDisk.FlatVer2BackingInfo()
-            # this is the datastore MoRef, eg. "vim.Datastore:datastore-13"
-            # must be converted to the correct type, otherwise getting
-            # TypeError: For "datastore" expected type vim.Datastore, but got str
-            # Solution: It works when not specifying the datastore here.
-            # add_device.backing.datastore = vim.Datastore(device["backing"]["datastore"])
-            if self.target_datastore_name:
+            # Limitation: If a target datastore was given, in the first implementation to support
+            # VMs using disks in multiple datastores, only disks that have been stored
+            # together with the VM will be transformed to the new datastore.
+            # To transform multiple datastores, it would be required to provide a mapping
+            # from old to new datastores, which would be complicated to pass with plugin options.
+
+            orig_disk_backing_path = device["backing"]["fileName"]
+            orig_disk_backing_datastore_name = self._extract_datastore_name(
+                orig_disk_backing_path
+            )
+
+            # When datastore is not changed, restore disk path will be the same as backed up
+            self.vadp.restore_disk_paths_map[
+                orig_disk_backing_path
+            ] = orig_disk_backing_path
+
+            if (
+                self.target_datastore_name
+                and orig_disk_backing_datastore_name == self.orig_vm_datastore_name
+            ):
                 # replace datastore name in backing fileName
                 device["backing"]["fileName"] = self.datastore_rex.sub(
                     "[" + self.target_datastore_name + "]",
                     device["backing"]["fileName"],
                     count=1,
                 )
+                self.vadp.restore_disk_paths_map[orig_disk_backing_path] = device[
+                    "backing"
+                ]["fileName"]
+
+            backing_ds_name = self._extract_datastore_name(
+                device["backing"]["fileName"]
+            )
+
+            ds_mo = [ds for ds in self.vadp.dc.datastore if ds.name == backing_ds_name][
+                0
+            ]
+            add_device.backing.datastore = ds_mo
 
             # if a snapshot existed at backup time, the disk backing name will be like
             # [datastore1] tcl131-test1_1/tcl131-test1-000001.vmdk
@@ -3102,6 +3328,11 @@ class BareosVmConfigInfoToSpec(object):
             add_device.backing.thinProvisioned = device["backing"]["thinProvisioned"]
             # add_device.backing.uuid = device["backing"]["uuid"]
             add_device.backing.writeThrough = device["backing"]["writeThrough"]
+            bareosfd.DebugMessage(
+                200,
+                "_transform_virtual_disk(): backing.fileName: %s\n"
+                % (add_device.backing.fileName),
+            )
         else:
             raise RuntimeError(
                 "Unknown Backing for disk: %s" % (device["backing"]["_vimtype"])
