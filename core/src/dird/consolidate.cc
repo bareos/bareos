@@ -100,16 +100,11 @@ static void TerminateConsolidate(JobControlRecord* jcr, JobResource* tmpjob)
  */
 bool DoConsolidate(JobControlRecord* jcr)
 {
-  JobResource* job;
-  JobResource* tmpjob;
-  time_t now = time(NULL);
-  int32_t fullconsolidations_started = 0;
-  int32_t max_full_consolidations = 0;
-
-  tmpjob = jcr->dir_impl->res.job; /* Memorize job */
+  JobResource* tmpjob = jcr->dir_impl->res.job; /* Memorize job */
 
   // Get Value for MaxFullConsolidations from Consolidation job
-  max_full_consolidations = jcr->dir_impl->res.job->MaxFullConsolidations;
+  int32_t max_full_consolidations
+      = jcr->dir_impl->res.job->MaxFullConsolidations;
 
   jcr->dir_impl->jr.JobId = jcr->JobId;
   jcr->dir_impl->fname = (char*)GetPoolMemory(PM_FNAME);
@@ -123,6 +118,9 @@ bool DoConsolidate(JobControlRecord* jcr)
 
   jcr->setJobStatusWithPriorityCheck(JS_Running);
 
+  int32_t fullconsolidations_started = 0;
+  JobResource* job;
+  time_t now = time(NULL);
   foreach_res (job, R_JOB) {
     if (job->AlwaysIncremental) {
       Jmsg(jcr, M_INFO, 0, _("Looking at always incremental job %s\n"),
