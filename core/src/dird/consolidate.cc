@@ -85,6 +85,13 @@ static inline void StartNewConsolidationJob(JobControlRecord* jcr,
   FreeUaContext(ua);
 }
 
+static void TerminateConsolidate(JobControlRecord* jcr, JobResource* tmpjob)
+{
+  jcr->dir_impl->res.job = tmpjob;
+  jcr->setJobStatusWithPriorityCheck(JS_Terminated);
+  ConsolidateCleanup(jcr, JS_Terminated);
+}
+
 /**
  * The actual consolidation worker
  *
@@ -95,7 +102,6 @@ bool DoConsolidate(JobControlRecord* jcr)
 {
   JobResource* job;
   JobResource* tmpjob;
-  bool retval = true;
   time_t now = time(NULL);
   int32_t fullconsolidations_started = 0;
   int32_t max_full_consolidations = 0;
@@ -132,14 +138,16 @@ bool DoConsolidate(JobControlRecord* jcr)
 
       if (!GetOrCreateFilesetRecord(jcr)) {
         Jmsg(jcr, M_FATAL, 0, _("JobId=%d no FileSet\n"), (int)jcr->JobId);
-        retval = false;
-        goto bail_out;
+
+        TerminateConsolidate(jcr, tmpjob);
+        return false;
       }
 
       if (!GetOrCreateClientRecord(jcr)) {
         Jmsg(jcr, M_FATAL, 0, _("JobId=%d no ClientId\n"), (int)jcr->JobId);
-        retval = false;
-        goto bail_out;
+
+        TerminateConsolidate(jcr, tmpjob);
+        return false;
       }
 
       // First determine the number of total incrementals
@@ -251,7 +259,9 @@ bool DoConsolidate(JobControlRecord* jcr)
           Jmsg(jcr, M_FATAL, 0,
                _("Error getting Job record for first Job: ERR=%s\n"),
                jcr->db->strerror());
-          goto bail_out;
+
+          TerminateConsolidate(jcr, tmpjob);
+          return true;
         }
 
         starttime = jcr->dir_impl->previous_jr.JobTDate;
@@ -302,14 +312,8 @@ bool DoConsolidate(JobControlRecord* jcr)
     }
   }
 
-bail_out:
-  // Restore original job back to jcr.
-  jcr->dir_impl->res.job = tmpjob;
-  jcr->setJobStatusWithPriorityCheck(JS_Terminated);
-  ConsolidateCleanup(jcr, JS_Terminated);
-
-
-  return retval;
+  TerminateConsolidate(jcr, tmpjob);
+  return true;
 }
 
 // Release resources allocated during backup.
