@@ -85,9 +85,12 @@ static inline void StartNewConsolidationJob(JobControlRecord* jcr,
   FreeUaContext(ua);
 }
 
-static void TerminateConsolidate(JobControlRecord* jcr, JobResource* tmpjob)
+static void TerminateConsolidate(JobControlRecord* jcr,
+                                 const Resources& tmpres,
+                                 const JobDbRecord& tmpjr)
 {
-  jcr->dir_impl->res.job = tmpjob;
+  jcr->dir_impl->res = tmpres;
+  jcr->dir_impl->jr = tmpjr;
   jcr->setJobStatusWithPriorityCheck(JS_Terminated);
   ConsolidateCleanup(jcr, JS_Terminated);
 }
@@ -100,8 +103,6 @@ static void TerminateConsolidate(JobControlRecord* jcr, JobResource* tmpjob)
  */
 bool DoConsolidate(JobControlRecord* jcr)
 {
-  JobResource* tmpjob = jcr->dir_impl->res.job; /* Memorize job */
-
   // Get Value for MaxFullConsolidations from Consolidation job
   int32_t max_full_consolidations
       = jcr->dir_impl->res.job->MaxFullConsolidations;
@@ -117,6 +118,9 @@ bool DoConsolidate(JobControlRecord* jcr)
        jcr->Job);
 
   jcr->setJobStatusWithPriorityCheck(JS_Running);
+
+  Resources tmpres = jcr->dir_impl->res;
+  JobDbRecord tmpjr = jcr->dir_impl->jr;
 
   int32_t fullconsolidations_started = 0;
   JobResource* job;
@@ -137,14 +141,14 @@ bool DoConsolidate(JobControlRecord* jcr)
       if (!GetOrCreateFilesetRecord(jcr)) {
         Jmsg(jcr, M_FATAL, 0, _("JobId=%d no FileSet\n"), (int)jcr->JobId);
 
-        TerminateConsolidate(jcr, tmpjob);
+        TerminateConsolidate(jcr, tmpres, tmpjr);
         return false;
       }
 
       if (!GetOrCreateClientRecord(jcr)) {
         Jmsg(jcr, M_FATAL, 0, _("JobId=%d no ClientId\n"), (int)jcr->JobId);
 
-        TerminateConsolidate(jcr, tmpjob);
+        TerminateConsolidate(jcr, tmpres, tmpjr);
         return false;
       }
 
@@ -258,7 +262,7 @@ bool DoConsolidate(JobControlRecord* jcr)
                _("Error getting Job record for first Job: ERR=%s\n"),
                jcr->db->strerror());
 
-          TerminateConsolidate(jcr, tmpjob);
+          TerminateConsolidate(jcr, tmpres, tmpjr);
           return true;
         }
 
@@ -310,7 +314,7 @@ bool DoConsolidate(JobControlRecord* jcr)
     }
   }
 
-  TerminateConsolidate(jcr, tmpjob);
+  TerminateConsolidate(jcr, tmpres, tmpjr);
   return true;
 }
 
