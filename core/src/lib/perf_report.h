@@ -61,17 +61,17 @@ class OverviewReport : public ReportGenerator {
   OverviewReport(std::int32_t ShowTopN) : NumToShow{ShowTopN}
   {}
 
-  virtual void begin_report(event::time_point now) override
+  void begin_report(event::time_point now) override
   {
     start = now;
   }
 
-  virtual void end_report(event::time_point now) override
+  void end_report(event::time_point now) override
   {
     end = now;
   }
 
-  virtual void add_events(const EventBuffer& buf) override
+  void add_events(const EventBuffer& buf) override
   {
     std::unique_lock lock{threads_mut};
     auto [iter, inserted] = threads.try_emplace(buf.threadid());
