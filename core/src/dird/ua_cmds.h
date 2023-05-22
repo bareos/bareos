@@ -41,23 +41,27 @@ struct SetDeviceCommand {
                        const ArgumentsList& arguments);
 };
 
-void SetDoClientSetdebugFunction(std::function<void(UaContext* ua,
-                                                    ClientResource* client,
-                                                    int level,
-                                                    int trace_flag,
-                                                    int hangup_flag,
-                                                    int timestamp_flag)> f);
+using client_debug_fn = std::function<void(UaContext* ua,
+                                           ClientResource* client,
+                                           int level,
+                                           int trace_flag,
+                                           int hangup_flag,
+                                           int timestamp_flag,
+                                           int perf)>;
+void SetDoClientSetdebugFunction(client_debug_fn f);
 
-void SetDoStorageSetdebugFunction(std::function<void(UaContext* ua,
-                                                     StorageResource* store,
-                                                     int level,
-                                                     int trace_flag,
-                                                     int timestamp_flag)> f);
+using storage_debug_fn = std::function<void(UaContext* ua,
+                                            StorageResource* store,
+                                            int level,
+                                            int trace_flag,
+                                            int timestamp_flag)>;
+void SetDoStorageSetdebugFunction(storage_debug_fn f);
 
 void DoAllSetDebug(UaContext* ua,
                    int level,
                    int trace_flag,
                    int hangup_flag,
-                   int timestamp_flag);
+                   int timestamp_flag,
+                   int perf);
 } /* namespace directordaemon */
 #endif  // BAREOS_DIRD_UA_CMDS_H_

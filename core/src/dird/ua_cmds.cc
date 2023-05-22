@@ -59,6 +59,8 @@
 
 #include "dird/reload.h"
 
+#include <optional>
+
 namespace directordaemon {
 
 /* Imported subroutines */
@@ -1203,7 +1205,8 @@ static void DoClientSetdebug(UaContext* ua,
                              int level,
                              int trace_flag,
                              int hangup_flag,
-                             int timestamp_flag)
+                             int timestamp_flag,
+                             int perf)
 {
   BareosSocket* fd;
 
@@ -1230,7 +1233,11 @@ static void DoClientSetdebug(UaContext* ua,
 
   Dmsg0(120, "Connected to file daemon\n");
   fd = ua->jcr->file_bsock;
-  if (ua->jcr->dir_impl->FDVersion >= FD_VERSION_53) {
+  // TODO: new fd version here ?
+  if (ua->jcr->dir_impl->FDVersion >= FD_VERSION_54) {
+    fd->fsend("setdebug=%d trace=%d hangup=%d timestamp=%d perf=%d\n", level,
+              trace_flag, hangup_flag, timestamp_flag, perf);
+  } else if (ua->jcr->dir_impl->FDVersion >= FD_VERSION_53) {
     fd->fsend("setdebug=%d trace=%d hangup=%d timestamp=%d\n", level,
               trace_flag, hangup_flag, timestamp_flag);
   } else {
@@ -1248,18 +1255,9 @@ static void DoClientSetdebug(UaContext* ua,
   return;
 }
 
-static std::function<void(UaContext* ua,
-                          StorageResource* store,
-                          int level,
-                          int trace_flag,
-                          int timestamp_flag)>
-    DoStorageSetdebugFunction = DoStorageSetdebug;
+static storage_debug_fn DoStorageSetdebugFunction = DoStorageSetdebug;
 
-void SetDoStorageSetdebugFunction(std::function<void(UaContext* ua,
-                                                     StorageResource* store,
-                                                     int level,
-                                                     int trace_flag,
-                                                     int timestamp_flag)> f)
+void SetDoStorageSetdebugFunction(storage_debug_fn f)
 {
   // dependency injection for testing
   DoStorageSetdebugFunction = f;
@@ -1300,20 +1298,9 @@ static void AllStorageSetdebug(UaContext* ua,
   }
 }
 
-static std::function<void(UaContext* ua,
-                          ClientResource* client,
-                          int level,
-                          int trace_flag,
-                          int hangup_flag,
-                          int timestamp_flag)>
-    DoClientSetdebugFunction = DoClientSetdebug;
+static client_debug_fn DoClientSetdebugFunction = DoClientSetdebug;
 
-void SetDoClientSetdebugFunction(std::function<void(UaContext* ua,
-                                                    ClientResource* client,
-                                                    int level,
-                                                    int trace_flag,
-                                                    int hangup_flag,
-                                                    int timestamp_flag)> f)
+void SetDoClientSetdebugFunction(client_debug_fn f)
 {
   // dependency injection for testing
   DoClientSetdebugFunction = f;
@@ -1323,7 +1310,8 @@ static void AllClientSetdebug(UaContext* ua,
                               int level,
                               int trace_flag,
                               int hangup_flag,
-                              int timestamp_flag)
+                              int timestamp_flag,
+                              int perf)
 {
   std::vector<ClientResource*> clients_with_unique_address;
   ClientResource* client_in_config = nullptr;
@@ -1352,7 +1340,7 @@ static void AllClientSetdebug(UaContext* ua,
 
   for (ClientResource* client : clients_with_unique_address) {
     DoClientSetdebugFunction(ua, client, level, trace_flag, hangup_flag,
-                             timestamp_flag);
+                             timestamp_flag, perf);
   }
 }  // namespace directordaemon
 
@@ -1378,11 +1366,18 @@ void DoAllSetDebug(UaContext* ua,
                    int level,
                    int trace_flag,
                    int hangup_flag,
-                   int timestamp_flag)
+                   int timestamp_flag,
+                   int perf)
 {
   DoDirectorSetdebug(ua, level, trace_flag, timestamp_flag);
   AllStorageSetdebug(ua, level, trace_flag, timestamp_flag);
-  AllClientSetdebug(ua, level, trace_flag, hangup_flag, timestamp_flag);
+  AllClientSetdebug(ua, level, trace_flag, hangup_flag, timestamp_flag, perf);
+}
+
+static std::optional<int> ParsePerf(const char* arg)
+{
+  (void)arg;
+  return std::nullopt;
 }
 
 // setdebug level=nn all trace=1/0 timestamp=1/0
@@ -1393,6 +1388,7 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
   int trace_flag;
   int hangup_flag;
   int timestamp_flag;
+  int perf;
   StorageResource* store;
   ClientResource* client;
 
@@ -1432,10 +1428,20 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
     timestamp_flag = -1;
   }
 
+  if (auto i = FindArgWithValue(ua, NT_("perf")); i >= 0) {
+    if (std::optional res = ParsePerf(ua->argv[i]); res.has_value()) {
+      perf = res.value();
+    } else {
+      perf = -1;
+    }
+  } else {
+    perf = -1;
+  }
+
   // General debug?
   for (i = 1; i < ua->argc; i++) {
     if (Bstrcasecmp(ua->argk[i], "all")) {
-      DoAllSetDebug(ua, level, trace_flag, hangup_flag, timestamp_flag);
+      DoAllSetDebug(ua, level, trace_flag, hangup_flag, timestamp_flag, perf);
       return true;
     }
     if (Bstrcasecmp(ua->argk[i], "dir")
@@ -1449,14 +1455,14 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
         client = ua->GetClientResWithName(ua->argv[i]);
         if (client) {
           DoClientSetdebug(ua, client, level, trace_flag, hangup_flag,
-                           timestamp_flag);
+                           timestamp_flag, perf);
           return true;
         }
       }
       client = select_client_resource(ua);
       if (client) {
         DoClientSetdebug(ua, client, level, trace_flag, hangup_flag,
-                         timestamp_flag);
+                         timestamp_flag, perf);
         return true;
       }
     }
@@ -1522,11 +1528,11 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
       client = select_client_resource(ua);
       if (client) {
         DoClientSetdebug(ua, client, level, trace_flag, hangup_flag,
-                         timestamp_flag);
+                         timestamp_flag, perf);
       }
       break;
     case 3:
-      DoAllSetDebug(ua, level, trace_flag, hangup_flag, timestamp_flag);
+      DoAllSetDebug(ua, level, trace_flag, hangup_flag, timestamp_flag, perf);
       break;
     default:
       break;

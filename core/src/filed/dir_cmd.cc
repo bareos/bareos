@@ -185,6 +185,7 @@ static char setbandwidthcmd[] = "setbandwidth=%lld Job=%127s";
 static char setdebugv0cmd[] = "setdebug=%d trace=%d";
 static char setdebugv1cmd[] = "setdebug=%d trace=%d hangup=%d";
 static char setdebugv2cmd[] = "setdebug=%d trace=%d hangup=%d timestamp=%d";
+static char setdebugv3cmd[] = "setdebug=%d trace=%d hangup=%d timestamp=%d perf=%d";
 static char storaddrv0cmd[] = "storage address=%s port=%d ssl=%d";
 static char storaddrv1cmd[]
     = "storage address=%s port=%d ssl=%d Authorization=%100s";
@@ -802,11 +803,16 @@ static bool SetdebugCmd(JobControlRecord* jcr)
 {
   BareosSocket* dir = jcr->dir_bsock;
   int32_t level, trace_flag, hangup_flag, timestamp_flag;
+  int32_t perf = -1;
   int scan;
 
   Dmsg1(50, "SetdebugCmd: %s", dir->msg);
-  scan = sscanf(dir->msg, setdebugv2cmd, &level, &trace_flag, &hangup_flag,
-                &timestamp_flag);
+  scan = sscanf(dir->msg, setdebugv3cmd, &level, &trace_flag, &hangup_flag,
+                &timestamp_flag, &perf);
+  if (scan != 5) {
+    scan = sscanf(dir->msg, setdebugv2cmd, &level, &trace_flag, &hangup_flag,
+		  &timestamp_flag);
+  }
   if (scan != 4) {
     scan = sscanf(dir->msg, setdebugv1cmd, &level, &trace_flag, &hangup_flag);
   }

@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -44,12 +44,8 @@ class SetdebugTest : public ::testing::Test {
 static std::multiset<std::string> client_names;
 static std::multiset<std::string> stored_names;
 
-static void DoClientSetdebug(UaContext*,
-                             ClientResource* client,
-                             int,
-                             int,
-                             int,
-                             int)
+static void
+DoClientSetdebug(UaContext*, ClientResource* client, int, int, int, int, int)
 {
   client_names.insert(client->resource_name_);
 }
@@ -71,7 +67,7 @@ void SetdebugTest::SetUpTestCase()
   SetDoClientSetdebugFunction(DoClientSetdebug);
   SetDoStorageSetdebugFunction(DoStorageSetdebug);
 
-  DoAllSetDebug(nullptr, 0, 0, 0, 0);
+  DoAllSetDebug(nullptr, 0, 0, 0, 0, 0);
 
   if (my_config) { delete my_config; }
 }
