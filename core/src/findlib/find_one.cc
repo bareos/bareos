@@ -259,6 +259,7 @@ static inline bool CheckSizeMatching(JobControlRecord*, FindFilesPacket* ff_pkt)
 // Check if a file have changed during backup and display an error
 bool HasFileChanged(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 {
+  auto& timer = jcr->timer.get_thread_local();
   struct stat statp;
   Dmsg1(500, "HasFileChanged fname=%s\n", ff_pkt->fname);
 
@@ -266,11 +267,15 @@ bool HasFileChanged(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
     return false;
   }
 
-  if (lstat(ff_pkt->fname, &statp) != 0) {
-    BErrNo be;
-    Jmsg(jcr, M_WARNING, 0, _("Cannot stat file %s: ERR=%s\n"), ff_pkt->fname,
-         be.bstrerror());
-    return true;
+  {
+    static constexpr BlockIdentity lstt{"lstat"};
+    TimedBlock timed(timer, lstt);
+    if (lstat(ff_pkt->fname, &statp) != 0) {
+      BErrNo be;
+      Jmsg(jcr, M_WARNING, 0, _("Cannot stat file %s: ERR=%s\n"), ff_pkt->fname,
+	   be.bstrerror());
+      return true;
+    }
   }
 
   if (statp.st_mtime != ff_pkt->statp.st_mtime) {
@@ -916,16 +921,24 @@ int FindOneFile(JobControlRecord* jcr,
                 dev_t parent_device,
                 bool top_level)
 {
+  auto& timer = jcr->timer.get_thread_local();
   int rtn_stat;
   bool done = false;
 
   ff_pkt->fname = ff_pkt->link = fname;
   ff_pkt->type = FT_UNSET;
-  if (lstat(fname, &ff_pkt->statp) != 0) {
-    // Cannot stat file
-    ff_pkt->type = FT_NOSTAT;
-    ff_pkt->ff_errno = errno;
-    return HandleFile(jcr, ff_pkt, top_level);
+  {
+    static constexpr BlockIdentity lstt{"lstat"};
+    timer.enter(lstt);
+    if (lstat(fname, &ff_pkt->statp) != 0) {
+      timer.exit();
+      // Cannot stat file
+      ff_pkt->type = FT_NOSTAT;
+      ff_pkt->ff_errno = errno;
+      return HandleFile(jcr, ff_pkt, top_level);
+    } else {
+      timer.exit();
+    }
   }
 
   Dmsg1(300, "File ----: %s\n", fname);
