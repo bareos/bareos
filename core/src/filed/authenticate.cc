@@ -52,8 +52,10 @@ const int debuglevel = 50;
  *  52 13Jul13 - Added plugin options
  *  53 02Apr15 - Added setdebug timestamp
  *  54 29Oct15 - Added getSecureEraseCmd
+ *  55 22May23 - Added perf counters
  */
-static char OK_hello[] = "2000 OK Hello 54\n";
+static constexpr int filedaemon_version = 55;
+static char OK_hello[] = "2000 OK Hello";
 
 static char Dir_sorry[] = "2999 Authentication failed.\n";
 
@@ -147,7 +149,7 @@ bool AuthenticateDirector(JobControlRecord* jcr)
 
   jcr->fd_impl->director = director;
 
-  return dir->fsend("%s", OK_hello);
+  return dir->fsend("%s %d\n", OK_hello, filedaemon_version);
 }
 
 // Authenticate with a remote director.

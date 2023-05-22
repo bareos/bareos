@@ -1234,7 +1234,7 @@ static void DoClientSetdebug(UaContext* ua,
   Dmsg0(120, "Connected to file daemon\n");
   fd = ua->jcr->file_bsock;
   // TODO: new fd version here ?
-  if (ua->jcr->dir_impl->FDVersion >= FD_VERSION_54) {
+  if (ua->jcr->dir_impl->FDVersion >= FD_VERSION_55) {
     fd->fsend("setdebug=%d trace=%d hangup=%d timestamp=%d perf=%d\n", level,
               trace_flag, hangup_flag, timestamp_flag, perf);
   } else if (ua->jcr->dir_impl->FDVersion >= FD_VERSION_53) {
