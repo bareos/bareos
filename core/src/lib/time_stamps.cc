@@ -1,9 +1,12 @@
 #include <lib/time_stamps.h>
 
 #include <mutex>
-#include <sstream>
+#include <cassert>
+#include <algorithm>
 
-#include "include/baconfig.h"
+// we cannot include baconfig here because otherwise we get a
+// redefinition error of stat; so we cannot use our ASSERT
+// macro
 
 ThreadTimeKeeper::~ThreadTimeKeeper()
 {
@@ -28,7 +31,7 @@ void ThreadTimeKeeper::switch_to(const BlockIdentity& block)
     keeper.handle_event_buffer(std::move(buffer));
     buffer = EventBuffer(this_id, 20000, stack);
   }
-  ASSERT(stack.size() != 0);
+  assert(stack.size() != 0);
   auto event = stack.back().close();
   buffer.events.push_back(event);
   stack.back() = event::OpenEvent(block);
@@ -42,7 +45,7 @@ void ThreadTimeKeeper::exit()
     keeper.handle_event_buffer(std::move(buffer));
     buffer = EventBuffer(this_id, 20000, stack);
   }
-  ASSERT(stack.size() != 0);
+  assert(stack.size() != 0);
   auto event = stack.back().close();
   buffer.events.push_back(event);
   stack.pop_back();
@@ -64,7 +67,7 @@ ThreadTimeKeeper& TimeKeeper::get_thread_local()
     auto [iter, inserted] = keeper.emplace(std::piecewise_construct,
 					   std::forward_as_tuple(my_id),
 					   std::forward_as_tuple(*this));
-    ASSERT(inserted);
+    assert(inserted);
     return iter->second;
   }
 }

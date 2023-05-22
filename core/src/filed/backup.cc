@@ -1413,8 +1413,13 @@ static DWORD WINAPI send_efs_data(PBYTE pbData,
                                   PVOID pvCallbackContext,
                                   ULONG ulLength)
 {
-  b_ctx* bctx = (b_ctx*)pvCallbackContext;
+  static constexpr BlockIdentity read{"read"};
+  static constexpr BlockIdentity send{"send"};
+  b_ctx* bctx = static_cast<b_ctx*>(pvCallbackContext);
   BareosSocket* sd = bctx->jcr->store_bsock;
+  auto& timer = bctx->jcr->timer.get_thread_local();
+
+  TimedBlock read_and_send{timer, read};
 
   if (ulLength == 0) { return ERROR_SUCCESS; }
 
@@ -1423,6 +1428,7 @@ static DWORD WINAPI send_efs_data(PBYTE pbData,
   if (ulLength <= (ULONG)bctx->rsize) {
     sd->message_length = ulLength;
     memcpy(bctx->rbuf, pbData, ulLength);
+    read_and_send.switch_to(read);
     if (!SendDataToSd(bctx)) { return ERROR_NET_WRITE_FAULT; }
   } else {
     // Need to chunk the data into pieces.
@@ -1431,10 +1437,12 @@ static DWORD WINAPI send_efs_data(PBYTE pbData,
     while (ulLength > 0) {
       sd->message_length = MIN((ULONG)bctx->rsize, ulLength);
       memcpy(bctx->rbuf, pbData + offset, sd->message_length);
+      read_and_send.switch_to(read);
       if (!SendDataToSd(bctx)) { return ERROR_NET_WRITE_FAULT; }
 
       offset += sd->message_length;
       ulLength -= sd->message_length;
+      read_and_send.switch_to(read);
     }
   }
 
