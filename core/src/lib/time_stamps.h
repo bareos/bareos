@@ -194,9 +194,6 @@ static void write_reports(bool* end,
       if (buf_queue->size() == 0) now_empty = true;
     }
 
-    // cannot notify while holding the lock!
-    if (now_empty) buf_empty->notify_all();
-
     std::vector<std::shared_ptr<ReportGenerator>> local_copy;
     {
       std::unique_lock lock{*gen_mut};
@@ -206,6 +203,8 @@ static void write_reports(bool* end,
     for (auto& gen : local_copy) {
       gen->add_events(buf);
     }
+
+    if (now_empty) buf_empty->notify_all();
   }
 }
 
