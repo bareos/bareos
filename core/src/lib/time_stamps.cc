@@ -41,7 +41,11 @@ void ThreadTimeKeeper::switch_to(const BlockIdentity& block)
 void ThreadTimeKeeper::exit()
 {
   std::unique_lock _{vec_mut};
-  if (buffer.events.size() > 20000) {
+  if (buffer.events.size() > 1000) {
+    if (keeper.try_handle_event_buffer(buffer)) {
+      buffer = EventBuffer(this_id, 20000, stack);
+    }
+  } else if (buffer.events.size() > 20000) {
     keeper.handle_event_buffer(std::move(buffer));
     buffer = EventBuffer(this_id, 20000, stack);
   }

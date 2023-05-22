@@ -240,6 +240,14 @@ public:
     }
     buf_not_empty.notify_one();
   }
+  bool try_handle_event_buffer(EventBuffer& buf) {
+    if (std::unique_lock lock{buf_mut, std::try_to_lock};
+	lock.owns_lock()) {
+      buf_queue.emplace_back(std::move(buf));
+      return true;
+    }
+    return false;
+  }
   void flush() {
     {
       std::unique_lock lock{alloc_mut};
