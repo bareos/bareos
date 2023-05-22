@@ -121,11 +121,14 @@ public:
   std::string str() {
     flush();
     std::unique_lock lock(gen_mut);
+    std::string result{};
     if (overview.has_value()) {
-      return overview.value().str();
-    } else {
-      return "";
+      result += overview.value().str();
     }
+    if (callstack.has_value()) {
+      result += callstack.value().str();
+    }
+    return result;
   }
 private:
   mutable std::mutex gen_mut{};
@@ -138,6 +141,7 @@ private:
   mutable std::shared_mutex alloc_mut{};
   std::unordered_map<std::thread::id, ThreadTimeKeeper> keeper{};
   std::optional<OverviewReport> overview{std::nullopt};
+  std::optional<CallstackReport> callstack{std::nullopt};
   std::thread report_writer;
 };
 

@@ -46,93 +46,90 @@ struct SplitDuration {
   }
 };
 
-// static auto max_child_values(const ThreadCallstackReport::Node* node)
-// {
-//   struct { std::size_t name_length; std::size_t depth; } max;
-//   max.depth = node->depth();
-//   max.name_length = 0;
-//   auto& children = node->children_view();
-//   // this looks weird but is necessary for return type deduction
-//   // since we want to call this function recursively
-//   if (children.size() == 0) return max;
-//   for (auto& [source, child] : children) {
-//     auto child_max = max_child_values(child.get());
-//     auto child_max_name = std::max(std::strlen(source->c_str()), child_max.name_length);
-//     max.name_length = std::max(max.name_length, child_max_name);
-//     max.depth = std::max(max.depth, child_max.depth);
-//   }
-//   return max;
-// }
+static auto max_child_values(const ThreadCallstackReport::Node* node)
+{
+  struct { std::size_t name_length; std::size_t depth; } max;
+  max.depth = node->depth();
+  max.name_length = 0;
+  auto& children = node->children_view();
+  // this looks weird but is necessary for return type deduction
+  // since we want to call this function recursively
+  if (children.size() == 0) return max;
+  for (auto& [source, child] : children) {
+    auto child_max = max_child_values(child.get());
+    auto child_max_name = std::max(std::strlen(source->c_str()), child_max.name_length);
+    max.name_length = std::max(max.name_length, child_max_name);
+    max.depth = std::max(max.depth, child_max.depth);
+  }
+  return max;
+}
 
-// static void PrintNode(std::ostringstream& out,
-// 		      const char* name,
-// 		      std::size_t depth,
-// 		      std::chrono::nanoseconds parentns,
-// 		      std::size_t max_name_length,
-// 		      std::size_t max_depth,
-// 		      const ThreadCallstackReport::Node* node)
-// {
-//     // depth is (modulo a shared offset) equal to current->depth
-//   std::size_t offset = (max_name_length - std::strlen(name))
-//     + (max_depth - depth);
-//   SplitDuration d(node->time_spent());
-//   out << std::setw(depth) << "" << name << ": " << std::setw(offset) << ""
-//       << std::setfill('0')
-//       << std::setw(2) << d.hours() << ":" << std::setw(2) << d.minutes() << ":" << std::setw(2) << d.seconds() << "."
-//       << std::setw(3) << d.millis() << "-" << std::setw(3) << d.micros()
-//       << std::setfill(' ');
-//   if (parentns.count() != 0) {
-//     out << " (" << std::setw(6) << std::fixed << std::setprecision(2) << double(node->time_spent().count() * 100) / double(parentns.count()) << "%%)";
-//   }
-//   out << "\n";
+static void PrintNode(std::ostringstream& out,
+		      const char* name,
+		      std::size_t depth,
+		      std::chrono::nanoseconds parentns,
+		      std::size_t max_name_length,
+		      std::size_t max_depth,
+		      const ThreadCallstackReport::Node* node)
+{
+    // depth is (modulo a shared offset) equal to current->depth
+  std::size_t offset = (max_name_length - std::strlen(name))
+    + (max_depth - depth);
+  SplitDuration d(node->time_spent());
+  out << std::setw(depth) << "" << name << ": " << std::setw(offset) << ""
+      << d;
+  if (parentns.count() != 0) {
+    out << " (" << std::setw(6) << std::fixed << std::setprecision(2) << double(node->time_spent().count() * 100) / double(parentns.count()) << "%)";
+  }
+  out << "\n";
 
-//   std::vector<std::pair<BlockIdentity const*, ThreadCallstackReport::Node const*>> children;
-//   auto& view = node->children_view();
-//   children.reserve(view.size());
-//   for (auto& [source, child] : view) {
-//     children.emplace_back(source, child.get());
-//   }
+  std::vector<std::pair<BlockIdentity const*, ThreadCallstackReport::Node const*>> children;
+  auto& view = node->children_view();
+  children.reserve(view.size());
+  for (auto& [source, child] : view) {
+    children.emplace_back(source, child.get());
+  }
 
-//   std::sort(children.begin(), children.end(), [](auto& p1, auto& p2) {
-//     auto t1 = p1.second->time_spent();
-//     auto t2 = p2.second->time_spent();
-//     if (t1 > t2) { return true; }
-//     if ((t1 == t2) &&
-// 	(p1.first > p2.first)) { return true; }
-//     return false;
-//   });
-//   for (auto& [id, child] : children) {
-//     PrintNode(out,
-// 	      id->c_str(),
-// 	      depth + 1,
-// 	      node->time_spent(),
-// 	      max_name_length,
-// 	      max_depth,
-// 	      child);
-//   }
-// }
+  std::sort(children.begin(), children.end(), [](auto& p1, auto& p2) {
+    auto t1 = p1.second->time_spent();
+    auto t2 = p2.second->time_spent();
+    if (t1 > t2) { return true; }
+    if ((t1 == t2) &&
+	(p1.first > p2.first)) { return true; }
+    return false;
+  });
+  for (auto& [id, child] : children) {
+    PrintNode(out,
+	      id->c_str(),
+	      depth + 1,
+	      node->time_spent(),
+	      max_name_length,
+	      max_depth,
+	      child);
+  }
+}
 
-// static std::int64_t PrintCollapsedNode(std::ostringstream& out,
-// 				       std::string path,
-// 				       const ThreadCallstackReport::Node* node)
-// {
-//   auto& view = node->children_view();
+static std::int64_t PrintCollapsedNode(std::ostringstream& out,
+				       std::string path,
+				       const ThreadCallstackReport::Node* node)
+{
+  auto& view = node->children_view();
 
-//   std::int64_t child_time = 0;
-//   for (auto& [id, child] : view) {
-//     std::string copy = path;
-//     copy += ";";
-//     copy += id->c_str();
-//     child_time += PrintCollapsedNode(out,
-// 				     copy,
-// 				     child.get());
-//   }
+  std::int64_t child_time = 0;
+  for (auto& [id, child] : view) {
+    std::string copy = path;
+    copy += ";";
+    copy += id->c_str();
+    child_time += PrintCollapsedNode(out,
+				     copy,
+				     child.get());
+  }
 
-//   ASSERT(child_time <= node->time_spent().count());
-//   out << path << " " << node->time_spent().count() - child_time << "\n";
-//   out << path << " " << node->time_spent().count() << " | " << child_time  << "\n";
-//   return node->time_spent().count();
-// }
+  ASSERT(child_time <= node->time_spent().count());
+  out << path << " " << node->time_spent().count() - child_time << "\n";
+  out << path << " " << node->time_spent().count() << " | " << child_time  << "\n";
+  return node->time_spent().count();
+}
 
 void ThreadOverviewReport::begin_report(event::time_point current) {
   std::unique_lock lock{mut};
@@ -216,6 +213,46 @@ std::string OverviewReport::str() const
 	     << "\n";
 
     }
+  }
+  report << "=== End Performance Report ===\n";
+  return report.str();
+}
+
+std::string CallstackReport::str() const
+{
+  using namespace std::chrono;
+  event::time_point now = event::clock::now();
+  std::ostringstream report{};
+  report << "=== Start Performance Report (Callstack) ===\n";
+  std::shared_lock lock{threads_mut};
+  for (auto& [id, thread] : threads) {
+    report << "== Thread: " << id << " ==\n";
+    auto node = thread.as_of(now);
+    auto max_values = max_child_values(node.get());
+
+    PrintNode(report, "Thread",
+	      0,
+	      duration_cast<nanoseconds>(now - start),
+	      std::max(std::size_t{6}, max_values.name_length),
+	      max_values.depth,
+	      node.get());
+  }
+  report << "=== End Performance Report ===\n";
+  return report.str();
+}
+
+std::string CallstackReport::collapsed_str() const
+{
+  using namespace std::chrono;
+  event::time_point now = event::clock::now();
+  std::ostringstream report{};
+  report << "=== Start Performance Report (Collapsed Callstack) ===\n";
+  std::shared_lock lock{threads_mut};
+  for (auto& [id, thread] : threads) {
+    report << "== Thread: " << id << " ==\n";
+    auto node = thread.as_of(now);
+    PrintCollapsedNode(report, "Thread",
+		       node.get());
   }
   report << "=== End Performance Report ===\n";
   return report.str();

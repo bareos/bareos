@@ -60,6 +60,7 @@ void ThreadTimeKeeper::exit()
 static void write_reports(bool* end,
 			  std::mutex* gen_mut,
 			  std::optional<OverviewReport>* overview,
+			  std::optional<CallstackReport>* callstack,
 			  std::mutex* buf_mut,
 			  std::condition_variable* buf_empty,
 			  std::condition_variable* buf_not_empty,
@@ -78,7 +79,23 @@ static void write_reports(bool* end,
       case 1: {
 	if (!overview->has_value()) {
 	  std::unique_lock lock{*gen_mut};
-	  overview->emplace(OverviewReport::ShowAll);
+	  overview->emplace(OverviewReport::ShowAll)
+	    .begin_report(event::clock::now());
+	}
+      } break;
+      }
+      switch (!!(perf & static_cast<std::int32_t>(PerfReport::Stack))) {
+      case 0: {
+	if (callstack->has_value()) {
+	  std::unique_lock lock{*gen_mut};
+	  callstack->reset();
+	}
+      } break;
+      case 1: {
+	if (!callstack->has_value()) {
+	  std::unique_lock lock{*gen_mut};
+	  callstack->emplace(CallstackReport::ShowAll)
+	    .begin_report(event::clock::now());
 	}
       } break;
       }
@@ -98,12 +115,13 @@ static void write_reports(bool* end,
     }
 
     if (overview->has_value()) overview->value().add_events(buf);
+    if (callstack->has_value()) callstack->value().add_events(buf);
 
     if (now_empty) buf_empty->notify_all();
   }
 }
 
-TimeKeeper::TimeKeeper() : report_writer{&write_reports, &end, &gen_mut, &overview,
+TimeKeeper::TimeKeeper() : report_writer{&write_reports, &end, &gen_mut, &overview, &callstack,
 					 &buf_mut, &buf_empty, &buf_not_empty, &buf_queue}
 {}
 
