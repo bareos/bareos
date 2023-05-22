@@ -92,11 +92,9 @@ static inline void StartNewConsolidationJob(JobControlRecord* jcr,
  */
 bool DoConsolidate(JobControlRecord* jcr)
 {
-  char* p;
   JobResource* job;
   JobResource* tmpjob;
   bool retval = true;
-  char* jobids = NULL;
   time_t now = time(NULL);
   int32_t fullconsolidations_started = 0;
   int32_t max_full_consolidations = 0;
@@ -230,14 +228,6 @@ bool DoConsolidate(JobControlRecord* jcr)
         continue;
       }
 
-      if (jobids) {
-        free(jobids);
-        jobids = NULL;
-      }
-
-      jobids = strdup(jobids_ctx.GetAsString().c_str());
-      p = jobids;
-
       // Check if we need to skip the first (full) job from consolidation
       if (job->AlwaysIncrementalMaxFullAge) {
         char sdt_allowed[50];
@@ -251,15 +241,15 @@ bool DoConsolidate(JobControlRecord* jcr)
                job->resource_name_);
           continue;
         }
-        Jmsg(jcr, M_INFO, 0, _("before ConsolidateFull: jobids: %s\n"), jobids);
+        Jmsg(jcr, M_INFO, 0, _("before ConsolidateFull: jobids: %s\n"),
+             jobids_ctx.GetAsString().c_str());
 
-        p = strchr(jobids, ','); /* find oldest jobid and optionally skip it */
-        if (p) { *p = '\0'; }
+        std::string oldestjobid = jobids_ctx.front();
 
         // Get db record of oldest jobid and check its age
         jcr->dir_impl->previous_jr = JobDbRecord{};
-        jcr->dir_impl->previous_jr.JobId = str_to_int64(jobids);
-        Dmsg1(10, "Previous JobId=%s\n", jobids);
+        jcr->dir_impl->previous_jr.JobId = std::stoul(oldestjobid);
+        Dmsg1(10, "Previous JobId=%s\n", oldestjobid.c_str());
 
         if (!jcr->db->GetJobRecord(jcr, &jcr->dir_impl->previous_jr)) {
           Jmsg(jcr, M_FATAL, 0,
@@ -280,36 +270,35 @@ bool DoConsolidate(JobControlRecord* jcr)
           Jmsg(jcr, M_INFO, 0,
                _("Full is newer than AlwaysIncrementalMaxFullAge -> skipping "
                  "first jobid %s because of age\n"),
-               jobids);
-          if (p) { *p++ = ','; /* Restore , and point to rest of list */ }
+               oldestjobid.c_str());
+
+          jobids_ctx.PopFront();
 
         } else if (max_full_consolidations
                    && fullconsolidations_started >= max_full_consolidations) {
           Jmsg(jcr, M_INFO, 0,
                _("%d AlwaysIncrementalFullConsolidations reached -> skipping "
                  "first jobid %s independent of age\n"),
-               max_full_consolidations, jobids);
-          if (p) { *p++ = ','; /* Restore , and point to rest of list */ }
+               max_full_consolidations, oldestjobid.c_str());
+
+          jobids_ctx.PopFront();
 
         } else {
           Jmsg(jcr, M_INFO, 0,
                _("Full is older than AlwaysIncrementalMaxFullAge -> also "
                  "consolidating Full jobid %s\n"),
-               jobids);
-          if (p) {
-            *p = ',';   /* Restore ,*/
-            p = jobids; /* Point to full list */
-          }
+               oldestjobid.c_str());
           fullconsolidations_started++;
         }
-        Jmsg(jcr, M_INFO, 0, _("after ConsolidateFull: jobids: %s\n"), p);
+        Jmsg(jcr, M_INFO, 0, _("after ConsolidateFull: jobids: %s\n"),
+             jobids_ctx.GetAsString().c_str());
       }
 
       // Set the virtualfull jobids to be consolidated
       if (!jcr->dir_impl->vf_jobids) {
         jcr->dir_impl->vf_jobids = GetPoolMemory(PM_MESSAGE);
       }
-      PmStrcpy(jcr->dir_impl->vf_jobids, p);
+      PmStrcpy(jcr->dir_impl->vf_jobids, jobids_ctx.GetAsString().c_str());
 
       Jmsg(jcr, M_INFO, 0, _("%s: Start new consolidation\n"),
            job->resource_name_);
@@ -323,7 +312,6 @@ bail_out:
   jcr->setJobStatusWithPriorityCheck(JS_Terminated);
   ConsolidateCleanup(jcr, JS_Terminated);
 
-  if (jobids) { free(jobids); }
 
   return retval;
 }
