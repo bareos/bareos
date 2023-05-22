@@ -41,6 +41,7 @@ public:
   virtual void begin_report(event::time_point start [[maybe_unused]]) {};
   virtual void end_report(event::time_point end [[maybe_unused]]) {};
   virtual void add_events(const EventBuffer& buf [[maybe_unused]]) {}
+  virtual ~ReportGenerator() = default;
 };
 
 class ThreadOverviewReport {
