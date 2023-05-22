@@ -2448,7 +2448,7 @@ static bRC bareosAcceptFile(PluginContext* ctx, save_pkt* sp)
   ff_pkt->fname = sp->fname;
   memcpy(&ff_pkt->statp, &sp->statp, sizeof(ff_pkt->statp));
 
-  if (AcceptFile(ff_pkt)) {
+  if (AcceptFile(jcr, ff_pkt)) {
     retval = bRC_OK;
   } else {
     retval = bRC_Skip;

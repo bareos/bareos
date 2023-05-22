@@ -277,7 +277,7 @@ bool MatchFiles(JobControlRecord* jcr,
                 int sub(JobControlRecord*, FindFilesPacket* ff_pkt, bool));
 void TermFindFiles(FindFilesPacket* ff);
 bool IsInFileset(FindFilesPacket* ff);
-bool AcceptFile(FindFilesPacket* ff);
+bool AcceptFile(JobControlRecord* jcr, FindFilesPacket* ff);
 findIncludeExcludeItem* allocate_new_incexe(void);
 findIncludeExcludeItem* new_exclude(findFILESET* fileset);
 findIncludeExcludeItem* new_include(findFILESET* fileset);

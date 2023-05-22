@@ -236,8 +236,11 @@ bool IsInFileset(FindFilesPacket* ff)
   return false;
 }
 
-bool AcceptFile(FindFilesPacket* ff)
+bool AcceptFile(JobControlRecord* jcr, FindFilesPacket* ff)
 {
+  static constexpr auto blockid = BlockIdentity{"AcceptFile"};
+  auto& timer = jcr->timer.get_thread_local();
+  TimedBlock block(timer, blockid);
   int i, j, k;
   int fnm_flags;
   const char* basename;
@@ -429,7 +432,7 @@ static int OurCallback(JobControlRecord* jcr,
     case FT_DIRNOCHG:
     case FT_REPARSE:
     case FT_JUNCTION:
-      if (AcceptFile(ff)) {
+      if (AcceptFile(jcr, ff)) {
         return ff->FileSave(jcr, ff, top_level);
       } else {
         Dmsg1(debuglevel, "Skip file %s\n", ff->fname);
