@@ -224,6 +224,8 @@ static void ListRunningJobsPlain(StatusPacket* sp)
       len = Mmsg(msg, _("    SDSocket closed.\n"));
       sp->send(msg, len);
     }
+    len = PmStrcpy(msg, njcr->timer.str().c_str());
+    sp->send(msg, len);
   }
   endeach_jcr(njcr);
 

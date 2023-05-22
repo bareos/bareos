@@ -1410,9 +1410,9 @@ static std::optional<int> ParsePerf(std::string_view args)
       args.remove_prefix(end + 1);
     }
     if (ParsesEqually("stack", arg)) {
-      result |= 1;
+      result |= static_cast<int32_t>(PerfReport::Stack);
     } else if (ParsesEqually("overview", arg)) {
-      result |= 2;
+      result |= static_cast<int32_t>(PerfReport::Overview);
     } else {
       return std::nullopt;
     }

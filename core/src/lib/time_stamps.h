@@ -31,109 +31,11 @@
 #include <variant>
 #include <memory> // shared_ptr
 #include <deque>
+#include <optional>
 
-struct SplitDuration {
-  std::chrono::hours h;
-  std::chrono::minutes m;
-  std::chrono::seconds s;
-  std::chrono::milliseconds ms;
-  std::chrono::microseconds us;
-  std::chrono::nanoseconds ns;
+#include "event.h"
+#include "perf_report.h"
 
-  template <typename Duration> SplitDuration(Duration d)
-  {
-    h = std::chrono::duration_cast<std::chrono::hours>(d);
-    d -= h;
-    m = std::chrono::duration_cast<std::chrono::minutes>(d);
-    d -= m;
-    s = std::chrono::duration_cast<std::chrono::seconds>(d);
-    d -= s;
-    ms = std::chrono::duration_cast<std::chrono::milliseconds>(d);
-    d -= ms;
-    us = std::chrono::duration_cast<std::chrono::microseconds>(d);
-    d -= us;
-    ns = std::chrono::duration_cast<std::chrono::nanoseconds>(d);
-  }
-
-  int64_t hours() { return h.count(); }
-  int64_t minutes() { return m.count(); }
-  int64_t seconds() { return s.count(); }
-  int64_t millis() { return ms.count(); }
-  int64_t micros() { return us.count(); }
-  int64_t nanos() { return ns.count(); }
-};
-
-class BlockIdentity {
-public:
-  //TODO: replace with source_location (with C++20)
-  constexpr explicit BlockIdentity(const char* name) : name(name)
-  {}
-
-  const char* c_str() const { return name; }
-private:
-  const char* name;
-};
-
-namespace event {
-  using clock = std::chrono::steady_clock;
-  using time_point = clock::time_point;
-
-  struct CloseEvent {
-    BlockIdentity const* source;
-    time_point end;
-    CloseEvent(BlockIdentity const* source) : source{source}
-					    , end{clock::now()}
-    {}
-    CloseEvent(BlockIdentity const& source) : source{&source}
-					    , end{clock::now()}
-    {}
-
-    CloseEvent(const CloseEvent&) = default;
-    CloseEvent& operator=(const CloseEvent&) = default;
-  };
-
-  struct OpenEvent {
-    BlockIdentity const* source;
-    time_point start;
-
-    OpenEvent(BlockIdentity const* source) : source{source}
-					   , start{clock::now()}
-    {}
-    OpenEvent(BlockIdentity const& source) : source{&source}
-					   , start{clock::now()}
-    {}
-
-    OpenEvent(const OpenEvent&) = default;
-    OpenEvent& operator=(const OpenEvent&) = default;
-    CloseEvent close() const {
-      return CloseEvent{source};
-    }
-
-  };
-
-  using Event = std::variant<OpenEvent, CloseEvent>;
-};
-
-
-class EventBuffer {
-public:
-  EventBuffer() {}
-  EventBuffer(std::thread::id thread_id,
-	      std::size_t initial_size,
-	      const std::vector<event::OpenEvent>& current_stack) : thread_id{thread_id}
-								  , initial_stack{current_stack}
-  {
-    events.reserve(initial_size);
-  }
-  EventBuffer(EventBuffer&&) = default;
-  EventBuffer& operator=(EventBuffer&&) = default;
-  std::vector<event::Event> events{};
-  const std::vector<event::OpenEvent>& stack() const { return initial_stack; }
-  const std::thread::id threadid() const { return thread_id; }
-private:
-  std::thread::id thread_id;
-  std::vector<event::OpenEvent> initial_stack{};
-};
 
 class TimeKeeper;
 
@@ -163,57 +65,11 @@ private:
   std::vector<event::OpenEvent> stack{};
 };
 
-class ReportGenerator {
-public:
-  virtual void begin_report(event::time_point start [[maybe_unused]]) {};
-  virtual void end_report(event::time_point end [[maybe_unused]]) {};
-
-  virtual void add_events(const EventBuffer& buf [[maybe_unused]]) {}
-};
-
-static void write_reports(bool* end,
-			  std::mutex* gen_mut,
-			  std::vector<std::shared_ptr<ReportGenerator>>* gens,
-			  std::mutex* buf_mut,
-			  std::condition_variable* buf_empty,
-			  std::condition_variable* buf_not_empty,
-			  std::deque<EventBuffer>* buf_queue)
-{
-  for (;;) {
-    EventBuffer buf;
-    bool now_empty = false;
-    {
-      std::unique_lock lock{*buf_mut};
-      buf_not_empty->wait(lock, [end, buf_queue]() { return *end || buf_queue->size() > 0; });
-
-      if (buf_queue->size() == 0) break;
-
-      buf = std::move(buf_queue->front());
-      buf_queue->pop_front();
-
-      if (buf_queue->size() == 0) now_empty = true;
-    }
-
-    std::vector<std::shared_ptr<ReportGenerator>> local_copy;
-    {
-      std::unique_lock lock{*gen_mut};
-      local_copy = *gens;
-    }
-
-    for (auto& gen : local_copy) {
-      gen->add_events(buf);
-    }
-
-    if (now_empty) buf_empty->notify_all();
-  }
-}
-
 class TimeKeeper
 {
 public:
   ThreadTimeKeeper& get_thread_local();
-  TimeKeeper() : report_writer{&write_reports, &end, &gen_mut, &gens,
-			       &buf_mut, &buf_empty, &buf_not_empty, &buf_queue} {}
+  TimeKeeper();
   ~TimeKeeper() {
     auto now = event::clock::now();
     flush();
@@ -262,6 +118,15 @@ public:
       buf_empty.wait(lock, [this]() { return this->buf_queue.size() == 0; });
     }
   }
+  std::string str() {
+    flush();
+    std::unique_lock lock(gen_mut);
+    if (overview.has_value()) {
+      return overview.value().str();
+    } else {
+      return "";
+    }
+  }
 private:
   mutable std::mutex gen_mut{};
   bool end{false};
@@ -270,9 +135,10 @@ private:
   std::condition_variable buf_empty{};
   std::condition_variable buf_not_empty{};
   std::deque<EventBuffer> buf_queue;
-  std::thread report_writer;
   mutable std::shared_mutex alloc_mut{};
   std::unordered_map<std::thread::id, ThreadTimeKeeper> keeper{};
+  std::optional<OverviewReport> overview{std::nullopt};
+  std::thread report_writer;
 };
 
 class TimedBlock

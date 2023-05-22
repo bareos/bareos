@@ -64,6 +64,7 @@ set(BAREOS_SRCS
     hmac.cc
     htable.cc
     jcr.cc
+    perf_report.cc
     time_stamps.cc
     lockmgr.cc
     mem_pool.cc
