@@ -29,6 +29,9 @@
 #include <shared_mutex>
 
 #include "lib/event.h"
+#include "include/messages.h"
+
+extern int debug_level;
 
 enum class PerfReport : std::int32_t {
   Overview = (1 << 0),
@@ -63,6 +66,8 @@ class OverviewReport : public ReportGenerator {
 
   OverviewReport(std::int32_t ShowTopN) : NumToShow{ShowTopN}
   {}
+
+  ~OverviewReport() override;
 
   void begin_report(event::time_point now) override
   {
@@ -121,13 +126,13 @@ public:
       return since.has_value();
     }
     void open(event::time_point at) {
-      //ASSERT(!is_open());
+      ASSERT(!is_open());
       since = at;
     }
     void close(event::time_point at) {
       using namespace std::chrono;
 
-      //ASSERT(is_open());
+      ASSERT(is_open());
       ns += duration_cast<nanoseconds>(at - since.value());
       since.reset();
     }
@@ -136,7 +141,7 @@ public:
     std::unique_ptr<Node> closed_deep_copy_at(event::time_point at) const {
       using namespace std::chrono;
       std::unique_ptr copy = std::make_unique<Node>();
-      //ASSERT(!is_open() || parent_ == nullptr);
+      ASSERT(!is_open() || parent_ == nullptr);
       copy->ns = ns;
       copy->depth_ = depth_;
       if (is_open() && at > since.value()) {
@@ -145,7 +150,7 @@ public:
 
       for (auto& [source, child] : children) {
 	auto [child_copy, inserted] = copy->children.emplace(source, child->closed_deep_copy_at(at));
-	//ASSERT(inserted);
+	ASSERT(inserted);
 	child_copy->second->parent_ = copy.get();
       }
       return copy;
@@ -200,7 +205,7 @@ public:
     } else {
       current->close(e.end);
       current = current->parent();
-      //ASSERT(current != nullptr);
+      ASSERT(current != nullptr);
     }
   }
 
@@ -224,9 +229,14 @@ private:
 
 class CallstackReport : public ReportGenerator {
 public:
+  CallstackReport(std::int32_t max_depth) : max_depth{max_depth} {}
+  ~CallstackReport() override;
+  static constexpr std::int32_t ShowAll = ThreadCallstackReport::ShowAll;
+
   void begin_report(event::time_point now) override {
     start = now;
   }
+
   void end_report(event::time_point now) override {
     end = now;
   }
@@ -246,7 +256,7 @@ public:
       lock.unlock();
       std::unique_lock write_lock{threads_mut};
       auto [_, did_insert] = threads.try_emplace(thread_id, max_depth);
-      //ASSERT(did_insert);
+      ASSERT(did_insert);
       inserted = did_insert;
       write_lock.unlock();
       lock.lock();
@@ -254,10 +264,10 @@ public:
       // that rehashes the map; as such we need to search again and cannot
       // use the result of emplace
       auto iter = threads.find(thread_id);
-      //ASSERT(iter != threads.end());
+      ASSERT(iter != threads.end());
       thread = &iter->second;
     }
-    //ASSERT(thread != nullptr);
+    ASSERT(thread != nullptr);
 
     if (inserted) {
       thread->begin_report(start);
@@ -275,8 +285,6 @@ public:
     }
   }
 
-  CallstackReport(std::int32_t max_depth) : max_depth{max_depth} {}
-  static constexpr std::int32_t ShowAll = ThreadCallstackReport::ShowAll;
   std::string str() const;
   std::string collapsed_str() const;
  private:

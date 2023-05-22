@@ -1,11 +1,10 @@
-#include "lib/perf_report.h"
-
 #include <sstream>
 #include <algorithm>
 #include <iomanip>
 #include <cstring>
 
-#define ASSERT(...) (void) 0
+#include "lib/perf_report.h"
+#include "include/messages.h"
 
 struct SplitDuration {
   std::chrono::hours h;
@@ -218,6 +217,11 @@ std::string OverviewReport::str() const
   return report.str();
 }
 
+OverviewReport::~OverviewReport()
+{
+  Dmsg1(500, "%s", str().c_str());
+}
+
 std::string CallstackReport::str() const
 {
   using namespace std::chrono;
@@ -256,4 +260,9 @@ std::string CallstackReport::collapsed_str() const
   }
   report << "=== End Performance Report ===\n";
   return report.str();
+}
+
+CallstackReport::~CallstackReport()
+{
+  Dmsg1(500, "%s", str().c_str());
 }
