@@ -399,6 +399,28 @@ static void PrintNode(std::ostringstream& out,
   }
 }
 
+static std::int64_t PrintCollapsedNode(std::ostringstream& out,
+				       std::string path,
+				       const ThreadCallstackReport::Node* node)
+{
+  auto& view = node->children_view();
+
+  std::int64_t child_time = 0;
+  for (auto& [id, child] : view) {
+    std::string copy = path;
+    copy += ";";
+    copy += id->c_str();
+    child_time += PrintCollapsedNode(out,
+				     copy,
+				     child.get());
+  }
+
+  ASSERT(child_time <= node->time_spent().count());
+  out << path << " " << node->time_spent().count() - child_time << "\n";
+  out << path << " " << node->time_spent().count() << " | " << child_time  << "\n";
+  return node->time_spent().count();
+}
+
 class CallstackReport : public ReportGenerator {
 public:
   virtual void begin_report(event::time_point now) override {
@@ -471,6 +493,22 @@ public:
 		std::max(std::size_t{6}, max_values.name_length),
 		max_values.depth,
 		node.get());
+    }
+    report << "=== End Performance Report ===\n";
+    return report.str();
+  }
+
+  std::string collapsed_str() const {
+    using namespace std::chrono;
+    event::time_point now = event::clock::now();
+    std::ostringstream report{};
+    report << "=== Start Performance Report (Collapsed Callstack) ===\n";
+    std::shared_lock lock{threads_mut};
+    for (auto& [id, thread] : threads) {
+      report << "== Thread: " << id << " ==\n";
+      auto node = thread.as_of(now);
+      PrintCollapsedNode(report, "Thread",
+			 node.get());
     }
     report << "=== End Performance Report ===\n";
     return report.str();
