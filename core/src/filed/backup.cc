@@ -248,6 +248,7 @@ public:
     std::unique_ptr<Node> closed_deep_copy_at(event::time_point at) const {
       using namespace std::chrono;
       std::unique_ptr copy = std::make_unique<Node>();
+      ASSERT(!is_open() || parent_ == nullptr);
       copy->ns = ns;
       copy->depth_ = depth_;
       if (is_open() && at > since.value()) {
