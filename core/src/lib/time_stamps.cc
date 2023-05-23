@@ -30,20 +30,16 @@
 
 ThreadTimeKeeper::~ThreadTimeKeeper()
 {
-  keeper.handle_event_buffer(std::move(buffer));
+  keeper.handle_event_buffer(std::move(buffer.lock().get()));
 }
 
 static constexpr std::size_t buffer_filled_ok = 1000;
 static_assert(buffer_filled_ok < buffer_full);
 
-static struct buffer_is_locked_t {
-} event_buffer_locked;
-
 static void FlushEventsIfNecessary(TimeKeeper& keeper,
                                    std::thread::id this_id,
                                    const std::vector<event::OpenEvent>& stack,
-                                   EventBuffer& buffer,
-                                   buffer_is_locked_t)
+                                   EventBuffer& buffer)
 {
   if (buffer.events.size() >= buffer_full) {
     keeper.handle_event_buffer(std::move(buffer));
@@ -57,30 +53,30 @@ static void FlushEventsIfNecessary(TimeKeeper& keeper,
 
 void ThreadTimeKeeper::enter(const BlockIdentity& block)
 {
-  std::unique_lock _{vec_mut};
-  FlushEventsIfNecessary(keeper, this_id, stack, buffer, event_buffer_locked);
+  auto locked = buffer.lock();
+  FlushEventsIfNecessary(keeper, this_id, stack, *locked);
   auto& event = stack.emplace_back(block);
-  buffer.events.emplace_back(event);
+  locked->events.emplace_back(event);
 }
 
 void ThreadTimeKeeper::switch_to(const BlockIdentity& block)
 {
-  std::unique_lock _{vec_mut};
-  FlushEventsIfNecessary(keeper, this_id, stack, buffer, event_buffer_locked);
+  auto locked = buffer.lock();
+  FlushEventsIfNecessary(keeper, this_id, stack, *locked);
   ASSERT(stack.size() != 0);
   auto event = stack.back().close();
-  buffer.events.push_back(event);
+  locked->events.push_back(event);
   stack.back() = event::OpenEvent(block);
-  buffer.events.push_back(stack.back());
+  locked->events.push_back(stack.back());
 }
 
 void ThreadTimeKeeper::exit()
 {
-  std::unique_lock _{vec_mut};
-  FlushEventsIfNecessary(keeper, this_id, stack, buffer, event_buffer_locked);
+  auto locked = buffer.lock();
+  FlushEventsIfNecessary(keeper, this_id, stack, *locked);
   ASSERT(stack.size() != 0);
   auto event = stack.back().close();
-  buffer.events.push_back(event);
+  locked->events.push_back(event);
   stack.pop_back();
 }
 

@@ -35,6 +35,7 @@
 
 #include "event.h"
 #include "perf_report.h"
+#include "lib/thread_util.h"
 
 static constexpr std::size_t buffer_full = 2000;
 
@@ -56,9 +57,8 @@ class ThreadTimeKeeper {
  protected:
   EventBuffer flush()
   {
-    std::unique_lock _{vec_mut};
     EventBuffer new_buffer(this_id, buffer_full, stack);
-    std::swap(new_buffer, buffer);
+    std::swap(new_buffer, *buffer.lock());
     return new_buffer;
   }
 
@@ -66,8 +66,8 @@ class ThreadTimeKeeper {
   std::thread::id this_id;
   TimeKeeper& keeper;
   std::vector<event::OpenEvent> stack{};
-  EventBuffer buffer{this_id, buffer_full, {}};
-  mutable std::mutex vec_mut{};
+  synchronized<EventBuffer> buffer{this_id, buffer_full,
+                                   std::vector<event::OpenEvent>{}};
 };
 
 class TimeKeeper {
