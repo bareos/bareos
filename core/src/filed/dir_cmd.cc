@@ -805,20 +805,25 @@ static bool SetdebugCmd(JobControlRecord* jcr)
   int32_t level, trace_flag, hangup_flag, timestamp_flag;
   int32_t perf = -1;
   int scan;
+  bool success;
 
   Dmsg1(50, "SetdebugCmd: %s", dir->msg);
   scan = sscanf(dir->msg, setdebugv3cmd, &level, &trace_flag, &hangup_flag,
                 &timestamp_flag, &perf);
-  if (scan != 5) {
+  success = (scan == 5);
+  if (!success) {
     scan = sscanf(dir->msg, setdebugv2cmd, &level, &trace_flag, &hangup_flag,
 		  &timestamp_flag);
+    success = (scan == 4);
   }
-  if (scan != 4) {
+  if (!success) {
     scan = sscanf(dir->msg, setdebugv1cmd, &level, &trace_flag, &hangup_flag);
+    success = (scan == 3);
   }
-  if (scan != 3 && scan != 4) {
+  if (!success) {
     scan = sscanf(dir->msg, setdebugv0cmd, &level, &trace_flag);
-    if (scan != 2) {
+    success = (scan == 2);
+    if (!success) {
       PmStrcpy(jcr->errmsg, dir->msg);
       dir->fsend(_("2991 Bad setdebug command: %s\n"), jcr->errmsg);
       return false;
