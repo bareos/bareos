@@ -5,10 +5,7 @@
 #include <algorithm>
 
 #include "lib/message.h"
-
-// we cannot include baconfig here because otherwise we get a
-// redefinition error of stat; so we cannot use our ASSERT
-// macro
+#include "include/messages.h"
 
 ThreadTimeKeeper::~ThreadTimeKeeper()
 {
@@ -47,8 +44,8 @@ void ThreadTimeKeeper::enter(const BlockIdentity& block)
 void ThreadTimeKeeper::switch_to(const BlockIdentity& block)
 {
   std::unique_lock _{vec_mut};
-  assert(stack.size() != 0);
   FlushEventsIfNecessary(keeper, this_id, stack, buffer, event_buffer_locked);
+  ASSERT(stack.size() != 0);
   auto event = stack.back().close();
   buffer.events.push_back(event);
   stack.back() = event::OpenEvent(block);
@@ -58,8 +55,8 @@ void ThreadTimeKeeper::switch_to(const BlockIdentity& block)
 void ThreadTimeKeeper::exit()
 {
   std::unique_lock _{vec_mut};
-  assert(stack.size() != 0);
   FlushEventsIfNecessary(keeper, this_id, stack, buffer, event_buffer_locked);
+  ASSERT(stack.size() != 0);
   auto event = stack.back().close();
   buffer.events.push_back(event);
   stack.pop_back();
@@ -143,7 +140,7 @@ ThreadTimeKeeper& TimeKeeper::get_thread_local()
     auto [iter, inserted] = keeper.emplace(std::piecewise_construct,
 					   std::forward_as_tuple(my_id),
 					   std::forward_as_tuple(*this));
-    assert(inserted);
+    ASSERT(inserted);
     return iter->second;
   }
 }
