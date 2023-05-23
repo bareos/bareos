@@ -22,17 +22,16 @@
 #define BAREOS_LIB_THREAD_UTIL_H_
 
 #include <mutex>
+#include <shared_mutex>
 #include <optional>
 #include <condition_variable>
 
-template <typename T> class locked {
+template <typename T, typename Mutex, template <typename> typename Lock>
+class locked {
  public:
-  locked(std::mutex& mut, T& data) : lock{mut}, data(data) {}
+  locked(Mutex& mut, T& data) : lock{mut}, data(data) {}
 
-  locked(std::unique_lock<std::mutex> lock, T& data)
-      : lock{std::move(lock)}, data(data)
-  {
-  }
+  locked(Lock<Mutex> lock, T& data) : lock{std::move(lock)}, data(data) {}
 
   const T& get() const { return data; }
   T& get() { return data; }
@@ -51,9 +50,16 @@ template <typename T> class locked {
   }
 
  private:
-  std::unique_lock<std::mutex> lock;
+  Lock<Mutex> lock;
   T& data;
 };
+
+template <typename T>
+using unique_locked = locked<T, std::mutex, std::unique_lock>;
+template <typename T>
+using read_locked = locked<const T, std::shared_mutex, std::shared_lock>;
+template <typename T>
+using write_locked = locked<T, std::shared_mutex, std::unique_lock>;
 
 template <typename T> class synchronized {
  public:
@@ -62,22 +68,56 @@ template <typename T> class synchronized {
   {
   }
 
-  locked<T> lock() { return locked{mut, data}; }
+  unique_locked<T> lock() { return {mut, data}; }
 
-  std::optional<locked<T>> try_lock()
+  std::optional<unique_locked<T>> try_lock()
   {
     std::unique_lock l(mut, std::try_to_lock);
     if (l.owns_lock()) {
-      return locked{std::move(l), data};
+      return unique_locked<T>{std::move(l), data};
     } else {
       return std::nullopt;
     }
   }
 
-  locked<const T> lock() const { return locked{mut, data}; }
+  unique_locked<const T> lock() const { return {mut, data}; }
 
  private:
   mutable std::mutex mut{};
+  T data;
+};
+
+template <typename T> class rw_synchronized {
+ public:
+  template <typename... Args>
+  rw_synchronized(Args... args) : data{std::forward<Args>(args)...}
+  {
+  }
+
+  [[nodiscard]] write_locked<T> wlock() { return {mut, &data}; }
+  [[nodiscard]] std::optional<write_locked<T>> try_wlock()
+  {
+    std::unique_lock l(mut, std::try_to_lock);
+    if (l.owns_lock()) {
+      return {std::move(l), data};
+    } else {
+      return std::nullopt;
+    }
+  }
+
+  [[nodiscard]] read_locked<T> rlock() const { return {mut, &data}; }
+  [[nodiscard]] std::optional<read_locked<T>> try_rlock() const
+  {
+    std::shared_lock l(mut, std::try_to_lock);
+    if (l.owns_lock()) {
+      return {std::move(l), data};
+    } else {
+      return std::nullopt;
+    }
+  }
+
+ private:
+  mutable std::shared_mutex mut{};
   T data;
 };
 
