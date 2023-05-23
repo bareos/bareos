@@ -164,23 +164,3 @@ ThreadTimeKeeper& TimeKeeper::get_thread_local()
     return iter->second;
   }
 }
-
-void TimeKeeper::add_writer(std::shared_ptr<ReportGenerator> gen)
-{
-  auto now = event::clock::now();
-  gen->begin_report(now);
-  {
-    std::unique_lock lock{gen_mut};
-    gens.emplace_back(std::move(gen));
-  }
-}
-
-void TimeKeeper::remove_writer(std::shared_ptr<ReportGenerator> gen)
-{
-  {
-    std::unique_lock lock{gen_mut};
-    gens.erase(std::remove(gens.begin(), gens.end(), gen), gens.end());
-  }
-  auto now = event::clock::now();
-  gen->end_report(now);
-}

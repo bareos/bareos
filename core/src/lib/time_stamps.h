@@ -80,8 +80,8 @@ class TimeKeeper {
     flush();
     {
       std::unique_lock lock{gen_mut};
-      for (auto& gen : gens) { gen->end_report(now); }
-      gens.clear();
+      if (overview.has_value()) overview->end_report(now);
+      if (callstack.has_value()) callstack->end_report(now);
     }
     {
       std::unique_lock lock{buf_mut};
@@ -90,8 +90,6 @@ class TimeKeeper {
     buf_not_empty.notify_one();
     report_writer.join();
   }
-  void add_writer(std::shared_ptr<ReportGenerator> gen);
-  void remove_writer(std::shared_ptr<ReportGenerator> gen);
   void handle_event_buffer(EventBuffer buf)
   {
     {
@@ -136,7 +134,6 @@ class TimeKeeper {
  private:
   mutable std::mutex gen_mut{};
   bool end{false};
-  std::vector<std::shared_ptr<ReportGenerator>> gens;
   std::mutex buf_mut{};
   std::condition_variable buf_empty{};
   std::condition_variable buf_not_empty{};
