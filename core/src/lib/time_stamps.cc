@@ -69,35 +69,29 @@ static void write_reports(bool* end,
   for (;;) {
     {
       int perf = GetPerf();
-      switch (!!(perf & static_cast<std::int32_t>(PerfReport::Overview))) {
-      case 0: {
+      if (!(perf & static_cast<std::int32_t>(PerfReport::Overview))) {
 	if (overview->has_value()) {
 	  std::unique_lock lock{*gen_mut};
 	  overview->reset();
 	}
-      } break;
-      case 1: {
+      } else {
 	if (!overview->has_value()) {
 	  std::unique_lock lock{*gen_mut};
 	  overview->emplace(OverviewReport::ShowAll)
 	    .begin_report(event::clock::now());
 	}
-      } break;
       }
-      switch (!!(perf & static_cast<std::int32_t>(PerfReport::Stack))) {
-      case 0: {
+      if (!(perf & static_cast<std::int32_t>(PerfReport::Stack))) {
 	if (callstack->has_value()) {
 	  std::unique_lock lock{*gen_mut};
 	  callstack->reset();
 	}
-      } break;
-      case 1: {
+      } else {
 	if (!callstack->has_value()) {
 	  std::unique_lock lock{*gen_mut};
 	  callstack->emplace(CallstackReport::ShowAll)
 	    .begin_report(event::clock::now());
 	}
-      } break;
       }
     }
     EventBuffer buf;
