@@ -28,6 +28,7 @@
 #include <shared_mutex>
 
 #include "lib/event.h"
+#include "lib/thread_util.h"
 #include "include/messages.h"
 
 extern int debug_level;
@@ -56,7 +57,6 @@ class ThreadOverviewReport {
       event::time_point tp) const;
 
  private:
-  mutable std::mutex mut{};
   std::vector<event::OpenEvent> stack{};
   event::time_point now;
   std::unordered_map<BlockIdentity const*, std::chrono::nanoseconds> cul_time;
@@ -78,18 +78,18 @@ class OverviewReport : public ReportGenerator {
   {
     std::unique_lock lock{threads_mut};
     auto [iter, inserted] = threads.try_emplace(buf.threadid());
-    auto& thread = iter->second;
+    auto thread = iter->second.lock();
 
     if (inserted) {
-      thread.begin_report(start);
-      for (auto& open : buf.stack()) { thread.begin_event(open); }
+      thread->begin_report(start);
+      for (auto& open : buf.stack()) { thread->begin_event(open); }
     }
 
     for (auto event : buf.events) {
       if (auto* open = std::get_if<event::OpenEvent>(&event)) {
-        thread.begin_event(*open);
+        thread->begin_event(*open);
       } else if (auto* close = std::get_if<event::CloseEvent>(&event)) {
-        thread.end_event(*close);
+        thread->end_event(*close);
       }
     }
   }
@@ -100,7 +100,8 @@ class OverviewReport : public ReportGenerator {
   std::int32_t NumToShow;
   event::time_point start, end;
   mutable std::mutex threads_mut{};
-  std::unordered_map<std::thread::id, ThreadOverviewReport> threads{};
+  std::unordered_map<std::thread::id, synchronized<ThreadOverviewReport>>
+      threads{};
 };
 
 class ThreadCallstackReport {
@@ -282,6 +283,7 @@ class CallstackReport : public ReportGenerator {
   std::int32_t max_depth;
   event::time_point start, end;
   mutable std::shared_mutex threads_mut{};
+
   std::unordered_map<std::thread::id, ThreadCallstackReport> threads{};
 };
 

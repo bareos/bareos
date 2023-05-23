@@ -155,13 +155,11 @@ static std::int64_t PrintCollapsedNode(std::ostringstream& out,
 
 void ThreadOverviewReport::begin_report(event::time_point current)
 {
-  std::unique_lock lock{mut};
   now = current;
 }
 
 void ThreadOverviewReport::begin_event(event::OpenEvent e)
 {
-  std::unique_lock lock{mut};
   stack.push_back(e);
 }
 
@@ -169,7 +167,6 @@ void ThreadOverviewReport::end_event(event::CloseEvent e)
 {
   using namespace std::chrono;
 
-  std::unique_lock lock{mut};
   ASSERT(stack.size() > 0);
   ASSERT(stack.back().source == e.source);
 
@@ -187,13 +184,10 @@ ThreadOverviewReport::as_of(event::time_point tp) const
   using namespace std::chrono;
   std::unordered_map<BlockIdentity const*, std::chrono::nanoseconds> result;
 
-  {
-    std::unique_lock lock{mut};
-    result = cul_time;  // copy
-    for (auto& open : stack) {
-      if (open.start > tp) continue;
-      result[open.source] += duration_cast<nanoseconds>(tp - open.start);
-    }
+  result = cul_time;  // copy
+  for (auto& open : stack) {
+    if (open.start > tp) continue;
+    result[open.source] += duration_cast<nanoseconds>(tp - open.start);
   }
 
   return result;
@@ -208,7 +202,7 @@ std::string OverviewReport::str() const
   std::unique_lock lock{threads_mut};
   for (auto& [id, reporter] : threads) {
     report << "== Thread: " << id << " ==\n";
-    auto data = reporter.as_of(now);
+    auto data = reporter.lock()->as_of(now);
 
     std::vector<std::pair<BlockIdentity const*, nanoseconds>> entries(
         data.begin(), data.end());
