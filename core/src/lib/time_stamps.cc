@@ -15,13 +15,31 @@ ThreadTimeKeeper::~ThreadTimeKeeper()
   keeper.handle_event_buffer(std::move(buffer));
 }
 
+static constexpr std::size_t buffer_filled_ok = 1000;
+static_assert(buffer_filled_ok < buffer_full);
+
+static struct buffer_is_locked_t {} event_buffer_locked;
+
+static void FlushEventsIfNecessary(TimeKeeper& keeper,
+				   std::thread::id this_id,
+				   const std::vector<event::OpenEvent>& stack,
+				   EventBuffer& buffer,
+				   buffer_is_locked_t)
+{
+  if (buffer.events.size() >= buffer_full) {
+    keeper.handle_event_buffer(std::move(buffer));
+    buffer = EventBuffer(this_id, buffer_full, stack);
+  } else if (buffer.events.size() >= buffer_filled_ok) {
+    if (keeper.try_handle_event_buffer(buffer)) {
+      buffer = EventBuffer(this_id, buffer_full, stack);
+    }
+  }
+}
+
 void ThreadTimeKeeper::enter(const BlockIdentity& block)
 {
   std::unique_lock _{vec_mut};
-  if (buffer.events.size() > 20000) {
-    keeper.handle_event_buffer(std::move(buffer));
-    buffer = EventBuffer(this_id, 20000, stack);
-  }
+  FlushEventsIfNecessary(keeper, this_id, stack, buffer, event_buffer_locked);
   auto& event = stack.emplace_back(block);
   buffer.events.emplace_back(event);
 }
@@ -29,11 +47,8 @@ void ThreadTimeKeeper::enter(const BlockIdentity& block)
 void ThreadTimeKeeper::switch_to(const BlockIdentity& block)
 {
   std::unique_lock _{vec_mut};
-  if (buffer.events.size() > 20000) {
-    keeper.handle_event_buffer(std::move(buffer));
-    buffer = EventBuffer(this_id, 20000, stack);
-  }
   assert(stack.size() != 0);
+  FlushEventsIfNecessary(keeper, this_id, stack, buffer, event_buffer_locked);
   auto event = stack.back().close();
   buffer.events.push_back(event);
   stack.back() = event::OpenEvent(block);
@@ -43,15 +58,8 @@ void ThreadTimeKeeper::switch_to(const BlockIdentity& block)
 void ThreadTimeKeeper::exit()
 {
   std::unique_lock _{vec_mut};
-  if (buffer.events.size() > 1000) {
-    if (keeper.try_handle_event_buffer(buffer)) {
-      buffer = EventBuffer(this_id, 20000, stack);
-    }
-  } else if (buffer.events.size() > 20000) {
-    keeper.handle_event_buffer(std::move(buffer));
-    buffer = EventBuffer(this_id, 20000, stack);
-  }
   assert(stack.size() != 0);
+  FlushEventsIfNecessary(keeper, this_id, stack, buffer, event_buffer_locked);
   auto event = stack.back().close();
   buffer.events.push_back(event);
   stack.pop_back();

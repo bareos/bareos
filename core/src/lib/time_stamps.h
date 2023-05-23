@@ -36,6 +36,7 @@
 #include "event.h"
 #include "perf_report.h"
 
+static constexpr std::size_t buffer_full = 2000;
 
 class TimeKeeper;
 
@@ -43,8 +44,7 @@ class ThreadTimeKeeper
 {
   friend class TimeKeeper;
 public:
-  ThreadTimeKeeper(TimeKeeper& keeper) : buffer{std::this_thread::get_id(), 20000, {}}
-				       , this_id{std::this_thread::get_id()}
+  ThreadTimeKeeper(TimeKeeper& keeper) : this_id{std::this_thread::get_id()}
 				       , keeper{keeper} {}
   ~ThreadTimeKeeper();
   void enter(const BlockIdentity& block);
@@ -53,16 +53,16 @@ public:
 protected:
   EventBuffer flush() {
     std::unique_lock _{vec_mut};
-    EventBuffer new_buffer(this_id, 20000, stack);
+    EventBuffer new_buffer(this_id, buffer_full, stack);
     std::swap(new_buffer, buffer);
     return new_buffer;
   }
-  EventBuffer buffer;
-  mutable std::mutex vec_mut{};
 private:
   std::thread::id this_id;
   TimeKeeper& keeper;
   std::vector<event::OpenEvent> stack{};
+  EventBuffer buffer{this_id, buffer_full, {}};
+  mutable std::mutex vec_mut{};
 };
 
 class TimeKeeper
