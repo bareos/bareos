@@ -66,8 +66,7 @@ class ThreadTimeKeeper {
   std::thread::id this_id;
   TimeKeeper& keeper;
   std::vector<event::OpenEvent> stack{};
-  synchronized<EventBuffer> buffer{this_id, buffer_full,
-                                   std::vector<event::OpenEvent>{}};
+  synchronized<EventBuffer> buffer{this_id, buffer_full, stack};
 };
 
 class TimeKeeper {
