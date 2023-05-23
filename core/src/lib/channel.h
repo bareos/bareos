@@ -86,6 +86,7 @@ template <typename T> struct out {
 template <typename T> struct in {
   bool put(const T& val);
   bool put(T&& val);
+  bool try_put(T& val);
   void close();
   ~in();
   in(std::shared_ptr<data<T>> shared);
@@ -244,6 +245,33 @@ out<T>::out(std::shared_ptr<data<T>> shared_)
 {
   std::unique_lock lock(shared->mutex);
   shared->out_alive = true;
+}
+
+template <typename T> bool in<T>::try_put(T& val)
+{
+  if (closed) return false;
+  bool success = false;
+  if (std::unique_lock lock(shared->mutex, std::try_to_lock);
+      lock.owns_lock()) {
+    if (shared->out_alive && shared->size < capacity) {
+      shared->storage[write_pos] = std::move(val);
+      shared->size += 1;
+      old_size = shared->size;
+      success = true;
+    } else {
+      shared->in_alive = false;
+      old_size = this->capacity;
+      closed = true;
+    }
+  } else {
+    // if we cannot get the lock, just return false
+    // no need for notify/etc.
+    return false;
+  }
+
+  shared->cv.notify_one();
+  if (success) { write_pos = wrapping_inc(write_pos, capacity); }
+  return success;
 }
 
 template <typename T> bool in<T>::put(const T& val)
