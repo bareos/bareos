@@ -332,7 +332,10 @@ static void FreeCommonJcr(JobControlRecord* jcr,
     jcr->comment = nullptr;
   }
 
-  if (!is_destructor_call) { free(jcr); }
+  if (!is_destructor_call) {
+    jcr->timer.~TimeKeeper();
+    free(jcr);
+  }
 }
 
 static void JcrCleanup(JobControlRecord* jcr, bool is_destructor_call = false)
