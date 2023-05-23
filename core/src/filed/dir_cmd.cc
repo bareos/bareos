@@ -225,6 +225,8 @@ static char OKsetdebugv0[]
     = "2000 OK setdebug=%d trace=%d hangup=%d tracefile=%s\n";
 static char OKsetdebugv1[]
     = "2000 OK setdebug=%d trace=%d hangup=%d timestamp=%d tracefile=%s\n";
+static char OKsetdebugv2[]
+    = "2000 OK setdebug=%d trace=%d hangup=%d timestamp=%d tracefile=%s perf=%s\n";
 static char BADjob[] = "2901 Bad Job\n";
 static char EndJob[]
     = "2800 End Job TermCode=%d JobFiles=%u ReadBytes=%s"
@@ -798,6 +800,30 @@ static bool SetbandwidthCmd(JobControlRecord* jcr)
   return dir->fsend(OKBandwidth);
 }
 
+static std::string GetPerfDescription(std::int32_t perf)
+{
+  std::string desc{""};
+  constexpr std::int32_t overview = static_cast<std::int32_t>(PerfReport::Overview);
+  constexpr std::int32_t stack = static_cast<std::int32_t>(PerfReport::Stack);
+  if (perf & overview) {
+    desc += "overview,";
+    perf &= ~overview;
+  }
+  if (perf & stack) {
+    desc += "stack,";
+    perf &= ~stack;
+  }
+  if (perf != 0) {
+    // if perf is not 0 here, we have some unknown flags set
+    Dmsg3(50, "Unknown perf flag(s) encountered: %d; known flags: %d,%d.\n",
+	  perf, stack, overview);
+    desc += "??,";
+  }
+
+  // desc always ends on a , (unless empty) so we need to remove that here
+  if (!desc.empty()) { desc.pop_back(); }
+  return desc;
+}
 // Set debug level as requested by the Director
 static bool SetdebugCmd(JobControlRecord* jcr)
 {
@@ -840,7 +866,15 @@ static bool SetdebugCmd(JobControlRecord* jcr)
   SetTrace(trace_flag);
   SetHangup(hangup_flag);
   SetPerf(perf);
-  if (scan == 4) {
+  if (scan == 5) {
+    auto perf_desc = GetPerfDescription(GetPerf());
+    SetTimestamp(timestamp_flag);
+    Dmsg5(50, "level=%d trace=%d hangup=%d timestamp=%d tracefilename=%s perf=%s\n",
+          level, GetTrace(), GetHangup(), GetTimestamp(),
+          tracefilename.c_str(), perf_desc.c_str());
+    return dir->fsend(OKsetdebugv2, level, GetTrace(), GetHangup(),
+                      GetTimestamp(), tracefilename.c_str(), perf_desc.c_str());
+  } else if (scan == 4) {
     SetTimestamp(timestamp_flag);
     Dmsg5(50, "level=%d trace=%d hangup=%d timestamp=%d tracefilename=%s\n",
           level, GetTrace(), GetHangup(), GetTimestamp(),
