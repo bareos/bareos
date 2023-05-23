@@ -75,7 +75,8 @@ static void PrintNode(std::ostringstream& out,
   std::size_t offset = (max_name_length - std::strlen(name))
     + (max_depth - depth);
   SplitDuration d(node->time_spent());
-  out << std::setw(depth) << "" << name << ": " << std::setw(offset) << ""
+  out << std::setw(depth) << "" << name << ": "
+      << std::setw(offset > 0 ? offset-1 : 0) << std::setfill('-') << " " << std::setfill(' ')
       << d;
   if (parentns.count() != 0) {
     out << " (" << std::setw(6) << std::fixed << std::setprecision(2) << double(node->time_spent().count() * 100) / double(parentns.count()) << "%)";
