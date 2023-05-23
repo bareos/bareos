@@ -151,16 +151,15 @@ ThreadTimeKeeper& TimeKeeper::get_thread_local()
   // TODO: threadlocal here ?
   std::thread::id my_id = std::this_thread::get_id();
   {
-    std::shared_lock read_lock(alloc_mut);
-    if (auto found = keeper.find(my_id); found != keeper.end()) {
-      return found->second;
+    auto locked = keeper.rlock();
+    if (auto found = locked->find(my_id); found != locked->end()) {
+      return const_cast<ThreadTimeKeeper&>(found->second);
     }
   }
   {
-    std::unique_lock write_lock(alloc_mut);
-    auto [iter, inserted]
-        = keeper.emplace(std::piecewise_construct, std::forward_as_tuple(my_id),
-                         std::forward_as_tuple(*this));
+    auto [iter, inserted] = keeper.wlock()->emplace(
+        std::piecewise_construct, std::forward_as_tuple(my_id),
+        std::forward_as_tuple(*this));
     ASSERT(inserted);
     return iter->second;
   }

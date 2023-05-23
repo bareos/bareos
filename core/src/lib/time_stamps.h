@@ -111,8 +111,8 @@ class TimeKeeper {
   void flush()
   {
     {
-      std::unique_lock lock{alloc_mut};
-      for (auto& [_, thread] : keeper) {
+      auto locked = keeper.wlock();
+      for (auto& [_, thread] : *locked) {
         auto buf = thread.flush();
         handle_event_buffer(std::move(buf));
       }
@@ -140,9 +140,9 @@ class TimeKeeper {
   std::mutex buf_mut{};
   std::condition_variable buf_empty{};
   std::condition_variable buf_not_empty{};
-  std::deque<EventBuffer> buf_queue;
-  mutable std::shared_mutex alloc_mut{};
-  std::unordered_map<std::thread::id, ThreadTimeKeeper> keeper{};
+  synchronized<channel::in<EventBuffer>> queue;
+  rw_synchronized<std::unordered_map<std::thread::id, ThreadTimeKeeper>>
+      keeper{};
   std::optional<OverviewReport> overview{std::nullopt};
   std::optional<CallstackReport> callstack{std::nullopt};
   std::thread report_writer;
