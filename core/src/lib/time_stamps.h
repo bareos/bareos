@@ -36,6 +36,7 @@
 #include "event.h"
 #include "perf_report.h"
 #include "lib/thread_util.h"
+#include "lib/channel.h"
 
 static constexpr std::size_t buffer_full = 2000;
 
@@ -72,7 +73,8 @@ class ThreadTimeKeeper {
 class TimeKeeper {
  public:
   ThreadTimeKeeper& get_thread_local();
-  TimeKeeper();
+  TimeKeeper(std::pair<channel::in<EventBuffer>, channel::out<EventBuffer>> p
+             = channel::CreateBufferedChannel<EventBuffer>(1000));
   ~TimeKeeper()
   {
     auto now = event::clock::now();
@@ -82,28 +84,21 @@ class TimeKeeper {
       if (overview.has_value()) overview->end_report(now);
       if (callstack.has_value()) callstack->end_report(now);
     }
-    {
-      std::unique_lock lock{buf_mut};
-      end = true;
-    }
-    buf_not_empty.notify_one();
+    queue.lock()->close();
     report_writer.join();
   }
   void handle_event_buffer(EventBuffer buf)
   {
-    {
-      std::unique_lock{buf_mut};
-      buf_queue.emplace_back(std::move(buf));
-    }
-    buf_not_empty.notify_one();
+    queue.lock()->put(std::move(buf));
   }
   bool try_handle_event_buffer(EventBuffer& buf)
   {
-    if (std::unique_lock lock{buf_mut, std::try_to_lock}; lock.owns_lock()) {
-      buf_queue.emplace_back(std::move(buf));
-      return true;
+    if (std::optional locked = queue.try_lock();
+	locked.has_value()) {
+      return (*locked)->try_put(buf);
+    } else {
+      return false;
     }
-    return false;
   }
   void flush()
   {
@@ -114,11 +109,8 @@ class TimeKeeper {
         handle_event_buffer(std::move(buf));
       }
     }
-    {
-      // TODO: we should somehow only wait until the above buffers were handled
-      std::unique_lock lock{buf_mut};
-      buf_empty.wait(lock, [this]() { return this->buf_queue.size() == 0; });
-    }
+    // TODO: we should somehow only wait until the above buffers were handled
+    queue.lock()->wait_till_empty();
   }
   std::string str()
   {
@@ -132,8 +124,6 @@ class TimeKeeper {
 
  private:
   mutable std::mutex gen_mut{};
-  bool end{false};
-  std::mutex buf_mut{};
   std::condition_variable buf_empty{};
   std::condition_variable buf_not_empty{};
   synchronized<channel::in<EventBuffer>> queue;

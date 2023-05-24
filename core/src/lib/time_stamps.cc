@@ -80,14 +80,10 @@ void ThreadTimeKeeper::exit()
   stack.pop_back();
 }
 
-static void write_reports(bool* end,
-                          std::mutex* gen_mut,
+static void write_reports(std::mutex* gen_mut,
                           std::optional<OverviewReport>* overview,
                           std::optional<CallstackReport>* callstack,
-                          std::mutex* buf_mut,
-                          std::condition_variable* buf_empty,
-                          std::condition_variable* buf_not_empty,
-                          std::deque<EventBuffer>* buf_queue)
+                          channel::out<EventBuffer> queue)
 {
   for (;;) {
     {
@@ -117,38 +113,29 @@ static void write_reports(bool* end,
         }
       }
     }
-    EventBuffer buf;
-    bool now_empty = false;
-    {
-      std::unique_lock lock{*buf_mut};
-      buf_not_empty->wait(
-          lock, [end, buf_queue]() { return *end || buf_queue->size() > 0; });
 
-      if (buf_queue->size() == 0) break;
-
-      buf = std::move(buf_queue->front());
-      buf_queue->pop_front();
-
-      if (buf_queue->size() == 0) now_empty = true;
+    if (std::optional opt = queue.get(); opt.has_value()) {
+      EventBuffer& buf = opt.value();
+      if (overview->has_value()) overview->value().add_events(buf);
+      if (callstack->has_value()) callstack->value().add_events(buf);
+    } else {
+      break;
     }
-
-    if (overview->has_value()) overview->value().add_events(buf);
-    if (callstack->has_value()) callstack->value().add_events(buf);
-
-    if (now_empty) buf_empty->notify_all();
   }
 }
 
-TimeKeeper::TimeKeeper()
-    : report_writer{&write_reports, &end,           &gen_mut,
-                    &overview,      &callstack,     &buf_mut,
-                    &buf_empty,     &buf_not_empty, &buf_queue}
+TimeKeeper::TimeKeeper(
+    std::pair<channel::in<EventBuffer>, channel::out<EventBuffer>> p)
+    : queue{std::move(p.first)}
+    , report_writer{&write_reports, &gen_mut, &overview, &callstack,
+                    std::move(p.second)}
 {
 }
 
 ThreadTimeKeeper& TimeKeeper::get_thread_local()
 {
-  // TODO: threadlocal here ?
+  // this is most likely just a read from a thread local variable
+  // anyways, so we do not need to store this inside a threadlocal ourselves
   std::thread::id my_id = std::this_thread::get_id();
   {
     auto locked = keeper.rlock();
