@@ -404,16 +404,18 @@ static void ListTerminatedJobs(StatusPacket* sp)
 struct words {
   class iterator {
   public:
-    iterator(const char* start, const char* end)
+    iterator(const char* start, const char* end, char sep)
       : start{start}
       , end{end}
       , word_end{start}
+      , sep{sep}
     {
       find_word();
     }
 
-    iterator(std::string_view view) : iterator{view.data(),
-					       view.data() + view.size()}
+    iterator(std::string_view view, char sep) : iterator{view.data(),
+							 view.data() + view.size(),
+							 sep}
     {
     }
 
@@ -431,7 +433,8 @@ struct words {
     bool operator==(const iterator& iter) {
       // no need to compare word_end as well
       return iter.start == start &&
-	iter.end == end;
+	iter.end == end &&
+	iter.sep == sep;
     }
     bool operator!=(const iterator& iter) {
       return !operator==(iter);
@@ -441,26 +444,30 @@ struct words {
     const char* start;
     const char* end;
     const char* word_end;
+    char sep;
 
     void find_word() {
-        start = std::find_if_not(start, end, [](int c) { return std::isspace(c); });
-        word_end = std::find_if(start, end, [](int c) { return std::isspace(c); });
+        start = std::find_if_not(start, end, [sep = this->sep](char c) { return c == sep; });
+        word_end = std::find_if(start, end, [sep = this->sep](char c) { return c == sep; });
     }
   };
 
-  words(std::string_view v) : view{v}
+  words(std::string_view v,
+	char sep = ' ') : view{v}
+			, sep{sep}
   {
   }
 
   iterator begin() const {
-    return iterator{view};
+    return iterator{view, sep};
   }
 
   iterator end() const {
-    return iterator{view.substr(view.size())};
+    return iterator{view.substr(view.size()), sep};
   }
 
   std::string_view view;
+  char sep;
 };
 
 // result is only guaranteed to live as long as str.
