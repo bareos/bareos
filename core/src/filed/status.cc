@@ -39,6 +39,8 @@
 #include "findlib/enable_priv.h"
 #include "lib/util.h"
 
+#include <charconv>
+
 namespace filedaemon {
 
 /* Forward referenced functions */
@@ -466,8 +468,9 @@ std::unordered_map<std::string_view, std::string_view> ParseReportCommands(std::
 {
   std::unordered_map<std::string_view, std::string_view> default_keys {
     {"about", "perf"},
-    {"style", "stack"},
-    {"depth", "-1"}
+    {"jobid", "all"},
+    {"style", "callstack"},
+    {"depth", "all"}
   };
 
   std::unordered_map<std::string_view, std::string_view> result;
@@ -497,19 +500,104 @@ std::unordered_map<std::string_view, std::string_view> ParseReportCommands(std::
   return result;
 }
 
+struct callstack_options
+{
+  std::size_t max_depth;
+  bool collapsed;
+  std::string to_string(const CallstackReport& callstack) {
+    if (collapsed) {
+      return callstack.collapsed_str(max_depth);
+    } else {
+      return callstack.str(max_depth);
+    }
+  }
+};
+
+struct overview_options
+{
+  std::size_t top_n;
+  std::string to_string(const OverviewReport& overview) {
+    return overview.str(top_n);
+  }
+};
+
+std::optional<overview_options> ParseOverviewOptions(BareosSocket* dir,
+						     const std::unordered_map<std::string_view, std::string_view>& map)
+{
+  overview_options options;
+  if (auto found = map.find("show");
+      found != map.end()) {
+    auto val = found->second;
+    if (val == "all") {
+      options.top_n = OverviewReport::ShowAll;
+    } else {
+      auto result = std::from_chars(val.data(),
+				    val.data() + val.size(),
+				    options.top_n);
+      if (result.ec != std::errc() ||
+	  result.ptr != val.data() + val.size()) {
+	dir->fsend("Could not parse 'show' value: %s\n",
+		   std::string{val}.c_str());
+	return std::nullopt;
+      }
+    }
+  }
+  return options;
+}
+
+std::optional<callstack_options> ParseCallstackOptions(BareosSocket* dir,
+						       const std::unordered_map<std::string_view, std::string_view>& map)
+{
+  callstack_options options;
+  if (auto found = map.find("depth");
+      found != map.end()) {
+    auto val = found->second;
+    if (val == "all") {
+      options.max_depth = CallstackReport::ShowAll;
+    } else {
+      auto result = std::from_chars(val.data(),
+				    val.data() + val.size(),
+				    options.max_depth);
+      if (result.ec != std::errc() ||
+	  result.ptr != val.end()) {
+	dir->fsend("Could not parse 'depth' value: %s\n",
+		   std::string{val}.c_str());
+	return std::nullopt;
+      }
+    }
+  }
+  if (auto found = map.find("collapsed");
+      found != map.end()) {
+    options.collapsed = true;
+  } else {
+    options.collapsed = false;
+  }
+  return options;
+}
+
 static bool PerformanceReport(BareosSocket* dir,
 			      const std::unordered_map<std::string_view,
 			      std::string_view>& options)
 {
-  bool callstack = false;
+  std::variant<std::monostate, callstack_options, overview_options> parsed;
 
   if (auto found = options.find("style");
       found != options.end()) {
     auto view = found->second;
     if (view == "callstack") {
-      callstack = true;
+      if (auto opt = ParseCallstackOptions(dir, options);
+	  opt.has_value()) {
+	parsed = opt.value();
+      } else {
+	return false;
+      }
     } else if (view == "overview") {
-      callstack = false;
+      if (auto opt = ParseOverviewOptions(dir, options);
+	  opt.has_value()) {
+	parsed = opt.value();
+      } else {
+	return false;
+      }
     } else {
       dir->fsend("Perf Report: Unknown style '%s'.\n", std::string{view}.c_str());
       return false;
@@ -526,13 +614,16 @@ static bool PerformanceReport(BareosSocket* dir,
   foreach_jcr (njcr) {
     if (njcr->JobId > 0) {
       dir->fsend(_("==== Job %d ====\n"), njcr->JobId);
-      if (callstack) {
-	std::string str = njcr->timer.callstack_report().str(CallstackReport::ShowAll);
-	dir->send(str.c_str(), str.size());
-      } else {
-	std::string str = njcr->timer.overview_report().str(OverviewReport::ShowAll);
-	dir->send(str.c_str(), str.size());
-      }
+      std::visit([dir, njcr](auto&& arg) {
+	using T = std::decay_t<decltype(arg)>;
+	if constexpr (std::is_same_v<T, callstack_options>) {
+	  std::string str = arg.to_string(njcr->timer.callstack_report());
+	  dir->send(str.c_str(), str.size());
+	} else if constexpr (std::is_same_v<T, overview_options>) {
+	  std::string str = arg.to_string(njcr->timer.overview_report());
+	  dir->send(str.c_str(), str.size());
+	}
+      }, parsed);
       dir->fsend(_("====\n"));
       NumJobs += 1;
     }
