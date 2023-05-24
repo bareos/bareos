@@ -609,6 +609,16 @@ static bool PerformanceReport(BareosSocket* dir,
     if (view == "all") {
       all_jobids = true;
     } else {
+      for (auto num : words(view, ',')) {
+	std::uint32_t jobid;
+	if (ParseInt(dir, num.data(),
+		     num.data() + num.size(),
+		     jobid)) {
+	  jobids.insert(jobid);
+	} else {
+	  return false;
+	}
+      }
     }
   } else {
     // this should never happen as jobid is set by default
