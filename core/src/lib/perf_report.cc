@@ -110,25 +110,27 @@ static void PrintNode(std::ostringstream& out,
   }
   out << "\n";
 
-  std::vector<
+  if (depth != max_depth) {
+    std::vector<
       std::pair<BlockIdentity const*, ThreadCallstackReport::Node const*>>
       children;
-  auto& view = node->children_view();
-  children.reserve(view.size());
-  for (auto& [source, child] : view) {
-    children.emplace_back(source, child.get());
-  }
+    auto& view = node->children_view();
+    children.reserve(view.size());
+    for (auto& [source, child] : view) {
+      children.emplace_back(source, child.get());
+    }
 
-  std::sort(children.begin(), children.end(), [](auto& p1, auto& p2) {
-    auto t1 = p1.second->time_spent();
-    auto t2 = p2.second->time_spent();
-    if (t1 > t2) { return true; }
-    if ((t1 == t2) && (p1.first > p2.first)) { return true; }
-    return false;
-  });
-  for (auto& [id, child] : children) {
-    PrintNode(out, id->c_str(), depth + 1, node->time_spent(), max_name_length,
-              max_depth, child);
+    std::sort(children.begin(), children.end(), [](auto& p1, auto& p2) {
+      auto t1 = p1.second->time_spent();
+      auto t2 = p2.second->time_spent();
+      if (t1 > t2) { return true; }
+      if ((t1 == t2) && (p1.first > p2.first)) { return true; }
+      return false;
+    });
+    for (auto& [id, child] : children) {
+      PrintNode(out, id->c_str(), depth + 1, node->time_spent(), max_name_length,
+		max_depth, child);
+    }
   }
 }
 
@@ -193,7 +195,7 @@ ThreadOverviewReport::as_of(event::time_point tp) const
   return result;
 }
 
-std::string OverviewReport::str() const
+std::string OverviewReport::str(std::size_t NumToShow) const
 {
   using namespace std::chrono;
   std::ostringstream report{};
@@ -212,7 +214,7 @@ std::string OverviewReport::str() const
       return false;
     });
 
-    if (NumToShow != ShowAll) { entries.resize(NumToShow); }
+    if (NumToShow < entries.size()) { entries.resize(NumToShow); }
 
     std::size_t maxwidth = 0;
     for (auto [id, _] : entries) {
@@ -235,9 +237,9 @@ std::string OverviewReport::str() const
   return report.str();
 }
 
-OverviewReport::~OverviewReport() { Dmsg1(500, "%s", str().c_str()); }
+OverviewReport::~OverviewReport() { Dmsg1(500, "%s", str(ShowAll).c_str()); }
 
-std::string CallstackReport::str() const
+std::string CallstackReport::str(std::size_t max_depth) const
 {
   using namespace std::chrono;
   event::time_point now = event::clock::now();
@@ -249,9 +251,12 @@ std::string CallstackReport::str() const
     auto node = thread.as_of(now);
     auto max_values = max_child_values(node.get());
 
+    auto max_print_depth = std::min(static_cast<std::size_t>(max_depth),
+				    max_values.depth);
+
     PrintNode(report, "Measured", 0, duration_cast<nanoseconds>(now - start),
               std::max(std::size_t{6}, max_values.name_length),
-              max_values.depth, node.get());
+              max_print_depth, node.get());
   }
   report << "=== End Performance Report ===\n";
   return report.str();

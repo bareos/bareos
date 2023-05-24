@@ -64,9 +64,7 @@ class ThreadOverviewReport {
 
 class OverviewReport : public ReportGenerator {
  public:
-  static constexpr std::int32_t ShowAll = -1;
-
-  OverviewReport(std::int32_t ShowTopN) : NumToShow{ShowTopN} {}
+  static constexpr std::size_t ShowAll = std::numeric_limits<std::size_t>::max();
 
   ~OverviewReport() override;
 
@@ -94,10 +92,9 @@ class OverviewReport : public ReportGenerator {
     }
   }
 
-  std::string str() const;
+  std::string str(std::size_t TopN) const;
 
  private:
-  std::int32_t NumToShow;
   event::time_point start, end;
   mutable std::mutex threads_mut{};
   std::unordered_map<std::thread::id, synchronized<ThreadOverviewReport>>
@@ -159,7 +156,7 @@ class ThreadCallstackReport {
       return ns;
     }
 
-    std::int32_t depth() const { return depth_; }
+    std::size_t depth() const { return depth_; }
     Node() = default;
     Node(Node* parent) : parent_{parent}, depth_{parent_->depth_ + 1} {}
     Node(const Node&) = default;
@@ -171,7 +168,7 @@ class ThreadCallstackReport {
    private:
     std::optional<event::time_point> since{std::nullopt};
     Node* parent_{nullptr};
-    std::int32_t depth_{0};
+    std::size_t depth_{0};
     std::chrono::nanoseconds ns{0};
     childmap children{};
   };
@@ -181,34 +178,21 @@ class ThreadCallstackReport {
   void begin_event(event::OpenEvent e)
   {
     std::unique_lock lock{node_mut};
-    if (skipped_depth > 0) {
-      skipped_depth += 1;
-    } else if (current->depth() == max_depth) {
-      skipped_depth = 1;
-    } else {
-      current = current->child(e.source);
-      current->open(e.start);
-    }
+    current = current->child(e.source);
+    current->open(e.start);
   }
 
   void end_event(event::CloseEvent e)
   {
     std::unique_lock lock{node_mut};
-    if (skipped_depth > 0) {
-      skipped_depth -= 1;
-    } else {
-      current->close(e.end);
-      current = current->parent();
-      ASSERT(current != nullptr);
-    }
+    current->close(e.end);
+    current = current->parent();
+    ASSERT(current != nullptr);
   }
 
-  ThreadCallstackReport(std::int32_t max_depth)
-      : max_depth{max_depth}, current{&top}
+  ThreadCallstackReport() : current{&top}
   {
   }
-  static constexpr std::int32_t ShowAll
-      = std::numeric_limits<std::int32_t>::max();
 
   std::unique_ptr<Node> as_of(event::time_point at) const
   {
@@ -217,8 +201,6 @@ class ThreadCallstackReport {
   }
 
  private:
-  std::int32_t skipped_depth{0};
-  std::int32_t max_depth;
   mutable std::mutex node_mut{};
   Node top{};
   Node* current{nullptr};
@@ -227,9 +209,8 @@ class ThreadCallstackReport {
 
 class CallstackReport : public ReportGenerator {
  public:
-  CallstackReport(std::int32_t max_depth) : max_depth{max_depth} {}
   ~CallstackReport() override;
-  static constexpr std::int32_t ShowAll = ThreadCallstackReport::ShowAll;
+  static constexpr std::size_t ShowAll = std::numeric_limits<std::size_t>::max();
 
   void begin_report(event::time_point now) override { start = now; }
 
@@ -248,7 +229,7 @@ class CallstackReport : public ReportGenerator {
     if (thread == nullptr) {
       lock.unlock();
       std::unique_lock write_lock{threads_mut};
-      auto [_, did_insert] = threads.try_emplace(thread_id, max_depth);
+      auto [_, did_insert] = threads.try_emplace(thread_id);
       ASSERT(did_insert);
       inserted = did_insert;
       write_lock.unlock();
@@ -276,11 +257,10 @@ class CallstackReport : public ReportGenerator {
     }
   }
 
-  std::string str() const;
+  std::string str(std::size_t max_depth = CallstackReport::ShowAll) const;
   std::string collapsed_str() const;
 
  private:
-  std::int32_t max_depth;
   event::time_point start, end;
   mutable std::shared_mutex threads_mut{};
 

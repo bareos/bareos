@@ -108,13 +108,21 @@ class TimeKeeper {
     queue.lock()->wait_till_empty();
   }
 
+  const CallstackReport& callstack_report() const {
+    return callstack;
+  }
+
+  const OverviewReport& overview_report() const {
+    return overview;
+  }
+
  private:
   TimeKeeper(std::pair<channel::in<EventBuffer>, channel::out<EventBuffer>> p);
   std::condition_variable buf_empty{};
   std::condition_variable buf_not_empty{};
   synchronized<channel::in<EventBuffer>> queue;
-  OverviewReport overview{-1};
-  CallstackReport callstack{-1};
+  OverviewReport overview{};
+  CallstackReport callstack{};
   std::vector<ReportGenerator*> gens;
   rw_synchronized<std::unordered_map<std::thread::id, ThreadTimeKeeper>>
       keeper{};

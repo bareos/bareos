@@ -527,10 +527,10 @@ static bool PerformanceReport(BareosSocket* dir,
     if (njcr->JobId > 0) {
       dir->fsend(_("==== Job %d ====\n"), njcr->JobId);
       if (callstack) {
-	std::string str = njcr->callstack.str();
+	std::string str = njcr->timer.callstack_report().str(CallstackReport::ShowAll);
 	dir->send(str.c_str(), str.size());
       } else {
-	std::string str = njcr->overview.str();
+	std::string str = njcr->timer.overview_report().str(OverviewReport::ShowAll);
 	dir->send(str.c_str(), str.size());
       }
       dir->fsend(_("====\n"));
