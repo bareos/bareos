@@ -400,32 +400,142 @@ static void ListTerminatedJobs(StatusPacket* sp)
     sp->send(msg, len);
   }
 }
+
+struct words {
+  class iterator {
+  public:
+    iterator(const char* start, const char* end)
+      : start{start}
+      , end{end}
+      , word_end{start}
+    {
+      find_word();
+    }
+
+    iterator(std::string_view view) : iterator{view.data(),
+					       view.data() + view.size()}
+    {
+    }
+
+    std::string_view operator*() const {
+      using size_type = std::string_view::size_type;
+      return std::string_view{start, static_cast<size_type>(word_end - start)};
+    }
+
+    iterator& operator++() {
+      start = word_end;
+      find_word();
+      return *this;
+    }
+
+    bool operator==(const iterator& iter) {
+      // no need to compare word_end as well
+      return iter.start == start &&
+	iter.end == end;
+    }
+    bool operator!=(const iterator& iter) {
+      return !operator==(iter);
+    }
+
+  private:
+    const char* start;
+    const char* end;
+    const char* word_end;
+
+    void find_word() {
+        start = std::find_if_not(start, end, [](int c) { return std::isspace(c); });
+        word_end = std::find_if(start, end, [](int c) { return std::isspace(c); });
+    }
+  };
+
+  words(std::string_view v) : view{v}
+  {
+  }
+
+  iterator begin() const {
+    return iterator{view};
+  }
+
+  iterator end() const {
+    return iterator{view.substr(view.size())};
+  }
+
+  std::string_view view;
+};
+
+// result is only guaranteed to live as long as str.
+std::unordered_map<std::string_view, std::string_view> ParseReportCommands(std::string_view str)
+{
+  std::unordered_map<std::string_view, std::string_view> default_keys {
+    {"perf", "yes"},
+    {"style", "stack"},
+    {"depth", "-1"}
+  };
+
+  std::unordered_map<std::string_view, std::string_view> result;
+
+  bool skipped_first = false;
+  for (auto word : words(str)) {
+    if (skipped_first) {
+      // word can either be a key-value pair of the form key=value
+      // or just a simple flag.  In that case we insert a "yes"
+
+      auto npos = std::string_view::npos;
+      if (auto eqpos = word.find_first_of('='); eqpos != npos) {
+	// kv pair
+	result.emplace(word.substr(0, eqpos),
+		       word.substr(eqpos+1));
+      } else {
+	// flag
+	result.emplace(word, "yes");
+      }
+    } else {
+      // skip 'report'
+      skipped_first = true;
+    }
+  }
+
+  result.merge(default_keys);
+  return result;
+}
+
 // Report command from Director
 bool ReportCmd(JobControlRecord* jcr) {
-  BareosSocket* user = jcr->dir_bsock;
+  BareosSocket* dir = jcr->dir_bsock;
 
-  user->fsend("Starting Report of running jobs.\n");
+  std::string received{dir->msg};
+  std::unordered_map parsed = ParseReportCommands(received);
+  dir->fsend("Received: '%s'\n", received.c_str());
+
+  for (auto [key, val] : parsed) {
+    std::string k{key};
+    std::string v{val};
+
+    dir->fsend("%s -> %s\n", k.c_str(), v.c_str());
+  }
+
+  dir->fsend("Starting Report of running jobs.\n");
   std::size_t NumJobs = 0;
 
   JobControlRecord* njcr;
 
   foreach_jcr (njcr) {
     if (njcr->JobId > 0) {
-      user->fsend(_("==== Job %d ====\n"), njcr->JobId);
+      dir->fsend(_("==== Job %d ====\n"), njcr->JobId);
       auto str = njcr->timer.str();
-      user->send(str.c_str(), str.size());
-      user->fsend(_("====\n"));
+      dir->send(str.c_str(), str.size());
+      dir->fsend(_("====\n"));
       NumJobs += 1;
     }
   }
 
   if (NumJobs) {
-    user->fsend("Reported on %lu job%s.\n", NumJobs,
+    dir->fsend("Reported on %lu job%s.\n", NumJobs,
 		NumJobs > 1 ? "s" : "");
   } else {
-    user->fsend("There are no running jobs to report on.\n");
+    dir->fsend("There are no running jobs to report on.\n");
   }
-  user->signal(BNET_EOD);
+  dir->signal(BNET_EOD);
   return true;
 }
 
@@ -434,7 +544,6 @@ bool StatusCmd(JobControlRecord* jcr)
 {
   BareosSocket* user = jcr->dir_bsock;
   StatusPacket sp;
-
 
   user->fsend("\n");
   sp.bs = user;
