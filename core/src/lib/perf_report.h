@@ -258,7 +258,7 @@ class CallstackReport : public ReportGenerator {
   }
 
   std::string str(std::size_t max_depth = CallstackReport::ShowAll) const;
-  std::string collapsed_str() const;
+  std::string collapsed_str(std::size_t max_depth = CallstackReport::ShowAll) const;
 
  private:
   event::time_point start, end;

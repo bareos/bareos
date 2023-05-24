@@ -110,7 +110,7 @@ static void PrintNode(std::ostringstream& out,
   }
   out << "\n";
 
-  if (depth != max_depth) {
+  if (depth <= max_depth) {
     std::vector<
       std::pair<BlockIdentity const*, ThreadCallstackReport::Node const*>>
       children;
@@ -136,22 +136,23 @@ static void PrintNode(std::ostringstream& out,
 
 static std::int64_t PrintCollapsedNode(std::ostringstream& out,
                                        std::string path,
+				       std::size_t max_depth,
                                        const ThreadCallstackReport::Node* node)
 {
-  auto& view = node->children_view();
-
   std::int64_t child_time = 0;
-  for (auto& [id, child] : view) {
-    std::string copy = path;
-    copy += ";";
-    copy += id->c_str();
-    child_time += PrintCollapsedNode(out, copy, child.get());
-  }
+  if (node->depth() <= max_depth) {
+    auto& view = node->children_view();
 
-  ASSERT(child_time <= node->time_spent().count());
+    for (auto& [id, child] : view) {
+      std::string copy = path;
+      copy += ";";
+      copy += id->c_str();
+      child_time += PrintCollapsedNode(out, copy, max_depth, child.get());
+    }
+
+    ASSERT(child_time <= node->time_spent().count());
+  }
   out << path << " " << node->time_spent().count() - child_time << "\n";
-  out << path << " " << node->time_spent().count() << " | " << child_time
-      << "\n";
   return node->time_spent().count();
 }
 
@@ -254,15 +255,16 @@ std::string CallstackReport::str(std::size_t max_depth) const
     auto max_print_depth = std::min(static_cast<std::size_t>(max_depth),
 				    max_values.depth);
 
-    PrintNode(report, "Measured", 0, duration_cast<nanoseconds>(now - start),
-              std::max(std::size_t{6}, max_values.name_length),
+    std::string_view base_name = "Measured";
+    PrintNode(report, base_name.data(), 0, duration_cast<nanoseconds>(now - start),
+              std::max(base_name.size(), max_values.name_length),
               max_print_depth, node.get());
   }
   report << "=== End Performance Report ===\n";
   return report.str();
 }
 
-std::string CallstackReport::collapsed_str() const
+std::string CallstackReport::collapsed_str(std::size_t max_depth) const
 {
   using namespace std::chrono;
   event::time_point now = event::clock::now();
@@ -272,7 +274,7 @@ std::string CallstackReport::collapsed_str() const
   for (auto& [id, thread] : threads) {
     report << "== Thread: " << id << " ==\n";
     auto node = thread.as_of(now);
-    PrintCollapsedNode(report, "Measured", node.get());
+    PrintCollapsedNode(report, "Measured", max_depth, node.get());
   }
   report << "=== End Performance Report ===\n";
   return report.str();
