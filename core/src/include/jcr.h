@@ -236,6 +236,7 @@ class JobControlRecord {
     FiledJcrImpl* fd_impl;
   };
 
+
   TimeKeeper timer;
 };
 /* clang-format on */

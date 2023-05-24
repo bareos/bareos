@@ -73,17 +73,12 @@ class ThreadTimeKeeper {
 class TimeKeeper {
  public:
   ThreadTimeKeeper& get_thread_local();
-  TimeKeeper(std::pair<channel::in<EventBuffer>, channel::out<EventBuffer>> p
-             = channel::CreateBufferedChannel<EventBuffer>(1000));
+  TimeKeeper() : TimeKeeper{channel::CreateBufferedChannel<EventBuffer>(1000)}
+  {
+  }
   ~TimeKeeper()
   {
-    auto now = event::clock::now();
     flush();
-    {
-      std::unique_lock lock{gen_mut};
-      if (overview.has_value()) overview->end_report(now);
-      if (callstack.has_value()) callstack->end_report(now);
-    }
     queue.lock()->close();
     report_writer.join();
   }
@@ -112,25 +107,17 @@ class TimeKeeper {
     // TODO: we should somehow only wait until the above buffers were handled
     queue.lock()->wait_till_empty();
   }
-  std::string str()
-  {
-    flush();
-    std::unique_lock lock(gen_mut);
-    std::string result{};
-    if (overview.has_value()) { result += overview.value().str(); }
-    if (callstack.has_value()) { result += callstack.value().str(); }
-    return result;
-  }
 
  private:
-  mutable std::mutex gen_mut{};
+  TimeKeeper(std::pair<channel::in<EventBuffer>, channel::out<EventBuffer>> p);
   std::condition_variable buf_empty{};
   std::condition_variable buf_not_empty{};
   synchronized<channel::in<EventBuffer>> queue;
+  OverviewReport overview{-1};
+  CallstackReport callstack{-1};
+  std::vector<ReportGenerator*> gens;
   rw_synchronized<std::unordered_map<std::thread::id, ThreadTimeKeeper>>
       keeper{};
-  std::optional<OverviewReport> overview{std::nullopt};
-  std::optional<CallstackReport> callstack{std::nullopt};
   std::thread report_writer;
 };
 

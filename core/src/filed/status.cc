@@ -222,8 +222,6 @@ static void ListRunningJobsPlain(StatusPacket* sp)
       len = Mmsg(msg, _("    SDSocket closed.\n"));
       sp->send(msg, len);
     }
-    len = PmStrcpy(msg, njcr->timer.str().c_str());
-    sp->send(msg, len);
   }
   endeach_jcr(njcr);
 
@@ -510,8 +508,6 @@ static bool PerformanceReport(BareosSocket* dir,
   foreach_jcr (njcr) {
     if (njcr->JobId > 0) {
       dir->fsend(_("==== Job %d ====\n"), njcr->JobId);
-      auto str = njcr->timer.str();
-      dir->send(str.c_str(), str.size());
       dir->fsend(_("====\n"));
       NumJobs += 1;
     }

@@ -80,54 +80,35 @@ void ThreadTimeKeeper::exit()
   stack.pop_back();
 }
 
-static void write_reports(std::mutex* gen_mut,
-                          std::optional<OverviewReport>* overview,
-                          std::optional<CallstackReport>* callstack,
+static void write_reports(std::vector<ReportGenerator*>* gensp,
                           channel::out<EventBuffer> queue)
 {
+  auto& gens = *gensp;
+  auto start = event::clock::now();
+  for (auto* reporter : gens) {
+    reporter->begin_report(start);
+  }
   for (;;) {
-    {
-      int perf = GetPerf();
-      if (!(perf & static_cast<std::int32_t>(PerfReport::Overview))) {
-        if (overview->has_value()) {
-          std::unique_lock lock{*gen_mut};
-          overview->reset();
-        }
-      } else {
-        if (!overview->has_value()) {
-          std::unique_lock lock{*gen_mut};
-          overview->emplace(OverviewReport::ShowAll)
-              .begin_report(event::clock::now());
-        }
-      }
-      if (!(perf & static_cast<std::int32_t>(PerfReport::Stack))) {
-        if (callstack->has_value()) {
-          std::unique_lock lock{*gen_mut};
-          callstack->reset();
-        }
-      } else {
-        if (!callstack->has_value()) {
-          std::unique_lock lock{*gen_mut};
-          callstack->emplace(CallstackReport::ShowAll)
-              .begin_report(event::clock::now());
-        }
-      }
-    }
-
     if (std::optional opt = queue.get(); opt.has_value()) {
       EventBuffer& buf = opt.value();
-      if (overview->has_value()) overview->value().add_events(buf);
-      if (callstack->has_value()) callstack->value().add_events(buf);
+      for (auto* reporter : gens) {
+	reporter->add_events(buf);
+      }
     } else {
       break;
     }
+  }
+  auto end = event::clock::now();
+  for (auto* reporter : gens) {
+    reporter->end_report(end);
   }
 }
 
 TimeKeeper::TimeKeeper(
     std::pair<channel::in<EventBuffer>, channel::out<EventBuffer>> p)
     : queue{std::move(p.first)}
-    , report_writer{&write_reports, &gen_mut, &overview, &callstack,
+    , gens{&overview, &callstack}
+    , report_writer{&write_reports, &gens,
                     std::move(p.second)}
 {
 }
