@@ -103,6 +103,7 @@ set(DIRD_OBJECTS_SRCS
     ua_select.cc
     ua_server.cc
     ua_status.cc
+    ua_report.cc
     ua_tree.cc
     ua_update.cc
     vbackup.cc

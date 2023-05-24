@@ -86,6 +86,7 @@ extern bool show_cmd(UaContext* ua, const char* cmd);
 extern bool SqlqueryCmd(UaContext* ua, const char* cmd);
 extern bool StatusCmd(UaContext* ua, const char* cmd);
 extern bool UpdateCmd(UaContext* ua, const char* cmd);
+extern bool ReportCmd(UaContext* ua, const char* cmd);
 
 /* ua_dotcmds.c */
 extern bool DotCatalogsCmd(UaContext* ua, const char* cmd);
@@ -477,11 +478,14 @@ static struct ua_cmdstruct commands[] = {
          "storage=<storage-name> slots | days=<nr_days> | job=<job-name> |\n"
          "subscriptions [detail] [unknown] [all] | configuration"),
      true, true},
+    {NT_("report"), ReportCmd, _("Report on gathered data"),
+     NT_("perf client=<client-name> | storage=<storage-name> | dir"), false,
+     true},
     {NT_("setbandwidth"), SetbwlimitCmd, _("Sets bandwidth"),
      NT_("client=<client-name> | storage=<storage-name> | jobid=<jobid> |\n"
          "\tjob=<job-name> | ujobid=<unique-jobid> state=<job_state> | all\n"
          "\tlimit=<nn-kbs> [ yes ]"),
-     true, true},
+     false, true},
     {NT_("setdebug"), SetdebugCmd, _("Sets debug level"),
      NT_("level=<nn> trace=0/1 timestamp=0/1 client=<client-name> | dir | "
          "storage=<storage-name> | all"),
