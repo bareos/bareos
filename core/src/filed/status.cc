@@ -467,7 +467,7 @@ struct words {
 std::unordered_map<std::string_view, std::string_view> ParseReportCommands(std::string_view str)
 {
   std::unordered_map<std::string_view, std::string_view> default_keys {
-    {"perf", "yes"},
+    {"about", "perf"},
     {"style", "stack"},
     {"depth", "-1"}
   };
@@ -499,26 +499,14 @@ std::unordered_map<std::string_view, std::string_view> ParseReportCommands(std::
   return result;
 }
 
-// Report command from Director
-bool ReportCmd(JobControlRecord* jcr) {
-  BareosSocket* dir = jcr->dir_bsock;
-
-  std::string received{dir->msg};
-  std::unordered_map parsed = ParseReportCommands(received);
-  dir->fsend("Received: '%s'\n", received.c_str());
-
-  for (auto [key, val] : parsed) {
-    std::string k{key};
-    std::string v{val};
-
-    dir->fsend("%s -> %s\n", k.c_str(), v.c_str());
-  }
-
-  dir->fsend("Starting Report of running jobs.\n");
-  std::size_t NumJobs = 0;
-
+static bool PerformanceReport(BareosSocket* dir,
+			      std::unordered_map<std::string_view,
+			      std::string_view> options)
+{
+  (void) options;
   JobControlRecord* njcr;
-
+  std::size_t NumJobs = 0;
+  dir->fsend("Starting Report of running jobs.\n");
   foreach_jcr (njcr) {
     if (njcr->JobId > 0) {
       dir->fsend(_("==== Job %d ====\n"), njcr->JobId);
@@ -535,8 +523,45 @@ bool ReportCmd(JobControlRecord* jcr) {
   } else {
     dir->fsend("There are no running jobs to report on.\n");
   }
-  dir->signal(BNET_EOD);
   return true;
+}
+// Report command from Director
+bool ReportCmd(JobControlRecord* jcr) {
+  BareosSocket* dir = jcr->dir_bsock;
+
+  std::string received{dir->msg};
+  std::unordered_map parsed = ParseReportCommands(received);
+  dir->fsend("Received: '%s'\n", received.c_str());
+
+  for (auto [key, val] : parsed) {
+    std::string k{key};
+    std::string v{val};
+
+    dir->fsend("%s -> %s\n", k.c_str(), v.c_str());
+  }
+
+  bool result = false;
+
+  if (auto found = parsed.find("about");
+      found != parsed.end()) {
+    if (found->second == "perf") {
+      result = PerformanceReport(dir, parsed);
+    } else {
+      // the map does not contain cstrings but string_views.  As such
+      // we need to create a string first if we want to print them with %s.
+      std::string s{found->second};
+      dir->fsend(_("2900 Bad report command; unknown report %s.\n"),
+		 s.c_str());
+      result = false;
+    }
+  } else {
+    // since about -> perf is the default, this should never happen
+    dir->fsend(_("2900 Bad report command; no report type selected.\n"));
+    result = false;
+  }
+
+  dir->signal(BNET_EOD);
+  return result;
 }
 
 // Status command from Director
