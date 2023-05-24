@@ -249,7 +249,7 @@ std::string CallstackReport::str() const
     auto node = thread.as_of(now);
     auto max_values = max_child_values(node.get());
 
-    PrintNode(report, "Thread", 0, duration_cast<nanoseconds>(now - start),
+    PrintNode(report, "Measured", 0, duration_cast<nanoseconds>(now - start),
               std::max(std::size_t{6}, max_values.name_length),
               max_values.depth, node.get());
   }
@@ -267,7 +267,7 @@ std::string CallstackReport::collapsed_str() const
   for (auto& [id, thread] : threads) {
     report << "== Thread: " << id << " ==\n";
     auto node = thread.as_of(now);
-    PrintCollapsedNode(report, "Thread", node.get());
+    PrintCollapsedNode(report, "Measured", node.get());
   }
   report << "=== End Performance Report ===\n";
   return report.str();
