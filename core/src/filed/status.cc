@@ -521,6 +521,31 @@ struct overview_options
   }
 };
 
+template<typename T>
+bool ParseInt(BareosSocket* dir,
+	      const char* start,
+	      const char* end,
+	      T& val)
+{
+  auto result = std::from_chars(start,
+				end,
+				val);
+  if (result.ec != std::errc() ||
+      result.ptr != end) {
+    std::string error_str(end - start, '~');
+    std::size_t problem = result.ptr - start;
+    error_str[problem] = '^';
+    for (std::size_t i = 0; i < problem; ++i) {
+      error_str[i] = ' ';
+    }
+    dir->fsend("Could not parse number value: %s\n"
+	       "                              %s\n",
+	       std::string{start, end}.c_str(),
+	       error_str.c_str());
+    return false;
+  }
+  return true;
+}
 std::optional<overview_options> ParseOverviewOptions(BareosSocket* dir,
 						     const std::unordered_map<std::string_view, std::string_view>& map)
 {
@@ -531,13 +556,7 @@ std::optional<overview_options> ParseOverviewOptions(BareosSocket* dir,
     if (val == "all") {
       options.top_n = OverviewReport::ShowAll;
     } else {
-      auto result = std::from_chars(val.data(),
-				    val.data() + val.size(),
-				    options.top_n);
-      if (result.ec != std::errc() ||
-	  result.ptr != val.data() + val.size()) {
-	dir->fsend("Could not parse 'show' value: %s\n",
-		   std::string{val}.c_str());
+      if (!ParseInt(dir, val.data(), val.data() + val.size(), options.top_n)) {
 	return std::nullopt;
       }
     }
@@ -555,13 +574,7 @@ std::optional<callstack_options> ParseCallstackOptions(BareosSocket* dir,
     if (val == "all") {
       options.max_depth = CallstackReport::ShowAll;
     } else {
-      auto result = std::from_chars(val.data(),
-				    val.data() + val.size(),
-				    options.max_depth);
-      if (result.ec != std::errc() ||
-	  result.ptr != val.end()) {
-	dir->fsend("Could not parse 'depth' value: %s\n",
-		   std::string{val}.c_str());
+      if (!ParseInt(dir, val.data(), val.data() + val.size(), options.max_depth)) {
 	return std::nullopt;
       }
     }
@@ -581,6 +594,20 @@ static bool PerformanceReport(BareosSocket* dir,
 {
   std::variant<std::monostate, callstack_options, overview_options> parsed;
 
+  bool all_jobids = false;
+  std::unordered_set<std::uint32_t> jobids{};
+  if (auto found = options.find("jobid");
+      found != options.end()) {
+    auto view = found->second;
+    if (view == "all") {
+      all_jobids = true;
+    } else {
+    }
+  } else {
+    // this should never happen as jobid is set by default
+    dir->fsend("Required field 'jobid' not supplied.\n");
+    return false;
+  }
   if (auto found = options.find("style");
       found != options.end()) {
     auto view = found->second;
@@ -613,6 +640,9 @@ static bool PerformanceReport(BareosSocket* dir,
   dir->fsend("Starting Report of running jobs.\n");
   foreach_jcr (njcr) {
     if (njcr->JobId > 0) {
+      if (!all_jobids && jobids.find(njcr->JobId) == jobids.end()) {
+	continue;
+      }
       dir->fsend(_("==== Job %d ====\n"), njcr->JobId);
       std::visit([dir, njcr](auto&& arg) {
 	using T = std::decay_t<decltype(arg)>;
