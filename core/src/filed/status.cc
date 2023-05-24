@@ -400,12 +400,41 @@ static void ListTerminatedJobs(StatusPacket* sp)
     sp->send(msg, len);
   }
 }
+// Report command from Director
+bool ReportCmd(JobControlRecord* jcr) {
+  BareosSocket* user = jcr->dir_bsock;
+
+  user->fsend("Starting Report of running jobs.\n");
+  std::size_t NumJobs = 0;
+
+  JobControlRecord* njcr;
+
+  foreach_jcr (njcr) {
+    if (njcr->JobId > 0) {
+      user->fsend(_("==== Job %d ====\n"), njcr->JobId);
+      auto str = njcr->timer.str();
+      user->send(str.c_str(), str.size());
+      user->fsend(_("====\n"));
+      NumJobs += 1;
+    }
+  }
+
+  if (NumJobs) {
+    user->fsend("Reported on %lu job%s.\n", NumJobs,
+		NumJobs > 1 ? "s" : "");
+  } else {
+    user->fsend("There are no running jobs to report on.\n");
+  }
+  user->signal(BNET_EOD);
+  return true;
+}
 
 // Status command from Director
 bool StatusCmd(JobControlRecord* jcr)
 {
   BareosSocket* user = jcr->dir_bsock;
   StatusPacket sp;
+
 
   user->fsend("\n");
   sp.bs = user;

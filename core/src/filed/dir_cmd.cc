@@ -93,6 +93,7 @@ static alist<pthread_t*>* client_initiated_connection_threads = nullptr;
 /* Imported functions */
 extern bool AccurateCmd(JobControlRecord* jcr);
 extern bool StatusCmd(JobControlRecord* jcr);
+extern bool ReportCmd(JobControlRecord* jcr);
 extern bool QstatusCmd(JobControlRecord* jcr);
 
 /* Forward referenced functions */
@@ -158,6 +159,7 @@ static struct s_fd_dir_cmds cmds[] = {
     {"pluginoptions", PluginoptionsCmd, false},
     {"RunBeforeNow", RunbeforenowCmd, false},
     {"Run", RunscriptCmd, false},
+    {"report", ReportCmd, false},
     {"restoreobject", RestoreObjectCmd, false},
     {"restore ", RestoreCmd, false},
     {"resolve ", ResolveCmd, false},
