@@ -498,16 +498,41 @@ std::unordered_map<std::string_view, std::string_view> ParseReportCommands(std::
 }
 
 static bool PerformanceReport(BareosSocket* dir,
-			      std::unordered_map<std::string_view,
-			      std::string_view> options)
+			      const std::unordered_map<std::string_view,
+			      std::string_view>& options)
 {
-  (void) options;
+  bool callstack = false;
+
+  if (auto found = options.find("style");
+      found != options.end()) {
+    auto view = found->second;
+    if (view == "callstack") {
+      callstack = true;
+    } else if (view == "overview") {
+      callstack = false;
+    } else {
+      dir->fsend("Perf Report: Unknown style '%s'.\n", std::string{view}.c_str());
+      return false;
+    }
+  } else {
+    // should not happen as style is set by default
+    dir->fsend("Perf Report: No style was specified.\n");
+    return false;
+  }
+
   JobControlRecord* njcr;
   std::size_t NumJobs = 0;
   dir->fsend("Starting Report of running jobs.\n");
   foreach_jcr (njcr) {
     if (njcr->JobId > 0) {
       dir->fsend(_("==== Job %d ====\n"), njcr->JobId);
+      if (callstack) {
+	std::string str = njcr->callstack.str();
+	dir->send(str.c_str(), str.size());
+      } else {
+	std::string str = njcr->overview.str();
+	dir->send(str.c_str(), str.size());
+      }
       dir->fsend(_("====\n"));
       NumJobs += 1;
     }
