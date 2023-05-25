@@ -101,7 +101,7 @@ static void PrintNode(std::ostringstream& out,
       = (max_name_length - std::strlen(name)) + (max_depth - depth);
   SplitDuration d(node->time_spent());
   out << std::setw(depth) << "" << name << ": "
-      << std::setw(offset > 0 ? offset - 1 : 0) << std::setfill('-') << " "
+      << std::setw(offset) << std::setfill('-') << ((offset>0) ? " " : "")
       << std::setfill(' ') << d;
   if (parentns.count() != 0) {
     out << " (" << std::setw(6) << std::fixed << std::setprecision(2)
@@ -110,7 +110,7 @@ static void PrintNode(std::ostringstream& out,
   }
   out << "\n";
 
-  if (depth <= max_depth) {
+  if (depth < max_depth) {
     std::vector<
       std::pair<BlockIdentity const*, ThreadCallstackReport::Node const*>>
       children;
@@ -140,7 +140,7 @@ static std::int64_t PrintCollapsedNode(std::ostringstream& out,
                                        const ThreadCallstackReport::Node* node)
 {
   std::int64_t child_time = 0;
-  if (node->depth() <= max_depth) {
+  if (node->depth() < max_depth) {
     auto& view = node->children_view();
 
     for (auto& [id, child] : view) {
