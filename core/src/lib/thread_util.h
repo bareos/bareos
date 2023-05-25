@@ -66,6 +66,14 @@ template <typename T> class synchronized {
   synchronized(Args... args) : data{std::forward<Args>(args)...}
   {
   }
+  ~synchronized()
+  {
+    // obviously nobody should hold the lock while this object is getting
+    // destructed, but we still need to ensure that the thread that
+    // is destroying this object has a synchronized view of the contained data
+    // so that datas destructor can run with no race conditions.
+    std::unique_lock _{mut};
+  }
 
   unique_locked<T> lock() { return {mut, data}; }
 
