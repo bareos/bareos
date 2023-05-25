@@ -79,16 +79,12 @@ static void OutputStatus(JobControlRecord* jcr,
 
   ListStatusHeader(sp);
 
-  // List running jobs
   ListRunningJobs(sp);
 
-  // List jobs stuck in reservation system
   ListJobsWaitingOnReservation(sp);
 
-  // List terminated jobs
   ListTerminatedJobs(sp);
 
-  // List devices
   ListDevices(jcr, sp, devicenames);
 
   if (!sp->api) {
@@ -107,10 +103,6 @@ static void OutputStatus(JobControlRecord* jcr,
     len = PmStrcpy(msg, "====\n\n");
     sp->send(msg, len);
   }
-}
-
-static void ListResources(StatusPacket*)
-{ /* this has not been implemented */
 }
 
 static bool NeedToListDevice(const char* devicenames, const char* devicename)
@@ -1015,9 +1007,6 @@ bool DotstatusCmd(JobControlRecord* jcr)
   } else if (Bstrcasecmp(cmd.c_str(), "terminated")) {
     sp.api = true;
     ListTerminatedJobs(&sp);
-  } else if (Bstrcasecmp(cmd.c_str(), "resources")) {
-    sp.api = true;
-    ListResources(&sp);
   } else {
     PmStrcpy(jcr->errmsg, dir->msg);
     dir->fsend(_("3900 Unknown arg in .status command: %s\n"), jcr->errmsg);
