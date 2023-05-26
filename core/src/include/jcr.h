@@ -237,7 +237,7 @@ class JobControlRecord {
   };
 
 
-  TimeKeeper timer;
+  TimeKeeper timer{GetPerf() != 0};
 };
 /* clang-format on */
 

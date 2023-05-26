@@ -84,7 +84,7 @@ static void SubmitRandomEvents(bm::State& state)
     assert(ins_end && "blocks have to have distinct characters from each outer.");
   }
 
-  auto& timer = keeper.get_thread_local();
+  auto timer = disabled.get_thread_local();
   auto num_blocks = state.range(0);
 
   std::string events = RandomBlocks(num_blocks);

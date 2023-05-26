@@ -239,7 +239,7 @@ bool IsInFileset(FindFilesPacket* ff)
 bool AcceptFile(JobControlRecord* jcr, FindFilesPacket* ff)
 {
   static constexpr auto blockid = BlockIdentity{"AcceptFile"};
-  auto& timer = jcr->timer.get_thread_local();
+  auto timer = jcr->timer.get_thread_local();
   TimedBlock block(timer, blockid);
   int i, j, k;
   int fnm_flags;

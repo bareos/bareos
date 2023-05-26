@@ -58,10 +58,24 @@ class ThreadTimeKeeper {
   EventBuffer buffer{this_id, event_buffer_init_capacity, stack};
 };
 
+struct ThreadHandle {
+  ThreadTimeKeeper* timer{nullptr};
+
+  void enter(const BlockIdentity& block) {
+    if (timer) { timer->enter(block); }
+  }
+  void switch_to(const BlockIdentity& block) {
+    if (timer) { timer->switch_to(block); }
+  }
+  void exit(const BlockIdentity& block) {
+    if (timer) { timer->exit(block); }
+  }
+};
+
 class TimeKeeper {
  public:
-  ThreadTimeKeeper& get_thread_local();
-  TimeKeeper() : TimeKeeper{channel::CreateBufferedChannel<EventBuffer>(1000)}
+  ThreadHandle get_thread_local();
+  TimeKeeper(bool enabled = true) : TimeKeeper{enabled, channel::CreateBufferedChannel<EventBuffer>(1000)}
   {
   }
 
@@ -87,9 +101,8 @@ class TimeKeeper {
   }
 
  private:
-  TimeKeeper(std::pair<channel::in<EventBuffer>, channel::out<EventBuffer>> p);
-  std::condition_variable buf_empty{};
-  std::condition_variable buf_not_empty{};
+  const bool enabled;
+  TimeKeeper(bool enabled, std::pair<channel::in<EventBuffer>, channel::out<EventBuffer>> p);
   synchronized<channel::in<EventBuffer>> queue;
   OverviewReport overview{};
   CallstackReport callstack{};
@@ -101,8 +114,8 @@ class TimeKeeper {
 
 class TimedBlock {
  public:
-  TimedBlock(ThreadTimeKeeper& timer, const BlockIdentity& block) : timer{timer}
-								  , source{&block}
+  TimedBlock(ThreadHandle timer, const BlockIdentity& block) : timer{timer}
+							     , source{&block}
   {
     timer.enter(block);
   }
@@ -115,7 +128,7 @@ class TimedBlock {
   }
 
  private:
-  ThreadTimeKeeper& timer;
+  ThreadHandle timer;
   BlockIdentity const* source;
 };
 
