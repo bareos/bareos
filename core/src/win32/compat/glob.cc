@@ -37,7 +37,85 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#ifdef _MSVC_VER
+#include <filesystem>
 #include <libgen.h>
+#endif
+#ifdef _MSC_VER
+#include <stddef.h>
+#include <string.h>
+ 
+ void* __memrchr(const void* /*m*/ /*m*/, int /*c*/ /*c*/, size_t /*n*/ /*n*/);
+ 
+ void* __memrchr(const void* m, int c, size_t n)
+ {
+     const unsigned char* s = static_cast<const unsigned char*>(m);
+     c = (unsigned char)c;
+ 
+     while(n--)
+     {
+         if(s[n] == c)
+         {
+             return (void*)(uintptr_t)(s + n);
+         }
+     }
+ 
+     return 0;
+ }
+
+#include <string.h>
+static char *
+dirname (char *path)
+{
+  static const char dot[] = ".";
+  char *last_slash;
+  /* Find last '/'.  */
+  last_slash = path != NULL ? strrchr (path, '/') : NULL;
+  if (last_slash != NULL && last_slash != path && last_slash[1] == '\0')
+    {
+      /* Determine whether all remaining characters are slashes.  */
+      char *runp;
+      for (runp = last_slash; runp != path; --runp)
+	if (runp[-1] != '/')
+	  break;
+      /* The '/' is the last character, we have to look further.  */
+      if (runp != path)
+	       last_slash = static_cast<char*>(__memrchr (static_cast<void*>(path), '/', runp - path));
+    }
+  if (last_slash != NULL)
+    {
+      /* Determine whether all remaining characters are slashes.  */
+      char *runp;
+      for (runp = last_slash; runp != path; --runp)
+	if (runp[-1] != '/')
+	  break;
+      /* Terminate the path.  */
+      if (runp == path)
+	{
+	  /* The last slash is the first character in the string.  We have to
+	     return "/".  As a special case we have to return "//" if there
+	     are exactly two slashes at the beginning of the string.  See
+	     XBD 4.10 Path Name Resolution for more information.  */
+	  if (last_slash == path + 1)
+	    ++last_slash;
+	  else
+	    last_slash = path + 1;
+	}
+      else
+	last_slash = runp;
+      last_slash[0] = '\0';
+    }
+  else
+    /* This assignment is ill-designed but the XPG specs require to
+       return a string containing "." in any case no directory part is
+       found and so a static and constant string is required.  */
+    path = (char *) dot;
+  return path;
+}
+
+
+
+#endif
 #include <dirent.h>
 #include <errno.h>
 
@@ -94,7 +172,7 @@ GLOB_INLINE char* glob_strdup(const char* pattern)
    * this strips instances of the GLOB_HARD_ESC character, which
    * have not themselves been escaped, from the strdup()ed copy.
    */
-  char buf[1 + strlen(pattern)];
+  char buf[MAX_PATH];
   char* copy = buf;
   const char* origin = pattern;
   do {
@@ -717,7 +795,7 @@ static int glob_match(const char* pattern,
 
   /* Begin by separating out any path prefix from the glob pattern.
    */
-  char dirbuf[1 + strlen(pattern)];
+  char dirbuf[MAX_PATH];
   const char* dir = dirname((char*)memcpy(dirbuf, pattern, sizeof(dirbuf)));
   char **dirp, preferred_dirsep = GLOB_DIRSEP;
 
@@ -771,7 +849,7 @@ static int glob_match(const char* pattern,
   else
     /* ...otherwise, we simply note that there was no prefix.
      */
-    dir = NULL;
+    //dir = NULL;
 
   /* We now have a globbed list of prefix directories, returned from
    * recursive processing, in local_gl_buf.gl_pathv, and we also have
@@ -822,7 +900,7 @@ static int glob_match(const char* pattern,
             char* found;
             size_t prefix;
             size_t matchlen = D_NAMLEN(entry);
-            char matchpath[2 + dirlen + matchlen];
+            char matchpath[MAX_PATH];
             if ((prefix = dirlen) > 0) {
               /* ...first copying the prefix, if any,
                * followed by a directory name separator...

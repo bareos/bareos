@@ -41,6 +41,9 @@
 #include "lib/berrno.h"
 #include "lib/bpipe.h"
 #include "vss.h"
+#ifndef _MSC_VER
+#  include "ntifs.h"
+#endif
 
 #include <shared_mutex>
 
@@ -1741,6 +1744,21 @@ int link(const char*, const char*)
   errno = ENOSYS;
   return -1;
 }
+
+#if defined(_MSVC_LANG)
+#  include <chrono>
+
+static int mingw_gettimeofday(struct timeval* tp, struct timezone* tzp)
+{
+  namespace sc = std::chrono;
+  sc::system_clock::duration d = sc::system_clock::now().time_since_epoch();
+  sc::seconds s = sc::duration_cast<sc::seconds>(d);
+  tp->tv_sec = s.count();
+  tp->tv_usec = sc::duration_cast<sc::microseconds>(d - s).count();
+
+  return 0;
+}
+#endif  //_MSVC_LANG
 
 int gettimeofday(struct timeval* tv, struct timezone* tz)
 {

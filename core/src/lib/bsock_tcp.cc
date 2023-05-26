@@ -39,6 +39,10 @@
 #include "lib/bsock_tcp.h"
 #include "lib/berrno.h"
 
+#ifdef _MSC_VER
+# include "mstcpip.h"
+#endif
+
 #ifndef ENODATA /* not defined on BSD systems */
 #  define ENODATA EPIPE
 #endif

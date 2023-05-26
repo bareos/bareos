@@ -25,9 +25,9 @@
 #ifndef BAREOS_WIN32_COMPAT_INCLUDE_COMPAT_H_
 #define BAREOS_WIN32_COMPAT_INCLUDE_COMPAT_H_
 
-#define NOMINMAX
 
 #ifdef _MSC_VER
+#define NOMINMAX
 // not #if defined(_WIN32) || defined(_WIN64) because we have strncasecmp in
 // mingw
 #  define strncasecmp _strnicmp
@@ -345,7 +345,9 @@ struct sigaction {
 #define sigaction(a, b, c)
 
 #define mkdir(p, m) win32_mkdir(p)
-#define unlink win32_unlink
+#ifndef _MSC_VER
+#  define unlink win32_unlink
+#endif
 #define chdir win32_chdir
 extern "C" void syslog(int type, const char* fmt, ...);
 #if !defined(LOG_DAEMON)
@@ -377,7 +379,7 @@ char* win32_getcwd(char* buf, int maxlen);
 int win32_chdir(const char* buf);
 int win32_mkdir(const char* buf);
 int win32_fputs(const char* string, FILE* stream);
-int win32_unlink(const char* filename);
+int win32_unlink(char const* filename);
 int win32_chmod(const char*, mode_t, _dev_t);
 
 char* win32_cgets(char* buffer, int len);

@@ -25,7 +25,8 @@ endif()
 option(ENABLE_PYTHON "Enable Python support" ON)
 option(ENABLE_PYTHON2 "Enable Python2 support" ON)
 
-if(NOT ENABLE_PYTHON)
+
+if(NOT ENABLE_PYTHON OR MSVC)
   set(HAVE_PYTHON 0)
   set(Python2_FOUND 0)
   set(Python3_FOUND 0)
@@ -222,3 +223,7 @@ if (NOT MSVC)
 else()
   find_package(pthread)
 endif()
+if(MSVC)
+  find_package(Intl)
+endif()
+

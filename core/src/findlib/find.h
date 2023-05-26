@@ -44,7 +44,9 @@
 #endif
 
 #if !defined(HAVE_UTIMES) && !defined(HAVE_LUTIMES)
-#  include <utime.h>
+#  ifndef _MSC_VER
+#    include <utime.h>
+#  endif
 #endif
 
 #define MODE_RALL (S_IRUSR | S_IRGRP | S_IROTH)
