@@ -1378,52 +1378,6 @@ void DoAllSetDebug(UaContext* ua,
   AllClientSetdebug(ua, level, trace_flag, hangup_flag, timestamp_flag, perf);
 }
 
-static bool ParsesEqually(std::string_view l, std::string_view r)
-{
-  for (;;) {
-    if (l.size() > 0 && l.front() == ' ') {
-      l.remove_prefix(1);
-    } else if (r.size() > 0 && r.front() == ' ') {
-      r.remove_prefix(1);
-    } else if (l.size() > 0 && r.size() > 0
-               && std::tolower(l.front()) == std::tolower(r.front())) {
-      l.remove_prefix(1);
-      r.remove_prefix(1);
-    } else if (l.size() == 0 && r.size() == 0) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-}
-
-static std::optional<int> ParsePerf(std::string_view args)
-{
-  if (args.size() == 0) return std::nullopt;
-
-  int result = 0;
-
-  while (args.size() > 0) {
-    auto end = args.find_first_of(',');
-    std::string_view arg = args.substr(0, end);
-    if (end == std::string_view::npos) {
-      end = args.size();
-      args.remove_prefix(end);
-    } else {
-      // skip the ','
-      args.remove_prefix(end + 1);
-    }
-    if (ParsesEqually("stack", arg)) {
-      result |= static_cast<int32_t>(PerfReport::Stack);
-    } else if (ParsesEqually("overview", arg)) {
-      result |= static_cast<int32_t>(PerfReport::Overview);
-    } else {
-      return std::nullopt;
-    }
-  }
-  return result;
-}
-
 // setdebug level=nn all trace=1/0 timestamp=1/0 perf=[stack|overview]*
 static bool SetdebugCmd(UaContext* ua, const char* cmd)
 {
@@ -1473,11 +1427,7 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
   }
 
   if (auto i = FindArgWithValue(ua, NT_("perf")); i >= 0) {
-    if (std::optional res = ParsePerf(ua->argv[i]); res.has_value()) {
-      perf = res.value();
-    } else {
-      perf = -1;
-    }
+    perf = atoi(ua->argv[i]);
   } else {
     perf = -1;
   }
