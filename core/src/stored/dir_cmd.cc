@@ -402,7 +402,7 @@ static bool SetdebugCmd(JobControlRecord* jcr)
   PoolMem tracefilename(PM_FNAME);
   Mmsg(tracefilename, "%s/%s.trace", TRACEFILEDIRECTORY, my_name);
 
-  debug_level = level;
+  if (level >= 0) { debug_level = level; }
   SetTrace(trace_flag);
   if (scan == 3) {
     SetTimestamp(timestamp_flag);

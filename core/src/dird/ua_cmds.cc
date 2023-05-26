@@ -1355,7 +1355,7 @@ static void DoDirectorSetdebug(UaContext* ua,
 {
   PoolMem tracefilename(PM_FNAME);
 
-  debug_level = level;
+  if (level >= 0) { debug_level = level; }
   SetTrace(trace_flag);
   SetTimestamp(timestamp_flag);
   Mmsg(tracefilename, "%s/%s.trace", TRACEFILEDIRECTORY, my_name);
