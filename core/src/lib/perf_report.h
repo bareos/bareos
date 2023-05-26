@@ -83,7 +83,7 @@ class OverviewReport : public ReportGenerator {
       for (auto& open : buf.stack()) { thread->begin_event(open); }
     }
 
-    for (auto event : buf.events) {
+    for (auto event : buf) {
       if (auto* open = std::get_if<event::OpenEvent>(&event)) {
         thread->begin_event(*open);
       } else if (auto* close = std::get_if<event::CloseEvent>(&event)) {
@@ -248,7 +248,7 @@ class CallstackReport : public ReportGenerator {
       for (auto& open : buf.stack()) { thread->begin_event(open); }
     }
 
-    for (auto event : buf.events) {
+    for (auto event : buf) {
       if (auto* open = std::get_if<event::OpenEvent>(&event)) {
         thread->begin_event(*open);
       } else if (auto* close = std::get_if<event::CloseEvent>(&event)) {

@@ -85,13 +85,24 @@ class EventBuffer {
   }
   EventBuffer(EventBuffer&&) = default;
   EventBuffer& operator=(EventBuffer&&) = default;
-  std::vector<event::Event> events{};
   const std::vector<event::OpenEvent>& stack() const { return initial_stack; }
   const std::thread::id threadid() const { return thread_id; }
+
+  template <typename... Args>
+  auto emplace_back(Args... args)
+  {
+    return events.emplace_back(std::forward<Args>(args)...);
+  }
+
+  auto size() const { return events.size(); }
+
+  auto begin() const { return events.begin(); }
+  auto end() const { return events.end(); }
 
  private:
   std::thread::id thread_id;
   std::vector<event::OpenEvent> initial_stack{};
+  std::vector<event::Event> events{};
 };
 
 #endif  // BAREOS_LIB_EVENT_H_
