@@ -39,15 +39,11 @@
 #include "lib/channel.h"
 
 
-class TimeKeeper;
-
 class ThreadTimeKeeper {
-  friend class TimeKeeper;
-
  public:
   static constexpr std::size_t event_buffer_init_capacity = 2000;
-  ThreadTimeKeeper(TimeKeeper& keeper)
-      : this_id{std::this_thread::get_id()}, keeper{keeper}
+  ThreadTimeKeeper(synchronized<channel::in<EventBuffer>>& queue)
+      : this_id{std::this_thread::get_id()}, queue{queue}
   {
   }
   ~ThreadTimeKeeper();
@@ -61,7 +57,7 @@ class ThreadTimeKeeper {
 
  private:
   std::thread::id this_id;
-  TimeKeeper& keeper;
+  synchronized<channel::in<EventBuffer>>& queue;
   std::vector<event::OpenEvent> stack{};
   EventBuffer buffer{this_id, event_buffer_init_capacity, stack};
 };
@@ -75,24 +71,15 @@ class TimeKeeper {
 
   ~TimeKeeper()
   {
+    // any other thread that was holding a thread time keeper reference
+    // has to be dead by now for two reasons
+    // 1) it cannot safely dereference the referenc, and
+    // 2) the join()ing of the thread acts as a memory barrier
+    //    which guarantees us that we are reading correct data
+    //    when flushing left over events
     keeper.wlock()->clear(); // this flushes left over events
     queue.lock()->close();
     report_writer.join();
-  }
-
-  void handle_event_buffer(EventBuffer buf)
-  {
-    queue.lock()->put(std::move(buf));
-  }
-
-  bool try_handle_event_buffer(EventBuffer& buf)
-  {
-    if (std::optional locked = queue.try_lock();
-	locked.has_value()) {
-      return (*locked)->try_put(buf);
-    } else {
-      return false;
-    }
   }
 
   const CallstackReport& callstack_report() const {

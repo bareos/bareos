@@ -30,33 +30,36 @@
 
 ThreadTimeKeeper::~ThreadTimeKeeper()
 {
-  keeper.handle_event_buffer(std::move(buffer));
+  queue.lock()->put(std::move(buffer));
 }
 
 
-static void FlushEventsIfNecessary(TimeKeeper& keeper,
+static void FlushEventsIfNecessary(synchronized<channel::in<EventBuffer>>& queue,
                                    std::thread::id this_id,
                                    const std::vector<event::OpenEvent>& stack,
                                    EventBuffer& buffer)
 {
   constexpr std::size_t buffer_filled_ok = 1000;
   if (buffer.size() >= buffer_filled_ok) {
-    if (keeper.try_handle_event_buffer(buffer)) {
-      buffer = EventBuffer(this_id, ThreadTimeKeeper::event_buffer_init_capacity, stack);
+    if (std::optional locked = queue.try_lock();
+	locked.has_value()) {
+      if ((*locked)->try_put(buffer)) {
+	buffer = EventBuffer(this_id, ThreadTimeKeeper::event_buffer_init_capacity, stack);
+      }
     }
   }
 }
 
 void ThreadTimeKeeper::enter(const BlockIdentity& block)
 {
-  FlushEventsIfNecessary(keeper, this_id, stack, buffer);
+  FlushEventsIfNecessary(queue, this_id, stack, buffer);
   auto& event = stack.emplace_back(block);
   buffer.emplace_back(event);
 }
 
 void ThreadTimeKeeper::switch_to(const BlockIdentity& block)
 {
-  FlushEventsIfNecessary(keeper, this_id, stack, buffer);
+  FlushEventsIfNecessary(queue, this_id, stack, buffer);
   ASSERT(stack.size() != 0);
   auto event = stack.back().close();
   buffer.emplace_back(event);
@@ -66,7 +69,7 @@ void ThreadTimeKeeper::switch_to(const BlockIdentity& block)
 
 void ThreadTimeKeeper::exit(const BlockIdentity& block)
 {
-  FlushEventsIfNecessary(keeper, this_id, stack, buffer);
+  FlushEventsIfNecessary(queue, this_id, stack, buffer);
   ASSERT(stack.size() != 0);
   auto event = stack.back().close();
   ASSERT(event.source == &block);
@@ -122,7 +125,7 @@ ThreadTimeKeeper& TimeKeeper::get_thread_local()
   {
     auto [iter, inserted] = keeper.wlock()->emplace(
         std::piecewise_construct, std::forward_as_tuple(my_id),
-        std::forward_as_tuple(*this));
+        std::forward_as_tuple(queue));
     ASSERT(inserted);
     return iter->second;
   }
