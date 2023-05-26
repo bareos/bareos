@@ -63,6 +63,7 @@ template <typename T> struct data {
 template <typename T> struct out {
   std::optional<T> get();
   std::optional<T> try_get();
+  std::optional<std::vector<T>> get_all();
   void close();
   ~out();
 
@@ -165,6 +166,33 @@ template <typename T> std::optional<T> out<T>::get()
   } else {
     Dmsg0(1000, "channel is closed.\n");
   }
+  return result;
+}
+
+template <typename T> std::optional<std::vector<T>> out<T>::get_all()
+{
+  std::optional<std::vector<T>> result{std::nullopt};
+  if (closed) return std::nullopt;
+  std::unique_lock lock(shared->mutex);
+  shared->cv.wait(lock,
+		  [this] { return this->shared->size > 0 || !this->shared->in_alive; });
+
+  if (shared->size > 0) {
+    std::vector<T>& v = result.emplace();
+    v.reserve(shared->size);
+    for (std::size_t i = 0; i < shared->size; ++i) {
+      v.emplace_back(std::move(shared->storage[read_pos]));
+      read_pos = wrapping_inc(read_pos, capacity);
+    }
+    shared->size = 0;
+    old_size = 0;
+  } else {
+    shared->out_alive = false;
+    old_size = 0;
+    closed = true;
+  }
+  shared->cv.notify_one();
+
   return result;
 }
 
