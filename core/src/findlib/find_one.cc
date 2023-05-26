@@ -935,13 +935,13 @@ int FindOneFile(JobControlRecord* jcr,
     static constexpr BlockIdentity lstt{"lstat"};
     timer.enter(lstt);
     if (lstat(fname, &ff_pkt->statp) != 0) {
-      timer.exit();
+      timer.exit(lstt);
       // Cannot stat file
       ff_pkt->type = FT_NOSTAT;
       ff_pkt->ff_errno = errno;
       return HandleFile(jcr, ff_pkt, top_level);
     } else {
-      timer.exit();
+      timer.exit(lstt);
     }
   }
 

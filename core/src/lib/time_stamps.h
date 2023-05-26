@@ -132,14 +132,21 @@ class TimeKeeper {
 class TimedBlock {
  public:
   TimedBlock(ThreadTimeKeeper& timer, const BlockIdentity& block) : timer{timer}
+								  , source{&block}
   {
     timer.enter(block);
   }
-  ~TimedBlock() { timer.exit(); }
-  void switch_to(const BlockIdentity& block) { timer.switch_to(block); }
+  ~TimedBlock() {
+    timer.exit(*source);
+  }
+  void switch_to(const BlockIdentity& block) {
+    source = &block;
+    timer.switch_to(block);
+  }
 
  private:
   ThreadTimeKeeper& timer;
+  BlockIdentity const* source;
 };
 
 #endif  // BAREOS_LIB_TIME_STAMPS_H_

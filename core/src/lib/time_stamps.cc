@@ -70,13 +70,13 @@ void ThreadTimeKeeper::switch_to(const BlockIdentity& block)
   locked->events.push_back(stack.back());
 }
 
-void ThreadTimeKeeper::exit()
+void ThreadTimeKeeper::exit(const BlockIdentity& block)
 {
-  auto locked = buffer.lock();
-  FlushEventsIfNecessary(keeper, this_id, stack, *locked);
+  FlushEventsIfNecessary(keeper, this_id, stack, buffer);
   ASSERT(stack.size() != 0);
   auto event = stack.back().close();
-  locked->events.push_back(event);
+  ASSERT(event.source == &block);
+  buffer.emplace_back(event);
   stack.pop_back();
 }
 
