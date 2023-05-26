@@ -51,10 +51,6 @@ class ThreadTimeKeeper {
   void switch_to(const BlockIdentity& block);
   void exit(const BlockIdentity& block);
 
-  std::thread::id threadid() const { return this_id; }
-
-  std::vector<event::OpenEvent> stk() const { return stack; }
-
  private:
   std::thread::id this_id;
   synchronized<channel::in<EventBuffer>>& queue;

@@ -87,8 +87,6 @@ static void SubmitRandomEvents(bm::State& state)
   auto& timer = keeper.get_thread_local();
   auto num_blocks = state.range(0);
 
-  ASSERT(std::this_thread::get_id() == timer.threadid());
-
   std::string events = RandomBlocks(num_blocks);
   std::size_t numEvents = 0;
   for (auto _ : state) {
