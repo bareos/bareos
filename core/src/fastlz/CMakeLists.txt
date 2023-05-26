@@ -26,6 +26,9 @@ target_include_directories(
   bareosfastlz
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
          $<INSTALL_INTERFACE:include>
+if (MSVC)
+  ${ZLIB_INCLUDE_DIR}
+endif()
   PRIVATE src
 )
 target_compile_definitions(bareosfastlz PRIVATE "-DDLL_EXPORT")
