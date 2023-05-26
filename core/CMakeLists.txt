@@ -43,9 +43,12 @@ endif(CCACHE_FOUND)
 
 # switch on CXX 17 Support
 #
+if (MSVC)
 set(CMAKE_CXX_STANDARD 17)
+else()
+set(CMAKE_CXX_STANDARD 20)
+endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 # enable PIC/PIE by default
 include(CheckPIESupported)
 check_pie_supported()
@@ -204,42 +207,43 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(Intl_ROOT_DIR /usr/local/opt/gettext)
 endif()
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  set(MINGW_PREFIX ${CMAKE_INSTALL_PREFIX})
-  set(MINGW_BINDIR "${MINGW_PREFIX}/bin")
-  if(${WINDOWS_BITS} MATCHES "32")
-    set(CMAKE_CROSSCOMPILING_EMULATOR wine)
-    set(SITE
-        "${CMAKE_SYSTEM}-32"
-        CACHE STRING "build name variable for CDash"
-    )
-  else()
-    set(CMAKE_CROSSCOMPILING_EMULATOR wine64)
-    set(SITE
-        "${CMAKE_SYSTEM}-64"
-        CACHE STRING "build name variable for CDash"
-    )
+if(NOT MSVC)
+  if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    set(MINGW_PREFIX ${CMAKE_INSTALL_PREFIX})
+    set(MINGW_BINDIR "${MINGW_PREFIX}/bin")
+    if(${WINDOWS_BITS} MATCHES "32")
+      set(CMAKE_CROSSCOMPILING_EMULATOR wine)
+      set(SITE
+          "${CMAKE_SYSTEM}-32"
+          CACHE STRING "build name variable for CDash"
+      )
+    else()
+      set(CMAKE_CROSSCOMPILING_EMULATOR wine64)
+      set(SITE
+          "${CMAKE_SYSTEM}-64"
+          CACHE STRING "build name variable for CDash"
+      )
+    endif()
+
+    # search for dll.a files before .dll
+    set(MINGW_LIBDIR "${MINGW_PREFIX}/lib")
+    set(CMAKE_LIBRARY_PATH ${MINGW_LIBDIR})
+
+    # set WINEPATH so that cross-compiled .exe tests find their dlls
+    set(WINEPATH "Z:${MINGW_BINDIR}\\\\;")
+    string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/lib\\\\;")
+    string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/fastlz\\\\;")
+    string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/findlib\\\\;")
+    string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/stored\\\\;")
+    string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/cats\\\\;")
+
+    message(${WINEPATH})
+    # replace slash with backslash everywhere
+    string(REPLACE "/" "\\" WINEPATH ${WINEPATH})
+    # MESSAGE(FATAL_ERROR ${WINEPATH})
+
+    set(ENV{WINEPATH} ${WINEPATH})
   endif()
-
-  # search for dll.a files before .dll
-  set(MINGW_LIBDIR "${MINGW_PREFIX}/lib")
-  set(CMAKE_LIBRARY_PATH ${MINGW_LIBDIR})
-
-  # set WINEPATH so that cross-compiled .exe tests find their dlls
-  set(WINEPATH "Z:${MINGW_BINDIR}\\\\;")
-  string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/lib\\\\;")
-  string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/fastlz\\\\;")
-  string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/findlib\\\\;")
-  string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/stored\\\\;")
-  string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/cats\\\\;")
-
-  message(${WINEPATH})
-  # replace slash with backslash everywhere
-  string(REPLACE "/" "\\" WINEPATH ${WINEPATH})
-  # MESSAGE(FATAL_ERROR ${WINEPATH})
-
-  set(ENV{WINEPATH} ${WINEPATH})
-
 endif()
 
 include(BareosFindAllLibraries)
@@ -408,11 +412,22 @@ endif()
 
 include(BareosGenerateDebianInfo)
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  if(MSVC)
+  add_definitions(
+    -DWIN32_VSS -DMINGW64 -DHAVE_WIN32
+    -D_WIN32_WINNT=${WINDOWS_VERSION}
+  )
+  # add parallel builds (-MP)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -MP")
+  # export all symbols of dlls trick in cmake
+  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+  else()
   add_definitions(
     -DWIN32_VSS -DMINGW64 -DHAVE_WIN32 -DHAVE_MINGW
     -D_WIN32_WINNT=${WINDOWS_VERSION}
   )
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m${WINDOWS_BITS} -mwin32 -mthreads")
+  endif()
 
   # c++17 removed register keyword
   set(Python2_CCSHARED -Wno-register)
