@@ -32,7 +32,9 @@
  * creating the path components.  Currently, it always starts at
  * the top, which can be rather inefficient for long path names.
  */
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
 #include "include/bareos.h"
 #include "include/filetypes.h"
 #include "include/jcr.h"

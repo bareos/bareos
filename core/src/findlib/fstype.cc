@@ -25,7 +25,9 @@
  * Implement routines to determine file system types.
  */
 
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
 #include "include/bareos.h"
 #include "find.h"
 #include "findlib/fstype.h"

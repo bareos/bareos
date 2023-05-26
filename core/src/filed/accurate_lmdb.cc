@@ -22,7 +22,9 @@
 // Marco van Wieringen, December 2013
 // This file contains the LMDB abstraction of the accurate payload storage.
 
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
 #include "include/bareos.h"
 #include "include/filetypes.h"
 #include "include/streams.h"

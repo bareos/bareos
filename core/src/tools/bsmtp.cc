@@ -59,7 +59,9 @@
  */
 #include <netdb.h>
 #include <pwd.h>
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
 #include "include/bareos.h"
 #include "include/jcr.h"
 #include "lib/cli.h"

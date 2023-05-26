@@ -26,7 +26,9 @@
  * Dumb program to do an "ls" of a Bareos 2.0 mortal file.
  */
 
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
 #include "include/bareos.h"
 #include "include/streams.h"
 #include "stored/stored.h"

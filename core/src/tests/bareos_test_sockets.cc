@@ -200,7 +200,9 @@ BareosSocket* create_new_bareos_socket(int fd)
 
 
 #include <sys/types.h>
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
 
 static uint16_t listening_server_port_number = 0;
 

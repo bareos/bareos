@@ -28,7 +28,9 @@
  * I.e. on Windows, we use Windows APIs.
  */
 
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
 #include <netinet/in.h>
 
 #include "include/fcntl_def.h"

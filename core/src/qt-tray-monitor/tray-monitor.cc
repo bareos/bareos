@@ -28,7 +28,9 @@
 #include <QMessageBox>
 
 #include <signal.h>
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
 
 #include "mainwindow.h"
 #include "tray-monitor.h"

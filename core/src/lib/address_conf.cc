@@ -26,7 +26,9 @@
  * Configuration file parser for IP-Addresse ipv4 and ipv6
  */
 #include <netdb.h>
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
 
 #include "include/bareos.h"
 #include "lib/address_conf.h"

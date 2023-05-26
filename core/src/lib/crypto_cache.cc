@@ -26,7 +26,9 @@
  */
 
 #include "include/fcntl_def.h"
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
 #include "include/bareos.h"
 #include "crypto_cache.h"
 #include "lib/berrno.h"

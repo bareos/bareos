@@ -24,7 +24,9 @@
  *
  * Kern Sibbald, MM
  */
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
 #include <openssl/md5.h>
 
 #include "include/bareos.h"

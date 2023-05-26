@@ -26,7 +26,9 @@
  * other non-Unix systems, or Unix systems with ACLs, ...
  */
 
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
 
 #include "include/bareos.h"
 #include "include/filetypes.h"

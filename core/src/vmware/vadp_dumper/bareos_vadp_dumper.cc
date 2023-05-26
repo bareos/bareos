@@ -28,7 +28,9 @@
 #include <string.h>
 #include <fcntl.h>
 #include <time.h>
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
 #include <signal.h>
 
 #include "copy_thread.h"

@@ -22,7 +22,9 @@
 #ifndef BAREOS_LIB_INI_H_
 #define BAREOS_LIB_INI_H_
 
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
 #include "lib/lex.h"
 
 // Standard global types with handlers defined in ini.c

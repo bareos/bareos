@@ -27,7 +27,9 @@
  * Kern Sibbald, MM
  */
 
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
 #include "include/bareos.h"
 #include "include/filetypes.h"
 #include "include/jcr.h"

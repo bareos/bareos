@@ -25,7 +25,9 @@
  * attr.c  Unpack an Attribute record returned from the tape
  */
 
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
 #include "include/bareos.h"
 #include "include/filetypes.h"
 #include "include/jcr.h"

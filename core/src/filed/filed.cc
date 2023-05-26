@@ -26,7 +26,9 @@
  * Bareos File Daemon
  */
 
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
 #include "include/bareos.h"
 #include "filed/dir_cmd.h"
 #include "filed/filed.h"
