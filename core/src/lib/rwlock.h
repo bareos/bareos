@@ -50,7 +50,7 @@ typedef struct s_rwlock_tag {
     mutex = PTHREAD_MUTEX_INITIALIZER;
     read = PTHREAD_COND_INITIALIZER;
     write = PTHREAD_COND_INITIALIZER;
-    writer_id = 0;
+    writer_id = pthread_t();
     priority = 0;
     valid = 0;
     r_active = 0;

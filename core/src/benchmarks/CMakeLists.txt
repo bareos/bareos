@@ -62,5 +62,5 @@ bareos_add_benchmark(
 
 bareos_add_benchmark(
   poolmem_fragmentation LINK_LIBRARIES bareos benchmark::benchmark_main
-  Threads::Threads
+  ${THREADS_THREADS}
 )

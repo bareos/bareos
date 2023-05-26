@@ -152,7 +152,7 @@ set(DIRD_RESTYPES
 # dird_objects is also used as library for unittests
 add_library(dird_objects STATIC ${DIRD_OBJECTS_SRCS})
 target_link_libraries(
-  dird_objects PRIVATE bareos ${OPENSSL_LIBRARIES} Threads::Threads
+  dird_objects PRIVATE bareos ${OPENSSL_LIBRARIES} ${THREADS_THREADS}
 )
 
 add_executable(bareos-dir)

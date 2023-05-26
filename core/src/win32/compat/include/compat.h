@@ -25,7 +25,18 @@
 #ifndef BAREOS_WIN32_COMPAT_INCLUDE_COMPAT_H_
 #define BAREOS_WIN32_COMPAT_INCLUDE_COMPAT_H_
 
-#include <windows.h>
+#define NOMINMAX
+
+#ifdef _MSC_VER
+// not #if defined(_WIN32) || defined(_WIN64) because we have strncasecmp in
+// mingw
+#  define strncasecmp _strnicmp
+#  define strcasecmp _stricmp
+#endif
+
+#  include <winsock2.h>
+#  include <windows.h>
+#  include <ws2tcpip.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <sys/types.h>
@@ -69,17 +80,12 @@
 #  define _declspec __declspec
 #endif
 
-#include <ntdef.h>
-
 #include <winioctl.h>
 
 #ifdef _WIN64
 #  define GWL_USERDATA GWLP_USERDATA
 #endif
 
-#ifndef INT64
-#  define INT64 long long int
-#endif
 
 void sleep(int);
 
@@ -95,9 +101,43 @@ typedef UINT32 uid_t;
 typedef UINT32 gid_t;
 typedef UINT32 mode_t;
 typedef INT32 ssize_t;
-typedef UINT32 size_t;
 #  define HAVE_SSIZE_T 1
 #endif /* HAVE_MINGW */
+
+#define utime _utime
+#define utimbuf _utimbuf
+
+//#if defined(_MSC_VER)
+typedef struct _REPARSE_DATA_BUFFER {
+  ULONG  ReparseTag;
+  USHORT ReparseDataLength;
+  USHORT Reserved;
+  union {
+    struct {
+      USHORT SubstituteNameOffset;
+      USHORT SubstituteNameLength;
+      USHORT PrintNameOffset;
+      USHORT PrintNameLength;
+      ULONG  Flags;
+      WCHAR  PathBuffer[1];
+    } SymbolicLinkReparseBuffer;
+    struct {
+      USHORT SubstituteNameOffset;
+      USHORT SubstituteNameLength;
+      USHORT PrintNameOffset;
+      USHORT PrintNameLength;
+      WCHAR  PathBuffer[1];
+    } MountPointReparseBuffer;
+    struct {
+      UCHAR DataBuffer[1];
+    } GenericReparseBuffer;
+  } DUMMYUNIONNAME;
+} REPARSE_DATA_BUFFER, *PREPARSE_DATA_BUFFER;
+//#endif
+
+#define ftello _ftelli64
+#define fseeko _fseeki64
+
 
 struct dirent {
   uint64_t d_ino;
@@ -318,7 +358,6 @@ extern "C" void syslog(int type, const char* fmt, ...);
 int stat(const char*, struct stat*);
 #  if defined(__cplusplus)
 #    define access _access
-extern "C" _CRTIMP int __cdecl _access(const char*, int);
 int execvp(const char*, char*[]);
 extern "C" void* __cdecl _alloca(size_t);
 #  endif
@@ -367,9 +406,6 @@ typedef DWORD EXECUTION_STATE;
 #ifndef ES_USER_PRESENT
 #  define ES_USER_PRESENT 0x00000004
 #endif
-
-WINBASEAPI EXECUTION_STATE WINAPI
-SetThreadExecutionState(EXECUTION_STATE esFlags);
 
 extern void LogErrorMsg(const char* message);
 

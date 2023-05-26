@@ -172,8 +172,9 @@ elseif(
       "vmware options were set but VMware Vix Disklib was not found. Cannot run vmware tests."
   )
 endif()
-
-bareosfindlibraryandheaders("pthread" "pthread.h" "")
+if (NOT MSVC)
+ bareosfindlibraryandheaders("pthread" "pthread.h" "")
+endif()
 bareosfindlibraryandheaders("cap" "sys/capability.h" "")
 bareosfindlibraryandheaders("gfapi" "glusterfs/api/glfs.h" "")
 
@@ -216,4 +217,8 @@ if(ENABLE_JANSSON)
   find_package(Jansson)
 endif()
 
-include(thread)
+if (NOT MSVC)
+  include(thread)
+else()
+  find_package(pthread)
+endif()

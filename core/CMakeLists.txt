@@ -247,6 +247,14 @@ if(NOT MSVC)
 endif()
 
 include(BareosFindAllLibraries)
+
+if (MSVC)
+  set (THREADS_THREADS "PThreads4W::PThreads4W_CXXEXC")
+else()
+  set (THREADS_THREADS "Threads::Threads")
+endif()
+
+
 include(BareosFindPrograms)
 
 if(NOT ${OPENSSL_FOUND})

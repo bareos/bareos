@@ -273,7 +273,7 @@ if(NOT client-only)
   bareos_add_test(
     sd_statistics_thread
     LINK_LIBRARIES testing_common dird_objects bareos bareossql bareosfind
-                   Threads::Threads GTest::gtest_main
+                   ${THREADS_THREADS} GTest::gtest_main
   )
   bareos_add_test(
     select_functions LINK_LIBRARIES dird_objects bareosfind bareossql
@@ -387,7 +387,7 @@ endif()
 # Keep alphabetically ordered
 bareos_add_test(
   cram_md5
-  LINK_LIBRARIES bareos Threads::Threads GTest::gtest_main
+  LINK_LIBRARIES bareos ${THREADS_THREADS} GTest::gtest_main
   ADDITIONAL_SOURCES bareos_test_sockets.cc
 )
 
@@ -433,7 +433,7 @@ if(HAVE_WIN32)
 endif()
 
 bareos_add_test(
-  thread_specific_data LINK_LIBRARIES bareos Threads::Threads GTest::gtest_main
+  thread_specific_data LINK_LIBRARIES bareos ${THREADS_THREADS} GTest::gtest_main
 )
 
 bareos_add_test(timer_thread LINK_LIBRARIES bareos GTest::gtest_main)
