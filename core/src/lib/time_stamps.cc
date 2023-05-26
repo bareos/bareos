@@ -30,44 +30,38 @@
 
 ThreadTimeKeeper::~ThreadTimeKeeper()
 {
-  keeper.handle_event_buffer(std::move(buffer.lock().get()));
+  keeper.handle_event_buffer(std::move(buffer));
 }
 
-static constexpr std::size_t buffer_filled_ok = 1000;
-static_assert(buffer_filled_ok < buffer_full);
 
 static void FlushEventsIfNecessary(TimeKeeper& keeper,
                                    std::thread::id this_id,
                                    const std::vector<event::OpenEvent>& stack,
                                    EventBuffer& buffer)
 {
-  if (buffer.events.size() >= buffer_full) {
-    keeper.handle_event_buffer(std::move(buffer));
-    buffer = EventBuffer(this_id, buffer_full, stack);
-  } else if (buffer.events.size() >= buffer_filled_ok) {
+  constexpr std::size_t buffer_filled_ok = 1000;
+  if (buffer.size() >= buffer_filled_ok) {
     if (keeper.try_handle_event_buffer(buffer)) {
-      buffer = EventBuffer(this_id, buffer_full, stack);
+      buffer = EventBuffer(this_id, ThreadTimeKeeper::event_buffer_init_capacity, stack);
     }
   }
 }
 
 void ThreadTimeKeeper::enter(const BlockIdentity& block)
 {
-  auto locked = buffer.lock();
-  FlushEventsIfNecessary(keeper, this_id, stack, *locked);
+  FlushEventsIfNecessary(keeper, this_id, stack, buffer);
   auto& event = stack.emplace_back(block);
-  locked->events.emplace_back(event);
+  buffer.emplace_back(event);
 }
 
 void ThreadTimeKeeper::switch_to(const BlockIdentity& block)
 {
-  auto locked = buffer.lock();
-  FlushEventsIfNecessary(keeper, this_id, stack, *locked);
+  FlushEventsIfNecessary(keeper, this_id, stack, buffer);
   ASSERT(stack.size() != 0);
   auto event = stack.back().close();
-  locked->events.push_back(event);
+  buffer.emplace_back(event);
   stack.back() = event::OpenEvent(block);
-  locked->events.push_back(stack.back());
+  buffer.emplace_back(stack.back());
 }
 
 void ThreadTimeKeeper::exit(const BlockIdentity& block)

@@ -38,7 +38,6 @@
 #include "lib/thread_util.h"
 #include "lib/channel.h"
 
-static constexpr std::size_t buffer_full = 2000;
 
 class TimeKeeper;
 
@@ -46,6 +45,7 @@ class ThreadTimeKeeper {
   friend class TimeKeeper;
 
  public:
+  static constexpr std::size_t event_buffer_init_capacity = 2000;
   ThreadTimeKeeper(TimeKeeper& keeper)
       : this_id{std::this_thread::get_id()}, keeper{keeper}
   {
@@ -53,21 +53,17 @@ class ThreadTimeKeeper {
   ~ThreadTimeKeeper();
   void enter(const BlockIdentity& block);
   void switch_to(const BlockIdentity& block);
-  void exit();
+  void exit(const BlockIdentity& block);
 
- protected:
-  EventBuffer flush()
-  {
-    EventBuffer new_buffer(this_id, buffer_full, stack);
-    std::swap(new_buffer, *buffer.lock());
-    return new_buffer;
-  }
+  std::thread::id threadid() const { return this_id; }
+
+  std::vector<event::OpenEvent> stk() const { return stack; }
 
  private:
   std::thread::id this_id;
   TimeKeeper& keeper;
   std::vector<event::OpenEvent> stack{};
-  synchronized<EventBuffer> buffer{this_id, buffer_full, stack};
+  EventBuffer buffer{this_id, event_buffer_init_capacity, stack};
 };
 
 class TimeKeeper {
@@ -76,16 +72,19 @@ class TimeKeeper {
   TimeKeeper() : TimeKeeper{channel::CreateBufferedChannel<EventBuffer>(1000)}
   {
   }
+
   ~TimeKeeper()
   {
-    flush();
+    keeper.wlock()->clear(); // this flushes left over events
     queue.lock()->close();
     report_writer.join();
   }
+
   void handle_event_buffer(EventBuffer buf)
   {
     queue.lock()->put(std::move(buf));
   }
+
   bool try_handle_event_buffer(EventBuffer& buf)
   {
     if (std::optional locked = queue.try_lock();
@@ -94,18 +93,6 @@ class TimeKeeper {
     } else {
       return false;
     }
-  }
-  void flush()
-  {
-    {
-      auto locked = keeper.wlock();
-      for (auto& [_, thread] : *locked) {
-        auto buf = thread.flush();
-        handle_event_buffer(std::move(buf));
-      }
-    }
-    // TODO: we should somehow only wait until the above buffers were handled
-    queue.lock()->wait_till_empty();
   }
 
   const CallstackReport& callstack_report() const {
