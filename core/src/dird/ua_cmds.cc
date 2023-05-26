@@ -1394,8 +1394,15 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
 
   level = -1;
   i = FindArgWithValue(ua, NT_("level"));
-  if (i >= 0) { level = atoi(ua->argv[i]); }
-  if (level < 0) {
+  if (i >= 0) {
+    /* FIXME: detect errors, i.e. level=blabla should not get parsed
+     *        as level=0 */
+    level = atoi(ua->argv[i]);
+  }
+  if (i >= 0 && level < 0) {
+    /* do not allow negative levels to be specified, since we want to use
+     * them to signal certain things to the daemons
+     * (e.g. -1 = do not change level). */
     if (!GetPint(ua, _("Enter new debug level: "))) { return true; }
     level = ua->pint32_val;
   }
