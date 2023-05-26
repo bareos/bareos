@@ -83,10 +83,11 @@ static void write_reports(std::vector<ReportGenerator*>* gensp,
     reporter->begin_report(start);
   }
   for (;;) {
-    if (std::optional opt = queue.get(); opt.has_value()) {
-      EventBuffer& buf = opt.value();
-      for (auto* reporter : gens) {
-	reporter->add_events(buf);
+    if (std::optional opt = queue.get_all(); opt.has_value()) {
+      for (EventBuffer& buf : opt.value()) {
+	for (auto* reporter : gens) {
+	  reporter->add_events(buf);
+	}
       }
     } else {
       break;
