@@ -43,7 +43,7 @@ endif(CCACHE_FOUND)
 
 # switch on CXX 17 Support
 #
-if (MSVC)
+if (NOT MSVC)
 set(CMAKE_CXX_STANDARD 17)
 else()
 set(CMAKE_CXX_STANDARD 20)
