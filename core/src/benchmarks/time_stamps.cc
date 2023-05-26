@@ -70,8 +70,98 @@ static std::string RandomBlocks(std::size_t num_blocks)
 static TimeKeeper keeper;
 static void SubmitRandomEvents(bm::State& state)
 {
+  std::unordered_map<char, const BlockIdentity*> blockid;
+  std::unordered_set<char> open;
+  for (auto& block : blocks) {
+    open.insert(block.start);
+    auto [_1, ins_start] = blockid.try_emplace(block.start, &block.id);
+    auto [_2, ins_end] = blockid.try_emplace(block.end, &block.id);
+    // check that each block has distinct characters from each other
+    // by confirming that each insert did actually create a new entry.
+    assert(ins_start && "blocks have to have distinct characters from each other.");
+    assert(ins_end && "blocks have to have distinct characters from each outer.");
+  }
 
+  auto timer = keeper.get_thread_local();
+  auto num_blocks = state.range(0);
 
+  std::string events = RandomBlocks(num_blocks);
+  std::size_t numEvents = 0;
+  for (auto _ : state) {
+    for (char c : events) {
+      if (open.find(c) != open.end()) {
+	timer.enter(*blockid[c]);
+      } else {
+	timer.exit(*blockid[c]);
+      }
+    }
+    numEvents += 2 * num_blocks;
+  }
+
+  state.counters["per event"] = benchmark::Counter(numEvents, benchmark::Counter::kIsRate | benchmark::Counter::kInvert);
+
+}
+static void SubmitDeepStack(bm::State& state)
+{
+  auto timer = keeper.get_thread_local();
+  auto num_blocks = state.range(0);
+
+  std::size_t numEvents = 0;
+  static BlockIdentity block{"deep"};
+  for (auto _ : state) {
+    for (decltype(num_blocks) i = 0; i < num_blocks; ++i) {
+      timer.enter(block);
+    }
+    for (decltype(num_blocks) i = 0; i < num_blocks; ++i) {
+      timer.exit(block);
+    }
+    numEvents += 2 * num_blocks;
+  }
+
+  state.counters["per event"] = benchmark::Counter(numEvents, benchmark::Counter::kIsRate | benchmark::Counter::kInvert);
+}
+static void SubmitShallowStack(bm::State& state)
+{
+  auto timer = keeper.get_thread_local();
+  auto num_blocks = state.range(0);
+
+  std::size_t numEvents = 0;
+  static BlockIdentity block{"deep"};
+  for (auto _ : state) {
+    for (decltype(num_blocks) i = 0; i < num_blocks; ++i) {
+      timer.enter(block);
+      timer.exit(block);
+    }
+    numEvents += 2 * num_blocks;
+  }
+
+  state.counters["per event"] = benchmark::Counter(numEvents, benchmark::Counter::kIsRate | benchmark::Counter::kInvert);
+}
+BENCHMARK(SubmitRandomEvents)->Range(1 << 4, 1 << 12)->ThreadRange(1 << 0, 1 << 5);
+BENCHMARK(SubmitDeepStack)->Range(1 << 4, 1 << 12)->ThreadRange(1 << 0, 1 << 5);
+BENCHMARK(SubmitShallowStack)->Range(1 << 4, 1 << 12)->ThreadRange(1 << 0, 1 << 5);
+static void VectorPush(bm::State& state)
+{
+  auto timer = keeper.get_thread_local();
+  auto num_blocks = state.range(0);
+
+  std::size_t numEvents = 0;
+  static BlockIdentity block{"deep"};
+  for (auto _ : state) {
+    for (decltype(num_blocks) i = 0; i < num_blocks; ++i) {
+      timer.enter(block);
+      timer.exit(block);
+    }
+    numEvents += 2 * num_blocks;
+  }
+
+  state.counters["per event"] = benchmark::Counter(numEvents, benchmark::Counter::kIsRate | benchmark::Counter::kInvert);
+}
+BENCHMARK(VectorPush)->Range(1 << 4, 1 << 12)->ThreadRange(1 << 0, 1 << 5);
+
+static TimeKeeper disabled{false};
+static void SubmitRandomEventsWhileDisabled(bm::State& state)
+{
   std::unordered_map<char, const BlockIdentity*> blockid;
   std::unordered_set<char> open;
   for (auto& block : blocks) {
@@ -103,6 +193,6 @@ static void SubmitRandomEvents(bm::State& state)
   state.counters["per event"] = benchmark::Counter(numEvents, benchmark::Counter::kIsRate | benchmark::Counter::kInvert);
 
 }
-BENCHMARK(SubmitRandomEvents)->Range(1 << 10, 1 << 20)->ThreadRange(1 << 0, 1 << 5);
+BENCHMARK(SubmitRandomEventsWhileDisabled)->Range(1 << 4, 1 << 12)->ThreadRange(1 << 0, 1 << 5);
 
 BENCHMARK_MAIN();
