@@ -22,6 +22,7 @@
 #include "dird/ua_report.h"
 
 #include "dird/dird_conf.h"
+#include "dird/dird_globals.h"
 #include "dird/director_jcr_impl.h"
 #include "dird/ua_select.h"
 #include "dird/fd_cmds.h"
@@ -29,9 +30,11 @@
 #include "dird/storage.h"
 #include "include/auth_protocol_types.h"
 #include "lib/display_report.h"
+#include "lib/parse_conf.h"
 
 #include <memory>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace directordaemon {
 void DoDirectorReport(UaContext* ua, const char* msg) {
@@ -152,14 +155,55 @@ bool StorageReport(UaContext* ua, StorageResource* storage, const char* msg)
   return true;
 }
 
-std::vector<StorageResource*> FindStorages()
+struct connection
 {
-  return {};
+  std::string_view address;
+  std::uint32_t    port;
+
+  bool operator==(const connection& other) const
+  {
+    return address == other.address && port == other.port;
+  }
+};
+
+struct connection_hash
+{
+  std::size_t operator()(const connection& val) const
+  {
+    std::size_t h1 = std::hash<std::string_view>{}(val.address);
+    std::size_t h2 = std::hash<std::uint32_t>{}(val.port);
+    return h1 ^ (h2 + 0x9e3779b9 + (h1 << 6) + (h1 >> 2));
+  }
+};
+
+std::vector<StorageResource*> FindUniqueStorages(UaContext* ua)
+{
+  std::unordered_set<connection, connection_hash> combinations;
+  std::vector<StorageResource*> storages;
+
+  StorageResource *store;
+  foreach_res (store, R_STORAGE) {
+    if (!ua->AclAccessOk(Storage_ACL, store->resource_name_)) { continue; }
+    if (combinations.find(connection{std::string_view{store->address},
+				     store->SDport}) != combinations.end()) { continue; }
+    storages.push_back(store);
+  }
+  return storages;
 }
 
-std::vector<ClientResource*> FindClients()
+std::vector<ClientResource*> FindUniqueClients(UaContext* ua)
 {
-  return {};
+  std::unordered_set<connection, connection_hash> combinations;
+  std::vector<ClientResource*> clients;
+
+  ClientResource *store;
+  foreach_res (store, R_CLIENT) {
+    if (!ua->AclAccessOk(Client_ACL, store->resource_name_)) { continue; }
+    if (combinations.find(connection{std::string_view{store->address},
+				     store->FDport}) != combinations.end()) { continue; }
+    clients.push_back(store);
+  }
+  return clients;
 }
 
 bool ReportCmd(UaContext* ua, const char*)
@@ -188,8 +232,8 @@ bool ReportCmd(UaContext* ua, const char*)
   if (Bstrcasecmp(target, "all")) {
     DoDirectorReport(ua, msg.c_str());
 
-    std::vector storages = FindStorages();
-    std::vector clients = FindClients();
+    std::vector storages = FindUniqueStorages(ua);
+    std::vector clients = FindUniqueClients(ua);
 
     for (auto* storage : storages) {
       StorageReport(ua, storage, msg.c_str());
