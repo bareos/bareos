@@ -512,14 +512,17 @@ std::unordered_map<std::string_view, std::string_view> ParseReportCommands(std::
 struct callstack_options
 {
   std::size_t max_depth;
-  bool collapsed;
   bool relative;
   std::string to_string(const CallstackReport& callstack) {
-    if (collapsed) {
+    return callstack.callstack_str(max_depth, relative);
+  }
+};
+
+struct collapsed_options
+{
+  std::size_t max_depth;
+  std::string to_string(const CallstackReport& callstack) {
       return callstack.collapsed_str(max_depth);
-    } else {
-      return callstack.callstack_str(max_depth, relative);
-    }
   }
 };
 
@@ -604,12 +607,6 @@ std::optional<callstack_options> ParseCallstackOptions(BareosSocket* dir,
       }
     }
   }
-  if (auto found = map.find("collapsed");
-      found != map.end()) {
-    options.collapsed = true;
-  } else {
-    options.collapsed = false;
-  }
   if (auto found = map.find("relative");
       found != map.end()) {
     auto val = found->second;
@@ -627,11 +624,30 @@ std::optional<callstack_options> ParseCallstackOptions(BareosSocket* dir,
   return options;
 }
 
+std::optional<collapsed_options> ParseCollapsedOptions(BareosSocket* dir,
+						       const std::unordered_map<std::string_view, std::string_view>& map)
+{
+  collapsed_options options;
+  if (auto found = map.find("depth");
+      found != map.end()) {
+    auto val = found->second;
+    if (val == "all") {
+      options.max_depth = CallstackReport::ShowAll;
+    } else {
+      if (!ParseInt(dir, val.data(), val.data() + val.size(), options.max_depth)) {
+	return std::nullopt;
+      }
+    }
+  }
+  return options;
+}
+
 static bool PerformanceReport(BareosSocket* dir,
 			      const std::unordered_map<std::string_view,
 			      std::string_view>& options)
 {
-  std::variant<std::monostate, callstack_options, overview_options> parsed;
+  std::variant<std::monostate, callstack_options, overview_options,
+	       collapsed_options> parsed;
 
   bool all_jobids = false;
   std::unordered_set<std::uint32_t> jobids{};
@@ -674,6 +690,13 @@ static bool PerformanceReport(BareosSocket* dir,
       } else {
 	return false;
       }
+    } else if (view == "collapsed") {
+      if (auto opt = ParseCollapsedOptions(dir, options);
+	  opt.has_value()) {
+	parsed = opt.value();
+      } else {
+	return false;
+      }
     } else {
       dir->fsend("Perf Report: Unknown style '%s'.\n", std::string{view}.c_str());
       return false;
@@ -699,6 +722,9 @@ static bool PerformanceReport(BareosSocket* dir,
 	  std::string str = arg.to_string(njcr->timer.callstack_report());
 	  dir->send(str.c_str(), str.size());
 	} else if constexpr (std::is_same_v<T, overview_options>) {
+	  std::string str = arg.to_string(njcr->timer.callstack_report());
+	  dir->send(str.c_str(), str.size());
+	} else if constexpr (std::is_same_v<T, collapsed_options>) {
 	  std::string str = arg.to_string(njcr->timer.callstack_report());
 	  dir->send(str.c_str(), str.size());
 	}
