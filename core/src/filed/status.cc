@@ -477,7 +477,9 @@ std::unordered_map<std::string_view, std::string_view> ParseReportCommands(std::
     {"about", "perf"},
     {"jobid", "all"},
     {"style", "callstack"},
-    {"depth", "all"}
+    {"depth", "all"},
+    {"show", "all"},
+    {"relative", "default"}
   };
 
   std::unordered_map<std::string_view, std::string_view> result;
@@ -511,11 +513,12 @@ struct callstack_options
 {
   std::size_t max_depth;
   bool collapsed;
+  bool relative;
   std::string to_string(const CallstackReport& callstack) {
     if (collapsed) {
       return callstack.collapsed_str(max_depth);
     } else {
-      return callstack.str(max_depth);
+      return callstack.callstack_str(max_depth, relative);
     }
   }
 };
@@ -523,8 +526,9 @@ struct callstack_options
 struct overview_options
 {
   std::size_t top_n;
-  std::string to_string(const OverviewReport& overview) {
-    return overview.str(top_n);
+  bool relative;
+  std::string to_string(const CallstackReport& callstack) {
+    return callstack.overview_str(top_n, relative);
   }
 };
 
@@ -568,6 +572,20 @@ std::optional<overview_options> ParseOverviewOptions(BareosSocket* dir,
       }
     }
   }
+  if (auto found = map.find("relative");
+      found != map.end()) {
+    auto val = found->second;
+    if (val == "default") {
+      options.relative = false;
+    } else if (val == "yes") {
+      options.relative = true;
+    } else if (val == "no") {
+      options.relative = false;
+    } else {
+      dir->fsend("Could not parse boolean 'relative': %s\n", std::string{val}.c_str());
+      return std::nullopt;
+    }
+  }
   return options;
 }
 
@@ -591,6 +609,20 @@ std::optional<callstack_options> ParseCallstackOptions(BareosSocket* dir,
     options.collapsed = true;
   } else {
     options.collapsed = false;
+  }
+  if (auto found = map.find("relative");
+      found != map.end()) {
+    auto val = found->second;
+    if (val == "default") {
+      options.relative = true;
+    } else if (val == "yes") {
+      options.relative = true;
+    } else if (val == "no") {
+      options.relative = false;
+    } else {
+      dir->fsend("Could not parse boolean 'relative': %s\n", std::string{val}.c_str());
+      return std::nullopt;
+    }
   }
   return options;
 }
@@ -667,7 +699,7 @@ static bool PerformanceReport(BareosSocket* dir,
 	  std::string str = arg.to_string(njcr->timer.callstack_report());
 	  dir->send(str.c_str(), str.size());
 	} else if constexpr (std::is_same_v<T, overview_options>) {
-	  std::string str = arg.to_string(njcr->timer.overview_report());
+	  std::string str = arg.to_string(njcr->timer.callstack_report());
 	  dir->send(str.c_str(), str.size());
 	}
       }, parsed);

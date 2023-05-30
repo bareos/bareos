@@ -257,7 +257,8 @@ class CallstackReport : public ReportGenerator {
     }
   }
 
-  std::string str(std::size_t max_depth = CallstackReport::ShowAll) const;
+  std::string callstack_str(std::size_t max_depth = CallstackReport::ShowAll, bool relative = true) const;
+  std::string overview_str(std::size_t num_to_show = CallstackReport::ShowAll, bool relative = false) const;
   std::string collapsed_str(std::size_t max_depth = CallstackReport::ShowAll) const;
 
  private:

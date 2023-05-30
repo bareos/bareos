@@ -27,6 +27,8 @@
 #include "lib/perf_report.h"
 #include "include/messages.h"
 
+using ns = std::chrono::nanoseconds;
+
 struct SplitDuration {
   std::chrono::hours h;
   std::chrono::minutes m;
@@ -89,6 +91,7 @@ static auto max_child_values(const ThreadCallstackReport::Node* node)
 }
 
 static void PrintNode(std::ostringstream& out,
+		      bool relative,
                       const char* name,
                       std::size_t depth,
                       std::chrono::nanoseconds parentns,
@@ -127,8 +130,11 @@ static void PrintNode(std::ostringstream& out,
       if ((t1 == t2) && (p1.first > p2.first)) { return true; }
       return false;
     });
+    if (relative) {
+      parentns = node->time_spent();
+    }
     for (auto& [id, child] : children) {
-      PrintNode(out, id->c_str(), depth + 1, node->time_spent(), max_name_length,
+      PrintNode(out, relative, id->c_str(), depth + 1, parentns, max_name_length,
 		max_depth, child);
     }
   }
@@ -154,6 +160,26 @@ static std::int64_t PrintCollapsedNode(std::ostringstream& out,
   }
   out << path << " " << node->time_spent().count() - child_time << "\n";
   return node->time_spent().count();
+}
+
+static ns CreateOverview(std::unordered_map<const BlockIdentity*, ns>& time_spent,
+			 const BlockIdentity* node_id,
+			 const ThreadCallstackReport::Node* node,
+			 bool relative) {
+  ns time_inside_node = node->time_spent();
+
+  ns child_time{0};
+  for (auto& [id, child] : node->children_view()) {
+    child_time += CreateOverview(time_spent, id, child.get(), relative);
+  }
+
+  ns attributed_time = time_inside_node;
+  if (relative) {
+    attributed_time -= child_time;
+  }
+
+  time_spent[node_id] += attributed_time;
+  return time_inside_node;
 }
 
 void ThreadOverviewReport::begin_report(event::time_point current)
@@ -240,7 +266,7 @@ std::string OverviewReport::str(std::size_t NumToShow) const
 
 OverviewReport::~OverviewReport() { Dmsg1(500, "%s", str(ShowAll).c_str()); }
 
-std::string CallstackReport::str(std::size_t max_depth) const
+std::string CallstackReport::callstack_str(std::size_t max_depth, bool relative) const
 {
   using namespace std::chrono;
   event::time_point now = event::clock::now();
@@ -256,7 +282,7 @@ std::string CallstackReport::str(std::size_t max_depth) const
 				    max_values.depth);
 
     std::string_view base_name = "Measured";
-    PrintNode(report, base_name.data(), 0, duration_cast<nanoseconds>(now - start),
+    PrintNode(report, relative, base_name.data(), 0, duration_cast<nanoseconds>(now - start),
               std::max(base_name.size(), max_values.name_length),
               max_print_depth, node.get());
   }
@@ -280,4 +306,57 @@ std::string CallstackReport::collapsed_str(std::size_t max_depth) const
   return report.str();
 }
 
-CallstackReport::~CallstackReport() { Dmsg1(500, "%s", str().c_str()); }
+std::string CallstackReport::overview_str(std::size_t show_top_n,
+					  bool relative) const
+{
+  using namespace std::chrono;
+  event::time_point now = event::clock::now();
+  std::ostringstream report{};
+  report << "=== Start Performance Report (Overview) ===\n";
+  std::shared_lock lock{threads_mut};
+  BlockIdentity top{"Measured"};
+  for (auto& [id, thread] : threads) {
+    report << "== Thread: " << id << " ==\n";
+    auto node = thread.as_of(now);
+    std::unordered_map<const BlockIdentity*, ns> time_spent;
+    CreateOverview(time_spent, &top, node.get(), relative);
+
+    std::vector<
+      std::pair<const BlockIdentity*, ns>>
+      blocks{time_spent.begin(), time_spent.end()};
+
+    std::sort(blocks.begin(), blocks.end(), [](auto& p1, auto& p2) {
+      auto t1 = p1.second.count();
+      auto t2 = p2.second.count();
+      if (t1 > t2) { return true; }
+      if ((t1 == t2) && (p1.first > p2.first)) { return true; }
+      return false;
+    });
+
+    if (show_top_n < blocks.size()) {
+      blocks.resize(show_top_n);
+    }
+
+    std::size_t maxwidth = 0;
+    for (auto [id, _] : blocks) {
+      maxwidth = std::max(std::strlen(id->c_str()), maxwidth);
+    }
+    auto max_time = duration_cast<nanoseconds>(now - start);
+
+    for (auto [id, time] : blocks) {
+      SplitDuration d{time};
+      report << std::setw(maxwidth) << id->c_str() << ": "
+             << d
+             // XXX.XX = 6 chars
+             << " (" << std::setw(6) << std::fixed << std::setprecision(2)
+             << double(time.count() * 100) / double(max_time.count()) << "%)"
+             << "\n";
+    }
+  }
+  report << "=== End Performance Report ===\n";
+  return report.str();
+}
+
+CallstackReport::~CallstackReport() {
+  Dmsg1(500, "%s", callstack_str().c_str());
+}
