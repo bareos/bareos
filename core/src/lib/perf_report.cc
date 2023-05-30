@@ -188,8 +188,8 @@ std::string CallstackReport::callstack_str(std::size_t max_depth, bool relative)
   event::time_point now = event::clock::now();
   std::ostringstream report{};
   report << "=== Start Performance Report (Callstack) ===\n";
-  std::shared_lock lock{threads_mut};
-  for (auto& [id, thread] : threads) {
+  auto locked = threads.rlock();
+  for (auto& [id, thread] : *locked) {
     report << "== Thread: " << id << " ==\n";
     auto node = thread.as_of(now);
     auto max_values = max_child_values(node.get());
@@ -212,8 +212,8 @@ std::string CallstackReport::collapsed_str(std::size_t max_depth) const
   event::time_point now = event::clock::now();
   std::ostringstream report{};
   report << "=== Start Performance Report (Collapsed Callstack) ===\n";
-  std::shared_lock lock{threads_mut};
-  for (auto& [id, thread] : threads) {
+  auto locked = threads.rlock();
+  for (auto& [id, thread] : *locked) {
     report << "== Thread: " << id << " ==\n";
     auto node = thread.as_of(now);
     PrintCollapsedNode(report, "Measured", max_depth, node.get());
@@ -229,9 +229,9 @@ std::string CallstackReport::overview_str(std::size_t show_top_n,
   event::time_point now = event::clock::now();
   std::ostringstream report{};
   report << "=== Start Performance Report (Overview) ===\n";
-  std::shared_lock lock{threads_mut};
+  auto locked = threads.rlock();
   BlockIdentity top{"Measured"};
-  for (auto& [id, thread] : threads) {
+  for (auto& [id, thread] : *locked) {
     report << "== Thread: " << id << " ==\n";
     auto node = thread.as_of(now);
     std::unordered_map<const BlockIdentity*, ns> time_spent;

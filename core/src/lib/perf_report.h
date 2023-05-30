@@ -160,28 +160,25 @@ class CallstackReport : public ReportGenerator {
   {
     ThreadCallstackReport* thread = nullptr;
     auto thread_id = buf.threadid();
-    std::shared_lock lock{threads_mut};
     bool inserted = false;
     {
-      auto iter = threads.find(thread_id);
-      if (iter != threads.end()) { thread = &iter->second; }
+      auto locked = threads.rlock();
+      auto iter = locked->find(thread_id);
+      if (iter != locked->end()) { thread = const_cast<ThreadCallstackReport*>(&iter->second); }
     }
     if (thread == nullptr) {
-      lock.unlock();
-      std::unique_lock write_lock{threads_mut};
-      auto [_, did_insert] = threads.try_emplace(thread_id);
+      auto locked = threads.wlock();
+      auto [_, did_insert] = locked->try_emplace(thread_id);
       ASSERT(did_insert);
       inserted = did_insert;
-      write_lock.unlock();
-      lock.lock();
       // since we unlock and then lock something couldve happened
       // that rehashes the map; as such we need to search again and cannot
       // use the result of emplace
-      auto iter = threads.find(thread_id);
-      ASSERT(iter != threads.end());
-      thread = &iter->second;
     }
-    ASSERT(thread != nullptr);
+    auto locked = threads.rlock();
+    auto iter = locked->find(thread_id);
+    ASSERT(iter != locked->end());
+    thread = const_cast<ThreadCallstackReport*>(&iter->second);
 
     if (inserted) {
       thread->begin_report(start);
@@ -203,9 +200,7 @@ class CallstackReport : public ReportGenerator {
 
  private:
   event::time_point start, end;
-  mutable std::shared_mutex threads_mut{};
-
-  std::unordered_map<std::thread::id, ThreadCallstackReport> threads{};
+  rw_synchronized<std::unordered_map<std::thread::id, ThreadCallstackReport>> threads{};
 };
 
 #endif  // BAREOS_LIB_PERF_REPORT_H_
