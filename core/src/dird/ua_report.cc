@@ -28,15 +28,33 @@
 #include "dird/sd_cmds.h"
 #include "dird/storage.h"
 #include "include/auth_protocol_types.h"
+#include "lib/display_report.h"
 
 #include <memory>
+#include <unordered_map>
 
 namespace directordaemon {
 void DoDirectorReport(UaContext* ua, const char* msg) {
-  (void) ua;
-  (void) msg;
-}
+  std::unordered_map parsed = shared::ParseReportCommands(msg);
 
+  if (auto found = parsed.find("about");
+      found != parsed.end()) {
+    if (found->second == "perf") {
+      std::ostringstream out;
+      static_cast<void>(shared::PerformanceReport(out, parsed));
+      ua->SendMsg("%s", out.str().c_str());
+    } else {
+      // the map does not contain cstrings but string_views.  As such
+      // we need to create a string first if we want to print them with %s.
+      std::string s{found->second};
+      ua->SendMsg(_("Bad report command; unknown report %s.\n"),
+		 s.c_str());
+    }
+  } else {
+    // since about -> perf is the default, this should never happen
+    ua->SendMsg(_("Bad report command; no report type selected.\n"));
+  }
+}
 
 struct connection_closer {
   void operator()(BareosSocket* sock)
