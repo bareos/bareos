@@ -81,6 +81,10 @@
 /* Imported variables */
 extern void terminate_child();
 
+namespace report {
+extern bool ReportCmd(JobControlRecord* jcr);
+};
+
 namespace storagedaemon {
 
 /* Commands received from director that need scanning */
@@ -202,6 +206,7 @@ static struct s_sd_dir_cmds cmds[] = {
     {"release", ReleaseCmd, false},
     {"resolve", ResolveCmd, false},
     {"replicate", ReplicateCmd, false}, /**< Replicate data to an external SD */
+    {"report", report::ReportCmd, false},
     {"run", RunCmd, false},             /**< Start of Job */
     {"getSecureEraseCmd", SecureerasereqCmd, false},
     {"setbandwidth=", SetbandwidthCmd, false},
