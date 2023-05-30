@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -51,6 +51,8 @@
  * Kern Sibbald, January MM
  */
 
+#include <algorithm>
+
 #include "include/bareos.h"
 #include "include/jcr.h"
 #include "lib/address_conf.h"
@@ -65,7 +67,6 @@
 #include "lib/berrno.h"
 #include "lib/util.h"
 
-#include <algorithm>
 
 #if defined(HAVE_WIN32)
 #  include "shlobj.h"
@@ -400,11 +401,9 @@ bool ConfigurationParser::GetConfigIncludePath(PoolMem& full_path,
   bool found = false;
 
   if (!config_include_dir_.empty()) {
-    /*
-     * Set full_path to the initial part of the include path,
+    /* Set full_path to the initial part of the include path,
      * so it can be used as result, even on errors.
-     * On success, full_path will be overwritten with the full path.
-     */
+     * On success, full_path will be overwritten with the full path. */
     full_path.strcpy(config_dir);
     PathAppend(full_path, config_include_dir_.c_str());
     if (PathIsDirectory(full_path)) {
@@ -468,11 +467,9 @@ bool ConfigurationParser::FindConfigPath(PoolMem& full_path)
       found = true;
     }
   } else if (config_default_filename_.empty()) {
-    /*
-     * Compatibility with older versions.
+    /* Compatibility with older versions.
      * If config_default_filename_ is not set,
-     * cf_ may contain what is expected in config_default_filename_.
-     */
+     * cf_ may contain what is expected in config_default_filename_. */
     found = GetConfigFile(full_path, GetDefaultConfigDir(), cf_.c_str());
     if (!found) {
       Jmsg2(nullptr, M_ERROR, 0,
@@ -515,8 +512,7 @@ bool ConfigurationParser::RemoveResource(int rcode, const char* name)
   int rindex = rcode;
   BareosResource* last;
 
-  /*
-   * Remove resource from list.
+  /* Remove resource from list.
    *
    * Note: this is intended for removing a resource that has just been added,
    * but proven to be incorrect (added by console command "configure add").
@@ -665,11 +661,9 @@ bool ConfigurationParser::GetPathOfNewResource(PoolMem& path,
     return false;
   }
 
-  /*
-   * Store name for temporary file in extramsg.
+  /* Store name for temporary file in extramsg.
    * Can be used, if result is true.
-   * Otherwise it contains an error message.
-   */
+   * Otherwise it contains an error message. */
   extramsg.bsprintf("%s.tmp", path.c_str());
 
   if (!error_if_exists) { return true; }

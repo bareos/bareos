@@ -25,11 +25,15 @@
  * attr.c  Unpack an Attribute record returned from the tape
  */
 
+#include <unistd.h>
 #include "include/bareos.h"
+#include "include/filetypes.h"
 #include "include/jcr.h"
+#include "lib/attr.h"
 #include "lib/breg.h"
 #include "lib/edit.h"
 #include "lib/util.h"
+#include "lib/base64.h"
 
 static const int debuglevel = 150;
 

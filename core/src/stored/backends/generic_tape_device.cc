@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2014-2014 Planets Communications B.V.
-   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,7 +29,9 @@
  * @file
  * Generic Tape API device abstraction.
  */
+#include <unistd.h>
 
+#include "include/fcntl_def.h"
 #include "include/bareos.h"
 #include "stored/device_control_record.h"
 #include "stored/stored.h"
@@ -38,8 +40,6 @@
 #include "lib/scsi_lli.h"
 #include "lib/berrno.h"
 #include "lib/util.h"
-
-#include <string>
 
 namespace storagedaemon {
 
@@ -71,11 +71,9 @@ void generic_tape_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
     dev_errno = errno;
   }
 #else
-  /*
-   * UNIX Code
+  /* UNIX Code
    *
-   * If busy retry each second for max_open_wait seconds
-   */
+   * If busy retry each second for max_open_wait seconds */
   for (;;) {
     // Try non-blocking open
     fd = d_open(archive_device_string, oflags | O_NONBLOCK, 0);
@@ -244,10 +242,8 @@ bool generic_tape_device::eod(DeviceControlRecord* dcr)
   }
 #endif
 
-  /*
-   * Some drivers leave us after second EOF when doing MTEOM, so we must backup
-   * so that appending overwrites the second EOF.
-   */
+  /* Some drivers leave us after second EOF when doing MTEOM, so we must backup
+   * so that appending overwrites the second EOF. */
   if (HasCap(CAP_BSFATEOM)) {
     // Backup over EOF
     ok = bsf(1);
@@ -405,13 +401,11 @@ bool generic_tape_device::fsf(int num)
   Dmsg0(100, "fsf\n");
   block_num = 0;
 
-  /*
-   * If Fast forward space file is set, then we
+  /* If Fast forward space file is set, then we
    * use MTFSF to forward space and MTIOCGET
    * to get the file position. We assume that
    * the SCSI driver will ensure that we do not
-   * forward space past the end of the medium.
-   */
+   * forward space past the end of the medium. */
   if (HasCap(CAP_FSF) && HasCap(CAP_MTIOCGET) && HasCap(CAP_FASTFSF)) {
     int my_errno = 0;
     mt_com.mt_op = MTFSF;
@@ -439,13 +433,11 @@ bool generic_tape_device::fsf(int num)
     file = os_file;
     return true;
 
-    /*
-     * Here if CAP_FSF is set, and virtually all drives
+    /* Here if CAP_FSF is set, and virtually all drives
      * these days support it, we read a record, then forward
      * space one file. Using this procedure, which is slow,
      * is the only way we can be sure that we don't read
-     * two consecutive EOF marks, which means End of Data.
-     */
+     * two consecutive EOF marks, which means End of Data. */
   } else if (HasCap(CAP_FSF)) {
     POOLMEM* rbuf;
     int rbuf_len;
@@ -910,10 +902,8 @@ void generic_tape_device::clrerror(int func)
 {
   HandleError(func);
 
-  /*
-   * Now we try different methods of clearing the error status on the drive
-   * so that it is not locked for further operations.
-   */
+  /* Now we try different methods of clearing the error status on the drive
+   * so that it is not locked for further operations. */
 
   // On some systems such as NetBSD, this clears all errors
   GetOsTapeFile();
@@ -960,26 +950,7 @@ void generic_tape_device::SetOsDeviceParameters(DeviceControlRecord* dcr)
   return;
 #endif
 
-#ifdef HAVE_NETBSD_OS
-  mtop mt_com{};
-  if (dev->min_block_size == dev->max_block_size
-      && dev->min_block_size == 0) { /* variable block mode */
-    mt_com.mt_op = MTSETBSIZ;
-    mt_com.mt_count = 0;
-    if (dev->d_ioctl(dev->fd, MTIOCTOP, (char*)&mt_com) < 0) {
-      dev->clrerror(mt_com.mt_op);
-    }
-    /* Get notified at logical end of tape */
-    mt_com.mt_op = MTEWARN;
-    mt_com.mt_count = 1;
-    if (dev->d_ioctl(dev->fd, MTIOCTOP, (char*)&mt_com) < 0) {
-      dev->clrerror(mt_com.mt_op);
-    }
-  }
-  return;
-#endif
-
-#if HAVE_FREEBSD_OS || HAVE_OPENBSD_OS
+#if HAVE_FREEBSD_OS
   mtop mt_com{};
   if (dev->min_block_size == dev->max_block_size
       && dev->min_block_size == 0) { /* variable block mode */
@@ -1060,11 +1031,9 @@ bool generic_tape_device::rewind(DeviceControlRecord* dcr)
   mt_com.mt_op = MTREW;
   mt_com.mt_count = 1;
 
-  /*
-   * If we get an I/O error on rewind, it is probably because
+  /* If we get an I/O error on rewind, it is probably because
    * the drive is actually busy. We loop for (about 5 minutes)
-   * retrying every 5 seconds.
-   */
+   * retrying every 5 seconds. */
   for (i = max_rewind_wait;; i -= 5) {
     if (d_ioctl(fd, MTIOCTOP, (char*)&mt_com) < 0) {
       BErrNo be;
@@ -1073,12 +1042,10 @@ bool generic_tape_device::rewind(DeviceControlRecord* dcr)
       if (i == max_rewind_wait) {
         Dmsg1(200, "Rewind error, %s. retrying ...\n", be.bstrerror());
       }
-      /*
-       * This is a gross hack, because if the user has the
+      /* This is a gross hack, because if the user has the
        * device mounted (i.e. open), then uses mtx to load
        * a tape, the current open file descriptor is invalid.
-       * So, we close the drive and re-open it.
-       */
+       * So, we close the drive and re-open it. */
       if (first && dcr) {
         DeviceMode oo_mode = open_mode;
         d_close(fd);

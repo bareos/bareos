@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -49,6 +49,7 @@
 #include "filed/fd_plugins.h"
 #include "plugins/include/python3compat.h"
 
+#include "include/filetypes.h"
 #include "python-fd.h"
 #include "module/bareosfd.h"
 #include "lib/edit.h"
@@ -303,10 +304,8 @@ static bRC handlePluginEvent(PluginContext* plugin_ctx,
 
   if (!plugin_priv_ctx) { goto bail_out; }
 
-  /*
-   * First handle some events internally before calling python if it
-   * want to do some special handling on the event triggered.
-   */
+  /* First handle some events internally before calling python if it
+   * want to do some special handling on the event triggered. */
   switch (event->eventType) {
     case bEventLevel:
       plugin_priv_ctx->backup_level = (int64_t)value;
@@ -357,19 +356,15 @@ static bRC handlePluginEvent(PluginContext* plugin_ctx,
       break;
   }
 
-  /*
-   * See if we have been triggered in the previous switch if not we have to
+  /* See if we have been triggered in the previous switch if not we have to
    * always dispatch the event. If we already processed the event internally
    * we only do a dispatch to the python entry point when that internal
-   * processing was successful (e.g. retval == bRC_OK).
-   */
+   * processing was successful (e.g. retval == bRC_OK). */
   if (!event_dispatched || retval == bRC_OK) {
     PyEval_AcquireThread(plugin_priv_ctx->interpreter);
 
-    /*
-     * Now dispatch the event to Python.
-     * First the calls that need special handling.
-     */
+    /* Now dispatch the event to Python.
+     * First the calls that need special handling. */
     switch (event->eventType) {
       case bEventBackupCommand:
         /* Fall-through wanted */
@@ -396,10 +391,8 @@ static bRC handlePluginEvent(PluginContext* plugin_ctx,
 
         rop = (restore_object_pkt*)value;
         if (!rop) {
-          /*
-           * If rop == NULL this means we got the last restore object.
-           * No need to call into python so just return.
-           */
+          /* If rop == NULL this means we got the last restore object.
+           * No need to call into python so just return. */
           retval = bRC_OK;
         } else {
           /* See if we already loaded the Python modules. */
@@ -424,11 +417,9 @@ static bRC handlePluginEvent(PluginContext* plugin_ctx,
         retval = Bareosfd_PyHandleBackupFile(plugin_ctx, (save_pkt*)value);
         break;
       default:
-        /*
-         * Handle the generic events e.g. the ones which are just passed on.
+        /* Handle the generic events e.g. the ones which are just passed on.
          * We only try to call Python when we loaded the right module until
-         * that time we pretend the call succeeded.
-         */
+         * that time we pretend the call succeeded. */
         if (plugin_priv_ctx->python_loaded) {
           retval = Bareosfd_PyHandlePluginEvent(plugin_ctx, event, value);
         } else {
@@ -463,18 +454,14 @@ static bRC startBackupFile(PluginContext* plugin_ctx, save_pkt* sp)
   retval = Bareosfd_PyStartBackupFile(plugin_ctx, sp);
   PyEval_ReleaseThread(plugin_priv_ctx->interpreter);
 
-  /*
-   * For Incremental and Differential backups use checkChanges method to
-   * see if we need to backup this file.
-   */
+  /* For Incremental and Differential backups use checkChanges method to
+   * see if we need to backup this file. */
   switch (plugin_priv_ctx->backup_level) {
     case L_INCREMENTAL:
     case L_DIFFERENTIAL:
-      /*
-       * If the plugin didn't set a save_time but we have a since time
+      /* If the plugin didn't set a save_time but we have a since time
        * from the bEventSince event we use that as basis for the actual
-       * save_time to check.
-       */
+       * save_time to check. */
       if (sp->save_time == 0 && plugin_priv_ctx->since) {
         sp->save_time = plugin_priv_ctx->since;
       }
@@ -737,11 +724,9 @@ static bRC parse_plugin_definition(PluginContext* plugin_ctx,
 
   if (!value) { return bRC_Error; }
 
-  /*
-   * Skip this plugin when getting plugin definition "*all*"
+  /* Skip this plugin when getting plugin definition "*all*"
    * This allows to restore a Windows Backup on a Linux FD with
-   * Python Plugins enabled.
-   */
+   * Python Plugins enabled. */
   if (bstrcmp((char*)value, "*all*")) {
     Dmsg(plugin_ctx, debuglevel,
          LOGPREFIX "Got plugin definition %s, skipping to ignore\n",
@@ -751,20 +736,16 @@ static bRC parse_plugin_definition(PluginContext* plugin_ctx,
 
   keep_existing = (plugin_priv_ctx->plugin_options) ? true : false;
 
-  /*
-   * Parse the plugin definition.
-   * Make a private copy of the whole string.
-   */
+  /* Parse the plugin definition.
+   * Make a private copy of the whole string. */
   if (!plugin_priv_ctx->python_loaded && plugin_priv_ctx->plugin_options) {
     int len;
 
-    /*
-     * We got some option string which got pushed before we actual were able to
+    /* We got some option string which got pushed before we actual were able to
      * send it to the python module as the entry point was not instantiated. So
      * we prepend that now in the option string and append the new option string
      * with the first argument being the pluginname removed as that is already
-     * part of the other plugin option string.
-     */
+     * part of the other plugin option string. */
     len = strlen(plugin_priv_ctx->plugin_options);
     PmStrcpy(plugin_definition, plugin_priv_ctx->plugin_options);
 
@@ -803,8 +784,7 @@ static bRC parse_plugin_definition(PluginContext* plugin_ctx,
   while (bp) {
     if (strlen(bp) == 0) { break; }
 
-    /*
-     * Each argument is in the form:
+    /* Each argument is in the form:
      *    <argument> = <argument_value>
      *
      * So we setup the right pointers here, argument to the beginning

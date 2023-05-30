@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -71,21 +71,10 @@
 #ifndef BAREOS_INCLUDE_BAREOS_H_
 #define BAREOS_INCLUDE_BAREOS_H_
 
-#ifdef __cplusplus
-/* Workaround for SGI IRIX 6.5 */
-#  define _LANGUAGE_C_PLUS_PLUS 1
-#endif
-
 #include "config.h"
 
 #if HAVE_AIX_OS
 #  define _LINUX_SOURCE_COMPAT 1
-#endif
-
-#ifdef HAVE_HPUX_OS
-#  undef HAVE_LCHMOD
-#  undef HAVE_LCHOWN
-#  undef HAVE_POSIX_FADVISE
 #endif
 
 #define _REENTRANT 1
@@ -93,13 +82,6 @@
 #define _POSIX_PTHREAD_SEMANTICS 1
 
 /* System includes */
-#ifndef __sgi
-#  include <stdint.h>
-#endif
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
 #if HAVE_UMEM_H
 #  include <umem.h>
 #endif
@@ -111,13 +93,6 @@
 #  include <direct.h>
 #  include <process.h>
 #endif
-#include <errno.h>
-#include <fcntl.h>
-
-/* O_NOATIME is defined at fcntl.h when supported */
-#ifndef O_NOATIME
-#  define O_NOATIME 0
-#endif
 
 #if defined(_MSC_VER)
 extern "C" {
@@ -125,35 +100,10 @@ extern "C" {
 }
 #endif
 
-#include <string.h>
-#include <strings.h>
-#include <signal.h>
-#include <ctype.h>
-#ifndef _SPLINT_
-#  include <syslog.h>
-#endif
-#include <limits.h>
-#include <pwd.h>
-#include <grp.h>
-#include <time.h>
-#include <netdb.h>
-#include <sys/types.h>
-#ifdef HAVE_SYS_BITYPES_H
-#  include <sys/bitypes.h>
-#endif
-#include <sys/ioctl.h>
 #include <sys/socket.h>
 #if defined(HAVE_WIN32) & !defined(HAVE_MINGW)
 #  include <winsock2.h>
 #endif
-#if !defined(HAVE_WIN32) & !defined(HAVE_MINGW)
-#  include <sys/stat.h>
-#endif
-#include <sys/time.h>
-#include <sys/wait.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <pthread.h>
 
 #if defined(HAVE_WIN32)
 /* we must include winsock2.h before windows.h, because that would implicitly
@@ -166,7 +116,6 @@ extern "C" {
 
 
 // Local Bareos includes. Be sure to put all the system includes before these.
-#include "lib/version.h"
 #include "bc_types.h"
 
 #if defined(HAVE_WIN32)
@@ -177,19 +126,11 @@ extern "C" {
 #  define _GLIBCXX_GTHREAD_USE_WEAK 0
 #endif
 
-#include <list>
-#include <vector>
-#include <map>
-#include <string>
-#include <memory>
-#include "lib/attribs.h"
-
-
-#include "streams.h"
-#include "filetypes.h"
+// Libraries widely used throughout the code
 #include "baconfig.h"
-#include "lib/lib.h"
-#include "lib/compression.h"
+#include "lib/lockmgr.h"
+#include "lib/mem_pool.h"
+#include "lib/btime.h"
 
 #if defined(HAVE_WIN32)
 #  include "winapi.h"

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -176,7 +176,7 @@ int RwlReadunlock(brwlock_t* rwl)
  * Lock for write access, wait until locked (or error).
  *   Multiple nested write locking is permitted.
  */
-int RwlWritelock_p(brwlock_t* rwl, const char*, int)
+int RwlWritelock(brwlock_t* rwl)
 {
   int status;
 

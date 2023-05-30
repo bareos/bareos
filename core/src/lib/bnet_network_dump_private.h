@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -37,15 +37,12 @@ class BnetDumpPrivate {
   BnetDumpPrivate() = default;
   ~BnetDumpPrivate() = default;
 
-  static bool SetFilename(const char* filename);
-
   void DumpToFile(const char* ptr, int nbytes);
   void SaveAndSendMessageIfNoDestinationDefined(const char* ptr, int nbytes);
   void OpenFile();
   void CloseFile();
 
   static std::string filename_;
-  static bool plantuml_mode_;
   static int stack_level_amount_;
 
   std::string own_qualified_name_;

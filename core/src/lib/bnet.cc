@@ -33,6 +33,9 @@
  * Network Utility Routines
  */
 
+
+#include <map>
+
 #include "include/bareos.h"
 #include "jcr.h"
 #include "lib/berrno.h"

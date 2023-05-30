@@ -97,6 +97,8 @@
 #ifndef BAREOS_NDMP_NDMAGENTS_H_
 #define BAREOS_NDMP_NDMAGENTS_H_
 
+#include <netdb.h>
+
 #include "ndmp/ndmlib.h"
 
 #ifdef __cplusplus

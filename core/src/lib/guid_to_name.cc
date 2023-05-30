@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Kern Sibbald
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,7 +26,10 @@
  * for preformance reasons.
  */
 
+#include <pwd.h>
+#include <grp.h>
 #include "include/bareos.h"
+#include "lib/guid_to_name.h"
 #include "lib/edit.h"
 #include "lib/dlist.h"
 
@@ -56,12 +59,8 @@ guid_list* new_guid_list()
 void FreeGuidList(guid_list* list)
 {
   guitem* item;
-  foreach_dlist (item, list->uid_list) {
-    free(item->name);
-  }
-  foreach_dlist (item, list->gid_list) {
-    free(item->name);
-  }
+  foreach_dlist (item, list->uid_list) { free(item->name); }
+  foreach_dlist (item, list->gid_list) { free(item->name); }
   delete list->uid_list;
   delete list->gid_list;
   free(list);

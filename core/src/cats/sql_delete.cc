@@ -200,25 +200,6 @@ bool BareosDb::DeleteMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
   return true;
 }
 
-/**
- * Purge all records associated with a
- * media record. This does not delete the
- * media record itself. But the media status
- * is changed to "Purged".
- */
-bool BareosDb::PurgeMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
-{
-  DbLocker _{this};
-  if (mr->MediaId == 0 && !GetMediaRecord(jcr, mr)) { return false; }
-
-  DoMediaPurge(this, mr); /* Note, always purge */
-
-  strcpy(mr->VolStatus, "Purged");
-  if (!UpdateMediaRecord(jcr, mr)) { return false; }
-
-  return true;
-}
-
 void BareosDb::PurgeFiles(const char* jobids)
 {
   PoolMem query(PM_MESSAGE);

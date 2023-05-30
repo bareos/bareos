@@ -30,6 +30,7 @@
 #include "lib/tls_resource_items.h"
 #include "lib/output_formatter.h"
 #include "lib/output_formatter_resource.h"
+#include "lib/version.h"
 
 #include <cassert>
 

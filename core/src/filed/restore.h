@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
    Copyright (C) 2009 Free Software Foundation Europe e.V.
 
    This program is Free Software; you can redistribute it and/or
@@ -24,6 +24,7 @@
 #define BAREOS_FILED_RESTORE_H_
 
 #include "findlib/bfile.h"
+#include "lib/attr.h"
 template <typename T> class alist;
 
 namespace filedaemon {

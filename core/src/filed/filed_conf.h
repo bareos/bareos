@@ -31,6 +31,7 @@
 
 #include "lib/messages_resource.h"
 #include "lib/tls_conf.h"
+#include "lib/crypto.h"
 template <typename T> class alist;
 template <typename T> class dlist;
 class IPADDR;

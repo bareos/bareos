@@ -40,7 +40,9 @@
 #include "lib/bstringlist.h"
 #include "lib/cli.h"
 #include "lib/qualified_resource_name_type_converter.h"
+#include "lib/version.h"
 #include "lib/watchdog.h"
+#include "lib/bpipe.h"
 #include <stdio.h>
 #include <fstream>
 #include <string>
@@ -914,8 +916,6 @@ int main(int argc, char* argv[])
       ->excludes(xc);
 
   AddDeprecatedExportOptionsHelp(console_app);
-
-  AddNetworkDebuggingOption(console_app);
 
   CLI11_PARSE(console_app, argc, argv);
 

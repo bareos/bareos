@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -39,6 +39,7 @@
 #include "lib/parse_conf.h"
 #include "lib/bsock.h"
 #include "lib/berrno.h"
+#include "lib/bpipe.h"
 
 namespace storagedaemon {
 
@@ -68,10 +69,8 @@ bool InitAutochangers()
 
     logical_drive_number = 0;
     foreach_alist (device_resource, changer->device_resources) {
-      /*
-       * If the device does not have a changer name or changer command
-       * defined, used the one from the Autochanger resource
-       */
+      /* If the device does not have a changer name or changer command
+       * defined, used the one from the Autochanger resource */
       if (!device_resource->changer_name && changer->changer_name) {
         device_resource->changer_name = strdup(changer->changer_name);
       }
@@ -142,10 +141,8 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
   Dmsg3(100, "autoload: slot=%hd InChgr=%d Vol=%s\n", dcr->VolCatInfo.Slot,
         dcr->VolCatInfo.InChanger, dcr->getVolCatName());
 
-  /*
-   * Handle autoloaders here.  If we cannot autoload it, we will return 0 so
-   * that the sysop will be asked to load it.
-   */
+  /* Handle autoloaders here.  If we cannot autoload it, we will return 0 so
+   * that the sysop will be asked to load it. */
   if (writing && (!IsSlotNumberValid(wanted_slot))) {
     if (dir) { return 0; /* For user, bail out right now */ }
 
@@ -305,18 +302,14 @@ slot_number_t GetAutochangerLoadedSlot(DeviceControlRecord* dcr, bool lock_set)
   // Virtual disk autochanger
   if (dcr->device_resource->changer_command[0] == 0) { return 1; }
 
-  /*
-   * Only lock the changer if the lock_set is false e.g. changer not locked by
-   * calling function.
-   */
+  /* Only lock the changer if the lock_set is false e.g. changer not locked by
+   * calling function. */
   if (!lock_set) {
     if (!LockChanger(dcr)) { return kInvalidSlotNumber; }
   }
 
-  /*
-   * Find out what is loaded, zero means device is unloaded
-   * Suppress info when polling
-   */
+  /* Find out what is loaded, zero means device is unloaded
+   * Suppress info when polling */
   if (!dev->poll && debug_level >= 1) {
     Jmsg(jcr, M_INFO, 0,
          _("3301 Issuing autochanger \"loaded? drive %hd\" command.\n"), drive);
@@ -380,10 +373,8 @@ static bool LockChanger(DeviceControlRecord* dcr)
            _("Lock failure on autochanger. ERR=%s\n"), be.bstrerror(errstat));
     }
 
-    /*
-     * We just locked the changer for exclusive use so let any plugin know we
-     * have.
-     */
+    /* We just locked the changer for exclusive use so let any plugin know we
+     * have. */
     if (GeneratePluginEvent(dcr->jcr, bSdEventChangerLock, dcr) != bRC_OK) {
       Dmsg0(100, "Locking changer: bSdEventChangerLock failed\n");
       RwlWriteunlock(&changer_res->changer_lock);
@@ -443,10 +434,8 @@ bool UnloadAutochanger(DeviceControlRecord* dcr,
     return true;
   }
 
-  /*
-   * Only lock the changer if the lock_set is false e.g. changer not locked by
-   * calling function.
-   */
+  /* Only lock the changer if the lock_set is false e.g. changer not locked by
+   * calling function. */
   if (!lock_set) {
     if (!LockChanger(dcr)) { return false; }
   }
@@ -489,10 +478,8 @@ bool UnloadAutochanger(DeviceControlRecord* dcr,
     FreePoolMemory(changer);
   }
 
-  /*
-   * Only unlock the changer if the lock_set is false e.g. changer not locked by
-   * calling function.
-   */
+  /* Only unlock the changer if the lock_set is false e.g. changer not locked by
+   * calling function. */
   if (!lock_set) { UnlockChanger(dcr); }
 
   // FreeVolume outside from changer lock
@@ -520,10 +507,8 @@ static bool UnloadOtherDrive(DeviceControlRecord* dcr,
   if (!changer) { return false; }
   if (changer->device_resources->size() == 1) { return true; }
 
-  /*
-   * We look for the slot number corresponding to the tape
-   * we want in other drives, and if possible, unload it.
-   */
+  /* We look for the slot number corresponding to the tape
+   * we want in other drives, and if possible, unload it. */
   Dmsg0(100, "Wiffle through devices looking for slot\n");
   foreach_alist (device_resource, changer->device_resources) {
     dev = device_resource->dev;
@@ -611,10 +596,8 @@ bool UnloadDev(DeviceControlRecord* dcr, Device* dev, bool lock_set)
     return false;
   }
 
-  /*
-   * Only lock the changer if the lock_set is false e.g. changer not locked by
-   * calling function.
-   */
+  /* Only lock the changer if the lock_set is false e.g. changer not locked by
+   * calling function. */
   if (!lock_set) {
     if (!LockChanger(dcr)) {
       dcr->SetDev(save_dev);
@@ -663,10 +646,8 @@ bool UnloadDev(DeviceControlRecord* dcr, Device* dev, bool lock_set)
   }
   if (retval) { dev->ClearUnload(); }
 
-  /*
-   * Only unlock the changer if the lock_set is false e.g. changer not locked by
-   * calling function.
-   */
+  /* Only unlock the changer if the lock_set is false e.g. changer not locked by
+   * calling function. */
   if (!lock_set) { UnlockChanger(dcr); }
 
   FreeVolume(dev); /* Free any volume associated with this drive */

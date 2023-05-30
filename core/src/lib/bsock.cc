@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -36,6 +36,7 @@
 #include "lib/util.h"
 #include "lib/bstringlist.h"
 #include "lib/parse_conf.h"
+#include "lib/version.h"
 
 #include <algorithm>
 
@@ -250,7 +251,7 @@ bool BareosSocket::despool(void UpdateAttrSpoolSize(ssize_t size),
     }
 
     send();
-    if (jcr && JobCanceled(jcr)) { return false; }
+    if (jcr && jcr->IsJobCanceled()) { return false; }
   }
   UpdateAttrSpoolSize(tsize - last);
 
@@ -388,7 +389,7 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord* jcr,
 {
   bool auth_success = false;
 
-  if (jcr && JobCanceled(jcr)) {
+  if (jcr && jcr->IsJobCanceled()) {
     const char* fmt
         = _("TwoWayAuthenticate failed, because job was canceled.\n");
     Jmsg(jcr, M_FATAL, 0, fmt);
@@ -449,7 +450,7 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord* jcr,
       }
       fsend(_("1999 Authorization failed.\n"));
       Bmicrosleep(sleep_time_after_authentication_error, 0);
-    } else if (jcr && JobCanceled(jcr)) {
+    } else if (jcr && jcr->IsJobCanceled()) {
       const char* fmt
           = _("TwoWayAuthenticate failed, because job was canceled.\n");
       Jmsg(jcr, M_FATAL, 0, fmt);
@@ -807,11 +808,9 @@ void BareosSocket::ControlBwlimit(int bytes)
   // Remove what was authorised to be written in temp usecs.
   nb_bytes_ -= (int64_t)(temp * ((double)bwlimit_ / 1000000.0));
   if (nb_bytes_ < 0) {
-    /*
-     * If more was authorized then used but bursting is not enabled
+    /* If more was authorized then used but bursting is not enabled
      * reset the counter as these bytes cannot be used later on when
-     * we are exceeding our bandwidth.
-     */
+     * we are exceeding our bandwidth. */
     if (!use_bursting_) { nb_bytes_ = 0; }
     return;
   }
@@ -838,14 +837,12 @@ void BareosSocket::ControlBwlimit(int bytes)
       }
     }
 
-    /*
-     * Subtract the number of bytes we could have sent during the sleep
+    /* Subtract the number of bytes we could have sent during the sleep
      * time given the bandwidth limit set. We only do this when we are
      * allowed to burst e.g. use unused bytes from previous timeslices
      * to get an overall bandwidth limiting which may sometimes be below
      * the bandwidth and sometimes above it but the average will be near
-     * the set bandwidth.
-     */
+     * the set bandwidth. */
     if (use_bursting_) {
       nb_bytes_ -= (int64_t)(usec_sleep * ((double)bwlimit_ / 1000000.0));
     } else {

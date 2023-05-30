@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2009 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,10 +32,6 @@
 #include "lib/rblist.h"
 
 #include "include/config.h"
-
-#ifdef HAVE_HPUX_OS
-#  pragma pack(push, 4)
-#endif
 
 struct s_mem {
   struct s_mem* next; /* next buffer */
@@ -151,10 +147,6 @@ struct s_tree_root {
   HardlinkTable hardlinks;     /* references to first occurence of hardlinks */
 };
 typedef struct s_tree_root TREE_ROOT;
-
-#ifdef HAVE_HPUX_OS
-#  pragma pack(pop)
-#endif
 
 /* type values */
 #define TN_ROOT 1    /* root node */

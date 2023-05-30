@@ -104,19 +104,19 @@ void InitVolListLock()
 void TermVolListLock() { RwlDestroy(&vol_list_lock); }
 
 // This allows a given thread to recursively call to LockVolumes()
-void _lockVolumes(const char* file, int line)
+void LockVolumes()
 {
   int errstat;
 
   vol_list_lock_count++;
-  if ((errstat = RwlWritelock_p(&vol_list_lock, file, line)) != 0) {
+  if ((errstat = RwlWritelock(&vol_list_lock)) != 0) {
     BErrNo be;
     Emsg2(M_ABORT, 0, "RwlWritelock failure. stat=%d: ERR=%s\n", errstat,
           be.bstrerror(errstat));
   }
 }
 
-void _unLockVolumes()
+void UnlockVolumes()
 {
   int errstat;
 
@@ -128,13 +128,13 @@ void _unLockVolumes()
   }
 }
 
-void _lockReadVolumes(const char*, int)
+void LockReadVolumes()
 {
   read_vol_list_lock_count++;
   pthread_mutex_lock(&read_vol_lock);
 }
 
-void _unLockReadVolumes()
+void UnlockReadVolumes()
 {
   read_vol_list_lock_count--;
   pthread_mutex_unlock(&read_vol_lock);
@@ -350,7 +350,7 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
 {
   VolumeReservationItem *vol, *nvol;
 
-  if (JobCanceled(dcr->jcr)) { return NULL; }
+  if (dcr->jcr->IsJobCanceled()) { return NULL; }
   ASSERT(dcr->dev != NULL);
 
   Dmsg2(debuglevel, "enter reserve_volume=%s drive=%s\n", VolumeName,
@@ -830,7 +830,7 @@ bool DeviceControlRecord::Can_i_use_volume()
   bool rtn = true;
   VolumeReservationItem* vol;
 
-  if (JobCanceled(jcr)) { return false; }
+  if (jcr->IsJobCanceled()) { return false; }
   LockVolumes();
   vol = find_volume(VolumeName);
   if (!vol) {

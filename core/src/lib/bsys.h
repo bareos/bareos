@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -52,6 +52,7 @@ char* bfgets(char* s, int size, FILE* fd);
 char* bfgets(POOLMEM*& s, FILE* fd);
 void MakeUniqueFilename(POOLMEM*& name, int Id, char* what);
 void ReadStateFile(const char* dir, const char* progname, int port);
+void WriteStateFile(const char* dir, const char* progname, int port);
 int b_strerror(int errnum, char* buf, size_t bufsiz);
 char* escape_filename(const char* file_path);
 int Zdeflate(char* in, int in_len, char* out, int& out_len);

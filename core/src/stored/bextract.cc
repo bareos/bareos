@@ -26,7 +26,10 @@
  * Dumb program to extract files from a Bareos backup.
  */
 
+#include <unistd.h>
 #include "include/bareos.h"
+#include "include/filetypes.h"
+#include "include/streams.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
 #include "lib/crypto_cache.h"
@@ -50,6 +53,8 @@
 #include "lib/parse_bsr.h"
 #include "lib/parse_conf.h"
 #include "include/jcr.h"
+#include "lib/compression.h"
+#include "lib/serial.h"
 
 namespace storagedaemon {
 extern bool ParseSdConfig(const char* configfile, int exit_code);

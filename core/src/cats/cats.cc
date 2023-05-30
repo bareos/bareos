@@ -105,7 +105,7 @@ void BareosDb::LockDb(const char* file, int line)
 {
   int errstat;
 
-  if ((errstat = RwlWritelock_p(&lock_, file, line)) != 0) {
+  if ((errstat = RwlWritelock(&lock_)) != 0) {
     BErrNo be;
     e_msg(file, line, M_FATAL, 0, "RwlWritelock failure. stat=%d: ERR=%s\n",
           errstat, be.bstrerror(errstat));

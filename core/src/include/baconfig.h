@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,9 +30,6 @@
 
 #ifndef BAREOS_INCLUDE_BACONFIG_H_
 #define BAREOS_INCLUDE_BACONFIG_H_
-
-#include <arpa/inet.h>
-#include <string.h>
 
 #include "lib/message.h"
 
@@ -547,14 +544,6 @@ inline const char* first_path_separator(const char* path)
 {
   return strpbrk(path, "/\\");
 }
-
-extern void PauseMsg(const char* file,
-                     const char* func,
-                     int line,
-                     const char* msg);
-#  define pause(msg) \
-    if (debug_level) PauseMsg(__FILE__, __func__, __LINE__, (msg))
-
 #else
 //   Unix/Linux
 #  define PathSeparator '/'
@@ -569,42 +558,7 @@ inline const char* first_path_separator(const char* path)
 {
   return strchr(path, '/');
 }
-#  define pause(msg)
 #endif
-
-
-/** HP-UX 11 specific workarounds */
-
-#ifdef HAVE_HPUX_OS
-#  undef h_errno
-extern int h_errno;
-/** the {get,set}domainname() functions exist in HPUX's libc.
- * the configure script detects that correctly.
- * the problem is no system headers declares the prototypes for these functions
- * this is done below
- */
-#  ifdef __cplusplus
-extern "C" {
-#  endif /* __cplusplus */
-int Getdomainname(char* name, int namelen);
-int Setdomainname(char* name, int namelen);
-#  ifdef __cplusplus
-}
-#  endif /* __cplusplus */
-#endif   /* HAVE_HPUX_OS */
-
-
-#ifdef HAVE_OSF1_OS
-#  ifdef __cplusplus
-extern "C" {
-#  endif /* __cplusplus */
-int fchdir(int filedes);
-long gethostid(void);
-int Getdomainname(char* name, int len);
-#  ifdef __cplusplus
-}
-#  endif /* __cplusplus */
-#endif   /* HAVE_OSF1_OS */
 
 #ifndef __GNUC__
 #  define __PRETTY_FUNCTION__ __func__

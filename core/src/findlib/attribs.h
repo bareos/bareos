@@ -21,6 +21,8 @@
 #ifndef BAREOS_FINDLIB_ATTRIBS_H_
 #define BAREOS_FINDLIB_ATTRIBS_H_
 
+#include "lib/attr.h"
+
 int encode_attribsEx(JobControlRecord* jcr,
                      char* attribsEx,
                      FindFilesPacket* ff_pkt);

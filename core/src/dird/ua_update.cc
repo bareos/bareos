@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -300,10 +300,8 @@ static void UpdateVolslot(UaContext* ua, char* val, MediaDbRecord* mr)
                  pr.MaxVols);
     return;
   }
-  /*
-   * Make sure to use db_update... rather than doing this directly,
-   * so that any Slot is handled correctly.
-   */
+  /* Make sure to use db_update... rather than doing this directly,
+   * so that any Slot is handled correctly. */
   SetStorageidInMr(NULL, mr);
   if (!ua->db->UpdateMediaRecord(ua->jcr, mr)) {
     ua->ErrorMsg(_("Error updating media record Slot: ERR=%s"),
@@ -721,10 +719,8 @@ static bool UpdateVolume(UaContext* ua)
                   mr.VolumeName);
         if (!GetYesno(ua, buf)) { return false; }
         mr.InChanger = ua->pint32_val;
-        /*
-         * Make sure to use db_update... rather than doing this directly,
-         *   so that any Slot is handled correctly.
-         */
+        /* Make sure to use db_update... rather than doing this directly,
+         *   so that any Slot is handled correctly. */
         SetStorageidInMr(NULL, &mr);
         if (!ua->db->UpdateMediaRecord(ua->jcr, &mr)) {
           ua->ErrorMsg(_("Error updating media record Slot: ERR=%s"),
@@ -1073,10 +1069,11 @@ static void UpdateSlots(UaContext* ua)
 
     Dmsg4(100, "Before make unique: Vol=%s slot=%d inchanger=%d sid=%d\n",
           mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
-    DbLock(ua->db);
-    // Set InChanger to zero for this Slot
-    ua->db->MakeInchangerUnique(ua->jcr, &mr);
-    DbUnlock(ua->db);
+    {
+      DbLocker _{ua->db};
+      // Set InChanger to zero for this Slot
+      ua->db->MakeInchangerUnique(ua->jcr, &mr);
+    }
     Dmsg4(100, "After make unique: Vol=%s slot=%d inchanger=%d sid=%d\n",
           mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
 
@@ -1088,36 +1085,40 @@ static void UpdateSlots(UaContext* ua)
       continue;
     }
 
-    DbLock(ua->db);
-    Dmsg4(100, "Before get MR: Vol=%s slot=%d inchanger=%d sid=%d\n",
-          mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
-    if (ua->db->GetMediaRecord(ua->jcr, &mr)) {
-      Dmsg4(100, "After get MR: Vol=%s slot=%d inchanger=%d sid=%d\n",
+    {
+      DbLocker _{ua->db};
+      Dmsg4(100, "Before get MR: Vol=%s slot=%d inchanger=%d sid=%d\n",
             mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
-      // If Slot, Inchanger, and StorageId have changed, update the Media record
-      if (mr.Slot != vl->bareos_slot_number || !mr.InChanger
-          || mr.StorageId != store.store->StorageId) {
-        mr.Slot = vl->bareos_slot_number;
-        mr.InChanger = 1;
-        if (have_enabled) { mr.Enabled = Enabled; }
-        SetStorageidInMr(store.store, &mr);
-        if (!ua->db->UpdateMediaRecord(ua->jcr, &mr)) {
-          ua->ErrorMsg("%s", ua->db->strerror());
+      if (ua->db->GetMediaRecord(ua->jcr, &mr)) {
+        Dmsg4(100, "After get MR: Vol=%s slot=%d inchanger=%d sid=%d\n",
+              mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
+        // If Slot, Inchanger, and StorageId have changed, update the Media
+        // record
+        if (mr.Slot != vl->bareos_slot_number || !mr.InChanger
+            || mr.StorageId != store.store->StorageId) {
+          mr.Slot = vl->bareos_slot_number;
+          mr.InChanger = 1;
+          if (have_enabled) { mr.Enabled = Enabled; }
+          SetStorageidInMr(store.store, &mr);
+          if (!ua->db->UpdateMediaRecord(ua->jcr, &mr)) {
+            ua->ErrorMsg("%s", ua->db->strerror());
+          } else {
+            ua->InfoMsg(
+                _("Catalog record for Volume \"%s\" updated to reference "
+                  "slot %d.\n"),
+                mr.VolumeName, mr.Slot);
+          }
         } else {
-          ua->InfoMsg(_("Catalog record for Volume \"%s\" updated to reference "
-                        "slot %d.\n"),
-                      mr.VolumeName, mr.Slot);
+          ua->InfoMsg(_("Catalog record for Volume \"%s\" is up to date.\n"),
+                      mr.VolumeName);
         }
       } else {
-        ua->InfoMsg(_("Catalog record for Volume \"%s\" is up to date.\n"),
-                    mr.VolumeName);
+        ua->WarningMsg(
+            _("Volume \"%s\" not found in catalog. Slot=%d InChanger "
+              "set to zero.\n"),
+            mr.VolumeName, vl->bareos_slot_number);
       }
-    } else {
-      ua->WarningMsg(_("Volume \"%s\" not found in catalog. Slot=%d InChanger "
-                       "set to zero.\n"),
-                     mr.VolumeName, vl->bareos_slot_number);
     }
-    DbUnlock(ua->db);
   }
   {
     MediaDbRecord mr;
@@ -1125,15 +1126,16 @@ static void UpdateSlots(UaContext* ua)
     SetStorageidInMr(store.store, &mr);
 
     // Any slot not visited gets it Inchanger flag reset.
-    DbLock(ua->db);
-    for (i = 1; i <= max_slots; i++) {
-      if (BitIsSet(i - 1, slot_list)) {
-        // Set InChanger to zero for this Slot
-        mr.Slot = i;
-        ua->db->MakeInchangerUnique(ua->jcr, &mr);
+    {
+      DbLocker _{ua->db};
+      for (i = 1; i <= max_slots; i++) {
+        if (BitIsSet(i - 1, slot_list)) {
+          // Set InChanger to zero for this Slot
+          mr.Slot = i;
+          ua->db->MakeInchangerUnique(ua->jcr, &mr);
+        }
       }
     }
-    DbUnlock(ua->db);
   }
 bail_out:
   if (vol_list) { StorageReleaseVolList(store.store, vol_list); }
@@ -1190,12 +1192,11 @@ void UpdateSlotsFromVolList(UaContext* ua,
 
     Dmsg4(100, "Before make unique: Vol=%s slot=%d inchanger=%d sid=%d\n",
           mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
-    DbLock(ua->db);
-
-    // Set InChanger to zero for this Slot
-    ua->db->MakeInchangerUnique(ua->jcr, &mr);
-
-    DbUnlock(ua->db);
+    {
+      DbLocker _{ua->db};
+      // Set InChanger to zero for this Slot
+      ua->db->MakeInchangerUnique(ua->jcr, &mr);
+    }
     Dmsg4(100, "After make unique: Vol=%s slot=%d inchanger=%d sid=%d\n",
           mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
 
@@ -1212,33 +1213,34 @@ void UpdateSlotsFromVolList(UaContext* ua,
         continue;
     }
 
-    /*
-     * There is something in the slot and it has a VolumeName so we can check
-     * the database and perform an update if needed.
-     */
-    DbLock(ua->db);
-    Dmsg4(100, "Before get MR: Vol=%s slot=%d inchanger=%d sid=%d\n",
-          mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
-    if (ua->db->GetMediaRecord(ua->jcr, &mr)) {
-      Dmsg4(100, "After get MR: Vol=%s slot=%d inchanger=%d sid=%d\n",
+    /* There is something in the slot and it has a VolumeName so we can check
+     * the database and perform an update if needed. */
+    {
+      DbLocker _{ua->db};
+      Dmsg4(100, "Before get MR: Vol=%s slot=%d inchanger=%d sid=%d\n",
             mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
-      /* If Slot, Inchanger, and StorageId have changed, update the Media record
-       */
-      if (mr.Slot != vl->bareos_slot_number || !mr.InChanger
-          || mr.StorageId != store->StorageId) {
-        mr.Slot = vl->bareos_slot_number;
-        mr.InChanger = 1;
-        SetStorageidInMr(store, &mr);
-        if (!ua->db->UpdateMediaRecord(ua->jcr, &mr)) {
-          ua->ErrorMsg("%s", ua->db->strerror());
+      if (ua->db->GetMediaRecord(ua->jcr, &mr)) {
+        Dmsg4(100, "After get MR: Vol=%s slot=%d inchanger=%d sid=%d\n",
+              mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
+        /* If Slot, Inchanger, and StorageId have changed, update the Media
+         * record
+         */
+        if (mr.Slot != vl->bareos_slot_number || !mr.InChanger
+            || mr.StorageId != store->StorageId) {
+          mr.Slot = vl->bareos_slot_number;
+          mr.InChanger = 1;
+          SetStorageidInMr(store, &mr);
+          if (!ua->db->UpdateMediaRecord(ua->jcr, &mr)) {
+            ua->ErrorMsg("%s", ua->db->strerror());
+          }
         }
+      } else {
+        ua->WarningMsg(
+            _("Volume \"%s\" not found in catalog. Slot=%d InChanger "
+              "set to zero.\n"),
+            mr.VolumeName, vl->bareos_slot_number);
       }
-    } else {
-      ua->WarningMsg(_("Volume \"%s\" not found in catalog. Slot=%d InChanger "
-                       "set to zero.\n"),
-                     mr.VolumeName, vl->bareos_slot_number);
     }
-    DbUnlock(ua->db);
   }
   return;
 }

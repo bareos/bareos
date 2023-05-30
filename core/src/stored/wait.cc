@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -66,20 +66,16 @@ int WaitForSysop(DeviceControlRecord* dcr)
   dev->Lock();
   Dmsg1(debuglevel, "Enter blocked=%s\n", dev->print_blocked());
 
-  /*
-   * Since we want to mount a tape, make sure current one is
-   *  not marked as using this drive.
-   */
+  /* Since we want to mount a tape, make sure current one is
+   *  not marked as using this drive. */
   VolumeUnused(dcr);
 
   unmounted = dev->IsDeviceUnmounted();
   dev->poll = false;
-  /*
-   * Wait requested time (dev->rem_wait_sec).  However, we also wake up every
+  /* Wait requested time (dev->rem_wait_sec).  However, we also wake up every
    *    HB_TIME seconds and send a heartbeat to the FD and the Director
    *    to keep stateful firewalls from closing them down while waiting
-   *    for the operator.
-   */
+   *    for the operator. */
   add_wait = dev->rem_wait_sec;
   if (me->heartbeat_interval && add_wait > me->heartbeat_interval) {
     add_wait = me->heartbeat_interval;
@@ -98,7 +94,7 @@ int WaitForSysop(DeviceControlRecord* dcr)
     dev->SetBlocked(BST_WAITING_FOR_SYSOP); /* indicate waiting for mount */
   }
 
-  while (!JobCanceled(jcr)) {
+  while (!jcr->IsJobCanceled()) {
     time_t now, start, total_waited;
 
     gettimeofday(&tv, &tz);
@@ -169,10 +165,8 @@ int WaitForSysop(DeviceControlRecord* dcr)
       break;
     }
 
-    /*
-     * If we did not timeout, then some event happened, so
-     *   return to check if state changed.
-     */
+    /* If we did not timeout, then some event happened, so
+     *   return to check if state changed. */
     if (status != ETIMEDOUT) {
       BErrNo be;
       Dmsg2(debuglevel, "Wake return. status=%d. ERR=%s\n", status,
@@ -181,11 +175,9 @@ int WaitForSysop(DeviceControlRecord* dcr)
       break;
     }
 
-    /*
-     * At this point, we know we woke up because of a timeout,
+    /* At this point, we know we woke up because of a timeout,
      *   that was due to a heartbeat, because any other reason would
-     *   have caused us to return, so update the wait counters and continue.
-     */
+     *   have caused us to return, so update the wait counters and continue. */
     add_wait = dev->rem_wait_sec;
     if (me->heartbeat_interval && add_wait > me->heartbeat_interval) {
       add_wait = me->heartbeat_interval;

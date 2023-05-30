@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2011 Bacula Systems(R) SA
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can modify it under the terms of
    version three of the GNU Affero General Public License as published by the
@@ -21,6 +21,9 @@
 
 #ifndef BAREOS_LIB_INI_H_
 #define BAREOS_LIB_INI_H_
+
+#include <unistd.h>
+#include "lib/lex.h"
 
 // Standard global types with handlers defined in ini.c
 enum
@@ -100,8 +103,11 @@ struct ini_items {
  * Can be used to set re_value, in_value, default_value, found and val to 0
  * G++ looks to allow partial declaration, let see with another compiler
  */
-#define ITEMS_DEFAULT \
-  NULL, NULL, NULL, 0, { 0 }
+#define ITEMS_DEFAULT  \
+  NULL, NULL, NULL, 0, \
+  {                    \
+    0                  \
+  }
 
 /*
  * Handle simple configuration file such as "ini" files.
@@ -163,10 +169,8 @@ class ConfigFile {
   // Dump the item table to a file (used on plugin side)
   bool Serialize(const char* fname);
 
-  /*
-   * Dump the item table format to a buffer (used on plugin side)
-   * returns the length of the buffer, -1 if error
-   */
+  /* Dump the item table format to a buffer (used on plugin side)
+   * returns the length of the buffer, -1 if error */
   int Serialize(PoolMem* buf);
 
   // Dump the item table content to a buffer

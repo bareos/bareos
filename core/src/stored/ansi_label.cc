@@ -34,6 +34,7 @@
 #include "stored/ebcdic.h"
 #include "include/jcr.h"
 #include "lib/berrno.h"
+#include "lib/serial.h"
 
 namespace storagedaemon {
 

@@ -39,6 +39,7 @@
 #include "lib/bsignal.h"
 #include "lib/daemon.h"
 #include "lib/berrno.h"
+#include "lib/bpipe.h"
 #include "vss.h"
 
 /**

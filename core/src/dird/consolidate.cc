@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -40,6 +40,7 @@
 #include "dird/dird_globals.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
+#include "lib/version.h"
 
 namespace directordaemon {
 
@@ -149,11 +150,9 @@ bool DoConsolidate(JobControlRecord* jcr)
       Dmsg1(10, "unlimited jobids list:  %s.\n",
             all_jobids_ctx.GetAsString().c_str());
 
-      /*
-       * If we are doing always incremental, we need to limit the search to
+      /* If we are doing always incremental, we need to limit the search to
        * only include incrementals that are older than (now -
-       * AlwaysIncrementalJobRetention)
-       */
+       * AlwaysIncrementalJobRetention) */
       if (job->AlwaysIncrementalJobRetention) {
         char sdt[50];
 
@@ -185,10 +184,8 @@ bool DoConsolidate(JobControlRecord* jcr)
       // all jobs - any empty jobs - the full backup
       const int32_t incrementals_total
           = all_jobids_ctx.size() - zero_file_jobs.size() - 1;
-      /**
-       * Consolidation of zero or one job does not make sense, we leave it
-       * like it is
-       */
+      /* Consolidation of zero or one job does not make sense, we leave it
+       * like it is */
       if (incrementals_total < 1) {
         Jmsg(jcr, M_INFO, 0,
              _("%s: less than two jobs to consolidate found, doing "
@@ -197,8 +194,7 @@ bool DoConsolidate(JobControlRecord* jcr)
         continue;
       }
 
-      /**
-       * Calculate limit for query. We specify how many incrementals should be
+      /* Calculate limit for query. We specify how many incrementals should be
        * left. the limit is total number of incrementals - number required - 1
        */
       Dmsg2(10, "Incrementals found/required. (%d/%d).\n", incrementals_total,

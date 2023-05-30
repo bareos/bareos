@@ -464,27 +464,6 @@ static bool PurgeQuotaFromClient(UaContext* ua, ClientResource* client)
   return true;
 }
 
-/**
- * Change the type of the next copy job to backup.
- * We need to upgrade the next copy of a normal job,
- * and also upgrade the next copy when the normal job
- * already have been purged.
- *
- *   JobId: 1   PriorJobId: 0    (original)
- *   JobId: 2   PriorJobId: 1    (first copy)
- *   JobId: 3   PriorJobId: 1    (second copy)
- *
- *   JobId: 2   PriorJobId: 1    (first copy, now regular backup)
- *   JobId: 3   PriorJobId: 1    (second copy)
- *
- *  => Search through PriorJobId in jobid and
- *                    PriorJobId in PriorJobId (jobid)
- */
-void UpgradeCopies(UaContext* ua, const char* jobs)
-{
-  ua->db->UpgradeCopies(jobs);
-}
-
 // Remove all records from catalog for a list of JobIds
 void PurgeJobsFromCatalog(UaContext* ua, const char* jobs)
 {

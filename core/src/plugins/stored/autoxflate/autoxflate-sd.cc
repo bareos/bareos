@@ -26,8 +26,11 @@
  */
 #include "include/bareos.h"
 #include "include/protocol_types.h"
+#include "include/streams.h"
 #include "stored/stored.h"
 #include "stored/device_control_record.h"
+#include "lib/serial.h"
+#include "lib/compression.h"
 
 #if defined(HAVE_LIBZ)
 #  include <zlib.h>

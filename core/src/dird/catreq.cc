@@ -32,7 +32,10 @@
  *    Handle Catalog services.
  */
 
+#include "include/fcntl_def.h"
 #include "include/bareos.h"
+#include "include/filetypes.h"
+#include "include/streams.h"
 #include "dird.h"
 #include "dird/next_vol.h"
 #include "dird/director_jcr_impl.h"
@@ -41,6 +44,7 @@
 #include "lib/berrno.h"
 #include "lib/edit.h"
 #include "lib/util.h"
+#include "lib/serial.h"
 
 namespace directordaemon {
 

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2006 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version two of the GNU Lesser General
@@ -29,6 +29,7 @@
 
 #include "include/bareos.h"
 #include "include/allow_deprecated.h"
+#include <openssl/md5.h>
 
 #define PAD_LEN 64 /* PAD length */
 #define SIG_LEN 16 /* MD5 digest length */
@@ -56,8 +57,7 @@ void hmac_md5(uint8_t* text, /* pointer to data stream */
     key_len = SIG_LEN;
   }
 
-  /*
-   * the HMAC_MD5 transform looks like:
+  /* the HMAC_MD5 transform looks like:
    *
    * MD5(Key XOR opad, MD5(Key XOR ipad, text))
    *
@@ -65,8 +65,7 @@ void hmac_md5(uint8_t* text, /* pointer to data stream */
    * ipad is the byte 0x36 repeated 64 times
 
    * opad is the byte 0x5c repeated 64 times
-   * and text is the data being protected
-   */
+   * and text is the data being protected */
 
   /* Zero pads and store key */
   memset(k_ipad, 0, PAD_LEN);

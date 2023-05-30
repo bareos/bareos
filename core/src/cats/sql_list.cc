@@ -192,23 +192,6 @@ void BareosDb::ListClientRecords(JobControlRecord* jcr,
   SqlFreeResult();
 }
 
-void BareosDb::ListStorageRecords(JobControlRecord* jcr,
-                                  OutputFormatter* sendit,
-                                  e_list_type type)
-{
-  DbLocker _{this};
-
-  Mmsg(cmd, "SELECT StorageId,Name,AutoChanger FROM Storage");
-
-  if (!QUERY_DB(jcr, cmd)) { return; }
-
-  sendit->ArrayStart("storages");
-  ListResult(jcr, sendit, type);
-  sendit->ArrayEnd("storages");
-
-  SqlFreeResult();
-}
-
 /**
  * If VolumeName is non-zero, list the record for that Volume
  *   otherwise, list the Volumes in the Pool specified by PoolId

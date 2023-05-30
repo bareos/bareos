@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -34,7 +34,6 @@ check_include_files(pwd.h HAVE_PWD_H)
 check_include_files(regex.h HAVE_REGEX_H)
 check_include_files("sys/types.h;sys/acl.h" HAVE_SYS_ACL_H)
 check_include_files(sys/attr.h HAVE_SYS_ATTR_H)
-check_include_files(sys/bitypes.h HAVE_SYS_BITYPES_H)
 check_include_files(sys/capability.h HAVE_SYS_CAPABILITY_H)
 check_include_files(sys/ea.h HAVE_SYS_EA_H)
 check_include_files("sys/types.h;sys/extattr.h" HAVE_SYS_EXTATTR_H)

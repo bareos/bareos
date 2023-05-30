@@ -25,7 +25,10 @@
  * Verify files.
  */
 
+#include "include/fcntl_def.h"
 #include "include/bareos.h"
+#include "include/filetypes.h"
+#include "include/streams.h"
 #include "filed/filed.h"
 #include "filed/filed_jcr_impl.h"
 #include "findlib/find.h"
@@ -35,6 +38,7 @@
 #include "lib/bnet.h"
 #include "lib/bsock.h"
 #include "lib/util.h"
+#include "lib/base64.h"
 
 namespace filedaemon {
 
@@ -93,7 +97,7 @@ static int VerifyFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
   int status;
   BareosSocket* dir;
 
-  if (JobCanceled(jcr)) { return 0; }
+  if (jcr->IsJobCanceled()) { return 0; }
 
   dir = jcr->dir_bsock;
   jcr->fd_impl->num_files_examined++; /* bump total file count */

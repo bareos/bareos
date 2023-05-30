@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2007 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -76,23 +76,16 @@ class ReserveContext {
 
 void InitReservationsLock();
 void TermReservationsLock();
-void _lockReservations(const char* file = "**Unknown**", int line = 0);
-void _unLockReservations();
-void _lockVolumes(const char* file = "**Unknown**", int line = 0);
-void _unLockVolumes();
-void _lockReadVolumes(const char* file = "**Unknown**", int line = 0);
-void _unLockReadVolumes();
+void LockReservations();
+void UnlockReservations();
+void LockVolumes();
+void UnlockVolumes();
+void LockReadVolumes();
+void UnlockReadVolumes();
 void UnreserveDevice(DeviceControlRecord* dcr);
 bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx);
 int SearchResForDevice(ReserveContext& rctx);
 void ReleaseReserveMessages(JobControlRecord* jcr);
-
-#define LockReservations() _lockReservations(__FILE__, __LINE__)
-#define UnlockReservations() _unLockReservations()
-#define LockVolumes() _lockVolumes(__FILE__, __LINE__)
-#define UnlockVolumes() _unLockVolumes()
-#define LockReadVolumes() _lockReadVolumes(__FILE__, __LINE__)
-#define UnlockReadVolumes() _unLockReadVolumes()
 
 bool use_cmd(JobControlRecord* jcr);
 

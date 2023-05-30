@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -62,8 +62,6 @@ typedef struct s_rwlock_tag {
 
 #define RWLOCK_VALID 0xfacade
 
-#define RwlWritelock(x) RwlWritelock_p((x), __FILE__, __LINE__)
-
 // read/write lock prototypes
 extern int RwlInit(brwlock_t* rwl, int priority = 0);
 extern int RwlDestroy(brwlock_t* rwl);
@@ -71,9 +69,7 @@ extern bool RwlIsInit(brwlock_t* rwl);
 extern int RwlReadlock(brwlock_t* rwl);
 extern int RwlReadtrylock(brwlock_t* rwl);
 extern int RwlReadunlock(brwlock_t* rwl);
-extern int RwlWritelock_p(brwlock_t* rwl,
-                          const char* file = "*unknown*",
-                          int line = 0);
+extern int RwlWritelock(brwlock_t* rwl);
 extern int RwlWritetrylock(brwlock_t* rwl);
 extern int RwlWriteunlock(brwlock_t* rwl);
 

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -190,22 +190,6 @@ void AddDebugOptions(CLI::App& app)
 void AddVerboseOption(CLI::App& app)
 {
   app.add_flag("-v,--verbose", verbose, "Verbose user messages.");
-}
-
-void AddNetworkDebuggingOption(CLI::App& app)
-{
-  app.add_flag("--zp,--plantuml-mode", BnetDumpPrivate::plantuml_mode_,
-               "Activate plant UML.")
-      ->group("");  // add it to empty group to hide the option from help
-
-  app.add_option("--zs,--set-dump-stack-level-amount",
-                 BnetDumpPrivate::stack_level_amount_,
-                 "Set stack level amount.")
-      ->group("");  // add it to empty group to hide the option from help
-
-  app.add_option("--zf,--set-dump-filename", BnetDumpPrivate::filename_,
-                 "Set file name.")
-      ->group("");  // add it to empty group to hide the option from help
 }
 
 void AddUserAndGroupOptions(CLI::App& app,

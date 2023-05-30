@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,7 +32,10 @@
  */
 
 #include <vector>
+#include <unistd.h>
+#include <syslog.h>
 
+#include "include/fcntl_def.h"
 #include "include/bareos.h"
 #include "include/jcr.h"
 #include "lib/berrno.h"
@@ -44,6 +47,7 @@
 #include "lib/message_destination_info.h"
 #include "lib/message_queue_item.h"
 #include "lib/thread_specific_data.h"
+#include "lib/bpipe.h"
 
 // globals
 const char* working_directory = NULL; /* working directory path stored here */
@@ -130,11 +134,6 @@ static void DeliveryError(const char* fmt, ...)
   FreeMemory(pool_buf);
 }
 
-void RegisterMessageCallback(void msg_callback(int type, const char* msg))
-{
-  message_callback = msg_callback;
-}
-
 /*
  * Set daemon name. Also, find canonical execution
  * path.  Note, exepath has spare room for tacking on
@@ -210,10 +209,8 @@ void InitMsg(JobControlRecord* jcr,
   int i;
 
   if (jcr == NULL && msg == NULL) {
-    /*
-     * Setup a daemon key then set invalid jcr
-     * Maybe we should give the daemon a jcr???
-     */
+    /* Setup a daemon key then set invalid jcr
+     * Maybe we should give the daemon a jcr??? */
     SetJcrInThreadSpecificData(nullptr);
   }
 
@@ -411,11 +408,9 @@ void CloseMsg(JobControlRecord* jcr)
             Pmsg1(000, _("close error: ERR=%s\n"), be.bstrerror());
           }
 
-          /*
-           * Since we are closing all messages, before "recursing"
+          /* Since we are closing all messages, before "recursing"
            * make sure we are not closing the daemon messages, otherwise
-           * kaboom.
-           */
+           * kaboom. */
           if (msgs != daemon_msgs) {
             // Read what mail prog returned -- should be nothing
             while (fgets(line, len, bpipe->rfd)) {
@@ -615,12 +610,10 @@ void DispatchMessage(JobControlRecord* jcr,
 
   Dmsg2(850, "Enter DispatchMessage type=%d msg=%s", type, msg);
 
-  /*
-   * Most messages are prefixed by a date and time. If mtime is
+  /* Most messages are prefixed by a date and time. If mtime is
    * zero, then we use the current time.  If mtime is 1 (special
    * kludge), we do not prefix the date and time. Otherwise,
-   * we assume mtime is a utime_t and use it.
-   */
+   * we assume mtime is a utime_t and use it. */
   if (mtime == 0) { mtime = time(NULL); }
 
   *dt = 0;
@@ -652,10 +645,8 @@ void DispatchMessage(JobControlRecord* jcr,
   if (jcr) {
     // See if we need to suppress the messages.
     if (jcr->suppress_output) {
-      /*
-       * See if this JobControlRecord has a controlling JobControlRecord and if
-       * so redirect this message to the controlling JobControlRecord.
-       */
+      /* See if this JobControlRecord has a controlling JobControlRecord and if
+       * so redirect this message to the controlling JobControlRecord. */
       if (jcr->cjcr) {
         jcr = jcr->cjcr;
       } else {
@@ -688,10 +679,8 @@ void DispatchMessage(JobControlRecord* jcr,
 
   for (MessageDestinationInfo* d : msgs->dest_chain_) {
     if (BitIsSet(type, d->msg_types_)) {
-      /*
-       * See if a specific timestamp format was specified for this log resource.
-       * Otherwise apply the global setting in log_timestamp_format.
-       */
+      /* See if a specific timestamp format was specified for this log resource.
+       * Otherwise apply the global setting in log_timestamp_format. */
       if (dt_conversion) {
         if (!d->timestamp_format_.empty()) {
           bstrftime(dt, sizeof(dt), mtime, d->timestamp_format_.c_str());
@@ -743,10 +732,8 @@ void DispatchMessage(JobControlRecord* jcr,
             break;
           }
 
-          /*
-           * Dispatch based on our internal message type to a matching syslog
-           * one.
-           */
+          /* Dispatch based on our internal message type to a matching syslog
+           * one. */
           SendToSyslog(d->syslog_facility_ | MessageTypeToLogPriority(type),
                        msg);
           break;
@@ -880,10 +867,8 @@ const char* get_basename(const char* pathname)
 // Print or write output to trace file
 static void pt_out(char* buf)
 {
-  /*
-   * Used the "trace on" command in the console to turn on
-   * output to the trace file.  "trace off" will close the file.
-   */
+  /* Used the "trace on" command in the console to turn on
+   * output to the trace file.  "trace off" will close the file. */
   if (trace) {
     if (!trace_fd) {
       PoolMem fn(PM_FNAME);
@@ -1191,10 +1176,8 @@ void e_msg(const char* file,
   // show error message also as debug message (level 10)
   d_msg(file, line, 10, "%s: %s", typestr.c_str(), more.c_str());
 
-  /*
-   * Check if we have a message destination defined.
-   * We always report M_ABORT and M_ERROR_TERM
-   */
+  /* Check if we have a message destination defined.
+   * We always report M_ABORT and M_ERROR_TERM */
   if (!daemon_msgs
       || ((type != M_ABORT && type != M_ERROR_TERM)
           && !BitIsSet(type, daemon_msgs->send_msg_types_))) {
@@ -1222,11 +1205,9 @@ void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
 
   Dmsg1(850, "Enter Jmsg type=%d\n", type);
 
-  /*
-   * Special case for the console, which has a dir_bsock and JobId == 0,
+  /* Special case for the console, which has a dir_bsock and JobId == 0,
    * in that case, we send the message directly back to the
-   * dir_bsock.
-   */
+   * dir_bsock. */
   if (jcr && jcr->JobId == 0 && jcr->dir_bsock) {
     BareosSocket* dir = jcr->dir_bsock;
 
@@ -1273,10 +1254,8 @@ void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
 
   if (!msgs) { msgs = daemon_msgs; /* if no jcr, we use daemon handler */ }
 
-  /*
-   * Check if we have a message destination defined.
-   * We always report M_ABORT and M_ERROR_TERM
-   */
+  /* Check if we have a message destination defined.
+   * We always report M_ABORT and M_ERROR_TERM */
   if (msgs && (type != M_ABORT && type != M_ERROR_TERM)
       && !BitIsSet(type, msgs->send_msg_types_)) {
     return; /* no destination */

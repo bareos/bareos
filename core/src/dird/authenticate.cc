@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -43,6 +43,7 @@
 #include "lib/bstringlist.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
+#include "lib/version.h"
 
 #include <array>
 

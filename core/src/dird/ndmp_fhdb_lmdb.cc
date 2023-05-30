@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2015 Planets Communications B.V.
-   Copyright (C) 2015-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,6 +26,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/filetypes.h"
 #include "dird.h"
 
 #if defined(HAVE_NDMP) && defined(HAVE_LMDB)
@@ -110,10 +111,8 @@ extern "C" int bndmp_fhdb_lmdb_add_dir(struct ndmlog* ixlog,
               raw_name, payload->node, payload->dir_node);
         break;
       case MDB_TXN_FULL:
-        /*
-         * Seems we filled the transaction.
-         * Flush the current transaction start a new one and retry the put.
-         */
+        /* Seems we filled the transaction.
+         * Flush the current transaction start a new one and retry the put. */
         result = mdb_txn_commit(fhdb_state->db_rw_txn);
         if (result == 0) {
           result = mdb_txn_begin(fhdb_state->db_env, NULL, 0,
@@ -173,10 +172,8 @@ extern "C" int bndmp_fhdb_lmdb_add_node(struct ndmlog* ixlog,
     Dmsg1(100, "{ NULL, %llu , 0},\n", node);
     Dmsg1(debuglevel, "bndmp_fhdb_lmdb_add_node node:[%llu]\n", node);
 
-    /*
-     * Need to update which means we first get the existing data
-     * and update the fields and write back.
-     */
+    /* Need to update which means we first get the existing data
+     * and update the fields and write back. */
     key.mv_data = &node;
     key.mv_size = sizeof(node);
 
@@ -202,11 +199,9 @@ extern "C" int bndmp_fhdb_lmdb_add_node(struct ndmlog* ixlog,
           case 0:
             break;
           case MDB_TXN_FULL:
-            /*
-             * Seems we filled the transaction.
+            /* Seems we filled the transaction.
              * Flush the current transaction start a new one and retry the
-             * delete.
-             */
+             * delete. */
             result = mdb_txn_commit(fhdb_state->db_rw_txn);
             if (result == 0) {
               result = mdb_txn_begin(fhdb_state->db_env, NULL, 0,
@@ -246,8 +241,7 @@ extern "C" int bndmp_fhdb_lmdb_add_node(struct ndmlog* ixlog,
           case 0:
             break;
           case MDB_TXN_FULL:
-            /*
-             * Seems we filled the transaction.
+            /* Seems we filled the transaction.
              * Flush the current transaction start a new one and retry the put.
              */
             result = mdb_txn_commit(fhdb_state->db_rw_txn);
@@ -282,10 +276,8 @@ extern "C" int bndmp_fhdb_lmdb_add_node(struct ndmlog* ixlog,
         }
         break;
       case MDB_TXN_FULL:
-        /*
-         * Seems we filled the transaction.
-         * Flush the current transaction start a new one and retry the put.
-         */
+        /* Seems we filled the transaction.
+         * Flush the current transaction start a new one and retry the put. */
         result = mdb_txn_commit(fhdb_state->db_rw_txn);
         if (result == 0) {
           result = mdb_txn_begin(fhdb_state->db_env, NULL, 0,
@@ -366,10 +358,8 @@ extern "C" int bndmp_fhdb_lmdb_add_dirnode_root(struct ndmlog* ixlog,
         Dmsg1(100, "new rootnode=%llu\n", root_node);
         break;
       case MDB_TXN_FULL:
-        /*
-         * Seems we filled the transaction.
-         * Flush the current transaction start a new one and retry the put.
-         */
+        /* Seems we filled the transaction.
+         * Flush the current transaction start a new one and retry the put. */
         result = mdb_txn_commit(fhdb_state->db_rw_txn);
         if (result == 0) {
           result = mdb_txn_begin(fhdb_state->db_env, NULL, 0,
@@ -652,10 +642,8 @@ static inline void ProcessLmdb(NIS* nis, struct fhdb_state* fhdb_state)
           PmStrcat(full_path, payload->namebuffer);
 
           if (FileType == FT_DIREND) {
-            /*
-             * SplitPathAndFilename() expects directories to end with a '/'
-             * so append '/' if full_path does not already end with '/'
-             */
+            /* SplitPathAndFilename() expects directories to end with a '/'
+             * so append '/' if full_path does not already end with '/' */
             if (full_path.c_str()[strlen(full_path.c_str()) - 1] != '/') {
               Dmsg1(100, ("appending / to %s \n"), full_path.c_str());
               PmStrcat(full_path, "/");
@@ -705,10 +693,8 @@ void NdmpFhdbLmdbProcessDb(struct ndmlog* ixlog)
     }
   }
 
-  /*
-   * From now on we also will be doing read transactions so create a read
-   * transaction context.
-   */
+  /* From now on we also will be doing read transactions so create a read
+   * transaction context. */
   int result = mdb_txn_begin(fhdb_state->db_env, NULL, MDB_RDONLY,
                              &fhdb_state->db_ro_txn);
   if (result != MDB_SUCCESS) {

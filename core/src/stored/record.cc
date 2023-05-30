@@ -29,12 +29,16 @@
  */
 
 #include "include/bareos.h"
+#include "include/streams.h"
 #include "stored/stored_jcr_impl.h"
 #include "stored/stored.h"
 #include "stored/device_control_record.h"
 #include "lib/attribs.h"
 #include "lib/util.h"
 #include "include/jcr.h"
+#include "lib/crypto.h"
+#include "lib/base64.h"
+#include "lib/serial.h"
 
 namespace storagedaemon {
 

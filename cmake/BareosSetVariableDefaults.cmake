@@ -518,10 +518,6 @@ if(DEFINED test-plugin)
   set(HAVE_TEST_PLUGIN 1)
 endif()
 
-if(NOT DEFINED developer)
-  set(developer OFF)
-endif()
-
 if(NOT DEFINED coverage)
   set(coverage OFF)
 endif()

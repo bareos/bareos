@@ -24,6 +24,8 @@
 #ifndef BAREOS_FILED_BACKUP_H_
 #define BAREOS_FILED_BACKUP_H_
 
+#include "lib/crypto.h"
+
 namespace filedaemon {
 
 struct b_save_ctx {

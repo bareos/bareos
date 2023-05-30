@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -25,12 +25,15 @@
  * Kern Sibbald, November MMII
  */
 
+#include <sys/wait.h>
+#include <unistd.h>
 #include "include/bareos.h"
 #include "jcr.h"
 #include "lib/berrno.h"
 #include "lib/bsys.h"
 #include "lib/btimers.h"
 #include "lib/util.h"
+#include "lib/bpipe.h"
 
 int execvp_errors[]
     = {EACCES,  ENOEXEC, EFAULT, EINTR, E2BIG, ENAMETOOLONG, ENOMEM,
@@ -344,11 +347,9 @@ int RunProgram(char* prog, int wait, POOLMEM*& results)
     Dmsg1(150, "Run program fgets stat=%d\n", stat1);
     if (bpipe->timer_id) {
       Dmsg1(150, "Run program fgets killed=%d\n", bpipe->timer_id->killed);
-      /*
-       * NB: I'm not sure it is really useful for RunProgram. Without the
+      /* NB: I'm not sure it is really useful for RunProgram. Without the
        * following lines RunProgram would not detect if the program was killed
-       * by the watchdog.
-       */
+       * by the watchdog. */
       if (bpipe->timer_id->killed) {
         stat1 = ETIME;
         PmStrcpy(results, _("Program killed by BAREOS (timeout)\n"));
@@ -425,12 +426,10 @@ int RunProgramFullOutput(char* prog, int wait, POOLMEM*& results)
     }
   }
 
-  /*
-   * We always check whether the timer killed the program. We would see
+  /* We always check whether the timer killed the program. We would see
    * an eof even when it does so we just have to trust the killed flag
    * and set the timer values to avoid edge cases where the program ends
-   * just as the timer kills it.
-   */
+   * just as the timer kills it. */
   if (bpipe->timer_id && bpipe->timer_id->killed) {
     Dmsg1(150, "Run program fgets killed=%d\n", bpipe->timer_id->killed);
     PmStrcpy(tmp, _("Program killed by BAREOS (timeout)\n"));

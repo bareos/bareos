@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -42,10 +42,6 @@
  */
 
 #include "include/config.h"
-
-#ifdef HAVE_HPUX_OS
-#  pragma pack(push, 4)
-#endif
 
 namespace filedaemon {
 
@@ -107,10 +103,6 @@ struct CurFile {
   char* fname;
   accurate_payload payload;
 };
-
-#ifdef HAVE_HPUX_OS
-#  pragma pack(pop)
-#endif
 
 class BareosAccurateFilelistHtable : public BareosAccurateFilelist {
   using FileList = htable<char*, CurFile>;

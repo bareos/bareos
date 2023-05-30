@@ -33,6 +33,7 @@
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
 #include "filed/filed_jcr_impl.h"
+#include "lib/compression.h"
 
 #if defined(HAVE_LIBZ)
 #  include <zlib.h>

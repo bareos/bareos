@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -188,9 +188,6 @@ LEX* lex_open_file(LEX* lf,
                    const char* fname,
                    LEX_ERROR_HANDLER* ScanError,
                    LEX_WARNING_HANDLER* scan_warning);
-LEX* lex_new_buffer(LEX* lf,
-                    LEX_ERROR_HANDLER* ScanError,
-                    LEX_WARNING_HANDLER* scan_warning);
 int LexGetChar(LEX* lf);
 void LexUngetChar(LEX* lf);
 const char* lex_tok_to_str(int token);

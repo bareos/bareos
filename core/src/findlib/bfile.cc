@@ -28,7 +28,12 @@
  * I.e. on Windows, we use Windows APIs.
  */
 
+#include <unistd.h>
+#include <netinet/in.h>
+
+#include "include/fcntl_def.h"
 #include "include/bareos.h"
+#include "include/streams.h"
 #include "find.h"
 #include "lib/berrno.h"
 
@@ -51,19 +56,6 @@ boffset_t (*plugin_blseek)(BareosFilePacket* bfd, boffset_t offset, int whence)
 
 #if !defined(HAVE_FDATASYNC)
 #  define fdatasync(fd)
-#endif
-
-#ifdef HAVE_WIN32
-void PauseMsg(const char* file, const char* func, int line, const char* msg)
-{
-  char buf[1000];
-  if (msg) {
-    Bsnprintf(buf, sizeof(buf), "%s:%s:%d %s", file, func, line, msg);
-  } else {
-    Bsnprintf(buf, sizeof(buf), "%s:%s:%d", file, func, line);
-  }
-  MessageBox(NULL, buf, "Pause", MB_OK);
-}
 #endif
 
 /* ===============================================================
@@ -973,8 +965,6 @@ bool IsPortableBackup(BareosFilePacket*)
 {
   return true; /* portable by definition */
 }
-
-bool set_prog(BareosFilePacket*, char*, JobControlRecord*) { return false; }
 
 bool SetCmdPlugin(BareosFilePacket* bfd, JobControlRecord* jcr)
 {

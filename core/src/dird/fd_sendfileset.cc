@@ -26,6 +26,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #include "lib/berrno.h"
 #include "lib/bnet.h"
 #include "dird/director_jcr_impl.h"
+#include "lib/bpipe.h"
 
 namespace directordaemon {
 

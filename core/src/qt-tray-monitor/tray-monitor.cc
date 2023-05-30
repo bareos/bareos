@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,6 +27,9 @@
 #include <QApplication>
 #include <QMessageBox>
 
+#include <signal.h>
+#include <unistd.h>
+
 #include "mainwindow.h"
 #include "tray-monitor.h"
 #include "authenticate.h"
@@ -35,6 +38,7 @@
 #include "lib/bsignal.h"
 #include "lib/parse_conf.h"
 #include "lib/cli.h"
+#include "lib/crypto.h"
 
 ConfigurationParser* my_config = nullptr;
 

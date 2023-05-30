@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -237,12 +237,10 @@ void SetPairedStorage(JobControlRecord* jcr)
     case JT_BACKUP:
       // For a backup we look at the write storage.
       if (jcr->dir_impl->res.write_storage_list) {
-        /*
-         * Setup the jcr->dir_impl_->res.write_storage_list to point to all
+        /* Setup the jcr->dir_impl_->res.write_storage_list to point to all
          * paired_storage entries of all the storage currently in the
          * jcrres.->write_storage_list. Save the original list under
-         * jcr->dir_impl_->res.paired_read_write_storage_list.
-         */
+         * jcr->dir_impl_->res.paired_read_write_storage_list. */
         jcr->dir_impl->res.paired_read_write_storage_list
             = jcr->dir_impl->res.write_storage_list;
         jcr->dir_impl->res.write_storage_list
@@ -257,12 +255,10 @@ void SetPairedStorage(JobControlRecord* jcr)
           }
         }
 
-        /*
-         * Swap the actual jcr->dir_impl_->res.write_storage to point to the
+        /* Swap the actual jcr->dir_impl_->res.write_storage to point to the
          * paired storage entry. We save the actual storage entry in
          * paired_read_write_storage which is for restore in the
-         * FreePairedStorage() function.
-         */
+         * FreePairedStorage() function. */
         store = jcr->dir_impl->res.write_storage;
         if (store->paired_storage) {
           jcr->dir_impl->res.write_storage = store->paired_storage;
@@ -276,11 +272,9 @@ void SetPairedStorage(JobControlRecord* jcr)
     case JT_RESTORE:
       // For a restores we look at the read storage.
       if (jcr->dir_impl->res.read_storage_list) {
-        /*
-         * Setup the jcr->dir_impl_->res.paired_read_write_storage_list to point
+        /* Setup the jcr->dir_impl_->res.paired_read_write_storage_list to point
          * to all paired_storage entries of all the storage currently in the
-         * jcr->dir_impl_->res.read_storage_list.
-         */
+         * jcr->dir_impl_->res.read_storage_list. */
         jcr->dir_impl->res.paired_read_write_storage_list
             = new alist<StorageResource*>(10, not_owned_by_alist);
         foreach_alist (paired_read_write_storage,
@@ -293,18 +287,14 @@ void SetPairedStorage(JobControlRecord* jcr)
                 R_STORAGE, (BareosResource*)store);
           }
 
-          /*
-           * See if we found a store that has the current
-           * paired_read_write_storage as its paired storage.
-           */
+          /* See if we found a store that has the current
+           * paired_read_write_storage as its paired storage. */
           if (store) {
             jcr->dir_impl->res.paired_read_write_storage_list->append(store);
 
-            /*
-             * If the current processed paired_read_write_storage is also the
+            /* If the current processed paired_read_write_storage is also the
              * current entry in jcr->dir_impl_->res.read_storage update the
-             * jcr->paired_read_write_storage to point to this storage entry.
-             */
+             * jcr->paired_read_write_storage to point to this storage entry. */
             if (paired_read_write_storage == jcr->dir_impl->res.read_storage) {
               jcr->dir_impl->res.paired_read_write_storage = store;
             }
@@ -319,12 +309,10 @@ void SetPairedStorage(JobControlRecord* jcr)
     case JT_COPY:
       // For a migrate or copy we look at the read storage.
       if (jcr->dir_impl->res.read_storage_list) {
-        /*
-         * Setup the jcr->dir_impl_->res.read_storage_list to point to all
+        /* Setup the jcr->dir_impl_->res.read_storage_list to point to all
          * paired_storage entries of all the storage currently in the
          * jcr->dir_impl_->res.read_storage_list. Save the original list under
-         * jcr->dir_impl_->res.paired_read_write_storage_list.
-         */
+         * jcr->dir_impl_->res.paired_read_write_storage_list. */
         jcr->dir_impl->res.paired_read_write_storage_list
             = jcr->dir_impl->res.read_storage_list;
         jcr->dir_impl->res.read_storage_list
@@ -338,12 +326,10 @@ void SetPairedStorage(JobControlRecord* jcr)
           }
         }
 
-        /*
-         * Swap the actual jcr->dir_impl_->res.read_storage to point to the
+        /* Swap the actual jcr->dir_impl_->res.read_storage to point to the
          * paired storage entry. We save the actual storage entry in
          * paired_read_write_storage which is for restore in the
-         * FreePairedStorage() function.
-         */
+         * FreePairedStorage() function. */
         store = jcr->dir_impl->res.read_storage;
         if (store->paired_storage) {
           jcr->dir_impl->res.read_storage = store->paired_storage;
@@ -374,11 +360,9 @@ void FreePairedStorage(JobControlRecord* jcr)
       case JT_BACKUP:
         // For a backup we look at the write storage.
         if (jcr->dir_impl->res.write_storage_list) {
-          /*
-           * The jcr->dir_impl_->res.write_storage_list contain a set of paired
+          /* The jcr->dir_impl_->res.write_storage_list contain a set of paired
            * storages. We just delete it content and swap back to the real
-           * master storage.
-           */
+           * master storage. */
           delete jcr->dir_impl->res.write_storage_list;
           jcr->dir_impl->res.write_storage_list
               = jcr->dir_impl->res.paired_read_write_storage_list;
@@ -389,11 +373,9 @@ void FreePairedStorage(JobControlRecord* jcr)
         }
         break;
       case JT_RESTORE:
-        /*
-         * The jcr->dir_impl_->res.read_storage_list contain a set of paired
+        /* The jcr->dir_impl_->res.read_storage_list contain a set of paired
          * storages. For the read we created a list of alternative storage which
-         * we can just drop now.
-         */
+         * we can just drop now. */
         delete jcr->dir_impl->res.paired_read_write_storage_list;
         jcr->dir_impl->res.paired_read_write_storage_list = NULL;
         jcr->dir_impl->res.paired_read_write_storage = NULL;
@@ -402,11 +384,9 @@ void FreePairedStorage(JobControlRecord* jcr)
       case JT_COPY:
         // For a migrate or copy we look at the read storage.
         if (jcr->dir_impl->res.read_storage_list) {
-          /*
-           * The jcr->dir_impl_->res.read_storage_list contains a set of paired
+          /* The jcr->dir_impl_->res.read_storage_list contains a set of paired
            * storages. We just delete it content and swap back to the real
-           * master storage.
-           */
+           * master storage. */
           delete jcr->dir_impl->res.read_storage_list;
           jcr->dir_impl->res.read_storage_list
               = jcr->dir_impl->res.paired_read_write_storage_list;
@@ -487,10 +467,8 @@ bool SelectNextRstore(JobControlRecord* jcr, bootstrap_info& info)
     return false;
   }
 
-  /*
-   * We start communicating with a new storage daemon so close the
-   * old connection when it is still open.
-   */
+  /* We start communicating with a new storage daemon so close the
+   * old connection when it is still open. */
   if (jcr->store_bsock) {
     jcr->store_bsock->close();
     delete jcr->store_bsock;
@@ -511,7 +489,7 @@ bool SelectNextRstore(JobControlRecord* jcr, bootstrap_info& info)
       return true;
     }
     Bmicrosleep(10, 0); /* Sleep 10 secs */
-    if (JobCanceled(jcr)) {
+    if (jcr->IsJobCanceled()) {
       FreeRstorage(jcr);
       return false;
     }
@@ -611,21 +589,17 @@ changer_vol_list_t* get_vol_list_from_storage(UaContext* ua,
       }
     }
 
-    /*
-     * Cached version expired or want non-cached version or wrong type.
+    /* Cached version expired or want non-cached version or wrong type.
      * Remove the cached contents and retrieve the new contents from the
-     * autochanger.
-     */
+     * autochanger. */
     Dmsg0(100, "Freeing volume list\n");
     if (store->runtime_storage_status->vol_list->reference_count == 0) {
       FreeVolList(store->runtime_storage_status->vol_list);
     } else {
-      /*
-       * Need to cleanup but things are still referenced.
+      /* Need to cleanup but things are still referenced.
        * We just remove the old changer_vol_list_t and on the next call to
        * StorageReleaseVolList() this orphaned changer_vol_list_t will
-       * then be destroyed.
-       */
+       * then be destroyed. */
       Dmsg0(100, "Need to free still referenced vol_list\n");
       store->runtime_storage_status->vol_list
           = (changer_vol_list_t*)malloc(sizeof(changer_vol_list_t));
@@ -828,10 +802,8 @@ void StorageReleaseVolList(StorageResource* store, changer_vol_list_t* vol_list)
   } else {
     vol_list->reference_count--;
     if (vol_list->reference_count == 0) {
-      /*
-       * It seems this is a release of an uncached version of the vol_list.
-       * We just destroy this vol_list as there are no more references to it.
-       */
+      /* It seems this is a release of an uncached version of the vol_list.
+       * We just destroy this vol_list as there are no more references to it. */
       FreeVolList(vol_list);
       free(vol_list);
     }
@@ -870,11 +842,9 @@ void InvalidateVolList(StorageResource* store)
     Dmsg1(100, "Invalidating volume list at %p\n",
           store->runtime_storage_status->vol_list);
 
-    /*
-     * If the volume list is unreferenced we can destroy it otherwise we just
+    /* If the volume list is unreferenced we can destroy it otherwise we just
      * reset the pointer and the StorageReleaseVolList() will destroy it for
-     * us the moment there are no more references.
-     */
+     * us the moment there are no more references. */
     if (store->runtime_storage_status->vol_list->reference_count == 0) {
       FreeVolList(store->runtime_storage_status->vol_list);
     } else {

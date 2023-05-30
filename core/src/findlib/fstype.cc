@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2007 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -25,6 +25,7 @@
  * Implement routines to determine file system types.
  */
 
+#include <unistd.h>
 #include "include/bareos.h"
 #include "find.h"
 #include "findlib/fstype.h"
@@ -35,8 +36,7 @@
  *
  * bool fstype(const char *fname, char *fs, int fslen);
  */
-#if defined(HAVE_DARWIN_OS) || defined(HAVE_FREEBSD_OS) \
-    || defined(HAVE_OPENBSD_OS)
+#if defined(HAVE_DARWIN_OS) || defined(HAVE_FREEBSD_OS)
 
 #  include <sys/param.h>
 #  include <sys/mount.h>
@@ -54,47 +54,7 @@ bool fstype(const char* fname, char* fs, int fslen)
   return false;
 }
 
-#elif defined(HAVE_NETBSD_OS)
-#  include <sys/param.h>
-#  include <sys/mount.h>
-#  ifdef HAVE_SYS_STATVFS_H
-#    include <sys/statvfs.h>
-#  else
-#    define statvfs statfs
-#  endif
-
-bool fstype(const char* fname, char* fs, int fslen)
-{
-  struct statvfs st;
-
-  if (statvfs(fname, &st) == 0) {
-    bstrncpy(fs, st.f_fstypename, fslen);
-    return true;
-  }
-
-  Dmsg1(50, "statfs() failed for \"%s\"\n", fname);
-  return false;
-}
-
-#elif defined(HAVE_HPUX_OS) || defined(HAVE_IRIX_OS)
-
-#  include <sys/types.h>
-#  include <sys/statvfs.h>
-
-bool fstype(const char* fname, char* fs, int fslen)
-{
-  struct statvfs st;
-
-  if (statvfs(fname, &st) == 0) {
-    bstrncpy(fs, st.f_basetype, fslen);
-    return true;
-  }
-
-  Dmsg1(50, "statfs() failed for \"%s\"\n", fname);
-  return false;
-}
-
-#elif defined(HAVE_LINUX_OS) || defined(HAVE_OSF1_OS)
+#elif defined(HAVE_LINUX_OS)
 
 #  include <sys/stat.h>
 #  include "lib/mntent_cache.h"

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -45,6 +45,7 @@
 
 #include "include/bareos.h"
 #include "include/jcr.h"
+#include "lib/jcr.h"
 #include "lib/berrno.h"
 #include "lib/bsignal.h"
 #include "lib/breg.h"
@@ -155,21 +156,6 @@ struct job_callback_item {
   void (*JobEndCb)(JobControlRecord* jcr, void*);
   void* ctx{};
 };
-
-// Push a job_callback_item onto the job end callback stack.
-void RegisterJobEndCallback(JobControlRecord* jcr,
-                            void JobEndCb(JobControlRecord* jcr, void*),
-                            void* ctx)
-{
-  job_callback_item* item;
-
-  item = (job_callback_item*)malloc(sizeof(job_callback_item));
-
-  item->JobEndCb = JobEndCb;
-  item->ctx = ctx;
-
-  jcr->job_end_callbacks.push(item);
-}
 
 // Pop each job_callback_item and process it.
 static void CallJobEndCallbacks(JobControlRecord* jcr)
@@ -427,7 +413,7 @@ void JobControlRecord::SetKillable(bool killable)
 {
   lock();
 
-  my_thread_killable = killable;
+  my_thread_killable_ = killable;
   if (killable) {
     my_thread_id = pthread_self();
   } else {
@@ -679,11 +665,9 @@ static void UpdateWaitTime(JobControlRecord* jcr, int newJobStatus)
       break;
   }
 
-  /*
-   * If we were previously waiting and are not any more
+  /* If we were previously waiting and are not any more
    * we want to update the wait_time variable, which is
-   * the start of waiting.
-   */
+   * the start of waiting. */
   switch (oldJobStatus) {
     case JS_WaitFD:
     case JS_WaitSD:
@@ -759,7 +743,7 @@ void JobControlRecord::setJobStarted()
 void JobControlRecord::setJobStatusWithPriorityCheck(int newJobStatus)
 {
   int priority;
-  int oldJobStatus = JobStatus;
+  int oldJobStatus = JobStatus_;
   int old_priority = GetStatusPriority(oldJobStatus);
 
   priority = GetStatusPriority(newJobStatus);
@@ -769,26 +753,22 @@ void JobControlRecord::setJobStatusWithPriorityCheck(int newJobStatus)
   // Update wait_time depending on newJobStatus and oldJobStatus
   UpdateWaitTime(this, newJobStatus);
 
-  /*
-   * For a set of errors, ... keep the current status
-   * so it isn't lost. For all others, set it.
-   */
+  /* For a set of errors, ... keep the current status
+   * so it isn't lost. For all others, set it. */
   Dmsg2(800, "OnEntry JobStatus=%c newJobstatus=%c\n", oldJobStatus,
         newJobStatus);
 
-  /*
-   * If status priority is > than proposed new status, change it.
+  /* If status priority is > than proposed new status, change it.
    * If status priority == new priority and both are zero, take the new
    * status. If it is not zero, then we keep the first non-zero "error" that
-   * occurred.
-   */
+   * occurred. */
   if (priority > old_priority || (priority == 0 && old_priority == 0)) {
     Dmsg4(800, "Set new stat. old: %c,%d new: %c,%d\n", oldJobStatus,
           old_priority, newJobStatus, priority);
-    JobStatus.compare_exchange_strong(oldJobStatus, newJobStatus);
+    JobStatus_.compare_exchange_strong(oldJobStatus, newJobStatus);
   }
 
-  if (oldJobStatus != JobStatus) {
+  if (oldJobStatus != JobStatus_) {
     Dmsg2(800, "leave setJobStatus old=%c new=%c\n", oldJobStatus,
           newJobStatus);
     //    GeneratePluginEvent(this, bEventStatusChange, nullptr);

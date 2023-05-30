@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,6 +27,8 @@
 #  include "include/bareos.h"
 #endif
 
+
+#include <arpa/inet.h>
 
 #include "create_resource.h"
 #include "bsock_test.h"

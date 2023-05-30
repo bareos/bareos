@@ -25,7 +25,7 @@
  * @file
  * Bareos routines to handle labels
  */
-
+#include <unistd.h>
 #include "include/bareos.h" /* pull in global headers */
 #include "stored/stored.h"  /* pull in Storage Daemon headers */
 #include "stored/stored_globals.h"
@@ -36,6 +36,8 @@
 #include "stored/label.h"
 #include "lib/edit.h"
 #include "include/jcr.h"
+#include "lib/version.h"
+#include "lib/serial.h"
 
 namespace storagedaemon {
 

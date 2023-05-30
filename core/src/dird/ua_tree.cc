@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -36,6 +36,7 @@
 #include "findlib/find.h"
 #include "dird/ua_input.h"
 #include "dird/ua_server.h"
+#include "lib/attribs.h"
 #include "lib/edit.h"
 #include "lib/tree.h"
 #include "lib/util.h"
@@ -277,16 +278,14 @@ int InsertTreeHandler(void* ctx, int, char** row)
     }
   }
 
-  /*
-   * - The first time we see a file (node->inserted==true), we accept it.
+  /* - The first time we see a file (node->inserted==true), we accept it.
    * - In the same JobId, we accept only the first copy of a
    *   hard linked file (the others are simply pointers).
    * - In the same JobId, we accept the last copy of any other
    *   file -- in particular directories.
    *
    * All the code to set ok could be condensed to a single
-   * line, but it would be even harder to read.
-   */
+   * line, but it would be even harder to read. */
   ok = true;
   if (!node->inserted && JobId == node->JobId) {
     if ((hard_link && FileIndex > node->FileIndex)
@@ -373,9 +372,7 @@ static int SetExtract(UaContext* ua,
   // For a non-file (i.e. directory), we see all the children
   if (node->type != TN_FILE || (node->soft_link && TreeNodeHasChild(node))) {
     // Recursive set children within directory
-    foreach_child (n, node) {
-      count += SetExtract(ua, n, tree, extract);
-    }
+    foreach_child (n, node) { count += SetExtract(ua, n, tree, extract); }
 
     // Walk up tree marking any unextracted parent to be extracted.
     if (extract) {
@@ -400,11 +397,9 @@ static int SetExtract(UaContext* ua,
         FileDbRecord fdbr;
         POOLMEM* cwd;
 
-        /*
-         * Ordinary file, we get the full path, look up the attributes, decode
+        /* Ordinary file, we get the full path, look up the attributes, decode
          * them, and if we are hard linked to a file that was saved, we must
-         * load that file too.
-         */
+         * load that file too. */
         cwd = tree_getpath(node);
         if (cwd) {
           fdbr.FileId = 0;
@@ -426,10 +421,8 @@ static int SetExtract(UaContext* ua,
       }
 
       if (is_hardlinked) {
-        /*
-         * If we point to a hard linked file, find that file in hardlinks
-         * hashmap, and mark it to be restored as well.
-         */
+        /* If we point to a hard linked file, find that file in hardlinks
+         * hashmap, and mark it to be restored as well. */
         HL_ENTRY* entry = (HL_ENTRY*)tree->root->hardlinks.lookup(key);
         if (entry && entry->node) {
           n = entry->node;
@@ -832,14 +825,12 @@ static int DoDircmd(UaContext* ua, TreeContext* tree, bool dot_cmd)
       fdbr.FileId = 0;
       fdbr.JobId = node->JobId;
 
-      /*
-       * Strip / from soft links to directories.
+      /* Strip / from soft links to directories.
        *
        * This is because soft links to files have a trailing slash
        * when returned from tree_getpath, but get_file_attr...
        * treats soft links as files, so they do not have a trailing
-       * slash like directory names.
-       */
+       * slash like directory names. */
       if (node->type == TN_FILE && TreeNodeHasChild(node)) {
         PmStrcpy(buf, cwd);
         pcwd = buf;

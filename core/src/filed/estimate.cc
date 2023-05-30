@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2008 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,6 +27,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/filetypes.h"
 #include "filed/filed.h"
 #include "filed/filed_jcr_impl.h"
 #include "filed/accurate.h"
@@ -64,7 +65,7 @@ static int TallyFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 {
   Attributes attr;
 
-  if (JobCanceled(jcr)) { return 0; }
+  if (jcr->IsJobCanceled()) { return 0; }
   switch (ff_pkt->type) {
     case FT_LNKSAVED: /* Hard linked, file already saved */
     case FT_REGE:

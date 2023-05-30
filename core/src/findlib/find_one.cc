@@ -29,7 +29,9 @@
  * Thanks to the TAR programmers.
  */
 
+#include <unistd.h>
 #include "include/bareos.h"
+#include "include/filetypes.h"
 #include "include/jcr.h"
 #include "find.h"
 #include "findlib/match.h"
@@ -479,8 +481,7 @@ static inline int process_regular_file(JobControlRecord* jcr,
 
   /* Don't bother opening empty, world readable files. Also do not open
    * files when archive is meant for /dev/null. */
-  if (ff_pkt->null_output_device
-      || (sizeleft == 0 && MODE_RALL == (MODE_RALL & ff_pkt->statp.st_mode))) {
+  if (sizeleft == 0 && MODE_RALL == (MODE_RALL & ff_pkt->statp.st_mode)) {
     ff_pkt->type = FT_REGE;
   } else {
     ff_pkt->type = FT_REG;
@@ -679,7 +680,7 @@ static inline int process_directory(JobControlRecord* jcr,
   int status;
 
   entry = (struct dirent*)malloc(sizeof(struct dirent) + name_max + 100);
-  while (!JobCanceled(jcr)) {
+  while (!jcr->IsJobCanceled()) {
     int name_length;
 
     status = Readdir_r(directory, entry, &result);
@@ -724,7 +725,7 @@ static inline int process_directory(JobControlRecord* jcr,
 
 #else
 
-  while (!JobCanceled(jcr)) {
+  while (!jcr->IsJobCanceled()) {
     int name_length;
     result = readdir(directory);
     if (result == NULL) { break; }

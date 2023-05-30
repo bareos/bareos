@@ -27,6 +27,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/streams.h"
 #include "crypto_openssl.h"
 #include "xxhash.h"
 

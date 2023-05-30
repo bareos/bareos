@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -56,6 +56,7 @@
 #include "lib/watchdog.h"
 #include "lib/util.h"
 #include "filed/backup.h"
+#include "lib/compression.h"
 
 #if defined(WIN32_VSS)
 #  include "win32/findlib/win32.h"
@@ -102,9 +103,6 @@ static bool BootstrapCmd(JobControlRecord* jcr);
 static bool CancelCmd(JobControlRecord* jcr);
 static bool EndRestoreCmd(JobControlRecord* jcr);
 static bool EstimateCmd(JobControlRecord* jcr);
-#ifdef DEVELOPER
-static bool exit_cmd(JobControlRecord* jcr);
-#endif
 static bool FilesetCmd(JobControlRecord* jcr);
 static bool job_cmd(JobControlRecord* jcr);
 static bool LevelCmd(JobControlRecord* jcr);
@@ -156,9 +154,6 @@ static struct s_fd_dir_cmds cmds[] = {
     {"cancel", CancelCmd, false},
     {"endrestore", EndRestoreCmd, false},
     {"estimate", EstimateCmd, false},
-#ifdef DEVELOPER
-    {"exit", exit_cmd, false},
-#endif
     {"fileset", FilesetCmd, false},
     {"JobId=", job_cmd, false},
     {"level = ", LevelCmd, false},
@@ -434,7 +429,7 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
         Dmsg1(100, "Executing %s command.\n", cmds[i].cmd);
         if (!cmds[i].func(jcr)) { /* do command */
           quit = true;            /* error or fully terminated, get out */
-          Dmsg1(100, "Quit command loop. Canceled=%d\n", JobCanceled(jcr));
+          Dmsg1(100, "Quit command loop. Canceled=%d\n", jcr->IsJobCanceled());
         }
         break;
       }
@@ -725,16 +720,6 @@ static bool SecureerasereqCmd(JobControlRecord* jcr)
   return dir->fsend(OKsecureerase, setting);
 }
 
-#ifdef DEVELOPER
-static bool exit_cmd(JobControlRecord* jcr)
-{
-  jcr->dir_bsock->fsend("2000 exit OK\n");
-  // terminate_filed(0);
-  StopSocketServer();
-  return false;
-}
-#endif
-
 // Cancel a Job
 static bool CancelCmd(JobControlRecord* jcr)
 {
@@ -941,7 +926,7 @@ static bool RunbeforenowCmd(JobControlRecord* jcr)
           ? jcr->fd_impl->director->allowed_script_dirs
           : me->allowed_script_dirs);
 
-  if (JobCanceled(jcr)) {
+  if (jcr->IsJobCanceled()) {
     dir->fsend(FailedRunScript);
     Dmsg0(100, "Back from RunScripts ClientBeforeJob now: FAILED\n");
     return false;
@@ -2266,7 +2251,7 @@ bail_out:
     retval = false; /* we stop here */
   }
 
-  if (JobCanceled(jcr)) { retval = false; /* we stop here */ }
+  if (jcr->IsJobCanceled()) { retval = false; /* we stop here */ }
 
   if (!retval) {
     EndRestoreCmd(jcr); /* stopping so send bEventEndRestoreJob */
@@ -2389,7 +2374,7 @@ bool response(JobControlRecord* jcr,
     Dmsg0(110, sd->msg);
     if (bstrcmp(sd->msg, resp)) { return true; }
   }
-  if (JobCanceled(jcr)) {
+  if (jcr->IsJobCanceled()) {
     return false; /* if canceled avoid useless error messages */
   }
   if (IsBnetError(sd)) {

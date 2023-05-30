@@ -27,6 +27,8 @@
  */
 
 #include "include/bareos.h"
+#include "include/filetypes.h"
+#include "include/streams.h"
 
 static const int dbglevel = 100;
 

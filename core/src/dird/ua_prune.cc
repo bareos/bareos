@@ -289,7 +289,6 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client)
   char* prune_topdir = NULL;
   PoolMem query(PM_MESSAGE), temp(PM_MESSAGE);
   bool recursive = false;
-  bool retval = false;
 
   // See if a client was selected.
   if (!client) {
@@ -353,7 +352,10 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client)
     char ed1[50];
     cr = ClientDbRecord{};
     bstrncpy(cr.Name, client->resource_name_, sizeof(cr.Name));
-    if (!ua->db->CreateClientRecord(ua->jcr, &cr)) { goto bail_out; }
+    if (!ua->db->CreateClientRecord(ua->jcr, &cr)) {
+      if (prune_topdir) { free(prune_topdir); }
+      return false;
+    }
 
     Mmsg(temp,
          " AND JobId IN ("
@@ -364,10 +366,10 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client)
 
     PmStrcat(query, temp.c_str());
   }
-
-  DbLock(ua->db);
-  ua->db->SqlQuery(query.c_str());
-  DbUnlock(ua->db);
+  {
+    DbLocker _{ua->db};
+    ua->db->SqlQuery(query.c_str());
+  }
 
   /* If we removed the entries from the file table without limiting it to a
    * certain client we created orphaned path entries as no one is referencing
@@ -375,8 +377,8 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client)
   if (!client) {
     if (!GetYesno(ua, _("Cleanup orphaned path records (yes/no):"))
         || !ua->pint32_val) {
-      retval = true;
-      goto bail_out;
+      if (prune_topdir) { free(prune_topdir); }
+      return true;
     }
 
     if (recursive) {
@@ -390,18 +392,14 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client)
            "WHERE path LIKE '%s'",
            prune_topdir);
     }
-
-    DbLock(ua->db);
-    ua->db->SqlQuery(query.c_str());
-    DbUnlock(ua->db);
+    {
+      DbLocker _{ua->db};
+      ua->db->SqlQuery(query.c_str());
+    }
   }
 
-  retval = true;
-
-bail_out:
   if (prune_topdir) { free(prune_topdir); }
-
-  return retval;
+  return true;
 }
 
 // Prune Job stat records from the database.
@@ -412,27 +410,28 @@ static bool PruneStats(UaContext* ua, utime_t retention)
   PoolMem query(PM_MESSAGE);
   utime_t now = (utime_t)time(NULL);
 
-  DbLock(ua->db);
-  Mmsg(query, "DELETE FROM JobHisto WHERE JobTDate < %s",
-       edit_int64(now - retention, ed1));
-  ua->db->SqlQuery(query.c_str());
-  DbUnlock(ua->db);
+  {
+    DbLocker _{ua->db};
+    Mmsg(query, "DELETE FROM JobHisto WHERE JobTDate < %s",
+         edit_int64(now - retention, ed1));
+    ua->db->SqlQuery(query.c_str());
+  }
 
   ua->InfoMsg(_("Pruned Jobs from JobHisto in catalog.\n"));
 
   bstrutime(dt, sizeof(dt), now - retention);
-
-  DbLock(ua->db);
-  Mmsg(query, "DELETE FROM DeviceStats WHERE SampleTime < '%s'", dt);
-  ua->db->SqlQuery(query.c_str());
-  DbUnlock(ua->db);
+  {
+    DbLocker _{ua->db};
+    Mmsg(query, "DELETE FROM DeviceStats WHERE SampleTime < '%s'", dt);
+    ua->db->SqlQuery(query.c_str());
+  }
 
   ua->InfoMsg(_("Pruned Statistics from DeviceStats in catalog.\n"));
-
-  DbLock(ua->db);
-  Mmsg(query, "DELETE FROM JobStats WHERE SampleTime < '%s'", dt);
-  ua->db->SqlQuery(query.c_str());
-  DbUnlock(ua->db);
+  {
+    DbLocker _{ua->db};
+    Mmsg(query, "DELETE FROM JobStats WHERE SampleTime < '%s'", dt);
+    ua->db->SqlQuery(query.c_str());
+  }
 
   ua->InfoMsg(_("Pruned Statistics from JobStats in catalog.\n"));
 

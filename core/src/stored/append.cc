@@ -37,8 +37,9 @@
 #include "lib/bget_msg.h"
 #include "lib/edit.h"
 #include "include/jcr.h"
+#include "include/streams.h"
 #include "lib/berrno.h"
-#include "lib/berrno.h"
+#include "lib/crypto.h"
 
 namespace storagedaemon {
 

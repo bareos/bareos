@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,8 +32,11 @@
  * creating the path components.  Currently, it always starts at
  * the top, which can be rather inefficient for long path names.
  */
+#include <unistd.h>
 #include "include/bareos.h"
+#include "include/filetypes.h"
 #include "include/jcr.h"
+#include "lib/attr.h"
 #include "lib/berrno.h"
 #include "lib/path_list.h"
 
@@ -147,15 +150,13 @@ bool makepath(Attributes* attr,
   path = (char*)alloca(len + 1);
   bstrncpy(path, apath, len + 1);
   StripTrailingSlashes(path);
-  /*
-   * Now for one of the complexities. If we are not running as root,
+  /* Now for one of the complexities. If we are not running as root,
    * then if the parent_mode does not have wx user perms, or we are
    * setting the userid or group, and the parent_mode has setuid, setgid,
    * or sticky bits, we must create the dir with open permissions, then
    * go back and patch all the dirs up with the correct perms.
    * Solution, set everything to 0777, then go back and reset them at the
-   * end.
-   */
+   * end. */
   tmode = 0777;
 
 #if defined(HAVE_WIN32)

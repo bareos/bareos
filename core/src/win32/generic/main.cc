@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -105,16 +105,14 @@ int WINAPI WinMain(HINSTANCE Instance,
 
   InitCommonControlsEx(&initCC);
 
-  /*
-   * Funny things happen with the command line if the
+  /* Funny things happen with the command line if the
    * execution comes from c:/Program Files/bareos/bareos.exe
    * We get a command line like: Files/bareos/bareos.exe" options
    * I.e. someone stops scanning command line on a space, not
    * realizing that the filename is quoted!!!!!!!!!!
    * So if first character is not a double quote and
    * the last character before first space is a double
-   * quote, we throw away the junk.
-   */
+   * quote, we throw away the junk. */
 
   wordPtr = cmdLine;
   while (*wordPtr && *wordPtr != ' ') wordPtr++;
@@ -123,10 +121,8 @@ int WINAPI WinMain(HINSTANCE Instance,
   /* if first character is not a quote and last is, junk it */
   if (*cmdLine != '"' && *wordPtr == '"') { cmdLine = wordPtr + 1; }
 
-  /*
-   * Build Unix style argc *argv[] for the main "Unix" code
-   *  stripping out any Windows options
-   */
+  /* Build Unix style argc *argv[] for the main "Unix" code
+   *  stripping out any Windows options */
 
   /* Don't NULL command_args[0] !!! */
   for (i = 1; i < MAX_COMMAND_ARGS; i++) { command_args[i] = NULL; }
@@ -163,11 +159,9 @@ int WINAPI WinMain(HINSTANCE Instance,
     }
   }
 
-  /*
-   * Now process Windows command line options. Most of these options
+  /* Now process Windows command line options. Most of these options
    *  are single shot -- i.e. we accept one option, do something and
-   *  Terminate.
-   */
+   *  Terminate. */
   for (i = 0; i < (int)strlen(cmdLine); i++) {
     char* p = &cmdLine[i];
 
@@ -240,11 +234,9 @@ void* Main_Msg_Loop(LPVOID)
 
   pthread_detach(pthread_self());
 
-  /*
-   * Since we are the only thread with a message loop
+  /* Since we are the only thread with a message loop
    * mark ourselves as the service thread so that
-   * we can receive all the window events.
-   */
+   * we can receive all the window events. */
   service_thread_id = GetCurrentThreadId();
 
   /* Create a window to handle Windows messages */
@@ -331,18 +323,6 @@ int BareosAppMain()
 
   WSACleanup();
   _exit(0);
-}
-
-
-void PauseMsg(const char* file, const char* func, int line, const char* msg)
-{
-  char buf[1000];
-  if (msg) {
-    Bsnprintf(buf, sizeof(buf), "%s:%s:%d %s", file, func, line, msg);
-  } else {
-    Bsnprintf(buf, sizeof(buf), "%s:%s:%d", file, func, line);
-  }
-  MessageBox(NULL, buf, "Pause", MB_OK);
 }
 
 typedef void(WINAPI* PGNSI)(LPSYSTEM_INFO);

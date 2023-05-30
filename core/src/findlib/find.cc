@@ -30,7 +30,9 @@
  * routines for the new syntax Options resource.
  */
 
+#include <unistd.h>
 #include "include/bareos.h"
+#include "include/filetypes.h"
 #include "include/jcr.h"
 #include "find.h"
 #include "findlib/find_one.h"
@@ -178,7 +180,7 @@ int FindFiles(JobControlRecord* jcr,
             == 0) {
           return 0; /* error return */
         }
-        if (JobCanceled(jcr)) { return 0; }
+        if (jcr->IsJobCanceled()) { return 0; }
       }
 
       foreach_dlist (node, &incexe->plugin_list) {
@@ -193,7 +195,7 @@ int FindFiles(JobControlRecord* jcr,
         ff->cmd_plugin = true;
         PluginSave(jcr, ff, true);
         ff->cmd_plugin = false;
-        if (JobCanceled(jcr)) { return 0; }
+        if (jcr->IsJobCanceled()) { return 0; }
       }
     }
   }
@@ -493,16 +495,6 @@ findIncludeExcludeItem* new_preinclude(findFILESET* fileset)
   // New pre-include
   fileset->incexe = allocate_new_incexe();
   fileset->include_list.prepend(fileset->incexe);
-
-  return fileset->incexe;
-}
-
-// Create a new exclude block and prepend it to the list of exclude blocks.
-findIncludeExcludeItem* new_preexclude(findFILESET* fileset)
-{
-  // New pre-exclude
-  fileset->incexe = allocate_new_incexe();
-  fileset->exclude_list.prepend(fileset->incexe);
 
   return fileset->incexe;
 }

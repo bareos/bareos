@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -68,9 +68,7 @@ void FreeBregexps(alist<BareosRegex*>* bregexps)
   Dmsg0(500, "bregexp: freeing all BareosRegex object\n");
 
   BareosRegex* elt = nullptr;
-  foreach_alist (elt, bregexps) {
-    FreeBregexp(elt);
-  }
+  foreach_alist (elt, bregexps) { FreeBregexp(elt); }
 }
 
 /* Apply all regexps to fname
@@ -390,12 +388,4 @@ char* bregexp_build_where(char* dest,
   FreePoolMemory(str_tmp);
 
   return dest;
-}
-
-
-void BareosRegex::debug()
-{
-  printf("expr=[%s]\n", expr);
-  printf("subst=[%s]\n", subst);
-  printf("result=%s\n", NPRT(result));
 }

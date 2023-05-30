@@ -3,7 +3,7 @@
 
    Copyright (C) 2008-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -57,10 +57,12 @@
  */
 
 #include "include/bareos.h"
+#include "include/streams.h"
 #include "find.h"
 #include "lib/berrno.h"
 #include "lib/bsock.h"
 #include "include/jcr.h"
+#include "lib/serial.h"
 
 static std::string error_message_disabling_xattributes{
     _("Disabling restore of XATTRs on this filesystem, "
@@ -179,10 +181,8 @@ uint32_t SerializeXattrStream(JobControlRecord*,
   xattr_t* current_xattr = nullptr;
   ser_declare;
 
-  /*
-   * Make sure the serialized stream fits in the poolmem buffer.
-   * We allocate some more to be sure the stream is gonna fit.
-   */
+  /* Make sure the serialized stream fits in the poolmem buffer.
+   * We allocate some more to be sure the stream is gonna fit. */
   xattr_data->u.build->content = CheckPoolMemorySize(
       xattr_data->u.build->content, expected_serialize_len + 10);
   SerBegin(xattr_data->u.build->content, expected_serialize_len + 10);
@@ -224,19 +224,15 @@ BxattrExitCode UnSerializeXattrStream(JobControlRecord* jcr,
   unser_declare;
   xattr_t* current_xattr;
 
-  /**
-   * Parse the stream and call restore_xattr_on_file for each extended
+  /* Parse the stream and call restore_xattr_on_file for each extended
    * attribute.
    *
    * Start unserializing the data. We keep on looping while we have not
-   * unserialized all bytes in the stream.
-   */
+   * unserialized all bytes in the stream. */
   UnserBegin(content, content_length);
   while (UnserLength(content) < content_length) {
-    /*
-     * First make sure the magic is present. This way we can easily catch
-     * corruption. Any missing MAGIC is fatal we do NOT try to continue.
-     */
+    /* First make sure the magic is present. This way we can easily catch
+     * corruption. Any missing MAGIC is fatal we do NOT try to continue. */
     current_xattr = (xattr_t*)malloc(sizeof(xattr_t));
     unser_uint32(current_xattr->magic);
     if (current_xattr->magic != XATTR_MAGIC) {
@@ -349,12 +345,10 @@ static BxattrExitCode aix_build_xattr_streams(JobControlRecord* jcr,
           retval = BxattrExitCode::kSuccess;
           goto bail_out;
         case ENOTSUP:
-          /*
-           * If the filesystem reports it doesn't support XATTRs we clear the
+          /* If the filesystem reports it doesn't support XATTRs we clear the
            * BXATTR_FLAG_SAVE_NATIVE flag so we skip XATTR saves on all other
            * files on the same filesystem. The BXATTR_FLAG_SAVE_NATIVE flags
-           * gets sets again when we change from one filesystem to another.
-           */
+           * gets sets again when we change from one filesystem to another. */
           xattr_data->flags &= ~BXATTR_FLAG_SAVE_NATIVE;
           retval = BxattrExitCode::kWarning;
           Mmsg(jcr->errmsg, error_message_disabling_xattributes.c_str(),
@@ -407,10 +401,8 @@ static BxattrExitCode aix_build_xattr_streams(JobControlRecord* jcr,
   }
   xattr_list[xattr_list_len] = '\0';
 
-  /*
-   * Walk the list of extended attributes names and retrieve the data.
-   * We already count the bytes needed for serializing the stream later on.
-   */
+  /* Walk the list of extended attributes names and retrieve the data.
+   * We already count the bytes needed for serializing the stream later on. */
   for (bp = xattr_list; (bp - xattr_list) + 1 < xattr_list_len;
        bp = strchr(bp, '\0') + 1) {
     skip_xattr = false;
@@ -579,13 +571,11 @@ static BxattrExitCode aix_parse_xattr_streams(JobControlRecord* jcr,
         case EFORMAT:
           goto bail_out;
         case ENOTSUP:
-          /*
-           * If the filesystem reports it doesn't support XATTRs we clear
+          /* If the filesystem reports it doesn't support XATTRs we clear
            * the BXATTR_FLAG_RESTORE_NATIVE flag so we skip XATTR restores
            * on all other files on the same filesystem. The
            * BXATTR_FLAG_RESTORE_NATIVE flags gets sets again when we
-           * change from one filesystem to another.
-           */
+           * change from one filesystem to another. */
           xattr_data->flags &= ~BXATTR_FLAG_RESTORE_NATIVE;
           retval = BxattrExitCode::kWarning;
           Mmsg(jcr->errmsg, error_message_disabling_xattributes.c_str(),
@@ -623,337 +613,7 @@ static BxattrExitCode (*os_parse_xattr_streams)(JobControlRecord* jcr,
                                                 uint32_t content_length)
     = aix_parse_xattr_streams;
 
-#  elif defined(HAVE_IRIX_OS)
-
-#    include <sys/attributes.h>
-
-// Define the supported XATTR streams for this OS
-static int os_default_xattr_streams[1] = {STREAM_XATTR_IRIX};
-static const char* xattr_acl_skiplist[1] = {NULL};
-static const char* xattr_skiplist[1] = {NULL};
-
-struct xattr_naming_space {
-  const char* name;
-  int flags;
-};
-
-static xattr_naming_space xattr_naming_spaces[]
-    = {{"user.", ATTR_DONTFOLLOW},
-       {"root.", ATTR_ROOT | ATTR_DONTFOLLOW},
-       {NULL, 0}};
-
-static BxattrExitCode irix_build_xattr_streams(JobControlRecord* jcr,
-                                               XattrData* xattr_data,
-                                               FindFilesPacket* ff_pkt)
-{
-  char dummy[32];
-  int cnt, length, xattr_count = 0;
-  attrlist_cursor_t cursor;
-  attrlist_t* attrlist;
-  attrlist_ent_t* attrlist_ent;
-  xattr_t* current_xattr;
-  alist<xattr_t*>* xattr_value_list = NULL;
-  uint32_t expected_serialize_len = 0;
-  BxattrExitCode retval = BxattrExitCode::kError;
-  POOLMEM* xattrbuf = GetMemory(ATTR_MAX_VALUELEN);
-
-  for (cnt = 0; xattr_naming_spaces[cnt].name != NULL; cnt++) {
-    memset(&cursor, 0, sizeof(attrlist_cursor_t));
-    while (1) {
-      if (attr_list(xattr_data->last_fname, xattrbuf, ATTR_MAX_VALUELEN,
-                    xattr_naming_spaces[cnt].flags, &cursor)
-          != 0) {
-        BErrNo be;
-
-        switch (errno) {
-          case ENOENT:
-            retval = BxattrExitCode::kSuccess;
-            goto bail_out;
-          default:
-            Mmsg2(jcr->errmsg, _("attr_list error on file \"%s\": ERR=%s\n"),
-                  xattr_data->last_fname, be.bstrerror());
-            Dmsg2(100, "attr_list error file=%s ERR=%s\n",
-                  xattr_data->last_fname, be.bstrerror());
-            goto bail_out;
-        }
-      }
-
-      attrlist = (attrlist_t*)xattrbuf;
-
-      // Walk the available attributes.
-      for (cnt = 0; cnt < attrlist->al_count; cnt++) {
-        attrlist_ent = ATTR_ENTRY(xattrbuf, cnt);
-
-        /*
-         * First determine if we can retrieve the xattr and how big it really
-         * is.
-         */
-        length = sizeof(dummy);
-        if (attr_get(xattr_data->last_fname, attrlist_ent->a_name, dummy,
-                     &length, xattr_naming_spaces[cnt].flags)
-            != 0) {
-          BErrNo be;
-
-          switch (errno) {
-            case ENOENT:
-            case ENOATTR:
-              retval = BxattrExitCode::kSuccess;
-              goto bail_out;
-            case E2BIG:
-              /*
-               * Size of the xattr is bigger then the 32 bytes dummy which is
-               * likely. As length now contains its actual length we can
-               * allocate a properly size buffer for the real retrieval.
-               */
-              break;
-            default:
-              Mmsg2(jcr->errmsg, _("attr_list error on file \"%s\": ERR=%s\n"),
-                    xattr_data->last_fname, be.bstrerror());
-              Dmsg2(100, "attr_list error file=%s ERR=%s\n",
-                    xattr_data->last_fname, be.bstrerror());
-              goto bail_out;
-          }
-        }
-
-        // Each xattr valuepair starts with a magic so we can parse it easier.
-        current_xattr = (xattr_t*)malloc(sizeof(xattr_t));
-        current_xattr->magic = XATTR_MAGIC;
-        expected_serialize_len += sizeof(current_xattr->magic);
-
-        /*
-         * Allocate space for storing the name.
-         * We store the name as <naming_space_name><xattr_name>
-         */
-        current_xattr->name_length = strlen(xattr_naming_spaces[cnt].name)
-                                     + strlen(attrlist_ent->a_name) + 1;
-        current_xattr->name = (char*)malloc(current_xattr->name_length);
-        Bsnprintf(current_xattr->name, current_xattr->name_length, "%s%s",
-                  xattr_naming_spaces[cnt].name, attrlist_ent->a_name);
-
-        expected_serialize_len
-            += sizeof(current_xattr->name_length) + current_xattr->name_length;
-
-        current_xattr->value_length = length;
-        current_xattr->value = (char*)malloc(current_xattr->value_length);
-
-        // Retrieve the actual value of the xattr.
-        if (attr_get(xattr_data->last_fname, attrlist_ent->a_name,
-                     current_xattr->value, &length,
-                     xattr_naming_spaces[cnt].flags)
-            != 0) {
-          BErrNo be;
-
-          switch (errno) {
-            case ENOENT:
-            case ENOATTR:
-              retval = BxattrExitCode::kSuccess;
-              break;
-            case E2BIG:
-              /*
-               * The buffer for the xattr isn't big enough. the value of
-               * current_xattr->value_length is updated with the actual size
-               * of the xattr. So we free the old buffer and create a new one
-               * and try again. Normally this cannot happen as we size the
-               * buffer using a call to attr_get before but in case of an
-               * race condition it might happen.
-               */
-              free(current_xattr->value);
-              current_xattr->value = (char*)malloc(length);
-              if (attr_get(xattr_data->last_fname, attrlist_ent->a_name,
-                           current_xattr->value, &length,
-                           xattr_naming_spaces[cnt].flags)
-                  != 0) {
-                switch (errno) {
-                  case ENOENT:
-                  case ENOATTR:
-                    retval = BxattrExitCode::kSuccess;
-                    break;
-                  default:
-                    Mmsg2(jcr->errmsg,
-                          _("attr_list error on file \"%s\": ERR=%s\n"),
-                          xattr_data->last_fname, be.bstrerror(errno));
-                    Dmsg2(100, "attr_list error file=%s ERR=%s\n",
-                          xattr_data->last_fname, be.bstrerror());
-                    break;
-                }
-              } else {
-                goto ok_continue;
-              }
-              break;
-            default:
-              Mmsg2(jcr->errmsg, _("attr_list error on file \"%s\": ERR=%s\n"),
-                    xattr_data->last_fname, be.bstrerror());
-              Dmsg2(100, "attr_list error file=%s ERR=%s\n",
-                    xattr_data->last_fname, be.bstrerror());
-              break;
-          }
-
-          // Default failure path out when retrieval of attr fails.
-          free(current_xattr->value);
-          free(current_xattr->name);
-          free(current_xattr);
-          goto bail_out;
-        }
-
-      ok_continue:
-        current_xattr->value_length = length;
-        expected_serialize_len += sizeof(current_xattr->value_length)
-                                  + current_xattr->value_length;
-
-        if (xattr_value_list == NULL) {
-          xattr_value_list = new alist<xattr_t*>(10, not_owned_by_alist);
-        }
-
-        xattr_value_list->append(current_xattr);
-        xattr_count++;
-
-        // Protect ourself against things getting out of hand.
-        if (expected_serialize_len >= MAX_XATTR_STREAM) {
-          Mmsg2(jcr->errmsg,
-                _("Xattr stream on file \"%s\" exceeds maximum size of %d "
-                  "bytes\n"),
-                xattr_data->last_fname, MAX_XATTR_STREAM);
-          goto bail_out;
-        }
-      }
-
-      // See if there are more attributes available for a next run of attr_list.
-      if (attrlist->al_more == 0) { break; }
-    }
-  }
-
-  // If we found any xattr send them to the SD.
-  if (xattr_count > 0) {
-    // Serialize the datastream.
-    if (SerializeXattrStream(jcr, xattr_data, expected_serialize_len,
-                             xattr_value_list)
-        < expected_serialize_len) {
-      Mmsg1(jcr->errmsg,
-            _("Failed to Serialize extended attributes on file \"%s\"\n"),
-            xattr_data->last_fname);
-      Dmsg1(100, "Failed to Serialize extended attributes on file \"%s\"\n",
-            xattr_data->last_fname);
-      goto bail_out;
-    }
-
-    // Send the datastream to the SD.
-    retval = SendXattrStream(jcr, xattr_data, os_default_xattr_streams[0]);
-  } else {
-    retval = BxattrExitCode::kSuccess;
-  }
-
-bail_out:
-  FreePoolMemory(xattrbuf);
-
-  if (xattr_value_list != NULL) { XattrDropInternalTable(xattr_value_list); }
-
-  return retval;
-}
-
-static BxattrExitCode irix_parse_xattr_streams(JobControlRecord* jcr,
-                                               XattrData* xattr_data,
-                                               int stream,
-                                               char* content,
-                                               uint32_t content_length)
-{
-  char* bp;
-  int cnt, cmp_size, name_space_index, flags;
-  xattr_t* current_xattr;
-  alist<xattr_t*>* xattr_value_list;
-  BxattrExitCode retval = BxattrExitCode::kError;
-
-  xattr_value_list = new alist<xattr_t*>(10, not_owned_by_alist);
-
-  if (UnSerializeXattrStream(jcr, xattr_data, content, content_length,
-                             xattr_value_list)
-      != BxattrExitCode::kSuccess) {
-    goto bail_out;
-  }
-
-  foreach_alist (current_xattr, xattr_value_list) {
-    // See to what namingspace this xattr belongs to.
-    name_space_index = 0;
-    for (cnt = 0; xattr_naming_spaces[cnt].name != NULL; cnt++) {
-      cmp_size = strlen(xattr_naming_spaces[cnt].name);
-      if (bstrncasecmp(current_xattr->name, xattr_naming_spaces[cnt].name,
-                       cmp_size)) {
-        name_space_index = cnt;
-        break;
-      }
-    }
-
-    // If we got a xattr that doesn't belong to an valid namespace complain.
-    if (name_space_index == 0) {
-      Mmsg2(jcr->errmsg, _("Received illegal xattr named %s on file \"%s\"\n"),
-            current_xattr->name, xattr_data->last_fname);
-      Dmsg2(100, "Received illegal xattr named %s on file \"%s\"\n",
-            current_xattr->name, xattr_data->last_fname);
-      goto bail_out;
-    }
-
-    // Restore the xattr first try to create the attribute from scratch.
-    flags = xattr_naming_spaces[name_space_index].flags | ATTR_CREATE;
-    bp = strchr(current_xattr->name, '.');
-    if (attr_set(xattr_data->last_fname, ++bp, current_xattr->value,
-                 current_xattr->value_length, flags)
-        != 0) {
-      BErrNo be;
-
-      switch (errno) {
-        case ENOENT:
-          retval = BxattrExitCode::kSuccess;
-          goto bail_out;
-        case EEXIST:
-          // The xattr already exists we need to replace it.
-          flags = xattr_naming_spaces[name_space_index].flags | ATTR_REPLACE;
-          if (attr_set(xattr_data->last_fname, bp, current_xattr->value,
-                       current_xattr->value_length, flags)
-              != 0) {
-            switch (errno) {
-              case ENOENT:
-                retval = BxattrExitCode::kSuccess;
-                goto bail_out;
-              default:
-                Mmsg2(jcr->errmsg, _("attr_set error on file \"%s\": ERR=%s\n"),
-                      xattr_data->last_fname, be.bstrerror(errno));
-                Dmsg2(100, "attr_set error file=%s ERR=%s\n",
-                      xattr_data->last_fname, be.bstrerror());
-                goto bail_out;
-            }
-          }
-          break;
-        default:
-          Mmsg2(jcr->errmsg, _("attr_set error on file \"%s\": ERR=%s\n"),
-                xattr_data->last_fname, be.bstrerror());
-          Dmsg2(100, "attr_set error file=%s ERR=%s\n", xattr_data->last_fname,
-                be.bstrerror());
-          goto bail_out;
-      }
-    }
-  }
-
-  retval = BxattrExitCode::kSuccess;
-
-bail_out:
-  XattrDropInternalTable(xattr_value_list);
-
-  return retval;
-}
-
-// Function pointers to the build and parse function to use for these xattrs.
-static BxattrExitCode (*os_build_xattr_streams)(JobControlRecord* jcr,
-                                                XattrData* xattr_data,
-                                                FindFilesPacket* ff_pkt)
-    = irix_build_xattr_streams;
-static BxattrExitCode (*os_parse_xattr_streams)(JobControlRecord* jcr,
-                                                XattrData* xattr_data,
-                                                int stream,
-                                                char* content,
-                                                uint32_t content_length)
-    = irix_parse_xattr_streams;
-
-#  elif defined(HAVE_DARWIN_OS) || defined(HAVE_LINUX_OS) \
-      || defined(HAVE_HURD_OS)
+#  elif defined(HAVE_DARWIN_OS) || defined(HAVE_LINUX_OS)
 
 #    if (!defined(HAVE_LISTXATTR) && !defined(HAVE_LLISTXATTR))  \
         || (!defined(HAVE_GETXATTR) && !defined(HAVE_LGETXATTR)) \
@@ -981,10 +641,6 @@ static const char* xattr_skiplist[]
     = {"ceph.dir.entries",  "ceph.dir.files",    "ceph.dir.rbytes",
        "ceph.dir.rctime",   "ceph.dir.rentries", "ceph.dir.rfiles",
        "ceph.dir.rsubdirs", "ceph.dir.subdirs",  NULL};
-#    elif defined(HAVE_HURD_OS)
-static int os_default_xattr_streams[1] = {STREAM_XATTR_HURD};
-static const char* xattr_acl_skiplist[1] = {NULL};
-static const char* xattr_skiplist[1] = {NULL};
 #    endif
 
 /**
@@ -1039,13 +695,11 @@ static BxattrExitCode generic_build_xattr_streams(JobControlRecord* jcr,
           retval = BxattrExitCode::kSuccess;
           goto bail_out;
         case BXATTR_ENOTSUP:
-          /*
-           * If the filesystem reports it doesn't support XATTRs we clear
+          /* If the filesystem reports it doesn't support XATTRs we clear
            * the BXATTR_FLAG_RESTORE_NATIVE flag so we skip XATTR restores
            * on all other files on the same filesystem. The
            * BXATTR_FLAG_RESTORE_NATIVE flags gets sets again when we
-           * change from one filesystem to another.
-           */
+           * change from one filesystem to another. */
           xattr_data->flags &= ~BXATTR_FLAG_SAVE_NATIVE;
           retval = BxattrExitCode::kWarning;
           Mmsg(jcr->errmsg, error_message_disabling_xattributes.c_str(),
@@ -1098,19 +752,15 @@ static BxattrExitCode generic_build_xattr_streams(JobControlRecord* jcr,
   }
   xattr_list[xattr_list_len] = '\0';
 
-  /*
-   * Walk the list of extended attributes names and retrieve the data.
-   * We already count the bytes needed for serializing the stream later on.
-   */
+  /* Walk the list of extended attributes names and retrieve the data.
+   * We already count the bytes needed for serializing the stream later on. */
   for (bp = xattr_list; (bp - xattr_list) + 1 < xattr_list_len;
        bp = strchr(bp, '\0') + 1) {
     skip_xattr = false;
 
-    /*
-     * On some OSes you also get the acls in the extented attribute list.
+    /* On some OSes you also get the acls in the extented attribute list.
      * So we check if we are already backing up acls and if we do we
-     * don't store the extended attribute with the same info.
-     */
+     * don't store the extended attribute with the same info. */
     if (BitIsSet(FO_ACL, ff_pkt->flags)) {
       for (cnt = 0; xattr_acl_skiplist[cnt] != NULL; cnt++) {
         if (bstrcmp(bp, xattr_acl_skiplist[cnt])) {
@@ -1120,10 +770,8 @@ static BxattrExitCode generic_build_xattr_streams(JobControlRecord* jcr,
       }
     }
 
-    /*
-     * On some OSes we want to skip certain xattrs which are in the
-     * xattr_skiplist array.
-     */
+    /* On some OSes we want to skip certain xattrs which are in the
+     * xattr_skiplist array. */
     if (!skip_xattr) {
       for (cnt = 0; xattr_skiplist[cnt] != NULL; cnt++) {
         if (bstrcmp(bp, xattr_skiplist[cnt])) {
@@ -1291,13 +939,11 @@ static BxattrExitCode generic_parse_xattr_streams(JobControlRecord* jcr,
         case ENOENT:
           goto bail_out;
         case BXATTR_ENOTSUP:
-          /*
-           * If the filesystem reports it doesn't support XATTRs we clear
+          /* If the filesystem reports it doesn't support XATTRs we clear
            * the BXATTR_FLAG_RESTORE_NATIVE flag so we skip XATTR restores
            * on all other files on the same filesystem. The
            * BXATTR_FLAG_RESTORE_NATIVE flags gets sets again when we
-           * change from one filesystem to another.
-           */
+           * change from one filesystem to another. */
           xattr_data->flags &= ~BXATTR_FLAG_RESTORE_NATIVE;
           retval = BxattrExitCode::kWarning;
           Mmsg(jcr->errmsg, error_message_disabling_xattributes.c_str(),
@@ -1335,8 +981,7 @@ static BxattrExitCode (*os_parse_xattr_streams)(JobControlRecord* jcr,
                                                 uint32_t content_length)
     = generic_parse_xattr_streams;
 
-#  elif defined(HAVE_FREEBSD_OS) || defined(HAVE_NETBSD_OS) \
-      || defined(HAVE_OPENBSD_OS)
+#  elif defined(HAVE_FREEBSD_OS)
 
 #    if (!defined(HAVE_EXTATTR_GET_LINK) && !defined(HAVE_EXTATTR_GET_FILE)) \
         || (!defined(HAVE_EXTATTR_SET_LINK)                                  \
@@ -1376,18 +1021,6 @@ static const char* xattr_acl_skiplist[4]
     = {"system.posix1e.acl_access", "system.posix1e.acl_default",
        "system.nfs4.acl", NULL};
 static const char* xattr_skiplist[1] = {NULL};
-#    elif defined(HAVE_NETBSD_OS)
-static int os_default_xattr_streams[1] = {STREAM_XATTR_NETBSD};
-static int os_default_xattr_namespaces[2]
-    = {EXTATTR_NAMESPACE_USER, EXTATTR_NAMESPACE_SYSTEM};
-static const char* xattr_acl_skiplist[1] = {NULL};
-static const char* xattr_skiplist[1] = {NULL};
-#    elif defined(HAVE_OPENBSD_OS)
-static int os_default_xattr_streams[1] = {STREAM_XATTR_OPENBSD};
-static int os_default_xattr_namespaces[2]
-    = {EXTATTR_NAMESPACE_USER, EXTATTR_NAMESPACE_SYSTEM};
-static const char* xattr_acl_skiplist[1] = {NULL};
-static const char* xattr_skiplist[1] = {NULL};
 #    endif
 
 static BxattrExitCode bsd_build_xattr_streams(JobControlRecord* jcr,
@@ -1413,13 +1046,11 @@ static BxattrExitCode bsd_build_xattr_streams(JobControlRecord* jcr,
        namespace_index++) {
     attrnamespace = os_default_xattr_namespaces[namespace_index];
 
-    /*
-     * First get the length of the available list with extended attributes.
+    /* First get the length of the available list with extended attributes.
      * If we get EPERM on system namespace, don't return error.
      * This is expected for normal users trying to archive the system
      * namespace on FreeBSD 6.2 and later. On NetBSD 3.1 and later,
-     * they've decided to return EOPNOTSUPP instead.
-     */
+     * they've decided to return EOPNOTSUPP instead. */
     xattr_list_len
         = extattr_list_link(xattr_data->last_fname, attrnamespace, NULL, 0);
     switch (xattr_list_len) {
@@ -1482,11 +1113,9 @@ static BxattrExitCode bsd_build_xattr_streams(JobControlRecord* jcr,
     }
     xattr_list[xattr_list_len] = '\0';
 
-    /*
-     * Convert the numeric attrnamespace into a string representation and make
+    /* Convert the numeric attrnamespace into a string representation and make
      * a private copy of that string. The extattr_namespace_to_string functions
-     * returns a strdupped string which we need to free.
-     */
+     * returns a strdupped string which we need to free. */
     if (extattr_namespace_to_string(attrnamespace, &current_attrnamespace)
         != 0) {
       Mmsg2(jcr->errmsg,
@@ -1497,18 +1126,14 @@ static BxattrExitCode bsd_build_xattr_streams(JobControlRecord* jcr,
       goto bail_out;
     }
 
-    /*
-     * Walk the list of extended attributes names and retrieve the data.
-     * We already count the bytes needed for serializing the stream later on.
-     */
+    /* Walk the list of extended attributes names and retrieve the data.
+     * We already count the bytes needed for serializing the stream later on. */
     for (index = 0; index < xattr_list_len; index += xattr_list[index] + 1) {
       skip_xattr = false;
 
-      /*
-       * Print the current name into the buffer as its not null terminated
+      /* Print the current name into the buffer as its not null terminated
        * we need to use the length encoded in the string for copying only
-       * the needed bytes.
-       */
+       * the needed bytes. */
       cnt = xattr_list[index];
       if (cnt > ((int)sizeof(current_attrname) - 1)) {
         cnt = ((int)sizeof(current_attrname) - 1);
@@ -1516,18 +1141,14 @@ static BxattrExitCode bsd_build_xattr_streams(JobControlRecord* jcr,
       strncpy(current_attrname, xattr_list + (index + 1), cnt);
       current_attrname[cnt] = '\0';
 
-      /*
-       * First make a xattr tuple of the current namespace and the name of
-       * the xattr. e.g. something like user.<attrname> or system.<attrname>
-       */
+      /* First make a xattr tuple of the current namespace and the name of
+       * the xattr. e.g. something like user.<attrname> or system.<attrname> */
       Bsnprintf(current_attrtuple, sizeof(current_attrtuple), "%s.%s",
                 current_attrnamespace, current_attrname);
 
-      /*
-       * On some OSes you also get the acls in the extented attribute list.
+      /* On some OSes you also get the acls in the extented attribute list.
        * So we check if we are already backing up acls and if we do we
-       * don't store the extended attribute with the same info.
-       */
+       * don't store the extended attribute with the same info. */
       if (BitIsSet(FO_ACL, ff_pkt->flags)) {
         for (cnt = 0; xattr_acl_skiplist[cnt] != NULL; cnt++) {
           if (bstrcmp(current_attrtuple, xattr_acl_skiplist[cnt])) {
@@ -1537,10 +1158,8 @@ static BxattrExitCode bsd_build_xattr_streams(JobControlRecord* jcr,
         }
       }
 
-      /*
-       * On some OSes we want to skip certain xattrs which are in the
-       * xattr_skiplist array.
-       */
+      /* On some OSes we want to skip certain xattrs which are in the
+       * xattr_skiplist array. */
       if (!skip_xattr) {
         for (cnt = 0; xattr_skiplist[cnt] != NULL; cnt++) {
           if (bstrcmp(current_attrtuple, xattr_skiplist[cnt])) {
@@ -1714,10 +1333,8 @@ static BxattrExitCode bsd_parse_xattr_streams(JobControlRecord* jcr,
   }
 
   foreach_alist (current_xattr, xattr_value_list) {
-    /*
-     * Try splitting the xattr_name into a namespace and name part.
-     * The splitting character is a .
-     */
+    /* Try splitting the xattr_name into a namespace and name part.
+     * The splitting character is a . */
     attrnamespace = current_xattr->name;
     if ((attrname = strchr(attrnamespace, '.')) == (char*)NULL) {
       Mmsg2(
@@ -1784,337 +1401,6 @@ static BxattrExitCode (*os_parse_xattr_streams)(JobControlRecord* jcr,
                                                 char* content,
                                                 uint32_t content_length)
     = bsd_parse_xattr_streams;
-
-#  elif defined(HAVE_OSF1_OS)
-
-#    if !defined(HAVE_GETPROPLIST) || !defined(HAVE_GET_PROPLIST_ENTRY) \
-        || !defined(HAVE_SIZEOF_PROPLIST_ENTRY)                         \
-        || !defined(HAVE_ADD_PROPLIST_ENTRY) || !defined(HAVE_SETPROPLIST)
-#      error "Missing full support for the Extended Attributes functions."
-#    endif
-
-#    ifdef HAVE_SYS_PROPLIST_H
-#      include <sys/proplist.h>
-#    else
-#      error "Missing sys/proplist.h header file"
-#    endif
-
-// Define the supported XATTR streams for this OS
-static int os_default_xattr_streams[1] = {STREAM_XATTR_TRU64};
-static const char* xattr_acl_skiplist[1] = {NULL};
-static const char* xattr_skiplist[1] = {NULL};
-
-static BxattrExitCode tru64_build_xattr_streams(JobControlRecord* jcr,
-                                                XattrData* xattr_data,
-                                                FindFilesPacket* ff_pkt)
-{
-  int cnt;
-  char *bp, *xattr_name, *xattr_value;
-  bool skip_xattr;
-  int xattr_count = 0;
-  int32_t *flags, *xattr_value_len;
-  int32_t xattr_list_len, xattrbuf_size, xattrbuf_min_size;
-  uint32_t expected_serialize_len = 0;
-  xattr_t* current_xattr;
-  alist<xattr_t*>* xattr_value_list = NULL;
-  struct proplistname_args prop_args;
-  BxattrExitCode retval = BxattrExitCode::kError;
-  POOLMEM* xattrbuf = GetPoolMemory(PM_MESSAGE);
-
-  xattrbuf_size = SizeofPoolMemory(xattrbuf);
-  xattrbuf_min_size = 0;
-  xattr_list_len = getproplist(xattr_data->last_fname, 1, &prop_args,
-                               xattrbuf_size, xattrbuf, &xattrbuf_min_size);
-
-  // See what xattr are available.
-  switch (xattr_list_len) {
-    case -1: {
-      BErrNo be;
-
-      switch (errno) {
-        case EOPNOTSUPP:
-          /*
-           * If the filesystem reports it doesn't support XATTRs we clear
-           * the BXATTR_FLAG_RESTORE_NATIVE flag so we skip XATTR restores
-           * on all other files on the same filesystem. The
-           * BXATTR_FLAG_RESTORE_NATIVE flags gets sets again when we
-           * change from one filesystem to another.
-           */
-          xattr_data->flags &= ~BXATTR_FLAG_SAVE_NATIVE;
-          retval = BxattrExitCode::kWarning;
-          Mmsg(jcr->errmsg, error_message_disabling_xattributes.c_str(),
-               xattr_data->last_fname);
-          Dmsg2(100, error_message_disabling_xattributes.c_str(),
-                xattr_data->last_fname);
-          goto bail_out;
-        default:
-          Mmsg2(jcr->errmsg, _("getproplist error on file \"%s\": ERR=%s\n"),
-                xattr_data->last_fname, be.bstrerror());
-          Dmsg2(100, "getproplist error file=%s ERR=%s\n",
-                xattr_data->last_fname, be.bstrerror());
-          goto bail_out;
-      }
-      break;
-    }
-    case 0:
-      if (xattrbuf_min_size) {
-        /*
-         * The buffer isn't big enough to hold the xattr data, we now have
-         * a minimum buffersize so we resize the buffer and try again.
-         */
-        xattrbuf = CheckPoolMemorySize(xattrbuf, xattrbuf_min_size + 1);
-        xattrbuf_size = xattrbuf_min_size + 1;
-        xattr_list_len
-            = getproplist(xattr_data->last_fname, 1, &prop_args, xattrbuf_size,
-                          xattrbuf, &xattrbuf_min_size);
-        switch (xattr_list_len) {
-          case -1: {
-            BErrNo be;
-
-            switch (errno) {
-              default:
-                Mmsg2(jcr->errmsg,
-                      _("getproplist error on file \"%s\": ERR=%s\n"),
-                      xattr_data->last_fname, be.bstrerror());
-                Dmsg2(100, "getproplist error file=%s ERR=%s\n",
-                      xattr_data->last_fname, be.bstrerror());
-                goto bail_out;
-            }
-            break;
-          }
-          case 0:
-            /*
-             * This should never happen as we sized the buffer according to the
-             * minimumsize returned by a previous getproplist call. If it does
-             * happen things are fishy and we are better of forgetting this
-             * xattr as it seems its list is changing at this exact moment so we
-             * can never make a good backup copy of it.
-             */
-            retval = BxattrExitCode::kSuccess;
-            goto bail_out;
-          default:
-            break;
-        }
-      } else {
-        // No xattr on file.
-        retval = BxattrExitCode::kSuccess;
-        goto bail_out;
-      }
-      break;
-    default:
-      break;
-  }
-
-  /*
-   * Walk the list of extended attributes names and retrieve the data.
-   * We already count the bytes needed for serializing the stream later on.
-   */
-  bp = xattrbuf;
-  while (xattrbuf_size > 0) {
-    /*
-     * Call getproplist_entry to initialize name and value
-     * pointers to entries position within buffer.
-     */
-    xattrbuf_size -= get_proplist_entry(&xattr_name, &flags, &xattr_value_len,
-                                        &xattr_value, &bp);
-
-    /*
-     * On some OSes you also get the acls in the extented attribute list.
-     * So we check if we are already backing up acls and if we do we
-     * don't store the extended attribute with the same info.
-     */
-    if (BitIsSet(FO_ACL, ff_pkt->flags)) {
-      for (cnt = 0; xattr_acl_skiplist[cnt] != NULL; cnt++) {
-        if (bstrcmp(xattr_name, xattr_acl_skiplist[cnt])) {
-          skip_xattr = true;
-          break;
-        }
-      }
-    }
-
-    /*
-     * On some OSes we want to skip certain xattrs which are in the
-     * xattr_skiplist array.
-     */
-    if (!skip_xattr) {
-      for (cnt = 0; xattr_skiplist[cnt] != NULL; cnt++) {
-        if (bstrcmp(xattr_name, xattr_skiplist[cnt])) {
-          skip_xattr = true;
-          break;
-        }
-      }
-    }
-
-    if (skip_xattr) {
-      Dmsg1(100, "Skipping xattr named %s\n", xattr_name);
-      continue;
-    }
-
-    // Each xattr valuepair starts with a magic so we can parse it easier.
-    current_xattr = (xattr_t*)malloc(sizeof(xattr_t));
-    current_xattr->magic = XATTR_MAGIC;
-    expected_serialize_len += sizeof(current_xattr->magic);
-
-    current_xattr->name_length = strlen(xattr_name);
-    current_xattr->name = strdup(xattr_name);
-
-    expected_serialize_len
-        += sizeof(current_xattr->name_length) + current_xattr->name_length;
-
-    current_xattr->value_length = *xattr_value_len;
-    current_xattr->value = (char*)malloc(current_xattr->value_length);
-    memcpy(current_xattr->value, xattr_value, current_xattr->value_length);
-
-    expected_serialize_len
-        += sizeof(current_xattr->value_length) + current_xattr->value_length;
-
-    if (xattr_value_list == NULL) {
-      xattr_value_list = new alist<xattr_t*>(10, not_owned_by_alist);
-    }
-
-    xattr_value_list->append(current_xattr);
-    xattr_count++;
-
-    // Protect ourself against things getting out of hand.
-    if (expected_serialize_len >= MAX_XATTR_STREAM) {
-      Mmsg2(jcr->errmsg,
-            _("Xattr stream on file \"%s\" exceeds maximum size of %d bytes\n"),
-            xattr_data->last_fname, MAX_XATTR_STREAM);
-      goto bail_out;
-    }
-  }
-
-  // If we found any xattr send them to the SD.
-  if (xattr_count > 0) {
-    // Serialize the datastream.
-    if (SerializeXattrStream(jcr, xattr_data, expected_serialize_len,
-                             xattr_value_list)
-        < expected_serialize_len) {
-      Mmsg1(jcr->errmsg,
-            _("Failed to Serialize extended attributes on file \"%s\"\n"),
-            xattr_data->last_fname);
-      Dmsg1(100, "Failed to Serialize extended attributes on file \"%s\"\n",
-            xattr_data->last_fname);
-      goto bail_out;
-    }
-
-    // Send the datastream to the SD.
-    retval = SendXattrStream(jcr, xattr_data, os_default_xattr_streams[0]);
-  } else {
-    retval = BxattrExitCode::kSuccess;
-  }
-
-bail_out:
-  if (xattr_value_list != NULL) { XattrDropInternalTable(xattr_value_list); }
-  FreePoolMemory(xattrbuf);
-
-  return retval;
-}
-
-static BxattrExitCode tru64_parse_xattr_streams(JobControlRecord* jcr,
-                                                XattrData* xattr_data,
-                                                int stream,
-                                                char* content,
-                                                uint32_t content_length)
-{
-  char *bp, *xattrbuf = NULL;
-  int32_t xattrbuf_size, cnt;
-  xattr_t* current_xattr;
-  alist<xattr_t*>* xattr_value_list;
-  BxattrExitCode retval = BxattrExitCode::kError;
-
-  xattr_value_list = new alist<xattr_t*>(10, not_owned_by_alist);
-
-  if (UnSerializeXattrStream(jcr, xattr_data, content, content_length,
-                             xattr_value_list)
-      != BxattrExitCode::kSuccess) {
-    goto bail_out;
-  }
-
-  // See how big the propertylist must be.
-  xattrbuf_size = 0;
-  foreach_alist (current_xattr, xattr_value_list) {
-    xattrbuf_size += sizeof_proplist_entry(current_xattr->name,
-                                           current_xattr->value_length);
-  }
-
-  xattrbuf = (char*)malloc(xattrbuf_size);
-
-  // Add all value pairs to the proplist.
-  cnt = 0;
-  bp = xattrbuf;
-  foreach_alist (current_xattr, xattr_value_list) {
-    cnt = add_proplist_entry(current_xattr->name, 0,
-                             current_xattr->value_length, current_xattr->value,
-                             &bp);
-  }
-
-  // Sanity check.
-  if (cnt != xattrbuf_size) {
-    Mmsg1(jcr->errmsg,
-          _("Unable create proper proplist to restore xattrs on file \"%s\"\n"),
-          xattr_data->last_fname);
-    Dmsg1(100,
-          "Unable create proper proplist to restore xattrs on file \"%s\"\n",
-          xattr_data->last_fname);
-    goto bail_out;
-  }
-
-  // Restore the list of extended attributes on the file.
-  cnt = setproplist(xattr_data->last_fname, 1, xattrbuf_size, xattrbuf);
-  switch (cnt) {
-    case -1: {
-      BErrNo be;
-
-      switch (errno) {
-        case EOPNOTSUPP:
-          /*
-           * If the filesystem reports it doesn't support XATTRs we clear
-           * the BXATTR_FLAG_RESTORE_NATIVE flag so we skip XATTR restores
-           * on all other files on the same filesystem. The
-           * BXATTR_FLAG_RESTORE_NATIVE flags gets sets again when we
-           * change from one filesystem to another.
-           */
-          xattr_data->flags &= ~BXATTR_FLAG_RESTORE_NATIVE;
-          retval = BxattrExitCode::kWarning;
-          Mmsg(jcr->errmsg, error_message_disabling_xattributes.c_str(),
-               xattr_data->last_fname);
-          Dmsg2(100, error_message_disabling_xattributes.c_str(),
-                xattr_data->last_fname);
-          goto bail_out;
-        default:
-          Mmsg2(jcr->errmsg, _("setproplist error on file \"%s\": ERR=%s\n"),
-                xattr_data->last_fname, be.bstrerror());
-          Dmsg2(100, "setproplist error file=%s ERR=%s\n",
-                xattr_data->last_fname, be.bstrerror());
-          goto bail_out;
-      }
-      break;
-    }
-    default:
-      break;
-  }
-
-  retval = BxattrExitCode::kSuccess;
-
-bail_out:
-  if (xattrbuf) { free(xattrbuf); }
-  XattrDropInternalTable(xattr_value_list);
-
-  return retval;
-}
-
-// Function pointers to the build and parse function to use for these xattrs.
-static BxattrExitCode (*os_build_xattr_streams)(JobControlRecord* jcr,
-                                                XattrData* xattr_data,
-                                                FindFilesPacket* ff_pkt)
-    = tru64_build_xattr_streams;
-static BxattrExitCode (*os_parse_xattr_streams)(JobControlRecord* jcr,
-                                                XattrData* xattr_data,
-                                                int stream,
-                                                char* content,
-                                                uint32_t content_length)
-    = tru64_parse_xattr_streams;
 
 #  elif defined(HAVE_SUN_OS)
 /**
@@ -2265,10 +1551,8 @@ static inline void DropXattrLinkCache(XattrData* xattr_data)
 {
   xattr_link_cache_entry_t* ptr;
 
-  /*
-   * Walk the list of xattr link cache entries and free allocated memory on
-   * traversing.
-   */
+  /* Walk the list of xattr link cache entries and free allocated memory on
+   * traversing. */
   foreach_alist (ptr, xattr_data->u.build->link_cache) {
     free(ptr->target);
     free(ptr);
@@ -2541,11 +1825,9 @@ static BxattrExitCode solaris_save_xattr(JobControlRecord* jcr,
     }
   }
 
-  /*
-   * Based on the filetype perform the correct action. We support most filetypes
+  /* Based on the filetype perform the correct action. We support most filetypes
    * here, more then the actual implementation on Solaris supports so some code
-   * may never get executed due to limitations in the implementation.
-   */
+   * may never get executed due to limitations in the implementation. */
   switch (st.st_mode & S_IFMT) {
     case S_IFIFO:
     case S_IFCHR:
@@ -2555,11 +1837,9 @@ static BxattrExitCode solaris_save_xattr(JobControlRecord* jcr,
           != BxattrExitCode::kSuccess)
         goto bail_out;
 
-      /*
-       * The current implementation of xattr on Solaris doesn't support this,
+      /* The current implementation of xattr on Solaris doesn't support this,
        * but if it ever does we are prepared.
-       * Encode the stat struct into an ASCII representation.
-       */
+       * Encode the stat struct into an ASCII representation. */
       EncodeStat(attribs, &st, sizeof(st), 0, stream);
       cnt = Bsnprintf(buffer, sizeof(buffer), "%s%c%s%c%s%c", target_attrname,
                       0, attribs, 0, (acl_text) ? acl_text : "", 0);
@@ -2572,13 +1852,11 @@ static BxattrExitCode solaris_save_xattr(JobControlRecord* jcr,
 
       // See if this is the toplevel_hidden_dir being saved.
       if (toplevel_hidden_dir) {
-        /*
-         * Save the data for later storage when we encounter a real xattr.
+        /* Save the data for later storage when we encounter a real xattr.
          * We store the data in the xattr_data->u.build->content buffer
          * and flush that just before sending out the first real xattr.
          * Encode the stat struct into an ASCII representation and jump
-         * out of the function.
-         */
+         * out of the function. */
         EncodeStat(attribs, &st, sizeof(st), 0, stream);
         cnt = Bsnprintf(buffer, sizeof(buffer), "%s%c%s%c%s%c", target_attrname,
                         0, attribs, 0, (acl_text) ? acl_text : "", 0);
@@ -2586,11 +1864,9 @@ static BxattrExitCode solaris_save_xattr(JobControlRecord* jcr,
         xattr_data->u.build->content_length = cnt;
         goto bail_out;
       } else {
-        /*
-         * The current implementation of xattr on Solaris doesn't support this,
+        /* The current implementation of xattr on Solaris doesn't support this,
          * but if it ever does we are prepared.
-         * Encode the stat struct into an ASCII representation.
-         */
+         * Encode the stat struct into an ASCII representation. */
         EncodeStat(attribs, &st, sizeof(st), 0, stream);
         cnt = Bsnprintf(buffer, sizeof(buffer), "%s%c%s%c%s%c", target_attrname,
                         0, attribs, 0, (acl_text) ? acl_text : "", 0);
@@ -2602,10 +1878,8 @@ static BxattrExitCode solaris_save_xattr(JobControlRecord* jcr,
         // See if the cache already knows this inode number.
         if ((xlce = find_xattr_link_cache_entry(xattr_data, st.st_ino))
             != NULL) {
-          /*
-           * Generate a xattr encoding with the reference to the target in
-           * there.
-           */
+          /* Generate a xattr encoding with the reference to the target in
+           * there. */
           EncodeStat(attribs, &st, sizeof(st), st.st_ino, stream);
           cnt = Bsnprintf(buffer, sizeof(buffer), "%s%c%s%c%s%c",
                           target_attrname, 0, attribs, 0, xlce->target, 0);
@@ -2613,17 +1887,13 @@ static BxattrExitCode solaris_save_xattr(JobControlRecord* jcr,
           xattr_data->u.build->content_length = cnt;
           retval = SendXattrStream(jcr, xattr_data, stream);
 
-          /*
-           * For a hard linked file we are ready now, no need to recursively
-           * save the attributes.
-           */
+          /* For a hard linked file we are ready now, no need to recursively
+           * save the attributes. */
           goto bail_out;
         }
 
-        /*
-         * Store this hard linked file in the cache.
-         * Store the name relative to the top level xattr space.
-         */
+        /* Store this hard linked file in the cache.
+         * Store the name relative to the top level xattr space. */
         add_xattr_link_cache_entry(xattr_data, st.st_ino, target_attrname + 1);
       }
 
@@ -2656,11 +1926,9 @@ static BxattrExitCode solaris_save_xattr(JobControlRecord* jcr,
       }
       break;
     case S_IFLNK:
-      /*
-       * The current implementation of xattr on Solaris doesn't support this,
+      /* The current implementation of xattr on Solaris doesn't support this,
        * but if it ever does we are prepared. Encode the stat struct into an
-       * ASCII representation.
-       */
+       * ASCII representation. */
       if (readlink(attrname, link_source, sizeof(link_source)) < 0) {
         BErrNo be;
 
@@ -2690,21 +1958,17 @@ static BxattrExitCode solaris_save_xattr(JobControlRecord* jcr,
         xattr_data->u.build->nr_saved++;
       }
 
-      /*
-       * For a soft linked file we are ready now, no need to recursively save
-       * the attributes.
-       */
+      /* For a soft linked file we are ready now, no need to recursively save
+       * the attributes. */
       goto bail_out;
     default:
       goto bail_out;
   }
 
-  /*
-   * See if this is the first real xattr being saved.
+  /* See if this is the first real xattr being saved.
    * If it is save the toplevel_hidden_dir attributes first.
    * This is easy as its stored already in the
-   * xattr_data->u.build->content buffer.
-   */
+   * xattr_data->u.build->content buffer. */
   if (xattr_data->u.build->nr_saved == 0) {
     retval = SendXattrStream(jcr, xattr_data, STREAM_XATTR_SOLARIS);
     if (retval != BxattrExitCode::kSuccess) { goto bail_out; }
@@ -2757,16 +2021,12 @@ static BxattrExitCode solaris_save_xattr(JobControlRecord* jcr,
   if (retval != BxattrExitCode::kSuccess) { goto bail_out; }
   xattr_data->u.build->nr_saved++;
 
-  /*
-   * Recursivly call solaris_save_extended_attributes for archiving the
-   * attributes available on this extended attribute.
-   */
+  /* Recursivly call solaris_save_extended_attributes for archiving the
+   * attributes available on this extended attribute. */
   retval = solaris_save_xattrs(jcr, xattr_data, xattr_namespace, attrname);
 
-  /*
-   * The recursive call could change our working dir so change back to the
-   * wanted workdir.
-   */
+  /* The recursive call could change our working dir so change back to the
+   * wanted workdir. */
   if (fchdir(fd) < 0) {
     BErrNo be;
 
@@ -2804,11 +2064,9 @@ static BxattrExitCode solaris_save_xattrs(JobControlRecord* jcr,
   char current_xattr_namespace[PATH_MAX];
   BxattrExitCode retval = BxattrExitCode::kError;
 
-  /*
-   * Determine what argument to use. Use attr_parent when set
+  /* Determine what argument to use. Use attr_parent when set
    * (recursive call) or xattr_data->last_fname for first call. Also save
-   * the current depth of the xattr_space we are in.
-   */
+   * the current depth of the xattr_space we are in. */
   if (attr_parent) {
     name = attr_parent;
     if (xattr_namespace) {
@@ -2845,11 +2103,9 @@ static BxattrExitCode solaris_save_xattrs(JobControlRecord* jcr,
 
     switch (errno) {
       case EINVAL:
-        /*
-         * Gentile way of the system saying this type of xattr layering is not
+        /* Gentile way of the system saying this type of xattr layering is not
          * supported. Which is not problem we just forget about this this xattr.
-         * But as this is not an error we return a positive return value.
-         */
+         * But as this is not an error we return a positive return value. */
         retval = BxattrExitCode::kSuccess;
         goto bail_out;
       case ENOENT:
@@ -2865,10 +2121,8 @@ static BxattrExitCode solaris_save_xattrs(JobControlRecord* jcr,
     }
   }
 
-  /*
-   * We need to change into the attribute directory to determine if each of the
-   * attributes should be saved.
-   */
+  /* We need to change into the attribute directory to determine if each of the
+   * attributes should be saved. */
   if (fchdir(attrdirfd) < 0) {
     BErrNo be;
 
@@ -2882,12 +2136,10 @@ static BxattrExitCode solaris_save_xattrs(JobControlRecord* jcr,
     goto bail_out;
   }
 
-  /*
-   * Save the data of the toplevel xattr hidden_dir. We save this one before
+  /* Save the data of the toplevel xattr hidden_dir. We save this one before
    * anything else because the readdir returns "." entry after the extensible
    * attr entry. And as we want this entry before anything else we better just
-   * save its data.
-   */
+   * save its data. */
   if (!attr_parent)
     solaris_save_xattr(jcr, xattr_data, attrdirfd, current_xattr_namespace, ".",
                        true, STREAM_XATTR_SOLARIS);
@@ -2927,15 +2179,11 @@ static BxattrExitCode solaris_save_xattrs(JobControlRecord* jcr,
       continue;
     }
 
-    /*
-     * We are only interested in read-write extensible attributes
-     * when they contain non-transient values.
-     */
+    /* We are only interested in read-write extensible attributes
+     * when they contain non-transient values. */
     if (bstrcmp(dp->d_name, VIEW_READWRITE)) {
-      /*
-       * Determine if there are non-transient system attributes at the toplevel.
-       * We need to provide a fd to the open file.
-       */
+      /* Determine if there are non-transient system attributes at the toplevel.
+       * We need to provide a fd to the open file. */
       if (!SolarisHasNonTransientExtensibleAttributes(filefd)) {
         Dmsg3(400,
               "Skipping transient extensible attributes %s%s on file \"%s\"\n",
@@ -3042,11 +2290,9 @@ static BxattrExitCode solaris_restore_xattrs(JobControlRecord* jcr,
   // Parse the xattr stream. First the part that is the same for all xattrs.
   used_bytes = 0;
 
-  /*
-   * The name of the target xattr has a leading / we are not interested
+  /* The name of the target xattr has a leading / we are not interested
    * in that so skip it when decoding the string. We always start a the /
-   * of the xattr space anyway.
-   */
+   * of the xattr space anyway. */
   target_attrname = content + 1;
   if ((bp = strchr(target_attrname, '\0')) == (char*)NULL
       || (used_bytes = (bp - content)) >= (int32_t)(content_length - 1)) {
@@ -3089,11 +2335,9 @@ static BxattrExitCode solaris_restore_xattrs(JobControlRecord* jcr,
     goto bail_out;
   }
 
-  /*
-   * Try to open the correct xattr subdir based on the target_attrname given.
+  /* Try to open the correct xattr subdir based on the target_attrname given.
    * e.g. check if its a subdir attrname. Each / in the string makes us go
-   * one level deeper.
-   */
+   * one level deeper. */
   while ((bp = strchr(target_attrname, '/')) != (char*)NULL) {
     *bp = '\0';
 
@@ -3152,17 +2396,13 @@ static BxattrExitCode solaris_restore_xattrs(JobControlRecord* jcr,
   }
   acl_text = ++bp;
 
-  /*
-   * Based on the filetype perform the correct action. We support most filetypes
+  /* Based on the filetype perform the correct action. We support most filetypes
    * here, more then the actual implementation on Solaris supports so some code
-   * may never get executed due to limitations in the implementation.
-   */
+   * may never get executed due to limitations in the implementation. */
   switch (st.st_mode & S_IFMT) {
     case S_IFIFO:
-      /*
-       * The current implementation of xattr on Solaris doesn't support this,
-       * but if it ever does we are prepared.
-       */
+      /* The current implementation of xattr on Solaris doesn't support this,
+       * but if it ever does we are prepared. */
       unlinkat(attrdirfd, target_attrname, 0);
       if (mkfifo(target_attrname, st.st_mode) < 0) {
         BErrNo be;
@@ -3177,10 +2417,8 @@ static BxattrExitCode solaris_restore_xattrs(JobControlRecord* jcr,
       break;
     case S_IFCHR:
     case S_IFBLK:
-      /*
-       * The current implementation of xattr on Solaris doesn't support this,
-       * but if it ever does we are prepared.
-       */
+      /* The current implementation of xattr on Solaris doesn't support this,
+       * but if it ever does we are prepared. */
       unlinkat(attrdirfd, target_attrname, 0);
       if (mknod(target_attrname, st.st_mode, st.st_rdev) < 0) {
         BErrNo be;
@@ -3194,11 +2432,9 @@ static BxattrExitCode solaris_restore_xattrs(JobControlRecord* jcr,
       }
       break;
     case S_IFDIR:
-      /*
-       * If its not the hidden_dir create the entry.
+      /* If its not the hidden_dir create the entry.
        * The current implementation of xattr on Solaris doesn't support this,
-       * but if it ever does we are prepared.
-       */
+       * but if it ever does we are prepared. */
       if (!bstrcmp(target_attrname, ".")) {
         unlinkat(attrdirfd, target_attrname, AT_REMOVEDIR);
         if (mkdir(target_attrname, st.st_mode) < 0) {
@@ -3265,10 +2501,8 @@ static BxattrExitCode solaris_restore_xattrs(JobControlRecord* jcr,
         used_bytes = (data - content);
         cnt = content_length - used_bytes;
 
-        /*
-         * Do a sanity check, the st.st_size should be the same as the number of
-         * bytes we have available as data of the stream.
-         */
+        /* Do a sanity check, the st.st_size should be the same as the number of
+         * bytes we have available as data of the stream. */
         if (cnt != st.st_size) {
           Mmsg2(jcr->errmsg,
                 _("Unable to restore data of xattr %s on file \"%s\": Not all "
@@ -3303,10 +2537,8 @@ static BxattrExitCode solaris_restore_xattrs(JobControlRecord* jcr,
       }
       break;
     case S_IFLNK:
-      /*
-       * The current implementation of xattr on Solaris doesn't support this,
-       * but if it ever does we are prepared.
-       */
+      /* The current implementation of xattr on Solaris doesn't support this,
+       * but if it ever does we are prepared. */
       linked_target = bp;
 
       if (symlink(linked_target, target_attrname) < 0) {
@@ -3338,11 +2570,9 @@ static BxattrExitCode solaris_restore_xattrs(JobControlRecord* jcr,
 
       switch (errno) {
         case EINVAL:
-          /*
-           * Gentile way of the system saying this type of xattr layering is not
+          /* Gentile way of the system saying this type of xattr layering is not
            * supported. But as this is not an error we return a positive return
-           * value.
-           */
+           * value. */
           retval = BxattrExitCode::kSuccess;
           break;
         case ENOENT:
@@ -3369,10 +2599,8 @@ static BxattrExitCode solaris_restore_xattrs(JobControlRecord* jcr,
       goto bail_out;
 #    endif /* HAVE_ACL */
 
-  /*
-   * For a non extensible attribute restore access and modification time on the
-   * xattr.
-   */
+  /* For a non extensible attribute restore access and modification time on the
+   * xattr. */
   if (!is_extensible) {
     times[0].tv_sec = st.st_atime;
     times[0].tv_usec = 0;
@@ -3420,17 +2648,13 @@ static BxattrExitCode solaris_build_xattr_streams(JobControlRecord* jcr,
   char cwd[PATH_MAX];
   BxattrExitCode retval = BxattrExitCode::kSuccess;
 
-  /*
-   * First see if extended attributes or extensible attributes are present.
-   * If not just pretend things went ok.
-   */
+  /* First see if extended attributes or extensible attributes are present.
+   * If not just pretend things went ok. */
   if (pathconf(xattr_data->last_fname, _PC_XATTR_EXISTS) > 0) {
     xattr_data->u.build->nr_saved = 0;
 
-    /*
-     * As we change the cwd in the save function save the current cwd
-     * for restore after return from the solaris_save_xattrs function.
-     */
+    /* As we change the cwd in the save function save the current cwd
+     * for restore after return from the solaris_save_xattrs function. */
     getcwd(cwd, sizeof(cwd));
     retval = solaris_save_xattrs(jcr, xattr_data, NULL, NULL);
     chdir(cwd);
@@ -3483,10 +2707,8 @@ static BxattrExitCode solaris_parse_xattr_streams(JobControlRecord* jcr,
       goto bail_out;
   }
 
-  /*
-   * As we change the cwd in the restore function save the current cwd
-   * for restore after return from the solaris_restore_xattrs function.
-   */
+  /* As we change the cwd in the restore function save the current cwd
+   * for restore after return from the solaris_restore_xattrs function. */
   getcwd(cwd, sizeof(cwd));
   retval = solaris_restore_xattrs(jcr, xattr_data, is_extensible, content,
                                   content_length);
@@ -3516,12 +2738,10 @@ BxattrExitCode BuildXattrStreams(JobControlRecord* jcr,
                                  XattrData* xattr_data,
                                  FindFilesPacket* ff_pkt)
 {
-  /*
-   * See if we are changing from one device to another.
+  /* See if we are changing from one device to another.
    * We save the current device we are scanning and compare
    * it with the current st_dev in the last stat performed on
-   * the file we are currently storing.
-   */
+   * the file we are currently storing. */
   Dmsg0(1000, "BuildXattrStreams(): Enter\n");
   if (xattr_data->first_dev
       || xattr_data->current_dev != ff_pkt->statp.st_dev) {
@@ -3549,12 +2769,10 @@ BxattrExitCode ParseXattrStreams(JobControlRecord* jcr,
   BxattrExitCode retval = BxattrExitCode::kError;
 
   Dmsg0(1000, "ParseXattrStreams(): Enter\n");
-  /*
-   * See if we are changing from one device to another.
+  /* See if we are changing from one device to another.
    * We save the current device we are restoring to and compare
    * it with the current st_dev in the last stat performed on
-   * the file we are currently restoring.
-   */
+   * the file we are currently restoring. */
   ret = lstat(xattr_data->last_fname, &st);
   switch (ret) {
     case -1: {
@@ -3594,10 +2812,8 @@ BxattrExitCode ParseXattrStreams(JobControlRecord* jcr,
       }
     }
   } else {
-    /*
-     * Increment error count but don't log an error again for the same
-     * filesystem.
-     */
+    /* Increment error count but don't log an error again for the same
+     * filesystem. */
     xattr_data->u.parse->nr_errors++;
     retval = BxattrExitCode::kSuccess;
     goto bail_out;

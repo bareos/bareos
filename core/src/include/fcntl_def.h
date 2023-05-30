@@ -1,8 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,33 +18,15 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Library includes for BAREOS lib directory
- *
- * This file contains an include for each library file
- * that we use within Bareos. include/bareos.h includes this
- * file and thus picks up everything we need in lib.
- */
 
-#ifndef BAREOS_LIB_LIB_H_
-#define BAREOS_LIB_LIB_H_
+#ifndef BAREOS_INCLUDE_FCNTL_DEF_H_
+#define BAREOS_INCLUDE_FCNTL_DEF_H_
 
-#include "lockmgr.h"
-#include "base64.h"
-#include "bits.h"
-#include "btime.h"
-#include "crypto.h"
-#include "mem_pool.h"
-#include "rwlock.h"
-#include "serial.h"
-#include "lex.h"
-#include "fnmatch.h"
-#include <openssl/md5.h>
-#include <openssl/sha.h>
-#include "bpipe.h"
-#include "attr.h"
-#include "var.h"
-#include "guid_to_name.h"
-#include "jcr.h"
+#include <fcntl.h>
 
-#endif  // BAREOS_LIB_LIB_H_
+/* O_NOATIME is defined at fcntl.h when supported */
+#ifndef O_NOATIME
+#  define O_NOATIME 0
+#endif
+
+#endif  // BAREOS_INCLUDE_FCNTL_DEF_H_

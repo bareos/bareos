@@ -26,8 +26,10 @@
  * Bareos File Daemon  backup.c  send file attributes and data to the Storage
  * daemon.
  */
-
+#include "include/fcntl_def.h"
 #include "include/bareos.h"
+#include "include/filetypes.h"
+#include "include/streams.h"
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
 #include "filed/accurate.h"
@@ -40,11 +42,14 @@
 #include "findlib/attribs.h"
 #include "findlib/hardlink.h"
 #include "findlib/find_one.h"
+#include "lib/attribs.h"
 #include "lib/berrno.h"
 #include "lib/bsock.h"
 #include "lib/btimers.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
+#include "lib/serial.h"
+#include "lib/compression.h"
 
 namespace filedaemon {
 
@@ -508,7 +513,7 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
   save_pkt sp; /* use by option plugin */
   BareosSocket* sd = jcr->store_bsock;
 
-  if (jcr->IsCanceled() || jcr->IsIncomplete()) { return 0; }
+  if (jcr->IsJobCanceled() || jcr->IsIncomplete()) { return 0; }
 
   jcr->fd_impl->num_files_examined++; /* bump total file count */
 
@@ -815,10 +820,10 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
   }
 
 good_rtn:
-  rtnstat = jcr->IsCanceled() ? 0 : 1; /* good return if not canceled */
+  rtnstat = jcr->IsJobCanceled() ? 0 : 1; /* good return if not canceled */
 
 bail_out:
-  if (jcr->IsIncomplete() || jcr->IsCanceled()) { rtnstat = 0; }
+  if (jcr->IsIncomplete() || jcr->IsJobCanceled()) { rtnstat = 0; }
   if (plugin_started) {
     SendPluginName(jcr, sd, false); /* signal end of plugin data */
   }
@@ -1214,7 +1219,7 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
   /* Send Attributes header to Storage daemon
    *    <file-index> <stream> <info> */
   if (!sd->fsend("%ld %d 0", jcr->JobFiles, attr_stream)) {
-    if (!jcr->IsCanceled() && !jcr->IsIncomplete()) {
+    if (!jcr->IsJobCanceled() && !jcr->IsIncomplete()) {
       Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
             sd->bstrerror());
     }

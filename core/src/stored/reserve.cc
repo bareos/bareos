@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -110,18 +110,18 @@ void TermReservationsLock()
 }
 
 // This applies to a drive and to Volumes
-void _lockReservations(const char* file, int line)
+void LockReservations()
 {
   int errstat;
   reservations_lock_count++;
-  if ((errstat = RwlWritelock_p(&reservation_lock, file, line)) != 0) {
+  if ((errstat = RwlWritelock(&reservation_lock)) != 0) {
     BErrNo be;
     Emsg2(M_ABORT, 0, "RwlWritelock failure. stat=%d: ERR=%s\n", errstat,
           be.bstrerror(errstat));
   }
 }
 
-void _unLockReservations()
+void UnlockReservations()
 {
   int errstat;
   reservations_lock_count--;
@@ -197,10 +197,8 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
   memset(&rctx, 0, sizeof(ReserveContext));
   rctx.jcr = jcr;
 
-  /*
-   * If there are multiple devices, the director sends us
-   * use_device for each device that it wants to use.
-   */
+  /* If there are multiple devices, the director sends us
+   * use_device for each device that it wants to use. */
   jcr->sd_impl->reserve_msgs = new alist<const char*>(10, not_owned_by_alist);
   do {
     Dmsg1(debuglevel, "<dird: %s", dir->msg);
@@ -252,16 +250,14 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
     ok = false;
   }
 
-  /*
-   * At this point, we have a list of all the Director's Storage resources
+  /* At this point, we have a list of all the Director's Storage resources
    * indicated for this Job, which include Pool, PoolType, storage name, and
    * Media type.
    *
    * Then for each of the Storage resources, we have a list of device names that
    * were given.
    *
-   * Wiffle through them and find one that can do the backup.
-   */
+   * Wiffle through them and find one that can do the backup. */
   if (ok) {
     int wait_for_device_retries = 0;
     int repeat = 0;
@@ -276,17 +272,15 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
     }
 
     LockReservations();
-    for (; !fail && !JobCanceled(jcr);) {
+    for (; !fail && !jcr->IsJobCanceled();) {
       PopReserveMessages(jcr);
       rctx.suitable_device = false;
       rctx.have_volume = false;
       rctx.VolumeName[0] = 0;
       rctx.any_drive = false;
       if (!jcr->sd_impl->PreferMountedVols) {
-        /*
-         * Here we try to find a drive that is not used.
-         * This will maximize the use of available drives.
-         */
+        /* Here we try to find a drive that is not used.
+         * This will maximize the use of available drives. */
         rctx.num_writers = 20000000; /* start with impossible number */
         rctx.low_use_drive = NULL;
         rctx.PreferMountedVols = false;
@@ -304,10 +298,8 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
         if ((ok = FindSuitableDeviceForJob(jcr, rctx))) { break; }
       }
 
-      /*
-       * Now we look for a drive that may or may not be in use.
-       * Look for an exact Volume match all drives
-       */
+      /* Now we look for a drive that may or may not be in use.
+       * Look for an exact Volume match all drives */
       rctx.PreferMountedVols = true;
       rctx.exact_match = true;
       rctx.autochanger_only = false;
@@ -324,13 +316,11 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
       // during WaitForDevice()
       UnlockReservations();
 
-      /*
-       * The idea of looping on repeat a few times it to ensure
+      /* The idea of looping on repeat a few times it to ensure
        * that if there is some subtle timing problem between two
        * jobs, we will simply try again, and most likely succeed.
        * This can happen if one job reserves a drive or finishes using
-       * a drive at the same time a second job wants it.
-       */
+       * a drive at the same time a second job wants it. */
       if (repeat++ > 1) {   /* try algorithm 3 times */
         Bmicrosleep(30, 0); /* wait a bit */
         Dmsg0(debuglevel, "repeat reserve algorithm\n");
@@ -345,11 +335,9 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
     UnlockReservations();
 
     if (!ok) {
-      /*
-       * If we get here, there are no suitable devices available, which
+      /* If we get here, there are no suitable devices available, which
        * means nothing configured.  If a device is suitable but busy
-       * with another Volume, we will not come here.
-       */
+       * with another Volume, we will not come here. */
       UnbashSpaces(dir->msg);
       PmStrcpy(jcr->errmsg, dir->msg);
       Jmsg(jcr, M_FATAL, 0, _("Device reservation failed for JobId=%d: %s\n"),
@@ -420,12 +408,10 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
         rctx.PreferMountedVols, rctx.exact_match, rctx.suitable_device,
         rctx.autochanger_only, rctx.any_drive);
 
-  /*
-   * If the appropriate conditions of this if are met, namely that
+  /* If the appropriate conditions of this if are met, namely that
    * we are appending and the user wants mounted drive (or we
    * force try a mounted drive because they are all busy), we
-   * start by looking at all the Volumes in the volume list.
-   */
+   * start by looking at all the Volumes in the volume list. */
   if (!IsVolListEmpty() && rctx.append && rctx.PreferMountedVols) {
     dlist<VolumeReservationItem>* temp_vol_list;
     VolumeReservationItem* vol = NULL;
@@ -500,12 +486,10 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
     return true;
   }
 
-  /*
-   * No reserved volume we can use, so now search for an available device.
+  /* No reserved volume we can use, so now search for an available device.
    *
    * For each storage device that the user specified, we
-   * search and see if there is a resource for that device.
-   */
+   * search and see if there is a resource for that device. */
   foreach_alist (store, dirstore) {
     rctx.store = store;
     foreach_alist (device_name, store->device) {
@@ -602,11 +586,9 @@ int SearchResForDevice(ReserveContext& rctx)
       }
     }
 
-    /*
-     * If we haven't found a available device_resource and the
+    /* If we haven't found a available device_resource and the
      * devicereservebymediatype option is set we try one more time where we
-     * allow any device_resource with a matching mediatype.
-     */
+     * allow any device_resource with a matching mediatype. */
     if (me->device_reserve_by_mediatype) {
       foreach_res (rctx.device_resource, R_DEVICE) {
         Dmsg3(debuglevel,
@@ -740,21 +722,18 @@ static int ReserveDevice(ReserveContext& rctx)
         rctx.have_volume = false;
         rctx.VolumeName[0] = 0;
 
-        /*
-         * If there is at least one volume that is valid and in use,
+        /* If there is at least one volume that is valid and in use,
          * but we get here, check if we are running with prefers
          * non-mounted drives.  In that case, we have selected a
          * non-used drive and our one and only volume is mounted
-         * elsewhere, so we bail out and retry using that drive.
-         */
+         * elsewhere, so we bail out and retry using that drive. */
         if (dcr->FoundInUse() && !rctx.PreferMountedVols) {
           rctx.PreferMountedVols = true;
           if (dcr->VolumeName[0]) { dcr->UnreserveDevice(); }
           goto bail_out;
         }
 
-        /*
-         * Note. Under some circumstances, the Director can hand us
+        /* Note. Under some circumstances, the Director can hand us
          * a Volume name that is not the same as the one on the current
          * drive, and in that case, the call above to find the next
          * volume will fail because in attempting to reserve the Volume
@@ -762,8 +741,7 @@ static int ReserveDevice(ReserveContext& rctx)
          * and it will fail.  This *should* only happen if there are
          * writers, thus the following test.  In that case, we simply
          * bail out, and continue waiting, rather than plunging on
-         * and hoping that the operator can resolve the problem.
-         */
+         * and hoping that the operator can resolve the problem. */
         if (dcr->dev->num_writers != 0) {
           if (dcr->VolumeName[0]) { dcr->UnreserveDevice(); }
           goto bail_out;
@@ -813,7 +791,7 @@ static bool ReserveDeviceForRead(DeviceControlRecord* dcr)
   bool ok = false;
 
   ASSERT(dcr);
-  if (JobCanceled(jcr)) { return false; }
+  if (jcr->IsJobCanceled()) { return false; }
 
   dev->Lock();
 
@@ -877,7 +855,7 @@ static bool ReserveDeviceForAppend(DeviceControlRecord* dcr,
   bool ok = false;
 
   ASSERT(dcr);
-  if (JobCanceled(jcr)) { return false; }
+  if (jcr->IsJobCanceled()) { return false; }
 
   dev->Lock();
 
@@ -1001,12 +979,10 @@ static int CanReserveDrive(DeviceControlRecord* dcr, ReserveContext& rctx)
 
   // Setting any_drive overrides PreferMountedVols flag
   if (!rctx.any_drive) {
-    /*
-     * When PreferMountedVols is set, we keep track of the
+    /* When PreferMountedVols is set, we keep track of the
      * drive in use that has the least number of writers, then if
      * no unmounted drive is found, we try that drive. This
-     * helps spread the load to the least used drives.
-     */
+     * helps spread the load to the least used drives. */
     if (rctx.try_low_use_drive && dev == rctx.low_use_drive) {
       Dmsg2(debuglevel, "OK dev=%s == low_drive=%s.\n", dev->print_name(),
             rctx.low_use_drive->print_name());
@@ -1044,8 +1020,7 @@ static int CanReserveDrive(DeviceControlRecord* dcr, ReserveContext& rctx)
       return 0; /* No volume mounted */
     }
 
-    /*
-     * Check for exact Volume name match
+    /* Check for exact Volume name match
      * ***FIXME*** for Disk, we can accept any volume that goes with this drive.
      */
     if (rctx.exact_match && rctx.have_volume) {
@@ -1112,10 +1087,8 @@ static int CanReserveDrive(DeviceControlRecord* dcr, ReserveContext& rctx)
     return 1; /* reserve drive */
   }
 
-  /*
-   * Check if the device is in append mode with writers (i.e. available if pool
-   * is the same).
-   */
+  /* Check if the device is in append mode with writers (i.e. available if pool
+   * is the same). */
   if (dev->CanAppend() || dev->num_writers > 0) {
     return IsPoolOk(dcr);
   } else {

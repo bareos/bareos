@@ -26,7 +26,10 @@
  * Bareos File Daemon restore.c Restorefiles.
  */
 
+#include "include/fcntl_def.h"
 #include "include/bareos.h"
+#include "include/filetypes.h"
+#include "include/streams.h"
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
 #include "filed/filed_jcr_impl.h"
@@ -38,12 +41,16 @@
 #include "findlib/create_file.h"
 #include "findlib/attribs.h"
 #include "findlib/find.h"
+#include "lib/attribs.h"
 #include "lib/berrno.h"
 #include "lib/bget_msg.h"
 #include "lib/bnet.h"
 #include "lib/bsock.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
+#include "lib/base64.h"
+#include "lib/serial.h"
+#include "lib/compression.h"
 
 #ifdef HAVE_WIN32
 #  include "win32/findlib/win32.h"
@@ -478,7 +485,7 @@ void DoRestore(JobControlRecord* jcr)
     memset(jcr->fd_impl->xattr_data->u.parse, 0, sizeof(xattr_parse_data_t));
   }
 
-  while (BgetMsg(sd) >= 0 && !JobCanceled(jcr)) {
+  while (BgetMsg(sd) >= 0 && !jcr->IsJobCanceled()) {
     // Remember previous stream type
     rctx.prev_stream = rctx.stream;
 

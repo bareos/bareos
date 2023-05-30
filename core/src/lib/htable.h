@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,6 +30,8 @@
 
 #define foreach_htable(var, tbl) \
   for ((var) = (tbl)->first(); (var); (var) = (tbl)->next())
+
+#include <memory>
 
 #include "include/config.h"
 #include "monotonic_buffer.h"

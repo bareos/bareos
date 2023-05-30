@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -41,6 +41,7 @@
 #include "lib/bsock.h"
 #include "lib/recent_job_results_list.h"
 #include "lib/util.h"
+#include "lib/version.h"
 
 namespace storagedaemon {
 
@@ -142,18 +143,15 @@ static bool NeedToListDevice(const char* devicenames, const char* devicename)
 static bool NeedToListDevice(const char* devicenames,
                              DeviceResource* device_resource)
 {
-  /*
-   * See if we are requested to list an explicit device name.
+  /* See if we are requested to list an explicit device name.
    * e.g. this happens when people address one particular device in
    * a autochanger via its own storage definition or an non autochanger device.
    */
   if (!NeedToListDevice(devicenames, device_resource->resource_name_)) {
     // See if this device is part of an autochanger.
     if (device_resource->changer_res) {
-      /*
-       * See if we need to list this particular device part of the given
-       * autochanger.
-       */
+      /* See if we need to list this particular device part of the given
+       * autochanger. */
       if (!NeedToListDevice(devicenames,
                             device_resource->changer_res->resource_name_)) {
         return false;

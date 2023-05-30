@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,6 +30,7 @@
 #include "runscript.h"
 #include "lib/berrno.h"
 #include "lib/util.h"
+#include "lib/bpipe.h"
 
 /*
  * This function pointer is set only by the Director (dird.c),
@@ -74,21 +75,17 @@ static bool ScriptDirAllowed(JobControlRecord*,
     *bp = '\0';
   }
 
-  /*
-   * Make sure there are no relative path elements in script dir by which the
+  /* Make sure there are no relative path elements in script dir by which the
    * user tries to escape the allowed dir checking. For scripts we only allow
-   * absolute paths.
-   */
+   * absolute paths. */
   if (strstr(script_dir.c_str(), "..")) {
     Dmsg1(200, "ScriptDirAllowed: relative pathnames not allowed: %s\n",
           script_dir.c_str());
     return false;
   }
 
-  /*
-   * Match the path the script is in against the list of allowed script
-   * directories.
-   */
+  /* Match the path the script is in against the list of allowed script
+   * directories. */
   foreach_alist (allowed_script_dir, allowed_script_dirs) {
     if (Bstrcasecmp(script_dir.c_str(), allowed_script_dir)) {
       allowed = true;
@@ -149,7 +146,7 @@ int RunScripts(JobControlRecord* jcr,
              && (jcr->getJobStatus() == JS_Running
                  || jcr->getJobStatus() == JS_Created))
             || (script->on_failure
-                && (JobCanceled(jcr)
+                && (jcr->IsJobCanceled()
                     || jcr->getJobStatus() == JS_Differences))) {
           Dmsg4(200, "runscript: Run it because SCRIPT_Before (%s,%i,%i,%c)\n",
                 script->command.c_str(), script->on_success, script->on_failure,
@@ -160,7 +157,7 @@ int RunScripts(JobControlRecord* jcr,
 
       if ((script->when & SCRIPT_AfterVSS) && (when & SCRIPT_AfterVSS)) {
         if ((script->on_success && (jcr->getJobStatus() == JS_Blocked))
-            || (script->on_failure && JobCanceled(jcr))) {
+            || (script->on_failure && jcr->IsJobCanceled())) {
           Dmsg4(200,
                 "runscript: Run it because SCRIPT_AfterVSS (%s,%i,%i,%c)\n",
                 script->command.c_str(), script->on_success, script->on_failure,
@@ -172,7 +169,7 @@ int RunScripts(JobControlRecord* jcr,
       if ((script->when & SCRIPT_After) && (when & SCRIPT_After)) {
         if ((script->on_success && jcr->IsTerminatedOk())
             || (script->on_failure
-                && (JobCanceled(jcr)
+                && (jcr->IsJobCanceled()
                     || jcr->getJobStatus() == JS_Differences))) {
           Dmsg4(200, "runscript: Run it because SCRIPT_After (%s,%i,%i,%c)\n",
                 script->command.c_str(), script->on_success, script->on_failure,
@@ -287,9 +284,7 @@ void FreeRunscripts(alist<RunScript*>* runscripts)
   Dmsg0(500, "runscript: freeing all RUNSCRIPTS object\n");
 
   RunScript* r = nullptr;
-  foreach_alist (r, runscripts) {
-    FreeRunscript(r);
-  }
+  foreach_alist (r, runscripts) { FreeRunscript(r); }
 }
 
 void RunScript::Debug() const

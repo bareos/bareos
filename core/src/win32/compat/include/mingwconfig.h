@@ -31,9 +31,6 @@
 /* Define if you have GCC */
 #define HAVE_GCC 1
 
-/* Define if you have sys/bitypes.h */
-/* #undef HAVE_SYS_BITYPES_H */
-
 /* Define if you have zlib */
 #define HAVE_LIBZ 1
 

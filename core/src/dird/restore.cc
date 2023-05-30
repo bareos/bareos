@@ -53,6 +53,7 @@
 #include "include/protocol_types.h"
 #include "lib/edit.h"
 #include "lib/util.h"
+#include "lib/version.h"
 
 namespace directordaemon {
 
@@ -420,7 +421,7 @@ void NativeRestoreCleanup(JobControlRecord* jcr, int TermCode)
     jcr->dir_impl->unlink_bsr = false;
   }
 
-  if (JobCanceled(jcr)) { CancelStorageDaemonJob(jcr); }
+  if (jcr->IsJobCanceled()) { CancelStorageDaemonJob(jcr); }
 
   if (jcr->dir_impl->ExpectedFiles != jcr->JobFiles) {
     Jmsg(jcr, M_WARNING, 0,

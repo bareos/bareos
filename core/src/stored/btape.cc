@@ -32,7 +32,11 @@
  * talk to devices that are configured.
  */
 
+#include <unistd.h>
+
+#include "include/fcntl_def.h"
 #include "include/bareos.h"
+#include "include/streams.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
 #include "lib/crypto_cache.h"
@@ -57,6 +61,7 @@
 #include "lib/util.h"
 #include "lib/watchdog.h"
 #include "include/jcr.h"
+#include "lib/serial.h"
 
 inline void read_with_check(int fd, void* buf, size_t count)
 {
@@ -2174,7 +2179,7 @@ static void fillcmd()
   } else {
     Pmsg1(-1, _("%s Begin writing Bareos records to first tape ...\n"), buf1);
   }
-  for (file_index = 0; ok && !JobCanceled(jcr);) {
+  for (file_index = 0; ok && !jcr->IsJobCanceled();) {
     rec.VolSessionId = jcr->VolSessionId;
     rec.VolSessionTime = jcr->VolSessionTime;
     rec.FileIndex = ++file_index;
@@ -2249,7 +2254,7 @@ static void fillcmd()
   if (vol_num > 1) {
     Dmsg0(100, "Write_end_session_label()\n");
     /* Create Job status for end of session label */
-    if (!JobCanceled(jcr) && ok) {
+    if (!jcr->IsJobCanceled() && ok) {
       jcr->setJobStatusWithPriorityCheck(JS_Terminated);
     } else if (!ok) {
       Pmsg0(000, _("Job canceled.\n"));

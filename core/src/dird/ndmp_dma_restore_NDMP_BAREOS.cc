@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -116,10 +116,8 @@ static inline int set_files_to_restore(JobControlRecord* jcr,
         Mmsg(restore_pathname, "%s/%s", parent->fname, tmp.c_str());
       }
 
-      /*
-       * We only want to restore the non pseudo NDMP names e.g. not the full
-       * backup stream name.
-       */
+      /* We only want to restore the non pseudo NDMP names e.g. not the full
+       * backup stream name. */
       if (!bstrncmp(restore_pathname.c_str(), "/@NDMP/", 7)) {
         // See if we need to strip the prefix from the filename.
         len = strlen(ndmp_filesystem);
@@ -185,12 +183,10 @@ static inline bool fill_restore_environment(JobControlRecord* jcr,
   // Lookup the environment stack saved during the backup so we can restore it.
   if (!jcr->db->GetNdmpEnvironmentString(current_session, current_fi,
                                          NdmpEnvHandler, &job->env_tab)) {
-    /*
-     * Fallback code try to build a environment stack that is good enough to
+    /* Fallback code try to build a environment stack that is good enough to
      * restore this NDMP backup. This is used when the data is not available in
      * the database when its either expired or when an old NDMP backup is
-     * restored where the whole environment was not saved.
-     */
+     * restored where the whole environment was not saved. */
     Jmsg(jcr, M_WARNING, 0,
          _("Could not load NDMP environment. Using fallback.\n"));
 
@@ -206,10 +202,8 @@ static inline bool fill_restore_environment(JobControlRecord* jcr,
     pv.value = job->bu_type;
     ndma_store_env_list(&job->env_tab, &pv);
 
-    /*
-     * Tell the data agent that this is a NDMP backup which uses a level
-     * indicator.
-     */
+    /* Tell the data agent that this is a NDMP backup which uses a level
+     * indicator. */
     if (level) {
       pv.name = ndmp_env_keywords[NDMP_ENV_KW_LEVEL];
       pv.value = level;
@@ -255,10 +249,8 @@ static inline bool fill_restore_environment(JobControlRecord* jcr,
   if (nbf_options && nbf_options->restore_prefix_relative) {
     switch (*restore_prefix) {
       case '^':
-        /*
-         * Use the restore_prefix as an absolute restore prefix.
-         * We skip the leading ^ that is the trigger for absolute restores.
-         */
+        /* Use the restore_prefix as an absolute restore prefix.
+         * We skip the leading ^ that is the trigger for absolute restores. */
         PmStrcpy(destination_path, restore_prefix + 1);
         break;
       default:
@@ -295,12 +287,10 @@ static inline bool fill_restore_environment(JobControlRecord* jcr,
     }
   }
 
-  /*
-   * If we have a paired storage definition we put the storage daemon
+  /* If we have a paired storage definition we put the storage daemon
    * auth key and the filesystem into the tape device name of the
    * NDMP session. This way the storage daemon can link the NDMP
-   * data and the normal save session together.
-   */
+   * data and the normal save session together. */
   if (jcr->store_bsock) {
     Mmsg(tape_device, "%s@%s", jcr->sd_auth_key, restore_pathname + 6);
     job->tape_device = strdup(tape_device.c_str());
@@ -327,14 +317,12 @@ static inline int NdmpWaitForJobTermination(JobControlRecord* jcr)
 {
   jcr->setJobStatusWithPriorityCheck(JS_Running);
 
-  /*
-   * Force cancel in SD if failing, but not for Incomplete jobs
-   * so that we let the SD despool.
-   */
-  Dmsg4(100, "cancel=%d FDJS=%d JS=%d SDJS=%d\n", jcr->IsCanceled(),
+  /* Force cancel in SD if failing, but not for Incomplete jobs
+   * so that we let the SD despool. */
+  Dmsg4(100, "cancel=%d FDJS=%d JS=%d SDJS=%d\n", jcr->IsJobCanceled(),
         jcr->dir_impl->FDJobStatus.load(), jcr->getJobStatus(),
         jcr->dir_impl->SDJobStatus.load());
-  if (jcr->IsCanceled()
+  if (jcr->IsJobCanceled()
       || (!jcr->dir_impl->res.job->RescheduleIncompleteJobs)) {
     Dmsg3(100, "FDJS=%d JS=%d SDJS=%d\n", jcr->dir_impl->FDJobStatus.load(),
           jcr->getJobStatus(), jcr->dir_impl->SDJobStatus.load());
@@ -411,24 +399,20 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
   while (!feof(info.bs)) {
     if (!SelectNextRstore(jcr, info)) { goto cleanup; }
 
-    /*
-     * Initialize the NDMP restore job. We build the generic job once per
+    /* Initialize the NDMP restore job. We build the generic job once per
      * storage daemon and reuse the job definition for each separate sub-restore
      * we perform as part of the whole job. We only free the env_table between
-     * every sub-restore.
-     */
+     * every sub-restore. */
     if (!NdmpBuildClientJob(jcr, jcr->dir_impl->res.client,
                             jcr->dir_impl->res.paired_read_write_storage,
                             NDM_JOB_OP_EXTRACT, &ndmp_job)) {
       goto cleanup;
     }
 
-    /*
-     * Open a message channel connection to the Storage
+    /* Open a message channel connection to the Storage
      * daemon. This is to let him know that our client
      * will be contacting him for a backup session.
-     *
-     */
+     * */
     Dmsg0(10, "Open connection to storage daemon\n");
     jcr->setJobStatusWithPriorityCheck(JS_WaitSD);
 
@@ -458,16 +442,14 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
     if (!StartStorageDaemonMessageThread(jcr)) { goto cleanup; }
     Dmsg0(50, "Storage daemon connection OK\n");
 
-    /*
-     * We need to run a NDMP restore for
+    /* We need to run a NDMP restore for
      * each File Index of each Session Id
      *
      * So we go over each BootStrapRecord
      *   * look for the Session IDs that we find.
      *      * look for the FileIndexes of that Session ID
      *
-     * and run a restore for each SessionID - FileIndex tuple
-     */
+     * and run a restore for each SessionID - FileIndex tuple */
 
     char dt[MAX_TIME_LENGTH];
     bool first_run = true;
@@ -485,10 +467,8 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
         first_run = true;
         next_sessid = true;
       }
-      /*
-       * check for the first and last fileindex  we have in the current
-       * BootStrapRecord
-       */
+      /* check for the first and last fileindex  we have in the current
+       * BootStrapRecord */
       for (fileindex = bsr->FileIndex; fileindex; fileindex = fileindex->next) {
         if (first_run) {
           first_fi = fileindex->findex;
@@ -518,14 +498,12 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
             current_session.time, current_session.id, current_fi);
 
 
-        /*
-         * See if this is the first Restore NDMP stream or not. For NDMP we can
+        /* See if this is the first Restore NDMP stream or not. For NDMP we can
          * have multiple Backup runs as part of the same Job. When we are
          * restoring data from a Native Storage Daemon we let it know to expect
          * a next restore session. It will generate a new authorization key so
          * we wait for the nextrun_ready conditional variable to be raised by
-         * the msg_thread.
-         */
+         * the msg_thread. */
         if (jcr->store_bsock && cnt > 0) {
           jcr->store_bsock->fsend("nextrun");
           lock_mutex(mutex);
@@ -533,10 +511,8 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
           unlock_mutex(mutex);
         }
 
-        /*
-         * Perform the actual NDMP job.
-         * Initialize a new NDMP session
-         */
+        /* Perform the actual NDMP job.
+         * Initialize a new NDMP session */
         memset(&ndmp_sess, 0, sizeof(ndmp_sess));
         ndmp_sess.conn_snooping = (me->ndmp_snooping) ? 1 : 0;
         ndmp_sess.control_agent_enabled = 1;

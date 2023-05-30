@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -25,6 +25,8 @@
  * Marco van Wieringen, April 2012
  */
 
+#include "include/fcntl_def.h"
+#include <unistd.h>
 #include "include/bareos.h"
 #include "crypto_cache.h"
 #include "lib/berrno.h"
@@ -88,11 +90,9 @@ void ReadCryptoCache(const char* cache_file)
     cce = (crypto_cache_entry_t*)malloc(sizeof(crypto_cache_entry_t));
   }
 
-  /*
-   * We always allocate a dangling crypto_cache_entry_t structure in
+  /* We always allocate a dangling crypto_cache_entry_t structure in
    * the way that we malloc before the loop and in the loop. So drop
-   * the last unused entry.
-   */
+   * the last unused entry. */
   free(cce);
 
   // Check if we read the number of entries the header said are in the file.
@@ -236,10 +236,8 @@ bool UpdateCryptoCache(const char* VolumeName, const char* EncryptionKey)
         continue;
       }
 
-      /*
-       * Validate the entry.
-       * Any entry older the CRYPTO_CACHE_MAX_AGE seconds is removed.
-       */
+      /* Validate the entry.
+       * Any entry older the CRYPTO_CACHE_MAX_AGE seconds is removed. */
       if ((cce->added + CRYPTO_CACHE_MAX_AGE) < now) {
         cached_crypto_keys->remove(cce);
         retval = true;
@@ -348,9 +346,7 @@ void ResetCryptoCache(void)
   // Lock the cache.
   lock_mutex(crypto_cache_lock);
 
-  foreach_dlist (cce, cached_crypto_keys) {
-    cce->added = now;
-  }
+  foreach_dlist (cce, cached_crypto_keys) { cce->added = now; }
 
   unlock_mutex(crypto_cache_lock);
 }

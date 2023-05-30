@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2006 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,14 +28,12 @@ btime_t GetCurrentBtime(void);
 time_t BtimeToUnix(btime_t bt);   /* bareos time to epoch time */
 utime_t BtimeToUtime(btime_t bt); /* bareos time to utime_t */
 
-int tm_wom(int mday, int wday);
 int TmWoy(time_t stime);
 
 void Blocaltime(const time_t* time, struct tm* tm);
 char* bstrutime(char* dt, int maxlen, utime_t tim);
 char* bstrftime(char* dt, int maxlen, utime_t tim, const char* fmt = NULL);
 char* bstrftimes(char* dt, int maxlen, utime_t tim);
-char* bstrftime_ny(char* dt, int maxlen, utime_t tim);
 char* bstrftime_nc(char* dt, int maxlen, utime_t tim);
 char* bstrftime_wd(char* dt, int maxlen, utime_t tim);
 utime_t StrToUtime(const char* str);

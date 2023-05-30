@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,7 +29,6 @@ int MatchBsr(BootStrapRecord* bsr,
              Session_Label* sesrec,
              JobControlRecord* jcr);
 int MatchBsrBlock(BootStrapRecord* bsr, DeviceBlock* block);
-void PositionBsrBlock(BootStrapRecord* bsr, DeviceBlock* block);
 BootStrapRecord* find_next_bsr(BootStrapRecord* root_bsr, Device* dev);
 bool IsThisBsrDone(BootStrapRecord* bsr, DeviceRecord* rec);
 uint64_t GetBsrStartAddr(BootStrapRecord* bsr,

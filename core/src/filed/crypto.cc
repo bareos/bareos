@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,12 +30,16 @@
  */
 
 #include "include/bareos.h"
+#include "include/filetypes.h"
+#include "include/streams.h"
 #include "filed/filed.h"
 #include "filed/filed_jcr_impl.h"
 #include "filed/restore.h"
 #include "findlib/find_one.h"
 #include "lib/bsock.h"
 #include "lib/edit.h"
+#include "lib/serial.h"
+#include "lib/compression.h"
 
 namespace filedaemon {
 
@@ -57,11 +61,9 @@ static void UnserCryptoPacketLen(RestoreCipherContext* ctx)
 
 bool CryptoSessionStart(JobControlRecord* jcr, crypto_cipher_t cipher)
 {
-  /**
-   * Create encryption session data and a cached, DER-encoded session data
+  /* Create encryption session data and a cached, DER-encoded session data
    * structure. We use a single session key for each backup, so we'll encode
-   * the session data only once.
-   */
+   * the session data only once. */
   if (jcr->fd_impl->crypto.pki_encrypt) {
     uint32_t size = 0;
 
@@ -179,12 +181,10 @@ bool VerifySignature(JobControlRecord* jcr, r_ctx& rctx)
     switch (err) {
       case CRYPTO_ERROR_NONE:
         Dmsg0(50, "== Got digest\n");
-        /*
-         * We computed jcr->fd_impl_->crypto.digest using signing_algorithm
+        /* We computed jcr->fd_impl_->crypto.digest using signing_algorithm
          * while writing the file. If it is not the same as the algorithm used
          * for this file, punt by releasing the computed algorithm and computing
-         * by re-reading the file.
-         */
+         * by re-reading the file. */
         if (algorithm != signing_algorithm) {
           if (jcr->fd_impl->crypto.digest) {
             CryptoDigestFree(jcr->fd_impl->crypto.digest);
@@ -203,16 +203,12 @@ bool VerifySignature(JobControlRecord* jcr, r_ctx& rctx)
             goto bail_out;
           }
         } else {
-          /*
-           * Signature found, digest allocated.  Old method,
-           * re-read the file and compute the digest
-           */
+          /* Signature found, digest allocated.  Old method,
+           * re-read the file and compute the digest */
           jcr->fd_impl->crypto.digest = digest;
 
-          /*
-           * Checksum the entire file
-           * Make sure we don't modify JobBytes by saving and restoring it
-           */
+          /* Checksum the entire file
+           * Make sure we don't modify JobBytes by saving and restoring it */
           saved_bytes = jcr->JobBytes;
           if (FindOneFile(jcr, jcr->fd_impl->ff, DoFileDigest,
                           jcr->fd_impl->last_fname, (dev_t)-1, 1)
@@ -342,10 +338,8 @@ again:
     memmove(cipher_ctx->buf, &cipher_ctx->buf[cipher_ctx->packet_len],
             cipher_ctx->buf_len);
   }
-  /*
-   * The packet was successfully written, reset the length so that the next
-   * packet length may be re-read by UnserCryptoPacketLen()
-   */
+  /* The packet was successfully written, reset the length so that the next
+   * packet length may be re-read by UnserCryptoPacketLen() */
   cipher_ctx->packet_len = 0;
 
   if (cipher_ctx->buf_len > 0 && !second_pass) {
@@ -405,13 +399,11 @@ bool SetupEncryptionContext(b_ctx& bctx)
       goto bail_out;
     }
 
-    /*
-     * Grow the crypto buffer, if necessary.
+    /* Grow the crypto buffer, if necessary.
      * CryptoCipherUpdate() will buffer up to (cipher_block_size - 1).
      * We grow crypto_buf to the maximum number of blocks that
      * could be returned for the given read buffer size.
-     * (Using the larger of either rsize or max_compress_len)
-     */
+     * (Using the larger of either rsize or max_compress_len) */
     bctx.jcr->fd_impl->crypto.crypto_buf
         = CheckPoolMemorySize(bctx.jcr->fd_impl->crypto.crypto_buf,
                               (MAX(bctx.jcr->buf_size + (int)sizeof(uint32_t),
@@ -457,8 +449,7 @@ bool EncryptData(b_ctx* bctx, bool* need_more_data)
   bool retval = false;
   uint32_t initial_len = 0;
 
-  /*
-   * Note, here we prepend the current record length to the beginning
+  /* Note, here we prepend the current record length to the beginning
    *  of the encrypted data. This is because both sparse and compression
    *  restore handling want records returned to them with exactly the
    *  same number of bytes that were processed in the backup handling.
@@ -468,8 +459,7 @@ bool EncryptData(b_ctx* bctx, bool* need_more_data)
    *  will not be obtained. Of course, the buffered data eventually comes
    *  out in subsequent CryptoCipherUpdate() calls or at least
    *  when CryptoCipherFinalize() is called.  Unfortunately, this
-   *  "feature" of encryption enormously complicates the restore code.
-   */
+   *  "feature" of encryption enormously complicates the restore code. */
   ser_declare;
 
   if (BitIsSet(FO_SPARSE, bctx->ff_pkt->flags)
@@ -529,14 +519,12 @@ bool DecryptData(JobControlRecord* jcr,
 
   ASSERT(cipher_ctx->cipher);
 
-  /*
-   * NOTE: We must fd_implement block preserving semantics for the
+  /* NOTE: We must fd_implement block preserving semantics for the
    * non-streaming compression and sparse code.
    *
    * Grow the crypto buffer, if necessary.
    * CryptoCipherUpdate() will process only whole blocks,
-   * buffering the remaining input.
-   */
+   * buffering the remaining input. */
   cipher_ctx->buf = CheckPoolMemorySize(
       cipher_ctx->buf, cipher_ctx->buf_len + *length + cipher_ctx->block_size);
 
@@ -560,12 +548,10 @@ bool DecryptData(JobControlRecord* jcr,
   cipher_ctx->buf_len += decrypted_len;
   *data = cipher_ctx->buf;
 
-  /*
-   * If one full preserved block is available, write it to disk,
+  /* If one full preserved block is available, write it to disk,
    * and then buffer any remaining data. This should be effecient
    * as long as Bareos's block size is not significantly smaller than the
-   * encryption block size (extremely unlikely!)
-   */
+   * encryption block size (extremely unlikely!) */
   UnserCryptoPacketLen(cipher_ctx);
   Dmsg1(500, "Crypto unser block size=%d\n",
         cipher_ctx->packet_len - CRYPTO_LEN_SIZE);

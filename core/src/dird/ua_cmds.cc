@@ -53,6 +53,7 @@
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
+#include "lib/version.h"
 
 #include "dird/dbcheck_utils.h"
 
@@ -86,7 +87,6 @@ extern bool UpdateCmd(UaContext* ua, const char* cmd);
 
 /* ua_dotcmds.c */
 extern bool DotCatalogsCmd(UaContext* ua, const char* cmd);
-extern bool DotAdminCmds(UaContext* ua, const char* cmd);
 extern bool DotJobdefsCmd(UaContext* ua, const char* cmd);
 extern bool DotJobsCmd(UaContext* ua, const char* cmd);
 extern bool DotJobstatusCmd(UaContext* ua, const char* cmd);
@@ -193,20 +193,6 @@ static struct ua_cmdstruct commands[] = {
      NT_("job=<job-name> | client=<client-name> | storage=<storage-name> | "
          "pool=<pool-name>"),
      false, false},
-#ifdef DEVELOPER
-    {NT_(".die"), DotAdminCmds, _("Generate Segmentation Fault"),
-     NT_("[dir | director] [client=<client>] [storage=<storage>]"), false,
-     true},
-    {NT_(".dump"), DotAdminCmds, _("Dump memory statistics"),
-     NT_("[dir | director] [client=<client>] [storage=<storage>]"), false,
-     true},
-    {NT_(".memcheck"), DotAdminCmds, _("Checks for internal memory leaks"),
-     NT_("[dir | director] [client=<client>] [storage=<storage>]"), false,
-     true},
-    {NT_(".exit"), DotAdminCmds, _("Close connection"),
-     NT_("[dir | director] [client=<client>] [storage=<storage>]"), false,
-     true},
-#endif
     {NT_(".filesets"), DotFilesetsCmd, _("List all filesets"), NULL, false,
      false},
     {NT_(".help"), DotHelpCmd, _("Print parsable information about a command"),

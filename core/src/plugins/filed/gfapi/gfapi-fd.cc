@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2017 Planets Communications B.V.
-   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -24,6 +24,7 @@
  * GlusterFS GFAPI plugin for the Bareos File Daemon
  */
 #include "include/bareos.h"
+#include "include/filetypes.h"
 #include "filed/fd_plugins.h"
 #include "plugins/include/common.h"
 #include "include/fileopts.h"
@@ -31,6 +32,7 @@
 #include "lib/path_list.h"
 #include "lib/berrno.h"
 #include "lib/edit.h"
+#include "lib/serial.h"
 
 #include <glusterfs/api/glfs.h>
 
@@ -241,10 +243,8 @@ static bool UrllibUnquotePlus(char* str)
   char *p, *q;
   bool retval = true;
 
-  /*
-   * Set both pointers to the beginning of the string.
-   * q is the converted cursor and p is the walking cursor.
-   */
+  /* Set both pointers to the beginning of the string.
+   * q is the converted cursor and p is the walking cursor. */
   q = str;
   p = str;
 
@@ -335,12 +335,10 @@ static bRC newPlugin(PluginContext* ctx)
   memset(p_ctx, 0, sizeof(plugin_ctx));
   ctx->plugin_private_context = (void*)p_ctx; /* set our context pointer */
 
-  /*
-   * Allocate some internal memory for:
+  /* Allocate some internal memory for:
    * - The file we are processing
    * - The link target of a symbolic link.
-   * - The list of xattrs.
-   */
+   * - The list of xattrs. */
   p_ctx->next_filename = GetPoolMemory(PM_FNAME);
   p_ctx->link_target = GetPoolMemory(PM_FNAME);
   p_ctx->xattr_list = GetPoolMemory(PM_MESSAGE);
@@ -476,21 +474,15 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
   struct dirent* entry;
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
-  /*
-   * See if we are actually crawling the fs ourself or depending on an external
-   * filelist.
-   */
+  /* See if we are actually crawling the fs ourself or depending on an external
+   * filelist. */
   if (p_ctx->crawl_fs) {
-    /*
-     * See if we just saved the directory then we are done processing this
-     * directory.
-     */
+    /* See if we just saved the directory then we are done processing this
+     * directory. */
     switch (p_ctx->type) {
       case FT_DIREND:
-        /*
-         * See if there is anything on the dir stack to pop off and continue
-         * reading that directory.
-         */
+        /* See if there is anything on the dir stack to pop off and continue
+         * reading that directory. */
         if (!p_ctx->dir_stack->empty()) {
           struct dir_stack_entry* entry;
 
@@ -527,10 +519,8 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
   while (1) {
     memset(&p_ctx->statp, 0, sizeof(p_ctx->statp));
 
-    /*
-     * See if we are actually crawling the fs ourself or depending on an
-     * external filelist.
-     */
+    /* See if we are actually crawling the fs ourself or depending on an
+     * external filelist. */
     if (!p_ctx->crawl_fs) {
       char* bp;
       struct gluster_find_mapping* gf_mapping;
@@ -565,10 +555,8 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
           UrllibUnquotePlus(p_ctx->next_filename);
           break;
         case gf_type_rename:
-          /*
-           * RENAME means we clear the seen bitmap for the original name and
-           * backup the new filename.
-           */
+          /* RENAME means we clear the seen bitmap for the original name and
+           * backup the new filename. */
           bstrinlinecpy(p_ctx->next_filename,
                         p_ctx->next_filename + gf_mapping->compare_size);
           bp = strchr(p_ctx->next_filename, ' ');
@@ -619,11 +607,9 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
 
         switch (errno) {
           case ENOENT:
-            /*
-             * Note: This was silently ignored before, now at least emit a
+            /* Note: This was silently ignored before, now at least emit a
              * warning in the job log that does not trigger the "OK -- with
-             * warnings" termination
-             */
+             * warnings" termination */
             Jmsg(ctx, M_WARNING,
                  "gfapi-fd: glfs_stat(%s) failed: %s (skipped)\n",
                  p_ctx->next_filename, be.bstrerror());
@@ -705,17 +691,13 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
         break;
       case S_IFDIR:
         if (!p_ctx->crawl_fs) {
-          /*
-           * When we don't crawl the filesystem ourself we directly move to
+          /* When we don't crawl the filesystem ourself we directly move to
            * FT_DIREND as we don't recurse into the directory but just process a
-           * list of externally provided filenames.
-           */
+           * list of externally provided filenames. */
           p_ctx->type = FT_DIREND;
         } else {
-          /*
-           * When we crawl the filesystem ourself we first do a FT_DIRBEGIN and
-           * recurse if needed and then save the directory in the FT_DIREND.
-           */
+          /* When we crawl the filesystem ourself we first do a FT_DIRBEGIN and
+           * recurse if needed and then save the directory in the FT_DIREND. */
           p_ctx->type = FT_DIRBEGIN;
         }
         break;
@@ -768,14 +750,12 @@ static bRC startBackupFile(PluginContext* ctx, save_pkt* sp)
 
   switch (p_ctx->type) {
     case FT_DIRBEGIN:
-      /*
-       * We should never get here when we don't crawl the filesystem ourself but
+      /* We should never get here when we don't crawl the filesystem ourself but
        * just in case we do we test in the if that p_ctx->crawl_fs is not set.
        *
        * See if we are recursing if so we open the directory and process it.
        * We also open the directory when it is the toplevel e.g. when
-       * p_ctx->gdir == NULL.
-       */
+       * p_ctx->gdir == NULL. */
       if (p_ctx->crawl_fs
           && (!p_ctx->gdir || !BitIsSet(FO_NO_RECURSION, p_ctx->flags))) {
         // Change into the directory and process all entries in it.
@@ -787,10 +767,8 @@ static bRC startBackupFile(PluginContext* ctx, save_pkt* sp)
                p_ctx->next_filename, be.bstrerror());
           p_ctx->type = FT_NOOPEN;
         } else {
-          /*
-           * Push the current directory onto the directory stack so we can
-           * continue processing it later on.
-           */
+          /* Push the current directory onto the directory stack so we can
+           * continue processing it later on. */
           if (p_ctx->gdir) {
             struct dir_stack_entry* new_entry;
 
@@ -832,10 +810,8 @@ static bRC startBackupFile(PluginContext* ctx, save_pkt* sp)
       sp->no_read = true;
       break;
     case FT_DIREND:
-      /*
-       * For a directory, link is the same as fname, but with trailing slash
-       * and don't read the actual content.
-       */
+      /* For a directory, link is the same as fname, but with trailing slash
+       * and don't read the actual content. */
       Mmsg(p_ctx->link_target, "%s/", p_ctx->next_filename);
       sp->link = p_ctx->link_target;
       sp->no_read = true;
@@ -866,23 +842,17 @@ static bRC startBackupFile(PluginContext* ctx, save_pkt* sp)
   memcpy(&sp->statp, &p_ctx->statp, sizeof(sp->statp));
   sp->save_time = p_ctx->since;
 
-  /*
-   * If we crawl the filesystem ourself we check the timestamps when
+  /* If we crawl the filesystem ourself we check the timestamps when
    * using glusterfind the changelog gives changes since the since time
-   * we provided to it so it makes no sense to check again.
-   */
+   * we provided to it so it makes no sense to check again. */
   if (p_ctx->crawl_fs) {
-    /*
-     * For Incremental and Differential backups use checkChanges method to
-     * see if we need to backup this file.
-     */
+    /* For Incremental and Differential backups use checkChanges method to
+     * see if we need to backup this file. */
     switch (p_ctx->backup_level) {
       case L_INCREMENTAL:
       case L_DIFFERENTIAL:
-        /*
-         * When sp->type is FT_DIRBEGIN, skip calling checkChanges() because it
-         * would be useless.
-         */
+        /* When sp->type is FT_DIRBEGIN, skip calling checkChanges() because it
+         * would be useless. */
         if (sp->type == FT_DIRBEGIN) {
           Dmsg(ctx, debuglevel,
                "gfapi-fd: skip checkChanges() for %s because sp->type is "
@@ -891,11 +861,9 @@ static bRC startBackupFile(PluginContext* ctx, save_pkt* sp)
           sp->type = FT_DIRNOCHG;
           break;
         }
-        /*
-         * When glfs_chdir() or glfs_opendir() failed, then sp->type is
+        /* When glfs_chdir() or glfs_opendir() failed, then sp->type is
          * FT_NOOPEN, then skip calling checkChanges() because it would be
-         * useless.
-         */
+         * useless. */
         if (sp->type == FT_NOOPEN) {
           Dmsg(ctx, debuglevel,
                "gfapi-fd: skip checkChanges() for %s because sp->type is "
@@ -1003,10 +971,8 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
 
   if (!p_ctx || !value) { return bRC_Error; }
 
-  /*
-   * See if we already got some plugin definition before and its exactly the
-   * same.
-   */
+  /* See if we already got some plugin definition before and its exactly the
+   * same. */
   if (p_ctx->plugin_definition) {
     if (bstrcmp(p_ctx->plugin_definition, (char*)value)) { return bRC_OK; }
 
@@ -1019,10 +985,8 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
   // Keep overrides passed in via pluginoptions.
   keep_existing = (p_ctx->plugin_options) ? true : false;
 
-  /*
-   * Parse the plugin definition.
-   * Make a private copy of the whole string.
-   */
+  /* Parse the plugin definition.
+   * Make a private copy of the whole string. */
   plugin_definition = strdup((char*)value);
 
   bp = strchr(plugin_definition, ':');
@@ -1039,8 +1003,7 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
   while (bp) {
     if (strlen(bp) == 0) { break; }
 
-    /*
-     * Each argument is in the form:
+    /* Each argument is in the form:
      *    <argument> = <argument_value>
      *
      * So we setup the right pointers here, argument to the beginning
@@ -1256,12 +1219,10 @@ static inline bool parse_gfapi_devicename(char* devicename,
     bp++;
     *servername = bp;
 
-    /*
-     * Parse any explicit server portnr.
+    /* Parse any explicit server portnr.
      * We search reverse in the string for a : what indicates
      * a port specification but in that string there may not contain a ']'
-     * because then we searching in a IPv6 string.
-     */
+     * because then we searching in a IPv6 string. */
     bp = strrchr(bp, ':');
     if (bp && !strchr(bp, ']')) {
       char* port;
@@ -1290,12 +1251,10 @@ static inline bool parse_gfapi_devicename(char* devicename,
       *bp++ = '\0';
       *volumename = bp;
 
-      /*
-       * See if there is a dir specified.
+      /* See if there is a dir specified.
        * As we use an unix socket, we need to check if we are not using the
        * path specified for the unix socket.
-       * It can happen if there is no subdirectory in the URI
-       */
+       * It can happen if there is no subdirectory in the URI */
       char* before_parameter = strchr(bp, '?');
       char* before_dir = strchr(bp, '/');
 
@@ -1359,10 +1318,8 @@ static bRC connect_to_gluster(PluginContext* ctx, bool is_backup)
     return bRC_Error;
   }
 
-  /*
-   * If we get called and we already have a handle to gfapi we should tear it
-   * down.
-   */
+  /* If we get called and we already have a handle to gfapi we should tear it
+   * down. */
   if (p_ctx->glfs) {
     glfs_fini(p_ctx->glfs);
     p_ctx->glfs = NULL;
@@ -1410,21 +1367,17 @@ static bRC setup_backup(PluginContext* ctx, void* value)
 
   if (!p_ctx || !value) { goto bail_out; }
 
-  /*
-   * If we are already having a handle to gfapi and we are getting the
+  /* If we are already having a handle to gfapi and we are getting the
    * same plugin definition there is no need to tear down the whole stuff and
-   * setup exactly the same.
-   */
+   * setup exactly the same. */
   if (p_ctx->glfs && bstrcmp((char*)value, p_ctx->plugin_definition)) {
     return bRC_OK;
   }
 
   if (connect_to_gluster(ctx, true) != bRC_OK) { goto bail_out; }
 
-  /*
-   * See if we use an external list with files to backup or should crawl the
-   * filesystem ourself.
-   */
+  /* See if we use an external list with files to backup or should crawl the
+   * filesystem ourself. */
   if (p_ctx->gf_file_list) {
     int accurate;
 
@@ -1443,11 +1396,9 @@ static bRC setup_backup(PluginContext* ctx, void* value)
     }
 
     if (p_ctx->is_accurate) {
-      /*
-       * Mark all files as seen from the previous backup when this is a
+      /* Mark all files as seen from the previous backup when this is a
        * incremental or differential backup. The entries we get from glusterfind
-       * are only the changes since that earlier backup.
-       */
+       * are only the changes since that earlier backup. */
       switch (p_ctx->backup_level) {
         case L_INCREMENTAL:
         case L_DIFFERENTIAL:
@@ -1466,22 +1417,18 @@ static bRC setup_backup(PluginContext* ctx, void* value)
       }
     }
 
-    /*
-     * Setup the plugin for the first entry.
+    /* Setup the plugin for the first entry.
      * As we need to get it from the gfflilelist we use
      * get_next_file_to_backup() to do the setup for us it retrieves the entry
-     * and does a setup of filetype etc.
-     */
+     * and does a setup of filetype etc. */
     switch (get_next_file_to_backup(ctx)) {
       case bRC_OK:
-        /*
-         * get_next_file_to_backup() normally returns bRC_More to indicate that
+        /* get_next_file_to_backup() normally returns bRC_More to indicate that
          * there are more files to backup. But when using glusterfind we use an
          * external filelist which could be empty in that special case we get
          * bRC_OK back from get_next_file_to_backup() and then only in
          * setup_backup() we return bRC_Skip which will skip processing of any
-         * more files to backup.
-         */
+         * more files to backup. */
         retval = bRC_Skip;
         break;
       case bRC_Error:
@@ -1495,36 +1442,28 @@ static bRC setup_backup(PluginContext* ctx, void* value)
   } else {
     p_ctx->crawl_fs = true;
 
-    /*
-     * Allocate some internal memory for:
+    /* Allocate some internal memory for:
      * - The current working dir.
-     * - For the older glfs_readdirplus_r() function an dirent hold buffer.
-     */
+     * - For the older glfs_readdirplus_r() function an dirent hold buffer. */
     p_ctx->cwd = GetPoolMemory(PM_FNAME);
     p_ctx->cwd = CheckPoolMemorySize(p_ctx->cwd, GLFS_PATH_MAX);
 #ifndef HAVE_GLFS_READDIRPLUS
     p_ctx->dirent_buffer = GetPoolMemory(PM_FNAME);
 
-    /*
-     * Resize the dirent buffer to 512 bytes which should be enough to hold any
-     * dirent.
-     */
+    /* Resize the dirent buffer to 512 bytes which should be enough to hold any
+     * dirent. */
     p_ctx->dirent_buffer = CheckPoolMemorySize(p_ctx->dirent_buffer, 512);
 #endif
 
-    /*
-     * This is an alist that holds the stack of directories we have open.
+    /* This is an alist that holds the stack of directories we have open.
      * We push the current directory onto this stack the moment we start
      * processing a sub directory and pop it from this list when we are
-     * done processing that sub directory.
-     */
+     * done processing that sub directory. */
     p_ctx->dir_stack = new alist<dir_stack_entry*>(10, owned_by_alist);
 
-    /*
-     * Setup the directory we need to start scanning by setting the filetype
+    /* Setup the directory we need to start scanning by setting the filetype
      * to FT_DIRBEGIN e.g. same as recursing into directory and let the recurse
-     * logic do the rest of the work.
-     */
+     * logic do the rest of the work. */
     p_ctx->type = FT_DIRBEGIN;
     if (p_ctx->basedir && strlen(p_ctx->basedir) > 0) {
       PmStrcpy(p_ctx->next_filename, p_ctx->basedir);
@@ -1546,11 +1485,9 @@ static bRC setup_restore(PluginContext* ctx, void* value)
 
   if (!p_ctx || !value) { return bRC_Error; }
 
-  /*
-   * If we are already having a handle to gfapi and we are getting the
+  /* If we are already having a handle to gfapi and we are getting the
    * same plugin definition there is no need to tear down the whole stuff and
-   * setup exactly the same.
-   */
+   * setup exactly the same. */
   if (p_ctx->glfs && bstrcmp((char*)value, p_ctx->plugin_definition)) {
     return bRC_OK;
   }
@@ -1908,10 +1845,8 @@ static inline uint32_t serialize_acl_stream(PoolMem* buf,
   uint32_t content_length;
   char* buffer;
 
-  /*
-   * Make sure the serialized stream fits in the poolmem buffer.
-   * We allocate some more to be sure the stream is gonna fit.
-   */
+  /* Make sure the serialized stream fits in the poolmem buffer.
+   * We allocate some more to be sure the stream is gonna fit. */
   buf->check_size(offset + expected_serialize_len + 10);
 
   buffer = buf->c_str() + offset;
@@ -2103,14 +2038,12 @@ static bRC getXattr(PluginContext* ctx, xattr_pkt* xp)
       break;
     }
 
-    /*
-     * Data from llistxattr is in the following form:
+    /* Data from llistxattr is in the following form:
      *
      * user.name1\0system.name1\0user.name2\0
      *
      * We add an extra \0 at the end so we have an unique terminator
-     * to know when we hit the end of the list.
-     */
+     * to know when we hit the end of the list. */
     p_ctx->xattr_list = CheckPoolMemorySize(p_ctx->xattr_list, status + 1);
     p_ctx->xattr_list[status] = '\0';
     p_ctx->next_xattr_name = p_ctx->xattr_list;
@@ -2118,11 +2051,9 @@ static bRC getXattr(PluginContext* ctx, xattr_pkt* xp)
   }
 
   while (1) {
-    /*
-     * On some OSes you also get the acls in the extented attribute list.
+    /* On some OSes you also get the acls in the extented attribute list.
      * So we check if we are already backing up acls and if we do we
-     * don't store the extended attribute with the same info.
-     */
+     * don't store the extended attribute with the same info. */
     skip_xattr = false;
     if (BitIsSet(FO_ACL, p_ctx->flags)) {
       for (int cnt = 0; xattr_acl_skiplist[cnt] != NULL; cnt++) {

@@ -25,6 +25,8 @@
  * @file
  * Configuration file parser for IP-Addresse ipv4 and ipv6
  */
+#include <netdb.h>
+#include <unistd.h>
 
 #include "include/bareos.h"
 #include "lib/address_conf.h"
@@ -254,20 +256,6 @@ const char* BuildAddressesString(dlist<IPADDR>* addrs,
     blen -= len;
   }
   return buf;
-}
-
-const char* GetFirstAddress(dlist<IPADDR>* addrs, char* outputbuf, int outlen)
-{
-  return ((IPADDR*)(addrs->first()))->GetAddress(outputbuf, outlen);
-}
-
-int GetFirstPortNetOrder(dlist<IPADDR>* addrs)
-{
-  if (!addrs) {
-    return 0;
-  } else {
-    return ((IPADDR*)(addrs->first()))->GetPortNetOrder();
-  }
 }
 
 int GetFirstPortHostOrder(dlist<IPADDR>* addrs)
@@ -550,26 +538,6 @@ void FreeAddresses(dlist<IPADDR>* addrs)
     delete ptr;
   }
   delete addrs;
-}
-
-int SockaddrGetPortNetOrder(const struct sockaddr* client_addr)
-{
-  if (client_addr->sa_family == AF_INET) {
-    return ((struct sockaddr_in*)client_addr)->sin_port;
-  } else {
-    return ((struct sockaddr_in6*)client_addr)->sin6_port;
-  }
-  return -1;
-}
-
-int SockaddrGetPort(const struct sockaddr* client_addr)
-{
-  if (client_addr->sa_family == AF_INET) {
-    return ntohs(((struct sockaddr_in*)client_addr)->sin_port);
-  } else {
-    return ntohs(((struct sockaddr_in6*)client_addr)->sin6_port);
-  }
-  return -1;
 }
 
 char* SockaddrToAscii(const struct sockaddr* sa, char* buf, int len)

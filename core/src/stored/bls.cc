@@ -26,7 +26,9 @@
  * Dumb program to do an "ls" of a Bareos 2.0 mortal file.
  */
 
+#include <unistd.h>
 #include "include/bareos.h"
+#include "include/streams.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
 #include "lib/berrno.h"
@@ -48,6 +50,7 @@
 #include "lib/parse_bsr.h"
 #include "include/jcr.h"
 #include "lib/parse_conf.h"
+#include "lib/compression.h"
 
 namespace storagedaemon {
 extern bool ParseSdConfig(const char* configfile, int exit_code);

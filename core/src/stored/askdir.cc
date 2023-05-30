@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -41,6 +41,7 @@
 #include "lib/util.h"
 #include "lib/berrno.h"
 #include "lib/bsock.h"
+#include "lib/serial.h"
 
 namespace storagedaemon {
 
@@ -131,10 +132,8 @@ static bool DoGetVolumeInfo(DeviceControlRecord* dcr)
   bstrncpy(dcr->VolumeName, vol.VolCatName, sizeof(dcr->VolumeName));
   dcr->VolCatInfo = vol; /* structure assignment */
 
-  /*
-   * If we received a new crypto key update the cache and write out the new
-   * cache on a change.
-   */
+  /* If we received a new crypto key update the cache and write out the new
+   * cache on a change. */
   if (*vol.VolEncrKey) {
     if (UpdateCryptoCache(vol.VolCatName, vol.VolEncrKey)) {
       WriteCryptoCache(me->working_directory, "bareos-sd",
@@ -209,11 +208,9 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
   Dmsg2(debuglevel, "DirFindNextAppendableVolume: reserved=%d Vol=%s\n",
         IsReserved(), VolumeName);
 
-  /*
-   * Try the twenty oldest or most available volumes. Note,
+  /* Try the twenty oldest or most available volumes. Note,
    * the most available could already be mounted on another
-   * drive, so we continue looking for a not in use Volume.
-   */
+   * drive, so we continue looking for a not in use Volume. */
   LockVolumes();
   lock_mutex(vol_info_mutex);
   ClearFoundInUse();
@@ -318,7 +315,7 @@ bool StorageDaemonDeviceControlRecord::DirUpdateVolumeInfo(bool label, bool)
   Dmsg1(debuglevel, ">dird %s", dir->msg);
 
   // Do not lock device here because it may be locked from label
-  if (!jcr->IsCanceled()) {
+  if (!jcr->IsJobCanceled()) {
     if (!DoGetVolumeInfo(this)) {
       Jmsg(jcr, M_FATAL, 0, "%s", jcr->errmsg);
       Dmsg2(debuglevel, _("Didn't get vol info vol=%s: ERR=%s\n"),
@@ -454,12 +451,12 @@ bool StorageDaemonDeviceControlRecord::DirAskSysopToCreateAppendableVolume()
   int status = W_TIMEOUT;
   bool got_vol = false;
 
-  if (JobCanceled(jcr)) { return false; }
+  if (jcr->IsJobCanceled()) { return false; }
 
   Dmsg0(debuglevel, "enter DirAskSysopToCreateAppendableVolume\n");
   ASSERT(dev->blocked());
   for (;;) {
-    if (JobCanceled(jcr)) {
+    if (jcr->IsJobCanceled()) {
       Mmsg(dev->errmsg,
            _("Job %s canceled while waiting for mount on Storage Device "
              "\"%s\".\n"),
@@ -546,17 +543,15 @@ bool StorageDaemonDeviceControlRecord::DirAskSysopToMountVolume(int mode)
   }
   ASSERT(dev->blocked());
   while (1) {
-    if (JobCanceled(jcr)) {
+    if (jcr->IsJobCanceled()) {
       Mmsg(dev->errmsg,
            _("Job %s canceled while waiting for mount on Storage Device %s.\n"),
            jcr->Job, dev->print_name());
       return false;
     }
 
-    /*
-     * If we are not polling, and the wait timeout or the user explicitly did a
-     * mount, send him the message. Otherwise skip it.
-     */
+    /* If we are not polling, and the wait timeout or the user explicitly did a
+     * mount, send him the message. Otherwise skip it. */
     if (!dev->poll && (status == W_TIMEOUT || status == W_MOUNT)) {
       const char* msg;
 

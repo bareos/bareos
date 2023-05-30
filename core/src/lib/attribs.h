@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,6 +27,5 @@ void EncodeStat(char* buf,
                 int32_t LinkFI,
                 int data_stream);
 int DecodeStat(char* buf, struct stat* statp, int stat_size, int32_t* LinkFI);
-int32_t DecodeLinkFI(char* buf, struct stat* statp, int stat_size);
 
 #endif  // BAREOS_LIB_ATTRIBS_H_

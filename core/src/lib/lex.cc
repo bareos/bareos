@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,6 +31,7 @@
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
 #include "lib/berrno.h"
+#include "lib/bpipe.h"
 #include <glob.h>
 
 extern int debug_level;
@@ -217,10 +218,8 @@ static inline LEX* lex_add(LEX* lf,
     memset(lf, 0, sizeof(LEX));
     lf->next = nf;             /* if have lf, push it behind new one */
     lf->options = nf->options; /* preserve user options */
-    /*
-     * preserve err_type to prevent bareos exiting on 'reload'
-     * if config is invalid.
-     */
+    /* preserve err_type to prevent bareos exiting on 'reload'
+     * if config is invalid. */
     lf->err_type = nf->err_type;
   } else {
     lf = nf; /* start new packet */
@@ -293,20 +292,16 @@ LEX* lex_open_file(LEX* lf,
     glob_t fileglob;
     char* filename_expanded = NULL;
 
-    /*
-     * Flag GLOB_NOMAGIC is a GNU extension, therefore manually check if string
-     * is a wildcard string.
-     */
+    /* Flag GLOB_NOMAGIC is a GNU extension, therefore manually check if string
+     * is a wildcard string. */
 
     // Clear fileglob at least required for mingw version of glob()
     memset(&fileglob, 0, sizeof(fileglob));
     globrc = glob(filename, 0, NULL, &fileglob);
 
     if ((globrc == GLOB_NOMATCH) && (IsWildcardString(filename))) {
-      /*
-       * fname is a wildcard string, but no matching files have been found.
-       * Ignore this include statement and continue.
-       */
+      /* fname is a wildcard string, but no matching files have been found.
+       * Ignore this include statement and continue. */
       return lf;
     } else if (globrc != 0) {
       // glob() error has occurred. Giving up.
@@ -329,16 +324,6 @@ LEX* lex_open_file(LEX* lf,
 #endif
     return lf;
   }
-}
-
-LEX* lex_new_buffer(LEX* lf,
-                    LEX_ERROR_HANDLER* ScanError,
-                    LEX_WARNING_HANDLER* scan_warning)
-{
-  lf = lex_add(lf, NULL, NULL, NULL, ScanError, scan_warning);
-  Dmsg1(debuglevel, "Return lex=%x\n", lf);
-
-  return lf;
 }
 
 /*
@@ -396,10 +381,8 @@ void LexUngetChar(LEX* lf)
 // Add a character to the current string
 static void add_str(LEX* lf, int ch)
 {
-  /*
-   * The default config string is sized to 256 bytes.
-   * If we need longer config strings its increased with 256 bytes each time.
-   */
+  /* The default config string is sized to 256 bytes.
+   * If we need longer config strings its increased with 256 bytes each time. */
   if ((lf->str_len + 3) >= lf->str_max_len) {
     lf->str = CheckPoolMemorySize(lf->str, lf->str_max_len + 256);
     lf->str_max_len = SizeofPoolMemory(lf->str);
@@ -801,11 +784,9 @@ int LexGetToken(LEX* lf, int expect)
             continue;
           } else {
             token = BCT_QUOTED_STRING;
-            /*
-             * Since we may be scanning a quoted list of names,
+            /* Since we may be scanning a quoted list of names,
              *  we get the next character (a comma indicates another
-             *  one), then we put it back for rescanning.
-             */
+             *  one), then we put it back for rescanning. */
             LexGetChar(lf);
             LexUngetChar(lf);
             lf->state = lex_none;
@@ -909,11 +890,9 @@ int LexGetToken(LEX* lf, int expect)
         lex_tok_to_str(token));
   lf->token = token;
 
-  /*
-   * Here is where we check to see if the user has set certain
+  /* Here is where we check to see if the user has set certain
    *  expectations (e.g. 32 bit integer). If so, we do type checking
-   *  and possible additional scanning (e.g. for range).
-   */
+   *  and possible additional scanning (e.g. for range). */
   switch (expect) {
     case BCT_PINT16:
       lf->u.pint16_val = (scan_pint(lf, lf->str) & 0xffff);

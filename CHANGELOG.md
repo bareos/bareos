@@ -64,6 +64,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - packaging: systemd unit: set a limit of restart [PR #1450]
 - python-bareos: add missing `dirname` variable [PR #1460]
 - build: remove openSUSE 15.3 and Univention 5.0 from test matrix [PR #1469]
+- cleanup: remove some unused functions and shrink number of includes in bareos.h [PR #1433]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -150,6 +151,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1425]: https://github.com/bareos/bareos/pull/1425
 [PR #1426]: https://github.com/bareos/bareos/pull/1426
 [PR #1429]: https://github.com/bareos/bareos/pull/1429
+[PR #1433]: https://github.com/bareos/bareos/pull/1433
 [PR #1437]: https://github.com/bareos/bareos/pull/1437
 [PR #1439]: https://github.com/bareos/bareos/pull/1439
 [PR #1440]: https://github.com/bareos/bareos/pull/1440

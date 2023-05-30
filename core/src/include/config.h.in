@@ -47,9 +47,6 @@ extern char win_os[];
 // Where are Bareos config files stored
 #cmakedefine CONFDIR @CONFDIR@
 
-// Define to 1 if you want the Developer mode enabled
-#cmakedefine DEVELOPER @DEVELOPER@
-
 /* Define to 1 if translation of program messages to the user's native
  * language is requested */
 #cmakedefine ENABLE_NLS @ENABLE_NLS@
@@ -247,20 +244,11 @@ extern char win_os[];
 // Define to 1 if you have the <grp.h> header file
 #cmakedefine HAVE_GRP_H @HAVE_GRP_H@
 
-// Define to 1 if you are running HPUX
-#cmakedefine HAVE_HPUX_OS @HAVE_HPUX_OS@
-
-// Define to 1 if you are running GNU Hurd
-#cmakedefine HAVE_HURD_OS @HAVE_HURD_OS@
-
 // Define to 1 if you have the `inet_ntop' function
 #cmakedefine HAVE_INET_NTOP @HAVE_INET_NTOP@
 
 // Define to 1 if ioctl request is unsigned long int
 #cmakedefine HAVE_IOCTL_ULINT_REQUEST @HAVE_IOCTL_ULINT_REQUEST@
-
-// Define to 1 if you are running IRIX
-#cmakedefine HAVE_IRIX_OS @HAVE_IRIX_OS@
 
 // Define HAVE_IS_TRIVIALLY_COPYABLE if compiler has type trait is_trivially_copyable
 #cmakedefine HAVE_IS_TRIVIALLY_COPYABLE
@@ -340,9 +328,6 @@ extern char win_os[];
 // Define to 1 if NDMP support should be enabled
 #cmakedefine HAVE_NDMP @HAVE_NDMP@
 
-// Define to 1 if you are running NetBSD
-#cmakedefine HAVE_NETBSD_OS @HAVE_NETBSD_OS@
-
 // Define to 1 to when walkcontext does not work
 #cmakedefine HAVE_NON_WORKING_WALKCONTEXT @HAVE_NON_WORKING_WALKCONTEXT@
 
@@ -352,14 +337,8 @@ extern char win_os[];
 // Define to 1 if you have the `openat' function
 #cmakedefine HAVE_OPENAT @HAVE_OPENAT@
 
-// Define to 1 if you are running OpenBSD
-#cmakedefine HAVE_OPENBSD_OS @HAVE_OPENBSD_OS@
-
 // Define to 1 if OpenSSL library is available
 #cmakedefine HAVE_OPENSSL @HAVE_OPENSSL@
-
-// Define to 1 if you are running Tru64
-#cmakedefine HAVE_OSF1_OS @HAVE_OSF1_OS@
 
 // Define to 1 if you have the `poll' function
 #cmakedefine HAVE_POLL @HAVE_POLL@
@@ -423,9 +402,6 @@ extern char win_os[];
 
 // Define to 1 if you have the <sys/attr.h> header file
 #cmakedefine HAVE_SYS_ATTR_H @HAVE_SYS_ATTR_H@
-
-// Define to 1 if you have the <sys/bitypes.h> header file
-#cmakedefine HAVE_SYS_BITYPES_H @HAVE_SYS_BITYPES_H@
 
 // Define to 1 if you have the <sys/capability.h> header file
 #cmakedefine HAVE_SYS_CAPABILITY_H @HAVE_SYS_CAPABILITY_H@

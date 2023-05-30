@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -182,7 +182,7 @@ extern "C" void* sched_wait(void* arg)
           wtime, jcr->UseCount());
     if (wtime > 30) { wtime = 30; }
     Bmicrosleep(wtime, 0);
-    if (JobCanceled(jcr)) { break; }
+    if (jcr->IsJobCanceled()) { break; }
     wtime = jcr->sched_time - time(NULL);
   }
   Dmsg1(200, "resched use=%d\n", jcr->UseCount());
@@ -227,7 +227,7 @@ int JobqAdd(jobq_t* jq, JobControlRecord* jcr)
   jcr->IncUseCount(); /* mark jcr in use by us */
   Dmsg3(2300, "JobqAdd jobid=%d jcr=0x%x UseCount=%d\n", jcr->JobId, jcr,
         jcr->UseCount());
-  if (!JobCanceled(jcr) && wtime > 0) {
+  if (!jcr->IsJobCanceled() && wtime > 0) {
     sched_pkt = (wait_pkt*)malloc(sizeof(wait_pkt));
     sched_pkt->jcr = jcr;
     sched_pkt->jq = jq;
@@ -250,7 +250,7 @@ int JobqAdd(jobq_t* jq, JobControlRecord* jcr)
 
   // While waiting in a queue this job is not attached to a thread
   SetJcrInThreadSpecificData(nullptr);
-  if (JobCanceled(jcr)) {
+  if (jcr->IsJobCanceled()) {
     // Add job to ready queue so that it is canceled quickly
     jq->ready_jobs->prepend(item);
     Dmsg1(2300, "Prepended job=%d to ready queue\n", jcr->JobId);
@@ -436,11 +436,9 @@ extern "C" void* jobq_server(void* arg)
       Dmsg0(200, "Done lock mutex after running job. Release locks.\n");
       jq->running_jobs->remove(je);
 
-      /*
-       * Release locks if acquired. Note, they will not have
+      /* Release locks if acquired. Note, they will not have
        * been acquired for jobs canceled before they were put into the ready
-       * queue.
-       */
+       * queue. */
       if (jcr->dir_impl->acquired_resource_locks) {
         DecReadStore(jcr);
         DecWriteStore(jcr);
@@ -491,10 +489,8 @@ extern "C" void* jobq_server(void* arg)
         Dmsg1(2300, "No job running. Look for Job pri=%d\n", Priority);
       }
 
-      /*
-       * Walk down the list of waiting jobs and attempt to acquire the resources
-       * it needs.
-       */
+      /* Walk down the list of waiting jobs and attempt to acquire the resources
+       * it needs. */
       for (; je;) {
         // je is current job item on the queue, jn is the next one
         JobControlRecord* jcr = je->jcr;
@@ -515,17 +511,15 @@ extern "C" void* jobq_server(void* arg)
 
         if (!AcquireResources(jcr)) {
           // If resource conflict, job is canceled
-          if (!JobCanceled(jcr)) {
+          if (!jcr->IsJobCanceled()) {
             je = jn; /* point to next waiting job */
             continue;
           }
         }
 
-        /*
-         * Got all locks, now remove it from wait queue and append it
+        /* Got all locks, now remove it from wait queue and append it
          * to the ready queue.  Note, we may also get here if the
-         * job was canceled.  Once it is "run", it will quickly Terminate.
-         */
+         * job was canceled.  Once it is "run", it will quickly Terminate. */
         jq->waiting_jobs->remove(je);
         jq->ready_jobs->append(je);
         Dmsg1(2300, "moved JobId=%d from wait to ready queue\n",
@@ -562,12 +556,10 @@ extern "C" void* jobq_server(void* arg)
 
     work = !jq->ready_jobs->empty() || !jq->waiting_jobs->empty();
     if (work) {
-      /*
-       * If a job is waiting on a Resource, don't consume all
+      /* If a job is waiting on a Resource, don't consume all
        * the CPU time looping looking for work, and even more
        * important, release the lock so that a job that has
-       * terminated can give us the resource.
-       */
+       * terminated can give us the resource. */
       unlock_mutex(jq->mutex);
       Bmicrosleep(2, 0); /* pause for 2 seconds */
       lock_mutex(jq->mutex);
@@ -610,10 +602,8 @@ static bool RescheduleJob(JobControlRecord* jcr, jobq_t* jq, jobq_item_t* je)
     char dt[50], dt2[50];
     time_t now;
 
-    /*
-     * Reschedule this job by cleaning it up, but reuse the same JobId if
-     * possible.
-     */
+    /* Reschedule this job by cleaning it up, but reuse the same JobId if
+     * possible. */
     now = time(NULL);
     jcr->dir_impl->reschedule_count++;
     jcr->sched_time = now + jcr->dir_impl->res.job->RescheduleInterval;
@@ -631,10 +621,8 @@ static bool RescheduleJob(JobControlRecord* jcr, jobq_t* jq, jobq_item_t* je)
     jcr->JobErrors = 0;
     if (!AllowDuplicateJob(jcr)) { return false; }
 
-    /*
-     * Only jobs with no output or Incomplete jobs can run on same
-     * JobControlRecord
-     */
+    /* Only jobs with no output or Incomplete jobs can run on same
+     * JobControlRecord */
     if (jcr->JobBytes == 0) {
       UpdateJobEnd(jcr, JS_WaitStartTime);
       Dmsg2(2300, "Requeue job=%d use=%d\n", jcr->JobId, jcr->UseCount());
@@ -648,12 +636,10 @@ static bool RescheduleJob(JobControlRecord* jcr, jobq_t* jq, jobq_item_t* je)
     } else {
       JobControlRecord* njcr;
 
-      /*
-       * Something was actually backed up, so we cannot reuse
+      /* Something was actually backed up, so we cannot reuse
        * the old JobId or there will be database record
        * conflicts.  We now create a new job, copying the
-       * appropriate fields.
-       */
+       * appropriate fields. */
       jcr->setJobStatusWithPriorityCheck(JS_WaitStartTime);
       njcr = NewDirectorJcr(DirdFreeJcr);
       SetJcrDefaults(njcr, jcr->dir_impl->res.job);
@@ -717,27 +703,21 @@ static bool AcquireResources(JobControlRecord* jcr)
   // Set that we didn't acquire any resourse locks yet.
   jcr->dir_impl->acquired_resource_locks = false;
 
-  /*
-   * Some Job Types are excluded from the client and storage concurrency
-   * as they have no interaction with the client or storage at all.
-   */
+  /* Some Job Types are excluded from the client and storage concurrency
+   * as they have no interaction with the client or storage at all. */
   switch (jcr->getJobType()) {
     case JT_MIGRATE:
     case JT_COPY:
     case JT_CONSOLIDATE:
-      /*
-       * Migration/Copy and Consolidation jobs are not counted for client
-       * concurrency as they do not touch the client at all
-       */
+      /* Migration/Copy and Consolidation jobs are not counted for client
+       * concurrency as they do not touch the client at all */
       jcr->dir_impl->IgnoreClientConcurrency = true;
       Dmsg1(200, "Skipping migrate/copy Job %s for client concurrency\n",
             jcr->Job);
 
       if (jcr->dir_impl->MigrateJobId == 0) {
-        /*
-         * Migration/Copy control jobs are not counted for storage concurrency
-         * as they do not touch the storage at all
-         */
+        /* Migration/Copy control jobs are not counted for storage concurrency
+         * as they do not touch the storage at all */
         Dmsg1(200,
               "Skipping migrate/copy Control Job %s for storage concurrency\n",
               jcr->Job);

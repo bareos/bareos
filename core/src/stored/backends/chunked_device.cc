@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2017 Planets Communications B.V.
-   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2017-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -25,6 +25,9 @@
  * Marco van Wieringen, February 2015
  */
 
+#include <unistd.h>
+
+#include "include/fcntl_def.h"
 #include "include/bareos.h"
 #include "lib/edit.h"
 #include "stored/device_status_information.h"
@@ -132,10 +135,8 @@ bool ChunkedDevice::StartIoThreads()
   pthread_t thread_id;
   thread_handle* handle;
 
-  /*
-   * Create a new ordered circular buffer for exchanging chunks between
-   * the producer (the storage driver) and multiple consumers (io-threads).
-   */
+  /* Create a new ordered circular buffer for exchanging chunks between
+   * the producer (the storage driver) and multiple consumers (io-threads). */
   if (io_slots_) {
     cb_ = new storagedaemon::ordered_circbuf(io_threads_ * io_slots_);
   } else {
@@ -173,10 +174,8 @@ void ChunkedDevice::StopThreads()
   char ed1[50];
   thread_handle* handle = nullptr;
 
-  /*
-   * Tell all IO threads that we flush the circular buffer.
-   * As such they will get a NULL chunk_io_request back and exit.
-   */
+  /* Tell all IO threads that we flush the circular buffer.
+   * As such they will get a NULL chunk_io_request back and exit. */
   cb_->flush();
 
   // Wait for all threads to exit.
@@ -306,8 +305,7 @@ static void UpdateChunkIoRequest(void* item1, void* item2)
   chunk_io_request* chunk1 = (chunk_io_request*)item1;
   chunk_io_request* chunk2 = (chunk_io_request*)item2;
 
-  /*
-   * See if the new chunk_io_request has more bytes then
+  /* See if the new chunk_io_request has more bytes then
    * the chunk_io_request currently on the ordered circular
    * buffer. We can only have multiple chunk_io_requests for
    * the same chunk of a volume when a chunk was not fully
@@ -315,8 +313,7 @@ static void UpdateChunkIoRequest(void* item1, void* item2)
    * the chunk before its being flushed to backing store. This
    * means all pointers are the same only the wbuflen and the
    * release flag of the chunk_io_request differ. So we only
-   * copy those two fields and not the others.
-   */
+   * copy those two fields and not the others. */
   if (chunk2->buffer == chunk1->buffer && chunk2->wbuflen > chunk1->wbuflen) {
     chunk1->wbuflen = chunk2->wbuflen;
     chunk1->release = chunk2->release;
@@ -348,11 +345,9 @@ bool ChunkedDevice::EnqueueChunk(chunk_io_request* request)
   Dmsg2(100, "Allocated chunk io request of %d bytes at %p\n",
         sizeof(chunk_io_request), new_request);
 
-  /*
-   * Enqueue the item onto the ordered circular buffer.
+  /* Enqueue the item onto the ordered circular buffer.
    * This returns either the same request as we passed
-   * in or the previous flush request for the same chunk.
-   */
+   * in or the previous flush request for the same chunk. */
   enqueued_request = (chunk_io_request*)cb_->enqueue(
       new_request, sizeof(chunk_io_request), CompareChunkIoRequest,
       UpdateChunkIoRequest, false, /* use_reserved_slot */
@@ -379,32 +374,25 @@ bool ChunkedDevice::DequeueChunk()
   bool requeued = false;
   chunk_io_request* new_request;
 
-  /*
-   * Loop while we are not done either due to the ordered circular buffer being
+  /* Loop while we are not done either due to the ordered circular buffer being
    * flushed some fatal error or successfully dequeueing a chunk flush request.
    */
   while (1) {
-    /*
-     * See if we are in the flushing state then we just return and exit the
-     * io-thread.
-     */
+    /* See if we are in the flushing state then we just return and exit the
+     * io-thread. */
     if (cb_->IsFlushing()) { return false; }
 
-    /*
-     * Calculate the next absolute timeout if we find out there is no work to be
-     * done.
-     */
+    /* Calculate the next absolute timeout if we find out there is no work to be
+     * done. */
     gettimeofday(&tv, &tz);
     ts.tv_nsec = tv.tv_usec * 1000;
     ts.tv_sec = tv.tv_sec + DEFAULT_RECHECK_INTERVAL;
 
-    /*
-     * Dequeue the next item from the ordered circular buffer and reserve the
+    /* Dequeue the next item from the ordered circular buffer and reserve the
      * slot as we might need to put this item back onto the ordered circular
      * buffer if we fail to flush it to the remote backing store. Also let the
      * dequeue wake up every DEFAULT_RECHECK_INTERVAL seconds to retry failed
-     * previous uploads.
-     */
+     * previous uploads. */
     new_request = (chunk_io_request*)cb_->dequeue(
         true,     /* reserve_slot we may need to enqueue the request */
         requeued, /* request is requeued due to failure ? */
@@ -418,13 +406,11 @@ bool ChunkedDevice::DequeueChunk()
     if (!FlushRemoteChunk(new_request)) {
       chunk_io_request* enqueued_request;
 
-      /*
-       * See if we have a maximum number of retries to upload chunks to the
+      /* See if we have a maximum number of retries to upload chunks to the
        * backing store and if we have and execeeded those tries for this chunk
        * set the device to read-only so any next write to the device will error
        * out. This should prevent us from hanging the flushing to the backing
-       * store on misconfigured devices.
-       */
+       * store on misconfigured devices. */
       new_request->tries++;
       if (retries_ > 0 && new_request->tries >= retries_) {
         Mmsg4(errmsg,
@@ -437,24 +423,20 @@ bool ChunkedDevice::DequeueChunk()
         goto bail_out;
       }
 
-      /*
-       * We failed to flush the chunk to the backing store
+      /* We failed to flush the chunk to the backing store
        * so enqueue it again using the reserved slot by dequeue()
        * but don't signal the workers otherwise we would try uploading
        * the same chunk again and again by different io-threads.
        * As we set the requeued flag to the dequeue method on the ordered
        * circular buffer we will not try dequeueing any new item either until a
        * new item is put onto the ordered circular buffer or after the retry
-       * interval has expired.
-       */
+       * interval has expired. */
       Dmsg2(100, "Enqueueing chunk %d of volume %s for retry of upload later\n",
             new_request->chunk, new_request->volname);
 
-      /*
-       * Enqueue the item onto the ordered circular buffer.
+      /* Enqueue the item onto the ordered circular buffer.
        * This returns either the same request as we passed
-       * in or the previous flush request for the same chunk.
-       */
+       * in or the previous flush request for the same chunk. */
       enqueued_request = (chunk_io_request*)cb_->enqueue(
           new_request, sizeof(chunk_io_request), CompareChunkIoRequest,
           UpdateChunkIoRequest, true, /* use_reserved_slot */
@@ -466,11 +448,9 @@ bool ChunkedDevice::DequeueChunk()
         return false;
       }
 
-      /*
-       * Compare the return value from the enqueue against our new_request.
+      /* Compare the return value from the enqueue against our new_request.
        * If it is different there was already a chunk io request for the
-       * same chunk on the ordered circular buffer.
-       */
+       * same chunk on the ordered circular buffer. */
       if (enqueued_request != new_request) {
         Dmsg2(100, "Attempted to append chunk %d of volume %s twice\n",
               new_request->chunk, new_request->volname);
@@ -576,11 +556,9 @@ bool ChunkedDevice::ReadChunk()
 int ChunkedDevice::SetupChunk(const char*, int flags, int)
 {
   int retval = -1;
-  /*
-   * If device is (re)opened and we are put into readonly mode because
+  /* If device is (re)opened and we are put into readonly mode because
    * of problems flushing chunks to the backing store we return EROFS
-   * to the upper layers.
-   */
+   * to the upper layers. */
   if ((flags & O_RDWR) && readonly_) {
     dev_errno = EROFS; /** Read-only file system */
     return -1;
@@ -616,10 +594,8 @@ int ChunkedDevice::SetupChunk(const char*, int flags, int)
 
   current_chunk_->chunk_setup = false;
 
-  /*
-   * We need to limit the maximum size of a chunked volume to MAX_CHUNKS *
-   * chunk_size).
-   */
+  /* We need to limit the maximum size of a chunked volume to MAX_CHUNKS *
+   * chunk_size). */
   if (max_volume_size == 0
       || max_volume_size
              > (uint64_t)(MAX_CHUNKS * current_chunk_->chunk_size)) {
@@ -637,11 +613,9 @@ int ChunkedDevice::SetupChunk(const char*, int flags, int)
 
   current_volname_ = strdup(getVolCatName());
 
-  /*
-   * in principle it is not required to load_chunk(),
+  /* in principle it is not required to load_chunk(),
    * but we need a secure way to determine,
-   * if the chunk already exists.
-   */
+   * if the chunk already exists. */
   if (LoadChunk()) {
     current_chunk_->opened = true;
     retval = 0;
@@ -665,17 +639,13 @@ ssize_t ChunkedDevice::ReadChunked(int, void* buffer, size_t count)
     ssize_t wanted_offset;
     ssize_t bytes_left;
 
-    /*
-     * Shortcut logic see if end_of_media_ is set then we are at the End of the
-     * Media
-     */
+    /* Shortcut logic see if end_of_media_ is set then we are at the End of the
+     * Media */
     if (end_of_media_) { goto bail_out; }
 
-    /*
-     * If we are starting reading without the chunk being setup it means we
+    /* If we are starting reading without the chunk being setup it means we
      * are start reading at the beginning of the file otherwise the d_lseek
-     * method would have read in the correct chunk.
-     */
+     * method would have read in the correct chunk. */
     if (!current_chunk_->chunk_setup) {
       current_chunk_->start_offset = 0;
 
@@ -715,13 +685,11 @@ ssize_t ChunkedDevice::ReadChunked(int, void* buffer, size_t count)
     } else {
       ssize_t offset = 0;
 
-      /*
-       * We cannot fulfill the read from the current chunk, see how much
+      /* We cannot fulfill the read from the current chunk, see how much
        * is available and return that and see if by reading the next chunk
        * we can fulfill the whole read. When then we still have not filled
        * the whole buffer we keep on reading any next chunk until none are
-       * left and we have reached End Of Media.
-       */
+       * left and we have reached End Of Media. */
       while (retval < (ssize_t)count) {
         // See how much is left in this chunk.
         if (offset_ <= current_chunk_->end_offset) {
@@ -748,11 +716,9 @@ ssize_t ChunkedDevice::ReadChunked(int, void* buffer, size_t count)
         if (!ReadChunk()) {
           switch (dev_errno) {
             case EIO:
-              /*
-               * If the are no more chunks to read we return only the bytes
+              /* If the are no more chunks to read we return only the bytes
                * available. We also set end_of_media_ as we are at the end of
-               * media.
-               */
+               * media. */
               end_of_media_ = true;
               goto bail_out;
             default:
@@ -760,10 +726,8 @@ ssize_t ChunkedDevice::ReadChunked(int, void* buffer, size_t count)
               goto bail_out;
           }
         } else {
-          /*
-           * Calculate how much data we can read from the just freshly read
-           * chunk.
-           */
+          /* Calculate how much data we can read from the just freshly read
+           * chunk. */
           bytes_left = MIN((ssize_t)(count - offset),
                            (ssize_t)(current_chunk_->buflen));
 
@@ -795,10 +759,8 @@ ssize_t ChunkedDevice::WriteChunked(int, const void* buffer, size_t count)
 {
   ssize_t retval = 0;
 
-  /*
-   * If we are put into readonly mode because of problems flushing chunks to the
-   * backing store we return EIO to the upper layers.
-   */
+  /* If we are put into readonly mode because of problems flushing chunks to the
+   * backing store we return EIO to the upper layers. */
   if (readonly_) {
     errno = EIO;
     retval = -1;
@@ -808,11 +770,9 @@ ssize_t ChunkedDevice::WriteChunked(int, const void* buffer, size_t count)
   if (current_chunk_->opened) {
     ssize_t wanted_offset;
 
-    /*
-     * If we are starting writing without the chunk being setup it means we
+    /* If we are starting writing without the chunk being setup it means we
      * are start writing to an empty file because otherwise the d_lseek method
-     * would have read in the correct chunk.
-     */
+     * would have read in the correct chunk. */
     if (!current_chunk_->chunk_setup) {
       current_chunk_->start_offset = 0;
       current_chunk_->end_offset = (current_chunk_->chunk_size - 1);
@@ -845,12 +805,10 @@ ssize_t ChunkedDevice::WriteChunked(int, const void* buffer, size_t count)
       ssize_t bytes_left;
       ssize_t offset = 0;
 
-      /*
-       * Things don't fit so first write as many bytes as can be written into
+      /* Things don't fit so first write as many bytes as can be written into
        * the current chunk and then flush it and write the next bytes into the
        * next chunk. When then things still don't fit loop until all bytes are
-       * written.
-       */
+       * written. */
       while (retval < (ssize_t)count) {
         // See how much is left in this chunk.
         if (offset_ <= current_chunk_->end_offset) {
@@ -885,10 +843,8 @@ ssize_t ChunkedDevice::WriteChunked(int, const void* buffer, size_t count)
           goto bail_out;
         }
 
-        /*
-         * Calculate how much data we can fit into the just freshly created
-         * chunk.
-         */
+        /* Calculate how much data we can fit into the just freshly created
+         * chunk. */
         bytes_left = MIN((ssize_t)(count - offset),
                          (ssize_t)((current_chunk_->end_offset
                                     - current_chunk_->start_offset)
@@ -929,12 +885,10 @@ int ChunkedDevice::CloseChunk()
         dev_errno = EIO;
       }
     } else {
-      /*
-       * If ChunkedDevice::wait_until_chunks_written() has been called before,
+      /* If ChunkedDevice::wait_until_chunks_written() has been called before,
        * chunk has been flushed (buffer given to an io thread),
        * but not released. Therefore the buffer is set to NULL,
-       * as normally done by flush_chunk(true, *).
-       */
+       * as normally done by flush_chunk(true, *). */
       if (io_threads_ && current_chunk_->buffer) {
         FreeChunkbuffer(current_chunk_->buffer);
         current_chunk_->buffer = NULL;
@@ -990,25 +944,21 @@ static int CompareVolumeName(void* item1, void* item2)
 // Get the current size of a volume.
 ssize_t ChunkedDevice::ChunkedVolumeSize()
 {
-  /*
-   * See if we are using io-threads or not and the ordered CircularBuffer is
+  /* See if we are using io-threads or not and the ordered CircularBuffer is
    * created. We try to make sure that nothing of the volume being requested is
    * still inflight as then the RemoteVolumeSize() method will fail to
    * determine the size of the data as its not fully stored on the backing store
-   * yet.
-   */
+   * yet. */
   if (io_threads_ > 0 && cb_) {
     while (1) {
       if (!cb_->empty()) {
         chunk_io_request* request;
 
-        /*
-         * Peek on the ordered circular queue if there are any pending
+        /* Peek on the ordered circular queue if there are any pending
          * IO-requests for this volume. If there are use that as the indication
          * of the size of the volume and don't contact the remote storage as
          * there is still data inflight and as such we need to look at the last
-         * chunk that is still not uploaded of the volume.
-         */
+         * chunk that is still not uploaded of the volume. */
         request = (chunk_io_request*)cb_->peek(
             storagedaemon::PEEK_LAST, current_volname_, CompareVolumeName);
         if (request) {
@@ -1018,57 +968,46 @@ ssize_t ChunkedDevice::ChunkedVolumeSize()
           retval = (request->chunk * current_chunk_->chunk_size)
                    + request->wbuflen;
 
-          /*
-           * The peek method gives us a cloned chunk_io_request with pointers to
+          /* The peek method gives us a cloned chunk_io_request with pointers to
            * the original chunk_io_request. We just need to free the structure
            * not the content so we call free() here and not FreeChunkIoRequest()
-           * !
-           */
+           * ! */
           free(request);
 
           return retval;
         }
       }
 
-      /*
-       * Chunk doesn't seem to be on the ordered circular buffer.
+      /* Chunk doesn't seem to be on the ordered circular buffer.
        * Make sure there is also nothing inflight to the backing store anymore.
        */
       if (NrInflightChunks() > 0) {
         uint8_t retries = INFLIGHT_RETRIES;
 
-        /*
-         * There seem to be inflight chunks to the backing store so busy wait
+        /* There seem to be inflight chunks to the backing store so busy wait
          * until there is nothing inflight anymore. The chunks either get
          * uploaded and as such we can just get the volume size from the backing
          * store or it gets put back onto the ordered circular list and then we
          * can pick it up by retrying the PEEK_LAST on the ordered circular
-         * list.
-         */
+         * list. */
         do {
           Bmicrosleep(INFLIGT_RETRY_TIME, 0);
         } while (NrInflightChunks() > 0 && --retries > 0);
 
-        /*
-         * If we ran out of retries we most likely encountered a stale inflight
-         * file.
-         */
+        /* If we ran out of retries we most likely encountered a stale inflight
+         * file. */
         if (!retries) {
           ClearInflightChunk(NULL);
           break;
         }
 
-        /*
-         * Do a new try on the ordered circular list to get the last pending
-         * IO-request for the volume we are trying to get the size of.
-         */
+        /* Do a new try on the ordered circular list to get the last pending
+         * IO-request for the volume we are trying to get the size of. */
         continue;
       } else {
-        /*
-         * Its not on the ordered circular list and not inflight so it must be
+        /* Its not on the ordered circular list and not inflight so it must be
          * on the backing store so we break the loop and try to get the volume
-         * size from the chunks available on the backing store.
-         */
+         * size from the chunks available on the backing store. */
         break;
       }
     }
@@ -1080,13 +1019,11 @@ ssize_t ChunkedDevice::ChunkedVolumeSize()
 
 bool ChunkedDevice::is_written()
 {
-  /*
-   * See if we are using io-threads or not and the ordered circbuf is created.
+  /* See if we are using io-threads or not and the ordered circbuf is created.
    * We try to make sure that nothing of the volume being requested is still
    * inflight as then the RemoteVolumeSize() method will fail to
    * determine the size of the data as its not fully stored on the backing store
-   * yet.
-   */
+   * yet. */
 
   if (current_chunk_->need_flushing) {
     Dmsg1(100, "volume %s is pending, as current chunk needs flushing\n",
@@ -1106,13 +1043,11 @@ bool ChunkedDevice::is_written()
     if (!cb_->empty()) {
       chunk_io_request* request;
 
-      /*
-       * Peek on the ordered circular queue if there are any pending IO-requests
+      /* Peek on the ordered circular queue if there are any pending IO-requests
        * for this volume. If there are use that as the indication of the size of
        * the volume and don't contact the remote storage as there is still data
        * inflight and as such we need to look at the last chunk that is still
-       * not uploaded of the volume.
-       */
+       * not uploaded of the volume. */
       request = (chunk_io_request*)cb_->peek(
           storagedaemon::PEEK_FIRST, current_volname_, CompareVolumeName);
       if (request) {
@@ -1196,12 +1131,10 @@ bool ChunkedDevice::LoadChunk()
     current_chunk_->buflen = 0;
     current_chunk_->start_offset = start_offset;
 
-    /*
-     * See if we are using io-threads or not and the ordered CircularBuffer is
+    /* See if we are using io-threads or not and the ordered CircularBuffer is
      * created. We try to make sure that nothing of the volume being requested
      * is still inflight as then the ReadChunk() method will fail to read the
-     * data as its not stored on the backing store yet.
-     */
+     * data as its not stored on the backing store yet. */
     if (io_threads_ > 0 && cb_) {
       chunk_io_request request;
 
@@ -1212,43 +1145,35 @@ bool ChunkedDevice::LoadChunk()
 
       while (1) {
         if (!cb_->empty()) {
-          /*
-           * Peek on the ordered circular queue and clone the data which is
+          /* Peek on the ordered circular queue and clone the data which is
            * infligt back to the current chunk buffer. When we are able to clone
            * the data the peek will return the address of the request structure
            * it used for the clone operation. When nothing could be cloned it
            * will return NULL. If data is cloned we use that and skip the call
            * to read the data from the backing store as that will not have the
-           * latest data anyway.
-           */
+           * latest data anyway. */
           if (cb_->peek(storagedaemon::PEEK_CLONE, &request, CloneIoRequest)
               == &request) {
             goto bail_out;
           }
         }
 
-        /*
-         * Chunk doesn't seem to be on the ordered circular buffer.
-         * Make sure its also not inflight to the backing store.
-         */
+        /* Chunk doesn't seem to be on the ordered circular buffer.
+         * Make sure its also not inflight to the backing store. */
         if (IsInflightChunk(&request)) {
           uint8_t retries = INFLIGHT_RETRIES;
 
-          /*
-           * Chunk seems to be inflight busy wait until its no longer.
+          /* Chunk seems to be inflight busy wait until its no longer.
            * It either gets uploaded and as such we can just read it from the
            * backing store again or it gets put back onto the ordered circular
            * list and then we can pick it up by retrying the PEEK_CLONE on the
-           * ordered circular list.
-           */
+           * ordered circular list. */
           do {
             Bmicrosleep(INFLIGT_RETRY_TIME, 0);
           } while (IsInflightChunk(&request) && --retries > 0);
 
-          /*
-           * If we ran out of retries we most likely encountered a stale
-           * inflight file.
-           */
+          /* If we ran out of retries we most likely encountered a stale
+           * inflight file. */
           if (!retries) {
             ClearInflightChunk(&request);
             break;
@@ -1257,11 +1182,9 @@ bool ChunkedDevice::LoadChunk()
           // Do a new try to clone the data from the ordered circular list.
           continue;
         } else {
-          /*
-           * Its not on the ordered circular list and not inflight so it must be
+          /* Its not on the ordered circular list and not inflight so it must be
            * on the backing store so we break the loop and try to read the chunk
-           * from the backing store.
-           */
+           * from the backing store. */
           break;
         }
       }
@@ -1317,10 +1240,8 @@ bool ChunkedDevice::DeviceStatus(DeviceStatusInformation* dst)
     dst->status_length
         = PmStrcpy(dst->status, _("Backend connection is not working.\n"));
   }
-  /*
-   * See if we are using io-threads or not and the ordered CircularBuffer is
-   * created and not empty.
-   */
+  /* See if we are using io-threads or not and the ordered CircularBuffer is
+   * created and not empty. */
   if (io_threads_ > 0 && cb_) {
     inflight_chunks = NrInflightChunks();
     inflights.bsprintf("Inflight chunks: %d\n", inflight_chunks);

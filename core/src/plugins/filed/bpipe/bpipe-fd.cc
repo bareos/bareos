@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -24,9 +24,15 @@
  * @file
  * A simple pipe plugin for the Bareos File Daemon
  */
+
+#include <unistd.h>
+
+#include "include/fcntl_def.h"
 #include "include/bareos.h"
+#include "include/filetypes.h"
 #include "filed/fd_plugins.h"
 #include "plugins/include/common.h"
+#include "lib/bpipe.h"
 
 namespace filedaemon {
 
@@ -271,10 +277,8 @@ static bRC startBackupFile(PluginContext* ctx, save_pkt* sp)
 // Done with backup of this file
 static bRC endBackupFile(PluginContext*)
 {
-  /*
-   * We would return bRC_More if we wanted startBackupFile to be called again to
-   * backup another file
-   */
+  /* We would return bRC_More if we wanted startBackupFile to be called again to
+   * backup another file */
   return bRC_OK;
 }
 
@@ -482,12 +486,10 @@ static char* apply_rp_codes(PluginContext* ctx)
     }
   }
 
-  /*
-   * Required mem:
+  /* Required mem:
    * len(imsg)
    * + number of "where" codes * (len(where)-2)
-   * - number of "replace" codes
-   */
+   * - number of "replace" codes */
   omsg = (char*)malloc(strlen(imsg) + (w_count * (strlen(p_ctx->where) - 2))
                        - r_count + 1);
   if (!omsg) {
@@ -582,10 +584,8 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
 
   keep_existing = (p_ctx->plugin_options) ? true : false;
 
-  /*
-   * Parse the plugin definition.
-   * Make a private copy of the whole string.
-   */
+  /* Parse the plugin definition.
+   * Make a private copy of the whole string. */
   plugin_definition = strdup((char*)value);
 
   bp = strchr(plugin_definition, ':');
@@ -630,11 +630,9 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
     if (argument) { argument++; }
   }
 
-  /*
-   * Start processing the definition, if compatible is left set we are
+  /* Start processing the definition, if compatible is left set we are
    * pretending that we are parsing a plugin definition in the old syntax and
-   * hope for the best.
-   */
+   * hope for the best. */
   cnt = 1;
   while (bp) {
     if (strlen(bp) == 0) { break; }
@@ -681,8 +679,7 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
         }
       }
     } else {
-      /*
-       * Each argument is in the form:
+      /* Each argument is in the form:
        *    <argument> = <argument_value>
        *
        * So we setup the right pointers here, argument to the beginning

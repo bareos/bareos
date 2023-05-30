@@ -32,6 +32,8 @@
  */
 
 #include "include/bareos.h"
+#include "include/filetypes.h"
+#include "include/streams.h"
 #include "cats/cats.h"
 #include "dird.h"
 #include "dird/dird_globals.h"

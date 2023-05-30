@@ -222,8 +222,6 @@ struct FindFilesPacket {
   time_t save_time{0};            /**< Start of incremental time */
   bool accurate_found{false};     /**< Found in the accurate hash (valid after
                                        CheckChanges()) */
-  bool dereference{false};        /**< Follow links (not implemented) */
-  bool null_output_device{false}; /**< Using null output device */
   bool incremental{false};        /**< Incremental save */
   bool no_read{false};            /**< Do not read this file when using Plugin */
   char VerifyOpts[MAX_OPTS]{};
@@ -260,7 +258,6 @@ struct FindFilesPacket {
 
   /* Darwin specific things.
    * To avoid clutter, we always include rsrc_bfd and volhas_attrlist. */
-  BareosFilePacket rsrc_bfd; /**< Fd for resource forks */
   bool volhas_attrlist{false};  /**< Volume supports getattrlist() */
   HfsPlusInfo hfsinfo;          /**< Finder Info and resource fork size */
 };
@@ -285,7 +282,6 @@ findIncludeExcludeItem* allocate_new_incexe(void);
 findIncludeExcludeItem* new_exclude(findFILESET* fileset);
 findIncludeExcludeItem* new_include(findFILESET* fileset);
 findIncludeExcludeItem* new_preinclude(findFILESET* fileset);
-findIncludeExcludeItem* new_preexclude(findFILESET* fileset);
 findFOPTS* start_options(FindFilesPacket* ff);
 void NewOptions(FindFilesPacket* ff, findIncludeExcludeItem* incexe);
 

@@ -57,6 +57,9 @@
      copyright.  See:
         http://archives.neohapsis.com/archives/postfix/2000-05/1520.html
  */
+#include <netdb.h>
+#include <pwd.h>
+#include <unistd.h>
 #include "include/bareos.h"
 #include "include/jcr.h"
 #include "lib/cli.h"

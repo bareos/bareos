@@ -26,13 +26,18 @@
  * other non-Unix systems, or Unix systems with ACLs, ...
  */
 
+#include <unistd.h>
+
 #include "include/bareos.h"
+#include "include/filetypes.h"
+#include "include/streams.h"
 #include "include/jcr.h"
 #include "find.h"
 #include "include/ch.h"
 #include "findlib/attribs.h"
 #include "lib/edit.h"
 #include "lib/berrno.h"
+#include "lib/base64.h"
 
 static uid_t my_uid = 1;
 static gid_t my_gid = 1;

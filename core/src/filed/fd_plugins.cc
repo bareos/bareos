@@ -25,7 +25,10 @@
  * @file
  * Bareos pluginloader
  */
+#include "include/fcntl_def.h"
 #include "include/bareos.h"
+#include "include/filetypes.h"
+#include "include/streams.h"
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
 #include "filed/accurate.h"

@@ -26,6 +26,7 @@
  * Bareos File Daemon
  */
 
+#include <unistd.h>
 #include "include/bareos.h"
 #include "filed/dir_cmd.h"
 #include "filed/filed.h"
@@ -143,8 +144,6 @@ int main(int argc, char* argv[])
       ->excludes(xc);
 
   AddDeprecatedExportOptionsHelp(fd_app);
-
-  AddNetworkDebuggingOption(fd_app);
 
   CLI11_PARSE(fd_app, argc, argv);
 

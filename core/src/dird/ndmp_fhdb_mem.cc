@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2015 Planets Communications B.V.
-   Copyright (C) 2015-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,6 +26,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/filetypes.h"
 #include "dird.h"
 #include "lib/rblist.h"
 #include "lib/htable.h"
@@ -56,10 +57,8 @@ struct ndmp_fhdb_mem {
 };
 
 struct ndmp_fhdb_node {
-  /*
-   * KEEP sibling as the first member to avoid having to do initialization of
-   * child
-   */
+  /* KEEP sibling as the first member to avoid having to do initialization of
+   * child */
   rblink sibling;
   rblist child;
   char* fname;        /* File name */
@@ -75,10 +74,8 @@ struct ndmp_fhdb_node {
 typedef struct ndmp_fhdb_node N_TREE_NODE;
 
 struct ndmp_fhdb_root {
-  /*
-   * KEEP sibling as the first member to avoid having to do initialization of
-   * child
-   */
+  /* KEEP sibling as the first member to avoid having to do initialization of
+   * child */
   rblink sibling;
   rblist child;
   char* fname{nullptr};  /**< File name */
@@ -91,10 +88,8 @@ struct ndmp_fhdb_root {
   ndmp_fhdb_node* next{nullptr};
   ndmp_fhdb_node* parent{nullptr};
 
-  /*
-   * The above ^^^ must be identical to a ndmp_fhdb_node structure
-   * The below vvv is only for the root of the tree.
-   */
+  /* The above ^^^ must be identical to a ndmp_fhdb_node structure
+   * The below vvv is only for the root of the tree. */
   ndmp_fhdb_node* first{nullptr};         /**< first entry in the tree */
   ndmp_fhdb_node* last{nullptr};          /**< last entry in the tree */
   ndmp_fhdb_mem* mem{nullptr};            /**< tree memory */
@@ -287,10 +282,8 @@ static N_TREE_NODE* search_and_insert_tree_node(char* fname,
   node->parent = parent;
   node->FileIndex = FileIndex;
   node->fname_len = strlen(fname);
-  /*
-   * Allocate a new entry with 2 bytes extra e.g. the extra slash
-   * needed for directories and the \0.
-   */
+  /* Allocate a new entry with 2 bytes extra e.g. the extra slash
+   * needed for directories and the \0. */
   node->fname = ndmp_fhdb_tree_alloc(root, node->fname_len + 2);
   bstrncpy(node->fname, fname, node->fname_len + 1);
 
@@ -312,12 +305,10 @@ static N_TREE_NODE* search_and_insert_tree_node(N_TREE_NODE* node,
 {
   N_TREE_NODE* found_node;
 
-  /*
-   * Insert the node into the right parent. We should always insert
+  /* Insert the node into the right parent. We should always insert
    * this node and never get back a found_node that is not the same
    * as the original node but if we do we better return as then there
-   * is nothing todo.
-   */
+   * is nothing todo. */
   found_node = (N_TREE_NODE*)parent->child.insert(node, NodeCompareById);
   if (found_node != node) { return found_node; }
 
@@ -347,10 +338,8 @@ static N_TREE_NODE* find_tree_node(N_TREE_NODE* node, uint64_t inode)
   found_node = (N_TREE_NODE*)node->child.search(&match_node, NodeCompareById);
   if (found_node) { return found_node; }
 
-  /*
-   * The node we are searching for is not one of the top nodes so need to search
-   * deeper.
-   */
+  /* The node we are searching for is not one of the top nodes so need to search
+   * deeper. */
   foreach_rblist (walker, &node->child) {
     // See if the node has any children otherwise no need to search it.
     if (walker->child.empty()) { continue; }
@@ -373,10 +362,8 @@ static N_TREE_NODE* find_tree_node(N_TREE_ROOT* root, uint64_t inode)
 
   match_node.inode = inode;
 
-  /*
-   * First do the easy lookup e.g. is this inode part of the parent of the
-   * current parent.
-   */
+  /* First do the easy lookup e.g. is this inode part of the parent of the
+   * current parent. */
   if (root->cached_parent && root->cached_parent->parent) {
     found_node = (N_TREE_NODE*)root->cached_parent->parent->child.search(
         &match_node, NodeCompareById);
@@ -387,10 +374,8 @@ static N_TREE_NODE* find_tree_node(N_TREE_ROOT* root, uint64_t inode)
   found_node = (N_TREE_NODE*)root->child.search(&match_node, NodeCompareById);
   if (found_node) { return found_node; }
 
-  /*
-   * The node we are searching for is not one of the top nodes so need to search
-   * deeper.
-   */
+  /* The node we are searching for is not one of the top nodes so need to search
+   * deeper. */
   foreach_rblist (walker, &root->child) {
     // See if the node has any children otherwise no need to search it.
     if (walker->child.empty()) { continue; }
@@ -422,10 +407,8 @@ static inline void add_out_of_order_metadata(NIS* nis,
   nt_node->inode = node;
   nt_node->FileIndex = fhdb_root->FileIndex;
   nt_node->fname_len = strlen(raw_name);
-  /*
-   * Allocate a new entry with 2 bytes extra e.g. the extra slash
-   * needed for directories and the \0.
-   */
+  /* Allocate a new entry with 2 bytes extra e.g. the extra slash
+   * needed for directories and the \0. */
   nt_node->fname = ndmp_fhdb_tree_alloc(fhdb_root, nt_node->fname_len + 2);
   bstrncpy(nt_node->fname, raw_name, nt_node->fname_len + 1);
 
@@ -509,8 +492,7 @@ static N_TREE_NODE* insert_metadata_parent_node(MetadataTable* meta_data,
   // lookup the dir_node
   md_entry = (OOO_MD*)meta_data->lookup(dir_node);
   if (!md_entry || !md_entry->nt_node) {
-    /*
-     * If we got called the parent node is not in the current tree if we
+    /* If we got called the parent node is not in the current tree if we
      * also cannot find it in the metadata things are inconsistent so give up.
      */
     return (N_TREE_NODE*)NULL;
@@ -523,19 +505,15 @@ static N_TREE_NODE* insert_metadata_parent_node(MetadataTable* meta_data,
     parent
         = insert_metadata_parent_node(meta_data, fhdb_root, md_entry->dir_node);
     if (!parent) {
-      /*
-       * If by recursive calling insert_metadata_parent_node we cannot create
+      /* If by recursive calling insert_metadata_parent_node we cannot create
        * linked set of parent nodes our metadata is really inconsistent so give
-       * up.
-       */
+       * up. */
       return (N_TREE_NODE*)NULL;
     }
   }
 
-  /*
-   * Now we have a working parent in the current tree so we can add the this
-   * parent node.
-   */
+  /* Now we have a working parent in the current tree so we can add the this
+   * parent node. */
   parent = search_and_insert_tree_node(md_entry->nt_node, fhdb_root, parent);
 
   // Keep track we used this entry.
@@ -690,10 +668,8 @@ extern "C" int bndmp_fhdb_mem_add_dirnode_root(struct ndmlog* ixlog,
     fhdb_root->inode = root_node;
     fhdb_root->FileIndex = nis->FileIndex;
     fhdb_root->fname_len = strlen(nis->filesystem);
-    /*
-     * Allocate a new entry with 2 bytes extra e.g. the extra slash
-     * needed for directories and the \0.
-     */
+    /* Allocate a new entry with 2 bytes extra e.g. the extra slash
+     * needed for directories and the \0. */
     fhdb_root->fname
         = ndmp_fhdb_tree_alloc(fhdb_root, fhdb_root->fname_len + 2);
     bstrncpy(fhdb_root->fname, nis->filesystem, fhdb_root->fname_len + 1);
@@ -760,26 +736,22 @@ void NdmpFhdbMemProcessDb(struct ndmlog* ixlog)
       for (node = fhdb_root->first; node; node = node->next) {
         PmStrcpy(fname, node->fname);
 
-        /*
-         * Walk up the parent until we hit the head of the list.
+        /* Walk up the parent until we hit the head of the list.
          * As directories are store including there trailing slash we
-         * can just concatenate the two parts.
-         */
+         * can just concatenate the two parts. */
         for (parent = node->parent; parent; parent = parent->parent) {
           PmStrcpy(tmp, fname.c_str());
           PmStrcpy(fname, parent->fname);
           PmStrcat(fname, tmp.c_str());
         }
 
-        /*
-         * Now we have the full pathname of the file in fname.
+        /* Now we have the full pathname of the file in fname.
          * Store the entry as a hardlinked entry to the original NDMP archive.
          *
          * Handling of incremental/differential backups:
          * During incremental backups, NDMP4_FH_ADD_DIR is sent for ALL files
          * Only for files being backed up, we also get NDMP4_FH_ADD_NODE
-         * So we skip entries that do not have any attribute
-         */
+         * So we skip entries that do not have any attribute */
         if (node->attr) {
           Dmsg2(100, "==> %s [%s]\n", fname.c_str(), node->attr);
           NdmpStoreAttributeRecord(nis->jcr, fname.c_str(),
