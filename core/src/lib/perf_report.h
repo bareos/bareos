@@ -182,7 +182,6 @@ class CallstackReport : public ReportGenerator {
 
     if (inserted) {
       thread->begin_report(start);
-      for (auto& open : buf.stack()) { thread->begin_event(open); }
     }
 
     for (auto event : buf) {

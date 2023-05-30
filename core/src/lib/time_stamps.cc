@@ -36,7 +36,6 @@ ThreadTimeKeeper::~ThreadTimeKeeper()
 
 static void FlushEventsIfNecessary(synchronized<channel::in<EventBuffer>>& queue,
                                    std::thread::id this_id,
-                                   const std::vector<event::OpenEvent>& stack,
                                    EventBuffer& buffer)
 {
   constexpr std::size_t buffer_filled_ok = 1000;
@@ -44,7 +43,7 @@ static void FlushEventsIfNecessary(synchronized<channel::in<EventBuffer>>& queue
     if (std::optional locked = queue.try_lock();
 	locked.has_value()) {
       if ((*locked)->try_put(buffer)) {
-	buffer = EventBuffer(this_id, ThreadTimeKeeper::event_buffer_init_capacity, stack);
+	buffer = EventBuffer(this_id, ThreadTimeKeeper::event_buffer_init_capacity);
       }
     }
   }
@@ -52,29 +51,16 @@ static void FlushEventsIfNecessary(synchronized<channel::in<EventBuffer>>& queue
 
 void ThreadTimeKeeper::enter(const BlockIdentity& block)
 {
-  FlushEventsIfNecessary(queue, this_id, stack, buffer);
-  auto& event = stack.emplace_back(block);
-  buffer.emplace_back(event);
-}
-
-void ThreadTimeKeeper::switch_to(const BlockIdentity& block)
-{
-  FlushEventsIfNecessary(queue, this_id, stack, buffer);
-  ASSERT(stack.size() != 0);
-  auto event = stack.back().close();
-  buffer.emplace_back(event);
-  stack.back() = event::OpenEvent(block);
-  buffer.emplace_back(stack.back());
+  FlushEventsIfNecessary(queue, this_id, buffer);
+  auto event = event::OpenEvent{block};
+  buffer.emplace_back(std::move(event));
 }
 
 void ThreadTimeKeeper::exit(const BlockIdentity& block)
 {
-  FlushEventsIfNecessary(queue, this_id, stack, buffer);
-  ASSERT(stack.size() != 0);
-  auto event = stack.back().close();
-  ASSERT(event.source == &block);
-  buffer.emplace_back(event);
-  stack.pop_back();
+  FlushEventsIfNecessary(queue, this_id, buffer);
+  auto event = event::CloseEvent{block};
+  buffer.emplace_back(std::move(event));
 }
 
 static void write_reports(ReportGenerator* gen,

@@ -77,15 +77,13 @@ class EventBuffer {
  public:
   EventBuffer() {}
   EventBuffer(std::thread::id thread_id,
-              std::size_t initial_size,
-              const std::vector<event::OpenEvent>& current_stack)
-      : thread_id{thread_id}, initial_stack{current_stack}
+              std::size_t initial_size)
+      : thread_id{thread_id}
   {
     events.reserve(initial_size);
   }
   EventBuffer(EventBuffer&&) = default;
   EventBuffer& operator=(EventBuffer&&) = default;
-  const std::vector<event::OpenEvent>& stack() const { return initial_stack; }
   const std::thread::id threadid() const { return thread_id; }
 
   template <typename... Args>
@@ -101,7 +99,6 @@ class EventBuffer {
 
  private:
   std::thread::id thread_id;
-  std::vector<event::OpenEvent> initial_stack{};
   std::vector<event::Event> events{};
 };
 

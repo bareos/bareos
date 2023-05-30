@@ -48,14 +48,12 @@ class ThreadTimeKeeper {
   }
   ~ThreadTimeKeeper();
   void enter(const BlockIdentity& block);
-  void switch_to(const BlockIdentity& block);
   void exit(const BlockIdentity& block);
 
  private:
   std::thread::id this_id;
   synchronized<channel::in<EventBuffer>>& queue;
-  std::vector<event::OpenEvent> stack{};
-  EventBuffer buffer{this_id, event_buffer_init_capacity, stack};
+  EventBuffer buffer{this_id, event_buffer_init_capacity};
 };
 
 struct ThreadHandle {
@@ -63,9 +61,6 @@ struct ThreadHandle {
 
   void enter(const BlockIdentity& block) {
     if (timer) { timer->enter(block); }
-  }
-  void switch_to(const BlockIdentity& block) {
-    if (timer) { timer->switch_to(block); }
   }
   void exit(const BlockIdentity& block) {
     if (timer) { timer->exit(block); }
@@ -121,8 +116,9 @@ class TimedBlock {
     timer.exit(*source);
   }
   void switch_to(const BlockIdentity& block) {
+    timer.exit(*source);
     source = &block;
-    timer.switch_to(block);
+    timer.enter(*source);
   }
 
  private:
