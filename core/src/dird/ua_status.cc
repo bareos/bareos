@@ -276,7 +276,7 @@ static void DoAllStatus(UaContext* ua)
   /* Count Storage items */
   i = 0;
   foreach_res (store, R_STORAGE) { i++; }
-  unique_store = (StorageResource**)malloc(i * sizeof(StorageResource));
+  unique_store = (StorageResource**)malloc(i * sizeof(StorageResource*));
   /* Find Unique Storage address/port */
   i = 0;
   foreach_res (store, R_STORAGE) {
@@ -309,7 +309,7 @@ static void DoAllStatus(UaContext* ua)
 
   i = 0;
   foreach_res (client, R_CLIENT) { i++; }
-  unique_client = (ClientResource**)malloc(i * sizeof(ClientResource));
+  unique_client = (ClientResource**)malloc(i * sizeof(ClientResource*));
   /* Find Unique Client address/port */
   i = 0;
   foreach_res (client, R_CLIENT) {
