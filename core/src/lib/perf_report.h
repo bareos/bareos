@@ -134,13 +134,14 @@ class ThreadCallstackReport {
   {
   }
 
-  std::unique_ptr<Node> as_of(event::time_point at) const
-  {
+  std::unique_ptr<Node> snapshot() const {
     std::unique_lock lock{node_mut};
-    return top.closed_deep_copy_at(at);
+    event::time_point now = event::clock::now();
+    return top.closed_deep_copy_at(now);
   }
 
  private:
+  // node_mut protects *all* nodes
   mutable std::mutex node_mut{};
   Node top{};
   Node* current{nullptr};

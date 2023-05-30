@@ -185,20 +185,19 @@ static ns CreateOverview(std::unordered_map<const BlockIdentity*, ns>& time_spen
 std::string CallstackReport::callstack_str(std::size_t max_depth, bool relative) const
 {
   using namespace std::chrono;
-  event::time_point now = event::clock::now();
   std::ostringstream report{};
   report << "=== Start Performance Report (Callstack) ===\n";
   auto locked = threads.rlock();
   for (auto& [id, thread] : *locked) {
     report << "== Thread: " << id << " ==\n";
-    auto node = thread.as_of(now);
+    auto node = thread.snapshot();
     auto max_values = max_child_values(node.get());
 
     auto max_print_depth = std::min(static_cast<std::size_t>(max_depth),
 				    max_values.depth);
 
     std::string_view base_name = "Measured";
-    PrintNode(report, relative, base_name.data(), 0, duration_cast<nanoseconds>(now - start),
+    PrintNode(report, relative, base_name.data(), 0, node->time_spent(),
               std::max(base_name.size(), max_values.name_length),
               max_print_depth, node.get());
   }
@@ -209,13 +208,12 @@ std::string CallstackReport::callstack_str(std::size_t max_depth, bool relative)
 std::string CallstackReport::collapsed_str(std::size_t max_depth) const
 {
   using namespace std::chrono;
-  event::time_point now = event::clock::now();
   std::ostringstream report{};
-  report << "=== Start Performance Report (Collapsed Callstack) ===\n";
+  report << "=== Start Performance Report (Collapsed) ===\n";
   auto locked = threads.rlock();
   for (auto& [id, thread] : *locked) {
     report << "== Thread: " << id << " ==\n";
-    auto node = thread.as_of(now);
+    auto node = thread.snapshot();
     PrintCollapsedNode(report, "Measured", max_depth, node.get());
   }
   report << "=== End Performance Report ===\n";
@@ -226,14 +224,13 @@ std::string CallstackReport::overview_str(std::size_t show_top_n,
 					  bool relative) const
 {
   using namespace std::chrono;
-  event::time_point now = event::clock::now();
   std::ostringstream report{};
   report << "=== Start Performance Report (Overview) ===\n";
   auto locked = threads.rlock();
   BlockIdentity top{"Measured"};
   for (auto& [id, thread] : *locked) {
     report << "== Thread: " << id << " ==\n";
-    auto node = thread.as_of(now);
+    auto node = thread.snapshot();
     std::unordered_map<const BlockIdentity*, ns> time_spent;
     CreateOverview(time_spent, &top, node.get(), relative);
 
@@ -257,7 +254,7 @@ std::string CallstackReport::overview_str(std::size_t show_top_n,
     for (auto [id, _] : blocks) {
       maxwidth = std::max(std::strlen(id->c_str()), maxwidth);
     }
-    auto max_time = duration_cast<nanoseconds>(now - start);
+    auto max_time = node->time_spent();
 
     for (auto [id, time] : blocks) {
       SplitDuration d{time};
