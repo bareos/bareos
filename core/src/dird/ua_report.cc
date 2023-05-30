@@ -25,11 +25,18 @@
 #include "dird/director_jcr_impl.h"
 #include "dird/ua_select.h"
 #include "dird/fd_cmds.h"
+#include "dird/sd_cmds.h"
+#include "dird/storage.h"
 #include "include/auth_protocol_types.h"
 
 #include <memory>
 
 namespace directordaemon {
+void DoDirectorReport(UaContext* ua) {
+  (void) ua;
+}
+
+
 struct connection_closer {
   void operator()(BareosSocket* sock)
   {
@@ -69,6 +76,73 @@ static socket_ptr NativeConnectToClient(UaContext* ua, ClientResource* client)
   return {fd, connection_closer{}};
 }
 
+static socket_ptr NativeConnectToStorage(UaContext* ua, StorageResource* storage)
+{
+  UnifiedStorageResource lstore;
+
+  lstore.store = storage;
+  PmStrcpy(lstore.store_source, _("unknown source"));
+  SetWstorage(ua->jcr, &lstore);
+
+  if (!ua->api) {
+    ua->SendMsg(_("Connecting to Storage daemon %s at %s:%d\n"),
+		  storage->resource_name_, storage->address, storage->SDport);
+  }
+
+  /* the next call will set ua->jcr->store_bsock */
+  if (!ConnectToStorageDaemon(ua->jcr, 1, 15, false)) {
+    ua->SendMsg(_("\nFailed to connect to Storage daemon %s.\n====\n"),
+		  storage->resource_name_);
+    return nullptr;
+  }
+
+  Dmsg0(20, _("Connected to storage daemon\n"));
+
+  BareosSocket* sd = ua->jcr->store_bsock;
+  ua->jcr->store_bsock = nullptr;
+  return {sd, connection_closer{}};
+}
+
+bool ClientReport(UaContext* ua, ClientResource* client, const char* msg)
+{
+    if (client->Protocol != APT_NATIVE) {
+      ua->SendMsg("client protocol not supported.\n");
+      return false;
+    }
+    socket_ptr fd = NativeConnectToClient(ua, client);
+    if (!fd) { return false; }
+
+    fd->fsend(msg);
+
+    while (fd->recv() >= 0) { ua->SendMsg("%s", fd->msg); }
+    return true;
+}
+
+bool StorageReport(UaContext* ua, StorageResource* storage, const char* msg)
+{
+  if (storage->Protocol != APT_NATIVE) {
+    ua->SendMsg("storage protocol not supported.\n");
+    return false;
+  }
+  socket_ptr sd = NativeConnectToStorage(ua, storage);
+  if (!sd) { return false; }
+
+  sd->fsend(msg);
+
+  while (sd->recv() >= 0) { ua->SendMsg("%s", sd->msg); }
+  return true;
+}
+
+std::vector<StorageResource*> FindStorages()
+{
+  return {};
+}
+
+std::vector<ClientResource*> FindClients()
+{
+  return {};
+}
+
 bool ReportCmd(UaContext* ua, const char*)
 {
   if (ua->argc < 2) {
@@ -92,22 +166,27 @@ bool ReportCmd(UaContext* ua, const char*)
     }
   }
 
-  if (Bstrcasecmp(target, "dir")) {
+  if (Bstrcasecmp(target, "all")) {
+    DoDirectorReport(ua);
+
+    std::vector storages = FindStorages();
+    std::vector clients = FindClients();
+
+    for (auto* storage : storages) {
+      StorageReport(ua, storage, msg.c_str());
+    }
+
+    for (auto* client : clients) {
+      ClientReport(ua, client, msg.c_str());
+    }
+  } else if (Bstrcasecmp(target, "dir")) {
+    DoDirectorReport(ua);
   } else if (Bstrcasecmp(target, "storage")) {
     StorageResource* storage = get_storage_resource(ua);
-    ua->SendMsg("storage %s is here\n", storage->resource_name_);
+    return StorageReport(ua, storage, msg.c_str());
   } else if (Bstrcasecmp(target, "client")) {
     ClientResource* client = get_client_resource(ua);
-    if (client->Protocol != APT_NATIVE) {
-      ua->SendMsg("client protocol not supported.\n");
-      return false;
-    }
-    socket_ptr fd = NativeConnectToClient(ua, client);
-    if (!fd) { return false; }
-
-    fd->fsend(msg.c_str());
-
-    while (fd->recv() >= 0) { ua->SendMsg("%s", fd->msg); }
+    return ClientReport(ua, client, msg.c_str());
   } else {
     ua->SendMsg("1900 Bad report command: unkown target '%s'.\n", target);
     return false;
