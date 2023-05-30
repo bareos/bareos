@@ -33,72 +33,12 @@
 
 extern int debug_level;
 
-enum class PerfReport : std::int32_t
-{
-  Overview = (1 << 0),
-  Stack = (1 << 1),
-};
-
-
 class ReportGenerator {
  public:
   virtual void begin_report(event::time_point start [[maybe_unused]]){};
   virtual void end_report(event::time_point end [[maybe_unused]]){};
   virtual void add_events(const EventBuffer& buf [[maybe_unused]]) {}
   virtual ~ReportGenerator() = default;
-};
-
-class ThreadOverviewReport {
- public:
-  void begin_report(event::time_point current);
-  void begin_event(event::OpenEvent e);
-  void end_event(event::CloseEvent e);
-  std::unordered_map<BlockIdentity const*, std::chrono::nanoseconds> as_of(
-      event::time_point tp) const;
-
- private:
-  std::vector<event::OpenEvent> stack{};
-  event::time_point now;
-  std::unordered_map<BlockIdentity const*, std::chrono::nanoseconds> cul_time;
-};
-
-class OverviewReport : public ReportGenerator {
- public:
-  static constexpr std::size_t ShowAll = std::numeric_limits<std::size_t>::max();
-
-  ~OverviewReport() override;
-
-  void begin_report(event::time_point now) override { start = now; }
-
-  void end_report(event::time_point now) override { end = now; }
-
-  void add_events(const EventBuffer& buf) override
-  {
-    std::unique_lock lock{threads_mut};
-    auto [iter, inserted] = threads.try_emplace(buf.threadid());
-    auto thread = iter->second.lock();
-
-    if (inserted) {
-      thread->begin_report(start);
-      for (auto& open : buf.stack()) { thread->begin_event(open); }
-    }
-
-    for (auto event : buf) {
-      if (auto* open = std::get_if<event::OpenEvent>(&event)) {
-        thread->begin_event(*open);
-      } else if (auto* close = std::get_if<event::CloseEvent>(&event)) {
-        thread->end_event(*close);
-      }
-    }
-  }
-
-  std::string str(std::size_t TopN) const;
-
- private:
-  event::time_point start, end;
-  mutable std::mutex threads_mut{};
-  std::unordered_map<std::thread::id, synchronized<ThreadOverviewReport>>
-      threads{};
 };
 
 class ThreadCallstackReport {

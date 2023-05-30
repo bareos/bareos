@@ -77,37 +77,29 @@ void ThreadTimeKeeper::exit(const BlockIdentity& block)
   stack.pop_back();
 }
 
-static void write_reports(std::vector<ReportGenerator*>* gensp,
+static void write_reports(ReportGenerator* gen,
                           channel::out<EventBuffer> queue)
 {
-  auto& gens = *gensp;
   auto start = event::clock::now();
-  for (auto* reporter : gens) {
-    reporter->begin_report(start);
-  }
+  gen->begin_report(start);
   for (;;) {
     if (std::optional opt = queue.get_all(); opt.has_value()) {
       for (EventBuffer& buf : opt.value()) {
-	for (auto* reporter : gens) {
-	  reporter->add_events(buf);
-	}
+	gen->add_events(buf);
       }
     } else {
       break;
     }
   }
   auto end = event::clock::now();
-  for (auto* reporter : gens) {
-    reporter->end_report(end);
-  }
+  gen->end_report(end);
 }
 
 TimeKeeper::TimeKeeper(bool enabled,
     std::pair<channel::in<EventBuffer>, channel::out<EventBuffer>> p)
     : enabled{enabled}
     , queue{std::move(p.first)}
-    , gens{&overview, &callstack}
-    , report_writer{&write_reports, &gens,
+    , report_writer{&write_reports, &callstack,
                     std::move(p.second)}
 {
 }

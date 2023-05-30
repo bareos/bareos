@@ -565,7 +565,7 @@ std::optional<overview_options> ParseOverviewOptions(BareosSocket* dir,
       found != map.end()) {
     auto val = found->second;
     if (val == "all") {
-      options.top_n = OverviewReport::ShowAll;
+      options.top_n = CallstackReport::ShowAll;
     } else {
       if (!ParseInt(dir, val.data(), val.data() + val.size(), options.top_n)) {
 	return std::nullopt;

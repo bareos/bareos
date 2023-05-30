@@ -96,17 +96,11 @@ class TimeKeeper {
     return callstack;
   }
 
-  const OverviewReport& overview_report() const {
-    return overview;
-  }
-
  private:
   const bool enabled;
   TimeKeeper(bool enabled, std::pair<channel::in<EventBuffer>, channel::out<EventBuffer>> p);
   synchronized<channel::in<EventBuffer>> queue;
-  OverviewReport overview{};
   CallstackReport callstack{};
-  std::vector<ReportGenerator*> gens;
   rw_synchronized<std::unordered_map<std::thread::id, ThreadTimeKeeper>>
       keeper{};
   std::thread report_writer;
