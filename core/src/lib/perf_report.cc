@@ -190,16 +190,24 @@ std::string CallstackReport::callstack_str(std::size_t max_depth, bool relative)
   auto locked = threads.rlock();
   for (auto& [id, thread] : *locked) {
     report << "== Thread: " << id << " ==\n";
-    auto node = thread.snapshot();
-    auto max_values = max_child_values(node.get());
+    auto node_or_error = thread.snapshot();
 
-    auto max_print_depth = std::min(static_cast<std::size_t>(max_depth),
-				    max_values.depth);
+    if (std::string* error = std::get_if<std::string>(&node_or_error);
+	error != nullptr) {
+      report << "Encountered Error: " << *error << "\n";
+    } else {
+      auto& node = std::get<std::unique_ptr<ThreadCallstackReport::Node>>(node_or_error);
+      auto max_values = max_child_values(node.get());
 
-    std::string_view base_name = "Measured";
-    PrintNode(report, relative, base_name.data(), 0, node->time_spent(),
-              std::max(base_name.size(), max_values.name_length),
-              max_print_depth, node.get());
+      auto max_print_depth = std::min(static_cast<std::size_t>(max_depth),
+				      max_values.depth);
+
+      std::string_view base_name = "Measured";
+      PrintNode(report, relative, base_name.data(), 0, node->time_spent(),
+		std::max(base_name.size(), max_values.name_length),
+		max_print_depth, node.get());
+    }
+
   }
   report << "=== End Performance Report ===\n";
   return report.str();
@@ -213,8 +221,15 @@ std::string CallstackReport::collapsed_str(std::size_t max_depth) const
   auto locked = threads.rlock();
   for (auto& [id, thread] : *locked) {
     report << "== Thread: " << id << " ==\n";
-    auto node = thread.snapshot();
-    PrintCollapsedNode(report, "Measured", max_depth, node.get());
+    auto node_or_error = thread.snapshot();
+
+    if (std::string* error = std::get_if<std::string>(&node_or_error);
+	error != nullptr) {
+      report << "Encountered Error: " << *error << "\n";
+    } else {
+      auto& node = std::get<std::unique_ptr<ThreadCallstackReport::Node>>(node_or_error);
+      PrintCollapsedNode(report, "Measured", max_depth, node.get());
+    }
   }
   report << "=== End Performance Report ===\n";
   return report.str();
@@ -230,40 +245,47 @@ std::string CallstackReport::overview_str(std::size_t show_top_n,
   BlockIdentity top{"Measured"};
   for (auto& [id, thread] : *locked) {
     report << "== Thread: " << id << " ==\n";
-    auto node = thread.snapshot();
-    std::unordered_map<const BlockIdentity*, ns> time_spent;
-    CreateOverview(time_spent, &top, node.get(), relative);
+    auto node_or_error = thread.snapshot();
 
-    std::vector<
-      std::pair<const BlockIdentity*, ns>>
-      blocks{time_spent.begin(), time_spent.end()};
+    if (std::string* error = std::get_if<std::string>(&node_or_error);
+	error != nullptr) {
+      report << "Encountered Error: " << *error << "\n";
+    } else {
+      auto& node = std::get<std::unique_ptr<ThreadCallstackReport::Node>>(node_or_error);
+      std::unordered_map<const BlockIdentity*, ns> time_spent;
+      CreateOverview(time_spent, &top, node.get(), relative);
 
-    std::sort(blocks.begin(), blocks.end(), [](auto& p1, auto& p2) {
-      auto t1 = p1.second.count();
-      auto t2 = p2.second.count();
-      if (t1 > t2) { return true; }
-      if ((t1 == t2) && (p1.first > p2.first)) { return true; }
-      return false;
-    });
+      std::vector<
+	std::pair<const BlockIdentity*, ns>>
+	blocks{time_spent.begin(), time_spent.end()};
 
-    if (show_top_n < blocks.size()) {
-      blocks.resize(show_top_n);
-    }
+      std::sort(blocks.begin(), blocks.end(), [](auto& p1, auto& p2) {
+	auto t1 = p1.second.count();
+	auto t2 = p2.second.count();
+	if (t1 > t2) { return true; }
+	if ((t1 == t2) && (p1.first > p2.first)) { return true; }
+	return false;
+      });
 
-    std::size_t maxwidth = 0;
-    for (auto [id, _] : blocks) {
-      maxwidth = std::max(std::strlen(id->c_str()), maxwidth);
-    }
-    auto max_time = node->time_spent();
+      if (show_top_n < blocks.size()) {
+	blocks.resize(show_top_n);
+      }
 
-    for (auto [id, time] : blocks) {
-      SplitDuration d{time};
-      report << std::setw(maxwidth) << id->c_str() << ": "
-             << d
-             // XXX.XX = 6 chars
-             << " (" << std::setw(6) << std::fixed << std::setprecision(2)
-             << double(time.count() * 100) / double(max_time.count()) << "%)"
-             << "\n";
+      std::size_t maxwidth = 0;
+      for (auto [id, _] : blocks) {
+	maxwidth = std::max(std::strlen(id->c_str()), maxwidth);
+      }
+      auto max_time = node->time_spent();
+
+      for (auto [id, time] : blocks) {
+	SplitDuration d{time};
+	report << std::setw(maxwidth) << id->c_str() << ": "
+	       << d
+	  // XXX.XX = 6 chars
+	       << " (" << std::setw(6) << std::fixed << std::setprecision(2)
+	       << double(time.count() * 100) / double(max_time.count()) << "%)"
+	       << "\n";
+      }
     }
   }
   report << "=== End Performance Report ===\n";

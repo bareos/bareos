@@ -50,7 +50,7 @@ class ThreadCallstackReport {
     Node* parent() const { return parent_; }
     Node* child(BlockIdentity const* source)
     {
-      std::unique_ptr child = std::make_unique<Node>(this);
+      std::unique_ptr child = std::make_unique<Node>(this, source);
       auto [iter, _] = children.try_emplace(source, std::move(child));
 
       return iter->second.get();
@@ -97,8 +97,12 @@ class ThreadCallstackReport {
     }
 
     std::size_t depth() const { return depth_; }
+    BlockIdentity const* source() const { return source_; }
     Node() = default;
-    Node(Node* parent) : parent_{parent}, depth_{parent_->depth_ + 1} {}
+    Node(Node* parent, BlockIdentity const* source) : parent_{parent}
+						    , depth_{parent_->depth_ + 1}
+						    , source_{source}
+    {}
     Node(const Node&) = default;
     Node(Node&&) = default;
     Node& operator=(Node&&) = default;
@@ -109,42 +113,89 @@ class ThreadCallstackReport {
     std::optional<event::time_point> since{std::nullopt};
     Node* parent_{nullptr};
     std::size_t depth_{0};
+    BlockIdentity const* source_{nullptr};
     std::chrono::nanoseconds ns{0};
     childmap children{};
   };
 
-  void begin_report(event::time_point now) { top.open(now); }
+  void begin_report(event::time_point now) {
+    std::unique_lock lock{node_mut};
+    if (error_str.has_value()) {
+      return;
+    }
+    top.open(now);
+  }
 
   void begin_event(event::OpenEvent e)
   {
     std::unique_lock lock{node_mut};
-    current = current->child(e.source);
-    current->open(e.start);
+    if (error_str.has_value()) {
+      return;
+    }
+    if (current == nullptr) {
+      set_error("Internal error while processing performance counters (enter).");
+    } else {
+      current = current->child(e.source);
+      current->open(e.start);
+    }
   }
 
   void end_event(event::CloseEvent e)
   {
     std::unique_lock lock{node_mut};
-    current->close(e.end);
-    current = current->parent();
-    ASSERT(current != nullptr);
+    if (error_str.has_value()) {
+      return;
+    }
+    if (current == nullptr) {
+      set_error("Internal error while processing performance counters (exit).");
+    } else if (current == &top) {
+      std::string error;
+      error += "Trying to leave block '";
+      error += e.source->c_str();
+      error += "' while no block is active.";
+      set_error(std::move(error));
+    } else if (current->source() != e.source) {
+      std::string error;
+      error += "Trying to leave block '";
+      error += e.source->c_str();
+      error += "' while block '";
+      error += current->source()->c_str();
+      error += "' is active.";
+      set_error(error);
+    } else {
+      current->close(e.end);
+      current = current->parent();
+    }
   }
 
   ThreadCallstackReport() : current{&top}
   {
   }
 
-  std::unique_ptr<Node> snapshot() const {
+  std::variant<std::unique_ptr<Node>, std::string> snapshot() const {
     std::unique_lock lock{node_mut};
     event::time_point now = event::clock::now();
-    return top.closed_deep_copy_at(now);
+    if (error_str.has_value()) {
+      return error_str.value();
+    } else {
+      return top.closed_deep_copy_at(now);
+    }
   }
 
  private:
-  // node_mut protects *all* nodes
+  // node_mut protects *all* nodes as well as error_str
   mutable std::mutex node_mut{};
   Node top{};
   Node* current{nullptr};
+  std::optional<std::string> error_str{std::nullopt};
+
+  void set_error(std::string error)
+  {
+    Dmsg1(50, "%s", error.c_str());
+    if (!error_str.has_value()) {
+      error_str.emplace(std::move(error));
+    }
+  }
 };
 
 
