@@ -625,6 +625,7 @@ static void* job_thread(void* arg)
     case JT_CONSOLIDATE:
       if (!JobCanceled(jcr)) {
         if (DoConsolidate(jcr)) {
+          ConsolidateCleanup(jcr, JS_Terminated);
           DoAutoprune(jcr);
         } else {
           ConsolidateCleanup(jcr, JS_ErrorTerminated);

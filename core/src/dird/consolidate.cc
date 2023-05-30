@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -84,43 +84,10 @@ static inline void StartNewConsolidationJob(JobControlRecord* jcr,
   FreeUaContext(ua);
 }
 
-static void TerminateConsolidate(JobControlRecord* jcr,
-                                 const Resources& tmpres,
-                                 const JobDbRecord& tmpjr)
+static bool ConsolidateJobs(JobControlRecord* jcr)
 {
-  jcr->dir_impl->res = tmpres;
-  jcr->dir_impl->jr = tmpjr;
-  jcr->setJobStatusWithPriorityCheck(JS_Terminated);
-  ConsolidateCleanup(jcr, JS_Terminated);
-}
-
-/**
- * The actual consolidation worker
- *
- * Returns: false on failure
- *          true  on success
- */
-bool DoConsolidate(JobControlRecord* jcr)
-{
-  // Get Value for MaxFullConsolidations from Consolidation job
-  int32_t max_full_consolidations
+  const int32_t max_full_consolidations
       = jcr->dir_impl->res.job->MaxFullConsolidations;
-
-  jcr->dir_impl->jr.JobId = jcr->JobId;
-  jcr->dir_impl->fname = (char*)GetPoolMemory(PM_FNAME);
-
-  // do not cancel virtual fulls started by consolidation
-  jcr->dir_impl->IgnoreDuplicateJobChecking = true;
-
-  // Print Job Start message
-  Jmsg(jcr, M_INFO, 0, _("Start Consolidate JobId %d, Job=%s\n"), jcr->JobId,
-       jcr->Job);
-
-  jcr->setJobStatusWithPriorityCheck(JS_Running);
-
-  Resources tmpres = jcr->dir_impl->res;
-  JobDbRecord tmpjr = jcr->dir_impl->jr;
-
   int32_t fullconsolidations_started = 0;
   JobResource* job;
   time_t now = time(NULL);
@@ -139,15 +106,11 @@ bool DoConsolidate(JobControlRecord* jcr)
 
       if (!GetOrCreateFilesetRecord(jcr)) {
         Jmsg(jcr, M_FATAL, 0, _("JobId=%d no FileSet\n"), (int)jcr->JobId);
-
-        TerminateConsolidate(jcr, tmpres, tmpjr);
         return false;
       }
 
       if (!GetOrCreateClientRecord(jcr)) {
         Jmsg(jcr, M_FATAL, 0, _("JobId=%d no ClientId\n"), (int)jcr->JobId);
-
-        TerminateConsolidate(jcr, tmpres, tmpjr);
         return false;
       }
 
@@ -157,11 +120,9 @@ bool DoConsolidate(JobControlRecord* jcr)
       Dmsg1(10, "unlimited jobids list:  %s.\n",
             all_jobids_ctx.GetAsString().c_str());
 
-      /*
-       * If we are doing always incremental, we need to limit the search to
+      /* If we are doing always incremental, we need to limit the search to
        * only include incrementals that are older than (now -
-       * AlwaysIncrementalJobRetention)
-       */
+       * AlwaysIncrementalJobRetention) */
       if (job->AlwaysIncrementalJobRetention) {
         char sdt[50];
 
@@ -193,10 +154,8 @@ bool DoConsolidate(JobControlRecord* jcr)
       // all jobs - any empty jobs - the full backup
       const int32_t incrementals_total
           = all_jobids_ctx.size() - zero_file_jobs.size() - 1;
-      /**
-       * Consolidation of zero or one job does not make sense, we leave it
-       * like it is
-       */
+      /* Consolidation of zero or one job does not make sense, we leave it
+       * like it is */
       if (incrementals_total < 1) {
         Jmsg(jcr, M_INFO, 0,
              _("%s: less than two jobs to consolidate found, doing "
@@ -205,8 +164,7 @@ bool DoConsolidate(JobControlRecord* jcr)
         continue;
       }
 
-      /**
-       * Calculate limit for query. We specify how many incrementals should be
+      /* Calculate limit for query. We specify how many incrementals should be
        * left. the limit is total number of incrementals - number required - 1
        */
       Dmsg2(10, "Incrementals found/required. (%d/%d).\n", incrementals_total,
@@ -265,8 +223,6 @@ bool DoConsolidate(JobControlRecord* jcr)
           Jmsg(jcr, M_FATAL, 0,
                _("Error getting Job record for first Job: ERR=%s\n"),
                jcr->db->strerror());
-
-          TerminateConsolidate(jcr, tmpres, tmpjr);
           return true;
         }
 
@@ -317,9 +273,37 @@ bool DoConsolidate(JobControlRecord* jcr)
       StartNewConsolidationJob(jcr, job->resource_name_);
     }
   }
-
-  TerminateConsolidate(jcr, tmpres, tmpjr);
   return true;
+}
+
+/**
+ * The actual consolidation worker
+ *
+ * Returns: false on failure
+ *          true  on success
+ */
+bool DoConsolidate(JobControlRecord* jcr)
+{
+  jcr->dir_impl->jr.JobId = jcr->JobId;
+  jcr->dir_impl->fname = (char*)GetPoolMemory(PM_FNAME);
+
+  // do not cancel virtual fulls started by consolidation
+  jcr->dir_impl->IgnoreDuplicateJobChecking = true;
+
+  // Print Job Start message
+  Jmsg(jcr, M_INFO, 0, _("Start Consolidate JobId %d, Job=%s\n"), jcr->JobId,
+       jcr->Job);
+
+  jcr->setJobStatusWithPriorityCheck(JS_Running);
+
+  Resources tmpres = jcr->dir_impl->res;
+  JobDbRecord tmpjr = jcr->dir_impl->jr;
+
+  bool returnval = ConsolidateJobs(jcr);
+
+  jcr->dir_impl->res = tmpres;
+  jcr->dir_impl->jr = tmpjr;
+  return returnval;
 }
 
 // Release resources allocated during backup.
