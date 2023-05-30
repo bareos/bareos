@@ -119,7 +119,6 @@ class ThreadCallstackReport {
   };
 
   void begin_report(event::time_point now) {
-    std::unique_lock lock{node_mut};
     if (error_str.has_value()) {
       return;
     }
@@ -128,7 +127,6 @@ class ThreadCallstackReport {
 
   void begin_event(event::OpenEvent e)
   {
-    std::unique_lock lock{node_mut};
     if (error_str.has_value()) {
       return;
     }
@@ -142,7 +140,6 @@ class ThreadCallstackReport {
 
   void end_event(event::CloseEvent e)
   {
-    std::unique_lock lock{node_mut};
     if (error_str.has_value()) {
       return;
     }
@@ -173,7 +170,6 @@ class ThreadCallstackReport {
   }
 
   std::variant<std::unique_ptr<Node>, std::string> snapshot() const {
-    std::unique_lock lock{node_mut};
     event::time_point now = event::clock::now();
     if (error_str.has_value()) {
       return error_str.value();
@@ -183,8 +179,6 @@ class ThreadCallstackReport {
   }
 
  private:
-  // node_mut protects *all* nodes as well as error_str
-  mutable std::mutex node_mut{};
   Node top{};
   Node* current{nullptr};
   std::optional<std::string> error_str{std::nullopt};
@@ -210,13 +204,13 @@ class CallstackReport : public ReportGenerator {
 
   void add_events(const EventBuffer& buf) override
   {
-    ThreadCallstackReport* thread = nullptr;
+    synchronized<ThreadCallstackReport>* thread = nullptr;
     auto thread_id = buf.threadid();
     bool inserted = false;
     {
       auto locked = threads.rlock();
       auto iter = locked->find(thread_id);
-      if (iter != locked->end()) { thread = const_cast<ThreadCallstackReport*>(&iter->second); }
+      if (iter != locked->end()) { thread = const_cast<synchronized<ThreadCallstackReport>*>(&iter->second); }
     }
     if (thread == nullptr) {
       auto locked = threads.wlock();
@@ -224,21 +218,23 @@ class CallstackReport : public ReportGenerator {
       ASSERT(did_insert);
       ASSERT(iter != locked->end());
       inserted = did_insert;
-      thread = const_cast<ThreadCallstackReport*>(&iter->second);
+      thread = const_cast<synchronized<ThreadCallstackReport>*>(&iter->second);
     }
     // pointers to elements of unordered_map are stable
     // (as long as the element does not get removed)
     // so there is no need to keep the map locked here
 
+    auto locked = thread->lock();
+
     if (inserted) {
-      thread->begin_report(start);
+      locked->begin_report(start);
     }
 
     for (auto event : buf) {
       if (auto* open = std::get_if<event::OpenEvent>(&event)) {
-        thread->begin_event(*open);
+        locked->begin_event(*open);
       } else if (auto* close = std::get_if<event::CloseEvent>(&event)) {
-        thread->end_event(*close);
+        locked->end_event(*close);
       }
     }
   }
@@ -249,7 +245,7 @@ class CallstackReport : public ReportGenerator {
 
  private:
   event::time_point start, end;
-  rw_synchronized<std::unordered_map<std::thread::id, ThreadCallstackReport>> threads{};
+  rw_synchronized<std::unordered_map<std::thread::id, synchronized<ThreadCallstackReport>>> threads{};
 };
 
 #endif  // BAREOS_LIB_PERF_REPORT_H_

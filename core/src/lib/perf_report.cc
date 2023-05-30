@@ -190,7 +190,7 @@ std::string CallstackReport::callstack_str(std::size_t max_depth, bool relative)
   auto locked = threads.rlock();
   for (auto& [id, thread] : *locked) {
     report << "== Thread: " << id << " ==\n";
-    auto node_or_error = thread.snapshot();
+    auto node_or_error = thread.lock()->snapshot();
 
     if (std::string* error = std::get_if<std::string>(&node_or_error);
 	error != nullptr) {
@@ -221,7 +221,7 @@ std::string CallstackReport::collapsed_str(std::size_t max_depth) const
   auto locked = threads.rlock();
   for (auto& [id, thread] : *locked) {
     report << "== Thread: " << id << " ==\n";
-    auto node_or_error = thread.snapshot();
+    auto node_or_error = thread.lock()->snapshot();
 
     if (std::string* error = std::get_if<std::string>(&node_or_error);
 	error != nullptr) {
@@ -245,7 +245,7 @@ std::string CallstackReport::overview_str(std::size_t show_top_n,
   BlockIdentity top{"Measured"};
   for (auto& [id, thread] : *locked) {
     report << "== Thread: " << id << " ==\n";
-    auto node_or_error = thread.snapshot();
+    auto node_or_error = thread.lock()->snapshot();
 
     if (std::string* error = std::get_if<std::string>(&node_or_error);
 	error != nullptr) {
