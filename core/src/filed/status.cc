@@ -513,7 +513,7 @@ struct callstack_options
 {
   std::size_t max_depth;
   bool relative;
-  std::string to_string(const CallstackReport& callstack) {
+  std::string to_string(const PerformanceReport& callstack) {
     return callstack.callstack_str(max_depth, relative);
   }
 };
@@ -521,7 +521,7 @@ struct callstack_options
 struct collapsed_options
 {
   std::size_t max_depth;
-  std::string to_string(const CallstackReport& callstack) {
+  std::string to_string(const PerformanceReport& callstack) {
       return callstack.collapsed_str(max_depth);
   }
 };
@@ -530,7 +530,7 @@ struct overview_options
 {
   std::size_t top_n;
   bool relative;
-  std::string to_string(const CallstackReport& callstack) {
+  std::string to_string(const PerformanceReport& callstack) {
     return callstack.overview_str(top_n, relative);
   }
 };
@@ -568,7 +568,7 @@ std::optional<overview_options> ParseOverviewOptions(BareosSocket* dir,
       found != map.end()) {
     auto val = found->second;
     if (val == "all") {
-      options.top_n = CallstackReport::ShowAll;
+      options.top_n = PerformanceReport::ShowAll;
     } else {
       if (!ParseInt(dir, val.data(), val.data() + val.size(), options.top_n)) {
 	return std::nullopt;
@@ -600,7 +600,7 @@ std::optional<callstack_options> ParseCallstackOptions(BareosSocket* dir,
       found != map.end()) {
     auto val = found->second;
     if (val == "all") {
-      options.max_depth = CallstackReport::ShowAll;
+      options.max_depth = PerformanceReport::ShowAll;
     } else {
       if (!ParseInt(dir, val.data(), val.data() + val.size(), options.max_depth)) {
 	return std::nullopt;
@@ -632,7 +632,7 @@ std::optional<collapsed_options> ParseCollapsedOptions(BareosSocket* dir,
       found != map.end()) {
     auto val = found->second;
     if (val == "all") {
-      options.max_depth = CallstackReport::ShowAll;
+      options.max_depth = PerformanceReport::ShowAll;
     } else {
       if (!ParseInt(dir, val.data(), val.data() + val.size(), options.max_depth)) {
 	return std::nullopt;
@@ -711,22 +711,23 @@ static bool PerformanceReport(BareosSocket* dir,
   std::size_t NumJobs = 0;
   dir->fsend("Starting Report of running jobs.\n");
   foreach_jcr (njcr) {
+    auto& perf_report = njcr->timer.performance_report();
     if (njcr->JobId > 0) {
       if (!all_jobids && jobids.find(njcr->JobId) == jobids.end()) {
 	continue;
       }
       dir->fsend(_("==== Job %d ====\n"), njcr->JobId);
       if (njcr->timer.is_enabled()) {
-	std::visit([dir, njcr](auto&& arg) {
+	std::visit([dir, &perf_report](auto&& arg) {
 	  using T = std::decay_t<decltype(arg)>;
 	  if constexpr (std::is_same_v<T, callstack_options>) {
-	    std::string str = arg.to_string(njcr->timer.callstack_report());
+	    std::string str = arg.to_string(perf_report);
 	    dir->send(str.c_str(), str.size());
 	  } else if constexpr (std::is_same_v<T, overview_options>) {
-	    std::string str = arg.to_string(njcr->timer.callstack_report());
+	    std::string str = arg.to_string(perf_report);
 	    dir->send(str.c_str(), str.size());
 	  } else if constexpr (std::is_same_v<T, collapsed_options>) {
-	    std::string str = arg.to_string(njcr->timer.callstack_report());
+	    std::string str = arg.to_string(perf_report);
 	    dir->send(str.c_str(), str.size());
 	  }
 	}, parsed);

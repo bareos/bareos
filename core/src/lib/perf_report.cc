@@ -68,7 +68,7 @@ struct SplitDuration {
   }
 };
 
-static auto max_child_values(const ThreadCallstackReport::Node* node)
+static auto max_child_values(const ThreadPerformanceReport::Node* node)
 {
   struct {
     std::size_t name_length;
@@ -97,7 +97,7 @@ static void PrintNode(std::ostringstream& out,
                       std::chrono::nanoseconds parentns,
                       std::size_t max_name_length,
                       std::size_t max_depth,
-                      const ThreadCallstackReport::Node* node)
+                      const ThreadPerformanceReport::Node* node)
 {
   // depth is (modulo a shared offset) equal to current->depth
   std::size_t offset
@@ -115,7 +115,7 @@ static void PrintNode(std::ostringstream& out,
 
   if (depth < max_depth) {
     std::vector<
-      std::pair<BlockIdentity const*, ThreadCallstackReport::Node const*>>
+      std::pair<BlockIdentity const*, ThreadPerformanceReport::Node const*>>
       children;
     auto& view = node->children_view();
     children.reserve(view.size());
@@ -143,7 +143,7 @@ static void PrintNode(std::ostringstream& out,
 static std::int64_t PrintCollapsedNode(std::ostringstream& out,
                                        std::string path,
 				       std::size_t max_depth,
-                                       const ThreadCallstackReport::Node* node)
+                                       const ThreadPerformanceReport::Node* node)
 {
   std::int64_t child_time = 0;
   if (node->depth() < max_depth) {
@@ -164,7 +164,7 @@ static std::int64_t PrintCollapsedNode(std::ostringstream& out,
 
 static ns CreateOverview(std::unordered_map<const BlockIdentity*, ns>& time_spent,
 			 const BlockIdentity* node_id,
-			 const ThreadCallstackReport::Node* node,
+			 const ThreadPerformanceReport::Node* node,
 			 bool relative) {
   ns time_inside_node = node->time_spent();
 
@@ -182,7 +182,7 @@ static ns CreateOverview(std::unordered_map<const BlockIdentity*, ns>& time_spen
   return time_inside_node;
 }
 
-std::string CallstackReport::callstack_str(std::size_t max_depth, bool relative) const
+std::string PerformanceReport::callstack_str(std::size_t max_depth, bool relative) const
 {
   using namespace std::chrono;
   std::ostringstream report{};
@@ -196,7 +196,7 @@ std::string CallstackReport::callstack_str(std::size_t max_depth, bool relative)
 	error != nullptr) {
       report << "Encountered Error: " << *error << "\n";
     } else {
-      auto& node = std::get<std::unique_ptr<ThreadCallstackReport::Node>>(node_or_error);
+      auto& node = std::get<std::unique_ptr<ThreadPerformanceReport::Node>>(node_or_error);
       auto max_values = max_child_values(node.get());
 
       auto max_print_depth = std::min(static_cast<std::size_t>(max_depth),
@@ -213,7 +213,7 @@ std::string CallstackReport::callstack_str(std::size_t max_depth, bool relative)
   return report.str();
 }
 
-std::string CallstackReport::collapsed_str(std::size_t max_depth) const
+std::string PerformanceReport::collapsed_str(std::size_t max_depth) const
 {
   using namespace std::chrono;
   std::ostringstream report{};
@@ -227,7 +227,7 @@ std::string CallstackReport::collapsed_str(std::size_t max_depth) const
 	error != nullptr) {
       report << "Encountered Error: " << *error << "\n";
     } else {
-      auto& node = std::get<std::unique_ptr<ThreadCallstackReport::Node>>(node_or_error);
+      auto& node = std::get<std::unique_ptr<ThreadPerformanceReport::Node>>(node_or_error);
       PrintCollapsedNode(report, "Measured", max_depth, node.get());
     }
   }
@@ -235,7 +235,7 @@ std::string CallstackReport::collapsed_str(std::size_t max_depth) const
   return report.str();
 }
 
-std::string CallstackReport::overview_str(std::size_t show_top_n,
+std::string PerformanceReport::overview_str(std::size_t show_top_n,
 					  bool relative) const
 {
   using namespace std::chrono;
@@ -251,7 +251,7 @@ std::string CallstackReport::overview_str(std::size_t show_top_n,
 	error != nullptr) {
       report << "Encountered Error: " << *error << "\n";
     } else {
-      auto& node = std::get<std::unique_ptr<ThreadCallstackReport::Node>>(node_or_error);
+      auto& node = std::get<std::unique_ptr<ThreadPerformanceReport::Node>>(node_or_error);
       std::unordered_map<const BlockIdentity*, ns> time_spent;
       CreateOverview(time_spent, &top, node.get(), relative);
 
@@ -292,6 +292,6 @@ std::string CallstackReport::overview_str(std::size_t show_top_n,
   return report.str();
 }
 
-CallstackReport::~CallstackReport() {
+PerformanceReport::~PerformanceReport() {
   Dmsg1(500, "%s", callstack_str().c_str());
 }

@@ -85,7 +85,7 @@ TimeKeeper::TimeKeeper(bool enabled,
     std::pair<channel::in<EventBuffer>, channel::out<EventBuffer>> p)
     : enabled{enabled}
     , queue{std::move(p.first)}
-    , report_writer{&write_reports, &callstack,
+    , report_writer{&write_reports, &perf,
                     std::move(p.second)}
 {
 }

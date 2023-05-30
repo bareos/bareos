@@ -41,7 +41,7 @@ class ReportGenerator {
   virtual ~ReportGenerator() = default;
 };
 
-class ThreadCallstackReport {
+class ThreadPerformanceReport {
  public:
   class Node {
    public:
@@ -165,7 +165,7 @@ class ThreadCallstackReport {
     }
   }
 
-  ThreadCallstackReport() : current{&top}
+  ThreadPerformanceReport() : current{&top}
   {
   }
 
@@ -193,9 +193,9 @@ class ThreadCallstackReport {
 };
 
 
-class CallstackReport : public ReportGenerator {
+class PerformanceReport : public ReportGenerator {
  public:
-  ~CallstackReport() override;
+  ~PerformanceReport() override;
   static constexpr std::size_t ShowAll = std::numeric_limits<std::size_t>::max();
 
   void begin_report(event::time_point now) override { start = now; }
@@ -204,13 +204,13 @@ class CallstackReport : public ReportGenerator {
 
   void add_events(const EventBuffer& buf) override
   {
-    synchronized<ThreadCallstackReport>* thread = nullptr;
+    synchronized<ThreadPerformanceReport>* thread = nullptr;
     auto thread_id = buf.threadid();
     bool inserted = false;
     {
       auto locked = threads.rlock();
       auto iter = locked->find(thread_id);
-      if (iter != locked->end()) { thread = const_cast<synchronized<ThreadCallstackReport>*>(&iter->second); }
+      if (iter != locked->end()) { thread = const_cast<synchronized<ThreadPerformanceReport>*>(&iter->second); }
     }
     if (thread == nullptr) {
       auto locked = threads.wlock();
@@ -218,7 +218,7 @@ class CallstackReport : public ReportGenerator {
       ASSERT(did_insert);
       ASSERT(iter != locked->end());
       inserted = did_insert;
-      thread = const_cast<synchronized<ThreadCallstackReport>*>(&iter->second);
+      thread = const_cast<synchronized<ThreadPerformanceReport>*>(&iter->second);
     }
     // pointers to elements of unordered_map are stable
     // (as long as the element does not get removed)
@@ -239,13 +239,13 @@ class CallstackReport : public ReportGenerator {
     }
   }
 
-  std::string callstack_str(std::size_t max_depth = CallstackReport::ShowAll, bool relative = true) const;
-  std::string overview_str(std::size_t num_to_show = CallstackReport::ShowAll, bool relative = false) const;
-  std::string collapsed_str(std::size_t max_depth = CallstackReport::ShowAll) const;
+  std::string callstack_str(std::size_t max_depth = PerformanceReport::ShowAll, bool relative = true) const;
+  std::string overview_str(std::size_t num_to_show = PerformanceReport::ShowAll, bool relative = false) const;
+  std::string collapsed_str(std::size_t max_depth = PerformanceReport::ShowAll) const;
 
  private:
   event::time_point start, end;
-  rw_synchronized<std::unordered_map<std::thread::id, synchronized<ThreadCallstackReport>>> threads{};
+  rw_synchronized<std::unordered_map<std::thread::id, synchronized<ThreadPerformanceReport>>> threads{};
 };
 
 #endif  // BAREOS_LIB_PERF_REPORT_H_
