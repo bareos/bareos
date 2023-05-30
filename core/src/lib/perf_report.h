@@ -220,17 +220,15 @@ class CallstackReport : public ReportGenerator {
     }
     if (thread == nullptr) {
       auto locked = threads.wlock();
-      auto [_, did_insert] = locked->try_emplace(thread_id);
+      auto [iter, did_insert] = locked->try_emplace(thread_id);
       ASSERT(did_insert);
+      ASSERT(iter != locked->end());
       inserted = did_insert;
-      // since we unlock and then lock something couldve happened
-      // that rehashes the map; as such we need to search again and cannot
-      // use the result of emplace
+      thread = const_cast<ThreadCallstackReport*>(&iter->second);
     }
-    auto locked = threads.rlock();
-    auto iter = locked->find(thread_id);
-    ASSERT(iter != locked->end());
-    thread = const_cast<ThreadCallstackReport*>(&iter->second);
+    // pointers to elements of unordered_map are stable
+    // (as long as the element does not get removed)
+    // so there is no need to keep the map locked here
 
     if (inserted) {
       thread->begin_report(start);
