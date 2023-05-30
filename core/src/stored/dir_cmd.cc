@@ -87,6 +87,7 @@ namespace storagedaemon {
 static char setbandwidth[] = "setbandwidth=%lld Job=%127s";
 static char setdebugv0cmd[] = "setdebug=%d trace=%d";
 static char setdebugv1cmd[] = "setdebug=%d trace=%d timestamp=%d";
+static char setdebugv2cmd[] = "setdebug=%d trace=%d timestamp=%d perf=%d";
 static char cancelcmd[] = "cancel Job=%127s";
 static char relabelcmd[]
     = "relabel %127s OldName=%127s NewName=%127s PoolName=%127s "
@@ -111,6 +112,8 @@ static char derrmsg[] = "3900 Invalid command:";
 static char OKsetdebugv0[] = "3000 OK setdebug=%d tracefile=%s\n";
 static char OKsetdebugv1[]
     = "3000 OK setdebug=%d trace=%d timestamp=%d tracefile=%s\n";
+static char OKsetdebugv2[]
+    = "3000 OK setdebug=%d trace=%d timestamp=%d tracefile=%s perf=%d\n";
 static char OKsetdevice[] = "3000 OK setdevice=%s autoselect=%d\n";
 static char invalid_cmd[]
     = "3997 Invalid command for a Director with Monitor directive enabled.\n";
@@ -385,15 +388,21 @@ static bool SetbandwidthCmd(JobControlRecord* jcr)
 static bool SetdebugCmd(JobControlRecord* jcr)
 {
   BareosSocket* dir = jcr->dir_bsock;
-  int32_t level, trace_flag, timestamp_flag;
+  int32_t level, trace_flag, timestamp_flag, perf;
   int scan;
 
   Dmsg1(10, "SetdebugCmd: %s\n", dir->msg);
-  scan = sscanf(dir->msg, setdebugv1cmd, &level, &trace_flag, &timestamp_flag);
-  if (scan != 3) {
-    scan = sscanf(dir->msg, setdebugv0cmd, &level, &trace_flag);
+  scan = sscanf(dir->msg, setdebugv2cmd, &level, &trace_flag, &timestamp_flag, &perf);
+  bool success = (scan == 4);
+  if (!success) {
+    scan = sscanf(dir->msg, setdebugv1cmd, &level, &trace_flag, &timestamp_flag);
+    success = (scan == 3);
   }
-  if ((scan != 3) && (scan != 2)) {
+  if (!success) {
+    scan = sscanf(dir->msg, setdebugv0cmd, &level, &trace_flag);
+    success = (scan == 2);
+  }
+  if (!success) {
     std::string msg_cpy(dir->msg);
     dir->fsend(BADcmd, "setdebug", msg_cpy.c_str());
     return false;
@@ -404,7 +413,15 @@ static bool SetdebugCmd(JobControlRecord* jcr)
 
   if (level >= 0) { debug_level = level; }
   SetTrace(trace_flag);
-  if (scan == 3) {
+  if (scan == 4) {
+    SetPerf(perf);
+    SetTimestamp(timestamp_flag);
+    Dmsg5(50, "level=%d trace=%d timestamp=%d tracefilename=%s perf=%d\n", level,
+          GetTrace(), GetTimestamp(), tracefilename.c_str(), GetPerf());
+    return dir->fsend(OKsetdebugv2, level, GetTrace(), GetTimestamp(),
+                      tracefilename.c_str(), GetPerf());
+
+  } else if (scan == 3) {
     SetTimestamp(timestamp_flag);
     Dmsg4(50, "level=%d trace=%d timestamp=%d tracefilename=%s\n", level,
           GetTrace(), GetTimestamp(), tracefilename.c_str());
