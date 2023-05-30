@@ -60,6 +60,11 @@ endif()
 if(HAVE_WIN32)
   add_library(mssqlvdi-fd MODULE ../../win32/plugins/filed/mssqlvdi-fd.cc)
   target_compile_options(mssqlvdi-fd PUBLIC -fpermissive)
+  if (MSVC)
+    target_link_libraries(mssqlvdi-fd PRIVATE ${THREADS_THREADS} bareos comsupp.lib)
+  else() 
+    target_link_libraries(mssqlvdi-fd bareos)
+  endif()
   set_target_properties(
     mssqlvdi-fd PROPERTIES PREFIX "" DEFINE_SYMBOL "BUILDING_DLL"
   )
@@ -69,7 +74,6 @@ if(HAVE_WIN32)
     DESTINATION ${plugindir}
     COMPONENT filedaemon
   )
-  target_link_libraries(mssqlvdi-fd bareos)
 endif()
 
 if(NOT HAVE_WIN32)

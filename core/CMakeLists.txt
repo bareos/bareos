@@ -369,8 +369,11 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     ${PROJECT_SOURCE_DIR}/src/win32/compat/include
   )
   if (MSVC)
-    # link_directories("C:/src/vcpkg/installed/x64-windows/lib")
     link_libraries(Intl::Intl)
+  include_directories(
+    SYSTEM ${PROJECT_SOURCE_DIR}/../../vdi/include
+    SYSTEM ${PROJECT_SOURCE_DIR}/../../vss/include
+    )
   endif()
 
   set(HAVE_WIN32 1)
