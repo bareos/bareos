@@ -1353,19 +1353,23 @@ static void AllClientSetdebug(UaContext* ua,
 static void DoDirectorSetdebug(UaContext* ua,
                                int level,
                                int trace_flag,
-                               int timestamp_flag)
+                               int timestamp_flag,
+			       int perf)
 {
   PoolMem tracefilename(PM_FNAME);
 
   if (level >= 0) { debug_level = level; }
   SetTrace(trace_flag);
   SetTimestamp(timestamp_flag);
+  SetPerf(perf);
   Mmsg(tracefilename, "%s/%s.trace", TRACEFILEDIRECTORY, my_name);
   if (ua) {
-    ua->SendMsg("level=%d trace=%d hangup=%d timestamp=%d tracefilename=%s\n",
+    ua->SendMsg("level=%d trace=%d hangup=%d timestamp=%d tracefilename=%s perf=%d\n",
                 level, GetTrace(), GetHangup(), GetTimestamp(),
-                tracefilename.c_str());
+                tracefilename.c_str(), GetPerf());
   }
+  Dmsg5(50, "level=%d trace=%d hangup=%d timestamp=%d tracefilename=%s perf=%d\n",
+	level, GetTrace(), GetHangup(), GetTimestamp(), tracefilename.c_str(), GetPerf());
 }
 
 void DoAllSetDebug(UaContext* ua,
@@ -1375,7 +1379,7 @@ void DoAllSetDebug(UaContext* ua,
                    int timestamp_flag,
                    int perf)
 {
-  DoDirectorSetdebug(ua, level, trace_flag, timestamp_flag);
+  DoDirectorSetdebug(ua, level, trace_flag, timestamp_flag, perf);
   AllStorageSetdebug(ua, level, trace_flag, timestamp_flag, perf);
   AllClientSetdebug(ua, level, trace_flag, hangup_flag, timestamp_flag, perf);
 }
@@ -1449,7 +1453,7 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
     }
     if (Bstrcasecmp(ua->argk[i], "dir")
         || Bstrcasecmp(ua->argk[i], "director")) {
-      DoDirectorSetdebug(ua, level, trace_flag, timestamp_flag);
+      DoDirectorSetdebug(ua, level, trace_flag, timestamp_flag, perf);
       return true;
     }
     if (Bstrcasecmp(ua->argk[i], "client") || Bstrcasecmp(ua->argk[i], "fd")) {
@@ -1510,7 +1514,7 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
       DoPrompt(ua, "", _("Select daemon type to set debug level"), NULL, 0)) {
     case 0:
       // Director
-      DoDirectorSetdebug(ua, level, trace_flag, timestamp_flag);
+      DoDirectorSetdebug(ua, level, trace_flag, timestamp_flag, perf);
       break;
     case 1:
       store = get_storage_resource(ua);
