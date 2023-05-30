@@ -393,7 +393,7 @@ static bool SetdebugCmd(JobControlRecord* jcr)
   if (scan != 3) {
     scan = sscanf(dir->msg, setdebugv0cmd, &level, &trace_flag);
   }
-  if ((scan != 3 && scan != 2) || level < 0) {
+  if ((scan != 3) && (scan != 2)) {
     std::string msg_cpy(dir->msg);
     dir->fsend(BADcmd, "setdebug", msg_cpy.c_str());
     return false;
