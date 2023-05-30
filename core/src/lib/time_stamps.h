@@ -96,6 +96,10 @@ class TimeKeeper {
     return callstack;
   }
 
+  bool is_enabled() const {
+    return enabled;
+  }
+
  private:
   const bool enabled;
   TimeKeeper(bool enabled, std::pair<channel::in<EventBuffer>, channel::out<EventBuffer>> p);

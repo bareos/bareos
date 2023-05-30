@@ -716,19 +716,23 @@ static bool PerformanceReport(BareosSocket* dir,
 	continue;
       }
       dir->fsend(_("==== Job %d ====\n"), njcr->JobId);
-      std::visit([dir, njcr](auto&& arg) {
-	using T = std::decay_t<decltype(arg)>;
-	if constexpr (std::is_same_v<T, callstack_options>) {
-	  std::string str = arg.to_string(njcr->timer.callstack_report());
-	  dir->send(str.c_str(), str.size());
-	} else if constexpr (std::is_same_v<T, overview_options>) {
-	  std::string str = arg.to_string(njcr->timer.callstack_report());
-	  dir->send(str.c_str(), str.size());
-	} else if constexpr (std::is_same_v<T, collapsed_options>) {
-	  std::string str = arg.to_string(njcr->timer.callstack_report());
-	  dir->send(str.c_str(), str.size());
-	}
-      }, parsed);
+      if (njcr->timer.is_enabled()) {
+	std::visit([dir, njcr](auto&& arg) {
+	  using T = std::decay_t<decltype(arg)>;
+	  if constexpr (std::is_same_v<T, callstack_options>) {
+	    std::string str = arg.to_string(njcr->timer.callstack_report());
+	    dir->send(str.c_str(), str.size());
+	  } else if constexpr (std::is_same_v<T, overview_options>) {
+	    std::string str = arg.to_string(njcr->timer.callstack_report());
+	    dir->send(str.c_str(), str.size());
+	  } else if constexpr (std::is_same_v<T, collapsed_options>) {
+	    std::string str = arg.to_string(njcr->timer.callstack_report());
+	    dir->send(str.c_str(), str.size());
+	  }
+	}, parsed);
+      } else {
+	dir->fsend(_("Performance counters are disabled for this job.\n"));
+      }
       dir->fsend(_("====\n"));
       NumJobs += 1;
     }
