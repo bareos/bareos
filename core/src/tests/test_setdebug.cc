@@ -50,7 +50,7 @@ DoClientSetdebug(UaContext*, ClientResource* client, int, int, int, int, int)
   client_names.insert(client->resource_name_);
 }
 
-static void DoStorageSetdebug(UaContext*, StorageResource* store, int, int, int)
+static void DoStorageSetdebug(UaContext*, StorageResource* store, int, int, int, int)
 {
   stored_names.insert(store->resource_name_);
 }

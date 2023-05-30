@@ -54,7 +54,8 @@ using storage_debug_fn = std::function<void(UaContext* ua,
                                             StorageResource* store,
                                             int level,
                                             int trace_flag,
-                                            int timestamp_flag)>;
+					    int timestamp_flag,
+					    int perf)>;
 void SetDoStorageSetdebugFunction(storage_debug_fn f);
 
 void DoAllSetDebug(UaContext* ua,

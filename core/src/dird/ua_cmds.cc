@@ -1152,7 +1152,8 @@ static void DoStorageSetdebug(UaContext* ua,
                               StorageResource* store,
                               int level,
                               int trace_flag,
-                              int timestamp_flag)
+                              int timestamp_flag,
+			      int perf)
 {
   BareosSocket* sd;
   JobControlRecord* jcr = ua->jcr;
@@ -1182,8 +1183,8 @@ static void DoStorageSetdebug(UaContext* ua,
 
   Dmsg0(120, _("Connected to storage daemon\n"));
   sd = jcr->store_bsock;
-  sd->fsend("setdebug=%d trace=%d timestamp=%d\n", level, trace_flag,
-            timestamp_flag);
+  sd->fsend("setdebug=%d trace=%d timestamp=%d perf=%d\n", level, trace_flag,
+            timestamp_flag, perf);
   if (sd->recv() >= 0) { ua->SendMsg("%s", sd->msg); }
 
   sd->signal(BNET_TERMINATE);
@@ -1270,7 +1271,8 @@ void SetDoStorageSetdebugFunction(storage_debug_fn f)
 static void AllStorageSetdebug(UaContext* ua,
                                int level,
                                int trace_flag,
-                               int timestamp_flag)
+                               int timestamp_flag,
+			       int perf)
 {
   std::vector<StorageResource*> storages_with_unique_address;
   StorageResource* storage_in_config = nullptr;
@@ -1298,7 +1300,7 @@ static void AllStorageSetdebug(UaContext* ua,
   } while (storage_in_config);
 
   for (StorageResource* store : storages_with_unique_address) {
-    DoStorageSetdebugFunction(ua, store, level, trace_flag, timestamp_flag);
+    DoStorageSetdebugFunction(ua, store, level, trace_flag, timestamp_flag, perf);
   }
 }
 
@@ -1374,7 +1376,7 @@ void DoAllSetDebug(UaContext* ua,
                    int perf)
 {
   DoDirectorSetdebug(ua, level, trace_flag, timestamp_flag);
-  AllStorageSetdebug(ua, level, trace_flag, timestamp_flag);
+  AllStorageSetdebug(ua, level, trace_flag, timestamp_flag, perf);
   AllClientSetdebug(ua, level, trace_flag, hangup_flag, timestamp_flag, perf);
 }
 
@@ -1475,7 +1477,7 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
       if (ua->argv[i]) {
         store = ua->GetStoreResWithName(ua->argv[i]);
         if (store) {
-          DoStorageSetdebug(ua, store, level, trace_flag, timestamp_flag);
+          DoStorageSetdebug(ua, store, level, trace_flag, timestamp_flag, perf);
           return true;
         }
       }
@@ -1491,7 +1493,7 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
             break;
         }
 
-        DoStorageSetdebug(ua, store, level, trace_flag, timestamp_flag);
+        DoStorageSetdebug(ua, store, level, trace_flag, timestamp_flag, perf);
         return true;
       }
     }
@@ -1522,7 +1524,7 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
           default:
             break;
         }
-        DoStorageSetdebug(ua, store, level, trace_flag, timestamp_flag);
+        DoStorageSetdebug(ua, store, level, trace_flag, timestamp_flag, perf);
       }
       break;
     case 2:
