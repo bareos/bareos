@@ -48,7 +48,6 @@ set(FDSRCS
     filed_conf.cc
     restore.cc
     status.cc
-    report.cc
     filed_utils.cc
 )
 

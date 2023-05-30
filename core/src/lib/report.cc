@@ -20,15 +20,13 @@
 */
 
 #include "include/bareos.h"
+#include "include/jcr.h"
 #include "lib/bsock.h"
-#include "filed/filed.h"
-#include "filed/filed_globals.h"
-#include "filed/filed_jcr_impl.h"
 
 #include <charconv>
 #include <unordered_set>
 
-namespace filedaemon {
+namespace report {
 struct words {
   class iterator {
   public:
