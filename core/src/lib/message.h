@@ -88,6 +88,8 @@ void SetHangup(int hangup_value);
 bool GetHangup(void);
 void SetTimestamp(int timestamp_flag);
 bool GetTimestamp(void);
+void SetPerf(int perf);
+int  GetPerf(void);
 void SetDbType(const char* name);
 
 using SyslogCallback = std::function<void(int mode, const char* msg)>;

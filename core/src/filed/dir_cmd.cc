@@ -834,6 +834,7 @@ static bool SetdebugCmd(JobControlRecord* jcr)
 
   SetTrace(trace_flag);
   SetHangup(hangup_flag);
+  SetPerf(perf);
   if (scan == 4) {
     SetTimestamp(timestamp_flag);
     Dmsg5(50, "level=%d trace=%d hangup=%d timestamp=%d tracefilename=%s\n",

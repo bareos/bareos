@@ -34,6 +34,7 @@
 #include <vector>
 #include <unistd.h>
 #include <syslog.h>
+#include <atomic>
 
 #include "include/fcntl_def.h"
 #include "include/bareos.h"
@@ -80,6 +81,8 @@ static bool trace = true;
 static bool trace = false;
 #endif
 static bool hangup = false;
+
+static std::atomic<int> do_perf;
 
 static int MessageTypeToLogPriority(int message_type);
 
@@ -993,6 +996,8 @@ bool GetTrace(void) { return trace; }
 
 bool GetTimestamp(void) { return dbg_timestamp; }
 
+int GetPerf(void) { return do_perf.load(std::memory_order_relaxed); }
+
 /*
  * This subroutine prints a message regardless of the debug level
  *
@@ -1629,4 +1634,11 @@ void q_msg(const char* file,
 void SetLogTimestampFormat(const char* format)
 {
   log_timestamp_format = format;
+}
+
+void SetPerf(int perf)
+{
+  if (perf != -1) {
+    do_perf.store(perf, std::memory_order_relaxed);
+  }
 }
