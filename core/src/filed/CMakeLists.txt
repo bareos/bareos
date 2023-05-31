@@ -49,6 +49,7 @@ set(FDSRCS
     restore.cc
     status.cc
     filed_utils.cc
+    ../lib/time_stamps.cc
 )
 
 if(HAVE_WIN32)

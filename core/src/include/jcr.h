@@ -47,6 +47,7 @@
 #include "lib/path_list.h"
 #include "lib/guid_to_name.h"
 #include "lib/jcr.h"
+#include "lib/time_stamps.h"
 
 #include <atomic>
 
@@ -235,6 +236,7 @@ class JobControlRecord {
     FiledJcrImpl* fd_impl;
   };
 
+  TimeKeeper timer;
 };
 /* clang-format on */
 
