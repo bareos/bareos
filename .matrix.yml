@@ -86,6 +86,17 @@ OS:
            - bareos
            - python-bareos
   Debian:
+    "12":
+      TYPE: deb
+      IMAGE: "debian12"
+      ARCH:
+        - x86_64
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-webui
+           - bareos-vmware
+           - python-bareos
     "11":
       TYPE: deb
       IMAGE: "debian11"
