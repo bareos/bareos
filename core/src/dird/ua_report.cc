@@ -105,7 +105,6 @@ bool ReportCmd(UaContext* ua, const char*)
     socket_ptr fd = NativeConnectToClient(ua, client);
     if (!fd) { return false; }
 
-    ua->SendMsg("Sending '%s'\n", msg.c_str());
     fd->fsend(msg.c_str());
 
     while (fd->recv() >= 0) { ua->SendMsg("%s", fd->msg); }
