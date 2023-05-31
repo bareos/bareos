@@ -58,7 +58,6 @@ class ThreadTimeKeeper {
 
 class TimeKeeper {
  public:
-  ThreadTimeKeeper& get_thread_local();
   TimeKeeper() : TimeKeeper{channel::CreateBufferedChannel<EventBuffer>(1000)}
   {
   }
@@ -75,6 +74,8 @@ class TimeKeeper {
     queue.lock()->close();
     report_writer.join();
   }
+
+  ThreadTimeKeeper& get_thread_local();
 
   const PerformanceReport& performance_report() const {
     return perf;
