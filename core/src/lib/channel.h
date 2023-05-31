@@ -279,25 +279,23 @@ template <typename T> bool in<T>::try_put(T& val)
 {
   if (closed) return false;
   bool success = false;
+  bool updated = false;
   if (std::unique_lock lock(shared->mutex, std::try_to_lock);
       lock.owns_lock()) {
     if (shared->out_alive && shared->size < capacity) {
       shared->storage[write_pos] = std::move(val);
       shared->size += 1;
-      old_size = shared->size;
       success = true;
-    } else {
+      updated = true;
+    } else if (!shared->out_alive) {
       shared->in_alive = false;
-      old_size = this->capacity;
       closed = true;
+      updated = true;
     }
-  } else {
-    // if we cannot get the lock, just return false
-    // no need for notify/etc.
-    return false;
+    old_size = shared->size;
   }
 
-  shared->cv.notify_one();
+  if (updated) shared->cv.notify_one();
   if (success) { write_pos = wrapping_inc(write_pos, capacity); }
   return success;
 }
