@@ -700,9 +700,10 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 
   static constexpr BlockIdentity send_attributes{"send attributes"};
   // Send attributes -- must be done after binit()
-  timer.enter(send_attributes);
-  if (!EncodeAndSendAttributes(jcr, ff_pkt, data_stream)) { goto bail_out; }
-  timer.exit(send_attributes);
+  {
+    TimedBlock block{timer, send_attributes};
+    if (!EncodeAndSendAttributes(jcr, ff_pkt, data_stream)) { goto bail_out; }
+  }
 
   // Meta data only for restore object
   if (IS_FT_OBJECT(ff_pkt->type)) { goto good_rtn; }
@@ -775,10 +776,12 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
     }
 
     static constexpr BlockIdentity sending{"send/read"};
-    timer.enter(sending);
-    status = send_data(jcr, data_stream, ff_pkt, bsctx.digest,
-                       bsctx.signing_digest);
-    timer.exit(sending);
+    {
+      TimedBlock block{timer, sending};
+      status = send_data(jcr, data_stream, ff_pkt, bsctx.digest,
+			 bsctx.signing_digest);
+
+    }
 
     if (BitIsSet(FO_CHKCHANGES, ff_pkt->flags)) { HasFileChanged(jcr, ff_pkt); }
 
