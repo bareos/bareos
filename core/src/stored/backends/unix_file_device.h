@@ -54,6 +54,41 @@ class unix_file_device : public Device {
   bool d_truncate(DeviceControlRecord* dcr) override;
 };
 
+class dedup_file_device : public Device {
+  int current_header_block;
+  int current_data_block;
+  // this only works if only complete blocks are written/read to this device
+  //   - ansi labels ?
+  //   - this still does not address the issue of record headers
+  // a header block looks like this:
+  // offset to next header block (0 if no next header block)
+  // offset to prev header block (0 if no prev header block)
+  // some padding
+  // header-1
+  // header-2
+  // ...
+  // header-n
+  // similary a data block looks like this:
+  // offset to next data block (0 if no next data block)
+  // offset to prev data block (0 if no prev data block)
+  // some padding
+  // data-1
+  // data-2
+  // ...
+  // data-n
+
+  // the file will then look something like this:
+  //     +--------------+
+  //  +- | header-block |
+  //  |  | data-block   |-+
+  //  |  | data-block   |-+
+  //  +- | header-block | |
+  //     | data-block   |-+
+  //     | unallocated  |
+  //     | ...          |
+  //     +--------------+
+};
+
 } /* namespace storagedaemon */
 
 #endif  // BAREOS_STORED_BACKENDS_UNIX_FILE_DEVICE_H_
