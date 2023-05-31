@@ -21,7 +21,7 @@
 
 #include "include/bareos.h"
 #include "include/jcr.h"
-#include "lib/bsock.h"
+#include "lib/display_report.h"
 
 #include <charconv>
 #include <unordered_set>
@@ -139,7 +139,7 @@ struct callstack_options
 {
   std::size_t max_depth;
   bool relative;
-  std::string to_string(const PerformanceReport& callstack) {
+  std::string to_string(const ::PerformanceReport& callstack) {
     return callstack.callstack_str(max_depth, relative);
   }
 };
@@ -147,7 +147,7 @@ struct callstack_options
 struct collapsed_options
 {
   std::size_t max_depth;
-  std::string to_string(const PerformanceReport& callstack) {
+  std::string to_string(const ::PerformanceReport& callstack) {
       return callstack.collapsed_str(max_depth);
   }
 };
@@ -156,13 +156,13 @@ struct overview_options
 {
   std::size_t top_n;
   bool relative;
-  std::string to_string(const PerformanceReport& callstack) {
+  std::string to_string(const ::PerformanceReport& callstack) {
     return callstack.overview_str(top_n, relative);
   }
 };
 
 template<typename T>
-bool ParseInt(BareosSocket* dir,
+bool ParseInt(std::ostringstream& out,
 	      const char* start,
 	      const char* end,
 	      T& val)
@@ -178,15 +178,14 @@ bool ParseInt(BareosSocket* dir,
     for (std::size_t i = 0; i < problem; ++i) {
       error_str[i] = ' ';
     }
-    dir->fsend("Could not parse number value: %s\n"
-	       "                              %s\n",
-	       std::string{start, end}.c_str(),
-	       error_str.c_str());
+    auto charcount = std::string_view::size_type(end - start);
+    out << "Could not parse number value: " << std::string_view{start, charcount} << "\n"
+	<< "                              " << error_str << "\n";
     return false;
   }
   return true;
 }
-std::optional<overview_options> ParseOverviewOptions(BareosSocket* dir,
+std::optional<overview_options> ParseOverviewOptions(std::ostringstream& out,
 						     const std::unordered_map<std::string_view, std::string_view>& map)
 {
   overview_options options;
@@ -196,7 +195,7 @@ std::optional<overview_options> ParseOverviewOptions(BareosSocket* dir,
     if (val == "all") {
       options.top_n = PerformanceReport::ShowAll;
     } else {
-      if (!ParseInt(dir, val.data(), val.data() + val.size(), options.top_n)) {
+      if (!ParseInt(out, val.data(), val.data() + val.size(), options.top_n)) {
 	return std::nullopt;
       }
     }
@@ -211,14 +210,14 @@ std::optional<overview_options> ParseOverviewOptions(BareosSocket* dir,
     } else if (val == "no") {
       options.relative = false;
     } else {
-      dir->fsend("Could not parse boolean 'relative': %s\n", std::string{val}.c_str());
+      out << "Could not parse boolean 'relative': " << val << "\n";
       return std::nullopt;
     }
   }
   return options;
 }
 
-std::optional<callstack_options> ParseCallstackOptions(BareosSocket* dir,
+std::optional<callstack_options> ParseCallstackOptions(std::ostringstream& out,
 						       const std::unordered_map<std::string_view, std::string_view>& map)
 {
   callstack_options options;
@@ -228,7 +227,7 @@ std::optional<callstack_options> ParseCallstackOptions(BareosSocket* dir,
     if (val == "all") {
       options.max_depth = PerformanceReport::ShowAll;
     } else {
-      if (!ParseInt(dir, val.data(), val.data() + val.size(), options.max_depth)) {
+      if (!ParseInt(out, val.data(), val.data() + val.size(), options.max_depth)) {
 	return std::nullopt;
       }
     }
@@ -243,14 +242,14 @@ std::optional<callstack_options> ParseCallstackOptions(BareosSocket* dir,
     } else if (val == "no") {
       options.relative = false;
     } else {
-      dir->fsend("Could not parse boolean 'relative': %s\n", std::string{val}.c_str());
+      out << "Could not parse boolean 'relative': " << val << "\n";
       return std::nullopt;
     }
   }
   return options;
 }
 
-std::optional<collapsed_options> ParseCollapsedOptions(BareosSocket* dir,
+std::optional<collapsed_options> ParseCollapsedOptions(std::ostringstream& out,
 						       const std::unordered_map<std::string_view, std::string_view>& map)
 {
   collapsed_options options;
@@ -260,7 +259,7 @@ std::optional<collapsed_options> ParseCollapsedOptions(BareosSocket* dir,
     if (val == "all") {
       options.max_depth = PerformanceReport::ShowAll;
     } else {
-      if (!ParseInt(dir, val.data(), val.data() + val.size(), options.max_depth)) {
+      if (!ParseInt(out, val.data(), val.data() + val.size(), options.max_depth)) {
 	return std::nullopt;
       }
     }
@@ -268,9 +267,9 @@ std::optional<collapsed_options> ParseCollapsedOptions(BareosSocket* dir,
   return options;
 }
 
-static bool PerformanceReport(BareosSocket* dir,
-			      const std::unordered_map<std::string_view,
-			      std::string_view>& options)
+bool PerformanceReport(std::ostringstream& out,
+		       const std::unordered_map<std::string_view,
+		       std::string_view>& options)
 {
   std::variant<std::monostate, callstack_options, overview_options,
 	       collapsed_options> parsed;
@@ -285,7 +284,7 @@ static bool PerformanceReport(BareosSocket* dir,
     } else {
       for (auto num : words(view, ',')) {
 	std::uint32_t jobid;
-	if (ParseInt(dir, num.data(),
+	if (ParseInt(out, num.data(),
 		     num.data() + num.size(),
 		     jobid)) {
 	  jobids.insert(jobid);
@@ -296,119 +295,78 @@ static bool PerformanceReport(BareosSocket* dir,
     }
   } else {
     // this should never happen as jobid is set by default
-    dir->fsend("Required field 'jobid' not supplied.\n");
+    out << "Required field 'jobid' not supplied.\n";
     return false;
   }
   if (auto found = options.find("style");
       found != options.end()) {
     auto view = found->second;
     if (view == "callstack") {
-      if (auto opt = ParseCallstackOptions(dir, options);
+      if (auto opt = ParseCallstackOptions(out, options);
 	  opt.has_value()) {
 	parsed = opt.value();
       } else {
 	return false;
       }
     } else if (view == "overview") {
-      if (auto opt = ParseOverviewOptions(dir, options);
+      if (auto opt = ParseOverviewOptions(out, options);
 	  opt.has_value()) {
 	parsed = opt.value();
       } else {
 	return false;
       }
     } else if (view == "collapsed") {
-      if (auto opt = ParseCollapsedOptions(dir, options);
+      if (auto opt = ParseCollapsedOptions(out, options);
 	  opt.has_value()) {
 	parsed = opt.value();
       } else {
 	return false;
       }
     } else {
-      dir->fsend("Perf Report: Unknown style '%s'.\n", std::string{view}.c_str());
+      out << "Perf Report: Unknown style '" << view << "'.\n";
       return false;
     }
   } else {
     // should not happen as style is set by default
-    dir->fsend("Perf Report: No style was specified.\n");
+    out << "Perf Report: No style was specified.\n";
     return false;
   }
 
   JobControlRecord* njcr;
   std::size_t NumJobs = 0;
-  dir->fsend("Starting Report of running jobs.\n");
+  out << "Starting Report of running jobs.\n";
   foreach_jcr (njcr) {
     auto* perf_report = njcr->performance_report();
     if (njcr->JobId > 0) {
       if (!all_jobids && jobids.find(njcr->JobId) == jobids.end()) {
 	continue;
       }
-      dir->fsend(_("==== Job %d ====\n"), njcr->JobId);
+      out << "==== Job " << njcr->JobId << " ====\n";
       if (perf_report) {
-	std::visit([dir, &perf_report](auto&& arg) {
+	std::visit([&out, &perf_report](auto&& arg) {
 	  using T = std::decay_t<decltype(arg)>;
 	  if constexpr (std::is_same_v<T, callstack_options>) {
-	    std::string str = arg.to_string(*perf_report);
-	    dir->send(str.c_str(), str.size());
+	    out << arg.to_string(*perf_report);
 	  } else if constexpr (std::is_same_v<T, overview_options>) {
-	    std::string str = arg.to_string(*perf_report);
-	    dir->send(str.c_str(), str.size());
+	    out << arg.to_string(*perf_report);
 	  } else if constexpr (std::is_same_v<T, collapsed_options>) {
-	    std::string str = arg.to_string(*perf_report);
-	    dir->send(str.c_str(), str.size());
+	    out << arg.to_string(*perf_report);
 	  }
 	}, parsed);
       } else {
-	dir->fsend(_("Performance counters are disabled for this job.\n"));
+	out << "Performance counters are disabled for this job.\n";
       }
-      dir->fsend(_("====\n"));
+      out << "====\n";
       NumJobs += 1;
     }
   }
 
   if (NumJobs) {
-    dir->fsend("Reported on %lu job%s.\n", NumJobs,
-		NumJobs > 1 ? "s" : "");
+    out << "Reported on " << NumJobs << " job"
+	<< (NumJobs > 1 ? "s" : "") << ".\n";
   } else {
-    dir->fsend("There are no running jobs to report on.\n");
+    out << "There are no running jobs to report on.\n";
   }
   return true;
-}
-// Report command from Director
-bool ReportCmd(JobControlRecord* jcr) {
-  BareosSocket* dir = jcr->dir_bsock;
-
-  std::string received{dir->msg};
-  std::unordered_map parsed = ParseReportCommands(received);
-  dir->fsend("Received: '%s'\n", received.c_str());
-
-  for (auto [key, val] : parsed) {
-    std::string k{key};
-    std::string v{val};
-
-    dir->fsend("%s -> %s\n", k.c_str(), v.c_str());
-  }
-
-  bool result = false;
-
-  if (auto found = parsed.find("about");
-      found != parsed.end()) {
-    if (found->second == "perf") {
-      result = PerformanceReport(dir, parsed);
-    } else {
-      // the map does not contain cstrings but string_views.  As such
-      // we need to create a string first if we want to print them with %s.
-      std::string s{found->second};
-      dir->fsend(_("2900 Bad report command; unknown report %s.\n"),
-		 s.c_str());
-      result = false;
-    }
-  } else {
-    // since about -> perf is the default, this should never happen
-    dir->fsend(_("2900 Bad report command; no report type selected.\n"));
-    result = false;
-  }
-
-  dir->signal(BNET_EOD);
-  return result;
 }
 };

@@ -38,6 +38,9 @@
 #include "lib/recent_job_results_list.h"
 #include "findlib/enable_priv.h"
 #include "lib/util.h"
+#include "lib/display_report.h"
+
+#include <sstream>
 
 namespace filedaemon {
 
@@ -518,6 +521,40 @@ static const char* JobLevelToString(int level)
       break;
   }
   return str;
+}
+
+// Report command from Director
+bool ReportCmd(JobControlRecord* jcr) {
+  BareosSocket* dir = jcr->dir_bsock;
+
+  std::string received{dir->msg};
+  std::unordered_map parsed = report::ParseReportCommands(received);
+
+  bool result = false;
+
+  if (auto found = parsed.find("about");
+      found != parsed.end()) {
+    if (found->second == "perf") {
+      std::ostringstream out;
+      result = report::PerformanceReport(out, parsed);
+      std::string answer = out.str();
+      dir->send(answer.c_str(), answer.size());
+    } else {
+      // the map does not contain cstrings but string_views.  As such
+      // we need to create a string first if we want to print them with %s.
+      std::string s{found->second};
+      dir->fsend(_("2900 Bad report command; unknown report %s.\n"),
+		 s.c_str());
+      result = false;
+    }
+  } else {
+    // since about -> perf is the default, this should never happen
+    dir->fsend(_("2900 Bad report command; no report type selected.\n"));
+    result = false;
+  }
+
+  dir->signal(BNET_EOD);
+  return result;
 }
 
 } /* namespace filedaemon */

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,15 +18,17 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef BAREOS_STORED_STATUS_H_
-#define BAREOS_STORED_STATUS_H_
 
-namespace storagedaemon {
+#ifndef BAREOS_LIB_DISPLAY_REPORT_H_
+#define BAREOS_LIB_DISPLAY_REPORT_H_
 
-bool StatusCmd(JobControlRecord* jcr);
-bool DotstatusCmd(JobControlRecord* jcr);
-bool ReportCmd(JobControlRecord* jcr);
+#include <sstream>
+#include <string_view>
+#include <unordered_map>
 
-} /* namespace storagedaemon */
+namespace report {
+std::unordered_map<std::string_view, std::string_view> ParseReportCommands(std::string_view str);
+bool PerformanceReport(std::ostringstream& out, const std::unordered_map<std::string_view, std::string_view>& options);
+};
 
-#endif  // BAREOS_STORED_STATUS_H_
+#endif  // BAREOS_LIB_DISPLAY_REPORT_H_

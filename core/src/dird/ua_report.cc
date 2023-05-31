@@ -32,8 +32,9 @@
 #include <memory>
 
 namespace directordaemon {
-void DoDirectorReport(UaContext* ua) {
+void DoDirectorReport(UaContext* ua, const char* msg) {
   (void) ua;
+  (void) msg;
 }
 
 
@@ -167,7 +168,7 @@ bool ReportCmd(UaContext* ua, const char*)
   }
 
   if (Bstrcasecmp(target, "all")) {
-    DoDirectorReport(ua);
+    DoDirectorReport(ua, msg.c_str());
 
     std::vector storages = FindStorages();
     std::vector clients = FindClients();
@@ -180,7 +181,7 @@ bool ReportCmd(UaContext* ua, const char*)
       ClientReport(ua, client, msg.c_str());
     }
   } else if (Bstrcasecmp(target, "dir")) {
-    DoDirectorReport(ua);
+    DoDirectorReport(ua, msg.c_str());
   } else if (Bstrcasecmp(target, "storage")) {
     StorageResource* storage = get_storage_resource(ua);
     return StorageReport(ua, storage, msg.c_str());
