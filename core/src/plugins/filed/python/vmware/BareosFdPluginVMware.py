@@ -1672,7 +1672,7 @@ class BareosVADPWrapper(object):
         self.vm = create_vm_task.info.result
 
         # If transformer.disk_device_change_delayed is not empty, there are disks in other
-        # datastores that must be added one-by-one here after VM was created.
+        # datastores which must be added one-by-one here after VM was created.
         if transformer.disk_device_change_delayed:
             self.add_disk_devices_to_vm(transformer.disk_device_change_delayed)
 
@@ -1836,7 +1836,7 @@ class BareosVADPWrapper(object):
                 bareosfd.JobMessage(
                     bareosfd.M_FATAL,
                     "Disk %s not found in previous backup, migrating disks is not yet supported for "
-                    "incremental or differential. A new full level backup of this job is required.\n"
+                    "incremental or differential backups. A new full level backup of this job is required.\n"
                     % (self.disk_device_to_backup["fileNameRoot"]),
                 )
                 return False
@@ -1989,7 +1989,7 @@ class BareosVADPWrapper(object):
         # which is fixed now. So now try to transform the VM metadata as it
         # would be done when recreating the VM for restore. Note that a job
         # message with level M_ERROR will cause the backup job to terminate
-        # as Backup OK -- with warnings
+        # as "Backup OK -- with warnings"
         try:
             transformer.transform()
         except Exception as transform_exception:
@@ -2926,7 +2926,7 @@ class BareosVmConfigInfoToSpec(object):
             return backing_ds_match.group(1)
         else:
             raise RuntimeError(
-                "Error getting datastore name from backing path: %s" % (backing_path)
+                "Error getting datastore name from backing path %s" % (backing_path)
             )
 
         return None
@@ -3087,7 +3087,7 @@ class BareosVmConfigInfoToSpec(object):
                     vim.vm.device.VirtualDeviceSpec.FileOperation().create
                 )
                 # As _transform_virtual_disk() will only change the backing datastore
-                # for disks which were in same datastore than VM, The backing datastore
+                # for disks which were in same datastore as the VM, The backing datastore
                 # will remain unchanged for disks in other datastores. It does not work
                 # to create these together with the VM, they must be added delayed one-by-one
                 # after the VM was created.
@@ -3300,7 +3300,7 @@ class BareosVmConfigInfoToSpec(object):
                 orig_disk_backing_path
             )
 
-            # When datastore is not changed, restore disk path will be the same as backed up
+            # When datastore is not changed, restore disk path will be the same as backed up disk
             self.vadp.restore_disk_paths_map[
                 orig_disk_backing_path
             ] = orig_disk_backing_path
