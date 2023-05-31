@@ -1,0 +1,65 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# check if perf on/off works
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+TraceFile="working/report-fd.trace"
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+#shellcheck source=functions
+. functions
+
+JobName=backup-bareos-fd
+
+start_test
+
+# the setdebug trace=0 call ensures that the file is written and closed
+cat <<END_OF_DATA >$tmp/turn-on
+@$out /dev/null
+messages
+@$out "$log_home/turn-on.out"
+setdebug client=bareos-fd level=500 perf=1 trace=1
+@sleep 1
+run job=$JobName level=Full client=bareos-fd yes
+wait
+setdebug client=bareos-fd perf=0 trace=0
+messages
+quit
+END_OF_DATA
+
+cat <<END_OF_DATA >$tmp/turn-off
+@$out /dev/null
+messages
+@$out "$log_home/turn-off.out"
+setdebug client=bareos-fd level=500 trace=1
+@sleep 1
+run job=$JobName level=Full client=bareos-fd yes
+wait
+setdebug client=bareos-fd trace=0
+messages
+quit
+END_OF_DATA
+
+run_bconsole "$tmp/turn-off"
+mv "$TraceFile" "$log_home/trace-1"
+expect_not_grep "Measured:" \
+		"$log_home/trace-1" \
+		"Some perfomance measures were taken."
+
+run_bconsole "$tmp/turn-on"
+mv "$TraceFile" "$log_home/trace-2"
+expect_grep "Measured:" \
+	    "$log_home/trace-2" \
+	    "No perfomance measurements were taken."
+
+end_test
