@@ -24,6 +24,7 @@
 #include <mutex>
 #include <cassert>
 #include <algorithm>
+#include <atomic>
 
 #include "lib/message.h"
 #include "include/messages.h"
@@ -35,7 +36,7 @@ ThreadTimeKeeper::~ThreadTimeKeeper()
 
 
 static void FlushEventsIfNecessary(synchronized<channel::in<EventBuffer>>& queue,
-                                   std::thread::id this_id,
+                                   ThreadTimeKeeper::thread_id this_id,
                                    EventBuffer& buffer)
 {
   constexpr std::size_t buffer_filled_ok = 1000;
@@ -93,7 +94,14 @@ ThreadTimeKeeper& TimeKeeper::get_thread_local()
 {
   // this is most likely just a read from a thread local variable
   // anyways, so we do not need to store this inside a threadlocal ourselves
-  std::thread::id my_id = std::this_thread::get_id();
+
+  // if (during the execution of a job) threads get destroyed and afterwards
+  // new threads get created, then those threads may in fact have the same id
+  // leading to get_thread_local to return the same reference.  Note that this
+  // is still completely thread safe!
+  // It will lead to weird results however so we use this alternative instead:
+  static std::atomic<thread_id> counter{0};
+  thread_local thread_id my_id = counter.fetch_add(1, std::memory_order_relaxed);
   {
     auto locked = keeper.rlock();
     if (auto found = locked->find(my_id); found != locked->end()) {
@@ -103,7 +111,7 @@ ThreadTimeKeeper& TimeKeeper::get_thread_local()
   {
     auto [iter, inserted] = keeper.wlock()->emplace(std::piecewise_construct,
 						    std::forward_as_tuple(my_id),
-						    std::forward_as_tuple(queue));
+						    std::forward_as_tuple(queue, my_id));
     ASSERT(inserted);
     return iter->second;
   }

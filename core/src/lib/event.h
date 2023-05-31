@@ -26,6 +26,7 @@
 #include <thread>
 #include <vector>
 #include <mutex>
+#include <cstdint>
 
 class BlockIdentity {
  public:
@@ -73,18 +74,20 @@ struct OpenEvent {
 using Event = std::variant<OpenEvent, CloseEvent>;
 };  // namespace event
 
+
 class EventBuffer {
  public:
+  using thread_id = std::uint64_t;
   EventBuffer() {}
-  EventBuffer(std::thread::id thread_id,
+  EventBuffer(thread_id threadid,
               std::size_t initial_size)
-      : thread_id{thread_id}
+      : threadid_{threadid}
   {
     events.reserve(initial_size);
   }
   EventBuffer(EventBuffer&&) = default;
   EventBuffer& operator=(EventBuffer&&) = default;
-  const std::thread::id threadid() const { return thread_id; }
+  thread_id threadid() const { return threadid_; }
 
   template <typename... Args>
   auto emplace_back(Args... args)
@@ -98,7 +101,7 @@ class EventBuffer {
   auto end() const { return events.end(); }
 
  private:
-  std::thread::id thread_id;
+  thread_id threadid_;
   std::vector<event::Event> events{};
 };
 

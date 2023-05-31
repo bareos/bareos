@@ -245,7 +245,7 @@ class PerformanceReport : public ReportGenerator {
 
  private:
   event::time_point start, end;
-  rw_synchronized<std::unordered_map<std::thread::id, synchronized<ThreadPerformanceReport>>> threads{};
+  rw_synchronized<std::unordered_map<EventBuffer::thread_id, synchronized<ThreadPerformanceReport>>> threads{};
 };
 
 #endif  // BAREOS_LIB_PERF_REPORT_H_

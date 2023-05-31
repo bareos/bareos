@@ -41,9 +41,11 @@
 
 class ThreadTimeKeeper {
  public:
+  using thread_id = EventBuffer::thread_id;
   static constexpr std::size_t event_buffer_init_capacity = 2000;
-  ThreadTimeKeeper(synchronized<channel::in<EventBuffer>>& queue)
-      : this_id{std::this_thread::get_id()}, queue{queue}
+  ThreadTimeKeeper(synchronized<channel::in<EventBuffer>>& queue,
+		   thread_id my_id)
+      : this_id{my_id}, queue{queue}
   {
   }
   ~ThreadTimeKeeper();
@@ -51,13 +53,14 @@ class ThreadTimeKeeper {
   void exit(const BlockIdentity& block);
 
  private:
-  std::thread::id this_id;
+  thread_id this_id;
   synchronized<channel::in<EventBuffer>>& queue;
   EventBuffer buffer{this_id, event_buffer_init_capacity};
 };
 
 class TimeKeeper {
  public:
+  using thread_id = ThreadTimeKeeper::thread_id;
   TimeKeeper() : TimeKeeper{channel::CreateBufferedChannel<EventBuffer>(1000)}
   {
   }
@@ -85,7 +88,7 @@ class TimeKeeper {
   TimeKeeper(std::pair<channel::in<EventBuffer>, channel::out<EventBuffer>> p);
   synchronized<channel::in<EventBuffer>> queue;
   PerformanceReport perf{};
-  rw_synchronized<std::unordered_map<std::thread::id, ThreadTimeKeeper>>
+  rw_synchronized<std::unordered_map<thread_id, ThreadTimeKeeper>>
       keeper{};
   std::thread report_writer;
 };

@@ -108,8 +108,8 @@ static void PrintNode(std::ostringstream& out,
       << std::setfill(' ') << d;
   if (parentns.count() != 0) {
     out << " (" << std::setw(6) << std::fixed << std::setprecision(2)
-        << double(node->time_spent().count() * 100) / double(parentns.count())
-        << "%)";
+        << double(node->time_spent().count() * 100) / double(parentns.count());
+    out << "%)";
   }
   out << "\n";
 
@@ -236,7 +236,7 @@ std::string PerformanceReport::collapsed_str(std::size_t max_depth) const
 }
 
 std::string PerformanceReport::overview_str(std::size_t show_top_n,
-					  bool relative) const
+					    bool relative) const
 {
   using namespace std::chrono;
   std::ostringstream report{};
@@ -283,8 +283,8 @@ std::string PerformanceReport::overview_str(std::size_t show_top_n,
 	       << d
 	  // XXX.XX = 6 chars
 	       << " (" << std::setw(6) << std::fixed << std::setprecision(2)
-	       << double(time.count() * 100) / double(max_time.count()) << "%)"
-	       << "\n";
+	       << double(time.count() * 100) / double(max_time.count());
+	report << "%)" << "\n";
       }
     }
   }
