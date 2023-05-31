@@ -176,6 +176,10 @@ JobControlRecord::JobControlRecord()
 {
   Dmsg0(100, "Construct JobControlRecord\n");
 
+  if (GetPerf() != 0) {
+    timer.emplace();
+  }
+
   msg_queue = new dlist<MessageQueueItem>();
 
   int status;
@@ -333,7 +337,7 @@ static void FreeCommonJcr(JobControlRecord* jcr,
   }
 
   if (!is_destructor_call) {
-    jcr->timer.~TimeKeeper();
+    jcr->destroy_timer();
     free(jcr);
   }
 }

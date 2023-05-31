@@ -40,6 +40,7 @@
 #include "lib/util.h"
 
 #include <charconv>
+#include <unordered_set>
 
 namespace filedaemon {
 
@@ -711,23 +712,23 @@ static bool PerformanceReport(BareosSocket* dir,
   std::size_t NumJobs = 0;
   dir->fsend("Starting Report of running jobs.\n");
   foreach_jcr (njcr) {
-    auto& perf_report = njcr->timer.performance_report();
+    auto* perf_report = njcr->performance_report();
     if (njcr->JobId > 0) {
       if (!all_jobids && jobids.find(njcr->JobId) == jobids.end()) {
 	continue;
       }
       dir->fsend(_("==== Job %d ====\n"), njcr->JobId);
-      if (njcr->timer.is_enabled()) {
+      if (perf_report) {
 	std::visit([dir, &perf_report](auto&& arg) {
 	  using T = std::decay_t<decltype(arg)>;
 	  if constexpr (std::is_same_v<T, callstack_options>) {
-	    std::string str = arg.to_string(perf_report);
+	    std::string str = arg.to_string(*perf_report);
 	    dir->send(str.c_str(), str.size());
 	  } else if constexpr (std::is_same_v<T, overview_options>) {
-	    std::string str = arg.to_string(perf_report);
+	    std::string str = arg.to_string(*perf_report);
 	    dir->send(str.c_str(), str.size());
 	  } else if constexpr (std::is_same_v<T, collapsed_options>) {
-	    std::string str = arg.to_string(perf_report);
+	    std::string str = arg.to_string(*perf_report);
 	    dir->send(str.c_str(), str.size());
 	  }
 	}, parsed);

@@ -81,35 +81,30 @@ static void write_reports(ReportGenerator* gen,
   gen->end_report(end);
 }
 
-TimeKeeper::TimeKeeper(bool enabled,
+TimeKeeper::TimeKeeper(
     std::pair<channel::in<EventBuffer>, channel::out<EventBuffer>> p)
-    : enabled{enabled}
-    , queue{std::move(p.first)}
+    : queue{std::move(p.first)}
     , report_writer{&write_reports, &perf,
                     std::move(p.second)}
 {
 }
 
-ThreadHandle TimeKeeper::get_thread_local()
+ThreadTimeKeeper& TimeKeeper::get_thread_local()
 {
-  if (enabled) {
-    // this is most likely just a read from a thread local variable
-    // anyways, so we do not need to store this inside a threadlocal ourselves
-    std::thread::id my_id = std::this_thread::get_id();
-    {
-      auto locked = keeper.rlock();
-      if (auto found = locked->find(my_id); found != locked->end()) {
-	return ThreadHandle{&const_cast<ThreadTimeKeeper&>(found->second)};
-      }
+  // this is most likely just a read from a thread local variable
+  // anyways, so we do not need to store this inside a threadlocal ourselves
+  std::thread::id my_id = std::this_thread::get_id();
+  {
+    auto locked = keeper.rlock();
+    if (auto found = locked->find(my_id); found != locked->end()) {
+      return const_cast<ThreadTimeKeeper&>(found->second);
     }
-    {
-      auto [iter, inserted] = keeper.wlock()->emplace(std::piecewise_construct,
-						      std::forward_as_tuple(my_id),
-						      std::forward_as_tuple(queue));
-      ASSERT(inserted);
-      return ThreadHandle{&iter->second};
-    }
-  } else {
-    return ThreadHandle{};
+  }
+  {
+    auto [iter, inserted] = keeper.wlock()->emplace(std::piecewise_construct,
+						    std::forward_as_tuple(my_id),
+						    std::forward_as_tuple(queue));
+    ASSERT(inserted);
+    return iter->second;
   }
 }

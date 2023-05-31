@@ -259,7 +259,7 @@ static inline bool CheckSizeMatching(JobControlRecord*, FindFilesPacket* ff_pkt)
 // Check if a file have changed during backup and display an error
 bool HasFileChanged(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 {
-  auto timer = jcr->timer.get_thread_local();
+  auto timer = jcr->get_thread_local_timer();
   struct stat statp;
   Dmsg1(500, "HasFileChanged fname=%s\n", ff_pkt->fname);
 
@@ -925,7 +925,7 @@ int FindOneFile(JobControlRecord* jcr,
                 dev_t parent_device,
                 bool top_level)
 {
-  auto timer = jcr->timer.get_thread_local();
+  auto timer = jcr->get_thread_local_timer();
   int rtn_stat;
   bool done = false;
 

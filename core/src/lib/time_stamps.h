@@ -56,21 +56,10 @@ class ThreadTimeKeeper {
   EventBuffer buffer{this_id, event_buffer_init_capacity};
 };
 
-struct ThreadHandle {
-  ThreadTimeKeeper* timer{nullptr};
-
-  void enter(const BlockIdentity& block) {
-    if (timer) { timer->enter(block); }
-  }
-  void exit(const BlockIdentity& block) {
-    if (timer) { timer->exit(block); }
-  }
-};
-
 class TimeKeeper {
  public:
-  ThreadHandle get_thread_local();
-  TimeKeeper(bool enabled = true) : TimeKeeper{enabled, channel::CreateBufferedChannel<EventBuffer>(1000)}
+  ThreadTimeKeeper& get_thread_local();
+  TimeKeeper() : TimeKeeper{channel::CreateBufferedChannel<EventBuffer>(1000)}
   {
   }
 
@@ -91,13 +80,8 @@ class TimeKeeper {
     return perf;
   }
 
-  bool is_enabled() const {
-    return enabled;
-  }
-
  private:
-  const bool enabled;
-  TimeKeeper(bool enabled, std::pair<channel::in<EventBuffer>, channel::out<EventBuffer>> p);
+  TimeKeeper(std::pair<channel::in<EventBuffer>, channel::out<EventBuffer>> p);
   synchronized<channel::in<EventBuffer>> queue;
   PerformanceReport perf{};
   rw_synchronized<std::unordered_map<std::thread::id, ThreadTimeKeeper>>
@@ -105,25 +89,41 @@ class TimeKeeper {
   std::thread report_writer;
 };
 
+class ThreadTimerHandle {
+public:
+  void enter(const BlockIdentity& block) {
+    if (timer) { timer->enter(block); }
+  }
+  void exit(const BlockIdentity& block) {
+    if (timer) { timer->exit(block); }
+  }
+  ThreadTimerHandle() = default;
+  ThreadTimerHandle(ThreadTimeKeeper& timer) : timer{&timer}
+  {
+  }
+private:
+  ThreadTimeKeeper* const timer{nullptr};
+};
+
 class TimedBlock {
  public:
-  TimedBlock(ThreadHandle timer, const BlockIdentity& block) : timer{timer}
-							     , source{&block}
+  TimedBlock(ThreadTimerHandle timer, const BlockIdentity& block) : timer{timer}
+								  , current_block{&block}
   {
     timer.enter(block);
   }
   ~TimedBlock() {
-    timer.exit(*source);
+    timer.exit(*current_block);
   }
   void switch_to(const BlockIdentity& block) {
-    timer.exit(*source);
-    source = &block;
-    timer.enter(*source);
+    timer.exit(*current_block);
+    current_block = &block;
+    timer.enter(*current_block);
   }
 
  private:
-  ThreadHandle timer;
-  BlockIdentity const* source;
+  ThreadTimerHandle timer;
+  BlockIdentity const* current_block;
 };
 
 #endif  // BAREOS_LIB_TIME_STAMPS_H_
