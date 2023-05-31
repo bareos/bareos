@@ -57,17 +57,17 @@ void SetDbLogInsertCallback(DbLogInsertCallback f);
 
 class MessagesResource;
 
-extern int debug_level;
-extern bool dbg_timestamp; /* print timestamp in debug output */
-extern bool prt_kaboom;    /* Print kaboom output */
-extern int verbose;
-extern char my_name[];
-extern const char* working_directory;
-extern utime_t daemon_start_time;
+__declspec(dllimport) extern int debug_level;
+__declspec(dllimport) extern bool dbg_timestamp; /* print timestamp in debug output */
+__declspec(dllimport) extern bool prt_kaboom;    /* Print kaboom output */
+__declspec(dllimport) extern int verbose;
+__declspec(dllimport) extern char my_name[];
+__declspec(dllimport) extern const char* working_directory;
+__declspec(dllimport) extern utime_t daemon_start_time;
 
-extern int console_msg_pending;
-extern FILE* con_fd;       /* Console file descriptor */
-extern brwlock_t con_lock; /* Console lock structure */
+__declspec(dllimport) extern int console_msg_pending;
+__declspec(dllimport) extern FILE* con_fd;       /* Console file descriptor */
+__declspec(dllimport) extern brwlock_t con_lock; /* Console lock structure */
 
 void MyNameIs(int argc, char* argv[], const char* name);
 void InitMsg(JobControlRecord* jcr,

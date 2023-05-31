@@ -69,8 +69,7 @@ int Readdir_r(DIR* dirp, struct dirent* entry, struct dirent** result);
 #include "sd_plugins.h"
 
 namespace storagedaemon {
-
-extern bool forge_on; /* Proceed inspite of I/O errors */
+__declspec(dllimport) extern bool forge_on; /* Proceed inspite of I/O errors */
 uint32_t new_VolSessionId();
 
 } /* namespace storagedaemon */

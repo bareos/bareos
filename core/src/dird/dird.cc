@@ -77,7 +77,7 @@ static void CleanUpOldFiles();
 static bool InitSighandlerSighup();
 
 /* Exported subroutines */
-extern bool ParseDirConfig(const char* configfile, int exit_code);
+__declspec(dllimport) extern bool ParseDirConfig(const char* configfile, int exit_code);
 extern bool PrintMessage(void* sock, const char* fmt, ...);
 
 /* Imported subroutines */

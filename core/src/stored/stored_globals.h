@@ -30,17 +30,17 @@ class ConfigurationParser;
 
 namespace storagedaemon {
 
-extern ConfigurationParser* my_config;
+__declspec(dllimport) extern ConfigurationParser* my_config;
 
 class StorageResource;
-extern StorageResource* me;
+__declspec(dllimport) extern StorageResource* me;
 
-extern char* configfile;
+__declspec(dllimport) extern char* configfile;
 
-extern void* start_heap;
-extern bool init_done;
-extern uint32_t vol_session_time;
-extern uint32_t NewVolSessionId();
+__declspec(dllimport) extern void* start_heap;
+__declspec(dllimport) extern bool init_done;
+__declspec(dllimport) extern uint32_t vol_session_time;
+__declspec(dllimport) extern uint32_t NewVolSessionId();
 
 } /* namespace storagedaemon */
 

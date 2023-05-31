@@ -44,18 +44,18 @@
 #include "lib/bsock.h"
 
 // Function pointers to be set here (findlib)
-extern int (*plugin_bopen)(BareosFilePacket* bfd,
+__declspec(dllimport) extern int (*plugin_bopen)(BareosFilePacket* bfd,
                            const char* fname,
                            int flags,
                            mode_t mode);
-extern int (*plugin_bclose)(BareosFilePacket* bfd);
-extern ssize_t (*plugin_bread)(BareosFilePacket* bfd, void* buf, size_t count);
-extern ssize_t (*plugin_bwrite)(BareosFilePacket* bfd, void* buf, size_t count);
-extern boffset_t (*plugin_blseek)(BareosFilePacket* bfd,
+__declspec(dllimport) extern int (*plugin_bclose)(BareosFilePacket* bfd);
+__declspec(dllimport) extern ssize_t (*plugin_bread)(BareosFilePacket* bfd, void* buf, size_t count);
+__declspec(dllimport) extern ssize_t (*plugin_bwrite)(BareosFilePacket* bfd, void* buf, size_t count);
+__declspec(dllimport) extern boffset_t (*plugin_blseek)(BareosFilePacket* bfd,
                                   boffset_t offset,
                                   int whence);
 
-extern char* exepath;
+__declspec(dllimport) extern char* exepath;
 
 namespace filedaemon {
 

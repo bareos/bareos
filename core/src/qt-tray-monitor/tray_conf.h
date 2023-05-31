@@ -36,7 +36,7 @@
 
 #include "lib/tls_conf.h"
 
-extern ConfigurationParser* my_config;
+__declspec(dllimport) extern ConfigurationParser* my_config;
 
 enum Rescode
 {

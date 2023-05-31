@@ -147,7 +147,13 @@ struct dirent {
 };
 typedef void DIR;
 
-
+#ifdef _MSC_VER
+    struct _utimbuf
+    {
+        time_t actime;          // access time
+        time_t modtime;         // modification time
+    };
+#endif
 #if !defined(__cplusplus)
 #  if !defined(true)
 #    define true 1

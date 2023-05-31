@@ -47,7 +47,7 @@ struct BareosVersionStrings {
   void (*PrintCopyright)(FILE* fh, int StartYear);
   const char* (*GetOsInfo)(void);
 };
-
+__declspec(dllimport) 
 extern const struct BareosVersionStrings kBareosVersionStrings;
 
 #ifdef __cplusplus

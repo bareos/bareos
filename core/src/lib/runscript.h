@@ -113,6 +113,6 @@ void FreeRunscript(RunScript* script);
 /* foreach_alist free RunScript */
 void FreeRunscripts(alist<RunScript*>* runscripts); /* you have to free alist */
 
-extern bool (*console_command)(JobControlRecord* jcr, const char* cmd);
+__declspec(dllimport) extern bool (*console_command)(JobControlRecord* jcr, const char* cmd);
 
 #endif  // BAREOS_LIB_RUNSCRIPT_H_

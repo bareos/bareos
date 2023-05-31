@@ -48,6 +48,9 @@
 #    include <utime.h>
 #  endif
 #endif
+#ifdef _MSVC_VER
+#include <sys/utime.h>
+#endif
 
 #define MODE_RALL (S_IRUSR | S_IRGRP | S_IROTH)
 

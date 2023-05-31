@@ -42,7 +42,13 @@
 #include "findlib/fstype.h"
 #include "findlib/drivetype.h"
 #include "lib/berrno.h"
-
+/*
+#ifdef _MSVC_LANG
+# include <sys/types.h>
+# include <sys/utime.h>
+# include <time.h>
+#endif
+*/
 #ifdef HAVE_DARWIN_OS
 #  include <sys/param.h>
 #  include <sys/mount.h>
@@ -372,7 +378,7 @@ static inline void RestoreFileTimes(FindFilesPacket* ff_pkt, char* fname)
   restore_times[1].tv_usec = 0;
 
   lutimes(fname, restore_times);
-#elif defined(HAVE_UTIMES)
+#elif defined(HAVE_UTIMES) || defined (_MSVC_VER)
   struct timeval restore_times[2];
 
   restore_times[0].tv_sec = ff_pkt->statp.st_atime;
@@ -387,7 +393,7 @@ static inline void RestoreFileTimes(FindFilesPacket* ff_pkt, char* fname)
   restore_times.actime = ff_pkt->statp.st_atime;
   restore_times.modtime = ff_pkt->statp.st_mtime;
 
-  utime(fname, &restore_times);
+  utime(fname, reinterpret_cast<utimbuf*>(&restore_times));
 #endif
 }
 

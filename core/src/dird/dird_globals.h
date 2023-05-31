@@ -29,11 +29,11 @@ class ConfigurationParser;
 namespace directordaemon {
 
 class DirectorResource;
-extern DirectorResource* me;
-extern ConfigurationParser* my_config;
+__declspec(dllexport) extern DirectorResource* me;
+__declspec(dllimport) extern ConfigurationParser* my_config;
 
-extern char* configfile;
-extern void* start_heap;
+__declspec(dllimport) extern char* configfile;
+__declspec(dllimport) extern void* start_heap;
 
 } /* namespace directordaemon */
 

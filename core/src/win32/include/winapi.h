@@ -74,9 +74,9 @@ char* BSTR_2_str(const BSTR pSrc);
 std::wstring make_win32_path_UTF8_2_wchar(std::string_view utf8);
 
 // init with win9x, but maybe set to NT in InitWinAPI
-extern DWORD g_platform_id;
-extern DWORD g_MinorVersion;
-extern DWORD g_MajorVersion;
+__declspec(dllimport) extern DWORD g_platform_id;
+__declspec(dllimport) extern DWORD g_MinorVersion;
+__declspec(dllimport) extern DWORD g_MajorVersion;
 
 /* In ADVAPI32.DLL */
 typedef BOOL(WINAPI* t_OpenProcessToken)(HANDLE, DWORD, PHANDLE);
@@ -88,17 +88,17 @@ typedef BOOL(WINAPI* t_AdjustTokenPrivileges)(HANDLE,
                                               PDWORD);
 typedef BOOL(WINAPI* t_LookupPrivilegeValue)(LPCTSTR, LPCTSTR, PLUID);
 
-extern t_OpenProcessToken p_OpenProcessToken;
-extern t_AdjustTokenPrivileges p_AdjustTokenPrivileges;
-extern t_LookupPrivilegeValue p_LookupPrivilegeValue;
+__declspec(dllimport) extern t_OpenProcessToken p_OpenProcessToken;
+__declspec(dllimport) extern t_AdjustTokenPrivileges p_AdjustTokenPrivileges;
+__declspec(dllimport) extern t_LookupPrivilegeValue p_LookupPrivilegeValue;
 
 /* In MSVCRT.DLL */
 typedef int(__cdecl* t_wunlink)(const wchar_t*);
 typedef int(__cdecl* t_wmkdir)(const wchar_t*);
 typedef int(__cdecl* t_wopen)(const wchar_t*, int, ...);
 
-extern t_wunlink p_wunlink;
-extern t_wmkdir p_wmkdir;
+__declspec(dllimport) extern t_wunlink p_wunlink;
+__declspec(dllimport) extern t_wmkdir p_wmkdir;
 
 /* In KERNEL32.DLL */
 typedef BOOL(WINAPI* t_GetFileAttributesExA)(LPCSTR,
@@ -214,57 +214,57 @@ extern t_CreateProcessW p_CreateProcessW;
 extern t_GetFileInformationByHandleEx p_GetFileInformationByHandleEx;
 #  endif
 
-extern t_GetFileAttributesA p_GetFileAttributesA;
-extern t_GetFileAttributesW p_GetFileAttributesW;
+__declspec(dllimport) extern t_GetFileAttributesA p_GetFileAttributesA;
+__declspec(dllimport) extern t_GetFileAttributesW p_GetFileAttributesW;
 
-extern t_GetFileAttributesExA p_GetFileAttributesExA;
-extern t_GetFileAttributesExW p_GetFileAttributesExW;
+__declspec(dllimport) extern t_GetFileAttributesExA p_GetFileAttributesExA;
+__declspec(dllimport) extern t_GetFileAttributesExW p_GetFileAttributesExW;
 
-extern t_SetFileAttributesA p_SetFileAttributesA;
-extern t_SetFileAttributesW p_SetFileAttributesW;
+__declspec(dllimport) extern t_SetFileAttributesA p_SetFileAttributesA;
+__declspec(dllimport) extern t_SetFileAttributesW p_SetFileAttributesW;
 
-extern t_CreateFileA p_CreateFileA;
-extern t_CreateFileW p_CreateFileW;
+__declspec(dllimport) extern t_CreateFileA p_CreateFileA;
+__declspec(dllimport) extern t_CreateFileW p_CreateFileW;
 
-extern t_CreateDirectoryA p_CreateDirectoryA;
-extern t_CreateDirectoryW p_CreateDirectoryW;
+__declspec(dllimport) extern t_CreateDirectoryA p_CreateDirectoryA;
+__declspec(dllimport) extern t_CreateDirectoryW p_CreateDirectoryW;
 
-extern t_CreateSymbolicLinkA p_CreateSymbolicLinkA;
-extern t_CreateSymbolicLinkW p_CreateSymbolicLinkW;
+__declspec(dllimport) extern t_CreateSymbolicLinkA p_CreateSymbolicLinkA;
+__declspec(dllimport) extern t_CreateSymbolicLinkW p_CreateSymbolicLinkW;
 
-extern t_OpenEncryptedFileRawA p_OpenEncryptedFileRawA;
-extern t_OpenEncryptedFileRawW p_OpenEncryptedFileRawW;
-extern t_ReadEncryptedFileRaw p_ReadEncryptedFileRaw;
-extern t_WriteEncryptedFileRaw p_WriteEncryptedFileRaw;
-extern t_CloseEncryptedFileRaw p_CloseEncryptedFileRaw;
+__declspec(dllimport) extern t_OpenEncryptedFileRawA p_OpenEncryptedFileRawA;
+__declspec(dllimport) extern t_OpenEncryptedFileRawW p_OpenEncryptedFileRawW;
+__declspec(dllimport) extern t_ReadEncryptedFileRaw p_ReadEncryptedFileRaw;
+__declspec(dllimport) extern t_WriteEncryptedFileRaw p_WriteEncryptedFileRaw;
+__declspec(dllimport) extern t_CloseEncryptedFileRaw p_CloseEncryptedFileRaw;
 
-extern t_BackupRead p_BackupRead;
-extern t_BackupWrite p_BackupWrite;
+__declspec(dllimport) extern t_BackupRead p_BackupRead;
+__declspec(dllimport) extern t_BackupWrite p_BackupWrite;
 
-extern t_SetProcessShutdownParameters p_SetProcessShutdownParameters;
+__declspec(dllimport) extern t_SetProcessShutdownParameters p_SetProcessShutdownParameters;
 
-extern t_WideCharToMultiByte p_WideCharToMultiByte;
-extern t_MultiByteToWideChar p_MultiByteToWideChar;
+__declspec(dllimport) extern t_WideCharToMultiByte p_WideCharToMultiByte;
+__declspec(dllimport) extern t_MultiByteToWideChar p_MultiByteToWideChar;
 
-extern t_FindFirstFileA p_FindFirstFileA;
-extern t_FindFirstFileW p_FindFirstFileW;
+__declspec(dllimport) extern t_FindFirstFileA p_FindFirstFileA;
+__declspec(dllimport) extern t_FindFirstFileW p_FindFirstFileW;
 
-extern t_FindNextFileA p_FindNextFileA;
-extern t_FindNextFileW p_FindNextFileW;
+__declspec(dllimport) extern t_FindNextFileA p_FindNextFileA;
+__declspec(dllimport) extern t_FindNextFileW p_FindNextFileW;
 
-extern t_SetCurrentDirectoryA p_SetCurrentDirectoryA;
-extern t_SetCurrentDirectoryW p_SetCurrentDirectoryW;
+__declspec(dllimport) extern t_SetCurrentDirectoryA p_SetCurrentDirectoryA;
+__declspec(dllimport) extern t_SetCurrentDirectoryW p_SetCurrentDirectoryW;
 
-extern t_GetCurrentDirectoryA p_GetCurrentDirectoryA;
-extern t_GetCurrentDirectoryW p_GetCurrentDirectoryW;
+__declspec(dllimport) extern t_GetCurrentDirectoryA p_GetCurrentDirectoryA;
+__declspec(dllimport) extern t_GetCurrentDirectoryW p_GetCurrentDirectoryW;
 
-extern t_GetVolumePathNameW p_GetVolumePathNameW;
-extern t_GetVolumeNameForVolumeMountPointW p_GetVolumeNameForVolumeMountPointW;
+__declspec(dllimport) extern t_GetVolumePathNameW p_GetVolumePathNameW;
+__declspec(dllimport) extern t_GetVolumeNameForVolumeMountPointW p_GetVolumeNameForVolumeMountPointW;
 
-extern t_GetLogicalDriveStringsA p_GetLogicalDriveStringsA;
-extern t_GetLogicalDriveStringsW p_GetLogicalDriveStringsW;
+__declspec(dllimport) extern t_GetLogicalDriveStringsA p_GetLogicalDriveStringsA;
+__declspec(dllimport) extern t_GetLogicalDriveStringsW p_GetLogicalDriveStringsW;
 
-extern t_AttachConsole p_AttachConsole;
+__declspec(dllimport) extern t_AttachConsole p_AttachConsole;
 
 void InitWinAPIWrapper();
 

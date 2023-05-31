@@ -42,8 +42,11 @@ endif()
 include_directories(${OPENSSL_INCLUDE_DIR})
 
 add_library(bareosfind SHARED ${BAREOSFIND_SRCS})
-
-target_link_libraries(bareosfind PRIVATE bareos ${ACL_LIBRARIES})
+if(MSVC)
+  target_link_libraries(bareosfind PRIVATE bareos ${ACL_LIBRARIES} ${THREADS_THREADS})
+else()
+  target_link_libraries(bareosfind PRIVATE bareos ${ACL_LIBRARIES})
+endif()
 if(HAVE_DARWIN_OS)
   target_compile_options(bareosfind PRIVATE -Wno-sign-compare)
   # dev_t is signed on Darwin

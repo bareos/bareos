@@ -27,17 +27,17 @@
 class ConfigurationParser;
 
 namespace filedaemon {
+ 
+__declspec(dllimport) extern ConfigurationParser* my_config;
 
-extern ConfigurationParser* my_config;
-
-extern bool no_signals;
-extern bool backup_only_mode;
-extern bool restore_only_mode;
+__declspec(dllimport) extern bool no_signals;
+__declspec(dllimport) extern bool backup_only_mode;
+__declspec(dllimport) extern bool restore_only_mode;
 
 class ClientResource;
-extern ClientResource* me;
-extern void* start_heap;
-extern char* configfile;
+__declspec(dllimport) extern ClientResource* me;
+__declspec(dllimport) extern void* start_heap;
+__declspec(dllimport) extern char* configfile;
 
 } /* namespace filedaemon */
 
