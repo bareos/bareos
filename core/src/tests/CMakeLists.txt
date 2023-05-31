@@ -440,4 +440,6 @@ bareos_add_test(timer_thread LINK_LIBRARIES bareos GTest::gtest_main)
 
 bareos_add_test(version_strings LINK_LIBRARIES bareos GTest::gtest_main)
 
-bareos_add_test(channel LINK_LIBRARIES GTest::gtest_main)
+bareos_add_test(
+  channel LINK_LIBRARIES bareos Threads::Threads GTest::gtest_main
+)
