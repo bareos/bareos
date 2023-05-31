@@ -1909,8 +1909,17 @@ class BareosVADPWrapper(object):
         backed_up_disks = set()
 
         for disk_path in self.restore_objects_by_diskpath.keys():
+            bareosfd.DebugMessage(
+                100,
+                "check_vm_disks_match(): checking disk path %s\n" % (disk_path),
+            )
             if self.restore_disk_paths_map:
                 # adapt for restore to different datastore or different VMFS path
+                bareosfd.DebugMessage(
+                    100,
+                    "check_vm_disks_match(): checking disk path %s with map: %s\n"
+                    % (disk_path, self.restore_disk_paths_map),
+                )
                 bareosfd.DebugMessage(
                     100,
                     "check_vm_disks_match(): adapting disk path %s to recreated disk path %s\n"
@@ -3281,7 +3290,12 @@ class BareosVmConfigInfoToSpec(object):
             # To transform multiple datastores, it would be required to provide a mapping
             # from old to new datastores, which would be complicated to pass with plugin options.
 
-            orig_disk_backing_path = device["backing"]["fileName"]
+            # if a snapshot existed at backup time, the disk backing name will be like
+            # [datastore1] tcl131-test1_1/tcl131-test1-000001.vmdk
+            # the part "-000001" must be removed when recreating a VM:
+            orig_disk_backing_path = self.backing_filename_snapshot_rex.sub(
+                ".vmdk", device["backing"]["fileName"]
+            )
             orig_disk_backing_datastore_name = self._extract_datastore_name(
                 orig_disk_backing_path
             )
@@ -3298,7 +3312,7 @@ class BareosVmConfigInfoToSpec(object):
                 # replace datastore name in backing fileName
                 device["backing"]["fileName"] = self.datastore_rex.sub(
                     "[" + self.target_datastore_name + "]",
-                    device["backing"]["fileName"],
+                    orig_disk_backing_path,
                     count=1,
                 )
                 self.vadp.restore_disk_paths_map[orig_disk_backing_path] = device[
@@ -3314,12 +3328,7 @@ class BareosVmConfigInfoToSpec(object):
             ]
             add_device.backing.datastore = ds_mo
 
-            # if a snapshot existed at backup time, the disk backing name will be like
-            # [datastore1] tcl131-test1_1/tcl131-test1-000001.vmdk
-            # the part "-000001" must be removed when recreating a VM:
-            add_device.backing.fileName = self.backing_filename_snapshot_rex.sub(
-                ".vmdk", device["backing"]["fileName"]
-            )
+            add_device.backing.fileName = device["backing"]["fileName"]
             add_device.backing.digestEnabled = device["backing"]["digestEnabled"]
             add_device.backing.diskMode = device["backing"]["diskMode"]
             add_device.backing.eagerlyScrub = device["backing"]["eagerlyScrub"]
