@@ -177,7 +177,7 @@ For additional security, there is a now plugin option :command:`vcthumbprint`, t
                 ":vcthumbprint=AABBCCDDEEFF11223344556677889900AABBCCDD"
        ...
 
-If the **vcthumbprint** option is used and the thumbprint on the server changes, for example by renewing or replacing the SSL certificate but not adapting the vcthumbprint parameter in the Bareos configuration, backup jobs will fail and the API will only return an "unknown" error. Since :sinceVersion:`22.1.0: VMware Plugin:` the plugin will compare the configured with the server thumbprint and emit an appropriate error message and advice to update vcthumbprint parameter.
+If the **vcthumbprint** option is used and the thumbprint on the server changes, for example by renewing or replacing the SSL certificate but not adapting the vcthumbprint parameter in the Bareos configuration, backup jobs will fail and the API will only return an "unknown" error. Since :sinceVersion:`22.1.0: VMware Plugin:` the plugin will compare the configured thumbprint with the server thumbprint and emit an appropriate error message and advice to update vcthumbprint parameter.
 
 For ease of use (but less secure) when the :command:`vcthumbprint` is not given, the plugin will retrieve the thumbprint.
 
@@ -583,7 +583,7 @@ restore_cluster (optional)
    Instead of specifying *restore_esxhost*, it is also possible to specify a cluster name using this option, the ESX host will be autoselected in that case, if DRS is configured properly. Since :sinceVersion:`22.0.0: VMware Plugin`
 
 restore_datastore (optional)
-   By default, if a VM to be restored does not exist, it will be recreated in the same datastore where it was stored at backup time. Use this option to restore on the given datastore. Since :sinceVersion:`22.0.0: VMware Plugin`. As :sinceVersion:`22.1.0: VMware Plugin` it is possible to backup and restore VMs with disks on multiple datastores, when using this option, it will only change the datastore of the disks which were stored in the same datastore than the VM, the other disks will be recreated on the same datastore they were backed up from.
+   By default, if a VM to be restored does not exist, it will be recreated in the same datastore where it was stored at backup time. Use this option to restore on the given datastore. Since :sinceVersion:`22.0.0: VMware Plugin`. As :sinceVersion:`22.1.0: VMware Plugin` it is possible to backup and restore VMs with disks on multiple datastores, when using this option, it will only change the datastore of the disks which were stored in the same datastore as the VM, the other disks will be recreated on the same datastore they were backed up from.
 
 restore_resourcepool (optional)
    By default, if a VM to be restored does not exist, it will be recreated in the same resource pool which it has in been in at backup time. Using this option allows to override this and specify a different resource pool. Since :sinceVersion:`22.0.0: VMware Plugin`
@@ -592,7 +592,7 @@ restore_powerstate (optional)
    By **default**, after restore a VM will be set to its **previous powerstate** which means the powerstate at backup time. When specifying ``restore_powerstate=off`` the VM will stay powered off after restore. Also can be forced to on with ``restore_powerstate=on``. Note that this will only work if DRS is configured to **fully automated**, otherwise the API request to power on a VM will be ignored. Since :sinceVersion:`22.0.0: VMware Plugin`
 
 snapshot_retries (optional)
-   Number of retries when taking a snapshot fails (default: 3). The most common cause of snapshot failure is error while quiescing the virtual machine. Mostly retrying helps. If not also check if a pre-freeze script is used on the VM, a non-zero exit code will cause a quiescing error. The pre-freeze and post-thaw scripts are executed by VMwareTools. Since :sinceVersion:`22.1.0: VMware Plugin`
+   Number of retries when taking a snapshot fails (default: 3). The most common cause of snapshot failure is "error while quiescing the virtual machine". In this case usually retrying helps. If not, also check if a pre-freeze script is used on the VM, as a non-zero exit code will cause a quiescing error. The pre-freeze and post-thaw scripts are executed by VMwareTools. Since :sinceVersion:`22.1.0: VMware Plugin`
 
 snapshot_retry_wait (optional)
   Time in seconds to wait before the next snapshot retry (default: 5). Since :sinceVersion:`22.1.0: VMware Plugin`
