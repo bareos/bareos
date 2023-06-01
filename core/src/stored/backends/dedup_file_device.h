@@ -1,8 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2013 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,23 +18,47 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * UNIX File API device abstraction.
- *
- * Marco van Wieringen, June 2014
- */
 
-#ifndef BAREOS_STORED_BACKENDS_UNIX_FILE_DEVICE_H_
-#define BAREOS_STORED_BACKENDS_UNIX_FILE_DEVICE_H_
+#ifndef BAREOS_STORED_BACKENDS_DEDUP_FILE_DEVICE_H_
+#define BAREOS_STORED_BACKENDS_DEDUP_FILE_DEVICE_H_
 
 #include "stored/dev.h"
 
 namespace storagedaemon {
+class dedup_file_device : public Device {
+  // this only works if only complete blocks are written/read to this device
+  //   - ansi labels ?
+  //   - this still does not address the issue of record headers
+  // a header block looks like this:
+  // offset to next header block (0 if no next header block)
+  // offset to prev header block (0 if no prev header block)
+  // some padding
+  // header-1
+  // header-2
+  // ...
+  // header-n
+  // similary a data block looks like this:
+  // offset to next data block (0 if no next data block)
+  // offset to prev data block (0 if no prev data block)
+  // some padding
+  // data-1
+  // data-2
+  // ...
+  // data-n
 
-class unix_file_device : public Device {
+  // the file will then look something like this:
+  //     +--------------+
+  //  +- | header-block |
+  //  |  | data-block   |-+
+  //  |  | data-block   |-+
+  //  +- | header-block | |
+  //     | data-block   |-+
+  //     | unallocated  |
+  //     | ...          |
+  //     +--------------+
  public:
-  unix_file_device() = default;
-  ~unix_file_device() { close(nullptr); }
+  dedup_file_device() = default;
+  ~dedup_file_device() { close(nullptr); }
 
   // Interface from Device
   SeekMode GetSeekMode() const override { return SeekMode::BYTES; }
@@ -52,8 +75,12 @@ class unix_file_device : public Device {
   ssize_t d_read(int fd, void* buffer, size_t count) override;
   ssize_t d_write(int fd, const void* buffer, size_t count) override;
   bool d_truncate(DeviceControlRecord* dcr) override;
+ private:
+  bool mounted{false};
+  bool open{false};
+  size_t blocksize{0};
 };
 
 } /* namespace storagedaemon */
 
-#endif  // BAREOS_STORED_BACKENDS_UNIX_FILE_DEVICE_H_
+#endif  // BAREOS_STORED_BACKENDS_DEDUP_FILE_DEVICE_H_
