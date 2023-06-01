@@ -615,7 +615,7 @@ int ListResult(void* vctx, int nb_col, char** row)
  *
  * Return number of rows
  */
-int BareosDb::ListResult(JobControlRecord* jcr,
+int BareosDb::ListResult(bool gui_enabled,
                          OutputFormatter* send,
                          e_list_type type)
 {
@@ -764,7 +764,7 @@ int BareosDb::ListResult(JobControlRecord* jcr,
           max_len = MaxLength(field->max_length);
           if (row[i] == NULL) {
             value.bsprintf(" %-*s |", max_len, "NULL");
-          } else if (SqlFieldIsNumeric(field->type) && !jcr->gui
+          } else if (SqlFieldIsNumeric(field->type) && !gui_enabled
                      && IsAnInteger(row[i])) {
             if (strcmp(field->name, "jobid") != 0) {
               value.bsprintf(" %*s |", max_len, add_commas(row[i], ewc));
@@ -805,7 +805,7 @@ int BareosDb::ListResult(JobControlRecord* jcr,
           if (row[i] == NULL) {
             key.bsprintf(" %*s: ", max_len, field->name);
             value.bsprintf("%s\n", "NULL");
-          } else if (SqlFieldIsNumeric(field->type) && !jcr->gui
+          } else if (SqlFieldIsNumeric(field->type) && !gui_enabled
                      && IsAnInteger(row[i])) {
             key.bsprintf(" %*s: ", max_len, field->name);
             if (strcmp(field->name, "jobid") != 0) {

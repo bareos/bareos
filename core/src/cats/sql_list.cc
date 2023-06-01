@@ -87,11 +87,11 @@ bool BareosDb::ListSqlQuery(JobControlRecord* jcr,
 
   if (collapse == CollapseMode::Collapse) {
     sendit->ObjectStart(description);
-    ListResult(jcr, sendit, type);
+    ListResult(jcr->gui, sendit, type);
     sendit->ObjectEnd(description);
   } else {
     sendit->ArrayStart(description);
-    ListResult(jcr, sendit, type);
+    ListResult(jcr->gui, sendit, type);
     sendit->ArrayEnd(description);
   }
   SqlFreeResult();
@@ -155,7 +155,7 @@ void BareosDb::ListPoolRecords(JobControlRecord* jcr,
   if (!QUERY_DB(jcr, query.c_str())) { return; }
 
   sendit->ArrayStart("pools");
-  ListResult(jcr, sendit, type);
+  ListResult(jcr->gui, sendit, type);
   sendit->ArrayEnd("pools");
 
   SqlFreeResult();
@@ -186,7 +186,7 @@ void BareosDb::ListClientRecords(JobControlRecord* jcr,
   if (!QUERY_DB(jcr, cmd)) { return; }
 
   sendit->ArrayStart("clients");
-  ListResult(jcr, sendit, type);
+  ListResult(jcr->gui, sendit, type);
   sendit->ArrayEnd("clients");
 
   SqlFreeResult();
@@ -250,7 +250,7 @@ void BareosDb::ListMediaRecords(JobControlRecord* jcr,
 
   if (!QUERY_DB(jcr, query.c_str())) { return; }
 
-  ListResult(jcr, sendit, type);
+  ListResult(jcr->gui, sendit, type);
 
   SqlFreeResult();
 }
@@ -297,7 +297,7 @@ void BareosDb::ListJobmediaRecords(JobControlRecord* jcr,
   if (!QUERY_DB(jcr, cmd)) { return; }
 
   sendit->ArrayStart("jobmedia");
-  ListResult(jcr, sendit, type);
+  ListResult(jcr->gui, sendit, type);
   sendit->ArrayEnd("jobmedia");
 
   SqlFreeResult();
@@ -330,7 +330,7 @@ void BareosDb::ListVolumesOfJobid(JobControlRecord* jcr,
   if (!QUERY_DB(jcr, cmd)) { return; }
 
   sendit->ArrayStart("volumes");
-  ListResult(jcr, sendit, type);
+  ListResult(jcr->gui, sendit, type);
   sendit->ArrayEnd("volumes");
 
   SqlFreeResult();
@@ -370,7 +370,7 @@ void BareosDb::ListCopiesRecords(JobControlRecord* jcr,
     }
 
     send->ArrayStart("copies");
-    ListResult(jcr, send, type);
+    ListResult(jcr->gui, send, type);
     send->ArrayEnd("copies");
   }
 
@@ -430,7 +430,7 @@ void BareosDb::ListLogRecords(JobControlRecord* jcr,
   if (!QUERY_DB(jcr, cmd)) { return; }
 
   sendit->ArrayStart("log");
-  ListResult(jcr, sendit, type);
+  ListResult(jcr->gui, sendit, type);
   sendit->ArrayEnd("log");
 
   SqlFreeResult();
@@ -465,7 +465,7 @@ void BareosDb::ListJoblogRecords(JobControlRecord* jcr,
   if (!QUERY_DB(jcr, cmd)) { return; }
 
   sendit->ArrayStart("joblog");
-  ListResult(jcr, sendit, type);
+  ListResult(jcr->gui, sendit, type);
   sendit->ArrayEnd("joblog");
 
   SqlFreeResult();
@@ -493,7 +493,7 @@ void BareosDb::ListJobstatisticsRecords(JobControlRecord* jcr,
   if (!QUERY_DB(jcr, cmd)) { return; }
 
   sendit->ArrayStart("jobstats");
-  ListResult(jcr, sendit, type);
+  ListResult(jcr->gui, sendit, type);
   sendit->ArrayEnd("jobstats");
 
   SqlFreeResult();
@@ -592,7 +592,7 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
   if (!QUERY_DB(jcr, cmd)) { return; }
 
   sendit->ArrayStart("jobs");
-  ListResult(jcr, sendit, type);
+  ListResult(jcr->gui, sendit, type);
   sendit->ArrayEnd("jobs");
 
   SqlFreeResult();
@@ -614,7 +614,7 @@ void BareosDb::ListJobTotals(JobControlRecord* jcr,
   if (!QUERY_DB(jcr, cmd)) { return; }
 
   sendit->ArrayStart("jobs");
-  ListResult(jcr, sendit, HORZ_LIST);
+  ListResult(jcr->gui, sendit, HORZ_LIST);
   sendit->ArrayEnd("jobs");
 
   SqlFreeResult();
@@ -629,7 +629,7 @@ void BareosDb::ListJobTotals(JobControlRecord* jcr,
   if (!QUERY_DB(jcr, cmd)) { return; }
 
   sendit->ObjectStart("jobtotals");
-  ListResult(jcr, sendit, HORZ_LIST);
+  ListResult(jcr->gui, sendit, HORZ_LIST);
   sendit->ObjectEnd("jobtotals");
 
   SqlFreeResult();
@@ -738,7 +738,7 @@ void BareosDb::ListFilesets(JobControlRecord* jcr,
 
   if (!QUERY_DB(jcr, cmd)) { return; }
   sendit->ArrayStart("filesets");
-  ListResult(jcr, sendit, type);
+  ListResult(jcr->gui, sendit, type);
   sendit->ArrayEnd("filesets");
 
   SqlFreeResult();
