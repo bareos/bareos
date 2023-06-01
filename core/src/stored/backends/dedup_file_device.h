@@ -79,6 +79,9 @@ class dedup_file_device : public Device {
   bool mounted{false};
   bool open{false};
   size_t blocksize{0};
+
+  char memory[4096];
+  int head{0};
 };
 
 } /* namespace storagedaemon */

@@ -69,13 +69,17 @@ int dedup_file_device::d_open(const char*, int, int)
   return 5;
 }
 
-ssize_t dedup_file_device::d_read(int fd, void*, size_t)
+ssize_t dedup_file_device::d_read(int fd, void* data, size_t size)
 {
   if (fd != 5) return -1;
-  return 0;
+
+  size_t readlen = std::min(size, sizeof(memory) - head);
+  memcpy(data, memory + head, readlen);
+
+  return readlen;
 }
 
-ssize_t dedup_file_device::d_write(int fd, const void*, size_t size)
+ssize_t dedup_file_device::d_write(int fd, const void* data, size_t size)
 {
   if (fd != 5) return -1;
   if (blocksize != size) {
@@ -84,7 +88,13 @@ ssize_t dedup_file_device::d_write(int fd, const void*, size_t size)
   } else {
     Dmsg2(10, "Blocksize staying at %lu\n", blocksize);
   }
-  return 0;
+
+  if (size + head <= sizeof(memory)) {
+    memcpy(memory, data, size);
+    head += size;
+  }
+
+  return size;
 }
 
 int dedup_file_device::d_close(int fd) {
@@ -96,10 +106,28 @@ int dedup_file_device::d_close(int fd) {
 int dedup_file_device::d_ioctl(int, ioctl_req_t, char*) { return -1; }
 
 boffset_t dedup_file_device::d_lseek(DeviceControlRecord*,
-				     boffset_t,
-				     int)
+				     boffset_t off,
+				     int whence)
 {
-  return -1;
+  size_t new_pos;
+
+  if (whence == SEEK_SET) {
+    new_pos = off;
+  } else if (whence == SEEK_CUR) {
+    new_pos = head + off;
+  } else if (whence == SEEK_END) {
+    new_pos = sizeof(memory) + off;
+  } else {
+    return -1;
+  }
+
+  if (new_pos >= sizeof(memory)) {
+    return -1;
+  } else {
+    head = new_pos;
+  }
+
+  return head;
 }
 
 bool dedup_file_device::d_truncate(DeviceControlRecord*)
