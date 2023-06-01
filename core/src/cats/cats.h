@@ -599,9 +599,7 @@ class BareosDb : public BareosDbQueryEnum {
   void SplitPathAndFile(JobControlRecord* jcr, const char* fname);
   void ListDashes(OutputFormatter* send);
   int ListResult(void* vctx, int nb_col, char** row);
-  int ListResult(JobControlRecord* jcr,
-                 OutputFormatter* send,
-                 e_list_type type);
+  int ListResult(bool gui_enabled, OutputFormatter* send, e_list_type type);
   bool OpenBatchConnection(JobControlRecord* jcr);
   void DbDebugPrint(FILE* fp);
 
