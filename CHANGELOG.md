@@ -65,6 +65,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - python-bareos: add missing `dirname` variable [PR #1460]
 - build: remove openSUSE 15.3 and Univention 5.0 from test matrix [PR #1469]
 - cleanup: remove some unused functions and shrink number of includes in bareos.h [PR #1433]
+- core: fix schema public with PostgreSQL 15 [PR #1449]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -159,6 +160,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1440]: https://github.com/bareos/bareos/pull/1440
 [PR #1445]: https://github.com/bareos/bareos/pull/1445
 [PR #1447]: https://github.com/bareos/bareos/pull/1447
+[PR #1449]: https://github.com/bareos/bareos/pull/1449
 [PR #1450]: https://github.com/bareos/bareos/pull/1450
 [PR #1453]: https://github.com/bareos/bareos/pull/1453
 [PR #1454]: https://github.com/bareos/bareos/pull/1454
