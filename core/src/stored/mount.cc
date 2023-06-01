@@ -331,7 +331,7 @@ read_volume:
 
     dev->VolCatInfo.VolCatMounts++; /* Update mounts */
     Dmsg1(150, "update volinfo mounts=%d\n", dev->VolCatInfo.VolCatMounts);
-    if (!dcr->DirUpdateVolumeInfo(false, false)) { goto bail_out; }
+    if (!dcr->DirUpdateVolumeInfo(is_labeloperation::False)) { goto bail_out; }
 
     /* Return an empty block */
     EmptyBlock(block); /* we used it for reading so set for write */
@@ -641,7 +641,7 @@ bool DeviceControlRecord::is_eod_valid()
              VolumeName, dev->GetFile(), dev->VolCatInfo.VolCatFiles);
         dev->VolCatInfo.VolCatFiles = dev->GetFile();
         dev->VolCatInfo.VolCatBlocks = dev->GetBlockNum();
-        if (!DirUpdateVolumeInfo(false, true)) {
+        if (!DirUpdateVolumeInfo(is_labeloperation::False)) {
           Jmsg(jcr, M_WARNING, 0, _("Error updating Catalog\n"));
           MarkVolumeInError();
           return false;
@@ -674,7 +674,7 @@ bool DeviceControlRecord::is_eod_valid()
              edit_uint64(dev->VolCatInfo.VolCatBytes, ed2));
         dev->VolCatInfo.VolCatBytes = (uint64_t)pos;
         dev->VolCatInfo.VolCatFiles = (uint32_t)(pos >> 32);
-        if (!DirUpdateVolumeInfo(false, true)) {
+        if (!DirUpdateVolumeInfo(is_labeloperation::False)) {
           Jmsg(jcr, M_WARNING, 0, _("Error updating Catalog\n"));
           MarkVolumeInError();
           return false;
@@ -738,8 +738,9 @@ int DeviceControlRecord::TryAutolabel(bool opened)
     }
     Dmsg0(150, "dir_update_vol_info. Set Append\n");
     /* Copy Director's info into the device info */
-    dev->VolCatInfo = VolCatInfo;                /* structure assignment */
-    if (!dcr->DirUpdateVolumeInfo(true, true)) { /* indicate tape labeled */
+    dev->VolCatInfo = VolCatInfo; /* structure assignment */
+    if (!dcr->DirUpdateVolumeInfo(
+            is_labeloperation::True)) { /* indicate tape labeled */
       return try_error;
     }
     Jmsg(dcr->jcr, M_INFO, 0, _("Labeled new Volume \"%s\" on device %s.\n"),
@@ -772,7 +773,7 @@ void DeviceControlRecord::MarkVolumeInError()
   bstrncpy(dev->VolCatInfo.VolCatStatus, "Error",
            sizeof(dev->VolCatInfo.VolCatStatus));
   Dmsg0(150, "dir_update_vol_info. Set Error.\n");
-  dcr->DirUpdateVolumeInfo(false, false);
+  dcr->DirUpdateVolumeInfo(is_labeloperation::False);
   VolumeUnused(dcr);
   Dmsg0(50, "SetUnload\n");
   dev->SetUnload(); /* must get a new volume */
@@ -794,7 +795,7 @@ void DeviceControlRecord::mark_volume_not_inchanger()
   VolCatInfo.InChanger = false;
   dev->VolCatInfo.InChanger = false;
   Dmsg0(400, "update vol info in mount\n");
-  dcr->DirUpdateVolumeInfo(true, false); /* set new status */
+  dcr->DirUpdateVolumeInfo(is_labeloperation::True); /* set new status */
 }
 
 /**
