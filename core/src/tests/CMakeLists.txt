@@ -306,6 +306,7 @@ if(NOT client-only)
   bareos_add_test(
     test_db_list_ctx LINK_LIBRARIES bareos bareossql GTest::gtest_main
   )
+if (NOT MSVC)
   bareos_add_test(
     test_dir_plugins
     ADDITIONAL_SOURCES
@@ -319,6 +320,7 @@ if(NOT client-only)
     LINK_LIBRARIES bareos bareossql bareosfind GTest::gtest_main
                    ${OPENSSL_LIBRARIES}
   )
+endif()
   bareos_add_test(
     test_fileindex_list
     LINK_LIBRARIES dird_objects bareos bareosfind bareossql
@@ -397,20 +399,22 @@ bareos_add_test(test_acl_entry_syntax LINK_LIBRARIES bareos GTest::gtest_main)
 
 bareos_add_test(test_bsnprintf LINK_LIBRARIES bareos GTest::gtest_main)
 
+if (NOT MSVC)
 bareos_add_test(
   test_config_parser_fd LINK_LIBRARIES fd_objects bareos bareosfind
                                        GTest::gtest_main
 )
-
+endif()
 bareos_add_test(test_edit LINK_LIBRARIES bareos GTest::gtest_main)
 
+if (NOT MSVC)
 bareos_add_test(
   test_fd_plugins
   ADDITIONAL_SOURCES ${PROJECT_SOURCE_DIR}/src/filed/fd_plugins.cc
                      ${PROJECT_SOURCE_DIR}/src/filed/fileset.cc
   LINK_LIBRARIES bareos bareosfind GTest::gtest_main
 )
-
+endif()
 bareos_add_test(test_is_name_valid LINK_LIBRARIES bareos GTest::gtest_main)
 
 bareos_add_test(test_poolmem LINK_LIBRARIES bareos GTest::gtest_main)

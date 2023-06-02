@@ -164,7 +164,7 @@ else()
 endif()
 
 add_library(stored_objects STATIC ${SDSRCS})
-add_executable(bareos-sd stored.cc)
+add_executable(bareos-sd WIN32 stored.cc)
 
 target_link_libraries(stored_objects PRIVATE ${THREADS_THREADS})
 target_link_libraries(

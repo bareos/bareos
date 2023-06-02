@@ -822,6 +822,7 @@ void DoRestore(JobControlRecord* jcr)
 
           if (rctx.extract) {
             if (rctx.prev_stream != rctx.stream) {
+#if HAVE_DARWIN_OS
               if (BopenRsrc(&rctx.forkbfd, jcr->fd_impl->last_fname,
                             O_WRONLY | O_TRUNC | O_BINARY, 0)
                   < 0) {
@@ -834,6 +835,7 @@ void DoRestore(JobControlRecord* jcr)
 
               rctx.fork_size = rsrc_len;
               Dmsg0(130, "Restoring resource fork\n");
+#endif
             }
 
             if (ExtractData(jcr, &rctx.forkbfd, sd->msg, sd->message_length,

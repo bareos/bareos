@@ -71,7 +71,7 @@ if(HAVE_LMDB)
   target_link_libraries(fd_objects PRIVATE bareoslmdb)
 endif()
 
-add_executable(bareos-fd filed.cc)
+add_executable(bareos-fd WIN32 filed.cc )
 
 set(BAREOS_FD_LIBRARIES bareosfind bareos ${THREADS_THREADS})
 if(HAVE_WIN32)

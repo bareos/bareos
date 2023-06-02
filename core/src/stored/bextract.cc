@@ -62,6 +62,11 @@ namespace storagedaemon {
 extern bool ParseSdConfig(const char* configfile, int exit_code);
 }
 
+#ifdef _MSC_VER
+char* optarg {};
+#endif
+
+
 using namespace storagedaemon;
 
 static void DoExtract(char* devname,

@@ -32,6 +32,10 @@
 #include "findlib/find.h"
 #include "findlib/drivetype.h"
 
+#if _MSC_VER
+char* optarg {};
+#endif
+
 static void usage()
 {
   fprintf(stderr,

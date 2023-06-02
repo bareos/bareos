@@ -33,6 +33,10 @@
 #include "lib/mntent_cache.h"
 #include "findlib/fstype.h"
 
+#if _MSC_VER
+char* optarg {};
+#endif
+
 static void usage()
 {
   fprintf(stderr,

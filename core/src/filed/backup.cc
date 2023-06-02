@@ -220,6 +220,7 @@ static inline bool SaveRsrcAndFinder(b_save_ctx& bsctx)
   bool retval = false;
 
   if (bsctx.ff_pkt->hfsinfo.rsrclength > 0) {
+#if HAVE_DARWIN_OS
     if (BopenRsrc(&bsctx.ff_pkt->bfd, bsctx.ff_pkt->fname, O_RDONLY | O_BINARY,
                   0)
         < 0) {
@@ -230,7 +231,9 @@ static inline bool SaveRsrcAndFinder(b_save_ctx& bsctx)
            bsctx.ff_pkt->fname, be.bstrerror());
       bsctx.jcr->JobErrors++;
       if (IsBopen(&bsctx.ff_pkt->bfd)) { bclose(&bsctx.ff_pkt->bfd); }
-    } else {
+    } else 
+#endif
+    {
       int status;
 
       memcpy(flags, bsctx.ff_pkt->flags, sizeof(flags));

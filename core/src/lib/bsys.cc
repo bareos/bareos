@@ -138,7 +138,7 @@ int SecureErase(JobControlRecord* jcr, const char* pathname)
     Dmsg0(100, "wpipe_command OK\n");
     retval = 0;
   } else {
-    retval = unlink(pathname);
+    retval = _unlink(pathname);
   }
 
   return retval;

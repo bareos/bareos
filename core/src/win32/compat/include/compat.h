@@ -298,7 +298,7 @@ int waitpid(int, int*, int);
 #if !defined(HAVE_MINGW)
 #  define strncasecmp strnicmp
 // int strncasecmp(const char*, const char *, int);
-__declspec(dllexport)int utime(const char* filename, struct utimbuf* const buf);
+//__declspec(dllexport)int utime(const char* filename, struct utimbuf* const buf);
 #  define vsnprintf _vsnprintf
 #  define snprintf _snprintf
 #endif  // HAVE_MINGW
@@ -385,7 +385,7 @@ char* win32_getcwd(char* buf, int maxlen);
 int win32_chdir(const char* buf);
 int win32_mkdir(const char* buf);
 int win32_fputs(const char* string, FILE* stream);
-int win32_unlink(char const* filename);
+//int win32_unlink(char const* filename);
 int win32_chmod(const char*, mode_t, _dev_t);
 
 char* win32_cgets(char* buffer, int len);

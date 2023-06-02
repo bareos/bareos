@@ -155,7 +155,7 @@ target_link_libraries(
   dird_objects PRIVATE bareos ${OPENSSL_LIBRARIES} ${THREADS_THREADS}
 )
 
-add_executable(bareos-dir)
+add_executable(bareos-dir WIN32)
 target_sources(bareos-dir PRIVATE dird.cc)
 
 target_link_libraries(

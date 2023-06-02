@@ -25,11 +25,6 @@ endif()
 add_executable(bsmtp ${BSMTPSRCS})
 target_link_libraries(bsmtp bareos CLI11::CLI11)
 
-add_executable(drivetype drivetype.cc)
-target_link_libraries(drivetype bareos bareosfind)
-
-add_executable(fstype fstype.cc)
-target_link_libraries(fstype bareos bareosfind)
 
 set(BREGEXSRCS bregex.cc)
 if(HAVE_WIN32)
@@ -50,6 +45,12 @@ target_sources(gentestdata PRIVATE gentestdata.cc)
 target_link_libraries(gentestdata PRIVATE CLI11::CLI11)
 
 if(NOT HAVE_WIN32)
+  add_executable(drivetype drivetype.cc)
+  target_link_libraries(drivetype bareos bareosfind)
+
+  add_executable(fstype fstype.cc)
+  target_link_libraries(fstype bareos bareosfind)
+
   add_executable(bscrypto bscrypto.cc)
   target_link_libraries(bscrypto bareos)
 

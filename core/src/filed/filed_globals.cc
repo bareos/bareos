@@ -30,7 +30,7 @@ bool no_signals = false;
 bool backup_only_mode = false;
 bool restore_only_mode = false;
 
-struct ClientResource;
+class ClientResource;
 ClientResource* me = nullptr;
 
 char* configfile = nullptr;
