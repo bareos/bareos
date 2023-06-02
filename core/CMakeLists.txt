@@ -387,13 +387,14 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set(cross-prefix x86_64-w64-mingw32)
   endif()
 
+  if (NOT MSVC)
   set(Python2_INCLUDE_DIRS /usr/${cross-prefix}/include/python2/)
   set(Python3_INCLUDE_DIRS /usr/${cross-prefix}/include/python3/)
 
   set(PostgreSQL_LIBRARY libpq.dll)
   set(PostgreSQL_INCLUDE_DIR "")
   set(PostgreSQL_TYPE_INCLUDE_DIR "")
-
+  endif()
   set(dynamic-storage-backends OFF)
   set(HAVE_DYNAMIC_SD_BACKENDS 0)
 
@@ -943,7 +944,7 @@ message(
 )
 message("   systemd support:              ${WITH_SYSTEMD} ${SYSTEMD_UNITDIR}")
 message("   Batch insert enabled:         ${USE_BATCH_FILE_INSERT}")
-message("   PostgreSQL Version:           ${PostgreSQL_VERSION_STRING} ")
+message("   PostgreSQL Version:           ${PostgreSQL_VERSION_STRING} ${PostgreSQL_LIBRARY}")
 message("   GTest enabled:                ${GTest_FOUND}")
 message(
   "   Intl support:                 ${Intl_FOUND} ${INTLINCLUDE_DIRS} ${INTL_LIBRARIES}"

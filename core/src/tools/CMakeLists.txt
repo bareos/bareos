@@ -45,24 +45,26 @@ endif()
 add_executable(bwild ${BWILDSRCS})
 target_link_libraries(bwild bareos CLI11::CLI11)
 
-add_executable(bscrypto bscrypto.cc)
-target_link_libraries(bscrypto bareos)
+add_executable(gentestdata)
+target_sources(gentestdata PRIVATE gentestdata.cc)
+target_link_libraries(gentestdata PRIVATE CLI11::CLI11)
 
 if(NOT HAVE_WIN32)
+  add_executable(bscrypto bscrypto.cc)
+  target_link_libraries(bscrypto bareos)
+
   add_executable(btestls btestls.cc)
   target_link_libraries(btestls bareosfind bareos)
 
   add_executable(bpluginfo bpluginfo.cc)
   target_link_libraries(bpluginfo bareos ${DL_LIBRARIES} CLI11::CLI11)
+
+  set(TOOLS_SBIN bscrypto bwild bregex)
+else()
+  set(TOOLS_SBIN bwild bregex)
 endif()
-
-add_executable(gentestdata)
-target_sources(gentestdata PRIVATE gentestdata.cc)
-target_link_libraries(gentestdata PRIVATE CLI11::CLI11)
-
 set(TOOLS_BIN bsmtp bwild bregex)
 
-set(TOOLS_SBIN bscrypto bwild bregex)
 
 if(NOT HAVE_WIN32)
   list(APPEND TOOLS_SBIN bpluginfo btestls)

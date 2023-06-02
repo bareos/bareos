@@ -42,13 +42,6 @@
 #include "findlib/fstype.h"
 #include "findlib/drivetype.h"
 #include "lib/berrno.h"
-/*
-#ifdef _MSVC_LANG
-# include <sys/types.h>
-# include <sys/utime.h>
-# include <time.h>
-#endif
-*/
 #ifdef HAVE_DARWIN_OS
 #  include <sys/param.h>
 #  include <sys/mount.h>
