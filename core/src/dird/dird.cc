@@ -36,6 +36,8 @@
 #include "dird/scheduler.h"
 #include "dird/socket_server.h"
 #include "dird/stats.h"
+#include "dird/bjsonrpcserver.h"
+#include "dird/websocketjsonrpcserver.h"
 #include "lib/daemon.h"
 #include "lib/berrno.h"
 #include "lib/edit.h"
@@ -364,6 +366,13 @@ int main(int argc, char* argv[])
   StartStatisticsThread();
 
   Dmsg0(200, "Start UA server\n");
+
+  std::unique_ptr<BJsonRpcServer> rpcserver
+      = std::make_unique<BJsonRpcServer>();
+
+  WebsocketJsonRpcServer websocketserver(std::move(rpcserver));
+  websocketserver.StartWebsocketThread();
+
   if (!StartSocketServer(me->DIRaddrs)) { TerminateDird(0); }
 
   Dmsg0(200, "wait for next job\n");

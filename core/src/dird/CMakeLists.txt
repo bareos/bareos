@@ -106,6 +106,9 @@ set(DIRD_OBJECTS_SRCS
     ua_update.cc
     vbackup.cc
     verify.cc
+    websocketjsonrpcserver.cc
+    bjsonrpcserver.cc
+    jsonrpccommands.cc
     pthread_detach_if_not_detached.cc
 )
 
@@ -151,15 +154,16 @@ set(DIRD_RESTYPES
 
 # dird_objects is also used as library for unittests
 add_library(dird_objects STATIC ${DIRD_OBJECTS_SRCS})
+
 target_link_libraries(
-  dird_objects PRIVATE bareos ${OPENSSL_LIBRARIES} Threads::Threads fmt::fmt-header-only
+  dird_objects PRIVATE bareos json-rpc-cxx websocketpp ${OPENSSL_LIBRARIES} Threads::Threads fmt::fmt-header-only
 )
 
 add_executable(bareos-dir)
 target_sources(bareos-dir PRIVATE dird.cc)
 
 target_link_libraries(
-  bareos-dir PRIVATE dird_objects bareossql bareosfind CLI11::CLI11
+  bareos-dir PRIVATE dird_objects json-rpc-cxx websocketpp bareossql bareosfind CLI11::CLI11
 )
 
 if(HAVE_WIN32)
