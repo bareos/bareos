@@ -26,42 +26,12 @@
 
 namespace storagedaemon {
 class dedup_file_device : public Device {
-  // this only works if only complete blocks are written/read to this device
-  //   - ansi labels ?
-  //   - this still does not address the issue of record headers
-  // a header block looks like this:
-  // offset to next header block (0 if no next header block)
-  // offset to prev header block (0 if no prev header block)
-  // some padding
-  // header-1
-  // header-2
-  // ...
-  // header-n
-  // similary a data block looks like this:
-  // offset to next data block (0 if no next data block)
-  // offset to prev data block (0 if no prev data block)
-  // some padding
-  // data-1
-  // data-2
-  // ...
-  // data-n
-
-  // the file will then look something like this:
-  //     +--------------+
-  //  +- | header-block |
-  //  |  | data-block   |-+
-  //  |  | data-block   |-+
-  //  +- | header-block | |
-  //     | data-block   |-+
-  //     | unallocated  |
-  //     | ...          |
-  //     +--------------+
  public:
   dedup_file_device() = default;
   ~dedup_file_device() { close(nullptr); }
 
   // Interface from Device
-  SeekMode GetSeekMode() const override { return SeekMode::BYTES; }
+  SeekMode GetSeekMode() const override { return SeekMode::FILE_BLOCK; }
   bool CanReadConcurrently() const override { return true; }
   bool MountBackend(DeviceControlRecord* dcr, int timeout) override;
   bool UnmountBackend(DeviceControlRecord* dcr, int timeout) override;
@@ -75,13 +45,15 @@ class dedup_file_device : public Device {
   ssize_t d_read(int fd, void* buffer, size_t count) override;
   ssize_t d_write(int fd, const void* buffer, size_t count) override;
   bool d_truncate(DeviceControlRecord* dcr) override;
+  bool rewind(DeviceControlRecord* dcr) override;
+  bool UpdatePos(DeviceControlRecord* dcr) override;
+  bool Reposition(DeviceControlRecord* dcr, uint32_t rfile, uint32_t rblock) override;
  private:
   bool mounted{false};
-  bool open{false};
-  size_t blocksize{0};
 
-  char memory[4096];
-  int head{0};
+  int block_fd;
+  int record_fd;
+  int data_fd;
 };
 
 } /* namespace storagedaemon */
