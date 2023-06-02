@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2022-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -17,12 +17,6 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
-
-add_subdirectory(CLI11 EXCLUDE_FROM_ALL)
-add_subdirectory(fmt EXCLUDE_FROM_ALL)
-add_subdirectory(json-rpc-cxx EXCLUDE_FROM_ALL)
-add_subdirectory(websocketpp EXCLUDE_FROM_ALL)
-# include(./json-rpc-cxx.cmake)
-include(./websocketpp.cmake)
-include(./xxHash.cmake)
+add_library(websocketpp INTERFACE)
+target_include_directories(websocketpp INTERFACE websocketpp)
+add_library(websocketpp::websocketpp ALIAS websocketpp)

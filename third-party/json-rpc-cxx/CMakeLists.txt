@@ -10,8 +10,13 @@ option(CODE_COVERAGE "Enable coverage reporting" OFF)
 include(GNUInstallDirs)
 
 add_library(json-rpc-cxx INTERFACE)
-target_include_directories(json-rpc-cxx INTERFACE include)
-install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+target_include_directories(
+  json-rpc-cxx INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+                         $<INSTALL_INTERFACE:include>)
+
+target_include_directories(
+  json-rpc-cxx INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/vendor>
+                         $<INSTALL_INTERFACE:include>)
 
 add_library(coverage_config INTERFACE)
 
