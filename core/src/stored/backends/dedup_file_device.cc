@@ -165,12 +165,23 @@ constexpr T byteswap(T val) {
   return static_cast<T>(byteswap<nosign>(static_cast<nosign>(val)));
 }
 
+struct is_network_order {} is_network_order_v;
+struct is_native_order {} is_native_order_v;
 template <typename T>
 struct network_order {
   T as_network;
   T as_native() const { return byteswap(as_network); }
   operator T() const { return as_native(); }
+
+  network_order() = default;
+  network_order(is_network_order, T val) : as_network{val} {}
+  network_order(is_native_order, T val) : as_network{byteswap(val)} {}
+  network_order(T val) : network_order{is_native_order_v, val} {}
 };
+
+static_assert(std::is_standard_layout_v<network_order<int>>);
+static_assert(std::is_pod_v<network_order<int>>);
+static_assert(std::has_unique_object_representations_v<network_order<int>>);
 
 template <typename U>
 static network_order<U> of_network(U network) {
@@ -197,7 +208,8 @@ struct bareos_record_header {
   network_order<uint32_t> DataSize;   /* size of following data record in bytes */
 };
 
-struct dedup_block_header : public bareos_block_header {
+struct dedup_block_header {
+  bareos_block_header     BareosHeader;
   network_order<uint32_t> RecStart;
   network_order<uint32_t> RecEnd;
 
@@ -206,13 +218,18 @@ struct dedup_block_header : public bareos_block_header {
   dedup_block_header(const bareos_block_header& base,
 		     std::uint32_t RecStart,
 		     std::uint32_t RecEnd)
-    : bareos_block_header(base)
+    : BareosHeader(base)
     , RecStart{of_native(RecStart)}
     , RecEnd{of_native(RecEnd)}
   {}
 };
 
-struct dedup_record_header : bareos_record_header {
+static_assert(std::is_standard_layout_v<dedup_block_header>);
+static_assert(std::is_pod_v<dedup_block_header>);
+static_assert(std::has_unique_object_representations_v<dedup_block_header>);
+
+struct dedup_record_header {
+  bareos_record_header    BareosHeader;
   network_order<uint32_t> DataStart;
   network_order<uint32_t> DataEnd;
 
@@ -221,11 +238,15 @@ struct dedup_record_header : bareos_record_header {
   dedup_record_header(const bareos_record_header& base,
 		     std::uint32_t DataStart,
 		     std::uint32_t DataEnd)
-    : bareos_record_header(base)
+    : BareosHeader(base)
     , DataStart{of_native(DataStart)}
     , DataEnd{of_native(DataEnd)}
   {}
 };
+
+static_assert(std::is_standard_layout_v<dedup_record_header>);
+static_assert(std::is_pod_v<dedup_record_header>);
+static_assert(std::has_unique_object_representations_v<dedup_record_header>);
 
 static void safe_write(int fd, void* data, std::size_t size)
 {
@@ -314,7 +335,7 @@ ssize_t dedup_file_device::d_read(int fd, void* data, size_t size)
     return 0;
   }
 
-  if (size < dblock.BlockSize) {
+  if (size < dblock.BareosHeader.BlockSize) {
     return -1;
   }
 
@@ -335,7 +356,7 @@ ssize_t dedup_file_device::d_read(int fd, void* data, size_t size)
   ssize_t lastend = -1;
   char* head = (char*)data;
   char* end  = head + size;
-  memcpy(head, static_cast<bareos_block_header*>(&dblock),
+  memcpy(head, &dblock.BareosHeader,
 	 sizeof(bareos_block_header));
   head += sizeof(bareos_block_header);
   for (uint32_t i = 0; i < NumRec; ++i) {
@@ -343,7 +364,7 @@ ssize_t dedup_file_device::d_read(int fd, void* data, size_t size)
       ::lseek(data_fd, records[i].DataStart, SEEK_SET);
     }
 
-    memcpy(head, static_cast<bareos_record_header*>(&records[i]),
+    memcpy(head, &records[i].BareosHeader,
 	   sizeof(bareos_record_header));
     head += sizeof(bareos_record_header);
     safe_read(data_fd, head, records[i].DataEnd - records[i].DataStart);
