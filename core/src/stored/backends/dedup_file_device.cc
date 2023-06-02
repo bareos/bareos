@@ -407,7 +407,7 @@ bool dedup_file_device::d_truncate(DeviceControlRecord*)
   return true;
 }
 
-bool dedup_file_device::rewind(DeviceControlRecord*)
+bool dedup_file_device::rewind(DeviceControlRecord* dcr)
 {
   if (lseek(block_fd, 0, SEEK_SET) != 0) {
     return false;
@@ -421,7 +421,7 @@ bool dedup_file_device::rewind(DeviceControlRecord*)
   block_num = 0;
   file = 0;
   file_addr = 0;
-  return true;
+  return UpdatePos(dcr);
 }
 
 bool dedup_file_device::UpdatePos(DeviceControlRecord*)
@@ -447,6 +447,14 @@ bool dedup_file_device::Reposition(DeviceControlRecord*, uint32_t rfile, uint32_
   file = rfile;
   file_addr = 0;
   return true;
+}
+
+bool dedup_file_device::eod(DeviceControlRecord* dcr)
+{
+  if (auto res = ::lseek(block_fd, 0, SEEK_END); res < 0) { return false; }
+  if (auto res = ::lseek(record_fd, 0, SEEK_END); res < 0) { return false; }
+  if (auto res = ::lseek(data_fd, 0, SEEK_END); res < 0) { return false; }
+  return UpdatePos(dcr);
 }
 
 REGISTER_SD_BACKEND(dedup, dedup_file_device);

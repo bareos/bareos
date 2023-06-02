@@ -48,6 +48,7 @@ class dedup_file_device : public Device {
   bool rewind(DeviceControlRecord* dcr) override;
   bool UpdatePos(DeviceControlRecord* dcr) override;
   bool Reposition(DeviceControlRecord* dcr, uint32_t rfile, uint32_t rblock) override;
+  bool eod(DeviceControlRecord* dcr) override;
  private:
   bool mounted{false};
 
