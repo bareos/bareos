@@ -312,7 +312,6 @@ static inline bool RestoreFileAttributes(JobControlRecord* jcr,
 
   restore_times.actime = attr->statp.st_atime;
   restore_times.modtime = attr->statp.st_mtime;
-#if 0
   if (utime(attr->ofname, reinterpret_cast<utimbuf*>(&restore_times)) < 0 && !suppress_errors) {
     BErrNo be;
 
@@ -320,7 +319,6 @@ static inline bool RestoreFileAttributes(JobControlRecord* jcr,
           attr->ofname, be.bstrerror());
     ok = false;
   }
-#endif
 #endif /* HAVE_LUTIMES */
   }
 

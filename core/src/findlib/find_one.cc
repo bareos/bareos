@@ -385,9 +385,7 @@ static inline void RestoreFileTimes(FindFilesPacket* ff_pkt, char* fname)
 
   restore_times.actime = ff_pkt->statp.st_atime;
   restore_times.modtime = ff_pkt->statp.st_mtime;
-#if 0
   utime(fname, reinterpret_cast<utimbuf*>(&restore_times));
-#endif
 #endif
 }
 

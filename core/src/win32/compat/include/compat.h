@@ -298,7 +298,9 @@ int waitpid(int, int*, int);
 #if !defined(HAVE_MINGW)
 #  define strncasecmp strnicmp
 // int strncasecmp(const char*, const char *, int);
-//__declspec(dllexport)int utime(const char* filename, struct utimbuf* const buf);
+extern "C"{
+__declspec(dllimport)int utime(const char* filename, struct utimbuf* const buf);
+}
 #  define vsnprintf _vsnprintf
 #  define snprintf _snprintf
 #endif  // HAVE_MINGW
