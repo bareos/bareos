@@ -63,7 +63,64 @@ bool dedup_file_device::ScanForVolumeImpl(DeviceControlRecord* dcr)
   return ScanDirectoryForVolume(dcr);
 }
 
-int dedup_file_device::d_open(const char* path, int flags, int mode)
+static int OpenDirStructure(const char* path, int flags, int mode,
+			      int* fd, int* block_fd,
+			      int* record_fd, int* data_fd)
+{
+  // dir needs to be executable if we want to create files inside
+  int create_mode = (flags & O_CREAT) ? 0100 : 0;
+  int dir = ::open(path, O_DIRECTORY | O_RDONLY, mode | create_mode);
+
+  if (dir < 0) {
+    return dir;
+  }
+
+  int block = ::openat(dir, "block", flags, mode);
+  if (block < 0) {
+    ::close(dir);
+    return block;
+  }
+  int record = ::openat(dir, "record", flags, mode);
+  if (record < 0) {
+    ::close(block);
+    ::close(dir);
+    return record;
+  }
+  int data = ::openat(dir, "data", flags, mode);
+  if (data < 0) {
+    ::close(record);
+    ::close(block);
+    ::close(dir);
+    return data;
+  }
+
+  *fd = dir;
+  *block_fd = block;
+  *record_fd = record;
+  *data_fd = data;
+
+  return dir;
+
+}
+
+static int CreateDirStructure(const char* path, int mode,
+			      int* fd, int* block_fd,
+			      int* record_fd, int* data_fd)
+{
+  if (struct stat st; ::stat(path, &st) != -1) {
+    return -1;
+  }
+
+  if (mkdir(path,  mode | 0100) < 0) {
+    return -1;
+  }
+
+  return OpenDirStructure(path, O_CREAT | O_RDWR | O_BINARY, mode, fd,
+			  block_fd, record_fd, data_fd);
+}
+
+
+int dedup_file_device::d_open(const char* path, int, int mode)
 {
   // todo parse mode
   // see Device::set_mode
@@ -74,27 +131,24 @@ int dedup_file_device::d_open(const char* path, int flags, int mode)
   // +- record
   // +- data
 
-  struct stat st;
-
-  auto i = ::stat(path, &st);
-  if (i == -1) {
-    if (mkdir(path, mode | 0100) < 0) return -1;
-  } else if ((st.st_mode & S_IFMT) != S_IFDIR) {
+  switch (open_mode) {
+  case DeviceMode::CREATE_READ_WRITE: {
+    return CreateDirStructure(path, mode, &fd, &block_fd, &record_fd, &data_fd);
+  } break;
+  case DeviceMode::OPEN_READ_WRITE: {
+    return OpenDirStructure(path, O_RDWR | O_BINARY, mode, &fd, &block_fd, &record_fd, &data_fd);
+  } break;
+  case DeviceMode::OPEN_READ_ONLY: {
+    return OpenDirStructure(path, O_RDONLY | O_BINARY, mode, &fd, &block_fd, &record_fd, &data_fd);
+  } break;
+  case DeviceMode::OPEN_WRITE_ONLY: {
+    return OpenDirStructure(path, O_WRONLY | O_BINARY, mode, &fd, &block_fd, &record_fd, &data_fd);
+  } break;
+  default: {
+    Emsg0(M_ABORT, 0, _("Illegal mode given to open dev.\n"));
     return -1;
   }
-
-  fd = ::open(path, O_DIRECTORY | O_RDONLY, mode | 0100);
-
-  if (fd < 0) return fd;
-
-  block_fd = ::openat(fd, "block", flags, mode);
-  if (block_fd < 0) return block_fd;
-  record_fd = ::openat(fd, "record", flags, mode);
-  if (record_fd < 0) return record_fd;
-  data_fd = ::openat(fd, "data", flags, mode);
-  if (data_fd < 0) return data_fd;
-
-  return fd;
+  }
 }
 
 template <typename T>
