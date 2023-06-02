@@ -165,17 +165,27 @@ constexpr T byteswap(T val) {
   return static_cast<T>(byteswap<nosign>(static_cast<nosign>(val)));
 }
 
+#if !defined(BYTE_ORDER) || !defined(LITTLE_ENDIAN)
+#error "Could not determine endianess."
+#elif (BYTE_ORDER == LITTLE_ENDIAN)
+template <typename T>
+T to_network(T val) { return byteswap(val); }
+#else
+template <typename T>
+T to_network(T val) { return val; }
+#endif
+
 struct is_network_order {} is_network_order_v;
 struct is_native_order {} is_native_order_v;
 template <typename T>
 struct network_order {
   T as_network;
-  T as_native() const { return byteswap(as_network); }
+  T as_native() const { return to_network(as_network); }
   operator T() const { return as_native(); }
 
   network_order() = default;
   network_order(is_network_order, T val) : as_network{val} {}
-  network_order(is_native_order, T val) : as_network{byteswap(val)} {}
+  network_order(is_native_order, T val) : as_network{to_network(val)} {}
   network_order(T val) : network_order{is_native_order_v, val} {}
 };
 
@@ -185,12 +195,12 @@ static_assert(std::has_unique_object_representations_v<network_order<int>>);
 
 template <typename U>
 static network_order<U> of_network(U network) {
-  return network_order<U>{ network };
+  return network_order<U>{ is_network_order_v, network };
 }
 
 template <typename U>
 static network_order<U> of_native(U native) {
-  return network_order<U>{ byteswap(native) };
+  return network_order<U>{ is_native_order_v, native };
 }
 
 struct bareos_block_header {
