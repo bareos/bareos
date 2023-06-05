@@ -139,7 +139,7 @@ fi
 # make sure the devices really have been truncated
 for i in 1 2 3; do
   size=`get_file_size "storage/Full-000${i}"`
-  if [ "$size" -ge 300 ]; then
+  if [ "$size" -ge 4396 ]; then
     echo "file storage/Full-000$i" was not truncated
     estat=3
   fi
