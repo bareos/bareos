@@ -100,6 +100,16 @@ OS:
       ARCH:
         - x64
   win:
+    native:
+      TYPE: win
+      STAGES:
+        - win-64-release
+      ARCH:
+       - x86_64
+      WINVERSIONS:
+         - windows-10-64
+
+  win:
     cross:
       TYPE: win
       STAGES:
