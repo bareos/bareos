@@ -94,7 +94,8 @@ int dedup_file_device::d_open(const char* path, int, int mode)
   switch (open_mode) {
   case DeviceMode::CREATE_READ_WRITE: {
     vol = CreateDirStructure(path, mode);
-  } break;
+    if (vol.has_value()) { break; }
+  } [[fallthrough]];
   case DeviceMode::OPEN_READ_WRITE: {
     vol = dedup_volume{path, O_RDWR | O_BINARY, mode};
   } break;
