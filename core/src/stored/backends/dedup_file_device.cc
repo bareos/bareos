@@ -35,6 +35,10 @@
 
 namespace storagedaemon {
 
+using net_u32 = network_order::network_value<std::uint32_t>;
+using net_u64 = network_order::network_value<std::uint64_t>;
+using net_i32 = network_order::network_value<std::int32_t>;
+
 /**
  * Mount the device.
  *
@@ -122,84 +126,26 @@ int dedup_file_device::d_open(const char* path, int, int mode)
   }
 }
 
-template <typename T> constexpr T byteswap(T);
-
-template <> constexpr std::uint64_t byteswap(std::uint64_t x)
-{
-  return __builtin_bswap64(x);
-}
-template <> constexpr std::uint32_t byteswap(std::uint32_t x)
-{
-  return __builtin_bswap32(x);
-}
-template <> constexpr std::uint16_t byteswap(std::uint16_t x)
-{
-  return __builtin_bswap16(x);
-}
-template <> constexpr std::uint8_t byteswap(std::uint8_t x) { return x; }
-
-template <typename T> constexpr T byteswap(T val)
-{
-  using nosign = std::make_unsigned_t<T>;
-  return static_cast<T>(byteswap<nosign>(static_cast<nosign>(val)));
-}
-
-#if !defined(BYTE_ORDER) || !defined(LITTLE_ENDIAN)
-#  error "Could not determine endianess."
-#elif (BYTE_ORDER == LITTLE_ENDIAN)
-template <typename T> T to_network(T val) { return byteswap(val); }
-#else
-template <typename T> T to_network(T val) { return val; }
-#endif
-
-struct is_network_order {
-} is_network_order_v;
-struct is_native_order {
-} is_native_order_v;
-template <typename T> struct network_order {
-  T as_network;
-  T as_native() const { return to_network(as_network); }
-  operator T() const { return as_native(); }
-
-  network_order() = default;
-  network_order(is_network_order, T val) : as_network{val} {}
-  network_order(is_native_order, T val) : as_network{to_network(val)} {}
-  network_order(T val) : network_order{is_native_order_v, val} {}
-};
-
-static_assert(std::is_standard_layout_v<network_order<int>>);
-static_assert(std::is_pod_v<network_order<int>>);
-static_assert(std::has_unique_object_representations_v<network_order<int>>);
-
-template <typename U> static network_order<U> of_network(U network)
-{
-  return network_order<U>{is_network_order_v, network};
-}
-
-template <typename U> static network_order<U> of_native(U native)
-{
-  return network_order<U>{is_native_order_v, native};
-}
 
 struct bareos_block_header {
-  network_order<uint32_t> CheckSum;  /* Block check sum */
-  network_order<uint32_t> BlockSize; /* Block byte size including the header */
-  network_order<uint32_t> BlockNumber;    /* Block number */
+  net_u32 CheckSum;  /* Block check sum */
+  net_u32 BlockSize; /* Block byte size including the header */
+  net_u32 BlockNumber;    /* Block number */
   char ID[4];                             /* Identification and block level */
-  network_order<uint32_t> VolSessionId;   /* Session Id for Job */
-  network_order<uint32_t> VolSessionTime; /* Session Time for Job */
+  net_u32 VolSessionId;   /* Session Id for Job */
+  net_u32 VolSessionTime; /* Session Time for Job */
 };
 
 struct bareos_record_header {
-  network_order<int32_t> FileIndex; /* File index supplied by File daemon */
-  network_order<int32_t> Stream;    /* Stream number supplied by File daemon */
-  network_order<uint32_t> DataSize; /* size of following data record in bytes */
+  net_i32 FileIndex; /* File index supplied by File daemon */
+  net_i32 Stream;    /* Stream number supplied by File daemon */
+  net_u32 DataSize; /* size of following data record in bytes */
 };
 
 struct dedup_block_header {
   bareos_block_header BareosHeader;
-  network_order<uint32_t> RecStart;
-  network_order<uint32_t> RecEnd;
+  net_u32 RecStart;
+  net_u32 RecEnd;
 
   dedup_block_header() = default;
 
@@ -207,8 +153,8 @@ struct dedup_block_header {
                      std::uint32_t RecStart,
                      std::uint32_t RecEnd)
       : BareosHeader(base)
-      , RecStart{of_native(RecStart)}
-      , RecEnd{of_native(RecEnd)}
+      , RecStart{network_order::of_native(RecStart)}
+      , RecEnd{network_order::of_native(RecEnd)}
   {
   }
 };
@@ -219,8 +165,8 @@ static_assert(std::has_unique_object_representations_v<dedup_block_header>);
 
 struct dedup_record_header {
   bareos_record_header BareosHeader;
-  network_order<uint32_t> DataStart;
-  network_order<uint32_t> DataEnd;
+  net_u32 DataStart;
+  net_u32 DataEnd;
 
   dedup_record_header() = default;
 
@@ -228,8 +174,8 @@ struct dedup_record_header {
                       std::uint32_t DataStart,
                       std::uint32_t DataEnd)
       : BareosHeader(base)
-      , DataStart{of_native(DataStart)}
-      , DataEnd{of_native(DataEnd)}
+      , DataStart{network_order::of_native(DataStart)}
+      , DataEnd{network_order::of_native(DataEnd)}
   {
   }
 };

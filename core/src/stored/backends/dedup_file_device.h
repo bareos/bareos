@@ -23,6 +23,7 @@
 #define BAREOS_STORED_BACKENDS_DEDUP_FILE_DEVICE_H_
 
 #include "stored/dev.h"
+#include "lib/network_order.h"
 
 #include <unordered_map>
 #include <fcntl.h>
