@@ -371,8 +371,8 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   if (MSVC)
     link_libraries(Intl::Intl)
   include_directories(
-    SYSTEM ${PROJECT_SOURCE_DIR}/../../vdi/include
-    SYSTEM ${PROJECT_SOURCE_DIR}/../../vss/include
+    SYSTEM C:/src/vdi/include
+    SYSTEM C:/src/vss/include
     )
   endif()
 
