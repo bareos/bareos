@@ -35,7 +35,6 @@
 #include "dird/director_jcr_impl.h"
 #include "dird/job.h"
 #include "dird/ua_cmdstruct.h"
-#include "cats/sql_pooling.h"
 #include "dird/next_vol.h"
 #include "dird/ua_db.h"
 #include "dird/ua_output.h"
@@ -1289,7 +1288,7 @@ static bool ListNextvol(UaContext* ua, int ndays)
 
 get_out:
   if (jcr->db) {
-    DbSqlClosePooledConnection(jcr, jcr->db);
+    jcr->db->CloseDatabase(jcr);
     jcr->db = NULL;
   }
   FreeJcr(jcr);
@@ -1383,7 +1382,7 @@ bool CompleteJcrForJob(JobControlRecord* jcr,
   if (pool) { jcr->dir_impl->res.pool = pool; /* override */ }
   if (jcr->db) {
     Dmsg0(100, "complete_jcr close db\n");
-    DbSqlClosePooledConnection(jcr, jcr->db);
+    jcr->db->CloseDatabase(jcr);
     jcr->db = NULL;
   }
 
@@ -1402,7 +1401,7 @@ bool CompleteJcrForJob(JobControlRecord* jcr,
       Jmsg(jcr, M_FATAL, 0, _("Pool %s not in database. %s\n"), pr.Name,
            jcr->db->strerror());
       if (jcr->db) {
-        DbSqlClosePooledConnection(jcr, jcr->db);
+        jcr->db->CloseDatabase(jcr);
         jcr->db = NULL;
       }
       return false;

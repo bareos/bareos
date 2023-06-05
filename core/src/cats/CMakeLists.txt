@@ -31,7 +31,6 @@ target_sources(
           sql_find.cc
           sql_get.cc
           sql_list.cc
-          sql_pooling.cc
           sql_query.cc
           sql_update.cc
           postgresql.cc

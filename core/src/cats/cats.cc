@@ -31,7 +31,6 @@
 #if HAVE_POSTGRESQL
 
 #  include "cats.h"
-#  include "sql_pooling.h"
 
 #  include "bdb_query_names.inc"
 #  include "lib/berrno.h"
@@ -61,7 +60,6 @@ bool BareosDb::MatchDatabase(const char* db_driver,
  */
 BareosDb* BareosDb::CloneDatabaseConnection(JobControlRecord* jcr,
                                             bool mult_db_connections,
-                                            bool get_pooled_connection,
                                             bool need_private)
 {
   /* See if its a simple clone e.g. with mult_db_connections set to false
@@ -71,19 +69,10 @@ BareosDb* BareosDb::CloneDatabaseConnection(JobControlRecord* jcr,
     return this;
   }
 
-  /* A bit more to do here just open a new session to the database.
-   * See if we need to get a pooled or non pooled connection. */
-  if (get_pooled_connection) {
-    return DbSqlGetPooledConnection(
-        jcr, db_driver_, db_name_, db_user_, db_password_, db_address_,
-        db_port_, db_socket_, mult_db_connections, disabled_batch_insert_,
-        try_reconnect_, exit_on_fatal_, need_private);
-  } else {
-    return DbSqlGetNonPooledConnection(
-        jcr, db_driver_, db_name_, db_user_, db_password_, db_address_,
-        db_port_, db_socket_, mult_db_connections, disabled_batch_insert_,
-        try_reconnect_, exit_on_fatal_, need_private);
-  }
+  return ConnectDatabase(jcr, db_driver_, db_name_, db_user_, db_password_,
+                         db_address_, db_port_, db_socket_, mult_db_connections,
+                         disabled_batch_insert_, try_reconnect_, exit_on_fatal_,
+                         need_private);
 }
 
 const char* BareosDb::GetType(void)

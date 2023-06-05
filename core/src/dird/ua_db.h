@@ -22,6 +22,8 @@
 #ifndef BAREOS_DIRD_UA_DB_H_
 #define BAREOS_DIRD_UA_DB_H_
 
+#include "dird/dird.h"
+
 namespace directordaemon {
 
 bool OpenClientDb(UaContext* ua, bool use_private = false);

@@ -59,7 +59,6 @@
 #include "dird/ndmp_dma_restore_NDMP_BAREOS.h"
 #include "dird/ndmp_dma_restore_NDMP_NATIVE.h"
 
-#include "cats/sql_pooling.h"
 #include "lib/berrno.h"
 #include "lib/edit.h"
 #include "lib/output_formatter_resource.h"
@@ -1532,13 +1531,13 @@ void DirdFreeJcr(JobControlRecord* jcr)
   }
 
   if (jcr->db_batch) {
-    DbSqlClosePooledConnection(jcr, jcr->db_batch);
+    jcr->db_batch->CloseDatabase(jcr);
     jcr->db_batch = NULL;
     jcr->batch_started = false;
   }
 
   if (jcr->db) {
-    DbSqlClosePooledConnection(jcr, jcr->db);
+    jcr->db->CloseDatabase(jcr);
     jcr->db = NULL;
   }
 

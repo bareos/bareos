@@ -889,6 +889,37 @@ bool BareosDbPostgresql::SqlFieldIsNumeric(int field_type)
   }
 }
 
+BareosDb* ConnectDatabase(JobControlRecord* jcr,
+                          const char* db_drivername,
+                          const char* db_name,
+                          const char* db_user,
+                          const char* db_password,
+                          const char* db_address,
+                          int db_port,
+                          const char* db_socket,
+                          bool mult_db_connections,
+                          bool disable_batch_insert,
+                          bool try_reconnect,
+                          bool exit_on_fatal,
+                          bool need_private)
+{
+  BareosDb* mdb;
+
+  mdb = db_init_database(jcr, db_drivername, db_name, db_user, db_password,
+                         db_address, db_port, db_socket, mult_db_connections,
+                         disable_batch_insert, try_reconnect, exit_on_fatal,
+                         need_private);
+  if (mdb == nullptr) { return nullptr; }
+
+  if (!mdb->OpenDatabase(jcr)) {
+    Jmsg(jcr, M_FATAL, 0, "%s", mdb->strerror());
+    mdb->CloseDatabase(jcr);
+    return nullptr;
+  }
+
+  return mdb;
+}
+
 /**
  * Initialize database data structure. In principal this should
  * never have errors, or it is really fatal.
