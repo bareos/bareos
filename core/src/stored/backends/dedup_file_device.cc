@@ -64,15 +64,12 @@ bool dedup_file_device::ScanForVolumeImpl(DeviceControlRecord* dcr)
   return ScanDirectoryForVolume(dcr);
 }
 
-static std::optional<dedup_volume> CreateDirStructure(const char* path, int mode)
+static std::optional<dedup_volume> CreateDirStructure(const char* path,
+                                                      int mode)
 {
-  if (struct stat st; ::stat(path, &st) != -1) {
-    return std::nullopt;
-  }
+  if (struct stat st; ::stat(path, &st) != -1) { return std::nullopt; }
 
-  if (mkdir(path,  mode | 0100) < 0) {
-    return std::nullopt;
-  }
+  if (mkdir(path, mode | 0100) < 0) { return std::nullopt; }
 
   return dedup_volume{path, O_CREAT | O_RDWR | O_BINARY, mode};
 }
@@ -92,31 +89,31 @@ int dedup_file_device::d_open(const char* path, int, int mode)
   std::optional<dedup_volume> vol{std::nullopt};
 
   switch (open_mode) {
-  case DeviceMode::CREATE_READ_WRITE: {
-    vol = CreateDirStructure(path, mode);
-    if (vol.has_value()) { break; }
-  } [[fallthrough]];
-  case DeviceMode::OPEN_READ_WRITE: {
-    vol = dedup_volume{path, O_RDWR | O_BINARY, mode};
-  } break;
-  case DeviceMode::OPEN_READ_ONLY: {
-    vol = dedup_volume{path, O_RDONLY | O_BINARY, mode};
-  } break;
-  case DeviceMode::OPEN_WRITE_ONLY: {
-    vol = dedup_volume{path, O_WRONLY | O_BINARY, mode};
-  } break;
-  default: {
-    Emsg0(M_ABORT, 0, _("Illegal mode given to open dev.\n"));
-  }
+    case DeviceMode::CREATE_READ_WRITE: {
+      vol = CreateDirStructure(path, mode);
+      if (vol.has_value()) { break; }
+    }
+      [[fallthrough]];
+    case DeviceMode::OPEN_READ_WRITE: {
+      vol = dedup_volume{path, O_RDWR | O_BINARY, mode};
+    } break;
+    case DeviceMode::OPEN_READ_ONLY: {
+      vol = dedup_volume{path, O_RDONLY | O_BINARY, mode};
+    } break;
+    case DeviceMode::OPEN_WRITE_ONLY: {
+      vol = dedup_volume{path, O_WRONLY | O_BINARY, mode};
+    } break;
+    default: {
+      Emsg0(M_ABORT, 0, _("Illegal mode given to open dev.\n"));
+    }
   }
 
   if (vol.has_value() && vol->is_ok()) {
     int new_fd = fd_ctr;
-    auto [iter, inserted] = open_volumes.emplace(new_fd, std::move(vol.value()));
+    auto [iter, inserted]
+        = open_volumes.emplace(new_fd, std::move(vol.value()));
 
-    if (!inserted) {
-      return -1;
-    }
+    if (!inserted) { return -1; }
 
     fd_ctr += 1;
     return new_fd;
@@ -125,34 +122,41 @@ int dedup_file_device::d_open(const char* path, int, int mode)
   }
 }
 
-template <typename T>
-constexpr T byteswap(T);
+template <typename T> constexpr T byteswap(T);
 
-template <> constexpr std::uint64_t byteswap(std::uint64_t x) { return __builtin_bswap64(x); }
-template <> constexpr std::uint32_t byteswap(std::uint32_t x) { return __builtin_bswap32(x); }
-template <> constexpr std::uint16_t byteswap(std::uint16_t x) { return __builtin_bswap16(x); }
+template <> constexpr std::uint64_t byteswap(std::uint64_t x)
+{
+  return __builtin_bswap64(x);
+}
+template <> constexpr std::uint32_t byteswap(std::uint32_t x)
+{
+  return __builtin_bswap32(x);
+}
+template <> constexpr std::uint16_t byteswap(std::uint16_t x)
+{
+  return __builtin_bswap16(x);
+}
 template <> constexpr std::uint8_t byteswap(std::uint8_t x) { return x; }
 
-template <typename T>
-constexpr T byteswap(T val) {
+template <typename T> constexpr T byteswap(T val)
+{
   using nosign = std::make_unsigned_t<T>;
   return static_cast<T>(byteswap<nosign>(static_cast<nosign>(val)));
 }
 
 #if !defined(BYTE_ORDER) || !defined(LITTLE_ENDIAN)
-#error "Could not determine endianess."
+#  error "Could not determine endianess."
 #elif (BYTE_ORDER == LITTLE_ENDIAN)
-template <typename T>
-T to_network(T val) { return byteswap(val); }
+template <typename T> T to_network(T val) { return byteswap(val); }
 #else
-template <typename T>
-T to_network(T val) { return val; }
+template <typename T> T to_network(T val) { return val; }
 #endif
 
-struct is_network_order {} is_network_order_v;
-struct is_native_order {} is_native_order_v;
-template <typename T>
-struct network_order {
+struct is_network_order {
+} is_network_order_v;
+struct is_native_order {
+} is_native_order_v;
+template <typename T> struct network_order {
   T as_network;
   T as_native() const { return to_network(as_network); }
   operator T() const { return as_native(); }
@@ -167,45 +171,46 @@ static_assert(std::is_standard_layout_v<network_order<int>>);
 static_assert(std::is_pod_v<network_order<int>>);
 static_assert(std::has_unique_object_representations_v<network_order<int>>);
 
-template <typename U>
-static network_order<U> of_network(U network) {
-  return network_order<U>{ is_network_order_v, network };
+template <typename U> static network_order<U> of_network(U network)
+{
+  return network_order<U>{is_network_order_v, network};
 }
 
-template <typename U>
-static network_order<U> of_native(U native) {
-  return network_order<U>{ is_native_order_v, native };
+template <typename U> static network_order<U> of_native(U native)
+{
+  return network_order<U>{is_native_order_v, native};
 }
 
 struct bareos_block_header {
-  network_order<uint32_t> CheckSum;                /* Block check sum */
-  network_order<uint32_t> BlockSize;               /* Block byte size including the header */
-  network_order<uint32_t> BlockNumber;             /* Block number */
-  char ID[4];              /* Identification and block level */
-  network_order<uint32_t> VolSessionId;            /* Session Id for Job */
-  network_order<uint32_t> VolSessionTime;          /* Session Time for Job */
+  network_order<uint32_t> CheckSum;  /* Block check sum */
+  network_order<uint32_t> BlockSize; /* Block byte size including the header */
+  network_order<uint32_t> BlockNumber;    /* Block number */
+  char ID[4];                             /* Identification and block level */
+  network_order<uint32_t> VolSessionId;   /* Session Id for Job */
+  network_order<uint32_t> VolSessionTime; /* Session Time for Job */
 };
 
 struct bareos_record_header {
-  network_order<int32_t> FileIndex;   /* File index supplied by File daemon */
-  network_order<int32_t> Stream;      /* Stream number supplied by File daemon */
-  network_order<uint32_t> DataSize;   /* size of following data record in bytes */
+  network_order<int32_t> FileIndex; /* File index supplied by File daemon */
+  network_order<int32_t> Stream;    /* Stream number supplied by File daemon */
+  network_order<uint32_t> DataSize; /* size of following data record in bytes */
 };
 
 struct dedup_block_header {
-  bareos_block_header     BareosHeader;
+  bareos_block_header BareosHeader;
   network_order<uint32_t> RecStart;
   network_order<uint32_t> RecEnd;
 
   dedup_block_header() = default;
 
   dedup_block_header(const bareos_block_header& base,
-		     std::uint32_t RecStart,
-		     std::uint32_t RecEnd)
-    : BareosHeader(base)
-    , RecStart{of_native(RecStart)}
-    , RecEnd{of_native(RecEnd)}
-  {}
+                     std::uint32_t RecStart,
+                     std::uint32_t RecEnd)
+      : BareosHeader(base)
+      , RecStart{of_native(RecStart)}
+      , RecEnd{of_native(RecEnd)}
+  {
+  }
 };
 
 static_assert(std::is_standard_layout_v<dedup_block_header>);
@@ -213,19 +218,20 @@ static_assert(std::is_pod_v<dedup_block_header>);
 static_assert(std::has_unique_object_representations_v<dedup_block_header>);
 
 struct dedup_record_header {
-  bareos_record_header    BareosHeader;
+  bareos_record_header BareosHeader;
   network_order<uint32_t> DataStart;
   network_order<uint32_t> DataEnd;
 
   dedup_record_header() = default;
 
   dedup_record_header(const bareos_record_header& base,
-		     std::uint32_t DataStart,
-		     std::uint32_t DataEnd)
-    : BareosHeader(base)
-    , DataStart{of_native(DataStart)}
-    , DataEnd{of_native(DataEnd)}
-  {}
+                      std::uint32_t DataStart,
+                      std::uint32_t DataEnd)
+      : BareosHeader(base)
+      , DataStart{of_native(DataStart)}
+      , DataEnd{of_native(DataEnd)}
+  {
+  }
 };
 
 static_assert(std::is_standard_layout_v<dedup_record_header>);
@@ -247,14 +253,14 @@ void scatter(dedup_volume& vol, const void* data)
   int block_fd = vol.get_block();
   int record_fd = vol.get_record();
   int data_fd = vol.get_data();
-  bareos_block_header *block = (bareos_block_header*) data;
+  bareos_block_header* block = (bareos_block_header*)data;
   uint32_t bsize = block->BlockSize;
 
   ASSERT(bsize >= sizeof(*block));
 
-  char* current = (char*) (block + 1);
+  char* current = (char*)(block + 1);
 
-  char* end = (char*) data + bsize;
+  char* end = (char*)data + bsize;
 
   ssize_t recpos = ::lseek(record_fd, 0, SEEK_CUR);
   ASSERT(recpos >= 0);
@@ -265,8 +271,8 @@ void scatter(dedup_volume& vol, const void* data)
   uint32_t actual_size = 0;
 
   // TODO: fuse split payloads here somewhere ?!
-  while (current != end)  {
-    bareos_record_header *record = (bareos_record_header*) current;
+  while (current != end) {
+    bareos_record_header* record = (bareos_record_header*)current;
     RecEnd += 1;
 
     ASSERT(current + sizeof(*record) < end);
@@ -274,8 +280,8 @@ void scatter(dedup_volume& vol, const void* data)
 
     // the record payload is [current + sizeof(record)]
 
-    char* payload_start = (char*) (record + 1);
-    char* payload_end   = payload_start + record->DataSize;
+    char* payload_start = (char*)(record + 1);
+    char* payload_end = payload_start + record->DataSize;
 
     if (payload_end > end) {
       // payload is split in multiple blocks
@@ -288,7 +294,7 @@ void scatter(dedup_volume& vol, const void* data)
     ssize_t pos = ::lseek(data_fd, 0, SEEK_CUR);
     ASSERT(pos >= 0);
     dedup_record_header drecord{*record, static_cast<std::uint32_t>(pos),
-				static_cast<std::uint32_t>(pos + size)};
+                                static_cast<std::uint32_t>(pos + size)};
     safe_write(data_fd, payload_start, size);
     actual_size += size;
     safe_write(record_fd, &drecord, sizeof(drecord));
@@ -324,26 +330,24 @@ ssize_t dedup_file_device::d_read(int fd, void* data, size_t size)
     int record_fd = vol.get_record();
     int data_fd = vol.get_data();
     dedup_block_header dblock;
-    if (ssize_t bytes = ::read(block_fd, &dblock, sizeof(dblock));
-	bytes < 0) {
+    if (ssize_t bytes = ::read(block_fd, &dblock, sizeof(dblock)); bytes < 0) {
       return bytes;
     } else if (bytes == 0) {
       return 0;
     }
 
-    if (size < dblock.BareosHeader.BlockSize) {
-      return -1;
-    }
+    if (size < dblock.BareosHeader.BlockSize) { return -1; }
 
     uint32_t RecStart = dblock.RecStart;
-    uint32_t RecEnd   = dblock.RecEnd;
+    uint32_t RecEnd = dblock.RecEnd;
     ASSERT(RecStart <= RecEnd);
     uint32_t NumRec = RecEnd - RecStart;
     if (NumRec == 0) { return 0; }
     ::lseek(record_fd, RecStart * sizeof(dedup_record_header), SEEK_SET);
     dedup_record_header* records = new dedup_record_header[NumRec];
 
-    // if (static_cast<ssize_t>(NumRec * sizeof(dedup_record_header)) != ::read(record_fd, records, NumRec * sizeof(dedup_record_header))) {
+    // if (static_cast<ssize_t>(NumRec * sizeof(dedup_record_header)) !=
+    // ::read(record_fd, records, NumRec * sizeof(dedup_record_header))) {
     //   delete[] records;
     //   return -1;
     // }
@@ -351,17 +355,15 @@ ssize_t dedup_file_device::d_read(int fd, void* data, size_t size)
 
     ssize_t lastend = -1;
     char* head = (char*)data;
-    char* end  = head + size;
-    memcpy(head, &dblock.BareosHeader,
-	   sizeof(bareos_block_header));
+    char* end = head + size;
+    memcpy(head, &dblock.BareosHeader, sizeof(bareos_block_header));
     head += sizeof(bareos_block_header);
     for (uint32_t i = 0; i < NumRec; ++i) {
       if (lastend != static_cast<ssize_t>(records[i].DataStart)) {
-	::lseek(data_fd, records[i].DataStart, SEEK_SET);
+        ::lseek(data_fd, records[i].DataStart, SEEK_SET);
       }
 
-      memcpy(head, &records[i].BareosHeader,
-	     sizeof(bareos_record_header));
+      memcpy(head, &records[i].BareosHeader, sizeof(bareos_record_header));
       head += sizeof(bareos_record_header);
       safe_read(data_fd, head, records[i].DataEnd - records[i].DataStart);
       head += records[i].DataEnd - records[i].DataStart;
@@ -373,7 +375,6 @@ ssize_t dedup_file_device::d_read(int fd, void* data, size_t size)
   } else {
     return -1;
   }
-
 }
 
 int dedup_file_device::d_close(int fd)
@@ -388,9 +389,7 @@ int dedup_file_device::d_close(int fd)
 
 int dedup_file_device::d_ioctl(int, ioctl_req_t, char*) { return -1; }
 
-boffset_t dedup_file_device::d_lseek(DeviceControlRecord*,
-				     boffset_t,
-				     int)
+boffset_t dedup_file_device::d_lseek(DeviceControlRecord*, boffset_t, int)
 {
   return -1;
 }
@@ -433,15 +432,9 @@ bool dedup_file_device::rewind(DeviceControlRecord* dcr)
   if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
     dedup_volume& vol = found->second;
     ASSERT(vol.is_ok());
-    if (lseek(vol.get_block(), 0, SEEK_SET) != 0) {
-      return false;
-    }
-    if (lseek(vol.get_record(), 0, SEEK_SET) != 0) {
-      return false;
-    }
-    if (lseek(vol.get_data(), 0, SEEK_SET) != 0) {
-      return false;
-    }
+    if (lseek(vol.get_block(), 0, SEEK_SET) != 0) { return false; }
+    if (lseek(vol.get_record(), 0, SEEK_SET) != 0) { return false; }
+    if (lseek(vol.get_data(), 0, SEEK_SET) != 0) { return false; }
     block_num = 0;
     file = 0;
     file_addr = 0;
@@ -473,17 +466,23 @@ bool dedup_file_device::UpdatePos(DeviceControlRecord*)
   }
 }
 
-bool dedup_file_device::Reposition(DeviceControlRecord* dcr, uint32_t rfile, uint32_t rblock)
+bool dedup_file_device::Reposition(DeviceControlRecord* dcr,
+                                   uint32_t rfile,
+                                   uint32_t rblock)
 {
-  Dmsg2(10, "file: %u -> %u; block: %u -> %u\n", file, rfile, block_num, rblock);
+  Dmsg2(10, "file: %u -> %u; block: %u -> %u\n", file, rfile, block_num,
+        rblock);
   ASSERT(file == 0);
 
   if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
     dedup_volume& vol = found->second;
     ASSERT(vol.is_ok());
 
-    if (auto res = ::lseek(vol.get_block(), rblock * sizeof(dedup_block_header), SEEK_SET);
-	res < 0) { return false; }
+    if (auto res = ::lseek(vol.get_block(), rblock * sizeof(dedup_block_header),
+                           SEEK_SET);
+        res < 0) {
+      return false;
+    }
 
     // todo: if we are not at the end of the device
     //       we should read the block header and position
@@ -501,9 +500,15 @@ bool dedup_file_device::eod(DeviceControlRecord* dcr)
   if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
     dedup_volume& vol = found->second;
     ASSERT(vol.is_ok());
-    if (auto res = ::lseek(vol.get_block(), 0, SEEK_END); res < 0) { return false; }
-    if (auto res = ::lseek(vol.get_record(), 0, SEEK_END); res < 0) { return false; }
-    if (auto res = ::lseek(vol.get_data(), 0, SEEK_END); res < 0) { return false; }
+    if (auto res = ::lseek(vol.get_block(), 0, SEEK_END); res < 0) {
+      return false;
+    }
+    if (auto res = ::lseek(vol.get_record(), 0, SEEK_END); res < 0) {
+      return false;
+    }
+    if (auto res = ::lseek(vol.get_data(), 0, SEEK_END); res < 0) {
+      return false;
+    }
     return UpdatePos(dcr);
   } else {
     return false;
