@@ -66,6 +66,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - build: remove openSUSE 15.3 and Univention 5.0 from test matrix [PR #1469]
 - cleanup: remove some unused functions and shrink number of includes in bareos.h [PR #1433]
 - core: fix schema public with PostgreSQL 15 [PR #1449]
+- pr-tool: handling POEditor commits and optional github ci tests [PR #1434]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -155,6 +156,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1429]: https://github.com/bareos/bareos/pull/1429
 [PR #1431]: https://github.com/bareos/bareos/pull/1431
 [PR #1433]: https://github.com/bareos/bareos/pull/1433
+[PR #1434]: https://github.com/bareos/bareos/pull/1434
 [PR #1437]: https://github.com/bareos/bareos/pull/1437
 [PR #1439]: https://github.com/bareos/bareos/pull/1439
 [PR #1440]: https://github.com/bareos/bareos/pull/1440
