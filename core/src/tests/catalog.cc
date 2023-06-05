@@ -21,7 +21,6 @@
 
 #include "include/bareos.h"
 #include "cats/cats.h"
-#include "cats/sql_pooling.h"
 #include "dird/get_database_connection.h"
 #include "dird/dird_conf.h"
 #include "dird/dird_globals.h"
@@ -107,7 +106,6 @@ void CatalogTest::SetUp()
 void CatalogTest::TearDown()
 {
   db->CloseDatabase(jcr);
-  DbSqlPoolDestroy();
 
   if (jcr) {
     FreeJcr(jcr);

@@ -29,7 +29,6 @@
 #include "include/bareos.h"
 #include "include/exit_codes.h"
 #include "cats/sql.h"
-#include "cats/sql_pooling.h"
 #include "dird.h"
 #include "dird_globals.h"
 #include "dird/check_catalog.h"
@@ -330,15 +329,6 @@ int main(int argc, char* argv[])
 
   if (test_config) { TerminateDird(0); }
 
-  if (!InitializeSqlPooling()) {
-    Jmsg((JobControlRecord*)nullptr, M_ERROR_TERM, 0,
-         _("Please correct the configuration in %s\n"),
-         my_config->get_base_config_path().c_str());
-
-    TerminateDird(BEXIT_SUCCESS);
-    return BEXIT_SUCCESS;
-  }
-
   MyNameIs(0, nullptr, me->resource_name_); /* set user defined name */
 
   CleanUpOldFiles();
@@ -400,7 +390,6 @@ static
   StopSocketServer();
   StopStatisticsThread();
   StopWatchdog();
-  DbSqlPoolDestroy();
   UnloadDirPlugins();
   if (!test_config && me) { /* we don't need to do this block in test mode */
     WriteStateFile(me->working_directory, "bareos-dir",

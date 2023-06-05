@@ -30,7 +30,6 @@
 #include "dird/dird_globals.h"
 #include "dird/get_database_connection.h"
 #include "dird/director_jcr_impl.h"
-#include "cats/sql_pooling.h"
 #include "dird/sd_cmds.h"
 #include "dird/ua_server.h"
 #include "include/auth_protocol_types.h"

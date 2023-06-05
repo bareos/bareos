@@ -918,7 +918,6 @@ class BareosDb : public BareosDbQueryEnum {
                      int db_port);
   BareosDb* CloneDatabaseConnection(JobControlRecord* jcr,
                                     bool mult_db_connections,
-                                    bool get_pooled_connection = true,
                                     bool need_private = false);
   int GetTypeIndex(void) { return db_type_; }
   const char* GetType(void);
@@ -994,6 +993,20 @@ class BareosDb : public BareosDbQueryEnum {
                                        AttributesDbRecord* ar)
       = 0;
 };
+
+BareosDb* ConnectDatabase(JobControlRecord* jcr,
+                          const char* db_drivername,
+                          const char* db_name,
+                          const char* db_user,
+                          const char* db_password,
+                          const char* db_address,
+                          int db_port,
+                          const char* db_socket,
+                          bool mult_db_connections,
+                          bool disable_batch_insert,
+                          bool try_reconnect,
+                          bool exit_on_fatal,
+                          bool need_private = false);
 
 BareosDb* db_init_database(JobControlRecord* jcr,
                            const char* db_driver,

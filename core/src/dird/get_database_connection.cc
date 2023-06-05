@@ -22,7 +22,7 @@
 */
 
 #include "include/bareos.h"
-#include "cats/sql_pooling.h"
+#include "cats/cats.h"
 #include "dird/dird_conf.h"
 #include "dird/get_database_connection.h"
 #include "dird/director_jcr_impl.h"
@@ -32,17 +32,17 @@ namespace directordaemon {
 
 BareosDb* GetDatabaseConnection(JobControlRecord* jcr)
 {
-  return DbSqlGetPooledConnection(
-      jcr, jcr->dir_impl->res.catalog->db_driver,
-      jcr->dir_impl->res.catalog->db_name, jcr->dir_impl->res.catalog->db_user,
-      jcr->dir_impl->res.catalog->db_password.value,
-      jcr->dir_impl->res.catalog->db_address,
-      jcr->dir_impl->res.catalog->db_port,
-      jcr->dir_impl->res.catalog->db_socket,
-      jcr->dir_impl->res.catalog->mult_db_connections,
-      jcr->dir_impl->res.catalog->disable_batch_insert,
-      jcr->dir_impl->res.catalog->try_reconnect,
-      jcr->dir_impl->res.catalog->exit_on_fatal);
+  return ConnectDatabase(jcr, jcr->dir_impl->res.catalog->db_driver,
+                         jcr->dir_impl->res.catalog->db_name,
+                         jcr->dir_impl->res.catalog->db_user,
+                         jcr->dir_impl->res.catalog->db_password.value,
+                         jcr->dir_impl->res.catalog->db_address,
+                         jcr->dir_impl->res.catalog->db_port,
+                         jcr->dir_impl->res.catalog->db_socket,
+                         jcr->dir_impl->res.catalog->mult_db_connections,
+                         jcr->dir_impl->res.catalog->disable_batch_insert,
+                         jcr->dir_impl->res.catalog->try_reconnect,
+                         jcr->dir_impl->res.catalog->exit_on_fatal);
 }
 
 }  // namespace directordaemon

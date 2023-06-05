@@ -195,34 +195,6 @@ bool CheckResources()
   return true;
 }
 
-// Initialize the sql pooling.
-bool InitializeSqlPooling(void)
-{
-  bool retval = true;
-  CatalogResource* catalog;
-
-  foreach_res (catalog, R_CATALOG) {
-    if (!db_sql_pool_initialize(
-            catalog->db_driver, catalog->db_name, catalog->db_user,
-            catalog->db_password.value, catalog->db_address, catalog->db_port,
-            catalog->db_socket, catalog->disable_batch_insert,
-            catalog->try_reconnect, catalog->exit_on_fatal,
-            catalog->pooling_min_connections, catalog->pooling_max_connections,
-            catalog->pooling_increment_connections,
-            catalog->pooling_idle_timeout, catalog->pooling_validate_timeout)) {
-      Jmsg(nullptr, M_FATAL, 0,
-           _("Could not setup sql pooling for Catalog \"%s\", database "
-             "\"%s\".\n"),
-           catalog->resource_name_, catalog->db_name);
-      retval = false;
-      goto bail_out;
-    }
-  }
-
-bail_out:
-  return retval;
-}
-
 bool DoReloadConfig()
 {
   static bool is_reloading = false;
@@ -242,8 +214,6 @@ bool DoReloadConfig()
   LockJobs();
   ResLocker _{my_config};
 
-  DbSqlPoolFlush();
-
   auto backup_container = my_config->BackupResourcesContainer();
   Dmsg0(100, "Reloading config file\n");
 
@@ -253,8 +223,7 @@ bool DoReloadConfig()
   bool ok = my_config->ParseConfig();
 
   // parse config successful
-  if (ok && CheckResources() && CheckCatalog(UPDATE_CATALOG)
-      && InitializeSqlPooling()) {
+  if (ok && CheckResources() && CheckCatalog(UPDATE_CATALOG)) {
     Scheduler::GetMainScheduler().ClearQueue();
     reloaded = true;
     Dmsg0(10, "Director's configuration file reread successfully.\n");

@@ -30,7 +30,6 @@
 #include "dird.h"
 #include "dird/director_jcr_impl.h"
 #include "dird/ua_db.h"
-#include "cats/sql_pooling.h"
 #include "dird/ua_select.h"
 
 namespace directordaemon {
@@ -134,7 +133,7 @@ bool OpenDb(UaContext* ua, bool use_private)
 
   ua->jcr->dir_impl->res.catalog = ua->catalog;
   Dmsg0(100, "UA Open database\n");
-  ua->db = DbSqlGetPooledConnection(
+  ua->db = ConnectDatabase(
       ua->jcr, ua->catalog->db_driver, ua->catalog->db_name,
       ua->catalog->db_user, ua->catalog->db_password.value,
       ua->catalog->db_address, ua->catalog->db_port, ua->catalog->db_socket,
@@ -170,12 +169,12 @@ void CloseDb(UaContext* ua)
   if (ua->jcr) { ua->jcr->db = NULL; }
 
   if (ua->shared_db) {
-    DbSqlClosePooledConnection(ua->jcr, ua->shared_db);
+    ua->shared_db->CloseDatabase(ua->jcr);
     ua->shared_db = NULL;
   }
 
   if (ua->private_db) {
-    DbSqlClosePooledConnection(ua->jcr, ua->private_db);
+    ua->private_db->CloseDatabase(ua->jcr);
     ua->private_db = NULL;
   }
 }
