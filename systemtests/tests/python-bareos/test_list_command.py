@@ -24,6 +24,7 @@ from __future__ import print_function
 import json
 import logging
 import os
+import shutil
 import re
 import subprocess
 from time import sleep
@@ -352,7 +353,11 @@ class PythonBareosListCommandTest(bareos_unittest.Base):
             "2",
         )
         director.call("delete volume=test_volume0001 yes")
-        os.remove("storage/{}".format(test_volume))
+        vol_path = f"storage/{test_volume}"
+        if os.path.isdir(vol_path):
+            shutil.rmtree(vol_path)
+        else:
+            os.remove(vol_path)
 
     def test_list_pool(self):
         """
