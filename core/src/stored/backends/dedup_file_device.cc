@@ -119,6 +119,15 @@ int dedup_file_device::d_open(const char* path, int, int mode)
 
     if (!inserted) { return -1; }
 
+    if (open_mode == DeviceMode::CREATE_READ_WRITE) {
+      // if we were supposed to create the volume, we need to
+      // setup the config file
+      iter->second.write_current_config();
+    } else if (!iter->second.has_compatible_config()) {
+      // if we are not compatible with the config, we should not open it.
+      return -1;
+    }
+
     fd_ctr += 1;
     return new_fd;
   } else {
@@ -128,10 +137,10 @@ int dedup_file_device::d_open(const char* path, int, int mode)
 
 
 struct bareos_block_header {
-  net_u32 CheckSum;  /* Block check sum */
-  net_u32 BlockSize; /* Block byte size including the header */
+  net_u32 CheckSum;       /* Block check sum */
+  net_u32 BlockSize;      /* Block byte size including the header */
   net_u32 BlockNumber;    /* Block number */
-  char ID[4];                             /* Identification and block level */
+  char ID[4];             /* Identification and block level */
   net_u32 VolSessionId;   /* Session Id for Job */
   net_u32 VolSessionTime; /* Session Time for Job */
 };
@@ -139,7 +148,7 @@ struct bareos_block_header {
 struct bareos_record_header {
   net_i32 FileIndex; /* File index supplied by File daemon */
   net_i32 Stream;    /* Stream number supplied by File daemon */
-  net_u32 DataSize; /* size of following data record in bytes */
+  net_u32 DataSize;  /* size of following data record in bytes */
 };
 
 struct dedup_block_header {
@@ -462,5 +471,76 @@ bool dedup_file_device::eod(DeviceControlRecord* dcr)
 }
 
 REGISTER_SD_BACKEND(dedup, dedup_file_device);
+
+bool dedup_volume_config::is_compatible(config_header other,
+                                        const void* data) const
+{
+  if (header.version == other.version
+      && header.payload_size == other.payload_size) {
+    const config_payload* other_payload
+        = static_cast<const config_payload*>(data);
+    if (payload.block_header_size == other_payload->block_header_size
+        && payload.record_header_size == other_payload->record_header_size) {
+      return true;
+    } else {
+      return false;
+    }
+  } else {
+    return false;
+  }
+}
+
+constexpr dedup_volume_config current_dedup_config{
+    .header = {.checksum = 0,
+               .version = 1,
+               .payload_size = sizeof(dedup_volume_config::config_payload),
+               .reserved = 0},
+
+    .payload = {.block_header_size = sizeof(dedup_block_header),
+                .record_header_size = sizeof(dedup_record_header)}};
+
+void dedup_volume::write_current_config()
+{
+  if (write(config.get(), &current_dedup_config, sizeof(current_dedup_config))
+      != sizeof(current_dedup_config)) {
+    error = true;
+  }
+}
+
+bool dedup_volume::has_compatible_config()
+{
+  auto config_end = lseek(config.get(), 0, SEEK_END);
+  auto config_start = lseek(config.get(), 0, SEEK_SET);
+
+  if (config_start != 0 || config_end <= config_start) { return false; }
+
+  std::size_t size = config_end - config_start;
+
+  if (size <= sizeof(dedup_volume_config::header)) {
+    // even == is wrong since every config needs at least some bytes
+    // of payload!
+    return false;
+  }
+
+  std::vector<std::byte> raw_config(size);
+  ASSERT(raw_config.size() == size);
+
+  if (read(config.get(), raw_config.data(), raw_config.size())
+      != static_cast<ssize_t>(raw_config.size())) {
+    return false;
+  }
+
+  const dedup_volume_config::config_header* header
+      = reinterpret_cast<dedup_volume_config::config_header*>(
+          raw_config.data());
+
+  if (raw_config.size() - sizeof(*header) != header->payload_size) {
+    return false;
+  }
+
+  const void* payload = static_cast<void*>(raw_config.data() + sizeof(*header));
+
+  return current_dedup_config.is_compatible(*header, payload);
+}
 
 } /* namespace storagedaemon  */

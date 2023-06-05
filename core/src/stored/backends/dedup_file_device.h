@@ -31,28 +31,23 @@
 namespace storagedaemon {
 
 class raii_fd {
-public:
-  raii_fd(const char* path, int flags, int mode) : flags{flags}
-						 , mode{mode}
+ public:
+  raii_fd(const char* path, int flags, int mode) : flags{flags}, mode{mode}
   {
     fd = open(path, flags, mode);
   }
 
-  raii_fd(int dird, const char* path, int flags, int mode) : flags{flags}
-							   , mode{mode}
+  raii_fd(int dird, const char* path, int flags, int mode)
+      : flags{flags}, mode{mode}
   {
     fd = openat(dird, path, flags, mode);
   }
-  raii_fd(int fd = -1, int flags = 0, int mode = 0) : fd{fd}
-						    , flags{flags}
-						    , mode{mode}
+  raii_fd(int fd = -1, int flags = 0, int mode = 0)
+      : fd{fd}, flags{flags}, mode{mode}
   {
   }
 
-  raii_fd(raii_fd&& move_from) : raii_fd{}
-  {
-    *this = std::move(move_from);
-  }
+  raii_fd(raii_fd&& move_from) : raii_fd{} { *this = std::move(move_from); }
 
   raii_fd& operator=(raii_fd&& move_from)
   {
@@ -62,45 +57,36 @@ public:
     return *this;
   }
 
-  bool is_ok() const
-  {
-    return !(fd < 0);
-  }
+  bool is_ok() const { return !(fd < 0); }
 
-  int get() const
-  {
-    return fd;
-  }
+  int get() const { return fd; }
 
-  int get_flags() const
-  {
-    return flags;
-  }
+  int get_flags() const { return flags; }
 
-  int get_mode() const
-  {
-    return mode;
-  }
+  int get_mode() const { return mode; }
 
   ~raii_fd()
   {
-    if (is_ok()) {
-      close(fd);
-    }
+    if (is_ok()) { close(fd); }
   }
-private:
+
+ private:
   int fd{-1};
   int flags;
   int mode;
 };
 
 class dedup_volume {
-public:
+ public:
   dedup_volume(const char* path, int flags, int mode)
-    : dir{path, O_DIRECTORY | O_RDONLY, mode | ((flags & O_CREAT) ? 0100 : 0)}
-    , block{dir.get(), "block", flags, mode}
-    , record{dir.get(), "record", flags, mode}
-    , data{dir.get(), "data", flags, mode}
+      : dir{path, O_DIRECTORY | O_RDONLY, mode | ((flags & O_CREAT) ? 0100 : 0)}
+      , block{dir.get(), "block", flags, mode}
+      , record{dir.get(), "record", flags, mode}
+      , data{dir.get(), "data", flags, mode}
+      , config{dir.get(), "config",
+               (flags & O_CREAT) ? O_CREAT | O_RDWR | O_BINARY
+                                 : O_RDONLY | O_BINARY,
+               mode}
   {
   }
 
@@ -109,34 +95,55 @@ public:
 
   bool is_ok() const
   {
-    return dir.is_ok() && block.is_ok() && record.is_ok() && data.is_ok();
+    return !error && dir.is_ok() && block.is_ok() && record.is_ok()
+           && data.is_ok() && config.is_ok();
   }
 
-  int get_dir()
-  {
-    return dir.get();
-  }
+  int get_dir() { return dir.get(); }
 
-  int get_block()
-  {
-    return block.get();
-  }
+  int get_block() { return block.get(); }
 
-  int get_record()
-  {
-    return record.get();
-  }
+  int get_record() { return record.get(); }
 
-  int get_data()
-  {
-    return data.get();
-  }
+  int get_data() { return data.get(); }
 
-private:
+  void write_current_config();
+  bool has_compatible_config();
+
+ private:
   raii_fd dir;
   raii_fd block;
   raii_fd record;
   raii_fd data;
+  raii_fd config;
+
+  bool error{false};
+};
+
+struct dedup_volume_config {
+ public:
+  using net_u32 = network_order::network_value<std::uint32_t>;
+  using net_u64 = network_order::network_value<std::uint64_t>;
+  using net_i32 = network_order::network_value<std::int32_t>;
+  // the header may not change!
+  struct config_header {
+    net_u64 checksum;  // no checksums at the moment
+    net_u32 version;
+    net_u32 payload_size;
+    net_u64 reserved;
+  };
+
+
+  // the payload structure may change between versions
+  struct config_payload {
+    net_u32 block_header_size;
+    net_u32 record_header_size;
+  };
+
+  bool is_compatible(config_header other, const void* data) const;
+
+  config_header header;
+  config_payload payload;
 };
 
 class dedup_file_device : public Device {
@@ -161,8 +168,11 @@ class dedup_file_device : public Device {
   bool d_truncate(DeviceControlRecord* dcr) override;
   bool rewind(DeviceControlRecord* dcr) override;
   bool UpdatePos(DeviceControlRecord* dcr) override;
-  bool Reposition(DeviceControlRecord* dcr, uint32_t rfile, uint32_t rblock) override;
+  bool Reposition(DeviceControlRecord* dcr,
+                  uint32_t rfile,
+                  uint32_t rblock) override;
   bool eod(DeviceControlRecord* dcr) override;
+
  private:
   bool mounted{false};
 
