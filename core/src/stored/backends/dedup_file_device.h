@@ -24,7 +24,119 @@
 
 #include "stored/dev.h"
 
+#include <unordered_map>
+
 namespace storagedaemon {
+
+class raii_fd {
+public:
+  raii_fd(const char* path, int flags, int mode) : flags{flags}
+						 , mode{mode}
+  {
+    fd = open(path, flags, mode);
+  }
+
+  raii_fd(int dird, const char* path, int flags, int mode) : flags{flags}
+							   , mode{mode}
+  {
+    fd = openat(dird, path, flags, mode);
+  }
+  raii_fd(int fd = -1, int flags = 0, int mode = 0) : fd{fd}
+						    , flags{flags}
+						    , mode{mode}
+  {
+  }
+
+  raii_fd(raii_fd&& move_from) : raii_fd{}
+  {
+    *this = std::move(move_from);
+  }
+
+  raii_fd& operator=(raii_fd&& move_from)
+  {
+    std::swap(fd, move_from.fd);
+    std::swap(flags, move_from.flags);
+    std::swap(mode, move_from.mode);
+    return *this;
+  }
+
+  bool is_ok() const
+  {
+    return !(fd < 0);
+  }
+
+  int get() const
+  {
+    return fd;
+  }
+
+  int get_flags() const
+  {
+    return flags;
+  }
+
+  int get_mode() const
+  {
+    return mode;
+  }
+
+  ~raii_fd()
+  {
+    if (is_ok()) {
+      close(fd);
+    }
+  }
+private:
+  int fd{-1};
+  int flags;
+  int mode;
+};
+
+class dedup_volume {
+public:
+  dedup_volume(const char* path, int flags, int mode)
+    : dir{path, O_DIRECTORY | O_RDONLY, mode | ((flags & O_CREAT) ? 0100 : 0)}
+    , block{dir.get(), "block", flags, mode}
+    , record{dir.get(), "record", flags, mode}
+    , data{dir.get(), "data", flags, mode}
+  {
+  }
+
+  dedup_volume(dedup_volume&&) = default;
+  dedup_volume& operator=(dedup_volume&&) = default;
+
+  bool is_ok() const
+  {
+    return dir.is_ok() && block.is_ok() && record.is_ok() && data.is_ok();
+  }
+
+  int get_dir()
+  {
+    return dir.get();
+  }
+
+  int get_block()
+  {
+    return block.get();
+  }
+
+  int get_record()
+  {
+    return record.get();
+  }
+
+  int get_data()
+  {
+    return data.get();
+  }
+
+private:
+  raii_fd dir;
+  raii_fd block;
+  raii_fd record;
+  raii_fd data;
+};
+
 class dedup_file_device : public Device {
  public:
   dedup_file_device() = default;
@@ -52,9 +164,8 @@ class dedup_file_device : public Device {
  private:
   bool mounted{false};
 
-  int block_fd;
-  int record_fd;
-  int data_fd;
+  int fd_ctr;
+  std::unordered_map<int, dedup_volume> open_volumes;
 };
 
 } /* namespace storagedaemon */

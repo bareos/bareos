@@ -31,6 +31,7 @@
 #include <unistd.h>
 
 #include <utility>
+#include <optional>
 
 namespace storagedaemon {
 
@@ -63,60 +64,17 @@ bool dedup_file_device::ScanForVolumeImpl(DeviceControlRecord* dcr)
   return ScanDirectoryForVolume(dcr);
 }
 
-static int OpenDirStructure(const char* path, int flags, int mode,
-			      int* fd, int* block_fd,
-			      int* record_fd, int* data_fd)
-{
-  // dir needs to be executable if we want to create files inside
-  int create_mode = (flags & O_CREAT) ? 0100 : 0;
-  int dir = ::open(path, O_DIRECTORY | O_RDONLY, mode | create_mode);
-
-  if (dir < 0) {
-    return dir;
-  }
-
-  int block = ::openat(dir, "block", flags, mode);
-  if (block < 0) {
-    ::close(dir);
-    return block;
-  }
-  int record = ::openat(dir, "record", flags, mode);
-  if (record < 0) {
-    ::close(block);
-    ::close(dir);
-    return record;
-  }
-  int data = ::openat(dir, "data", flags, mode);
-  if (data < 0) {
-    ::close(record);
-    ::close(block);
-    ::close(dir);
-    return data;
-  }
-
-  *fd = dir;
-  *block_fd = block;
-  *record_fd = record;
-  *data_fd = data;
-
-  return dir;
-
-}
-
-static int CreateDirStructure(const char* path, int mode,
-			      int* fd, int* block_fd,
-			      int* record_fd, int* data_fd)
+static std::optional<dedup_volume> CreateDirStructure(const char* path, int mode)
 {
   if (struct stat st; ::stat(path, &st) != -1) {
-    return -1;
+    return std::nullopt;
   }
 
   if (mkdir(path,  mode | 0100) < 0) {
-    return -1;
+    return std::nullopt;
   }
 
-  return OpenDirStructure(path, O_CREAT | O_RDWR | O_BINARY, mode, fd,
-			  block_fd, record_fd, data_fd);
+  return dedup_volume{path, O_CREAT | O_RDWR | O_BINARY, mode};
 }
 
 
@@ -131,23 +89,38 @@ int dedup_file_device::d_open(const char* path, int, int mode)
   // +- record
   // +- data
 
+  std::optional<dedup_volume> vol{std::nullopt};
+
   switch (open_mode) {
   case DeviceMode::CREATE_READ_WRITE: {
-    return CreateDirStructure(path, mode, &fd, &block_fd, &record_fd, &data_fd);
+    vol = CreateDirStructure(path, mode);
   } break;
   case DeviceMode::OPEN_READ_WRITE: {
-    return OpenDirStructure(path, O_RDWR | O_BINARY, mode, &fd, &block_fd, &record_fd, &data_fd);
+    vol = dedup_volume{path, O_RDWR | O_BINARY, mode};
   } break;
   case DeviceMode::OPEN_READ_ONLY: {
-    return OpenDirStructure(path, O_RDONLY | O_BINARY, mode, &fd, &block_fd, &record_fd, &data_fd);
+    vol = dedup_volume{path, O_RDONLY | O_BINARY, mode};
   } break;
   case DeviceMode::OPEN_WRITE_ONLY: {
-    return OpenDirStructure(path, O_WRONLY | O_BINARY, mode, &fd, &block_fd, &record_fd, &data_fd);
+    vol = dedup_volume{path, O_WRONLY | O_BINARY, mode};
   } break;
   default: {
     Emsg0(M_ABORT, 0, _("Illegal mode given to open dev.\n"));
-    return -1;
   }
+  }
+
+  if (vol.has_value() && vol->is_ok()) {
+    int new_fd = fd_ctr;
+    auto [iter, inserted] = open_volumes.emplace(new_fd, std::move(vol.value()));
+
+    if (!inserted) {
+      return -1;
+    }
+
+    fd_ctr += 1;
+    return new_fd;
+  } else {
+    return -1;
   }
 }
 
@@ -268,8 +241,11 @@ static void safe_read(int fd, void* data, std::size_t size)
   ASSERT(::read(fd, data, size) == static_cast<ssize_t>(size));
 }
 
-void split_and_write(int block_fd, int record_fd, int data_fd, const void* data)
+void scatter(dedup_volume& vol, const void* data)
 {
+  int block_fd = vol.get_block();
+  int record_fd = vol.get_record();
+  int data_fd = vol.get_data();
   bareos_block_header *block = (bareos_block_header*) data;
   uint32_t bsize = block->BlockSize;
 
@@ -327,70 +303,86 @@ void split_and_write(int block_fd, int record_fd, int data_fd, const void* data)
 
 ssize_t dedup_file_device::d_write(int fd, const void* data, size_t size)
 {
-  (void) fd;
-  split_and_write(block_fd, record_fd, data_fd, data);
-
-  return size;
+  if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
+    dedup_volume& vol = found->second;
+    ASSERT(vol.is_ok());
+    scatter(vol, data);
+    return size;
+  } else {
+    return -1;
+  }
 }
 
 ssize_t dedup_file_device::d_read(int fd, void* data, size_t size)
 {
-  (void) fd;
+  if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
+    dedup_volume& vol = found->second;
+    ASSERT(vol.is_ok());
 
-  dedup_block_header dblock;
-  if (ssize_t bytes = ::read(block_fd, &dblock, sizeof(dblock));
-      bytes < 0) {
-    return bytes;
-  } else if (bytes == 0) {
-    return 0;
-  }
+    int block_fd = vol.get_block();
+    int record_fd = vol.get_record();
+    int data_fd = vol.get_data();
+    dedup_block_header dblock;
+    if (ssize_t bytes = ::read(block_fd, &dblock, sizeof(dblock));
+	bytes < 0) {
+      return bytes;
+    } else if (bytes == 0) {
+      return 0;
+    }
 
-  if (size < dblock.BareosHeader.BlockSize) {
+    if (size < dblock.BareosHeader.BlockSize) {
+      return -1;
+    }
+
+    uint32_t RecStart = dblock.RecStart;
+    uint32_t RecEnd   = dblock.RecEnd;
+    ASSERT(RecStart <= RecEnd);
+    uint32_t NumRec = RecEnd - RecStart;
+    if (NumRec == 0) { return 0; }
+    ::lseek(record_fd, RecStart * sizeof(dedup_record_header), SEEK_SET);
+    dedup_record_header* records = new dedup_record_header[NumRec];
+
+    // if (static_cast<ssize_t>(NumRec * sizeof(dedup_record_header)) != ::read(record_fd, records, NumRec * sizeof(dedup_record_header))) {
+    //   delete[] records;
+    //   return -1;
+    // }
+    safe_read(record_fd, records, NumRec * sizeof(dedup_record_header));
+
+    ssize_t lastend = -1;
+    char* head = (char*)data;
+    char* end  = head + size;
+    memcpy(head, &dblock.BareosHeader,
+	   sizeof(bareos_block_header));
+    head += sizeof(bareos_block_header);
+    for (uint32_t i = 0; i < NumRec; ++i) {
+      if (lastend != static_cast<ssize_t>(records[i].DataStart)) {
+	::lseek(data_fd, records[i].DataStart, SEEK_SET);
+      }
+
+      memcpy(head, &records[i].BareosHeader,
+	     sizeof(bareos_record_header));
+      head += sizeof(bareos_record_header);
+      safe_read(data_fd, head, records[i].DataEnd - records[i].DataStart);
+      head += records[i].DataEnd - records[i].DataStart;
+      lastend = records[i].DataEnd;
+      ASSERT(head <= end);
+    }
+
+    return head - (char*)data;
+  } else {
     return -1;
   }
 
-  uint32_t RecStart = dblock.RecStart;
-  uint32_t RecEnd   = dblock.RecEnd;
-  ASSERT(RecStart <= RecEnd);
-  uint32_t NumRec = RecEnd - RecStart;
-  if (NumRec == 0) { return 0; }
-  ::lseek(record_fd, RecStart * sizeof(dedup_record_header), SEEK_SET);
-  dedup_record_header* records = new dedup_record_header[NumRec];
-
-  // if (static_cast<ssize_t>(NumRec * sizeof(dedup_record_header)) != ::read(record_fd, records, NumRec * sizeof(dedup_record_header))) {
-  //   delete[] records;
-  //   return -1;
-  // }
-  safe_read(record_fd, records, NumRec * sizeof(dedup_record_header));
-
-  ssize_t lastend = -1;
-  char* head = (char*)data;
-  char* end  = head + size;
-  memcpy(head, &dblock.BareosHeader,
-	 sizeof(bareos_block_header));
-  head += sizeof(bareos_block_header);
-  for (uint32_t i = 0; i < NumRec; ++i) {
-    if (lastend != static_cast<ssize_t>(records[i].DataStart)) {
-      ::lseek(data_fd, records[i].DataStart, SEEK_SET);
-    }
-
-    memcpy(head, &records[i].BareosHeader,
-	   sizeof(bareos_record_header));
-    head += sizeof(bareos_record_header);
-    safe_read(data_fd, head, records[i].DataEnd - records[i].DataStart);
-    head += records[i].DataEnd - records[i].DataStart;
-    lastend = records[i].DataEnd;
-    ASSERT(head <= end);
-  }
-
-  return head - (char*)data;
 }
 
-int dedup_file_device::d_close(int fd) {
-  ::close(block_fd);
-  ::close(record_fd);
-  ::close(data_fd);
-  return ::close(fd);
+int dedup_file_device::d_close(int fd)
+{
+  size_t num_erased = open_volumes.erase(fd);
+  if (num_erased == 1) {
+    return 0;
+  } else {
+    return -1;
+  }
 }
 
 int dedup_file_device::d_ioctl(int, ioctl_req_t, char*) { return -1; }
@@ -404,40 +396,58 @@ boffset_t dedup_file_device::d_lseek(DeviceControlRecord*,
 
 bool dedup_file_device::d_truncate(DeviceControlRecord*)
 {
-  return true;
+  if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
+    dedup_volume& vol = found->second;
+    ASSERT(vol.is_ok());
+    return true;
+  } else {
+    return false;
+  }
 }
 
 bool dedup_file_device::rewind(DeviceControlRecord* dcr)
 {
-  if (lseek(block_fd, 0, SEEK_SET) != 0) {
+  if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
+    dedup_volume& vol = found->second;
+    ASSERT(vol.is_ok());
+    if (lseek(vol.get_block(), 0, SEEK_SET) != 0) {
+      return false;
+    }
+    if (lseek(vol.get_record(), 0, SEEK_SET) != 0) {
+      return false;
+    }
+    if (lseek(vol.get_data(), 0, SEEK_SET) != 0) {
+      return false;
+    }
+    block_num = 0;
+    file = 0;
+    file_addr = 0;
+    return UpdatePos(dcr);
+  } else {
     return false;
   }
-  if (lseek(data_fd, 0, SEEK_SET) != 0) {
-    return false;
-  }
-  if (lseek(record_fd, 0, SEEK_SET) != 0) {
-    return false;
-  }
-  block_num = 0;
-  file = 0;
-  file_addr = 0;
-  return UpdatePos(dcr);
 }
 
 bool dedup_file_device::UpdatePos(DeviceControlRecord*)
 {
-  // synchronize (real) device position with this->file, this->block
-  auto pos = lseek(block_fd, 0, SEEK_CUR);
-  if (pos < 0) return false;
+  if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
+    dedup_volume& vol = found->second;
+    ASSERT(vol.is_ok());
+    // synchronize (real) device position with this->file, this->block
+    auto pos = lseek(vol.get_block(), 0, SEEK_CUR);
+    if (pos < 0) return false;
 
-  file_addr = pos;
-  block_num = pos / sizeof(dedup_block_header);
+    file_addr = pos;
+    block_num = pos / sizeof(dedup_block_header);
 
-  ASSERT(block_num * sizeof(dedup_block_header) == file_addr);
+    ASSERT(block_num * sizeof(dedup_block_header) == file_addr);
 
-  file = 0;
+    file = 0;
 
-  return true;
+    return true;
+  } else {
+    return false;
+  }
 }
 
 bool dedup_file_device::Reposition(DeviceControlRecord*, uint32_t rfile, uint32_t rblock)
@@ -451,10 +461,16 @@ bool dedup_file_device::Reposition(DeviceControlRecord*, uint32_t rfile, uint32_
 
 bool dedup_file_device::eod(DeviceControlRecord* dcr)
 {
-  if (auto res = ::lseek(block_fd, 0, SEEK_END); res < 0) { return false; }
-  if (auto res = ::lseek(record_fd, 0, SEEK_END); res < 0) { return false; }
-  if (auto res = ::lseek(data_fd, 0, SEEK_END); res < 0) { return false; }
-  return UpdatePos(dcr);
+  if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
+    dedup_volume& vol = found->second;
+    ASSERT(vol.is_ok());
+    if (auto res = ::lseek(vol.get_block(), 0, SEEK_END); res < 0) { return false; }
+    if (auto res = ::lseek(vol.get_record(), 0, SEEK_END); res < 0) { return false; }
+    if (auto res = ::lseek(vol.get_data(), 0, SEEK_END); res < 0) { return false; }
+    return UpdatePos(dcr);
+  } else {
+    return false;
+  }
 }
 
 REGISTER_SD_BACKEND(dedup, dedup_file_device);
