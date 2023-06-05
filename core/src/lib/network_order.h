@@ -49,11 +49,11 @@ template <typename T> constexpr T byteswap(T val)
 #if !defined(BYTE_ORDER) || !defined(LITTLE_ENDIAN)
 #  error "Could not determine endianess."
 #elif (BYTE_ORDER == LITTLE_ENDIAN)
-template <typename T> T to_network(T val) { return byteswap(val); }
-template <typename T> T to_native(T val) { return byteswap(val); }
+template <typename T> constexpr T to_network(T val) { return byteswap(val); }
+template <typename T> constexpr T to_native(T val) { return byteswap(val); }
 #else
-template <typename T> T to_network(T val) { return val; }
-template <typename T> T to_native(T val) { return val; }
+template <typename T> constexpr T to_network(T val) { return val; }
+template <typename T> constexpr T to_native(T val) { return val; }
 #endif
 
 struct from_network_order {
@@ -64,13 +64,13 @@ struct from_native_order {
 
 template <typename T> struct network_value {
   T as_network;
-  T as_native() const { return to_native(as_network); }
-  operator T() const { return as_native(); }
+  constexpr T as_native() const { return to_native(as_network); }
+  constexpr operator T() const { return as_native(); }
 
-  network_value() = default;
-  network_value(from_network_order, T val) : as_network{val} {}
-  network_value(from_native_order, T val) : as_network{to_network(val)} {}
-  network_value(T val) : network_value{from_native_order_v, val} {}
+  constexpr network_value() = default;
+  constexpr network_value(from_network_order, T val) : as_network{val} {}
+  constexpr network_value(from_native_order, T val) : as_network{to_network(val)} {}
+  constexpr network_value(T val) : network_value{from_native_order_v, val} {}
 };
 
 // TODO: can we do this on instantiaton of every template
