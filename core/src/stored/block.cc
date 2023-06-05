@@ -1128,7 +1128,7 @@ reread:
   dev->block_num++;
 
   // Update dcr values
-  if (dev->IsTape()) {
+  if (dev->GetSeekMode() == SeekMode::FILE_BLOCK) {
     dcr->EndBlock = dev->EndBlock;
     dcr->EndFile = dev->EndFile;
   } else {
