@@ -821,12 +821,12 @@ void OutputFormatter::SendBuffer()
   }
 }
 
-void OutputFormatter::FinalizeResult([[maybe_unused]] bool result)
+void OutputFormatter::FinalizeResult()
 {
   switch (api) {
 #if HAVE_JANSSON
     case API_MODE_JSON:
-      JsonFinalizeResult(result);
+      JsonFinalizeResult();
       break;
 #endif
     default:
@@ -970,7 +970,7 @@ bool OutputFormatter::JsonSendErrorMessage(const char* message)
   return send_func(send_ctx, "%s", json_error_message.c_str());
 }
 
-void OutputFormatter::JsonFinalizeResult([[maybe_unused]] bool result)
+void OutputFormatter::JsonFinalizeResult()
 {
   json_t* msg_obj = json_object();
   json_t* meta_obj = NULL;

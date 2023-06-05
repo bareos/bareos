@@ -626,7 +626,7 @@ bool Do_a_command(UaContext* ua)
     ua->ErrorMsg(_("%s: is an invalid command.\n"), ua->argk[0]);
     ok = false;
   }
-  ua->send->FinalizeResult(ok);
+  ua->send->FinalizeResult();
 
   return ok;
 }

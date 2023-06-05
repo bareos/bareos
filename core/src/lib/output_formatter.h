@@ -255,7 +255,7 @@ class OutputFormatter {
 
   void message(const char* type, PoolMem& message);
 
-  void FinalizeResult(bool result);
+  void FinalizeResult();
 
 #if HAVE_JANSSON
   bool JsonArrayItemAdd(json_t* value);
@@ -264,7 +264,7 @@ class OutputFormatter {
   bool JsonKeyValueAdd(const char* key, const char* value);
   void JsonAddMessage(const char* type, PoolMem& message);
   bool JsonHasErrorMessage();
-  void JsonFinalizeResult(bool result);
+  void JsonFinalizeResult();
 #endif
 };
 
