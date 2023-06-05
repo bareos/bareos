@@ -802,17 +802,20 @@ bool DeviceControlRecord::WriteBlockToDev()
   block->BlockNumber++;
 
   // Update dcr values
-  if (dev->IsTape()) {
+  switch (dev->GetSeekMode()) {
+  case SeekMode::FILE_BLOCK: {
     dcr->EndBlock = dev->EndBlock;
     dcr->EndFile = dev->EndFile;
     dev->block_num++;
-  } else {
+  } break;
+  default: {
     // Save address of block just written
     uint64_t addr = dev->file_addr + wlen - 1;
     dcr->EndBlock = (uint32_t)addr;
     dcr->EndFile = (uint32_t)(addr >> 32);
     dev->block_num = dcr->EndBlock;
     dev->file = dcr->EndFile;
+  }
   }
   dcr->VolMediaId = dev->VolCatInfo.VolMediaId;
   if (dcr->VolFirstIndex == 0 && block->FirstIndex > 0) {
@@ -1110,10 +1113,12 @@ reread:
   dev->block_num++;
 
   // Update dcr values
-  if (dev->IsTape()) {
+  switch (dev->GetSeekMode()) {
+  case SeekMode::FILE_BLOCK: {
     dcr->EndBlock = dev->EndBlock;
     dcr->EndFile = dev->EndFile;
-  } else {
+  } break;
+  default: {
     // We need to take care about a short block in EndBlock/File computation
     uint32_t len = MIN(block->read_len, block->block_len);
     uint64_t addr = dev->file_addr + len - 1;
@@ -1121,6 +1126,7 @@ reread:
     dcr->EndFile = (uint32_t)(addr >> 32);
     dev->block_num = dev->EndBlock = dcr->EndBlock;
     dev->file = dev->EndFile = dcr->EndFile;
+  }
   }
   dcr->VolMediaId = dev->VolCatInfo.VolMediaId;
   dev->file_addr += block->read_len;

@@ -621,12 +621,15 @@ bool WriteSessionLabel(DeviceControlRecord* dcr, int label)
       SetStartVolPosition(dcr);
       break;
     case EOS_LABEL:
-      if (dev->IsTape()) {
+      switch (dev->GetSeekMode()) {
+      case SeekMode::FILE_BLOCK: {
         dcr->EndBlock = dev->EndBlock;
         dcr->EndFile = dev->EndFile;
-      } else {
+      } break;
+      default: {
         dcr->EndBlock = (uint32_t)dev->file_addr;
         dcr->EndFile = (uint32_t)(dev->file_addr >> 32);
+      }
       }
       break;
     default:
