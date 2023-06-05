@@ -450,13 +450,27 @@ bool dedup_file_device::UpdatePos(DeviceControlRecord*)
   }
 }
 
-bool dedup_file_device::Reposition(DeviceControlRecord*, uint32_t rfile, uint32_t rblock)
+bool dedup_file_device::Reposition(DeviceControlRecord* dcr, uint32_t rfile, uint32_t rblock)
 {
   Dmsg2(10, "file: %u -> %u; block: %u -> %u\n", file, rfile, block_num, rblock);
-  block_num = rblock;
-  file = rfile;
-  file_addr = 0;
-  return true;
+  ASSERT(file == 0);
+
+  if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
+    dedup_volume& vol = found->second;
+    ASSERT(vol.is_ok());
+
+    if (auto res = ::lseek(vol.get_block(), rblock * sizeof(dedup_block_header), SEEK_SET);
+	res < 0) { return false; }
+
+    // todo: if we are not at the end of the device
+    //       we should read the block header and position
+    //       the record and data files as well
+    //       otherwise set the record and data files to their respective end
+
+    return UpdatePos(dcr);
+  } else {
+    return false;
+  }
 }
 
 bool dedup_file_device::eod(DeviceControlRecord* dcr)
