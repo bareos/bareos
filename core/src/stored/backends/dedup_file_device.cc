@@ -399,6 +399,28 @@ bool dedup_file_device::d_truncate(DeviceControlRecord*)
   if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
     dedup_volume& vol = found->second;
     ASSERT(vol.is_ok());
+    // TODO: look at unix_file_device for "secure_erase_cmdline"
+    if (ftruncate(vol.get_block(), 0) != 0) {
+      BErrNo be;
+
+      Mmsg2(errmsg, _("Unable to truncate device %s. ERR=%s\n"), prt_name,
+            be.bstrerror());
+      return false;
+    }
+    if (ftruncate(vol.get_record(), 0) != 0) {
+      BErrNo be;
+
+      Mmsg2(errmsg, _("Unable to truncate device %s. ERR=%s\n"), prt_name,
+            be.bstrerror());
+      return false;
+    }
+    if (ftruncate(vol.get_data(), 0) != 0) {
+      BErrNo be;
+
+      Mmsg2(errmsg, _("Unable to truncate device %s. ERR=%s\n"), prt_name,
+            be.bstrerror());
+      return false;
+    }
     return true;
   } else {
     return false;
