@@ -323,7 +323,7 @@ This is the device table. It contains information about reading and or writing d
 Tape Volume
 ^^^^^^^^^^^
 
-The number ob records depends on the “Maximum File Size” specified in
+The number of records depends on the “Maximum File Size” specified in
 the Device resource. This record allows Bareos to efficiently position
 close to any given file in a backup. For restoring a full Job, these
 records are not very important, but if you want to retrieve a single
