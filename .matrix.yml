@@ -170,6 +170,7 @@ OS:
   #     ARCH:
   #       - i386
 
+
   win:
     native:
       TYPE: win-native
@@ -179,8 +180,6 @@ OS:
        - x86_64
       WINVERSIONS:
          - windows-11-64
-
-  win:
     cross:
       TYPE: win
       STAGES:
