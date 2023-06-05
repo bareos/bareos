@@ -25,6 +25,7 @@
 #include "stored/dev.h"
 
 #include <unordered_map>
+#include <fcntl.h>
 
 namespace storagedaemon {
 
