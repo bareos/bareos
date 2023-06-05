@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #ifndef BAREOS_LIB_WEBSOCKETJSONRPCSERVER_H
 #define BAREOS_LIB_WEBSOCKETJSONRPCSERVER_H
 
-#include "jsonrpccxx/server.hpp"
+#include "dird/bjsonrpcserver.h"
 #include "websocketpp/config/asio_no_tls.hpp"
 #include "websocketpp/server.hpp"
 #include "lib/bsock.h"
@@ -36,9 +36,11 @@ using websocketpp::lib::placeholders::_2;
 // pull out the type of messages sent by our config
 typedef wsasioserver::message_ptr message_ptr;
 
+namespace directordaemon {
+
 class WebsocketJsonRpcServer {
  public:
-  WebsocketJsonRpcServer(std::unique_ptr<jsonrpccxx::JsonRpc2Server> rpcserv);
+  WebsocketJsonRpcServer(JsonRpcServer* rpcserv);
   bool StartListening();
 
   void StopWebsocketThread();
@@ -46,7 +48,6 @@ class WebsocketJsonRpcServer {
   void StartWebsocketThread();
 
   void on_message(wsasioserver* wsserver,
-                  jsonrpccxx::JsonRpc2Server* rpcServer,
                   websocketpp::connection_hdl hdl,
                   message_ptr msg);
 
@@ -54,9 +55,11 @@ class WebsocketJsonRpcServer {
   void on_open(wsasioserver* wsserver, websocketpp::connection_hdl hdl);
 
  private:
-  wsasioserver wsserver;
-  std::unique_ptr<jsonrpccxx::JsonRpc2Server> rpcServer;
+  wsasioserver wsserver_;
+  JsonRpcServer* rpcServer_;
   std::thread listenning_thread;
 };
+
+}  // namespace directordaemon
 
 #endif  // BAREOS_LIB_WEBSOCKETJSONRPCSERVER_H

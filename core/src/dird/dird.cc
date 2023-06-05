@@ -367,10 +367,9 @@ int main(int argc, char* argv[])
 
   Dmsg0(200, "Start UA server\n");
 
-  std::unique_ptr<BJsonRpcServer> rpcserver
-      = std::make_unique<BJsonRpcServer>();
+  BJsonRpcServer rpcserver;
 
-  WebsocketJsonRpcServer websocketserver(std::move(rpcserver));
+  WebsocketJsonRpcServer websocketserver(&rpcserver);
   websocketserver.StartWebsocketThread();
 
   if (!StartSocketServer(me->DIRaddrs)) { TerminateDird(0); }
@@ -379,6 +378,7 @@ int main(int argc, char* argv[])
 
   Scheduler::GetMainScheduler().Run();
 
+  websocketserver.StopWebsocketThread();
   TerminateDird(0);
   return 0;
 }

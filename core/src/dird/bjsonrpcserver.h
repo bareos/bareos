@@ -5,9 +5,20 @@
 
 namespace directordaemon {
 
-class BJsonRpcServer : public jsonrpccxx::JsonRpc2Server {
+class JsonRpcServer {
+ public:
+  virtual ~JsonRpcServer() {}
+
+  virtual std::string ProcessRequest(const std::string request) = 0;
+};
+
+class BJsonRpcServer
+    : public JsonRpcServer
+    , jsonrpccxx::JsonRpc2Server {
  public:
   BJsonRpcServer();
+
+  std::string ProcessRequest(std::string request) override;
 };
 
 }  // namespace directordaemon

@@ -22,14 +22,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #include "websocketjsonrpcserver.h"
 #include "dird/ua_status.h"
 
+namespace directordaemon {
+
 // Define a callback to handle incoming messages
 void WebsocketJsonRpcServer::on_message(wsasioserver* wsserver,
-                                        jsonrpccxx::JsonRpc2Server* rpcServer,
                                         websocketpp::connection_hdl hdl,
                                         message_ptr msg)
 {
   try {
-    std::string response = rpcServer->HandleRequest(msg->get_payload());
+    std::string response = rpcServer_->ProcessRequest(msg->get_payload());
 
     wsserver->send(hdl, response, msg->get_opcode());
   } catch (websocketpp::exception const& e) {
@@ -62,37 +63,36 @@ void WebsocketJsonRpcServer::on_close(wsasioserver* wsserver,
   }
 }
 
-WebsocketJsonRpcServer::WebsocketJsonRpcServer(
-    std::unique_ptr<jsonrpccxx::JsonRpc2Server> rpcserv)
-    : rpcServer(std::move(rpcserv))
+WebsocketJsonRpcServer::WebsocketJsonRpcServer(JsonRpcServer* rpcserv)
+    : rpcServer_(rpcserv)
 {
 }
 
 bool WebsocketJsonRpcServer::StartListening()
 {
   // Set logging settings
-  wsserver.set_access_channels(websocketpp::log::alevel::all);
-  wsserver.clear_access_channels(websocketpp::log::alevel::frame_payload);
+  wsserver_.set_access_channels(websocketpp::log::alevel::all);
+  wsserver_.clear_access_channels(websocketpp::log::alevel::frame_payload);
 
   // Initialize Asio
-  wsserver.init_asio();
+  wsserver_.init_asio();
 
   // Register our message handler
-  wsserver.set_message_handler(bind(&WebsocketJsonRpcServer::on_message, this,
-                                    &wsserver, rpcServer.get(), ::_1, ::_2));
+  wsserver_.set_message_handler(
+      bind(&WebsocketJsonRpcServer::on_message, this, &wsserver_, ::_1, ::_2));
 
-  wsserver.set_open_handler(
-      bind(&WebsocketJsonRpcServer::on_open, this, &wsserver, ::_1));
-  wsserver.set_close_handler(
-      bind(&WebsocketJsonRpcServer::on_close, this, &wsserver, ::_1));
+  wsserver_.set_open_handler(
+      bind(&WebsocketJsonRpcServer::on_open, this, &wsserver_, ::_1));
+  wsserver_.set_close_handler(
+      bind(&WebsocketJsonRpcServer::on_close, this, &wsserver_, ::_1));
 
   // Listen on port 9002
-  wsserver.listen(9002);
+  wsserver_.listen(9002);
 
   // Start the server accept loop
-  wsserver.start_accept();
+  wsserver_.start_accept();
 
-  wsserver.run();
+  wsserver_.run();
   return true;
 }
 
@@ -102,3 +102,5 @@ void WebsocketJsonRpcServer::StartWebsocketThread()
 {
   listenning_thread = std::thread([this]() { StartListening(); });
 }
+
+}  // namespace directordaemon
