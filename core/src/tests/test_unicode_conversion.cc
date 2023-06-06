@@ -46,7 +46,7 @@ std::vector<std::wstring> OldU2W(std::vector<std::string_view> strings) {
   for (auto view : strings) {
     PoolMem mem(PM_FNAME);
     UTF8_2_wchar(mem.addr(), view.data());
-    result.emplace_back((wchar_t*)(mem.c_str()));
+    result.emplace_back(reinterpret_cast<wchar_t*>(mem.c_str()));
   }
   return result;
 }
@@ -102,6 +102,7 @@ TEST_F(Conversions, utf8_to_wchar_paths) {
 TEST_F(Conversions, utf8_to_wchar_phrases) {
   using namespace std::literals;
   std::vector<std::string_view> strings{
+    "",
     "Döner macht schöner."sv,
     "烤肉串使你更加美丽。"sv,
     "Döner kebab gør dig smukkere."sv,
@@ -140,6 +141,7 @@ TEST_F(Conversions, wchar_to_utf8_paths) {
 TEST_F(Conversions, wchar_to_utf8_phrases) {
   using namespace std::literals;
   std::vector<std::wstring_view> strings{
+    L"",
     L"Döner macht schöner."sv,
     L"烤肉串使你更加美丽。"sv,
     L"Döner kebab gør dig smukkere."sv,
