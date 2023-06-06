@@ -328,8 +328,6 @@ void unix_name_to_win32(POOLMEM*& win32_name, const char* name)
 
 std::wstring FromUtf8(std::string_view utf8)
 {
-  // TODO: find out if there is a difference between this
-  //       and std::wstring{std::begin(utf8), std::end(utf8)}
   // if the buffer is to small the function returns the number of characters
   // required
   DWORD required = MultiByteToWideChar(CP_UTF8, 0, utf8.data(), utf8.size(), nullptr, 0);

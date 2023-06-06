@@ -33,8 +33,6 @@
 #  include "findlib/drivetype.h"
 #  include "findlib/fstype.h"
 #  include "win32/findlib/win32.h"
-#  include <locale>
-#  include <codecvt>
 
 
 /**
@@ -70,7 +68,6 @@ std::vector<std::wstring> get_win32_volumes(findFILESET* fileset)
   std::vector<std::wstring> volumes{};
 
   if (fileset) {
-    std::wstring_convert<std::codecvt_utf8<wchar_t>> converter{};
     for (int i = 0; i < fileset->include_list.size(); i++) {
       findIncludeExcludeItem* incexe = (findIncludeExcludeItem*)fileset->include_list.get(i);
 
@@ -78,7 +75,7 @@ std::vector<std::wstring> get_win32_volumes(findFILESET* fileset)
       foreach_dlist (node, &incexe->name_list) {
         char* fname = node->c_str();
 
-	std::wstring wname = converter.from_bytes(fname);
+	std::wstring wname = FromUtf8(fname);
 	std::wstring mountpoint(256, L'\0');
 	if (DWORD needed = GetFullPathNameW(wname.c_str(), 0, mountpoint.data(), NULL);
 	    needed >= mountpoint.size()) {
@@ -97,7 +94,7 @@ std::vector<std::wstring> get_win32_volumes(findFILESET* fileset)
 	std::array<wchar_t, 50> volume;
 	if (!GetVolumeNameForVolumeMountPointW(mountpoint.c_str(), volume.data(), volume.size())) {
 	  Dmsg1(100, "Could not find the volume name for %s\n",
-		converter.to_bytes(mountpoint.c_str()).c_str());
+		FromUtf16(mountpoint.c_str()).c_str());
 	  continue;
 	}
 
