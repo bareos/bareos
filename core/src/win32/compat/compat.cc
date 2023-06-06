@@ -386,26 +386,22 @@ std::string FromUtf16(std::wstring_view utf16)
 
 static bool IsLiteralPath(std::wstring_view path)
 {
-  using namespace std::literals;
   // check if the path starts with //?/
   return path.size() >= 4 &&
     IsPathSeparator(path[0]) &&
     IsPathSeparator(path[1]) &&
     IsPathSeparator(path[3]) &&
     path[2] == L'?';
-  // return path.rfind(L"\\\\?\\"sv, 0) == 0;
 }
 
 static bool IsNormalizedPath(std::wstring_view path)
 {
-  using namespace std::literals;
-  // check if the path starts with //?/
+  // check if the path starts with //./
   return path.size() >= 4 &&
     IsPathSeparator(path[0]) &&
     IsPathSeparator(path[1]) &&
     IsPathSeparator(path[3]) &&
     path[2] == L'.';
-  // return path.rfind(L"\\\\.\\"sv, 0) == 0;
 }
 
 /**
@@ -427,7 +423,6 @@ static void RemoveTrailingSlashes(std::wstring& str)
 
 static std::wstring AsFullPath(std::wstring_view p)
 {
-  using namespace std::literals;
   DWORD required = GetFullPathNameW(p.data(), 0, NULL, NULL);
   if (required == 0) {
     Dmsg0(300, "Could not get full path length of path %s\n",
