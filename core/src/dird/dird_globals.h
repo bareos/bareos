@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -24,16 +24,18 @@
 #ifndef BAREOS_DIRD_DIRD_GLOBALS_H_
 #define BAREOS_DIRD_DIRD_GLOBALS_H_
 
+#include "include/dll_import_export.h"
+
 class ConfigurationParser;
 
 namespace directordaemon {
 
 class DirectorResource;
-__declspec(dllexport) extern DirectorResource* me;
-__declspec(dllimport) extern ConfigurationParser* my_config;
+BAREOS_EXPORT DirectorResource* me;
+BAREOS_IMPORT ConfigurationParser* my_config;
 
-__declspec(dllimport) extern char* configfile;
-__declspec(dllimport) extern void* start_heap;
+BAREOS_IMPORT char* configfile;
+BAREOS_IMPORT void* start_heap;
 
 } /* namespace directordaemon */
 

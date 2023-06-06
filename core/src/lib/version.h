@@ -26,6 +26,7 @@
 
 #include <stddef.h>
 #include <stdio.h>
+#include "include/dll_import_export.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,8 +48,7 @@ struct BareosVersionStrings {
   void (*PrintCopyright)(FILE* fh, int StartYear);
   const char* (*GetOsInfo)(void);
 };
-__declspec(dllimport) 
-extern const struct BareosVersionStrings kBareosVersionStrings;
+BAREOS_IMPORT const struct BareosVersionStrings kBareosVersionStrings;
 
 #ifdef __cplusplus
 };

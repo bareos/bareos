@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,17 +30,17 @@ class ConfigurationParser;
 
 namespace storagedaemon {
 
-__declspec(dllimport) extern ConfigurationParser* my_config;
+BAREOS_IMPORT ConfigurationParser* my_config;
 
 class StorageResource;
-__declspec(dllimport) extern StorageResource* me;
+BAREOS_IMPORT StorageResource* me;
 
-__declspec(dllimport) extern char* configfile;
+BAREOS_IMPORT char* configfile;
 
-__declspec(dllimport) extern void* start_heap;
-__declspec(dllimport) extern bool init_done;
-__declspec(dllimport) extern uint32_t vol_session_time;
-__declspec(dllimport) extern uint32_t NewVolSessionId();
+BAREOS_IMPORT void* start_heap;
+BAREOS_IMPORT bool init_done;
+BAREOS_IMPORT uint32_t vol_session_time;
+BAREOS_IMPORT uint32_t NewVolSessionId();
 
 } /* namespace storagedaemon */
 

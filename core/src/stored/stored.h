@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2013 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -69,7 +69,7 @@ int Readdir_r(DIR* dirp, struct dirent* entry, struct dirent** result);
 #include "sd_plugins.h"
 
 namespace storagedaemon {
-__declspec(dllimport) extern bool forge_on; /* Proceed inspite of I/O errors */
+BAREOS_IMPORT bool forge_on; /* Proceed inspite of I/O errors */
 uint32_t new_VolSessionId();
 
 } /* namespace storagedaemon */

@@ -241,7 +241,8 @@ __declspec(dllimport) extern t_CloseEncryptedFileRaw p_CloseEncryptedFileRaw;
 __declspec(dllimport) extern t_BackupRead p_BackupRead;
 __declspec(dllimport) extern t_BackupWrite p_BackupWrite;
 
-__declspec(dllimport) extern t_SetProcessShutdownParameters p_SetProcessShutdownParameters;
+__declspec(dllimport) extern t_SetProcessShutdownParameters
+    p_SetProcessShutdownParameters;
 
 __declspec(dllimport) extern t_WideCharToMultiByte p_WideCharToMultiByte;
 __declspec(dllimport) extern t_MultiByteToWideChar p_MultiByteToWideChar;
@@ -259,10 +260,13 @@ __declspec(dllimport) extern t_GetCurrentDirectoryA p_GetCurrentDirectoryA;
 __declspec(dllimport) extern t_GetCurrentDirectoryW p_GetCurrentDirectoryW;
 
 __declspec(dllimport) extern t_GetVolumePathNameW p_GetVolumePathNameW;
-__declspec(dllimport) extern t_GetVolumeNameForVolumeMountPointW p_GetVolumeNameForVolumeMountPointW;
+__declspec(dllimport) extern t_GetVolumeNameForVolumeMountPointW
+    p_GetVolumeNameForVolumeMountPointW;
 
-__declspec(dllimport) extern t_GetLogicalDriveStringsA p_GetLogicalDriveStringsA;
-__declspec(dllimport) extern t_GetLogicalDriveStringsW p_GetLogicalDriveStringsW;
+__declspec(dllimport) extern t_GetLogicalDriveStringsA
+    p_GetLogicalDriveStringsA;
+__declspec(dllimport) extern t_GetLogicalDriveStringsW
+    p_GetLogicalDriveStringsW;
 
 __declspec(dllimport) extern t_AttachConsole p_AttachConsole;
 

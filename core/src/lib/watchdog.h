@@ -53,8 +53,8 @@ struct s_watchdog_t {
 typedef struct s_watchdog_t watchdog_t;
 
 /* Exported globals */
-__declspec(dllimport) extern utime_t watchdog_time;       /* this has granularity of SLEEP_TIME */
-__declspec(dllimport) extern utime_t watchdog_sleep_time; /* examine things every 60 seconds */
+BAREOS_IMPORT utime_t watchdog_time; /* this has granularity of SLEEP_TIME */
+BAREOS_IMPORT utime_t watchdog_sleep_time; /* examine things every 60 seconds */
 int StartWatchdog(void);
 int StopWatchdog(void);
 watchdog_t* new_watchdog(void);

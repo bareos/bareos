@@ -34,6 +34,7 @@
 #include "lib/dlink.h"
 #include "lib/rwlock.h"
 #include "lib/message_destination_info.h"
+#include "include/dll_import_export.h"
 
 #include <functional>
 #include <string>
@@ -57,17 +58,17 @@ void SetDbLogInsertCallback(DbLogInsertCallback f);
 
 class MessagesResource;
 
-__declspec(dllimport) extern int debug_level;
-__declspec(dllimport) extern bool dbg_timestamp; /* print timestamp in debug output */
-__declspec(dllimport) extern bool prt_kaboom;    /* Print kaboom output */
-__declspec(dllimport) extern int verbose;
-__declspec(dllimport) extern char my_name[];
-__declspec(dllimport) extern const char* working_directory;
-__declspec(dllimport) extern utime_t daemon_start_time;
+BAREOS_IMPORT int debug_level;
+BAREOS_IMPORT bool dbg_timestamp; /* print timestamp in debug output */
+BAREOS_IMPORT bool prt_kaboom;    /* Print kaboom output */
+BAREOS_IMPORT int verbose;
+BAREOS_IMPORT char my_name[];
+BAREOS_IMPORT const char* working_directory;
+BAREOS_IMPORT utime_t daemon_start_time;
 
-__declspec(dllimport) extern int console_msg_pending;
-__declspec(dllimport) extern FILE* con_fd;       /* Console file descriptor */
-__declspec(dllimport) extern brwlock_t con_lock; /* Console lock structure */
+BAREOS_IMPORT int console_msg_pending;
+BAREOS_IMPORT FILE* con_fd;       /* Console file descriptor */
+BAREOS_IMPORT brwlock_t con_lock; /* Console lock structure */
 
 void MyNameIs(int argc, char* argv[], const char* name);
 void InitMsg(JobControlRecord* jcr,

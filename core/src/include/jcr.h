@@ -237,24 +237,26 @@ class JobControlRecord {
 /* clang-format on */
 
 // The following routines are found in lib/jcr.c
-__declspec(dllimport) extern int GetNextJobidFromList(const char** p, uint32_t* JobId);
-__declspec(dllimport) extern bool InitJcrSubsystem(int timeout);
-__declspec(dllimport) extern JobControlRecord* new_jcr(JCR_free_HANDLER* daemon_free_jcr);
-__declspec(dllimport) extern JobControlRecord* get_jcr_by_id(uint32_t JobId);
-__declspec(dllimport) extern JobControlRecord* get_jcr_by_session(uint32_t SessionId,
-                                            uint32_t SessionTime);
-__declspec(dllimport) extern JobControlRecord* get_jcr_by_partial_name(char* Job);
-__declspec(dllimport) extern JobControlRecord* get_jcr_by_full_name(char* Job);
-__declspec(dllimport) extern const char* JcrGetAuthenticateKey(const char* unified_job_name);
+BAREOS_IMPORT int GetNextJobidFromList(const char** p, uint32_t* JobId);
+BAREOS_IMPORT bool InitJcrSubsystem(int timeout);
+BAREOS_IMPORT JobControlRecord* new_jcr(JCR_free_HANDLER* daemon_free_jcr);
+BAREOS_IMPORT JobControlRecord* get_jcr_by_id(uint32_t JobId);
+BAREOS_IMPORT JobControlRecord* get_jcr_by_session(uint32_t SessionId,
+                                                   uint32_t SessionTime);
+BAREOS_IMPORT JobControlRecord* get_jcr_by_partial_name(char* Job);
+BAREOS_IMPORT JobControlRecord* get_jcr_by_full_name(char* Job);
+BAREOS_IMPORT const char* JcrGetAuthenticateKey(const char* unified_job_name);
 TlsPolicy JcrGetTlsPolicy(const char* unified_job_name);
-__declspec(dllimport) extern int num_jobs_run;
+BAREOS_IMPORT int num_jobs_run;
 
-__declspec(dllimport) extern void b_free_jcr(const char* file, int line, JobControlRecord* jcr);
+BAREOS_IMPORT void b_free_jcr(const char* file,
+                              int line,
+                              JobControlRecord* jcr);
 #define FreeJcr(jcr) b_free_jcr(__FILE__, __LINE__, (jcr))
 
 // Used to display specific job information after a fatal signal
 typedef void(dbg_jcr_hook_t)(JobControlRecord* jcr, FILE* fp);
-__declspec(dllimport) extern void DbgJcrAddHook(dbg_jcr_hook_t* fct);
+BAREOS_IMPORT void DbgJcrAddHook(dbg_jcr_hook_t* fct);
 
 /* new-2019 interface */
 void InitJcr(std::shared_ptr<JobControlRecord> jcr,

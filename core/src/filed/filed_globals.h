@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,17 +27,17 @@
 class ConfigurationParser;
 
 namespace filedaemon {
- 
-__declspec(dllimport) extern ConfigurationParser* my_config;
 
-__declspec(dllimport) extern bool no_signals;
-__declspec(dllimport) extern bool backup_only_mode;
-__declspec(dllimport) extern bool restore_only_mode;
+BAREOS_IMPORT ConfigurationParser* my_config;
+
+BAREOS_IMPORT bool no_signals;
+BAREOS_IMPORT bool backup_only_mode;
+BAREOS_IMPORT bool restore_only_mode;
 
 class ClientResource;
-__declspec(dllimport) extern ClientResource* me;
-__declspec(dllimport) extern void* start_heap;
-__declspec(dllimport) extern char* configfile;
+BAREOS_IMPORT ClientResource* me;
+BAREOS_IMPORT void* start_heap;
+BAREOS_IMPORT char* configfile;
 
 } /* namespace filedaemon */
 
