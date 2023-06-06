@@ -298,10 +298,8 @@ static inline bool HandleVolumeMountPoint(VSSClientGeneric* pVssClient,
 
   std::wstring full_path = parent + mountpoint;
   std::wstring vol = GetUniqueVolumeNameForPath(full_path);
-  PoolMem pvol(PM_FNAME);
-  PoolMem utf8_mp(PM_FNAME);
-  wchar_2_UTF8(pvol.addr(), vol.c_str());
-  wchar_2_UTF8(utf8_mp.addr(), mountpoint);
+  std::string pvol = FromUtf16(vol);
+  std::string utf8_mp = FromUtf16(mountpoint);
   if (auto found = snapshoted_volumes.find(vol);
       found == snapshoted_volumes.end()) {
     HRESULT hr = pVssObj->AddToSnapshotSet(const_cast<LPWSTR>(vol.c_str()), GUID_NULL, &pid);
@@ -322,14 +320,10 @@ static inline bool HandleVolumeMountPoint(VSSClientGeneric* pVssClient,
   }
 
   if (snapshot_success) {
-    PoolMem utf8_parent(PM_FNAME);
-    PoolMem path(PM_FNAME);
-    wchar_2_UTF8(utf8_parent.addr(), parent.c_str());
-    path.strcpy(utf8_parent.c_str());
-    path.strcat(utf8_mp.c_str());
+    std::string path = FromUtf16(parent) + utf8_mp;
 
-    mount_to_vol.emplace(path.c_str(), pvol.c_str());
-    mount_to_vol_w.emplace(full_path, vol);
+    mount_to_vol.emplace(std::move(path), std::move(pvol));
+    mount_to_vol_w.emplace(std::move(full_path), std::move(vol));
   }
 
   return snapshot_success;
@@ -601,10 +595,8 @@ void VSSClientGeneric::AddVolumeSnapshots(IVssBackupComponents* pVssObj,
   for (const std::wstring& volume : volumes) {
     std::wstring unique_name = GetUniqueVolumeNameForPath(volume);
 
-    PoolMem utf_unique(PM_FNAME);
-    PoolMem utf_vol(PM_FNAME);
-    wchar_2_UTF8(utf_unique.addr(), unique_name.c_str());
-    wchar_2_UTF8(utf_vol.addr(), volume.c_str());
+    std::string utf_unique = FromUtf16(unique_name);
+    std::string utf_vol    = FromUtf16(volume);
 
     bool snapshot_success = false;
 
@@ -635,8 +627,8 @@ void VSSClientGeneric::AddVolumeSnapshots(IVssBackupComponents* pVssObj,
     }
 
     if (snapshot_success) {
-      mount_to_vol.emplace(utf_vol.c_str(), utf_unique.c_str());
-      mount_to_vol_w.emplace(volume, unique_name);
+      mount_to_vol.emplace(std::move(utf_vol), std::move(utf_unique));
+      mount_to_vol_w.emplace(volume, std::move(unique_name));
     }
   }
 }
@@ -921,12 +913,10 @@ void VSSClientGeneric::QuerySnapshotSet(GUID snapshotSetID)
 
     // Print the shadow copy (if not filtered out)
     if (Snap.m_SnapshotSetId == snapshotSetID) {
-      PoolMem vol(PM_FNAME);
-      PoolMem vss(PM_FNAME);
       // m_pwszExposedName = mount path! e.g. C:, X:\MountC, ...
-      wchar_2_UTF8(vol.addr(), Snap.m_pwszOriginalVolumeName);
-      wchar_2_UTF8(vss.addr(), Snap.m_pwszSnapshotDeviceObject);
-      vol_to_vss.emplace(vol.c_str(), vss.c_str());
+      std::string vol = FromUtf16(Snap.m_pwszOriginalVolumeName);
+      std::string vss = FromUtf16(Snap.m_pwszSnapshotDeviceObject);
+      vol_to_vss.emplace(std::move(vol), std::move(vss));
       vol_to_vss_w.emplace(Snap.m_pwszOriginalVolumeName, Snap.m_pwszSnapshotDeviceObject);
     }
     VssFreeSnapshotProperties_(&Snap);
