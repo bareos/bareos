@@ -230,7 +230,7 @@ void scatter(dedup_volume& vol, const void* data)
     bareos_record_header* record = (bareos_record_header*)current;
     RecEnd += 1;
 
-    ASSERT(current + sizeof(*record) < end);
+    ASSERT(current + sizeof(*record) <= end);
 
 
     // the record payload is [current + sizeof(record)]
@@ -245,15 +245,23 @@ void scatter(dedup_volume& vol, const void* data)
 
     current = payload_end;
 
-    std::size_t size = payload_end - payload_start;
     ssize_t pos = ::lseek(data_fd, 0, SEEK_CUR);
     ASSERT(pos >= 0);
-    dedup_record_header drecord{*record, static_cast<std::uint32_t>(pos),
-                                static_cast<std::uint32_t>(pos + size)};
-    safe_write(data_fd, payload_start, size);
-    actual_size += size;
-    safe_write(record_fd, &drecord, sizeof(drecord));
-    actual_size += sizeof(bareos_record_header);
+    if (payload_start < end) {
+      std::size_t size = payload_end - payload_start;
+      dedup_record_header drecord{*record, static_cast<std::uint32_t>(pos),
+				  static_cast<std::uint32_t>(pos + size)};
+      safe_write(data_fd, payload_start, size);
+      actual_size += size;
+      safe_write(record_fd, &drecord, sizeof(drecord));
+      actual_size += sizeof(bareos_record_header);
+    } else {
+      dedup_record_header drecord{*record, static_cast<std::uint32_t>(pos),
+				  static_cast<std::uint32_t>(pos)};
+      safe_write(record_fd, &drecord, sizeof(drecord));
+      actual_size += sizeof(bareos_record_header);
+
+    }
   }
 
   dedup_block_header dblock{*block, RecStart, RecEnd};
