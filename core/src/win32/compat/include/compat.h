@@ -27,16 +27,16 @@
 
 
 #ifdef _MSC_VER
-#define NOMINMAX
+#  define NOMINMAX
 // not #if defined(_WIN32) || defined(_WIN64) because we have strncasecmp in
 // mingw
 #  define strncasecmp _strnicmp
 #  define strcasecmp _stricmp
 #endif
 
-#  include <winsock2.h>
-#  include <windows.h>
-#  include <ws2tcpip.h>
+#include <winsock2.h>
+#include <windows.h>
+#include <ws2tcpip.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <sys/types.h>
@@ -109,7 +109,7 @@ typedef INT32 ssize_t;
 
 //#if defined(_MSC_VER)
 typedef struct _REPARSE_DATA_BUFFER {
-  ULONG  ReparseTag;
+  ULONG ReparseTag;
   USHORT ReparseDataLength;
   USHORT Reserved;
   union {
@@ -118,15 +118,15 @@ typedef struct _REPARSE_DATA_BUFFER {
       USHORT SubstituteNameLength;
       USHORT PrintNameOffset;
       USHORT PrintNameLength;
-      ULONG  Flags;
-      WCHAR  PathBuffer[1];
+      ULONG Flags;
+      WCHAR PathBuffer[1];
     } SymbolicLinkReparseBuffer;
     struct {
       USHORT SubstituteNameOffset;
       USHORT SubstituteNameLength;
       USHORT PrintNameOffset;
       USHORT PrintNameLength;
-      WCHAR  PathBuffer[1];
+      WCHAR PathBuffer[1];
     } MountPointReparseBuffer;
     struct {
       UCHAR DataBuffer[1];
@@ -148,11 +148,10 @@ struct dirent {
 typedef void DIR;
 
 #ifdef _MSC_VER
-    struct _utimbuf
-    {
-        time_t actime;          // access time
-        time_t modtime;         // modification time
-    };
+struct _utimbuf {
+  time_t actime;   // access time
+  time_t modtime;  // modification time
+};
 #endif
 #if !defined(__cplusplus)
 #  if !defined(true)
@@ -298,8 +297,9 @@ int waitpid(int, int*, int);
 #if !defined(HAVE_MINGW)
 #  define strncasecmp strnicmp
 // int strncasecmp(const char*, const char *, int);
-extern "C"{
-__declspec(dllimport)int utime(const char* filename, struct utimbuf* const buf);
+extern "C" {
+__declspec(dllimport) int utime(const char* filename,
+                                struct utimbuf* const buf);
 }
 #  define vsnprintf _vsnprintf
 #  define snprintf _snprintf
@@ -353,7 +353,7 @@ struct sigaction {
 #define sigaction(a, b, c)
 
 #define mkdir(p, m) win32_mkdir(p)
-#ifndef _MSC_VER
+#if !defined(HAVE_MINGW)
 #  define unlink win32_unlink
 #endif
 #define chdir win32_chdir
@@ -371,7 +371,7 @@ int stat(const char*, struct stat*);
 int execvp(const char*, char*[]);
 extern "C" void* __cdecl _alloca(size_t);
 #  endif
-#endif  // HAVE_MINGW
+#endif  // !HAVE_MINGW
 
 #define getpid _getpid
 
@@ -387,7 +387,9 @@ char* win32_getcwd(char* buf, int maxlen);
 int win32_chdir(const char* buf);
 int win32_mkdir(const char* buf);
 int win32_fputs(const char* string, FILE* stream);
-//int win32_unlink(char const* filename);
+#if defined(HAVE_MINGW)
+int win32_unlink(char const* filename);
+#endif
 int win32_chmod(const char*, mode_t, _dev_t);
 
 char* win32_cgets(char* buffer, int len);
