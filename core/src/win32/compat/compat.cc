@@ -420,13 +420,15 @@ static bool IsNormalizedPath(std::wstring_view path)
 /**
  * Removes all trailing slashes.  If the string only contains slashes
  * all but the first one are removed!
- * We also do not remove any slash if its precedet by a colon, i.e.
+ * We also do not remove any slash if its preceded by a colon, i.e.
  * 'C:\' does not get changed.
+ * If always is set to true it will even strip slashes that are preceded
+ * by colons.
  */
-static void RemoveTrailingSlashes(std::wstring& str)
+static void RemoveTrailingSlashes(std::wstring& str, bool always = false)
 {
   while (str.size() > 1 && IsPathSeparator(str.back())) {
-    if (str[str.size() - 2] == L':') {
+    if (str[str.size() - 2] == L':' && !always) {
       break;
     } else {
       str.pop_back();
@@ -531,7 +533,10 @@ static inline std::wstring make_wchar_win32_path(std::wstring_view path)
     // add literal path prefix to allow 32k paths
     converted.insert(0, L"\\\\?\\"sv);
   }
-  RemoveTrailingSlashes(converted);
+  bool is_root = path.size() == 1 && IsPathSeparator(path[0]);
+  // for legacy reasons we do not want to have a trailing slash if
+  // we were only given the "root" path, i.e. a path containing only a single '/'
+  RemoveTrailingSlashes(converted, is_root);
 
 
   Dmsg1(debuglevel, "Leave make_wchar_win32_path=%s\n", FromUtf16(converted).c_str());
