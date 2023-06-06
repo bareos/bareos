@@ -41,7 +41,7 @@
 #include "lib/berrno.h"
 #include "lib/bpipe.h"
 #include "vss.h"
-#ifndef _MSC_VER
+#if defined (_MSVC_LANG)
 #  include "ntifs.h"
 #endif
 
@@ -255,8 +255,10 @@ const char* errorString(void);
 // To allow the usage of the original version in this file here
 #undef fputs
 
-extern DWORD g_platform_id;
-extern DWORD g_MinorVersion;
+#define USE_WIN32_32KPATHCONVERSION 1
+
+BAREOS_IMPORT DWORD g_platform_id;
+BAREOS_IMPORT DWORD g_MinorVersion;
 
 // From Microsoft SDK (KES) is the diff between Jan 1 1601 and Jan 1 1970
 // see

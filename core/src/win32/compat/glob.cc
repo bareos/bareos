@@ -37,7 +37,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-#ifdef _MSVC_VER
+#ifndef _MSC_VER
 #include <filesystem>
 #include <libgen.h>
 #endif

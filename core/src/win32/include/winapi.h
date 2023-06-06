@@ -31,6 +31,8 @@
 #ifndef BAREOS_WIN32_INCLUDE_WINAPI_H_
 #define BAREOS_WIN32_INCLUDE_WINAPI_H_
 
+#import "include/dll_import_export.h"
+
 #if defined(HAVE_WIN32)
 /*
  * Commented out native.h include statement, which is not distributed with the
@@ -74,9 +76,9 @@ char* BSTR_2_str(const BSTR pSrc);
 std::wstring make_win32_path_UTF8_2_wchar(std::string_view utf8);
 
 // init with win9x, but maybe set to NT in InitWinAPI
-__declspec(dllimport) extern DWORD g_platform_id;
-__declspec(dllimport) extern DWORD g_MinorVersion;
-__declspec(dllimport) extern DWORD g_MajorVersion;
+BAREOS_IMPORT DWORD g_platform_id;
+BAREOS_IMPORT DWORD g_MinorVersion;
+BAREOS_IMPORT DWORD g_MajorVersion;
 
 /* In ADVAPI32.DLL */
 typedef BOOL(WINAPI* t_OpenProcessToken)(HANDLE, DWORD, PHANDLE);
@@ -88,17 +90,17 @@ typedef BOOL(WINAPI* t_AdjustTokenPrivileges)(HANDLE,
                                               PDWORD);
 typedef BOOL(WINAPI* t_LookupPrivilegeValue)(LPCTSTR, LPCTSTR, PLUID);
 
-__declspec(dllimport) extern t_OpenProcessToken p_OpenProcessToken;
-__declspec(dllimport) extern t_AdjustTokenPrivileges p_AdjustTokenPrivileges;
-__declspec(dllimport) extern t_LookupPrivilegeValue p_LookupPrivilegeValue;
+BAREOS_IMPORT t_OpenProcessToken p_OpenProcessToken;
+BAREOS_IMPORT t_AdjustTokenPrivileges p_AdjustTokenPrivileges;
+BAREOS_IMPORT t_LookupPrivilegeValue p_LookupPrivilegeValue;
 
 /* In MSVCRT.DLL */
 typedef int(__cdecl* t_wunlink)(const wchar_t*);
 typedef int(__cdecl* t_wmkdir)(const wchar_t*);
 typedef int(__cdecl* t_wopen)(const wchar_t*, int, ...);
 
-__declspec(dllimport) extern t_wunlink p_wunlink;
-__declspec(dllimport) extern t_wmkdir p_wmkdir;
+BAREOS_IMPORT t_wunlink p_wunlink;
+BAREOS_IMPORT t_wmkdir p_wmkdir;
 
 /* In KERNEL32.DLL */
 typedef BOOL(WINAPI* t_GetFileAttributesExA)(LPCSTR,
@@ -214,61 +216,61 @@ extern t_CreateProcessW p_CreateProcessW;
 extern t_GetFileInformationByHandleEx p_GetFileInformationByHandleEx;
 #  endif
 
-__declspec(dllimport) extern t_GetFileAttributesA p_GetFileAttributesA;
-__declspec(dllimport) extern t_GetFileAttributesW p_GetFileAttributesW;
+BAREOS_IMPORT t_GetFileAttributesA p_GetFileAttributesA;
+BAREOS_IMPORT t_GetFileAttributesW p_GetFileAttributesW;
 
-__declspec(dllimport) extern t_GetFileAttributesExA p_GetFileAttributesExA;
-__declspec(dllimport) extern t_GetFileAttributesExW p_GetFileAttributesExW;
+BAREOS_IMPORT t_GetFileAttributesExA p_GetFileAttributesExA;
+BAREOS_IMPORT t_GetFileAttributesExW p_GetFileAttributesExW;
 
-__declspec(dllimport) extern t_SetFileAttributesA p_SetFileAttributesA;
-__declspec(dllimport) extern t_SetFileAttributesW p_SetFileAttributesW;
+BAREOS_IMPORT t_SetFileAttributesA p_SetFileAttributesA;
+BAREOS_IMPORT t_SetFileAttributesW p_SetFileAttributesW;
 
-__declspec(dllimport) extern t_CreateFileA p_CreateFileA;
-__declspec(dllimport) extern t_CreateFileW p_CreateFileW;
+BAREOS_IMPORT t_CreateFileA p_CreateFileA;
+BAREOS_IMPORT t_CreateFileW p_CreateFileW;
 
-__declspec(dllimport) extern t_CreateDirectoryA p_CreateDirectoryA;
-__declspec(dllimport) extern t_CreateDirectoryW p_CreateDirectoryW;
+BAREOS_IMPORT t_CreateDirectoryA p_CreateDirectoryA;
+BAREOS_IMPORT t_CreateDirectoryW p_CreateDirectoryW;
 
-__declspec(dllimport) extern t_CreateSymbolicLinkA p_CreateSymbolicLinkA;
-__declspec(dllimport) extern t_CreateSymbolicLinkW p_CreateSymbolicLinkW;
+BAREOS_IMPORT t_CreateSymbolicLinkA p_CreateSymbolicLinkA;
+BAREOS_IMPORT t_CreateSymbolicLinkW p_CreateSymbolicLinkW;
 
-__declspec(dllimport) extern t_OpenEncryptedFileRawA p_OpenEncryptedFileRawA;
-__declspec(dllimport) extern t_OpenEncryptedFileRawW p_OpenEncryptedFileRawW;
-__declspec(dllimport) extern t_ReadEncryptedFileRaw p_ReadEncryptedFileRaw;
-__declspec(dllimport) extern t_WriteEncryptedFileRaw p_WriteEncryptedFileRaw;
-__declspec(dllimport) extern t_CloseEncryptedFileRaw p_CloseEncryptedFileRaw;
+BAREOS_IMPORT t_OpenEncryptedFileRawA p_OpenEncryptedFileRawA;
+BAREOS_IMPORT t_OpenEncryptedFileRawW p_OpenEncryptedFileRawW;
+BAREOS_IMPORT t_ReadEncryptedFileRaw p_ReadEncryptedFileRaw;
+BAREOS_IMPORT t_WriteEncryptedFileRaw p_WriteEncryptedFileRaw;
+BAREOS_IMPORT t_CloseEncryptedFileRaw p_CloseEncryptedFileRaw;
 
-__declspec(dllimport) extern t_BackupRead p_BackupRead;
-__declspec(dllimport) extern t_BackupWrite p_BackupWrite;
+BAREOS_IMPORT t_BackupRead p_BackupRead;
+BAREOS_IMPORT t_BackupWrite p_BackupWrite;
 
-__declspec(dllimport) extern t_SetProcessShutdownParameters
+BAREOS_IMPORT t_SetProcessShutdownParameters
     p_SetProcessShutdownParameters;
 
-__declspec(dllimport) extern t_WideCharToMultiByte p_WideCharToMultiByte;
-__declspec(dllimport) extern t_MultiByteToWideChar p_MultiByteToWideChar;
+BAREOS_IMPORT t_WideCharToMultiByte p_WideCharToMultiByte;
+BAREOS_IMPORT t_MultiByteToWideChar p_MultiByteToWideChar;
 
-__declspec(dllimport) extern t_FindFirstFileA p_FindFirstFileA;
-__declspec(dllimport) extern t_FindFirstFileW p_FindFirstFileW;
+BAREOS_IMPORT t_FindFirstFileA p_FindFirstFileA;
+BAREOS_IMPORT t_FindFirstFileW p_FindFirstFileW;
 
-__declspec(dllimport) extern t_FindNextFileA p_FindNextFileA;
-__declspec(dllimport) extern t_FindNextFileW p_FindNextFileW;
+BAREOS_IMPORT t_FindNextFileA p_FindNextFileA;
+BAREOS_IMPORT t_FindNextFileW p_FindNextFileW;
 
-__declspec(dllimport) extern t_SetCurrentDirectoryA p_SetCurrentDirectoryA;
-__declspec(dllimport) extern t_SetCurrentDirectoryW p_SetCurrentDirectoryW;
+BAREOS_IMPORT t_SetCurrentDirectoryA p_SetCurrentDirectoryA;
+BAREOS_IMPORT t_SetCurrentDirectoryW p_SetCurrentDirectoryW;
 
-__declspec(dllimport) extern t_GetCurrentDirectoryA p_GetCurrentDirectoryA;
-__declspec(dllimport) extern t_GetCurrentDirectoryW p_GetCurrentDirectoryW;
+BAREOS_IMPORT t_GetCurrentDirectoryA p_GetCurrentDirectoryA;
+BAREOS_IMPORT t_GetCurrentDirectoryW p_GetCurrentDirectoryW;
 
-__declspec(dllimport) extern t_GetVolumePathNameW p_GetVolumePathNameW;
-__declspec(dllimport) extern t_GetVolumeNameForVolumeMountPointW
+BAREOS_IMPORT t_GetVolumePathNameW p_GetVolumePathNameW;
+BAREOS_IMPORT t_GetVolumeNameForVolumeMountPointW
     p_GetVolumeNameForVolumeMountPointW;
 
-__declspec(dllimport) extern t_GetLogicalDriveStringsA
+BAREOS_IMPORT t_GetLogicalDriveStringsA
     p_GetLogicalDriveStringsA;
-__declspec(dllimport) extern t_GetLogicalDriveStringsW
+BAREOS_IMPORT t_GetLogicalDriveStringsW
     p_GetLogicalDriveStringsW;
 
-__declspec(dllimport) extern t_AttachConsole p_AttachConsole;
+BAREOS_IMPORT t_AttachConsole p_AttachConsole;
 
 void InitWinAPIWrapper();
 

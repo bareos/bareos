@@ -22,7 +22,7 @@
 #ifndef BAREOS_CORE_SRC_INCLUDE_DLL_EXPORT_IMPORT_H_
 #define BAREOS_CORE_SRC_INCLUDE_DLL_EXPORT_IMPORT_H_
 
-#ifdef _MSC_VER
+#if defined(_MSVC_LANG)
 #  define BAREOS_EXPORT __declspec(dllexport) extern
 #  define BAREOS_IMPORT __declspec(dllimport) extern
 #else

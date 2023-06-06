@@ -107,6 +107,7 @@ typedef INT32 ssize_t;
 #define utime _utime
 #define utimbuf _utimbuf
 
+#define NO_OLDNAMES
 //#if defined(_MSC_VER)
 typedef struct _REPARSE_DATA_BUFFER {
   ULONG ReparseTag;
