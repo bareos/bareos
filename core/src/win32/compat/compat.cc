@@ -363,7 +363,10 @@ std::string FromUtf16(std::wstring_view utf16)
   DWORD required = WideCharToMultiByte(CP_UTF8, 0, utf16.data(), utf16.size(),
 				       nullptr, 0, nullptr, nullptr);
   if (required == 0) {
-    Dmsg0(300, "Encountered error in utf16 -> utf8 conversion.\n");
+    errno = b_errno_win32;
+    BErrNo be;
+    Dmsg0(300, "Encountered error in utf16 -> utf8 conversion: %s\n",
+	  be.bstrerror());
     return {};
   }
   std::string utf8(required, '\0');
@@ -375,8 +378,10 @@ std::string FromUtf16(std::wstring_view utf16)
 				      nullptr, nullptr);
 
   if (written != required) {
-    Dmsg1(300, "Error during conversion! Expected %d-1 chars but only got %d.\n",
-	  required, written);
+    errno = b_errno_win32;
+    BErrNo be;
+    Dmsg1(300, "Error during conversion! Expected %d chars but only got %d: %s\n",
+	  required, written, be.bstrerror());
 
     return {};
   }
@@ -426,20 +431,24 @@ static std::wstring AsFullPath(std::wstring_view p)
 {
   DWORD required = GetFullPathNameW(p.data(), 0, NULL, NULL);
   if (required == 0) {
-    Dmsg0(300, "Could not get full path length of path %s\n",
-	  FromUtf16(p).c_str());
+    errno = b_errno_win32;
+    BErrNo be;
+    Dmsg0(300, "Could not get full path length of path %s: %s\n",
+	  FromUtf16(p).c_str(), be.bstrerror());
   }
   std::wstring literal(required, L'\0');
   DWORD written = GetFullPathNameW(p.data(), required,
 				   literal.data(),
 				   NULL);
 
-  // chars_needed contains the terminating 0 but
-  // chars_written will not *if* the operation was successful.
+  // required contains the terminating 0 but
+  // written will not *if* the operation was successful.
   if (written != required - 1) {
-    Dmsg3(300, "Error while getting full path of %s; allocated %d chars but needed %d\n",
+    errno = b_errno_win32;
+    BErrNo be;
+    Dmsg3(300, "Error while getting full path of %s; allocated %d chars but needed %d: %s\n",
 	  FromUtf16(p).c_str(),
-	  required, written);
+	  required, written, be.bstrerror());
   }
 
   literal.resize(written);
