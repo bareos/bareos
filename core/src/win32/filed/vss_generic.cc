@@ -48,6 +48,7 @@
 #  include <string>
 #  include <sstream>
 #  include <fstream>
+#  include <chrono>
 using namespace std;
 
 #  include "ms_atl.h"
@@ -551,32 +552,25 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
 
 bool VSSClientGeneric::WaitAndCheckForAsyncOperation(IVssAsync* pAsync)
 {
-  HRESULT hr;
   HRESULT hrReturned = S_OK;
-  int timeout = 600; /* 10 minutes.... */
-  int queryErrors = 0;
+  std::chrono::milliseconds timeout = std::chrono::minutes(10);
 
-  /*
-   * Wait until the async operation finishes
-   * unfortunately we can't use a timeout here yet.
-   * the interface would allow it on W2k3,
-   * but it is not implemented yet....
-   */
-  do {
-    if (hrReturned != S_OK) { Sleep(1000); }
-    hrReturned = S_OK;
-    hr = pAsync->QueryStatus(&hrReturned, NULL);
+  HRESULT wait = pAsync->Wait(static_cast<DWORD>(timeout.count())); // wait at most 10 minutes
+  if (FAILED(wait)) {
+    JmsgVssApiStatus(jcr_, M_FATAL, wait,
+		     "async wait");
+    return false;
+  }
 
-    if (FAILED(hr)) { queryErrors++; }
-  } while ((timeout-- > 0) && (hrReturned == VSS_S_ASYNC_PENDING));
+  HRESULT hr = pAsync->QueryStatus(&hrReturned, NULL);
 
-  // Check the result of the asynchronous operation
-  if (hrReturned == VSS_S_ASYNC_FINISHED) { return true; }
+  if (FAILED(hr)) {
+    JmsgVssApiStatus(jcr_, M_FATAL, wait,
+		     "query async status");
+    return false;
+  }
 
-  JmsgVssApiStatus(jcr_, M_FATAL, hr,
-                   "Query Async Status after 10 minute wait");
-
-  return false;
+  return hrReturned == VSS_S_ASYNC_FINISHED;
 }
 
 // Add all drive letters that need to be snapshotted.
