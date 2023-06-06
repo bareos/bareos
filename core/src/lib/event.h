@@ -71,7 +71,30 @@ struct OpenEvent {
   CloseEvent close() const { return CloseEvent{source}; }
 };
 
-using Event = std::variant<OpenEvent, CloseEvent>;
+struct StartRecording {
+  time_point when;
+
+  StartRecording() : when{clock::now()}
+  {
+  }
+
+  StartRecording(const StartRecording&) = default;
+  StartRecording& operator=(const StartRecording&) = default;
+};
+
+struct StopRecording {
+  BlockIdentity const* source;
+  time_point when;
+
+  StopRecording() : when{clock::now()}
+  {
+  }
+
+  StopRecording(const StopRecording&) = default;
+  StopRecording& operator=(const StopRecording&) = default;
+};
+
+using Event = std::variant<OpenEvent, CloseEvent, StartRecording, StopRecording>;
 };  // namespace event
 
 

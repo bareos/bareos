@@ -31,6 +31,7 @@
 
 ThreadTimeKeeper::~ThreadTimeKeeper()
 {
+  buffer.emplace_back(event::StopRecording{});
   queue.lock()->put(std::move(buffer));
 }
 
@@ -67,8 +68,6 @@ void ThreadTimeKeeper::exit(const BlockIdentity& block)
 static void write_reports(ReportGenerator* gen,
                           channel::out<EventBuffer> queue)
 {
-  auto start = event::clock::now();
-  gen->begin_report(start);
   for (;;) {
     if (std::optional opt = queue.get_all(); opt.has_value()) {
       for (EventBuffer& buf : opt.value()) {
@@ -78,8 +77,6 @@ static void write_reports(ReportGenerator* gen,
       break;
     }
   }
-  auto end = event::clock::now();
-  gen->end_report(end);
 }
 
 TimeKeeper::TimeKeeper(

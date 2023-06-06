@@ -153,6 +153,12 @@ class JobControlRecord {
     }
   }
 
+  void erase_thread_local_timer() {
+    if (timer.has_value()) {
+      timer->erase_thread_local();
+    }
+  }
+
   const PerformanceReport* performance_report() {
     if (timer.has_value()) {
       return &timer->performance_report();

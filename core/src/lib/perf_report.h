@@ -35,8 +35,6 @@ extern int debug_level;
 
 class ReportGenerator {
  public:
-  virtual void begin_report(event::time_point start [[maybe_unused]]){};
-  virtual void end_report(event::time_point end [[maybe_unused]]){};
   virtual void add_events(const EventBuffer& buf [[maybe_unused]]) {}
   virtual ~ReportGenerator() = default;
 };
@@ -118,11 +116,24 @@ class ThreadPerformanceReport {
     childmap children{};
   };
 
-  void begin_report(event::time_point now) {
+  void begin_report(event::StartRecording start) {
     if (error_str.has_value()) {
       return;
+    } else if (top.is_open()) {
+      set_error("Tried starting recording when it was already started.");
+    } else {
+      top.open(start.when);
     }
-    top.open(now);
+  }
+
+  void end_report(event::StopRecording stop) {
+    if (error_str.has_value()) {
+      return;
+    } else if (!top.is_open()) {
+      set_error("Tried stopping recording when it was not started.");
+    } else {
+      top.close(stop.when);
+    }
   }
 
   void begin_event(event::OpenEvent e)
@@ -132,6 +143,8 @@ class ThreadPerformanceReport {
     }
     if (current == nullptr) {
       set_error("Internal error while processing performance counters (enter).");
+    } else if (!current->is_open()) {
+      set_error("Trying to enter block when recording has not started yet!");
     } else {
       current = current->child(e.source);
       current->open(e.start);
@@ -159,6 +172,8 @@ class ThreadPerformanceReport {
       error += current->source()->c_str();
       error += "' is active.";
       set_error(error);
+    } else if (!current->is_open()) {
+      set_error("Trying to enter block when recording has not started yet!!");
     } else {
       current->close(e.end);
       current = current->parent();
@@ -198,15 +213,10 @@ class PerformanceReport : public ReportGenerator {
   ~PerformanceReport() override;
   static constexpr std::size_t ShowAll = std::numeric_limits<std::size_t>::max();
 
-  void begin_report(event::time_point now) override { start = now; }
-
-  void end_report(event::time_point now) override { end = now; }
-
   void add_events(const EventBuffer& buf) override
   {
     synchronized<ThreadPerformanceReport>* thread = nullptr;
     auto thread_id = buf.threadid();
-    bool inserted = false;
     {
       auto locked = threads.rlock();
       auto iter = locked->find(thread_id);
@@ -217,7 +227,6 @@ class PerformanceReport : public ReportGenerator {
       auto [iter, did_insert] = locked->try_emplace(thread_id);
       ASSERT(did_insert);
       ASSERT(iter != locked->end());
-      inserted = did_insert;
       thread = const_cast<synchronized<ThreadPerformanceReport>*>(&iter->second);
     }
     // pointers to elements of unordered_map are stable
@@ -226,15 +235,15 @@ class PerformanceReport : public ReportGenerator {
 
     auto locked = thread->lock();
 
-    if (inserted) {
-      locked->begin_report(start);
-    }
-
     for (auto event : buf) {
       if (auto* open = std::get_if<event::OpenEvent>(&event)) {
         locked->begin_event(*open);
       } else if (auto* close = std::get_if<event::CloseEvent>(&event)) {
         locked->end_event(*close);
+      } else if (auto* start = std::get_if<event::StartRecording>(&event)) {
+	locked->begin_report(*start);
+      } else if (auto* stop = std::get_if<event::StopRecording>(&event)) {
+	locked->end_report(*stop);
       }
     }
   }
@@ -244,7 +253,6 @@ class PerformanceReport : public ReportGenerator {
   std::string collapsed_str(std::size_t max_depth = PerformanceReport::ShowAll) const;
 
  private:
-  event::time_point start, end;
   rw_synchronized<std::unordered_map<EventBuffer::thread_id, synchronized<ThreadPerformanceReport>>> threads{};
 };
 

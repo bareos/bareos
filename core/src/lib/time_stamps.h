@@ -38,6 +38,7 @@
 #include "lib/thread_util.h"
 #include "lib/channel.h"
 
+static const BlockIdentity recording{"recording"};
 
 class ThreadTimeKeeper {
  public:
@@ -47,6 +48,7 @@ class ThreadTimeKeeper {
 		   thread_id my_id)
       : this_id{my_id}, queue{queue}
   {
+    buffer.emplace_back(event::StartRecording{});
   }
   ~ThreadTimeKeeper();
   void enter(const BlockIdentity& block);
