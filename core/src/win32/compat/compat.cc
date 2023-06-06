@@ -41,9 +41,6 @@
 #include "lib/berrno.h"
 #include "lib/bpipe.h"
 #include "vss.h"
-#if defined(_MSVC_LANG)
-#  include "ntifs.h"
-#endif
 
 #include <shared_mutex>
 
