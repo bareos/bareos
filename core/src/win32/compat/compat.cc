@@ -355,10 +355,11 @@ std::wstring FromUtf8(std::string_view utf8)
 
 std::string FromUtf16(std::wstring_view utf16)
 {
-  // TODO: find out if there is a difference between this
-  //       and std::string{std::begin(utf16), std::end(utf16)}
-  // if the buffer is to small the function returns the number of bytes
-  // required
+  // WideCharToMultiByte does not handle empty strings
+  if (utf16.size() == 0) { return {}; }
+
+  // if the buffer is to small (or not supplied) the function returns
+  // the number of bytes required
   DWORD required = WideCharToMultiByte(CP_UTF8, 0, utf16.data(), utf16.size(),
 				       nullptr, 0, nullptr, nullptr);
   if (required == 0) {
