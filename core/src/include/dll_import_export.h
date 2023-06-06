@@ -23,8 +23,8 @@
 #define BAREOS_CORE_SRC_INCLUDE_DLL_EXPORT_IMPORT_H_
 
 #ifdef _MSC_VER
-#  define BAREOS_EXPORT "__declspec(dllexport) extern"
-#  define BAREOS_IMPORT "__declspec(dllimport) extern"
+#  define BAREOS_EXPORT __declspec(dllexport) extern
+#  define BAREOS_IMPORT __declspec(dllimport) extern
 #else
 #  define BAREOS_EXPORT extern
 #  define BAREOS_IMPORT extern
