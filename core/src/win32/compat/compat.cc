@@ -328,11 +328,16 @@ void unix_name_to_win32(POOLMEM*& win32_name, const char* name)
 
 std::wstring FromUtf8(std::string_view utf8)
 {
+  // MultiByteToWideChar does not handle empty strings
+  if (utf8.size() == 0) { return {}; }
   // if the buffer is to small the function returns the number of characters
   // required
   DWORD required = MultiByteToWideChar(CP_UTF8, 0, utf8.data(), utf8.size(), nullptr, 0);
   if (required == 0) {
-    Dmsg1(300, "Can not convert %s to wide string.\n", utf8.data());
+    errno = b_errno_win32;
+    BErrNo be;
+    Dmsg2(300, "Can not convert %s to wide string: %s\n", utf8.data(),
+	  be.bstrerror());
     return {};
   }
   std::wstring utf16(required, '\0');
@@ -343,8 +348,10 @@ std::wstring FromUtf8(std::string_view utf8)
 				      utf16.data(), utf16.size());
 
   if (written != required) {
-    Dmsg1(300, "Error during conversion! Expected %d-1 chars but only got %d.\n",
-	  required, written);
+    errno = b_errno_win32;
+    BErrNo be;
+    Dmsg3(300, "Error during conversion! Expected %d chars but only got %d: %s\n",
+	  required, written, be.bstrerror());
 
     return {};
   }
