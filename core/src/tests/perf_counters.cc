@@ -41,8 +41,8 @@
 static void RegisterThreadLocal(ThreadTimeKeeper** address,
 				TimeKeeper* keeper)
 {
-  auto& timer = keeper->get_thread_local();
-  *address = &timer;
+  keeper->create_thread_local();
+  *address = keeper->get_thread_local();
 }
 
 TEST(time_keeper, CorrectThreadLocal)

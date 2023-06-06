@@ -89,35 +89,31 @@ TimeKeeper::TimeKeeper(
 
 static TimeKeeper::thread_id get_my_id()
 {
+  // if (during the execution of a job) threads get destroyed and afterwards
+  // new threads get created, then those threads may in fact have the same
+  // (c++) threadid leading to get_thread_local to return the same reference.
+  // Note that this is still completely thread safe!
+  // It will lead to weird results however so we use this alternative instead:
   static std::atomic<TimeKeeper::thread_id> counter{0};
   thread_local TimeKeeper::thread_id my_id = counter.fetch_add(1, std::memory_order_relaxed);
   return my_id;
 }
 
-ThreadTimeKeeper& TimeKeeper::get_thread_local()
+bool TimeKeeper::create_thread_local()
 {
-  // this is most likely just a read from a thread local variable
-  // anyways, so we do not need to store this inside a threadlocal ourselves
-
-  // if (during the execution of a job) threads get destroyed and afterwards
-  // new threads get created, then those threads may in fact have the same id
-  // leading to get_thread_local to return the same reference.  Note that this
-  // is still completely thread safe!
-  // It will lead to weird results however so we use this alternative instead:
   thread_id my_id = get_my_id();
-  {
-    auto locked = keeper.rlock();
-    if (auto found = locked->find(my_id); found != locked->end()) {
-      return const_cast<ThreadTimeKeeper&>(found->second);
-    }
+  auto [_, inserted] = keeper.wlock()->try_emplace(my_id, queue, my_id);
+  return inserted;
+}
+
+ThreadTimeKeeper* TimeKeeper::get_thread_local()
+{
+  thread_id my_id = get_my_id();
+  auto locked = keeper.rlock();
+  if (auto found = locked->find(my_id); found != locked->end()) {
+    return &const_cast<ThreadTimeKeeper&>(found->second);
   }
-  {
-    auto [iter, inserted] = keeper.wlock()->emplace(std::piecewise_construct,
-						    std::forward_as_tuple(my_id),
-						    std::forward_as_tuple(queue, my_id));
-    ASSERT(inserted);
-    return iter->second;
-  }
+  return nullptr;
 }
 
 void TimeKeeper::erase_thread_local()

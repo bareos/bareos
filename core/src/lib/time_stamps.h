@@ -80,7 +80,8 @@ class TimeKeeper {
     report_writer.join();
   }
 
-  ThreadTimeKeeper& get_thread_local();
+  bool create_thread_local();
+  ThreadTimeKeeper* get_thread_local();
   void erase_thread_local();
 
   const PerformanceReport& performance_report() const {
