@@ -31,7 +31,7 @@
 #ifndef BAREOS_WIN32_INCLUDE_WINAPI_H_
 #define BAREOS_WIN32_INCLUDE_WINAPI_H_
 
-#import "include/dll_import_export.h"
+#include "include/dll_import_export.h"
 
 #if defined(HAVE_WIN32)
 /*
@@ -243,8 +243,7 @@ BAREOS_IMPORT t_CloseEncryptedFileRaw p_CloseEncryptedFileRaw;
 BAREOS_IMPORT t_BackupRead p_BackupRead;
 BAREOS_IMPORT t_BackupWrite p_BackupWrite;
 
-BAREOS_IMPORT t_SetProcessShutdownParameters
-    p_SetProcessShutdownParameters;
+BAREOS_IMPORT t_SetProcessShutdownParameters p_SetProcessShutdownParameters;
 
 BAREOS_IMPORT t_WideCharToMultiByte p_WideCharToMultiByte;
 BAREOS_IMPORT t_MultiByteToWideChar p_MultiByteToWideChar;
@@ -265,10 +264,8 @@ BAREOS_IMPORT t_GetVolumePathNameW p_GetVolumePathNameW;
 BAREOS_IMPORT t_GetVolumeNameForVolumeMountPointW
     p_GetVolumeNameForVolumeMountPointW;
 
-BAREOS_IMPORT t_GetLogicalDriveStringsA
-    p_GetLogicalDriveStringsA;
-BAREOS_IMPORT t_GetLogicalDriveStringsW
-    p_GetLogicalDriveStringsW;
+BAREOS_IMPORT t_GetLogicalDriveStringsA p_GetLogicalDriveStringsA;
+BAREOS_IMPORT t_GetLogicalDriveStringsW p_GetLogicalDriveStringsW;
 
 BAREOS_IMPORT t_AttachConsole p_AttachConsole;
 

@@ -29,7 +29,7 @@
  */
 /**
  * @file
- * compatibilty layer to make bareos-fd run natively under windows
+ * compatibility layer to make bareos-fd run natively under windows
  */
 #include "include/bareos.h"
 #include "include/jcr.h"
@@ -41,7 +41,7 @@
 #include "lib/berrno.h"
 #include "lib/bpipe.h"
 #include "vss.h"
-#if defined (_MSVC_LANG)
+#if defined(_MSVC_LANG)
 #  include "ntifs.h"
 #endif
 
