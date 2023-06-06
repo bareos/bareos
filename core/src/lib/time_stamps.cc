@@ -90,6 +90,13 @@ TimeKeeper::TimeKeeper(
 {
 }
 
+static TimeKeeper::thread_id get_my_id()
+{
+  static std::atomic<TimeKeeper::thread_id> counter{0};
+  thread_local TimeKeeper::thread_id my_id = counter.fetch_add(1, std::memory_order_relaxed);
+  return my_id;
+}
+
 ThreadTimeKeeper& TimeKeeper::get_thread_local()
 {
   // this is most likely just a read from a thread local variable
@@ -100,8 +107,7 @@ ThreadTimeKeeper& TimeKeeper::get_thread_local()
   // leading to get_thread_local to return the same reference.  Note that this
   // is still completely thread safe!
   // It will lead to weird results however so we use this alternative instead:
-  static std::atomic<thread_id> counter{0};
-  thread_local thread_id my_id = counter.fetch_add(1, std::memory_order_relaxed);
+  thread_id my_id = get_my_id();
   {
     auto locked = keeper.rlock();
     if (auto found = locked->find(my_id); found != locked->end()) {
@@ -115,4 +121,11 @@ ThreadTimeKeeper& TimeKeeper::get_thread_local()
     ASSERT(inserted);
     return iter->second;
   }
+}
+
+void TimeKeeper::erase_thread_local()
+{
+  thread_id my_id = get_my_id();
+
+  keeper.wlock()->erase(my_id);
 }

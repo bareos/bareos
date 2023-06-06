@@ -79,6 +79,7 @@ class TimeKeeper {
   }
 
   ThreadTimeKeeper& get_thread_local();
+  void erase_thread_local();
 
   const PerformanceReport& performance_report() const {
     return perf;
