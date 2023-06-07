@@ -67,6 +67,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - cleanup: remove some unused functions and shrink number of includes in bareos.h [PR #1433]
 - core: fix schema public with PostgreSQL 15 [PR #1449]
 - pr-tool: handling POEditor commits and optional github ci tests [PR #1434]
+- VMware Plugin: Backup and Restore of VMs using multiple datastores [PR #1473]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -170,4 +171,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1459]: https://github.com/bareos/bareos/pull/1459
 [PR #1460]: https://github.com/bareos/bareos/pull/1460
 [PR #1469]: https://github.com/bareos/bareos/pull/1469
+[PR #1473]: https://github.com/bareos/bareos/pull/1473
 [unreleased]: https://github.com/bareos/bareos/tree/master
