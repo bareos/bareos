@@ -24,6 +24,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - daemons: update network handling when IP protocols unavailable [PR #1463]
 - build: fix for gcc 13.1.1 [PR #1461]
 - build: remove openSUSE 15.3 and Univention 5.0 from test matrix [PR #1470]
+- VMware Plugin: Backup and Restore of VMs using multiple datastores [PR #1478]
 
 ### Fixed
 -  filed: fix off-by-one error when resizing acl buffer [PR #1480]
@@ -522,5 +523,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1463]: https://github.com/bareos/bareos/pull/1463
 [PR #1465]: https://github.com/bareos/bareos/pull/1465
 [PR #1470]: https://github.com/bareos/bareos/pull/1470
+[PR #1478]: https://github.com/bareos/bareos/pull/1478
 [PR #1480]: https://github.com/bareos/bareos/pull/1480
 [unreleased]: https://github.com/bareos/bareos/tree/master
