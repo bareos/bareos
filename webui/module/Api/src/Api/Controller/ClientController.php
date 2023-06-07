@@ -35,6 +35,16 @@ class ClientController extends AbstractRestfulController
     protected $clientModel = null;
     protected $result = null;
 
+    private function getNearestVersionInfo($bareos_supported_versions, $client_version)
+    {
+        foreach ($bareos_supported_versions as $version_info) {
+            if (version_compare($client_version, $version_info["version"], ">=")) {
+                return $version_info;
+            }
+        }
+        return null;
+    }
+
     public function getList()
     {
         $this->RequestURIPlugin()->setRequestURI();
@@ -60,6 +70,10 @@ class ClientController extends AbstractRestfulController
             if (isset($client)) {
                 $this->result = $this->getClientModel()->getClient($this->bsock, $client);
             } else {
+                # $_SESSION['bareos']['product-updates'] is
+                # a sorted list of Bareos release versions.
+                $bareos_supported_versions = json_decode($_SESSION['bareos']['product-updates'], true);
+
                 $clients = $this->getClientModel()->getClients($this->bsock);
                 $dot_clients = $this->getClientModel()->getDotClients($this->bsock);
 
@@ -75,6 +89,14 @@ class ClientController extends AbstractRestfulController
                     $uname = explode(",", $clients[$i]['uname']);
                     $v = explode(" ", $uname[0]);
                     $this->result[$i]['version'] = $v[0];
+                    $this->result[$i]['version_tooltip'] = "";
+                    $this->result[$i]['version_status'] = "unknown";
+                    $version_info = $this->getNearestVersionInfo($bareos_supported_versions, $this->result[$i]['version']);
+                    if ($version_info) {
+                        $this->result[$i]['version_tooltip'] = $version_info['package_update_info'];
+                        $this->result[$i]['version_status'] = $version_info['status'];
+                    }
+                    $this->result[$i]['enabled'] = "";
                     for ($j = 0; $j < count($dot_clients); $j++) {
                         if ($this->result[$i]['name'] == $dot_clients[$j]['name']) {
                             $this->result[$i]['enabled'] = $dot_clients[$j]['enabled'];
