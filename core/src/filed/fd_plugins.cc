@@ -1331,7 +1331,7 @@ bacl_exit_code PluginBuildAclStreams(JobControlRecord* jcr,
       case bRC_OK:
         if (ap.content_length && ap.content) {
           acl_data->u.build->content = CheckPoolMemorySize(
-              acl_data->u.build->content, ap.content_length);
+              acl_data->u.build->content, ap.content_length + 1);
           memcpy(acl_data->u.build->content, ap.content, ap.content_length);
           acl_data->u.build->content_length = ap.content_length;
           free(ap.content);

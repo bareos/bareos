@@ -90,6 +90,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - bsmtp bls bextract: fixes for command line parsing [PR #1455]
 - daemons: update network handling when IP protocols unavailable [PR #1454]
 - Improve handling of catalog requests that try to reduce VolFiles, VolBlocks and VolBytes [PR #1431]
+- filed: fix off-by-one error when resizing acl buffer [PR #1479]
 
 ### Documentation
 - add explanation about binary version numbers [PR #1354]
@@ -172,4 +173,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1460]: https://github.com/bareos/bareos/pull/1460
 [PR #1469]: https://github.com/bareos/bareos/pull/1469
 [PR #1473]: https://github.com/bareos/bareos/pull/1473
+[PR #1479]: https://github.com/bareos/bareos/pull/1479
 [unreleased]: https://github.com/bareos/bareos/tree/master
