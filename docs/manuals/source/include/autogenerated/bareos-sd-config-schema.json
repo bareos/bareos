@@ -711,6 +711,7 @@
         "MaximumBlockSize": {
           "datatype": "MAX_BLOCKSIZE",
           "code": 0,
+          "default_value": "1048576",
           "equals": true
         },
         "MaximumFileSize": {

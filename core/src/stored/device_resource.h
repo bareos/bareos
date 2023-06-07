@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -43,50 +43,55 @@ class DeviceResource : public BareosResource {
   char* changer_command;       /**< Changer command  -- external program */
   char* alert_command;         /**< Alert command -- external program */
   char* spool_directory;       /**< Spool file directory */
-  std::string device_type;
-  uint32_t label_type;
-  bool autoselect;              /**< Automatically select from AutoChanger */
-  bool norewindonclose;         /**< Don't rewind tape drive on close */
-  bool drive_tapealert_enabled; /**< Enable Tape Alert monitoring */
-  bool drive_crypto_enabled;    /**< Enable hardware crypto */
-  bool query_crypto_status;     /**< Query device for crypto status */
-  bool collectstats;            /**< Set if statistics should be collected */
-  bool eof_on_error_is_eot;     /**< Interpret EOF during read error as EOT */
-  drive_number_t drive;         /**< Autochanger logical drive number */
-  drive_number_t drive_index;   /**< Autochanger physical drive index */
-  char cap_bits[CAP_BYTES];     /**< Capabilities of this device */
-  utime_t max_changer_wait;     /**< Changer timeout */
-  utime_t max_rewind_wait;      /**< Maximum secs to wait for rewind */
-  utime_t max_open_wait;        /**< Maximum secs to wait for open */
-  uint32_t max_open_vols;       /**< Maximum simultaneous open volumes */
-  uint32_t label_block_size;    /**< block size of the label block*/
-  uint32_t min_block_size;      /**< Current Minimum block size */
-  uint32_t max_block_size;      /**< Current Maximum block size */
-  uint32_t max_network_buffer_size; /**< Max network buf size */
-  uint32_t max_concurrent_jobs;     /**< Maximum concurrent jobs this drive */
-  uint32_t autodeflate_algorithm;   /**< Compression algorithm to use for
-                                       compression */
-  uint16_t autodeflate_level; /**< Compression level to use for compression
+  std::string device_type{DeviceType::B_UNKNOWN_DEV};
+  uint32_t label_type{B_BAREOS_LABEL};
+  bool autoselect{true};      /**< Automatically select from AutoChanger */
+  bool norewindonclose{true}; /**< Don't rewind tape drive on close */
+  bool drive_tapealert_enabled{false}; /**< Enable Tape Alert monitoring */
+  bool drive_crypto_enabled{false};    /**< Enable hardware crypto */
+  bool query_crypto_status{false};     /**< Query device for crypto status */
+  bool collectstats{false}; /**< Set if statistics should be collected */
+  bool eof_on_error_is_eot{
+      false};                    /**< Interpret EOF during read error as EOT */
+  drive_number_t drive{0};       /**< Autochanger logical drive number */
+  drive_number_t drive_index{0}; /**< Autochanger physical drive index */
+  char cap_bits[CAP_BYTES]{0};   /**< Capabilities of this device */
+  utime_t max_changer_wait{300}; /**< Changer timeout */
+  utime_t max_rewind_wait{300};  /**< Maximum secs to wait for rewind */
+  utime_t max_open_wait{300};    /**< Maximum secs to wait for open */
+  uint32_t max_open_vols{1};     /**< Maximum simultaneous open volumes */
+  uint32_t label_block_size{64512};    /**< block size of the label block*/
+  uint32_t min_block_size{0};          /**< Current Minimum block size */
+  uint32_t max_block_size{1048576};    /**< Current Maximum block size */
+  uint32_t max_network_buffer_size{0}; /**< Max network buf size */
+  uint32_t max_concurrent_jobs{0};   /**< Maximum concurrent jobs this drive */
+  uint32_t autodeflate_algorithm{0}; /**< Compression algorithm to use for
+                                     compression */
+  uint16_t autodeflate_level{6}; /**< Compression level to use for compression
                                  algorithm which uses levels */
-  AutoXflateMode autodeflate; /**< auto deflation in this IO direction */
-  AutoXflateMode autoinflate; /**< auto inflation in this IO direction */
-  utime_t
-      vol_poll_interval;   /**< Interval between polling volume during mount */
-  int64_t max_file_size;   /**< Max file size in bytes */
-  int64_t volume_capacity; /**< Advisory capacity */
-  int64_t max_spool_size;  /**< Max spool size for all jobs */
-  int64_t max_job_spool_size; /**< Max spool size for any single job */
+  AutoXflateMode autodeflate{
+      AutoXflateMode::IO_DIRECTION_NONE}; /**< auto deflation in this IO
+                                             direction */
+  AutoXflateMode autoinflate{
+      AutoXflateMode::IO_DIRECTION_NONE}; /**< auto inflation in this IO
+                                             direction */
+  utime_t vol_poll_interval{
+      300}; /**< Interval between polling volume during mount */
+  int64_t max_file_size{1000000000}; /**< Max file size in bytes */
+  int64_t volume_capacity{0};        /**< Advisory capacity */
+  int64_t max_spool_size{0};         /**< Max spool size for all jobs */
+  int64_t max_job_spool_size{0};     /**< Max spool size for any single job */
 
   char* mount_point;     /**< Mount point for require mount devices */
   char* mount_command;   /**< Mount command */
   char* unmount_command; /**< Unmount command */
-  uint32_t count;        /**< Total number of multiplied devices */
+  uint32_t count{1};     /**< Total number of multiplied devices */
   DeviceResource* multiplied_device_resource; /**< Copied from this device */
 
   Device* dev; /* Pointer to physical dev -- set at runtime */
   AutochangerResource* changer_res; /* Pointer to changer res if any */
 
-  DeviceResource();
+  DeviceResource() = default;
   virtual ~DeviceResource() = default;
   DeviceResource(const DeviceResource& other);
   DeviceResource& operator=(const DeviceResource& rhs);

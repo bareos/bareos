@@ -505,6 +505,12 @@ Tapespeed and blocksizes
 :index:`\ <single: Tape; speed>`
 :index:`\ <single: Blocksize; optimize>`
 
+.. note::
+  As of Bareos 23, the default block size has been increased to 1 MiB (1.048.576 bytes).
+  This should provide optimal tape performance in the default configuration and remedy the need to tune block sizes.
+  The original chapter has been preserved in its original state for reference.
+
+
 The `Bareos Whitepaper Tape Speed Tuning <https://www.bareos.com/whitepapers/optimizing-the-tape-speed.pdf>`_ shows that the two parameters :strong:`Maximum File Size`\  and :strong:`Maximum Block Size`\  of the device have significant influence on the tape speed.
 
 While it is no problem to change the :config:option:`sd/device/MaximumFileSize`\  parameter, unfortunately it is not possible to change the :config:option:`sd/device/MaximumBlockSize`\  parameter, because the previously written tapes would become unreadable in the new setup. It would require that the :config:option:`sd/device/MaximumBlockSize`\  parameter is switched back to the old value to be able to read the old volumes, but of

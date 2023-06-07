@@ -68,6 +68,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - core: fix schema public with PostgreSQL 15 [PR #1449]
 - pr-tool: handling POEditor commits and optional github ci tests [PR #1434]
 - VMware Plugin: Backup and Restore of VMs using multiple datastores [PR #1473]
+- stored: change default block size to 1 MiB [PR #1396]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -140,6 +141,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1390]: https://github.com/bareos/bareos/pull/1390
 [PR #1392]: https://github.com/bareos/bareos/pull/1392
 [PR #1395]: https://github.com/bareos/bareos/pull/1395
+[PR #1396]: https://github.com/bareos/bareos/pull/1396
 [PR #1398]: https://github.com/bareos/bareos/pull/1398
 [PR #1401]: https://github.com/bareos/bareos/pull/1401
 [PR #1402]: https://github.com/bareos/bareos/pull/1402

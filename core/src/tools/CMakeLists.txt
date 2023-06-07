@@ -56,6 +56,10 @@ if(NOT HAVE_WIN32)
   target_link_libraries(bpluginfo bareos ${DL_LIBRARIES} CLI11::CLI11)
 endif()
 
+add_executable(gentestdata)
+target_sources(gentestdata PRIVATE gentestdata.cc)
+target_link_libraries(gentestdata PRIVATE CLI11::CLI11)
+
 set(TOOLS_BIN bsmtp bwild bregex)
 
 set(TOOLS_SBIN bscrypto bwild bregex)
