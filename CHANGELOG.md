@@ -69,6 +69,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - pr-tool: handling POEditor commits and optional github ci tests [PR #1434]
 - VMware Plugin: Backup and Restore of VMs using multiple datastores [PR #1473]
 - stored: change default block size to 1 MiB [PR #1396]
+- webui: re-add show update status for clients [PR #1371]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -128,6 +129,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1365]: https://github.com/bareos/bareos/pull/1365
 [PR #1366]: https://github.com/bareos/bareos/pull/1366
 [PR #1367]: https://github.com/bareos/bareos/pull/1367
+[PR #1371]: https://github.com/bareos/bareos/pull/1371
 [PR #1372]: https://github.com/bareos/bareos/pull/1372
 [PR #1373]: https://github.com/bareos/bareos/pull/1373
 [PR #1374]: https://github.com/bareos/bareos/pull/1374
