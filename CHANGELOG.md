@@ -25,6 +25,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - build: fix for gcc 13.1.1 [PR #1461]
 - build: remove openSUSE 15.3 and Univention 5.0 from test matrix [PR #1470]
 
+### Fixed
+-  filed: fix off-by-one error when resizing acl buffer [PR #1480]
+
 ## [22.0.3] - 2023-03-24
 
 ### Changed
@@ -519,4 +522,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1463]: https://github.com/bareos/bareos/pull/1463
 [PR #1465]: https://github.com/bareos/bareos/pull/1465
 [PR #1470]: https://github.com/bareos/bareos/pull/1470
+[PR #1480]: https://github.com/bareos/bareos/pull/1480
 [unreleased]: https://github.com/bareos/bareos/tree/master
