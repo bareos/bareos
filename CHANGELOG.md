@@ -70,6 +70,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - VMware Plugin: Backup and Restore of VMs using multiple datastores [PR #1473]
 - stored: change default block size to 1 MiB [PR #1396]
 - webui: re-add show update status for clients [PR #1371]
+- build: add Debian 12 [PR #1477]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -177,5 +178,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1460]: https://github.com/bareos/bareos/pull/1460
 [PR #1469]: https://github.com/bareos/bareos/pull/1469
 [PR #1473]: https://github.com/bareos/bareos/pull/1473
+[PR #1477]: https://github.com/bareos/bareos/pull/1477
 [PR #1479]: https://github.com/bareos/bareos/pull/1479
 [unreleased]: https://github.com/bareos/bareos/tree/master
