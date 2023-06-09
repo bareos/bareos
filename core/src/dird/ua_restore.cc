@@ -64,12 +64,10 @@ static int LastFullHandler(void* ctx, int num_fields, char** row);
 static int JobidHandler(void* ctx, int num_fields, char** row);
 static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx);
 static int FilesetHandler(void* ctx, int num_fields, char** row);
-static void FreeNameList(NameList* name_list);
 static bool SelectBackupsBeforeDate(UaContext* ua,
                                     RestoreContext* rx,
                                     char* date);
 static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx);
-static void free_rx(RestoreContext* rx);
 static void SplitPathAndFilename(UaContext* ua,
                                  RestoreContext* rx,
                                  char* fname);
@@ -99,16 +97,7 @@ static void GetAndDisplayBasejobs(UaContext* ua, RestoreContext* rx);
 // Restore files
 bool RestoreCmd(UaContext* ua, const char*)
 {
-  RestoreContext rx; /* restore context */
-  PoolMem buf;
-  JobResource* job;
-  int i;
-  JobControlRecord* jcr = ua->jcr;
-  char* escaped_bsr_name = NULL;
-  char* escaped_where_name = NULL;
-  char *strip_prefix, *add_prefix, *add_suffix, *regexp;
-  strip_prefix = add_prefix = add_suffix = regexp = NULL;
-
+  RestoreContext rx;
   rx.path = GetPoolMemory(PM_FNAME);
   rx.fname = GetPoolMemory(PM_FNAME);
   rx.JobIds = GetPoolMemory(PM_FNAME);
@@ -117,10 +106,13 @@ bool RestoreCmd(UaContext* ua, const char*)
   rx.query = GetPoolMemory(PM_FNAME);
   rx.bsr = std::make_unique<RestoreBootstrapRecord>();
 
-  i = FindArgWithValue(ua, "comment");
+  char* strip_prefix = nullptr;
+  char* add_prefix = nullptr;
+  char* add_suffix = nullptr;
+  int i = FindArgWithValue(ua, "comment");
   if (i >= 0) {
     rx.comment = ua->argv[i];
-    if (!IsCommentLegal(ua, rx.comment)) { goto bail_out; }
+    if (!IsCommentLegal(ua, rx.comment)) { return false; }
   }
 
   i = FindArgWithValue(ua, "backupformat");
@@ -155,11 +147,7 @@ bool RestoreCmd(UaContext* ua, const char*)
   }
 
   if (strip_prefix || add_suffix || add_prefix) {
-    int len = BregexpGetBuildWhereSize(strip_prefix, add_prefix, add_suffix);
-    regexp = (char*)malloc(len * sizeof(char));
-
-    bregexp_build_where(regexp, len, strip_prefix, add_prefix, add_suffix);
-    rx.RegexWhere = regexp;
+    rx.BuildRegexWhere(strip_prefix, add_suffix, add_prefix);
   }
 
   /* TODO: add acl for regexwhere ? */
@@ -167,20 +155,22 @@ bool RestoreCmd(UaContext* ua, const char*)
   if (rx.RegexWhere) {
     if (!ua->AclAccessOk(Where_ACL, rx.RegexWhere, true)) {
       ua->ErrorMsg(_("\"RegexWhere\" specification not authorized.\n"));
-      goto bail_out;
+
+      return false;
     }
   }
 
   if (rx.where) {
     if (!ua->AclAccessOk(Where_ACL, rx.where, true)) {
       ua->ErrorMsg(_("\"where\" specification not authorized.\n"));
-      goto bail_out;
+      return false;
     }
   }
 
-  if (!OpenClientDb(ua, true)) { goto bail_out; }
+  if (!OpenClientDb(ua, true)) { return false; }
 
   /* Ensure there is at least one Restore Job */
+  JobResource* job;
   {
     foreach_res (job, R_JOB) {
       if (job->JobType == JT_RESTORE) {
@@ -194,7 +184,7 @@ bool RestoreCmd(UaContext* ua, const char*)
         _("No Restore Job Resource found in %s.\n"
           "You must create at least one before running this command.\n"),
         my_config->get_base_config_path().c_str());
-    goto bail_out;
+    return false;
   }
 
   /* Request user to select JobIds or files by various different methods
@@ -203,12 +193,12 @@ bool RestoreCmd(UaContext* ua, const char*)
    *  AddFindex() */
   switch (UserSelectJobidsOrFiles(ua, &rx)) {
     case 0: /* error */
-      goto bail_out;
+      return false;
     case 1: /* selected by jobid */
       GetAndDisplayBasejobs(ua, &rx);
       if (!BuildDirectoryTree(ua, &rx)) {
         ua->SendMsg(_("Restore not done.\n"));
-        goto bail_out;
+        return false;
       }
       break;
     case 2: /* selected by filename, no tree needed */
@@ -220,7 +210,7 @@ bool RestoreCmd(UaContext* ua, const char*)
   } else {
     job = get_restore_job(ua);
   }
-  if (!job) { goto bail_out; }
+  if (!job) { return false; }
 
   /* When doing NDMP_NATIVE restores, we don't create any bootstrap file
    * as we only send a namelist for restore. The storage handling is
@@ -236,11 +226,11 @@ bool RestoreCmd(UaContext* ua, const char*)
       if (!AddVolumeInformationToBsr(ua, rx.bsr.get())) {
         ua->ErrorMsg(_(
             "Unable to construct a valid BootStrapRecord. Cannot continue.\n"));
-        goto bail_out;
+        return false;
       }
       if (!(rx.selected_files = WriteBsrFile(ua, rx))) {
         ua->WarningMsg(_("No files selected to be restored.\n"));
-        goto bail_out;
+        return false;
       }
       DisplayBsrInfo(ua, rx); /* display vols needed, etc */
 
@@ -252,43 +242,47 @@ bool RestoreCmd(UaContext* ua, const char*)
       }
     } else {
       ua->WarningMsg(_("No files selected to be restored.\n"));
-      goto bail_out;
+      return false;
     }
   }
 
-  if (!GetClientName(ua, &rx)) { goto bail_out; }
+  if (!GetClientName(ua, &rx)) { return false; }
   if (!rx.ClientName) {
     ua->ErrorMsg(_("No Client resource found!\n"));
-    goto bail_out;
+    return false;
   }
-  if (!GetRestoreClientName(ua, rx)) { goto bail_out; }
+  if (!GetRestoreClientName(ua, rx)) { return false; }
 
-  escaped_bsr_name = escape_filename(jcr->RestoreBootstrap);
+  std::string escaped_bsr_name = escape_filename(ua->jcr->RestoreBootstrap);
 
   Mmsg(ua->cmd,
        "run job=\"%s\" client=\"%s\" restoreclient=\"%s\" storage=\"%s\""
        " bootstrap=\"%s\" files=%u catalog=\"%s\"",
        job->resource_name_, rx.ClientName, rx.RestoreClientName,
        rx.store ? rx.store->resource_name_ : "",
-       escaped_bsr_name ? escaped_bsr_name : jcr->RestoreBootstrap,
+       !escaped_bsr_name.empty() ? escaped_bsr_name.c_str()
+                                 : ua->jcr->RestoreBootstrap,
        rx.selected_files, ua->catalog->resource_name_);
 
   // Build run command
+  PoolMem buf;
   if (rx.backup_format) {
     Mmsg(buf, " backupformat=%s", rx.backup_format);
     PmStrcat(ua->cmd, buf);
   }
 
   PmStrcpy(buf, "");
+  std::string escaped_where_name{};
   if (rx.RegexWhere) {
     escaped_where_name = escape_filename(rx.RegexWhere);
     Mmsg(buf, " regexwhere=\"%s\"",
-         escaped_where_name ? escaped_where_name : rx.RegexWhere);
+         !escaped_where_name.empty() ? escaped_where_name.c_str()
+                                     : rx.RegexWhere);
 
   } else if (rx.where) {
     escaped_where_name = escape_filename(rx.where);
     Mmsg(buf, " where=\"%s\"",
-         escaped_where_name ? escaped_where_name : rx.where);
+         !escaped_where_name.empty() ? escaped_where_name.c_str() : rx.where);
   }
   PmStrcat(ua->cmd, buf);
 
@@ -307,12 +301,6 @@ bool RestoreCmd(UaContext* ua, const char*)
     PmStrcat(ua->cmd, buf);
   }
 
-  if (escaped_bsr_name != NULL) { free(escaped_bsr_name); }
-
-  if (escaped_where_name != NULL) { free(escaped_where_name); }
-
-  if (regexp) { free(regexp); }
-
   if (FindArg(ua, NT_("yes")) > 0) {
     PmStrcat(ua->cmd, " yes"); /* pass it on to the run command */
   }
@@ -320,23 +308,12 @@ bool RestoreCmd(UaContext* ua, const char*)
   Dmsg1(200, "Submitting: %s\n", ua->cmd);
 
   // Transfer jobids to jcr to for picking up restore objects
-  jcr->JobIds = rx.JobIds;
+  ua->jcr->JobIds = rx.JobIds;
   rx.JobIds = NULL;
 
   ParseUaArgs(ua);
   RunCmd(ua, ua->cmd);
-  free_rx(&rx);
   return true;
-
-bail_out:
-  if (escaped_bsr_name != NULL) { free(escaped_bsr_name); }
-
-  if (escaped_where_name != NULL) { free(escaped_where_name); }
-
-  if (regexp) { free(regexp); }
-
-  free_rx(&rx);
-  return false;
 }
 
 // Fill the rx->BaseJobIds and display the list
@@ -359,27 +336,43 @@ static void GetAndDisplayBasejobs(UaContext* ua, RestoreContext* rx)
   PmStrcpy(rx->BaseJobIds, jobids.GetAsString().c_str());
 }
 
-static void free_rx(RestoreContext* rx)
+void RestoreContext::BuildRegexWhere(char* strip_prefix,
+                                     char* add_prefix,
+                                     char* add_suffix)
 {
-  rx->bsr.reset(nullptr);
+  int len = BregexpGetBuildWhereSize(strip_prefix, add_prefix, add_suffix);
+  regexp = (char*)malloc(len * sizeof(char));
+  bregexp_build_where(regexp, len, strip_prefix, add_prefix, add_suffix);
 
-  if (rx->ClientName) {
-    free(rx->ClientName);
-    rx->ClientName = NULL;
-  }
-
-  if (rx->RestoreClientName) {
-    free(rx->RestoreClientName);
-    rx->RestoreClientName = NULL;
-  }
-
-  FreeAndNullPoolMemory(rx->JobIds);
-  FreeAndNullPoolMemory(rx->BaseJobIds);
-  FreeAndNullPoolMemory(rx->fname);
-  FreeAndNullPoolMemory(rx->path);
-  FreeAndNullPoolMemory(rx->query);
-  FreeNameList(&rx->name_list);
+  RegexWhere = regexp;
 }
+
+RestoreContext::~RestoreContext()
+{
+  bsr.reset(nullptr);
+
+  if (ClientName) {
+    free(ClientName);
+    ClientName = nullptr;
+  }
+
+  if (RestoreClientName) {
+    free(RestoreClientName);
+    RestoreClientName = nullptr;
+  }
+
+  if (regexp) {
+    free(regexp);
+    regexp = nullptr;
+  }
+
+  FreeAndNullPoolMemory(JobIds);
+  FreeAndNullPoolMemory(BaseJobIds);
+  FreeAndNullPoolMemory(fname);
+  FreeAndNullPoolMemory(path);
+  FreeAndNullPoolMemory(query);
+}
+
 
 static bool HasValue(UaContext* ua, int i)
 {
@@ -815,9 +808,9 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
       return 0;
     }
     if (!ua->AclAccessOk(Job_ACL, jr.Name, true)) {
-      ua->ErrorMsg(
-          _("Access to JobId=%s (Job \"%s\") not authorized. Not selected.\n"),
-          edit_int64(JobId, ed1), jr.Name);
+      ua->ErrorMsg(_("Access to JobId=%s (Job \"%s\") not authorized. Not "
+                     "selected.\n"),
+                   edit_int64(JobId, ed1), jr.Name);
       continue;
     }
     if (*JobIds != 0) { PmStrcat(JobIds, ","); }
@@ -1144,25 +1137,24 @@ static void AddDeltaListFindex(RestoreContext* rx, struct delta_list* lst)
 
 static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
 {
-  TreeContext tree;
-  JobId_t JobId, last_JobId;
-  const char* p;
   bool OK = true;
-  char ed1[50];
 
   // Build the directory tree containing JobIds user selected
+  TreeContext tree;
   tree.root = new_tree(rx->TotalFiles);
   tree.ua = ua;
   tree.all = rx->all;
-  last_JobId = 0;
 
   /* For display purposes, the same JobId, with different volumes may
    * appear more than once, however, we only insert it once. */
-  p = rx->JobIds;
+
+  const char* p = rx->JobIds;
   tree.FileEstimate = 0;
 
+  JobId_t JobId;
   if (GetNextJobidFromList(&p, &JobId) > 0) {
     // Use first JobId as estimate of the number of files to restore
+    char ed1[50];
     ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_count_files,
                       edit_int64(JobId, ed1));
     if (!ua->db->SqlQuery(rx->query, RestoreCountHandler, (void*)rx)) {
@@ -1210,9 +1202,7 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
   if (tree.FileCount == 0) {
     OK = AskForFileregex(ua, rx);
     if (OK) {
-      last_JobId = 0;
       for (p = rx->JobIds; GetNextJobidFromList(&p, &JobId) > 0;) {
-        if (JobId == last_JobId) { continue; /* eliminate duplicate JobIds */ }
         AddFindexAll(rx->bsr.get(), JobId);
       }
     }
@@ -1393,8 +1383,8 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
     goto bail_out;
   }
 
-  /* Note, this is needed because I don't seem to get the callback from the call
-   * just above. */
+  /* Note, this is needed because I don't seem to get the callback from the
+   * call just above. */
   rx->JobTDate = 0;
   ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_sel_all_temp1);
   if (!ua->db->SqlQuery(rx->query, LastFullHandler, (void*)rx)) {
@@ -1408,8 +1398,9 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
                  date);
 
     // if no full backups were found while searching for archives/backups
-    // try to see if there are any valid full backups using the opposite filter.
-    // if there are send a message to the user that he can try restoring those.
+    // try to see if there are any valid full backups using the opposite
+    // filter. if there are send a message to the user that he can try
+    // restoring those.
     RestoreContext::JobTypeFilter opposite
         = RestoreContext::JobTypeFilter::Backup;
     switch (rx->job_filter) {
@@ -1493,8 +1484,8 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
       if (ua->pint32_val) {
         PoolMem JobIds(PM_FNAME);
 
-        /* Change the list of jobs needed to do the restore to the copies of the
-         * Job. */
+        /* Change the list of jobs needed to do the restore to the copies of
+         * the Job. */
         PmStrcpy(JobIds, rx->JobIds);
         rx->last_jobid[0] = rx->JobIds[0] = 0;
         ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_sel_jobid_copies,
@@ -1579,14 +1570,12 @@ static int FilesetHandler(void* ctx, int, char** row)
 }
 
 // Free names in the list
-static void FreeNameList(NameList* name_list)
+NameList::~NameList()
 {
-  int i;
-
-  for (i = 0; i < name_list->num_ids; i++) { free(name_list->name[i]); }
-  BfreeAndNull(name_list->name);
-  name_list->max_ids = 0;
-  name_list->num_ids = 0;
+  for (int i = 0; i < num_ids; i++) { free(name[i]); }
+  BfreeAndNull(name);
+  max_ids = 0;
+  num_ids = 0;
 }
 
 void FindStorageResource(UaContext* ua,
@@ -1620,9 +1609,9 @@ void FindStorageResource(UaContext* ua,
     i = FindArgWithValue(ua, "storage");
     if (i > 0) { store = ua->GetStoreResWithName(ua->argv[i]); }
     if (store && (store != rx.store)) {
-      ua->InfoMsg(
-          _("Warning default storage overridden by \"%s\" on command line.\n"),
-          store->resource_name_);
+      ua->InfoMsg(_("Warning default storage overridden by \"%s\" on command "
+                    "line.\n"),
+                  store->resource_name_);
       rx.store = store;
       Dmsg1(200, "Set store=%s\n", rx.store->resource_name_);
     }
