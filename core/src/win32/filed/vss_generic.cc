@@ -102,8 +102,8 @@ static void JmsgVssApiStatus(JobControlRecord* jcr,
   const char* errmsg;
 
   if (hr == S_OK || hr == VSS_S_ASYNC_FINISHED) { return; }
-
-  switch (hr) {
+  int64_t hr_64{hr};
+  switch (hr_64) {
     case E_INVALIDARG:
       errmsg = "One of the parameter values is not valid.";
       break;
