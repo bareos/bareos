@@ -354,9 +354,6 @@ struct sigaction {
 #define sigaction(a, b, c)
 
 #define mkdir(p, m) win32_mkdir(p)
-#if !defined(HAVE_MINGW)
-#  define unlink win32_unlink
-#endif
 #define chdir win32_chdir
 extern "C" void syslog(int type, const char* fmt, ...);
 #if !defined(LOG_DAEMON)
@@ -389,6 +386,7 @@ int win32_chdir(const char* buf);
 int win32_mkdir(const char* buf);
 int win32_fputs(const char* string, FILE* stream);
 #if defined(HAVE_MINGW)
+#  define unlink win32_unlink
 int win32_unlink(char const* filename);
 #endif
 int win32_chmod(const char*, mode_t, _dev_t);
