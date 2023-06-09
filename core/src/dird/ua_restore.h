@@ -31,5 +31,9 @@ void FindStorageResource(UaContext* ua,
                          char* Storage,
                          char* MediaType);
 
+void BuildRestoreCommandString(UaContext* ua,
+                               const RestoreContext& rx,
+                               JobResource* job);
+
 } /* namespace directordaemon */
 #endif  // BAREOS_DIRD_UA_RESTORE_H_

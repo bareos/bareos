@@ -253,6 +253,20 @@ bool RestoreCmd(UaContext* ua, const char*)
   }
   if (!GetRestoreClientName(ua, rx)) { return false; }
 
+  BuildRestoreCommandString(ua, rx, job);
+  // Transfer jobids to jcr to for picking up restore objects
+  ua->jcr->JobIds = rx.JobIds;
+  rx.JobIds = nullptr;
+
+  ParseUaArgs(ua);
+  RunCmd(ua, ua->cmd);
+  return true;
+}
+
+void BuildRestoreCommandString(UaContext* ua,
+                               const RestoreContext& rx,
+                               JobResource* job)
+{
   std::string escaped_bsr_name = escape_filename(ua->jcr->RestoreBootstrap);
 
   Mmsg(ua->cmd,
@@ -306,14 +320,6 @@ bool RestoreCmd(UaContext* ua, const char*)
   }
 
   Dmsg1(200, "Submitting: %s\n", ua->cmd);
-
-  // Transfer jobids to jcr to for picking up restore objects
-  ua->jcr->JobIds = rx.JobIds;
-  rx.JobIds = NULL;
-
-  ParseUaArgs(ua);
-  RunCmd(ua, ua->cmd);
-  return true;
 }
 
 // Fill the rx->BaseJobIds and display the list
