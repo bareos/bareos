@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -131,10 +131,8 @@ static bool DoGetVolumeInfo(DeviceControlRecord* dcr)
   bstrncpy(dcr->VolumeName, vol.VolCatName, sizeof(dcr->VolumeName));
   dcr->VolCatInfo = vol; /* structure assignment */
 
-  /*
-   * If we received a new crypto key update the cache and write out the new
-   * cache on a change.
-   */
+  /* If we received a new crypto key update the cache and write out the new
+   * cache on a change. */
   if (*vol.VolEncrKey) {
     if (UpdateCryptoCache(vol.VolCatName, vol.VolEncrKey)) {
       WriteCryptoCache(me->working_directory, "bareos-sd",
@@ -209,11 +207,9 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
   Dmsg2(debuglevel, "DirFindNextAppendableVolume: reserved=%d Vol=%s\n",
         IsReserved(), VolumeName);
 
-  /*
-   * Try the twenty oldest or most available volumes. Note,
+  /* Try the twenty oldest or most available volumes. Note,
    * the most available could already be mounted on another
-   * drive, so we continue looking for a not in use Volume.
-   */
+   * drive, so we continue looking for a not in use Volume. */
   LockVolumes();
   lock_mutex(vol_info_mutex);
   ClearFoundInUse();
@@ -276,7 +272,8 @@ get_out:
  * back to the director. The information comes from the
  * dev record.
  */
-bool StorageDaemonDeviceControlRecord::DirUpdateVolumeInfo(bool label, bool)
+bool StorageDaemonDeviceControlRecord::DirUpdateVolumeInfo(
+    is_labeloperation label)
 {
   BareosSocket* dir = jcr->dir_bsock;
   VolumeCatalogInfo* vol = &dev->VolCatInfo;
@@ -299,7 +296,7 @@ bool StorageDaemonDeviceControlRecord::DirUpdateVolumeInfo(bool label, bool)
   Dmsg1(debuglevel, "Update cat VolBytes=%lld\n", vol->VolCatBytes);
 
   // Just labeled or relabeled the tape
-  if (label) {
+  if (label == is_labeloperation::True) {
     bstrncpy(vol->VolCatStatus, "Append", sizeof(vol->VolCatStatus));
   }
   vol->VolLastWritten = time(NULL);
@@ -553,10 +550,8 @@ bool StorageDaemonDeviceControlRecord::DirAskSysopToMountVolume(int mode)
       return false;
     }
 
-    /*
-     * If we are not polling, and the wait timeout or the user explicitly did a
-     * mount, send him the message. Otherwise skip it.
-     */
+    /* If we are not polling, and the wait timeout or the user explicitly did a
+     * mount, send him the message. Otherwise skip it. */
     if (!dev->poll && (status == W_TIMEOUT || status == W_MOUNT)) {
       const char* msg;
 

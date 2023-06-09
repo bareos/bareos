@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -86,11 +86,9 @@ bool DeviceControlRecord::MountNextWriteVolume()
 
   lock_mutex(mount_mutex);
 
-  /*
-   * Attempt to mount the next volume. If something non-fatal goes
+  /* Attempt to mount the next volume. If something non-fatal goes
    *  wrong, we come back here to re-try (new op messages, re-read
-   *  Volume, ...)
-   */
+   *  Volume, ...) */
 
 mount_next_vol:
   Dmsg1(150, "mount_next_vol retry=%d\n", retry);
@@ -128,24 +126,20 @@ mount_next_vol:
   Dmsg2(150, "After find_next_append. Vol=%s Slot=%d\n", getVolCatName(),
         VolCatInfo.Slot);
 
-  /*
-   * Get next volume and ready it for append
+  /* Get next volume and ready it for append
    * This code ensures that the device is ready for
    * writing. We start from the assumption that there
    * may not be a tape mounted.
    *
    * If the device is a file, we create the output
    * file. If it is a tape, we check the volume name
-   * and move the tape to the end of data.
-   */
+   * and move the tape to the end of data. */
   dcr->setVolCatInfo(false); /* out of date when Vols unlocked */
 
-  /*
-   * See if this is a retry of the mounting of the next volume.
+  /* See if this is a retry of the mounting of the next volume.
    * If the device is already open close it first as otherwise we could
    * potentially write to an already open device a new volume label.
-   * This is only interesting for non tape devices.
-   */
+   * This is only interesting for non tape devices. */
   if (!dev->IsTape()) {
     if (retry && dev->IsOpen()) { dev->close(dcr); }
   }
@@ -173,11 +167,9 @@ mount_next_vol:
       autochanger = false;
       VolCatInfo.Slot = 0;
 
-      /*
-       * If the VolCatInfo.InChanger flag is not set we are trying to use a
+      /* If the VolCatInfo.InChanger flag is not set we are trying to use a
        * volume that is not in the autochanger so that means we need to ask the
-       * operator to mount it.
-       */
+       * operator to mount it. */
       if (dev->AttachedToAutochanger() && !VolCatInfo.InChanger) {
         ask = true;
       } else {
@@ -192,12 +184,10 @@ mount_next_vol:
   }
   Dmsg1(150, "autoLoadDev returns %d\n", autochanger);
 
-  /*
-   * If we autochanged to correct Volume or (we have not just
+  /* If we autochanged to correct Volume or (we have not just
    * released the Volume AND we can automount) we go ahead
    * and read the label. If there is no tape in the drive,
-   * we will fail, recurse and ask the operator the next time.
-   */
+   * we will fail, recurse and ask the operator the next time. */
   if (!dev->MustUnload() && dev->IsTape() && dev->HasCap(CAP_AUTOMOUNT)) {
     Dmsg0(250, "(1)Ask=0\n");
     ask = false; /* don't ask SYSOP this time */
@@ -296,8 +286,7 @@ read_volume:
     dev->SetBlocksizes(dcr);
   }
 
-  /*
-   * See if we have a fresh tape or a tape with data.
+  /* See if we have a fresh tape or a tape with data.
    *
    * Note, if the LabelType is PRE_LABEL, it was labeled
    *  but never written. If so, rewrite the label but set as
@@ -307,8 +296,7 @@ read_volume:
    *  a second volume, the calling routine will write the label
    *  before writing the overflow block.
    *
-   *  If the tape is marked as Recycle, we rewrite the label.
-   */
+   *  If the tape is marked as Recycle, we rewrite the label. */
   recycle = bstrcmp(dev->VolCatInfo.VolCatStatus, "Recycle");
   if (dev->VolHdr.LabelType == PRE_LABEL || recycle) {
     if (!dcr->RewriteVolumeLabel(recycle)) {
@@ -316,11 +304,9 @@ read_volume:
       goto mount_next_vol;
     }
   } else {
-    /*
-     * OK, at this point, we have a valid Bareos label, but
+    /* OK, at this point, we have a valid Bareos label, but
      * we need to position to the end of the volume, since we are
-     * just now putting it into append mode.
-     */
+     * just now putting it into append mode. */
     Dmsg1(
         100,
         "Device previously written, moving to end of data. Expect %lld bytes\n",
@@ -345,7 +331,7 @@ read_volume:
 
     dev->VolCatInfo.VolCatMounts++; /* Update mounts */
     Dmsg1(150, "update volinfo mounts=%d\n", dev->VolCatInfo.VolCatMounts);
-    if (!dcr->DirUpdateVolumeInfo(false, false)) { goto bail_out; }
+    if (!dcr->DirUpdateVolumeInfo(is_labeloperation::False)) { goto bail_out; }
 
     /* Return an empty block */
     EmptyBlock(block); /* we used it for reading so set for write */
@@ -385,10 +371,8 @@ bool DeviceControlRecord::find_a_volume()
       have_vol = dcr->DirGetVolumeInfo(GET_VOL_INFO_FOR_WRITE);
     }
 
-    /*
-     * Get Director's idea of what tape we should have mounted, in
-     * dcr->VolCatInfo
-     */
+    /* Get Director's idea of what tape we should have mounted, in
+     * dcr->VolCatInfo */
     if (!have_vol) {
       Dmsg0(200, "Before DirFindNextAppendableVolume.\n");
       while (!dcr->DirFindNextAppendableVolume()) {
@@ -416,10 +400,8 @@ int DeviceControlRecord::CheckVolumeLabel(bool& ask, bool& autochanger)
   DeviceControlRecord* dcr = this;
   int vol_label_status;
 
-  /*
-   * If we are writing to a stream device, ASSUME the volume label
-   *  is correct.
-   */
+  /* If we are writing to a stream device, ASSUME the volume label
+   *  is correct. */
   if (dev->HasCap(CAP_STREAM)) {
     vol_label_status = VOL_OK;
     CreateVolumeLabel(dev, VolumeName, "Default");
@@ -432,10 +414,8 @@ int DeviceControlRecord::CheckVolumeLabel(bool& ask, bool& autochanger)
   Dmsg2(150, "Want dirVol=%s dirStat=%s\n", VolumeName,
         VolCatInfo.VolCatStatus);
 
-  /*
-   * At this point, dev->VolCatInfo has what is in the drive, if anything,
-   *          and   dcr->VolCatInfo has what the Director wants.
-   */
+  /* At this point, dev->VolCatInfo has what is in the drive, if anything,
+   *          and   dcr->VolCatInfo has what the Director wants. */
   switch (vol_label_status) {
     case VOL_OK:
       Dmsg1(150, "Vol OK name=%s\n", dev->VolHdr.VolumeName);
@@ -460,12 +440,10 @@ int DeviceControlRecord::CheckVolumeLabel(bool& ask, bool& autochanger)
         goto check_next_volume;
       }
 
-      /*
-       * OK, we got a different volume mounted. First save the
+      /* OK, we got a different volume mounted. First save the
        *  requested Volume info (dcr) structure, then query if
        *  this volume is really OK. If not, put back the desired
-       *  volume name, mark it not in changer and continue.
-       */
+       *  volume name, mark it not in changer and continue. */
       dcrVolCatInfo = VolCatInfo;      /* structure assignment */
       devVolCatInfo = dev->VolCatInfo; /* structure assignment */
       /* Check if this is a valid Volume in the pool */
@@ -478,11 +456,9 @@ int DeviceControlRecord::CheckVolumeLabel(bool& ask, bool& autochanger)
         /* This gets the info regardless of the Pool */
         bstrncpy(VolumeName, dev->VolHdr.VolumeName, sizeof(VolumeName));
         if (autochanger && !dcr->DirGetVolumeInfo(GET_VOL_INFO_FOR_READ)) {
-          /*
-           * If we get here, we know we cannot write on the Volume,
+          /* If we get here, we know we cannot write on the Volume,
            *  and we know that we cannot read it either, so it
-           *  is not in the autochanger.
-           */
+           *  is not in the autochanger. */
           mark_volume_not_inchanger();
         }
         dev->VolCatInfo = devVolCatInfo; /* structure assignment */
@@ -499,10 +475,8 @@ int DeviceControlRecord::CheckVolumeLabel(bool& ask, bool& autochanger)
         VolCatInfo = dcrVolCatInfo; /* structure assignment */
         goto check_next_volume;
       }
-      /*
-       * This was not the volume we expected, but it is OK with
-       * the Director, so use it.
-       */
+      /* This was not the volume we expected, but it is OK with
+       * the Director, so use it. */
       Dmsg1(150, "Got new Volume name=%s\n", VolumeName);
       dev->VolCatInfo = VolCatInfo; /* structure assignment */
       Dmsg1(100, "Call reserve_volume=%s\n", dev->VolHdr.VolumeName);
@@ -615,11 +589,9 @@ void DeviceControlRecord::DoSwapping(bool)
 {
   DeviceControlRecord* dcr = this;
 
-  /*
-   * See if we are asked to swap the Volume from another device
+  /* See if we are asked to swap the Volume from another device
    *  if so, unload the other device here, and attach the
-   *  volume to our drive.
-   */
+   *  volume to our drive. */
   if (dev->swap_dev) {
     if (dev->swap_dev->MustUnload()) {
       if (dev->vol) { dev->swap_dev->SetSlotNumber(dev->vol->GetSlot()); }
@@ -655,10 +627,8 @@ bool DeviceControlRecord::is_eod_valid()
 {
   switch (dev->GetSeekMode()) {
     case SeekMode::FILE_BLOCK: {
-      /*
-       * Check if we are positioned on the tape at the same place
-       * that the database says we should be.
-       */
+      /* Check if we are positioned on the tape at the same place
+       * that the database says we should be. */
       if (dev->VolCatInfo.VolCatFiles == dev->GetFile()) {
         Jmsg(jcr, M_INFO, 0,
              _("Ready to append to end of Volume \"%s\" at file=%d.\n"),
@@ -671,7 +641,7 @@ bool DeviceControlRecord::is_eod_valid()
              VolumeName, dev->GetFile(), dev->VolCatInfo.VolCatFiles);
         dev->VolCatInfo.VolCatFiles = dev->GetFile();
         dev->VolCatInfo.VolCatBlocks = dev->GetBlockNum();
-        if (!DirUpdateVolumeInfo(false, true)) {
+        if (!DirUpdateVolumeInfo(is_labeloperation::False)) {
           Jmsg(jcr, M_WARNING, 0, _("Error updating Catalog\n"));
           MarkVolumeInError();
           return false;
@@ -704,7 +674,7 @@ bool DeviceControlRecord::is_eod_valid()
              edit_uint64(dev->VolCatInfo.VolCatBytes, ed2));
         dev->VolCatInfo.VolCatBytes = (uint64_t)pos;
         dev->VolCatInfo.VolCatFiles = (uint32_t)(pos >> 32);
-        if (!DirUpdateVolumeInfo(false, true)) {
+        if (!DirUpdateVolumeInfo(is_labeloperation::False)) {
           Jmsg(jcr, M_WARNING, 0, _("Error updating Catalog\n"));
           MarkVolumeInError();
           return false;
@@ -768,8 +738,9 @@ int DeviceControlRecord::TryAutolabel(bool opened)
     }
     Dmsg0(150, "dir_update_vol_info. Set Append\n");
     /* Copy Director's info into the device info */
-    dev->VolCatInfo = VolCatInfo;                /* structure assignment */
-    if (!dcr->DirUpdateVolumeInfo(true, true)) { /* indicate tape labeled */
+    dev->VolCatInfo = VolCatInfo; /* structure assignment */
+    if (!dcr->DirUpdateVolumeInfo(
+            is_labeloperation::True)) { /* indicate tape labeled */
       return try_error;
     }
     Jmsg(dcr->jcr, M_INFO, 0, _("Labeled new Volume \"%s\" on device %s.\n"),
@@ -802,7 +773,7 @@ void DeviceControlRecord::MarkVolumeInError()
   bstrncpy(dev->VolCatInfo.VolCatStatus, "Error",
            sizeof(dev->VolCatInfo.VolCatStatus));
   Dmsg0(150, "dir_update_vol_info. Set Error.\n");
-  dcr->DirUpdateVolumeInfo(false, false);
+  dcr->DirUpdateVolumeInfo(is_labeloperation::False);
   VolumeUnused(dcr);
   Dmsg0(50, "SetUnload\n");
   dev->SetUnload(); /* must get a new volume */
@@ -824,7 +795,7 @@ void DeviceControlRecord::mark_volume_not_inchanger()
   VolCatInfo.InChanger = false;
   dev->VolCatInfo.InChanger = false;
   Dmsg0(400, "update vol info in mount\n");
-  dcr->DirUpdateVolumeInfo(true, false); /* set new status */
+  dcr->DirUpdateVolumeInfo(is_labeloperation::True); /* set new status */
 }
 
 /**
@@ -889,12 +860,10 @@ bool DeviceControlRecord::IsTapePositionOk()
            _("Invalid tape position on volume \"%s\""
              " on device %s. Expected %d, got %d\n"),
            dev->VolHdr.VolumeName, dev->print_name(), dev->GetFile(), file);
-      /*
-       * If the current file is greater than zero, it means we probably
+      /* If the current file is greater than zero, it means we probably
        *  have some bad count of EOF marks, so mark tape in error.  Otherwise
        *  the operator might have moved the tape, so we just release it
-       *  and try again.
-       */
+       *  and try again. */
       if (file > 0) { MarkVolumeInError(); }
       ReleaseVolume();
       return false;
