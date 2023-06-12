@@ -108,6 +108,24 @@ We like simple rather than complex code, but complex code is still better than c
 
 Currently there is still a lot of old C++ and C code in the code base and a lot of existing code violates our `do's`_ and `don'ts`_. Therefore our long-term goal is to modernize the code-base to make it easier to understand, easier to maintain and better approachable for new developers.
 
+Boy Scout Rule
+--------------
+
+Before submitting your pull request, please ensure that you have followed the Boy Scout Rule:
+
+> **"Leave the codebase better than you found it."**
+
+The Boy Scout Rule encourages contributors to make small improvements or clean-ups while working on a task without being explicitly requested. By following this rule, we can collectively improve the quality, readability, and maintainability of the codebase over time.
+
+To apply the Boy Scout Rule, consider the following guidelines:
+
+- **Clean up code**: Review the code you are modifying and check if there are any areas that could be improved, such as variable naming, code formatting, or removing unnecessary comments.
+- **Refactor when appropriate**: If you find a block of code that you can refactor to improve its clarity or efficiency, take the initiative to make those changes.
+- **Fix adjacent issues**: If you notice any related issues or bugs while working on your task, address them if it’s within the scope of your current changes. This proactive approach helps prevent future problems.
+- **Update documentation**: If you modify a part of the codebase that affects the existing documentation, ensure that relevant documentation is updated accordingly.
+
+Remember, the goal of the Boy Scout Rule is to foster continuous improvement and create a more sustainable and maintainable codebase. By leaving the code better than you found it, you contribute to the overall health and longevity of the project.
+
 Usage of C++ Exceptions
 -----------------------
 

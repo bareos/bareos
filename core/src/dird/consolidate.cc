@@ -85,40 +85,13 @@ static inline void StartNewConsolidationJob(JobControlRecord* jcr,
   FreeUaContext(ua);
 }
 
-/**
- * The actual consolidation worker
- *
- * Returns: false on failure
- *          true  on success
- */
-bool DoConsolidate(JobControlRecord* jcr)
+static bool ConsolidateJobs(JobControlRecord* jcr)
 {
-  char* p;
-  JobResource* job;
-  JobResource* tmpjob;
-  bool retval = true;
-  char* jobids = NULL;
-  time_t now = time(NULL);
+  const int32_t max_full_consolidations
+      = jcr->dir_impl->res.job->MaxFullConsolidations;
   int32_t fullconsolidations_started = 0;
-  int32_t max_full_consolidations = 0;
-
-  tmpjob = jcr->dir_impl->res.job; /* Memorize job */
-
-  // Get Value for MaxFullConsolidations from Consolidation job
-  max_full_consolidations = jcr->dir_impl->res.job->MaxFullConsolidations;
-
-  jcr->dir_impl->jr.JobId = jcr->JobId;
-  jcr->dir_impl->fname = (char*)GetPoolMemory(PM_FNAME);
-
-  // do not cancel virtual fulls started by consolidation
-  jcr->dir_impl->IgnoreDuplicateJobChecking = true;
-
-  // Print Job Start message
-  Jmsg(jcr, M_INFO, 0, _("Start Consolidate JobId %d, Job=%s\n"), jcr->JobId,
-       jcr->Job);
-
-  jcr->setJobStatusWithPriorityCheck(JS_Running);
-
+  JobResource* job;
+  time_t now = time(NULL);
   foreach_res (job, R_JOB) {
     if (job->AlwaysIncremental) {
       Jmsg(jcr, M_INFO, 0, _("Looking at always incremental job %s\n"),
@@ -134,14 +107,12 @@ bool DoConsolidate(JobControlRecord* jcr)
 
       if (!GetOrCreateFilesetRecord(jcr)) {
         Jmsg(jcr, M_FATAL, 0, _("JobId=%d no FileSet\n"), (int)jcr->JobId);
-        retval = false;
-        goto bail_out;
+        return false;
       }
 
       if (!GetOrCreateClientRecord(jcr)) {
         Jmsg(jcr, M_FATAL, 0, _("JobId=%d no ClientId\n"), (int)jcr->JobId);
-        retval = false;
-        goto bail_out;
+        return false;
       }
 
       // First determine the number of total incrementals
@@ -226,14 +197,6 @@ bool DoConsolidate(JobControlRecord* jcr)
         continue;
       }
 
-      if (jobids) {
-        free(jobids);
-        jobids = NULL;
-      }
-
-      jobids = strdup(jobids_ctx.GetAsString().c_str());
-      p = jobids;
-
       // Check if we need to skip the first (full) job from consolidation
       if (job->AlwaysIncrementalMaxFullAge) {
         char sdt_allowed[50];
@@ -247,21 +210,21 @@ bool DoConsolidate(JobControlRecord* jcr)
                job->resource_name_);
           continue;
         }
-        Jmsg(jcr, M_INFO, 0, _("before ConsolidateFull: jobids: %s\n"), jobids);
+        Jmsg(jcr, M_INFO, 0, _("before ConsolidateFull: jobids: %s\n"),
+             jobids_ctx.GetAsString().c_str());
 
-        p = strchr(jobids, ','); /* find oldest jobid and optionally skip it */
-        if (p) { *p = '\0'; }
+        std::string oldestjobid = jobids_ctx.front();
 
         // Get db record of oldest jobid and check its age
         jcr->dir_impl->previous_jr = JobDbRecord{};
-        jcr->dir_impl->previous_jr.JobId = str_to_int64(jobids);
-        Dmsg1(10, "Previous JobId=%s\n", jobids);
+        jcr->dir_impl->previous_jr.JobId = std::stoul(oldestjobid);
+        Dmsg1(10, "Previous JobId=%s\n", oldestjobid.c_str());
 
         if (!jcr->db->GetJobRecord(jcr, &jcr->dir_impl->previous_jr)) {
           Jmsg(jcr, M_FATAL, 0,
                _("Error getting Job record for first Job: ERR=%s\n"),
                jcr->db->strerror());
-          goto bail_out;
+          return true;
         }
 
         starttime = jcr->dir_impl->previous_jr.JobTDate;
@@ -276,52 +239,72 @@ bool DoConsolidate(JobControlRecord* jcr)
           Jmsg(jcr, M_INFO, 0,
                _("Full is newer than AlwaysIncrementalMaxFullAge -> skipping "
                  "first jobid %s because of age\n"),
-               jobids);
-          if (p) { *p++ = ','; /* Restore , and point to rest of list */ }
+               oldestjobid.c_str());
+
+          jobids_ctx.PopFront();
 
         } else if (max_full_consolidations
                    && fullconsolidations_started >= max_full_consolidations) {
           Jmsg(jcr, M_INFO, 0,
                _("%d AlwaysIncrementalFullConsolidations reached -> skipping "
                  "first jobid %s independent of age\n"),
-               max_full_consolidations, jobids);
-          if (p) { *p++ = ','; /* Restore , and point to rest of list */ }
+               max_full_consolidations, oldestjobid.c_str());
+
+          jobids_ctx.PopFront();
 
         } else {
           Jmsg(jcr, M_INFO, 0,
                _("Full is older than AlwaysIncrementalMaxFullAge -> also "
                  "consolidating Full jobid %s\n"),
-               jobids);
-          if (p) {
-            *p = ',';   /* Restore ,*/
-            p = jobids; /* Point to full list */
-          }
+               oldestjobid.c_str());
           fullconsolidations_started++;
         }
-        Jmsg(jcr, M_INFO, 0, _("after ConsolidateFull: jobids: %s\n"), p);
+        Jmsg(jcr, M_INFO, 0, _("after ConsolidateFull: jobids: %s\n"),
+             jobids_ctx.GetAsString().c_str());
       }
 
       // Set the virtualfull jobids to be consolidated
       if (!jcr->dir_impl->vf_jobids) {
         jcr->dir_impl->vf_jobids = GetPoolMemory(PM_MESSAGE);
       }
-      PmStrcpy(jcr->dir_impl->vf_jobids, p);
+      PmStrcpy(jcr->dir_impl->vf_jobids, jobids_ctx.GetAsString().c_str());
 
       Jmsg(jcr, M_INFO, 0, _("%s: Start new consolidation\n"),
            job->resource_name_);
       StartNewConsolidationJob(jcr, job->resource_name_);
     }
   }
+  return true;
+}
 
-bail_out:
-  // Restore original job back to jcr.
-  jcr->dir_impl->res.job = tmpjob;
-  jcr->setJobStatusWithPriorityCheck(JS_Terminated);
-  ConsolidateCleanup(jcr, JS_Terminated);
+/**
+ * The actual consolidation worker
+ *
+ * Returns: false on failure
+ *          true  on success
+ */
+bool DoConsolidate(JobControlRecord* jcr)
+{
+  jcr->dir_impl->jr.JobId = jcr->JobId;
+  jcr->dir_impl->fname = (char*)GetPoolMemory(PM_FNAME);
 
-  if (jobids) { free(jobids); }
+  // do not cancel virtual fulls started by consolidation
+  jcr->dir_impl->IgnoreDuplicateJobChecking = true;
 
-  return retval;
+  // Print Job Start message
+  Jmsg(jcr, M_INFO, 0, _("Start Consolidate JobId %d, Job=%s\n"), jcr->JobId,
+       jcr->Job);
+
+  jcr->setJobStatusWithPriorityCheck(JS_Running);
+
+  Resources tmpres = jcr->dir_impl->res;
+  JobDbRecord tmpjr = jcr->dir_impl->jr;
+
+  bool returnval = ConsolidateJobs(jcr);
+
+  jcr->dir_impl->res = tmpres;
+  jcr->dir_impl->jr = tmpjr;
+  return returnval;
 }
 
 // Release resources allocated during backup.

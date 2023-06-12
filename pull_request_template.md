@@ -14,7 +14,7 @@ If you have any questions or problems, please give a comment in the PR.
 - [Git Workflow](https://docs.bareos.org/DeveloperGuide/gitworkflow.html)
 - [Automatic Sourcecode Formatting](https://docs.bareos.org/DeveloperGuide/generaldevel.html#automatic-sourcecode-formatting)
 - [Check your commit messages](https://docs.bareos.org/DeveloperGuide/gitworkflow.html#commits)
-
+- [Boy Scout Rule](https://docs.bareos.org/DeveloperGuide/generaldevel.html#boy-scout-rule)
 
 ### Checklist for the _reviewer_ of the PR (will be processed by the Bareos team)
 Make sure you check/merge the PR using `devtools/pr-tool` to have some simple automated checks run and a proper changelog record added.

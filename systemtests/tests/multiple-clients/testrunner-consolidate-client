@@ -1,0 +1,58 @@
+#!/bin/bash
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+first_client_job="backup-bareos-fd"
+second_client_job="backupotherclient"
+
+backup_log="$tmp"/backups.out
+consolidate_log="$tmp"/consolidate.out
+
+rm -rf $backup_log $consolidate_log
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $backup_log
+run job=$first_client_job level=Incremental yes
+wait
+run job=$first_client_job level=Incremental yes
+wait
+run job=$second_client_job level=Incremental yes
+wait
+run job=$second_client_job level=Incremental yes
+wait
+messages
+END_OF_DATA
+run_bconsole
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/consolidate.out
+run job=Consolidate yes
+wait
+.api 2
+list jobs job=Consolidate
+wait
+messages
+wait
+quit
+END_OF_DATA
+run_bconsole
+
+consolidate_client=$(grep -o '"client": "[^"]*"' tmp/consolidate.out | sed 's/"client": "\(.*\)"/\1/')
+
+if [ "$consolidate_client" != "bareos-fd" ]; then
+  echo "Wrong client for consolidate job!"
+  estat=1
+fi
+
+end_test

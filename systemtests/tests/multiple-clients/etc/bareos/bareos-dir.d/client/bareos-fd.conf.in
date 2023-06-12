@@ -1,0 +1,15 @@
+Client {
+  Name = bareos-fd
+  Description = "Client resource of the Director itself."
+  Address = @hostname@
+  Password = "@fd_password@"
+  FD PORT = @fd_port@
+}
+
+Client {
+  Name = anotherclient
+  Description = "Client resource of the Director itself."
+  Address = @hostname@
+  Password = "@fd_password@"
+  FD PORT = @fd2_port@
+}

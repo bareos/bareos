@@ -1,0 +1,13 @@
+Job {
+  Name = "backup-bareos-fd"
+  JobDefs = "DefaultJob"
+  Client = "bareos-fd"
+  Accurate = yes
+}
+
+Job {
+  Name = "backupotherclient"
+  JobDefs = "DefaultJob"
+  Client = "anotherclient"
+  Accurate = yes
+}
