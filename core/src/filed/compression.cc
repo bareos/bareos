@@ -34,6 +34,7 @@
 #include "filed/filed_globals.h"
 #include "filed/filed_jcr_impl.h"
 #include "lib/compression.h"
+#include "filed/compression.h"
 
 #if defined(HAVE_LIBZ)
 #  include <zlib.h>
@@ -90,6 +91,73 @@ bool AdjustDecompressionBuffers(JobControlRecord* jcr)
   return true;
 }
 
+LevelChangeResult SetCompressionLevel(JobControlRecord* jcr,
+				      uint32_t algorithm,
+				      int level,
+				      CompressionContext& compress) {
+  LevelChangeResult result = LevelChangeResult::NO_CHANGE;
+  switch (algorithm) {
+#if defined(HAVE_LIBZ)
+  case COMPRESS_GZIP: {
+    /* Only change zlib parameters if there is no pending operation.
+     * This should never happen as deflateReset is called after each
+     * deflate. */
+    z_stream* pZlibStream = (z_stream*)compress.workset.pZLIB;
+    if (pZlibStream->total_in == 0) {
+      // Set gzip compression level - must be done per file
+      if (int zstat = deflateParams(pZlibStream, level,
+				    Z_DEFAULT_STRATEGY);
+	  zstat != Z_OK) {
+	Jmsg(jcr, M_FATAL, 0,
+	     _("Compression deflateParams error: %d\n"), zstat);
+	jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+	result = LevelChangeResult::ERROR;
+      } else {
+	result = LevelChangeResult::CHANGE;
+      }
+    }
+    break;
+  }
+#endif
+#if defined(HAVE_LZO)
+  case COMPRESS_LZO1X:
+    break;
+#endif
+  case COMPRESS_FZFZ:
+  case COMPRESS_FZ4L:
+  case COMPRESS_FZ4H: {
+    zfast_stream_compressor compressor = COMPRESSOR_FASTLZ;
+
+    /* Only change fastlz parameters if there is no pending operation.
+     * This should never happen as fastlzlibCompressReset is called after
+     * each fastlzlibCompress. */
+    zfast_stream* pZfastStream = (zfast_stream*)compress.workset.pZFAST;
+    if (pZfastStream->total_in == 0) {
+      switch (algorithm) {
+      case COMPRESS_FZ4L:
+      case COMPRESS_FZ4H: {
+	compressor = COMPRESSOR_LZ4;
+      } break;
+      }
+
+      if (int zstat = fastlzlibSetCompressor(pZfastStream, compressor);
+	  zstat != Z_OK) {
+	Jmsg(jcr, M_FATAL, 0,
+	     _("Compression fastlzlibSetCompressor error: %d\n"), zstat);
+	jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+	result = LevelChangeResult::ERROR;
+      } else {
+	result = LevelChangeResult::CHANGE;
+      }
+    }
+    break;
+  }
+  default:
+    break;
+  }
+  return result;
+}
+
 bool SetupCompressionContext(b_ctx& bctx)
 {
   bool retval = false;
@@ -124,74 +192,26 @@ bool SetupCompressionContext(b_ctx& bctx)
 
     /* Do compression specific actions and set the magic, header version and
      * compression level. */
-    switch (bctx.ff_pkt->Compress_algo) {
-#if defined(HAVE_LIBZ)
-      case COMPRESS_GZIP: {
-        z_stream* pZlibStream;
 
-        /* Only change zlib parameters if there is no pending operation.
-         * This should never happen as deflateReset is called after each
-         * deflate. */
-        pZlibStream = (z_stream*)bctx.jcr->compress.workset.pZLIB;
-        if (pZlibStream->total_in == 0) {
-          int zstat;
+    auto result = SetCompressionLevel(bctx.jcr, bctx.ff_pkt->Compress_algo,
+				      bctx.ff_pkt->Compress_level,
+				      bctx.jcr->compress);
 
-          // Set gzip compression level - must be done per file
-          if ((zstat = deflateParams(pZlibStream, bctx.ff_pkt->Compress_level,
-                                     Z_DEFAULT_STRATEGY))
-              != Z_OK) {
-            Jmsg(bctx.jcr, M_FATAL, 0,
-                 _("Compression deflateParams error: %d\n"), zstat);
-            bctx.jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
-            goto bail_out;
-          }
-        }
-        bctx.ch.level = bctx.ff_pkt->Compress_level;
-        break;
-      }
-#endif
-#if defined(HAVE_LZO)
-      case COMPRESS_LZO1X:
-        break;
-#endif
-      case COMPRESS_FZFZ:
-      case COMPRESS_FZ4L:
-      case COMPRESS_FZ4H: {
-        int zstat;
-        zfast_stream* pZfastStream;
-        zfast_stream_compressor compressor = COMPRESSOR_FASTLZ;
-
-        /* Only change fastlz parameters if there is no pending operation.
-         * This should never happen as fastlzlibCompressReset is called after
-         * each fastlzlibCompress. */
-        pZfastStream = (zfast_stream*)bctx.jcr->compress.workset.pZFAST;
-        if (pZfastStream->total_in == 0) {
-          switch (bctx.ff_pkt->Compress_algo) {
-            case COMPRESS_FZ4L:
-            case COMPRESS_FZ4H:
-              compressor = COMPRESSOR_LZ4;
-              break;
-          }
-
-          if ((zstat = fastlzlibSetCompressor(pZfastStream, compressor))
-              != Z_OK) {
-            Jmsg(bctx.jcr, M_FATAL, 0,
-                 _("Compression fastlzlibSetCompressor error: %d\n"), zstat);
-            bctx.jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
-            goto bail_out;
-          }
-        }
-        bctx.ch.level = bctx.ff_pkt->Compress_level;
-        break;
-      }
-      default:
-        break;
+    switch (result) {
+    case LevelChangeResult::ERROR: {
+      retval = false;
+    } break;
+    case LevelChangeResult::CHANGE: {
+      bctx.ch.level = bctx.ff_pkt->Compress_level;
+      retval = true;
+    } break;
+    case LevelChangeResult::NO_CHANGE: {
+      retval = true;
+    } break;
     }
+  } else {
+    retval = true;
   }
-
-  retval = true;
-
-bail_out:
   return retval;
 }
 
