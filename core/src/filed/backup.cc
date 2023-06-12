@@ -106,7 +106,6 @@ static void CloseVssBackupSession(JobControlRecord* jcr);
 bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
 {
   static constexpr auto blockid = BlockIdentity{"BlastDataToStorageDaemon"};
-  auto handle = jcr->start_recording_thread();
   auto timer = jcr->get_thread_local_timer();
 
   TimedBlock blast_data{timer, blockid};

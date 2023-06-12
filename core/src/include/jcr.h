@@ -146,37 +146,12 @@ class JobControlRecord {
     std::destroy_at(&timer);
   }
 
-  auto start_recording_thread() {
-    class handle {
-      TimeKeeper* keeper;
-
-      handle(const handle&) = delete;
-      handle(handle&&) = delete;
-      handle& operator=(const handle&) = delete;
-      handle& operator=(handle&&) = delete;
-
-      public:
-      handle(TimeKeeper* keeper) : keeper{keeper}
-      {
-      }
-
-      ~handle() {
-	if (keeper) {
-	  keeper->erase_thread_local();
-	}
-      }
-    };
-    if (timer.has_value() && timer->create_thread_local()) {
-      return handle{&timer.value()};
-    } else {
-      return handle{nullptr};
-    }
-  }
-
   ThreadTimerHandle get_thread_local_timer() {
     if (timer.has_value()) {
       if (auto* local = timer->get_thread_local()) {
 	return ThreadTimerHandle{ *local };
+      } else if (timer->create_thread_local()) {
+	return ThreadTimerHandle{ *timer->get_thread_local(), &timer.value() };
       }
     }
 

@@ -106,17 +106,30 @@ public:
     if (timer) { timer->exit(block); }
   }
   ThreadTimerHandle() = default;
-  ThreadTimerHandle(ThreadTimeKeeper& timer) : timer{&timer}
+  ThreadTimerHandle(ThreadTimeKeeper& timer, TimeKeeper* keeper = nullptr)
+    : timer{&timer}
+    , keeper{keeper}
   {
+  }
+
+  ThreadTimerHandle(const ThreadTimerHandle&) = delete;
+  ThreadTimerHandle& operator=(const ThreadTimerHandle&) = delete;
+
+  ~ThreadTimerHandle()
+  {
+    if (keeper) {
+      keeper->erase_thread_local();
+    }
   }
 private:
   ThreadTimeKeeper* const timer{nullptr};
+  TimeKeeper* const keeper{nullptr};
 };
 
 class TimedBlock {
  public:
-  TimedBlock(ThreadTimerHandle timer, const BlockIdentity& block) : timer{timer}
-								  , current_block{&block}
+  TimedBlock(ThreadTimerHandle& timer, const BlockIdentity& block) : timer{timer}
+								   , current_block{&block}
   {
     timer.enter(block);
   }
@@ -130,7 +143,7 @@ class TimedBlock {
   }
 
  private:
-  ThreadTimerHandle timer;
+  ThreadTimerHandle& timer;
   BlockIdentity const* current_block;
 };
 
