@@ -46,24 +46,36 @@ template <typename T> struct out {
   void close();
   ~out();
 
-  out();
+  out() = default;
   out(std::shared_ptr<data<T>> shared);
   out(const out&) = delete;
   out& operator=(const out&) = delete;
 
-  out(out&& moved) = default;
-  out& operator=(out&& moved) = default;
+  out(out&& moved) : out()
+  {
+    *this = std::move(moved);
+  }
 
-	bool empty() const {
-		return closed;
-	}
+  out& operator=(out&& moved)
+  {
+    std::swap(shared, moved.shared);
+    std::swap(read_pos, moved.read_pos);
+    std::swap(old_size, moved.old_size);
+    std::swap(capacity, moved.capacity);
+    std::swap(closed, moved.closed);
+    return *this;
+  }
+
+  bool empty() const {
+    return closed;
+  }
 
  private:
-  std::shared_ptr<data<T>> shared;
-  std::size_t read_pos;
-  std::size_t old_size;
-  std::size_t capacity;
-  bool closed;
+  std::shared_ptr<data<T>> shared{nullptr};
+  std::size_t read_pos{0};
+  std::size_t old_size{0};
+  std::size_t capacity{0};
+  bool closed{true};
 };
 
 template <typename T> struct in {
@@ -71,21 +83,33 @@ template <typename T> struct in {
   bool put(T&& val);
   void close();
   ~in();
-  in();
+  in() = default;
   in(std::shared_ptr<data<T>> shared);
   in(const in&) = delete;
   in& operator=(const in&) = delete;
 
-  in(in&& moved) = default;
-  in& operator=(in&& moved) = default;
+  in(in&& moved) : in()
+  {
+    *this = std::move(moved);
+  }
+
+  in& operator=(in&& moved)
+  {
+    std::swap(shared, moved.shared);
+    std::swap(write_pos, moved.write_pos);
+    std::swap(old_size, moved.old_size);
+    std::swap(capacity, moved.capacity);
+    std::swap(closed, moved.closed);
+    return *this;
+  }
   void wait_till_empty();
 
  private:
-  std::shared_ptr<data<T>> shared;
-  std::size_t write_pos;
-  std::size_t old_size;
-  std::size_t capacity;
-  bool closed;
+  std::shared_ptr<data<T>> shared{nullptr};
+  std::size_t write_pos{0};
+  std::size_t old_size{0};
+  std::size_t capacity{0};
+  bool closed{true};
 };
 
 template <typename T>
@@ -231,13 +255,8 @@ template <typename T> out<T>::~out()
 }
 
 template <typename T>
-out<T>::out()
-	: shared(nullptr), read_pos(0), old_size(0), capacity(0), closed(true)
-{}
-
-template <typename T>
 out<T>::out(std::shared_ptr<data<T>> shared_)
-	: shared(shared_), read_pos(0), old_size(0), capacity(shared_->capacity), closed(false)
+	: shared(shared_), capacity(shared_->capacity), closed(false)
 {
   std::unique_lock lock(shared->mutex);
   shared->out_alive = true;
@@ -352,19 +371,8 @@ template <typename T> in<T>::~in()
 }
 
 template <typename T>
-in<T>::in()
-    : shared(nullptr)
-    , write_pos(0)
-    , old_size(0)
-    , capacity(0)
-    , closed(true)
-{}
-
-template <typename T>
 in<T>::in(std::shared_ptr<data<T>> shared_)
     : shared(shared_)
-    , write_pos(0)
-    , old_size(0)
     , capacity(shared_->capacity)
     , closed(false)
 {
