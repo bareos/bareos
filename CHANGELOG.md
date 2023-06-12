@@ -105,6 +105,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - docs: move and update localization documentation [PR #1415]
 - check-sources: update check-sources ignores [PR #1439]
 - docs: replace GZIP compression by LZ4 and MD5/SHA1 signature by XXH128 [PR #1453]
+- docs: Windows add Antivirus section [PR #1468]
 
 [PR #935]: https://github.com/bareos/bareos/pull/935
 [PR #1011]: https://github.com/bareos/bareos/pull/1011
@@ -179,6 +180,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1455]: https://github.com/bareos/bareos/pull/1455
 [PR #1459]: https://github.com/bareos/bareos/pull/1459
 [PR #1460]: https://github.com/bareos/bareos/pull/1460
+[PR #1468]: https://github.com/bareos/bareos/pull/1468
 [PR #1469]: https://github.com/bareos/bareos/pull/1469
 [PR #1473]: https://github.com/bareos/bareos/pull/1473
 [PR #1474]: https://github.com/bareos/bareos/pull/1474
