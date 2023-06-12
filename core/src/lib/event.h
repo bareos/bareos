@@ -46,55 +46,44 @@ using time_point = clock::time_point;
 struct CloseEvent {
   BlockIdentity const* source;
   time_point end;
-  CloseEvent(BlockIdentity const* source) : source{source}, end{clock::now()} {}
-  CloseEvent(BlockIdentity const& source) : source{&source}, end{clock::now()}
+  CloseEvent(BlockIdentity const* source) noexcept(true) : source{source}, end{clock::now()} {}
+  CloseEvent(BlockIdentity const& source) noexcept(true) : source{&source}, end{clock::now()}
   {
   }
-
-  CloseEvent(const CloseEvent&) = default;
-  CloseEvent& operator=(const CloseEvent&) = default;
 };
 
 struct OpenEvent {
   BlockIdentity const* source;
   time_point start;
 
-  OpenEvent(BlockIdentity const* source) : source{source}, start{clock::now()}
+  OpenEvent(BlockIdentity const* source) noexcept(true) : source{source}, start{clock::now()}
   {
   }
-  OpenEvent(BlockIdentity const& source) : source{&source}, start{clock::now()}
+  OpenEvent(BlockIdentity const& source) noexcept(true) : source{&source}, start{clock::now()}
   {
   }
-
-  OpenEvent(const OpenEvent&) = default;
-  OpenEvent& operator=(const OpenEvent&) = default;
   CloseEvent close() const { return CloseEvent{source}; }
 };
 
 struct StartRecording {
   time_point when;
 
-  StartRecording() : when{clock::now()}
+  StartRecording() noexcept(true) : when{clock::now()}
   {
   }
-
-  StartRecording(const StartRecording&) = default;
-  StartRecording& operator=(const StartRecording&) = default;
 };
 
 struct StopRecording {
-  BlockIdentity const* source;
   time_point when;
 
-  StopRecording() : when{clock::now()}
+  StopRecording() noexcept(true) : when{clock::now()}
   {
   }
-
-  StopRecording(const StopRecording&) = default;
-  StopRecording& operator=(const StopRecording&) = default;
 };
 
 using Event = std::variant<OpenEvent, CloseEvent, StartRecording, StopRecording>;
+
+
 };  // namespace event
 
 
