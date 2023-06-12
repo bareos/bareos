@@ -260,6 +260,60 @@ struct stated_file
 	int type;
 	std::optional<HfsPlusInfo> hfsinfo;
 };
+
+class list_files_result
+{
+public:
+ list_files_result(std::size_t fileset_idx) :  fileset{fileset_idx}
+ {
+ }
+
+ template <typename... Args>
+ stated_file& emplace_back(Args... args)
+ {
+   return files.emplace_back(std::forward<Args>(args)...);
+ }
+
+ std::size_t fileset_idx() const
+ {
+   return fileset;
+ }
+
+ std::size_t count_skipped() const
+ {
+   return skipped;
+ }
+
+ void skip()
+ {
+   skipped += 1;
+ }
+
+ void error()
+ {
+   error_ = true;
+ }
+
+ bool has_error()
+ {
+   return error_;
+ }
+
+ auto begin()
+ {
+   return files.begin();
+ }
+
+ auto end()
+ {
+   return files.end();
+ }
+private:
+ std::vector<stated_file> files{};
+ std::size_t fileset;
+ std::size_t skipped{0};
+ bool error_{false};
+};
 FindFilesPacket* init_find_files();
 void SetFindOptions(FindFilesPacket* ff, bool incremental, time_t mtime);
 void SetFindChangedFunction(FindFilesPacket* ff,
@@ -270,15 +324,14 @@ int FindFiles(JobControlRecord* jcr,
               FindFilesPacket* ff,
               int file_sub(JobControlRecord*, FindFilesPacket* ff_pkt, bool),
               int PluginSub(JobControlRecord*, FindFilesPacket* ff_pkt, bool));
-std::optional<std::size_t> ListFiles(JobControlRecord* jcr,
-				     findFILESET* fileset,
-				     bool incremental,
-				     time_t saved_time,
-				     std::optional<bool (*)(JobControlRecord*, FindFilesPacket*)> check_changed,
-				     std::vector<channel::in<stated_file>> ins);
+std::optional<std::vector<list_files_result>> ListFiles(JobControlRecord* jcr,
+							findFILESET* fileset,
+							bool incremental,
+							time_t saved_time,
+							std::optional<bool (*)(JobControlRecord*, FindFilesPacket*)> check_changed);
 int SendFiles(JobControlRecord* jcr,
               FindFilesPacket* ff,
-              std::vector<channel::out<stated_file>> outs,
+              std::vector<list_files_result> outs,
               int file_sub(JobControlRecord*, FindFilesPacket* ff_pkt, bool),
               int PluginSub(JobControlRecord*, FindFilesPacket* ff_pkt, bool));
 bool MatchFiles(JobControlRecord* jcr,

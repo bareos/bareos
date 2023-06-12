@@ -556,9 +556,9 @@ void NewOptions(FindFilesPacket* ff, findIncludeExcludeItem* incexe)
   ff->fileset->state = state_options;
 }
 
-auto SaveInList(channel::in<stated_file>& in, std::size_t& num_skipped)
+auto SaveInList(list_files_result& result)
 {
-  return [&in, &num_skipped](JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool) {
+  return [&result](JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool) {
     switch (ff_pkt->type) {
       case FT_LNKSAVED: /* Hard linked, file already saved */
         Dmsg2(50, "FT_LNKSAVED hit while listing: %s => %s (ERROR)\n", ff_pkt->fname,
@@ -626,7 +626,7 @@ auto SaveInList(channel::in<stated_file>& in, std::size_t& num_skipped)
         if (S_ISSOCK(ff_pkt->statp.st_mode)) {
           Jmsg(jcr, M_SKIPPED, 1, _("     Socket file skipped: %s\n"),
                ff_pkt->fname);
-	  num_skipped++;
+	  result.skip();
           return 1;
         }
         break;
@@ -641,7 +641,7 @@ auto SaveInList(channel::in<stated_file>& in, std::size_t& num_skipped)
         Jmsg(jcr, M_NOTSAVED, 0, _("     Could not access \"%s\": ERR=%s\n"),
              ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
         jcr->JobErrors++;
-	num_skipped++;
+	result.skip();
         return 1;
       }
       case FT_NOFOLLOW: {
@@ -650,7 +650,7 @@ auto SaveInList(channel::in<stated_file>& in, std::size_t& num_skipped)
              _("     Could not follow link \"%s\": ERR=%s\n"), ff_pkt->fname,
              be.bstrerror(ff_pkt->ff_errno));
         jcr->JobErrors++;
-	num_skipped++;
+	result.skip();
         return 1;
       }
       case FT_NOSTAT: {
@@ -658,14 +658,14 @@ auto SaveInList(channel::in<stated_file>& in, std::size_t& num_skipped)
         Jmsg(jcr, M_NOTSAVED, 0, _("     Could not stat \"%s\": ERR=%s\n"),
              ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
         jcr->JobErrors++;
-	num_skipped++;
+	result.skip();
         return 1;
       }
       case FT_DIRNOCHG:
       case FT_NOCHG:
         Jmsg(jcr, M_SKIPPED, 1, _("     Unchanged file skipped: %s\n"),
              ff_pkt->fname);
-	num_skipped++;
+	result.skip();
         return 1;
       case FT_ISARCH:
         Jmsg(jcr, M_NOTSAVED, 0, _("     Archive file not saved: %s\n"),
@@ -677,7 +677,7 @@ auto SaveInList(channel::in<stated_file>& in, std::size_t& num_skipped)
              _("     Could not open directory \"%s\": ERR=%s\n"), ff_pkt->fname,
              be.bstrerror(ff_pkt->ff_errno));
         jcr->JobErrors++;
-	num_skipped++;
+	result.skip();
         return 1;
       }
       case FT_DELETED:
@@ -688,17 +688,17 @@ auto SaveInList(channel::in<stated_file>& in, std::size_t& num_skipped)
              _("     Unknown file type %d; not saved: %s\n"), ff_pkt->type,
              ff_pkt->fname);
         jcr->JobErrors++;
-	num_skipped++;
+	result.skip();
         return 1;
     }
 
     try {
       // take note that ff_pkt->fname actually gets copied here since stated_file
       // uses a std::string instead of a char* to save the file name!
-      in.put({ff_pkt->fname, ff_pkt->statp, ff_pkt->delta_seq, ff_pkt->type,
-	  ff_pkt->volhas_attrlist ? std::make_optional(ff_pkt->hfsinfo) : std::nullopt});
+      result.emplace_back(stated_file{ff_pkt->fname, ff_pkt->statp, ff_pkt->delta_seq, ff_pkt->type,
+				      ff_pkt->volhas_attrlist ? std::make_optional(ff_pkt->hfsinfo) : std::nullopt});
     } catch (...) {
-      num_skipped++;
+      result.skip();
       return 0;
     }
     return 1;
@@ -707,15 +707,12 @@ auto SaveInList(channel::in<stated_file>& in, std::size_t& num_skipped)
 
 
 static void ListFromIncexe(JobControlRecord* jcr,
-			   findFILESET* fileset,
 			   FindFilesPacket* ff,
-			   findIncludeExcludeItem* incexe,
-			   channel::in<stated_file> in,
-			   std::promise<std::optional<std::size_t>> num_skipped)
+			   findFILESET* fileset,
+			   list_files_result* result)
 {
   SetJcrInThreadSpecificData(jcr);
-  dlistString* node;
-  fileset->incexe = incexe;
+  findIncludeExcludeItem* incexe = fileset->incexe = fileset->include_list.get(result->fileset_idx());
   SetupLastOptionBlock(ff, incexe);
   // we do not need to follow hardlinks, as they will be handled
   // by the sending thread
@@ -724,34 +721,31 @@ static void ListFromIncexe(JobControlRecord* jcr,
   Dmsg4(50, "Verify=<%s> Accurate=<%s> BaseJob=<%s> flags=<%d>\n",
 	ff->VerifyOpts, ff->AccurateOpts, ff->BaseJobOpts, ff->flags);
 
-  std::size_t local_num_skipped{0};
+  dlistString* node;
   foreach_dlist (node, &incexe->name_list) {
     char* fname = (char*)node->c_str();
     Dmsg1(debuglevel, "F %s\n", fname);
     ff->top_fname = fname;
-    if (FindOneFile(jcr, ff, CreateCallback(SaveInList(in, local_num_skipped)),
+    if (FindOneFile(jcr, ff, CreateCallback(SaveInList(*result)),
 		    ff->top_fname, (dev_t)-1, true)
 	== 0) {
-      num_skipped.set_value(std::nullopt);
+      result->error();
       return;
     }
     if (jcr->IsJobCanceled()) {
-      num_skipped.set_value(std::nullopt);
+      result->error();
       return;
     }
   }
-  num_skipped.set_value(local_num_skipped);
 }
 
-std::optional<std::size_t>
+std::optional<std::vector<list_files_result>>
 ListFiles(JobControlRecord* jcr,
 	  findFILESET* fileset,
 	  bool incremental,
 	  time_t save_time,
-	  std::optional<bool (*)(JobControlRecord*, FindFilesPacket*)> check_changed,
-	  std::vector<channel::in<stated_file>> ins)
+	  std::optional<bool (*)(JobControlRecord*, FindFilesPacket*)> check_changed)
 {
-  ASSERT(ins.size() == (std::size_t)fileset->include_list.size());
   struct free_on_delete {
     void operator()(findFILESET* copies) { if (copies) free(copies); }
   };
@@ -764,46 +758,36 @@ ListFiles(JobControlRecord* jcr,
     };
     std::vector<std::unique_ptr<FindFilesPacket, ff_cleanup>> ffs;
     std::vector<std::thread> listing_threads;
-    std::vector<std::future<std::optional<std::size_t>>> futures;
+    std::vector<list_files_result> results;
+    results.reserve(fileset->include_list.size());
     fileset_copies.reset((findFILESET*)malloc(sizeof(findFILESET) * fileset->include_list.size()));
     for (int i = 0; i < fileset->include_list.size(); i++) {
-      findFILESET* my_fileset = &fileset_copies[i];
-      *my_fileset = *fileset; // do a shallow copy
+      findFILESET* local_fileset = &fileset_copies[i];
+      *local_fileset = *fileset;
+      auto& list_result = results.emplace_back(i);
       auto ff_pkt = ffs.emplace_back(init_find_files(),
 				     ff_cleanup{}).get();
       ClearAllBits(FO_MAX, ff_pkt->flags);
-      ff_pkt->fileset     = my_fileset;
+      ff_pkt->fileset = local_fileset;
       SetFindOptions(ff_pkt, incremental, save_time);
       if (check_changed) SetFindChangedFunction(ff_pkt, check_changed.value());
 
-      std::promise<std::optional<std::size_t>> num_skipped{};
-      futures.emplace_back(num_skipped.get_future());
-
       listing_threads.emplace_back(ListFromIncexe,
 				   jcr,
-				   my_fileset,
 				   ff_pkt,
-				   my_fileset->include_list.get(i),
-				   std::move(ins[i]),
-				   std::move(num_skipped)
-				  );
+				   local_fileset,
+				   &list_result);
 
     }
     for (auto& thread : listing_threads)
     {
 	    thread.join();
     }
-    std::optional<std::size_t> num_skipped{0};
-    for (auto& future : futures)
-    {
-      if (std::optional local_num_skipped = future.get(); local_num_skipped) {
-	*num_skipped += *local_num_skipped;
-      } else {
-	num_skipped = std::nullopt;
-	break;
-      }
+    for (auto& list_result : results) {
+      if (list_result.has_error()) { return std::nullopt; }
     }
-    return num_skipped;
+
+    return results;
   } else {
     return std::nullopt;
   }
@@ -985,9 +969,88 @@ static bool SetupFFPkt(JobControlRecord* jcr,
 	return true;
 }
 
+struct stated_opened_file
+{
+  stated_file f;
+  std::optional<BareosFilePacket> bfd;
+  int fileset;
+};
+
+void PrepareFileForSending(JobControlRecord* jcr,
+			   std::vector<channel::out<stated_file>> outs,
+			   channel::in<stated_opened_file> in)
+{
+  SetJcrInThreadSpecificData(jcr);
+  std::size_t closed_channels = 0;
+  while (closed_channels != outs.size()) {
+    bool found_file = false;
+    for (int i = 0; i < (int)outs.size(); ++i) {
+      auto& out = outs[i];
+      if (out.empty()) continue;
+      std::optional<stated_file> file;
+      while ((file = out.try_get())) {
+	found_file = true;
+	stated_file& f = file.value();
+	BareosFilePacket bfd;
+	binit(&bfd);
+	// if (BitIsSet(FO_PORTABLE, f.flags)) {
+	// 	SetPortableBackup(&bfd); /* disable Win32 BackupRead() */
+	// }
+	bool do_read = false;
+	{
+	  /* Open any file with data that we intend to save, then save it.
+	   *
+	   * Note, if is_win32_backup, we must open the Directory so that
+	   * the BackupRead will save its permissions and ownership streams. */
+	  if (f.type != FT_LNKSAVED && S_ISREG(f.statp.st_mode)) {
+#ifdef HAVE_WIN32
+	    do_read = !IsPortableBackup(&bfd) || f.statp.st_size > 0;
+#else
+	    do_read = f.statp.st_size > 0;
+#endif
+	  } else if (f.type == FT_RAW || f.type == FT_FIFO
+		     || f.type == FT_REPARSE || f.type == FT_JUNCTION
+		     || (!IsPortableBackup(&bfd)
+			 && f.type == FT_DIREND)) {
+	    do_read = true;
+	  }
+	}
+	// one can only safely read from a fifo
+	// with a timer.  Otherwise we can get stuck here
+	// as such we do not handle fifos here
+	if (do_read && f.type != FT_FIFO) {
+	  //int noatime = BitIsSet(FO_NOATIME, f.flags) ? O_NOATIME : 0;
+	  int noatime = 0;
+	  if (bopen(&bfd, f.name.c_str(), O_RDONLY | O_BINARY | noatime, 0,
+		    f.statp.st_rdev) < 0) {
+	    BErrNo be;
+	    Jmsg(jcr, M_NOTSAVED, 0, _("     Cannot open \"%s\": ERR=%s.\n"),
+		 f.name.c_str(), be.bstrerror());
+	    jcr->JobErrors++;
+	  } else {
+	    if (!in.put({f, std::make_optional(bfd), i})) {
+	      return;
+	    }
+	  }
+	} else {
+	  if (!in.put({f, std::nullopt, i})) {
+	    return;
+	  }
+	}
+      }
+      if (out.empty()) {
+	closed_channels += 1;
+      }
+    }
+    // if we have not gotten any file then sleep for a bit instead
+    // of spinning here
+    if (!found_file) { std::this_thread::sleep_for(std::chrono::milliseconds(30)); }
+  }
+}
+
 int SendFiles(JobControlRecord* jcr,
               FindFilesPacket* ff,
-              std::vector<channel::out<stated_file>> outs,
+	      std::vector<list_files_result> results,
               int FileSave(JobControlRecord*, FindFilesPacket* ff_pkt, bool),
               int PluginSave(JobControlRecord*, FindFilesPacket* ff_pkt, bool))
 {
@@ -998,7 +1061,6 @@ int SendFiles(JobControlRecord* jcr,
     /* TODO: We probably need be move the initialization in the fileset loop,
      * at this place flags options are "concatenated" accross Include {} blocks
      * (not only Options{} blocks inside a Include{}) */
-    ASSERT(outs.size() == (std::size_t)fileset->include_list.size());
     ClearAllBits(FO_MAX, ff->flags);
     SendPluginInfo(jcr, ff, PluginSave);
     ClearAllBits(FO_MAX, ff->flags);
@@ -1007,66 +1069,114 @@ int SendFiles(JobControlRecord* jcr,
     // get set once per include block inside SetupLastOptionBlock.
     // Not all of these are used during the send, so we "cache" them
     // here once and then always reuse them.
-    struct cached_vals {
-      int StripPath;
-    };
+    struct cached_vals { int StripPath; };
     // everything is set to 0
     std::vector<cached_vals> cached_values(fileset->include_list.size());
     for (std::size_t i = 0; i < cached_values.size(); ++i) {
-      fileset->incexe = fileset->include_list.get(i);
-      SetupLastOptionBlock(ff, fileset->incexe);
-      cached_values[i].StripPath = ff->StripPath;
+	fileset->incexe = fileset->include_list.get(i);
+	SetupLastOptionBlock(ff, fileset->incexe);
+	cached_values[i].StripPath = ff->StripPath;
     }
-    std::size_t closed_channels = 0;
-    while (closed_channels != outs.size()) {
-      bool found_file = false;
-      for (std::size_t fileset_idx = 0; fileset_idx < outs.size();
-           ++fileset_idx) {
-        auto& out = outs[fileset_idx];
-        if (out.empty()) continue;
-        while (std::optional files = out.try_get_all()) {
-          for (auto& file : *files) {
-            fileset->incexe = fileset->include_list.get(fileset_idx);
-            char* fname = file.name.data();
-            ff->StripPath = cached_values[fileset_idx].StripPath;
-            // todo: what to do with top_fname ? its only used
-            // for debug messages from here on out and setting it up
-            // correctly seems wasteful
-            if (!SetupFFPkt(jcr, ff, fname, file.statp, file.delta_seq,
-                            file.type, file.hfsinfo)) {
-              Dmsg1(debuglevel, "Error: Could not setup ffpkt for file '%s'\n",
-                    ff->fname);
-              ret_val = 0;
-              break;
-            }
-            if (!AcceptFile(ff)) {
-              Dmsg1(debuglevel, "Did not accept file '%s'; skipping.\n",
-                    ff->fname);
-              continue;
-            }
-            if (!FileSave(jcr, ff, false)) {
-              CleanupLink(ff);
-              Dmsg1(debuglevel, "Error: Could not save file %s", ff->fname);
-              ret_val = 0;
-              break;
-            } else {
-              CleanupLink(ff);
-              if (ff->linked) { ff->linked->FileIndex = ff->FileIndex; }
-            }
-            if (jcr->IsJobCanceled()) {
-              ret_val = 0;
-              break;
-            }
-          }
-        }
-        if (out.empty()) { closed_channels += 1; }
+    for (auto& list_result : results) {
+      if (list_result.has_error()) {
+	ret_val = 0;
+	break;
       }
-      // if we have not gotten any file then sleep for a bit instead
-      // of spinning here
-      if (!found_file) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(30));
+      fileset->incexe = fileset->include_list.get(list_result.fileset_idx());
+      for (auto& file : list_result) {
+	char* fname = file.name.data();
+	if (!SetupFFPkt(jcr, ff, fname, file.statp, file.delta_seq,
+			file.type, file.hfsinfo)) {
+	  Dmsg1(debuglevel, "Error: Could not setup ffpkt for file '%s'\n",
+		ff->fname);
+	  ret_val = 0;
+	  break;
+	}
+	if (!AcceptFile(ff)) {
+	  Dmsg1(debuglevel, "Did not accept file '%s'; skipping.\n",
+		ff->fname);
+	  continue;
+	}
+
+	ff->bfd = BareosFilePacket{};
+	binit(&ff->bfd);
+	if (!FileSave(jcr, ff, false)) {
+	  if (IsBopen(&ff->bfd)) {
+	    bclose(&ff->bfd);
+	  }
+	  CleanupLink(ff);
+	  Dmsg1(debuglevel, "Error: Could not save file %s",
+		ff->fname);
+	  ret_val = 0;
+	  break;
+	} else {
+	  CleanupLink(ff);
+	  if (ff->linked) { ff->linked->FileIndex = ff->FileIndex; }
+	}
+	if (jcr->IsJobCanceled()) { ret_val = 0; break; }
       }
     }
+    // while (1) {
+    //   if (std::optional opened_file = out.get(); opened_file) {
+    // 	auto& [file, bfd, fileset_idx] = opened_file.value();
+    // 	fileset->incexe = fileset->include_list.get(fileset_idx);
+    // 	char* fname = file.name.data();
+    // 	ff->StripPath = cached_values[fileset_idx].StripPath;
+    // 	// todo: what to do with top_fname ? its only used
+    // 	// for debug messages from here on out and setting it up
+    // 	// correctly seems wasteful
+    // 	if (!SetupFFPkt(jcr, ff, fname, file.statp, file.delta_seq,
+    // 			file.type, file.hfsinfo)) {
+    // 	  Dmsg1(debuglevel, "Error: Could not setup ffpkt for file '%s'\n",
+    // 		ff->fname);
+    // 	  ret_val = 0;
+    // 	  break;
+    // 	}
+    // 	if (!AcceptFile(ff)) {
+    // 	  Dmsg1(debuglevel, "Did not accept file '%s'; skipping.\n",
+    // 		ff->fname);
+    // 	  continue;
+    // 	}
+    // 	if (bfd) {
+    // 	  if (ff->type == FT_LNKSAVED) {
+    // 	    // we should probably find a way in which we do not open
+    // 	    // files that we dont plan on reading!
+    // 	    // maybe do the hardlink detection in the preparing thread
+    // 	    // WARNING: the current hardlink lookup is not reentrant!
+    // 	    //          its not possible to safely search inside it from
+    // 	    //          two threads at the same time!!
+    // 	    //          This can only be achieved by redoing that part!
+    // 	    bclose(&bfd.value());
+    // 	  } else {
+    // 	    ff->bfd = bfd.value();
+    // 	  }
+    // 	} else {
+    // 	  // restore to default values
+    // 	  ff->bfd = BareosFilePacket{};
+    // 	  binit(&ff->bfd);
+    // 	}
+
+    // 	if (!FileSave(jcr, ff, false)) {
+    // 	  if (IsBopen(&ff->bfd)) {
+    // 	    bclose(&ff->bfd);
+    // 	  }
+    // 	  CleanupLink(ff);
+    // 	  Dmsg1(debuglevel, "Error: Could not save file %s",
+    // 		ff->fname);
+    // 	  ret_val = 0;
+    // 	  break;
+    // 	} else {
+    // 	  CleanupLink(ff);
+    // 	  if (ff->linked) { ff->linked->FileIndex = ff->FileIndex; }
+    // 	}
+    // 	if (jcr->IsJobCanceled()) { ret_val = 0; break; }
+    //   } else {
+    // 	break;
+    //   }
+    //}
+    // this will close the opener regardless of whether
+    // there are still files getting listed or not
+    // since currently the opener will spin if it isnt fed fast enough
   }
   return ret_val;
 }

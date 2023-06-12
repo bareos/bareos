@@ -377,62 +377,37 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
     SetFindOptions((FindFilesPacket*)jcr->fd_impl->ff, false,
 		   jcr->fd_impl->since_time);
 
-    std::optional<std::size_t> list_ok = std::nullopt;
     bool send_ok = true;
     try {
-      // buffer size chosen at random
-      // todo: is there a better buffer size maybe ?
-      auto [ins, outs] = CreateNecessaryChannels(jcr->fd_impl->ff->fileset, 50);
-      std::thread list_thread{
-	[](JobControlRecord* jcr, findFILESET* ff, bool incremental,
-	   time_t save_time,
-	   std::optional<bool (*)(JobControlRecord*, FindFilesPacket*)> chk,
-	   auto ins,
-	   std::optional<std::size_t>& ok) {
-	  try {
-	    ok = ListFiles(jcr, ff, incremental, save_time, chk,
-			   std::move(ins));
-	  } catch (const std::exception& ex) {
-	    ok = std::nullopt;
-	    Dmsg1(500, "Uncaught exception! Aborting.\n Message: %s\n", ex.what());
-	  } catch (...)
-	    {
-	      ok = std::nullopt;
-	      Dmsg1(500, "Uncaught unknown exception! Aborting.\n");
-	    }
-	},
-	jcr,
-	jcr->fd_impl->ff->fileset,
-	jcr->fd_impl->incremental,
-	jcr->fd_impl->since_time,
-	(jcr->accurate) ? std::make_optional(&AccurateCheckFile) : std::nullopt,
-	std::move(ins),
-	std::ref(list_ok)};
-      if (!SendFiles(jcr, jcr->fd_impl->ff, std::move(outs), SaveFile,
-		     PluginSave)) {
+      std::optional results = ListFiles(jcr, jcr->fd_impl->ff->fileset,
+					jcr->fd_impl->incremental,
+					jcr->fd_impl->since_time,
+					(jcr->accurate) ? std::make_optional(&AccurateCheckFile) : std::nullopt);
+
+      if (results.has_value()) {
+	for (auto& list_result : *results) {
+	  jcr->fd_impl->num_files_examined += list_result.count_skipped();
+	}
+	if (!SendFiles(jcr, jcr->fd_impl->ff, std::move(*results), SaveFile,
+		       PluginSave)) {
+	  send_ok = false;
+	}
+      } else {
 	send_ok = false;
       }
 
-      list_thread.join();
     } catch (const std::exception& ex)
       {
 	send_ok = false;
-	list_ok = std::nullopt;
 	Dmsg1(500, "Uncaught exception! Aborting.\n Message: %s\n", ex.what());
       } catch (...)
       {
 	send_ok = false;
-	list_ok = std::nullopt;
 	Dmsg1(500, "Uncaught unknown exception! Aborting.\n");
       }
 
-    if (list_ok)
-      {
-	jcr->fd_impl->num_files_examined += list_ok.value();
-      }
-
     // join synchronizes threads, so its safe to read from list_ok now!
-    if (!list_ok || !send_ok) {
+    if (!send_ok) {
       ok = false; /* error */
       jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     }
