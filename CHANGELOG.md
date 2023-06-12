@@ -95,6 +95,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Improve handling of catalog requests that try to reduce VolFiles, VolBlocks and VolBytes [PR #1431]
 - filed: fix off-by-one error when resizing acl buffer [PR #1479]
 - Consolidate: fix for consolidate job's client name not being correctly shown [PR #1474]
+- scripts: config-lib improve setup_sd_user [PR #1448]
 
 ### Documentation
 - add explanation about binary version numbers [PR #1354]
@@ -170,6 +171,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1440]: https://github.com/bareos/bareos/pull/1440
 [PR #1445]: https://github.com/bareos/bareos/pull/1445
 [PR #1447]: https://github.com/bareos/bareos/pull/1447
+[PR #1448]: https://github.com/bareos/bareos/pull/1448
 [PR #1449]: https://github.com/bareos/bareos/pull/1449
 [PR #1450]: https://github.com/bareos/bareos/pull/1450
 [PR #1453]: https://github.com/bareos/bareos/pull/1453
