@@ -28,6 +28,17 @@ bool AdjustCompressionBuffers(JobControlRecord* jcr, CompressionContext& ctx);
 bool AdjustDecompressionBuffers(JobControlRecord* jcr);
 bool SetupCompressionContext(b_ctx& bctx);
 
+enum class LevelChangeResult {
+  ERROR,
+  CHANGE,
+  NO_CHANGE
+};
+
+LevelChangeResult SetCompressionLevel(JobControlRecord* jcr,
+				      uint32_t algorithm,
+				      int level,
+				      CompressionContext& compress);
+
 } /* namespace filedaemon */
 
 #endif  // BAREOS_FILED_COMPRESSION_H_
