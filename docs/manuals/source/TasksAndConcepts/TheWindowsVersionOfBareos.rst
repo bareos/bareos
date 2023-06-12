@@ -480,12 +480,16 @@ Windows Antivirus
 .. index:: Antivirus; Windows
 .. index:: Windows; Antivirus
 
-The Windows builtin anti-virus **Defender** is enabled by default. If you care about performance, it is advised to add the :command:`bareos-dir.exe`, :command:`bareos-sd.exe`, :command:`bareos-fd.exe` to the list of excluded monitored processes. Otherwise you may suffer by i/o throughput and excessive cpu consumption.
+The Windows builtin antivirus **Defender** is enabled by default and will scan every single file being backed up during the backup process. This leads to an extremely slow throughput with a very high cpu load.
+
+Therefore it is advised to add the :command:`bareos-fd.exe` to the list of excluded monitored processes on computers being backed up via the bareos filedaemon.
+On systems running the director or storage daemon on windows, also add the processes
+:command:`bareos-dir.exe`, :command:`bareos-sd.exe`
 
 .. image:: /include/images/windows-defender-exclusion.png
    :width: 80.0%
 
-The same remark can be done to any other similar on-access anti-virus scanner. Please also check next section about possible troubles with antivirus on Windows.
+The same remark can be done to any other similar on-access antivirus scanner. Please also check next section about possible troubles with antivirus on Windows.
 
 
 Dealing with Windows Problems
