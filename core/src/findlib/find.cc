@@ -735,7 +735,7 @@ static void ListFromIncexe(JobControlRecord* jcr,
       num_skipped.set_value(std::nullopt);
       return;
     }
-    if (JobCanceled(jcr)) {
+    if (jcr->IsJobCanceled()) {
       num_skipped.set_value(std::nullopt);
       return;
     }
@@ -832,7 +832,7 @@ int SendPluginInfo(JobControlRecord* jcr,
         ff->cmd_plugin = true;
         PluginSave(jcr, ff, true);
         ff->cmd_plugin = false;
-        if (JobCanceled(jcr)) { return 0; }
+        if (jcr->IsJobCanceled()) { return 0; }
       }
     }
 
@@ -1150,7 +1150,7 @@ int SendFiles(JobControlRecord* jcr,
 	  CleanupLink(ff);
 	  if (ff->linked) { ff->linked->FileIndex = ff->FileIndex; }
 	}
-	if (JobCanceled(jcr)) { ret_val = 0; break; }
+	if (jcr->IsJobCanceled()) { ret_val = 0; break; }
       } else {
 	break;
       }
