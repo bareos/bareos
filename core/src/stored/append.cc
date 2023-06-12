@@ -40,6 +40,10 @@
 #include "include/streams.h"
 #include "lib/berrno.h"
 #include "lib/crypto.h"
+#include "lib/berrno.h"
+#include "lib/channel.h"
+
+#include <thread>
 
 namespace storagedaemon {
 
@@ -108,6 +112,27 @@ static bool SaveFullyProcessedFilesAttributes(
     return true;
   }
   return false;
+}
+
+static void ReadMsg(channel::in<PoolMem> in, BareosSocket* bs,
+		    JobControlRecord *jcr) {
+    while (BgetMsg(bs) > 0 && !jcr->IsJobCanceled()) {
+      PoolMem msg(PM_MESSAGE);
+      PmMemcpy(msg, bs->msg, bs->message_length);
+      // set to correct size
+      ReallocPoolMemory(msg.addr(), bs->message_length);
+      if(!in.put(std::move(msg))) {
+	break;
+      }
+    }
+}
+
+static void WaitForReading(channel::out<channel::in<PoolMem>*> chan,
+			   BareosSocket* bs, JobControlRecord* jcr)
+{
+  for (std::optional in = chan.get(); in; in = chan.get()) {
+    ReadMsg(std::move(*in.value()), bs, jcr);
+  }
 }
 
 // Append Data sent from File daemon
@@ -218,6 +243,9 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   std::vector<ProcessedFile> processed_files{};
   int64_t current_volumeid = jcr->sd_impl->dcr->VolMediaId;
 
+  auto [read_in, read_out] = channel::CreateBufferedChannel<channel::in<PoolMem>*>(1);
+  std::thread reader(WaitForReading, std::move(read_out), bs, jcr);
+
   ProcessedFile file_currently_processed;
   uint32_t current_block_number = jcr->sd_impl->dcr->block->BlockNumber;
 
@@ -278,15 +306,24 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
      * We save the original data pointer from the record so we can restore
      * that after the loop ends. */
     rec_data = jcr->sd_impl->dcr->rec->data;
-    while ((n = BgetMsg(bs)) > 0 && !jcr->IsJobCanceled()) {
+    auto [in, out] = channel::CreateBufferedChannel<PoolMem>(20);
+    if (!read_in.put(&in)) {
+      Jmsg(jcr, M_FATAL, 0,
+	   "Could not submit new channel.\n");
+      ok = false;
+      break;
+    }
+
+    std::optional<PoolMem> buf;
+    while ((buf = out.get()) && !jcr->IsJobCanceled()) {
       jcr->sd_impl->dcr->rec->VolSessionId = jcr->VolSessionId;
       jcr->sd_impl->dcr->rec->VolSessionTime = jcr->VolSessionTime;
       jcr->sd_impl->dcr->rec->FileIndex = file_index;
       jcr->sd_impl->dcr->rec->Stream = stream;
       jcr->sd_impl->dcr->rec->maskedStream
           = stream & STREAMMASK_TYPE; /* strip high bits */
-      jcr->sd_impl->dcr->rec->data_len = bs->message_length;
-      jcr->sd_impl->dcr->rec->data = bs->msg; /* use message buffer */
+      jcr->sd_impl->dcr->rec->data_len = buf->size(); //bs->message_length;
+      jcr->sd_impl->dcr->rec->data = buf->addr(); //bs->msg; /* use message buffer */
 
       Dmsg4(850, "before writ_rec FI=%d SessId=%d Strm=%s len=%d\n",
             jcr->sd_impl->dcr->rec->FileIndex,
@@ -352,6 +389,9 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       break;
     }
   }
+
+  read_in.close();
+  reader.join();
 
   // Create Job status for end of session label
   jcr->setJobStatusWithPriorityCheck(ok ? JS_Terminated : JS_ErrorTerminated);
