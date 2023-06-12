@@ -55,6 +55,7 @@
 
 #include <thread>
 #include <future>
+#include <memory>
 
 namespace filedaemon {
 
@@ -153,36 +154,35 @@ void WaitForCompress(JobControlRecord* jcr, channel::out<compress_input> to_read
   }
 }
 static void CompressionWorker(JobControlRecord* jcr,
-				channel::out<std::shared_ptr<compress_worker_input>> to_read,
+			      channel::out<std::shared_ptr<compress_worker_input>> to_read,
 			      std::unique_ptr<CompressionContext> ctx) {
   SetJcrInThreadSpecificData(jcr);
-  for (std::optional chan = to_read.get(); chan; chan = to_read.get()) {
-    compress_input* args = &chan.value()->args;
-    std::mutex& input = chan.value()->input;
-    std::mutex& output = chan.value()->output;
-    if (SetCompressionLevel(args->jcr,
-			    args->algorithm,
-			    args->level,
-			    *ctx) == LevelChangeResult::CHANGE_ERROR) {
-      chan.reset();
-      continue;
+  for (;;) {
+    if (std::optional chan = to_read.get()) {
+      auto& work = chan.value();
+      compress_input* args = &work->args;
+      std::mutex& input = work->input;
+      std::mutex& output = work->output;
+      if (SetCompressionLevel(args->jcr,
+			      args->algorithm,
+			      args->level,
+			      *ctx) == LevelChangeResult::CHANGE_ERROR) {
+	continue;
+      }
+      Compress(*ctx,
+	       args->out,
+	       input,
+	       args->in,
+	       output,
+	       work->cv,
+	       work->num_in,
+	       work->num_out,
+	       args->jcr,
+	       args->max_compress_len,
+	       args->algorithm);
+    } else {
+      break;
     }
-    Compress(*ctx,
-	     args->out,
-	     input,
-	     args->in,
-	     output,
-	     chan.value()->cv,
-	     chan.value()->num_in,
-	     chan.value()->num_out,
-	     args->jcr,
-	     args->max_compress_len,
-	     args->algorithm);
-    // we need to explicitly drop the references to the channels
-    // here since otherwise that will only happen once we receive the next
-    // input packet; this leads to a deadlock since we only get the next packet
-    // once this finishes!
-    chan.reset();
   }
 }
 
