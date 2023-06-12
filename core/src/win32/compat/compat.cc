@@ -1305,6 +1305,25 @@ int fstat(intptr_t fd, struct stat* sb)
     return -1;
   }
 
+  // This can become a problem in the future:
+  // https://learn.microsoft.com/en-us/windows/win32/api/fileapi/ns-fileapi-by_handle_file_information
+  // The identifier (low and high parts) and the volume serial number uniquely
+  // identify a file on a single computer.  To determine whether two open
+  // handles represent the same file, combine the identifier and the volume
+  // serial number for each file and compare them.
+  // The ReFS file system, introduced with Windows Server 2012, includes
+  // 128-bit file identifiers.  To retrieve the 128-bit file identifier use the
+  // GetFileInformationByHandleEx function with FileIdInfo to retrieve the
+  // FILE_ID_INFO structure. The 64-bit identifier in this structure is not
+  // guaranteed to be unique on ReFS.
+  // This means that we need to make st_ino at least 128 bit big.
+  // The API itself is only available on windows server as it seems:
+  // https://learn.microsoft.com/en-us/windows/win32/api/winbase/ns-winbase-file_id_info
+  // Since the stat struct is something that we serialize, we have to ensure
+  // that making st_ino 128 does not mess anything up; especially for
+  // "portable" windows backups that you are supposed to be able to restore
+  // on other operating systems.
+
   sb->st_dev = info.dwVolumeSerialNumber;
   sb->st_ino = info.nFileIndexHigh;
   sb->st_ino <<= 32;
