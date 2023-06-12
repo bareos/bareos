@@ -382,7 +382,7 @@ bool BareosSocketTCP::SendPacket(int32_t* hdr, int32_t pktsiz)
   out_msg_no++; /* increment message number */
 
   // Send data packet
-  timer_start = watchdog_time; /* start timer */
+  timer_start = watchdog_time.load(std::memory_order_relaxed); /* start timer */
   ClearTimedOut();
 
   // Full I/O done in one write
@@ -517,7 +517,7 @@ int32_t BareosSocketTCP::recv()
   if (mutex_) { mutex_->lock(); }
 
   read_seqno++;                /* bump sequence number */
-  timer_start = watchdog_time; /* set start wait time */
+  timer_start = watchdog_time.load(std::memory_order_relaxed); /* set start wait time */
   ClearTimedOut();
 
   // Get data size -- in int32_t
@@ -574,7 +574,7 @@ int32_t BareosSocketTCP::recv()
     msg = ReallocPoolMemory(msg, pktsiz + 100);
   }
 
-  timer_start = watchdog_time; /* set start wait time */
+  timer_start = watchdog_time.load(std::memory_order_relaxed); /* set start wait time */
   ClearTimedOut();
 
   // Now read the actual data

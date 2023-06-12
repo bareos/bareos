@@ -35,9 +35,10 @@
 #include "lib/watchdog.h"
 
 
+
 /* Exported globals */
-utime_t watchdog_time = 0;        /* this has granularity of SLEEP_TIME */
-utime_t watchdog_sleep_time = 60; /* examine things every 60 seconds */
+std::atomic<utime_t> watchdog_time = 0;        /* this has granularity of SLEEP_TIME */
+std::atomic<utime_t> watchdog_sleep_time = 60; /* examine things every 60 seconds */
 
 /* Locals */
 static pthread_mutex_t timer_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -50,8 +51,8 @@ static void wd_lock();
 static void wd_unlock();
 
 /* Static globals */
-static bool quit = false;
-static bool wd_is_init = false;
+static std::atomic<bool> quit = false;
+static std::atomic<bool> wd_is_init = false;
 static brwlock_t lock; /* watchdog lock */
 
 static pthread_t wd_tid;
@@ -93,7 +94,7 @@ int StartWatchdog(void)
   }
   wd_queue = new dlist<watchdog_t>();
   wd_inactive = new dlist<watchdog_t>();
-  wd_is_init = true;
+  wd_is_init.store(true, std::memory_order_release);
 
   if ((status = pthread_create(&wd_tid, NULL, watchdog_thread, NULL)) != 0) {
     return status;
@@ -124,9 +125,9 @@ int StopWatchdog(void)
   int status;
   watchdog_t* p;
 
-  if (!wd_is_init) { return 0; }
+  if (!wd_is_init.load(std::memory_order_acquire)) { return 0; }
 
-  quit = true; /* notify watchdog thread to stop */
+  quit.store(true, std::memory_order_relaxed); /* notify watchdog thread to stop */
   ping_watchdog();
 
   status = pthread_join(wd_tid, NULL);
@@ -160,7 +161,7 @@ watchdog_t* new_watchdog(void)
 {
   watchdog_t* wd = (watchdog_t*)malloc(sizeof(watchdog_t));
 
-  if (!wd_is_init) { StartWatchdog(); }
+  if (!wd_is_init.load(std::memory_order_acquire)) { StartWatchdog(); }
 
   if (wd == NULL) { return NULL; }
   wd->one_shot = true;
@@ -174,7 +175,7 @@ watchdog_t* new_watchdog(void)
 
 bool RegisterWatchdog(watchdog_t* wd)
 {
-  if (!wd_is_init) {
+  if (!wd_is_init.load(std::memory_order_acquire)) {
     Jmsg0(NULL, M_ABORT, 0,
           _("BUG! RegisterWatchdog called before StartWatchdog\n"));
   }
@@ -249,7 +250,7 @@ extern "C" void* watchdog_thread(void*)
   SetJcrInThreadSpecificData(nullptr);
   Dmsg0(800, "NicB-reworked watchdog thread entered\n");
 
-  while (!quit) {
+  while (!quit.load(std::memory_order_relaxed)) {
     watchdog_t* p;
 
     /*

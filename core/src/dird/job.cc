@@ -809,7 +809,7 @@ static bool JobCheckMaxruntime(JobControlRecord* jcr)
   }
   run_time = watchdog_time - jcr->start_time;
   Dmsg7(200, "check_maxruntime %llu-%u=%llu >= %llu|%llu|%llu|%llu\n",
-        watchdog_time, jcr->start_time, run_time, job->MaxRunTime,
+        watchdog_time.load(std::memory_order_relaxed), jcr->start_time, run_time, job->MaxRunTime,
         job->FullMaxRunTime, job->IncMaxRunTime, job->DiffMaxRunTime);
 
   if (jcr->getJobLevel() == L_FULL && job->FullMaxRunTime != 0

@@ -295,7 +295,7 @@ int TlsOpenSslPrivate::OpensslBsockReadwrite(BareosSocket* bsock,
 
   int flags = bsock->SetNonblocking();
 
-  bsock->timer_start = watchdog_time;
+  bsock->timer_start = watchdog_time.load(std::memory_order_relaxed);
   bsock->ClearTimedOut();
   bsock->SetKillable(false);
 
@@ -371,7 +371,7 @@ bool TlsOpenSslPrivate::OpensslBsockSessionStart(BareosSocket* bsock,
 
   int flags = bsock->SetNonblocking();
 
-  bsock->timer_start = watchdog_time;
+  bsock->timer_start = watchdog_time.load(std::memory_order_relaxed);
   bsock->ClearTimedOut();
   bsock->SetKillable(false);
 
