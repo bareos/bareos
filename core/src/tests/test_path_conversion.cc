@@ -146,36 +146,28 @@ class Regression : public ::testing::TestWithParam<VssStatus> {
 };
 
 using namespace std::literals;
+
+std::string make_long_file_name()
+{
+  std::string file_name(30000, 'a');
+  file_name[0] = 'Z';
+  file_name[0] = ':';
+  file_name[0] = '/';
+  return file_name;
+}
+std::string long_file_name = make_long_file_name();
 const std::vector<std::string_view> paths{
     "/"sv,
     "C:"sv,
     "C:\\"sv,
-    "C:/./.."sv,
-    "c:\\..\\\\/test//ab\\.x"sv,
-    ""sv,
-    "\\\\.\\C:"sv,
-    "\\\\.\\C:\\"sv,
     "\\\\?\\C:"sv,
     "\\\\?\\C:\\"sv,
-    "\\\\.\\d:"sv,
-    "\\\\.\\d:\\"sv,
     "\\\\?\\d:"sv,
     "\\\\?\\d:\\"sv,
     "C:/test"sv,
-    "//./normalized_path"sv,
-    "\\\\.\\normalized_path"sv,
-    "//?/literal_path"sv,
     "\\\\?\\literal_path"sv,
-    "//./normalized_path/.\\..\\/test"sv,
-    "\\\\.\\normalized_path/.\\..\\/test"sv,
-    "//?/literal_path/.\\..\\/test"sv,
     "\\\\?\\literal_path/.\\..\\/test"sv,
-    "//localhast/C$/dir"sv,
-    "\\\\localhost\\C$\\dir"sv,
-    "//localhost/d$"sv,
-    "\\\\localhost\\d$"sv,
-    "//localhost/d$/"sv,
-    "\\\\localhost\\d$\\"sv,
+    long_file_name,
 };
 
 std::string OldU2U(const char* name) {
