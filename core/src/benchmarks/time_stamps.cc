@@ -72,10 +72,11 @@ static std::optional<TimeKeeper> keeper;
 
 static ThreadTimerHandle get_thread_local_timer(std::optional<TimeKeeper>& timer) {
   if (timer.has_value()) {
-    return ThreadTimerHandle{ timer->get_thread_local() };
-  } else {
-    return ThreadTimerHandle{};
+    if (auto* local = timer->get_thread_local()) {
+      return ThreadTimerHandle{ *local };
+    }
   }
+  return ThreadTimerHandle{};
 }
 
 static void SetupKeeper(const bm::State& state) {
@@ -90,6 +91,9 @@ static void TeardownKeeper(const bm::State&) {
 
 static void SubmitRandomEvents(bm::State& state)
 {
+  if (keeper.has_value()) {
+    keeper->create_thread_local();
+  }
   std::unordered_map<char, const BlockIdentity*> blockid;
   std::unordered_set<char> open;
   for (auto& block : blocks) {
@@ -117,6 +121,11 @@ static void SubmitRandomEvents(bm::State& state)
     }
     numEvents += 2 * num_blocks;
   }
+  if (keeper.has_value()) {
+    keeper->erase_thread_local();
+  }
+
+  benchmark::DoNotOptimize(keeper);
 
   state.counters["per event"] = benchmark::Counter(numEvents, benchmark::Counter::kIsRate | benchmark::Counter::kInvert);
 
@@ -124,6 +133,9 @@ static void SubmitRandomEvents(bm::State& state)
 
 static void SubmitDeepStack(bm::State& state)
 {
+  if (keeper.has_value()) {
+    keeper->create_thread_local();
+  }
   auto timer = get_thread_local_timer(keeper);
   auto num_blocks = state.range(0);
 
@@ -139,10 +151,17 @@ static void SubmitDeepStack(bm::State& state)
     numEvents += 2 * num_blocks;
   }
 
+  if (keeper.has_value()) {
+    keeper->erase_thread_local();
+  }
+  benchmark::DoNotOptimize(keeper);
   state.counters["per event"] = benchmark::Counter(numEvents, benchmark::Counter::kIsRate | benchmark::Counter::kInvert);
 }
 static void SubmitShallowStack(bm::State& state)
 {
+  if (keeper.has_value()) {
+    keeper->create_thread_local();
+  }
   auto timer = get_thread_local_timer(keeper);
   auto num_blocks = state.range(0);
 
@@ -156,6 +175,10 @@ static void SubmitShallowStack(bm::State& state)
     numEvents += 2 * num_blocks;
   }
 
+  if (keeper.has_value()) {
+    keeper->erase_thread_local();
+  }
+  benchmark::DoNotOptimize(keeper);
   state.counters["per event"] = benchmark::Counter(numEvents, benchmark::Counter::kIsRate | benchmark::Counter::kInvert);
 }
 BENCHMARK(SubmitRandomEvents)->Ranges({{1 << 4, 1 << 12}, {0, 1}})->ThreadRange(1 << 0, 1 << 5)->Setup(SetupKeeper)->Teardown(TeardownKeeper);
