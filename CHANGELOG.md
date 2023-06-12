@@ -30,6 +30,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Fixed
 -  filed: fix off-by-one error when resizing acl buffer [PR #1480]
 - Improve handling of catalog requests that try to reduce VolFiles, VolBlocks and VolBytes [PR #1475]
+- Consolidate: fix for consolidate job's client name not being correctly shown [PR #1481]
 
 ## [22.0.3] - 2023-03-24
 
@@ -528,5 +529,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1475]: https://github.com/bareos/bareos/pull/1475
 [PR #1478]: https://github.com/bareos/bareos/pull/1478
 [PR #1480]: https://github.com/bareos/bareos/pull/1480
+[PR #1481]: https://github.com/bareos/bareos/pull/1481
 [PR #1482]: https://github.com/bareos/bareos/pull/1482
 [unreleased]: https://github.com/bareos/bareos/tree/master

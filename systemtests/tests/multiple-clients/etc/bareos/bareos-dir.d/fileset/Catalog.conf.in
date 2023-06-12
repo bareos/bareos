@@ -1,0 +1,8 @@
+FileSet {
+  Name = "Catalog"
+  Description = "Backup the catalog dump and Bareos configuration files."
+  Include {
+    File = "@working_dir@/@db_name@.sql" # database dump
+    File = "@confdir@"                   # configuration
+  }
+}
