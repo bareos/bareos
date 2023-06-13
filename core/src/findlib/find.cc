@@ -751,6 +751,7 @@ static void ListFromIncexe(JobControlRecord* jcr,
     }
   }
 
+  result.sort();
   std::unique_lock lock(in_ptr->mut);
   in_ptr->in.put(std::move(result));
 }
