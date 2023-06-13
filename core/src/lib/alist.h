@@ -168,6 +168,17 @@ template <typename T> class alist {
       items = NULL;
     }
   }
+  // we only do a "shallow" copy: since we cannot copy Ts we just
+  // say that we do not own them!
+  alist(const alist<T>& to_copy) : items{(T*)malloc(sizeof(T) * to_copy.num_items)}
+				 , num_items{to_copy.num_items}
+				 , max_items{to_copy.num_items}
+				 , num_grow{to_copy.num_grow}
+				 , cur_item{to_copy.cur_item}
+				 , own_items{false}
+  {
+    memcpy(items, to_copy.items, sizeof(T) * to_copy.num_items);
+  }
   void grow(int num) { num_grow = num; }
 
   // Use it as a stack, pushing and popping from the end
