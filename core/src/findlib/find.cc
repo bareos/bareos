@@ -556,7 +556,7 @@ void NewOptions(FindFilesPacket* ff, findIncludeExcludeItem* incexe)
   ff->fileset->state = state_options;
 }
 
-auto SaveInList(list_files_result& result)
+auto SaveInList(found_files_list& result)
 {
   return [&result](JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool) {
     switch (ff_pkt->type) {
@@ -708,10 +708,10 @@ auto SaveInList(list_files_result& result)
 // todo: replace by synchronized
 struct guarded_in_chan
 {
-  guarded_in_chan(channel::in<list_files_result> in) : in{std::move(in)}
+  guarded_in_chan(channel::in<found_files_list> in) : in{std::move(in)}
   {}
   std::mutex mut{};
-  channel::in<list_files_result> in;
+  channel::in<found_files_list> in;
 };
 
 template <typename Deleter>
@@ -734,7 +734,7 @@ static void ListFromIncexe(JobControlRecord* jcr,
 	ff->VerifyOpts, ff->AccurateOpts, ff->BaseJobOpts, ff->flags);
 
   dlistString* node;
-  list_files_result result{static_cast<std::size_t>(fileset_idx)};
+  found_files_list result{static_cast<std::size_t>(fileset_idx)};
   foreach_dlist (node, &incexe->name_list) {
     char* fname = (char*)node->c_str();
     Dmsg1(debuglevel, "F %s\n", fname);
@@ -768,7 +768,7 @@ ListFiles(JobControlRecord* jcr,
       void operator()(FindFilesPacket* ff) { TermFindFiles(ff); }
     };
 
-    auto [in, out] = channel::CreateBufferedChannel<list_files_result>(50);
+    auto [in, out] = channel::CreateBufferedChannel<found_files_list>(50);
 
     auto in_ptr = std::make_shared<guarded_in_chan>(std::move(in));
     list_files_threads threads{std::move(out)};
@@ -1052,7 +1052,7 @@ void PrepareFileForSending(JobControlRecord* jcr,
 
 int SendFiles(JobControlRecord* jcr,
               FindFilesPacket* ff,
-	      channel::out<list_files_result> results,
+	      found_files_list list_result,
               int FileSave(JobControlRecord*, FindFilesPacket* ff_pkt, bool),
               int PluginSave(JobControlRecord*, FindFilesPacket* ff_pkt, bool))
 {
@@ -1079,108 +1079,103 @@ int SendFiles(JobControlRecord* jcr,
 	SetupLastOptionBlock(ff, fileset->incexe);
 	cached_values[i].StripPath = ff->StripPath;
     }
-    for (std::optional list_result_opt = results.get(); list_result_opt.has_value();
-	 list_result_opt = results.get()) {
-      auto& list_result = list_result_opt.value();
-      if (list_result.has_error()) {
+    if (list_result.has_error()) {
+      return 0;
+    }
+    fileset->incexe = fileset->include_list.get(list_result.fileset_idx());
+    for (auto& file : list_result) {
+      char* fname = file.name.data();
+      if (!SetupFFPkt(jcr, ff, fname, file.statp, file.delta_seq,
+		      file.type, file.hfsinfo)) {
+	Dmsg1(debuglevel, "Error: Could not setup ffpkt for file '%s'\n",
+	      ff->fname);
 	ret_val = 0;
 	break;
       }
-      fileset->incexe = fileset->include_list.get(list_result.fileset_idx());
-      for (auto& file : list_result) {
-	char* fname = file.name.data();
-	if (!SetupFFPkt(jcr, ff, fname, file.statp, file.delta_seq,
-			file.type, file.hfsinfo)) {
-	  Dmsg1(debuglevel, "Error: Could not setup ffpkt for file '%s'\n",
-		ff->fname);
-	  ret_val = 0;
-	  break;
-	}
-	if (!AcceptFile(ff)) {
-	  Dmsg1(debuglevel, "Did not accept file '%s'; skipping.\n",
-		ff->fname);
-	  continue;
-	}
-
-	ff->bfd = BareosFilePacket{};
-	binit(&ff->bfd);
-	if (!FileSave(jcr, ff, false)) {
-	  if (IsBopen(&ff->bfd)) {
-	    bclose(&ff->bfd);
-	  }
-	  CleanupLink(ff);
-	  Dmsg1(debuglevel, "Error: Could not save file %s",
-		ff->fname);
-	  ret_val = 0;
-	  break;
-	} else {
-	  CleanupLink(ff);
-	  if (ff->linked) { ff->linked->FileIndex = ff->FileIndex; }
-	}
-	if (jcr->IsJobCanceled()) { ret_val = 0; break; }
+      if (!AcceptFile(ff)) {
+	Dmsg1(debuglevel, "Did not accept file '%s'; skipping.\n",
+	      ff->fname);
+	continue;
       }
-    }
-    // while (1) {
-    //   if (std::optional opened_file = out.get(); opened_file) {
-    // 	auto& [file, bfd, fileset_idx] = opened_file.value();
-    // 	fileset->incexe = fileset->include_list.get(fileset_idx);
-    // 	char* fname = file.name.data();
-    // 	ff->StripPath = cached_values[fileset_idx].StripPath;
-    // 	// todo: what to do with top_fname ? its only used
-    // 	// for debug messages from here on out and setting it up
-    // 	// correctly seems wasteful
-    // 	if (!SetupFFPkt(jcr, ff, fname, file.statp, file.delta_seq,
-    // 			file.type, file.hfsinfo)) {
-    // 	  Dmsg1(debuglevel, "Error: Could not setup ffpkt for file '%s'\n",
-    // 		ff->fname);
-    // 	  ret_val = 0;
-    // 	  break;
-    // 	}
-    // 	if (!AcceptFile(ff)) {
-    // 	  Dmsg1(debuglevel, "Did not accept file '%s'; skipping.\n",
-    // 		ff->fname);
-    // 	  continue;
-    // 	}
-    // 	if (bfd) {
-    // 	  if (ff->type == FT_LNKSAVED) {
-    // 	    // we should probably find a way in which we do not open
-    // 	    // files that we dont plan on reading!
-    // 	    // maybe do the hardlink detection in the preparing thread
-    // 	    // WARNING: the current hardlink lookup is not reentrant!
-    // 	    //          its not possible to safely search inside it from
-    // 	    //          two threads at the same time!!
-    // 	    //          This can only be achieved by redoing that part!
-    // 	    bclose(&bfd.value());
-    // 	  } else {
-    // 	    ff->bfd = bfd.value();
-    // 	  }
-    // 	} else {
-    // 	  // restore to default values
-    // 	  ff->bfd = BareosFilePacket{};
-    // 	  binit(&ff->bfd);
-    // 	}
 
-    // 	if (!FileSave(jcr, ff, false)) {
-    // 	  if (IsBopen(&ff->bfd)) {
-    // 	    bclose(&ff->bfd);
-    // 	  }
-    // 	  CleanupLink(ff);
-    // 	  Dmsg1(debuglevel, "Error: Could not save file %s",
-    // 		ff->fname);
-    // 	  ret_val = 0;
-    // 	  break;
-    // 	} else {
-    // 	  CleanupLink(ff);
-    // 	  if (ff->linked) { ff->linked->FileIndex = ff->FileIndex; }
-    // 	}
-    // 	if (jcr->IsJobCanceled()) { ret_val = 0; break; }
-    //   } else {
-    // 	break;
-    //   }
-    //}
-    // this will close the opener regardless of whether
-    // there are still files getting listed or not
-    // since currently the opener will spin if it isnt fed fast enough
+      ff->bfd = BareosFilePacket{};
+      binit(&ff->bfd);
+      if (!FileSave(jcr, ff, false)) {
+	if (IsBopen(&ff->bfd)) {
+	  bclose(&ff->bfd);
+	}
+	CleanupLink(ff);
+	Dmsg1(debuglevel, "Error: Could not save file %s",
+	      ff->fname);
+	ret_val = 0;
+	break;
+      } else {
+	CleanupLink(ff);
+	if (ff->linked) { ff->linked->FileIndex = ff->FileIndex; }
+      }
+      if (jcr->IsJobCanceled()) { ret_val = 0; break; }
+    }
   }
+  // while (1) {
+  //   if (std::optional opened_file = out.get(); opened_file) {
+  // 	auto& [file, bfd, fileset_idx] = opened_file.value();
+  // 	fileset->incexe = fileset->include_list.get(fileset_idx);
+  // 	char* fname = file.name.data();
+  // 	ff->StripPath = cached_values[fileset_idx].StripPath;
+  // 	// todo: what to do with top_fname ? its only used
+  // 	// for debug messages from here on out and setting it up
+  // 	// correctly seems wasteful
+  // 	if (!SetupFFPkt(jcr, ff, fname, file.statp, file.delta_seq,
+  // 			file.type, file.hfsinfo)) {
+  // 	  Dmsg1(debuglevel, "Error: Could not setup ffpkt for file '%s'\n",
+  // 		ff->fname);
+  // 	  ret_val = 0;
+  // 	  break;
+  // 	}
+  // 	if (!AcceptFile(ff)) {
+  // 	  Dmsg1(debuglevel, "Did not accept file '%s'; skipping.\n",
+  // 		ff->fname);
+  // 	  continue;
+  // 	}
+  // 	if (bfd) {
+  // 	  if (ff->type == FT_LNKSAVED) {
+  // 	    // we should probably find a way in which we do not open
+  // 	    // files that we dont plan on reading!
+  // 	    // maybe do the hardlink detection in the preparing thread
+  // 	    // WARNING: the current hardlink lookup is not reentrant!
+  // 	    //          its not possible to safely search inside it from
+  // 	    //          two threads at the same time!!
+  // 	    //          This can only be achieved by redoing that part!
+  // 	    bclose(&bfd.value());
+  // 	  } else {
+  // 	    ff->bfd = bfd.value();
+  // 	  }
+  // 	} else {
+  // 	  // restore to default values
+  // 	  ff->bfd = BareosFilePacket{};
+  // 	  binit(&ff->bfd);
+  // 	}
+
+  // 	if (!FileSave(jcr, ff, false)) {
+  // 	  if (IsBopen(&ff->bfd)) {
+  // 	    bclose(&ff->bfd);
+  // 	  }
+  // 	  CleanupLink(ff);
+  // 	  Dmsg1(debuglevel, "Error: Could not save file %s",
+  // 		ff->fname);
+  // 	  ret_val = 0;
+  // 	  break;
+  // 	} else {
+  // 	  CleanupLink(ff);
+  // 	  if (ff->linked) { ff->linked->FileIndex = ff->FileIndex; }
+  // 	}
+  // 	if (jcr->IsJobCanceled()) { ret_val = 0; break; }
+  //   } else {
+  // 	break;
+  //   }
+  //}
+  // this will close the opener regardless of whether
+  // there are still files getting listed or not
+  // since currently the opener will spin if it isnt fed fast enough
   return ret_val;
 }

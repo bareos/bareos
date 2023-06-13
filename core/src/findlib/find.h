@@ -272,13 +272,13 @@ struct stated_file
   }
 };
 
-class list_files_result
+class found_files_list
 {
 public:
-  list_files_result() : fileset{0}
+  found_files_list() : fileset{0}
 		      , error_{true}
   {}
-  list_files_result(std::size_t fileset_idx) :  fileset{fileset_idx}
+  found_files_list(std::size_t fileset_idx) :  fileset{fileset_idx}
   {
   }
 
@@ -336,7 +336,7 @@ private:
 
 class list_files_threads
 {
-  using out_channel = channel::out<list_files_result>;
+  using out_channel = channel::out<found_files_list>;
   std::vector<std::thread> threads{};
 
   out_channel out{};
@@ -388,7 +388,7 @@ std::optional<list_files_threads> ListFiles(JobControlRecord* jcr,
 
 int SendFiles(JobControlRecord* jcr,
               FindFilesPacket* ff,
-              channel::out<list_files_result> outs,
+              found_files_list outs,
               int file_sub(JobControlRecord*, FindFilesPacket* ff_pkt, bool),
               int PluginSub(JobControlRecord*, FindFilesPacket* ff_pkt, bool));
 bool MatchFiles(JobControlRecord* jcr,
