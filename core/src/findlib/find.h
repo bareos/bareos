@@ -36,6 +36,8 @@
 #include "lib/alist.h"
 #include "lib/channel.h"
 
+#include <thread>
+
 #include <dirent.h>
 #define NAMELEN(dirent) (strlen((dirent)->d_name))
 
@@ -259,61 +261,115 @@ struct stated_file
 	int delta_seq;
 	int type;
 	std::optional<HfsPlusInfo> hfsinfo;
+
+  friend bool operator<(const stated_file& left,
+			const stated_file& right)
+  {
+    if (left.statp.st_dev < right.statp.st_dev) {
+      return true;
+    }
+    return left.statp.st_ino < right.statp.st_ino;
+  }
 };
 
 class list_files_result
 {
 public:
- list_files_result(std::size_t fileset_idx) :  fileset{fileset_idx}
- {
- }
+  list_files_result() : fileset{0}
+		      , error_{true}
+  {}
+  list_files_result(std::size_t fileset_idx) :  fileset{fileset_idx}
+  {
+  }
 
- template <typename... Args>
- stated_file& emplace_back(Args... args)
- {
-   return files.emplace_back(std::forward<Args>(args)...);
- }
+  template <typename... Args>
+  stated_file& emplace_back(Args... args)
+  {
+    return files.emplace_back(std::forward<Args>(args)...);
+  }
 
- std::size_t fileset_idx() const
- {
-   return fileset;
- }
+  std::size_t fileset_idx() const
+  {
+    return fileset;
+  }
 
- std::size_t count_skipped() const
- {
-   return skipped;
- }
+  std::size_t count_skipped() const
+  {
+    return skipped;
+  }
 
- void skip()
- {
-   skipped += 1;
- }
+  void skip()
+  {
+    skipped += 1;
+  }
 
- void error()
- {
-   error_ = true;
- }
+  void error()
+  {
+    error_ = true;
+  }
 
- bool has_error()
- {
-   return error_;
- }
+  bool has_error()
+  {
+    return error_;
+  }
 
- auto begin()
- {
-   return files.begin();
- }
+  auto begin()
+  {
+    return files.begin();
+  }
 
- auto end()
- {
-   return files.end();
- }
+  auto end()
+  {
+    return files.end();
+  }
+
+  void sort()
+  {
+    std::sort(files.begin(), files.end());
+  }
 private:
- std::vector<stated_file> files{};
- std::size_t fileset;
- std::size_t skipped{0};
- bool error_{false};
+  std::vector<stated_file> files{};
+  std::size_t fileset;
+  std::size_t skipped{0};
+  bool error_{false};
 };
+
+class list_files_threads
+{
+  using out_channel = channel::out<list_files_result>;
+  std::vector<std::thread> threads{};
+
+  out_channel out{};
+
+public:
+  list_files_threads() = default;
+  list_files_threads(out_channel out) : out{std::move(out)}
+  {
+  }
+
+  list_files_threads(list_files_threads&&) = default;
+  list_files_threads& operator=(list_files_threads&&) = default;
+
+  template <typename... Args>
+  std::thread& emplace_thread(Args... args)
+  {
+    return threads.emplace_back(std::forward<Args>(args)...);
+  }
+
+  out_channel& out_chan()
+  {
+    return out;
+  }
+
+  ~list_files_threads()
+  {
+    out.close();
+    for (auto& thread : threads) {
+      thread.join();
+    }
+  }
+};
+
 FindFilesPacket* init_find_files();
 void SetFindOptions(FindFilesPacket* ff, bool incremental, time_t mtime);
 void SetFindChangedFunction(FindFilesPacket* ff,
@@ -324,14 +380,15 @@ int FindFiles(JobControlRecord* jcr,
               FindFilesPacket* ff,
               int file_sub(JobControlRecord*, FindFilesPacket* ff_pkt, bool),
               int PluginSub(JobControlRecord*, FindFilesPacket* ff_pkt, bool));
-std::optional<std::vector<list_files_result>> ListFiles(JobControlRecord* jcr,
-							findFILESET* fileset,
-							bool incremental,
-							time_t saved_time,
-							std::optional<bool (*)(JobControlRecord*, FindFilesPacket*)> check_changed);
+std::optional<list_files_threads> ListFiles(JobControlRecord* jcr,
+					    findFILESET* fileset,
+					    bool incremental,
+					    time_t saved_time,
+					    std::optional<bool (*)(JobControlRecord*, FindFilesPacket*)> check_changed);
+
 int SendFiles(JobControlRecord* jcr,
               FindFilesPacket* ff,
-              std::vector<list_files_result> outs,
+              channel::out<list_files_result> outs,
               int file_sub(JobControlRecord*, FindFilesPacket* ff_pkt, bool),
               int PluginSub(JobControlRecord*, FindFilesPacket* ff_pkt, bool));
 bool MatchFiles(JobControlRecord* jcr,

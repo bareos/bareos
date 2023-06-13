@@ -705,14 +705,26 @@ auto SaveInList(list_files_result& result)
   };
 }
 
-
-static void ListFromIncexe(JobControlRecord* jcr,
-			   FindFilesPacket* ff,
-			   findFILESET* fileset,
-			   list_files_result* result)
+// todo: replace by synchronized
+struct guarded_in_chan
 {
+  guarded_in_chan(channel::in<list_files_result> in) : in{std::move(in)}
+  {}
+  std::mutex mut{};
+  channel::in<list_files_result> in;
+};
+
+template <typename Deleter>
+static void ListFromIncexe(JobControlRecord* jcr,
+			   std::unique_ptr<FindFilesPacket, Deleter> ff_ptr,
+			   std::unique_ptr<findFILESET> fileset_ptr,
+			   std::shared_ptr<guarded_in_chan> in_ptr,
+			   int fileset_idx)
+{
+  FindFilesPacket* ff = ff_ptr.get();
+  findFILESET* fileset = fileset_ptr.get();
   SetJcrInThreadSpecificData(jcr);
-  findIncludeExcludeItem* incexe = fileset->incexe = fileset->include_list.get(result->fileset_idx());
+  findIncludeExcludeItem* incexe = fileset->incexe = fileset->include_list.get(fileset_idx);
   SetupLastOptionBlock(ff, incexe);
   // we do not need to follow hardlinks, as they will be handled
   // by the sending thread
@@ -722,75 +734,64 @@ static void ListFromIncexe(JobControlRecord* jcr,
 	ff->VerifyOpts, ff->AccurateOpts, ff->BaseJobOpts, ff->flags);
 
   dlistString* node;
+  list_files_result result{static_cast<std::size_t>(fileset_idx)};
   foreach_dlist (node, &incexe->name_list) {
     char* fname = (char*)node->c_str();
     Dmsg1(debuglevel, "F %s\n", fname);
     ff->top_fname = fname;
-    if (FindOneFile(jcr, ff, CreateCallback(SaveInList(*result)),
+    if (FindOneFile(jcr, ff, CreateCallback(SaveInList(result)),
 		    ff->top_fname, (dev_t)-1, true)
 	== 0) {
-      result->error();
-      return;
+      result.error();
+      break;
     }
     if (jcr->IsJobCanceled()) {
-      result->error();
-      return;
+      result.error();
+      break;
     }
   }
+
+  std::unique_lock lock(in_ptr->mut);
+  in_ptr->in.put(std::move(result));
 }
 
-std::optional<std::vector<list_files_result>>
+std::optional<list_files_threads>
 ListFiles(JobControlRecord* jcr,
 	  findFILESET* fileset,
 	  bool incremental,
 	  time_t save_time,
 	  std::optional<bool (*)(JobControlRecord*, FindFilesPacket*)> check_changed)
 {
-  struct free_on_delete {
-    void operator()(findFILESET* copies) { if (copies) free(copies); }
-  };
-  // these are only shallow copies, so we need to free them and not call
-  // their destructor!
-  std::unique_ptr<findFILESET[], free_on_delete> fileset_copies(nullptr, free_on_delete{});
   if (fileset) {
     struct ff_cleanup {
       void operator()(FindFilesPacket* ff) { TermFindFiles(ff); }
     };
-    std::vector<std::unique_ptr<FindFilesPacket, ff_cleanup>> ffs;
-    std::vector<std::thread> listing_threads;
-    std::vector<list_files_result> results;
-    results.reserve(fileset->include_list.size());
-    fileset_copies.reset((findFILESET*)malloc(sizeof(findFILESET) * fileset->include_list.size()));
+
+    auto [in, out] = channel::CreateBufferedChannel<list_files_result>(50);
+
+    auto in_ptr = std::make_shared<guarded_in_chan>(std::move(in));
+    list_files_threads threads{std::move(out)};
+
     for (int i = 0; i < fileset->include_list.size(); i++) {
-      findFILESET* local_fileset = &fileset_copies[i];
-      *local_fileset = *fileset;
-      auto& list_result = results.emplace_back(i);
-      auto ff_pkt = ffs.emplace_back(init_find_files(),
-				     ff_cleanup{}).get();
+      auto local_fileset = std::make_unique<findFILESET>(*fileset);
+      std::unique_ptr<FindFilesPacket, ff_cleanup> ff_pkt{init_find_files(), ff_cleanup{}};
       ClearAllBits(FO_MAX, ff_pkt->flags);
-      ff_pkt->fileset = local_fileset;
-      SetFindOptions(ff_pkt, incremental, save_time);
-      if (check_changed) SetFindChangedFunction(ff_pkt, check_changed.value());
+      ff_pkt->fileset = local_fileset.get();
+      SetFindOptions(ff_pkt.get(), incremental, save_time);
+      if (check_changed) SetFindChangedFunction(ff_pkt.get(), check_changed.value());
 
-      listing_threads.emplace_back(ListFromIncexe,
-				   jcr,
-				   ff_pkt,
-				   local_fileset,
-				   &list_result);
+      threads.emplace_thread(ListFromIncexe<ff_cleanup>,
+			     jcr,
+			     std::move(ff_pkt),
+			     std::move(local_fileset),
+			     in_ptr,
+			     i);
 
     }
-    for (auto& thread : listing_threads)
-    {
-	    thread.join();
-    }
-    for (auto& list_result : results) {
-      if (list_result.has_error()) { return std::nullopt; }
-    }
 
-    return results;
-  } else {
-    return std::nullopt;
+    return std::make_optional<list_files_threads>(std::move(threads));
   }
+  return std::nullopt;
 }
 
 int SendPluginInfo(JobControlRecord* jcr,
@@ -1050,7 +1051,7 @@ void PrepareFileForSending(JobControlRecord* jcr,
 
 int SendFiles(JobControlRecord* jcr,
               FindFilesPacket* ff,
-	      std::vector<list_files_result> results,
+	      channel::out<list_files_result> results,
               int FileSave(JobControlRecord*, FindFilesPacket* ff_pkt, bool),
               int PluginSave(JobControlRecord*, FindFilesPacket* ff_pkt, bool))
 {
@@ -1077,7 +1078,9 @@ int SendFiles(JobControlRecord* jcr,
 	SetupLastOptionBlock(ff, fileset->incexe);
 	cached_values[i].StripPath = ff->StripPath;
     }
-    for (auto& list_result : results) {
+    for (std::optional list_result_opt = results.get(); list_result_opt.has_value();
+	 list_result_opt = results.get()) {
+      auto& list_result = list_result_opt.value();
       if (list_result.has_error()) {
 	ret_val = 0;
 	break;

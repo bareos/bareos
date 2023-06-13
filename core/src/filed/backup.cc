@@ -385,10 +385,7 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
 					(jcr->accurate) ? std::make_optional(&AccurateCheckFile) : std::nullopt);
 
       if (results.has_value()) {
-	for (auto& list_result : *results) {
-	  jcr->fd_impl->num_files_examined += list_result.count_skipped();
-	}
-	if (!SendFiles(jcr, jcr->fd_impl->ff, std::move(*results), SaveFile,
+	if (!SendFiles(jcr, jcr->fd_impl->ff, std::move(results->out_chan()), SaveFile,
 		       PluginSave)) {
 	  send_ok = false;
 	}
