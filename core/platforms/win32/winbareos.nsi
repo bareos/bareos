@@ -166,8 +166,8 @@ ${StrRep}
 
 ; MUI Settings
 !define MUI_ABORTWARNING
-!define MUI_ICON   "bareos.ico"
-!define MUI_UNICON "bareos.ico"
+!define MUI_ICON   "win32/bareos.ico"
+!define MUI_UNICON "win32/bareos.ico"
 #!define MUI_ICON "${NSISDIR}\Contrib\Graphics\Icons\modern-install.ico"
 #!define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall.ico"
 !define MUI_COMPONENTSPAGE_SMALLDESC
@@ -180,7 +180,7 @@ ${StrRep}
 !insertmacro MUI_PAGE_WELCOME
 
 ; License
-!insertmacro MUI_PAGE_LICENSE "LICENSE"
+!insertmacro MUI_PAGE_LICENSE "C:\src\master\core\LICENSE"
 
 ; Directory page
 !insertmacro MUI_PAGE_DIRECTORY
@@ -545,28 +545,35 @@ SectionIn 1 2 3 4
   CreateDirectory "$SMPROGRAMS\${PRODUCT_NAME}"
   CreateDirectory "$APPDATA\${PRODUCT_NAME}"
   SetOutPath "$INSTDIR"
-  File bareos-config-deploy.bat
-  File bareos-fd.exe
-  File libbareos.dll
-  File libbareosfastlz.dll
-  File libbareosfind.dll
-  File libbareoslmdb.dll
-  File libbareossql.dll
-  File libcrypto-*.dll
-  File libgcc_s_*-1.dll
-  File libssl-*.dll
-  File libstdc++-6.dll
-  File libwinpthread-1.dll
-  File zlib1.dll
-  File liblzo2-2.dll
-  File libjansson-4.dll
-  File iconv.dll
-  File libxml2-2.dll
-  File libpq.dll
-  File libpcre-1.dll
-  File libbz2-1.dll
-  File libssp-0.dll
-  File libintl-8.dll
+  File /r bareos-config-deploy.bat
+  File /r bareos-fd.exe
+  File /r bareos.dll
+  File /r bareosfastlz.dll
+  File /r bareosfind.dll
+  File /r bareoslmdb.dll
+  File /r bareossql.dll
+  
+  File C:\src\vcpkg\packages\openssl_x64-windows\bin\libcrypto*.dll
+ #  File libgcc_s_*-1.dll
+  File C:\src\vcpkg\packages\openssl_x64-windows\bin\libssl*.dll
+  #File libstdc++-6.dll
+  #File libwinpthread-1.dll
+  File c:\src\vcpkg\packages\zlib_x64-windows\bin\zlib1.dll 
+  File c:\src\vcpkg\packages\lzo_x64-windows\bin\lzo2.dll 
+  #File libjansson-4.dll
+  File C:\src\vcpkg\packages\jansson_x64-windows\bin\jansson.dll
+ # File iconv.dll
+  File C:\src\vcpkg\packages\libiconv_x86-windows\tools\libiconv\bin\iconv-2.dll
+ # File libxml2-2.dll
+  File C:\src\vcpkg\packages\libxml2_x64-windows\bin\libxml2.dll
+ # File libpq.dll
+  File C:\src\vcpkg\packages\libpq_x64-windows\bin\libpq.dll
+ # File libpcre-1.dll
+ # File libbz2-1.dll
+  File C:\src\vcpkg\packages\bzip2_x64-windows\bin\bz2.dll  
+#  File libssp-0.dll
+  File C:\src\vcpkg\packages\gettext_x64-windows\bin\intl-8.dll
+#  File libintl-8.dll
 
   # for password generation
   File "openssl.exe"
