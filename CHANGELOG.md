@@ -5,33 +5,34 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
-### Documentation
-- doc: improvements webui, plugins, virtualfull chapters [PR #1427]
-- docs: replace gzip by lz4 and md5/sha1 by xxh128 [PR #1458]
-
 ### Changed
-- core: fixes for gcc-13 support [PR #1430]
 - ua_restore: enable restore from archive [PR #1420]
 - dird: keep copy and migration control/administrative jobs [PR #1436]
 - scripts: config-lib improve get_local_hostname fallback [PR #1438]
--  dird: allow to disable TLS-PSK downgrades [PR #1428]
+- dird: allow to disable TLS-PSK downgrades [PR #1428]
 - build: switch to FreeBSD 12.4 [PR #1442]
 - file checksums: add new signature algorithm xxh128 [PR #1394]
-- stored: remove warning for maximum block size for tapes [PR #1423]
 - webui: make restore merge options configurable [PR #1446]
-- bsmtp bls bextract: fixes for command line parsing [PR #1457]
 - packaging: systemd unit: set a limit of restart [PR #1465]
 - daemons: update network handling when IP protocols unavailable [PR #1463]
-- build: fix for gcc 13.1.1 [PR #1461]
 - build: remove openSUSE 15.3 and Univention 5.0 from test matrix [PR #1470]
 - VMware Plugin: Backup and Restore of VMs using multiple datastores [PR #1478]
 - build: add Debian 12 [PR #1482]
 
 ### Fixed
--  filed: fix off-by-one error when resizing acl buffer [PR #1480]
+- filed: fix off-by-one error when resizing acl buffer [PR #1480]
 - Improve handling of catalog requests that try to reduce VolFiles, VolBlocks and VolBytes [PR #1475]
 - Consolidate: fix for consolidate job's client name not being correctly shown [PR #1481]
 - backport config lib improve create sd user [PR #1483]
+- bsmtp bls bextract: fixes for command line parsing [PR #1457]
+- core: fixes for gcc-13 support [PR #1430]
+- build: fix for gcc 13.1.1 [PR #1461]
+- stored: remove warning for maximum block size for tapes [PR #1423]
+
+### Documentation
+- doc: improvements webui, plugins, virtualfull chapters [PR #1427]
+- docs: replace gzip by lz4 and md5/sha1 by xxh128 [PR #1458]
+
 
 ## [22.0.3] - 2023-03-24
 
