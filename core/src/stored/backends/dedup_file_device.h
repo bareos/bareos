@@ -76,22 +76,87 @@ class raii_fd {
   int mode;
 };
 
+struct block_file
+{
+  block_file() = default;
+  block_file(std::string str,
+	     std::uint32_t file_index,
+	     std::uint32_t s,
+	     std::uint32_t e) : path{std::move(str)}
+			      , file_index{file_index}
+			      , start_block{s}
+			      , end_block{e}
+  {}
+  std::string path;
+  std::uint32_t file_index;
+  std::uint32_t start_block;
+  std::uint32_t end_block;
+};
+
+struct record_file
+{
+  record_file() = default;
+  record_file(std::string str,
+	      std::uint32_t file_index,
+	      std::uint32_t s,
+	      std::uint32_t e) : path{std::move(str)}
+			       , file_index{file_index}
+			       , start_record{s}
+			       , end_record{e}
+  {}
+  std::string path;
+  std::uint32_t file_index;
+  std::uint32_t start_record;
+  std::uint32_t end_record;
+};
+
+struct data_file
+{
+  data_file() = default;
+  data_file(std::string str,
+	    std::uint32_t file_index) : path{std::move(str)}
+				      , file_index{file_index}
+  {}
+  std::string path;
+  std::uint32_t file_index;
+};
+
+struct dedup_volume_config {
+  std::vector<block_file> blockfiles;
+  std::vector<record_file> recordfiles;
+  std::vector<data_file> datafiles;
+};
+
 class dedup_volume {
  public:
   dedup_volume(const char* path, int flags, int mode)
-      : dir{path, O_DIRECTORY | O_RDONLY, mode | ((flags & O_CREAT) ? 0100 : 0)}
-      , block{dir.get(), "block", flags, mode}
-      , record{dir.get(), "record", flags, mode}
-      , data{dir.get(), "data", flags, mode}
-      , config{dir.get(), "config",
-               (flags & O_CREAT) ? O_CREAT | O_RDWR | O_BINARY
-                                 : O_RDONLY | O_BINARY,
-               mode}
+    : name(path)
+    , dir{path, O_DIRECTORY | O_RDONLY, mode | ((flags & O_CREAT) ? 0100 : 0)}
+    , block{dir.get(), "block", flags, mode}
+    , record{dir.get(), "record", flags, mode}
+    , data{dir.get(), "data", flags, mode}
+    , config{dir.get(), "config",
+	     flags,
+	     mode}
+    , mode{mode}
   {
   }
 
   dedup_volume(dedup_volume&&) = default;
   dedup_volume& operator=(dedup_volume&&) = default;
+
+  ~dedup_volume() {
+    if (volume_changed) {
+      write_current_config();
+    }
+
+    if (error) {
+      Emsg1(
+          M_FATAL, 0,
+          _("Error while writing dedup config.  Volume '%s' may be damaged."),
+	  name.c_str());
+    }
+  }
 
   bool is_ok() const
   {
@@ -108,42 +173,22 @@ class dedup_volume {
   int get_data() { return data.get(); }
 
   void write_current_config();
-  bool has_compatible_config();
+  bool load_config();
+  void changed_volume() { volume_changed = true; };
 
  private:
+  std::string name;
   raii_fd dir;
   raii_fd block;
   raii_fd record;
   raii_fd data;
   raii_fd config;
 
+  dedup_volume_config current_config;
+
   bool error{false};
-};
-
-struct dedup_volume_config {
- public:
-  using net_u32 = network_order::network_value<std::uint32_t>;
-  using net_u64 = network_order::network_value<std::uint64_t>;
-  using net_i32 = network_order::network_value<std::int32_t>;
-  // the header may not change!
-  struct config_header {
-    net_u64 checksum;  // no checksums at the moment
-    net_u32 version;
-    net_u32 payload_size;
-    net_u64 reserved;
-  };
-
-
-  // the payload structure may change between versions
-  struct config_payload {
-    net_u32 block_header_size;
-    net_u32 record_header_size;
-  };
-
-  bool is_compatible(config_header other, const void* data) const;
-
-  config_header header;
-  config_payload payload;
+  bool volume_changed{false};
+  int mode;
 };
 
 class dedup_file_device : public Device {
@@ -153,7 +198,7 @@ class dedup_file_device : public Device {
 
   // Interface from Device
   SeekMode GetSeekMode() const override { return SeekMode::FILE_BLOCK; }
-  bool CanReadConcurrently() const override { return true; }
+  bool CanReadConcurrently() const override { return false; }
   bool MountBackend(DeviceControlRecord* dcr, int timeout) override;
   bool UnmountBackend(DeviceControlRecord* dcr, int timeout) override;
   bool ScanForVolumeImpl(DeviceControlRecord* dcr) override;
