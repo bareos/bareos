@@ -588,17 +588,6 @@ bool dedup_file_device::ScanForVolumeImpl(DeviceControlRecord* dcr)
   return ScanDirectoryForVolume(dcr);
 }
 
-static std::optional<dedup_volume> CreateDirStructure(const char* path,
-                                                      int mode)
-{
-  if (struct stat st; ::stat(path, &st) != -1) { return std::nullopt; }
-
-  if (mkdir(path, mode | 0100) < 0) { return std::nullopt; }
-
-  return dedup_volume{path, O_CREAT | O_RDWR | O_BINARY, mode};
-}
-
-
 int dedup_file_device::d_open(const char* path, int, int mode)
 {
   // todo parse mode
@@ -610,46 +599,26 @@ int dedup_file_device::d_open(const char* path, int, int mode)
   // +- record
   // +- data
 
-  std::optional<dedup_volume> vol{std::nullopt};
-
   switch (open_mode) {
-    case DeviceMode::CREATE_READ_WRITE: {
-      vol = CreateDirStructure(path, mode);
-      if (vol.has_value()) { break; }
-    }
-      [[fallthrough]];
-    case DeviceMode::OPEN_READ_WRITE: {
-      vol = dedup_volume{path, O_RDWR | O_BINARY, mode};
-    } break;
-    case DeviceMode::OPEN_READ_ONLY: {
-      vol = dedup_volume{path, O_RDONLY | O_BINARY, mode};
-    } break;
-    case DeviceMode::OPEN_WRITE_ONLY: {
-      vol = dedup_volume{path, O_WRONLY | O_BINARY, mode};
-    } break;
-    default: {
-      Emsg0(M_ABORT, 0, _("Illegal mode given to open dev.\n"));
-    }
+  case DeviceMode::CREATE_READ_WRITE: break;
+  case DeviceMode::OPEN_READ_WRITE: break;
+  case DeviceMode::OPEN_READ_ONLY: break;
+  case DeviceMode::OPEN_WRITE_ONLY: break;
+  default: {
+    Emsg0(M_ABORT, 0, _("Illegal mode given to open dev.\n"));
+    return -1;
+  }
   }
 
-  if (vol.has_value() && vol->is_ok()) {
+  dedup_volume vol{path, open_mode, mode};
+
+  if (vol.is_ok()) {
     int new_fd = fd_ctr;
     auto [iter, inserted]
-        = open_volumes.emplace(new_fd, std::move(vol.value()));
+        = open_volumes.emplace(new_fd, std::move(vol));
 
-    // the volume was already open!
-    if (!inserted) { return -1; }
-
-    if (open_mode == DeviceMode::CREATE_READ_WRITE) {
-      // if we were supposed to create the volume, we need to
-      // setup the config file
-      iter->second.write_current_config();
-      if (!iter->second.is_ok()) {
-	open_volumes.erase(iter);
-	return -1;
-      }
-    } else if (!iter->second.load_config()) {
-      // if we are not compatible with the config, we should not open it.
+    if (!inserted) {
+      // volume was already open; that should not be possible
       open_volumes.erase(iter);
       return -1;
     }
@@ -719,95 +688,153 @@ static_assert(std::is_standard_layout_v<dedup_record_header>);
 static_assert(std::is_pod_v<dedup_record_header>);
 static_assert(std::has_unique_object_representations_v<dedup_record_header>);
 
-static void safe_write(int fd, void* data, std::size_t size)
+// static void safe_write(int fd, void* data, std::size_t size)
+// {
+//   ASSERT(::write(fd, data, size) == static_cast<ssize_t>(size));
+// }
+
+// static void safe_read(int fd, void* data, std::size_t size)
+// {
+//   ASSERT(::read(fd, data, size) == static_cast<ssize_t>(size));
+// }
+
+ssize_t scatter(dedup_volume& vol, const void* data)
 {
-  ASSERT(::write(fd, data, size) == static_cast<ssize_t>(size));
-}
+  (void) vol;
+  (void) data;
+  // int block_fd = vol.get_block_file();
+  // int record_fd = vol.get_record_file();
+  // bareos_block_header* block = (bareos_block_header*)data;
+  // uint32_t bsize = block->BlockSize;
 
-static void safe_read(int fd, void* data, std::size_t size)
-{
-  ASSERT(::read(fd, data, size) == static_cast<ssize_t>(size));
-}
+  // ASSERT(bsize >= sizeof(*block));
 
-void scatter(dedup_volume& vol, const void* data)
-{
-  int block_fd = vol.get_block();
-  int record_fd = vol.get_record();
-  int data_fd = vol.get_data();
-  bareos_block_header* block = (bareos_block_header*)data;
-  uint32_t bsize = block->BlockSize;
+  // char* current = (char*)(block + 1);
 
-  ASSERT(bsize >= sizeof(*block));
+  // char* end = (char*)data + bsize;
 
-  char* current = (char*)(block + 1);
+  // ssize_t recpos = ::lseek(record_fd, 0, SEEK_CUR);
+  // ASSERT(recpos >= 0);
+  // uint32_t CurrentRec = recpos / sizeof(dedup_record_header);
+  // uint32_t RecStart = CurrentRec;
+  // uint32_t RecEnd = RecStart;
 
-  char* end = (char*)data + bsize;
+  // uint32_t actual_size = 0;
 
-  ssize_t recpos = ::lseek(record_fd, 0, SEEK_CUR);
-  ASSERT(recpos >= 0);
-  uint32_t CurrentRec = recpos / sizeof(dedup_record_header);
-  uint32_t RecStart = CurrentRec;
-  uint32_t RecEnd = RecStart;
+  // // TODO: fuse split payloads here somewhere ?!
+  // while (current != end) {
+  //   bareos_record_header* record = (bareos_record_header*)current;
+  //   RecEnd += 1;
 
-  uint32_t actual_size = 0;
-
-  // TODO: fuse split payloads here somewhere ?!
-  while (current != end) {
-    bareos_record_header* record = (bareos_record_header*)current;
-    RecEnd += 1;
-
-    ASSERT(current + sizeof(*record) <= end);
+  //   ASSERT(current + sizeof(*record) <= end);
 
 
-    // the record payload is [current + sizeof(record)]
+  //   // the record payload is [current + sizeof(record)]
 
-    char* payload_start = (char*)(record + 1);
-    char* payload_end = payload_start + record->DataSize;
+  //   char* payload_start = (char*)(record + 1);
+  //   char* payload_end = payload_start + record->DataSize;
 
-    if (payload_end > end) {
-      // payload is split in multiple blocks
-      payload_end = end;
-    }
+  //   if (payload_end > end) {
+  //     // payload is split in multiple blocks
+  //     payload_end = end;
+  //   }
 
-    current = payload_end;
+  //   current = payload_end;
 
-    ssize_t pos = ::lseek(data_fd, 0, SEEK_CUR);
-    ASSERT(pos >= 0);
-    if (payload_start < end) {
-      std::size_t size = payload_end - payload_start;
-      dedup_record_header drecord{*record, static_cast<std::uint32_t>(pos),
-				  static_cast<std::uint32_t>(pos + size)};
-      safe_write(data_fd, payload_start, size);
-      actual_size += size;
-      safe_write(record_fd, &drecord, sizeof(drecord));
-      actual_size += sizeof(bareos_record_header);
-    } else {
-      dedup_record_header drecord{*record, static_cast<std::uint32_t>(pos),
-				  static_cast<std::uint32_t>(pos)};
-      safe_write(record_fd, &drecord, sizeof(drecord));
-      actual_size += sizeof(bareos_record_header);
+  //   ssize_t pos = ::lseek(data_fd, 0, SEEK_CUR);
+  //   ASSERT(pos >= 0);
+  //   if (payload_start < end) {
+  //     std::size_t size = payload_end - payload_start;
+  //     dedup_record_header drecord{*record, static_cast<std::uint32_t>(pos),
+  // 				  static_cast<std::uint32_t>(pos + size)};
+  //     safe_write(data_fd, payload_start, size);
+  //     actual_size += size;
+  //     safe_write(record_fd, &drecord, sizeof(drecord));
+  //     actual_size += sizeof(bareos_record_header);
+  //   } else {
+  //     dedup_record_header drecord{*record, static_cast<std::uint32_t>(pos),
+  // 				  static_cast<std::uint32_t>(pos)};
+  //     safe_write(record_fd, &drecord, sizeof(drecord));
+  //     actual_size += sizeof(bareos_record_header);
 
-    }
-  }
+  //   }
+  // }
 
-  dedup_block_header dblock{*block, RecStart, RecEnd};
-  safe_write(block_fd, &dblock, sizeof(dblock));
-  actual_size += sizeof(bareos_block_header);
+  // dedup_block_header dblock{*block, RecStart, RecEnd};
+  // safe_write(block_fd, &dblock, sizeof(dblock));
+  // actual_size += sizeof(bareos_block_header);
 
-  ASSERT(actual_size == bsize);
+  // ASSERT(actual_size == bsize);
+  return -1;
 }
 
 ssize_t dedup_file_device::d_write(int fd, const void* data, size_t size)
 {
+  (void) fd;
+  (void) data;
+  (void) size;
   if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
     dedup_volume& vol = found->second;
     ASSERT(vol.is_ok());
     vol.changed_volume();
-    scatter(vol, data);
-    return size;
+    return scatter(vol, data);
   } else {
     return -1;
   }
+}
+
+ssize_t gather(dedup_volume& vol, void* data, std::size_t size)
+{
+  (void) vol;
+  (void) data;
+  (void) size;
+    // int block_fd = vol.get_block();
+    // int record_fd = vol.get_record();
+    // int data_fd = vol.get_data();
+    // dedup_block_header dblock;
+    // if (ssize_t bytes = ::read(block_fd, &dblock, sizeof(dblock)); bytes < 0) {
+    //   return bytes;
+    // } else if (bytes == 0) {
+    //   return 0;
+    // }
+
+    // if (size < dblock.BareosHeader.BlockSize) { return -1; }
+
+    // uint32_t RecStart = dblock.RecStart;
+    // uint32_t RecEnd = dblock.RecEnd;
+    // ASSERT(RecStart <= RecEnd);
+    // uint32_t NumRec = RecEnd - RecStart;
+    // if (NumRec == 0) { return 0; }
+    // ::lseek(record_fd, RecStart * sizeof(dedup_record_header), SEEK_SET);
+    // dedup_record_header* records = new dedup_record_header[NumRec];
+
+    // // if (static_cast<ssize_t>(NumRec * sizeof(dedup_record_header)) !=
+    // // ::read(record_fd, records, NumRec * sizeof(dedup_record_header))) {
+    // //   delete[] records;
+    // //   return -1;
+    // // }
+    // safe_read(record_fd, records, NumRec * sizeof(dedup_record_header));
+
+    // ssize_t lastend = -1;
+    // char* head = (char*)data;
+    // char* end = head + size;
+    // memcpy(head, &dblock.BareosHeader, sizeof(bareos_block_header));
+    // head += sizeof(bareos_block_header);
+    // for (uint32_t i = 0; i < NumRec; ++i) {
+    //   if (lastend != static_cast<ssize_t>(records[i].DataStart)) {
+    //     ::lseek(data_fd, records[i].DataStart, SEEK_SET);
+    //   }
+
+    //   memcpy(head, &records[i].BareosHeader, sizeof(bareos_record_header));
+    //   head += sizeof(bareos_record_header);
+    //   safe_read(data_fd, head, records[i].DataEnd - records[i].DataStart);
+    //   head += records[i].DataEnd - records[i].DataStart;
+    //   lastend = records[i].DataEnd;
+    //   ASSERT(head <= end);
+    // }
+
+    // return head - (char*)data;
+  return -1;
 }
 
 ssize_t dedup_file_device::d_read(int fd, void* data, size_t size)
@@ -815,53 +842,7 @@ ssize_t dedup_file_device::d_read(int fd, void* data, size_t size)
   if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
     dedup_volume& vol = found->second;
     ASSERT(vol.is_ok());
-
-    int block_fd = vol.get_block();
-    int record_fd = vol.get_record();
-    int data_fd = vol.get_data();
-    dedup_block_header dblock;
-    if (ssize_t bytes = ::read(block_fd, &dblock, sizeof(dblock)); bytes < 0) {
-      return bytes;
-    } else if (bytes == 0) {
-      return 0;
-    }
-
-    if (size < dblock.BareosHeader.BlockSize) { return -1; }
-
-    uint32_t RecStart = dblock.RecStart;
-    uint32_t RecEnd = dblock.RecEnd;
-    ASSERT(RecStart <= RecEnd);
-    uint32_t NumRec = RecEnd - RecStart;
-    if (NumRec == 0) { return 0; }
-    ::lseek(record_fd, RecStart * sizeof(dedup_record_header), SEEK_SET);
-    dedup_record_header* records = new dedup_record_header[NumRec];
-
-    // if (static_cast<ssize_t>(NumRec * sizeof(dedup_record_header)) !=
-    // ::read(record_fd, records, NumRec * sizeof(dedup_record_header))) {
-    //   delete[] records;
-    //   return -1;
-    // }
-    safe_read(record_fd, records, NumRec * sizeof(dedup_record_header));
-
-    ssize_t lastend = -1;
-    char* head = (char*)data;
-    char* end = head + size;
-    memcpy(head, &dblock.BareosHeader, sizeof(bareos_block_header));
-    head += sizeof(bareos_block_header);
-    for (uint32_t i = 0; i < NumRec; ++i) {
-      if (lastend != static_cast<ssize_t>(records[i].DataStart)) {
-        ::lseek(data_fd, records[i].DataStart, SEEK_SET);
-      }
-
-      memcpy(head, &records[i].BareosHeader, sizeof(bareos_record_header));
-      head += sizeof(bareos_record_header);
-      safe_read(data_fd, head, records[i].DataEnd - records[i].DataStart);
-      head += records[i].DataEnd - records[i].DataStart;
-      lastend = records[i].DataEnd;
-      ASSERT(head <= end);
-    }
-
-    return head - (char*)data;
+    return gather(vol, data, size);
   } else {
     return -1;
   }
@@ -890,29 +871,7 @@ bool dedup_file_device::d_truncate(DeviceControlRecord*)
     dedup_volume& vol = found->second;
     ASSERT(vol.is_ok());
     vol.changed_volume();
-    // TODO: look at unix_file_device for "secure_erase_cmdline"
-    if (ftruncate(vol.get_block(), 0) != 0) {
-      BErrNo be;
-
-      Mmsg2(errmsg, _("Unable to truncate device %s. ERR=%s\n"), prt_name,
-            be.bstrerror());
-      return false;
-    }
-    if (ftruncate(vol.get_record(), 0) != 0) {
-      BErrNo be;
-
-      Mmsg2(errmsg, _("Unable to truncate device %s. ERR=%s\n"), prt_name,
-            be.bstrerror());
-      return false;
-    }
-    if (ftruncate(vol.get_data(), 0) != 0) {
-      BErrNo be;
-
-      Mmsg2(errmsg, _("Unable to truncate device %s. ERR=%s\n"), prt_name,
-            be.bstrerror());
-      return false;
-    }
-    return true;
+    return vol.reset();
   } else {
     return false;
   }
@@ -923,9 +882,8 @@ bool dedup_file_device::rewind(DeviceControlRecord* dcr)
   if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
     dedup_volume& vol = found->second;
     ASSERT(vol.is_ok());
-    if (lseek(vol.get_block(), 0, SEEK_SET) != 0) { return false; }
-    if (lseek(vol.get_record(), 0, SEEK_SET) != 0) { return false; }
-    if (lseek(vol.get_data(), 0, SEEK_SET) != 0) { return false; }
+    if (lseek(vol.get_block_file(), 0, SEEK_SET) != 0) { return false; }
+    if (lseek(vol.get_record_file(), 0, SEEK_SET) != 0) { return false; }
     block_num = 0;
     file = 0;
     file_addr = 0;
@@ -941,7 +899,7 @@ bool dedup_file_device::UpdatePos(DeviceControlRecord*)
     dedup_volume& vol = found->second;
     ASSERT(vol.is_ok());
     // synchronize (real) device position with this->file, this->block
-    auto pos = lseek(vol.get_block(), 0, SEEK_CUR);
+    auto pos = lseek(vol.get_block_file(), 0, SEEK_CUR);
     if (pos < 0) return false;
 
     file_addr = pos;
@@ -969,7 +927,7 @@ bool dedup_file_device::Reposition(DeviceControlRecord* dcr,
     dedup_volume& vol = found->second;
     ASSERT(vol.is_ok());
 
-    if (auto res = ::lseek(vol.get_block(), rblock * sizeof(dedup_block_header),
+    if (auto res = ::lseek(vol.get_block_file(), rblock * sizeof(dedup_block_header),
                            SEEK_SET);
         res < 0) {
       return false;
@@ -991,13 +949,10 @@ bool dedup_file_device::eod(DeviceControlRecord* dcr)
   if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
     dedup_volume& vol = found->second;
     ASSERT(vol.is_ok());
-    if (auto res = ::lseek(vol.get_block(), 0, SEEK_END); res < 0) {
+    if (auto res = ::lseek(vol.get_block_file(), 0, SEEK_END); res < 0) {
       return false;
     }
-    if (auto res = ::lseek(vol.get_record(), 0, SEEK_END); res < 0) {
-      return false;
-    }
-    if (auto res = ::lseek(vol.get_data(), 0, SEEK_END); res < 0) {
+    if (auto res = ::lseek(vol.get_record_file(), 0, SEEK_END); res < 0) {
       return false;
     }
     return UpdatePos(dcr);
@@ -1010,12 +965,12 @@ REGISTER_SD_BACKEND(dedup, dedup_file_device);
 
 void dedup_volume::write_current_config()
 {
-  std::vector<std::byte> bytes = to_bytes(current_config);
-  if (ftruncate(config.get(), 0) != 0) {
+  std::vector<std::byte> bytes = to_bytes(config);
+  if (ftruncate(configfile.fd.get(), 0) != 0) {
     error = true;
-  } else if (::lseek(config.get(), 0, SEEK_SET) != 0) {
+  } else if (::lseek(configfile.fd.get(), 0, SEEK_SET) != 0) {
     error = true;
-  } else if (write(config.get(), &bytes.front(), bytes.size())
+  } else if (write(configfile.fd.get(), &bytes.front(), bytes.size())
 	     != static_cast<ssize_t>(bytes.size())) {
     error = true;
   }
@@ -1023,8 +978,8 @@ void dedup_volume::write_current_config()
 
 bool dedup_volume::load_config()
 {
-  auto config_end = lseek(config.get(), 0, SEEK_END);
-  auto config_start = lseek(config.get(), 0, SEEK_SET);
+  auto config_end = lseek(configfile.fd.get(), 0, SEEK_END);
+  auto config_start = lseek(configfile.fd.get(), 0, SEEK_SET);
 
   if (config_start != 0 || config_start > config_end) {
     // error: cannot determine config file size
@@ -1033,8 +988,9 @@ bool dedup_volume::load_config()
 
   std::vector<std::byte> bytes(config_end - config_start);
 
-  if (read(config.get(), &bytes.front(), bytes.size())
+  if (read(configfile.fd.get(), &bytes.front(), bytes.size())
       != static_cast<ssize_t>(bytes.size())) {
+    // error: cannot read config file
     return false;
   }
 
@@ -1043,7 +999,20 @@ bool dedup_volume::load_config()
     return false;
   }
 
-  current_config = loaded_config.value();
+  // at the moment we only support configurations that have
+  // exactly one block and one record file.
+  // This might change in the future
+  if (loaded_config->blockfiles.size() != 1) {
+    // error: to many/few block files
+    return false;
+  }
+
+  if (loaded_config->recordfiles.size() != 1) {
+    // error: to many/few record files
+    return false;
+  }
+
+  config = std::move(loaded_config.value());
   return true;
 }
 

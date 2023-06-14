@@ -76,48 +76,92 @@ class raii_fd {
   int mode;
 };
 
-struct block_file
+struct dedup_volume_file
+{
+  std::string path{};
+  raii_fd fd{};
+
+  dedup_volume_file() = default;
+  dedup_volume_file(std::string_view path) : path{path}
+  {
+  }
+
+  bool open_inside(raii_fd& dir, int mode, DeviceMode dev_mode) {
+    int flags;
+    switch (dev_mode) {
+    case DeviceMode::CREATE_READ_WRITE: {
+      flags = O_CREAT | O_RDWR | O_BINARY;
+    } break;
+    case DeviceMode::OPEN_READ_WRITE: {
+      flags = O_RDWR | O_BINARY;
+    } break;
+    case DeviceMode::OPEN_READ_ONLY: {
+      flags = O_RDONLY | O_BINARY;
+    } break;
+    case DeviceMode::OPEN_WRITE_ONLY: {
+      flags = O_WRONLY | O_BINARY;
+    } break;
+    default: {
+      return false;
+    }
+    }
+    fd = raii_fd(dir.get(), path.c_str(), flags, mode);
+    return is_ok();
+  }
+
+  bool truncate() {
+    if (ftruncate(fd.get(), 0) != 0) {
+      return false;
+    }
+    return true;
+  }
+
+  bool is_ok() const {
+    return fd.is_ok();
+  }
+};
+
+struct block_file : public dedup_volume_file
 {
   block_file() = default;
-  block_file(std::string str,
+  block_file(std::string_view path,
 	     std::uint32_t file_index,
 	     std::uint32_t s,
-	     std::uint32_t e) : path{std::move(str)}
+	     std::uint32_t e) : dedup_volume_file(path)
 			      , file_index{file_index}
 			      , start_block{s}
 			      , end_block{e}
   {}
-  std::string path;
   std::uint32_t file_index;
   std::uint32_t start_block;
   std::uint32_t end_block;
 };
 
-struct record_file
+struct record_file : public dedup_volume_file
 {
   record_file() = default;
-  record_file(std::string str,
+  record_file(std::string_view path,
 	      std::uint32_t file_index,
 	      std::uint32_t s,
-	      std::uint32_t e) : path{std::move(str)}
+	      std::uint32_t e) : dedup_volume_file(path)
 			       , file_index{file_index}
 			       , start_record{s}
 			       , end_record{e}
   {}
-  std::string path;
   std::uint32_t file_index;
   std::uint32_t start_record;
   std::uint32_t end_record;
 };
 
-struct data_file
+struct data_file : public dedup_volume_file
 {
   data_file() = default;
-  data_file(std::string str,
-	    std::uint32_t file_index) : path{std::move(str)}
-				      , file_index{file_index}
+  data_file(std::string_view path,
+	    std::uint32_t file_index,
+	    std::int64_t block_size) : dedup_volume_file{path}
+				     , file_index{file_index}
+				     , block_size{block_size}
   {}
-  std::string path;
   std::uint32_t file_index;
 
   static constexpr std::int64_t read_only_size = -1;
@@ -129,21 +173,113 @@ struct dedup_volume_config {
   std::vector<block_file> blockfiles;
   std::vector<record_file> recordfiles;
   std::vector<data_file> datafiles;
+
+  void create_default()
+  {
+    blockfiles.clear();
+    recordfiles.clear();
+    datafiles.clear();
+    blockfiles.emplace_back("block", 0, 0, 0);
+    recordfiles.emplace_back("record", 0, 0, 0);
+    datafiles.emplace_back("data", 0, data_file::any_size);
+  }
 };
 
 class dedup_volume {
  public:
-  dedup_volume(const char* path, int flags, int mode)
-    : name(path)
-    , dir{path, O_DIRECTORY | O_RDONLY, mode | ((flags & O_CREAT) ? 0100 : 0)}
-    , block{dir.get(), "block", flags, mode}
-    , record{dir.get(), "record", flags, mode}
-    , data{dir.get(), "data", flags, mode}
-    , config{dir.get(), "config",
-	     flags,
-	     mode}
-    , mode{mode}
+  dedup_volume(const char* path, DeviceMode dev_mode, int mode)
+    : path(path)
+    , configfile{"config"}
   {
+    int dir_mode = 0100;
+    if (dev_mode == DeviceMode::CREATE_READ_WRITE) {
+      if (struct stat st; ::stat(path, &st) != -1) { error = true; return; }
+
+      if (mkdir(path, mode | 0100) < 0) { error = true; return; }
+
+      // to create files inside dir, we need executive permissions
+      dir_mode |= 0100;
+    }
+
+    dir = raii_fd(path, O_CREAT | O_RDWR | O_BINARY | O_DIRECTORY, dir_mode);
+
+    if (!dir.is_ok()) {
+      error = true;
+      return;
+    }
+
+    if (dev_mode == DeviceMode::OPEN_WRITE_ONLY) {
+      // we always need to read the config file
+      configfile.open_inside(dir, mode, DeviceMode::OPEN_READ_WRITE);
+    } else {
+      configfile.open_inside(dir, mode, dev_mode);
+    }
+
+    if (!configfile.is_ok()) {
+      error = true;
+      return;
+    }
+
+    if (dev_mode == DeviceMode::CREATE_READ_WRITE) {
+      config.create_default();
+    } else {
+      if (!load_config()) {
+	error = true;
+	return;
+      }
+    }
+
+    for (auto& blockfile : config.blockfiles) {
+      if (!blockfile.open_inside(dir, mode, dev_mode)) {
+	error = true;
+	return;
+      }
+    }
+
+    for (auto& recordfile : config.recordfiles) {
+      if (!recordfile.open_inside(dir, mode, dev_mode)) {
+	error = true;
+	return;
+      }
+    }
+
+    for (auto& datafile : config.datafiles) {
+      if (!datafile.open_inside(dir, mode, dev_mode)) {
+	error = true;
+	return;
+      }
+    }
+  }
+
+  int get_record_file()
+  {
+    return -1;
+  }
+
+  int get_block_file()
+  {
+    return -1;
+  }
+
+  bool reset()
+  {
+    // TODO: look at unix_file_device for "secure_erase_cmdline"
+    for (auto& blockfile : config.blockfiles) {
+      if (!blockfile.truncate()) {
+	return false;
+      }
+    }
+    for (auto& recordfile : config.recordfiles) {
+      if (!recordfile.truncate()) {
+	return false;
+      }
+    }
+    for (auto& datafile : config.datafiles) {
+      if (!datafile.truncate()) {
+	return false;
+      }
+    }
+    return true;
   }
 
   dedup_volume(dedup_volume&&) = default;
@@ -158,37 +294,25 @@ class dedup_volume {
       Emsg1(
           M_FATAL, 0,
           _("Error while writing dedup config.  Volume '%s' may be damaged."),
-	  name.c_str());
+	  path.c_str());
     }
   }
 
   bool is_ok() const
   {
-    return !error && dir.is_ok() && block.is_ok() && record.is_ok()
-           && data.is_ok() && config.is_ok();
+    return !error && dir.is_ok() && configfile.is_ok();
   }
-
-  int get_dir() { return dir.get(); }
-
-  int get_block() { return block.get(); }
-
-  int get_record() { return record.get(); }
-
-  int get_data() { return data.get(); }
 
   void write_current_config();
   bool load_config();
   void changed_volume() { volume_changed = true; };
 
  private:
-  std::string name;
+  std::string path;
   raii_fd dir;
-  raii_fd block;
-  raii_fd record;
-  raii_fd data;
-  raii_fd config;
+  dedup_volume_file configfile;
 
-  dedup_volume_config current_config;
+  dedup_volume_config config;
 
   bool error{false};
   bool volume_changed{false};
