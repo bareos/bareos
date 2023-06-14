@@ -669,15 +669,17 @@ static_assert(std::has_unique_object_representations_v<dedup_block_header>);
 
 struct dedup_record_header {
   bareos_record_header BareosHeader;
-  net_u32 DataStart;
-  net_u32 DataEnd;
+  net_u32 reserved;
+  net_u64 DataStart;
+  net_u64 DataEnd;
 
   dedup_record_header() = default;
 
   dedup_record_header(const bareos_record_header& base,
-                      std::uint32_t DataStart,
-                      std::uint32_t DataEnd)
+                      std::uint64_t DataStart,
+                      std::uint64_t DataEnd)
       : BareosHeader(base)
+      , reserved{0}
       , DataStart{network_order::of_native(DataStart)}
       , DataEnd{network_order::of_native(DataEnd)}
   {
@@ -702,77 +704,85 @@ ssize_t scatter(dedup_volume& vol, const void* data, size_t size)
 {
   (void) vol;
   (void) data;
+
   // int block_fd = vol.get_block_file();
   // int record_fd = vol.get_record_file();
-  // bareos_block_header* block = (bareos_block_header*)data;
-  // uint32_t bsize = block->BlockSize;
+  auto* block = static_cast<const bareos_block_header*>(data);
+  uint32_t bsize = block->BlockSize;
 
-  // ASSERT(bsize >= sizeof(*block));
+  if (bsize < sizeof(*block)) {
+    // the data size has to at least include the block header!
+    // otherwise this will not make any sense
+    Emsg0(M_ABORT, 0, _("Trying to write bad block!\n"));
+    return -1;
+  }
 
-  // char* current = (char*)(block + 1);
+  if (size < bsize) {
+    // cannot write an uncomplete block
+    return -1;
+  }
 
-  // char* end = (char*)data + bsize;
+  if (bsize != size) {
+    // todo: emit dmsg warning
+  }
 
+  auto* begin = reinterpret_cast<const char*>(block + 1);
+  auto* current = begin;
+
+  auto* end = static_cast<const char*>(data) + bsize;
+
+  auto& blockfile = vol.get_active_block_file();
+  auto& recordfile = vol.get_active_record_file();
   // ssize_t recpos = ::lseek(record_fd, 0, SEEK_CUR);
   // ASSERT(recpos >= 0);
   // uint32_t CurrentRec = recpos / sizeof(dedup_record_header);
   // uint32_t RecStart = CurrentRec;
   // uint32_t RecEnd = RecStart;
 
+  uint32_t RecStart = recordfile.current();
+  uint32_t RecEnd = RecStart;
+
   // uint32_t actual_size = 0;
 
-  // // TODO: fuse split payloads here somewhere ?!
-  // while (current != end) {
-  //   bareos_record_header* record = (bareos_record_header*)current;
-  //   RecEnd += 1;
+  while (current != end) {
+    bareos_record_header* record = (bareos_record_header*)current;
+    if (current + sizeof(*record) > end) {
+      Emsg0(M_ABORT, 0, _("Trying to write bad record!\n"));
+      return -1;
+    }
 
-  //   ASSERT(current + sizeof(*record) <= end);
+    RecEnd += 1;
+    auto* payload_start = reinterpret_cast<const char*>(record + 1);
+    auto* payload_end = payload_start + record->DataSize;
 
+    auto& datafile = vol.get_data_file_by_size(record->DataSize);
 
-  //   // the record payload is [current + sizeof(record)]
+    if (payload_end > end) {
+      // payload is split in multiple blocks
+      payload_end = end;
+    }
 
-  //   char* payload_start = (char*)(record + 1);
-  //   char* payload_end = payload_start + record->DataSize;
+    std::optional written_loc = datafile.write(payload_start, payload_end);
 
-  //   if (payload_end > end) {
-  //     // payload is split in multiple blocks
-  //     payload_end = end;
-  //   }
+    if (!written_loc) {
+      return -1;
+    }
 
-  //   current = payload_end;
+    dedup_record_header drecord{*record, written_loc->begin, written_loc->end};
+    if (!recordfile.write(&drecord)) {
+      return -1;
+    }
+    current = payload_end;
+  }
 
-  //   ssize_t pos = ::lseek(data_fd, 0, SEEK_CUR);
-  //   ASSERT(pos >= 0);
-  //   if (payload_start < end) {
-  //     std::size_t size = payload_end - payload_start;
-  //     dedup_record_header drecord{*record, static_cast<std::uint32_t>(pos),
-  // 				  static_cast<std::uint32_t>(pos + size)};
-  //     safe_write(data_fd, payload_start, size);
-  //     actual_size += size;
-  //     safe_write(record_fd, &drecord, sizeof(drecord));
-  //     actual_size += sizeof(bareos_record_header);
-  //   } else {
-  //     dedup_record_header drecord{*record, static_cast<std::uint32_t>(pos),
-  // 				  static_cast<std::uint32_t>(pos)};
-  //     safe_write(record_fd, &drecord, sizeof(drecord));
-  //     actual_size += sizeof(bareos_record_header);
+  dedup_block_header dblock{*block, RecStart, RecEnd};
+  blockfile.write(&dblock);
 
-  //   }
-  // }
-
-  // dedup_block_header dblock{*block, RecStart, RecEnd};
-  // safe_write(block_fd, &dblock, sizeof(dblock));
-  // actual_size += sizeof(bareos_block_header);
-
-  // ASSERT(actual_size == bsize);
-  return -1;
+  return current - begin;
 }
 
 ssize_t dedup_file_device::d_write(int fd, const void* data, size_t size)
 {
-  (void) fd;
-  (void) data;
-  (void) size;
   if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
     dedup_volume& vol = found->second;
     ASSERT(vol.is_ok());

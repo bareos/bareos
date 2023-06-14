@@ -152,6 +152,28 @@ struct block_file : public dedup_volume_file
   std::uint32_t file_index;
   std::uint32_t start_block;
   std::uint32_t end_block;
+  std::uint32_t current_block;
+
+  bool truncate() {
+    start_block = 0;
+    end_block = 0;
+    current_block = 0;
+    return dedup_volume_file::truncate();
+  }
+
+  bool goto_end(ssize_t offset = 0) {
+    current_block = end_block;
+    return dedup_volume_file::goto_end(offset);
+  }
+
+  bool goto_begin(ssize_t offset = 0) {
+    current_block = 0;
+    return dedup_volume_file::goto_begin(offset);
+  }
+
+  bool write(void*) {
+    return false;
+  }
 };
 
 struct record_file : public dedup_volume_file
@@ -168,6 +190,33 @@ struct record_file : public dedup_volume_file
   std::uint32_t file_index;
   std::uint32_t start_record;
   std::uint32_t end_record;
+  std::uint32_t current_record;
+
+  bool truncate() {
+    start_record = 0;
+    end_record = 0;
+    current_record = 0;
+    return dedup_volume_file::truncate();
+  }
+
+  bool goto_end(ssize_t offset = 0) {
+    current_record = end_record;
+    return dedup_volume_file::goto_end(offset);
+  }
+
+  bool goto_begin(ssize_t offset = 0) {
+    current_record = 0;
+    return dedup_volume_file::goto_begin(offset);
+  }
+
+  std::uint32_t current() const {
+    return current_record;
+  }
+
+  bool write(void* val) {
+    (void) val;
+    return false;
+  }
 };
 
 struct data_file : public dedup_volume_file
@@ -184,6 +233,17 @@ struct data_file : public dedup_volume_file
   static constexpr std::int64_t read_only_size = -1;
   static constexpr std::int64_t any_size = 0;
   std::int64_t block_size;
+
+  struct written_loc {
+    std::uint64_t begin;
+    std::uint64_t end;
+  };
+
+  std::optional<written_loc> write(const char* begin, const char* end) {
+    (void) begin;
+    (void) end;
+    return std::nullopt;
+  }
 };
 
 struct dedup_volume_config {
@@ -276,6 +336,10 @@ class dedup_volume {
   block_file& get_active_block_file()
   {
     return config.blockfiles[0];
+  }
+
+  data_file& get_data_file_by_size(std::uint32_t) {
+    return config.datafiles[0];
   }
 
   bool reset()
