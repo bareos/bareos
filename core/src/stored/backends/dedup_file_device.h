@@ -119,6 +119,10 @@ struct data_file
   {}
   std::string path;
   std::uint32_t file_index;
+
+  static constexpr std::int64_t read_only_size = -1;
+  static constexpr std::int64_t any_size = 0;
+  std::int64_t block_size;
 };
 
 struct dedup_volume_config {

@@ -40,6 +40,7 @@ using net_u32 = network_order::network_value<std::uint32_t>;
 using net_u16 = network_order::network_value<std::uint16_t>;
 using net_u8 = std::uint8_t;
 using net_i32 = network_order::network_value<std::int32_t>;
+using net_i64 = network_order::network_value<std::int64_t>;
 
 using iter = std::vector<std::byte>::const_iterator;
 
@@ -172,6 +173,7 @@ struct dedup_config_record_file_section
 
 struct dedup_config_data_file_section
 {
+  net_i64 block_size;
   net_u32 file_index;
   net_u32 path_length;
   // the path data follows directly without any padding
@@ -231,7 +233,7 @@ std::optional<const dedup_config_section_header*> try_read_section_header(iter& 
   current += sizeof(dedup_config_section_header);
 
   if (section_header->checksum != CalculateCheckSum(reinterpret_cast<const std::byte*>(section_header),
-							 reinterpret_cast<const std::byte*>(&section_header->checksum))) {
+						    reinterpret_cast<const std::byte*>(&section_header->checksum))) {
     // error: header checksum does not match
     return std::nullopt;
   }
@@ -330,6 +332,7 @@ std::vector<std::byte> serialize_data_file(const data_file& datafile)
 {
   dedup_config_data_file_section network;
 
+  network.block_size = datafile.block_size;
   network.file_index = datafile.file_index;
   network.path_length = datafile.path.size();
 
@@ -531,6 +534,7 @@ static std::optional<dedup_volume_config> from_bytes(const std::vector<std::byte
 
 	data_file data_file;
 	data_file.file_index = data->file_index;
+	data_file.block_size = data->block_size;
 	data_file.path = deserialize_string(current, current + data->path_length);
 
 	current += data->path_length;
