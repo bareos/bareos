@@ -30,6 +30,23 @@
 #include <optional>
 
 namespace storagedaemon {
+using net_u32 = network_order::network_value<std::uint32_t>;
+using net_i32 = network_order::network_value<std::int32_t>;
+
+struct bareos_block_header {
+  net_u32 CheckSum;       /* Block check sum */
+  net_u32 BlockSize;      /* Block byte size including the header */
+  net_u32 BlockNumber;    /* Block number */
+  char ID[4];             /* Identification and block level */
+  net_u32 VolSessionId;   /* Session Id for Job */
+  net_u32 VolSessionTime; /* Session Time for Job */
+};
+
+struct bareos_record_header {
+  net_i32 FileIndex; /* File index supplied by File daemon */
+  net_i32 Stream;    /* Stream number supplied by File daemon */
+  net_u32 DataSize;  /* size of following data record in bytes */
+};
 
 class raii_fd {
  public:
@@ -133,6 +150,11 @@ struct dedup_volume_file
     return static_cast<std::size_t>(pos);
   }
 
+  bool write(const void* data, std::size_t length)
+  {
+    return ::write(fd.get(), data, length) == static_cast<ssize_t>(length);
+  }
+
   bool is_ok() const {
     return fd.is_ok();
   }
@@ -171,9 +193,7 @@ struct block_file : public dedup_volume_file
     return dedup_volume_file::goto_begin(offset);
   }
 
-  bool write(void*) {
-    return false;
-  }
+  bool write(const bareos_block_header&, std::uint32_t, std::uint32_t);
 };
 
 struct record_file : public dedup_volume_file
@@ -213,10 +233,7 @@ struct record_file : public dedup_volume_file
     return current_record;
   }
 
-  bool write(void* val) {
-    (void) val;
-    return false;
-  }
+  bool write(const bareos_record_header&, std::uint64_t, std::uint64_t);
 };
 
 struct data_file : public dedup_volume_file
@@ -237,14 +254,31 @@ struct data_file : public dedup_volume_file
   struct written_loc {
     std::uint64_t begin;
     std::uint64_t end;
+
+    written_loc(std::uint64_t begin, std::uint64_t end) : begin(begin)
+							, end(end)
+    {}
   };
 
   std::optional<written_loc> write(const char* begin, const char* end) {
-    (void) begin;
-    (void) end;
-    return std::nullopt;
+    if (accepts_records_of_size(end - begin)) {
+      return std::nullopt;
+    }
+
+    std::optional current = current_pos();
+    if (!current) {
+      return std::nullopt;
+    }
+    std::uint64_t begin_pos = *current;
+    std::uint64_t end_pos   = begin_pos + (end - begin);
+
+    if (!dedup_volume_file::write(begin, end - begin)) {
+      return std::nullopt;
+    }
+
+    return std::make_optional<written_loc>(begin_pos, end_pos);
   }
-  bool accepts_record_of_size(std::uint32_t record_size) const {
+  bool accepts_records_of_size(std::uint32_t record_size) const {
     if (block_size == any_size) {
       return true;
     } else if (block_size == read_only_size) {
@@ -356,7 +390,7 @@ class dedup_volume {
     // maybe split into _one_ any_size + map size -> file
     // + vector of read_only ?
     for (auto& datafile : config.datafiles) {
-      if (datafile.accepts_record_of_size(record_size)) {
+      if (datafile.accepts_records_of_size(record_size)) {
 	return datafile;
       }
     }

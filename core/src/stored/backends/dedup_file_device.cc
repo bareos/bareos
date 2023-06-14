@@ -36,10 +36,8 @@
 namespace storagedaemon {
 
 using net_u64 = network_order::network_value<std::uint64_t>;
-using net_u32 = network_order::network_value<std::uint32_t>;
 using net_u16 = network_order::network_value<std::uint16_t>;
 using net_u8 = std::uint8_t;
-using net_i32 = network_order::network_value<std::int32_t>;
 using net_i64 = network_order::network_value<std::int64_t>;
 
 using iter = std::vector<std::byte>::const_iterator;
@@ -630,22 +628,6 @@ int dedup_file_device::d_open(const char* path, int, int mode)
   }
 }
 
-
-struct bareos_block_header {
-  net_u32 CheckSum;       /* Block check sum */
-  net_u32 BlockSize;      /* Block byte size including the header */
-  net_u32 BlockNumber;    /* Block number */
-  char ID[4];             /* Identification and block level */
-  net_u32 VolSessionId;   /* Session Id for Job */
-  net_u32 VolSessionTime; /* Session Time for Job */
-};
-
-struct bareos_record_header {
-  net_i32 FileIndex; /* File index supplied by File daemon */
-  net_i32 Stream;    /* Stream number supplied by File daemon */
-  net_u32 DataSize;  /* size of following data record in bytes */
-};
-
 struct dedup_block_header {
   bareos_block_header BareosHeader;
   net_u32 RecStart;
@@ -733,11 +715,6 @@ ssize_t scatter(dedup_volume& vol, const void* data, size_t size)
 
   auto& blockfile = vol.get_active_block_file();
   auto& recordfile = vol.get_active_record_file();
-  // ssize_t recpos = ::lseek(record_fd, 0, SEEK_CUR);
-  // ASSERT(recpos >= 0);
-  // uint32_t CurrentRec = recpos / sizeof(dedup_record_header);
-  // uint32_t RecStart = CurrentRec;
-  // uint32_t RecEnd = RecStart;
 
   uint32_t RecStart = recordfile.current();
   uint32_t RecEnd = RecStart;
@@ -768,15 +745,15 @@ ssize_t scatter(dedup_volume& vol, const void* data, size_t size)
       return -1;
     }
 
-    dedup_record_header drecord{*record, written_loc->begin, written_loc->end};
-    if (!recordfile.write(&drecord)) {
+    if (!recordfile.write(*record, written_loc->begin, written_loc->end) &&
+	RecEnd != recordfile.current()) {
+      // something went wrong
       return -1;
     }
     current = payload_end;
   }
 
-  dedup_block_header dblock{*block, RecStart, RecEnd};
-  blockfile.write(&dblock);
+  blockfile.write(*block, RecStart, RecEnd);
 
   return current - begin;
 }
@@ -1007,6 +984,36 @@ bool dedup_volume::load_config()
   }
 
   config = std::move(loaded_config.value());
+  return true;
+}
+
+bool block_file::write(const bareos_block_header& header,
+		       std::uint32_t start_record,
+		       std::uint32_t end_record)
+{
+  dedup_block_header dedup{header, start_record, end_record};
+
+  if (!dedup_volume_file::write(&dedup, sizeof(dedup))) {
+    return false;
+  }
+
+  current_block += 1;
+  end_block = current_block;
+  return true;
+}
+
+bool record_file::write(const bareos_record_header& header,
+			std::uint64_t payload_start,
+			std::uint64_t payload_end)
+{
+  dedup_record_header dedup{header, payload_start, payload_end};
+
+  if (!dedup_volume_file::write(&dedup, sizeof(dedup))) {
+    return false;
+  }
+
+  current_record += 1;
+  end_record = current_record;
   return true;
 }
 
