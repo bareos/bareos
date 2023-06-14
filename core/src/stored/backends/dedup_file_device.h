@@ -244,6 +244,16 @@ struct data_file : public dedup_volume_file
     (void) end;
     return std::nullopt;
   }
+  bool accepts_record_of_size(std::uint32_t record_size) const {
+    if (block_size == any_size) {
+      return true;
+    } else if (block_size == read_only_size) {
+      return false;
+    } else {
+      return record_size == block_size;
+    }
+
+  }
 };
 
 struct dedup_volume_config {
@@ -330,15 +340,28 @@ class dedup_volume {
 
   record_file& get_active_record_file()
   {
+    // currently only one record file is supported
     return config.recordfiles[0];
   }
 
   block_file& get_active_block_file()
   {
+    // currently only one block file is supported
     return config.blockfiles[0];
   }
 
-  data_file& get_data_file_by_size(std::uint32_t) {
+  data_file& get_data_file_by_size(std::uint32_t record_size) {
+    // we have to do this smarter
+    // if datafile::any_size is first, we should ignore it until the end!
+    // maybe split into _one_ any_size + map size -> file
+    // + vector of read_only ?
+    for (auto& datafile : config.datafiles) {
+      if (datafile.accepts_record_of_size(record_size)) {
+	return datafile;
+      }
+    }
+
+    ASSERT(!"dedup volume has no datafile for this record.\n");
     return config.datafiles[0];
   }
 
