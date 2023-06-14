@@ -27,6 +27,7 @@
 
 #include <unordered_map>
 #include <fcntl.h>
+#include <optional>
 
 namespace storagedaemon {
 
@@ -114,6 +115,22 @@ struct dedup_volume_file
       return false;
     }
     return true;
+  }
+
+  bool goto_end(ssize_t offset = 0) {
+    if (lseek(fd.get(), offset, SEEK_END) != 0) { return false; }
+    return true;
+  }
+
+  bool goto_begin(ssize_t offset = 0) {
+    if (lseek(fd.get(), offset, SEEK_SET) != 0) { return false; }
+    return true;
+  }
+
+  std::optional<std::size_t> current_pos() {
+    auto pos = lseek(fd.get(), 0, SEEK_CUR);
+    if (pos < 0) return std::nullopt;
+    return static_cast<std::size_t>(pos);
   }
 
   bool is_ok() const {
@@ -251,14 +268,14 @@ class dedup_volume {
     }
   }
 
-  int get_record_file()
+  record_file& get_active_record_file()
   {
-    return -1;
+    return config.recordfiles[0];
   }
 
-  int get_block_file()
+  block_file& get_active_block_file()
   {
-    return -1;
+    return config.blockfiles[0];
   }
 
   bool reset()
@@ -276,6 +293,59 @@ class dedup_volume {
     }
     for (auto& datafile : config.datafiles) {
       if (!datafile.truncate()) {
+	return false;
+      }
+    }
+    return true;
+  }
+
+  bool goto_begin()
+  {
+    for (auto& blockfile : config.blockfiles) {
+      if (!blockfile.goto_begin()) {
+	return false;
+      }
+    }
+    for (auto& recordfile : config.recordfiles) {
+      if (!recordfile.goto_begin()) {
+	return false;
+      }
+    }
+    for (auto& datafile : config.datafiles) {
+      if (!datafile.goto_begin()) {
+	return false;
+      }
+    }
+    return true;
+  }
+
+  bool goto_block(std::size_t block_num)
+  {
+    // todo: if we are not at the end of the device
+    //       we should read the block header and position
+    //       the record and data files as well
+    //       otherwise set the record and data files to their respective end
+
+    if (!get_active_block_file().goto_begin(block_num /* * sizeof(dedup_block_header) */)) {
+      return false;
+    }
+    return true;
+  }
+
+  bool goto_end()
+  {
+    for (auto& blockfile : config.blockfiles) {
+      if (!blockfile.goto_end()) {
+	return false;
+      }
+    }
+    for (auto& recordfile : config.recordfiles) {
+      if (!recordfile.goto_end()) {
+	return false;
+      }
+    }
+    for (auto& datafile : config.datafiles) {
+      if (!datafile.goto_end()) {
 	return false;
       }
     }

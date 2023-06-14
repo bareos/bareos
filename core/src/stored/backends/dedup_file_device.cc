@@ -698,7 +698,7 @@ static_assert(std::has_unique_object_representations_v<dedup_record_header>);
 //   ASSERT(::read(fd, data, size) == static_cast<ssize_t>(size));
 // }
 
-ssize_t scatter(dedup_volume& vol, const void* data)
+ssize_t scatter(dedup_volume& vol, const void* data, size_t size)
 {
   (void) vol;
   (void) data;
@@ -777,7 +777,7 @@ ssize_t dedup_file_device::d_write(int fd, const void* data, size_t size)
     dedup_volume& vol = found->second;
     ASSERT(vol.is_ok());
     vol.changed_volume();
-    return scatter(vol, data);
+    return scatter(vol, data, size);
   } else {
     return -1;
   }
@@ -882,8 +882,7 @@ bool dedup_file_device::rewind(DeviceControlRecord* dcr)
   if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
     dedup_volume& vol = found->second;
     ASSERT(vol.is_ok());
-    if (lseek(vol.get_block_file(), 0, SEEK_SET) != 0) { return false; }
-    if (lseek(vol.get_record_file(), 0, SEEK_SET) != 0) { return false; }
+    if (!vol.goto_begin()) { return false; }
     block_num = 0;
     file = 0;
     file_addr = 0;
@@ -898,12 +897,11 @@ bool dedup_file_device::UpdatePos(DeviceControlRecord*)
   if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
     dedup_volume& vol = found->second;
     ASSERT(vol.is_ok());
-    // synchronize (real) device position with this->file, this->block
-    auto pos = lseek(vol.get_block_file(), 0, SEEK_CUR);
-    if (pos < 0) return false;
+    auto pos = vol.get_active_block_file().current_pos();
+    if (!pos) return false;
 
-    file_addr = pos;
-    block_num = pos / sizeof(dedup_block_header);
+    file_addr = *pos;
+    block_num = *pos / sizeof(dedup_block_header);
 
     ASSERT(block_num * sizeof(dedup_block_header) == file_addr);
 
@@ -927,16 +925,7 @@ bool dedup_file_device::Reposition(DeviceControlRecord* dcr,
     dedup_volume& vol = found->second;
     ASSERT(vol.is_ok());
 
-    if (auto res = ::lseek(vol.get_block_file(), rblock * sizeof(dedup_block_header),
-                           SEEK_SET);
-        res < 0) {
-      return false;
-    }
-
-    // todo: if we are not at the end of the device
-    //       we should read the block header and position
-    //       the record and data files as well
-    //       otherwise set the record and data files to their respective end
+    if (!vol.goto_block(rblock)) { return false; }
 
     return UpdatePos(dcr);
   } else {
@@ -949,12 +938,7 @@ bool dedup_file_device::eod(DeviceControlRecord* dcr)
   if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
     dedup_volume& vol = found->second;
     ASSERT(vol.is_ok());
-    if (auto res = ::lseek(vol.get_block_file(), 0, SEEK_END); res < 0) {
-      return false;
-    }
-    if (auto res = ::lseek(vol.get_record_file(), 0, SEEK_END); res < 0) {
-      return false;
-    }
+    if (!vol.goto_end()) { return false; }
     return UpdatePos(dcr);
   } else {
     return false;
