@@ -68,21 +68,21 @@ Here are the important steps.
 
 -  For a standard installation you may only select the "Tray-Monitor" and the "Open Firewall for Client" as additional optional components.
 
-.. image:: /include/images/win-install-1.*
+.. image:: /include/images/win-install-1.png
    :width: 80.0%
 
 
 
 -  You need to fill in the name of your bareos director in the client configuration dialogue and the FQDN or ip address of your client.
 
-.. image:: /include/images/win-install-2.*
+.. image:: /include/images/win-install-2.png
    :width: 80.0%
 
 
 
 -  Add the client resource to your Bareos Director Configuration and a job resource for the client as it is also described in the default bareos-dir.conf
 
-.. image:: /include/images/win-install-3.*
+.. image:: /include/images/win-install-3.png
    :width: 80.0%
 
 
@@ -473,6 +473,24 @@ If you want to see if the File daemon has properly opened the port and is listen
 .. code-block:: shell-session
 
    netstat -an | findstr 910[123]
+
+Windows Antivirus
+-----------------
+
+.. index:: Antivirus; Windows
+.. index:: Windows; Antivirus
+
+The Windows builtin antivirus **Defender** is enabled by default and will scan every single file being backed up during the backup process. This leads to an extremely slow throughput with a very high cpu load.
+
+Therefore it is advised to add the :command:`bareos-fd.exe` to the list of excluded monitored processes on computers being backed up via the bareos filedaemon.
+On systems running the director or storage daemon on windows, also add the processes
+:command:`bareos-dir.exe`, :command:`bareos-sd.exe`
+
+.. image:: /include/images/windows-defender-exclusion.png
+   :width: 80.0%
+
+The same remark can be done to any other similar on-access antivirus scanner. Please also check next section about possible troubles with antivirus on Windows.
+
 
 Dealing with Windows Problems
 -----------------------------

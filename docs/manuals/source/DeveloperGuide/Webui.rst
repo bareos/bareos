@@ -4,7 +4,6 @@
 Webui
 =====
 
-=======
 .. _section-dev-webui-translation:
 
 Translation

@@ -5,6 +5,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Documentation
+- docs: Windows add Antivirus section [PR #1485]
+
 ## [22.1.0] - 2023-06-13
 
 ### Changed
@@ -537,4 +540,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1481]: https://github.com/bareos/bareos/pull/1481
 [PR #1482]: https://github.com/bareos/bareos/pull/1482
 [PR #1483]: https://github.com/bareos/bareos/pull/1483
+[PR #1485]: https://github.com/bareos/bareos/pull/1485
 [unreleased]: https://github.com/bareos/bareos/tree/master
