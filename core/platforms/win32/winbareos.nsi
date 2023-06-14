@@ -576,22 +576,25 @@ SectionIn 1 2 3 4
 #  File libintl-8.dll
 
   # for password generation
-  File "openssl.exe"
-  File "sed.exe"
+#  File "openssl.exe"
+  File C:\src\vcpkg\packages\openssl_x64-windows\tools\openssl\openssl.exe
+#  File "sed.exe"
+  File "C:\Program Files\Git\usr\bin\sed.exe"
 
   # install unittests
 #  File "test_*.exe"
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\bareos-fd.d"
-  File /r config\bareos-fd.d\*.*
+  File /r etc\bareos\bareos-fd.d\*.*
 
   # install configuration as templates
-  SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\client\"
-  File config\tray-monitor.d\client\FileDaemon-local.conf
+#TODO! 
+#  SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\client\"
+#  File config\tray-monitor.d\client\FileDaemon-local.conf
 
   SetOutPath "$APPDATA\${PRODUCT_NAME}"
-  File "config\fillup.sed"
+  File "win32\fillup.sed"
 
 SectionEnd
 
@@ -605,10 +608,10 @@ SectionIn 1 2 3 4
   #File "bpipe-fd.dll"
   #File "mssqlvdi-fd.dll"
   #File "python-fd.dll"
-  File "*-fd.dll"
+  File "lib\bareos\plugins\*-fd.dll"
 
-  File "Plugins\BareosFd*.py"
-  File "Plugins\bareos-fd*.py"
+  File "lib\bareos\plugins\BareosFd*.py"
+  File "lib\bareos\plugins\bareos-fd*.py"
 SectionEnd
 
 
@@ -644,22 +647,23 @@ SectionIn 2 3
   SetShellVarContext all
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
-  File "libbareossd.dll"
-  File "bareos-sd.exe"
-  File "btape.exe"
-  File "bls.exe"
-  File "bextract.exe"
-  File "bscan.exe"
+  File "lib\bareos\bareossd.dll"
+  File "sbin\bareos-sd.exe"
+  File "sbin\btape.exe"
+  File "sbin\bls.exe"
+  File "sbin\bextract.exe"
+  File "sbin\bscan.exe"
 
   CreateDirectory "C:\bareos-storage"
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\bareos-sd.d"
-  File /r config\bareos-sd.d\*.*
+  File /r etc\bareos\bareos-sd.d\*.*
 
   # install configuration as templates
-  SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\storage"
-  File config\tray-monitor.d\storage\StorageDaemon-local.conf
+#todo
+#  SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\storage"
+#  File config\tray-monitor.d\storage\StorageDaemon-local.conf
 
 SectionEnd
 
@@ -668,9 +672,10 @@ SectionIn 2 3
   SetShellVarContext all
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
-  File "*-sd.dll"
-  File "Plugins\BareosSd*.py"
-  File "Plugins\bareos-sd*.py"
+  File "lib\bareos\plugins\*-sd.dll"
+#TODO: install via make install
+#  File "lib\bareos\plugins\BareosSd*.py"
+#  File "lib\plugins\bareos-sd*.py"
 SectionEnd
 
 
@@ -705,20 +710,21 @@ SectionIn 2 3
   CreateDirectory "$APPDATA\${PRODUCT_NAME}\scripts"
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
-  File "bareos-dir.exe"
-  File "bareos-dbcheck.exe"
-  File "bsmtp.exe"
-  File "testfind.exe"
-  File "bregex.exe"
-  File "bwild.exe"
+  File "sbin\bareos-dir.exe"
+  File "sbin\bareos-dbcheck.exe"
+  File "sbin\bsmtp.exe"
+  File "sbin\testfind.exe"
+  File "sbin\bregex.exe"
+  File "sbin\bwild.exe"
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\bareos-dir.d"
-  File /r config\bareos-dir.d\*.*
+  File /r etc\bareos\bareos-dir.d\*.*
 
   # install configuration as templates
-  SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\director"
-  File config\tray-monitor.d\director\Director-local.conf
+#TODO: traymon
+#  SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\director"
+#  File config\tray-monitor.d\director\Director-local.conf
 
 SectionEnd
 
@@ -828,9 +834,10 @@ SectionIn 2 3
   SetOverwrite ifnewer
 
   #File "python-dir.dll"
-  File "*-dir.dll"
-  File "Plugins\BareosDir*.py"
-  File "Plugins\bareos-dir*.py"
+  #TODO: install plugins
+#  File "lib\bareos\plugins\*-dir.dll"
+#  File "lib\bareos\plugins\BareosDir*.py"
+#  File "lib\bareos\plugins\bareos-dir*.py"
 SectionEnd
 
 
@@ -865,28 +872,28 @@ SectionIn 1 2 3
 
   # autostart
   CreateShortCut "$SMSTARTUP\bareos-tray-monitor.lnk" "$INSTDIR\bareos-tray-monitor.exe"
-
-  File "bareos-tray-monitor.exe"
-  File "libpng*.dll"
-  File "Qt5Core.dll"
-  File "Qt5Gui.dll"
-  File "Qt5Widgets.dll"
-  File "icui*n*.dll"
-  File "icudata*.dll"
-  File "icuuc*.dll"
-  File "libfreetype-6.dll"
-  File "libglib-2.0-0.dll"
-  File "libintl-8.dll"
-  File "libharfbuzz-0.dll"
-  File "libpcre2-16-0.dll"
-
-  SetOutPath "$INSTDIR\platforms"
-  File "qwindows.dll"
-
-
-  # install configuration as templates
-  SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\monitor"
-  File config\tray-monitor.d\monitor\bareos-mon.conf
+# TODO: build traymon
+#  File "bareos-tray-monitor.exe"
+#  File "libpng*.dll"
+#  File "Qt5Core.dll"
+#  File "Qt5Gui.dll"
+#  File "Qt5Widgets.dll"
+#  File "icui*n*.dll"
+#  File "icudata*.dll"
+#  File "icuuc*.dll"
+#  File "libfreetype-6.dll"
+#  File "libglib-2.0-0.dll"
+#  File "libintl-8.dll"
+#  File "libharfbuzz-0.dll"
+#  File "libpcre2-16-0.dll"
+#
+#  SetOutPath "$INSTDIR\platforms"
+#  File "qwindows.dll"
+#
+#
+#  # install configuration as templates
+#  SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\monitor"
+#  File config\tray-monitor.d\monitor\bareos-mon.conf
 SectionEnd
 
 
@@ -897,9 +904,10 @@ Section "Bareos Webui" SEC_WEBUI
    SetShellVarContext all
    SetOutPath "$INSTDIR"
    SetOverwrite ifnewer
-   File /r "nssm.exe"
+#todo: nsm.exe
+#   File /r "nssm.exe"
    SetOutPath "$INSTDIR\bareos-webui"
-   File /r "bareos-webui\*.*"
+   File /r "share\bareos-webui\*.*"
 
 IfSilent skip_vc_redist_check
    # check  for Visual C++ Redistributable für Visual Studio 2012 x86 (on 32 and 64 bit systems)
@@ -981,12 +989,13 @@ SectionIn 2 3
   SetOverwrite ifnewer
   CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\bconsole.lnk" "$INSTDIR\bconsole.exe"
 
-  File "bconsole.exe"
-  File "libhistory8.dll"
-  File "libreadline8.dll"
-  File "libtermcap-0.dll"
+  File "sbin\bconsole.exe"
+  File C:\src\vcpkg\installed\x86-windows\bin\readline.dll
+#  File "libhistory8.dll"
+#  File "libreadline8.dll"
+#  File "libtermcap-0.dll"
 
-  !insertmacro InstallConfFile "bconsole.conf"
+  !insertmacro InstallConfFile "etc\bareos\bconsole.conf"
 SectionEnd
 
 
@@ -996,7 +1005,7 @@ Section /o Sourcecode SEC_SOURCE
    SetShellVarContext all
    SetOutPath "C:\"
    SetOverwrite ifnewer
-   File /r "bareos-${VERSION}"
+#   File /r "bareos-${VERSION}"
 SectionEnd
 
 
@@ -1191,7 +1200,7 @@ Section -StartDaemon
       #  MessageBox MB_OK|MB_ICONINFORMATION "To setup the bareos database, please run the script$\r$\n\
       #                 $APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat$\r$\n \
       #                 with administrator rights now." /SD IDOK
-      LogText "### Executing $APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat"
+      #LogText "### Executing $APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat"
       StrCmp $WriteLogs "yes" 0 +2
          LogEx::Init false $INSTDIR\sql.log
       StrCmp $WriteLogs "yes" 0 +2
@@ -1202,7 +1211,7 @@ Section -StartDaemon
 
 
 
-      LogText "### Executing net start bareos-dir"
+      #LogText "### Executing net start bareos-dir"
       nsExec::ExecToLog "net start bareos-dir"
       StrCmp $WriteLogs "yes" 0 +2
       LogEx::Close
@@ -1291,8 +1300,8 @@ Function .onInit
   ClearErrors
 
   StrCmp $WriteLogs "yes" 0 +3
-     LogSet on # enable nsis-own logging to $INSTDIR\install.log, needs INSTDIR defined
-     LogText "Logging started, INSTDIR is $INSTDIR"
+     #LogSet on # enable nsis-own logging to $INSTDIR\install.log, needs INSTDIR defined
+     #LogText "Logging started, INSTDIR is $INSTDIR"
 
   #  /? param (help)
   ClearErrors
@@ -1310,7 +1319,7 @@ Function .onInit
 
   # Check if we are installing on 64Bit, then do some settings
   ${If} ${RunningX64} # 64Bit OS
-    LogText "Windows 64 bit"
+    #LogText "Windows 64 bit"
     ${If} ${BIT_WIDTH} == '32'
       MessageBox MB_OK|MB_ICONSTOP "You are running a 32 Bit installer on a 64 Bit OS.$\r$\nPlease use the 64 Bit installer."
       Abort
@@ -1322,7 +1331,7 @@ Function .onInit
     SetRegView 64
     ${EnableX64FSRedirection}
   ${Else} # 32Bit OS
-    LogText "Windows 32 bit"
+    #LogText "Windows 32 bit"
     ${If} ${BIT_WIDTH} == '64'
       MessageBox MB_OK|MB_ICONSTOP "You are running a 64 Bit installer on a 32 Bit OS.$\r$\nPlease use the 32 Bit installer."
       Abort
@@ -1347,7 +1356,7 @@ Function .onInit
   #
   StrCmp $R0 "" done
 
-  LogText "Prior Bareos version installed: $0"
+  #LogText "Prior Bareos version installed: $0"
 
   #
   # As versions before 12.4.5 cannot keep the config files during silent install, we do not support upgrading here
@@ -1362,7 +1371,7 @@ Function .onInit
 
   strcpy $Upgrading "yes"
   ${StrRep} $INSTDIR $R0 "uninst.exe" "" # find current INSTDIR by cutting uninst.exe out of uninstall string
-  LogText "INSTDIR is now $INSTDIR"
+  #LogText "INSTDIR is now $INSTDIR"
 
   MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION "${PRODUCT_NAME} version $0 is already installed in $\r$\n \
          '$INSTDIR' on your system.$\r$\n$\n \
@@ -1386,7 +1395,7 @@ uninst:
 
 config_backup_workaround:
   IfFileExists "$APPDATA\${PRODUCT_NAME}\*.conf" 0 no_config_backup_workaround
-    LogText "config_backup_workaround"
+    #LogText "config_backup_workaround"
     CreateDirectory "$PLUGINSDIR\config-backup"
     CopyFiles "$APPDATA\${PRODUCT_NAME}\*.conf" "$PLUGINSDIR\config-backup"
   ClearErrors
@@ -1407,7 +1416,7 @@ no_remove_uninstaller:
 done:
   # config backup workaround: restore config files
   IfFileExists "$PLUGINSDIR\config-backup\*.conf" 0 +3
-    LogText "restore config-backup from workaround"
+    #LogText "restore config-backup from workaround"
     CopyFiles "$PLUGINSDIR\config-backup\*.conf" "$APPDATA\${PRODUCT_NAME}"
   ClearErrors
 
@@ -1492,32 +1501,34 @@ done:
   ClearErrors
 
   InitPluginsDir
-  File "/oname=$PLUGINSDIR\storagedialog.ini" "storagedialog.ini"
-  File "/oname=$PLUGINSDIR\clientdialog.ini" "clientdialog.ini"
-  File "/oname=$PLUGINSDIR\directordialog.ini" "directordialog.ini"
-  File "/oname=$PLUGINSDIR\databasedialog.ini" "databasedialog.ini"
-  File "/oname=$PLUGINSDIR\openssl.exe" "openssl.exe"
-  File "/oname=$PLUGINSDIR\sed.exe" "sed.exe"
+  File "/oname=$PLUGINSDIR\storagedialog.ini" "win32\storagedialog.ini"
+  File "/oname=$PLUGINSDIR\clientdialog.ini" "win32\clientdialog.ini"
+  File "/oname=$PLUGINSDIR\directordialog.ini" "win32\directordialog.ini"
+  File "/oname=$PLUGINSDIR\databasedialog.ini" "win32\databasedialog.ini"
+  File "/oname=$PLUGINSDIR\openssl.exe" "C:\src\vcpkg\packages\openssl_x64-windows\tools\openssl\openssl.exe"
+  File "/oname=$PLUGINSDIR\sed.exe" "C:\Program Files\Git\usr\bin\sed.exe"
 
-  File "/oname=$PLUGINSDIR\iconv.dll" "iconv.dll"
-  File "/oname=$PLUGINSDIR\libintl-8.dll" "libintl-8.dll"
-  File "/oname=$PLUGINSDIR\libwinpthread-1.dll" "libwinpthread-1.dll"
+#TODO
+#  File "/oname=$PLUGINSDIR\iconv.dll" "iconv.dll"
+#  File "/oname=$PLUGINSDIR\libintl-8.dll" "libintl-8.dll"
+#  File "/oname=$PLUGINSDIR\libwinpthread-1.dll" "libwinpthread-1.dll"
 
-  # one of the two files  have to be available depending onwhat openssl Version we sue
-  File /nonfatal "/oname=$PLUGINSDIR\libcrypto-1_1.dll" "libcrypto-1_1.dll"
-  File /nonfatal "/oname=$PLUGINSDIR\libcrypto-1_1-x64.dll" "libcrypto-1_1-x64.dll"
+  File "/oname=$PLUGINSDIR\libcrypto-3-x64.dll" "C:\src\vcpkg\packages\openssl_x64-windows\bin\libcrypto-3-x64.dll"
+ 
+  #
+  #
   # Either one of this two files will be available depending on 32/64 bits.
-  File /nonfatal "/oname=$PLUGINSDIR\libgcc_s_sjlj-1.dll" "libgcc_s_sjlj-1.dll"
-  File /nonfatal "/oname=$PLUGINSDIR\libgcc_s_seh-1.dll" "libgcc_s_seh-1.dll"
+#  File /nonfatal "/oname=$PLUGINSDIR\libgcc_s_sjlj-1.dll" "libgcc_s_sjlj-1.dll"
+#  File /nonfatal "/oname=$PLUGINSDIR\libgcc_s_seh-1.dll" "libgcc_s_seh-1.dll"
+#
+#  File /nonfatal "/oname=$PLUGINSDIR\libssl-1_1.dll" "libssl-1_1.dll"
+#  File /nonfatal "/oname=$PLUGINSDIR\libssl-1_1-x64.dll" "libssl-1_1-x64.dll"
 
-  File /nonfatal "/oname=$PLUGINSDIR\libssl-1_1.dll" "libssl-1_1.dll"
-  File /nonfatal "/oname=$PLUGINSDIR\libssl-1_1-x64.dll" "libssl-1_1-x64.dll"
-
-  File "/oname=$PLUGINSDIR\libstdc++-6.dll" "libstdc++-6.dll"
-  File "/oname=$PLUGINSDIR\zlib1.dll" "zlib1.dll"
-  File "/oname=$PLUGINSDIR\libssp-0.dll" "libssp-0.dll"
-
-  File "/oname=$PLUGINSDIR\bconsole.conf" "config/bconsole.conf"
+#  File "/oname=$PLUGINSDIR\libstdc++-6.dll" "libstdc++-6.dll"
+#  File "/oname=$PLUGINSDIR\zlib1.dll" "zlib1.dll"
+#  File "/oname=$PLUGINSDIR\libssp-0.dll" "libssp-0.dll"
+#
+  File "/oname=$PLUGINSDIR\bconsole.conf" "etc\bareos\bconsole.conf"
 
   File "/oname=$PLUGINSDIR\postgresql-create.sql" ".\ddl\creates\postgresql.sql"
   File "/oname=$PLUGINSDIR\postgresql-drop.sql" ".\ddl\drops\postgresql.sql"
