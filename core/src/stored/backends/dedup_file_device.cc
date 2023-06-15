@@ -35,10 +35,6 @@
 
 namespace storagedaemon {
 
-using net_u64 = network_order::network_value<std::uint64_t>;
-using net_u16 = network_order::network_value<std::uint16_t>;
-using net_u8 = std::uint8_t;
-using net_i64 = network_order::network_value<std::int64_t>;
 
 using iter = std::vector<std::byte>::const_iterator;
 
@@ -226,8 +222,6 @@ std::optional<const dedup_config_section_header*> try_read_section_header(iter& 
     return std::nullopt;
   }
 
-
-
   current += sizeof(dedup_config_section_header);
 
   if (section_header->checksum != CalculateCheckSum(reinterpret_cast<const std::byte*>(section_header),
@@ -275,6 +269,7 @@ std::vector<std::byte> serialize_with_header(std::uint16_t version,
 
   return bytes;
 }
+
 std::vector<std::byte> serialize_general_info()
 {
   dedup_config_general_section general;
@@ -628,67 +623,8 @@ int dedup_file_device::d_open(const char* path, int, int mode)
   }
 }
 
-struct dedup_block_header {
-  bareos_block_header BareosHeader;
-  net_u32 RecStart;
-  net_u32 RecEnd;
-
-  dedup_block_header() = default;
-
-  dedup_block_header(const bareos_block_header& base,
-                     std::uint32_t RecStart,
-                     std::uint32_t RecEnd)
-      : BareosHeader(base)
-      , RecStart{network_order::of_native(RecStart)}
-      , RecEnd{network_order::of_native(RecEnd)}
-  {
-  }
-};
-
-static_assert(std::is_standard_layout_v<dedup_block_header>);
-static_assert(std::is_pod_v<dedup_block_header>);
-static_assert(std::has_unique_object_representations_v<dedup_block_header>);
-
-struct dedup_record_header {
-  bareos_record_header BareosHeader;
-  net_u32 reserved;
-  net_u64 DataStart;
-  net_u64 DataEnd;
-
-  dedup_record_header() = default;
-
-  dedup_record_header(const bareos_record_header& base,
-                      std::uint64_t DataStart,
-                      std::uint64_t DataEnd)
-      : BareosHeader(base)
-      , reserved{0}
-      , DataStart{network_order::of_native(DataStart)}
-      , DataEnd{network_order::of_native(DataEnd)}
-  {
-  }
-};
-
-static_assert(std::is_standard_layout_v<dedup_record_header>);
-static_assert(std::is_pod_v<dedup_record_header>);
-static_assert(std::has_unique_object_representations_v<dedup_record_header>);
-
-// static void safe_write(int fd, void* data, std::size_t size)
-// {
-//   ASSERT(::write(fd, data, size) == static_cast<ssize_t>(size));
-// }
-
-// static void safe_read(int fd, void* data, std::size_t size)
-// {
-//   ASSERT(::read(fd, data, size) == static_cast<ssize_t>(size));
-// }
-
 ssize_t scatter(dedup_volume& vol, const void* data, size_t size)
 {
-  (void) vol;
-  (void) data;
-
-  // int block_fd = vol.get_block_file();
-  // int record_fd = vol.get_record_file();
   auto* block = static_cast<const bareos_block_header*>(data);
   uint32_t bsize = block->BlockSize;
 
@@ -718,8 +654,6 @@ ssize_t scatter(dedup_volume& vol, const void* data, size_t size)
 
   uint32_t RecStart = recordfile.current();
   uint32_t RecEnd = RecStart;
-
-  // uint32_t actual_size = 0;
 
   while (current != end) {
     bareos_record_header* record = (bareos_record_header*)current;
@@ -770,58 +704,45 @@ ssize_t dedup_file_device::d_write(int fd, const void* data, size_t size)
   }
 }
 
-ssize_t gather(dedup_volume& vol, void* data, std::size_t size)
+ssize_t gather(dedup_volume& vol, char* data, std::size_t size)
 {
-  (void) vol;
-  (void) data;
-  (void) size;
-    // int block_fd = vol.get_block();
-    // int record_fd = vol.get_record();
-    // int data_fd = vol.get_data();
-    // dedup_block_header dblock;
-    // if (ssize_t bytes = ::read(block_fd, &dblock, sizeof(dblock)); bytes < 0) {
-    //   return bytes;
-    // } else if (bytes == 0) {
-    //   return 0;
-    // }
+  std::optional block = vol.read_block();
+  write_buffer buf{data, size};
 
-    // if (size < dblock.BareosHeader.BlockSize) { return -1; }
+  if (!block) {
+    return -1;
+  }
 
-    // uint32_t RecStart = dblock.RecStart;
-    // uint32_t RecEnd = dblock.RecEnd;
-    // ASSERT(RecStart <= RecEnd);
-    // uint32_t NumRec = RecEnd - RecStart;
-    // if (NumRec == 0) { return 0; }
-    // ::lseek(record_fd, RecStart * sizeof(dedup_record_header), SEEK_SET);
-    // dedup_record_header* records = new dedup_record_header[NumRec];
+  if (block->BareosHeader.BlockSize > size) {
+    return -1;
+  }
 
-    // // if (static_cast<ssize_t>(NumRec * sizeof(dedup_record_header)) !=
-    // // ::read(record_fd, records, NumRec * sizeof(dedup_record_header))) {
-    // //   delete[] records;
-    // //   return -1;
-    // // }
-    // safe_read(record_fd, records, NumRec * sizeof(dedup_record_header));
+  if (!buf.write(block->BareosHeader)) {
+    return -1;
+  }
 
-    // ssize_t lastend = -1;
-    // char* head = (char*)data;
-    // char* end = head + size;
-    // memcpy(head, &dblock.BareosHeader, sizeof(bareos_block_header));
-    // head += sizeof(bareos_block_header);
-    // for (uint32_t i = 0; i < NumRec; ++i) {
-    //   if (lastend != static_cast<ssize_t>(records[i].DataStart)) {
-    //     ::lseek(data_fd, records[i].DataStart, SEEK_SET);
-    //   }
+  for (std::size_t record_idx = block->RecStart;
+       record_idx < block->RecEnd;
+       ++record_idx) {
+    std::optional record = vol.read_record(block->file_index, record_idx);
 
-    //   memcpy(head, &records[i].BareosHeader, sizeof(bareos_record_header));
-    //   head += sizeof(bareos_record_header);
-    //   safe_read(data_fd, head, records[i].DataEnd - records[i].DataStart);
-    //   head += records[i].DataEnd - records[i].DataStart;
-    //   lastend = records[i].DataEnd;
-    //   ASSERT(head <= end);
-    // }
+    if (!record) {
+      return -1;
+    }
 
-    // return head - (char*)data;
-  return -1;
+    if (!buf.write(record->BareosHeader)) {
+      return -1;
+    }
+
+    if (!vol.read_data(record->file_index,
+		       record->DataStart,
+		       record->DataEnd,
+		       buf)) {
+      return -1;
+    }
+  }
+
+  return buf.current - data;
 }
 
 ssize_t dedup_file_device::d_read(int fd, void* data, size_t size)
@@ -829,7 +750,7 @@ ssize_t dedup_file_device::d_read(int fd, void* data, size_t size)
   if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
     dedup_volume& vol = found->second;
     ASSERT(vol.is_ok());
-    return gather(vol, data, size);
+    return gather(vol, static_cast<char*>(data), size);
   } else {
     return -1;
   }

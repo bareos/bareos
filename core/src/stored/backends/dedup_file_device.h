@@ -28,10 +28,15 @@
 #include <unordered_map>
 #include <fcntl.h>
 #include <optional>
+#include <algorithm>
 
 namespace storagedaemon {
 using net_u32 = network_order::network_value<std::uint32_t>;
 using net_i32 = network_order::network_value<std::int32_t>;
+using net_u64 = network_order::network_value<std::uint64_t>;
+using net_u16 = network_order::network_value<std::uint16_t>;
+using net_u8 = std::uint8_t;
+using net_i64 = network_order::network_value<std::int64_t>;
 
 struct bareos_block_header {
   net_u32 CheckSum;       /* Block check sum */
@@ -47,6 +52,77 @@ struct bareos_record_header {
   net_i32 Stream;    /* Stream number supplied by File daemon */
   net_u32 DataSize;  /* size of following data record in bytes */
 };
+
+struct write_buffer {
+  char* current;
+  char* end;
+
+  write_buffer(char* data, std::size_t size) : current{static_cast<char*>(data)}
+					     , end{current + size}
+  {}
+
+
+  bool write(std::size_t size, const char* data)
+  {
+    if (current + size > end) {
+      return false;
+    }
+
+    current = std::copy(data, data + size, current);
+    return true;
+  }
+
+  template <typename F>
+  inline bool write(const F& val) {
+    return write(sizeof(F), reinterpret_cast<const char*>(&val));
+  }
+};
+
+struct dedup_block_header {
+  bareos_block_header BareosHeader;
+  // change to 64bit start!
+  net_u32 RecStart;
+  net_u32 RecEnd;
+  net_u32 file_index;
+
+  dedup_block_header() = default;
+
+  dedup_block_header(const bareos_block_header& base,
+                     std::uint32_t RecStart,
+                     std::uint32_t RecEnd)
+      : BareosHeader(base)
+      , RecStart{network_order::of_native(RecStart)}
+      , RecEnd{network_order::of_native(RecEnd)}
+  {
+  }
+};
+
+static_assert(std::is_standard_layout_v<dedup_block_header>);
+static_assert(std::is_pod_v<dedup_block_header>);
+static_assert(std::has_unique_object_representations_v<dedup_block_header>);
+
+struct dedup_record_header {
+  bareos_record_header BareosHeader;
+  net_u32 file_index;
+  net_u64 DataStart;
+  net_u64 DataEnd;
+
+  dedup_record_header() = default;
+
+  dedup_record_header(const bareos_record_header& base,
+                      std::uint64_t DataStart,
+                      std::uint64_t DataEnd)
+      : BareosHeader(base)
+      , file_index{0}
+      , DataStart{network_order::of_native(DataStart)}
+      , DataEnd{network_order::of_native(DataEnd)}
+  {
+  }
+};
+
+static_assert(std::is_standard_layout_v<dedup_record_header>);
+static_assert(std::is_pod_v<dedup_record_header>);
+static_assert(std::has_unique_object_representations_v<dedup_record_header>);
 
 class raii_fd {
  public:
@@ -155,6 +231,10 @@ struct dedup_volume_file
     return ::write(fd.get(), data, length) == static_cast<ssize_t>(length);
   }
 
+  bool read(void* data, std::size_t length) {
+    return ::read(fd.get(), data, length) == static_cast<ssize_t>(length);
+  }
+
   bool is_ok() const {
     return fd.is_ok();
   }
@@ -194,6 +274,18 @@ struct block_file : public dedup_volume_file
   }
 
   bool write(const bareos_block_header&, std::uint32_t, std::uint32_t);
+
+  std::optional<dedup_block_header> read_block() {
+    if (current_block == end_block) {
+      return std::nullopt;
+    }
+
+    dedup_block_header result;
+    if (read(static_cast<void*>(&result), sizeof(result))) {
+      return std::nullopt;
+    }
+    return result;
+  }
 };
 
 struct record_file : public dedup_volume_file
@@ -407,11 +499,13 @@ class dedup_volume {
 	return false;
       }
     }
+
     for (auto& recordfile : config.recordfiles) {
       if (!recordfile.truncate()) {
 	return false;
       }
     }
+
     for (auto& datafile : config.datafiles) {
       if (!datafile.truncate()) {
 	return false;
@@ -427,11 +521,13 @@ class dedup_volume {
 	return false;
       }
     }
+
     for (auto& recordfile : config.recordfiles) {
       if (!recordfile.goto_begin()) {
 	return false;
       }
     }
+
     for (auto& datafile : config.datafiles) {
       if (!datafile.goto_begin()) {
 	return false;
@@ -472,6 +568,33 @@ class dedup_volume {
     }
     return true;
   }
+
+  std::optional<dedup_block_header> read_block()
+  {
+    auto& blockfile = get_active_block_file();
+
+    return blockfile.read_block();
+  }
+
+  std::optional<dedup_record_header> read_record(std::uint32_t file_index,
+						 std::uint32_t record_index)
+  {
+    (void) file_index;
+    (void) record_index;
+    return std::nullopt;
+  }
+
+  bool read_data(std::uint32_t file_index, std::uint64_t start, std::uint64_t end,
+		 write_buffer& buf)
+  {
+    (void) file_index;
+    (void) start;
+    (void) end;
+    (void) buf;
+    return false;
+  }
+
+
 
   dedup_volume(dedup_volume&&) = default;
   dedup_volume& operator=(dedup_volume&&) = default;
