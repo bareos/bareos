@@ -202,6 +202,9 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
                 % (self.dbname, self.dbuser, self.dbHost, e),
             )
             return bareosfd.bRC_Error
+
+        pgMajorVersion = self.pgVersion // 10000
+
         if chr(self.level) == "F":
             # For Full we backup the Postgres data directory
             # Restore object ROP comes later, after file backup
@@ -223,7 +226,6 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
             # PG8: not supported
             # PG9: pg_get_current_xlog_location
             # PG10: pg_current_wal_lsn
-            pgMajorVersion = self.pgVersion // 10000
             if pgMajorVersion >= 10:
                 getLsnStmt = "SELECT pg_current_wal_lsn()"
                 switchLsnStmt = "SELECT pg_switch_wal()"
@@ -345,18 +347,23 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
             )
             return bareosfd.bRC_Error
 
-        bareosfd.DebugMessage(100, "Send 'SELECT pg_start_backup' to Postgres\n")
+        if pgMajorVersion >= 15:
+            startStmt = "pg_backup_start"
+        else:
+            startStmt = "pg_start_backup"
+
+        bareosfd.DebugMessage(100, "Send 'SELECT %s' to Postgres\n" % startStmt)
         # We tell Postgres that we want to start to backup file now
         self.backupStartTime = datetime.datetime.now(
             tz=dateutil.tz.tzoffset(None, self.tzOffset)
         )
         try:
             result = self.dbCon.run(
-                "SELECT pg_start_backup('%s');" % self.backupLabelString
+                "SELECT %s('%s');" % (startStmt, self.backupLabelString)
             )
         except Exception as e:
             bareosfd.JobMessage(
-                bareosfd.M_FATAL, "pg_start_backup statement failed: %s" % (e)
+                bareosfd.M_FATAL, "%s statement failed: %s" % (startStmt, e)
             )
             return bareosfd.bRC_Error
 
@@ -471,8 +478,15 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
         # self.execute_SQL("SELECT pg_backup_start_time()")
         # self.backupStartTime = self.dbCursor.fetchone()[0]
         # Tell Postgres we are done
+        
+        pgMajorVersion = self.pgVersion // 10000
+        if pgMajorVersion >= 15:
+            stopStmt = "pg_backup_stop"
+        else:
+            stopStmt = "pg_stop_backup"
+        
         try:
-            results = self.dbCon.run("SELECT pg_stop_backup();")
+            results = self.dbCon.run("SELECT %s();" % stopStmt)
             self.lastLSN = self.formatLSN(results[0][0])
             self.lastBackupStopTime = int(time.time())
             bareosfd.JobMessage(
@@ -485,7 +499,7 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
             self.PostgressFullBackupRunning = False
         except Exception as e:
             bareosfd.JobMessage(
-                bareosfd.M_ERROR, "pg_stop_backup statement failed: %s\n" % (e)
+                bareosfd.M_ERROR, "%s statement failed: %s\n" % (stopStmt, e)
             )
 
     def checkForWalFiles(self):
