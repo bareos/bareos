@@ -32,6 +32,7 @@ import dateutil.parser
 import dateutil
 import json
 import getpass
+import re
 from BareosFdPluginLocalFilesBaseclass import BareosFdPluginLocalFilesBaseclass
 import bareosfd
 
@@ -368,10 +369,11 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
             return bareosfd.bRC_Error
 
         bareosfd.DebugMessage(150, "Start response: %s\n" % str(result))
-        bareosfd.DebugMessage(
-            150, "Adding label file %s to fileset\n" % self.labelFileName
-        )
-        self.files_to_backup.append(self.labelFileName)
+        if pgMajorVersion < 15:
+            bareosfd.DebugMessage(
+                150, "Adding label file %s to fileset\n" % self.labelFileName
+            )
+            self.files_to_backup.append(self.labelFileName)
         bareosfd.DebugMessage(150, "Filelist: %s\n" % (self.files_to_backup))
         self.PostgressFullBackupRunning = True
         return bareosfd.bRC_OK
@@ -389,6 +391,20 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
                 "Could not read Label File %s: %s\n" % (self.labelFileName, e),
             )
 
+    def parseBackupStopResult(self, result: str):
+        try:
+            for (key, value) in re.findall("([A-Z ]+): (.*)\n", result):
+                if key == 'START WAL LOCATION':
+                    value, _ = value.split(" ", 1)
+        
+                self.labelItems.update({key.strip(): value.strip()})
+            bareosfd.DebugMessage(150, "Labels read: %s\n" % str(self.labelItems))
+        except Exception as e:
+            bareosfd.JobMessage(
+                bareosfd.M_ERROR,
+                "Could not parse stop result %s: %s\n" % (result, e),
+            )
+        
     def start_backup_file(self, savepkt):
         """
         For normal files we call the super method
@@ -474,7 +490,6 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
         """
         # TODO Error Handling
         # Get Backup Start Date
-        self.parseBackupLabelFile()
         # self.execute_SQL("SELECT pg_backup_start_time()")
         # self.backupStartTime = self.dbCursor.fetchone()[0]
         # Tell Postgres we are done
@@ -484,10 +499,16 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
             stopStmt = "pg_backup_stop"
         else:
             stopStmt = "pg_stop_backup"
+            self.parseBackupLabelFile()
         
         try:
             results = self.dbCon.run("SELECT %s();" % stopStmt)
-            self.lastLSN = self.formatLSN(results[0][0])
+            if pgMajorVersion >= 15:
+                self.parseBackupStopResult(results[0][0])
+                self.lastLSN = self.formatLSN(self.labelItems["START WAL LOCATION"])
+            else:
+                self.lastLSN = self.formatLSN(results[0][0])
+
             self.lastBackupStopTime = int(time.time())
             bareosfd.JobMessage(
                 bareosfd.M_INFO,
