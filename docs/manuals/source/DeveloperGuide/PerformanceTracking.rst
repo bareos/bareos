@@ -57,6 +57,11 @@ job-local event stream
 As can be seen in the function name, events are buffered thread locally and then
 later on given to the per-job processor.
 
+.. note::
+   Since each handle retrieved from the jcr implictly depends on that jcr it is
+   of utmost importance that the handle does not outlive that jcr.
+
+
 Now that we can submit events it becomes possible to tell bareos that we
 entered/left our block.  There are two ways to do this.
 We can create a RAII handle which will enter the given block on construction and
@@ -127,16 +132,70 @@ There is also a second, manual way to submit such events:
 
 Sometimes such manual code might be necessary but in general it is not
 recommended since it is very easy to make mistakes; especially when another
-developer needs to edit the code.  Any missed enter or exit will lead to bad
-results.  In the best case the event system will detect the error and discard
-any data for that thread, and in the worst case two errors will cancel out
-and we just silently produce bad data.
+developer needs to edit the code.  Any missed enter() or exit() calls will lead
+to bad results.  In the best case the event system will detect the error and
+discard any data for that thread, and in the worst case two errors will cancel
+out and we just silently produce bad data.
 
 Displaying gathered performance statistics
 ------------------------------------------
 
-Using the report command
-------------------------
+If performance tracking was enabled for a particular job and the debug was was
+set to at least 500 a final report will be printed to the debug log. See
+:ref:`here <bcommandSetdebug>` for more details.
+
+
+bconsole interface
+------------------
+
+It is possible to query the daemons for a live snapshot of the processed
+performance events and display them in various ways.  This can be done with the
+performance command.
+
+In total we currently have three different ways to view that snapshot from the
+bconsole:
+
+.. code-block:: bconsole
+   :caption: possible performance report invocations
+
+   report about=perf <report options> [style=callstack depth=all|<max_depth> relative[=yes|no]]
+   report about=perf <report options> style=overview [show=all|<top_n> relative[=yes|no]]
+   report about=perf <report options> style=collapsed [depth=all|<max_depth>]
+
+.. seealso:: :ref:`the bconsole report command <bcommandReport>`
+
+callstack style
+^^^^^^^^^^^^^^^
+
+This is the default style that gets selected when no style is specified.  It
+displays a sorted tree of blocks in which each parent called its children.
+Each line contains one block, the time spent inside that block when called from
+its parents and what percentage this constitutes of the parents time if relative
+is set to yes -- which is the default -- or of the total time otherwise.
+
+Blocks may appear mulitple times in this tree since the blocks can be entered
+from different contexts.
+
+You can restrict the depth of this tree with the depth parameter.  If depth is
+set to all, the whole tree will be displayed otherwise.
+
+overview style
+^^^^^^^^^^^^^^
+
+When the overview style is selected a sorted list of blocks -- one per line --
+gets printed.  If relative is no -- which is the default for this style -- the
+time associated with each block is simply the duration that bareos was inside
+this block.  Otherwise, if relative is yes, the time will instead be the
+duration bareos was inside this block, but not inside any other block.
+
+The number of lines may be restricted with the show parameter.  If its set to
+all instead all blocks get printed.
+
+collapsed style
+^^^^^^^^^^^^^^^
+
+The output of this can be piped into `flamegraph.pl <https://www.brendangregg.com/flamegraphs.html>`_
+to create a flamegraph representation in svg form.  It is not very enlightening on its own.
 
 .. limitation:: live viewing: buffering
 

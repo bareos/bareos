@@ -967,6 +967,8 @@ reload
 
    While it is possible to reload the Director’s configuration on the fly, even while jobs are executing, this is a complex operation and not without side effects. Accordingly, if you have to reload the Director’s configuration while Bareos is running, it is advisable to restart the Director at the next convenient opportunity.
 
+.. _bcommandReport:
+
 report
    :index:`\ <single: Console; Command; report>`\ The report command allows you
    to ask the daemons to send reports about specific topics to you. Currently
