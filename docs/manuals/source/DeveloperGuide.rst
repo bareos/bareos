@@ -33,3 +33,4 @@ Developer Guide
    DeveloperGuide/PythonBareos.rst
    DeveloperGuide/Webui.rst
    DeveloperGuide/developerFAQ.rst
+   DeveloperGuide/PerformanceTracking.rst

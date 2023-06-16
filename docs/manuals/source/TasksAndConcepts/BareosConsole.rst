@@ -978,7 +978,7 @@ report
       report [about=perf] [jobid=<jobid> | style=<style>] <style arguments>
 
    If no topic is given then the about defaults to perf.
-   More information on the performance report may be found <<insert here>>.
+   More information on the performance report may be found :ref:`here <sec:perf>`.
 
 rerun
    :index:`\ <single: Console; Command; rerun>`\  The rerun command allows you to re-run a Job with exactly the same setting as the original Job. In Bareos, the job configuration is often altered by job overrides. These overrides alter the configuration of the job just for one job run. If because of any reason, a job with overrides fails, it is not easy to restart a new job that is exactly configured as the job that failed. The whole job configuration is automatically set to the defaults
