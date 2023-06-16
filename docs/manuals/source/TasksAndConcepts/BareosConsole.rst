@@ -975,9 +975,11 @@ report
    .. code-block:: bconsole
       :caption: report
 
-      report [about=perf] [jobid=<jobid> | style=<style>] <style arguments>
+      report [about=perf] client=<client-name> | dir | director | storage=<storage-name> | all [jobid=<jobid> style=<style>] <style arguments>
 
-   If no topic is given then the about defaults to perf.
+   If no topic is given then the about defaults to perf. It defaults to showing
+   all jobids, otherwise a comma seperated list of jobids is expected. All
+   selected daemons will report on all selected jobs if possible.
    More information on the performance report may be found :ref:`here <sec:perf>`.
 
 rerun
