@@ -38,13 +38,13 @@
 
 namespace directordaemon {
 void DoDirectorReport(UaContext* ua, const char* msg) {
-  std::unordered_map parsed = shared::ParseReportCommands(msg);
+  std::unordered_map parsed = report::ParseReportCommands(msg);
 
   if (auto found = parsed.find("about");
       found != parsed.end()) {
     if (found->second == "perf") {
       std::ostringstream out;
-      static_cast<void>(shared::PerformanceReport(out, parsed));
+      static_cast<void>(report::PerformanceReport(out, parsed));
       ua->SendMsg("%s", out.str().c_str());
     } else {
       // the map does not contain cstrings but string_views.  As such
