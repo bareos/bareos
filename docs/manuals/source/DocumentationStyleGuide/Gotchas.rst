@@ -15,13 +15,13 @@ Also do a :program:`make clean` if you change the structure of the document (e.g
 Not shown text
 --------------
 
-When using :ref:`DocumentationStyleGuide/RestOverview:Directives`, they are prepanded by the comment directives: ''.. ''
+:ref:`DocumentationStyleGuide/RestOverview:Directives` are prepended by the comment directive: ''.. ''
 
-For this reason, any mispelled directives will not be shown at all (and not even are warning is shown during sphinx-build).
+For this reason, any mispelled directives will not be shown at all (not even a warning will be shown during sphinx-build).
 
-Similar things happen, is a space is forgotten or a space or line break too many is used.
+Similar things happen when a space is forgotten or too many spaces or line breaks are used.
 
-Help: I'm not aware about a reasonalbe approach to avoid this in reST.
+Help: I'm not aware about a reasonable approach to avoid this in reST.
 
 
 Undefined link targets
@@ -32,10 +32,10 @@ For example, config directives can be defined and later on referenced by::
    :config:option:`...`
 
 If the link target :ref:`DocumentationStyleGuide/BareosSpecificFormatting/BareosConfiguration:Reference to a Resource Directive` is unknown,
-the displayed text will not alter.
+the displayed text will not change.
 
 There will not even be a warning during Sphinx build,
-making it really hard to find typos in this kind of references.
+making it really hard to find typos in this kind of reference.
 
 .. _documentationstyleguide/gotchas:toctree vs include:
 
@@ -73,7 +73,7 @@ toctree
 ``:option:``
 ------------
 
-Don't use the ``:options:`` role, as this tries to refers to a option definition, which we don't have.
+Don't use the ``:options:`` role, as this tries to refers to an option definition, which we don't have.
 Also, as we document different programs, using option would require to prefix it with the program name, see https://www.sphinx-doc.org/en/master/usage/restructuredtext/domains.html#directive-program.
 
-This only applies to ``:options:`` without domain. We do you ``:config:option:`` in :ref:`DocumentationStyleGuide/BareosSpecificFormatting/BareosConfiguration:Bareos Configuration`.
+This only applies to ``:options:`` without domain. We do use ``:config:option:`` in :ref:`DocumentationStyleGuide/BareosSpecificFormatting/BareosConfiguration:Bareos Configuration`.

@@ -295,7 +295,7 @@ Alternatively, you can reference any label (not just section titles) if you prov
 Manual defined labels should use following naming rules:
 
    * without spaces
-   * without columns (:)
+   * without colons (:)
 
 .. warning::
 
