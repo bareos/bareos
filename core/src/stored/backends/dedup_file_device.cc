@@ -644,10 +644,9 @@ ssize_t scatter(dedup_volume& vol, const void* data, size_t size)
     // todo: emit dmsg warning
   }
 
-  auto* begin = reinterpret_cast<const char*>(block + 1);
-  auto* current = begin;
-
-  auto* end = static_cast<const char*>(data) + bsize;
+  auto* begin = static_cast<const char*>(data);
+  auto* current = begin + sizeof(*block);
+  auto* end = begin + bsize;
 
   auto& blockfile = vol.get_active_block_file();
   auto& recordfile = vol.get_active_record_file();
@@ -666,20 +665,17 @@ ssize_t scatter(dedup_volume& vol, const void* data, size_t size)
     auto* payload_start = reinterpret_cast<const char*>(record + 1);
     auto* payload_end = payload_start + record->DataSize;
 
-    auto& datafile = vol.get_data_file_by_size(record->DataSize);
-
     if (payload_end > end) {
       // payload is split in multiple blocks
       payload_end = end;
     }
 
-    std::optional written_loc = datafile.write(payload_start, payload_end);
-
+    std::optional written_loc = vol.write_data(*block, *record, payload_start, payload_end);
     if (!written_loc) {
       return -1;
     }
 
-    if (!recordfile.write(*record, written_loc->begin, written_loc->end) &&
+    if (!recordfile.write(*record, written_loc->begin, written_loc->end, written_loc->file_index) ||
 	RecEnd != recordfile.current()) {
       // something went wrong
       return -1;
@@ -687,6 +683,7 @@ ssize_t scatter(dedup_volume& vol, const void* data, size_t size)
     current = payload_end;
   }
 
+  ASSERT(RecEnd == recordfile.current());
   blockfile.write(*block, RecStart, RecEnd);
 
   return current - begin;
@@ -698,6 +695,7 @@ ssize_t dedup_file_device::d_write(int fd, const void* data, size_t size)
     dedup_volume& vol = found->second;
     ASSERT(vol.is_ok());
     vol.changed_volume();
+    SetEot();
     return scatter(vol, data, size);
   } else {
     return -1;
@@ -750,7 +748,13 @@ ssize_t dedup_file_device::d_read(int fd, void* data, size_t size)
   if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
     dedup_volume& vol = found->second;
     ASSERT(vol.is_ok());
-    return gather(vol, static_cast<char*>(data), size);
+    ssize_t bytes_written = gather(vol, static_cast<char*>(data), size);
+    if (vol.is_at_end()) {
+      SetEot();
+    } else {
+      ClearEot();
+    }
+    return bytes_written;
   } else {
     return -1;
   }
@@ -794,6 +798,11 @@ bool dedup_file_device::rewind(DeviceControlRecord* dcr)
     block_num = 0;
     file = 0;
     file_addr = 0;
+    if (vol.is_at_end()) {
+      SetEot();
+    } else {
+      ClearEot();
+    }
     return UpdatePos(dcr);
   } else {
     return false;
@@ -835,6 +844,11 @@ bool dedup_file_device::Reposition(DeviceControlRecord* dcr,
 
     if (!vol.goto_block(rblock)) { return false; }
 
+    if (vol.is_at_end()) {
+      SetEot();
+    } else {
+      ClearEot();
+    }
     return UpdatePos(dcr);
   } else {
     return false;
@@ -847,6 +861,7 @@ bool dedup_file_device::eod(DeviceControlRecord* dcr)
     dedup_volume& vol = found->second;
     ASSERT(vol.is_ok());
     if (!vol.goto_end()) { return false; }
+    SetEot();
     return UpdatePos(dcr);
   } else {
     return false;
@@ -925,9 +940,10 @@ bool block_file::write(const bareos_block_header& header,
 
 bool record_file::write(const bareos_record_header& header,
 			std::uint64_t payload_start,
-			std::uint64_t payload_end)
+			std::uint64_t payload_end,
+			std::uint32_t file_index)
 {
-  dedup_record_header dedup{header, payload_start, payload_end};
+  dedup_record_header dedup{header, payload_start, payload_end, file_index};
 
   if (!dedup_volume_file::write(&dedup, sizeof(dedup))) {
     return false;
