@@ -975,7 +975,7 @@ report
    .. code-block:: bconsole
       :caption: report
 
-      report [about=perf] [jobid=<jobid> | style=<style>]
+      report [about=perf] [jobid=<jobid> | style=<style>] <style arguments>
 
    If no topic is given then the about defaults to perf.
    More information on the performance report may be found <<insert here>>.
