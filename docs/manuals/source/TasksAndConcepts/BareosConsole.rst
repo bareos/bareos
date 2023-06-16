@@ -1071,7 +1071,7 @@ setdebug
    .. code-block:: bconsole
       :caption: setdebug
 
-      setdebug level=nnn [trace=0/1 client=<client-name> | dir | director | storage=<storage-name> | all]
+      setdebug [level=nnn] [trace=0/1 perf=0/1 client=<client-name> | dir | director | storage=<storage-name> | all]
 
    Each of the daemons normally has debug compiled into the program, but disabled. There are two ways to enable the debug output.
 
@@ -1085,7 +1085,19 @@ setdebug
       :caption: set Director debug level to 100 and get messages written to his trace file
 
       *<input>setdebug level=100 trace=1 dir</input>
-      level=100 trace=1 hangup=0 timestamp=0 tracefilename=/var/lib/bareos/bareos-dir.example.com.trace
+      level=100 trace=1 hangup=0 timestamp=0 tracefilename=/var/lib/bareos/bareos-dir.example.com.trace perf=0
+
+   If perf=1 is set, then performance tracking will be enabled for all jobs started after this point, which means that the daemon will start tracking how much time was spent in particular blocks of code.  The results can be viewed in the debug log of the daemon at the end of the job if a high enough debug level is set.  An estimation may be printed at any time with the report command.
+
+   If perf=0 is set, then performance tracking will be disabled for all jobs started after this point; this does not have any effect on jobs started beforehand.
+
+   .. code-block:: bconsole
+      :caption: turn on performance tracking on the director
+
+      *<input>setdebug perf=1 dir</input>
+      level=-1 trace=0 hangup=0 timestamp=0 tracefilename=/var/lib/bareos/bareos-dir.example.com.trace perf=1
+
+   If no level is given, then each daemon will stay on their current debug level.  This allows one to e.g. enable tracing without having to change/specify the current debug level.
 
 .. _bcommandSetdevice:
 
