@@ -926,22 +926,6 @@ purge
    However, normally you should use the :bcommand:`purge` command only to purge a volume from the catalog and use the :bcommand:`truncate` command to truncate the volume on the |sd|.
 
 
-resolve
-   :index:`\ <single: Console; Command; resolve>`\  In the configuration files, Addresses can (and normally should) be specified as DNS names. As the different components of Bareos will establish network connections to other Bareos components, it is important that DNS name resolution works on involved components and delivers the same results. The :bcommand:`resolve` command can be used to test DNS resolution of a given hostname on director, storage daemon or client.
-
-   .. code-block:: bconsole
-      :caption: resolve example
-
-      *<input>resolve www.bareos.com</input>
-      bareos-dir resolves www.bareos.com to host[ipv4:84.44.166.242]
-
-      *<input>resolve client=client1-fd www.bareos.com</input>
-      client1-fd resolves www.bareos.com to host[ipv4:84.44.166.242]
-
-      *<input>resolve storage=File www.bareos.com</input>
-      bareos-sd resolves www.bareos.com to host[ipv4:84.44.166.242]
-
-
 .. _section-bcommandQuery:
 
 query
@@ -983,6 +967,19 @@ reload
 
    While it is possible to reload the Director’s configuration on the fly, even while jobs are executing, this is a complex operation and not without side effects. Accordingly, if you have to reload the Director’s configuration while Bareos is running, it is advisable to restart the Director at the next convenient opportunity.
 
+report
+   :index:`\ <single: Console; Command; rerun>`\ The report command allows you
+	  to ask the daemons to send reports about specific topics to you.
+	  Currently only the perf topic is supported.
+
+   .. code-block:: bconsole
+      :caption: report
+
+      report [about=perf] [jobid=<jobid> | style=<style>]
+
+   If no topic is given then the about defaults to perf.
+   More information on the performance report may be found <<insert here>>.
+
 rerun
    :index:`\ <single: Console; Command; rerun>`\  The rerun command allows you to re-run a Job with exactly the same setting as the original Job. In Bareos, the job configuration is often altered by job overrides. These overrides alter the configuration of the job just for one job run. If because of any reason, a job with overrides fails, it is not easy to restart a new job that is exactly configured as the job that failed. The whole job configuration is automatically set to the defaults
    and it is hard to configure everything like it was.
@@ -995,6 +992,21 @@ rerun
       rerun jobid=<jobid> since_jobid=<jobid> days=<nr_days> hours=<nr_hours> yes
 
    You can select the jobid(s) to rerun by using one of the selection criteria. Using jobid= will automatically select all jobs failed after and including the given jobid for rerunning. By using days= or hours=, you can select all failed jobids in the last number of days or number of hours respectively for rerunning.
+
+resolve
+   :index:`\ <single: Console; Command; resolve>`\  In the configuration files, Addresses can (and normally should) be specified as DNS names. As the different components of Bareos will establish network connections to other Bareos components, it is important that DNS name resolution works on involved components and delivers the same results. The :bcommand:`resolve` command can be used to test DNS resolution of a given hostname on director, storage daemon or client.
+
+   .. code-block:: bconsole
+      :caption: resolve example
+
+      *<input>resolve www.bareos.com</input>
+      bareos-dir resolves www.bareos.com to host[ipv4:84.44.166.242]
+
+      *<input>resolve client=client1-fd www.bareos.com</input>
+      client1-fd resolves www.bareos.com to host[ipv4:84.44.166.242]
+
+      *<input>resolve storage=File www.bareos.com</input>
+      bareos-sd resolves www.bareos.com to host[ipv4:84.44.166.242]
 
 
 .. _bcommandRestore:
