@@ -1,3 +1,27 @@
+/*
+   BAREOS® - Backup Archiving REcovery Open Sourced
+
+   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+
+   This program is Free Software; you can redistribute it and/or
+   modify it under the terms of version three of the GNU Affero General Public
+   License as published by the Free Software Foundation and included
+   in the file LICENSE.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+   Affero General Public License for more details.
+
+   You should have received a copy of the GNU Affero General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
+*/
+/**
+ * @file
+ * Program to see dedup possibilities
+ */
 #include <iostream>
 #include <vector>
 #include <cstdio>
@@ -9,21 +33,16 @@
 #include "lib/version.h"
 #include <openssl/evp.h>
 
-class openssl_digest
-{
-public:
-  openssl_digest(char* digest, unsigned length) : digest{digest}
-						, length{length}
+class openssl_digest {
+ public:
+  openssl_digest(char* digest, unsigned length) : digest{digest}, length{length}
   {
   }
 
   openssl_digest(const openssl_digest&) = delete;
   openssl_digest& operator=(const openssl_digest&) = delete;
 
-  openssl_digest(openssl_digest&& to_move)
-  {
-    *this = std::move(to_move);
-  }
+  openssl_digest(openssl_digest&& to_move) { *this = std::move(to_move); }
   openssl_digest& operator=(openssl_digest&& to_move)
   {
     std::swap(digest, to_move.digest);
@@ -31,62 +50,54 @@ public:
     return *this;
   }
 
-  const char* data() const {
-    return digest;
-  }
+  const char* data() const { return digest; }
 
-  std::size_t size() const {
-    return length;
-  }
+  std::size_t size() const { return length; }
 
   ~openssl_digest()
   {
     if (digest) { OPENSSL_free(digest); }
   }
-private:
+
+ private:
   char* digest{nullptr};
   unsigned length{0};
 };
 
-std::optional<openssl_digest> digest_message(const char *message,
-					     size_t message_len)
+std::optional<openssl_digest> digest_message(const char* message,
+                                             size_t message_len)
 {
-	EVP_MD_CTX *mdctx;
+  EVP_MD_CTX* mdctx;
 
-	if((mdctx = EVP_MD_CTX_new()) == NULL) {
-	  return std::nullopt;
-	}
+  if ((mdctx = EVP_MD_CTX_new()) == NULL) { return std::nullopt; }
 
-	if(1 != EVP_DigestInit_ex(mdctx, EVP_sha256(), NULL)) {
-	  return std::nullopt;
-	}
+  if (1 != EVP_DigestInit_ex(mdctx, EVP_sha256(), NULL)) {
+    return std::nullopt;
+  }
 
-	if(1 != EVP_DigestUpdate(mdctx, message, message_len)) {
-	  return std::nullopt;
-	}
+  if (1 != EVP_DigestUpdate(mdctx, message, message_len)) {
+    return std::nullopt;
+  }
 
-	char* digest = (char *)OPENSSL_malloc(EVP_MD_size(EVP_sha256()));
-	unsigned length = 0;
-	if(digest == NULL) {
-	  return std::nullopt;
-	}
+  char* digest = (char*)OPENSSL_malloc(EVP_MD_size(EVP_sha256()));
+  unsigned length = 0;
+  if (digest == NULL) { return std::nullopt; }
 
-	if(1 != EVP_DigestFinal_ex(mdctx, (unsigned char*)digest, &length)) {
-	  OPENSSL_free(digest);
-	  return std::nullopt;
-	}
+  if (1 != EVP_DigestFinal_ex(mdctx, (unsigned char*)digest, &length)) {
+    OPENSSL_free(digest);
+    return std::nullopt;
+  }
 
-	EVP_MD_CTX_free(mdctx);
+  EVP_MD_CTX_free(mdctx);
 
-	return openssl_digest{ digest, length };
+  return openssl_digest{digest, length};
 }
 
 
 struct block {
   using it = std::vector<char>::const_iterator;
 
-  block(std::size_t size, it begin, it end,
-	char fill) : data(size, fill)
+  block(std::size_t size, it begin, it end, char fill) : data(size, fill)
   {
     if (static_cast<std::size_t>(end - begin) <= size) {
       std::copy(begin, end, data.begin());
@@ -94,36 +105,36 @@ struct block {
       std::copy(begin, begin + size, data.begin());
     }
     std::optional digest = digest_message(&*data.begin(), data.size());
-    if (!digest.has_value()) {
-      throw;
-    }
+    if (!digest.has_value()) { throw; }
     checksum = std::string(digest->data(), digest->size());
   }
 
-  friend bool operator==(const block& a, const block& b) {
+  friend bool operator==(const block& a, const block& b)
+  {
     return b.checksum == a.checksum && b.data == a.data;
   }
 
   const std::string& hash() const { return checksum; }
-private:
+
+ private:
   std::vector<char> data;
   std::string checksum;
 };
 
 namespace std {
-  template <>
-  struct hash<block> {
-    std::size_t operator()(const block& b) const {
-      return std::hash<std::string>{}(b.hash());
-    }
-  };
+template <> struct hash<block> {
+  std::size_t operator()(const block& b) const
+  {
+    return std::hash<std::string>{}(b.hash());
+  }
 };
+};  // namespace std
 
 std::size_t add_blocks(std::unordered_set<block>& uniques,
-		       const std::vector<char>& data,
-		       std::size_t blocksize,
-		       std::size_t cutoff,
-		       char fill = 0)
+                       const std::vector<char>& data,
+                       std::size_t blocksize,
+                       std::size_t cutoff,
+                       char fill = 0)
 {
   auto current = data.begin();
   std::size_t num = 0;
@@ -155,7 +166,6 @@ std::size_t add_blocks(std::unordered_set<block>& uniques,
 
 int main(int argc, char* argv[])
 {
-
   CLI::App app;
   std::string desc(1024, '\0');
   kBareosVersionStrings.FormatCopyright(desc.data(), desc.size(), 2023);
@@ -163,16 +173,16 @@ int main(int argc, char* argv[])
   InitCLIApp(app, desc, 0);
 
   std::size_t blocksize = 1 << 16;
-  std::size_t cutoff    = 0;
+  std::size_t cutoff = 0;
   std::vector<std::string> files;
   std::string file_list;
   std::map<std::string, std::size_t> unit_map = {{"k", 1024}};
   app.add_option("-b,--blocksize", blocksize)
-    ->transform(CLI::AsNumberWithUnit(unit_map));
+      ->transform(CLI::AsNumberWithUnit(unit_map));
   app.add_option("-c,--cut-off", cutoff)
-    ->transform(CLI::AsNumberWithUnit(unit_map));
-  auto* group = app.add_option_group("file input", "some description")
-    ->required();
+      ->transform(CLI::AsNumberWithUnit(unit_map));
+  auto* group
+      = app.add_option_group("file input", "some description")->required();
   group->add_option("-f,--files,files", files);
   group->add_option("-l,--file-list", file_list);
 
@@ -190,7 +200,7 @@ int main(int argc, char* argv[])
       std::cerr << "Could not open filelist '" << file_list << "'\n";
     } else {
       for (std::string line; std::getline(fl, line);) {
-	files.emplace_back(std::move(line));
+        files.emplace_back(std::move(line));
       }
     }
   }
@@ -235,8 +245,8 @@ int main(int argc, char* argv[])
     return 1;
   }
 
-  std::cout << "From " << num_total_blocks << " to "
-	    << unique_blocks.size() << std::endl;
+  std::cout << "From " << num_total_blocks << " to " << unique_blocks.size()
+            << std::endl;
 
   return 0;
 }

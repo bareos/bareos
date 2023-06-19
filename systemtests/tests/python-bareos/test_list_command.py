@@ -1,7 +1,7 @@
 #
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -56,7 +56,7 @@ class PythonBareosListCommandTest(bareos_unittest.Base):
             port=self.director_port,
             name=username,
             password=password,
-            **self.director_extra_options
+            **self.director_extra_options,
         )
 
         director.call("run job=backup-bareos-fd yes")
@@ -283,7 +283,7 @@ class PythonBareosListCommandTest(bareos_unittest.Base):
             port=self.director_port,
             name=username,
             password=password,
-            **self.director_extra_options
+            **self.director_extra_options,
         )
 
         director.call("run job=backup-bareos-fd yes")
@@ -373,7 +373,7 @@ class PythonBareosListCommandTest(bareos_unittest.Base):
             port=self.director_port,
             name=username,
             password=password,
-            **self.director_extra_options
+            **self.director_extra_options,
         )
 
         director.call("run job=backup-bareos-fd yes")

@@ -69,7 +69,10 @@ template <typename T> struct network_value {
 
   constexpr network_value() = default;
   constexpr network_value(from_network_order, T val) : as_network{val} {}
-  constexpr network_value(from_native_order, T val) : as_network{to_network(val)} {}
+  constexpr network_value(from_native_order, T val)
+      : as_network{to_network(val)}
+  {
+  }
   constexpr network_value(T val) : network_value{from_native_order_v, val} {}
 };
 
@@ -88,5 +91,5 @@ template <typename U> static network_value<U> of_native(U native)
 {
   return network_value<U>{from_native_order_v, native};
 }
-}
+}  // namespace network_order
 #endif  // BAREOS_LIB_NETWORK_ORDER_H_

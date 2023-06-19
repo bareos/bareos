@@ -622,14 +622,14 @@ bool WriteSessionLabel(DeviceControlRecord* dcr, int label)
       break;
     case EOS_LABEL:
       switch (dev->GetSeekMode()) {
-      case SeekMode::FILE_BLOCK: {
-        dcr->EndBlock = dev->EndBlock;
-        dcr->EndFile = dev->EndFile;
-      } break;
-      default: {
-        dcr->EndBlock = (uint32_t)dev->file_addr;
-        dcr->EndFile = (uint32_t)(dev->file_addr >> 32);
-      }
+        case SeekMode::FILE_BLOCK: {
+          dcr->EndBlock = dev->EndBlock;
+          dcr->EndFile = dev->EndFile;
+        } break;
+        default: {
+          dcr->EndBlock = (uint32_t)dev->file_addr;
+          dcr->EndFile = (uint32_t)(dev->file_addr >> 32);
+        }
       }
       break;
     default:

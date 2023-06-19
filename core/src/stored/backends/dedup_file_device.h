@@ -58,31 +58,29 @@ struct write_buffer {
   char* current;
   char* end;
 
-  write_buffer(char* data, std::size_t size) : current{static_cast<char*>(data)}
-					     , end{current + size}
-  {}
+  write_buffer(char* data, std::size_t size)
+      : current{static_cast<char*>(data)}, end{current + size}
+  {
+  }
 
 
   bool write(std::size_t size, const char* data)
   {
-    if (current + size > end) {
-      return false;
-    }
+    if (current + size > end) { return false; }
 
     current = std::copy(data, data + size, current);
     return true;
   }
 
-  char* reserve(std::size_t size) {
-    if (current + size > end) {
-      return nullptr;
-    }
+  char* reserve(std::size_t size)
+  {
+    if (current + size > end) { return nullptr; }
 
     return std::exchange(current, current + size);
   }
 
-  template <typename F>
-  inline bool write(const F& val) {
+  template <typename F> inline bool write(const F& val)
+  {
     return write(sizeof(F), reinterpret_cast<const char*>(&val));
   }
 };
@@ -98,10 +96,12 @@ struct dedup_block_header {
 
   dedup_block_header(const bareos_block_header& base,
                      std::uint32_t RecStart,
-                     std::uint32_t RecEnd)
+                     std::uint32_t RecEnd,
+                     std::uint32_t file_index)
       : BareosHeader(base)
       , RecStart{network_order::of_native(RecStart)}
       , RecEnd{network_order::of_native(RecEnd)}
+      , file_index{network_order::of_native(file_index)}
   {
   }
 };
@@ -121,7 +121,7 @@ struct dedup_record_header {
   dedup_record_header(const bareos_record_header& base,
                       std::uint64_t DataStart,
                       std::uint64_t DataEnd,
-		      std::uint32_t file_index)
+                      std::uint32_t file_index)
       : BareosHeader(base)
       , file_index{file_index}
       , DataStart{network_order::of_native(DataStart)}
@@ -180,58 +180,58 @@ class raii_fd {
   int mode;
 };
 
-struct dedup_volume_file
-{
+struct dedup_volume_file {
   std::string path{};
   raii_fd fd{};
 
   dedup_volume_file() = default;
-  dedup_volume_file(std::string_view path) : path{path}
-  {
-  }
+  dedup_volume_file(std::string_view path) : path{path} {}
 
-  bool open_inside(raii_fd& dir, int mode, DeviceMode dev_mode) {
+  bool open_inside(raii_fd& dir, int mode, DeviceMode dev_mode)
+  {
     int flags;
     switch (dev_mode) {
-    case DeviceMode::CREATE_READ_WRITE: {
-      flags = O_CREAT | O_RDWR | O_BINARY;
-    } break;
-    case DeviceMode::OPEN_READ_WRITE: {
-      flags = O_RDWR | O_BINARY;
-    } break;
-    case DeviceMode::OPEN_READ_ONLY: {
-      flags = O_RDONLY | O_BINARY;
-    } break;
-    case DeviceMode::OPEN_WRITE_ONLY: {
-      flags = O_WRONLY | O_BINARY;
-    } break;
-    default: {
-      return false;
-    }
+      case DeviceMode::CREATE_READ_WRITE: {
+        flags = O_CREAT | O_RDWR | O_BINARY;
+      } break;
+      case DeviceMode::OPEN_READ_WRITE: {
+        flags = O_RDWR | O_BINARY;
+      } break;
+      case DeviceMode::OPEN_READ_ONLY: {
+        flags = O_RDONLY | O_BINARY;
+      } break;
+      case DeviceMode::OPEN_WRITE_ONLY: {
+        flags = O_WRONLY | O_BINARY;
+      } break;
+      default: {
+        return false;
+      }
     }
     fd = raii_fd(dir.get(), path.c_str(), flags, mode);
     return is_ok();
   }
 
-  bool truncate(std::size_t size = 0) {
-    if (ftruncate(fd.get(), size) != 0) {
-      return false;
-    }
+  bool truncate(std::size_t size = 0)
+  {
+    if (ftruncate(fd.get(), size) != 0) { return false; }
     return true;
   }
 
-  bool goto_end() {
+  bool goto_end()
+  {
     if (lseek(fd.get(), 0, SEEK_END) < 0) { return false; }
     return true;
   }
 
-  bool goto_begin(ssize_t offset = 0) {
+  bool goto_begin(ssize_t offset = 0)
+  {
     if (offset < 0) { return false; }
     if (lseek(fd.get(), offset, SEEK_SET) != offset) { return false; }
     return true;
   }
 
-  std::optional<std::size_t> current_pos() {
+  std::optional<std::size_t> current_pos()
+  {
     auto pos = lseek(fd.get(), 0, SEEK_CUR);
     if (pos < 0) return std::nullopt;
     return static_cast<std::size_t>(pos);
@@ -242,53 +242,55 @@ struct dedup_volume_file
     return ::write(fd.get(), data, length) == static_cast<ssize_t>(length);
   }
 
-  bool read(void* data, std::size_t length) {
+  bool read(void* data, std::size_t length)
+  {
     return ::read(fd.get(), data, length) == static_cast<ssize_t>(length);
   }
 
-  bool is_ok() const {
-    return fd.is_ok();
-  }
+  bool is_ok() const { return fd.is_ok(); }
 };
 
-struct block_file : public dedup_volume_file
-{
+struct block_file : public dedup_volume_file {
   block_file() = default;
   block_file(std::string_view path,
-	     std::uint32_t file_index,
-	     std::uint32_t s,
-	     std::uint32_t e) : dedup_volume_file(path)
-			      , file_index{file_index}
-			      , start_block{s}
-			      , end_block{e}
-			      , current_block{0}
-  {}
-  std::uint32_t file_index;
-  std::uint32_t start_block;
-  std::uint32_t end_block;
-  std::uint32_t current_block;
+             std::uint32_t file_index,
+             std::uint32_t s,
+             std::uint32_t e)
+      : dedup_volume_file(path)
+      , file_index{file_index}
+      , start_block{s}
+      , end_block{e}
+      , current_block{0}
+  {
+  }
+  std::uint32_t file_index{};
+  std::uint32_t start_block{};
+  std::uint32_t end_block{};
+  std::uint32_t current_block{};
 
-  bool truncate() {
+  bool truncate()
+  {
     start_block = 0;
     end_block = 0;
     current_block = 0;
     return dedup_volume_file::truncate();
   }
 
-  bool goto_end() {
+  bool goto_end()
+  {
     current_block = end_block;
     return dedup_volume_file::goto_end();
   }
 
-  bool goto_begin() {
+  bool goto_begin()
+  {
     current_block = 0;
     return dedup_volume_file::goto_begin();
   }
 
-  bool goto_block(std::int64_t block) {
-    if (current_block == block) {
-      return true;
-    }
+  bool goto_block(std::int64_t block)
+  {
+    if (current_block == block) { return true; }
     if (dedup_volume_file::goto_begin(block * sizeof(dedup_block_header))) {
       current_block = block;
       return true;
@@ -296,12 +298,14 @@ struct block_file : public dedup_volume_file
     return false;
   }
 
-  bool write(const bareos_block_header&, std::uint32_t, std::uint32_t);
+  bool write(const bareos_block_header&,
+             std::uint32_t,
+             std::uint32_t,
+             std::uint32_t);
 
-  std::optional<dedup_block_header> read_block() {
-    if (current_block == end_block) {
-      return std::nullopt;
-    }
+  std::optional<dedup_block_header> read_block()
+  {
+    if (current_block == end_block) { return std::nullopt; }
 
     dedup_block_header result;
     if (!read(static_cast<void*>(&result), sizeof(result))) {
@@ -313,58 +317,63 @@ struct block_file : public dedup_volume_file
   }
 };
 
-struct record_file : public dedup_volume_file
-{
+struct record_file : public dedup_volume_file {
   record_file() = default;
   record_file(std::string_view path,
-	      std::uint32_t file_index,
-	      std::uint32_t s,
-	      std::uint32_t e) : dedup_volume_file(path)
-			       , file_index{file_index}
-			       , start_record{s}
-			       , end_record{e}
-			       , current_record{0}
-  {}
-  std::uint32_t file_index;
-  std::uint32_t start_record;
-  std::uint32_t end_record;
-  std::uint32_t current_record;
+              std::uint32_t file_index,
+              std::uint32_t s,
+              std::uint32_t e)
+      : dedup_volume_file(path)
+      , file_index{file_index}
+      , start_record{s}
+      , end_record{e}
+      , current_record{0}
+  {
+  }
+  std::uint32_t file_index{};
+  std::uint32_t start_record{};
+  std::uint32_t end_record{};
+  std::uint32_t current_record{};
 
-  bool truncate() {
+  bool truncate()
+  {
     start_record = 0;
     end_record = 0;
     current_record = 0;
     return dedup_volume_file::truncate();
   }
 
-  bool goto_end() {
+  bool goto_end()
+  {
     current_record = end_record;
     return dedup_volume_file::goto_end();
   }
 
-  bool goto_begin() {
+  bool goto_begin()
+  {
     current_record = 0;
     return dedup_volume_file::goto_begin();
   }
 
-  bool goto_record(std::uint64_t record_idx) {
-    if (current_record == record_idx) {
-      return true;
-    }
+  bool goto_record(std::uint64_t record_idx)
+  {
+    if (current_record == record_idx) { return true; }
 
-    if (dedup_volume_file::goto_begin(record_idx * sizeof(dedup_record_header))) {
+    if (dedup_volume_file::goto_begin(record_idx
+                                      * sizeof(dedup_record_header))) {
       current_record = record_idx;
       return true;
     }
     return false;
   }
 
-  std::uint32_t current() const {
-    return current_record;
-  }
+  std::uint32_t current() const { return current_record; }
 
   // should probably return std::optional<record idx>
-  bool write(const bareos_record_header&, std::uint64_t, std::uint64_t, std::uint32_t);
+  bool write(const bareos_record_header&,
+             std::uint64_t,
+             std::uint64_t,
+             std::uint32_t);
 
   std::optional<dedup_record_header> read_record(std::int64_t)
   {
@@ -382,15 +391,14 @@ struct record_file : public dedup_volume_file
   }
 };
 
-struct data_file : public dedup_volume_file
-{
+struct data_file : public dedup_volume_file {
   data_file() = default;
   data_file(std::string_view path,
-	    std::uint32_t file_index,
-	    std::int64_t block_size) : dedup_volume_file{path}
-				     , file_index{file_index}
-				     , block_size{block_size}
-  {}
+            std::uint32_t file_index,
+            std::int64_t block_size)
+      : dedup_volume_file{path}, file_index{file_index}, block_size{block_size}
+  {
+  }
   std::uint32_t file_index;
 
   static constexpr std::int64_t read_only_size = -1;
@@ -401,33 +409,30 @@ struct data_file : public dedup_volume_file
     std::uint64_t begin;
     std::uint64_t end;
 
-    written_loc(std::uint64_t begin, std::uint64_t end) : begin(begin)
-							, end(end)
-    {}
+    written_loc(std::uint64_t begin, std::uint64_t end) : begin(begin), end(end)
+    {
+    }
   };
 
   std::optional<written_loc> write(std::uint64_t offset,
-				   const char* begin, const char* end) {
+                                   const char* begin,
+                                   const char* end)
+  {
     // first check that the space was reserved:
 
     std::uint64_t end_offset = offset + static_cast<std::uint64_t>(end - begin);
 
-    if (!goto_begin(end_offset)) {
-      return std::nullopt;
-    }
+    if (!goto_begin(end_offset)) { return std::nullopt; }
 
-    if (!goto_begin(offset)) {
-      return std::nullopt;
-    }
+    if (!goto_begin(offset)) { return std::nullopt; }
 
-    if (!dedup_volume_file::write(begin, end - begin)) {
-      return std::nullopt;
-    }
+    if (!dedup_volume_file::write(begin, end - begin)) { return std::nullopt; }
 
     return std::make_optional<written_loc>(offset, end_offset);
   }
 
-  bool accepts_records_of_size(std::uint32_t record_size) const {
+  bool accepts_records_of_size(std::uint32_t record_size) const
+  {
     if (block_size == any_size) {
       return true;
     } else if (block_size == read_only_size) {
@@ -439,33 +444,26 @@ struct data_file : public dedup_volume_file
 
   std::optional<written_loc> reserve(std::size_t size)
   {
-    if (!accepts_records_of_size(size)) {
-      return std::nullopt;
-    }
+    if (!accepts_records_of_size(size)) { return std::nullopt; }
 
     // todo: this is wrong; we need to track the current "virtual" length
     // as well, so that two calls to reserve() work (important for multiplexing)
 
     std::optional current = current_pos();
-    if (!current) {
-      return std::nullopt;
-    }
+    if (!current) { return std::nullopt; }
 
     std::size_t end = *current + size;
 
-    if (!truncate(end)) {
-      return std::nullopt;
-    }
+    if (!truncate(end)) { return std::nullopt; }
 
     goto_begin(end);
 
     return written_loc{*current, end};
   }
 
-  bool read_data(char* buf, std::uint64_t start, std::uint64_t end) {
-    if (!dedup_volume_file::goto_begin(start)) {
-      return false;
-    }
+  bool read_data(char* buf, std::uint64_t start, std::uint64_t end)
+  {
+    if (!dedup_volume_file::goto_begin(start)) { return false; }
 
     return dedup_volume_file::read(buf, end - start);
   }
@@ -491,14 +489,19 @@ struct dedup_volume_config {
 class dedup_volume {
  public:
   dedup_volume(const char* path, DeviceMode dev_mode, int mode)
-    : path(path)
-    , configfile{"config"}
+      : path(path), configfile{"config"}
   {
     int dir_mode = mode | 0100;
     if (dev_mode == DeviceMode::CREATE_READ_WRITE) {
-      if (struct stat st; ::stat(path, &st) != -1) { error = true; return; }
+      if (struct stat st; ::stat(path, &st) != -1) {
+        error = true;
+        return;
+      }
 
-      if (mkdir(path, mode | 0100) < 0) { error = true; return; }
+      if (mkdir(path, mode | 0100) < 0) {
+        error = true;
+        return;
+      }
 
       // to create files inside dir, we need executive permissions
     }
@@ -528,29 +531,29 @@ class dedup_volume {
       volume_changed = true;
     } else {
       if (!load_config()) {
-	error = true;
-	return;
+        error = true;
+        return;
       }
     }
 
     for (auto& blockfile : config.blockfiles) {
       if (!blockfile.open_inside(dir, mode, dev_mode)) {
-	error = true;
-	return;
+        error = true;
+        return;
       }
     }
 
     for (auto& recordfile : config.recordfiles) {
       if (!recordfile.open_inside(dir, mode, dev_mode)) {
-	error = true;
-	return;
+        error = true;
+        return;
       }
     }
 
     for (auto& datafile : config.datafiles) {
       if (!datafile.open_inside(dir, mode, dev_mode)) {
-	error = true;
-	return;
+        error = true;
+        return;
       }
     }
   }
@@ -572,20 +575,20 @@ class dedup_volume {
     return config.blockfiles[0];
   }
 
-  bool is_at_end() {
+  bool is_at_end()
+  {
     auto& blockfile = get_active_block_file();
     return blockfile.current_block == blockfile.end_block;
   }
 
-  data_file& get_data_file_by_size(std::uint32_t record_size) {
+  data_file& get_data_file_by_size(std::uint32_t record_size)
+  {
     // we have to do this smarter
     // if datafile::any_size is first, we should ignore it until the end!
     // maybe split into _one_ any_size + map size -> file
     // + vector of read_only ?
     for (auto& datafile : config.datafiles) {
-      if (datafile.accepts_records_of_size(record_size)) {
-	return datafile;
-      }
+      if (datafile.accepts_records_of_size(record_size)) { return datafile; }
     }
 
     ASSERT(!"dedup volume has no datafile for this record.\n");
@@ -596,21 +599,15 @@ class dedup_volume {
   {
     // TODO: look at unix_file_device for "secure_erase_cmdline"
     for (auto& blockfile : config.blockfiles) {
-      if (!blockfile.truncate()) {
-	return false;
-      }
+      if (!blockfile.truncate()) { return false; }
     }
 
     for (auto& recordfile : config.recordfiles) {
-      if (!recordfile.truncate()) {
-	return false;
-      }
+      if (!recordfile.truncate()) { return false; }
     }
 
     for (auto& datafile : config.datafiles) {
-      if (!datafile.truncate()) {
-	return false;
-      }
+      if (!datafile.truncate()) { return false; }
     }
     return true;
   }
@@ -618,21 +615,15 @@ class dedup_volume {
   bool goto_begin()
   {
     for (auto& blockfile : config.blockfiles) {
-      if (!blockfile.goto_begin()) {
-	return false;
-      }
+      if (!blockfile.goto_begin()) { return false; }
     }
 
     for (auto& recordfile : config.recordfiles) {
-      if (!recordfile.goto_begin()) {
-	return false;
-      }
+      if (!recordfile.goto_begin()) { return false; }
     }
 
     for (auto& datafile : config.datafiles) {
-      if (!datafile.goto_begin()) {
-	return false;
-      }
+      if (!datafile.goto_begin()) { return false; }
     }
     return true;
   }
@@ -647,33 +638,26 @@ class dedup_volume {
     std::uint32_t max_block = 0;
     for (auto& blockfile : config.blockfiles) {
       max_block = std::max(max_block, blockfile.end_block);
-      if (blockfile.start_block <= block_num && blockfile.end_block < block_num) {
-	return blockfile.goto_block(block_num);
+      if (blockfile.start_block <= block_num
+          && blockfile.end_block < block_num) {
+        return blockfile.goto_block(block_num);
       }
     }
 
-    if (block_num == max_block) {
-      return goto_end();
-    }
+    if (block_num == max_block) { return goto_end(); }
     return false;
   }
 
   bool goto_end()
   {
     for (auto& blockfile : config.blockfiles) {
-      if (!blockfile.goto_end()) {
-	return false;
-      }
+      if (!blockfile.goto_end()) { return false; }
     }
     for (auto& recordfile : config.recordfiles) {
-      if (!recordfile.goto_end()) {
-	return false;
-      }
+      if (!recordfile.goto_end()) { return false; }
     }
     for (auto& datafile : config.datafiles) {
-      if (!datafile.goto_end()) {
-	return false;
-      }
+      if (!datafile.goto_end()) { return false; }
     }
     return true;
   }
@@ -686,35 +670,29 @@ class dedup_volume {
   }
 
   std::optional<dedup_record_header> read_record(std::uint32_t file_index,
-						 std::uint32_t record_index)
+                                                 std::uint32_t record_index)
   {
     // müssen wir hier überhaupt das record bewegen ?
     // wenn eod, bod & reposition das richtige machen, sollte man
     // immer bei der richtigen position sein
-    if (file_index > config.recordfiles.size()) {
-      return std::nullopt;
-    }
+    if (file_index > config.recordfiles.size()) { return std::nullopt; }
     auto& record_file = config.recordfiles[file_index];
     return record_file.read_record(record_index);
   }
 
-  bool read_data(std::uint32_t file_index, std::uint64_t start, std::uint64_t end,
-		 write_buffer& buf)
+  bool read_data(std::uint32_t file_index,
+                 std::uint64_t start,
+                 std::uint64_t end,
+                 write_buffer& buf)
   {
-    if (file_index > config.datafiles.size()) {
-      return false;
-    }
+    if (file_index > config.datafiles.size()) { return false; }
 
     auto& data_file = config.datafiles[file_index];
 
     // todo: check we are in the right position
-    char *data = buf.reserve(end - start);
-    if (!data) {
-      return false;
-    }
-    if (!data_file.read_data(data, start, end)) {
-      return false;
-    }
+    char* data = buf.reserve(end - start);
+    if (!data) { return false; }
+    if (!data_file.read_data(data, start, end)) { return false; }
     return true;
   }
 
@@ -722,7 +700,8 @@ class dedup_volume {
   {
     *this = std::move(other);
   }
-  dedup_volume& operator=(dedup_volume&& other) {
+  dedup_volume& operator=(dedup_volume&& other)
+  {
     std::swap(path, other.path);
     std::swap(dir, other.dir);
     std::swap(path, other.path);
@@ -734,23 +713,18 @@ class dedup_volume {
     return *this;
   }
 
-  ~dedup_volume() {
-    if (volume_changed) {
-      write_current_config();
-    }
+  ~dedup_volume()
+  {
+    if (volume_changed) { write_current_config(); }
 
     if (error) {
-      Emsg1(
-          M_FATAL, 0,
-          _("Error while writing dedup config.  Volume '%s' may be damaged."),
-	  path.c_str());
+      Emsg1(M_FATAL, 0,
+            _("Error while writing dedup config.  Volume '%s' may be damaged."),
+            path.c_str());
     }
   }
 
-  bool is_ok() const
-  {
-    return !error && dir.is_ok() && configfile.is_ok();
-  }
+  bool is_ok() const { return !error && dir.is_ok() && configfile.is_ok(); }
 
   void write_current_config();
   bool load_config();
@@ -762,86 +736,80 @@ class dedup_volume {
     std::uint64_t end;
   };
 
-  std::optional<written_loc> write_data(const bareos_block_header& blockheader,
-					const bareos_record_header& recordheader,
-					const char* data_start,
-					const char* data_end)
+  std::optional<written_loc> write_data(
+      const bareos_block_header& blockheader,
+      const bareos_record_header& recordheader,
+      const char* data_start,
+      const char* data_end)
   {
     if (recordheader.Stream < 0) {
       // this is a continuation record header
       record this_record{blockheader.VolSessionId, blockheader.VolSessionTime,
-			 recordheader.FileIndex, -recordheader.Stream};
+                         recordheader.FileIndex, -recordheader.Stream};
 
       if (auto found = unfinished_records.find(this_record);
-	  found != unfinished_records.end()) {
-	write_loc& loc = found->second;
+          found != unfinished_records.end()) {
+        write_loc& loc = found->second;
 
-	if (!(data_start < data_end)) {
-	  return std::nullopt;
-	}
-	if (loc.end - loc.current < static_cast<std::uint64_t>(data_end - data_start)) {
-	  return std::nullopt;
-	}
+        if (!(data_start < data_end)) { return std::nullopt; }
+        if (loc.end - loc.current
+            < static_cast<std::uint64_t>(data_end - data_start)) {
+          return std::nullopt;
+        }
 
-	auto& datafile = config.datafiles[loc.file_index];
-	std::optional data_written = datafile.write(loc.current, data_start, data_end);
-	if (!data_written) {
-	  return std::nullopt;
-	}
+        auto& datafile = config.datafiles[loc.file_index];
+        std::optional data_written
+            = datafile.write(loc.current, data_start, data_end);
+        if (!data_written) { return std::nullopt; }
 
-	loc.current += (data_end - data_start);
-	if (loc.current == loc.end) {
-	  unfinished_records.erase(found);
-	}
+        loc.current += (data_end - data_start);
+        if (loc.current == loc.end) { unfinished_records.erase(found); }
 
-	return written_loc{loc.file_index, data_written->begin, data_written->end};
+        return written_loc{loc.file_index, data_written->begin,
+                           data_written->end};
       } else {
-	return std::nullopt;
+        return std::nullopt;
       }
     } else {
       record this_record{blockheader.VolSessionId, blockheader.VolSessionTime,
-			 recordheader.FileIndex, recordheader.Stream};
+                         recordheader.FileIndex, recordheader.Stream};
       // this is a real record header
       if (auto found = unfinished_records.find(this_record);
-	  found != unfinished_records.end()) {
-	return std::nullopt;
+          found != unfinished_records.end()) {
+        return std::nullopt;
       } else {
-	auto [iter, inserted] = unfinished_records.emplace(this_record, write_loc{});
+        auto [iter, inserted]
+            = unfinished_records.emplace(this_record, write_loc{});
 
-	if (!inserted) {
-	  return std::nullopt;
-	}
+        if (!inserted) { return std::nullopt; }
 
-	auto& datafile = get_data_file_by_size(recordheader.DataSize);
-	std::optional file_loc = datafile.reserve(recordheader.DataSize);
+        auto& datafile = get_data_file_by_size(recordheader.DataSize);
+        std::optional file_loc = datafile.reserve(recordheader.DataSize);
 
-	if (!file_loc) {
-	  unfinished_records.erase(iter);
-	  return std::nullopt;
-	}
+        if (!file_loc) {
+          unfinished_records.erase(iter);
+          return std::nullopt;
+        }
 
-	write_loc& loc = iter->second;
-	loc.file_index = datafile.file_index;
-	loc.current = file_loc->begin;
-	loc.end = file_loc->end;
+        write_loc& loc = iter->second;
+        loc.file_index = datafile.file_index;
+        loc.current = file_loc->begin;
+        loc.end = file_loc->end;
 
-	std::optional data_written = datafile.write(loc.current, data_start, data_end);
-	if (!data_written) {
-	  return std::nullopt;
-	}
+        std::optional data_written
+            = datafile.write(loc.current, data_start, data_end);
+        if (!data_written) { return std::nullopt; }
 
-	loc.current += (data_end - data_start);
-	if (loc.current == loc.end) {
-	  unfinished_records.erase(iter);
-	}
+        loc.current += (data_end - data_start);
+        if (loc.current == loc.end) { unfinished_records.erase(iter); }
 
-	return written_loc{loc.file_index, data_written->begin, data_written->end};
+        return written_loc{loc.file_index, data_written->begin,
+                           data_written->end};
       }
     }
-
   }
- private:
 
+ private:
   dedup_volume() = default;
   std::string path{};
   raii_fd dir{};
@@ -858,28 +826,29 @@ class dedup_volume {
     std::int32_t FileIndex;
     std::int32_t Stream;
 
-    friend bool operator==(const record& l, const record& r) {
+    friend bool operator==(const record& l, const record& r)
+    {
       return (l.VolSessionId == r.VolSessionId)
-	&& (l.VolSessionTime == r.VolSessionTime)
-	&& (l.FileIndex == r.FileIndex)
-	&& (l.Stream == r.Stream);
+             && (l.VolSessionTime == r.VolSessionTime)
+             && (l.FileIndex == r.FileIndex) && (l.Stream == r.Stream);
     }
 
     struct hash {
-      std::size_t operator()(const record& rec) const {
-	std::size_t hash = 0;
+      std::size_t operator()(const record& rec) const
+      {
+        std::size_t hash = 0;
 
-	hash *= 101;
-	hash += std::hash<std::uint32_t>{}(rec.VolSessionId);
-	hash *= 101;
-	hash += std::hash<std::uint32_t>{}(rec.VolSessionTime);
+        hash *= 101;
+        hash += std::hash<std::uint32_t>{}(rec.VolSessionId);
+        hash *= 101;
+        hash += std::hash<std::uint32_t>{}(rec.VolSessionTime);
 
-	hash *= 101;
-	hash += std::hash<std::int32_t>{}(rec.FileIndex);
-	hash *= 101;
-	hash += std::hash<std::int32_t>{}(rec.Stream);
+        hash *= 101;
+        hash += std::hash<std::int32_t>{}(rec.FileIndex);
+        hash *= 101;
+        hash += std::hash<std::int32_t>{}(rec.Stream);
 
-	return hash;
+        return hash;
       }
     };
   };
