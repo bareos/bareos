@@ -391,7 +391,7 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
                 "Could not read Label File %s: %s\n" % (self.labelFileName, e),
             )
 
-    def parseBackupStopResult(self, result: str):
+    def parseBackupStopResult(self, result):
         try:
             for (key, value) in re.findall("([A-Z ]+): (.*)\n", result):
                 if key == 'START WAL LOCATION':
