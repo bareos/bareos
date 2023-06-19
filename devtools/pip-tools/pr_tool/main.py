@@ -436,6 +436,11 @@ def parse_cmdline_args():
         metavar="<path>",
         help="path to local git repository",
     )
+    parser.add_argument(
+        "--skip-sanity-checks",
+        action="store_true",
+        help="skip checking for safe environment",
+    )
     log_group = parser.add_mutually_exclusive_group()
     log_group.add_argument("--debug", "-d", action="store_true")
     log_group.add_argument("--verbose", "-v", action="store_true")
@@ -652,11 +657,12 @@ def main():
     args = parse_cmdline_args()
     setup_logging(verbose=args.verbose, debug=args.debug)
 
-    if "GH_HOST" in environ or "GH_REPO" in environ:
-        logging.critical(
-            "cannot work correctly with GH_HOST or GH_REPO env variables set"
-        )
-        return 2
+    if not args.skip_sanity_checks:
+        if "GH_HOST" in environ or "GH_REPO" in environ:
+            logging.critical(
+                "cannot work correctly with GH_HOST or GH_REPO env variables set"
+            )
+            return 2
 
     chdir(args.directory)
     try:
