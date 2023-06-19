@@ -438,7 +438,7 @@ struct data_file : public dedup_volume_file {
     } else if (block_size == read_only_size) {
       return false;
     } else {
-      return record_size == block_size;
+      return record_size % block_size == 0;
     }
   }
 
