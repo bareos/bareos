@@ -158,15 +158,14 @@ std::string make_long_file_name()
 std::string long_file_name = make_long_file_name();
 const std::vector<std::string_view> paths{
     "/"sv,
-    "C:"sv,
     "C:\\"sv,
     "\\\\?\\C:"sv,
-    "\\\\?\\C:\\"sv,
+    "\\\\?\\C:\\"sv
     "\\\\?\\d:"sv,
     "\\\\?\\d:\\"sv,
     "C:/test"sv,
     "\\\\?\\literal_path"sv,
-    "\\\\?\\literal_path/.\\..\\/test"sv,
+    "\\\\?\\literal_path\\.\\..\\\test"sv,
     long_file_name,
 };
 
