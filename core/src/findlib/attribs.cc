@@ -524,7 +524,7 @@ int encode_attribsEx(JobControlRecord* jcr,
     std::wstring utf16 = make_win32_path_UTF8_2_wchar(ff_pkt->fname);
 
     if (!p_GetFileAttributesExW(utf16.c_str(), GetFileExInfoStandard,
-				(LPVOID)&atts)) {
+                                (LPVOID)&atts)) {
       WinError(jcr, "GetFileAttributesExW:", ff_pkt->sys_fname);
       return STREAM_UNIX_ATTRIBUTES;
     }

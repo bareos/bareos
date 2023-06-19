@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -69,39 +69,42 @@ std::vector<std::wstring> get_win32_volumes(findFILESET* fileset)
 
   if (fileset) {
     for (int i = 0; i < fileset->include_list.size(); i++) {
-      findIncludeExcludeItem* incexe = (findIncludeExcludeItem*)fileset->include_list.get(i);
+      findIncludeExcludeItem* incexe
+          = (findIncludeExcludeItem*)fileset->include_list.get(i);
 
       // Look through all files and check
       foreach_dlist (node, &incexe->name_list) {
         char* fname = node->c_str();
 
-	std::wstring wname = FromUtf8(fname);
-	std::wstring mountpoint(256, L'\0');
-	if (DWORD needed = GetFullPathNameW(wname.c_str(), 0, mountpoint.data(), NULL);
-	    needed >= mountpoint.size()) {
-	  mountpoint.resize(needed + 1, '\0');
-	} else if (needed == 0) {
-	  Dmsg1(100, "Could not query the full path length of %s\n", fname);
-	  continue;
-	}
+        std::wstring wname = FromUtf8(fname);
+        std::wstring mountpoint(256, L'\0');
+        if (DWORD needed
+            = GetFullPathNameW(wname.c_str(), 0, mountpoint.data(), NULL);
+            needed >= mountpoint.size()) {
+          mountpoint.resize(needed + 1, '\0');
+        } else if (needed == 0) {
+          Dmsg1(100, "Could not query the full path length of %s\n", fname);
+          continue;
+        }
 
-	if (!GetVolumePathNameW(wname.c_str(), mountpoint.data(), mountpoint.capacity())) {
-	  Dmsg1(100, "Could not find a mounted volume on %s\n", fname);
-	  continue;
-	} else {
-	  mountpoint.resize(wcslen(mountpoint.c_str()));
-	}
-	std::array<wchar_t, 50> volume;
-	if (!GetVolumeNameForVolumeMountPointW(mountpoint.c_str(), volume.data(), volume.size())) {
-	  Dmsg1(100, "Could not find the volume name for %s\n",
-		FromUtf16(mountpoint.c_str()).c_str());
-	  continue;
-	}
+        if (!GetVolumePathNameW(wname.c_str(), mountpoint.data(),
+                                mountpoint.capacity())) {
+          Dmsg1(100, "Could not find a mounted volume on %s\n", fname);
+          continue;
+        } else {
+          mountpoint.resize(wcslen(mountpoint.c_str()));
+        }
+        std::array<wchar_t, 50> volume;
+        if (!GetVolumeNameForVolumeMountPointW(mountpoint.c_str(),
+                                               volume.data(), volume.size())) {
+          Dmsg1(100, "Could not find the volume name for %s\n",
+                FromUtf16(mountpoint.c_str()).c_str());
+          continue;
+        }
 
-	if (GetDriveTypeW(volume.data()) == DRIVE_FIXED) {
-	  volumes.emplace_back(std::move(mountpoint));
-
-	}
+        if (GetDriveTypeW(volume.data()) == DRIVE_FIXED) {
+          volumes.emplace_back(std::move(mountpoint));
+        }
       }
     }
   }
@@ -121,18 +124,14 @@ static inline bool WantedDriveType(const char* drive,
   // Lookup the drive type.
   if (!Drivetype(drive, dt, sizeof(dt))) { return false; }
 
-  /*
-   * We start the loop with done set to false and wanted
+  /* We start the loop with done set to false and wanted
    * to true so when there are no Drivetype selections we
-   * select any Drivetype.
-   */
+   * select any Drivetype. */
   for (i = 0; !done && i < incexe->opts_list.size(); i++) {
     fo = (findFOPTS*)incexe->opts_list.get(i);
 
-    /*
-     * If there is any Drivetype selection set the default
-     * selection to false.
-     */
+    /* If there is any Drivetype selection set the default
+     * selection to false. */
     if (fo->Drivetype.size()) { wanted = false; }
 
     for (j = 0; !done && j < fo->Drivetype.size(); j++) {
@@ -162,20 +161,16 @@ bool expand_win32_fileset(findFILESET* fileset)
         // Request for auto expansion but no support for it.
         if (!p_GetLogicalDriveStringsA) { return false; }
 
-        /*
-         * we want to add all available local drives to our fileset
+        /* we want to add all available local drives to our fileset
          * if we have "/" specified in the fileset. We want to remove
          * the "/" pattern itself that gets expanded into all
-         * available drives.
-         */
+         * available drives. */
         incexe->name_list.remove(node);
         if (p_GetLogicalDriveStringsA(sizeof(drives), drives) != 0) {
           bp = drives;
           while (bp && strlen(bp) > 0) {
-            /*
-             * Apply any Drivetype selection to the currently
-             * processed item.
-             */
+            /* Apply any Drivetype selection to the currently
+             * processed item. */
             if (WantedDriveType(bp, incexe)) {
               if (*(bp + 2) == '\\') { *(bp + 2) = '/'; /* 'x:\' -> 'x:/' */ }
               Dmsg1(100, "adding drive %s\n", bp);
@@ -187,10 +182,8 @@ bool expand_win32_fileset(findFILESET* fileset)
           return false;
         }
 
-        /*
-         * No need to search further in the include list when we have
-         * found what we were looking for.
-         */
+        /* No need to search further in the include list when we have
+         * found what we were looking for. */
         break;
       }
     }
@@ -237,10 +230,8 @@ bool exclude_win32_not_to_backup_registry_entries(JobControlRecord* jcr,
   DWORD retCode;
   HKEY hKey;
 
-  /*
-   * If we do not have "File = " directives (e.g. only plugin calls)
-   * we do not create excludes for the NotForBackup RegKey
-   */
+  /* If we do not have "File = " directives (e.g. only plugin calls)
+   * we do not create excludes for the NotForBackup RegKey */
   if (CountIncludeListFileEntries(ff) == 0) {
     Qmsg(jcr, M_INFO, 1,
          _("Fileset has no \"File=\" directives, ignoring FilesNotToBackup "
@@ -248,10 +239,8 @@ bool exclude_win32_not_to_backup_registry_entries(JobControlRecord* jcr,
     return true;
   }
 
-  /*
-   * If autoexclude is set to no in fileset options somewhere, we do not
-   * automatically exclude files from FilesNotToBackup Registry Key
-   */
+  /* If autoexclude is set to no in fileset options somewhere, we do not
+   * automatically exclude files from FilesNotToBackup Registry Key */
   for (int i = 0; i < ff->fileset->include_list.size(); i++) {
     findIncludeExcludeItem* incexe
         = (findIncludeExcludeItem*)ff->fileset->include_list.get(i);
@@ -345,11 +334,9 @@ bool exclude_win32_not_to_backup_registry_entries(JobControlRecord* jcr,
           if (retCode == ERROR_SUCCESS) {
             char* lpValue;
 
-            /*
-             * Iterate over each string, expand the %xxx% variables and
+            /* Iterate over each string, expand the %xxx% variables and
              * process them for addition to exclude block or wildcard options
-             * block
-             */
+             * block */
             for (lpValue = dwKeyEn.c_str(); lpValue && *lpValue;
                  lpValue = strchr(lpValue, '\0') + 1) {
               char *s, *d;
@@ -358,10 +345,8 @@ bool exclude_win32_not_to_backup_registry_entries(JobControlRecord* jcr,
                                        expandedKey.size());
               Dmsg1(100, "        \"%s\"\n", expandedKey.c_str());
 
-              /*
-               * Never add single character entries. Probably known buggy DRM
-               * Entry in Windows XP / 2003
-               */
+              /* Never add single character entries. Probably known buggy DRM
+               * Entry in Windows XP / 2003 */
               if (strlen(expandedKey.c_str()) <= 1) {
                 Dmsg0(
                     100,
@@ -371,12 +356,10 @@ bool exclude_win32_not_to_backup_registry_entries(JobControlRecord* jcr,
               } else {
                 PmStrcpy(destination, "");
 
-                /*
-                 * Do all post processing.
+                /* Do all post processing.
                  * - Replace '\' by '/'
                  * - Strip any trailing /s patterns.
-                 * - Check if wildcards are used.
-                 */
+                 * - Check if wildcards are used. */
                 s = expandedKey.c_str();
                 d = destination.c_str();
 
@@ -492,10 +475,8 @@ static void* copy_thread(void* data)
   pthread_cleanup_push(CopyCleanupThread, data);
 
   while (1) {
-    /*
-     * Wait for the moment we are supposed to start.
-     * We are signalled by the restore thread.
-     */
+    /* Wait for the moment we are supposed to start.
+     * We are signalled by the restore thread. */
     pthread_cond_wait(&context->start, &context->lock);
     context->started = true;
 
@@ -506,10 +487,8 @@ static void* copy_thread(void* data)
       goto bail_out;
     }
 
-    /*
-     * Need to synchronize the main thread and this one so the main thread
-     * cannot miss the conditional signal.
-     */
+    /* Need to synchronize the main thread and this one so the main thread
+     * cannot miss the conditional signal. */
     if (pthread_mutex_lock(&context->lock) != 0) { goto bail_out; }
 
     // Signal the main thread we flushed the data and the BFD can be closed.
@@ -598,11 +577,9 @@ int win32_send_to_copy_thread(JobControlRecord* jcr,
   // See if the bfd changed.
   if (jcr->cp_thread->bfd != bfd) { jcr->cp_thread->bfd = bfd; }
 
-  /*
-   * Find out which next slot will be used on the Circular Buffer.
+  /* Find out which next slot will be used on the Circular Buffer.
    * The method will block when the circular buffer is full until a slot is
-   * available.
-   */
+   * available. */
   slotnr = cb->NextSlot();
   save_data = &jcr->cp_thread->save_data[slotnr];
 
@@ -627,10 +604,8 @@ void win32_flush_copy_thread(JobControlRecord* jcr)
 
   if (pthread_mutex_lock(&context->lock) != 0) { return; }
 
-  /*
-   * In essence the flush should work in one shot but be a bit more
-   * conservative.
-   */
+  /* In essence the flush should work in one shot but be a bit more
+   * conservative. */
   while (!context->flushed) {
     // Tell the copy thread to flush out all data.
     context->cb->flush();

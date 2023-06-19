@@ -37,38 +37,41 @@
 #include "compat_old_conversion.h"
 
 class WindowsEnvironment : public ::testing::Environment {
-  void SetUp() override {
-    InitWinAPIWrapper();
-  }
+  void SetUp() override { InitWinAPIWrapper(); }
 };
 
-const testing::Environment* _global_env =
-  testing::AddGlobalTestEnvironment(new WindowsEnvironment);
+const testing::Environment* _global_env
+    = testing::AddGlobalTestEnvironment(new WindowsEnvironment);
 
-enum class VssStatus {
-  Enabled, Disabled
+enum class VssStatus
+{
+  Enabled,
+  Disabled
 };
 
-std::string_view VssStatusName(VssStatus status) {
+std::string_view VssStatusName(VssStatus status)
+{
   using namespace std::literals;
   switch (status) {
-  case VssStatus::Enabled: {
-    return "Enabled"sv;
-  } break;
-  case VssStatus::Disabled: {
-    return "Disabled"sv;
-  } break;
+    case VssStatus::Enabled: {
+      return "Enabled"sv;
+    } break;
+    case VssStatus::Disabled: {
+      return "Disabled"sv;
+    } break;
   }
   return "unreachble"sv;
 }
 
 // used by gtest to print VssStatus;
 // this is needed to be able to use VssStatus as test param
-void PrintTo(const VssStatus& status, std::ostream* os) {
+void PrintTo(const VssStatus& status, std::ostream* os)
+{
   *os << VssStatusName(status);
 }
 
-static bool MockVSSConvert_OldApi(const char* path, char* buf, int len) {
+static bool MockVSSConvert_OldApi(const char* path, char* buf, int len)
+{
   using namespace std::literals;
   constexpr std::string_view s = "\\\\?\\vss\\"sv;
   if (len <= 0) return false;
@@ -77,12 +80,13 @@ static bool MockVSSConvert_OldApi(const char* path, char* buf, int len) {
   // strncat can write up to n+1 bytes!
   // using strncat ensures that we end up with proper strings, that is
   // we ensure that we always have a zero terminator
-  strncat(buf, s.data(), ulen-1);
-  strncat(buf, path, ulen-1 - strlen(buf));
+  strncat(buf, s.data(), ulen - 1);
+  strncat(buf, path, ulen - 1 - strlen(buf));
   return true;
 }
 
-static bool MockVSSConvertW_OldApi(const wchar_t* path, wchar_t *buf, int len) {
+static bool MockVSSConvertW_OldApi(const wchar_t* path, wchar_t* buf, int len)
+{
   using namespace std::literals;
   constexpr std::wstring_view s = L"\\\\?\\vss\\"sv;
   if (len <= 0) return false;
@@ -92,53 +96,55 @@ static bool MockVSSConvertW_OldApi(const wchar_t* path, wchar_t *buf, int len) {
   // wcsncat can write up to n+1 bytes!
   // using wcsncat ensures that we end up with proper strings, that is
   // we ensure that we always have a zero terminator
-  wcsncat(buf, s.data(), ulen-1);
-  wcsncat(buf, path, ulen-1 - wcslen(buf));
+  wcsncat(buf, s.data(), ulen - 1);
+  wcsncat(buf, path, ulen - 1 - wcslen(buf));
   return true;
 }
 
 // do the same thing as MockVSSConvert* except with the new required api
-static char* MockVSSConvert_NewApi(const char* path) {
+static char* MockVSSConvert_NewApi(const char* path)
+{
   // use a len thats big enough to fit path without
   // relying on strlen(path) so as to not trigger
   // a false strncat 'bound depends on source' warning
   int len = 8000;
   ASSERT(static_cast<std::size_t>(len) > strlen(path));
-  char* buf = (char*) malloc(len);
+  char* buf = (char*)malloc(len);
   MockVSSConvert_OldApi(path, buf, len);
   return buf;
 }
 
-static wchar_t* MockVSSConvertW_NewApi(const wchar_t* path) {
+static wchar_t* MockVSSConvertW_NewApi(const wchar_t* path)
+{
   int len = 8000;
   ASSERT(static_cast<std::size_t>(len) > wcslen(path));
-  wchar_t* buf = (wchar_t*) malloc(len * sizeof(*buf));
+  wchar_t* buf = (wchar_t*)malloc(len * sizeof(*buf));
   MockVSSConvertW_OldApi(path, buf, len);
   return buf;
 }
 
 class Regression : public ::testing::TestWithParam<VssStatus> {
-  void SetUp() override {
+  void SetUp() override
+  {
     switch (GetParam()) {
-    case VssStatus::Enabled: {
-      old_path_conversion::Win32SetPathConvert(MockVSSConvert_OldApi,
-					       MockVSSConvertW_OldApi);
-      SetVSSPathConvert(MockVSSConvert_NewApi, MockVSSConvertW_NewApi);
-    } break;
-    case VssStatus::Disabled: {
-
-    } break;
+      case VssStatus::Enabled: {
+        old_path_conversion::Win32SetPathConvert(MockVSSConvert_OldApi,
+                                                 MockVSSConvertW_OldApi);
+        SetVSSPathConvert(MockVSSConvert_NewApi, MockVSSConvertW_NewApi);
+      } break;
+      case VssStatus::Disabled: {
+      } break;
     }
   }
-  void TearDown() override {
+  void TearDown() override
+  {
     switch (GetParam()) {
-    case VssStatus::Enabled: {
-      old_path_conversion::Win32SetPathConvert(nullptr, nullptr);
-      SetVSSPathConvert(nullptr, nullptr);
-    } break;
-    case VssStatus::Disabled: {
-
-    } break;
+      case VssStatus::Enabled: {
+        old_path_conversion::Win32SetPathConvert(nullptr, nullptr);
+        SetVSSPathConvert(nullptr, nullptr);
+      } break;
+      case VssStatus::Disabled: {
+      } break;
     }
     // reset the conversion cache!
     Win32ResetConversionCache();
@@ -169,22 +175,24 @@ const std::vector<std::string_view> paths{
     long_file_name,
 };
 
-std::string OldU2U(const char* name) {
+std::string OldU2U(const char* name)
+{
   PoolMem win32_name;
   old_path_conversion::unix_name_to_win32(win32_name.addr(), name);
   return std::string(win32_name.c_str());
 }
 
-std::wstring OldU2W(const char* name) {
+std::wstring OldU2W(const char* name)
+{
   PoolMem win32_name;
-  old_path_conversion::make_win32_path_UTF8_2_wchar(win32_name.addr(),
-						    name);
+  old_path_conversion::make_win32_path_UTF8_2_wchar(win32_name.addr(), name);
   return std::wstring((wchar_t*)win32_name.c_str());
 }
 
 extern void unix_name_to_win32(POOLMEM*& win32_name, const char* name);
 
-TEST_P(Regression, utf8_to_utf8_paths) {
+TEST_P(Regression, utf8_to_utf8_paths)
+{
   using namespace std::literals;
 
   for (auto path : paths) {
@@ -197,7 +205,8 @@ TEST_P(Regression, utf8_to_utf8_paths) {
 }
 
 
-TEST_P(Regression, utf8_to_wchar_paths) {
+TEST_P(Regression, utf8_to_wchar_paths)
+{
   using namespace std::literals;
   for (auto path : paths) {
     std::wstring new_str = make_win32_path_UTF8_2_wchar(path);
@@ -206,7 +215,8 @@ TEST_P(Regression, utf8_to_wchar_paths) {
   }
 }
 
-TEST_P(Regression, utf8_long_path) {
+TEST_P(Regression, utf8_long_path)
+{
   // path bigger than 4K
   std::string path = "C:/" + std::string(5000, 'a') + 'b';
 
@@ -217,7 +227,8 @@ TEST_P(Regression, utf8_long_path) {
   EXPECT_EQ(new_str, old_str);
 }
 
-TEST_P(Regression, wchar_long_path) {
+TEST_P(Regression, wchar_long_path)
+{
   // path bigger than 4K
   std::string path = "C:/" + std::string(5000, 'a') + 'b';
 
@@ -226,21 +237,24 @@ TEST_P(Regression, wchar_long_path) {
   EXPECT_EQ(new_str, old_str);
 }
 
-INSTANTIATE_TEST_CASE_P(ShadowCopy, Regression, ::testing::Values(VssStatus::Enabled, VssStatus::Disabled),
-			[](const testing::TestParamInfo<Regression::ParamType>& info) -> std::string {
-			  return std::string(VssStatusName(info.param));
-			});
+INSTANTIATE_TEST_CASE_P(
+    ShadowCopy,
+    Regression,
+    ::testing::Values(VssStatus::Enabled, VssStatus::Disabled),
+    [](const testing::TestParamInfo<Regression::ParamType>& info)
+        -> std::string { return std::string(VssStatusName(info.param)); });
 
 extern std::wstring ReplaceSlashes(std::wstring_view path);
 
-TEST(ReplaceSlashes, literal_paths) {
+TEST(ReplaceSlashes, literal_paths)
+{
   using namespace std::literals;
   auto literal_paths = {
-    L"\\\\?\\path\\to\\somewhere"sv,
-    L"//?/path\\to\\somewhere"sv,
-    L"//?/path/to/somewhere"sv,
-    L"//?/path\\\\//\\to\\\\somewhere//////"sv,
-    L"//?/path\\\\//\\to\\\\somewhere///\\///"sv,
+      L"\\\\?\\path\\to\\somewhere"sv,
+      L"//?/path\\to\\somewhere"sv,
+      L"//?/path/to/somewhere"sv,
+      L"//?/path\\\\//\\to\\\\somewhere//////"sv,
+      L"//?/path\\\\//\\to\\\\somewhere///\\///"sv,
   };
 
   // strings have prettier output in gtest so they are used
@@ -250,22 +264,23 @@ TEST(ReplaceSlashes, literal_paths) {
 
   for (auto view : literal_paths) {
     auto replaced = ReplaceSlashes(view);
-    auto& expected = (replaced.back() == L'\\') ? expected_with_slash
-      : expected_no_slash;
+    auto& expected
+        = (replaced.back() == L'\\') ? expected_with_slash : expected_no_slash;
     ASSERT_EQ(replaced, expected)
-      << "replacing slashes in " << FromUtf16(view).c_str();
+        << "replacing slashes in " << FromUtf16(view).c_str();
   }
 }
 
-TEST(ReplaceSlashes, normalized_paths) {
+TEST(ReplaceSlashes, normalized_paths)
+{
   using namespace std::literals;
 
   auto normalized_paths = {
-    L"\\\\.\\path\\to\\somewhere"sv,
-    L"//./path\\to\\somewhere"sv,
-    L"//./path/to/somewhere"sv,
-    L"//./path\\\\//\\to\\\\somewhere//////"sv,
-    L"//./path\\\\//\\to\\\\somewhere///\\///"sv,
+      L"\\\\.\\path\\to\\somewhere"sv,
+      L"//./path\\to\\somewhere"sv,
+      L"//./path/to/somewhere"sv,
+      L"//./path\\\\//\\to\\\\somewhere//////"sv,
+      L"//./path\\\\//\\to\\\\somewhere///\\///"sv,
   };
 
   auto expected_no_slash = L"\\\\.\\path\\to\\somewhere"s;
@@ -273,23 +288,24 @@ TEST(ReplaceSlashes, normalized_paths) {
 
   for (auto view : normalized_paths) {
     auto replaced = ReplaceSlashes(view);
-    auto& expected = (replaced.back() == L'\\') ? expected_with_slash
-      : expected_no_slash;
+    auto& expected
+        = (replaced.back() == L'\\') ? expected_with_slash : expected_no_slash;
     ASSERT_EQ(replaced, expected)
-      << "replacing slashes in " << FromUtf16(view).c_str();
+        << "replacing slashes in " << FromUtf16(view).c_str();
   }
 }
 
-TEST(ReplaceSlashes, full_paths) {
+TEST(ReplaceSlashes, full_paths)
+{
   using namespace std::literals;
 
   auto normalized_paths = {
-    L"C:\\path\\to\\somewhere"sv,
-    L"C:/path\\to\\somewhere"sv,
-    L"C:/path/to/somewhere"sv,
-    L"C:\\/\\/path\\to\\somewhere"sv,
-    L"C:/path\\\\//\\to\\\\somewhere//////"sv,
-    L"C:/path\\\\//\\to\\\\somewhere///\\///"sv,
+      L"C:\\path\\to\\somewhere"sv,
+      L"C:/path\\to\\somewhere"sv,
+      L"C:/path/to/somewhere"sv,
+      L"C:\\/\\/path\\to\\somewhere"sv,
+      L"C:/path\\\\//\\to\\\\somewhere//////"sv,
+      L"C:/path\\\\//\\to\\\\somewhere///\\///"sv,
   };
 
   auto expected_no_slash = L"C:\\path\\to\\somewhere"s;
@@ -297,9 +313,9 @@ TEST(ReplaceSlashes, full_paths) {
 
   for (auto view : normalized_paths) {
     auto replaced = ReplaceSlashes(view);
-    auto& expected = (replaced.back() == L'\\') ? expected_with_slash
-      : expected_no_slash;
+    auto& expected
+        = (replaced.back() == L'\\') ? expected_with_slash : expected_no_slash;
     ASSERT_EQ(replaced, expected)
-      << "replacing slashes in " << FromUtf16(view).c_str();
+        << "replacing slashes in " << FromUtf16(view).c_str();
   }
 }

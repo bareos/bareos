@@ -367,19 +367,15 @@ if(NOT HAVE_WIN32 AND NOT client-only)
   bareos_add_test(watchdog_timer LINK_LIBRARIES bareos GTest::gtest_main)
 endif() # NOT HAVE_WIN32 AND NOT client-only
 
-if (HAVE_WIN32)
+if(HAVE_WIN32)
   bareos_add_test(
-    test_unicode_conversion
-    LINK_LIBRARIES
-    bareos
-    GTest::gtest_main)
+    test_unicode_conversion LINK_LIBRARIES bareos GTest::gtest_main
+  )
   bareos_add_test(
     test_path_conversion
-    ADDITIONAL_SOURCES
-    compat_old_conversion.cc
-    LINK_LIBRARIES
-    bareos
-    GTest::gtest_main)
+    ADDITIONAL_SOURCES compat_old_conversion.cc
+    LINK_LIBRARIES bareos GTest::gtest_main
+  )
 endif()
 if(ENABLE_BCONSOLE)
   bareos_add_test(

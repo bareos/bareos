@@ -79,25 +79,30 @@ static const int debuglevel = 500;
 bool InitializeComSecurity()
 {
   class ComSecurityInitializer {
-  public:
-    ComSecurityInitializer() : h{CoInitializeSecurity(NULL, /*  Allow *all* VSS writers to communicate back! */
-						      -1,   /*  Default COM authentication service */
-						      NULL, /*  Default COM authorization service */
-						      NULL, /*  reserved parameter */
-						      RPC_C_AUTHN_LEVEL_PKT_PRIVACY, /*  Strongest COM authentication level */
-						      RPC_C_IMP_LEVEL_IDENTIFY,      /*  Minimal impersonation abilities */
-						      NULL,                          /*  Default COM authentication settings */
-						      EOAC_NONE,                     /*  No special options */
-						      NULL) /* reserved */ } {
+   public:
+    ComSecurityInitializer()
+        : h{CoInitializeSecurity(
+            NULL, /*  Allow *all* VSS writers to communicate back! */
+            -1,   /*  Default COM authentication service */
+            NULL, /*  Default COM authorization service */
+            NULL, /*  reserved parameter */
+            RPC_C_AUTHN_LEVEL_PKT_PRIVACY, /*  Strongest COM authentication
+                                              level */
+            RPC_C_IMP_LEVEL_IDENTIFY, /*  Minimal impersonation abilities */
+            NULL,                     /*  Default COM authentication settings */
+            EOAC_NONE,                /*  No special options */
+            NULL) /* reserved */}
+    {
       if (!InitSuccessFull()) {
-	Dmsg1(0, "InitializeComSecurity: CoInitializeSecurity returned 0x%08X\n",
-	      h);
+        Dmsg1(0,
+              "InitializeComSecurity: CoInitializeSecurity returned 0x%08X\n",
+              h);
       }
     }
 
     bool InitSuccessFull() const { return !FAILED(h); }
 
-  private:
+   private:
     HRESULT h;
   };
   // CoInitializeSecurity can only fail if the system is running out of memory
@@ -126,24 +131,23 @@ struct thread_conversion_cache {
 
 
 static class VssPathConverter {
-public:
-  void SetConversions(t_pVSSPathConvert Convert, t_pVSSPathConvertW ConvertW) {
-    std::unique_lock write_lock(rw_mut); // unique write lock
+ public:
+  void SetConversions(t_pVSSPathConvert Convert, t_pVSSPathConvertW ConvertW)
+  {
+    std::unique_lock write_lock(rw_mut);  // unique write lock
     convert_fn = Convert;
     convert_w_fn = ConvertW;
   }
 
   struct free_deleter {
-    void operator()(void* mem) {
-      free(mem);
-    }
+    void operator()(void* mem) { free(mem); }
   };
 
-  template <typename T>
-  using c_ptr = std::unique_ptr<T, free_deleter>;
+  template <typename T> using c_ptr = std::unique_ptr<T, free_deleter>;
 
-  c_ptr<wchar_t> Convert(std::wstring_view str) {
-    std::shared_lock read_lock(rw_mut); // shared read lock
+  c_ptr<wchar_t> Convert(std::wstring_view str)
+  {
+    std::shared_lock read_lock(rw_mut);  // shared read lock
     if (convert_w_fn) {
       return c_ptr<wchar_t>(convert_w_fn(str.data()));
     } else {
@@ -151,8 +155,9 @@ public:
     }
   }
 
-  c_ptr<char> Convert(std::string_view str) {
-    std::shared_lock read_lock(rw_mut); // shared read lock
+  c_ptr<char> Convert(std::string_view str)
+  {
+    std::shared_lock read_lock(rw_mut);  // shared read lock
     if (convert_fn) {
       return c_ptr<char>(convert_fn(str.data()));
     } else {
@@ -160,7 +165,7 @@ public:
     }
   }
 
-private:
+ private:
   // used for a read-write-lock that protects writes to
   // convert_fn/convert_w_fn
   std::shared_mutex rw_mut{};
@@ -169,7 +174,8 @@ private:
   t_pVSSPathConvertW convert_w_fn{nullptr};
 } vss_path_converter;
 
-bool SetVSSPathConvert(t_pVSSPathConvert Convert, t_pVSSPathConvertW ConvertW) {
+bool SetVSSPathConvert(t_pVSSPathConvert Convert, t_pVSSPathConvertW ConvertW)
+{
   vss_path_converter.SetConversions(Convert, ConvertW);
   return true;
 }
@@ -188,37 +194,47 @@ static void Win32ConvCleanupCache(void* arg)
 }
 
 static class PathConversionCache {
-public:
-  PathConversionCache() {
+ public:
+  PathConversionCache()
+  {
     status = pthread_key_create(&key, Win32ConvCleanupCache);
   }
-  ~PathConversionCache() {
-    if (status == 0) {
-      pthread_key_delete(key);
+  ~PathConversionCache()
+  {
+    if (status == 0) { pthread_key_delete(key); }
+  }
+
+  thread_conversion_cache* GetThreadLocal()
+  {
+    if (status != 0) return nullptr;  // could not init thread specific data
+    auto tcc = static_cast<thread_conversion_cache*>(pthread_getspecific(key));
+    if (!tcc) {
+      return CreateThreadLocal();
+    } else {
+      return tcc;
     }
   }
 
-  thread_conversion_cache* GetThreadLocal() {
-    if (status != 0) return nullptr; // could not init thread specific data
+  void ResetThreadLocal()
+  {
+    if (status != 0) return;  // could not init thread specific data
     auto tcc = static_cast<thread_conversion_cache*>(pthread_getspecific(key));
-    if (!tcc) { return CreateThreadLocal(); }
-    else      { return tcc; }
+    if (tcc) {
+      tcc->utf8.clear();
+      tcc->utf16.clear();
+    }
   }
 
-  void ResetThreadLocal() {
-    if (status != 0) return; // could not init thread specific data
-    auto tcc = static_cast<thread_conversion_cache*>(pthread_getspecific(key));
-    if (tcc) { tcc->utf8.clear(); tcc->utf16.clear(); }
-  }
-private:
-
-  thread_conversion_cache* CreateThreadLocal() {
+ private:
+  thread_conversion_cache* CreateThreadLocal()
+  {
     ASSERT(status == 0);
     auto tcc = std::make_unique<thread_conversion_cache>();
     if (pthread_setspecific(key, tcc.get()) == 0) {
-      Dmsg1(debuglevel,
-	    "Win32ConvInitCache: Setup of thread specific cache at address %p\n",
-	    tcc.get());
+      Dmsg1(
+          debuglevel,
+          "Win32ConvInitCache: Setup of thread specific cache at address %p\n",
+          tcc.get());
       return tcc.release();
     } else {
       return nullptr;
@@ -228,10 +244,7 @@ private:
   int status;
 } path_conversion_cache;
 
-void Win32ResetConversionCache()
-{
-  path_conversion_cache.ResetThreadLocal();
-}
+void Win32ResetConversionCache() { path_conversion_cache.ResetThreadLocal(); }
 
 // Forward referenced functions
 const char* errorString(void);
@@ -243,7 +256,8 @@ extern DWORD g_platform_id;
 extern DWORD g_MinorVersion;
 
 // From Microsoft SDK (KES) is the diff between Jan 1 1601 and Jan 1 1970
-// see https://learn.microsoft.com/en-us/windows/win32/api/minwinbase/ns-minwinbase-filetime
+// see
+// https://learn.microsoft.com/en-us/windows/win32/api/minwinbase/ns-minwinbase-filetime
 #define WIN32_FILETIME_ADJUST 0x19DB1DED53E8000ULL
 
 #define WIN32_FILETIME_SCALE 10000000  // 100ns/second
@@ -278,7 +292,7 @@ static inline void conv_unix_to_vss_win32_path(const char* name,
     *win32_name++ = '?';
     *win32_name++ = '\\';
 
-    offset = 4; // skip this part during vss conversion
+    offset = 4;  // skip this part during vss conversion
   }
 
   while (*name) {
@@ -332,12 +346,13 @@ std::wstring FromUtf8(std::string_view utf8)
   if (utf8.size() == 0) { return {}; }
   // if the buffer is to small the function returns the number of characters
   // required
-  DWORD required = MultiByteToWideChar(CP_UTF8, 0, utf8.data(), utf8.size(), nullptr, 0);
+  DWORD required
+      = MultiByteToWideChar(CP_UTF8, 0, utf8.data(), utf8.size(), nullptr, 0);
   if (required == 0) {
     errno = b_errno_win32;
     BErrNo be;
     Dmsg2(300, "Can not convert %s to wide string: %s\n", utf8.data(),
-	  be.bstrerror());
+          be.bstrerror());
     return {};
   }
   std::wstring utf16(required, '\0');
@@ -345,13 +360,14 @@ std::wstring FromUtf8(std::string_view utf8)
   // if the buffer is big enough the function returns the number of
   // characters written
   DWORD written = MultiByteToWideChar(CP_UTF8, 0, utf8.data(), utf8.size(),
-				      utf16.data(), utf16.size());
+                                      utf16.data(), utf16.size());
 
   if (written != required) {
     errno = b_errno_win32;
     BErrNo be;
-    Dmsg3(300, "Error during conversion! Expected %d chars but only got %d: %s\n",
-	  required, written, be.bstrerror());
+    Dmsg3(300,
+          "Error during conversion! Expected %d chars but only got %d: %s\n",
+          required, written, be.bstrerror());
 
     return {};
   }
@@ -368,27 +384,28 @@ std::string FromUtf16(std::wstring_view utf16)
   // if the buffer is to small (or not supplied) the function returns
   // the number of bytes required
   DWORD required = WideCharToMultiByte(CP_UTF8, 0, utf16.data(), utf16.size(),
-				       nullptr, 0, nullptr, nullptr);
+                                       nullptr, 0, nullptr, nullptr);
   if (required == 0) {
     errno = b_errno_win32;
     BErrNo be;
     Dmsg0(300, "Encountered error in utf16 -> utf8 conversion: %s\n",
-	  be.bstrerror());
+          be.bstrerror());
     return {};
   }
   std::string utf8(required, '\0');
 
   // if the buffer is big enough the function returns the number of
   // bytes written
-  DWORD written = WideCharToMultiByte(CP_UTF8, 0, utf16.data(), utf16.size(),
-				      utf8.data(), utf8.size(),
-				      nullptr, nullptr);
+  DWORD written
+      = WideCharToMultiByte(CP_UTF8, 0, utf16.data(), utf16.size(), utf8.data(),
+                            utf8.size(), nullptr, nullptr);
 
   if (written != required) {
     errno = b_errno_win32;
     BErrNo be;
-    Dmsg1(300, "Error during conversion! Expected %d chars but only got %d: %s\n",
-	  required, written, be.bstrerror());
+    Dmsg1(300,
+          "Error during conversion! Expected %d chars but only got %d: %s\n",
+          required, written, be.bstrerror());
 
     return {};
   }
@@ -400,21 +417,17 @@ std::string FromUtf16(std::wstring_view utf16)
 static bool IsLiteralPath(std::wstring_view path)
 {
   // check if the path starts with //?/
-  return path.size() >= 4 &&
-    IsPathSeparator(path[0]) &&
-    IsPathSeparator(path[1]) &&
-    IsPathSeparator(path[3]) &&
-    path[2] == L'?';
+  return path.size() >= 4 && IsPathSeparator(path[0])
+         && IsPathSeparator(path[1]) && IsPathSeparator(path[3])
+         && path[2] == L'?';
 }
 
 static bool IsNormalizedPath(std::wstring_view path)
 {
   // check if the path starts with //./
-  return path.size() >= 4 &&
-    IsPathSeparator(path[0]) &&
-    IsPathSeparator(path[1]) &&
-    IsPathSeparator(path[3]) &&
-    path[2] == L'.';
+  return path.size() >= 4 && IsPathSeparator(path[0])
+         && IsPathSeparator(path[1]) && IsPathSeparator(path[3])
+         && path[2] == L'.';
 }
 
 /**
@@ -443,21 +456,20 @@ static std::wstring AsFullPath(std::wstring_view p)
     errno = b_errno_win32;
     BErrNo be;
     Dmsg0(300, "Could not get full path length of path %s: %s\n",
-	  FromUtf16(p).c_str(), be.bstrerror());
+          FromUtf16(p).c_str(), be.bstrerror());
   }
   std::wstring literal(required, L'\0');
-  DWORD written = GetFullPathNameW(p.data(), required,
-				   literal.data(),
-				   NULL);
+  DWORD written = GetFullPathNameW(p.data(), required, literal.data(), NULL);
 
   // required contains the terminating 0 but
   // written will not *if* the operation was successful.
   if (written != required - 1) {
     errno = b_errno_win32;
     BErrNo be;
-    Dmsg3(300, "Error while getting full path of %s; allocated %d chars but needed %d: %s\n",
-	  FromUtf16(p).c_str(),
-	  required, written, be.bstrerror());
+    Dmsg3(300,
+          "Error while getting full path of %s; allocated %d chars but needed "
+          "%d: %s\n",
+          FromUtf16(p).c_str(), required, written, be.bstrerror());
   }
 
   literal.resize(written);
@@ -476,14 +488,14 @@ std::wstring ReplaceSlashes(std::wstring_view path)
   constexpr std::wstring_view path_separators = L"\\/"sv;
 
   std::size_t end = path.size();
-  std::size_t head = std::min(path.find_first_not_of(path_separators),
-			      end);
+  std::size_t head = std::min(path.find_first_not_of(path_separators), end);
 
   std::wstring result(head, L'\\');
 
 
   for (;;) {
-    std::size_t copy_until = std::min(path.find_first_of(path_separators, head), end);
+    std::size_t copy_until
+        = std::min(path.find_first_of(path_separators, head), end);
     result.append(std::begin(path) + head, std::begin(path) + copy_until);
     head = std::min(path.find_first_not_of(path_separators, copy_until), end);
 
@@ -525,8 +537,7 @@ static inline std::wstring make_wchar_win32_path(std::wstring_view path)
   }
 
   std::wstring converted = AsFullPath(path);
-  if (auto shadow_path = vss_path_converter.Convert(converted);
-      shadow_path) {
+  if (auto shadow_path = vss_path_converter.Convert(converted); shadow_path) {
     // we sadly need to copy here
     converted.assign(shadow_path.get());
   } else {
@@ -535,11 +546,13 @@ static inline std::wstring make_wchar_win32_path(std::wstring_view path)
   }
   bool is_root = path.size() == 1 && IsPathSeparator(path[0]);
   // for legacy reasons we do not want to have a trailing slash if
-  // we were only given the "root" path, i.e. a path containing only a single '/'
+  // we were only given the "root" path, i.e. a path containing only a single
+  // '/'
   RemoveTrailingSlashes(converted, is_root);
 
 
-  Dmsg1(debuglevel, "Leave make_wchar_win32_path=%s\n", FromUtf16(converted).c_str());
+  Dmsg1(debuglevel, "Leave make_wchar_win32_path=%s\n",
+        FromUtf16(converted).c_str());
   return converted;
 }
 
@@ -903,8 +916,9 @@ static inline bool GetVolumeMountPointData(const char* filename,
     std::wstring utf16 = make_win32_path_UTF8_2_wchar(filename);
 
     if (p_CreateFileW) {
-      h = CreateFileW(utf16.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
-		      FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
+      h = CreateFileW(
+          utf16.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+          FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
     }
 
     if (h == INVALID_HANDLE_VALUE) {
@@ -916,11 +930,13 @@ static inline bool GetVolumeMountPointData(const char* filename,
     PoolMem win32_fname(PM_FNAME);
     unix_name_to_win32(win32_fname.addr(), filename);
 
-    h = CreateFileA(win32_fname.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
-		    FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
+    h = CreateFileA(
+        win32_fname.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+        FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
 
     if (h == INVALID_HANDLE_VALUE) {
-      Dmsg1(debuglevel, "Invalid handle from CreateFile(%s)\n", win32_fname.c_str());
+      Dmsg1(debuglevel, "Invalid handle from CreateFile(%s)\n",
+            win32_fname.c_str());
       return false;
     }
   }
@@ -969,8 +985,9 @@ static inline ssize_t GetSymlinkData(const char* filename,
     std::wstring utf16 = make_win32_path_UTF8_2_wchar(filename);
 
     if (p_CreateFileW) {
-      h = CreateFileW(utf16.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
-		      FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
+      h = CreateFileW(
+          utf16.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+          FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
     }
 
     if (h == INVALID_HANDLE_VALUE) {
@@ -981,11 +998,12 @@ static inline ssize_t GetSymlinkData(const char* filename,
     PoolMem win32_fname(PM_FNAME);
     unix_name_to_win32(win32_fname.addr(), filename);
     h = CreateFileA(
-		    win32_fname.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+        win32_fname.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
         FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
 
     if (h == INVALID_HANDLE_VALUE) {
-      Dmsg1(debuglevel, "Invalid handle from CreateFile(%s)\n", win32_fname.c_str());
+      Dmsg1(debuglevel, "Invalid handle from CreateFile(%s)\n",
+            win32_fname.c_str());
       return -1;
     }
   }
@@ -1092,7 +1110,7 @@ static int GetWindowsFileInfo(const char* filename,
 #if (_WIN32_WINNT >= 0x0600)
     if (fh != INVALID_HANDLE_VALUE) {
       h = p_CreateFileW(
-			utf16.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+          utf16.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
           FILE_FLAG_BACKUP_SEMANTICS, /* Required for directories */
           NULL);
     }
@@ -1133,15 +1151,11 @@ static int GetWindowsFileInfo(const char* filename,
     // As this is retrieved by handle it has no specific A or W call.
     if (h != INVALID_HANDLE_VALUE) {
       if (p_GetFileInformationByHandleEx) {
-        if (p_GetFileInformationByHandleEx(
-                h, FileBasicInfo, &basic_info,
-                sizeof(basic_info))) {
-          pftLastAccessTime
-              = (FILETIME*)&basic_info.LastAccessTime;
-          pftLastWriteTime
-              = (FILETIME*)&basic_info.LastWriteTime;
-	  pftChangeTime
-	      = (FILETIME*)&basic_info.ChangeTime;
+        if (p_GetFileInformationByHandleEx(h, FileBasicInfo, &basic_info,
+                                           sizeof(basic_info))) {
+          pftLastAccessTime = (FILETIME*)&basic_info.LastAccessTime;
+          pftLastWriteTime = (FILETIME*)&basic_info.LastWriteTime;
+          pftChangeTime = (FILETIME*)&basic_info.ChangeTime;
           use_fallback_data = false;
         }
       }
@@ -1350,16 +1364,12 @@ int fstat(intptr_t fd, struct stat* sb)
   if (p_GetFileInformationByHandleEx) {
     FILE_BASIC_INFO basic_info;
 
-    if (p_GetFileInformationByHandleEx(
-            (HANDLE)_get_osfhandle(fd), FileBasicInfo,
-            &basic_info,
-            sizeof(basic_info))) {
-      sb->st_atime
-          = CvtFtimeToUtime(basic_info.LastAccessTime);
-      sb->st_mtime
-          = CvtFtimeToUtime(basic_info.LastWriteTime);
-      sb->st_ctime
-	  = CvtFtimeToUtime(basic_info.ChangeTime);
+    if (p_GetFileInformationByHandleEx((HANDLE)_get_osfhandle(fd),
+                                       FileBasicInfo, &basic_info,
+                                       sizeof(basic_info))) {
+      sb->st_atime = CvtFtimeToUtime(basic_info.LastAccessTime);
+      sb->st_mtime = CvtFtimeToUtime(basic_info.LastWriteTime);
+      sb->st_ctime = CvtFtimeToUtime(basic_info.ChangeTime);
       use_fallback_data = false;
     }
   }
@@ -1461,12 +1471,12 @@ int stat(const char* filename, struct stat* sb)
   std::wstring utf16 = make_win32_path_UTF8_2_wchar(filename);
 
   if (p_GetFileAttributesExW) {
-    BOOL b = p_GetFileAttributesExW(utf16.c_str(), GetFileExInfoStandard,
-                                    &data);
+    BOOL b
+        = p_GetFileAttributesExW(utf16.c_str(), GetFileExInfoStandard, &data);
     if (!b) { goto bail_out; }
   } else if (p_GetFileAttributesExA) {
-
-    if (!p_GetFileAttributesExA(win32_fname.c_str(), GetFileExInfoStandard, &data)) {
+    if (!p_GetFileAttributesExA(win32_fname.c_str(), GetFileExInfoStandard,
+                                &data)) {
       goto bail_out;
     }
   } else {
@@ -1518,22 +1528,18 @@ int stat(const char* filename, struct stat* sb)
         h = p_CreateFileW(utf16.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL,
                           OPEN_EXISTING, 0, NULL);
       } else {
-        h = CreateFileA(win32_fname.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL,
-                        OPEN_EXISTING, 0, NULL);
+        h = CreateFileA(win32_fname.c_str(), GENERIC_READ, FILE_SHARE_READ,
+                        NULL, OPEN_EXISTING, 0, NULL);
       }
 
       if (h != INVALID_HANDLE_VALUE) {
         FILE_BASIC_INFO basic_info;
 
-        if (p_GetFileInformationByHandleEx(
-                h, FileBasicInfo, &basic_info,
-                sizeof(basic_info))) {
-          sb->st_atime
-              = CvtFtimeToUtime(basic_info.LastAccessTime);
-          sb->st_mtime
-              = CvtFtimeToUtime(basic_info.LastWriteTime);
-	  sb->st_ctime
-	      = CvtFtimeToUtime(basic_info.ChangeTime);
+        if (p_GetFileInformationByHandleEx(h, FileBasicInfo, &basic_info,
+                                           sizeof(basic_info))) {
+          sb->st_atime = CvtFtimeToUtime(basic_info.LastAccessTime);
+          sb->st_mtime = CvtFtimeToUtime(basic_info.LastWriteTime);
+          sb->st_ctime = CvtFtimeToUtime(basic_info.ChangeTime);
           use_fallback_data = false;
         }
 
@@ -1692,8 +1698,7 @@ int win32_symlink(const char* name1, const char* name2, _dev_t st_rdev)
     if (target.size() == 0) { goto bail_out; }
     std::wstring symlink = make_win32_path_UTF8_2_wchar(name2);
 
-    BOOL b
-        = p_CreateSymbolicLinkW(symlink.c_str(), target.c_str(), dwFlags);
+    BOOL b = p_CreateSymbolicLinkW(symlink.c_str(), target.c_str(), dwFlags);
 
     if (!b) {
       Dmsg1(debuglevel, "CreateSymbolicLinkW failed:%s\n", errorString());
@@ -1796,9 +1801,7 @@ DIR* opendir(const char* path)
   // we want to ensure we are in the second case!
   std::string dir_path{path};
 
-  if (!IsPathSeparator(dir_path.back())) {
-    dir_path.push_back('/');
-  }
+  if (!IsPathSeparator(dir_path.back())) { dir_path.push_back('/'); }
   dir_path.push_back('*');
 
   Dmsg1(debuglevel, "Opendir path=%s\n", dir_path.c_str());
@@ -2185,18 +2188,19 @@ int win32_fputs(const char* string, FILE* stream)
     std::wstring utf16 = FromUtf8(string);
 
     // Try WriteConsoleW
-    if (WriteConsoleW(hOut, utf16.c_str(), utf16.size(), &dwCharsWritten, NULL)) {
+    if (WriteConsoleW(hOut, utf16.c_str(), utf16.size(), &dwCharsWritten,
+                      NULL)) {
       return dwCharsWritten;
     }
 
 
     DWORD needed = p_WideCharToMultiByte(GetConsoleOutputCP(), 0, utf16.c_str(),
-					 -1, nullptr, 0, nullptr, nullptr);
+                                         -1, nullptr, 0, nullptr, nullptr);
     // Convert to local codepage and try WriteConsoleA
     pszBuf = GetPoolMemory(PM_MESSAGE);
     pszBuf = CheckPoolMemorySize(pszBuf, needed);
-    dwChars = p_WideCharToMultiByte(GetConsoleOutputCP(), 0, utf16.c_str(),
-                                    -1, pszBuf, needed, NULL, NULL);
+    dwChars = p_WideCharToMultiByte(GetConsoleOutputCP(), 0, utf16.c_str(), -1,
+                                    pszBuf, needed, NULL, NULL);
     if (WriteConsoleA(hOut, pszBuf, dwChars - 1, &dwCharsWritten, NULL)) {
       FreePoolMemory(pszBuf);
       return dwCharsWritten;
@@ -2348,12 +2352,14 @@ bool win32_restore_file_attributes(POOLMEM* ofname,
   if (p_SetFileAttributesW) {
     std::wstring utf16 = make_win32_path_UTF8_2_wchar(ofname);
 
-    BOOL b = p_SetFileAttributesW(utf16.c_str(), atts->dwFileAttributes & SET_ATTRS);
+    BOOL b = p_SetFileAttributesW(utf16.c_str(),
+                                  atts->dwFileAttributes & SET_ATTRS);
     if (!b) { goto bail_out; }
   } else {
     PoolMem win32_ofile(PM_FNAME);
     unix_name_to_win32(win32_ofile.addr(), ofname);
-    BOOL b = p_SetFileAttributesA(win32_ofile.c_str(), atts->dwFileAttributes & SET_ATTRS);
+    BOOL b = p_SetFileAttributesA(win32_ofile.c_str(),
+                                  atts->dwFileAttributes & SET_ATTRS);
     if (!b) { goto bail_out; }
   }
 

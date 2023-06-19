@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -89,10 +89,8 @@ void VSSInit(JobControlRecord* jcr)
 // Destructor
 VSSClient::~VSSClient()
 {
-  /*
-   * Release the IVssBackupComponents interface
-   * WARNING: this must be done BEFORE calling CoUninitialize()
-   */
+  /* Release the IVssBackupComponents interface
+   * WARNING: this must be done BEFORE calling CoUninitialize() */
   if (pVssObject_) {
     //      pVssObject_->Release();
     pVssObject_ = NULL;
@@ -124,12 +122,14 @@ bool VSSClient::InitializeForRestore(JobControlRecord* jcr)
 }
 
 template <typename CharT>
-static std::size_t AppendPathPart(std::basic_string<CharT>& s, const CharT* path) {
+static std::size_t AppendPathPart(std::basic_string<CharT>& s,
+                                  const CharT* path)
+{
   for (std::size_t lookahead = 0; path[lookahead]; lookahead += 1) {
     CharT cur = path[lookahead];
     if (cur == CharT{'\\'}) {
-      s.append(path, lookahead+1);
-      return lookahead+1;
+      s.append(path, lookahead + 1);
+      return lookahead + 1;
     }
   }
   return 0;
@@ -142,8 +142,9 @@ static std::size_t AppendPathPart(std::basic_string<CharT>& s, const CharT* path
 // in `path` that registered in `mount_to_vol`.
 // We then return the volume guid of `current_volume` and the rest of the path.
 template <typename CharT, typename String = std::basic_string<CharT>>
-static std::pair<String, String> FindMountPoint(const CharT* path,
-						std::unordered_map<String, String>& mount_to_vol)
+static std::pair<String, String> FindMountPoint(
+    const CharT* path,
+    std::unordered_map<String, String>& mount_to_vol)
 {
   String current_volume{};
   std::size_t offset{0};
@@ -157,10 +158,10 @@ static std::pair<String, String> FindMountPoint(const CharT* path,
   // no more / found so reset to the last locked in path and return
   // -> current_volume = VolD; path = path
   while (lookahead = AppendPathPart(current_volume, path + offset),
-	 lookahead != 0) {
+         lookahead != 0) {
     offset += lookahead;
     if (auto found = mount_to_vol.find(current_volume);
-	found != mount_to_vol.end()) {
+        found != mount_to_vol.end()) {
       current_volume.assign(found->second);
       path += offset;
       offset = 0;
@@ -179,14 +180,13 @@ char* VSSClient::GetShadowPath(const char* szFilePath)
 
   auto [volume, path] = FindMountPoint(szFilePath, this->mount_to_vol);
 
-  if (auto found = vol_to_vss.find(volume);
-      found != vol_to_vss.end()) {
+  if (auto found = vol_to_vss.find(volume); found != vol_to_vss.end()) {
     constexpr std::string_view sep = "\\"sv;
     auto len = found->second.size() + sep.size() + path.size() + 1;
     char* shadow_path = (char*)malloc(len * sizeof(*shadow_path));
     shadow_path[len - 1] = '\0';
     auto head = std::copy(std::begin(found->second), std::end(found->second),
-			  shadow_path);
+                          shadow_path);
 
     head = std::copy(std::begin(sep), std::end(sep), head);
 
@@ -195,13 +195,15 @@ char* VSSClient::GetShadowPath(const char* szFilePath)
     ASSERT(head == shadow_path + len - 1);
     return shadow_path;
   } else {
-    Dmsg4(50, "Could not find shadow volume for volume '%s' (path = '%s'; input = '%s').\n"
-	  "Falling back to live system!\n",
-	  volume.c_str(), path.c_str(), szFilePath);
+    Dmsg4(50,
+          "Could not find shadow volume for volume '%s' (path = '%s'; input = "
+          "'%s').\n"
+          "Falling back to live system!\n",
+          volume.c_str(), path.c_str(), szFilePath);
     goto bail_out;
   }
 
- bail_out:
+bail_out:
   errno = EINVAL;
   return nullptr;
 }
@@ -213,8 +215,7 @@ wchar_t* VSSClient::GetShadowPathW(const wchar_t* szFilePath)
 
   auto [volume, path] = FindMountPoint(szFilePath, this->mount_to_vol_w);
 
-  if (auto found = vol_to_vss_w.find(volume);
-      found != vol_to_vss_w.end()) {
+  if (auto found = vol_to_vss_w.find(volume); found != vol_to_vss_w.end()) {
     // we need two extra chars; one for the null terminator and one for
     // the backslash between the parts
     constexpr std::wstring_view sep = L"\\"sv;
@@ -222,7 +223,7 @@ wchar_t* VSSClient::GetShadowPathW(const wchar_t* szFilePath)
     wchar_t* shadow_path = (wchar_t*)malloc(len * sizeof(*shadow_path));
     shadow_path[len - 1] = '\0';
     auto head = std::copy(std::begin(found->second), std::end(found->second),
-			  shadow_path);
+                          shadow_path);
 
     head = std::copy(std::begin(sep), std::end(sep), head);
 
@@ -232,12 +233,13 @@ wchar_t* VSSClient::GetShadowPathW(const wchar_t* szFilePath)
     return shadow_path;
   } else {
     // TODO: how to do dmsg with wstrs ?
-    Dmsg4(50, "Could not find shadow volume.\n"
-	  "Falling back to live system!\n");
+    Dmsg4(50,
+          "Could not find shadow volume.\n"
+          "Falling back to live system!\n");
     goto bail_out;
   }
 
- bail_out:
+bail_out:
   errno = EINVAL;
   return nullptr;
 }

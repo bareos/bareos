@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -70,16 +70,19 @@ class VSSClient {
   bool InitializeForBackup(JobControlRecord* jcr);
   bool InitializeForRestore(JobControlRecord* jcr);
   virtual void AddVolumeSnapshots(IVssBackupComponents* pVssObj,
-				  const std::vector<std::wstring>& volumes,
-				  bool onefs_disabled)
+                                  const std::vector<std::wstring>& volumes,
+                                  bool onefs_disabled)
       = 0;
-  virtual void AddVolumeMountPointSnapshots(IVssBackupComponents* pVssObj,
-                                            const std::wstring& volume,
-					    std::unordered_set<std::wstring>& snapshoted_volumes)
+  virtual void AddVolumeMountPointSnapshots(
+      IVssBackupComponents* pVssObj,
+      const std::wstring& volume,
+      std::unordered_set<std::wstring>& snapshoted_volumes)
       = 0;
   virtual void ShowVolumeMountPointStats(JobControlRecord* jcr) = 0;
 
-  virtual bool CreateSnapshots(const std::vector<std::wstring>& volumes, bool onefs_disabled) = 0;
+  virtual bool CreateSnapshots(const std::vector<std::wstring>& volumes,
+                               bool onefs_disabled)
+      = 0;
   virtual bool CloseBackup() = 0;
   virtual bool CloseRestore() = 0;
   virtual WCHAR* GetMetadata() = 0;
@@ -143,11 +146,12 @@ class VSSClientVista : public VSSClient {
   VSSClientVista();
   virtual ~VSSClientVista() override;
   virtual void AddVolumeSnapshots(IVssBackupComponents* pVssObj,
-				  const std::vector<std::wstring>& volumes,
-				  bool onefs_disabled) override;
-  virtual void AddVolumeMountPointSnapshots(IVssBackupComponents* pVssObj,
-                                            const std::wstring& volume,
-					    std::unordered_set<std::wstring>& snapshoted_volumes) override;
+                                  const std::vector<std::wstring>& volumes,
+                                  bool onefs_disabled) override;
+  virtual void AddVolumeMountPointSnapshots(
+      IVssBackupComponents* pVssObj,
+      const std::wstring& volume,
+      std::unordered_set<std::wstring>& snapshoted_volumes) override;
   virtual void ShowVolumeMountPointStats(JobControlRecord* jcr) override;
   virtual bool CreateSnapshots(const std::vector<std::wstring>& volumes,
                                bool onefs_disabled) override;

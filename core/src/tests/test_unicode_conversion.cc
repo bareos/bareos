@@ -34,14 +34,17 @@
 #include <compat.h>
 #include <lib/mem_pool.h>
 
-template<typename CharT>
+template <typename CharT>
 bool ByteEq(std::basic_string_view<CharT> lhs,
-	    std::basic_string_view<CharT> rhs) {
-  return lhs.size() == rhs.size() &&
-    std::memcmp(lhs.data(), rhs.data(), rhs.size() * sizeof(CharT)) == 0;
+            std::basic_string_view<CharT> rhs)
+{
+  return lhs.size() == rhs.size()
+         && std::memcmp(lhs.data(), rhs.data(), rhs.size() * sizeof(CharT))
+                == 0;
 }
 
-std::vector<std::wstring> OldU2W(std::vector<std::string_view> strings) {
+std::vector<std::wstring> OldU2W(std::vector<std::string_view> strings)
+{
   std::vector<std::wstring> result;
   for (auto view : strings) {
     PoolMem mem(PM_FNAME);
@@ -51,15 +54,15 @@ std::vector<std::wstring> OldU2W(std::vector<std::string_view> strings) {
   return result;
 }
 
-std::vector<std::wstring> NewU2W(std::vector<std::string_view> strings) {
+std::vector<std::wstring> NewU2W(std::vector<std::string_view> strings)
+{
   std::vector<std::wstring> result;
-  for (auto view : strings) {
-    result.emplace_back(std::move(FromUtf8(view)));
-  }
+  for (auto view : strings) { result.emplace_back(std::move(FromUtf8(view))); }
   return result;
 }
 
-std::vector<std::string> OldW2U(std::vector<std::wstring_view> strings) {
+std::vector<std::string> OldW2U(std::vector<std::wstring_view> strings)
+{
   std::vector<std::string> result;
   for (auto view : strings) {
     PoolMem mem(PM_FNAME);
@@ -69,11 +72,10 @@ std::vector<std::string> OldW2U(std::vector<std::wstring_view> strings) {
   return result;
 }
 
-std::vector<std::string> NewW2U(std::vector<std::wstring_view> strings) {
+std::vector<std::string> NewW2U(std::vector<std::wstring_view> strings)
+{
   std::vector<std::string> result;
-  for (auto view : strings) {
-    result.emplace_back(std::move(FromUtf16(view)));
-  }
+  for (auto view : strings) { result.emplace_back(std::move(FromUtf16(view))); }
   return result;
 }
 
@@ -81,11 +83,11 @@ class Conversions : public ::testing::Test {
   void SetUp() override { InitWinAPIWrapper(); }
 };
 
-TEST_F(Conversions, utf8_to_wchar_paths) {
+TEST_F(Conversions, utf8_to_wchar_paths)
+{
   using namespace std::literals;
   std::vector<std::string_view> paths{
-    "/"sv, "C:"sv, "D:\\"sv, "D:/./.."sv,
-    "D:\\.."sv,
+      "/"sv, "C:"sv, "D:\\"sv, "D:/./.."sv, "D:\\.."sv,
   };
 
   auto old_ver = OldU2W(paths);
@@ -99,16 +101,16 @@ TEST_F(Conversions, utf8_to_wchar_paths) {
 }
 
 
-TEST_F(Conversions, utf8_to_wchar_phrases) {
+TEST_F(Conversions, utf8_to_wchar_phrases)
+{
   using namespace std::literals;
   std::vector<std::string_view> strings{
-    "",
-    "Döner macht schöner."sv,
-    "烤肉串使你更加美丽。"sv,
-    "Döner kebab gør dig smukkere."sv,
-    "도너 케밥은 당신을 더 아름답게 만듭니다."sv,
-    "Донер-кебаб робить вас красивішими."sv
-  };
+      "",
+      "Döner macht schöner."sv,
+      "烤肉串使你更加美丽。"sv,
+      "Döner kebab gør dig smukkere."sv,
+      "도너 케밥은 당신을 더 아름답게 만듭니다."sv,
+      "Донер-кебаб робить вас красивішими."sv};
 
   auto old_ver = OldU2W(strings);
   auto new_ver = NewU2W(strings);
@@ -120,11 +122,11 @@ TEST_F(Conversions, utf8_to_wchar_phrases) {
   }
 }
 
-TEST_F(Conversions, wchar_to_utf8_paths) {
+TEST_F(Conversions, wchar_to_utf8_paths)
+{
   using namespace std::literals;
   std::vector<std::wstring_view> paths{
-    L"/"sv, L"C:"sv, L"D:\\"sv, L"D:/./.."sv,
-    L"D:\\.."sv,
+      L"/"sv, L"C:"sv, L"D:\\"sv, L"D:/./.."sv, L"D:\\.."sv,
   };
 
   auto old_ver = OldW2U(paths);
@@ -138,16 +140,16 @@ TEST_F(Conversions, wchar_to_utf8_paths) {
 }
 
 
-TEST_F(Conversions, wchar_to_utf8_phrases) {
+TEST_F(Conversions, wchar_to_utf8_phrases)
+{
   using namespace std::literals;
   std::vector<std::wstring_view> strings{
-    L"",
-    L"Döner macht schöner."sv,
-    L"烤肉串使你更加美丽。"sv,
-    L"Döner kebab gør dig smukkere."sv,
-    L"도너 케밥은 당신을 더 아름답게 만듭니다."sv,
-    L"Донер-кебаб робить вас красивішими."sv
-  };
+      L"",
+      L"Döner macht schöner."sv,
+      L"烤肉串使你更加美丽。"sv,
+      L"Döner kebab gør dig smukkere."sv,
+      L"도너 케밥은 당신을 더 아름답게 만듭니다."sv,
+      L"Донер-кебаб робить вас красивішими."sv};
 
   auto old_ver = OldW2U(strings);
   auto new_ver = NewW2U(strings);
