@@ -22,6 +22,16 @@ on_error() {
 }
 trap 'on_error' ERR
 
+reset_eject_drive() {
+  # cleanup before bareos tests
+  /usr/bin/mt -f "${ltodrive}" rewind ||:
+  /usr/bin/mt -f "${ltodrive}" weof   ||:
+  ${mybsc} -c ${ltodrive}
+  # Empty the drive without failing.
+  /usr/sbin/mtx -f "${changer}" unload 1 0 ||:
+  /usr/sbin/mtx -f "${changer}" inventory ||:
+}
+
 # Prepare KEK and initial tests
 # ltodrive="/dev/tape/by-id/scsi-350223344ab000100-nst"
 # changer="/dev/tape/by-id/scsi-SSTK_L700_XYZZY_A-changer"
@@ -102,13 +112,7 @@ fi
 # + Set the key to drive and volume
 # + do a tar job
 # + check again volume
-
-# cleanup before bareos tests
-/usr/bin/mt -f "${ltodrive}" rewind
-/usr/bin/mt -f "${ltodrive}" weof
-# Empty the drive without failing.
-/usr/sbin/mtx -f "${changer}" unload 1 0 ||: 
-/usr/sbin/mtx -f "${changer}" inventory ||: 
+reset_eject_drive
 
 
 # Bareos tests
@@ -119,6 +123,7 @@ messages
 setdebug level=100 trace=1 timestamp=1 all
 update slots
 label barcodes encrypt slot=1-4 drive=0 pool=Scratch storage=Tape-0 yes
+wait
 umount storage=Tape-0 drive=0
 list media
 run job=backup-bareos-fd Level=Full pool=Full storage=Tape-0 spooldata=yes yes
@@ -129,6 +134,9 @@ status client
 status storage=Tape-0
 wait
 messages
+release storage=Tape-0 drive=0
+umount storage=Tape-0 drive=0
+update slots
 END_OF_DATA
 
 run_bareos "$@"
@@ -181,12 +189,17 @@ expect_grep "E01001L8" \
 # How?
 
 # Test volume content listing
+# export confdir for mtx-changer
+export confdir=$(pwd)/etc/bareos
+# load the tape into the drive
+/usr/sbin/mtx -f "${changer}" load 1 0 ||:
+/usr/sbin/mt -f "${ltodrive}" rewind ||:
 bls_lj_log=$tmp/bls-Ljoutput.log
 sbin/bls-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" -L -j -V E01001L8 tapedrive-0-.dev.tape.by-id.scsi-350223344ab000100-nst > "${bls_lj_log}"
 expect_grep "JobId             : 1" \
             "$bls_lj_log" \
             "BLS jobid not found."
-expect_grep "Crypto cache read 4 entries" \
+expect_grep "Crypto cache read 1 entries" \
             "$bls_lj_log" \
             "bls: no crypto cache entry found."
 
@@ -201,7 +214,7 @@ mkdir -p "${restore_directory}" ||:
 bextract_log="${tmp}/bextract-output.log"
 # Test volume extraction
 sbin/bextract-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" -V E01001L8 tapedrive-0-.dev.tape.by-id.scsi-350223344ab000100-nst "${restore_directory}" > "${bextract_log}"
-expect_grep "Crypto cache read 4 entries" \
+expect_grep "Crypto cache read 1 entries" \
             "${bextract_log}" \
             "bextract: no crypto cache entry found."
 
