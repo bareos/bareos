@@ -715,6 +715,9 @@ class dedup_volume {
 
   ~dedup_volume()
   {
+    // do not write the config if there was an error
+    if (error) return;
+
     if (volume_changed) { write_current_config(); }
 
     if (error) {
