@@ -1007,58 +1007,65 @@ int SendFiles(JobControlRecord* jcr,
     // get set once per include block inside SetupLastOptionBlock.
     // Not all of these are used during the send, so we "cache" them
     // here once and then always reuse them.
-    struct cached_vals { int StripPath; };
+    struct cached_vals {
+      int StripPath;
+    };
     // everything is set to 0
     std::vector<cached_vals> cached_values(fileset->include_list.size());
     for (std::size_t i = 0; i < cached_values.size(); ++i) {
-	fileset->incexe = fileset->include_list.get(i);
-	SetupLastOptionBlock(ff, fileset->incexe);
-	cached_values[i].StripPath = ff->StripPath;
+      fileset->incexe = fileset->include_list.get(i);
+      SetupLastOptionBlock(ff, fileset->incexe);
+      cached_values[i].StripPath = ff->StripPath;
     }
     std::size_t closed_channels = 0;
     while (closed_channels != outs.size()) {
       bool found_file = false;
-      for (std::size_t fileset_idx = 0; fileset_idx < outs.size(); ++fileset_idx) {
-	auto& out = outs[fileset_idx];
-	if (out.empty()) continue;
-	while (std::optional<stated_file> file = out.try_get()) {
-	  fileset->incexe = fileset->include_list.get(fileset_idx);
-	  char* fname = file->name.data();
-	  ff->StripPath = cached_values[fileset_idx].StripPath;
-	  // todo: what to do with top_fname ? its only used
-	  // for debug messages from here on out and setting it up
-	  // correctly seems wasteful
-	  if (!SetupFFPkt(jcr, ff, fname, file->statp, file->delta_seq,
-			  file->type, file->hfsinfo)) {
-	    Dmsg1(debuglevel, "Error: Could not setup ffpkt for file '%s'\n",
-		  ff->fname);
-	    ret_val = 0;
-	    break;
-	  }
-	  if (!AcceptFile(ff)) {
-	    Dmsg1(debuglevel, "Did not accept file '%s'; skipping.\n",
-		  ff->fname);
-	    continue;
-	  }
-	  if (!FileSave(jcr, ff, false)) {
-	    CleanupLink(ff);
-	    Dmsg1(debuglevel, "Error: Could not save file %s",
-		  ff->fname);
-	    ret_val = 0;
-	    break;
-	  } else {
-	    CleanupLink(ff);
-	    if (ff->linked) { ff->linked->FileIndex = ff->FileIndex; }
-	  }
-	  if (jcr->IsJobCanceled()) { ret_val = 0; break; }
-	}
-	if (out.empty()) {
-	  closed_channels += 1;
-	}
+      for (std::size_t fileset_idx = 0; fileset_idx < outs.size();
+           ++fileset_idx) {
+        auto& out = outs[fileset_idx];
+        if (out.empty()) continue;
+        while (std::optional files = out.try_get_all()) {
+          for (auto& file : *files) {
+            fileset->incexe = fileset->include_list.get(fileset_idx);
+            char* fname = file.name.data();
+            ff->StripPath = cached_values[fileset_idx].StripPath;
+            // todo: what to do with top_fname ? its only used
+            // for debug messages from here on out and setting it up
+            // correctly seems wasteful
+            if (!SetupFFPkt(jcr, ff, fname, file.statp, file.delta_seq,
+                            file.type, file.hfsinfo)) {
+              Dmsg1(debuglevel, "Error: Could not setup ffpkt for file '%s'\n",
+                    ff->fname);
+              ret_val = 0;
+              break;
+            }
+            if (!AcceptFile(ff)) {
+              Dmsg1(debuglevel, "Did not accept file '%s'; skipping.\n",
+                    ff->fname);
+              continue;
+            }
+            if (!FileSave(jcr, ff, false)) {
+              CleanupLink(ff);
+              Dmsg1(debuglevel, "Error: Could not save file %s", ff->fname);
+              ret_val = 0;
+              break;
+            } else {
+              CleanupLink(ff);
+              if (ff->linked) { ff->linked->FileIndex = ff->FileIndex; }
+            }
+            if (jcr->IsJobCanceled()) {
+              ret_val = 0;
+              break;
+            }
+          }
+        }
+        if (out.empty()) { closed_channels += 1; }
       }
       // if we have not gotten any file then sleep for a bit instead
       // of spinning here
-      if (!found_file) { std::this_thread::sleep_for(std::chrono::milliseconds(30)); }
+      if (!found_file) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(30));
+      }
     }
   }
   return ret_val;
