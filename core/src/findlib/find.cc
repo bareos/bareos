@@ -985,85 +985,6 @@ static bool SetupFFPkt(JobControlRecord* jcr,
 	return true;
 }
 
-struct stated_opened_file
-{
-  stated_file f;
-  std::optional<BareosFilePacket> bfd;
-  int fileset;
-};
-
-void PrepareFileForSending(JobControlRecord* jcr,
-			   std::vector<channel::out<stated_file>> outs,
-			   channel::in<stated_opened_file> in)
-{
-  SetJcrInThreadSpecificData(jcr);
-  std::size_t closed_channels = 0;
-  while (closed_channels != outs.size()) {
-    bool found_file = false;
-    for (int i = 0; i < (int)outs.size(); ++i) {
-      auto& out = outs[i];
-      if (out.empty()) continue;
-      std::optional<stated_file> file;
-      while ((file = out.try_get())) {
-	found_file = true;
-	stated_file& f = file.value();
-	BareosFilePacket bfd;
-	binit(&bfd);
-	// if (BitIsSet(FO_PORTABLE, f.flags)) {
-	// 	SetPortableBackup(&bfd); /* disable Win32 BackupRead() */
-	// }
-	bool do_read = false;
-	{
-	  /* Open any file with data that we intend to save, then save it.
-	   *
-	   * Note, if is_win32_backup, we must open the Directory so that
-	   * the BackupRead will save its permissions and ownership streams. */
-	  if (f.type != FT_LNKSAVED && S_ISREG(f.statp.st_mode)) {
-#ifdef HAVE_WIN32
-	    do_read = !IsPortableBackup(&bfd) || f.statp.st_size > 0;
-#else
-	    do_read = f.statp.st_size > 0;
-#endif
-	  } else if (f.type == FT_RAW || f.type == FT_FIFO
-		     || f.type == FT_REPARSE || f.type == FT_JUNCTION
-		     || (!IsPortableBackup(&bfd)
-			 && f.type == FT_DIREND)) {
-	    do_read = true;
-	  }
-	}
-	// one can only safely read from a fifo
-	// with a timer.  Otherwise we can get stuck here
-	// as such we do not handle fifos here
-	if (do_read && f.type != FT_FIFO) {
-	  //int noatime = BitIsSet(FO_NOATIME, f.flags) ? O_NOATIME : 0;
-	  int noatime = 0;
-	  if (bopen(&bfd, f.name.c_str(), O_RDONLY | O_BINARY | noatime, 0,
-		    f.statp.st_rdev) < 0) {
-	    BErrNo be;
-	    Jmsg(jcr, M_NOTSAVED, 0, _("     Cannot open \"%s\": ERR=%s.\n"),
-		 f.name.c_str(), be.bstrerror());
-	    jcr->JobErrors++;
-	  } else {
-	    if (!in.put({f, std::make_optional(bfd), i})) {
-	      return;
-	    }
-	  }
-	} else {
-	  if (!in.put({f, std::nullopt, i})) {
-	    return;
-	  }
-	}
-      }
-      if (out.empty()) {
-	closed_channels += 1;
-      }
-    }
-    // if we have not gotten any file then sleep for a bit instead
-    // of spinning here
-    if (!found_file) { std::this_thread::sleep_for(std::chrono::milliseconds(30)); }
-  }
-}
-
 int SendFiles(JobControlRecord* jcr,
               FindFilesPacket* ff,
               std::vector<channel::out<stated_file>> outs,
@@ -1081,9 +1002,6 @@ int SendFiles(JobControlRecord* jcr,
     ClearAllBits(FO_MAX, ff->flags);
     SendPluginInfo(jcr, ff, PluginSave);
     ClearAllBits(FO_MAX, ff->flags);
-    std::size_t max_open_files = 10;
-    auto [in, out] = channel::CreateBufferedChannel<stated_opened_file>(max_open_files);
-    std::thread opener(PrepareFileForSending, jcr, std::move(outs), std::move(in));
 
     // some values are not setup by AcceptFile / SetupFFPkt but instead
     // get set once per include block inside SetupLastOptionBlock.
@@ -1097,69 +1015,51 @@ int SendFiles(JobControlRecord* jcr,
 	SetupLastOptionBlock(ff, fileset->incexe);
 	cached_values[i].StripPath = ff->StripPath;
     }
-    while (1) {
-      if (std::optional opened_file = out.get(); opened_file) {
-	auto& [file, bfd, fileset_idx] = opened_file.value();
-	fileset->incexe = fileset->include_list.get(fileset_idx);
-	char* fname = file.name.data();
-	ff->StripPath = cached_values[fileset_idx].StripPath;
-	// todo: what to do with top_fname ? its only used
-	// for debug messages from here on out and setting it up
-	// correctly seems wasteful
-	if (!SetupFFPkt(jcr, ff, fname, file.statp, file.delta_seq,
-			file.type, file.hfsinfo)) {
-	  Dmsg1(debuglevel, "Error: Could not setup ffpkt for file '%s'\n",
-		ff->fname);
-	  ret_val = 0;
-	  break;
-	}
-	if (!AcceptFile(ff)) {
-	  Dmsg1(debuglevel, "Did not accept file '%s'; skipping.\n",
-		ff->fname);
-	  continue;
-	}
-	if (bfd) {
-	  if (ff->type == FT_LNKSAVED) {
-	    // we should probably find a way in which we do not open
-	    // files that we dont plan on reading!
-	    // maybe do the hardlink detection in the preparing thread
-	    // WARNING: the current hardlink lookup is not reentrant!
-	    //          its not possible to safely search inside it from
-	    //          two threads at the same time!!
-	    //          This can only be achieved by redoing that part!
-	    bclose(&bfd.value());
+    std::size_t closed_channels = 0;
+    while (closed_channels != outs.size()) {
+      bool found_file = false;
+      for (std::size_t fileset_idx = 0; fileset_idx < outs.size(); ++fileset_idx) {
+	auto& out = outs[fileset_idx];
+	if (out.empty()) continue;
+	while (std::optional<stated_file> file = out.try_get()) {
+	  fileset->incexe = fileset->include_list.get(fileset_idx);
+	  char* fname = file->name.data();
+	  ff->StripPath = cached_values[fileset_idx].StripPath;
+	  // todo: what to do with top_fname ? its only used
+	  // for debug messages from here on out and setting it up
+	  // correctly seems wasteful
+	  if (!SetupFFPkt(jcr, ff, fname, file->statp, file->delta_seq,
+			  file->type, file->hfsinfo)) {
+	    Dmsg1(debuglevel, "Error: Could not setup ffpkt for file '%s'\n",
+		  ff->fname);
+	    ret_val = 0;
+	    break;
+	  }
+	  if (!AcceptFile(ff)) {
+	    Dmsg1(debuglevel, "Did not accept file '%s'; skipping.\n",
+		  ff->fname);
+	    continue;
+	  }
+	  if (!FileSave(jcr, ff, false)) {
+	    CleanupLink(ff);
+	    Dmsg1(debuglevel, "Error: Could not save file %s",
+		  ff->fname);
+	    ret_val = 0;
+	    break;
 	  } else {
-	    ff->bfd = bfd.value();
+	    CleanupLink(ff);
+	    if (ff->linked) { ff->linked->FileIndex = ff->FileIndex; }
 	  }
-	} else {
-	  // restore to default values
-	  ff->bfd = BareosFilePacket{};
-	  binit(&ff->bfd);
+	  if (jcr->IsJobCanceled()) { ret_val = 0; break; }
 	}
-
-	if (!FileSave(jcr, ff, false)) {
-	  if (IsBopen(&ff->bfd)) {
-	    bclose(&ff->bfd);
-	  }
-	  CleanupLink(ff);
-	  Dmsg1(debuglevel, "Error: Could not save file %s",
-		ff->fname);
-	  ret_val = 0;
-	  break;
-	} else {
-	  CleanupLink(ff);
-	  if (ff->linked) { ff->linked->FileIndex = ff->FileIndex; }
+	if (out.empty()) {
+	  closed_channels += 1;
 	}
-	if (jcr->IsJobCanceled()) { ret_val = 0; break; }
-      } else {
-	break;
       }
+      // if we have not gotten any file then sleep for a bit instead
+      // of spinning here
+      if (!found_file) { std::this_thread::sleep_for(std::chrono::milliseconds(30)); }
     }
-    // this will close the opener regardless of whether
-    // there are still files getting listed or not
-    // since currently the opener will spin if it isnt fed fast enough
-    out.close();
-    opener.join();
   }
   return ret_val;
 }
