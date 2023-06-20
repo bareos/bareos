@@ -769,9 +769,10 @@ class dedup_volume {
         return written_loc{loc.file_index, data_written->begin,
                            data_written->end};
       } else {
-        return std::nullopt;
+        goto create_new_record;
       }
     } else {
+    create_new_record:
       record this_record{blockheader.VolSessionId, blockheader.VolSessionTime,
                          recordheader.FileIndex, recordheader.Stream};
       // this is a real record header
