@@ -22,6 +22,33 @@
 #ifndef BAREOS_LIB_NETWORK_ORDER_H_
 #define BAREOS_LIB_NETWORK_ORDER_H_
 
+#include <cstdint>
+#include <type_traits>
+
+#ifndef BYTE_ORDER
+#  if (defined(_LITTLE_ENDIAN) || defined(_BIG_ENDIAN)) \
+      && !(defined(_LITTLE_ENDIAN) && defined(_BIG_ENDIAN))
+/* Solaris just defines one or the other */
+#    define LITTLE_ENDIAN 1234
+#    define BIG_ENDIAN 4321
+#    ifdef _LITTLE_ENDIAN
+#      define BYTE_ORDER LITTLE_ENDIAN
+#    else
+#      define BYTE_ORDER BIG_ENDIAN
+#    endif
+#  else
+#    define BYTE_ORDER __BYTE_ORDER
+#  endif
+#endif
+
+#ifndef LITTLE_ENDIAN
+#  define LITTLE_ENDIAN __LITTLE_ENDIAN
+#endif
+#ifndef BIG_ENDIAN
+#  define BIG_ENDIAN __BIG_ENDIAN
+#endif
+
+
 namespace network_order {
 
 template <typename T> constexpr T byteswap(T);
@@ -46,6 +73,7 @@ template <typename T> constexpr T byteswap(T val)
   return static_cast<T>(byteswap<nosign>(static_cast<nosign>(val)));
 }
 
+// FIXME: use C++20 <bit> here!
 #if !defined(BYTE_ORDER) || !defined(LITTLE_ENDIAN)
 #  error "Could not determine endianess."
 #elif (BYTE_ORDER == LITTLE_ENDIAN)
@@ -56,11 +84,11 @@ template <typename T> constexpr T to_network(T val) { return val; }
 template <typename T> constexpr T to_native(T val) { return val; }
 #endif
 
-struct from_network_order {
-} from_network_order_v;
+struct from_network_order {};
+constexpr from_network_order from_network_order_v;
 
-struct from_native_order {
-} from_native_order_v;
+struct from_native_order {};
+constexpr from_native_order from_native_order_v;
 
 template <typename T> struct network_value {
   T as_network;
@@ -91,5 +119,5 @@ template <typename U> static network_value<U> of_native(U native)
 {
   return network_value<U>{from_native_order_v, native};
 }
-}  // namespace network_order
+} /* namespace network_order */
 #endif  // BAREOS_LIB_NETWORK_ORDER_H_
