@@ -354,17 +354,16 @@ static void LogErrorMessage(std::string console_name, UaContext* ua)
         ua->UA_sock->port());
 }
 
-static bool NumberOfConsoleConnectionsExceeded()
+static uint32_t CurrentNumberOfConsoleConnections()
 {
   JobControlRecord* jcr;
-  unsigned int cnt = 0;
+  uint32_t cnt = 0;
 
   foreach_jcr (jcr) {
     if (jcr->is_JobType(JT_CONSOLE)) { cnt++; }
   }
   endeach_jcr(jcr);
-
-  return (cnt >= me->MaxConsoleConnections) ? true : false;
+  return cnt;
 }
 
 static bool GetConsoleNameAndVersion(BareosSocket* ua_sock,
@@ -407,10 +406,12 @@ static ConsoleAuthenticator* CreateConsoleAuthenticator(UaContext* ua)
 
 bool AuthenticateConsole(UaContext* ua)
 {
-  if (NumberOfConsoleConnectionsExceeded()) {
+  uint32_t ConsoleConnections = CurrentNumberOfConsoleConnections();
+  if (ConsoleConnections >= me->MaxConsoleConnections) {
     Emsg0(M_ERROR, 0,
           _("Number of console connections exceeded "
-            "MaximumConsoleConnections\n"));
+            "Maximum :%u, Current: %u\n"),
+          me->MaxConsoleConnections, ConsoleConnections);
     return false;
   }
 
