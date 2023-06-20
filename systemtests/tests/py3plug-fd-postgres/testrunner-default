@@ -28,6 +28,8 @@ mkdir -p "$TESTPGHOST"
 
 pushd database > /dev/null
 setup_local_db "$TESTPGHOST"
+# PG_VERSION will be pick from backuped PG data dir
+PG_VERSION="$(cut -d '.' -f1 data/PG_VERSION)"
 popd > /dev/null
 
 #shellcheck source=../scripts/functions
@@ -42,7 +44,6 @@ CREATE TABLE t(id serial PRIMARY KEY, text VARCHAR(20), created_on TIMESTAMP);
 INSERT INTO t (text, created_on) values ('test for FULL backup', current_timestamp);
 SELECT * FROM t;
 "
-PSQL_VERSION=$(${PSQL} -qtAX ${DBNAME} <<< "SHOW server_version;" | sed 's/\..*//g')
 
 start_test
 
@@ -76,12 +77,15 @@ wait
 END_OF_DATA
 
 run_bconsole
+
 # run another Incr without db changes - should result in empty backup job (only restore object)
 run_bconsole
 
 # Now stop database and try a restore
 pushd database/ > /dev/null
 local_db_stop_server "$TESTPGHOST"
+# Save previous log
+cp -a data/log/* log/
 rm -Rf data
 rm -Rf wal_archive
 echo "------------ stopped"
@@ -90,8 +94,7 @@ popd > /dev/null
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null
 messages
-messages
-@$out $tmp/log1.out
+@$out $tmp/log2.out
 restore client=bareos-fd where=/ select all done yes
 wait
 messages
@@ -102,27 +105,30 @@ check_for_zombie_jobs storage=File
 stop_bareos
 sleep 1
 
+pushd database > /dev/null
 #sometimes the pid file remains
-rm -f database/data/postmaster.pid
+rm -f data/postmaster.pid
+# reset log file
+rm -f data/log/*
+rm -f data/pg_wall/* ||:
 
-# Create a recovery.conf
+# Create a recovery.conf or recovery.signal
 # This may become a plugin feature later on
 # postgres 11 and lower
-# bc returns 1 if true, 0 if false so we need to negate
-if [ $(bc -l <<< "${PSQL_VERSION} < 12") -eq "1" ]; then
-  echo "PSQL is ${PSQL_VERSION} so lower than 12, using recovery.conf"
-  echo "restore_command = 'cp $current_test_directory/database/wal_archive/%f %p'" > $current_test_directory/database/data/recovery.conf
-  [ $EUID -eq 0 ] &&  chown postgres database/data/recovery.conf
+if (( ${PG_VERSION} < 12 )); then
+  echo "PG_VERSION is ${PG_VERSION} so lower than 12, using recovery.conf"
+  echo "restore_command = 'cp $current_test_directory/database/wal_archive/%f %p'" > ${current_test_directory}/database/data/recovery.conf
+  [ $EUID -eq 0 ] && chmod 0600 data/recovery.conf
+  [ $EUID -eq 0 ] && chown postgres data/recovery.conf
 else
   # postgres 12+
-  echo "PSQL is ${PSQL_VERSION} so 12+, using postgresql.conf and recovery.signal"
-  touch $current_test_directory/database/data/recovery.signal
-  echo "restore_command = 'cp $current_test_directory/database/wal_archive/%f %p'" >> database/data/postgresql.conf
-  [ $EUID -eq 0 ] &&  chown postgres database/data/postgresql.conf
+  echo "PG_VERSION is ${PG_VERSION} so 12+, using postgresql.conf and recovery.signal"
+  touch "${current_test_directory}/database/data/recovery.signal"
+  echo "restore_command = 'cp ${current_test_directory}/database/wal_archive/%f %p'" >> ${current_test_directory}/database/data/postgresql.conf
+  [ $EUID -eq 0 ] && chmod 0600 data/postgresql.conf data/recovery.signal
+  [ $EUID -eq 0 ] && chown postgres:postgres data/postgresql.conf data/recovery.signal
 fi
-# start DB again - shall recover to latest possible state
-pushd database > /dev/null
-local_db_start_server "$TESTPGHOST" || exit 1
+local_db_start_server "${TESTPGHOST}"
 popd > /dev/null
 
 i=0
@@ -130,7 +136,7 @@ until ${PSQL} ${DBNAME} <<< "SELECT * FROM t" | grep "for INCR"  > $tmp/sql.log 
 	echo "waiting for query to succeed"
 	sleep 1
   i=$((i+1))
-  if [ $i -gt 30 ]; then echo "timeout waiting for query after recovery"; exit 1; fi
+  if [ $i -gt 10 ]; then echo "timeout waiting for query after recovery"; exit 1; fi
 done
 
 pushd database/ > /dev/null
