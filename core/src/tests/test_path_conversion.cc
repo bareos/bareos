@@ -107,7 +107,7 @@ static char* MockVSSConvert_NewApi(const char* path)
   // use a len thats big enough to fit path without
   // relying on strlen(path) so as to not trigger
   // a false strncat 'bound depends on source' warning
-  int len = 8000;
+  int len = 40000;
   ASSERT(static_cast<std::size_t>(len) > strlen(path));
   char* buf = (char*)malloc(len);
   MockVSSConvert_OldApi(path, buf, len);
@@ -116,7 +116,10 @@ static char* MockVSSConvert_NewApi(const char* path)
 
 static wchar_t* MockVSSConvertW_NewApi(const wchar_t* path)
 {
-  int len = 8000;
+  // use a len thats big enough to fit path without
+  // relying on strlen(path) so as to not trigger
+  // a false strncat 'bound depends on source' warning
+  int len = 40000;
   ASSERT(static_cast<std::size_t>(len) > wcslen(path));
   wchar_t* buf = (wchar_t*)malloc(len * sizeof(*buf));
   MockVSSConvertW_OldApi(path, buf, len);
