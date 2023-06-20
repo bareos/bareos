@@ -62,7 +62,9 @@ else()
   target_sources(bareossd-fifo PRIVATE unix_fifo_device.cc)
   target_sources(bareossd-tape PRIVATE unix_tape_device.cc)
 endif()
-target_sources(bareossd-dedup PRIVATE dedup_file_device.cc)
+target_sources(
+  bareossd-dedup PRIVATE dedup_file_device.cc dedup/dedup_volume.cc
+)
 
 if(HAVE_DARWIN_OS)
   target_link_libraries(bareossd-fifo bareos bareossd)
