@@ -309,6 +309,10 @@ static std::optional<volume_config> from_bytes(
       return std::nullopt;
     }
 
+    config.version = file_header->version;
+    config.file_size = file_header->file_size;
+    config.section_alignment = file_header->section_alignment;
+
     bool encountered_general_info = false;
 
     while (current < end) {
@@ -356,10 +360,14 @@ static std::optional<volume_config> from_bytes(
             return std::nullopt;
           }
 
+          config.block_header_size = general_section->block_header_size;
+
           if (general_section->section_header_size != 0) {
             // error: bad block header size
             return std::nullopt;
           }
+
+          config.section_header_size = general_section->section_header_size;
 
           if (general_section->written_order
               != static_cast<std::uint8_t>(
@@ -367,6 +375,10 @@ static std::optional<volume_config> from_bytes(
             // error: bad byte order
             return std::nullopt;
           }
+
+          config.written_order
+              = static_cast<config::general_section::byte_order>(
+                  general_section->written_order);
 
         } break;
         case config::section_header::types::BlockFile: {
@@ -454,6 +466,7 @@ static std::optional<volume_config> from_bytes(
       // error: no general info
       return std::nullopt;
     }
+
 
     return config;
   } else {
