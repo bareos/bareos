@@ -491,19 +491,17 @@ class dedup_volume {
   dedup_volume(const char* path, DeviceMode dev_mode, int mode)
       : path(path), configfile{"config"}
   {
+    // to create files inside dir, we need executive permissions
     int dir_mode = mode | 0100;
-    if (dev_mode == DeviceMode::CREATE_READ_WRITE) {
-      if (struct stat st; ::stat(path, &st) != -1) {
-        error = true;
-        return;
-      }
-
+    if (struct stat st; (dev_mode == DeviceMode::CREATE_READ_WRITE)
+                        && (::stat(path, &st) == -1)) {
       if (mkdir(path, mode | 0100) < 0) {
         error = true;
         return;
       }
 
-      // to create files inside dir, we need executive permissions
+    } else {
+      dev_mode = DeviceMode::OPEN_READ_WRITE;
     }
 
     dir = raii_fd(path, O_RDONLY | O_DIRECTORY, dir_mode);
