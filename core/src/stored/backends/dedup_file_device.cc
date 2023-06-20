@@ -34,6 +34,7 @@
 #include <utility>
 #include <optional>
 #include <cstring>
+#include <filesystem>
 
 namespace storagedaemon {
 
@@ -63,7 +64,33 @@ bool dedup_file_device::UnmountBackend(DeviceControlRecord*, int)
 
 bool dedup_file_device::ScanForVolumeImpl(DeviceControlRecord* dcr)
 {
-  return ScanDirectoryForVolume(dcr);
+  namespace fs = std::filesystem;
+  const char* mount_point
+      = device_resource->mount_point ?: device_resource->archive_device_string;
+  for (const auto& entry : fs::directory_iterator{mount_point}) {
+    if (!entry.exists()) { continue; }
+
+    if (!entry.is_directory()) { continue; }
+
+    auto path = entry.path().filename();
+
+    if (path == "." || path == "..") { continue; }
+
+    // if (!IsVolumeNameLegal(path.c_str())) {
+    //   continue;
+    // }
+
+    bstrncpy(dcr->VolumeName, path.c_str(), sizeof(dcr->VolumeName));
+    if (!dcr->DirGetVolumeInfo(GET_VOL_INFO_FOR_WRITE)) { continue; }
+    /* This was not the volume we expected, but it is OK with
+     * the Director, so use it. */
+    VolCatInfo = dcr->VolCatInfo;
+    return 1;
+  }
+
+  // we did not find anything
+  dev_errno = EIO;
+  return 0;
 }
 
 int dedup_file_device::d_open(const char* path, int, int mode)
