@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2022 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2023 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -393,10 +393,10 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
 
     def parseBackupStopResult(self, result):
         try:
-            for (key, value) in re.findall("([A-Z ]+): (.*)\n", result):
-                if key == 'START WAL LOCATION':
+            for key, value in re.findall("([A-Z ]+): (.*)\n", result):
+                if key == "START WAL LOCATION":
                     value, _ = value.split(" ", 1)
-        
+
                 self.labelItems.update({key.strip(): value.strip()})
             bareosfd.DebugMessage(150, "Labels read: %s\n" % str(self.labelItems))
         except Exception as e:
@@ -404,7 +404,7 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
                 bareosfd.M_ERROR,
                 "Could not parse stop result %s: %s\n" % (result, e),
             )
-        
+
     def start_backup_file(self, savepkt):
         """
         For normal files we call the super method
@@ -493,16 +493,16 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
         # self.execute_SQL("SELECT pg_backup_start_time()")
         # self.backupStartTime = self.dbCursor.fetchone()[0]
         # Tell Postgres we are done
-        
+
         pgMajorVersion = self.pgVersion // 10000
         if pgMajorVersion >= 15:
-            stopStmt = "pg_backup_stop"
+            stopStmt = "pg_backup_stop(wait_for_archive => true)"
         else:
-            stopStmt = "pg_stop_backup"
+            stopStmt = "pg_stop_backup()"
             self.parseBackupLabelFile()
-        
+
         try:
-            results = self.dbCon.run("SELECT %s();" % stopStmt)
+            results = self.dbCon.run("SELECT %s;" % stopStmt)
             if pgMajorVersion >= 15:
                 self.parseBackupStopResult(results[0][0])
                 self.lastLSN = self.formatLSN(self.labelItems["START WAL LOCATION"])
