@@ -166,7 +166,7 @@ const std::vector<std::string_view> paths{
     "/"sv,
     "C:\\"sv,
     "\\\\?\\C:"sv,
-    "\\\\?\\C:\\"sv
+    "\\\\?\\C:\\"sv,
     "\\\\?\\d:"sv,
     "\\\\?\\d:\\"sv,
     "C:/test"sv,
