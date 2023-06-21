@@ -1530,18 +1530,19 @@ done:
 #
   File "/oname=$PLUGINSDIR\bconsole.conf" "etc\bareos\bconsole.conf"
 
-  File "/oname=$PLUGINSDIR\postgresql-create.sql" ".\ddl\creates\postgresql.sql"
-  File "/oname=$PLUGINSDIR\postgresql-drop.sql" ".\ddl\drops\postgresql.sql"
-  File "/oname=$PLUGINSDIR\postgresql-grant.sql" ".\ddl\grants\postgresql.sql"
+  File "/oname=$PLUGINSDIR\postgresql-create.sql" "lib\bareos\scripts\ddl\creates\postgresql.sql"
+  File "/oname=$PLUGINSDIR\postgresql-drop.sql" "lib\bareos\scripts\ddl\drops\postgresql.sql"
+  File "/oname=$PLUGINSDIR\postgresql-grant.sql" "lib\bareos\scripts\ddl\grants\postgresql.sql"
   # File "/oname=$PLUGINSDIR\postgresql.sql" ".\ddl\updates\postgresql.sql"
 
   # webui
-  File "/oname=$PLUGINSDIR\php.ini" ".\bareos-webui\php\php.ini"
-  File "/oname=$PLUGINSDIR\global.php" ".\bareos-webui\config\autoload\global.php"
-  File "/oname=$PLUGINSDIR\directors.ini" ".\bareos-webui\install\directors.ini"
-  File "/oname=$PLUGINSDIR\configuration.ini" ".\bareos-webui\install\configuration.ini"
-  File "/oname=$PLUGINSDIR\webui-admin.conf" ".\bareos-webui/install/bareos/bareos-dir.d/profile/webui-admin.conf"
-  File "/oname=$PLUGINSDIR\admin.conf" ".\bareos-webui/install/bareos/bareos-dir.d/console/admin.conf.example"
+#TODO
+  #  File "/oname=$PLUGINSDIR\php.ini" ".\bareos-webui\php\php.ini"
+  File "/oname=$PLUGINSDIR\global.php" "share\bareos-webui\config\autoload\global.php"
+  File "/oname=$PLUGINSDIR\directors.ini" "etc\bareos-webui\directors.ini"
+  File "/oname=$PLUGINSDIR\configuration.ini" "etc\bareos-webui\configuration.ini"
+  File "/oname=$PLUGINSDIR\webui-admin.conf" "etc\bareos\bareos-dir.d\profile\webui-admin.conf"
+  File "/oname=$PLUGINSDIR\admin.conf"  "etc\bareos\bareos-dir.d\console\admin.conf.example"
 
   # make first section mandatory
   SectionSetFlags ${SEC_FD} 17 # SF_SELECTED & SF_RO
