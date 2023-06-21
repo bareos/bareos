@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -223,7 +223,7 @@ static void WarnOnSetMaxBlockSize(const DeviceResource& resource)
   if (resource.IsMemberPresent("MaximumBlockSize")) {
     my_config->AddWarning(fmt::format(
         FMT_STRING(
-            "Device {:s}: Setting 'Maximum Block Size' is only supported on  "
+            "Device {:s}: Setting 'Maximum Block Size' is only supported on "
             "tape devices"),
         resource.resource_name_));
   }
@@ -235,7 +235,7 @@ static void WarnOnZeroMaxConcurrentJobs(int max_concurrent_jobs,
   if (max_concurrent_jobs == 0) {
     my_config->AddWarning(
         fmt::format(FMT_STRING("Device {:s}: unlimited (0) 'Maximum Concurrent "
-                               "Jobs' reduces the restore peformance."),
+                               "Jobs' reduces the restore performance."),
                     name));
   }
 }
