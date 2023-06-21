@@ -64,6 +64,7 @@ else()
 endif()
 target_sources(
   bareossd-dedup PRIVATE dedup_file_device.cc dedup/dedup_volume.cc
+                         dedup/dedup_config.cc
 )
 
 if(HAVE_DARWIN_OS)

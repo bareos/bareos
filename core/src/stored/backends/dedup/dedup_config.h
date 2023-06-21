@@ -24,8 +24,13 @@
 
 #include "lib/network_order.h"
 #include <array>
+#include <cstdint>
+#include <string>
+#include <vector>
+#include <optional>
 
 namespace dedup::config {
+
 
 using net_u32 = network_order::network_value<std::uint32_t>;
 using net_i32 = network_order::network_value<std::int32_t>;
@@ -44,6 +49,8 @@ struct file_header {
       static_cast<std::byte>(u8'I'), static_cast<std::byte>(u8'G'),
   };
 
+  // the file header is always written in big endian!
+
   std::array<std::byte, 8> identifier;  // will say "DDCONFIG" in ascii
   net_u64 file_size;
   net_u32 version;
@@ -56,6 +63,12 @@ struct file_header {
 static_assert(sizeof(file_header) == 40);
 
 // sections are 16byte aligned
+enum class byte_order : std::uint8_t
+{
+  little_endian = 1,
+  big_endian = 2
+};
+
 struct section_header {
   enum class types : std::uint16_t
   {
@@ -72,7 +85,10 @@ struct section_header {
       padding;  // the amount of padding between the header and start of data
 
   net_u32 data_size;
-  net_u32 reserved_0{0};
+  net_u8 written_order;  // order of bytes inside section
+                         // currently only big endian is supported
+  net_u8 reserved_0{0};
+  net_u16 reserved_1{0};
 
   net_u64 data_checksum;
   net_u64 checksum;  // checksum for the header; does not include itsef
@@ -82,15 +98,10 @@ struct section_header {
 static_assert(sizeof(section_header) == 32);
 
 struct general_section {
-  enum class byte_order : std::uint8_t
-  {
-    little_endian = 1,
-    big_endian = 2
-  };
-
   net_u32 block_header_size;
-  net_u32 section_header_size;
-  net_u8 written_order;  // order of values inside file
+  net_u32 record_header_size;
+  net_u32 dedup_block_header_size;
+  net_u32 dedup_record_header_size;
 };
 
 struct block_file_section {
@@ -125,6 +136,82 @@ struct data_file_section {
   // was the next member (not legal in C++)
 };
 
+struct loaded_data_section {
+  std::int64_t block_size;
+  std::uint32_t file_index;
+  std::string path;
+
+  loaded_data_section() = default;
+  loaded_data_section(std::uint32_t file_index,
+                      std::int64_t block_size,
+                      std::string path)
+      : block_size(block_size), file_index(file_index), path(std::move(path))
+  {
+  }
+};
+
+struct loaded_block_section {
+  std::uint32_t file_index;
+  std::uint32_t start_block;
+  std::uint32_t end_block;
+  std::string path;
+
+  loaded_block_section() = default;
+  loaded_block_section(std::uint32_t file_index,
+                       std::uint32_t start_block,
+                       std::uint32_t end_block,
+                       std::string path)
+      : file_index(file_index)
+      , start_block(start_block)
+      , end_block(end_block)
+      , path(std::move(path))
+  {
+  }
+};
+
+struct loaded_record_section {
+  std::uint32_t file_index;
+  std::uint32_t start_record;
+  std::uint32_t end_record;
+  std::string path;
+
+  loaded_record_section() = default;
+  loaded_record_section(std::uint32_t file_index,
+                        std::uint32_t start_record,
+                        std::uint32_t end_record,
+                        std::string path)
+      : file_index(file_index)
+      , start_record(start_record)
+      , end_record(end_record)
+      , path(std::move(path))
+  {
+  }
+};
+
+struct loaded_general_info {
+  std::uint32_t block_header_size;
+  std::uint32_t record_header_size;
+  std::uint32_t dedup_block_header_size;
+  std::uint32_t dedup_record_header_size;
+};
+
+struct loaded_config {
+  std::vector<loaded_data_section> datafiles;
+  std::vector<loaded_record_section> recordfiles;
+  std::vector<loaded_block_section> blockfiles;
+  loaded_general_info info;
+  std::uint64_t file_size;
+  std::uint64_t version;
+  std::uint32_t section_alignment;
+};
+
+std::vector<std::byte> to_bytes(
+    loaded_general_info info,
+    const std::vector<loaded_data_section>& datafiles,
+    const std::vector<loaded_record_section>& recordfiles,
+    const std::vector<loaded_block_section>& blockfiles);
+
+std::optional<loaded_config> from_bytes(const std::vector<std::byte>& bytes);
 }  // namespace dedup::config
 
 #endif  // BAREOS_STORED_BACKENDS_DEDUP_DEDUP_CONFIG_H_

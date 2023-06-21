@@ -477,16 +477,6 @@ struct volume_config {
   std::vector<record_file> recordfiles;
   std::vector<data_file> datafiles;
 
-  // these values are only set on load
-  // and do not get updated on write.
-  // Do not use them unless you just read the volume
-  std::uint32_t version;
-  std::uint32_t file_size;
-  std::uint32_t section_alignment;
-  config::general_section::byte_order written_order;
-  std::uint32_t block_header_size;
-  std::uint32_t section_header_size;
-
   void create_default()
   {
     blockfiles.clear();
@@ -496,6 +486,25 @@ struct volume_config {
     recordfiles.emplace_back("record", 0, 0, 0);
     datafiles.emplace_back("64KiB", 0, 65536);
     datafiles.emplace_back("data", 1, data_file::any_size);
+  }
+
+  volume_config() = default;
+  volume_config(config::loaded_config&& conf)
+  {
+    for (auto&& blocksection : conf.blockfiles) {
+      blockfiles.emplace_back(std::move(blocksection.path),
+                              blocksection.file_index, blocksection.start_block,
+                              blocksection.end_block);
+    }
+    for (auto&& recordsection : conf.recordfiles) {
+      recordfiles.emplace_back(
+          std::move(recordsection.path), recordsection.file_index,
+          recordsection.start_record, recordsection.end_record);
+    }
+    for (auto&& datasection : conf.datafiles) {
+      datafiles.emplace_back(std::move(datasection.path),
+                             datasection.file_index, datasection.block_size);
+    }
   }
 };
 
