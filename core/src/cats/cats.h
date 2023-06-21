@@ -468,8 +468,8 @@ class pathid_cache;
 #define QUERY_INITIAL_HASH_SIZE 1024
 #define QUERY_HTABLE_PAGES 128
 
-// Current database version number for all drivers
-#define BDB_VERSION 2210
+// Current database version number schema = 2000 + 10 * Major + Minor
+#define BDB_VERSION 2230
 
 typedef char** SQL_ROW;
 
