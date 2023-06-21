@@ -536,7 +536,13 @@ static inline std::wstring make_wchar_win32_path(std::wstring_view path)
     return ReplaceSlashes(path);
   }
 
+  bool is_root = path.size() == 1 && IsPathSeparator(path[0]);
   std::wstring converted = AsFullPath(path);
+  // for legacy reasons we do not want to have a trailing slash if
+  // we were only given the "root" path, i.e. a path containing only a single
+  // '/'
+  RemoveTrailingSlashes(converted, is_root);
+
   if (auto shadow_path = vss_path_converter.Convert(converted); shadow_path) {
     // we sadly need to copy here
     converted.assign(shadow_path.get());
@@ -544,11 +550,6 @@ static inline std::wstring make_wchar_win32_path(std::wstring_view path)
     // add literal path prefix to allow 32k paths
     converted.insert(0, L"\\\\?\\"sv);
   }
-  bool is_root = path.size() == 1 && IsPathSeparator(path[0]);
-  // for legacy reasons we do not want to have a trailing slash if
-  // we were only given the "root" path, i.e. a path containing only a single
-  // '/'
-  RemoveTrailingSlashes(converted, is_root);
 
 
   Dmsg1(debuglevel, "Leave make_wchar_win32_path=%s\n",
