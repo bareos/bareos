@@ -452,6 +452,11 @@ def parse_cmdline_args():
 
     subparsers = parser.add_subparsers(dest="subcommand")
     check_parser = subparsers.add_parser("check")
+    check_parser.add_argument(
+        "--ignore-status-checks",
+        action="store_true",
+        help="ignore (required) github status checks",
+    )
     changelog_parser = subparsers.add_parser("add-changelog")
     merge_parser = subparsers.add_parser("merge")
     merge_parser.add_argument(
@@ -701,7 +706,9 @@ def main():
             return 2
 
     if args.subcommand == "check":
-        ret = check_merge_prereq(repo, pr_data)
+        ret = check_merge_prereq(
+            repo, pr_data, ignore_status_checks=args.ignore_status_checks
+        )
         if check_changelog_entry(repo, pr_data):
             print("{} ChangeLog record present".format(Mark.PASS))
         elif not pr_data["isCrossRepository"] or pr_data["maintainerCanModify"]:
