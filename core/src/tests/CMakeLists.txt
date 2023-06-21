@@ -42,9 +42,15 @@ macro(bareos_gtest_add_tests testname)
     ${found_tests} PROPERTIES TIMEOUT 120 SKIP_RETURN_CODE 77
   )
   if(HAVE_WIN32)
-    set_tests_properties(
-      ${found_tests} PROPERTIES ENVIRONMENT "WINEPATH=${WINEPATH}"
-    )
+    if (NOT MSVC)
+      set_tests_properties(
+        ${found_tests} PROPERTIES ENVIRONMENT "WINEPATH=${WINEPATH}"
+      )
+    else()
+      set_tests_properties(
+        ${found_tests} PROPERTIES ENVIRONMENT "PATH=${ENVPATH}"
+      )
+    endif()
   endif() # HAVE_WIN32
 endmacro() # bareos_gtest_add_tests
 

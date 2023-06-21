@@ -553,31 +553,31 @@ SectionIn 1 2 3 4
   File /r bareoslmdb.dll
   File /r bareossql.dll
   
-  File C:\src\vcpkg\packages\openssl_x64-windows\bin\libcrypto*.dll
+  File C:\vcpkg\packages\openssl_x64-windows\bin\libcrypto*.dll
  #  File libgcc_s_*-1.dll
-  File C:\src\vcpkg\packages\openssl_x64-windows\bin\libssl*.dll
+  File C:\vcpkg\packages\openssl_x64-windows\bin\libssl*.dll
   #File libstdc++-6.dll
   #File libwinpthread-1.dll
-  File c:\src\vcpkg\packages\zlib_x64-windows\bin\zlib1.dll 
-  File c:\src\vcpkg\packages\lzo_x64-windows\bin\lzo2.dll 
+  File c:\vcpkg\packages\zlib_x64-windows\bin\zlib1.dll 
+  File c:\vcpkg\packages\lzo_x64-windows\bin\lzo2.dll 
   #File libjansson-4.dll
-  File C:\src\vcpkg\packages\jansson_x64-windows\bin\jansson.dll
+  File C:\vcpkg\packages\jansson_x64-windows\bin\jansson.dll
  # File iconv.dll
-  File C:\src\vcpkg\packages\libiconv_x86-windows\tools\libiconv\bin\iconv-2.dll
+  File C:\vcpkg\packages\libiconv_x64-windows\tools\libiconv\bin\iconv-2.dll
  # File libxml2-2.dll
-  File C:\src\vcpkg\packages\libxml2_x64-windows\bin\libxml2.dll
+  File C:\vcpkg\packages\libxml2_x64-windows\bin\libxml2.dll
  # File libpq.dll
-  File C:\src\vcpkg\packages\libpq_x64-windows\bin\libpq.dll
+  File C:\vcpkg\packages\libpq_x64-windows\bin\libpq.dll
  # File libpcre-1.dll
  # File libbz2-1.dll
-  File C:\src\vcpkg\packages\bzip2_x64-windows\bin\bz2.dll  
+  File C:\vcpkg\packages\bzip2_x64-windows\bin\bz2.dll  
 #  File libssp-0.dll
-  File C:\src\vcpkg\packages\gettext_x64-windows\bin\intl-8.dll
+  File C:\vcpkg\packages\gettext-libintl_x64-windows\bin\intl-8.dll
 #  File libintl-8.dll
 
   # for password generation
 #  File "openssl.exe"
-  File C:\src\vcpkg\packages\openssl_x64-windows\tools\openssl\openssl.exe
+  File C:\vcpkg\packages\openssl_x64-windows\tools\openssl\openssl.exe
 #  File "sed.exe"
   File "C:\Program Files\Git\usr\bin\sed.exe"
 
@@ -990,7 +990,7 @@ SectionIn 2 3
   CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\bconsole.lnk" "$INSTDIR\bconsole.exe"
 
   File "sbin\bconsole.exe"
-  File C:\src\vcpkg\installed\x86-windows\bin\readline.dll
+  File C:\src\installed\x86-windows\bin\readline.dll
 #  File "libhistory8.dll"
 #  File "libreadline8.dll"
 #  File "libtermcap-0.dll"
@@ -1505,7 +1505,7 @@ done:
   File "/oname=$PLUGINSDIR\clientdialog.ini" "win32\clientdialog.ini"
   File "/oname=$PLUGINSDIR\directordialog.ini" "win32\directordialog.ini"
   File "/oname=$PLUGINSDIR\databasedialog.ini" "win32\databasedialog.ini"
-  File "/oname=$PLUGINSDIR\openssl.exe" "C:\src\vcpkg\packages\openssl_x64-windows\tools\openssl\openssl.exe"
+  File "/oname=$PLUGINSDIR\openssl.exe" "C:\vcpkg\packages\openssl_x64-windows\tools\openssl\openssl.exe"
   File "/oname=$PLUGINSDIR\sed.exe" "C:\Program Files\Git\usr\bin\sed.exe"
 
 #TODO
@@ -1513,7 +1513,7 @@ done:
 #  File "/oname=$PLUGINSDIR\libintl-8.dll" "libintl-8.dll"
 #  File "/oname=$PLUGINSDIR\libwinpthread-1.dll" "libwinpthread-1.dll"
 
-  File "/oname=$PLUGINSDIR\libcrypto-3-x64.dll" "C:\src\vcpkg\packages\openssl_x64-windows\bin\libcrypto-3-x64.dll"
+  File "/oname=$PLUGINSDIR\libcrypto-3-x64.dll" "C:\vcpkg\packages\openssl_x64-windows\bin\libcrypto-3-x64.dll"
  
   #
   #
