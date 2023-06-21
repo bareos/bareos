@@ -278,7 +278,7 @@ static void WarnOnNonZeroBlockSize(int max_block_size, std::string_view name)
   if (max_block_size > 0) {
     my_config->AddWarning(fmt::format(
         FMT_STRING(
-            "Device {:s}: Setting 'Maximum Block Size' is only supported on  "
+            "Device {:s}: Setting 'Maximum Block Size' is only supported on "
             "tape devices"),
         name));
   }
@@ -290,7 +290,7 @@ static void WarnOnZeroMaxConcurrentJobs(int max_concurrent_jobs,
   if (max_concurrent_jobs == 0) {
     my_config->AddWarning(
         fmt::format(FMT_STRING("Device {:s}: unlimited (0) 'Maximum Concurrent "
-                               "Jobs' reduces the restore peformance."),
+                               "Jobs' reduces the restore performance."),
                     name));
   }
 }
