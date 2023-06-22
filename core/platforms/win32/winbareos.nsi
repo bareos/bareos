@@ -144,7 +144,7 @@ Var Upgrading
 
 # variable if we do write logs or not
 #
-Var WriteLogs
+#Var WriteLogs
 
 !include "LogicLib.nsh"
 !include "FileFunc.nsh"
@@ -266,9 +266,9 @@ ${EndIf}
 # See http://nsis.sourceforge.net/Tutorial:_Using_labels_in_macro%27s
 
 
-    StrCmp $WriteLogs "yes" 0 +3
-      LogEx::Init false $INSTDIR\sql.log
-      LogEx::Write "PostgresPath=$PostgresPath"
+    #StrCmp $WriteLogs "yes" 0 +3
+    #  LogEx::Init false $INSTDIR\sql.log
+    #  LogEx::Write "PostgresPath=$PostgresPath"
 
 
     # set postgres port, username and password in environment
@@ -278,46 +278,46 @@ ${EndIf}
 
     DetailPrint "Now trying to log into the PostgreSQL server with the DbAdmin User and Password"
     DetailPrint "Running $PostgresPsqlExeFullPath -c \copyright"
-    StrCmp $WriteLogs "yes" 0 +2
-       LogEx::Write "Running $PostgresPsqlExeFullPath -c \copyright"
+    #StrCmp $WriteLogs "yes" 0 +2
+    #   LogEx::Write "Running $PostgresPsqlExeFullPath -c \copyright"
 
     nsExec::Exec /TIMEOUT=10000 "$PostgresPsqlExeFullPath -c \copyright"
     Pop $0 # return value/error/timeout
     DetailPrint "Return Value is $0"
-    StrCmp $WriteLogs "yes" 0 +2
-       LogEx::Write "Return Value is $0"
+    #StrCmp $WriteLogs "yes" 0 +2
+    #   LogEx::Write "Return Value is $0"
     ${select} $0
        ${case} "1"
          DetailPrint "psql.exe was killed"
-         StrCmp $WriteLogs "yes" 0 +2
-            LogEx::Write "psql.exe was killed"
+        # StrCmp $WriteLogs "yes" 0 +2
+        #    LogEx::Write "psql.exe was killed"
        ${case} "2"
          DetailPrint "connection failed, username or password wrong?"
-         StrCmp $WriteLogs "yes" 0 +2
-            LogEx::Write "connection failed, username or password wrong?"
+       #  StrCmp $WriteLogs "yes" 0 +2
+       #     LogEx::Write "connection failed, username or password wrong?"
        ${case} "timeout"
          DetailPrint "connection timed out, probably password is wrong?"
-         StrCmp $WriteLogs "yes" 0 +2
-            LogEx::Write "connection timed out, probably password is wrong?"
+       #  StrCmp $WriteLogs "yes" 0 +2
+       #     LogEx::Write "connection timed out, probably password is wrong?"
        ${case} "error"
          DetailPrint "could not execute $PostgresPsqlExeFullPath"
-         StrCmp $WriteLogs "yes" 0 +2
-            LogEx::Write "could not execute $PostgresPsqlExeFullPath"
+       #  StrCmp $WriteLogs "yes" 0 +2
+       #     LogEx::Write "could not execute $PostgresPsqlExeFullPath"
        ${case} "0"
          DetailPrint "success"
-         StrCmp $WriteLogs "yes" 0 +2
-            LogEx::Write "success"
+       #  StrCmp $WriteLogs "yes" 0 +2
+       #     LogEx::Write "success"
          goto afterabort_${UniqueID}
        ${caseelse}
          DetailPrint "Unknown problem executing $PostgresPsqlExeFullPath"
-         StrCmp $WriteLogs "yes" 0 +2
-            LogEx::Write "Unknown problem executing $PostgresPsqlExeFullPath"
+       #  StrCmp $WriteLogs "yes" 0 +2
+       #     LogEx::Write "Unknown problem executing $PostgresPsqlExeFullPath"
     ${endselect}
    MessageBox MB_OK|MB_ICONSTOP "Connection to db server with DbAdmin credentials failed.$\r$\nplease check username/password and service$\r$\n($PostgresPsqlExeFullPath -c \copyright)" /SD IDOK
-   StrCmp $WriteLogs "yes" 0 +2
-      LogEx::Write "Connection to db server with DbAdmin credentials failed.$\r$\nplease check username/password and service$\r$\n($PostgresPsqlExeFullPath -c \copyright)"
-   StrCmp $WriteLogs "yes" 0 +2
-      LogEx::Close
+   #StrCmp $WriteLogs "yes" 0 +2
+   #   LogEx::Write "Connection to db server with DbAdmin credentials failed.$\r$\nplease check username/password and service$\r$\n($PostgresPsqlExeFullPath -c \copyright)"
+   #StrCmp $WriteLogs "yes" 0 +2
+   #   LogEx::Close
       FileOpen $R1 $TEMP\abortreason.txt w
       FileWrite $R1 "database connection failed"
       FileClose $R1
@@ -558,6 +558,7 @@ SectionIn 1 2 3 4
   File C:\vcpkg\packages\openssl_x64-windows\bin\libssl*.dll
   #File libstdc++-6.dll
   #File libwinpthread-1.dll
+  File "C:\vcpkg\installed\x64-windows\bin\pthreadVC3.dll"
   File c:\vcpkg\packages\zlib_x64-windows\bin\zlib1.dll 
   File c:\vcpkg\packages\lzo_x64-windows\bin\lzo2.dll 
   #File libjansson-4.dll
@@ -589,9 +590,8 @@ SectionIn 1 2 3 4
   File /r etc\bareos\bareos-fd.d\*.*
 
   # install configuration as templates
-#TODO! 
-#  SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\client\"
-#  File config\tray-monitor.d\client\FileDaemon-local.conf
+  SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\client\"
+  File etc\bareos\tray-monitor.d\client\FileDaemon-local.conf
 
   SetOutPath "$APPDATA\${PRODUCT_NAME}"
   File "win32\fillup.sed"
@@ -661,9 +661,8 @@ SectionIn 2 3
   File /r etc\bareos\bareos-sd.d\*.*
 
   # install configuration as templates
-#todo
-#  SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\storage"
-#  File config\tray-monitor.d\storage\StorageDaemon-local.conf
+  SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\storage"
+  File etc\bareos\tray-monitor.d\storage\StorageDaemon-local.conf
 
 SectionEnd
 
@@ -673,7 +672,7 @@ SectionIn 2 3
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
   File "lib\bareos\plugins\*-sd.dll"
-#TODO: install via make install
+#ODO: install via make install
 #  File "lib\bareos\plugins\BareosSd*.py"
 #  File "lib\plugins\bareos-sd*.py"
 SectionEnd
@@ -722,9 +721,8 @@ SectionIn 2 3
   File /r etc\bareos\bareos-dir.d\*.*
 
   # install configuration as templates
-#TODO: traymon
-#  SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\director"
-#  File config\tray-monitor.d\director\Director-local.conf
+  SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\director"
+  File etc\bareos\tray-monitor.d\director\Director-local.conf
 
 SectionEnd
 
@@ -872,116 +870,112 @@ SectionIn 1 2 3
 
   # autostart
   CreateShortCut "$SMSTARTUP\bareos-tray-monitor.lnk" "$INSTDIR\bareos-tray-monitor.exe"
-# TODO: build traymon
-#  File "bareos-tray-monitor.exe"
-#  File "libpng*.dll"
-#  File "Qt5Core.dll"
-#  File "Qt5Gui.dll"
-#  File "Qt5Widgets.dll"
-#  File "icui*n*.dll"
-#  File "icudata*.dll"
-#  File "icuuc*.dll"
-#  File "libfreetype-6.dll"
-#  File "libglib-2.0-0.dll"
-#  File "libintl-8.dll"
-#  File "libharfbuzz-0.dll"
-#  File "libpcre2-16-0.dll"
+  File "bin\bareos-tray-monitor.exe"
+  File "C:\vcpkg\packages\libpng_x64-windows\bin\libpng16.dll"
+  File "C:\vcpkg\packages\qtbase_x64-windows\bin\Qt6Core.dll"
+  File "C:\vcpkg\packages\qtbase_x64-windows\bin\Qt6Gui.dll"
+  File "C:\vcpkg\packages\qtbase_x64-windows\bin\Qt6Widgets.dll"
+  File "C:\vcpkg\packages\icu_x64-windows\bin\*.dll"
+  File "C:\vcpkg\packages\freetype_x64-windows\bin\freetype.dll"
+  File "C:\vcpkg\packages\gettext-libintl_x64-windows\bin\intl-8.dll"
+  File "C:\vcpkg\packages\harfbuzz_x64-windows\bin\harfbuzz.dll"
+  File "C:\vcpkg\packages\pcre2_x64-windows\bin\pcre2-16.dll"  
 #
-#  SetOutPath "$INSTDIR\platforms"
-#  File "qwindows.dll"
+  SetOutPath "$INSTDIR\platforms"
+  File "C:\vcpkg\packages\qtbase_x64-windows\Qt6\plugins\platforms\qwindows.dll"
 #
 #
 #  # install configuration as templates
-#  SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\monitor"
-#  File config\tray-monitor.d\monitor\bareos-mon.conf
+  SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\monitor"
+  File etc\bareos\tray-monitor.d\monitor\bareos-mon.conf
 SectionEnd
 
 
-Section "Bareos Webui" SEC_WEBUI
-   SectionIn 2 3
-   ; set to yes, needed for MUI_FINISHPAGE_RUN_FUNCTION
-   StrCpy $InstallWebUI "yes"
-   SetShellVarContext all
-   SetOutPath "$INSTDIR"
-   SetOverwrite ifnewer
-#todo: nsm.exe
-#   File /r "nssm.exe"
-   SetOutPath "$INSTDIR\bareos-webui"
-   File /r "share\bareos-webui\*.*"
-
-IfSilent skip_vc_redist_check
-   # check  for Visual C++ Redistributable für Visual Studio 2012 x86 (on 32 and 64 bit systems)
-   ReadRegDword $R1 HKLM "SOFTWARE\Wow6432Node\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
-   ReadRegDword $R2 HKLM "SOFTWARE\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
-check_for_vc_redist:
-   ${If} $R1 == ""
-      ${If} $R2 == ""
-         ExecShell "open" "https://www.microsoft.com/en-us/download/details.aspx?id=30679"
-         MessageBox MB_OK|MB_ICONSTOP "Visual C++ Redistributable for Visual Studio 2012 x86 was not found$\r$\n\
-                                 It is needed by the bareos-webui service.$\r$\n\
-                                 Please install vcredist_x86.exe from $\r$\n\
-                                 https://www.microsoft.com/en-us/download/details.aspx?id=30679$\r$\n\
-                                 and click OK when done." /SD IDOK
-      ${EndIf}
-   ${EndIf}
-   ReadRegDword $R1 HKLM "SOFTWARE\Wow6432Node\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
-   ReadRegDword $R2 HKLM "SOFTWARE\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
-   ${If} $R1 == ""
-      ${If} $R2 == ""
-         goto check_for_vc_redist
-	  ${EndIf}
-   ${EndIf}
-
-skip_vc_redist_check:
-   Rename  "$INSTDIR\bareos-webui\config\autoload\global.php" "$INSTDIR\bareos-webui\config\autoload\global.php.orig"
-   Rename  "$PLUGINSDIR\global.php" "$INSTDIR\bareos-webui\config\autoload\global.php"
-
-   Rename  "$PLUGINSDIR\php.ini"   "$APPDATA\${PRODUCT_NAME}\php.ini"
-   Rename  "$PLUGINSDIR\directors.ini" "$APPDATA\${PRODUCT_NAME}\directors.ini"
-   Rename  "$PLUGINSDIR\configuration.ini" "$APPDATA\${PRODUCT_NAME}\configuration.ini"
-
-
-   CreateDirectory "$INSTDIR\defaultconfigs\bareos-dir.d\profile"
-   Rename  "$PLUGINSDIR\webui-admin.conf" "$INSTDIR\defaultconfigs\bareos-dir.d\profile\webui-admin.conf"
-
-   CreateDirectory "$INSTDIR\defaultconfigs\bareos-dir.d\console"
-   Rename  "$PLUGINSDIR\admin.conf"       "$INSTDIR\defaultconfigs\bareos-dir.d\console\admin.conf"
-
-
-   ExecWait '$INSTDIR\nssm.exe install bareos-webui $INSTDIR\bareos-webui\php\php.exe'
-   ExecWait '$INSTDIR\nssm.exe set     bareos-webui AppDirectory \"$INSTDIR\bareos-webui\"'
-   ExecWait '$INSTDIR\nssm.exe set     bareos-webui Application  $INSTDIR\bareos-webui\php\php.exe'
-   ExecWait '$INSTDIR\nssm.exe set     bareos-webui AppEnvironmentExtra BAREOS_WEBUI_CONFDIR=$APPDATA\${PRODUCT_NAME}\'
-
-   # nssm.exe wants """ """ around parameters with spaces, the executable itself without quotes
-   # see https://nssm.cc/usage -> quoting issues
-   ExecWait '$INSTDIR\nssm.exe set bareos-webui AppParameters \
-      -S $WebUIListenAddress:$WebUIListenPort \
-      -c $\"$\"$\"$APPDATA\${PRODUCT_NAME}\php.ini$\"$\"$\" \
-      -t $\"$\"$\"$INSTDIR\bareos-webui\public$\"$\"$\"'
-   ExecWait '$INSTDIR\nssm.exe set bareos-webui AppStdout $\"$\"$\"$APPDATA\${PRODUCT_NAME}\logs\bareos-webui.log$\"$\"$\"'
-   ExecWait '$INSTDIR\nssm.exe set bareos-webui AppStderr $\"$\"$\"$APPDATA\${PRODUCT_NAME}\logs\bareos-webui.log$\"$\"$\"'
-
-   WriteRegStr HKLM "SYSTEM\CurrentControlSet\Services\Bareos-webui" \
-                     "Description" "Bareos Webui php service"
-
-   nsExec::ExecToLog "net start Bareos-webui"
-
-   # Shortcuts
-   !insertmacro "CreateURLShortCut" "bareos-webui" "http://$WebUIListenAddress:$WebUIListenPort" "Bareos Backup Server Web Interface"
-   CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\bareos-webui.lnk" "http://$WebUIListenAddress:$WebUIListenPort"
-
-   # WebUI Firewall
-
-   DetailPrint  "Opening Firewall for WebUI"
-   DetailPrint  "netsh advfirewall firewall add rule name=$\"Bareos WebUI access$\" dir=in action=allow program=$\"$INSTDIR\bareos-webui\php\php.exe$\" enable=yes protocol=TCP localport=$WEBUILISTENPORT description=$\"Bareos WebUI rule$\""
-   # profile=[private,domain]"
-   nsExec::Exec "netsh advfirewall firewall add rule name=$\"Bareos WebUI access$\" dir=in action=allow program=$\"$INSTDIR\bareos-webui\php\php.exe$\" enable=yes protocol=TCP localport=$WEBUILISTENPORT description=$\"Bareos WebUI rule$\""
-   # profile=[private,domain]"
-
-SectionEnd
-
-
+;Section "Bareos Webui" SEC_WEBUI
+;   SectionIn 2 3
+;   ; set to yes, needed for MUI_FINISHPAGE_RUN_FUNCTION
+;   StrCpy $InstallWebUI "yes"
+;   SetShellVarContext all
+;   SetOutPath "$INSTDIR"
+;   SetOverwrite ifnewer
+;#todo: nsm.exe
+;#   File /r "nssm.exe"
+;   SetOutPath "$INSTDIR\bareos-webui"
+;   File /r "share\bareos-webui\*.*"
+;
+;IfSilent skip_vc_redist_check
+;   # check  for Visual C++ Redistributable für Visual Studio 2012 x86 (on 32 and 64 bit systems)
+;   ReadRegDword $R1 HKLM "SOFTWARE\Wow6432Node\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
+;   ReadRegDword $R2 HKLM "SOFTWARE\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
+;check_for_vc_redist:
+;   ${If} $R1 == ""
+;      ${If} $R2 == ""
+;         ExecShell "open" "https://www.microsoft.com/en-us/download/details.aspx?id=30679"
+;         MessageBox MB_OK|MB_ICONSTOP "Visual C++ Redistributable for Visual Studio 2012 x86 was not found$\r$\n\
+;                                 It is needed by the bareos-webui service.$\r$\n\
+;                                 Please install vcredist_x86.exe from $\r$\n\
+;                                 https://www.microsoft.com/en-us/download/details.aspx?id=30679$\r$\n\
+;                                 and click OK when done." /SD IDOK
+;      ${EndIf}
+;   ${EndIf}
+;   ReadRegDword $R1 HKLM "SOFTWARE\Wow6432Node\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
+;   ReadRegDword $R2 HKLM "SOFTWARE\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
+;   ${If} $R1 == ""
+;      ${If} $R2 == ""
+;         goto check_for_vc_redist
+;	  ${EndIf}
+;   ${EndIf}
+;
+;skip_vc_redist_check:
+;   Rename  "$INSTDIR\bareos-webui\config\autoload\global.php" "$INSTDIR\bareos-webui\config\autoload\global.php.orig"
+;   Rename  "$PLUGINSDIR\global.php" "$INSTDIR\bareos-webui\config\autoload\global.php"
+;
+;   Rename  "$PLUGINSDIR\php.ini"   "$APPDATA\${PRODUCT_NAME}\php.ini"
+;   Rename  "$PLUGINSDIR\directors.ini" "$APPDATA\${PRODUCT_NAME}\directors.ini"
+;   Rename  "$PLUGINSDIR\configuration.ini" "$APPDATA\${PRODUCT_NAME}\configuration.ini"
+;
+;
+;   CreateDirectory "$INSTDIR\defaultconfigs\bareos-dir.d\profile"
+;   Rename  "$PLUGINSDIR\webui-admin.conf" "$INSTDIR\defaultconfigs\bareos-dir.d\profile\webui-admin.conf"
+;
+;   CreateDirectory "$INSTDIR\defaultconfigs\bareos-dir.d\console"
+;   Rename  "$PLUGINSDIR\admin.conf"       "$INSTDIR\defaultconfigs\bareos-dir.d\console\admin.conf"
+;
+;
+;   ExecWait '$INSTDIR\nssm.exe install bareos-webui $INSTDIR\bareos-webui\php\php.exe'
+;   ExecWait '$INSTDIR\nssm.exe set     bareos-webui AppDirectory \"$INSTDIR\bareos-webui\"'
+;   ExecWait '$INSTDIR\nssm.exe set     bareos-webui Application  $INSTDIR\bareos-webui\php\php.exe'
+;   ExecWait '$INSTDIR\nssm.exe set     bareos-webui AppEnvironmentExtra BAREOS_WEBUI_CONFDIR=$APPDATA\${PRODUCT_NAME}\'
+;
+;   # nssm.exe wants """ """ around parameters with spaces, the executable itself without quotes
+;   # see https://nssm.cc/usage -> quoting issues
+;   ExecWait '$INSTDIR\nssm.exe set bareos-webui AppParameters \
+;      -S $WebUIListenAddress:$WebUIListenPort \
+;      -c $\"$\"$\"$APPDATA\${PRODUCT_NAME}\php.ini$\"$\"$\" \
+;      -t $\"$\"$\"$INSTDIR\bareos-webui\public$\"$\"$\"'
+;   ExecWait '$INSTDIR\nssm.exe set bareos-webui AppStdout $\"$\"$\"$APPDATA\${PRODUCT_NAME}\logs\bareos-webui.log$\"$\"$\"'
+;   ExecWait '$INSTDIR\nssm.exe set bareos-webui AppStderr $\"$\"$\"$APPDATA\${PRODUCT_NAME}\logs\bareos-webui.log$\"$\"$\"'
+;
+;   WriteRegStr HKLM "SYSTEM\CurrentControlSet\Services\Bareos-webui" \
+;                     "Description" "Bareos Webui php service"
+;
+;   nsExec::ExecToLog "net start Bareos-webui"
+;
+;   # Shortcuts
+;   !insertmacro "CreateURLShortCut" "bareos-webui" "http://$WebUIListenAddress:$WebUIListenPort" "Bareos Backup Server Web Interface"
+;   CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\bareos-webui.lnk" "http://$WebUIListenAddress:$WebUIListenPort"
+;
+;   # WebUI Firewall
+;
+;   DetailPrint  "Opening Firewall for WebUI"
+;   DetailPrint  "netsh advfirewall firewall add rule name=$\"Bareos WebUI access$\" dir=in action=allow program=$\"$INSTDIR\bareos-webui\php\php.exe$\" enable=yes protocol=TCP localport=$WEBUILISTENPORT description=$\"Bareos WebUI rule$\""
+;   # profile=[private,domain]"
+;   nsExec::Exec "netsh advfirewall firewall add rule name=$\"Bareos WebUI access$\" dir=in action=allow program=$\"$INSTDIR\bareos-webui\php\php.exe$\" enable=yes protocol=TCP localport=$WEBUILISTENPORT description=$\"Bareos WebUI rule$\""
+;   # profile=[private,domain]"
+;
+;SectionEnd
+;
+;
 Section /o "Text Console (bconsole)" SEC_BCONSOLE
 SectionIn 2 3
   SetShellVarContext all
@@ -990,10 +984,7 @@ SectionIn 2 3
   CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\bconsole.lnk" "$INSTDIR\bconsole.exe"
 
   File "sbin\bconsole.exe"
-  File C:\src\installed\x86-windows\bin\readline.dll
-#  File "libhistory8.dll"
-#  File "libreadline8.dll"
-#  File "libtermcap-0.dll"
+  File C:\vcpkg\packages\readline-win32_x64-windows\bin\readline.dll
 
   !insertmacro InstallConfFile "etc\bareos\bconsole.conf"
 SectionEnd
@@ -1201,20 +1192,20 @@ Section -StartDaemon
       #                 $APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat$\r$\n \
       #                 with administrator rights now." /SD IDOK
       #LogText "### Executing $APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat"
-      StrCmp $WriteLogs "yes" 0 +2
-         LogEx::Init false $INSTDIR\sql.log
-      StrCmp $WriteLogs "yes" 0 +2
-         LogEx::Write "Now executing $APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat"
-      nsExec::ExecToLog "$APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat > $PLUGINSDIR\db_setup_output.log"
-      StrCmp $WriteLogs "yes" 0 +2
-         LogEx::AddFile "   >" "$PLUGINSDIR\db_setup_output.log"
+#      StrCmp $WriteLogs "yes" 0 +2
+#         LogEx::Init false $INSTDIR\sql.log
+#      StrCmp $WriteLogs "yes" 0 +2
+#         LogEx::Write "Now executing $APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat"
+#      nsExec::ExecToLog "$APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat > $PLUGINSDIR\db_setup_output.log"
+#      StrCmp $WriteLogs "yes" 0 +2
+#         LogEx::AddFile "   >" "$PLUGINSDIR\db_setup_output.log"
 
 
 
       #LogText "### Executing net start bareos-dir"
       nsExec::ExecToLog "net start bareos-dir"
-      StrCmp $WriteLogs "yes" 0 +2
-      LogEx::Close
+#      StrCmp $WriteLogs "yes" 0 +2
+#      LogEx::Close
   ${EndIf}
 
   ${If} ${SectionIsSelected} ${SEC_TRAYMON}
@@ -1293,15 +1284,15 @@ Function .onInit
   #
   # enable logging?
   #
-  StrCpy $WriteLogs "yes"
-  ${GetOptions} $cmdLineParams "/WRITELOGS" $R0
-  IfErrors 0 +2         # error is set if NOT found
-    StrCpy $WriteLogs "no"
-  ClearErrors
+  #StrCpy $WriteLogs "yes"
+  #${GetOptions} $cmdLineParams "/WRITELOGS" $R0
+  #IfErrors 0 +2         # error is set if NOT found
+  #  StrCpy $WriteLogs "no"
+  #ClearErrors
 
-  StrCmp $WriteLogs "yes" 0 +3
-     #LogSet on # enable nsis-own logging to $INSTDIR\install.log, needs INSTDIR defined
-     #LogText "Logging started, INSTDIR is $INSTDIR"
+ # StrCmp $WriteLogs "yes" 0 +3
+ # LogSet on # enable nsis-own logging to $INSTDIR\install.log, needs INSTDIR defined
+ # LogText "Logging started, INSTDIR is $INSTDIR"
 
   #  /? param (help)
   ClearErrors
@@ -1507,12 +1498,9 @@ done:
   File "/oname=$PLUGINSDIR\databasedialog.ini" "win32\databasedialog.ini"
   File "/oname=$PLUGINSDIR\openssl.exe" "C:\vcpkg\packages\openssl_x64-windows\tools\openssl\openssl.exe"
   File "/oname=$PLUGINSDIR\sed.exe" "C:\Program Files\Git\usr\bin\sed.exe"
-
-#TODO
-#  File "/oname=$PLUGINSDIR\iconv.dll" "iconv.dll"
-#  File "/oname=$PLUGINSDIR\libintl-8.dll" "libintl-8.dll"
-#  File "/oname=$PLUGINSDIR\libwinpthread-1.dll" "libwinpthread-1.dll"
-
+  File "/oname=$PLUGINSDIR\iconv-2.dll" "C:\vcpkg\packages\libiconv_x64-windows\tools\libiconv\bin\iconv-2.dll"
+  File "/oname=$PLUGINSDIR\libintl-8.dll" "C:\vcpkg\packages\gettext-libintl_x64-windows\bin\intl-8.dll"
+  File "/oname=$PLUGINSDIR\pthreadVC3.dll" "C:\vcpkg\installed\x64-windows\bin\pthreadVC3.dll"
   File "/oname=$PLUGINSDIR\libcrypto-3-x64.dll" "C:\vcpkg\packages\openssl_x64-windows\bin\libcrypto-3-x64.dll"
  
   #
@@ -1550,12 +1538,12 @@ done:
   SectionSetFlags ${SEC_FDPLUGINS} ${SF_SELECTED} #  fd plugins
   SectionSetFlags ${SEC_FIREWALL_SD} ${SF_UNSELECTED} # unselect sd firewall (is selected by default, why?)
   SectionSetFlags ${SEC_FIREWALL_DIR} ${SF_UNSELECTED} # unselect dir firewall (is selected by default, why?)
-  SectionSetFlags ${SEC_WEBUI} ${SF_UNSELECTED} # unselect webinterface (is selected by default, why?)
+;  SectionSetFlags ${SEC_WEBUI} ${SF_UNSELECTED} # unselect webinterface (is selected by default, why?)
 
-  StrCmp $InstallWebUI "no" dontInstWebUI
-    SectionSetFlags ${SEC_WEBUI} ${SF_SELECTED} # webui
-    StrCpy $InstallDirector "yes"               # webui needs director
-  dontInstWebUI:
+;  StrCmp $InstallWebUI "no" dontInstWebUI
+;    SectionSetFlags ${SEC_WEBUI} ${SF_SELECTED} # webui
+;    StrCpy $InstallDirector "yes"               # webui needs director
+;  dontInstWebUI:
 
   StrCmp $InstallDirector "no" dontInstDir
     SectionSetFlags ${SEC_DIR} ${SF_SELECTED} # director
@@ -1865,7 +1853,6 @@ Function getDatabaseParametersLeave
   ReadINIStr  $DbPassword             "$PLUGINSDIR\databasedialog.ini" "Field 6" "state"
   ReadINIStr  $DbName                 "$PLUGINSDIR\databasedialog.ini" "Field 7" "state"
   ReadINIStr  $DbPort                 "$PLUGINSDIR\databasedialog.ini" "Field 8" "state"
-dbcheckend:
 
    StrCmp $InstallDirector "no" SkipDbCheck # skip DbConnection if not instaling director
 
@@ -2176,10 +2163,10 @@ Function .onSelChange
   ${EndIf}
 
   # Check if WEBUI was just selected then select SEC_DIR
-  SectionGetFlags ${SEC_WEBUI} $R0
-  IntOp $R0 $R0 & ${SF_SELECTED}
-  StrCmp $R0 ${SF_SELECTED} 0 +2
-  SectionSetFlags ${SEC_DIR} $R0
+;  SectionGetFlags ${SEC_WEBUI} $R0
+;  IntOp $R0 $R0 & ${SF_SELECTED}
+;  StrCmp $R0 ${SF_SELECTED} 0 +2
+;  SectionSetFlags ${SEC_DIR} $R0
 
   # if director is selected, we set InstallDirector to yes and select textconsole
   StrCpy $InstallDirector "no"
