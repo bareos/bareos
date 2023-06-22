@@ -545,22 +545,29 @@ SectionIn 1 2 3 4
   CreateDirectory "$SMPROGRAMS\${PRODUCT_NAME}"
   CreateDirectory "$APPDATA\${PRODUCT_NAME}"
   SetOutPath "$INSTDIR"
-  File /r bareos-config-deploy.bat
-  File /r bareos-fd.exe
-  File /r bareos.dll
-  File /r bareosfastlz.dll
-  File /r bareosfind.dll
-  File /r bareoslmdb.dll
-  File /r bareossql.dll
-  
+  File  win32\bareos-config-deploy.bat
+  File  sbin\bareos-fd.exe
+  File  lib\bareos\bareos.dll
+  File  lib\bareos\bareosfastlz.dll
+  File  lib\bareos\bareosfind.dll
+  File  lib\bareos\bareoslmdb.dll
+  File  lib\bareos\bareossql.dll
+
   File C:\vcpkg\packages\openssl_x64-windows\bin\libcrypto*.dll
  #  File libgcc_s_*-1.dll
   File C:\vcpkg\packages\openssl_x64-windows\bin\libssl*.dll
   #File libstdc++-6.dll
   #File libwinpthread-1.dll
   File "C:\vcpkg\installed\x64-windows\bin\pthreadVC3.dll"
-  File c:\vcpkg\packages\zlib_x64-windows\bin\zlib1.dll 
-  File c:\vcpkg\packages\lzo_x64-windows\bin\lzo2.dll 
+  File "C:\vcpkg\installed\x64-windows\bin\pthreadVCE3.dll"
+
+  File "C:\vcpkg\installed\x64-windows\debug\bin\pthreadVC3d.dll"
+  File "C:\vcpkg\installed\x64-windows\debug\bin\pthreadVCE3d.dll"
+
+  File c:\vcpkg\packages\zlib_x64-windows\bin\zlib1.dll
+  File c:\vcpkg\packages\zlib_x64-windows\debug\bin\zlibd1.dll
+
+  File c:\vcpkg\packages\lzo_x64-windows\bin\lzo2.dll
   #File libjansson-4.dll
   File C:\vcpkg\packages\jansson_x64-windows\bin\jansson.dll
  # File iconv.dll
@@ -571,7 +578,7 @@ SectionIn 1 2 3 4
   File C:\vcpkg\packages\libpq_x64-windows\bin\libpq.dll
  # File libpcre-1.dll
  # File libbz2-1.dll
-  File C:\vcpkg\packages\bzip2_x64-windows\bin\bz2.dll  
+  File C:\vcpkg\packages\bzip2_x64-windows\bin\bz2.dll
 #  File libssp-0.dll
   File C:\vcpkg\packages\gettext-libintl_x64-windows\bin\intl-8.dll
 #  File libintl-8.dll
@@ -879,7 +886,7 @@ SectionIn 1 2 3
   File "C:\vcpkg\packages\freetype_x64-windows\bin\freetype.dll"
   File "C:\vcpkg\packages\gettext-libintl_x64-windows\bin\intl-8.dll"
   File "C:\vcpkg\packages\harfbuzz_x64-windows\bin\harfbuzz.dll"
-  File "C:\vcpkg\packages\pcre2_x64-windows\bin\pcre2-16.dll"  
+  File "C:\vcpkg\packages\pcre2_x64-windows\bin\pcre2-16.dll"
 #
   SetOutPath "$INSTDIR\platforms"
   File "C:\vcpkg\packages\qtbase_x64-windows\Qt6\plugins\platforms\qwindows.dll"
@@ -1500,9 +1507,13 @@ done:
   File "/oname=$PLUGINSDIR\sed.exe" "C:\Program Files\Git\usr\bin\sed.exe"
   File "/oname=$PLUGINSDIR\iconv-2.dll" "C:\vcpkg\packages\libiconv_x64-windows\tools\libiconv\bin\iconv-2.dll"
   File "/oname=$PLUGINSDIR\libintl-8.dll" "C:\vcpkg\packages\gettext-libintl_x64-windows\bin\intl-8.dll"
+
   File "/oname=$PLUGINSDIR\pthreadVC3.dll" "C:\vcpkg\installed\x64-windows\bin\pthreadVC3.dll"
+  File "/oname=$PLUGINSDIR\pthreadVCE3.dll" "C:\vcpkg\installed\x64-windows\bin\pthreadVCE3.dll"
+
   File "/oname=$PLUGINSDIR\libcrypto-3-x64.dll" "C:\vcpkg\packages\openssl_x64-windows\bin\libcrypto-3-x64.dll"
- 
+  File "/oname=$PLUGINSDIR\libssl-3-x64.dll" "C:\vcpkg\packages\openssl_x64-windows\bin\libssl-3-x64.dll"
+
   #
   #
   # Either one of this two files will be available depending on 32/64 bits.
