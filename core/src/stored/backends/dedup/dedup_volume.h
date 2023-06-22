@@ -283,7 +283,7 @@ struct block_file : public volume_file {
   bool goto_end()
   {
     current_block = end_block;
-    return volume_file::goto_end();
+    return volume_file::goto_begin(current_block * sizeof(dedup::block_header));
   }
 
   bool goto_begin()
@@ -350,7 +350,8 @@ struct record_file : public volume_file {
   bool goto_end()
   {
     current_record = end_record;
-    return volume_file::goto_end();
+    return volume_file::goto_begin(current_record
+                                   * sizeof(dedup::record_header));
   }
 
   bool goto_begin()
