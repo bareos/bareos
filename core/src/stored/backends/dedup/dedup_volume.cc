@@ -46,7 +46,7 @@ void volume::write_current_config()
   }
   for (auto&& datafile : config.datafiles) {
     datasections.emplace_back(datafile.file_index, datafile.block_size,
-                              datafile.path);
+                              datafile.path, datafile.data_used);
   }
 
   std::vector<std::byte> bytes = config::to_bytes(

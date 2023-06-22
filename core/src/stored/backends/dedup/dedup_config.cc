@@ -163,6 +163,7 @@ std::vector<std::byte> serialize_data_file(const loaded_data_section& datafile)
   network.block_size = datafile.block_size;
   network.file_index = datafile.file_index;
   network.path_length = datafile.path.size();
+  network.data_used = datafile.data_used;
 
   std::vector<std::byte> data{
       reinterpret_cast<std::byte*>(&network),
@@ -448,6 +449,7 @@ std::optional<loaded_config> from_bytes(const std::vector<std::byte>& bytes)
           data_file.block_size = data->block_size;
           data_file.path
               = deserialize_string(current, current + data->path_length);
+          data_file.data_used = data->data_used;
 
           current += data->path_length;
           config.datafiles.emplace_back(std::move(data_file));

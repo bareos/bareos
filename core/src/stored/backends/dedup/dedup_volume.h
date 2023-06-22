@@ -399,15 +399,20 @@ struct data_file : public volume_file {
   data_file() = default;
   data_file(std::string_view path,
             std::uint32_t file_index,
-            std::int64_t block_size)
-      : volume_file{path}, file_index{file_index}, block_size{block_size}
+            std::int32_t block_size,
+            std::uint64_t data_used)
+      : volume_file{path}
+      , file_index{file_index}
+      , block_size{block_size}
+      , data_used{data_used}
   {
   }
   std::uint32_t file_index;
 
   static constexpr std::int64_t read_only_size = -1;
   static constexpr std::int64_t any_size = 0;
-  std::int64_t block_size;
+  std::int32_t block_size;
+  std::uint64_t data_used;
 
   struct written_loc {
     std::uint64_t begin;
@@ -446,6 +451,8 @@ struct data_file : public volume_file {
     }
   }
 
+  bool goto_end() { return volume_file::goto_begin(data_used); }
+
   std::optional<written_loc> reserve(std::size_t size)
   {
     if (!accepts_records_of_size(size)) { return std::nullopt; }
@@ -456,7 +463,7 @@ struct data_file : public volume_file {
     std::optional current = current_pos();
     if (!current) { return std::nullopt; }
 
-    if (!goto_end()) { return std::nullopt; }
+    if (!volume_file::goto_end()) { return std::nullopt; }
 
     std::optional omax = current_pos();
 
@@ -474,6 +481,7 @@ struct data_file : public volume_file {
     }
 
     goto_begin(end);
+    data_used = end;
 
     return written_loc{*current, end};
   }
@@ -498,8 +506,8 @@ struct volume_config {
     datafiles.clear();
     blockfiles.emplace_back("block", 0, 0, 0);
     recordfiles.emplace_back("record", 0, 0, 0);
-    datafiles.emplace_back("64KiB", 0, 65536);
-    datafiles.emplace_back("data", 1, data_file::any_size);
+    datafiles.emplace_back("64KiB", 0, 65536, 0);
+    datafiles.emplace_back("data", 1, data_file::any_size, 0);
   }
 
   volume_config() = default;
@@ -517,7 +525,8 @@ struct volume_config {
     }
     for (auto&& datasection : conf.datafiles) {
       datafiles.emplace_back(std::move(datasection.path),
-                             datasection.file_index, datasection.block_size);
+                             datasection.file_index, datasection.block_size,
+                             datasection.data_used);
     }
   }
 };
