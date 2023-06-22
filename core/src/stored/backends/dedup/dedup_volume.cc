@@ -119,6 +119,28 @@ bool block_file::write(const bareos_block_header& header,
 {
   block_header dedup{header, start_record, end_record, record_file_index};
 
+  std::optional current = current_pos();
+  if (!current) { return false; }
+
+  if (!volume_file::goto_end()) { return false; }
+
+  std::optional omax = current_pos();
+
+  if (!omax) { return false; }
+
+  std::size_t max = *omax;
+  std::size_t end = *current + sizeof(dedup);
+
+  if (end > max) {
+    do {
+      max += 1 * 1024 * 1024 * 1024;
+    } while (end > max);
+
+    if (!volume_file::truncate(max)) { return false; }
+  }
+
+  if (!volume_file::goto_begin(*current)) { return false; }
+
   if (!volume_file::write(&dedup, sizeof(dedup))) { return false; }
 
   current_block += 1;
@@ -133,6 +155,27 @@ bool record_file::write(const bareos_record_header& header,
 {
   record_header dedup{header, payload_start, payload_end, file_index};
 
+  std::optional current = current_pos();
+  if (!current) { return false; }
+
+  if (!volume_file::goto_end()) { return false; }
+
+  std::optional omax = current_pos();
+
+  if (!omax) { return false; }
+
+  std::size_t max = *omax;
+  std::size_t end = *current + sizeof(dedup);
+
+  if (end > max) {
+    do {
+      max += 1 * 1024 * 1024 * 1024;
+    } while (end > max);
+
+    if (!volume_file::truncate(max)) { return false; }
+  }
+
+  if (!volume_file::goto_begin(*current)) { return false; }
   if (!volume_file::write(&dedup, sizeof(dedup))) { return false; }
 
   current_record += 1;

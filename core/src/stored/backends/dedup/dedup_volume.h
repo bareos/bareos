@@ -455,9 +455,22 @@ struct data_file : public volume_file {
     std::optional current = current_pos();
     if (!current) { return std::nullopt; }
 
+    if (!goto_end()) { return std::nullopt; }
+
+    std::optional omax = current_pos();
+
+    if (!omax) { return std::nullopt; }
+
+    std::size_t max = *omax;
     std::size_t end = *current + size;
 
-    if (!truncate(end)) { return std::nullopt; }
+    if (end > max) {
+      do {
+        max += 1 * 1024 * 1024 * 1024;
+      } while (end > max);
+
+      if (!truncate(max)) { return std::nullopt; }
+    }
 
     goto_begin(end);
 
