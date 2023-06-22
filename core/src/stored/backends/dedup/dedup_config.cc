@@ -180,7 +180,8 @@ std::vector<std::byte> to_bytes(
     loaded_general_info info,
     const std::vector<loaded_data_section>& datafiles,
     const std::vector<loaded_record_section>& recordfiles,
-    const std::vector<loaded_block_section>& blockfiles)
+    const std::vector<loaded_block_section>& blockfiles,
+    const std::vector<loaded_unfinished_record>&)
 {
   std::vector<std::byte> bytes;
   static constexpr std::size_t section_alignment = 16;

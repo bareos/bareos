@@ -34,23 +34,30 @@ void volume::write_current_config()
   std::vector<config::loaded_block_section> blocksections;
   std::vector<config::loaded_record_section> recordsections;
   std::vector<config::loaded_data_section> datasections;
+  std::vector<config::loaded_unfinished_record> unfinished;
 
-
-  for (auto&& blockfile : config.blockfiles) {
+  for (auto& blockfile : config.blockfiles) {
     blocksections.emplace_back(blockfile.file_index, blockfile.start_block,
                                blockfile.end_block, blockfile.path);
   }
-  for (auto&& recordfile : config.recordfiles) {
+  for (auto& recordfile : config.recordfiles) {
     recordsections.emplace_back(recordfile.file_index, recordfile.start_record,
                                 recordfile.end_record, recordfile.path);
   }
-  for (auto&& datafile : config.datafiles) {
+  for (auto& datafile : config.datafiles) {
     datasections.emplace_back(datafile.file_index, datafile.block_size,
                               datafile.path, datafile.data_used);
   }
 
+  for (auto& [record, loc] : unfinished_records) {
+    unfinished.emplace_back(record.VolSessionId, record.VolSessionTime,
+                            record.FileIndex, record.Stream, loc.file_index,
+                            loc.current, loc.end - loc.current);
+  }
+
+
   std::vector<std::byte> bytes = config::to_bytes(
-      my_general_info, datasections, recordsections, blocksections);
+      my_general_info, datasections, recordsections, blocksections, unfinished);
   if (ftruncate(configfile.fd.get(), 0) != 0) {
     error = true;
   } else if (::lseek(configfile.fd.get(), 0, SEEK_SET) != 0) {
@@ -106,6 +113,18 @@ bool volume::load_config()
              != sizeof(record_header)) {
     // error: bad record header size
     return false;
+  }
+
+  for (auto& rec : loaded_config->unfinished) {
+    // FIXME: check wether this write_loc makes any sense!
+    record unfinished_record{rec.VolSessionId, rec.VolSessionTime,
+                             rec.FileIndex, rec.Stream};
+    write_loc loc{rec.DataIdx, rec.file_offset, rec.file_offset + rec.size};
+    auto [_, inserted] = unfinished_records.emplace(unfinished_record, loc);
+    if (!inserted) {
+      // error: bad unfinished record
+      return false;
+    }
   }
 
   config = volume_config(std::move(loaded_config.value()));

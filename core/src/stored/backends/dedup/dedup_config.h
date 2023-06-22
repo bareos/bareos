@@ -201,10 +201,42 @@ struct loaded_general_info {
   std::uint32_t dedup_record_header_size;
 };
 
+struct loaded_unfinished_record {
+  // record data of unfinished record
+  std::uint32_t VolSessionId;
+  std::uint32_t VolSessionTime;
+  std::int32_t FileIndex;
+  std::int32_t Stream;
+
+  // location of allocated section in data file
+  std::uint32_t DataIdx;
+  std::uint64_t file_offset;
+  std::uint32_t size;
+
+  loaded_unfinished_record() = default;
+  loaded_unfinished_record(std::uint32_t VolSessionId,
+                           std::uint32_t VolSessionTime,
+                           std::int32_t FileIndex,
+                           std::int32_t Stream,
+                           std::uint32_t DataIdx,
+                           std::uint64_t file_offset,
+                           std::uint32_t size)
+      : VolSessionId{VolSessionId}
+      , VolSessionTime{VolSessionTime}
+      , FileIndex{FileIndex}
+      , Stream{Stream}
+      , DataIdx{DataIdx}
+      , file_offset{file_offset}
+      , size{size}
+  {
+  }
+};
+
 struct loaded_config {
   std::vector<loaded_data_section> datafiles;
   std::vector<loaded_record_section> recordfiles;
   std::vector<loaded_block_section> blockfiles;
+  std::vector<loaded_unfinished_record> unfinished;
   loaded_general_info info;
   std::uint64_t file_size;
   std::uint64_t version;
@@ -215,7 +247,8 @@ std::vector<std::byte> to_bytes(
     loaded_general_info info,
     const std::vector<loaded_data_section>& datafiles,
     const std::vector<loaded_record_section>& recordfiles,
-    const std::vector<loaded_block_section>& blockfiles);
+    const std::vector<loaded_block_section>& blockfiles,
+    const std::vector<loaded_unfinished_record>& unfinished);
 
 std::optional<loaded_config> from_bytes(const std::vector<std::byte>& bytes);
 }  // namespace dedup::config
