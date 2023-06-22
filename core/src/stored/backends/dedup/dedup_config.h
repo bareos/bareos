@@ -76,6 +76,7 @@ struct section_header {
     BlockFile = 1,
     RecordFile = 2,
     DataFile = 3,
+    UnfinishedRecord = 4,
   };
   // total section size = header size + data size + padding
   // padding is between header & data
@@ -135,6 +136,19 @@ struct data_file_section {
   // as if
   // std::byte path_data[]; (in utf8 encoding)
   // was the next member (not legal in C++)
+};
+
+struct unfinished_record_section {
+  // record data of unfinished record
+  net_u32 VolSessionId;
+  net_u32 VolSessionTime;
+  net_i32 FileIndex;
+  net_i32 Stream;
+
+  // location of allocated section in data file
+  net_u64 file_offset;
+  net_i32 DataIdx;
+  net_i32 size;
 };
 
 struct loaded_data_section {

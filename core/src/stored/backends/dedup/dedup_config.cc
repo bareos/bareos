@@ -175,13 +175,35 @@ std::vector<std::byte> serialize_data_file(const loaded_data_section& datafile)
                                alignof(network), data);
 }
 
+std::vector<std::byte> serialize_unfinished_record(
+    const loaded_unfinished_record& rec)
+{
+  config::unfinished_record_section network;
+
+  network.VolSessionId = rec.VolSessionId;
+  network.VolSessionTime = rec.VolSessionTime;
+  network.FileIndex = rec.FileIndex;
+  network.Stream = rec.Stream;
+  network.file_offset = rec.file_offset;
+  network.DataIdx = rec.DataIdx;
+  network.size = rec.size;
+
+  std::vector<std::byte> data{
+      reinterpret_cast<std::byte*>(&network),
+      reinterpret_cast<std::byte*>(&network) + sizeof(network)};
+
+  return serialize_with_header(0,
+                               config::section_header::types::UnfinishedRecord,
+                               alignof(network), data);
+}
+
 
 std::vector<std::byte> to_bytes(
     loaded_general_info info,
     const std::vector<loaded_data_section>& datafiles,
     const std::vector<loaded_record_section>& recordfiles,
     const std::vector<loaded_block_section>& blockfiles,
-    const std::vector<loaded_unfinished_record>&)
+    const std::vector<loaded_unfinished_record>& unfinished)
 {
   std::vector<std::byte> bytes;
   static constexpr std::size_t section_alignment = 16;
@@ -218,6 +240,13 @@ std::vector<std::byte> to_bytes(
     std::vector<std::byte> datafile_bytes = serialize_data_file(datafile);
 
     bytes.insert(bytes.end(), datafile_bytes.begin(), datafile_bytes.end());
+  }
+
+  for (auto& rec : unfinished) {
+    bytes.resize(bytes.size()
+                 + alignment_diff(bytes.size(), section_alignment));
+    std::vector<std::byte> rec_bytes = serialize_unfinished_record(rec);
+    bytes.insert(bytes.end(), rec_bytes.begin(), rec_bytes.end());
   }
 
   file_header.file_size = bytes.size();
@@ -454,6 +483,31 @@ std::optional<loaded_config> from_bytes(const std::vector<std::byte>& bytes)
 
           current += data->path_length;
           config.datafiles.emplace_back(std::move(data_file));
+        } break;
+        case config::section_header::types::UnfinishedRecord: {
+          if (section_header->data_size
+              < sizeof(config::unfinished_record_section)) {
+            // error: bad section header
+            return std::nullopt;
+          }
+
+          auto* data
+              = reinterpret_cast<const config::unfinished_record_section*>(
+                  &*current);
+          current += sizeof(*data);
+
+          loaded_unfinished_record rec;
+
+          rec.VolSessionId = data->VolSessionId;
+          rec.VolSessionTime = data->VolSessionTime;
+          rec.FileIndex = data->FileIndex;
+          rec.Stream = data->Stream;
+          rec.file_offset = data->file_offset;
+          rec.DataIdx = data->DataIdx;
+          rec.size = data->size;
+
+          config.unfinished.push_back(rec);
+
         } break;
         default: {
           // error: unrecognized section header
