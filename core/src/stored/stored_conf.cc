@@ -214,6 +214,7 @@ static ResourceItem dev_items[] = {
   {"Count", CFG_TYPE_PINT32, ITEM(res_dev, count), 0, CFG_ITEM_DEFAULT, "1", NULL, "If Count is set to (1 < Count < 10000), "
   "this resource will be multiplied Count times. The names of multiplied resources will have a serial number (0001, 0002, ...) attached. "
   "If set to 1 only this single resource will be used and its name will not be altered."},
+  {"DedupBlockSize", CFG_TYPE_MAXBLOCKSIZE, ITEM(res_dev, dedup_block_size), 0, CFG_ITEM_DEFAULT, NULL, NULL, NULL},
   {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
 
