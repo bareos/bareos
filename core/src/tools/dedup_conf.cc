@@ -82,7 +82,8 @@ void print_config(const dedup::config::loaded_config& conf)
       }
       std::cout << "{ "
                 << "Name: \"" << datafile.path << "\", "
-                << "block size: ";
+                << "BytesUsed: " << datafile.data_used << ", "
+                << "BlockSize: ";
       switch (datafile.block_size) {
         case dedup::data_file::read_only_size: {
           std::cout << "\"read only\"";
@@ -125,7 +126,8 @@ int main(int argc, char* argv[])
 
   std::error_code error;
   if (!fs::is_regular_file(config_path, error)) {
-    std::cerr << "'" << config_path << "' could not be loaded.\n";
+    std::cerr << "'" << config_path << "' could not be loaded (ec = " << error
+              << ").\n";
     return 1;
   }
 
