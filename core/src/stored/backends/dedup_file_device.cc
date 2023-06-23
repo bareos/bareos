@@ -119,7 +119,7 @@ int dedup_file_device::d_open(const char* path, int, int mode)
     }
   }
 
-  dedup::volume vol{path, open_mode, mode};
+  dedup::volume vol{path, open_mode, mode, device_resource->dedup_block_size};
 
   if (vol.is_ok()) {
     int new_fd = fd_ctr;

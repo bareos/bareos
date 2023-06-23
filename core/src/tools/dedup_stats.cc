@@ -49,7 +49,7 @@ int main(int argc, const char* argv[])
   CLI11_PARSE(app, argc, argv);
 
   dedup::volume vol{volume.c_str(), storagedaemon::DeviceMode::OPEN_READ_ONLY,
-                    0};
+                    0, 0};
 
   if (!vol.is_ok()) {
     std::cerr << volume << " is not a valid dedup volume." << std::endl;

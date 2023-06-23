@@ -499,14 +499,16 @@ struct volume_config {
   std::vector<record_file> recordfiles;
   std::vector<data_file> datafiles;
 
-  void create_default()
+  void create_default(std::uint32_t dedup_block_size)
   {
     blockfiles.clear();
     recordfiles.clear();
     datafiles.clear();
     blockfiles.emplace_back("block", 0, 0, 0);
     recordfiles.emplace_back("record", 0, 0, 0);
-    datafiles.emplace_back("64KiB", 0, 65536, 0);
+    if (dedup_block_size != 0) {
+      datafiles.emplace_back("full_blocks", 0, dedup_block_size, 0);
+    }
     datafiles.emplace_back("data", 1, data_file::any_size, 0);
   }
 
@@ -533,7 +535,10 @@ struct volume_config {
 
 class volume {
  public:
-  volume(const char* path, DeviceMode dev_mode, int mode)
+  volume(const char* path,
+         DeviceMode dev_mode,
+         int mode,
+         std::uint32_t dedup_block_size)
       : path(path), configfile{"config"}
   {
     // to create files inside dir, we need executive permissions
@@ -570,7 +575,7 @@ class volume {
     }
 
     if (dev_mode == DeviceMode::CREATE_READ_WRITE) {
-      config.create_default();
+      config.create_default(dedup_block_size);
       volume_changed = true;
     } else {
       if (!load_config()) {
