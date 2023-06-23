@@ -31,6 +31,13 @@
 
 #include <iostream>
 
+enum class OrderBy
+{
+  Count,
+  Size,
+  BytesUsed,
+};
+
 int main(int argc, const char* argv[])
 {
   CLI::App app;
@@ -45,6 +52,13 @@ int main(int argc, const char* argv[])
       ->required();
   std::vector<int> streams;
   app.add_option("-s,--streams", streams)->check(CLI::PositiveNumber);
+  OrderBy order = OrderBy::Count;
+  std::unordered_map<std::string, OrderBy> order_translation{
+      {"count", OrderBy::Count},
+      {"size", OrderBy::Size},
+      {"bytes", OrderBy::BytesUsed}};
+  app.add_option("-o,--order-by", order)
+      ->transform(CLI::CheckedTransformer(order_translation, CLI::ignore_case));
 
   CLI11_PARSE(app, argc, argv);
 
@@ -77,13 +91,26 @@ int main(int argc, const char* argv[])
   std::vector<std::pair<std::size_t, std::size_t>> sorted{sizes.begin(),
                                                           sizes.end()};
 
-  std::sort(sorted.begin(), sorted.end(), [](const auto& l, const auto& r) {
-    if (l.second == r.second) { return l.first > r.first; }
-    return l.second > r.second;
-  });
-
-  std::cout << "size : num\n";
-  for (auto& p : sorted) { std::cout << p.first << " : " << p.second << "\n"; }
+  if (order == OrderBy::Count) {
+    std::sort(sorted.begin(), sorted.end(), [](const auto& l, const auto& r) {
+      if (l.second == r.second) { return l.first > r.first; }
+      return l.second > r.second;
+    });
+  } else if (order == OrderBy::Size) {
+    std::sort(sorted.begin(), sorted.end(), [](const auto& l, const auto& r) {
+      if (l.second == r.second) { return l.first > r.first; }
+      return l.first > r.first;
+    });
+  } else if (order == OrderBy::BytesUsed) {
+    std::sort(sorted.begin(), sorted.end(), [](const auto& l, const auto& r) {
+      return l.first * l.second > r.first * r.second;
+    });
+  }
+  std::cout << "size : count : bytes used\n";
+  for (auto& p : sorted) {
+    std::cout << p.first << " : " << p.second << " : " << p.first * p.second
+              << "\n";
+  }
 
   return 0;
 }
