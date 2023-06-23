@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -317,10 +317,8 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
       }   /* end if Bstrcasecmp */
     }     /* end for RunFields */
 
-    /*
-     * At this point, it is not a keyword. Check for old syle
-     * Job Levels without keyword. This form is depreciated!!!
-     */
+    /* At this point, it is not a keyword. Check for old syle
+     * Job Levels without keyword. This form is depreciated!!! */
     if (!found) {
       for (j = 0; joblevels[j].level_name; j++) {
         if (Bstrcasecmp(lc->str, joblevels[j].level_name)) {
@@ -333,10 +331,8 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
     }
   } /* end for found */
 
-  /*
-   * Scan schedule times.
-   * Default is: daily at 0:0
-   */
+  /* Scan schedule times.
+   * Default is: daily at 0:0 */
   state = s_none;
   set_defaults(res_run);
 
@@ -464,12 +460,10 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
           scan_err0(lc, _("Bad time specification."));
           return;
         }
-        /*
-         * Note, according to NIST, 12am and 12pm are ambiguous and
+        /* Note, according to NIST, 12am and 12pm are ambiguous and
          *  can be defined to anything.  However, 12:01am is the same
          *  as 00:01 and 12:01pm is the same as 12:01, so we define
-         *  12am as 00:00 and 12pm as 12:00.
-         */
+         *  12am as 00:00 and 12pm as 12:00. */
         if (pm) {
           // Convert to 24 hour time
           if (code != 12) { code += 12; }
@@ -720,7 +714,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
   }
 
   lc->options = options; /* Restore scanner options */
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 } /* namespace directordaemon */

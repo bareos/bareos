@@ -189,7 +189,7 @@ static void StoreCipher(LEX* lc, ResourceItem* item, int index, int)
     scan_err1(lc, _("Expected a Crypto Cipher option, got: %s"), lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -424,7 +424,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
   // Ensure that all required items are present
   for (i = 0; items[i].name; i++) {
     if (items[i].flags & CFG_ITEM_REQUIRED) {
-      if (!BitIsSet(i, (*items[i].allocated_resource)->item_present_)) {
+      if (!items[i].IsPresent()) {
         Emsg2(M_ABORT, 0,
               _("%s item is required in %s resource, but not found.\n"),
               items[i].name, resources[type].name);

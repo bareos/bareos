@@ -372,8 +372,10 @@ void Device::SetBlocksizes(DeviceControlRecord* dcr)
         "dev->max_block_size of %u, dcr->VolMaxBlocksize is %u\n",
         dev->print_name(), dev->device_resource->max_block_size,
         dev->max_block_size, dcr->VolMaxBlocksize);
-
-  if (dcr->VolMaxBlocksize == 0 && dev->device_resource->max_block_size != 0) {
+  if (dcr->VolMaxBlocksize != 0) {
+    dev->min_block_size = dcr->VolMinBlocksize;
+    dev->max_block_size = dcr->VolMaxBlocksize;
+  } else if (dev->device_resource->max_block_size != 0) {
     Dmsg2(100,
           "setting dev->max_block_size to "
           "dev->device_resource->max_block_size=%u "
@@ -381,9 +383,6 @@ void Device::SetBlocksizes(DeviceControlRecord* dcr)
           dev->device_resource->max_block_size, dev->print_name());
     dev->min_block_size = dev->device_resource->min_block_size;
     dev->max_block_size = dev->device_resource->max_block_size;
-  } else if (dcr->VolMaxBlocksize != 0) {
-    dev->min_block_size = dcr->VolMinBlocksize;
-    dev->max_block_size = dcr->VolMaxBlocksize;
   }
 
   // Sanity check

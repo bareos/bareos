@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -25,6 +25,8 @@
 #define BAREOS_LIB_BAREOS_RESOURCE_H_
 
 #include "include/bareos.h"
+#include <unordered_set>
+#include <string_view>
 
 class PoolMem;
 class ConfigurationParser;
@@ -35,17 +37,20 @@ struct ResourceItem;
 
 class BareosResource {
  public:
-  BareosResource* next_; /* Pointer to next resource of this type */
-  char* resource_name_;  /* Resource name */
-  char* description_;    /* Resource description */
-  uint32_t rcode_;       /* Resource id or type */
-  int32_t refcnt_;       /* Reference count for releasing */
-  std::string rcode_str_;
-  char item_present_[MAX_RES_ITEMS]; /* Set if item is present in conf file */
-  char inherit_content_[MAX_RES_ITEMS]; /* Set if item has inherited content */
+  BareosResource* next_{nullptr}; /* Pointer to next resource of this type */
+  char* resource_name_{nullptr};  /* Resource name */
+  char* description_{nullptr};    /* Resource description */
+  uint32_t rcode_{0};             /* Resource id or type */
+  int32_t refcnt_{0};             /* Reference count for releasing */
+  std::string rcode_str_{};
+  std::unordered_set<std::string_view>
+      item_present_{}; /* set of resource member names where values were
+                          written */
+  char inherit_content_[MAX_RES_ITEMS]{
+      0}; /* Set if item has inherited content */
   bool internal_{false};
 
-  BareosResource();
+  BareosResource() = default;
   BareosResource(const BareosResource& other);
   BareosResource& operator=(const BareosResource& rhs);
 
@@ -62,6 +67,19 @@ class BareosResource {
                                  bool hide_sensitive_data,
                                  bool inherited,
                                  bool verbose);
+
+  bool IsMemberPresent(std::string_view member_name) const
+  {
+    return item_present_.find(member_name) != item_present_.end();
+  }
+  void SetMemberPresent(std::string_view member_name)
+  {
+    item_present_.insert(member_name);
+  }
+  bool UnsetMemberPresent(std::string_view member_name)
+  {
+    return item_present_.erase(member_name) > 0;
+  }
 };
 
 const char* GetResourceName(const void* resource);
