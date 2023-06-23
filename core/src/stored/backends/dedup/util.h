@@ -127,6 +127,254 @@ class raii_fd {
   int mode{};
   bool error{false};
 };
+
+template <typename T> class file_based_vector {
+ public:
+  file_based_vector() = default;
+  file_based_vector(raii_fd file,
+                    std::size_t used,
+                    std::size_t capacity_chunk_size);
+  std::optional<std::size_t> reserve(std::size_t count);
+  std::optional<std::size_t> write(const T* arr, std::size_t count);
+  std::optional<std::size_t> write_at(std::size_t start,
+                                      const T* arr,
+                                      std::size_t count);
+  inline std::optional<std::size_t> write(const T& val)
+  {
+    return write(&val, 1);
+  }
+  inline std::optional<std::size_t> write_at(std::size_t start, const T& val)
+  {
+    return write_at(start, &val, 1);
+  }
+  std::unique_ptr<T[]> read(std::size_t count = 1);
+  std::unique_ptr<T[]> read_at(std::size_t start, std::size_t count = 1);
+  std::unique_ptr<T[]> peek(std::size_t count = 1);
+
+  bool move_to(std::size_t start);
+
+  bool flush()
+  {
+    if (error) { return false; }
+    // if we used a cache we would write it out here
+    return file.flush();
+  }
+
+  inline std::size_t size() const { return used; }
+
+  inline std::size_t current() const { return iter; }
+
+  inline bool is_ok() const { return !error && file.is_ok(); }
+
+ private:
+  // future: std::vector<T> cache;
+  std::size_t used{0};
+  std::size_t capacity;
+  std::size_t iter{0};
+  const std::size_t capacity_chunk_size{1};
+  raii_fd file;
+  bool error{true};
+  static constexpr std::size_t elem_size = sizeof(T);
+
+  std::optional<std::size_t> reserve_at(std::size_t at, std::size_t count);
+};
+
+template <typename T>
+std::optional<std::size_t> file_based_vector<T>::reserve(std::size_t count)
+{
+  return reserve_at(used, count);
+}
+
+template <typename T>
+std::optional<std::size_t> file_based_vector<T>::reserve_at(std::size_t at,
+                                                            std::size_t count)
+{
+  if (error) { return std::nullopt; }
+
+  if (at + count < at) {
+    return std::nullopt;  // make sure nothing weird is going on
+  }
+
+  if (at > used) {
+    // since this is an internal function
+    // this should never happen.  So if it does set the error flag
+    error = true;
+    return std::nullopt;
+  }
+
+  if (at + count > capacity) {
+    std::size_t delta = at + count - capacity;
+
+    // compute first mutilple of capacity_chunk_size that is greater than delta
+    std::size_t num_new_items
+        = ((delta + capacity_chunk_size - 1) / capacity_chunk_size)
+          * capacity_chunk_size;
+    ASSERT(num_new_items + capacity >= at + count);
+
+    std::size_t new_cap = capacity + num_new_items;
+    if (new_cap < at + count) {
+      // something weird is going on :S
+      return std::nullopt;
+    }
+
+    if (file.resize(new_cap * elem_size)) {
+      error = true;
+      return std::nullopt;
+    }
+
+    capacity = new_cap;
+  }
+
+  used = std::max(used, at + count);
+  return at;
+}
+
+template <typename T>
+std::optional<std::size_t> file_based_vector<T>::write(const T* arr,
+                                                       std::size_t count)
+{
+  std::optional start = reserve_at(iter, count);
+
+  if (!start) { return std::nullopt; }
+
+  ASSERT(start == iter);
+  auto old_iter = iter;
+  iter += count;
+  // read_at always returns to the current iter
+  // if we set iter to the new desired position
+  // we prevent the double seek we would need to do otherwise
+  auto res = write_at(old_iter, arr, count);
+
+  if (!res) { iter = old_iter; }
+
+  return res;
+}
+
+template <typename T>
+std::optional<std::size_t> file_based_vector<T>::write_at(std::size_t start,
+                                                          const T* arr,
+                                                          std::size_t count)
+{
+  if (error) { return std::nullopt; }
+
+  if (start > used) { return std::nullopt; }
+
+  if (!file.seek(elem_size * start)) {
+    error = true;
+    return std::nullopt;
+  }
+
+  if (!file.write(arr, count * elem_size)) {
+    error = true;
+    return std::nullopt;
+  }
+
+  // go back to normal place
+  if (!file.seek(elem_size * iter)) {
+    error = true;
+    return std::nullopt;
+  }
+
+  return start;
+}
+
+template <typename T>
+std::unique_ptr<T[]> file_based_vector<T>::read(std::size_t count)
+{
+  if (error) { return nullptr; }
+
+  auto old_iter = iter;
+  iter += count;
+  // read_at always returns to the current iter
+  // if we set iter to the new desired position
+  // we prevent the double seek we would need to do otherwise
+  std::unique_ptr result = read_at(old_iter, count);
+
+  if (!result) { iter = old_iter; }
+
+  return result;
+}
+
+template <typename T>
+std::unique_ptr<T[]> file_based_vector<T>::read_at(std::size_t start,
+                                                   std::size_t count)
+{
+  if (error) { return nullptr; }
+
+  if (start + count > used) { return nullptr; }
+
+  std::unique_ptr data = std::make_unique<T[]>(new T[count]);
+  T* arr = data.get();
+
+  if (!file.seek(elem_size * start)) {
+    error = true;
+    return nullptr;
+  }
+
+  if (!file.read(arr, count * elem_size)) {
+    error = true;
+    return nullptr;
+  }
+
+  // go back to normal place
+  if (!file.seek(elem_size * iter)) {
+    error = true;
+    return nullptr;
+  }
+
+  return data;
+}
+
+template <typename T>
+std::unique_ptr<T[]> file_based_vector<T>::peek(std::size_t count)
+{
+  if (error) { return nullptr; }
+  return read_at(iter, count);
+}
+
+template <typename T> bool file_based_vector<T>::move_to(std::size_t start)
+{
+  if (error) { return false; }
+
+  if (start > used) { return false; }
+
+  iter = start;
+
+  if (!file.seek(iter * elem_size)) {
+    error = true;
+    return false;
+  }
+  return true;
+}
+
+template <typename T>
+file_based_vector<T>::file_based_vector(raii_fd file,
+                                        std::size_t used,
+                                        std::size_t capacity_chunk_size)
+    : file{std::move(file)}
+    , capacity_chunk_size(capacity_chunk_size)
+    , used{used}
+    , capacity{0}
+    , error{file.is_ok()}
+{
+  if (error) { return; }
+
+  // let us compute the capacity
+
+  std::optional size = file.size_then_reset();
+
+  if (!size) {
+    error = true;
+    return;
+  }
+
+  capacity = *size / elem_size;
+
+  if (used > capacity) {
+    error = true;
+    return;
+  }
+}
 }; /* namespace dedup::util */
 
 #endif  // BAREOS_STORED_BACKENDS_DEDUP_UTIL_H_
