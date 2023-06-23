@@ -228,6 +228,29 @@ static void WarnOnNonZeroBlockSize(int max_block_size, std::string_view name)
   }
 }
 
+static void WarnOnZeroDedupBlockSize(int dedup_block_size,
+                                     std::string_view name)
+{
+  if (dedup_block_size == 0) {
+    my_config->AddWarning(fmt::format(
+        FMT_STRING("Device {:s}: 'Dedup Block Size' is set to zero. "
+                   "This disables dedupability."),
+        name));
+  }
+}
+
+static void WarnOnNonZeroDedupBlockSize(int dedup_block_size,
+                                        std::string_view name)
+{
+  if (dedup_block_size > 0) {
+    my_config->AddWarning(fmt::format(
+        FMT_STRING(
+            "Device {:s}: Setting 'Dedup Block Size' is only supported on  "
+            "dedup devices"),
+        name));
+  }
+}
+
 static void WarnOnZeroMaxConcurrentJobs(int max_concurrent_jobs,
                                         std::string_view name)
 {
@@ -258,13 +281,28 @@ static bool ValidateTapeDevice(const DeviceResource& resource)
 
   WarnOnZeroMaxConcurrentJobs(resource.max_concurrent_jobs,
                               resource.resource_name_);
+  WarnOnNonZeroDedupBlockSize(resource.dedup_block_size,
+                              resource.resource_name_);
 
+  return true;
+}
+
+static bool ValidateDedupDevice(const DeviceResource& resource)
+{
+  WarnOnNonZeroBlockSize(resource.max_block_size, resource.resource_name_);
+  WarnOnZeroDedupBlockSize(resource.dedup_block_size, resource.resource_name_);
+  WarnOnZeroMaxConcurrentJobs(resource.max_concurrent_jobs,
+                              resource.resource_name_);
+  WarnOnGtOneMaxConcurrentJobs(resource.max_concurrent_jobs,
+                               resource.resource_name_);
   return true;
 }
 
 static bool ValidateGenericDevice(const DeviceResource& resource)
 {
   WarnOnNonZeroBlockSize(resource.max_block_size, resource.resource_name_);
+  WarnOnNonZeroDedupBlockSize(resource.dedup_block_size,
+                              resource.resource_name_);
   WarnOnZeroMaxConcurrentJobs(resource.max_concurrent_jobs,
                               resource.resource_name_);
   WarnOnGtOneMaxConcurrentJobs(resource.max_concurrent_jobs,
@@ -278,6 +316,8 @@ bool DeviceResource::Validate()
   to_lower(device_type);
   if (device_type == DeviceType::B_TAPE_DEV) {
     return ValidateTapeDevice(*this);
+  } else if (device_type == DeviceType::B_DEDUP_DEV) {
+    return ValidateDedupDevice(*this);
   } else {
     return ValidateGenericDevice(*this);
   }
