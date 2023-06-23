@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -49,7 +49,7 @@ BareosResource::BareosResource(const BareosResource& other)
   description_ = other.description_ ? strdup(other.description_) : nullptr;
   rcode_ = other.rcode_;
   refcnt_ = other.refcnt_;
-  ::memcpy(item_present_, other.item_present_, MAX_RES_ITEMS);
+  item_present_ = other.item_present_;
   ::memcpy(inherit_content_, other.inherit_content_, MAX_RES_ITEMS);
 }
 
@@ -62,7 +62,7 @@ BareosResource& BareosResource::operator=(const BareosResource& rhs)
   description_ = rhs.description_;
   rcode_ = rhs.rcode_;
   refcnt_ = rhs.refcnt_;
-  ::memcpy(item_present_, rhs.item_present_, MAX_RES_ITEMS);
+  item_present_ = rhs.item_present_;
   ::memcpy(inherit_content_, rhs.inherit_content_, MAX_RES_ITEMS);
   return *this;
 }

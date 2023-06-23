@@ -395,7 +395,7 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
     }
   }
   ScanToEol(lc);
-  SetBit(index, message_resource->item_present_);
+  message_resource->SetMemberPresent(item->offset);
   ClearBit(index, message_resource->inherit_content_);
   Dmsg0(900, "Done StoreMsgs\n");
 }
@@ -422,7 +422,7 @@ void ConfigurationParser::StoreName(LEX* lc, ResourceItem* item, int index, int)
   }
   *p = strdup(lc->str);
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -442,7 +442,7 @@ void ConfigurationParser::StoreStrname(LEX* lc,
     *p = strdup(lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -455,7 +455,7 @@ void ConfigurationParser::StoreStr(LEX* lc,
   LexGetToken(lc, BCT_STRING);
   if (pass == 1) { SetItemVariableFreeMemory<char*>(*item, strdup(lc->str)); }
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -468,7 +468,7 @@ void ConfigurationParser::StoreStdstr(LEX* lc,
   LexGetToken(lc, BCT_STRING);
   if (pass == 1) { SetItemVariable<std::string>(*item, lc->str); }
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -492,7 +492,7 @@ void ConfigurationParser::StoreDir(LEX* lc,
     *p = strdup(lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -509,7 +509,7 @@ void ConfigurationParser::StoreStdstrdir(LEX* lc,
     SetItemVariable<std::string>(*item, lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -565,7 +565,7 @@ void ConfigurationParser::StoreMd5Password(LEX* lc,
     }
   }
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -593,7 +593,7 @@ void ConfigurationParser::StoreClearpassword(LEX* lc,
     pwd->value = strdup(lc->str);
   }
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -628,7 +628,7 @@ void ConfigurationParser::StoreRes(LEX* lc,
     *p = res;
   }
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -670,7 +670,7 @@ void ConfigurationParser::StoreAlistRes(LEX* lc,
     }
     token = LexGetToken(lc, BCT_ALL);
   }
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -695,7 +695,7 @@ void ConfigurationParser::StoreStdVectorStr(LEX* lc,
        *
        * We first check to see if the config item has the CFG_ITEM_DEFAULT
        * flag set and currently has exactly one entry. */
-      if (!BitIsSet(index, (*item->allocated_resource)->item_present_)) {
+      if (!item->IsPresent()) {
         if ((item->flags & CFG_ITEM_DEFAULT) && list->size() == 1) {
           if (list->at(0) == item->default_value) { list->clear(); }
         }
@@ -704,7 +704,7 @@ void ConfigurationParser::StoreStdVectorStr(LEX* lc,
     }
     token = LexGetToken(lc, BCT_ALL);
   }
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -735,7 +735,7 @@ void ConfigurationParser::StoreAlistStr(LEX* lc,
        *
        * We first check to see if the config item has the CFG_ITEM_DEFAULT
        * flag set and currently has exactly one entry. */
-      if (!BitIsSet(index, (*item->allocated_resource)->item_present_)) {
+      if (!item->IsPresent()) {
         if ((item->flags & CFG_ITEM_DEFAULT) && list->size() == 1) {
           char* entry = (char*)list->first();
           if (bstrcmp(entry, item->default_value)) {
@@ -748,7 +748,7 @@ void ConfigurationParser::StoreAlistStr(LEX* lc,
     }
     token = LexGetToken(lc, BCT_ALL);
   }
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -796,7 +796,7 @@ void ConfigurationParser::StoreAlistDir(LEX* lc,
     list->append(strdup(lc->str));
   }
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -844,7 +844,7 @@ void ConfigurationParser::StorePluginNames(LEX* lc,
         break;
     }
   }
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -884,7 +884,7 @@ void ConfigurationParser::store_int16(LEX* lc,
   LexGetToken(lc, BCT_INT16);
   SetItemVariable<int16_t>(*item, lc->u.int16_val);
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -896,7 +896,7 @@ void ConfigurationParser::store_int32(LEX* lc,
   LexGetToken(lc, BCT_INT32);
   SetItemVariable<int32_t>(*item, lc->u.int32_val);
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -909,7 +909,7 @@ void ConfigurationParser::store_pint16(LEX* lc,
   LexGetToken(lc, BCT_PINT16);
   SetItemVariable<uint16_t>(*item, lc->u.pint16_val);
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -921,7 +921,7 @@ void ConfigurationParser::store_pint32(LEX* lc,
   LexGetToken(lc, BCT_PINT32);
   SetItemVariable<uint32_t>(*item, lc->u.pint32_val);
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -934,7 +934,7 @@ void ConfigurationParser::store_int64(LEX* lc,
   LexGetToken(lc, BCT_INT64);
   SetItemVariable<int64_t>(*item, lc->u.int64_val);
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -1006,7 +1006,7 @@ void ConfigurationParser::store_int_unit(LEX* lc,
       return;
   }
   if (token != BCT_EOL) { ScanToEol(lc); }
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
   Dmsg0(900, "Leave store_unit\n");
 }
@@ -1073,7 +1073,7 @@ void ConfigurationParser::StoreTime(LEX* lc, ResourceItem* item, int index, int)
       return;
   }
   if (token != BCT_EOL) { ScanToEol(lc); }
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -1092,7 +1092,7 @@ void ConfigurationParser::StoreBit(LEX* lc, ResourceItem* item, int index, int)
     return;
   }
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -1110,7 +1110,7 @@ void ConfigurationParser::StoreBool(LEX* lc, ResourceItem* item, int index, int)
     return;
   }
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -1135,7 +1135,7 @@ void ConfigurationParser::StoreLabel(LEX* lc,
     return;
   }
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -1275,7 +1275,7 @@ void ConfigurationParser::StoreAddresses(LEX* lc,
   if (token != BCT_EOB) {
     scan_err1(lc, _("Expected a end of block }, got: %s"), lc->str);
   }
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 

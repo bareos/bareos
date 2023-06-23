@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -40,18 +40,21 @@ struct ResourceItem {
   int32_t code;              /* Item code/additional info */
   uint32_t flags;            /* Flags: See CFG_ITEM_* */
   const char* default_value; /* Default value */
-  /*
-   * version string in format: [start_version]-[end_version]
+  /* version string in format: [start_version]-[end_version]
    * start_version: directive has been introduced in this version
-   * end_version:   directive is deprecated since this version
-   */
+   * end_version:   directive is deprecated since this version */
   const char* versions;
-  /*
-   * description of the directive, used for the documentation.
+  /* description of the directive, used for the documentation.
    * Full sentence.
-   * Every new directive should have a description.
-   */
+   * Every new directive should have a description. */
   const char* description;
+
+  void SetPresent() { (*allocated_resource)->SetMemberPresent(offset); }
+
+  bool IsPresent() const
+  {
+    return (*allocated_resource)->IsMemberPresent(offset);
+  }
 };
 
 static inline void* CalculateAddressOfMemberVariable(const ResourceItem& item)

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -25,6 +25,7 @@
 #define BAREOS_LIB_BAREOS_RESOURCE_H_
 
 #include "include/bareos.h"
+#include <unordered_set>
 
 class PoolMem;
 class ConfigurationParser;
@@ -41,7 +42,9 @@ class BareosResource {
   uint32_t rcode_;       /* Resource id or type */
   int32_t refcnt_;       /* Reference count for releasing */
   std::string rcode_str_;
-  char item_present_[MAX_RES_ITEMS]; /* Set if item is present in conf file */
+  std::unordered_set<std::size_t>
+      item_present_; /* set of offsets into the resource where values were
+                        written */
   char inherit_content_[MAX_RES_ITEMS]; /* Set if item has inherited content */
   bool internal_{false};
 
@@ -62,6 +65,15 @@ class BareosResource {
                                  bool hide_sensitive_data,
                                  bool inherited,
                                  bool verbose);
+
+  bool IsMemberPresent(std::size_t member_offset) const
+  {
+    return item_present_.find(member_offset) != item_present_.end();
+  }
+  void SetMemberPresent(std::size_t member_offset)
+  {
+    item_present_.insert(member_offset);
+  }
 };
 
 const char* GetResourceName(const void* resource);
