@@ -184,6 +184,7 @@ struct DeviceType {
   static constexpr std::string_view B_FIFO_DEV = "fifo";
   static constexpr std::string_view B_FILE_DEV = "file";
   static constexpr std::string_view B_TAPE_DEV = "tape";
+  static constexpr std::string_view B_DEDUP_DEV = "dedup";
   static constexpr std::string_view B_UNKNOWN_DEV = "";
 };
 
