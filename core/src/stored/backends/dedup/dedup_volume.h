@@ -24,11 +24,10 @@
 
 #include "stored/dev.h"
 #include "dedup_config.h"
+#include "util.h"
 #include "lib/network_order.h"
 
 #include <utility>
-#include <fcntl.h>
-#include <unistd.h>
 #include <optional>
 #include <algorithm>
 #include <utility>
@@ -138,60 +137,15 @@ struct write_buffer {
   }
 };
 
-class raii_fd {
- public:
-  raii_fd(const char* path, int flags, int mode) : flags{flags}, mode{mode}
-  {
-    fd = open(path, flags, mode);
-  }
-
-  raii_fd(int dird, const char* path, int flags, int mode)
-      : flags{flags}, mode{mode}
-  {
-    fd = openat(dird, path, flags, mode);
-  }
-  raii_fd(int fd = -1, int flags = 0, int mode = 0)
-      : fd{fd}, flags{flags}, mode{mode}
-  {
-  }
-
-  raii_fd(raii_fd&& move_from) : raii_fd{} { *this = std::move(move_from); }
-
-  raii_fd& operator=(raii_fd&& move_from)
-  {
-    std::swap(fd, move_from.fd);
-    std::swap(flags, move_from.flags);
-    std::swap(mode, move_from.mode);
-    return *this;
-  }
-
-  bool is_ok() const { return !(fd < 0); }
-
-  int get() const { return fd; }
-
-  int get_flags() const { return flags; }
-
-  int get_mode() const { return mode; }
-
-  ~raii_fd()
-  {
-    if (is_ok()) { close(fd); }
-  }
-
- private:
-  int fd{-1};
-  int flags;
-  int mode;
-};
 
 struct volume_file {
   std::string path{};
-  raii_fd fd{};
+  util::raii_fd fd{};
 
   volume_file() = default;
   volume_file(std::string_view path) : path{path} {}
 
-  bool open_inside(raii_fd& dir, int mode, DeviceMode dev_mode)
+  bool open_inside(util::raii_fd& dir, int mode, DeviceMode dev_mode)
   {
     int flags;
     switch (dev_mode) {
@@ -211,7 +165,7 @@ struct volume_file {
         return false;
       }
     }
-    fd = raii_fd(dir.get(), path.c_str(), flags, mode);
+    fd = util::raii_fd(dir.get(), path.c_str(), flags, mode);
     return is_ok();
   }
 
@@ -556,7 +510,7 @@ class volume {
       dev_mode = DeviceMode::OPEN_READ_WRITE;
     }
 
-    dir = raii_fd(path, O_RDONLY | O_DIRECTORY, dir_mode);
+    dir = util::raii_fd(path, O_RDONLY | O_DIRECTORY, dir_mode);
 
 
     if (!dir.is_ok()) {
@@ -865,7 +819,7 @@ class volume {
  private:
   volume() = default;
   std::string path{};
-  raii_fd dir{};
+  util::raii_fd dir{};
   volume_file configfile{};
 
   volume_config config{};
