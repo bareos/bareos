@@ -217,14 +217,14 @@ void DeviceResource::CreateAndAssignSerialNumber(uint16_t number)
   resource_name_ = strdup(tmp_name.c_str());
 }
 
-static void WarnOnNonZeroBlockSize(int max_block_size, std::string_view name)
+static void WarnOnSetMaxBlockSize(const DeviceResource& resource)
 {
-  if (max_block_size > 0) {
+  if (resource.IsMemberPresent("MaximumBlockSize")) {
     my_config->AddWarning(fmt::format(
         FMT_STRING(
             "Device {:s}: Setting 'Maximum Block Size' is only supported on  "
             "tape devices"),
-        name));
+        resource.resource_name_));
   }
 }
 
@@ -264,7 +264,7 @@ static bool ValidateTapeDevice(const DeviceResource& resource)
 
 static bool ValidateGenericDevice(const DeviceResource& resource)
 {
-  WarnOnNonZeroBlockSize(resource.max_block_size, resource.resource_name_);
+  WarnOnSetMaxBlockSize(resource);
   WarnOnZeroMaxConcurrentJobs(resource.max_concurrent_jobs,
                               resource.resource_name_);
   WarnOnGtOneMaxConcurrentJobs(resource.max_concurrent_jobs,
