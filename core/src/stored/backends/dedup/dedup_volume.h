@@ -385,6 +385,8 @@ struct record_file : public volume_file {
     //   return std::nullopt;
     // }
 
+    if (current_record >= end_record) { return std::nullopt; }
+
     record_header record;
     if (!read(static_cast<void*>(&record), sizeof(record))) {
       return std::nullopt;
