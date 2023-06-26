@@ -825,10 +825,15 @@ class volume {
       const char* data,
       std::size_t size)
   {
+    // continuation record headers have a negative stream number
+    // whereas "starting" record headers have a nonnegative one.
+    // We always use the positive stream number for lookups!
+    record this_record{
+        blockheader.VolSessionId, blockheader.VolSessionTime,
+        recordheader.FileIndex,
+        recordheader.Stream >= 0 ? +recordheader.Stream : -recordheader.Stream};
     if (recordheader.Stream < 0) {
       // this is a continuation record header
-      record this_record{blockheader.VolSessionId, blockheader.VolSessionTime,
-                         recordheader.FileIndex, -recordheader.Stream};
 
       if (auto found = unfinished_records.find(this_record);
           found != unfinished_records.end()) {
@@ -847,45 +852,40 @@ class volume {
 
         return written_loc{loc.file_index, data_written->begin,
                            data_written->end};
-      } else {
-        goto create_new_record;
       }
+    }
+    // this is a real record header; or an unfinished one that was not started
+    // in this volume; either way we need to use the real stream
+    if (auto found = unfinished_records.find(this_record);
+        found != unfinished_records.end()) {
+      return std::nullopt;
     } else {
-    create_new_record:
-      record this_record{blockheader.VolSessionId, blockheader.VolSessionTime,
-                         recordheader.FileIndex, recordheader.Stream};
-      // this is a real record header
-      if (auto found = unfinished_records.find(this_record);
-          found != unfinished_records.end()) {
+      auto [iter, inserted]
+          = unfinished_records.emplace(this_record, write_loc{});
+
+      if (!inserted) { return std::nullopt; }
+
+      auto& datafile = get_data_file_by_size(recordheader.DataSize);
+      std::optional file_loc = datafile.reserve(recordheader.DataSize);
+
+      if (!file_loc) {
+        unfinished_records.erase(iter);
         return std::nullopt;
-      } else {
-        auto [iter, inserted]
-            = unfinished_records.emplace(this_record, write_loc{});
-
-        if (!inserted) { return std::nullopt; }
-
-        auto& datafile = get_data_file_by_size(recordheader.DataSize);
-        std::optional file_loc = datafile.reserve(recordheader.DataSize);
-
-        if (!file_loc) {
-          unfinished_records.erase(iter);
-          return std::nullopt;
-        }
-
-        write_loc& loc = iter->second;
-        loc.file_index = datafile.index();
-        loc.current = file_loc->begin;
-        loc.end = file_loc->end;
-
-        std::optional data_written = datafile.write(loc.current, data, size);
-        if (!data_written) { return std::nullopt; }
-
-        loc.current += size;
-        if (loc.current == loc.end) { unfinished_records.erase(iter); }
-
-        return written_loc{loc.file_index, data_written->begin,
-                           data_written->end};
       }
+
+      write_loc& loc = iter->second;
+      loc.file_index = datafile.index();
+      loc.current = file_loc->begin;
+      loc.end = file_loc->end;
+
+      std::optional data_written = datafile.write(loc.current, data, size);
+      if (!data_written) { return std::nullopt; }
+
+      loc.current += size;
+      if (loc.current == loc.end) { unfinished_records.erase(iter); }
+
+      return written_loc{loc.file_index, data_written->begin,
+                         data_written->end};
     }
   }
 
