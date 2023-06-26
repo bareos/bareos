@@ -72,10 +72,10 @@ int main(int argc, const char* argv[])
   std::vector<dedup::record_header> records;
   for (auto& record_file : vol.config.recordfiles) {
     if (!record_file.goto_begin()) {
-      std::cerr << "Error while reading " << record_file.path << std::endl;
+      std::cerr << "Error while reading " << record_file.path() << std::endl;
     }
 
-    while (std::optional record = record_file.read_record(0)) {
+    while (std::optional record = record_file.read_record()) {
       records.push_back(*record);
     }
   }

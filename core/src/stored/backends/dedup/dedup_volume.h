@@ -206,6 +206,32 @@ struct volume_file {
   bool is_ok() const { return fd.is_ok(); }
 };
 
+static util::raii_fd open_inside(util::raii_fd& dir,
+                                 const char* path,
+                                 int mode,
+                                 DeviceMode dev_mode)
+{
+  int flags;
+  switch (dev_mode) {
+    case DeviceMode::CREATE_READ_WRITE: {
+      flags = O_CREAT | O_RDWR | O_BINARY;
+    } break;
+    case DeviceMode::OPEN_READ_WRITE: {
+      flags = O_RDWR | O_BINARY;
+    } break;
+    case DeviceMode::OPEN_READ_ONLY: {
+      flags = O_RDONLY | O_BINARY;
+    } break;
+    case DeviceMode::OPEN_WRITE_ONLY: {
+      flags = O_WRONLY | O_BINARY;
+    } break;
+    default: {
+      return util::raii_fd{};
+    }
+  }
+  return util::raii_fd(dir.get(), path, flags, mode);
+}
+
 class block_file {
  public:
   block_file() = default;
@@ -261,25 +287,8 @@ class block_file {
   {
     if (is_initialized) { return false; }
     is_initialized = true;
-    int flags;
-    switch (dev_mode) {
-      case DeviceMode::CREATE_READ_WRITE: {
-        flags = O_CREAT | O_RDWR | O_BINARY;
-      } break;
-      case DeviceMode::OPEN_READ_WRITE: {
-        flags = O_RDWR | O_BINARY;
-      } break;
-      case DeviceMode::OPEN_READ_ONLY: {
-        flags = O_RDONLY | O_BINARY;
-      } break;
-      case DeviceMode::OPEN_WRITE_ONLY: {
-        flags = O_WRONLY | O_BINARY;
-      } break;
-      default: {
-        return false;
-      }
-    }
-    auto file = util::raii_fd(dir.get(), name.c_str(), flags, mode);
+
+    auto file = dedup::open_inside(dir, name.c_str(), mode, dev_mode);
 
     vec = std::move(util::file_based_vector<block_header>(std::move(file),
                                                           start_size, 1024));
@@ -301,74 +310,70 @@ struct record_file : public volume_file {
               std::uint32_t file_index,
               std::uint32_t s,
               std::uint32_t e)
-      : volume_file(path)
-      , file_index{file_index}
-      , start_record{s}
-      , end_record{e}
-      , current_record{0}
+      : file_index{file_index}, start_record{s}, start_size{e - s}, name{path}
   {
   }
-  std::uint32_t file_index{};
-  std::uint32_t start_record{};
-  std::uint32_t end_record{};
-  std::uint32_t current_record{};
+
+  std::uint32_t index() const { return file_index; }
+
+  const char* path() const { return name.c_str(); }
+
+  std::uint32_t begin() const { return start_record; }
+
+  std::uint32_t current() const { return vec.current() + start_record; }
+
+  std::uint32_t end() const { return vec.size() + start_record; }
 
   bool truncate()
   {
     start_record = 0;
-    end_record = 0;
-    current_record = 0;
-    return volume_file::truncate();
+    start_size = 0;
+    vec.clear();
+    return vec.shrink_to_fit();
   }
 
-  bool goto_end()
+  bool goto_end() { return vec.move_to(vec.size()); }
+
+  bool goto_begin() { return vec.move_to(0); }
+
+  bool goto_record(std::uint32_t record) { return vec.move_to(record); }
+
+  bool write(const record_header& header)
   {
-    current_record = end_record;
-    return volume_file::goto_begin(current_record
-                                   * sizeof(dedup::record_header));
+    return vec.write(header).has_value();
   }
 
-  bool goto_begin()
+  std::optional<record_header> read_record()
   {
-    current_record = 0;
-    return volume_file::goto_begin();
-  }
-
-  bool goto_record(std::uint64_t record_idx)
-  {
-    if (current_record == record_idx) { return true; }
-
-    if (volume_file::goto_begin(record_idx * sizeof(record_header))) {
-      current_record = record_idx;
-      return true;
-    }
-    return false;
-  }
-
-  std::uint32_t current() const { return current_record; }
-
-  // should probably return std::optional<record idx>
-  bool write(const bareos_record_header&,
-             std::uint64_t,
-             std::uint64_t,
-             std::uint32_t);
-
-  std::optional<record_header> read_record(std::int64_t)
-  {
-    // if (!goto_record(index)) {
-    //   return std::nullopt;
-    // }
-
-    if (current_record >= end_record) { return std::nullopt; }
-
-    record_header record;
-    if (!read(static_cast<void*>(&record), sizeof(record))) {
+    std::unique_ptr ptr = vec.read();
+    if (ptr) {
+      return *ptr.get();
+    } else {
       return std::nullopt;
     }
-
-    current_record += 1;
-    return record;
   }
+
+  bool is_ok() { return is_initialized && vec.is_ok(); }
+
+  bool open_inside(util::raii_fd& dir, int mode, DeviceMode dev_mode)
+  {
+    if (is_initialized) { return false; }
+    is_initialized = true;
+
+    auto file = dedup::open_inside(dir, name.c_str(), mode, dev_mode);
+
+    vec = std::move(util::file_based_vector<record_header>(std::move(file),
+                                                           start_size, 1024));
+    return vec.is_ok();
+  }
+
+ private:
+  util::file_based_vector<record_header> vec{};
+  std::uint32_t file_index{};
+  std::uint32_t start_record{};
+  std::uint32_t start_size{};
+  std::string name{};
+  bool is_initialized{false};
 };
 
 struct data_file : public volume_file {
@@ -700,7 +705,8 @@ class volume {
     // immer bei der richtigen position sein
     if (file_index > config.recordfiles.size()) { return std::nullopt; }
     auto& record_file = config.recordfiles[file_index];
-    return record_file.read_record(record_index);
+    if (!record_file.goto_record(record_index)) { return std::nullopt; }
+    return record_file.read_record();
   }
 
   bool read_data(std::uint32_t file_index,

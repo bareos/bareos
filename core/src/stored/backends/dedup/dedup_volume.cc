@@ -41,8 +41,8 @@ void volume::write_current_config()
                                blockfile.end(), blockfile.path());
   }
   for (auto& recordfile : config.recordfiles) {
-    recordsections.emplace_back(recordfile.file_index, recordfile.start_record,
-                                recordfile.end_record, recordfile.path);
+    recordsections.emplace_back(recordfile.index(), recordfile.begin(),
+                                recordfile.end(), recordfile.path());
   }
   for (auto& datafile : config.datafiles) {
     datasections.emplace_back(datafile.file_index, datafile.block_size,
@@ -130,76 +130,4 @@ bool volume::load_config()
   config = volume_config(std::move(loaded_config.value()));
   return true;
 }
-
-// bool block_file::write(const bareos_block_header& header,
-//                        std::uint32_t start_record,
-//                        std::uint32_t end_record,
-//                        std::uint32_t record_file_index)
-// {
-//   block_header dedup{header, start_record, end_record, record_file_index};
-
-//   std::optional current = current_pos();
-//   if (!current) { return false; }
-
-//   if (!volume_file::goto_end()) { return false; }
-
-//   std::optional omax = current_pos();
-
-//   if (!omax) { return false; }
-
-//   std::size_t max = *omax;
-//   std::size_t end = *current + sizeof(dedup);
-
-//   if (end > max) {
-//     do {
-//       max += 1 * 1024 * 1024 * 1024;
-//     } while (end > max);
-
-//     if (!volume_file::truncate(max)) { return false; }
-//   }
-
-//   if (!volume_file::goto_begin(*current)) { return false; }
-
-//   if (!volume_file::write(&dedup, sizeof(dedup))) { return false; }
-
-//   current_block += 1;
-//   end_block = current_block;
-//   return true;
-// }
-
-bool record_file::write(const bareos_record_header& header,
-                        std::uint64_t payload_start,
-                        std::uint64_t payload_end,
-                        std::uint32_t file_index)
-{
-  record_header dedup{header, payload_start, payload_end, file_index};
-
-  std::optional current = current_pos();
-  if (!current) { return false; }
-
-  if (!volume_file::goto_end()) { return false; }
-
-  std::optional omax = current_pos();
-
-  if (!omax) { return false; }
-
-  std::size_t max = *omax;
-  std::size_t end = *current + sizeof(dedup);
-
-  if (end > max) {
-    do {
-      max += 1 * 1024 * 1024 * 1024;
-    } while (end > max);
-
-    if (!volume_file::truncate(max)) { return false; }
-  }
-
-  if (!volume_file::goto_begin(*current)) { return false; }
-  if (!volume_file::write(&dedup, sizeof(dedup))) { return false; }
-
-  current_record += 1;
-  end_record = current_record;
-  return true;
-}
-
 } /* namespace dedup */

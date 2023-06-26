@@ -189,8 +189,9 @@ ssize_t scatter(dedup::volume& vol, const void* data, size_t size)
         = vol.write_data(*block, *record, payload_start, payload_end);
     if (!written_loc) { return -1; }
 
-    if (!recordfile.write(*record, written_loc->begin, written_loc->end,
-                          written_loc->file_index)
+    if (!recordfile.write(dedup::record_header{*record, written_loc->begin,
+                                               written_loc->end,
+                                               written_loc->file_index})
         || RecEnd != recordfile.current()) {
       // something went wrong
       return -1;
@@ -200,7 +201,7 @@ ssize_t scatter(dedup::volume& vol, const void* data, size_t size)
 
   ASSERT(RecEnd == recordfile.current());
   blockfile.write(
-      dedup::block_header{*block, RecStart, RecEnd, recordfile.file_index});
+      dedup::block_header{*block, RecStart, RecEnd, recordfile.index()});
 
   return current - begin;
 }
