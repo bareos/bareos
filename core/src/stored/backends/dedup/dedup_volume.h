@@ -27,11 +27,11 @@
 #include "util.h"
 #include "lib/network_order.h"
 
-#include <utility>
-#include <optional>
 #include <algorithm>
-#include <utility>
+#include <optional>
 #include <string>
+#include <unordered_set>
+#include <utility>
 
 namespace dedup {
 using DeviceMode = storagedaemon::DeviceMode;
@@ -636,18 +636,36 @@ class volume {
 
   bool reset()
   {
+    changed_volume();
+
     // TODO: look at unix_file_device for "secure_erase_cmdline"
+    // TODO: delete all but one record/block file
+    //       and all unneeded datafiles
+
     for (auto& blockfile : config.blockfiles) {
       if (!blockfile.truncate()) { return false; }
     }
+    config.blockfiles.resize(1);
 
     for (auto& recordfile : config.recordfiles) {
       if (!recordfile.truncate()) { return false; }
     }
+    config.recordfiles.resize(1);
 
+    std::unordered_set<uint64_t> blocksizes;
     for (auto& datafile : config.datafiles) {
       if (!datafile.truncate()) { return false; }
     }
+
+    config.datafiles.erase(
+        std::remove_if(config.datafiles.begin(), config.datafiles.end(),
+                       [&blocksizes](const auto& datafile) {
+                         auto [_, inserted]
+                             = blocksizes.insert(datafile.blocksize());
+                         return !inserted;
+                       }),
+        config.datafiles.end());
+
     return true;
   }
 
