@@ -266,9 +266,8 @@ class block_file {
 
   std::optional<block_header> read_block()
   {
-    std::unique_ptr ptr = vec.read();
-    if (ptr) {
-      return *ptr.get();
+    if (block_header b; vec.read(&b)) {
+      return b;
     } else {
       return std::nullopt;
     }
@@ -333,9 +332,8 @@ class record_file {
 
   std::optional<record_header> read_record()
   {
-    std::unique_ptr ptr = vec.read();
-    if (ptr) {
-      return *ptr.get();
+    if (record_header h; vec.read(&h)) {
+      return h;
     } else {
       return std::nullopt;
     }
@@ -453,12 +451,7 @@ class data_file {
   {
     if (!vec.move_to(start)) { return false; }
 
-    std::unique_ptr read = vec.read(size);
-
-    if (!read) { return false; }
-
-    for (std::uint64_t i = 0; i < size; ++i) { buf[i] = read[i]; }
-    return true;
+    return vec.read(buf, size);
   }
 
  private:

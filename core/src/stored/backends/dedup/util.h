@@ -154,9 +154,9 @@ template <typename T> class file_based_vector {
   {
     return write_at(start, &val, 1);
   }
-  std::unique_ptr<T[]> read(std::size_t count = 1);
-  std::unique_ptr<T[]> read_at(std::size_t start, std::size_t count = 1);
-  std::unique_ptr<T[]> peek(std::size_t count = 1);
+  bool read(T* arr, std::size_t count = 1);
+  bool read_at(std::size_t start, T* arr, std::size_t count = 1);
+  bool peek(T* arr, std::size_t count = 1);
 
   bool move_to(std::size_t start);
 
@@ -255,7 +255,7 @@ std::optional<std::size_t> file_based_vector<T>::write(const T* arr,
   ASSERT(start == iter);
   auto old_iter = iter;
   iter += count;
-  // read_at always returns to the current iter
+  // write_at always returns to the current iter
   // if we set iter to the new desired position
   // we prevent the double seek we would need to do otherwise
   auto res = write_at(old_iter, arr, count);
@@ -293,58 +293,52 @@ std::optional<std::size_t> file_based_vector<T>::write_at(std::size_t start,
   return start;
 }
 
-template <typename T>
-std::unique_ptr<T[]> file_based_vector<T>::read(std::size_t count)
+template <typename T> bool file_based_vector<T>::read(T* arr, std::size_t count)
 {
-  if (error) { return nullptr; }
+  if (error) { return false; }
 
   auto old_iter = iter;
   iter += count;
   // read_at always returns to the current iter
   // if we set iter to the new desired position
   // we prevent the double seek we would need to do otherwise
-  std::unique_ptr result = read_at(old_iter, count);
+  bool success = read_at(old_iter, arr, count);
 
-  if (!result) { iter = old_iter; }
+  if (!success) { iter = old_iter; }
 
-  return result;
+  return success;
 }
 
 template <typename T>
-std::unique_ptr<T[]> file_based_vector<T>::read_at(std::size_t start,
-                                                   std::size_t count)
+bool file_based_vector<T>::read_at(std::size_t start, T* arr, std::size_t count)
 {
-  if (error) { return nullptr; }
+  if (error) { return false; }
 
-  if (start + count > used) { return nullptr; }
-
-  std::unique_ptr<T[]> data(new T[count]);
-  T* arr = data.get();
+  if (start + count > used) { return false; }
 
   if (!file.seek(elem_size * start)) {
     error = true;
-    return nullptr;
+    return false;
   }
 
   if (!file.read(arr, count * elem_size)) {
     error = true;
-    return nullptr;
+    return false;
   }
 
   // go back to normal place
   if (!file.seek(elem_size * iter)) {
     error = true;
-    return nullptr;
+    return false;
   }
 
-  return data;
+  return true;
 }
 
-template <typename T>
-std::unique_ptr<T[]> file_based_vector<T>::peek(std::size_t count)
+template <typename T> bool file_based_vector<T>::peek(T* arr, std::size_t count)
 {
-  if (error) { return nullptr; }
-  return read_at(iter, count);
+  if (error) { return false; }
+  return read_at(iter, arr, count);
 }
 
 template <typename T> bool file_based_vector<T>::move_to(std::size_t start)

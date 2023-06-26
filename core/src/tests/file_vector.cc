@@ -71,7 +71,7 @@ TEST(FileBasedVector, write)
 
   EXPECT_TRUE(vec.is_ok());
 
-  std::string_view test_view = "Hallo, Welt! Dies ist ein Test!";
+  constexpr std::string_view test_view = "Hallo, Welt! Dies ist ein Test!";
 
   std::optional res = vec.write(test_view.data(), test_view.size());
 
@@ -89,11 +89,12 @@ TEST(FileBasedVector, write)
 
   EXPECT_TRUE(success);
 
-  auto read = vec.read(test_view.size());
+  char read[test_view.size()];
+  success = vec.read(read, test_view.size());
 
-  EXPECT_NE(read, nullptr);
+  EXPECT_TRUE(success);
 
-  std::string_view read_view{read.get(), test_view.size()};
+  std::string_view read_view{read, test_view.size()};
 
   EXPECT_EQ(test_view, read_view);
   EXPECT_TRUE(vec.is_ok());
@@ -114,7 +115,7 @@ TEST(FileBasedVector, reserve_and_write_at)
 
   EXPECT_TRUE(vec.is_ok());
 
-  std::string_view test_view = "Hallo, Welt! Dies ist ein Test!";
+  constexpr std::string_view test_view = "Hallo, Welt! Dies ist ein Test!";
 
   std::optional where1 = vec.reserve(test_view.size());
   EXPECT_PRED1(has_value<std::remove_reference_t<decltype(*where1)>>, where1);
@@ -139,17 +140,19 @@ TEST(FileBasedVector, reserve_and_write_at)
   EXPECT_EQ(vec.current(), 2 * test_view.size());
   EXPECT_EQ(vec.size(), 2 * test_view.size());
 
-  auto read1 = vec.read_at(*where1, test_view.size());
-  auto read2 = vec.read_at(*where2, test_view.size());
+  char read1[test_view.size()];
+  char read2[test_view.size()];
+  auto success1 = vec.read_at(*where1, read1, test_view.size());
+  auto success2 = vec.read_at(*where2, read2, test_view.size());
   EXPECT_EQ(vec.current(), 2 * test_view.size());
 
   EXPECT_TRUE(vec.is_ok());
 
-  EXPECT_NE(read1, nullptr);
-  EXPECT_NE(read2, nullptr);
+  EXPECT_TRUE(success1);
+  EXPECT_TRUE(success2);
 
-  std::string_view read1_view{read1.get(), test_view.size()};
-  std::string_view read2_view{read2.get(), test_view.size()};
+  std::string_view read1_view{read1, test_view.size()};
+  std::string_view read2_view{read2, test_view.size()};
 
   EXPECT_EQ(test_view, read1_view);
   EXPECT_EQ(test_view, read2_view);
