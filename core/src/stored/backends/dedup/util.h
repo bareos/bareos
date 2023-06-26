@@ -149,6 +149,7 @@ template <typename T> class file_based_vector {
   {
     return write(&val, 1);
   }
+
   inline std::optional<std::size_t> write_at(std::size_t start, const T& val)
   {
     return write_at(start, &val, 1);
@@ -165,6 +166,10 @@ template <typename T> class file_based_vector {
     // if we used a cache we would write it out here
     return file.flush();
   }
+
+  bool shrink_to_fit();
+
+  inline void clear() { used = 0; }
 
   inline std::size_t size() const { return used; }
 
@@ -386,6 +391,11 @@ file_based_vector<T>::file_based_vector(raii_fd file_,
     error = true;
     return;
   }
+}
+
+template <typename T> bool file_based_vector<T>::shrink_to_fit()
+{
+  return file.resize(used * elem_size);
 }
 
 template <typename T>
