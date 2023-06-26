@@ -163,11 +163,8 @@ ssize_t scatter(dedup::volume& vol, const void* data, size_t size)
   auto* current = begin + sizeof(*block);
   auto* end = begin + bsize;
 
+  std::vector<dedup::record_header> records;
   auto& blockfile = vol.get_active_block_file();
-  auto& recordfile = vol.get_active_record_file();
-
-  uint32_t RecStart = recordfile.current();
-  uint32_t RecEnd = RecStart;
 
   while (current != end) {
     dedup::bareos_record_header* record = (dedup::bareos_record_header*)current;
@@ -176,7 +173,6 @@ ssize_t scatter(dedup::volume& vol, const void* data, size_t size)
       return -1;
     }
 
-    RecEnd += 1;
     auto* payload_start = reinterpret_cast<const char*>(record + 1);
     auto* payload_end = payload_start + record->DataSize;
 
@@ -189,18 +185,17 @@ ssize_t scatter(dedup::volume& vol, const void* data, size_t size)
                                                payload_end - payload_start);
     if (!written_loc) { return -1; }
 
-    if (!recordfile.write(dedup::record_header{*record, written_loc->begin,
-                                               written_loc->end,
-                                               written_loc->file_index})
-        || RecEnd != recordfile.current()) {
-      // something went wrong
-      return -1;
-    }
+    records.emplace_back(*record, written_loc->begin, written_loc->end,
+                         written_loc->file_index);
     current = payload_end;
   }
 
-  ASSERT(RecEnd == recordfile.current());
-  blockfile.write(dedup::block_header{*block, RecStart, RecEnd});
+  std::optional start = vol.write_records(records.data(), records.size());
+  if (!start) {
+    // error: could not write records
+    return -1;
+  }
+  blockfile.write(dedup::block_header{*block, *start, records.size()});
 
   return current - begin;
 }
@@ -229,8 +224,10 @@ ssize_t gather(dedup::volume& vol, char* data, std::size_t size)
 
   if (!buf.write(block->BareosHeader)) { return -1; }
 
-  for (std::uint64_t record_idx = block->RecStart; record_idx < block->RecEnd;
-       ++record_idx) {
+  // std::vector<dedup::record_header> records(block->count);
+
+  for (std::uint64_t record_idx = block->start;
+       record_idx < block->start + block->count; ++record_idx) {
     std::optional record = vol.read_record(record_idx);
 
     if (!record) { return -1; }

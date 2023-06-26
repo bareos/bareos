@@ -59,17 +59,17 @@ struct bareos_record_header {
 
 struct block_header {
   bareos_block_header BareosHeader;
-  net_u64 RecStart;
-  net_u64 RecEnd;
+  net_u64 start;
+  net_u64 count;
 
   block_header() = default;
 
   block_header(const bareos_block_header& base,
-               std::uint64_t RecStart,
-               std::uint64_t RecEnd)
+               std::uint64_t start,
+               std::uint64_t count)
       : BareosHeader(base)
-      , RecStart{network_order::of_native(RecStart)}
-      , RecEnd{network_order::of_native(RecEnd)}
+      , start{network_order::of_native(start)}
+      , count{network_order::of_native(count)}
   {
   }
 };
@@ -325,9 +325,10 @@ class record_file {
 
   bool goto_record(std::uint32_t record) { return vec.move_to(record); }
 
-  bool write(const record_header& header)
+  std::optional<std::uint64_t> write(const record_header* headers,
+                                     std::uint64_t count)
   {
-    return vec.write(header).has_value();
+    return vec.write(headers, count);
   }
 
   std::optional<record_header> read_record()
@@ -577,17 +578,6 @@ class volume {
     }
   }
 
-  record_file& get_active_record_file()
-  {
-    // currently only one record file is supported
-    return config.recordfiles[0];
-  }
-
-  record_file& get_record_file(std::uint32_t)
-  {
-    return get_active_record_file();
-  }
-
   block_file& get_active_block_file()
   {
     // currently only one block file is supported
@@ -685,6 +675,12 @@ class volume {
     auto& blockfile = get_active_block_file();
 
     return blockfile.read_block();
+  }
+
+  std::optional<std::uint64_t> write_records(record_header* headers,
+                                             std::uint64_t count)
+  {
+    return config.recordfiles[0].write(headers, count);
   }
 
   std::optional<record_header> read_record(std::uint64_t record_index)
