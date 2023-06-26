@@ -182,7 +182,11 @@ template <typename T> class file_based_vector {
 template <typename T>
 std::optional<std::size_t> file_based_vector<T>::reserve(std::size_t count)
 {
-  return reserve_at(used, count);
+  std::optional start = reserve_at(used, count);
+
+  if (start.has_value()) { iter = used; }
+
+  return start;
 }
 
 template <typename T>
