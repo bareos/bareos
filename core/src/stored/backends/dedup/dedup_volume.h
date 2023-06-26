@@ -491,16 +491,49 @@ struct volume_config {
                               blocksection.start_block,
                               blocksection.num_blocks);
     }
+    // todo: we need to check wether the start blocks are unique or not!
+    std::sort(
+        blockfiles.begin(), blockfiles.end(),
+        [](const auto& l, const auto& r) { return l.begin() < r.begin(); });
+
+    for (std::size_t i = 0; i + 1 < blockfiles.size(); ++i) {
+      auto& current = blockfiles[i];
+      auto& next = blockfiles[i + 1];
+      if (current.end() > next.begin()) {
+        // error: blocks are not unique
+      } else if (current.end() < next.begin()) {
+        // warning: missing blocks
+      }
+    }
     for (auto&& recordsection : conf.recordfiles) {
       recordfiles.emplace_back(std::move(recordsection.path),
                                recordsection.start_record,
                                recordsection.num_records);
     }
+    // todo: we need to check wether the start blocks are unique or not!
+    std::sort(
+        recordfiles.begin(), recordfiles.end(),
+        [](const auto& l, const auto& r) { return l.begin() < r.begin(); });
+
+    for (std::size_t i = 0; i + 1 < recordfiles.size(); ++i) {
+      auto& current = recordfiles[i];
+      auto& next = recordfiles[i + 1];
+      if (current.end() > next.begin()) {
+        // error: records are not unique
+      } else if (current.end() < next.begin()) {
+        // warning: missing records
+      }
+    }
+
     for (auto&& datasection : conf.datafiles) {
       datafiles.emplace_back(std::move(datasection.path),
                              datasection.file_index, datasection.block_size,
                              datasection.data_used);
     }
+    // todo: we need to check wether the indices are unique or not!
+    std::sort(
+        datafiles.begin(), datafiles.end(),
+        [](const auto& l, const auto& r) { return l.index() < r.index(); });
   }
 };
 
@@ -679,7 +712,7 @@ class volume {
   std::optional<std::uint64_t> write_records(record_header* headers,
                                              std::uint64_t count)
   {
-    return config.recordfiles[0].write(headers, count);
+    return config.recordfiles.back().write(headers, count);
   }
 
   std::optional<record_header> read_record(std::uint64_t record_index)
