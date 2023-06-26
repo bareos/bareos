@@ -59,21 +59,17 @@ struct bareos_record_header {
 
 struct block_header {
   bareos_block_header BareosHeader;
-  // change to 64bit start!
-  net_u32 RecStart;
-  net_u32 RecEnd;
-  net_u32 file_index;
+  net_u64 RecStart;
+  net_u64 RecEnd;
 
   block_header() = default;
 
   block_header(const bareos_block_header& base,
-               std::uint32_t RecStart,
-               std::uint32_t RecEnd,
-               std::uint32_t file_index)
+               std::uint64_t RecStart,
+               std::uint64_t RecEnd)
       : BareosHeader(base)
       , RecStart{network_order::of_native(RecStart)}
       , RecEnd{network_order::of_native(RecEnd)}
-      , file_index{network_order::of_native(file_index)}
   {
   }
 };
@@ -84,7 +80,8 @@ static_assert(std::has_unique_object_representations_v<block_header>);
 
 struct record_header {
   bareos_record_header BareosHeader;
-  net_u32 file_index;
+  net_u32 reserved_0;
+  net_u64 file_index;
   net_u64 DataStart;
   net_u64 DataEnd;
 
@@ -93,8 +90,9 @@ struct record_header {
   record_header(const bareos_record_header& base,
                 std::uint64_t DataStart,
                 std::uint64_t DataEnd,
-                std::uint32_t file_index)
+                std::uint64_t file_index)
       : BareosHeader(base)
+      , reserved_0{0}
       , file_index{file_index}
       , DataStart{network_order::of_native(DataStart)}
       , DataEnd{network_order::of_native(DataEnd)}
@@ -235,15 +233,10 @@ static util::raii_fd open_inside(util::raii_fd& dir,
 class block_file {
  public:
   block_file() = default;
-  block_file(std::string_view path,
-             std::uint32_t file_index,
-             std::uint32_t s,
-             std::uint32_t e)
-      : file_index{file_index}, start_block{s}, start_size{e - s}, name{path}
+  block_file(std::string_view path, std::uint64_t start, std::uint64_t count)
+      : start_block{start}, start_size{count}, name{path}
   {
   }
-  std::uint32_t index() const { return file_index; }
-
   const char* path() const { return name.c_str(); }
 
   std::uint32_t begin() const { return start_block; }
@@ -297,9 +290,8 @@ class block_file {
 
  private:
   util::file_based_vector<block_header> vec{};
-  std::uint32_t file_index{};
-  std::uint32_t start_block{};
-  std::uint32_t start_size{};
+  std::uint64_t start_block{};
+  std::uint64_t start_size{};
   std::string name{};
   bool is_initialized{false};
 };
@@ -307,15 +299,10 @@ class block_file {
 class record_file {
  public:
   record_file() = default;
-  record_file(std::string_view path,
-              std::uint32_t file_index,
-              std::uint32_t s,
-              std::uint32_t e)
-      : file_index{file_index}, start_record{s}, start_size{e - s}, name{path}
+  record_file(std::string_view path, std::uint64_t start, std::uint64_t count)
+      : start_record{start}, start_size{count}, name{path}
   {
   }
-
-  std::uint32_t index() const { return file_index; }
 
   const char* path() const { return name.c_str(); }
 
@@ -370,9 +357,8 @@ class record_file {
 
  private:
   util::file_based_vector<record_header> vec{};
-  std::uint32_t file_index{};
-  std::uint32_t start_record{};
-  std::uint32_t start_size{};
+  std::uint64_t start_record{};
+  std::uint64_t start_size{};
   std::string name{};
   bool is_initialized{false};
 };
@@ -496,8 +482,8 @@ struct volume_config {
     blockfiles.clear();
     recordfiles.clear();
     datafiles.clear();
-    blockfiles.emplace_back("block", 0, 0, 0);
-    recordfiles.emplace_back("record", 0, 0, 0);
+    blockfiles.emplace_back("block", 0, 0);
+    recordfiles.emplace_back("record", 0, 0);
     if (dedup_block_size != 0) {
       datafiles.emplace_back("full_blocks", 0, dedup_block_size, 0);
     }
@@ -509,13 +495,13 @@ struct volume_config {
   {
     for (auto&& blocksection : conf.blockfiles) {
       blockfiles.emplace_back(std::move(blocksection.path),
-                              blocksection.file_index, blocksection.start_block,
-                              blocksection.end_block);
+                              blocksection.start_block,
+                              blocksection.num_blocks);
     }
     for (auto&& recordsection : conf.recordfiles) {
-      recordfiles.emplace_back(
-          std::move(recordsection.path), recordsection.file_index,
-          recordsection.start_record, recordsection.end_record);
+      recordfiles.emplace_back(std::move(recordsection.path),
+                               recordsection.start_record,
+                               recordsection.num_records);
     }
     for (auto&& datasection : conf.datafiles) {
       datafiles.emplace_back(std::move(datasection.path),
@@ -708,16 +694,20 @@ class volume {
     return blockfile.read_block();
   }
 
-  std::optional<record_header> read_record(std::uint32_t file_index,
-                                           std::uint32_t record_index)
+  std::optional<record_header> read_record(std::uint64_t record_index)
   {
     // müssen wir hier überhaupt das record bewegen ?
     // wenn eod, bod & reposition das richtige machen, sollte man
     // immer bei der richtigen position sein
-    if (file_index > config.recordfiles.size()) { return std::nullopt; }
-    auto& record_file = config.recordfiles[file_index];
-    if (!record_file.goto_record(record_index)) { return std::nullopt; }
-    return record_file.read_record();
+
+    for (auto& record_file : config.recordfiles) {
+      if (record_index >= record_file.begin()
+          && record_index < record_file.end()) {
+        if (!record_file.goto_record(record_index)) { return std::nullopt; }
+        return record_file.read_record();
+      }
+    }
+    return std::nullopt;
   }
 
   bool read_data(std::uint32_t file_index,
@@ -773,7 +763,7 @@ class volume {
   void changed_volume() { volume_changed = true; };
 
   struct written_loc {
-    std::uint32_t file_index;
+    std::uint64_t file_index;
     std::uint64_t begin;
     std::uint64_t end;
   };
@@ -895,7 +885,7 @@ class volume {
   };
 
   struct write_loc {
-    std::uint32_t file_index;
+    std::uint64_t file_index;
     std::uint64_t current;
     std::uint64_t end;
   };

@@ -49,8 +49,8 @@ void print_config(const dedup::config::loaded_config& conf)
       std::cout << "{ "
                 << "Name: \"" << blockfile.path << "\", "
                 << "Start: " << blockfile.start_block << ", "
-                << "End: " << blockfile.end_block << ", "
-                << "Index: " << blockfile.file_index << " }";
+                << "End: " << blockfile.start_block + blockfile.num_blocks
+                << " }";
     }
     std::cout << "],\n";
   }
@@ -66,8 +66,8 @@ void print_config(const dedup::config::loaded_config& conf)
       std::cout << "{ "
                 << "Name: \"" << recordfile.path << "\", "
                 << "Start: " << recordfile.start_record << ", "
-                << "End: " << recordfile.end_record << ", "
-                << "Index: " << recordfile.file_index << " }";
+                << "End: " << recordfile.start_record + recordfile.num_records
+                << " }";
     }
     std::cout << "],\n";
   }

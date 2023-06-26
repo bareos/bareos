@@ -122,9 +122,8 @@ std::vector<std::byte> serialize_block_file(loaded_block_section blockfile)
 {
   config::block_file_section network;
 
-  network.file_index = blockfile.file_index;
   network.start_block = blockfile.start_block;
-  network.end_block = blockfile.end_block;
+  network.num_blocks = blockfile.num_blocks;
   network.path_length = blockfile.path.size();
 
   std::vector<std::byte> data{
@@ -141,9 +140,8 @@ std::vector<std::byte> serialize_record_file(loaded_record_section recordfile)
 {
   config::record_file_section network;
 
-  network.file_index = recordfile.file_index;
   network.start_record = recordfile.start_record;
-  network.end_record = recordfile.end_record;
+  network.num_records = recordfile.num_records;
   network.path_length = recordfile.path.size();
 
   std::vector<std::byte> data{
@@ -425,9 +423,8 @@ std::optional<loaded_config> from_bytes(const std::vector<std::byte>& bytes)
           }
 
           loaded_block_section block_file;
-          block_file.file_index = block->file_index;
           block_file.start_block = block->start_block;
-          block_file.end_block = block->end_block;
+          block_file.num_blocks = block->num_blocks;
           block_file.path
               = deserialize_string(current, current + block->path_length);
 
@@ -450,9 +447,8 @@ std::optional<loaded_config> from_bytes(const std::vector<std::byte>& bytes)
           }
 
           loaded_record_section record_file;
-          record_file.file_index = record->file_index;
           record_file.start_record = record->start_record;
-          record_file.end_record = record->end_record;
+          record_file.num_records = record->num_records;
           record_file.path
               = deserialize_string(current, current + record->path_length);
 

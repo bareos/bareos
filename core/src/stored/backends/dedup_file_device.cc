@@ -200,8 +200,7 @@ ssize_t scatter(dedup::volume& vol, const void* data, size_t size)
   }
 
   ASSERT(RecEnd == recordfile.current());
-  blockfile.write(
-      dedup::block_header{*block, RecStart, RecEnd, recordfile.index()});
+  blockfile.write(dedup::block_header{*block, RecStart, RecEnd});
 
   return current - begin;
 }
@@ -230,9 +229,9 @@ ssize_t gather(dedup::volume& vol, char* data, std::size_t size)
 
   if (!buf.write(block->BareosHeader)) { return -1; }
 
-  for (std::size_t record_idx = block->RecStart; record_idx < block->RecEnd;
+  for (std::uint64_t record_idx = block->RecStart; record_idx < block->RecEnd;
        ++record_idx) {
-    std::optional record = vol.read_record(block->file_index, record_idx);
+    std::optional record = vol.read_record(record_idx);
 
     if (!record) { return -1; }
 

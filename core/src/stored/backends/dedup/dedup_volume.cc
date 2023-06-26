@@ -37,12 +37,12 @@ void volume::write_current_config()
   std::vector<config::loaded_unfinished_record> unfinished;
 
   for (auto& blockfile : config.blockfiles) {
-    blocksections.emplace_back(blockfile.index(), blockfile.begin(),
-                               blockfile.end(), blockfile.path());
+    blocksections.emplace_back(blockfile.begin(), blockfile.end(),
+                               blockfile.path());
   }
   for (auto& recordfile : config.recordfiles) {
-    recordsections.emplace_back(recordfile.index(), recordfile.begin(),
-                                recordfile.end(), recordfile.path());
+    recordsections.emplace_back(recordfile.begin(), recordfile.end(),
+                                recordfile.path());
   }
   for (auto& datafile : config.datafiles) {
     datasections.emplace_back(datafile.index(), datafile.blocksize(),
