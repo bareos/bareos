@@ -436,6 +436,11 @@ def parse_cmdline_args():
         metavar="<path>",
         help="path to local git repository",
     )
+    parser.add_argument(
+        "--skip-sanity-checks",
+        action="store_true",
+        help="skip checking for safe environment",
+    )
     log_group = parser.add_mutually_exclusive_group()
     log_group.add_argument("--debug", "-d", action="store_true")
     log_group.add_argument("--verbose", "-v", action="store_true")
@@ -447,6 +452,11 @@ def parse_cmdline_args():
 
     subparsers = parser.add_subparsers(dest="subcommand")
     check_parser = subparsers.add_parser("check")
+    check_parser.add_argument(
+        "--ignore-status-checks",
+        action="store_true",
+        help="ignore (required) github status checks",
+    )
     changelog_parser = subparsers.add_parser("add-changelog")
     merge_parser = subparsers.add_parser("merge")
     merge_parser.add_argument(
@@ -652,11 +662,12 @@ def main():
     args = parse_cmdline_args()
     setup_logging(verbose=args.verbose, debug=args.debug)
 
-    if "GH_HOST" in environ or "GH_REPO" in environ:
-        logging.critical(
-            "cannot work correctly with GH_HOST or GH_REPO env variables set"
-        )
-        return 2
+    if not args.skip_sanity_checks:
+        if "GH_HOST" in environ or "GH_REPO" in environ:
+            logging.critical(
+                "cannot work correctly with GH_HOST or GH_REPO env variables set"
+            )
+            return 2
 
     chdir(args.directory)
     try:
@@ -695,7 +706,9 @@ def main():
             return 2
 
     if args.subcommand == "check":
-        ret = check_merge_prereq(repo, pr_data)
+        ret = check_merge_prereq(
+            repo, pr_data, ignore_status_checks=args.ignore_status_checks
+        )
         if check_changelog_entry(repo, pr_data):
             print("{} ChangeLog record present".format(Mark.PASS))
         elif not pr_data["isCrossRepository"] or pr_data["maintainerCanModify"]:
