@@ -55,7 +55,7 @@ class raii_fd {
     return *this;
   }
 
-  bool is_ok() const { return !(fd < 0) && error; }
+  bool is_ok() const { return !(fd < 0 || error); }
 
   int get() const { return fd; }
 
@@ -217,7 +217,7 @@ std::optional<std::size_t> file_based_vector<T>::reserve_at(std::size_t at,
       return std::nullopt;
     }
 
-    if (file.resize(new_cap * elem_size)) {
+    if (!file.resize(new_cap * elem_size)) {
       error = true;
       return std::nullopt;
     }
