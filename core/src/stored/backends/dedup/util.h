@@ -303,7 +303,7 @@ std::unique_ptr<T[]> file_based_vector<T>::read_at(std::size_t start,
 
   if (start + count > used) { return nullptr; }
 
-  std::unique_ptr data = std::make_unique<T[]>(new T[count]);
+  std::unique_ptr<T[]> data(new T[count]);
   T* arr = data.get();
 
   if (!file.seek(elem_size * start)) {
@@ -348,14 +348,14 @@ template <typename T> bool file_based_vector<T>::move_to(std::size_t start)
 }
 
 template <typename T>
-file_based_vector<T>::file_based_vector(raii_fd file,
-                                        std::size_t used,
-                                        std::size_t capacity_chunk_size)
-    : file{std::move(file)}
-    , capacity_chunk_size(capacity_chunk_size)
-    , used{used}
+file_based_vector<T>::file_based_vector(raii_fd file_,
+                                        std::size_t used_,
+                                        std::size_t capacity_chunk_size_)
+    : used{used_}
     , capacity{0}
-    , error{file.is_ok()}
+    , capacity_chunk_size(capacity_chunk_size_)
+    , file{std::move(file_)}
+    , error{!file.is_ok()}
 {
   if (error) { return; }
 
