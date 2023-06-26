@@ -1,0 +1,91 @@
+name: Build MacOS packages
+run-name: "${{ inputs.run-name }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "The resulting version number of the build"
+        required: true
+        type: string
+      timestamp:
+        description: "The timestamp of the version"
+        required: true
+        type: number
+      repository:
+        description: "The repository to retrieve the sources from"
+        required: false
+        type: string
+      ref:
+        description: "The ref in the repository to checkout"
+        required: false
+        type: string
+      treeid:
+        description: "The tree-id that the checkout should have"
+        required: false
+        type: string
+      run-name:
+        description: "The workflow run's name"
+        required: false
+        type: string
+
+env:
+  artifact_dir: "${{ github.workspace }}/artifacts"
+
+jobs:
+  build:
+    name: Build MacOS packages
+    runs-on: macos-12
+    steps:
+    - name: "Checkout source"
+      uses: actions/checkout@v3
+      with:
+        repository: "${{ inputs.repository || github.repository }}"
+        ref: "${{ inputs.ref || github.ref }}"
+    - name: "Check HEAD commit"
+      run: |
+        HAVE_TREE="$(git cat-file -p HEAD | awk '/^tree / { print $2; exit }')"
+        if [ -z "$WANT_TREE" ]; then
+          echo "Have tree $HAVE_TREE. No tree to compare with."
+        elif [ "$HAVE_TREE" = "$WANT_TREE" ]; then
+          echo "Have tree $HAVE_TREE, wanted $WANT_TREE. All OK!"
+        else
+          echo "Have tree $HAVE_TREE, wanted $WANT_TREE. Stopping build!"
+          exit 1
+        fi
+      env:
+        WANT_TREE: "${{ inputs.treeid }}"
+    - name: Install dependencies
+      run: |
+        brew install jansson
+    - name: Inject version parameters
+      run: |
+        echo -e "set(VERSION_STRING \"$VERSION\")\nset(VERSION_TIMESTAMP \"$TIMESTAMP\")" >core/cmake/BareosVersion.cmake
+        cat core/cmake/BareosVersion.cmake
+      env:
+        VERSION: "${{ inputs.version }}"
+        TIMESTAMP: "${{ inputs.timestamp }}"
+    - name: Build package
+      run: |
+        cmake -S . -B cmake-build -Dclient-only=yes
+        cmake --build cmake-build -- package
+        ls -la cmake-build/*.pkg
+        mkdir -p "${{ env.artifact_dir }}/BUILD_RESULTS/MacOS"
+        mv cmake-build/*.pkg "${{ env.artifact_dir }}/BUILD_RESULTS/MacOS"
+        cp core/src/include/config.h "${{ env.artifact_dir }}"
+      env:
+        CFLAGS: -I/usr/local/include
+        CXXFLAGS: -I/usr/local/include
+        CMAKE_BUILD_PARALLEL_LEVEL: 4
+    - name: CTest
+      run: |
+        cd cmake-build
+        ctest -V -S CTestScript.cmake
+        mv ./Testing "${{ env.artifact_dir }}"
+
+    - name: Upload package
+      uses: actions/upload-artifact@v3
+      with:
+        name: MacOS Packages
+        path: ${{ env.artifact_dir }}
+        retention-days: 1
