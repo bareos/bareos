@@ -140,6 +140,8 @@ int dedup_file_device::d_open(const char* path, int, int mode)
 
 ssize_t scatter(dedup::volume& vol, const void* data, size_t size)
 {
+  if (size > std::numeric_limits<std::uint32_t>::max()) { return -1; }
+
   auto* block = static_cast<const dedup::bareos_block_header*>(data);
   uint32_t bsize = block->BlockSize;
 
@@ -151,12 +153,12 @@ ssize_t scatter(dedup::volume& vol, const void* data, size_t size)
   }
 
   if (size < bsize) {
-    // cannot write an uncomplete block
+    // error: cannot write an uncomplete block
     return -1;
   }
 
   if (bsize != size) {
-    // todo: emit dmsg warning
+    // warning: weird block size
   }
 
   auto* begin = static_cast<const char*>(data);
@@ -180,12 +182,13 @@ ssize_t scatter(dedup::volume& vol, const void* data, size_t size)
       // payload is split in multiple blocks
       payload_end = end;
     }
+    std::size_t payload_size = payload_end - payload_start;
 
-    std::optional written_loc = vol.write_data(*block, *record, payload_start,
-                                               payload_end - payload_start);
+    std::optional written_loc
+        = vol.write_data(*block, *record, payload_start, payload_size);
     if (!written_loc) { return -1; }
 
-    records.emplace_back(*record, written_loc->begin, written_loc->end,
+    records.emplace_back(*record, written_loc->begin, payload_size,
                          written_loc->file_index);
     current = payload_end;
   }
@@ -234,8 +237,7 @@ ssize_t gather(dedup::volume& vol, char* data, std::size_t size)
 
     if (!buf.write(record->BareosHeader)) { return -1; }
 
-    if (!vol.read_data(record->file_index, record->DataStart, record->DataEnd,
-                       buf)) {
+    if (!vol.read_data(record->file_index, record->start, record->size, buf)) {
       return -1;
     }
   }

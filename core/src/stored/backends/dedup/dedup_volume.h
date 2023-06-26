@@ -80,22 +80,21 @@ static_assert(std::has_unique_object_representations_v<block_header>);
 
 struct record_header {
   bareos_record_header BareosHeader;
-  net_u32 reserved_0;
+  // the weird order is for padding reasons
+  net_u32 size;   // real payload size
+  net_u64 start;  // data start
   net_u64 file_index;
-  net_u64 DataStart;
-  net_u64 DataEnd;
 
   record_header() = default;
 
   record_header(const bareos_record_header& base,
-                std::uint64_t DataStart,
-                std::uint64_t DataEnd,
+                std::uint64_t start,
+                std::uint32_t size,
                 std::uint64_t file_index)
       : BareosHeader(base)
-      , reserved_0{0}
+      , size{network_order::of_native(size)}
+      , start{network_order::of_native(start)}
       , file_index{file_index}
-      , DataStart{network_order::of_native(DataStart)}
-      , DataEnd{network_order::of_native(DataEnd)}
   {
   }
 };
@@ -701,16 +700,14 @@ class volume {
 
   bool read_data(std::uint32_t file_index,
                  std::uint64_t start,
-                 std::uint64_t end,
+                 std::uint32_t size,
                  write_buffer& buf)
   {
-    if (start > end) { return false; }
     if (file_index > config.datafiles.size()) { return false; }
 
     auto& data_file = config.datafiles[file_index];
 
     // todo: check we are in the right position
-    std::uint64_t size = end - start;
     char* data = buf.reserve(size);
     if (!data) { return false; }
     if (!data_file.read_data(data, start, size)) { return false; }
