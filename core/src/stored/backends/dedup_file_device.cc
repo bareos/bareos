@@ -227,17 +227,14 @@ ssize_t gather(dedup::volume& vol, char* data, std::size_t size)
 
   if (!buf.write(block->BareosHeader)) { return -1; }
 
-  // std::vector<dedup::record_header> records(block->count);
+  std::vector<dedup::record_header> records(block->count);
 
-  for (std::uint64_t record_idx = block->start;
-       record_idx < block->start + block->count; ++record_idx) {
-    std::optional record = vol.read_record(record_idx);
+  vol.read_records(block->start, records.data(), records.size());
 
-    if (!record) { return -1; }
+  for (auto& record : records) {
+    if (!buf.write(record.BareosHeader)) { return -1; }
 
-    if (!buf.write(record->BareosHeader)) { return -1; }
-
-    if (!vol.read_data(record->file_index, record->start, record->size, buf)) {
+    if (!vol.read_data(record.file_index, record.start, record.size, buf)) {
       return -1;
     }
   }

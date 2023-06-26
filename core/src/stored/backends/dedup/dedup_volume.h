@@ -304,11 +304,13 @@ class record_file {
 
   const char* path() const { return name.c_str(); }
 
-  std::uint32_t begin() const { return start_record; }
+  std::uint64_t begin() const { return start_record; }
 
-  std::uint32_t current() const { return vec.current() + start_record; }
+  std::uint64_t current() const { return vec.current() + start_record; }
 
-  std::uint32_t end() const { return vec.size() + start_record; }
+  std::uint64_t end() const { return vec.size() + start_record; }
+
+  std::uint64_t size() const { return vec.size(); }
 
   bool truncate()
   {
@@ -330,13 +332,9 @@ class record_file {
     return vec.write(headers, count);
   }
 
-  std::optional<record_header> read_record()
+  bool read(record_header* headers, std::uint64_t count)
   {
-    if (record_header h; vec.read(&h)) {
-      return h;
-    } else {
-      return std::nullopt;
-    }
+    return vec.read(headers, count);
   }
 
   bool is_ok() { return is_initialized && vec.is_ok(); }
@@ -715,20 +713,54 @@ class volume {
     return config.recordfiles.back().write(headers, count);
   }
 
-  std::optional<record_header> read_record(std::uint64_t record_index)
+  bool read_records(std::uint64_t record_index,
+                    record_header* headers,
+                    std::uint64_t count)
   {
     // müssen wir hier überhaupt das record bewegen ?
     // wenn eod, bod & reposition das richtige machen, sollte man
     // immer bei der richtigen position sein
 
-    for (auto& record_file : config.recordfiles) {
-      if (record_index >= record_file.begin()
-          && record_index < record_file.end()) {
-        if (!record_file.goto_record(record_index)) { return std::nullopt; }
-        return record_file.read_record();
+    auto& files = config.recordfiles;
+
+    auto iter
+        = std::lower_bound(files.rbegin(), files.rend(), record_index,
+                           [](const auto& file, const auto& record_index) {
+                             return file.begin() > record_index;
+                           });
+    // this only happens if something weird is going on
+    if (iter == files.rend()) {
+      // warning: some records are missing
+      return false;
+    }
+
+    // iter points to the first record file for which file.begin() <=
+    // record_index
+
+    for (;;) {
+      if (!iter->goto_record(record_index)) { return false; }
+
+      std::uint64_t num_records = std::min(iter->end() - record_index, count);
+
+      if (!iter->read(headers, num_records)) { return false; }
+
+      count -= num_records;
+      // this is a reverse iterator, so we need to go backwards!
+      if (count > 0) {
+        headers += num_records;
+        record_index += num_records;
+
+        if (iter == files.rbegin()) {
+          return false;
+        } else {
+          --iter;
+        }
+      } else {
+        break;
       }
     }
-    return std::nullopt;
+
+    return true;
   }
 
   bool read_data(std::uint32_t file_index,

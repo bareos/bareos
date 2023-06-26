@@ -75,9 +75,9 @@ int main(int argc, const char* argv[])
       std::cerr << "Error while reading " << record_file.path() << std::endl;
     }
 
-    while (std::optional record = record_file.read_record()) {
-      records.push_back(*record);
-    }
+    auto current_size = records.size();
+    records.resize(current_size + record_file.size());
+    record_file.read(records.data() + current_size, record_file.size());
   }
 
   std::unordered_map<std::size_t, std::size_t> sizes;
