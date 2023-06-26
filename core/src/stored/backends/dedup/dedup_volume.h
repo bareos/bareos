@@ -115,7 +115,6 @@ struct write_buffer {
   {
   }
 
-
   bool write(std::size_t size, const char* data)
   {
     if (current + size > end) { return false; }
@@ -136,7 +135,6 @@ struct write_buffer {
     return write(sizeof(F), reinterpret_cast<const char*>(&val));
   }
 };
-
 
 struct volume_file {
   std::string path{};
@@ -208,71 +206,93 @@ struct volume_file {
   bool is_ok() const { return fd.is_ok(); }
 };
 
-struct block_file : public volume_file {
+class block_file {
+ public:
   block_file() = default;
   block_file(std::string_view path,
              std::uint32_t file_index,
              std::uint32_t s,
              std::uint32_t e)
-      : volume_file(path)
-      , file_index{file_index}
-      , start_block{s}
-      , end_block{e}
-      , current_block{0}
+      : file_index{file_index}, start_block{s}, start_size{e - s}, name{path}
   {
   }
-  std::uint32_t file_index{};
-  std::uint32_t start_block{};
-  std::uint32_t end_block{};
-  std::uint32_t current_block{};
+  std::uint32_t index() const { return file_index; }
+
+  const char* path() const { return name.c_str(); }
+
+  std::uint32_t begin() const { return start_block; }
+
+  std::uint32_t current() const { return vec.current() + start_block; }
+
+  std::uint32_t end() const { return vec.size() + start_block; }
 
   bool truncate()
   {
     start_block = 0;
-    end_block = 0;
-    current_block = 0;
-    return volume_file::truncate();
+    start_size = 0;
+    vec.clear();
+    return vec.shrink_to_fit();
   }
 
-  bool goto_end()
+  bool goto_end() { return vec.move_to(vec.size()); }
+
+  bool goto_begin() { return vec.move_to(0); }
+
+  bool goto_block(std::uint32_t block) { return vec.move_to(block); }
+
+  bool write(const block_header& header)
   {
-    current_block = end_block;
-    return volume_file::goto_begin(current_block * sizeof(dedup::block_header));
+    return vec.write(header).has_value();
   }
-
-  bool goto_begin()
-  {
-    current_block = 0;
-    return volume_file::goto_begin();
-  }
-
-  bool goto_block(std::int64_t block)
-  {
-    if (current_block == block) { return true; }
-    if (volume_file::goto_begin(block * sizeof(block_header))) {
-      current_block = block;
-      return true;
-    }
-    return false;
-  }
-
-  bool write(const bareos_block_header&,
-             std::uint32_t,
-             std::uint32_t,
-             std::uint32_t);
 
   std::optional<block_header> read_block()
   {
-    if (current_block == end_block) { return std::nullopt; }
-
-    block_header result;
-    if (!read(static_cast<void*>(&result), sizeof(result))) {
+    std::unique_ptr ptr = vec.read();
+    if (ptr) {
+      return *ptr.get();
+    } else {
       return std::nullopt;
     }
-
-    current_block += 1;
-    return result;
   }
+
+  bool is_ok() { return is_initialized && vec.is_ok(); }
+
+  bool open_inside(util::raii_fd& dir, int mode, DeviceMode dev_mode)
+  {
+    if (is_initialized) { return false; }
+    is_initialized = true;
+    int flags;
+    switch (dev_mode) {
+      case DeviceMode::CREATE_READ_WRITE: {
+        flags = O_CREAT | O_RDWR | O_BINARY;
+      } break;
+      case DeviceMode::OPEN_READ_WRITE: {
+        flags = O_RDWR | O_BINARY;
+      } break;
+      case DeviceMode::OPEN_READ_ONLY: {
+        flags = O_RDONLY | O_BINARY;
+      } break;
+      case DeviceMode::OPEN_WRITE_ONLY: {
+        flags = O_WRONLY | O_BINARY;
+      } break;
+      default: {
+        return false;
+      }
+    }
+    auto file = util::raii_fd(dir.get(), name.c_str(), flags, mode);
+
+    vec = std::move(util::file_based_vector<block_header>(std::move(file),
+                                                          start_size, 1024));
+    return vec.is_ok();
+  }
+
+ private:
+  util::file_based_vector<block_header> vec{};
+  std::uint32_t file_index{};
+  std::uint32_t start_block{};
+  std::uint32_t start_size{};
+  std::string name{};
+  bool is_initialized{false};
 };
 
 struct record_file : public volume_file {
@@ -582,7 +602,7 @@ class volume {
   bool is_at_end()
   {
     auto& blockfile = get_active_block_file();
-    return blockfile.current_block == blockfile.end_block;
+    return blockfile.current() == blockfile.end();
   }
 
   data_file& get_data_file_by_size(std::uint32_t record_size)
@@ -641,9 +661,8 @@ class volume {
 
     std::uint32_t max_block = 0;
     for (auto& blockfile : config.blockfiles) {
-      max_block = std::max(max_block, blockfile.end_block);
-      if (blockfile.start_block <= block_num
-          && blockfile.end_block < block_num) {
+      max_block = std::max(max_block, blockfile.end());
+      if (blockfile.begin() <= block_num && blockfile.end() < block_num) {
         return blockfile.goto_block(block_num);
       }
     }

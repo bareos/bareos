@@ -37,8 +37,8 @@ void volume::write_current_config()
   std::vector<config::loaded_unfinished_record> unfinished;
 
   for (auto& blockfile : config.blockfiles) {
-    blocksections.emplace_back(blockfile.file_index, blockfile.start_block,
-                               blockfile.end_block, blockfile.path);
+    blocksections.emplace_back(blockfile.index(), blockfile.begin(),
+                               blockfile.end(), blockfile.path());
   }
   for (auto& recordfile : config.recordfiles) {
     recordsections.emplace_back(recordfile.file_index, recordfile.start_record,
@@ -131,41 +131,41 @@ bool volume::load_config()
   return true;
 }
 
-bool block_file::write(const bareos_block_header& header,
-                       std::uint32_t start_record,
-                       std::uint32_t end_record,
-                       std::uint32_t record_file_index)
-{
-  block_header dedup{header, start_record, end_record, record_file_index};
+// bool block_file::write(const bareos_block_header& header,
+//                        std::uint32_t start_record,
+//                        std::uint32_t end_record,
+//                        std::uint32_t record_file_index)
+// {
+//   block_header dedup{header, start_record, end_record, record_file_index};
 
-  std::optional current = current_pos();
-  if (!current) { return false; }
+//   std::optional current = current_pos();
+//   if (!current) { return false; }
 
-  if (!volume_file::goto_end()) { return false; }
+//   if (!volume_file::goto_end()) { return false; }
 
-  std::optional omax = current_pos();
+//   std::optional omax = current_pos();
 
-  if (!omax) { return false; }
+//   if (!omax) { return false; }
 
-  std::size_t max = *omax;
-  std::size_t end = *current + sizeof(dedup);
+//   std::size_t max = *omax;
+//   std::size_t end = *current + sizeof(dedup);
 
-  if (end > max) {
-    do {
-      max += 1 * 1024 * 1024 * 1024;
-    } while (end > max);
+//   if (end > max) {
+//     do {
+//       max += 1 * 1024 * 1024 * 1024;
+//     } while (end > max);
 
-    if (!volume_file::truncate(max)) { return false; }
-  }
+//     if (!volume_file::truncate(max)) { return false; }
+//   }
 
-  if (!volume_file::goto_begin(*current)) { return false; }
+//   if (!volume_file::goto_begin(*current)) { return false; }
 
-  if (!volume_file::write(&dedup, sizeof(dedup))) { return false; }
+//   if (!volume_file::write(&dedup, sizeof(dedup))) { return false; }
 
-  current_block += 1;
-  end_block = current_block;
-  return true;
-}
+//   current_block += 1;
+//   end_block = current_block;
+//   return true;
+// }
 
 bool record_file::write(const bareos_record_header& header,
                         std::uint64_t payload_start,

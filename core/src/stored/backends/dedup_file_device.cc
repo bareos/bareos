@@ -199,7 +199,8 @@ ssize_t scatter(dedup::volume& vol, const void* data, size_t size)
   }
 
   ASSERT(RecEnd == recordfile.current());
-  blockfile.write(*block, RecStart, RecEnd, recordfile.file_index);
+  blockfile.write(
+      dedup::block_header{*block, RecStart, RecEnd, recordfile.file_index});
 
   return current - begin;
 }
@@ -316,15 +317,11 @@ bool dedup_file_device::UpdatePos(DeviceControlRecord*)
   if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
     dedup::volume& vol = found->second;
     ASSERT(vol.is_ok());
-    auto pos = vol.get_active_block_file().current_pos();
-    if (!pos) return false;
+    std::size_t pos = vol.get_active_block_file().current();
 
-    file_addr = *pos;
-    block_num = *pos / sizeof(dedup::block_header);
-
-    ASSERT(block_num * sizeof(dedup::block_header) == file_addr);
-
-    file = 0;
+    file_addr = 0;
+    file = pos >> 32;
+    block_num = pos & ((1ULL << 32) - 1);
 
     return true;
   } else {
@@ -344,7 +341,9 @@ bool dedup_file_device::Reposition(DeviceControlRecord* dcr,
     dedup::volume& vol = found->second;
     ASSERT(vol.is_ok());
 
-    if (!vol.goto_block(rblock)) { return false; }
+    std::uint64_t block_num = static_cast<std::uint64_t>(rfile) << 32 | rblock;
+
+    if (!vol.goto_block(block_num)) { return false; }
 
     if (vol.is_at_end()) {
       SetEot();
