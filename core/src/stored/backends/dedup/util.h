@@ -134,6 +134,12 @@ template <typename T> class file_based_vector {
   file_based_vector(raii_fd file,
                     std::size_t used,
                     std::size_t capacity_chunk_size);
+  file_based_vector(file_based_vector&& other) : file_based_vector{}
+  {
+    *this = std::move(other);
+  }
+  file_based_vector& operator=(file_based_vector&& other);
+
   std::optional<std::size_t> reserve(std::size_t count);
   std::optional<std::size_t> write(const T* arr, std::size_t count);
   std::optional<std::size_t> write_at(std::size_t start,
@@ -171,7 +177,7 @@ template <typename T> class file_based_vector {
   std::size_t used{0};
   std::size_t capacity;
   std::size_t iter{0};
-  const std::size_t capacity_chunk_size{1};
+  std::size_t capacity_chunk_size{1};
   raii_fd file;
   bool error{true};
   static constexpr std::size_t elem_size = sizeof(T);
@@ -381,6 +387,20 @@ file_based_vector<T>::file_based_vector(raii_fd file_,
     return;
   }
 }
+
+template <typename T>
+file_based_vector<T>& file_based_vector<T>::operator=(
+    file_based_vector<T>&& other)
+{
+  std::swap(used, other.used);
+  std::swap(capacity, other.capacity);
+  std::swap(iter, other.iter);
+  std::swap(capacity_chunk_size, other.capacity_chunk_size);
+  std::swap(file, other.file);
+  std::swap(error, other.error);
+  return *this;
+}
+
 }; /* namespace dedup::util */
 
 #endif  // BAREOS_STORED_BACKENDS_DEDUP_UTIL_H_
