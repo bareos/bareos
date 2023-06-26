@@ -339,54 +339,17 @@ int make_win32_path_UTF8_2_wchar(POOLMEM*& pszUCS,
                                  BOOL* pBIsRawPath /*= NULL*/)
 {
   int nRet;
-  // FUTURE NOTE: no caching inside the tests!
-  // thread_conversion_cache* tcc;
-
-  // /* If we find the utf8 string in cache, we use the cached ucs2 version.
-  //  * we compare the stringlength first (quick check) and then compare the
-  //  * content. */
-  // tcc = Win32GetCache();
-  // if (!tcc) {
-  //   tcc = Win32ConvInitCache();
-  // } else if (tcc->dwWin32ConvUTF8strlen == strlen(pszUTF)) {
-  //   if (bstrcmp(pszUTF, tcc->pWin32ConvUTF8Cache)) {
-  //     int nBufSize;
-
-  //     // Return cached value
-  //     nBufSize = SizeofPoolMemory(tcc->pWin32ConvUCS2Cache);
-  //     pszUCS = CheckPoolMemorySize(pszUCS, nBufSize);
-  //     wcscpy((LPWSTR)pszUCS, (LPWSTR)tcc->pWin32ConvUCS2Cache);
-
-  //     return nBufSize / sizeof(WCHAR);
-  //   }
-  // }
+  // FUTURE NOTE: removed some caching logic here
 
   /* Helper to convert from utf-8 to UCS-2 and to complete a path for 32K path
    * syntax */
   nRet = UTF8_2_wchar(pszUCS, pszUTF);
 
   // FUTURE NOTE: always use 32K conversions
-#define USE_WIN32_32KPATHCONVERSION
-#ifdef USE_WIN32_32KPATHCONVERSION
   // Add \\?\ to support 32K long filepaths
   pszUCS = make_wchar_win32_path(pszUCS, pBIsRawPath);
-#else
-  if (pBIsRawPath) { *pBIsRawPath = FALSE; }
-#endif
 
-  // FUTURE NOTE: no caching inside the tests!
-  // // Populate cache
-  // if (tcc) {
-  //   tcc->pWin32ConvUCS2Cache = CheckPoolMemorySize(tcc->pWin32ConvUCS2Cache,
-  //                                                  SizeofPoolMemory(pszUCS));
-  //   wcscpy((LPWSTR)tcc->pWin32ConvUCS2Cache, (LPWSTR)pszUCS);
-
-  //   tcc->dwWin32ConvUTF8strlen = strlen(pszUTF);
-  //   tcc->pWin32ConvUTF8Cache = CheckPoolMemorySize(
-  //       tcc->pWin32ConvUTF8Cache, tcc->dwWin32ConvUTF8strlen + 2);
-  //   bstrncpy(tcc->pWin32ConvUTF8Cache, pszUTF, tcc->dwWin32ConvUTF8strlen +
-  //   1);
-  // }
+  // FUTURE NOTE: removed some caching logic here.
 
   return nRet;
 }
