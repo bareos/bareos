@@ -674,16 +674,24 @@ class volume {
     //       the record and data files as well
     //       otherwise set the record and data files to their respective end
 
-    std::uint32_t max_block = 0;
-    for (auto& blockfile : config.blockfiles) {
-      max_block = std::max(max_block, blockfile.end());
-      if (blockfile.begin() <= block_num && blockfile.end() < block_num) {
-        return blockfile.goto_block(block_num);
-      }
+    auto& files = config.blockfiles;
+    if (block_num == files.back().end()) { return goto_end(); }
+
+    // iter points to the first block file for which file.begin() <=
+    // block_num
+    auto iter = std::lower_bound(files.rbegin(), files.rend(), block_num,
+                                 [](const auto& file, const auto& block_num) {
+                                   return file.begin() > block_num;
+                                 });
+    // this only happens if something weird is going on since
+    // block_num >= 0 is true and we should always have a block
+    // with begin() == 0
+    if (iter == files.rend()) {
+      // warning: some blocks are missing
+      return false;
     }
 
-    if (block_num == max_block) { return goto_end(); }
-    return false;
+    return iter->goto_block(block_num);
   }
 
   bool goto_end()
@@ -723,19 +731,21 @@ class volume {
 
     auto& files = config.recordfiles;
 
+    // iter points to the first record file for which file.begin() <=
+    // record_index
     auto iter
         = std::lower_bound(files.rbegin(), files.rend(), record_index,
                            [](const auto& file, const auto& record_index) {
                              return file.begin() > record_index;
                            });
-    // this only happens if something weird is going on
+    // this only happens if something weird is going on since
+    // record_index >= 0 is true and we should always have a record
+    // with begin() == 0
     if (iter == files.rend()) {
       // warning: some records are missing
       return false;
     }
 
-    // iter points to the first record file for which file.begin() <=
-    // record_index
 
     for (;;) {
       if (!iter->goto_record(record_index)) { return false; }
