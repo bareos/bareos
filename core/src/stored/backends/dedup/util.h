@@ -342,6 +342,8 @@ template <typename T> bool file_based_vector<T>::move_to(std::size_t start)
 
   if (start > used) { return false; }
 
+  if (iter == start) { return true; }
+
   iter = start;
 
   if (!file.seek(iter * elem_size)) {
