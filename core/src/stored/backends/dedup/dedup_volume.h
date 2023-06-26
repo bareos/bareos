@@ -620,18 +620,23 @@ class volume {
     return blockfile.current() == blockfile.end();
   }
 
-  data_file& get_data_file_by_size(std::uint32_t record_size)
+  data_file* get_data_file_by_size(std::uint32_t record_size)
   {
     // we have to do this smarter
     // if datafile::any_size is first, we should ignore it until the end!
     // maybe split into _one_ any_size + map size -> file
     // + vector of read_only ?
+    data_file* selected = nullptr;
+    ;
     for (auto& datafile : config.datafiles) {
-      if (datafile.accepts_records_of_size(record_size)) { return datafile; }
+      if (datafile.accepts_records_of_size(record_size)) {
+        if (!selected || selected->blocksize() < datafile.blocksize()) {
+          selected = &datafile;
+        }
+      }
     }
 
-    ASSERT(!"dedup volume has no datafile for this record.\n");
-    return config.datafiles[0];
+    return selected;
   }
 
   bool reset()
@@ -893,8 +898,12 @@ class volume {
 
       if (!inserted) { return std::nullopt; }
 
-      auto& datafile = get_data_file_by_size(recordheader.DataSize);
-      std::optional file_loc = datafile.reserve(recordheader.DataSize);
+      auto* datafile = get_data_file_by_size(recordheader.DataSize);
+      if (!datafile) {
+        // dmesg: no appropriate data file present
+        return std::nullopt;
+      }
+      std::optional file_loc = datafile->reserve(recordheader.DataSize);
 
       if (!file_loc) {
         unfinished_records.erase(iter);
@@ -902,11 +911,11 @@ class volume {
       }
 
       write_loc& loc = iter->second;
-      loc.file_index = datafile.index();
+      loc.file_index = datafile->index();
       loc.current = file_loc->begin;
       loc.end = file_loc->end;
 
-      std::optional data_written = datafile.write(loc.current, data, size);
+      std::optional data_written = datafile->write(loc.current, data, size);
       if (!data_written) { return std::nullopt; }
 
       loc.current += size;
