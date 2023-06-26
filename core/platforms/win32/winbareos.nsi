@@ -334,91 +334,6 @@ afterabort_${UniqueID}:
 # also, install a shortcut to edit
 # the conf file
 #
-!macro InstallConfFile fname
-  # This is important to have $APPDATA variable
-  # point to ProgramData folder
-  # instead of current user's Roaming folder
-  SetShellVarContext all
-
-  ${If} ${FileExists} "$APPDATA\${PRODUCT_NAME}\${fname}"
-    StrCmp $SilentKeepConfig "yes" keep # in silent install keep configs silently if desired
-    StrCmp $Upgrading "yes" keep        # during upgrade also keep configs silently
-
-    MessageBox MB_YESNO|MB_ICONQUESTION \
-      "Existing config file found: $APPDATA\${PRODUCT_NAME}\${fname}$\r$\nKeep existing config file?" \
-      /SD IDNO IDYES keep IDNO move
-move:
-    Rename "$APPDATA\${PRODUCT_NAME}\${fname}" "$APPDATA\${PRODUCT_NAME}\${fname}.old"
-    Rename "$PLUGINSDIR\${fname}" "$APPDATA\${PRODUCT_NAME}\${fname}"
-    MessageBox MB_OK|MB_ICONINFORMATION \
-      "Existing config file saved as $APPDATA\${PRODUCT_NAME}\${fname}.old" \
-      /SD IDOK
-    GOTO skipmsgbox
-keep:
-    Rename "$PLUGINSDIR\${fname}" "$APPDATA\${PRODUCT_NAME}\${fname}.new"
-    StrCmp $Upgrading "yes" skipmsgbox        # during upgrade keep existing file without messagebox
-    MessageBox MB_OK|MB_ICONINFORMATION \
-      "New config file stored $APPDATA\${PRODUCT_NAME}\${fname}.new" \
-      /SD IDOK
-skipmsgbox:
-  ${Else}
-    Rename "$PLUGINSDIR\${fname}" "$APPDATA\${PRODUCT_NAME}\${fname}"
-  ${EndIf}
-  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\Edit ${fname}.lnk" "write.exe" '"$APPDATA\${PRODUCT_NAME}\${fname}"'
-
-  # for traymonitor.conf, set access and ownership to users
-  ${If} ${fname} == "tray-monitor.conf"
-    # Disable file access inheritance
-    AccessControl::DisableFileInheritance "$APPDATA\${PRODUCT_NAME}\${fname}"
-    Pop $R0
-    ${If} $R0 == error
-       Pop $R0
-       DetailPrint `AccessControl error: $R0`
-    ${EndIf}
-
-    # Set file owner to Users
-    AccessControl::SetFileOwner "$APPDATA\${PRODUCT_NAME}\${fname}" "(S-1-5-32-545)"  # user
-    Pop $R0
-    ${If} $R0 == error
-       Pop $R0
-       DetailPrint `AccessControl error: $R0`
-    ${EndIf}
-
-    # Set fullaccess for Users (S-1-5-32-545)
-    AccessControl::SetOnFile "$APPDATA\${PRODUCT_NAME}\${fname}" "(S-1-5-32-545)" "FullAccess"
-    Pop $R0
-    ${If} $R0 == error
-       Pop $R0
-       DetailPrint `AccessControl error: $R0`
-    ${EndIf}
-  ${Else}
-    # All other config files admin owner and only access
-    # Disable file access inheritance
-    AccessControl::DisableFileInheritance "$APPDATA\${PRODUCT_NAME}\${fname}"
-    Pop $R0
-    ${If} $R0 == error
-       Pop $R0
-       DetailPrint `AccessControl error: $R0`
-    ${EndIf}
-
-    # Set file owner to administrator
-    AccessControl::SetFileOwner "$APPDATA\${PRODUCT_NAME}\${fname}" "(S-1-5-32-544)"  # administratoren
-    Pop $R0
-    ${If} $R0 == error
-       Pop $R0
-       DetailPrint `AccessControl error: $R0`
-    ${EndIf}
-
-    # Set fullaccess only for administrators (S-1-5-32-544)
-    AccessControl::ClearOnFile "$APPDATA\${PRODUCT_NAME}\${fname}" "(S-1-5-32-544)" "FullAccess"
-    Pop $R0
-    ${If} $R0 == error
-       Pop $R0
-       DetailPrint `AccessControl error: $R0`
-    ${EndIf}
-  ${EndIf}
-!macroend
-
 
 !macro AllowAccessForAll fname
   # This is important to have $APPDATA variable
@@ -599,6 +514,7 @@ SectionIn 1 2 3 4
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\client\"
   File etc\bareos\tray-monitor.d\client\FileDaemon-local.conf
+  
 
   SetOutPath "$APPDATA\${PRODUCT_NAME}"
   File "win32\fillup.sed"
@@ -898,91 +814,94 @@ SectionIn 1 2 3
 SectionEnd
 
 
-;Section "Bareos Webui" SEC_WEBUI
-;   SectionIn 2 3
-;   ; set to yes, needed for MUI_FINISHPAGE_RUN_FUNCTION
-;   StrCpy $InstallWebUI "yes"
-;   SetShellVarContext all
-;   SetOutPath "$INSTDIR"
-;   SetOverwrite ifnewer
-;#todo: nsm.exe
-;#   File /r "nssm.exe"
-;   SetOutPath "$INSTDIR\bareos-webui"
-;   File /r "share\bareos-webui\*.*"
-;
-;IfSilent skip_vc_redist_check
-;   # check  for Visual C++ Redistributable für Visual Studio 2012 x86 (on 32 and 64 bit systems)
-;   ReadRegDword $R1 HKLM "SOFTWARE\Wow6432Node\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
-;   ReadRegDword $R2 HKLM "SOFTWARE\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
-;check_for_vc_redist:
-;   ${If} $R1 == ""
-;      ${If} $R2 == ""
-;         ExecShell "open" "https://www.microsoft.com/en-us/download/details.aspx?id=30679"
-;         MessageBox MB_OK|MB_ICONSTOP "Visual C++ Redistributable for Visual Studio 2012 x86 was not found$\r$\n\
-;                                 It is needed by the bareos-webui service.$\r$\n\
-;                                 Please install vcredist_x86.exe from $\r$\n\
-;                                 https://www.microsoft.com/en-us/download/details.aspx?id=30679$\r$\n\
-;                                 and click OK when done." /SD IDOK
-;      ${EndIf}
-;   ${EndIf}
-;   ReadRegDword $R1 HKLM "SOFTWARE\Wow6432Node\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
-;   ReadRegDword $R2 HKLM "SOFTWARE\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
-;   ${If} $R1 == ""
-;      ${If} $R2 == ""
-;         goto check_for_vc_redist
-;	  ${EndIf}
-;   ${EndIf}
-;
-;skip_vc_redist_check:
-;   Rename  "$INSTDIR\bareos-webui\config\autoload\global.php" "$INSTDIR\bareos-webui\config\autoload\global.php.orig"
-;   Rename  "$PLUGINSDIR\global.php" "$INSTDIR\bareos-webui\config\autoload\global.php"
-;
-;   Rename  "$PLUGINSDIR\php.ini"   "$APPDATA\${PRODUCT_NAME}\php.ini"
-;   Rename  "$PLUGINSDIR\directors.ini" "$APPDATA\${PRODUCT_NAME}\directors.ini"
-;   Rename  "$PLUGINSDIR\configuration.ini" "$APPDATA\${PRODUCT_NAME}\configuration.ini"
-;
-;
-;   CreateDirectory "$INSTDIR\defaultconfigs\bareos-dir.d\profile"
-;   Rename  "$PLUGINSDIR\webui-admin.conf" "$INSTDIR\defaultconfigs\bareos-dir.d\profile\webui-admin.conf"
-;
-;   CreateDirectory "$INSTDIR\defaultconfigs\bareos-dir.d\console"
-;   Rename  "$PLUGINSDIR\admin.conf"       "$INSTDIR\defaultconfigs\bareos-dir.d\console\admin.conf"
-;
-;
-;   ExecWait '$INSTDIR\nssm.exe install bareos-webui $INSTDIR\bareos-webui\php\php.exe'
-;   ExecWait '$INSTDIR\nssm.exe set     bareos-webui AppDirectory \"$INSTDIR\bareos-webui\"'
-;   ExecWait '$INSTDIR\nssm.exe set     bareos-webui Application  $INSTDIR\bareos-webui\php\php.exe'
-;   ExecWait '$INSTDIR\nssm.exe set     bareos-webui AppEnvironmentExtra BAREOS_WEBUI_CONFDIR=$APPDATA\${PRODUCT_NAME}\'
-;
-;   # nssm.exe wants """ """ around parameters with spaces, the executable itself without quotes
-;   # see https://nssm.cc/usage -> quoting issues
-;   ExecWait '$INSTDIR\nssm.exe set bareos-webui AppParameters \
-;      -S $WebUIListenAddress:$WebUIListenPort \
-;      -c $\"$\"$\"$APPDATA\${PRODUCT_NAME}\php.ini$\"$\"$\" \
-;      -t $\"$\"$\"$INSTDIR\bareos-webui\public$\"$\"$\"'
-;   ExecWait '$INSTDIR\nssm.exe set bareos-webui AppStdout $\"$\"$\"$APPDATA\${PRODUCT_NAME}\logs\bareos-webui.log$\"$\"$\"'
-;   ExecWait '$INSTDIR\nssm.exe set bareos-webui AppStderr $\"$\"$\"$APPDATA\${PRODUCT_NAME}\logs\bareos-webui.log$\"$\"$\"'
-;
-;   WriteRegStr HKLM "SYSTEM\CurrentControlSet\Services\Bareos-webui" \
-;                     "Description" "Bareos Webui php service"
-;
-;   nsExec::ExecToLog "net start Bareos-webui"
-;
-;   # Shortcuts
-;   !insertmacro "CreateURLShortCut" "bareos-webui" "http://$WebUIListenAddress:$WebUIListenPort" "Bareos Backup Server Web Interface"
-;   CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\bareos-webui.lnk" "http://$WebUIListenAddress:$WebUIListenPort"
-;
-;   # WebUI Firewall
-;
-;   DetailPrint  "Opening Firewall for WebUI"
-;   DetailPrint  "netsh advfirewall firewall add rule name=$\"Bareos WebUI access$\" dir=in action=allow program=$\"$INSTDIR\bareos-webui\php\php.exe$\" enable=yes protocol=TCP localport=$WEBUILISTENPORT description=$\"Bareos WebUI rule$\""
-;   # profile=[private,domain]"
-;   nsExec::Exec "netsh advfirewall firewall add rule name=$\"Bareos WebUI access$\" dir=in action=allow program=$\"$INSTDIR\bareos-webui\php\php.exe$\" enable=yes protocol=TCP localport=$WEBUILISTENPORT description=$\"Bareos WebUI rule$\""
-;   # profile=[private,domain]"
-;
-;SectionEnd
-;
-;
+Section "Bareos Webui" SEC_WEBUI
+   SectionIn 2 3
+   ; set to yes, needed for MUI_FINISHPAGE_RUN_FUNCTION
+   StrCpy $InstallWebUI "yes"
+   SetShellVarContext all
+   SetOutPath "$INSTDIR"
+   SetOverwrite ifnewer
+   File  "C:\downloads\nssm-2.24\win64\nssm.exe"
+
+   SetOutPath "$INSTDIR\bareos-webui\php"
+   File /r "C:\downloads\php\*.*"
+
+   SetOutPath "$INSTDIR\bareos-webui"
+   File /r "share\bareos-webui\*.*"
+
+IfSilent skip_vc_redist_check
+   # check  for Visual C++ Redistributable für Visual Studio 2012 x86 (on 32 and 64 bit systems)
+   ReadRegDword $R1 HKLM "SOFTWARE\Wow6432Node\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
+   ReadRegDword $R2 HKLM "SOFTWARE\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
+check_for_vc_redist:
+   ${If} $R1 == ""
+      ${If} $R2 == ""
+         ExecShell "open" "https://www.microsoft.com/en-us/download/details.aspx?id=30679"
+         MessageBox MB_OK|MB_ICONSTOP "Visual C++ Redistributable for Visual Studio 2012 x86 was not found$\r$\n\
+                                 It is needed by the bareos-webui service.$\r$\n\
+                                 Please install vcredist_x86.exe from $\r$\n\
+                                 https://www.microsoft.com/en-us/download/details.aspx?id=30679$\r$\n\
+                                 and click OK when done." /SD IDOK
+      ${EndIf}
+   ${EndIf}
+   ReadRegDword $R1 HKLM "SOFTWARE\Wow6432Node\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
+   ReadRegDword $R2 HKLM "SOFTWARE\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
+   ${If} $R1 == ""
+      ${If} $R2 == ""
+         goto check_for_vc_redist
+	  ${EndIf}
+   ${EndIf}
+
+skip_vc_redist_check:
+   Rename  "$INSTDIR\bareos-webui\config\autoload\global.php" "$INSTDIR\bareos-webui\config\autoload\global.php.orig"
+   Rename  "$PLUGINSDIR\global.php" "$INSTDIR\bareos-webui\config\autoload\global.php"
+
+   Rename  "$PLUGINSDIR\php.ini"   "$APPDATA\${PRODUCT_NAME}\php.ini"
+   Rename  "$PLUGINSDIR\directors.ini" "$APPDATA\${PRODUCT_NAME}\directors.ini"
+   Rename  "$PLUGINSDIR\configuration.ini" "$APPDATA\${PRODUCT_NAME}\configuration.ini"
+
+
+   CreateDirectory "$INSTDIR\defaultconfigs\bareos-dir.d\profile"
+   Rename  "$PLUGINSDIR\webui-admin.conf" "$INSTDIR\defaultconfigs\bareos-dir.d\profile\webui-admin.conf"
+
+   CreateDirectory "$INSTDIR\defaultconfigs\bareos-dir.d\console"
+   Rename  "$PLUGINSDIR\admin.conf"       "$INSTDIR\defaultconfigs\bareos-dir.d\console\admin.conf"
+
+
+   ExecWait '$INSTDIR\nssm.exe install bareos-webui $INSTDIR\bareos-webui\php\php.exe'
+   ExecWait '$INSTDIR\nssm.exe set     bareos-webui AppDirectory \"$INSTDIR\bareos-webui\"'
+   ExecWait '$INSTDIR\nssm.exe set     bareos-webui Application  $INSTDIR\bareos-webui\php\php.exe'
+   ExecWait '$INSTDIR\nssm.exe set     bareos-webui AppEnvironmentExtra BAREOS_WEBUI_CONFDIR=$APPDATA\${PRODUCT_NAME}\'
+
+   # nssm.exe wants """ """ around parameters with spaces, the executable itself without quotes
+   # see https://nssm.cc/usage -> quoting issues
+   ExecWait '$INSTDIR\nssm.exe set bareos-webui AppParameters \
+      -S $WebUIListenAddress:$WebUIListenPort \
+      -c $\"$\"$\"$APPDATA\${PRODUCT_NAME}\php.ini$\"$\"$\" \
+      -t $\"$\"$\"$INSTDIR\bareos-webui\public$\"$\"$\"'
+   ExecWait '$INSTDIR\nssm.exe set bareos-webui AppStdout $\"$\"$\"$APPDATA\${PRODUCT_NAME}\logs\bareos-webui.log$\"$\"$\"'
+   ExecWait '$INSTDIR\nssm.exe set bareos-webui AppStderr $\"$\"$\"$APPDATA\${PRODUCT_NAME}\logs\bareos-webui.log$\"$\"$\"'
+
+   WriteRegStr HKLM "SYSTEM\CurrentControlSet\Services\Bareos-webui" \
+                     "Description" "Bareos Webui php service"
+
+   nsExec::ExecToLog "net start Bareos-webui"
+
+   # Shortcuts
+   !insertmacro "CreateURLShortCut" "bareos-webui" "http://$WebUIListenAddress:$WebUIListenPort" "Bareos Backup Server Web Interface"
+   CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\bareos-webui.lnk" "http://$WebUIListenAddress:$WebUIListenPort"
+
+   # WebUI Firewall
+
+   DetailPrint  "Opening Firewall for WebUI"
+   DetailPrint  "netsh advfirewall firewall add rule name=$\"Bareos WebUI access$\" dir=in action=allow program=$\"$INSTDIR\bareos-webui\php\php.exe$\" enable=yes protocol=TCP localport=$WEBUILISTENPORT description=$\"Bareos WebUI rule$\""
+   # profile=[private,domain]"
+   nsExec::Exec "netsh advfirewall firewall add rule name=$\"Bareos WebUI access$\" dir=in action=allow program=$\"$INSTDIR\bareos-webui\php\php.exe$\" enable=yes protocol=TCP localport=$WEBUILISTENPORT description=$\"Bareos WebUI rule$\""
+   # profile=[private,domain]"
+
+SectionEnd
+
+
 Section /o "Text Console (bconsole)" SEC_BCONSOLE
 SectionIn 2 3
   SetShellVarContext all
@@ -992,8 +911,8 @@ SectionIn 2 3
 
   File "sbin\bconsole.exe"
   File C:\vcpkg\packages\readline-win32_x64-windows\bin\readline.dll
+  Rename  "$PLUGINSDIR\bconsole.conf"   "$INSTDIR\defaultconfigs\bconsole.conf"
 
-  !insertmacro InstallConfFile "etc\bareos\bconsole.conf"
 SectionEnd
 
 
@@ -1535,8 +1454,7 @@ done:
   # File "/oname=$PLUGINSDIR\postgresql.sql" ".\ddl\updates\postgresql.sql"
 
   # webui
-#TODO
-  #  File "/oname=$PLUGINSDIR\php.ini" ".\bareos-webui\php\php.ini"
+  File "/oname=$PLUGINSDIR\php.ini" "C:\downloads\php\php.ini-production"
   File "/oname=$PLUGINSDIR\global.php" "share\bareos-webui\config\autoload\global.php"
   File "/oname=$PLUGINSDIR\directors.ini" "etc\bareos-webui\directors.ini"
   File "/oname=$PLUGINSDIR\configuration.ini" "etc\bareos-webui\configuration.ini"
@@ -1549,12 +1467,12 @@ done:
   SectionSetFlags ${SEC_FDPLUGINS} ${SF_SELECTED} #  fd plugins
   SectionSetFlags ${SEC_FIREWALL_SD} ${SF_UNSELECTED} # unselect sd firewall (is selected by default, why?)
   SectionSetFlags ${SEC_FIREWALL_DIR} ${SF_UNSELECTED} # unselect dir firewall (is selected by default, why?)
-;  SectionSetFlags ${SEC_WEBUI} ${SF_UNSELECTED} # unselect webinterface (is selected by default, why?)
+  SectionSetFlags ${SEC_WEBUI} ${SF_UNSELECTED} # unselect webinterface (is selected by default, why?)
 
-;  StrCmp $InstallWebUI "no" dontInstWebUI
-;    SectionSetFlags ${SEC_WEBUI} ${SF_SELECTED} # webui
-;    StrCpy $InstallDirector "yes"               # webui needs director
-;  dontInstWebUI:
+  StrCmp $InstallWebUI "no" dontInstWebUI
+    SectionSetFlags ${SEC_WEBUI} ${SF_SELECTED} # webui
+    StrCpy $InstallDirector "yes"               # webui needs director
+  dontInstWebUI:
 
   StrCmp $InstallDirector "no" dontInstDir
     SectionSetFlags ${SEC_DIR} ${SF_SELECTED} # director
@@ -2037,47 +1955,45 @@ ConfDeleteSkip:
   Delete "$INSTDIR\bconsole.exe"
   Delete "$INSTDIR\bareos-config-deploy.bat"
 
-  Delete "$INSTDIR\libbareos.dll"
-  Delete "$INSTDIR\libbareosfastlz.dll"
-  Delete "$INSTDIR\libbareossd.dll"
-  Delete "$INSTDIR\libbareosfind.dll"
-  Delete "$INSTDIR\libbareoslmdb.dll"
-  Delete "$INSTDIR\libbareossql.dll"
+  Delete "$INSTDIR\*bareos.dll"
+  Delete "$INSTDIR\*bareosfastlz.dll"
+  Delete "$INSTDIR\*bareossd.dll"
+  Delete "$INSTDIR\*bareosfind.dll"
+  Delete "$INSTDIR\*bareoslmdb.dll"
+  Delete "$INSTDIR\*bareossql.dll"
 
   Delete "$INSTDIR\libcrypto-*.dll"
   Delete "$INSTDIR\libgcc_s_*-1.dll"
   Delete "$INSTDIR\libhistory8.dll"
-  Delete "$INSTDIR\libreadline8.dll"
+  Delete "$INSTDIR\*readline*.dll"
   Delete "$INSTDIR\libssl-*.dll"
   Delete "$INSTDIR\libstdc++-6.dll"
   Delete "$INSTDIR\libtermcap-0.dll"
-  Delete "$INSTDIR\libwinpthread-1.dll"
-  Delete "$INSTDIR\zlib1.dll"
-  Delete "$INSTDIR\Qt5Core.dll"
-  Delete "$INSTDIR\Qt5Gui.dll"
-  Delete "$INSTDIR\Qt5Widgets.dll"
-  Delete "$INSTDIR\icui*n*.dll"
-  Delete "$INSTDIR\icudata*.dll"
-  Delete "$INSTDIR\icuuc*.dll"
-  Delete "$INSTDIR\libfreetype-6.dll"
+  Delete "$INSTDIR\*pthread*.dll"
+  Delete "$INSTDIR\zlib*.dll"
+  Delete "$INSTDIR\Qt*Core.dll"
+  Delete "$INSTDIR\Qt*Gui.dll"
+  Delete "$INSTDIR\Qt*Widgets.dll"
+  Delete "$INSTDIR\icu*.dll"
+  Delete "$INSTDIR\*freetype*.dll"
   Delete "$INSTDIR\libglib-2.0-0.dll"
-  Delete "$INSTDIR\libintl-8.dll"
-  Delete "$INSTDIR\libharfbuzz-0.dll"
-  Delete "$INSTDIR\libpcre2-16-0.dll"
-  Delete "$INSTDIR\iconv.dll"
-  Delete "$INSTDIR\libxml2-2.dll"
+  Delete "$INSTDIR\*intl*.dll"
+  Delete "$INSTDIR\*harfbuzz*.dll"
+  Delete "$INSTDIR\*pcre*.dll"
+  Delete "$INSTDIR\*iconv*.dll"
+  Delete "$INSTDIR\*xml2*.dll"
   Delete "$INSTDIR\libpq.dll"
   Delete "$INSTDIR\libpcre-1.dll"
-  Delete "$INSTDIR\libbz2-1.dll"
+  Delete "$INSTDIR\*bz2*.dll"
   Delete "$INSTDIR\libssp-0.dll"
   Delete "$INSTDIR\libintl-8.dll"
 
   RMDir /r "$INSTDIR\platforms"
 
-  Delete "$INSTDIR\liblzo2-2.dll"
+  Delete "$INSTDIR\*lzo2*.dll"
   Delete "$INSTDIR\libbareosfastlz.dll"
-  Delete "$INSTDIR\libjansson-4.dll"
-  Delete "$INSTDIR\libpng*.dll"
+  Delete "$INSTDIR\*jansson*.dll"
+  Delete "$INSTDIR\*png*.dll"
   Delete "$INSTDIR\openssl.exe"
   Delete "$INSTDIR\sed.exe"
 
@@ -2113,7 +2029,7 @@ ConfDeleteSkip:
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\${PRODUCT_NAME}.lnk"
 
   # shortcuts
-  Delete "$SMPROGRAMS\${PRODUCT_NAME}\Edit*.lnk"
+  Delete "$SMPROGRAMS\${PRODUCT_NAME}\Bareos.lnk"
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\bconsole.lnk"
   # traymon
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\bareos-tray-monitor.lnk"
@@ -2174,10 +2090,10 @@ Function .onSelChange
   ${EndIf}
 
   # Check if WEBUI was just selected then select SEC_DIR
-;  SectionGetFlags ${SEC_WEBUI} $R0
-;  IntOp $R0 $R0 & ${SF_SELECTED}
-;  StrCmp $R0 ${SF_SELECTED} 0 +2
-;  SectionSetFlags ${SEC_DIR} $R0
+  SectionGetFlags ${SEC_WEBUI} $R0
+  IntOp $R0 $R0 & ${SF_SELECTED}
+  StrCmp $R0 ${SF_SELECTED} 0 +2
+  SectionSetFlags ${SEC_DIR} $R0
 
   # if director is selected, we set InstallDirector to yes and select textconsole
   StrCpy $InstallDirector "no"
