@@ -72,6 +72,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: re-add show update status for clients [PR #1371]
 - build: add Debian 12 [PR #1477]
 - pr-tool: Add options to be used in CI runs [PR #1488]
+- VMware Plugin: improve snapshot cleanup [PR #1484]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -187,5 +188,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1474]: https://github.com/bareos/bareos/pull/1474
 [PR #1477]: https://github.com/bareos/bareos/pull/1477
 [PR #1479]: https://github.com/bareos/bareos/pull/1479
+[PR #1484]: https://github.com/bareos/bareos/pull/1484
 [PR #1488]: https://github.com/bareos/bareos/pull/1488
 [unreleased]: https://github.com/bareos/bareos/tree/master
