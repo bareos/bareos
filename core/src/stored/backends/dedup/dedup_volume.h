@@ -304,7 +304,8 @@ class block_file {
   bool is_initialized{false};
 };
 
-struct record_file : public volume_file {
+class record_file {
+ public:
   record_file() = default;
   record_file(std::string_view path,
               std::uint32_t file_index,
@@ -362,8 +363,8 @@ struct record_file : public volume_file {
 
     auto file = dedup::open_inside(dir, name.c_str(), mode, dev_mode);
 
-    vec = std::move(util::file_based_vector<record_header>(std::move(file),
-                                                           start_size, 1024));
+    vec = std::move(util::file_based_vector<record_header>(
+        std::move(file), start_size, 128 * 1024));
     return vec.is_ok();
   }
 
@@ -376,24 +377,51 @@ struct record_file : public volume_file {
   bool is_initialized{false};
 };
 
-struct data_file : public volume_file {
+class data_file {
+ public:
   data_file() = default;
   data_file(std::string_view path,
-            std::uint32_t file_index,
-            std::int32_t block_size,
-            std::uint64_t data_used)
-      : volume_file{path}
-      , file_index{file_index}
+            std::uint64_t file_index,
+            std::uint64_t block_size,
+            std::uint64_t data_used,
+            bool read_only = false)
+      : file_index{file_index}
       , block_size{block_size}
       , data_used{data_used}
+      , name{path}
+      , read_only{read_only}
+      , error{block_size == 0}
   {
   }
-  std::uint32_t file_index;
 
-  static constexpr std::int64_t read_only_size = -1;
-  static constexpr std::int64_t any_size = 0;
-  std::int32_t block_size;
-  std::uint64_t data_used;
+  std::uint64_t index() const { return file_index; }
+  std::uint64_t blocksize() const { return block_size; }
+
+  const char* path() const { return name.c_str(); }
+
+  std::uint64_t end() const { return vec.size(); }
+
+  bool truncate()
+  {
+    vec.clear();
+    return vec.shrink_to_fit();
+  }
+
+  bool goto_end() { return vec.move_to(vec.size()); }
+
+  bool goto_begin() { return vec.move_to(0); }
+
+  bool open_inside(util::raii_fd& dir, int mode, DeviceMode dev_mode)
+  {
+    if (is_initialized) { return false; }
+    is_initialized = true;
+
+    auto file = dedup::open_inside(dir, name.c_str(), mode, dev_mode);
+
+    vec = std::move(
+        util::file_based_vector<char>(std::move(file), data_used, 128 * 1024));
+    return vec.is_ok();
+  }
 
   struct written_loc {
     std::uint64_t begin;
@@ -405,74 +433,57 @@ struct data_file : public volume_file {
   };
 
   std::optional<written_loc> write(std::uint64_t offset,
-                                   const char* begin,
-                                   const char* end)
+                                   const char* data,
+                                   std::size_t size)
   {
-    // first check that the space was reserved:
+    if (!accepts_records_of_size(size)) { return std::nullopt; }
 
-    std::uint64_t end_offset = offset + static_cast<std::uint64_t>(end - begin);
+    std::optional start = vec.write_at(offset, data, size);
 
-    if (!goto_begin(end_offset)) { return std::nullopt; }
+    if (!start) { return std::nullopt; }
 
-    if (!goto_begin(offset)) { return std::nullopt; }
-
-    if (!volume_file::write(begin, end - begin)) { return std::nullopt; }
-
-    return std::make_optional<written_loc>(offset, end_offset);
+    return written_loc{*start, *start + size};
   }
-
-  bool accepts_records_of_size(std::uint32_t record_size) const
-  {
-    if (block_size == any_size) {
-      return true;
-    } else if (block_size == read_only_size) {
-      return false;
-    } else {
-      return record_size % block_size == 0;
-    }
-  }
-
-  bool goto_end() { return volume_file::goto_begin(data_used); }
-
   std::optional<written_loc> reserve(std::size_t size)
   {
     if (!accepts_records_of_size(size)) { return std::nullopt; }
 
-    // todo: this is wrong; we need to track the current "virtual" length
-    // as well, so that two calls to reserve() work (important for multiplexing)
+    std::optional start = vec.reserve(size);
 
-    std::optional current = current_pos();
-    if (!current) { return std::nullopt; }
+    if (!start) { return std::nullopt; }
 
-    if (!volume_file::goto_end()) { return std::nullopt; }
-
-    std::optional omax = current_pos();
-
-    if (!omax) { return std::nullopt; }
-
-    std::size_t max = *omax;
-    std::size_t end = *current + size;
-
-    if (end > max) {
-      do {
-        max += 1 * 1024 * 1024 * 1024;
-      } while (end > max);
-
-      if (!truncate(max)) { return std::nullopt; }
-    }
-
-    goto_begin(end);
-    data_used = end;
-
-    return written_loc{*current, end};
+    return written_loc{*start, *start + size};
   }
 
-  bool read_data(char* buf, std::uint64_t start, std::uint64_t end)
+  bool accepts_records_of_size(std::uint64_t record_size) const
   {
-    if (!volume_file::goto_begin(start)) { return false; }
-
-    return volume_file::read(buf, end - start);
+    if (read_only) { return false; }
+    return record_size % block_size == 0;
   }
+
+  bool is_ok() const { return !error && vec.is_ok(); }
+
+  bool read_data(char* buf, std::uint64_t start, std::uint64_t size)
+  {
+    if (!vec.move_to(start)) { return false; }
+
+    std::unique_ptr read = vec.read(size);
+
+    if (!read) { return false; }
+
+    for (std::uint64_t i = 0; i < size; ++i) { buf[i] = read[i]; }
+    return true;
+  }
+
+ private:
+  util::file_based_vector<char> vec{};
+  std::uint64_t file_index{};
+  std::uint64_t block_size{};
+  std::uint64_t data_used{};
+  std::string name{};
+  bool read_only{true};
+  bool error{true};
+  bool is_initialized{false};
 };
 
 struct volume_config {
@@ -490,7 +501,7 @@ struct volume_config {
     if (dedup_block_size != 0) {
       datafiles.emplace_back("full_blocks", 0, dedup_block_size, 0);
     }
-    datafiles.emplace_back("data", 1, data_file::any_size, 0);
+    datafiles.emplace_back("data", 1, 1, 0);
   }
 
   volume_config() = default;
@@ -714,14 +725,16 @@ class volume {
                  std::uint64_t end,
                  write_buffer& buf)
   {
+    if (start > end) { return false; }
     if (file_index > config.datafiles.size()) { return false; }
 
     auto& data_file = config.datafiles[file_index];
 
     // todo: check we are in the right position
-    char* data = buf.reserve(end - start);
+    std::uint64_t size = end - start;
+    char* data = buf.reserve(size);
     if (!data) { return false; }
-    if (!data_file.read_data(data, start, end)) { return false; }
+    if (!data_file.read_data(data, start, size)) { return false; }
     return true;
   }
 
@@ -768,8 +781,8 @@ class volume {
   std::optional<written_loc> write_data(
       const bareos_block_header& blockheader,
       const bareos_record_header& recordheader,
-      const char* data_start,
-      const char* data_end)
+      const char* data,
+      std::size_t size)
   {
     if (recordheader.Stream < 0) {
       // this is a continuation record header
@@ -780,18 +793,15 @@ class volume {
           found != unfinished_records.end()) {
         write_loc& loc = found->second;
 
-        if (!(data_start < data_end)) { return std::nullopt; }
-        if (loc.end - loc.current
-            < static_cast<std::uint64_t>(data_end - data_start)) {
+        if (loc.end - loc.current < static_cast<std::uint64_t>(size)) {
           return std::nullopt;
         }
 
         auto& datafile = config.datafiles[loc.file_index];
-        std::optional data_written
-            = datafile.write(loc.current, data_start, data_end);
+        std::optional data_written = datafile.write(loc.current, data, size);
         if (!data_written) { return std::nullopt; }
 
-        loc.current += (data_end - data_start);
+        loc.current += (size);
         if (loc.current == loc.end) { unfinished_records.erase(found); }
 
         return written_loc{loc.file_index, data_written->begin,
@@ -822,15 +832,14 @@ class volume {
         }
 
         write_loc& loc = iter->second;
-        loc.file_index = datafile.file_index;
+        loc.file_index = datafile.index();
         loc.current = file_loc->begin;
         loc.end = file_loc->end;
 
-        std::optional data_written
-            = datafile.write(loc.current, data_start, data_end);
+        std::optional data_written = datafile.write(loc.current, data, size);
         if (!data_written) { return std::nullopt; }
 
-        loc.current += (data_end - data_start);
+        loc.current += size;
         if (loc.current == loc.end) { unfinished_records.erase(iter); }
 
         return written_loc{loc.file_index, data_written->begin,

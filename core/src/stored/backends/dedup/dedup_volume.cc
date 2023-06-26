@@ -45,8 +45,8 @@ void volume::write_current_config()
                                 recordfile.end(), recordfile.path());
   }
   for (auto& datafile : config.datafiles) {
-    datasections.emplace_back(datafile.file_index, datafile.block_size,
-                              datafile.path, datafile.data_used);
+    datasections.emplace_back(datafile.index(), datafile.blocksize(),
+                              datafile.path(), datafile.end());
   }
 
   for (auto& [record, loc] : unfinished_records) {

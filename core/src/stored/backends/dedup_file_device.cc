@@ -185,8 +185,8 @@ ssize_t scatter(dedup::volume& vol, const void* data, size_t size)
       payload_end = end;
     }
 
-    std::optional written_loc
-        = vol.write_data(*block, *record, payload_start, payload_end);
+    std::optional written_loc = vol.write_data(*block, *record, payload_start,
+                                               payload_end - payload_start);
     if (!written_loc) { return -1; }
 
     if (!recordfile.write(dedup::record_header{*record, written_loc->begin,
