@@ -790,6 +790,19 @@ bool DeviceControlRecord::WriteBlockToDev()
     return false;
   }
 
+  // if this is the first write to this volume (from this job) create a null
+  // jobmedia entry to prevent the volume from getting recycled.
+  dcr->VolMediaId = dev->VolCatInfo.VolMediaId;
+  if (dcr->VolFirstIndex == 0 && block->FirstIndex > 0) {
+    dcr->WroteVol = true;
+    ASSERT(dcr->DirCreateJobmediaRecord(true));
+    dcr->VolFirstIndex = block->FirstIndex;
+    uint64_t addr = dev->file_addr;
+    dcr->StartBlock = (uint32_t)addr;
+    dcr->StartFile = (uint32_t)(addr >> 32);
+  }
+  if (block->LastIndex > 0) { dcr->VolLastIndex = block->LastIndex; }
+
   // We successfully wrote the block, now do housekeeping
   Dmsg2(1300, "VolCatBytes=%d newVolCatBytes=%d\n",
         (int)dev->VolCatInfo.VolCatBytes,
@@ -814,11 +827,6 @@ bool DeviceControlRecord::WriteBlockToDev()
     dev->block_num = dcr->EndBlock;
     dev->file = dcr->EndFile;
   }
-  dcr->VolMediaId = dev->VolCatInfo.VolMediaId;
-  if (dcr->VolFirstIndex == 0 && block->FirstIndex > 0) {
-    dcr->VolFirstIndex = block->FirstIndex;
-  }
-  if (block->LastIndex > 0) { dcr->VolLastIndex = block->LastIndex; }
   dcr->WroteVol = true;
   dev->file_addr += wlen; /* update file address */
   dev->file_size += wlen;
