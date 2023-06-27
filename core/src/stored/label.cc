@@ -618,7 +618,7 @@ bool WriteSessionLabel(DeviceControlRecord* dcr, int label)
   Dmsg1(130, "session_label record=%x\n", rec);
   switch (label) {
     case SOS_LABEL:
-      SetStartVolPosition(dcr);
+      //      SetStartVolPosition(dcr);
       break;
     case EOS_LABEL:
       break;
@@ -1106,7 +1106,7 @@ bool DeviceControlRecord::RewriteVolumeLabel(bool recycle)
     dev->VolCatInfo.VolCatRecycles = 0;
     dev->VolCatInfo.VolCatWrites = 1;
     dev->VolCatInfo.VolCatReads = 1;
-    dcr->DirCreateJobmediaRecord(true);
+    // dcr->DirCreateJobmediaRecord(true);
   }
   Dmsg1(150, "dir_update_vol_info. Set Append vol=%s\n", dcr->VolumeName);
   dev->VolCatInfo.VolFirstWritten = time(NULL);
