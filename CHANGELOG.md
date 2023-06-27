@@ -10,6 +10,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Changed
 - packaging: cleanup SUSE webui dependencies [PR #1494]
+- VMware Plugin: improve snapshot cleanup [PR #1492]
 
 ## [22.1.0] - 2023-06-13
 
@@ -544,5 +545,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1482]: https://github.com/bareos/bareos/pull/1482
 [PR #1483]: https://github.com/bareos/bareos/pull/1483
 [PR #1485]: https://github.com/bareos/bareos/pull/1485
+[PR #1492]: https://github.com/bareos/bareos/pull/1492
 [PR #1494]: https://github.com/bareos/bareos/pull/1494
 [unreleased]: https://github.com/bareos/bareos/tree/master
