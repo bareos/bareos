@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -48,6 +48,7 @@
 #  include <string>
 #  include <sstream>
 #  include <fstream>
+#  include <chrono>
 using namespace std;
 
 #  include "ms_atl.h"
@@ -81,30 +82,15 @@ class IXMLDOMDocument;
 #  undef uuid
 #  define uuid(x)
 
-#  ifdef B_VSS_XP
-#    define VSSClientGeneric VSSClientXP
-#    include "WinXP/vss.h"
-#    include "WinXP/vswriter.h"
-#    include "WinXP/vsbackup.h"
-#  endif
-
-#  ifdef B_VSS_W2K3
-#    define VSSClientGeneric VSSClient2003
-#    include "Win2003/vss.h"
-#    include "Win2003/vswriter.h"
-#    include "Win2003/vsbackup.h"
-#  endif
-
-#  ifdef B_VSS_VISTA
-#    define VSSClientGeneric VSSClientVista
-#    include "Win2003/vss.h"
-#    include "Win2003/vswriter.h"
-#    include "Win2003/vsbackup.h"
-#  endif
+#  define VSSClientGeneric VSSClientVista
+#  include "Win2003/vss.h"
+#  include "Win2003/vswriter.h"
+#  include "Win2003/vsbackup.h"
 
 #  define VSS_ERROR_OBJECT_ALREADY_EXISTS 0x8004230D
 
 #  include "vss.h"
+
 
 using namespace filedaemon;
 
@@ -264,52 +250,26 @@ static void JmsgVssWriterStatus(JobControlRecord* jcr,
 
 // Some helper functions
 
-// strdup a wchar_t string.
-static inline wchar_t* wbstrdup(const wchar_t* str)
-{
-  int len;
-  wchar_t* dup;
-
-  len = wcslen(str) + 1;
-  dup = (wchar_t*)malloc(len * sizeof(wchar_t));
-  memcpy(dup, str, len * sizeof(wchar_t));
-
-  return dup;
-}
-
-// Append a backslash to the current string.
-static inline wstring AppendBackslash(wstring str)
-{
-  if (str.length() == 0) { return wstring(L"\\"); }
-  if (str[str.length() - 1] == L'\\') { return str; }
-  return str.append(L"\\");
-}
-
 // Get the unique volume name for the given path.
-static inline wstring GetUniqueVolumeNameForPath(wstring path)
+static inline std::wstring GetUniqueVolumeNameForPath(const std::wstring& path)
 {
-  wchar_t volumeRootPath[MAX_PATH];
+  std::wstring temp{};
   wchar_t volumeName[MAX_PATH];
   wchar_t volumeUniqueName[MAX_PATH];
 
-  if (path.length() <= 0) { return L""; }
+  if (path.size() <= 0) { return L""; }
 
+  const wchar_t* volumeRoot = path.c_str();
   // Add the backslash termination, if needed.
-  path = AppendBackslash(path);
-
-  // Get the root path of the volume.
-  if (!p_GetVolumePathNameW
-      || !p_GetVolumePathNameW((LPCWSTR)path.c_str(), volumeRootPath,
-                               MAX_PATH)) {
-    return L"";
+  if (path.back() != L'\\') {
+    temp.assign(path);
+    temp.push_back(L'\\');
+    volumeRoot = temp.c_str();
   }
-
-  /*
-   * Get the volume name alias (might be different from the unique volume name
-   * in rare cases).
-   */
+  /* Get the volume name alias (might be different from the unique volume name
+   * in rare cases). */
   if (!p_GetVolumeNameForVolumeMountPointW
-      || !p_GetVolumeNameForVolumeMountPointW(volumeRootPath, volumeName,
+      || !p_GetVolumeNameForVolumeMountPointW(volumeRoot, volumeName,
                                               MAX_PATH)) {
     return L"";
   }
@@ -323,65 +283,52 @@ static inline wstring GetUniqueVolumeNameForPath(wstring path)
   return volumeUniqueName;
 }
 
-static inline POOLMEM* GetMountedVolumeForMountPointPath(POOLMEM* volumepath,
-                                                         POOLMEM* mountpoint)
+static inline bool HandleVolumeMountPoint(
+    VSSClientGeneric* pVssClient,
+    IVssBackupComponents* pVssObj,
+    std::unordered_map<std::string, std::string>& mount_to_vol,
+    std::unordered_map<std::wstring, std::wstring>& mount_to_vol_w,
+    std::unordered_set<std::wstring>& snapshoted_volumes,
+    const std::wstring& parent,
+    const wchar_t* mountpoint)
 {
-  POOLMEM *fullPath, *buf, *vol;
-  int len;
-
-  // GetUniqueVolumeNameForPath() should be used here
-  len = strlen(volumepath) + 1;
-  fullPath = GetPoolMemory(PM_FNAME);
-  PmStrcpy(fullPath, volumepath);
-  PmStrcat(fullPath, mountpoint);
-
-  buf = GetPoolMemory(PM_FNAME);
-  GetVolumeNameForVolumeMountPoint(fullPath, buf, len);
-
-  Dmsg3(200, "%s%s mounts volume %s\n", volumepath, mountpoint, buf);
-
-  vol = GetPoolMemory(PM_FNAME);
-  UTF8_2_wchar(vol, buf);
-
-  FreePoolMemory(fullPath);
-  FreePoolMemory(buf);
-
-  return vol;
-}
-
-static inline bool HandleVolumeMountPoint(VSSClientGeneric* pVssClient,
-                                          IVssBackupComponents* pVssObj,
-                                          POOLMEM*& volumepath,
-                                          POOLMEM*& mountpoint)
-{
-  bool retval = false;
-  HRESULT hr;
-  POOLMEM* vol = NULL;
-  POOLMEM* pvol;
   VSS_ID pid;
 
-  vol = GetMountedVolumeForMountPointPath(volumepath, mountpoint);
-  hr = pVssObj->AddToSnapshotSet((LPWSTR)vol, GUID_NULL, &pid);
+  bool snapshot_success = false;
 
-  pvol = GetPoolMemory(PM_FNAME);
-  wchar_2_UTF8(pvol, (wchar_t*)vol);
-
-  if (SUCCEEDED(hr)) {
-    pVssClient->AddVolumeMountPointSnapshots(pVssObj, (wchar_t*)vol);
-    Dmsg1(200, "%s added to snapshotset \n", pvol);
-    retval = true;
-  } else if ((unsigned)hr == VSS_ERROR_OBJECT_ALREADY_EXISTS) {
-    Dmsg1(200, "%s already in snapshotset, skipping.\n", pvol);
-  } else {
-    Dmsg3(200,
+  std::wstring full_path = parent + mountpoint;
+  std::wstring vol = GetUniqueVolumeNameForPath(full_path);
+  std::string pvol = FromUtf16(vol);
+  std::string utf8_mp = FromUtf16(mountpoint);
+  if (auto found = snapshoted_volumes.find(vol);
+      found == snapshoted_volumes.end()) {
+    HRESULT hr = pVssObj->AddToSnapshotSet(const_cast<LPWSTR>(vol.c_str()),
+                                           GUID_NULL, &pid);
+    if (SUCCEEDED(hr)) {
+      pVssClient->AddVolumeMountPointSnapshots(pVssObj, vol,
+                                               snapshoted_volumes);
+      Dmsg1(200, "%s added to snapshotset \n", pvol.c_str());
+      snapshot_success = true;
+    } else if ((unsigned)hr == VSS_ERROR_OBJECT_ALREADY_EXISTS) {
+      Dmsg1(200, "%s already in snapshotset, skipping.\n", pvol.c_str());
+    } else {
+      Dmsg3(
+          200,
           "%s with vmp %s could not be added to snapshotset, COM ERROR: 0x%X\n",
-          vol, mountpoint, hr);
+          pvol.c_str(), utf8_mp.c_str(), hr);
+    }
+  } else {
+    snapshot_success = true;
   }
 
-  FreePoolMemory(pvol);
-  if (vol) { FreePoolMemory(vol); }
+  if (snapshot_success) {
+    std::string path = FromUtf16(parent) + utf8_mp;
 
-  return retval;
+    mount_to_vol.emplace(std::move(path), std::move(pvol));
+    mount_to_vol_w.emplace(std::move(full_path), std::move(vol));
+  }
+
+  return snapshot_success;
 }
 
 // Helper macro for quick treatment of case statements for error codes
@@ -532,13 +479,11 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
       return false;
     }
 
-    /*
-     * 2. SetBackupState
+    /* 2. SetBackupState
      *
      * Generate a bEventVssSetBackupState event and if none of the plugins
      * give back a bRC_Skip it means this will not be performed by any plugin
-     * and we should do the generic handling ourself in the core.
-     */
+     * and we should do the generic handling ourself in the core. */
     if (GeneratePluginEvent(jcr_, bEventVssSetBackupState) != bRC_Skip) {
       VSS_BACKUP_TYPE backup_type;
 
@@ -606,76 +551,73 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
 
 bool VSSClientGeneric::WaitAndCheckForAsyncOperation(IVssAsync* pAsync)
 {
-  HRESULT hr;
   HRESULT hrReturned = S_OK;
-  int timeout = 600; /* 10 minutes.... */
-  int queryErrors = 0;
+  std::chrono::milliseconds timeout = std::chrono::minutes(10);
 
-  /*
-   * Wait until the async operation finishes
-   * unfortunately we can't use a timeout here yet.
-   * the interface would allow it on W2k3,
-   * but it is not implemented yet....
-   */
-  do {
-    if (hrReturned != S_OK) { Sleep(1000); }
-    hrReturned = S_OK;
-    hr = pAsync->QueryStatus(&hrReturned, NULL);
+  HRESULT wait = pAsync->Wait(
+      static_cast<DWORD>(timeout.count()));  // wait at most 10 minutes
+  if (FAILED(wait)) {
+    JmsgVssApiStatus(jcr_, M_FATAL, wait, "async wait");
+    return false;
+  }
 
-    if (FAILED(hr)) { queryErrors++; }
-  } while ((timeout-- > 0) && (hrReturned == VSS_S_ASYNC_PENDING));
+  HRESULT hr = pAsync->QueryStatus(&hrReturned, NULL);
 
-  // Check the result of the asynchronous operation
-  if (hrReturned == VSS_S_ASYNC_FINISHED) { return true; }
+  if (FAILED(hr)) {
+    JmsgVssApiStatus(jcr_, M_FATAL, wait, "query async status");
+    return false;
+  }
 
-  JmsgVssApiStatus(jcr_, M_FATAL, hr,
-                   "Query Async Status after 10 minute wait");
-
-  return false;
+  return hrReturned == VSS_S_ASYNC_FINISHED;
 }
 
 // Add all drive letters that need to be snapshotted.
-void VSSClientGeneric::AddDriveSnapshots(IVssBackupComponents* pVssObj,
-                                         char* szDriveLetters,
-                                         bool onefs_disabled)
+void VSSClientGeneric::AddVolumeSnapshots(
+    IVssBackupComponents* pVssObj,
+    const std::vector<std::wstring>& volumes,
+    bool onefs_disabled)
 {
-  wstring volume;
-  wchar_t szDrive[3];
   VSS_ID pid;
+  std::unordered_set<std::wstring> snapshoted_volumes{};
 
-  szDrive[1] = ':';
-  szDrive[2] = 0;
-
-  /*
-   * szDriveLetters contains all drive letters in uppercase
+  /* szDriveLetters contains all drive letters in uppercase
    * If a drive can not being added, it's converted to lowercase in
-   * szDriveLetters
-   */
-  for (size_t i = 0; i < strlen(szDriveLetters); i++) {
-    szDrive[0] = szDriveLetters[i];
-    volume = GetUniqueVolumeNameForPath(szDrive);
+   * szDriveLetters */
+  for (const std::wstring& volume : volumes) {
+    std::wstring unique_name = GetUniqueVolumeNameForPath(volume);
 
-    // Store uniquevolumname.
+    std::string utf_unique = FromUtf16(unique_name);
+    std::string utf_vol = FromUtf16(volume);
 
-    if (SUCCEEDED(pVssObj->AddToSnapshotSet((LPWSTR)volume.c_str(), GUID_NULL,
-                                            &pid))) {
-      if (debug_level >= 200) {
-        POOLMEM* szBuf = GetPoolMemory(PM_FNAME);
+    bool snapshot_success = false;
 
-        wchar_2_UTF8(szBuf, volume.c_str());
-        Dmsg2(200, "%s added to snapshotset (Drive %s:\\)\n", szBuf, szDrive);
-        FreePoolMemory(szBuf);
+    // Store uniquevolumname if it doesnt already exist
+    if (auto found = snapshoted_volumes.find(unique_name);
+        found == snapshoted_volumes.end()) {
+      if (SUCCEEDED(pVssObj->AddToSnapshotSet(
+              const_cast<LPWSTR>(unique_name.c_str()), GUID_NULL, &pid))) {
+        if (debug_level >= 200) {
+          Dmsg2(200, "%s added to snapshotset (Path: %s)\n", utf_unique.c_str(),
+                utf_vol.c_str());
+        }
+
+        snapshot_success = true;
+        snapshoted_volumes.emplace(unique_name.c_str());
       }
-      wcsncpy(wszUniqueVolumeName_[szDriveLetters[i] - 'A'],
-              (LPWSTR)volume.c_str(), MAX_PATH);
+
+      if (onefs_disabled) {
+        AddVolumeMountPointSnapshots(pVssObj, unique_name, snapshoted_volumes);
+      } else {
+        Jmsg(jcr_, M_INFO, 0,
+             "VolumeMountpoints are not processed as onefs = yes.\n");
+      }
     } else {
-      szDriveLetters[i] = tolower(szDriveLetters[i]);
+      snapshot_success = true;
     }
-    if (onefs_disabled) {
-      AddVolumeMountPointSnapshots(pVssObj, (LPWSTR)volume.c_str());
-    } else {
-      Jmsg(jcr_, M_INFO, 0,
-           "VolumeMountpoints are not processed as onefs = yes.\n");
+
+    if (snapshot_success) {
+      mount_to_vol.emplace(std::move(utf_vol), std::move(utf_unique));
+      mount_to_vol_w.emplace(volume, std::move(unique_name));
     }
   }
 }
@@ -689,33 +631,31 @@ void VSSClientGeneric::AddDriveSnapshots(IVssBackupComponents* pVssObj,
  */
 void VSSClientGeneric::AddVolumeMountPointSnapshots(
     IVssBackupComponents* pVssObj,
-    LPWSTR volume)
+    const std::wstring& volume,
+    std::unordered_set<std::wstring>& snapshoted_volumes)
 {
-  BOOL b;
-  int len;
-  HANDLE hMount;
-  POOLMEM *mp, *path;
+  PoolMem mp(PM_FNAME);
+  constexpr auto size = MAX_PATH;
+  mp.check_size(sizeof(wchar_t[size]));
+  wchar_t* mountpoint = reinterpret_cast<wchar_t*>(mp.addr());
 
-  mp = GetPoolMemory(PM_FNAME);
-  path = GetPoolMemory(PM_FNAME);
-
-  wchar_2_UTF8(path, volume);
-
-  len = wcslen(volume) + 1;
-
-  hMount = FindFirstVolumeMountPoint(path, mp, len);
+  HANDLE hMount = FindFirstVolumeMountPointW(volume.c_str(), mountpoint, size);
   if (hMount != INVALID_HANDLE_VALUE) {
     // Count number of vmps.
     VMPs += 1;
-    if (HandleVolumeMountPoint(this, pVssObj, path, mp)) {
+    if (HandleVolumeMountPoint(this, pVssObj, this->mount_to_vol,
+                               this->mount_to_vol_w, snapshoted_volumes, volume,
+                               mountpoint)) {
       // Count vmps that were snapshotted
       VMP_snapshots += 1;
     }
 
-    while ((b = FindNextVolumeMountPoint(hMount, mp, len))) {
+    while (FindNextVolumeMountPointW(hMount, mountpoint, size)) {
       // Count number of vmps.
       VMPs += 1;
-      if (HandleVolumeMountPoint(this, pVssObj, path, mp)) {
+      if (HandleVolumeMountPoint(this, pVssObj, this->mount_to_vol,
+                                 this->mount_to_vol_w, snapshoted_volumes,
+                                 volume, mountpoint)) {
         // Count vmps that were snapshotted
         VMP_snapshots += 1;
       }
@@ -723,9 +663,6 @@ void VSSClientGeneric::AddVolumeMountPointSnapshots(
   }
 
   FindVolumeMountPointClose(hMount);
-
-  FreePoolMemory(path);
-  FreePoolMemory(mp);
 }
 
 void VSSClientGeneric::ShowVolumeMountPointStats(JobControlRecord* jcr)
@@ -737,7 +674,7 @@ void VSSClientGeneric::ShowVolumeMountPointStats(JobControlRecord* jcr)
   }
 }
 
-bool VSSClientGeneric::CreateSnapshots(char* szDriveLetters,
+bool VSSClientGeneric::CreateSnapshots(const std::vector<std::wstring>& volumes,
                                        bool onefs_disabled)
 {
   IVssBackupComponents* pVssObj;
@@ -745,8 +682,7 @@ bool VSSClientGeneric::CreateSnapshots(char* szDriveLetters,
   CComPtr<IVssAsync> pAsync2;
   HRESULT hr;
 
-  /*
-   * See
+  /* See
    * http://msdn.microsoft.com/en-us/library/windows/desktop/aa382870%28v=vs.85%29.aspx.
    */
   if (!pVssObject_ || bBackupIsInitialized_) {
@@ -775,8 +711,8 @@ bool VSSClientGeneric::CreateSnapshots(char* szDriveLetters,
   }
 
   // AddToSnapshotSet
-  if (szDriveLetters) {
-    AddDriveSnapshots(pVssObj, szDriveLetters, onefs_disabled);
+  if (volumes.size() > 0) {
+    AddVolumeSnapshots(pVssObj, volumes, onefs_disabled);
   }
 
   // PrepareForBackup
@@ -865,11 +801,9 @@ bool VSSClientGeneric::CloseBackup()
     metadata_ = NULL;
   }
 
-  /*
-   * FIXME?: The docs
+  /* FIXME?: The docs
    * http://msdn.microsoft.com/en-us/library/aa384582%28v=VS.85%29.aspx say this
-   * isn't required...
-   */
+   * isn't required... */
   if (uidCurrentSnapshotSet_ != GUID_NULL) {
     VSS_ID idNonDeletedSnapshotID = GUID_NULL;
     LONG lSnapshots;
@@ -894,6 +828,11 @@ bool VSSClientGeneric::CloseBackup()
     bCoInitializeCalled_ = false;
   }
 
+  // from this point on we should only look at the vss snapshot
+  // since the "conversion" cache might still contain presnapshot
+  // conversions, we need to invalidate them here!
+
+  Win32ResetConversionCache();
   return bRet;
 }
 
@@ -921,8 +860,6 @@ void VSSClientGeneric::QuerySnapshotSet(GUID snapshotSetID)
     errno = ENOSYS;
     return;
   }
-
-  memset(szShadowCopyName_, 0, sizeof(szShadowCopyName_));
 
   if (snapshotSetID == GUID_NULL || pVssObject_ == NULL) {
     Jmsg(jcr_, M_FATAL, 0, "snapshotSetID == NULL or VssObject is NULL.\n");
@@ -958,14 +895,12 @@ void VSSClientGeneric::QuerySnapshotSet(GUID snapshotSetID)
 
     // Print the shadow copy (if not filtered out)
     if (Snap.m_SnapshotSetId == snapshotSetID) {
-      for (int ch = 'A' - 'A'; ch <= 'Z' - 'A'; ch++) {
-        if (wcscmp(Snap.m_pwszOriginalVolumeName, wszUniqueVolumeName_[ch])
-            == 0) {
-          wcsncpy(szShadowCopyName_[ch], Snap.m_pwszSnapshotDeviceObject,
-                  MAX_PATH - 1);
-          break;
-        }
-      }
+      // m_pwszExposedName = mount path! e.g. C:, X:\MountC, ...
+      std::string vol = FromUtf16(Snap.m_pwszOriginalVolumeName);
+      std::string vss = FromUtf16(Snap.m_pwszSnapshotDeviceObject);
+      vol_to_vss.emplace(std::move(vol), std::move(vss));
+      vol_to_vss_w.emplace(Snap.m_pwszOriginalVolumeName,
+                           Snap.m_pwszSnapshotDeviceObject);
     }
     VssFreeSnapshotProperties_(&Snap);
   }
@@ -975,8 +910,7 @@ void VSSClientGeneric::QuerySnapshotSet(GUID snapshotSetID)
 // Check the status for all selected writers
 bool VSSClientGeneric::CheckWriterStatus()
 {
-  /*
-   * See
+  /* See
    * http://msdn.microsoft.com/en-us/library/windows/desktop/aa382870%28v=vs.85%29.aspx
    */
   IVssBackupComponents* pVssObj = (IVssBackupComponents*)pVssObject_;

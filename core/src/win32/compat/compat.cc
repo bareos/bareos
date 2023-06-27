@@ -42,6 +42,8 @@
 #include "lib/bpipe.h"
 #include "vss.h"
 
+#include <shared_mutex>
+
 /**
  * Sanity check to make sure FILE_ATTRIBUTE_VALID_FLAGS is always smaller
  * than our define of FILE_ATTRIBUTE_VOLUME_MOUNT_POINT.
@@ -65,9 +67,6 @@ static const int debuglevel = 500;
 
 #define MAX_PATHLENGTH 1024
 
-static pthread_mutex_t com_security_mutex = PTHREAD_MUTEX_INITIALIZER;
-static bool com_security_initialized = false;
-
 /**
  * The CoInitializeSecurity function initializes the security layer and sets the
  * specified values as the security default. If a process does not call
@@ -79,39 +78,44 @@ static bool com_security_initialized = false;
  */
 bool InitializeComSecurity()
 {
-  HRESULT hr;
-  bool retval = false;
+  class ComSecurityInitializer {
+   public:
+    ComSecurityInitializer()
+        : h{CoInitializeSecurity(
+            NULL, /*  Allow *all* VSS writers to communicate back! */
+            -1,   /*  Default COM authentication service */
+            NULL, /*  Default COM authorization service */
+            NULL, /*  reserved parameter */
+            RPC_C_AUTHN_LEVEL_PKT_PRIVACY, /*  Strongest COM authentication
+                                              level */
+            RPC_C_IMP_LEVEL_IDENTIFY, /*  Minimal impersonation abilities */
+            NULL,                     /*  Default COM authentication settings */
+            EOAC_NONE,                /*  No special options */
+            NULL) /* reserved */}
+    {
+      if (!InitSuccessFull()) {
+        Dmsg1(0,
+              "InitializeComSecurity: CoInitializeSecurity returned 0x%08X\n",
+              h);
+      }
+    }
 
-  lock_mutex(com_security_mutex);
-  if (com_security_initialized) {
-    retval = true;
-    goto bail_out;
-  }
+    bool InitSuccessFull() const { return !FAILED(h); }
 
-  hr = CoInitializeSecurity(
-      NULL, /*  Allow *all* VSS writers to communicate back! */
-      -1,   /*  Default COM authentication service */
-      NULL, /*  Default COM authorization service */
-      NULL, /*  reserved parameter */
-      RPC_C_AUTHN_LEVEL_PKT_PRIVACY, /*  Strongest COM authentication level */
-      RPC_C_IMP_LEVEL_IDENTIFY,      /*  Minimal impersonation abilities */
-      NULL,                          /*  Default COM authentication settings */
-      EOAC_NONE,                     /*  No special options */
-      NULL);                         /*  Reserved parameter */
+   private:
+    HRESULT h;
+  };
+  // CoInitializeSecurity can only fail if the system is running out of memory
+  // in that case retrying it will probably not be a good idea anyways;
+  // as such we only attempt to initialize once
+  static const ComSecurityInitializer security{};
 
-  if (FAILED(hr)) {
-    Dmsg1(0, "InitializeComSecurity: CoInitializeSecurity returned 0x%08X\n",
-          hr);
+  if (!security.InitSuccessFull()) {
     errno = b_errno_win32;
-    goto bail_out;
+    return false;
   }
 
-  com_security_initialized = true;
-  retval = true;
-
-bail_out:
-  unlock_mutex(com_security_mutex);
-  return retval;
+  return true;
 }
 
 /**
@@ -121,90 +125,59 @@ bail_out:
  * by using the cache this is reduced to 1 time
  */
 struct thread_conversion_cache {
-  POOLMEM* pWin32ConvUTF8Cache;
-  POOLMEM* pWin32ConvUCS2Cache;
-  DWORD dwWin32ConvUTF8strlen;
+  std::string utf8{};
+  std::wstring utf16{};
 };
 
-struct thread_vss_path_convert {
-  t_pVSSPathConvert pPathConvert;
-  t_pVSSPathConvertW pPathConvertW;
-};
 
-/**
- * We use thread specific data using pthread_set_specific and
- * pthread_get_specific to have unique and separate data for each thread instead
- * of global variables.
- */
-static pthread_mutex_t tsd_mutex = PTHREAD_MUTEX_INITIALIZER;
-static bool pc_tsd_initialized = false;
-static bool cc_tsd_initialized = false;
-static pthread_key_t path_conversion_key;
-static pthread_key_t conversion_cache_key;
+static class VssPathConverter {
+ public:
+  void SetConversions(t_pVSSPathConvert Convert, t_pVSSPathConvertW ConvertW)
+  {
+    std::unique_lock write_lock(rw_mut);  // unique write lock
+    convert_fn = Convert;
+    convert_w_fn = ConvertW;
+  }
 
-static void VSSPathConvertCleanup(void* arg)
-{
-  thread_vss_path_convert* tvpc = (thread_vss_path_convert*)arg;
+  struct free_deleter {
+    void operator()(void* mem) { free(mem); }
+  };
 
-  Dmsg1(debuglevel,
-        "VSSPathConvertCleanup: Cleanup thread specific conversion pointers at "
-        "address %p\n",
-        tvpc);
+  template <typename T> using c_ptr = std::unique_ptr<T, free_deleter>;
 
-  free(tvpc);
-}
-
-bool SetVSSPathConvert(t_pVSSPathConvert pPathConvert,
-                       t_pVSSPathConvertW pPathConvertW)
-{
-  int status;
-  thread_vss_path_convert* tvpc = NULL;
-
-  lock_mutex(tsd_mutex);
-  if (!pc_tsd_initialized) {
-    status = pthread_key_create(&path_conversion_key, VSSPathConvertCleanup);
-    if (status != 0) {
-      unlock_mutex(tsd_mutex);
-      goto bail_out;
+  c_ptr<wchar_t> Convert(std::wstring_view str)
+  {
+    std::shared_lock read_lock(rw_mut);  // shared read lock
+    if (convert_w_fn) {
+      return c_ptr<wchar_t>(convert_w_fn(str.data()));
+    } else {
+      return nullptr;
     }
-    pc_tsd_initialized = true;
-  }
-  unlock_mutex(tsd_mutex);
-
-  tvpc = (thread_vss_path_convert*)pthread_getspecific(path_conversion_key);
-  if (!tvpc) {
-    tvpc = (thread_vss_path_convert*)malloc(sizeof(thread_vss_path_convert));
-    status = pthread_setspecific(path_conversion_key, (void*)tvpc);
-    if (status != 0) { goto bail_out; }
   }
 
-  Dmsg1(debuglevel,
-        "SetVSSPathConvert: Setup thread specific conversion pointers at "
-        "address %p\n",
-        tvpc);
+  c_ptr<char> Convert(std::string_view str)
+  {
+    std::shared_lock read_lock(rw_mut);  // shared read lock
+    if (convert_fn) {
+      return c_ptr<char>(convert_fn(str.data()));
+    } else {
+      return nullptr;
+    }
+  }
 
-  tvpc->pPathConvert = pPathConvert;
-  tvpc->pPathConvertW = pPathConvertW;
+ private:
+  // used for a read-write-lock that protects writes to
+  // convert_fn/convert_w_fn
+  std::shared_mutex rw_mut{};
 
-  return true;
+  t_pVSSPathConvert convert_fn{nullptr};
+  t_pVSSPathConvertW convert_w_fn{nullptr};
+} vss_path_converter;
 
-bail_out:
-  if (tvpc) { free(tvpc); }
-
-  return false;
-}
-
-static thread_vss_path_convert* Win32GetPathConvert()
+bool SetVSSPathConvert(t_pVSSPathConvert Convert, t_pVSSPathConvertW ConvertW)
 {
-  thread_vss_path_convert* tvpc = NULL;
-
-  lock_mutex(tsd_mutex);
-  if (pc_tsd_initialized) {
-    tvpc = (thread_vss_path_convert*)pthread_getspecific(path_conversion_key);
-  }
-  unlock_mutex(tsd_mutex);
-
-  return tvpc;
+  vss_path_converter.SetConversions(Convert, ConvertW);
+  return true;
 }
 
 // UTF-8 to UCS2 path conversion caching.
@@ -217,79 +190,61 @@ static void Win32ConvCleanupCache(void* arg)
       "Win32ConvCleanupCache: Cleanup of thread specific cache at address %p\n",
       tcc);
 
-  FreePoolMemory(tcc->pWin32ConvUCS2Cache);
-  FreePoolMemory(tcc->pWin32ConvUTF8Cache);
-  free(tcc);
+  delete tcc;
 }
 
-static thread_conversion_cache* Win32ConvInitCache()
-{
-  int status;
-  thread_conversion_cache* tcc = NULL;
+static class PathConversionCache {
+ public:
+  PathConversionCache()
+  {
+    status = pthread_key_create(&key, Win32ConvCleanupCache);
+  }
+  ~PathConversionCache()
+  {
+    if (status == 0) { pthread_key_delete(key); }
+  }
 
-  lock_mutex(tsd_mutex);
-  if (!cc_tsd_initialized) {
-    status = pthread_key_create(&conversion_cache_key, Win32ConvCleanupCache);
-    if (status != 0) {
-      unlock_mutex(tsd_mutex);
-      goto bail_out;
+  thread_conversion_cache* GetThreadLocal()
+  {
+    if (status != 0) return nullptr;  // could not init thread specific data
+    auto tcc = static_cast<thread_conversion_cache*>(pthread_getspecific(key));
+    if (!tcc) {
+      return CreateThreadLocal();
+    } else {
+      return tcc;
     }
-    cc_tsd_initialized = true;
-  }
-  unlock_mutex(tsd_mutex);
-
-  // Create a new cache.
-  tcc = (thread_conversion_cache*)malloc(sizeof(thread_conversion_cache));
-  tcc->pWin32ConvUTF8Cache = GetPoolMemory(PM_FNAME);
-  tcc->pWin32ConvUCS2Cache = GetPoolMemory(PM_FNAME);
-  tcc->dwWin32ConvUTF8strlen = 0;
-
-  status = pthread_setspecific(conversion_cache_key, (void*)tcc);
-  if (status != 0) { goto bail_out; }
-
-  Dmsg1(debuglevel,
-        "Win32ConvInitCache: Setup of thread specific cache at address %p\n",
-        tcc);
-
-  return tcc;
-
-bail_out:
-  if (tcc) {
-    FreePoolMemory(tcc->pWin32ConvUCS2Cache);
-    FreePoolMemory(tcc->pWin32ConvUTF8Cache);
-    free(tcc);
   }
 
-  return NULL;
-}
-
-static thread_conversion_cache* Win32GetCache()
-{
-  thread_conversion_cache* tcc = NULL;
-
-  lock_mutex(tsd_mutex);
-  if (cc_tsd_initialized) {
-    tcc = (thread_conversion_cache*)pthread_getspecific(conversion_cache_key);
-  }
-  unlock_mutex(tsd_mutex);
-
-  return tcc;
-}
-
-void Win32TSDCleanup()
-{
-  lock_mutex(tsd_mutex);
-  if (pc_tsd_initialized) {
-    pthread_key_delete(path_conversion_key);
-    pc_tsd_initialized = false;
+  void ResetThreadLocal()
+  {
+    if (status != 0) return;  // could not init thread specific data
+    auto tcc = static_cast<thread_conversion_cache*>(pthread_getspecific(key));
+    if (tcc) {
+      tcc->utf8.clear();
+      tcc->utf16.clear();
+    }
   }
 
-  if (cc_tsd_initialized) {
-    pthread_key_delete(conversion_cache_key);
-    cc_tsd_initialized = false;
+ private:
+  thread_conversion_cache* CreateThreadLocal()
+  {
+    ASSERT(status == 0);
+    auto tcc = std::make_unique<thread_conversion_cache>();
+    if (pthread_setspecific(key, tcc.get()) == 0) {
+      Dmsg1(
+          debuglevel,
+          "Win32ConvInitCache: Setup of thread specific cache at address %p\n",
+          tcc.get());
+      return tcc.release();
+    } else {
+      return nullptr;
+    }
   }
-  unlock_mutex(tsd_mutex);
-}
+  pthread_key_t key;
+  int status;
+} path_conversion_cache;
+
+void Win32ResetConversionCache() { path_conversion_cache.ResetThreadLocal(); }
 
 // Forward referenced functions
 const char* errorString(void);
@@ -297,12 +252,12 @@ const char* errorString(void);
 // To allow the usage of the original version in this file here
 #undef fputs
 
-#define USE_WIN32_32KPATHCONVERSION 1
-
 extern DWORD g_platform_id;
 extern DWORD g_MinorVersion;
 
 // From Microsoft SDK (KES) is the diff between Jan 1 1601 and Jan 1 1970
+// see
+// https://learn.microsoft.com/en-us/windows/win32/api/minwinbase/ns-minwinbase-filetime
 #define WIN32_FILETIME_ADJUST 0x19DB1DED53E8000ULL
 
 #define WIN32_FILETIME_SCALE 10000000  // 100ns/second
@@ -317,11 +272,11 @@ static inline void conv_unix_to_vss_win32_path(const char* name,
 {
   const char* fname = name;
   char* tname = win32_name;
-  thread_vss_path_convert* tvpc;
+
+  int offset = 0;
 
   Dmsg0(debuglevel, "Enter convert_unix_to_win32_path\n");
 
-  tvpc = Win32GetPathConvert();
   if (IsPathSeparator(name[0]) && IsPathSeparator(name[1]) && name[2] == '.'
       && IsPathSeparator(name[3])) {
     *win32_name++ = '\\';
@@ -330,12 +285,14 @@ static inline void conv_unix_to_vss_win32_path(const char* name,
     *win32_name++ = '\\';
 
     name += 4;
-  } else if (g_platform_id != VER_PLATFORM_WIN32_WINDOWS && !tvpc) {
+  } else if (g_platform_id != VER_PLATFORM_WIN32_WINDOWS) {
     // Allow path to be 32767 bytes
     *win32_name++ = '\\';
     *win32_name++ = '\\';
     *win32_name++ = '?';
     *win32_name++ = '\\';
+
+    offset = 4;  // skip this part during vss conversion
   }
 
   while (*name) {
@@ -362,19 +319,10 @@ static inline void conv_unix_to_vss_win32_path(const char* name,
   } else {
     *win32_name = 0;
   }
-
-  /* Here we convert to VSS specific file name which
-   * can get longer because VSS will make something like
-   * \\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy1\\bareos\\uninstall.exe
-   * from c:\bareos\uninstall.exe */
-  Dmsg1(debuglevel, "path=%s\n", tname);
-  if (tvpc) {
-    POOLMEM* pszBuf = GetPoolMemory(PM_FNAME);
-
-    pszBuf = CheckPoolMemorySize(pszBuf, dwSize);
-    bstrncpy(pszBuf, tname, strlen(tname) + 1);
-    tvpc->pPathConvert(pszBuf, tname, dwSize);
-    FreePoolMemory(pszBuf);
+  Dmsg1(debuglevel, "path = %s\n", tname);
+  if (auto shadow_path = vss_path_converter.Convert(tname + offset);
+      shadow_path) {
+    bstrncpy(tname, shadow_path.get(), dwSize);
   }
 
   Dmsg1(debuglevel, "Leave cvt_u_to_win32_path path=%s\n", tname);
@@ -392,207 +340,224 @@ void unix_name_to_win32(POOLMEM*& win32_name, const char* name)
   conv_unix_to_vss_win32_path(name, win32_name, dwSize);
 }
 
+std::wstring FromUtf8(std::string_view utf8)
+{
+  // MultiByteToWideChar does not handle empty strings
+  if (utf8.size() == 0) { return {}; }
+  // if the buffer is to small the function returns the number of characters
+  // required
+  DWORD required
+      = MultiByteToWideChar(CP_UTF8, 0, utf8.data(), utf8.size(), nullptr, 0);
+  if (required == 0) {
+    errno = b_errno_win32;
+    BErrNo be;
+    Dmsg2(300, "Can not convert %s to wide string: %s\n", utf8.data(),
+          be.bstrerror());
+    return {};
+  }
+  std::wstring utf16(required, '\0');
+
+  // if the buffer is big enough the function returns the number of
+  // characters written
+  DWORD written = MultiByteToWideChar(CP_UTF8, 0, utf8.data(), utf8.size(),
+                                      utf16.data(), utf16.size());
+
+  if (written != required) {
+    errno = b_errno_win32;
+    BErrNo be;
+    Dmsg3(300,
+          "Error during conversion! Expected %d chars but only got %d: %s\n",
+          required, written, be.bstrerror());
+
+    return {};
+  }
+
+  utf16.resize(written);
+  return utf16;
+}
+
+std::string FromUtf16(std::wstring_view utf16)
+{
+  // WideCharToMultiByte does not handle empty strings
+  if (utf16.size() == 0) { return {}; }
+
+  // if the buffer is to small (or not supplied) the function returns
+  // the number of bytes required
+  DWORD required = WideCharToMultiByte(CP_UTF8, 0, utf16.data(), utf16.size(),
+                                       nullptr, 0, nullptr, nullptr);
+  if (required == 0) {
+    errno = b_errno_win32;
+    BErrNo be;
+    Dmsg0(300, "Encountered error in utf16 -> utf8 conversion: %s\n",
+          be.bstrerror());
+    return {};
+  }
+  std::string utf8(required, '\0');
+
+  // if the buffer is big enough the function returns the number of
+  // bytes written
+  DWORD written
+      = WideCharToMultiByte(CP_UTF8, 0, utf16.data(), utf16.size(), utf8.data(),
+                            utf8.size(), nullptr, nullptr);
+
+  if (written != required) {
+    errno = b_errno_win32;
+    BErrNo be;
+    Dmsg1(300,
+          "Error during conversion! Expected %d chars but only got %d: %s\n",
+          required, written, be.bstrerror());
+
+    return {};
+  }
+
+  utf8.resize(written);
+  return utf8;
+}
+
+static bool IsLiteralPath(std::wstring_view path)
+{
+  // check if the path starts with //?/
+  return path.size() >= 4 && IsPathSeparator(path[0])
+         && IsPathSeparator(path[1]) && IsPathSeparator(path[3])
+         && path[2] == L'?';
+}
+
+static bool IsNormalizedPath(std::wstring_view path)
+{
+  // check if the path starts with //./
+  return path.size() >= 4 && IsPathSeparator(path[0])
+         && IsPathSeparator(path[1]) && IsPathSeparator(path[3])
+         && path[2] == L'.';
+}
+
 /**
- * This function expects an UCS-encoded standard wchar_t in pszUCSPath and
- * will complete the input path to an absolue path of the form \\?\c:\path\file
+ * Removes all trailing slashes.  If the string only contains slashes
+ * all but the first one are removed!
+ * We also do not remove any slash if its preceded by a colon, i.e.
+ * 'C:\' does not get changed.
+ * If always is set to true it will even strip slashes that are preceded
+ * by colons.
+ */
+static void RemoveTrailingSlashes(std::wstring& str, bool always = false)
+{
+  while (str.size() > 1 && IsPathSeparator(str.back())) {
+    if (str[str.size() - 2] == L':' && !always) {
+      break;
+    } else {
+      str.pop_back();
+    }
+  }
+}
+
+static std::wstring AsFullPath(std::wstring_view p)
+{
+  DWORD required = GetFullPathNameW(p.data(), 0, NULL, NULL);
+  if (required == 0) {
+    errno = b_errno_win32;
+    BErrNo be;
+    Dmsg0(300, "Could not get full path length of path %s: %s\n",
+          FromUtf16(p).c_str(), be.bstrerror());
+  }
+  std::wstring literal(required, L'\0');
+  DWORD written = GetFullPathNameW(p.data(), required, literal.data(), NULL);
+
+  // required contains the terminating 0 but
+  // written will not *if* the operation was successful.
+  if (written != required - 1) {
+    errno = b_errno_win32;
+    BErrNo be;
+    Dmsg3(300,
+          "Error while getting full path of %s; allocated %d chars but needed "
+          "%d: %s\n",
+          FromUtf16(p).c_str(), required, written, be.bstrerror());
+  }
+
+  literal.resize(written);
+
+  return literal;
+}
+
+/**
+ * Replace all forward slashes by backwards slashes.
+ * Also replaces all consecutive slashes by a single one unless they are
+ * right at the start.
+ */
+std::wstring ReplaceSlashes(std::wstring_view path)
+{
+  using namespace std::literals;
+  constexpr std::wstring_view path_separators = L"\\/"sv;
+
+  std::size_t end = path.size();
+  std::size_t head = std::min(path.find_first_not_of(path_separators), end);
+
+  std::wstring result(head, L'\\');
+
+
+  for (;;) {
+    std::size_t copy_until
+        = std::min(path.find_first_of(path_separators, head), end);
+    result.append(std::begin(path) + head, std::begin(path) + copy_until);
+    head = std::min(path.find_first_not_of(path_separators, copy_until), end);
+
+    // if we encountered any slashes, replace them by a single backslash
+    if (head != copy_until) {
+      result.append(L"\\"sv);
+    } else {
+      ASSERT(head == end);
+      break;
+    }
+  }
+
+  return result;
+}
+
+/**
+ * This function converts relative paths to absolute paths and prepends \\?\ if
+ * needed.  It also replaces all '/' with '\' and removes duplicates of them.
  *
  * With this trick, it is possible to have 32K characters long paths.
  *
- * Optionally one can use pBIsRawPath to determine id pszUCSPath contains a path
- * to a raw windows partition.
+ * If availalbe it also converts the path to a vss path.
  *
  * Created 02/27/2006 Thorsten Engel
+ * Updated 05/03/2023 Sebastian Sura
  */
-static inline POOLMEM* make_wchar_win32_path(POOLMEM* pszUCSPath,
-                                             BOOL* pBIsRawPath /*= NULL*/)
+static inline std::wstring make_wchar_win32_path(std::wstring_view path)
 {
+  // we want
+  // '/' -> //?/C:
+  // 'C:/' -> //?/C:/
+  using namespace std::literals;
   Dmsg0(debuglevel, "Enter make_wchar_win32_path\n");
-  if (pBIsRawPath) { *pBIsRawPath = FALSE; /* Initialize, set later */ }
-
-  if (!p_GetCurrentDirectoryW) {
-    Dmsg0(debuglevel, "Leave make_wchar_win32_path no change \n");
-    return pszUCSPath;
-  }
-
-  wchar_t* name = (wchar_t*)pszUCSPath;
 
   // If it has already the desired form, exit without changes
-  if (wcslen(name) > 3 && wcsncmp(name, L"\\\\?\\", 4) == 0) {
+  if (IsLiteralPath(path) || IsNormalizedPath(path)) {
     Dmsg0(debuglevel, "Leave make_wchar_win32_path no change \n");
-    return pszUCSPath;
+    return ReplaceSlashes(path);
   }
 
-  wchar_t* pwszBuf = (wchar_t*)GetPoolMemory(PM_FNAME);
-  wchar_t* pwszCurDirBuf = (wchar_t*)GetPoolMemory(PM_FNAME);
-  DWORD dwCurDirPathSize = 0;
+  bool is_root = path.size() == 1 && IsPathSeparator(path[0]);
+  std::wstring converted = AsFullPath(path);
+  // for legacy reasons we do not want to have a trailing slash if
+  // we were only given the "root" path, i.e. a path containing only a single
+  // '/'
+  RemoveTrailingSlashes(converted, is_root);
 
-  // Get buffer with enough size (name+max 6. wchars+1 null terminator
-  DWORD dwBufCharsNeeded = (wcslen(name) + 7);
-  pwszBuf = (wchar_t*)CheckPoolMemorySize((POOLMEM*)pwszBuf,
-                                          dwBufCharsNeeded * sizeof(wchar_t));
-
-  /* Add \\?\ to support 32K long filepaths
-   * it is important to make absolute paths, so we add drive and
-   * current path if necessary */
-  BOOL bAddDrive = TRUE;
-  BOOL bAddCurrentPath = TRUE;
-  BOOL bAddPrefix = TRUE;
-
-  // Does path begin with drive? if yes, it is absolute
-  if (iswalpha(name[0]) && name[1] == ':' && IsPathSeparator(name[2])) {
-    bAddDrive = FALSE;
-    bAddCurrentPath = FALSE;
+  if (auto shadow_path = vss_path_converter.Convert(converted); shadow_path) {
+    // we sadly need to copy here
+    converted.assign(shadow_path.get());
+  } else {
+    // add literal path prefix to allow 32k paths
+    converted.insert(0, L"\\\\?\\"sv);
   }
 
-  // Is path absolute?
-  if (IsPathSeparator(name[0])) bAddCurrentPath = FALSE;
 
-  // Is path relative to itself?, if yes, skip ./
-  if (name[0] == '.' && IsPathSeparator(name[1])) { name += 2; }
-
-  // Is path of form '//./'?
-  if (IsPathSeparator(name[0]) && IsPathSeparator(name[1]) && name[2] == '.'
-      && IsPathSeparator(name[3])) {
-    bAddDrive = FALSE;
-    bAddCurrentPath = FALSE;
-    bAddPrefix = FALSE;
-    if (pBIsRawPath) { *pBIsRawPath = TRUE; }
-  }
-
-  int nParseOffset = 0;
-
-  // Add 4 bytes header
-  if (bAddPrefix) {
-    nParseOffset = 4;
-    wcscpy(pwszBuf, L"\\\\?\\");
-  }
-
-  // Get current path if needed
-  if (bAddDrive || bAddCurrentPath) {
-    dwCurDirPathSize = p_GetCurrentDirectoryW(0, NULL);
-    if (dwCurDirPathSize > 0) {
-      /* Get directory into own buffer as it may either return c:\... or
-       * \\?\C:\.... */
-      pwszCurDirBuf = (wchar_t*)CheckPoolMemorySize(
-          (POOLMEM*)pwszCurDirBuf, (dwCurDirPathSize + 1) * sizeof(wchar_t));
-      p_GetCurrentDirectoryW(dwCurDirPathSize, pwszCurDirBuf);
-    } else {
-      // We have no info for doing so
-      bAddDrive = FALSE;
-      bAddCurrentPath = FALSE;
-    }
-  }
-
-  // Add drive if needed
-  if (bAddDrive && !bAddCurrentPath) {
-    wchar_t szDrive[3];
-
-    if (IsPathSeparator(pwszCurDirBuf[0]) && IsPathSeparator(pwszCurDirBuf[1])
-        && pwszCurDirBuf[2] == '?' && IsPathSeparator(pwszCurDirBuf[3])) {
-      // Copy drive character
-      szDrive[0] = pwszCurDirBuf[4];
-    } else {
-      // Copy drive character
-      szDrive[0] = pwszCurDirBuf[0];
-    }
-
-    szDrive[1] = ':';
-    szDrive[2] = 0;
-
-    wcscat(pwszBuf, szDrive);
-    nParseOffset += 2;
-  }
-
-  // Add path if needed
-  if (bAddCurrentPath) {
-    // The 1 additional character is for the eventually added backslash
-    dwBufCharsNeeded += dwCurDirPathSize + 1;
-    pwszBuf = (wchar_t*)CheckPoolMemorySize((POOLMEM*)pwszBuf,
-                                            dwBufCharsNeeded * sizeof(wchar_t));
-
-    /* Get directory into own buffer as it may either return c:\... or
-     * \\?\C:\.... */
-    if (IsPathSeparator(pwszCurDirBuf[0]) && IsPathSeparator(pwszCurDirBuf[1])
-        && pwszCurDirBuf[2] == '?' && IsPathSeparator(pwszCurDirBuf[3])) {
-      // Copy complete string
-      wcscpy(pwszBuf, pwszCurDirBuf);
-    } else {
-      // Append path
-      wcscat(pwszBuf, pwszCurDirBuf);
-    }
-
-    nParseOffset = wcslen((LPCWSTR)pwszBuf);
-
-    // Check if path ends with backslash, if not, add one
-    if (!IsPathSeparator(pwszBuf[nParseOffset - 1])) {
-      wcscat(pwszBuf, L"\\");
-      nParseOffset++;
-    }
-  }
-
-  wchar_t* win32_name = &pwszBuf[nParseOffset];
-  wchar_t* name_start = name;
-  wchar_t previous_char = 0;
-  wchar_t next_char = 0;
-
-  while (*name) {
-    /* Check for Unix separator and convert to Win32, eliminating duplicate
-     * separators. */
-    if (IsPathSeparator(*name)) {
-      // Don't add a trailing slash.
-      next_char = *(name + 1);
-      if (previous_char != ':' && next_char == '\0') {
-        name++;
-        continue;
-      }
-      previous_char = '\\';
-      *win32_name++ = '\\'; /* convert char */
-
-      /* Eliminate consecutive slashes, but not at the start so that \\.\ still
-       * works. */
-      if (name_start != name && IsPathSeparator(name[1])) { name++; }
-    } else {
-      previous_char = *name;
-      *win32_name++ = *name; /* copy character */
-    }
-    name++;
-  }
-
-  // NULL Terminate string
-  *win32_name = 0;
-
-  /* Here we convert to VSS specific file name which can get longer because VSS
-   * will make something like
-   * \\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy1\\bareos\\uninstall.exe
-   * from c:\bareos\uninstall.exe */
-  thread_vss_path_convert* tvpc = Win32GetPathConvert();
-  if (tvpc) {
-    // Is output buffer large enough?
-    pwszBuf = (wchar_t*)CheckPoolMemorySize(
-        (POOLMEM*)pwszBuf, (dwBufCharsNeeded + MAX_PATH) * sizeof(wchar_t));
-    // Create temp. buffer
-    wchar_t* pszBuf = (wchar_t*)GetPoolMemory(PM_FNAME);
-    pszBuf = (wchar_t*)CheckPoolMemorySize(
-        (POOLMEM*)pszBuf, (dwBufCharsNeeded + MAX_PATH) * sizeof(wchar_t));
-    if (bAddPrefix) {
-      nParseOffset = 4;
-    } else {
-      nParseOffset = 0;
-    }
-
-    wcsncpy(pszBuf, &pwszBuf[nParseOffset], wcslen(pwszBuf) + 1 - nParseOffset);
-    tvpc->pPathConvertW(pszBuf, pwszBuf, dwBufCharsNeeded + MAX_PATH);
-    FreePoolMemory((POOLMEM*)pszBuf);
-  }
-
-  FreePoolMemory(pszUCSPath);
-  FreePoolMemory((POOLMEM*)pwszCurDirBuf);
-
-  Dmsg1(debuglevel, "Leave make_wchar_win32_path=%s\n", pwszBuf);
-  return (POOLMEM*)pwszBuf;
+  Dmsg1(debuglevel, "Leave make_wchar_win32_path=%s\n",
+        FromUtf16(converted).c_str());
+  return converted;
 }
 
-// Convert from WCHAR (UCS) to UTF-8
+// Convert from WCHAR (UTF-16) to UTF-8
 int wchar_2_UTF8(POOLMEM*& pszUTF, const WCHAR* pszUCS)
 {
   /* The return value is the number of bytes written to the buffer.
@@ -608,7 +573,7 @@ int wchar_2_UTF8(POOLMEM*& pszUTF, const WCHAR* pszUCS)
   }
 }
 
-// Convert from WCHAR (UCS) to UTF-8
+// Convert from WCHAR (UTF-16) to UTF-8
 int wchar_2_UTF8(char* pszUTF, const WCHAR* pszUCS, int cchChar)
 {
   /* The return value is the number of bytes written to the buffer.
@@ -691,56 +656,39 @@ char* BSTR_2_str(const BSTR pSrc)
   return szOut;
 }
 
-int make_win32_path_UTF8_2_wchar(POOLMEM*& pszUCS,
-                                 const char* pszUTF,
-                                 BOOL* pBIsRawPath /*= NULL*/)
+std::wstring make_win32_path_UTF8_2_wchar(std::string_view utf8)
 {
-  int nRet;
-  thread_conversion_cache* tcc;
+  thread_conversion_cache* tcc = nullptr;
 
   /* If we find the utf8 string in cache, we use the cached ucs2 version.
    * we compare the stringlength first (quick check) and then compare the
    * content. */
-  tcc = Win32GetCache();
-  if (!tcc) {
-    tcc = Win32ConvInitCache();
-  } else if (tcc->dwWin32ConvUTF8strlen == strlen(pszUTF)) {
-    if (bstrcmp(pszUTF, tcc->pWin32ConvUTF8Cache)) {
-      int nBufSize;
-
-      // Return cached value
-      nBufSize = SizeofPoolMemory(tcc->pWin32ConvUCS2Cache);
-      pszUCS = CheckPoolMemorySize(pszUCS, nBufSize);
-      wcscpy((LPWSTR)pszUCS, (LPWSTR)tcc->pWin32ConvUCS2Cache);
-
-      return nBufSize / sizeof(WCHAR);
-    }
+  tcc = path_conversion_cache.GetThreadLocal();
+  if (tcc && tcc->utf8 == utf8) {
+    // this creates a copy!
+    return tcc->utf16;
   }
 
-  /* Helper to convert from utf-8 to UCS-2 and to complete a path for 32K path
+  /* Helper to convert from utf-8 to utf-16 and to complete a path for 32K path
    * syntax */
-  nRet = UTF8_2_wchar(pszUCS, pszUTF);
+  std::wstring utf16 = FromUtf8(utf8);
 
-#ifdef USE_WIN32_32KPATHCONVERSION
-  // Add \\?\ to support 32K long filepaths
-  pszUCS = make_wchar_win32_path(pszUCS, pBIsRawPath);
-#else
-  if (pBIsRawPath) { *pBIsRawPath = FALSE; }
-#endif
+  {
+    // Add \\?\ to support 32K long filepaths
+    std::wstring converted = make_wchar_win32_path(utf16);
+    // this is done for debugability;
+    // the compiler should optimize it as if it were
+    // utf16 = make_wchar_[...]
+    std::swap(converted, utf16);
+  }
 
   // Populate cache
   if (tcc) {
-    tcc->pWin32ConvUCS2Cache = CheckPoolMemorySize(tcc->pWin32ConvUCS2Cache,
-                                                   SizeofPoolMemory(pszUCS));
-    wcscpy((LPWSTR)tcc->pWin32ConvUCS2Cache, (LPWSTR)pszUCS);
-
-    tcc->dwWin32ConvUTF8strlen = strlen(pszUTF);
-    tcc->pWin32ConvUTF8Cache = CheckPoolMemorySize(
-        tcc->pWin32ConvUTF8Cache, tcc->dwWin32ConvUTF8strlen + 2);
-    bstrncpy(tcc->pWin32ConvUTF8Cache, pszUTF, tcc->dwWin32ConvUTF8strlen + 1);
+    tcc->utf8.assign(utf8);
+    tcc->utf16.assign(utf16);
   }
 
-  return nRet;
+  return utf16;
 }
 
 #if !defined(_MSC_VER) || (_MSC_VER < 1400)  // VC8+
@@ -966,38 +914,32 @@ static inline bool GetVolumeMountPointData(const char* filename,
    * Explicitly open the file to read the reparse point, then call
    * DeviceIoControl to find out if it points to a Volume or to a directory. */
   if (p_GetFileAttributesW) {
-    POOLMEM* pwszBuf = GetPoolMemory(PM_FNAME);
-    make_win32_path_UTF8_2_wchar(pwszBuf, filename);
+    std::wstring utf16 = make_win32_path_UTF8_2_wchar(filename);
 
     if (p_CreateFileW) {
       h = CreateFileW(
-          (LPCWSTR)pwszBuf, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+          utf16.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
           FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
     }
 
     if (h == INVALID_HANDLE_VALUE) {
-      Dmsg1(debuglevel, "Invalid handle from CreateFileW(%s)\n", pwszBuf);
-      FreePoolMemory(pwszBuf);
+      Dmsg1(debuglevel, "Invalid handle from CreateFileW(%s)\n", utf16.c_str());
       return false;
     }
 
-    FreePoolMemory(pwszBuf);
   } else if (p_GetFileAttributesA) {
-    POOLMEM* win32_fname;
+    PoolMem win32_fname(PM_FNAME);
+    unix_name_to_win32(win32_fname.addr(), filename);
 
-    win32_fname = GetPoolMemory(PM_FNAME);
-    unix_name_to_win32(win32_fname, filename);
     h = CreateFileA(
-        win32_fname, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+        win32_fname.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
         FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
 
     if (h == INVALID_HANDLE_VALUE) {
-      Dmsg1(debuglevel, "Invalid handle from CreateFile(%s)\n", win32_fname);
-      FreePoolMemory(win32_fname);
+      Dmsg1(debuglevel, "Invalid handle from CreateFile(%s)\n",
+            win32_fname.c_str());
       return false;
     }
-
-    FreePoolMemory(win32_fname);
   }
 
   if (h != INVALID_HANDLE_VALUE) {
@@ -1041,37 +983,30 @@ static inline ssize_t GetSymlinkData(const char* filename,
   HANDLE h = INVALID_HANDLE_VALUE;
 
   if (p_GetFileAttributesW) {
-    POOLMEM* pwszBuf = GetPoolMemory(PM_FNAME);
-    make_win32_path_UTF8_2_wchar(pwszBuf, filename);
+    std::wstring utf16 = make_win32_path_UTF8_2_wchar(filename);
 
     if (p_CreateFileW) {
       h = CreateFileW(
-          (LPCWSTR)pwszBuf, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+          utf16.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
           FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
     }
 
     if (h == INVALID_HANDLE_VALUE) {
-      Dmsg1(debuglevel, "Invalid handle from CreateFileW(%s)\n", pwszBuf);
-      FreePoolMemory(pwszBuf);
+      Dmsg1(debuglevel, "Invalid handle from CreateFileW(%s)\n", utf16.c_str());
       return -1;
     }
-
-    FreePoolMemory(pwszBuf);
   } else if (p_GetFileAttributesA) {
-    POOLMEM* win32_fname;
-
-    win32_fname = GetPoolMemory(PM_FNAME);
-    unix_name_to_win32(win32_fname, filename);
+    PoolMem win32_fname(PM_FNAME);
+    unix_name_to_win32(win32_fname.addr(), filename);
     h = CreateFileA(
-        win32_fname, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+        win32_fname.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
         FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
 
     if (h == INVALID_HANDLE_VALUE) {
-      Dmsg1(debuglevel, "Invalid handle from CreateFile(%s)\n", win32_fname);
-      FreePoolMemory(win32_fname);
+      Dmsg1(debuglevel, "Invalid handle from CreateFile(%s)\n",
+            win32_fname.c_str());
       return -1;
     }
-    FreePoolMemory(win32_fname);
   }
   if (h != INVALID_HANDLE_VALUE) {
     bool ok;
@@ -1152,7 +1087,7 @@ static int GetWindowsFileInfo(const char* filename,
   WIN32_FIND_DATAW info_w;  // window's file info
   WIN32_FIND_DATAA info_a;  // window's file info
 #if (_WIN32_WINNT >= 0x0600)
-  FILE_BASIC_INFO bareos_plugin_interface_version;  // window's basic file info
+  FILE_BASIC_INFO basic_info;  // window's basic file info
   HANDLE h = INVALID_HANDLE_VALUE;
 #endif
   HANDLE fh = INVALID_HANDLE_VALUE;
@@ -1164,43 +1099,37 @@ static int GetWindowsFileInfo(const char* filename,
   DWORD* pdwReserved0;
   FILETIME* pftLastAccessTime;
   FILETIME* pftLastWriteTime;
-  FILETIME* pftCreationTime;
+  FILETIME* pftChangeTime;
+
 
   // First get a findhandle and a file handle to the file.
   if (p_FindFirstFileW) { /* use unicode */
-    POOLMEM* pwszBuf = GetPoolMemory(PM_FNAME);
-    make_win32_path_UTF8_2_wchar(pwszBuf, filename);
+    std::wstring utf16 = make_win32_path_UTF8_2_wchar(filename);
 
-    Dmsg1(debuglevel, "FindFirstFileW=%s\n", pwszBuf);
-    fh = p_FindFirstFileW((LPCWSTR)pwszBuf, &info_w);
+    Dmsg1(debuglevel, "FindFirstFileW=%s\n", utf16.c_str());
+    fh = p_FindFirstFileW(utf16.c_str(), &info_w);
 #if (_WIN32_WINNT >= 0x0600)
     if (fh != INVALID_HANDLE_VALUE) {
       h = p_CreateFileW(
-          (LPCWSTR)pwszBuf, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+          utf16.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
           FILE_FLAG_BACKUP_SEMANTICS, /* Required for directories */
           NULL);
     }
 #endif
 
-    FreePoolMemory(pwszBuf);
   } else if (p_FindFirstFileA) {  // use ASCII
-    POOLMEM* win32_fname;
-
-    win32_fname = GetPoolMemory(PM_FNAME);
-    unix_name_to_win32(win32_fname, filename);
-
-    Dmsg1(debuglevel, "FindFirstFileA=%s\n", win32_fname);
-    fh = p_FindFirstFileA(win32_fname, &info_a);
+    PoolMem win32_fname(PM_FNAME);
+    unix_name_to_win32(win32_fname.addr(), filename);
+    Dmsg1(debuglevel, "FindFirstFileA=%s\n", win32_fname.c_str());
+    fh = p_FindFirstFileA(win32_fname.c_str(), &info_a);
 #if (_WIN32_WINNT >= 0x0600)
     if (h != INVALID_HANDLE_VALUE) {
-      h = CreateFileA(win32_fname, GENERIC_READ, FILE_SHARE_READ, NULL,
+      h = CreateFileA(win32_fname.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL,
                       OPEN_EXISTING,
                       FILE_FLAG_BACKUP_SEMANTICS, /* Required for directories */
                       NULL);
     }
 #endif
-
-    FreePoolMemory(win32_fname);
   } else {
     Dmsg0(debuglevel, "No findFirstFile A or W found\n");
   }
@@ -1223,21 +1152,11 @@ static int GetWindowsFileInfo(const char* filename,
     // As this is retrieved by handle it has no specific A or W call.
     if (h != INVALID_HANDLE_VALUE) {
       if (p_GetFileInformationByHandleEx) {
-        if (p_GetFileInformationByHandleEx(
-                h, FileBasicInfo, &bareos_plugin_interface_version,
-                sizeof(bareos_plugin_interface_version))) {
-          pftLastAccessTime
-              = (FILETIME*)&bareos_plugin_interface_version.LastAccessTime;
-          pftLastWriteTime
-              = (FILETIME*)&bareos_plugin_interface_version.LastWriteTime;
-          if (CvtFtimeToUtime(bareos_plugin_interface_version.CreationTime)
-              > CvtFtimeToUtime(bareos_plugin_interface_version.ChangeTime)) {
-            pftCreationTime
-                = (FILETIME*)&bareos_plugin_interface_version.CreationTime;
-          } else {
-            pftCreationTime
-                = (FILETIME*)&bareos_plugin_interface_version.ChangeTime;
-          }
+        if (p_GetFileInformationByHandleEx(h, FileBasicInfo, &basic_info,
+                                           sizeof(basic_info))) {
+          pftLastAccessTime = (FILETIME*)&basic_info.LastAccessTime;
+          pftLastWriteTime = (FILETIME*)&basic_info.LastWriteTime;
+          pftChangeTime = (FILETIME*)&basic_info.ChangeTime;
           use_fallback_data = false;
         }
       }
@@ -1252,11 +1171,11 @@ static int GetWindowsFileInfo(const char* filename,
       if (p_FindFirstFileW) { /* use unicode */
         pftLastAccessTime = &info_w.ftLastAccessTime;
         pftLastWriteTime = &info_w.ftLastWriteTime;
-        pftCreationTime = &info_w.ftCreationTime;
+        pftChangeTime = &info_w.ftLastWriteTime;
       } else {
         pftLastAccessTime = &info_a.ftLastAccessTime;
         pftLastWriteTime = &info_a.ftLastWriteTime;
-        pftCreationTime = &info_a.ftCreationTime;
+        pftChangeTime = &info_a.ftLastWriteTime;
       }
     }
 
@@ -1381,7 +1300,7 @@ static int GetWindowsFileInfo(const char* filename,
 
   sb->st_atime = CvtFtimeToUtime(*pftLastAccessTime);
   sb->st_mtime = CvtFtimeToUtime(*pftLastWriteTime);
-  sb->st_ctime = CvtFtimeToUtime(*pftCreationTime);
+  sb->st_ctime = CvtFtimeToUtime(*pftChangeTime);
 
   return 0;
 }
@@ -1400,6 +1319,25 @@ int fstat(intptr_t fd, struct stat* sb)
 
     return -1;
   }
+
+  // This can become a problem in the future:
+  // https://learn.microsoft.com/en-us/windows/win32/api/fileapi/ns-fileapi-by_handle_file_information
+  // The identifier (low and high parts) and the volume serial number uniquely
+  // identify a file on a single computer.  To determine whether two open
+  // handles represent the same file, combine the identifier and the volume
+  // serial number for each file and compare them.
+  // The ReFS file system, introduced with Windows Server 2012, includes
+  // 128-bit file identifiers.  To retrieve the 128-bit file identifier use the
+  // GetFileInformationByHandleEx function with FileIdInfo to retrieve the
+  // FILE_ID_INFO structure. The 64-bit identifier in this structure is not
+  // guaranteed to be unique on ReFS.
+  // This means that we need to make st_ino at least 128 bit big.
+  // The API itself is only available on windows server as it seems:
+  // https://learn.microsoft.com/en-us/windows/win32/api/winbase/ns-winbase-file_id_info
+  // Since the stat struct is something that we serialize, we have to ensure
+  // that making st_ino 128 does not mess anything up; especially for
+  // "portable" windows backups that you are supposed to be able to restore
+  // on other operating systems.
 
   sb->st_dev = info.dwVolumeSerialNumber;
   sb->st_ino = info.nFileIndexHigh;
@@ -1425,24 +1363,14 @@ int fstat(intptr_t fd, struct stat* sb)
 
 #if (_WIN32_WINNT >= 0x0600)
   if (p_GetFileInformationByHandleEx) {
-    FILE_BASIC_INFO bareos_plugin_interface_version;
+    FILE_BASIC_INFO basic_info;
 
-    if (p_GetFileInformationByHandleEx(
-            (HANDLE)_get_osfhandle(fd), FileBasicInfo,
-            &bareos_plugin_interface_version,
-            sizeof(bareos_plugin_interface_version))) {
-      sb->st_atime
-          = CvtFtimeToUtime(bareos_plugin_interface_version.LastAccessTime);
-      sb->st_mtime
-          = CvtFtimeToUtime(bareos_plugin_interface_version.LastWriteTime);
-      if (CvtFtimeToUtime(bareos_plugin_interface_version.CreationTime)
-          > CvtFtimeToUtime(bareos_plugin_interface_version.ChangeTime)) {
-        sb->st_ctime
-            = CvtFtimeToUtime(bareos_plugin_interface_version.CreationTime);
-      } else {
-        sb->st_ctime
-            = CvtFtimeToUtime(bareos_plugin_interface_version.ChangeTime);
-      }
+    if (p_GetFileInformationByHandleEx((HANDLE)_get_osfhandle(fd),
+                                       FileBasicInfo, &basic_info,
+                                       sizeof(basic_info))) {
+      sb->st_atime = CvtFtimeToUtime(basic_info.LastAccessTime);
+      sb->st_mtime = CvtFtimeToUtime(basic_info.LastWriteTime);
+      sb->st_ctime = CvtFtimeToUtime(basic_info.ChangeTime);
       use_fallback_data = false;
     }
   }
@@ -1451,7 +1379,7 @@ int fstat(intptr_t fd, struct stat* sb)
   if (use_fallback_data) {
     sb->st_atime = CvtFtimeToUtime(info.ftLastAccessTime);
     sb->st_mtime = CvtFtimeToUtime(info.ftLastWriteTime);
-    sb->st_ctime = CvtFtimeToUtime(info.ftCreationTime);
+    sb->st_ctime = CvtFtimeToUtime(info.ftLastWriteTime);
   }
 
   return 0;
@@ -1469,27 +1397,21 @@ static int stat2(const char* filename, struct stat* sb)
   int rval = 0;
   DWORD attr = (DWORD)-1;
 
-  if (p_GetFileAttributesW) {
-    POOLMEM* pwszBuf = GetPoolMemory(PM_FNAME);
 
-    make_win32_path_UTF8_2_wchar(pwszBuf, filename);
-    attr = p_GetFileAttributesW((LPCWSTR)pwszBuf);
+  if (p_GetFileAttributesW) {
+    std::wstring utf16 = make_win32_path_UTF8_2_wchar(filename);
+    attr = p_GetFileAttributesW(utf16.c_str());
     if (p_CreateFileW) {
-      h = CreateFileW((LPCWSTR)pwszBuf, GENERIC_READ, FILE_SHARE_READ, NULL,
+      h = CreateFileW(utf16.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL,
                       OPEN_EXISTING, 0, NULL);
     }
-    FreePoolMemory(pwszBuf);
   } else if (p_GetFileAttributesA) {
-    POOLMEM* win32_fname;
-
-    win32_fname = GetPoolMemory(PM_FNAME);
-    unix_name_to_win32(win32_fname, filename);
-
-    attr = p_GetFileAttributesA(win32_fname);
-    h = CreateFileA(win32_fname, GENERIC_READ, FILE_SHARE_READ, NULL,
+    PoolMem win32_fname(PM_FNAME);
+    unix_name_to_win32(win32_fname.addr(), filename);
+    attr = p_GetFileAttributesA(win32_fname.c_str());
+    h = CreateFileA(win32_fname.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL,
                     OPEN_EXISTING, 0, NULL);
 
-    FreePoolMemory(win32_fname);
   } else {
     Emsg0(M_FATAL, 0,
           _("p_GetFileAttributesW and p_GetFileAttributesA undefined. "
@@ -1539,27 +1461,23 @@ bail_out:
 int stat(const char* filename, struct stat* sb)
 {
   int rval = 0;
-  POOLMEM* win32_fname = NULL;
   WIN32_FILE_ATTRIBUTE_DATA data;
 
   errno = 0;
   memset(sb, 0, sizeof(*sb));
 
+  PoolMem win32_fname(PM_FNAME);
+  unix_name_to_win32(win32_fname.addr(), filename);
+
+  std::wstring utf16 = make_win32_path_UTF8_2_wchar(filename);
+
   if (p_GetFileAttributesExW) {
-    // Dynamically allocate enough space for UCS2 filename
-    POOLMEM* pwszBuf = GetPoolMemory(PM_FNAME);
-    make_win32_path_UTF8_2_wchar(pwszBuf, filename);
-
-    BOOL b = p_GetFileAttributesExW((LPCWSTR)pwszBuf, GetFileExInfoStandard,
-                                    &data);
-    FreePoolMemory(pwszBuf);
-
+    BOOL b
+        = p_GetFileAttributesExW(utf16.c_str(), GetFileExInfoStandard, &data);
     if (!b) { goto bail_out; }
   } else if (p_GetFileAttributesExA) {
-    win32_fname = GetPoolMemory(PM_FNAME);
-    unix_name_to_win32(win32_fname, filename);
-
-    if (!p_GetFileAttributesExA(win32_fname, GetFileExInfoStandard, &data)) {
+    if (!p_GetFileAttributesExA(win32_fname.c_str(), GetFileExInfoStandard,
+                                &data)) {
       goto bail_out;
     }
   } else {
@@ -1608,38 +1526,21 @@ int stat(const char* filename, struct stat* sb)
       /* The GetFileInformationByHandleEx need a file handle so we have to
        * open the file or directory read-only. */
       if (p_CreateFileW) {
-        POOLMEM* pwszBuf;
-
-        pwszBuf = GetPoolMemory(PM_FNAME);
-        make_win32_path_UTF8_2_wchar(pwszBuf, filename);
-
-        h = p_CreateFileW((LPCWSTR)pwszBuf, GENERIC_READ, FILE_SHARE_READ, NULL,
+        h = p_CreateFileW(utf16.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL,
                           OPEN_EXISTING, 0, NULL);
-
-        FreePoolMemory(pwszBuf);
       } else {
-        h = CreateFileA(win32_fname, GENERIC_READ, FILE_SHARE_READ, NULL,
-                        OPEN_EXISTING, 0, NULL);
+        h = CreateFileA(win32_fname.c_str(), GENERIC_READ, FILE_SHARE_READ,
+                        NULL, OPEN_EXISTING, 0, NULL);
       }
 
       if (h != INVALID_HANDLE_VALUE) {
-        FILE_BASIC_INFO bareos_plugin_interface_version;
+        FILE_BASIC_INFO basic_info;
 
-        if (p_GetFileInformationByHandleEx(
-                h, FileBasicInfo, &bareos_plugin_interface_version,
-                sizeof(bareos_plugin_interface_version))) {
-          sb->st_atime
-              = CvtFtimeToUtime(bareos_plugin_interface_version.LastAccessTime);
-          sb->st_mtime
-              = CvtFtimeToUtime(bareos_plugin_interface_version.LastWriteTime);
-          if (CvtFtimeToUtime(bareos_plugin_interface_version.CreationTime)
-              > CvtFtimeToUtime(bareos_plugin_interface_version.ChangeTime)) {
-            sb->st_ctime
-                = CvtFtimeToUtime(bareos_plugin_interface_version.CreationTime);
-          } else {
-            sb->st_ctime
-                = CvtFtimeToUtime(bareos_plugin_interface_version.ChangeTime);
-          }
+        if (p_GetFileInformationByHandleEx(h, FileBasicInfo, &basic_info,
+                                           sizeof(basic_info))) {
+          sb->st_atime = CvtFtimeToUtime(basic_info.LastAccessTime);
+          sb->st_mtime = CvtFtimeToUtime(basic_info.LastWriteTime);
+          sb->st_ctime = CvtFtimeToUtime(basic_info.ChangeTime);
           use_fallback_data = false;
         }
 
@@ -1652,7 +1553,7 @@ int stat(const char* filename, struct stat* sb)
       // Fall back to the GetFileAttributesEx data.
       sb->st_atime = CvtFtimeToUtime(data.ftLastAccessTime);
       sb->st_mtime = CvtFtimeToUtime(data.ftLastWriteTime);
-      sb->st_ctime = CvtFtimeToUtime(data.ftCreationTime);
+      sb->st_ctime = CvtFtimeToUtime(data.ftLastWriteTime);
     }
   }
   rval = 0;
@@ -1663,7 +1564,6 @@ int stat(const char* filename, struct stat* sb)
   return rval;
 
 bail_out:
-  if (win32_fname) { FreePoolMemory(win32_fname); }
 
   return stat2(filename, sb);
 }
@@ -1795,21 +1695,11 @@ int win32_symlink(const char* name1, const char* name2, _dev_t st_rdev)
 
   Dmsg2(debuglevel, "symlink called name1=%s, name2=%s\n", name1, name2);
   if (p_CreateSymbolicLinkW) {
-    /* Dynamically allocate enough space for UCS2 filename
-     *
-     * pwszBuf1: lpTargetFileName
-     * pwszBuf2: lpSymlinkFileName */
-    POOLMEM* pwszBuf1 = GetPoolMemory(PM_FNAME);
-    POOLMEM* pwszBuf2 = GetPoolMemory(PM_FNAME);
+    std::wstring target = FromUtf8(name1);
+    if (target.size() == 0) { goto bail_out; }
+    std::wstring symlink = make_win32_path_UTF8_2_wchar(name2);
 
-    if (!UTF8_2_wchar(pwszBuf1, name1)) { goto bail_out; }
-    make_win32_path_UTF8_2_wchar(pwszBuf2, name2);
-
-    BOOL b
-        = p_CreateSymbolicLinkW((LPCWSTR)pwszBuf2, (LPCWSTR)pwszBuf1, dwFlags);
-
-    FreePoolMemory(pwszBuf1);
-    FreePoolMemory(pwszBuf2);
+    BOOL b = p_CreateSymbolicLinkW(symlink.c_str(), target.c_str(), dwFlags);
 
     if (!b) {
       Dmsg1(debuglevel, "CreateSymbolicLinkW failed:%s\n", errorString());
@@ -1900,40 +1790,36 @@ typedef struct _dir {
 
 DIR* opendir(const char* path)
 {
-  POOLMEM* win32_path;
-  _dir* rval = NULL;
-
   if (path == NULL) {
     errno = ENOENT;
     return NULL;
   }
 
-  Dmsg1(debuglevel, "Opendir path=%s\n", path);
-  rval = (_dir*)malloc(sizeof(_dir));
+  // unix_name_to_win32 works like this:
+  // C:/mountpoint -> ShadowCopyOfC/mountpoint
+  // C:/mountpoint/stuff -> ShadowCopyOfMountpoint/stuff
+  // since we are inspecting the contents of the mountpoint
+  // we want to ensure we are in the second case!
+  std::string dir_path{path};
+
+  if (!IsPathSeparator(dir_path.back())) { dir_path.push_back('/'); }
+  dir_path.push_back('*');
+
+  Dmsg1(debuglevel, "Opendir path=%s\n", dir_path.c_str());
+  _dir* rval = (_dir*)malloc(sizeof(_dir));
   memset(rval, 0, sizeof(_dir));
 
-  win32_path = GetPoolMemory(PM_FNAME);
-  unix_name_to_win32(win32_path, path);
+  POOLMEM* win32_path = GetPoolMemory(PM_FNAME);
+  unix_name_to_win32(win32_path, dir_path.c_str());
   Dmsg1(debuglevel, "win32 path=%s\n", win32_path);
-
-  // Add backslash only if there is none yet (think of c:\)
-  if (win32_path[strlen(win32_path) - 1] != '\\') {
-    PmStrcat(win32_path, "\\*");
-  } else {
-    PmStrcat(win32_path, "*");
-  }
 
   rval->spec = win32_path;
 
   // convert to wchar_t
   if (p_FindFirstFileW) {
-    POOLMEM* pwcBuf;
-
-    pwcBuf = GetPoolMemory(PM_FNAME);
-    make_win32_path_UTF8_2_wchar(pwcBuf, rval->spec);
-    rval->dirh = p_FindFirstFileW((LPCWSTR)pwcBuf, &rval->data_w);
+    std::wstring utf16 = make_win32_path_UTF8_2_wchar(dir_path.c_str());
+    rval->dirh = p_FindFirstFileW(utf16.c_str(), &rval->data_w);
     if (rval->dirh != INVALID_HANDLE_VALUE) { rval->valid_w = 1; }
-    FreePoolMemory(pwcBuf);
   } else if (p_FindFirstFileA) {
     rval->dirh = p_FindFirstFileA(rval->spec, &rval->data_a);
     if (rval->dirh != INVALID_HANDLE_VALUE) { rval->valid_a = 1; }
@@ -2194,17 +2080,13 @@ int win32_chmod(const char* path, mode_t mode, _dev_t rdev)
         (uint64_t)mode, (uint64_t)rdev);
 
   if (p_GetFileAttributesW) {
-    POOLMEM* pwszBuf;
-
-    pwszBuf = GetPoolMemory(PM_FNAME);
-    make_win32_path_UTF8_2_wchar(pwszBuf, path);
-    attr = p_GetFileAttributesW((LPCWSTR)pwszBuf);
+    std::wstring utf16 = make_win32_path_UTF8_2_wchar(path);
+    attr = p_GetFileAttributesW(utf16.c_str());
     if (attr != INVALID_FILE_ATTRIBUTES) {
       // Use Bareos mappings define in stat() above
       attr = fill_attribute(attr, mode, rdev);
-      ret = p_SetFileAttributesW((LPCWSTR)pwszBuf, attr);
+      ret = p_SetFileAttributesW(utf16.c_str(), attr);
     }
-    FreePoolMemory(pwszBuf);
     Dmsg0(debuglevel, "Leave win32_chmod. AttributesW\n");
   } else if (p_GetFileAttributesA) {
     attr = p_GetFileAttributesA(path);
@@ -2233,14 +2115,8 @@ int win32_chmod(const char* path, mode_t mode, _dev_t rdev)
 int win32_chdir(const char* dir)
 {
   if (p_SetCurrentDirectoryW) {
-    POOLMEM* pwszBuf;
-    BOOL b;
-
-    pwszBuf = GetPoolMemory(PM_FNAME);
-    make_win32_path_UTF8_2_wchar(pwszBuf, dir);
-    b = p_SetCurrentDirectoryW((LPCWSTR)pwszBuf);
-    FreePoolMemory(pwszBuf);
-    if (!b) {
+    std::wstring utf16 = make_win32_path_UTF8_2_wchar(dir);
+    if (!p_SetCurrentDirectoryW(utf16.c_str())) {
       errno = b_errno_win32;
       return -1;
     }
@@ -2260,13 +2136,8 @@ int win32_mkdir(const char* dir)
 {
   Dmsg1(debuglevel, "enter win32_mkdir. dir=%s\n", dir);
   if (p_wmkdir) {
-    int n;
-    POOLMEM* pwszBuf;
-
-    pwszBuf = GetPoolMemory(PM_FNAME);
-    make_win32_path_UTF8_2_wchar(pwszBuf, dir);
-    n = p_wmkdir((LPCWSTR)pwszBuf);
-    FreePoolMemory(pwszBuf);
+    std::wstring utf16 = make_win32_path_UTF8_2_wchar(dir);
+    int n = p_wmkdir(utf16.c_str());
     Dmsg0(debuglevel, "Leave win32_mkdir did wmkdir\n");
 
     return n;
@@ -2306,33 +2177,31 @@ char* win32_getcwd(char* buf, int maxlen)
 
 int win32_fputs(const char* string, FILE* stream)
 {
-  /* We use WriteConsoleA / WriteConsoleA so we can be sure that unicode support
+  /* We use WriteConsoleW / WriteConsoleA so we can be sure that unicode support
    * works on win32. with fallback if something fails */
   HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
   if (hOut && (hOut != INVALID_HANDLE_VALUE) && p_WideCharToMultiByte
       && p_MultiByteToWideChar && (stream == stdout)) {
-    POOLMEM* pwszBuf;
     POOLMEM* pszBuf;
     DWORD dwCharsWritten;
     DWORD dwChars;
 
-    pwszBuf = GetPoolMemory(PM_MESSAGE);
-    dwChars = UTF8_2_wchar(pwszBuf, string);
+    std::wstring utf16 = FromUtf8(string);
 
     // Try WriteConsoleW
-    if (WriteConsoleW(hOut, pwszBuf, dwChars - 1, &dwCharsWritten, NULL)) {
-      FreePoolMemory(pwszBuf);
+    if (WriteConsoleW(hOut, utf16.c_str(), utf16.size(), &dwCharsWritten,
+                      NULL)) {
       return dwCharsWritten;
     }
 
+
+    DWORD needed = p_WideCharToMultiByte(GetConsoleOutputCP(), 0, utf16.c_str(),
+                                         -1, nullptr, 0, nullptr, nullptr);
     // Convert to local codepage and try WriteConsoleA
     pszBuf = GetPoolMemory(PM_MESSAGE);
-    pszBuf = CheckPoolMemorySize(pszBuf, dwChars + 1);
-
-    dwChars = p_WideCharToMultiByte(GetConsoleOutputCP(), 0, (LPCWSTR)pwszBuf,
-                                    -1, pszBuf, dwChars, NULL, NULL);
-    FreePoolMemory(pwszBuf);
-
+    pszBuf = CheckPoolMemorySize(pszBuf, needed);
+    dwChars = p_WideCharToMultiByte(GetConsoleOutputCP(), 0, utf16.c_str(), -1,
+                                    pszBuf, needed, NULL, NULL);
     if (WriteConsoleA(hOut, pszBuf, dwChars - 1, &dwCharsWritten, NULL)) {
       FreePoolMemory(pszBuf);
       return dwCharsWritten;
@@ -2404,22 +2273,19 @@ int win32_unlink(const char* filename)
 {
   int nRetCode;
   if (p_wunlink) {
-    POOLMEM* pwszBuf;
-
-    pwszBuf = GetPoolMemory(PM_FNAME);
-    make_win32_path_UTF8_2_wchar(pwszBuf, filename);
-    nRetCode = _wunlink((LPCWSTR)pwszBuf);
+    std::wstring utf16 = make_win32_path_UTF8_2_wchar(filename);
+    nRetCode = _wunlink(utf16.c_str());
 
     // Special case if file is readonly, we retry but unset attribute before
     if (nRetCode == -1 && errno == EACCES && p_SetFileAttributesW
         && p_GetFileAttributesW) {
-      DWORD dwAttr = p_GetFileAttributesW((LPCWSTR)pwszBuf);
+      DWORD dwAttr = p_GetFileAttributesW(utf16.c_str());
       if (dwAttr != INVALID_FILE_ATTRIBUTES) {
-        if (p_SetFileAttributesW((LPCWSTR)pwszBuf,
+        if (p_SetFileAttributesW(utf16.c_str(),
                                  dwAttr & ~FILE_ATTRIBUTE_READONLY)) {
-          nRetCode = _wunlink((LPCWSTR)pwszBuf);
+          nRetCode = _wunlink(utf16.c_str());
           /* reset to original if it didn't help */
-          if (nRetCode == -1) p_SetFileAttributesW((LPCWSTR)pwszBuf, dwAttr);
+          if (nRetCode == -1) p_SetFileAttributesW(utf16.c_str(), dwAttr);
         }
       }
     }
@@ -2428,7 +2294,7 @@ int win32_unlink(const char* filename)
      * remove file links) */
     if (nRetCode == -1) {
       Dmsg0(100, "_unlink failed, trying DeleteFileW \n");
-      if (DeleteFileW((LPCWSTR)pwszBuf) == 0) {  // 0 = fail
+      if (DeleteFileW(utf16.c_str()) == 0) {  // 0 = fail
         Dmsg0(100, "DeleteFileW failed\n");
         nRetCode = -1;
       } else {
@@ -2442,7 +2308,7 @@ int win32_unlink(const char* filename)
      * also can remove directory links) */
     if (nRetCode == -1) {
       Dmsg0(100, "DeleteFileW failed, trying RemoveDirectoryW \n");
-      if (RemoveDirectoryW((LPCWSTR)pwszBuf) == 0) {  // 0 = fail
+      if (RemoveDirectoryW(utf16.c_str()) == 0) {  // 0 = fail
         Dmsg0(100, "RemoveDirectoryW failed\n");
         nRetCode = -1;
       } else {
@@ -2450,9 +2316,6 @@ int win32_unlink(const char* filename)
         nRetCode = 0;
       }
     }
-
-    FreePoolMemory(pwszBuf);
-
   } else {
     nRetCode = _unlink(filename);
 
@@ -2486,24 +2349,18 @@ bool win32_restore_file_attributes(POOLMEM* ofname,
   bool retval = false;
 
   Dmsg1(100, "SetFileAtts %s\n", ofname);
+
   if (p_SetFileAttributesW) {
-    BOOL b;
-    POOLMEM* pwszBuf = GetPoolMemory(PM_FNAME);
+    std::wstring utf16 = make_win32_path_UTF8_2_wchar(ofname);
 
-    make_win32_path_UTF8_2_wchar(pwszBuf, ofname);
-    b = p_SetFileAttributesW((LPCWSTR)pwszBuf,
-                             atts->dwFileAttributes & SET_ATTRS);
-    FreePoolMemory(pwszBuf);
-
+    BOOL b = p_SetFileAttributesW(utf16.c_str(),
+                                  atts->dwFileAttributes & SET_ATTRS);
     if (!b) { goto bail_out; }
   } else {
-    BOOL b;
-    POOLMEM* win32_ofile = GetPoolMemory(PM_FNAME);
-
-    unix_name_to_win32(win32_ofile, ofname);
-    b = p_SetFileAttributesA(win32_ofile, atts->dwFileAttributes & SET_ATTRS);
-    FreePoolMemory(win32_ofile);
-
+    PoolMem win32_ofile(PM_FNAME);
+    unix_name_to_win32(win32_ofile.addr(), ofname);
+    BOOL b = p_SetFileAttributesA(win32_ofile.c_str(),
+                                  atts->dwFileAttributes & SET_ATTRS);
     if (!b) { goto bail_out; }
   }
 

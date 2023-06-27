@@ -2,7 +2,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,11 +22,13 @@
 #ifndef BAREOS_WIN32_FINDLIB_WIN32_H_
 #define BAREOS_WIN32_FINDLIB_WIN32_H_
 
+#include <vector>
+#include <string>
 
 bool expand_win32_fileset(findFILESET* fileset);
 bool exclude_win32_not_to_backup_registry_entries(JobControlRecord* jcr,
                                                   FindFilesPacket* ff);
-int get_win32_driveletters(findFILESET* fileset, char* szDrives);
+std::vector<std::wstring> get_win32_volumes(findFILESET* fileset);
 bool win32_onefs_is_disabled(findFILESET* fileset);
 void win32_cleanup_copy_thread(JobControlRecord* jcr);
 void win32_flush_copy_thread(JobControlRecord* jcr);

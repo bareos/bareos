@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -48,46 +48,33 @@ static const GUID VSS_SWPRV_ProviderID
        0x4925,
        {0xaf, 0x80, 0x51, 0xab, 0xd6, 0x0b, 0x20, 0xd5}};
 
-static bool VSSPathConvert(const char* szFilePath,
-                           char* szShadowPath,
-                           int nBuflen)
+static char* VSSPathConvert(const char* szFilePath)
 {
   JobControlRecord* jcr = GetJcrFromThreadSpecificData();
 
   if (jcr && jcr->fd_impl->pVSSClient) {
-    return jcr->fd_impl->pVSSClient->GetShadowPath(szFilePath, szShadowPath,
-                                                   nBuflen);
+    return jcr->fd_impl->pVSSClient->GetShadowPath(szFilePath);
   }
 
-  return false;
+  return nullptr;
 }
 
-static bool VSSPathConvertW(const wchar_t* szFilePath,
-                            wchar_t* szShadowPath,
-                            int nBuflen)
+static wchar_t* VSSPathConvertW(const wchar_t* szFilePath)
 {
   JobControlRecord* jcr = GetJcrFromThreadSpecificData();
 
   if (jcr && jcr->fd_impl->pVSSClient) {
-    return jcr->fd_impl->pVSSClient->GetShadowPathW(szFilePath, szShadowPath,
-                                                    nBuflen);
+    return jcr->fd_impl->pVSSClient->GetShadowPathW(szFilePath);
   }
 
-  return false;
+  return nullptr;
 }
 
 void VSSInit(JobControlRecord* jcr)
 {
   // Decide which vss class to initialize
   if (g_MajorVersion == 5) {
-    switch (g_MinorVersion) {
-      case 1:
-        jcr->fd_impl->pVSSClient = new VSSClientXP();
-        break;
-      case 2:
-        jcr->fd_impl->pVSSClient = new VSSClient2003();
-        break;
-    }
+    Jmsg(jcr, M_FATAL, 0, "Your windows version is not supported anymore.\n");
     // Vista or Longhorn or later
   } else if (g_MajorVersion >= 6) {
     jcr->fd_impl->pVSSClient = new VSSClientVista();
@@ -102,10 +89,8 @@ void VSSInit(JobControlRecord* jcr)
 // Destructor
 VSSClient::~VSSClient()
 {
-  /*
-   * Release the IVssBackupComponents interface
-   * WARNING: this must be done BEFORE calling CoUninitialize()
-   */
+  /* Release the IVssBackupComponents interface
+   * WARNING: this must be done BEFORE calling CoUninitialize() */
   if (pVssObject_) {
     //      pVssObject_->Release();
     pVssObject_ = NULL;
@@ -136,64 +121,127 @@ bool VSSClient::InitializeForRestore(JobControlRecord* jcr)
   return Initialize(0, true /*=>Restore*/);
 }
 
-bool VSSClient::GetShadowPath(const char* szFilePath,
-                              char* szShadowPath,
-                              int nBuflen)
+template <typename CharT>
+static std::size_t AppendPathPart(std::basic_string<CharT>& s,
+                                  const CharT* path)
 {
-  if (!bBackupIsInitialized_) return false;
-
-  // Check for valid pathname
-  bool bIsValidName;
-
-  bIsValidName = strlen(szFilePath) > 3;
-  if (bIsValidName)
-    bIsValidName &= isalpha(szFilePath[0]) && szFilePath[1] == ':'
-                    && szFilePath[2] == '\\';
-
-  if (bIsValidName) {
-    int nDriveIndex = toupper(szFilePath[0]) - 'A';
-    if (szShadowCopyName_[nDriveIndex][0] != 0) {
-      if (WideCharToMultiByte(CP_UTF8, 0, szShadowCopyName_[nDriveIndex], -1,
-                              szShadowPath, nBuflen - 1, NULL, NULL)) {
-        nBuflen -= (int)strlen(szShadowPath);
-        bstrncat(szShadowPath, szFilePath + 2, nBuflen);
-        return true;
-      }
+  for (std::size_t lookahead = 0; path[lookahead]; lookahead += 1) {
+    CharT cur = path[lookahead];
+    if (cur == CharT{'\\'}) {
+      s.append(path, lookahead + 1);
+      return lookahead + 1;
     }
   }
-
-  bstrncpy(szShadowPath, szFilePath, nBuflen);
-  errno = EINVAL;
-  return false;
+  return 0;
 }
 
-bool VSSClient::GetShadowPathW(const wchar_t* szFilePath,
-                               wchar_t* szShadowPath,
-                               int nBuflen)
+// splits path into two sections:
+// 1) a 'maximal' mountpoint `current_volume`
+// 2) the rest of the path `path`
+// `current_volume is maximal in the sense that there are no mount points left
+// in `path` that registered in `mount_to_vol`.
+// We then return the volume guid of `current_volume` and the rest of the path.
+template <typename CharT, typename String = std::basic_string<CharT>>
+static std::pair<String, String> FindMountPoint(
+    const CharT* path,
+    std::unordered_map<String, String>& mount_to_vol)
 {
-  if (!bBackupIsInitialized_) return false;
-
-  // Check for valid pathname
-  bool bIsValidName;
-
-  bIsValidName = wcslen(szFilePath) > 3;
-  if (bIsValidName)
-    bIsValidName &= iswalpha(szFilePath[0]) && szFilePath[1] == ':'
-                    && szFilePath[2] == '\\';
-
-  if (bIsValidName) {
-    int nDriveIndex = towupper(szFilePath[0]) - 'A';
-    if (szShadowCopyName_[nDriveIndex][0] != 0) {
-      wcsncpy(szShadowPath, szShadowCopyName_[nDriveIndex], nBuflen);
-      nBuflen -= (int)wcslen(szShadowCopyName_[nDriveIndex]);
-      wcsncat(szShadowPath, szFilePath + 2, nBuflen);
-      return true;
+  String current_volume{};
+  std::size_t offset{0};
+  std::size_t lookahead{0};
+  // idea:
+  // we have { C:/ -> VolC, VolC/dir/mountD/ -> VolD } and path is
+  // C:/dir/mountD/path.   Then it goes like this:
+  // current_volume = C:/ -> VolC; path = dir/mountD/path; lock in path
+  // current_volume = VolC/dir/ -> X; path = mountD/path
+  // current_volume = VolC/did/mountD/ -> VolD; path = path; lock in path
+  // no more / found so reset to the last locked in path and return
+  // -> current_volume = VolD; path = path
+  while (lookahead = AppendPathPart(current_volume, path + offset),
+         lookahead != 0) {
+    offset += lookahead;
+    if (auto found = mount_to_vol.find(current_volume);
+        found != mount_to_vol.end()) {
+      current_volume.assign(found->second);
+      path += offset;
+      offset = 0;
     }
   }
+  current_volume.resize(current_volume.size() - offset);
+  // TODO: we do not need new strings for that
+  // we could just return char pointers!
+  return {std::move(current_volume), path};
+}
 
-  wcsncpy(szShadowPath, szFilePath, nBuflen);
+char* VSSClient::GetShadowPath(const char* szFilePath)
+{
+  using namespace std::literals;
+  if (!bBackupIsInitialized_) return nullptr;
+
+  auto [volume, path] = FindMountPoint(szFilePath, this->mount_to_vol);
+
+  if (auto found = vol_to_vss.find(volume); found != vol_to_vss.end()) {
+    constexpr std::string_view sep = "\\"sv;
+    auto len = found->second.size() + sep.size() + path.size() + 1;
+    char* shadow_path = (char*)malloc(len * sizeof(*shadow_path));
+    shadow_path[len - 1] = '\0';
+    auto head = std::copy(std::begin(found->second), std::end(found->second),
+                          shadow_path);
+
+    head = std::copy(std::begin(sep), std::end(sep), head);
+
+    head = std::copy(std::begin(path), std::end(path), head);
+
+    ASSERT(head == shadow_path + len - 1);
+    return shadow_path;
+  } else {
+    Dmsg4(50,
+          "Could not find shadow volume for volume '%s' (path = '%s'; input = "
+          "'%s').\n"
+          "Falling back to live system!\n",
+          volume.c_str(), path.c_str(), szFilePath);
+    goto bail_out;
+  }
+
+bail_out:
   errno = EINVAL;
-  return false;
+  return nullptr;
+}
+
+wchar_t* VSSClient::GetShadowPathW(const wchar_t* szFilePath)
+{
+  using namespace std::literals;
+  if (!bBackupIsInitialized_) return nullptr;
+
+  auto [volume, path] = FindMountPoint(szFilePath, this->mount_to_vol_w);
+
+  if (auto found = vol_to_vss_w.find(volume); found != vol_to_vss_w.end()) {
+    // we need two extra chars; one for the null terminator and one for
+    // the backslash between the parts
+    constexpr std::wstring_view sep = L"\\"sv;
+    auto len = found->second.size() + sep.size() + path.size() + 1;
+    wchar_t* shadow_path = (wchar_t*)malloc(len * sizeof(*shadow_path));
+    shadow_path[len - 1] = '\0';
+    auto head = std::copy(std::begin(found->second), std::end(found->second),
+                          shadow_path);
+
+    head = std::copy(std::begin(sep), std::end(sep), head);
+
+    head = std::copy(std::begin(path), std::end(path), head);
+
+    ASSERT(head == shadow_path + len - 1);
+    return shadow_path;
+  } else {
+    // TODO: how to do dmsg with wstrs ?
+    Dmsg4(50,
+          "Could not find shadow volume.\n"
+          "Falling back to live system!\n");
+    goto bail_out;
+  }
+
+bail_out:
+  errno = EINVAL;
+  return nullptr;
 }
 
 size_t VSSClient::GetWriterCount() const { return writer_info_.size(); }

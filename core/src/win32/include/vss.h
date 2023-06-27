@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -34,6 +34,8 @@
  * Author          : Thorsten Engel
  * Created On      : Fri May 06 21:44:00 2006
  */
+
+#include <unordered_set>
 
 #ifndef b_errno_win32
 #  define b_errno_win32 (1 << 29)
@@ -67,24 +69,26 @@ class VSSClient {
   // Backup Process
   bool InitializeForBackup(JobControlRecord* jcr);
   bool InitializeForRestore(JobControlRecord* jcr);
-  virtual void AddDriveSnapshots(IVssBackupComponents* pVssObj,
-                                 char* szDriveLetters,
-                                 bool onefs_disabled)
+  virtual void AddVolumeSnapshots(IVssBackupComponents* pVssObj,
+                                  const std::vector<std::wstring>& volumes,
+                                  bool onefs_disabled)
       = 0;
-  virtual void AddVolumeMountPointSnapshots(IVssBackupComponents* pVssObj,
-                                            LPWSTR volume)
+  virtual void AddVolumeMountPointSnapshots(
+      IVssBackupComponents* pVssObj,
+      const std::wstring& volume,
+      std::unordered_set<std::wstring>& snapshoted_volumes)
       = 0;
   virtual void ShowVolumeMountPointStats(JobControlRecord* jcr) = 0;
 
-  virtual bool CreateSnapshots(char* szDriveLetters, bool onefs_disabled) = 0;
+  virtual bool CreateSnapshots(const std::vector<std::wstring>& volumes,
+                               bool onefs_disabled)
+      = 0;
   virtual bool CloseBackup() = 0;
   virtual bool CloseRestore() = 0;
   virtual WCHAR* GetMetadata() = 0;
   virtual const char* GetDriverName() = 0;
-  bool GetShadowPath(const char* szFilePath, char* szShadowPath, int nBuflen);
-  bool GetShadowPathW(const wchar_t* szFilePath,
-                      wchar_t* szShadowPath,
-                      int nBuflen); /* nBuflen in characters */
+  char* GetShadowPath(const char* szFilePath);
+  wchar_t* GetShadowPathW(const wchar_t* szFilePath);
 
   size_t GetWriterCount() const;
   const char* GetWriterInfo(size_t nIndex) const;
@@ -94,6 +98,14 @@ class VSSClient {
   const bool IsInitialized() { return bBackupIsInitialized_; };
   HMODULE GetVssDllHandle() { return hLib_; };
   IUnknown* GetVssObject() { return pVssObject_; };
+
+  // sadly we need to construct a string here for lookups
+  // if we switch to c++20 we can use lookups without constructing strings!
+  // check: https://stackoverflow.com/a/71258936
+  std::unordered_map<std::string, std::string> mount_to_vol{};
+  std::unordered_map<std::string, std::string> vol_to_vss{};
+  std::unordered_map<std::wstring, std::wstring> mount_to_vol_w{};
+  std::unordered_map<std::wstring, std::wstring> vol_to_vss_w{};
 
  private:
   virtual bool Initialize(DWORD dwContext, bool bDuringRestore = FALSE) = 0;
@@ -112,11 +124,6 @@ class VSSClient {
   IUnknown* pVssObject_ = nullptr;
   GUID uidCurrentSnapshotSet_ = GUID_NULL;
 
-  /*
-   ! drive A will be stored on position 0, Z on pos. 25
-   */
-  wchar_t wszUniqueVolumeName_[26][MAX_PATH]{0};
-  wchar_t szShadowCopyName_[26][MAX_PATH]{0};
   wchar_t* metadata_ = nullptr;
 
   struct WriterInfo {
@@ -134,73 +141,19 @@ class VSSClient {
   int VMP_snapshots = 0; /* volume mount points that are snapshotted */
 };
 
-class VSSClientXP : public VSSClient {
- public:
-  VSSClientXP();
-  virtual ~VSSClientXP();
-  virtual void AddDriveSnapshots(IVssBackupComponents* pVssObj,
-                                 char* szDriveLetters,
-                                 bool onefs_disabled) override;
-  virtual void AddVolumeMountPointSnapshots(IVssBackupComponents* pVssObj,
-                                            LPWSTR volume) override;
-  virtual void ShowVolumeMountPointStats(JobControlRecord* jcr) override;
-  virtual bool CreateSnapshots(char* szDriveLetters,
-                               bool onefs_disabled) override;
-  virtual bool CloseBackup() override;
-  virtual bool CloseRestore() override;
-  virtual WCHAR* GetMetadata() override;
-#  ifdef _WIN64
-  virtual const char* GetDriverName() override { return "Win64 VSS"; };
-#  else
-  virtual const char* GetDriverName() override { return "Win32 VSS"; };
-#  endif
-
- private:
-  virtual bool Initialize(DWORD dwContext, bool bDuringRestore) override;
-  virtual bool WaitAndCheckForAsyncOperation(IVssAsync* pAsync) override;
-  virtual void QuerySnapshotSet(GUID snapshotSetID) override;
-  bool CheckWriterStatus();
-};
-
-class VSSClient2003 : public VSSClient {
- public:
-  VSSClient2003();
-  virtual ~VSSClient2003();
-  virtual void AddDriveSnapshots(IVssBackupComponents* pVssObj,
-                                 char* szDriveLetters,
-                                 bool onefs_disabled) override;
-  virtual void AddVolumeMountPointSnapshots(IVssBackupComponents* pVssObj,
-                                            LPWSTR volume) override;
-  virtual void ShowVolumeMountPointStats(JobControlRecord* jcr) override;
-  virtual bool CreateSnapshots(char* szDriveLetters,
-                               bool onefs_disabled) override;
-  virtual bool CloseBackup() override;
-  virtual bool CloseRestore() override;
-  virtual WCHAR* GetMetadata() override;
-#  ifdef _WIN64
-  virtual const char* GetDriverName() override { return "Win64 VSS"; };
-#  else
-  virtual const char* GetDriverName() override { return "Win32 VSS"; };
-#  endif
-
- private:
-  virtual bool Initialize(DWORD dwContext, bool bDuringRestore) override;
-  virtual bool WaitAndCheckForAsyncOperation(IVssAsync* pAsync) override;
-  virtual void QuerySnapshotSet(GUID snapshotSetID) override;
-  bool CheckWriterStatus();
-};
-
 class VSSClientVista : public VSSClient {
  public:
   VSSClientVista();
   virtual ~VSSClientVista() override;
-  virtual void AddDriveSnapshots(IVssBackupComponents* pVssObj,
-                                 char* szDriveLetters,
-                                 bool onefs_disabled) override;
-  virtual void AddVolumeMountPointSnapshots(IVssBackupComponents* pVssObj,
-                                            LPWSTR volume) override;
+  virtual void AddVolumeSnapshots(IVssBackupComponents* pVssObj,
+                                  const std::vector<std::wstring>& volumes,
+                                  bool onefs_disabled) override;
+  virtual void AddVolumeMountPointSnapshots(
+      IVssBackupComponents* pVssObj,
+      const std::wstring& volume,
+      std::unordered_set<std::wstring>& snapshoted_volumes) override;
   virtual void ShowVolumeMountPointStats(JobControlRecord* jcr) override;
-  virtual bool CreateSnapshots(char* szDriveLetters,
+  virtual bool CreateSnapshots(const std::vector<std::wstring>& volumes,
                                bool onefs_disabled) override;
   virtual bool CloseBackup() override;
   virtual bool CloseRestore() override;

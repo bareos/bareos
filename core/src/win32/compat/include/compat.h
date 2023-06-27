@@ -225,12 +225,8 @@ bool InitializeComSecurity();
 bool CreateJunction(const char* szJunction, const char* szPath);
 const char* errorString(void);
 
-typedef bool (*t_pVSSPathConvert)(const char* szFilePath,
-                                  char* szShadowPath,
-                                  int nBuflen);
-typedef bool (*t_pVSSPathConvertW)(const wchar_t* szFilePath,
-                                   wchar_t* szShadowPath,
-                                   int nBuflen);
+typedef char* (*t_pVSSPathConvert)(const char* szFilePath);
+typedef wchar_t* (*t_pVSSPathConvertW)(const wchar_t* szFilePath);
 bool SetVSSPathConvert(t_pVSSPathConvert pPathConvert,
                        t_pVSSPathConvertW pPathConvertW);
 
@@ -348,7 +344,6 @@ int win32_chmod(const char*, mode_t, _dev_t);
 char* win32_cgets(char* buffer, int len);
 
 int WSA_Init(void);
-void Win32TSDCleanup();
 
 #if defined(HAVE_MINGW)
 void closelog();
@@ -403,6 +398,7 @@ bool win32_restore_file_attributes(POOLMEM* ofname,
                                    HANDLE handle,
                                    WIN32_FILE_ATTRIBUTE_DATA* atts);
 
+void Win32ResetConversionCache();
 #undef ftruncate
 #define ftruncate win32_ftruncate
 

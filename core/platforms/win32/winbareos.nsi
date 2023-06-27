@@ -1880,8 +1880,6 @@ ${If} ${SectionIsSelected} ${SEC_SD} # if sd is selected, also generate sd snipp
                               Name = $ClientName$\r$\n  \
                               Address = $ClientAddress$\r$\n  \
                               Password = $\"$ClientPassword$\"$\r$\n  \
-                              # uncomment the following if using bacula $\r$\n  \
-                              # Catalog = $\"MyCatalog$\"$\r$\n\
                            }$\r$\n $\r$\n\
                          Storage {$\r$\n  \
                               Name = $StorageName$\r$\n  \
@@ -1896,8 +1894,6 @@ ${Else}
                               Name = $ClientName$\r$\n  \
                               Address = $ClientAddress$\r$\n  \
                               Password = $\"$ClientPassword$\"$\r$\n  \
-                              # uncomment the following if using bacula $\r$\n  \
-                              # Catalog = $\"MyCatalog$\"$\r$\n  \
                            }$\r$\n"
 ${EndIf}
 

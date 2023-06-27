@@ -488,8 +488,6 @@ static inline int BopenEncrypted(BareosFilePacket* bfd,
 {
   bool is_dir;
   ULONG ulFlags = 0;
-  POOLMEM* win32_fname;
-  POOLMEM* win32_fname_wchar;
 
   if (!p_OpenEncryptedFileRawA && !p_OpenEncryptedFileRawW) {
     Dmsg0(50,
@@ -500,13 +498,6 @@ static inline int BopenEncrypted(BareosFilePacket* bfd,
   is_dir = S_ISDIR(mode);
 
   // Convert to Windows path format
-  win32_fname = GetPoolMemory(PM_FNAME);
-  win32_fname_wchar = GetPoolMemory(PM_FNAME);
-
-  unix_name_to_win32(win32_fname, (char*)fname);
-  if (p_OpenEncryptedFileRawW && p_MultiByteToWideChar) {
-    make_win32_path_UTF8_2_wchar(win32_fname_wchar, fname);
-  }
 
   // See if we open the file for create or read-write.
   if ((flags & O_CREAT) || (flags & O_WRONLY)) {
@@ -522,23 +513,23 @@ static inline int BopenEncrypted(BareosFilePacket* bfd,
   }
 
   if (p_OpenEncryptedFileRawW && p_MultiByteToWideChar) {
+    std::wstring utf16 = make_win32_path_UTF8_2_wchar(fname);
+
     // Unicode open.
-    Dmsg1(100, "OpenEncryptedFileRawW=%s\n", win32_fname);
-    if (p_OpenEncryptedFileRawW((LPCWSTR)win32_fname_wchar, ulFlags,
-                                &(bfd->pvContext))) {
+    Dmsg1(100, "OpenEncryptedFileRawW=%s\n", FromUtf16(utf16).c_str());
+    if (p_OpenEncryptedFileRawW(utf16.c_str(), ulFlags, &(bfd->pvContext))) {
       bfd->mode = BF_CLOSED;
     }
   } else {
     // ASCII open.
-    Dmsg1(100, "OpenEncryptedFileRawA=%s\n", win32_fname);
-    if (p_OpenEncryptedFileRawA(win32_fname_wchar, ulFlags,
+    PoolMem win32_fname(PM_FNAME);
+    unix_name_to_win32(win32_fname.addr(), fname);
+    Dmsg1(100, "OpenEncryptedFileRawA=%s\n", win32_fname.c_str());
+    if (p_OpenEncryptedFileRawA(win32_fname.c_str(), ulFlags,
                                 &(bfd->pvContext))) {
       bfd->mode = BF_CLOSED;
     }
   }
-
-  FreePoolMemory(win32_fname_wchar);
-  FreePoolMemory(win32_fname);
 
   bfd->encrypted = true;
 
@@ -550,15 +541,8 @@ static inline int BopenNonencrypted(BareosFilePacket* bfd,
                                     int flags,
                                     mode_t mode)
 {
-  POOLMEM* win32_fname;
-  POOLMEM* win32_fname_wchar;
   DWORD dwaccess, dwflags, dwshare;
 
-  // Convert to Windows path format
-  win32_fname = GetPoolMemory(PM_FNAME);
-  win32_fname_wchar = GetPoolMemory(PM_FNAME);
-
-  unix_name_to_win32(win32_fname, (char*)fname);
   if (bfd->cmd_plugin && plugin_bopen) {
     int rtnstat;
     Dmsg1(50, "call plugin_bopen fname=%s\n", fname);
@@ -576,8 +560,6 @@ static inline int BopenNonencrypted(BareosFilePacket* bfd,
       bfd->mode = BF_CLOSED;
       Dmsg1(000, "==== plugin_bopen returned bad status=%d\n", rtnstat);
     }
-    FreePoolMemory(win32_fname_wchar);
-    FreePoolMemory(win32_fname);
     return bfd->mode == BF_CLOSED ? -1 : 1;
   }
   Dmsg0(50, "=== NO plugin\n");
@@ -585,10 +567,6 @@ static inline int BopenNonencrypted(BareosFilePacket* bfd,
   if (!(p_CreateFileA || p_CreateFileW)) {
     Dmsg0(50, "No CreateFileA and no CreateFileW!!!!!\n");
     return 0;
-  }
-
-  if (p_CreateFileW && p_MultiByteToWideChar) {
-    make_win32_path_UTF8_2_wchar(win32_fname_wchar, fname);
   }
 
   if (flags & O_CREAT) { /* Create */
@@ -603,23 +581,25 @@ static inline int BopenNonencrypted(BareosFilePacket* bfd,
 
     // Unicode open for create write
     if (p_CreateFileW && p_MultiByteToWideChar) {
-      Dmsg1(100, "Create CreateFileW=%s\n", win32_fname);
-      bfd->fh = p_CreateFileW((LPCWSTR)win32_fname_wchar,
-                              dwaccess,      /* Requested access */
-                              0,             /* Shared mode */
-                              NULL,          /* SecurityAttributes */
-                              CREATE_ALWAYS, /* CreationDisposition */
-                              dwflags,       /* Flags and attributes */
-                              NULL);         /* TemplateFile */
+      std::wstring utf16 = make_win32_path_UTF8_2_wchar(fname);
+      Dmsg1(100, "Create CreateFileW=%s\n", FromUtf16(utf16).c_str());
+      bfd->fh = p_CreateFileW(utf16.c_str(), dwaccess, /* Requested access */
+                              0,                       /* Shared mode */
+                              NULL,                    /* SecurityAttributes */
+                              CREATE_ALWAYS,           /* CreationDisposition */
+                              dwflags, /* Flags and attributes */
+                              NULL);   /* TemplateFile */
     } else {
+      PoolMem ansi(PM_FNAME);
+      unix_name_to_win32(ansi.addr(), fname);
       // ASCII open
-      Dmsg1(100, "Create CreateFileA=%s\n", win32_fname);
-      bfd->fh = p_CreateFileA(win32_fname, dwaccess, /* Requested access */
-                              0,                     /* Shared mode */
-                              NULL,                  /* SecurityAttributes */
-                              CREATE_ALWAYS,         /* CreationDisposition */
-                              dwflags,               /* Flags and attributes */
-                              NULL);                 /* TemplateFile */
+      Dmsg1(100, "Create CreateFileA=%s\n", ansi.c_str());
+      bfd->fh = p_CreateFileA(ansi.c_str(), dwaccess, /* Requested access */
+                              0,                      /* Shared mode */
+                              NULL,                   /* SecurityAttributes */
+                              CREATE_ALWAYS,          /* CreationDisposition */
+                              dwflags,                /* Flags and attributes */
+                              NULL);                  /* TemplateFile */
     }
 
     bfd->mode = BF_WRITE;
@@ -639,23 +619,25 @@ static inline int BopenNonencrypted(BareosFilePacket* bfd,
 
     if (p_CreateFileW && p_MultiByteToWideChar) {
       // unicode open for open existing write
-      Dmsg1(100, "Write only CreateFileW=%s\n", win32_fname);
-      bfd->fh = p_CreateFileW((LPCWSTR)win32_fname_wchar,
-                              dwaccess,      /* Requested access */
-                              0,             /* Shared mode */
-                              NULL,          /* SecurityAttributes */
-                              OPEN_EXISTING, /* CreationDisposition */
-                              dwflags,       /* Flags and attributes */
-                              NULL);         /* TemplateFile */
+      std::wstring utf16 = make_win32_path_UTF8_2_wchar(fname);
+      Dmsg1(100, "Write only CreateFileW=%s\n", FromUtf16(utf16).c_str());
+      bfd->fh = p_CreateFileW(utf16.c_str(), dwaccess, /* Requested access */
+                              0,                       /* Shared mode */
+                              NULL,                    /* SecurityAttributes */
+                              OPEN_EXISTING,           /* CreationDisposition */
+                              dwflags, /* Flags and attributes */
+                              NULL);   /* TemplateFile */
     } else {
+      PoolMem ansi(PM_FNAME);
+      unix_name_to_win32(ansi.addr(), fname);
       // ASCII open
-      Dmsg1(100, "Write only CreateFileA=%s\n", win32_fname);
-      bfd->fh = p_CreateFileA(win32_fname, dwaccess, /* Requested access */
-                              0,                     /* Shared mode */
-                              NULL,                  /* SecurityAttributes */
-                              OPEN_EXISTING,         /* CreationDisposition */
-                              dwflags,               /* Flags and attributes */
-                              NULL);                 /* TemplateFile */
+      Dmsg1(100, "Write only CreateFileA=%s\n", ansi.c_str());
+      bfd->fh = p_CreateFileA(ansi.c_str(), dwaccess, /* Requested access */
+                              0,                      /* Shared mode */
+                              NULL,                   /* SecurityAttributes */
+                              OPEN_EXISTING,          /* CreationDisposition */
+                              dwflags,                /* Flags and attributes */
+                              NULL);                  /* TemplateFile */
     }
 
     bfd->mode = BF_WRITE;
@@ -678,23 +660,25 @@ static inline int BopenNonencrypted(BareosFilePacket* bfd,
 
     if (p_CreateFileW && p_MultiByteToWideChar) {
       // Unicode open for open existing read
-      Dmsg1(100, "Read CreateFileW=%s\n", win32_fname);
-      bfd->fh = p_CreateFileW((LPCWSTR)win32_fname_wchar,
-                              dwaccess,      /* Requested access */
-                              dwshare,       /* Share modes */
-                              NULL,          /* SecurityAttributes */
-                              OPEN_EXISTING, /* CreationDisposition */
-                              dwflags,       /* Flags and attributes */
-                              NULL);         /* TemplateFile */
+      std::wstring utf16 = make_win32_path_UTF8_2_wchar(fname);
+      Dmsg1(100, "Read CreateFileW=%s\n", FromUtf16(utf16).c_str());
+      bfd->fh = p_CreateFileW(utf16.c_str(), dwaccess, /* Requested access */
+                              dwshare,                 /* Share modes */
+                              NULL,                    /* SecurityAttributes */
+                              OPEN_EXISTING,           /* CreationDisposition */
+                              dwflags, /* Flags and attributes */
+                              NULL);   /* TemplateFile */
     } else {
-      // ASCII open for open existing read
-      Dmsg1(100, "Read CreateFileA=%s\n", win32_fname);
-      bfd->fh = p_CreateFileA(win32_fname, dwaccess, /* Requested access */
-                              dwshare,               /* Share modes */
-                              NULL,                  /* SecurityAttributes */
-                              OPEN_EXISTING,         /* CreationDisposition */
-                              dwflags,               /* Flags and attributes */
-                              NULL);                 /* TemplateFile */
+      PoolMem ansi(PM_FNAME);
+      unix_name_to_win32(ansi.addr(), fname);
+      // ASCII open
+      Dmsg1(100, "Read CreateFileA=%s\n", ansi.c_str());
+      bfd->fh = p_CreateFileA(ansi.c_str(), dwaccess, /* Requested access */
+                              dwshare,                /* Share modes */
+                              NULL,                   /* SecurityAttributes */
+                              OPEN_EXISTING,          /* CreationDisposition */
+                              dwflags,                /* Flags and attributes */
+                              NULL);                  /* TemplateFile */
     }
 
     bfd->mode = BF_READ;
@@ -711,8 +695,6 @@ static inline int BopenNonencrypted(BareosFilePacket* bfd,
   bfd->lplugin_private_context = NULL;
   bfd->win32Decomplugin_private_context.bIsInData = false;
   bfd->win32Decomplugin_private_context.liNextHeader = 0;
-  FreePoolMemory(win32_fname_wchar);
-  FreePoolMemory(win32_fname);
 
   bfd->encrypted = false;
 

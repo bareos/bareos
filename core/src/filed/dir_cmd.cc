@@ -1800,7 +1800,7 @@ static bool BackupCmd(JobControlRecord* jcr)
   // START VSS ON WIN32
   if (jcr->fd_impl->pVSSClient) {
     if (jcr->fd_impl->pVSSClient->InitializeForBackup(jcr)) {
-      int drive_count;
+      int volume_count;
       char szWinDriveLetters[27];
       bool onefs_disabled;
 
@@ -1812,18 +1812,29 @@ static bool BackupCmd(JobControlRecord* jcr)
       // Plugin driver can return drive letters
       GeneratePluginEvent(jcr, bEventVssPrepareSnapshot, szWinDriveLetters);
 
-      drive_count = get_win32_driveletters(jcr->fd_impl->ff->fileset,
-                                           szWinDriveLetters);
+      std::vector<std::wstring> volumes
+          = get_win32_volumes(jcr->fd_impl->ff->fileset);
+
+      {
+        char drive[] = "_:";
+        for (std::size_t i = 0;
+             i < sizeof(szWinDriveLetters) && szWinDriveLetters[i]; ++i) {
+          drive[0] = szWinDriveLetters[i];
+          std::wstring wdrive = FromUtf8(drive);
+          if (GetDriveTypeW(wdrive.c_str()) == DRIVE_FIXED) {
+            volumes.emplace_back(std::move(wdrive));
+          }
+        }
+      }
 
       onefs_disabled = win32_onefs_is_disabled(jcr->fd_impl->ff->fileset);
 
-      if (drive_count > 0) {
-        Jmsg(jcr, M_INFO, 0,
-             _("Generate VSS snapshots. Driver=\"%s\", Drive(s)=\"%s\"\n"),
-             jcr->fd_impl->pVSSClient->GetDriverName(),
-             (drive_count) ? szWinDriveLetters : "None");
+      volume_count = volumes.size();
+      if (volume_count > 0) {
+        Jmsg(jcr, M_INFO, 0, _("Generate VSS snapshots. Driver=\"%s\"\n"),
+             jcr->fd_impl->pVSSClient->GetDriverName());
 
-        if (!jcr->fd_impl->pVSSClient->CreateSnapshots(szWinDriveLetters,
+        if (!jcr->fd_impl->pVSSClient->CreateSnapshots(volumes,
                                                        onefs_disabled)) {
           BErrNo be;
           Jmsg(jcr, M_FATAL, 0,
@@ -1835,12 +1846,18 @@ static bool BackupCmd(JobControlRecord* jcr)
           // Inform about VMPs if we have them
           jcr->fd_impl->pVSSClient->ShowVolumeMountPointStats(jcr);
 
-          // Tell user if snapshot creation of a specific drive failed
-          for (int i = 0; i < (int)strlen(szWinDriveLetters); i++) {
-            if (islower(szWinDriveLetters[i])) {
+          VSSClient* client = jcr->fd_impl->pVSSClient;
+
+          // Tell the user about the created shadow copies
+          for (auto [mount, vol] : client->mount_to_vol) {
+            if (auto found = client->vol_to_vss.find(vol);
+                found != client->vol_to_vss.end()) {
+              Jmsg(jcr, M_INFO, 0, "(%s)%s -> %s\n", mount.c_str(), vol.c_str(),
+                   found->second.c_str());
+            } else {
               Jmsg(jcr, M_FATAL, 0,
-                   _("Generate VSS snapshot of drive \"%c:\\\" failed.\n"),
-                   szWinDriveLetters[i]);
+                   "No snapshot for volume %s (aka. %s) was generated.\n",
+                   mount.c_str(), vol.c_str());
             }
           }
 
@@ -1856,7 +1873,7 @@ static bool BackupCmd(JobControlRecord* jcr)
 
       } else {
         Jmsg(jcr, M_FATAL, 0,
-             _("No drive letters found for generating VSS snapshots.\n"));
+             _("No volumes found for generating VSS snapshots.\n"));
       }
     } else {
       BErrNo be;

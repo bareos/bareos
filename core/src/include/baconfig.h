@@ -538,7 +538,14 @@ int Getdomainname(char* name, int len);
 #  define DEFAULT_CONFIGDIR "C:\\Documents and Settings\\All Users\\Bareos"
 #  define PathSeparator '\\'
 
-inline bool IsPathSeparator(int ch) { return ch == '/' || ch == '\\'; }
+inline bool IsPathSeparator(int ch)
+{
+  // check that this works regardless of whether one uses
+  // wchar_t or char
+  static_assert(int{L'/'} == int{'/'});
+  static_assert(int{L'\\'} == int{'\\'});
+  return ch == '/' || ch == '\\';
+}
 inline char* first_path_separator(char* path) { return strpbrk(path, "/\\"); }
 inline const char* first_path_separator(const char* path)
 {
