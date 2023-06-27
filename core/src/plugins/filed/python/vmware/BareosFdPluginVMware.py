@@ -51,7 +51,7 @@ except ImportError:
 from pyVim.connect import SmartConnect, Disconnect
 from pyVmomi import vim
 from pyVmomi import vmodl
-from pyVim.task import WaitForTask
+import pyVim.task
 from pyVmomi.VmomiSupport import VmomiJSONEncoder
 
 # if OrderedDict is not available from collection (eg. SLES11),
@@ -302,7 +302,7 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         # strip trailing "/" from folder option value value
         if "folder" in self.options:
-            self.options["folder"] = self.options["folder"].rstrip("/")
+            self.options["folder"] = self.vadp.proper_path(self.options["folder"])
 
         if self.options.get("restore_powerstate"):
             if self.options["restore_powerstate"] not in ["on", "off", "previous"]:
@@ -375,13 +375,6 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 % (option, StringCodec.encode(self.options[option])),
             )
 
-        for options in self.options:
-            bareosfd.DebugMessage(
-                100,
-                "Using Option %s=%s\n"
-                % (option, StringCodec.encode(self.options[option])),
-            )
-
         if not self.options.get("localvmdk") == "yes":
             if "vcthumbprint" in self.options:
                 # fetch the thumbprint and compare it with the passed thumbprint,
@@ -424,10 +417,13 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         if "uuid" in self.options:
             self.vadp.backup_path = "/VMS/%s" % (self.options["uuid"])
         else:
-            self.vadp.backup_path = "/VMS/%s/%s/%s" % (
-                self.options["dc"],
-                self.options["folder"].strip("/"),
-                self.options["vmname"],
+            self.vadp.backup_path = self.vadp.proper_path(
+                "/VMS/%s/%s/%s"
+                % (
+                    self.options["dc"],
+                    self.options["folder"],
+                    self.options["vmname"],
+                )
             )
 
         return self.vadp.prepare_vm_backup()
@@ -818,7 +814,12 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 100, "handle_plugin_event() called with bEventEndBackupJob\n"
             )
             bareosfd.DebugMessage(100, "removing Snapshot\n")
-            self.vadp.remove_vm_snapshot()
+            # Normal snapshot removal usually failed when there were long
+            # delays during backup, so that keepalive had to reconnect
+            # to vCenter. Retrieving the VM details again and cleaning
+            # up any snapshots taken by this plugin is more reliable.
+            self.vadp.get_vm_details()
+            self.vadp.cleanup_vm_snapshots()
 
         elif event == bareosfd.bEventEndFileSet:
             bareosfd.DebugMessage(
@@ -1008,6 +1009,7 @@ class BareosVADPWrapper(object):
         self.fetched_vcthumbprint = None
         self.snapshot_retries = 3
         self.snapshot_retry_wait = 5
+        self.snapshot_prefix = "BareosTmpSnap_jobId"
 
     def connect_vmware(self):
         # this prevents from repeating on second call
@@ -1097,15 +1099,23 @@ class BareosVADPWrapper(object):
             return
 
         if int(time.time()) - self.si_last_keepalive > 600:
-            self.si.CurrentTime()
+            try:
+                self.si.CurrentTime()
+            except vim.fault.NotAuthenticated as keepalive_error:
+                bareosfd.JobMessage(
+                    bareosfd.M_INFO,
+                    "keepalive failed with %s, last keepalive was %s s ago, trying to reconnect.\n"
+                    % (keepalive_error.msg, time.time() - self.si_last_keepalive),
+                )
+                self.si = None
+                self.connect_vmware()
+                self.get_vm_details()
+
             self.si_last_keepalive = int(time.time())
 
-    def prepare_vm_backup(self):
+    def get_vm_details(self):
         """
-        prepare VM backup:
-        - get vm details
-        - take snapshot
-        - get disk devices
+        Get VM details
         """
         if "uuid" in self.options:
             if not self.get_vm_details_by_uuid():
@@ -1136,6 +1146,14 @@ class BareosVADPWrapper(object):
             "Successfully got details for VM %s\n" % (StringCodec.encode(self.vm.name)),
         )
 
+    def prepare_vm_backup(self):
+        """
+        prepare VM backup:
+        - take snapshot
+        - get disk devices
+        """
+        self.get_vm_details()
+
         # check if the VM supports CBT and that CBT is enabled
         if not self.vm.capability.changeTrackingSupported:
             bareosfd.DebugMessage(
@@ -1165,6 +1183,10 @@ class BareosVADPWrapper(object):
             100,
             "Creating Snapshot on VM %s\n" % (StringCodec.encode(self.vm.name)),
         )
+
+        # cleanup leftover snapshots from previous backups (if any exist)
+        # before creating a new snapshot
+        self.cleanup_vm_snapshots()
 
         if not self.create_vm_snapshot():
             bareosfd.DebugMessage(
@@ -1309,7 +1331,9 @@ class BareosVADPWrapper(object):
                 folder = ""
                 self._get_dcftree(vmListWithFolder, folder, dc.vmFolder)
 
-        vm_path = "%s/%s" % (self.options["folder"], self.options["vmname"])
+        vm_path = self.proper_path(
+            "%s/%s" % (self.options["folder"], self.options["vmname"])
+        )
 
         if vm_path not in vmListWithFolder:
             return False
@@ -1470,6 +1494,84 @@ class BareosVADPWrapper(object):
 
         return resource_pools[resource_pool_path]
 
+    def get_vm_snapshots_by_name(
+        self, snapshots=None, snapshot_name=None, startswith_match=True
+    ):
+        """
+        Recursive function to get snapshot of the VM
+        """
+        found_snapshots = []
+
+        if snapshots is None:
+            if not self.vm.snapshot:
+                # no snapshots exist
+                return None
+
+            snapshots = self.vm.snapshot.rootSnapshotList
+
+        if snapshot_name is None:
+            snapshot_name = self.snapshot_prefix
+
+        for snapshot in snapshots:
+            if startswith_match:
+                if snapshot.name.startswith(snapshot_name):
+                    found_snapshots.append(snapshot)
+            else:
+                if snapshot.name == snapshot_name:
+                    found_snapshots.append(snapshot)
+
+            found_snapshots.extend(
+                self.get_vm_snapshots_by_name(
+                    snapshots=snapshot.childSnapshotList,
+                    snapshot_name=snapshot_name,
+                    startswith_match=startswith_match,
+                )
+            )
+
+        return found_snapshots
+
+    def cleanup_vm_snapshots(self):
+        """
+        Cleanup all existing temporary snapshots
+
+        Remove all snapshots which have been created by this plugin.
+        """
+        snapshots = self.get_vm_snapshots_by_name()
+        if not snapshots:
+            bareosfd.DebugMessage(
+                100,
+                "cleanup_vm_snapshots(): No snapshots found for VM %s\n"
+                % (StringCodec.encode(self.vm.name)),
+            )
+            return
+
+        remove_snap_tasks = []
+        for snapshot_info in snapshots:
+            bareosfd.JobMessage(
+                bareosfd.M_INFO,
+                "Cleaning up snapshot %s from VM %s\n"
+                % (
+                    StringCodec.encode(snapshot_info.name),
+                    StringCodec.encode(self.vm.name),
+                ),
+            )
+            try:
+                remove_snap_tasks.append(
+                    snapshot_info.snapshot.RemoveSnapshot_Task(removeChildren=False)
+                )
+            except vmodl.MethodFault as err:
+                bareosfd.JobMessage(
+                    bareosfd.M_WARNING,
+                    "Failed to remove snapshot %s from VM %s: %s\n"
+                    % (
+                        StringCodec.encode(snapshot_info.name),
+                        StringCodec.encode(self.vm.name),
+                        err.msg,
+                    ),
+                )
+
+        pyVim.task.WaitForTasks(remove_snap_tasks)
+
     def create_vm(self):
         """
         Create a new VM using JSON configuration data
@@ -1616,12 +1718,25 @@ class BareosVADPWrapper(object):
             ),
         )
 
+        vm_create_try_count = 0
         while not vm_created:
+            vm_create_try_count += 1
+            if vm_create_try_count > 5:
+                bareosfd.JobMessage(
+                    bareosfd.M_FATAL,
+                    "Giving up creating VM name %s after %s unsuccessful tries\n"
+                    % (
+                        StringCodec.encode(self.options["vmname"]),
+                        vm_create_try_count - 1,
+                    ),
+                )
+                return False
+
             try:
                 create_vm_task = target_folder.CreateVm(
                     config, pool=resource_pool, host=destination_host
                 )
-                WaitForTask(create_vm_task)
+                pyVim.task.WaitForTask(create_vm_task)
                 bareosfd.DebugMessage(
                     100,
                     "VM created: %s\n" % (StringCodec.encode(self.options["vmname"])),
@@ -1653,6 +1768,41 @@ class BareosVADPWrapper(object):
                 config.files.vmPathName = "[%s]" % (datastore_name)
                 self.vmfs_vm_path_changed = True
 
+            except vim.fault.InvalidDeviceSpec as exc_invalid_dev_spec:
+                # Can happen for virtualCdrom when connected to ISO on NFS datastore which
+                # is not available at the time when the VM is created.
+                bareosfd.JobMessage(
+                    bareosfd.M_WARNING,
+                    "Error creating VM %s: %s\n"
+                    % (
+                        StringCodec.encode(self.options["vmname"]),
+                        exc_invalid_dev_spec.faultMessage[0].message,
+                    ),
+                )
+
+                if (
+                    len(exc_invalid_dev_spec.faultMessage) != 2
+                    or exc_invalid_dev_spec.faultMessage[1].arg[0].value
+                    != "VirtualCdrom"
+                ):
+                    bareosfd.JobMessage(
+                        bareosfd.M_FATAL,
+                        "Unexpected InvalidDeviceSpec exception %s\n"
+                        % (StringCodec.encode(str(exc_invalid_dev_spec)),),
+                    )
+                    return False
+
+                dev_spec = config.deviceChange[exc_invalid_dev_spec.deviceIndex].device
+                bareosfd.JobMessage(
+                    bareosfd.M_WARNING,
+                    "Invalid VirtualCdrom backing file: %s, creating VM with disconnected VirtualCdrom\n"
+                    % (dev_spec.backing.fileName),
+                )
+                dev_spec.connectable.connected = False
+                dev_spec.connectable.startConnected = False
+                dev_spec.backing = vim.vm.device.VirtualCdrom.RemoteAtapiBackingInfo()
+                dev_spec.backing.useAutoDetect = False
+
             except Exception as ex:
                 bareosfd.JobMessage(
                     bareosfd.M_FATAL,
@@ -1676,6 +1826,9 @@ class BareosVADPWrapper(object):
         if transformer.disk_device_change_delayed:
             self.add_disk_devices_to_vm(transformer.disk_device_change_delayed)
 
+        if transformer.config_spec_delayed:
+            self.adapt_vm_config(transformer.config_spec_delayed)
+
         return True
 
     def create_vm_snapshot(self):
@@ -1683,6 +1836,7 @@ class BareosVADPWrapper(object):
         Creates a snapshot
         """
         snapshot_try_count = 0
+        snapshot_name = "%s_%s" % (self.snapshot_prefix, self.plugin.jobId)
 
         enable_quiescing = True
         if self.options.get("quiesce") == "no":
@@ -1696,7 +1850,7 @@ class BareosVADPWrapper(object):
             snapshot_try_count += 1
             try:
                 self.create_snap_task = self.vm.CreateSnapshot_Task(
-                    name="BareosTmpSnap_jobId_%s" % (self.plugin.jobId),
+                    name=snapshot_name,
                     description="Bareos Tmp Snap jobId %s jobName %s"
                     % (self.plugin.jobId, self.plugin.jobName),
                     memory=False,
@@ -1712,7 +1866,7 @@ class BareosVADPWrapper(object):
                 continue
 
             try:
-                self.vmomi_WaitForTasks([self.create_snap_task])
+                pyVim.task.WaitForTask(self.create_snap_task)
             except vim.fault.ApplicationQuiesceFault as quiescing_error:
                 bareosfd.JobMessage(
                     bareosfd.M_INFO,
@@ -1739,32 +1893,6 @@ class BareosVADPWrapper(object):
 
         self.create_snap_result = self.create_snap_task.info.result
         self.create_snap_tstamp = time.time()
-        return True
-
-    def remove_vm_snapshot(self):
-        """
-        Removes the snapshot taken before
-        """
-
-        if not self.create_snap_result:
-            bareosfd.JobMessage(
-                bareosfd.M_WARNING,
-                "No snapshot was taken, skipping snapshot removal\n",
-            )
-            return False
-
-        try:
-            rmsnap_task = self.create_snap_result.RemoveSnapshot_Task(
-                removeChildren=True
-            )
-        except vmodl.MethodFault as e:
-            bareosfd.JobMessage(
-                bareosfd.M_WARNING,
-                "Failed to remove snapshot %s\n" % (e.msg),
-            )
-            return False
-
-        self.vmomi_WaitForTasks([rmsnap_task])
         return True
 
     def get_vm_snap_disk_devices(self):
@@ -1873,10 +2001,11 @@ class BareosVADPWrapper(object):
             )
         except vim.fault.FileFault as error:
             if cbt_changeId == "*":
-                bareosfd.JobMessage(
-                    bareosfd.M_FATAL,
-                    "Get CBT failed: %s\n" % (error.faultMessage.message),
-                )
+                bareosfd.JobMessage(bareosfd.M_FATAL, "Get CBT failed:\n")
+                for cbt_error_message in [
+                    fault.message for fault in error.faultMessage
+                ]:
+                    bareosfd.JobMessage(bareosfd.M_FATAL, cbt_error_message + "\n")
                 return False
             else:
                 # Note: A job message with M_ERROR will result in termination
@@ -2151,61 +2280,6 @@ class BareosVADPWrapper(object):
 
         # the following path must be passed to bareos_vadp_dumper as parameter
         self.cbt_json_local_file_path = filename
-
-    def vmomi_WaitForTasks(self, tasks):
-        """
-        Given the service instance si and tasks, it returns after all the
-        tasks are complete
-        """
-
-        si = self.si
-        pc = si.content.propertyCollector
-
-        taskList = [str(task) for task in tasks]
-
-        # Create filter
-        objSpecs = [
-            vmodl.query.PropertyCollector.ObjectSpec(obj=task) for task in tasks
-        ]
-        propSpec = vmodl.query.PropertyCollector.PropertySpec(
-            type=vim.Task, pathSet=[], all=True
-        )
-        filterSpec = vmodl.query.PropertyCollector.FilterSpec()
-        filterSpec.objectSet = objSpecs
-        filterSpec.propSet = [propSpec]
-        pcfilter = pc.CreateFilter(filterSpec, True)
-
-        try:
-            version, state = None, None
-
-            # Loop looking for updates till the state moves to a completed
-            # state.
-            while len(taskList):
-                update = pc.WaitForUpdates(version)
-                for filterSet in update.filterSet:
-                    for objSet in filterSet.objectSet:
-                        task = objSet.obj
-                        for change in objSet.changeSet:
-                            if change.name == "info":
-                                state = change.val.state
-                            elif change.name == "info.state":
-                                state = change.val
-                            else:
-                                continue
-
-                            if not str(task) in taskList:
-                                continue
-
-                            if state == vim.TaskInfo.State.success:
-                                # Remove task from taskList
-                                taskList.remove(str(task))
-                            elif state == vim.TaskInfo.State.error:
-                                raise task.info.error
-                # Move to next version
-                version = update.version
-        finally:
-            if pcfilter:
-                pcfilter.Destroy()
 
     def start_dumper(self, cmd):
         """
@@ -2643,7 +2717,7 @@ class BareosVADPWrapper(object):
                 "restore_power_state(): Powering on VM %s\n" % (self.vm.name),
             )
             poweron_task = self.dc.PowerOnMultiVM_Task(vm=[self.vm])
-            self.vmomi_WaitForTasks([poweron_task])
+            pyVim.task.WaitForTask(poweron_task)
             bareosfd.DebugMessage(
                 100,
                 "restore_power_state(): Power on Task status for VM %s: %s\n"
@@ -2746,7 +2820,7 @@ class BareosVADPWrapper(object):
             while not device_created:
                 reconfig_task = self.vm.ReconfigVM_Task(spec=config_spec)
                 try:
-                    WaitForTask(reconfig_task)
+                    pyVim.task.WaitForTask(reconfig_task)
                     device_created = True
                 except vim.fault.FileAlreadyExists:
                     device_spec.device.backing.fileName = (
@@ -2770,6 +2844,13 @@ class BareosVADPWrapper(object):
                 ]
             disk_index += 1
 
+    def adapt_vm_config(self, config_spec):
+        """
+        Adapt VM config
+        """
+        adapt_config_task = self.vm.ReconfigVM_Task(config_spec)
+        pyVim.task.WaitForTask(adapt_config_task)
+
     # helper functions ############
 
     def mkdir(self, directory_name):
@@ -2787,8 +2868,15 @@ class BareosVADPWrapper(object):
         Ensure proper path:
         - removes multiplied slashes
         - makes sure it starts with slash
+        - makes sure it does not end with slash
+        - if slashes only or the empty string were passed,
+          returns a single slash
         """
-        return self.slashes_rex.sub("/", "/" + path)
+        proper_path = self.slashes_rex.sub("/", "/" + path)
+        proper_path = proper_path.rstrip("/")
+        if proper_path == "":
+            proper_path = "/"
+        return proper_path
 
 
 class StringCodec:
@@ -2814,6 +2902,7 @@ class BareosVmConfigInfoToSpec(object):
         self.orig_vm_datastore_name = None
         self.new_vm_datastore_name = None
         self.disk_device_change_delayed = []
+        self.config_spec_delayed = None
         self.vadp = vadp
 
     def transform(self, target_datastore_name=None, target_vm_name=None):
@@ -2935,6 +3024,7 @@ class BareosVmConfigInfoToSpec(object):
         return self._extract_datastore_name(self.config_info["files"]["vmPathName"])
 
     def _transform_bootOptions(self):
+        boot_order_has_disk = False
         config_info_boot_options = self.config_info["bootOptions"]
         boot_options = vim.vm.BootOptions()
         boot_options.bootRetryDelay = config_info_boot_options["bootRetryDelay"]
@@ -2953,6 +3043,7 @@ class BareosVmConfigInfoToSpec(object):
             elif boot_order["_vimtype"] == "vim.vm.BootOptions.BootableDiskDevice":
                 boot_device = vim.vm.BootOptions.BootableDiskDevice()
                 boot_device.deviceKey = boot_order["deviceKey"]
+                boot_order_has_disk = True
             elif boot_order["_vimtype"] == "vim.vm.BootOptions.BootableEthernetDevice":
                 boot_device = vim.vm.BootOptions.BootableEthernetDevice()
                 boot_device.deviceKey = boot_order["deviceKey"]
@@ -2960,6 +3051,14 @@ class BareosVmConfigInfoToSpec(object):
                 boot_device = vim.vm.BootOptions.BootableFloppyDevice()
 
             boot_options.bootOrder.append(boot_device)
+
+        # When bootOrder contains a disk, it must be set delayed to after disks were
+        # added, otherwise it would fail.
+        if boot_order_has_disk:
+            if self.config_spec_delayed is None:
+                self.config_spec_delayed = vim.vm.ConfigSpec()
+                self.config_spec_delayed.bootOptions = boot_options
+                return None
 
         return boot_options
 
