@@ -334,6 +334,91 @@ afterabort_${UniqueID}:
 # also, install a shortcut to edit
 # the conf file
 #
+!macro InstallConfFile fname
+  # This is important to have $APPDATA variable
+  # point to ProgramData folder
+  # instead of current user's Roaming folder
+  SetShellVarContext all
+
+  ${If} ${FileExists} "$APPDATA\${PRODUCT_NAME}\${fname}"
+    StrCmp $SilentKeepConfig "yes" keep # in silent install keep configs silently if desired
+    StrCmp $Upgrading "yes" keep        # during upgrade also keep configs silently
+
+    MessageBox MB_YESNO|MB_ICONQUESTION \
+      "Existing config file found: $APPDATA\${PRODUCT_NAME}\${fname}$\r$\nKeep existing config file?" \
+      /SD IDNO IDYES keep IDNO move
+move:
+    Rename "$APPDATA\${PRODUCT_NAME}\${fname}" "$APPDATA\${PRODUCT_NAME}\${fname}.old"
+    Rename "$PLUGINSDIR\${fname}" "$APPDATA\${PRODUCT_NAME}\${fname}"
+    MessageBox MB_OK|MB_ICONINFORMATION \
+      "Existing config file saved as $APPDATA\${PRODUCT_NAME}\${fname}.old" \
+      /SD IDOK
+    GOTO skipmsgbox
+keep:
+    Rename "$PLUGINSDIR\${fname}" "$APPDATA\${PRODUCT_NAME}\${fname}.new"
+    StrCmp $Upgrading "yes" skipmsgbox        # during upgrade keep existing file without messagebox
+    MessageBox MB_OK|MB_ICONINFORMATION \
+      "New config file stored $APPDATA\${PRODUCT_NAME}\${fname}.new" \
+      /SD IDOK
+skipmsgbox:
+  ${Else}
+    Rename "$PLUGINSDIR\${fname}" "$APPDATA\${PRODUCT_NAME}\${fname}"
+  ${EndIf}
+  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\Edit ${fname}.lnk" "write.exe" '"$APPDATA\${PRODUCT_NAME}\${fname}"'
+
+  # for traymonitor.conf, set access and ownership to users
+  ${If} ${fname} == "tray-monitor.conf"
+    # Disable file access inheritance
+    AccessControl::DisableFileInheritance "$APPDATA\${PRODUCT_NAME}\${fname}"
+    Pop $R0
+    ${If} $R0 == error
+       Pop $R0
+       DetailPrint `AccessControl error on file $APPDATA${PRODUCT_NAME}${fname}: $R0`
+    ${EndIf}
+
+    # Set file owner to Users
+    AccessControl::SetFileOwner "$APPDATA\${PRODUCT_NAME}\${fname}" "(S-1-5-32-545)"  # user
+    Pop $R0
+    ${If} $R0 == error
+       Pop $R0
+       DetailPrint `AccessControl error on file $APPDATA${PRODUCT_NAME}${fname}: $R0`
+    ${EndIf}
+
+    # Set fullaccess for Users (S-1-5-32-545)
+    AccessControl::SetOnFile "$APPDATA\${PRODUCT_NAME}\${fname}" "(S-1-5-32-545)" "FullAccess"
+    Pop $R0
+    ${If} $R0 == error
+       Pop $R0
+       DetailPrint `AccessControl error on file $APPDATA${PRODUCT_NAME}${fname}: $R0`
+    ${EndIf}
+  ${Else}
+    # All other config files admin owner and only access
+    # Disable file access inheritance
+    AccessControl::DisableFileInheritance "$APPDATA\${PRODUCT_NAME}\${fname}"
+    Pop $R0
+    ${If} $R0 == error
+       Pop $R0
+       DetailPrint `AccessControl error on file $APPDATA${PRODUCT_NAME}${fname}: $R0`
+    ${EndIf}
+
+    # Set file owner to administrator
+    AccessControl::SetFileOwner "$APPDATA\${PRODUCT_NAME}\${fname}" "(S-1-5-32-544)"  # administratoren
+    Pop $R0
+    ${If} $R0 == error
+       Pop $R0
+       DetailPrint `AccessControl error on file $APPDATA${PRODUCT_NAME}${fname}: $R0`
+    ${EndIf}
+
+    # Set fullaccess only for administrators (S-1-5-32-544)
+    AccessControl::ClearOnFile "$APPDATA\${PRODUCT_NAME}\${fname}" "(S-1-5-32-544)" "FullAccess"
+    Pop $R0
+    ${If} $R0 == error
+       Pop $R0
+       DetailPrint `AccessControl error on file $APPDATA${PRODUCT_NAME}${fname}: $R0`
+    ${EndIf}
+  ${EndIf}
+!macroend
+
 
 !macro AllowAccessForAll fname
   # This is important to have $APPDATA variable
@@ -346,7 +431,7 @@ afterabort_${UniqueID}:
     Pop $R0
     ${If} $R0 == error
        Pop $R0
-       DetailPrint `AccessControl error: $R0`
+       DetailPrint `AccessControl error on file $APPDATA${PRODUCT_NAME}${fname}: $R0`
     ${EndIf}
 
     # Set file owner to Users
@@ -354,7 +439,7 @@ afterabort_${UniqueID}:
     Pop $R0
     ${If} $R0 == error
        Pop $R0
-       DetailPrint `AccessControl error: $R0`
+       DetailPrint `AccessControl error on file $APPDATA${PRODUCT_NAME}${fname}: $R0`
     ${EndIf}
 
     # Set fullaccess for Users (S-1-5-32-545)
@@ -362,7 +447,7 @@ afterabort_${UniqueID}:
     Pop $R0
     ${If} $R0 == error
        Pop $R0
-       DetailPrint `AccessControl error: $R0`
+       DetailPrint `AccessControl error on file $APPDATA${PRODUCT_NAME}${fname}: $R0`
     ${EndIf}
 !macroend
 
@@ -911,7 +996,8 @@ SectionIn 2 3
 
   File "sbin\bconsole.exe"
   File C:\vcpkg\packages\readline-win32_x64-windows\bin\readline.dll
-  Rename  "$PLUGINSDIR\bconsole.conf"   "$INSTDIR\defaultconfigs\bconsole.conf"
+  !insertmacro InstallConfFile "bconsole.conf"
+  #Rename  "$PLUGINSDIR\bconsole.conf"   "$INSTDIR\defaultconfigs\bconsole.conf"
 
 SectionEnd
 
