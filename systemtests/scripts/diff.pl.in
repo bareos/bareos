@@ -85,7 +85,7 @@ foreach my $f (keys %src_attr)
 {
     if (!defined $dst_attr{$f}) {
         $ret++;
-        print "diff.pl ERROR: Can't find $f in dst\n";
+        print "diff.pl ERROR: Can't find $f in (dst) $dst\n";
 
     } else {
         compare($src_attr{$f}, $dst_attr{$f});
@@ -97,7 +97,7 @@ foreach my $f (keys %src_attr)
 foreach my $f (keys %dst_attr)
 {
     $ret++;
-    print "diff.pl ERROR: Can't find $f in src\n";
+    print "diff.pl ERROR: Can't find $f in (src) $src\n";
 }
 
 if ($ret) {
