@@ -8,6 +8,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Documentation
 - docs: Windows add Antivirus section [PR #1485]
 
+### Changed
+- packaging: cleanup SUSE webui dependencies [PR #1494]
+
 ## [22.1.0] - 2023-06-13
 
 ### Changed
@@ -541,4 +544,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1482]: https://github.com/bareos/bareos/pull/1482
 [PR #1483]: https://github.com/bareos/bareos/pull/1483
 [PR #1485]: https://github.com/bareos/bareos/pull/1485
+[PR #1494]: https://github.com/bareos/bareos/pull/1494
 [unreleased]: https://github.com/bareos/bareos/tree/master

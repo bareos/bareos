@@ -712,20 +712,15 @@ Requires: php-zip
 Requires: php-libxml
 %endif
 
-%if 0%{?rhel} || 0%{?fedora}
 Requires: httpd
+%if 0%{?rhel} || 0%{?fedora}
 %define _apache_conf_dir /etc/httpd/conf.d/
 %define www_daemon_user apache
 %define www_daemon_group apache
 %endif
 
 %if 0%{?suse_version} || 0%{?sle_version}
-%if 0%{?sle_version} == 120500
-Requires: apache2
-%else
-Requires: apache2-event
-%endif
-Requires: apache2-mod_fcgid
+Conflicts: mod_php_any
 %define _apache_conf_dir /etc/apache2/conf.d/
 %define www_daemon_user wwwrun
 %define www_daemon_group www
