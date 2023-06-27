@@ -630,13 +630,6 @@ bool WriteSessionLabel(DeviceControlRecord* dcr, int label)
       SetStartVolPosition(dcr);
       break;
     case EOS_LABEL:
-      if (dev->IsTape()) {
-        dcr->EndBlock = dev->EndBlock;
-        dcr->EndFile = dev->EndFile;
-      } else {
-        dcr->EndBlock = (uint32_t)dev->file_addr;
-        dcr->EndFile = (uint32_t)(dev->file_addr >> 32);
-      }
       break;
     default:
       Jmsg1(jcr, M_ABORT, 0, _("Bad Volume session label = %d\n"), label);
