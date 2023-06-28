@@ -1,7 +1,3 @@
-JENKINS_TESTTYPES:
-  - bareos-client-only+bareos-universal-client+bareos-postgresql
-  - univention-bareos
-
 OS:
   Sanitize:
     "F37":
@@ -19,31 +15,17 @@ OS:
       FINISH_SCRIPT: CD/deb/finish-ulc.sh
       ARCH:
         - x86_64
-
   xUbuntu:
     "22.04":
       TYPE: deb
       IMAGE: "ubuntu22.04"
       ARCH:
         - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-webui
-           - bareos-vmware
-           - python-bareos
     "20.04":
       TYPE: deb
       IMAGE: "ubuntu20.04"
       ARCH:
         - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-webui
-           - bareos-vmware
-           - python-bareos
-
   SUSE:
     "15":
       TYPE: rpm
@@ -51,75 +33,39 @@ OS:
       CUSTOM_TEST_IMAGES: [ SLE-15_SP3, SLE-15_SP4, openSUSE-Leap_15.4, SLE-15_SP5, openSUSE-Leap_15.5 ]
       ARCH:
       - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - python-bareos
   SLE:
     "12_SP5":
       TYPE: rpm
       IMAGE: sles12sp5
       ARCH:
       - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - python-bareos
-
   Fedora:
     "37":
       TYPE: rpm
       IMAGE: fedora37
       ARCH:
       - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - python-bareos
     "36":
       TYPE: rpm
       IMAGE: fedora36
       ARCH:
       - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - python-bareos
   Debian:
     "12":
       TYPE: deb
       IMAGE: "debian12"
       ARCH:
         - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-webui
-           - bareos-vmware
-           - python-bareos
     "11":
       TYPE: deb
       IMAGE: "debian11"
       ARCH:
         - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-webui
-           - bareos-vmware
-           - python-bareos
     "10":
       TYPE: deb
       IMAGE: "debian10"
       ARCH:
         - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-webui
-           - bareos-vmware
-           - python-bareos
-
   EL:
     "9":
       TYPE: rpm
@@ -127,59 +73,32 @@ OS:
       CUSTOM_TEST_IMAGES: [ Rocky, Alma, Oracle, Stream, RHEL ]
       ARCH:
       - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-vmware
-           - python-bareos
     "8":
       TYPE: rpm
       IMAGE: rhel8
       CUSTOM_TEST_IMAGES: [ Rocky, Alma, Oracle, Stream, RHEL ]
       ARCH:
       - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-vmware
-           - python-bareos
     "7":
       TYPE: rpm
       IMAGE: rhel7
       CUSTOM_TEST_IMAGES: [ CentOS, RHEL ]
       ARCH:
       - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-vmware
-           - python-bareos
-
   FreeBSD:
     "12.4":
       TYPE: freebsd
       ARCH:
         - amd64
-      PROJECTPACKAGES:
-        amd64:
-           - bareos-freebsd
     "13.1":
       TYPE: freebsd
       ARCH:
         - amd64
-
   MacOS:
     "10.13.6":
       TYPE: macos
       ARCH:
         - x64
-
-  Solaris:
-    "11.4":
-      TYPE: solaris
-      ARCH:
-        - i386
-
   win:
     cross:
       TYPE: win
