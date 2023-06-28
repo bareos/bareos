@@ -71,10 +71,9 @@ get_block_size()
     # block 1 and 2 are label blocks.
     # blocks >= 3 are data blocks.
     # Parameter 3 is the block of interest. Default is block 1.
-    DEVICE="$1"
-    VOLUME="${2:-*}"
-    LINE=${3:-1}
-    bls_blocks "$DEVICE" "$VOLUME" | sed -r -n -e "s/^bls .* Exit read_block read_len=([0-9]+) block_len=[0-9]*/\1/p" | sed "${LINE}q;d"
+    DATA="$1"
+    LINE=${2:-1}
+    echo "$DATA" | sed -r -n -e "s/^bls .* Exit read_block read_len=([0-9]+) block_len=[0-9]*/\1/p" | sed "${LINE}q;d"
 }
 
 get_data_size()
@@ -82,10 +81,9 @@ get_data_size()
     # block 1 and 2 are label blocks.
     # blocks >= 3 are data blocks.
     # Parameter 3 is the block of interest. Default is block 1.
-    DEVICE="$1"
-    VOLUME="${2:-*}"
-    LINE=${3:-1}
-    bls_blocks "$DEVICE" "$VOLUME" | sed -r -n -e "s/^bls .* Exit read_block read_len=[0-9]+ block_len=([0-9]*)/\1/p" | sed "${LINE}q;d"
+    DATA="$1"
+    LINE=${2:-1}
+    echo "$DATA" | sed -r -n -e "s/^bls .* Exit read_block read_len=[0-9]+ block_len=([0-9]*)/\1/p" | sed "${LINE}q;d"
 }
 
 
@@ -148,27 +146,35 @@ if [ ! -d ${BackupDirectory} ]; then
     set_error "Directory ${BackupDirectory} does not exists any more."
 fi
 
-blocksize_label=$(get_block_size File1 ${VolumeName} 1)
+file_out=$(bls_blocks File1 ${VolumeName})
+blocksize_label=$(get_block_size "${file_out}" 1)
 print_debug "File Label block size: $blocksize_label"
-if [ $blocksize_label != $DEFAULT_BLOCK_SIZE ]; then
+if [ "$blocksize_label" != $DEFAULT_BLOCK_SIZE ]; then
     set_error "Wrong label block size: expected: $DEFAULT_BLOCK_SIZE, got: $blocksize_label"
 fi
 
-blocksize_data=$(get_block_size File1 ${VolumeName} 3)
+blocksize_data=$(get_block_size "${file_out}" 3)
 print_debug "File Data block size (block 3): $blocksize_data"
-if [ $blocksize_data != $DEFAULT_BLOCK_SIZE ]; then
+if [ "$blocksize_data" != $DEFAULT_BLOCK_SIZE ]; then
     set_error "Wrong data block size (block 3): expected: $DEFAULT_BLOCK_SIZE, got: $blocksize_data"
 fi
 
-blocksize_label=$(get_block_size tapedrive0-0 "*" 1)
+tape_out=$(bls_blocks tapedrive0-0 "*")
+blocksize_label=$(get_block_size "${tape_out}" 1)
+if [[ -z "$blocksize_data" ]]; then
+    set_error "Could not read the label blocksize"
+fi
 print_debug "Tape Label block size: $blocksize_label"
-if [ $blocksize_label != $DEFAULT_BLOCK_SIZE ]; then
+if [ "$blocksize_label" != $DEFAULT_BLOCK_SIZE ]; then
     set_error "Wrong label block size: expected: $DEFAULT_BLOCK_SIZE, got: $blocksize_label"
 fi
 
-blocksize_data=$(get_block_size tapedrive0-0 "*" 3)
+blocksize_data=$(get_block_size "${tape_out}" 3)
+if [[ -z "$blocksize_data" ]]; then
+    set_error "Could not read the data blocksize"
+fi
 print_debug "Tape Data block size (block 3): $blocksize_data"
-if [ $blocksize_data -le $DEFAULT_BLOCK_SIZE ]; then
+if [ "$blocksize_data" -lt $DEFAULT_BLOCK_SIZE ]; then
     set_error "Wrong data block size (block 3): expected: $DEFAULT_BLOCK_SIZE, got: $blocksize_data"
 fi
 
