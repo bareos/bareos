@@ -75,6 +75,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - VMware Plugin: improve snapshot cleanup [PR #1484]
 - packaging: cleanup SUSE webui dependencies [PR #1493]
 - vss: remove dependency on live system during backup [PR #1452]
+- build: adapt matrix and pkglist for changes to CI [PR #1490]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -193,5 +194,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1479]: https://github.com/bareos/bareos/pull/1479
 [PR #1484]: https://github.com/bareos/bareos/pull/1484
 [PR #1488]: https://github.com/bareos/bareos/pull/1488
+[PR #1490]: https://github.com/bareos/bareos/pull/1490
 [PR #1493]: https://github.com/bareos/bareos/pull/1493
 [unreleased]: https://github.com/bareos/bareos/tree/master
