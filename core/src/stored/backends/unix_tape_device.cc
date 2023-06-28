@@ -40,6 +40,9 @@
  * @file
  * UNIX Tape API device abstraction.
  */
+#include <algorithm>
+#include <vector>
+
 #include <sys/ioctl.h>
 #include <unistd.h>
 
@@ -48,6 +51,19 @@
 #include "stored/sd_backends.h"
 #include "generic_tape_device.h"
 #include "unix_tape_device.h"
+
+namespace {
+static constexpr size_t size_increment = 1024 * 1024;
+static constexpr size_t max_size_increment = 16 * size_increment;
+static constexpr size_t next_size_increment(size_t count)
+{
+  if (count < size_increment) {
+    return size_increment;
+  } else {
+    return (count / size_increment) * 2 * size_increment;
+  }
+}
+}  // namespace
 
 namespace storagedaemon {
 
@@ -59,6 +75,29 @@ int unix_tape_device::d_ioctl(int fd, ioctl_req_t request, char* op)
 unix_tape_device::unix_tape_device()
 {
   SetCap(CAP_ADJWRITESIZE); /* Adjust write size to min/max */
+}
+
+ssize_t unix_tape_device::d_read(int fd, void* buffer, size_t count)
+{
+  ssize_t ret = ::read(fd, buffer, count);
+  /* when the driver fails to `read()` with `ENOMEM`, then the provided buffer
+   * was too small by re-reading with a temporary buffer that is enlarged
+   * step-by-step, we can read the block and returns its first `count` bytes.
+   * This allows the calling code to read the block header and resize its buffer
+   * according to the size recorded in that header.
+   */
+  for (size_t bufsize = next_size_increment(count);
+       ret == -1 && errno == ENOMEM && bufsize <= max_size_increment;
+       bufsize = next_size_increment(bufsize)) {
+    std::vector<char> tmpbuf(bufsize);
+    bsr(1);       // go back one block so we can re-read
+    block_num++;  // re-increment the block counter that bsr() just incremented
+    if (auto tmpret = ::read(fd, tmpbuf.data(), tmpbuf.size()); tmpret != -1) {
+      memcpy(buffer, tmpbuf.data(), count);
+      ret = std::min(tmpret, static_cast<ssize_t>(count));
+    }
+  }
+  return ret;
 }
 
 REGISTER_SD_BACKEND(tape, unix_tape_device)
