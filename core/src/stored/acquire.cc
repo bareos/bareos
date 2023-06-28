@@ -564,7 +564,8 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
       // take note that the volume we wrote to is not necessarily the volume
       // that is currently inside the device.
       dcr->DirCreateJobmediaRecord(false);
-    } else if (dev->IsLabeled()) {
+    }
+    if (dev->IsLabeled()) {
       Dmsg2(200, "dir_create_jobmedia. Release vol=%s dev=%s\n",
             dev->getVolCatName(), dev->print_name());
       if (!dev->AtWeot() && !dcr->DirCreateJobmediaRecord(false)) {
