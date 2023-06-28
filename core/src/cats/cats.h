@@ -614,6 +614,7 @@ class BareosDb : public BareosDbQueryEnum {
   bool CreateClientRecord(JobControlRecord* jcr, ClientDbRecord* cr);
   bool CreateFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr);
   bool CreatePoolRecord(JobControlRecord* jcr, PoolDbRecord* pool_dbr);
+  int DeleteNullJobmediaRecords(JobControlRecord* jcr, std::uint32_t jobid);
   bool CreateJobmediaRecord(JobControlRecord* jcr, JobMediaDbRecord* jr);
   bool CreateCounterRecord(JobControlRecord* jcr, CounterDbRecord* cr);
   bool CreateDeviceRecord(JobControlRecord* jcr, DeviceDbRecord* dr);
