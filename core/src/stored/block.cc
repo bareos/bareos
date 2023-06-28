@@ -1076,7 +1076,9 @@ reread:
     // Attempt to Reposition to re-read the block
     if (dev->IsTape()) {
       Dmsg0(250, "BootStrapRecord for reread; block too big for buffer.\n");
-      if (!dev->bsr(1)) {
+      if (dev->bsr(1)) {
+        dev->block_num++;  // re-increment what bsr() decremented
+      } else {
         Mmsg(dev->errmsg, "%s", dev->bstrerror());
         Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
         block->read_len = 0;
