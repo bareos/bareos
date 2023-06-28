@@ -1,9 +1,3 @@
-JENKINS_TESTTYPES:
-  - bareos-client-only
-  - bareos-postgresql
-  - univention-bareos
-  - bareos-universal-client
-
 OS:
   ULC_deb:
     "OpenSSL_1.1":
@@ -14,11 +8,6 @@ OS:
       ARCH:
         - i586
         - x86_64
-      PROJECTPACKAGES:
-        i586:
-          - bareos
-        x86_64:
-          - bareos
 
   xUbuntu:
     "22.04":
@@ -26,35 +15,16 @@ OS:
       IMAGE: "ubuntu22.04"
       ARCH:
         - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-webui
-           - bareos-vmware
-           - python-bareos
     "20.04":
       TYPE: deb
       IMAGE: "ubuntu20.04"
       ARCH:
         - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-webui
-           - bareos-vmware
-           - python-bareos
-
     "18.04":
       TYPE: deb
       IMAGE: "ubuntu18.04"
       ARCH:
         - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-webui
-           - bareos-vmware
-           - python-bareos
 
   openSUSE:
     "Leap_15.4":
@@ -63,10 +33,6 @@ OS:
       CUSTOM_TEST_IMAGES: [ openSUSE-Leap_15.4 ]
       ARCH:
       - x86_64
-      PROJECTPACKAGES:
-       x86_64:
-          - bareos
-          - python-bareos
 
   SLE:
     "15_SP4":
@@ -75,39 +41,23 @@ OS:
       CUSTOM_TEST_IMAGES: [ SLE-15_SP4 ]
       ARCH:
       - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - python-bareos
     "15_SP3":
       TYPE: rpm
       IMAGE: sle153
       CUSTOM_TEST_IMAGES: [ SLE-15_SP4 ]
       ARCH:
       - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - python-bareos
     "15_SP2":
       TYPE: rpm
       IMAGE: sle152
       CUSTOM_TEST_IMAGES: [ SLE-15_SP4 ]
       ARCH:
       - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - python-bareos
     "12_SP5":
       TYPE: rpm
       IMAGE: sles12sp5
       ARCH:
       - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - python-bareos
 
   RHEL:
     "8":
@@ -115,21 +65,11 @@ OS:
       IMAGE: rhel8
       ARCH:
       - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-vmware
-           - python-bareos
     "7":
       TYPE: rpm
       IMAGE: rhel7
       ARCH:
       - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-vmware
-           - python-bareos
 
   Fedora:
     "36":
@@ -137,34 +77,17 @@ OS:
       IMAGE: fedora36
       ARCH:
       - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - python-bareos
   Debian:
     "11":
       TYPE: deb
       IMAGE: "debian11"
       ARCH:
         - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-webui
-           - bareos-vmware
-           - python-bareos
     "10":
       TYPE: deb
       IMAGE: "debian10"
       ARCH:
         - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-webui
-           - bareos-vmware
-           - python-bareos
-
   EL:
     "9":
       TYPE: rpm
@@ -172,67 +95,32 @@ OS:
       CUSTOM_TEST_IMAGES: [ Rocky, Alma, Oracle, Stream ]
       ARCH:
       - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-vmware
-           - python-bareos
     "8":
       TYPE: rpm
       IMAGE: rocky8
       CUSTOM_TEST_IMAGES: [ Rocky, Alma, Oracle, Stream ]
       ARCH:
       - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-vmware
-           - python-bareos
   CentOS:
     "7":
       TYPE: rpm
       IMAGE: centos7
       ARCH:
       - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-vmware
-           - python-bareos
-
   FreeBSD:
     "12.4":
       TYPE: freebsd
       ARCH:
         - amd64
-      PROJECTPACKAGES:
-        amd64:
-           - bareos-freebsd
     "13.1":
       TYPE: freebsd
       ARCH:
         - amd64
-      PROJECTPACKAGES:
-        amd64:
-           - bareos-freebsd
-
   MacOS:
     "10.13.6":
       TYPE: macos
       ARCH:
         - x64
-      PROJECTPACKAGES:
-        x64:
-  Solaris:
-    "11.4":
-      TYPE: solaris
-      ARCH:
-        - i386
-        - sparc
-      PROJECTPACKAGES:
-        i386:
-           - bareos
-
   win:
     cross:
       TYPE: win
@@ -241,13 +129,6 @@ OS:
         - win-64-release
       ARCH:
        - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - mingw-debugsrc
-           - mingw32-winbareos
-           - mingw64-winbareos
-           - winbareos-nsi
-           - winbareos-opsi
       WINVERSIONS:
          - windows-10-32
          - windows-10-64
