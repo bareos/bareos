@@ -109,6 +109,24 @@ static bool SaveFullyProcessedFilesAttributes(
   return false;
 }
 
+bool DeleteNullJobmediaRecords(JobControlRecord* jcr)
+{
+  Dmsg0(100, "Deleting null jobmedia records\n");
+  BareosSocket* dir = jcr->dir_bsock;
+  const char* delete_null_records
+      = "CatReq Job=%s DeleteNullJobmediaRecords jobid=%u";
+  dir->fsend(delete_null_records, jcr->Job, jcr->JobId);
+  if (dir->recv() <= 0) {
+    Dmsg0(100, "DeleteNullJobmediaRecords error BnetRecv\n");
+    Mmsg(jcr->errmsg,
+         _("Network error on BnetRecv in DeleteNullJobmediaRecords.\n"));
+    return false;
+  }
+  Dmsg1(100, ">dird %s", dir->msg);
+  if (strncmp(dir->msg, "1000", 4) == 0) { return true; }
+  return false;
+}
+
 // Append Data sent from File daemon
 bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
 {
@@ -409,6 +427,10 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
 
   // Release the device -- and send final Vol info to DIR and unlock it.
   ReleaseDevice(jcr->sd_impl->dcr);
+
+  if (!DeleteNullJobmediaRecords(jcr)) {
+    Jmsg(jcr, M_WARNING, 0, _("Could not delete placeholder media records.\n"));
+  }
 
   /* Don't use time_t for job_elapsed as time_t can be 32 or 64 bits,
    * and the subsequent Jmsg() editing will break */
