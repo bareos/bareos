@@ -789,6 +789,8 @@ bool DeviceControlRecord::WriteBlockToDev()
     return false;
   }
 
+  bool block_seek = dev->GetSeekMode() == SeekMode::FILE_BLOCK;
+
   // if this is the first write to this volume (from this job) create a null
   // jobmedia entry to prevent the volume from getting recycled.
   dcr->VolMediaId = dev->VolCatInfo.VolMediaId;
@@ -797,8 +799,14 @@ bool DeviceControlRecord::WriteBlockToDev()
     ASSERT(dcr->DirCreateJobmediaRecord(true));
     dcr->VolFirstIndex = block->FirstIndex;
     uint64_t addr = dev->file_addr;
-    dcr->StartBlock = (uint32_t)addr;
-    dcr->StartFile = (uint32_t)(addr >> 32);
+
+    if (block_seek) {
+      dcr->StartBlock = dev->block_num;
+      dcr->StartFile = dev->file;
+    } else {
+      dcr->StartBlock = (uint32_t)addr;
+      dcr->StartFile = (uint32_t)(addr >> 32);
+    }
   }
   if (block->LastIndex > 0) { dcr->VolLastIndex = block->LastIndex; }
 
@@ -814,7 +822,7 @@ bool DeviceControlRecord::WriteBlockToDev()
   block->BlockNumber++;
 
   // Update dcr values
-  if (dev->IsTape()) {
+  if (block_seek) {
     dcr->EndBlock = dev->EndBlock;
     dcr->EndFile = dev->EndFile;
     dev->block_num++;
