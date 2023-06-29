@@ -166,7 +166,6 @@ ssize_t scatter(dedup::volume& vol, const void* data, size_t size)
   auto* end = begin + bsize;
 
   std::vector<dedup::record_header> records;
-  auto& blockfile = vol.get_active_block_file();
 
   while (current != end) {
     dedup::bareos_record_header* record = (dedup::bareos_record_header*)current;
@@ -198,7 +197,9 @@ ssize_t scatter(dedup::volume& vol, const void* data, size_t size)
     // error: could not write records
     return -1;
   }
-  blockfile.write(dedup::block_header{*block, *start, records.size()});
+  if (!vol.write_block(dedup::block_header{*block, *start, records.size()})) {
+    return -1;
+  }
 
   return current - begin;
 }

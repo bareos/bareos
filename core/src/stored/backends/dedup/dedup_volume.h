@@ -244,12 +244,14 @@ class block_file {
 
   std::uint32_t end() const { return vec.size() + start_block; }
 
+  std::uint32_t capacity() const { return vec.capacity(); }
+
   bool truncate()
   {
     start_block = 0;
     start_size = 0;
     vec.clear();
-    return vec.shrink_to_fit();
+    return true;
   }
 
   bool goto_end() { return vec.move_to(vec.size()); }
@@ -280,14 +282,15 @@ class block_file {
     is_initialized = true;
 
     auto file = dedup::open_inside(dir, name.c_str(), mode, dev_mode);
+    file.resize(1024 * vec.elem_size);
 
-    vec = std::move(util::file_based_vector<block_header>(std::move(file),
-                                                          start_size, 1024));
+    vec = std::move(
+        util::file_based_array<block_header>(std::move(file), start_size));
     return vec.is_ok();
   }
 
  private:
-  util::file_based_vector<block_header> vec{};
+  util::file_based_array<block_header> vec{};
   std::uint64_t start_block{};
   std::uint64_t start_size{};
   std::string name{};
@@ -608,15 +611,18 @@ class volume {
     }
   }
 
-  block_file& get_active_block_file()
+  bool write_block(const block_header& block)
   {
-    // currently only one block file is supported
-    return config.blockfiles[0];
+    auto& blockfile = config.blockfiles.back();
+
+    if (blockfile.capacity() == blockfile.end()) {}
+
+    return blockfile.write(block);
   }
 
   bool is_at_end()
   {
-    auto& blockfile = get_active_block_file();
+    auto& blockfile = config.blockfiles.back();
     return blockfile.current() == blockfile.end();
   }
 
@@ -729,6 +735,12 @@ class volume {
       if (!datafile.goto_end()) { return false; }
     }
     return true;
+  }
+
+  block_file& get_active_block_file()
+  {
+    // todo: this is not right
+    return config.blockfiles.back();
   }
 
   std::optional<block_header> read_block()
