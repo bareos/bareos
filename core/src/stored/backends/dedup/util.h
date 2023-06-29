@@ -26,6 +26,8 @@
 #include <unistd.h>
 #include <memory>
 #include <utility>
+#include <cstring>
+#include <sys/mman.h>
 
 namespace dedup::util {
 static_assert(((ssize_t)(off_t)-1) < 0,
@@ -128,7 +130,245 @@ class raii_fd {
   bool error{false};
 };
 
+template <typename T> class file_based_array {
+  using needs_to_be_trivially_copyable
+      = std::enable_if_t<std::is_trivially_copyable_v<T>, bool>;
+
+ public:
+  file_based_array() = default;
+  file_based_array(raii_fd file, std::size_t used);
+  file_based_array(file_based_array&& other) : file_based_array{}
+  {
+    *this = std::move(other);
+  }
+  ~file_based_array();
+  file_based_array& operator=(file_based_array&& other);
+
+  std::optional<std::size_t> reserve(std::size_t count);
+  std::optional<std::size_t> write(const T* arr, std::size_t count);
+  std::optional<std::size_t> write_at(std::size_t start,
+                                      const T* arr,
+                                      std::size_t count);
+  inline std::optional<std::size_t> write(const T& val)
+  {
+    return write(&val, 1);
+  }
+
+  inline std::optional<std::size_t> write_at(std::size_t start, const T& val)
+  {
+    return write_at(start, &val, 1);
+  }
+
+  bool read(T* arr, std::size_t count = 1);
+  bool read_at(std::size_t start, T* arr, std::size_t count = 1);
+  bool peek(T* arr, std::size_t count = 1);
+
+  bool move_to(std::size_t start);
+
+  bool flush()
+  {
+    if (error) { return false; }
+    // if we used a cache we would write it out here
+    msync(memory, cap * elem_size, MS_SYNC);
+    return file.flush();
+  }
+
+  inline void clear() { used = 0; }
+
+  inline std::size_t size() const { return used; }
+  inline std::size_t capacity() const { return cap; }
+
+  inline std::size_t current() const { return iter; }
+
+  inline bool is_ok() const { return !error && file.is_ok(); }
+
+  static constexpr std::size_t elem_size = sizeof(T);
+
+ private:
+  std::size_t used{0};
+  std::size_t cap;
+  std::size_t iter{0};
+  raii_fd file{};
+  T* memory{nullptr};
+  bool error{true};
+
+  std::optional<std::size_t> reserve_at(std::size_t at, std::size_t count);
+};
+
+template <typename T>
+std::optional<std::size_t> file_based_array<T>::reserve(std::size_t count)
+{
+  std::optional start = reserve_at(iter, count);
+
+  if (start.has_value()) { iter = used; }
+
+  return start;
+}
+
+template <typename T>
+std::optional<std::size_t> file_based_array<T>::reserve_at(std::size_t at,
+                                                           std::size_t count)
+{
+  if (error) { return std::nullopt; }
+
+  if (at + count < at) {
+    return std::nullopt;  // make sure nothing weird is going on
+  }
+
+  if (at > used) {
+    // since this is an internal function
+    // this should never happen.  So if it does set the error flag
+    error = true;
+    return std::nullopt;
+  }
+
+  if (at + count > cap) { return std::nullopt; }
+
+  used = std::max(used, at + count);
+  return at;
+}
+
+template <typename T>
+std::optional<std::size_t> file_based_array<T>::write(const T* arr,
+                                                      std::size_t count)
+{
+  std::optional start = reserve_at(iter, count);
+
+  if (!start) { return std::nullopt; }
+
+  ASSERT(start == iter);
+  auto old_iter = iter;
+  iter += count;
+  // write_at always returns to the current iter
+  // if we set iter to the new desired position
+  // we prevent the double seek we would need to do otherwise
+  auto res = write_at(old_iter, arr, count);
+
+  if (!res) { iter = old_iter; }
+
+  return res;
+}
+
+template <typename T>
+std::optional<std::size_t> file_based_array<T>::write_at(std::size_t start,
+                                                         const T* arr,
+                                                         std::size_t count)
+{
+  if (error) { return std::nullopt; }
+
+  if (start > used) { return std::nullopt; }
+
+  std::memcpy(memory + start, arr, count * elem_size);
+
+  return start;
+}
+
+template <typename T> bool file_based_array<T>::read(T* arr, std::size_t count)
+{
+  if (error) { return false; }
+
+  auto old_iter = iter;
+  iter += count;
+  // read_at always returns to the current iter
+  // if we set iter to the new desired position
+  // we prevent the double seek we would need to do otherwise
+  bool success = read_at(old_iter, arr, count);
+
+  if (!success) { iter = old_iter; }
+
+  return success;
+}
+
+template <typename T>
+bool file_based_array<T>::read_at(std::size_t start, T* arr, std::size_t count)
+{
+  if (error) { return false; }
+
+  if (start + count > used) { return false; }
+
+  // todo: should this be std::copy_n ?
+  std::memcpy(arr, memory + start, count * elem_size);
+
+  return true;
+}
+
+template <typename T> bool file_based_array<T>::peek(T* arr, std::size_t count)
+{
+  if (error) { return false; }
+  return read_at(iter, arr, count);
+}
+
+template <typename T> bool file_based_array<T>::move_to(std::size_t start)
+{
+  if (error) { return false; }
+
+  if (start > used) { return false; }
+
+  if (iter == start) { return true; }
+
+  iter = start;
+
+  return true;
+}
+
+template <typename T>
+file_based_array<T>::file_based_array(raii_fd file_, std::size_t used_)
+    : used{used_}, cap{0}, file{std::move(file_)}, error{!file.is_ok()}
+{
+  if (error) { return; }
+
+  // let us compute the capacity
+
+  std::optional size = file.size_then_reset();
+
+  if (!size) {
+    error = true;
+    return;
+  }
+
+  cap = *size / elem_size;
+
+  if (used > cap) {
+    error = true;
+    return;
+  }
+
+  // todo: use the permissions from file here somehow
+  void* ptr = mmap(nullptr, cap * elem_size, PROT_READ | PROT_WRITE, MAP_SHARED,
+                   file.get(), 0);
+
+  if (ptr == MAP_FAILED) {
+    error = true;
+    return;
+  }
+
+  memory = static_cast<T*>(ptr);
+}
+
+template <typename T> file_based_array<T>::~file_based_array()
+{
+  if (memory) {
+    flush();
+    munmap(memory, cap * elem_size);
+  }
+}
+
+template <typename T>
+file_based_array<T>& file_based_array<T>::operator=(file_based_array<T>&& other)
+{
+  std::swap(used, other.used);
+  std::swap(cap, other.cap);
+  std::swap(iter, other.iter);
+  std::swap(file, other.file);
+  std::swap(error, other.error);
+  std::swap(memory, other.memory);
+  return *this;
+}
+
 template <typename T> class file_based_vector {
+  using needs_to_be_trivially_copyable
+      = std::enable_if_t<std::is_trivially_copyable_v<T>, bool>;
+
  public:
   file_based_vector() = default;
   file_based_vector(raii_fd file,
@@ -178,7 +418,6 @@ template <typename T> class file_based_vector {
   inline bool is_ok() const { return !error && file.is_ok(); }
 
  private:
-  // future: std::vector<T> cache;
   std::size_t used{0};
   std::size_t capacity;
   std::size_t iter{0};
