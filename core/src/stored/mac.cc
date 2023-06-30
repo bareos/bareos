@@ -381,10 +381,10 @@ static inline void CheckAutoXflation(JobControlRecord* jcr)
 
   // Check autodeflation.
   switch (jcr->sd_impl->read_dcr->autodeflate) {
-    case AutoXflateMode::IO_DIRECTION_IN:
-    case AutoXflateMode::IO_DIRECTION_INOUT:
+    case IODirection::READ:
+    case IODirection::READ_WRITE:
       Dmsg0(200, "Clearing autodeflate on read_dcr\n");
-      jcr->sd_impl->read_dcr->autodeflate = AutoXflateMode::IO_DIRECTION_NONE;
+      jcr->sd_impl->read_dcr->autodeflate = IODirection::NONE;
       break;
     default:
       break;
@@ -392,10 +392,10 @@ static inline void CheckAutoXflation(JobControlRecord* jcr)
 
   if (jcr->sd_impl->dcr) {
     switch (jcr->sd_impl->dcr->autodeflate) {
-      case AutoXflateMode::IO_DIRECTION_OUT:
-      case AutoXflateMode::IO_DIRECTION_INOUT:
+      case IODirection::WRITE:
+      case IODirection::READ_WRITE:
         Dmsg0(200, "Clearing autodeflate on write dcr\n");
-        jcr->sd_impl->dcr->autodeflate = AutoXflateMode::IO_DIRECTION_NONE;
+        jcr->sd_impl->dcr->autodeflate = IODirection::NONE;
         break;
       default:
         break;
@@ -404,10 +404,10 @@ static inline void CheckAutoXflation(JobControlRecord* jcr)
 
   // Check autoinflation.
   switch (jcr->sd_impl->read_dcr->autoinflate) {
-    case AutoXflateMode::IO_DIRECTION_IN:
-    case AutoXflateMode::IO_DIRECTION_INOUT:
+    case IODirection::READ:
+    case IODirection::READ_WRITE:
       Dmsg0(200, "Clearing autoinflate on read_dcr\n");
-      jcr->sd_impl->read_dcr->autoinflate = AutoXflateMode::IO_DIRECTION_NONE;
+      jcr->sd_impl->read_dcr->autoinflate = IODirection::NONE;
       break;
     default:
       break;
@@ -415,10 +415,10 @@ static inline void CheckAutoXflation(JobControlRecord* jcr)
 
   if (jcr->sd_impl->dcr) {
     switch (jcr->sd_impl->dcr->autoinflate) {
-      case AutoXflateMode::IO_DIRECTION_OUT:
-      case AutoXflateMode::IO_DIRECTION_INOUT:
+      case IODirection::WRITE:
+      case IODirection::READ_WRITE:
         Dmsg0(200, "Clearing autoinflate on write dcr\n");
-        jcr->sd_impl->dcr->autoinflate = AutoXflateMode::IO_DIRECTION_NONE;
+        jcr->sd_impl->dcr->autoinflate = IODirection::NONE;
         break;
       default:
         break;

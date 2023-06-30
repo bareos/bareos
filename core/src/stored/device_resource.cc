@@ -22,7 +22,6 @@
 */
 
 #include "lib/parse_conf.h"
-#include "stored/autoxflate.h"
 #include "stored/device_resource.h"
 #include "stored/stored_globals.h"
 #include <fmt/format.h>

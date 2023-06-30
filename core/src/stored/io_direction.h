@@ -21,21 +21,21 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_STORED_AUTOXFLATE_H_
-#define BAREOS_STORED_AUTOXFLATE_H_
+#ifndef BAREOS_STORED_IO_DIRECTION_H_
+#define BAREOS_STORED_IO_DIRECTION_H_
 
 #include "include/bareos.h"
 
 namespace storagedaemon {
 
-enum class AutoXflateMode : uint16_t
+enum class IODirection : uint16_t
 {
-  IO_DIRECTION_NONE = 0,
-  IO_DIRECTION_IN,
-  IO_DIRECTION_OUT,
-  IO_DIRECTION_INOUT
+  NONE = 0,
+  READ,
+  WRITE,
+  READ_WRITE
 };
 
 }  // namespace storagedaemon
 
-#endif  // BAREOS_STORED_AUTOXFLATE_H_
+#endif  // BAREOS_STORED_IO_DIRECTION_H_

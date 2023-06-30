@@ -25,7 +25,7 @@
 #define BAREOS_STORED_DEVICE_RESOURCE_H_
 
 #include "stored/dev.h"
-#include "stored/autoxflate.h"
+#include "stored/io_direction.h"
 #include "lib/bareos_resource.h"
 
 namespace storagedaemon {
@@ -45,7 +45,7 @@ class DeviceResource : public BareosResource {
   char* spool_directory;       /**< Spool file directory */
   std::string device_type{DeviceType::B_UNKNOWN_DEV};
   uint32_t label_type{B_BAREOS_LABEL};
-  AutoXflateMode access_mode{AutoXflateMode::IO_DIRECTION_INOUT};   /**< Allowed access mode(s) for reservation */
+  IODirection access_mode{IODirection::READ_WRITE}; /**< Allowed access mode(s) for reservation */
   bool autoselect{true};      /**< Automatically select from AutoChanger */
   bool norewindonclose{true}; /**< Don't rewind tape drive on close */
   bool drive_tapealert_enabled{false}; /**< Enable Tape Alert monitoring */
@@ -70,11 +70,11 @@ class DeviceResource : public BareosResource {
                                      compression */
   uint16_t autodeflate_level{6}; /**< Compression level to use for compression
                                  algorithm which uses levels */
-  AutoXflateMode autodeflate{
-      AutoXflateMode::IO_DIRECTION_NONE}; /**< auto deflation in this IO
+  IODirection autodeflate{
+      IODirection::NONE}; /**< auto deflation in this IO
                                              direction */
-  AutoXflateMode autoinflate{
-      AutoXflateMode::IO_DIRECTION_NONE}; /**< auto inflation in this IO
+  IODirection autoinflate{
+      IODirection::NONE}; /**< auto inflation in this IO
                                              direction */
   utime_t vol_poll_interval{
       300}; /**< Interval between polling volume during mount */

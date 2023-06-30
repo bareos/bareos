@@ -63,7 +63,7 @@
 #include "include/bareos.h"
 #include "stored/record.h"
 #include "stored/volume_catalog_info.h"
-#include "stored/autoxflate.h"
+#include "stored/io_direction.h"
 #include "lib/btimers.h"
 
 #include <vector>
@@ -232,7 +232,7 @@ class Device {
   int oflags{};               /**< Read/write flags */
   DeviceMode open_mode{DeviceMode::kUndefined};
   std::string device_type{};
-  AutoXflateMode access_mode{}; /**< Allowed access mode(s) for reservation */
+  IODirection access_mode{};  /**< Allowed access mode(s) for reservation */
   bool autoselect{};          /**< Autoselect in autochanger */
   bool norewindonclose{};     /**< Don't rewind tape drive on close */
   bool initiated{};           /**< Set when FactoryCreateDevice() called */

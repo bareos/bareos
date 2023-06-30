@@ -438,7 +438,7 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
           rctx.device_name = device_name;
           rctx.device_resource = vol->dev->device_resource;
 
-          if (rctx.device_resource->access_mode == AutoXflateMode::IO_DIRECTION_IN) {
+          if (rctx.device_resource->access_mode == IODirection::READ) {
             Dmsg1(debuglevel,
                   "device=%s not suitable because it is read only\n",
                   vol->dev->device_resource->resource_name_);
@@ -547,11 +547,11 @@ int SearchResForDevice(ReserveContext& rctx)
           Dmsg1(100, "Device %s not autoselect skipped.\n",
                 rctx.device_resource->resource_name_);
           continue; /* Device is not available */
-        } else if (rctx.append && rctx.device_resource->access_mode == AutoXflateMode::IO_DIRECTION_IN) {
+        } else if (rctx.append && rctx.device_resource->access_mode == IODirection::READ) {
           Dmsg1(debuglevel, "Device %s is read only.\n",
                 rctx.device_resource->resource_name_);
           continue; /* Device is not available */
-        } else if (!rctx.append && rctx.device_resource->access_mode == AutoXflateMode::IO_DIRECTION_OUT) {
+        } else if (!rctx.append && rctx.device_resource->access_mode == IODirection::WRITE) {
           Dmsg1(debuglevel, "Device %s is write only.\n",
                 rctx.device_resource->resource_name_);
           continue; /* Device is not available */
@@ -661,9 +661,9 @@ static int ReserveDevice(ReserveContext& rctx)
   Dmsg3(debuglevel,
         "chk AccessMode append=%d access_mode=%d\n",
         rctx.append, rctx.device_resource->access_mode);
-  if (rctx.append && rctx.device_resource->access_mode == AutoXflateMode::IO_DIRECTION_IN) {
+  if (rctx.append && rctx.device_resource->access_mode == IODirection::READ) {
     return -1;
-  } else if (!rctx.append && rctx.device_resource->access_mode == AutoXflateMode::IO_DIRECTION_OUT) {
+  } else if (!rctx.append && rctx.device_resource->access_mode == IODirection::WRITE) {
     return -1;
   }
 
