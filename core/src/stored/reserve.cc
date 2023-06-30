@@ -438,7 +438,7 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
           rctx.device_name = device_name;
           rctx.device_resource = vol->dev->device_resource;
 
-          if (rctx.device_resource->read_only) {
+          if (rctx.device_resource->access_mode == AutoXflateMode::IO_DIRECTION_IN) {
             Dmsg1(debuglevel,
                   "device=%s not suitable because it is read only\n",
                   vol->dev->device_resource->resource_name_);
@@ -547,11 +547,11 @@ int SearchResForDevice(ReserveContext& rctx)
           Dmsg1(100, "Device %s not autoselect skipped.\n",
                 rctx.device_resource->resource_name_);
           continue; /* Device is not available */
-        } else if (rctx.append && rctx.device_resource->read_only) {
+        } else if (rctx.append && rctx.device_resource->access_mode == AutoXflateMode::IO_DIRECTION_IN) {
           Dmsg1(debuglevel, "Device %s is read only.\n",
                 rctx.device_resource->resource_name_);
           continue; /* Device is not available */
-        } else if (!rctx.append && rctx.device_resource->write_only) {
+        } else if (!rctx.append && rctx.device_resource->access_mode == AutoXflateMode::IO_DIRECTION_OUT) {
           Dmsg1(debuglevel, "Device %s is write only.\n",
                 rctx.device_resource->resource_name_);
           continue; /* Device is not available */
@@ -657,14 +657,13 @@ static int ReserveDevice(ReserveContext& rctx)
     return -1;
   }
 
-  // Make sure device read_only and write_only match
+  // Make sure device access mode matches
   Dmsg3(debuglevel,
-        "chk ReadOnly/WriteOnly append=%d read_only=%d write_only=%d\n",
-        rctx.append, rctx.device_resource->read_only,
-        rctx.device_resource->write_only);
-  if (rctx.append && rctx.device_resource->read_only) {
+        "chk AccessMode append=%d access_mode=%d\n",
+        rctx.append, rctx.device_resource->access_mode);
+  if (rctx.append && rctx.device_resource->access_mode == AutoXflateMode::IO_DIRECTION_IN) {
     return -1;
-  } else if (!rctx.append && rctx.device_resource->write_only) {
+  } else if (!rctx.append && rctx.device_resource->access_mode == AutoXflateMode::IO_DIRECTION_OUT) {
     return -1;
   }
 

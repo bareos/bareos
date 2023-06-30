@@ -62,8 +62,7 @@ DeviceResource::DeviceResource(const DeviceResource& other)
   }
   device_type = other.device_type;
   label_type = other.label_type;
-  read_only = other.read_only;
-  write_only = other.write_only;
+  access_mode = other.access_mode;
   autoselect = other.autoselect;
   norewindonclose = other.norewindonclose;
   drive_tapealert_enabled = other.drive_tapealert_enabled;
@@ -119,8 +118,7 @@ DeviceResource& DeviceResource::operator=(const DeviceResource& rhs)
   spool_directory = rhs.spool_directory;
   device_type = rhs.device_type;
   label_type = rhs.label_type;
-  read_only = rhs.read_only;
-  write_only = rhs.write_only;
+  access_mode = rhs.access_mode;
   autoselect = rhs.autoselect;
   norewindonclose = rhs.norewindonclose;
   drive_tapealert_enabled = rhs.drive_tapealert_enabled;

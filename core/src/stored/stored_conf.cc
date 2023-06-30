@@ -172,8 +172,8 @@ static ResourceItem dev_items[] = {
   {"RequiresMount", CFG_TYPE_BIT, ITEM(res_dev, cap_bits), CAP_REQMOUNT, CFG_ITEM_DEFAULT, "off", NULL, NULL},
   {"OfflineOnUnmount", CFG_TYPE_BIT, ITEM(res_dev, cap_bits), CAP_OFFLINEUNMOUNT, CFG_ITEM_DEFAULT, "off", NULL, NULL},
   {"BlockChecksum", CFG_TYPE_BIT, ITEM(res_dev, cap_bits), CAP_BLOCKCHECKSUM, CFG_ITEM_DEFAULT, "on", NULL, NULL},
-  {"ReadOnly", CFG_TYPE_BOOL, ITEM(res_dev, read_only), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL},
-  {"WriteOnly", CFG_TYPE_BOOL, ITEM(res_dev, write_only), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL},
+  {"AccessMode", CFG_TYPE_IODIRECTION, ITEM(res_dev, access_mode), 0, CFG_ITEM_DEFAULT, "readwrite", NULL, "Access mode specifies whether"
+  "this device can be used for reading, writing or for both modes."},
   {"AutoSelect", CFG_TYPE_BOOL, ITEM(res_dev, autoselect), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL},
   {"ChangerDevice", CFG_TYPE_STRNAME, ITEM(res_dev, changer_name), 0, 0, NULL, NULL, NULL},
   {"ChangerCommand", CFG_TYPE_STRNAME, ITEM(res_dev, changer_command), 0, 0, NULL, NULL, NULL},
@@ -254,8 +254,13 @@ struct s_io_kw {
 };
 
 static s_io_kw io_directions[] = {{"in", AutoXflateMode::IO_DIRECTION_IN},
+                                  {"read", AutoXflateMode::IO_DIRECTION_IN},
+                                  {"readonly", AutoXflateMode::IO_DIRECTION_IN},
                                   {"out", AutoXflateMode::IO_DIRECTION_OUT},
+                                  {"write", AutoXflateMode::IO_DIRECTION_OUT},
+                                  {"writeonly", AutoXflateMode::IO_DIRECTION_OUT},
                                   {"both", AutoXflateMode::IO_DIRECTION_INOUT},
+                                  {"readwrite", AutoXflateMode::IO_DIRECTION_INOUT},
                                   {nullptr, AutoXflateMode::IO_DIRECTION_NONE}};
 
 static s_kw compression_algorithms[]
