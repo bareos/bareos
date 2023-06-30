@@ -744,6 +744,23 @@ When parsing the resource directives, Bareos classifies the data according to th
    :values: **in** | **out** | **both**
 
    String indicating sens of IO can be `in` or `out` or `both`
+   Following aliases are also valid:
+
+   read
+        Alias for `in`.
+
+   readonly
+        Alias for `in`.
+
+   write
+        Alias for `out`.
+
+   writeonly
+        Alias for `out`.
+
+   readwrite
+        Alias for `both`.
+
 
 
 .. config:datatype:: JOB_TYPE
