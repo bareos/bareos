@@ -438,12 +438,7 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
           rctx.device_name = device_name;
           rctx.device_resource = vol->dev->device_resource;
 
-          if (rctx.device_resource->access_mode == IODirection::READ) {
-            Dmsg1(debuglevel,
-                  "device=%s not suitable because it is read only\n",
-                  vol->dev->device_resource->resource_name_);
-            continue;
-          } else if (vol->dev->AttachedToAutochanger()) {
+          if (vol->dev->AttachedToAutochanger()) {
             Dmsg1(debuglevel, "vol=%s is in changer\n", vol->vol_name);
             if (!IsVolInAutochanger(rctx, vol) || !vol->dev->autoselect) {
               continue;
@@ -545,14 +540,6 @@ int SearchResForDevice(ReserveContext& rctx)
               rctx.device_resource->resource_name_);
         if (!rctx.device_resource->autoselect) {
           Dmsg1(100, "Device %s not autoselect skipped.\n",
-                rctx.device_resource->resource_name_);
-          continue; /* Device is not available */
-        } else if (rctx.append && rctx.device_resource->access_mode == IODirection::READ) {
-          Dmsg1(debuglevel, "Device %s is read only.\n",
-                rctx.device_resource->resource_name_);
-          continue; /* Device is not available */
-        } else if (!rctx.append && rctx.device_resource->access_mode == IODirection::WRITE) {
-          Dmsg1(debuglevel, "Device %s is write only.\n",
                 rctx.device_resource->resource_name_);
           continue; /* Device is not available */
         }
@@ -662,9 +649,11 @@ static int ReserveDevice(ReserveContext& rctx)
         "chk AccessMode append=%d access_mode=%d\n",
         rctx.append, rctx.device_resource->access_mode);
   if (rctx.append && rctx.device_resource->access_mode == IODirection::READ) {
+	// Trying to write but access mode is readonly
     return -1;
   } else if (!rctx.append && rctx.device_resource->access_mode == IODirection::WRITE) {
-    return -1;
+    // Trying to read but access mode is writeonly
+	return -1;
   }
 
   // Make sure device_resource exists -- i.e. we can stat() it
