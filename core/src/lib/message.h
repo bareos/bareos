@@ -38,11 +38,12 @@
 #include <functional>
 #include <string>
 #include <vector>
+#include <optional>
 
 class JobControlRecord;
 
 extern "C" {
-typedef char* (*job_code_callback_t)(JobControlRecord*, const char*);
+typedef std::optional<std::string> (*job_code_callback_t)(JobControlRecord*, const char*);
 }
 
 void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...);
