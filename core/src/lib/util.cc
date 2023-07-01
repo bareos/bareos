@@ -1030,7 +1030,13 @@ POOLMEM* edit_job_codes(JobControlRecord* jcr,
           break;
         default:
           str = NULL;
-          if (callback != NULL) { str = callback(jcr, p); }
+          if (callback != NULL) {
+            auto callback_result = callback(jcr, p);
+            if (callback_result) {
+              Bsnprintf(add, sizeof(add), "%s", callback_result->c_str());
+              str = add;
+            }
+          }
 
           if (!str) {
             add[0] = '%';
