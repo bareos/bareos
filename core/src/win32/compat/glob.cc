@@ -1,7 +1,7 @@
 /**
  * @file glob.c
  * Copyright (C) 2011-2013, MinGW.org project.
- * Copyright (C) 2016-2022 Bareos GmbH & Co. KG
+ * Copyright (C) 2016-2023 Bareos GmbH & Co. KG
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -38,8 +38,8 @@
 #include <string.h>
 #include <sys/types.h>
 #ifndef _MSC_VER
-#include <filesystem>
-#include <libgen.h>
+#  include <filesystem>
+#  include <libgen.h>
 #endif
 
 // #define GLOB_HARD_ESC __CRT_GLOB_ESCAPE_CHAR__
@@ -88,63 +88,52 @@ static int glob_escape_char = '\\';
 #ifdef _MSC_VER
 char* LastSlash(char* str, std::size_t n)
 {
-  while(n--) {
-    if(glob_is_dirsep(str[n])) {
-      return &str[n];
-    }
+  while (n--) {
+    if (glob_is_dirsep(str[n])) { return &str[n]; }
   }
   return nullptr;
 }
 
-static char *
-dirname (char *path)
+static char* dirname(char* path)
 {
   static const char dot[] = ".";
-  char *last_slash;
+  char* last_slash;
   /* Find last '/'.  */
   std::size_t len = strlen(path);
   last_slash = path != NULL ? LastSlash(path, len) : NULL;
-  if (last_slash != NULL && last_slash != path && last_slash[1] == '\0')
-    {
-      /* Determine whether all remaining characters are slashes.  */
-      char *runp;
-      for (runp = last_slash; runp != path; --runp)
-	if (!glob_is_dirsep(runp[-1]))
-	  break;
-      /* The '/' is the last character, we have to look further.  */
-      if (runp != path)
-	last_slash = LastSlash(path, runp - path);
-    }
+  if (last_slash != NULL && last_slash != path && last_slash[1] == '\0') {
+    /* Determine whether all remaining characters are slashes.  */
+    char* runp;
+    for (runp = last_slash; runp != path; --runp)
+      if (!glob_is_dirsep(runp[-1])) break;
+    /* The '/' is the last character, we have to look further.  */
+    if (runp != path) last_slash = LastSlash(path, runp - path);
+  }
   if (last_slash != NULL) {
-      /* Determine whether all remaining characters are slashes.  */
-      char *runp;
-      for (runp = last_slash; runp != path; --runp)
-	if (!glob_is_dirsep(runp[-1]))
-	  break;
-      /* Terminate the path.  */
-      if (runp == path)
-	{
-	  /* The last slash is the first character in the string.  We have to
-	     return "/".  As a special case we have to return "//" if there
-	     are exactly two slashes at the beginning of the string.  See
-	     XBD 4.10 Path Name Resolution for more information.  */
-	  if (last_slash == path + 1)
-	    ++last_slash;
-	  else
-	    last_slash = path + 1;
-	}
+    /* Determine whether all remaining characters are slashes.  */
+    char* runp;
+    for (runp = last_slash; runp != path; --runp)
+      if (!glob_is_dirsep(runp[-1])) break;
+    /* Terminate the path.  */
+    if (runp == path) {
+      /* The last slash is the first character in the string.  We have to
+         return "/".  As a special case we have to return "//" if there
+         are exactly two slashes at the beginning of the string.  See
+         XBD 4.10 Path Name Resolution for more information.  */
+      if (last_slash == path + 1)
+        ++last_slash;
       else
-	last_slash = runp;
-      last_slash[0] = '\0';
-    }
-  else
+        last_slash = path + 1;
+    } else
+      last_slash = runp;
+    last_slash[0] = '\0';
+  } else
     /* This assignment is ill-designed but the XPG specs require to
        return a string containing "." in any case no directory part is
        found and so a static and constant string is required.  */
-    path = (char *) dot;
+    path = (char*)dot;
   return path;
 }
-
 
 
 #endif
@@ -169,10 +158,8 @@ enum
    */
   __GLOB_DIRONLY_OFFSET = __GLOB_FLAG_OFFSET_HIGH_WATER_MARK,
   __GLOB_PERIOD_PRIVATE_OFFSET,
-  /*
-   * For congruency, set a new high water mark above the private data
-   * range, (which we don't otherwise use).
-   */
+  /* For congruency, set a new high water mark above the private data
+   * range, (which we don't otherwise use). */
   __GLOB_PRIVATE_FLAGS_HIGH_WATER_MARK
 };
 
@@ -209,48 +196,38 @@ static int IsGlobPattern(const char* pattern, int flags)
        */
       if (((flags & GLOB_NOESCAPE) == 0) && (c == glob_escape_char)
           && (*p++ == '\0'))
-        /*
-         * We found an escape character, (and the escape mechanism has
+        /* We found an escape character, (and the escape mechanism has
          * not been disabled), but there is no following character to
          * escape; it may be malformed, but this certainly doesn't look
-         * like a candidate globbing pattern.
-         */
+         * like a candidate globbing pattern. */
         return 0;
 
       else if (bracket == 0) {
         /* Still outside of any bracketted character set...
          */
         if ((c == '*') || (c == '?'))
-          /*
-           * ...either of these makes "pattern" an explicit
-           * globbing pattern...
-           */
+          /* ...either of these makes "pattern" an explicit
+           * globbing pattern... */
           return 1;
 
         if (c == '[')
-          /*
-           * ...while this marks the start of a bracketted
-           * character set.
-           */
+          /* ...while this marks the start of a bracketted
+           * character set. */
           bracket++;
       }
 
       else if ((bracket > 1) && (c == ']'))
-        /*
-         * Within a bracketted character set, where it is not
+        /* Within a bracketted character set, where it is not
          * the first character, ']' marks the end of the set,
-         * making "pattern" a globbing pattern.
-         */
+         * making "pattern" a globbing pattern. */
         return 1;
 
       else if (c != '!')
-        /*
-         * Also within a bracketted character set, '!' is special
+        /* Also within a bracketted character set, '!' is special
          * when the first character, and shouldn't be counted; note
          * that it should be counted when not the first character,
          * but the short count resulting from ignoring it doesn't
-         * affect our desired outcome.
-         */
+         * affect our desired outcome. */
         bracket++;
     }
   }
@@ -279,17 +256,13 @@ static const char* glob_set_adjusted(const char* pattern, int flags)
     /* We haven't found it yet; advance by one character...
      */
     if ((*p == glob_escape_char) && ((flags & GLOB_NOESCAPE) == 0))
-      /*
-       * ...or maybe even two, when we identify a need to
-       * step over any character which has been escaped...
-       */
+      /* ...or maybe even two, when we identify a need to
+       * step over any character which has been escaped... */
       p++;
 
     if (*p++ == '\0')
-      /*
-       * ...but if we find a NUL on the way, then the pattern
-       * is malformed, so we return NULL to report a bad match.
-       */
+      /* ...but if we find a NUL on the way, then the pattern
+       * is malformed, so we return NULL to report a bad match. */
       return NULL;
   }
   /* We found the expected ']'; return a pointer to the NEXT
@@ -370,24 +343,18 @@ static const char* glob_in_set(const char* set, int test, int flags)
      */
 
     if ((c == '\0')
-        /*
-         * This is a malformed set; (not closed before the end of
-         * the pattern)...
-         */
+        /* This is a malformed set; (not closed before the end of
+         * the pattern)... */
         || glob_is_dirsep(c))
-      /*
-       * ...or it attempts to explicitly match a directory separator,
+      /* ...or it attempts to explicitly match a directory separator,
        * which is invalid in this context.  We MUST fail it, in either
-       * case, reporting a mismatch.
-       */
+       * case, reporting a mismatch. */
       return NULL;
 
     if (c == test)
-      /*
-       * We found the test character within the set; adjust the pattern
+      /* We found the test character within the set; adjust the pattern
        * reference, to resume after the end of the set, and return the
-       * successful match.
-       */
+       * successful match. */
       return glob_set_adjusted(set, flags);
 
     /* If we get to here, we haven't yet found the test character within
@@ -428,12 +395,10 @@ static int GlobStrcmp(const char* pattern, const char* text, int flags)
   int c;
 
   if ((*t == '.') && (*p != '.') && ((flags & GLOB_PERIOD) == 0))
-    /*
-     * The special GNU extension allowing wild cards to match a period
+    /* The special GNU extension allowing wild cards to match a period
      * as first character is NOT in effect; "text" DOES have an initial
      * period character AND "pattern" DOES NOT match it EXPLICITLY, so
-     * this comparison must report a MISMATCH.
-     */
+     * this comparison must report a MISMATCH. */
     return *p - *t;
 
   /* Attempt to match "pattern", character by character...
@@ -462,11 +427,9 @@ static int GlobStrcmp(const char* pattern, const char* text, int flags)
         /* ...and if we've exhausted the pattern...
          */
         if (*p == '\0')
-          /*
-           * ...then we simply match all remaining characters,
+          /* ...then we simply match all remaining characters,
            * to the end of "text", so we may return immediately,
-           * reporting a successful match.
-           */
+           * reporting a successful match. */
           return 0;
 
         /* When we haven't exhausted the pattern, then we may
@@ -481,10 +444,8 @@ static int GlobStrcmp(const char* pattern, const char* text, int flags)
         do {
           c = GlobStrcmp(p, t, flags | GLOB_PERIOD);
         } while ((c != 0) && (*t++ != '\0'));
-        /*
-         * ...and ultimately, we return the result of this
-         * recursive attempt to find a match.
-         */
+        /* ...and ultimately, we return the result of this
+         * recursive attempt to find a match. */
         return c;
 
       case '[':
@@ -493,10 +454,8 @@ static int GlobStrcmp(const char* pattern, const char* text, int flags)
          * a set of characters in the pattern...
          */
         if ((c = *t++) == '\0')
-          /*
-           * ...but, we must return a mismatch if there is no
-           * candidate character left to match.
-           */
+          /* ...but, we must return a mismatch if there is no
+           * candidate character left to match. */
           return '[';
 
         if (*p == '!') {
@@ -513,10 +472,8 @@ static int GlobStrcmp(const char* pattern, const char* text, int flags)
           p = glob_in_set(p, c, flags);
         }
         if (p == NULL)
-          /*
-           * The character under test didn't satisfy the SET
-           * matching criterion; return as unmatched.
-           */
+          /* The character under test didn't satisfy the SET
+           * matching criterion; return as unmatched. */
           return ']';
         break;
 
@@ -528,15 +485,11 @@ static int GlobStrcmp(const char* pattern, const char* text, int flags)
          * glob() call...
          */
         if (((flags & GLOB_NOESCAPE) == 0)
-            /*
-             * ...but when it is active, and we find an escape
-             * character without exhausting the pattern...
-             */
+            /* ...but when it is active, and we find an escape
+             * character without exhausting the pattern... */
             && (c == glob_escape_char) && ((c = *p) != 0))
-          /*
-           * ...then we handle the escaped character here, as
-           * a literal, and step over it, within the pattern.
-           */
+          /* ...then we handle the escaped character here, as
+           * a literal, and step over it, within the pattern. */
           ++p;
 
         /* When we get to here, a successful match requires that
@@ -658,10 +611,8 @@ static int GlobStoreEntry(char* path, glob_t* gl_buf)
      */
     gl_buf->gl_pathv = pathv;
     gl_buf->gl_pathv[gl_buf->gl_offs + gl_buf->gl_pathc++] = path;
-    /*
-     * ...then place a further NULL pointer into the newly allocated
-     * slot, to mark the new end of the vector...
-     */
+    /* ...then place a further NULL pointer into the newly allocated
+     * slot, to mark the new end of the vector... */
     gl_buf->gl_pathv[gl_buf->gl_offs + gl_buf->gl_pathc] = NULL;
     // ...before returning a successful completion status.
     return GLOB_SUCCESS;
@@ -744,10 +695,8 @@ static void glob_store_collated_entries(struct glob_collator* collator,
    * data contained thereon.
    */
   if (collator->prev != NULL)
-    /*
-     * Recurse into the sub-tree of entries which collate before the
-     * root of the current (sub-)tree.
-     */
+    /* Recurse into the sub-tree of entries which collate before the
+     * root of the current (sub-)tree. */
     glob_store_collated_entries(collator->prev, gl_buf);
 
   /* Store the path name entry at the root of the current (sub-)tree.
@@ -755,10 +704,8 @@ static void glob_store_collated_entries(struct glob_collator* collator,
   GlobStoreEntry(collator->entry, gl_buf);
 
   if (collator->next != NULL)
-    /*
-     * Recurse into the sub-tree of entries which collate after the
-     * root of the current (sub-)tree.
-     */
+    /* Recurse into the sub-tree of entries which collate after the
+     * root of the current (sub-)tree. */
     glob_store_collated_entries(collator->next, gl_buf);
 
   /* Finally, delete the root node of the current (sub-)tree; since
@@ -799,10 +746,8 @@ static int glob_match(const char* pattern,
   /* Check if there are any globbing tokens in the path prefix...
    */
   if (IsGlobPattern(dir, flags))
-    /*
-     * ...and recurse to identify all possible matching prefixes,
-     * as may be necessary...
-     */
+    /* ...and recurse to identify all possible matching prefixes,
+     * as may be necessary... */
     status = glob_match(dir, flags | GLOB_DIRONLY, errfn, &local_gl_buf);
 
   else
@@ -838,14 +783,14 @@ static int glob_match(const char* pattern,
   else
     /* ...otherwise, we simply note that there was no prefix.
      */
-    //dir = NULL;
+    // dir = NULL;
 
-  /* We now have a globbed list of prefix directories, returned from
-   * recursive processing, in local_gl_buf.gl_pathv, and we also have
-   * a separate pattern which we may attempt to match in each of them;
-   * at the outset, we have yet to match this pattern to anything.
-   */
-  status = GLOB_NOMATCH;
+    /* We now have a globbed list of prefix directories, returned from
+     * recursive processing, in local_gl_buf.gl_pathv, and we also have
+     * a separate pattern which we may attempt to match in each of them;
+     * at the outset, we have yet to match this pattern to anything.
+     */
+    status = GLOB_NOMATCH;
   for (dirp = local_gl_buf.gl_pathv; *dirp != NULL; free(*dirp++)) {
     /* Provided an earlier cycle hasn't scheduled an abort...
      */
@@ -877,10 +822,8 @@ static int glob_match(const char* pattern,
            * directory, in turn, then...
            */
           if ((((flags & GLOB_DIRONLY) == 0) || GLOB_ISDIR(*dirp, entry))
-              /*
-               * ...provided we don't require it to be a subdirectory,
-               * or it actually is one...
-               */
+              /* ...provided we don't require it to be a subdirectory,
+               * or it actually is one... */
               && (GlobStrcmp(pattern, entry->d_name, flags) == 0)) {
             /* ...and it is a globbed match for the pattern, then
              * we allocate a temporary local buffer of sufficient
@@ -906,10 +849,8 @@ static int glob_match(const char* pattern,
              * the heap, for assignment into gl_buf->gl_pathv...
              */
             if ((found = glob_strdup(matchpath)) == NULL)
-              /*
-               * ...setting the appropriate error code, in the
-               * event that the heap memory has been exhausted.
-               */
+              /* ...setting the appropriate error code, in the
+               * event that the heap memory has been exhausted. */
               status = GLOB_NOSPACE;
 
             else { /* This glob match has been successfully recorded on
@@ -944,23 +885,19 @@ static int glob_match(const char* pattern,
       /* In the event of failure to open the candidate prefix directory...
        */
       else if ((flags & GLOB_ERR) || ((errfn != NULL) && errfn(*dirp, errno)))
-        /*
-         * ...and when the caller has set the GLOB_ERR flag, or has provided
+        /* ...and when the caller has set the GLOB_ERR flag, or has provided
          * an error handler which returns non-zero for the failure condition,
-         * then we schedule an abort.
-         */
+         * then we schedule an abort. */
         status = GLOB_ABORTED;
 
       /* When we diverted the glob results for collation...
        */
       if (collator != NULL)
-        /*
-         * ...then we redirect them to gl_buf->gl_pathv now, before we
+        /* ...then we redirect them to gl_buf->gl_pathv now, before we
          * begin a new cycle, to process any further prefix directories
          * which may have been identified; note that we do this even if
          * we scheduled an abort, so that we may return any results we
-         * may have already collected before the error occurred.
-         */
+         * may have already collected before the error occurred. */
         glob_store_collated_entries(collator, gl_buf);
     }
   }
@@ -1062,11 +999,9 @@ int __mingw_glob(const char* pattern,
    */
   status = glob_match(pattern, flags, errfn, gl_data);
   if ((status == GLOB_NOMATCH) && ((flags & GLOB_NOCHECK) != 0))
-    /*
-     * ...ultimately delegating to glob_strdup() and GlobStoreEntry()
+    /* ...ultimately delegating to glob_strdup() and GlobStoreEntry()
      * to handle any unmatched globbing pattern which the user specified
-     * options may require to be stored anyway.
-     */
+     * options may require to be stored anyway. */
     GlobStoreEntry(glob_strdup(pattern), gl_data);
 
   /* We always return the status reported by glob_match().
