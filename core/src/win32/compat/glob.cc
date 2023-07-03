@@ -41,53 +41,85 @@
 #include <filesystem>
 #include <libgen.h>
 #endif
-#ifdef _MSC_VER
-#include <stddef.h>
-#include <string.h>
- 
- void* __memrchr(const void* /*m*/ /*m*/, int /*c*/ /*c*/, size_t /*n*/ /*n*/);
- 
- void* __memrchr(const void* m, int c, size_t n)
- {
-     const unsigned char* s = static_cast<const unsigned char*>(m);
-     c = (unsigned char)c;
- 
-     while(n--)
-     {
-         if(s[n] == c)
-         {
-             return (void*)(uintptr_t)(s + n);
-         }
-     }
- 
-     return 0;
- }
 
-#include <string.h>
+// #define GLOB_HARD_ESC __CRT_GLOB_ESCAPE_CHAR__
+#define GLOB_HARD_ESC (char)(127)
+
+#if defined _WIN32 || defined __MS_DOS__
+/*
+ * For the Microsoft platforms, we treat '\' and '/' interchangeably
+ * as directory separator characters...
+ */
+#  define GLOB_DIRSEP ('\\')
+#  define glob_is_dirsep(c) (((c) == ('/')) || ((c) == GLOB_DIRSEP))
+// ...and we use the ASCII ESC code as our escape character.
+static int glob_escape_char = GLOB_HARD_ESC;
+
+GLOB_INLINE char* glob_strdup(const char* pattern)
+{
+  /* An inline wrapper around the standard strdup() function;
+   * this strips instances of the GLOB_HARD_ESC character, which
+   * have not themselves been escaped, from the strdup()ed copy.
+   */
+  char buf[MAX_PATH];
+  char* copy = buf;
+  const char* origin = pattern;
+  do {
+    if (*origin == GLOB_HARD_ESC) ++origin;
+    *copy++ = *origin;
+  } while (*origin++);
+  return strdup(buf);
+}
+
+#else
+/* Otherwise, we assume only the POSIX standard '/'...
+ */
+#  define GLOB_DIRSEP ('/')
+#  define glob_is_dirsep(c) ((c) == GLOB_DIRSEP)
+/*
+ * ...and we interpret '\', as specified by POSIX, as
+ * the escape character.
+ */
+static int glob_escape_char = '\\';
+
+#  define glob_strdup strdup
+#endif
+
+#ifdef _MSC_VER
+char* LastSlash(char* str, std::size_t n)
+{
+  while(n--) {
+    if(glob_is_dirsep(str[n])) {
+      return &str[n];
+    }
+  }
+  return nullptr;
+}
+
 static char *
 dirname (char *path)
 {
   static const char dot[] = ".";
   char *last_slash;
   /* Find last '/'.  */
-  last_slash = path != NULL ? strrchr (path, '/') : NULL;
+  std::size_t len = strlen(path);
+  last_slash = path != NULL ? LastSlash(path, len) : NULL;
   if (last_slash != NULL && last_slash != path && last_slash[1] == '\0')
     {
       /* Determine whether all remaining characters are slashes.  */
       char *runp;
       for (runp = last_slash; runp != path; --runp)
-	if (runp[-1] != '/')
+	if (!glob_is_dirsep(runp[-1]))
 	  break;
       /* The '/' is the last character, we have to look further.  */
       if (runp != path)
-	       last_slash = static_cast<char*>(__memrchr (static_cast<void*>(path), '/', runp - path));
+	last_slash = LastSlash(path, runp - path);
     }
-  if (last_slash != NULL)
-    {
+  if (last_slash != NULL) {
       /* Determine whether all remaining characters are slashes.  */
       char *runp;
       for (runp = last_slash; runp != path; --runp)
-	if (runp[-1] != '/')
+	if (!glob_is_dirsep(runp[-1]))
 	  break;
       /* Terminate the path.  */
       if (runp == path)
@@ -151,49 +183,6 @@ enum
 
 #ifndef GLOB_INLINE
 #  define GLOB_INLINE static __inline__ __attribute__((__always_inline__))
-#endif
-
-//#define GLOB_HARD_ESC __CRT_GLOB_ESCAPE_CHAR__
-#define GLOB_HARD_ESC (char)(127)
-
-#if defined _WIN32 || defined __MS_DOS__
-/*
- * For the Microsoft platforms, we treat '\' and '/' interchangeably
- * as directory separator characters...
- */
-#  define GLOB_DIRSEP ('\\')
-#  define glob_is_dirsep(c) (((c) == ('/')) || ((c) == GLOB_DIRSEP))
-// ...and we use the ASCII ESC code as our escape character.
-static int glob_escape_char = GLOB_HARD_ESC;
-
-GLOB_INLINE char* glob_strdup(const char* pattern)
-{
-  /* An inline wrapper around the standard strdup() function;
-   * this strips instances of the GLOB_HARD_ESC character, which
-   * have not themselves been escaped, from the strdup()ed copy.
-   */
-  char buf[MAX_PATH];
-  char* copy = buf;
-  const char* origin = pattern;
-  do {
-    if (*origin == GLOB_HARD_ESC) ++origin;
-    *copy++ = *origin;
-  } while (*origin++);
-  return strdup(buf);
-}
-
-#else
-/* Otherwise, we assume only the POSIX standard '/'...
- */
-#  define GLOB_DIRSEP ('/')
-#  define glob_is_dirsep(c) ((c) == GLOB_DIRSEP)
-/*
- * ...and we interpret '\', as specified by POSIX, as
- * the escape character.
- */
-static int glob_escape_char = '\\';
-
-#  define glob_strdup strdup
 #endif
 
 static int IsGlobPattern(const char* pattern, int flags)
