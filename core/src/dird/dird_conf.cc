@@ -3080,8 +3080,8 @@ bail_out:
  * %C = Cloning (yes/no)
  * %D = Director name
  * %V = Volume name(s) (Destination)
- * %m = Prev Backup JobId
- * %M = New Backup JobId
+ * %O = Prev Backup JobId
+ * %N = New Backup JobId
  */
 std::optional<std::string> job_code_callback_director(JobControlRecord* jcr,
                                             const char* param)
@@ -3132,14 +3132,14 @@ std::optional<std::string> job_code_callback_director(JobControlRecord* jcr,
         return none;
       }
       break;
-    case 'm': /* Migration/copy job prev jobid */
+    case 'O': /* Migration/copy job prev jobid */
       if (jcr && jcr->dir_impl && jcr->dir_impl->previous_jr.JobId) {
         return std::to_string(jcr->dir_impl->previous_jr.JobId);
       } else {
         return none;
       }
       break;
-    case 'M': /* Migration/copy job new jobid */
+    case 'N': /* Migration/copy job new jobid */
       if (jcr && jcr->dir_impl && jcr->dir_impl->mig_jcr && jcr->dir_impl->mig_jcr->dir_impl
 	      && jcr->dir_impl->mig_jcr->dir_impl->jr.JobId) {
         return std::to_string(jcr->dir_impl->mig_jcr->dir_impl->jr.JobId);

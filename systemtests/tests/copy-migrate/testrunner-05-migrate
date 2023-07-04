@@ -48,19 +48,19 @@ expect_grep "The following 3 JobIds were chosen to be migrated: 11,12,13" \
 
 expect_grep "JobId 14: BeforeJob: prevjobid=\*None\* newjobid=\*None\*" \
             "$log" \
-            "Before runscript does not return expected previous jobid (%m) and new jobid (%M)."
+            "Before runscript does not return expected previous jobid (%O) and new jobid (%N)."
 			
 expect_grep "JobId 14: AfterJob: prevjobid=\*None\* newjobid=\*None\*" \
             "$log" \
-            "After runscript does not return expected previous jobid (%m) and new jobid (%M)."
+            "After runscript does not return expected previous jobid (%O) and new jobid (%N)."
 
 expect_grep "JobId 19: BeforeJob: prevjobid=13 newjobid=20" \
             "$log" \
-            "Before runscript does not return expected previous jobid (%m) and new jobid (%M)."
+            "Before runscript does not return expected previous jobid (%O) and new jobid (%N)."
 			
 expect_grep "JobId 19: AfterJob: prevjobid=13 newjobid=20" \
             "$log" \
-            "After runscript does not return expected previous jobid (%m) and new jobid (%M)."
+            "After runscript does not return expected previous jobid (%O) and new jobid (%N)."
 
 # 1 administrative job that spawns 3 migration jobs
 if [[ $(grep -c "Termination:.*Migration OK" "$log") -ne "4" ]]; then
