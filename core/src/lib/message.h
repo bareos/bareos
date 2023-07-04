@@ -42,9 +42,7 @@
 
 class JobControlRecord;
 
-extern "C" {
 typedef std::optional<std::string> (*job_code_callback_t)(JobControlRecord*, const char*);
-}
 
 void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...);
 void Qmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...);

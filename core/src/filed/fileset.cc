@@ -54,7 +54,7 @@ namespace filedaemon {
  * %D = Director
  * %m = Modification time (for incremental and differential)
  */
-extern "C" std::optional<std::string> job_code_callback_filed(JobControlRecord* jcr,
+std::optional<std::string> job_code_callback_filed(JobControlRecord* jcr,
                                          const char* param)
 {
   switch (param[0]) {
