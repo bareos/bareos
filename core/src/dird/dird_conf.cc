@@ -3099,22 +3099,22 @@ extern "C" std::optional<std::string> job_code_callback_director(JobControlRecor
   switch (param[0]) {
     case 'f':
       if (jcr->dir_impl->res.fileset) {
-        return std::string(jcr->dir_impl->res.fileset->resource_name_);
+        return jcr->dir_impl->res.fileset->resource_name_;
       }
       break;
     case 'h':
       if (jcr->dir_impl->res.client) {
-        return std::string(jcr->dir_impl->res.client->address);
+        return jcr->dir_impl->res.client->address;
       }
       break;
     case 'p':
       if (jcr->dir_impl->res.pool) {
-        return std::string(jcr->dir_impl->res.pool->resource_name_);
+        return jcr->dir_impl->res.pool->resource_name_;
       }
       break;
     case 'w':
       if (jcr->dir_impl->res.write_storage) {
-        return std::string(jcr->dir_impl->res.write_storage->resource_name_);
+        return jcr->dir_impl->res.write_storage->resource_name_;
       }
       break;
     case 'x':
@@ -3122,7 +3122,7 @@ extern "C" std::optional<std::string> job_code_callback_director(JobControlRecor
     case 'C':
       return jcr->dir_impl->cloned ? yes : no;
     case 'D':
-      return std::string(my_name);
+      return my_name;
     case 'V':
       if (jcr) {
         /* If this is a migration/copy we need the volume name from the
@@ -3130,7 +3130,7 @@ extern "C" std::optional<std::string> job_code_callback_director(JobControlRecor
         if (jcr->dir_impl->mig_jcr) { jcr = jcr->dir_impl->mig_jcr; }
 
         if (jcr->VolumeName) {
-          return std::string(jcr->VolumeName);
+          return jcr->VolumeName;
         } else {
           return none;
         }
