@@ -49,9 +49,11 @@ static bool create_and_bind_v4socket(int test_fd, int port)
   if (bind(test_fd, (struct sockaddr*)&v4_address, sizeof(v4_address)) == 0) {
     return true;
   } else {
+#ifdef HAVE_WIN32
     auto i = WSAGetLastError();
     socketClose(test_fd);
     std::cout << "WSAError: " << i << std::endl;
+#endif
     return false;
   }
 }

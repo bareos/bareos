@@ -34,6 +34,7 @@
 #  include "findlib/fstype.h"
 #  include "win32/findlib/win32.h"
 
+#  include <array>
 
 /**
  * We need to analyze if a fileset contains onefs=no as option, because only
