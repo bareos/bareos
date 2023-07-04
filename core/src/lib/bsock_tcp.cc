@@ -40,7 +40,7 @@
 #include "lib/berrno.h"
 
 #ifdef _MSC_VER
-# include "mstcpip.h"
+#  include "mstcpip.h"
 #endif
 
 #ifndef ENODATA /* not defined on BSD systems */
