@@ -276,3 +276,22 @@ WHERE Client.Name='%1'
   AND JobMedia.MediaId=Media.MediaId
 ORDER BY File.Name ASC, Job.StartTime DESC
 LIMIT %3;
+
+# 22
+:List the top largest files for a JobId
+*Enter jobid:
+*Enter limit (recommended <= 100):
+select
+ ls.st_size as size,
+ p.path,
+ f.name
+from
+ file f,
+ path p,
+ decode_lstat(f.lstat, array['st_size']) ls
+where
+ f.jobid = %1
+and
+ f.pathid = p.pathid
+order by size desc
+limit %2;
