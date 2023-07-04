@@ -130,20 +130,20 @@ struct findFOPTS {
   int StripPath{};          /**< Strip path count */
   struct s_sz_matching* size_match{}; /**< Perform size matching ? */
   b_fileset_shadow_type shadow_type{
-      check_shadow_none};        /**< Perform fileset shadowing check ? */
-  char VerifyOpts[MAX_OPTS]{};   /**< Verify options */
-  char AccurateOpts[MAX_OPTS]{}; /**< Accurate mode options */
-  char BaseJobOpts[MAX_OPTS]{};  /**< Basejob mode options */
-  char* plugin{};                /**< Plugin that handle this section */
-  std::vector<regex_t> regex{};         /**< Regex string(s) */
-  std::vector<regex_t> regexdir{};      /**< Regex string(s) for directories */
-  std::vector<regex_t> regexfile{};     /**< Regex string(s) for files */
-  std::vector<std::string> wild{};       /**< Wild card strings */
-  std::vector<std::string> wilddir{};    /**< Wild card strings for directories */
-  std::vector<std::string> wildfile{};   /**< Wild card strings for files */
-  std::vector<std::string> wildbase{};   /**< Wild card strings for basenames */
-  std::vector<std::string> fstype{};     /**< File system type limitation */
-  std::vector<std::string> Drivetype{};  /**< Drive type limitation */
+      check_shadow_none};              /**< Perform fileset shadowing check ? */
+  char VerifyOpts[MAX_OPTS]{};         /**< Verify options */
+  char AccurateOpts[MAX_OPTS]{};       /**< Accurate mode options */
+  char BaseJobOpts[MAX_OPTS]{};        /**< Basejob mode options */
+  char* plugin{};                      /**< Plugin that handle this section */
+  std::vector<regex_t> regex{};        /**< Regex string(s) */
+  std::vector<regex_t> regexdir{};     /**< Regex string(s) for directories */
+  std::vector<regex_t> regexfile{};    /**< Regex string(s) for files */
+  std::vector<std::string> wild{};     /**< Wild card strings */
+  std::vector<std::string> wilddir{};  /**< Wild card strings for directories */
+  std::vector<std::string> wildfile{}; /**< Wild card strings for files */
+  std::vector<std::string> wildbase{}; /**< Wild card strings for basenames */
+  std::vector<std::string> fstype{};   /**< File system type limitation */
+  std::vector<std::string> Drivetype{}; /**< Drive type limitation */
 };
 
 // This is either an include item or an exclude item
@@ -254,119 +254,80 @@ struct FindFilesPacket {
 };
 /* clang-format on */
 
-struct stated_file
-{
-	std::string name;
-	struct stat statp;
-	int delta_seq;
-	int type;
-	std::optional<HfsPlusInfo> hfsinfo;
+struct stated_file {
+  std::string name;
+  struct stat statp;
+  int delta_seq;
+  int type;
+  std::optional<HfsPlusInfo> hfsinfo;
 
-  friend bool operator<(const stated_file& left,
-			const stated_file& right)
+  friend bool operator<(const stated_file& left, const stated_file& right)
   {
-    if (left.statp.st_dev < right.statp.st_dev) {
-      return true;
-    }
+    if (left.statp.st_dev < right.statp.st_dev) { return true; }
     return left.statp.st_ino < right.statp.st_ino;
   }
 };
 
-class found_files_list
-{
-public:
-  found_files_list() : fileset{0}
-		      , error_{true}
-  {}
-  found_files_list(std::size_t fileset_idx) :  fileset{fileset_idx}
-  {
-  }
+class found_files_list {
+ public:
+  found_files_list() : fileset{0}, error_{true} {}
+  found_files_list(std::size_t fileset_idx) : fileset{fileset_idx} {}
 
-  template <typename... Args>
-  stated_file& emplace_back(Args... args)
+  template <typename... Args> stated_file& emplace_back(Args... args)
   {
     return files.emplace_back(std::forward<Args>(args)...);
   }
 
-  std::size_t fileset_idx() const
-  {
-    return fileset;
-  }
+  std::size_t fileset_idx() const { return fileset; }
 
-  std::size_t count_skipped() const
-  {
-    return skipped;
-  }
+  std::size_t count_skipped() const { return skipped; }
 
-  void skip()
-  {
-    skipped += 1;
-  }
+  void skip() { skipped += 1; }
 
-  void error()
-  {
-    error_ = true;
-  }
+  void error() { error_ = true; }
 
-  bool has_error()
-  {
-    return error_;
-  }
+  bool has_error() { return error_; }
 
-  auto begin()
-  {
-    return files.begin();
-  }
+  auto begin() { return files.begin(); }
 
-  auto end()
-  {
-    return files.end();
-  }
+  auto end() { return files.end(); }
 
   void sort()
   {
     std::sort(files.begin(), files.end());
   }
-private:
+
+ private:
   std::vector<stated_file> files{};
   std::size_t fileset;
   std::size_t skipped{0};
   bool error_{false};
 };
 
-class list_files_threads
-{
+class list_files_threads {
   using out_channel = channel::out<found_files_list>;
   std::vector<std::thread> threads{};
 
   out_channel out{};
 
-public:
+ public:
   list_files_threads() = default;
-  list_files_threads(out_channel out) : out{std::move(out)}
-  {
-  }
+  list_files_threads(out_channel out) : out{std::move(out)} {}
 
   list_files_threads(list_files_threads&&) = default;
   list_files_threads& operator=(list_files_threads&&) = default;
 
-  template <typename... Args>
-  std::thread& emplace_thread(Args... args)
+  template <typename... Args> std::thread& emplace_thread(Args... args)
   {
     return threads.emplace_back(std::forward<Args>(args)...);
   }
 
-  out_channel& out_chan()
-  {
-    return out;
-  }
+  out_channel& out_chan() { return out; }
 
   ~list_files_threads()
   {
     out.close();
-    for (auto& thread : threads) {
-      thread.join();
-    }
+    for (auto& thread : threads) { thread.join(); }
   }
 };
 
@@ -380,11 +341,12 @@ int FindFiles(JobControlRecord* jcr,
               FindFilesPacket* ff,
               int file_sub(JobControlRecord*, FindFilesPacket* ff_pkt, bool),
               int PluginSub(JobControlRecord*, FindFilesPacket* ff_pkt, bool));
-std::optional<list_files_threads> ListFiles(JobControlRecord* jcr,
-					    findFILESET* fileset,
-					    bool incremental,
-					    time_t saved_time,
-					    std::optional<bool (*)(JobControlRecord*, FindFilesPacket*)> check_changed);
+std::optional<list_files_threads> ListFiles(
+    JobControlRecord* jcr,
+    findFILESET* fileset,
+    bool incremental,
+    time_t saved_time,
+    std::optional<bool (*)(JobControlRecord*, FindFilesPacket*)> check_changed);
 
 int SendFiles(JobControlRecord* jcr,
               FindFilesPacket* ff,
