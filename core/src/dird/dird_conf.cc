@@ -3084,7 +3084,7 @@ bail_out:
  * %N = New Backup JobId
  */
 std::optional<std::string> job_code_callback_director(JobControlRecord* jcr,
-                                            const char* param)
+                                                      const char* param)
 {
   static const std::string yes = "yes";
   static const std::string no = "no";
@@ -3140,8 +3140,9 @@ std::optional<std::string> job_code_callback_director(JobControlRecord* jcr,
       }
       break;
     case 'N': /* Migration/copy job new jobid */
-      if (jcr && jcr->dir_impl && jcr->dir_impl->mig_jcr && jcr->dir_impl->mig_jcr->dir_impl
-	      && jcr->dir_impl->mig_jcr->dir_impl->jr.JobId) {
+      if (jcr && jcr->dir_impl && jcr->dir_impl->mig_jcr
+          && jcr->dir_impl->mig_jcr->dir_impl
+          && jcr->dir_impl->mig_jcr->dir_impl->jr.JobId) {
         return std::to_string(jcr->dir_impl->mig_jcr->dir_impl->jr.JobId);
       } else {
         return none;
