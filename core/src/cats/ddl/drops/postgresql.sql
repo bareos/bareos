@@ -1,3 +1,5 @@
+DROP FUNCTION IF EXISTS decode_lstat();
+DROP FUNCTION IF EXISTS bareos_frombase64();
 DROP VIEW IF EXISTS backup_unit_overview;
 DROP VIEW IF EXISTS latest_full_size_categorized;
 -- DROP TABLE IF EXISTS unsavedfiles;
