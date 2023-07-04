@@ -60,7 +60,7 @@ extern "C" std::optional<std::string> job_code_callback_filed(JobControlRecord* 
   switch (param[0]) {
     case 'D':
       if (jcr->fd_impl->director) {
-        return std::string(jcr->fd_impl->director->resource_name_);
+        return jcr->fd_impl->director->resource_name_;
       }
       break;
     case 'm':
