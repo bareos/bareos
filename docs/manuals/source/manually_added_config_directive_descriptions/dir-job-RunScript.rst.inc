@@ -62,6 +62,8 @@ Before executing the specified command, Bareos performs character substitution o
 %j Unique Job Id
 %l Job Level
 %n Job name
+%N New Job Id (only on director side during migration/copy jobs)
+%O Previous Job Id (only on director side during migration/copy jobs)
 %p Pool name (only on director side)
 %P Daemon PID
 %s Since time
