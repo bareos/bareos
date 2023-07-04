@@ -294,7 +294,16 @@ class found_files_list {
 
   void sort()
   {
-    std::sort(files.begin(), files.end());
+    // do the regular files first; their relative order does not matter
+    // the order of directories does matter though! they need to send
+    // _after_ everything they contain!
+    auto regular_file_p = [](const stated_file& f) {
+      return S_IFREG == (f.statp.st_mode & S_IFMT);
+    };
+    auto regular_end
+        = std::stable_partition(files.begin(), files.end(), regular_file_p);
+    // sort just the regular files by their inode number.
+    std::sort(files.begin(), regular_end);
   }
 
  private:
