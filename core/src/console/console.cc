@@ -54,8 +54,10 @@
 #define clrbrk()
 #define usrbrk() 0
 
-#if defined(HAVE_WIN32)
-#  define isatty(fd) (fd == 0)
+#if defined(HAVE_WIN32) && !defined(_MSC_VER)
+// windows has its own isatty implemented, so
+// if we are compiling with msvc we can just that
+#  define isatty(fd) ((fd) == 0)
 #endif
 
 using namespace console;
