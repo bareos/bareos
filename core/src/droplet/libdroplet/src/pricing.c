@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+ * Copyright (C) 2020-2023 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -36,7 +36,7 @@
 
 /** @file */
 
-//#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
+// #define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt, ...)
 
 // misc
@@ -391,6 +391,7 @@ enum dpl_request_type dpl_pricing_request_type(const char* str)
     return DPL_REQUEST_TYPE_COPY;
 
   assert(0);
+  return 0;
 }
 
 enum dpl_data_type dpl_pricing_data_type(const char* str)
@@ -403,6 +404,7 @@ enum dpl_data_type dpl_pricing_data_type(const char* str)
     return DPL_DATA_TYPE_STORAGE;
 
   assert(0);
+  return 0;
 }
 
 enum dpl_duration_type dpl_pricing_duration_type(const char* str)
@@ -421,6 +423,7 @@ enum dpl_duration_type dpl_pricing_duration_type(const char* str)
     return DPL_DURATION_TYPE_YEAR;
 
   assert(0);
+  return 0;
 }
 
 static unsigned long long multiplicator(enum dpl_unit unit)
