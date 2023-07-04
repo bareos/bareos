@@ -158,11 +158,6 @@ target_link_libraries(
 add_executable(bareos-dir WIN32)
 target_sources(bareos-dir PRIVATE dird.cc)
 
-add_custom_command(TARGET bareos-dir POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy -t $<TARGET_FILE_DIR:bareos-dir> $<TARGET_RUNTIME_DLLS:bareos-dir>
-  COMMAND_EXPAND_LISTS
-)
-
 target_link_libraries(
   bareos-dir PRIVATE dird_objects bareossql bareosfind CLI11::CLI11
 )
