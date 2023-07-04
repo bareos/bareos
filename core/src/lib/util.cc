@@ -1033,7 +1033,7 @@ POOLMEM* edit_job_codes(JobControlRecord* jcr,
           if (callback != NULL) {
             auto callback_result = callback(jcr, p);
             if (callback_result) {
-              Bsnprintf(add, sizeof(add), "%s", callback_result->c_str());
+              snprintf(add, sizeof(add), "%s", callback_result->c_str());
               str = add;
             }
           }
