@@ -688,7 +688,7 @@ bool print_datatype_schema_json(PoolMem& buffer,
 json_t* json_datatype(const int type, ResourceItem items[]);
 const char* AuthenticationProtocolTypeToString(uint32_t auth_protocol);
 const char* JobLevelToString(int level);
-extern "C" std::optional<std::string> job_code_callback_director(JobControlRecord* jcr, const char*);
+std::optional<std::string> job_code_callback_director(JobControlRecord* jcr, const char*);
 const char* GetUsageStringForConsoleConfigureCommand();
 void DestroyConfigureUsageString();
 bool PopulateDefs();

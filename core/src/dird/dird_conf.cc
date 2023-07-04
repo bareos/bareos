@@ -3089,7 +3089,7 @@ bail_out:
  * %m = Prev Backup JobId
  * %M = New Backup JobId
  */
-extern "C" std::optional<std::string> job_code_callback_director(JobControlRecord* jcr,
+std::optional<std::string> job_code_callback_director(JobControlRecord* jcr,
                                             const char* param)
 {
   static const std::string yes = "yes";
