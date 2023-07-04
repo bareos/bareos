@@ -42,7 +42,7 @@ macro(bareos_gtest_add_tests testname)
     ${found_tests} PROPERTIES TIMEOUT 120 SKIP_RETURN_CODE 77
   )
   if(HAVE_WIN32)
-    if (NOT MSVC)
+    if(NOT MSVC)
       set_tests_properties(
         ${found_tests} PROPERTIES ENVIRONMENT "WINEPATH=${WINEPATH}"
       )
@@ -117,11 +117,11 @@ if(HAVE_WIN32)
     comdlg32
     advapi32
   )
-  set(RELATIVE_PROJECT_SOURCE_DIR "Z:${CMAKE_CURRENT_SOURCE_DIR}")
-  set(TEST_ORIGINAL_FILE_DIR Z:${CMAKE_CURRENT_SOURCE_DIR}/statefile)
-  set(TEST_TEMP_DIR Z:${CMAKE_CURRENT_BINARY_DIR}/statefile_tmp)
+  set(RELATIVE_PROJECT_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+  set(TEST_ORIGINAL_FILE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/statefile)
+  set(TEST_TEMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/statefile_tmp)
   file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/statefile_tmp/write-test)
-  set(CERTDIR Z:${CMAKE_CURRENT_SOURCE_DIR}/configs/test_bsock/tls)
+  set(CERTDIR ${CMAKE_CURRENT_SOURCE_DIR}/configs/test_bsock/tls)
 else() # NOT HAVE_WIN32
   file(RELATIVE_PATH RELATIVE_PROJECT_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}
        ${CMAKE_CURRENT_SOURCE_DIR}
@@ -312,21 +312,21 @@ if(NOT client-only)
   bareos_add_test(
     test_db_list_ctx LINK_LIBRARIES bareos bareossql GTest::gtest_main
   )
-if (NOT MSVC)
-  bareos_add_test(
-    test_dir_plugins
-    ADDITIONAL_SOURCES
-      ${PROJECT_SOURCE_DIR}/src/dird/dir_plugins.cc
-      ${PROJECT_SOURCE_DIR}/src/dird/dird_conf.cc
-      ${PROJECT_SOURCE_DIR}/src/dird/dird_globals.cc
-      ${PROJECT_SOURCE_DIR}/src/dird/run_conf.cc
-      ${PROJECT_SOURCE_DIR}/src/dird/inc_conf.cc
-      ${PROJECT_SOURCE_DIR}/src/dird/ua_acl.cc
-      ${PROJECT_SOURCE_DIR}/src/dird/ua_audit.cc
-    LINK_LIBRARIES bareos bareossql bareosfind GTest::gtest_main
-                   ${OPENSSL_LIBRARIES}
-  )
-endif()
+  if(NOT MSVC)
+    bareos_add_test(
+      test_dir_plugins
+      ADDITIONAL_SOURCES
+        ${PROJECT_SOURCE_DIR}/src/dird/dir_plugins.cc
+        ${PROJECT_SOURCE_DIR}/src/dird/dird_conf.cc
+        ${PROJECT_SOURCE_DIR}/src/dird/dird_globals.cc
+        ${PROJECT_SOURCE_DIR}/src/dird/run_conf.cc
+        ${PROJECT_SOURCE_DIR}/src/dird/inc_conf.cc
+        ${PROJECT_SOURCE_DIR}/src/dird/ua_acl.cc
+        ${PROJECT_SOURCE_DIR}/src/dird/ua_audit.cc
+      LINK_LIBRARIES bareos bareossql bareosfind GTest::gtest_main
+                     ${OPENSSL_LIBRARIES}
+    )
+  endif()
   bareos_add_test(
     test_fileindex_list
     LINK_LIBRARIES dird_objects bareos bareosfind bareossql
@@ -405,21 +405,21 @@ bareos_add_test(test_acl_entry_syntax LINK_LIBRARIES bareos GTest::gtest_main)
 
 bareos_add_test(test_bsnprintf LINK_LIBRARIES bareos GTest::gtest_main)
 
-if (NOT MSVC)
-bareos_add_test(
-  test_config_parser_fd LINK_LIBRARIES fd_objects bareos bareosfind
-                                       GTest::gtest_main
-)
+if(NOT MSVC)
+  bareos_add_test(
+    test_config_parser_fd LINK_LIBRARIES fd_objects bareos bareosfind
+                                         GTest::gtest_main
+  )
 endif()
 bareos_add_test(test_edit LINK_LIBRARIES bareos GTest::gtest_main)
 
-if (NOT MSVC)
-bareos_add_test(
-  test_fd_plugins
-  ADDITIONAL_SOURCES ${PROJECT_SOURCE_DIR}/src/filed/fd_plugins.cc
-                     ${PROJECT_SOURCE_DIR}/src/filed/fileset.cc
-  LINK_LIBRARIES bareos bareosfind GTest::gtest_main
-)
+if(NOT MSVC)
+  bareos_add_test(
+    test_fd_plugins
+    ADDITIONAL_SOURCES ${PROJECT_SOURCE_DIR}/src/filed/fd_plugins.cc
+                       ${PROJECT_SOURCE_DIR}/src/filed/fileset.cc
+    LINK_LIBRARIES bareos bareosfind GTest::gtest_main
+  )
 endif()
 bareos_add_test(test_is_name_valid LINK_LIBRARIES bareos GTest::gtest_main)
 
@@ -443,7 +443,8 @@ if(HAVE_WIN32)
 endif()
 
 bareos_add_test(
-  thread_specific_data LINK_LIBRARIES bareos ${THREADS_THREADS} GTest::gtest_main
+  thread_specific_data LINK_LIBRARIES bareos ${THREADS_THREADS}
+                                      GTest::gtest_main
 )
 
 bareos_add_test(timer_thread LINK_LIBRARIES bareos GTest::gtest_main)
