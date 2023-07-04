@@ -212,7 +212,7 @@ int OpenSocketAndBind(IPADDR* ipaddr,
 
   do {
     ++tries;
-    if (bind(fd, ipaddr->get_sockaddr(), ipaddr->GetSockaddrLen()) < 0) {
+    if (bind(fd, ipaddr->get_sockaddr(), ipaddr->GetSockaddrLen()) != 0) {
       BErrNo be;
       char tmp[1024];
 #ifdef HAVE_WIN32
