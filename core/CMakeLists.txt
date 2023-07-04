@@ -43,10 +43,10 @@ endif(CCACHE_FOUND)
 
 # switch on CXX 17 Support
 #
-if (NOT MSVC)
-set(CMAKE_CXX_STANDARD 17)
+if(NOT MSVC)
+  set(CMAKE_CXX_STANDARD 17)
 else()
-set(CMAKE_CXX_STANDARD 20)
+  set(CMAKE_CXX_STANDARD 20)
 endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # enable PIC/PIE by default
@@ -238,32 +238,34 @@ if(NOT MSVC)
     string(APPEND WINEPATH "Z:${CMAKE_CURRENT_BINARY_DIR}/src/cats\\\\;")
 
     message(${WINEPATH})
-    # replace slash with backslash everywhere
-    # MESSAGE(FATAL_ERROR ${WINEPATH})
+    # replace slash with backslash everywhere MESSAGE(FATAL_ERROR ${WINEPATH})
 
     set(ENV{WINEPATH} ${WINEPATH})
   endif()
 else()
   # MSVC: set path to VCPKG dlls
   set(ENVPATH "")
-  foreach (CURPATH $ENV{PATH})
+  foreach(CURPATH $ENV{PATH})
     list(APPEND ENVPATH "${CURPATH}")
-    #message(STATUS "${ENVPATH}")
+    # message(STATUS "${ENVPATH}")
   endforeach()
-  
+
+  # might be interesting:
+  # https://learn.microsoft.com/en-us/vcpkg/users/buildsystems/cmake-integration
+
   file(GLOB VCPKG_PACKAGEDIRS "C:/vcpkg/packages/*/bin")
-  foreach (DIR ${VCPKG_PACKAGEDIRS})
+  foreach(DIR ${VCPKG_PACKAGEDIRS})
     string(STRIP DIR ${DIR})
     string(REPLACE "/" "\\" DIR ${DIR})
     list(APPEND ENVPATH "${DIR}")
   endforeach()
-  
+
   set(OUT "")
-  foreach (P ${ENVPATH})
+  foreach(P ${ENVPATH})
     message(STATUS "${P}")
     set(OUT "${OUT}\;${P}")
   endforeach()
-  #string(REPLACE ";" "\\\;" ENVPAH "${ENVPATH}")
+  # string(REPLACE ";" "\\\;" ENVPAH "${ENVPATH}")
   set(ENVPATH "${OUT}")
   set(ENVPATH "${ENVPATH}\;${CMAKE_BINARY_DIR}\\core\\src\\cats\\Debug")
   set(ENVPATH "${ENVPATH}\;${CMAKE_BINARY_DIR}\\core\\src\\lib\\Debug")
@@ -275,12 +277,11 @@ endif()
 
 include(BareosFindAllLibraries)
 
-if (MSVC)
-  set (THREADS_THREADS "PThreads4W::PThreads4W_CXXEXC")
+if(MSVC)
+  set(THREADS_THREADS "PThreads4W::PThreads4W_CXXEXC")
 else()
-  set (THREADS_THREADS "Threads::Threads")
+  set(THREADS_THREADS "Threads::Threads")
 endif()
-
 
 include(BareosFindPrograms)
 
@@ -395,12 +396,9 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     SYSTEM ${PROJECT_SOURCE_DIR}/src/win32/include
     ${PROJECT_SOURCE_DIR}/src/win32/compat/include
   )
-  if (MSVC)
+  if(MSVC)
     link_libraries(Intl::Intl)
-  include_directories(
-    SYSTEM C:/src/vdi/include
-    SYSTEM C:/src/vss/include
-    )
+    include_directories(SYSTEM C:/src/vdi/include SYSTEM C:/src/vss/include)
   endif()
 
   set(HAVE_WIN32 1)
@@ -414,13 +412,13 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set(cross-prefix x86_64-w64-mingw32)
   endif()
 
-  if (NOT MSVC)
-  set(Python2_INCLUDE_DIRS /usr/${cross-prefix}/include/python2/)
-  set(Python3_INCLUDE_DIRS /usr/${cross-prefix}/include/python3/)
+  if(NOT MSVC)
+    set(Python2_INCLUDE_DIRS /usr/${cross-prefix}/include/python2/)
+    set(Python3_INCLUDE_DIRS /usr/${cross-prefix}/include/python3/)
 
-  set(PostgreSQL_LIBRARY libpq.dll)
-  set(PostgreSQL_INCLUDE_DIR "")
-  set(PostgreSQL_TYPE_INCLUDE_DIR "")
+    set(PostgreSQL_LIBRARY libpq.dll)
+    set(PostgreSQL_INCLUDE_DIR "")
+    set(PostgreSQL_TYPE_INCLUDE_DIR "")
   endif()
   set(dynamic-storage-backends OFF)
   set(HAVE_DYNAMIC_SD_BACKENDS 0)
@@ -432,8 +430,8 @@ endif()
 include(FindIntl)
 
 if(NOT MSVC)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wall -Wextra")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wall -Wextra")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra")
 endif()
 include(BareosSetVariableDefaults)
 option(ENABLE_BCONSOLE "Build bconsole binary" ON)
@@ -456,20 +454,21 @@ endif()
 include(BareosGenerateDebianInfo)
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   if(MSVC)
-  add_definitions(
-    -DWIN32_VSS -DMINGW64 -DHAVE_WIN32
-    -D_WIN32_WINNT=${WINDOWS_VERSION}
-  )
-  # add parallel builds (-MP)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -MP")
-  # export all symbols of dlls trick in cmake
-  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+    add_definitions(
+      -DWIN32_VSS -DMINGW64 -DHAVE_WIN32 -D_WIN32_WINNT=${WINDOWS_VERSION}
+    )
+    # add parallel builds (-MP)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -MP")
+    # export all symbols of dlls trick in cmake
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
   else()
-  add_definitions(
-    -DWIN32_VSS -DMINGW64 -DHAVE_WIN32 -DHAVE_MINGW
-    -D_WIN32_WINNT=${WINDOWS_VERSION}
-  )
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m${WINDOWS_BITS} -mwin32 -mthreads")
+    add_definitions(
+      -DWIN32_VSS -DMINGW64 -DHAVE_WIN32 -DHAVE_MINGW
+      -D_WIN32_WINNT=${WINDOWS_VERSION}
+    )
+    set(CMAKE_CXX_FLAGS
+        "${CMAKE_CXX_FLAGS} -m${WINDOWS_BITS} -mwin32 -mthreads"
+    )
   endif()
 
   # c++17 removed register keyword
@@ -971,7 +970,9 @@ message(
 )
 message("   systemd support:              ${WITH_SYSTEMD} ${SYSTEMD_UNITDIR}")
 message("   Batch insert enabled:         ${USE_BATCH_FILE_INSERT}")
-message("   PostgreSQL Version:           ${PostgreSQL_VERSION_STRING} ${PostgreSQL_LIBRARY}")
+message(
+  "   PostgreSQL Version:           ${PostgreSQL_VERSION_STRING} ${PostgreSQL_LIBRARY}"
+)
 message("   GTest enabled:                ${GTest_FOUND}")
 message(
   "   Intl support:                 ${Intl_FOUND} ${INTLINCLUDE_DIRS} ${INTL_LIBRARIES}"
