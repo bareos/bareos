@@ -726,7 +726,7 @@ $$ language 'plpgsql' immutable;
 
 -- set lstat/decode function parallel safe if supported
 begin;
-create or replace function pg_tmp.exec(raw_query text) returns boolean as $$
+create or replace function pg_temp.exec(raw_query text) returns boolean as $$
 begin
   execute raw_query;
   return true;
