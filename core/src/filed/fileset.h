@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -39,7 +39,7 @@ int AddOptionsToFileset(JobControlRecord* jcr, const char* item);
 void AddFileset(JobControlRecord* jcr, const char* item);
 bool TermFileset(JobControlRecord* jcr);
 std::optional<std::string> job_code_callback_filed(JobControlRecord* jcr,
-                                         const char*);
+                                                   const char*);
 
 } /* namespace filedaemon */
 

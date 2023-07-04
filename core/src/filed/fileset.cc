@@ -56,7 +56,7 @@ static int SetOptions(findFOPTS* fo, const char* opts);
  * %m = Modification time (for incremental and differential)
  */
 std::optional<std::string> job_code_callback_filed(JobControlRecord* jcr,
-                                         const char* param)
+                                                   const char* param)
 {
   switch (param[0]) {
     case 'D':
