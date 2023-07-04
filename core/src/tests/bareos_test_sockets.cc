@@ -32,6 +32,12 @@
 
 #include <thread>
 
+#ifdef HAVE_WIN32
+#  define socketClose(fd) ::closesocket(fd)
+#else
+#  define socketClose(fd) ::close(fd)
+#endif
+
 #if HAVE_WIN32
 #  include <cstdlib>
 #  include <mutex>
@@ -147,7 +153,7 @@ static int accept_server_socket(int listen_file_descriptor)
     return -1;
   }
 
-  close(listen_file_descriptor);
+  socketClose(listen_file_descriptor);
 
   return new_socket;
 }

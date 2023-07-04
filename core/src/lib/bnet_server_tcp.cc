@@ -59,6 +59,12 @@
 #include <array>
 #include <vector>
 
+#ifdef HAVE_WIN32
+#  define socketClose(fd) ::closesocket(fd)
+#else
+#  define socketClose(fd) ::close(fd)
+#endif
+
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static std::atomic<bool> quit{false};
 
@@ -89,7 +95,7 @@ static void CleanupBnetThreadServerTcp(alist<s_sockfd*>* sockfds,
   if (sockfds && !sockfds->empty()) {
     s_sockfd* fd_ptr = (s_sockfd*)sockfds->first();
     while (fd_ptr) {
-      close(fd_ptr->fd);
+      socketClose(fd_ptr->fd);
       fd_ptr = (s_sockfd*)sockfds->next();
     }
     sockfds->destroy();

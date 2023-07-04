@@ -26,6 +26,14 @@
 #include "lib/watchdog.h"
 #include "lib/berrno.h"
 
+#include <iostream>
+
+#ifdef HAVE_WIN32
+#  define socketClose(fd) ::closesocket(fd)
+#else
+#  define socketClose(fd) ::close(fd)
+#endif
+
 static bool create_and_bind_v4socket(int test_fd, int port)
 {
   int family = AF_INET;
@@ -41,6 +49,9 @@ static bool create_and_bind_v4socket(int test_fd, int port)
   if (bind(test_fd, (struct sockaddr*)&v4_address, sizeof(v4_address)) == 0) {
     return true;
   } else {
+    auto i = WSAGetLastError();
+    socketClose(test_fd);
+    std::cout << "WSAError: " << i << std::endl;
     return false;
   }
 }
@@ -65,7 +76,7 @@ static bool create_and_bind_v6socket(int test_fd, int port)
     BErrNo be;
     Emsg1(M_WARNING, 0, _("Cannot set IPV6_V6ONLY on socket: %s\n"),
           be.bstrerror());
-
+    socketClose(test_fd);
     return false;
   }
 
@@ -73,6 +84,7 @@ static bool create_and_bind_v6socket(int test_fd, int port)
   if (bind(test_fd, (struct sockaddr*)&v6_address, sizeof(v6_address)) == 0) {
     return true;
   } else {
+    socketClose(test_fd);
     return false;
   }
 }
@@ -83,19 +95,22 @@ static bool test_sockets(int family, int port)
   int v4_fd = -1;
   int v6_fd = -1;
   bool result = true;
-  bool result_v4, result_v6;
-  if (family == 0) {
-    result_v4 = create_and_bind_v4socket(v4_fd, port);
-    result_v6 = create_and_bind_v6socket(v6_fd, port);
-    result = result_v4 && result_v6;
 
+  if (family == 0) {
+    bool result_v4 = create_and_bind_v4socket(v4_fd, port);
+    bool result_v6 = create_and_bind_v6socket(v6_fd, port);
+    result = result_v4 && result_v6;
+    if (result_v4) socketClose(v4_fd);
+    if (result_v6) socketClose(v6_fd);
   } else {
     switch (family) {
       case AF_INET:
         result = create_and_bind_v4socket(v4_fd, port);
+        if (result) socketClose(v4_fd);
         break;
       case AF_INET6:
         result = create_and_bind_v6socket(v6_fd, port);
+        if (result) socketClose(v6_fd);
         break;
       default:
         EXPECT_TRUE(false);
@@ -103,8 +118,6 @@ static bool test_sockets(int family, int port)
     }
   }
 
-  close(v4_fd);
-  close(v6_fd);
   return result;
 }
 
