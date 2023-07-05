@@ -296,14 +296,12 @@ bool exclude_win32_not_to_backup_registry_entries(JobControlRecord* jcr,
       findFOPTS* fo;
 
       // Prepare include block to do exclusion via wildcards in options
-      new_preinclude(ff->fileset);
-
-      include = (findIncludeExcludeItem*)ff->fileset->include_list.get(0);
+      include = new_preinclude(ff);
 
       if (include->opts_list.size() == 0) {
         // Create new options block in include block for the wildcard excludes
         Dmsg0(100, "prepending new options block\n");
-        NewOptions(ff, ff->fileset->incexe);
+        NewOptions(ff, include);
       } else {
         Dmsg0(100, "reusing existing options block\n");
       }
