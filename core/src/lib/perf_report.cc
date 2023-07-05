@@ -1,3 +1,24 @@
+/*
+   BAREOS® - Backup Archiving REcovery Open Sourced
+
+   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+
+   This program is Free Software; you can redistribute it and/or
+   modify it under the terms of version three of the GNU Affero General Public
+   License as published by the Free Software Foundation and included
+   in the file LICENSE.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+   Affero General Public License for more details.
+
+   You should have received a copy of the GNU Affero General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
+*/
+
 #include <sstream>
 #include <algorithm>
 #include <iomanip>
@@ -38,16 +59,19 @@ struct SplitDuration {
 
   friend std::ostream& operator<<(std::ostream& out, SplitDuration d)
   {
-    return out << std::setfill('0')
-	       << std::setw(2) << d.hours() << ":" << std::setw(2) << d.minutes() << ":" << std::setw(2) << d.seconds() << "."
-	       << std::setw(3) << d.millis() << "-" << std::setw(3) << d.micros()
-	       << std::setfill(' ');
+    return out << std::setfill('0') << std::setw(2) << d.hours() << ":"
+               << std::setw(2) << d.minutes() << ":" << std::setw(2)
+               << d.seconds() << "." << std::setw(3) << d.millis() << "-"
+               << std::setw(3) << d.micros() << std::setfill(' ');
   }
 };
 
 static auto max_child_values(const ThreadCallstackReport::Node* node)
 {
-  struct { std::size_t name_length; std::size_t depth; } max;
+  struct {
+    std::size_t name_length;
+    std::size_t depth;
+  } max;
   max.depth = node->depth();
   max.name_length = 0;
   auto& children = node->children_view();
@@ -56,7 +80,8 @@ static auto max_child_values(const ThreadCallstackReport::Node* node)
   if (children.size() == 0) return max;
   for (auto& [source, child] : children) {
     auto child_max = max_child_values(child.get());
-    auto child_max_name = std::max(std::strlen(source->c_str()), child_max.name_length);
+    auto child_max_name
+        = std::max(std::strlen(source->c_str()), child_max.name_length);
     max.name_length = std::max(max.name_length, child_max_name);
     max.depth = std::max(max.depth, child_max.depth);
   }
@@ -64,26 +89,30 @@ static auto max_child_values(const ThreadCallstackReport::Node* node)
 }
 
 static void PrintNode(std::ostringstream& out,
-		      const char* name,
-		      std::size_t depth,
-		      std::chrono::nanoseconds parentns,
-		      std::size_t max_name_length,
-		      std::size_t max_depth,
-		      const ThreadCallstackReport::Node* node)
+                      const char* name,
+                      std::size_t depth,
+                      std::chrono::nanoseconds parentns,
+                      std::size_t max_name_length,
+                      std::size_t max_depth,
+                      const ThreadCallstackReport::Node* node)
 {
-    // depth is (modulo a shared offset) equal to current->depth
-  std::size_t offset = (max_name_length - std::strlen(name))
-    + (max_depth - depth);
+  // depth is (modulo a shared offset) equal to current->depth
+  std::size_t offset
+      = (max_name_length - std::strlen(name)) + (max_depth - depth);
   SplitDuration d(node->time_spent());
   out << std::setw(depth) << "" << name << ": "
-      << std::setw(offset > 0 ? offset-1 : 0) << std::setfill('-') << " " << std::setfill(' ')
-      << d;
+      << std::setw(offset > 0 ? offset - 1 : 0) << std::setfill('-') << " "
+      << std::setfill(' ') << d;
   if (parentns.count() != 0) {
-    out << " (" << std::setw(6) << std::fixed << std::setprecision(2) << double(node->time_spent().count() * 100) / double(parentns.count()) << "%)";
+    out << " (" << std::setw(6) << std::fixed << std::setprecision(2)
+        << double(node->time_spent().count() * 100) / double(parentns.count())
+        << "%)";
   }
   out << "\n";
 
-  std::vector<std::pair<BlockIdentity const*, ThreadCallstackReport::Node const*>> children;
+  std::vector<
+      std::pair<BlockIdentity const*, ThreadCallstackReport::Node const*>>
+      children;
   auto& view = node->children_view();
   children.reserve(view.size());
   for (auto& [source, child] : view) {
@@ -94,24 +123,18 @@ static void PrintNode(std::ostringstream& out,
     auto t1 = p1.second->time_spent();
     auto t2 = p2.second->time_spent();
     if (t1 > t2) { return true; }
-    if ((t1 == t2) &&
-	(p1.first > p2.first)) { return true; }
+    if ((t1 == t2) && (p1.first > p2.first)) { return true; }
     return false;
   });
   for (auto& [id, child] : children) {
-    PrintNode(out,
-	      id->c_str(),
-	      depth + 1,
-	      node->time_spent(),
-	      max_name_length,
-	      max_depth,
-	      child);
+    PrintNode(out, id->c_str(), depth + 1, node->time_spent(), max_name_length,
+              max_depth, child);
   }
 }
 
 static std::int64_t PrintCollapsedNode(std::ostringstream& out,
-				       std::string path,
-				       const ThreadCallstackReport::Node* node)
+                                       std::string path,
+                                       const ThreadCallstackReport::Node* node)
 {
   auto& view = node->children_view();
 
@@ -120,28 +143,30 @@ static std::int64_t PrintCollapsedNode(std::ostringstream& out,
     std::string copy = path;
     copy += ";";
     copy += id->c_str();
-    child_time += PrintCollapsedNode(out,
-				     copy,
-				     child.get());
+    child_time += PrintCollapsedNode(out, copy, child.get());
   }
 
   ASSERT(child_time <= node->time_spent().count());
   out << path << " " << node->time_spent().count() - child_time << "\n";
-  out << path << " " << node->time_spent().count() << " | " << child_time  << "\n";
+  out << path << " " << node->time_spent().count() << " | " << child_time
+      << "\n";
   return node->time_spent().count();
 }
 
-void ThreadOverviewReport::begin_report(event::time_point current) {
+void ThreadOverviewReport::begin_report(event::time_point current)
+{
   std::unique_lock lock{mut};
   now = current;
 }
 
-void ThreadOverviewReport::begin_event(event::OpenEvent e) {
+void ThreadOverviewReport::begin_event(event::OpenEvent e)
+{
   std::unique_lock lock{mut};
   stack.push_back(e);
 }
 
-void ThreadOverviewReport::end_event(event::CloseEvent e) {
+void ThreadOverviewReport::end_event(event::CloseEvent e)
+{
   using namespace std::chrono;
 
   std::unique_lock lock{mut};
@@ -149,21 +174,22 @@ void ThreadOverviewReport::end_event(event::CloseEvent e) {
   ASSERT(stack.back().source == e.source);
 
   auto start = stack.back().start;
-  auto end   = e.end;
+  auto end = e.end;
 
   cul_time[e.source] += duration_cast<nanoseconds>(end - start);
 
   stack.pop_back();
 }
 
-std::unordered_map<BlockIdentity const*, std::chrono::nanoseconds> ThreadOverviewReport::as_of(event::time_point tp) const
+std::unordered_map<BlockIdentity const*, std::chrono::nanoseconds>
+ThreadOverviewReport::as_of(event::time_point tp) const
 {
   using namespace std::chrono;
   std::unordered_map<BlockIdentity const*, std::chrono::nanoseconds> result;
 
   {
     std::unique_lock lock{mut};
-    result = cul_time; // copy
+    result = cul_time;  // copy
     for (auto& open : stack) {
       if (open.start > tp) continue;
       result[open.source] += duration_cast<nanoseconds>(tp - open.start);
@@ -184,17 +210,15 @@ std::string OverviewReport::str() const
     report << "== Thread: " << id << " ==\n";
     auto data = reporter.as_of(now);
 
-    std::vector<std::pair<BlockIdentity const*, nanoseconds>> entries(data.begin(), data.end());
+    std::vector<std::pair<BlockIdentity const*, nanoseconds>> entries(
+        data.begin(), data.end());
     std::sort(entries.begin(), entries.end(), [](auto& p1, auto& p2) {
       if (p1.second > p2.second) { return true; }
-      if ((p1.second == p2.second) &&
-	  (p1.first > p2.first)) { return true; }
+      if ((p1.second == p2.second) && (p1.first > p2.first)) { return true; }
       return false;
     });
 
-    if (NumToShow != ShowAll) {
-      entries.resize(NumToShow);
-    }
+    if (NumToShow != ShowAll) { entries.resize(NumToShow); }
 
     std::size_t maxwidth = 0;
     for (auto [id, _] : entries) {
@@ -205,23 +229,19 @@ std::string OverviewReport::str() const
     for (auto [id, time] : entries) {
       SplitDuration d(time);
       // TODO(C++20): replace this with std::format
-      report << std::setw(maxwidth)
-	     << id->c_str() << ": "
-	     << d
-	// XXX.XX = 6 chars
-	     << " (" << std::setw(6) << std::fixed << std::setprecision(2) << double(time.count() * 100) / double(max_time.count()) << "%)"
-	     << "\n";
-
+      report << std::setw(maxwidth) << id->c_str() << ": "
+             << d
+             // XXX.XX = 6 chars
+             << " (" << std::setw(6) << std::fixed << std::setprecision(2)
+             << double(time.count() * 100) / double(max_time.count()) << "%)"
+             << "\n";
     }
   }
   report << "=== End Performance Report ===\n";
   return report.str();
 }
 
-OverviewReport::~OverviewReport()
-{
-  Dmsg1(500, "%s", str().c_str());
-}
+OverviewReport::~OverviewReport() { Dmsg1(500, "%s", str().c_str()); }
 
 std::string CallstackReport::str() const
 {
@@ -235,12 +255,9 @@ std::string CallstackReport::str() const
     auto node = thread.as_of(now);
     auto max_values = max_child_values(node.get());
 
-    PrintNode(report, "Thread",
-	      0,
-	      duration_cast<nanoseconds>(now - start),
-	      std::max(std::size_t{6}, max_values.name_length),
-	      max_values.depth,
-	      node.get());
+    PrintNode(report, "Thread", 0, duration_cast<nanoseconds>(now - start),
+              std::max(std::size_t{6}, max_values.name_length),
+              max_values.depth, node.get());
   }
   report << "=== End Performance Report ===\n";
   return report.str();
@@ -256,14 +273,10 @@ std::string CallstackReport::collapsed_str() const
   for (auto& [id, thread] : threads) {
     report << "== Thread: " << id << " ==\n";
     auto node = thread.as_of(now);
-    PrintCollapsedNode(report, "Thread",
-		       node.get());
+    PrintCollapsedNode(report, "Thread", node.get());
   }
   report << "=== End Performance Report ===\n";
   return report.str();
 }
 
-CallstackReport::~CallstackReport()
-{
-  Dmsg1(500, "%s", str().c_str());
-}
+CallstackReport::~CallstackReport() { Dmsg1(500, "%s", str().c_str()); }

@@ -1638,7 +1638,5 @@ void SetLogTimestampFormat(const char* format)
 
 void SetPerf(int perf)
 {
-  if (perf != -1) {
-    do_perf.store(perf, std::memory_order_relaxed);
-  }
+  if (perf != -1) { do_perf.store(perf, std::memory_order_relaxed); }
 }

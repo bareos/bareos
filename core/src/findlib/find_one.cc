@@ -273,7 +273,7 @@ bool HasFileChanged(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
     if (lstat(ff_pkt->fname, &statp) != 0) {
       BErrNo be;
       Jmsg(jcr, M_WARNING, 0, _("Cannot stat file %s: ERR=%s\n"), ff_pkt->fname,
-	   be.bstrerror());
+           be.bstrerror());
       return true;
     }
   }
@@ -322,15 +322,15 @@ bool HasFileChanged(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 bool CheckChanges(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 {
   constexpr auto dmsg_debug_level = 750;
-  time_t since_time  = ff_pkt->save_time;
-  time_t mod_time    = ff_pkt->statp.st_mtime;
+  time_t since_time = ff_pkt->save_time;
+  time_t mod_time = ff_pkt->statp.st_mtime;
   time_t create_time = ff_pkt->statp.st_ctime;
   /* In special mode (like accurate backup), the programmer can
    * choose his comparison function. */
   if (ff_pkt->CheckFct) {
     bool changed = ff_pkt->CheckFct(jcr, ff_pkt);
     Dmsg2(dmsg_debug_level, "custom check -> changed: %s\n",
-	  changed ? "true" : "false");
+          changed ? "true" : "false");
     return changed;
   }
 
@@ -338,18 +338,22 @@ bool CheckChanges(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
   if (ff_pkt->incremental) {
     bool mtime_new = mod_time >= since_time;
     bool ctime_new = create_time >= since_time;
-    bool changed = BitIsSet(FO_MTIMEONLY, ff_pkt->flags) ? mtime_new : mtime_new || ctime_new;
+    bool changed = BitIsSet(FO_MTIMEONLY, ff_pkt->flags)
+                       ? mtime_new
+                       : mtime_new || ctime_new;
 
     if (debug_level >= dmsg_debug_level) {
       char mtime_str[MAX_TIME_LENGTH];
       char ctime_str[MAX_TIME_LENGTH];
       char stime_str[MAX_TIME_LENGTH];
 
-      Dmsg5(dmsg_debug_level, "default check -> changed: %s (since_time: %s, mtime: %s, ctime: %s)\n",
-	    changed ? "true" : "false",
-	    bstrftimes(stime_str, sizeof(stime_str), since_time),
-	    bstrftimes(mtime_str, sizeof(mtime_str), mod_time),
-	    bstrftimes(ctime_str, sizeof(ctime_str), create_time));
+      Dmsg5(dmsg_debug_level,
+            "default check -> changed: %s (since_time: %s, mtime: %s, ctime: "
+            "%s)\n",
+            changed ? "true" : "false",
+            bstrftimes(stime_str, sizeof(stime_str), since_time),
+            bstrftimes(mtime_str, sizeof(mtime_str), mod_time),
+            bstrftimes(ctime_str, sizeof(ctime_str), create_time));
     }
 
     return changed;

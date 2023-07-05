@@ -1,3 +1,24 @@
+/*
+   BAREOS® - Backup Archiving REcovery Open Sourced
+
+   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+
+   This program is Free Software; you can redistribute it and/or
+   modify it under the terms of version three of the GNU Affero General Public
+   License as published by the Free Software Foundation and included
+   in the file LICENSE.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+   Affero General Public License for more details.
+
+   You should have received a copy of the GNU Affero General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
+*/
+
 #include <lib/time_stamps.h>
 
 #include <mutex>
@@ -15,13 +36,14 @@ ThreadTimeKeeper::~ThreadTimeKeeper()
 static constexpr std::size_t buffer_filled_ok = 1000;
 static_assert(buffer_filled_ok < buffer_full);
 
-static struct buffer_is_locked_t {} event_buffer_locked;
+static struct buffer_is_locked_t {
+} event_buffer_locked;
 
 static void FlushEventsIfNecessary(TimeKeeper& keeper,
-				   std::thread::id this_id,
-				   const std::vector<event::OpenEvent>& stack,
-				   EventBuffer& buffer,
-				   buffer_is_locked_t)
+                                   std::thread::id this_id,
+                                   const std::vector<event::OpenEvent>& stack,
+                                   EventBuffer& buffer,
+                                   buffer_is_locked_t)
 {
   if (buffer.events.size() >= buffer_full) {
     keeper.handle_event_buffer(std::move(buffer));
@@ -63,47 +85,48 @@ void ThreadTimeKeeper::exit()
 }
 
 static void write_reports(bool* end,
-			  std::mutex* gen_mut,
-			  std::optional<OverviewReport>* overview,
-			  std::optional<CallstackReport>* callstack,
-			  std::mutex* buf_mut,
-			  std::condition_variable* buf_empty,
-			  std::condition_variable* buf_not_empty,
-			  std::deque<EventBuffer>* buf_queue)
+                          std::mutex* gen_mut,
+                          std::optional<OverviewReport>* overview,
+                          std::optional<CallstackReport>* callstack,
+                          std::mutex* buf_mut,
+                          std::condition_variable* buf_empty,
+                          std::condition_variable* buf_not_empty,
+                          std::deque<EventBuffer>* buf_queue)
 {
   for (;;) {
     {
       int perf = GetPerf();
       if (!(perf & static_cast<std::int32_t>(PerfReport::Overview))) {
-	if (overview->has_value()) {
-	  std::unique_lock lock{*gen_mut};
-	  overview->reset();
-	}
+        if (overview->has_value()) {
+          std::unique_lock lock{*gen_mut};
+          overview->reset();
+        }
       } else {
-	if (!overview->has_value()) {
-	  std::unique_lock lock{*gen_mut};
-	  overview->emplace(OverviewReport::ShowAll)
-	    .begin_report(event::clock::now());
-	}
+        if (!overview->has_value()) {
+          std::unique_lock lock{*gen_mut};
+          overview->emplace(OverviewReport::ShowAll)
+              .begin_report(event::clock::now());
+        }
       }
       if (!(perf & static_cast<std::int32_t>(PerfReport::Stack))) {
-	if (callstack->has_value()) {
-	  std::unique_lock lock{*gen_mut};
-	  callstack->reset();
-	}
+        if (callstack->has_value()) {
+          std::unique_lock lock{*gen_mut};
+          callstack->reset();
+        }
       } else {
-	if (!callstack->has_value()) {
-	  std::unique_lock lock{*gen_mut};
-	  callstack->emplace(CallstackReport::ShowAll)
-	    .begin_report(event::clock::now());
-	}
+        if (!callstack->has_value()) {
+          std::unique_lock lock{*gen_mut};
+          callstack->emplace(CallstackReport::ShowAll)
+              .begin_report(event::clock::now());
+        }
       }
     }
     EventBuffer buf;
     bool now_empty = false;
     {
       std::unique_lock lock{*buf_mut};
-      buf_not_empty->wait(lock, [end, buf_queue]() { return *end || buf_queue->size() > 0; });
+      buf_not_empty->wait(
+          lock, [end, buf_queue]() { return *end || buf_queue->size() > 0; });
 
       if (buf_queue->size() == 0) break;
 
@@ -120,9 +143,12 @@ static void write_reports(bool* end,
   }
 }
 
-TimeKeeper::TimeKeeper() : report_writer{&write_reports, &end, &gen_mut, &overview, &callstack,
-					 &buf_mut, &buf_empty, &buf_not_empty, &buf_queue}
-{}
+TimeKeeper::TimeKeeper()
+    : report_writer{&write_reports, &end,           &gen_mut,
+                    &overview,      &callstack,     &buf_mut,
+                    &buf_empty,     &buf_not_empty, &buf_queue}
+{
+}
 
 ThreadTimeKeeper& TimeKeeper::get_thread_local()
 {
@@ -130,16 +156,15 @@ ThreadTimeKeeper& TimeKeeper::get_thread_local()
   std::thread::id my_id = std::this_thread::get_id();
   {
     std::shared_lock read_lock(alloc_mut);
-    if (auto found = keeper.find(my_id);
-	found != keeper.end()) {
+    if (auto found = keeper.find(my_id); found != keeper.end()) {
       return found->second;
     }
   }
   {
     std::unique_lock write_lock(alloc_mut);
-    auto [iter, inserted] = keeper.emplace(std::piecewise_construct,
-					   std::forward_as_tuple(my_id),
-					   std::forward_as_tuple(*this));
+    auto [iter, inserted]
+        = keeper.emplace(std::piecewise_construct, std::forward_as_tuple(my_id),
+                         std::forward_as_tuple(*this));
     ASSERT(inserted);
     return iter->second;
   }

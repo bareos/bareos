@@ -474,8 +474,8 @@ static bool ConfigureMessageThread(JobControlRecord* jcr)
  */
 bool DoNativeBackup(JobControlRecord* jcr)
 {
-  Jmsg(jcr, M_INFO, 0, _("Start Backup JobId %llu, Job=%s\n"), jcr->JobId,
-       jcr->Job);
+  Jmsg(jcr, M_INFO, 0, _("Start Backup JobId %llu, Job=%s\n"),
+       (uint64_t)jcr->JobId, jcr->Job);
 
   jcr->setJobStatusWithPriorityCheck(JS_Running);
   Dmsg2(100, "JobId=%d JobLevel=%c\n", jcr->dir_impl->jr.JobId,

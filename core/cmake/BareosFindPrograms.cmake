@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -56,7 +56,7 @@ find_program(RPCGEN rpcgen)
 find_program(MTX mtx)
 find_program(MT mt)
 
-if (ENABLE_SANITIZERS)
+if(ENABLE_SANITIZERS)
   find_program(GCORE false)
 else()
   find_program(GCORE gcore)

@@ -1381,8 +1381,8 @@ static bool ParsesEqually(std::string_view l, std::string_view r)
       l.remove_prefix(1);
     } else if (r.size() > 0 && r.front() == ' ') {
       r.remove_prefix(1);
-    } else if (l.size() > 0 && r.size() > 0 &&
-	       std::tolower(l.front()) == std::tolower(r.front())) {
+    } else if (l.size() > 0 && r.size() > 0
+               && std::tolower(l.front()) == std::tolower(r.front())) {
       l.remove_prefix(1);
       r.remove_prefix(1);
     } else if (l.size() == 0 && r.size() == 0) {

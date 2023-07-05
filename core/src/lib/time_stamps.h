@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,7 +29,7 @@
 #include <condition_variable>
 #include <shared_mutex>
 #include <variant>
-#include <memory> // shared_ptr
+#include <memory>  // shared_ptr
 #include <deque>
 #include <optional>
 
@@ -40,24 +40,29 @@ static constexpr std::size_t buffer_full = 2000;
 
 class TimeKeeper;
 
-class ThreadTimeKeeper
-{
+class ThreadTimeKeeper {
   friend class TimeKeeper;
-public:
-  ThreadTimeKeeper(TimeKeeper& keeper) : this_id{std::this_thread::get_id()}
-				       , keeper{keeper} {}
+
+ public:
+  ThreadTimeKeeper(TimeKeeper& keeper)
+      : this_id{std::this_thread::get_id()}, keeper{keeper}
+  {
+  }
   ~ThreadTimeKeeper();
   void enter(const BlockIdentity& block);
   void switch_to(const BlockIdentity& block);
   void exit();
-protected:
-  EventBuffer flush() {
+
+ protected:
+  EventBuffer flush()
+  {
     std::unique_lock _{vec_mut};
     EventBuffer new_buffer(this_id, buffer_full, stack);
     std::swap(new_buffer, buffer);
     return new_buffer;
   }
-private:
+
+ private:
   std::thread::id this_id;
   TimeKeeper& keeper;
   std::vector<event::OpenEvent> stack{};
@@ -65,19 +70,17 @@ private:
   mutable std::mutex vec_mut{};
 };
 
-class TimeKeeper
-{
-public:
+class TimeKeeper {
+ public:
   ThreadTimeKeeper& get_thread_local();
   TimeKeeper();
-  ~TimeKeeper() {
+  ~TimeKeeper()
+  {
     auto now = event::clock::now();
     flush();
     {
       std::unique_lock lock{gen_mut};
-      for (auto& gen : gens) {
-	gen->end_report(now);
-      }
+      for (auto& gen : gens) { gen->end_report(now); }
       gens.clear();
     }
     {
@@ -89,27 +92,29 @@ public:
   }
   void add_writer(std::shared_ptr<ReportGenerator> gen);
   void remove_writer(std::shared_ptr<ReportGenerator> gen);
-  void handle_event_buffer(EventBuffer buf) {
+  void handle_event_buffer(EventBuffer buf)
+  {
     {
       std::unique_lock{buf_mut};
       buf_queue.emplace_back(std::move(buf));
     }
     buf_not_empty.notify_one();
   }
-  bool try_handle_event_buffer(EventBuffer& buf) {
-    if (std::unique_lock lock{buf_mut, std::try_to_lock};
-	lock.owns_lock()) {
+  bool try_handle_event_buffer(EventBuffer& buf)
+  {
+    if (std::unique_lock lock{buf_mut, std::try_to_lock}; lock.owns_lock()) {
       buf_queue.emplace_back(std::move(buf));
       return true;
     }
     return false;
   }
-  void flush() {
+  void flush()
+  {
     {
       std::unique_lock lock{alloc_mut};
       for (auto& [_, thread] : keeper) {
-	auto buf = thread.flush();
-	handle_event_buffer(std::move(buf));
+        auto buf = thread.flush();
+        handle_event_buffer(std::move(buf));
       }
     }
     {
@@ -118,19 +123,17 @@ public:
       buf_empty.wait(lock, [this]() { return this->buf_queue.size() == 0; });
     }
   }
-  std::string str() {
+  std::string str()
+  {
     flush();
     std::unique_lock lock(gen_mut);
     std::string result{};
-    if (overview.has_value()) {
-      result += overview.value().str();
-    }
-    if (callstack.has_value()) {
-      result += callstack.value().str();
-    }
+    if (overview.has_value()) { result += overview.value().str(); }
+    if (callstack.has_value()) { result += callstack.value().str(); }
     return result;
   }
-private:
+
+ private:
   mutable std::mutex gen_mut{};
   bool end{false};
   std::vector<std::shared_ptr<ReportGenerator>> gens;
@@ -145,17 +148,14 @@ private:
   std::thread report_writer;
 };
 
-class TimedBlock
-{
-public:
+class TimedBlock {
+ public:
   TimedBlock(ThreadTimeKeeper& timer, const BlockIdentity& block) : timer{timer}
   {
     timer.enter(block);
   }
   ~TimedBlock() { timer.exit(); }
-  void switch_to(const BlockIdentity& block) {
-    timer.switch_to(block);
-  }
+  void switch_to(const BlockIdentity& block) { timer.switch_to(block); }
 
  private:
   ThreadTimeKeeper& timer;

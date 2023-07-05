@@ -1,9 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -243,4 +241,4 @@ void q_msg(const char* file,
            ...);
 int msg_(const char* file, int line, POOLMEM*& pool_buf, const char* fmt, ...);
 
-#endif /* BAREOS_INCLUDE_MESSAGES_H_ */
+#endif  // BAREOS_INCLUDE_MESSAGES_H_

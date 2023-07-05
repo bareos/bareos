@@ -1060,8 +1060,8 @@ static inline bool SendPlainData(b_ctx& bctx)
   TimedBlock read_and_send{timer, read};
   for (;;) {
     if ((sd->message_length
-	 = (uint32_t)bread(&bctx.ff_pkt->bfd, bctx.rbuf, bctx.rsize))
-	<= 0) {
+         = (uint32_t)bread(&bctx.ff_pkt->bfd, bctx.rbuf, bctx.rsize))
+        <= 0) {
       break;
     }
     read_and_send.switch_to(send);

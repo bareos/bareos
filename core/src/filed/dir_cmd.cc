@@ -185,7 +185,8 @@ static char setbandwidthcmd[] = "setbandwidth=%lld Job=%127s";
 static char setdebugv0cmd[] = "setdebug=%d trace=%d";
 static char setdebugv1cmd[] = "setdebug=%d trace=%d hangup=%d";
 static char setdebugv2cmd[] = "setdebug=%d trace=%d hangup=%d timestamp=%d";
-static char setdebugv3cmd[] = "setdebug=%d trace=%d hangup=%d timestamp=%d perf=%d";
+static char setdebugv3cmd[]
+    = "setdebug=%d trace=%d hangup=%d timestamp=%d perf=%d";
 static char storaddrv0cmd[] = "storage address=%s port=%d ssl=%d";
 static char storaddrv1cmd[]
     = "storage address=%s port=%d ssl=%d Authorization=%100s";
@@ -226,7 +227,8 @@ static char OKsetdebugv0[]
 static char OKsetdebugv1[]
     = "2000 OK setdebug=%d trace=%d hangup=%d timestamp=%d tracefile=%s\n";
 static char OKsetdebugv2[]
-    = "2000 OK setdebug=%d trace=%d hangup=%d timestamp=%d tracefile=%s perf=%s\n";
+    = "2000 OK setdebug=%d trace=%d hangup=%d timestamp=%d tracefile=%s "
+      "perf=%s\n";
 static char BADjob[] = "2901 Bad Job\n";
 static char EndJob[]
     = "2800 End Job TermCode=%d JobFiles=%u ReadBytes=%s"
@@ -803,7 +805,8 @@ static bool SetbandwidthCmd(JobControlRecord* jcr)
 static std::string GetPerfDescription(std::int32_t perf)
 {
   std::string desc{""};
-  constexpr std::int32_t overview = static_cast<std::int32_t>(PerfReport::Overview);
+  constexpr std::int32_t overview
+      = static_cast<std::int32_t>(PerfReport::Overview);
   constexpr std::int32_t stack = static_cast<std::int32_t>(PerfReport::Stack);
   if (perf & overview) {
     desc += "overview,";
@@ -816,7 +819,7 @@ static std::string GetPerfDescription(std::int32_t perf)
   if (perf != 0) {
     // if perf is not 0 here, we have some unknown flags set
     Dmsg3(50, "Unknown perf flag(s) encountered: %d; known flags: %d,%d.\n",
-	  perf, stack, overview);
+          perf, stack, overview);
     desc += "??,";
   }
 
@@ -839,7 +842,7 @@ static bool SetdebugCmd(JobControlRecord* jcr)
   success = (scan == 5);
   if (!success) {
     scan = sscanf(dir->msg, setdebugv2cmd, &level, &trace_flag, &hangup_flag,
-		  &timestamp_flag);
+                  &timestamp_flag);
     success = (scan == 4);
   }
   if (!success) {
@@ -869,9 +872,10 @@ static bool SetdebugCmd(JobControlRecord* jcr)
   if (scan == 5) {
     auto perf_desc = GetPerfDescription(GetPerf());
     SetTimestamp(timestamp_flag);
-    Dmsg5(50, "level=%d trace=%d hangup=%d timestamp=%d tracefilename=%s perf=%s\n",
-          level, GetTrace(), GetHangup(), GetTimestamp(),
-          tracefilename.c_str(), perf_desc.c_str());
+    Dmsg5(50,
+          "level=%d trace=%d hangup=%d timestamp=%d tracefilename=%s perf=%s\n",
+          level, GetTrace(), GetHangup(), GetTimestamp(), tracefilename.c_str(),
+          perf_desc.c_str());
     return dir->fsend(OKsetdebugv2, level, GetTrace(), GetHangup(),
                       GetTimestamp(), tracefilename.c_str(), perf_desc.c_str());
   } else if (scan == 4) {
