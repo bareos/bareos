@@ -129,20 +129,20 @@ struct findFOPTS {
   int StripPath{};          /**< Strip path count */
   struct s_sz_matching* size_match{}; /**< Perform size matching ? */
   b_fileset_shadow_type shadow_type{
-      check_shadow_none};        /**< Perform fileset shadowing check ? */
-  char VerifyOpts[MAX_OPTS]{};   /**< Verify options */
-  char AccurateOpts[MAX_OPTS]{}; /**< Accurate mode options */
-  char BaseJobOpts[MAX_OPTS]{};  /**< Basejob mode options */
-  char* plugin{};                /**< Plugin that handle this section */
-  std::vector<regex_t> regex{};         /**< Regex string(s) */
-  std::vector<regex_t> regexdir{};      /**< Regex string(s) for directories */
-  std::vector<regex_t> regexfile{};     /**< Regex string(s) for files */
-  std::vector<std::string> wild{};       /**< Wild card strings */
-  std::vector<std::string> wilddir{};    /**< Wild card strings for directories */
-  std::vector<std::string> wildfile{};   /**< Wild card strings for files */
-  std::vector<std::string> wildbase{};   /**< Wild card strings for basenames */
-  std::vector<std::string> fstype{};     /**< File system type limitation */
-  std::vector<std::string> Drivetype{};  /**< Drive type limitation */
+      check_shadow_none};              /**< Perform fileset shadowing check ? */
+  char VerifyOpts[MAX_OPTS]{};         /**< Verify options */
+  char AccurateOpts[MAX_OPTS]{};       /**< Accurate mode options */
+  char BaseJobOpts[MAX_OPTS]{};        /**< Basejob mode options */
+  char* plugin{};                      /**< Plugin that handle this section */
+  std::vector<regex_t> regex{};        /**< Regex string(s) */
+  std::vector<regex_t> regexdir{};     /**< Regex string(s) for directories */
+  std::vector<regex_t> regexfile{};    /**< Regex string(s) for files */
+  std::vector<std::string> wild{};     /**< Wild card strings */
+  std::vector<std::string> wilddir{};  /**< Wild card strings for directories */
+  std::vector<std::string> wildfile{}; /**< Wild card strings for files */
+  std::vector<std::string> wildbase{}; /**< Wild card strings for basenames */
+  std::vector<std::string> fstype{};   /**< File system type limitation */
+  std::vector<std::string> Drivetype{}; /**< Drive type limitation */
 };
 
 // This is either an include item or an exclude item
@@ -157,7 +157,6 @@ struct findIncludeExcludeItem {
 // FileSet Resource
 struct findFILESET {
   int state;
-  findIncludeExcludeItem* incexe; /**< Current item */
   alist<findIncludeExcludeItem*> include_list;
   alist<findIncludeExcludeItem*> exclude_list;
 };
@@ -205,6 +204,7 @@ struct FindFilesPacket {
   struct s_excluded_file* excluded_files_list{nullptr};
   struct s_excluded_file* excluded_paths_list{nullptr};
   findFILESET* fileset{nullptr};
+  findIncludeExcludeItem* incexe{nullptr}; /**< Current item */
   bool (*CheckFct)(
       JobControlRecord*,
       FindFilesPacket*){};   /**< Optional user fct to check file changes */
@@ -231,13 +231,12 @@ struct FindFilesPacket {
 };
 /* clang-format on */
 
-struct stated_file
-{
-	std::string name;
-	struct stat statp;
-	int delta_seq;
-	int type;
-	std::optional<HfsPlusInfo> hfsinfo;
+struct stated_file {
+  std::string name;
+  struct stat statp;
+  int delta_seq;
+  int type;
+  std::optional<HfsPlusInfo> hfsinfo;
 };
 FindFilesPacket* init_find_files();
 void SetFindOptions(FindFilesPacket* ff, bool incremental, time_t mtime);
@@ -249,12 +248,13 @@ int FindFiles(JobControlRecord* jcr,
               FindFilesPacket* ff,
               int file_sub(JobControlRecord*, FindFilesPacket* ff_pkt, bool),
               int PluginSub(JobControlRecord*, FindFilesPacket* ff_pkt, bool));
-std::optional<std::size_t> ListFiles(JobControlRecord* jcr,
-				     findFILESET* fileset,
-				     bool incremental,
-				     time_t saved_time,
-				     std::optional<bool (*)(JobControlRecord*, FindFilesPacket*)> check_changed,
-				     std::vector<channel::in<stated_file>> ins);
+std::optional<std::size_t> ListFiles(
+    JobControlRecord* jcr,
+    findFILESET* fileset,
+    bool incremental,
+    time_t saved_time,
+    std::optional<bool (*)(JobControlRecord*, FindFilesPacket*)> check_changed,
+    std::vector<channel::in<stated_file>> ins);
 int SendFiles(JobControlRecord* jcr,
               FindFilesPacket* ff,
               std::vector<channel::out<stated_file>> outs,
@@ -267,9 +267,9 @@ void TermFindFiles(FindFilesPacket* ff);
 bool IsInFileset(FindFilesPacket* ff);
 bool AcceptFile(FindFilesPacket* ff);
 findIncludeExcludeItem* allocate_new_incexe(void);
-findIncludeExcludeItem* new_exclude(findFILESET* fileset);
-findIncludeExcludeItem* new_include(findFILESET* fileset);
-findIncludeExcludeItem* new_preinclude(findFILESET* fileset);
+findIncludeExcludeItem* new_exclude(FindFilesPacket* ff);
+findIncludeExcludeItem* new_include(FindFilesPacket* ff);
+findIncludeExcludeItem* new_preinclude(FindFilesPacket* ff);
 findFOPTS* start_options(FindFilesPacket* ff);
 void NewOptions(FindFilesPacket* ff, findIncludeExcludeItem* incexe);
 

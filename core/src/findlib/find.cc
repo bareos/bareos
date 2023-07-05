@@ -43,7 +43,7 @@
 
 #include <memory>  // unique_ptr
 #include <initializer_list>
-#include <utility> // pair
+#include <utility>  // pair
 #include <thread>
 #include <future>
 
@@ -104,13 +104,14 @@ void SetFindChangedFunction(FindFilesPacket* ff,
   ff->CheckFct = CheckFct;
 }
 
-static void SetupLastOptionBlock(FindFilesPacket* ff, findIncludeExcludeItem* incexe)
+static void SetupLastOptionBlock(FindFilesPacket* ff,
+                                 findIncludeExcludeItem* incexe)
 {
-
   /* By setting all options, we in effect OR the global options which is
    * what we want. */
   findFOPTS* fo = incexe->opts_list.get(incexe->opts_list.size() - 1);
   CopyBits(FO_MAX, fo->flags, ff->flags);
+  ff->incexe = incexe;
   ff->Compress_algo = fo->Compress_algo;
   ff->Compress_level = fo->Compress_level;
   ff->StripPath = fo->StripPath;
@@ -228,7 +229,6 @@ int FindFiles(JobControlRecord* jcr,
       dlistString* node;
       findIncludeExcludeItem* incexe
           = (findIncludeExcludeItem*)fileset->include_list.get(i);
-      fileset->incexe = incexe;
       SetupLastOptionBlock(ff, incexe);
 
       Dmsg4(50, "Verify=<%s> Accurate=<%s> BaseJob=<%s> flags=<%d>\n",
@@ -300,9 +300,12 @@ bool IsInFileset(FindFilesPacket* ff)
   return false;
 }
 
-static std::optional<const char*> FindMatch(int (*match_func)(const char* pattern, const char* str, int flags),
-					    const std::vector<std::string>& patterns,
-					    const char* str, int flags) {
+static std::optional<const char*> FindMatch(
+    int (*match_func)(const char* pattern, const char* str, int flags),
+    const std::vector<std::string>& patterns,
+    const char* str,
+    int flags)
+{
   for (auto& pattern : patterns) {
     if (match_func(pattern.c_str(), str, flags) == 0) {
       return std::make_optional(pattern.c_str());
@@ -311,8 +314,10 @@ static std::optional<const char*> FindMatch(int (*match_func)(const char* patter
   return std::nullopt;
 }
 
-static std::optional<const regex_t*> FindRegexMatch(std::vector<regex_t>& regexs,
-						    const char* str) {
+static std::optional<const regex_t*> FindRegexMatch(
+    std::vector<regex_t>& regexs,
+    const char* str)
+{
   for (auto& regex : regexs) {
     if (regexec(&regex, str, 0, NULL, 0) == 0) {
       return std::make_optional(&regex);
@@ -325,7 +330,7 @@ bool AcceptFile(FindFilesPacket* ff)
 {
   const char* basename;
   findFILESET* fileset = ff->fileset;
-  findIncludeExcludeItem* incexe = fileset->incexe;
+  findIncludeExcludeItem* incexe = ff->incexe;
   int (*match_func)(const char* pattern, const char* string, int flags);
 
   Dmsg1(debuglevel, "enter AcceptFile: fname=%s\n", ff->fname);
@@ -348,96 +353,98 @@ bool AcceptFile(FindFilesPacket* ff)
     ff->fstypes = &fo->fstype;
     ff->drivetypes = &fo->Drivetype;
 
-    const int fnm_flags = (BitIsSet(FO_IGNORECASE, ff->flags) ? FNM_CASEFOLD : 0)
-	    | (BitIsSet(FO_ENHANCEDWILD, ff->flags) ? FNM_PATHNAME : 0);
+    const int fnm_flags
+        = (BitIsSet(FO_IGNORECASE, ff->flags) ? FNM_CASEFOLD : 0)
+          | (BitIsSet(FO_ENHANCEDWILD, ff->flags) ? FNM_PATHNAME : 0);
 
     bool do_exclude = BitIsSet(FO_EXCLUDE, ff->flags);
 
     if (S_ISDIR(ff->statp.st_mode)) {
       // wild matches
-      if (std::optional match = FindMatch(match_func, fo->wilddir, ff->fname, fnmode | fnm_flags);
-	  match.has_value()) {
-	if (do_exclude) {
-	  Dmsg2(debuglevel, "Exclude wilddir: %s file=%s\n",
-		match.value(), ff->fname);
-	}
-	return !do_exclude;
+      if (std::optional match
+          = FindMatch(match_func, fo->wilddir, ff->fname, fnmode | fnm_flags);
+          match.has_value()) {
+        if (do_exclude) {
+          Dmsg2(debuglevel, "Exclude wilddir: %s file=%s\n", match.value(),
+                ff->fname);
+        }
+        return !do_exclude;
       }
-      if (std::optional match = FindMatch(match_func, fo->wild, ff->fname, fnmode | fnm_flags);
-	  match.has_value()) {
-	if (do_exclude) {
-	  Dmsg2(debuglevel, "Exclude wild: %s file=%s\n",
-		match.value(), ff->fname);
-	}
-	return !do_exclude;
+      if (std::optional match
+          = FindMatch(match_func, fo->wild, ff->fname, fnmode | fnm_flags);
+          match.has_value()) {
+        if (do_exclude) {
+          Dmsg2(debuglevel, "Exclude wild: %s file=%s\n", match.value(),
+                ff->fname);
+        }
+        return !do_exclude;
       }
       // regex matches
       if (std::optional match = FindRegexMatch(fo->regexdir, ff->fname);
-	  match.has_value()) {
-	if (do_exclude) {
-	  Dmsg2(debuglevel, "Exclude regexdir: file=%s\n",
-		ff->fname);
-	}
-	return !do_exclude;
+          match.has_value()) {
+        if (do_exclude) {
+          Dmsg2(debuglevel, "Exclude regexdir: file=%s\n", ff->fname);
+        }
+        return !do_exclude;
       }
       if (std::optional match = FindRegexMatch(fo->regex, ff->fname);
-	  match.has_value()) {
-	if (do_exclude) {
-	  Dmsg2(debuglevel, "Exclude regex: file=%s\n",
-		ff->fname);
-	}
-	return !do_exclude;
+          match.has_value()) {
+        if (do_exclude) {
+          Dmsg2(debuglevel, "Exclude regex: file=%s\n", ff->fname);
+        }
+        return !do_exclude;
       }
     } else {
       // wild matches
-      if (std::optional match = FindMatch(match_func, fo->wildfile, ff->fname, fnmode | fnm_flags);
-	  match.has_value()) {
-	if (do_exclude) {
-	  Dmsg2(debuglevel, "Exclude wildfile: %s file=%s\n",
-		match.value(), ff->fname);
-	}
-	return !do_exclude;
+      if (std::optional match
+          = FindMatch(match_func, fo->wildfile, ff->fname, fnmode | fnm_flags);
+          match.has_value()) {
+        if (do_exclude) {
+          Dmsg2(debuglevel, "Exclude wildfile: %s file=%s\n", match.value(),
+                ff->fname);
+        }
+        return !do_exclude;
       }
-      if (std::optional match = FindMatch(match_func, fo->wildbase, basename, fnmode | fnm_flags);
-	  match.has_value()) {
-	if (do_exclude) {
-	  Dmsg2(debuglevel, "Exclude wildbase: %s file=%s\n",
-		match.value(), ff->fname);
-	}
-	return !do_exclude;
+      if (std::optional match
+          = FindMatch(match_func, fo->wildbase, basename, fnmode | fnm_flags);
+          match.has_value()) {
+        if (do_exclude) {
+          Dmsg2(debuglevel, "Exclude wildbase: %s file=%s\n", match.value(),
+                ff->fname);
+        }
+        return !do_exclude;
       }
-      if (std::optional match = FindMatch(match_func, fo->wild, ff->fname, fnmode | fnm_flags);
-	  match.has_value()) {
-	if (do_exclude) {
-	  Dmsg2(debuglevel, "Exclude wild: %s file=%s\n",
-		match.value(), ff->fname);
-	}
-	return !do_exclude;
+      if (std::optional match
+          = FindMatch(match_func, fo->wild, ff->fname, fnmode | fnm_flags);
+          match.has_value()) {
+        if (do_exclude) {
+          Dmsg2(debuglevel, "Exclude wild: %s file=%s\n", match.value(),
+                ff->fname);
+        }
+        return !do_exclude;
       }
       // regex matches
       if (std::optional match = FindRegexMatch(fo->regexfile, ff->fname);
-	  match.has_value()) {
-	if (do_exclude) {
-	  Dmsg2(debuglevel, "Exclude regexfile: file=%s\n",
-		ff->fname);
-	}
-	return !do_exclude;
+          match.has_value()) {
+        if (do_exclude) {
+          Dmsg2(debuglevel, "Exclude regexfile: file=%s\n", ff->fname);
+        }
+        return !do_exclude;
       }
       if (std::optional match = FindRegexMatch(fo->regex, ff->fname);
-	  match.has_value()) {
-	if (do_exclude) {
-	  Dmsg2(debuglevel, "Exclude regex: file=%s\n",
-		ff->fname);
-	}
-	return !do_exclude;
+          match.has_value()) {
+        if (do_exclude) {
+          Dmsg2(debuglevel, "Exclude regex: file=%s\n", ff->fname);
+        }
+        return !do_exclude;
       }
     }
 
     // If we have an empty Options clause with exclude, then exclude the file
-    if (do_exclude && fo->regex.size() == 0
-        && fo->wild.size() == 0 && fo->regexdir.size() == 0
-        && fo->wilddir.size() == 0 && fo->regexfile.size() == 0
-        && fo->wildfile.size() == 0 && fo->wildbase.size() == 0) {
+    if (do_exclude && fo->regex.size() == 0 && fo->wild.size() == 0
+        && fo->regexdir.size() == 0 && fo->wilddir.size() == 0
+        && fo->regexfile.size() == 0 && fo->wildfile.size() == 0
+        && fo->wildbase.size() == 0) {
       Dmsg1(debuglevel, "Empty options, rejecting: %s\n", ff->fname);
       return false; /* reject file */
     }
@@ -451,17 +458,20 @@ bool AcceptFile(FindFilesPacket* ff)
 
     for (int j = 0; j < incexe->opts_list.size(); j++) {
       findFOPTS* fo = (findFOPTS*)incexe->opts_list.get(j);
-      const int fnm_flags = BitIsSet(FO_IGNORECASE, fo->flags) ? FNM_CASEFOLD : 0;
-      if (std::optional match = FindMatch(fnmatch, fo->wild, ff->fname, fnmode | fnm_flags);
-	  match.has_value()) {
-	Dmsg2(debuglevel, "Reject wild1: %s\n", ff->fname);
-	return false; /* reject file */
+      const int fnm_flags
+          = BitIsSet(FO_IGNORECASE, fo->flags) ? FNM_CASEFOLD : 0;
+      if (std::optional match
+          = FindMatch(fnmatch, fo->wild, ff->fname, fnmode | fnm_flags);
+          match.has_value()) {
+        Dmsg2(debuglevel, "Reject wild1: %s\n", ff->fname);
+        return false; /* reject file */
       }
     }
-    const int fnm_flags = (incexe->current_opts != NULL
-			   && BitIsSet(FO_IGNORECASE, incexe->current_opts->flags))
-	    ? FNM_CASEFOLD
-	    : 0;
+    const int fnm_flags
+        = (incexe->current_opts != NULL
+           && BitIsSet(FO_IGNORECASE, incexe->current_opts->flags))
+              ? FNM_CASEFOLD
+              : 0;
     foreach_dlist (node, &incexe->name_list) {
       char* fname = node->c_str();
 
@@ -495,23 +505,23 @@ findIncludeExcludeItem* allocate_new_incexe(void)
 }
 
 // Define a new Exclude block in the FileSet
-findIncludeExcludeItem* new_exclude(findFILESET* fileset)
+findIncludeExcludeItem* new_exclude(FindFilesPacket* ff)
 {
   // New exclude
-  fileset->incexe = allocate_new_incexe();
-  fileset->exclude_list.append(fileset->incexe);
+  ff->incexe = allocate_new_incexe();
+  ff->fileset->exclude_list.append(ff->incexe);
 
-  return fileset->incexe;
+  return ff->incexe;
 }
 
 // Define a new Include block in the FileSet
-findIncludeExcludeItem* new_include(findFILESET* fileset)
+findIncludeExcludeItem* new_include(FindFilesPacket* ff)
 {
   // New include
-  fileset->incexe = allocate_new_incexe();
-  fileset->include_list.append(fileset->incexe);
+  ff->incexe = allocate_new_incexe();
+  ff->fileset->include_list.append(ff->incexe);
 
-  return fileset->incexe;
+  return ff->incexe;
 }
 
 /**
@@ -519,19 +529,19 @@ findIncludeExcludeItem* new_include(findFILESET* fileset)
  * That is the include is prepended to the other
  * Includes. This is used for plugin exclusions.
  */
-findIncludeExcludeItem* new_preinclude(findFILESET* fileset)
+findIncludeExcludeItem* new_preinclude(FindFilesPacket* ff)
 {
   // New pre-include
-  fileset->incexe = allocate_new_incexe();
-  fileset->include_list.prepend(fileset->incexe);
+  ff->incexe = allocate_new_incexe();
+  ff->fileset->include_list.prepend(ff->incexe);
 
-  return fileset->incexe;
+  return ff->incexe;
 }
 
 findFOPTS* start_options(FindFilesPacket* ff)
 {
   int state = ff->fileset->state;
-  findIncludeExcludeItem* incexe = ff->fileset->incexe;
+  findIncludeExcludeItem* incexe = ff->incexe;
 
   if (state != state_options) {
     ff->fileset->state = state_options;
@@ -558,12 +568,13 @@ void NewOptions(FindFilesPacket* ff, findIncludeExcludeItem* incexe)
 
 auto SaveInList(channel::in<stated_file>& in, std::size_t& num_skipped)
 {
-  return [&in, &num_skipped](JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool) {
+  return [&in, &num_skipped](JobControlRecord* jcr, FindFilesPacket* ff_pkt,
+                             bool) {
     switch (ff_pkt->type) {
       case FT_LNKSAVED: /* Hard linked, file already saved */
-        Dmsg2(50, "FT_LNKSAVED hit while listing: %s => %s (ERROR)\n", ff_pkt->fname,
-              ff_pkt->link);
-	return 0;
+        Dmsg2(50, "FT_LNKSAVED hit while listing: %s => %s (ERROR)\n",
+              ff_pkt->fname, ff_pkt->link);
+        return 0;
         break;
       case FT_REGE:
         Dmsg1(130, "found FT_REGE: %s\n", ff_pkt->fname);
@@ -575,15 +586,17 @@ auto SaveInList(channel::in<stated_file>& in, std::size_t& num_skipped)
         Dmsg2(130, "found FT_LNK: %s -> %s\n", ff_pkt->fname, ff_pkt->link);
         break;
       case FT_RESTORE_FIRST:
-        Dmsg2(50, "FT_RESTORE_FIRST hit while listing: %s (ERROR)\n", ff_pkt->fname);
-	return 0;
+        Dmsg2(50, "FT_RESTORE_FIRST hit while listing: %s (ERROR)\n",
+              ff_pkt->fname);
+        return 0;
         break;
       case FT_PLUGIN_CONFIG:
-        Dmsg2(50, "FT_PLUGIN_CONFIG hit while listing: %s (ERROR)\n", ff_pkt->fname);
-	return 0;
+        Dmsg2(50, "FT_PLUGIN_CONFIG hit while listing: %s (ERROR)\n",
+              ff_pkt->fname);
+        return 0;
         break;
       case FT_DIRBEGIN:
-	/* this is skipped, so num_skipped is not increased */
+        /* this is skipped, so num_skipped is not increased */
         return 1; /* not used */
       case FT_NORECURSE:
         Jmsg(jcr, M_INFO, 1,
@@ -626,7 +639,7 @@ auto SaveInList(channel::in<stated_file>& in, std::size_t& num_skipped)
         if (S_ISSOCK(ff_pkt->statp.st_mode)) {
           Jmsg(jcr, M_SKIPPED, 1, _("     Socket file skipped: %s\n"),
                ff_pkt->fname);
-	  num_skipped++;
+          num_skipped++;
           return 1;
         }
         break;
@@ -641,7 +654,7 @@ auto SaveInList(channel::in<stated_file>& in, std::size_t& num_skipped)
         Jmsg(jcr, M_NOTSAVED, 0, _("     Could not access \"%s\": ERR=%s\n"),
              ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
         jcr->JobErrors++;
-	num_skipped++;
+        num_skipped++;
         return 1;
       }
       case FT_NOFOLLOW: {
@@ -650,7 +663,7 @@ auto SaveInList(channel::in<stated_file>& in, std::size_t& num_skipped)
              _("     Could not follow link \"%s\": ERR=%s\n"), ff_pkt->fname,
              be.bstrerror(ff_pkt->ff_errno));
         jcr->JobErrors++;
-	num_skipped++;
+        num_skipped++;
         return 1;
       }
       case FT_NOSTAT: {
@@ -658,14 +671,14 @@ auto SaveInList(channel::in<stated_file>& in, std::size_t& num_skipped)
         Jmsg(jcr, M_NOTSAVED, 0, _("     Could not stat \"%s\": ERR=%s\n"),
              ff_pkt->fname, be.bstrerror(ff_pkt->ff_errno));
         jcr->JobErrors++;
-	num_skipped++;
+        num_skipped++;
         return 1;
       }
       case FT_DIRNOCHG:
       case FT_NOCHG:
         Jmsg(jcr, M_SKIPPED, 1, _("     Unchanged file skipped: %s\n"),
              ff_pkt->fname);
-	num_skipped++;
+        num_skipped++;
         return 1;
       case FT_ISARCH:
         Jmsg(jcr, M_NOTSAVED, 0, _("     Archive file not saved: %s\n"),
@@ -677,7 +690,7 @@ auto SaveInList(channel::in<stated_file>& in, std::size_t& num_skipped)
              _("     Could not open directory \"%s\": ERR=%s\n"), ff_pkt->fname,
              be.bstrerror(ff_pkt->ff_errno));
         jcr->JobErrors++;
-	num_skipped++;
+        num_skipped++;
         return 1;
       }
       case FT_DELETED:
@@ -688,15 +701,17 @@ auto SaveInList(channel::in<stated_file>& in, std::size_t& num_skipped)
              _("     Unknown file type %d; not saved: %s\n"), ff_pkt->type,
              ff_pkt->fname);
         jcr->JobErrors++;
-	num_skipped++;
+        num_skipped++;
         return 1;
     }
 
     try {
-      // take note that ff_pkt->fname actually gets copied here since stated_file
-      // uses a std::string instead of a char* to save the file name!
+      // take note that ff_pkt->fname actually gets copied here since
+      // stated_file uses a std::string instead of a char* to save the file
+      // name!
       in.put({ff_pkt->fname, ff_pkt->statp, ff_pkt->delta_seq, ff_pkt->type,
-	  ff_pkt->volhas_attrlist ? std::make_optional(ff_pkt->hfsinfo) : std::nullopt});
+              ff_pkt->volhas_attrlist ? std::make_optional(ff_pkt->hfsinfo)
+                                      : std::nullopt});
     } catch (...) {
       num_skipped++;
       return 0;
@@ -706,23 +721,23 @@ auto SaveInList(channel::in<stated_file>& in, std::size_t& num_skipped)
 }
 
 
+template <typename Deleter>
 static void ListFromIncexe(JobControlRecord* jcr,
-			   findFILESET* fileset,
-			   FindFilesPacket* ff,
-			   findIncludeExcludeItem* incexe,
-			   channel::in<stated_file> in,
-			   std::promise<std::optional<std::size_t>> num_skipped)
+                           std::unique_ptr<FindFilesPacket, Deleter> ff_ptr,
+                           findIncludeExcludeItem* incexe,
+                           channel::in<stated_file> in,
+                           std::promise<std::optional<std::size_t>> num_skipped)
 {
+  FindFilesPacket* ff = ff_ptr.get();
   SetJcrInThreadSpecificData(jcr);
   dlistString* node;
-  fileset->incexe = incexe;
   SetupLastOptionBlock(ff, incexe);
   // we do not need to follow hardlinks, as they will be handled
   // by the sending thread
   SetBit(FO_NO_HARDLINK, ff->flags);
 
   Dmsg4(50, "Verify=<%s> Accurate=<%s> BaseJob=<%s> flags=<%d>\n",
-	ff->VerifyOpts, ff->AccurateOpts, ff->BaseJobOpts, ff->flags);
+        ff->VerifyOpts, ff->AccurateOpts, ff->BaseJobOpts, ff->flags);
 
   std::size_t local_num_skipped{0};
   foreach_dlist (node, &incexe->name_list) {
@@ -730,8 +745,8 @@ static void ListFromIncexe(JobControlRecord* jcr,
     Dmsg1(debuglevel, "F %s\n", fname);
     ff->top_fname = fname;
     if (FindOneFile(jcr, ff, CreateCallback(SaveInList(in, local_num_skipped)),
-		    ff->top_fname, (dev_t)-1, true)
-	== 0) {
+                    ff->top_fname, (dev_t)-1, true)
+        == 0) {
       num_skipped.set_value(std::nullopt);
       return;
     }
@@ -743,64 +758,46 @@ static void ListFromIncexe(JobControlRecord* jcr,
   num_skipped.set_value(local_num_skipped);
 }
 
-std::optional<std::size_t>
-ListFiles(JobControlRecord* jcr,
-	  findFILESET* fileset,
-	  bool incremental,
-	  time_t save_time,
-	  std::optional<bool (*)(JobControlRecord*, FindFilesPacket*)> check_changed,
-	  std::vector<channel::in<stated_file>> ins)
+std::optional<std::size_t> ListFiles(
+    JobControlRecord* jcr,
+    findFILESET* fileset,
+    bool incremental,
+    time_t save_time,
+    std::optional<bool (*)(JobControlRecord*, FindFilesPacket*)> check_changed,
+    std::vector<channel::in<stated_file>> ins)
 {
   ASSERT(ins.size() == (std::size_t)fileset->include_list.size());
-  struct free_on_delete {
-    void operator()(findFILESET* copies) { if (copies) free(copies); }
-  };
-  // these are only shallow copies, so we need to free them and not call
-  // their destructor!
-  std::unique_ptr<findFILESET[], free_on_delete> fileset_copies(nullptr, free_on_delete{});
   if (fileset) {
     struct ff_cleanup {
       void operator()(FindFilesPacket* ff) { TermFindFiles(ff); }
     };
-    std::vector<std::unique_ptr<FindFilesPacket, ff_cleanup>> ffs;
     std::vector<std::thread> listing_threads;
     std::vector<std::future<std::optional<std::size_t>>> futures;
-    fileset_copies.reset((findFILESET*)malloc(sizeof(findFILESET) * fileset->include_list.size()));
     for (int i = 0; i < fileset->include_list.size(); i++) {
-      findFILESET* my_fileset = &fileset_copies[i];
-      *my_fileset = *fileset; // do a shallow copy
-      auto ff_pkt = ffs.emplace_back(init_find_files(),
-				     ff_cleanup{}).get();
+      std::unique_ptr<FindFilesPacket, ff_cleanup> ff_pkt{init_find_files(),
+                                                          ff_cleanup{}};
       ClearAllBits(FO_MAX, ff_pkt->flags);
-      ff_pkt->fileset     = my_fileset;
-      SetFindOptions(ff_pkt, incremental, save_time);
-      if (check_changed) SetFindChangedFunction(ff_pkt, check_changed.value());
+      ff_pkt->fileset = fileset;
+      SetFindOptions(ff_pkt.get(), incremental, save_time);
+      if (check_changed)
+        SetFindChangedFunction(ff_pkt.get(), check_changed.value());
 
       std::promise<std::optional<std::size_t>> num_skipped{};
       futures.emplace_back(num_skipped.get_future());
 
-      listing_threads.emplace_back(ListFromIncexe,
-				   jcr,
-				   my_fileset,
-				   ff_pkt,
-				   my_fileset->include_list.get(i),
-				   std::move(ins[i]),
-				   std::move(num_skipped)
-				  );
-
+      listing_threads.emplace_back(ListFromIncexe<ff_cleanup>, jcr,
+                                   std::move(ff_pkt),
+                                   fileset->include_list.get(i),
+                                   std::move(ins[i]), std::move(num_skipped));
     }
-    for (auto& thread : listing_threads)
-    {
-	    thread.join();
-    }
+    for (auto& thread : listing_threads) { thread.join(); }
     std::optional<std::size_t> num_skipped{0};
-    for (auto& future : futures)
-    {
+    for (auto& future : futures) {
       if (std::optional local_num_skipped = future.get(); local_num_skipped) {
-	*num_skipped += *local_num_skipped;
+        *num_skipped += *local_num_skipped;
       } else {
-	num_skipped = std::nullopt;
-	break;
+        num_skipped = std::nullopt;
+        break;
       }
     }
     return num_skipped;
@@ -810,179 +807,169 @@ ListFiles(JobControlRecord* jcr,
 }
 
 int SendPluginInfo(JobControlRecord* jcr,
-		   FindFilesPacket* ff,
-		   int PluginSave(JobControlRecord*, FindFilesPacket*, bool))
+                   FindFilesPacket* ff,
+                   int PluginSave(JobControlRecord*, FindFilesPacket*, bool))
 {
-	findFILESET* fileset = ff->fileset;
-    for (int i = 0; i < fileset->include_list.size(); i++) {
-      dlistString* node;
-      findIncludeExcludeItem* incexe
-          = (findIncludeExcludeItem*)fileset->include_list.get(i);
-      fileset->incexe = incexe;
-      SetupLastOptionBlock(ff, incexe);
-      foreach_dlist (node, &incexe->plugin_list) {
-        char* fname = node->c_str();
-
-        if (!PluginSave) {
-          Jmsg(jcr, M_FATAL, 0, _("Plugin: \"%s\" not found.\n"), fname);
-          return 0;
-        }
-        Dmsg1(debuglevel, "PluginCommand: %s\n", fname);
-        ff->top_fname = fname;
-        ff->cmd_plugin = true;
-        PluginSave(jcr, ff, true);
-        ff->cmd_plugin = false;
-        if (jcr->IsJobCanceled()) { return 0; }
+  findFILESET* fileset = ff->fileset;
+  for (int i = 0; i < fileset->include_list.size(); i++) {
+    dlistString* node;
+    findIncludeExcludeItem* incexe = fileset->include_list.get(i);
+    SetupLastOptionBlock(ff, incexe);
+    foreach_dlist (node, &incexe->plugin_list) {
+      char* fname = node->c_str();
+      if (!PluginSave) {
+        Jmsg(jcr, M_FATAL, 0, _("Plugin: \"%s\" not found.\n"), fname);
+        return 0;
       }
+      Dmsg1(debuglevel, "PluginCommand: %s\n", fname);
+      ff->top_fname = fname;
+      ff->cmd_plugin = true;
+      PluginSave(jcr, ff, true);
+      ff->cmd_plugin = false;
+      if (jcr->IsJobCanceled()) { return 0; }
     }
+  }
 
-    return 1;
+  return 1;
 }
 
 static bool CanBeHardLinked(struct stat& statp)
 {
-	bool hardlinked = false;
-	switch (statp.st_mode & S_IFMT)
-	{
-		case S_IFREG:
-		case S_IFCHR:
-		case S_IFBLK:
-		case S_IFIFO:
+  bool hardlinked = false;
+  switch (statp.st_mode & S_IFMT) {
+    case S_IFREG:
+    case S_IFCHR:
+    case S_IFBLK:
+    case S_IFIFO:
 #ifdef S_IFSOCK
-		case S_IFSOCK:
+    case S_IFSOCK:
 #endif
-		{
-			hardlinked = true;
-		} break;
-	}
-	return hardlinked;
+    {
+      hardlinked = true;
+    } break;
+  }
+  return hardlinked;
 }
 
 static bool SetupLink(FindFilesPacket* ff)
 {
-	switch (ff->statp.st_mode & S_IFMT)
-	{
-	case S_IFDIR: {
-		std::size_t len = strlen(ff->fname);
-		std::size_t max_len = len + 2; // for trailing / and 0
-		ff->link = (char*) malloc(max_len);
-		if (!ff->link) return false;
-		bstrncpy(ff->link, ff->fname, max_len);
+  switch (ff->statp.st_mode & S_IFMT) {
+    case S_IFDIR: {
+      std::size_t len = strlen(ff->fname);
+      std::size_t max_len = len + 2;  // for trailing / and 0
+      ff->link = (char*)malloc(max_len);
+      if (!ff->link) return false;
+      bstrncpy(ff->link, ff->fname, max_len);
 
-		// strip all trailing slashes and then add one
-		while (len >= 1 && IsPathSeparator(ff->link[len - 1])) { len--; }
-		ff->link[len++] = '/'; /* add back one */
-		ff->link[len] = '\0';
-	} break;
-	case S_IFLNK: {
-		ff->link = (char*)malloc(path_max + name_max + 102);
-		if (!ff->link) return false;
-		int size = readlink(ff->fname, ff->link, path_max + name_max + 101);
-		if (size < 0) {
-			free(ff->link);
-			return false;
-		}
-		ff->link[size] = 0;
-	} break;
-	default: {
-		// this check is *should* be the same as ff->type != LNKSAVED
-		if (ff->link == nullptr) ff->link = ff->fname;
-	} break;
-	}
-	return true;
+      // strip all trailing slashes and then add one
+      while (len >= 1 && IsPathSeparator(ff->link[len - 1])) { len--; }
+      ff->link[len++] = '/'; /* add back one */
+      ff->link[len] = '\0';
+    } break;
+    case S_IFLNK: {
+      ff->link = (char*)malloc(path_max + name_max + 102);
+      if (!ff->link) return false;
+      int size = readlink(ff->fname, ff->link, path_max + name_max + 101);
+      if (size < 0) {
+        free(ff->link);
+        return false;
+      }
+      ff->link[size] = 0;
+    } break;
+    default: {
+      // this check is *should* be the same as ff->type != LNKSAVED
+      if (ff->link == nullptr) ff->link = ff->fname;
+    } break;
+  }
+  return true;
 }
 
 static void CleanupLink(FindFilesPacket* ff)
 {
-	switch (ff->statp.st_mode & S_IFMT)
-	{
-	case S_IFDIR:
-	case S_IFLNK: {
-		free(ff->link);
-	} break;
-	}
+  switch (ff->statp.st_mode & S_IFMT) {
+    case S_IFDIR:
+    case S_IFLNK: {
+      free(ff->link);
+    } break;
+  }
 }
 
 static bool SetupFFPkt(JobControlRecord* jcr,
-		       FindFilesPacket* ff, char *fname, struct stat& statp,
-		       int delta_seq, int type, std::optional<HfsPlusInfo> hfsinfo)
+                       FindFilesPacket* ff,
+                       char* fname,
+                       struct stat& statp,
+                       int delta_seq,
+                       int type,
+                       std::optional<HfsPlusInfo> hfsinfo)
 {
-	ff->fname     = fname;
-	ff->statp     = statp;
-	ff->delta_seq = delta_seq;
-	ff->type      = type;
+  ff->fname = fname;
+  ff->statp = statp;
+  ff->delta_seq = delta_seq;
+  ff->type = type;
 
-	ff->LinkFI  = 0;
-	ff->no_read = false;
-	ff->linked  = nullptr;
-	ff->link    = nullptr; // we may need to allocate memory here instead
-	if (!BitIsSet(FO_NO_HARDLINK, ff->flags) && statp.st_nlink > 1
-	    && CanBeHardLinked(statp)) {
-	  CurLink* hl = lookup_hardlink(jcr, ff, statp.st_ino,
-					statp.st_dev);
-	  if (hl) {
-	    /* If we have already backed up the hard linked file don't do it
-	     * again */
-	    if (bstrcmp(hl->name, fname)) {
-	      Dmsg2(400, "== Name identical skip FI=%d file=%s\n",
-		    hl->FileIndex, fname);
-	      return false;
-	    } else {
-	      if (hl->FileIndex) {
-		ff->link = hl->name;
-		ff->type
-		  = FT_LNKSAVED; /* Handle link, file already saved */
-		ff->LinkFI = hl->FileIndex;
-		ff->linked = NULL;
-		ff->digest = hl->digest;
-		ff->digest_stream = hl->digest_stream;
-		ff->digest_len = hl->digest_len;
+  ff->LinkFI = 0;
+  ff->no_read = false;
+  ff->linked = nullptr;
+  ff->link = nullptr;  // we may need to allocate memory here instead
+  if (!BitIsSet(FO_NO_HARDLINK, ff->flags) && statp.st_nlink > 1
+      && CanBeHardLinked(statp)) {
+    CurLink* hl = lookup_hardlink(jcr, ff, statp.st_ino, statp.st_dev);
+    if (hl) {
+      /* If we have already backed up the hard linked file don't do it
+       * again */
+      if (bstrcmp(hl->name, fname)) {
+        Dmsg2(400, "== Name identical skip FI=%d file=%s\n", hl->FileIndex,
+              fname);
+        return false;
+      } else {
+        if (hl->FileIndex) {
+          ff->link = hl->name;
+          ff->type = FT_LNKSAVED; /* Handle link, file already saved */
+          ff->LinkFI = hl->FileIndex;
+          ff->linked = NULL;
+          ff->digest = hl->digest;
+          ff->digest_stream = hl->digest_stream;
+          ff->digest_len = hl->digest_len;
 
-		Dmsg3(400, "FT_LNKSAVED FI=%d LinkFI=%d file=%s\n",
-		      ff->FileIndex, hl->FileIndex, hl->name);
-	      } else {
-		// if digest does not exist then whatever file created the
-		// hardlink was not backed up (correctly). Try again here:
+          Dmsg3(400, "FT_LNKSAVED FI=%d LinkFI=%d file=%s\n", ff->FileIndex,
+                hl->FileIndex, hl->name);
+        } else {
+          // if digest does not exist then whatever file created the
+          // hardlink was not backed up (correctly). Try again here:
 
-		if (ff->type == FT_LNKSAVED) {
-		  // this should only happen if something went wrong.
-		  // we cannot base our hardlink on FT_LNKSAVED
-		  // as that will not send any data.  We just have to
-		  // throw an error here
-		  return false;
-		}
+          if (ff->type == FT_LNKSAVED) {
+            // this should only happen if something went wrong.
+            // we cannot base our hardlink on FT_LNKSAVED
+            // as that will not send any data.  We just have to
+            // throw an error here
+            return false;
+          }
 
-		int len = strlen(fname) + 1;
-		hl->name   = (char*) ff->linkhash->hash_malloc(len);
-		bstrncpy(hl->name, fname, len);
-		ff->linked = hl; /* Mark saved link */
-		Dmsg2(400, "Added to hash FI=%d file=%s\n", ff->FileIndex,
-		      hl->name);
-	      }
-	    }
-	  } else {
-	    // File not previously dumped. Chain it into our list.
-	    hl = new_hardlink(jcr, ff, fname, ff->statp.st_ino,
-			      ff->statp.st_dev);
-	    ff->linked = hl; /* Mark saved link */
-	    Dmsg2(400, "Added to hash FI=%d file=%s\n", ff->FileIndex,
-		  hl->name);
-	  }
-	}
+          int len = strlen(fname) + 1;
+          hl->name = (char*)ff->linkhash->hash_malloc(len);
+          bstrncpy(hl->name, fname, len);
+          ff->linked = hl; /* Mark saved link */
+          Dmsg2(400, "Added to hash FI=%d file=%s\n", ff->FileIndex, hl->name);
+        }
+      }
+    } else {
+      // File not previously dumped. Chain it into our list.
+      hl = new_hardlink(jcr, ff, fname, ff->statp.st_ino, ff->statp.st_dev);
+      ff->linked = hl; /* Mark saved link */
+      Dmsg2(400, "Added to hash FI=%d file=%s\n", ff->FileIndex, hl->name);
+    }
+  }
 
-	if (!SetupLink(ff)) return false;
+  if (!SetupLink(ff)) return false;
 
-	if (hfsinfo)
-	{
-		ff->volhas_attrlist = true;
-		ff->hfsinfo = hfsinfo.value();
-	}
-	else
-	{
-		ff->volhas_attrlist = false;
-	}
+  if (hfsinfo) {
+    ff->volhas_attrlist = true;
+    ff->hfsinfo = hfsinfo.value();
+  } else {
+    ff->volhas_attrlist = false;
+  }
 
-	return true;
+  return true;
 }
 
 int SendFiles(JobControlRecord* jcr,
@@ -1013,8 +1000,7 @@ int SendFiles(JobControlRecord* jcr,
     // everything is set to 0
     std::vector<cached_vals> cached_values(fileset->include_list.size());
     for (std::size_t i = 0; i < cached_values.size(); ++i) {
-      fileset->incexe = fileset->include_list.get(i);
-      SetupLastOptionBlock(ff, fileset->incexe);
+      SetupLastOptionBlock(ff, fileset->include_list.get(i));
       cached_values[i].StripPath = ff->StripPath;
     }
     std::size_t closed_channels = 0;
@@ -1026,7 +1012,7 @@ int SendFiles(JobControlRecord* jcr,
         if (out.empty()) continue;
         while (std::optional files = out.try_get_all()) {
           for (auto& file : *files) {
-            fileset->incexe = fileset->include_list.get(fileset_idx);
+            ff->incexe = fileset->include_list.get(fileset_idx);
             char* fname = file.name.data();
             ff->StripPath = cached_values[fileset_idx].StripPath;
             // todo: what to do with top_fname ? its only used

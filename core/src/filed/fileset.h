@@ -30,7 +30,7 @@ bool InitFileset(JobControlRecord* jcr);
 void AddFileToFileset(JobControlRecord* jcr,
                       const char* fname,
                       bool IsFile,
-                      findFILESET* fileset);
+                      findIncludeExcludeItem* incexe);
 findIncludeExcludeItem* get_incexe(JobControlRecord* jcr);
 void SetIncexe(JobControlRecord* jcr, findIncludeExcludeItem* incexe);
 int AddRegexToFileset(JobControlRecord* jcr, const char* item, int type);
