@@ -105,9 +105,8 @@ static bool AcceptFstype(FindFilesPacket* ff, void*)
     return false; /* fs type cannot be established */
   }
 
-  if (std::find(std::begin(*allowed_fs_types),
-		std::end(*allowed_fs_types),
-		fs) != std::end(*allowed_fs_types)) {
+  if (std::find(std::begin(*allowed_fs_types), std::end(*allowed_fs_types), fs)
+      != std::end(*allowed_fs_types)) {
     Dmsg2(100, "Accepting fstype %s for \"%s\"\n", fs, ff->fname);
     return true; /* fs type is allowed */
   }
@@ -308,15 +307,15 @@ bool HasFileChanged(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 bool CheckChanges(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 {
   constexpr auto dmsg_debug_level = 750;
-  time_t since_time  = ff_pkt->save_time;
-  time_t mod_time    = ff_pkt->statp.st_mtime;
+  time_t since_time = ff_pkt->save_time;
+  time_t mod_time = ff_pkt->statp.st_mtime;
   time_t create_time = ff_pkt->statp.st_ctime;
   /* In special mode (like accurate backup), the programmer can
    * choose his comparison function. */
   if (ff_pkt->CheckFct) {
     bool changed = ff_pkt->CheckFct(jcr, ff_pkt);
     Dmsg2(dmsg_debug_level, "custom check -> changed: %s\n",
-	  changed ? "true" : "false");
+          changed ? "true" : "false");
     return changed;
   }
 
@@ -324,18 +323,22 @@ bool CheckChanges(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
   if (ff_pkt->incremental) {
     bool mtime_new = mod_time >= since_time;
     bool ctime_new = create_time >= since_time;
-    bool changed = BitIsSet(FO_MTIMEONLY, ff_pkt->flags) ? mtime_new : mtime_new || ctime_new;
+    bool changed = BitIsSet(FO_MTIMEONLY, ff_pkt->flags)
+                       ? mtime_new
+                       : mtime_new || ctime_new;
 
     if (debug_level >= dmsg_debug_level) {
       char mtime_str[MAX_TIME_LENGTH];
       char ctime_str[MAX_TIME_LENGTH];
       char stime_str[MAX_TIME_LENGTH];
 
-      Dmsg5(750, "default check -> changed: %s (since_time: %s, mtime: %s, ctime: %s)\n",
-	    changed ? "true" : "false",
-	    bstrftimes(stime_str, sizeof(stime_str), since_time),
-	    bstrftimes(mtime_str, sizeof(mtime_str), mod_time),
-	    bstrftimes(ctime_str, sizeof(ctime_str), create_time));
+      Dmsg5(750,
+            "default check -> changed: %s (since_time: %s, mtime: %s, ctime: "
+            "%s)\n",
+            changed ? "true" : "false",
+            bstrftimes(stime_str, sizeof(stime_str), since_time),
+            bstrftimes(mtime_str, sizeof(mtime_str), mod_time),
+            bstrftimes(ctime_str, sizeof(ctime_str), create_time));
     }
 
     return changed;
@@ -351,10 +354,10 @@ static inline bool HaveIgnoredir(FindFilesPacket* ff_pkt)
   PoolMem ignoredir_fname(PM_FNAME);
 
   // Ensure that pointers are defined
-  if (!ff_pkt->fileset || !ff_pkt->fileset->incexe) { return false; }
+  if (!ff_pkt->fileset || !ff_pkt->incexe) { return false; }
 
-  for (int i = 0; i < ff_pkt->fileset->incexe->ignoredir.size(); i++) {
-    ignoredir = (char*)ff_pkt->fileset->incexe->ignoredir.get(i);
+  for (int i = 0; i < ff_pkt->incexe->ignoredir.size(); i++) {
+    ignoredir = (char*)ff_pkt->incexe->ignoredir.get(i);
 
     if (ignoredir) {
       Mmsg(ignoredir_fname, "%s/%s", ff_pkt->fname, ignoredir);
@@ -464,14 +467,14 @@ static inline int process_hardlink(
 
       rtn_stat = HandleFile(jcr, ff_pkt, top_level);
       Dmsg3(400, "FT_LNKSAVED FI=%d LinkFI=%d file=%s\n", ff_pkt->FileIndex,
-	    hl->FileIndex, hl->name);
+            hl->FileIndex, hl->name);
       *done = true;
     } else {
       // if digest does not exist then whatever file created the
       // hardlink was not backed up (correctly).  Try again here:
 
       int len = strlen(fname) + 1;
-      hl->name   = (char*) ff_pkt->linkhash->hash_malloc(len);
+      hl->name = (char*)ff_pkt->linkhash->hash_malloc(len);
       bstrncpy(hl->name, fname, len);
       ff_pkt->linked = hl; /* Mark saved link */
       Dmsg2(400, "Added to hash FI=%d file=%s\n", ff_pkt->FileIndex, hl->name);

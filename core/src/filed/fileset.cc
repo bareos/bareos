@@ -114,7 +114,7 @@ static void append_file(JobControlRecord* jcr,
 void AddFileToFileset(JobControlRecord* jcr,
                       const char* fname,
                       bool IsFile,
-                      findFILESET* fileset)
+                      findIncludeExcludeItem* incexe)
 {
   char* p;
   Bpipe* bpipe;
@@ -142,7 +142,7 @@ void AddFileToFileset(JobControlRecord* jcr,
       FreePoolMemory(fn);
       while (fgets(buf, sizeof(buf), bpipe->rfd)) {
         StripTrailingJunk(buf);
-        append_file(jcr, fileset->incexe, buf, IsFile);
+        append_file(jcr, incexe, buf, IsFile);
       }
       if ((status = CloseBpipe(bpipe)) != 0) {
         BErrNo be;
@@ -163,12 +163,12 @@ void AddFileToFileset(JobControlRecord* jcr,
       }
       while (fgets(buf, sizeof(buf), ffd)) {
         StripTrailingJunk(buf);
-        append_file(jcr, fileset->incexe, buf, IsFile);
+        append_file(jcr, incexe, buf, IsFile);
       }
       fclose(ffd);
       break;
     default:
-      append_file(jcr, fileset->incexe, fname, IsFile);
+      append_file(jcr, incexe, fname, IsFile);
       break;
   }
 }
@@ -176,7 +176,7 @@ void AddFileToFileset(JobControlRecord* jcr,
 findIncludeExcludeItem* get_incexe(JobControlRecord* jcr)
 {
   if (jcr->fd_impl->ff && jcr->fd_impl->ff->fileset) {
-    return jcr->fd_impl->ff->fileset->incexe;
+    return jcr->fd_impl->ff->incexe;
   }
 
   return NULL;
@@ -184,8 +184,7 @@ findIncludeExcludeItem* get_incexe(JobControlRecord* jcr)
 
 void SetIncexe(JobControlRecord* jcr, findIncludeExcludeItem* incexe)
 {
-  findFILESET* fileset = jcr->fd_impl->ff->fileset;
-  fileset->incexe = incexe;
+  jcr->fd_impl->ff->incexe = incexe;
 }
 
 // Add a regex to the current fileset
@@ -533,6 +532,7 @@ void AddFileset(JobControlRecord* jcr, const char* item)
 {
   FindFilesPacket* ff = jcr->fd_impl->ff;
   findFILESET* fileset = ff->fileset;
+  findIncludeExcludeItem*& incexe = ff->incexe;
   int code, subcode;
   int state = fileset->state;
   findFOPTS* current_opts;
@@ -564,23 +564,24 @@ void AddFileset(JobControlRecord* jcr, const char* item)
     state = state_error;
     Dmsg0(100, "Set state=error or double code.\n");
   }
+
   switch (code) {
     case 'I':
-      (void)new_include(jcr->fd_impl->ff->fileset);
+      incexe = new_include(jcr->fd_impl->ff);
       break;
     case 'E':
-      (void)new_exclude(jcr->fd_impl->ff->fileset);
+      incexe = new_exclude(jcr->fd_impl->ff);
       break;
     case 'N': /* Null */
       state = state_none;
       break;
     case 'F': /* File */
       state = state_include;
-      AddFileToFileset(jcr, item, true, jcr->fd_impl->ff->fileset);
+      AddFileToFileset(jcr, item, true, incexe);
       break;
     case 'P': /* Plugin */
       state = state_include;
-      AddFileToFileset(jcr, item, false, jcr->fd_impl->ff->fileset);
+      AddFileToFileset(jcr, item, false, incexe);
       break;
     case 'R': /* Regex */
       state = AddRegexToFileset(jcr, item, subcode);
@@ -612,7 +613,7 @@ void AddFileset(JobControlRecord* jcr, const char* item)
       break;
     case 'Z': /* Ignore dir */
       state = state_include;
-      fileset->incexe->ignoredir.append(strdup(item));
+      incexe->ignoredir.append(strdup(item));
       break;
     case 'D':
       current_opts = start_options(ff);

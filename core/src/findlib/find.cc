@@ -111,6 +111,7 @@ static void SetupLastOptionBlock(FindFilesPacket* ff,
    * what we want. */
   findFOPTS* fo = incexe->opts_list.get(incexe->opts_list.size() - 1);
   CopyBits(FO_MAX, fo->flags, ff->flags);
+  ff->incexe = incexe;
   ff->Compress_algo = fo->Compress_algo;
   ff->Compress_level = fo->Compress_level;
   ff->StripPath = fo->StripPath;
@@ -228,7 +229,6 @@ int FindFiles(JobControlRecord* jcr,
       dlistString* node;
       findIncludeExcludeItem* incexe
           = (findIncludeExcludeItem*)fileset->include_list.get(i);
-      fileset->incexe = incexe;
       SetupLastOptionBlock(ff, incexe);
 
       Dmsg4(50, "Verify=<%s> Accurate=<%s> BaseJob=<%s> flags=<%d>\n",
@@ -330,7 +330,7 @@ bool AcceptFile(FindFilesPacket* ff)
 {
   const char* basename;
   findFILESET* fileset = ff->fileset;
-  findIncludeExcludeItem* incexe = fileset->incexe;
+  findIncludeExcludeItem* incexe = ff->incexe;
   int (*match_func)(const char* pattern, const char* string, int flags);
 
   Dmsg1(debuglevel, "enter AcceptFile: fname=%s\n", ff->fname);
@@ -505,23 +505,23 @@ findIncludeExcludeItem* allocate_new_incexe(void)
 }
 
 // Define a new Exclude block in the FileSet
-findIncludeExcludeItem* new_exclude(findFILESET* fileset)
+findIncludeExcludeItem* new_exclude(FindFilesPacket* ff)
 {
   // New exclude
-  fileset->incexe = allocate_new_incexe();
-  fileset->exclude_list.append(fileset->incexe);
+  ff->incexe = allocate_new_incexe();
+  ff->fileset->exclude_list.append(ff->incexe);
 
-  return fileset->incexe;
+  return ff->incexe;
 }
 
 // Define a new Include block in the FileSet
-findIncludeExcludeItem* new_include(findFILESET* fileset)
+findIncludeExcludeItem* new_include(FindFilesPacket* ff)
 {
   // New include
-  fileset->incexe = allocate_new_incexe();
-  fileset->include_list.append(fileset->incexe);
+  ff->incexe = allocate_new_incexe();
+  ff->fileset->include_list.append(ff->incexe);
 
-  return fileset->incexe;
+  return ff->incexe;
 }
 
 /**
@@ -529,19 +529,19 @@ findIncludeExcludeItem* new_include(findFILESET* fileset)
  * That is the include is prepended to the other
  * Includes. This is used for plugin exclusions.
  */
-findIncludeExcludeItem* new_preinclude(findFILESET* fileset)
+findIncludeExcludeItem* new_preinclude(FindFilesPacket* ff)
 {
   // New pre-include
-  fileset->incexe = allocate_new_incexe();
-  fileset->include_list.prepend(fileset->incexe);
+  ff->incexe = allocate_new_incexe();
+  ff->fileset->include_list.prepend(ff->incexe);
 
-  return fileset->incexe;
+  return ff->incexe;
 }
 
 findFOPTS* start_options(FindFilesPacket* ff)
 {
   int state = ff->fileset->state;
-  findIncludeExcludeItem* incexe = ff->fileset->incexe;
+  findIncludeExcludeItem* incexe = ff->incexe;
 
   if (state != state_options) {
     ff->fileset->state = state_options;
@@ -730,15 +730,13 @@ struct guarded_in_chan {
 template <typename Deleter>
 static void ListFromIncexe(JobControlRecord* jcr,
                            std::unique_ptr<FindFilesPacket, Deleter> ff_ptr,
-                           std::unique_ptr<findFILESET> fileset_ptr,
                            std::shared_ptr<guarded_in_chan> in_ptr,
                            int fileset_idx)
 {
   FindFilesPacket* ff = ff_ptr.get();
-  findFILESET* fileset = fileset_ptr.get();
+  findFILESET* fileset = ff->fileset;
   SetJcrInThreadSpecificData(jcr);
-  findIncludeExcludeItem* incexe = fileset->incexe
-      = fileset->include_list.get(fileset_idx);
+  findIncludeExcludeItem* incexe = fileset->include_list.get(fileset_idx);
   SetupLastOptionBlock(ff, incexe);
   // we do not need to follow hardlinks, as they will be handled
   // by the sending thread
@@ -788,17 +786,16 @@ std::optional<list_files_threads> ListFiles(
     list_files_threads threads{std::move(out)};
 
     for (int i = 0; i < fileset->include_list.size(); i++) {
-      auto local_fileset = std::make_unique<findFILESET>(*fileset);
       std::unique_ptr<FindFilesPacket, ff_cleanup> ff_pkt{init_find_files(),
                                                           ff_cleanup{}};
       ClearAllBits(FO_MAX, ff_pkt->flags);
-      ff_pkt->fileset = local_fileset.get();
+      ff_pkt->fileset = fileset;
       SetFindOptions(ff_pkt.get(), incremental, save_time);
       if (check_changed)
         SetFindChangedFunction(ff_pkt.get(), check_changed.value());
 
       threads.emplace_thread(ListFromIncexe<ff_cleanup>, jcr, std::move(ff_pkt),
-                             std::move(local_fileset), in_ptr, i);
+                             in_ptr, i);
     }
 
     return std::make_optional<list_files_threads>(std::move(threads));
@@ -815,7 +812,6 @@ int SendPluginInfo(JobControlRecord* jcr,
     dlistString* node;
     findIncludeExcludeItem* incexe
         = (findIncludeExcludeItem*)fileset->include_list.get(i);
-    fileset->incexe = incexe;
     SetupLastOptionBlock(ff, incexe);
     foreach_dlist (node, &incexe->plugin_list) {
       char* fname = node->c_str();
@@ -1076,12 +1072,11 @@ int SendFiles(JobControlRecord* jcr,
     // everything is set to 0
     std::vector<cached_vals> cached_values(fileset->include_list.size());
     for (std::size_t i = 0; i < cached_values.size(); ++i) {
-      fileset->incexe = fileset->include_list.get(i);
-      SetupLastOptionBlock(ff, fileset->incexe);
+      SetupLastOptionBlock(ff, fileset->include_list.get(i));
       cached_values[i].StripPath = ff->StripPath;
     }
     if (list_result.has_error()) { return 0; }
-    fileset->incexe = fileset->include_list.get(list_result.fileset_idx());
+    ff->incexe = fileset->include_list.get(list_result.fileset_idx());
     for (auto& file : list_result) {
       char* fname = file.name.data();
       if (!SetupFFPkt(jcr, ff, fname, file.statp, file.delta_seq, file.type,

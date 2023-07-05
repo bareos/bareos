@@ -158,7 +158,6 @@ struct findIncludeExcludeItem {
 // FileSet Resource
 struct findFILESET {
   int state;
-  findIncludeExcludeItem* incexe; /**< Current item */
   alist<findIncludeExcludeItem*> include_list;
   alist<findIncludeExcludeItem*> exclude_list;
 };
@@ -228,6 +227,7 @@ struct FindFilesPacket {
   struct s_excluded_file* excluded_files_list{nullptr};
   struct s_excluded_file* excluded_paths_list{nullptr};
   findFILESET* fileset{nullptr};
+  findIncludeExcludeItem* incexe{nullptr}; /**< Current item */
   bool (*CheckFct)(
       JobControlRecord*,
       FindFilesPacket*){};   /**< Optional user fct to check file changes */
@@ -369,9 +369,9 @@ void TermFindFiles(FindFilesPacket* ff);
 bool IsInFileset(FindFilesPacket* ff);
 bool AcceptFile(FindFilesPacket* ff);
 findIncludeExcludeItem* allocate_new_incexe(void);
-findIncludeExcludeItem* new_exclude(findFILESET* fileset);
-findIncludeExcludeItem* new_include(findFILESET* fileset);
-findIncludeExcludeItem* new_preinclude(findFILESET* fileset);
+findIncludeExcludeItem* new_exclude(FindFilesPacket* ff);
+findIncludeExcludeItem* new_include(FindFilesPacket* ff);
+findIncludeExcludeItem* new_preinclude(FindFilesPacket* ff);
 findFOPTS* start_options(FindFilesPacket* ff);
 void NewOptions(FindFilesPacket* ff, findIncludeExcludeItem* incexe);
 
