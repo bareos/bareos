@@ -78,13 +78,9 @@ static void OutputStatus(JobControlRecord* jcr,
   PoolMem msg(PM_MESSAGE);
 
   ListStatusHeader(sp);
-
   ListRunningJobs(sp);
-
   ListJobsWaitingOnReservation(sp);
-
   ListTerminatedJobs(sp);
-
   ListDevices(jcr, sp, devicenames);
 
   if (!sp->api) {
@@ -646,7 +642,7 @@ static void ListRunningJobs(StatusPacket* sp)
   char b1[50], b2[50], b3[50], b4[50];
 
   if (!sp->api) {
-    len = Mmsg(msg, _("\nRunning Jobs:\n"));
+    len = Mmsg(msg, _("\nJob inventory:\n\n"));
     sp->send(msg, len);
   }
 
@@ -665,12 +661,16 @@ static void ListRunningJobs(StatusPacket* sp)
       for (int i = 0; i < 3; i++) {
         if ((p = strrchr(JobName, '.')) != NULL) { *p = 0; }
       }
+      len = Mmsg(msg, _("JobId=%d Level=%s Type=%s Name=%s Status=%s\n"),
+                 jcr->JobId, job_level_to_str(jcr->getJobLevel()),
+                 job_type_to_str(jcr->getJobType()), JobName,
+                 JobstatusToAscii(jcr->getJobStatus()).c_str());
+      sp->send(msg, len);
+
       if (rdcr && rdcr->device_resource) {
         len = Mmsg(msg,
-                   _("Reading: %s %s job %s JobId=%d Volume=\"%s\"\n"
+                   _("Reading: Volume=\"%s\"\n"
                      "    pool=\"%s\" device=%s\n"),
-                   job_level_to_str(jcr->getJobLevel()),
-                   job_type_to_str(jcr->getJobType()), JobName, jcr->JobId,
                    rdcr->VolumeName, rdcr->pool_name,
                    rdcr->dev ? rdcr->dev->print_name()
                              : rdcr->device_resource->archive_device_string);
@@ -678,10 +678,8 @@ static void ListRunningJobs(StatusPacket* sp)
       }
       if (dcr && dcr->device_resource) {
         len = Mmsg(msg,
-                   _("Writing: %s %s job %s JobId=%d Volume=\"%s\"\n"
+                   _("Writing: Volume=\"%s\"\n"
                      "    pool=\"%s\" device=%s\n"),
-                   job_level_to_str(jcr->getJobLevel()),
-                   job_type_to_str(jcr->getJobType()), JobName, jcr->JobId,
                    dcr->VolumeName, dcr->pool_name,
                    dcr->dev ? dcr->dev->print_name()
                             : dcr->device_resource->archive_device_string);
@@ -703,13 +701,13 @@ static void ListRunningJobs(StatusPacket* sp)
 
       found = true;
       if (jcr->file_bsock) {
-        len = Mmsg(msg, _("    FDReadSeqNo=%s in_msg=%u out_msg=%d fd=%d\n"),
+        len = Mmsg(msg, _("    FDReadSeqNo=%s in_msg=%u out_msg=%d fd=%d\n\n"),
                    edit_uint64_with_commas(jcr->file_bsock->read_seqno, b1),
                    jcr->file_bsock->in_msg_no, jcr->file_bsock->out_msg_no,
                    jcr->file_bsock->fd_);
         sp->send(msg, len);
       } else {
-        len = Mmsg(msg, _("    FDSocket closed\n"));
+        len = Mmsg(msg, _("    FDSocket closed\n\n"));
         sp->send(msg, len);
       }
     }
