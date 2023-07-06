@@ -1017,9 +1017,6 @@ void DbgPrintJcr(FILE* fp)
   for (JobControlRecord* jcr
        = (JobControlRecord*)job_control_record_chain->first();
        jcr; jcr = (JobControlRecord*)job_control_record_chain->next(jcr)) {
-    fprintf(fp, "threadid=%s JobId=%d JobStatus=%c jcr=%p name=%s\n",
-            edit_pthread(jcr->my_thread_id, ed1, sizeof(ed1)), (int)jcr->JobId,
-            jcr->getJobStatus(), jcr, jcr->Job);
     fprintf(
         fp, "threadid=%s killable=%d JobId=%d JobStatus=%c jcr=%p name=%s\n",
         edit_pthread(jcr->my_thread_id, ed1, sizeof(ed1)), jcr->IsKillable(),
