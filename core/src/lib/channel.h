@@ -136,39 +136,43 @@ template <typename T> T out<T>::read_unlocked()
   return std::move(shared->storage[old]);
 }
 
+template <typename T>
+static std::unique_lock<std::mutex> WaitForReadable(data<T>& data)
+{
+  std::unique_lock lock(data.mutex);
+  data.cv.wait(lock,
+               // only wake up if either there is
+               // something in the queue, or
+               // the in announced his death
+               [&data] { return data.size > 0 || !data.in_alive; });
+
+  return lock;
+}
+
 template <typename T> std::optional<T> out<T>::get()
 {
+  if (closed) return std::nullopt;
   std::optional<T> result = std::nullopt;
-  if (!closed) {
-    std::unique_lock lock(shared->mutex);
-    shared->cv.wait(
-        lock,
-        // only wake up if either there is
-        // something in the queue, or
-        // the in announced his death
-        [this] { return this->shared->size > 0 || !this->shared->in_alive; });
+  {
+    auto lock = WaitForReadable(*shared);
 
     if (this->shared->size > 0) {
-      // if we did not take the fast path, take it now
       result = std::move(read_unlocked());
     } else {
       // if the in is dead and the queue is empty we also close
       shared->out_alive = false;
       closed = true;
     }
-    shared->cv.notify_one();
   }
+  shared->cv.notify_one();
   return result;
 }
 
 template <typename T> std::optional<std::vector<T>> out<T>::get_all()
 {
-  std::optional<std::vector<T>> result{std::nullopt};
   if (closed) return std::nullopt;
-  std::unique_lock lock(shared->mutex);
-  shared->cv.wait(lock, [this] {
-    return this->shared->size > 0 || !this->shared->in_alive;
-  });
+  std::optional<std::vector<T>> result{std::nullopt};
+  auto lock = WaitForReadable(*shared);
 
   if (shared->size > 0) {
     std::vector<T>& v = result.emplace();
@@ -185,24 +189,23 @@ template <typename T> std::optional<std::vector<T>> out<T>::get_all()
 
 template <typename T> std::optional<T> out<T>::try_get()
 {
+  if (closed) return std::nullopt;
   std::optional<T> result = std::nullopt;
-  if (!closed) {
-    bool had_lock = false;
-    if (std::unique_lock lock(shared->mutex, std::try_to_lock);
-        lock.owns_lock()) {
-      if (this->shared->size > 0) {
-        result = std::move(read_unlocked());
-      } else if (!shared->in_alive) {
-        // if the in is dead and the queue is empty we also close
-        shared->out_alive = false;
-        closed = true;
-      }
-      had_lock = true;
+  bool had_lock = false;
+  if (std::unique_lock lock(shared->mutex, std::try_to_lock);
+      lock.owns_lock()) {
+    if (this->shared->size > 0) {
+      result = std::move(read_unlocked());
+    } else if (!shared->in_alive) {
+      // if the in is dead and the queue is empty we also close
+      shared->out_alive = false;
+      closed = true;
     }
-    // only notify waiting threads if we actually did something to
-    // the shared state!
-    if (had_lock) shared->cv.notify_one();
+    had_lock = true;
   }
+  // only notify waiting threads if we actually did something to
+  // the shared state!
+  if (had_lock) shared->cv.notify_one();
   return result;
 }
 
@@ -253,13 +256,13 @@ template <typename T> bool in<T>::try_put(const T& val)
 
   if (std::unique_lock lock(shared->mutex, std::try_to_lock);
       lock.owns_lock()) {
-    if (shared->out_alive && shared->size < shared->capacity) {
-      write_unlocked(val);
-      success = true;
-      updated = true;
-    } else if (!shared->out_alive) {
+    if (!shared->out_alive) {
       shared->in_alive = false;
       closed = true;
+      updated = true;
+    } else if (shared->size < shared->capacity) {
+      write_unlocked(val);
+      success = true;
       updated = true;
     }
   }
@@ -268,15 +271,20 @@ template <typename T> bool in<T>::try_put(const T& val)
   return success;
 }
 
+template <typename T>
+std::unique_lock<std::mutex> WaitForWritable(data<T>& data)
+{
+  std::unique_lock lock(data.mutex);
+  data.cv.wait(
+      lock, [&data] { return data.size < data.capacity || !data.out_alive; });
+  return lock;
+}
+
 template <typename T> bool in<T>::put(const T& val)
 {
   if (closed) return false;
   bool success = false;
-  std::unique_lock lock(shared->mutex);
-  shared->cv.wait(lock, [this] {
-    return this->shared->size < this->shared->capacity
-           || !this->shared->out_alive;
-  });
+  auto lock = WaitForWritable(*shared);
 
   if (shared->out_alive) {
     // since the out is still alive, we know that
@@ -297,11 +305,7 @@ template <typename T> bool in<T>::put(T&& val)
 {
   if (closed) return false;
   bool success = false;
-  std::unique_lock lock(shared->mutex);
-  shared->cv.wait(lock, [this] {
-    return this->shared->size < this->shared->capacity
-           || !this->shared->out_alive;
-  });
+  auto lock = WaitForWritable(*shared);
 
   if (shared->out_alive) {
     // since the out is still alive, we know that
@@ -319,6 +323,8 @@ template <typename T> bool in<T>::put(T&& val)
 
 template <typename T> void in<T>::wait_till_empty()
 {
+  if (closed) return;
+
   {
     std::unique_lock lock(shared->mutex);
     shared->cv.wait(lock, [this] {
