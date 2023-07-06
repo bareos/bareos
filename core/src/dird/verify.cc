@@ -435,7 +435,7 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
   int JobLevel;
   char sdt[50], edt[50];
   char ec1[30], ec2[30];
-  char term_code[100], fd_term_msg[100], sd_term_msg[100];
+  char term_code[100];
   const char* TermMsg;
   int msg_type;
   const char* Name;
@@ -492,12 +492,11 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
     Name = "";
   }
 
-  JobstatusToAscii(jcr->dir_impl->FDJobStatus, fd_term_msg,
-                   sizeof(fd_term_msg));
+  std::string fd_term_msg = JobstatusToAscii(jcr->dir_impl->FDJobStatus);
+  std::string sd_term_msg = JobstatusToAscii(jcr->dir_impl->SDJobStatus);
+
   switch (JobLevel) {
     case L_VERIFY_VOLUME_TO_CATALOG:
-      JobstatusToAscii(jcr->dir_impl->SDJobStatus, sd_term_msg,
-                       sizeof(sd_term_msg));
       Jmsg(jcr, msg_type, 0,
            _("%s %s %s (%s):\n"
              "  Build OS:               %s\n"
@@ -527,7 +526,8 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
            jcr->dir_impl->previous_jr.JobId, Name, sdt, edt,
            edit_uint64_with_commas(jcr->dir_impl->ExpectedFiles, ec1),
            edit_uint64_with_commas(jcr->JobFiles, ec2), jcr->JobErrors,
-           fd_term_msg, sd_term_msg, kBareosVersionStrings.JoblogMessage,
+           fd_term_msg.c_str(), sd_term_msg.c_str(),
+           kBareosVersionStrings.JoblogMessage,
            JobTriggerToString(jcr->dir_impl->job_trigger).c_str(), TermMsg);
       break;
     default:
@@ -557,7 +557,7 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
            jcr->dir_impl->res.client->resource_name_,
            jcr->dir_impl->previous_jr.JobId, Name, sdt, edt,
            edit_uint64_with_commas(jcr->JobFiles, ec1), jcr->JobErrors,
-           fd_term_msg, kBareosVersionStrings.JoblogMessage,
+           fd_term_msg.c_str(), kBareosVersionStrings.JoblogMessage,
            JobTriggerToString(jcr->dir_impl->job_trigger).c_str(), TermMsg);
       break;
   }

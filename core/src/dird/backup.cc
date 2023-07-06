@@ -893,7 +893,6 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
    char sdt[50], edt[50], schedt[50], gdt[50];
    char ec1[30], ec2[30], ec3[30], ec4[30], ec5[30], compress[50];
    char ec6[30], ec7[30], ec8[30], elapsed[50];
-   char fd_term_msg[100], sd_term_msg[100];
    double kbps, compression;
    utime_t RunTime;
    MediaDbRecord mr;
@@ -958,8 +957,8 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
       }
    }
 
-   JobstatusToAscii(jcr->dir_impl->FDJobStatus, fd_term_msg, sizeof(fd_term_msg));
-   JobstatusToAscii(jcr->dir_impl->SDJobStatus, sd_term_msg, sizeof(sd_term_msg));
+   std::string fd_term_msg = JobstatusToAscii(jcr->dir_impl->FDJobStatus);
+   std::string sd_term_msg = JobstatusToAscii(jcr->dir_impl->SDJobStatus);
 
    switch (jcr->getJobProtocol()) {
    case PT_NDMP_BAREOS:
@@ -1053,7 +1052,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
               "  SD termination status:  %s\n"
               "  Accurate:               %s\n"),
            jcr->dir_impl->SDErrors,
-           sd_term_msg,
+           sd_term_msg.c_str(),
            jcr->accurate ? _("yes") : _("no"));
       } else {
          if (jcr->HasBase) {
@@ -1091,8 +1090,8 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
               "  SD termination status:  %s\n"),
            jcr->JobErrors,
            jcr->dir_impl->SDErrors,
-           fd_term_msg,
-           sd_term_msg);
+           fd_term_msg.c_str(),
+           sd_term_msg.c_str());
 
          if (me->secure_erase_cmdline) {
             Mmsg(temp,"  Dir Secure Erase Cmd:   %s\n", me->secure_erase_cmdline);

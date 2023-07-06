@@ -1515,7 +1515,7 @@ static inline void GenerateMigrateSummary(JobControlRecord* jcr,
   double kbps;
   utime_t RunTime;
   JobControlRecord* mig_jcr = jcr->dir_impl->mig_jcr;
-  char term_code[100], sd_term_msg[100];
+  char term_code[100];
   char sdt[MAX_TIME_LENGTH], edt[MAX_TIME_LENGTH];
   char ec1[30], ec2[30], ec3[30], ec4[30], ec5[30], elapsed[50];
   char ec6[50], ec7[50], ec8[50];
@@ -1526,8 +1526,7 @@ static inline void GenerateMigrateSummary(JobControlRecord* jcr,
   bstrftimes(edt, sizeof(edt), jcr->dir_impl->jr.EndTime);
   RunTime = jcr->dir_impl->jr.EndTime - jcr->dir_impl->jr.StartTime;
 
-  JobstatusToAscii(jcr->dir_impl->SDJobStatus, sd_term_msg,
-                   sizeof(sd_term_msg));
+  std::string sd_term_msg = JobstatusToAscii(jcr->dir_impl->SDJobStatus);
   if (jcr->dir_impl->previous_jr.JobId != 0) {
     // Copy/Migrate worker Job.
     if (RunTime <= 0) {
@@ -1605,7 +1604,7 @@ static inline void GenerateMigrateSummary(JobControlRecord* jcr,
          mig_jcr ? mig_jcr->VolumeName : _("*None*"), jcr->VolSessionId,
          jcr->VolSessionTime, edit_uint64_with_commas(mr->VolBytes, ec4),
          edit_uint64_with_suffix(mr->VolBytes, ec5), jcr->dir_impl->SDErrors,
-         sd_term_msg, kBareosVersionStrings.JoblogMessage,
+         sd_term_msg.c_str(), kBareosVersionStrings.JoblogMessage,
          JobTriggerToString(jcr->dir_impl->job_trigger).c_str(), term_code);
   } else {
     // Copy/Migrate selection only Job.
