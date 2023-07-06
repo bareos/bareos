@@ -25,6 +25,7 @@
 #include <condition_variable>
 #include <optional>
 #include <vector>
+#include <utility>
 
 namespace channel {
 // a simple single consumer/ single producer queue
