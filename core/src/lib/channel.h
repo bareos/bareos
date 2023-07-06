@@ -78,6 +78,7 @@ template <typename T> struct out {
   bool empty() const { return closed; }
 
  private:
+  T read_unlocked();
   std::shared_ptr<data<T>> shared;
   std::size_t read_pos;
   bool closed;
@@ -86,7 +87,7 @@ template <typename T> struct out {
 template <typename T> struct in {
   bool put(const T& val);
   bool put(T&& val);
-  bool try_put(T& val);
+  bool try_put(const T& val);
   void close();
   ~in();
   in(std::shared_ptr<data<T>> shared);
@@ -98,6 +99,8 @@ template <typename T> struct in {
   void wait_till_empty();
 
  private:
+  void write_unlocked(T&& val);
+  void write_unlocked(const T& val);
   std::shared_ptr<data<T>> shared;
   std::size_t write_pos;
   bool closed;
@@ -125,6 +128,14 @@ data<T>::data(std::size_t capacity)
 {
 }
 
+template <typename T> T out<T>::read_unlocked()
+{
+  shared->size -= 1;
+  auto old = read_pos;
+  read_pos = wrapping_inc(read_pos, shared->capacity);
+  return std::move(shared->storage[old]);
+}
+
 template <typename T> std::optional<T> out<T>::get()
 {
   std::optional<T> result = std::nullopt;
@@ -139,9 +150,7 @@ template <typename T> std::optional<T> out<T>::get()
 
     if (this->shared->size > 0) {
       // if we did not take the fast path, take it now
-      result = std::move(shared->storage[read_pos]);
-      shared->size -= 1;
-      read_pos = wrapping_inc(read_pos, shared->capacity);
+      result = std::move(read_unlocked());
     } else {
       // if the in is dead and the queue is empty we also close
       shared->out_alive = false;
@@ -164,11 +173,7 @@ template <typename T> std::optional<std::vector<T>> out<T>::get_all()
   if (shared->size > 0) {
     std::vector<T>& v = result.emplace();
     v.reserve(shared->size);
-    for (std::size_t i = 0; i < shared->size; ++i) {
-      v.emplace_back(std::move(shared->storage[read_pos]));
-      read_pos = wrapping_inc(read_pos, shared->capacity);
-    }
-    shared->size = 0;
+    while (shared->size > 0) { v.emplace_back(std::move(read_unlocked())); }
   } else {
     shared->out_alive = false;
     closed = true;
@@ -186,9 +191,7 @@ template <typename T> std::optional<T> out<T>::try_get()
     if (std::unique_lock lock(shared->mutex, std::try_to_lock);
         lock.owns_lock()) {
       if (this->shared->size > 0) {
-        result = std::move(shared->storage[read_pos]);
-        shared->size -= 1;
-        read_pos = wrapping_inc(read_pos, shared->capacity);
+        result = std::move(read_unlocked());
       } else if (!shared->in_alive) {
         // if the in is dead and the queue is empty we also close
         shared->out_alive = false;
@@ -228,7 +231,21 @@ out<T>::out(std::shared_ptr<data<T>> shared_)
   shared->out_alive = true;
 }
 
-template <typename T> bool in<T>::try_put(T& val)
+template <typename T> void in<T>::write_unlocked(T&& val)
+{
+  shared->storage[write_pos] = std::move(val);
+  shared->size += 1;
+  write_pos = wrapping_inc(write_pos, shared->capacity);
+}
+
+template <typename T> void in<T>::write_unlocked(const T& val)
+{
+  shared->storage[write_pos] = val;
+  shared->size += 1;
+  write_pos = wrapping_inc(write_pos, shared->capacity);
+}
+
+template <typename T> bool in<T>::try_put(const T& val)
 {
   if (closed) return false;
   bool success = false;
@@ -237,11 +254,9 @@ template <typename T> bool in<T>::try_put(T& val)
   if (std::unique_lock lock(shared->mutex, std::try_to_lock);
       lock.owns_lock()) {
     if (shared->out_alive && shared->size < shared->capacity) {
-      shared->storage[write_pos] = std::move(val);
-      shared->size += 1;
+      write_unlocked(val);
       success = true;
       updated = true;
-      write_pos = wrapping_inc(write_pos, shared->capacity);
     } else if (!shared->out_alive) {
       shared->in_alive = false;
       closed = true;
@@ -267,10 +282,8 @@ template <typename T> bool in<T>::put(const T& val)
     // since the out is still alive, we know that
     // there is some space free in the storage
     // (otherwise we would still be stuck waiting!)
-    shared->storage[write_pos] = val;
-    shared->size += 1;
+    write_unlocked(val);
     success = true;
-    write_pos = wrapping_inc(write_pos, shared->capacity);
   } else {
     shared->in_alive = false;
     closed = true;
@@ -293,10 +306,8 @@ template <typename T> bool in<T>::put(T&& val)
   if (shared->out_alive) {
     // since the out is still alive, we know that
     // there is some space free in the storage
-    shared->storage[write_pos] = std::move(val);
-    shared->size += 1;
+    write_unlocked(std::move(val));
     success = true;
-    write_pos = wrapping_inc(write_pos, shared->capacity);
   } else {
     shared->in_alive = false;
     closed = true;
