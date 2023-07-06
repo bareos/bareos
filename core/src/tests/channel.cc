@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -49,14 +49,14 @@ static void SendDataBlocking(const std::vector<T>* to_send, channel::in<T> in)
 template <typename T>
 static void ReceiveDataBlocking(std::vector<T>* to_receive, channel::out<T> out)
 {
-  for (std::optional elem = out.get(); elem.has_value();
-       elem = out.get()) {
+  for (std::optional elem = out.get(); elem.has_value(); elem = out.get()) {
     to_receive->push_back(elem.value());
   }
 }
 
 template <typename T>
-static void SendDataNonBlocking(const std::vector<T>* to_send, channel::in<T> in)
+static void SendDataNonBlocking(const std::vector<T>* to_send,
+                                channel::in<T> in)
 {
   for (auto elem : *to_send) {
     while (!in.try_put(elem)) {
@@ -66,13 +66,12 @@ static void SendDataNonBlocking(const std::vector<T>* to_send, channel::in<T> in
 }
 
 template <typename T>
-static void ReceiveDataNonBlocking(std::vector<T>* to_receive, channel::out<T> out)
+static void ReceiveDataNonBlocking(std::vector<T>* to_receive,
+                                   channel::out<T> out)
 {
   for (std::optional elem = out.try_get(); elem.has_value() || !out.empty();
        elem = out.try_get()) {
-    if (elem.has_value()) {
-      to_receive->push_back(elem.value());
-    }
+    if (elem.has_value()) { to_receive->push_back(elem.value()); }
   }
 }
 
@@ -81,9 +80,7 @@ static void ReceiveDataChunked(std::vector<T>* to_receive, channel::out<T> out)
 {
   for (std::optional elems = out.get_all(); elems.has_value();
        elems = out.get_all()) {
-    for (auto& elem : elems.value()) {
-      to_receive->push_back(elem);
-    }
+    for (auto& elem : elems.value()) { to_receive->push_back(elem); }
   }
 }
 
@@ -95,14 +92,13 @@ std::vector<int> RandomData(std::size_t size)
 
   vec.reserve(size);
 
-  for (std::size_t i = 0; i < size; ++i) {
-    vec.push_back(dist(rd));
-  }
+  for (std::size_t i = 0; i < size; ++i) { vec.push_back(dist(rd)); }
 
   return vec;
 }
 
-TEST(channel, BlockingConsistency) {
+TEST(channel, BlockingConsistency)
+{
   std::size_t size = 100'000;
   std::vector<int> input = RandomData(size);
   std::vector<int> output;
@@ -119,7 +115,8 @@ TEST(channel, BlockingConsistency) {
   }
 }
 
-TEST(channel, ChunkedConsistency) {
+TEST(channel, ChunkedConsistency)
+{
   std::size_t size = 100'000;
   std::vector<int> input = RandomData(size);
   std::vector<int> output;
@@ -136,7 +133,8 @@ TEST(channel, ChunkedConsistency) {
   }
 }
 
-TEST(channel, NonBlockingConsistency) {
+TEST(channel, NonBlockingConsistency)
+{
   std::size_t size = 100'000;
   std::vector<int> input = RandomData(size);
   std::vector<int> output;
@@ -153,45 +151,39 @@ TEST(channel, NonBlockingConsistency) {
   }
 }
 
-TEST(channel, ConsistentState) {
+TEST(channel, ConsistentState)
+{
   auto [in, out] = channel::CreateBufferedChannel<int>(2);
   ASSERT_FALSE(in.closed);
   ASSERT_FALSE(out.closed);
   ASSERT_TRUE(in.put(1));
-  EXPECT_EQ(in.old_size, 1);
   ASSERT_TRUE(in.put(2));
-  EXPECT_EQ(in.old_size, 2);
   ASSERT_FALSE(in.closed);
   ASSERT_FALSE(out.closed);
   in.close();
   EXPECT_TRUE(in.closed);
   ASSERT_FALSE(out.closed);
   EXPECT_TRUE(out.get().has_value());
-  EXPECT_EQ(out.old_size, 1);
   ASSERT_FALSE(out.closed);
   EXPECT_TRUE(out.get().has_value());
-  EXPECT_EQ(out.old_size, 0);
   EXPECT_FALSE(out.get().has_value());
   EXPECT_TRUE(out.closed);
 
   EXPECT_FALSE(in.put(3));
 }
 
-TEST(channel, NoFalsePutsOrGets) {
+TEST(channel, NoFalsePutsOrGets)
+{
   std::size_t capacity = 20;
   auto [in, out] = channel::CreateBufferedChannel<int>(capacity);
 
   std::vector<int> data_in;
 
-  for (std::size_t i = 0; i < capacity * 2; ++i) {
-    data_in.push_back(i);
-  }
+  for (std::size_t i = 0; i < capacity * 2; ++i) { data_in.push_back(i); }
 
   std::size_t num_writes = 0;
   for (int i : data_in) {
-    if (in.try_put(i)) {
-      num_writes += 1;
-    }
+    if (in.try_put(i)) { num_writes += 1; }
   }
 
   EXPECT_EQ(num_writes, capacity);
@@ -202,12 +194,9 @@ TEST(channel, NoFalsePutsOrGets) {
   in.close();
 
   std::vector<int> data_out;
-  for (std::optional i = out.try_get();
-       i.has_value() || !out.empty();
+  for (std::optional i = out.try_get(); i.has_value() || !out.empty();
        i = out.try_get()) {
-    if (i.has_value()) {
-      data_out.push_back(i.value());
-    }
+    if (i.has_value()) { data_out.push_back(i.value()); }
   }
 
   EXPECT_EQ(num_writes, data_out.size());

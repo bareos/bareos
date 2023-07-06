@@ -80,8 +80,6 @@ template <typename T> struct out {
  private:
   std::shared_ptr<data<T>> shared;
   std::size_t read_pos;
-  std::size_t old_size;
-  std::size_t capacity;
   bool closed;
 };
 
@@ -102,8 +100,6 @@ template <typename T> struct in {
  private:
   std::shared_ptr<data<T>> shared;
   std::size_t write_pos;
-  std::size_t old_size;
-  std::size_t capacity;
   bool closed;
 };
 
@@ -133,10 +129,6 @@ template <typename T> std::optional<T> out<T>::get()
 {
   std::optional<T> result = std::nullopt;
   if (!closed) {
-    if (old_size > 0) {
-      // take the fast path
-      result = std::move(shared->storage[read_pos]);
-    }
     std::unique_lock lock(shared->mutex);
     shared->cv.wait(
         lock,
@@ -145,27 +137,17 @@ template <typename T> std::optional<T> out<T>::get()
         // the in announced his death
         [this] { return this->shared->size > 0 || !this->shared->in_alive; });
 
-    bool in_alive = this->shared->in_alive;
     if (this->shared->size > 0) {
       // if we did not take the fast path, take it now
-      if (!result) { result = std::move(shared->storage[read_pos]); }
+      result = std::move(shared->storage[read_pos]);
       shared->size -= 1;
-      old_size = shared->size;  // update the cache
-      read_pos = wrapping_inc(read_pos, capacity);
+      read_pos = wrapping_inc(read_pos, shared->capacity);
     } else {
       // if the in is dead and the queue is empty we also close
       shared->out_alive = false;
-      old_size = 0;
       closed = true;
     }
     shared->cv.notify_one();
-    Dmsg4(1000,
-          "size remaining: %d,"
-          " in: %s, out: %s, sucess: %d .\n",
-          old_size, in_alive ? "alive" : "dead", closed ? "dead" : "alive",
-          result.has_value());
-  } else {
-    Dmsg0(1000, "channel is closed.\n");
   }
   return result;
 }
@@ -175,21 +157,20 @@ template <typename T> std::optional<std::vector<T>> out<T>::get_all()
   std::optional<std::vector<T>> result{std::nullopt};
   if (closed) return std::nullopt;
   std::unique_lock lock(shared->mutex);
-  shared->cv.wait(lock,
-		  [this] { return this->shared->size > 0 || !this->shared->in_alive; });
+  shared->cv.wait(lock, [this] {
+    return this->shared->size > 0 || !this->shared->in_alive;
+  });
 
   if (shared->size > 0) {
     std::vector<T>& v = result.emplace();
     v.reserve(shared->size);
     for (std::size_t i = 0; i < shared->size; ++i) {
       v.emplace_back(std::move(shared->storage[read_pos]));
-      read_pos = wrapping_inc(read_pos, capacity);
+      read_pos = wrapping_inc(read_pos, shared->capacity);
     }
     shared->size = 0;
-    old_size = 0;
   } else {
     shared->out_alive = false;
-    old_size = 0;
     closed = true;
   }
   shared->cv.notify_one();
@@ -201,48 +182,23 @@ template <typename T> std::optional<T> out<T>::try_get()
 {
   std::optional<T> result = std::nullopt;
   if (!closed) {
-    bool something_changed = false;
-    if (old_size > 0) {
-      // take the fast path
-      something_changed = true;
-      result = std::move(shared->storage[read_pos]);
-    }
-    bool had_lock = true;
-    bool in_alive = true;  // only used if had_lock
-    // TODO: should we use try_lock here instead ?
-    if (std::unique_lock lock(shared->mutex); lock.owns_lock()) {
-      in_alive = shared->in_alive;
+    bool had_lock = false;
+    if (std::unique_lock lock(shared->mutex, std::try_to_lock);
+        lock.owns_lock()) {
       if (this->shared->size > 0) {
-        // if we did not take the fast path, take it now
-        if (!result) {
-          something_changed = true;
-          result = std::move(shared->storage[read_pos]);
-        }
+        result = std::move(shared->storage[read_pos]);
         shared->size -= 1;
-        old_size = shared->size;  // update the cache
-        read_pos = wrapping_inc(read_pos, capacity);
+        read_pos = wrapping_inc(read_pos, shared->capacity);
       } else if (!shared->in_alive) {
         // if the in is dead and the queue is empty we also close
-        something_changed = true;
         shared->out_alive = false;
-        old_size = 0;
         closed = true;
       }
-    } else {
-      had_lock = false;
-    }
-    if (had_lock) {
-      Dmsg4(1000, "size remaining: %d, in: %s, out: %s, sucess: %d.\n",
-            old_size, in_alive ? "alive" : "dead", closed ? "dead" : "alive",
-            result.has_value());
-    } else {
-      Dmsg0(1000, "Failed to acquire lock.\n");
+      had_lock = true;
     }
     // only notify waiting threads if we actually did something to
     // the shared state!
-    if (something_changed) shared->cv.notify_one();
-  } else {
-    Dmsg0(1000, "channel is closed.\n");
+    if (had_lock) shared->cv.notify_one();
   }
   return result;
 }
@@ -266,11 +222,7 @@ template <typename T> out<T>::~out()
 
 template <typename T>
 out<T>::out(std::shared_ptr<data<T>> shared_)
-    : shared(shared_)
-    , read_pos(0)
-    , old_size(0)
-    , capacity(shared_->capacity)
-    , closed(false)
+    : shared(shared_), read_pos(0), closed(false)
 {
   std::unique_lock lock(shared->mutex);
   shared->out_alive = true;
@@ -281,23 +233,23 @@ template <typename T> bool in<T>::try_put(T& val)
   if (closed) return false;
   bool success = false;
   bool updated = false;
+
   if (std::unique_lock lock(shared->mutex, std::try_to_lock);
       lock.owns_lock()) {
-    if (shared->out_alive && shared->size < capacity) {
+    if (shared->out_alive && shared->size < shared->capacity) {
       shared->storage[write_pos] = std::move(val);
       shared->size += 1;
       success = true;
       updated = true;
+      write_pos = wrapping_inc(write_pos, shared->capacity);
     } else if (!shared->out_alive) {
       shared->in_alive = false;
       closed = true;
       updated = true;
     }
-    old_size = shared->size;
   }
 
   if (updated) shared->cv.notify_one();
-  if (success) { write_pos = wrapping_inc(write_pos, capacity); }
   return success;
 }
 
@@ -305,34 +257,26 @@ template <typename T> bool in<T>::put(const T& val)
 {
   if (closed) return false;
   bool success = false;
-  bool took_fast_path = false;
-  if (old_size < capacity)  // size <= old_size is always true!
-  {
-    // fast path: copy first, then take the lock
-    shared->storage[write_pos] = val;
-    took_fast_path = true;
-  }
-  // slow path: take the lock, then copy
   std::unique_lock lock(shared->mutex);
   shared->cv.wait(lock, [this] {
-    return this->shared->size < this->capacity || !this->shared->out_alive;
+    return this->shared->size < this->shared->capacity
+           || !this->shared->out_alive;
   });
 
   if (shared->out_alive) {
     // since the out is still alive, we know that
     // there is some space free in the storage
-    if (!took_fast_path) { shared->storage[write_pos] = val; }
+    // (otherwise we would still be stuck waiting!)
+    shared->storage[write_pos] = val;
     shared->size += 1;
-    old_size = shared->size;  // update the cache!
     success = true;
+    write_pos = wrapping_inc(write_pos, shared->capacity);
   } else {
     shared->in_alive = false;
-    old_size = this->capacity;  // update the cache!
     closed = true;
   }
 
   shared->cv.notify_one();
-  if (success) { write_pos = wrapping_inc(write_pos, capacity); }
   return success;
 }
 
@@ -340,33 +284,25 @@ template <typename T> bool in<T>::put(T&& val)
 {
   if (closed) return false;
   bool success = false;
-  bool took_fast_path = false;
-  if (old_size < capacity)  // size <= old_size is always true!
-  {
-    // fast path: copy first, then take the lock
-    shared->storage[write_pos] = std::move(val);
-    took_fast_path = true;
-  }
-  // slow path: take the lock, then copy
   std::unique_lock lock(shared->mutex);
   shared->cv.wait(lock, [this] {
-    return this->shared->size < this->capacity || !this->shared->out_alive;
+    return this->shared->size < this->shared->capacity
+           || !this->shared->out_alive;
   });
 
   if (shared->out_alive) {
     // since the out is still alive, we know that
     // there is some space free in the storage
-    if (!took_fast_path) { shared->storage[write_pos] = std::move(val); }
+    shared->storage[write_pos] = std::move(val);
     shared->size += 1;
-    old_size = shared->size;
     success = true;
+    write_pos = wrapping_inc(write_pos, shared->capacity);
   } else {
     shared->in_alive = false;
     closed = true;
   }
 
   shared->cv.notify_one();
-  if (success) { write_pos = wrapping_inc(write_pos, capacity); }
   return success;
 }
 
@@ -378,13 +314,12 @@ template <typename T> void in<T>::wait_till_empty()
       return this->shared->size == 0 || !this->shared->out_alive;
     });
 
-    old_size = shared->size;
-    if (!this->shared->out_alive) {
+    if (!shared->out_alive) {
       shared->in_alive = false;
       closed = true;
     }
   }
-  this->shared->cv.notify_one();
+  shared->cv.notify_one();
 }
 
 template <typename T> void in<T>::close()
@@ -406,11 +341,7 @@ template <typename T> in<T>::~in()
 
 template <typename T>
 in<T>::in(std::shared_ptr<data<T>> shared_)
-    : shared(shared_)
-    , write_pos(0)
-    , old_size(0)
-    , capacity(shared_->capacity)
-    , closed(false)
+    : shared(shared_), write_pos(0), closed(false)
 {
   std::unique_lock lock(shared->mutex);
   shared->in_alive = true;
