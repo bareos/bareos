@@ -479,9 +479,10 @@ struct volume_config {
     blockfiles.emplace_back("block", 0, 0);
     recordfiles.emplace_back("record", 0, 0);
     if (dedup_block_size != 0) {
-      datafiles.emplace_back("full_blocks", 0, dedup_block_size, 0);
+      datafiles.emplace_back("full_blocks", datafiles.size(), dedup_block_size,
+                             0);
     }
-    datafiles.emplace_back("data", 1, 1, 0);
+    datafiles.emplace_back("data", datafiles.size(), 1, 0);
   }
 
   volume_config() = default;
