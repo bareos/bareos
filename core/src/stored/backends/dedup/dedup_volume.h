@@ -799,6 +799,8 @@ class volume {
         if (iter == files.rbegin()) {
           return false;
         } else {
+          // since iter is a reverse iterator
+          // `--' actually lets it go forward!
           --iter;
         }
       } else {
@@ -899,6 +901,9 @@ class volume {
         return written_loc{loc.file_index, data_written->begin,
                            data_written->end};
       }
+
+      // if we did not find the start record on this volume, we instead
+      // go on as if this was a normal record
     }
     // this is a real record header; or an unfinished one that was not started
     // in this volume; either way we need to use the real stream
