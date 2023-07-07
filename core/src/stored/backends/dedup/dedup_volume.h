@@ -814,7 +814,7 @@ class volume {
                  std::uint32_t size,
                  write_buffer& buf)
   {
-    if (file_index > config.datafiles.size()) { return false; }
+    if (file_index >= config.datafiles.size()) { return false; }
 
     auto& data_file = config.datafiles[file_index];
 
