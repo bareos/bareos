@@ -209,7 +209,6 @@ ssize_t dedup_file_device::d_write(int fd, const void* data, size_t size)
   if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
     dedup::volume& vol = found->second;
     ASSERT(vol.is_ok());
-    vol.changed_volume();
     SetEot();
     return scatter(vol, data, size);
   } else {
@@ -282,7 +281,6 @@ bool dedup_file_device::d_truncate(DeviceControlRecord*)
   if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
     dedup::volume& vol = found->second;
     ASSERT(vol.is_ok());
-    vol.changed_volume();
     return vol.reset();
   } else {
     return false;

@@ -618,7 +618,9 @@ class volume {
 
     if (blockfile.capacity() == blockfile.end()) {}
 
-    return blockfile.write(block);
+    auto result = blockfile.write(block);
+    if (result) { changed_volume(); }
+    return result;
   }
 
   bool is_at_end()
@@ -754,7 +756,9 @@ class volume {
   std::optional<std::uint64_t> write_records(record_header* headers,
                                              std::uint64_t count)
   {
-    return config.recordfiles.back().write(headers, count);
+    auto result = config.recordfiles.back().write(headers, count);
+    if (result) { changed_volume(); }
+    return result;
   }
 
   bool read_records(std::uint64_t record_index,
@@ -859,7 +863,6 @@ class volume {
 
   void write_current_config();
   bool load_config();
-  void changed_volume() { volume_changed = true; };
 
   struct written_loc {
     std::uint64_t file_index;
@@ -894,6 +897,7 @@ class volume {
         auto& datafile = config.datafiles[loc.file_index];
         std::optional data_written = datafile.write(loc.current, data, size);
         if (!data_written) { return std::nullopt; }
+        changed_volume();
 
         loc.current += (size);
         if (loc.current == loc.end) { unfinished_records.erase(found); }
@@ -934,7 +938,11 @@ class volume {
       loc.end = file_loc->end;
 
       std::optional data_written = datafile->write(loc.current, data, size);
-      if (!data_written) { return std::nullopt; }
+      if (!data_written) {
+        unfinished_records.erase(iter);
+        return std::nullopt;
+      }
+      changed_volume();
 
       loc.current += size;
       if (loc.current == loc.end) { unfinished_records.erase(iter); }
@@ -956,6 +964,8 @@ class volume {
 
   bool error{false};
   bool volume_changed{false};
+
+  void changed_volume() { volume_changed = true; };
 
   struct record {
     std::uint32_t VolSessionId;
