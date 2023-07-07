@@ -173,7 +173,11 @@ template <typename T> class file_based_array {
     return file.flush();
   }
 
-  inline void clear() { used = 0; }
+  inline void clear()
+  {
+    used = 0;
+    iter = 0;
+  }
 
   inline std::size_t size() const { return used; }
   inline std::size_t capacity() const { return cap; }
@@ -409,7 +413,11 @@ template <typename T> class file_based_vector {
 
   bool shrink_to_fit();
 
-  inline void clear() { used = 0; }
+  inline void clear()
+  {
+    used = 0;
+    iter = 0;
+  }
 
   inline std::size_t size() const { return used; }
 
