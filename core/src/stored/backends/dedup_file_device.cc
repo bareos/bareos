@@ -38,6 +38,13 @@
 
 namespace storagedaemon {
 
+static constexpr std::uint64_t block_number(std::uint32_t rfile,
+                                            std::uint32_t rblock)
+{
+  std::uint64_t block_num = static_cast<std::uint64_t>(rfile) << 32 | rblock;
+  return block_num;
+}
+
 /**
  * Mount the device.
  *
@@ -184,7 +191,7 @@ ssize_t scatter(dedup::volume& vol, const void* data, size_t size)
     std::size_t payload_size = payload_end - payload_start;
 
     std::optional written_loc
-        = vol.write_data(*block, *record, payload_start, payload_size);
+        = vol.append_data(*block, *record, payload_start, payload_size);
     if (!written_loc) { return -1; }
 
     records.emplace_back(*record, written_loc->begin, payload_size,
@@ -192,12 +199,12 @@ ssize_t scatter(dedup::volume& vol, const void* data, size_t size)
     current = payload_end;
   }
 
-  std::optional start = vol.write_records(records.data(), records.size());
+  std::optional start = vol.append_records(records.data(), records.size());
   if (!start) {
     // error: could not write records
     return -1;
   }
-  if (!vol.write_block(dedup::block_header{*block, *start, records.size()})) {
+  if (!vol.append_block(dedup::block_header{*block, *start, records.size()})) {
     return -1;
   }
 
@@ -210,15 +217,28 @@ ssize_t dedup_file_device::d_write(int fd, const void* data, size_t size)
     dedup::volume& vol = found->second;
     ASSERT(vol.is_ok());
     SetEot();
+    auto current_block = block_number(file, block_num);
+    if (current_block == 0 && vol.size() == 1) {
+      // we are currently trying to relabel the volume
+      vol.reset();
+    }
+
+    if (current_block != vol.size()) {
+      // error: not at end of device
+      return -1;
+    }
     return scatter(vol, data, size);
   } else {
     return -1;
   }
 }
 
-ssize_t gather(dedup::volume& vol, char* data, std::size_t size)
+ssize_t gather(dedup::volume& vol,
+               std::uint64_t blocknum,
+               char* data,
+               std::size_t size)
 {
-  std::optional block = vol.read_block();
+  std::optional block = vol.read_block(blocknum);
   dedup::write_buffer buf{data, size};
 
   if (!block) { return -1; }
@@ -247,8 +267,9 @@ ssize_t dedup_file_device::d_read(int fd, void* data, size_t size)
   if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
     dedup::volume& vol = found->second;
     ASSERT(vol.is_ok());
-    ssize_t bytes_written = gather(vol, static_cast<char*>(data), size);
-    if (vol.is_at_end()) {
+    auto block = block_number(file, block_num);
+    ssize_t bytes_written = gather(vol, block, static_cast<char*>(data), size);
+    if (block + 1 == vol.size()) {
       SetEot();
     } else {
       ClearEot();
@@ -292,11 +313,10 @@ bool dedup_file_device::rewind(DeviceControlRecord* dcr)
   if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
     dedup::volume& vol = found->second;
     ASSERT(vol.is_ok());
-    if (!vol.goto_begin()) { return false; }
     block_num = 0;
     file = 0;
     file_addr = 0;
-    if (vol.is_at_end()) {
+    if (vol.size() == 0) {
       SetEot();
     } else {
       ClearEot();
@@ -309,19 +329,9 @@ bool dedup_file_device::rewind(DeviceControlRecord* dcr)
 
 bool dedup_file_device::UpdatePos(DeviceControlRecord*)
 {
-  if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
-    dedup::volume& vol = found->second;
-    ASSERT(vol.is_ok());
-    std::size_t pos = vol.get_active_block_file().current();
-
-    file_addr = 0;
-    file = pos >> 32;
-    block_num = pos & ((1ULL << 32) - 1);
-
-    return true;
-  } else {
-    return false;
-  }
+  // the volume itself is stateless
+  // so we have nothing to do
+  return true;
 }
 
 bool dedup_file_device::Reposition(DeviceControlRecord* dcr,
@@ -336,11 +346,10 @@ bool dedup_file_device::Reposition(DeviceControlRecord* dcr,
     dedup::volume& vol = found->second;
     ASSERT(vol.is_ok());
 
-    std::uint64_t block_num = static_cast<std::uint64_t>(rfile) << 32 | rblock;
+    block_num = rblock;
+    file = rfile;
 
-    if (!vol.goto_block(block_num)) { return false; }
-
-    if (vol.is_at_end()) {
+    if (block_number(file, block_num) == vol.size()) {
       SetEot();
     } else {
       ClearEot();
@@ -356,7 +365,9 @@ bool dedup_file_device::eod(DeviceControlRecord* dcr)
   if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
     dedup::volume& vol = found->second;
     ASSERT(vol.is_ok());
-    if (!vol.goto_end()) { return false; }
+    auto block = vol.size();
+    block_num = static_cast<std::uint32_t>(block);
+    file = static_cast<std::uint32_t>(block >> 32);
     SetEot();
     return UpdatePos(dcr);
   } else {

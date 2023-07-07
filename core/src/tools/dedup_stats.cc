@@ -71,13 +71,9 @@ int main(int argc, const char* argv[])
 
   std::vector<dedup::record_header> records;
   for (auto& record_file : vol.config.recordfiles) {
-    if (!record_file.goto_begin()) {
-      std::cerr << "Error while reading " << record_file.path() << std::endl;
-    }
-
     auto current_size = records.size();
     records.resize(current_size + record_file.size());
-    record_file.read(records.data() + current_size, record_file.size());
+    record_file.read_at(0, records.data() + current_size, record_file.size());
   }
 
   std::unordered_map<std::size_t, std::size_t> sizes;

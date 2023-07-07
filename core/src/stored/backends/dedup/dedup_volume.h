@@ -309,8 +309,6 @@ class record_file {
 
   std::uint64_t begin() const { return start_record; }
 
-  std::uint64_t current() const { return vec.current() + start_record; }
-
   std::uint64_t end() const { return vec.size() + start_record; }
 
   std::uint64_t size() const { return vec.size(); }
@@ -323,21 +321,17 @@ class record_file {
     return vec.shrink_to_fit();
   }
 
-  bool goto_end() { return vec.move_to(vec.size()); }
-
-  bool goto_begin() { return vec.move_to(0); }
-
-  bool goto_record(std::uint32_t record) { return vec.move_to(record); }
-
-  std::optional<std::uint64_t> write(const record_header* headers,
-                                     std::uint64_t count)
+  std::optional<std::uint64_t> append(const record_header* headers,
+                                      std::uint64_t count)
   {
-    return vec.write(headers, count);
+    return vec.push_back(headers, count);
   }
 
-  bool read(record_header* headers, std::uint64_t count)
+  bool read_at(std::uint32_t record,
+               record_header* headers,
+               std::uint64_t count)
   {
-    return vec.read(headers, count);
+    return vec.read_at(record, headers, count);
   }
 
   bool is_ok() { return is_initialized && vec.is_ok(); }
@@ -392,10 +386,6 @@ class data_file {
     return vec.shrink_to_fit();
   }
 
-  bool goto_end() { return vec.move_to(vec.size()); }
-
-  bool goto_begin() { return vec.move_to(0); }
-
   bool open_inside(util::raii_fd& dir, int mode, DeviceMode dev_mode)
   {
     if (is_initialized) { return false; }
@@ -417,17 +407,17 @@ class data_file {
     }
   };
 
-  std::optional<written_loc> write(std::uint64_t offset,
-                                   const char* data,
-                                   std::size_t size)
+  std::optional<written_loc> write_at(std::uint64_t offset,
+                                      const char* data,
+                                      std::size_t size)
   {
     if (!accepts_records_of_size(size)) { return std::nullopt; }
 
-    std::optional start = vec.write_at(offset, data, size);
+    bool success = vec.write_at(offset, data, size);
 
-    if (!start) { return std::nullopt; }
+    if (!success) { return std::nullopt; }
 
-    return written_loc{*start, *start + size};
+    return written_loc{offset, offset + size};
   }
   std::optional<written_loc> reserve(std::size_t size)
   {
@@ -448,11 +438,9 @@ class data_file {
 
   bool is_ok() const { return !error && vec.is_ok(); }
 
-  bool read_data(char* buf, std::uint64_t start, std::uint64_t size)
+  bool read_at(char* buf, std::uint64_t start, std::uint64_t size)
   {
-    if (!vec.move_to(start)) { return false; }
-
-    return vec.read(buf, size);
+    return vec.read_at(start, buf, size);
   }
 
  private:
@@ -612,7 +600,7 @@ class volume {
     }
   }
 
-  bool write_block(const block_header& block)
+  bool append_block(const block_header& block)
   {
     auto& blockfile = config.blockfiles.back();
 
@@ -623,11 +611,7 @@ class volume {
     return result;
   }
 
-  bool is_at_end()
-  {
-    auto& blockfile = config.blockfiles.back();
-    return blockfile.current() == blockfile.end();
-  }
+  std::uint64_t size() const { return config.blockfiles.back().end(); }
 
   data_file* get_data_file_by_size(std::uint32_t record_size)
   {
@@ -683,31 +667,10 @@ class volume {
     return true;
   }
 
-  bool goto_begin()
+  std::optional<block_header> read_block(std::uint64_t block_num)
   {
-    for (auto& blockfile : config.blockfiles) {
-      if (!blockfile.goto_begin()) { return false; }
-    }
-
-    for (auto& recordfile : config.recordfiles) {
-      if (!recordfile.goto_begin()) { return false; }
-    }
-
-    for (auto& datafile : config.datafiles) {
-      if (!datafile.goto_begin()) { return false; }
-    }
-    return true;
-  }
-
-  bool goto_block(std::size_t block_num)
-  {
-    // todo: if we are not at the end of the device
-    //       we should read the block header and position
-    //       the record and data files as well
-    //       otherwise set the record and data files to their respective end
-
     auto& files = config.blockfiles;
-    if (block_num == files.back().end()) { return goto_end(); }
+    if (files.size() == 0) { return std::nullopt; }
 
     // iter points to the first block file for which file.begin() <=
     // block_num
@@ -720,43 +683,17 @@ class volume {
     // with begin() == 0
     if (iter == files.rend()) {
       // warning: some blocks are missing
-      return false;
+      return std::nullopt;
     }
 
-    return iter->goto_block(block_num);
+    if (!iter->goto_block(block_num)) { return std::nullopt; }
+    return iter->read_block();
   }
 
-  bool goto_end()
+  std::optional<std::uint64_t> append_records(record_header* headers,
+                                              std::uint64_t count)
   {
-    for (auto& blockfile : config.blockfiles) {
-      if (!blockfile.goto_end()) { return false; }
-    }
-    for (auto& recordfile : config.recordfiles) {
-      if (!recordfile.goto_end()) { return false; }
-    }
-    for (auto& datafile : config.datafiles) {
-      if (!datafile.goto_end()) { return false; }
-    }
-    return true;
-  }
-
-  block_file& get_active_block_file()
-  {
-    // todo: this is not right
-    return config.blockfiles.back();
-  }
-
-  std::optional<block_header> read_block()
-  {
-    auto& blockfile = get_active_block_file();
-
-    return blockfile.read_block();
-  }
-
-  std::optional<std::uint64_t> write_records(record_header* headers,
-                                             std::uint64_t count)
-  {
-    auto result = config.recordfiles.back().write(headers, count);
+    auto result = config.recordfiles.back().append(headers, count);
     if (result) { changed_volume(); }
     return result;
   }
@@ -788,11 +725,9 @@ class volume {
 
 
     for (;;) {
-      if (!iter->goto_record(record_index)) { return false; }
-
       std::uint64_t num_records = std::min(iter->end() - record_index, count);
 
-      if (!iter->read(headers, num_records)) { return false; }
+      if (!iter->read_at(record_index, headers, num_records)) { return false; }
 
       count -= num_records;
       // this is a reverse iterator, so we need to go backwards!
@@ -824,10 +759,9 @@ class volume {
 
     auto& data_file = config.datafiles[file_index];
 
-    // todo: check we are in the right position
     char* data = buf.reserve(size);
     if (!data) { return false; }
-    if (!data_file.read_data(data, start, size)) { return false; }
+    if (!data_file.read_at(data, start, size)) { return false; }
     return true;
   }
 
@@ -870,7 +804,7 @@ class volume {
     std::uint64_t end;
   };
 
-  std::optional<written_loc> write_data(
+  std::optional<written_loc> append_data(
       const bareos_block_header& blockheader,
       const bareos_record_header& recordheader,
       const char* data,
@@ -895,7 +829,7 @@ class volume {
         }
 
         auto& datafile = config.datafiles[loc.file_index];
-        std::optional data_written = datafile.write(loc.current, data, size);
+        std::optional data_written = datafile.write_at(loc.current, data, size);
         if (!data_written) { return std::nullopt; }
         changed_volume();
 
@@ -937,7 +871,7 @@ class volume {
       loc.current = file_loc->begin;
       loc.end = file_loc->end;
 
-      std::optional data_written = datafile->write(loc.current, data, size);
+      std::optional data_written = datafile->write_at(loc.current, data, size);
       if (!data_written) {
         unfinished_records.erase(iter);
         return std::nullopt;

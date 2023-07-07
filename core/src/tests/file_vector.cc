@@ -73,24 +73,19 @@ TEST(FileBasedVector, write)
 
   constexpr std::string_view test_view = "Hallo, Welt! Dies ist ein Test!";
 
-  std::optional res = vec.write(test_view.data(), test_view.size());
+  std::optional res = vec.push_back(test_view.data(), test_view.size());
 
   EXPECT_PRED1(has_value<std::remove_reference_t<decltype(*res)>>, res);
+  EXPECT_EQ(*res, 0);
   struct stat st;
   fstat(fd, &st);
 
   EXPECT_EQ(st.st_size, 1024);
 
   EXPECT_EQ(vec.size(), test_view.size());
-  EXPECT_EQ(vec.current(), test_view.size());
-
-  bool success = vec.move_to(0);
-  EXPECT_EQ(vec.current(), 0);
-
-  EXPECT_TRUE(success);
 
   char read[test_view.size()];
-  success = vec.read(read, test_view.size());
+  bool success = vec.read_at(*res, read, test_view.size());
 
   EXPECT_TRUE(success);
 
@@ -119,7 +114,7 @@ TEST(FileBasedVector, reserve_and_write_at)
 
   std::optional where1 = vec.reserve(test_view.size());
   EXPECT_PRED1(has_value<std::remove_reference_t<decltype(*where1)>>, where1);
-  EXPECT_EQ(vec.current(), test_view.size());
+  EXPECT_EQ(*where1, 0);
   EXPECT_EQ(vec.size(), test_view.size());
 
   struct stat st;
@@ -127,9 +122,9 @@ TEST(FileBasedVector, reserve_and_write_at)
   fstat(fd, &st);
   EXPECT_EQ(st.st_size, 1024);
 
-  std::optional where2 = vec.write(test_view.data(), test_view.size());
+  std::optional where2 = vec.push_back(test_view.data(), test_view.size());
   EXPECT_PRED1(has_value<std::remove_reference_t<decltype(*where2)>>, where2);
-  EXPECT_EQ(vec.current(), 2 * test_view.size());
+  EXPECT_EQ(*where2, test_view.size());
   EXPECT_EQ(vec.size(), 2 * test_view.size());
 
   fstat(fd, &st);
@@ -137,14 +132,13 @@ TEST(FileBasedVector, reserve_and_write_at)
 
   std::optional res = vec.write_at(*where1, test_view.data(), test_view.size());
   EXPECT_PRED1(has_value<std::remove_reference_t<decltype(*res)>>, res);
-  EXPECT_EQ(vec.current(), 2 * test_view.size());
+  EXPECT_EQ(*res, *where1);
   EXPECT_EQ(vec.size(), 2 * test_view.size());
 
   char read1[test_view.size()];
   char read2[test_view.size()];
   auto success1 = vec.read_at(*where1, read1, test_view.size());
   auto success2 = vec.read_at(*where2, read2, test_view.size());
-  EXPECT_EQ(vec.current(), 2 * test_view.size());
 
   EXPECT_TRUE(vec.is_ok());
 
