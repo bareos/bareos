@@ -211,7 +211,7 @@ class record_file {
  public:
   record_file() = default;
   record_file(util::raii_fd&& file, std::uint64_t start, std::uint64_t count)
-    : start_record{start}, vec{std::move(file), count, 128 * 1024}
+      : start_record{start}, vec{std::move(file), count}
   {
   }
 
@@ -222,6 +222,9 @@ class record_file {
   std::uint64_t end() const { return vec.size() + start_record; }
 
   std::uint64_t size() const { return vec.size(); }
+  std::uint64_t capacity() const { return vec.capacity(); }
+
+  bool is_full() const { return capacity() == size(); }
 
   bool truncate()
   {
@@ -236,18 +239,19 @@ class record_file {
     return vec.push_back(headers, count);
   }
 
-  bool read_at(std::uint32_t record,
+  bool read_at(std::uint64_t record,
                record_header* headers,
                std::uint64_t count) const
   {
-    return vec.read_at(record, headers, count);
+    if (record < start_record) return false;
+    return vec.read_at(record - start_record, headers, count);
   }
 
   bool is_ok() { return vec.is_ok(); }
 
  private:
   std::uint64_t start_record{};
-  util::file_based_vector<record_header> vec{};
+  util::file_based_array<record_header> vec{};
 };
 
 class data_file {
@@ -461,7 +465,7 @@ struct volume_data {
   {
     for (auto& blockfile : layout.blockfiles) {
       auto file = open_inside(dir, blockfile.path.c_str(), mode, dev_mode);
-      if (dev_mode == DeviceMode::CREATE_READ_WRITE) { file.resize(64); }
+      if (dev_mode == DeviceMode::CREATE_READ_WRITE) { file.resize(1024); }
       auto& result = blockfiles.emplace_back(std::move(file), blockfile.start,
                                              blockfile.count);
       if (!result.is_ok()) {
@@ -472,6 +476,7 @@ struct volume_data {
 
     for (auto& recordfile : layout.recordfiles) {
       auto file = open_inside(dir, recordfile.path.c_str(), mode, dev_mode);
+      if (dev_mode == DeviceMode::CREATE_READ_WRITE) { file.resize(1024); }
       auto& result = recordfiles.emplace_back(std::move(file), recordfile.start,
                                               recordfile.count);
       if (!result.is_ok()) {
@@ -509,6 +514,17 @@ struct volume_data {
   {
     auto& result
         = blockfiles.emplace_back(std::move(file), blockfiles.back().end(), 0);
+    if (!result.is_ok()) {
+      error = true;
+      return false;
+    }
+    return true;
+  }
+
+  bool push_record_file(util::raii_fd file)
+  {
+    auto& result = recordfiles.emplace_back(std::move(file),
+                                            recordfiles.back().end(), 0);
     if (!result.is_ok()) {
       error = true;
       return false;
@@ -594,7 +610,7 @@ class volume {
           = "block-" + std::to_string(contents.blockfiles.size());
       auto file = open_inside(dir, block_name.c_str(), permissions,
                               DeviceMode::CREATE_READ_WRITE);
-      file.resize(64);
+      file.resize(1024);
       if (!contents.push_block_file(std::move(file))) { return false; }
     }
 
@@ -686,9 +702,35 @@ class volume {
   std::optional<std::uint64_t> append_records(record_header* headers,
                                               std::uint64_t count)
   {
-    auto result = contents.recordfiles.back().append(headers, count);
-    if (result) { changed_volume(); }
-    return result;
+    std::optional<std::uint64_t> start;
+    while (count > 0) {
+      if (contents.recordfiles.back().is_full()) {
+        std::string record_name
+            = "record-" + std::to_string(contents.recordfiles.size());
+        auto file = open_inside(dir, record_name.c_str(), permissions,
+                                DeviceMode::CREATE_READ_WRITE);
+        file.resize(1024);
+        if (!contents.push_record_file(std::move(file))) { return false; }
+      }
+      auto& recordfile = contents.recordfiles.back();
+
+      auto records_to_write
+          = std::min(count, recordfile.capacity() - recordfile.size());
+
+
+      if (std::optional res = recordfile.append(headers, records_to_write);
+          res.has_value()) {
+        if (!start) { start = res; }
+      } else {
+        return std::nullopt;
+      }
+
+      count -= records_to_write;
+      headers += records_to_write;
+    }
+
+    if (start) { changed_volume(); }
+    return start;
   }
 
   bool read_records(std::uint64_t record_index,
