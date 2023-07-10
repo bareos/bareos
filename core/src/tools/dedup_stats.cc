@@ -70,7 +70,7 @@ int main(int argc, const char* argv[])
   }
 
   std::vector<dedup::record_header> records;
-  for (auto& record_file : vol.config.recordfiles) {
+  for (auto& record_file : vol.recordfiles()) {
     auto current_size = records.size();
     records.resize(current_size + record_file.size());
     record_file.read_at(0, records.data() + current_size, record_file.size());

@@ -36,15 +36,15 @@ void volume::write_current_config()
   std::vector<config::loaded_data_section> datasections;
   std::vector<config::loaded_unfinished_record> unfinished;
 
-  for (auto& blockfile : config.blockfiles) {
+  for (auto& blockfile : contents.blockfiles) {
     blocksections.emplace_back(blockfile.begin(), blockfile.end(),
                                blockfile.path());
   }
-  for (auto& recordfile : config.recordfiles) {
+  for (auto& recordfile : contents.recordfiles) {
     recordsections.emplace_back(recordfile.begin(), recordfile.end(),
                                 recordfile.path());
   }
-  for (auto& datafile : config.datafiles) {
+  for (auto& datafile : contents.datafiles) {
     datasections.emplace_back(datafile.index(), datafile.blocksize(),
                               datafile.path(), datafile.end());
   }
@@ -58,61 +58,53 @@ void volume::write_current_config()
 
   std::vector<std::byte> bytes = config::to_bytes(
       my_general_info, datasections, recordsections, blocksections, unfinished);
-  if (ftruncate(configfile.fd.get(), 0) != 0) {
+  if (!config.resize(0)) {
     error = true;
-  } else if (::lseek(configfile.fd.get(), 0, SEEK_SET) != 0) {
-    error = true;
-  } else if (write(configfile.fd.get(), &bytes.front(), bytes.size())
-             != static_cast<ssize_t>(bytes.size())) {
+  } else if (!config.write_at(0, bytes.data(), bytes.size())) {
     error = true;
   }
 }
 
-bool volume::load_config()
+std::optional<volume_layout> volume::load_layout()
 {
-  auto config_end = lseek(configfile.fd.get(), 0, SEEK_END);
-  auto config_start = lseek(configfile.fd.get(), 0, SEEK_SET);
+  std::optional size = config.size_then_reset();
 
-  if (config_start != 0 || config_start > config_end) {
-    // error: cannot determine config file size
-    return false;
-  }
+  if (!size.has_value()) { return std::nullopt; }
 
-  std::vector<std::byte> bytes(config_end - config_start);
+  std::vector<std::byte> bytes(size.value());
 
-  if (read(configfile.fd.get(), &bytes.front(), bytes.size())
-      != static_cast<ssize_t>(bytes.size())) {
+  if (!config.read(bytes.data(), bytes.size())) {
     // error: cannot read config file
-    return false;
+    return std::nullopt;
   }
 
   std::optional loaded_config = config::from_bytes(bytes);
-  if (!loaded_config) { return false; }
+  if (!loaded_config) { return std::nullopt; }
 
   // at the moment we only support configurations that have
   // exactly one block and one record file.
   // This might change in the future
   if (loaded_config->blockfiles.size() != 1) {
     // error: to many/few block files
-    return false;
+    return std::nullopt;
   }
 
   if (loaded_config->recordfiles.size() != 1) {
     // error: to many/few record files
-    return false;
+    return std::nullopt;
   }
 
   if (loaded_config->info.block_header_size != sizeof(bareos_block_header)
       || loaded_config->info.dedup_block_header_size != sizeof(block_header)) {
     // error: bad block header size
-    return false;
+    return std::nullopt;
   }
 
   if (loaded_config->info.record_header_size != sizeof(bareos_record_header)
       || loaded_config->info.dedup_record_header_size
              != sizeof(record_header)) {
     // error: bad record header size
-    return false;
+    return std::nullopt;
   }
 
   for (auto& rec : loaded_config->unfinished) {
@@ -123,11 +115,10 @@ bool volume::load_config()
     auto [_, inserted] = unfinished_records.emplace(unfinished_record, loc);
     if (!inserted) {
       // error: bad unfinished record
-      return false;
+      return std::nullopt;
     }
   }
 
-  config = volume_config(std::move(loaded_config.value()));
-  return true;
+  return volume_layout(std::move(loaded_config.value()));
 }
 } /* namespace dedup */

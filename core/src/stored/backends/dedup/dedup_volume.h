@@ -133,76 +133,6 @@ struct write_buffer {
   }
 };
 
-struct volume_file {
-  std::string path{};
-  util::raii_fd fd{};
-
-  volume_file() = default;
-  volume_file(std::string_view path) : path{path} {}
-
-  bool open_inside(util::raii_fd& dir, int mode, DeviceMode dev_mode)
-  {
-    int flags;
-    switch (dev_mode) {
-      case DeviceMode::CREATE_READ_WRITE: {
-        flags = O_CREAT | O_RDWR | O_BINARY;
-      } break;
-      case DeviceMode::OPEN_READ_WRITE: {
-        flags = O_RDWR | O_BINARY;
-      } break;
-      case DeviceMode::OPEN_READ_ONLY: {
-        flags = O_RDONLY | O_BINARY;
-      } break;
-      case DeviceMode::OPEN_WRITE_ONLY: {
-        flags = O_WRONLY | O_BINARY;
-      } break;
-      default: {
-        return false;
-      }
-    }
-    fd = util::raii_fd(dir.get(), path.c_str(), flags, mode);
-    return is_ok();
-  }
-
-  bool truncate(std::size_t size = 0)
-  {
-    if (ftruncate(fd.get(), size) != 0) { return false; }
-    return true;
-  }
-
-  bool goto_end()
-  {
-    if (lseek(fd.get(), 0, SEEK_END) < 0) { return false; }
-    return true;
-  }
-
-  bool goto_begin(ssize_t offset = 0)
-  {
-    if (offset < 0) { return false; }
-    if (lseek(fd.get(), offset, SEEK_SET) != offset) { return false; }
-    return true;
-  }
-
-  std::optional<std::size_t> current_pos()
-  {
-    auto pos = lseek(fd.get(), 0, SEEK_CUR);
-    if (pos < 0) return std::nullopt;
-    return static_cast<std::size_t>(pos);
-  }
-
-  bool write(const void* data, std::size_t length)
-  {
-    return ::write(fd.get(), data, length) == static_cast<ssize_t>(length);
-  }
-
-  bool read(void* data, std::size_t length)
-  {
-    return ::read(fd.get(), data, length) == static_cast<ssize_t>(length);
-  }
-
-  bool is_ok() const { return fd.is_ok(); }
-};
-
 static util::raii_fd open_inside(util::raii_fd& dir,
                                  const char* path,
                                  int mode,
@@ -232,11 +162,11 @@ static util::raii_fd open_inside(util::raii_fd& dir,
 class block_file {
  public:
   block_file() = default;
-  block_file(std::string_view path, std::uint64_t start, std::uint64_t count)
-      : start_block{start}, start_size{count}, name{path}
+  block_file(util::raii_fd&& file, std::uint64_t start, std::uint64_t count)
+      : start_block{start}, vec{std::move(file), count}
   {
   }
-  const char* path() const { return name.c_str(); }
+  const char* path() const { return vec.backing_file().relative_path(); }
 
   std::uint32_t begin() const { return start_block; }
 
@@ -249,7 +179,6 @@ class block_file {
   bool truncate()
   {
     start_block = 0;
-    start_size = 0;
     vec.clear();
     return true;
   }
@@ -274,38 +203,22 @@ class block_file {
     }
   }
 
-  bool is_ok() { return is_initialized && vec.is_ok(); }
-
-  bool open_inside(util::raii_fd& dir, int mode, DeviceMode dev_mode)
-  {
-    if (is_initialized) { return false; }
-    is_initialized = true;
-
-    auto file = dedup::open_inside(dir, name.c_str(), mode, dev_mode);
-    file.resize(1024 * vec.elem_size);
-
-    vec = std::move(
-        util::file_based_array<block_header>(std::move(file), start_size));
-    return vec.is_ok();
-  }
+  bool is_ok() { return vec.is_ok(); }
 
  private:
-  util::file_based_array<block_header> vec{};
   std::uint64_t start_block{};
-  std::uint64_t start_size{};
-  std::string name{};
-  bool is_initialized{false};
+  util::file_based_array<block_header> vec{};
 };
 
 class record_file {
  public:
   record_file() = default;
-  record_file(std::string_view path, std::uint64_t start, std::uint64_t count)
-      : start_record{start}, start_size{count}, name{path}
+  record_file(util::raii_fd&& file, std::uint64_t start, std::uint64_t count)
+      : start_record{start}, vec{std::move(file), count, 128 * 1024}
   {
   }
 
-  const char* path() const { return name.c_str(); }
+  const char* path() const { return vec.backing_file().relative_path(); }
 
   std::uint64_t begin() const { return start_record; }
 
@@ -316,7 +229,6 @@ class record_file {
   bool truncate()
   {
     start_record = 0;
-    start_size = 0;
     vec.clear();
     return vec.shrink_to_fit();
   }
@@ -329,54 +241,38 @@ class record_file {
 
   bool read_at(std::uint32_t record,
                record_header* headers,
-               std::uint64_t count)
+               std::uint64_t count) const
   {
     return vec.read_at(record, headers, count);
   }
 
-  bool is_ok() { return is_initialized && vec.is_ok(); }
-
-  bool open_inside(util::raii_fd& dir, int mode, DeviceMode dev_mode)
-  {
-    if (is_initialized) { return false; }
-    is_initialized = true;
-
-    auto file = dedup::open_inside(dir, name.c_str(), mode, dev_mode);
-
-    vec = std::move(util::file_based_vector<record_header>(
-        std::move(file), start_size, 128 * 1024));
-    return vec.is_ok();
-  }
+  bool is_ok() { return vec.is_ok(); }
 
  private:
-  util::file_based_vector<record_header> vec{};
   std::uint64_t start_record{};
-  std::uint64_t start_size{};
-  std::string name{};
-  bool is_initialized{false};
+  util::file_based_vector<record_header> vec{};
 };
 
 class data_file {
  public:
   data_file() = default;
-  data_file(std::string_view path,
+  data_file(util::raii_fd&& file,
             std::uint64_t file_index,
             std::uint64_t block_size,
             std::uint64_t data_used,
             bool read_only = false)
       : file_index{file_index}
       , block_size{block_size}
-      , data_used{data_used}
-      , name{path}
       , read_only{read_only}
-      , error{block_size == 0}
+      , vec{std::move(file), data_used, 128 * 1024}
+      , error{block_size == 0 || !vec.is_ok()}
   {
   }
 
   std::uint64_t index() const { return file_index; }
   std::uint64_t blocksize() const { return block_size; }
 
-  const char* path() const { return name.c_str(); }
+  const char* path() const { return vec.backing_file().relative_path(); }
 
   std::uint64_t end() const { return vec.size(); }
 
@@ -384,18 +280,6 @@ class data_file {
   {
     vec.clear();
     return vec.shrink_to_fit();
-  }
-
-  bool open_inside(util::raii_fd& dir, int mode, DeviceMode dev_mode)
-  {
-    if (is_initialized) { return false; }
-    is_initialized = true;
-
-    auto file = dedup::open_inside(dir, name.c_str(), mode, dev_mode);
-
-    vec = std::move(
-        util::file_based_vector<char>(std::move(file), data_used, 128 * 1024));
-    return vec.is_ok();
   }
 
   struct written_loc {
@@ -438,43 +322,76 @@ class data_file {
 
   bool is_ok() const { return !error && vec.is_ok(); }
 
-  bool read_at(char* buf, std::uint64_t start, std::uint64_t size)
+  bool read_at(char* buf, std::uint64_t start, std::uint64_t size) const
   {
     return vec.read_at(start, buf, size);
   }
 
  private:
-  util::file_based_vector<char> vec{};
   std::uint64_t file_index{};
   std::uint64_t block_size{};
-  std::uint64_t data_used{};
-  std::string name{};
   bool read_only{true};
+  util::file_based_vector<char> vec{};
   bool error{true};
-  bool is_initialized{false};
 };
 
-struct volume_config {
+struct volume_layout {
+  struct block_file {
+    std::string path;
+    std::size_t start;
+    std::size_t count;
+
+    block_file() = default;
+    block_file(std::string_view path, std::size_t start, std::size_t count)
+        : path{path}, start{start}, count{count}
+    {
+    }
+  };
+  struct record_file {
+    std::string path;
+    std::size_t start;
+    std::size_t count;
+    record_file() = default;
+    record_file(std::string_view path, std::size_t start, std::size_t count)
+        : path{path}, start{start}, count{count}
+    {
+    }
+  };
+  struct data_file {
+    std::string path;
+    std::size_t file_index;
+    std::size_t chunk_size;
+    std::size_t bytes_used;
+    data_file() = default;
+    data_file(std::string_view path,
+              std::size_t file_index,
+              std::size_t chunk_size,
+              std::size_t bytes_used)
+        : path{path}
+        , file_index{file_index}
+        , chunk_size{chunk_size}
+        , bytes_used{bytes_used}
+    {
+    }
+  };
   std::vector<block_file> blockfiles;
   std::vector<record_file> recordfiles;
   std::vector<data_file> datafiles;
 
-  void create_default(std::uint32_t dedup_block_size)
+  static volume_layout create_default(std::uint32_t dedup_block_size)
   {
-    blockfiles.clear();
-    recordfiles.clear();
-    datafiles.clear();
-    blockfiles.emplace_back("block", 0, 0);
-    recordfiles.emplace_back("record", 0, 0);
+    volume_layout layout;
+    layout.blockfiles.emplace_back("block", 0, 0);
+    layout.recordfiles.emplace_back("record", 0, 0);
     if (dedup_block_size != 0) {
-      datafiles.emplace_back("full_blocks", datafiles.size(), dedup_block_size,
-                             0);
+      layout.datafiles.emplace_back("full_blocks", layout.datafiles.size(),
+                                    dedup_block_size, 0);
     }
-    datafiles.emplace_back("data", datafiles.size(), 1, 0);
+    layout.datafiles.emplace_back("data", layout.datafiles.size(), 1, 0);
+    return layout;
   }
 
-  volume_config() = default;
-  volume_config(config::loaded_config&& conf)
+  volume_layout(config::loaded_config&& conf)
   {
     for (auto&& blocksection : conf.blockfiles) {
       blockfiles.emplace_back(std::move(blocksection.path),
@@ -482,49 +399,122 @@ struct volume_config {
                               blocksection.num_blocks);
     }
     // todo: we need to check wether the start blocks are unique or not!
-    std::sort(
-        blockfiles.begin(), blockfiles.end(),
-        [](const auto& l, const auto& r) { return l.begin() < r.begin(); });
+    std::sort(blockfiles.begin(), blockfiles.end(),
+              [](const auto& l, const auto& r) { return l.start < r.start; });
 
-    for (std::size_t i = 0; i + 1 < blockfiles.size(); ++i) {
-      auto& current = blockfiles[i];
-      auto& next = blockfiles[i + 1];
-      if (current.end() > next.begin()) {
-        // error: blocks are not unique
-      } else if (current.end() < next.begin()) {
-        // warning: missing blocks
-      }
-    }
     for (auto&& recordsection : conf.recordfiles) {
       recordfiles.emplace_back(std::move(recordsection.path),
                                recordsection.start_record,
                                recordsection.num_records);
     }
     // todo: we need to check wether the start blocks are unique or not!
-    std::sort(
-        recordfiles.begin(), recordfiles.end(),
-        [](const auto& l, const auto& r) { return l.begin() < r.begin(); });
-
-    for (std::size_t i = 0; i + 1 < recordfiles.size(); ++i) {
-      auto& current = recordfiles[i];
-      auto& next = recordfiles[i + 1];
-      if (current.end() > next.begin()) {
-        // error: records are not unique
-      } else if (current.end() < next.begin()) {
-        // warning: missing records
-      }
-    }
+    std::sort(recordfiles.begin(), recordfiles.end(),
+              [](const auto& l, const auto& r) { return l.start < r.start; });
 
     for (auto&& datasection : conf.datafiles) {
       datafiles.emplace_back(std::move(datasection.path),
                              datasection.file_index, datasection.block_size,
                              datasection.data_used);
     }
-    // todo: we need to check wether the indices are unique or not!
-    std::sort(
-        datafiles.begin(), datafiles.end(),
-        [](const auto& l, const auto& r) { return l.index() < r.index(); });
+    // todo: we need to check whether the indices are unique or not!
+    std::sort(datafiles.begin(), datafiles.end(),
+              [](const auto& l, const auto& r) {
+                return l.file_index < r.file_index;
+              });
   }
+
+  volume_layout() = default;
+
+  bool validate()
+  {
+    for (std::size_t i = 0; i + 1 < blockfiles.size(); ++i) {
+      auto& current = blockfiles[i];
+      auto& next = blockfiles[i + 1];
+      if (current.start + current.count > next.start) {
+        // error: blocks are not unique
+        return false;
+      } else if (current.start + current.count < next.start) {
+        // warning: missing blocks
+        return false;
+      }
+    }
+
+    for (std::size_t i = 0; i + 1 < recordfiles.size(); ++i) {
+      auto& current = recordfiles[i];
+      auto& next = recordfiles[i + 1];
+      if (current.start + current.count > next.start) {
+        // error: records are not unique
+        return false;
+      } else if (current.start + current.count < next.start) {
+        // warning: missing records
+        return false;
+      }
+    }
+    return true;
+  }
+
+ private:
+};
+
+struct volume_data {
+  volume_data() = default;
+  volume_data(volume_layout&& layout,
+              util::raii_fd& dir,
+              int mode,
+              DeviceMode dev_mode)
+      : error{false}
+  {
+    for (auto& blockfile : layout.blockfiles) {
+      auto file = open_inside(dir, blockfile.path.c_str(), mode, dev_mode);
+      auto& result = blockfiles.emplace_back(std::move(file), blockfile.start,
+                                             blockfile.count);
+      if (!result.is_ok()) {
+        error = true;
+        return;
+      }
+    }
+
+    for (auto& recordfile : layout.recordfiles) {
+      auto file = open_inside(dir, recordfile.path.c_str(), mode, dev_mode);
+      auto& result = recordfiles.emplace_back(std::move(file), recordfile.start,
+                                              recordfile.count);
+      if (!result.is_ok()) {
+        error = true;
+        return;
+      }
+    }
+
+    for (auto& datafile : layout.datafiles) {
+      auto file = open_inside(dir, datafile.path.c_str(), mode, dev_mode);
+      auto& result
+          = datafiles.emplace_back(std::move(file), datafile.file_index,
+                                   datafile.chunk_size, datafile.bytes_used);
+      if (!result.is_ok()) {
+        error = true;
+        return;
+      }
+    }
+  }
+
+  volume_layout make_layout() const
+  {
+    volume_layout layout;
+
+    for (auto& blockfile : blockfiles) { (void)blockfile; }
+
+    for (auto& recordfile : recordfiles) { (void)recordfile; }
+
+    for (auto& datafile : datafiles) { (void)datafile; }
+
+    return layout;
+  }
+
+  bool is_ok() const { return !error; }
+
+  std::vector<block_file> blockfiles{};
+  std::vector<record_file> recordfiles{};
+  std::vector<data_file> datafiles{};
+  bool error{true};
 };
 
 class volume {
@@ -533,7 +523,7 @@ class volume {
          DeviceMode dev_mode,
          int mode,
          std::uint32_t dedup_block_size)
-      : path(path), configfile{"config"}
+      : path(path)
   {
     // to create files inside dir, we need executive permissions
     int dir_mode = mode | 0100;
@@ -558,51 +548,41 @@ class volume {
 
     if (dev_mode == DeviceMode::OPEN_WRITE_ONLY) {
       // we always need to read the config file
-      configfile.open_inside(dir, mode, DeviceMode::OPEN_READ_WRITE);
+      config = open_inside(dir, default_config_path, mode,
+                           DeviceMode::OPEN_READ_WRITE);
     } else {
-      configfile.open_inside(dir, mode, dev_mode);
+      config = open_inside(dir, default_config_path, mode, dev_mode);
     }
 
-    if (!configfile.is_ok()) {
+    if (!config.is_ok()) {
       error = true;
       return;
     }
 
+    std::optional<volume_layout> layout;
     if (dev_mode == DeviceMode::CREATE_READ_WRITE) {
-      config.create_default(dedup_block_size);
       volume_changed = true;
+      layout = volume_layout::create_default(dedup_block_size);
     } else {
-      if (!load_config()) {
-        error = true;
-        return;
-      }
+      layout = load_layout();
     }
 
-    for (auto& blockfile : config.blockfiles) {
-      if (!blockfile.open_inside(dir, mode, dev_mode)) {
-        error = true;
-        return;
-      }
+    if (!layout) {
+      error = true;
+      return;
     }
 
-    for (auto& recordfile : config.recordfiles) {
-      if (!recordfile.open_inside(dir, mode, dev_mode)) {
-        error = true;
-        return;
-      }
-    }
+    contents = volume_data{std::move(*layout), dir, mode, dev_mode};
 
-    for (auto& datafile : config.datafiles) {
-      if (!datafile.open_inside(dir, mode, dev_mode)) {
-        error = true;
-        return;
-      }
+    if (!contents.is_ok()) {
+      error = true;
+      return;
     }
   }
 
   bool append_block(const block_header& block)
   {
-    auto& blockfile = config.blockfiles.back();
+    auto& blockfile = contents.blockfiles.back();
 
     if (blockfile.capacity() == blockfile.end()) {}
 
@@ -611,7 +591,7 @@ class volume {
     return result;
   }
 
-  std::uint64_t size() const { return config.blockfiles.back().end(); }
+  std::uint64_t size() const { return contents.blockfiles.back().end(); }
 
   data_file* get_data_file_by_size(std::uint32_t record_size)
   {
@@ -621,7 +601,7 @@ class volume {
     // + vector of read_only ?
     data_file* selected = nullptr;
     ;
-    for (auto& datafile : config.datafiles) {
+    for (auto& datafile : contents.datafiles) {
       if (datafile.accepts_records_of_size(record_size)) {
         if (!selected || selected->blocksize() < datafile.blocksize()) {
           selected = &datafile;
@@ -640,36 +620,36 @@ class volume {
     // TODO: delete all but one record/block file
     //       and all unneeded datafiles
 
-    for (auto& blockfile : config.blockfiles) {
+    for (auto& blockfile : contents.blockfiles) {
       if (!blockfile.truncate()) { return false; }
     }
-    config.blockfiles.resize(1);
+    contents.blockfiles.resize(1);
 
-    for (auto& recordfile : config.recordfiles) {
+    for (auto& recordfile : contents.recordfiles) {
       if (!recordfile.truncate()) { return false; }
     }
-    config.recordfiles.resize(1);
+    contents.recordfiles.resize(1);
 
     std::unordered_set<uint64_t> blocksizes;
-    for (auto& datafile : config.datafiles) {
+    for (auto& datafile : contents.datafiles) {
       if (!datafile.truncate()) { return false; }
     }
 
-    config.datafiles.erase(
-        std::remove_if(config.datafiles.begin(), config.datafiles.end(),
+    contents.datafiles.erase(
+        std::remove_if(contents.datafiles.begin(), contents.datafiles.end(),
                        [&blocksizes](const auto& datafile) {
                          auto [_, inserted]
                              = blocksizes.insert(datafile.blocksize());
                          return !inserted;
                        }),
-        config.datafiles.end());
+        contents.datafiles.end());
 
     return true;
   }
 
   std::optional<block_header> read_block(std::uint64_t block_num)
   {
-    auto& files = config.blockfiles;
+    auto& files = contents.blockfiles;
     if (files.size() == 0) { return std::nullopt; }
 
     // iter points to the first block file for which file.begin() <=
@@ -693,7 +673,7 @@ class volume {
   std::optional<std::uint64_t> append_records(record_header* headers,
                                               std::uint64_t count)
   {
-    auto result = config.recordfiles.back().append(headers, count);
+    auto result = contents.recordfiles.back().append(headers, count);
     if (result) { changed_volume(); }
     return result;
   }
@@ -706,7 +686,7 @@ class volume {
     // wenn eod, bod & reposition das richtige machen, sollte man
     // immer bei der richtigen position sein
 
-    auto& files = config.recordfiles;
+    auto& files = contents.recordfiles;
 
     // iter points to the first record file for which file.begin() <=
     // record_index
@@ -755,9 +735,9 @@ class volume {
                  std::uint32_t size,
                  write_buffer& buf)
   {
-    if (file_index >= config.datafiles.size()) { return false; }
+    if (file_index >= contents.datafiles.size()) { return false; }
 
-    auto& data_file = config.datafiles[file_index];
+    auto& data_file = contents.datafiles[file_index];
 
     char* data = buf.reserve(size);
     if (!data) { return false; }
@@ -771,8 +751,8 @@ class volume {
     std::swap(path, other.path);
     std::swap(dir, other.dir);
     std::swap(path, other.path);
-    std::swap(configfile, other.configfile);
     std::swap(config, other.config);
+    std::swap(contents, other.contents);
     std::swap(error, other.error);
     std::swap(volume_changed, other.volume_changed);
 
@@ -793,10 +773,10 @@ class volume {
     }
   }
 
-  bool is_ok() const { return !error && dir.is_ok() && configfile.is_ok(); }
+  bool is_ok() const { return !error && dir.is_ok() && config.is_ok(); }
 
   void write_current_config();
-  bool load_config();
+  std::optional<volume_layout> load_layout();
 
   struct written_loc {
     std::uint64_t file_index;
@@ -828,7 +808,7 @@ class volume {
           return std::nullopt;
         }
 
-        auto& datafile = config.datafiles[loc.file_index];
+        auto& datafile = contents.datafiles[loc.file_index];
         std::optional data_written = datafile.write_at(loc.current, data, size);
         if (!data_written) { return std::nullopt; }
         changed_volume();
@@ -886,15 +866,26 @@ class volume {
     }
   }
 
-  const volume_config& get_config() const { return config; }
+  volume_layout layout() const { return contents.make_layout(); }
+
+  const std::vector<block_file>& blockfiles() const
+  {
+    return contents.blockfiles;
+  }
+  const std::vector<record_file>& recordfiles() const
+  {
+    return contents.recordfiles;
+  }
+  const std::vector<data_file>& datafiles() const { return contents.datafiles; }
 
  private:
   volume() = default;
   std::string path{};
   util::raii_fd dir{};
-  volume_file configfile{};
+  static constexpr const char* default_config_path = "config";
+  util::raii_fd config{};
 
-  volume_config config{};
+  volume_data contents{};
 
   bool error{false};
   bool volume_changed{false};

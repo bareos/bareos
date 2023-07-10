@@ -36,15 +36,22 @@ static_assert(((ssize_t)(off_t)-1) < 0,
 class raii_fd {
  public:
   raii_fd() = default;
-  raii_fd(const char* path, int flags, int mode) : flags{flags}, mode{mode}
+  raii_fd(const char* path_, int flags_, int mode_)
+      : path{path_}
+      , flags{flags_}
+      , mode{mode_}
+      , fd{::open(path.c_str(), flags, mode)}
+      , error{fd < 0}
   {
-    fd = ::open(path, flags, mode);
   }
 
-  raii_fd(int dird, const char* path, int flags, int mode)
-      : flags{flags}, mode{mode}
+  raii_fd(int dird, const char* path_, int flags_, int mode_)
+      : path{path_}
+      , flags{flags_}
+      , mode{mode_}
+      , fd{::openat(dird, path.c_str(), flags, mode)}
+      , error{fd < 0}
   {
-    fd = openat(dird, path, flags, mode);
   }
 
   raii_fd(raii_fd&& move_from) : raii_fd{} { *this = std::move(move_from); }
@@ -54,6 +61,8 @@ class raii_fd {
     std::swap(fd, move_from.fd);
     std::swap(flags, move_from.flags);
     std::swap(mode, move_from.mode);
+    std::swap(error, move_from.error);
+    std::swap(path, move_from.path);
     return *this;
   }
 
@@ -90,15 +99,12 @@ class raii_fd {
       return false;
     }
 
-    if (static_cast<std::size_t>(res) != size) {
-      error = true;
-      return false;
-    }
+    if (static_cast<std::size_t>(res) != size) { return false; }
 
     return true;
   }
 
-  bool read_at(std::size_t offset, void* data, std::size_t size)
+  bool read_at(std::size_t offset, void* data, std::size_t size) const
   {
     ssize_t res = ::pread(fd, data, size, offset);
 
@@ -107,10 +113,7 @@ class raii_fd {
       return false;
     }
 
-    if (static_cast<std::size_t>(res) != size) {
-      error = true;
-      return false;
-    }
+    if (static_cast<std::size_t>(res) != size) { return false; }
 
     return true;
   }
@@ -157,11 +160,14 @@ class raii_fd {
     if (fd >= 0) { close(fd); }
   }
 
+  const char* relative_path() const { return path.c_str(); }
+
  private:
-  int fd{-1};
+  std::string path{};
   int flags{};
   int mode{};
-  bool error{false};
+  int fd{-1};
+  mutable bool error{true};
 };
 
 template <typename T> class file_based_array {
@@ -194,7 +200,7 @@ template <typename T> class file_based_array {
   }
 
   bool read(T* arr, std::size_t count = 1);
-  bool read_at(std::size_t start, T* arr, std::size_t count = 1);
+  bool read_at(std::size_t start, T* arr, std::size_t count = 1) const;
   bool peek(T* arr, std::size_t count = 1);
 
   bool move_to(std::size_t start);
@@ -221,6 +227,8 @@ template <typename T> class file_based_array {
   inline bool is_ok() const { return !error && file.is_ok(); }
 
   static constexpr std::size_t elem_size = sizeof(T);
+
+  const raii_fd& backing_file() const { return file; }
 
  private:
   std::size_t used{0};
@@ -318,7 +326,9 @@ template <typename T> bool file_based_array<T>::read(T* arr, std::size_t count)
 }
 
 template <typename T>
-bool file_based_array<T>::read_at(std::size_t start, T* arr, std::size_t count)
+bool file_based_array<T>::read_at(std::size_t start,
+                                  T* arr,
+                                  std::size_t count) const
 {
   if (error) { return false; }
 
@@ -431,7 +441,7 @@ template <typename T> class file_based_vector {
   }
 
   bool write_at(std::size_t start, const T* arr, std::size_t count);
-  bool read_at(std::size_t start, T* arr, std::size_t count);
+  bool read_at(std::size_t start, T* arr, std::size_t count) const;
 
   bool flush()
   {
@@ -448,12 +458,14 @@ template <typename T> class file_based_vector {
 
   inline bool is_ok() const { return !error && file.is_ok(); }
 
+  const raii_fd& backing_file() const { return file; }
+
  private:
   std::size_t used{0};
   std::size_t capacity;
   std::size_t capacity_chunk_size{1};
   raii_fd file;
-  bool error{true};
+  mutable bool error{true};
   static constexpr std::size_t elem_size = sizeof(T);
 };
 
@@ -529,7 +541,9 @@ bool file_based_vector<T>::write_at(std::size_t start,
 }
 
 template <typename T>
-bool file_based_vector<T>::read_at(std::size_t start, T* arr, std::size_t count)
+bool file_based_vector<T>::read_at(std::size_t start,
+                                   T* arr,
+                                   std::size_t count) const
 {
   if (error) { return false; }
 
