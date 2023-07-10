@@ -466,9 +466,7 @@ struct volume_data {
   {
     for (auto& blockfile : layout.blockfiles) {
       auto file = open_inside(dir, blockfile.path.c_str(), mode, dev_mode);
-      if (dev_mode == DeviceMode::CREATE_READ_WRITE) {
-        file.resize(1024 * 1024 * 1024);
-      }
+      if (dev_mode == DeviceMode::CREATE_READ_WRITE) { file.resize(64); }
       auto& result = blockfiles.emplace_back(std::move(file), blockfile.start,
                                              blockfile.count);
       if (!result.is_ok()) {
@@ -512,6 +510,17 @@ struct volume_data {
     return layout;
   }
 
+  bool push_block_file(util::raii_fd file)
+  {
+    auto& result
+        = blockfiles.emplace_back(std::move(file), blockfiles.back().end(), 0);
+    if (!result.is_ok()) {
+      error = true;
+      return false;
+    }
+    return true;
+  }
+
   bool is_ok() const { return !error; }
 
   std::vector<block_file> blockfiles{};
@@ -526,7 +535,7 @@ class volume {
          DeviceMode dev_mode,
          int mode,
          std::uint32_t dedup_block_size)
-      : path(path)
+      : path(path), permissions{mode}, mode{dev_mode}
   {
     // to create files inside dir, we need executive permissions
     int dir_mode = mode | 0100;
@@ -585,9 +594,16 @@ class volume {
 
   bool append_block(const block_header& block)
   {
-    auto& blockfile = contents.blockfiles.back();
+    if (contents.blockfiles.back().is_full()) {
+      std::string block_name
+          = "block-" + std::to_string(contents.blockfiles.size());
+      auto file = open_inside(dir, block_name.c_str(), permissions,
+                              DeviceMode::CREATE_READ_WRITE);
+      file.resize(64);
+      if (!contents.push_block_file(std::move(file))) { return false; }
+    }
 
-    if (blockfile.capacity() == blockfile.end()) {}
+    auto& blockfile = contents.blockfiles.back();
 
     auto result = blockfile.write(block);
     if (result) { changed_volume(); }
@@ -758,6 +774,8 @@ class volume {
     std::swap(contents, other.contents);
     std::swap(error, other.error);
     std::swap(volume_changed, other.volume_changed);
+    std::swap(mode, other.mode);
+    std::swap(permissions, other.permissions);
 
     return *this;
   }
@@ -887,6 +905,8 @@ class volume {
   util::raii_fd dir{};
   static constexpr const char* default_config_path = "config";
   util::raii_fd config{};
+  int permissions{};
+  DeviceMode mode{};
 
   volume_data contents{};
 
