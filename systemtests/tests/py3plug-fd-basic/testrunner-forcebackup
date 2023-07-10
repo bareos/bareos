@@ -1,0 +1,41 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-bareos-fd
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+rm -f "$tmp/forcebackup-backup.out" 
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+setdebug client=bareos-fd level=130 trace=1
+run job=$JobName fileset=PluginForceBackup level=Full yes
+wait
+messages
+@$out $tmp/forcebackup-backup.out
+run job=$JobName fileset=PluginForceBackup level=Incremental yes
+wait
+messages
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File
+
+expect_grep "FD Files Written:       1" \
+            "$tmp/forcebackup-backup.out" \
+            "Incremental did not backup file!"
+
+end_test
