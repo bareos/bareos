@@ -162,19 +162,19 @@ static util::raii_fd open_inside(util::raii_fd& dir,
 class block_file {
  public:
   block_file() = default;
-  block_file(util::raii_fd&& file, std::uint64_t start, std::uint64_t count)
+  block_file(util::raii_fd&& file, std::size_t start, std::size_t count)
       : start_block{start}, vec{std::move(file), count}
   {
   }
   const char* path() const { return vec.backing_file().relative_path(); }
 
-  std::uint64_t begin() const { return start_block; }
+  std::size_t begin() const { return start_block; }
 
-  std::uint64_t end() const { return vec.size() + start_block; }
+  std::size_t end() const { return vec.size() + start_block; }
 
-  std::uint64_t size() const { return vec.size(); }
+  std::size_t size() const { return vec.size(); }
 
-  std::uint64_t capacity() const { return vec.capacity(); }
+  std::size_t capacity() const { return vec.capacity(); }
 
   bool is_full() const { return capacity() == size(); }
 
@@ -190,7 +190,7 @@ class block_file {
     return vec.push_back(header).has_value();
   }
 
-  std::optional<block_header> read_block(std::uint64_t block_idx)
+  std::optional<block_header> read_block(std::size_t block_idx)
   {
     if (block_idx < start_block) return std::nullopt;
     if (block_header b; vec.read_at(block_idx - start_block, &b)) {
@@ -203,26 +203,26 @@ class block_file {
   bool is_ok() { return vec.is_ok(); }
 
  private:
-  std::uint64_t start_block{};
+  std::size_t start_block{};
   util::file_based_array<block_header> vec{};
 };
 
 class record_file {
  public:
   record_file() = default;
-  record_file(util::raii_fd&& file, std::uint64_t start, std::uint64_t count)
+  record_file(util::raii_fd&& file, std::size_t start, std::size_t count)
       : start_record{start}, vec{std::move(file), count}
   {
   }
 
   const char* path() const { return vec.backing_file().relative_path(); }
 
-  std::uint64_t begin() const { return start_record; }
+  std::size_t begin() const { return start_record; }
 
-  std::uint64_t end() const { return vec.size() + start_record; }
+  std::size_t end() const { return vec.size() + start_record; }
 
-  std::uint64_t size() const { return vec.size(); }
-  std::uint64_t capacity() const { return vec.capacity(); }
+  std::size_t size() const { return vec.size(); }
+  std::size_t capacity() const { return vec.capacity(); }
 
   bool is_full() const { return capacity() == size(); }
 
@@ -233,15 +233,15 @@ class record_file {
     return true;
   }
 
-  std::optional<std::uint64_t> append(const record_header* headers,
-                                      std::uint64_t count)
+  std::optional<std::size_t> append(const record_header* headers,
+                                    std::size_t count)
   {
     return vec.push_back(headers, count);
   }
 
-  bool read_at(std::uint64_t record,
+  bool read_at(std::size_t record,
                record_header* headers,
-               std::uint64_t count) const
+               std::size_t count) const
   {
     if (record < start_record) return false;
     return vec.read_at(record - start_record, headers, count);
@@ -250,7 +250,7 @@ class record_file {
   bool is_ok() { return vec.is_ok(); }
 
  private:
-  std::uint64_t start_record{};
+  std::size_t start_record{};
   util::file_based_array<record_header> vec{};
 };
 
@@ -258,9 +258,9 @@ class data_file {
  public:
   data_file() = default;
   data_file(util::raii_fd&& file,
-            std::uint64_t file_index,
-            std::uint64_t block_size,
-            std::uint64_t data_used,
+            std::size_t file_index,
+            std::size_t block_size,
+            std::size_t data_used,
             bool read_only = false)
       : file_index{file_index}
       , block_size{block_size}
@@ -270,12 +270,12 @@ class data_file {
   {
   }
 
-  std::uint64_t index() const { return file_index; }
-  std::uint64_t blocksize() const { return block_size; }
+  std::size_t index() const { return file_index; }
+  std::size_t blocksize() const { return block_size; }
 
   const char* path() const { return vec.backing_file().relative_path(); }
 
-  std::uint64_t end() const { return vec.size(); }
+  std::size_t end() const { return vec.size(); }
 
   bool truncate()
   {
@@ -284,15 +284,13 @@ class data_file {
   }
 
   struct written_loc {
-    std::uint64_t begin;
-    std::uint64_t end;
+    std::size_t begin;
+    std::size_t end;
 
-    written_loc(std::uint64_t begin, std::uint64_t end) : begin(begin), end(end)
-    {
-    }
+    written_loc(std::size_t begin, std::size_t end) : begin(begin), end(end) {}
   };
 
-  std::optional<written_loc> write_at(std::uint64_t offset,
+  std::optional<written_loc> write_at(std::size_t offset,
                                       const char* data,
                                       std::size_t size)
   {
@@ -315,7 +313,7 @@ class data_file {
     return written_loc{*start, *start + size};
   }
 
-  bool accepts_records_of_size(std::uint64_t record_size) const
+  bool accepts_records_of_size(std::size_t record_size) const
   {
     if (read_only) { return false; }
     return record_size % block_size == 0;
@@ -323,14 +321,14 @@ class data_file {
 
   bool is_ok() const { return !error && vec.is_ok(); }
 
-  bool read_at(char* buf, std::uint64_t start, std::uint64_t size) const
+  bool read_at(char* buf, std::size_t start, std::size_t size) const
   {
     return vec.read_at(start, buf, size);
   }
 
  private:
-  std::uint64_t file_index{};
-  std::uint64_t block_size{};
+  std::size_t file_index{};
+  std::size_t block_size{};
   bool read_only{true};
   util::file_based_vector<char> vec{};
   bool error{true};
@@ -379,7 +377,7 @@ struct volume_layout {
   std::vector<record_file> recordfiles;
   std::vector<data_file> datafiles;
 
-  static volume_layout create_default(std::uint32_t dedup_block_size)
+  static volume_layout create_default(std::size_t dedup_block_size)
   {
     volume_layout layout;
     layout.blockfiles.emplace_back("block", 0, 0);
@@ -545,7 +543,7 @@ class volume {
   volume(const char* path,
          DeviceMode dev_mode,
          int mode,
-         std::uint32_t dedup_block_size)
+         std::size_t dedup_block_size)
       : path(path), permissions{mode}, mode{dev_mode}
   {
     // to create files inside dir, we need executive permissions
@@ -621,9 +619,9 @@ class volume {
     return result;
   }
 
-  std::uint64_t size() const { return contents.blockfiles.back().end(); }
+  std::size_t size() const { return contents.blockfiles.back().end(); }
 
-  data_file* get_data_file_by_size(std::uint32_t record_size)
+  data_file* get_data_file_by_size(std::size_t record_size)
   {
     // we have to do this smarter
     // if datafile::any_size is first, we should ignore it until the end!
@@ -677,7 +675,7 @@ class volume {
     return true;
   }
 
-  std::optional<block_header> read_block(std::uint64_t block_num)
+  std::optional<block_header> read_block(std::size_t block_num)
   {
     auto& files = contents.blockfiles;
     if (files.size() == 0) { return std::nullopt; }
@@ -699,10 +697,10 @@ class volume {
     return iter->read_block(block_num);
   }
 
-  std::optional<std::uint64_t> append_records(record_header* headers,
-                                              std::uint64_t count)
+  std::optional<std::size_t> append_records(record_header* headers,
+                                            std::size_t count)
   {
-    std::optional<std::uint64_t> start;
+    std::optional<std::size_t> start;
     while (count > 0) {
       if (contents.recordfiles.back().is_full()) {
         std::string record_name
@@ -733,9 +731,9 @@ class volume {
     return start;
   }
 
-  bool read_records(std::uint64_t record_index,
+  bool read_records(std::size_t record_index,
                     record_header* headers,
-                    std::uint64_t count)
+                    std::size_t count)
   {
     // müssen wir hier überhaupt das record bewegen ?
     // wenn eod, bod & reposition das richtige machen, sollte man
@@ -760,7 +758,7 @@ class volume {
 
 
     for (;;) {
-      std::uint64_t num_records = std::min(iter->end() - record_index, count);
+      std::size_t num_records = std::min(iter->end() - record_index, count);
 
       if (!iter->read_at(record_index, headers, num_records)) { return false; }
 
@@ -785,9 +783,9 @@ class volume {
     return true;
   }
 
-  bool read_data(std::uint32_t file_index,
-                 std::uint64_t start,
-                 std::uint32_t size,
+  bool read_data(std::size_t file_index,
+                 std::size_t start,
+                 std::size_t size,
                  write_buffer& buf)
   {
     if (file_index >= contents.datafiles.size()) { return false; }
@@ -836,9 +834,9 @@ class volume {
   std::optional<volume_layout> load_layout();
 
   struct written_loc {
-    std::uint64_t file_index;
-    std::uint64_t begin;
-    std::uint64_t end;
+    std::size_t file_index;
+    std::size_t begin;
+    std::size_t end;
   };
 
   std::optional<written_loc> append_data(
@@ -861,7 +859,7 @@ class volume {
           found != unfinished_records.end()) {
         write_loc& loc = found->second;
 
-        if (loc.end - loc.current < static_cast<std::uint64_t>(size)) {
+        if (loc.end - loc.current < static_cast<std::size_t>(size)) {
           return std::nullopt;
         }
 
@@ -985,9 +983,9 @@ class volume {
   };
 
   struct write_loc {
-    std::uint64_t file_index;
-    std::uint64_t current;
-    std::uint64_t end;
+    std::size_t file_index;
+    std::size_t current;
+    std::size_t end;
   };
 
   // todo: this should also get serialized!
