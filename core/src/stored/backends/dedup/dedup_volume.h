@@ -258,19 +258,16 @@ class data_file {
  public:
   data_file() = default;
   data_file(util::raii_fd&& file,
-            std::size_t file_index,
             std::size_t block_size,
             std::size_t data_used,
             bool read_only = false)
-      : file_index{file_index}
-      , block_size{block_size}
+      : block_size{block_size}
       , read_only{read_only}
       , vec{std::move(file), data_used, 128 * 1024}
       , error{block_size == 0 || !vec.is_ok()}
   {
   }
 
-  std::size_t index() const { return file_index; }
   std::size_t blocksize() const { return block_size; }
 
   const char* path() const { return vec.backing_file().relative_path(); }
@@ -327,7 +324,6 @@ class data_file {
   }
 
  private:
-  std::size_t file_index{};
   std::size_t block_size{};
   bool read_only{true};
   util::file_based_vector<char> vec{};
@@ -485,10 +481,15 @@ struct volume_data {
 
     for (auto& datafile : layout.datafiles) {
       auto file = open_inside(dir, datafile.path.c_str(), mode, dev_mode);
-      auto& result
-          = datafiles.emplace_back(std::move(file), datafile.file_index,
-                                   datafile.chunk_size, datafile.bytes_used);
-      if (!result.is_ok()) {
+      auto [iter, inserted]
+          = datafiles.try_emplace(datafile.file_index, std::move(file),
+                                  datafile.chunk_size, datafile.bytes_used);
+      if (!inserted) {
+        // error: file index exists twice
+        error = true;
+        return;
+      }
+      if (!iter->second.is_ok()) {
         error = true;
         return;
       }
@@ -510,8 +511,8 @@ struct volume_data {
                                       recordfile.size());
     }
 
-    for (auto& datafile : datafiles) {
-      layout.datafiles.emplace_back(datafile.path(), datafile.index(),
+    for (auto& [index, datafile] : datafiles) {
+      layout.datafiles.emplace_back(datafile.path(), index,
                                     datafile.blocksize(), datafile.size());
     }
 
@@ -544,7 +545,7 @@ struct volume_data {
 
   std::vector<block_file> blockfiles{};
   std::vector<record_file> recordfiles{};
-  std::vector<data_file> datafiles{};
+  std::unordered_map<std::size_t, data_file> datafiles{};
   bool error{true};
 };
 
@@ -631,18 +632,20 @@ class volume {
 
   std::size_t size() const { return contents.blockfiles.back().end(); }
 
-  data_file* get_data_file_by_size(std::size_t record_size)
+  std::optional<std::size_t> file_index_for_size(std::size_t record_size)
   {
     // we have to do this smarter
     // if datafile::any_size is first, we should ignore it until the end!
     // maybe split into _one_ any_size + map size -> file
     // + vector of read_only ?
-    data_file* selected = nullptr;
-    ;
-    for (auto& datafile : contents.datafiles) {
+    std::optional<std::size_t> selected;
+    std::size_t blocksize = 0;
+
+    for (auto& [index, datafile] : contents.datafiles) {
       if (datafile.accepts_records_of_size(record_size)) {
-        if (!selected || selected->blocksize() < datafile.blocksize()) {
-          selected = &datafile;
+        if (!selected || blocksize < datafile.blocksize()) {
+          blocksize = datafile.blocksize();
+          selected = index;
         }
       }
     }
@@ -669,18 +672,14 @@ class volume {
     contents.recordfiles.resize(1);
 
     std::unordered_set<uint64_t> blocksizes;
-    for (auto& datafile : contents.datafiles) {
+    std::vector<std::size_t> files_to_delete;
+    for (auto& [index, datafile] : contents.datafiles) {
       if (!datafile.truncate()) { return false; }
+      auto [_, inserted] = blocksizes.insert(datafile.blocksize());
+      if (!inserted) { files_to_delete.emplace_back(index); }
     }
 
-    contents.datafiles.erase(
-        std::remove_if(contents.datafiles.begin(), contents.datafiles.end(),
-                       [&blocksizes](const auto& datafile) {
-                         auto [_, inserted]
-                             = blocksizes.insert(datafile.blocksize());
-                         return !inserted;
-                       }),
-        contents.datafiles.end());
+    for (auto index : files_to_delete) { contents.datafiles.erase(index); }
 
     return true;
   }
@@ -899,12 +898,14 @@ class volume {
 
       if (!inserted) { return std::nullopt; }
 
-      auto* datafile = get_data_file_by_size(recordheader.DataSize);
-      if (!datafile) {
+      std::optional file_index = file_index_for_size(recordheader.DataSize);
+      if (!file_index) {
         // dmesg: no appropriate data file present
         return std::nullopt;
       }
-      std::optional file_loc = datafile->reserve(recordheader.DataSize);
+
+      auto& datafile = contents.datafiles[file_index.value()];
+      std::optional file_loc = datafile.reserve(recordheader.DataSize);
 
       if (!file_loc) {
         unfinished_records.erase(iter);
@@ -912,11 +913,11 @@ class volume {
       }
 
       write_loc& loc = iter->second;
-      loc.file_index = datafile->index();
+      loc.file_index = file_index.value();
       loc.current = file_loc->begin;
       loc.end = file_loc->end;
 
-      std::optional data_written = datafile->write_at(loc.current, data, size);
+      std::optional data_written = datafile.write_at(loc.current, data, size);
       if (!data_written) {
         unfinished_records.erase(iter);
         return std::nullopt;
@@ -933,15 +934,10 @@ class volume {
 
   volume_layout layout() const { return contents.make_layout(); }
 
-  const std::vector<block_file>& blockfiles() const
-  {
-    return contents.blockfiles;
-  }
   const std::vector<record_file>& recordfiles() const
   {
     return contents.recordfiles;
   }
-  const std::vector<data_file>& datafiles() const { return contents.datafiles; }
 
  private:
   volume() = default;
