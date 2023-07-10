@@ -179,8 +179,6 @@ template <typename T> class file_based_array {
   inline std::size_t size() const { return used; }
   inline std::size_t capacity() const { return cap; }
 
-  inline std::size_t current() const { return iter; }
-
   inline bool is_ok() const { return !error && file.is_ok(); }
 
   static constexpr std::size_t elem_size = sizeof(T);

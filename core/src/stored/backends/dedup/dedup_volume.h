@@ -168,13 +168,15 @@ class block_file {
   }
   const char* path() const { return vec.backing_file().relative_path(); }
 
-  std::uint32_t begin() const { return start_block; }
+  std::uint64_t begin() const { return start_block; }
 
-  std::uint32_t current() const { return vec.current() + start_block; }
+  std::uint64_t end() const { return vec.size() + start_block; }
 
-  std::uint32_t end() const { return vec.size() + start_block; }
+  std::uint64_t size() const { return vec.size(); }
 
-  std::uint32_t capacity() const { return vec.capacity(); }
+  std::uint64_t capacity() const { return vec.capacity(); }
+
+  bool is_full() const { return capacity() == size(); }
 
   bool truncate()
   {
@@ -187,7 +189,7 @@ class block_file {
 
   bool goto_begin() { return vec.move_to(0); }
 
-  bool goto_block(std::uint32_t block) { return vec.move_to(block); }
+  bool goto_block(std::uint64_t block) { return vec.move_to(block); }
 
   bool write(const block_header& header)
   {
@@ -452,8 +454,6 @@ struct volume_layout {
     }
     return true;
   }
-
- private:
 };
 
 struct volume_data {
