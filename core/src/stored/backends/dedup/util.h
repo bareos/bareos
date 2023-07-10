@@ -142,25 +142,18 @@ template <typename T> class file_based_array {
   file_based_array& operator=(file_based_array&& other);
 
   std::optional<std::size_t> reserve(std::size_t count);
-  std::optional<std::size_t> write(const T* arr, std::size_t count);
-  std::optional<std::size_t> write_at(std::size_t start,
-                                      const T* arr,
-                                      std::size_t count);
-  inline std::optional<std::size_t> write(const T& val)
+  bool write_at(std::size_t start, const T* arr, std::size_t count);
+  std::optional<std::size_t> push_back(const T& val)
   {
-    return write(&val, 1);
+    return push_back(&val, 1);
   }
-
-  inline std::optional<std::size_t> write_at(std::size_t start, const T& val)
+  std::optional<std::size_t> push_back(const T* arr, std::size_t count);
+  bool write_at(std::size_t start, const T& val)
   {
     return write_at(start, &val, 1);
   }
 
-  bool read(T* arr, std::size_t count = 1);
   bool read_at(std::size_t start, T* arr, std::size_t count = 1) const;
-  bool peek(T* arr, std::size_t count = 1);
-
-  bool move_to(std::size_t start);
 
   bool flush()
   {
@@ -170,11 +163,7 @@ template <typename T> class file_based_array {
     return file.flush();
   }
 
-  inline void clear()
-  {
-    used = 0;
-    iter = 0;
-  }
+  inline void clear() { used = 0; }
 
   inline std::size_t size() const { return used; }
   inline std::size_t capacity() const { return cap; }
@@ -188,7 +177,6 @@ template <typename T> class file_based_array {
  private:
   std::size_t used{0};
   std::size_t cap;
-  std::size_t iter{0};
   raii_fd file{};
   T* memory{nullptr};
   bool error{true};
@@ -199,11 +187,7 @@ template <typename T> class file_based_array {
 template <typename T>
 std::optional<std::size_t> file_based_array<T>::reserve(std::size_t count)
 {
-  std::optional start = reserve_at(iter, count);
-
-  if (start.has_value()) { iter = used; }
-
-  return start;
+  return reserve_at(used, count);
 }
 
 template <typename T>
@@ -230,54 +214,30 @@ std::optional<std::size_t> file_based_array<T>::reserve_at(std::size_t at,
 }
 
 template <typename T>
-std::optional<std::size_t> file_based_array<T>::write(const T* arr,
-                                                      std::size_t count)
+std::optional<std::size_t> file_based_array<T>::push_back(const T* arr,
+                                                          std::size_t count)
 {
-  std::optional start = reserve_at(iter, count);
+  std::optional start = reserve_at(used, count);
 
   if (!start) { return std::nullopt; }
 
-  ASSERT(start == iter);
-  auto old_iter = iter;
-  iter += count;
-  // write_at always returns to the current iter
-  // if we set iter to the new desired position
-  // we prevent the double seek we would need to do otherwise
-  auto res = write_at(old_iter, arr, count);
-
-  if (!res) { iter = old_iter; }
-
-  return res;
-}
-
-template <typename T>
-std::optional<std::size_t> file_based_array<T>::write_at(std::size_t start,
-                                                         const T* arr,
-                                                         std::size_t count)
-{
-  if (error) { return std::nullopt; }
-
-  if (start > used) { return std::nullopt; }
-
-  std::memcpy(memory + start, arr, count * elem_size);
+  if (!write_at(*start, arr, count)) { return std::nullopt; }
 
   return start;
 }
 
-template <typename T> bool file_based_array<T>::read(T* arr, std::size_t count)
+template <typename T>
+bool file_based_array<T>::write_at(std::size_t start,
+                                   const T* arr,
+                                   std::size_t count)
 {
   if (error) { return false; }
 
-  auto old_iter = iter;
-  iter += count;
-  // read_at always returns to the current iter
-  // if we set iter to the new desired position
-  // we prevent the double seek we would need to do otherwise
-  bool success = read_at(old_iter, arr, count);
+  if (start > used) { return false; }
 
-  if (!success) { iter = old_iter; }
+  std::memcpy(memory + start, arr, count * elem_size);
 
-  return success;
+  return true;
 }
 
 template <typename T>
@@ -291,25 +251,6 @@ bool file_based_array<T>::read_at(std::size_t start,
 
   // todo: should this be std::copy_n ?
   std::memcpy(arr, memory + start, count * elem_size);
-
-  return true;
-}
-
-template <typename T> bool file_based_array<T>::peek(T* arr, std::size_t count)
-{
-  if (error) { return false; }
-  return read_at(iter, arr, count);
-}
-
-template <typename T> bool file_based_array<T>::move_to(std::size_t start)
-{
-  if (error) { return false; }
-
-  if (start > used) { return false; }
-
-  if (iter == start) { return true; }
-
-  iter = start;
 
   return true;
 }
@@ -361,7 +302,6 @@ file_based_array<T>& file_based_array<T>::operator=(file_based_array<T>&& other)
 {
   std::swap(used, other.used);
   std::swap(cap, other.cap);
-  std::swap(iter, other.iter);
   std::swap(file, other.file);
   std::swap(error, other.error);
   std::swap(memory, other.memory);

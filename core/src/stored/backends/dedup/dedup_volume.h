@@ -185,20 +185,15 @@ class block_file {
     return true;
   }
 
-  bool goto_end() { return vec.move_to(vec.size()); }
-
-  bool goto_begin() { return vec.move_to(0); }
-
-  bool goto_block(std::uint64_t block) { return vec.move_to(block); }
-
-  bool write(const block_header& header)
+  bool append(const block_header& header)
   {
-    return vec.write(header).has_value();
+    return vec.push_back(header).has_value();
   }
 
-  std::optional<block_header> read_block()
+  std::optional<block_header> read_block(std::uint64_t block_idx)
   {
-    if (block_header b; vec.read(&b)) {
+    if (block_idx < start_block) return std::nullopt;
+    if (block_header b; vec.read_at(block_idx - start_block, &b)) {
       return b;
     } else {
       return std::nullopt;
@@ -216,7 +211,7 @@ class record_file {
  public:
   record_file() = default;
   record_file(util::raii_fd&& file, std::uint64_t start, std::uint64_t count)
-      : start_record{start}, vec{std::move(file), count, 128 * 1024}
+    : start_record{start}, vec{std::move(file), count, 128 * 1024}
   {
   }
 
@@ -232,7 +227,7 @@ class record_file {
   {
     start_record = 0;
     vec.clear();
-    return vec.shrink_to_fit();
+    return true;
   }
 
   std::optional<std::uint64_t> append(const record_header* headers,
@@ -605,7 +600,7 @@ class volume {
 
     auto& blockfile = contents.blockfiles.back();
 
-    auto result = blockfile.write(block);
+    auto result = blockfile.append(block);
     if (result) { changed_volume(); }
     return result;
   }
@@ -685,8 +680,7 @@ class volume {
       return std::nullopt;
     }
 
-    if (!iter->goto_block(block_num)) { return std::nullopt; }
-    return iter->read_block();
+    return iter->read_block(block_num);
   }
 
   std::optional<std::uint64_t> append_records(record_header* headers,
