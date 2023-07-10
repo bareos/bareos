@@ -2094,12 +2094,6 @@ static bRC bareosSetValue(PluginContext* ctx, bVariable var, void* value)
   if (!jcr) { return bRC_Error; }
 
   switch (var) {
-    case bVarSinceTime:
-      jcr->fd_impl->since_time = (*(int*)value);
-      break;
-    case bVarLevel:
-      jcr->setJobLevel(*(int*)value);
-      break;
     case bVarFileSeen:
       if (!AccurateMarkFileAsSeen(jcr, (char*)value)) { return bRC_Error; }
       break;
@@ -2409,23 +2403,31 @@ static bRC bareosCheckChanges(PluginContext* ctx, save_pkt* sp)
     goto bail_out;
   }
 
-  ff_pkt->fname = sp->fname;
-  ff_pkt->link = sp->link;
-  if (sp->save_time) {
-    ff_pkt->save_time = sp->save_time;
-    ff_pkt->incremental = true;
-  }
-  memcpy(&ff_pkt->statp, &sp->statp, sizeof(ff_pkt->statp));
+  {
+    const auto orig_save_time{ff_pkt->save_time};
+    const auto orig_incremental{ff_pkt->incremental};
 
-  if (CheckChanges(jcr, ff_pkt)) {
-    retval = bRC_OK;
-  } else {
-    retval = bRC_Seen;
-  }
+    ff_pkt->fname = sp->fname;
+    ff_pkt->link = sp->link;
+    if (sp->save_time) {
+      ff_pkt->save_time = sp->save_time;
+      ff_pkt->incremental = true;
+    }
+    memcpy(&ff_pkt->statp, &sp->statp, sizeof(ff_pkt->statp));
 
+    if (CheckChanges(jcr, ff_pkt)) {
+      retval = bRC_OK;
+    } else {
+      retval = bRC_Seen;
+    }
+
+    ff_pkt->save_time = orig_save_time;
+    ff_pkt->incremental = orig_incremental;
+  }
   // CheckChanges() can update delta sequence number, return it to the plugin
   sp->delta_seq = ff_pkt->delta_seq;
   sp->accurate_found = ff_pkt->accurate_found;
+
 
 bail_out:
   Dmsg1(100, "checkChanges=%i\n", retval);
