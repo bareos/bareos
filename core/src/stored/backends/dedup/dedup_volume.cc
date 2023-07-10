@@ -36,17 +36,19 @@ void volume::write_current_config()
   std::vector<config::loaded_data_section> datasections;
   std::vector<config::loaded_unfinished_record> unfinished;
 
-  for (auto& blockfile : contents.blockfiles) {
-    blocksections.emplace_back(blockfile.begin(), blockfile.size(),
-                               blockfile.path());
+  auto layout = contents.make_layout();
+
+  for (auto& blockfile : layout.blockfiles) {
+    blocksections.emplace_back(blockfile.start, blockfile.count,
+                               std::move(blockfile.path));
   }
-  for (auto& recordfile : contents.recordfiles) {
-    recordsections.emplace_back(recordfile.begin(), recordfile.size(),
-                                recordfile.path());
+  for (auto& recordfile : layout.recordfiles) {
+    recordsections.emplace_back(recordfile.start, recordfile.count,
+                                std::move(recordfile.path));
   }
-  for (auto& datafile : contents.datafiles) {
-    datasections.emplace_back(datafile.index(), datafile.blocksize(),
-                              datafile.path(), datafile.end());
+  for (auto& datafile : layout.datafiles) {
+    datasections.emplace_back(datafile.file_index, datafile.chunk_size,
+                              std::move(datafile.path), datafile.bytes_used);
   }
 
   for (auto& [record, loc] : unfinished_records) {

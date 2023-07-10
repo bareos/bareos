@@ -275,7 +275,7 @@ class data_file {
 
   const char* path() const { return vec.backing_file().relative_path(); }
 
-  std::size_t end() const { return vec.size(); }
+  std::size_t size() const { return vec.size(); }
 
   bool truncate()
   {
