@@ -466,6 +466,9 @@ struct volume_data {
   {
     for (auto& blockfile : layout.blockfiles) {
       auto file = open_inside(dir, blockfile.path.c_str(), mode, dev_mode);
+      if (dev_mode == DeviceMode::CREATE_READ_WRITE) {
+        file.resize(1024 * 1024 * 1024);
+      }
       auto& result = blockfiles.emplace_back(std::move(file), blockfile.start,
                                              blockfile.count);
       if (!result.is_ok()) {
