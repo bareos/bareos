@@ -109,23 +109,7 @@ static bool SaveFullyProcessedFilesAttributes(
   return false;
 }
 
-bool DeleteNullJobmediaRecords(JobControlRecord* jcr)
-{
-  Dmsg0(100, "Deleting null jobmedia records\n");
-  BareosSocket* dir = jcr->dir_bsock;
-  const char* delete_null_records
-      = "CatReq Job=%s DeleteNullJobmediaRecords jobid=%u";
-  dir->fsend(delete_null_records, jcr->Job, jcr->JobId);
-  if (dir->recv() <= 0) {
-    Dmsg0(100, "DeleteNullJobmediaRecords error BnetRecv\n");
-    Mmsg(jcr->errmsg,
-         _("Network error on BnetRecv in DeleteNullJobmediaRecords.\n"));
-    return false;
-  }
-  Dmsg1(100, ">dird %s", dir->msg);
-  if (strncmp(dir->msg, "1000", 4) == 0) { return true; }
-  return false;
-}
+bool DeleteNullJobmediaRecords(JobControlRecord* jcr);
 
 // Append Data sent from File daemon
 bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
