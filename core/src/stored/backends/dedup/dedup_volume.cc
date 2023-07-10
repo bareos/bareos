@@ -67,13 +67,13 @@ void volume::write_current_config()
 
 std::optional<volume_layout> volume::load_layout()
 {
-  std::optional size = config.size_then_reset();
+  std::optional size = config.size();
 
   if (!size.has_value()) { return std::nullopt; }
 
   std::vector<std::byte> bytes(size.value());
 
-  if (!config.read(bytes.data(), bytes.size())) {
+  if (!config.read_at(0, bytes.data(), bytes.size())) {
     // error: cannot read config file
     return std::nullopt;
   }

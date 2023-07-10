@@ -83,22 +83,6 @@ class raii_fd {
       return false;
     }
 
-    if (static_cast<std::size_t>(res) != size) {
-      error = true;
-      return false;
-    }
-
-    return true;
-  }
-
-  bool write(const void* data, std::size_t size)
-  {
-    ssize_t res = ::write(fd, data, size);
-    if (res < 0) {
-      error = true;
-      return false;
-    }
-
     if (static_cast<std::size_t>(res) != size) { return false; }
 
     return true;
@@ -118,37 +102,10 @@ class raii_fd {
     return true;
   }
 
-  bool read(void* data, std::size_t size)
-  {
-    ssize_t res = ::read(fd, data, size);
-    if (res < 0) {
-      error = true;
-      return false;
-    }
-
-    if (static_cast<std::size_t>(res) != size) {
-      error = true;
-      return false;
-    }
-
-    return true;
-  }
-
-  // bool seek(std::size_t where)
-  // {
-  //   ssize_t res = ::lseek(fd, where, SEEK_SET);
-  //   if (res < 0) { return false; }
-  //   return static_cast<std::size_t>(res) == where;
-  // }
-
-  std::optional<std::size_t> size_then_reset()
+  std::optional<std::size_t> size()
   {
     ssize_t size = ::lseek(fd, 0, SEEK_END);
     if (size < 0) {
-      error = true;
-      return std::nullopt;
-    }
-    if (::lseek(fd, 0, SEEK_SET) != 0) {
       error = true;
       return std::nullopt;
     }
@@ -367,7 +324,7 @@ file_based_array<T>::file_based_array(raii_fd file_, std::size_t used_)
 
   // let us compute the capacity
 
-  std::optional size = file.size_then_reset();
+  std::optional size = file.size();
 
   if (!size) {
     error = true;
@@ -571,7 +528,7 @@ file_based_vector<T>::file_based_vector(raii_fd file_,
 
   // let us compute the capacity
 
-  std::optional size = file.size_then_reset();
+  std::optional size = file.size();
 
   if (!size) {
     error = true;
