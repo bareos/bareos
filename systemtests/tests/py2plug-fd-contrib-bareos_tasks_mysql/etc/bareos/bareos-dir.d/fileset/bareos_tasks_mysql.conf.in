@@ -3,7 +3,7 @@ FileSet {
   Description = "Test the Plugin functionality."
   Include {
     Options {
-      signature = MD5
+      Signature = XXH128
     }
     Plugin = "@python_module_name@"
       ":module_name=bareos_tasks.mysql"

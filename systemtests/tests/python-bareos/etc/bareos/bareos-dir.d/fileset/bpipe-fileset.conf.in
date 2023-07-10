@@ -2,7 +2,7 @@ FileSet {
   Name = bpipe-fileset
   Include {
     Options {
-       signature = MD5
+       Signature = XXH128
        xattrsupport = no           # Prevent problems on FreeBSD
     }
 
