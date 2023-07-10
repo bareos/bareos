@@ -45,8 +45,6 @@ setup_data
 VolumeName=TestVolume001
 # VolumePath=storage/${VolumeName}
 DEFAULT_BLOCK_SIZE=64512
-LABEL_BLOCK_SIZE=${DEFAULT_BLOCK_SIZE}
-
 
 bls_blocks()
 {
@@ -55,22 +53,11 @@ bls_blocks()
   ${BAREOS_BLS_BINARY} -c ${configs} ${DEVICE} -V"${VOLUME}" -k -d 250
 }
 
-get_block_and_data_size()
-{
-    # block 1 and 2 are label blocks.
-    # blocks >= 3 are data blocks.
-    # Parameter 3 is the block of interest. Default is block 1.
-    DEVICE="$1"
-    VOLUME="${2:-*}"
-    LINE=${3:-1}
-    bls_blocks "$DEVICE" "$VOLUME" | sed -r -n -e "s/^bls .* Exit read_block (read_len=[0-9]+) (block_len=[0-9]*)/\1 \2/p" | sed "${LINE}q;d"
-}
-
 get_block_size()
 {
     # block 1 and 2 are label blocks.
     # blocks >= 3 are data blocks.
-    # Parameter 3 is the block of interest. Default is block 1.
+    # Parameter 2 is the block of interest. Default is block 1.
     DATA="$1"
     LINE=${2:-1}
     echo "$DATA" | sed -r -n -e "s/^bls .* Exit read_block read_len=([0-9]+) block_len=[0-9]*/\1/p" | sed "${LINE}q;d"
@@ -80,7 +67,7 @@ get_data_size()
 {
     # block 1 and 2 are label blocks.
     # blocks >= 3 are data blocks.
-    # Parameter 3 is the block of interest. Default is block 1.
+    # Parameter 2 is the block of interest. Default is block 1.
     DATA="$1"
     LINE=${2:-1}
     echo "$DATA" | sed -r -n -e "s/^bls .* Exit read_block read_len=[0-9]+ block_len=([0-9]*)/\1/p" | sed "${LINE}q;d"
