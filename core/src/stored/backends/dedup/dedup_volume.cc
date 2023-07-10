@@ -77,53 +77,52 @@ class gap_list {
       vec.emplace_back(start, end);
       return true;
     }
-    auto iter
+    auto next
         = std::lower_bound(vec.begin(), vec.end(), start,
                            [](const auto& interval, const std::size_t& val) {
                              return interval.first < val;
                            });
 
-    if (iter == vec.end()) {
-      auto& inter = vec.front();  // we already checked that size > 1!
-
-      if (inter.first < end) {
-        // there is some overlap which we do not allow
-        return false;
-      } else if (inter.first == end) {
-        inter.first = start;
-        return true;
-      } else {
-        vec.insert(vec.begin(), interval{start, end});
-        return true;
-      }
-    }
-
-    auto next = iter + 1;
-
+    // next points to the first interval with first >= val
     if (next == vec.end()) {
-      auto& inter = *iter;
+      auto& inter = vec.back();  // we already checked that size > 1!
+
       if (inter.second > start) {
         // there is some overlap which we do not allow
         return false;
       } else if (inter.second == start) {
         inter.second = end;
-        return true;
       } else {
         vec.emplace_back(start, end);
-        return true;
       }
+      return true;
     }
 
-    bool combines_with_iter = iter->second == start;
-    bool combines_with_next = next->first == end;
+    if (next == vec.begin()) {
+      auto& inter = vec.front();
+      if (inter.first < end) {
+        // there is some overlap which we do not allow
+        return false;
+      } else if (inter.first == end) {
+        inter.first = start;
+      } else {
+        vec.insert(vec.begin(), interval{start, end});
+      }
+      return true;
+    }
 
-    if (combines_with_iter && combines_with_next) {
-      iter->second = next->second;
+    auto prev = next - 1;
+
+    bool combines_with_next = next->first == end;
+    bool combines_with_prev = prev->second == start;
+
+    if (combines_with_next && combines_with_prev) {
+      prev->second = next->second;
       vec.erase(next);
-    } else if (combines_with_iter) {
-      iter->second = end;
     } else if (combines_with_next) {
       next->first = start;
+    } else if (combines_with_prev) {
+      prev->second = end;
     } else {
       vec.insert(next, interval{start, end});
     }
