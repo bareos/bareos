@@ -499,11 +499,21 @@ struct volume_data {
   {
     volume_layout layout;
 
-    for (auto& blockfile : blockfiles) { (void)blockfile; }
+    layout.blockfiles.reserve(blockfiles.size());
+    for (auto& blockfile : blockfiles) {
+      layout.blockfiles.emplace_back(blockfile.path(), blockfile.begin(),
+                                     blockfile.size());
+    }
 
-    for (auto& recordfile : recordfiles) { (void)recordfile; }
+    for (auto& recordfile : recordfiles) {
+      layout.recordfiles.emplace_back(recordfile.path(), recordfile.begin(),
+                                      recordfile.size());
+    }
 
-    for (auto& datafile : datafiles) { (void)datafile; }
+    for (auto& datafile : datafiles) {
+      layout.datafiles.emplace_back(datafile.path(), datafile.index(),
+                                    datafile.blocksize(), datafile.size());
+    }
 
     return layout;
   }
