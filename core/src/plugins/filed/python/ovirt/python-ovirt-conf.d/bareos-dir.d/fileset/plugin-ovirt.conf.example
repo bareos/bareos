@@ -2,7 +2,7 @@ FileSet {
   Name = "plugin-ovirt"
   Include {
     Options {
-      signature = MD5
+      signature = xxh128
     }
     #
     Plugin = "python"

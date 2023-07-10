@@ -1545,7 +1545,7 @@ The directives within an Options resource may be one of the following:
         Name = "Test Set"
         Include {
           Options {
-            signature = MD5
+            Signature = XXH128
             shadowing = localwarn
           }
           File = /
@@ -1906,7 +1906,7 @@ The following example demonstrates a Windows FileSet. It backups all data from a
      Enable VSS = yes
      Include {
        Options {
-         Signature = MD5
+         Signature = XXH128
          Drive Type = fixed
          IgnoreCase = yes
          WildFile = "[A-Z]:/pagefile.sys"

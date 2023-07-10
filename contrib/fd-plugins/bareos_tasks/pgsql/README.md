@@ -30,7 +30,7 @@ FileSet {
         Include  {
             Options {
                 compression = LZ4
-                signature = MD5
+                signature = XXH128
             }
             Plugin = "python:"
                      "module_path=/usr/lib/bareos/plugins:"

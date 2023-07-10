@@ -63,7 +63,7 @@ Now include the plugin as command-plugin in the Fileset resource:
        Name = "mysql"
        Include  {
            Options {
-               signature = MD5
+               Signature = XXH128
            }
            #...
            Plugin = "python"

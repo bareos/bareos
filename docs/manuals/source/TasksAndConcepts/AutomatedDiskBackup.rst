@@ -262,7 +262,7 @@ The Director’s configuration file is as follows:
      Name = "Catalog"
      Include {
        Options {
-         signature = MD5
+         Signature = XXH128
        }
        File = "/var/lib/bareos/bareos.sql" # database dump
        File = "/etc/bareos"                # configuration
