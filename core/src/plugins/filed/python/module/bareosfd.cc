@@ -376,10 +376,12 @@ static inline bool PySavePacketToNative(
     } else {
       sp->no_read = pSavePkt->no_read;
       sp->delta_seq = pSavePkt->delta_seq;
+      sp->save_time = pSavePkt->save_time;
     }
   } else {
     sp->no_read = pSavePkt->no_read;
     sp->delta_seq = pSavePkt->delta_seq;
+    sp->save_time = pSavePkt->save_time;
 
     if (PyByteArray_Check(pSavePkt->flags)) {
       char* flags;
@@ -1273,7 +1275,6 @@ static PyObject* PyBareosGetValue(PyObject*, PyObject* args)
     case bVarLevel:
     case bVarType:
     case bVarJobStatus:
-    case bVarSinceTime:
     case bVarAccurate:
     case bVarPrefixLinks: {
       int value = 0;
@@ -1299,6 +1300,11 @@ static PyObject* PyBareosGetValue(PyObject*, PyObject* args)
       }
       break;
     }
+    case bVarSinceTime:
+      pRetVal = PyLong_FromLong(static_cast<plugin_private_context*>(
+                                    plugin_ctx->plugin_private_context)
+                                    ->since);
+      break;
     case bVarFileSeen:
       break; /* a write only variable, ignore read request */
     default:
@@ -1330,14 +1336,11 @@ static PyObject* PyBareosSetValue(PyObject*, PyObject* args)
   RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
 
   switch (var) {
-    case bVarLevel: {
-      int value = 0;
-
-      value = PyLong_AsLong(pyValue);
-      if (value) {
-        retval = bareos_core_functions->setBareosValue(plugin_ctx,
-                                                       (bVariable)var, &value);
-      }
+    case bVarSinceTime: {
+      static_cast<plugin_private_context*>(plugin_ctx->plugin_private_context)
+          ->since
+          = PyLong_AsLong(pyValue);
+      retval = bRC_OK;
       break;
     }
     case bVarFileSeen: {
