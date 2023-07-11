@@ -48,6 +48,9 @@ template <typename T> struct data {
   data(std::size_t capacity);
 
  private:
+  std::unique_lock<std::mutex> wait_for_readable();
+  std::unique_lock<std::mutex> wait_for_writable();
+
   std::size_t size;
   const std::size_t capacity;
 
@@ -136,15 +139,14 @@ template <typename T> T out<T>::read_unlocked()
   return std::move(shared->storage[old]);
 }
 
-template <typename T>
-static std::unique_lock<std::mutex> WaitForReadable(data<T>& data)
+template <typename T> std::unique_lock<std::mutex> data<T>::wait_for_readable()
 {
-  std::unique_lock lock(data.mutex);
-  data.cv.wait(lock,
-               // only wake up if either there is
-               // something in the queue, or
-               // the in announced his death
-               [&data] { return data.size > 0 || !data.in_alive; });
+  std::unique_lock lock(mutex);
+  cv.wait(lock,
+          // only wake up if either there is
+          // something in the queue, or
+          // the in announced his death
+          [this] { return this->size > 0 || !this->in_alive; });
 
   return lock;
 }
@@ -154,7 +156,7 @@ template <typename T> std::optional<T> out<T>::get()
   if (closed) return std::nullopt;
   std::optional<T> result = std::nullopt;
   {
-    auto lock = WaitForReadable(*shared);
+    auto lock = shared->wait_for_readable();
 
     if (this->shared->size > 0) {
       result = std::move(read_unlocked());
@@ -172,7 +174,7 @@ template <typename T> std::optional<std::vector<T>> out<T>::get_all()
 {
   if (closed) return std::nullopt;
   std::optional<std::vector<T>> result{std::nullopt};
-  auto lock = WaitForReadable(*shared);
+  auto lock = shared->wait_for_readable();
 
   if (shared->size > 0) {
     std::vector<T>& v = result.emplace();
@@ -271,12 +273,11 @@ template <typename T> bool in<T>::try_put(T& val)
   return success;
 }
 
-template <typename T>
-std::unique_lock<std::mutex> WaitForWritable(data<T>& data)
+template <typename T> std::unique_lock<std::mutex> data<T>::wait_for_writable()
 {
-  std::unique_lock lock(data.mutex);
-  data.cv.wait(
-      lock, [&data] { return data.size < data.capacity || !data.out_alive; });
+  std::unique_lock lock(mutex);
+  cv.wait(lock,
+          [this] { return this->size < this->capacity || !this->out_alive; });
   return lock;
 }
 
@@ -284,7 +285,7 @@ template <typename T> bool in<T>::put(const T& val)
 {
   if (closed) return false;
   bool success = false;
-  auto lock = WaitForWritable(*shared);
+  auto lock = shared->wait_for_writable();
 
   if (shared->out_alive) {
     // since the out is still alive, we know that
@@ -305,7 +306,7 @@ template <typename T> bool in<T>::put(T&& val)
 {
   if (closed) return false;
   bool success = false;
-  auto lock = WaitForWritable(*shared);
+  auto lock = shared->wait_for_writable();
 
   if (shared->out_alive) {
     // since the out is still alive, we know that
