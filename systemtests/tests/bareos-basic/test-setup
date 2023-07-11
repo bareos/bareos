@@ -39,6 +39,11 @@ for i in 1 2 3 4 5 6 7 8 9 10; do
   "$gentestdata" --size=1048576 >"$tmp/data/testfile$i.bin"
 done
 
+mkdir "$tmp/data/hardlinks"
+mkdir "$tmp/data/hardlinks/file"
+touch "$tmp/data/hardlinks/file/file"
+ln "$tmp/data/hardlinks/file/file" "$tmp/data/hardlinks/link"
+
 bin/bareos start
 bin/bareos status
 
