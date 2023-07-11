@@ -809,7 +809,9 @@ static inline int process_directory(JobControlRecord* jcr,
    * were used without this record.
    */
   HandleFile(jcr, dir_ff_pkt, top_level); /* handle directory entry */
-  if (ff_pkt->linked) { ff_pkt->linked->FileIndex = dir_ff_pkt->FileIndex; }
+  if (dir_ff_pkt->linked) {
+    dir_ff_pkt->linked->FileIndex = dir_ff_pkt->FileIndex;
+  }
   FreeDirFfPkt(dir_ff_pkt);
 
   if (BitIsSet(FO_KEEPATIME, ff_pkt->flags)) {
