@@ -178,6 +178,8 @@ class block_file {
 
   bool is_full() const { return capacity() == size(); }
 
+  bool flush() { return vec.flush(); }
+
   bool truncate()
   {
     start_block = 0;
@@ -226,6 +228,8 @@ class record_file {
 
   bool is_full() const { return capacity() == size(); }
 
+  bool flush() { return vec.flush(); }
+
   bool truncate()
   {
     start_record = 0;
@@ -273,6 +277,8 @@ class data_file {
   const char* path() const { return vec.backing_file().relative_path(); }
 
   std::size_t size() const { return vec.size(); }
+
+  bool flush() { return vec.flush(); }
 
   bool truncate()
   {
@@ -541,6 +547,16 @@ struct volume_data {
     return true;
   }
 
+  bool flush()
+  {
+    bool error = false;
+    for (auto& blockfile : blockfiles) { error |= !blockfile.flush(); }
+    for (auto& recordfile : recordfiles) { error |= !recordfile.flush(); }
+    for (auto& [_, datafile] : datafiles) { error |= !datafile.flush(); }
+
+    return !error;
+  }
+
   bool is_ok() const { return !error; }
 
   std::vector<block_file> blockfiles{};
@@ -571,7 +587,6 @@ class volume {
     }
 
     dir = util::raii_fd(path, O_RDONLY | O_DIRECTORY, dir_mode);
-
 
     if (!dir.is_ok()) {
       error = true;
@@ -822,6 +837,8 @@ class volume {
 
     return *this;
   }
+
+  bool flush() { return contents.flush(); }
 
   ~volume()
   {

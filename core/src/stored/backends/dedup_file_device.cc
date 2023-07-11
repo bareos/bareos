@@ -375,6 +375,17 @@ bool dedup_file_device::eod(DeviceControlRecord* dcr)
   }
 }
 
+bool dedup_file_device::d_flush(DeviceControlRecord*)
+{
+  if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
+    dedup::volume& vol = found->second;
+    ASSERT(vol.is_ok());
+    return vol.flush();
+  } else {
+    return false;
+  }
+}
+
 REGISTER_SD_BACKEND(dedup, dedup_file_device);
 
 } /* namespace storagedaemon  */

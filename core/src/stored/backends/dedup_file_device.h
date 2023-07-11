@@ -56,6 +56,7 @@ class dedup_file_device : public Device {
                   uint32_t rfile,
                   uint32_t rblock) override;
   bool eod(DeviceControlRecord* dcr) override;
+  bool d_flush(DeviceControlRecord*) override;
 
  private:
   bool mounted{false};
