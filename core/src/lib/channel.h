@@ -87,7 +87,7 @@ template <typename T> struct out {
 template <typename T> struct in {
   bool put(const T& val);
   bool put(T&& val);
-  bool try_put(const T& val);
+  bool try_put(T& val);
   void close();
   ~in();
   in(std::shared_ptr<data<T>> shared);
@@ -248,7 +248,7 @@ template <typename T> void in<T>::write_unlocked(const T& val)
   write_pos = wrapping_inc(write_pos, shared->capacity);
 }
 
-template <typename T> bool in<T>::try_put(const T& val)
+template <typename T> bool in<T>::try_put(T& val)
 {
   if (closed) return false;
   bool success = false;
@@ -261,7 +261,7 @@ template <typename T> bool in<T>::try_put(const T& val)
       closed = true;
       updated = true;
     } else if (shared->size < shared->capacity) {
-      write_unlocked(val);
+      write_unlocked(std::move(val));
       success = true;
       updated = true;
     }
