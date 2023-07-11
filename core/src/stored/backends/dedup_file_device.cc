@@ -353,7 +353,6 @@ bool dedup_file_device::Reposition(DeviceControlRecord* dcr,
 {
   Dmsg2(10, "file: %u -> %u; block: %u -> %u\n", file, rfile, block_num,
         rblock);
-  ASSERT(file == 0);
 
   if (!open_volume) {
     // error: no volume mounted
