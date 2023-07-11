@@ -1151,18 +1151,20 @@ The directives within an Options resource may be one of the following:
 .. config:option:: dir/fileset/include/options/HardLinks
 
    :type: yes|no
-   :default: yes
+   :default: no
 
 
-   When enabled (default), this directive will cause hard links to be
-   backed up. However, the File daemon keeps track of hard linked files and
-   will backup the data only once. The process of keeping track of the
-   hard links can be quite expensive if you have lots of them (tens of
-   thousands or more). This doesn't occur on normal Unix systems, but if
-   you use a program like BackupPC, it can create hundreds of thousands, or
-   even millions of hard links. Backups become very long and the File daemon
-   will consume a lot of CPU power checking hard links.  In such a case,
-   set :config:option:`dir/fileset/include/options/HardLinks = no`
+   When enabled, this directive will cause hard links to be backed up. 
+   However, the File daemon keeps track of hard linked files and
+   will backup the data only once. When you have a file with multiple hardlinks 
+   and the first hardlink encountered gets excluded, then no actual file data is 
+   send but the backup is still finishes without errors, which normally would create
+   an error on restore. In such a case the hardlink information will be dropped and 
+   not restored.
+   Also be aware that the process of keeping track of the hard links can be quite 
+   expensive if you have lots of them (tens of thousands or more). Backups become 
+   very long and the File daemon will consume a lot of CPU power checking hard links.
+   In such a case, set :config:option:`dir/fileset/include/options/HardLinks = no`
    and hard links will not be backed up.  Note, using
    this option will most likely backup more data and on a restore the file
    system will not be restored identically to the original.

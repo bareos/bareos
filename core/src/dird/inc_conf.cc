@@ -231,10 +231,8 @@ static IncludeExcludeItem* res_incexe;
 
 /* clang-format off */
 
-/*
- * new Include/Exclude items
- * name handler value code flags default_value
- */
+/* new Include/Exclude items
+ * name handler value code flags default_value */
 ResourceItem newinc_items[] = {
   { "File", CFG_TYPE_FNAME, 0, nullptr, 0, 0, NULL, NULL, NULL },
   { "Plugin", CFG_TYPE_PLUGINNAME, 0, nullptr, 0, 0, NULL, NULL, NULL },
@@ -243,10 +241,8 @@ ResourceItem newinc_items[] = {
   { NULL, 0, 0, nullptr, 0, 0, NULL, NULL, NULL }
 };
 
-/*
- * Items that are valid in an Options resource
- * name handler value code flags default_value
- */
+/* Items that are valid in an Options resource
+ * name handler value code flags default_value */
 ResourceItem options_items[] = {
   { "Compression", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
   { "Signature", CFG_TYPE_OPTION, 0, nullptr, 0, 0, NULL, NULL, NULL },
@@ -295,7 +291,10 @@ ResourceItem options_items[] = {
 
 struct OptionsDefaultValues {
   std::map<int, options_default_value_s> option_default_values
-      = {{INC_KW_ACL, {false, "A"}}, {INC_KW_XATTR, {false, "X"}}};
+      = {{INC_KW_ACL, {false, "A"}}, 
+         {INC_KW_HARDLINK, {false, "H"}},
+         {INC_KW_XATTR, {false, "X"}}
+        };
 };
 
 // determine used compression algorithms

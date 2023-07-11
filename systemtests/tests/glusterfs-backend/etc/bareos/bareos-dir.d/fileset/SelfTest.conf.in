@@ -4,6 +4,7 @@ FileSet {
   Include {
     Options {
       Signature = XXH128
+      Hardlinks = yes
     }
    #File = "@sbindir@"
     File=<@tmpdir@/file-list

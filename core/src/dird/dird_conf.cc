@@ -1864,7 +1864,7 @@ void FilesetResource::PrintConfigIncludeExcludeOptions(
         send.KeyBool("Recurse", false);
         break;
       case 'H': /* no hard link handling */
-        send.KeyBool("Hardlinks", false);
+        send.KeyBool("HardLinks", false);
         break;
       case 'i':
         send.KeyBool("IgnoreCase", true);
