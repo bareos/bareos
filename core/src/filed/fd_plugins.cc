@@ -154,14 +154,18 @@ static CoreFunctions bareos_core_functions = {sizeof(CoreFunctions),
 
 // Bareos private context
 struct b_plugin_ctx {
+  b_plugin_ctx(JobControlRecord* t_jcr, Plugin* t_plugin)
+      : jcr(t_jcr), plugin(t_plugin)
+  {
+  }
   JobControlRecord* jcr; /* jcr for plugin */
-  bRC ret;               /* last return code */
-  bool disabled;         /* set if plugin disabled */
-  bool restoreFileStarted;
-  bool createFileCalled;
-  char events[NbytesForBits(FD_NR_EVENTS + 1)]; /* enabled events bitmask */
-  findIncludeExcludeItem* exclude;              /* pointer to exclude files */
-  findIncludeExcludeItem* include; /* pointer to include/exclude files */
+  bRC ret{bRC_OK};       /* last return code */
+  bool disabled{false};  /* set if plugin disabled */
+  bool restoreFileStarted{false};
+  bool createFileCalled{false};
+  char events[NbytesForBits(FD_NR_EVENTS + 1)]{}; /* enabled events bitmask */
+  findIncludeExcludeItem* exclude{nullptr};                /* pointer to exclude files */
+  findIncludeExcludeItem* include{nullptr}; /* pointer to include/exclude files */
   Plugin* plugin; /* pointer to plugin of which this is an instance off */
 };
 
@@ -1682,18 +1686,11 @@ static inline PluginContext* instantiate_plugin(JobControlRecord* jcr,
                                                 Plugin* plugin,
                                                 char instance)
 {
-  PluginContext* ctx;
-  b_plugin_ctx* b_ctx;
-
-  b_ctx = (b_plugin_ctx*)malloc(sizeof(b_plugin_ctx));
-  b_ctx = (b_plugin_ctx*)memset(b_ctx, 0, sizeof(b_plugin_ctx));
-  b_ctx->jcr = jcr;
-  b_ctx->plugin = plugin;
-
-  ctx = (PluginContext*)malloc(sizeof(PluginContext));
+  b_plugin_ctx* b_ctx = new b_plugin_ctx(jcr, plugin);
+  PluginContext* ctx = (PluginContext*)malloc(sizeof(PluginContext));
   ctx->instance = instance;
   ctx->plugin = plugin;
-  ctx->core_private_context = (void*)b_ctx;
+  ctx->core_private_context = b_ctx;
   ctx->plugin_private_context = NULL;
 
   jcr->plugin_ctx_list->append(ctx);
@@ -1750,7 +1747,7 @@ void FreePlugins(JobControlRecord* jcr)
   foreach_alist (ctx, jcr->plugin_ctx_list) {
     // Free the plugin instance
     PlugFunc(ctx->plugin)->freePlugin(ctx);
-    free(ctx->core_private_context); /* Free BAREOS private context */
+    delete static_cast<b_plugin_ctx*>(ctx->core_private_context);
   }
 
   delete jcr->plugin_ctx_list;
@@ -2424,7 +2421,6 @@ static bRC bareosCheckChanges(PluginContext* ctx, save_pkt* sp)
   // CheckChanges() can update delta sequence number, return it to the plugin
   sp->delta_seq = ff_pkt->delta_seq;
   sp->accurate_found = ff_pkt->accurate_found;
-
 
 bail_out:
   Dmsg1(100, "checkChanges=%i\n", retval);
