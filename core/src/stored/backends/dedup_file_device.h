@@ -61,8 +61,8 @@ class dedup_file_device : public Device {
  private:
   bool mounted{false};
 
-  int fd_ctr;
-  std::unordered_map<int, dedup::volume> open_volumes;
+  int fd_ctr{-1};
+  std::optional<dedup::volume> open_volume;
 };
 
 } /* namespace storagedaemon */

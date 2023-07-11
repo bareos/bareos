@@ -102,15 +102,10 @@ bool dedup_file_device::ScanForVolumeImpl(DeviceControlRecord* dcr)
 
 int dedup_file_device::d_open(const char* path, int, int mode)
 {
-  // todo parse mode
-  // see Device::set_mode
-
-  // create/open the folder structure
-  // path
-  // +- block
-  // +- record
-  // +- data
-
+  if (open_volume.has_value()) {
+    // error: a volume is already open
+    return -1;
+  }
   switch (open_mode) {
     case DeviceMode::CREATE_READ_WRITE:
       break;
@@ -126,21 +121,13 @@ int dedup_file_device::d_open(const char* path, int, int mode)
     }
   }
 
-  dedup::volume vol{path, open_mode, mode, device_resource->dedup_block_size};
+  auto& vol = open_volume.emplace(path, open_mode, mode,
+                                  device_resource->dedup_block_size);
 
   if (vol.is_ok()) {
-    int new_fd = fd_ctr;
-    auto [iter, inserted] = open_volumes.emplace(new_fd, std::move(vol));
-
-    if (!inserted) {
-      // volume was already open; that should not be possible
-      open_volumes.erase(iter);
-      return -1;
-    }
-
-    fd_ctr += 1;
-    return new_fd;
+    return ++fd_ctr;
   } else {
+    open_volume.reset();
     return -1;
   }
 }
@@ -213,24 +200,33 @@ ssize_t scatter(dedup::volume& vol, const void* data, size_t size)
 
 ssize_t dedup_file_device::d_write(int fd, const void* data, size_t size)
 {
-  if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
-    dedup::volume& vol = found->second;
-    ASSERT(vol.is_ok());
-    SetEot();
-    auto current_block = block_number(file, block_num);
-    if (current_block == 0 && vol.size() == 1) {
-      // we are currently trying to relabel the volume
-      vol.reset();
-    }
-
-    if (current_block != vol.size()) {
-      // error: not at end of device
-      return -1;
-    }
-    return scatter(vol, data, size);
-  } else {
+  if (fd != fd_ctr) {
+    // error: unknown file descriptor
     return -1;
   }
+
+  if (!open_volume) {
+    // error: no volume mounted
+    return -1;
+  }
+
+  dedup::volume& vol = open_volume.value();
+  ASSERT(vol.is_ok());
+  SetEot();
+  auto current_block = block_number(file, block_num);
+  if (current_block == 0 && vol.size() == 1) {
+    // we are currently trying to relabel the volume
+    // since bareos does this often with empty volumes
+    // we have a special case allowing this.
+    // We do this by reseting the volume to empty.
+    vol.reset();
+  }
+
+  if (current_block != vol.size()) {
+    // error: not at end of device
+    return -1;
+  }
+  return scatter(vol, data, size);
 }
 
 ssize_t gather(dedup::volume& vol,
@@ -264,30 +260,42 @@ ssize_t gather(dedup::volume& vol,
 
 ssize_t dedup_file_device::d_read(int fd, void* data, size_t size)
 {
-  if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
-    dedup::volume& vol = found->second;
-    ASSERT(vol.is_ok());
-    auto block = block_number(file, block_num);
-    ssize_t bytes_written = gather(vol, block, static_cast<char*>(data), size);
-    if (block + 1 == vol.size()) {
-      SetEot();
-    } else {
-      ClearEot();
-    }
-    return bytes_written;
-  } else {
+  if (fd != fd_ctr) {
+    // error: unknown file descriptor
     return -1;
   }
+
+  if (!open_volume) {
+    // error: no volume mounted
+    return -1;
+  }
+
+  dedup::volume& vol = open_volume.value();
+  ASSERT(vol.is_ok());
+  auto block = block_number(file, block_num);
+  ssize_t bytes_written = gather(vol, block, static_cast<char*>(data), size);
+  if (block + 1 == vol.size()) {
+    SetEot();
+  } else {
+    ClearEot();
+  }
+  return bytes_written;
 }
 
 int dedup_file_device::d_close(int fd)
 {
-  size_t num_erased = open_volumes.erase(fd);
-  if (num_erased == 1) {
-    return 0;
-  } else {
+  if (fd != fd_ctr) {
+    // error: unknown file descriptor
     return -1;
   }
+
+  if (!open_volume) {
+    // error: no volume mounted
+    return -1;
+  }
+
+  open_volume.reset();
+  return 0;
 }
 
 int dedup_file_device::d_ioctl(int, ioctl_req_t, char*) { return -1; }
@@ -299,32 +307,37 @@ boffset_t dedup_file_device::d_lseek(DeviceControlRecord*, boffset_t, int)
 
 bool dedup_file_device::d_truncate(DeviceControlRecord*)
 {
-  if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
-    dedup::volume& vol = found->second;
-    ASSERT(vol.is_ok());
-    return vol.reset();
-  } else {
-    return false;
+  if (!open_volume) {
+    // error: no volume mounted
+    return -1;
   }
+
+  dedup::volume& vol = open_volume.value();
+  ASSERT(vol.is_ok());
+  return vol.reset();
 }
 
 bool dedup_file_device::rewind(DeviceControlRecord* dcr)
 {
-  if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
-    dedup::volume& vol = found->second;
-    ASSERT(vol.is_ok());
-    block_num = 0;
-    file = 0;
-    file_addr = 0;
-    if (vol.size() == 0) {
-      SetEot();
-    } else {
-      ClearEot();
-    }
-    return UpdatePos(dcr);
-  } else {
-    return false;
+  if (!open_volume) {
+    // error: no volume mounted
+    return -1;
   }
+
+  dedup::volume& vol = open_volume.value();
+  ASSERT(vol.is_ok());
+  block_num = 0;
+  file = 0;
+  // we do not use file_addr
+  // so make sure it stays at 0
+  file_addr = 0;
+  if (vol.size() == 0) {
+    SetEot();
+  } else {
+    ClearEot();
+  }
+
+  return UpdatePos(dcr);
 }
 
 bool dedup_file_device::UpdatePos(DeviceControlRecord*)
@@ -342,48 +355,54 @@ bool dedup_file_device::Reposition(DeviceControlRecord* dcr,
         rblock);
   ASSERT(file == 0);
 
-  if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
-    dedup::volume& vol = found->second;
-    ASSERT(vol.is_ok());
-
-    block_num = rblock;
-    file = rfile;
-
-    if (block_number(file, block_num) == vol.size()) {
-      SetEot();
-    } else {
-      ClearEot();
-    }
-    return UpdatePos(dcr);
-  } else {
-    return false;
+  if (!open_volume) {
+    // error: no volume mounted
+    return -1;
   }
+
+  dedup::volume& vol = open_volume.value();
+
+  ASSERT(vol.is_ok());
+
+  block_num = rblock;
+  file = rfile;
+
+  if (block_number(file, block_num) == vol.size()) {
+    SetEot();
+  } else {
+    ClearEot();
+  }
+  return UpdatePos(dcr);
 }
 
 bool dedup_file_device::eod(DeviceControlRecord* dcr)
 {
-  if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
-    dedup::volume& vol = found->second;
-    ASSERT(vol.is_ok());
-    auto block = vol.size();
-    block_num = static_cast<std::uint32_t>(block);
-    file = static_cast<std::uint32_t>(block >> 32);
-    SetEot();
-    return UpdatePos(dcr);
-  } else {
-    return false;
+  if (!open_volume) {
+    // error: no volume mounted
+    return -1;
   }
+
+  dedup::volume& vol = open_volume.value();
+
+  ASSERT(vol.is_ok());
+  auto block = vol.size();
+  block_num = static_cast<std::uint32_t>(block);
+  file = static_cast<std::uint32_t>(block >> 32);
+  SetEot();
+  return UpdatePos(dcr);
 }
 
 bool dedup_file_device::d_flush(DeviceControlRecord*)
 {
-  if (auto found = open_volumes.find(fd); found != open_volumes.end()) {
-    dedup::volume& vol = found->second;
-    ASSERT(vol.is_ok());
-    return vol.flush();
-  } else {
-    return false;
+  if (!open_volume) {
+    // error: no volume mounted
+    return -1;
   }
+
+  dedup::volume& vol = open_volume.value();
+  ASSERT(vol.is_ok());
+
+  return vol.flush();
 }
 
 REGISTER_SD_BACKEND(dedup, dedup_file_device);
