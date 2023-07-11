@@ -735,7 +735,6 @@ static inline int process_directory(JobControlRecord* jcr,
 
     if (!FileIsExcluded(ff_pkt, link)) {
       rtn_stat = FindOneFile(jcr, ff_pkt, HandleFile, link, our_device, false);
-      if (ff_pkt->linked) { ff_pkt->linked->FileIndex = ff_pkt->FileIndex; }
     }
   }
 
