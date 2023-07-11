@@ -972,6 +972,12 @@ int FindOneFile(JobControlRecord* jcr,
 #endif
 
   ff_pkt->LinkFI = 0;
+  // some codes accesses FileIndex even if the file was never send
+  // If we did not reset it here, they would read the file index of the
+  // last send file.  This is obviously not great and as such we
+  // reset it to zero here before it can do any damage (0 is an invalid
+  // FileIndex).
+  ff_pkt->FileIndex = 0;
   /* Handle hard linked files
    *
    * Maintain a list of hard linked files already backed up. This
