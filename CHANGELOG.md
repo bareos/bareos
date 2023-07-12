@@ -77,6 +77,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - vss: remove dependency on live system during backup [PR #1452]
 - build: adapt matrix and pkglist for changes to CI [PR #1490]
 - cats: postgresql introduce pl/sql lstat_decode() function [PR #1466]
+- bsmtp: make mailhost and port message info a debug message [PR #1507]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -200,4 +201,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1490]: https://github.com/bareos/bareos/pull/1490
 [PR #1493]: https://github.com/bareos/bareos/pull/1493
 [PR #1502]: https://github.com/bareos/bareos/pull/1502
+[PR #1507]: https://github.com/bareos/bareos/pull/1507
 [unreleased]: https://github.com/bareos/bareos/tree/master
