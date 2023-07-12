@@ -34,8 +34,9 @@
 #include "lib/htable.h"
 #include "lib/dlist.h"
 #include "lib/alist.h"
+#include "findlib/hardlink.h"
 #include <cstring>
-#include <unordered_map>
+
 
 #include <dirent.h>
 #define NAMELEN(dirent) (strlen((dirent)->d_name))
@@ -168,47 +169,6 @@ struct HfsPlusInfo {
   char fndrinfo[32]{};     /**< Finder Info */
   off_t rsrclength{0};     /**< Size of resource fork */
 };
-
-/**
- * Structure for keeping track of hard linked files, we
- * keep an entry for each hardlinked file that we save,
- * which is the first one found. For all the other files that
- * are linked to this one, we save only the directory
- * entry so we can link it.
- */
-struct CurLink {
-  struct hlink link;
-  dev_t dev;                /**< Device */
-  ino_t ino;                /**< Inode with device is unique */
-  uint32_t FileIndex;       /**< Bareos FileIndex of this file */
-  int32_t digest_stream;    /**< Digest type if needed */
-  std::vector<char> digest; /**< Checksum of the file if needed */
-  std::string name;         /**< The name */
-};
-
-struct Hardlink {
-  dev_t dev;
-  ino_t ino;
-
-  friend bool operator==(const Hardlink& l, const Hardlink& r)
-  {
-    return l.dev == r.dev && l.ino == r.ino;
-  }
-};
-
-template <> struct std::hash<Hardlink> {
-  std::size_t operator()(const Hardlink& link) const
-  {
-    auto hash1 = std::hash<decltype(link.dev)>{}(link.dev);
-    auto hash2 = std::hash<decltype(link.ino)>{}(link.ino);
-
-    // change this when N3876 or something similar
-    // is finally implemented.
-    return hash1 + 67 * hash2;
-  }
-};
-
-using LinkHash = std::unordered_map<Hardlink, CurLink>;
 
 /**
  * Definition of the FindFiles packet passed as the
