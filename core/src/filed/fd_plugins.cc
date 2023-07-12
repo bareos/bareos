@@ -794,7 +794,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 #ifdef S_IFSOCK
           case S_IFSOCK:
 #endif
-            hl = lookup_hardlink(jcr, ff_pkt, ff_pkt->statp.st_ino,
+            hl = lookup_hardlink(ff_pkt->linkhash, ff_pkt->statp.st_ino,
                                  ff_pkt->statp.st_dev);
             if (hl) {
               /* If we have already backed up the hard linked file don't do it
@@ -820,8 +820,8 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
               }
             } else {
               // File not previously dumped. Chain it into our list.
-              hl = new_hardlink(jcr, ff_pkt, sp.fname, ff_pkt->statp.st_ino,
-                                ff_pkt->statp.st_dev);
+              hl = new_hardlink(ff_pkt->linkhash, sp.fname,
+                                ff_pkt->statp.st_ino, ff_pkt->statp.st_dev);
               ff_pkt->linked = hl; /* Mark saved link */
               Dmsg2(400, "Added to hash FI=%d file=%s\n", ff_pkt->FileIndex,
                     hl->name.c_str());
