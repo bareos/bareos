@@ -34,6 +34,8 @@
 #include "lib/htable.h"
 #include "lib/dlist.h"
 #include "lib/alist.h"
+#include <cstring>
+#include <unordered_map>
 
 #include <dirent.h>
 #define NAMELEN(dirent) (strlen((dirent)->d_name))
@@ -177,17 +179,37 @@ struct HfsPlusInfo {
  */
 struct CurLink {
   struct hlink link;
-  dev_t dev;             /**< Device */
-  ino_t ino;             /**< Inode with device is unique */
-  uint32_t FileIndex;    /**< Bareos FileIndex of this file */
-  int32_t digest_stream; /**< Digest type if needed */
-  uint32_t digest_len;   /**< Digest len if needed */
-  char* digest;          /**< Checksum of the file if needed */
-  char* name;            /**< The name */
+  dev_t dev;                /**< Device */
+  ino_t ino;                /**< Inode with device is unique */
+  uint32_t FileIndex;       /**< Bareos FileIndex of this file */
+  int32_t digest_stream;    /**< Digest type if needed */
+  std::vector<char> digest; /**< Checksum of the file if needed */
+  std::string name;         /**< The name */
 };
 
-using LinkHash
-    = htable<htable_binary_key, CurLink, MonotonicBuffer::Size::Medium>;
+struct Hardlink {
+  dev_t dev;
+  ino_t ino;
+
+  friend bool operator==(const Hardlink& l, const Hardlink& r)
+  {
+    return l.dev == r.dev && l.ino == r.ino;
+  }
+};
+
+template <> struct std::hash<Hardlink> {
+  std::size_t operator()(const Hardlink& link) const
+  {
+    auto hash1 = std::hash<decltype(link.dev)>{}(link.dev);
+    auto hash2 = std::hash<decltype(link.ino)>{}(link.ino);
+
+    // change this when N3876 or something similar
+    // is finally implemented.
+    return hash1 + 67 * hash2;
+  }
+};
+
+using LinkHash = std::unordered_map<Hardlink, CurLink>;
 
 
 /**

@@ -434,7 +434,7 @@ static inline int process_hardlink(JobControlRecord* jcr,
   hl = lookup_hardlink(jcr, ff_pkt, ff_pkt->statp.st_ino, ff_pkt->statp.st_dev);
   if (hl) {
     // If we have already backed up the hard linked file don't do it again
-    if (bstrcmp(hl->name, fname)) {
+    if (bstrcmp(hl->name.c_str(), fname)) {
       Dmsg2(400, "== Name identical skip FI=%d file=%s\n", hl->FileIndex,
             fname);
       *done = true;
@@ -448,26 +448,25 @@ static inline int process_hardlink(JobControlRecord* jcr,
     // example), we overwrite the name and fileindex inside the hl entry.
 
     if (hl->FileIndex > 0) {
-      ff_pkt->link = hl->name;
+      ff_pkt->link = hl->name.data();
       ff_pkt->type = FT_LNKSAVED; /* Handle link, file already saved */
       ff_pkt->LinkFI = hl->FileIndex;
       ff_pkt->linked = NULL;
-      ff_pkt->digest = hl->digest;
+      ff_pkt->digest = hl->digest.data();
       ff_pkt->digest_stream = hl->digest_stream;
-      ff_pkt->digest_len = hl->digest_len;
+      ff_pkt->digest_len = hl->digest.size();
 
       rtn_stat = HandleFile(jcr, ff_pkt, top_level);
       Dmsg3(400, "FT_LNKSAVED FI=%d LinkFI=%d file=%s\n", ff_pkt->FileIndex,
-            hl->FileIndex, hl->name);
+            hl->FileIndex, hl->name.c_str());
       *done = true;
     } else {
       // if FileIndex is <= 0, then no file data was send yet.  Send it now
       // and update the name
-      int len = strlen(fname) + 1;
-      hl->name = (char*)ff_pkt->linkhash->hash_malloc(len);
-      bstrncpy(hl->name, fname, len);
+      hl->name.assign(fname);
       ff_pkt->linked = hl; /* Mark saved link */
-      Dmsg2(400, "Added to hash FI=%d file=%s\n", ff_pkt->FileIndex, hl->name);
+      Dmsg2(400, "Added to hash FI=%d file=%s\n", ff_pkt->FileIndex,
+            hl->name.c_str());
       *done = false;
     }
 
@@ -476,7 +475,8 @@ static inline int process_hardlink(JobControlRecord* jcr,
     hl = new_hardlink(jcr, ff_pkt, fname, ff_pkt->statp.st_ino,
                       ff_pkt->statp.st_dev);
     ff_pkt->linked = hl; /* Mark saved link */
-    Dmsg2(400, "Added to hash FI=%d file=%s\n", ff_pkt->FileIndex, hl->name);
+    Dmsg2(400, "Added to hash FI=%d file=%s\n", ff_pkt->FileIndex,
+          hl->name.c_str());
     *done = false;
   }
 
