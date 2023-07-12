@@ -273,6 +273,7 @@ int main(int argc, char* argv[])
 
   int mailport = default_port;
   std::string mailhost = default_mailhost;
+  std::string host_and_port_source = "Mailhost and mailport set to default";
 
   char* env_variable_smtpserver;
   if ((env_variable_smtpserver = getenv("SMTPSERVER")) != nullptr) {
@@ -280,24 +281,21 @@ int main(int argc, char* argv[])
         = ParseHostAndPort(std::string(env_variable_smtpserver));
     mailhost = host_and_port.first;
     mailport = host_and_port.second;
-    Pmsg2(0,
-          "Taking host and mailport from the SMTPSERVER environment variable: "
-          "host=%s ; port=%d\n",
-          mailhost.c_str(), mailport);
+    host_and_port_source
+        = "Mailhost and port extracted from SMTPSERVER environment variable";
   }
 
   bsmtp_app
       .add_option(
           "-h,--mailhost",
-          [&mailport, &mailhost](std::vector<std::string> val) {
+          [&mailport, &mailhost,
+           &host_and_port_source](std::vector<std::string> val) {
             std::pair<std::string, int> host_and_port
                 = ParseHostAndPort(val[0]);
             mailhost = host_and_port.first;
             mailport = host_and_port.second;
-            Pmsg2(0,
-                  "Mailhost argument detected: Taking host and mailport from "
-                  "cli : host=%s ; port=%d\n",
-                  mailhost.c_str(), mailport);
+            host_and_port_source
+                = "Mailhost and port extracted from CLI arguments";
             return true;
           },
           "Use mailhost:port as the SMTP server.")
@@ -320,6 +318,9 @@ int main(int argc, char* argv[])
       ->required();
 
   CLI11_PARSE(bsmtp_app, argc, argv);
+
+  Dmsg3(20, "%s: mailhost=%s ; mailport=%d\n", host_and_port_source.c_str(),
+        mailhost.c_str(), mailport);
 
 
 #if defined(HAVE_WIN32)
