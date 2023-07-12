@@ -429,56 +429,37 @@ static inline int process_hardlink(JobControlRecord* jcr,
                                    bool* done)
 {
   int rtn_stat = 0;
-  CurLink* hl;
 
-  hl = lookup_hardlink(ff_pkt->linkhash, ff_pkt->statp.st_ino,
-                       ff_pkt->statp.st_dev);
-  if (hl) {
-    // If we have already backed up the hard linked file don't do it again
-    if (bstrcmp(hl->name.c_str(), fname)) {
-      Dmsg2(400, "== Name identical skip FI=%d file=%s\n", hl->FileIndex,
-            fname);
-      *done = true;
-      return 1; /* ignore */
-    }
+  if (!ff_pkt->linkhash) { ff_pkt->linkhash = new LinkHash(10000); }
 
-    // We need to ensure that at least one hardlinked file was send.
-    // Since only files that were sent have FileIndex > 0, we can
-    // use hl->FileIndex to see whether a file was send already or not.
-    // If no file was send yet (this can happen if the file was excluded for
-    // example), we overwrite the name and fileindex inside the hl entry.
+  auto [iter, inserted] = ff_pkt->linkhash->try_emplace(
+      Hardlink{ff_pkt->statp.st_dev, ff_pkt->statp.st_ino}, fname);
+  CurLink& hl = iter->second;
 
-    if (hl->FileIndex > 0) {
-      ff_pkt->link = hl->name.data();
-      ff_pkt->type = FT_LNKSAVED; /* Handle link, file already saved */
-      ff_pkt->LinkFI = hl->FileIndex;
-      ff_pkt->linked = NULL;
-      ff_pkt->digest = hl->digest.data();
-      ff_pkt->digest_stream = hl->digest_stream;
-      ff_pkt->digest_len = hl->digest.size();
-
-      rtn_stat = HandleFile(jcr, ff_pkt, top_level);
-      Dmsg3(400, "FT_LNKSAVED FI=%d LinkFI=%d file=%s\n", ff_pkt->FileIndex,
-            hl->FileIndex, hl->name.c_str());
-      *done = true;
-    } else {
-      // if FileIndex is <= 0, then no file data was send yet.  Send it now
-      // and update the name
-      hl->name.assign(fname);
-      ff_pkt->linked = hl; /* Mark saved link */
-      Dmsg2(400, "Added to hash FI=%d file=%s\n", ff_pkt->FileIndex,
-            hl->name.c_str());
-      *done = false;
-    }
-
-  } else {
-    // File not previously dumped. Chain it into our list.
-    hl = new_hardlink(ff_pkt->linkhash, fname, ff_pkt->statp.st_ino,
-                      ff_pkt->statp.st_dev);
-    ff_pkt->linked = hl; /* Mark saved link */
-    Dmsg2(400, "Added to hash FI=%d file=%s\n", ff_pkt->FileIndex,
-          hl->name.c_str());
+  // note: FileIndex < 0 should not happen
+  if (hl.FileIndex <= 0) {
+    // no file backed up yet
+    ff_pkt->linked = &hl;
     *done = false;
+  } else if (bstrcmp(hl.name.c_str(), fname)) {
+    // If we have already backed up the hard linked file don't do it again
+    Dmsg2(400, "== Name identical skip FI=%d file=%s\n", hl.FileIndex, fname);
+    *done = true;
+    rtn_stat = 1; /* ignore */
+  } else {
+    // some other file was already backed up!
+    ff_pkt->link = hl.name.data();
+    ff_pkt->type = FT_LNKSAVED; /* Handle link, file already saved */
+    ff_pkt->LinkFI = hl.FileIndex;
+    ff_pkt->linked = NULL;
+    ff_pkt->digest = hl.digest.data();
+    ff_pkt->digest_stream = hl.digest_stream;
+    ff_pkt->digest_len = hl.digest.size();
+
+    rtn_stat = HandleFile(jcr, ff_pkt, top_level);
+    Dmsg3(400, "FT_LNKSAVED FI=%d LinkFI=%d file=%s\n", ff_pkt->FileIndex,
+          hl.FileIndex, hl.name.c_str());
+    *done = true;
   }
 
   return rtn_stat;
@@ -917,7 +898,7 @@ int FindOneFile(JobControlRecord* jcr,
   int rtn_stat;
   bool done = false;
 
-  ff_pkt->fname = ff_pkt->link = fname;
+  ff_pkt->link = ff_pkt->fname = fname;
   ff_pkt->type = FT_UNSET;
   if (lstat(fname, &ff_pkt->statp) != 0) {
     // Cannot stat file

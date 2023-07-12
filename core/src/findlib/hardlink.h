@@ -73,13 +73,4 @@ template <> struct std::hash<Hardlink> {
 
 using LinkHash = std::unordered_map<Hardlink, CurLink>;
 
-CurLink* lookup_hardlink(LinkHash* table, ino_t ino, dev_t dev);
-
-CurLink* new_hardlink(LinkHash*& table, char* fname, ino_t ino, dev_t dev);
-
-void FfPktSetLinkDigest(CurLink* link,
-                        int32_t digest_stream,
-                        const char* digest,
-                        uint32_t len);
-
 #endif  // BAREOS_FINDLIB_HARDLINK_H_
