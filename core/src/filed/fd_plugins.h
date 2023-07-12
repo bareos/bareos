@@ -190,6 +190,7 @@ struct xattr_pkt {
 
 // Bareos Variable Ids
 typedef enum
+    : int
 {
   bVarJobId = 1,
   bVarFDName = 2,
@@ -209,7 +210,8 @@ typedef enum
   bVarVersion = 16,
   bVarDistName = 17,
   bVarPrevJobName = 18,
-  bVarPrefixLinks = 19
+  bVarPrefixLinks = 19,
+  bVarCheckChanges = 20,
 } bVariable;
 
 // Events that are passed to plugin

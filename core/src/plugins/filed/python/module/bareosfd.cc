@@ -1249,7 +1249,7 @@ bail_out:
  */
 static PyObject* PyBareosGetValue(PyObject*, PyObject* args)
 {
-  int var;
+  bVariable var;
   PluginContext* plugin_ctx = plugin_context;
   PyObject* pRetVal = NULL;
 
@@ -1264,8 +1264,7 @@ static PyObject* PyBareosGetValue(PyObject*, PyObject* args)
     case bVarDistName: {
       char* value = NULL;
 
-      if (bareos_core_functions->getBareosValue(plugin_ctx, (bVariable)var,
-                                                &value)
+      if (bareos_core_functions->getBareosValue(plugin_ctx, var, &value)
           == bRC_OK) {
         if (value) { pRetVal = PyUnicode_FromString(value); }
       }
@@ -1279,8 +1278,7 @@ static PyObject* PyBareosGetValue(PyObject*, PyObject* args)
     case bVarPrefixLinks: {
       int value = 0;
 
-      if (bareos_core_functions->getBareosValue(plugin_ctx, (bVariable)var,
-                                                &value)
+      if (bareos_core_functions->getBareosValue(plugin_ctx, var, &value)
           == bRC_OK) {
         pRetVal = PyLong_FromLong(value);
       }
@@ -1293,18 +1291,26 @@ static PyObject* PyBareosGetValue(PyObject*, PyObject* args)
     case bVarRegexWhere: {
       char* value = NULL;
 
-      if (bareos_core_functions->getBareosValue(plugin_ctx, (bVariable)var,
-                                                &value)
+      if (bareos_core_functions->getBareosValue(plugin_ctx, var, &value)
           == bRC_OK) {
         if (value) { pRetVal = PyUnicode_FromString(value); }
       }
       break;
     }
-    case bVarSinceTime:
+    case bVarSinceTime: {
       pRetVal = PyLong_FromLong(static_cast<plugin_private_context*>(
                                     plugin_ctx->plugin_private_context)
                                     ->since);
       break;
+    }
+    case bVarCheckChanges: {
+      bool value{false};
+      if (bareos_core_functions->getBareosValue(plugin_ctx, var, &value)
+          == bRC_OK) {
+        pRetVal = value ? Py_True : Py_False;
+      }
+      break;
+    }
     case bVarFileSeen:
       break; /* a write only variable, ignore read request */
     default:
@@ -1343,12 +1349,15 @@ static PyObject* PyBareosSetValue(PyObject*, PyObject* args)
       retval = bRC_OK;
       break;
     }
+    case bVarCheckChanges: {
+      bool value = (pyValue == Py_True);
+      retval = bareos_core_functions->setBareosValue(plugin_ctx, var, &value);
+      break;
+    }
     case bVarFileSeen: {
       const char* value = PyUnicode_AsUTF8(pyValue);
       if (value) {
-        retval = bareos_core_functions->setBareosValue(
-            plugin_ctx, (bVariable)var,
-            static_cast<void*>(const_cast<char*>(value)));
+        retval = bareos_core_functions->setBareosValue(plugin_ctx, var, value);
       }
       break;
     }
