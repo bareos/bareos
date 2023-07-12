@@ -34,11 +34,13 @@
  * entry so we can link it.
  */
 struct CurLink {
-  struct hlink link;
-  uint32_t FileIndex;       /**< Bareos FileIndex of this file */
-  int32_t digest_stream;    /**< Digest type if needed */
-  std::vector<char> digest; /**< Checksum of the file if needed */
-  std::string name;         /**< The name */
+  uint32_t FileIndex{0};      /**< Bareos FileIndex of this file */
+  int32_t digest_stream{0};   /**< Digest type if needed */
+  std::vector<char> digest{}; /**< Checksum of the file if needed */
+  std::string name;           /**< The name */
+
+  CurLink(const char* fname) : name{fname} {}
+  void set_digest(int32_t digest_stream, const char* digest, uint32_t len);
 };
 
 struct Hardlink {

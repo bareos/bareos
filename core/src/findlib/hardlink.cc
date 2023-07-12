@@ -47,15 +47,9 @@ CurLink* new_hardlink(LinkHash*& table, char* fname, ino_t ino, dev_t dev)
 {
   if (!table) { table = new LinkHash(10000); }
 
-  auto [iter, inserted] = table->try_emplace(Hardlink{dev, ino});
+  auto [iter, inserted] = table->try_emplace(Hardlink{dev, ino}, fname);
   if (!inserted) { return nullptr; }
-  CurLink& hl = iter->second;
-  hl.name.assign(fname);
-
-  hl.digest_stream = 0; /* Set later */
-  hl.FileIndex = 0;     /* Set later */
-
-  return &hl;
+  return &iter->second;
 }
 
 /**
@@ -67,8 +61,17 @@ void FfPktSetLinkDigest(CurLink* link,
                         const char* digest,
                         uint32_t len)
 {
-  if (link && link->digest.empty()) { /* is a hardlink */
-    link->digest = std::vector(digest, digest + len);
-    link->digest_stream = digest_stream;
+  if (link) { /* is a hardlink */
+    link->set_digest(digest_stream, digest, len);
+  }
+}
+
+void CurLink::set_digest(int32_t new_digest_stream,
+                         const char* new_digest,
+                         uint32_t len)
+{
+  if (digest.empty()) {
+    digest.assign(new_digest, new_digest + len);
+    digest_stream = new_digest_stream;
   }
 }
