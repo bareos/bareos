@@ -73,7 +73,7 @@ static inline void StartNewConsolidationJob(JobControlRecord* jcr,
   Dmsg1(debuglevel, "=============== consolidate cmd=%s\n", ua->cmd);
   ParseUaArgs(ua); /* parse command */
 
-  jobid = DoRunCmd(ua, ua->cmd);
+  jobid = DoRunCmd(ua);
   if (jobid == 0) {
     Jmsg(jcr, M_ERROR, 0, _("Could not start %s job.\n"),
          jcr->get_OperationName());

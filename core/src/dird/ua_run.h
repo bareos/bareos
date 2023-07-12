@@ -39,7 +39,7 @@ struct RerunArguments {
 RerunArguments GetRerunCmdlineArguments(UaContext* ua);
 bool reRunCmd(UaContext* ua, const char* cmd);
 bool RunCmd(UaContext* ua, const char* cmd);
-int DoRunCmd(UaContext* ua, const char* cmd);
+int DoRunCmd(UaContext* ua);
 
 } /* namespace directordaemon */
 #endif  // BAREOS_DIRD_UA_RUN_H_

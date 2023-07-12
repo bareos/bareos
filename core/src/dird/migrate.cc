@@ -360,7 +360,7 @@ static inline void StartNewMigrationJob(JobControlRecord* jcr)
         ua->cmd);
   ParseUaArgs(ua); /* parse command */
 
-  jobid = DoRunCmd(ua, ua->cmd);
+  jobid = DoRunCmd(ua);
   if (jobid == 0) {
     Jmsg(jcr, M_ERROR, 0, _("Could not start migration job.\n"));
   } else {

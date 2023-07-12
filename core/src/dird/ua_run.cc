@@ -366,7 +366,7 @@ bool reRunCmd(UaContext* ua, const char*)
  *          JobId if OK
  *
  */
-int DoRunCmd(UaContext* ua, const char*)
+int DoRunCmd(UaContext* ua)
 {
   JobControlRecord* jcr = NULL;
   RunContext rc;
@@ -540,7 +540,7 @@ bail_out:
   return 0; /* do not run */
 }
 
-bool RunCmd(UaContext* ua, const char*) { return (DoRunCmd(ua, ua->cmd) != 0); }
+bool RunCmd(UaContext* ua, const char*) { return (DoRunCmd(ua) != 0); }
 
 int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
 {
