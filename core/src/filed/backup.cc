@@ -419,7 +419,8 @@ static inline bool TerminateDigest(b_save_ctx& bsctx)
 
   // Keep the checksum if this file is a hardlink
   if (bsctx.ff_pkt->linked) {
-    FfPktSetLinkDigest(bsctx.ff_pkt, bsctx.digest_stream, sd->msg, size);
+    FfPktSetLinkDigest(bsctx.ff_pkt->linked, bsctx.digest_stream, sd->msg,
+                       size);
   }
 
   sd->message_length = size;

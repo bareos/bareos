@@ -431,7 +431,8 @@ static inline int process_hardlink(JobControlRecord* jcr,
   int rtn_stat = 0;
   CurLink* hl;
 
-  hl = lookup_hardlink(jcr, ff_pkt, ff_pkt->statp.st_ino, ff_pkt->statp.st_dev);
+  hl = lookup_hardlink(ff_pkt->linkhash, ff_pkt->statp.st_ino,
+                       ff_pkt->statp.st_dev);
   if (hl) {
     // If we have already backed up the hard linked file don't do it again
     if (bstrcmp(hl->name.c_str(), fname)) {
@@ -472,7 +473,7 @@ static inline int process_hardlink(JobControlRecord* jcr,
 
   } else {
     // File not previously dumped. Chain it into our list.
-    hl = new_hardlink(jcr, ff_pkt, fname, ff_pkt->statp.st_ino,
+    hl = new_hardlink(ff_pkt->linkhash, fname, ff_pkt->statp.st_ino,
                       ff_pkt->statp.st_dev);
     ff_pkt->linked = hl; /* Mark saved link */
     Dmsg2(400, "Added to hash FI=%d file=%s\n", ff_pkt->FileIndex,

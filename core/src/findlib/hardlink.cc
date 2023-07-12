@@ -30,37 +30,27 @@
 #include "findlib/hardlink.h"
 
 // Lookup a inode/dev in the list of hardlinked files.
-CurLink* lookup_hardlink(JobControlRecord*,
-                         FindFilesPacket* ff_pkt,
-                         ino_t ino,
-                         dev_t dev)
+CurLink* lookup_hardlink(LinkHash* table, ino_t ino, dev_t dev)
 {
-  if (!ff_pkt->linkhash) { return nullptr; }
+  if (!table) { return nullptr; }
 
   // Search link list of hard linked files
 
-  if (auto found = ff_pkt->linkhash->find(Hardlink{dev, ino});
-      found != ff_pkt->linkhash->end()) {
+  if (auto found = table->find(Hardlink{dev, ino}); found != table->end()) {
     return &found->second;
   }
 
   return nullptr;
 }
 
-CurLink* new_hardlink(JobControlRecord*,
-                      FindFilesPacket* ff_pkt,
-                      char* fname,
-                      ino_t ino,
-                      dev_t dev)
+CurLink* new_hardlink(LinkHash*& table, char* fname, ino_t ino, dev_t dev)
 {
-  if (!ff_pkt->linkhash) { ff_pkt->linkhash = new LinkHash(10000); }
+  if (!table) { table = new LinkHash(10000); }
 
-  auto [iter, inserted] = ff_pkt->linkhash->try_emplace(Hardlink{dev, ino});
+  auto [iter, inserted] = table->try_emplace(Hardlink{dev, ino});
   if (!inserted) { return nullptr; }
   CurLink& hl = iter->second;
   hl.name.assign(fname);
-  hl.ino = ino;
-  hl.dev = dev;
 
   hl.digest_stream = 0; /* Set later */
   hl.FileIndex = 0;     /* Set later */
@@ -72,13 +62,13 @@ CurLink* new_hardlink(JobControlRecord*,
  * When the current file is a hardlink, the backup code can compute
  * the checksum and store it into the CurLink structure.
  */
-void FfPktSetLinkDigest(FindFilesPacket* ff_pkt,
+void FfPktSetLinkDigest(CurLink* link,
                         int32_t digest_stream,
                         const char* digest,
                         uint32_t len)
 {
-  if (ff_pkt->linked && ff_pkt->linked->digest.empty()) { /* is a hardlink */
-    ff_pkt->linked->digest = std::vector(digest, digest + len);
-    ff_pkt->linked->digest_stream = digest_stream;
+  if (link && link->digest.empty()) { /* is a hardlink */
+    link->digest = std::vector(digest, digest + len);
+    link->digest_stream = digest_stream;
   }
 }
