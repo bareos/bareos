@@ -686,6 +686,7 @@ MOD_INIT(bareosfd)
   ConstSet_StrLong(pDictbVariable, bVarDistName, 17);
   ConstSet_StrLong(pDictbVariable, bVarPrevJobName, 18);
   ConstSet_StrLong(pDictbVariable, bVarPrefixLinks, 19);
+  ConstSet_StrLong(pDictbVariable, bVarCheckChanges, 20);
   if (PyModule_AddObject(m, bVariable, pDictbVariable)) {
     return MOD_ERROR_VAL;
   }
