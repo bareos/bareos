@@ -35,20 +35,16 @@ CurLink* lookup_hardlink(JobControlRecord*,
                          ino_t ino,
                          dev_t dev)
 {
-  CurLink* hl;
-  uint64_t binary_search_key[2];
-
-  if (!ff_pkt->linkhash) { return NULL; }
+  if (!ff_pkt->linkhash) { return nullptr; }
 
   // Search link list of hard linked files
-  memset(binary_search_key, 0, sizeof(binary_search_key));
-  binary_search_key[0] = dev;
-  binary_search_key[1] = ino;
 
-  hl = (CurLink*)ff_pkt->linkhash->lookup(htable_binary_key{
-      (uint8_t*)binary_search_key, sizeof(binary_search_key)});
+  if (auto found = ff_pkt->linkhash->find(Hardlink{dev, ino});
+      found != ff_pkt->linkhash->end()) {
+    return &found->second;
+  }
 
-  return hl;
+  return nullptr;
 }
 
 CurLink* new_hardlink(JobControlRecord*,
@@ -57,34 +53,19 @@ CurLink* new_hardlink(JobControlRecord*,
                       ino_t ino,
                       dev_t dev)
 {
-  uint64_t binary_search_key[2];
-  uint8_t* new_key;
-
   if (!ff_pkt->linkhash) { ff_pkt->linkhash = new LinkHash(10000); }
 
-  int len = strlen(fname) + 1;
-  CurLink* hl = (CurLink*)ff_pkt->linkhash->hash_malloc(sizeof(CurLink));
-  hl->name = (char*)ff_pkt->linkhash->hash_malloc(len);
-  bstrncpy(hl->name, fname, len);
-  hl->ino = ino;
-  hl->dev = dev;
+  auto [iter, inserted] = ff_pkt->linkhash->try_emplace(Hardlink{dev, ino});
+  if (!inserted) { return nullptr; }
+  CurLink& hl = iter->second;
+  hl.name.assign(fname);
+  hl.ino = ino;
+  hl.dev = dev;
 
-  hl->digest = NULL;     /* Set later */
-  hl->digest_stream = 0; /* Set later */
-  hl->digest_len = 0;    /* Set later */
-  hl->FileIndex = 0;     /* Set later */
+  hl.digest_stream = 0; /* Set later */
+  hl.FileIndex = 0;     /* Set later */
 
-  memset(binary_search_key, 0, sizeof(binary_search_key));
-  binary_search_key[0] = dev;
-  binary_search_key[1] = ino;
-
-  new_key = (uint8_t*)ff_pkt->linkhash->hash_malloc(sizeof(binary_search_key));
-  memcpy(new_key, binary_search_key, sizeof(binary_search_key));
-
-  ff_pkt->linkhash->insert(
-      htable_binary_key{new_key, sizeof(binary_search_key)}, hl);
-
-  return hl;
+  return &hl;
 }
 
 /**
@@ -96,10 +77,8 @@ void FfPktSetLinkDigest(FindFilesPacket* ff_pkt,
                         const char* digest,
                         uint32_t len)
 {
-  if (ff_pkt->linked && !ff_pkt->linked->digest) { /* is a hardlink */
-    ff_pkt->linked->digest = (char*)ff_pkt->linkhash->hash_malloc(len);
-    memcpy(ff_pkt->linked->digest, digest, len);
-    ff_pkt->linked->digest_len = len;
+  if (ff_pkt->linked && ff_pkt->linked->digest.empty()) { /* is a hardlink */
+    ff_pkt->linked->digest = std::vector(digest, digest + len);
     ff_pkt->linked->digest_stream = digest_stream;
   }
 }
