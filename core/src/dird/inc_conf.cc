@@ -291,10 +291,9 @@ ResourceItem options_items[] = {
 
 struct OptionsDefaultValues {
   std::map<int, options_default_value_s> option_default_values
-      = {{INC_KW_ACL, {false, "A"}}, 
+      = {{INC_KW_ACL, {false, "A"}},
          {INC_KW_HARDLINK, {false, "H"}},
-         {INC_KW_XATTR, {false, "X"}}
-        };
+         {INC_KW_XATTR, {false, "X"}}};
 };
 
 // determine used compression algorithms

@@ -323,7 +323,9 @@ Accordingly, if OneFS is set to yes, we do not need to handle Volume Mount Point
 Hard Links
 ~~~~~~~~~~
 
-Windows also supports hard links, even so they are seldom used. These are treated as normal files and will be restored as individual files (which will not be hardlinks again)
+Windows also supports hard links, even so they are seldom used. These are 
+treated as normal files and will be restored as individual files (which 
+will not be hard links again)
 
 .. _FilesNotToBackup:
 
