@@ -29,49 +29,16 @@
 #include "find.h"
 #include "findlib/hardlink.h"
 
-// Lookup a inode/dev in the list of hardlinked files.
-CurLink* lookup_hardlink(LinkHash* table, ino_t ino, dev_t dev)
-{
-  if (!table) { return nullptr; }
-
-  // Search link list of hard linked files
-
-  if (auto found = table->find(Hardlink{dev, ino}); found != table->end()) {
-    return &found->second;
-  }
-
-  return nullptr;
-}
-
-CurLink* new_hardlink(LinkHash*& table, char* fname, ino_t ino, dev_t dev)
-{
-  if (!table) { table = new LinkHash(10000); }
-
-  auto [iter, inserted] = table->try_emplace(Hardlink{dev, ino}, fname);
-  if (!inserted) { return nullptr; }
-  return &iter->second;
-}
-
 /**
  * When the current file is a hardlink, the backup code can compute
  * the checksum and store it into the CurLink structure.
  */
-void FfPktSetLinkDigest(CurLink* link,
-                        int32_t digest_stream,
-                        const char* digest,
-                        uint32_t len)
-{
-  if (link) { /* is a hardlink */
-    link->set_digest(digest_stream, digest, len);
-  }
-}
-
-void CurLink::set_digest(int32_t new_digest_stream,
+void CurLink::set_digest(int32_t digest_stream,
                          const char* new_digest,
                          uint32_t len)
 {
   if (digest.empty()) {
     digest.assign(new_digest, new_digest + len);
-    digest_stream = new_digest_stream;
+    digest_stream = digest_stream;
   }
 }
