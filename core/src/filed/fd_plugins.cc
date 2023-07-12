@@ -74,7 +74,7 @@ extern int SaveFile(JobControlRecord* jcr,
 
 // Forward referenced functions
 static bRC bareosGetValue(PluginContext* ctx, bVariable var, void* value);
-static bRC bareosSetValue(PluginContext* ctx, bVariable var, void* value);
+static bRC bareosSetValue(PluginContext* ctx, bVariable var, const void* value);
 static bRC bareosRegisterEvents(PluginContext* ctx, int nr_events, ...);
 static bRC bareosUnRegisterEvents(PluginContext* ctx, int nr_events, ...);
 static bRC bareosJobMsg(PluginContext* ctx,
@@ -2084,7 +2084,7 @@ static bRC bareosGetValue(PluginContext* ctx, bVariable var, void* value)
   return bRC_OK;
 }
 
-static bRC bareosSetValue(PluginContext* ctx, bVariable var, void* value)
+static bRC bareosSetValue(PluginContext* ctx, bVariable var, const void* value)
 {
   JobControlRecord* jcr;
 

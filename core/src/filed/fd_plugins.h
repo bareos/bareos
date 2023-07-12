@@ -320,7 +320,7 @@ typedef struct s_bareosFuncs {
   bRC (*unregisterBareosEvents)(PluginContext* ctx, int nr_events, ...);
   bRC (*getInstanceCount)(PluginContext* ctx, int* ret);
   bRC (*getBareosValue)(PluginContext* ctx, bVariable var, void* value);
-  bRC (*setBareosValue)(PluginContext* ctx, bVariable var, void* value);
+  bRC (*setBareosValue)(PluginContext* ctx, bVariable var, const void* value);
   bRC (*JobMessage)(PluginContext* ctx,
                     const char* file,
                     int line,
