@@ -1325,7 +1325,7 @@ static PyObject* PyBareosGetValue(PyObject*, PyObject* args)
  */
 static PyObject* PyBareosSetValue(PyObject*, PyObject* args)
 {
-  int var;
+  bVariable var;
   PluginContext* plugin_ctx = plugin_context;
   bRC retval = bRC_Error;
   PyObject* pyValue;
