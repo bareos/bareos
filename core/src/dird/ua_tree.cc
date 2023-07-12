@@ -439,15 +439,6 @@ static int SetExtract(UaContext* ua,
   return count;
 }
 
-static void StripTrailingSlash(char* arg)
-{
-  int len = strlen(arg);
-  if (len == 0) { return; }
-  len--;
-  if (arg[len] == '/') { /* strip any trailing slash */
-    arg[len] = 0;
-  }
-}
 
 static int MarkElements(UaContext* ua, TreeContext* tree)
 {

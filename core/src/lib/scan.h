@@ -25,6 +25,7 @@ void StripLeadingSpace(char* str);
 void StripTrailingJunk(char* str);
 void StripTrailingNewline(char* str);
 void StripTrailingSlashes(char* dir);
+void StripTrailingSlash(char* arg);
 bool SkipSpaces(char** msg);
 bool SkipNonspaces(char** msg);
 int fstrsch(const char* a, const char* b);

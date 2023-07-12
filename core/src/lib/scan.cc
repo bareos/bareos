@@ -67,6 +67,16 @@ void StripTrailingSlashes(char* dir)
   while (p >= dir && IsPathSeparator(*p)) { *p-- = 0; }
 }
 
+void StripTrailingSlash(char* arg)
+{
+  int len = strlen(arg);
+  if (len == 0) { return; }
+  len--;
+  if (arg[len] == '/') {  // strip any trailing slash
+    arg[len] = 0;
+  }
+}
+
 /*
  * Skip spaces
  *  Returns: 0 on failure (EOF)
