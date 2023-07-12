@@ -812,26 +812,24 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
             hl = lookup_hardlink(jcr, ff_pkt, ff_pkt->statp.st_ino,
                                  ff_pkt->statp.st_dev);
             if (hl) {
-              /*
-               * If we have already backed up the hard linked file don't do it
-               * again
-               */
-              if (bstrcmp(hl->name, sp.fname)) {
+              /* If we have already backed up the hard linked file don't do it
+               * again */
+              if (bstrcmp(hl->name.c_str(), sp.fname)) {
                 Dmsg2(400, "== Name identical skip FI=%d file=%s\n",
                       hl->FileIndex, fname.c_str());
                 ff_pkt->no_read = true;
               } else {
-                ff_pkt->link = hl->name;
+                ff_pkt->link = hl->name.data();
                 ff_pkt->type
                     = FT_LNKSAVED; /* Handle link, file already saved */
                 ff_pkt->LinkFI = hl->FileIndex;
                 ff_pkt->linked = NULL;
-                ff_pkt->digest = hl->digest;
+                ff_pkt->digest = hl->digest.data();
                 ff_pkt->digest_stream = hl->digest_stream;
-                ff_pkt->digest_len = hl->digest_len;
+                ff_pkt->digest_len = hl->digest.size();
 
                 Dmsg3(400, "FT_LNKSAVED FI=%d LinkFI=%d file=%s\n",
-                      ff_pkt->FileIndex, hl->FileIndex, hl->name);
+                      ff_pkt->FileIndex, hl->FileIndex, hl->name.c_str());
 
                 ff_pkt->no_read = true;
               }
@@ -841,7 +839,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
                                 ff_pkt->statp.st_dev);
               ff_pkt->linked = hl; /* Mark saved link */
               Dmsg2(400, "Added to hash FI=%d file=%s\n", ff_pkt->FileIndex,
-                    hl->name);
+                    hl->name.c_str());
             }
             break;
           default:
