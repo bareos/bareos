@@ -40,7 +40,15 @@ struct CurLink {
   std::string name;           /**< The name */
 
   CurLink(const char* fname) : name{fname} {}
-  void set_digest(int32_t digest_stream, const char* digest, uint32_t len);
+  void set_digest(int32_t new_digest_stream,
+                  const char* new_digest,
+                  uint32_t len)
+  {
+    if (digest.empty()) {
+      digest.assign(new_digest, new_digest + len);
+      digest_stream = new_digest_stream;
+    }
+  }
 };
 
 struct Hardlink {
