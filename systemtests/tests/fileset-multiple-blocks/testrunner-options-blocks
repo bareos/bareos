@@ -28,7 +28,7 @@ BackupFileExtra=${BackupDirectory}/extrafile.txt
 
 start_test
 
-for i in 1 2 3 4 5 6; do
+for i in 1 2 3 4 5 6 7 8 9; do
     mkdir -p ${BackupDirectory}/data$i
     echo "test" > ${BackupDirectory}/data${i}/test.dat
 done
@@ -73,13 +73,15 @@ check_restore_diff ${BackupDirectory}/data1
 check_restore_diff ${BackupDirectory}/data2
 check_restore_diff ${BackupDirectory}/data3
 check_restore_diff ${BackupDirectory}/data4
-#check_restore_diff ${BackupDirectory}/data5
-if [ -e ${tmp}/bareos-restores/${BackupDirectory}/data5 ]; then
-    set_error "Directory data5 has been restored, however it should be excluded from the backup."
+check_restore_diff ${BackupDirectory}/data5
+check_restore_diff ${BackupDirectory}/data6
+check_restore_diff ${BackupDirectory}/data7
+if [ -e ${tmp}/bareos-restores/${BackupDirectory}/data8 ]; then
+    set_error "Directory data8 has been restored, however it should be excluded from the backup."
 fi
-#check_restore_diff ${BackupDirectory}/data6
-if [ -e ${tmp}/bareos-restores/${BackupDirectory}/data6 ]; then
-    set_error "Directory data6 has been restored, however it should be excluded from the backup."
+#check_restore_diff ${BackupDirectory}/data9
+if [ -e ${tmp}/bareos-restores/${BackupDirectory}/data9 ]; then
+    set_error "Directory data9 has been restored, however it should be excluded from the backup."
 fi
 
 # do some manual testing
@@ -90,6 +92,12 @@ fi
 
 check_compression "${Storage}" "${VolumeName}" "1" "${BackupDirectory}/data2/test.dat" "gzip"
 check_compression "${Storage}" "${VolumeName}" "1" "${BackupDirectory}/data3/test.dat" "gzip" "9"
+#lzo
+check_compression "${Storage}" "${VolumeName}" "1" "${BackupDirectory}/data4/test.dat" "lzo1x" 
+#lz4
+check_compression "${Storage}" "${VolumeName}" "1" "${BackupDirectory}/data5/test.dat" "fz4l" 
+#lz4hc
+check_compression "${Storage}" "${VolumeName}" "1" "${BackupDirectory}/data6/test.dat" "fz4h" 
 # Warning: LZ4 compression support requested in fileset but not available on this platform. Disabling ...
 #check_compression "${Storage}" "${VolumeName}" "1" "${tmp}/data/data3/test.dat" "LZ4"
 
