@@ -271,7 +271,6 @@ findIncludeExcludeItem* new_preexclude(findFILESET* fileset);
 findFOPTS* start_options(FindFilesPacket* ff);
 void NewOptions(FindFilesPacket* ff, findIncludeExcludeItem* incexe);
 
-
 #include "acl.h"
 #include "xattr.h"
 
