@@ -70,7 +70,7 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
         self.labelFileName = None
         self.recoverySignalFileName = None
         self.tablespaceMapFileName = None
-        self.lastLSN = None
+        self.lastLSN = 0
         self.dbCon = None
         # This will be set to True between SELECT pg_start_backup
         # and SELECT pg_stop_backup. We backup database file during
@@ -256,7 +256,7 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
                         "Could not get current LSN, last LSN was: %s : %s \n"
                         % (self.lastLSN, e),
                     )
-                if currentLSN > self.lastLSN and self.switchWal:
+                if self.switchWal and str(currentLSN) > str(self.lastLSN):
                     # Let Postgres write latest transaction into a new WAL file now
                     try:
                         result = self.dbCon.run(switchLsnStmt)
@@ -481,7 +481,7 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
                 "Got lastBackupStopTime %d from restore object of job %d\n"
                 % (self.lastBackupStopTime, ROP.jobid),
             )
-        if "lastLSN" in self.rop_data[ROP.jobid]:
+        if "lastLSN" in self.rop_data[ROP.jobid] and self.rop_data[ROP.jobid]["lastLSN"] is not None:
             self.lastLSN = self.rop_data[ROP.jobid]["lastLSN"]
             bareosfd.JobMessage(
                 bareosfd.M_INFO,
