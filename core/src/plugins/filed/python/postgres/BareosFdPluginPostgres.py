@@ -67,6 +67,10 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
         )
         self.ignoreSubdirs = ["pg_wal", "pg_log", "pg_xlog"]
 
+        self.labelFileName = None
+        self.recoverySignalFileName = None
+        self.tablespaceMapFileName = None
+        self.lastLSN = None
         self.dbCon = None
         # This will be set to True between SELECT pg_start_backup
         # and SELECT pg_stop_backup. We backup database file during
@@ -368,22 +372,23 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
             )
             return bareosfd.bRC_Error
 
-        if pgMajorVersion >= 15:
-            recoverySignalFileName = self.options["postgresDataDir"] + "recovery.signal"
-            with open(recoverySignalFileName, 'w') as recoverySignalFile:
-                recoverySignalFile.write("Created by bareos\n")
-            bareosfd.DebugMessage(150, "Did write recovery.signal file at %s\n" % recoverySignalFileName)
-            self.files_to_backup.append(recoverySignalFileName)
-
-            with open(self.labelFileName, 'w') as labelFile:
-                labelFile.write("TODO\n")
-            bareosfd.DebugMessage(150, "Did write backup_label file at %s\n" % self.labelFileName)
-
         bareosfd.DebugMessage(150, "Start response: %s\n" % str(result))
-        bareosfd.DebugMessage(
-            150, "Adding label file %s to fileset\n" % self.labelFileName
-        )
-        self.files_to_backup.append(self.labelFileName)
+
+        if pgMajorVersion >= 15:
+            self.recoverySignalFileName = self.options["postgresDataDir"] + "recovery.signal"
+            with open(self.recoverySignalFileName, 'w') as recoverySignalFile:
+                recoverySignalFile.write("Created by bareos\n")
+
+            bareosfd.DebugMessage(
+                150, "Adding recovery signal file %s to fileset\n" % self.recoverySignalFileName
+            )
+            self.files_to_backup.append(self.recoverySignalFileName)
+        else:
+            bareosfd.DebugMessage(
+                150, "Adding label file %s to fileset\n" % self.labelFileName
+            )
+            self.files_to_backup.append(self.labelFileName)
+
         bareosfd.DebugMessage(150, "Filelist: %s\n" % (self.files_to_backup))
         self.PostgressFullBackupRunning = True
         return bareosfd.bRC_OK
@@ -489,10 +494,37 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
         """
         Make sure the DB connection is closed properly. Will not throw if the connection was already closed.
         """
+
+        if self.dbCon is None:
+            return
+
         try:
             self.dbCon.close()
         except pg8000.exceptions.InterfaceError as e:
             pass
+
+    def writeAndAppendLabelFile(self, content):
+        mode = 'w' if isinstance(content, str) else 'wb'
+        with open(self.labelFileName, mode) as labelFile:
+            labelFile.write(content)
+            bareosfd.DebugMessage(150, "Did write backup_label file %s with conten:\n%s\n" % (self.labelFileName, content))
+            bareosfd.DebugMessage(
+                150, "Adding label file %s to fileset\n" % self.labelFileName
+            )
+            self.files_to_backup.append(self.labelFileName)
+            bareosfd.DebugMessage(150, "Filelist: %s\n" % (self.files_to_backup))
+
+    def writeAndAppendTablespaceMapFile(self, content):
+        mode = 'w' if isinstance(content, str) else 'wb'
+        self.tablespaceMapFileName = self.options["postgresDataDir"] + "tablespace_map"
+        with open(self.tablespaceMapFileName, mode) as tablespaceMapFile:
+            tablespaceMapFile.write(content)
+            bareosfd.DebugMessage(150, "Did write tablespace_map file %s with conten:\n%s\n" % (self.tablespaceMapFileName, content))
+            bareosfd.DebugMessage(
+                150, "Adding tablespace map file %s to fileset\n" % self.tablespaceMapFileName
+            )
+            self.files_to_backup.append(self.tablespaceMapFileName)
+            bareosfd.DebugMessage(150, "Filelist: %s\n" % (self.files_to_backup))
 
     def complete_backup_job_and_close_db(self):
         """
@@ -513,25 +545,34 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
 
         try:
             results = self.dbCon.run("SELECT %s;" % stopStmt)
+            firstRow = results[0][0]
             if pgMajorVersion >= 15:
-                self.parseBackupStopResult(results[0][0])
+                self.parseBackupStopResult(firstRow[1])
+                # https://www.postgresql.org/docs/current/continuous-archiving.html#BACKUP-LOWLEVEL-BASE-BACKUP
+                # pg_backup_stop will return one row with three values. The second of these fields should be written
+                # to a file named backup_label in the root directory of the backup. The third field should be written
+                # to a file named tablespace_map unless the field is empty
+                self.writeAndAppendLabelFile(firstRow[1])
+                if len(firstRow) > 2 and len(firstRow[2]) > 0:
+                    self.writeAndAppendTablespaceMapFile(firstRow[2])
                 self.lastLSN = self.formatLSN(self.labelItems["START WAL LOCATION"])
             else:
-                self.lastLSN = self.formatLSN(results[0][0])
+                self.lastLSN = self.formatLSN(firstRow)
 
             self.lastBackupStopTime = int(time.time())
-            bareosfd.JobMessage(
-                bareosfd.M_INFO,
-                "Database connection closed. "
-                + "CHECKPOINT LOCATION: %s, " % self.labelItems["CHECKPOINT LOCATION"]
-                + "START WAL LOCATION: %s\n" % self.labelItems["START WAL LOCATION"],
-            )
-            self.close_db_connection()
-            self.PostgressFullBackupRunning = False
         except Exception as e:
             bareosfd.JobMessage(
                 bareosfd.M_ERROR, "%s statement failed: %s\n" % (stopStmt, e)
             )
+
+        bareosfd.JobMessage(
+            bareosfd.M_INFO,
+            "Database connection closed. "
+            + "CHECKPOINT LOCATION: %s, " % self.labelItems["CHECKPOINT LOCATION"]
+            + "START WAL LOCATION: %s\n" % self.labelItems["START WAL LOCATION"],
+        )
+        self.close_db_connection()
+        self.PostgressFullBackupRunning = False
 
     def checkForWalFiles(self):
         """
@@ -582,6 +623,18 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
                 return self.checkForWalFiles()
             else:
                 self.close_db_connection()
+
+                # we are connected to postgres 15 or later and have to delete the files created for the restore, see
+                # https://www.postgresql.org/docs/current/continuous-archiving.html#BACKUP-LOWLEVEL-BASE-BACKUP
+                if self.recoverySignalFileName is not None:
+                    if os.path.isfile(self.recoverySignalFileName):
+                        os.remove(self.recoverySignalFileName)
+                    if os.path.isfile(self.labelFileName):
+                        os.remove(self.labelFileName)
+                if self.tablespaceMapFileName is not None:
+                    if os.path.isfile(self.tablespaceMapFileName):
+                        os.remove(self.tablespaceMapFileName)
+
                 return bareosfd.bRC_OK
 
     def end_backup_job(self):
