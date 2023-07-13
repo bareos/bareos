@@ -779,6 +779,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
        * Maintain a list of hard linked files already backed up. This allows
        * us to ensure that the data of each file gets backed up only once. */
       ff_pkt->LinkFI = 0;
+      ff_pkt->FileIndex = 0;
       ff_pkt->linked = nullptr;
       if (!BitIsSet(FO_NO_HARDLINK, ff_pkt->flags)
           && ff_pkt->statp.st_nlink > 1) {
@@ -796,8 +797,10 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
             auto [iter, _] = ff_pkt->linkhash->try_emplace(
                 Hardlink{ff_pkt->statp.st_dev, ff_pkt->statp.st_ino}, sp.fname);
             auto& hl = iter->second;
-            if (hl.FileIndex <= 0) {
+            if (hl.FileIndex == 0) {
               ff_pkt->linked = &hl;
+              Dmsg2(400, "Added to hash FI=%d file=%s\n", ff_pkt->FileIndex,
+                    hl.name.c_str());
             } else if (bstrcmp(hl.name.c_str(), sp.fname)) {
               Dmsg2(400, "== Name identical skip FI=%d file=%s\n", hl.FileIndex,
                     fname.c_str());

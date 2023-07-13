@@ -436,8 +436,7 @@ static inline int process_hardlink(JobControlRecord* jcr,
       Hardlink{ff_pkt->statp.st_dev, ff_pkt->statp.st_ino}, fname);
   CurLink& hl = iter->second;
 
-  // note: FileIndex < 0 should not happen
-  if (hl.FileIndex <= 0) {
+  if (hl.FileIndex == 0) {
     // no file backed up yet
     ff_pkt->linked = &hl;
     *done = false;
@@ -959,6 +958,7 @@ int FindOneFile(JobControlRecord* jcr,
   // reset it to zero here before it can do any damage (0 is an invalid
   // FileIndex).
   ff_pkt->FileIndex = 0;
+  ff_pkt->linked = nullptr;
   /* Handle hard linked files
    *
    * Maintain a list of hard linked files already backed up. This
