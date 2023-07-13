@@ -642,6 +642,13 @@
           "default_value": "on",
           "equals": true
         },
+        "AccessMode": {
+          "datatype": "IO_DIRECTION",
+          "code": 0,
+          "default_value": "readwrite",
+          "equals": true,
+          "description": "Access mode specifies whether this device can be reserved for reading, writing or for both modes (default)."
+        },
         "AutoSelect": {
           "datatype": "BOOLEAN",
           "code": 0,
