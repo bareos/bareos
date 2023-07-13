@@ -368,12 +368,22 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
             )
             return bareosfd.bRC_Error
 
+        if pgMajorVersion >= 15:
+            recoverySignalFileName = self.options["postgresDataDir"] + "recovery.signal"
+            with open(recoverySignalFileName, 'w') as recoverySignalFile:
+                recoverySignalFile.write("Created by bareos\n")
+            bareosfd.DebugMessage(150, "Did write recovery.signal file at %s\n" % recoverySignalFileName)
+            self.files_to_backup.append(recoverySignalFileName)
+
+            with open(self.labelFileName, 'w') as labelFile:
+                labelFile.write("TODO\n")
+            bareosfd.DebugMessage(150, "Did write backup_label file at %s\n" % self.labelFileName)
+
         bareosfd.DebugMessage(150, "Start response: %s\n" % str(result))
-        if pgMajorVersion < 15:
-            bareosfd.DebugMessage(
-                150, "Adding label file %s to fileset\n" % self.labelFileName
-            )
-            self.files_to_backup.append(self.labelFileName)
+        bareosfd.DebugMessage(
+            150, "Adding label file %s to fileset\n" % self.labelFileName
+        )
+        self.files_to_backup.append(self.labelFileName)
         bareosfd.DebugMessage(150, "Filelist: %s\n" % (self.files_to_backup))
         self.PostgressFullBackupRunning = True
         return bareosfd.bRC_OK
