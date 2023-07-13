@@ -1,7 +1,7 @@
-This parameter specifies for which access modes (i.e. reading or writing) this device can be reserved.
+The following values are valid:
 
--  readonly - this device can only be used for reading.
+-  readonly - this device can be reserved only for reading.
 
--  writeonly - this device can only be used for writing.
+-  writeonly - this device can be reserved only for writing.
 
--  readwrite - this device can be used for both reading and writing.
+-  readwrite - this device can be reserved for both reading and writing.
