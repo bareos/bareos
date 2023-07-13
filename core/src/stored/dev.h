@@ -232,7 +232,7 @@ class Device {
   int oflags{};               /**< Read/write flags */
   DeviceMode open_mode{DeviceMode::kUndefined};
   std::string device_type{};
-  IODirection access_mode{};  /**< Allowed access mode(s) for reservation */
+  IODirection access_mode{IODirection::READ_WRITE};  /**< Allowed access mode(s) for reservation */
   bool autoselect{};          /**< Autoselect in autochanger */
   bool norewindonclose{};     /**< Don't rewind tape drive on close */
   bool initiated{};           /**< Set when FactoryCreateDevice() called */
