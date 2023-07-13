@@ -115,15 +115,13 @@ static int const debuglevel = 200;
 // Does the mode contain OUT
 static bool AutoxflateModeContainsOut(IODirection mode)
 {
-  return (mode == IODirection::WRITE
-          || mode == IODirection::READ_WRITE);
+  return (mode == IODirection::WRITE || mode == IODirection::READ_WRITE);
 }
 
 // Does the mode contain IN
 static bool AutoxflateModeContainsIn(IODirection mode)
 {
-  return (mode == IODirection::READ
-          || mode == IODirection::READ_WRITE);
+  return (mode == IODirection::READ || mode == IODirection::READ_WRITE);
 }
 
 // what streams can be decompressed by the plugin

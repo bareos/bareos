@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -74,10 +74,8 @@ void ReservationTest::SetUp()
   configfile = strdup(RELATIVE_PROJECT_SOURCE_DIR "/configs/sd_reservation/");
   my_config = InitSdConfig(configfile, M_ERROR_TERM);
   ParseSdConfig(configfile, M_ERROR_TERM);
-  /*
-   * we do not run CheckResources() here, so take care the test configration
-   * is not broken. Also autochangers will not work.
-   */
+  /* we do not run CheckResources() here, so take care the test configration
+   * is not broken. Also autochangers will not work. */
 
   InitReservationsLock();
   CreateVolumeLists();
@@ -301,16 +299,19 @@ TEST_F(ReservationTest, use_cmd_append_reserves_write_only)
   job1->jcr->dir_bsock = bsock.get();
 
   EXPECT_CALL(*bsock, recv())
-      .WillOnce(BSOCK_RECV(bsock.get(),
-                           "use storage=sssss media_type=FileRWOnly pool_name=ppppp "
-                           "pool_type=ptptp append=1 copy=0 stripe=0"))
+      .WillOnce(
+          BSOCK_RECV(bsock.get(),
+                     "use storage=sssss media_type=FileRWOnly pool_name=ppppp "
+                     "pool_type=ptptp append=1 copy=0 stripe=0"))
       .WillOnce(BSOCK_RECV(bsock.get(), "use device=readonly1"))
       .WillOnce(BSOCK_RECV(bsock.get(), "use device=readonly2"))
       .WillOnce(BSOCK_RECV(bsock.get(), "use device=writeonly1"))
       .WillOnce(BSOCK_RECV(bsock.get(), "use device=writeonly2"))
-      .WillOnce(Return(BNET_EOD))                            // end of device commands
-      .WillOnce(Return(BNET_EOD))                            // end of storage command
-      .WillOnce(BSOCK_RECV(bsock.get(), "1901 No Media."));  // response to DirFindNextAppendableVolume
+      .WillOnce(Return(BNET_EOD))  // end of device commands
+      .WillOnce(Return(BNET_EOD))  // end of storage command
+      .WillOnce(BSOCK_RECV(
+          bsock.get(),
+          "1901 No Media."));  // response to DirFindNextAppendableVolume
 
   EXPECT_CALL(*bsock, send()).WillRepeatedly(Return(true));
 
@@ -327,9 +328,10 @@ TEST_F(ReservationTest, use_cmd_non_append_reserves_read_only)
   job1->jcr->dir_bsock = bsock.get();
 
   EXPECT_CALL(*bsock, recv())
-      .WillOnce(BSOCK_RECV(bsock.get(),
-                           "use storage=sssss media_type=FileRWOnly pool_name=ppppp "
-                           "pool_type=ptptp append=0 copy=0 stripe=0"))
+      .WillOnce(
+          BSOCK_RECV(bsock.get(),
+                     "use storage=sssss media_type=FileRWOnly pool_name=ppppp "
+                     "pool_type=ptptp append=0 copy=0 stripe=0"))
       .WillOnce(BSOCK_RECV(bsock.get(), "use device=writeonly1"))
       .WillOnce(BSOCK_RECV(bsock.get(), "use device=writeonly2"))
       .WillOnce(BSOCK_RECV(bsock.get(), "use device=readonly1"))
@@ -352,30 +354,34 @@ TEST_F(ReservationTest, use_cmd_non_append_reserves_read_only_with_wait)
   auto job1 = std::make_unique<TestJob>(111u);
   auto job2 = std::make_unique<TestJob>(222u);
   auto job3 = std::make_unique<TestJob>(333u);
-  job1->jcr->dir_bsock = job2->jcr->dir_bsock = job3->jcr->dir_bsock = bsock.get();
+  job1->jcr->dir_bsock = job2->jcr->dir_bsock = job3->jcr->dir_bsock
+      = bsock.get();
 
   EXPECT_CALL(*bsock, recv())
-      .WillOnce(BSOCK_RECV(bsock.get(),
-                           "use storage=sssss media_type=FileRWOnly pool_name=ppppp "
-                           "pool_type=ptptp append=0 copy=0 stripe=0"))
+      .WillOnce(
+          BSOCK_RECV(bsock.get(),
+                     "use storage=sssss media_type=FileRWOnly pool_name=ppppp "
+                     "pool_type=ptptp append=0 copy=0 stripe=0"))
       .WillOnce(BSOCK_RECV(bsock.get(), "use device=readonly1"))
       .WillOnce(BSOCK_RECV(bsock.get(), "use device=readonly2"))
       .WillOnce(BSOCK_RECV(bsock.get(), "use device=writeonly1"))
       .WillOnce(BSOCK_RECV(bsock.get(), "use device=writeonly2"))
-      .WillOnce(Return(BNET_EOD))   // end of device commands
-      .WillOnce(Return(BNET_EOD))   // end of storage command
-      .WillOnce(BSOCK_RECV(bsock.get(),
-                           "use storage=sssss media_type=FileRWOnly pool_name=ppppp "
-                           "pool_type=ptptp append=0 copy=0 stripe=0"))
+      .WillOnce(Return(BNET_EOD))  // end of device commands
+      .WillOnce(Return(BNET_EOD))  // end of storage command
+      .WillOnce(
+          BSOCK_RECV(bsock.get(),
+                     "use storage=sssss media_type=FileRWOnly pool_name=ppppp "
+                     "pool_type=ptptp append=0 copy=0 stripe=0"))
       .WillOnce(BSOCK_RECV(bsock.get(), "use device=readonly1"))
       .WillOnce(BSOCK_RECV(bsock.get(), "use device=readonly2"))
       .WillOnce(BSOCK_RECV(bsock.get(), "use device=writeonly1"))
       .WillOnce(BSOCK_RECV(bsock.get(), "use device=writeonly2"))
-      .WillOnce(Return(BNET_EOD))   // end of device commands
-      .WillOnce(Return(BNET_EOD))   // end of storage command
-      .WillOnce(BSOCK_RECV(bsock.get(),
-                           "use storage=sssss media_type=FileRWOnly pool_name=ppppp "
-                           "pool_type=ptptp append=0 copy=0 stripe=0"))
+      .WillOnce(Return(BNET_EOD))  // end of device commands
+      .WillOnce(Return(BNET_EOD))  // end of storage command
+      .WillOnce(
+          BSOCK_RECV(bsock.get(),
+                     "use storage=sssss media_type=FileRWOnly pool_name=ppppp "
+                     "pool_type=ptptp append=0 copy=0 stripe=0"))
       .WillOnce(BSOCK_RECV(bsock.get(), "use device=readonly1"))
       .WillOnce(BSOCK_RECV(bsock.get(), "use device=readonly2"))
       .WillOnce(BSOCK_RECV(bsock.get(), "use device=writeonly1"))
@@ -403,6 +409,6 @@ TEST_F(ReservationTest, use_cmd_non_append_reserves_read_only_with_wait)
 
   // Unreserve job1 and readonly1 after waiting for a bit
   auto _ = std::async(std::launch::async, [&job1] { WaitThenUnreserve(job1); });
-  
+
   future.wait();
 }

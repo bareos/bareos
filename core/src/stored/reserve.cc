@@ -645,13 +645,13 @@ static int ReserveDevice(ReserveContext& rctx)
   }
 
   // Make sure device access mode matches
-  Dmsg3(debuglevel,
-        "chk AccessMode append=%d access_mode=%d\n",
-        rctx.append, rctx.device_resource->access_mode);
+  Dmsg3(debuglevel, "chk AccessMode append=%d access_mode=%d\n", rctx.append,
+        rctx.device_resource->access_mode);
   if (rctx.append && rctx.device_resource->access_mode == IODirection::READ) {
     // Trying to write but access mode is readonly
     return -1;
-  } else if (!rctx.append && rctx.device_resource->access_mode == IODirection::WRITE) {
+  } else if (!rctx.append
+             && rctx.device_resource->access_mode == IODirection::WRITE) {
     // Trying to read but access mode is writeonly
     return -1;
   }

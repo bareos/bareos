@@ -253,15 +253,12 @@ struct s_io_kw {
   IODirection token;
 };
 
-static s_io_kw io_directions[] = {{"in", IODirection::READ},
-                                  {"read", IODirection::READ},
-                                  {"readonly", IODirection::READ},
-                                  {"out", IODirection::WRITE},
-                                  {"write", IODirection::WRITE},
-                                  {"writeonly", IODirection::WRITE},
-                                  {"both", IODirection::READ_WRITE},
-                                  {"readwrite", IODirection::READ_WRITE},
-                                  {nullptr, IODirection::READ_WRITE}};
+static s_io_kw io_directions[] = {
+    {"in", IODirection::READ},         {"read", IODirection::READ},
+    {"readonly", IODirection::READ},   {"out", IODirection::WRITE},
+    {"write", IODirection::WRITE},     {"writeonly", IODirection::WRITE},
+    {"both", IODirection::READ_WRITE}, {"readwrite", IODirection::READ_WRITE},
+    {nullptr, IODirection::READ_WRITE}};
 
 static s_kw compression_algorithms[]
     = {{"gzip", COMPRESS_GZIP},   {"lzo", COMPRESS_LZO1X},
