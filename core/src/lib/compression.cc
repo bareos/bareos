@@ -836,6 +836,7 @@ void CleanupCompression(JobControlRecord* jcr)
 #endif
 
   if (jcr->compress.workset.pZFAST) {
+    fastlzlibCompressEnd((zfast_stream*)jcr->compress.workset.pZFAST);
     free(jcr->compress.workset.pZFAST);
     jcr->compress.workset.pZFAST = NULL;
   }
