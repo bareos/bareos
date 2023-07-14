@@ -165,14 +165,9 @@ uint32_t write_findex(RestoreBootstrapRecordFileIndex* fi,
   std::optional<int32_t> actual_last;
 
   for (auto& range : fi->GetRanges()) {
-    auto first = range.first;
-    auto last = range.second;
-    if ((first >= FirstIndex && first <= LastIndex)
-        || (last >= FirstIndex && last <= LastIndex)
-        || (first < FirstIndex && last > LastIndex)) {
-      first = std::max(first, FirstIndex);
-      last = std::min(last, LastIndex);
-
+    auto first = std::max(range.first, FirstIndex);
+    auto last = std::min(range.second, LastIndex);
+    if (first <= last) {
       if (!actual_first.has_value()) { actual_first = first; }
       actual_last = last;
 
