@@ -28,6 +28,8 @@
  */
 
 #include "include/bareos.h"
+#include "stored/askdir.h"
+
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
 
