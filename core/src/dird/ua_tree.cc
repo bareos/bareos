@@ -36,35 +36,13 @@
 #include "findlib/find.h"
 #include "dird/ua_input.h"
 #include "dird/ua_server.h"
+#include "dird/ua_tree.h"
 #include "lib/attribs.h"
 #include "lib/edit.h"
 #include "lib/tree.h"
 #include "lib/util.h"
 
 namespace directordaemon {
-
-/* Forward referenced commands */
-static int markcmd(UaContext* ua, TreeContext* tree);
-static int Markdircmd(UaContext* ua, TreeContext* tree);
-static int countcmd(UaContext* ua, TreeContext* tree);
-static int findcmd(UaContext* ua, TreeContext* tree);
-static int lscmd(UaContext* ua, TreeContext* tree);
-static int Lsmarkcmd(UaContext* ua, TreeContext* tree);
-static int dircmd(UaContext* ua, TreeContext* tree);
-static int DotDircmd(UaContext* ua, TreeContext* tree);
-static int Estimatecmd(UaContext* ua, TreeContext* tree);
-static int HelpCmd(UaContext* ua, TreeContext* tree);
-static int cdcmd(UaContext* ua, TreeContext* tree);
-static int pwdcmd(UaContext* ua, TreeContext* tree);
-static int DotPwdcmd(UaContext* ua, TreeContext* tree);
-static int Unmarkcmd(UaContext* ua, TreeContext* tree);
-static int UnMarkdircmd(UaContext* ua, TreeContext* tree);
-static int QuitCmd(UaContext* ua, TreeContext* tree);
-static int donecmd(UaContext* ua, TreeContext* tree);
-static int DotLsdircmd(UaContext* ua, TreeContext* tree);
-static int DotLscmd(UaContext* ua, TreeContext* tree);
-static int DotHelpcmd(UaContext* ua, TreeContext* tree);
-static int DotLsmarkcmd(UaContext* ua, TreeContext* tree);
 
 struct cmdstruct {
   const char* key;
@@ -73,7 +51,7 @@ struct cmdstruct {
   const bool audit_event;
 };
 
-static struct cmdstruct commands[] = {
+static cmdstruct restore_browser_commands[] = {
     {NT_("abort"), QuitCmd, _("abort and do not do restore"), true},
     {NT_("add"), markcmd,
      _("add dir/file to be restored recursively, wildcards allowed"), true},
@@ -113,7 +91,8 @@ static struct cmdstruct commands[] = {
     {NT_(".help"), DotHelpcmd, _("print help"), false},
     {NT_("?"), HelpCmd, _("print help"), false},
 };
-#define comsize ((int)(sizeof(commands) / sizeof(struct cmdstruct)))
+#define comsize \
+  ((int)(sizeof(restore_browser_commands) / sizeof(struct cmdstruct)))
 
 /**
  * Enter a prompt mode where the user can select/deselect
@@ -168,12 +147,13 @@ bool UserSelectFilesFromTree(TreeContext* tree)
     status = false;
     len = strlen(ua->argk[0]);
     for (i = 0; i < comsize; i++) { /* search for command */
-      if (bstrncasecmp(ua->argk[0], commands[i].key, len)) {
+      if (bstrncasecmp(ua->argk[0], restore_browser_commands[i].key, len)) {
         // If we need to audit this event do it now.
-        if (ua->AuditEventWanted(commands[i].audit_event)) {
+        if (ua->AuditEventWanted(restore_browser_commands[i].audit_event)) {
           ua->LogAuditEventCmdline();
         }
-        status = (*commands[i].func)(ua, tree); /* go execute command */
+        status = (*restore_browser_commands[i].func)(
+            ua, tree); /* go execute command */
         found = 1;
         break;
       }
@@ -439,79 +419,84 @@ static int SetExtract(UaContext* ua,
   return count;
 }
 
+int MarkElement(char* element, UaContext* ua, TreeContext* tree)
+{
+  int count = 0;
+  // See if this is a complex path.
+  if (strchr(element, '/')) {
+    StripTrailingSlash(element);
+    int pnl, fnl;
+    POOLMEM* given_file_pattern = GetPoolMemory(PM_FNAME);
+    POOLMEM* given_path_pattern = GetPoolMemory(PM_FNAME);
+
+    // Split the argument into a path pattern and file pattern.
+    SplitPathAndFilename(element, given_path_pattern, &pnl, given_file_pattern,
+                         &fnl);
+
+    if (!tree_cwd(given_path_pattern, tree->root, tree->node)) {
+      ua->WarningMsg(_("Invalid path %s given.\n"), given_path_pattern);
+      FreePoolMemory(given_file_pattern);
+      FreePoolMemory(given_path_pattern);
+      return count;
+    }
+
+    std::string fullpath_pattern{};
+    if (element[0] != '/') {
+      POOLMEM* path = tree_getpath(tree->node);
+      fullpath_pattern.append(path);
+      FreePoolMemory(path);
+    }
+
+    fullpath_pattern.append(given_path_pattern);
+
+    POOLMEM* node_filename = GetPoolMemory(PM_FNAME);
+    POOLMEM* node_path = GetPoolMemory(PM_FNAME);
+
+    TREE_NODE* node{nullptr};
+    {
+      POOLMEM* path = tree_getpath(tree->node);
+      if (strcmp(path, "/") == 0) {
+        node = FirstTreeNode(tree->root);
+      } else {
+        node = tree->node;
+      }
+      FreePoolMemory(path);
+    }
+
+    for (; node; node = NextTreeNode(node)) {
+      POOLMEM* path = tree_getpath(node);
+      SplitPathAndFilename(path, node_path, &pnl, node_filename, &fnl);
+      FreePoolMemory(path);
+
+      if (fnmatch(fullpath_pattern.c_str(), node_path, 0) == 0) {
+        if (fnmatch(given_file_pattern, node->fname, 0) == 0) {
+          count += SetExtract(ua, node, tree, true);
+        }
+      }
+    }
+
+    FreePoolMemory(given_file_pattern);
+    FreePoolMemory(given_path_pattern);
+    FreePoolMemory(node_filename);
+    FreePoolMemory(node_path);
+  } else {
+    // Only a pattern without a / so do things relative to CWD.
+    TREE_NODE* node;
+    foreach_child (node, tree->node) {
+      if (fnmatch(element, node->fname, 0) == 0) {
+        count += SetExtract(ua, node, tree, true);
+      }
+    }
+  }
+  return count;
+}
 
 static int MarkElements(UaContext* ua, TreeContext* tree)
 {
   int count = 0;
 
   for (int i = 1; i < ua->argc; i++) {
-    StripTrailingSlash(ua->argk[i]);
-
-    // See if this is a complex path.
-    if (strchr(ua->argk[i], '/')) {
-      int pnl, fnl;
-      POOLMEM* given_file_pattern = GetPoolMemory(PM_FNAME);
-      POOLMEM* given_path_pattern = GetPoolMemory(PM_FNAME);
-
-      // Split the argument into a path pattern and file pattern.
-      SplitPathAndFilename(ua->argk[i], given_path_pattern, &pnl,
-                           given_file_pattern, &fnl);
-
-      if (!tree_cwd(given_path_pattern, tree->root, tree->node)) {
-        ua->WarningMsg(_("Invalid path %s given.\n"), given_path_pattern);
-        FreePoolMemory(given_file_pattern);
-        FreePoolMemory(given_path_pattern);
-        continue;
-      }
-
-      std::string fullpath_pattern{};
-      if (ua->argk[i][0] != '/') {
-        POOLMEM* path = tree_getpath(tree->node);
-        fullpath_pattern.append(path);
-        FreePoolMemory(path);
-      }
-
-      fullpath_pattern.append(given_path_pattern);
-
-      POOLMEM* node_filename = GetPoolMemory(PM_FNAME);
-      POOLMEM* node_path = GetPoolMemory(PM_FNAME);
-
-      TREE_NODE* node{nullptr};
-      {
-        POOLMEM* path = tree_getpath(tree->node);
-        if (strcmp(path, "/") == 0) {
-          node = FirstTreeNode(tree->root);
-        } else {
-          node = tree->node;
-        }
-        FreePoolMemory(path);
-      }
-
-      for (; node; node = NextTreeNode(node)) {
-        POOLMEM* path = tree_getpath(node);
-        SplitPathAndFilename(path, node_path, &pnl, node_filename, &fnl);
-        FreePoolMemory(path);
-
-        if (fnmatch(fullpath_pattern.c_str(), node_path, 0) == 0) {
-          if (fnmatch(given_file_pattern, node->fname, 0) == 0) {
-            count += SetExtract(ua, node, tree, true);
-          }
-        }
-      }
-
-      FreePoolMemory(given_file_pattern);
-      FreePoolMemory(given_path_pattern);
-      FreePoolMemory(node_filename);
-      FreePoolMemory(node_path);
-    } else {
-      // Only a pattern without a / so do things relative to CWD.
-      TREE_NODE* node;
-      foreach_child (node, tree->node) {
-        if (fnmatch(ua->argk[i], node->fname, 0) == 0) {
-          count += SetExtract(ua, node, tree, true);
-        }
-      }
-    }
+    count += MarkElement(ua->argk[i], ua, tree);
   }
   return count;
 }
@@ -520,7 +505,7 @@ static int MarkElements(UaContext* ua, TreeContext* tree)
  * Recursively mark the current directory to be restored as
  *  well as all directories and files below it.
  */
-static int markcmd(UaContext* ua, TreeContext* tree)
+int markcmd(UaContext* ua, TreeContext* tree)
 {
   if (ua->argc < 2 || !TreeNodeHasChild(tree->node)) {
     ua->SendMsg(_("No files marked.\n"));
@@ -542,7 +527,7 @@ static int markcmd(UaContext* ua, TreeContext* tree)
   return 1;
 }
 
-static int Markdircmd(UaContext* ua, TreeContext* tree)
+int Markdircmd(UaContext* ua, TreeContext* tree)
 {
   TREE_NODE* node;
   int count = 0;
@@ -574,7 +559,7 @@ static int Markdircmd(UaContext* ua, TreeContext* tree)
   return 1;
 }
 
-static int countcmd(UaContext* ua, TreeContext* tree)
+int countcmd(UaContext* ua, TreeContext* tree)
 {
   TREE_NODE* node;
   int total, num_extract;
@@ -593,7 +578,7 @@ static int countcmd(UaContext* ua, TreeContext* tree)
   return 1;
 }
 
-static int findcmd(UaContext* ua, TreeContext* tree)
+int findcmd(UaContext* ua, TreeContext* tree)
 {
   TREE_NODE* node;
   POOLMEM* cwd;
@@ -624,7 +609,7 @@ static int findcmd(UaContext* ua, TreeContext* tree)
   return 1;
 }
 
-static int DotLsdircmd(UaContext* ua, TreeContext* tree)
+int DotLsdircmd(UaContext* ua, TreeContext* tree)
 {
   TREE_NODE* node;
 
@@ -639,16 +624,18 @@ static int DotLsdircmd(UaContext* ua, TreeContext* tree)
   return 1;
 }
 
-static int DotHelpcmd(UaContext* ua, TreeContext*)
+int DotHelpcmd(UaContext* ua, TreeContext*)
 {
   for (int i = 0; i < comsize; i++) {
     /* List only non-dot commands */
-    if (commands[i].key[0] != '.') { ua->SendMsg("%s\n", commands[i].key); }
+    if (restore_browser_commands[i].key[0] != '.') {
+      ua->SendMsg("%s\n", restore_browser_commands[i].key);
+    }
   }
   return 1;
 }
 
-static int DotLscmd(UaContext* ua, TreeContext* tree)
+int DotLscmd(UaContext* ua, TreeContext* tree)
 {
   TREE_NODE* node;
 
@@ -663,7 +650,7 @@ static int DotLscmd(UaContext* ua, TreeContext* tree)
   return 1;
 }
 
-static int lscmd(UaContext* ua, TreeContext* tree)
+int lscmd(UaContext* ua, TreeContext* tree)
 {
   TREE_NODE* node;
 
@@ -686,7 +673,7 @@ static int lscmd(UaContext* ua, TreeContext* tree)
 }
 
 // Ls command that lists only the marked files
-static int DotLsmarkcmd(UaContext* ua, TreeContext* tree)
+int DotLsmarkcmd(UaContext* ua, TreeContext* tree)
 {
   TREE_NODE* node;
   if (!TreeNodeHasChild(tree->node)) { return 1; }
@@ -700,7 +687,7 @@ static int DotLsmarkcmd(UaContext* ua, TreeContext* tree)
 }
 
 // This recursive ls command that lists only the marked files
-static void rlsmark(UaContext* ua, TREE_NODE* tnode, int level)
+void rlsmark(UaContext* ua, TREE_NODE* tnode, int level)
 {
   TREE_NODE* node;
   const int max_level = 100;
@@ -735,7 +722,7 @@ static void rlsmark(UaContext* ua, TREE_NODE* tnode, int level)
   }
 }
 
-static int Lsmarkcmd(UaContext* ua, TreeContext* tree)
+int Lsmarkcmd(UaContext* ua, TreeContext* tree)
 {
   rlsmark(ua, tree->node, 0);
   return 1;
@@ -787,7 +774,7 @@ static inline void ls_output(guid_list* guid,
 }
 
 // Like ls command, but give more detail on each file
-static int DoDircmd(UaContext* ua, TreeContext* tree, bool dot_cmd)
+int DoDircmd(UaContext* ua, TreeContext* tree, bool dot_cmd)
 {
   TREE_NODE* node;
   POOLMEM *cwd, *buf;
@@ -860,12 +847,12 @@ int DotDircmd(UaContext* ua, TreeContext* tree)
   return DoDircmd(ua, tree, true /*dot command*/);
 }
 
-static int dircmd(UaContext* ua, TreeContext* tree)
+int dircmd(UaContext* ua, TreeContext* tree)
 {
   return DoDircmd(ua, tree, false /*not dot command*/);
 }
 
-static int Estimatecmd(UaContext* ua, TreeContext* tree)
+int Estimatecmd(UaContext* ua, TreeContext* tree)
 {
   TREE_NODE* node;
   POOLMEM* cwd;
@@ -908,15 +895,16 @@ static int Estimatecmd(UaContext* ua, TreeContext* tree)
   return 1;
 }
 
-static int HelpCmd(UaContext* ua, TreeContext*)
+int HelpCmd(UaContext* ua, TreeContext*)
 {
   unsigned int i;
 
   ua->SendMsg(_("  Command    Description\n  =======    ===========\n"));
   for (i = 0; i < comsize; i++) {
     // List only non-dot commands
-    if (commands[i].key[0] != '.') {
-      ua->SendMsg("  %-10s %s\n", _(commands[i].key), _(commands[i].help));
+    if (restore_browser_commands[i].key[0] != '.') {
+      ua->SendMsg("  %-10s %s\n", _(restore_browser_commands[i].key),
+                  _(restore_browser_commands[i].help));
     }
   }
   ua->SendMsg("\n");
@@ -928,7 +916,7 @@ static int HelpCmd(UaContext* ua, TreeContext*)
  * we assume it is a Win32 absolute cd rather than relative and
  * try a second time with /x: ...  Win32 kludge.
  */
-static int cdcmd(UaContext* ua, TreeContext* tree)
+int cdcmd(UaContext* ua, TreeContext* tree)
 {
   TREE_NODE* node;
   POOLMEM* cwd;
@@ -962,7 +950,7 @@ static int cdcmd(UaContext* ua, TreeContext* tree)
   return pwdcmd(ua, tree);
 }
 
-static int pwdcmd(UaContext* ua, TreeContext* tree)
+int pwdcmd(UaContext* ua, TreeContext* tree)
 {
   POOLMEM* cwd;
 
@@ -979,7 +967,7 @@ static int pwdcmd(UaContext* ua, TreeContext* tree)
   return 1;
 }
 
-static int DotPwdcmd(UaContext* ua, TreeContext* tree)
+int DotPwdcmd(UaContext* ua, TreeContext* tree)
 {
   POOLMEM* cwd;
 
@@ -992,7 +980,51 @@ static int DotPwdcmd(UaContext* ua, TreeContext* tree)
   return 1;
 }
 
-static int Unmarkcmd(UaContext* ua, TreeContext* tree)
+int UnmarkElement(char* element, UaContext* ua, TreeContext* tree)
+{
+  int count = 0;
+  StripTrailingSlash(element);
+  TREE_NODE* node;
+  // See if this is a full path.
+  if (strchr(element, '/')) {
+    int pnl, fnl;
+    POOLMEM* file = GetPoolMemory(PM_FNAME);
+    POOLMEM* path = GetPoolMemory(PM_FNAME);
+
+    // Split the argument into a path and file part.
+    SplitPathAndFilename(element, path, &pnl, file, &fnl);
+
+    // First change the CWD to the correct PATH.
+    node = tree_cwd(path, tree->root, tree->node);
+    if (!node) {
+      ua->WarningMsg(_("Invalid path %s given.\n"), path);
+      FreePoolMemory(file);
+      FreePoolMemory(path);
+      return count;
+    }
+
+    TREE_NODE* childnode;
+    foreach_child (childnode, node) {
+      if (fnmatch(file, childnode->fname, 0) == 0) {
+        count += SetExtract(ua, childnode, tree, false);
+      }
+    }
+
+    FreePoolMemory(file);
+    FreePoolMemory(path);
+  } else {
+    // Only a pattern without a / so do things relative to CWD.
+    foreach_child (node, tree->node) {
+      if (fnmatch(element, node->fname, 0) == 0) {
+        count += SetExtract(ua, node, tree, false);
+      }
+    }
+  }
+
+  return count;
+}
+
+int Unmarkcmd(UaContext* ua, TreeContext* tree)
 {
   int count = 0;
 
@@ -1002,43 +1034,7 @@ static int Unmarkcmd(UaContext* ua, TreeContext* tree)
   }
 
   for (int i = 1; i < ua->argc; i++) {
-    StripTrailingSlash(ua->argk[i]);
-    TREE_NODE* node;
-    // See if this is a full path.
-    if (strchr(ua->argk[i], '/')) {
-      int pnl, fnl;
-      POOLMEM* file = GetPoolMemory(PM_FNAME);
-      POOLMEM* path = GetPoolMemory(PM_FNAME);
-
-      // Split the argument into a path and file part.
-      SplitPathAndFilename(ua->argk[i], path, &pnl, file, &fnl);
-
-      // First change the CWD to the correct PATH.
-      node = tree_cwd(path, tree->root, tree->node);
-      if (!node) {
-        ua->WarningMsg(_("Invalid path %s given.\n"), path);
-        FreePoolMemory(file);
-        FreePoolMemory(path);
-        continue;
-      }
-
-      TREE_NODE* childnode;
-      foreach_child (childnode, node) {
-        if (fnmatch(file, childnode->fname, 0) == 0) {
-          count += SetExtract(ua, childnode, tree, false);
-        }
-      }
-
-      FreePoolMemory(file);
-      FreePoolMemory(path);
-    } else {
-      // Only a pattern without a / so do things relative to CWD.
-      foreach_child (node, tree->node) {
-        if (fnmatch(ua->argk[i], node->fname, 0) == 0) {
-          count += SetExtract(ua, node, tree, false);
-        }
-      }
-    }
+    count += UnmarkElement(ua->argk[i], ua, tree);
   }
 
   if (count == 0) {
@@ -1053,7 +1049,7 @@ static int Unmarkcmd(UaContext* ua, TreeContext* tree)
   return 1;
 }
 
-static int UnMarkdircmd(UaContext* ua, TreeContext* tree)
+int UnMarkdircmd(UaContext* ua, TreeContext* tree)
 {
   TREE_NODE* node;
   int count = 0;
@@ -1085,9 +1081,9 @@ static int UnMarkdircmd(UaContext* ua, TreeContext* tree)
   return 1;
 }
 
-static int donecmd(UaContext*, TreeContext*) { return 0; }
+int donecmd(UaContext*, TreeContext*) { return 0; }
 
-static int QuitCmd(UaContext* ua, TreeContext*)
+int QuitCmd(UaContext* ua, TreeContext*)
 {
   ua->quit = true;
   return 0;
