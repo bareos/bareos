@@ -203,13 +203,7 @@ static inline bool is_volume_selected(RestoreBootstrapRecordFileIndex* fi,
                                       int32_t LastIndex)
 {
   for (auto range : fi->GetRanges()) {
-    auto first = range.first;
-    auto last = range.second;
-    if ((first >= FirstIndex && first <= LastIndex)
-        || (last >= FirstIndex && last <= LastIndex)
-        || (first < FirstIndex && last > LastIndex)) {
-      return true;
-    }
+    if (range.first <= LastIndex && range.second >= FirstIndex) { return true; }
   }
   return false;
 }
