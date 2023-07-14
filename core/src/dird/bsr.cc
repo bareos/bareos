@@ -154,12 +154,15 @@ static void PrintBsrItem(std::string& buffer, const char* fmt, ...)
  * for each Volume.
  */
 uint32_t write_findex(RestoreBootstrapRecordFileIndex* fi,
-                      int32_t FirstIndex,
-                      int32_t LastIndex,
+                      int32_t& FirstIndex,
+                      int32_t& LastIndex,
                       std::string& buffer)
 {
   auto count = uint32_t{0};
   auto bsrItems = std::string{};
+
+  std::optional<int32_t> actual_first;
+  std::optional<int32_t> actual_last;
 
   for (auto& range : fi->GetRanges()) {
     auto first = range.first;
@@ -169,6 +172,9 @@ uint32_t write_findex(RestoreBootstrapRecordFileIndex* fi,
         || (first < FirstIndex && last > LastIndex)) {
       first = std::max(first, FirstIndex);
       last = std::min(last, LastIndex);
+
+      if (!actual_first.has_value()) { actual_first = first; }
+      actual_last = last;
 
       if (first == last) {
         bsrItems += "FileIndex=" + std::to_string(first) + "\n";
@@ -181,6 +187,15 @@ uint32_t write_findex(RestoreBootstrapRecordFileIndex* fi,
     }
   }
   buffer += bsrItems.c_str();
+
+  if (actual_first.has_value()) {
+    // if we did not restore anything
+    // we should just leave the first/last index alone!
+    ASSERT(actual_last.has_value());
+    FirstIndex = *actual_first;
+    LastIndex = *actual_last;
+  }
+
   return count;
 }
 
@@ -379,7 +394,7 @@ static uint32_t write_bsr_item(RestoreBootstrapRecord* bsr,
                                RestoreContext& rx,
                                std::string& buffer,
                                bool& first,
-                               uint32_t& LastIndex)
+                               int32_t& LastIndex)
 {
   int i;
   char ed1[50], ed2[50];
@@ -423,8 +438,9 @@ static uint32_t write_bsr_item(RestoreBootstrapRecord* bsr,
                  edit_uint64(bsr->VolParams[i].StartAddr, ed1),
                  edit_uint64(bsr->VolParams[i].EndAddr, ed2));
 
-    count = write_findex(bsr->fi.get(), bsr->VolParams[i].FirstIndex,
-                         bsr->VolParams[i].LastIndex, buffer);
+    int32_t start = bsr->VolParams[i].FirstIndex;
+    int32_t end = bsr->VolParams[i].LastIndex;
+    count = write_findex(bsr->fi.get(), start, end, buffer);
     if (count) { PrintBsrItem(buffer, "Count=%u\n", count); }
 
     total_count += count;
@@ -432,9 +448,9 @@ static uint32_t write_bsr_item(RestoreBootstrapRecord* bsr,
     /* If the same file is present on two tapes or in two files
      * on a tape, it is a continuation, and should not be treated
      * twice in the totals. */
-    if (!first && LastIndex == bsr->VolParams[i].FirstIndex) { total_count--; }
+    if (!first && count > 0 && LastIndex == start) { total_count--; }
     first = false;
-    LastIndex = bsr->VolParams[i].LastIndex;
+    LastIndex = end;
   }
 
   return total_count;
@@ -452,7 +468,7 @@ static uint32_t write_bsr_item(RestoreBootstrapRecord* bsr,
 uint32_t WriteBsr(UaContext* ua, RestoreContext& rx, std::string& buffer)
 {
   bool first = true;
-  uint32_t LastIndex = 0;
+  int32_t LastIndex = 0;
   uint32_t total_count = 0;
   const char* p;
   JobId_t JobId;
