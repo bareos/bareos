@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -39,6 +39,7 @@
 #include "lib/parse_conf.h"
 
 #include <algorithm>
+#include <optional>
 
 namespace directordaemon {
 
@@ -386,10 +387,8 @@ static uint32_t write_bsr_item(RestoreBootstrapRecord* bsr,
   uint32_t total_count = 0;
   char device[MAX_NAME_LENGTH];
 
-  /*
-   * For a given volume, loop over all the JobMedia records.
-   * VolCount is the number of JobMedia records.
-   */
+  /* For a given volume, loop over all the JobMedia records.
+   * VolCount is the number of JobMedia records. */
   for (i = 0; i < bsr->VolCount; i++) {
     if (!is_volume_selected(bsr->fi.get(), bsr->VolParams[i].FirstIndex,
                             bsr->VolParams[i].LastIndex)) {
@@ -430,11 +429,9 @@ static uint32_t write_bsr_item(RestoreBootstrapRecord* bsr,
 
     total_count += count;
 
-    /*
-     * If the same file is present on two tapes or in two files
+    /* If the same file is present on two tapes or in two files
      * on a tape, it is a continuation, and should not be treated
-     * twice in the totals.
-     */
+     * twice in the totals. */
     if (!first && LastIndex == bsr->VolParams[i].FirstIndex) { total_count--; }
     first = false;
     LastIndex = bsr->VolParams[i].LastIndex;
@@ -461,9 +458,21 @@ uint32_t WriteBsr(UaContext* ua, RestoreContext& rx, std::string& buffer)
   JobId_t JobId;
   RestoreBootstrapRecord* bsr;
 
+  std::optional<std::pair<std::size_t, std::size_t>> last_job;
+
   if (*rx.JobIds == 0) {
     for (bsr = rx.bsr.get(); bsr; bsr = bsr->next.get()) {
+      std::pair<std::size_t, std::size_t> this_job{bsr->VolSessionId,
+                                                   bsr->VolSessionTime};
+
+      if (last_job != this_job) {
+        // cannot compare indices between jobs
+        LastIndex = 0;
+      }
+
       total_count += write_bsr_item(bsr, ua, rx, buffer, first, LastIndex);
+
+      last_job = this_job;
     }
     return total_count;
   }
@@ -471,7 +480,17 @@ uint32_t WriteBsr(UaContext* ua, RestoreContext& rx, std::string& buffer)
   for (p = rx.JobIds; GetNextJobidFromList(&p, &JobId) > 0;) {
     for (bsr = rx.bsr.get(); bsr; bsr = bsr->next.get()) {
       if (JobId == bsr->JobId) {
+        std::pair<std::size_t, std::size_t> this_job{bsr->VolSessionId,
+                                                     bsr->VolSessionTime};
+
+        if (last_job != this_job) {
+          // cannot compare indices between jobs
+          LastIndex = 0;
+        }
+
         total_count += write_bsr_item(bsr, ua, rx, buffer, first, LastIndex);
+
+        last_job = this_job;
       }
     }
   }
@@ -627,10 +646,8 @@ static inline bool IsOnSameStorage(JobControlRecord* jcr, char* new_one)
     return true;
   }
 
-  /*
-   * If Port and Hostname/IP are same, we are talking to the same
-   * Storage Daemon
-   */
+  /* If Port and Hostname/IP are same, we are talking to the same
+   * Storage Daemon */
   if (jcr->dir_impl->res.read_storage->SDport != new_store->SDport
       || !bstrcmp(jcr->dir_impl->res.read_storage->address,
                   new_store->address)) {
@@ -687,10 +704,8 @@ bool SendBootstrapFile(JobControlRecord* jcr,
 
   while (fgets(ua->cmd, UA_CMD_SIZE, bs)) {
     if (CheckForNewStorage(jcr, info)) {
-      /*
-       * Otherwise, we need to contact another storage daemon.
-       * Reset bs to the beginning of the current segment.
-       */
+      /* Otherwise, we need to contact another storage daemon.
+       * Reset bs to the beginning of the current segment. */
       fseeko(bs, pos, SEEK_SET);
       break;
     }
