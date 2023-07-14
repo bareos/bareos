@@ -26,6 +26,7 @@
  */
 
 #include "stored/append.h"
+#include "stored/askdir.h"
 #include "stored/stored.h"
 #include "stored/acquire.h"
 #include "stored/checkpoint_handler.h"
@@ -109,8 +110,6 @@ static bool SaveFullyProcessedFilesAttributes(
   }
   return false;
 }
-
-bool DeleteNullJobmediaRecords(JobControlRecord* jcr);
 
 // Append Data sent from File daemon
 bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
