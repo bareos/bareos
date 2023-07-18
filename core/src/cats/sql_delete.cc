@@ -202,6 +202,11 @@ bool BareosDb::DeleteMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
 
 void BareosDb::PurgeFiles(const char* jobids)
 {
+  if (strcmp(jobids, "") == 0) {
+    Dmsg0(100, "No jobids to use for purging files\n");
+    return;
+  }
+
   PoolMem query(PM_MESSAGE);
 
   Mmsg(query, "DELETE FROM File WHERE JobId IN (%s)", jobids);
@@ -217,6 +222,11 @@ void BareosDb::PurgeFiles(const char* jobids)
 void BareosDb::PurgeJobs(const char* jobids)
 {
   PoolMem query(PM_MESSAGE);
+
+  if (strcmp(jobids, "") == 0) {
+    Dmsg0(100, "No jobids to purge\n");
+    return;
+  }
 
   /* Delete (or purge) records associated with the job */
   PurgeFiles(jobids);
