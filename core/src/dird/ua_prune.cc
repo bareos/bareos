@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -137,12 +137,10 @@ bool PruneCmd(UaContext* ua, const char*)
       = {NT_("Files"), NT_("Jobs"),      NT_("Volume"),
          NT_("Stats"), NT_("Directory"), NULL};
 
-  /*
-   * All prune commands might target jobs that reside on different storages.
+  /* All prune commands might target jobs that reside on different storages.
    * Instead of checking all of them,
    * we require full permission on jobs and storages.
-   * Client and Pool permissions are checked at the individual subcommands.
-   */
+   * Client and Pool permissions are checked at the individual subcommands. */
   if (ua->AclHasRestrictions(Job_ACL)) {
     ua->ErrorMsg(permission_denied_message, "job");
     return false;
@@ -324,10 +322,8 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client)
     PmStrcpy(temp, ua->cmd);
   }
 
-  /*
-   * See if the directory ends in a / and escape it for usage in a database
-   * query.
-   */
+  /* See if the directory ends in a / and escape it for usage in a database
+   * query. */
   len = strlen(temp.c_str());
   if (*(temp.c_str() + len - 1) != '/') {
     PmStrcat(temp, "/");
@@ -373,11 +369,9 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client)
   ua->db->SqlQuery(query.c_str());
   DbUnlock(ua->db);
 
-  /*
-   * If we removed the entries from the file table without limiting it to a
+  /* If we removed the entries from the file table without limiting it to a
    * certain client we created orphaned path entries as no one is referencing
-   * them anymore.
-   */
+   * them anymore. */
   if (!client) {
     if (!GetYesno(ua, _("Cleanup orphaned path records (yes/no):"))
         || !ua->pint32_val) {
@@ -661,10 +655,8 @@ bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
   edit_utime(period, ed1, sizeof(ed1));
   ua->SendMsg(_("Begin pruning Jobs older than %s.\n"), ed1);
 
-  /*
-   * Select all files that are older than the JobRetention period
-   * and add them into the "DeletionCandidates" table.
-   */
+  /* Select all files that are older than the JobRetention period
+   * and add them into the "DeletionCandidates" table. */
 
   PoolMem query(PM_MESSAGE);
   Mmsg(query,
@@ -682,11 +674,9 @@ bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
     return true;
   }
 
-  /*
-   * Now, for the selection, we discard some of them in order to be always
+  /* Now, for the selection, we discard some of them in order to be always
    * able to restore files. (ie, last full, last diff, last incrs)
-   * Note: The DISTINCT could be more useful if we don't get FileSetId
-   */
+   * Note: The DISTINCT could be more useful if we don't get FileSetId */
 
   std::vector<accurate_check_ctx> accurate_job_check;
   Mmsg(query,
@@ -700,20 +690,16 @@ bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
        "AND Job.JobStatus IN ('T', 'W') " /* Look only useful jobs */
   );
 
-  /*
-   * The JobSelectHandler will skip jobs or filesets that are no longer
+  /* The JobSelectHandler will skip jobs or filesets that are no longer
    * in the configuration file. Interesting ClientId/FileSetId will be
-   * added to jobids_check.
-   */
+   * added to jobids_check. */
   if (!ua->db->SqlQuery(query.c_str(), JobSelectHandler, &accurate_job_check)) {
     ua->ErrorMsg("%s", ua->db->strerror());
   }
 
-  /*
-   * For this selection, we exclude current jobs used for restore or
+  /* For this selection, we exclude current jobs used for restore or
    * accurate. This will prevent to prune the last full backup used for
-   * current backup & restore
-   */
+   * current backup & restore */
 
   // To find useful jobs, we do like an incremental
   JobDbRecord jr;
@@ -728,10 +714,8 @@ bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
     jobids.add(tempids);
   }
 
-  /*
-   * Discard latest Verify level=InitCatalog job
-   * TODO: can have multiple fileset
-   */
+  /* Discard latest Verify level=InitCatalog job
+   * TODO: can have multiple fileset */
   Mmsg(query,
        "SELECT JobId, JobTDate "
        "FROM Job %s " /* JOIN Client/Pool */
