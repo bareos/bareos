@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2006 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -221,6 +221,11 @@ bool BareosDb::PurgeMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
 
 void BareosDb::PurgeFiles(const char* jobids)
 {
+  if (strcmp(jobids, "") == 0) {
+    Dmsg0(100, "No jobids to use for purging files\n");
+    return;
+  }
+
   PoolMem query(PM_MESSAGE);
 
   Mmsg(query, "DELETE FROM File WHERE JobId IN (%s)", jobids);
@@ -236,6 +241,11 @@ void BareosDb::PurgeFiles(const char* jobids)
 void BareosDb::PurgeJobs(const char* jobids)
 {
   PoolMem query(PM_MESSAGE);
+
+  if (strcmp(jobids, "") == 0) {
+    Dmsg0(100, "No jobids to purge\n");
+    return;
+  }
 
   /* Delete (or purge) records associated with the job */
   PurgeFiles(jobids);

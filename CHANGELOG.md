@@ -13,6 +13,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - VMware Plugin: improve snapshot cleanup [PR #1492]
 - build: adapt matrix and pkglist for changes to CI [PR #1497]
 - bsmtp: make mailhost and port message info a debug message [PR #1509]
+- dird: cats: abort purge when there are no eligible jobids [PR #1513]
 
 ## [22.1.0] - 2023-06-13
 
@@ -551,4 +552,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1494]: https://github.com/bareos/bareos/pull/1494
 [PR #1497]: https://github.com/bareos/bareos/pull/1497
 [PR #1509]: https://github.com/bareos/bareos/pull/1509
+[PR #1513]: https://github.com/bareos/bareos/pull/1513
 [unreleased]: https://github.com/bareos/bareos/tree/master
