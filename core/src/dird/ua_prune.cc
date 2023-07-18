@@ -768,8 +768,6 @@ bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
     ua->InfoMsg(
         _("Pruned %d %s for client %s from catalog.\n"), prune_list.size(),
         prune_list.size() == 1 ? _("Job") : _("Jobs"), client->resource_name_);
-  } else if (ua->verbose) {
-    ua->InfoMsg(_("No Jobs found to prune.\n"));
   }
 
   DropTempTables(ua);

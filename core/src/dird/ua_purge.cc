@@ -428,6 +428,11 @@ void PurgeJobListFromCatalog(UaContext* ua, std::vector<JobId_t>& deletion_list)
 
   std::string jobids_to_delete_string
       = PrepareJobidsTobedeleted(ua, deletion_list);
+  if (deletion_list.empty()) {
+    ua->SendMsg(_("No jobids found to be purged\n"), deletion_list.size(),
+                jobids_to_delete_string.c_str());
+    return;
+  }
   ua->SendMsg(_("Purging the following %d JobIds: %s\n"), deletion_list.size(),
               jobids_to_delete_string.c_str());
   PurgeJobsFromCatalog(ua, jobids_to_delete_string.c_str());
