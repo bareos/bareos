@@ -237,6 +237,11 @@ void BareosDb::PurgeJobs(const char* jobids)
 {
   PoolMem query(PM_MESSAGE);
 
+  if (strcmp(jobids, "") == 0) {
+    Dmsg0(100, "No jobids to purge\n");
+    return;
+  }
+
   /* Delete (or purge) records associated with the job */
   PurgeFiles(jobids);
 
