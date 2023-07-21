@@ -85,7 +85,7 @@ run_bconsole
 pushd database/ > /dev/null
 local_db_stop_server "$TESTPGHOST"
 # Save previous log
-cp -a data/log/* log/
+[ -d "data/log" ] && cp -a data/log/* log/
 rm -Rf data
 rm -Rf wal_archive
 echo "------------ stopped"
