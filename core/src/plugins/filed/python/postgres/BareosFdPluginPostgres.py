@@ -565,12 +565,13 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
                 bareosfd.M_ERROR, "%s statement failed: %s\n" % (stopStmt, e)
             )
 
-        bareosfd.JobMessage(
-            bareosfd.M_INFO,
-            "Database connection closed. "
-            + "CHECKPOINT LOCATION: %s, " % self.labelItems["CHECKPOINT LOCATION"]
-            + "START WAL LOCATION: %s\n" % self.labelItems["START WAL LOCATION"],
-        )
+        message = "Database connection closed. "
+        for key, value in self.labelItems:
+            message = message + "%s: %s, " % (key, value)
+        message = message[:-2] + "\n"
+
+        bareosfd.JobMessage(bareosfd.M_INFO, message)
+
         self.close_db_connection()
         self.PostgressFullBackupRunning = False
 
