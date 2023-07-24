@@ -14,6 +14,9 @@ record has a record header followed by record data.
 This chapter is intended to be a technical discussion of the Media
 Format.
 
+Take note that the type **char [n]** almost always means that the value
+is a variable sized null terminated string of length at most **n - 1**.
+
 Definitions
 -----------
 
@@ -199,7 +202,7 @@ Block Header
 ------------
 
 The current Block Header version is **BB02**. (The prior version
-`BB01 <#BB01>`__ is deprecated since Bacula 1.27.)
+`BB01 <#BB01>`__ is unsupported.)
 
 Each session or Job use their own private blocks.
 
@@ -210,7 +213,7 @@ The format of a `Block Header <#BlockHeader>`__ is:
        uint32_t CheckSum;                /* Block check sum */
        uint32_t BlockSize;               /* Block byte size including the header */
        uint32_t BlockNumber;             /* Block number */
-       char ID[4] = "BB02";              /* Identification and block level */
+       char ID[4] = "BB02";              /* Identification and block level; not null terminated */
        uint32_t VolSessionId;            /* Session Id for Job */
        uint32_t VolSessionTime;          /* Session Time for Job */
 
@@ -310,8 +313,11 @@ to the end with zeros and the Record Header begins in the next block.
 The data record, on the other hand, may be split across multiple blocks
 and even multiple physical volumes. When a data record is split, the
 second (and possibly subsequent) piece of the data is preceded by a new
-Record Header. Thus each piece of data is always immediately preceded by
-a Record Header. When reading a record, if Bareos finds only part of the
+Record Header. In this case the first record header has the complete data
+size whereas each other record header has DataSize equal to the size of the
+their actual data record. Thus each piece of data is always immediately
+preceded by a Record Header.
+When reading a record, if Bareos finds only part of the
 data in the first record, it will automatically read the next record and
 concatenate the data record to form a full data record.
 
@@ -320,22 +326,20 @@ Volume Label Format
 
 Tape volume labels are created by the Storage daemon in response to a
 **label** command given to the Console program, or alternatively by the
-**btape** program. created. Each volume is labeled with the following
+**btape** program. Each volume is labeled with the following
 information using the Bareos serialization routines, which guarantee
 machine byte order independence.
 
-For Bacula versions 1.27 and later, the Volume Label Format is:
+For Bareos versions 12.4 and later, the Volume Label Format is:
 
 ::
 
-      char Id[32];              /* Bacula 1.0 Immortal\n */
-      uint32_t VerNum;          /* Label version number */
-      /* VerNum 11 and greater Bacula 1.27 and later */
+      char Id[32] = "Bareos 2.0 Immortal\n"; /* Identification */
+      uint32_t VerNum;          /* Label version number; = 20 since Bareos 12.4 */
       btime_t   label_btime;    /* Time/date tape labeled */
       btime_t   write_btime;    /* Time/date tape first written */
-      /* The following are 0 in VerNum 11 and greater */
-      float64_t write_date;     /* Date this label written */
-      float64_t write_time;     /* Time this label written */
+      float64_t write_date;     /* Always 0 */
+      float64_t write_time;     /* Always 0 */
       char VolName[128];        /* Volume name */
       char PrevVolName[128];    /* Previous Volume Name */
       char PoolName[128];       /* Pool name */
@@ -359,25 +363,21 @@ binary format:
 
 ::
 
-      char Id[32];              /* Bacula/Bareos Immortal ... */
+      char Id[32];              /* Bareos Immortal ... */
       uint32_t VerNum;          /* Label version number */
       uint32_t JobId;           /* Job id */
-      uint32_t VolumeIndex;     /* sequence no of vol */
-      /* Prior to VerNum 11 */
-      float64_t write_date;     /* Date this label written */
-      /* VerNum 11 and greater */
+      uint32_t VolumeIndex;     /* sequence no of vol (??)*/
       btime_t   write_btime;    /* time/date record written */
-      /* The following is zero VerNum 11 and greater */
-      float64_t write_time;    /* Time this label written */
-      char PoolName[128];        /* Pool name */
-      char PoolType[128];        /* Pool type */
-      char JobName[128];         /* base Job name */
+      float64_t write_time;     /* Always 0 */
+      char PoolName[128];       /* Pool name */
+      char PoolType[128];       /* Pool type */
+      char JobName[128];        /* base Job name */
       char ClientName[128];
-      /* Added in VerNum 10 */
-      char Job[128];             /* Unique Job name */
-      char FileSetName[128];     /* FileSet name */
+      char Job[128];            /* Unique Job name */
+      char FileSetName[128];    /* FileSet name */
       uint32_t JobType;
       uint32_t JobLevel;
+      char FileSetChecksum[50]
 
 In addition, the `EOS <#EndOfSessionRecord>`__ label contains:
 
@@ -391,7 +391,7 @@ In addition, the `EOS <#EndOfSessionRecord>`__ label contains:
       uint32_t start_file;
       uint32_t end_file;
       uint32_t JobErrors;
-      uint32_t JobStatus          /* Job termination code, since VerNum >= 11 */
+      uint32_t JobStatus          /* Job termination code */
 
 Note, the LabelType (Volume Label, Volume PreLabel, Session Start Label,
 …) is stored in the record FileIndex field and does not appear in the
@@ -404,10 +404,10 @@ Overall Storage Format
 
 ::
 
-                   Bacula/Bareos Tape Format
+                      Bareos Tape Format
                          6 June 2001
                Version BB02 added 28 September 2002
-               Version BB01 is the old deprecated format.
+               Version BB01 is the old unsupported format.
        A Bareos tape is composed of tape Blocks.  Each block
          has a Block header followed by the block data. Block
          Data consists of Records. Records consist of Record
@@ -455,7 +455,7 @@ Overall Storage Format
        |              VolSessionTime   (uint32_t)              |
        :=======================================================:
        BBO2: Serves to identify the block as a
-         Bacula/Bareos block and also servers as a block format identifier
+         Bacula/Bareos block and also serves as a block format identifier
          should we ever need to change the format.
        BlockSize: is the size in bytes of the block. When reading
          back a block, if the BlockSize does not agree with the
@@ -508,17 +508,13 @@ Overall Storage Format
        |-------------------------------------------------------|
        |              VerNum           (uint32_t)              |
        |-------------------------------------------------------|
-       |              label_date       (float64_t)             |
-       |              label_btime      (btime_t VerNum 11      |
+       |              label_btime      (btime_t)               |
        |-------------------------------------------------------|
-       |              label_time       (float64_t)             |
-       |              write_btime      (btime_t VerNum 11      |
+       |              write_btime      (btime_t)               |
        |-------------------------------------------------------|
-       |              write_date       (float64_t)             |
-       |                  0            (float64_t) VerNum 11   |
+       |                  0            (float64_t)             |
        |-------------------------------------------------------|
-       |              write_time       (float64_t)             |
-       |                  0            (float64_t) VerNum 11   |
+       |                  0            (float64_t)             |
        |-------------------------------------------------------|
        |              VolName          (128 bytes)             |
        |-------------------------------------------------------|
@@ -540,20 +536,16 @@ Overall Storage Format
        |-------------------------------------------------------|
        :=======================================================:
 
-       Id: 32 byte identifier "Bacula 1.0 immortal\n"
-       (old version also recognized:)
-       Id: 32 byte identifier "Bacula 0.9 mortal\n"
+       Id: 32 byte identifier "Bareos 2.0 immortal\n"
        LabelType (Saved in the FileIndex of the Header record).
            PRE_LABEL -1    Volume label on unwritten tape
            VOL_LABEL -2    Volume label after tape written
            EOM_LABEL -3    Label at EOM (not currently implemented)
            SOS_LABEL -4    Start of Session label (format given below)
            EOS_LABEL -5    End of Session label (format given below)
-       VerNum: 11
-       label_date: Julian day tape labeled
-       label_time: Julian time tape labeled
-       write_date: Julian date tape first used (data written)
-       write_time: Julian time tape first used (data written)
+       VerNum: 20
+       label_btime: Bareos time/date tape labeled
+       write_btime: Bareos time/date tape first used (data written)
        VolName: "Physical" Volume name
        PrevVolName: The VolName of the previous tape (if this tape is
                     a continuation of the previous one).
@@ -572,9 +564,9 @@ Overall Storage Format
        |-------------------------------------------------------|
        |              JobId            (uint32_t)              |
        |-------------------------------------------------------|
-       |              write_btime      (btime_t)   VerNum 11   |
+       |              write_btime      (btime_t)               |
        |-------------------------------------------------------|
-       |                 0             (float64_t) VerNum 11   |
+       |                 0             (float64_t)             |
        |-------------------------------------------------------|
        |              PoolName         (128 bytes)             |
        |-------------------------------------------------------|
@@ -592,7 +584,7 @@ Overall Storage Format
        |-------------------------------------------------------|
        |              JobLevel         (uint32_t)              |
        |-------------------------------------------------------|
-       |              FileSetMD5       (50 bytes)   VerNum 11  |
+       |              FileSetMD5       (50 bytes)              |
        |-------------------------------------------------------|
                Additional fields in End Of Session Label
        |-------------------------------------------------------|
@@ -610,19 +602,17 @@ Overall Storage Format
        |-------------------------------------------------------|
        |              JobErrors        (uint32_t)              |
        |-------------------------------------------------------|
-       |              JobStatus        (uint32_t) VerNum 11    |
+       |              JobStatus        (uint32_t)              |
        :=======================================================:
        * => fields deprecated
-       Id: 32 byte identifier "Bacula 1.0 immortal\n"
+       Id: 32 byte identifier "Bareos 2.0 immortal\n"
        LabelType (in FileIndex field of Header):
            EOM_LABEL -3     Label at EOM
            SOS_LABEL -4     Start of Session label
            EOS_LABEL -5     End of Session label
-       VerNum: 11
+       VerNum: 20
        JobId: JobId
        write_btime: Bareos time/date this tape record written
-       write_date: Julian date tape this record written - deprecated
-       write_time: Julian time tape this record written - deprecated.
        PoolName: Pool Name
        PoolType: Pool Type
        MediaType: Media Type
@@ -768,12 +758,12 @@ The File-attributes consist of the following:
 
 .. _BB01:
 
-Old Deprecated Tape Format
+Old Unsupported Tape Format
 --------------------------
 
 In Bacula <= 1.26, a `Block <#Block>`__ could contain
 `records <#Record>`__ from multiple jobs. However, all blocks currently
-written by Bacula/Bareos are block level BB02, and a given block
+written by Bareos are block level BB02, and a given block
 contains records for only a single job. Different jobs simply have their
 own private blocks that are intermingled with the other blocks from
 other jobs on the Volume (previously the records were intermingled
