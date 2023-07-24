@@ -1153,10 +1153,10 @@ The directives within an Options resource may be one of the following:
    :type: yes|no
    :default: no
 
-   .. note::
+   .. warning::
 
-      Since :sinceVersion:`23.0.0: fileset keep hard links option switched from
-      yes to :strong:`no`.
+      Since :sinceVersion:`23.0.0: fileset keep hard links option switched from yes to no`
+      the default is :strong:`no`.
 
    When disabled, Bareos will backup each file individually and restore them as
    unrelated files as well. The fact that the files were hard links will be
