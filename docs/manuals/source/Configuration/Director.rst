@@ -1176,7 +1176,7 @@ The directives within an Options resource may be one of the following:
    .. note::
 
       If you created backups with :config:option:`dir/fileset/include/options/HardLinks = yes`
-      you should only ever restore all files in that set of hardlinks at once
+      you should only ever restore all files in that set of hard links at once
       or not restore any of them.
       If you were to restore a file inside that set, which was not the file
       with the contents attached, then Bareos will not restore its data, but
