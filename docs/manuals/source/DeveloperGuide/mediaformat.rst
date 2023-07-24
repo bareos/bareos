@@ -313,10 +313,10 @@ to the end with zeros and the Record Header begins in the next block.
 The data record, on the other hand, may be split across multiple blocks
 and even multiple physical volumes. When a data record is split, the
 second (and possibly subsequent) piece of the data is preceded by a new
-Record Header. In this case the first record header has the complete data
-size whereas each other record header has DataSize equal to the size of the
-their actual data record. Thus each piece of data is always immediately
-preceded by a Record Header.
+Record Header. In this case the first record header has DataSize equal
+to total size of the data records whereas each other record header has
+DataSize equal to the size of their actual data record.
+Thus each piece of data is always immediately preceded by a Record Header.
 When reading a record, if Bareos finds only part of the
 data in the first record, it will automatically read the next record and
 concatenate the data record to form a full data record.
@@ -366,7 +366,6 @@ binary format:
       char Id[32];              /* Bareos Immortal ... */
       uint32_t VerNum;          /* Label version number */
       uint32_t JobId;           /* Job id */
-      uint32_t VolumeIndex;     /* sequence no of vol (??)*/
       btime_t   write_btime;    /* time/date record written */
       float64_t write_time;     /* Always 0 */
       char PoolName[128];       /* Pool name */
@@ -377,7 +376,7 @@ binary format:
       char FileSetName[128];    /* FileSet name */
       uint32_t JobType;
       uint32_t JobLevel;
-      char FileSetChecksum[50]
+      char FileSetChecksum[128]
 
 In addition, the `EOS <#EndOfSessionRecord>`__ label contains:
 
@@ -405,9 +404,7 @@ Overall Storage Format
 ::
 
                       Bareos Tape Format
-                         6 June 2001
-               Version BB02 added 28 September 2002
-               Version BB01 is the old unsupported format.
+                      28 September 2002
        A Bareos tape is composed of tape Blocks.  Each block
          has a Block header followed by the block data. Block
          Data consists of Records. Records consist of Record
@@ -454,8 +451,8 @@ Overall Storage Format
        |-------------------------------------------------------|
        |              VolSessionTime   (uint32_t)              |
        :=======================================================:
-       BBO2: Serves to identify the block as a
-         Bacula/Bareos block and also serves as a block format identifier
+       BB02: Serves to identify the block as a
+         Bareos block and also serves as a block format identifier
          should we ever need to change the format.
        BlockSize: is the size in bytes of the block. When reading
          back a block, if the BlockSize does not agree with the
@@ -533,7 +530,6 @@ Overall Storage Format
        |              ProgVersion      (32 bytes)              |
        |-------------------------------------------------------|
        |              ProgDate         (32 bytes)              |
-       |-------------------------------------------------------|
        :=======================================================:
 
        Id: 32 byte identifier "Bareos 2.0 immortal\n"
@@ -584,7 +580,7 @@ Overall Storage Format
        |-------------------------------------------------------|
        |              JobLevel         (uint32_t)              |
        |-------------------------------------------------------|
-       |              FileSetMD5       (50 bytes)              |
+       |              FileSetMD5       (128 bytes)             |
        |-------------------------------------------------------|
                Additional fields in End Of Session Label
        |-------------------------------------------------------|
@@ -755,41 +751,3 @@ The File-attributes consist of the following:
 | ime   | since epoch          | since epoch          | time -66      |
 |       |                      |                      | years         |
 +-------+----------------------+----------------------+---------------+
-
-.. _BB01:
-
-Old Unsupported Tape Format
---------------------------
-
-In Bacula <= 1.26, a `Block <#Block>`__ could contain
-`records <#Record>`__ from multiple jobs. However, all blocks currently
-written by Bareos are block level BB02, and a given block
-contains records for only a single job. Different jobs simply have their
-own private blocks that are intermingled with the other blocks from
-other jobs on the Volume (previously the records were intermingled
-within the blocks). Having only records from a single job in any given
-block permitted moving the VolumeSessionId and VolumeSessionTime (see
-below) from each record heading to the Block header. This has two
-advantages: 1. a block can be quickly rejected based on the contents of
-the header without reading all the records. 2. because there is on the
-average more than one record per block, less data is written to the
-Volume for each job.
-
-The format of the Block Header (Bacula <= 1.26) is:
-
-::
-
-       uint32_t CheckSum;      /* Block check sum */
-       uint32_t BlockSize;     /* Block byte size including the header */
-       uint32_t BlockNumber;   /* Block number */
-       char ID[4] = "BB01";    /* Identification and block level */
-
-The format of the Record Header (Bacula <= 1.26) is:
-
-::
-
-      uint32_t VolSessionId;    /* Unique ID for this session */
-      uint32_t VolSessionTime;  /* Start time/date of session */
-      int32_t FileIndex;        /* File index supplied by File daemon */
-      int32_t Stream;           /* Stream number supplied by File daemon */
-      uint32_t DataSize;        /* size of following data record in bytes */
