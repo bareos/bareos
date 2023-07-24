@@ -84,14 +84,13 @@ where
 | ERROR OR CODE | Description                                                    |
 +===============+================================================================+
 | M_ABORT       | Causes the daemon to immediately abort. This should be used    |
-|               | only in extrem e cases. It attempts to produce a traceback.    |
+|               | only in extreme cases. It attempts to produce a traceback.     |
 +---------------+----------------------------------------------------------------+
 | M_ERROR_TERM  | Causes the daemon to immediately terminate. This should be     |
 |               | used only in extreme cases. It does not produce a traceback.   |
 +---------------+----------------------------------------------------------------+
 | M_FATAL       | Causes the daemon to terminate the current job, but the daemon |
 |               | keeps running.                                                 |
-|               |                                                                |
 +---------------+----------------------------------------------------------------+
 | M_ERROR       | Reports the error. The daemon and the job continue running.    |
 +---------------+----------------------------------------------------------------+
