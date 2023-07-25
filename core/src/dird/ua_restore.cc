@@ -51,6 +51,8 @@
 #include "lib/tree.h"
 #include "include/protocol_types.h"
 
+#include <vector>
+
 namespace directordaemon {
 
 /* Imported functions */
@@ -510,7 +512,8 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
 
   rx->JobIds[0] = 0;
 
-  std::optional<std::pair<bool, const char*>> file_or_dir;
+  std::vector<char*> files;
+  std::vector<char*> dirs;
   bool use_select = false;
 
   for (i = 1; i < ua->argc; i++) { /* loop through arguments */
@@ -555,10 +558,12 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         break;
       }
       case 3: /* file */
+        if (!HasValue(ua, i)) { return 0; }
+        files.push_back(ua->argv[i]);
+        break;
       case 4: /* dir */
         if (!HasValue(ua, i)) { return 0; }
-        // make sure to always take only the first file/dir
-        if (!file_or_dir) file_or_dir.emplace(j == 4, ua->argv[i]);
+        dirs.push_back(ua->argv[i]);
         break;
       case 5: /* select */
         use_select = true;
@@ -581,11 +586,20 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
     }
   }
 
-  if (file_or_dir) {
+  if (files.size() + dirs.size() > 0) {
     if (!have_date) { bstrutime(date, sizeof(date), now); }
     if (!GetClientName(ua, rx)) { return 0; }
-    PmStrcpy(ua->cmd, file_or_dir->second);
-    InsertOneFileOrDir(ua, rx, date, file_or_dir->first);
+
+    for (auto* file : files) {
+      PmStrcpy(ua->cmd, file);
+      InsertOneFileOrDir(ua, rx, date, false);
+    }
+
+    for (auto* dir : dirs) {
+      PmStrcpy(ua->cmd, dir);
+      InsertOneFileOrDir(ua, rx, date, true);
+    }
+
     return 2;
   }
 
