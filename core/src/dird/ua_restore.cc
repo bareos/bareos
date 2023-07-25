@@ -510,6 +510,9 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
 
   rx->JobIds[0] = 0;
 
+  std::optional<std::pair<bool, const char*>> file_or_dir;
+  bool use_select = false;
+
   for (i = 1; i < ua->argc; i++) { /* loop through arguments */
     bool found_kw = false;
     for (j = 0; kw[j]; j++) { /* loop through keywords */
@@ -554,15 +557,11 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
       case 3: /* file */
       case 4: /* dir */
         if (!HasValue(ua, i)) { return 0; }
-        if (!have_date) { bstrutime(date, sizeof(date), now); }
-        if (!GetClientName(ua, rx)) { return 0; }
-        PmStrcpy(ua->cmd, ua->argv[i]);
-        InsertOneFileOrDir(ua, rx, date, j == 4);
-        return 2;
+        // make sure to always take only the first file/dir
+        if (!file_or_dir) file_or_dir.emplace(j == 4, ua->argv[i]);
+        break;
       case 5: /* select */
-        if (!have_date) { bstrutime(date, sizeof(date), now); }
-        if (!SelectBackupsBeforeDate(ua, rx, date)) { return 0; }
-        done = true;
+        use_select = true;
         break;
       case 6: /* pool specified */
         if (!HasValue(ua, i)) { return 0; }
@@ -580,6 +579,20 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         // All keywords 7 or greater are ignored or handled by a select prompt
         break;
     }
+  }
+
+  if (file_or_dir) {
+    if (!have_date) { bstrutime(date, sizeof(date), now); }
+    if (!GetClientName(ua, rx)) { return 0; }
+    PmStrcpy(ua->cmd, file_or_dir->second);
+    InsertOneFileOrDir(ua, rx, date, file_or_dir->first);
+    return 2;
+  }
+
+  if (use_select) {
+    if (!have_date) { bstrutime(date, sizeof(date), now); }
+    if (!SelectBackupsBeforeDate(ua, rx, date)) { return 0; }
+    done = true;
   }
 
   if (!done) {
