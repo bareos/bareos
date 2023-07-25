@@ -555,7 +555,9 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
                 self.writeAndAppendLabelFile(firstRow[1])
                 if len(firstRow) > 2 and len(firstRow[2]) > 0:
                     self.writeAndAppendTablespaceMapFile(firstRow[2])
-                self.lastLSN = self.formatLSN(self.labelItems["START WAL LOCATION"])
+                
+                if "START WAL LOCATION" in self.labelItems:
+                    self.lastLSN = self.formatLSN(self.labelItems["START WAL LOCATION"])
             else:
                 self.lastLSN = self.formatLSN(firstRow)
 
