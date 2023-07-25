@@ -21,6 +21,8 @@
 
 #include "dedup_volume.h"
 
+#include <unordered_map>
+
 namespace dedup {
 constexpr config::loaded_general_info my_general_info = {
     .block_header_size = sizeof(bareos_block_header),
@@ -298,7 +300,8 @@ std::optional<volume_layout> volume::load_layout()
   std::vector<std::byte> bytes(size.value());
 
   if (!config.read_at(0, bytes.data(), bytes.size())) {
-    // error: cannot read config file
+    Emsg0(M_ERROR, 0, "Could not read config file %s correctly.\n",
+          config.relative_path());
     return std::nullopt;
   }
 
@@ -306,14 +309,37 @@ std::optional<volume_layout> volume::load_layout()
   if (!loaded_config) { return std::nullopt; }
   if (!validate_config(*loaded_config)) { return std::nullopt; }
 
+  std::unordered_map<std::size_t, std::size_t> file_size;
+  std::unordered_map<std::size_t, const char*> file_name;
+
+  for (auto& datafile : loaded_config->datafiles) {
+    file_size[datafile.file_index] = datafile.data_used;
+    file_name[datafile.file_index] = datafile.path.c_str();
+  }
+
   for (auto& rec : loaded_config->unfinished) {
-    // FIXME: check wether this write_loc makes any sense!
+    auto found = file_size.find(rec.FileIndex);
+    if (found == file_size.end()) {
+      Emsg0(M_ERROR, 0,
+            "Unfinished record points to non existent file index %ld\n",
+            rec.FileIndex);
+      return std::nullopt;
+    }
+    if (found->second < rec.file_offset + rec.size) {
+      Emsg0(M_ERROR, 0,
+            "Unfinished record points to unallocated file memory [%ld,%ld] in "
+            "file %s (index: %ld) of size %zu\n",
+            rec.file_offset, rec.file_offset + rec.size - 1,
+            file_name[rec.FileIndex], rec.FileIndex, found->second);
+      return std::nullopt;
+    }
+
     record unfinished_record{rec.VolSessionId, rec.VolSessionTime,
                              rec.FileIndex, rec.Stream};
     write_loc loc{rec.DataIdx, rec.file_offset, rec.file_offset + rec.size};
     auto [_, inserted] = unfinished_records.emplace(unfinished_record, loc);
     if (!inserted) {
-      // error: bad unfinished record
+      Emsg0(M_ERROR, 0, "Found duplicate unfinished records.\n");
       return std::nullopt;
     }
   }
