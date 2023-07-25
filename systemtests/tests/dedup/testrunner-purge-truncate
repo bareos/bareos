@@ -1,0 +1,38 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# restore some a directory from archives
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+#shellcheck source=functions
+. functions
+
+start_test
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $log_home/log.out
+status storage=Dedup
+label volume=TestVol pool=Incremental
+purge volume=TestVol
+truncate volstatus=Purged volume=TestVol
+update volstatus=Full volume=TestVol
+status storage=Dedup
+quit
+END_OF_DATA
+
+run_bconsole
+
+expect_not_grep "Error" \
+		"$log_home/log.out" \
+		"Something went wrong."
+
+end_test
