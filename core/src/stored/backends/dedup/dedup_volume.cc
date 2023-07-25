@@ -132,6 +132,17 @@ class gap_list {
     return true;
   }
 
+  std::vector<interval> gaps() const
+  {
+    std::vector<interval> gaps{};
+
+    for (std::size_t i = 0; i + 1 < vec.size(); ++i) {
+      gaps.emplace_back(vec[i].second, vec[i + 1].first);
+    }
+
+    return gaps;
+  }
+
   bool has_gaps() const { return vec.size() > 1; }
 
  private:
@@ -145,7 +156,7 @@ static bool validate_config(const config::loaded_config& conf)
   // at least one block and one record file.
   // This might change in the future
   if (conf.blockfiles.size() == 0) {
-    // error: few block files
+    Emsg0(M_ERROR, 0, "no block files found.\n");
     return false;
   }
 
@@ -153,17 +164,36 @@ static bool validate_config(const config::loaded_config& conf)
   for (auto& blockfile : conf.blockfiles) {
     if (!block_gaps.add(blockfile.start_block,
                         blockfile.start_block + blockfile.num_blocks)) {
-      // todo: print duplicates
+      Emsg0(M_ERROR, 0, "duplicate blocks detected:\n");
+      auto begin = blockfile.start_block;
+      auto end = blockfile.start_block + blockfile.num_blocks;
+      std::size_t current_index = &blockfile - conf.blockfiles.data();
+
+      for (std::size_t i = 0; i < current_index; ++i) {
+        auto& other = conf.blockfiles[i];
+        auto begin_i = other.start_block;
+        auto end_i = other.start_block + other.num_blocks;
+        if (begin < end_i && begin_i < end) {
+          Emsg0(M_ERROR, 0,
+                "blockfiles %s and %s each contain blocks %zu-%zu\n",
+                blockfile.path.c_str(), other.path.c_str(),
+                std::max(begin_i, begin), std::min(end_i, end) - 1);
+        }
+      }
+
       return false;
     }
   }
 
   if (block_gaps.has_gaps()) {
-    // warning: gaps!
+    Dmsg0(150, "block gaps detected:\n");
+    for (auto gap : block_gaps.gaps()) {
+      Dmsg0(150, "blocks %zu-%zu are missing.\n", gap.first, gap.second - 1);
+    }
   }
 
   if (conf.recordfiles.size() == 0) {
-    // error: few record files
+    Emsg0(M_ERROR, 0, "no record files found.\n");
     return false;
   }
 
@@ -171,37 +201,88 @@ static bool validate_config(const config::loaded_config& conf)
   for (auto& recordfile : conf.recordfiles) {
     if (!record_gaps.add(recordfile.start_record,
                          recordfile.start_record + recordfile.num_records)) {
-      // todo: print duplicates
+      Emsg0(M_ERROR, 0, "duplicate records detected:\n");
+      auto begin = recordfile.start_record;
+      auto end = recordfile.start_record + recordfile.num_records;
+      std::size_t current_index = &recordfile - conf.recordfiles.data();
+
+      for (std::size_t i = 0; i < current_index; ++i) {
+        auto& other = conf.recordfiles[i];
+        auto begin_i = other.start_record;
+        auto end_i = other.start_record + other.num_records;
+        if (begin < end_i && begin_i < end) {
+          Emsg0(M_ERROR, 0,
+                "recordfiles %s and %s each contain records %zu-%zu\n",
+                recordfile.path.c_str(), other.path.c_str(),
+                std::max(begin_i, begin), std::min(end_i, end) - 1);
+        }
+      }
       return false;
+    }
+  }
+
+  if (record_gaps.has_gaps()) {
+    Dmsg0(150, "record gaps detected:\n");
+    for (auto gap : record_gaps.gaps()) {
+      Dmsg0(150, "records %zu-%zu are missing.\n", gap.first, gap.second - 1);
     }
   }
 
   gap_list file_indices;
   for (auto& datafile : conf.datafiles) {
     if (!file_indices.add(datafile.file_index, datafile.file_index + 1)) {
-      // todo: print duplicates
+      Emsg0(M_ERROR, 0, "duplicate data file indices detected:\n");
+      auto index = datafile.file_index;
+      std::size_t current_index = &datafile - conf.datafiles.data();
+
+      for (std::size_t i = 0; i < current_index; ++i) {
+        auto& other = conf.datafiles[i];
+        auto index_i = other.file_index;
+        if (index == index_i) {
+          Emsg0(M_ERROR, 0, "datafiles %s and %s have the same index %zu\n",
+                datafile.path.c_str(), other.path.c_str(), index);
+        }
+      }
       return false;
     }
   }
 
   if (file_indices.has_gaps()) {
-    // warning: missing file indices
+    // this is not as bad as the previous errors, so display it only
+    // with a much higher debug level
+
+    Dmsg0(500, "data file index gaps detected:\n");
+    for (auto gap : file_indices.gaps()) {
+      Dmsg0(500, "data files with indices %zu-%zu are missing.\n", gap.first,
+            gap.second - 1);
+    }
   }
 
-
-  if (record_gaps.has_gaps()) {
-    // warning: gaps!
-  }
-
-  if (conf.info.block_header_size != sizeof(bareos_block_header)
-      || conf.info.dedup_block_header_size != sizeof(block_header)) {
-    // error: bad block header size
+  if (conf.info.block_header_size != sizeof(bareos_block_header)) {
+    Emsg0(M_ERROR, 0,
+          "bareos block header differ in size: Got: %d, Expected: %d\n",
+          conf.info.block_header_size, sizeof(bareos_block_header));
     return false;
   }
 
-  if (conf.info.record_header_size != sizeof(bareos_record_header)
-      || conf.info.dedup_record_header_size != sizeof(record_header)) {
-    // error: bad record header size
+  if (conf.info.dedup_block_header_size != sizeof(block_header)) {
+    Emsg0(M_ERROR, 0,
+          "dedup block header differ in size: Got: %d, Expected: %d\n",
+          conf.info.dedup_block_header_size, sizeof(block_header));
+    return false;
+  }
+
+  if (conf.info.record_header_size != sizeof(bareos_record_header)) {
+    Emsg0(M_ERROR, 0,
+          "bareos record header differ in size: Got: %d, Expected: %d\n",
+          conf.info.record_header_size, sizeof(bareos_record_header));
+    return false;
+  }
+
+  if (conf.info.dedup_record_header_size != sizeof(record_header)) {
+    Emsg0(M_ERROR, 0,
+          "dedup record header differ in size: Got: %d, Expected: %d\n",
+          conf.info.dedup_record_header_size, sizeof(record_header));
     return false;
   }
 
