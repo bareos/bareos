@@ -384,7 +384,7 @@ Upgrade the Bareos download repositories
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This does only apply for subscription repositories (https://download.bareos.com/bareos/release/).
-The community repository (https://download.bareos.org/current) will always contain the latest build of the most recent stable branch.
+The community repository (https://download.bareos.org/current/) will always contain the latest build of the most recent stable branch.
 
 - First remove the existing Bareos repository definitions, by either removing the definition file(s) or by using your package manager.
 - Point your browser to the new Bareos major version for your operating system on the download server.
