@@ -2,9 +2,9 @@ FileSet {
   Name = "plugin-gfapi"
   Include {
     Options {
-      aclsupport = yes
-      signature = xxh128
-      xattrsupport = yes
+      Signature = XXH128
+      Aclsupport = Yes
+      Xattrsupport = Yes
     }
     # adapt this to your environment
     Plugin = "gfapi:volume=gluster\\://glusterhost.example.com/dvol1/data:"

@@ -22,8 +22,8 @@ FileSet {
     Name = "client-data"
        Include  {
                 Options {
-                        compression = lz4
-                        signature = xxh128
+                        Signature = XXH128
+                        Compression = LZ4
                         Plugin = "python:"
                                  "module_path=/usr/lib64/bareos/plugins:"
                                  "module_name=bareos_option_example"

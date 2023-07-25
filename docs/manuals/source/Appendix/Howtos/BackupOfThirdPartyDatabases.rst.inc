@@ -144,7 +144,7 @@ To use the plugin you need to configure it in the fileset as a plugin resource. 
      Enable VSS = no
      Include {
        Options {
-         signature = XXH128
+         Signature = XXH128
        }
        Plugin = "mssqlvdi:instance=default:database=myDatabase:username=bareos:password=bareos"
      }
@@ -675,7 +675,7 @@ This can be done by using :config:option:`dir/job/RunScript`\  directives inside
         Include {
             Options {
                 Signature = XXH128
-                Compression = lz4
+                Compression = LZ4
             }
             # database dump file
             File = "/var/tmp/postgresql_dump.sql"
@@ -701,7 +701,7 @@ Instead of creating a temporary database dump file, the bpipe plugin can be used
      Include {
        Options {
          Signature = XXH128
-         Compression = lz4
+         Compression = LZ4
        }
        Plugin = "bpipe:file=/POSTGRESQL/dump.sql:reader=su postgres -c pg_dumpall:writer=su postgres -c psql"
      }
@@ -721,7 +721,7 @@ This can also be used, to backup a database that is running on a remote host:
        Plugin = "bpipe:file=/POSTGRESQL/dump.sql:reader=pg_dumpall -h <hostname> -U <username> -W <password>:writer=psql -h <hostname> -U <username> -W <password>"
        Options {
          Signature = XXH128
-         Compression = lz4
+         Compression = LZ4
        }
      }
    }
