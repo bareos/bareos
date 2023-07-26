@@ -19,6 +19,8 @@
    02110-1301, USA.
 */
 
+#define STORAGE_DAEMON
+
 #include "lib/cli.h"
 #include "lib/crypto.h"
 #include "stored/butil.h"
@@ -29,10 +31,13 @@
 #include "stored/read_record.h"
 #include "stored/stored_conf.h"
 #include "stored/stored_globals.h"
+#include "stored/sd_plugins.h"
 #include "stored/bsr.h"
 #include "lib/parse_conf.h"
 
 #include "lib/edit.h"
+#include "stored/acquire.h"
+#include "lib/compression.h"
 
 #include <cassert>
 #include <cstring>
@@ -169,30 +174,30 @@ bool read_records(const std::vector<std::string>& volumenames)
   DeviceControlRecord* dcr = new DeviceControlRecord;
   auto* jcr = storagedaemon::SetupJcr("bdedupestimate", device_name.data(),
                                       bsr.get(), dir, dcr, volumename, true);
+
+  LoadSdPlugins(me->plugin_directory, me->plugin_names);
   if (!jcr) { exit(1); }
   auto* dev = jcr->sd_impl->read_dcr->dev;
   if (!dev) { exit(1); }
   dcr = jcr->sd_impl->read_dcr;
 
   // Let SD plugins setup the record translation
-  // if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation, dcr) !=
-  // bRC_OK) {
-  //   Jmsg(jcr, M_FATAL, 0, _("bSdEventSetupRecordTranslation call
-  //   failed!\n"));
-  // }
+  if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation, dcr) != bRC_OK) {
+    Jmsg(jcr, M_FATAL, 0, _("bSdEventSetupRecordTranslation call failed!\n"));
+  }
 
   ReadRecords(dcr, RecordCallback, storagedaemon::MountNextReadVolume);
 
-  // CleanDevice(jcr->sd_impl->dcr);
+  CleanDevice(jcr->sd_impl->dcr);
 
   delete dev;
 
-  // FreeDeviceControlRecord(dcr);
+  FreeDeviceControlRecord(dcr);
 
-  // CleanupCompression(jcr);
-  //  FreePlugins(jcr);
+  CleanupCompression(jcr);
+  FreePlugins(jcr);
   FreeJcr(jcr);
-  // UnloadSdPlugins();
+  UnloadSdPlugins();
   return true;
 }
 
