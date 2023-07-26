@@ -364,7 +364,8 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
         )
         try:
             result = self.dbCon.run(
-                "SELECT %s('%s');" % (startStmt, self.backupLabelString)
+                #TODO make fast => True an option
+                "SELECT %s('%s', fast => True);" % (startStmt, self.backupLabelString)
             )
         except Exception as e:
             bareosfd.JobMessage(
@@ -552,10 +553,11 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
                 # pg_backup_stop will return one row with three values. The second of these fields should be written
                 # to a file named backup_label in the root directory of the backup. The third field should be written
                 # to a file named tablespace_map unless the field is empty
-                self.writeAndAppendLabelFile(firstRow[1])
-                if len(firstRow) > 2 and len(firstRow[2]) > 0:
-                    self.writeAndAppendTablespaceMapFile(firstRow[2])
-                
+                if  chr(self.level) == "F":
+                    self.writeAndAppendLabelFile(firstRow[1])
+                    if len(firstRow) > 2 and len(firstRow[2]) > 0:
+                        self.writeAndAppendTablespaceMapFile(firstRow[2])
+
                 if "START WAL LOCATION" in self.labelItems:
                     self.lastLSN = self.formatLSN(self.labelItems["START WAL LOCATION"])
             else:
