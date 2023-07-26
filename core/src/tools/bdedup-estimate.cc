@@ -81,6 +81,21 @@ static std::size_t real_size{0};
 static std::size_t num_records{0};
 static std::unordered_set<dedup_unit> dedup_units;
 
+static void OutputStatus()
+{
+  char before[DEFAULT_FORMAT_LENGTH];
+  char after[DEFAULT_FORMAT_LENGTH];
+  char delta[DEFAULT_FORMAT_LENGTH];
+
+  std::cout << "Records consumed: " << num_records << "\n  Total record size: "
+            << edit_uint64_with_suffix(total_size, before) << "B"
+            << "\n  Size after dedup: "
+            << edit_uint64_with_suffix(real_size, after) << "B"
+            << "\n  Possible reduction: "
+            << edit_uint64_with_suffix(total_size - real_size, delta) << "B"
+            << "\n";
+}
+
 static bool RecordCallback(storagedaemon::DeviceControlRecord*,
                            storagedaemon::DeviceRecord* record)
 {
@@ -102,18 +117,7 @@ static bool RecordCallback(storagedaemon::DeviceControlRecord*,
     // cannot dedup this record
     real_size += size;
   }
-  if (num_records % 100000 == 0) {
-    char before[DEFAULT_FORMAT_LENGTH], after[DEFAULT_FORMAT_LENGTH],
-        delta[DEFAULT_FORMAT_LENGTH];
-    std::cout << "Records consumed: " << num_records
-              << "\n  Total record size: "
-              << edit_uint64_with_suffix(total_size, before) << "B"
-              << "\n  Size after dedup: "
-              << edit_uint64_with_suffix(real_size, after) << "B"
-              << "\n  Possible reduction: "
-              << edit_uint64_with_suffix(total_size - real_size, delta) << "B"
-              << "\n";
-  }
+  if (num_records % 100000 == 0) { OutputStatus(); }
   return true;
 }
 
@@ -233,10 +237,7 @@ int main(int argc, const char* argv[])
 
   read_records(volumes);
 
-  char before[DEFAULT_FORMAT_LENGTH], after[DEFAULT_FORMAT_LENGTH];
-  std::cout << "Possible reduction: "
-            << edit_uint64_with_suffix(total_size, before) << "B --> "
-            << edit_uint64_with_suffix(real_size, after) << "B" << std::endl;
+  OutputStatus();
 
   return 0;
 }
