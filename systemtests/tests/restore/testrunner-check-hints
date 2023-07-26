@@ -3,7 +3,7 @@ set -e
 set -o pipefail
 set -u
 #
-# Check wether hints are issued when trying to restore
+# Check whether hints are issued when trying to restore
 # backups, but none of the right type exist.
 # (i.e. an archive exists, but a non-archive is wanted.)
 #
