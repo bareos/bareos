@@ -102,10 +102,17 @@ static bool RecordCallback(storagedaemon::DeviceControlRecord*,
     // cannot dedup this record
     real_size += size;
   }
-  if (num_records % 10000 == 0) {
-    double current_reduction = 1.0 - double{real_size} / double{total_size};
-    std::cout << num_records << ": " << real_size << " / " << total_size << "("
-              << current_reduction << "%)\n";
+  if (num_records % 100000 == 0) {
+    char before[DEFAULT_FORMAT_LENGTH], after[DEFAULT_FORMAT_LENGTH],
+        delta[DEFAULT_FORMAT_LENGTH];
+    std::cout << "Records consumed: " << num_records
+              << "\n  Total record size: "
+              << edit_uint64_with_suffix(total_size, before) << "B"
+              << "\n  Size after dedup: "
+              << edit_uint64_with_suffix(real_size, after) << "B"
+              << "\n  Possible reduction: "
+              << edit_uint64_with_suffix(total_size - real_size, delta) << "B"
+              << "\n";
   }
   return true;
 }
