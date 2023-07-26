@@ -1,0 +1,94 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# Check whether multiple file=/dir= are handled
+# correctly during restore.
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+#shellcheck source=functions
+. functions
+
+start_test
+
+long_dir_name="This-Is-A-Very-Long-Directory-Name-1111111111-2222222222-3333333333-44444444444-55555555555-66666666666-77777777777-8888888888-9999999999-0000000000"
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $log_home/setup.out
+setdebug level=100 storage=File
+status director
+status client
+status storage=File
+wait
+messages
+@$out $log_home/jobs.out
+list jobs
+@$out $log_home/multi-file.out
+restore client=bareos-fd fileset=SelfTest where=$tmp/multi-file/1 file=$tmp/data/weird-files/2 file=$tmp/data/weird-files/1 yes
+restore client=bareos-fd fileset=SelfTest where=$tmp/multi-file/2 file=$tmp/data/weird-files/1 yes
+restore client=bareos-fd fileset=SelfTest where=$tmp/multi-file/2 file=$tmp/data/weird-files/2 yes
+wait
+messages
+@$out $log_home/multi-dir.out
+restore jobid=1 client=bareos-fd fileset=SelfTest where=$tmp/multi-dir/1 directory=$tmp/data/weird-files/ directory=$tmp/data/build/src/tests/ yes
+restore jobid=1 client=bareos-fd fileset=SelfTest where=$tmp/multi-dir/2 directory=$tmp/data/build/src/tests/ yes
+restore jobid=1 client=bareos-fd fileset=SelfTest where=$tmp/multi-dir/2 directory=$tmp/data/weird-files/ yes
+wait
+messages
+@$out $log_home/file-and-dir.out
+restore jobid=1 client=bareos-fd fileset=SelfTest where=$tmp/files-and-dir/1 directory=$tmp/data/build/src/tests/ file=$tmp/data/weird-files/2 file=$tmp/data/weird-files/1 yes
+restore jobid=1 client=bareos-fd fileset=SelfTest where=$tmp/files-and-dir/2 directory=$tmp/data/build/src/tests/ yes
+restore jobid=1 client=bareos-fd fileset=SelfTest where=$tmp/files-and-dir/2 file=$tmp/data/weird-files/2 yes
+restore jobid=1 client=bareos-fd fileset=SelfTest where=$tmp/files-and-dir/2 file=$tmp/data/weird-files/1 yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File
+
+check_preconditions
+
+
+check_log "$log_home/multi-file.out"
+check_log "$log_home/multi-dir.out"
+check_log "$log_home/file-and-dir.out"
+
+expect_not_grep "No database record found for:" \
+		"$log_home/multi-file.out" \
+		"Something was not restored in test 1"
+expect_not_grep "No database record found for:" \
+		"$log_home/multi-dir.out" \
+		"Something was not restored in test 2"
+expect_not_grep "No database record found for:" \
+		"$log_home/file-and-dir.out" \
+		"Something was not restored in test 3"
+
+if ! "$rscripts/diff.pl" -d "$tmp/multi-file/1" -s "$tmp/multi-file/2"; then
+    echo "Error: multi-file"
+    estat=1
+fi
+
+if ! "$rscripts/diff.pl" -d "$tmp/multi-dir/1" -s "$tmp/multi-dir/2"; then
+    echo "Error: multi-dir"
+    estat=1
+fi
+
+if ! "$rscripts/diff.pl" -d "$tmp/files-and-dir/1" -s "$tmp/files-and-dir/2"; then
+    echo "Error: files-and-dir"
+    estat=1
+fi
+
+end_test
