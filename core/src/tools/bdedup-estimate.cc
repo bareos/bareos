@@ -121,41 +121,54 @@ static bool RecordCallback(storagedaemon::DeviceControlRecord*,
   return true;
 }
 
-static storagedaemon::BootStrapRecord* make_bsr(
-    const std::vector<std::string>& volumenames)
-{
-  using namespace storagedaemon;
-  BootStrapRecord* root = nullptr;
+class SimpleVolumesBsr {
+ public:
+  SimpleVolumesBsr(const std::vector<std::string>& volumenames)
+  {
+    using namespace storagedaemon;
+    for (auto& name : volumenames) {
+      auto* bsrvolume = (BsrVolume*)calloc(1, sizeof(BsrVolume));
+      bstrncpy(bsrvolume->VolumeName, name.c_str(),
+               sizeof(bsrvolume->VolumeName));
 
-  for (auto& name : volumenames) {
-    auto* bsrvolume = (BsrVolume*)calloc(1, sizeof(BsrVolume));
-    bstrncpy(bsrvolume->VolumeName, name.c_str(),
-             sizeof(bsrvolume->VolumeName));
-
-    BootStrapRecord* bsr = (BootStrapRecord*)calloc(1, sizeof(*bsr));
-    bsr->volume = bsrvolume;
-    if (root) {
-      bsr->next = root;
-      root->prev = bsr;
+      BootStrapRecord* bsr = (BootStrapRecord*)calloc(1, sizeof(*bsr));
+      bsr->volume = bsrvolume;
+      if (root) {
+        bsr->next = root;
+        root->prev = bsr;
+      }
+      root = bsr;
     }
-    root = bsr;
+
+    for (auto* current = root; current; current = current->next) {
+      current->root = root;
+    }
   }
 
-  for (auto* current = root; current; current = current->next) {
-    current->root = root;
+  storagedaemon::BootStrapRecord* get() { return root; }
+
+  ~SimpleVolumesBsr()
+  {
+    while (root) {
+      auto* next = root->next;
+      free(root->volume);
+      free(root);
+      root = next;
+    }
   }
 
-  return root;
-}
+ private:
+  storagedaemon::BootStrapRecord* root{nullptr};
+};
 
 bool read_records(const std::vector<std::string>& volumenames)
 {
   using namespace storagedaemon;
   std::string volumename;
-  BootStrapRecord* bsr = make_bsr(volumenames);
+  SimpleVolumesBsr bsr(volumenames);
   DeviceControlRecord* dcr = new DeviceControlRecord;
-  auto* jcr = storagedaemon::SetupJcr("bdedupestimate", device_name.data(), bsr,
-                                      dir, dcr, volumename, true);
+  auto* jcr = storagedaemon::SetupJcr("bdedupestimate", device_name.data(),
+                                      bsr.get(), dir, dcr, volumename, true);
   if (!jcr) { exit(1); }
   auto* dev = jcr->sd_impl->read_dcr->dev;
   if (!dev) { exit(1); }
