@@ -841,7 +841,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
   } else {
     ua->InfoMsg(_("You have selected the following JobId: %s\n"), rx->JobIds);
   }
-  return true;
+  return 1;
 }
 
 // Get date from user
