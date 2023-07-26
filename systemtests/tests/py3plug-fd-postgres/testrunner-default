@@ -52,7 +52,7 @@ cat <<END_OF_DATA >$tmp/bconcmds
 messages
 @$out $tmp/log1.out
 label volume=TestVolume001 storage=File pool=Full
-setdebug level=100 trace=1 timestamp=1 client=bareos-fd
+setdebug level=150 trace=1 timestamp=1 client=bareos-fd
 run job=$JobName yes
 wait
 setdebug level=0 client=bareos-fd
@@ -64,6 +64,9 @@ messages
 END_OF_DATA
 
 run_bareos "$@"
+expect_grep "Backup OK" "$tmp/log1.out" "Full Backup not found!" 
+
+exit 1
 
 # Now add data to the database and run an incremental job
 echo "INSERT INTO t (text, created_on) values ('test for INCR backup', current_timestamp)" | ${PSQL} ${DBNAME}
@@ -71,15 +74,26 @@ echo "INSERT INTO t (text, created_on) values ('test for INCR backup', current_t
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null
 messages
-@$out $tmp/log1.out
+@$out $tmp/log2.out
 run job=$JobName Level=Incremental yes
 wait
+messages
 END_OF_DATA
 
 run_bconsole
+expect_grep "Backup OK" "$tmp/log2.out" "First Incremental Backup not found!"
 
 # run another Incr without db changes - should result in empty backup job (only restore object)
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log3.out
+run job=$JobName Level=Incremental yes
+wait
+messages
+END_OF_DATA
 run_bconsole
+expect_grep "Backup OK" "$tmp/log3.out" "2nd Incremental Backup not found!" 
 
 # Now stop database and try a restore
 pushd database/ > /dev/null
@@ -94,13 +108,14 @@ popd > /dev/null
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null
 messages
-@$out $tmp/log2.out
+@$out $tmp/log4.out
 restore client=bareos-fd where=/ select all done yes
 wait
 messages
 END_OF_DATA
 run_bconsole
 
+expect_grep "Restore OK" "$tmp/log4.out" "Restore Backup not ok!"
 check_for_zombie_jobs storage=File
 stop_bareos
 sleep 1
@@ -117,14 +132,14 @@ rm -f data/pg_wall/* ||:
 # postgres 11 and lower
 if (( ${PG_VERSION} < 12 )); then
   echo "PG_VERSION is ${PG_VERSION} so lower than 12, using recovery.conf"
-  echo "restore_command = 'cp $current_test_directory/database/wal_archive/%f %p'" > ${current_test_directory}/database/data/recovery.conf
+  echo "restore_command = 'cp ../wal_archive/%f %p'" > ${current_test_directory}/database/data/recovery.conf
   [ $EUID -eq 0 ] && chmod 0600 data/recovery.conf
   [ $EUID -eq 0 ] && chown postgres data/recovery.conf
 else
   # postgres 12+
   echo "PG_VERSION is ${PG_VERSION} so 12+, using postgresql.conf and recovery.signal"
   touch "${current_test_directory}/database/data/recovery.signal"
-  echo "restore_command = 'cp ${current_test_directory}/database/wal_archive/%f %p'" >> ${current_test_directory}/database/data/postgresql.conf
+  echo "restore_command = 'cp ../wal_archive/%f %p'" >> ${current_test_directory}/database/data/postgresql.conf
   [ $EUID -eq 0 ] && chmod 0600 data/postgresql.conf data/recovery.signal
   [ $EUID -eq 0 ] && chown postgres:postgres data/postgresql.conf data/recovery.signal
 fi
