@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,6 +23,8 @@
 
 #include <vector>
 
+#define DEFAULT_FORMAT_LENGTH 27
+
 uint64_t str_to_uint64(const char* str);
 #define str_to_uint16(str) ((uint16_t)str_to_uint64(str))
 #define str_to_uint32(str) ((uint32_t)str_to_uint64(str))
@@ -43,7 +45,7 @@ char* edit_pthread(pthread_t val, char* buf, int buf_len);
 bool Is_a_number(const char* num);
 bool Is_a_number_list(const char* n);
 bool IsAnInteger(const char* n);
-bool IsNameValid(const char* name, std::string &msg);
+bool IsNameValid(const char* name, std::string& msg);
 bool IsNameValid(const char* name);
 bool IsAclEntryValid(const char* acl, std::vector<char>& msg);
 bool IsAclEntryValid(const char* acl);
