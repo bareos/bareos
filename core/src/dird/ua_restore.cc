@@ -534,6 +534,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         if (!HasValue(ua, i)) { return 0; }
         if (*rx->JobIds != 0) { PmStrcat(rx->JobIds, ","); }
         PmStrcat(rx->JobIds, ua->argv[i]);
+        bstrncpy(rx->last_jobid, ua->argv[i], sizeof(rx->last_jobid));
         done = true;
         break;
       case 1: /* current */
