@@ -256,16 +256,19 @@ macro(check_for_pamtest)
   bareosfindlibrary("pam_wrapper")
   find_program(PAMTESTER pamtester)
 
-  set(ENV{PAM_WRAPPER_LIBRARIES} "${PAM_WRAPPER_LIBRARIES}")
-  execute_process(
-    COMMAND
-      "${CMAKE_SOURCE_DIR}/systemtests/tests/bconsole-pam/bin/check_pam_exec_available.sh"
-    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/systemtests/tests/bconsole-pam/"
-    RESULT_VARIABLE PAM_EXEC_AVAILABLE_RC
-  )
-  if(PAM_EXEC_AVAILABLE_RC EQUAL "0")
-    set(PAM_EXEC_AVAILABLE TRUE)
+  if(PAM_FOUND)
+    set(ENV{PAM_WRAPPER_LIBRARIES} "${PAM_WRAPPER_LIBRARIES}")
+    execute_process(
+      COMMAND
+        "${CMAKE_SOURCE_DIR}/systemtests/tests/bconsole-pam/bin/check_pam_exec_available.sh"
+      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/systemtests/tests/bconsole-pam/"
+      RESULT_VARIABLE PAM_EXEC_AVAILABLE_RC
+    )
+    if(PAM_EXEC_AVAILABLE_RC EQUAL "0")
+      set(PAM_EXEC_AVAILABLE TRUE)
+    endif()
   endif()
+
   message("   PAM_FOUND:                " ${PAM_FOUND})
   message("   PAM_WRAPPER_LIBRARIES:    " ${PAM_WRAPPER_LIBRARIES})
   message("   PAMTESTER:                " ${PAMTESTER})
