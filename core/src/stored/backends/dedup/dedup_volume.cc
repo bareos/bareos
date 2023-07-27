@@ -318,11 +318,11 @@ std::optional<volume_layout> volume::load_layout()
   }
 
   for (auto& rec : loaded_config->unfinished) {
-    auto found = file_size.find(rec.FileIndex);
+    auto found = file_size.find(rec.DataIdx);
     if (found == file_size.end()) {
       Emsg0(M_ERROR, 0,
             "Unfinished record points to non existent file index %ld\n",
-            rec.FileIndex);
+            rec.DataIdx);
       return std::nullopt;
     }
     if (found->second < rec.file_offset + rec.size) {
@@ -330,7 +330,7 @@ std::optional<volume_layout> volume::load_layout()
             "Unfinished record points to unallocated file memory [%ld,%ld] in "
             "file %s (index: %ld) of size %zu\n",
             rec.file_offset, rec.file_offset + rec.size - 1,
-            file_name[rec.FileIndex], rec.FileIndex, found->second);
+            file_name[rec.DataIdx], rec.DataIdx, found->second);
       return std::nullopt;
     }
 
