@@ -66,8 +66,6 @@ END_OF_DATA
 run_bareos "$@"
 expect_grep "Backup OK" "$tmp/log1.out" "Full Backup not found!" 
 
-exit 1
-
 # Now add data to the database and run an incremental job
 echo "INSERT INTO t (text, created_on) values ('test for INCR backup', current_timestamp)" | ${PSQL} ${DBNAME}
 
