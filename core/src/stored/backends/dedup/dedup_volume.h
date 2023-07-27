@@ -57,6 +57,15 @@ struct bareos_record_header {
   net_u32 DataSize;  /* size of following data record in bytes */
 };
 
+template <typename T>
+using is_serializable
+    = std::conjunction<std::is_standard_layout<T>,
+                       std::is_pod<T>,
+                       std::has_unique_object_representations<T>>;
+
+template <typename T>
+inline constexpr bool is_serializable_v = is_serializable<T>::value;
+
 struct block_header {
   bareos_block_header BareosHeader;
   net_u64 start;
@@ -74,9 +83,7 @@ struct block_header {
   }
 };
 
-static_assert(std::is_standard_layout_v<block_header>);
-static_assert(std::is_pod_v<block_header>);
-static_assert(std::has_unique_object_representations_v<block_header>);
+static_assert(is_serializable_v<block_header>);
 
 struct record_header {
   bareos_record_header BareosHeader;
@@ -99,9 +106,7 @@ struct record_header {
   }
 };
 
-static_assert(std::is_standard_layout_v<record_header>);
-static_assert(std::is_pod_v<record_header>);
-static_assert(std::has_unique_object_representations_v<record_header>);
+static_assert(is_serializable_v<record_header>);
 
 struct write_buffer {
   char* current;
@@ -127,7 +132,8 @@ struct write_buffer {
     return std::exchange(current, current + size);
   }
 
-  template <typename F> inline bool write(const F& val)
+  template <typename F>
+  inline std::enable_if_t<is_serializable_v<F>, bool> write(const F& val)
   {
     return write(sizeof(F), reinterpret_cast<const char*>(&val));
   }
