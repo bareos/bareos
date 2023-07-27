@@ -267,8 +267,7 @@ bool file_based_array<T>::read_at(std::size_t start,
 
   if (start + count > used) { return false; }
 
-  // todo: should this be std::copy_n ?
-  std::memcpy(arr, memory + start, count * elem_size);
+  std::copy_n(memory + start, count, arr);
 
   return true;
 }
