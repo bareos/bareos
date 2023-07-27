@@ -72,7 +72,25 @@ class raii_fd {
 
   bool flush() { return ::fsync(fd) == 0; }
 
-  bool resize(std::size_t new_size) { return ::ftruncate(fd, new_size) == 0; }
+  bool resize(std::size_t new_size)
+  {
+    // this looks weird but is done for the following reason:
+    // if new_size > current_size, then ftruncate would not actually allocate
+    // the memory but instead make the file sparse!  This will reduce write
+    // performance.  So in these cases we want to use fallocate.
+    // if new_size < current_size, we want to use ftruncate to make the file
+    // smaller.
+    // Since fallocate does not do anything if new_size <= current_size,
+    // and ftruncate does not do anything if current_size >= new_size,
+    // we can accomplish what this function is trying to do by
+    // first calling fallocate and then calling ftruncate.
+    // we need to take into account that fallocate will error
+    // if new_size is 0!
+    if (new_size != 0 && posix_fallocate(fd, 0, new_size) != 0) {
+      return false;
+    }
+    return ::ftruncate(fd, new_size) == 0;
+  }
 
   bool write_at(std::size_t offset, const void* data, std::size_t size)
   {
