@@ -55,11 +55,11 @@ template <typename T>
 using is_serializable
     = std::conjunction<std::is_standard_layout<T>,
                        std::is_pod<T>,
-                       std::has_unique_object_representations<T>>;
+                       std::has_unique_object_representations<T>,
+                       std::is_trivially_copyable<T>>;
 
 template <typename T>
 inline constexpr bool is_serializable_v = is_serializable<T>::value;
-
 
 template <typename T> constexpr T byteswap(T);
 
