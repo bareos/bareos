@@ -100,7 +100,7 @@ constexpr from_network_order from_network_order_v;
 struct from_native_order {};
 constexpr from_native_order from_native_order_v;
 
-template <typename T, std::enable_if_t<is_serializable_v<T>, bool> = true>
+template <typename T, std::enable_if_t<std::is_arithmetic_v<T>, bool> = true>
 struct network_value {
   T as_network;
   constexpr T as_native() const { return to_native(as_network); }
