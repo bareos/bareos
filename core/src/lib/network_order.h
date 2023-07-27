@@ -51,6 +51,16 @@
 
 namespace network_order {
 
+template <typename T>
+using is_serializable
+    = std::conjunction<std::is_standard_layout<T>,
+                       std::is_pod<T>,
+                       std::has_unique_object_representations<T>>;
+
+template <typename T>
+inline constexpr bool is_serializable_v = is_serializable<T>::value;
+
+
 template <typename T> constexpr T byteswap(T);
 
 template <> constexpr std::uint64_t byteswap(std::uint64_t x)
@@ -106,9 +116,7 @@ template <typename T> struct network_value {
 
 // TODO: can we do this on instantiaton of every template
 //       and check that P(network_value<T>) == P(T) ?
-static_assert(std::is_standard_layout_v<network_value<int>>);
-static_assert(std::is_pod_v<network_value<int>>);
-static_assert(std::has_unique_object_representations_v<network_value<int>>);
+static_assert(is_serializable_v<network_value<int>>);
 
 template <typename U> static network_value<U> of_network(U network)
 {
