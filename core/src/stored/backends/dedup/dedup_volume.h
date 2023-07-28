@@ -632,14 +632,11 @@ class volume {
 
   std::optional<std::size_t> file_index_for_size(std::size_t record_size)
   {
-    // we have to do this smarter
-    // if datafile::any_size is first, we should ignore it until the end!
-    // maybe split into _one_ any_size + map size -> file
-    // + vector of read_only ?
     std::optional<std::size_t> selected;
     std::size_t blocksize = 0;
 
     for (auto& [index, datafile] : contents.datafiles) {
+      // we select the accepting datafile that has the biggest block size
       if (datafile.accepts_records_of_size(record_size)) {
         if (!selected || blocksize < datafile.blocksize()) {
           blocksize = datafile.blocksize();
