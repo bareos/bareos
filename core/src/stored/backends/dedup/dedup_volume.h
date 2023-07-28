@@ -735,10 +735,6 @@ class volume {
                     record_header* headers,
                     std::size_t count)
   {
-    // müssen wir hier überhaupt das record bewegen ?
-    // wenn eod, bod & reposition das richtige machen, sollte man
-    // immer bei der richtigen position sein
-
     auto& files = contents.recordfiles;
 
     // iter points to the first record file for which file.begin() <=
