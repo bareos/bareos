@@ -418,34 +418,6 @@ struct volume_layout {
   }
 
   volume_layout() = default;
-
-  bool validate()
-  {
-    for (std::size_t i = 0; i + 1 < blockfiles.size(); ++i) {
-      auto& current = blockfiles[i];
-      auto& next = blockfiles[i + 1];
-      if (current.start + current.count > next.start) {
-        // error: blocks are not unique
-        return false;
-      } else if (current.start + current.count < next.start) {
-        // warning: missing blocks
-        return false;
-      }
-    }
-
-    for (std::size_t i = 0; i + 1 < recordfiles.size(); ++i) {
-      auto& current = recordfiles[i];
-      auto& next = recordfiles[i + 1];
-      if (current.start + current.count > next.start) {
-        // error: records are not unique
-        return false;
-      } else if (current.start + current.count < next.start) {
-        // warning: missing records
-        return false;
-      }
-    }
-    return true;
-  }
 };
 
 struct volume_data {
