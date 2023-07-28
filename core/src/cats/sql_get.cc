@@ -1201,8 +1201,7 @@ static void strip_md5(char* q)
  *
  * TODO: See if we can do the SORT only if needed (as an argument)
  */
-bool BareosDb::GetFileList(JobControlRecord*,
-                           const char* jobids,
+bool BareosDb::GetFileList(const char* jobids,
                            bool use_md5,
                            bool use_delta,
                            DB_RESULT_HANDLER* ResultHandler,

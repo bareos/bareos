@@ -543,7 +543,7 @@ static bool CreateBootstrapFile(JobControlRecord& jcr,
 
   PmStrcpy(rx.JobIds, jobids.c_str());
 
-  if (!jcr.db_batch->GetFileList(&jcr, rx.JobIds, false /* don't use md5 */,
+  if (!jcr.db_batch->GetFileList(rx.JobIds, false /* don't use md5 */,
                                  true /* use delta */, InsertBootstrapHandler,
                                  (void*)rx.bsr.get())) {
     Jmsg(&jcr, M_ERROR, 0, "%s", jcr.db_batch->strerror());

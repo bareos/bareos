@@ -723,8 +723,7 @@ class BareosDb : public BareosDbQueryEnum {
   bool GetClientRecord(JobControlRecord* jcr, ClientDbRecord* cdbr);
   bool GetCounterRecord(JobControlRecord* jcr, CounterDbRecord* cr);
   bool GetQueryDbids(JobControlRecord* jcr, PoolMem& query, dbid_list& ids);
-  bool GetFileList(JobControlRecord* jcr,
-                   const char* jobids,
+  bool GetFileList(const char* jobids,
                    bool use_md5,
                    bool use_delta,
                    DB_RESULT_HANDLER* ResultHandler,
