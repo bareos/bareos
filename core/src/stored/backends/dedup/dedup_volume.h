@@ -264,7 +264,7 @@ class data_file {
   data_file(util::raii_fd&& file,
             std::size_t block_size,
             std::size_t data_used,
-            bool read_only = false)
+            bool read_only)
       : block_size{block_size}
       , read_only{read_only}
       , vec{std::move(file), data_used, 128 * 1024}
@@ -327,6 +327,8 @@ class data_file {
     return vec.read_at(start, buf, size);
   }
 
+  bool readonly() const { return read_only; }
+
  private:
   std::size_t block_size{};
   bool read_only{true};
@@ -361,15 +363,18 @@ struct volume_layout {
     std::size_t file_index;
     std::size_t chunk_size;
     std::size_t bytes_used;
+    bool read_only;
     data_file() = default;
     data_file(std::string_view path,
               std::size_t file_index,
               std::size_t chunk_size,
-              std::size_t bytes_used)
+              std::size_t bytes_used,
+              bool read_only)
         : path{path}
         , file_index{file_index}
         , chunk_size{chunk_size}
         , bytes_used{bytes_used}
+        , read_only{read_only}
     {
     }
   };
@@ -408,7 +413,7 @@ struct volume_layout {
     for (auto&& datasection : conf.datafiles) {
       datafiles.emplace_back(std::move(datasection.path),
                              datasection.file_index, datasection.block_size,
-                             datasection.data_used);
+                             datasection.data_used, datasection.read_only);
     }
     std::sort(datafiles.begin(), datafiles.end(),
               [](const auto& l, const auto& r) {
@@ -424,7 +429,7 @@ struct volume_layout {
     std::string name = std::string{"data-"} + std::to_string(chunk_size);
     std::size_t index
         = datafiles.size() == 0 ? 0 : datafiles.back().file_index + 1;
-    datafiles.emplace_back(name, index, chunk_size, 0);
+    datafiles.emplace_back(name, index, chunk_size, 0, false);
   }
 };
 
@@ -464,9 +469,9 @@ struct volume_data {
 
     for (auto& datafile : layout.datafiles) {
       auto file = open_inside(dir, datafile.path.c_str(), mode, dev_mode);
-      auto [iter, inserted]
-          = datafiles.try_emplace(datafile.file_index, std::move(file),
-                                  datafile.chunk_size, datafile.bytes_used);
+      auto [iter, inserted] = datafiles.try_emplace(
+          datafile.file_index, std::move(file), datafile.chunk_size,
+          datafile.bytes_used, datafile.read_only);
       if (!inserted) {
         // error: file index exists twice
         error = true;
@@ -496,7 +501,8 @@ struct volume_data {
 
     for (auto& [index, datafile] : datafiles) {
       layout.datafiles.emplace_back(datafile.path(), index,
-                                    datafile.blocksize(), datafile.size());
+                                    datafile.blocksize(), datafile.size(),
+                                    datafile.readonly());
     }
 
     return layout;
