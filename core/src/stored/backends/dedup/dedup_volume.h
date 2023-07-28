@@ -378,13 +378,10 @@ struct volume_layout {
   static volume_layout create_default(std::size_t dedup_block_size)
   {
     volume_layout layout;
-    layout.blockfiles.emplace_back("block", 0, 0);
-    layout.recordfiles.emplace_back("record", 0, 0);
-    if (dedup_block_size != 0) {
-      layout.datafiles.emplace_back("full_blocks", layout.datafiles.size(),
-                                    dedup_block_size, 0);
-    }
-    layout.datafiles.emplace_back("data", layout.datafiles.size(), 1, 0);
+    layout.blockfiles.emplace_back("block-0", 0, 0);
+    layout.recordfiles.emplace_back("record-0", 0, 0);
+    if (dedup_block_size != 0) { layout.new_data_file(dedup_block_size); }
+    layout.new_data_file(1);
     return layout;
   }
 
@@ -418,6 +415,15 @@ struct volume_layout {
   }
 
   volume_layout() = default;
+
+ private:
+  void new_data_file(std::size_t chunk_size)
+  {
+    std::string name = std::string{"data-"} + std::to_string(chunk_size);
+    std::size_t index
+        = datafiles.size() == 0 ? 0 : datafiles.back().file_index + 1;
+    datafiles.emplace_back(name, index, chunk_size, 0);
+  }
 };
 
 struct volume_data {
