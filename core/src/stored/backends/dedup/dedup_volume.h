@@ -395,7 +395,6 @@ struct volume_layout {
                               blocksection.start_block,
                               blocksection.num_blocks);
     }
-    // todo: we need to check wether the start blocks are unique or not!
     std::sort(blockfiles.begin(), blockfiles.end(),
               [](const auto& l, const auto& r) { return l.start < r.start; });
 
@@ -404,7 +403,6 @@ struct volume_layout {
                                recordsection.start_record,
                                recordsection.num_records);
     }
-    // todo: we need to check wether the start blocks are unique or not!
     std::sort(recordfiles.begin(), recordfiles.end(),
               [](const auto& l, const auto& r) { return l.start < r.start; });
 
@@ -413,7 +411,6 @@ struct volume_layout {
                              datasection.file_index, datasection.block_size,
                              datasection.data_used);
     }
-    // todo: we need to check whether the indices are unique or not!
     std::sort(datafiles.begin(), datafiles.end(),
               [](const auto& l, const auto& r) {
                 return l.file_index < r.file_index;
