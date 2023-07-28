@@ -4,14 +4,7 @@ set -o pipefail
 set -u
 #
 # This systemtest tests the plugin functionality
-# of the Bareos FD by using the supplied module
-#   bareos-fd-local-fileset.py
-#
-# The module will backup some files.
-# This plugin is not intended for production,
-# but is only a minimal example that shows
-# how to use the python plugin interface.
-# File attributes like uses and times will not be saved.
+# of the Bareos FD with the Python LDAP plugin.
 #
 TestName="$(basename "$(pwd)")"
 export TestName

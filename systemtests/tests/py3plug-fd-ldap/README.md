@@ -8,7 +8,7 @@ Finally both subtrees will be compared.
 Besides simple DNs we also test DNs with special characters (i.e. quotes, backslashes, newlines, etc.) and UTF-8 characters.
 
 ## Requirements to run
-For this to work you will have to build Bareos with the Python 2 plugin for the Bareos FD.
+For this to work you will have to build Bareos with the Python 3 plugin for the Bareos FD.
 The python code itself requires the python-ldap library.
 
 To run a backup and a restore this test requires a working LDAP server.
@@ -22,6 +22,4 @@ You should configure the following CMake settings to point the test at your serv
 * `SYSTEMTEST_LDAP_BINDDN`
 * `SYSTEMTEST_LDAP_PASSWORD`
 
-Everything besides `SYSTEMTEST_LDAP_ADDRESS` defaults to the valies for the above container.
-
-AFAICT this test will not work with Python 3.
+Everything besides `SYSTEMTEST_LDAP_ADDRESS` defaults to the values for the above container.
