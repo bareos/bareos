@@ -34,6 +34,8 @@
 #include <utility>
 
 namespace dedup {
+static constexpr std::size_t initial_file_size = 1024;
+
 using DeviceMode = storagedaemon::DeviceMode;
 using net_u32 = network_order::network_value<std::uint32_t>;
 using net_i32 = network_order::network_value<std::int32_t>;
@@ -437,7 +439,7 @@ struct volume_data {
     for (auto& blockfile : layout.blockfiles) {
       auto file = open_inside(dir, blockfile.path.c_str(), mode, dev_mode);
       if (dev_mode == DeviceMode::CREATE_READ_WRITE) {
-        file.resize(1024 * 1024 * 1024);
+        file.resize(initial_file_size);
       }
       auto& result = blockfiles.emplace_back(std::move(file), blockfile.start,
                                              blockfile.count);
@@ -450,7 +452,7 @@ struct volume_data {
     for (auto& recordfile : layout.recordfiles) {
       auto file = open_inside(dir, recordfile.path.c_str(), mode, dev_mode);
       if (dev_mode == DeviceMode::CREATE_READ_WRITE) {
-        file.resize(1024 * 1024 * 1024);
+        file.resize(initial_file_size);
       }
       auto& result = recordfiles.emplace_back(std::move(file), recordfile.start,
                                               recordfile.count);
@@ -609,7 +611,7 @@ class volume {
           = "block-" + std::to_string(contents.blockfiles.size());
       auto file = open_inside(dir, block_name.c_str(), permissions,
                               DeviceMode::CREATE_READ_WRITE);
-      file.resize(1024 * 1024 * 1024);
+      file.resize(initial_file_size);
       if (!contents.push_block_file(std::move(file))) { return false; }
     }
 
@@ -705,7 +707,7 @@ class volume {
             = "record-" + std::to_string(contents.recordfiles.size());
         auto file = open_inside(dir, record_name.c_str(), permissions,
                                 DeviceMode::CREATE_READ_WRITE);
-        file.resize(1024 * 1024 * 1024);
+        file.resize(initial_file_size);
         if (!contents.push_record_file(std::move(file))) { return false; }
       }
       auto& recordfile = contents.recordfiles.back();
