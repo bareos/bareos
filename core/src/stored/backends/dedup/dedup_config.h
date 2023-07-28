@@ -129,6 +129,7 @@ struct data_file_section {
   net_u64 data_used;
   net_u64 block_size;
   net_u64 file_index;
+  net_u32 flags;
   net_u32 path_length;
   // the path data follows directly without any padding
   // as if
@@ -154,16 +155,19 @@ struct loaded_data_section {
   std::uint32_t file_index;
   std::string path;
   std::uint64_t data_used;
+  bool read_only;
 
   loaded_data_section() = default;
   loaded_data_section(std::uint32_t file_index,
                       std::int32_t block_size,
                       std::string path,
-                      std::uint64_t data_used)
+                      std::uint64_t data_used,
+                      bool read_only)
       : block_size(block_size)
       , file_index(file_index)
       , path(std::move(path))
       , data_used{data_used}
+      , read_only{read_only}
   {
   }
 };

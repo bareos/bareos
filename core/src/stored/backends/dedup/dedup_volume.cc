@@ -50,7 +50,8 @@ void volume::write_current_config()
   }
   for (auto& datafile : layout.datafiles) {
     datasections.emplace_back(datafile.file_index, datafile.chunk_size,
-                              std::move(datafile.path), datafile.bytes_used);
+                              std::move(datafile.path), datafile.bytes_used,
+                              datafile.read_only);
   }
 
   for (auto& [record, loc] : unfinished_records) {

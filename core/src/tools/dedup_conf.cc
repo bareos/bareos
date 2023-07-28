@@ -80,14 +80,12 @@ void print_config(const dedup::config::loaded_config& conf)
       } else {
         std::cout << "\n                ";
       }
-      std::cout
-          << "{ "
-          << "Name: \"" << datafile.path << "\", "
-          << "BytesUsed: " << datafile.data_used << ", "
-          << "BlockSize: " << datafile.block_size
-          << ", "
-          // << "ReadOnly: " << (datafile.read_only ? "yes" : "no") << ", "
-          << "Index: " << datafile.file_index << " }";
+      std::cout << "{ "
+                << "Name: \"" << datafile.path << "\", "
+                << "BytesUsed: " << datafile.data_used << ", "
+                << "BlockSize: " << datafile.block_size << ", "
+                << "ReadOnly: " << (datafile.read_only ? "yes" : "no") << ", "
+                << "Index: " << datafile.file_index << " }";
     }
     std::cout << "]\n";
   }
