@@ -644,7 +644,6 @@ class volume {
     // TODO: look at unix_file_device for "secure_erase_cmdline"
     // TODO: delete all but one record/block file
     //       and all unneeded datafiles
-
     for (auto& blockfile : contents.blockfiles) {
       if (!blockfile.truncate()) { return false; }
     }
@@ -924,6 +923,10 @@ class volume {
   {
     return contents.recordfiles;
   }
+
+  const char* name() { return path.c_str(); }
+
+  int get_permissions() { return permissions; }
 
  private:
   volume() = default;

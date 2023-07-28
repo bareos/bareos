@@ -305,16 +305,68 @@ boffset_t dedup_file_device::d_lseek(DeviceControlRecord*, boffset_t, int)
   return -1;
 }
 
-bool dedup_file_device::d_truncate(DeviceControlRecord*)
+static bool delete_volume(JobControlRecord* jcr, const std::string& path)
+{
+  namespace stdfs = std::filesystem;
+
+  try {
+    std::vector<std::string> files;
+    for (auto& file : stdfs::recursive_directory_iterator(path.c_str())) {
+      if (file.is_directory()) {
+        // error: unexpected directory in volume
+        return false;
+      } else {
+        files.emplace_back(std::move(file).path().string());
+      }
+    }
+
+    for (auto& file : files) {
+      if (SecureErase(jcr, file.c_str()) != 0) { return false; }
+    }
+
+    if (!stdfs::remove(path.c_str())) { return false; }
+  } catch (stdfs::filesystem_error& error) {
+    Jmsg(jcr, M_FATAL, 0, "Encountered error while deleting volume %s: %s\n",
+         path.c_str(), error.what());
+    return false;
+  }
+
+  return true;
+}
+
+bool dedup_file_device::d_truncate(DeviceControlRecord* dcr)
 {
   if (!open_volume) {
     // error: no volume mounted
     return -1;
   }
 
-  dedup::volume& vol = open_volume.value();
-  ASSERT(vol.is_ok());
-  return vol.reset();
+  auto* vol = &open_volume.value();
+  ASSERT(vol->is_ok());
+
+  if (!me->secure_erase_cmdline) { return vol->reset(); }
+
+  std::string volume_path = vol->name();
+  int perm = vol->get_permissions();
+
+  vol = nullptr;
+  // close the volume
+  open_volume.reset();
+
+  // delete the volume
+  if (!delete_volume(dcr->jcr, volume_path)) { return false; }
+
+  // recreate the volume
+  open_mode = DeviceMode::CREATE_READ_WRITE;
+  vol = &open_volume.emplace(volume_path.c_str(), open_mode, perm,
+                             device_resource->dedup_block_size);
+
+  if (!vol->is_ok()) {
+    open_volume.reset();
+    fd = -1;
+    return false;
+  }
+  return true;
 }
 
 bool dedup_file_device::rewind(DeviceControlRecord* dcr)
