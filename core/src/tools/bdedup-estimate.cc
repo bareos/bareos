@@ -214,7 +214,9 @@ int main(int argc, const char* argv[])
   AddDebugOptions(app);
 
   std::vector<std::string> volumes;
-  app.add_option("-v,--volumes,volumes", volumes)->required();
+  app.add_option("-v,--volumes", volumes, "List of volumes to be analyzed.")
+      ->type_name("<volume>")
+      ->required();
   std::string config;
   app.add_option("-c,--config", config,
                  "Use <path> as configuration file or directory.")
@@ -227,7 +229,7 @@ int main(int argc, const char* argv[])
                  "Configuration file for the Key Encryption Key selection.")
       ->type_name("<director>");
 
-  app.add_option("-d,--devicename", device_name,
+  app.add_option("--devicename,devicename", device_name,
                  "Specify the input device name (either as name of a Bareos "
                  "Storage Daemon Device resource or identical to the Archive "
                  "Device in a Bareos Storage Daemon Device resource).")
