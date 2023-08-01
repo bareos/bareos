@@ -240,7 +240,12 @@ class record_file {
   std::optional<std::size_t> append(const record_header* headers,
                                     std::size_t count)
   {
-    return vec.push_back(headers, count);
+    if (std::optional start = vec.push_back(headers, count);
+        start.has_value()) {
+      return start.value() + begin();
+    } else {
+      return std::nullopt;
+    }
   }
 
   bool read_at(std::size_t record,
