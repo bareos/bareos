@@ -107,6 +107,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - cats: fix creates, grants and drops postgresql [PR #1502]
 - stored: fix blocksize warning [PR #1503]
 - status storage: fix wrong data displayed about waiting jobs [PR #1476]
+- stored: fix incoherent meta data when concurrently writing to the same volume [PR #1495]
 
 ### Documentation
 - add explanation about binary version numbers [PR #1354]
@@ -204,6 +205,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1488]: https://github.com/bareos/bareos/pull/1488
 [PR #1490]: https://github.com/bareos/bareos/pull/1490
 [PR #1493]: https://github.com/bareos/bareos/pull/1493
+[PR #1495]: https://github.com/bareos/bareos/pull/1495
 [PR #1502]: https://github.com/bareos/bareos/pull/1502
 [PR #1503]: https://github.com/bareos/bareos/pull/1503
 [PR #1507]: https://github.com/bareos/bareos/pull/1507
