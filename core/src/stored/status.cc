@@ -78,17 +78,9 @@ static void OutputStatus(JobControlRecord* jcr,
   PoolMem msg(PM_MESSAGE);
 
   ListStatusHeader(sp);
-
-  // List running jobs
   ListRunningJobs(sp);
-
-  // List jobs stuck in reservation system
   ListJobsWaitingOnReservation(sp);
-
-  // List terminated jobs
   ListTerminatedJobs(sp);
-
-  // List devices
   ListDevices(jcr, sp, devicenames);
 
   if (!sp->api) {
@@ -107,10 +99,6 @@ static void OutputStatus(JobControlRecord* jcr,
     len = PmStrcpy(msg, "====\n\n");
     sp->send(msg, len);
   }
-}
-
-static void ListResources(StatusPacket*)
-{ /* this has not been implemented */
 }
 
 static bool NeedToListDevice(const char* devicenames, const char* devicename)
@@ -648,14 +636,13 @@ static void ListRunningJobs(StatusPacket* sp)
   JobControlRecord* jcr;
   DeviceControlRecord *dcr, *rdcr;
   bool found = false;
-  time_t now = time(NULL);
   PoolMem msg(PM_MESSAGE);
-  int len, avebps, bps, sec;
+  int len;
   char JobName[MAX_NAME_LENGTH];
   char b1[50], b2[50], b3[50], b4[50];
 
   if (!sp->api) {
-    len = Mmsg(msg, _("\nRunning Jobs:\n"));
+    len = Mmsg(msg, _("\nJob inventory:\n\n"));
     sp->send(msg, len);
   }
 
@@ -674,12 +661,16 @@ static void ListRunningJobs(StatusPacket* sp)
       for (int i = 0; i < 3; i++) {
         if ((p = strrchr(JobName, '.')) != NULL) { *p = 0; }
       }
+      len = Mmsg(msg, _("JobId=%d Level=%s Type=%s Name=%s Status=%s\n"),
+                 jcr->JobId, job_level_to_str(jcr->getJobLevel()),
+                 job_type_to_str(jcr->getJobType()), JobName,
+                 JobstatusToAscii(jcr->getJobStatus()).c_str());
+      sp->send(msg, len);
+
       if (rdcr && rdcr->device_resource) {
         len = Mmsg(msg,
-                   _("Reading: %s %s job %s JobId=%d Volume=\"%s\"\n"
+                   _("Reading: Volume=\"%s\"\n"
                      "    pool=\"%s\" device=%s\n"),
-                   job_level_to_str(jcr->getJobLevel()),
-                   job_type_to_str(jcr->getJobType()), JobName, jcr->JobId,
                    rdcr->VolumeName, rdcr->pool_name,
                    rdcr->dev ? rdcr->dev->print_name()
                              : rdcr->device_resource->archive_device_string);
@@ -687,10 +678,8 @@ static void ListRunningJobs(StatusPacket* sp)
       }
       if (dcr && dcr->device_resource) {
         len = Mmsg(msg,
-                   _("Writing: %s %s job %s JobId=%d Volume=\"%s\"\n"
+                   _("Writing: Volume=\"%s\"\n"
                      "    pool=\"%s\" device=%s\n"),
-                   job_level_to_str(jcr->getJobLevel()),
-                   job_type_to_str(jcr->getJobType()), JobName, jcr->JobId,
                    dcr->VolumeName, dcr->pool_name,
                    dcr->dev ? dcr->dev->print_name()
                             : dcr->device_resource->archive_device_string);
@@ -699,31 +688,26 @@ static void ListRunningJobs(StatusPacket* sp)
                    dcr->spooling, dcr->despooling, dcr->despool_wait);
         sp->send(msg, len);
       }
-      if (jcr->last_time == 0) { jcr->last_time = jcr->run_time; }
-      sec = now - jcr->last_time;
-      if (sec <= 0) { sec = 1; }
-      bps = (jcr->JobBytes - jcr->LastJobBytes) / sec;
-      if (jcr->LastRate == 0) { jcr->LastRate = bps; }
-      avebps = (jcr->LastRate + bps) / 2;
+
+      jcr->UpdateJobStats();
+
       len = Mmsg(msg,
                  _("    Files=%s Bytes=%s AveBytes/sec=%s LastBytes/sec=%s\n"),
                  edit_uint64_with_commas(jcr->JobFiles, b1),
                  edit_uint64_with_commas(jcr->JobBytes, b2),
-                 edit_uint64_with_commas(avebps, b3),
-                 edit_uint64_with_commas(bps, b4));
+                 edit_uint64_with_commas(jcr->AverageRate, b3),
+                 edit_uint64_with_commas(jcr->LastRate, b4));
       sp->send(msg, len);
-      jcr->LastRate = avebps;
-      jcr->LastJobBytes = jcr->JobBytes;
-      jcr->last_time = now;
+
       found = true;
       if (jcr->file_bsock) {
-        len = Mmsg(msg, _("    FDReadSeqNo=%s in_msg=%u out_msg=%d fd=%d\n"),
+        len = Mmsg(msg, _("    FDReadSeqNo=%s in_msg=%u out_msg=%d fd=%d\n\n"),
                    edit_uint64_with_commas(jcr->file_bsock->read_seqno, b1),
                    jcr->file_bsock->in_msg_no, jcr->file_bsock->out_msg_no,
                    jcr->file_bsock->fd_);
         sp->send(msg, len);
       } else {
-        len = Mmsg(msg, _("    FDSocket closed\n"));
+        len = Mmsg(msg, _("    FDSocket closed\n\n"));
         sp->send(msg, len);
       }
     }
@@ -1015,9 +999,6 @@ bool DotstatusCmd(JobControlRecord* jcr)
   } else if (Bstrcasecmp(cmd.c_str(), "terminated")) {
     sp.api = true;
     ListTerminatedJobs(&sp);
-  } else if (Bstrcasecmp(cmd.c_str(), "resources")) {
-    sp.api = true;
-    ListResources(&sp);
   } else {
     PmStrcpy(jcr->errmsg, dir->msg);
     dir->fsend(_("3900 Unknown arg in .status command: %s\n"), jcr->errmsg);

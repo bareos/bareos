@@ -482,7 +482,6 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
 {
   char sdt[MAX_TIME_LENGTH], edt[MAX_TIME_LENGTH];
   char ec1[30], ec2[30], ec3[30], elapsed[50];
-  char fd_term_msg[100], sd_term_msg[100];
   utime_t RunTime;
   double kbps;
   PoolMem temp, secure_erase_status;
@@ -497,10 +496,8 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
   }
   if (kbps < 0.05) { kbps = 0; }
 
-  JobstatusToAscii(jcr->dir_impl->FDJobStatus, fd_term_msg,
-                   sizeof(fd_term_msg));
-  JobstatusToAscii(jcr->dir_impl->SDJobStatus, sd_term_msg,
-                   sizeof(sd_term_msg));
+  std::string fd_term_msg = JobstatusToAscii(jcr->dir_impl->FDJobStatus);
+  std::string sd_term_msg = JobstatusToAscii(jcr->dir_impl->SDJobStatus);
 
   ClientDbRecord cr;
   bstrncpy(cr.Name, jcr->dir_impl->res.client->resource_name_, sizeof(cr.Name));
@@ -540,7 +537,8 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
            edit_uint64_with_commas((uint64_t)jcr->dir_impl->ExpectedFiles, ec1),
            edit_uint64_with_commas((uint64_t)jcr->dir_impl->jr.JobFiles, ec2),
            edit_uint64_with_commas(jcr->dir_impl->jr.JobBytes, ec3),
-           (float)kbps, sd_term_msg, kBareosVersionStrings.JoblogMessage,
+           (float)kbps, sd_term_msg.c_str(),
+           kBareosVersionStrings.JoblogMessage,
            JobTriggerToString(jcr->dir_impl->job_trigger).c_str(), TermMsg);
       break;
     default:
@@ -587,8 +585,9 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
            edit_uint64_with_commas((uint64_t)jcr->dir_impl->ExpectedFiles, ec1),
            edit_uint64_with_commas((uint64_t)jcr->dir_impl->jr.JobFiles, ec2),
            edit_uint64_with_commas(jcr->dir_impl->jr.JobBytes, ec3),
-           (float)kbps, jcr->JobErrors, fd_term_msg, sd_term_msg,
-           secure_erase_status.c_str(), kBareosVersionStrings.JoblogMessage,
+           (float)kbps, jcr->JobErrors, fd_term_msg.c_str(),
+           sd_term_msg.c_str(), secure_erase_status.c_str(),
+           kBareosVersionStrings.JoblogMessage,
            JobTriggerToString(jcr->dir_impl->job_trigger).c_str(), TermMsg);
       break;
   }

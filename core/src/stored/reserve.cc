@@ -484,6 +484,9 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
     Dmsg1(debuglevel, "OK dev found. Vol=%s from in-use vols list\n",
           rctx.VolumeName);
     return true;
+  } else {
+    // no existing volume found; reseting volume name.
+    dcr->VolumeName[0] = 0;
   }
 
   /* No reserved volume we can use, so now search for an available device.

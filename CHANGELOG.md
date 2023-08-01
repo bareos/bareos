@@ -106,6 +106,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - scripts: config-lib improve setup_sd_user [PR #1448]
 - cats: fix creates, grants and drops postgresql [PR #1502]
 - stored: fix blocksize warning [PR #1503]
+- status storage: fix wrong data displayed about waiting jobs [PR #1476]
 
 ### Documentation
 - add explanation about binary version numbers [PR #1354]
@@ -196,6 +197,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1469]: https://github.com/bareos/bareos/pull/1469
 [PR #1473]: https://github.com/bareos/bareos/pull/1473
 [PR #1474]: https://github.com/bareos/bareos/pull/1474
+[PR #1476]: https://github.com/bareos/bareos/pull/1476
 [PR #1477]: https://github.com/bareos/bareos/pull/1477
 [PR #1479]: https://github.com/bareos/bareos/pull/1479
 [PR #1484]: https://github.com/bareos/bareos/pull/1484

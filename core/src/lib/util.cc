@@ -359,98 +359,88 @@ bool ConvertTimeoutToTimespec(timespec& timeout, int timeout_in_seconds)
 }
 
 // Convert a JobStatus code into a human readable form
-void JobstatusToAscii(int JobStatus, char* msg, int maxlen)
+std::string JobstatusToAscii(int JobStatus)
 {
-  const char* jobstat;
-  char buf[100];
-
   switch (JobStatus) {
     case JS_Created:
-      jobstat = _("Created");
-      break;
+      return "Created";
+
     case JS_Running:
-      jobstat = _("Running");
-      break;
+      return "Running";
+
     case JS_Blocked:
-      jobstat = _("Blocked");
-      break;
+      return "Blocked";
+
     case JS_Terminated:
-      jobstat = _("OK");
-      break;
+      return "OK";
+
     case JS_Incomplete:
-      jobstat = _("Error: incomplete job");
-      break;
+      return "Error: incomplete job";
+
     case JS_FatalError:
-      jobstat = _("Fatal Error");
-      break;
+      return "Fatal Error";
+
     case JS_ErrorTerminated:
-      jobstat = _("Error");
-      break;
+      return "Error";
+
     case JS_Error:
-      jobstat = _("Non-fatal error");
-      break;
+      return "Non-fatal error";
+
     case JS_Warnings:
-      jobstat = _("OK -- with warnings");
-      break;
+      return "OK -- with warnings";
+
     case JS_Canceled:
-      jobstat = _("Canceled");
-      break;
+      return "Canceled";
+
     case JS_Differences:
-      jobstat = _("Verify differences");
-      break;
+      return "Verify differences";
+
     case JS_WaitFD:
-      jobstat = _("Waiting on FD");
-      break;
+      return "Waiting on FD";
+
     case JS_WaitSD:
-      jobstat = _("Wait on SD");
-      break;
+      return "Wait on SD";
+
     case JS_WaitMedia:
-      jobstat = _("Wait for new Volume");
-      break;
+      return "Wait for new Volume";
+
     case JS_WaitMount:
-      jobstat = _("Waiting for mount");
-      break;
+      return "Waiting for mount";
+
     case JS_WaitStoreRes:
-      jobstat = _("Waiting for Storage resource");
-      break;
+      return "Waiting for Storage resource";
+
     case JS_WaitJobRes:
-      jobstat = _("Waiting for Job resource");
-      break;
+      return "Waiting for Job resource";
+
     case JS_WaitClientRes:
-      jobstat = _("Waiting for Client resource");
-      break;
+      return "Waiting for Client resource";
+
     case JS_WaitMaxJobs:
-      jobstat = _("Waiting on Max Jobs");
-      break;
+      return "Waiting on Max Jobs";
+
     case JS_WaitStartTime:
-      jobstat = _("Waiting for Start Time");
-      break;
+      return "Waiting for Start Time";
+
     case JS_WaitPriority:
-      jobstat = _("Waiting on Priority");
-      break;
+      return "Waiting on Priority";
+
     case JS_DataCommitting:
-      jobstat = _("SD committing Data");
-      break;
+      return "SD committing Data";
+
     case JS_DataDespooling:
-      jobstat = _("SD despooling Data");
-      break;
+      return "SD despooling Data";
+
     case JS_AttrDespooling:
-      jobstat = _("SD despooling Attributes");
-      break;
+      return "SD despooling Attributes";
+
     case JS_AttrInserting:
-      jobstat = _("Dir inserting Attributes");
-      break;
+      return "Dir inserting Attributes";
+    case 0:
+      return "";
     default:
-      if (JobStatus == 0) {
-        buf[0] = 0;
-      } else {
-        Bsnprintf(buf, sizeof(buf), _("Unknown Job termination status=%d"),
-                  JobStatus);
-      }
-      jobstat = buf;
-      break;
+      return "Unknown Job termination status=" + std::to_string(JobStatus);
   }
-  bstrncpy(msg, jobstat, maxlen);
 }
 
 // Convert Job Termination Status into a string
