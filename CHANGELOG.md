@@ -105,6 +105,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Consolidate: fix for consolidate job's client name not being correctly shown [PR #1474]
 - scripts: config-lib improve setup_sd_user [PR #1448]
 - cats: fix creates, grants and drops postgresql [PR #1502]
+- stored: fix blocksize warning [PR #1503]
 
 ### Documentation
 - add explanation about binary version numbers [PR #1354]
@@ -202,6 +203,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1490]: https://github.com/bareos/bareos/pull/1490
 [PR #1493]: https://github.com/bareos/bareos/pull/1493
 [PR #1502]: https://github.com/bareos/bareos/pull/1502
+[PR #1503]: https://github.com/bareos/bareos/pull/1503
 [PR #1507]: https://github.com/bareos/bareos/pull/1507
 [PR #1512]: https://github.com/bareos/bareos/pull/1512
 [unreleased]: https://github.com/bareos/bareos/tree/master
