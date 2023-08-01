@@ -99,7 +99,7 @@ int main(int argc, char* argv[])
   CLI::App app;
   std::string desc(1024, '\0');
   kBareosVersionStrings.FormatCopyright(desc.data(), desc.size(), 2023);
-  desc += "The Bareos DryDedup Tool.";
+  desc += "The Bareos Dedup Config Viewer";
   InitCLIApp(app, desc, 0);
 
   std::string volume;
