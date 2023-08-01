@@ -46,13 +46,14 @@
 #include <unordered_set>
 
 struct dedup_unit {
+  std::size_t data_size;
   std::array<uint64_t, 4> digest;
 
   dedup_unit(std::vector<std::uint8_t> data)
       : dedup_unit(data.data(), data.size())
   {
   }
-  dedup_unit(const std::uint8_t* data, std::size_t dsize)
+  dedup_unit(const std::uint8_t* data, std::size_t dsize) : data_size{dsize}
   {
     DIGEST* digester = crypto_digest_new(nullptr, CRYPTO_DIGEST_SHA256);
 
@@ -67,7 +68,7 @@ struct dedup_unit {
 
   friend bool operator==(const dedup_unit& l, const dedup_unit& r)
   {
-    return l.digest == r.digest;
+    return l.data_size == r.data_size && l.digest == r.digest;
   }
 };
 
