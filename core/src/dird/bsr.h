@@ -102,8 +102,8 @@ bool SendBootstrapFile(JobControlRecord* jcr,
                        bootstrap_info& info);
 void CloseBootstrapFile(bootstrap_info& info);
 uint32_t write_findex(RestoreBootstrapRecordFileIndex* fi,
-                      int32_t& FirstIndex,
-                      int32_t& LastIndex,
+                      uint32_t& FirstIndex,
+                      uint32_t& LastIndex,
                       std::string& buffer);
 
 } /* namespace directordaemon */
