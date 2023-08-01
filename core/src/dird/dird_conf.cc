@@ -1012,9 +1012,9 @@ static void PropagateResource(ResourceItem* items,
   uint32_t offset;
 
   for (int i = 0; items[i].name; i++) {
-    if (!BitIsSet(i, dest->item_present_)
-        && BitIsSet(i, source->item_present_)) {
-      offset = items[i].offset;
+    offset = items[i].offset;
+    if (!dest->IsMemberPresent(items[i].name)
+        && source->IsMemberPresent(items[i].name)) {
       switch (items[i].type) {
         case CFG_TYPE_STR:
         case CFG_TYPE_DIR:
@@ -1026,7 +1026,7 @@ static void PropagateResource(ResourceItem* items,
           svalue = (char**)((char*)dest + offset);
           if (*svalue) { free(*svalue); }
           *svalue = strdup(*def_svalue);
-          SetBit(i, dest->item_present_);
+          dest->SetMemberPresent(items[i].name);
           SetBit(i, dest->inherit_content_);
           break;
         }
@@ -1040,7 +1040,7 @@ static void PropagateResource(ResourceItem* items,
             Pmsg1(000, _("Hey something is wrong. p=0x%lu\n"), *svalue);
           }
           *svalue = *def_svalue;
-          SetBit(i, dest->item_present_);
+          dest->SetMemberPresent(items[i].name);
           SetBit(i, dest->inherit_content_);
           break;
         }
@@ -1061,7 +1061,7 @@ static void PropagateResource(ResourceItem* items,
 
             foreach_alist (str, orig_list) { (*new_list)->append(strdup(str)); }
 
-            SetBit(i, dest->item_present_);
+            dest->SetMemberPresent(items[i].name);
             SetBit(i, dest->inherit_content_);
           }
           break;
@@ -1083,7 +1083,7 @@ static void PropagateResource(ResourceItem* items,
 
             foreach_alist (res, orig_list) { (*new_list)->append(res); }
 
-            SetBit(i, dest->item_present_);
+            dest->SetMemberPresent(items[i].name);
             SetBit(i, dest->inherit_content_);
           }
           break;
@@ -1107,7 +1107,7 @@ static void PropagateResource(ResourceItem* items,
 
             foreach_alist (str, orig_list) { (*new_list)->append(strdup(str)); }
 
-            SetBit(i, dest->item_present_);
+            dest->SetMemberPresent(items[i].name);
             SetBit(i, dest->inherit_content_);
           }
           break;
@@ -1128,7 +1128,7 @@ static void PropagateResource(ResourceItem* items,
           def_ivalue = (uint32_t*)((char*)(source) + offset);
           ivalue = (uint32_t*)((char*)dest + offset);
           *ivalue = *def_ivalue;
-          SetBit(i, dest->item_present_);
+          dest->SetMemberPresent(items[i].name);
           SetBit(i, dest->inherit_content_);
           break;
         }
@@ -1142,7 +1142,7 @@ static void PropagateResource(ResourceItem* items,
           def_lvalue = (int64_t*)((char*)(source) + offset);
           lvalue = (int64_t*)((char*)dest + offset);
           *lvalue = *def_lvalue;
-          SetBit(i, dest->item_present_);
+          dest->SetMemberPresent(items[i].name);
           SetBit(i, dest->inherit_content_);
           break;
         }
@@ -1153,7 +1153,7 @@ static void PropagateResource(ResourceItem* items,
           def_bvalue = (bool*)((char*)(source) + offset);
           bvalue = (bool*)((char*)dest + offset);
           *bvalue = *def_bvalue;
-          SetBit(i, dest->item_present_);
+          dest->SetMemberPresent(items[i].name);
           SetBit(i, dest->inherit_content_);
           break;
         }
@@ -1166,7 +1166,7 @@ static void PropagateResource(ResourceItem* items,
 
           d_pwd->encoding = s_pwd->encoding;
           d_pwd->value = strdup(s_pwd->value);
-          SetBit(i, dest->item_present_);
+          dest->SetMemberPresent(items[i].name);
           SetBit(i, dest->inherit_content_);
           break;
         }
@@ -1193,7 +1193,7 @@ bool ValidateResource(int res_type, ResourceItem* items, BareosResource* res)
 
   for (int i = 0; items[i].name; i++) {
     if (items[i].flags & CFG_ITEM_REQUIRED) {
-      if (!BitIsSet(i, res->item_present_)) {
+      if (!res->IsMemberPresent(items[i].name)) {
         Jmsg(NULL, M_ERROR, 0,
              _("\"%s\" directive in %s \"%s\" resource is required, but not "
                "found.\n"),
@@ -2474,7 +2474,7 @@ static void StorePooltype(LEX* lc, ResourceItem* item, int index, int pass)
   }
 
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -2499,7 +2499,7 @@ static void StoreActiononpurge(LEX* lc, ResourceItem* item, int index, int)
   }
 
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -2548,7 +2548,7 @@ static void StoreDevice(LEX* lc,
     }
 
     ScanToEol(lc);
-    SetBit(index, (*item->allocated_resource)->item_present_);
+    item->SetPresent();
     ClearBit(index, (*item->allocated_resource)->inherit_content_);
   } else {
     my_config->StoreResource(CFG_TYPE_ALIST_RES, lc, item, index, pass);
@@ -2574,7 +2574,7 @@ static void StoreMigtype(LEX* lc, ResourceItem* item, int index)
   }
 
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -2597,7 +2597,7 @@ static void StoreJobtype(LEX* lc, ResourceItem* item, int index, int)
   }
 
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -2620,7 +2620,7 @@ static void StoreProtocoltype(LEX* lc, ResourceItem* item, int index, int)
   }
 
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -2642,7 +2642,7 @@ static void StoreReplace(LEX* lc, ResourceItem* item, int index, int)
   }
 
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -2665,7 +2665,7 @@ static void StoreAuthprotocoltype(LEX* lc, ResourceItem* item, int index, int)
   }
 
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -2689,7 +2689,7 @@ static void StoreAuthtype(LEX* lc, ResourceItem* item, int index, int)
   }
 
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -2713,7 +2713,7 @@ static void StoreLevel(LEX* lc, ResourceItem* item, int index, int)
   }
 
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -2798,7 +2798,7 @@ static void StoreAcl(LEX* lc, ResourceItem* item, int index, int pass)
     }
     token = LexGetToken(lc, BCT_ALL);
   }
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -2824,7 +2824,7 @@ static void StoreAudit(LEX* lc, ResourceItem* item, int index, int pass)
     if (token == BCT_COMMA) { continue; }
     break;
   }
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -3064,7 +3064,7 @@ bail_out:
   res_runscript = nullptr;
 
   ScanToEol(lc);
-  SetBit(index, (*item->allocated_resource)->item_present_);
+  item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
@@ -3992,7 +3992,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
       /* Check Job requirements after applying JobDefs
        * Ensure that the name item is present however. */
       if (items[0].flags & CFG_ITEM_REQUIRED) {
-        if (!BitIsSet(0, allocated_resource->item_present_)) {
+        if (!allocated_resource->IsMemberPresent(items[0].name)) {
           Emsg2(M_ERROR, 0,
                 _("%s item is required in %s resource, but not found.\n"),
                 items[0].name, resources[type].name);

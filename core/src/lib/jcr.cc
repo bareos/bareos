@@ -1013,12 +1013,10 @@ void DbgPrintJcr(FILE* fp)
   fprintf(fp, "Attempt to dump current JCRs. njcrs=%d\n",
           job_control_record_chain->size());
 
+  std::size_t num_dumped = 0;
   for (JobControlRecord* jcr
        = (JobControlRecord*)job_control_record_chain->first();
        jcr; jcr = (JobControlRecord*)job_control_record_chain->next(jcr)) {
-    fprintf(fp, "threadid=%s JobId=%d JobStatus=%c jcr=%p name=%s\n",
-            edit_pthread(jcr->my_thread_id, ed1, sizeof(ed1)), (int)jcr->JobId,
-            jcr->getJobStatus(), jcr, jcr->Job);
     fprintf(
         fp, "threadid=%s killable=%d JobId=%d JobStatus=%c jcr=%p name=%s\n",
         edit_pthread(jcr->my_thread_id, ed1, sizeof(ed1)), jcr->IsKillable(),
@@ -1040,5 +1038,9 @@ void DbgPrintJcr(FILE* fp)
       dbg_jcr_hook_t* hook = dbg_jcr_hooks[i];
       hook(jcr, fp);
     }
+
+    num_dumped += 1;
   }
+
+  fprintf(fp, "dumping of jcrs finished. number of dumped = %zu\n", num_dumped);
 }
