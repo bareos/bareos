@@ -761,7 +761,12 @@ static time_t CvtFtimeToUtime(const FILETIME& time)
   mstime -= WIN32_FILETIME_ADJUST;
   mstime /= WIN32_FILETIME_SCALE; /* convert to seconds. */
 
-  return (time_t)(mstime & 0xffffffff);
+  if constexpr (sizeof(time_t) < sizeof(mstime)) {
+    // take care of 32bit time_ts (i.e. on 32bit windows)
+    return static_cast<time_t>(mstime & 0xffff'ffff);
+  } else {
+    return static_cast<time_t>(mstime);
+  }
 }
 
 static time_t CvtFtimeToUtime(const LARGE_INTEGER& time)
@@ -774,7 +779,12 @@ static time_t CvtFtimeToUtime(const LARGE_INTEGER& time)
   mstime -= WIN32_FILETIME_ADJUST;
   mstime /= WIN32_FILETIME_SCALE; /* convert to seconds. */
 
-  return (time_t)(mstime & 0xffffffff);
+  if constexpr (sizeof(time_t) < sizeof(mstime)) {
+    // take care of 32bit time_ts (i.e. on 32bit windows)
+    return static_cast<time_t>(mstime & 0xffff'ffff);
+  } else {
+    return static_cast<time_t>(mstime);
+  }
 }
 
 bool CreateJunction(const char* szJunction, const char* szPath)
