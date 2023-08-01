@@ -111,7 +111,11 @@ bool RecordCallback(storagedaemon::DeviceControlRecord*,
   num_records += 1;
   auto size = record->data_len;
   total_size += size;
-  if (size % block_size == 0) {
+  if (record_based_dedup) {
+    const std::uint8_t* data
+        = reinterpret_cast<const std::uint8_t*>(record->data);
+    if (dedup_units.emplace(data, size).second) { real_size += size; }
+  } else if (size % block_size == 0) {
     auto num_units = size / block_size;
 
     for (std::size_t unit = 0; unit < num_units; ++unit) {
