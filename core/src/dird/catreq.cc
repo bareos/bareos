@@ -74,6 +74,8 @@ static char Update_filelist[] = "Catreq Job=%127s UpdateFileList\n";
 
 static char Update_jobrecord[]
     = "Catreq Job=%127s UpdateJobRecord JobFiles=%lu JobBytes=%llu\n";
+static char Delete_nulljobmediarecord[]
+    = "CatReq Job=%127s DeleteNullJobmediaRecords jobid=%u\n";
 
 // Responses sent to Storage daemon
 static char OK_media[]
@@ -84,6 +86,7 @@ static char OK_media[]
       " VolWriteTime=%s EndFile=%u EndBlock=%u LabelType=%d"
       " MediaId=%s EncryptionKey=%s MinBlocksize=%d MaxBlocksize=%d\n";
 static char OK_create[] = "1000 OK CreateJobMedia\n";
+static char OK_delete[] = "1000 OK DeleteNullJobmediaRecords\n";
 
 static int SendVolumeInfoToStorageDaemon(JobControlRecord* jcr,
                                          BareosSocket* sd,
@@ -122,6 +125,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
   uint64_t MediaId;
   utime_t VolFirstWritten;
   utime_t VolLastWritten;
+  std::uint32_t jobid;
 
   // Request to find next appendable Volume for this Job
   Dmsg1(100, "catreq %s", bs->msg);
@@ -379,6 +383,14 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       Jmsg(jcr, M_FATAL, 0, _("Catalog error updating Job record. %s\n"),
            jcr->db->strerror());
       bs->fsend(_("1992 Update job record error\n"));
+    }
+  } else if (sscanf(bs->msg, Delete_nulljobmediarecord, &Job, &jobid) == 2) {
+    int numrows = jcr->db->DeleteNullJobmediaRecords(jcr, jobid);
+    Dmsg1(400, "Deleted %d rows.\n", numrows);
+    if (numrows == -1) {
+      bs->fsend(_("1992 DeleteNullJobMediaRecords error\n"));
+    } else {
+      bs->fsend(OK_delete);
     }
   } else {
     omsg = GetMemory(bs->message_length + 1);

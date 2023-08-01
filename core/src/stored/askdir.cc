@@ -28,6 +28,8 @@
  */
 
 #include "include/bareos.h"
+#include "stored/askdir.h"
+
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
 
@@ -641,6 +643,24 @@ bool DeviceControlRecord::DirAskSysopToMountVolume(int /*mode*/)
   return true;
 }
 
+bool DeleteNullJobmediaRecords(JobControlRecord* jcr)
+{
+  Dmsg0(100, "Deleting null jobmedia records\n");
+  BareosSocket* dir = jcr->dir_bsock;
+  const char* delete_null_records
+      = "CatReq Job=%s DeleteNullJobmediaRecords jobid=%u";
+  dir->fsend(delete_null_records, jcr->Job, jcr->JobId);
+  if (dir->recv() <= 0) {
+    Dmsg0(100, "DeleteNullJobmediaRecords error BnetRecv\n");
+    Mmsg(jcr->errmsg,
+         _("Network error on BnetRecv in DeleteNullJobmediaRecords.\n"));
+    return false;
+  }
+  Dmsg1(100, ">dird %s", dir->msg);
+  if (strncmp(dir->msg, "1000", 4) == 0) { return true; }
+  return false;
+}
+
 bool DeviceControlRecord::DirGetVolumeInfo(enum get_vol_info_rw)
 {
   Dmsg0(100, "Fake DirGetVolumeInfo\n");
@@ -653,5 +673,4 @@ DeviceControlRecord* DeviceControlRecord::get_new_spooling_dcr()
 {
   return new StorageDaemonDeviceControlRecord;
 }
-
 } /* namespace storagedaemon */

@@ -26,6 +26,7 @@
  */
 
 #include "stored/append.h"
+#include "stored/askdir.h"
 #include "stored/stored.h"
 #include "stored/acquire.h"
 #include "stored/checkpoint_handler.h"
@@ -411,6 +412,10 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
 
   // Release the device -- and send final Vol info to DIR and unlock it.
   ReleaseDevice(jcr->sd_impl->dcr);
+
+  if (!DeleteNullJobmediaRecords(jcr)) {
+    Jmsg(jcr, M_WARNING, 0, _("Could not delete placeholder media records.\n"));
+  }
 
   /* Don't use time_t for job_elapsed as time_t can be 32 or 64 bits,
    * and the subsequent Jmsg() editing will break */

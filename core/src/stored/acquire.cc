@@ -559,6 +559,12 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
      * already been done, which means we skip them here. */
     dev->num_writers--;
     Dmsg1(100, "There are %d writers in ReleaseDevice\n", dev->num_writers);
+    if (dcr->VolFirstIndex) {
+      // Send a new jobmedia record if we have written to a volume
+      // take note that the volume we wrote to is not necessarily the volume
+      // that is currently inside the device.
+      dcr->DirCreateJobmediaRecord(false);
+    }
     if (dev->IsLabeled()) {
       Dmsg2(200, "dir_create_jobmedia. Release vol=%s dev=%s\n",
             dev->getVolCatName(), dev->print_name());
