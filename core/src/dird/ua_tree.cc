@@ -377,9 +377,9 @@ static int SetExtract(UaContext* ua,
     // Walk up tree marking any unextracted parent to be extracted.
     if (extract) {
       while (node->parent && !node->parent->extract_dir) {
-        if (node->type != TN_NEWDIR) { count += 1; }
         node = node->parent;
         node->extract_dir = true;
+        if (node->type != TN_NEWDIR && node->type != TN_ROOT) { count += 1; }
       }
     }
   } else {
