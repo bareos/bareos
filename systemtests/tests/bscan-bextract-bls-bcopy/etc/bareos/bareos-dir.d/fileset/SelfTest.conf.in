@@ -4,6 +4,7 @@ FileSet {
   Include {
     Options {
       Signature = XXH128
+      Compression = LZ4
     }
    #File = "@sbindir@"
     File=<@tmpdir@/file-list
