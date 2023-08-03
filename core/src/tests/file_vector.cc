@@ -130,9 +130,8 @@ TEST(FileBasedVector, reserve_and_write_at)
   fstat(fd, &st);
   EXPECT_EQ(st.st_size, 1024);
 
-  std::optional res = vec.write_at(*where1, test_view.data(), test_view.size());
-  EXPECT_PRED1(has_value<std::remove_reference_t<decltype(*res)>>, res);
-  EXPECT_EQ(*res, *where1);
+  bool write_ok = vec.write_at(*where1, test_view.data(), test_view.size());
+  EXPECT_TRUE(write_ok);
   EXPECT_EQ(vec.size(), 2 * test_view.size());
 
   char read1[test_view.size()];
