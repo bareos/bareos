@@ -18,6 +18,10 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
      * Pid Directory
      * Compatible
 
+- The following configuration defaults have changed:
+   * Director daemon
+     * Hard Links (Dir->Fileset->Include->Options) = no (was yes)
+
 ### Changed
 - VMware Plugin: introduce pyVmomi 8.x compatibility [PR #1352]
 - devtools: add `pr-tool` to automate PR review and merge [PR #935]
