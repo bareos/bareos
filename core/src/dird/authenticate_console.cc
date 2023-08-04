@@ -37,6 +37,7 @@
 #include "lib/util.h"
 #include "lib/version.h"
 #include "include/version_numbers.h"
+#include "console_connection_lease.h"
 
 namespace directordaemon {
 
@@ -354,19 +355,6 @@ static void LogErrorMessage(std::string console_name, UaContext* ua)
         ua->UA_sock->port());
 }
 
-static bool NumberOfConsoleConnectionsExceeded()
-{
-  JobControlRecord* jcr;
-  unsigned int cnt = 0;
-
-  foreach_jcr (jcr) {
-    if (jcr->is_JobType(JT_CONSOLE)) { cnt++; }
-  }
-  endeach_jcr(jcr);
-
-  return (cnt >= me->MaxConsoleConnections) ? true : false;
-}
-
 static bool GetConsoleNameAndVersion(BareosSocket* ua_sock,
                                      std::string& name_out,
                                      BareosVersionNumber& version_out)
@@ -407,13 +395,7 @@ static ConsoleAuthenticator* CreateConsoleAuthenticator(UaContext* ua)
 
 bool AuthenticateConsole(UaContext* ua)
 {
-  if (NumberOfConsoleConnectionsExceeded()) {
-    Emsg0(M_ERROR, 0,
-          _("Number of console connections exceeded "
-            "MaximumConsoleConnections\n"));
-    return false;
-  }
-
+  auto num_leases = ConsoleConnectionLease::get_num_leases();
   std::unique_ptr<ConsoleAuthenticator> console_authenticator(
       CreateConsoleAuthenticator(ua));
   if (!console_authenticator) { return false; }
@@ -424,7 +406,21 @@ bool AuthenticateConsole(UaContext* ua)
       LogErrorMessage(console_authenticator->console_name_, ua);
       return false;
     }
+    if (num_leases > me->MaxConsoleConnections) {
+      Emsg0(M_INFO, 0,
+            _("Number of console connections exceeded\n"
+              "Maximum: %u, Current: %zu\n"),
+            me->MaxConsoleConnections, num_leases);
+    }
   } else {
+    if (num_leases > me->MaxConsoleConnections) {
+      Emsg0(M_ERROR, 0,
+            _("Number of console connections exceeded "
+              "Maximum :%u, Current: %zu\n"),
+            me->MaxConsoleConnections, num_leases);
+      return false;
+    }
+
     console_authenticator->AuthenticateNamedConsole();
     if (!console_authenticator->auth_success_) {
       LogErrorMessage(console_authenticator->console_name_, ua);
