@@ -79,6 +79,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - cats: postgresql introduce pl/sql lstat_decode() function [PR #1466]
 - bsmtp: make mailhost and port message info a debug message [PR #1507]
 - dird: cats: abort purge when there are no eligible jobids [PR #1512]
+- dird: show current and allowed console connections [PR #1487]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -202,6 +203,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1477]: https://github.com/bareos/bareos/pull/1477
 [PR #1479]: https://github.com/bareos/bareos/pull/1479
 [PR #1484]: https://github.com/bareos/bareos/pull/1484
+[PR #1487]: https://github.com/bareos/bareos/pull/1487
 [PR #1488]: https://github.com/bareos/bareos/pull/1488
 [PR #1490]: https://github.com/bareos/bareos/pull/1490
 [PR #1493]: https://github.com/bareos/bareos/pull/1493
