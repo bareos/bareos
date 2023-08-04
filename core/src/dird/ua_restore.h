@@ -22,6 +22,8 @@
 #ifndef BAREOS_DIRD_UA_RESTORE_H_
 #define BAREOS_DIRD_UA_RESTORE_H_
 
+#include "lib/tree.h"
+
 namespace directordaemon {
 
 std::string CompensateShortDate(const char* cmd);
@@ -34,6 +36,9 @@ void FindStorageResource(UaContext* ua,
 void BuildRestoreCommandString(UaContext* ua,
                                const RestoreContext& rx,
                                JobResource* job);
+
+int RestoreCountHandler(void* ctx, int, char** row);
+void AddDeltaListFindex(RestoreContext* rx, struct delta_list* lst);
 
 } /* namespace directordaemon */
 #endif  // BAREOS_DIRD_UA_RESTORE_H_

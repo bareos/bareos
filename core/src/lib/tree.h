@@ -52,7 +52,7 @@ struct s_mem {
         ((TREE_NODE *)(node->child.first())
 
 struct delta_list {
-  struct delta_list* next;
+  delta_list* next;
   JobId_t JobId;
   int32_t FileIndex;
 };
