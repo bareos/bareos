@@ -80,6 +80,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - bsmtp: make mailhost and port message info a debug message [PR #1507]
 - dird: cats: abort purge when there are no eligible jobids [PR #1512]
 - dird: show current and allowed console connections [PR #1487]
+- dird: add prev and new jobid variables [PR #1499]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -208,6 +209,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1490]: https://github.com/bareos/bareos/pull/1490
 [PR #1493]: https://github.com/bareos/bareos/pull/1493
 [PR #1495]: https://github.com/bareos/bareos/pull/1495
+[PR #1499]: https://github.com/bareos/bareos/pull/1499
 [PR #1502]: https://github.com/bareos/bareos/pull/1502
 [PR #1503]: https://github.com/bareos/bareos/pull/1503
 [PR #1507]: https://github.com/bareos/bareos/pull/1507
