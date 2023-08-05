@@ -3080,12 +3080,15 @@ bail_out:
  * %C = Cloning (yes/no)
  * %D = Director name
  * %V = Volume name(s) (Destination)
+ * %O = Prev Backup JobId
+ * %N = New Backup JobId
  */
-extern "C" char* job_code_callback_director(JobControlRecord* jcr,
-                                            const char* param)
+std::optional<std::string> job_code_callback_director(JobControlRecord* jcr,
+                                                      const char* param)
 {
-  static char yes[] = "yes";
-  static char no[] = "no";
+  static const std::string yes = "yes";
+  static const std::string no = "no";
+  static const std::string none = "*None*";
 
   switch (param[0]) {
     case 'f':
@@ -3123,15 +3126,31 @@ extern "C" char* job_code_callback_director(JobControlRecord* jcr,
         if (jcr->VolumeName) {
           return jcr->VolumeName;
         } else {
-          return (char*)_("*None*");
+          return none;
         }
       } else {
-        return (char*)_("*None*");
+        return none;
+      }
+      break;
+    case 'O': /* Migration/copy job prev jobid */
+      if (jcr && jcr->dir_impl && jcr->dir_impl->previous_jr.JobId) {
+        return std::to_string(jcr->dir_impl->previous_jr.JobId);
+      } else {
+        return none;
+      }
+      break;
+    case 'N': /* Migration/copy job new jobid */
+      if (jcr && jcr->dir_impl && jcr->dir_impl->mig_jcr
+          && jcr->dir_impl->mig_jcr->dir_impl
+          && jcr->dir_impl->mig_jcr->dir_impl->jr.JobId) {
+        return std::to_string(jcr->dir_impl->mig_jcr->dir_impl->jr.JobId);
+      } else {
+        return none;
       }
       break;
   }
 
-  return NULL;
+  return std::nullopt;
 }
 
 /**
