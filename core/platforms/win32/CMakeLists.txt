@@ -18,7 +18,7 @@
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
-INSTALL(FILES winbareos.nsi DESTINATION ${CMAKE_INSTALL_PREFIX})
+INSTALL(FILES winbareos-native.nsi DESTINATION ${CMAKE_INSTALL_PREFIX})
 INSTALL(FILES bareos.ico bareos-config-deploy.bat fillup.sed
               clientdialog.ini databasedialog.ini directordialog.ini storagedialog.ini
         DESTINATION "${CMAKE_INSTALL_PREFIX}/win32")
