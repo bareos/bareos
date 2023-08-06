@@ -594,9 +594,9 @@ SectionIn 1 2 3 4
 
 # debug dlls
   File C:\Windows\SysWOW64\vcruntime140d.dll
-  File C:\Windows\System32\vcruntime140_1d.dll
   File C:\Windows\SysWOW64\ucrtbased.dll
   File C:\Windows\SysWOW64\msvcp140d.dll
+  File "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Redist\MSVC\14.34.31931\debug_nonredist\x64\Microsoft.VC143.DebugCRT\vcruntime140_1d.dll"
 
 
   # install configuration as templates
