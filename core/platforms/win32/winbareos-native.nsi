@@ -588,7 +588,7 @@ SectionIn 1 2 3 4
   File C:\vcpkg\packages\openssl_x64-windows\tools\openssl\openssl.exe
 #  File "sed.exe"
   File "C:\Program Files\Git\usr\bin\sed.exe"
-
+  File "C:\Program Files\Git\usr\bin\msys-intl-8.dll"
   # install unittests
 #  File "test_*.exe"
 
@@ -2082,6 +2082,7 @@ ConfDeleteSkip:
   Delete "$INSTDIR\*png*.dll"
   Delete "$INSTDIR\openssl.exe"
   Delete "$INSTDIR\sed.exe"
+  Delete "$INSTDIR\msys-intl-8.dll"
 
   Delete "$INSTDIR\bsmtp.exe"
   Delete "$INSTDIR\bregex.exe"
