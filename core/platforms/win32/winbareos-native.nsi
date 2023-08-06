@@ -1510,6 +1510,7 @@ done:
   File "/oname=$PLUGINSDIR\databasedialog.ini" "win32\databasedialog.ini"
   File "/oname=$PLUGINSDIR\openssl.exe" "C:\vcpkg\packages\openssl_x64-windows\tools\openssl\openssl.exe"
   File "/oname=$PLUGINSDIR\sed.exe" "C:\Program Files\Git\usr\bin\sed.exe"
+  File "/oname=$PLUGINSDIR\msys-intl-8.dll" "C:\Program Files\Git\usr\bin\msys-intl-8.dll"
   File "/oname=$PLUGINSDIR\iconv-2.dll" "C:\vcpkg\packages\libiconv_x64-windows\tools\libiconv\bin\iconv-2.dll"
   File "/oname=$PLUGINSDIR\libintl-8.dll" "C:\vcpkg\packages\gettext-libintl_x64-windows\bin\intl-8.dll"
 
