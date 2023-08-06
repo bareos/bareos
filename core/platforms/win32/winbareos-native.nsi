@@ -592,6 +592,13 @@ SectionIn 1 2 3 4
   # install unittests
 #  File "test_*.exe"
 
+# debug dlls
+  File C:\Windows\SysWOW64\vcruntime140d.dll
+  File C:\Windows\System32\vcruntime140_1d.dll
+  File C:\Windows\SysWOW64\ucrtbased.dll
+  File C:\Windows\SysWOW64\msvcp140d.dll
+
+
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\bareos-fd.d"
   File /r etc\bareos\bareos-fd.d\*.*
