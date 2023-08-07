@@ -555,16 +555,17 @@ SectionIn 1 2 3 4
 
   File C:\vcpkg\installed\x64-windows\debug\bin\libcrypto*.dll
   File C:\vcpkg\installed\x64-windows\debug\bin\libssl*.dll
-  File C:\vcpkg\installed\x64-windows\debug\bin\pthreadVC3d.dll"
-  File C:\vcpkg\installed\x64-windows\debug\bin\pthreadVCE3d.dll"
+  File C:\vcpkg\installed\x64-windows\debug\bin\pthreadVC3d.dll
+  File C:\vcpkg\installed\x64-windows\debug\bin\pthreadVCE3d.dll
   File C:\vcpkg\installed\x64-windows\debug\bin\zlibd1.dll
   File C:\vcpkg\installed\x64-windows\debug\bin\lzo2.dll
   File C:\vcpkg\installed\x64-windows\debug\bin\jansson_d.dll
   File C:\vcpkg\installed\x64-windows\debug\bin\iconv-2.dll
   File C:\vcpkg\installed\x64-windows\debug\bin\libxml2.dll
   File C:\vcpkg\installed\x64-windows\debug\bin\libpq.dll
-  File C:\vcpkg\installed\x64-windows\debug\bin\bz2.dll
   File C:\vcpkg\installed\x64-windows\debug\bin\intl-8.dll
+  #File C:\vcpkg\installed\x64-windows\debug\bin\bz2.dll
+  File C:\vcpkg\installed\x64-windows\debug\bin\bz2d.dll
 
   # for password generation
 #  File "openssl.exe"
@@ -868,18 +869,18 @@ SectionIn 1 2 3
   # autostart
   CreateShortCut "$SMSTARTUP\bareos-tray-monitor.lnk" "$INSTDIR\bareos-tray-monitor.exe"
   File "bin\bareos-tray-monitor.exe"
-  File "C:\vcpkg\installed\x64-windows\debug\bin\libpng16.dll"
-  File "C:\vcpkg\installed\x64-windows\debug\bin\Qt6Core.dll"
-  File "C:\vcpkg\installed\x64-windows\debug\bin\Qt6Gui.dll"
-  File "C:\vcpkg\installed\x64-windows\debug\bin\Qt6Widgets.dll"
-  File "C:\vcpkg\installed\x64-windows\debug\bin\*.dll"
-  File "C:\vcpkg\installed\x64-windows\debug\bin\freetype.dll"
+  File "C:\vcpkg\installed\x64-windows\debug\bin\libpng16d.dll"
+  File "C:\vcpkg\installed\x64-windows\debug\bin\Qt6Cored.dll"
+  File "C:\vcpkg\installed\x64-windows\debug\bin\Qt6Guid.dll"
+  File "C:\vcpkg\installed\x64-windows\debug\bin\Qt6Widgetsd.dll"
+#  File "C:\vcpkg\installed\x64-windows\debug\bin\*.dll"
+  File "C:\vcpkg\installed\x64-windows\debug\bin\freetyped.dll"
   File "C:\vcpkg\installed\x64-windows\debug\bin\intl-8.dll"
-  File "C:\vcpkg\installed\x64-windows\debug\bin\harfbuzz.dll"
-  File "C:\vcpkg\installed\x64-windows\debug\bin\pcre2-16.dll"
+  File C:\vcpkg\packages\harfbuzz_x64-windows\debug\bin\harfbuzz.dll
+  File C:\vcpkg\installed\x64-windows\debug\bin\pcre2-16d.dll
 #
   SetOutPath "$INSTDIR\platforms"
-  File "C:\vcpkg\installed\x64-windows\debug\Qt6\plugins\platforms\qwindows.dll"
+  File C:\vcpkg\installed\x64-windows\debug\Qt6\plugins\platforms\qwindowsd.dll 
 #
 #
 #  # install configuration as templates
@@ -1501,9 +1502,12 @@ done:
 
   File "/oname=$PLUGINSDIR\openssl.exe"         "C:\vcpkg\installed\x64-windows\tools\openssl\openssl.exe"
   File "/oname=$PLUGINSDIR\iconv-2.dll"         "C:\vcpkg\installed\x64-windows\debug\bin\iconv-2.dll"
-  File "/oname=$PLUGINSDIR\libintl-8.dll"       "C:\vcpkg\installed\x64-windows\debug\bin\intl-8.dll"
-  File "/oname=$PLUGINSDIR\pthreadVC3.dll"      "C:\vcpkg\installed\x64-windows\debug\bin\pthreadVC3d.dll"
-  File "/oname=$PLUGINSDIR\pthreadVCE3.dll"     "C:\vcpkg\installed\x64-windows\debug\bin\pthreadVCE3d.dll"
+  File "/oname=$PLUGINSDIR\intl-8.dll"          "C:\vcpkg\installed\x64-windows\debug\bin\intl-8.dll"
+  File "/oname=$PLUGINSDIR\pthreadVC3d.dll"     "C:\vcpkg\packages\pthreads_x64-windows\debug\bin\pthreadVC3d.dll"
+  File "/oname=$PLUGINSDIR\pthreadVCE3d.dll"    "C:\vcpkg\packages\pthreads_x64-windows\debug\bin\pthreadVCE3d.dll"
+# the following don't work, why?
+;  File "/oname=$PLUGINSDIR\pthreadVC3.dll"      "C:\vcpkg\installed\x64-windows\debug\bin\pthreadVC3d.dll
+;  File "/oname=$PLUGINSDIR\pthreadVCE3.dll"     "C:\vcpkg\installed\x64-windows\debug\bin\pthreadVCE3d.dll"
   File "/oname=$PLUGINSDIR\libcrypto-3-x64.dll" "C:\vcpkg\installed\x64-windows\debug\bin\libcrypto-3-x64.dll"
   File "/oname=$PLUGINSDIR\libssl-3-x64.dll"    "C:\vcpkg\installed\x64-windows\debug\bin\libssl-3-x64.dll"
 
