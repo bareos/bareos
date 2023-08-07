@@ -560,6 +560,7 @@ SectionIn 1 2 3 4
   File C:\vcpkg\installed\x64-windows\debug\bin\zlibd1.dll
   File C:\vcpkg\installed\x64-windows\debug\bin\lzo2.dll
   File C:\vcpkg\installed\x64-windows\debug\bin\jansson_d.dll
+  File C:\vcpkg\installed\x64-windows\bin\jansson.dll
   File C:\vcpkg\installed\x64-windows\debug\bin\iconv-2.dll
   File C:\vcpkg\installed\x64-windows\debug\bin\libxml2.dll
   File C:\vcpkg\installed\x64-windows\debug\bin\libpq.dll
@@ -572,6 +573,8 @@ SectionIn 1 2 3 4
   File C:\vcpkg\installed\x64-windows\tools\openssl\openssl.exe
 #  File "sed.exe"
   File "C:\Program Files\Git\usr\bin\sed.exe"
+  File "C:\Program Files\Git\usr\bin\msys-2.0.dll"
+  File "C:\Program Files\Git\usr\bin\msys-intl-8.dll"
 
   # install unittests
 #  File "test_*.exe"
