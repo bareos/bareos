@@ -3,15 +3,15 @@ FileSet {
   Description = "Backup all regular filesystems, determined by filesystem type."
   Include {
     Options {
-      Signature = MD5 # calculate md5 checksum per file
-      One FS = No     # change into other filessytems
+      Signature = XXH128 # calculate checksum per file
+      One FS = No        # change into other filessytems
       FS Type = btrfs
-      FS Type = ext2  # filesystems of given types will be backed up
-      FS Type = ext3  # others will be ignored
+      FS Type = ext2     # filesystems of given types will be backed up
+      FS Type = ext3     # others will be ignored
       FS Type = ext4
       FS Type = reiserfs
       FS Type = jfs
-      FS Type = vfat  # UEFI
+      FS Type = vfat     # UEFI
       FS Type = xfs
       FS Type = zfs
     }
@@ -24,6 +24,8 @@ FileSet {
     File = @workingdir@
     File = @archivedir@
     File = /proc
+    File = /dev
+    File = /sys
     File = /tmp
     File = /var/tmp
     File = /.journal

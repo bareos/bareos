@@ -30,7 +30,7 @@ Director {
   Auditing = Yes
   AuditEvents = "item11", "item12", ".*"
   # SecureEraseCommand =
-  # LogTimestampFormat =
+  # LogTimestampFormat = "%d-%b %H:%M"
   # TlsAuthenticate = No
   # TlsEnable = Yes
   TlsRequire = Yes
@@ -255,7 +255,7 @@ JobDefs {
 
 JobDefs {
   Name = "JobDefWithRunScripts"
-  # Description = 
+  # Description =
   Type = Backup
   # Protocol = Native
   # BackupFormat = "Native"
@@ -274,15 +274,15 @@ JobDefs {
   # JobToVerify = ""
   # Catalog = ""
   # JobDefs = ""
-  # Run = 
-  # Where = 
-  # RegexWhere = 
-  # StripPrefix = 
-  # AddPrefix = 
-  # AddSuffix = 
-  # Bootstrap = 
+  # Run =
+  # Where =
+  # RegexWhere =
+  # StripPrefix =
+  # AddPrefix =
+  # AddSuffix =
+  # Bootstrap =
   WriteBootstrap = "/var/lib/bareos/%c.bsr"
-  # WriteVerifyList = 
+  # WriteVerifyList =
   # Replace = Always
   # MaximumBandwidth = 0
   # MaxRunSchedTime = 0
@@ -308,11 +308,11 @@ JobDefs {
   # PreferMountedVolumes = Yes
   # MaximumConcurrentJobs = 1
   # RescheduleOnError = No
-  # RescheduleInterval = 30 minutes 
+  # RescheduleInterval = 30 minutes
   # RescheduleTimes = 5
   # Priority = 10
   # AllowMixedPriority = No
-  # SelectionPattern = 
+  # SelectionPattern =
   ClientRunBeforeJob = "/tmp/JobDefClientRunBeforeJob1.sh"
   ClientRunBeforeJob = "/tmp/JobDefClientRunBeforeJob2.sh"
   ClientRunAfterJob = "/tmp/JobDefClientRunAfterJob1"
@@ -345,10 +345,10 @@ JobDefs {
   # CancelRunningDuplicates = No
   # SaveFileHistory = Yes
   # FileHistorySize = 9 m 549 k 640
-  # FdPluginOptions = 
-  # SdPluginOptions = 
-  # DirPluginOptions = 
-  # Base = 
+  # FdPluginOptions =
+  # SdPluginOptions =
+  # DirPluginOptions =
+  # Base =
   # MaxConcurrentCopies = 100
   # AlwaysIncremental = No
   # AlwaysIncrementalJobRetention = 0
@@ -1035,7 +1035,7 @@ Job {
 
 Job {
   Name = "job-only-with-jobdefs-runscripts"
-  # Description = 
+  # Description =
   # Type = Backup
   # Protocol = Native
   # BackupFormat = "Native"
@@ -1054,15 +1054,15 @@ Job {
   # JobToVerify = ""
   # Catalog = ""
   JobDefs = "JobDefWithRunScripts"
-  # Run = 
-  # Where = 
-  # RegexWhere = 
-  # StripPrefix = 
-  # AddPrefix = 
-  # AddSuffix = 
-  # Bootstrap = 
+  # Run =
+  # Where =
+  # RegexWhere =
+  # StripPrefix =
+  # AddPrefix =
+  # AddSuffix =
+  # Bootstrap =
   # WriteBootstrap = "/var/lib/bareos/%c.bsr"
-  # WriteVerifyList = 
+  # WriteVerifyList =
   # Replace = Always
   # MaximumBandwidth = 0
   # MaxRunSchedTime = 0
@@ -1088,11 +1088,11 @@ Job {
   # PreferMountedVolumes = Yes
   # MaximumConcurrentJobs = 1
   # RescheduleOnError = No
-  # RescheduleInterval = 30 minutes 
+  # RescheduleInterval = 30 minutes
   # RescheduleTimes = 5
   # Priority = 10
   # AllowMixedPriority = No
-  # SelectionPattern = 
+  # SelectionPattern =
   # ClientRunBeforeJob = "/tmp/JobDefClientRunBeforeJob1.sh"
   # ClientRunBeforeJob = "/tmp/JobDefClientRunBeforeJob2.sh"
   # ClientRunAfterJob = "/tmp/JobDefClientRunAfterJob1"
@@ -1125,10 +1125,10 @@ Job {
   # CancelRunningDuplicates = No
   # SaveFileHistory = Yes
   # FileHistorySize = 9 m 549 k 640
-  # FdPluginOptions = 
-  # SdPluginOptions = 
-  # DirPluginOptions = 
-  # Base = 
+  # FdPluginOptions =
+  # SdPluginOptions =
+  # DirPluginOptions =
+  # Base =
   # MaxConcurrentCopies = 100
   # AlwaysIncremental = No
   # AlwaysIncrementalJobRetention = 0
@@ -1140,7 +1140,7 @@ Job {
 
 Job {
   Name = "job-with-jobdefs-runscripts"
-  # Description = 
+  # Description =
   # Type = Backup
   # Protocol = Native
   # BackupFormat = "Native"
@@ -1159,15 +1159,15 @@ Job {
   # JobToVerify = ""
   # Catalog = ""
   JobDefs = "JobDefWithRunScripts"
-  # Run = 
-  # Where = 
-  # RegexWhere = 
-  # StripPrefix = 
-  # AddPrefix = 
-  # AddSuffix = 
-  # Bootstrap = 
+  # Run =
+  # Where =
+  # RegexWhere =
+  # StripPrefix =
+  # AddPrefix =
+  # AddSuffix =
+  # Bootstrap =
   # WriteBootstrap = "/var/lib/bareos/%c.bsr"
-  # WriteVerifyList = 
+  # WriteVerifyList =
   # Replace = Always
   # MaximumBandwidth = 0
   # MaxRunSchedTime = 0
@@ -1193,11 +1193,11 @@ Job {
   # PreferMountedVolumes = Yes
   # MaximumConcurrentJobs = 1
   # RescheduleOnError = No
-  # RescheduleInterval = 30 minutes 
+  # RescheduleInterval = 30 minutes
   # RescheduleTimes = 5
   # Priority = 10
   # AllowMixedPriority = No
-  # SelectionPattern = 
+  # SelectionPattern =
   RunScript {
     Command = "/tmp/RunScriptCommandBeforeOnClient.sh"
     RunsWhen = "before"
@@ -1246,10 +1246,10 @@ Job {
   # CancelRunningDuplicates = No
   # SaveFileHistory = Yes
   # FileHistorySize = 9 m 549 k 640
-  # FdPluginOptions = 
-  # SdPluginOptions = 
-  # DirPluginOptions = 
-  # Base = 
+  # FdPluginOptions =
+  # SdPluginOptions =
+  # DirPluginOptions =
+  # Base =
   # MaxConcurrentCopies = 100
   # AlwaysIncremental = No
   # AlwaysIncrementalJobRetention = 0
@@ -1341,6 +1341,7 @@ FileSet {
       Exclude = Yes
       AclSupport = Yes
       XattrSupport = Yes
+      HardLinks = No
       WildDir = "[A-Z]:/RECYCLER"
       WildDir = "[A-Z]:/$RECYCLE.BIN"
       WildDir = "[A-Z]:/System Volume Information"
@@ -1359,6 +1360,7 @@ FileSet {
       Signature = "MD5"
       AclSupport = Yes
       XattrSupport = Yes
+      HardLinks = No
     }
     File = "/usr/sbin"
   }
@@ -1373,6 +1375,7 @@ FileSet {
       OneFS = No
       AclSupport = Yes
       XattrSupport = Yes
+      HardLinks = No
       FsType = "btrfs"
       FsType = "ext2"
       FsType = "ext3"
@@ -1404,6 +1407,7 @@ FileSet {
       Signature = "MD5"
       AclSupport = Yes
       XattrSupport = Yes
+      HardLinks = No
     }
     File = "/var/lib/bareos/bareos.sql"
     File = "/etc/bareos"
@@ -1418,6 +1422,7 @@ FileSet {
       Signature = "MD5"
       AclSupport = Yes
       XattrSupport = Yes
+      HardLinks = No
     }
     File = "/tmp/dir"
     File = "\<includefile-server"
@@ -1434,6 +1439,7 @@ FileSet {
     Options {
       AclSupport = Yes
       XattrSupport = Yes
+      HardLinks = No
     }
     File = "/tmp/dir11"
   }
@@ -1441,6 +1447,7 @@ FileSet {
     Options {
       AclSupport = Yes
       XattrSupport = Yes
+      HardLinks = No
     }
     File = "/tmp/dir22"
   }
@@ -1454,6 +1461,7 @@ FileSet {
       Signature = "MD5"
       AclSupport = Yes
       XattrSupport = Yes
+      HardLinks = No
       Wild = "/tmp/data/*1/*"
       WildDir = "/tmp/data/*1"
     }
@@ -1462,6 +1470,7 @@ FileSet {
       Compression = "GZIP3"
       AclSupport = Yes
       XattrSupport = Yes
+      HardLinks = No
       Wild = "/tmp/data/*2/*"
       Wild = "/tmp/data/*22/*"
       WildDir = "/tmp/data/*2"
@@ -1473,6 +1482,7 @@ FileSet {
     Options {
       AclSupport = Yes
       XattrSupport = Yes
+      HardLinks = No
     }
     File = "/tmp/dir22"
   }
@@ -1486,6 +1496,7 @@ FileSet {
       Signature = "MD5"
       AclSupport = Yes
       XattrSupport = Yes
+      HardLinks = No
     }
     File = "/tmp/dir11"
     File = "/tmp/dir12"
@@ -1499,6 +1510,7 @@ FileSet {
       Signature = "MD5"
       AclSupport = Yes
       XattrSupport = Yes
+      HardLinks = No
     }
     File = "/tmp/dir21"
     File = "/tmp/dir22"

@@ -34,7 +34,7 @@ Command plugins are used to replace or extend the FileSet definition in the File
      Name = "mysql"
      Include {
        Options {
-         Signature = MD5
+         Signature = XXH128
        }
        Plugin = "python3"
                 ":module_path=/usr/lib/bareos/plugins"
@@ -61,7 +61,7 @@ Example:
      Name = "option"
      Include {
        Options {
-         Signature = MD5
+         Signature = XXH128
          Plugin = "python3"
                   ":module_path=/usr/lib/bareos/plugins"
                   ":module_name=bareos_option_example"

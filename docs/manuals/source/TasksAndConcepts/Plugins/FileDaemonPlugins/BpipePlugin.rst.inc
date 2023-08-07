@@ -21,8 +21,8 @@ The bpipe plugin is specified in the Include section of your Job’s FileSet res
      Name = "MyFileSet"
      Include {
        Options {
-         signature = MD5
-         compression = gzip
+         Signature = XXH128
+         Compression = LZ4
        }
        Plugin = "bpipe"
                 ":file=<filepath>"

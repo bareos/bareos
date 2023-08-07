@@ -3,7 +3,7 @@ FileSet {
   Description = "Backup the catalog dump and Bareos configuration files."
   Include {
     Options {
-      signature = MD5
+      Signature = XXH128
     }
     File = "@workingdir@/@db_name@.sql" # database dump
     File = "@confdir@"                  # configuration

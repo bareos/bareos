@@ -168,7 +168,7 @@ expect_grep "0	0	A A A A A A A A A A A A A A	/" \
             "$tmp"/virtualfull.out \
             "bvfs_update did not take into consideration VirtualFull Archive."
 
-expect_grep "43xzp14Dk2Gvm+cKgszDNQ	AI-Longterm" \
+expect_grep "x9mlMotNz6zXMPiL2rDLrg	AI-Longterm" \
             "$tmp"/virtualfull.out \
             ".bvfs_versions did not find a file backup up by a VirtualFull Archive."
 

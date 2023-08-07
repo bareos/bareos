@@ -47,7 +47,7 @@ Configuration of Libcloud Plugin
      Description = "Test the Plugin functionality with a Python Plugin."
      Include {
        Options {
-         signature = MD5
+         Signature = XXH128
        }
        Plugin = "python"
                 ":module_name=bareos-fd-libcloud"

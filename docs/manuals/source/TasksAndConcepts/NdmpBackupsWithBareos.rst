@@ -736,7 +736,11 @@ Let us have a look what files are in our backup:
     /ifs/home/admin/
     /ifs/home/admin/.zshrc
 
-The real backup data is stored in the file :file:`/@NDMP/ifs/home%0` (we will refer to it as "NDMP main backup file" or "main backup file" later on). One NDMP main backup file is created for every directory specified in the used Fileset. The other files show the file history and are hardlinks to the backup file.
+The real backup data is stored in the file :file:`/@NDMP/ifs/home%0` (we will
+refer to it as "NDMP main backup file" or "main backup file" later on). One 
+NDMP main backup file is created for every directory specified in the used 
+Fileset. The other files show the file history and are hard links to the backup
+file.
 
 Run NDMP Restore
 ~~~~~~~~~~~~~~~~
@@ -1101,11 +1105,13 @@ NDMP Job limitations when scanning in volumes
 
 :index:`\ <single: NDMP; File History>`
 
-For NDMP jobs, all data is stored into a single big file. The file and directory information (File History in NDMP Terms) is stored as hardlinks to this big file.
+For NDMP jobs, all data is stored into a single big file. The file and directory
+information (File History in NDMP Terms) is stored as hard links to this big
+file.
 
 .. limitation:: NDMP: File information are not available in the Bareos backup stream.
 
-   As hardlink information is only stored in the Bareos database, but not int the backup stream itself, it is not possible to recover the file history information from the NDMP stream with :command:`bscan`.
+   As hard link information is only stored in the Bareos database, but not int the backup stream itself, it is not possible to recover the file history information from the NDMP stream with :command:`bscan`.
 
    As storing the database dump for disaster recovery and storing the bootstrap file offsite is recommended  anyway (see :ref:`section-before-disaster`), this should be not a big problem in correctly setup environments.
 

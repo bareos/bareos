@@ -134,7 +134,7 @@ example to backup the VM **testvm1**, configure the fileset as follows:
 
       Include {
          Options {
-            signature = MD5
+            Signature = XXH128
             Compression = LZ4
          }
          Plugin = "python"
@@ -172,7 +172,7 @@ Optionally, it is possible to use a configuration file on the system running the
 
       Include {
          Options {
-            signature = MD5
+            Signature = XXH128
             Compression = LZ4
          }
          Plugin = "python"

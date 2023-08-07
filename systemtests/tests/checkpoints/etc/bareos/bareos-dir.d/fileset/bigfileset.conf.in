@@ -3,7 +3,7 @@ FileSet {
   Description = "fileset that contains the systemtest directory of the source directory"
   Include {
     Options {
-      Signature = MD5 # calculate md5 checksum per file
+      Signature = XXH128
       fstype = ext2
       fstype = ext3
       fstype = ext4

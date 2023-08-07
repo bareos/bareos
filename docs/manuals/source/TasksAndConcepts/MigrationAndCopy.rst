@@ -248,7 +248,7 @@ Example:
      Name = None
      Include {
        Options {
-         signature = MD5
+         Signature = XXH128
        }
      }
    }

@@ -1151,21 +1151,41 @@ The directives within an Options resource may be one of the following:
 .. config:option:: dir/fileset/include/options/HardLinks
 
    :type: yes|no
-   :default: yes
+   :default: no
 
+   .. warning::
 
-   When enabled (default), this directive will cause hard links to be
-   backed up. However, the File daemon keeps track of hard linked files and
-   will backup the data only once. The process of keeping track of the
-   hard links can be quite expensive if you have lots of them (tens of
-   thousands or more). This doesn't occur on normal Unix systems, but if
-   you use a program like BackupPC, it can create hundreds of thousands, or
-   even millions of hard links. Backups become very long and the File daemon
-   will consume a lot of CPU power checking hard links.  In such a case,
-   set :config:option:`dir/fileset/include/options/HardLinks = no`
-   and hard links will not be backed up.  Note, using
-   this option will most likely backup more data and on a restore the file
-   system will not be restored identically to the original.
+      Since :sinceVersion:`23.0.0: fileset keep hard links option switched from yes to no`
+      the default is :strong:`no`.
+
+   When disabled, Bareos will backup each file individually and restore them as
+   unrelated files as well. The fact that the files were hard links will be
+   lost.
+
+   When enabled, this directive will cause hard links to be backed up as hard
+   links. For each set of hard links, the file daemon will only backup the file
+   contents once -- when it encounters the first file of that set -- and only
+   backup meta data and a reference to that first file for each subsequent file
+   in that set.
+
+   Be aware that the process of keeping track of the hard links can be quite
+   expensive if you have lots of them (tens of thousands or more). Backups
+   become very long and the File daemon will consume a lot of CPU power
+   checking hard links.
+
+   See related performance option like :config:option:`dir/director/OptimizeForSize`
+
+   .. note::
+
+      If you created backups with :config:option:`dir/fileset/include/options/HardLinks = yes`
+      you should only ever restore all files in that set of hard links at once
+      or not restore any of them.
+      If you were to restore a file inside that set, which was not the file
+      with the contents attached, then Bareos will not restore its data, but
+      instead just try to link with the file it references and restore its meta
+      data.
+      This means that the newly restored file might not actually have the same
+      contents as when it was backed up.
 
 .. config:option:: dir/fileset/include/options/Wild
 
@@ -1545,7 +1565,7 @@ The directives within an Options resource may be one of the following:
         Name = "Test Set"
         Include {
           Options {
-            signature = MD5
+            Signature = XXH128
             shadowing = localwarn
           }
           File = /
@@ -1906,7 +1926,7 @@ The following example demonstrates a Windows FileSet. It backups all data from a
      Enable VSS = yes
      Include {
        Options {
-         Signature = MD5
+         Signature = XXH128
          Drive Type = fixed
          IgnoreCase = yes
          WildFile = "[A-Z]:/pagefile.sys"

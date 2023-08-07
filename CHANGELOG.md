@@ -18,6 +18,10 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
      * Pid Directory
      * Compatible
 
+- The following configuration defaults have changed:
+   * Director daemon
+     * Hard Links (Dir->Fileset->Include->Options) = no (was yes)
+
 ### Changed
 - VMware Plugin: introduce pyVmomi 8.x compatibility [PR #1352]
 - devtools: add `pr-tool` to automate PR review and merge [PR #935]
@@ -81,6 +85,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - dird: cats: abort purge when there are no eligible jobids [PR #1512]
 - dird: show current and allowed console connections [PR #1487]
 - dird: add prev and new jobid variables [PR #1499]
+- improve default configuration [PR #1508]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -213,5 +218,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1502]: https://github.com/bareos/bareos/pull/1502
 [PR #1503]: https://github.com/bareos/bareos/pull/1503
 [PR #1507]: https://github.com/bareos/bareos/pull/1507
+[PR #1508]: https://github.com/bareos/bareos/pull/1508
 [PR #1512]: https://github.com/bareos/bareos/pull/1512
 [unreleased]: https://github.com/bareos/bareos/tree/master

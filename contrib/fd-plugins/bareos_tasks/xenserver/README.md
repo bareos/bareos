@@ -33,8 +33,8 @@ FileSet {
     Name = "client-data"
         Include  {
             Options {
-                compression = LZO
-                signature = MD5
+                Signature = XXH128
+                Compression = LZ4
             }
             Plugin = "python:"
                      "module_path=/usr/lib/bareos/plugins:"

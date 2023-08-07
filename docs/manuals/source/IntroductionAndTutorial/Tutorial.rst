@@ -156,7 +156,7 @@ At this point, enter the :bcommand:`show filesets` and you should get something 
      Name = "SelfTest"
      Include {
        Options {
-         Signature = MD5
+         Signature = XXH128
        }
        File = "/usr/sbin"
      }
@@ -166,7 +166,7 @@ At this point, enter the :bcommand:`show filesets` and you should get something 
      Name = "Catalog"
      Include {
        Options {
-         Signature = MD5
+         Signature = XXH128
        }
        File = "/var/lib/bareos/bareos.sql"
        File = "/etc/bareos"
