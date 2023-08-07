@@ -553,39 +553,22 @@ SectionIn 1 2 3 4
   File  lib\bareos\bareoslmdb.dll
   File  lib\bareos\bareossql.dll
 
-  File C:\vcpkg\packages\openssl_x64-windows\bin\libcrypto*.dll
- #  File libgcc_s_*-1.dll
-  File C:\vcpkg\packages\openssl_x64-windows\bin\libssl*.dll
-  #File libstdc++-6.dll
-  #File libwinpthread-1.dll
-  File "C:\vcpkg\installed\x64-windows\bin\pthreadVC3.dll"
-  File "C:\vcpkg\installed\x64-windows\bin\pthreadVCE3.dll"
-
-  File "C:\vcpkg\installed\x64-windows\debug\bin\pthreadVC3d.dll"
-  File "C:\vcpkg\installed\x64-windows\debug\bin\pthreadVCE3d.dll"
-
-  File c:\vcpkg\packages\zlib_x64-windows\bin\zlib1.dll
-  File c:\vcpkg\packages\zlib_x64-windows\debug\bin\zlibd1.dll
-
-  File c:\vcpkg\packages\lzo_x64-windows\bin\lzo2.dll
-  #File libjansson-4.dll
-  File C:\vcpkg\packages\jansson_x64-windows\bin\jansson.dll
- # File iconv.dll
-  File C:\vcpkg\packages\libiconv_x64-windows\tools\libiconv\bin\iconv-2.dll
- # File libxml2-2.dll
-  File C:\vcpkg\packages\libxml2_x64-windows\bin\libxml2.dll
- # File libpq.dll
-  File C:\vcpkg\packages\libpq_x64-windows\bin\libpq.dll
- # File libpcre-1.dll
- # File libbz2-1.dll
-  File C:\vcpkg\packages\bzip2_x64-windows\bin\bz2.dll
-#  File libssp-0.dll
-  File C:\vcpkg\packages\gettext-libintl_x64-windows\bin\intl-8.dll
-#  File libintl-8.dll
+  File C:\vcpkg\installed\x64-windows\debug\bin\libcrypto*.dll
+  File C:\vcpkg\installed\x64-windows\debug\bin\libssl*.dll
+  File C:\vcpkg\installed\x64-windows\debug\bin\pthreadVC3d.dll"
+  File C:\vcpkg\installed\x64-windows\debug\bin\pthreadVCE3d.dll"
+  File C:\vcpkg\installed\x64-windows\debug\bin\zlibd1.dll
+  File C:\vcpkg\installed\x64-windows\debug\bin\lzo2.dll
+  File C:\vcpkg\installed\x64-windows\debug\bin\jansson_d.dll
+  File C:\vcpkg\installed\x64-windows\debug\bin\iconv-2.dll
+  File C:\vcpkg\installed\x64-windows\debug\bin\libxml2.dll
+  File C:\vcpkg\installed\x64-windows\debug\bin\libpq.dll
+  File C:\vcpkg\installed\x64-windows\debug\bin\bz2.dll
+  File C:\vcpkg\installed\x64-windows\debug\bin\intl-8.dll
 
   # for password generation
 #  File "openssl.exe"
-  File C:\vcpkg\packages\openssl_x64-windows\tools\openssl\openssl.exe
+  File C:\vcpkg\installed\x64-windows\tools\openssl\openssl.exe
 #  File "sed.exe"
   File "C:\Program Files\Git\usr\bin\sed.exe"
 
@@ -606,7 +589,6 @@ SectionIn 1 2 3 4
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\client\"
   File etc\bareos\tray-monitor.d\client\FileDaemon-local.conf
-  
 
   SetOutPath "$APPDATA\${PRODUCT_NAME}"
   File "win32\fillup.sed"
@@ -886,18 +868,18 @@ SectionIn 1 2 3
   # autostart
   CreateShortCut "$SMSTARTUP\bareos-tray-monitor.lnk" "$INSTDIR\bareos-tray-monitor.exe"
   File "bin\bareos-tray-monitor.exe"
-  File "C:\vcpkg\packages\libpng_x64-windows\bin\libpng16.dll"
-  File "C:\vcpkg\packages\qtbase_x64-windows\bin\Qt6Core.dll"
-  File "C:\vcpkg\packages\qtbase_x64-windows\bin\Qt6Gui.dll"
-  File "C:\vcpkg\packages\qtbase_x64-windows\bin\Qt6Widgets.dll"
-  File "C:\vcpkg\packages\icu_x64-windows\bin\*.dll"
-  File "C:\vcpkg\packages\freetype_x64-windows\bin\freetype.dll"
-  File "C:\vcpkg\packages\gettext-libintl_x64-windows\bin\intl-8.dll"
-  File "C:\vcpkg\packages\harfbuzz_x64-windows\bin\harfbuzz.dll"
-  File "C:\vcpkg\packages\pcre2_x64-windows\bin\pcre2-16.dll"
+  File "C:\vcpkg\installed\x64-windows\debug\bin\libpng16.dll"
+  File "C:\vcpkg\installed\x64-windows\debug\bin\Qt6Core.dll"
+  File "C:\vcpkg\installed\x64-windows\debug\bin\Qt6Gui.dll"
+  File "C:\vcpkg\installed\x64-windows\debug\bin\Qt6Widgets.dll"
+  File "C:\vcpkg\installed\x64-windows\debug\bin\*.dll"
+  File "C:\vcpkg\installed\x64-windows\debug\bin\freetype.dll"
+  File "C:\vcpkg\installed\x64-windows\debug\bin\intl-8.dll"
+  File "C:\vcpkg\installed\x64-windows\debug\bin\harfbuzz.dll"
+  File "C:\vcpkg\installed\x64-windows\debug\bin\pcre2-16.dll"
 #
   SetOutPath "$INSTDIR\platforms"
-  File "C:\vcpkg\packages\qtbase_x64-windows\Qt6\plugins\platforms\qwindows.dll"
+  File "C:\vcpkg\installed\x64-windows\debug\Qt6\plugins\platforms\qwindows.dll"
 #
 #
 #  # install configuration as templates
@@ -1002,7 +984,7 @@ SectionIn 2 3
   CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\bconsole.lnk" "$INSTDIR\bconsole.exe"
 
   File "sbin\bconsole.exe"
-  File C:\vcpkg\packages\readline-win32_x64-windows\bin\readline.dll
+  File C:\vcpkg\installed\x64-windows\debug\bin\readline.dll
   !insertmacro InstallConfFile "bconsole.conf"
   #Rename  "$PLUGINSDIR\bconsole.conf"   "$INSTDIR\defaultconfigs\bconsole.conf"
 
@@ -1511,20 +1493,19 @@ done:
   ClearErrors
 
   InitPluginsDir
-  File "/oname=$PLUGINSDIR\storagedialog.ini" "win32\storagedialog.ini"
-  File "/oname=$PLUGINSDIR\clientdialog.ini" "win32\clientdialog.ini"
-  File "/oname=$PLUGINSDIR\directordialog.ini" "win32\directordialog.ini"
-  File "/oname=$PLUGINSDIR\databasedialog.ini" "win32\databasedialog.ini"
-  File "/oname=$PLUGINSDIR\openssl.exe" "C:\vcpkg\packages\openssl_x64-windows\tools\openssl\openssl.exe"
-  File "/oname=$PLUGINSDIR\sed.exe" "C:\Program Files\Git\usr\bin\sed.exe"
-  File "/oname=$PLUGINSDIR\iconv-2.dll" "C:\vcpkg\packages\libiconv_x64-windows\tools\libiconv\bin\iconv-2.dll"
-  File "/oname=$PLUGINSDIR\libintl-8.dll" "C:\vcpkg\packages\gettext-libintl_x64-windows\bin\intl-8.dll"
+  File "/oname=$PLUGINSDIR\storagedialog.ini"   "win32\storagedialog.ini"
+  File "/oname=$PLUGINSDIR\clientdialog.ini"    "win32\clientdialog.ini"
+  File "/oname=$PLUGINSDIR\directordialog.ini"  "win32\directordialog.ini"
+  File "/oname=$PLUGINSDIR\databasedialog.ini"  "win32\databasedialog.ini"
+  File "/oname=$PLUGINSDIR\sed.exe"             "C:\Program Files\Git\usr\bin\sed.exe"
 
-  File "/oname=$PLUGINSDIR\pthreadVC3.dll" "C:\vcpkg\installed\x64-windows\bin\pthreadVC3.dll"
-  File "/oname=$PLUGINSDIR\pthreadVCE3.dll" "C:\vcpkg\installed\x64-windows\bin\pthreadVCE3.dll"
-
-  File "/oname=$PLUGINSDIR\libcrypto-3-x64.dll" "C:\vcpkg\packages\openssl_x64-windows\bin\libcrypto-3-x64.dll"
-  File "/oname=$PLUGINSDIR\libssl-3-x64.dll" "C:\vcpkg\packages\openssl_x64-windows\bin\libssl-3-x64.dll"
+  File "/oname=$PLUGINSDIR\openssl.exe"         "C:\vcpkg\installed\x64-windows\tools\openssl\openssl.exe"
+  File "/oname=$PLUGINSDIR\iconv-2.dll"         "C:\vcpkg\installed\x64-windows\debug\bin\iconv-2.dll"
+  File "/oname=$PLUGINSDIR\libintl-8.dll"       "C:\vcpkg\installed\x64-windows\debug\bin\intl-8.dll"
+  File "/oname=$PLUGINSDIR\pthreadVC3.dll"      "C:\vcpkg\installed\x64-windows\debug\bin\pthreadVC3d.dll"
+  File "/oname=$PLUGINSDIR\pthreadVCE3.dll"     "C:\vcpkg\installed\x64-windows\debug\bin\pthreadVCE3d.dll"
+  File "/oname=$PLUGINSDIR\libcrypto-3-x64.dll" "C:\vcpkg\installed\x64-windows\debug\bin\libcrypto-3-x64.dll"
+  File "/oname=$PLUGINSDIR\libssl-3-x64.dll"    "C:\vcpkg\installed\x64-windows\debug\bin\libssl-3-x64.dll"
 
   #
   #
