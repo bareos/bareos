@@ -304,7 +304,8 @@ As of https://kb.vmware.com/s/article/2075984 manually enabling CBT is currently
    usage: vmware_cbt_tool.py [-h] -s HOST [-o PORT] -u USER [-p PASSWORD] -d
                              DATACENTER [-f FOLDER] [-v VMNAME]
                              [--vm-uuid VM_UUID] [--enablecbt] [--disablecbt]
-                             [--resetcbt] [--info] [--listall]
+                             [--resetcbt] [--info] [--listall] [--sslverify]
+                             [--dumpvmconfig]
 
    Process args for enabling/disabling/resetting CBT
 
@@ -329,9 +330,18 @@ As of https://kb.vmware.com/s/article/2075984 manually enabling CBT is currently
                            disabled)
      --listall             List all VMs in the given datacenter with UUID and
                            containing folder
+     --sslverify           Force SSL certificate verification
+     --dumpvmconfig        Dump VM config metadata to JSON file
 
-Note: the options :command:`--vm-uuid` and :command:`--listall` have been added in version :sinceVersion:`17.2.8: VMware Plugin: new options in vmware\_cbt\_tool.py`, the tool is also able now to process non-ascii character arguments for the :command:`--folder` and :command:`--vmname` arguments and vApp names can be used like folder name components. With :command:`--listall` all VMs in the given datacenter are reported
-in a tabular output including instance UUID and containing Folder/vApp name.
+Note: the options :command:`--vm-uuid` and :command:`--listall` have been added in version :sinceVersion:`17.2.8: VMware Plugin: new options in vmware\_cbt\_tool.py`, the tool is also able now to process non-ascii character arguments for the :command:`--folder` and :command:`--vmname` arguments and vApp names can be used like folder name components.
+With :command:`--listall` all VMs in the given datacenter are reported in a tabular output including instance UUID and containing Folder/vApp name.
+
+Without the option :command:`--sslverify` also self-signed SSL certificates will
+be accepted, but a warning message will be emitted in this case.
+
+The option :command:`--dumpvmconfig` is helpful to debug issues with the transformation
+of VM config metadata for recreating virtual machines.
+The JSON file will be written to the current working directory when this option is used.
 
 For the above configuration example, the command to enable CBT would be
 
