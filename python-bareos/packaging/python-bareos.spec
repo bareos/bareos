@@ -20,28 +20,7 @@
 
 %global srcname bareos
 
-
-%define python2_build_requires python-rpm-macros python2-devel python2-setuptools
 %define python3_build_requires python-rpm-macros python3-devel python3-setuptools
-
-%if 0%{?rhel} > 0 && 0%{?rhel} <= 6
-%define skip_python3 1
-%define python2_build_requires python-rpm-macros python2-rpm-macros python-devel python-setuptools
-%endif
-
-%if 0%{?fedora} >= 35 || 0%{?rhel_version} >= 900 || 0%{?suse_version} >= 1550 || 0%{?sle_version} >= 150400
-%define skip_python2 1
-%endif
-
-%define python2_extra_package 1
-
-%if 0%{?rhel} > 0 && 0%{?rhel} <= 7
-%define python2_extra_package 0
-%endif
-
-%if 0%{?sle_version} <= 120000
-%define python2_extra_package 0
-%endif
 
 
 Name:           python-%{srcname}
@@ -65,27 +44,6 @@ It also includes some tools based on this module.}
 
 %description %_description
 
-
-%if ! 0%{?skip_python2}
-
-%if 0%{?python2_extra_package}
-
-%package -n python2-%{srcname}
-Summary:        %{summary}
-BuildRequires:  %{python2_build_requires}
-%{?python_provide:%python_provide python2-%{srcname}}
-
-%description -n python2-%{srcname} %_description
-
-%endif
-# python2_extra_package
-
-%endif
-# skip_python2
-
-
-%if ! 0%{?skip_python3}
-
 %package -n python3-%{srcname}
 Summary:        %{summary}
 BuildRequires:  %{python3_build_requires}
@@ -93,17 +51,11 @@ BuildRequires:  %{python3_build_requires}
 
 %description -n python3-%{srcname} %_description
 
-%endif
-# skip_python3
 
 %prep
-#%%autosetup -n %%{srcname}-%%{version}
 %setup -q
 
 %build
-%if ! 0%{?skip_python2}
-%py2_build
-%endif
 
 %if ! 0%{?skip_python3}
 %py3_build
@@ -111,12 +63,6 @@ BuildRequires:  %{python3_build_requires}
 
 
 %install
-# Must do the python2 install first because the scripts in /usr/bin are
-# overwritten with every setup.py install, and in general we want the
-# python3 version to be the default.
-%if ! 0%{?skip_python2}
-%py2_install
-%endif
 
 %if ! 0%{?skip_python3}
 %py3_install
@@ -126,38 +72,14 @@ BuildRequires:  %{python3_build_requires}
 %check
 # This does not work,
 # as "test" tries to download other packages from pip.
-#%%{__python2} setup.py test
 #%%{__python3} setup.py test
 
-
-%if ! 0%{?skip_python2}
-%if ! 0%{?python2_extra_package}
-%files
-%else
-%files -n python2-%{srcname}
-%endif
-# python2_extra_package
-%defattr(-,root,root,-)
-%doc README.rst
-%{python2_sitelib}/%{srcname}/
-%{python2_sitelib}/python_%{srcname}-*.egg-info/
-# Include binaries only if no python3 package will be build.
-%if 0%{?skip_python3}
-%{_bindir}/*
-%endif
-%endif
-# skip_python2
-
-
-%if ! 0%{?skip_python3}
 %files -n python3-%{srcname}
 %defattr(-,root,root,-)
 %doc README.rst
 %{python3_sitelib}/%{srcname}/
 %{python3_sitelib}/python_%{srcname}-*.egg-info/
 %{_bindir}/*
-%endif
-# skip_python3
 
 
 %changelog
