@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -48,8 +48,6 @@
 #include "plugins/include/common.h"  // for Dmsg Macro
 
 #include "plugins/dird/python/plugin_private_context.h"
-
-#include "plugins/include/python3compat.h"
 
 #define BAREOSDIR_MODULE
 #include "bareosdir.h"

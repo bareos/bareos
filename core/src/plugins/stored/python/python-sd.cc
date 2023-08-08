@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2014 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -48,7 +48,6 @@
 #define LOGPREFIX PLUGIN_NAME "-" PLUGIN_DAEMON ": "
 
 #include "stored/stored.h"
-#include "plugins/include/python3compat.h"
 
 #include "python-sd.h"
 #include "module/bareossd.h"
@@ -264,8 +263,6 @@ static bRC newPlugin(PluginContext* plugin_ctx)
    */
   bareos_core_functions->registerBareosEvents(plugin_ctx, 1,
                                               bSdEventNewPluginOptions);
-
-#include "plugins/include/joblog_warn_about_python2_deprecation.inc"
 
   return bRC_OK;
 }

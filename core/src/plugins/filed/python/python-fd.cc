@@ -47,7 +47,6 @@
 #define LOGPREFIX PLUGIN_NAME "-" PLUGIN_DAEMON ": "
 
 #include "filed/fd_plugins.h"
-#include "plugins/include/python3compat.h"
 
 #include "include/filetypes.h"
 #include "python-fd.h"
@@ -238,8 +237,6 @@ static bRC newPlugin(PluginContext* plugin_ctx)
       plugin_ctx, 9, bEventLevel, bEventSince, bEventNewPluginOptions,
       bEventPluginCommand, bEventJobStart, bEventRestoreCommand,
       bEventEstimateCommand, bEventBackupCommand, bEventRestoreObject);
-
-#include "plugins/include/joblog_warn_about_python2_deprecation.inc"
 
   return bRC_OK;
 }

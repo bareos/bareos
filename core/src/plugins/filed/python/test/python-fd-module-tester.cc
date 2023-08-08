@@ -26,7 +26,6 @@
 #endif
 
 #include "Python.h"
-#include "plugins/include/python3compat.h"
 #include <inttypes.h>
 class PoolMem;
 #define NbytesForBits(n) ((((n)-1) >> 3) + 1)
