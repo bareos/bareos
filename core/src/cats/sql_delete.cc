@@ -125,6 +125,26 @@ static int DeleteHandler(void* ctx, int, char** row)
   return 0;
 }
 
+/**
+ * Delete all NullJobMedia records for this job
+ * Returns: -1 on failure
+ *          n>=0 on success,
+ *               where n is the number of rows affected
+ */
+int BareosDb::DeleteNullJobmediaRecords(JobControlRecord* jcr,
+                                        std::uint32_t jobid)
+{
+  DbLocker _{this};
+
+  Mmsg(cmd,
+       "DELETE FROM jobmedia WHERE jobid=%u AND firstindex=0 AND lastindex=0",
+       jobid);
+  Dmsg1(200, "DeleteNullJobmediaRecords: %s\n", cmd);
+
+  int numrows = DELETE_DB(jcr, cmd);
+
+  return numrows;
+}
 
 /**
  * This routine will purge (delete) all records
@@ -195,9 +215,7 @@ bool BareosDb::DeleteMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
   }
 
   Mmsg(cmd, "DELETE FROM Media WHERE MediaId=%d", mr->MediaId);
-  SqlQuery(cmd);
-
-  return true;
+  return DELETE_DB(jcr, cmd) != -1;
 }
 
 /**

@@ -16,6 +16,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - dird: cats: abort purge when there are no eligible jobids [PR #1513]
 - dird: show current and allowed console connections [PR #1517]
 
+### Fixed
+- stored: fix incoherent meta data when concurrently writing to the same volume [PR #1514]
+
 ## [22.1.0] - 2023-06-13
 
 ### Changed
@@ -554,5 +557,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1497]: https://github.com/bareos/bareos/pull/1497
 [PR #1509]: https://github.com/bareos/bareos/pull/1509
 [PR #1513]: https://github.com/bareos/bareos/pull/1513
+[PR #1514]: https://github.com/bareos/bareos/pull/1514
 [PR #1517]: https://github.com/bareos/bareos/pull/1517
 [unreleased]: https://github.com/bareos/bareos/tree/master
