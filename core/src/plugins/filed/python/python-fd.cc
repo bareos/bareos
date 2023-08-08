@@ -37,13 +37,8 @@
 
 #define PLUGIN_DAEMON "fd"
 
-#if PY_VERSION_HEX < VERSION_HEX(3, 0, 0)
-#  define PLUGIN_NAME "python"
-#  define PLUGIN_DIR PY2MODDIR
-#else
-#  define PLUGIN_NAME "python3"
-#  define PLUGIN_DIR PY3MODDIR
-#endif
+#define PLUGIN_NAME "python3"
+#define PLUGIN_DIR PY3MODDIR
 #define LOGPREFIX PLUGIN_NAME "-" PLUGIN_DAEMON ": "
 
 #include "filed/fd_plugins.h"
