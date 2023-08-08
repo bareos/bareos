@@ -3199,6 +3199,10 @@ class BareosVmConfigInfoToSpec(object):
                 add_device = self._transform_virtual_ethernet_card(device)
             elif device["_vimtype"] == "vim.vm.device.VirtualFloppy":
                 add_device = self._transform_virtual_floppy(device)
+            elif device["_vimtype"] == "vim.vm.device.VirtualPCIPassthrough":
+                add_device = self._transform_virtual_pci_passthrough(device)
+            elif device["_vimtype"] == "vim.vm.device.VirtualEnsoniq1371":
+                add_device = self._transform_virtual_ensoniq1371(device)
             else:
                 raise RuntimeError(
                     "Error: Unknown Device Type %s" % (device["_vimtype"])
@@ -3371,6 +3375,70 @@ class BareosVmConfigInfoToSpec(object):
         add_device.controllerKey = device["controllerKey"]
         if device["controllerKey"] not in [400]:
             add_device.controllerKey = device["controllerKey"] * -1
+        add_device.unitNumber = device["unitNumber"]
+
+        return add_device
+
+    def _transform_virtual_pci_passthrough(self, device):
+        add_device = vim.vm.device.VirtualPCIPassthrough()
+        add_device.key = device["key"] * -1
+        if (
+            device["backing"]["_vimtype"]
+            == "vim.vm.device.VirtualPCIPassthrough.DeviceBackingInfo"
+        ):
+            add_device.backing = vim.vm.device.VirtualPCIPassthrough.DeviceBackingInfo()
+            add_device.backing.deviceId = device["backing"]["deviceId"]
+            add_device.backing.deviceName = device["backing"]["deviceName"]
+            add_device.backing.id = device["backing"]["id"]
+            add_device.backing.systemId = device["backing"]["systemId"]
+            add_device.backing.useAutoDetect = device["backing"]["useAutoDetect"]
+            add_device.backing.vendorId = device["backing"]["vendorId"]
+        else:
+            raise RuntimeError(
+                "Unknown Backing for VirtualPCIPassthrough: %s"
+                % (device["backing"]["_vimtype"])
+            )
+            return None
+
+        if device["connectable"]:
+            add_device.connectable = self._transform_connectable(device)
+
+        # Looks like negative values must not be used for default devices,
+        # the VirtualPCIController always seems to have key 100.
+        add_device.controllerKey = device["controllerKey"]
+        if device["controllerKey"] != 100:
+            add_device.controllerKey = device["controllerKey"] * -1
+
+        add_device.unitNumber = device["unitNumber"]
+
+        return add_device
+
+    def _transform_virtual_ensoniq1371(self, device):
+        add_device = vim.vm.device.VirtualEnsoniq1371()
+        add_device.key = device["key"] * -1
+        if (
+            device["backing"]["_vimtype"]
+            == "vim.vm.device.VirtualSoundCard.DeviceBackingInfo"
+        ):
+            add_device.backing = vim.vm.device.VirtualSoundCard.DeviceBackingInfo()
+            add_device.backing.deviceName = device["backing"]["deviceName"]
+            add_device.backing.useAutoDetect = device["backing"]["useAutoDetect"]
+        else:
+            raise RuntimeError(
+                "Unknown Backing for VirtualEnsoniq1371: %s"
+                % (device["backing"]["_vimtype"])
+            )
+            return None
+
+        if device["connectable"]:
+            add_device.connectable = self._transform_connectable(device)
+
+        # Looks like negative values must not be used for default devices,
+        # the VirtualPCIController always seems to have key 100.
+        add_device.controllerKey = device["controllerKey"]
+        if device["controllerKey"] != 100:
+            add_device.controllerKey = device["controllerKey"] * -1
+
         add_device.unitNumber = device["unitNumber"]
 
         return add_device
