@@ -1,6 +1,5 @@
 debug/x86_64/bareos-debuginfo
 noarch/python3-bareos
-noarch/python-bareos
 src/bareos
 src/bareos-vmware-vix-disklib
 src/python-bareos
