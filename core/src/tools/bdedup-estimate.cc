@@ -90,6 +90,7 @@ std::size_t num_records{0};
 std::unordered_set<dedup_unit> dedup_units;
 bool verbose_status{false};
 bool record_based_dedup{false};
+bool enable_decompression{false};
 
 void OutputStatus()
 {
@@ -106,23 +107,31 @@ void OutputStatus()
             << "\n";
 }
 
-bool RecordCallback(storagedaemon::DeviceControlRecord*,
-                    storagedaemon::DeviceRecord* record)
+bool RecordCallback(storagedaemon::DeviceControlRecord* dcr,
+		    storagedaemon::DeviceRecord* record)
 {
   num_records += 1;
+
+  auto* buf = record->data;
   auto size = record->data_len;
+
+  if (!enable_decompression
+      || !DecompressData(dcr->jcr, "unknown", record->maskedStream, &buf, &size,
+                         false)) {
+    buf = record->data;
+    size = record->data_len;
+  }
+
   total_size += size;
   if (record_based_dedup) {
-    const std::uint8_t* data
-        = reinterpret_cast<const std::uint8_t*>(record->data);
+    const std::uint8_t* data = reinterpret_cast<const std::uint8_t*>(buf);
     if (dedup_units.emplace(data, size).second) { real_size += size; }
   } else if (size % block_size == 0) {
     auto num_units = size / block_size;
 
     for (std::size_t unit = 0; unit < num_units; ++unit) {
       const std::uint8_t* start
-          = reinterpret_cast<const std::uint8_t*>(record->data)
-            + unit * block_size;
+          = reinterpret_cast<const std::uint8_t*>(buf) + unit * block_size;
       if (dedup_units.emplace(start, block_size).second) {
         real_size += block_size;
       }
@@ -196,6 +205,23 @@ bool read_records(const std::vector<std::string>& volumenames)
     Jmsg(jcr, M_FATAL, 0, T_("bSdEventSetupRecordTranslation call failed!\n"));
   }
 
+  uint32_t decompress_buf_size;
+  SetupDecompressionBuffers(jcr, &decompress_buf_size);
+  if (decompress_buf_size > 0) {
+    // See if we need to create a new compression buffer or make sure the
+    // existing is big enough.
+    if (!jcr->compress.inflate_buffer) {
+      jcr->compress.inflate_buffer = GetMemory(decompress_buf_size);
+      jcr->compress.inflate_buffer_size = decompress_buf_size;
+    } else {
+      if (decompress_buf_size > jcr->compress.inflate_buffer_size) {
+        jcr->compress.inflate_buffer = ReallocPoolMemory(
+            jcr->compress.inflate_buffer, decompress_buf_size);
+        jcr->compress.inflate_buffer_size = decompress_buf_size;
+      }
+    }
+  }
+
   ReadRecords(dcr, RecordCallback, storagedaemon::MountNextReadVolume);
 
   CleanDevice(jcr->sd_impl->dcr);
@@ -235,6 +261,11 @@ int main(int argc, const char* argv[])
                  "Specify a director name specified in the storage.\n"
                  "Configuration file for the Key Encryption Key selection.")
       ->type_name("<director>");
+
+  app.add_flag("-u,--decompress", enable_decompression,
+               "Specify whether compressed records should get decompressed.\n"
+               "Compressed records are very unlikely to be dedupable.")
+      ->type_name("<bool>");
 
   app.add_option("--devicename,devicename", device_name,
                  "Specify the input device name (either as name of a Bareos "
