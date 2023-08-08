@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -22,27 +22,6 @@
 # -D XTRABACKUP_BINARY=/usr/bin/xtrabackup \ -D
 # MYSQL_DAEMON_BINARY=/opt/mysql/bin/mysqld \ -D
 # MYSQL_CLIENT_BINARY=/usr/bin/mysql \
-
-if(TARGET python-fd
-   AND XTRABACKUP_BINARY
-   AND MYSQL_DAEMON_BINARY
-   AND MYSQL_CLIENT_BINARY
-)
-  create_systemtest(${SYSTEMTEST_PREFIX} "py2plug-fd-percona-xtrabackup")
-else()
-  create_systemtest(
-    ${SYSTEMTEST_PREFIX}
-    "py2plug-fd-percona-xtrabackup"
-    DISABLED
-    COMMENT
-    "
-    no python-fd or XTRABACKUP_BINARY,MYSQL_DAEMON_BINARY or MYSQL_CLIENT_BINARY not set.)
-    example:
-    cmake -D XTRABACKUP_BINARY=/usr/bin/xtrabackup
-    -D MYSQL_DAEMON_BINARY=/opt/mysql/bin/mysqld
-    -D MYSQL_CLIENT_BINARY=/usr/bin/mysql"
-  )
-endif()
 
 if(TARGET python3-fd
    AND XTRABACKUP_BINARY

@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -16,15 +16,6 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
-
-if(TARGET python-fd AND ovirt_server)
-  create_systemtest(${SYSTEMTEST_PREFIX} "py2plug-fd-ovirt")
-else()
-  create_systemtest(
-    ${SYSTEMTEST_PREFIX} "py2plug-fd-ovirt" DISABLED COMMENT
-    "no python-fd or ovirt_server not set"
-  )
-endif()
 
 if(TARGET python3-fd AND ovirt_server)
   create_systemtest(${SYSTEMTEST_PREFIX} "py3plug-fd-ovirt")
