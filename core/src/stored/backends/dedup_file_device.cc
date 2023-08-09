@@ -250,7 +250,8 @@ ssize_t gather(dedup::volume& vol,
   for (auto& record : records) {
     if (!buf.write(record.BareosHeader)) { return -1; }
 
-    if (!vol.read_data(record.file_index, record.start, record.size, buf)) {
+    if (!vol.read_data(record.file_index, record.start, record.size,
+                       buf.reserve(record.size))) {
       return -1;
     }
   }

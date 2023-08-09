@@ -790,13 +790,12 @@ class volume {
   bool read_data(std::size_t file_index,
                  std::size_t start,
                  std::size_t size,
-                 write_buffer& buf)
+                 char* data)
   {
     if (file_index >= contents.datafiles.size()) { return false; }
 
     auto& data_file = contents.datafiles[file_index];
 
-    char* data = buf.reserve(size);
     if (!data) { return false; }
     if (!data_file.read_at(data, start, size)) { return false; }
     return true;
