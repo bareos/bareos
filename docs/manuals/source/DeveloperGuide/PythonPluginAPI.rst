@@ -26,23 +26,21 @@ Description of the Bareos Python plugin API for Bareos >= 20
 For Bareos :sinceVersion:`20: Python API`, the Bareos Python API was refactored and
 adapted to support both Python version *2* and Python version *3*.
 
-Two Python plugins exist for each Bareos daemon,
-where the **python-** prefix means that the plugin supports
-Python 2
-and the **python3-** prefix supports Python 3.
+For Bareos :sinceVersion:`23: Python API`, the support for Python version *2*
+(end-of-live since January 1, 2020) was removed.
 
-The following six plugins now exist:
+The following plugins now exist:
 
 .. table:: Bareos Python plugins
    :widths: auto
 
-   ===============  =========== ============
-    Python Version  Python 2    Python 3
-   ===============  =========== ============
-    |fd|            python-fd   python3-fd
-    |sd|            python-sd   python3-sd
-    |dir|           python-dir  python3-dir
-   ===============  =========== ============
+   =============== ============
+    Python Version Python 3
+   =============== ============
+    |fd|           python3-fd
+    |sd|           python3-sd
+    |dir|          python3-dir
+   =============== ============
 
 The functionality of the former *internal Python extension module* is now implemented
 as real Python extension module with the name *bareos[fd|sd|dir]*, for example
@@ -75,7 +73,7 @@ Every Python plugin now has a corresponding Python extension module.
 
 
 
-The Python plugin creates a Python interpreter with either Python 2 or Python 3
+The Python plugin creates a Python interpreter with Python 3
 which then loads the corresponding Python extension module. Afterwards the interpreter
 loads the Python script configured in the *Plugin* fileset setting and executes
 it.
@@ -310,10 +308,8 @@ and requires the following steps:
 
    Add the **st_** prefix to all members of **stat_pkt** type.
 
-   Adapt the code to run on Python 2 **and** Python 3
-      It is important to make sure the code works both for Python 2 and 3.
+   Adapt the code to run on Python 3
+      It is important to make sure the code works Python 3.
       While the C++ code and the Python api have been reorganized, the Python
-      plugin code itself is the same being run with Python 2 or 3.  Existing
-      plugins have been ported and the current Python 2 version support
-      already a lot of things required by Python 3.
+      plugin code itself is the same being run with Python 3.
       For more details see `Python 3 Porting Guide, strings chapter: <https://portingguide.readthedocs.io/en/latest/strings.html>`_
