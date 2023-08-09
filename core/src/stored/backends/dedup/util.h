@@ -28,6 +28,7 @@
 #include <utility>
 #include <cstring>
 #include <sys/mman.h>
+#include "lib/network_order.h"
 
 namespace dedup::util {
 static_assert(((ssize_t)(off_t)-1) < 0,
@@ -143,6 +144,38 @@ class raii_fd {
   int mode{};
   int fd{-1};
   mutable bool error{true};
+};
+
+struct write_buffer {
+  char* current;
+  char* end;
+
+  write_buffer(char* data, std::size_t size)
+      : current{static_cast<char*>(data)}, end{current + size}
+  {
+  }
+
+  bool write(std::size_t size, const char* data)
+  {
+    if (current + size > end) { return false; }
+
+    current = std::copy(data, data + size, current);
+    return true;
+  }
+
+  char* reserve(std::size_t size)
+  {
+    if (current + size > end) { return nullptr; }
+
+    return std::exchange(current, current + size);
+  }
+
+  template <typename F>
+  inline std::enable_if_t<network_order::is_serializable_v<F>, bool> write(
+      const F& val)
+  {
+    return write(sizeof(F), reinterpret_cast<const char*>(&val));
+  }
 };
 
 template <typename T> class file_based_array {

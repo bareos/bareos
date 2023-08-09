@@ -101,38 +101,6 @@ struct record_header {
 
 static_assert(network_order::is_serializable_v<record_header>);
 
-struct write_buffer {
-  char* current;
-  char* end;
-
-  write_buffer(char* data, std::size_t size)
-      : current{static_cast<char*>(data)}, end{current + size}
-  {
-  }
-
-  bool write(std::size_t size, const char* data)
-  {
-    if (current + size > end) { return false; }
-
-    current = std::copy(data, data + size, current);
-    return true;
-  }
-
-  char* reserve(std::size_t size)
-  {
-    if (current + size > end) { return nullptr; }
-
-    return std::exchange(current, current + size);
-  }
-
-  template <typename F>
-  inline std::enable_if_t<network_order::is_serializable_v<F>, bool> write(
-      const F& val)
-  {
-    return write(sizeof(F), reinterpret_cast<const char*>(&val));
-  }
-};
-
 static util::raii_fd open_inside(util::raii_fd& dir,
                                  const char* path,
                                  int mode,

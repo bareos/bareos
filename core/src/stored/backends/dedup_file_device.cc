@@ -235,7 +235,7 @@ ssize_t gather(dedup::volume& vol,
                std::size_t size)
 {
   std::optional block = vol.read_block(blocknum);
-  dedup::write_buffer buf{data, size};
+  dedup::util::write_buffer buf{data, size};
 
   if (!block) { return -1; }
 
