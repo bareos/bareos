@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -116,10 +116,12 @@ static std::string ToBsrStringBareos(const itBegin& t_begin, const itEnd& t_end)
     std::for_each(t_begin, t_end,
                   [&](int fid) { AddFindex(&bsr, kJobId_1, fid); });
   });
-  auto maxId = *std::max_element(t_begin, t_end);
+  uint32_t maxId = *std::max_element(t_begin, t_end);
   auto buffer = std::string{};
-  TimedLambda("write_findex total",
-              [&]() { write_findex(bsr.fi.get(), 1, maxId, buffer); });
+  uint32_t first_possible_file_index = 1;
+  TimedLambda("write_findex total", [&]() {
+    write_findex(bsr.fi.get(), first_possible_file_index, maxId, buffer);
+  });
   return std::string{buffer.c_str()};
 }
 

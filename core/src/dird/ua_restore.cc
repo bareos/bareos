@@ -1201,7 +1201,7 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
           edit_uint64_with_commas(tree.FileCount, ec1));
     } else {
       ua->InfoMsg(_("\n%s files inserted into the tree.\n"),
-                  edit_uint64_with_commas(tree.FileCount, ec1));
+                  edit_uint64_with_commas(tree.cnt, ec1));
     }
 
     if (FindArg(ua, NT_("done")) < 0) {

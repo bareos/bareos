@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -39,6 +39,7 @@
 #include "lib/parse_conf.h"
 
 #include <algorithm>
+#include <optional>
 
 namespace directordaemon {
 
@@ -153,21 +154,31 @@ static void PrintBsrItem(std::string& buffer, const char* fmt, ...)
  * for each Volume.
  */
 uint32_t write_findex(RestoreBootstrapRecordFileIndex* fi,
-                      int32_t FirstIndex,
-                      int32_t LastIndex,
+                      uint32_t& FirstIndex,
+                      uint32_t& LastIndex,
                       std::string& buffer)
 {
   auto count = uint32_t{0};
   auto bsrItems = std::string{};
 
+  struct minmax {
+    uint32_t min, max;
+  };
+  std::optional<minmax> min_max_index;
+
   for (auto& range : fi->GetRanges()) {
-    auto first = range.first;
-    auto last = range.second;
-    if ((first >= FirstIndex && first <= LastIndex)
-        || (last >= FirstIndex && last <= LastIndex)
-        || (first < FirstIndex && last > LastIndex)) {
-      first = std::max(first, FirstIndex);
-      last = std::min(last, LastIndex);
+    ASSERT(range.first >= 0);
+    ASSERT(range.second >= 0);
+    auto first = std::max(static_cast<uint32_t>(range.first), FirstIndex);
+    auto last = std::min(static_cast<uint32_t>(range.second), LastIndex);
+    if (first <= last) {
+      if (!min_max_index.has_value()) {
+        min_max_index = {first, last};
+      } else {
+        // the ranges returned by GetRanges() are sorted!
+        ASSERT(last > min_max_index->max);
+        min_max_index->max = last;
+      }
 
       if (first == last) {
         bsrItems += "FileIndex=" + std::to_string(first) + "\n";
@@ -180,6 +191,14 @@ uint32_t write_findex(RestoreBootstrapRecordFileIndex* fi,
     }
   }
   buffer += bsrItems.c_str();
+
+  if (min_max_index) {
+    // if we did not restore anything
+    // we should just leave the first/last index alone!
+    FirstIndex = min_max_index->min;
+    LastIndex = min_max_index->max;
+  }
+
   return count;
 }
 
@@ -192,13 +211,7 @@ static inline bool is_volume_selected(RestoreBootstrapRecordFileIndex* fi,
                                       int32_t LastIndex)
 {
   for (auto range : fi->GetRanges()) {
-    auto first = range.first;
-    auto last = range.second;
-    if ((first >= FirstIndex && first <= LastIndex)
-        || (last >= FirstIndex && last <= LastIndex)
-        || (first < FirstIndex && last > LastIndex)) {
-      return true;
-    }
+    if (range.first <= LastIndex && range.second >= FirstIndex) { return true; }
   }
   return false;
 }
@@ -386,10 +399,8 @@ static uint32_t write_bsr_item(RestoreBootstrapRecord* bsr,
   uint32_t total_count = 0;
   char device[MAX_NAME_LENGTH];
 
-  /*
-   * For a given volume, loop over all the JobMedia records.
-   * VolCount is the number of JobMedia records.
-   */
+  /* For a given volume, loop over all the JobMedia records.
+   * VolCount is the number of JobMedia records. */
   for (i = 0; i < bsr->VolCount; i++) {
     if (!is_volume_selected(bsr->fi.get(), bsr->VolParams[i].FirstIndex,
                             bsr->VolParams[i].LastIndex)) {
@@ -424,20 +435,19 @@ static uint32_t write_bsr_item(RestoreBootstrapRecord* bsr,
                  edit_uint64(bsr->VolParams[i].StartAddr, ed1),
                  edit_uint64(bsr->VolParams[i].EndAddr, ed2));
 
-    count = write_findex(bsr->fi.get(), bsr->VolParams[i].FirstIndex,
-                         bsr->VolParams[i].LastIndex, buffer);
+    uint32_t start = bsr->VolParams[i].FirstIndex;
+    uint32_t end = bsr->VolParams[i].LastIndex;
+    count = write_findex(bsr->fi.get(), start, end, buffer);
     if (count) { PrintBsrItem(buffer, "Count=%u\n", count); }
 
     total_count += count;
 
-    /*
-     * If the same file is present on two tapes or in two files
+    /* If the same file is present on two tapes or in two files
      * on a tape, it is a continuation, and should not be treated
-     * twice in the totals.
-     */
-    if (!first && LastIndex == bsr->VolParams[i].FirstIndex) { total_count--; }
+     * twice in the totals. */
+    if (!first && count > 0 && LastIndex == start) { total_count--; }
     first = false;
-    LastIndex = bsr->VolParams[i].LastIndex;
+    LastIndex = end;
   }
 
   return total_count;
@@ -461,9 +471,21 @@ uint32_t WriteBsr(UaContext* ua, RestoreContext& rx, std::string& buffer)
   JobId_t JobId;
   RestoreBootstrapRecord* bsr;
 
+  std::optional<std::pair<std::size_t, std::size_t>> last_job;
+
   if (*rx.JobIds == 0) {
     for (bsr = rx.bsr.get(); bsr; bsr = bsr->next.get()) {
+      std::pair<std::size_t, std::size_t> this_job{bsr->VolSessionId,
+                                                   bsr->VolSessionTime};
+
+      if (last_job != this_job) {
+        // cannot compare indices between jobs
+        LastIndex = 0;
+      }
+
       total_count += write_bsr_item(bsr, ua, rx, buffer, first, LastIndex);
+
+      last_job = this_job;
     }
     return total_count;
   }
@@ -471,7 +493,17 @@ uint32_t WriteBsr(UaContext* ua, RestoreContext& rx, std::string& buffer)
   for (p = rx.JobIds; GetNextJobidFromList(&p, &JobId) > 0;) {
     for (bsr = rx.bsr.get(); bsr; bsr = bsr->next.get()) {
       if (JobId == bsr->JobId) {
+        std::pair<std::size_t, std::size_t> this_job{bsr->VolSessionId,
+                                                     bsr->VolSessionTime};
+
+        if (last_job != this_job) {
+          // cannot compare indices between jobs
+          LastIndex = 0;
+        }
+
         total_count += write_bsr_item(bsr, ua, rx, buffer, first, LastIndex);
+
+        last_job = this_job;
       }
     }
   }
@@ -627,10 +659,8 @@ static inline bool IsOnSameStorage(JobControlRecord* jcr, char* new_one)
     return true;
   }
 
-  /*
-   * If Port and Hostname/IP are same, we are talking to the same
-   * Storage Daemon
-   */
+  /* If Port and Hostname/IP are same, we are talking to the same
+   * Storage Daemon */
   if (jcr->dir_impl->res.read_storage->SDport != new_store->SDport
       || !bstrcmp(jcr->dir_impl->res.read_storage->address,
                   new_store->address)) {
@@ -687,10 +717,8 @@ bool SendBootstrapFile(JobControlRecord* jcr,
 
   while (fgets(ua->cmd, UA_CMD_SIZE, bs)) {
     if (CheckForNewStorage(jcr, info)) {
-      /*
-       * Otherwise, we need to contact another storage daemon.
-       * Reset bs to the beginning of the current segment.
-       */
+      /* Otherwise, we need to contact another storage daemon.
+       * Reset bs to the beginning of the current segment. */
       fseeko(bs, pos, SEEK_SET);
       break;
     }

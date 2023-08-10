@@ -115,6 +115,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - stored: fix blocksize warning [PR #1503]
 - status storage: fix wrong data displayed about waiting jobs [PR #1476]
 - stored: fix incoherent meta data when concurrently writing to the same volume [PR #1495]
+- dird: fix expected file count error during bsr build  [PR #1511]
 
 ### Documentation
 - add explanation about binary version numbers [PR #1354]
@@ -219,5 +220,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1503]: https://github.com/bareos/bareos/pull/1503
 [PR #1507]: https://github.com/bareos/bareos/pull/1507
 [PR #1508]: https://github.com/bareos/bareos/pull/1508
+[PR #1511]: https://github.com/bareos/bareos/pull/1511
 [PR #1512]: https://github.com/bareos/bareos/pull/1512
 [unreleased]: https://github.com/bareos/bareos/tree/master

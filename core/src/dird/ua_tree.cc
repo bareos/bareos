@@ -379,6 +379,7 @@ static int SetExtract(UaContext* ua,
       while (node->parent && !node->parent->extract_dir) {
         node = node->parent;
         node->extract_dir = true;
+        if (node->type != TN_NEWDIR && node->type != TN_ROOT) { count += 1; }
       }
     }
   } else {
@@ -426,6 +427,8 @@ static int SetExtract(UaContext* ua,
         HL_ENTRY* entry = (HL_ENTRY*)tree->root->hardlinks.lookup(key);
         if (entry && entry->node) {
           n = entry->node;
+          // if this is our first time marking it, then add to the count
+          if (!n->extract) { count += 1; }
           n->extract = true;
           n->extract_dir = (n->type == TN_DIR || n->type == TN_DIR_NLS);
         }
