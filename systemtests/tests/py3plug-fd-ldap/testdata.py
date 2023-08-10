@@ -1,8 +1,8 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -31,25 +31,13 @@ from ldif import LDIFWriter
 
 
 def _safe_encode(data):
-    if isinstance(data, unicode):
+    if isinstance(data, str):
         return data.encode("utf-8")
     return data
 
 
-class BytesLDIFRecordList(ldif.LDIFRecordList):
-    """Simple encoding wrapper for LDIFRecordList that converts keys to UTF-8"""
-
-    def _next_key_and_value(self):
-        # we do not descend from object, so we cannot use super()
-        k, v = ldif.LDIFRecordList._next_key_and_value(self)
-        return k.encode("utf-8"), v
-
-
 def ldap_connect(address, binddn, password):
-    try:
-        conn = ldap.initialize("ldap://%s" % address, bytes_mode=True)
-    except TypeError:
-        conn = ldap.initialize("ldap://%s" % address)
+    conn = ldap.initialize("ldap://%s" % address)
 
     conn.set_option(ldap.OPT_REFERRALS, 0)
     conn.simple_bind_s(binddn, password)
@@ -76,7 +64,7 @@ def action_clean(conn, basedn):
     longest to shortest dn, so we remove parent objects later
     """
 
-    for subtree_dn in [b"ou=backup,%s" % basedn, b"ou=restore,%s" % basedn]:
+    for subtree_dn in ["ou=backup,%s" % basedn, "ou=restore,%s" % basedn]:
         try:
             for dn in sorted(
                 map(
@@ -96,91 +84,97 @@ def action_populate(conn, basedn):
     """Populate our backup data"""
     ldap_create_or_fail(
         conn,
-        b"ou=backup,%s" % basedn,
-        {b"objectClass": [b"organizationalUnit"], b"ou": [b"restore"]},
+        "ou=backup,%s" % basedn,
+        {"objectClass": [b"organizationalUnit"], "ou": [b"restore"]},
     )
 
     ldap_create_or_fail(
         conn,
-        b"cn=No JPEG,ou=backup,%s" % basedn,
+        "cn=No JPEG,ou=backup,%s" % basedn,
         {
-            b"objectClass": [b"inetOrgPerson", b"posixAccount", b"shadowAccount"],
-            b"uid": [b"njpeg"],
-            b"sn": [b"JPEG"],
-            b"givenName": [b"No"],
-            b"cn": [b"No JPEG"],
-            b"displayName": [b"No JPEG"],
-            b"uidNumber": [b"1000"],
-            b"gidNumber": [b"1000"],
-            b"loginShell": [b"/bin/bash"],
-            b"homeDirectory": [b"/home/njpeg"],
+            "objectClass": [b"inetOrgPerson", b"posixAccount", b"shadowAccount"],
+            "uid": [b"njpeg"],
+            "sn": [b"JPEG"],
+            "givenName": [b"No"],
+            "cn": [b"No JPEG"],
+            "displayName": [b"No JPEG"],
+            "uidNumber": [b"1000"],
+            "gidNumber": [b"1000"],
+            "loginShell": [b"/bin/bash"],
+            "homeDirectory": [b"/home/njpeg"],
+        },
+    )
+
+    photo = open("image-small.jpg", "rb").read()
+
+    ldap_create_or_fail(
+        conn,
+        "cn=Small JPEG,ou=backup,%s" % basedn,
+        {
+            "objectClass": [b"inetOrgPerson", b"posixAccount", b"shadowAccount"],
+            "uid": [b"sjpeg"],
+            "sn": [b"JPEG"],
+            "givenName": [b"Small"],
+            "cn": [b"Small JPEG"],
+            "displayName": [b"Small JPEG"],
+            "uidNumber": [b"1001"],
+            "gidNumber": [b"1000"],
+            "loginShell": [b"/bin/bash"],
+            "homeDirectory": [b"/home/sjpeg"],
+            "jpegPhoto": photo,
+        },
+    )
+
+    photo = open("image-medium.jpg", "rb").read()
+
+    ldap_create_or_fail(
+        conn,
+        "cn=Medium JPEG,ou=backup,%s" % basedn,
+        {
+            "objectClass": [b"inetOrgPerson", b"posixAccount", b"shadowAccount"],
+            "uid": [b"mjpeg"],
+            "sn": [b"JPEG"],
+            "givenName": [b"Medium"],
+            "cn": [b"Medium JPEG"],
+            "displayName": [b"Medium JPEG"],
+            "uidNumber": [b"1002"],
+            "gidNumber": [b"1000"],
+            "loginShell": [b"/bin/bash"],
+            "homeDirectory": [b"/home/mjpeg"],
+            "jpegPhoto": photo,
+        },
+    )
+
+    photo = open("image-large.jpg", "rb").read()
+
+    ldap_create_or_fail(
+        conn,
+        "cn=Large JPEG,ou=backup,%s" % basedn,
+        {
+            "objectClass": [b"inetOrgPerson", b"posixAccount", b"shadowAccount"],
+            "uid": [b"ljpeg"],
+            "sn": [b"JPEG"],
+            "givenName": [b"Large"],
+            "cn": [b"Large JPEG"],
+            "displayName": [b"Large JPEG"],
+            "uidNumber": [b"1003"],
+            "gidNumber": [b"1000"],
+            "loginShell": [b"/bin/bash"],
+            "homeDirectory": [b"/home/ljpeg"],
+            "jpegPhoto": photo,
         },
     )
 
     ldap_create_or_fail(
         conn,
-        b"cn=Small JPEG,ou=backup,%s" % basedn,
-        {
-            b"objectClass": [b"inetOrgPerson", b"posixAccount", b"shadowAccount"],
-            b"uid": [b"sjpeg"],
-            b"sn": [b"JPEG"],
-            b"givenName": [b"Small"],
-            b"cn": [b"Small JPEG"],
-            b"displayName": [b"Small JPEG"],
-            b"uidNumber": [b"1001"],
-            b"gidNumber": [b"1000"],
-            b"loginShell": [b"/bin/bash"],
-            b"homeDirectory": [b"/home/sjpeg"],
-            b"jpegPhoto": open("image-small.jpg", "rb").read(),
-        },
+        "o=Bareos GmbH & Co. KG,ou=backup,%s" % basedn,
+        {"objectClass": [b"top", b"organization"], "o": [b"Bareos GmbH & Co. KG"]},
     )
 
     ldap_create_or_fail(
         conn,
-        b"cn=Medium JPEG,ou=backup,%s" % basedn,
-        {
-            b"objectClass": [b"inetOrgPerson", b"posixAccount", b"shadowAccount"],
-            b"uid": [b"mjpeg"],
-            b"sn": [b"JPEG"],
-            b"givenName": [b"Medium"],
-            b"cn": [b"Medium JPEG"],
-            b"displayName": [b"Medium JPEG"],
-            b"uidNumber": [b"1002"],
-            b"gidNumber": [b"1000"],
-            b"loginShell": [b"/bin/bash"],
-            b"homeDirectory": [b"/home/mjpeg"],
-            b"jpegPhoto": open("image-medium.jpg", "rb").read(),
-        },
-    )
-
-    ldap_create_or_fail(
-        conn,
-        b"cn=Large JPEG,ou=backup,%s" % basedn,
-        {
-            b"objectClass": [b"inetOrgPerson", b"posixAccount", b"shadowAccount"],
-            b"uid": [b"ljpeg"],
-            b"sn": [b"JPEG"],
-            b"givenName": [b"Large"],
-            b"cn": [b"Large JPEG"],
-            b"displayName": [b"Large JPEG"],
-            b"uidNumber": [b"1003"],
-            b"gidNumber": [b"1000"],
-            b"loginShell": [b"/bin/bash"],
-            b"homeDirectory": [b"/home/ljpeg"],
-            b"jpegPhoto": open("image-large.jpg", "rb").read(),
-        },
-    )
-
-    ldap_create_or_fail(
-        conn,
-        b"o=Bareos GmbH & Co. KG,ou=backup,%s" % basedn,
-        {b"objectClass": [b"top", b"organization"], b"o": [b"Bareos GmbH & Co. KG"]},
-    )
-
-    ldap_create_or_fail(
-        conn,
-        b"ou=automount,ou=backup,%s" % basedn,
-        {b"objectClass": [b"top", b"organizationalUnit"], b"ou": [b"automount"]},
+        "ou=automount,ou=backup,%s" % basedn,
+        {"objectClass": [b"top", b"organizationalUnit"], "ou": [b"automount"]},
     )
 
     # # Objects with / in the DN are currently not supported
@@ -196,8 +190,8 @@ def action_populate(conn, basedn):
 
     ldap_create_or_fail(
         conn,
-        b"ou=weird-names,ou=backup,%s" % basedn,
-        {b"objectClass": [b"top", b"organizationalUnit"], b"ou": [b"weird-names"]},
+        "ou=weird-names,ou=backup,%s" % basedn,
+        {"objectClass": [b"top", b"organizationalUnit"], "ou": [b"weird-names"]},
     )
 
     for ou in [
@@ -218,27 +212,28 @@ def action_populate(conn, basedn):
     ]:
         ldap_create_or_fail(
             conn,
-            b"ou=%s,ou=weird-names,ou=backup,%s"
-            % (ldap.dn.escape_dn_chars(ou), basedn),
-            {b"objectClass": [b"top", b"organizationalUnit"], b"ou": [ou]},
+            "ou=%s,ou=weird-names,ou=backup,%s"
+            % (ldap.dn.escape_dn_chars(ou.decode("utf8")), basedn),
+            {"objectClass": [b"top", b"organizationalUnit"], "ou": [ou]},
         )
 
     # creating the DN using the normal method wouldn't work, so we create a
     # temporary LDIF and parse that.
     ldif_data = io.BytesIO()
-    ldif_data.write(b"dn: ou=böses encoding,ou=weird-names,ou=backup,")
-    ldif_data.write(b"%s\n" % basedn.encode("ascii"))
+    ldif_data.write("dn: ou=böses encoding,ou=weird-names,ou=backup,".encode("utf8"))
+    ldif_data.write(b"%s\n" % basedn.encode("utf8"))
     ldif_data.write(b"objectClass: top\n")
     ldif_data.write(b"objectClass: organizationalUnit\n")
-    ldif_data.write(b"ou: böses encoding\n")
+    ldif_data.write("ou: böses encoding\n".encode("utf8"))
     ldif_data.seek(0)
 
-    ldif_parser = BytesLDIFRecordList(ldif_data, max_entries=1)
+    ldif_parser = ldif.LDIFRecordList(ldif_data, max_entries=1)
     ldif_parser.parse()
+
     dn, entry = ldif_parser.all_records[0]
     ldif_data.close()
 
-    ldap_create_or_fail(conn, _safe_encode(dn), entry)
+    ldap_create_or_fail(conn, dn, entry)
 
 
 def abbrev_value(v):
@@ -246,7 +241,7 @@ def abbrev_value(v):
     length = len(v)
     if length > 80:
         digest = hashlib.sha1(v).hexdigest()
-        return "BLOB len:%d sha1:%s" % (length, digest)
+        return ("BLOB len:%d sha1:%s" % (length, digest)).encode("utf8")
     return v
 
 
@@ -255,19 +250,12 @@ def action_dump(conn, basedn, shorten=True, rewrite_dn=True):
     try:
         for dn, attrs in conn.search_s(basedn, ldap.SCOPE_SUBTREE):
             if rewrite_dn:
-                dn = (
-                    dn.decode("utf-8")
-                    .replace(basedn, "dc=unified,dc=base,dc=dn")
-                    .encode("utf-8")
-                )
+                dn = dn.replace(basedn, "dc=unified,dc=base,dc=dn")
             if shorten:
                 attrs = {
-                    k: [abbrev_value(v) for v in vals] for k, vals in attrs.iteritems()
+                    k: [abbrev_value(v) for v in vals] for k, vals in attrs.items()
                 }
-            try:
-                writer.unparse(dn, attrs)
-            except UnicodeDecodeError:
-                writer.unparse(dn.decode("utf-8"), attrs)
+            writer.unparse(dn, attrs)
     except ldap.NO_SUCH_OBJECT:
         print("No object '%s' in directory." % basedn, file=sys.stderr)
         sys.exit(1)
@@ -329,14 +317,14 @@ if __name__ == "__main__":
     if args.dump_backup:
         action_dump(
             conn,
-            b"ou=backup,%s" % args.basedn,
+            "ou=backup,%s" % args.basedn,
             shorten=not args.full_value,
             rewrite_dn=not args.real_dn,
         )
     if args.dump_restore:
         action_dump(
             conn,
-            b"ou=restore,%s" % args.basedn,
+            "ou=restore,%s" % args.basedn,
             shorten=not args.full_value,
             rewrite_dn=not args.real_dn,
         )

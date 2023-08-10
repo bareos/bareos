@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -35,13 +35,12 @@ set(SYSTEMTEST_LDAP_PASSWORD
     "admin"
     CACHE STRING "LDAP bind password for plugin test"
 )
-check_pymodule_available(2 ldap)
-if(TARGET python-fd
-   AND PYMODULE_2_LDAP_FOUND
-   AND Python2_EXECUTABLE
-   AND SYSTEMTEST_LDAP_ADDRESS
-)
-  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
-else()
-  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED)
+
+if(TARGET python3-fd)
+  check_pymodule_available(3 ldap)
+  if(PYMODULE_3_LDAP_FOUND AND SYSTEMTEST_LDAP_ADDRESS)
+    create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
+  else()
+    create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED)
+  endif()
 endif()

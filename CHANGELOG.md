@@ -87,6 +87,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - dird: add prev and new jobid variables [PR #1499]
 - improve default configuration [PR #1508]
 - stored: add AccessMode SD->Device directive to reserve devices exclusively for reading or writing [PR #1464]
+- plugins: switch python-ldap plugin to  python3 [PR #1522]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -224,4 +225,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1508]: https://github.com/bareos/bareos/pull/1508
 [PR #1511]: https://github.com/bareos/bareos/pull/1511
 [PR #1512]: https://github.com/bareos/bareos/pull/1512
+[PR #1522]: https://github.com/bareos/bareos/pull/1522
 [unreleased]: https://github.com/bareos/bareos/tree/master
