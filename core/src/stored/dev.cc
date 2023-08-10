@@ -179,6 +179,7 @@ static void InitiateDevice(JobControlRecord* jcr, Device* dev)
   dev->max_spool_size = dev->device_resource->max_spool_size;
   dev->drive = dev->device_resource->drive;
   dev->drive_index = dev->device_resource->drive_index;
+  dev->access_mode = dev->device_resource->access_mode;
   dev->autoselect = dev->device_resource->autoselect;
   dev->norewindonclose = dev->device_resource->norewindonclose;
   dev->device_type = dev->device_resource->device_type;

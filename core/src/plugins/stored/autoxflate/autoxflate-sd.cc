@@ -113,17 +113,15 @@ static int const debuglevel = 200;
 
 
 // Does the mode contain OUT
-static bool AutoxflateModeContainsOut(AutoXflateMode mode)
+static bool AutoxflateModeContainsOut(IODirection mode)
 {
-  return (mode == AutoXflateMode::IO_DIRECTION_OUT
-          || mode == AutoXflateMode::IO_DIRECTION_INOUT);
+  return (mode == IODirection::WRITE || mode == IODirection::READ_WRITE);
 }
 
 // Does the mode contain IN
-static bool AutoxflateModeContainsIn(AutoXflateMode mode)
+static bool AutoxflateModeContainsIn(IODirection mode)
 {
-  return (mode == AutoXflateMode::IO_DIRECTION_IN
-          || mode == AutoXflateMode::IO_DIRECTION_INOUT);
+  return (mode == IODirection::READ || mode == IODirection::READ_WRITE);
 }
 
 // what streams can be decompressed by the plugin
@@ -312,8 +310,8 @@ static bRC setup_record_translation(PluginContext* ctx, void* value)
       && dcr->jcr->is_JobType(JT_RESTORE)
       && (AutoxflateModeContainsIn(dcr->autodeflate)
           || !AutoxflateModeContainsIn(dcr->autoinflate))) {
-    dcr->autoinflate = AutoXflateMode::IO_DIRECTION_IN;
-    dcr->autodeflate = AutoXflateMode::IO_DIRECTION_NONE;
+    dcr->autoinflate = IODirection::READ;
+    dcr->autodeflate = IODirection::NONE;
     Jmsg(ctx, M_INFO,
          _("autoxflate-sd: overriding settings on %s for NDMP restore\n"),
          dcr->dev_name);
@@ -321,19 +319,19 @@ static bRC setup_record_translation(PluginContext* ctx, void* value)
 
   // Give jobmessage info what is configured
   switch (dcr->autodeflate) {
-    case AutoXflateMode::IO_DIRECTION_NONE:
+    case IODirection::NONE:
       deflate_in = SETTING_NO;
       deflate_out = SETTING_NO;
       break;
-    case AutoXflateMode::IO_DIRECTION_IN:
+    case IODirection::READ:
       deflate_in = SETTING_YES;
       deflate_out = SETTING_NO;
       break;
-    case AutoXflateMode::IO_DIRECTION_OUT:
+    case IODirection::WRITE:
       deflate_in = SETTING_NO;
       deflate_out = SETTING_YES;
       break;
-    case AutoXflateMode::IO_DIRECTION_INOUT:
+    case IODirection::READ_WRITE:
       deflate_in = SETTING_YES;
       deflate_out = SETTING_YES;
       break;
@@ -345,19 +343,19 @@ static bRC setup_record_translation(PluginContext* ctx, void* value)
   }
 
   switch (dcr->autoinflate) {
-    case AutoXflateMode::IO_DIRECTION_NONE:
+    case IODirection::NONE:
       inflate_in = SETTING_NO;
       inflate_out = SETTING_NO;
       break;
-    case AutoXflateMode::IO_DIRECTION_IN:
+    case IODirection::READ:
       inflate_in = SETTING_YES;
       inflate_out = SETTING_NO;
       break;
-    case AutoXflateMode::IO_DIRECTION_OUT:
+    case IODirection::WRITE:
       inflate_in = SETTING_NO;
       inflate_out = SETTING_YES;
       break;
-    case AutoXflateMode::IO_DIRECTION_INOUT:
+    case IODirection::READ_WRITE:
       inflate_in = SETTING_YES;
       inflate_out = SETTING_YES;
       break;

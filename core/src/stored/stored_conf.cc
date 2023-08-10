@@ -172,6 +172,8 @@ static ResourceItem dev_items[] = {
   {"RequiresMount", CFG_TYPE_BIT, ITEM(res_dev, cap_bits), CAP_REQMOUNT, CFG_ITEM_DEFAULT, "off", NULL, NULL},
   {"OfflineOnUnmount", CFG_TYPE_BIT, ITEM(res_dev, cap_bits), CAP_OFFLINEUNMOUNT, CFG_ITEM_DEFAULT, "off", NULL, NULL},
   {"BlockChecksum", CFG_TYPE_BIT, ITEM(res_dev, cap_bits), CAP_BLOCKCHECKSUM, CFG_ITEM_DEFAULT, "on", NULL, NULL},
+  {"AccessMode", CFG_TYPE_IODIRECTION, ITEM(res_dev, access_mode), 0, CFG_ITEM_DEFAULT, "readwrite", NULL, "Access mode specifies whether "
+  "this device can be reserved for reading, writing or for both modes (default)."},
   {"AutoSelect", CFG_TYPE_BOOL, ITEM(res_dev, autoselect), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL},
   {"ChangerDevice", CFG_TYPE_STRNAME, ITEM(res_dev, changer_name), 0, 0, NULL, NULL, NULL},
   {"ChangerCommand", CFG_TYPE_STRNAME, ITEM(res_dev, changer_command), 0, 0, NULL, NULL, NULL},
@@ -248,13 +250,15 @@ static struct s_kw authentication_methods[]
 
 struct s_io_kw {
   const char* name;
-  AutoXflateMode token;
+  IODirection token;
 };
 
-static s_io_kw io_directions[] = {{"in", AutoXflateMode::IO_DIRECTION_IN},
-                                  {"out", AutoXflateMode::IO_DIRECTION_OUT},
-                                  {"both", AutoXflateMode::IO_DIRECTION_INOUT},
-                                  {nullptr, AutoXflateMode::IO_DIRECTION_NONE}};
+static s_io_kw io_directions[] = {
+    {"in", IODirection::READ},         {"read", IODirection::READ},
+    {"readonly", IODirection::READ},   {"out", IODirection::WRITE},
+    {"write", IODirection::WRITE},     {"writeonly", IODirection::WRITE},
+    {"both", IODirection::READ_WRITE}, {"readwrite", IODirection::READ_WRITE},
+    {nullptr, IODirection::READ_WRITE}};
 
 static s_kw compression_algorithms[]
     = {{"gzip", COMPRESS_GZIP},   {"lzo", COMPRESS_LZO1X},
@@ -330,7 +334,7 @@ static void StoreIoDirection(LEX* lc, ResourceItem* item, int index, int)
   LexGetToken(lc, BCT_NAME);
   for (i = 0; io_directions[i].name; i++) {
     if (Bstrcasecmp(lc->str, io_directions[i].name)) {
-      SetItemVariable<AutoXflateMode>(*item, io_directions[i].token);
+      SetItemVariable<IODirection>(*item, io_directions[i].token);
       i = 0;
       break;
     }

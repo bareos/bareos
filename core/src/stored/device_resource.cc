@@ -22,7 +22,6 @@
 */
 
 #include "lib/parse_conf.h"
-#include "stored/autoxflate.h"
 #include "stored/device_resource.h"
 #include "stored/stored_globals.h"
 #include <fmt/format.h>
@@ -62,6 +61,7 @@ DeviceResource::DeviceResource(const DeviceResource& other)
   }
   device_type = other.device_type;
   label_type = other.label_type;
+  access_mode = other.access_mode;
   autoselect = other.autoselect;
   norewindonclose = other.norewindonclose;
   drive_tapealert_enabled = other.drive_tapealert_enabled;
@@ -117,6 +117,7 @@ DeviceResource& DeviceResource::operator=(const DeviceResource& rhs)
   spool_directory = rhs.spool_directory;
   device_type = rhs.device_type;
   label_type = rhs.label_type;
+  access_mode = rhs.access_mode;
   autoselect = rhs.autoselect;
   norewindonclose = rhs.norewindonclose;
   drive_tapealert_enabled = rhs.drive_tapealert_enabled;

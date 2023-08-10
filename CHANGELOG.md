@@ -86,6 +86,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - dird: show current and allowed console connections [PR #1487]
 - dird: add prev and new jobid variables [PR #1499]
 - improve default configuration [PR #1508]
+- stored: add AccessMode SD->Device directive to reserve devices exclusively for reading or writing [PR #1464]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -201,6 +202,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1455]: https://github.com/bareos/bareos/pull/1455
 [PR #1459]: https://github.com/bareos/bareos/pull/1459
 [PR #1460]: https://github.com/bareos/bareos/pull/1460
+[PR #1464]: https://github.com/bareos/bareos/pull/1464
 [PR #1466]: https://github.com/bareos/bareos/pull/1466
 [PR #1468]: https://github.com/bareos/bareos/pull/1468
 [PR #1469]: https://github.com/bareos/bareos/pull/1469

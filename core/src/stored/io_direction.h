@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,21 +21,21 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_STORED_AUTOXFLATE_H_
-#define BAREOS_STORED_AUTOXFLATE_H_
+#ifndef BAREOS_STORED_IO_DIRECTION_H_
+#define BAREOS_STORED_IO_DIRECTION_H_
 
 #include "include/bareos.h"
 
 namespace storagedaemon {
 
-enum class AutoXflateMode : uint16_t
+enum class IODirection : uint16_t
 {
-  IO_DIRECTION_NONE = 0,
-  IO_DIRECTION_IN,
-  IO_DIRECTION_OUT,
-  IO_DIRECTION_INOUT
+  NONE = 0,
+  READ,
+  WRITE,
+  READ_WRITE
 };
 
 }  // namespace storagedaemon
 
-#endif  // BAREOS_STORED_AUTOXFLATE_H_
+#endif  // BAREOS_STORED_IO_DIRECTION_H_
