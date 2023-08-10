@@ -28,7 +28,6 @@
 import bareosfd
 
 import BareosFdPluginBaseclass
-from StringIO import StringIO
 from stat import S_IFREG, S_IFDIR, S_IRWXU
 import io
 import ldif
@@ -41,21 +40,9 @@ import collections
 
 
 def _safe_encode(data):
-    if isinstance(data, unicode):
+    if isinstance(data, str):
         return data.encode("utf-8")
     return data
-
-
-class BytesLDIFRecordList(ldif.LDIFRecordList):
-    """Simple encoding wrapper for LDIFRecordList that converts keys to UTF-8"""
-
-    def _next_key_and_value(self):
-        # we do not descend from object, so we cannot use super()
-        k, v = ldif.LDIFRecordList._next_key_and_value(self)
-        try:
-            return _safe_encode(k), v
-        except:
-            return k, v
 
 
 class BareosFdPluginLDAP(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
@@ -134,14 +121,14 @@ class BareosFdPluginLDAP(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         bareosfd.DebugMessage(
             100, "BareosFdPluginLDAP:create_file() called with %s\n" % (restorepkt)
         )
-        if restorepkt.type == bareosfd.bFileType["FT_DIREND"]:
-            restorepkt.create_status = bareosfd.bCFs["CF_SKIP"]
-        elif restorepkt.type == bareosfd.bFileType["FT_REG"]:
+        if restorepkt.type == bareosfd.FT_DIREND:
+            restorepkt.create_status = bareosfd.CF_SKIP
+        elif restorepkt.type == bareosfd.FT_REG:
             self.ldap.set_new_dn(restorepkt.ofname)
-            restorepkt.create_status = bareosfd.bCFs["CF_EXTRACT"]
+            restorepkt.create_status = bareosfd.CF_EXTRACT
         else:
             bareosfd.JobMessage(
-                bareosfd.bJobMessageType["M_FATAL"],
+                bareosfd.M_FATAL,
                 "Request to restore illegal filetype %s\n" % (restorepkt.type),
             )
             return bareosfd.bRC_Error
@@ -153,24 +140,24 @@ class BareosFdPluginLDAP(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             100, "BareosFdPluginLDAP:plugin_io() called with function %s\n" % (IOP.func)
         )
 
-        if IOP.func == bareosfd.bIOPS["IO_OPEN"]:
+        if IOP.func == bareosfd.IO_OPEN:
             self.last_op = IOP.func
             return bareosfd.bRC_OK
 
-        elif IOP.func == bareosfd.bIOPS["IO_CLOSE"]:
-            if self.last_op == bareosfd.bIOPS["IO_OPEN"]:
+        elif IOP.func == bareosfd.IO_CLOSE:
+            if self.last_op == bareosfd.IO_OPEN:
                 bareosfd.JobMessage(
-                    bareosfd.bJobMessageType["M_WARNING"],
+                    bareosfd.M_WARNING,
                     "Missing data for DN %s\n" % self.ldap.dn,
                 )
             self.last_op = IOP.func
             return bareosfd.bRC_OK
 
-        elif IOP.func == bareosfd.bIOPS["IO_SEEK"]:
+        elif IOP.func == bareosfd.IO_SEEK:
             self.last_op = IOP.func
             return bareosfd.bRC_OK
 
-        elif IOP.func == bareosfd.bIOPS["IO_READ"]:
+        elif IOP.func == bareosfd.IO_READ:
             if not self.data_stream:
                 self.data_stream = io.BytesIO(_safe_encode(self.ldap.ldif))
             IOP.buf = bytearray(IOP.count)
@@ -184,7 +171,7 @@ class BareosFdPluginLDAP(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             self.last_op = IOP.func
             return bareosfd.bRC_OK
 
-        elif IOP.func == bareosfd.bIOPS["IO_WRITE"]:
+        elif IOP.func == bareosfd.IO_WRITE:
             if not self.data_stream:
                 self.data_stream = io.BytesIO()
 
@@ -238,15 +225,9 @@ class BareosLDAPWrapper:
         Bind to LDAP URI using the given authentication tokens
         """
         if bulk:
-            try:
-                self.ld = BulkLDAP(options["uri"], bytes_mode=True)
-            except TypeError:
-                self.ld = BulkLDAP(options["uri"])
+            self.ld = BulkLDAP(options["uri"])
         else:
-            try:
-                self.ld = ldap.initialize(options["uri"], bytes_mode=True)
-            except TypeError:
-                self.ld = ldap.initialize(options["uri"])
+            self.ld = ldap.initialize(options["uri"])
 
         try:
             self.ld.protocol_version = ldap.VERSION3
@@ -256,7 +237,7 @@ class BareosLDAPWrapper:
                 self.ld.simple_bind_s("", "")
         except ldap.INVALID_CREDENTIALS:
             bareosfd.JobMessage(
-                bareosfd.bJobMessageType["M_FATAL"],
+                bareosfd.M_FATAL,
                 "Failed to bind to LDAP uri due to invalid credentials %s\n"
                 % (options["uri"]),
             )
@@ -265,13 +246,13 @@ class BareosLDAPWrapper:
         except ldap.LDAPError as e:
             if type(e.message) == dict and "desc" in e.message:
                 bareosfd.JobMessage(
-                    bareosfd.bJobMessageType["M_FATAL"],
+                    bareosfd.M_FATAL,
                     "Failed to bind to LDAP uri %s: %s %s\n"
                     % (options["uri"], e.message["desc"], e.message["info"]),
                 )
             else:
                 bareosfd.JobMessage(
-                    bareosfd.bJobMessageType["M_FATAL"],
+                    bareosfd.M_FATAL,
                     "Failed to bind to LDAP uri %s: %s\n" % (options["uri"], e),
                 )
 
@@ -313,13 +294,13 @@ class BareosLDAPWrapper:
         except ldap.LDAPError as e:
             if type(e.message) == dict and "desc" in e.message:
                 bareosfd.JobMessage(
-                    bareosfd.bJobMessageType["M_FATAL"],
+                    bareosfd.M_FATAL,
                     "Failed to execute LDAP search on LDAP uri %s: %s\n"
                     % (options["uri"], e.message["desc"]),
                 )
             else:
                 bareosfd.JobMessage(
-                    bareosfd.bJobMessageType["M_FATAL"],
+                    bareosfd.M_FATAL,
                     "Failed to execute LDAP search on LDAP uri %s: %s\n"
                     % (options["uri"], e),
                 )
@@ -358,18 +339,15 @@ class BareosLDAPWrapper:
             # Remove some attributes from entry before creating the LDIF.
             ignore_attribute = ["createTimestamp", "modifyTimestamp"]
 
-            keys = self.entry.keys()
+            keys = list(self.entry.keys())
             for value in keys:
                 if value in ignore_attribute:
                     del self.entry[value]
 
             # Dump the content of the LDAP entry as LDIF text
-            ldif_dump = StringIO()
+            ldif_dump = io.StringIO()
             ldif_out = ldif.LDIFWriter(ldif_dump)
-            try:
-                ldif_out.unparse(self.dn, self.entry)
-            except UnicodeDecodeError:
-                ldif_out.unparse(self.dn.decode("utf-8"), self.entry)
+            ldif_out.unparse(self.dn, self.entry)
 
             self.ldif = ldif_dump.getvalue()
             self.ldif_len = len(self.ldif)
@@ -384,7 +362,7 @@ class BareosLDAPWrapper:
                 statp.st_mtime = self.unix_modify_time
 
             savepkt.statp = statp
-            savepkt.type = bareosfd.bFileType["FT_REG"]
+            savepkt.type = bareosfd.FT_REG
             savepkt.fname = self.file_to_backup + "/data.ldif"
             # Read the content of a file
             savepkt.no_read = False
@@ -398,7 +376,7 @@ class BareosLDAPWrapper:
                 # Try to get the first result set from the query,
                 # if there is nothing return an error.
                 try:
-                    res_type, res_data, res_msgid, res_controls = self.resultset.next()
+                    res_type, res_data, res_msgid, res_controls = next(self.resultset)
                     self.ldap_entries = collections.deque(res_data)
                 except ldap.NO_SUCH_OBJECT:
                     return bareosfd.bRC_Error
@@ -414,7 +392,9 @@ class BareosLDAPWrapper:
                     # convert it to an UNIX timestamp
                     self.unix_create_time = None
                     try:
-                        createTimestamp = self.entry["createTimestamp"][0]
+                        createTimestamp = self.entry["createTimestamp"][0].decode(
+                            "ascii"
+                        )
                     except KeyError:
                         pass
                     else:
@@ -422,7 +402,9 @@ class BareosLDAPWrapper:
 
                     self.unix_modify_time = None
                     try:
-                        modifyTimestamp = self.entry["modifyTimestamp"][0]
+                        modifyTimestamp = self.entry["modifyTimestamp"][0].decode(
+                            "ascii"
+                        )
                     except KeyError:
                         pass
                     else:
@@ -442,7 +424,8 @@ class BareosLDAPWrapper:
                         statp.st_mtime = self.unix_modify_time
 
                     savepkt.statp = statp
-                    savepkt.type = bareosfd.bFileType["FT_DIREND"]
+
+                    savepkt.type = bareosfd.FT_DIREND
                     savepkt.fname = self.file_to_backup
                     # A directory has a link field which contains
                     # the fname + a trailing '/'
@@ -452,7 +435,7 @@ class BareosLDAPWrapper:
 
                     if "/" in self.dn:
                         bareosfd.JobMessage(
-                            bareosfd.bJobMessageType["M_ERROR"],
+                            bareosfd.M_ERROR,
                             "Slashes (/) in DN not supported. Skipping %s" % self.dn,
                         )
                         # set to none, so the object will not be picket up
@@ -469,9 +452,7 @@ class BareosLDAPWrapper:
         3. filter out anything without an equals sign("=")
         4. join components into comma-separated string
         """
-        self.dn = _safe_encode(
-            ",".join(filter(lambda x: "=" in x, reversed(fname.split("/"))))
-        )
+        self.dn = ",".join(filter(lambda x: "=" in x, reversed(fname.split("/"))))
 
     def has_next_file(self):
         # See if we are currently handling the LDIF file or
@@ -484,7 +465,7 @@ class BareosLDAPWrapper:
             if self.resultset:
                 try:
                     # Get the next result set
-                    res_type, res_data, res_msgid, res_controls = self.resultset.next()
+                    res_type, res_data, res_msgid, res_controls = next(self.resultset)
                     self.ldap_entries = collections.deque(res_data)
 
                     # We expect something to be in the result set but better check
@@ -502,16 +483,15 @@ class BareosLDAPWrapper:
         # Restore the entry
         if self.ldif:
             # Parse the LDIF back to an attribute list
-            ldif_dump = StringIO(str(self.ldif))
-            ldif_parser = BytesLDIFRecordList(ldif_dump, max_entries=1)
+            ldif_dump = io.StringIO(self.ldif)
+            ldif_parser = ldif.LDIFRecordList(ldif_dump, max_entries=1)
             ldif_parser.parse()
             dn, entry = ldif_parser.all_records[0]
-            dn = _safe_encode(dn)
             ldif_dump.close()
 
             if self.dn != dn:
                 bareosfd.JobMessage(
-                    bareosfd.bJobMessageType["M_INFO"],
+                    bareosfd.M_INFO,
                     "Restoring original DN %s as %s\n" % (dn, self.dn),
                 )
 
@@ -529,20 +509,20 @@ class BareosLDAPWrapper:
                         except ldap.LDAPError as e:
                             if type(e.message) == dict and "desc" in e.message:
                                 bareosfd.JobMessage(
-                                    bareosfd.bJobMessageType["M_ERROR"],
+                                    bareosfd.M_ERROR,
                                     "Failed to restore LDAP DN %s: %s\n"
                                     % (self.dn, e.message["desc"]),
                                 )
                             else:
                                 bareosfd.JobMessage(
-                                    bareosfd.bJobMessageType["M_ERROR"],
+                                    bareosfd.M_ERROR,
                                     "Failed to restore LDAP DN %s: %s\n" % (self.dn, e),
                                 )
                             self.ldif = None
                             return bareosfd.bRC_Error
                 else:
                     bareosfd.JobMessage(
-                        bareosfd.bJobMessageType["M_ERROR"],
+                        bareosfd.M_ERROR,
                         "Failed to restore LDAP DN %s no writable binding to LDAP exists\n"
                         % (self.dn),
                     )
