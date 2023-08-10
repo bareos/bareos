@@ -36,7 +36,7 @@
 
 /* Forward referenced subroutines */
 static TREE_NODE* search_and_insert_tree_node(char* fname,
-                                              int type,
+                                              TreeNodeType type,
                                               TREE_ROOT* root,
                                               TREE_NODE* parent);
 template <typename T> static T* tree_alloc(TREE_ROOT* root, int size);
@@ -90,7 +90,7 @@ TREE_ROOT* new_tree(int count)
   MallocBuf(root, size);
   root->cached_path_len = -1;
   root->cached_path = GetPoolMemory(PM_FNAME);
-  root->type = TN_ROOT;
+  root->type = TreeNodeType::ROOT;
   root->fname = "";
   return root;
 }
@@ -190,7 +190,6 @@ void TreeAddDeltaPart(TREE_ROOT* root,
  */
 TREE_NODE* insert_tree_node(char* path,
                             char* fname,
-                            int,
                             TREE_ROOT* root,
                             TREE_NODE* parent)
 {
@@ -244,7 +243,8 @@ TREE_NODE* insert_tree_node(char* path,
     Dmsg1(100, "No / found: %s\n", path);
   }
 
-  node = search_and_insert_tree_node(fname, 0, root, parent);
+  node
+      = search_and_insert_tree_node(fname, TreeNodeType::UNKNOWN, root, parent);
 
   if (q) {    /* if trailing slash on entry */
     *q = '/'; /*  restore it */
@@ -262,7 +262,7 @@ TREE_NODE* make_tree_path(char* path, TREE_ROOT* root)
 {
   TREE_NODE *parent, *node;
   char *fname, *p;
-  int type = TN_NEWDIR;
+  TreeNodeType type = TreeNodeType::NEWDIR;
 
   Dmsg1(100, "make_tree_path: %s\n", path);
 
@@ -281,7 +281,7 @@ TREE_NODE* make_tree_path(char* path, TREE_ROOT* root)
   } else {
     fname = path;
     parent = (TREE_NODE*)root;
-    type = TN_DIR_NLS;
+    type = TreeNodeType::DIR_NLS;
   }
 
   node = search_and_insert_tree_node(fname, type, root, parent);
@@ -305,7 +305,7 @@ static int NodeCompare(void* item1, void* item2)
 
 // See if the fname already exists. If not insert a new node for it.
 static TREE_NODE* search_and_insert_tree_node(char* fname,
-                                              int type,
+                                              TreeNodeType type,
                                               TREE_ROOT* root,
                                               TREE_NODE* parent)
 {
@@ -349,7 +349,8 @@ static void TreeGetpathItem(TREE_NODE* node, POOLMEM*& path)
   /* Fixup for Win32. If we have a Win32 directory and
    * there is only a / in the buffer, remove it since
    * win32 names don't generally start with / */
-  if (node->type == TN_DIR_NLS && IsPathSeparator(path[0]) && path[1] == '\0') {
+  if (node->type == TreeNodeType::DIR_NLS && IsPathSeparator(path[0])
+      && path[1] == '\0') {
     PmStrcpy(path, "");
   }
   PmStrcat(path, node->fname);
@@ -357,7 +358,8 @@ static void TreeGetpathItem(TREE_NODE* node, POOLMEM*& path)
   /* Add a slash for all directories unless we are at the root,
    * also add a slash to a soft linked file if it has children
    * i.e. it is linked to a directory. */
-  if ((node->type != TN_FILE && !(IsPathSeparator(path[0]) && path[1] == '\0'))
+  if ((node->type != TreeNodeType::FILE
+       && !(IsPathSeparator(path[0]) && path[1] == '\0'))
       || (node->soft_link && TreeNodeHasChild(node))) {
     PmStrcat(path, "/");
   }
@@ -441,7 +443,9 @@ TREE_NODE* tree_relcwd(char* path, TREE_ROOT* root, TREE_NODE* node)
     if (match) { break; }
   }
 
-  if (!cd || (cd->type == TN_FILE && !TreeNodeHasChild(cd))) { return NULL; }
+  if (!cd || (cd->type == TreeNodeType::FILE && !TreeNodeHasChild(cd))) {
+    return NULL;
+  }
 
   if (!p) {
     Dmsg0(100, "tree_relcwd: no more to lookup. found.\n");

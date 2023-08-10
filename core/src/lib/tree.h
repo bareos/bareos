@@ -57,6 +57,17 @@ struct delta_list {
   int32_t FileIndex;
 };
 
+/* type values */
+enum class TreeNodeType
+{
+  UNKNOWN = 0,
+  ROOT,     // root node
+  NEWDIR,   // created directory to fill path
+  DIR,      // directory entry
+  DIR_NLS,  // directory -- no leading slash -- win32
+  FILE,     // file entry
+};
+
 /**
  * Keep this node as small as possible because
  *   there is one for each file.
@@ -76,18 +87,18 @@ struct s_tree_node {
    *  do initialization of child */
   rblink sibling;
   rblist child;
-  char* fname{};                /* file name */
-  int32_t FileIndex{};          /* file index */
-  uint32_t JobId{};             /* JobId */
-  int32_t delta_seq{};          /* current delta sequence */
-  uint16_t fname_len{};         /* filename length */
-  unsigned int type : 8;        /* node type */
-  unsigned int extract : 1;     /* extract item */
-  unsigned int extract_dir : 1; /* extract dir entry only */
-  unsigned int hard_link : 1;   /* set if have hard link */
-  unsigned int soft_link : 1;   /* set if is soft link */
-  unsigned int inserted : 1;    /* set when node newly inserted */
-  unsigned int loaded : 1;      /* set when the dir is in the tree */
+  char* fname{};                            /* file name */
+  int32_t FileIndex{};                      /* file index */
+  uint32_t JobId{};                         /* JobId */
+  int32_t delta_seq{};                      /* current delta sequence */
+  uint16_t fname_len{};                     /* filename length */
+  TreeNodeType type{TreeNodeType::UNKNOWN}; /* node type */
+  unsigned int extract : 1;                 /* extract item */
+  unsigned int extract_dir : 1;             /* extract dir entry only */
+  unsigned int hard_link : 1;               /* set if have hard link */
+  unsigned int soft_link : 1;               /* set if is soft link */
+  unsigned int inserted : 1;                /* set when node newly inserted */
+  unsigned int loaded : 1; /* set when the dir is in the tree */
   struct s_tree_node* parent{};
   struct s_tree_node* next{};      /* next hash of FileIndex */
   struct delta_list* delta_list{}; /* delta parts for this node */
@@ -120,17 +131,17 @@ struct s_tree_root {
    *  do initialization of child */
   rblink sibling{};
   rblist child;
-  const char* fname{};          /* file name */
-  int32_t FileIndex{};          /* file index */
-  uint32_t JobId{};             /* JobId */
-  int32_t delta_seq{};          /* current delta sequence */
-  uint16_t fname_len{};         /* filename length */
-  unsigned int type : 8;        /* node type */
-  unsigned int extract : 1;     /* extract item */
-  unsigned int extract_dir : 1; /* extract dir entry only */
-  unsigned int have_link : 1;   /* set if have hard link */
-  unsigned int inserted : 1;    /* set when newly inserted */
-  unsigned int loaded : 1;      /* set when the dir is in the tree */
+  const char* fname{};                      /* file name */
+  int32_t FileIndex{};                      /* file index */
+  uint32_t JobId{};                         /* JobId */
+  int32_t delta_seq{};                      /* current delta sequence */
+  uint16_t fname_len{};                     /* filename length */
+  TreeNodeType type{TreeNodeType::UNKNOWN}; /* node type */
+  unsigned int extract : 1;                 /* extract item */
+  unsigned int extract_dir : 1;             /* extract dir entry only */
+  unsigned int have_link : 1;               /* set if have hard link */
+  unsigned int inserted : 1;                /* set when newly inserted */
+  unsigned int loaded : 1; /* set when the dir is in the tree */
   struct s_tree_node* parent{};
   struct s_tree_node* next{};      /* next hash of FileIndex */
   struct delta_list* delta_list{}; /* delta parts for this node */
@@ -148,18 +159,10 @@ struct s_tree_root {
 };
 typedef struct s_tree_root TREE_ROOT;
 
-/* type values */
-#define TN_ROOT 1    /* root node */
-#define TN_NEWDIR 2  /* created directory to fill path */
-#define TN_DIR 3     /* directory entry */
-#define TN_DIR_NLS 4 /* directory -- no leading slash -- win32 */
-#define TN_FILE 5    /* file entry */
-
 /* External interface */
 TREE_ROOT* new_tree(int count);
 TREE_NODE* insert_tree_node(char* path,
                             char* fname,
-                            int type,
                             TREE_ROOT* root,
                             TREE_NODE* parent);
 TREE_NODE* make_tree_path(char* path, TREE_ROOT* root);
