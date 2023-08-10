@@ -978,6 +978,9 @@ int SendFiles(JobControlRecord* jcr,
   /* This is the new way */
   findFILESET* fileset = ff->fileset;
   int ret_val = 1;
+  std::chrono::milliseconds initial_sleep_time{1};
+  std::chrono::milliseconds max_sleep_time{30};
+  std::chrono::milliseconds progressive_sleep_time = initial_sleep_time;
   if (fileset) {
     /* TODO: We probably need be move the initialization in the fileset loop,
      * at this place flags options are "concatenated" accross Include {} blocks
@@ -1047,7 +1050,11 @@ int SendFiles(JobControlRecord* jcr,
       // if we have not gotten any file then sleep for a bit instead
       // of spinning here
       if (!found_file) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(30));
+        std::this_thread::sleep_for(progressive_sleep_time);
+        progressive_sleep_time
+            = std::min(progressive_sleep_time * 2, max_sleep_time);
+      } else {
+        progressive_sleep_time = initial_sleep_time;
       }
     }
   }
