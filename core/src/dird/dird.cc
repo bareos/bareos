@@ -226,7 +226,7 @@ int main(int argc, char* argv[])
 
   AddDeprecatedExportOptionsHelp(dir_app);
 
-  CLI11_PARSE(dir_app, argc, argv);
+  ParseBareosApp(dir_app, argc, argv);
 
   if (!no_signals) { InitSignals(TerminateDird); }
 

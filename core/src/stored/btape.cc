@@ -290,7 +290,7 @@ int main(int margc, char* margv[])
   btape_app.add_option_group("Interactive commands",
                              Generate_interactive_commands_help());
 
-  CLI11_PARSE(btape_app, margc, margv)
+  ParseBareosApp(btape_app, margc, margv);
 
   printf(_("Tape block granularity is %d bytes.\n"), TAPE_BSIZE);
 

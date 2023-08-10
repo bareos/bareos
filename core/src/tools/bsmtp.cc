@@ -320,7 +320,7 @@ int main(int argc, char* argv[])
   bsmtp_app.add_option("recipients", recipients, "List of recipients.")
       ->required();
 
-  CLI11_PARSE(bsmtp_app, argc, argv);
+  ParseBareosApp(bsmtp_app, argc, argv);
 
   Dmsg3(20, "%s: mailhost=%s ; mailport=%d\n", host_and_port_source.c_str(),
         mailhost.c_str(), mailport);

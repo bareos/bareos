@@ -145,7 +145,7 @@ int main(int argc, char* argv[])
 
   AddDeprecatedExportOptionsHelp(fd_app);
 
-  CLI11_PARSE(fd_app, argc, argv);
+  ParseBareosApp(fd_app, argc, argv);
 
   if (user.empty() && keep_readall_caps) {
     Emsg0(M_ERROR_TERM, 0, _("-k option has no meaning without -u option.\n"));

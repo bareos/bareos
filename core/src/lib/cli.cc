@@ -203,3 +203,17 @@ void AddUserAndGroupOptions(CLI::App& app,
                  "Run as given group (requires starting as root)")
       ->type_name("<group>");
 }
+
+void ParseBareosApp(CLI::App& app, int argc, char** argv)
+{
+  try {
+    app.parse(argc, argv);
+  } catch (const CLI::ParseError& e) {
+    int cli11_exit = app.exit(e);
+    if (cli11_exit == static_cast<int>(CLI::ExitCodes::Success)) {
+      exit(EXIT_SUCCESS);
+    } else {
+      exit(kBareosCLI11ExitCode);
+    }
+  }
+}

@@ -34,7 +34,7 @@
 
 using namespace directordaemon;
 
-int main(int argc, char* const* argv)
+int main(int argc, char** argv)
 {
   OSDependentInit();
 
@@ -59,7 +59,7 @@ int main(int argc, char* const* argv)
   testfind_app.add_option("-f,--fileset", filesetname,
                           "Specify which FileSet to use.");
 
-  CLI11_PARSE(testfind_app, argc, argv);
+  ParseBareosApp(testfind_app, argc, argv);
 
   directordaemon::my_config = InitDirConfig(configfile.c_str(), M_ERROR_TERM);
 
