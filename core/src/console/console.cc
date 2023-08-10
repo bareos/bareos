@@ -945,14 +945,17 @@ int main(int argc, char* argv[])
   if (export_config_schema) {
     PoolMem buffer;
 
-    my_config = InitConsConfig(configfile, M_ERROR_TERM);
+    my_config = InitConsConfig(configfile, M_CONFIG_ERROR);
     PrintConfigSchemaJson(buffer);
     printf("%s\n", buffer.c_str());
     exit(0);
   }
 
-  my_config = InitConsConfig(configfile, M_ERROR_TERM);
-  my_config->ParseConfig();
+  my_config = InitConsConfig(configfile, M_CONFIG_ERROR);
+  if (!my_config->ParseConfig()) {
+    std::cerr << "Configuration parsing error" << std::endl;
+    exit(configerror_exit_code);
+  }
 
   if (export_config) {
     my_config->DumpResources(PrintMessage, NULL);

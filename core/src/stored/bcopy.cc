@@ -166,8 +166,8 @@ int main(int argc, char* argv[])
 
   working_directory = work_dir.c_str();
 
-  my_config = InitSdConfig(configfile.c_str(), M_ERROR_TERM);
-  ParseSdConfig(configfile.c_str(), M_ERROR_TERM);
+  my_config = InitSdConfig(configfile.c_str(), M_CONFIG_ERROR);
+  ParseSdConfig(configfile.c_str(), M_CONFIG_ERROR);
 
   DirectorResource* director = nullptr;
   if (!DirectorName.empty()) {

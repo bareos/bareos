@@ -873,8 +873,12 @@ int main(int argc, char* argv[])
     CatalogResource* catalog = nullptr;
     int found = 0;
 
-    my_config = InitDirConfig(configfile.c_str(), M_ERROR_TERM);
-    my_config->ParseConfig();
+    my_config = InitDirConfig(configfile.c_str(), M_CONFIG_ERROR);
+    if (!my_config->ParseConfig()) {
+      std::cerr << "Configuration parsing error" << std::endl;
+      exit(configerror_exit_code);
+    }
+
     LockRes(my_config);
     foreach_res (catalog, R_CATALOG) {
       if (!catalogname.empty()

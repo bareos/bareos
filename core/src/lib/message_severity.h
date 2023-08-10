@@ -90,7 +90,8 @@ enum
   M_SECURITY,
   M_ALERT,
   M_VOLMGMT,
-  M_AUDIT
+  M_AUDIT,
+  M_CONFIG_ERROR,
 };
 
 #define M_MAX M_AUDIT /* keep this updated ! */

@@ -296,8 +296,8 @@ int main(int margc, char* margv[])
 
   daemon_start_time = time(nullptr);
 
-  my_config = InitSdConfig(configfile, M_ERROR_TERM);
-  ParseSdConfig(configfile, M_ERROR_TERM);
+  my_config = InitSdConfig(configfile, M_CONFIG_ERROR);
+  ParseSdConfig(configfile, M_CONFIG_ERROR);
 
   DirectorResource* director = nullptr;
   if (!DirectorName.empty()) {
