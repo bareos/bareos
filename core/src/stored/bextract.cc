@@ -220,8 +220,8 @@ int main(int argc, char* argv[])
 
   ParseBareosApp(bextract_app, argc, argv);
 
-  my_config = InitSdConfig(configfile, M_ERROR_TERM);
-  ParseSdConfig(configfile, M_ERROR_TERM);
+  my_config = InitSdConfig(configfile, M_CONFIG_ERROR);
+  ParseSdConfig(configfile, M_CONFIG_ERROR);
 
   static DirectorResource* director = nullptr;
   if (!DirectorName.empty()) {

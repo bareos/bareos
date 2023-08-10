@@ -45,6 +45,8 @@ class JobControlRecord;
 typedef std::optional<std::string> (*job_code_callback_t)(JobControlRecord*,
                                                           const char*);
 
+const short configerror_exit_code = 42;
+
 void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...);
 void Qmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...);
 bool GetTrace(void);

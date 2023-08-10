@@ -72,8 +72,8 @@ void ReservationTest::SetUp()
 
   /* configfile is a global char* from stored_globals.h */
   configfile = strdup(RELATIVE_PROJECT_SOURCE_DIR "/configs/sd_reservation/");
-  my_config = InitSdConfig(configfile, M_ERROR_TERM);
-  ParseSdConfig(configfile, M_ERROR_TERM);
+  my_config = InitSdConfig(configfile, M_CONFIG_ERROR);
+  ParseSdConfig(configfile, M_CONFIG_ERROR);
   /* we do not run CheckResources() here, so take care the test configration
    * is not broken. Also autochangers will not work. */
 

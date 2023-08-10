@@ -190,8 +190,11 @@ int main(int argc, char* argv[])
     exit(0);
   }
 
-  my_config = InitFdConfig(configfile, M_ERROR_TERM);
-  my_config->ParseConfig();
+  my_config = InitFdConfig(configfile, M_CONFIG_ERROR);
+  if (!my_config->ParseConfig()) {
+    std::cerr << "Configuration parsing error" << std::endl;
+    exit(configerror_exit_code);
+  }
 
   if (export_config) {
     my_config->DumpResources(PrintMessage, nullptr);
@@ -202,7 +205,7 @@ int main(int argc, char* argv[])
   if (!CheckResources()) {
     Emsg1(M_ERROR, 0, _("Please correct configuration file: %s\n"),
           my_config->get_base_config_path().c_str());
-    TerminateFiled(1);
+    TerminateFiled(configerror_exit_code);
   }
 
   if (my_config->HasWarnings()) {

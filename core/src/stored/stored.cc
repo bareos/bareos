@@ -216,15 +216,15 @@ int main(int argc, char* argv[])
   if (export_config_schema) {
     PoolMem buffer;
 
-    my_config = InitSdConfig(configfile, M_ERROR_TERM);
+    my_config = InitSdConfig(configfile, M_CONFIG_ERROR);
     PrintConfigSchemaJson(buffer);
     printf("%s\n", buffer.c_str());
 
     return 0;
   }
 
-  my_config = InitSdConfig(configfile, M_ERROR_TERM);
-  ParseSdConfig(configfile, M_ERROR_TERM);
+  my_config = InitSdConfig(configfile, M_CONFIG_ERROR);
+  ParseSdConfig(configfile, M_CONFIG_ERROR);
 
   if (forge_on) {
     my_config->AddWarning(

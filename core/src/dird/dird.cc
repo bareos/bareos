@@ -251,7 +251,7 @@ int main(int argc, char* argv[])
             "but program was not started with required root privileges.\n"));
   }
 
-  my_config = InitDirConfig(configfile, M_ERROR_TERM);
+  my_config = InitDirConfig(configfile, M_CONFIG_ERROR);
   if (export_config_schema) {
     PoolMem buffer;
 
@@ -262,7 +262,10 @@ int main(int argc, char* argv[])
     return 0;
   }
 
-  my_config->ParseConfig();
+  if (!my_config->ParseConfig()) {
+    std::cerr << "Configuration parsing error" << std::endl;
+    exit(configerror_exit_code);
+  }
 
   if (export_config) {
     int rc = 0;
