@@ -862,7 +862,7 @@ int main(int argc, char* argv[])
   manual_args->add_option("port", dbport, "Database port")
       ->check(CLI::PositiveNumber);
 
-  CLI11_PARSE(dbcheck_app, argc, argv);
+  ParseBareosApp(dbcheck_app, argc, argv);
 
   const char* db_driver = "postgresql";
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)

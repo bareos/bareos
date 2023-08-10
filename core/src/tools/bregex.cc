@@ -34,7 +34,7 @@
 #  include <regex.h>
 #endif
 
-int main(int argc, char* const* argv)
+int main(int argc, char** argv)
 {
   setlocale(LC_ALL, "");
   tzset();
@@ -60,7 +60,7 @@ int main(int argc, char* const* argv)
       "-n,--not-match", [&match_only](bool) { match_only = false; },
       "Print line that do not match.");
 
-  CLI11_PARSE(bregex_app, argc, argv);
+  ParseBareosApp(bregex_app, argc, argv);
 
   OSDependentInit();
 

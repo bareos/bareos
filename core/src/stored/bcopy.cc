@@ -160,7 +160,7 @@ int main(int argc, char* argv[])
       ->required()
       ->type_name(" ");
 
-  CLI11_PARSE(bcopy_app, argc, argv);
+  ParseBareosApp(bcopy_app, argc, argv);
 
   OSDependentInit();
 

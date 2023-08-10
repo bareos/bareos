@@ -189,7 +189,7 @@ int main(int argc, char* argv[])
 
   AddNetworkDebuggingOption(sd_app);
 
-  CLI11_PARSE(sd_app, argc, argv);
+  ParseBareosApp(sd_app, argc, argv);
 
   if (!no_signals) { InitSignals(TerminateStored); }
 

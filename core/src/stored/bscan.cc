@@ -252,7 +252,7 @@ int main(int argc, char* argv[])
       ->required()
       ->type_name(" ");
 
-  CLI11_PARSE(bscan_app, argc, argv);
+  ParseBareosApp(bscan_app, argc, argv);
 
   my_config = InitSdConfig(configfile, M_ERROR_TERM);
   ParseSdConfig(configfile, M_ERROR_TERM);
