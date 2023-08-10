@@ -29,6 +29,12 @@ mkdir -p "$TESTPGHOST"
 
 pushd database > /dev/null
 setup_local_db "$TESTPGHOST"
+PSQL_VERSION=$(${PSQL} -qtAX <<< "SHOW server_version;" | sed 's/\..*//g')
+if [ ${PSQL_VERSION} -ge 15 ]; then
+# skip test
+  echo "${TestName} test skipped: not compatible with PG >= 15"
+  exit 77;
+fi
 # Create a backup group role with nologin but superuser
 ${PSQL} -d postgres <<< "CREATE ROLE backup_group with SUPERUSER"
 # Create a simple login role
@@ -40,7 +46,6 @@ CREATE TABLE t(id serial PRIMARY KEY, text VARCHAR(20), created_on TIMESTAMP);
 INSERT INTO t (text, created_on) values ('test for FULL backup', current_timestamp);
 SELECT * FROM t;
 "
-PSQL_VERSION=$(${PSQL} -qtAX ${DBNAME} <<< "SHOW server_version;" | sed 's/\..*//g')
 popd > /dev/null
 
 #shellcheck source=../scripts/functions

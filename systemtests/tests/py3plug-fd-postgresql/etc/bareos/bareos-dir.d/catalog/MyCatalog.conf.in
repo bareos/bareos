@@ -1,0 +1,9 @@
+Catalog {
+  Name = MyCatalog
+  dbname = "@db_name@"
+  dbuser = "@db_user@"
+  dbpassword = "@db_password@"
+  # this would rund the catalog in the local database
+  # for now we use it for backup and restore tests, only
+  #dbaddress = "@dbaddress@"
+}

@@ -1,0 +1,213 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+# This systemtest tests the plugin functionality
+# of the Bareos FD by using the supplied module
+# bareos-fd-postgresql
+#
+# The module will backup a PostgreSQL cluster with tablespaces
+# Full, Incremental after changes, Incremental after no changes
+# Stop the PostgreSQL, destroy the data directory
+# Restore the server data directory and wal archives
+# Restart and check the PostgreSQL cluster.
+#
+# It can be used for any PostgreSQL version >= 10.
+
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName="backup-bareos-fd"
+#shellcheck source=../environment.in
+. ./environment
+. ./database/setup_local_db.sh
+
+# setup local database server
+DBNAME="backuptablespace"
+TESTPGHOST="${dbHost}"
+PSQL="${POSTGRES_BIN_PATH}/psql --host ${TESTPGHOST}"
+
+[ -d "${TESTPGHOST}" ] && rm -R "${TESTPGHOST}"
+mkdir -p "${TESTPGHOST}"
+[ $EUID -eq 0 ] && chown postgres "${TESTPGHOST}"
+
+pushd database > /dev/null
+setup_local_db "${TESTPGHOST}"
+# PG_VERSION will be pick from backuped PG data dir
+PG_VERSION="$(cut -d '.' -f1 data/PG_VERSION)"
+if [ ${PG_VERSION} -lt 10 ]; then
+# skip test
+ echo "${TestName} test skipped: not compatible with PG <= 10"
+ exit 77;
+fi
+setup_local_tablespace "${TESTPGHOST}"
+popd > /dev/null
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+# Create Test DB with table and 1 statement
+${PSQL} postgres -c "CREATE DATABASE $DBNAME TABLESPACE table_space"
+${PSQL} ${DBNAME} -c "
+CREATE TABLE t(id serial PRIMARY KEY, text VARCHAR(20), created_on TIMESTAMP);
+INSERT INTO t (text, created_on) values ('test for FULL backup', current_timestamp);
+SELECT * FROM t;
+"
+${PSQL} ${DBNAME} -c"
+CREATE UNIQUE INDEX uniq_space ON t (text, created_on DESC)
+TABLESPACE index_space;
+"
+
+start_test
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@$out /dev/null
+messages
+@$out ${tmp}/tlog1.out
+setdebug level=150 trace=1 timestamp=1 client=bareos-fd
+run job=${JobName} fileset=PluginTestTablespace Level=Full yes
+wait
+setdebug level=0 client=bareos-fd
+status director
+status client
+status storage=File
+wait
+messages
+END_OF_DATA
+
+echo "First full backup stage"
+run_bconsole
+expect_grep "Backup OK" "${tmp}/tlog1.out" "Full Backup not found!"
+if [ ${estat} -ne 0 ]; then
+    exit ${estat}
+fi
+
+# Now add data to the database and run an incremental job
+${PSQL} ${DBNAME} -c "INSERT INTO t (text, created_on) values ('test for INCR backup', current_timestamp)"
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@$out /dev/null
+messages
+@$out ${tmp}/tlog2.out
+setdebug level=250 trace=1 timestamp=1 client=bareos-fd
+run job=${JobName} fileset=PluginTestTablespace Level=Incremental yes
+wait
+setdebug level=0 client=bareos-fd
+messages
+END_OF_DATA
+
+echo "First incremental backup stage"
+run_bconsole
+expect_grep "Backup OK" "${tmp}/tlog2.out" "First Incremental Backup not found!"
+if [ ${estat} -ne 0 ]; then
+    exit ${estat}
+fi
+
+# run another Incr without db changes - should result in empty backup job (only restore object)
+cat <<END_OF_DATA >${tmp}/bconcmds
+@$out /dev/null
+messages
+@$out ${tmp}/tlog3.out
+setdebug level=150 trace=1 timestamp=1 client=bareos-fd
+run job=${JobName} fileset=PluginTestTablespace Level=Incremental yes
+wait
+setdebug level=0 client=bareos-fd
+messages
+END_OF_DATA
+echo "Second incremental backup stage"
+run_bconsole
+expect_grep "Backup OK" "${tmp}/tlog3.out" "2nd Incremental Backup not found!"
+if [ ${estat} -ne 0 ]; then
+    exit ${estat}
+fi
+
+# Now stop database and try a restore
+pushd database/ > /dev/null
+echo "destroy pg_cluster"
+local_db_stop_server "$TESTPGHOST"
+# Save previous log
+[ -d "data/log" ] && cp -a data/log/* log/
+rm -rf data wal_archive table_space index_space
+
+echo "------------ stopped"
+popd > /dev/null
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@$out /dev/null
+messages
+@$out ${tmp}/tlog4.out
+setdebug level=150 trace=1 timestamp=1 client=bareos-fd
+restore client=bareos-fd fileset=PluginTestTablespace where=/ select all done yes
+wait
+setdebug level=0 client=bareos-fd
+messages
+END_OF_DATA
+echo "Restore stage"
+run_bconsole
+
+expect_grep "Restore OK" "${tmp}/tlog4.out" "Restore Backup not ok!"
+if [ ${estat} -ne 0 ]; then
+    exit ${estat}
+fi
+
+sleep 1
+
+pushd database > /dev/null
+#sometimes the pid file remains
+rm -f data/postmaster.pid ||:
+# reset log file
+rm -f data/log/* ||:
+rm -f data/pg_wall/* ||:
+
+# use either recovery.conf or recovery.signal
+# Those files should exist after restore, the plugin create them
+# postgres 11 and lower
+if (( ${PG_VERSION} < 12 )); then
+  echo "PG_VERSION is ${PG_VERSION} so lower than 12, using recovery.conf"
+  recovery_file="${current_test_directory}/database/data/recovery.conf"
+else
+  # postgres 12+
+  echo "PG_VERSION is ${PG_VERSION} so 12+, using postgresql.conf and recovery.signal"
+  recovery_file="${current_test_directory}/database/data/recovery.signal"
+fi
+#  We shouldn't have to change right and mode as they are restored correctly.
+#  [ $EUID -eq 0 ] && chmod 0600 ${recovery_file}
+#  [ $EUID -eq 0 ] && chown postgres ${recovery_file}
+restore_command="restore_command = 'cp ${current_test_directory}/database/wal_archive/%f %p'"
+if [ ! -f "${recovery_file}" ];then
+ echo "${TestName} ${recovery_file} is missing from restore"
+ exit 1;
+fi
+if (( ${PG_VERSION} < 12 )); then
+  echo "${restore_command}" >> "${recovery_file}"
+else
+  echo "${restore_command}" >> "${current_test_directory}/database/data/postgresql.conf"
+fi
+
+echo "Restart restored pg_cluster"
+local_db_start_server "${TESTPGHOST}"
+popd > /dev/null
+
+i=0
+until ${PSQL} ${DBNAME} <<< "SELECT * FROM t" | grep "for INCR"  > ${tmp}/sql.log  ; do
+  echo "waiting for query to succeed"
+  sleep 1
+  i=$((i+1))
+  if [ $i -gt 10 ]; then echo "timeout waiting for query after recovery"; exit 1; fi
+done
+
+pushd database/ > /dev/null
+local_db_stop_server "$TESTPGHOST"
+popd > /dev/null
+
+check_two_logs "${tmp}/tlog1.out" "${tmp}/tlog4.out"
+if (grep -q "for INCR" ${tmp}/sql.log)
+then
+   estat=0
+else
+   echo "Error: Database rows not found"
+   estat=1
+fi
+
+end_test

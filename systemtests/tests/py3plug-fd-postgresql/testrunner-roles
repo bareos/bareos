@@ -1,0 +1,111 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+# This systemtest tests the plugin functionality
+# of the Bareos FD by using the supplied module
+# bareos-fd-postgres
+#
+# The module will backup a postgresql database.
+# One time without set_role, one time with set_role in fileset
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName="backup-bareos-fd"
+#shellcheck source=../environment.in
+. ./environment
+. ./database/setup_local_db.sh
+
+# setup local database server
+DBNAME="backuptest"
+TESTPGHOST="${dbHost}"
+PSQL="${POSTGRES_BIN_PATH}/psql --host ${TESTPGHOST}"
+
+[ -d "${TESTPGHOST}" ] && rm -R  "${TESTPGHOST}"
+mkdir -p "${TESTPGHOST}"
+[ $EUID -eq 0 ] && chown postgres "${TESTPGHOST}"
+
+pushd database > /dev/null
+setup_local_db "${TESTPGHOST}"
+# PG_VERSION will be pick from backuped PG data dir
+PG_VERSION="$(cut -d '.' -f1 data/PG_VERSION)"
+if [ ${PG_VERSION} -lt 10 ]; then
+# skip test
+ echo "${TestName} test skipped: not compatible with PG <= 10"
+ exit 77;
+fi
+
+# Create a backup group role with nologin but superuser
+${PSQL} -d postgres -c "CREATE ROLE backup_group with SUPERUSER"
+# Create a simple login role
+${PSQL} -d postgres -c "CREATE USER db_backup"
+# Create Test DB with table and 1 statement
+${PSQL} postgres -c "CREATE DATABASE ${DBNAME}"
+${PSQL} ${DBNAME} -c "
+CREATE TABLE t(id serial PRIMARY KEY, text VARCHAR(20), created_on TIMESTAMP);
+INSERT INTO t (text, created_on) values ('test for FULL backup', current_timestamp);
+SELECT * FROM t;
+"
+popd > /dev/null
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@$out /dev/null
+messages
+@$out ${tmp}/rlog1.out
+setdebug level=150 trace=1 timestamp=1 client=bareos-fd
+run job=${JobName} fileset="PluginTestNoRole" level=Full yes
+wait
+setdebug level=0 client=bareos-fd
+status director
+status client
+status storage=File
+wait
+messages
+END_OF_DATA
+run_bconsole
+
+expect_grep "permission denied for function pg_" "${tmp}/rlog1.out" "No Role 'Backup Error' not found in job log"
+if [ ${estat} -ne 0 ]; then
+    exit ${estat}
+fi
+
+# Affect db_backup role to backup_group
+${PSQL} -d postgres -c "GRANT backup_group TO db_backup;"
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out ${tmp}/rlog2.out
+setdebug level=100 trace=1 timestamp=1 client=bareos-fd
+run job=${JobName} fileset="PluginTestRole" level=Full yes
+wait
+setdebug level=0 client=bareos-fd
+status director
+status client
+status storage=File
+wait
+messages
+END_OF_DATA
+run_bconsole
+
+
+expect_grep "Backup OK" "${tmp}/rlog2.out" "Set Role Backup OK not found in job log"
+if [ ${estat} -ne 0 ]; then
+    exit ${estat}
+fi
+
+sleep 1
+
+pushd database/ > /dev/null
+local_db_stop_server "${TESTPGHOST}"
+popd > /dev/null
+
+
+end_test

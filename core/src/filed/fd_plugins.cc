@@ -645,6 +645,7 @@ bail_out:
  */
 int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 {
+  int ret = 1;  // everything ok
   int len;
   bRC retval;
   char* cmd;
@@ -719,6 +720,8 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 
       // Get the file save parameters. I.e. the stat pkt ...
       if (PlugFunc(ctx->plugin)->startBackupFile(ctx, &sp) != bRC_OK) {
+        Jmsg1(jcr, M_FATAL, 0,
+              _("Command plugin \"%s\": startBackupFile failed.\n"), cmd);
         goto bail_out;
       }
 
@@ -840,17 +843,20 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 
       if (retval == bRC_More) { continue; }
 
-      goto bail_out;
+      goto fun_end;
     } /* end while loop */
 
-    goto bail_out;
+    goto fun_end;
   } /* end loop over all plugins */
   Jmsg1(jcr, M_FATAL, 0, "Command plugin \"%s\" not found.\n", cmd);
 
 bail_out:
+  ret = 0;
+
+fun_end:
   jcr->cmd_plugin = false;
 
-  return 1;
+  return ret;
 }
 
 /**
