@@ -84,6 +84,7 @@ static bool InsertDirIntoFindexList(UaContext* ua,
                                     char* date);
 static void InsertOneFileOrDir(UaContext* ua,
                                RestoreContext* rx,
+                               char* p,
                                char* date,
                                bool dir);
 static bool GetClientName(UaContext* ua, RestoreContext* rx);
@@ -591,15 +592,9 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
     if (!have_date) { bstrutime(date, sizeof(date), now); }
     if (!GetClientName(ua, rx)) { return 0; }
 
-    for (auto* file : files) {
-      PmStrcpy(ua->cmd, file);
-      InsertOneFileOrDir(ua, rx, date, false);
-    }
+    for (auto& file : files) { InsertOneFileOrDir(ua, rx, file, date, false); }
 
-    for (auto* dir : dirs) {
-      PmStrcpy(ua->cmd, dir);
-      InsertOneFileOrDir(ua, rx, date, true);
-    }
+    for (auto& dir : dirs) { InsertOneFileOrDir(ua, rx, dir, date, true); }
 
     return 2;
   }
@@ -703,7 +698,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
           if (!GetCmd(ua, _("Enter full filename: "))) { return 0; }
           len = strlen(ua->cmd);
           if (len == 0) { break; }
-          InsertOneFileOrDir(ua, rx, date, false);
+          InsertOneFileOrDir(ua, rx, ua->cmd, date, false);
         }
         return 2;
       case 7: /* enter files backed up before specified time */
@@ -719,7 +714,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
           if (!GetCmd(ua, _("Enter full filename: "))) { return 0; }
           len = strlen(ua->cmd);
           if (len == 0) { break; }
-          InsertOneFileOrDir(ua, rx, date, false);
+          InsertOneFileOrDir(ua, rx, ua->cmd, date, false);
         }
         return 2;
 
@@ -765,7 +760,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
           if (ua->cmd[0] != '<' && !IsPathSeparator(ua->cmd[len - 1])) {
             strcat(ua->cmd, "/");
           }
-          InsertOneFileOrDir(ua, rx, date, true);
+          InsertOneFileOrDir(ua, rx, ua->cmd, date, true);
         }
         return 2;
 
@@ -912,12 +907,12 @@ std::string CompensateShortDate(const char* cmd)
 // Insert a single file, or read a list of files from a file
 static void InsertOneFileOrDir(UaContext* ua,
                                RestoreContext* rx,
+                               char* p,
                                char* date,
                                bool dir)
 {
   FILE* ffd;
   char file[5000];
-  char* p = ua->cmd;
   int line = 0;
 
   switch (*p) {
@@ -950,9 +945,9 @@ static void InsertOneFileOrDir(UaContext* ua,
       break;
     default:
       if (dir) {
-        InsertDirIntoFindexList(ua, rx, ua->cmd, date);
+        InsertDirIntoFindexList(ua, rx, p, date);
       } else {
-        InsertFileIntoFindexList(ua, rx, ua->cmd, date);
+        InsertFileIntoFindexList(ua, rx, p, date);
       }
       break;
   }
