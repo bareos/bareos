@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -38,12 +38,12 @@
 #include <functional>
 #include <string>
 #include <vector>
+#include <optional>
 
 class JobControlRecord;
 
-extern "C" {
-typedef char* (*job_code_callback_t)(JobControlRecord*, const char*);
-}
+typedef std::optional<std::string> (*job_code_callback_t)(JobControlRecord*,
+                                                          const char*);
 
 void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...);
 void Qmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...);

@@ -92,8 +92,6 @@ static alist<pthread_t*>* client_initiated_connection_threads = nullptr;
 extern bool AccurateCmd(JobControlRecord* jcr);
 extern bool StatusCmd(JobControlRecord* jcr);
 extern bool QstatusCmd(JobControlRecord* jcr);
-extern "C" char* job_code_callback_filed(JobControlRecord* jcr,
-                                         const char* param);
 
 /* Forward referenced functions */
 static bool BackupCmd(JobControlRecord* jcr);

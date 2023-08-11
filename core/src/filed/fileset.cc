@@ -55,11 +55,9 @@ static int SetOptions(findFOPTS* fo, const char* opts);
  * %D = Director
  * %m = Modification time (for incremental and differential)
  */
-extern "C" char* job_code_callback_filed(JobControlRecord* jcr,
-                                         const char* param)
+std::optional<std::string> job_code_callback_filed(JobControlRecord* jcr,
+                                                   const char* param)
 {
-  static char str[50];
-
   switch (param[0]) {
     case 'D':
       if (jcr->fd_impl->director) {
@@ -67,10 +65,10 @@ extern "C" char* job_code_callback_filed(JobControlRecord* jcr,
       }
       break;
     case 'm':
-      return edit_uint64(jcr->fd_impl->since_time, str);
+      return std::to_string(jcr->fd_impl->since_time);
   }
 
-  return NULL;
+  return std::nullopt;
 }
 
 bool InitFileset(JobControlRecord* jcr)
