@@ -90,7 +90,7 @@ OS:
       TYPE: freebsd
       ARCH:
         - amd64
-    "13.1":
+    "13.2":
       TYPE: freebsd
       ARCH:
         - amd64
