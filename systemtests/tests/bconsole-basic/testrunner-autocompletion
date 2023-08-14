@@ -15,9 +15,9 @@ export TestName
 . "${rscripts}"/functions
 
 case "$(uname)" in
-  FreeBSD)
-    script_opts=("$tmp/log3.out" bin/bconsole)
-    ;;
+#  FreeBSD)
+#    script_opts=("$tmp/log3.out" bin/bconsole)
+#    ;;
   Linux)
     script_opts=(--return --command bin/bconsole "$tmp/log3.out")
     ;;
