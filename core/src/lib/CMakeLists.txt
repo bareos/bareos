@@ -99,6 +99,7 @@ set(BAREOS_SRCS
     tree.cc
     try_tls_handshake_as_a_server.cc
     compression.cc
+    thread_pool.cc
     util.cc
     var.cc
     watchdog.cc
