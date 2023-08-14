@@ -26,6 +26,7 @@
 
 #include "include/bareos.h"
 #include "lib/crypto.h"
+#include "lib/thread_pool.h"
 
 #include <atomic>
 
@@ -87,6 +88,7 @@ struct FiledJcrImpl {
 #ifdef HAVE_WIN32
   VSSClient* pVSSClient{};        /**< VSS Client Instance */
 #endif
+  thread_pool pool;
 };
 /* clang-format on */
 
