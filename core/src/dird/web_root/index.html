@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+  <body>
+    <h1>JSON-RPC over Websocket demo</h1>
+    <input id="url" type="text" placeholder="Type URL" value="ws://localhost:9002/" style="width:20em;" />
+    <button id="connect">connect</button>
+    <div style="height: 0.3em;">&nbsp;</div>
+    <input id="method" type="text" placeholder="enter method name" style="width:20em;" />
+    <input id="params" type="text" placeholder="enter parameters in json format" style="width:20em;" />
+    <div style="height: 0.3em;">&nbsp;</div>
+    <button id="execute">execute</button>
+    <div style="height: 0.3em;">&nbsp;</div>
+    <button id="btn1">restore</button>
+    <div style="margin-top: 1em;">Event log:</div>
+    <div id="log" style="background: #eee; height: 10em; padding: 0.5em; overflow:auto;"><div>
+  </body>
+  <script src="rpc-over-websocket.js"></script>
+  <script>
+    var rpc, E = function(id) { return document.getElementById(id); };
+    var url = E('url'), connect = E('connect'), btn1 = E('btn1'), msglog = E('log');
+    var method = E('method'), params = E('params'), execute = E('execute');
+    var enable = function(en) { btn1.disabled = !en;
+    method.disabled = !en; params.disabled = !en ; execute.disabled = !en;
+    url.disabled = en; connect.innerHTML = en ? 'disconnect' : 'connect'; };
+    var log = text => msglog.innerHTML += text + '<br/>\n';
+    enable(false);
+    connect.onclick = function() {
+      console.log(rpc);
+      if (rpc) { rpc.close(); rpc = null; return; }
+      rpc = jsonrpc(url.value,
+            () => enable(true),
+            () => enable(false),
+            msg => log('NOTIFICATION: ' + JSON.stringify(msg)));
+    };
+    btn1.onclick = ev => rpc.call('restore', {'jobid':1,'restoreid':1,'client':'bareos-fd'}).then(res => log(JSON.stringify(res)));
+    execute.onclick = ev => rpc.call(method.value, JSON.parse(params.value)).then(res => log(JSON.stringify(res)));
+  </script>
+</html>
