@@ -160,6 +160,12 @@ Below is a super stripped down |dir| configuration showing you the four places w
 Tape Labels: ANSI or IBM
 ------------------------
 
+.. warning::
+
+   ANSI/IBM labels have been deprecated as of Bareos 23.
+   Support will be removed in the future.
+
+
 .. index::
    single: Label; Tape Labels
    single: Tape; Label; ANSI
