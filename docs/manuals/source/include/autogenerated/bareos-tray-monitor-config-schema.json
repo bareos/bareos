@@ -62,7 +62,7 @@
         "TlsRequire": {
           "datatype": "BOOLEAN",
           "code": 0,
-          "default_value": "false",
+          "default_value": "true",
           "equals": true,
           "description": "Without setting this to yes, Bareos can fall back to use unencrypted connections. Enabling this implicitly sets \"TLS Enable = yes\"."
         },
@@ -172,7 +172,7 @@
         "TlsRequire": {
           "datatype": "BOOLEAN",
           "code": 0,
-          "default_value": "false",
+          "default_value": "true",
           "equals": true,
           "description": "Without setting this to yes, Bareos can fall back to use unencrypted connections. Enabling this implicitly sets \"TLS Enable = yes\"."
         },
@@ -288,7 +288,7 @@
         "TlsRequire": {
           "datatype": "BOOLEAN",
           "code": 0,
-          "default_value": "false",
+          "default_value": "true",
           "equals": true,
           "description": "Without setting this to yes, Bareos can fall back to use unencrypted connections. Enabling this implicitly sets \"TLS Enable = yes\"."
         },
@@ -414,7 +414,7 @@
         "TlsRequire": {
           "datatype": "BOOLEAN",
           "code": 0,
-          "default_value": "false",
+          "default_value": "true",
           "equals": true,
           "description": "Without setting this to yes, Bareos can fall back to use unencrypted connections. Enabling this implicitly sets \"TLS Enable = yes\"."
         },
