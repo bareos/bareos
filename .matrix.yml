@@ -163,7 +163,7 @@ OS:
       PROJECTPACKAGES:
         amd64:
            - bareos-freebsd
-    "13.1":
+    "13.2":
       TYPE: freebsd
       ARCH:
         - amd64
