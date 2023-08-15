@@ -17,6 +17,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - dird: show current and allowed console connections [PR #1517]
 - backport fixes fastlz: remove unaligned memory accesses [PR #1519]
 -  dird: add prev and new jobid variables [PR #1518]
+- build: switch from FreeBSD 13.1 to 13.2 [PR #1525]
 
 ### Fixed
 - stored: fix incoherent meta data when concurrently writing to the same volume [PR #1514]
@@ -563,4 +564,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1517]: https://github.com/bareos/bareos/pull/1517
 [PR #1518]: https://github.com/bareos/bareos/pull/1518
 [PR #1519]: https://github.com/bareos/bareos/pull/1519
+[PR #1525]: https://github.com/bareos/bareos/pull/1525
 [unreleased]: https://github.com/bareos/bareos/tree/master
