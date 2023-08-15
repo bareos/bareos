@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,7 +32,7 @@
      NULL, "Use TLS only to authenticate, not for encryption."}, \
   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res, tls_enable_), 0, CFG_ITEM_DEFAULT, "true", \
      NULL, "Enable TLS support."}, \
-  { "TlsRequire", CFG_TYPE_BOOL, ITEM(res, tls_require_), 0, CFG_ITEM_DEFAULT, "false", \
+  { "TlsRequire", CFG_TYPE_BOOL, ITEM(res, tls_require_), 0, CFG_ITEM_DEFAULT, "true", \
      NULL, "Without setting this to yes, Bareos can fall back to use unencrypted " \
      "connections. " \
      "Enabling this implicitly sets \"TLS Enable = yes\"."}, \
