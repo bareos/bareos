@@ -280,6 +280,8 @@ class RunContext {
   bool nextpool_set = false;
   bool accurate_set = false;
   bool ignoreduplicatecheck_set = false;
+  bool allow_mixed_priority = false;
+  bool allow_mixed_priority_set = false;
 
   RunContext();
   ~RunContext();

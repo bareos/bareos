@@ -1008,6 +1008,9 @@ static bool ResetRestoreContext(UaContext* ua,
     jcr->dir_impl->IgnoreDuplicateJobChecking = rc.ignoreduplicatecheck;
   }
 
+  // Used by consolidate jobs to make spawned virtualfulls inherit the AllowMixedPriority flag  
+  if (rc.allow_mixed_priority_set) { jcr->allow_mixed_priority = rc.allow_mixed_priority; }
+
   return true;
 }
 
@@ -1767,6 +1770,7 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
          "ignoreduplicatecheck", /* 29 */
          "accurate",             /* 30 */
          "backupformat",         /* 31 */
+		 "allowmixedpriority",   /* 32 */
          NULL};
 
 #define YES_POS 14
@@ -2053,6 +2057,18 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
             }
             rc.backup_format = ua->argv[i];
             kw_ok = true;
+            break;
+          case 32: /* allowmixedpriority */
+            if (rc.allow_mixed_priority_set) {
+              ua->SendMsg(_("AllowMixedPriority flag specified twice.\n"));
+              return false;
+            }
+            if (IsYesno(ua->argv[i], &rc.allow_mixed_priority)) {
+              rc.allow_mixed_priority_set = true;
+              kw_ok = true;
+            } else {
+              ua->SendMsg(_("Invalid AllowMixedPriority flag.\n"));
+            }
             break;
           default:
             break;
