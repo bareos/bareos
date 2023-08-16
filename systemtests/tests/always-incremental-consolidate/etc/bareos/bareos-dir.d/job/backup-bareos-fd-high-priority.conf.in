@@ -8,7 +8,7 @@ Job {
   AlwaysIncrementalJobRetention = 1 seconds
   AlwaysIncrementalKeepNumber = 1
   AlwaysIncrementalMaxFullAge = 1 seconds
-  Allow Mixed Priority = yes
+  Allow Mixed Priority = no
   Priority = 10
   Run Script {
     Command = "sleep 5"
