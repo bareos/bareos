@@ -474,9 +474,9 @@ extern "C" void* jobq_server(void* arg)
 
         for (; re;) {
           Dmsg2(2300, "JobId %d is also running with %s\n", re->jcr->JobId,
-                re->jcr->dir_impl->res.job->allow_mixed_priority ? "mix"
-                                                                 : "no mix");
-          if (!re->jcr->dir_impl->res.job->allow_mixed_priority) {
+                re->jcr->allow_mixed_priority ? "mix"
+                                              : "no mix");
+          if (!re->jcr->allow_mixed_priority) {
             running_allow_mix = false;
             break;
           }
@@ -498,12 +498,12 @@ extern "C" void* jobq_server(void* arg)
 
         Dmsg4(2300, "Examining Job=%d JobPri=%d want Pri=%d (%s)\n", jcr->JobId,
               jcr->JobPriority, Priority,
-              jcr->dir_impl->res.job->allow_mixed_priority ? "mix" : "no mix");
+              jcr->allow_mixed_priority ? "mix" : "no mix");
 
         // Take only jobs of correct Priority
         if (!(jcr->JobPriority == Priority
               || (jcr->JobPriority < Priority
-                  && jcr->dir_impl->res.job->allow_mixed_priority
+                  && jcr->allow_mixed_priority
                   && running_allow_mix))) {
           jcr->setJobStatusWithPriorityCheck(JS_WaitPriority);
           break;

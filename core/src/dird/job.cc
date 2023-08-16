@@ -1654,6 +1654,7 @@ void SetJcrDefaults(JobControlRecord* jcr, JobResource* job)
   }
 
   jcr->JobPriority = job->Priority;
+  jcr->allow_mixed_priority = job->allow_mixed_priority;
 
   // Copy storage definitions -- deleted in dir_free_jcr above
   if (job->storage) {
