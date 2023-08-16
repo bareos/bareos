@@ -66,8 +66,9 @@ static inline void StartNewConsolidationJob(JobControlRecord* jcr,
 
   ua = new_ua_context(jcr);
   ua->batch = true;
-  Mmsg(ua->cmd, "run job=\"%s\" jobid=%s level=VirtualFull %s", jobname,
+  Mmsg(ua->cmd, "run job=\"%s\" jobid=%s level=VirtualFull priority=%d %s", jobname,
        jcr->dir_impl->vf_jobids,
+	   jcr->JobPriority,
        jcr->accurate ? "accurate=yes" : "accurate=no");
 
   Dmsg1(debuglevel, "=============== consolidate cmd=%s\n", ua->cmd);
