@@ -37,6 +37,10 @@ void BuildRestoreCommandString(UaContext* ua,
                                const RestoreContext& rx,
                                JobResource* job);
 
+bool FindRestoreJobs(RestoreContext& rx);
+void BuildDirectoryTree(UaContext* ua, RestoreContext* rx, TreeContext& tree);
+void FinishSelection(RestoreContext* rx, TreeContext& tree);
+
 int RestoreCountHandler(void* ctx, int, char** row);
 void AddDeltaListFindex(RestoreContext* rx, struct delta_list* lst);
 
