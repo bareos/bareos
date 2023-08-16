@@ -1,5 +1,29 @@
 FileSet {
-  Name = "SelfTest"
+  Name = "SelfTest1"
+  Description = "fileset just to backup some files for selftest"
+  Include {
+    Options {
+      Signature = XXH128
+    }
+   #File = "@sbindir@"
+    File=<@tmpdir@/file-list
+  }
+}
+
+FileSet {
+  Name = "SelfTest2"
+  Description = "fileset just to backup some files for selftest"
+  Include {
+    Options {
+      Signature = XXH128
+    }
+   #File = "@sbindir@"
+    File=<@tmpdir@/file-list
+  }
+}
+
+FileSet {
+  Name = "SelfTest3"
   Description = "fileset just to backup some files for selftest"
   Include {
     Options {

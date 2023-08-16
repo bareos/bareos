@@ -18,6 +18,8 @@ TestName="$(basename "$(pwd)")"
 export TestName
 
 JobName=ai-backup-bareos-fd
+JobNameHighPriority=ai-backup-bareos-fd-high-priority
+JobNameLowPriority=ai-backup-bareos-fd-low-priority
 
 #shellcheck source=../environment.in
 . ./environment
@@ -146,6 +148,50 @@ END_OF_DATA
 
 run_bconsole
 
+# Check whether consolidate job priority is also applied to jobs.
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+wait
+@exec "sh -c 'touch ${tmp}/data/weird-files/file-16'"
+run job=$JobNameHighPriority level=Full yes
+wait
+@exec "sh -c 'touch ${tmp}/data/weird-files/file-17'"
+run job=$JobNameHighPriority level=Incremental yes
+wait
+@exec "sh -c 'touch ${tmp}/data/weird-files/file-18'"
+run job=$JobNameHighPriority level=Incremental yes
+wait
+@exec "sh -c 'touch ${tmp}/data/weird-files/file-19'"
+run job=$JobNameHighPriority level=Incremental yes
+wait
+messages
+run job=$JobNameLowPriority level=Full yes
+wait
+messages
+END_OF_DATA
+run_bconsole
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+run job=Consolidate-lower-priority yes
+wait job=Consolidate-lower-priority
+run job=$JobNameLowPriority level=Incremental yes
+wait job=$JobNameLowPriority
+messages
+@$out $tmp/priorities1.out
+list jobs
+@$out /dev/null
+wait
+messages
+@$out $tmp/priorities2.out
+list jobs
+@$out /dev/null
+quit
+END_OF_DATA
+run_bconsole
+
 check_job_canceled
 
 expect_grep "purged JobIds 1,2,3 as they were consolidated into Job 6" \
@@ -171,5 +217,21 @@ expect_grep "0	0	A A A A A A A A A A A A A A	/" \
 expect_grep "x9mlMotNz6zXMPiL2rDLrg	AI-Longterm" \
             "$tmp"/virtualfull.out \
             ".bvfs_versions did not find a file backup up by a VirtualFull Archive."
+
+expect_grep ".*|.*Consolidate-lower-priority.*|.*T.*|" \
+            "$tmp"/priorities1.out \
+            "low priority consolidate job was not successful."
+
+expect_grep "|.*28.*|.*${JobNameLowPriority}.*|.*T.*|" \
+            "$tmp"/priorities1.out \
+            "low priority backup job was not successful."
+
+expect_not_grep "|.*26.*|.*${JobNameHighPriority}.*|.*T.*|" \
+                "$tmp"/priorities1.out \
+                "spawned low priority consolidate job terminated before backup job with higher priority."
+
+expect_grep "|.*26.*|.*${JobNameHighPriority}.*|.*T.*|" \
+            "$tmp"/priorities2.out \
+            "spawned low priority consolidate job was not successful."
 
 end_test

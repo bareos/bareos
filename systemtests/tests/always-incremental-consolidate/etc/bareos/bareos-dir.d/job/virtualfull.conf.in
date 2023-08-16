@@ -1,7 +1,7 @@
 Job {
   Name = "VirtualLongtermFull"
   Client = bareos-fd
-  FileSet = SelfTest
+  FileSet = SelfTest1
   Type = Backup
   Level = VirtualFull
   Pool = AI-Consolidated

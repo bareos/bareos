@@ -1,16 +1,13 @@
 Job {
-  Name = "ai-backup-bareos-fd"
+  Name = "ai-backup-bareos-fd-low-priority"
   JobDefs = "DefaultJob"
   Client = "bareos-fd"
-  FileSet = "SelfTest1"
+  FileSet = "SelfTest3"
   Accurate = yes
   AlwaysIncremental = yes
   AlwaysIncrementalJobRetention = 1 seconds
   AlwaysIncrementalKeepNumber = 1
   AlwaysIncrementalMaxFullAge = 1 seconds
   Allow Mixed Priority = yes
-  Run Script {
-        command = "sleep 2"
-        Runs When = Before
-  }
+  Priority = 15
 }

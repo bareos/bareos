@@ -3,7 +3,7 @@ JobDefs {
   Type = Backup
   Level = Incremental
   Client = bareos-fd
-  FileSet = "SelfTest"
+  FileSet = "SelfTest1"
   Storage = File
   Messages = Standard
   Pool = AI-Incremental
