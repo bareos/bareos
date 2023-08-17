@@ -34,12 +34,6 @@ run job=${backupjob} level=Full yes
 run job=${backupjob} level=Full yes
 run job=${backupjob} level=Full yes
 run job=${backupjob} level=Full yes
-run job=${backupjob} level=Full yes
-run job=${backupjob} level=Full yes
-run job=${backupjob} level=Full yes
-run job=${backupjob} level=Full yes
-run job=${backupjob} level=Full yes
-run job=${backupjob} level=Full yes
 wait
 messages
 quit
@@ -61,12 +55,6 @@ restore jobid=${backup_jobids[2]} where=$tmp/restore3 all done yes
 restore jobid=${backup_jobids[3]} where=$tmp/restore4 all done yes
 restore jobid=${backup_jobids[4]} where=$tmp/restore5 all done yes
 restore jobid=${backup_jobids[5]} where=$tmp/restore6 all done yes
-restore jobid=${backup_jobids[6]} where=$tmp/restore7 all done yes
-restore jobid=${backup_jobids[7]} where=$tmp/restore8 all done yes
-restore jobid=${backup_jobids[8]} where=$tmp/restore9 all done yes
-restore jobid=${backup_jobids[9]} where=$tmp/restore10 all done yes
-restore jobid=${backup_jobids[10]} where=$tmp/restore11 all done yes
-restore jobid=${backup_jobids[11]} where=$tmp/restore12 all done yes
 wait
 messages
 quit
