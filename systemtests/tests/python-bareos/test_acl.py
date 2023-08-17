@@ -1,7 +1,7 @@
 #
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -47,7 +47,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
         Login as console with access only to client = bareos-fd.
         Verify, that a restore can only be performed from this client.
 
-        It checks the intercative restore command,
+        It checks the interactive restore command,
         therefore it can not use the Json console.
         """
         logger = logging.getLogger()
@@ -55,8 +55,8 @@ class PythonBareosAclTest(bareos_unittest.Json):
         username = self.get_operator_username()
         password = self.get_operator_password(username)
 
-        console_bareos_fd_username = u"client-bareos-fd"
-        console_bareos_fd_password = u"secret"
+        console_bareos_fd_username = "client-bareos-fd"
+        console_bareos_fd_password = "secret"
 
         director_root = bareos.bsock.DirectorConsoleJson(
             address=self.director_address,
@@ -193,7 +193,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
         username = self.get_operator_username()
         password = self.get_operator_password(username)
 
-        console_password = u"secret"
+        console_password = "secret"
 
         director_root = bareos.bsock.DirectorConsoleJson(
             address=self.director_address,
@@ -216,7 +216,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
         # make sure, timestamp differs
         sleep(2)
 
-        self.append_to_file(u"{}/extrafile.txt".format(self.backup_directory), "Test\n")
+        self.append_to_file("{}/extrafile.txt".format(self.backup_directory), "Test\n")
 
         sleep(2)
 
@@ -239,13 +239,13 @@ class PythonBareosAclTest(bareos_unittest.Json):
 
         result = director_root.call("list volume pool=Full count")
         self.assertTrue(
-            int(result["volumes"][0]["count"]) >= 1, u"Full pool contains no volumes."
+            int(result["volumes"][0]["count"]) >= 1, "Full pool contains no volumes."
         )
 
         result = director_root.call("list volume pool=Incremental count")
         self.assertTrue(
             int(result["volumes"][0]["count"]) >= 1,
-            u"Incremental pool contains no volumes.",
+            "Incremental pool contains no volumes.",
         )
 
         # without Pool ACL restrictions,
@@ -295,7 +295,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
             director_root,
             "consoles",
             console_overwrite,
-            u"console={} password={} profile=operator poolacl=!Full tlsenable=no".format(
+            "console={} password={} profile=operator poolacl=!Full tlsenable=no".format(
                 console_overwrite, console_password
             ),
         )
@@ -324,10 +324,10 @@ class PythonBareosAclTest(bareos_unittest.Json):
         username = self.get_operator_username()
         password = self.get_operator_password(username)
 
-        console_username = u"job-backup-bareos-fd"
-        console_password = u"secret"
-        jobname1 = u"backup-bareos-fd"
-        jobname2 = u"backup-bareos-fd-test"
+        console_username = "job-backup-bareos-fd"
+        console_password = "secret"
+        jobname1 = "backup-bareos-fd"
+        jobname2 = "backup-bareos-fd-test"
 
         director_root = bareos.bsock.DirectorConsoleJson(
             address=self.director_address,
@@ -338,7 +338,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
         )
 
         jobid1 = self.run_job(
-            director=director_root, jobname=jobname1, level=u"Full", wait=True
+            director=director_root, jobname=jobname1, level="Full", wait=True
         )
 
         self.configure_add(
@@ -349,7 +349,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
         )
 
         jobid2 = self.run_job(
-            director=director_root, jobname=jobname2, level=u"Full", wait=True
+            director=director_root, jobname=jobname2, level="Full", wait=True
         )
 
         #
@@ -401,4 +401,4 @@ class PythonBareosAclTest(bareos_unittest.Json):
 
     def test_status_subscription_user_fails(self):
         with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
-            self._test_status_subscription(u"client-bareos-fd", u"secret")
+            self._test_status_subscription("client-bareos-fd", "secret")
