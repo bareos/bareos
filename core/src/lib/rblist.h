@@ -84,7 +84,7 @@ inline void rblist::init(void* item, rblink* link)
 {
   head = NULL;
   loffset = (int)((char*)link - (char*)item);
-  if (loffset < 0 || loffset > 5000) {
+  if ((loffset < 0) || (loffset > 5000)) {
     Emsg0(M_ABORT, 0, "Improper rblist initialization.\n");
   }
   num_items = 0;
