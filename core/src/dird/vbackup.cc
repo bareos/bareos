@@ -539,10 +539,9 @@ static bool CreateBootstrapFile(JobControlRecord& jcr,
     return false;
   }
 
-  PoolMem jobids_pm{jobids};
   RestoreContext rx;
-  rx.bsr = std::make_unique<RestoreBootstrapRecord>();
-  rx.JobIds = jobids_pm.addr();
+
+  PmStrcpy(rx.JobIds, jobids.c_str());
 
   if (!jcr.db_batch->GetFileList(&jcr, rx.JobIds, false /* don't use md5 */,
                                  true /* use delta */, InsertBootstrapHandler,
@@ -555,7 +554,6 @@ static bool CreateBootstrapFile(JobControlRecord& jcr,
   jcr.dir_impl->ExpectedFiles = WriteBsrFile(ua, rx);
   Dmsg1(10, "Found %d files to consolidate.\n", jcr.dir_impl->ExpectedFiles);
   FreeUaContext(ua);
-  rx.bsr.reset(nullptr);
   return jcr.dir_impl->ExpectedFiles != 0;
 }
 

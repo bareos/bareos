@@ -167,7 +167,7 @@ struct TreeContext {
   TREE_ROOT* root = nullptr; /**< Root */
   TREE_NODE* node = nullptr; /**< Current node */
   bool all = false;          /**< If set mark all as default */
-  int cnt = 0;                     /**< Count for user feedback */
+  int cnt = 0;               /**< Count for user feedback */
   UaContext* ua = nullptr;
   uint32_t FileCount = 0;  /**< Current count of files */
   uint32_t LastCount = 0;  /**< Last count of files */
@@ -189,7 +189,8 @@ struct NameList {
 };
 
 // Context for restore job.
-struct RestoreContext {
+class RestoreContext {
+ public:
   enum class JobTypeFilter
   {
     Backup,
@@ -226,11 +227,11 @@ struct RestoreContext {
   bool all = false; /**< Mark all as default */
   NameList name_list;
 
-  RestoreContext() = default;
+  RestoreContext();
   ~RestoreContext();
 
   static char FilterIdentifier(JobTypeFilter filter);
-  void BuildRegexWhere(char *strip_prefix, char *add_prefix, char *add_suffix);
+  void BuildRegexWhere(char* strip_prefix, char* add_prefix, char* add_suffix);
 
  private:
   char* regexp = nullptr;

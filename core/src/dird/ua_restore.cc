@@ -98,13 +98,6 @@ static void GetAndDisplayBasejobs(UaContext* ua, RestoreContext* rx);
 bool RestoreCmd(UaContext* ua, const char*)
 {
   RestoreContext rx;
-  rx.path = GetPoolMemory(PM_FNAME);
-  rx.fname = GetPoolMemory(PM_FNAME);
-  rx.JobIds = GetPoolMemory(PM_FNAME);
-  rx.JobIds[0] = 0;
-  rx.BaseJobIds = GetPoolMemory(PM_FNAME);
-  rx.query = GetPoolMemory(PM_FNAME);
-  rx.bsr = std::make_unique<RestoreBootstrapRecord>();
 
   char* strip_prefix = nullptr;
   char* add_prefix = nullptr;
@@ -379,6 +372,20 @@ RestoreContext::~RestoreContext()
   FreeAndNullPoolMemory(query);
 }
 
+RestoreContext::RestoreContext()
+{
+  path = GetPoolMemory(PM_FNAME);
+  path[0] = 0;
+  fname = GetPoolMemory(PM_FNAME);
+  fname[0] = 0;
+  JobIds = GetPoolMemory(PM_FNAME);
+  JobIds[0] = 0;
+  BaseJobIds = GetPoolMemory(PM_FNAME);
+  BaseJobIds[0] = 0;
+  query = GetPoolMemory(PM_FNAME);
+  query[0] = 0;
+  bsr = std::make_unique<RestoreBootstrapRecord>();
+}
 
 static bool HasValue(UaContext* ua, int i)
 {
@@ -1155,7 +1162,6 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
    * appear more than once, however, we only insert it once. */
 
   const char* p = rx->JobIds;
-  tree.FileEstimate = 0;
 
   JobId_t JobId;
   if (GetNextJobidFromList(&p, &JobId) > 0) {
@@ -1166,11 +1172,7 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
     if (!ua->db->SqlQuery(rx->query, RestoreCountHandler, (void*)rx)) {
       ua->ErrorMsg("%s\n", ua->db->strerror());
     }
-    if (rx->found) {
-      // Add about 25% more than this job for over estimate
-      tree.FileEstimate = rx->JobId + (rx->JobId >> 2);
-      tree.DeltaCount = rx->JobId / 50; /* print 50 ticks */
-    }
+    if (rx->found) { tree.DeltaCount = rx->JobId / 50; /* print 50 ticks */ }
   }
 
   ua->InfoMsg(_("\nBuilding directory tree for JobId(s) %s ...  "), rx->JobIds);
