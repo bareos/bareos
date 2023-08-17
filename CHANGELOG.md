@@ -89,6 +89,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - stored: add AccessMode SD->Device directive to reserve devices exclusively for reading or writing [PR #1464]
 - plugins: switch python-ldap plugin to  python3 [PR #1522]
 - build: switch from FreeBSD 13.1 to 13.2 [PR #1524]
+- stored: automatically increment tape block size in case the buffer is too small [PR #1496]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -219,6 +220,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1490]: https://github.com/bareos/bareos/pull/1490
 [PR #1493]: https://github.com/bareos/bareos/pull/1493
 [PR #1495]: https://github.com/bareos/bareos/pull/1495
+[PR #1496]: https://github.com/bareos/bareos/pull/1496
 [PR #1499]: https://github.com/bareos/bareos/pull/1499
 [PR #1502]: https://github.com/bareos/bareos/pull/1502
 [PR #1503]: https://github.com/bareos/bareos/pull/1503

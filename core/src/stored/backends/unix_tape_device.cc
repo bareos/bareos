@@ -40,6 +40,9 @@
  * @file
  * UNIX Tape API device abstraction.
  */
+#include <algorithm>
+#include <vector>
+
 #include <sys/ioctl.h>
 #include <unistd.h>
 
@@ -51,6 +54,15 @@
 
 namespace storagedaemon {
 
+static std::vector<std::size_t> bufsizes(std::size_t count)
+{
+  constexpr std::size_t mb = 1024 * 1024;
+  std::vector<std::size_t> sizes{1 * mb, 2 * mb, 4 * mb, 8 * mb, 16 * mb};
+  sizes.erase(sizes.begin(),
+              std::upper_bound(sizes.begin(), sizes.end(), count));
+  return sizes;
+}
+
 int unix_tape_device::d_ioctl(int fd, ioctl_req_t request, char* op)
 {
   return ::ioctl(fd, request, op);
@@ -59,6 +71,41 @@ int unix_tape_device::d_ioctl(int fd, ioctl_req_t request, char* op)
 unix_tape_device::unix_tape_device()
 {
   SetCap(CAP_ADJWRITESIZE); /* Adjust write size to min/max */
+}
+
+ssize_t unix_tape_device::d_read(int fd, void* buffer, size_t count)
+{
+  ssize_t ret = ::read(fd, buffer, count);
+  /* If the driver fails to `read()` with `ENOMEM`, then the provided buffer
+   * was too small. By re-reading with a temporary buffer that is enlarged
+   * step-by-step, we can read the block and return the first `count` bytes.
+   * This allows the calling code to read the block header and resize its buffer
+   * according to the size recorded in that header.
+   */
+  if (ret == -1 && errno == ENOMEM && HasCap(CAP_BSR)) {
+    for (auto bufsize : bufsizes(count)) {
+      // first go back one block so we can re-read
+      if (!bsr(1)) {
+        /* when backward-spacing fails for some reason, there's not much we
+         * can do, so we just return the original ENOMEM and hope that the
+         * caller knows the device is in a non well-defined state.
+         */
+        errno = ENOMEM;
+        return -1;
+      }
+      block_num++;  // re-increment the block counter bsr() just decremented
+      std::vector<char> tmpbuf(bufsize);
+      if (auto tmpret = ::read(fd, tmpbuf.data(), tmpbuf.size());
+          tmpret != -1) {
+        memcpy(buffer, tmpbuf.data(), count);
+        ret = std::min(tmpret, static_cast<ssize_t>(count));
+        break;  // successful read
+      } else if (errno != ENOMEM) {
+        break;  // some other error occured
+      }
+    }
+  }
+  return ret;
 }
 
 REGISTER_SD_BACKEND(tape, unix_tape_device)
