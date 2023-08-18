@@ -3,7 +3,8 @@ FileSet {
   Include {
     Options {
       Signature = XXH128
-      xattrsupport = no           # Prevent problems on FreeBSD
+      XattrSupport = No           # Prevent problems on FreeBSD
+      HardLinks = Yes
     }
     File = "<@tmpdir@/file-list"
   }

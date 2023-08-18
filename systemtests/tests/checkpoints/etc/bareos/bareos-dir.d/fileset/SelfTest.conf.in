@@ -4,6 +4,7 @@ FileSet {
   Include {
     Options {
       Signature = XXH128
+      HardLinks = Yes
       fstype = ext2
       fstype = ext3
       fstype = ext4
@@ -15,6 +16,5 @@ FileSet {
       fstype = btrfs
     }
     File=<@tmpdir@/file-list
-
   }
 }

@@ -4,6 +4,7 @@ FileSet {
   Include {
     Options {
       Signature = xxh128
+      HardLinks = Yes
       fstype = ext2
       fstype = ext3
       fstype = ext4

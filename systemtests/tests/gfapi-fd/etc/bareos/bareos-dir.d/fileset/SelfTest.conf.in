@@ -4,7 +4,7 @@ FileSet {
   Include {
     Options {
       Signature = XXH128
-      Hardlinks = yes
+      HardLinks = Yes
     }
     Plugin = "gfapi:volume=gluster\\://@gfapi_fd_host@/@gfapi_fd_testvolume@:"`
   }

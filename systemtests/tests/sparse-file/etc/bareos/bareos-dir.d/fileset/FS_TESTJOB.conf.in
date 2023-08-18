@@ -3,6 +3,7 @@ FileSet {
   Include {
     Options {
       Signature = XXH128
+      HardLinks = Yes
       Sparse=yes
     }
     File = "<@tmpdir@/file-list"
