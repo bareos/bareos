@@ -21,12 +21,29 @@
 #ifndef BAREOS_LIB_COMPRESSION_H_
 #define BAREOS_LIB_COMPRESSION_H_
 
+#include <optional>
+
 const char* cmprs_algo_to_text(uint32_t compression_algorithm);
+
 bool SetupCompressionBuffers(JobControlRecord* jcr,
                              uint32_t compression_algorithm,
                              uint32_t* compress_buf_size);
 bool SetupDecompressionBuffers(JobControlRecord* jcr,
                                uint32_t* decompress_buf_size);
+
+
+// return the number of bytes written to the output on success
+// or std::nullopt on error
+std::optional<std::size_t> ThreadlocalCompress(uint32_t algo,
+                                               uint32_t level,
+                                               char const* input,
+                                               std::size_t size,
+                                               char* output,
+                                               std::size_t capacity);
+
+std::size_t RequiredCompressionOutputBufferSize(uint32_t algo,
+                                                std::size_t max_input_size);
+
 bool CompressData(JobControlRecord* jcr,
                   uint32_t compression_algorithm,
                   char* rbuf,
