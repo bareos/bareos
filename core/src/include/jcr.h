@@ -243,6 +243,7 @@ class JobControlRecord {
 extern int GetNextJobidFromList(const char** p, uint32_t* JobId);
 extern bool InitJcrSubsystem(int timeout);
 extern JobControlRecord* new_jcr(JCR_free_HANDLER* daemon_free_jcr);
+extern void register_jcr(JobControlRecord* jcr);
 extern JobControlRecord* get_jcr_by_id(uint32_t JobId);
 extern JobControlRecord* get_jcr_by_session(uint32_t SessionId,
                                             uint32_t SessionTime);

@@ -489,6 +489,7 @@ JobControlRecord* NewStoredJcr()
 {
   JobControlRecord* jcr = new_jcr(StoredFreeJcr);
   jcr->sd_impl = new StoredJcrImpl;
+  register_jcr(jcr);
   return jcr;
 }
 

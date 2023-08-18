@@ -61,8 +61,9 @@ JobControlRecord* SetupDummyJcr(const char* name,
                                 BootStrapRecord* bsr,
                                 DirectorResource* director)
 {
-  JobControlRecord* jcr = new_jcr(MyFreeJcr);
+  JobControlRecord* jcr = new_jcr(&MyFreeJcr);
   jcr->sd_impl = new StoredJcrImpl;
+  register_jcr(jcr);
 
   jcr->sd_impl->read_session.bsr = bsr;
   jcr->sd_impl->director = director;

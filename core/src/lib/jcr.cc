@@ -216,6 +216,12 @@ JobControlRecord* new_jcr(JCR_free_HANDLER* daemon_free_jcr)
   jcr = new (jcr) JobControlRecord();
 
   jcr->daemon_free_jcr = daemon_free_jcr;
+  return jcr;
+}
+
+void register_jcr(JobControlRecord* jcr)
+{
+  Dmsg0(debuglevel, "Enter register_jcr\n");
 
   LockJobs();
   LockJcrChain();
@@ -223,7 +229,6 @@ JobControlRecord* new_jcr(JCR_free_HANDLER* daemon_free_jcr)
   job_control_record_chain->append(jcr);
   UnlockJcrChain();
   UnlockJobs();
-  return jcr;
 }
 
 void InitJcr(std::shared_ptr<JobControlRecord> jcr,
