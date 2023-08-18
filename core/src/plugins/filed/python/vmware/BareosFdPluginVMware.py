@@ -2958,7 +2958,9 @@ class BareosVmConfigInfoToSpec(object):
             "numCoresPerSocket"
         ]
         config_spec.numCPUs = self.config_info["hardware"]["numCPU"]
-        config_spec.pmem = self._transform_pmem()
+        # Since vSphere API 7.0.3.0:
+        if hasattr(config_spec, "pmem"):
+            config_spec.pmem = self._transform_pmem()
         config_spec.pmemFailoverEnabled = self.config_info["pmemFailoverEnabled"]
         config_spec.powerOpInfo = self._transform_defaultPowerOps()
         # Since vSphere API 7.0.1.0:
@@ -2982,9 +2984,12 @@ class BareosVmConfigInfoToSpec(object):
         config_spec.virtualSMCPresent = self.config_info["hardware"][
             "virtualSMCPresent"
         ]
-        config_spec.vmOpNotificationToAppEnabled = self.config_info[
-            "vmOpNotificationToAppEnabled"
-        ]
+        # Since vSphere API 7.0.3.0:
+        if hasattr(config_spec, "vmOpNotificationToAppEnabled"):
+            if "vmOpNotificationToAppEnabled" in self.config_info:
+                config_spec.vmOpNotificationToAppEnabled = self.config_info[
+                    "vmOpNotificationToAppEnabled"
+                ]
 
         return config_spec
 
@@ -3743,7 +3748,10 @@ class BareosVmConfigInfoToSpec(object):
         return managed_by
 
     def _transform_pmem(self):
-        if self.config_info["pmem"] is None:
+        if (
+            self.config_info.get("pmem") is None
+            or self.config_info["pmem"].get("snapshotMode") is None
+        ):
             return None
 
         pmem = vim.vm.VirtualPMem()
