@@ -20,4 +20,5 @@ Director {                            # define myself
   # Plugin Names = ""
   Working Directory =  "@working_dir@"
   DirPort = @dir_port@
+  Tls Require = no
 }
