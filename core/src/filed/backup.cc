@@ -1122,13 +1122,17 @@ static inline bool SendPlainData(b_ctx& bctx)
 
   size_t bytes_read{0};
   size_t bytes_send{0};
-  // Read the file data
 
+  thread_pool& pool = bctx.jcr->fd_impl->pool;
+
+  std::optional<std::future<void>> update_digest;
+
+  // Read the file data
   for (;;) {
-    PoolMem Buffer;
-    Buffer.check_size(header_size + max_buf_size);
-    char* header = need_header ? Buffer.c_str() : nullptr;
-    char* file_data = Buffer.c_str() + header_size;
+    std::shared_ptr Buffer = std::make_shared<PoolMem>();
+    Buffer->check_size(header_size + max_buf_size);
+    char* header = need_header ? Buffer->c_str() : nullptr;
+    char* file_data = Buffer->c_str() + header_size;
     ssize_t read_bytes = bread(&bfd, file_data, max_buf_size);
 
     if (read_bytes <= 0) break;
@@ -1137,58 +1141,70 @@ static inline bool SendPlainData(b_ctx& bctx)
 
     size_t buf_size = static_cast<size_t>(read_bytes);
 
-    // Update checksum if requested
-    if (checksum) {
-      CryptoDigestUpdate(checksum, (uint8_t*)file_data, buf_size);
+    if (update_digest) {
+      // updating the digest has to be done serially
+      // so we have to wait until the last task is finished
+      // before issuing a new one.
+      update_digest->get();
     }
 
-    // Update signing digest if requested
-    if (signing) { CryptoDigestUpdate(signing, (uint8_t*)file_data, buf_size); }
+    bool skip_block = false;
 
-
-    // Check for sparse blocks
-    if (support_sparse) {
-      bool allZeros = false;
-
-      if ((buf_size == max_buf_size
-           && (bytes_read + buf_size < (uint64_t)file_size))
-          || ((file_type == FT_RAW || file_type == FT_FIFO)
-              && (file_size == 0))) {
-        allZeros = IsBufZero(file_data, max_buf_size);
-      }
-
-      // Skip block of all zeros
-      if (allZeros) { continue; }
-
-      // Put file address as first data in buffer
-      ser_declare;
-      SerBegin(header, OFFSET_FADDR_SIZE);
-      ser_uint64(bytes_read); /* store fileAddr in begin of buffer */
-      SerEnd(header, OFFSET_FADDR_SIZE);
-    } else if (support_offsets) {
-      ser_declare;
-      SerBegin(header, OFFSET_FADDR_SIZE);
-      ser_uint64(offset); /* store offset in begin of buffer */
-      SerEnd(header, OFFSET_FADDR_SIZE);
+    if (support_sparse
+        && ((buf_size == max_buf_size
+             && (bytes_read + buf_size < (uint64_t)file_size))
+            || ((file_type == FT_RAW || file_type == FT_FIFO)
+                && (file_size == 0)))
+        && IsBufZero(file_data, max_buf_size)) {
+      skip_block = true;
     }
 
-    // Send the buffer to the Storage daemon
-    size_t total_length
-        = (need_header)
-              ? header_size + buf_size /* include bytes_read/offset in size */
-              : buf_size;
+    if (!skip_block) {
+      if (checksum || signing) {
+        std::shared_ptr<char> aliased(Buffer, file_data);
+        update_digest.emplace(
+            enqueue(pool, [checksum, signing, aliased, buf_size]() {
+              // Update checksum if requested
+              if (checksum) {
+                CryptoDigestUpdate(checksum, (uint8_t*)aliased.get(), buf_size);
+              }
 
-    result sendres = SendData(sd, Buffer.addr(), total_length);
-
-    if (auto* error = sendres.error()) {
-      if (!bctx.jcr->IsJobCanceled()) {
-        Jmsg1(bctx.jcr, M_FATAL, 0, "%s\n", error->c_str());
+              // Update signing digest if requested
+              if (signing) {
+                CryptoDigestUpdate(signing, (uint8_t*)aliased.get(), buf_size);
+              }
+            }));
       }
-      goto bail_out;
-    } else {
-      bytes_send
-          += sendres.value_unchecked(); /* count bytes saved possibly
-                                                   compressed/encrypted */
+
+      if (support_sparse) {
+        ser_declare;
+        SerBegin(header, OFFSET_FADDR_SIZE);
+        ser_uint64(bytes_read); /* store fileAddr in begin of buffer */
+        SerEnd(header, OFFSET_FADDR_SIZE);
+      } else if (support_offsets) {
+        ser_declare;
+        SerBegin(header, OFFSET_FADDR_SIZE);
+        ser_uint64(offset); /* store offset in begin of buffer */
+        SerEnd(header, OFFSET_FADDR_SIZE);
+      }
+
+      // Send the buffer to the Storage daemon
+      size_t total_length
+          = need_header
+                ? header_size + buf_size /* include bytes_read/offset in size */
+                : buf_size;
+
+      result sendres = SendData(sd, Buffer->addr(), total_length);
+
+      if (auto* error = sendres.error()) {
+        if (!bctx.jcr->IsJobCanceled()) {
+          Jmsg1(bctx.jcr, M_FATAL, 0, "%s\n", error->c_str());
+        }
+        goto bail_out;
+      } else {
+        bytes_send += sendres.value_unchecked(); /* count bytes saved possibly
+                                                    compressed/encrypted */
+      }
     }
 
     bytes_read += buf_size; /* count bytes read */
@@ -1196,6 +1212,7 @@ static inline bool SendPlainData(b_ctx& bctx)
   retval = true;
 
 bail_out:
+  if (update_digest) { update_digest->get(); }
   bctx.jcr->ReadBytes += bytes_read; /* count bytes read */
   bctx.jcr->JobBytes += bytes_send;  /* count bytes read */
   sd->msg = bctx.msgsave;            /* restore read buffer */
