@@ -1056,9 +1056,40 @@ bail_out:
 }
 #endif
 
+static inline bool SendPlainDataSerially(b_ctx& bctx)
+{
+  bool retval = false;
+  BareosSocket* sd = bctx.jcr->store_bsock;
+
+  // Read the file data
+  while ((sd->message_length
+          = (uint32_t)bread(&bctx.ff_pkt->bfd, bctx.rbuf, bctx.rsize))
+         > 0) {
+    if (!SendDataToSd(&bctx)) { goto bail_out; }
+  }
+  retval = true;
+
+bail_out:
+  return retval;
+}
+
 // Send the content of a file on anything but an EFS filesystem.
 static inline bool SendPlainData(b_ctx& bctx)
 {
+  std::size_t max_buf_size = bctx.rsize;
+
+  auto file_size = bctx.ff_pkt->statp.st_size;
+  auto* flags = bctx.ff_pkt->flags;
+
+  // Currently we do not support encryption while doing
+  // parallel sending/checksumming/compression/etc.
+  // This is mostly because EncryptData() is weird!
+  // FIXME(ssura): change this
+  if (BitIsSet(FO_ENCRYPT, flags)
+      || file_size < static_cast<ssize_t>(2 * max_buf_size)) {
+    return SendPlainDataSerially(bctx);
+  }
+
   bool retval = false;
   BareosSocket* sd = bctx.jcr->store_bsock;
 
