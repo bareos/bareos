@@ -295,7 +295,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
             director_root,
             "consoles",
             console_overwrite,
-            "console={} password={} profile=operator poolacl=!Full tlsenable=no".format(
+            "console={} password={} profile=operator poolacl=!Full tlsenable=no tlsrequire=no".format(
                 console_overwrite, console_password
             ),
         )
