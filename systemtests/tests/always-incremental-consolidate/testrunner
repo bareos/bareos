@@ -182,7 +182,7 @@ wait job=$JobNameLowPriority
 messages
 @$out $tmp/priorities1.out
 list jobs
-@$out /dev/null
+@$out $tmp/spooling.out
 wait
 messages
 @$out $tmp/priorities2.out
@@ -233,5 +233,9 @@ expect_not_grep "|.*26.*|.*${JobNameHighPriority}.*|.*T.*|" \
 expect_grep "|.*26.*|.*${JobNameHighPriority}.*|.*T.*|" \
             "$tmp"/priorities2.out \
             "spawned low priority consolidate job was not successful."
+
+expect_not_grep "Spooling data" \
+                "$tmp"/spooling.out \
+                "spawned low priority consolidate job is spooling unexpectedly."
 
 end_test

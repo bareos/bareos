@@ -68,9 +68,10 @@ static inline void StartNewConsolidationJob(JobControlRecord* jcr,
   ua->batch = true;
   Mmsg(ua->cmd,
        "run job=\"%s\" jobid=%s level=VirtualFull priority=%d accurate=%s "
-       "allowmixedpriority=%s",
+       "spooldata=%s allowmixedpriority=%s",
        jobname, jcr->dir_impl->vf_jobids, jcr->JobPriority,
-       jcr->accurate ? "yes" : "no", jcr->allow_mixed_priority ? "yes" : "no");
+       jcr->accurate ? "yes" : "no", jcr->dir_impl->spool_data ? "yes" : "no",
+       jcr->allow_mixed_priority ? "yes" : "no");
 
   Dmsg1(debuglevel, "=============== consolidate cmd=%s\n", ua->cmd);
   ParseUaArgs(ua); /* parse command */

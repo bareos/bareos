@@ -10,6 +10,7 @@ Job {
   AlwaysIncrementalMaxFullAge = 1 seconds
   Allow Mixed Priority = no
   Priority = 10
+  Spool Data = yes  # Enabling spooling to test consolidate Spool Data = no override
   Run Script {
     Command = "sleep 5"
     Runs When = Before

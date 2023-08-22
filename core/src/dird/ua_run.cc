@@ -992,8 +992,8 @@ static bool ResetRestoreContext(UaContext* ua,
     jcr->dir_impl->IgnoreDuplicateJobChecking = rc.ignoreduplicatecheck;
   }
 
-  // Used by consolidate jobs to make spawned virtualfulls inherit the
-  // AllowMixedPriority flag
+  /* Used by consolidate jobs to make spawned virtualfulls inherit the
+   * AllowMixedPriority flag */
   if (rc.allow_mixed_priority_set) {
     jcr->allow_mixed_priority = rc.allow_mixed_priority;
   }
