@@ -208,6 +208,10 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
     jcr->fd_impl->xattr_data->u.build->content = GetPoolMemory(PM_MESSAGE);
   }
 
+  // enable the use of some workers
+  auto num_workers = std::thread::hardware_concurrency() / 2;
+  jcr->fd_impl->pool.ensure_num_workers(num_workers);
+
   // Subroutine SaveFile() is called for each file
   if (!FindFiles(jcr, (FindFilesPacket*)jcr->fd_impl->ff, SaveFile,
                  PluginSave)) {
