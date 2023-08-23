@@ -51,6 +51,8 @@
 #include "lib/tree.h"
 #include "include/protocol_types.h"
 
+#include <vector>
+
 namespace directordaemon {
 
 /* Imported functions */
@@ -82,6 +84,7 @@ static bool InsertDirIntoFindexList(UaContext* ua,
                                     char* date);
 static void InsertOneFileOrDir(UaContext* ua,
                                RestoreContext* rx,
+                               char* p,
                                char* date,
                                bool dir);
 static bool GetClientName(UaContext* ua, RestoreContext* rx);
@@ -510,6 +513,10 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
 
   rx->JobIds[0] = 0;
 
+  std::vector<char*> files;
+  std::vector<char*> dirs;
+  bool use_select = false;
+
   for (i = 1; i < ua->argc; i++) { /* loop through arguments */
     bool found_kw = false;
     for (j = 0; kw[j]; j++) { /* loop through keywords */
@@ -528,6 +535,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         if (!HasValue(ua, i)) { return 0; }
         if (*rx->JobIds != 0) { PmStrcat(rx->JobIds, ","); }
         PmStrcat(rx->JobIds, ua->argv[i]);
+        bstrncpy(rx->last_jobid, ua->argv[i], sizeof(rx->last_jobid));
         done = true;
         break;
       case 1: /* current */
@@ -552,17 +560,15 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         break;
       }
       case 3: /* file */
+        if (!HasValue(ua, i)) { return 0; }
+        files.push_back(ua->argv[i]);
+        break;
       case 4: /* dir */
         if (!HasValue(ua, i)) { return 0; }
-        if (!have_date) { bstrutime(date, sizeof(date), now); }
-        if (!GetClientName(ua, rx)) { return 0; }
-        PmStrcpy(ua->cmd, ua->argv[i]);
-        InsertOneFileOrDir(ua, rx, date, j == 4);
-        return 2;
+        dirs.push_back(ua->argv[i]);
+        break;
       case 5: /* select */
-        if (!have_date) { bstrutime(date, sizeof(date), now); }
-        if (!SelectBackupsBeforeDate(ua, rx, date)) { return 0; }
-        done = true;
+        use_select = true;
         break;
       case 6: /* pool specified */
         if (!HasValue(ua, i)) { return 0; }
@@ -580,6 +586,23 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         // All keywords 7 or greater are ignored or handled by a select prompt
         break;
     }
+  }
+
+  if (files.size() + dirs.size() > 0) {
+    if (!have_date) { bstrutime(date, sizeof(date), now); }
+    if (!GetClientName(ua, rx)) { return 0; }
+
+    for (auto& file : files) { InsertOneFileOrDir(ua, rx, file, date, false); }
+
+    for (auto& dir : dirs) { InsertOneFileOrDir(ua, rx, dir, date, true); }
+
+    return 2;
+  }
+
+  if (use_select) {
+    if (!have_date) { bstrutime(date, sizeof(date), now); }
+    if (!SelectBackupsBeforeDate(ua, rx, date)) { return 0; }
+    done = true;
   }
 
   if (!done) {
@@ -675,7 +698,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
           if (!GetCmd(ua, _("Enter full filename: "))) { return 0; }
           len = strlen(ua->cmd);
           if (len == 0) { break; }
-          InsertOneFileOrDir(ua, rx, date, false);
+          InsertOneFileOrDir(ua, rx, ua->cmd, date, false);
         }
         return 2;
       case 7: /* enter files backed up before specified time */
@@ -691,7 +714,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
           if (!GetCmd(ua, _("Enter full filename: "))) { return 0; }
           len = strlen(ua->cmd);
           if (len == 0) { break; }
-          InsertOneFileOrDir(ua, rx, date, false);
+          InsertOneFileOrDir(ua, rx, ua->cmd, date, false);
         }
         return 2;
 
@@ -737,7 +760,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
           if (ua->cmd[0] != '<' && !IsPathSeparator(ua->cmd[len - 1])) {
             strcat(ua->cmd, "/");
           }
-          InsertOneFileOrDir(ua, rx, date, true);
+          InsertOneFileOrDir(ua, rx, ua->cmd, date, true);
         }
         return 2;
 
@@ -813,7 +836,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
   } else {
     ua->InfoMsg(_("You have selected the following JobId: %s\n"), rx->JobIds);
   }
-  return true;
+  return 1;
 }
 
 // Get date from user
@@ -884,12 +907,12 @@ std::string CompensateShortDate(const char* cmd)
 // Insert a single file, or read a list of files from a file
 static void InsertOneFileOrDir(UaContext* ua,
                                RestoreContext* rx,
+                               char* p,
                                char* date,
                                bool dir)
 {
   FILE* ffd;
   char file[5000];
-  char* p = ua->cmd;
   int line = 0;
 
   switch (*p) {
@@ -922,9 +945,9 @@ static void InsertOneFileOrDir(UaContext* ua,
       break;
     default:
       if (dir) {
-        InsertDirIntoFindexList(ua, rx, ua->cmd, date);
+        InsertDirIntoFindexList(ua, rx, p, date);
       } else {
-        InsertFileIntoFindexList(ua, rx, ua->cmd, date);
+        InsertFileIntoFindexList(ua, rx, p, date);
       }
       break;
   }

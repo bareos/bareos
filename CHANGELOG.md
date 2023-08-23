@@ -90,6 +90,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - plugins: switch python-ldap plugin to  python3 [PR #1522]
 - build: switch from FreeBSD 13.1 to 13.2 [PR #1524]
 - stored: automatically increment tape block size in case the buffer is too small [PR #1496]
+- ua_restore: change restore argument handling [PR #1516]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -228,6 +229,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1508]: https://github.com/bareos/bareos/pull/1508
 [PR #1511]: https://github.com/bareos/bareos/pull/1511
 [PR #1512]: https://github.com/bareos/bareos/pull/1512
+[PR #1516]: https://github.com/bareos/bareos/pull/1516
 [PR #1522]: https://github.com/bareos/bareos/pull/1522
 [PR #1524]: https://github.com/bareos/bareos/pull/1524
 [unreleased]: https://github.com/bareos/bareos/tree/master

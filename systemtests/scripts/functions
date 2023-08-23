@@ -782,8 +782,8 @@ check_restore_diff()
 
    restorepath="$restoredirectory/${dest}"
 
-   if "$rscripts/diff.pl" -s "${dest}" -d "${restorepath}"; then
-       result=$?
+   if ! "$rscripts/diff.pl" -d "${restorepath}" -s "${dest}"; then
+       dstat=1
    fi
 
    # gnu diff is required
