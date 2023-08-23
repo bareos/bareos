@@ -47,9 +47,7 @@ else()
      AND ENABLE_PYTHON
      AND (Python3_FOUND)
   )
-    if(Python3_FOUND)
-      list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-director-python3-plugin")
-    endif()
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-director-python3-plugin")
     list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-director-python-plugins-common")
   endif()
 
@@ -57,9 +55,7 @@ else()
     list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-filedaemon-glusterfs-plugin")
   endif()
   if(ENABLE_PYTHON AND Python3_FOUND)
-    if(Python3_FOUND)
-      list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-filedaemon-python3-plugin")
-    endif()
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-filedaemon-python3-plugin")
     list(APPEND DEBIAN_CONTROL_SNIPPETS
          "bareos-filedaemon-python-plugins-common"
     )
@@ -75,9 +71,7 @@ else()
      AND ENABLE_PYTHON
      AND Python3_FOUND
   )
-    if(Python3_FOUND)
-      list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-storage-python3-plugin")
-    endif()
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-storage-python3-plugin")
     list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-storage-python-plugins-common")
   endif()
 

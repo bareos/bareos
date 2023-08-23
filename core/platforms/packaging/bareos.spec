@@ -555,7 +555,7 @@ This package contains the python 3 plugin for the director daemon
 %description director-python-plugins-common
 %{dscr}
 
-This package contains the common files for the python 2 and python 3 director plugins.
+This package contains the common files for the python director plugins.
 
 %description filedaemon-python3-plugin
 %{dscr}
@@ -565,7 +565,7 @@ This package contains the python 3 plugin for the file daemon
 %description filedaemon-python-plugins-common
 %{dscr}
 
-This package contains the common files for the python 2 and python 3 filedaemon plugins.
+This package contains the common files for the python filedaemon plugins.
 
 %description filedaemon-ldap-python-plugin
 %{dscr}
@@ -606,7 +606,7 @@ This package contains the python 3 plugin for the storage daemon
 %description storage-python-plugins-common
 %{dscr}
 
-This package contains the common files for the python 2 and python 3 storage plugins.
+This package contains the common files for the python storage plugins.
 %endif
 
 %if 0%{?glusterfs}

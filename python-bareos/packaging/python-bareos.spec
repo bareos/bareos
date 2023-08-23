@@ -55,18 +55,13 @@ BuildRequires:  %{python3_build_requires}
 %prep
 %setup -q
 
-%build
 
-%if ! 0%{?skip_python3}
+%build
 %py3_build
-%endif
 
 
 %install
-
-%if ! 0%{?skip_python3}
 %py3_install
-%endif
 
 
 %check
