@@ -252,10 +252,8 @@ static bRC newPlugin(PluginContext* plugin_ctx)
   plugin_priv_ctx->interpreter = Py_NewInterpreter();
   PyEval_ReleaseThread(plugin_priv_ctx->interpreter);
 
-  /*
-   * Always register some events the python plugin itself can register
-   * any other events it is interested in.
-   */
+  /* Always register some events the python plugin itself can register
+   * any other events it is interested in. */
   bareos_core_functions->registerBareosEvents(plugin_ctx, 1,
                                               bSdEventNewPluginOptions);
 
@@ -303,10 +301,8 @@ static bRC handlePluginEvent(PluginContext* plugin_ctx,
 
   if (!plugin_priv_ctx) { goto bail_out; }
 
-  /*
-   * First handle some events internally before calling python if it
-   * want to do some special handling on the event triggered.
-   */
+  /* First handle some events internally before calling python if it
+   * want to do some special handling on the event triggered. */
   switch (event->eventType) {
     case bSdEventNewPluginOptions:
       event_dispatched = true;
@@ -316,19 +312,15 @@ static bRC handlePluginEvent(PluginContext* plugin_ctx,
       break;
   }
 
-  /*
-   * See if we have been triggered in the previous switch if not we have to
+  /* See if we have been triggered in the previous switch if not we have to
    * always dispatch the event. If we already processed the event internally
    * we only do a dispatch to the python entry point when that internal
-   * processing was successful (e.g. retval == bRC_OK).
-   */
+   * processing was successful (e.g. retval == bRC_OK). */
   if (!event_dispatched || retval == bRC_OK) {
     PyEval_AcquireThread(plugin_priv_ctx->interpreter);
 
-    /*
-     * Now dispatch the event to Python.
-     * First the calls that need special handling.
-     */
+    /* Now dispatch the event to Python.
+     * First the calls that need special handling. */
     switch (event->eventType) {
       case bSdEventNewPluginOptions:
         // See if we already loaded the Python modules.
@@ -343,11 +335,9 @@ static bRC handlePluginEvent(PluginContext* plugin_ctx,
         }
         break;
       default:
-        /*
-         * Handle the generic events e.g. the ones which are just passed on.
+        /* Handle the generic events e.g. the ones which are just passed on.
          * We only try to call Python when we loaded the right module until
-         * that time we pretend the call succeeded.
-         */
+         * that time we pretend the call succeeded. */
         if (plugin_priv_ctx->python_loaded) {
           retval = Bareossd_PyHandlePluginEvent(plugin_ctx, event, value);
         } else {
@@ -383,10 +373,8 @@ static bRC parse_plugin_definition(PluginContext* plugin_ctx,
 
   if (!value) { return bRC_Error; }
 
-  /*
-   * Parse the plugin definition.
-   * Make a private copy of the whole string.
-   */
+  /* Parse the plugin definition.
+   * Make a private copy of the whole string. */
   PmStrcpy(plugin_definition, (char*)value);
 
   bp = strchr(plugin_definition.c_str(), ':');
@@ -405,8 +393,7 @@ static bRC parse_plugin_definition(PluginContext* plugin_ctx,
   while (bp) {
     if (strlen(bp) == 0) { break; }
 
-    /*
-     * Each argument is in the form:
+    /* Each argument is in the form:
      *    <argument> = <argument_value>
      *
      * So we setup the right pointers here, argument to the beginning
