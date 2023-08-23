@@ -91,6 +91,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - build: switch from FreeBSD 13.1 to 13.2 [PR #1524]
 - stored: automatically increment tape block size in case the buffer is too small [PR #1496]
 - ua_restore: change restore argument handling [PR #1516]
+- plugin-fd: allow fd plugins to (re-)set since-time and disable/re-enable timestamp/accurate checks [PR #1505]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -225,6 +226,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1499]: https://github.com/bareos/bareos/pull/1499
 [PR #1502]: https://github.com/bareos/bareos/pull/1502
 [PR #1503]: https://github.com/bareos/bareos/pull/1503
+[PR #1505]: https://github.com/bareos/bareos/pull/1505
 [PR #1507]: https://github.com/bareos/bareos/pull/1507
 [PR #1508]: https://github.com/bareos/bareos/pull/1508
 [PR #1511]: https://github.com/bareos/bareos/pull/1511
