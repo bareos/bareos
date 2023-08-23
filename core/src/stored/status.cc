@@ -631,6 +631,14 @@ static void SendDeviceStatus(Device* dev, StatusPacket* sp)
   sp->send(msg, len);
 }
 
+static uint64_t CalculateAverageRate(JobControlRecord* jcr)
+{
+  time_t now = time(nullptr);
+  time_t totalruntime = now - jcr->run_time;
+  if (totalruntime <= 0) { totalruntime = 1; }
+  return (jcr->JobBytes / totalruntime);
+}
+
 static void ListRunningJobs(StatusPacket* sp)
 {
   JobControlRecord* jcr;
@@ -639,7 +647,7 @@ static void ListRunningJobs(StatusPacket* sp)
   PoolMem msg(PM_MESSAGE);
   int len;
   char JobName[MAX_NAME_LENGTH];
-  char b1[50], b2[50], b3[50], b4[50];
+  char b1[50], b2[50], b3[50];
 
   if (!sp->api) {
     len = Mmsg(msg, _("\nJob inventory:\n\n"));
@@ -689,14 +697,11 @@ static void ListRunningJobs(StatusPacket* sp)
         sp->send(msg, len);
       }
 
-      jcr->UpdateJobStats();
 
-      len = Mmsg(msg,
-                 _("    Files=%s Bytes=%s AveBytes/sec=%s LastBytes/sec=%s\n"),
+      len = Mmsg(msg, _("    Files=%s Bytes=%s AveBytes/sec=%s \n"),
                  edit_uint64_with_commas(jcr->JobFiles, b1),
                  edit_uint64_with_commas(jcr->JobBytes, b2),
-                 edit_uint64_with_commas(jcr->AverageRate, b3),
-                 edit_uint64_with_commas(jcr->LastRate, b4));
+                 edit_uint64_with_commas(CalculateAverageRate(jcr), b3));
       sp->send(msg, len);
 
       found = true;
