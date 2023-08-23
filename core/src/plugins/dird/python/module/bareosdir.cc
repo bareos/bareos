@@ -223,7 +223,6 @@ static PyObject* PyBareosGetValue(PyObject*, PyObject* args)
     case bDirVarSDErrors:
     case bDirVarJobFiles:
     case bDirVarSDJobFiles:
-    case bDirVarLastRate:
     case bDirVarJobBytes:
     case bDirVarReadBytes: {
       uint64_t value = 0;

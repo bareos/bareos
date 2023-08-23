@@ -80,9 +80,8 @@ typedef enum
   bDirVarFDJobStatus = 22,
   bDirVarSDJobStatus = 23,
   bDirVarPluginDir = 24,
-  bDirVarLastRate = 25,
-  bDirVarJobBytes = 26,
-  bDirVarReadBytes = 27
+  bDirVarJobBytes = 25,
+  bDirVarReadBytes = 26,
 } brDirVariable;
 
 // Bareos Variable Ids (Write)

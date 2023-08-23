@@ -690,11 +690,6 @@ static bRC bareosGetValue(PluginContext* ctx, brDirVariable var, void* value)
         Dmsg1(debuglevel, "dir-plugin: return bDirVarSDJobStatus=%c\n",
               jcr->dir_impl->SDJobStatus.load());
         break;
-      case bDirVarLastRate:
-        *((int*)value) = jcr->LastRate;
-        Dmsg1(debuglevel, "dir-plugin: return bDirVarLastRate=%d\n",
-              jcr->LastRate);
-        break;
       case bDirVarJobBytes:
         *((uint64_t*)value) = jcr->JobBytes;
         Dmsg1(debuglevel, "dir-plugin: return bDirVarJobBytes=%u\n",

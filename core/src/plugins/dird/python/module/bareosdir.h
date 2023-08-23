@@ -140,9 +140,8 @@ MOD_INIT(bareosdir)
   ConstSet_StrLong(pDictbDirVariable, bDirVarFDJobStatus, 22);
   ConstSet_StrLong(pDictbDirVariable, bDirVarSDJobStatus, 23);
   ConstSet_StrLong(pDictbDirVariable, bDirVarPluginDir, 24);
-  ConstSet_StrLong(pDictbDirVariable, bDirVarLastRate, 25);
-  ConstSet_StrLong(pDictbDirVariable, bDirVarJobBytes, 26);
-  ConstSet_StrLong(pDictbDirVariable, bDirVarReadBytes, 27);
+  ConstSet_StrLong(pDictbDirVariable, bDirVarJobBytes, 25);
+  ConstSet_StrLong(pDictbDirVariable, bDirVarReadBytes, 26);
   if (PyModule_AddObject(m, bDirVariable, pDictbDirVariable)) {
     return MOD_ERROR_VAL;
   }
