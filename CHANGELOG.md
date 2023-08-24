@@ -92,6 +92,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - stored: automatically increment tape block size in case the buffer is too small [PR #1496]
 - ua_restore: change restore argument handling [PR #1516]
 - plugin-fd: allow fd plugins to (re-)set since-time and disable/re-enable timestamp/accurate checks [PR #1505]
+- config: deprecate `LabelType` and `CheckLabels` [PR #1521]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -234,6 +235,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1512]: https://github.com/bareos/bareos/pull/1512
 [PR #1516]: https://github.com/bareos/bareos/pull/1516
 [PR #1520]: https://github.com/bareos/bareos/pull/1520
+[PR #1521]: https://github.com/bareos/bareos/pull/1521
 [PR #1522]: https://github.com/bareos/bareos/pull/1522
 [PR #1524]: https://github.com/bareos/bareos/pull/1524
 [unreleased]: https://github.com/bareos/bareos/tree/master
