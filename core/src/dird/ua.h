@@ -232,9 +232,6 @@ class RestoreContext {
 
   static char FilterIdentifier(JobTypeFilter filter);
   void BuildRegexWhere(char* strip_prefix, char* add_prefix, char* add_suffix);
-
- private:
-  char* regexp = nullptr;
 };
 
 // Context for run job.

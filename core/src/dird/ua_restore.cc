@@ -355,10 +355,8 @@ void RestoreContext::BuildRegexWhere(char* strip_prefix,
                                      char* add_suffix)
 {
   int len = BregexpGetBuildWhereSize(strip_prefix, add_prefix, add_suffix);
-  regexp = (char*)malloc(len * sizeof(char));
-  bregexp_build_where(regexp, len, strip_prefix, add_prefix, add_suffix);
-
-  RegexWhere = regexp;
+  RegexWhere = (char*)malloc(len * sizeof(char));
+  bregexp_build_where(RegexWhere, len, strip_prefix, add_prefix, add_suffix);
 }
 
 RestoreContext::~RestoreContext()
@@ -375,9 +373,9 @@ RestoreContext::~RestoreContext()
     RestoreClientName = nullptr;
   }
 
-  if (regexp) {
-    free(regexp);
-    regexp = nullptr;
+  if (RegexWhere) {
+    free(RegexWhere);
+    RegexWhere = nullptr;
   }
 
   FreeAndNullPoolMemory(JobIds);
