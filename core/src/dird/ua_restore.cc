@@ -284,7 +284,7 @@ void BuildRestoreCommandString(UaContext* ua,
                                const RestoreContext& rx,
                                JobResource* job)
 {
-  std::string escaped_bsr_name = escape_filename(ua->jcr->RestoreBootstrap);
+  std::string escaped_bsr_name = EscapePath(ua->jcr->RestoreBootstrap);
 
   Mmsg(ua->cmd,
        "run job=\"%s\" client=\"%s\" restoreclient=\"%s\" storage=\"%s\""
@@ -305,13 +305,13 @@ void BuildRestoreCommandString(UaContext* ua,
   PmStrcpy(buf, "");
   std::string escaped_where_name{};
   if (rx.RegexWhere) {
-    escaped_where_name = escape_filename(rx.RegexWhere);
+    escaped_where_name = EscapePath(rx.RegexWhere);
     Mmsg(buf, " regexwhere=\"%s\"",
          !escaped_where_name.empty() ? escaped_where_name.c_str()
                                      : rx.RegexWhere);
 
   } else if (rx.where) {
-    escaped_where_name = escape_filename(rx.where);
+    escaped_where_name = EscapePath(rx.where);
     Mmsg(buf, " where=\"%s\"",
          !escaped_where_name.empty() ? escaped_where_name.c_str() : rx.where);
   }
