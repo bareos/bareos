@@ -622,6 +622,7 @@
           "datatype": "BIT",
           "code": 22,
           "default_value": "off",
+          "deprecated": true,
           "equals": true
         },
         "RequiresMount": {
@@ -777,6 +778,7 @@
         "LabelType": {
           "datatype": "LABEL",
           "code": 0,
+          "deprecated": true,
           "equals": true
         },
         "NoRewindOnClose": {
