@@ -40,7 +40,7 @@ messages
 list jobs
 @$out $log_home/should-hang.out
 restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done yes
-@sleep 3
+@sleep 6
 messages
 quit
 END_OF_DATA
