@@ -786,8 +786,10 @@ void MakeUniqueFilename(POOLMEM*& name, int Id, char* what)
 std::string EscapePath(const char* file_path)
 {
   std::string escaped{};
-  if (file_path == nullptr || strpbrk(file_path, "\"\\") == nullptr) {
+  if (file_path == nullptr) {
     return escaped;
+  } else if (strpbrk(file_path, "\"\\") == nullptr) {
+    return file_path;
   }
 
   char* escaped_path = (char*)malloc(2 * (strlen(file_path) + 1));

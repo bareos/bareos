@@ -292,34 +292,35 @@ TEST(bstrncat, overlap_terminating_null_byte)
   EXPECT_STREQ(dest, "<OLD>");
 }
 
+TEST(EscapePath, escape_nullptr) { EXPECT_EQ(EscapePath(nullptr), ""); }
+
 TEST(EscapePath, escape_regular_filename)
 {
   std::string filename = "thisisaregularfilename";
-  std::string escaped_filename = EscapePath(filename.c_str());
 
-  EXPECT_STREQ(escaped_filename.c_str(), "");
+  EXPECT_EQ(EscapePath(filename.c_str()), filename);
 }
 
 TEST(EscapePath, escape_backslashes)
 {
-  filename = R"(this\is\aregularfilename)";
-  escaped_filename = EscapePath(filename.c_str());
+  std::string filename = R"(this\is\aregularfilename)";
+  std::string escaped_filename = R"(this\\is\\aregularfilename)";
 
-  EXPECT_STREQ(escaped_filename.c_str(), R"(this\\is\\aregularfilename)");
+  EXPECT_EQ(EscapePath(filename.c_str()), escaped_filename);
 }
 
 TEST(EscapePath, escape_quotes)
 {
-  filename = R"(this"isaregularfile"name)";
-  escaped_filename = EscapePath(filename.c_str());
+  std::string filename = R"(this"isaregularfile"name)";
+  std::string escaped_filename = R"(this\"isaregularfile\"name)";
 
-  EXPECT_STREQ(escaped_filename.c_str(), R"(this\"isaregularfile\"name)");
+  EXPECT_EQ(EscapePath(filename.c_str()), escaped_filename);
 }
 
 TEST(EscapePath, escape_backslashes_and_quotes)
 {
-  filename = R"(this"is\aregular\file"name)";
-  escaped_filename = EscapePath(filename.c_str());
+  std::string filename = R"(this"is\aregular\file"name)";
+  std::string escaped_filename = R"(this\"is\\aregular\\file\"name)";
 
-  EXPECT_STREQ(escaped_filename.c_str(), R"(this\"is\\aregular\\file\"name)");
+  EXPECT_EQ(EscapePath(filename.c_str()), escaped_filename);
 }

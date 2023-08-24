@@ -284,16 +284,13 @@ void BuildRestoreCommandString(UaContext* ua,
                                const RestoreContext& rx,
                                JobResource* job)
 {
-  std::string escaped_bsr_name = EscapePath(ua->jcr->RestoreBootstrap);
-
   Mmsg(ua->cmd,
        "run job=\"%s\" client=\"%s\" restoreclient=\"%s\" storage=\"%s\""
        " bootstrap=\"%s\" files=%u catalog=\"%s\"",
        job->resource_name_, rx.ClientName, rx.RestoreClientName,
        rx.store ? rx.store->resource_name_ : "",
-       !escaped_bsr_name.empty() ? escaped_bsr_name.c_str()
-                                 : ua->jcr->RestoreBootstrap,
-       rx.selected_files, ua->catalog->resource_name_);
+       EscapePath(ua->jcr->RestoreBootstrap).c_str(), rx.selected_files,
+       ua->catalog->resource_name_);
 
   // Build run command
   PoolMem buf;
@@ -303,17 +300,11 @@ void BuildRestoreCommandString(UaContext* ua,
   }
 
   PmStrcpy(buf, "");
-  std::string escaped_where_name{};
   if (rx.RegexWhere) {
-    escaped_where_name = EscapePath(rx.RegexWhere);
-    Mmsg(buf, " regexwhere=\"%s\"",
-         !escaped_where_name.empty() ? escaped_where_name.c_str()
-                                     : rx.RegexWhere);
+    Mmsg(buf, " regexwhere=\"%s\"", EscapePath(rx.RegexWhere).c_str());
 
   } else if (rx.where) {
-    escaped_where_name = EscapePath(rx.where);
-    Mmsg(buf, " where=\"%s\"",
-         !escaped_where_name.empty() ? escaped_where_name.c_str() : rx.where);
+    Mmsg(buf, " where=\"%s\"", EscapePath(rx.where).c_str());
   }
   PmStrcat(ua->cmd, buf);
 
