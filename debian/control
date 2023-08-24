@@ -104,8 +104,8 @@ Description: Backup Archiving Recovery Open Sourced - client metapackage
 
 Package:        bareos-common
 Architecture:   any
-Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0, adduser
-Depends:        gawk, openssl, ${shlibs:Depends}, ${misc:Depends}
+Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0, adduser, coreutils, findutils, grep, gawk, libc-bin, passwd, openssl, sed
+Depends:        ${shlibs:Depends}, ${misc:Depends}
 Conflicts:      bacula-director-common, bacula-common
 Description: Backup Archiving Recovery Open Sourced - common files
  Bareos is a set of programs to manage backup, recovery and verification of
@@ -269,26 +269,11 @@ Description: Backup Archiving Recovery Open Sourced - common tools
  Bareos storage volumes.
 
 
-Package:        bareos-director-python2-plugin
-Architecture:   any
-Section:        python
-Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), bareos-director-python-plugins-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
-Provides:       bareos-director-python-plugin (= ${binary:Version})
-Replaces:       bareos-director-python-plugin
-Conflicts:      bareos-director-python-plugin
-Description: Backup Archiving Recovery Open Sourced - director Python plugin
- Bareos is a set of programs to manage backup, recovery and verification of
- data across a network of computers of different kinds.
- .
- This package provides the Python plugin for the director.
-
-
 Package:        bareos-director-python3-plugin
 Architecture:   any
 Section:        python
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), bareos-director-python-plugins-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Depends:        bareos-common (= ${binary:Version}), bareos-director (= ${binary:Version}), bareos-director-python-plugins-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
 Provides:       bareos-director-python-plugin (= ${binary:Version})
 Replaces:       bareos-director-python-plugin
 Conflicts:      bareos-director-python-plugin
@@ -308,14 +293,13 @@ Description: Backup Archiving Recovery Open Sourced - director Python plugin com
  Bareos is a set of programs to manage backup, recovery and verification of
  data across a network of computers of different kinds.
  .
- This package provides common files for both Python 2 and Python 3 director plugins.
+ This package provides common files for both Python director plugins.
 
 Package:        bareos-contrib-director-python-plugins
 Architecture:   any
 Section:        python
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), bareos-director-python-plugin (= ${binary:Version}), ${misc:Depends}
-Recommends:     bareos-director-python3-plugin
+Depends:        bareos-common (= ${binary:Version}), bareos-director-python3-plugin (= ${binary:Version}), ${misc:Depends}
 Description: Backup Archiving Recovery Open Sourced - contributed Director plugins
  Bareos is a set of programs to manage backup, recovery and verification of
  data across a network of computers of different kinds.
@@ -323,27 +307,11 @@ Description: Backup Archiving Recovery Open Sourced - contributed Director plugi
  This package provides additional Bareos Director Python plugins, not part of the Bareos project.
 
 
-Package:        bareos-filedaemon-python2-plugin
-Architecture:   any
-Section:        python
-Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), bareos-filedaemon-python-plugins-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
-Recommends:     python-dateutil
-Provides:       bareos-filedaemon-python-plugin (= ${binary:Version})
-Replaces:       bareos-filedaemon-python-plugin
-Conflicts:      bareos-filedaemon-python-plugin (<< 20.0.0)
-Description: Backup Archiving Recovery Open Sourced - file daemon Python plugin
- Bareos is a set of programs to manage backup, recovery and verification of
- data across a network of computers of different kinds.
- .
- This package provides the Python plugin for the filedaemon.
-
-
 Package:        bareos-filedaemon-python3-plugin
 Architecture:   any
 Section:        python
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), bareos-filedaemon-python-plugins-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Depends:        bareos-filedaemon (= ${binary:Version}), bareos-filedaemon-python-plugins-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
 Recommends:     python3-dateutil
 Provides:       bareos-filedaemon-python-plugin (= ${binary:Version})
 Replaces:       bareos-filedaemon-python-plugin
@@ -364,13 +332,13 @@ Description: Backup Archiving Recovery Open Sourced - file daemon Python plugin 
  Bareos is a set of programs to manage backup, recovery and verification of
  data across a network of computers of different kinds.
  .
- This package provides common files for both Python 2 and Python 3 filedaemon plugins.
+ This package provides common files for Python filedaemon plugins.
 
 Package:        bareos-filedaemon-ldap-python-plugin
 Architecture:   any
 Section:        python
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), bareos-filedaemon-python2-plugin (= ${binary:Version}), python-ldap, ${misc:Depends}
+Depends:        bareos-common (= ${binary:Version}), bareos-filedaemon-python3-plugin (= ${binary:Version}), python-ldap, ${misc:Depends}
 Description: Backup Archiving Recovery Open Sourced - file daemon LDAP plugin
  Bareos is a set of programs to manage backup, recovery and verification of
  data across a network of computers of different kinds.
@@ -381,8 +349,7 @@ Package:        bareos-filedaemon-percona-xtrabackup-python-plugin
 Architecture:   any
 Section:        python
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), bareos-filedaemon-python-plugin (= ${binary:Version}), ${misc:Depends}
-Recommends:     bareos-filedaemon-python3-plugin
+Depends:        bareos-common (= ${binary:Version}), bareos-filedaemon-python3-plugin (= ${binary:Version}), ${misc:Depends}
 Description: Backup Archiving Recovery Open Sourced - file daemon Percona XtraBackup plugin
  Bareos is a set of programs to manage backup, recovery and verification of
  data across a network of computers of different kinds.
@@ -393,8 +360,7 @@ Package:        bareos-filedaemon-mariabackup-python-plugin
 Architecture:   any
 Section:        python
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), bareos-filedaemon-python-plugin (= ${binary:Version}), ${misc:Depends}
-Recommends:     bareos-filedaemon-python3-plugin
+Depends:        bareos-common (= ${binary:Version}), bareos-filedaemon-python3-plugin (= ${binary:Version}), ${misc:Depends}
 Description: Backup Archiving Recovery Open Sourced - file daemon Mariabackup plugin
  Bareos is a set of programs to manage backup, recovery and verification of
  data across a network of computers of different kinds.
@@ -405,8 +371,7 @@ Package:        bareos-filedaemon-postgresql-python-plugin
 Architecture:   any
 Section:        python
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), bareos-filedaemon-python-plugin (= ${binary:Version}), ${misc:Depends}
-Recommends:     bareos-filedaemon-python3-plugin
+Depends:        bareos-common (= ${binary:Version}), bareos-filedaemon-python3-plugin (= ${binary:Version}), ${misc:Depends}
 Description: Backup Archiving Recovery Open Sourced - file daemon PostgreSQL plugin
  Bareos is a set of programs to manage backup, recovery and verification of
  data across a network of computers of different kinds.
@@ -417,8 +382,7 @@ Package:        bareos-filedaemon-libcloud-python-plugin
 Architecture:   any
 Section:        python
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), bareos-filedaemon-python-plugin (= ${binary:Version}), ${misc:Depends}
-Recommends:     bareos-filedaemon-python3-plugin
+Depends:        bareos-common (= ${binary:Version}), bareos-filedaemon-python3-plugin (= ${binary:Version}), ${misc:Depends}
 Description: Backup Archiving Recovery Open Sourced - file daemon Apache Libcloud plugin
  Bareos is a set of programs to manage backup, recovery and verification of
  data across a network of computers of different kinds.
@@ -429,8 +393,7 @@ Package:        bareos-contrib-filedaemon-python-plugins
 Architecture:   any
 Section:        python
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), bareos-filedaemon-python-plugin (= ${binary:Version}), ${misc:Depends}
-Recommends:     bareos-filedaemon-python3-plugin
+Depends:        bareos-common (= ${binary:Version}), bareos-filedaemon-python3-plugin (= ${binary:Version}), ${misc:Depends}
 Description: Backup Archiving Recovery Open Sourced - contributed File Daemon plugins
  Bareos is a set of programs to manage backup, recovery and verification of
  data across a network of computers of different kinds.
@@ -449,26 +412,11 @@ Description: Backup Archiving Recovery Open Sourced - storage daemon droplet bac
  This package provides the droplet backend for the storage daemon.
 
 
-Package:        bareos-storage-python2-plugin
-Architecture:   any
-Section:        python
-Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), bareos-storage-python-plugins-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
-Provides:       bareos-storage-python-plugin (= ${binary:Version})
-Replaces:       bareos-storage-python-plugin
-Conflicts:      bareos-storage-python-plugin
-Description: Backup Archiving Recovery Open Sourced - storage daemon Python plugin
- Bareos is a set of programs to manage backup, recovery and verification of
- data across a network of computers of different kinds.
- .
- This package provides the Python plugin for the storage daemon.
-
-
 Package:        bareos-storage-python3-plugin
 Architecture:   any
 Section:        python
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), bareos-storage-python-plugins-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Depends:        bareos-common (= ${binary:Version}), bareos-storage (= ${binary:Version}), bareos-storage-python-plugins-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
 Provides:       bareos-storage-python-plugin (= ${binary:Version})
 Replaces:       bareos-storage-python-plugin
 Conflicts:      bareos-storage-python-plugin
@@ -488,7 +436,7 @@ Description: Backup Archiving Recovery Open Sourced - storage daemon Python plug
  Bareos is a set of programs to manage backup, recovery and verification of
  data across a network of computers of different kinds.
  .
- This package provides common files for both Python 2 and Python 3 storagedaemon plugins.
+ This package provides common files for Python storagedaemon plugins.
 
 
 Package:        bareos-traymonitor

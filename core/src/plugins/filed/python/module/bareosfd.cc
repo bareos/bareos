@@ -35,20 +35,12 @@
 
 #include "include/version_hex.h"
 
-#if PY_VERSION_HEX < VERSION_HEX(3, 0, 0)
-#  define LOGPREFIX "python-fd-mod: "
-#else
-#  define LOGPREFIX "python3-fd-mod: "
-#endif
-
+#define LOGPREFIX "python3-fd-mod: "
 
 #include "filed/fd_plugins.h"
 
-#include "plugins/include/python3compat.h"
-
 #define BAREOSFD_MODULE
 #include "bareosfd.h"
-#include "plugins/include/python3compat.h"
 #include "include/filetypes.h"
 #include "lib/edit.h"
 

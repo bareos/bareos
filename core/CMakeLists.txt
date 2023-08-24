@@ -359,7 +359,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
   set(HAVE_WIN32 1)
 
-  set(Python2_LIBRARIES python27.dll)
   set(Python3_LIBRARIES python38.dll)
 
   if(${WINDOWS_BITS} MATCHES "32")
@@ -368,7 +367,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set(cross-prefix x86_64-w64-mingw32)
   endif()
 
-  set(Python2_INCLUDE_DIRS /usr/${cross-prefix}/include/python2/)
   set(Python3_INCLUDE_DIRS /usr/${cross-prefix}/include/python3/)
 
   set(PostgreSQL_LIBRARY libpq.dll)
@@ -413,10 +411,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   )
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m${WINDOWS_BITS} -mwin32 -mthreads")
 
-  # c++17 removed register keyword
-  set(Python2_CCSHARED -Wno-register)
-
-  set(Python2_SITEARCH ${plugindir})
   set(Python3_SITEARCH ${plugindir})
 endif()
 
@@ -903,9 +897,6 @@ message(
 )
 message(
   "   CEPHFS support:               ${CEPHFS_FOUND} ${CEPHFS_LIBRARIES} ${CEPHFS_INCLUDE_DIRS} "
-)
-message(
-  "   Python2 support:              ${Python2_FOUND} ${Python2_VERSION} ${Python2_INCLUDE_DIRS} ${Python2_EXECUTABLE}"
 )
 message(
   "   Python3 support:              ${Python3_FOUND} ${Python3_VERSION} ${Python3_INCLUDE_DIRS} ${Python3_EXECUTABLE}"

@@ -43,7 +43,6 @@ Vendor:     The Bareos Team
 %define install_suse_fw 0
 %define systemd_support 0
 %define python_plugins 1
-%define python2_available 1
 %define contrib 1
 %define webui 1
 
@@ -177,12 +176,6 @@ BuildRequires: qt-devel
 %endif
 
 %if 0%{?python_plugins}
-  %if 0%{?fedora} >= 36 || 0%{?rhel} >= 9 || 0%{?suse_version} >= 1550 || 0%{?sle_version} >= 150400
-%define python2_available 0
-  %endif
- %if 0%{python2_available}
-BuildRequires: python2-devel >= 2.6
- %endif
 BuildRequires: python3-devel >= 3.4
 %endif
 
@@ -415,15 +408,6 @@ Provides:   %{name}-tray-monitor-qt
 %endif
 
 %if 0%{?python_plugins}
-  %if 0%{?python2_available}
-%package    director-python2-plugin
-Summary:    Python plugin for Bareos Director daemon
-Group:      Productivity/Archiving/Backup
-Requires:   bareos-director = %{version}
-Requires:   bareos-director-python-plugins-common = %{version}
-Provides:   bareos-director-python-plugin
-Obsoletes:  bareos-director-python-plugin <= %{version}
-  %endif
 %package    director-python3-plugin
 Summary:    Python plugin for Bareos Director daemon
 Group:      Productivity/Archiving/Backup
@@ -438,15 +422,6 @@ Group:      Productivity/Archiving/Backup
 Requires:   bareos-director = %{version}
 
 
-  %if 0%{?python2_available}
-%package    filedaemon-python2-plugin
-Summary:    Python plugin for Bareos File daemon
-Group:      Productivity/Archiving/Backup
-Requires:   bareos-filedaemon = %{version}
-Requires:   bareos-filedaemon-python-plugins-common = %{version}
-Provides:   bareos-filedaemon-python-plugin
-Obsoletes:  bareos-filedaemon-python-plugin <= %{version}
-  %endif
 %package    filedaemon-python3-plugin
 Summary:    Python plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
@@ -465,8 +440,11 @@ Requires:   bareos-filedaemon = %{version}
 Summary:    LDAP Python plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-filedaemon = %{version}
-Requires:   bareos-filedaemon-python2-plugin = %{version}
-Requires:   python-ldap
+Requires:   bareos-filedaemon-python-plugin = %{version}
+%if 0%{?rhel} != 7
+Suggests:   bareos-filedaemon-python3-plugin = %{version}
+%endif
+Requires:   python3-ldap
 
 %package    filedaemon-ovirt-python-plugin
 Summary:    Ovirt Python plugin for Bareos File daemon
@@ -514,15 +492,6 @@ Suggests:   bareos-filedaemon-python3-plugin = %{version}
 %endif
 
 
-  %if 0%{?python2_available}
-%package    storage-python2-plugin
-Summary:    Python plugin for Bareos Storage daemon
-Group:      Productivity/Archiving/Backup
-Requires:   bareos-storage = %{version}
-Requires:   bareos-storage-python-plugins-common = %{version}
-Provides:   bareos-storage-python-plugin
-Obsoletes:  bareos-storage-python-plugin <= %{version}
-  %endif
 %package    storage-python3-plugin
 Summary:    Python plugin for Bareos Storage daemon
 Group:      Productivity/Archiving/Backup
@@ -578,12 +547,6 @@ Keeps bareos/plugins/vmware_plugin subdirectory, which have been used in Bareos 
 # VMware Plugin END
 %endif
 
-  %if 0%{python2_available}
-%description director-python2-plugin
-%{dscr}
-
-This package contains the python plugin for the director daemon
-  %endif
 %description director-python3-plugin
 %{dscr}
 
@@ -592,14 +555,8 @@ This package contains the python 3 plugin for the director daemon
 %description director-python-plugins-common
 %{dscr}
 
-This package contains the common files for the python 2 and python 3 director plugins.
+This package contains the common files for the python director plugins.
 
-  %if 0%{python2_available}
-%description filedaemon-python2-plugin
-%{dscr}
-
-This package contains the python plugin for the file daemon
-  %endif
 %description filedaemon-python3-plugin
 %{dscr}
 
@@ -608,7 +565,7 @@ This package contains the python 3 plugin for the file daemon
 %description filedaemon-python-plugins-common
 %{dscr}
 
-This package contains the common files for the python 2 and python 3 filedaemon plugins.
+This package contains the common files for the python filedaemon plugins.
 
 %description filedaemon-ldap-python-plugin
 %{dscr}
@@ -641,12 +598,6 @@ This package contains the Percona python plugin for the file daemon
 This package contains the Mariabackup python plugin for the file daemon
 
 
-  %if 0%{python2_available}
-%description storage-python2-plugin
-%{dscr}
-
-This package contains the python plugin for the storage daemon
-  %endif
 %description storage-python3-plugin
 %{dscr}
 
@@ -655,7 +606,7 @@ This package contains the python 3 plugin for the storage daemon
 %description storage-python-plugins-common
 %{dscr}
 
-This package contains the common files for the python 2 and python 3 storage plugins.
+This package contains the common files for the python storage plugins.
 %endif
 
 %if 0%{?glusterfs}
@@ -991,9 +942,6 @@ cmake  .. \
 %endif
   -Dwebuiconfdir=%{_sysconfdir}/bareos-webui \
   -DVERSION_STRING=%version \
-  %if !0%{python2_available}
-  -DENABLE_PYTHON2=no \
-  %endif
 
 %if 0%{?make_build:1}
 %make_build
@@ -1497,12 +1445,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %endif
 
 %if 0%{?python_plugins}
-  %if 0%{python2_available}
-%files filedaemon-python2-plugin
-%defattr(-, root, root)
-%{plugin_dir}/python-fd.so
-%{python2_sitearch}/bareosfd*.so
-  %endif
 %files filedaemon-python3-plugin
 %defattr(-, root, root)
 %{plugin_dir}/python3-fd.so
@@ -1557,12 +1499,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{plugin_dir}/BareosFdPluginMariabackup.py*
 
 
-  %if 0%{python2_available}
-%files director-python2-plugin
-%defattr(-, root, root)
-%{plugin_dir}/python-dir.so
-%{python2_sitearch}/bareosdir*.so
-  %endif
 %files director-python3-plugin
 %defattr(-, root, root)
 %{plugin_dir}/python3-dir.so
@@ -1573,12 +1509,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{plugin_dir}/bareos-dir-class-plugin.py*
 %{plugin_dir}/BareosDirWrapper.py*
 
-  %if 0%{python2_available}
-%files storage-python2-plugin
-%defattr(-, root, root)
-%{plugin_dir}/python-sd.so
-%{python2_sitearch}/bareossd*.so
-  %endif
 %files storage-python3-plugin
 %defattr(-, root, root)
 %{plugin_dir}/python3-sd.so

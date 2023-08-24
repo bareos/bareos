@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -45,27 +45,17 @@ else()
 
   if(NOT client-only
      AND ENABLE_PYTHON
-     AND (Python2_FOUND OR Python3_FOUND)
+     AND (Python3_FOUND)
   )
-    if(Python2_FOUND)
-      list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-director-python2-plugin")
-    endif()
-    if(Python3_FOUND)
-      list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-director-python3-plugin")
-    endif()
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-director-python3-plugin")
     list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-director-python-plugins-common")
   endif()
 
   if(HAVE_GLUSTERFS)
     list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-filedaemon-glusterfs-plugin")
   endif()
-  if(ENABLE_PYTHON AND (Python2_FOUND OR Python3_FOUND))
-    if(Python2_FOUND)
-      list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-filedaemon-python2-plugin")
-    endif()
-    if(Python3_FOUND)
-      list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-filedaemon-python3-plugin")
-    endif()
+  if(ENABLE_PYTHON AND Python3_FOUND)
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-filedaemon-python3-plugin")
     list(APPEND DEBIAN_CONTROL_SNIPPETS
          "bareos-filedaemon-python-plugins-common"
     )
@@ -79,14 +69,9 @@ else()
   endif()
   if(NOT client-only
      AND ENABLE_PYTHON
-     AND (Python2_FOUND OR Python3_FOUND)
+     AND Python3_FOUND
   )
-    if(Python2_FOUND)
-      list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-storage-python2-plugin")
-    endif()
-    if(Python3_FOUND)
-      list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-storage-python3-plugin")
-    endif()
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-storage-python3-plugin")
     list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-storage-python-plugins-common")
   endif()
 

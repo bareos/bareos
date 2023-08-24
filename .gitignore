@@ -155,7 +155,6 @@ debian/bareos-database-tools.postinst
 debian/bareos-director.install
 debian/bareos-director.postinst
 debian/bareos-director.preinst
-debian/bareos-director-python2-plugin.install
 debian/bareos-director-python3-plugin.install
 debian/bareos-director-python-plugins-common.install
 debian/bareos-director.service
@@ -168,7 +167,6 @@ debian/bareos-filedaemon-percona-xtrabackup-python-plugin.install
 debian/bareos-filedaemon-postgresql-python-plugin.install
 debian/bareos-filedaemon.postinst
 debian/bareos-filedaemon.preinst
-debian/bareos-filedaemon-python2-plugin.install
 debian/bareos-filedaemon-python3-plugin.install
 debian/bareos-filedaemon-python-plugins-common.install
 debian/bareos-filedaemon.service
@@ -178,7 +176,6 @@ debian/bareos-storage-glusterfs.install
 debian/bareos-storage.install
 debian/bareos-storage.postinst
 debian/bareos-storage.preinst
-debian/bareos-storage-python2-plugin.install
 debian/bareos-storage-python3-plugin.install
 debian/bareos-storage-python-plugins-common.install
 debian/bareos-storage.service

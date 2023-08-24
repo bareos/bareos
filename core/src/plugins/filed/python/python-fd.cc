@@ -37,17 +37,11 @@
 
 #define PLUGIN_DAEMON "fd"
 
-#if PY_VERSION_HEX < VERSION_HEX(3, 0, 0)
-#  define PLUGIN_NAME "python"
-#  define PLUGIN_DIR PY2MODDIR
-#else
-#  define PLUGIN_NAME "python3"
-#  define PLUGIN_DIR PY3MODDIR
-#endif
+#define PLUGIN_NAME "python3"
+#define PLUGIN_DIR PY3MODDIR
 #define LOGPREFIX PLUGIN_NAME "-" PLUGIN_DAEMON ": "
 
 #include "filed/fd_plugins.h"
-#include "plugins/include/python3compat.h"
 
 #include "include/filetypes.h"
 #include "python-fd.h"
@@ -238,8 +232,6 @@ static bRC newPlugin(PluginContext* plugin_ctx)
       plugin_ctx, 9, bEventLevel, bEventSince, bEventNewPluginOptions,
       bEventPluginCommand, bEventJobStart, bEventRestoreCommand,
       bEventEstimateCommand, bEventBackupCommand, bEventRestoreObject);
-
-#include "plugins/include/joblog_warn_about_python2_deprecation.inc"
 
   return bRC_OK;
 }

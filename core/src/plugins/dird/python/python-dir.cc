@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2014 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -37,17 +37,11 @@
 
 #define PLUGIN_DAEMON "dir"
 
-#if PY_VERSION_HEX < VERSION_HEX(3, 0, 0)
-#  define PLUGIN_NAME "python"
-#  define PLUGIN_DIR PY2MODDIR
-#else
-#  define PLUGIN_NAME "python3"
-#  define PLUGIN_DIR PY3MODDIR
-#endif
+#define PLUGIN_NAME "python3"
+#define PLUGIN_DIR PY3MODDIR
 #define LOGPREFIX PLUGIN_NAME "-" PLUGIN_DAEMON ": "
 
 #include "dird/dird.h"
-#include "plugins/include/python3compat.h"
 
 #include "python-dir.h"
 #include "module/bareosdir.h"
@@ -261,8 +255,6 @@ static bRC newPlugin(PluginContext* plugin_ctx)
   bareos_core_functions->registerBareosEvents(plugin_ctx, 1,
                                               bDirEventNewPluginOptions);
 
-#include "plugins/include/joblog_warn_about_python2_deprecation.inc"
-
   return bRC_OK;
 }
 
@@ -309,10 +301,8 @@ static bRC handlePluginEvent(PluginContext* plugin_ctx,
 
   Bareosdir_set_plugin_context(plugin_ctx);
 
-  /*
-   * First handle some events internally before calling python if it
-   * want to do some special handling on the event triggered.
-   */
+  /* First handle some events internally before calling python if it
+   * want to do some special handling on the event triggered. */
   switch (event->eventType) {
     case bDirEventNewPluginOptions:
       event_dispatched = true;
@@ -322,19 +312,15 @@ static bRC handlePluginEvent(PluginContext* plugin_ctx,
       break;
   }
 
-  /*
-   * See if we have been triggered in the previous switch if not we have to
+  /* See if we have been triggered in the previous switch if not we have to
    * always dispatch the event. If we already processed the event internally
    * we only do a dispatch to the python entry point when that internal
-   * processing was successful (e.g. retval == bRC_OK).
-   */
+   * processing was successful (e.g. retval == bRC_OK). */
   if (!event_dispatched || retval == bRC_OK) {
     PyEval_AcquireThread(plugin_priv_ctx->interpreter);
 
-    /*
-     * Now dispatch the event to Python.
-     * First the calls that need special handling.
-     */
+    /* Now dispatch the event to Python.
+     * First the calls that need special handling. */
     switch (event->eventType) {
       case bDirEventNewPluginOptions:
         // See if we already loaded the Python modules.
@@ -349,11 +335,9 @@ static bRC handlePluginEvent(PluginContext* plugin_ctx,
         }
         break;
       default:
-        /*
-         * Handle the generic events e.g. the ones which are just passed on.
+        /* Handle the generic events e.g. the ones which are just passed on.
          * We only try to call Python when we loaded the right module until
-         * that time we pretend the call succeeded.
-         */
+         * that time we pretend the call succeeded. */
         if (plugin_priv_ctx->python_loaded) {
           retval = Bareosdir_PyHandlePluginEvent(plugin_ctx, event, value);
         } else {
@@ -390,10 +374,8 @@ static bRC parse_plugin_definition(PluginContext* plugin_ctx,
 
   if (!value) { return bRC_Error; }
 
-  /*
-   * Parse the plugin definition.
-   * Make a private copy of the whole string.
-   */
+  /* Parse the plugin definition.
+   * Make a private copy of the whole string. */
   PmStrcpy(plugin_definition, (char*)value);
 
   bp = strchr(plugin_definition.c_str(), ':');
@@ -412,8 +394,7 @@ static bRC parse_plugin_definition(PluginContext* plugin_ctx,
   while (bp) {
     if (strlen(bp) == 0) { break; }
 
-    /*
-     * Each argument is in the form:
+    /* Each argument is in the form:
      *    <argument> = <argument_value>
      *
      * So we setup the right pointers here, argument to the beginning
