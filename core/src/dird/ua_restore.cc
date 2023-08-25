@@ -1185,9 +1185,12 @@ static bool SelectFiles(UaContext* ua,
     OK = AskForFileregex(ua, rx);
     if (OK) {
       JobId_t JobId;
+      JobId_t LastJobid = 0;
       for (const char* p = rx->JobIds.c_str();
            GetNextJobidFromList(&p, &JobId) > 0;) {
+        if (JobId == LastJobid) { continue; }
         AddFindexAll(rx->bsr.get(), JobId);
+        LastJobid = JobId;
       }
     }
   } else {
