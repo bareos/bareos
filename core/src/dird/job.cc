@@ -1623,6 +1623,7 @@ void GetJobStorage(UnifiedStorageResource* store,
 void SetJcrDefaults(JobControlRecord* jcr, JobResource* job)
 {
   jcr->dir_impl->res.job = job;
+  jcr->dir_impl->rjs = job->rjs;
   jcr->setJobType(job->JobType);
   jcr->setJobProtocol(job->Protocol);
   jcr->setJobStatus(JS_Created);

@@ -39,6 +39,7 @@ class ClientResource;
 class PoolResource;
 class FilesetResource;
 class CatalogResource;
+struct runtime_job_status_t;
 }  // namespace directordaemon
 
 namespace storagedaemon {
@@ -163,6 +164,7 @@ struct DirectorJcrImpl {
   bool remote_replicate{};              /**< Replicate data to remote SD */
   bool HasQuota{};                      /**< Client has quota limits */
   bool HasSelectedJobs{};               /**< Migration/Copy Job did actually select some JobIds */
+  directordaemon::runtime_job_status_t* rjs{};  /**< Runtime Job Status. May be set to the rjs of another resource (e.g. for consolidation vf jobs this points to the rjs of the parent consolidation job's resource) */
   directordaemon::ClientConnectionHandshakeMode connection_handshake_try_{
     directordaemon::ClientConnectionHandshakeMode::kUndefined};
   JobTrigger job_trigger{JobTrigger::kUndefined};

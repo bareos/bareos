@@ -809,11 +809,11 @@ static void DecClientConcurrency(JobControlRecord* jcr)
 static bool IncJobConcurrency(JobControlRecord* jcr)
 {
   lock_mutex(mutex);
-  if (jcr->dir_impl->res.job->rjs->NumConcurrentJobs
+  if (jcr->dir_impl->rjs->NumConcurrentJobs
       < jcr->dir_impl->res.job->MaxConcurrentJobs) {
-    jcr->dir_impl->res.job->rjs->NumConcurrentJobs++;
+    jcr->dir_impl->rjs->NumConcurrentJobs++;
     Dmsg2(50, "Inc Job=%s rncj=%d\n", jcr->dir_impl->res.job->resource_name_,
-          jcr->dir_impl->res.job->rjs->NumConcurrentJobs);
+          jcr->dir_impl->rjs->NumConcurrentJobs);
     unlock_mutex(mutex);
 
     return true;
@@ -827,9 +827,9 @@ static bool IncJobConcurrency(JobControlRecord* jcr)
 static void DecJobConcurrency(JobControlRecord* jcr)
 {
   lock_mutex(mutex);
-  jcr->dir_impl->res.job->rjs->NumConcurrentJobs--;
+  jcr->dir_impl->rjs->NumConcurrentJobs--;
   Dmsg2(50, "Dec Job=%s rncj=%d\n", jcr->dir_impl->res.job->resource_name_,
-        jcr->dir_impl->res.job->rjs->NumConcurrentJobs);
+        jcr->dir_impl->rjs->NumConcurrentJobs);
   unlock_mutex(mutex);
 }
 
