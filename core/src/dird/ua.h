@@ -178,17 +178,6 @@ struct TreeContext {
   ~TreeContext() = default;
 };
 
-struct NameList {
-  char** name = nullptr; /**< List of names */
-  int num_ids = 0;       /**< Ids stored */
-  int max_ids = 0;       /**< Size of array */
-  int num_del = 0;       /**< Number deleted */
-  int tot_ids = 0;       /**< Total to process */
-
-  NameList() = default;
-  ~NameList();
-};
-
 // Context for restore job.
 class RestoreContext {
  public:
@@ -225,7 +214,6 @@ class RestoreContext {
   PoolMem query{};
   bool found = false;
   bool all = false; /**< Mark all as default */
-  NameList name_list;
 
   void GetFilenameAndPath(UaContext* ua, char* pathname);
   static char FilterIdentifier(JobTypeFilter filter);

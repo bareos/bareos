@@ -1541,15 +1541,6 @@ static int FilesetHandler(void* ctx, int, char** row)
   return 0;
 }
 
-// Free names in the list
-NameList::~NameList()
-{
-  for (int i = 0; i < num_ids; i++) { free(name[i]); }
-  BfreeAndNull(name);
-  max_ids = 0;
-  num_ids = 0;
-}
-
 void FindStorageResource(UaContext* ua,
                          RestoreContext& rx,
                          char* Storage,
