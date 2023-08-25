@@ -37,6 +37,9 @@ struct VolumeParameters;
 
 namespace directordaemon {
 
+
+class RestoreContext;
+
 class RestoreBootstrapRecordFileIndex {
  private:
   std::vector<int32_t> fileIds_;

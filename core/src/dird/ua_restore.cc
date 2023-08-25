@@ -383,11 +383,6 @@ void RestoreContext::GetFilenameAndPath(UaContext* ua, char* pathname)
   Dmsg2(100, "split path=%s file=%s\n", path.c_str(), fname.c_str());
 }
 
-RestoreContext::RestoreContext()
-{
-  bsr = std::make_unique<RestoreBootstrapRecord>();
-}
-
 static bool HasValue(UaContext* ua, int i)
 {
   if (!ua->argv[i]) {

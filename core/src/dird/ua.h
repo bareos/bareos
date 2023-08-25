@@ -31,6 +31,7 @@
 
 #include "include/bareos.h"
 #include "lib/bsock.h"
+#include "dird/bsr.h"
 
 class JobControlRecord;
 class BareosDb;
@@ -215,7 +216,8 @@ class RestoreContext {
   std::string RegexWhere{};
   char* replace = nullptr;
   char* plugin_options = nullptr;
-  std::unique_ptr<RestoreBootstrapRecord> bsr;
+  std::unique_ptr<RestoreBootstrapRecord> bsr{
+      std::make_unique<RestoreBootstrapRecord>()};
   std::string JobIds{};     /**< User entered string of JobIds */
   std::string BaseJobIds{}; /**< Base jobids */
   std::string fname{};      /**< Filename only */
@@ -224,9 +226,6 @@ class RestoreContext {
   bool found = false;
   bool all = false; /**< Mark all as default */
   NameList name_list;
-
-  RestoreContext();
-  ~RestoreContext() = default;
 
   void GetFilenameAndPath(UaContext* ua, char* pathname);
   static char FilterIdentifier(JobTypeFilter filter);
