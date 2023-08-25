@@ -127,7 +127,7 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         self.vadp = BareosVADPWrapper()
         self.vadp.plugin = self
         self.vm_config_info_saved = False
-        self.current_object_index = -1
+        self.current_object_index = int(time.time())
 
     def parse_plugin_definition(self, plugindef):
         """
