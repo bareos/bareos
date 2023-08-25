@@ -220,13 +220,13 @@ class RestoreContext {
   std::string BaseJobIds{}; /**< Base jobids */
   std::string fname{};      /**< Filename only */
   std::string path{};       /**< Path only */
-  POOLMEM* query = nullptr;
+  PoolMem query{};
   bool found = false;
   bool all = false; /**< Mark all as default */
   NameList name_list;
 
   RestoreContext();
-  ~RestoreContext();
+  ~RestoreContext() = default;
 
   void GetFilenameAndPath(UaContext* ua, char* pathname);
   static char FilterIdentifier(JobTypeFilter filter);

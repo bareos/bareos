@@ -356,8 +356,6 @@ void RestoreContext::BuildRegexWhere(char* strip_prefix,
                       add_suffix);
 }
 
-RestoreContext::~RestoreContext() { FreeAndNullPoolMemory(query); }
-
 void RestoreContext::GetFilenameAndPath(UaContext* ua, char* pathname)
 {
   std::filesystem::path mypath(pathname);
@@ -387,8 +385,6 @@ void RestoreContext::GetFilenameAndPath(UaContext* ua, char* pathname)
 
 RestoreContext::RestoreContext()
 {
-  query = GetPoolMemory(PM_FNAME);
-  query[0] = 0;
   bsr = std::make_unique<RestoreBootstrapRecord>();
 }
 
@@ -665,7 +661,8 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         free(fname);
         gui_save = ua->jcr->gui;
         ua->jcr->gui = true;
-        ua->db->ListSqlQuery(ua->jcr, rx->query, ua->send, HORZ_LIST, true);
+        ua->db->ListSqlQuery(ua->jcr, rx->query.c_str(), ua->send, HORZ_LIST,
+                             true);
         ua->jcr->gui = gui_save;
         done = false;
         break;
@@ -986,8 +983,8 @@ static bool InsertFileIntoFindexList(UaContext* ua,
 
   // Find and insert jobid and File Index
   rx->found = false;
-  if (!ua->db->SqlQuery(rx->query, JobidFileindexHandler, (void*)rx)) {
-    ua->ErrorMsg(_("Query failed: %s. ERR=%s\n"), rx->query,
+  if (!ua->db->SqlQuery(rx->query.c_str(), JobidFileindexHandler, (void*)rx)) {
+    ua->ErrorMsg(_("Query failed: %s. ERR=%s\n"), rx->query.c_str(),
                  ua->db->strerror());
   }
   if (!rx->found) {
@@ -1019,8 +1016,8 @@ static bool InsertDirIntoFindexList(UaContext* ua,
 
   // Find and insert jobid and File Index
   rx->found = false;
-  if (!ua->db->SqlQuery(rx->query, JobidFileindexHandler, (void*)rx)) {
-    ua->ErrorMsg(_("Query failed: %s. ERR=%s\n"), rx->query,
+  if (!ua->db->SqlQuery(rx->query.c_str(), JobidFileindexHandler, (void*)rx)) {
+    ua->ErrorMsg(_("Query failed: %s. ERR=%s\n"), rx->query.c_str(),
                  ua->db->strerror());
   }
   if (!rx->found) {
@@ -1042,8 +1039,8 @@ static bool InsertTableIntoFindexList(UaContext* ua,
 
   // Find and insert jobid and File Index
   rx->found = false;
-  if (!ua->db->SqlQuery(rx->query, JobidFileindexHandler, (void*)rx)) {
-    ua->ErrorMsg(_("Query failed: %s. ERR=%s\n"), rx->query,
+  if (!ua->db->SqlQuery(rx->query.c_str(), JobidFileindexHandler, (void*)rx)) {
+    ua->ErrorMsg(_("Query failed: %s. ERR=%s\n"), rx->query.c_str(),
                  ua->db->strerror());
   }
   if (!rx->found) {
@@ -1123,7 +1120,7 @@ void BuildDirectoryTree(UaContext* ua, RestoreContext* rx, TreeContext& tree)
     char ed1[50];
     ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_count_files,
                       edit_int64(JobId, ed1));
-    if (!ua->db->SqlQuery(rx->query, RestoreCountHandler, (void*)rx)) {
+    if (!ua->db->SqlQuery(rx->query.c_str(), RestoreCountHandler, (void*)rx)) {
       ua->ErrorMsg("%s\n", ua->db->strerror());
     }
     if (rx->found) { tree.DeltaCount = rx->JobId / 50; /* print 50 ticks */ }
@@ -1153,7 +1150,7 @@ void BuildDirectoryTree(UaContext* ua, RestoreContext* rx, TreeContext& tree)
     // Find out if any Job is purged
     Mmsg(rx->query, "SELECT SUM(PurgedFiles) FROM Job WHERE JobId IN (%s)",
          rx->JobIds.c_str());
-    if (!ua->db->SqlQuery(rx->query, RestoreCountHandler, (void*)rx)) {
+    if (!ua->db->SqlQuery(rx->query.c_str(), RestoreCountHandler, (void*)rx)) {
       ua->ErrorMsg("%s\n", ua->db->strerror());
     }
     // rx->JobId is the PurgedFiles flag
@@ -1245,14 +1242,14 @@ static bool InsertLastFullBackupOfType(UaContext* ua,
     ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_last_full, client_id,
                       date, filter_name, file_set, pool_select);
 
-    if (!ua->db->SqlQuery(rx->query)) {
+    if (!ua->db->SqlQuery(rx->query.c_str())) {
       ua->ErrorMsg("%s\n", ua->db->strerror());
       return false;
     }
   } else {
     ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_last_full_no_pool,
                       client_id, date, filter_name, file_set);
-    if (!ua->db->SqlQuery(rx->query)) {
+    if (!ua->db->SqlQuery(rx->query.c_str())) {
       ua->ErrorMsg("%s\n", ua->db->strerror());
       return false;
     }
@@ -1260,7 +1257,7 @@ static bool InsertLastFullBackupOfType(UaContext* ua,
 
   // Find all Volumes used by that JobId
   ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_full, filter_name);
-  if (!ua->db->SqlQuery(rx->query)) {
+  if (!ua->db->SqlQuery(rx->query.c_str())) {
     ua->ErrorMsg("%s\n", ua->db->strerror());
     return false;
   }
@@ -1318,7 +1315,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
                       edit_int64(cr.ClientId, ed1), ed1);
 
     StartPrompt(ua, _("The defined FileSet resources are:\n"));
-    if (!ua->db->SqlQuery(rx->query, FilesetHandler, (void*)ua)) {
+    if (!ua->db->SqlQuery(rx->query.c_str(), FilesetHandler, (void*)ua)) {
       ua->ErrorMsg("%s\n", ua->db->strerror());
     }
     if (DoPrompt(ua, _("FileSet"), _("Select FileSet resource"), fileset_name,
@@ -1362,7 +1359,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
    * call just above. */
   rx->JobTDate = 0;
   ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_sel_all_temp1);
-  if (!ua->db->SqlQuery(rx->query, LastFullHandler, (void*)rx)) {
+  if (!ua->db->SqlQuery(rx->query.c_str(), LastFullHandler, (void*)rx)) {
     ua->WarningMsg("%s\n", ua->db->strerror());
   }
   if (rx->JobTDate == 0) {
@@ -1390,7 +1387,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
                                    edit_int64(cr.ClientId, ed1), date,
                                    fsr.FileSet, pool_select)) {
       ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_sel_all_temp1);
-      if (!ua->db->SqlQuery(rx->query, LastFullHandler, (void*)rx)) {
+      if (!ua->db->SqlQuery(rx->query.c_str(), LastFullHandler, (void*)rx)) {
         // ignore warnings here, since they would not make any sense
         // to the end user
         goto bail_out;
@@ -1417,13 +1414,13 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
                     edit_uint64(rx->JobTDate, ed1), date,
                     edit_int64(cr.ClientId, ed2), filter_name, fsr.FileSet,
                     pool_select);
-  if (!ua->db->SqlQuery(rx->query)) {
+  if (!ua->db->SqlQuery(rx->query.c_str())) {
     ua->WarningMsg("%s\n", ua->db->strerror());
   }
 
   // Now update JobTDate to look into Differential, if any
   ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_sel_all_temp);
-  if (!ua->db->SqlQuery(rx->query, LastFullHandler, (void*)rx)) {
+  if (!ua->db->SqlQuery(rx->query.c_str(), LastFullHandler, (void*)rx)) {
     ua->WarningMsg("%s\n", ua->db->strerror());
   }
 
@@ -1432,7 +1429,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
                     edit_uint64(rx->JobTDate, ed1), date,
                     edit_int64(cr.ClientId, ed2), filter_name, fsr.FileSet,
                     pool_select);
-  if (!ua->db->SqlQuery(rx->query)) {
+  if (!ua->db->SqlQuery(rx->query.c_str())) {
     ua->WarningMsg("%s\n", ua->db->strerror());
   }
 
@@ -1441,7 +1438,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
   rx->JobIds.clear();
 
   ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_sel_jobid_temp);
-  if (!ua->db->SqlQuery(rx->query, JobidHandler, (void*)rx)) {
+  if (!ua->db->SqlQuery(rx->query.c_str(), JobidHandler, (void*)rx)) {
     ua->WarningMsg("%s\n", ua->db->strerror());
   }
 
@@ -1467,7 +1464,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
         rx->last_jobid[0] = 0;
         rx->JobIds.clear();
 
-        if (!ua->db->SqlQuery(rx->query, JobidHandler, (void*)rx)) {
+        if (!ua->db->SqlQuery(rx->query.c_str(), JobidHandler, (void*)rx)) {
           ua->WarningMsg("%s\n", ua->db->strerror());
         }
       }
@@ -1476,7 +1473,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
     // Display a list of Jobs selected for this restore
     ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_list_jobs_by_idlist,
                       rx->JobIds.c_str());
-    ua->db->ListSqlQuery(ua->jcr, rx->query, ua->send, HORZ_LIST, true);
+    ua->db->ListSqlQuery(ua->jcr, rx->query.c_str(), ua->send, HORZ_LIST, true);
 
     ok = true;
   } else {
