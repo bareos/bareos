@@ -147,6 +147,7 @@ struct DirectorJcrImpl {
   bool IgnoreLevelPoolOverrides{};       /**< Set if a cmdline pool was specified */
   bool IgnoreClientConcurrency{};       /**< Set in migration jobs */
   bool IgnoreStorageConcurrency{};      /**< Set in migration jobs */
+  int32_t max_concurrent_jobs{};        /**< Maximum concurrent jobs */
   bool spool_data{};                    /**< Spool data in SD */
   bool acquired_resource_locks{};       /**< Set if resource locks acquired */
   bool term_wait_inited{};              /**< Set when cond var inited */
