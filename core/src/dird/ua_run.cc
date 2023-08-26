@@ -1767,6 +1767,7 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
          "ignoreduplicatecheck", /* 29 */
          "accurate",             /* 30 */
          "backupformat",         /* 31 */
+		 "consolidatejob",       /* 32 */
          NULL};
 
 #define YES_POS 14
@@ -2054,6 +2055,14 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
             rc.backup_format = ua->argv[i];
             kw_ok = true;
             break;
+          case 32: /* consolidatejob */
+            if (rc.consolidate_job_name) {
+              ua->SendMsg(_("Consolidate Job specified twice.\n"));
+              return false;
+            }
+            rc.consolidate_job_name = ua->argv[i];
+            kw_ok = true;
+            break;
           default:
             break;
         }
@@ -2247,6 +2256,21 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
   } else {
     rc.previous_job = rc.job->verify_job;
   }
+
+  if (rc.consolidate_job_name) {
+    rc.consolidate_job = ua->GetJobResWithName(rc.consolidate_job_name);
+    if (!rc.consolidate_job) {
+      ua->SendMsg(_("Consolidate Job \"%s\" not found.\n"), rc.consolidate_job_name);
+      rc.consolidate_job = select_job_resource(ua);
+    }
+    if (rc.consolidate_job && rc.consolidate_job->JobType != JT_CONSOLIDATE) {
+      ua->ErrorMsg(_("Invalid Consolidate Job \"%s\". Job type is \"%c\" but expected \"%c\".\n"),
+                   rc.consolidate_job->resource_name_, rc.consolidate_job->JobType,
+                   JT_CONSOLIDATE);
+      return false;
+    }
+  }
+
   return true;
 }
 } /* namespace directordaemon */

@@ -254,6 +254,7 @@ class RunContext {
   char* since = nullptr;
   char* StoreName = nullptr;
   char* verify_job_name = nullptr;
+  char* consolidate_job_name = nullptr;
   char* when = nullptr;
   char* where = nullptr;
   const char* replace = nullptr;
@@ -261,6 +262,7 @@ class RunContext {
   JobResource* job = nullptr;
   JobResource* verify_job = nullptr;
   JobResource* previous_job = nullptr;
+  JobResource* consolidate_job = nullptr;
   UnifiedStorageResource* store = nullptr;
   ClientResource* client = nullptr;
   FilesetResource* fileset = nullptr;

@@ -57,7 +57,8 @@ bool DoConsolidateInit(JobControlRecord* jcr)
  * Start a Virtual(Full) Job that creates a new virtual backup
  * containing the jobids given in jcr->dir_impl_->vf_jobids
  */
-static inline void StartNewConsolidationJob(JobControlRecord* jcr,
+static inline void StartNewConsolidationJob(const JobResource* consolidate_job,
+                                            JobControlRecord* jcr,
                                             char* jobname)
 {
   JobId_t jobid;
@@ -66,9 +67,10 @@ static inline void StartNewConsolidationJob(JobControlRecord* jcr,
 
   ua = new_ua_context(jcr);
   ua->batch = true;
-  Mmsg(ua->cmd, "run job=\"%s\" jobid=%s level=VirtualFull %s", jobname,
+  Mmsg(ua->cmd, "run job=\"%s\" jobid=%s level=VirtualFull %s consolidatejob=%s", jobname,
        jcr->dir_impl->vf_jobids,
-       jcr->accurate ? "accurate=yes" : "accurate=no");
+       jcr->accurate ? "accurate=yes" : "accurate=no",
+	   consolidate_job->resource_name_);
 
   Dmsg1(debuglevel, "=============== consolidate cmd=%s\n", ua->cmd);
   ParseUaArgs(ua); /* parse command */
@@ -89,6 +91,7 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
 {
   const int32_t max_full_consolidations
       = jcr->dir_impl->res.job->MaxFullConsolidations;
+  JobResource* const consolidate_job = jcr->dir_impl->res.job;
   int32_t fullconsolidations_started = 0;
   JobResource* job;
   time_t now = time(NULL);
@@ -271,7 +274,7 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
 
       Jmsg(jcr, M_INFO, 0, _("%s: Start new consolidation\n"),
            job->resource_name_);
-      StartNewConsolidationJob(jcr, job->resource_name_);
+      StartNewConsolidationJob(consolidate_job, jcr, job->resource_name_);
     }
   }
   return true;
