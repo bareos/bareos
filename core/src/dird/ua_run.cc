@@ -1008,6 +1008,19 @@ static bool ResetRestoreContext(UaContext* ua,
     jcr->dir_impl->IgnoreDuplicateJobChecking = rc.ignoreduplicatecheck;
   }
 
+  /* If this is a virtualfull spawned by a consolidate job
+   * then the same rjs is used so that max concurrent jobs
+   * of the consolidate job applies.
+   */
+  if (rc.consolidate_job) {
+	if (!jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+      ua->SendMsg(_("Consolidate Job option is only valid for virtual full jobs.\n"));
+      return false;
+	}
+    jcr->dir_impl->rjs = rc.consolidate_job->rjs;
+	jcr->dir_impl->max_concurrent_jobs = rc.consolidate_job->MaxConcurrentJobs;
+  }
+
   return true;
 }
 
