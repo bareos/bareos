@@ -180,8 +180,8 @@ bool RestoreCmd(UaContext* ua, const char*)
 
   /* TODO: add acl for regexwhere ? */
 
-  if (rx.RegexWhere) {
-    if (!ua->AclAccessOk(Where_ACL, rx.RegexWhere, true)) {
+  if (!rx.RegexWhere.empty()) {
+    if (!ua->AclAccessOk(Where_ACL, rx.RegexWhere.c_str(), true)) {
       ua->ErrorMsg(_("\"RegexWhere\" specification not authorized.\n"));
 
       return false;
@@ -246,7 +246,7 @@ bool RestoreCmd(UaContext* ua, const char*)
   }
 
   if (!GetClientName(ua, &rx)) { return false; }
-  if (!rx.ClientName) {
+  if (rx.ClientName.empty()) {
     ua->ErrorMsg(_("No Client resource found!\n"));
     return false;
   }
@@ -287,7 +287,7 @@ void BuildRestoreCommandString(UaContext* ua,
   Mmsg(ua->cmd,
        "run job=\"%s\" client=\"%s\" restoreclient=\"%s\" storage=\"%s\""
        " bootstrap=\"%s\" files=%u catalog=\"%s\"",
-       job->resource_name_, rx.ClientName, rx.RestoreClientName,
+       job->resource_name_, rx.ClientName.c_str(), rx.RestoreClientName.c_str(),
        rx.store ? rx.store->resource_name_ : "",
        EscapePath(ua->jcr->RestoreBootstrap).c_str(), rx.selected_files,
        ua->catalog->resource_name_);
@@ -300,8 +300,8 @@ void BuildRestoreCommandString(UaContext* ua,
   }
 
   PmStrcpy(buf, "");
-  if (rx.RegexWhere) {
-    Mmsg(buf, " regexwhere=\"%s\"", EscapePath(rx.RegexWhere).c_str());
+  if (!rx.RegexWhere.empty()) {
+    Mmsg(buf, " regexwhere=\"%s\"", EscapePath(rx.RegexWhere.c_str()).c_str());
 
   } else if (rx.where) {
     Mmsg(buf, " where=\"%s\"", EscapePath(rx.where).c_str());
@@ -355,29 +355,12 @@ void RestoreContext::BuildRegexWhere(char* strip_prefix,
                                      char* add_suffix)
 {
   int len = BregexpGetBuildWhereSize(strip_prefix, add_prefix, add_suffix);
-  RegexWhere = (char*)malloc(len * sizeof(char));
-  bregexp_build_where(RegexWhere, len, strip_prefix, add_prefix, add_suffix);
+  bregexp_build_where(RegexWhere.data(), len, strip_prefix, add_prefix,
+                      add_suffix);
 }
 
 RestoreContext::~RestoreContext()
 {
-  bsr.reset(nullptr);
-
-  if (ClientName) {
-    free(ClientName);
-    ClientName = nullptr;
-  }
-
-  if (RestoreClientName) {
-    free(RestoreClientName);
-    RestoreClientName = nullptr;
-  }
-
-  if (RegexWhere) {
-    free(RegexWhere);
-    RegexWhere = nullptr;
-  }
-
   FreeAndNullPoolMemory(JobIds);
   FreeAndNullPoolMemory(BaseJobIds);
   FreeAndNullPoolMemory(fname);
@@ -416,7 +399,7 @@ static bool GetClientName(UaContext* ua, RestoreContext* rx)
   ClientDbRecord cr;
 
   // If no client name specified yet, get it now
-  if (!rx->ClientName) {
+  if (rx->ClientName.empty()) {
     // Try command line argument
     i = FindArgWithValue(ua, NT_("client"));
     if (i < 0) { i = FindArgWithValue(ua, NT_("backupclient")); }
@@ -430,11 +413,11 @@ static bool GetClientName(UaContext* ua, RestoreContext* rx)
         ua->ErrorMsg("invalid %s argument: %s\n", ua->argk[i], ua->argv[i]);
         return false;
       }
-      rx->ClientName = strdup(ua->argv[i]);
+      rx->ClientName = ua->argv[i];
       return true;
     }
     if (!GetClientDbr(ua, &cr)) { return false; }
-    rx->ClientName = strdup(cr.Name);
+    rx->ClientName = cr.Name;
   }
 
   return true;
@@ -456,11 +439,11 @@ static bool GetRestoreClientName(UaContext* ua, RestoreContext& rx)
       ua->ErrorMsg("invalid %s argument: %s\n", ua->argk[i], ua->argv[i]);
       return false;
     }
-    rx.RestoreClientName = strdup(ua->argv[i]);
+    rx.RestoreClientName = ua->argv[i];
     return true;
   }
 
-  rx.RestoreClientName = strdup(rx.ClientName);
+  rx.RestoreClientName = rx.ClientName;
   return true;
 }
 
@@ -670,7 +653,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         fname = (char*)malloc(len * 2 + 1);
         ua->db->EscapeString(ua->jcr, fname, ua->cmd, len);
         ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_file,
-                          rx->ClientName, fname);
+                          rx->ClientName.c_str(), fname);
         free(fname);
         gui_save = ua->jcr->gui;
         ua->jcr->gui = true;
@@ -988,11 +971,11 @@ static bool InsertFileIntoFindexList(UaContext* ua,
   char filter_name = RestoreContext::FilterIdentifier(rx->job_filter);
   if (*rx->JobIds == 0) {
     ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_jobid_fileindex, date,
-                      rx->path, rx->fname, rx->ClientName, filter_name);
+                      rx->path, rx->fname, rx->ClientName.c_str(), filter_name);
   } else {
     ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_jobids_fileindex,
-                      rx->JobIds, date, rx->path, rx->fname, rx->ClientName,
-                      filter_name);
+                      rx->JobIds, date, rx->path, rx->fname,
+                      rx->ClientName.c_str(), filter_name);
   }
 
   // Find and insert jobid and File Index
@@ -1025,7 +1008,7 @@ static bool InsertDirIntoFindexList(UaContext* ua,
   } else {
     ua->db->FillQuery(rx->query,
                       BareosDb::SQL_QUERY::uar_jobid_fileindex_from_dir,
-                      rx->JobIds, dir, rx->ClientName);
+                      rx->JobIds, dir, rx->ClientName.c_str());
   }
 
   // Find and insert jobid and File Index
@@ -1352,7 +1335,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
   }
   // Select Client from the Catalog
   if (!GetClientDbr(ua, &cr)) { goto bail_out; }
-  rx->ClientName = strdup(cr.Name);
+  rx->ClientName = cr.Name;
 
   // Get FileSet
   i = FindArgWithValue(ua, "FileSet");

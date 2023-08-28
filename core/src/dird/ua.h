@@ -206,13 +206,13 @@ class RestoreContext {
   uint32_t selected_files = 0;
   JobId_t JobId = 0;
   char* backup_format = nullptr;
-  char* ClientName = nullptr;        /**< Backup client */
-  char* RestoreClientName = nullptr; /**< Restore client */
+  std::string ClientName{};        /**< Backup client */
+  std::string RestoreClientName{}; /**< Restore client */
   char last_jobid[20]{0};
   int restore_jobs = 0;
   char* comment = nullptr;
   char* where = nullptr;
-  char* RegexWhere = nullptr;
+  std::string RegexWhere{};
   char* replace = nullptr;
   char* plugin_options = nullptr;
   std::unique_ptr<RestoreBootstrapRecord> bsr;
