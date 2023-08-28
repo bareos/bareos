@@ -1111,6 +1111,7 @@ static inline bool SendPlainData(b_ctx& bctx)
   // This is mostly because EncryptData() is weird!
   // FIXME(ssura): change this
   if (BitIsSet(FO_ENCRYPT, flags)) { return SendPlainDataSerially(bctx); }
+  if (file_size < 128 * 1024) { return SendPlainDataSerially(bctx); }
 
   bool retval = false;
   BareosSocket* sd = bctx.jcr->store_bsock;
