@@ -127,11 +127,15 @@ class MessageHandler {
     PoolMem data;
   };
 
-  enum class error
-  {
-    HARDEOF,
-    // both ERROR and SOCKET_ERROR are taken by windows.h
-    INTERNAL_ERROR,
+  struct error {
+    enum class type
+    {
+      HARDEOF,
+      // both ERROR and SOCKET_ERROR are taken by windows.h
+      INTERNAL_ERROR,
+    } type;
+
+    std::string msg;
   };
 
   using result_type = std::variant<signal, message, error>;
@@ -213,18 +217,13 @@ class MessageHandler {
             result = signal{fd->message_length};
             // break; /* end of data */
           } else if (n == BNET_HARDEOF) {
-            result = error::HARDEOF;
+            result = error{error::type::HARDEOF, fd->bstrerror()};
             cont = false;
           } else {
-            result = error::INTERNAL_ERROR;
+            result = error{error::type::INTERNAL_ERROR, fd->bstrerror()};
             cont = false;
           }
 
-          // Jmsg2(jcr, M_FATAL, 0, _("Error reading data header from %s.
-          // ERR=%s\n"),
-          //       what, bs->bstrerror());
-          // ok = false;
-          // break;
           signal_count += 1;
         } else {
           std::size_t length = n;
@@ -402,24 +401,23 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
      *               info is not currently used, so is read, but ignored! */
     auto msg = handler.get_msg();
     if (!msg) {
-      Jmsg2(jcr, M_FATAL, 0, _("Error reading data header from %s. ERR=%s\n"),
-            what, "bs->bstrerror()");
+      Jmsg2(jcr, M_FATAL, 0, _("Internal Error reading data header from %s.\n"),
+            what);
       ok = false;
       break;
     }
 
     if (auto* error = std::get_if<MessageHandler::error>(&msg.value())) {
-      (void)error;
       Jmsg2(jcr, M_FATAL, 0, _("Error reading data header from %s. ERR=%s\n"),
-            what, "bs->bstrerror()");
+            what, error->msg.c_str());
       ok = false;
       break;
     }
 
     if (auto* signal = std::get_if<MessageHandler::signal>(&msg.value())) {
       if (*signal != BNET_EOD) {
-        Jmsg2(jcr, M_FATAL, 0, _("Error reading data header from %s. ERR=%s\n"),
-              what, "bs->bstrerror()");
+        Jmsg2(jcr, M_FATAL, 0, _("Unexpected signal from %s: %d\n"), what,
+              *signal);
         ok = false;
       }
       break;
@@ -471,25 +469,23 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       auto msg = handler.get_msg();
 
       if (!msg) {
-        Jmsg2(jcr, M_FATAL, 0, _("Error reading data header from %s. ERR=%s\n"),
-              what, "bs->bstrerror()");
+        Jmsg2(jcr, M_FATAL, 0,
+              _("Internal Error reading data header from %s.\n"), what);
         ok = false;
         break;
       }
 
       if (auto* error = std::get_if<MessageHandler::error>(&msg.value())) {
-        (void)error;
         Jmsg2(jcr, M_FATAL, 0, _("Error reading data header from %s. ERR=%s\n"),
-              what, "bs->bstrerror()");
+              what, error->msg.c_str());
         ok = false;
         break;
       }
 
       if (auto* signal = std::get_if<MessageHandler::signal>(&msg.value())) {
         if (*signal != BNET_EOD) {
-          Jmsg2(jcr, M_FATAL, 0,
-                _("Error reading data header from %s. ERR=%s\n"), what,
-                "bs->bstrerror()");
+          Jmsg2(jcr, M_FATAL, 0, _("Unexpected signal from %s: %d\n"), what,
+                *signal);
           ok = false;
         }
         break;
