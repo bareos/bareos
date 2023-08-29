@@ -77,7 +77,7 @@ class JobConsistencyChecker {
   std::vector<std::string> JobList;
   std::vector<std::string> JobsWithPurgedFiles;
 
-  bool operator()(int num_fields, char** row)
+  bool operator()([[maybe_unused]] int num_fields, char** row)
   {
     assert(num_fields == 5);
     JobList.push_back(row[col_JobId]);
