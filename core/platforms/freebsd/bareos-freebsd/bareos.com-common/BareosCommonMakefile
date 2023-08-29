@@ -71,7 +71,6 @@ CPPFLAGS+=      -I${LOCALBASE}/include
 
 LIB_DEPENDS+=	liblzo2.so:archivers/lzo2 \
 		          libjansson.so:devel/jansson
-LIB_DEPENDS+= libpython3.7m.so:lang/python37
 
 # optional overrides, used by build system.
 .-include "BareosCommonMakefile-overrides.mk"
