@@ -197,7 +197,7 @@ if(USE_SYSTEM_FMT)
 endif()
 if(USE_SYSTEM_XXHASH)
   find_package(PkgConfig REQUIRED)
-  pkg_search_module(XXHASH REQUIRED IMPORTED_TARGET xxhash>=0.8.1)
+  pkg_search_module(XXHASH REQUIRED IMPORTED_TARGET libxxhash>=0.8.1)
   message(STATUS "Using system xxHash ${XXHASH_VERSION}")
 endif()
 
