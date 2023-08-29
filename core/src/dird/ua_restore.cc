@@ -225,9 +225,8 @@ bool RestoreCmd(UaContext* ua, const char*)
     case 0: /* error */
       return false;
     case 1: /* selected by jobid */ {
-      TreeContext tree;
       GetAndDisplayBasejobs(ua, &rx);
-      BuildDirectoryTree(ua, &rx, tree);
+      TreeContext tree = BuildDirectoryTree(ua, &rx);
       if (!SelectFiles(ua, &rx, tree, done)) {
         ua->SendMsg(_("Restore not done.\n"));
         return false;
@@ -1092,9 +1091,10 @@ void AddDeltaListFindex(RestoreContext* rx, delta_list* lst)
   AddFindex(rx->bsr.get(), lst->JobId, lst->FileIndex);
 }
 
-void BuildDirectoryTree(UaContext* ua, RestoreContext* rx, TreeContext& tree)
+TreeContext BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
 {
   // Build the directory tree containing JobIds user selected
+  TreeContext tree;
   tree.root = new_tree(rx->TotalFiles);
   tree.ua = ua;
   tree.all = rx->all;
@@ -1148,6 +1148,8 @@ void BuildDirectoryTree(UaContext* ua, RestoreContext* rx, TreeContext& tree)
       tree.FileCount = 0; /* set count to zero, no tree selection */
     }
   }
+
+  return tree;
 }
 
 void FinishSelection(RestoreContext* rx, TreeContext& tree)
