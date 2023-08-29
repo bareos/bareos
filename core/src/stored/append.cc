@@ -154,10 +154,12 @@ class MessageHandler {
     result_type t = std::move(cache.front());
     cache.pop_front();
 
+    std::unique_lock l(mut);
     bytes_out += sizeof(t);
     if (auto* content = std::get_if<message>(&t)) {
       bytes_out += content->size;
     }
+    element_removed.notify_one();
     return t;
   }
 
@@ -179,6 +181,7 @@ class MessageHandler {
   bool finished{false};
   std::size_t bytes_out{0};
   std::condition_variable not_empty{};
+  std::condition_variable element_removed{};
   std::deque<result_type> results{};
 
   std::deque<result_type> cache;
@@ -233,10 +236,16 @@ class MessageHandler {
 
         {
           std::unique_lock l(mut);
-          results.emplace_back(std::move(result));
-          if (results.size() > max_size) { max_size = results.size(); }
           if (n > 0) { bytes_in += n; }
           bytes_in += sizeof(result);
+
+          element_removed.wait(l, [this, bytes_in] {
+            return bytes_in - bytes_out < 5ULL * 1024ULL * 1024ULL
+                   || end.load();
+          });
+
+          results.emplace_back(std::move(result));
+          if (results.size() > max_size) { max_size = results.size(); }
           ASSERT(bytes_in >= full_message_count * 64ULL * 1024ULL);
           if (bytes_in - bytes_out > max_bytes) {
             ASSERT(bytes_in > bytes_out);
