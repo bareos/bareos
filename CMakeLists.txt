@@ -53,9 +53,6 @@ include(CTest)
 option(BUILD_UNIVERSAL_CLIENT
        "Override build-options to produce a limited, but universal client" OFF
 )
-option(USE_SYSTEM_CLI11 "Use the CLI11 lib of the operating system" OFF)
-option(USE_SYSTEM_FMT "Use the fmt lib of the operating system" OFF)
-option(USE_SYSTEM_XXHASH "Use the xxHash lib of the operating system" OFF)
 if(BUILD_UNIVERSAL_CLIENT)
   if(CMAKE_VERSION VERSION_LESS 3.18.0)
     message(
