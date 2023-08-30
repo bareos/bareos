@@ -91,7 +91,9 @@ TREE_ROOT* new_tree(int count)
   root->cached_path_len = -1;
   root->cached_path = GetPoolMemory(PM_FNAME);
   root->type = TreeNodeType::ROOT;
-  root->fname = "";
+  root->fname_len = strlen("");
+  root->fname = tree_alloc<char>(root, root->fname_len + 1);
+  strcpy(root->fname, "");
   return root;
 }
 

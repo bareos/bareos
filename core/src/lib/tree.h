@@ -73,16 +73,6 @@ enum class TreeNodeType
  *   there is one for each file.
  */
 struct s_tree_node {
-  s_tree_node()
-      : type{false}
-      , extract{false}
-      , extract_dir{false}
-      , hard_link{false}
-      , soft_link{false}
-      , inserted{false}
-      , loaded{false}
-  {
-  }
   /* KEEP sibling as the first member to avoid having to
    *  do initialization of child */
   rblink sibling;
@@ -93,12 +83,12 @@ struct s_tree_node {
   int32_t delta_seq{};                      /* current delta sequence */
   uint16_t fname_len{};                     /* filename length */
   TreeNodeType type{TreeNodeType::UNKNOWN}; /* node type */
-  unsigned int extract : 1;                 /* extract item */
-  unsigned int extract_dir : 1;             /* extract dir entry only */
-  unsigned int hard_link : 1;               /* set if have hard link */
-  unsigned int soft_link : 1;               /* set if is soft link */
-  unsigned int inserted : 1;                /* set when node newly inserted */
-  unsigned int loaded : 1; /* set when the dir is in the tree */
+  bool extract{false};                      /* extract item */
+  bool extract_dir{false};                  /* extract dir entry only */
+  bool hard_link{false};                    /* set if have hard link */
+  bool soft_link{false};                    /* set if is soft link */
+  bool inserted{false};                     /* set when node newly inserted */
+  bool loaded{false}; /* set when the dir is in the tree */
   struct s_tree_node* parent{};
   struct s_tree_node* next{};      /* next hash of FileIndex */
   struct delta_list* delta_list{}; /* delta parts for this node */
@@ -117,36 +107,7 @@ typedef struct s_hl_entry HL_ENTRY;
 
 using HardlinkTable = htable<uint64_t, HL_ENTRY, MonotonicBuffer::Size::Small>;
 
-struct s_tree_root {
-  s_tree_root()
-      : type{false}
-      , extract{false}
-      , extract_dir{false}
-      , have_link{false}
-      , inserted{false}
-      , loaded{false}
-  {
-  }
-  /* KEEP sibling as the first member to avoid having to
-   *  do initialization of child */
-  rblink sibling{};
-  rblist child;
-  const char* fname{};                      /* file name */
-  int32_t FileIndex{};                      /* file index */
-  uint32_t JobId{};                         /* JobId */
-  int32_t delta_seq{};                      /* current delta sequence */
-  uint16_t fname_len{};                     /* filename length */
-  TreeNodeType type{TreeNodeType::UNKNOWN}; /* node type */
-  unsigned int extract : 1;                 /* extract item */
-  unsigned int extract_dir : 1;             /* extract dir entry only */
-  unsigned int have_link : 1;               /* set if have hard link */
-  unsigned int inserted : 1;                /* set when newly inserted */
-  unsigned int loaded : 1; /* set when the dir is in the tree */
-  struct s_tree_node* parent{};
-  struct s_tree_node* next{};      /* next hash of FileIndex */
-  struct delta_list* delta_list{}; /* delta parts for this node */
-
-  /* The above ^^^ must be identical to a TREE_NODE structure */
+struct s_tree_root : s_tree_node {
   struct s_tree_node* first{}; /* first entry in the tree */
   struct s_tree_node* last{};  /* last entry in tree */
   struct s_mem* mem{};         /* tree memory */
