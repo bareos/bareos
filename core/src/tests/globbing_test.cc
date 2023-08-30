@@ -50,12 +50,21 @@ int FakeMarkCmd(UaContext* ua, TreeContext* tree, std::string path)
   return MarkElements(ua, tree);
 }
 
+int FakeUnMarkCmd(UaContext* ua, TreeContext* tree, std::string path)
+{
+  std::string command = "unmark " + path;
+  PmStrcpy(ua->cmd, command.c_str());
+
+  ParseArgsOnly(ua->cmd, ua->args, &ua->argc, ua->argk, ua->argv, MAX_CMD_ARGS);
+  return UnmarkElements(ua, tree);
+}
+
 void PopulateTree(std::vector<std::string> files, TreeContext* tree)
 {
   std::string filename;
   std::string path;
 
-  for (auto file : files) {
+  for (const auto& file : files) {
     SplitPathAndFilename(file.c_str(), path, filename);
 
     char* row0 = path.data();
@@ -82,6 +91,8 @@ class Globbing : public testing::Test {
     me->optimize_for_size = true;
     me->optimize_for_speed = false;
     ua = new_ua_context(&jcr);
+
+    PopulateTree(files, &tree);
   }
 
   void TearDown() override
@@ -94,10 +105,7 @@ class Globbing : public testing::Test {
   JobControlRecord jcr{};
   UaContext* ua{nullptr};
   TreeContext tree;
-};
 
-TEST_F(Globbing, globbing_in_markcmd)
-{
   const std::vector<std::string> files
       = {"/some/weirdfiles/normalefile",
          "/some/weirdfiles/nottooweird",
@@ -132,9 +140,10 @@ TEST_F(Globbing, globbing_in_markcmd)
          "/testingwildcards/subdirectory3/file5",
          "/testingwildcards/subdirectory3/file6",
          "/testingwildcards/lonesubdirectory/whatever"};
+};
 
-  PopulateTree(files, &tree);
-
+TEST_F(Globbing, globbing_in_markcmd)
+{
   // testing full paths
   FakeCdCmd(ua, &tree, "/");
   EXPECT_EQ(FakeMarkCmd(ua, &tree, "*"), files.size());
@@ -183,4 +192,52 @@ TEST_F(Globbing, globbing_in_markcmd)
    */
   //  EXPECT_EQ(FakeMarkCmd(&ua, tree, "{*tory1,*tory2}/file1"), 1);
   //  EXPECT_EQ(fnmatch("{*tory1,*tory2}", "subdirectory1", 0), 0);
+}
+
+TEST_F(Globbing, globbing_in_unmarkcmd)
+{
+  // testing full paths
+  FakeCdCmd(ua, &tree, "/");
+  EXPECT_EQ(FakeUnMarkCmd(ua, &tree, "*"), files.size());
+
+  EXPECT_EQ(
+      FakeUnMarkCmd(ua, &tree, "/testingwildcards/lonesubdirectory/whatever"),
+      1);
+
+  EXPECT_EQ(
+      FakeUnMarkCmd(ua, &tree, "testingwildcards/lonesubdirectory/whatever"),
+      1);
+
+  // Using full path while being in a different folder than root
+  FakeCdCmd(ua, &tree, "/some/weirdfiles/");
+  EXPECT_EQ(
+      FakeUnMarkCmd(ua, &tree, "/testingwildcards/lonesubdirectory/whatever"),
+      1);
+  EXPECT_EQ(FakeUnMarkCmd(ua, &tree, "/testingwildcards/sub*"), 6);
+
+  EXPECT_EQ(
+      FakeUnMarkCmd(ua, &tree, "testingwildcards/lonesubdirectory/whatever"),
+      0);
+
+  // Testing patterns in different folders
+  FakeCdCmd(ua, &tree, "/some/weirdfiles/");
+  EXPECT_EQ(FakeUnMarkCmd(ua, &tree, "nope"), 0);
+  EXPECT_EQ(FakeUnMarkCmd(ua, &tree, "potato"), 1);
+  EXPECT_EQ(FakeUnMarkCmd(ua, &tree, "potato*"), 2);
+  EXPECT_EQ(FakeUnMarkCmd(ua, &tree, "lonesubdirectory/*"), 1);
+  EXPECT_EQ(FakeUnMarkCmd(ua, &tree, "subdirectory2/*"), 2);
+  EXPECT_EQ(FakeUnMarkCmd(ua, &tree, "sub*/*"), 6);
+
+  FakeCdCmd(ua, &tree, "/some/");
+  EXPECT_EQ(FakeUnMarkCmd(ua, &tree, "w*/sub*/*"), 12);
+  EXPECT_EQ(FakeUnMarkCmd(ua, &tree, "wei*/sub*/*"), 6);
+  EXPECT_EQ(FakeUnMarkCmd(ua, &tree, "wei*/subroza/*"), 0);
+  EXPECT_EQ(FakeUnMarkCmd(ua, &tree, "w*efiles/sub*/*"), 6);
+
+  FakeCdCmd(ua, &tree, "/testingwildcards/");
+  EXPECT_EQ(FakeUnMarkCmd(ua, &tree, "p?tato"), 1);
+  EXPECT_EQ(FakeUnMarkCmd(ua, &tree, "subdirectory?/file1"), 1);
+  EXPECT_EQ(FakeUnMarkCmd(ua, &tree, "subdirectory?/file?"), 6);
+  EXPECT_EQ(FakeUnMarkCmd(ua, &tree, "subdirectory?/file[!2,!3]"), 4);
+  EXPECT_EQ(FakeUnMarkCmd(ua, &tree, "su[a,b,c]directory?/file1"), 1);
 }

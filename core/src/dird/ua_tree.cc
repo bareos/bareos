@@ -425,7 +425,11 @@ static int SetExtract(UaContext* ua,
   return count;
 }
 
-int MarkElement(const char* element, UaContext* ua, TreeContext* tree)
+
+int MarkElement(const char* element,
+                UaContext* ua,
+                TreeContext* tree,
+                bool extract)
 {
   int count = 0;
   // See if this is a complex path.
@@ -468,7 +472,7 @@ int MarkElement(const char* element, UaContext* ua, TreeContext* tree)
 
       if (fnmatch(fullpath_pattern.c_str(), node_path.c_str(), 0) == 0) {
         if (fnmatch(given_file_pattern.c_str(), node->fname, 0) == 0) {
-          count += SetExtract(ua, node, tree, true);
+          count += SetExtract(ua, node, tree, extract);
         }
       }
     }
@@ -477,7 +481,7 @@ int MarkElement(const char* element, UaContext* ua, TreeContext* tree)
     // Only a pattern without a / so do things relative to CWD.
     foreach_child (node, tree->node) {
       if (fnmatch(element, node->fname, 0) == 0) {
-        count += SetExtract(ua, node, tree, true);
+        count += SetExtract(ua, node, tree, extract);
       }
     }
   }
@@ -489,7 +493,7 @@ static int MarkElements(UaContext* ua, TreeContext* tree)
   int count = 0;
 
   for (int i = 1; i < ua->argc; i++) {
-    count += MarkElement(ua->argk[i], ua, tree);
+    count += MarkElement(ua->argk[i], ua, tree, true);
   }
   return count;
 }
@@ -974,54 +978,24 @@ int DotPwdcmd(UaContext* ua, TreeContext* tree)
   return 1;
 }
 
-int UnmarkElement(const char* element, UaContext* ua, TreeContext* tree)
+static int UnmarkElements(UaContext* ua, TreeContext* tree)
 {
   int count = 0;
-  TREE_NODE* node;
-  // See if this is a full path.
-  if (strchr(element, '/')) {
-    std::string file{};
-    std::string path{};
 
-    // Split the argument into a path and file part.
-    SplitPathAndFilename(element, path, file);
-
-    node = tree_cwd(path.data(), tree->root, tree->node);
-    if (!node) {
-      ua->WarningMsg(_("Invalid path %s given.\n"), path.c_str());
-      return count;
-    }
-
-    TREE_NODE* childnode;
-    foreach_child (childnode, node) {
-      if (fnmatch(file.c_str(), childnode->fname, 0) == 0) {
-        count += SetExtract(ua, childnode, tree, false);
-      }
-    }
-  } else {
-    // Only a pattern without a / so do things relative to CWD.
-    foreach_child (node, tree->node) {
-      if (fnmatch(element, node->fname, 0) == 0) {
-        count += SetExtract(ua, node, tree, false);
-      }
-    }
+  for (int i = 1; i < ua->argc; i++) {
+    count += MarkElement(ua->argk[i], ua, tree, false);
   }
-
   return count;
 }
 
 int Unmarkcmd(UaContext* ua, TreeContext* tree)
 {
-  int count = 0;
-
   if (ua->argc < 2 || !TreeNodeHasChild(tree->node)) {
     ua->SendMsg(_("No files unmarked.\n"));
     return 1;
   }
 
-  for (int i = 1; i < ua->argc; i++) {
-    count += UnmarkElement(ua->argk[i], ua, tree);
-  }
+  int count = UnmarkElements(ua, tree);
 
   if (count == 0) {
     ua->SendMsg(_("No files unmarked.\n"));
