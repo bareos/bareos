@@ -55,9 +55,6 @@ jobs:
         fi
       env:
         WANT_TREE: "${{ inputs.treeid }}"
-    - name: Install dependencies
-      run: |
-        brew install jansson
     - name: Inject version parameters
       run: |
         echo -e "set(VERSION_STRING \"$VERSION\")\nset(VERSION_TIMESTAMP \"$TIMESTAMP\")" >core/cmake/BareosVersion.cmake
@@ -67,12 +64,13 @@ jobs:
         TIMESTAMP: "${{ inputs.timestamp }}"
     - name: Build package
       run: |
-        cmake -S . -B cmake-build -Dclient-only=yes
+        cmake -S . -B cmake-build -DENABLE_JANSSON=OFF -Dclient-only=yes
         cmake --build cmake-build -- package
         ls -la cmake-build/*.pkg
         mkdir -p "${{ env.artifact_dir }}/BUILD_RESULTS/MacOS"
         mv cmake-build/*.pkg "${{ env.artifact_dir }}/BUILD_RESULTS/MacOS"
         cp core/src/include/config.h "${{ env.artifact_dir }}"
+        find cmake-build/core/src -type f -perm +0111 -exec otool -L {} ";" > "${{ env.artifact_dir }}/libdepends.txt"
       env:
         CFLAGS: -I/usr/local/include
         CXXFLAGS: -I/usr/local/include
