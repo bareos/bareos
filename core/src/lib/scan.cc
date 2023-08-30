@@ -29,6 +29,8 @@
 #include "include/bareos.h"
 #include "jcr.h"
 
+#include <filesystem>
+
 // Strip leading space from command line arguments
 void StripLeadingSpace(char* str)
 {
@@ -273,55 +275,25 @@ int ParseArgsOnly(const POOLMEM* cmd,
  * They are returned in pool memory in the arguments provided.
  */
 void SplitPathAndFilename(const char* fname,
-                          POOLMEM*& path,
-                          int* pnl,
-                          POOLMEM*& file,
-                          int* fnl)
+                          std::string& path,
+                          std::string& filename)
 {
-  const char* f;
-  int slen;
-  int len = slen = strlen(fname);
+  std::filesystem::path fname_path(fname);
 
-  /*
-   * Find path without the filename.
-   * I.e. everything after the last / is a "filename".
-   * OK, maybe it is a directory name, but we treat it like
-   * a filename. If we don't find a / then the whole name
-   * must be a path name (e.g. c:).
-   */
-  f = fname + len - 1;
-  /* "strip" any trailing slashes */
-  while (slen > 1 && IsPathSeparator(*f)) {
-    slen--;
-    f--;
+  if (fname_path.has_filename()) {
+    filename = fname_path.filename().generic_string();
+    if (fname_path.has_parent_path()) {
+      path = fname_path.parent_path().generic_string();
+      path.append("/");
+    }
+  } else {
+    std::filesystem::path fname_parent_path(fname_path.parent_path());
+    path = fname_parent_path.parent_path().generic_string();
+    path.append("/");
   }
-  /* Walk back to last slash -- begin of filename */
-  while (slen > 0 && !IsPathSeparator(*f)) {
-    slen--;
-    f--;
-  }
-  if (IsPathSeparator(*f)) { /* did we find a slash? */
-    f++;                     /* yes, point to filename */
-  } else {                   /* no, whole thing must be path name */
-    f = fname;
-  }
-  Dmsg2(200, "after strip len=%d f=%s\n", len, f);
-  *fnl = fname - f + len;
-  if (*fnl > 0) {
-    file = CheckPoolMemorySize(file, *fnl + 1);
-    memcpy(file, f, *fnl); /* copy filename */
-  }
-  file[*fnl] = '\0';
 
-  *pnl = f - fname;
-  if (*pnl > 0) {
-    path = CheckPoolMemorySize(path, *pnl + 1);
-    memcpy(path, fname, *pnl);
-  }
-  path[*pnl] = '\0';
-
-  Dmsg2(200, "pnl=%d fnl=%d\n", *pnl, *fnl);
-  Dmsg3(200, "split fname=%s path=%s file=%s\n", fname, path, file);
+  Dmsg3(200, "split fname=%s path=%s file=%s\n", fname, path.c_str(),
+        filename.c_str());
 }
 
 // Extremely simple sscanf. Handles only %(u,d,hu,hd,ld,qd,qu,lu,lld,llu,c,nns)

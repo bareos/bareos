@@ -52,16 +52,14 @@ int FakeMarkCmd(UaContext* ua, TreeContext* tree, std::string path)
 
 void PopulateTree(std::vector<std::string> files, TreeContext* tree)
 {
-  int pnl, fnl;
-  PoolMem filename{PM_FNAME};
-  PoolMem path{PM_FNAME};
+  std::string filename;
+  std::string path;
 
   for (auto file : files) {
-    SplitPathAndFilename(file.c_str(), path.addr(), &pnl, filename.addr(),
-                         &fnl);
+    SplitPathAndFilename(file.c_str(), path, filename);
 
-    char* row0 = path.c_str();
-    char* row1 = filename.c_str();
+    char* row0 = path.data();
+    char* row1 = filename.data();
     char row2[] = "1";
     char row3[] = "2";
     char row4[] = "P0A CF2xg IGk B Po Po A 3Y BAA I BhjA7I BU+HEc BhjA7I A A C";

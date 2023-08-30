@@ -425,69 +425,56 @@ static int SetExtract(UaContext* ua,
   return count;
 }
 
-int MarkElement(char* element, UaContext* ua, TreeContext* tree)
+int MarkElement(const char* element, UaContext* ua, TreeContext* tree)
 {
   int count = 0;
   // See if this is a complex path.
   if (strchr(element, '/')) {
-    StripTrailingSlash(element);
-    int pnl, fnl;
-    POOLMEM* given_file_pattern = GetPoolMemory(PM_FNAME);
-    POOLMEM* given_path_pattern = GetPoolMemory(PM_FNAME);
+    std::string given_file_pattern{};
+    std::string given_path_pattern{};
 
     // Split the argument into a path pattern and file pattern.
-    SplitPathAndFilename(element, given_path_pattern, &pnl, given_file_pattern,
-                         &fnl);
+    SplitPathAndFilename(element, given_path_pattern, given_file_pattern);
+    StripTrailingSlash(given_file_pattern.data());
 
-    if (!tree_cwd(given_path_pattern, tree->root, tree->node)) {
-      ua->WarningMsg(_("Invalid path %s given.\n"), given_path_pattern);
-      FreePoolMemory(given_file_pattern);
-      FreePoolMemory(given_path_pattern);
+    if (!tree_cwd(given_path_pattern.data(), tree->root, tree->node)) {
+      ua->WarningMsg(_("Invalid path %s given.\n"), given_path_pattern.c_str());
       return count;
     }
 
     std::string fullpath_pattern{};
     if (element[0] != '/') {
-      POOLMEM* path = tree_getpath(tree->node);
+      std::string path{tree_getpath(tree->node)};
       fullpath_pattern.append(path);
-      FreePoolMemory(path);
     }
 
     fullpath_pattern.append(given_path_pattern);
 
-    POOLMEM* node_filename = GetPoolMemory(PM_FNAME);
-    POOLMEM* node_path = GetPoolMemory(PM_FNAME);
-
     TREE_NODE* node{nullptr};
     {
-      POOLMEM* path = tree_getpath(tree->node);
-      if (strcmp(path, "/") == 0) {
+      std::string path{tree_getpath(tree->node)};
+      if (path == "/") {
         node = FirstTreeNode(tree->root);
       } else {
         node = tree->node;
       }
-      FreePoolMemory(path);
     }
 
     for (; node; node = NextTreeNode(node)) {
-      POOLMEM* path = tree_getpath(node);
-      SplitPathAndFilename(path, node_path, &pnl, node_filename, &fnl);
-      FreePoolMemory(path);
+      std::string path{tree_getpath(node)};
+      std::string node_filename{};
+      std::string node_path{};
+      SplitPathAndFilename(path.c_str(), node_path, node_filename);
 
-      if (fnmatch(fullpath_pattern.c_str(), node_path, 0) == 0) {
-        if (fnmatch(given_file_pattern, node->fname, 0) == 0) {
+      if (fnmatch(fullpath_pattern.c_str(), node_path.c_str(), 0) == 0) {
+        if (fnmatch(given_file_pattern.c_str(), node->fname, 0) == 0) {
           count += SetExtract(ua, node, tree, true);
         }
       }
     }
-
-    FreePoolMemory(given_file_pattern);
-    FreePoolMemory(given_path_pattern);
-    FreePoolMemory(node_filename);
-    FreePoolMemory(node_path);
   } else {
-    // Only a pattern without a / so do things relative to CWD.
     TREE_NODE* node;
+    // Only a pattern without a / so do things relative to CWD.
     foreach_child (node, tree->node) {
       if (fnmatch(element, node->fname, 0) == 0) {
         count += SetExtract(ua, node, tree, true);
@@ -987,38 +974,30 @@ int DotPwdcmd(UaContext* ua, TreeContext* tree)
   return 1;
 }
 
-int UnmarkElement(char* element, UaContext* ua, TreeContext* tree)
+int UnmarkElement(const char* element, UaContext* ua, TreeContext* tree)
 {
   int count = 0;
-  StripTrailingSlash(element);
   TREE_NODE* node;
   // See if this is a full path.
   if (strchr(element, '/')) {
-    int pnl, fnl;
-    POOLMEM* file = GetPoolMemory(PM_FNAME);
-    POOLMEM* path = GetPoolMemory(PM_FNAME);
+    std::string file{};
+    std::string path{};
 
     // Split the argument into a path and file part.
-    SplitPathAndFilename(element, path, &pnl, file, &fnl);
+    SplitPathAndFilename(element, path, file);
 
-    // First change the CWD to the correct PATH.
-    node = tree_cwd(path, tree->root, tree->node);
+    node = tree_cwd(path.data(), tree->root, tree->node);
     if (!node) {
-      ua->WarningMsg(_("Invalid path %s given.\n"), path);
-      FreePoolMemory(file);
-      FreePoolMemory(path);
+      ua->WarningMsg(_("Invalid path %s given.\n"), path.c_str());
       return count;
     }
 
     TREE_NODE* childnode;
     foreach_child (childnode, node) {
-      if (fnmatch(file, childnode->fname, 0) == 0) {
+      if (fnmatch(file.c_str(), childnode->fname, 0) == 0) {
         count += SetExtract(ua, childnode, tree, false);
       }
     }
-
-    FreePoolMemory(file);
-    FreePoolMemory(path);
   } else {
     // Only a pattern without a / so do things relative to CWD.
     foreach_child (node, tree->node) {

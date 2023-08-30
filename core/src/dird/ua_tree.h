@@ -48,8 +48,8 @@ int DotLscmd(UaContext* ua, TreeContext* tree);
 int DotHelpcmd(UaContext* ua, TreeContext* tree);
 int DotLsmarkcmd(UaContext* ua, TreeContext* tree);
 
-int MarkElement(char* element, UaContext* ua, TreeContext* tree);
-int UnmarkElement(char* element, UaContext* ua, TreeContext* tree);
+int MarkElement(const char *element, UaContext* ua, TreeContext* tree);
+int UnmarkElement(const char *element, UaContext* ua, TreeContext* tree);
 
 bool UserSelectFilesFromTree(TreeContext* tree);
 int InsertTreeHandler(void* ctx, int num_fields, char** row);
