@@ -36,13 +36,35 @@
 #include "findlib/find.h"
 #include "dird/ua_input.h"
 #include "dird/ua_server.h"
-#include "dird/ua_tree.h"
 #include "lib/attribs.h"
 #include "lib/edit.h"
 #include "lib/tree.h"
 #include "lib/util.h"
 
 namespace directordaemon {
+
+/* Forward referenced commands */
+static int markcmd(UaContext* ua, TreeContext* tree);
+static int Markdircmd(UaContext* ua, TreeContext* tree);
+static int countcmd(UaContext* ua, TreeContext* tree);
+static int findcmd(UaContext* ua, TreeContext* tree);
+static int lscmd(UaContext* ua, TreeContext* tree);
+static int Lsmarkcmd(UaContext* ua, TreeContext* tree);
+static int dircmd(UaContext* ua, TreeContext* tree);
+static int DotDircmd(UaContext* ua, TreeContext* tree);
+static int Estimatecmd(UaContext* ua, TreeContext* tree);
+static int HelpCmd(UaContext* ua, TreeContext* tree);
+static int cdcmd(UaContext* ua, TreeContext* tree);
+static int pwdcmd(UaContext* ua, TreeContext* tree);
+static int DotPwdcmd(UaContext* ua, TreeContext* tree);
+static int Unmarkcmd(UaContext* ua, TreeContext* tree);
+static int UnMarkdircmd(UaContext* ua, TreeContext* tree);
+static int QuitCmd(UaContext* ua, TreeContext* tree);
+static int donecmd(UaContext* ua, TreeContext* tree);
+static int DotLsdircmd(UaContext* ua, TreeContext* tree);
+static int DotLscmd(UaContext* ua, TreeContext* tree);
+static int DotHelpcmd(UaContext* ua, TreeContext* tree);
+static int DotLsmarkcmd(UaContext* ua, TreeContext* tree);
 
 struct cmdstruct {
   const char* key;
@@ -497,7 +519,7 @@ static int MarkElements(UaContext* ua, TreeContext* tree)
  * Recursively mark the current directory to be restored as
  *  well as all directories and files below it.
  */
-int markcmd(UaContext* ua, TreeContext* tree)
+static int markcmd(UaContext* ua, TreeContext* tree)
 {
   if (ua->argc < 2 || !TreeNodeHasChild(tree->node)) {
     ua->SendMsg(_("No files marked.\n"));
@@ -519,7 +541,7 @@ int markcmd(UaContext* ua, TreeContext* tree)
   return 1;
 }
 
-int Markdircmd(UaContext* ua, TreeContext* tree)
+static int Markdircmd(UaContext* ua, TreeContext* tree)
 {
   TREE_NODE* node;
   int count = 0;
@@ -552,7 +574,7 @@ int Markdircmd(UaContext* ua, TreeContext* tree)
   return 1;
 }
 
-int countcmd(UaContext* ua, TreeContext* tree)
+static int countcmd(UaContext* ua, TreeContext* tree)
 {
   TREE_NODE* node;
   int total, num_extract;
@@ -571,7 +593,7 @@ int countcmd(UaContext* ua, TreeContext* tree)
   return 1;
 }
 
-int findcmd(UaContext* ua, TreeContext* tree)
+static int findcmd(UaContext* ua, TreeContext* tree)
 {
   TREE_NODE* node;
 
@@ -600,7 +622,7 @@ int findcmd(UaContext* ua, TreeContext* tree)
   return 1;
 }
 
-int DotLsdircmd(UaContext* ua, TreeContext* tree)
+static int DotLsdircmd(UaContext* ua, TreeContext* tree)
 {
   TREE_NODE* node;
 
@@ -615,7 +637,7 @@ int DotLsdircmd(UaContext* ua, TreeContext* tree)
   return 1;
 }
 
-int DotHelpcmd(UaContext* ua, TreeContext*)
+static int DotHelpcmd(UaContext* ua, TreeContext*)
 {
   for (int i = 0; i < comsize; i++) {
     /* List only non-dot commands */
@@ -626,7 +648,7 @@ int DotHelpcmd(UaContext* ua, TreeContext*)
   return 1;
 }
 
-int DotLscmd(UaContext* ua, TreeContext* tree)
+static int DotLscmd(UaContext* ua, TreeContext* tree)
 {
   TREE_NODE* node;
 
@@ -641,7 +663,7 @@ int DotLscmd(UaContext* ua, TreeContext* tree)
   return 1;
 }
 
-int lscmd(UaContext* ua, TreeContext* tree)
+static int lscmd(UaContext* ua, TreeContext* tree)
 {
   TREE_NODE* node;
 
@@ -664,7 +686,7 @@ int lscmd(UaContext* ua, TreeContext* tree)
 }
 
 // Ls command that lists only the marked files
-int DotLsmarkcmd(UaContext* ua, TreeContext* tree)
+static int DotLsmarkcmd(UaContext* ua, TreeContext* tree)
 {
   TREE_NODE* node;
   if (!TreeNodeHasChild(tree->node)) { return 1; }
@@ -678,7 +700,7 @@ int DotLsmarkcmd(UaContext* ua, TreeContext* tree)
 }
 
 // This recursive ls command that lists only the marked files
-void rlsmark(UaContext* ua, TREE_NODE* tnode, int level)
+static void rlsmark(UaContext* ua, TREE_NODE* tnode, int level)
 {
   TREE_NODE* node;
   const int max_level = 100;
@@ -713,7 +735,7 @@ void rlsmark(UaContext* ua, TREE_NODE* tnode, int level)
   }
 }
 
-int Lsmarkcmd(UaContext* ua, TreeContext* tree)
+static int Lsmarkcmd(UaContext* ua, TreeContext* tree)
 {
   rlsmark(ua, tree->node, 0);
   return 1;
@@ -765,7 +787,7 @@ static inline void ls_output(guid_list* guid,
 }
 
 // Like ls command, but give more detail on each file
-int DoDircmd(UaContext* ua, TreeContext* tree, bool dot_cmd)
+static int DoDircmd(UaContext* ua, TreeContext* tree, bool dot_cmd)
 {
   TREE_NODE* node;
   FileDbRecord fdbr;
@@ -828,12 +850,12 @@ int DotDircmd(UaContext* ua, TreeContext* tree)
   return DoDircmd(ua, tree, true /*dot command*/);
 }
 
-int dircmd(UaContext* ua, TreeContext* tree)
+static int dircmd(UaContext* ua, TreeContext* tree)
 {
   return DoDircmd(ua, tree, false /*not dot command*/);
 }
 
-int Estimatecmd(UaContext* ua, TreeContext* tree)
+static int Estimatecmd(UaContext* ua, TreeContext* tree)
 {
   TREE_NODE* node;
   int total, num_extract;
@@ -873,7 +895,7 @@ int Estimatecmd(UaContext* ua, TreeContext* tree)
   return 1;
 }
 
-int HelpCmd(UaContext* ua, TreeContext*)
+static int HelpCmd(UaContext* ua, TreeContext*)
 {
   unsigned int i;
 
@@ -894,7 +916,7 @@ int HelpCmd(UaContext* ua, TreeContext*)
  * we assume it is a Win32 absolute cd rather than relative and
  * try a second time with /x: ...  Win32 kludge.
  */
-int cdcmd(UaContext* ua, TreeContext* tree)
+static int cdcmd(UaContext* ua, TreeContext* tree)
 {
   TREE_NODE* node;
   POOLMEM* cwd;
@@ -928,7 +950,7 @@ int cdcmd(UaContext* ua, TreeContext* tree)
   return pwdcmd(ua, tree);
 }
 
-int pwdcmd(UaContext* ua, TreeContext* tree)
+static int pwdcmd(UaContext* ua, TreeContext* tree)
 {
   std::string cwd = tree_getpath(tree->node);
   if (!cwd.empty()) {
@@ -942,7 +964,7 @@ int pwdcmd(UaContext* ua, TreeContext* tree)
   return 1;
 }
 
-int DotPwdcmd(UaContext* ua, TreeContext* tree)
+static int DotPwdcmd(UaContext* ua, TreeContext* tree)
 {
   std::string cwd = tree_getpath(tree->node);
   if (!cwd.empty()) { ua->SendMsg("%s", cwd.c_str()); }
@@ -981,7 +1003,7 @@ int Unmarkcmd(UaContext* ua, TreeContext* tree)
   return 1;
 }
 
-int UnMarkdircmd(UaContext* ua, TreeContext* tree)
+static int UnMarkdircmd(UaContext* ua, TreeContext* tree)
 {
   TREE_NODE* node;
   int count = 0;
@@ -1014,9 +1036,9 @@ int UnMarkdircmd(UaContext* ua, TreeContext* tree)
   return 1;
 }
 
-int donecmd(UaContext*, TreeContext*) { return 0; }
+static int donecmd(UaContext*, TreeContext*) { return 0; }
 
-int QuitCmd(UaContext* ua, TreeContext*)
+static int QuitCmd(UaContext* ua, TreeContext*)
 {
   ua->quit = true;
   return 0;
