@@ -7,7 +7,7 @@ MASTERDIR=	${.CURDIR}/../bareos.com-common
 
 LIB_DEPENDS+=  libbareos.so:sysutils/bareos.com-common
 
-USES+=python:3.7
+USES+=python
 
 # optional overrides, used by build system.
 .-include "overrides.mk"
