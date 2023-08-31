@@ -367,20 +367,17 @@ static void TreeGetpathItem(TREE_NODE* node, POOLMEM*& path)
   }
 }
 
-POOLMEM* tree_getpath(TREE_NODE* node)
+std::string tree_getpath(TREE_NODE* node)
 {
-  POOLMEM* path;
+  if (!node) { return ""; }
 
-  if (!node) { return NULL; }
-
-  // Allocate a new empty path.
-  path = GetPoolMemory(PM_NAME);
+  PoolMem path;
   PmStrcpy(path, "");
 
   // Fill the path with the full path.
-  TreeGetpathItem(node, path);
+  TreeGetpathItem(node, path.addr());
 
-  return path;
+  return std::string(path.c_str());
 }
 
 // Change to specified directory

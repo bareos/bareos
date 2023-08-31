@@ -101,7 +101,6 @@ static cmdstruct restore_browser_commands[] = {
  */
 bool UserSelectFilesFromTree(TreeContext* tree)
 {
-  POOLMEM* cwd;
   UaContext* ua;
   BareosSocket* user;
   bool status;
@@ -122,11 +121,8 @@ bool UserSelectFilesFromTree(TreeContext* tree)
 
   // Enter interactive command handler allowing selection of individual files.
   tree->node = (TREE_NODE*)tree->root;
-  cwd = tree_getpath(tree->node);
-  if (cwd) {
-    ua->SendMsg(_("cwd is: %s\n"), cwd);
-    FreePoolMemory(cwd);
-  }
+  std::string cwd = tree_getpath(tree->node);
+  if (!cwd.empty()) { ua->SendMsg(_("cwd is: %s\n"), cwd.c_str()); }
 
   while (1) {
     int found, len, i;
@@ -381,18 +377,18 @@ static int SetExtract(UaContext* ua,
         }
       } else {
         FileDbRecord fdbr;
-        POOLMEM* cwd;
 
         /* Ordinary file, we get the full path, look up the attributes, decode
          * them, and if we are hard linked to a file that was saved, we must
          * load that file too. */
-        cwd = tree_getpath(node);
-        if (cwd) {
+        std::string cwd = tree_getpath(node);
+        if (!cwd.empty()) {
           fdbr.FileId = 0;
           fdbr.JobId = node->JobId;
 
           if (node->hard_link
-              && ua->db->GetFileAttributesRecord(ua->jcr, cwd, NULL, &fdbr)) {
+              && ua->db->GetFileAttributesRecord(ua->jcr, cwd.data(), NULL,
+                                                 &fdbr)) {
             int32_t LinkFI;
             struct stat statp;
 
@@ -402,7 +398,6 @@ static int SetExtract(UaContext* ua,
                   + LinkFI; /* lookup by linked file's fileindex */
             is_hardlinked = true;
           }
-          FreePoolMemory(cwd);
         }
       }
 
@@ -579,7 +574,6 @@ int countcmd(UaContext* ua, TreeContext* tree)
 int findcmd(UaContext* ua, TreeContext* tree)
 {
   TREE_NODE* node;
-  POOLMEM* cwd;
 
   if (ua->argc == 1) {
     ua->SendMsg(_("No file specification given.\n"));
@@ -591,7 +585,7 @@ int findcmd(UaContext* ua, TreeContext* tree)
       if (fnmatch(ua->argk[i], node->fname, 0) == 0) {
         const char* tag;
 
-        cwd = tree_getpath(node);
+        std::string cwd = tree_getpath(node);
         if (node->extract) {
           tag = "*";
         } else if (node->extract_dir) {
@@ -599,8 +593,7 @@ int findcmd(UaContext* ua, TreeContext* tree)
         } else {
           tag = "";
         }
-        ua->SendMsg("%s%s\n", tag, cwd);
-        FreePoolMemory(cwd);
+        ua->SendMsg("%s%s\n", tag, cwd.c_str());
       }
     }
   }
@@ -775,10 +768,8 @@ static inline void ls_output(guid_list* guid,
 int DoDircmd(UaContext* ua, TreeContext* tree, bool dot_cmd)
 {
   TREE_NODE* node;
-  POOLMEM *cwd, *buf;
   FileDbRecord fdbr;
   struct stat statp;
-  char* pcwd;
 
   if (!TreeNodeHasChild(tree->node)) {
     ua->SendMsg(_("Node %s has no children.\n"), tree->node->fname);
@@ -786,7 +777,6 @@ int DoDircmd(UaContext* ua, TreeContext* tree, bool dot_cmd)
   }
 
   ua->guid = new_guid_list();
-  buf = GetPoolMemory(PM_FNAME);
 
   foreach_child (node, tree->node) {
     const char* tag;
@@ -799,7 +789,7 @@ int DoDircmd(UaContext* ua, TreeContext* tree, bool dot_cmd)
         tag = " ";
       }
 
-      cwd = tree_getpath(node);
+      std::string cwd = tree_getpath(node);
 
       fdbr.FileId = 0;
       fdbr.JobId = node->JobId;
@@ -810,16 +800,12 @@ int DoDircmd(UaContext* ua, TreeContext* tree, bool dot_cmd)
        * when returned from tree_getpath, but get_file_attr...
        * treats soft links as files, so they do not have a trailing
        * slash like directory names. */
+      std::string pcwd = cwd;
       if (node->type == TreeNodeType::FILE && TreeNodeHasChild(node)) {
-        PmStrcpy(buf, cwd);
-        pcwd = buf;
-        int len = strlen(buf);
-        if (len > 1) { buf[len - 1] = '\0'; /* strip trailing / */ }
-      } else {
-        pcwd = cwd;
+        if (pcwd.size() > 1) { pcwd.pop_back(); /* strip trailing / */ }
       }
 
-      if (ua->db->GetFileAttributesRecord(ua->jcr, pcwd, NULL, &fdbr)) {
+      if (ua->db->GetFileAttributesRecord(ua->jcr, pcwd.data(), NULL, &fdbr)) {
         int32_t LinkFI;
         DecodeStat(fdbr.LStat, &statp, sizeof(statp),
                    &LinkFI); /* decode stat pkt */
@@ -828,14 +814,11 @@ int DoDircmd(UaContext* ua, TreeContext* tree, bool dot_cmd)
         memset(&statp, 0, sizeof(statp));
       }
 
-      ls_output(ua->guid, buf, cwd, tag, &statp, dot_cmd);
-      ua->SendMsg("%s\n", buf);
-
-      FreePoolMemory(cwd);
+      PoolMem buf{PM_MESSAGE};
+      ls_output(ua->guid, buf.addr(), cwd.c_str(), tag, &statp, dot_cmd);
+      ua->SendMsg("%s\n", buf.c_str());
     }
   }
-
-  FreePoolMemory(buf);
 
   return 1;
 }
@@ -853,7 +836,6 @@ int dircmd(UaContext* ua, TreeContext* tree)
 int Estimatecmd(UaContext* ua, TreeContext* tree)
 {
   TREE_NODE* node;
-  POOLMEM* cwd;
   int total, num_extract;
   uint64_t total_bytes = 0;
   FileDbRecord fdbr;
@@ -867,12 +849,12 @@ int Estimatecmd(UaContext* ua, TreeContext* tree)
       if (node->extract && node->type == TreeNodeType::FILE) {
         // If regular file, get size
         num_extract++;
-        cwd = tree_getpath(node);
+        std::string cwd = tree_getpath(node);
 
         fdbr.FileId = 0;
         fdbr.JobId = node->JobId;
 
-        if (ua->db->GetFileAttributesRecord(ua->jcr, cwd, NULL, &fdbr)) {
+        if (ua->db->GetFileAttributesRecord(ua->jcr, cwd.data(), NULL, &fdbr)) {
           int32_t LinkFI;
           DecodeStat(fdbr.LStat, &statp, sizeof(statp),
                      &LinkFI); /* decode stat pkt */
@@ -880,8 +862,6 @@ int Estimatecmd(UaContext* ua, TreeContext* tree)
             total_bytes += statp.st_size;
           }
         }
-
-        FreePoolMemory(cwd);
       } else if (node->extract || node->extract_dir) {
         // Directory, count only
         num_extract++;
@@ -950,16 +930,13 @@ int cdcmd(UaContext* ua, TreeContext* tree)
 
 int pwdcmd(UaContext* ua, TreeContext* tree)
 {
-  POOLMEM* cwd;
-
-  cwd = tree_getpath(tree->node);
-  if (cwd) {
+  std::string cwd = tree_getpath(tree->node);
+  if (!cwd.empty()) {
     if (ua->api) {
-      ua->SendMsg("%s", cwd);
+      ua->SendMsg("%s", cwd.c_str());
     } else {
-      ua->SendMsg(_("cwd is: %s\n"), cwd);
+      ua->SendMsg(_("cwd is: %s\n"), cwd.c_str());
     }
-    FreePoolMemory(cwd);
   }
 
   return 1;
@@ -967,13 +944,8 @@ int pwdcmd(UaContext* ua, TreeContext* tree)
 
 int DotPwdcmd(UaContext* ua, TreeContext* tree)
 {
-  POOLMEM* cwd;
-
-  cwd = tree_getpath(tree->node);
-  if (cwd) {
-    ua->SendMsg("%s", cwd);
-    FreePoolMemory(cwd);
-  }
+  std::string cwd = tree_getpath(tree->node);
+  if (!cwd.empty()) { ua->SendMsg("%s", cwd.c_str()); }
 
   return 1;
 }

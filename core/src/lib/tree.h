@@ -134,7 +134,7 @@ void TreeAddDeltaPart(TREE_ROOT* root,
                       JobId_t JobId,
                       int32_t FileIndex);
 void FreeTree(TREE_ROOT* root);
-POOLMEM* tree_getpath(TREE_NODE* node);
+std::string tree_getpath(TREE_NODE* node);
 void TreeRemoveNode(TREE_ROOT* root, TREE_NODE* node);
 
 /**
