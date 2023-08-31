@@ -93,6 +93,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - ua_restore: change restore argument handling [PR #1516]
 - plugin-fd: allow fd plugins to (re-)set since-time and disable/re-enable timestamp/accurate checks [PR #1505]
 - config: deprecate `LabelType` and `CheckLabels` [PR #1521]
+- devtools: Update python dependencies [PR #1531]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -238,4 +239,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1521]: https://github.com/bareos/bareos/pull/1521
 [PR #1522]: https://github.com/bareos/bareos/pull/1522
 [PR #1524]: https://github.com/bareos/bareos/pull/1524
+[PR #1531]: https://github.com/bareos/bareos/pull/1531
 [unreleased]: https://github.com/bareos/bareos/tree/master
