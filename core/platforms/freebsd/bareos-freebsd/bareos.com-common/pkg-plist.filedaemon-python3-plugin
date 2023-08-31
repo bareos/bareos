@@ -1,3 +1,3 @@
 
 lib/bareos/plugins/python3-fd.so
-lib/python3.7/site-packages/bareosfd.so
+lib/python3.9/site-packages/bareosfd.cpython-39.so
