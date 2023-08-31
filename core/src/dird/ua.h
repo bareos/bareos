@@ -216,13 +216,11 @@ class RestoreContext {
   char* replace = nullptr;
   char* plugin_options = nullptr;
   std::unique_ptr<RestoreBootstrapRecord> bsr;
-  std::string JobIds{};          /**< User entered string of JobIds */
-  POOLMEM* BaseJobIds = nullptr; /**< Base jobids */
-  POOLMEM* fname = nullptr;      /**< Filename only */
-  POOLMEM* path = nullptr;       /**< Path only */
+  std::string JobIds{};     /**< User entered string of JobIds */
+  std::string BaseJobIds{}; /**< Base jobids */
+  std::string fname{};      /**< Filename only */
+  std::string path{};       /**< Path only */
   POOLMEM* query = nullptr;
-  int fnl = 0; /**< Filename length */
-  int pnl = 0; /**< Path length */
   bool found = false;
   bool all = false; /**< Mark all as default */
   NameList name_list;
@@ -230,6 +228,7 @@ class RestoreContext {
   RestoreContext();
   ~RestoreContext();
 
+  void GetFilenameAndPath(UaContext* ua, char* pathname);
   static char FilterIdentifier(JobTypeFilter filter);
   void BuildRegexWhere(char* strip_prefix, char* add_prefix, char* add_suffix);
 };

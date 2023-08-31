@@ -52,6 +52,7 @@
 #include "include/protocol_types.h"
 
 #include <vector>
+#include <filesystem>
 
 namespace directordaemon {
 
@@ -71,9 +72,6 @@ static bool SelectFiles(UaContext* ua,
                         RestoreContext* rx,
                         TreeContext& tree,
                         bool done);
-static void SplitPathAndFilename(UaContext* ua,
-                                 RestoreContext* rx,
-                                 char* fname);
 static int JobidFileindexHandler(void* ctx, int num_fields, char** row);
 static bool InsertFileIntoFindexList(UaContext* ua,
                                      RestoreContext* rx,
@@ -346,7 +344,7 @@ static void GetAndDisplayBasejobs(UaContext* ua, RestoreContext* rx)
                       jobids.GetAsString().c_str());
     ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
   }
-  PmStrcpy(rx->BaseJobIds, jobids.GetAsString().c_str());
+  rx->BaseJobIds = jobids.GetAsString();
 }
 
 void RestoreContext::BuildRegexWhere(char* strip_prefix,
@@ -358,22 +356,37 @@ void RestoreContext::BuildRegexWhere(char* strip_prefix,
                       add_suffix);
 }
 
-RestoreContext::~RestoreContext()
+RestoreContext::~RestoreContext() { FreeAndNullPoolMemory(query); }
+
+void RestoreContext::GetFilenameAndPath(UaContext* ua, char* pathname)
 {
-  FreeAndNullPoolMemory(BaseJobIds);
-  FreeAndNullPoolMemory(fname);
-  FreeAndNullPoolMemory(path);
-  FreeAndNullPoolMemory(query);
+  std::filesystem::path mypath(pathname);
+  char escaped_string[MAX_ESCAPE_NAME_LENGTH];
+
+  if (mypath.has_filename()) {
+    std::string filename = mypath.filename().generic_string();
+    ua->db->EscapeString(ua->jcr, escaped_string, filename.c_str(),
+                         filename.size());
+    fname = escaped_string;
+  } else {
+    fname.clear();
+  }
+
+  if (mypath.has_parent_path()) {
+    std::string parent_path = mypath.parent_path().generic_string();
+    ua->db->EscapeString(ua->jcr, escaped_string, parent_path.c_str(),
+                         parent_path.size());
+    path = escaped_string;
+    path.append("/");
+  } else {
+    path.clear();
+  }
+
+  Dmsg2(100, "split path=%s file=%s\n", path.c_str(), fname.c_str());
 }
 
 RestoreContext::RestoreContext()
 {
-  path = GetPoolMemory(PM_FNAME);
-  path[0] = 0;
-  fname = GetPoolMemory(PM_FNAME);
-  fname[0] = 0;
-  BaseJobIds = GetPoolMemory(PM_FNAME);
-  BaseJobIds[0] = 0;
   query = GetPoolMemory(PM_FNAME);
   query[0] = 0;
   bsr = std::make_unique<RestoreBootstrapRecord>();
@@ -958,16 +971,17 @@ static bool InsertFileIntoFindexList(UaContext* ua,
                                      char* date)
 {
   StripTrailingNewline(file);
-  SplitPathAndFilename(ua, rx, file);
+  rx->GetFilenameAndPath(ua, file);
 
   char filter_name = RestoreContext::FilterIdentifier(rx->job_filter);
   if (rx->JobIds.empty()) {
     ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_jobid_fileindex, date,
-                      rx->path, rx->fname, rx->ClientName.c_str(), filter_name);
+                      rx->path.c_str(), rx->fname.c_str(),
+                      rx->ClientName.c_str(), filter_name);
   } else {
     ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_jobids_fileindex,
-                      rx->JobIds.c_str(), date, rx->path, rx->fname,
-                      rx->ClientName.c_str(), filter_name);
+                      rx->JobIds.c_str(), date, rx->path.c_str(),
+                      rx->fname.c_str(), rx->ClientName.c_str(), filter_name);
   }
 
   // Find and insert jobid and File Index
@@ -1037,51 +1051,6 @@ static bool InsertTableIntoFindexList(UaContext* ua,
     return true;
   }
   return true;
-}
-
-static void SplitPathAndFilename(UaContext* ua, RestoreContext* rx, char* name)
-{
-  char *p, *f;
-
-  /* Find path without the filename.
-   * I.e. everything after the last / is a "filename".
-   * OK, maybe it is a directory name, but we treat it like
-   * a filename. If we don't find a / then the whole name
-   * must be a path name (e.g. c:).
-   */
-  for (p = f = name; *p; p++) {
-    if (IsPathSeparator(*p)) { f = p; /* set pos of last slash */ }
-  }
-  if (IsPathSeparator(*f)) { /* did we find a slash? */
-    f++;                     /* yes, point to filename */
-  } else {                   /* no, whole thing must be path name */
-    f = p;
-  }
-
-  /* If filename doesn't exist (i.e. root directory), we
-   * simply create a blank name consisting of a single
-   * space. This makes handling zero length filenames
-   * easier.
-   */
-  rx->fnl = p - f;
-  if (rx->fnl > 0) {
-    rx->fname = CheckPoolMemorySize(rx->fname, 2 * (rx->fnl) + 1);
-    ua->db->EscapeString(ua->jcr, rx->fname, f, rx->fnl);
-  } else {
-    rx->fname[0] = 0;
-    rx->fnl = 0;
-  }
-
-  rx->pnl = f - name;
-  if (rx->pnl > 0) {
-    rx->path = CheckPoolMemorySize(rx->path, 2 * (rx->pnl) + 1);
-    ua->db->EscapeString(ua->jcr, rx->path, name, rx->pnl);
-  } else {
-    rx->path[0] = 0;
-    rx->pnl = 0;
-  }
-
-  Dmsg2(100, "split path=%s file=%s\n", rx->path, rx->fname);
 }
 
 static bool AskForFileregex(UaContext* ua, RestoreContext* rx)
@@ -1172,7 +1141,7 @@ void BuildDirectoryTree(UaContext* ua, RestoreContext* rx, TreeContext& tree)
     ua->ErrorMsg("%s", ua->db->strerror());
   }
 
-  if (*rx->BaseJobIds) {
+  if (!rx->BaseJobIds.empty()) {
     rx->JobIds.append(",");
     rx->JobIds.append(rx->BaseJobIds);
   }
