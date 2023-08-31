@@ -20,8 +20,6 @@ export TestName
 
 start_test
 
-long_dir_name="This-Is-A-Very-Long-Directory-Name-1111111111-2222222222-3333333333-44444444444-55555555555-66666666666-77777777777-8888888888-9999999999-0000000000"
-
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
 messages
@@ -41,9 +39,9 @@ restore client=bareos-fd fileset=SelfTest where=$tmp/multi-file/2 file=$tmp/data
 wait
 messages
 @$out $log_home/multi-dir.out
-restore jobid=1 client=bareos-fd fileset=SelfTest where=$tmp/multi-dir/1 directory=$tmp/data/weird-files/ directory=$tmp/data/build/src/tests/ yes
-restore jobid=1 client=bareos-fd fileset=SelfTest where=$tmp/multi-dir/2 directory=$tmp/data/build/src/tests/ yes
-restore jobid=1 client=bareos-fd fileset=SelfTest where=$tmp/multi-dir/2 directory=$tmp/data/weird-files/ yes
+restore jobid=1 client=bareos-fd fileset=SelfTest where=$tmp/multi-dir/1 directory=$tmp/data/weird-files/simple-dir-1/ directory=$tmp/data/weird-files/simple-dir-2/ yes
+restore jobid=1 client=bareos-fd fileset=SelfTest where=$tmp/multi-dir/2 directory=$tmp/data/weird-files/simple-dir-2/ yes
+restore jobid=1 client=bareos-fd fileset=SelfTest where=$tmp/multi-dir/2 directory=$tmp/data/weird-files/simple-dir-1/ yes
 wait
 messages
 @$out $log_home/file-and-dir.out
