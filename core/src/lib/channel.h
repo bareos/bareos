@@ -81,9 +81,23 @@ template <typename T> class queue {
     }
   };
 
+  /* the *_lock functions return std::nullopt only if the channel is closed
+   * otherwise they wait until they get the lock
+   * The try_*_lock functions instead return a tristate indicating whether
+   * they succeeded, failed to acquire the lock or if the channel was closed
+   * from the other side. */
+
   std::optional<handle> output_lock()
   {
     auto locked = shared.lock();
+    if (locked->out_dead) {
+      // note(ssura): This happening is programmer error.
+      // Maybe we should assert this instead ?
+      Dmsg0(50,
+            "Tried to read from channel that was closed from the read side.\n");
+      return std::nullopt;
+    }
+
     locked.wait(in_update, [](const auto& intern) {
       return intern.data.size() > 0 || intern.in_dead;
     });
@@ -100,6 +114,13 @@ template <typename T> class queue {
     locked.wait(out_update, [max_size = max_size](const auto& intern) {
       return intern.data.size() < max_size || intern.out_dead;
     });
+    if (locked->in_dead) {
+      // note(ssura): This happening is programmer error.
+      // Maybe we should assert this instead ?
+      Dmsg0(50,
+            "Tried to write to channel that was closed from the write side.\n");
+      return std::nullopt;
+    }
     if (locked->out_dead) {
       return std::nullopt;
     } else {
@@ -114,6 +135,13 @@ template <typename T> class queue {
   {
     auto locked = shared.try_lock();
     if (!locked) { return failed_to_acquire_lock{}; }
+    if (locked.value()->out_dead) {
+      // note(ssura): This happening is programmer error.
+      // Maybe we should assert this instead ?
+      Dmsg0(50,
+            "Tried to read from channel that was closed from the read side.\n");
+      return channel_closed{};
+    }
     if (locked.value()->data.size() == 0) {
       if (locked.value()->in_dead) {
         return channel_closed{};
@@ -130,6 +158,13 @@ template <typename T> class queue {
   {
     auto locked = shared.try_lock();
     if (!locked) { return failed_to_acquire_lock{}; }
+    if (locked.value()->in_dead) {
+      // note(ssura): This happening is programmer error.
+      // Maybe we should assert this instead ?
+      Dmsg0(50,
+            "Tried to write to channel that was closed from the write side.\n");
+      return channel_closed{};
+    }
     if (locked.value()->out_dead) { return channel_closed{}; }
     if (locked.value()->data.size() >= max_size) {
       return failed_to_acquire_lock{};
