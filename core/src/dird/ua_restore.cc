@@ -206,13 +206,12 @@ bool RestoreCmd(UaContext* ua, const char*)
     return false;
   }
 
-  JobResource* job;
   if (restorejobs.size() == 1) {
-    job = restorejobs.front();
+    rx.restore_job = restorejobs.front();
   } else {
-    job = get_restore_job(ua);
+    rx.restore_job = get_restore_job(ua);
   }
-  if (!job) { return false; }
+  if (!rx.restore_job) { return false; }
 
   /* Request user to select JobIds or files by various different methods
    *  last 20 jobs, where File saved, most recent backup, ...
@@ -243,7 +242,7 @@ bool RestoreCmd(UaContext* ua, const char*)
   /* When doing NDMP_NATIVE restores, we don't create any bootstrap file
    * as we only send a namelist for restore. The storage handling is
    * done by the NDMP state machine via robot and tape interface. */
-  if (job->Protocol == PT_NDMP_NATIVE) {
+  if (rx.restore_job->Protocol == PT_NDMP_NATIVE) {
     ua->InfoMsg(
         _("Skipping BootStrapRecord creation as we are doing NDMP_NATIVE "
           "restore.\n"));
@@ -259,8 +258,7 @@ bool RestoreCmd(UaContext* ua, const char*)
   if (!GetRestoreClientName(ua, rx)) { return false; }
 
   std::string command_to_run = BuildRestoreCommandString(
-      rx, job->resource_name_, ua->catalog->resource_name_,
-      ua->jcr->RestoreBootstrap, yes_keyword);
+      rx, ua->catalog->resource_name_, ua->jcr->RestoreBootstrap, yes_keyword);
   Mmsg(ua->cmd, command_to_run.c_str());
 
   Dmsg1(200, "Submitting: %s\n", ua->cmd);
@@ -286,7 +284,6 @@ std::vector<JobResource*> GetRestoreJobs()
 }
 
 std::string BuildRestoreCommandString(const RestoreContext& rx,
-                                      const char* job_resource_name,
                                       const char* catalog_resource_name,
                                       const char* restore_bootstrap,
                                       bool yes_keyword)
@@ -295,9 +292,10 @@ std::string BuildRestoreCommandString(const RestoreContext& rx,
       FMT_STRING("run job=\"{:s}\" client=\"{:s}\" restoreclient=\"{:s}\" "
                  "storage=\"{:s}\""
                  " bootstrap=\"{:s}\" files={} catalog=\"{:s}\""),
-      job_resource_name, rx.ClientName, rx.RestoreClientName,
-      rx.store ? rx.store->resource_name_ : "", EscapePath(restore_bootstrap),
-      rx.selected_files, catalog_resource_name);
+      rx.restore_job->resource_name_, rx.ClientName.c_str(),
+      rx.RestoreClientName.c_str(), rx.store ? rx.store->resource_name_ : "",
+      EscapePath(restore_bootstrap).c_str(), rx.selected_files,
+      catalog_resource_name);
 
   // Build run command
   if (rx.backup_format) {

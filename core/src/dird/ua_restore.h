@@ -34,7 +34,6 @@ void FindStorageResource(UaContext* ua,
                          char* MediaType);
 
 std::string BuildRestoreCommandString(const RestoreContext& rx,
-                                      const char* job_resource_name,
                                       const char* catalog_resource_name,
                                       const char* restore_bootstrap,
                                       bool yes_keyword);

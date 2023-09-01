@@ -195,6 +195,7 @@ class RestoreContext {
 
   StorageResource* store = nullptr;
   PoolResource* pool = nullptr;
+  JobResource* restore_job = nullptr;
   utime_t JobTDate = {0};
   uint32_t TotalFiles = 0;
   uint32_t selected_files = 0;
