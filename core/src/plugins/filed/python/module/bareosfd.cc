@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -281,10 +281,8 @@ static inline bool PySavePacketToNative(
   if (!is_options_plugin) {
     // Only copy back the arguments that are allowed to change.
     if (pSavePkt->fname) {
-      /*
-       * As this has to linger as long as the backup is running we save it in
-       * our plugin context.
-       */
+      /* As this has to linger as long as the backup is running we save it in
+       * our plugin context. */
       if (PyUnicode_Check(pSavePkt->fname)) {
         if (plugin_priv_ctx->fname) { free(plugin_priv_ctx->fname); }
 
@@ -300,10 +298,8 @@ static inline bool PySavePacketToNative(
 
     // Optional field.
     if (pSavePkt->link) {
-      /*
-       * As this has to linger as long as the backup is running we save it in
-       * our plugin context.
-       */
+      /* As this has to linger as long as the backup is running we save it in
+       * our plugin context. */
       if (PyUnicode_Check(pSavePkt->link)) {
         if (plugin_priv_ctx->link) { free(plugin_priv_ctx->link); }
         plugin_priv_ctx->link = strdup(PyUnicode_AsUTF8(pSavePkt->link));
@@ -340,10 +336,8 @@ static inline bool PySavePacketToNative(
     if (IS_FT_OBJECT(sp->type)) {
       // See if a proper restore object was created.
       if (pSavePkt->object_len > 0) {
-        /*
-         * As this has to linger as long as the backup is running we save it
-         * in our plugin context.
-         */
+        /* As this has to linger as long as the backup is running we save it
+         * in our plugin context. */
         if (pSavePkt->object_name && pSavePkt->object
             && PyUnicode_Check(pSavePkt->object_name)
             && PyByteArray_Check(pSavePkt->object)) {
@@ -376,10 +370,12 @@ static inline bool PySavePacketToNative(
     } else {
       sp->no_read = pSavePkt->no_read;
       sp->delta_seq = pSavePkt->delta_seq;
+      sp->save_time = pSavePkt->save_time;
     }
   } else {
     sp->no_read = pSavePkt->no_read;
     sp->delta_seq = pSavePkt->delta_seq;
+    sp->save_time = pSavePkt->save_time;
 
     if (PyByteArray_Check(pSavePkt->flags)) {
       char* flags;
@@ -1247,7 +1243,7 @@ bail_out:
  */
 static PyObject* PyBareosGetValue(PyObject*, PyObject* args)
 {
-  int var;
+  bVariable var;
   PluginContext* plugin_ctx = plugin_context;
   PyObject* pRetVal = NULL;
 
@@ -1262,8 +1258,7 @@ static PyObject* PyBareosGetValue(PyObject*, PyObject* args)
     case bVarDistName: {
       char* value = NULL;
 
-      if (bareos_core_functions->getBareosValue(plugin_ctx, (bVariable)var,
-                                                &value)
+      if (bareos_core_functions->getBareosValue(plugin_ctx, var, &value)
           == bRC_OK) {
         if (value) { pRetVal = PyUnicode_FromString(value); }
       }
@@ -1273,13 +1268,11 @@ static PyObject* PyBareosGetValue(PyObject*, PyObject* args)
     case bVarLevel:
     case bVarType:
     case bVarJobStatus:
-    case bVarSinceTime:
     case bVarAccurate:
     case bVarPrefixLinks: {
       int value = 0;
 
-      if (bareos_core_functions->getBareosValue(plugin_ctx, (bVariable)var,
-                                                &value)
+      if (bareos_core_functions->getBareosValue(plugin_ctx, var, &value)
           == bRC_OK) {
         pRetVal = PyLong_FromLong(value);
       }
@@ -1292,10 +1285,23 @@ static PyObject* PyBareosGetValue(PyObject*, PyObject* args)
     case bVarRegexWhere: {
       char* value = NULL;
 
-      if (bareos_core_functions->getBareosValue(plugin_ctx, (bVariable)var,
-                                                &value)
+      if (bareos_core_functions->getBareosValue(plugin_ctx, var, &value)
           == bRC_OK) {
         if (value) { pRetVal = PyUnicode_FromString(value); }
+      }
+      break;
+    }
+    case bVarSinceTime: {
+      pRetVal = PyLong_FromLong(static_cast<plugin_private_context*>(
+                                    plugin_ctx->plugin_private_context)
+                                    ->since);
+      break;
+    }
+    case bVarCheckChanges: {
+      bool value{false};
+      if (bareos_core_functions->getBareosValue(plugin_ctx, var, &value)
+          == bRC_OK) {
+        pRetVal = value ? Py_True : Py_False;
       }
       break;
     }
@@ -1319,7 +1325,7 @@ static PyObject* PyBareosGetValue(PyObject*, PyObject* args)
  */
 static PyObject* PyBareosSetValue(PyObject*, PyObject* args)
 {
-  int var;
+  bVariable var;
   PluginContext* plugin_ctx = plugin_context;
   bRC retval = bRC_Error;
   PyObject* pyValue;
@@ -1330,22 +1336,22 @@ static PyObject* PyBareosSetValue(PyObject*, PyObject* args)
   RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
 
   switch (var) {
-    case bVarLevel: {
-      int value = 0;
-
-      value = PyLong_AsLong(pyValue);
-      if (value) {
-        retval = bareos_core_functions->setBareosValue(plugin_ctx,
-                                                       (bVariable)var, &value);
-      }
+    case bVarSinceTime: {
+      static_cast<plugin_private_context*>(plugin_ctx->plugin_private_context)
+          ->since
+          = PyLong_AsLong(pyValue);
+      retval = bRC_OK;
+      break;
+    }
+    case bVarCheckChanges: {
+      bool value = (pyValue == Py_True);
+      retval = bareos_core_functions->setBareosValue(plugin_ctx, var, &value);
       break;
     }
     case bVarFileSeen: {
       const char* value = PyUnicode_AsUTF8(pyValue);
       if (value) {
-        retval = bareos_core_functions->setBareosValue(
-            plugin_ctx, (bVariable)var,
-            static_cast<void*>(const_cast<char*>(value)));
+        retval = bareos_core_functions->setBareosValue(plugin_ctx, var, value);
       }
       break;
     }
@@ -1679,10 +1685,8 @@ static PyObject* PyBareosCheckChanges(PyObject*, PyObject* args)
   RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
 
 
-  /*
-   * CheckFile only has a need for a limited version of the PySavePacket so we
-   * handle that here separately and don't call PySavePacketToNative().
-   */
+  /* CheckFile only has a need for a limited version of the PySavePacket so we
+   * handle that here separately and don't call PySavePacketToNative(). */
   sp.type = pSavePkt->type;
   if (pSavePkt->fname) {
     if (PyUnicode_Check(pSavePkt->fname)) {
@@ -1729,10 +1733,8 @@ static PyObject* PyBareosAcceptFile(PyObject*, PyObject* args)
   }
   RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
 
-  /*
-   * Acceptfile only needs fname and statp from PySavePacket so we handle
-   * that here separately and don't call PySavePacketToNative().
-   */
+  /* Acceptfile only needs fname and statp from PySavePacket so we handle
+   * that here separately and don't call PySavePacketToNative(). */
   if (pSavePkt->fname) {
     if (PyUnicode_Check(pSavePkt->fname)) {
       sp.fname = const_cast<char*>(PyUnicode_AsUTF8(pSavePkt->fname));
