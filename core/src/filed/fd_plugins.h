@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -96,12 +96,11 @@ struct save_pkt {
   int32_t pkt_size{sizeof(save_pkt)}; /* Size of this packet */
   char* fname{};                      /* Full path and filename */
   char* link{};                       /* Link name if any */
-  struct stat statp {
-  };                         /* System stat() packet for file */
-  int32_t type{};            /* FT_xx for this file */
-  char flags[FOPTS_BYTES]{}; /* Bareos internal flags */
-  bool no_read{};            /* During the save, the file should not be saved */
-  bool portable{};           /* Set if data format is portable */
+  struct stat statp {};               /* System stat() packet for file */
+  int32_t type{};                     /* FT_xx for this file */
+  char flags[FOPTS_BYTES]{};          /* Bareos internal flags */
+  bool no_read{};        /* During the save, the file should not be saved */
+  bool portable{};       /* Set if data format is portable */
   bool accurate_found{}; /* Found in accurate list (valid after CheckChanges())
                           */
   char* cmd{};           /* Command */
@@ -123,17 +122,16 @@ struct restore_pkt {
   int32_t file_index{};                  /* File index */
   int32_t LinkFI{};                      /* File index to data if hard link */
   uid_t uid{};                           /* Userid */
-  struct stat statp {
-  };                        /* Decoded stat packet */
-  const char* attrEx{};     /* Extended attributes if any */
-  const char* ofname{};     /* Output filename */
-  const char* olname{};     /* Output link name */
-  const char* where{};      /* Where */
-  const char* RegexWhere{}; /* Regex where */
-  int replace{};            /* Replace flag */
-  int create_status{};      /* Status from createFile() */
-  uint32_t delta_seq{};     /* Delta sequence number */
-  int filedes{};            /* file descriptor to read/write in core */
+  struct stat statp {};                  /* Decoded stat packet */
+  const char* attrEx{};                  /* Extended attributes if any */
+  const char* ofname{};                  /* Output filename */
+  const char* olname{};                  /* Output link name */
+  const char* where{};                   /* Where */
+  const char* RegexWhere{};              /* Regex where */
+  int replace{};                         /* Replace flag */
+  int create_status{};                   /* Status from createFile() */
+  uint32_t delta_seq{};                  /* Delta sequence number */
+  int filedes{}; /* file descriptor to read/write in core */
   int32_t pkt_end{sizeof(restore_pkt)}; /* End packet sentinel */
 };
 
