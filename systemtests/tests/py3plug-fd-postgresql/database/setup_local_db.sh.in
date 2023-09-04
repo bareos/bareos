@@ -105,4 +105,3 @@ setup_local_tablespace() {
     ${POSTGRES_BIN_PATH}/psql -h "$1" -d postgres -c "CREATE TABLESPACE index_space LOCATION '$(pwd)/index_space';"
   fi
 }
-

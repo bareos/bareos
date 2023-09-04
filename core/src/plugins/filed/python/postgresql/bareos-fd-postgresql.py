@@ -69,8 +69,7 @@ def load_bareos_plugin(plugindef):
             )
     except Exception as err:
         bareosfd.JobMessage(
-            bareosfd.M_FATAL,
-            f"could not import Python module: pg8000 {err}\n"
+            bareosfd.M_FATAL, f"could not import Python module: pg8000 {err}\n"
         )
         return bareosfd.bRC_Error
 
@@ -79,8 +78,7 @@ def load_bareos_plugin(plugindef):
         import BareosFdPluginPostgreSQL
     except Exception as err:
         bareosfd.JobMessage(
-            bareosfd.M_FATAL,
-            f"could not import Python module: pg8000 {err}\n"
+            bareosfd.M_FATAL, f"could not import Python module: pg8000 {err}\n"
         )
         return bareosfd.bRC_Error
 
