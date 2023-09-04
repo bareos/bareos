@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -20,9 +20,12 @@
 if(TARGET python3-fd)
   check_pymodule_available(3 pg8000)
   check_pymodule_available(3 dateutil)
+  include(FindPostgreSQL)
   if(PYMODULE_3_PG8000_FOUND
+     AND PostgreSQL_FOUND
      AND PYMODULE_3_DATEUTIL_FOUND
      AND (${Python3_VERSION_MAJOR} EQUAL 3)
+     AND (${PostgreSQL_VERSION_STRING} VERSION_LESS "15.0")
   )
     create_systemtest(${SYSTEMTEST_PREFIX} "py3plug-fd-postgres")
   else()
