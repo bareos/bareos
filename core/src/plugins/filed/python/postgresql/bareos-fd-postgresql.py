@@ -50,7 +50,7 @@ def load_bareos_plugin(plugindef):
     if version_info.major >= 3 and version_info.minor < 6:
         bareosfd.JobMessage(
             bareosfd.M_FATAL,
-            f"Need Python version >=< 3.6 (current version: {version_info.major}.{version_info.minor}.{version_info.micro})\n"
+            f"Need Python version >= 3.6 (current version: {version_info.major}.{version_info.minor}.{version_info.micro})\n"
         )
         return bareosfd.bRC_Error
 
