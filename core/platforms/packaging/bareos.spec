@@ -97,6 +97,7 @@ BuildRequires: libtirpc-devel
 
 %if 0%{?rhel} == 7
 %define webui 0
+%define __python python3
 %endif
 
 # use Developer Toolset 8 compiler as standard is too old
