@@ -480,12 +480,6 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('i', 'Doing batch insert file records',15);
 
--- Initialize Version
---   DELETE should not be required,
---   but prevents errors if create script is called multiple times
-DELETE FROM Version WHERE VersionId<=2230;
-INSERT INTO Version (VersionId) VALUES (2230);
-
 -- subscription status part
 DROP VIEW IF EXISTS backup_unit_overview;
 DROP VIEW IF EXISTS latest_full_size_categorized;
@@ -496,28 +490,28 @@ SELECT
   f.fileset AS fileset,
   j.jobbytes / 1000000 AS total_mb,
   CASE
-    WHEN f.filesettext ILIKE '%{%{%File%=%' THEN NULL
+    WHEN f.filesettext ILIKE '%{%{%File%=%' AND f.filesettext NOT ILIKE '%:config_file%=%' THEN NULL
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-percona%' THEN j.jobbytes / 1000000
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-postgres%' THEN j.jobbytes / 1000000
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%mssqlvdi:%' THEN j.jobbytes / 1000000
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-ldap%' THEN j.jobbytes / 1000000
   END AS db_mb,
   CASE
-    WHEN f.filesettext ILIKE '%{%{%File%=%' THEN NULL
+    WHEN f.filesettext ILIKE '%{%{%File%=%' AND f.filesettext NOT ILIKE '%:config_file%=%' THEN NULL
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-vmware%' THEN j.jobbytes / 1000000
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-ovirt%' THEN j.jobbytes / 1000000
   END AS vm_mb,
   CASE
-    WHEN f.filesettext ILIKE '%{%{%File%=%' THEN NULL
+    WHEN f.filesettext ILIKE '%{%{%File%=%' AND f.filesettext NOT ILIKE '%:config_file%=%' THEN NULL
     WHEN f.filesettext ILIKE '%{%{%meta%=' THEN j.jobbytes / 1000000
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-libcloud%' THEN j.jobbytes / 1000000
   END AS filer_mb,
   CASE
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%' THEN NULL
-    WHEN f.filesettext ILIKE '%{%{%File%=%' THEN j.jobbytes / 1000000
+    WHEN f.filesettext ILIKE '%{%{%File%=%' AND f.filesettext NOT ILIKE '%:config_file%=%' THEN j.jobbytes / 1000000
   END AS normal_mb,
   CASE
-    WHEN f.filesettext ILIKE '%{%{%File%=%Plugin%=%' OR f.filesettext ILIKE '%{%{%Plugin%=%File%=%' THEN j.jobbytes / 1000000
+    WHEN (f.filesettext ILIKE '%{%{%File%=%Plugin%=%' OR f.filesettext ILIKE '%{%{%Plugin%=%File%=%') AND f.filesettext NOT ILIKE '%:config_file%=%' THEN j.jobbytes / 1000000
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-percona%' THEN NULL
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-postgres%' THEN NULL
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-ldap%' THEN NULL
@@ -530,9 +524,9 @@ SELECT
     ELSE j.jobbytes / 1000000
   END AS unknown_mb,
   CASE
-    WHEN f.filesettext ILIKE '%{%{%File%=%Plugin%=%' OR f.filesettext ILIKE '%{%{%Plugin%=%File%=%' THEN
+    WHEN (f.filesettext ILIKE '%{%{%File%=%Plugin%=%' OR f.filesettext ILIKE '%{%{%Plugin%=%File%=%') AND f.filesettext NOT ILIKE '%:config_file%=%' THEN
 	CASE WHEN LENGTH(f.filesettext) < 10 THEN '<empty>' ELSE f.filesettext END
-    WHEN f.filesettext ILIKE '%{%{%Plugin%=%File%=%' THEN '"' || f.filesettext || '"'
+    WHEN f.filesettext ILIKE '%{%{%Plugin%=%File%=%' AND f.filesettext NOT ILIKE '%:config_file%=%' THEN '"' || f.filesettext || '"'
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-percona%' THEN NULL
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-postgres%' THEN NULL
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-ldap%' THEN NULL
@@ -748,4 +742,11 @@ select
     end as bareos_frombase64_parallel
 ;
 commit;
+
+-- Initialize Version
+--   DELETE should not be required,
+--   but prevents errors if create script is called multiple times
+DELETE FROM Version WHERE VersionId<=2230;
+INSERT INTO Version (VersionId) VALUES (2230);
+
 -- Make sure we have appropriate permissions
