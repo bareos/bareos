@@ -1201,19 +1201,20 @@ static inline bool SendPlainData(b_ctx& bctx)
               SerEnd(header_data, OFFSET_FADDR_SIZE);
             }
             if (compctx) {
-              std::optional comp_size = ThreadlocalCompress(
+              result comp_size = ThreadlocalCompress(
                   compctx->algorithm, compctx->level, buf->data(), buf->size(),
                   file_data + sizeof(comp_stream_header),
                   data_size - sizeof(comp_stream_header));
 
-              if (!comp_size) {
-                PoolMem error{"compression error"};
-                return error;
+              if (comp_size.holds_error()) {
+                return std::move(comp_size.error_unchecked());
               }
 
-              if (*comp_size > std::numeric_limits<std::uint32_t>::max()) {
+              auto csize = comp_size.value_unchecked();
+
+              if (csize > std::numeric_limits<std::uint32_t>::max()) {
                 PoolMem error;
-                Mmsg(error, "Compressed size to big (%llu > %llu)", *comp_size,
+                Mmsg(error, "Compressed size to big (%llu > %llu)", csize,
                      std::numeric_limits<std::uint32_t>::max());
                 return error;
               }
@@ -1223,14 +1224,13 @@ static inline bool SendPlainData(b_ctx& bctx)
                 ser_declare;
                 SerBegin(file_data, sizeof(comp_stream_header));
                 ser_uint32(compctx->ch.magic);
-                ser_uint32(*comp_size);
+                ser_uint32(csize);
                 ser_uint16(compctx->ch.level);
                 ser_uint16(compctx->ch.version);
                 SerEnd(file_data, sizeof(comp_stream_header));
               }
 
-              total_size
-                  = header_size + *comp_size + sizeof(comp_stream_header);
+              total_size = header_size + csize + sizeof(comp_stream_header);
             } else {
               std::memcpy(file_data, buf->data(), buf->size());
             }
