@@ -53,52 +53,9 @@
 
 #include "lib/channel.h"
 
-#include <variant>
 #include <cstring>
 
 namespace filedaemon {
-
-// fixme(ssura): replace by std::expected<T, PoolMem> (C++23)
-//               or std::expected<T, std::string>
-template <typename T> class result {
- public:
-  constexpr result() : data{1, "Not Initialized"} {}
-
-  template <typename Arg0, typename... Args>
-  constexpr result(Arg0 arg0, Args... args)
-      : data(std::forward<Arg0>(arg0), std::forward<Args>(args)...)
-  {
-  }
-
-  bool holds_error() const { return data.index() == 1; }
-  PoolMem* error()
-  {
-    if (holds_error()) {
-      return &std::get<1>(data);
-    } else {
-      return nullptr;
-    }
-  }
-
-  T* value()
-  {
-    if (!holds_error()) {
-      return &std::get<0>(data);
-    } else {
-      return nullptr;
-    }
-  }
-
-  PoolMem& error_unchecked() { return std::get<1>(data); }
-
-  T& value_unchecked() { return std::get<0>(data); }
-
- private:
-  // we are using PoolMem here, since it is easier to format into a PoolMem.
-  // Once we have access to std::format everywhere, this should change
-  // to std::string.
-  std::variant<T, PoolMem> data;
-};
 
 #ifdef HAVE_DARWIN_OS
 const bool have_darwin_os = true;
