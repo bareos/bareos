@@ -50,8 +50,7 @@ def load_bareos_plugin(plugindef):
     if version_info.major >= 3 and version_info.minor < 6:
         bareosfd.JobMessage(
             bareosfd.M_FATAL,
-            f"Need Python version >=< 3.6 (current version: \
-              {version_info.major}.{version_info.minor}.{version_info.micro})\n",
+            f"Need Python version >=< 3.6 (current version: {version_info.major}.{version_info.minor}.{version_info.micro})\n"
         )
         return bareosfd.bRC_Error
 
@@ -64,8 +63,7 @@ def load_bareos_plugin(plugindef):
         if int(major) < 1 or (int(major) == 1 and int(minor) < 16):
             bareosfd.JobMessage(
                 bareosfd.M_FATAL,
-                f"FATAL ERROR: pg8000 module is too old({pg8000.__version__}),\
-                minimum required version is >= 1.16\n",
+                f"FATAL ERROR: pg8000 module is too old({pg8000.__version__}),minimum required version is >= 1.16\n"
             )
     except Exception as err:
         bareosfd.JobMessage(

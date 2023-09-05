@@ -68,12 +68,12 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
     def __init__(self, plugindef):
         bareosfd.DebugMessage(
             100,
-            f"Constructor called in module {__name__} with plugindef={plugindef}\n",
+            f"Constructor called in module {__name__} with plugindef={plugindef}\n"
         )
 
         bareosfd.DebugMessage(
             100,
-            f"Python Version: {version_info.major}.{version_info.minor}.{version_info.micro}\n",
+            f"Python Version: {version_info.major}.{version_info.minor}.{version_info.micro}\n"
         )
 
         # Last argument of super constructor is a list of mandatory arguments
