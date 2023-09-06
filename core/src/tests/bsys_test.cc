@@ -324,3 +324,19 @@ TEST(EscapePath, escape_backslashes_and_quotes)
 
   EXPECT_EQ(EscapePath(filename.c_str()), escaped_filename);
 }
+
+TEST(EscapePath, escape_backslashes_and_quotes_at_end)
+{
+  std::string filename = R"(thisisaregularfilename"\)";
+  std::string escaped_filename = R"(thisisaregularfilename\"\\)";
+
+  EXPECT_EQ(EscapePath(filename.c_str()), escaped_filename);
+}
+
+TEST(EscapePath, escape_backslashes_and_quotes_at_start)
+{
+  std::string filename = R"("\thisisaregularfilename)";
+  std::string escaped_filename = R"(\"\\thisisaregularfilename)";
+
+  EXPECT_EQ(EscapePath(filename.c_str()), escaped_filename);
+}

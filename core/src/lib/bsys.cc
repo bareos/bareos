@@ -785,26 +785,24 @@ void MakeUniqueFilename(POOLMEM*& name, int Id, char* what)
 
 std::string EscapePath(const char* file_path)
 {
+  if (file_path == nullptr) return "";
+  std::string_view view{file_path};
+  if (view.find_first_of("\"\\") == view.npos) { return std::string{view}; }
   std::string escaped{};
-  if (file_path == nullptr) {
-    return escaped;
-  } else if (strpbrk(file_path, "\"\\") == nullptr) {
-    return file_path;
+
+  for (char c : view) {
+    switch (c) {
+      case '\\': {
+        escaped.append("\\\\");
+      } break;
+      case '"': {
+        escaped.append("\\\"");
+      } break;
+      default: {
+        escaped.push_back(c);
+      }
+    }
   }
-
-  char* escaped_path = (char*)malloc(2 * (strlen(file_path) + 1));
-  char* cur_char = escaped_path;
-
-  while (*file_path) {
-    if (*file_path == '\\' || *file_path == '"') { *cur_char++ = '\\'; }
-
-    *cur_char++ = *file_path++;
-  }
-
-  *cur_char = '\0';
-
-  escaped = escaped_path;
-  free(escaped_path);
 
   return escaped;
 }
