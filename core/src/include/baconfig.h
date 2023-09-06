@@ -164,7 +164,7 @@ void InitWinAPIWrapper();
 #define AUTH_TIMEOUT 60 * 10
 
 // Default network buffer size
-#define DEFAULT_NETWORK_BUFFER_SIZE (64 * 1024)
+#define DEFAULT_NETWORK_BUFFER_SIZE (256 * 1024)
 
 // Tape label types -- stored in catalog
 #define B_BAREOS_LABEL 0
