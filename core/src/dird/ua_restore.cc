@@ -1094,10 +1094,7 @@ void AddDeltaListFindex(RestoreContext* rx, delta_list* lst)
 TreeContext BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
 {
   // Build the directory tree containing JobIds user selected
-  TreeContext tree;
-  tree.root = new_tree(rx->TotalFiles);
-  tree.ua = ua;
-  tree.all = rx->all;
+  TreeContext tree(rx->all, ua, rx->TotalFiles);
 
   /* For display purposes, the same JobId, with different volumes may
    * appear more than once, however, we only insert it once. */

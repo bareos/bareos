@@ -32,6 +32,7 @@
 #include "include/bareos.h"
 #include "lib/bsock.h"
 #include "dird/bsr.h"
+#include "lib/tree.h"
 
 class JobControlRecord;
 class BareosDb;
@@ -175,7 +176,11 @@ struct TreeContext {
   uint32_t DeltaCount = 0; /**< Trigger for printing */
 
   TreeContext() = default;
-  ~TreeContext() = default;
+  TreeContext(bool all_specified, UaContext* _ua, int tree_size)
+      : all(all_specified), ua(_ua)
+  {
+    root = new_tree(tree_size);
+  }
 };
 
 // Context for restore job.
