@@ -33,9 +33,10 @@ void FindStorageResource(UaContext* ua,
                          char* Storage,
                          char* MediaType);
 
-void BuildRestoreCommandString(UaContext* ua,
-                               const RestoreContext& rx,
-                               JobResource* job);
+std::string BuildRestoreCommandString(const RestoreContext& rx,
+                                      const char* job_resource_name,
+                                      const char* catalog_resource_name,
+                                      const char* restore_bootstrap, bool yes_keyword);
 
 bool FindRestoreJobs(RestoreContext& rx);
 void BuildDirectoryTree(UaContext* ua, RestoreContext* rx, TreeContext& tree);

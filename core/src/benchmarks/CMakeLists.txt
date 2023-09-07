@@ -57,7 +57,7 @@ endmacro()
 
 bareos_add_benchmark(
   restore_browser_stress_test LINK_LIBRARIES bareos dird_objects bareosfind
-  bareossql benchmark::benchmark_main
+  bareossql benchmark::benchmark_main fmt::fmt-header-only
 )
 
 bareos_add_benchmark(

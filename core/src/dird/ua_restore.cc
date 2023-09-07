@@ -53,6 +53,7 @@
 
 #include <vector>
 #include <filesystem>
+#include <fmt/format.h>
 
 namespace directordaemon {
 
@@ -165,6 +166,10 @@ bool RestoreCmd(UaContext* ua, const char*)
   i = FindArg(ua, NT_("done"));
   if (i >= 0) { done = true; }
 
+  bool yes_keyword = false;
+  i = FindArg(ua, NT_("yes"));
+  if (i >= 0) { yes_keyword = true; }
+
   i = FindArg(ua, "archive");
   if (i >= 0) {
     rx.job_filter = RestoreContext::JobTypeFilter::Archive;
@@ -250,7 +255,13 @@ bool RestoreCmd(UaContext* ua, const char*)
   }
   if (!GetRestoreClientName(ua, rx)) { return false; }
 
-  BuildRestoreCommandString(ua, rx, job);
+  std::string command_to_run = BuildRestoreCommandString(
+      rx, job->resource_name_, ua->catalog->resource_name_,
+      ua->jcr->RestoreBootstrap, yes_keyword);
+  Mmsg(ua->cmd, command_to_run.c_str());
+
+  Dmsg1(200, "Submitting: %s\n", ua->cmd);
+
   // Transfer jobids to jcr to for picking up restore objects
   ua->jcr->JobIds = rx.JobIds;
 
@@ -277,54 +288,43 @@ bool FindRestoreJobs(RestoreContext& rx)
   return true;
 }
 
-void BuildRestoreCommandString(UaContext* ua,
-                               const RestoreContext& rx,
-                               JobResource* job)
+std::string BuildRestoreCommandString(const RestoreContext& rx,
+                                      const char* job_resource_name,
+                                      const char* catalog_resource_name,
+                                      const char* restore_bootstrap,
+                                      bool yes_keyword)
 {
-  Mmsg(ua->cmd,
-       "run job=\"%s\" client=\"%s\" restoreclient=\"%s\" storage=\"%s\""
-       " bootstrap=\"%s\" files=%u catalog=\"%s\"",
-       job->resource_name_, rx.ClientName.c_str(), rx.RestoreClientName.c_str(),
-       rx.store ? rx.store->resource_name_ : "",
-       EscapePath(ua->jcr->RestoreBootstrap).c_str(), rx.selected_files,
-       ua->catalog->resource_name_);
+  std::string command = fmt::format(
+      FMT_STRING("run job=\"{:s}\" client=\"{:s}\" restoreclient=\"{:s}\" "
+                 "storage=\"{:s}\""
+                 " bootstrap=\"{:s}\" files={} catalog=\"{:s}\""),
+      job_resource_name, rx.ClientName, rx.RestoreClientName,
+      rx.store ? rx.store->resource_name_ : "", EscapePath(restore_bootstrap),
+      rx.selected_files, catalog_resource_name);
 
   // Build run command
-  PoolMem buf;
   if (rx.backup_format) {
-    Mmsg(buf, " backupformat=%s", rx.backup_format);
-    PmStrcat(ua->cmd, buf);
+    command += " backupformat=" + std::string(rx.backup_format);
   }
 
-  PmStrcpy(buf, "");
   if (!rx.RegexWhere.empty()) {
-    Mmsg(buf, " regexwhere=\"%s\"", EscapePath(rx.RegexWhere.c_str()).c_str());
+    command += " regexwhere=\"" + EscapePath(rx.RegexWhere.c_str()) + "\"";
 
   } else if (rx.where) {
-    Mmsg(buf, " where=\"%s\"", EscapePath(rx.where).c_str());
+    command += " where=\"" + EscapePath(rx.where) + "\"";
   }
-  PmStrcat(ua->cmd, buf);
 
-  if (rx.replace) {
-    Mmsg(buf, " replace=%s", rx.replace);
-    PmStrcat(ua->cmd, buf);
-  }
+  if (rx.replace) { command += " replace=" + std::string(rx.replace); }
 
   if (rx.plugin_options) {
-    Mmsg(buf, " pluginoptions=%s", rx.plugin_options);
-    PmStrcat(ua->cmd, buf);
+    command += " pluginoptions=" + std::string(rx.plugin_options);
   }
 
-  if (rx.comment) {
-    Mmsg(buf, " comment=\"%s\"", rx.comment);
-    PmStrcat(ua->cmd, buf);
-  }
+  if (rx.comment) { command += " comment=\"" + std::string(rx.comment) + "\""; }
 
-  if (FindArg(ua, NT_("yes")) > 0) {
-    PmStrcat(ua->cmd, " yes"); /* pass it on to the run command */
-  }
+  if (yes_keyword) { command.append(" yes"); }
 
-  Dmsg1(200, "Submitting: %s\n", ua->cmd);
+  return command;
 }
 
 // Fill the rx->BaseJobIds and display the list
