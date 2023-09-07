@@ -50,7 +50,7 @@
  * Escape special characters in bareos configuration strings
  * needed for dumping config strings
  */
-void EscapeString(PoolMem& snew, const char* old, int len)
+void EscapeConfigString(PoolMem& snew, const char* old, int len)
 {
   char* n;
   const char* o;
@@ -92,10 +92,10 @@ void EscapeString(PoolMem& snew, const char* old, int len)
 }
 
 
-std::string EscapeString(const char* old)
+std::string EscapeConfigString(const char* old)
 {
   PoolMem snew;
-  EscapeString(snew, old, strlen(old));
+  EscapeConfigString(snew, old, strlen(old));
   return std::string(snew.c_str());
 }
 

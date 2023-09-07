@@ -1282,7 +1282,7 @@ static void PrintConfigRunscript(OutputFormatterResource& send,
 
   RunScript* runscript = nullptr;
   foreach_alist (runscript, list) {
-    std::string esc = EscapeString(runscript->command.c_str());
+    std::string esc = EscapeConfigString(runscript->command.c_str());
 
     bool print_as_comment = inherited;
 

@@ -239,15 +239,15 @@ void OutputFormatterResource::KeyMultipleStringsOnePerLineAddItem(
     bool escape_strings)
 {
   PoolMem lineformat;
-  std::string escItem;
-  const char* value = item;
+  std::string value;
   std::string format = GetKeyFormatString(as_comment) + "%s\n";
   if (quoted_strings) { format = GetKeyFormatString(as_comment) + "\"%s\"\n"; }
   if (escape_strings || requiresEscaping(item)) {
-    escItem = EscapeString(item);
-    value = escItem.c_str();
+    value = EscapeConfigString(item);
+  } else {
+    value = item;
   }
-  lineformat.bsprintf(format.c_str(), key, value);
+  lineformat.bsprintf(format.c_str(), key, value.c_str());
   send_->ArrayItem(item, lineformat.c_str(), false);
 }
 

@@ -38,8 +38,8 @@ class ConfigurationParser;
 class QualifiedResourceNameTypeConverter;
 enum class BareosVersionNumber : uint32_t;
 
-void EscapeString(PoolMem& snew, const char* old, int len);
-std::string EscapeString(const char* old);
+void EscapeConfigString(PoolMem& snew, const char* old, int len);
+std::string EscapeConfigString(const char* old);
 bool IsBufZero(char* buf, int len);
 void lcase(char* str);
 void BashSpaces(char* str);

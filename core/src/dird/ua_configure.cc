@@ -160,7 +160,7 @@ static inline bool config_add_directive(UaContext* ua,
 
       if (std::find(script_types.begin(), script_types.end(), item->type)
           != script_types.end()) {
-        temp_value = EscapeString(value);
+        temp_value = EscapeConfigString(value);
       }
     }
   }
