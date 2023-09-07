@@ -189,7 +189,6 @@ class RestoreContext {
   JobTypeFilter job_filter = JobTypeFilter::Backup;
 
   StorageResource* store = nullptr;
-  JobResource* restore_job = nullptr;
   PoolResource* pool = nullptr;
   utime_t JobTDate = {0};
   uint32_t TotalFiles = 0;
@@ -199,7 +198,6 @@ class RestoreContext {
   std::string ClientName{};        /**< Backup client */
   std::string RestoreClientName{}; /**< Restore client */
   char last_jobid[20]{0};
-  int restore_jobs = 0;
   char* comment = nullptr;
   char* where = nullptr;
   std::string RegexWhere{};

@@ -200,13 +200,22 @@ bool RestoreCmd(UaContext* ua, const char*)
 
   if (!OpenClientDb(ua, true)) { return false; }
 
-  if (!FindRestoreJobs(rx)) {
+  std::vector<JobResource*> restorejobs = GetRestoreJobs();
+  if (restorejobs.empty()) {
     ua->ErrorMsg(
         _("No Restore Job Resource found in %s.\n"
           "You must create at least one before running this command.\n"),
         my_config->get_base_config_path().c_str());
     return false;
   }
+
+  JobResource* job;
+  if (restorejobs.size() == 1) {
+    job = restorejobs.front();
+  } else {
+    job = get_restore_job(ua);
+  }
+  if (!job) { return false; }
 
   /* Request user to select JobIds or files by various different methods
    *  last 20 jobs, where File saved, most recent backup, ...
@@ -228,14 +237,6 @@ bool RestoreCmd(UaContext* ua, const char*)
     case 2: /* selected by filename, no tree needed */
       break;
   }
-
-  JobResource* job;
-  if (rx.restore_jobs == 1) {
-    job = rx.restore_job;
-  } else {
-    job = get_restore_job(ua);
-  }
-  if (!job) { return false; }
 
   /* When doing NDMP_NATIVE restores, we don't create any bootstrap file
    * as we only send a namelist for restore. The storage handling is
@@ -270,22 +271,16 @@ bool RestoreCmd(UaContext* ua, const char*)
   return true;
 }
 
-bool FindRestoreJobs(RestoreContext& rx)
+std::vector<JobResource*> GetRestoreJobs()
 {
-  // Ensure there is at least one Restore Job
+  std::vector<JobResource*> restorejobs;
   JobResource* job;
-  {
-    foreach_res (job, R_JOB) {
-      if (job->JobType == JT_RESTORE) {
-        if (!rx.restore_job) { rx.restore_job = job; }
-        rx.restore_jobs++;
-      }
-    }
+
+  foreach_res (job, R_JOB) {
+    if (job->JobType == JT_RESTORE) { restorejobs.push_back(job); }
   }
 
-  if (!rx.restore_jobs) { return false; }
-
-  return true;
+  return restorejobs;
 }
 
 std::string BuildRestoreCommandString(const RestoreContext& rx,
