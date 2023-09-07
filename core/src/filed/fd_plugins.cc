@@ -723,8 +723,9 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
         if (ret == bRC_Error) {
           Jmsg1(jcr, M_FATAL, 0,
                 _("Command plugin \"%s\": startBackupFile failed.\n"), cmd);
-	    }
-        goto bail_out;
+          goto bail_out;
+        }
+        goto fun_end;
       }
       if (sp.type == 0) {
         Jmsg1(jcr, M_FATAL, 0,
