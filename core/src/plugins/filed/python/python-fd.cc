@@ -446,6 +446,13 @@ static bRC startBackupFile(PluginContext* plugin_ctx, save_pkt* sp)
   retval = Bareosfd_PyStartBackupFile(plugin_ctx, sp);
   PyEval_ReleaseThread(plugin_priv_ctx->interpreter);
 
+  if (retval != bRC_OK) {
+    Dmsg(plugin_ctx, debuglevel,
+         LOGPREFIX "StartBackupFile returned: %d\n",
+         retval);
+    goto bail_out;
+  }
+
   /* For Incremental and Differential backups use checkChanges method to
    * see if we need to backup this file. */
   switch (plugin_priv_ctx->backup_level) {

@@ -426,17 +426,17 @@ static bRC PyStartBackupFile(PluginContext* plugin_ctx, save_pkt* sp)
       Py_DECREF((PyObject*)pSavePkt);
       goto bail_out;
     } else {
-      if (!PySavePacketToNative(pSavePkt, sp, plugin_priv_ctx, false)) {
+      retval = ConvertPythonRetvalTobRCRetval(pRetVal);
+      Py_DECREF(pRetVal);
+
+      if (retval == bRC_OK && !PySavePacketToNative(pSavePkt, sp, plugin_priv_ctx, false)) {
         Dmsg(plugin_ctx, debuglevel,
              LOGPREFIX "Failed to convert save packet to native.\n");
-        Py_DECREF(pRetVal);
         Py_DECREF((PyObject*)pSavePkt);
         goto bail_out;
       }
       Py_DECREF((PyObject*)pSavePkt);
 
-      retval = ConvertPythonRetvalTobRCRetval(pRetVal);
-      Py_DECREF(pRetVal);
     }
   } else {
     Dmsg(plugin_ctx, debuglevel,
@@ -448,7 +448,7 @@ static bRC PyStartBackupFile(PluginContext* plugin_ctx, save_pkt* sp)
 bail_out:
   if (PyErr_Occurred()) { PyErrorHandler(plugin_ctx, M_FATAL); }
 
-  return retval;
+  return bRC_Error;
 }
 
 /**
