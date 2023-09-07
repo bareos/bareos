@@ -202,7 +202,7 @@ if(NOT client-only)
                                          bareossql bareosfind GTest::gtest_main
   )
   bareos_add_test(
-    globbing_test
+    restoretree_test
     LINK_LIBRARIES bareos dird_objects bareosfind bareossql
                    $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
   )

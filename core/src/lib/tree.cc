@@ -342,42 +342,32 @@ static TREE_NODE* search_and_insert_tree_node(char* fname,
   return node;
 }
 
-static void TreeGetpathItem(TREE_NODE* node, POOLMEM*& path)
+static inline bool is_root_path(const std::string& path)
 {
-  if (!node) { return; }
-
-  TreeGetpathItem(node->parent, path);
-
-  /* Fixup for Win32. If we have a Win32 directory and
-   * there is only a / in the buffer, remove it since
-   * win32 names don't generally start with / */
-  if (node->type == TreeNodeType::DIR_NLS && IsPathSeparator(path[0])
-      && path[1] == '\0') {
-    PmStrcpy(path, "");
-  }
-  PmStrcat(path, node->fname);
-
-  /* Add a slash for all directories unless we are at the root,
-   * also add a slash to a soft linked file if it has children
-   * i.e. it is linked to a directory. */
-  if ((node->type != TreeNodeType::FILE
-       && !(IsPathSeparator(path[0]) && path[1] == '\0'))
-      || (node->soft_link && TreeNodeHasChild(node))) {
-    PmStrcat(path, "/");
-  }
+  return path.size() == 1 && IsPathSeparator(path[0]);
 }
 
 std::string tree_getpath(TREE_NODE* node)
 {
   if (!node) { return ""; }
 
-  PoolMem path;
-  PmStrcpy(path, "");
+  std::string path = tree_getpath(node->parent);
 
-  // Fill the path with the full path.
-  TreeGetpathItem(node, path.addr());
+  /* Fixup for Win32. If we have a Win32 directory and
+   * there is only a / in the buffer, remove it since
+   * win32 names don't generally start with / */
+  if (node->type == TreeNodeType::DIR_NLS && is_root_path(path)) { path = ""; }
+  path.append(node->fname);
 
-  return std::string(path.c_str());
+  /* Add a slash for all directories unless we are at the root,
+   * also add a slash to a soft linked file if it has children
+   * i.e. it is linked to a directory. */
+  if ((node->type != TreeNodeType::FILE && !is_root_path(path))
+      || (node->soft_link && TreeNodeHasChild(node))) {
+    path.append("/");
+  }
+
+  return path;
 }
 
 // Change to specified directory

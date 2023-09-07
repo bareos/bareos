@@ -81,7 +81,7 @@ void PopulateTree(std::vector<std::string> files, TreeContext* tree)
   }
 }
 
-class Globbing : public testing::Test {
+class RestoreTree : public testing::Test {
  protected:
   void SetUp() override
   {
@@ -140,7 +140,7 @@ class Globbing : public testing::Test {
          "/testingwildcards/lonesubdirectory/whatever"};
 };
 
-TEST_F(Globbing, globbing_in_markcmd)
+TEST_F(RestoreTree, globbing_in_markcmd)
 {
   // testing full paths
   FakeCdCmd(ua, &tree, "/");
@@ -192,7 +192,7 @@ TEST_F(Globbing, globbing_in_markcmd)
   //  EXPECT_EQ(fnmatch("{*tory1,*tory2}", "subdirectory1", 0), 0);
 }
 
-TEST_F(Globbing, globbing_in_unmarkcmd)
+TEST_F(RestoreTree, globbing_in_unmarkcmd)
 {
   // testing full paths
   FakeCdCmd(ua, &tree, "/");
@@ -238,4 +238,21 @@ TEST_F(Globbing, globbing_in_unmarkcmd)
   EXPECT_EQ(FakeUnMarkCmd(ua, &tree, "subdirectory?/file?"), 6);
   EXPECT_EQ(FakeUnMarkCmd(ua, &tree, "subdirectory?/file[!2,!3]"), 4);
   EXPECT_EQ(FakeUnMarkCmd(ua, &tree, "su[a,b,c]directory?/file1"), 1);
+}
+
+TEST_F(RestoreTree, tree_getpath)
+{
+  std::string cwd = tree_getpath(tree.root);
+  EXPECT_STREQ(cwd.c_str(), "/");
+
+  cwd = tree_getpath(tree.node);
+  EXPECT_STREQ(cwd.c_str(), "");
+
+  FakeCdCmd(ua, &tree, "/testingwildcards");
+  cwd = tree_getpath(tree.node);
+  EXPECT_STREQ(cwd.c_str(), "/testingwildcards/");
+
+  FakeCdCmd(ua, &tree, "/some/wastefiles/lonesubdirectory/");
+  cwd = tree_getpath(tree.node);
+  EXPECT_STREQ(cwd.c_str(), "/some/wastefiles/lonesubdirectory/");
 }

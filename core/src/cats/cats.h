@@ -698,7 +698,7 @@ class BareosDb : public BareosDbQueryEnum {
                         JobId_t JobId,
                         POOLMEM*& VolumeNames);
   bool GetFileAttributesRecord(JobControlRecord* jcr,
-                               char* filename,
+                               const char *filename,
                                JobDbRecord* jr,
                                FileDbRecord* fdbr);
   int GetFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr);

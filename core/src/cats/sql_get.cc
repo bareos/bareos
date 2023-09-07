@@ -56,7 +56,7 @@
  *           1 on success with the File record in FileDbRecord
  */
 bool BareosDb::GetFileAttributesRecord(JobControlRecord* jcr,
-                                       char* filename,
+                                       const char* filename,
                                        JobDbRecord* jr,
                                        FileDbRecord* fdbr)
 {
