@@ -50,12 +50,9 @@ popd > /dev/null
 
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
-"${rscripts}"/cleanup
-"${rscripts}"/setup
 
 start_test
 
-start_bareos
 
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null
@@ -99,7 +96,6 @@ expect_grep "Backup OK" "$tmp/rlog2.out" "Set Role Backup OK not found in job lo
 
 
 check_for_zombie_jobs storage=File
-stop_bareos
 sleep 1
 
 #sometimes the pid file remains

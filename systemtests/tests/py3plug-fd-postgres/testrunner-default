@@ -38,8 +38,6 @@ popd > /dev/null
 
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
-"${rscripts}"/cleanup
-"${rscripts}"/setup
 
 # Create Test DB with table and 1 statement
 echo "CREATE DATABASE $DBNAME" | ${PSQL} postgres
@@ -67,7 +65,7 @@ wait
 messages
 END_OF_DATA
 
-run_bareos "$@"
+run_bconsole
 
 # Now add data to the database and run an incremental job
 echo "INSERT INTO t (text, created_on) values ('test for INCR backup', current_timestamp)" | ${PSQL} ${DBNAME}
@@ -104,7 +102,6 @@ END_OF_DATA
 run_bconsole
 
 check_for_zombie_jobs storage=File
-stop_bareos
 sleep 1
 
 #sometimes the pid file remains
