@@ -719,12 +719,13 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
             &sp.statp.st_size, &sp.statp.st_blocks, &sp);
 
       // Get the file save parameters. I.e. the stat pkt ...
-      if (PlugFunc(ctx->plugin)->startBackupFile(ctx, &sp) != bRC_OK) {
-        Jmsg1(jcr, M_FATAL, 0,
-              _("Command plugin \"%s\": startBackupFile failed.\n"), cmd);
+      if (auto ret = PlugFunc(ctx->plugin)->startBackupFile(ctx, &sp); ret != bRC_OK) {
+        if (ret == bRC_Error) {
+          Jmsg1(jcr, M_FATAL, 0,
+                _("Command plugin \"%s\": startBackupFile failed.\n"), cmd);
+	    }
         goto bail_out;
       }
-
       if (sp.type == 0) {
         Jmsg1(jcr, M_FATAL, 0,
               _("Command plugin \"%s\": no type in startBackupFile packet.\n"),

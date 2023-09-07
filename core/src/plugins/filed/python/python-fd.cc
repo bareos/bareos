@@ -445,11 +445,11 @@ static bRC startBackupFile(PluginContext* plugin_ctx, save_pkt* sp)
   PyEval_AcquireThread(plugin_priv_ctx->interpreter);
   retval = Bareosfd_PyStartBackupFile(plugin_ctx, sp);
   PyEval_ReleaseThread(plugin_priv_ctx->interpreter);
+  Dmsg(plugin_ctx, debuglevel,
+       LOGPREFIX "StartBackupFile returned: %d\n",
+       retval);
 
   if (retval != bRC_OK) {
-    Dmsg(plugin_ctx, debuglevel,
-         LOGPREFIX "StartBackupFile returned: %d\n",
-         retval);
     goto bail_out;
   }
 
