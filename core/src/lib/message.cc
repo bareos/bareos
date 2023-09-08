@@ -38,6 +38,7 @@
 #include "include/fcntl_def.h"
 #include "include/bareos.h"
 #include "include/jcr.h"
+#include "include/exit_codes.h"
 #include "lib/berrno.h"
 #include "lib/bsock.h"
 #include "lib/util.h"
@@ -1198,7 +1199,7 @@ void e_msg(const char* file,
   } else if (type == M_ERROR_TERM) {
     exit(1);
   } else if (type == M_CONFIG_ERROR) {
-    exit(configerror_exit_code);
+    exit(BEXIT_CONFIG_ERROR);
   }
 }
 
@@ -1325,7 +1326,7 @@ void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
   } else if (type == M_ERROR_TERM) {
     exit(1);
   } else if (type == M_CONFIG_ERROR) {
-    exit(configerror_exit_code);
+    exit(BEXIT_CONFIG_ERROR);
   }
 }
 

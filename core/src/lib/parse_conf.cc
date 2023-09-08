@@ -55,6 +55,7 @@
 
 #include "include/bareos.h"
 #include "include/jcr.h"
+#include "include/exit_codes.h"
 #include "lib/address_conf.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
@@ -154,8 +155,8 @@ std::string ConfigurationParser::CreateOwnQualifiedNameForNetworkDump() const
 void ConfigurationParser::ParseConfigOrExit()
 {
   if (!ParseConfig()) {
-    std::cerr << "Configuration parsing error" << std::endl;
-    exit(configerror_exit_code);
+    fprintf(stderr, "Configuration parsing error\n");
+    exit(BEXIT_CONFIG_ERROR);
   }
 }
 

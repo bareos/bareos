@@ -28,6 +28,7 @@
 
 #include <unistd.h>
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "filed/dir_cmd.h"
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
@@ -202,7 +203,7 @@ int main(int argc, char* argv[])
   if (!CheckResources()) {
     Emsg1(M_ERROR, 0, _("Please correct configuration file: %s\n"),
           my_config->get_base_config_path().c_str());
-    TerminateFiled(configerror_exit_code);
+    TerminateFiled(BEXIT_CONFIG_ERROR);
   }
 
   if (my_config->HasWarnings()) {
