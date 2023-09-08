@@ -29,6 +29,7 @@
 
 #include <unistd.h>
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "include/filetypes.h"
 #include "include/jcr.h"
 #include "findlib/find.h"
@@ -187,7 +188,7 @@ int main(int argc, char* const* argv)
   FreeJcr(jcr);
   RecentJobResultsList::Cleanup();
   CleanupJcrChain();
-  exit(0);
+  exit(BEXIT_SUCCESS);
 }
 
 static int CountFiles(JobControlRecord*, FindFilesPacket*, bool)

@@ -32,6 +32,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "stored/stored.h"
 #include "lib/crypto_cache.h"
 #include "stored/acquire.h"
@@ -220,7 +221,7 @@ int main(int argc, char* argv[])
     PrintConfigSchemaJson(buffer);
     printf("%s\n", buffer.c_str());
 
-    return 0;
+    return BEXIT_SUCCESS;
   }
 
   my_config = InitSdConfig(configfile, M_CONFIG_ERROR);
@@ -235,7 +236,7 @@ int main(int argc, char* argv[])
   if (export_config) {
     my_config->DumpResources(PrintMessage, nullptr);
 
-    return 0;
+    return BEXIT_SUCCESS;
   }
 
   if (!CheckResources()) {
@@ -312,9 +313,9 @@ int main(int argc, char* argv[])
   StartSocketServer(me->SDaddrs);
 
   /* to keep compiler quiet */
-  TerminateStored(0);
+  TerminateStored(BEXIT_SUCCESS);
 
-  return 0;
+  return BEXIT_SUCCESS;
 }
 
 /* Check Configuration file for necessary info */

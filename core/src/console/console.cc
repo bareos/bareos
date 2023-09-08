@@ -27,6 +27,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "console/console_conf.h"
 #include "console/console_globals.h"
 #include "console/auth_pam.h"
@@ -939,7 +940,7 @@ int main(int argc, char* argv[])
     my_config = InitConsConfig(configfile, M_CONFIG_ERROR);
     PrintConfigSchemaJson(buffer);
     printf("%s\n", buffer.c_str());
-    exit(0);
+    exit(BEXIT_SUCCESS);
   }
 
   my_config = InitConsConfig(configfile, M_CONFIG_ERROR);
@@ -947,8 +948,8 @@ int main(int argc, char* argv[])
 
   if (export_config) {
     my_config->DumpResources(PrintMessage, NULL);
-    TerminateConsole(0);
-    exit(0);
+    TerminateConsole(BEXIT_SUCCESS);
+    exit(BEXIT_SUCCESS);
   }
 
   if (InitCrypto() != 0) {
@@ -969,8 +970,8 @@ int main(int argc, char* argv[])
   }
 
   if (test_config) {
-    TerminateConsole(0);
-    exit(0);
+    TerminateConsole(BEXIT_SUCCESS);
+    exit(BEXIT_SUCCESS);
   }
 
   (void)WSA_Init(); /* Initialize Windows sockets */
@@ -1097,8 +1098,8 @@ int main(int argc, char* argv[])
 
   if (history_file.size()) { ConsoleUpdateHistory(history_file.c_str()); }
 
-  TerminateConsole(0);
-  return 0;
+  TerminateConsole(BEXIT_SUCCESS);
+  return BEXIT_SUCCESS;
 }
 
 static void TerminateConsole(int sig)

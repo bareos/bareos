@@ -26,7 +26,7 @@
  */
 
 #include "include/bareos.h"
-
+#include "include/exit_codes.h"
 #include "dird/dird_globals.h"
 #include "lib/parse_conf.h"
 #include "lib/cli.h"
@@ -90,5 +90,5 @@ int main(int argc, char** argv)
 
   TermMsg();
 
-  exit(0);
+  return BEXIT_SUCCESS;
 }

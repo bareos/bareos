@@ -28,6 +28,7 @@
 
 #include <unistd.h>
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "include/streams.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
@@ -276,7 +277,7 @@ int main(int argc, char* argv[])
   if (bsr) { libbareos::FreeBsr(bsr); }
   TermIncludeExcludeFiles(ff);
   TermFindFiles(ff);
-  return 0;
+  return BEXIT_SUCCESS;
 }
 
 static void do_close(JobControlRecord* jcr)

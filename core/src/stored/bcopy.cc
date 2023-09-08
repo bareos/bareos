@@ -27,6 +27,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
 #include "stored/device_control_record.h"
@@ -266,7 +267,7 @@ int main(int argc, char* argv[])
   delete out_dev;
 
 
-  return 0;
+  return BEXIT_SUCCESS;
 }
 
 

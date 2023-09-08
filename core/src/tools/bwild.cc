@@ -26,6 +26,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "lib/cli.h"
 #include "lib/fnmatch.h"
 
@@ -74,7 +75,7 @@ int main(int argc, char** argv)
     printf("Enter a wild-card: ");
     if (fgets(pat, sizeof(pat) - 1, stdin) == NULL) { break; }
     StripTrailingNewline(pat);
-    if (pat[0] == 0) { exit(0); }
+    if (pat[0] == 0) { exit(BEXIT_SUCCESS); }
     fd = fopen(fname.c_str(), "r");
     if (!fd) {
       printf(_("Could not open data file: %s\n"), fname.c_str());
@@ -95,5 +96,6 @@ int main(int argc, char** argv)
     }
     fclose(fd);
   }
-  exit(0);
+
+  return BEXIT_SUCCESS;
 }

@@ -24,6 +24,7 @@
 // Program to check a BAREOS database for consistency and to make repairs
 
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "cats/cats.h"
 #include "lib/runscript.h"
 #include "lib/cli.h"
@@ -906,7 +907,7 @@ int main(int argc, char* argv[])
       // Print catalog information and exit (-B)
       if (print_catalog) {
         PrintCatalogDetails(catalog);
-        exit(0);
+        exit(BEXIT_SUCCESS);
       }
 
       db_name = catalog->db_name;
@@ -946,5 +947,5 @@ int main(int argc, char* argv[])
   CloseMsg(nullptr);
   TermMsg();
 
-  return 0;
+  return BEXIT_SUCCESS;
 }

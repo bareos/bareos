@@ -29,6 +29,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "include/filetypes.h"
 #include "include/streams.h"
 #include "stored/stored.h"
@@ -343,7 +344,7 @@ int main(int argc, char* argv[])
   FreeJcr(bjcr);
   UnloadSdPlugins();
 
-  return 0;
+  return BEXIT_SUCCESS;
 }
 
 /**
