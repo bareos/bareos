@@ -25,8 +25,6 @@
 #include "CLI/Config.hpp"
 #include "CLI/Formatter.hpp"
 
-const short kBareosCLI11ExitCode = 41;
-
 void ParseBareosApp(CLI::App& app, int argc, char** argv);
 void InitCLIApp(CLI::App& app, std::string description, int fsfyear = 0);
 void AddDebugOptions(CLI::App& app);
