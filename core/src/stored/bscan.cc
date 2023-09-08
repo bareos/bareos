@@ -304,7 +304,7 @@ int main(int argc, char* argv[])
   DeviceControlRecord* dcr = new DeviceControlRecord;
   bjcr = SetupJcr("bscan", device_name.data(), bsr, director, dcr, volumes,
                   true);
-  if (!bjcr) { exit(1); }
+  if (!bjcr) { exit(BEXIT_FAILURE); }
   dev = bjcr->sd_impl->read_dcr->dev;
 
   // Let SD plugins setup the record translation

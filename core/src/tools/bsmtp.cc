@@ -122,7 +122,7 @@ static void GetResponse(const std::string& mailhost)
     Dmsg2(10, "%s --> %s\n", mailhost.c_str(), buf);
     if (!isdigit((int)buf[0]) || buf[0] > '3') {
       Pmsg2(0, _("Fatal malformed reply from %s: %s\n"), mailhost.c_str(), buf);
-      exit(1);
+      exit(BEXIT_FAILURE);
     }
     if (buf[3] != '-') { break; }
   }
@@ -336,7 +336,7 @@ int main(int argc, char* argv[])
   char my_hostname[MAXSTRING];
   if (gethostname(my_hostname, sizeof(my_hostname) - 1) < 0) {
     Pmsg1(0, _("Fatal gethostname error: ERR=%s\n"), strerror(errno));
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
 
 #ifdef HAVE_GETADDRINFO
@@ -354,7 +354,7 @@ int main(int argc, char* argv[])
   if ((res = getaddrinfo(my_hostname, NULL, &hints, &ai)) != 0) {
     Pmsg2(0, _("Fatal getaddrinfo for myself failed \"%s\": ERR=%s\n"),
           my_hostname, gai_strerror(res));
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
   strncpy(my_hostname, ai->ai_canonname, sizeof(my_hostname) - 1);
   my_hostname[sizeof(my_hostname) - 1] = '\0';
@@ -366,7 +366,7 @@ int main(int argc, char* argv[])
   if ((hp = gethostbyname(my_hostname)) == NULL) {
     Pmsg2(0, _("Fatal gethostbyname for myself failed \"%s\": ERR=%s\n"),
           my_hostname, strerror(errno));
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
   strncpy(my_hostname, hp->h_name, sizeof(my_hostname) - 1);
   my_hostname[sizeof(my_hostname) - 1] = '\0';
@@ -430,7 +430,7 @@ lookup_host:
       mailhost = "localhost";
       goto lookup_host;
     }
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
 
 #  if defined(HAVE_WIN32)
@@ -453,7 +453,7 @@ lookup_host:
 
   if (!rp) {
     Pmsg1(0, _("Failed to connect to mailhost %s\n"), mailhost.c_str());
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
 
   freeaddrinfo(ai);
@@ -466,13 +466,13 @@ lookup_host:
       mailhost = "localhost";
       goto lookup_host;
     }
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
 
   if (hp->h_addrtype != AF_INET) {
     Pmsg1(0, _("Fatal error: Unknown address family for smtp host: %d\n"),
           hp->h_addrtype);
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
   memset((char*)&sin, 0, sizeof(sin));
   memcpy((char*)&sin.sin_addr, hp->h_addr, hp->h_length);
@@ -481,18 +481,18 @@ lookup_host:
 #  if defined(HAVE_WIN32)
   if ((s = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, 0)) < 0) {
     Pmsg1(0, _("Fatal socket error: ERR=%s\n"), strerror(errno));
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
 #  else
   if ((s = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
     Pmsg1(0, _("Fatal socket error: ERR=%s\n"), strerror(errno));
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
 #  endif
   if (connect(s, (struct sockaddr*)&sin, sizeof(sin)) < 0) {
     Pmsg2(0, _("Fatal connect error to %s: ERR=%s\n"), mailhost.c_str(),
           strerror(errno));
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
   Dmsg0(20, "Connected\n");
 #endif
@@ -501,31 +501,31 @@ lookup_host:
   int fdSocket = _open_osfhandle(s, _O_RDWR | _O_BINARY);
   if (fdSocket == -1) {
     Pmsg1(0, _("Fatal _open_osfhandle error: ERR=%s\n"), strerror(errno));
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
 
   int fdSocket2 = dup(fdSocket);
 
   if ((sfp = fdopen(fdSocket, "wb")) == NULL) {
     Pmsg1(0, _("Fatal fdopen error: ERR=%s\n"), strerror(errno));
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
   if ((rfp = fdopen(fdSocket2, "rb")) == NULL) {
     Pmsg1(0, _("Fatal fdopen error: ERR=%s\n"), strerror(errno));
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
 #else
   if ((r = dup(s)) < 0) {
     Pmsg1(0, _("Fatal dup error: ERR=%s\n"), strerror(errno));
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
   if ((sfp = fdopen(s, "w")) == 0) {
     Pmsg1(0, _("Fatal fdopen error: ERR=%s\n"), strerror(errno));
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
   if ((rfp = fdopen(r, "r")) == 0) {
     Pmsg1(0, _("Fatal fdopen error: ERR=%s\n"), strerror(errno));
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
 #endif
 

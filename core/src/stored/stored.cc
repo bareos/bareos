@@ -592,7 +592,7 @@ static
 
   if (in_here) {       /* prevent loops */
     Bmicrosleep(2, 0); /* yield */
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
   in_here = true;
   debug_level = 0; /* turn off any debug */

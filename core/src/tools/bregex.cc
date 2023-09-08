@@ -26,6 +26,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "lib/cli.h"
 
 #ifndef HAVE_REGEX_H
@@ -86,7 +87,7 @@ int main(int argc, char** argv)
     fd = fopen(fname.c_str(), "r");
     if (!fd) {
       printf(_("Could not open data file: %s\n"), fname.c_str());
-      exit(1);
+      exit(BEXIT_FAILURE);
     }
     lineno = 0;
     while (fgets(data, sizeof(data) - 1, fd)) {
