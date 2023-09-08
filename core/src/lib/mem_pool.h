@@ -104,7 +104,7 @@ class PoolMem {
   int strcat(PoolMem& str);
   int strcat(const char* str);
   void toLower();
-  size_t strlen() { return ::strlen(mem); }
+  size_t strlen() const { return ::strlen(mem); }
   int bsprintf(const char* fmt, ...);
   int Bvsprintf(const char* fmt, va_list arg_ptr);
 };
