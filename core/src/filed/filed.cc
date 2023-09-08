@@ -259,8 +259,8 @@ void TerminateFiled(int sig)
   static bool already_here = false;
 
   if (already_here) {
-    Bmicrosleep(2, 0); /* yield */
-    exit(1);           /* prevent loops */
+    Bmicrosleep(2, 0);   /* yield */
+    exit(BEXIT_FAILURE); /* prevent loops */
   }
   already_here = true;
   debug_level = 0; /* turn off debug */

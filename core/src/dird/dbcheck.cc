@@ -230,7 +230,7 @@ static void eliminate_duplicate_paths()
       = "SELECT Path, count(Path) as Count FROM Path "
         "GROUP BY Path HAVING count(Path) > 1";
 
-  if (!MakeNameList(db, query, &name_list)) { exit(1); }
+  if (!MakeNameList(db, query, &name_list)) { exit(BEXIT_FAILURE); }
   printf(_("Found %d duplicate Path records.\n"), name_list.num_ids);
   fflush(stdout);
   if (name_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
@@ -246,7 +246,7 @@ static void eliminate_duplicate_paths()
       Bsnprintf(buf, sizeof(buf), "SELECT PathId FROM Path WHERE Path='%s'",
                 esc_name);
       if (verbose > 1) { printf("%s\n", buf); }
-      if (!MakeIdList(db, buf, &id_list)) { exit(1); }
+      if (!MakeIdList(db, buf, &id_list)) { exit(BEXIT_FAILURE); }
       if (verbose) {
         printf(_("Found %d for: %s\n"), id_list.num_ids, name_list.name[i]);
       }
@@ -279,7 +279,7 @@ static void eliminate_orphaned_jobmedia_records()
 
   printf(_("Checking for orphaned JobMedia entries.\n"));
   fflush(stdout);
-  if (!MakeIdList(db, query, &id_list)) { exit(1); }
+  if (!MakeIdList(db, query, &id_list)) { exit(BEXIT_FAILURE); }
   // Loop doing 300000 at a time
   while (id_list.num_ids != 0) {
     printf(_("Found %d orphaned JobMedia records.\n"), id_list.num_ids);
@@ -305,7 +305,7 @@ static void eliminate_orphaned_jobmedia_records()
     } else {
       break; /* get out if not updating db */
     }
-    if (!MakeIdList(db, query, &id_list)) { exit(1); }
+    if (!MakeIdList(db, query, &id_list)) { exit(BEXIT_FAILURE); }
   }
   fflush(stdout);
 }
@@ -320,7 +320,7 @@ static void eliminate_orphaned_file_records()
   printf(_("Checking for orphaned File entries. This may take some time!\n"));
   if (verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
-  if (!MakeIdList(db, query, &id_list)) { exit(1); }
+  if (!MakeIdList(db, query, &id_list)) { exit(BEXIT_FAILURE); }
   // Loop doing 300000 at a time
   while (id_list.num_ids != 0) {
     printf(_("Found %d orphaned File records.\n"), id_list.num_ids);
@@ -343,7 +343,7 @@ static void eliminate_orphaned_file_records()
     } else {
       break; /* get out if not updating db */
     }
-    if (!MakeIdList(db, query, &id_list)) { exit(1); }
+    if (!MakeIdList(db, query, &id_list)) { exit(BEXIT_FAILURE); }
   }
   fflush(stdout);
 }
@@ -361,7 +361,7 @@ static void eliminate_orphaned_path_records()
   printf(_("Checking for orphaned Path entries. This may take some time!\n"));
   if (verbose > 1) { printf("%s\n", query.c_str()); }
   fflush(stdout);
-  if (!MakeIdList(db, query.c_str(), &id_list)) { exit(1); }
+  if (!MakeIdList(db, query.c_str(), &id_list)) { exit(BEXIT_FAILURE); }
   // Loop doing 300000 at a time
   while (id_list.num_ids != 0) {
     printf(_("Found %d orphaned Path records.\n"), id_list.num_ids);
@@ -383,7 +383,7 @@ static void eliminate_orphaned_path_records()
     } else {
       break; /* get out if not updating db */
     }
-    if (!MakeIdList(db, query.c_str(), &id_list)) { exit(1); }
+    if (!MakeIdList(db, query.c_str(), &id_list)) { exit(BEXIT_FAILURE); }
   }
 }
 
@@ -398,7 +398,7 @@ static void eliminate_orphaned_fileset_records()
         "WHERE Job.FileSetId IS NULL";
   if (verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
-  if (!MakeIdList(db, query, &id_list)) { exit(1); }
+  if (!MakeIdList(db, query, &id_list)) { exit(BEXIT_FAILURE); }
   printf(_("Found %d orphaned FileSet records.\n"), id_list.num_ids);
   fflush(stdout);
   if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
@@ -439,7 +439,7 @@ static void eliminate_orphaned_client_records()
         "WHERE Job.ClientId IS NULL";
   if (verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
-  if (!MakeIdList(db, query, &id_list)) { exit(1); }
+  if (!MakeIdList(db, query, &id_list)) { exit(BEXIT_FAILURE); }
   printf(_("Found %d orphaned Client records.\n"), id_list.num_ids);
   if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
     for (int i = 0; i < id_list.num_ids; i++) {
@@ -479,7 +479,7 @@ static void eliminate_orphaned_job_records()
         "WHERE Client.Name IS NULL";
   if (verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
-  if (!MakeIdList(db, query, &id_list)) { exit(1); }
+  if (!MakeIdList(db, query, &id_list)) { exit(BEXIT_FAILURE); }
   printf(_("Found %d orphaned Job records.\n"), id_list.num_ids);
   fflush(stdout);
   if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
@@ -552,7 +552,7 @@ static void eliminate_admin_records()
         "WHERE Job.Type='D'";
   if (verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
-  if (!MakeIdList(db, query, &id_list)) { exit(1); }
+  if (!MakeIdList(db, query, &id_list)) { exit(BEXIT_FAILURE); }
   printf(_("Found %d Admin Job records.\n"), id_list.num_ids);
   if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
     for (int i = 0; i < id_list.num_ids; i++) {
@@ -585,7 +585,7 @@ static void eliminate_restore_records()
         "WHERE Job.Type='R'";
   if (verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
-  if (!MakeIdList(db, query, &id_list)) { exit(1); }
+  if (!MakeIdList(db, query, &id_list)) { exit(BEXIT_FAILURE); }
   printf(_("Found %d Restore Job records.\n"), id_list.num_ids);
   if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
     for (int i = 0; i < id_list.num_ids; i++) {
@@ -619,7 +619,7 @@ static void repair_bad_filenames()
         "WHERE Name LIKE '%/'";
   if (verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
-  if (!MakeIdList(db, query, &id_list)) { exit(1); }
+  if (!MakeIdList(db, query, &id_list)) { exit(BEXIT_FAILURE); }
   printf(_("Found %d bad Filename records.\n"), id_list.num_ids);
   if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
     for (i = 0; i < id_list.num_ids; i++) {
@@ -676,7 +676,7 @@ static void repair_bad_paths()
   db->FillQuery(query, BareosDb::SQL_QUERY::get_bad_paths_0);
   if (verbose > 1) { printf("%s\n", query.c_str()); }
   fflush(stdout);
-  if (!MakeIdList(db, query.c_str(), &id_list)) { exit(1); }
+  if (!MakeIdList(db, query.c_str(), &id_list)) { exit(BEXIT_FAILURE); }
   printf(_("Found %d bad Path records.\n"), id_list.num_ids);
   fflush(stdout);
   if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
@@ -890,7 +890,7 @@ int main(int argc, char* argv[])
                 "[%s]\n"),
               configfile.c_str());
       }
-      exit(1);
+      exit(BEXIT_FAILURE);
     } else {
       {
         ResLocker _{my_config};
@@ -899,7 +899,7 @@ int main(int argc, char* argv[])
       }
       if (!me) {
         Pmsg0(0, _("Error no Director resource defined.\n"));
-        exit(1);
+        exit(BEXIT_FAILURE);
       }
 
       SetWorkingDirectory(me->working_directory);

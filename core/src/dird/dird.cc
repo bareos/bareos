@@ -390,7 +390,7 @@ static
 
   if (is_reloading) {  /* avoid recursive termination problems */
     Bmicrosleep(2, 0); /* yield */
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
 
   is_reloading = true;

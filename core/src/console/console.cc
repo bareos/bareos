@@ -1107,7 +1107,7 @@ static void TerminateConsole(int sig)
   static bool already_here = false;
 
   if (already_here) { /* avoid recursive temination problems */
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
   already_here = true;
   StopWatchdog();
@@ -1118,7 +1118,7 @@ static void TerminateConsole(int sig)
   ConTerm();
   WSACleanup(); /* Cleanup Windows sockets */
 
-  if (sig != 0) { exit(1); }
+  if (sig != 0) { exit(BEXIT_FAILURE); }
   return;
 }
 

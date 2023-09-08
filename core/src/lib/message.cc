@@ -1197,7 +1197,7 @@ void e_msg(const char* file,
   if (type == M_ABORT) {
     abort();
   } else if (type == M_ERROR_TERM) {
-    exit(1);
+    exit(BEXIT_FAILURE);
   } else if (type == M_CONFIG_ERROR) {
     exit(BEXIT_CONFIG_ERROR);
   }
@@ -1324,7 +1324,7 @@ void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
     syslog(LOG_DAEMON | LOG_ERR, "BAREOS aborting to obtain traceback.\n");
     abort();
   } else if (type == M_ERROR_TERM) {
-    exit(1);
+    exit(BEXIT_FAILURE);
   } else if (type == M_CONFIG_ERROR) {
     exit(BEXIT_CONFIG_ERROR);
   }

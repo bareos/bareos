@@ -78,7 +78,7 @@ int main(int argc, char** argv)
     foreach_res (var, R_FILESET) {
       std::cerr << "  " << var->resource_name_ << std::endl;
     }
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
 
   ProcessFileset(dir_fileset, configfile.c_str());

@@ -138,7 +138,7 @@ int main(int argc, char* argv[])
               BErrNo be;
               Pmsg2(0, _("Could not open exclude file: %s, ERR=%s\n"),
                     val.front().c_str(), be.bstrerror());
-              exit(1);
+              exit(BEXIT_FAILURE);
             }
             while (fgets(line, sizeof(line), fd) != nullptr) {
               StripTrailingJunk(line);
@@ -159,7 +159,7 @@ int main(int argc, char* argv[])
               BErrNo be;
               Pmsg2(0, _("Could not open include file: %s, ERR=%s\n"),
                     val.front().c_str(), be.bstrerror());
-              exit(1);
+              exit(BEXIT_FAILURE);
             }
             while (fgets(line, sizeof(line), fd) != nullptr) {
               StripTrailingJunk(line);
@@ -241,7 +241,7 @@ int main(int argc, char* argv[])
     dcr = new DeviceControlRecord;
     jcr = SetupJcr("bls", device.data(), bsr, director, dcr, VolumeNames,
                    true); /* read device */
-    if (!jcr) { exit(1); }
+    if (!jcr) { exit(BEXIT_FAILURE); }
 
 
     // Let SD plugins setup the record translation
@@ -252,7 +252,7 @@ int main(int argc, char* argv[])
 
     jcr->sd_impl->ignore_label_errors = ignore_label_errors;
     dev = jcr->sd_impl->dcr->dev;
-    if (!dev) { exit(1); }
+    if (!dev) { exit(BEXIT_FAILURE); }
     dcr = jcr->sd_impl->dcr;
     rec = new_record();
     attr = new_attr(jcr);
