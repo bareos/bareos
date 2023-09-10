@@ -1,10 +1,10 @@
-fastapi
-packaging
-passlib
-pydantic
+fastapi~=0.103
+packaging~=23.1
+passlib~=1.7
+pydantic>=1.10.12, <2.0
 python-bareos
-python-jose
+python-jose~=3.3
 # python-multipart: used by fastapi
-python-multipart
-pyyaml
-uvicorn
+python-multipart~=0.0.6
+PyYAML~=6.0
+uvicorn~=0.23
