@@ -78,7 +78,7 @@ Generate a Master public/private key-pair with:
 ::
 
      openssl genrsa -out master.priv.key 2048
-     openssl req -new -key master.priv.key -x509 -out master.pub.key
+     openssl req -new -key master.priv.key -x509 -addext subjectKeyIdentifier=hash -out master.pub.key
 
 
 
