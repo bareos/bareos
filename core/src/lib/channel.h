@@ -29,6 +29,7 @@
 #include <variant>
 
 #include "thread_util.h"
+#include "include/baconfig.h"
 
 namespace channel {
 // a simple single consumer/ single producer queue
@@ -102,13 +103,7 @@ template <typename T> class queue {
   result_type output_lock()
   {
     auto locked = shared.lock();
-    if (locked->out_dead) {
-      // note(ssura): This happening is programmer error.
-      // Maybe we should assert this instead ?
-      Dmsg0(50,
-            "Tried to read from channel that was closed from the read side.\n");
-      return channel_closed{};
-    }
+    ASSERT(!locked->out_dead);
 
     locked.wait(in_update, [](const auto& queue) {
       return queue.data.size() > 0 || queue.in_dead;
@@ -126,13 +121,8 @@ template <typename T> class queue {
   {
     auto locked = shared.try_lock();
     if (!locked) { return std::nullopt; }
-    if (locked.value()->out_dead) {
-      // note(ssura): This happening is programmer error.
-      // Maybe we should assert this instead ?
-      Dmsg0(50,
-            "Tried to read from channel that was closed from the read side.\n");
-      return channel_closed{};
-    }
+    ASSERT(!locked.value()->out_dead);
+
     if (locked.value()->data.size() == 0) {
       if (locked.value()->in_dead) {
         return channel_closed{};
@@ -151,13 +141,8 @@ template <typename T> class queue {
     locked.wait(out_update, [max_size = max_size](const auto& queue) {
       return queue.data.size() < max_size || queue.out_dead;
     });
-    if (locked->in_dead) {
-      // note(ssura): This happening is programmer error.
-      // Maybe we should assert this instead ?
-      Dmsg0(50,
-            "Tried to write to channel that was closed from the write side.\n");
-      return channel_closed{};
-    }
+    ASSERT(!locked->in_dead);
+
     if (locked->out_dead) {
       return channel_closed{};
     } else {
@@ -170,13 +155,8 @@ template <typename T> class queue {
   {
     auto locked = shared.try_lock();
     if (!locked) { return std::nullopt; }
-    if (locked.value()->in_dead) {
-      // note(ssura): This happening is programmer error.
-      // Maybe we should assert this instead ?
-      Dmsg0(50,
-            "Tried to write to channel that was closed from the write side.\n");
-      return channel_closed{};
-    }
+
+    ASSERT(!locked.value()->in_dead);
     if (locked.value()->out_dead) { return channel_closed{}; }
     if (locked.value()->data.size() >= max_size) { return std::nullopt; }
 
