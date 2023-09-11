@@ -492,6 +492,10 @@ if(NOT DEFINED sd_port)
   set(sd_port "9103")
 endif()
 
+if(NOT DEFINED rpc_port)
+  set(rpc_port "9104")
+endif()
+
 if(DEFINED baseport)
   math(EXPR dir_port "${baseport}+0")
   math(EXPR fd_port "${baseport}+1")

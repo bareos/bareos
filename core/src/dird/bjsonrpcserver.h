@@ -77,6 +77,8 @@ class BJsonRpcServer : public StubServer {
   {
   }
 
+  ~BJsonRpcServer() { StopListening(); }
+
   Json::Value list_client(const std::string& name) override;
   Json::Value list_clients() override;
   Json::Value list_filesets() override;

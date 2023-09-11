@@ -133,6 +133,8 @@ class DirectorResource
       = false;  // Workaround for Isilon 9.1.0.0 not accepting -1 as value for
                 // FhInfo (which is the tape offset)
   bool auditing = false; /* Auditing enabled */
+  bool rpc_server_enabled = false;
+  int rpc_server_port = 0;
   alist<const char*>* audit_events
       = nullptr;                  /* Specific audit events to enable */
   uint32_t ndmp_loglevel = 0;     /* NDMP Protocol specific loglevel to use */

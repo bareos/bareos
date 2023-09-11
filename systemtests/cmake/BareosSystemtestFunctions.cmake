@@ -457,6 +457,7 @@ macro(prepare_test test_subdir)
   math(EXPR test_db_port "${BASEPORT} + 6")
   math(EXPR minio_port "${BASEPORT} + 7")
   math(EXPR restapi_port "${BASEPORT} + 8")
+  set(rpc_port "9104")
 
   prepare_testdir_for_daemon_run()
 

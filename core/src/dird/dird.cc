@@ -358,17 +358,18 @@ int main(int argc, char* argv[])
 
   Dmsg0(200, "Start UA server\n");
 
-  WebsocketJsonRpcServer websocketserver(9002);
-  BJsonRpcServer rpcserver(websocketserver);
-  rpcserver.StartListening();
-
   if (!StartSocketServer(me->DIRaddrs)) { TerminateDird(0); }
+
+  if (me->rpc_server_enabled) {
+    WebsocketJsonRpcServer websocketserver(me->rpc_server_port);
+    BJsonRpcServer rpcserver(websocketserver);
+    rpcserver.StartListening();
+  }
 
   Dmsg0(200, "wait for next job\n");
 
   Scheduler::GetMainScheduler().Run();
 
-  rpcserver.StopListening();
   TerminateDird(BEXIT_SUCCESS);
   return BEXIT_SUCCESS;
 }

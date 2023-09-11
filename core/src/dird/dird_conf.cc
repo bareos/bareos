@@ -150,6 +150,8 @@ static ResourceItem dir_items[] = {
   { "SecureEraseCommand", CFG_TYPE_STR, ITEM(res_dir, secure_erase_cmdline), 0, 0, NULL, "15.2.1-",
      "Specify command that will be called when bareos unlinks files." },
   { "LogTimestampFormat", CFG_TYPE_STR, ITEM(res_dir, log_timestamp_format), 0, CFG_ITEM_DEFAULT, "%d-%b %H:%M", "15.2.3-", NULL },
+  { "RpcServer", CFG_TYPE_BOOL, ITEM(res_dir, rpc_server_enabled), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
+  { "RpcPort", CFG_TYPE_PINT32, ITEM(res_dir,  rpc_server_port), 0, CFG_ITEM_DEFAULT, RPC_DEFAULT_PORT, NULL, NULL },
    TLS_COMMON_CONFIG(res_dir),
    TLS_CERT_CONFIG(res_dir),
   {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}

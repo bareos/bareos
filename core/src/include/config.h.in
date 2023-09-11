@@ -27,9 +27,10 @@
 // clang-format off
 
 #define BAREOS "@BAREOS@"
+#define DIR_DEFAULT_PORT "@dir_port@"
 #define FD_DEFAULT_PORT "@fd_port@"
 #define SD_DEFAULT_PORT "@sd_port@"
-#define DIR_DEFAULT_PORT "@dir_port@"
+#define RPC_DEFAULT_PORT "@rpc_port@"
 #define NDMP_DEFAULT_PORT "10000"
 
 #if defined(HAVE_WIN32)
