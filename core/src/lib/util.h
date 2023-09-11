@@ -89,4 +89,11 @@ std::string TPAsString(const std::chrono::system_clock::time_point& tp);
 regex_t* StringToRegex(const char* input);
 void to_lower(std::string& s);
 
+// see N3876 / boost::hash_combine
+inline std::size_t hash_combine(std::size_t seed, std::size_t hash)
+{
+  // 0x9e3779b9 is approximately 2^32 / phi (where phi is the golden ratio)
+  std::size_t changed = hash + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+  return seed ^ changed;
+}
 #endif  // BAREOS_LIB_UTIL_H_

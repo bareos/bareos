@@ -26,6 +26,8 @@
 #include <string>
 #include <type_traits>
 
+#include "lib/util.h"
+
 /**
  * Structure for keeping track of hard linked files, we
  * keep an entry for each hardlinked file that we save,
@@ -73,9 +75,10 @@ template <> struct std::hash<Hardlink> {
     auto hash1 = std::hash<Hardlink::device_type>{}(link.dev);
     auto hash2 = std::hash<Hardlink::inode_type>{}(link.ino);
 
-    // change this when N3876 (std::hash_combine) or something similar
-    // is finally implemented.
-    return hash1 + 67 * hash2;
+    std::size_t seed{0};
+    seed = hash_combine(seed, hash1);
+    seed = hash_combine(seed, hash2);
+    return seed;
   }
 };
 
