@@ -4,7 +4,7 @@
 #
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+# Copyright (C) 2020-2023 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -37,6 +37,7 @@ from typing import Optional
 import yaml
 
 import bareos.bsock
+import bareos.util
 from bareos_restapi.models import *
 
 # Read config from api.ini
@@ -199,7 +200,7 @@ def versionCheck(
     else:
         result = read_director_version(response=response, current_user=current_user)
         if "version" in result:
-            myVersion = result["version"]
+            myVersion = bareos.util.Version(result["version"]).as_python_version()
             current_user.directorVersion = myVersion
         else:
             raise HTTPException(
@@ -207,15 +208,17 @@ def versionCheck(
                 detail="Could not read version from director. Need at least version %s"
                 % (minVersion),
             )
-    # print (myVersion)
-    if not (version.parse(myVersion) >= version.parse(minVersion)):
-        raise HTTPException(
-            status_code=501,
-            detail="Not implemented in Bareos %s. Need at least version %s"
-            % (myVersion, minVersion),
-        )
-    else:
-        return True
+    try:
+        if not (version.parse(myVersion) >= version.parse(minVersion)):
+            raise HTTPException(
+                status_code=501,
+                detail="Not implemented in Bareos %s. Need at least version %s"
+                % (myVersion, minVersion),
+            )
+        else:
+            return True
+    except version.InvalidVersion as exception:
+        raise HTTPException(status_code=500, detail=str(exception))
 
 
 def configure_add_standard_component(
@@ -321,7 +324,7 @@ def show_configuration_items(
     versionCheck(
         response=response,
         current_user=current_user,
-        minVersion="20.0.0~pre996.de46d0b15",
+        minVersion="20.0.1",
     )
     # Sometimes config type identificator differs from key returned by director, we need to map
     itemKey = itemType
