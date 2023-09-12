@@ -1442,8 +1442,8 @@ void DoMessages(UaContext* ua, const char*)
     DoTruncate = true;
   }
   if (DoTruncate) { (void)!ftruncate(fileno(con_fd), 0L); }
-  console_msg_pending = FALSE;
-  ua->user_notified_msg_pending = FALSE;
+  console_msg_pending = false;
+  ua->user_notified_msg_pending = false;
   pthread_cleanup_pop(0);
   Vw(con_lock);
 }
