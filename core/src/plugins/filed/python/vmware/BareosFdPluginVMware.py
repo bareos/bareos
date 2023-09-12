@@ -3339,14 +3339,7 @@ class BareosVmConfigInfoToSpec(object):
             return None
 
         add_device.connectable = self._transform_connectable(device)
-
-        # Looks like negative values must not be used for default devices,
-        # the second VirtualIDEController seems to have key 201, that always seems to be the case.
-        # Same for VirtualCdrom, getting error "The device '1' is referring to a nonexisting controller '-200'."
-        add_device.controllerKey = device["controllerKey"]
-        if device["controllerKey"] not in [200, 201]:
-            add_device.controllerKey = device["controllerKey"] * -1
-        add_device.unitNumber = device["unitNumber"]
+        self._transform_controllerkey_and_unitnumber(add_device, device)
 
         return add_device
 
@@ -3374,13 +3367,7 @@ class BareosVmConfigInfoToSpec(object):
             return None
 
         add_device.connectable = self._transform_connectable(device)
-
-        # Looks like negative values must not be used for default devices,
-        # the VirtualSIOController seems to have key 400, that seems to be always the case.
-        add_device.controllerKey = device["controllerKey"]
-        if device["controllerKey"] not in [400]:
-            add_device.controllerKey = device["controllerKey"] * -1
-        add_device.unitNumber = device["unitNumber"]
+        self._transform_controllerkey_and_unitnumber(add_device, device)
 
         return add_device
 
@@ -3408,13 +3395,7 @@ class BareosVmConfigInfoToSpec(object):
         if device["connectable"]:
             add_device.connectable = self._transform_connectable(device)
 
-        # Looks like negative values must not be used for default devices,
-        # the VirtualPCIController always seems to have key 100.
-        add_device.controllerKey = device["controllerKey"]
-        if device["controllerKey"] != 100:
-            add_device.controllerKey = device["controllerKey"] * -1
-
-        add_device.unitNumber = device["unitNumber"]
+        self._transform_controllerkey_and_unitnumber(add_device, device)
 
         return add_device
 
@@ -3438,13 +3419,7 @@ class BareosVmConfigInfoToSpec(object):
         if device["connectable"]:
             add_device.connectable = self._transform_connectable(device)
 
-        # Looks like negative values must not be used for default devices,
-        # the VirtualPCIController always seems to have key 100.
-        add_device.controllerKey = device["controllerKey"]
-        if device["controllerKey"] != 100:
-            add_device.controllerKey = device["controllerKey"] * -1
-
-        add_device.unitNumber = device["unitNumber"]
+        self._transform_controllerkey_and_unitnumber(add_device, device)
 
         return add_device
 
@@ -3533,8 +3508,7 @@ class BareosVmConfigInfoToSpec(object):
             "reservation"
         ]
 
-        add_device.controllerKey = device["controllerKey"] * -1
-        add_device.unitNumber = device["unitNumber"]
+        self._transform_controllerkey_and_unitnumber(add_device, device)
         add_device.capacityInBytes = device["capacityInBytes"]
 
         return add_device
@@ -3609,12 +3583,7 @@ class BareosVmConfigInfoToSpec(object):
 
         add_device.key = device["key"] * -1
         add_device.connectable = self._transform_connectable(device)
-        # Looks like negative values must not be used for default devices,
-        # the VirtualPCIController always seems to have key 100.
-        add_device.controllerKey = device["controllerKey"]
-        if device["controllerKey"] != 100:
-            add_device.controllerKey = device["controllerKey"] * -1
-        add_device.unitNumber = device["unitNumber"]
+        self._transform_controllerkey_and_unitnumber(add_device, device)
         # Note: MAC address preservation is not safe with addressType "manual", the
         # server does not check for conflicts. The calling code should check for
         # MAC address conflicts before and set addressType to "generated" or "assigned"
@@ -3917,6 +3886,22 @@ class BareosVmConfigInfoToSpec(object):
             spec_vcpu_configs.append(spec_vcpu_config)
 
         return spec_vcpu_configs
+
+    def _transform_controllerkey_and_unitnumber(self, add_device, device):
+        # Looks like negative values must not be used for default devices,
+        # the second VirtualIDEController seems to have key 201, that always seems to be the case.
+        # Same for VirtualCdrom, getting error "The device '1' is referring to a nonexisting controller '-200'."
+        # Looks like negative values must not be used for default devices,
+        # the VirtualSIOController seems to have key 400, that seems to be always the case.
+        # Looks like negative values must not be used for default devices,
+        # the VirtualPCIController always seems to have key 100.
+        default_devices_controller_keys = [100, 200, 201, 400]
+        add_device.controllerKey = device["controllerKey"]
+        if device["controllerKey"] not in default_devices_controller_keys:
+            add_device.controllerKey = device["controllerKey"] * -1
+        add_device.unitNumber = device["unitNumber"]
+
+        return
 
 
 # vim: tabstop=4 shiftwidth=4 softtabstop=4 expandtab
