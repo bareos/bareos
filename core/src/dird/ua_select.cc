@@ -1965,7 +1965,8 @@ bool GetUserJobLevelSelection(UaContext* ua, int* joblevel)
 {
   int i;
 
-  if ((i = FindArgWithValue(ua, NT_("joblevel"))) >= 0) {
+  if (((i = FindArgWithValue(ua, NT_("joblevel"))) >= 0)
+      || ((i = FindArgWithValue(ua, NT_("level"))) >= 0)) {
     if (strlen(ua->argv[i]) == 1 && ua->argv[i][0] >= 'A'
         && ua->argv[i][0] <= 'z') {
       *joblevel = ua->argv[i][0];
