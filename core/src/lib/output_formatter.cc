@@ -741,7 +741,7 @@ void OutputFormatter::AddHiddenColumn(int column)
 
 bool OutputFormatter::IsHiddenColumn(int column)
 {
-  if (!hidden_columns || column < 0 || column > OF_MAX_NR_HIDDEN_COLUMNS) {
+  if (!hidden_columns || (column < 0) || (column > OF_MAX_NR_HIDDEN_COLUMNS)) {
     return false;
   }
 
@@ -980,13 +980,6 @@ void OutputFormatter::JsonFinalizeResult(bool result)
   PoolMem ErrorMsg;
   char* string;
 
-  /*
-   * We mimic json-rpc result and error messages,
-   * To make it easier to implement real json-rpc later on.
-   */
-  json_object_set_new(msg_obj, "jsonrpc", json_string("2.0"));
-  json_object_set_new(msg_obj, "id", json_null());
-
   if (!result || JsonHasErrorMessage()) {
     error_obj = json_object();
     json_object_set_new(error_obj, "code", json_integer(1));
@@ -997,7 +990,7 @@ void OutputFormatter::JsonFinalizeResult(bool result)
     json_object_set_new(error_obj, "data", data_obj);
     json_object_set_new(msg_obj, "error", error_obj);
   } else {
-    json_object_set(msg_obj, "result", result_json);
+    json_object_update(msg_obj, result_json);
     if (HasFilters()) {
       meta_obj = json_object();
       json_object_set_new(result_json, "meta", meta_obj);

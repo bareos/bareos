@@ -87,13 +87,9 @@ class DirectorConsoleJson(DirectorConsole):
         json = self.call_fullresult(command)
         if json == None:
             return
-        if "result" in json:
-            result = json["result"]
-        elif "error" in json:
+        if "error" in json:
             raise bareos.exceptions.JsonRpcErrorReceivedException(json)
-        else:
-            raise bareos.exceptions.JsonRpcInvalidJsonReceivedException(json)
-        return result
+        return json
 
     def call_fullresult(self, command):
         """Calls a command on the Bareos Director and returns its result.

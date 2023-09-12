@@ -180,4 +180,4 @@ class PythonBareosPlainTest(bareos_unittest.Base):
         logger.debug(str(result))
         content = json.loads(str(result))
         logger.debug(str(content))
-        self.assertEqual(content["result"]["whoami"].rstrip(), username)
+        self.assertEqual(content["whoami"].rstrip(), username)

@@ -231,9 +231,6 @@ The API mode 2 (or JSON mode) has been introduced in Bareos-15.2 and
 differs from API mode 1 in several aspects:
 
 -  JSON output
--  The JSON output is in the format of JSON-RPC 2.0 responce objects
-   (https://www.jsonrpc.org/specification#response_object). This should
-   make it easier to implement a full JSON-RPC service later.
 -  No user interaction inside a command (meaning: if not all parameters
    are given to a :bcommand:`run` command, the command fails).
 -  Each command creates exactly one response object.
@@ -245,21 +242,19 @@ A successful responce should return
 
 .. code-block:: bconsole
 
-    "result": {
-        "<type_of_the_results>": [
-            {
-                <result_object_1_key_1>: <result_object_1_value_1>,
-                <result_object_1_key_2>: <result_object_1_value_2>,
-                ...
-            },
-            {
-                <result_object_2_key_1>: <result_object_2_value_1>,
-                <result_object_2_key_2>: <result_object_2_value_2>,
-                ...
-            },
+    "<type_of_the_results>": [
+        {
+            <result_object_1_key_1>: <result_object_1_value_1>,
+            <result_object_1_key_2>: <result_object_1_value_2>,
             ...
-        ]
-    }
+        },
+        {
+            <result_object_2_key_1>: <result_object_2_value_1>,
+            <result_object_2_key_2>: <result_object_2_value_2>,
+            ...
+        },
+        ...
+    ]
 
 All keys are lower case.
 
@@ -274,9 +269,6 @@ Examples
 
        *list jobs
        {
-       "jsonrpc": "2.0",
-       "id": null,
-       "result": {
          "jobs": [
            {
              "type": "B",
@@ -301,7 +293,6 @@ Examples
            ...
          ]
        }
-       }
 
    - The keys are identical to the catalog column names in lowercase.
 
@@ -313,9 +304,6 @@ Examples
 
        *llist jobs
        {
-       "jsonrpc": "2.0",
-       "id": null,
-       "result": {
          "jobs": [
            {
              "name": "BackupClient1",
@@ -372,7 +360,6 @@ Examples
            ...
          ]
        }
-       }
 
    - Like the :bcommand:`list` command, but contains more information.
 
@@ -384,9 +371,6 @@ Examples
 
        *.jobs
        {
-       "jsonrpc": "2.0",
-       "id": null,
-       "result": {
          "jobs": [
            {
              "name": "BackupClient1"
@@ -399,7 +383,6 @@ Examples
            }
          ]
        }
-       }
 
 Example of a JSON-RPC Error Response
 ''''''''''''''''''''''''''''''''''''
@@ -411,8 +394,6 @@ Example of a JSON-RPC Error Response
 
     *gui
     {
-      "jsonrpc": "2.0",
-      "id": null,
       "error": {
         "data": {
           "result": {},
