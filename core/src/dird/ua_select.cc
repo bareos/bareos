@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1994,7 +1994,8 @@ bool GetUserJobLevelSelection(UaContext* ua, int* joblevel)
 {
   int i;
 
-  if ((i = FindArgWithValue(ua, NT_("joblevel"))) >= 0) {
+  if (((i = FindArgWithValue(ua, NT_("joblevel"))) >= 0)
+      || ((i = FindArgWithValue(ua, NT_("level"))) >= 0)) {
     if (strlen(ua->argv[i]) == 1 && ua->argv[i][0] >= 'A'
         && ua->argv[i][0] <= 'z') {
       *joblevel = ua->argv[i][0];
