@@ -38,11 +38,6 @@
 
 /* Bareos common configuration defines */
 
-#undef TRUE
-#undef FALSE
-#define TRUE 1
-#define FALSE 0
-
 #ifdef HAVE_TLS
 #  define have_tls 1
 #else

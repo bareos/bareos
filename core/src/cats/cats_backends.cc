@@ -39,11 +39,11 @@ static struct backend_interface_mapping_t {
   bool partly_compare;
   int interface_type_id;
 } backend_interface_mappings[]
-    = {{"dbi", TRUE, SQL_INTERFACE_TYPE_DBI},
-       {"mysql", FALSE, SQL_INTERFACE_TYPE_MYSQL},
-       {"postgresql", FALSE, SQL_INTERFACE_TYPE_POSTGRESQL},
-       {"sqlite3", FALSE, SQL_INTERFACE_TYPE_SQLITE3},
-       {NULL, FALSE, 0}};
+    = {{"dbi", true, SQL_INTERFACE_TYPE_DBI},
+       {"mysql", false, SQL_INTERFACE_TYPE_MYSQL},
+       {"postgresql", false, SQL_INTERFACE_TYPE_POSTGRESQL},
+       {"sqlite3", false, SQL_INTERFACE_TYPE_SQLITE3},
+       {NULL, false, 0}};
 
 #    include "cats_backends.h"
 #    include <dlfcn.h>

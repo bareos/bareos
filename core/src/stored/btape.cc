@@ -132,7 +132,7 @@ static int argc;
 static int quickie_count = 0;
 static uint64_t write_count = 0;
 static BootStrapRecord* bsr = NULL;
-static int signals = TRUE;
+static int signals = true;
 static bool ok;
 static int stop = 0;
 static uint64_t vol_size;
