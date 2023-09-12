@@ -237,7 +237,7 @@ static btimer_t* btimer_start_common()
     return NULL;
   }
   wid->wd->data = wid;
-  wid->killed = FALSE;
+  wid->killed = false;
 
   return wid;
 }

@@ -65,7 +65,7 @@ extern char my_name[];
 extern const char* working_directory;
 extern utime_t daemon_start_time;
 
-extern int console_msg_pending;
+extern bool console_msg_pending;
 extern FILE* con_fd;       /* Console file descriptor */
 extern brwlock_t con_lock; /* Console lock structure */
 

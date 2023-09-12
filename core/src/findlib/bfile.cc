@@ -348,7 +348,7 @@ bool processWin32BackupAPIBlock(BareosFilePacket* bfd,
   /* set "NextHeader" relative to the beginning of the next block */
   plugin_private_context->liNextHeader -= dwSize;
 
-  return TRUE;
+  return true;
 }
 
 /* ===============================================================
