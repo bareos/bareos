@@ -333,7 +333,10 @@ As of https://kb.vmware.com/s/article/2075984 manually enabling CBT is currently
      --sslverify           Force SSL certificate verification
      --dumpvmconfig        Dump VM config metadata to JSON file
 
-Note: the options :command:`--vm-uuid` and :command:`--listall` have been added in version :sinceVersion:`17.2.8: VMware Plugin: new options in vmware\_cbt\_tool.py`, the tool is also able now to process non-ascii character arguments for the :command:`--folder` and :command:`--vmname` arguments and vApp names can be used like folder name components.
+.. note::
+
+The options :command:`--vm-uuid` and :command:`--listall` have been added in version :sinceVersion:`17.2.8: VMware Plugin: new options in vmware\_cbt\_tool.py`, the tool is also able now to process non-ascii character arguments for the :command:`--folder` and :command:`--vmname` arguments and vApp names can be used like folder name components.
+
 With :command:`--listall` all VMs in the given datacenter are reported in a tabular output including instance UUID and containing Folder/vApp name.
 
 Without the option :command:`--sslverify` also self-signed SSL certificates will
