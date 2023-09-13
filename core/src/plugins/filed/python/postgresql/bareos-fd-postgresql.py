@@ -197,12 +197,10 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
                 if filename == "PG_VERSION":
                     self.ref_statp = os.stat(fullname)
 
-                mTime = os.stat(fullname).st_mtime
+                mtime = os.stat(fullname).st_mtime
             except Exception as err:
-                """
-                if can't stat the file emit a warning instead error
-                like traditional backup
-                """
+                #if can't stat the file emit a warning instead error
+                #like traditional backup
                 bareosfd.JobMessage(
                     bareosfd.M_WARNING,
                     f"Could net get stat-info for file {fullname}: {err}\n",
@@ -212,14 +210,14 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
                 150,
                 f"file:{fullname} \
                   fullTime: {self.last_backup_stop_time}\
-                  mtime: {mTime}\n",
+                  mtime: {mtime}\n",
             )
-            if mTime > self.last_backup_stop_time + 1:
+            if mtime > self.last_backup_stop_time + 1:
                 bareosfd.DebugMessage(
                     150,
                     f"file:{fullname} \
                       fullTime: {self.last_backup_stop_time}\
-                      mtime: {mTime}\n",
+                      mtime: {mtime}\n",
                 )
                 self.files_to_backup.append(fullname)
                 if os.path.isdir(fullname) and filename not in self.ignore_sub_dirs:
@@ -336,17 +334,17 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
         if "stop_wait_wal_archive" in self.options:
             self.stop_wait_wal_archive = bool(self.options["stop_wait_wal_archive"])
 
-        """ TODO
-            handle ssl_context support in connection
-            Normally not needed as the bareos-fd has to be located on host within
-            the pg cluster: as such using socket is preferably.
-        """
+        # TODO
+        # handle ssl_context support in connection
+        # Normally not needed as the bareos-fd has to be located on host within
+        # the pg cluster: as such using socket is preferably.
+
 
         return bareosfd.bRC_OK
 
     def create_check_db_connection(self):
         """
-        Setup the db connecion, and check pg cluster version.
+        Setup the db connection, and check pg cluster version.
         """
         bareosfd.DebugMessage(
             100, "create_check_db_connection in PostgresqlPlugin called\n"
@@ -396,7 +394,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
             )
             return bareosfd.bRC_Error
 
-    def format_LSN(self, raw_LSN):
+    def format_lsn(self, raw_lsn):
         """
         Postgres returns LSN in a non-comparable format with varying length, e.g.
         0/3A6A710
@@ -404,16 +402,19 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
         We fill the part before the / and after it with leading 0 to get strings
         with equal length
         """
-        lsn_Pre, lsn_Post = raw_LSN.split("/")
-        return lsn_Pre.zfill(8) + "/" + lsn_Post.zfill(8)
+        lsn_pre, lsn_post = raw_lsn.split("/")
+        return lsn_pre.zfill(8) + "/" + lsn_post.zfill(8)
 
-    def lsn_to_int(self, raw_LSN):
+    def lsn_to_int(self, raw_lsn):
         """
         Return LSN converted to integer safer to compare than string
         """
-        return int("".join(map(lambda x: x.zfill(8), raw_LSN.split("/"))), base=16)
+        return int("".join(map(lambda x: x.zfill(8), raw_lsn.split("/"))), base=16)
 
     def plugin_io_read(self, IOP):
+        """
+            plugin_io_read function specific for our virtual files and ROP
+        """
         if self.file_type == "FT_REG":
             bareosfd.DebugMessage(
                 200,
@@ -432,11 +433,11 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
                     + "That can't be true with no_read = True",
                 )
             if self.FNAME == self.backup_label_filename:
-                b = bytearray(self.backup_label_data, "utf-8")
+                bdata = bytearray(self.backup_label_data, "utf-8")
             elif self.FNAME == self.recovery_filename:
-                b = self.recovery_data
+                bdata = self.recovery_data
             elif self.FNAME == self.tablespace_map_filename:
-                b = bytearray(self.tablespace_map_data, "utf-8")
+                bdata = bytearray(self.tablespace_map_data, "utf-8")
             else:
                 bareosfd.JobMessage(
                     bareosfd.M_FATAL, f'Unexpected file name "{self.FNAME}"'
@@ -447,9 +448,9 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
                 bareosfd.DebugMessage(
                     250,
                     f"BareosFdPluginPostgreSQL:plugin_io_read \
-                    type of b {type(b)}\n",
+                    type of bdata {type(bdata)}\n",
                 )
-                self.data_stream = io.BytesIO(b)
+                self.data_stream = io.BytesIO(bdata)
 
             try:
                 IOP.status = self.data_stream.readinto(IOP.buf)
@@ -465,10 +466,10 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
             except Exception as err:
                 bareosfd.JobMessage(
                     bareosfd.M_ERROR,
-                    f'Could net read {IOP.count} bytes from {str(b)}.\
+                    f'Could net read {IOP.count} bytes from {str(bdata)}.\
                     "{err}"',
                 )
-                IOP.io_errno = e.errno
+                # IOP.io_errno = err.errno
                 return bareosfd.bRC_Error
         else:
             bareosfd.DebugMessage(
@@ -583,25 +584,25 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
             self.virtual_files.append("ROP")
             # get current Log Sequence Number (LSN)
             # PG10: pg_current_wal_lsn
-            getLsnStmt = "SELECT pg_current_wal_lsn()"
-            switchLsnStmt = "SELECT pg_switch_wal()"
+            get_lsn_stmt = "SELECT pg_current_wal_lsn()"
+            switch_lsn_stmt = "SELECT pg_switch_wal()"
             try:
-                currentLSN = self.format_LSN(self.db_con.run(getLsnStmt)[0][0])
+                current_lsn = self.format_lsn(self.db_con.run(get_lsn_stmt)[0][0])
                 bareosfd.JobMessage(
                     bareosfd.M_INFO,
-                    f"Current LSN {currentLSN}, last LSN: {self.lastLSN}\n",
+                    f"Current LSN {current_lsn}, last LSN: {self.lastLSN}\n",
                 )
             except Exception as err:
-                currentLSN = 0
+                current_lsn = 0
                 bareosfd.JobMessage(
                     bareosfd.M_WARNING,
                     f"Could not get current LSN, last LSN was: {self.lastLSN}\
                      : {err} \n",
                 )
-            if self.switch_wal and currentLSN > self.lastLSN:
+            if self.switch_wal and current_lsn > self.lastLSN:
                 # Let PostgreSQL write latest transaction into a new WAL file now
                 try:
-                    result = self.db_con.run(switchLsnStmt)
+                    result = self.db_con.run(switch_lsn_stmt)
                 except Exception as err:
                     bareosfd.JobMessage(
                         bareosfd.M_WARNING,
@@ -609,38 +610,38 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
                     )
                 # Pick the new rawLSN and update our lastLSN
                 try:
-                    currentLSNraw = self.db_con.run(getLsnStmt)[0][0]
-                    currentLSN = self.format_LSN(currentLSNraw)
+                    current_lsn_raw = self.db_con.run(get_lsn_stmt)[0][0]
+                    current_lsn = self.format_lsn(current_lsn_raw)
                     bareosfd.DebugMessage(
                         150,
-                        f"after pg_switch_wal(): currentLSN: {currentLSN} \
+                        f"after pg_switch_wal(): current_lsn: {current_lsn} \
                           lastLSN: {self.lastLSN}\n",
                     )
-                    self.lastLSN = currentLSN
+                    self.lastLSN = current_lsn
                 except Exception as err:
                     bareosfd.JobMessage(
                         bareosfd.M_WARNING,
                         f"Could not read LSN after switching to new WAL segment: {err}\n",
                     )
 
-                if not self.wait_for_wal_archiving(currentLSNraw):
+                if not self.wait_for_wal_archiving(current_lsn_raw):
                     return bareosfd.bRC_Error
 
             else:
                 # Nothing has changed since last backup - only send ROP this time
                 bareosfd.JobMessage(
                     bareosfd.M_INFO,
-                    f"Same LSN {currentLSN} as last time - nothing to do\n",
+                    f"Same LSN {current_lsn} as last time - nothing to do\n",
                 )
                 return bareosfd.bRC_OK
 
-        """ Plugins needs to build by themselves the list of file/dir to backup
-        Gather files from start_dir:
-            - postgresql_data_dir for full
-                ask PG if there's tablespace in use, if yes decode
-                and add the real location too.
-            - wal_archive_dir for incr/diff jobs
-        """
+        # Plugins needs to build by themselves the list of file/dir to backup
+        # Gather files from start_dir:
+        #     - postgresql_data_dir for full
+        #         ask PG if there's tablespace in use, if yes decode
+        #         and add the real location too.
+        #     - wal_archive_dir for incr/diff jobs
+
         self.build_files_to_backup(start_dir)
 
         # If level is not Full, we are done here and set the new
@@ -650,9 +651,9 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
             self.last_backup_stop_time = int(time.time())
             return bareosfd.bRC_OK
 
-        #   For Full in non exclusive mode we can't know if there's
-        #   already a running job. Document how to use
-        #   Allow Duplicate Job = no to exclude that case in job config.
+        # For Full in non exclusive mode we can't know if there's
+        # already a running job. Document how to use
+        # Allow Duplicate Job = no to exclude that case in job config.
 
         self.check_tablespace_in_cluster()
         # Add PG major version to the label that can help Ops to distinguish backup.
@@ -720,10 +721,8 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
             savepkt.no_read = True
             bareosfd.DebugMessage(150, f"rop data: {str(self.rop_data)}\n")
         else:
-            """
-            We affect owner,group,mode from previously saved PG_VERSION
-            Time is the backup time
-            """
+            # We affect owner,group,mode from previously saved PG_VERSION
+            # Time is the backup time
             statp.st_mode = self.ref_statp.st_mode
             statp.st_uid = self.ref_statp.st_uid
             statp.st_gid = self.ref_statp.st_gid
@@ -840,13 +839,13 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
         )
 
         if self.pg_major_version < 15:
-            stopStmt = f"pg_stop_backup(exclusive => False, \
+            stop_stmt = f"pg_stop_backup(exclusive => False, \
                          wait_for_archive => {self.stop_wait_wal_archive})"
         else:
-            stopStmt = f"pg_backup_stop({self.stop_wait_wal_archive})"
+            stop_stmt = f"pg_backup_stop({self.stop_wait_wal_archive})"
         try:
-            bareosfd.DebugMessage(100, f"Send '{stopStmt}' to PostgreSQL\n")
-            first_row = self.db_con.run(f"SELECT {stopStmt};")[0][0]
+            bareosfd.DebugMessage(100, f"Send '{stop_stmt}' to PostgreSQL\n")
+            first_row = self.db_con.run(f"SELECT {stop_stmt};")[0][0]
             bareosfd.DebugMessage(
                 100,
                 f"row returned type is {type(first_row)}\n\
@@ -929,19 +928,20 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
         """
         # We have to add local timezone to the file's timestamp in order
         # to compare them with the backup starttime, which has a timezone
+        # TODO check after PR1536 is merged
         wal_archive_dir = self.options["wal_archive_dir"]
         self.files_to_backup.append(wal_archive_dir)
         for filename in os.listdir(wal_archive_dir):
             full_path = os.path.join(wal_archive_dir, filename)
             try:
-                st = os.stat(full_path)
+                wal_st = os.stat(full_path)
             except Exception as err:
                 bareosfd.JobMessage(
                     bareosfd.M_ERROR,
                     f"Could net get stat-info for file {full_path}: {err}\n",
                 )
                 continue
-            file_mtime = datetime.datetime.fromtimestamp(st.st_mtime)
+            file_mtime = datetime.datetime.fromtimestamp(wal_st.st_mtime)
             if (
                 file_mtime.replace(tzinfo=dateutil.tz.tzoffset(None, self.tz_offset))
                 > self.backup_start_time
@@ -994,7 +994,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
             self.close_db_connection()
         return bareosfd.bRC_OK
 
-    def wait_for_wal_archiving(self, LSN):
+    def wait_for_wal_archiving(self, lsn):
         """
         Wait for wal archiving to be finished by checking if the wal file
         for the given LSN is present in the filesystem.
@@ -1005,20 +1005,20 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
         else:
             wal_filename_func = "pg_xlogfile_name"
 
-        walfile_stmt = f"SELECT {wal_filename_func}('{LSN}')"
+        walfile_stmt = f"SELECT {wal_filename_func}('{lsn}')"
 
         try:
             wal_filename = self.db_con.run(walfile_stmt)[0][0]
 
             bareosfd.DebugMessage(
                 100,
-                f"wait_for_wal_archiving({LSN}):\
+                f"wait_for_wal_archiving({lsn}):\
                  wal filename={wal_filename}\n",
             )
 
         except Exception as err:
             bareosfd.JobMessage(
-                bareosfd.M_FATAL, f"Error getting WAL filename for LSN {LSN}\n{err}\n"
+                bareosfd.M_FATAL, f"Error getting WAL filename for LSN {lsn}\n{err}\n"
             )
             return False
 
