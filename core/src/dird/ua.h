@@ -210,8 +210,7 @@ class RestoreContext {
   char* plugin_options = nullptr;
   std::unique_ptr<RestoreBootstrapRecord> bsr{
       std::make_unique<RestoreBootstrapRecord>()};
-  std::string JobIds{};     /**< User entered string of JobIds */
-  std::string BaseJobIds{}; /**< Base jobids */
+  std::string JobIds{}; /**< User entered string of JobIds */
   PoolMem query{};
   bool found = false;
   bool all = false; /**< Mark all as default */
