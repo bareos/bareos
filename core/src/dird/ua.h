@@ -212,13 +212,10 @@ class RestoreContext {
       std::make_unique<RestoreBootstrapRecord>()};
   std::string JobIds{};     /**< User entered string of JobIds */
   std::string BaseJobIds{}; /**< Base jobids */
-  std::string fname{};      /**< Filename only */
-  std::string path{};       /**< Path only */
   PoolMem query{};
   bool found = false;
   bool all = false; /**< Mark all as default */
 
-  void GetFilenameAndPath(UaContext* ua, char* pathname);
   static char FilterIdentifier(JobTypeFilter filter);
 };
 

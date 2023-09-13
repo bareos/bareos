@@ -339,33 +339,6 @@ static void GetAndDisplayBasejobs(UaContext* ua, RestoreContext* rx)
   rx->BaseJobIds = jobids.GetAsString();
 }
 
-void RestoreContext::GetFilenameAndPath(UaContext* ua, char* pathname)
-{
-  std::filesystem::path mypath(pathname);
-  char escaped_string[MAX_ESCAPE_NAME_LENGTH];
-
-  if (mypath.has_filename()) {
-    std::string filename = mypath.filename().generic_string();
-    ua->db->EscapeString(ua->jcr, escaped_string, filename.c_str(),
-                         filename.size());
-    fname = escaped_string;
-  } else {
-    fname.clear();
-  }
-
-  if (mypath.has_parent_path()) {
-    std::string parent_path = mypath.parent_path().generic_string();
-    ua->db->EscapeString(ua->jcr, escaped_string, parent_path.c_str(),
-                         parent_path.size());
-    path = escaped_string;
-    path.append("/");
-  } else {
-    path.clear();
-  }
-
-  Dmsg2(100, "split path=%s file=%s\n", path.c_str(), fname.c_str());
-}
-
 static bool HasValue(UaContext* ua, int i)
 {
   if (!ua->argv[i]) {
@@ -935,6 +908,31 @@ static void InsertOneFileOrDir(UaContext* ua,
   }
 }
 
+static PathAndFileName GetFilenameAndPath(UaContext* ua, char* pathname)
+{
+  std::filesystem::path mypath(pathname);
+  char escaped_string[MAX_ESCAPE_NAME_LENGTH];
+  PathAndFileName path_and_filename;
+  if (mypath.has_filename()) {
+    std::string filename = mypath.filename().string();
+    ua->db->EscapeString(ua->jcr, escaped_string, filename.c_str(),
+                         filename.size());
+    path_and_filename.filename = escaped_string;
+  }
+
+  if (mypath.has_parent_path()) {
+    std::string parent_path = mypath.parent_path().string();
+    ua->db->EscapeString(ua->jcr, escaped_string, parent_path.c_str(),
+                         parent_path.size());
+    path_and_filename.path = escaped_string;
+    path_and_filename.path.append("/");
+  }
+
+  Dmsg2(100, "split path=%s file=%s\n", path_and_filename.filename.c_str(),
+        path_and_filename.path.c_str());
+  return path_and_filename;
+}
+
 /**
  * For a given file (path+filename), split into path and file, then
  * lookup the most recent backup in the catalog to get the JobId
@@ -946,17 +944,19 @@ static bool InsertFileIntoFindexList(UaContext* ua,
                                      char* date)
 {
   StripTrailingNewline(file);
-  rx->GetFilenameAndPath(ua, file);
+  PathAndFileName path_and_filename = GetFilenameAndPath(ua, file);
 
   char filter_name = RestoreContext::FilterIdentifier(rx->job_filter);
   if (rx->JobIds.empty()) {
     ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_jobid_fileindex, date,
-                      rx->path.c_str(), rx->fname.c_str(),
+                      path_and_filename.path.c_str(),
+                      path_and_filename.filename.c_str(),
                       rx->ClientName.c_str(), filter_name);
   } else {
     ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_jobids_fileindex,
-                      rx->JobIds.c_str(), date, rx->path.c_str(),
-                      rx->fname.c_str(), rx->ClientName.c_str(), filter_name);
+                      rx->JobIds.c_str(), date, path_and_filename.path.c_str(),
+                      path_and_filename.filename.c_str(),
+                      rx->ClientName.c_str(), filter_name);
   }
 
   // Find and insert jobid and File Index
