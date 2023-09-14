@@ -68,8 +68,6 @@
 #define NPRTB(x) (x) ? (x) : ""
 
 #if defined(HAVE_WIN32)
-// Reduce compiler warnings from Windows vss code
-#  define uuid(x)
 
 void InitWinAPIWrapper();
 

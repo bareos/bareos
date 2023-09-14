@@ -78,10 +78,6 @@ using namespace std;
 class IXMLDOMDocument;
 #  endif
 
-// Reduce compiler warnings from Windows vss code
-#  undef uuid
-#  define uuid(x)
-
 #  define VSSClientGeneric VSSClientVista
 #  include "Win2003/vss.h"
 #  include "Win2003/vswriter.h"
