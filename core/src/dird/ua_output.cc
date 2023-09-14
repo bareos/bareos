@@ -477,7 +477,7 @@ static void SetQueryRange(PoolMem& query_range, UaContext* ua, JobDbRecord* jr)
   if (i >= 0) {
     PoolMem temp(PM_MESSAGE);
 
-    jr->limit = atoi(ua->argv[i]);
+    jr->limit = std::stoull(ua->argv[i]);
     ua->send->AddLimitFilterTuple(jr->limit);
 
     temp.bsprintf(" LIMIT %d", jr->limit);
@@ -486,7 +486,7 @@ static void SetQueryRange(PoolMem& query_range, UaContext* ua, JobDbRecord* jr)
     // offset is only valid, if limit is given
     i = FindArgWithValue(ua, NT_("offset"));
     if (i >= 0) {
-      jr->offset = atoi(ua->argv[i]);
+      jr->offset = std::stoull(ua->argv[i]);
       ua->send->AddOffsetFilterTuple(jr->offset);
       temp.bsprintf(" OFFSET %d", atoi(ua->argv[i]));
       PmStrcat(query_range, temp.c_str());
