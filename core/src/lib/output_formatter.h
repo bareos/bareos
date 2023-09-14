@@ -52,6 +52,7 @@ typedef struct json_t json_t;
 
 #include "lib/alist.h"
 #include "lib/api_mode.h"
+#include <stdint.h>
 
 class PoolMem;
 
@@ -75,11 +76,11 @@ typedef enum of_filter_type
 } of_filter_type;
 
 typedef struct of_limit_filter_tuple {
-  int limit = 0; /* Filter output to a maximum of limit entries */
+  uint64_t limit = 0; /* Filter output to a maximum of limit entries */
 } of_limit_filter_tuple;
 
 typedef struct of_offset_filter_tuple {
-  int offset = 0;
+  uint64_t offset = 0;
 } of_offset_filter_tuple;
 
 typedef struct of_acl_filter_tuple {
@@ -237,8 +238,8 @@ class OutputFormatter {
   void SendBuffer();
 
   // Filtering.
-  void AddLimitFilterTuple(int limit);
-  void AddOffsetFilterTuple(int offset);
+  void AddLimitFilterTuple(uint64_t limit);
+  void AddOffsetFilterTuple(uint64_t offset);
   void AddAclFilterTuple(int column, int acltype);
   void AddResFilterTuple(int column, int restype);
   void AddEnabledFilterTuple(int column, int restype);

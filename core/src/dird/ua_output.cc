@@ -462,14 +462,14 @@ static void SetQueryRange(std::string& query_range,
   // Apply any limit
   int i = FindArgWithValue(ua, NT_("limit"));
   if (i >= 0) {
-    jr->limit = atoi(ua->argv[i]);
+    jr->limit = std::stoull(ua->argv[i]);
     ua->send->AddLimitFilterTuple(jr->limit);
     query_range.append(" LIMIT " + std::to_string(jr->limit));
 
     // offset is only valid, if limit is given
     i = FindArgWithValue(ua, NT_("offset"));
     if (i >= 0) {
-      jr->offset = atoi(ua->argv[i]);
+      jr->offset = std::stoull(ua->argv[i]);
       ua->send->AddOffsetFilterTuple(jr->offset);
       query_range.append(" OFFSET " + std::to_string(jr->offset));
     }

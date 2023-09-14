@@ -603,7 +603,7 @@ void OutputFormatter::CreateNewResFilter(of_filter_type type,
   filters->append(tuple);
 }
 
-void OutputFormatter::AddLimitFilterTuple(int limit)
+void OutputFormatter::AddLimitFilterTuple(uint64_t limit)
 {
   of_filter_tuple* tuple;
 
@@ -616,7 +616,7 @@ void OutputFormatter::AddLimitFilterTuple(int limit)
   filters->append(tuple);
 }
 
-void OutputFormatter::AddOffsetFilterTuple(int offset)
+void OutputFormatter::AddOffsetFilterTuple(uint64_t offset)
 {
   of_filter_tuple* tuple;
 
