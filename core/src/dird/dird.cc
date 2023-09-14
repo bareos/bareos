@@ -36,6 +36,8 @@
 #include "dird/scheduler.h"
 #include "dird/socket_server.h"
 #include "dird/stats.h"
+#include "dird/bjsonrpcserver.h"
+#include "dird/websocketjsonrpcserver.h"
 #include "lib/daemon.h"
 #include "lib/berrno.h"
 #include "lib/edit.h"
@@ -355,12 +357,18 @@ int main(int argc, char* argv[])
   StartStatisticsThread();
 
   Dmsg0(200, "Start UA server\n");
+
+  WebsocketJsonRpcServer websocketserver(9002);
+  BJsonRpcServer rpcserver(websocketserver);
+  rpcserver.StartListening();
+
   if (!StartSocketServer(me->DIRaddrs)) { TerminateDird(0); }
 
   Dmsg0(200, "wait for next job\n");
 
   Scheduler::GetMainScheduler().Run();
 
+  rpcserver.StopListening();
   TerminateDird(BEXIT_SUCCESS);
   return BEXIT_SUCCESS;
 }

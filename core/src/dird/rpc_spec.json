@@ -1,0 +1,174 @@
+[
+  {
+    "name": "list_client",
+    "params": {
+      "name": "fd"
+    },
+    "returns" : {
+      "clients":[
+        {
+          "autoprune":"0",
+          "clientid":"1",
+          "fileretention":"5184000",
+          "jobretention":"15552000",
+          "name":"bareos-fd",
+          "uname":"23.0.0~pre566.222c7aec6.dirty (05Jun23) Fedora 38,redhat"
+        }
+      ]
+    }
+  },
+  {
+    "name" : "list_clients",
+    "returns" : {
+      "clients":[
+        {
+          "autoprune":"0",
+          "clientid":"2",
+          "fileretention":"5184000",
+          "jobretention":"15552000",
+          "name":"bareos-fd2",
+          "uname":"23.0.0~pre566.222c7aec6.dirty (05Jun23) Fedora 38,redhat"
+        }
+      ]
+    }
+  },
+  {
+    "name" : "list_filesets",
+    "returns" : {
+      "filesets": [
+        {
+          "filesetid": "1",
+          "fileset": "SelfTest",
+          "md5": "R7+jQz9Wa0/RN9+J9793rC",
+          "createtime": "2023-06-05 16:15:20",
+          "filesettext": "FileSet {\n  Name = \"SelfTest\"\n  Description = \"fileset just to backup some files for selftest\"\n  Include {\n    Options {\n      Signature = \"XXH128\"\n      AclSupport = Yes\n      XattrSupport = Yes\n      FsType = \"ext2\"\n      FsType = \"ext3\"\n      FsType = \"ext4\"\n      FsType = \"overlay\"\n      FsType = \"jfs\"\n      FsType = \"ufs\"\n      FsType = \"xfs\"\n      FsType = \"zfs\"\n      FsType = \"btrfs\"\n      FsType = \"vfat\"\n    }\n    File = \"\\</home/alaa/bareosprojects/build-bareos/systemtests/tests/bareos-basic/tmp/file-list\"\n  }\n}\n\n"
+        },
+        {
+          "filesetid": "2",
+          "fileset": "anothertest",
+          "md5": "R7+jQz9Wa0/RN9+J9793rC",
+          "createtime": "2023-06-05 16:15:20",
+          "filesettext": "FileSet {\n  Name = \"SelfTest\"\n  Description = \"fileset just to backup some files for selftest\"\n  Include {\n    Options {\n      Signature = \"XXH128\"\n      AclSupport = Yes\n      XattrSupport = Yes\n      FsType = \"ext2\"\n      FsType = \"ext3\"\n      FsType = \"ext4\"\n      FsType = \"overlay\"\n      FsType = \"jfs\"\n      FsType = \"ufs\"\n      FsType = \"xfs\"\n      FsType = \"zfs\"\n      FsType = \"btrfs\"\n      FsType = \"vfat\"\n    }\n    File = \"\\</home/alaa/bareosprojects/build-bareos/systemtests/tests/bareos-basic/tmp/file-list\"\n  }\n}\n\n"
+        }
+      ]
+    }
+  },
+  {
+    "name" : "list_fileset",
+    "params": {
+      "jobname": "backup-bareos-fd",
+      "jobid": 1,
+    },
+    "returns" : {
+      "filesets":[
+        {
+          "filesetid": "1",
+          "fileset": "SelfTest",
+          "md5": "R7+jQz9Wa0/RN9+J9793rC",
+          "createtime": "2023-06-05 16:15:20",
+          "filesettext": "FileSet {\n  Name = \"SelfTest\"\n  Description = \"fileset just to backup some files for selftest\"\n  Include {\n    Options {\n      Signature = \"XXH128\"\n      AclSupport = Yes\n      XattrSupport = Yes\n      FsType = \"ext2\"\n      FsType = \"ext3\"\n      FsType = \"ext4\"\n      FsType = \"overlay\"\n      FsType = \"jfs\"\n      FsType = \"ufs\"\n      FsType = \"xfs\"\n      FsType = \"zfs\"\n      FsType = \"btrfs\"\n      FsType = \"vfat\"\n    }\n    File = \"\\</home/alaa/bareosprojects/build-bareos/systemtests/tests/bareos-basic/tmp/file-list\"\n  }\n}\n\n"
+        }
+      ]
+    }
+  },
+  {
+    "name" : "list_restores",
+    "returns" : {
+      "restoreids":[1, 2, 3]
+    }
+  },
+  {
+    "name" : "restore",
+    "params": {
+      "jobid": 3,
+      "restoreid": 3,
+      "client": "bareos-fd"
+    },
+    "returns" : {
+      "jobid": 5
+    }
+  },
+  {
+    "name" : "cd",
+    "params": {
+      "path": "/home/bareos",
+      "restoreid": 3
+    },
+    "returns" : {
+      "current directory": "/home/bareos"
+    }
+  },
+  {
+    "name" : "ls",
+    "params": {
+      "path": "/home/bareos",
+      "restoreid": 3,
+      "offset": 50,
+      "limit": 100
+    },
+    "returns" : {
+      "file list": [
+        {"fileindex":1, "name":"file1", "tag":"*"},
+        {"fileindex":2, "name":"file2", "tag":""},
+        {"fileindex":3, "name":"file3", "tag":""}
+      ]
+    }
+  },
+  {
+    "name" : "lscount",
+    "params": {
+      "path": "/home/bareos",
+      "restoreid": 3
+    },
+    "returns" : {
+      "File Count": "/home/bareos"
+    }
+  },
+  {
+    "name" : "mark",
+    "params": {
+      "files": ["file*","notafile1","notafile2"],
+      "restoreid": 3
+    },
+    "returns" : {
+      "files marked": 22
+    }
+  },
+  {
+    "name" : "unmark",
+    "params": {
+      "files": ["file*","notafile1","notafile2"],
+      "restoreid": 3
+    },
+    "returns" : {
+      "files marked": 15
+    }
+  },
+  {
+    "name" : "done",
+    "params": {
+      "restoreid": 3
+    },
+    "returns" : {
+      "selected files": 25
+    }
+  },
+  {
+    "name" : "commitrestore",
+    "params": {
+      "restoreid": 3
+    },
+    "returns" : {
+      "jobid": 5
+    }
+  },
+  {
+    "name" : "cancelrestore",
+    "params": {
+      "restoreid": 3
+    },
+    "returns" : {
+      "status": "canceled"
+    }
+  }
+]
