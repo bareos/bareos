@@ -1,0 +1,39 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# Run a simple backup
+#   then restore it.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+JobName=backup-bareos-fd
+catalogbackupjob=BackupCatalog
+backup_log=$tmp/backup_log.out
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $backup_log
+setdebug level=100 storage=File
+run job=$JobName yes
+wait
+run job=$catalogbackupjob yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+end_test

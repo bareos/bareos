@@ -1,0 +1,93 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# Run a simple backup
+#   then restore it.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-bareos-fd
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+execute_rpc_command()
+{
+local rpc_command="$1"
+local target_file="$2"
+
+wscat --connect ws://localhost:${BAREOS_RPC_PORT} --execute ${rpc_command} >>${target_file}
+
+}
+
+start_test
+
+rpccommands_log=$tmp/rpccommands_log.out
+
+rm -f $rpccommands_log
+
+### List client(s)
+execute_rpc_command '{"jsonrpc":"2.0","id":1,"method":"list_client","params":{"name":"bareos-fd"}}' "$rpccommands_log"
+execute_rpc_command '{"jsonrpc":"2.0","id":2,"method":"list_clients"}' "$rpccommands_log"
+
+
+### List fileset(s)
+execute_rpc_command '{"jsonrpc":"2.0","id":3,"method":"list_fileset","params":{"jobid":0,"jobname":"BackupCatalog"}}' $rpccommands_log
+execute_rpc_command '{"jsonrpc":"2.0","id":4,"method":"list_fileset","params":{"jobid":1,"jobname":"SelfTest"}}' $rpccommands_log
+
+### Do restore
+execute_rpc_command '{"jsonrpc":"2.0","id":5,"method":"restore","params":{"jobid":1,"restoreid":1,"client":"bareos-fd"}}' $rpccommands_log
+execute_rpc_command '{"jsonrpc":"2.0","id":6,"method":"restore","params":{"jobid":1,"restoreid":1,"client":"bareos-fd"}}' $rpccommands_log
+
+execute_rpc_command '{"jsonrpc":"2.0","id":7,"method":"ls","params":{"offset":0,"limit":100,"path":"","restoreid":1}}' $rpccommands_log
+execute_rpc_command '{"jsonrpc":"2.0","id":8,"method":"cd","params":{"path":"${tmp}","restoreid":1}}' $rpccommands_log
+execute_rpc_command '{"jsonrpc":"2.0","id":9,"method":"mark","params":{"files":["*"],"restoreid":1}}' $rpccommands_log
+execute_rpc_command '{"jsonrpc":"2.0","id":10,"method":"done","params":{"restoreid":1}}' $rpccommands_log
+execute_rpc_command '{"jsonrpc":"2.0","id":11,"method":"commitrestore","params":{"restoreid":1}}' $rpccommands_log
+
+restore_log=$tmp/restore_log.out
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $restore_log
+setdebug level=100 storage=File
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+
+expect_grep "{\"id\":1,.*\"name\":\"bareos-fd\".*" \
+            "$rpccommands_log" \
+            "Could not find client with list client."
+
+expect_grep "{\"id\":2,.*\"name\":\"bareos-fd\".*\"name\":\"bareos-fd2\".*" \
+            "$rpccommands_log" \
+            "Could not find all clients with list clients."
+
+expect_grep "{\"id\":3,.*\"fileset\":\"Catalog\".*" \
+            "$rpccommands_log" \
+            "Could not find catalog backup fileset with list_fileset."
+
+expect_grep "{\"id\":4,.*\"fileset\":\"SelfTest\".*" \
+            "$rpccommands_log" \
+            "Could not find selftest fileset with list fileset."
+
+expect_grep '{"id":6,"jsonrpc":"2.0","result":{"error":"A restore with the same ID=1 is already running."}}' \
+            "$rpccommands_log" \
+            "Duplicate restoreid not detected."
+
+expect_grep '{"id":10,"jsonrpc":"2.0","result":{"selectedfiles":79}}' \
+            "$rpccommands_log" \
+            "Error during file selection."
+
+
+check_restore_diff "${BackupDirectory}"
+end_test
