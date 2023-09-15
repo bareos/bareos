@@ -11,6 +11,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - build: remove EOL distros from build matrix [PR #1471]
 - build: adapt matrix and pkglist for changes to CI [PR #1498]
 - build: switch from FreeBSD 13.1 to 13.2 [PR #1528]
+- webui: upgrade bootstrap to version 3.4.1 [PR #1552]
 
 ## [21.1.7] - 2023-03-24
 
@@ -679,4 +680,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1471]: https://github.com/bareos/bareos/pull/1471
 [PR #1498]: https://github.com/bareos/bareos/pull/1498
 [PR #1528]: https://github.com/bareos/bareos/pull/1528
+[PR #1552]: https://github.com/bareos/bareos/pull/1552
 [unreleased]: https://github.com/bareos/bareos/tree/master
