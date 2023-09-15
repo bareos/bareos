@@ -6,7 +6,6 @@ Director {                            # define myself
   Auditing = yes
   DirPort = 32663
   TlsEnable = no
-  TlsRequire = no
 
   # Enable the Heartbeat if you experience connection losses
   # (eg. because of your router or firewall configuration).

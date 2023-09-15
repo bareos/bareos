@@ -6,5 +6,4 @@ Storage {
   Media Type = File
   SD Port = @sd_port@
   Tls Enable = No
-  Tls Require = No
 }

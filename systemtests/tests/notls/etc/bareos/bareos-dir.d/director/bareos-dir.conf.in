@@ -21,5 +21,4 @@ Director {                            # define myself
   Working Directory =  "@working_dir@"
   DirPort = @dir_port@
   Tls Enable = No
-  Tls Require = No
 }

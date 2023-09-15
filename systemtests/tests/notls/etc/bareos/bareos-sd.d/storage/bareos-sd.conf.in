@@ -12,5 +12,4 @@ Storage {
   SD Port = @sd_port@
   @sd_backend_config@
   Tls Enable = No
-  Tls Require = No
 }

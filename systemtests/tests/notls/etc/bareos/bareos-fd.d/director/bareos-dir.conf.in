@@ -3,5 +3,4 @@ Director {
   Password = "@fd_password@"
   Description = "Allow the configured Director to access this file daemon."
   TLS Enable = no
-  TLS Require = no
 }

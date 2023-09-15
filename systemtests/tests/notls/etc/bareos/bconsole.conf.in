@@ -8,5 +8,4 @@ Director {
   Address = @hostname@
   Password = "@dir_password@"
   Tls Enable = no
-  Tls Require = no
 }
