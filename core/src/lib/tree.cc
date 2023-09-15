@@ -88,8 +88,6 @@ TREE_ROOT* new_tree(int count)
   if (count > 1000000 || size > (MAX_BUF_SIZE / 2)) { size = MAX_BUF_SIZE; }
   Dmsg2(400, "count=%d size=%d\n", count, size);
   MallocBuf(root, size);
-  root->cached_path_len = -1;
-  root->cached_path = GetPoolMemory(PM_FNAME);
   root->type = TreeNodeType::ROOT;
   return root;
 }
@@ -160,10 +158,6 @@ void FreeTree(TREE_ROOT* root)
     mem = mem->next;
     free(rel);
   }
-  if (root->cached_path) {
-    FreePoolMemory(root->cached_path);
-    root->cached_path = NULL;
-  }
   free(root);
   return;
 }
@@ -225,12 +219,10 @@ TREE_NODE* insert_tree_node(char* path,
     if (!parent) { /* if no parent, we need to make one */
       Dmsg1(100, "make_tree_path for %s\n", path);
       path_len = strlen(path); /* get new length */
-      if (path_len == root->cached_path_len
-          && bstrcmp(path, root->cached_path)) {
+      if (path == root->cached_path) {
         parent = root->cached_parent;
       } else {
-        root->cached_path_len = path_len;
-        PmStrcpy(root->cached_path, path);
+        root->cached_path = path;
         parent = make_tree_path(path, root);
         root->cached_parent = parent;
       }

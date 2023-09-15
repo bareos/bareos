@@ -112,8 +112,7 @@ struct s_tree_root : s_tree_node {
   struct s_mem* mem{};         /* tree memory */
   uint32_t total_size{};       /* total bytes allocated */
   uint32_t blocks{};           /* total mallocs */
-  int cached_path_len{};       /* length of cached path */
-  char* cached_path{};         /* cached current path */
+  std::string cached_path{};   /* cached current path */
   TREE_NODE* cached_parent{};  /* cached parent for above path */
   HardlinkTable hardlinks;     /* references to first occurence of hardlinks */
 };
