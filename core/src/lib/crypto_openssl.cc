@@ -43,6 +43,7 @@
 #    include "lib/alist.h"
 #    include <openssl/ssl.h>
 #    include <openssl/x509v3.h>
+#undef INT64
 #    include <openssl/asn1.h>
 #    include <openssl/asn1t.h>
 #    include <openssl/engine.h>

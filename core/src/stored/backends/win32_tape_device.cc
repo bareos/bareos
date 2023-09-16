@@ -1039,7 +1039,7 @@ static DWORD GetDensityBlockSize(HANDLE hDevice,
       GET_MEDIA_TYPES* pNewBuffer
           = (GET_MEDIA_TYPES*)realloc(pGetMediaTypes, dwBufferSize);
       if (pNewBuffer != pGetMediaTypes) {
-        free(pGetMediaTypes);
+       // free(pGetMediaTypes);
 
         if (pNewBuffer == NULL) { return ERROR_OUTOFMEMORY; }
 

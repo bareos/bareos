@@ -31,7 +31,7 @@
 #include "lib/crypto_openssl.h"
 
 #if defined(HAVE_TLS) && defined(HAVE_OPENSSL)
-
+#undef INT64
 #  include <openssl/asn1.h>
 #  include <openssl/asn1t.h>
 #  include <openssl/err.h>
