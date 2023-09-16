@@ -10,4 +10,5 @@ webui/public/js/*.min.*
 webui/public/js/partials/*.min.*
 webui/public/js/bootstrap-select.js.map
 webui/public/css/*.min.*
+webui/public/css/bootstrap*.css
 webui/public/css/bootstrap*.css.map
