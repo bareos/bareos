@@ -67,10 +67,11 @@ static inline void StartNewConsolidationJob(const JobResource* consolidate_job,
 
   ua = new_ua_context(jcr);
   ua->batch = true;
-  Mmsg(ua->cmd, "run job=\"%s\" jobid=%s level=VirtualFull %s consolidatejob=%s", jobname,
-       jcr->dir_impl->vf_jobids,
+  Mmsg(ua->cmd,
+       "run job=\"%s\" jobid=%s level=VirtualFull %s consolidatejob=%s",
+       jobname, jcr->dir_impl->vf_jobids,
        jcr->accurate ? "accurate=yes" : "accurate=no",
-	   consolidate_job->resource_name_);
+       consolidate_job->resource_name_);
 
   Dmsg1(debuglevel, "=============== consolidate cmd=%s\n", ua->cmd);
   ParseUaArgs(ua); /* parse command */

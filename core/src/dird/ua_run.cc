@@ -2,7 +2,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -383,10 +383,8 @@ int DoRunCmd(UaContext* ua, const char*)
     ua->quit = true;
   }
 
-  /*
-   * Create JobControlRecord to run job.  NOTE!!! after this point, FreeJcr()
-   * before returning.
-   */
+  /* Create JobControlRecord to run job.  NOTE!!! after this point, FreeJcr()
+   * before returning. */
   if (!jcr) {
     jcr = NewDirectorJcr(DirdFreeJcr);
     SetJcrDefaults(jcr, rc.job);
@@ -413,15 +411,13 @@ try_again:
   // Run without prompting?
   if (ua->batch || FindArg(ua, NT_("yes")) > 0) { goto start_job; }
 
-  /*
-   * When doing interactive runs perform the pool level overrides
+  /* When doing interactive runs perform the pool level overrides
    * early this way the user doesn't get nasty surprisses when
    * a level override changes the pool the data will be saved to
    * later. We only want to do these overrides once so we use
    * a tracking boolean do_pool_overrides to see if we still
    * need to do this (e.g. we pass by here multiple times when
-   * the user interactivly changes options.
-   */
+   * the user interactivly changes options. */
   if (do_pool_overrides) {
     switch (jcr->getJobType()) {
       case JT_BACKUP:
@@ -433,23 +429,19 @@ try_again:
     do_pool_overrides = false;
   }
 
-  /*
-   * Prompt User to see if all run job parameters are correct, and
-   * allow him to modify them.
-   */
+  /* Prompt User to see if all run job parameters are correct, and
+   * allow him to modify them. */
   if (!DisplayJobParameters(ua, jcr, rc)) { goto bail_out; }
 
   // Prompt User until we have a valid response.
   do {
     if (!GetCmd(ua, _("OK to run? (yes/mod/no): "))) { goto bail_out; }
 
-    /*
-     * Empty line equals yes, anything other we compare
+    /* Empty line equals yes, anything other we compare
      * the cmdline for the length of the given input unless
      * its mod or .mod where we compare only the keyword
      * and a space as it can be followed by a full cmdline
-     * with new cmdline arguments that need to be parsed.
-     */
+     * with new cmdline arguments that need to be parsed. */
     valid_response = false;
     length = strlen(ua->cmd);
     if (ua->cmd[0] == 0 || bstrncasecmp(ua->cmd, ".mod ", MIN(length, 5))
@@ -486,10 +478,8 @@ try_again:
       goto bail_out;
   }
 
-  /*
-   * For interactive runs we set IgnoreLevelPoolOverrides as we already
-   * performed the actual overrrides.
-   */
+  /* For interactive runs we set IgnoreLevelPoolOverrides as we already
+   * performed the actual overrrides. */
   jcr->dir_impl->IgnoreLevelPoolOverrides = true;
 
   if (ua->cmd[0] == 0 || bstrncasecmp(ua->cmd, NT_("yes"), strlen(ua->cmd))
@@ -836,12 +826,10 @@ static bool ResetRestoreContext(UaContext* ua,
   jcr->dir_impl->res.pool = rc.pool;
   jcr->dir_impl->res.next_pool = rc.next_pool;
 
-  /*
-   * See if an explicit pool override was performed.
+  /* See if an explicit pool override was performed.
    * If so set the pool_source to command line and
    * set the IgnoreLevelPoolOverrides so any level Pool
-   * overrides are ignored.
-   */
+   * overrides are ignored. */
   if (rc.pool_name) {
     PmStrcpy(jcr->dir_impl->res.pool_source, _("command line"));
     jcr->dir_impl->IgnoreLevelPoolOverrides = true;
@@ -992,18 +980,14 @@ static bool ResetRestoreContext(UaContext* ua,
     rc.backup_format = NULL;
   }
 
-  /*
-   * Some options are not available through the menu
-   * TODO: Add an advanced menu?
-   */
+  /* Some options are not available through the menu
+   * TODO: Add an advanced menu? */
   if (rc.spool_data_set) { jcr->dir_impl->spool_data = rc.spool_data; }
 
   if (rc.accurate_set) { jcr->accurate = rc.accurate; }
 
-  /*
-   * Used by migration jobs that can have the same name,
-   * but can run at the same time
-   */
+  /* Used by migration jobs that can have the same name,
+   * but can run at the same time */
   if (rc.ignoreduplicatecheck_set) {
     jcr->dir_impl->IgnoreDuplicateJobChecking = rc.ignoreduplicatecheck;
   }
@@ -1013,12 +997,13 @@ static bool ResetRestoreContext(UaContext* ua,
    * of the consolidate job applies.
    */
   if (rc.consolidate_job) {
-	if (!jcr->is_JobLevel(L_VIRTUAL_FULL)) {
-      ua->SendMsg(_("Consolidate Job option is only valid for virtual full jobs.\n"));
+    if (!jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+      ua->SendMsg(
+          _("Consolidate Job option is only valid for virtual full jobs.\n"));
       return false;
-	}
+    }
     jcr->dir_impl->res.rjs = rc.consolidate_job->rjs;
-	jcr->dir_impl->max_concurrent_jobs = rc.consolidate_job->MaxConcurrentJobs;
+    jcr->dir_impl->max_concurrent_jobs = rc.consolidate_job->MaxConcurrentJobs;
   }
 
   return true;
@@ -1780,7 +1765,7 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
          "ignoreduplicatecheck", /* 29 */
          "accurate",             /* 30 */
          "backupformat",         /* 31 */
-		 "consolidatejob",       /* 32 */
+         "consolidatejob",       /* 32 */
          NULL};
 
 #define YES_POS 14
@@ -2085,10 +2070,8 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
     // End of keyword for loop -- if not found, we got a bogus keyword
     if (!kw_ok) {
       Dmsg1(800, "%s not found\n", ua->argk[i]);
-      /*
-       * Special case for Job Name, it can be the first
-       * keyword that has no value.
-       */
+      /* Special case for Job Name, it can be the first
+       * keyword that has no value. */
       if (!rc.job_name && !ua->argv[i]) {
         rc.job_name = ua->argk[i]; /* use keyword as job name */
         Dmsg1(800, "Set jobname=%s\n", rc.job_name);
@@ -2172,10 +2155,8 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
     GetJobStorage(rc.store, rc.job, NULL); /* use default */
   }
 
-  /*
-   * For certain Jobs an explicit setting of the read storage is not
-   * required as its determined when the Job is executed automatically.
-   */
+  /* For certain Jobs an explicit setting of the read storage is not
+   * required as its determined when the Job is executed automatically. */
   switch (rc.job->JobType) {
     case JT_COPY:
     case JT_MIGRATE:
@@ -2273,13 +2254,15 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
   if (rc.consolidate_job_name) {
     rc.consolidate_job = ua->GetJobResWithName(rc.consolidate_job_name);
     if (!rc.consolidate_job) {
-      ua->SendMsg(_("Consolidate Job \"%s\" not found.\n"), rc.consolidate_job_name);
+      ua->SendMsg(_("Consolidate Job \"%s\" not found.\n"),
+                  rc.consolidate_job_name);
       rc.consolidate_job = select_job_resource(ua);
     }
     if (rc.consolidate_job && rc.consolidate_job->JobType != JT_CONSOLIDATE) {
-      ua->ErrorMsg(_("Invalid Consolidate Job \"%s\". Job type is \"%c\" but expected \"%c\".\n"),
-                   rc.consolidate_job->resource_name_, rc.consolidate_job->JobType,
-                   JT_CONSOLIDATE);
+      ua->ErrorMsg(_("Invalid Consolidate Job \"%s\". Job type is \"%c\" but "
+                     "expected \"%c\".\n"),
+                   rc.consolidate_job->resource_name_,
+                   rc.consolidate_job->JobType, JT_CONSOLIDATE);
       return false;
     }
   }
