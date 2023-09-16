@@ -998,6 +998,20 @@ static bool ResetRestoreContext(UaContext* ua,
     jcr->allow_mixed_priority = rc.allow_mixed_priority;
   }
 
+  /* If this is a virtualfull spawned by a consolidate job
+   * then the same rjs is used so that max concurrent jobs
+   * of the consolidate job applies.
+   */
+  if (rc.consolidate_job) {
+    if (!jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+      ua->SendMsg(
+          _("Consolidate Job option is only valid for virtual full jobs.\n"));
+      return false;
+    }
+    jcr->dir_impl->res.rjs = rc.consolidate_job->rjs;
+    jcr->dir_impl->max_concurrent_jobs = rc.consolidate_job->MaxConcurrentJobs;
+  }
+
   return true;
 }
 
@@ -1758,6 +1772,7 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
          "accurate",             /* 30 */
          "backupformat",         /* 31 */
          "allowmixedpriority",   /* 32 */
+         "consolidatejob",       /* 33 */
          NULL};
 
 #define YES_POS 14
@@ -2057,6 +2072,14 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
               ua->SendMsg(_("Invalid AllowMixedPriority flag.\n"));
             }
             break;
+          case 33: /* consolidatejob */
+            if (rc.consolidate_job_name) {
+              ua->SendMsg(_("Consolidate Job specified twice.\n"));
+              return false;
+            }
+            rc.consolidate_job_name = ua->argv[i];
+            kw_ok = true;
+            break;
           default:
             break;
         }
@@ -2246,6 +2269,23 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
   } else {
     rc.previous_job = rc.job->verify_job;
   }
+
+  if (rc.consolidate_job_name) {
+    rc.consolidate_job = ua->GetJobResWithName(rc.consolidate_job_name);
+    if (!rc.consolidate_job) {
+      ua->SendMsg(_("Consolidate Job \"%s\" not found.\n"),
+                  rc.consolidate_job_name);
+      rc.consolidate_job = select_job_resource(ua);
+    }
+    if (rc.consolidate_job && rc.consolidate_job->JobType != JT_CONSOLIDATE) {
+      ua->ErrorMsg(_("Invalid Consolidate Job \"%s\". Job type is \"%c\" but "
+                     "expected \"%c\".\n"),
+                   rc.consolidate_job->resource_name_,
+                   rc.consolidate_job->JobType, JT_CONSOLIDATE);
+      return false;
+    }
+  }
+
   return true;
 }
 } /* namespace directordaemon */

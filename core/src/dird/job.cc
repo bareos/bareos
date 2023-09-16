@@ -1623,6 +1623,8 @@ void GetJobStorage(UnifiedStorageResource* store,
 void SetJcrDefaults(JobControlRecord* jcr, JobResource* job)
 {
   jcr->dir_impl->res.job = job;
+  jcr->dir_impl->res.rjs = job->rjs;
+  jcr->dir_impl->max_concurrent_jobs = job->MaxConcurrentJobs;
   jcr->setJobType(job->JobType);
   jcr->setJobProtocol(job->Protocol);
   jcr->setJobStatus(JS_Created);
