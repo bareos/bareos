@@ -79,6 +79,7 @@ struct Resources {
   directordaemon::PoolResource* next_pool{};    /**< Next Pool used for migration/copy and virtual backup */
   directordaemon::FilesetResource* fileset{};   /**< FileSet resource */
   directordaemon::CatalogResource* catalog{};   /**< Catalog resource */
+  directordaemon::runtime_job_status_t* rjs{};  /**< Runtime Job Status. May point to the rjs of another resource (e.g. for consolidation vf jobs this points to the rjs of the parent consolidation job's resource) */
   MessagesResource* messages{};   /**< Default message handler */
   POOLMEM* pool_source{};         /**< Where pool came from */
   POOLMEM* npool_source{};        /**< Where next pool came from */
@@ -165,7 +166,6 @@ struct DirectorJcrImpl {
   bool remote_replicate{};              /**< Replicate data to remote SD */
   bool HasQuota{};                      /**< Client has quota limits */
   bool HasSelectedJobs{};               /**< Migration/Copy Job did actually select some JobIds */
-  directordaemon::runtime_job_status_t* rjs{};  /**< Runtime Job Status. May be set to the rjs of another resource (e.g. for consolidation vf jobs this points to the rjs of the parent consolidation job's resource) */
   directordaemon::ClientConnectionHandshakeMode connection_handshake_try_{
     directordaemon::ClientConnectionHandshakeMode::kUndefined};
   JobTrigger job_trigger{JobTrigger::kUndefined};

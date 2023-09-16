@@ -1017,7 +1017,7 @@ static bool ResetRestoreContext(UaContext* ua,
       ua->SendMsg(_("Consolidate Job option is only valid for virtual full jobs.\n"));
       return false;
 	}
-    jcr->dir_impl->rjs = rc.consolidate_job->rjs;
+    jcr->dir_impl->res.rjs = rc.consolidate_job->rjs;
 	jcr->dir_impl->max_concurrent_jobs = rc.consolidate_job->MaxConcurrentJobs;
   }
 
