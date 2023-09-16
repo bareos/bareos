@@ -95,6 +95,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - config: deprecate `LabelType` and `CheckLabels` [PR #1521]
 - devtools: Update python dependencies [PR #1531]
 - webui: upgrade bootstrap to version 3.4.1 [PR #1550]
+- bareos-check-sources: ignore bootstrap*.css [PR #1556]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -244,4 +245,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1531]: https://github.com/bareos/bareos/pull/1531
 [PR #1532]: https://github.com/bareos/bareos/pull/1532
 [PR #1550]: https://github.com/bareos/bareos/pull/1550
+[PR #1556]: https://github.com/bareos/bareos/pull/1556
 [unreleased]: https://github.com/bareos/bareos/tree/master
