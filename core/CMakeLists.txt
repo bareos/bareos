@@ -219,6 +219,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
         "${CMAKE_SYSTEM}-64"
         CACHE STRING "build name variable for CDash"
     )
+  add_link_options("--disable-runtime-pseudo-reloc")
   endif()
 
   # search for dll.a files before .dll
