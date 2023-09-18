@@ -345,7 +345,6 @@ static void DisplayVolInfo(UaContext* ua, RestoreContext& rx, JobId_t JobId)
 void DisplayBsrInfo(UaContext* ua, RestoreContext& rx)
 {
   int i;
-  const char* p;
   JobId_t JobId;
 
   // Tell the user what he will need to mount
@@ -358,12 +357,13 @@ void DisplayBsrInfo(UaContext* ua, RestoreContext& rx)
 
   // Create Unique list of Volumes using prompt list
   StartPrompt(ua, "");
-  if (*rx.JobIds == 0) {
+  if (rx.JobIds.empty()) {
     // Print Volumes in any order
     DisplayVolInfo(ua, rx, 0);
   } else {
     // Ensure that the volumes are printed in JobId order
-    for (p = rx.JobIds; GetNextJobidFromList(&p, &JobId) > 0;) {
+    for (const char* p = rx.JobIds.c_str();
+         GetNextJobidFromList(&p, &JobId) > 0;) {
       DisplayVolInfo(ua, rx, JobId);
     }
   }
@@ -467,13 +467,12 @@ uint32_t WriteBsr(UaContext* ua, RestoreContext& rx, std::string& buffer)
   bool first = true;
   uint32_t LastIndex = 0;
   uint32_t total_count = 0;
-  const char* p;
   JobId_t JobId;
   RestoreBootstrapRecord* bsr;
 
   std::optional<std::pair<std::size_t, std::size_t>> last_job;
 
-  if (*rx.JobIds == 0) {
+  if (rx.JobIds.empty()) {
     for (bsr = rx.bsr.get(); bsr; bsr = bsr->next.get()) {
       std::pair<std::size_t, std::size_t> this_job{bsr->VolSessionId,
                                                    bsr->VolSessionTime};
@@ -490,7 +489,8 @@ uint32_t WriteBsr(UaContext* ua, RestoreContext& rx, std::string& buffer)
     return total_count;
   }
 
-  for (p = rx.JobIds; GetNextJobidFromList(&p, &JobId) > 0;) {
+  for (const char* p = rx.JobIds.c_str();
+       GetNextJobidFromList(&p, &JobId) > 0;) {
     for (bsr = rx.bsr.get(); bsr; bsr = bsr->next.get()) {
       if (JobId == bsr->JobId) {
         std::pair<std::size_t, std::size_t> this_job{bsr->VolSessionId,

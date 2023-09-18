@@ -166,7 +166,7 @@ bool GetNdmmediaInfoFromDatabase(ndm_media_table* media_tab,
 
   // Find restore JobId
   JobId_t restoreJobId;
-  const char* p = jcr->JobIds;
+  const char* p = jcr->JobIds.c_str();
 
   //  TODO: what happens with multiple IDs?
   if (!GetNextJobidFromList(&p, &restoreJobId)) {

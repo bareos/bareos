@@ -70,7 +70,7 @@ static inline bool fill_restore_environment_ndmp_native(
    * We use the first jobid to get the environment string
    */
 
-  JobId_t JobId{str_to_uint32(jcr->JobIds)};
+  JobId_t JobId{str_to_uint32(jcr->JobIds.c_str())};
   if (JobId <= 0) {
     Jmsg(jcr, M_FATAL, 0, "Impossible JobId: %d", JobId);
     return false;

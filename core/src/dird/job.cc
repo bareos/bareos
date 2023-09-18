@@ -1499,7 +1499,6 @@ void DirdFreeJcrPointers(JobControlRecord* jcr)
   BfreeAndNull(jcr->RestoreBootstrap);
   BfreeAndNull(jcr->ar);
 
-  FreeAndNullPoolMemory(jcr->JobIds);
   FreeAndNullPoolMemory(jcr->dir_impl->client_uname);
   FreeAndNullPoolMemory(jcr->attr);
   FreeAndNullPoolMemory(jcr->dir_impl->fname);

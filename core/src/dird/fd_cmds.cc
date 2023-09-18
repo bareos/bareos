@@ -771,15 +771,15 @@ static void SendGlobalRestoreObjects(JobControlRecord* jcr,
   char ed1[50];
   PoolMem query(PM_MESSAGE);
 
-  if (!jcr->JobIds || !jcr->JobIds[0]) { return; }
+  if (jcr->JobIds.empty()) { return; }
 
   // Send restore objects for all jobs involved
   jcr->db->FillQuery(query, BareosDb::SQL_QUERY::get_restore_objects,
-                     jcr->JobIds, FT_RESTORE_FIRST);
+                     jcr->JobIds.c_str(), FT_RESTORE_FIRST);
   jcr->db->SqlQuery(query.c_str(), RestoreObjectHandler, (void*)octx);
 
   jcr->db->FillQuery(query, BareosDb::SQL_QUERY::get_restore_objects,
-                     jcr->JobIds, FT_PLUGIN_CONFIG);
+                     jcr->JobIds.c_str(), FT_PLUGIN_CONFIG);
   jcr->db->SqlQuery(query.c_str(), RestoreObjectHandler, (void*)octx);
 
   // Send config objects for the current restore job

@@ -177,7 +177,7 @@ class JobControlRecord {
   time_t wait_time{};           /**< Timestamp when job have started to wait */
   time_t job_started_time{};    /**< Time when the MaxRunTime start to count */
   POOLMEM* client_name{};       /**< Client name */
-  POOLMEM* JobIds{};            /**< User entered string of JobIds */
+  std::string JobIds{};            /**< User entered string of JobIds */
   POOLMEM* RestoreBootstrap{};  /**< Bootstrap file to restore */
   POOLMEM* starttime_string{};  /**< start time for incremental/differential
                                   as string "yyyy-mm-dd hh:mm:ss" */

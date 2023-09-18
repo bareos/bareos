@@ -216,7 +216,7 @@ class RestoreContext {
   char* replace = nullptr;
   char* plugin_options = nullptr;
   std::unique_ptr<RestoreBootstrapRecord> bsr;
-  POOLMEM* JobIds = nullptr;     /**< User entered string of JobIds */
+  std::string JobIds{};          /**< User entered string of JobIds */
   POOLMEM* BaseJobIds = nullptr; /**< Base jobids */
   POOLMEM* fname = nullptr;      /**< Filename only */
   POOLMEM* path = nullptr;       /**< Path only */
