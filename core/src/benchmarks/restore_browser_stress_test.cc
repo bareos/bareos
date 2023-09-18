@@ -39,6 +39,44 @@
 
 using namespace directordaemon;
 
+template <typename T> struct array_list {
+  using storage_type = std::aligned_storage_t<sizeof(T), alignof(T)>;
+
+  std::unique_ptr<array_list> next;
+  std::size_t capacity{0};
+  std::size_t size{0};
+  std::unique_ptr<storage_type[]> data;
+
+  array_list(std::size_t capacity = 100) : capacity{capacity}
+  {
+    data = std::make_unique<storage_type[]>(capacity);
+  }
+
+  array_list(array_list&& l)
+      : next{std::move(l.next)}
+      , capacity{std::move(l.capacity)}
+      , size{std::move(l.size)}
+      , data{std::move(l.data)}
+  {
+  }
+
+  template <typename... Args> T& emplace_back(Args... args)
+  {
+    if (size >= capacity) {
+      std::unique_ptr<array_list> copy
+          = std::make_unique<array_list<T>>(std::move(*this));
+
+      next = std::move(copy);
+      size = 0;
+      capacity = capacity + (capacity >> 1);
+      data = std::make_unique<storage_type[]>(capacity);
+    }
+
+    T* ptr = std::launder(new (&data[size++]) T(std::forward<Args>(args)...));
+    return *ptr;
+  }
+};
+
 UaContext ua;
 TreeContext tree;
 std::vector<char> bytes;
@@ -368,8 +406,8 @@ struct tree_builder2 {
 
   auto make_handler_ctx()
   {
-    return std::make_tuple(std::pmr::vector<std::pmr::string>(&paths),
-                           std::pmr::vector<std::pmr::string>(&names),
+    return std::make_tuple(array_list<std::pmr::string>(),
+                           array_list<std::pmr::string>(),
                            std::vector<tree_data>());
   }
 
@@ -577,8 +615,8 @@ void PopulateTree2(int quantity)
 {
   tree_builder2 builder;
   auto ctx = builder.make_handler_ctx();
-  std::get<0>(ctx).reserve(quantity);
-  std::get<1>(ctx).reserve(quantity);
+  // std::get<0>(ctx).reserve(quantity);
+  // std::get<1>(ctx).reserve(quantity);
   std::get<2>(ctx).reserve(quantity);
 
   char* filename = GetPoolMemory(PM_FNAME);
