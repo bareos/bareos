@@ -816,12 +816,13 @@ static int DoDircmd(UaContext* ua, TreeContext* tree, bool dot_cmd)
        * when returned from tree_getpath, but get_file_attr...
        * treats soft links as files, so they do not have a trailing
        * slash like directory names. */
-      std::string pcwd = cwd;
+      std::string temp_cwd = cwd;
       if (node->type == TreeNodeType::FILE && TreeNodeHasChild(node)) {
-        if (pcwd.size() > 1) { pcwd.pop_back(); /* strip trailing / */ }
+        if (temp_cwd.size() > 1) { temp_cwd.pop_back(); /* strip trailing / */ }
       }
 
-      if (ua->db->GetFileAttributesRecord(ua->jcr, pcwd.c_str(), NULL, &fdbr)) {
+      if (ua->db->GetFileAttributesRecord(ua->jcr, temp_cwd.c_str(), NULL,
+                                          &fdbr)) {
         int32_t LinkFI;
         DecodeStat(fdbr.LStat, &statp, sizeof(statp),
                    &LinkFI); /* decode stat pkt */
