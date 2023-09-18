@@ -21,8 +21,8 @@
 #
 # Author: Bareos Team
 #
-"""bareos-fd-postgresql is a plugin to backup PostgreSQL cluster
-with bareos-fd-postgresql
+"""
+bareos-fd-postgresql is a plugin to backup PostgreSQL clusters via non-exclusive backup mode
 """
 import os
 import io
@@ -94,7 +94,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
     backups and point-in-time (pitr) recovery.
     If the cluster use tablespace, the backup will also backup and restore those
     (symlinks in pg_tblspc, and real external location data)
-    The plugin will fail a job if previously done was not done on same PG major version
+    The plugin job will fail if previous job was not done on same PG major version
     """
 
     def __init__(self, plugindef):
@@ -111,7 +111,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
         # Last argument of super constructor is a list of mandatory arguments
         super().__init__(plugindef, ["postgresql_data_dir", "wal_archive_dir"])
 
-        self.ignore_sub_dirs = ["log", "pg_wal", "pg_log", "pg_xlog", "pgsql_tmp"]
+        self.ignore_sub_dirs = ["log", "pg_wal", "pg_log", "pg_xlog", "pgsql_tmp", "pg_dynshmem", "pg_notify", "pg_serial", "pg_snapshots", "pg_stat_tmp", "pg_subtrans"]
         self.options = {}
         self.db_con = None
         self.db_user = None
@@ -142,16 +142,15 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
         # should be renamed to last_LSN but would break compatibility with older plugin
         self.lastLSN = 0
         # This will be set to True between SELECT pg_backup_start and pg_backup_stop.
-        # We backup database file during this time
+        # We backup the cluster files during that time
         self.full_backup_running = False
-        # Store items given by pg_backup_stop for virtual backup_label file
+        # Store items given by `pg_backup_stop()` for virtual backup_label file
         self.label_items = {}
         # We will store the starttime from backup_label here
         self.backup_start_time = None
         # PostgreSQL last backup stop time
         self.last_backup_stop_time = 0
-        # Our label, will be used for SELECT pg_start_backup and there
-        # be used as backup_label
+        # Our label, will be used as `backup label` in `SELECT pg_start_backup`
         self.backup_label_string = ""
         # Raw restore object data (json-string)
         self.row_rop_raw = None
@@ -173,10 +172,10 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
 
     def build_files_to_backup(self, start_dir):
         """
-        Do the os walk from a top directory, and build the list to be backuped.
+        Build the list of files to be backed up by recursing from top directory.
         The parsing has to be in reverse mode so file first, directory at the end
 
-        Will be use to parse postgresql_data_dir, wal_archive_dir, tablespace
+        Will be use to parse `postgresql_data_dir`, `wal_archive_dir`, `tablespace`
         """
         if not start_dir.endswith("/"):
             start_dir += "/"
@@ -396,7 +395,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
 
     def format_lsn(self, raw_lsn):
         """
-        Postgres returns LSN in a non-comparable format with varying length, e.g.
+        PostgreSQL returns LSN in a non-comparable format with varying length, e.g.
         0/3A6A710
         0/F00000
         We fill the part before the / and after it with leading 0 to get strings
@@ -549,7 +548,6 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
 
         if chr(self.level) == "F":
             # For Full we backup the PostgreSQL data directory
-            # Restore object ROP comes later with other virtual files
             start_dir = self.options["postgresql_data_dir"]
             bareosfd.DebugMessage(100, f"dataDir: {start_dir}\n")
             bareosfd.JobMessage(bareosfd.M_INFO, f"dataDir: {start_dir}\n")
@@ -699,7 +697,6 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
         # Plain files are handled by super class
         if self.files_to_backup[-1] not in self.virtual_files:
             bareosfd.DebugMessage(100, f"{self.files_to_backup[-1]} -> super\n")
-            # return super(BareosFdPluginPostgreSQL, self).start_backup_file(savepkt)
             return super().start_backup_file(savepkt)
 
         # Here we create the restore object & virtual files
@@ -711,7 +708,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
             self.rop_data["lastLSN"] = self.lastLSN
             self.rop_data["plugin_version"] = 2
             self.rop_data["pg_major_version"] = self.pg_major_version
-            savepkt.fname = "/_bareos_postgres_plugin/metadata"
+            savepkt.fname = "/_bareos_postgresql_plugin/metadata"
             savepkt.type = bareosfd.FT_RESTORE_FIRST
             savepkt.object_name = savepkt.fname
             savepkt.object = bytearray(json.dumps(self.rop_data), "utf-8")
@@ -721,7 +718,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
             savepkt.no_read = True
             bareosfd.DebugMessage(150, f"rop data: {str(self.rop_data)}\n")
         else:
-            # We affect owner,group,mode from previously saved PG_VERSION
+            # We affect owner, group, mode from previously saved PG_VERSION
             # Time is the backup time
             statp.st_mode = self.ref_statp.st_mode
             statp.st_uid = self.ref_statp.st_uid
@@ -760,7 +757,6 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
         """
         Called on restore and on diff/inc jobs.
         """
-        # TODO: sanity / consistence check of restore object
         # ROP.object is of type bytearray.
         self.row_rop_raw = ROP.object.decode("UTF-8")
         try:
@@ -924,7 +920,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
         """
         Look for new WAL files and backup
         Backup start time is timezone aware, we need to add timezone
-        to files'mtime to make them comparable
+        to files' mtime to make them comparable
         """
         # We have to add local timezone to the file's timestamp in order
         # to compare them with the backup starttime, which has a timezone

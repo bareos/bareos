@@ -9,7 +9,7 @@ PostgreSQL Plugin
 The PostgreSQL plugin supports an online (Hot) backup of database files and database transaction logs (WAL) archiving.
 With online database and transaction logs the backup plugin can perform Point-In-Time-Restore (PITR) up to a single selected transaction or date/time.
 
-This plugin uses the standard API |postgresql| backup routines based on *pg_backup_start()* and *pg_backup_stop()* functions in non exclusive mode.
+This plugin uses the standard API |postgresql| backup routines based on *pg_backup_start()* and *pg_backup_stop()* functions in non-exclusive mode.
 (Before PostgreSQL 15 formally *pg_start_backup()* and *pg_stop_backup()*)
 
 The key features are:
