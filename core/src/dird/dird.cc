@@ -265,10 +265,7 @@ int main(int argc, char* argv[])
     return 0;
   }
 
-  if (!my_config->ParseConfig()) {
-    std::cerr << "Configuration parsing error" << std::endl;
-    exit(configerror_exit_code);
-  }
+  my_config->ParseConfigOrExit();
 
   if (export_config) {
     int rc = 0;

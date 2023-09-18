@@ -169,8 +169,8 @@ int main(int argc, char* argv[])
   }
 
   // read the config file
-  my_config = InitTmonConfig(cl.configfile_, M_ERROR_TERM);
-  my_config->ParseConfig();
+  my_config = InitTmonConfig(cl.configfile_, M_CONFIG_ERROR);
+  my_config->ParseConfigOrExit();
 
   if (cl.export_config_) {
     my_config->DumpResources(PrintMessage, NULL);
