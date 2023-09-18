@@ -12,54 +12,55 @@ SELECT
   f.fileset AS fileset,
   j.jobbytes / 1000000 AS total_mb,
   CASE
-    WHEN f.filesettext ILIKE '%{%{%File%=%' AND f.filesettext NOT ILIKE '%:config_file%=%' THEN NULL
+    WHEN f.filesettext ILIKE '%{%{%Plugin%=%mssqlvdi:%' THEN j.jobbytes / 1000000
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-percona%' THEN j.jobbytes / 1000000
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-postgres%' THEN j.jobbytes / 1000000
-    WHEN f.filesettext ILIKE '%{%{%Plugin%=%mssqlvdi:%' THEN j.jobbytes / 1000000
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-ldap%' THEN j.jobbytes / 1000000
+    WHEN f.filesettext ILIKE '%{%{%File%=%' THEN NULL
   END AS db_mb,
   CASE
-    WHEN f.filesettext ILIKE '%{%{%File%=%' AND f.filesettext NOT ILIKE '%:config_file%=%' THEN NULL
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-vmware%' THEN j.jobbytes / 1000000
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-ovirt%' THEN j.jobbytes / 1000000
+    WHEN f.filesettext ILIKE '%{%{%File%=%' THEN NULL
   END AS vm_mb,
   CASE
-    WHEN f.filesettext ILIKE '%{%{%File%=%' AND f.filesettext NOT ILIKE '%:config_file%=%' THEN NULL
     WHEN f.filesettext ILIKE '%{%{%meta%=' THEN j.jobbytes / 1000000
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-libcloud%' THEN j.jobbytes / 1000000
+    WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-qumulo%' THEN j.jobbytes / 1000000
+    WHEN f.filesettext ILIKE '%{%{%File%=%' THEN NULL
   END AS filer_mb,
   CASE
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%' THEN NULL
-    WHEN f.filesettext ILIKE '%{%{%File%=%' AND f.filesettext NOT ILIKE '%:config_file%=%' THEN j.jobbytes / 1000000
+    WHEN f.filesettext ILIKE '%{%{%File%=%' THEN j.jobbytes / 1000000
   END AS normal_mb,
   CASE
-    WHEN (f.filesettext ILIKE '%{%{%File%=%Plugin%=%' OR f.filesettext ILIKE '%{%{%Plugin%=%File%=%') AND f.filesettext NOT ILIKE '%:config_file%=%' THEN j.jobbytes / 1000000
+    WHEN f.filesettext ILIKE '%{%{%meta%=' THEN NULL
+    WHEN f.filesettext ILIKE '%{%{%Plugin%=%mssqlvdi:%' THEN NULL
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-percona%' THEN NULL
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-postgres%' THEN NULL
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-ldap%' THEN NULL
-    WHEN f.filesettext ILIKE '%{%{%Plugin%=%mssqlvdi:%' THEN NULL
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-vmware%' THEN NULL
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-ovirt%' THEN NULL
-    WHEN f.filesettext ILIKE '%{%{%meta%=' THEN NULL
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-libcloud%' THEN NULL
+    WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-qumulo%' THEN NULL
     WHEN f.filesettext ILIKE '%{%{%File%=%' THEN NULL
     ELSE j.jobbytes / 1000000
   END AS unknown_mb,
   CASE
-    WHEN (f.filesettext ILIKE '%{%{%File%=%Plugin%=%' OR f.filesettext ILIKE '%{%{%Plugin%=%File%=%') AND f.filesettext NOT ILIKE '%:config_file%=%' THEN
-        CASE WHEN LENGTH(f.filesettext) < 10 THEN '<empty>' ELSE f.filesettext END
-    WHEN f.filesettext ILIKE '%{%{%Plugin%=%File%=%' AND f.filesettext NOT ILIKE '%:config_file%=%' THEN '"' || f.filesettext || '"'
+    WHEN f.filesettext ILIKE '%{%{%meta%=' THEN NULL
+    WHEN f.filesettext ILIKE '%{%{%Plugin%=%mssqlvdi:%' THEN NULL
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-percona%' THEN NULL
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-postgres%' THEN NULL
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-ldap%' THEN NULL
-    WHEN f.filesettext ILIKE '%{%{%Plugin%=%mssqlvdi:%' THEN NULL
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-vmware%' THEN NULL
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-ovirt%' THEN NULL
-    WHEN f.filesettext ILIKE '%{%{%meta%=' THEN NULL
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-libcloud%' THEN NULL
+    WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-qumulo%' THEN NULL
     WHEN f.filesettext ILIKE '%{%{%File%=%' THEN NULL
+    WHEN f.filesettext ILIKE '%{%{%File%=%Plugin%=%' OR f.filesettext ILIKE '%{%{%Plugin%=%File%=%' THEN
+      CASE WHEN LENGTH(f.filesettext) < 10 THEN '<empty>' ELSE f.filesettext END
     ELSE
-        CASE WHEN LENGTH(f.filesettext) < 10 THEN '<empty>' ELSE f.filesettext END
+      CASE WHEN LENGTH(f.filesettext) < 10 THEN '<empty>' ELSE f.filesettext END
   END AS filesettext
 FROM job j
 INNER JOIN client c
