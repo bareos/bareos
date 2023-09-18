@@ -67,7 +67,6 @@
 #include "lib/berrno.h"
 #include "lib/util.h"
 
-
 #if defined(HAVE_WIN32)
 #  include "shlobj.h"
 #else
@@ -151,6 +150,13 @@ std::string ConfigurationParser::CreateOwnQualifiedNameForNetworkDump() const
     }
   }
   return qualified_name;
+}
+void ConfigurationParser::ParseConfigOrExit()
+{
+  if (!ParseConfig()) {
+    std::cerr << "Configuration parsing error" << std::endl;
+    exit(configerror_exit_code);
+  }
 }
 
 bool ConfigurationParser::ParseConfig()

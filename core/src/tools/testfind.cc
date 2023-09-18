@@ -61,16 +61,9 @@ int main(int argc, char** argv)
 
   ParseBareosApp(testfind_app, argc, argv);
 
-  directordaemon::my_config = InitDirConfig(configfile.c_str(), M_ERROR_TERM);
+  directordaemon::my_config = InitDirConfig(configfile.c_str(), M_CONFIG_ERROR);
 
-  if (!directordaemon::my_config) {
-    std::cerr << "Error parsing configuration!\n";
-    exit(2);
-  }
-  if (!directordaemon::my_config->ParseConfig()) {
-    std::cerr << "Error parsing configuration!\n";
-    exit(3);
-  }
+  my_config->ParseConfigOrExit();
 
   FilesetResource* dir_fileset = (FilesetResource*)my_config->GetResWithName(
       R_FILESET, filesetname.c_str());

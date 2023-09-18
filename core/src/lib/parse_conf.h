@@ -249,6 +249,7 @@ class ConfigurationParser {
   ~ConfigurationParser();
 
   bool IsUsingConfigIncludeDir() const { return use_config_include_dir_; }
+  void ParseConfigOrExit();
   bool ParseConfig();
   bool ParseConfigFile(const char* config_file_name,
                        void* caller_ctx,

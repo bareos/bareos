@@ -191,10 +191,7 @@ int main(int argc, char* argv[])
   }
 
   my_config = InitFdConfig(configfile, M_CONFIG_ERROR);
-  if (!my_config->ParseConfig()) {
-    std::cerr << "Configuration parsing error" << std::endl;
-    exit(configerror_exit_code);
-  }
+  my_config->ParseConfigOrExit();
 
   if (export_config) {
     my_config->DumpResources(PrintMessage, nullptr);

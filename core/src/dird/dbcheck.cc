@@ -863,10 +863,7 @@ int main(int argc, char* argv[])
     int found = 0;
 
     my_config = InitDirConfig(configfile.c_str(), M_CONFIG_ERROR);
-    if (!my_config->ParseConfig()) {
-      std::cerr << "Configuration parsing error" << std::endl;
-      exit(configerror_exit_code);
-    }
+    my_config->ParseConfigOrExit();
 
     foreach_res (catalog, R_CATALOG) {
       if (!catalogname.empty()

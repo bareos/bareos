@@ -37,8 +37,8 @@ using namespace filedaemon;
 void ProcessFileset(directordaemon::FilesetResource* director_fileset,
                     const char* configfile)
 {
-  my_config = InitFdConfig(configfile, M_ERROR_TERM);
-  my_config->ParseConfig();
+  my_config = InitFdConfig(configfile, M_CONFIG_ERROR);
+  my_config->ParseConfigOrExit();
 
   me = static_cast<ClientResource*>(my_config->GetNextRes(R_CLIENT, nullptr));
 
