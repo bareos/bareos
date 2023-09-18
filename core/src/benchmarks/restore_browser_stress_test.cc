@@ -34,6 +34,8 @@
 #include <cstring>
 #include <memory_resource>
 
+#include <utility>
+#include <numeric>
 
 using namespace directordaemon;
 
@@ -95,6 +97,88 @@ struct node_meta {
   unsigned int hard_link : 1; /* set if have hard link */
   unsigned int soft_link : 1; /* set if is soft link */
 };
+
+class parts {
+ public:
+  parts(std::string_view path) : path{path} {}
+
+  class iter {
+   public:
+    iter() : rest{""}, current{rest} {}
+
+    iter(std::string_view path)
+    {
+      auto pos = path.find_first_of("/");
+      current = path.substr(0, pos);
+      rest = path.substr(std::min(pos + 1, path.size()));
+    }
+
+    friend bool operator==(const iter& left, const iter& right)
+    {
+      return left.rest == right.rest && left.current == right.current;
+    }
+
+    friend bool operator!=(const iter& left, const iter& right)
+    {
+      return !(left == right);
+    }
+
+    iter& operator++()
+    {
+      if (rest.size() > 0) {
+        auto pos = rest.find_first_of("/");
+        current = rest.substr(0, pos);
+        rest.remove_prefix(std::min(pos + 1, rest.size()));
+      } else {
+        current = rest;
+      }
+      return *this;
+    }
+
+    std::string_view operator*() const { return current; }
+
+    std::string_view path() const
+    {
+      auto* start = current.data();
+      auto* end = rest.data() + rest.size();
+      return std::string_view{start, static_cast<std::size_t>(end - start)};
+    }
+
+   private:
+    std::string_view rest;
+    std::string_view current;
+  };
+
+  iter begin() { return iter{path}; }
+
+  static iter end() { return iter{}; }
+
+ private:
+  std::string_view path;
+};
+
+std::pair<std::size_t, std::string_view> get_base(std::string_view current,
+                                                  std::string_view next)
+{
+  auto cur_parts = parts(current);
+  auto next_parts = parts(next);
+
+  auto c = cur_parts.begin();
+  auto n = next_parts.begin();
+
+  std::size_t common = 0;
+  while (c != cur_parts.end() && n != next_parts.end()) {
+    if (*c == *n) {
+      common += 1;
+      ++c;
+      ++n;
+    } else {
+      break;
+    }
+  }
+
+  return {common, n.path()};
+}
 
 struct tree {
   tree_header header{};
@@ -194,11 +278,77 @@ struct tree {
     if (glob.back() == '/') { glob.remove_suffix(1); }
     return mark_glob(glob, 0, marked.size());
   }
+
+  std::string_view name_of(std::size_t idx)
+  {
+    const proto_node& current = nodes[idx];
+    const char* s_data = string_pool.data() + current.name.start;
+    std::size_t s_size = current.name.end - current.name.start;
+    std::string_view view{s_data, s_size};
+    return view;
+  }
 };
 
 struct tree tree2;
 
 struct tree_builder2 {
+  // struct iter
+  // {
+  //   tree* t{nullptr};
+  //   std::vector<uint32_t> stack{};
+
+  //   iter(tree& t) : t{&t}
+  // 		  , stack{0}
+  //   {
+  //   }
+
+  //   void go_to(std::string_view path)
+  //   {
+  //     auto ps = parts(path);
+  //     auto iter = ps.begin();
+
+  //     std::size_t common = 0;
+  //     while (common < stack.size() && iter != ps.end()) {
+  // 	if (*iter == t->name_of(stack[common])) {
+  // 	  ++common;
+  // 	  ++iter;
+  // 	} else {
+  // 	  break;
+  // 	}
+  //     }
+
+  //     stack.resize(common);
+
+  //     if (stack.size() == 0) { return; }
+
+  //     while (iter != ps.end()) {
+  // 	auto last = stack.back();
+
+  // 	auto& node = t->nodes[last];
+
+  // 	auto child = node.sub.start;
+  // 	auto end = node.sub.end;
+
+  // 	bool found = false;
+  // 	while (child < end) {
+  // 	  if (t->name_of(child) == *iter) {
+  // 	    stack.push_back(child);
+  // 	    found = true;
+  // 	    break;
+  // 	  }
+
+  // 	  child = t->nodes[child].sub.end + 1;
+  // 	}
+
+  // 	if (!found) {
+  // 	  stack.clear();
+  // 	  return;
+  // 	}
+
+  // 	++iter;
+  //     }
+  //   }
+  // };
   std::vector<proto_node> nodes;
   std::vector<char> string_area;
   std::vector<node_meta> metas;
@@ -239,6 +389,11 @@ struct tree_builder2 {
     DecodeStat(row[4], &d.s, sizeof(d.s), &d.link_findex);
     return 0;
   }
+
+  // iter begin()
+  // {
+  //   return iter{this};
+  // }
 };
 
 struct tree_builder {
@@ -347,7 +502,7 @@ enum HIGH_FILE_NUMBERS
   billion = 1'000'000'000
 };
 
-void InitContexts(UaContext* ua, TreeContext* tree)
+void InitContexts(UaContext* ua, TreeContext* tree, int count = 1)
 {
   ua->cmd = GetPoolMemory(PM_FNAME);
   ua->args = GetPoolMemory(PM_FNAME);
@@ -355,7 +510,7 @@ void InitContexts(UaContext* ua, TreeContext* tree)
   ua->automount = true;
   ua->send = new OutputFormatter(sprintit, ua, filterit, ua);
 
-  tree->root = new_tree(1);
+  tree->root = new_tree(count);
   tree->ua = ua;
   tree->all = false;
   tree->FileEstimate = 100;
@@ -385,7 +540,7 @@ void PopulateTree(int quantity, TreeContext* tree)
   me = new DirectorResource;
   me->optimize_for_size = true;
   me->optimize_for_speed = false;
-  InitContexts(&ua, tree);
+  InitContexts(&ua, tree, quantity);
 
   char* filename = GetPoolMemory(PM_FNAME);
   char* path = GetPoolMemory(PM_FNAME);
@@ -422,8 +577,9 @@ void PopulateTree2(int quantity)
 {
   tree_builder2 builder;
   auto ctx = builder.make_handler_ctx();
-  // ctx.first.reserve(quantity);
-  // ctx.second.reserve(quantity);
+  std::get<0>(ctx).reserve(quantity);
+  std::get<1>(ctx).reserve(quantity);
+  std::get<2>(ctx).reserve(quantity);
 
   char* filename = GetPoolMemory(PM_FNAME);
   char* path = GetPoolMemory(PM_FNAME);
@@ -455,6 +611,21 @@ void PopulateTree2(int quantity)
     }
   }
 
+  // auto [paths, names, data] = std::move(ctx);
+
+  // std::vector<uint32_t> idx;
+  // std::cout << paths.size() << std::endl;
+  // idx.resize(paths.size());
+
+  // std::iota(idx.begin(), idx.end(), 0);
+
+  // std::sort(idx.begin(), idx.end(), [&names, &paths](uint32_t a, uint32_t b)
+  // {
+  //   if (paths[a] < paths[b]) return true;
+  //   return names[a] < names[b];
+  // });
+  // benchmark::DoNotOptimize(idx);
+
   benchmark::DoNotOptimize(ctx);
 }
 
@@ -463,12 +634,12 @@ static void BM_populatetree(benchmark::State& state)
   for (auto _ : state) { PopulateTree(state.range(0), &tree); }
 }
 
-// static void BM_populatetree2(benchmark::State& state)
-// {
-//   for (auto _ : state) { PopulateTree2(state.range(0)); }
-// }
+static void BM_populatetree2(benchmark::State& state)
+{
+  for (auto _ : state) { PopulateTree2(state.range(0)); }
+}
 
-static void BM_buildtree(benchmark::State& state)
+[[maybe_unused]] static void BM_buildtree(benchmark::State& state)
 {
   for (auto _ : state) {
     tree_builder builder(tree.root);
@@ -479,7 +650,7 @@ static void BM_buildtree(benchmark::State& state)
   std::cout << bytes.size() << std::endl;
 }
 
-static void BM_markallfiles(benchmark::State& state)
+[[maybe_unused]] static void BM_markallfiles(benchmark::State& state)
 {
   FakeCdCmd(&ua, &tree, "/");
   [[maybe_unused]] int count = 0;
@@ -488,7 +659,7 @@ static void BM_markallfiles(benchmark::State& state)
   std::cout << "Marked: " << count << " files." << std::endl;
 }
 
-static void BM_markallfiles2(benchmark::State& state)
+[[maybe_unused]] static void BM_markallfiles2(benchmark::State& state)
 {
   [[maybe_unused]] std::size_t count = 0;
   for (auto _ : state) { count = tree2.mark_glob("*"); }
@@ -496,36 +667,34 @@ static void BM_markallfiles2(benchmark::State& state)
   std::cout << "Marked: " << count << " files." << std::endl;
 }
 
-BENCHMARK(BM_populatetree)
-    ->Arg(HIGH_FILE_NUMBERS::hundred_thousand)
-    ->Unit(benchmark::kSecond);
-BENCHMARK(BM_markallfiles)->Unit(benchmark::kSecond);
-BENCHMARK(BM_buildtree)->Unit(benchmark::kSecond);
-BENCHMARK(BM_markallfiles2)->Unit(benchmark::kSecond);
-
-
-BENCHMARK(BM_populatetree)
-    ->Arg(HIGH_FILE_NUMBERS::million)
-    ->Unit(benchmark::kSecond);
-BENCHMARK(BM_markallfiles)->Unit(benchmark::kSecond);
-BENCHMARK(BM_buildtree)->Unit(benchmark::kSecond);
-BENCHMARK(BM_markallfiles2)->Unit(benchmark::kSecond);
-
-
-BENCHMARK(BM_populatetree)
-    ->Arg(HIGH_FILE_NUMBERS::ten_million)
-    ->Unit(benchmark::kSecond);
-BENCHMARK(BM_markallfiles)->Unit(benchmark::kSecond);
-BENCHMARK(BM_buildtree)->Unit(benchmark::kSecond);
-BENCHMARK(BM_markallfiles2)->Unit(benchmark::kSecond);
-
-// BENCHMARK(BM_populatetree2)
-//     ->Arg(100'000'000)
+// BENCHMARK(BM_populatetree)
+//     ->Arg(HIGH_FILE_NUMBERS::hundred_thousand)
 //     ->Unit(benchmark::kSecond);
+// BENCHMARK(BM_markallfiles)->Unit(benchmark::kSecond);
+// BENCHMARK(BM_buildtree)->Unit(benchmark::kSecond);
+// BENCHMARK(BM_markallfiles2)->Unit(benchmark::kSecond);
+
+
+// BENCHMARK(BM_populatetree)
+//     ->Arg(HIGH_FILE_NUMBERS::million)
+//     ->Unit(benchmark::kSecond);
+// BENCHMARK(BM_markallfiles)->Unit(benchmark::kSecond);
+// BENCHMARK(BM_buildtree)->Unit(benchmark::kSecond);
+// BENCHMARK(BM_markallfiles2)->Unit(benchmark::kSecond);
+
+
+// BENCHMARK(BM_populatetree)
+//     ->Arg(HIGH_FILE_NUMBERS::ten_million)
+//     ->Unit(benchmark::kSecond);
+// BENCHMARK(BM_markallfiles)->Unit(benchmark::kSecond);
+// BENCHMARK(BM_buildtree)->Unit(benchmark::kSecond);
+// BENCHMARK(BM_markallfiles2)->Unit(benchmark::kSecond);
+
+BENCHMARK(BM_populatetree2)->Arg(100'000'000)->Unit(benchmark::kSecond);
 BENCHMARK(BM_populatetree)->Arg(100'000'000)->Unit(benchmark::kSecond);
-BENCHMARK(BM_markallfiles)->Unit(benchmark::kSecond);
+// BENCHMARK(BM_markallfiles)->Unit(benchmark::kSecond);
 BENCHMARK(BM_buildtree)->Unit(benchmark::kSecond);
-BENCHMARK(BM_markallfiles2)->Unit(benchmark::kSecond);
+// BENCHMARK(BM_markallfiles2)->Unit(benchmark::kSecond);
 
 /*
  * Over ten million files requires quiet a bit a ram, so if you are going to
