@@ -909,20 +909,26 @@ static void InsertOneFileOrDir(UaContext* ua,
 static PathAndFileName GetFilenameAndPath(UaContext* ua, char* pathname)
 {
   std::filesystem::path mypath(pathname);
-  char escaped_string[MAX_ESCAPE_NAME_LENGTH];
   PathAndFileName path_and_filename;
+
+
+  PoolMem escaped_string;
   if (mypath.has_filename()) {
     std::string filename = mypath.filename().string();
-    ua->db->EscapeString(ua->jcr, escaped_string, filename.c_str(),
+    escaped_string.check_size(2 * filename.size() + 1);
+
+    ua->db->EscapeString(ua->jcr, escaped_string.addr(), filename.c_str(),
                          filename.size());
-    path_and_filename.filename = escaped_string;
+    path_and_filename.filename = escaped_string.c_str();
   }
 
   if (mypath.has_parent_path()) {
     std::string parent_path = mypath.parent_path().string();
-    ua->db->EscapeString(ua->jcr, escaped_string, parent_path.c_str(),
+    escaped_string.check_size(2 * parent_path.size() + 1);
+
+    ua->db->EscapeString(ua->jcr, escaped_string.addr(), parent_path.c_str(),
                          parent_path.size());
-    path_and_filename.path = escaped_string;
+    path_and_filename.path = escaped_string.c_str();
     path_and_filename.path.append("/");
   }
 
