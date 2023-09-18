@@ -906,7 +906,9 @@ static void InsertOneFileOrDir(UaContext* ua,
   }
 }
 
-static PathAndFileName GetFilenameAndPath(UaContext* ua, char* pathname)
+static PathAndFileName SplitFilenameAndPathWithDatabaseStringEscape(
+    UaContext* ua,
+    char* pathname)
 {
   std::filesystem::path mypath(pathname);
   PathAndFileName path_and_filename;
@@ -948,19 +950,18 @@ static bool InsertFileIntoFindexList(UaContext* ua,
                                      char* date)
 {
   StripTrailingNewline(file);
-  PathAndFileName path_and_filename = GetFilenameAndPath(ua, file);
+  auto [path, filename]
+      = SplitFilenameAndPathWithDatabaseStringEscape(ua, file);
   PoolMem query{};
 
   char filter_name = RestoreContext::FilterIdentifier(rx->job_filter);
   if (rx->JobIds.empty()) {
     ua->db->FillQuery(query, BareosDb::SQL_QUERY::uar_jobid_fileindex, date,
-                      path_and_filename.path.c_str(),
-                      path_and_filename.filename.c_str(),
-                      rx->ClientName.c_str(), filter_name);
+                      path.c_str(), filename.c_str(), rx->ClientName.c_str(),
+                      filter_name);
   } else {
     ua->db->FillQuery(query, BareosDb::SQL_QUERY::uar_jobids_fileindex,
-                      rx->JobIds.c_str(), date, path_and_filename.path.c_str(),
-                      path_and_filename.filename.c_str(),
+                      rx->JobIds.c_str(), date, path.c_str(), filename.c_str(),
                       rx->ClientName.c_str(), filter_name);
   }
 
