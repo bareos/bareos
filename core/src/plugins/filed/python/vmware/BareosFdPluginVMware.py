@@ -3385,6 +3385,31 @@ class BareosVmConfigInfoToSpec(object):
             add_device.backing.systemId = device["backing"]["systemId"]
             add_device.backing.useAutoDetect = device["backing"]["useAutoDetect"]
             add_device.backing.vendorId = device["backing"]["vendorId"]
+
+        elif (
+            device["backing"]["_vimtype"]
+            == "vim.vm.device.VirtualPCIPassthrough.VmiopBackingInfo"
+        ):
+            add_device.backing = vim.vm.device.VirtualPCIPassthrough.VmiopBackingInfo()
+            add_device.backing.vgpu = device["backing"]["vgpu"]
+
+            # Since vSphere API 7.0.2.0
+            self._transform_property(
+                property_name="migrateSupported",
+                source_data=device["backing"],
+                target_object=add_device.backing,
+                minimum_pyvmomi_version="7.0.2.0",
+            )
+
+            # Since 8.0.0.1
+            for property_name in ("enhancedMigrateCapability", "vgpuMigrateDataSizeMB"):
+                self._transform_property(
+                    property_name=property_name,
+                    source_data=device["backing"],
+                    target_object=add_device.backing,
+                    minimum_pyvmomi_version="8.0.0.1",
+                )
+
         else:
             raise RuntimeError(
                 "Unknown Backing for VirtualPCIPassthrough: %s"
@@ -3902,6 +3927,23 @@ class BareosVmConfigInfoToSpec(object):
         add_device.unitNumber = device["unitNumber"]
 
         return
+
+    def _transform_property(
+        self,
+        property_name=None,
+        source_data=None,
+        target_object=None,
+        minimum_pyvmomi_version=None,
+    ):
+        if source_data.get(property_name) is not None:
+            if not hasattr(target_object, property_name):
+                raise RuntimeError(
+                    "Missing property %s in %s, pyVmomi %s or greater required"
+                    % (property_name, source_data["_vimtype"], minimum_pyvmomi_version)
+                )
+                return None
+
+            setattr(target_object, property_name, source_data[property_name])
 
 
 # vim: tabstop=4 shiftwidth=4 softtabstop=4 expandtab
