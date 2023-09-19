@@ -153,7 +153,7 @@ db_host
 db_port
    useful, if cluster is not listening default port. Default: *5432*
 
-ignore_sub_dirs
+ignore_subdirs
    a list of comma separated directories below the *postgres_data_dir*, that will not be backed up. Default: *log, pg_wal, pg_log, pg_xlog, pgsql_tmp*
 
 switch_wal
