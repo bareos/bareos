@@ -71,6 +71,9 @@ wait
 messages
 END_OF_DATA
 
+
+${PSQL} ${DBNAME} -f "database/make_cluster_activity.sql" --output ${tmp}/cluster_activity.log &
+
 echo "First full backup stage"
 run_bconsole
 expect_grep "Backup OK" "${tmp}/log1.out" "Full Backup not found!"
