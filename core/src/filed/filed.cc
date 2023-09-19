@@ -27,6 +27,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
 #include "filed/dir_cmd.h"
@@ -189,7 +190,7 @@ int main(int argc, char* argv[])
     PrintConfigSchemaJson(buffer);
     printf("%s\n", buffer.c_str());
 
-    exit(0);
+    exit(BEXIT_SUCCESS);
   }
 
   my_config = InitFdConfig(configfile, M_CONFIG_ERROR);
@@ -198,7 +199,7 @@ int main(int argc, char* argv[])
   if (export_config) {
     my_config->DumpResources(PrintMessage, nullptr);
 
-    exit(0);
+    exit(BEXIT_SUCCESS);
   }
 
   if (!CheckResources()) {
@@ -257,9 +258,8 @@ int main(int argc, char* argv[])
   // start socket server to listen for new connections.
   StartSocketServer(me->FDaddrs);
 
-  TerminateFiled(0);
-
-  exit(0);
+  TerminateFiled(BEXIT_SUCCESS);
+  return BEXIT_SUCCESS;
 }
 
 namespace filedaemon {

@@ -35,6 +35,7 @@
 #include "lib/bsignal.h"
 #include "lib/parse_conf.h"
 #include "lib/cli.h"
+#include "include/exit_codes.h"
 
 ConfigurationParser* my_config = nullptr;
 
@@ -165,7 +166,7 @@ int main(int argc, char* argv[])
     PrintConfigSchemaJson(buffer);
     printf("%s\n", buffer.c_str());
     fflush(stdout);
-    exit(0);
+    exit(BEXIT_SUCCESS);
   }
 
   // read the config file

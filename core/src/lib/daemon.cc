@@ -32,6 +32,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "lib/berrno.h"
 #include "lib/daemon.h"
 
@@ -85,7 +86,7 @@ void daemon_start(const char* progname,
       break;
     }
     default:
-      exit(0);
+      exit(BEXIT_SUCCESS);
   }
 
   Dmsg0(900, "Exit daemon_start\n");

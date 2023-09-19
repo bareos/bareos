@@ -27,6 +27,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
 #include "lib/crypto_cache.h"
@@ -256,7 +257,7 @@ int main(int argc, char* argv[])
   }
   TermIncludeExcludeFiles(ff);
   TermFindFiles(ff);
-  return 0;
+  return BEXIT_SUCCESS;
 }
 
 // Cleanup of delayed restore stack with streams for later processing.

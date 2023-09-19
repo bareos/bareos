@@ -104,5 +104,5 @@ int main(int argc, char** argv)
     fclose(fd);
     regfree(&preg);
   }
-  exit(0);
+  return BEXIT_SUCCESS;
 }

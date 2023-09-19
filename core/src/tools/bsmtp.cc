@@ -58,6 +58,7 @@
         http://archives.neohapsis.com/archives/postfix/2000-05/1520.html
  */
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "include/jcr.h"
 #include "lib/cli.h"
 #include "lib/bstringlist.h"
@@ -616,5 +617,5 @@ lookup_host:
   chat(my_hostname, mailhost, "QUIT\r\n");
 
   //  Go away gracefully ...
-  exit(0);
+  return BEXIT_SUCCESS;
 }
