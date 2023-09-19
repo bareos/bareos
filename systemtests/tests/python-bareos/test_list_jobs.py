@@ -1,7 +1,7 @@
 #
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -234,3 +234,8 @@ class PythonBareosListJobsTest(bareos_unittest.Base):
             result["jobs"][0]["count"],
             "",
         )
+
+        result = director.call(
+            "llist jobs limit=99999999999999999999999999999999999999 offset=99999999999999999999999999999999999999999999999"
+        )
+        self.assertEqual(len(result["jobs"]), 0)
