@@ -165,7 +165,7 @@ switch_wal_timeout
 role
    Set the role used after login, before the first sql call. Default: *None*
 
-start_fast_start
+start_fast
    By default the backup will start after a checkpoint which can take time. If true it
    specifies executing pg_backup_start as quickly as possible. This forces an immediate
    checkpoint which will cause a spike in I/O operations, slowing any concurrently
