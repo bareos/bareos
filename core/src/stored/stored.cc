@@ -139,7 +139,7 @@ int main(int argc, char* argv[])
   AddDebugOptions(sd_app);
 
   bool foreground = false;
-  CLI::Option* foreground_option = sd_app.add_flag(
+  [[maybe_unused]] CLI::Option* foreground_option = sd_app.add_flag(
       "-f,--foreground", foreground, "Run in foreground (for debugging).");
 
   std::string user{};
@@ -153,20 +153,16 @@ int main(int argc, char* argv[])
   sd_app.add_flag("-i,--ignore-io-errors", forge_on, "Ignore IO errors.");
 
   bool test_config = false;
-  auto testconfig_option = sd_app.add_flag(
+  [[maybe_unused]] auto testconfig_option = sd_app.add_flag(
       "-t,--test-config", test_config, "Test - read configuration and exit.");
 
-#if !defined(HAVE_WIN32)
+#ifndef HAVE_WIN32
   sd_app
       .add_option("-p,--pid-file", pidfile_path,
                   "Full path to pidfile (default: none)")
       ->excludes(foreground_option)
       ->excludes(testconfig_option)
       ->type_name("<file>");
-#else
-  // to silence unused variable error on windows
-  (void)testconfig_option;
-  (void)foreground_option;
 #endif
 
   bool no_signals = false;
