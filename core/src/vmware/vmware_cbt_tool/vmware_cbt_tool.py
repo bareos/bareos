@@ -29,12 +29,14 @@ from __future__ import print_function
 
 from pyVim.connect import SmartConnect, Disconnect
 from pyVmomi import vim, vmodl
+from pyVmomi.VmomiSupport import VmomiJSONEncoder
 
 import argparse
 import atexit
 import getpass
 import sys
 import os.path
+import json
 
 from collections import defaultdict
 
@@ -119,6 +121,12 @@ def GetArgs():
         action="store_true",
         default=False,
         help="Force SSL certificate verification",
+    )
+    parser.add_argument(
+        "--dumpvmconfig",
+        action="store_true",
+        default=False,
+        help="Dump VM config metadata to JSON file",
     )
     args = parser.parse_args()
 
@@ -239,6 +247,8 @@ def main():
                 print("INFO: VM %s trying to reset CBT now" % (vm.name))
                 disable_cbt(si, vm)
                 enable_cbt(si, vm)
+            if args.dumpvmconfig:
+                dump_vm_config(si, vm)
 
     except vmodl.MethodFault as e:
         print("Caught vmodl fault : " + e.msg)
@@ -388,6 +398,17 @@ def create_and_remove_snapshot(si, vm):
             return True
 
     return False
+
+
+def dump_vm_config(si, vm):
+    """
+    Dump the VM config data to a JSON file
+    """
+    dump_dir = "./"
+    dump_filename = dump_dir + vm.name + ".json"
+    print("INFO: Dumping VM config data to %s" % dump_filename)
+    with open(dump_filename, "w") as jsonfile:
+        json.dump(vm, jsonfile, indent=4, cls=VmomiJSONEncoder)
 
 
 def WaitForTasks(tasks, si):

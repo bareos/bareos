@@ -127,7 +127,7 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         self.vadp = BareosVADPWrapper()
         self.vadp.plugin = self
         self.vm_config_info_saved = False
-        self.current_object_index = -1
+        self.current_object_index = int(time.time())
 
     def parse_plugin_definition(self, plugindef):
         """
@@ -2958,7 +2958,9 @@ class BareosVmConfigInfoToSpec(object):
             "numCoresPerSocket"
         ]
         config_spec.numCPUs = self.config_info["hardware"]["numCPU"]
-        config_spec.pmem = self._transform_pmem()
+        # Since vSphere API 7.0.3.0:
+        if hasattr(config_spec, "pmem"):
+            config_spec.pmem = self._transform_pmem()
         config_spec.pmemFailoverEnabled = self.config_info["pmemFailoverEnabled"]
         config_spec.powerOpInfo = self._transform_defaultPowerOps()
         # Since vSphere API 7.0.1.0:
@@ -2982,9 +2984,12 @@ class BareosVmConfigInfoToSpec(object):
         config_spec.virtualSMCPresent = self.config_info["hardware"][
             "virtualSMCPresent"
         ]
-        config_spec.vmOpNotificationToAppEnabled = self.config_info[
-            "vmOpNotificationToAppEnabled"
-        ]
+        # Since vSphere API 7.0.3.0:
+        if hasattr(config_spec, "vmOpNotificationToAppEnabled"):
+            if "vmOpNotificationToAppEnabled" in self.config_info:
+                config_spec.vmOpNotificationToAppEnabled = self.config_info[
+                    "vmOpNotificationToAppEnabled"
+                ]
 
         return config_spec
 
@@ -3199,6 +3204,10 @@ class BareosVmConfigInfoToSpec(object):
                 add_device = self._transform_virtual_ethernet_card(device)
             elif device["_vimtype"] == "vim.vm.device.VirtualFloppy":
                 add_device = self._transform_virtual_floppy(device)
+            elif device["_vimtype"] == "vim.vm.device.VirtualPCIPassthrough":
+                add_device = self._transform_virtual_pci_passthrough(device)
+            elif device["_vimtype"] == "vim.vm.device.VirtualEnsoniq1371":
+                add_device = self._transform_virtual_ensoniq1371(device)
             else:
                 raise RuntimeError(
                     "Error: Unknown Device Type %s" % (device["_vimtype"])
@@ -3330,14 +3339,7 @@ class BareosVmConfigInfoToSpec(object):
             return None
 
         add_device.connectable = self._transform_connectable(device)
-
-        # Looks like negative values must not be used for default devices,
-        # the second VirtualIDEController seems to have key 201, that always seems to be the case.
-        # Same for VirtualCdrom, getting error "The device '1' is referring to a nonexisting controller '-200'."
-        add_device.controllerKey = device["controllerKey"]
-        if device["controllerKey"] not in [200, 201]:
-            add_device.controllerKey = device["controllerKey"] * -1
-        add_device.unitNumber = device["unitNumber"]
+        self._transform_controllerkey_and_unitnumber(add_device, device)
 
         return add_device
 
@@ -3365,13 +3367,59 @@ class BareosVmConfigInfoToSpec(object):
             return None
 
         add_device.connectable = self._transform_connectable(device)
+        self._transform_controllerkey_and_unitnumber(add_device, device)
 
-        # Looks like negative values must not be used for default devices,
-        # the VirtualSIOController seems to have key 400, that seems to be always the case.
-        add_device.controllerKey = device["controllerKey"]
-        if device["controllerKey"] not in [400]:
-            add_device.controllerKey = device["controllerKey"] * -1
-        add_device.unitNumber = device["unitNumber"]
+        return add_device
+
+    def _transform_virtual_pci_passthrough(self, device):
+        add_device = vim.vm.device.VirtualPCIPassthrough()
+        add_device.key = device["key"] * -1
+        if (
+            device["backing"]["_vimtype"]
+            == "vim.vm.device.VirtualPCIPassthrough.DeviceBackingInfo"
+        ):
+            add_device.backing = vim.vm.device.VirtualPCIPassthrough.DeviceBackingInfo()
+            add_device.backing.deviceId = device["backing"]["deviceId"]
+            add_device.backing.deviceName = device["backing"]["deviceName"]
+            add_device.backing.id = device["backing"]["id"]
+            add_device.backing.systemId = device["backing"]["systemId"]
+            add_device.backing.useAutoDetect = device["backing"]["useAutoDetect"]
+            add_device.backing.vendorId = device["backing"]["vendorId"]
+        else:
+            raise RuntimeError(
+                "Unknown Backing for VirtualPCIPassthrough: %s"
+                % (device["backing"]["_vimtype"])
+            )
+            return None
+
+        if device["connectable"]:
+            add_device.connectable = self._transform_connectable(device)
+
+        self._transform_controllerkey_and_unitnumber(add_device, device)
+
+        return add_device
+
+    def _transform_virtual_ensoniq1371(self, device):
+        add_device = vim.vm.device.VirtualEnsoniq1371()
+        add_device.key = device["key"] * -1
+        if (
+            device["backing"]["_vimtype"]
+            == "vim.vm.device.VirtualSoundCard.DeviceBackingInfo"
+        ):
+            add_device.backing = vim.vm.device.VirtualSoundCard.DeviceBackingInfo()
+            add_device.backing.deviceName = device["backing"]["deviceName"]
+            add_device.backing.useAutoDetect = device["backing"]["useAutoDetect"]
+        else:
+            raise RuntimeError(
+                "Unknown Backing for VirtualEnsoniq1371: %s"
+                % (device["backing"]["_vimtype"])
+            )
+            return None
+
+        if device["connectable"]:
+            add_device.connectable = self._transform_connectable(device)
+
+        self._transform_controllerkey_and_unitnumber(add_device, device)
 
         return add_device
 
@@ -3460,8 +3508,7 @@ class BareosVmConfigInfoToSpec(object):
             "reservation"
         ]
 
-        add_device.controllerKey = device["controllerKey"] * -1
-        add_device.unitNumber = device["unitNumber"]
+        self._transform_controllerkey_and_unitnumber(add_device, device)
         add_device.capacityInBytes = device["capacityInBytes"]
 
         return add_device
@@ -3536,12 +3583,7 @@ class BareosVmConfigInfoToSpec(object):
 
         add_device.key = device["key"] * -1
         add_device.connectable = self._transform_connectable(device)
-        # Looks like negative values must not be used for default devices,
-        # the VirtualPCIController always seems to have key 100.
-        add_device.controllerKey = device["controllerKey"]
-        if device["controllerKey"] != 100:
-            add_device.controllerKey = device["controllerKey"] * -1
-        add_device.unitNumber = device["unitNumber"]
+        self._transform_controllerkey_and_unitnumber(add_device, device)
         # Note: MAC address preservation is not safe with addressType "manual", the
         # server does not check for conflicts. The calling code should check for
         # MAC address conflicts before and set addressType to "generated" or "assigned"
@@ -3675,7 +3717,10 @@ class BareosVmConfigInfoToSpec(object):
         return managed_by
 
     def _transform_pmem(self):
-        if self.config_info["pmem"] is None:
+        if (
+            self.config_info.get("pmem") is None
+            or self.config_info["pmem"].get("snapshotMode") is None
+        ):
             return None
 
         pmem = vim.vm.VirtualPMem()
@@ -3841,6 +3886,22 @@ class BareosVmConfigInfoToSpec(object):
             spec_vcpu_configs.append(spec_vcpu_config)
 
         return spec_vcpu_configs
+
+    def _transform_controllerkey_and_unitnumber(self, add_device, device):
+        # Looks like negative values must not be used for default devices,
+        # the second VirtualIDEController seems to have key 201, that always seems to be the case.
+        # Same for VirtualCdrom, getting error "The device '1' is referring to a nonexisting controller '-200'."
+        # Looks like negative values must not be used for default devices,
+        # the VirtualSIOController seems to have key 400, that seems to be always the case.
+        # Looks like negative values must not be used for default devices,
+        # the VirtualPCIController always seems to have key 100.
+        default_devices_controller_keys = [100, 200, 201, 400]
+        add_device.controllerKey = device["controllerKey"]
+        if device["controllerKey"] not in default_devices_controller_keys:
+            add_device.controllerKey = device["controllerKey"] * -1
+        add_device.unitNumber = device["unitNumber"]
+
+        return
 
 
 # vim: tabstop=4 shiftwidth=4 softtabstop=4 expandtab
