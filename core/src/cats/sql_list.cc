@@ -504,7 +504,7 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
                               const char* range,
                               const char* clientname,
                               std::vector<char> jobstatuslist,
-                              int joblevel,
+                              std::vector<char> joblevels,
                               std::vector<char> jobtypes,
                               const char* volumename,
                               const char* poolname,
@@ -542,8 +542,9 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
     PmStrcat(selection, temp.c_str());
   }
 
-  if (joblevel) {
-    temp.bsprintf("AND Job.Level = '%c' ", joblevel);
+  if (!joblevels.empty()) {
+    std::string levels = CreateDelimitedStringForSqlQueries(joblevels, ',');
+    temp.bsprintf("AND Job.Level in (%s) ", levels.c_str());
     PmStrcat(selection, temp.c_str());
   }
 
