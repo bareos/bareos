@@ -52,13 +52,15 @@ try:
     # check if pg8000 module is new enough
     major, minor, patch = pg8000.__version__.split(".")
     if int(major) < 1 or (int(major) == 1 and int(minor) < 16):
-        raise ValueError(f"pg8000 module version ({pg8000.__version__}) is lower than required version 1.16\n")
+        raise ValueError(
+            (
+                f"pg8000 module version ({pg8000.__version__}) is lower"
+                f"than required version 1.16\n"
+            )
+        )
 
 except ValueError as err_version:
-    bareosfd.JobMessage(
-        bareosfd.M_FATAL,
-        f"FATAL ERROR: {err_version}\n"
-    )
+    bareosfd.JobMessage(bareosfd.M_FATAL, f"FATAL ERROR: {err_version}\n")
 
 except ImportError as err_import:
     bareosfd.JobMessage(
@@ -66,9 +68,7 @@ except ImportError as err_import:
     )
 
 except Exception as err_unknown:
-    bareosfd.JobMessage(
-        bareosfd.M_FATAL, f"Unknown error {err_unknown}\n"
-    )
+    bareosfd.JobMessage(bareosfd.M_FATAL, f"Unknown error {err_unknown}\n")
 
 
 def parse_row(row):
@@ -99,19 +99,33 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
 
     def __init__(self, plugindef):
         bareosfd.DebugMessage(
-            100,
-            f"Constructor called in module {__name__} with plugindef={plugindef}\n"
+            100, f"Constructor called in module {__name__} with plugindef={plugindef}\n"
         )
 
         bareosfd.DebugMessage(
             100,
-            f"Python Version: {version_info.major}.{version_info.minor}.{version_info.micro}\n"
+            (
+                f"Python Version: {version_info.major}.{version_info.minor}"
+                f".{version_info.micro}\n"
+            ),
         )
 
         # Last argument of super constructor is a list of mandatory arguments
         super().__init__(plugindef, ["postgresql_data_dir", "wal_archive_dir"])
 
-        self.ignore_sub_dirs = ["log", "pg_wal", "pg_log", "pg_xlog", "pgsql_tmp", "pg_dynshmem", "pg_notify", "pg_serial", "pg_snapshots", "pg_stat_tmp", "pg_subtrans"]
+        self.ignore_subdirs = [
+            "log",
+            "pg_wal",
+            "pg_log",
+            "pg_xlog",
+            "pgsql_tmp",
+            "pg_dynshmem",
+            "pg_notify",
+            "pg_serial",
+            "pg_snapshots",
+            "pg_stat_tmp",
+            "pg_subtrans",
+        ]
         self.options = {}
         self.db_con = None
         self.db_user = None
@@ -119,7 +133,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
         self.db_host = None
         self.db_port = None
         self.db_name = None
-        self.start_fast_start = False
+        self.start_fast = False
         self.stop_wait_wal_archive = True
         self.switch_wal = True
         self.switch_wal_timeout = 60
@@ -139,8 +153,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
         self.files_to_backup = []
         self.file_to_backup = ""
         self.ref_statp = None
-        # should be renamed to last_LSN but would break compatibility with older plugin
-        self.lastLSN = 0
+        self.last_lsn = 0
         # This will be set to True between SELECT pg_backup_start and pg_backup_stop.
         # We backup the cluster files during that time
         self.full_backup_running = False
@@ -197,9 +210,9 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
                     self.ref_statp = os.stat(fullname)
 
                 mtime = os.stat(fullname).st_mtime
-            except Exception as err:
-                #if can't stat the file emit a warning instead error
-                #like traditional backup
+            except os.error as os_err:
+                # if can't stat the file emit a warning instead error
+                # like in traditional backup
                 bareosfd.JobMessage(
                     bareosfd.M_WARNING,
                     f"Could net get stat-info for file {fullname}: {err}\n",
@@ -207,19 +220,23 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
                 continue
             bareosfd.DebugMessage(
                 150,
-                f"file:{fullname} \
-                  fullTime: {self.last_backup_stop_time}\
-                  mtime: {mtime}\n",
+                (
+                    f"file:{fullname}"
+                    f"fullTime: {self.last_backup_stop_time}"
+                    f"mtime: {mtime}\n"
+                ),
             )
             if mtime > self.last_backup_stop_time + 1:
                 bareosfd.DebugMessage(
                     150,
-                    f"file:{fullname} \
-                      fullTime: {self.last_backup_stop_time}\
-                      mtime: {mtime}\n",
+                    (
+                        f"file:{fullname}"
+                        f"fullTime: {self.last_backup_stop_time}"
+                        f"mtime: {mtime}\n"
+                    ),
                 )
                 self.files_to_backup.append(fullname)
-                if os.path.isdir(fullname) and filename not in self.ignore_sub_dirs:
+                if os.path.isdir(fullname) and filename not in self.ignore_subdirs:
                     for topdir, dirnames, filenames in os.walk(fullname):
                         for filename in filenames:
                             self.files_to_backup.append(os.path.join(topdir, filename))
@@ -234,8 +251,10 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
         """
         try:
             results = self.db_con.run(
-                "select oid,spcname from pg_tablespace \
-                            where spcname not in ('pg_default','pg_global');"
+                (
+                    "select oid,spcname from pg_tablespace"
+                    "where spcname not in ('pg_default','pg_global');"
+                )
             )
             for row in results:
                 oid, tablespace_name = row
@@ -246,8 +265,10 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
                 )
                 bareosfd.DebugMessage(
                     100,
-                    f"tablespacemap found: oid={oid} name={tablespace_name}\n\
-                      adding {spacelink} to build_file_to_backup\n",
+                    (
+                        f"tablespacemap found: oid={oid} name={tablespace_name}\n"
+                        f"adding {spacelink} to build_file_to_backup\n"
+                    ),
                 )
                 self.build_files_to_backup(spacelink)
         except Exception as err:
@@ -268,8 +289,10 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
         if accurate_enabled is not None and accurate_enabled != 0:
             bareosfd.JobMessage(
                 bareosfd.M_FATAL,
-                "start_backup_job: Accurate backup not allowed\
-                 please disable in Job\n",
+                (
+                    "start_backup_job: Accurate backup not allowed"
+                    "please disable in Job\n"
+                ),
             )
             return bareosfd.bRC_Error
 
@@ -279,8 +302,8 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
         if not self.options["wal_archive_dir"].endswith("/"):
             self.options["wal_archive_dir"] += "/"
 
-        if "ignore_sub_dirs" in self.options:
-            self.ignore_sub_dirs = self.options["ignore_sub_dirs"]
+        if "ignore_subdirs" in self.options:
+            self.ignore_subdirs = self.options["ignore_subdirs"]
 
         self.backup_label_filename = (
             self.options["postgresql_data_dir"] + "backup_label"
@@ -321,14 +344,16 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
             except ValueError as err:
                 bareosfd.JobMessage(
                     bareosfd.M_FATAL,
-                    f"start_backup_job: Plugin option switch_wal_timeout\
-                    {self.options['switch_wal_timeout']} is not an integer value\n\
-                    {err}\n",
+                    (
+                        f"start_backup_job: Plugin option switch_wal_timeout"
+                        f"{self.options['switch_wal_timeout']} is not an integer value\n"
+                        f"{err}\n"
+                    ),
                 )
                 return bareosfd.bRC_Error
 
-        if "start_fast_start" in self.options:
-            self.start_fast_start = bool(self.options["start_fast_start"])
+        if "start_fast" in self.options:
+            self.start_fast = bool(self.options["start_fast"])
 
         if "stop_wait_wal_archive" in self.options:
             self.stop_wait_wal_archive = bool(self.options["stop_wait_wal_archive"])
@@ -337,7 +362,6 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
         # handle ssl_context support in connection
         # Normally not needed as the bareos-fd has to be located on host within
         # the pg cluster: as such using socket is preferably.
-
 
         return bareosfd.bRC_OK
 
@@ -380,16 +404,20 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
         except Exception as err:
             bareosfd.JobMessage(
                 bareosfd.M_FATAL,
-                f"Could not connect to database {self.db_name}, \
-                  user {self.db_user}, host: {self.db_host}: {err}\n",
+                (
+                    f"Could not connect to database {self.db_name},"
+                    f"user {self.db_user}, host: {self.db_host} : '{err}'\n"
+                ),
             )
             return bareosfd.bRC_Error
 
         if self.pg_major_version < 10:
             bareosfd.JobMessage(
                 bareosfd.M_FATAL,
-                f"Only PostgreSQL server version >= 10 is supported.\
-                Version detected {self.pg_major_version}\n",
+                (
+                    f"Only PostgreSQL server version >= 10 is supported."
+                    f"Version detected {self.pg_major_version}\n"
+                ),
             )
             return bareosfd.bRC_Error
 
@@ -412,13 +440,15 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
 
     def plugin_io_read(self, IOP):
         """
-            plugin_io_read function specific for our virtual files and ROP
+        plugin_io_read function specific for our virtual files and ROP
         """
         if self.file_type == "FT_REG":
             bareosfd.DebugMessage(
                 200,
-                f"BareosFdPluginPostgreSQL:plugin_io_read reading {IOP.count}\
-                from file {self.FNAME}\n",
+                (
+                    f"BareosFdPluginPostgreSQL:plugin_io_read reading {IOP.count}"
+                    f"from file {self.FNAME}\n"
+                ),
             )
             IOP.buf = bytearray(IOP.count)
             if self.FNAME == "ROP":
@@ -428,8 +458,10 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
                 IOP.io_errno = 0
                 bareosfd.DebugMessage(
                     100,
-                    "BareosFdPluginPostgreSQL:plugin_io_read for ROP\n"
-                    + "That can't be true with no_read = True",
+                    (
+                        "BareosFdPluginPostgreSQL:plugin_io_read for ROP\n"
+                        "That can't be true with no_read = True"
+                    ),
                 )
             if self.FNAME == self.backup_label_filename:
                 bdata = bytearray(self.backup_label_data, "utf-8")
@@ -446,8 +478,10 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
             if self.data_stream is None:
                 bareosfd.DebugMessage(
                     250,
-                    f"BareosFdPluginPostgreSQL:plugin_io_read \
-                    type of bdata {type(bdata)}\n",
+                    (
+                        f"BareosFdPluginPostgreSQL:plugin_io_read type of"
+                        f"bdata {type(bdata)}\n"
+                    ),
                 )
                 self.data_stream = io.BytesIO(bdata)
 
@@ -455,8 +489,10 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
                 IOP.status = self.data_stream.readinto(IOP.buf)
                 bareosfd.DebugMessage(
                     250,
-                    f"BareosFdPluginPostgreSQL:plugin_io_read IOP.status \
-                    {IOP.status}\n{self.data_stream}\n",
+                    (
+                        f"BareosFdPluginPostgreSQL:plugin_io_read"
+                        f"IOP.status {IOP.status}\n{self.data_stream}\n"
+                    ),
                 )
 
                 if IOP.status == 0:
@@ -465,16 +501,17 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
             except Exception as err:
                 bareosfd.JobMessage(
                     bareosfd.M_ERROR,
-                    f'Could net read {IOP.count} bytes from {str(bdata)}.\
-                    "{err}"',
+                    f'Could net read {IOP.count} bytes from {str(bdata)}. "{err}"',
                 )
                 # IOP.io_errno = err.errno
                 return bareosfd.bRC_Error
         else:
             bareosfd.DebugMessage(
                 100,
-                f"BareosFdPluginPostgreSQL:plugin_io_read Did not read \
-                from file {self.FNAME} (type {self.file_type})\n",
+                (
+                    f"BareosFdPluginPostgreSQL:plugin_io_read Did not read from"
+                    f"file {self.FNAME} (type {self.file_type})\n"
+                ),
             )
             IOP.buf = bytearray()
             IOP.status = 0
@@ -493,7 +530,6 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
         bareosfd.DebugMessage(
             250, f"BareosFdPluginPostgreSQL:plugin_io called with function {IOP.func}\n"
         )
-        # 1
         if IOP.func == bareosfd.IO_OPEN:
             if IOP.fname in self.virtual_files:
                 self.FNAME = IOP.fname
@@ -506,8 +542,10 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
                 IOP.status = bareosfd.iostat_do_in_plugin
                 bareosfd.DebugMessage(
                     250,
-                    f"BareosFdPluginPostgreSQL:plugin_io open find \
-                    {self.FNAME} in {self.virtual_files}\n",
+                    (
+                        f"BareosFdPluginPostgreSQL:plugin_io open find {self.FNAME}"
+                        f"in {self.virtual_files}\n"
+                    ),
                 )
                 return bareosfd.bRC_OK
 
@@ -517,24 +555,22 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
                     IOP.filedes = self.file.fileno()
                     IOP.status = bareosfd.iostat_do_in_core
             return result
-        # 2
         elif IOP.func == bareosfd.IO_READ:
             if self.FNAME in self.virtual_files:
                 bareosfd.DebugMessage(
                     250,
-                    f"BareosFdPluginPostgreSQL:plugin_io io_read calling\
-                    self.plugin_io_read for {self.FNAME}\n",
+                    (
+                        f"BareosFdPluginPostgreSQL:plugin_io io_read calling"
+                        f"self.plugin_io_read for {self.FNAME}\n"
+                    ),
                 )
                 return self.plugin_io_read(IOP)
 
             return super().plugin_io_read(IOP)
-        # 3
         elif IOP.func == bareosfd.IO_WRITE:
             return super().plugin_io_write(IOP)
-        # 4
         elif IOP.func == bareosfd.IO_CLOSE:
             return super().plugin_io_close(IOP)
-        # 5
         elif IOP.func == bareosfd.IO_SEEK:
             return super().plugin_io_seek(IOP)
 
@@ -549,8 +585,8 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
         if chr(self.level) == "F":
             # For Full we backup the PostgreSQL data directory
             start_dir = self.options["postgresql_data_dir"]
-            bareosfd.DebugMessage(100, f"dataDir: {start_dir}\n")
-            bareosfd.JobMessage(bareosfd.M_INFO, f"dataDir: {start_dir}\n")
+            bareosfd.DebugMessage(100, f"data_dir: {start_dir}\n")
+            bareosfd.JobMessage(bareosfd.M_INFO, f"data_dir: {start_dir}\n")
         else:
             # If level is not Full, we only backup WAL files
             # and create a restore object ROP with timestamp information.
@@ -563,17 +599,21 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
             if self.last_pg_major is None:
                 bareosfd.JobMessage(
                     bareosfd.M_FATAL,
-                    "no pg version from previous backup recorded. \
-                    Is the previous backup from an old plugin ?",
+                    (
+                        "no pg version from previous backup recorded."
+                        "Is the previous backup from an old plugin?"
+                    ),
                 )
                 return bareosfd.bRC_Error
 
             if self.pg_major_version != self.last_pg_major:
                 bareosfd.JobMessage(
                     bareosfd.M_FATAL,
-                    f"pg version of previous backup {self.last_pg_major} does\
-                      not match current pg version {self.pg_major_version}\
-                      Please run a new Full.",
+                    (
+                        f"pg version of previous backup {self.last_pg_major} does not"
+                        f"match current pg version {self.pg_major_version}."
+                        f"Please run a new Full."
+                    ),
                 )
                 return bareosfd.bRC_Error
 
@@ -585,19 +625,25 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
             get_lsn_stmt = "SELECT pg_current_wal_lsn()"
             switch_lsn_stmt = "SELECT pg_switch_wal()"
             try:
-                current_lsn = self.format_lsn(self.db_con.run(get_lsn_stmt)[0][0])
+                current_lsn = self.db_con.run(get_lsn_stmt)[0][0]
                 bareosfd.JobMessage(
                     bareosfd.M_INFO,
-                    f"Current LSN {current_lsn}, last LSN: {self.lastLSN}\n",
+                    f"Current LSN {current_lsn}, last LSN: {self.last_lsn}\n",
                 )
             except Exception as err:
                 current_lsn = 0
                 bareosfd.JobMessage(
                     bareosfd.M_WARNING,
-                    f"Could not get current LSN, last LSN was: {self.lastLSN}\
-                     : {err} \n",
+                    (
+                        f"Could not get current LSN, last LSN was: {self.last_lsn}"
+                        f": {err} \n"
+                    ),
                 )
-            if self.switch_wal and current_lsn > self.lastLSN:
+            # TODO maybe we want to ensure that pg_walfile_name_offset()
+            # return 0 bytes between lsn.
+            current_lsn_formated = self.lsn_to_int(current_lsn)
+            last_lsn_formated = self.lsn_to_int(self.last_lsn)
+            if self.switch_wal and current_lsn_formated > last_lsn_formated:
                 # Let PostgreSQL write latest transaction into a new WAL file now
                 try:
                     result = self.db_con.run(switch_lsn_stmt)
@@ -606,23 +652,28 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
                         bareosfd.M_WARNING,
                         f"Could not switch to next WAL segment: {err}\n",
                     )
-                # Pick the new rawLSN and update our lastLSN
+                # Pick the new raw lsn and update our last_lsn
                 try:
                     current_lsn_raw = self.db_con.run(get_lsn_stmt)[0][0]
-                    current_lsn = self.format_lsn(current_lsn_raw)
+                    current_lsn = current_lsn_raw
                     bareosfd.DebugMessage(
                         150,
-                        f"after pg_switch_wal(): current_lsn: {current_lsn} \
-                          lastLSN: {self.lastLSN}\n",
+                        (
+                            f"after pg_switch_wal(): current_lsn: {current_lsn}"
+                            f"last_lsn: {self.last_lsn}\n"
+                        ),
                     )
-                    self.lastLSN = current_lsn
+                    self.last_lsn = current_lsn
                 except Exception as err:
                     bareosfd.JobMessage(
                         bareosfd.M_WARNING,
-                        f"Could not read LSN after switching to new WAL segment: {err}\n",
+                        (
+                            f"Could not read LSN after switching to"
+                            f"new WAL segment: {err}\n"
+                        ),
                     )
 
-                if not self.wait_for_wal_archiving(current_lsn_raw):
+                if not self.wait_for_wal_archiving(current_lsn):
                     return bareosfd.bRC_Error
 
             else:
@@ -659,12 +710,16 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
             f"Bareos.plugin.postgresql.jobid.{self.jobId}.PG{self.pg_major_version}"
         )
         if self.pg_major_version < 15:
-            start_stmt = f"pg_start_backup('{self.backup_label_string}', \
-                                          fast => {self.start_fast_start}, \
-                                          exclusive => False)"
+            start_stmt = (
+                f"pg_start_backup('{self.backup_label_string}',"
+                f"fast => {self.start_fast},"
+                f"exclusive => False)"
+            )
         else:
-            start_stmt = f"pg_backup_start('{self.backup_label_string}', \
-                                          fast => {self.start_fast_start})"
+            start_stmt = (
+                f"pg_backup_start('{self.backup_label_string}',"
+                f"fast => {self.start_fast})"
+            )
         bareosfd.DebugMessage(100, f"Send 'SELECT {start_stmt}' to Postgres\n")
         bareosfd.DebugMessage(100, f"backup label = {self.backup_label_string}\n")
         # We tell PostgreSQL that we want to start to backup file now
@@ -705,7 +760,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
         statp = bareosfd.StatPacket()
         if self.file_to_backup == "ROP":
             self.rop_data["last_backup_stop_time"] = self.last_backup_stop_time
-            self.rop_data["lastLSN"] = self.lastLSN
+            self.rop_data["last_lsn"] = self.last_lsn
             self.rop_data["plugin_version"] = 2
             self.rop_data["pg_major_version"] = self.pg_major_version
             savepkt.fname = "/_bareos_postgresql_plugin/metadata"
@@ -764,8 +819,10 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
         except Exception as err:
             bareosfd.JobMessage(
                 bareosfd.M_FATAL,
-                f'Could not parse restore object json-data \
-                  "{self.row_rop_raw}" / {err}"\n',
+                (
+                    f"Could not parse restore object json-data"
+                    f"'{self.row_rop_raw}' / '{err}'\n"
+                ),
             )
             return bareosfd.bRC_Error
 
@@ -775,17 +832,19 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
             )
             bareosfd.JobMessage(
                 bareosfd.M_INFO,
-                f"Got last_backup_stop_time {self.last_backup_stop_time} \
-                  from restore object of job {ROP.jobid}\n",
+                (
+                    f"Got last_backup_stop_time {self.last_backup_stop_time}"
+                    f"from restore object of job {ROP.jobid}\n"
+                ),
             )
         if (
-            "lastLSN" in self.rop_data[ROP.jobid]
-            and self.rop_data[ROP.jobid]["lastLSN"] is not None
+            "last_lsn" in self.rop_data[ROP.jobid]
+            and self.rop_data[ROP.jobid]["last_lsn"] is not None
         ):
-            self.lastLSN = self.rop_data[ROP.jobid]["lastLSN"]
+            self.last_lsn = self.rop_data[ROP.jobid]["last_lsn"]
             bareosfd.JobMessage(
                 bareosfd.M_INFO,
-                f"Got lastLSN {self.lastLSN} from restore object of job {ROP.jobid}\n",
+                f"Got last_lsn {self.last_lsn} from restore object of job {ROP.jobid}\n",
             )
 
         if (
@@ -795,8 +854,10 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
             self.last_pg_major = self.rop_data[ROP.jobid]["pg_major_version"]
             bareosfd.JobMessage(
                 bareosfd.M_INFO,
-                f"Got pg major version {self.last_pg_major} \
-                  from restore object of job {ROP.jobid}\n",
+                (
+                    f"Got pg major version {self.last_pg_major} from restore object"
+                    f"of job {ROP.jobid}\n"
+                ),
             )
 
         return bareosfd.bRC_OK
@@ -830,13 +891,14 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
         """
         bareosfd.DebugMessage(
             100,
-            "complete_backup_job_and_close_db() \
-             entry point in Python called\n",
+            ("complete_backup_job_and_close_db(), entry point in Python called\n"),
         )
 
         if self.pg_major_version < 15:
-            stop_stmt = f"pg_stop_backup(exclusive => False, \
-                         wait_for_archive => {self.stop_wait_wal_archive})"
+            stop_stmt = (
+                f"pg_stop_backup(exclusive => False,"
+                f"wait_for_archive => {self.stop_wait_wal_archive})"
+            )
         else:
             stop_stmt = f"pg_backup_stop({self.stop_wait_wal_archive})"
         try:
@@ -844,31 +906,37 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
             first_row = self.db_con.run(f"SELECT {stop_stmt};")[0][0]
             bareosfd.DebugMessage(
                 100,
-                f"row returned type is {type(first_row)}\n\
-                                 isstr:{isinstance(first_row, str)}\n\
-                                 content:'{first_row}'\n",
+                (
+                    f"row returned type is {type(first_row)}\n"
+                    f"isstr:{isinstance(first_row, str)}\n"
+                    f"content:'{first_row}'\n"
+                ),
             )
             if isinstance(first_row, str):
                 first_row = parse_row(first_row)
 
             bareosfd.DebugMessage(
                 150,
-                f"pg_backup_stop return with: '{first_row}'\n\
-                                  Being a type of '{type(first_row)}'\n\
-                                  With a length of '{len(first_row)}'\n",
+                (
+                    f"pg_backup_stop return with: '{first_row}'\n"
+                    f"Being a type of '{type(first_row)}'\n"
+                    f"With a length of '{len(first_row)}'\n"
+                ),
             )
 
-            self.lastLSN, self.backup_label_data, self.tablespace_map_data = first_row
+            self.last_lsn, self.backup_label_data, self.tablespace_map_data = first_row
 
             self.backup_label_filename = (
                 self.options["postgresql_data_dir"] + "backup_label"
             )
             bareosfd.DebugMessage(
                 100,
-                f"backup_label file created in \
-                                  '{self.backup_label_filename}'\n\
-                                  LSN='{self.lastLSN}'\n\
-                                  Label='{self.backup_label_data}'\n",
+                (
+                    f"backup_label file created in"
+                    f"'{self.backup_label_filename}'\n"
+                    f"LSN='{self.last_lsn}'\n"
+                    f"Label='{self.backup_label_data}'\n"
+                ),
             )
 
             if len(self.tablespace_map_data) > 0 and self.tablespace_map_data != "":
@@ -877,14 +945,17 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
                 )
                 bareosfd.DebugMessage(
                     100,
-                    f"tablespace_map file create in \
-                                        {self.tablespace_map_filename}\n\
-                                        Content='{self.tablespace_map_data}'\n",
+                    (
+                        f"tablespace_map create in {self.tablespace_map_filename}\n"
+                        f"Content='{self.tablespace_map_data}'\n"
+                    ),
                 )
 
             bareosfd.DebugMessage(100, f"pg_major_version {self.pg_major_version}\n")
-            recovery_string = f"# Created by bareos {bareosfd.GetValue(bareosfd.bVarJobName)}\n\
-                  # on PostgreSQL cluster version {str(self.pg_version)}\n"
+            recovery_string = (
+                f"# Created by bareos {bareosfd.GetValue(bareosfd.bVarJobName)}\n"
+                f"# on PostgreSQL cluster version {str(self.pg_version)}\n"
+            )
             if self.pg_major_version >= 10 and self.pg_major_version < 12:
                 self.recovery_filename = (
                     self.options["postgresql_data_dir"] + "recovery.conf"
@@ -901,11 +972,11 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
             bareosfd.DebugMessage(100, f"len recovery_data {len(self.recovery_data)}\n")
             bareosfd.DebugMessage(
                 100,
-                f"recovery file create in \
-                                  {self.recovery_filename}\n\
-                                  with data {self.recovery_data}\n",
+                (
+                    f"recovery file create in {self.recovery_filename}\n"
+                    f"with data {self.recovery_data}\n"
+                ),
             )
-
             self.last_backup_stop_time = int(time.time())
 
         except Exception as err:
@@ -980,8 +1051,8 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
     def end_backup_job(self):
         """
         Called if backup job ends, before ClientAfterJob
-        Make sure that dbconnection was closed in any way,
-        especially when job was cancelled
+        Make sure that db connection was closed in any way,
+        especially when job was canceled
         """
         if self.full_backup_running:
             self.complete_backup_job_and_close_db()
@@ -1008,8 +1079,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
 
             bareosfd.DebugMessage(
                 100,
-                f"wait_for_wal_archiving({lsn}):\
-                 wal filename={wal_filename}\n",
+                f"wait_for_wal_archiving({lsn}): wal filename={wal_filename}\n",
             )
 
         except Exception as err:
@@ -1033,7 +1103,12 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
 
         bareosfd.JobMessage(
             bareosfd.M_FATAL,
-            f"Timeout waiting {self.switch_wal_timeout} s\
-             for wal file {wal_filename} to be archived\n",
+            (
+                f"Timeout waiting {self.switch_wal_timeout} sec."
+                f"for wal file {wal_filename} to be archived\n"
+            ),
         )
         return False
+
+
+# vim: ts=4 tabstop=4 expandtab shiftwidth=4 softtabstop=4
