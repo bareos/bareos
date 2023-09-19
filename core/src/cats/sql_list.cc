@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -525,7 +525,7 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
                               const char* range,
                               const char* clientname,
                               std::vector<char> jobstatuslist,
-                              int joblevel,
+                              std::vector<char> joblevels,
                               std::vector<char> jobtypes,
                               const char* volumename,
                               const char* poolname,
@@ -563,8 +563,9 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
     PmStrcat(selection, temp.c_str());
   }
 
-  if (joblevel) {
-    temp.bsprintf("AND Job.Level = '%c' ", joblevel);
+  if (!joblevels.empty()) {
+    std::string levels = CreateDelimitedStringForSqlQueries(joblevels, ',');
+    temp.bsprintf("AND Job.Level in (%s) ", levels.c_str());
     PmStrcat(selection, temp.c_str());
   }
 

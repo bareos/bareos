@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -93,7 +93,7 @@ bool GetUserJobTypeListSelection(UaContext* ua,
                                  std::vector<char>& passed_jobtypes,
                                  bool ask_user);
 bool GetUserJobStatusSelection(UaContext* ua, std::vector<char>& jobstatus);
-bool GetUserJobLevelSelection(UaContext* ua, int* joblevel);
+bool GetUserJobLevelSelection(UaContext* ua, std::vector<char>& joblevel_list);
 
 int FindArgKeyword(UaContext* ua, const char** list);
 int FindArg(UaContext* ua, const char* keyword);

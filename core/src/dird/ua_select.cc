@@ -990,9 +990,8 @@ PoolResource* get_pool_resource(UaContext* ua)
 // List all jobs and ask user to select one
 int SelectJobDbr(UaContext* ua, JobDbRecord* jr)
 {
-  ua->db->ListJobRecords(ua->jcr, jr, "", NULL, std::vector<char>{}, 0,
-                         std::vector<char>{}, NULL, NULL, 0, 0, 0, ua->send,
-                         HORZ_LIST);
+  ua->db->ListJobRecords(ua->jcr, jr, "", NULL, {}, {}, {}, nullptr, nullptr, 0,
+                         0, 0, ua->send, HORZ_LIST);
   if (!GetPint(ua, _("Enter the JobId to select: "))) { return 0; }
 
   jr->JobId = ua->int64_val;
@@ -1990,18 +1989,22 @@ bool GetUserJobStatusSelection(UaContext* ua, std::vector<char>& jobstatuslist)
   return true;
 }
 
-bool GetUserJobLevelSelection(UaContext* ua, int* joblevel)
+bool GetUserJobLevelSelection(UaContext* ua, std::vector<char>& joblevel_list)
 {
   int i;
 
   if (((i = FindArgWithValue(ua, NT_("joblevel"))) >= 0)
       || ((i = FindArgWithValue(ua, NT_("level"))) >= 0)) {
-    if (strlen(ua->argv[i]) == 1 && ua->argv[i][0] >= 'A'
-        && ua->argv[i][0] <= 'z') {
-      *joblevel = ua->argv[i][0];
-    } else {
-      /* invalid joblevel */
-      return false;
+    std::vector<std::string> joblevelinput_list
+        = split_string(ua->argv[i], ',');
+
+    for (const auto& level : joblevelinput_list) {
+      if (level.size() == 1 && level[0] >= 'A' && level[0] <= 'z') {
+        joblevel_list.push_back(level[0]);
+      } else {
+        /* invalid joblevel */
+        return false;
+      }
     }
   }
   return true;
