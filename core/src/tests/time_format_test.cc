@@ -47,20 +47,29 @@ TEST(time_format, correct_time_and_date_format)
   EXPECT_THAT(stime_out.data(), EndsWith(GetCurrentTimezoneOffset()));
 
 #if !defined(HAVE_WIN32)
+  using namespace std::string_literals;
+
   setenv("TZ", "/usr/share/zoneinfo/Europe/Berlin", 1);
-  EXPECT_STREQ(GetCurrentTimezoneOffset().data(), "+0200");
+  EXPECT_PRED3(
+      [](auto str, auto s1, auto s2) { return str == s1 || str == s2; },
+      GetCurrentTimezoneOffset().data(), "+0200"s, "+0100"s);
 
   setenv("TZ", "/usr/share/zoneinfo/America/Los_Angeles", 1);
-  EXPECT_STREQ(GetCurrentTimezoneOffset().data(), "-0700");
-
-  setenv("TZ", "/usr/share/zoneinfo/Europe/Chisinau", 1);
-  EXPECT_STREQ(GetCurrentTimezoneOffset().data(), "+0300");
-
-  setenv("TZ", "/usr/share/zoneinfo/Asia/Katmandu", 1);
-  EXPECT_STREQ(GetCurrentTimezoneOffset().data(), "+0545");
+  EXPECT_PRED3(
+      [](auto str, auto s1, auto s2) { return str == s1 || str == s2; },
+      GetCurrentTimezoneOffset().data(), "-0700"s, "-0800"s);
 
   setenv("TZ", "/usr/share/zoneinfo/America/St_Johns", 1);
-  EXPECT_STREQ(GetCurrentTimezoneOffset().data(), "-0230");
+  EXPECT_PRED3(
+      [](auto str, auto s1, auto s2) { return str == s1 || str == s2; },
+      GetCurrentTimezoneOffset(), "-0230"s, "-0330"s);
+
+  setenv("TZ", "/usr/share/zoneinfo/Europe/Chisinau", 1);
+  EXPECT_EQ(GetCurrentTimezoneOffset(), "+0300"s);
+
+  setenv("TZ", "/usr/share/zoneinfo/Asia/Katmandu", 1);
+  EXPECT_EQ(GetCurrentTimezoneOffset(), "+0545"s);
+
 #endif
 
   // iso date with timezone
