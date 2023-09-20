@@ -33,9 +33,8 @@
   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res, tls_enable_), 0, CFG_ITEM_DEFAULT, "true", \
      NULL, "Enable TLS support."}, \
   { "TlsRequire", CFG_TYPE_BOOL, ITEM(res, tls_require_), 0, CFG_ITEM_DEFAULT, "true", \
-     NULL, "Without setting this to yes, Bareos can fall back to use unencrypted " \
-     "connections. " \
-     "Enabling this implicitly sets \"TLS Enable = yes\"."}, \
+     NULL, "If set to \"no\", Bareos can fall back to use unencrypted " \
+     "connections. " }, \
   { "TlsCipherList", CFG_TYPE_STDSTRDIR, ITEM(res, cipherlist_), 0, CFG_ITEM_PLATFORM_SPECIFIC, NULL, \
      NULL, "List of valid TLS Ciphers."}, \
   { "TlsDhFile", CFG_TYPE_STDSTRDIR, ITEM(res, tls_cert_.dhfile_), 0, 0, NULL, \
