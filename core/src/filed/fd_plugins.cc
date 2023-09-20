@@ -647,7 +647,6 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 {
   int ret = 1;  // everything ok
   int len;
-  bRC retval;
   char* cmd;
   bEvent event;
   PluginContext* ctx = nullptr;
@@ -719,8 +718,8 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
             &sp.statp.st_size, &sp.statp.st_blocks, &sp);
 
       // Get the file save parameters. I.e. the stat pkt ...
-      if (auto ret = PlugFunc(ctx->plugin)->startBackupFile(ctx, &sp); ret != bRC_OK) {
-        if (ret == bRC_Error) {
+      if (bRC retval = PlugFunc(ctx->plugin)->startBackupFile(ctx, &sp); retval != bRC_OK) {
+        if (retval == bRC_Error) {
           Jmsg1(jcr, M_FATAL, 0,
                 _("Command plugin \"%s\": startBackupFile failed.\n"), cmd);
           goto bail_out;
