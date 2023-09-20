@@ -99,6 +99,10 @@ int BregexpGetBuildWhereSize(char* strip_prefix,
                              char* add_prefix,
                              char* add_suffix);
 
+std::string BuildRegexWhere(char* strip_prefix,
+                     char* add_prefix,
+                     char* add_suffix);
+
 /* get a bregexp string from user arguments
  * you must allocate it with BregexpGetBuildWhereSize();
  */

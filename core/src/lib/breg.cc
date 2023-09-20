@@ -345,6 +345,17 @@ int BregexpGetBuildWhereSize(char* strip_prefix,
   return str_size;
 }
 
+std::string BuildRegexWhere(char* strip_prefix,
+                            char* add_prefix,
+                            char* add_suffix)
+{
+  std::string dest;
+  int len = BregexpGetBuildWhereSize(strip_prefix, add_prefix, add_suffix);
+  dest.resize(len);
+  bregexp_build_where(dest.data(), len, strip_prefix, add_prefix, add_suffix);
+  return dest;
+}
+
 /* build a regexp string with user arguments
  * Usage :
  *

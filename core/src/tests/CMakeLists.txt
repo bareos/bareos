@@ -158,6 +158,11 @@ if(NOT client-only)
                    $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
   )
 
+target_sources(addresses_and_ports_config
+  PRIVATE
+    breg_expressions.cc
+)
+
   bareos_add_test(
     addresses_and_ports_functions
     LINK_LIBRARIES bareos dird_objects bareosfind bareossql testing_common
@@ -390,6 +395,9 @@ bareos_add_test(
   LINK_LIBRARIES bareos Threads::Threads GTest::gtest_main
   ADDITIONAL_SOURCES bareos_test_sockets.cc
 )
+
+
+bareos_add_test(breg_expressions LINK_LIBRARIES bareos GTest::gtest_main)
 
 bareos_add_test(job_control_record LINK_LIBRARIES bareos GTest::gtest_main)
 

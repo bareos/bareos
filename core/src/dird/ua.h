@@ -220,7 +220,6 @@ class RestoreContext {
 
   void GetFilenameAndPath(UaContext* ua, char* pathname);
   static char FilterIdentifier(JobTypeFilter filter);
-  void BuildRegexWhere(char* strip_prefix, char* add_prefix, char* add_suffix);
 };
 
 // Context for run job.
