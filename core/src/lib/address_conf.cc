@@ -505,6 +505,10 @@ void InitDefaultAddresses(dlist<IPADDR>** out, const char* port)
   bool ipv4_added = true;
   bool ipv6_added = true;
 
+#ifdef HAVE_WIN32
+  WSA_Init();
+#endif
+
   if (!AddAddress(out, IPADDR::R_DEFAULT, htons(sport), AF_INET, 0, 0, buf,
                   sizeof(buf))) {
     Emsg1(M_WARNING, 0, _("Can't add default IPv4 address (%s)\n"), buf);
