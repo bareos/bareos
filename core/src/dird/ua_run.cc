@@ -191,7 +191,7 @@ static inline bool reRunJob(UaContext* ua, JobId_t JobId, bool yes, utime_t now)
     PmStrcat(ua->cmd, cmdline);
   }
 
-  bstrutime(dt, sizeof(dt), now);
+  bstrftime(dt, sizeof(dt), now);
   Mmsg(cmdline, " when=\"%s\"", dt);
   PmStrcat(ua->cmd, cmdline);
 
@@ -277,7 +277,7 @@ static std::string PrepareRerunSqlQuery(UaContext*,
 {
   char dt[MAX_TIME_LENGTH];
   time_t schedtime = ConvertDaysHoursToSecs(rerunargs, now);
-  bstrutime(dt, sizeof(dt), schedtime);
+  bstrftime(dt, sizeof(dt), schedtime);
 
   std::string select{"SELECT JobId FROM Job WHERE JobStatus = 'f'"};
   if (rerunargs.since_jobid) {
@@ -1238,7 +1238,7 @@ static bool DisplayJobParameters(UaContext* ua,
             jcr->dir_impl->res.write_storage
                 ? jcr->dir_impl->res.write_storage->resource_name_
                 : _("*None*"),
-            bstrutime(dt, sizeof(dt), jcr->sched_time), jcr->JobPriority);
+            bstrftime(dt, sizeof(dt), jcr->sched_time), jcr->JobPriority);
       } else {
         ua->SendMsg(
             _("Run Admin Job\n"
@@ -1253,7 +1253,7 @@ static bool DisplayJobParameters(UaContext* ua,
             jcr->dir_impl->res.write_storage
                 ? jcr->dir_impl->res.write_storage->resource_name_
                 : _("*None*"),
-            bstrutime(dt, sizeof(dt), jcr->sched_time), jcr->JobPriority);
+            bstrftime(dt, sizeof(dt), jcr->sched_time), jcr->JobPriority);
       }
       jcr->setJobLevel(L_FULL);
       break;
@@ -1274,7 +1274,7 @@ static bool DisplayJobParameters(UaContext* ua,
             jcr->dir_impl->res.write_storage
                 ? jcr->dir_impl->res.write_storage->resource_name_
                 : _("*None*"),
-            bstrutime(dt, sizeof(dt), jcr->sched_time), jcr->JobPriority);
+            bstrftime(dt, sizeof(dt), jcr->sched_time), jcr->JobPriority);
       } else {
         ua->SendMsg(
             _("Run Archive Job\n"
@@ -1289,7 +1289,7 @@ static bool DisplayJobParameters(UaContext* ua,
             jcr->dir_impl->res.write_storage
                 ? jcr->dir_impl->res.write_storage->resource_name_
                 : _("*None*"),
-            bstrutime(dt, sizeof(dt), jcr->sched_time), jcr->JobPriority);
+            bstrftime(dt, sizeof(dt), jcr->sched_time), jcr->JobPriority);
       }
       jcr->setJobLevel(L_FULL);
       break;
@@ -1310,7 +1310,7 @@ static bool DisplayJobParameters(UaContext* ua,
             jcr->dir_impl->res.write_storage
                 ? jcr->dir_impl->res.write_storage->resource_name_
                 : _("*None*"),
-            bstrutime(dt, sizeof(dt), jcr->sched_time), jcr->JobPriority);
+            bstrftime(dt, sizeof(dt), jcr->sched_time), jcr->JobPriority);
       } else {
         ua->SendMsg(
             _("Run Consolidate Job\n"
@@ -1325,7 +1325,7 @@ static bool DisplayJobParameters(UaContext* ua,
             jcr->dir_impl->res.write_storage
                 ? jcr->dir_impl->res.write_storage->resource_name_
                 : _("*None*"),
-            bstrutime(dt, sizeof(dt), jcr->sched_time), jcr->JobPriority);
+            bstrftime(dt, sizeof(dt), jcr->sched_time), jcr->JobPriority);
       }
       jcr->setJobLevel(L_FULL);
       break;
@@ -1364,7 +1364,7 @@ static bool DisplayJobParameters(UaContext* ua,
               jcr->dir_impl->res.write_storage
                   ? jcr->dir_impl->res.write_storage->resource_name_
                   : _("*None*"),
-              bstrutime(dt, sizeof(dt), jcr->sched_time), jcr->JobPriority,
+              bstrftime(dt, sizeof(dt), jcr->sched_time), jcr->JobPriority,
               jcr->dir_impl->plugin_options ? "Plugin Options: " : "",
               jcr->dir_impl->plugin_options ? jcr->dir_impl->plugin_options
                                             : "",
@@ -1400,7 +1400,7 @@ static bool DisplayJobParameters(UaContext* ua,
                   ? jcr->dir_impl->res.write_storage->resource_name_
                   : _("*None*"),
               jcr->dir_impl->res.wstore_source,
-              bstrutime(dt, sizeof(dt), jcr->sched_time), jcr->JobPriority,
+              bstrftime(dt, sizeof(dt), jcr->sched_time), jcr->JobPriority,
               jcr->dir_impl->plugin_options ? "Plugin Options: " : "",
               jcr->dir_impl->plugin_options ? jcr->dir_impl->plugin_options
                                             : "",
@@ -1449,7 +1449,7 @@ static bool DisplayJobParameters(UaContext* ua,
               jcr->dir_impl->res.pool_source,
               jcr->dir_impl->res.read_storage->resource_name_,
               jcr->dir_impl->res.rstore_source, Name, verify_list,
-              bstrutime(dt, sizeof(dt), jcr->sched_time), jcr->JobPriority);
+              bstrftime(dt, sizeof(dt), jcr->sched_time), jcr->JobPriority);
         } else {
           ua->SendMsg(_("Run Verify Job\n"
                         "JobName:     %s\n"
@@ -1469,7 +1469,7 @@ static bool DisplayJobParameters(UaContext* ua,
                       jcr->dir_impl->res.pool_source,
                       jcr->dir_impl->res.read_storage->resource_name_,
                       jcr->dir_impl->res.rstore_source, Name, verify_list,
-                      bstrutime(dt, sizeof(dt), jcr->sched_time),
+                      bstrftime(dt, sizeof(dt), jcr->sched_time),
                       jcr->JobPriority);
         }
       }
@@ -1521,7 +1521,7 @@ static bool DisplayJobParameters(UaContext* ua,
                 jcr->dir_impl->res.client->resource_name_,
                 jcr->dir_impl->backup_format,
                 jcr->dir_impl->res.read_storage->resource_name_,
-                bstrutime(dt, sizeof(dt), jcr->sched_time),
+                bstrftime(dt, sizeof(dt), jcr->sched_time),
                 jcr->dir_impl->res.catalog->resource_name_, jcr->JobPriority,
                 NPRT(jcr->dir_impl->plugin_options));
           } else {
@@ -1546,7 +1546,7 @@ static bool DisplayJobParameters(UaContext* ua,
                         jcr->dir_impl->res.client->resource_name_,
                         jcr->dir_impl->backup_format,
                         jcr->dir_impl->res.read_storage->resource_name_,
-                        bstrutime(dt, sizeof(dt), jcr->sched_time),
+                        bstrftime(dt, sizeof(dt), jcr->sched_time),
                         jcr->dir_impl->res.catalog->resource_name_,
                         jcr->JobPriority, NPRT(jcr->dir_impl->plugin_options));
           }
@@ -1575,7 +1575,7 @@ static bool DisplayJobParameters(UaContext* ua,
                 jcr->dir_impl->res.client->resource_name_,
                 jcr->dir_impl->backup_format,
                 jcr->dir_impl->res.read_storage->resource_name_,
-                bstrutime(dt, sizeof(dt), jcr->sched_time),
+                bstrftime(dt, sizeof(dt), jcr->sched_time),
                 jcr->dir_impl->res.catalog->resource_name_, jcr->JobPriority,
                 NPRT(jcr->dir_impl->plugin_options));
           } else {
@@ -1600,7 +1600,7 @@ static bool DisplayJobParameters(UaContext* ua,
                         jcr->dir_impl->res.client->resource_name_,
                         jcr->dir_impl->backup_format,
                         jcr->dir_impl->res.read_storage->resource_name_,
-                        bstrutime(dt, sizeof(dt), jcr->sched_time),
+                        bstrftime(dt, sizeof(dt), jcr->sched_time),
                         jcr->dir_impl->res.catalog->resource_name_,
                         jcr->JobPriority, NPRT(jcr->dir_impl->plugin_options));
           }
@@ -1637,7 +1637,7 @@ static bool DisplayJobParameters(UaContext* ua,
                     (jcr->dir_impl->RestoreJobId == 0)
                         ? _("*None*")
                         : edit_uint64(jcr->dir_impl->RestoreJobId, ec1),
-                    bstrutime(dt, sizeof(dt), jcr->sched_time),
+                    bstrftime(dt, sizeof(dt), jcr->sched_time),
                     jcr->dir_impl->res.catalog->resource_name_,
                     jcr->JobPriority, NPRT(jcr->dir_impl->plugin_options));
       }
@@ -1680,7 +1680,7 @@ static bool DisplayJobParameters(UaContext* ua,
             (jcr->dir_impl->MigrateJobId == 0)
                 ? _("*None*")
                 : edit_uint64(jcr->dir_impl->MigrateJobId, ec1),
-            bstrutime(dt, sizeof(dt), jcr->sched_time),
+            bstrftime(dt, sizeof(dt), jcr->sched_time),
             jcr->dir_impl->res.catalog->resource_name_, jcr->JobPriority);
       } else {
         if (jcr->is_JobType(JT_COPY)) {
@@ -1717,7 +1717,7 @@ static bool DisplayJobParameters(UaContext* ua,
                     jcr->dir_impl->MigrateJobId == 0
                         ? _("*None*")
                         : edit_uint64(jcr->dir_impl->MigrateJobId, ec1),
-                    bstrutime(dt, sizeof(dt), jcr->sched_time),
+                    bstrftime(dt, sizeof(dt), jcr->sched_time),
                     jcr->dir_impl->res.catalog->resource_name_,
                     jcr->JobPriority);
       }

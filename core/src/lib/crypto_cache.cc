@@ -319,8 +319,8 @@ void DumpCryptoCache(int fd)
     Dmsg1(000, "write error: ERR=%s\n", be.bstrerror());
   }
   foreach_dlist (cce, cached_crypto_keys) {
-    bstrutime(dt1, sizeof(dt1), cce->added);
-    bstrutime(dt2, sizeof(dt2), cce->added + CRYPTO_CACHE_MAX_AGE);
+    bstrftime(dt1, sizeof(dt1), cce->added);
+    bstrftime(dt2, sizeof(dt2), cce->added + CRYPTO_CACHE_MAX_AGE);
     len = Mmsg(msg, "%-*s %-*s %-20s %-20s\n", max_vol_length, cce->VolumeName,
                max_key_length, cce->EncryptionKey, dt1, dt2);
 

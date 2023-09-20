@@ -414,7 +414,7 @@ static void ListStatusHeader(StatusPacket* sp)
              kBareosVersionStrings.GetOsInfo());
   sp->send(msg, len);
 
-  bstrftime_nc(dt, sizeof(dt), daemon_start_time);
+  bstrftime(dt, sizeof(dt), daemon_start_time);
 
   len = Mmsg(msg, _("Daemon started %s. Jobs: run=%d, running=%d, %s binary\n"),
              dt, num_jobs_run, JobCount(), kBareosVersionStrings.BinaryInfo);
@@ -809,7 +809,7 @@ static void ListTerminatedJobs(StatusPacket* sp)
     char JobName[MAX_NAME_LENGTH];
     const char* termstat;
 
-    bstrftime_nc(dt, sizeof(dt), je.end_time);
+    bstrftime(dt, sizeof(dt), je.end_time);
     switch (je.JobType) {
       case JT_ADMIN:
       case JT_RESTORE:

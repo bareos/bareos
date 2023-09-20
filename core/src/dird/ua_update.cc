@@ -961,9 +961,9 @@ static bool UpdateJob(UaContext* ua)
     jr.EndTime += (time_t)delta_start;
     jr.JobTDate += delta_start;
     /* Convert to DB times */
-    bstrutime(jr.cStartTime, sizeof(jr.cStartTime), jr.StartTime);
-    bstrutime(jr.cSchedTime, sizeof(jr.cSchedTime), jr.SchedTime);
-    bstrutime(jr.cEndTime, sizeof(jr.cEndTime), jr.EndTime);
+    bstrftime(jr.cStartTime, sizeof(jr.cStartTime), jr.StartTime);
+    bstrftime(jr.cSchedTime, sizeof(jr.cSchedTime), jr.SchedTime);
+    bstrftime(jr.cEndTime, sizeof(jr.cEndTime), jr.EndTime);
   }
   Mmsg(cmd,
        "UPDATE Job SET Name='%s', ClientId=%s,StartTime='%s',SchedTime='%s',"

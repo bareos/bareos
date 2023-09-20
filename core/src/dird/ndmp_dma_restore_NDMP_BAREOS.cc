@@ -494,7 +494,7 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
         Jmsg(
             jcr, M_INFO, 0,
             _("Run restore for sesstime %s (%d), sessionid %d, fileindex %d\n"),
-            bstrftime(dt, sizeof(dt), current_session.time, NULL),
+            bstrftime(dt, sizeof(dt), current_session.time),
             current_session.time, current_session.id, current_fi);
 
 

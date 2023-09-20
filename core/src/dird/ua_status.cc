@@ -347,7 +347,7 @@ void ListDirStatusHeader(UaContext* ua)
   ua->SendMsg(_("%s Version: %s (%s) %s\n"), my_name,
               kBareosVersionStrings.Full, kBareosVersionStrings.Date,
               kBareosVersionStrings.GetOsInfo());
-  bstrftime_nc(dt, sizeof(dt), daemon_start_time);
+  bstrftime(dt, sizeof(dt), daemon_start_time);
   ua->SendMsg(_("Daemon started %s. Jobs: run=%d, running=%d db:postgresql, %s "
                 "binary\n"),
               dt, num_jobs_run, JobCount(), kBareosVersionStrings.BinaryInfo);
@@ -399,7 +399,7 @@ static bool show_scheduled_preview(UaContext*,
        * As we use locale specific strings for weekday and month we
        * need to keep track of the longest data string used. */
       runtime = mktime(&tm);
-      bstrftime_wd(dt, sizeof(dt), runtime);
+      bstrftime(dt, sizeof(dt), runtime);
       date_len = strlen(dt);
       if (date_len > *max_date_len) {
         if (*max_date_len == 0) {
@@ -526,7 +526,7 @@ static bool DoSubscriptionStatus(UaContext* ua)
   }
 
   char now[30] = {0};
-  bstrftime(now, sizeof(now), (utime_t)time(NULL), "%F %T");
+  bstrftime(now, sizeof(now), (utime_t)time(NULL));
 
   if (kw_all || kw_detail) {
     ua->send->ObjectKeyValue(
@@ -836,7 +836,7 @@ static void PrtRuntime(UaContext* ua, sched_pkt* sp)
     }
     if (!ok) { bstrncpy(mr.VolumeName, "*unknown*", sizeof(mr.VolumeName)); }
   }
-  bstrftime_nc(dt, sizeof(dt), sp->runtime);
+  bstrftime(dt, sizeof(dt), sp->runtime);
   switch (sp->job->JobType) {
     case JT_ADMIN:
     case JT_ARCHIVE:
@@ -963,7 +963,7 @@ static void ListRunningJobs(UaContext* ua)
        * jobs in the status output.
        */
       if (jcr->is_JobType(JT_CONSOLE) && !ua->api) {
-        bstrftime_nc(dt, sizeof(dt), jcr->start_time);
+        bstrftime(dt, sizeof(dt), jcr->start_time);
         ua->SendMsg(_("Console connected at %s\n"), dt);
       }
       continue;
@@ -1063,7 +1063,7 @@ static void ListRunningJobs(UaContext* ua)
         emsg = (char*)GetPoolMemory(PM_FNAME);
         if (jcr->sched_time) {
           char dt[MAX_TIME_LENGTH];
-          bstrftime_nc(dt, sizeof(dt), jcr->sched_time);
+          bstrftime(dt, sizeof(dt), jcr->sched_time);
           Mmsg(emsg, _("is waiting for its start time at %s"), dt);
         } else {
           Mmsg(emsg, _("is waiting for its start time"));
@@ -1210,7 +1210,7 @@ static void ListTerminatedJobs(UaContext* ua)
 
     if (!ua->AclAccessOk(Job_ACL, JobName)) { continue; }
 
-    bstrftime_nc(dt, sizeof(dt), je.end_time);
+    bstrftime(dt, sizeof(dt), je.end_time);
     switch (je.JobType) {
       case JT_ADMIN:
       case JT_ARCHIVE:
@@ -1279,7 +1279,7 @@ static void ListConnectedClients(UaContext* ua)
   ua->send->ArrayStart("client-connection");
   foreach_alist (connection, connections) {
     ua->send->ObjectStart();
-    bstrftime_nc(dt, sizeof(dt), connection->ConnectTime());
+    bstrftime(dt, sizeof(dt), connection->ConnectTime());
     ua->send->ObjectKeyValue("ConnectTime", dt, "%-20s");
     ua->send->ObjectKeyValue("protocol_version", connection->protocol_version(),
                              "%-20d");

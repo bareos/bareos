@@ -94,7 +94,7 @@ bool BareosDb::UpdateJobStartRecord(JobControlRecord* jcr, JobDbRecord* jr)
   char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50];
 
   stime = jr->StartTime;
-  bstrutime(dt, sizeof(dt), stime);
+  bstrftime(dt, sizeof(dt), stime);
   JobTDate = (btime_t)stime;
 
   DbLocker _{this};
@@ -162,11 +162,11 @@ bool BareosDb::UpdateJobEndRecord(JobControlRecord* jcr, JobDbRecord* jr)
   }
 
   ttime = jr->EndTime;
-  bstrutime(dt, sizeof(dt), ttime);
+  bstrftime(dt, sizeof(dt), ttime);
 
   if (jr->RealEndTime < jr->EndTime) { jr->RealEndTime = jr->EndTime; }
   ttime = jr->RealEndTime;
-  bstrutime(rdt, sizeof(rdt), ttime);
+  bstrftime(rdt, sizeof(rdt), ttime);
 
   JobTDate = ttime;
 
@@ -301,7 +301,7 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
   if (mr->set_first_written) {
     Dmsg1(400, "Set FirstWritten Vol=%s\n", mr->VolumeName);
     ttime = mr->FirstWritten;
-    bstrutime(dt, sizeof(dt), ttime);
+    bstrftime(dt, sizeof(dt), ttime);
     Mmsg(cmd,
          "UPDATE Media SET FirstWritten='%s'"
          " WHERE VolumeName='%s'",
@@ -314,7 +314,7 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
   if (mr->set_label_date) {
     ttime = mr->LabelDate;
     if (ttime == 0) { ttime = time(NULL); }
-    bstrutime(dt, sizeof(dt), ttime);
+    bstrftime(dt, sizeof(dt), ttime);
     Mmsg(cmd,
          "UPDATE Media SET LabelDate='%s' "
          "WHERE VolumeName='%s'",
@@ -324,7 +324,7 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
 
   if (mr->LastWritten != 0) {
     ttime = mr->LastWritten;
-    bstrutime(dt, sizeof(dt), ttime);
+    bstrftime(dt, sizeof(dt), ttime);
     Mmsg(cmd,
          "UPDATE Media Set LastWritten='%s' "
          "WHERE VolumeName='%s'",

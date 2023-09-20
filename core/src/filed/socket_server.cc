@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -85,14 +85,14 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
   char tbuf[100];
   if (bstrncmp(bs->msg, "Hello Director", 14)) {
     Dmsg1(110, "Got a DIR connection at %s\n",
-          bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+          bstrftime(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
     return handle_director_connection(bs);
   }
 
   // See if its a storage daemon making a connection.
   if (bstrncmp(bs->msg, "Hello Storage", 13)) {
     Dmsg1(110, "Got a SD connection at %s\n",
-          bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+          bstrftime(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
     return handle_stored_connection(bs);
   }
 
@@ -132,10 +132,8 @@ void StopSocketServer(bool wait)
   Dmsg0(100, "StopSocketServer\n");
   if (sock_fds) {
     BnetStopAndWaitForThreadServerTcp(tcp_server_tid);
-    /*
-     * before thread_servers terminates,
-     * it calls cleanup_bnet_thread_server_tcp
-     */
+    /* before thread_servers terminates,
+     * it calls cleanup_bnet_thread_server_tcp */
     if (wait) {
       pthread_join(tcp_server_tid, NULL);
       delete (sock_fds);

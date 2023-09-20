@@ -66,7 +66,7 @@ bool BareosDb::CreateJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
   stime = jr->SchedTime;
   ASSERT(stime != 0);
 
-  bstrutime(dt, sizeof(dt), stime);
+  bstrftime(dt, sizeof(dt), stime);
   JobTDate = (utime_t)stime;
 
   len = strlen(jcr->comment); /* TODO: use jr instead of jcr to get comment */
@@ -457,7 +457,7 @@ bool BareosDb::CreateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
       char dt[MAX_TIME_LENGTH];
       if (mr->LabelDate == 0) { mr->LabelDate = time(NULL); }
 
-      bstrutime(dt, sizeof(dt), mr->LabelDate);
+      bstrftime(dt, sizeof(dt), mr->LabelDate);
       Mmsg(cmd,
            "UPDATE Media SET LabelDate='%s' "
            "WHERE MediaId=%d",
@@ -725,7 +725,7 @@ bool BareosDb::CreateFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr)
     fsr->CreateTime = time(NULL);
   }
 
-  bstrutime(fsr->cCreateTime, sizeof(fsr->cCreateTime), fsr->CreateTime);
+  bstrftime(fsr->cCreateTime, sizeof(fsr->cCreateTime), fsr->CreateTime);
   if (fsr->FileSetText) {
     PoolMem esc_filesettext(PM_MESSAGE);
 
@@ -1281,7 +1281,7 @@ bool BareosDb::CreateJobStatistics(JobControlRecord* jcr,
   stime = jsr->SampleTime;
   ASSERT(stime != 0);
 
-  bstrutime(dt, sizeof(dt), stime);
+  bstrftime(dt, sizeof(dt), stime);
 
   Mmsg(cmd,
        "INSERT INTO JobStats (SampleTime, JobId, JobFiles, JobBytes, DeviceId)"
@@ -1318,7 +1318,7 @@ bool BareosDb::CreateDeviceStatistics(JobControlRecord* jcr,
   stime = dsr->SampleTime;
   ASSERT(stime != 0);
 
-  bstrutime(dt, sizeof(dt), stime);
+  bstrftime(dt, sizeof(dt), stime);
 
   /* clang-format off */
   Mmsg(cmd,
@@ -1371,7 +1371,7 @@ bool BareosDb::CreateTapealertStatistics(JobControlRecord* jcr,
   stime = tsr->SampleTime;
   ASSERT(stime != 0);
 
-  bstrutime(dt, sizeof(dt), stime);
+  bstrftime(dt, sizeof(dt), stime);
 
   /* clang-format off */
   Mmsg(cmd,

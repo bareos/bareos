@@ -26,7 +26,7 @@
  *
  */
 
-/* Concerning times. There are a number of differnt time standards
+/* Concerning times. There are a number of different time standards
  * in BAREOS (fdate_t, ftime_t, time_t (Unix standard), btime_t, and
  * utime_t).  fdate_t and ftime_t are deprecated and should no longer
  * be used, and in general, Unix time time_t should no longer be used,
@@ -46,6 +46,42 @@
 #include "include/bareos.h"
 #include "lib/btime.h"
 #include <math.h>
+#include <date/date.h>
+
+#include <sstream>
+#include <iomanip>
+#include <iostream>
+
+
+static date::sys_time<std::chrono::milliseconds> parse8601(std::istream&& is,
+                                                           const char* pattern)
+{
+  std::string save(std::istreambuf_iterator<char>(is), {});
+  std::istringstream in{save};
+  date::sys_time<std::chrono::milliseconds> tp;
+  in >> date::parse(pattern, tp);
+  return tp;
+}
+
+#if HAVE_WIN32
+#  define timegm _mkgmtime
+#endif
+
+// create string in ISO format, e.g. -0430
+std::string GetCurrentTimezoneOffset()
+{
+  std::time_t t = time(0);
+  auto timeoffset = timegm(localtime(&t)) - t;
+
+  // calculate hour and minutes
+  auto hourdiff = timeoffset / (60 * 60);
+  auto mindiff = abs(timeoffset % (60 * 60) / 60);
+  std::stringstream output{};
+  output << std::internal << std::showpos << std::setw(3) << std::setfill('0')
+         << hourdiff << std::noshowpos << std::setw(2) << mindiff;
+  return output.str();
+}
+
 
 void Blocaltime(const time_t* time, struct tm* tm)
 {
@@ -53,131 +89,62 @@ void Blocaltime(const time_t* time, struct tm* tm)
   (void)localtime_r(time, tm);
 }
 
-// Formatted time for user display: dd-Mon-yyyy hh:mm
-char* bstrftime(char* dt, int maxlen, utime_t utime, const char* fmt)
+
+// Formatted time as iso8601 string
+static char* bstrftime_internal(char* dt,
+                                int maxlen,
+                                utime_t utime,
+                                const char* fmt)
 {
   time_t time = (time_t)utime;
   struct tm tm;
 
   Blocaltime(&time, &tm);
-  if (fmt) {
-    strftime(dt, maxlen, fmt, &tm);
-  } else {
-    strftime(dt, maxlen, "%d-%b-%Y %H:%M", &tm);
-  }
-
+#if defined(HAVE_WIN32)
+  // we have to add the content that usually is provided by %z
+  std::vector<char> buf(MAX_NAME_LENGTH, '\0');
+  strftime(buf.data(), maxlen, fmt, &tm);
+  std::string timeformat_without_timezone{buf.data()};
+  std::string fullformat
+      = timeformat_without_timezone + GetCurrentTimezoneOffset();
+  strncpy(dt, fullformat.data(), fullformat.size());
+  dt[fullformat.size()] = '\0';
+#else
+  strftime(dt, maxlen, fmt, &tm);
+#endif
   return dt;
 }
 
-// Formatted time for user display: dd-Mon-yyyy hh:mm:ss
-char* bstrftimes(char* dt, int maxlen, utime_t utime)
+
+char* bstrftime(char* dt, int maxlen, utime_t utime)
 {
-  return bstrftime(dt, maxlen, utime, "%d-%b-%Y %H:%M:%S");
+  return bstrftime_internal(dt, maxlen, utime, kBareosDefaultTimestampFormat);
 }
 
-// Formatted time for user display with weekday: weekday dd-Mon hh:mm
-char* bstrftime_wd(char* dt, int maxlen, utime_t utime)
+char* bstrftime_filename(char* dt, int maxlen, utime_t utime)
 {
-  return bstrftime(dt, maxlen, utime, "%a %d-%b-%Y %H:%M");
+  return bstrftime_internal(dt, maxlen, utime, kBareosFilenameTimestampFormat);
 }
 
-// Formatted time for user display: dd-Mon-yy hh:mm (no century)
-char* bstrftime_nc(char* dt, int maxlen, utime_t utime)
-{
-  char *p, *q;
 
-  // NOTE! since the compiler complains about %y, I use %Y and cut the century
-  bstrftime(dt, maxlen, utime, "%d-%b-%Y %H:%M");
-
-  // Overlay the century
-  p = dt + 7;
-  q = dt + 9;
-  while (*q) { *p++ = *q++; }
-  *p = 0;
-  return dt;
-}
-
-// Unix time to standard time string yyyy-mm-dd hh:mm:ss
-char* bstrutime(char* dt, int maxlen, utime_t utime)
-{
-  return bstrftime(dt, maxlen, utime, "%Y-%m-%d %H:%M:%S");
-}
-
-static bool is_leap(const tm& datetime)
-{
-  const int year = datetime.tm_year + 1900;
-  return year % 4 == 0 && !(year % 100 == 0 && year % 400 != 0);
-}
-
-// Check if a given date is valid
-
-static bool DateIsValid(const tm& datetime)
-{
-  if (datetime.tm_year <= 0
-      || (datetime.tm_mon < month::january || datetime.tm_mon > month::december)
-      || datetime.tm_mday <= 0
-      || (datetime.tm_hour < 0 || datetime.tm_hour > 23)
-      || (datetime.tm_min < 0 || datetime.tm_min > 59)
-      || (datetime.tm_sec < 0 || datetime.tm_sec > 59)) {
-    return false;
-  }
-
-  switch (datetime.tm_mon) {
-    case month::february:
-      if (is_leap(datetime)) {
-        if (datetime.tm_mday > 29) { return false; }
-      } else {
-        if (datetime.tm_mday > 28) { return false; }
-      }
-      break;
-    case month::april:
-    case month::june:
-    case month::september:
-    case month::november:
-      if (datetime.tm_mday > 30) { return false; }
-      break;
-    default:
-      if (datetime.tm_mday > 31) { return false; }
-      break;
-  }
-  return true;
-}
-
-// Convert standard time string yyyy-mm-dd hh:mm:ss to Unix time
 utime_t StrToUtime(const char* str)
 {
-  tm datetime{};
-  time_t time;
-
-  char trailinggarbage[16]{""};
-
-  // Check for bad argument
-  if (!str || *str == 0) { return 0; }
-
-  if ((sscanf(str, "%u-%u-%u %u:%u:%u%15s", &datetime.tm_year, &datetime.tm_mon,
-              &datetime.tm_mday, &datetime.tm_hour, &datetime.tm_min,
-              &datetime.tm_sec, trailinggarbage)
-       != 7)
-      || trailinggarbage[0] != '\0') {
-    return 0;
+  date::sys_time<std::chrono::milliseconds> tp;
+  tp = parse8601(std::istringstream{str}, "%FT%TZ");
+  if (tp.time_since_epoch().count() == 0) {
+    tp = parse8601(std::istringstream{str}, "%FT%T%z");
   }
-
-  // range for tm_mon is defined as 0-11
-  --datetime.tm_mon;
-  // tm_year is years since 1900
-  datetime.tm_year -= 1900;
-
-  // we don't know these, so we initialize to sane defaults
-  datetime.tm_wday = datetime.tm_yday = 0;
-
-  // set to -1 for "I don't know"
-  datetime.tm_isdst = -1;
-
-  if (!DateIsValid(datetime)) { return 0; }
-
-  time = mktime(&datetime);
-  if (time == -1) { time = 0; }
-  return (utime_t)time;
+  auto current_timezone_offset = GetCurrentTimezoneOffset();
+  if (tp.time_since_epoch().count() == 0) {
+    // if we only have a "bareos" timestring without timezone,
+    // assume the current timezone is meant and add this to the string
+    tp = parse8601(std::istringstream{str + current_timezone_offset},
+                   "%F %T%z");
+  }
+  auto retval
+      = std::chrono::duration_cast<std::chrono::seconds>(tp.time_since_epoch())
+            .count();
+  return retval;
 }
 
 

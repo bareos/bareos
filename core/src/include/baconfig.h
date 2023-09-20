@@ -51,6 +51,22 @@
 #  define ioctl_req_t int
 #endif
 
+#if defined(HAVE_WIN32)
+static constexpr char* kBareosDefaultTimestampFormat
+    = (char*)"%Y-%m-%dT%H:%M:%S";
+// %z is missing because it is not correctly implemented in windows :(
+#else
+static constexpr char* kBareosDefaultTimestampFormat = (char*)"%Y-%m-%dT%T%z";
+#endif
+
+// for use in TO_CHAR database queries
+static constexpr char* kBareosDatabaseDefaultTimestampFormat
+    = (char*)"YYYY-MM-DD\"T\"HH24:MI:SSTZH:TZM";
+
+// to create filenames, so only what is allowed in filenames also on windows
+static constexpr char* kBareosFilenameTimestampFormat
+    = (char*)"%Y-%m-%dT%H.%M.%S";
+
 /**
  * In DEBUG mode an assert that is triggered generates a segmentation
  * fault so we can capture the debug info using btraceback.
@@ -98,8 +114,10 @@ void InitWinAPIWrapper();
 #  undef bindtextdomain
 #  undef setlocale
 
-#  ifndef _
-#    define _(s) (s)
+#  ifndef NO_UNDERSCORE_MACRO
+#    ifndef _
+#      define _(s) (s)
+#    endif
 #  endif
 #  ifndef N_
 #    define N_(s) (s)

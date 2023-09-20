@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2007 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -109,7 +109,7 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
        == 2)
       || (sscanf(bs->msg, hello_client, name) == 1)) {
     Dmsg1(110, "Got a FD connection at %s\n",
-          bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+          bstrftime(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
     return HandleFiledConnection(client_connections, bs, name,
                                  fd_protocol_version);
   }

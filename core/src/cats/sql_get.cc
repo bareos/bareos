@@ -245,7 +245,11 @@ bool BareosDb::GetJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
          "SELECT VolSessionId,VolSessionTime,"
          "PoolId,StartTime,EndTime,JobFiles,JobBytes,JobTDate,Job,JobStatus,"
          "Type,Level,ClientId,Name,PriorJobId,RealEndTime,JobId,FileSetId,"
-         "SchedTime,RealEndTime,ReadBytes,HasBase,PurgedFiles "
+         "SchedTime,RealEndTime,ReadBytes,HasBase,PurgedFiles,"
+         "EXTRACT('EPOCH' FROM StartTime),"
+         "EXTRACT('EPOCH' FROM SchedTime),"
+         "EXTRACT('EPOCH' FROM EndTime),"
+         "EXTRACT('EPOCH' FROM RealEndTime) "
          "FROM Job WHERE Job='%s'",
          esc);
   } else {
@@ -253,7 +257,11 @@ bool BareosDb::GetJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
          "SELECT VolSessionId,VolSessionTime,"
          "PoolId,StartTime,EndTime,JobFiles,JobBytes,JobTDate,Job,JobStatus,"
          "Type,Level,ClientId,Name,PriorJobId,RealEndTime,JobId,FileSetId,"
-         "SchedTime,RealEndTime,ReadBytes,HasBase,PurgedFiles "
+         "SchedTime,RealEndTime,ReadBytes,HasBase,PurgedFiles,"
+         "EXTRACT('EPOCH' FROM StartTime),"
+         "EXTRACT('EPOCH' FROM SchedTime),"
+         "EXTRACT('EPOCH' FROM EndTime),"
+         "EXTRACT('EPOCH' FROM RealEndTime) "
          "FROM Job WHERE JobId=%s",
          edit_int64(jr->JobId, ed1));
   }
@@ -296,12 +304,13 @@ bool BareosDb::GetJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
   bstrncpy(jr->cRealEndTime, (row[19] != NULL) ? row[19] : "",
            sizeof(jr->cRealEndTime));
   jr->ReadBytes = str_to_int64(row[20]);
-  jr->StartTime = StrToUtime(jr->cStartTime);
-  jr->SchedTime = StrToUtime(jr->cSchedTime);
-  jr->EndTime = StrToUtime(jr->cEndTime);
-  jr->RealEndTime = StrToUtime(jr->cRealEndTime);
   jr->HasBase = str_to_int64(row[21]);
   jr->PurgedFiles = str_to_int64(row[22]);
+
+  jr->StartTime = str_to_int64(row[23]);
+  jr->SchedTime = str_to_int64(row[24]);
+  jr->EndTime = str_to_int64(row[25]);
+  jr->RealEndTime = str_to_int64(row[26]);
 
   SqlFreeResult();
 
@@ -1074,7 +1083,11 @@ bool BareosDb::GetMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
          "EndFile,EndBlock,LabelType,LabelDate,StorageId,"
          "Enabled,LocationId,RecycleCount,InitialWrite,"
          "ScratchPoolId,RecyclePoolId,VolReadTime,VolWriteTime,"
-         "ActionOnPurge,EncryptionKey,MinBlocksize,MaxBlocksize "
+         "ActionOnPurge,EncryptionKey,MinBlocksize,MaxBlocksize,"
+         "EXTRACT('EPOCH' FROM FirstWritten),"
+         "EXTRACT('EPOCH' FROM LastWritten),"
+         "EXTRACT('EPOCH' FROM LabelDate),"
+         "EXTRACT('EPOCH' FROM InitialWrite) "
          "FROM Media WHERE MediaId=%s",
          edit_int64(mr->MediaId, ed1));
   } else { /* find by name */
@@ -1087,8 +1100,12 @@ bool BareosDb::GetMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
          "EndFile,EndBlock,LabelType,LabelDate,StorageId,"
          "Enabled,LocationId,RecycleCount,InitialWrite,"
          "ScratchPoolId,RecyclePoolId,VolReadTime,VolWriteTime,"
-         "ActionOnPurge,EncryptionKey,MinBlocksize,MaxBlocksize "
-         "FROM Media WHERE VolumeName='%s'",
+         "ActionOnPurge,EncryptionKey,MinBlocksize,MaxBlocksize,"
+         "EXTRACT('EPOCH' FROM FirstWritten),"
+         "EXTRACT('EPOCH' FROM LastWritten),"
+         "EXTRACT('EPOCH' FROM LabelDate),"
+         "EXTRACT('EPOCH' FROM InitialWrite) "
+         " FROM Media WHERE VolumeName='%s'",
          esc);
   }
 
@@ -1128,26 +1145,29 @@ bool BareosDb::GetMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
         mr->MaxVolFiles = str_to_int64(row[17]);
         mr->Recycle = str_to_int64(row[18]);
         mr->Slot = str_to_int64(row[19]);
+
         bstrncpy(mr->cFirstWritten, (row[20] != NULL) ? row[20] : "",
                  sizeof(mr->cFirstWritten));
-        mr->FirstWritten = (time_t)StrToUtime(mr->cFirstWritten);
+
         bstrncpy(mr->cLastWritten, (row[21] != NULL) ? row[21] : "",
                  sizeof(mr->cLastWritten));
-        mr->LastWritten = (time_t)StrToUtime(mr->cLastWritten);
+
         mr->InChanger = str_to_uint64(row[22]);
         mr->EndFile = str_to_uint64(row[23]);
         mr->EndBlock = str_to_uint64(row[24]);
         mr->LabelType = str_to_int64(row[25]);
+
         bstrncpy(mr->cLabelDate, (row[26] != NULL) ? row[26] : "",
                  sizeof(mr->cLabelDate));
-        mr->LabelDate = (time_t)StrToUtime(mr->cLabelDate);
+
         mr->StorageId = str_to_int64(row[27]);
         mr->Enabled = str_to_int64(row[28]);
         mr->LocationId = str_to_int64(row[29]);
         mr->RecycleCount = str_to_int64(row[30]);
+
         bstrncpy(mr->cInitialWrite, (row[31] != NULL) ? row[31] : "",
                  sizeof(mr->cInitialWrite));
-        mr->InitialWrite = (time_t)StrToUtime(mr->cInitialWrite);
+
         mr->ScratchPoolId = str_to_int64(row[32]);
         mr->RecyclePoolId = str_to_int64(row[33]);
         mr->VolReadTime = str_to_int64(row[34]);
@@ -1157,6 +1177,11 @@ bool BareosDb::GetMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
                  sizeof(mr->EncrKey));
         mr->MinBlocksize = str_to_int32(row[38]);
         mr->MaxBlocksize = str_to_int32(row[39]);
+
+        mr->FirstWritten = str_to_uint64(row[40] != NULL ? row[40] : "");
+        mr->LastWritten = str_to_uint64(row[41] != NULL ? row[41] : "");
+        mr->LabelDate = str_to_uint64(row[42] != NULL ? row[42] : "");
+        mr->InitialWrite = str_to_uint64(row[43] != NULL ? row[43] : "");
         retval = true;
       }
     } else {
@@ -1309,7 +1334,7 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
   /* Take the current time as upper limit if nothing else specified */
   utime_t StartTime = (jr->StartTime) ? jr->StartTime : time(NULL);
 
-  bstrutime(date, sizeof(date), StartTime + 1);
+  bstrftime(date, sizeof(date), StartTime + 1);
   jobids->clear();
 
   char job_type = jr->JobType == JT_ARCHIVE ? 'A' : 'B';
@@ -1415,7 +1440,7 @@ bool BareosDb::GetBaseJobid(JobControlRecord* jcr,
   lctx.value = 0;
 
   StartTime = (jr->StartTime) ? jr->StartTime : time(NULL);
-  bstrutime(date, sizeof(date), StartTime + 1);
+  bstrftime(date, sizeof(date), StartTime + 1);
   EscapeString(jcr, esc, jr->Name, strlen(jr->Name));
 
   /* we can take also client name, fileset, etc... */
@@ -1492,7 +1517,7 @@ bool BareosDb::get_quota_jobbytes(JobControlRecord* jcr,
    * last job from the job retention gets excluded. */
   schedtime += 5;
 
-  bstrutime(dt, sizeof(dt), schedtime);
+  bstrftime(dt, sizeof(dt), schedtime);
 
   DbLocker _{this};
 
@@ -1541,7 +1566,7 @@ bool BareosDb::get_quota_jobbytes_nofailed(JobControlRecord* jcr,
    * last job from the job retention gets excluded. */
   schedtime += 5;
 
-  bstrutime(dt, sizeof(dt), schedtime);
+  bstrftime(dt, sizeof(dt), schedtime);
 
   DbLocker _{this};
 

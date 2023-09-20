@@ -176,7 +176,7 @@ class MockDatabase : public BareosDb {
             = system_clock::to_time_t(now - more_than_three_hours);
 
         stime_out.resize(MAX_NAME_LENGTH);
-        bstrutime(stime_out.data(), MAX_NAME_LENGTH,
+        bstrftime(stime_out.data(), MAX_NAME_LENGTH,
                   fake_start_time_of_previous_job);
         return SqlFindResult::kSuccess;
       }
@@ -184,7 +184,7 @@ class MockDatabase : public BareosDb {
       case Mode::kFindStartTimeWrongString: {
         auto now = system_clock::now();
         stime_out.resize(MAX_NAME_LENGTH);
-        bstrutime(stime_out.data(), MAX_NAME_LENGTH,
+        bstrftime(stime_out.data(), MAX_NAME_LENGTH,
                   system_clock::to_time_t(now));
         stime_out[5] = 0;  // truncate string
         return SqlFindResult::kSuccess;

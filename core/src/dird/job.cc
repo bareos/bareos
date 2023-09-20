@@ -1437,7 +1437,6 @@ void CreateUniqueJobName(JobControlRecord* jcr, const char* base_name)
   time_t now = time(NULL);
   char dt[MAX_TIME_LENGTH];
   char name[MAX_NAME_LENGTH];
-  char* p;
   int len;
 
   /* Guarantee unique start time -- maximum one per second, and
@@ -1459,7 +1458,7 @@ void CreateUniqueJobName(JobControlRecord* jcr, const char* base_name)
 
   /* Form Unique JobName
    * Use only characters that are permitted in Windows filenames */
-  bstrftime(dt, sizeof(dt), jcr->start_time, "%Y-%m-%d_%H.%M.%S");
+  bstrftime_filename(dt, sizeof(dt), jcr->start_time);
 
   len = strlen(dt) + 5; /* dt + .%02d EOS */
 
@@ -1470,10 +1469,6 @@ void CreateUniqueJobName(JobControlRecord* jcr, const char* base_name)
   name[sizeof(name) - len] = 0; /* truncate if too long */
   Bsnprintf(jcr->Job, sizeof(jcr->Job), "%s.%s_%02d", name, dt,
             lseq); /* add date & time */
-  /* Convert spaces into underscores */
-  for (p = jcr->Job; *p; p++) {
-    if (*p == ' ') { *p = '_'; }
-  }
   Dmsg2(100, "JobId=%u created Job=%s\n", jcr->JobId, jcr->Job);
 }
 

@@ -72,7 +72,7 @@ job_code_callback_t message_job_code_callback = NULL;  // Only used by director
 
 static MessagesResource* daemon_msgs; /* Global messages */
 static char* catalog_db = NULL;       /* Database type */
-static const char* log_timestamp_format = "%d-%b %H:%M";
+static const char* log_timestamp_format = kBareosDefaultTimestampFormat;
 static void (*message_callback)(int type, const char* msg) = NULL;
 static FILE* trace_fd = NULL;
 #if defined(HAVE_WIN32)
@@ -110,7 +110,7 @@ static void DeliveryError(const char* fmt, ...)
 
   pool_buf = GetPoolMemory(PM_EMSG);
 
-  bstrftime(dt, sizeof(dt), time(NULL), log_timestamp_format);
+  bstrftime(dt, sizeof(dt), time(NULL));
   bstrncat(dt, " ", sizeof(dt));
 
   i = Mmsg(pool_buf, "%s Message delivery ERROR: ", dt);
@@ -668,7 +668,7 @@ void DispatchMessage(JobControlRecord* jcr,
   // If closing this message resource, print and send to syslog, then get out.
   if (msgs->IsClosing()) {
     if (dt_conversion) {
-      bstrftime(dt, sizeof(dt), mtime, log_timestamp_format);
+      bstrftime(dt, sizeof(dt), mtime);
       bstrncat(dt, " ", sizeof(dt));
     }
     fputs(dt, stdout);
@@ -684,9 +684,9 @@ void DispatchMessage(JobControlRecord* jcr,
        * Otherwise apply the global setting in log_timestamp_format. */
       if (dt_conversion) {
         if (!d->timestamp_format_.empty()) {
-          bstrftime(dt, sizeof(dt), mtime, d->timestamp_format_.c_str());
+          bstrftime(dt, sizeof(dt), mtime);
         } else {
-          bstrftime(dt, sizeof(dt), mtime, log_timestamp_format);
+          bstrftime(dt, sizeof(dt), mtime);
         }
         bstrncat(dt, " ", sizeof(dt));
         dtlen = strlen(dt);
@@ -920,7 +920,7 @@ void d_msg(const char* file, int line, int level, const char* fmt, ...)
     if (dbg_timestamp) {
       mtime = GetCurrentBtime();
       usecs = mtime % 1000000;
-      Mmsg(buf, "%s.%06d ", bstrftimes(ed1, sizeof(ed1), BtimeToUtime(mtime)),
+      Mmsg(buf, "%s.%06d ", bstrftime(ed1, sizeof(ed1), BtimeToUtime(mtime)),
            usecs);
       pt_out(buf.c_str());
     }

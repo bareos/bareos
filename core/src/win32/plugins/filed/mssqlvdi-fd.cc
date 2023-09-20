@@ -384,7 +384,7 @@ static bRC startBackupFile(PluginContext* ctx, save_pkt* sp)
   }
 
   now = time(NULL);
-  bstrftime(dt, sizeof(dt), now, "%Y%m%d-%H%M%S");
+  bstrftime_filename(dt, sizeof(dt), now);
 
   switch (p_ctx->backup_level) {
     case L_FULL:

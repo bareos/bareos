@@ -952,7 +952,7 @@ void DumpLabelRecord(Device* dev, DeviceRecord* rec, bool verbose)
     switch (rec->FileIndex) {
       case SOS_LABEL:
         UnserSessionLabel(&label, rec);
-        bstrftimes(dt, sizeof(dt), BtimeToUtime(label.write_btime));
+        bstrftime(dt, sizeof(dt), BtimeToUtime(label.write_btime));
         Pmsg6(-1,
               _("%s Record: File:blk=%u:%u SessId=%d SessTime=%d JobId=%d\n"),
               type, dev->file, dev->block_num, rec->VolSessionId,
@@ -963,7 +963,7 @@ void DumpLabelRecord(Device* dev, DeviceRecord* rec, bool verbose)
       case EOS_LABEL:
         char ed1[30], ed2[30];
         UnserSessionLabel(&label, rec);
-        bstrftimes(dt, sizeof(dt), BtimeToUtime(label.write_btime));
+        bstrftime(dt, sizeof(dt), BtimeToUtime(label.write_btime));
         Pmsg6(-1,
               _("%s Record: File:blk=%u:%u SessId=%d SessTime=%d JobId=%d\n"),
               type, dev->file, dev->block_num, rec->VolSessionId,

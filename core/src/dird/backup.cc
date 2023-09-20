@@ -836,7 +836,7 @@ void UpdateBootstrapFile(JobControlRecord* jcr)
         }
       }
       /* Start output with when and who wrote it */
-      bstrftimes(edt, sizeof(edt), time(nullptr));
+      bstrftime(edt, sizeof(edt), time(nullptr));
       fprintf(fd, "# %s - %s - %s%s\n", edt, jcr->dir_impl->jr.Job,
               JobLevelToString(jcr->getJobLevel()), jcr->dir_impl->since);
       for (int i = 0; i < VolCount; i++) {
@@ -905,11 +905,11 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
             secure_erase_status,
             compress_algo_list;
 
-   bstrftimes(schedt, sizeof(schedt), jcr->dir_impl->jr.SchedTime);
-   bstrftimes(sdt, sizeof(sdt), jcr->dir_impl->jr.StartTime);
-   bstrftimes(edt, sizeof(edt), jcr->dir_impl->jr.EndTime);
+   bstrftime(schedt, sizeof(schedt), jcr->dir_impl->jr.SchedTime);
+   bstrftime(sdt, sizeof(sdt), jcr->dir_impl->jr.StartTime);
+   bstrftime(edt, sizeof(edt), jcr->dir_impl->jr.EndTime);
    RunTime = jcr->dir_impl->jr.EndTime - jcr->dir_impl->jr.StartTime;
-   bstrftimes(gdt, sizeof(gdt),
+   bstrftime(gdt, sizeof(gdt),
               jcr->dir_impl->res.client->GraceTime +
               jcr->dir_impl->res.client->SoftQuotaGracePeriod);
 
@@ -1019,7 +1019,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
 
    if (jcr->dir_impl->HasQuota) {
       if (jcr->dir_impl->res.client->GraceTime != 0) {
-         bstrftimes(gdt, sizeof(gdt), jcr->dir_impl->res.client->GraceTime +
+         bstrftime(gdt, sizeof(gdt), jcr->dir_impl->res.client->GraceTime +
                                       jcr->dir_impl->res.client->SoftQuotaGracePeriod);
       } else {
          bstrncpy(gdt, "Soft Quota not exceeded", sizeof(gdt));

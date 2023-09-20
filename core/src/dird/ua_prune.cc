@@ -419,7 +419,7 @@ static bool PruneStats(UaContext* ua, utime_t retention)
 
   ua->InfoMsg(_("Pruned Jobs from JobHisto in catalog.\n"));
 
-  bstrutime(dt, sizeof(dt), now - retention);
+  bstrftime(dt, sizeof(dt), now - retention);
   {
     DbLocker _{ua->db};
     Mmsg(query, "DELETE FROM DeviceStats WHERE SampleTime < '%s'", dt);

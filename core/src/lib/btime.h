@@ -31,12 +31,11 @@ utime_t BtimeToUtime(btime_t bt); /* bareos time to utime_t */
 int TmWoy(time_t stime);
 
 void Blocaltime(const time_t* time, struct tm* tm);
-char* bstrutime(char* dt, int maxlen, utime_t tim);
-char* bstrftime(char* dt, int maxlen, utime_t tim, const char* fmt = NULL);
-char* bstrftimes(char* dt, int maxlen, utime_t tim);
-char* bstrftime_nc(char* dt, int maxlen, utime_t tim);
-char* bstrftime_wd(char* dt, int maxlen, utime_t tim);
+char* bstrftime(char* dt, int maxlen, utime_t tim);
+char* bstrftime_filename(char* dt, int maxlen, utime_t tim);
 utime_t StrToUtime(const char* str);
+
+std::string GetCurrentTimezoneOffset();
 
 struct month {
   enum : int

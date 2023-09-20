@@ -542,7 +542,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         /* Note, we add one second here just to include any job
          *  that may have finished within the current second,
          *  which happens a lot in scripting small jobs. */
-        bstrutime(date, sizeof(date), now);
+        bstrftime(date, sizeof(date), now);
         have_date = true;
         break;
       case 2: /* before */
@@ -589,7 +589,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
   }
 
   if (files.size() + dirs.size() > 0) {
-    if (!have_date) { bstrutime(date, sizeof(date), now); }
+    if (!have_date) { bstrftime(date, sizeof(date), now); }
     if (!GetClientName(ua, rx)) { return 0; }
 
     for (auto& file : files) { InsertOneFileOrDir(ua, rx, file, date, false); }
@@ -600,7 +600,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
   }
 
   if (use_select) {
-    if (!have_date) { bstrutime(date, sizeof(date), now); }
+    if (!have_date) { bstrftime(date, sizeof(date), now); }
     if (!SelectBackupsBeforeDate(ua, rx, date)) { return 0; }
     done = true;
   }
@@ -678,7 +678,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         done = false;
         break;
       case 4: /* Select the most recent backups */
-        if (!have_date) { bstrutime(date, sizeof(date), now); }
+        if (!have_date) { bstrftime(date, sizeof(date), now); }
         if (!SelectBackupsBeforeDate(ua, rx, date)) { return 0; }
         break;
       case 5: /* select backup at specified time */
@@ -688,7 +688,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         if (!SelectBackupsBeforeDate(ua, rx, date)) { return 0; }
         break;
       case 6: /* Enter files */
-        if (!have_date) { bstrutime(date, sizeof(date), now); }
+        if (!have_date) { bstrftime(date, sizeof(date), now); }
         if (!GetClientName(ua, rx)) { return 0; }
         ua->SendMsg(
             _("Enter file names with paths, or < to enter a filename\n"
@@ -719,7 +719,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         return 2;
 
       case 8: /* Find JobIds for current backup */
-        if (!have_date) { bstrutime(date, sizeof(date), now); }
+        if (!have_date) { bstrftime(date, sizeof(date), now); }
         if (!SelectBackupsBeforeDate(ua, rx, date)) { return 0; }
         done = false;
         break;
@@ -746,7 +746,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
           *rx->JobIds = 0;
           return 0; /* nothing entered, return */
         }
-        if (!have_date) { bstrutime(date, sizeof(date), now); }
+        if (!have_date) { bstrftime(date, sizeof(date), now); }
         if (!GetClientName(ua, rx)) { return 0; }
         ua->SendMsg(
             _("Enter full directory names or start the name\n"

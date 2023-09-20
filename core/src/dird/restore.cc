@@ -486,8 +486,8 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
   double kbps;
   PoolMem temp, secure_erase_status;
 
-  bstrftimes(sdt, sizeof(sdt), jcr->dir_impl->jr.StartTime);
-  bstrftimes(edt, sizeof(edt), jcr->dir_impl->jr.EndTime);
+  bstrftime(sdt, sizeof(sdt), jcr->dir_impl->jr.StartTime);
+  bstrftime(edt, sizeof(edt), jcr->dir_impl->jr.EndTime);
   RunTime = jcr->dir_impl->jr.EndTime - jcr->dir_impl->jr.StartTime;
   if (RunTime <= 0) {
     kbps = 0;

@@ -883,7 +883,7 @@ static inline bool getJobs_to_migrate(JobControlRecord* jcr)
       char dt[MAX_TIME_LENGTH];
 
       ttime = time(NULL) - (time_t)jcr->dir_impl->res.rpool->MigrationTime;
-      bstrutime(dt, sizeof(dt), ttime);
+      bstrftime(dt, sizeof(dt), ttime);
 
       ids.count = 0;
       Mmsg(query, sql_pool_time, jcr->dir_impl->res.rpool->resource_name_, dt);
@@ -1522,8 +1522,8 @@ static inline void GenerateMigrateSummary(JobControlRecord* jcr,
 
   Bsnprintf(term_code, sizeof(term_code), TermMsg, jcr->get_OperationName(),
             jcr->get_ActionName());
-  bstrftimes(sdt, sizeof(sdt), jcr->dir_impl->jr.StartTime);
-  bstrftimes(edt, sizeof(edt), jcr->dir_impl->jr.EndTime);
+  bstrftime(sdt, sizeof(sdt), jcr->dir_impl->jr.StartTime);
+  bstrftime(edt, sizeof(edt), jcr->dir_impl->jr.EndTime);
   RunTime = jcr->dir_impl->jr.EndTime - jcr->dir_impl->jr.StartTime;
 
   std::string sd_term_msg = JobstatusToAscii(jcr->dir_impl->SDJobStatus);

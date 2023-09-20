@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
 
    This program is Free Software; you can redistribute it and/or
@@ -82,7 +82,7 @@ static void ListStatusHeader(StatusPacket* sp)
              kBareosVersionStrings.Full, kBareosVersionStrings.Date, VSS,
              kBareosVersionStrings.GetOsInfo());
   sp->send(msg, len);
-  bstrftime_nc(dt, sizeof(dt), daemon_start_time);
+  bstrftime(dt, sizeof(dt), daemon_start_time);
   len = Mmsg(msg, _("Daemon started %s. Jobs: run=%d running=%d, %s binary\n"),
              dt, num_jobs_run, JobCount(), kBareosVersionStrings.BinaryInfo);
   sp->send(msg, len);
@@ -163,7 +163,7 @@ static void ListRunningJobsPlain(StatusPacket* sp)
   sp->send(msg, len);
 
   foreach_jcr (njcr) {
-    bstrftime_nc(dt, sizeof(dt), njcr->start_time);
+    bstrftime(dt, sizeof(dt), njcr->start_time);
     if (njcr->JobId > 0) {
       len = Mmsg(msg, _("JobId %d Job %s is running.\n"), njcr->JobId,
                  njcr->Job);
@@ -185,10 +185,8 @@ static void ListRunningJobsPlain(StatusPacket* sp)
       len = Mmsg(msg, _("%s (director) connected at: %s\n"),
                  njcr->fd_impl->director->resource_name_, dt);
     } else {
-      /*
-       * This should only occur shortly, until the JobControlRecord values are
-       * set.
-       */
+      /* This should only occur shortly, until the JobControlRecord values are
+       * set. */
       len = Mmsg(msg, _("Unknown connection, started at: %s\n"), dt);
     }
     sp->send(msg, len);
@@ -245,7 +243,7 @@ static void ListRunningJobsApi(StatusPacket* sp)
 
   // List running jobs for Bat/Bweb (sfd_imple to parse)
   foreach_jcr (njcr) {
-    bstrutime(dt, sizeof(dt), njcr->start_time);
+    bstrftime(dt, sizeof(dt), njcr->start_time);
     if (njcr->JobId == 0) {
       len = Mmsg(msg, "DirectorConnected=%s\n", dt);
     } else {
@@ -340,7 +338,7 @@ static void ListTerminatedJobs(StatusPacket* sp)
     char JobName[MAX_NAME_LENGTH];
     const char* termstat;
 
-    bstrftime_nc(dt, sizeof(dt), je.end_time);
+    bstrftime(dt, sizeof(dt), je.end_time);
 
     switch (je.JobType) {
       case JT_ADMIN:

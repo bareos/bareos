@@ -484,8 +484,8 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
                 _("Inappropriate term code: %d %c\n"), TermCode, TermCode);
       break;
   }
-  bstrftimes(sdt, sizeof(sdt), jcr->dir_impl->jr.StartTime);
-  bstrftimes(edt, sizeof(edt), jcr->dir_impl->jr.EndTime);
+  bstrftime(sdt, sizeof(sdt), jcr->dir_impl->jr.StartTime);
+  bstrftime(edt, sizeof(edt), jcr->dir_impl->jr.EndTime);
   if (jcr->dir_impl->res.verify_job) {
     Name = jcr->dir_impl->res.verify_job->resource_name_;
   } else {

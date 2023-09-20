@@ -461,7 +461,11 @@ retry_fetch:
          "EndFile,EndBlock,LabelType,LabelDate,StorageId,"
          "Enabled,LocationId,RecycleCount,InitialWrite,"
          "ScratchPoolId,RecyclePoolId,VolReadTime,VolWriteTime,"
-         "ActionOnPurge,EncryptionKey,MinBlocksize,MaxBlocksize "
+         "ActionOnPurge,EncryptionKey,MinBlocksize,MaxBlocksize,"
+         "EXTRACT('EPOCH' FROM FirstWritten),"
+         "EXTRACT('EPOCH' FROM LastWritten),"
+         "EXTRACT('EPOCH' FROM LabelDate),"
+         "EXTRACT('EPOCH' FROM InitialWrite) "
          "FROM Media WHERE PoolId=%s AND MediaType='%s' AND VolStatus IN "
          "('Full',"
          "'Recycle','Purged','Used','Append') AND Enabled=1 "
@@ -498,7 +502,11 @@ retry_fetch:
          "EndFile,EndBlock,LabelType,LabelDate,StorageId,"
          "Enabled,LocationId,RecycleCount,InitialWrite,"
          "ScratchPoolId,RecyclePoolId,VolReadTime,VolWriteTime,"
-         "ActionOnPurge,EncryptionKey,MinBlocksize,MaxBlocksize "
+         "ActionOnPurge,EncryptionKey,MinBlocksize,MaxBlocksize,"
+         "EXTRACT('EPOCH' FROM FirstWritten),"
+         "EXTRACT('EPOCH' FROM LastWritten),"
+         "EXTRACT('EPOCH' FROM LabelDate),"
+         "EXTRACT('EPOCH' FROM InitialWrite) "
          "FROM Media WHERE PoolId=%s AND MediaType='%s' AND Enabled=1 "
          "AND VolStatus='%s' "
          "%s "
@@ -576,24 +584,20 @@ retry_fetch:
     mr->Slot = str_to_int64(row[19]);
     bstrncpy(mr->cFirstWritten, (row[20] != NULL) ? row[20] : "",
              sizeof(mr->cFirstWritten));
-    mr->FirstWritten = (time_t)StrToUtime(mr->cFirstWritten);
     bstrncpy(mr->cLastWritten, (row[21] != NULL) ? row[21] : "",
              sizeof(mr->cLastWritten));
-    mr->LastWritten = (time_t)StrToUtime(mr->cLastWritten);
     mr->InChanger = str_to_uint64(row[22]);
     mr->EndFile = str_to_uint64(row[23]);
     mr->EndBlock = str_to_uint64(row[24]);
     mr->LabelType = str_to_int64(row[25]);
     bstrncpy(mr->cLabelDate, (row[26] != NULL) ? row[26] : "",
              sizeof(mr->cLabelDate));
-    mr->LabelDate = (time_t)StrToUtime(mr->cLabelDate);
     mr->StorageId = str_to_int64(row[27]);
     mr->Enabled = str_to_int64(row[28]);
     mr->LocationId = str_to_int64(row[29]);
     mr->RecycleCount = str_to_int64(row[30]);
     bstrncpy(mr->cInitialWrite, (row[31] != NULL) ? row[31] : "",
              sizeof(mr->cInitialWrite));
-    mr->InitialWrite = (time_t)StrToUtime(mr->cInitialWrite);
     mr->ScratchPoolId = str_to_int64(row[32]);
     mr->RecyclePoolId = str_to_int64(row[33]);
     mr->VolReadTime = str_to_int64(row[34]);
@@ -603,6 +607,11 @@ retry_fetch:
              sizeof(mr->EncrKey));
     mr->MinBlocksize = str_to_int32(row[38]);
     mr->MaxBlocksize = str_to_int32(row[39]);
+
+    mr->FirstWritten = str_to_uint64(row[40] != NULL ? row[40] : "");
+    mr->LastWritten = str_to_uint64(row[41] != NULL ? row[41] : "");
+    mr->LabelDate = str_to_uint64(row[42] != NULL ? row[42] : "");
+    mr->InitialWrite = str_to_uint64(row[43] != NULL ? row[43] : "");
 
     SqlFreeResult();
     found_candidate = true;

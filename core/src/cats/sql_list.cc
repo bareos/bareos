@@ -451,12 +451,14 @@ void BareosDb::ListJoblogRecords(JobControlRecord* jcr,
   if (count) {
     FillQuery(SQL_QUERY::list_joblog_count_1, edit_int64(JobId, ed1));
   } else {
-    FillQuery(SQL_QUERY::list_joblog_2, edit_int64(JobId, ed1), range);
+    FillQuery(SQL_QUERY::list_joblog_2, kBareosDatabaseDefaultTimestampFormat,
+              edit_int64(JobId, ed1), range);
     if (type != VERT_LIST) {
-      /* When something else then a vertical list is requested set the list type
-       * to RAW_LIST e.g. non formated raw data as that makes the only sense for
-       * the logtext output. The logtext already has things like \n etc in it
-       * so we should just dump the raw content out for the best visible output.
+      /* When something else than a vertical list is requested set the list type
+       * to RAW_LIST e.g. non formatted raw data as that makes the only sense
+       * for the logtext output. The logtext already has things like \n etc in
+       * it so we should just dump the raw content out for the best visible
+       * output.
        */
       type = RAW_LIST;
     }
@@ -567,7 +569,7 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
   }
 
   if (since_time) {
-    bstrutime(dt, sizeof(dt), since_time);
+    bstrftime(dt, sizeof(dt), since_time);
     temp.bsprintf("AND Job.SchedTime > '%s' ", dt);
     PmStrcat(selection, temp.c_str());
   }

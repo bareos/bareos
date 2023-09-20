@@ -1288,7 +1288,7 @@ static int TimeCmd(FILE*, BareosSocket*)
 {
   char sdt[50];
 
-  bstrftimes(sdt, sizeof(sdt), time(NULL));
+  bstrftime(sdt, sizeof(sdt), time(NULL));
   ConsoleOutputFormat("%s\n", sdt);
   return 1;
 }

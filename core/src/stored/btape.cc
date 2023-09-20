@@ -2173,7 +2173,7 @@ static void fillcmd()
   jcr->sd_impl->dcr->VolFirstIndex = 0;
   time(&jcr->run_time); /* start counting time for rates */
 
-  bstrftime(buf1, sizeof(buf1), jcr->run_time, "%H:%M:%S");
+  bstrftime(buf1, sizeof(buf1), jcr->run_time);
 
   if (simple) {
     Pmsg1(-1, _("%s Begin writing Bareos records to tape ...\n"), buf1);
@@ -2222,7 +2222,7 @@ static void fillcmd()
        */
       if ((block->BlockNumber % write_eof) == 0) {
         now = time(nullptr);
-        bstrftime(buf1, sizeof(buf1), now, "%H:%M:%S");
+        bstrftime(buf1, sizeof(buf1), now);
         Pmsg1(-1, _("%s Flush block, write EOF\n"), buf1);
         FlushBlock(block);
       }
@@ -2307,7 +2307,7 @@ static void fillcmd()
   }
 
   now = time(nullptr);
-  bstrftime(buf1, sizeof(buf1), now, "%H:%M:%S");
+  bstrftime(buf1, sizeof(buf1), now);
 
   if (ok) {
     if (simple) {

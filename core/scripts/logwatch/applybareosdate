@@ -22,7 +22,7 @@ use Logwatch ':dates';
 
 my $Debug = $ENV{'LOGWATCH_DEBUG'} || 0;
 
-$SearchDate = TimeFilter('%d-%b %H:%M');
+$SearchDate = TimeFilter('%Y-%m-%dT%T%z');
 
 if ( $Debug > 5 ) {
    print STDERR "DEBUG: Inside ApplyBareosDate...\n";

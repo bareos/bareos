@@ -133,7 +133,7 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
         char sdt[50];
 
         jcr->dir_impl->jr.StartTime = now - job->AlwaysIncrementalJobRetention;
-        bstrftimes(sdt, sizeof(sdt), jcr->dir_impl->jr.StartTime);
+        bstrftime(sdt, sizeof(sdt), jcr->dir_impl->jr.StartTime);
         Jmsg(jcr, M_INFO, 0,
              _("%s: considering jobs older than %s for consolidation.\n"),
              job->resource_name_, sdt);
@@ -234,8 +234,8 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
 
         starttime = jcr->dir_impl->previous_jr.JobTDate;
         oldest_allowed_starttime = now - job->AlwaysIncrementalMaxFullAge;
-        bstrftimes(sdt_allowed, sizeof(sdt_allowed), oldest_allowed_starttime);
-        bstrftimes(sdt_starttime, sizeof(sdt_starttime), starttime);
+        bstrftime(sdt_allowed, sizeof(sdt_allowed), oldest_allowed_starttime);
+        bstrftime(sdt_starttime, sizeof(sdt_starttime), starttime);
 
         // Check if job is older than AlwaysIncrementalMaxFullAge
         Jmsg(jcr, M_INFO, 0, _("check full age: full is %s, allowed is %s\n"),
@@ -350,9 +350,9 @@ void ConsolidateCleanup(JobControlRecord* jcr, int TermCode)
               jcr->getJobStatus());
       break;
   }
-  bstrftimes(schedt, sizeof(schedt), jcr->dir_impl->jr.SchedTime);
-  bstrftimes(sdt, sizeof(sdt), jcr->dir_impl->jr.StartTime);
-  bstrftimes(edt, sizeof(edt), jcr->dir_impl->jr.EndTime);
+  bstrftime(schedt, sizeof(schedt), jcr->dir_impl->jr.SchedTime);
+  bstrftime(sdt, sizeof(sdt), jcr->dir_impl->jr.StartTime);
+  bstrftime(edt, sizeof(edt), jcr->dir_impl->jr.EndTime);
 
   Jmsg(jcr, msg_type, 0,
        _("BAREOS %s (%s): %s\n"

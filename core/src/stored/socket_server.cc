@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -99,19 +99,19 @@ void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
   // See if this is a File daemon connection. If so call FD handler.
   if (sscanf(bs->msg, "Hello Start Job %127s", name) == 1) {
     Dmsg1(110, "Got a FD connection at %s\n",
-          bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+          bstrftime(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
     return HandleFiledConnection(bs, name);
   }
 
   // See if this is a Storage daemon connection. If so call SD handler.
   if (sscanf(bs->msg, "Hello Start Storage Job %127s", name) == 1) {
     Dmsg1(110, "Got a SD connection at %s\n",
-          bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+          bstrftime(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
     return handle_stored_connection(bs, name);
   }
 
   Dmsg1(110, "Got a DIR connection at %s\n",
-        bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+        bstrftime(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
 
   return HandleDirectorConnection(bs);
 }

@@ -1955,21 +1955,21 @@ static bool time_cmd(UaContext* ua, const char*)
 
   ua->send->ObjectStart("time");
 
-  bstrftime(sdt, sizeof(sdt), ttime, "%a %d-%b-%Y %H:%M:%S");
+  bstrftime(sdt, sizeof(sdt), ttime);
   ua->send->ObjectKeyValue("full", sdt, "%s\n");
 
-  bstrftime(sdt, sizeof(sdt), ttime, "%Y");
-  ua->send->ObjectKeyValue("year", sdt);
-  bstrftime(sdt, sizeof(sdt), ttime, "%m");
-  ua->send->ObjectKeyValue("month", sdt);
-  bstrftime(sdt, sizeof(sdt), ttime, "%d");
-  ua->send->ObjectKeyValue("day", sdt);
-  bstrftime(sdt, sizeof(sdt), ttime, "%H");
-  ua->send->ObjectKeyValue("hour", sdt);
-  bstrftime(sdt, sizeof(sdt), ttime, "%M");
-  ua->send->ObjectKeyValue("minute", sdt);
-  bstrftime(sdt, sizeof(sdt), ttime, "%S");
-  ua->send->ObjectKeyValue("second", sdt);
+  /* bstrftime(sdt, sizeof(sdt), ttime, "%Y"); */
+  /* ua->send->ObjectKeyValue("year", sdt); */
+  /* bstrftime(sdt, sizeof(sdt), ttime, "%m"); */
+  /* ua->send->ObjectKeyValue("month", sdt); */
+  /* bstrftime(sdt, sizeof(sdt), ttime, "%d"); */
+  /* ua->send->ObjectKeyValue("day", sdt); */
+  /* bstrftime(sdt, sizeof(sdt), ttime, "%H"); */
+  /* ua->send->ObjectKeyValue("hour", sdt); */
+  /* bstrftime(sdt, sizeof(sdt), ttime, "%M"); */
+  /* ua->send->ObjectKeyValue("minute", sdt); */
+  /* bstrftime(sdt, sizeof(sdt), ttime, "%S"); */
+  /* ua->send->ObjectKeyValue("second", sdt); */
 
   ua->send->ObjectEnd("time");
 
