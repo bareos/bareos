@@ -230,7 +230,7 @@
           "code": 0,
           "default_value": "true",
           "equals": true,
-          "description": "Without setting this to yes, Bareos can fall back to use unencrypted connections. Enabling this implicitly sets \"TLS Enable = yes\"."
+          "description": "If set to \"no\", Bareos can fall back to use unencrypted connections. "
         },
         "TlsCipherList": {
           "datatype": "DIRECTORY",
@@ -514,7 +514,7 @@
           "code": 0,
           "default_value": "true",
           "equals": true,
-          "description": "Without setting this to yes, Bareos can fall back to use unencrypted connections. Enabling this implicitly sets \"TLS Enable = yes\"."
+          "description": "If set to \"no\", Bareos can fall back to use unencrypted connections. "
         },
         "TlsCipherList": {
           "datatype": "DIRECTORY",
@@ -1732,7 +1732,7 @@
           "code": 0,
           "default_value": "true",
           "equals": true,
-          "description": "Without setting this to yes, Bareos can fall back to use unencrypted connections. Enabling this implicitly sets \"TLS Enable = yes\"."
+          "description": "If set to \"no\", Bareos can fall back to use unencrypted connections. "
         },
         "TlsCipherList": {
           "datatype": "DIRECTORY",
@@ -2472,7 +2472,7 @@
           "code": 0,
           "default_value": "true",
           "equals": true,
-          "description": "Without setting this to yes, Bareos can fall back to use unencrypted connections. Enabling this implicitly sets \"TLS Enable = yes\"."
+          "description": "If set to \"no\", Bareos can fall back to use unencrypted connections. "
         },
         "TlsCipherList": {
           "datatype": "DIRECTORY",
