@@ -29,6 +29,7 @@
 
 #include <unistd.h>
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "include/filetypes.h"
 #include "include/jcr.h"
 #include "findlib/find.h"
@@ -79,7 +80,7 @@ static void usage()
             "Truncation is only in catalog.\n"
             "\n"));
 
-  exit(1);
+  exit(BEXIT_FAILURE);
 }
 
 
@@ -154,7 +155,7 @@ int main(int argc, char* const* argv)
     fd = fopen(inc, "rb");
     if (!fd) {
       printf(_("Could not open include file: %s\n"), inc);
-      exit(1);
+      exit(BEXIT_FAILURE);
     }
     while (fgets(name, sizeof(name) - 1, fd)) {
       StripTrailingJunk(name);
@@ -167,7 +168,7 @@ int main(int argc, char* const* argv)
     fd = fopen(exc, "rb");
     if (!fd) {
       printf(_("Could not open exclude file: %s\n"), exc);
-      exit(1);
+      exit(BEXIT_FAILURE);
     }
     while (fgets(name, sizeof(name) - 1, fd)) {
       StripTrailingJunk(name);
@@ -187,7 +188,7 @@ int main(int argc, char* const* argv)
   FreeJcr(jcr);
   RecentJobResultsList::Cleanup();
   CleanupJcrChain();
-  exit(0);
+  exit(BEXIT_SUCCESS);
 }
 
 static int CountFiles(JobControlRecord*, FindFilesPacket*, bool)

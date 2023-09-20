@@ -29,6 +29,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "include/filetypes.h"
 #include "include/streams.h"
 #include "stored/stored.h"
@@ -238,10 +239,10 @@ int main(int argc, char* argv[])
       ->required()
       ->type_name(" ");
 
-  CLI11_PARSE(bscan_app, argc, argv);
+  ParseBareosApp(bscan_app, argc, argv);
 
-  my_config = InitSdConfig(configfile, M_ERROR_TERM);
-  ParseSdConfig(configfile, M_ERROR_TERM);
+  my_config = InitSdConfig(configfile, M_CONFIG_ERROR);
+  ParseSdConfig(configfile, M_CONFIG_ERROR);
 
   DirectorResource* director = nullptr;
   if (!DirectorName.empty()) {
@@ -289,7 +290,7 @@ int main(int argc, char* argv[])
   DeviceControlRecord* dcr = new DeviceControlRecord;
   bjcr = SetupJcr("bscan", device_name.data(), bsr, director, dcr, volumes,
                   true);
-  if (!bjcr) { exit(1); }
+  if (!bjcr) { exit(BEXIT_FAILURE); }
   dev = bjcr->sd_impl->read_dcr->dev;
 
   // Let SD plugins setup the record translation
@@ -343,7 +344,7 @@ int main(int argc, char* argv[])
   FreeJcr(bjcr);
   UnloadSdPlugins();
 
-  return 0;
+  return BEXIT_SUCCESS;
 }
 
 /**

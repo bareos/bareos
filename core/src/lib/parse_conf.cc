@@ -55,6 +55,7 @@
 
 #include "include/bareos.h"
 #include "include/jcr.h"
+#include "include/exit_codes.h"
 #include "lib/address_conf.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
@@ -66,7 +67,6 @@
 #include "lib/resource_item.h"
 #include "lib/berrno.h"
 #include "lib/util.h"
-
 
 #if defined(HAVE_WIN32)
 #  include "shlobj.h"
@@ -152,6 +152,13 @@ std::string ConfigurationParser::CreateOwnQualifiedNameForNetworkDump() const
   }
   return qualified_name;
 }
+void ConfigurationParser::ParseConfigOrExit()
+{
+  if (!ParseConfig()) {
+    fprintf(stderr, "Configuration parsing error\n");
+    exit(BEXIT_CONFIG_ERROR);
+  }
+}
 
 bool ConfigurationParser::ParseConfig()
 {
@@ -169,7 +176,7 @@ bool ConfigurationParser::ParseConfig()
   parser_first_run_ = false;
 
   if (!FindConfigPath(config_path)) {
-    Jmsg0(nullptr, M_ERROR_TERM, 0, _("Failed to find config filename.\n"));
+    Jmsg0(nullptr, M_CONFIG_ERROR, 0, _("Failed to find config filename.\n"));
   }
   used_config_path_ = config_path.c_str();
   Dmsg1(100, "config file = %s\n", used_config_path_.c_str());

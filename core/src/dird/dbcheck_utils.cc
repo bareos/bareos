@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2021-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,6 +20,7 @@
 */
 
 #include "dbcheck_utils.h"
+#include "include/exit_codes.h"
 
 using namespace directordaemon;
 
@@ -166,7 +167,9 @@ std::vector<int> get_deletable_storageids(
   query += ")";
 
   ID_LIST orphaned_storage_ids_list{};
-  if (!MakeIdList(db, query.c_str(), &orphaned_storage_ids_list)) { exit(1); }
+  if (!MakeIdList(db, query.c_str(), &orphaned_storage_ids_list)) {
+    exit(BEXIT_FAILURE);
+  }
 
   std::vector<int> storage_ids_to_delete;
   NameList volume_names = {};
@@ -178,7 +181,9 @@ std::vector<int> get_deletable_storageids(
         = "SELECT volumename FROM media WHERE storageid="
           + std::to_string(orphaned_storage_ids_list.Id[orphaned_storage_id]);
 
-    if (!MakeNameList(db, media_query.c_str(), &volume_names)) { exit(1); }
+    if (!MakeNameList(db, media_query.c_str(), &volume_names)) {
+      exit(BEXIT_FAILURE);
+    }
 
     if (volume_names.num_ids > 0) {
       for (int volumename = 0; volumename < volume_names.num_ids;
@@ -197,7 +202,9 @@ std::vector<int> get_deletable_storageids(
         = "SELECT name FROM device WHERE storageid="
           + std::to_string(orphaned_storage_ids_list.Id[orphaned_storage_id]);
 
-    if (!MakeNameList(db, device_query.c_str(), &device_names)) { exit(1); }
+    if (!MakeNameList(db, device_query.c_str(), &device_names)) {
+      exit(BEXIT_FAILURE);
+    }
 
     if (device_names.num_ids > 0) {
       for (int devicename = 0; devicename < device_names.num_ids;
@@ -240,7 +247,7 @@ std::vector<std::string> get_orphaned_storages_names(BareosDb* db)
 
   NameList database_storage_names_list{};
   if (!MakeNameList(db, query.c_str(), &database_storage_names_list)) {
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
 
   std::vector<std::string> orphaned_storage_names_list;

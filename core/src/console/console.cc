@@ -27,6 +27,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "console/console_conf.h"
 #include "console/console_globals.h"
 #include "console/auth_pam.h"
@@ -917,7 +918,7 @@ int main(int argc, char* argv[])
 
   AddDeprecatedExportOptionsHelp(console_app);
 
-  CLI11_PARSE(console_app, argc, argv);
+  ParseBareosApp(console_app, argc, argv);
 
   if (!no_signals) { InitSignals(TerminateConsole); }
 
@@ -936,19 +937,19 @@ int main(int argc, char* argv[])
   if (export_config_schema) {
     PoolMem buffer;
 
-    my_config = InitConsConfig(configfile, M_ERROR_TERM);
+    my_config = InitConsConfig(configfile, M_CONFIG_ERROR);
     PrintConfigSchemaJson(buffer);
     printf("%s\n", buffer.c_str());
-    exit(0);
+    exit(BEXIT_SUCCESS);
   }
 
-  my_config = InitConsConfig(configfile, M_ERROR_TERM);
-  my_config->ParseConfig();
+  my_config = InitConsConfig(configfile, M_CONFIG_ERROR);
+  my_config->ParseConfigOrExit();
 
   if (export_config) {
     my_config->DumpResources(PrintMessage, NULL);
-    TerminateConsole(0);
-    exit(0);
+    TerminateConsole(BEXIT_SUCCESS);
+    exit(BEXIT_SUCCESS);
   }
 
   if (InitCrypto() != 0) {
@@ -969,8 +970,8 @@ int main(int argc, char* argv[])
   }
 
   if (test_config) {
-    TerminateConsole(0);
-    exit(0);
+    TerminateConsole(BEXIT_SUCCESS);
+    exit(BEXIT_SUCCESS);
   }
 
   (void)WSA_Init(); /* Initialize Windows sockets */
@@ -1097,8 +1098,8 @@ int main(int argc, char* argv[])
 
   if (history_file.size()) { ConsoleUpdateHistory(history_file.c_str()); }
 
-  TerminateConsole(0);
-  return 0;
+  TerminateConsole(BEXIT_SUCCESS);
+  return BEXIT_SUCCESS;
 }
 
 static void TerminateConsole(int sig)
@@ -1106,7 +1107,7 @@ static void TerminateConsole(int sig)
   static bool already_here = false;
 
   if (already_here) { /* avoid recursive temination problems */
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
   already_here = true;
   StopWatchdog();
@@ -1117,7 +1118,7 @@ static void TerminateConsole(int sig)
   ConTerm();
   WSACleanup(); /* Cleanup Windows sockets */
 
-  if (sig != 0) { exit(1); }
+  if (sig != 0) { exit(BEXIT_FAILURE); }
   return;
 }
 

@@ -32,6 +32,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "stored/stored.h"
 #include "lib/crypto_cache.h"
 #include "stored/acquire.h"
@@ -187,7 +188,7 @@ int main(int argc, char* argv[])
 
   AddDeprecatedExportOptionsHelp(sd_app);
 
-  CLI11_PARSE(sd_app, argc, argv);
+  ParseBareosApp(sd_app, argc, argv);
 
   if (!no_signals) { InitSignals(TerminateStored); }
 
@@ -216,15 +217,15 @@ int main(int argc, char* argv[])
   if (export_config_schema) {
     PoolMem buffer;
 
-    my_config = InitSdConfig(configfile, M_ERROR_TERM);
+    my_config = InitSdConfig(configfile, M_CONFIG_ERROR);
     PrintConfigSchemaJson(buffer);
     printf("%s\n", buffer.c_str());
 
-    return 0;
+    return BEXIT_SUCCESS;
   }
 
-  my_config = InitSdConfig(configfile, M_ERROR_TERM);
-  ParseSdConfig(configfile, M_ERROR_TERM);
+  my_config = InitSdConfig(configfile, M_CONFIG_ERROR);
+  ParseSdConfig(configfile, M_CONFIG_ERROR);
 
   if (forge_on) {
     my_config->AddWarning(
@@ -235,7 +236,7 @@ int main(int argc, char* argv[])
   if (export_config) {
     my_config->DumpResources(PrintMessage, nullptr);
 
-    return 0;
+    return BEXIT_SUCCESS;
   }
 
   if (!CheckResources()) {
@@ -312,9 +313,9 @@ int main(int argc, char* argv[])
   StartSocketServer(me->SDaddrs);
 
   /* to keep compiler quiet */
-  TerminateStored(0);
+  TerminateStored(BEXIT_SUCCESS);
 
-  return 0;
+  return BEXIT_SUCCESS;
 }
 
 /* Check Configuration file for necessary info */
@@ -588,7 +589,7 @@ static
 
   if (in_here) {       /* prevent loops */
     Bmicrosleep(2, 0); /* yield */
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
   in_here = true;
   debug_level = 0; /* turn off any debug */

@@ -27,6 +27,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
 #include "stored/device_control_record.h"
@@ -161,14 +162,14 @@ int main(int argc, char* argv[])
       ->required()
       ->type_name(" ");
 
-  CLI11_PARSE(bcopy_app, argc, argv);
+  ParseBareosApp(bcopy_app, argc, argv);
 
   OSDependentInit();
 
   working_directory = work_dir.c_str();
 
-  my_config = InitSdConfig(configfile.c_str(), M_ERROR_TERM);
-  ParseSdConfig(configfile.c_str(), M_ERROR_TERM);
+  my_config = InitSdConfig(configfile.c_str(), M_CONFIG_ERROR);
+  ParseSdConfig(configfile.c_str(), M_CONFIG_ERROR);
 
   DirectorResource* director = nullptr;
   if (!DirectorName.empty()) {
@@ -194,12 +195,12 @@ int main(int argc, char* argv[])
   DeviceControlRecord* in_dcr = new DeviceControlRecord;
   in_jcr = SetupJcr("bcopy", input_archive.data(), bsr, director, in_dcr,
                     inputVolumes, true); /* read device */
-  if (!in_jcr) { exit(1); }
+  if (!in_jcr) { exit(BEXIT_FAILURE); }
 
   in_jcr->sd_impl->ignore_label_errors = ignore_label_errors;
 
   in_dev = in_jcr->sd_impl->dcr->dev;
-  if (!in_dev) { exit(1); }
+  if (!in_dev) { exit(BEXIT_FAILURE); }
 
   // Let SD plugins setup the record translation
   if (GeneratePluginEvent(in_jcr, bSdEventSetupRecordTranslation, in_dcr)
@@ -215,10 +216,10 @@ int main(int argc, char* argv[])
   DeviceControlRecord* out_dcr = new DeviceControlRecord;
   out_jcr = SetupJcr("bcopy", output_archive.data(), bsr, director, out_dcr,
                      outputVolumes, false); /* write device */
-  if (!out_jcr) { exit(1); }
+  if (!out_jcr) { exit(BEXIT_FAILURE); }
 
   out_dev = out_jcr->sd_impl->dcr->dev;
-  if (!out_dev) { exit(1); }
+  if (!out_dev) { exit(BEXIT_FAILURE); }
 
   // Let SD plugins setup the record translation
   if (GeneratePluginEvent(out_jcr, bSdEventSetupRecordTranslation, out_dcr)
@@ -234,12 +235,12 @@ int main(int argc, char* argv[])
   if (!out_dev->open(out_jcr->sd_impl->dcr, DeviceMode::OPEN_READ_WRITE)) {
     Emsg1(M_FATAL, 0, _("dev open failed: %s\n"), out_dev->errmsg);
     out_dev->Unlock();
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
   out_dev->Unlock();
   if (!AcquireDeviceForAppend(out_jcr->sd_impl->dcr)) {
     FreeJcr(in_jcr);
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
   out_block = out_jcr->sd_impl->dcr->block;
 
@@ -266,7 +267,7 @@ int main(int argc, char* argv[])
   delete out_dev;
 
 
-  return 0;
+  return BEXIT_SUCCESS;
 }
 
 

@@ -36,6 +36,7 @@
 
 #include "include/fcntl_def.h"
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "include/streams.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
@@ -213,7 +214,7 @@ int main(int margc, char* margv[])
   if (i != 1 || x32 != y32) {
     Pmsg3(-1, _("32 bit printf/scanf problem. i=%d x32=%u y32=%u\n"), i, x32,
           y32);
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
 
   uint64_t x64 = 123456789;
@@ -226,7 +227,7 @@ int main(int margc, char* margv[])
   if (i != 1 || x64 != y64) {
     Pmsg3(-1, _("64 bit printf/scanf problem. i=%d x64=%llu y64=%llu\n"), i,
           x64, y64);
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
 
   working_directory = "/tmp";
@@ -290,7 +291,7 @@ int main(int margc, char* margv[])
   btape_app.add_option_group("Interactive commands",
                              Generate_interactive_commands_help());
 
-  CLI11_PARSE(btape_app, margc, margv)
+  ParseBareosApp(btape_app, margc, margv);
 
   printf(_("Tape block granularity is %d bytes.\n"), TAPE_BSIZE);
 
@@ -301,8 +302,8 @@ int main(int margc, char* margv[])
 
   daemon_start_time = time(nullptr);
 
-  my_config = InitSdConfig(configfile, M_ERROR_TERM);
-  ParseSdConfig(configfile, M_ERROR_TERM);
+  my_config = InitSdConfig(configfile, M_CONFIG_ERROR);
+  ParseSdConfig(configfile, M_CONFIG_ERROR);
 
   DirectorResource* director = nullptr;
   if (!DirectorName.empty()) {
@@ -325,14 +326,14 @@ int main(int margc, char* margv[])
   dcr = new BTAPE_DCR;
   jcr = SetupJcr("btape", archive_name.data(), bsr, director, dcr, "",
                  false); /* write device */
-  if (!jcr) { exit(1); }
+  if (!jcr) { exit(BEXIT_FAILURE); }
 
   dev = jcr->sd_impl->dcr->dev;
-  if (!dev) { exit(1); }
+  if (!dev) { exit(BEXIT_FAILURE); }
 
   if (!dev->IsTape()) {
     Pmsg0(000, _("btape only works with tape storage.\n"));
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
 
   // Let SD plugins setup the record translation
@@ -340,7 +341,7 @@ int main(int margc, char* margv[])
     Jmsg(jcr, M_FATAL, 0, _("bSdEventSetupRecordTranslation call failed!\n"));
   }
 
-  if (!open_the_device()) { exit(1); }
+  if (!open_the_device()) { exit(BEXIT_FAILURE); }
 
   Dmsg0(200, "Do tape commands\n");
   do_tape_cmds();

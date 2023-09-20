@@ -38,6 +38,7 @@
 #include "include/fcntl_def.h"
 #include "include/bareos.h"
 #include "include/jcr.h"
+#include "include/exit_codes.h"
 #include "lib/berrno.h"
 #include "lib/bsock.h"
 #include "lib/util.h"
@@ -631,7 +632,7 @@ void DispatchMessage(JobControlRecord* jcr,
   }
 
   // For serious errors make sure message is printed or logged
-  if (type == M_ABORT || type == M_ERROR_TERM) {
+  if (type == M_ABORT || type == M_ERROR_TERM || type == M_CONFIG_ERROR) {
     fputs(dt, stdout);
     fputs(msg, stdout);
     fflush(stdout);
@@ -825,7 +826,8 @@ void DispatchMessage(JobControlRecord* jcr,
           break;
         case MessageDestinationCode::kStdout:
           Dmsg1(850, "STDOUT for following msg: %s", msg);
-          if (type != M_ABORT && type != M_ERROR_TERM) { /* already printed */
+          if (type != M_ABORT && type != M_ERROR_TERM
+              && type != M_CONFIG_ERROR) { /* already printed */
             fputs(dt, stdout);
             fputs(msg, stdout);
             fflush(stdout);
@@ -1131,6 +1133,11 @@ void e_msg(const char* file,
       Mmsg(buf, _("%s: ERROR TERMINATION at %s:%d\n"), my_name,
            get_basename(file), line);
       break;
+    case M_CONFIG_ERROR:
+      Mmsg(typestr, "CONFIG ERROR");
+      Mmsg(buf, _("%s: CONFIG ERROR at %s:%d\n"), my_name, get_basename(file),
+           line);
+      break;
     case M_FATAL:
       Mmsg(typestr, "FATAL ERROR");
       if (level == -1) /* skip details */
@@ -1179,7 +1186,7 @@ void e_msg(const char* file,
   /* Check if we have a message destination defined.
    * We always report M_ABORT and M_ERROR_TERM */
   if (!daemon_msgs
-      || ((type != M_ABORT && type != M_ERROR_TERM)
+      || ((type != M_ABORT && type != M_ERROR_TERM && type != M_CONFIG_ERROR)
           && !BitIsSet(type, daemon_msgs->send_msg_types_))) {
     return; /* no destination */
   }
@@ -1190,7 +1197,9 @@ void e_msg(const char* file,
   if (type == M_ABORT) {
     abort();
   } else if (type == M_ERROR_TERM) {
-    exit(1);
+    exit(BEXIT_FAILURE);
+  } else if (type == M_CONFIG_ERROR) {
+    exit(BEXIT_CONFIG_ERROR);
   }
 }
 
@@ -1255,8 +1264,9 @@ void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
   if (!msgs) { msgs = daemon_msgs; /* if no jcr, we use daemon handler */ }
 
   /* Check if we have a message destination defined.
-   * We always report M_ABORT and M_ERROR_TERM */
-  if (msgs && (type != M_ABORT && type != M_ERROR_TERM)
+   * We always report M_ABORT, M_ERROR_TERM and M_CONFIG_ERROR*/
+  if (msgs
+      && (type != M_ABORT && type != M_ERROR_TERM && type != M_CONFIG_ERROR)
       && !BitIsSet(type, msgs->send_msg_types_)) {
     return; /* no destination */
   }
@@ -1267,6 +1277,9 @@ void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
       break;
     case M_ERROR_TERM:
       Mmsg(buf, _("%s ERROR TERMINATION\n"), my_name);
+      break;
+    case M_CONFIG_ERROR:
+      Mmsg(buf, _("%s Configuration error\n"), my_name);
       break;
     case M_FATAL:
       Mmsg(buf, _("%s JobId %u: Fatal error: "), my_name, JobId);
@@ -1311,7 +1324,9 @@ void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
     syslog(LOG_DAEMON | LOG_ERR, "BAREOS aborting to obtain traceback.\n");
     abort();
   } else if (type == M_ERROR_TERM) {
-    exit(1);
+    exit(BEXIT_FAILURE);
+  } else if (type == M_CONFIG_ERROR) {
+    exit(BEXIT_CONFIG_ERROR);
   }
 }
 
@@ -1486,6 +1501,7 @@ static int MessageTypeToLogPriority(int message_type)
   switch (message_type) {
     case M_ERROR:
     case M_ERROR_TERM:
+    case M_CONFIG_ERROR:
       return LOG_ERR;
 
     case M_ABORT:
