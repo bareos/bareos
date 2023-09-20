@@ -451,15 +451,11 @@ int MarkElement(const char* element,
   int count = 0;
   // See if this is a complex path.
   if (strchr(element, '/')) {
-    std::string given_file_pattern{};
-    std::string given_path_pattern{};
+    auto [path_pattern, filename_pattern] = SplitPathAndFilename(element);
+    StripTrailingSlash(filename_pattern.data());
 
-    // Split the argument into a path pattern and file pattern.
-    SplitPathAndFilename(element, given_path_pattern, given_file_pattern);
-    StripTrailingSlash(given_file_pattern.data());
-
-    if (!tree_cwd(given_path_pattern.data(), tree->root, tree->node)) {
-      ua->WarningMsg(_("Invalid path %s given.\n"), given_path_pattern.c_str());
+    if (!tree_cwd(path_pattern.data(), tree->root, tree->node)) {
+      ua->WarningMsg(_("Invalid path %s given.\n"), path_pattern.c_str());
       return count;
     }
 
@@ -468,7 +464,7 @@ int MarkElement(const char* element,
       fullpath_pattern.append(tree_getpath(tree->node));
     }
 
-    fullpath_pattern.append(given_path_pattern);
+    fullpath_pattern.append(path_pattern);
 
     TREE_NODE* node{nullptr};
 
@@ -480,13 +476,11 @@ int MarkElement(const char* element,
 
 
     for (; node; node = NextTreeNode(node)) {
-      std::string node_filename{};
-      std::string node_path{};
-      SplitPathAndFilename(tree_getpath(node).c_str(), node_path,
-                           node_filename);
+      auto [node_path, node_filename]
+          = SplitPathAndFilename(tree_getpath(node).c_str());
 
       if (fnmatch(fullpath_pattern.c_str(), node_path.c_str(), 0) == 0) {
-        if (fnmatch(given_file_pattern.c_str(), node->fname, 0) == 0) {
+        if (fnmatch(filename_pattern.c_str(), node->fname.c_str(), 0) == 0) {
           count += SetExtract(ua, node, tree, extract);
         }
       }

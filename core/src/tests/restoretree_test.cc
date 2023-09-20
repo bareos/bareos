@@ -61,11 +61,8 @@ int FakeUnMarkCmd(UaContext* ua, TreeContext* tree, std::string path)
 
 void PopulateTree(std::vector<std::string> files, TreeContext* tree)
 {
-  std::string filename;
-  std::string path;
-
   for (const auto& file : files) {
-    SplitPathAndFilename(file.c_str(), path, filename);
+    auto [path, filename] = SplitPathAndFilename(file.c_str());
 
     char* row0 = path.data();
     char* row1 = filename.data();
@@ -104,6 +101,7 @@ class RestoreTree : public testing::Test {
   UaContext* ua{nullptr};
   TreeContext tree{true, ua, 1};
 
+#ifndef HAVE_WIN32
   const std::vector<std::string> files
       = {"/some/weirdfiles/normalefile",
          "/some/weirdfiles/nottooweird",
@@ -138,6 +136,43 @@ class RestoreTree : public testing::Test {
          "/testingwildcards/subdirectory3/file5",
          "/testingwildcards/subdirectory3/file6",
          "/testingwildcards/lonesubdirectory/whatever"};
+
+#else
+  const std::vector<std::string> files
+      = {"\\some\\weirdfiles\\normalefile",
+         "\\some\\weirdfiles\\nottooweird",
+         "\\some\\weirdfiles\\potato",
+         "\\some\\weirdfiles\\potatomashed",
+         "\\some\\weirdfiles\\subdirectory1\\file1",
+         "\\some\\weirdfiles\\subdirectory1\\file2",
+         "\\some\\weirdfiles\\subdirectory2\\file3",
+         "\\some\\weirdfiles\\subdirectory2\\file4",
+         "\\some\\weirdfiles\\subdirectory3\\file5",
+         "\\some\\weirdfiles\\subdirectory3\\file6",
+         "\\some\\weirdfiles\\lonesubdirectory\\whatever",
+         "\\some\\wastefiles\\normalefile",
+         "\\some\\wastefiles\\nottooweird",
+         "\\some\\wastefiles\\potato",
+         "\\some\\wastefiles\\potatomashed",
+         "\\some\\wastefiles\\subdirectory1\\file1",
+         "\\some\\wastefiles\\subdirectory1\\file2",
+         "\\some\\wastefiles\\subdirectory2\\file3",
+         "\\some\\wastefiles\\subdirectory2\\file4",
+         "\\some\\wastefiles\\subdirectory3\\file5",
+         "\\some\\wastefiles\\subdirectory3\\file6",
+         "\\some\\wastefiles\\lonesubdirectory\\whatever",
+         "\\testingwildcards\\normalefile",
+         "\\testingwildcards\\nottooweird",
+         "\\testingwildcards\\potato",
+         "\\testingwildcards\\potatomashed",
+         "\\testingwildcards\\subdirectory1\\file1",
+         "\\testingwildcards\\subdirectory1\\file2",
+         "\\testingwildcards\\subdirectory2\\file3",
+         "\\testingwildcards\\subdirectory2\\file4",
+         "\\testingwildcards\\subdirectory3\\file5",
+         "\\testingwildcards\\subdirectory3\\file6",
+         "\\testingwildcards\\lonesubdirectory\\whatever"};
+#endif
 };
 
 TEST_F(RestoreTree, globbing_in_markcmd)
@@ -188,7 +223,7 @@ TEST_F(RestoreTree, globbing_in_markcmd)
    * wildcard matching function used in bareos) has problems handling the curly
    * braces wildcard.
    */
-  //  EXPECT_EQ(FakeMarkCmd(&ua, tree, "{*tory1,*tory2}/file1"), 1);
+  //  EXPECT_EQ(FakeMarkCmd(ua, &tree, "{*tory1,*tory2}/file1"), 1);
   //  EXPECT_EQ(fnmatch("{*tory1,*tory2}", "subdirectory1", 0), 0);
 }
 

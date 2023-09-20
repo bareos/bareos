@@ -335,3 +335,63 @@ TEST(StringManipulation, DelimitedString_PrintsCorrectMultipleCharacters)
 
   EXPECT_STREQ(result.c_str(), "'A','B','C','D','E','F'");
 }
+
+#if !defined(HAVE_WIN32)
+TEST(StringManipulation, SplitPathAndFilename_relativepath)
+{
+  auto [path, filename] = SplitPathAndFilename("this/is/aregularfilename");
+
+  EXPECT_EQ(path, "this/is/");
+  EXPECT_EQ(filename, "aregularfilename");
+}
+
+TEST(StringManipulation, SplitPathAndFilename_absolutepath)
+{
+  auto [path, filename] = SplitPathAndFilename("/this/is/aregularfilename");
+
+  EXPECT_EQ(path, "/this/is/");
+  EXPECT_EQ(filename, "aregularfilename");
+}
+
+TEST(StringManipulation, SplitPathAndFilename_nofilename)
+{
+  auto [path, filename] = SplitPathAndFilename("/this/is/aregularfilename/");
+
+  EXPECT_EQ(path, "/this/is/");
+  EXPECT_EQ(filename, "aregularfilename/");
+}
+#else
+TEST(StringManipulation, SplitPathAndFilename_windows_relativepath)
+{
+  auto [path, filename] = SplitPathAndFilename("this\\is\\aregularfilename");
+
+  EXPECT_EQ(path, "this\\is\\");
+  EXPECT_EQ(filename, "aregularfilename");
+}
+
+TEST(StringManipulation, SplitPathAndFilename_windows_relative_to_drive_root)
+{
+  auto [path, filename] = SplitPathAndFilename("\\this\\is\\aregularfilename");
+
+  EXPECT_EQ(path, "\\this\\is\\");
+  EXPECT_EQ(filename, "aregularfilename");
+}
+
+TEST(StringManipulation, SplitPathAndFilename_windows_absolutepath)
+{
+  auto [path, filename]
+      = SplitPathAndFilename("C:\\this\\is\\aregularfilename");
+
+  EXPECT_EQ(path, "C:\\this\\is\\");
+  EXPECT_EQ(filename, "aregularfilename");
+}
+
+TEST(StringManipulation, SplitPathAndFilename_windows_nofilename)
+{
+  auto [path, filename]
+      = SplitPathAndFilename("\\this\\is\\aregularfilename\\");
+
+  EXPECT_EQ(path, "\\this\\is\\");
+  EXPECT_EQ(filename, "aregularfilename\\");
+}
+#endif

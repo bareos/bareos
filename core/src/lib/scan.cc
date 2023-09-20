@@ -270,30 +270,29 @@ int ParseArgsOnly(const POOLMEM* cmd,
   return 1;
 }
 
-/*
- * Given a full filename, split it into its path and filename parts.
- * They are returned in pool memory in the arguments provided.
- */
-void SplitPathAndFilename(const char* fname,
-                          std::string& path,
-                          std::string& filename)
+PathAndFileName SplitPathAndFilename(const char* fname)
 {
   std::filesystem::path fname_path(fname);
-
+  std::string path;
+  std::string filename;
   if (fname_path.has_filename()) {
-    filename = fname_path.filename().generic_string();
+    filename = fname_path.filename().string();
     if (fname_path.has_parent_path()) {
-      path = fname_path.parent_path().generic_string();
-      path.append("/");
+      path = fname_path.parent_path().string();
+      path += PathSeparator;
     }
   } else {
     std::filesystem::path fname_parent_path(fname_path.parent_path());
-    path = fname_parent_path.parent_path().generic_string();
-    path.append("/");
+    filename = fname_parent_path.filename().string();
+    filename += PathSeparator;
+    path = fname_parent_path.parent_path().string();
+    path += PathSeparator;
   }
 
   Dmsg3(200, "split fname=%s path=%s file=%s\n", fname, path.c_str(),
         filename.c_str());
+
+  return {path, filename};
 }
 
 // Extremely simple sscanf. Handles only %(u,d,hu,hd,ld,qd,qu,lu,lld,llu,c,nns)

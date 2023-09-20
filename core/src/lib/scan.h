@@ -42,9 +42,13 @@ int ParseArgsOnly(const POOLMEM* cmd,
                   char** argk,
                   char** argv,
                   int max_args);
-void SplitPathAndFilename(const char* fname,
-                          std::string &path,
-                          std::string &filename);
+
+struct PathAndFileName {
+  std::string path;
+  std::string filename;
+};
+
+PathAndFileName SplitPathAndFilename(const char* fname);
 int bsscanf(const char* buf, const char* fmt, ...);
 
 #endif  // BAREOS_LIB_SCAN_H_
