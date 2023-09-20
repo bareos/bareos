@@ -91,9 +91,6 @@ TREE_ROOT* new_tree(int count)
   root->cached_path_len = -1;
   root->cached_path = GetPoolMemory(PM_FNAME);
   root->type = TreeNodeType::ROOT;
-  root->fname_len = strlen("");
-  root->fname = tree_alloc<char>(root, root->fname_len + 1);
-  strcpy(root->fname, "");
   return root;
 }
 
@@ -237,7 +234,7 @@ TREE_NODE* insert_tree_node(char* path,
         parent = make_tree_path(path, root);
         root->cached_parent = parent;
       }
-      Dmsg1(100, "parent=%s\n", parent->fname);
+      Dmsg1(100, "parent=%s\n", parent->fname.c_str());
     }
   } else {
     fname = path;
@@ -302,7 +299,7 @@ static int NodeCompare(void* item1, void* item2)
     return -1;
   }
 
-  return strcmp(tn1->fname, tn2->fname);
+  return strcmp(tn1->fname.c_str(), tn2->fname.c_str());
 }
 
 // See if the fname already exists. If not insert a new node for it.
@@ -323,9 +320,7 @@ static TREE_NODE* search_and_insert_tree_node(char* fname,
   }
 
   // It was not found, but is now inserted
-  node->fname_len = strlen(fname);
-  node->fname = tree_alloc<char>(root, node->fname_len + 1);
-  strcpy(node->fname, fname);
+  node->fname = fname;
   node->parent = parent;
   node->type = type;
 
@@ -400,7 +395,7 @@ TREE_NODE* tree_cwd(char* path, TREE_ROOT* root, TREE_NODE* node)
 TREE_NODE* tree_relcwd(char* path, TREE_ROOT* root, TREE_NODE* node)
 {
   char* p;
-  int len;
+  size_t len;
   TREE_NODE* cd;
   char save_char;
   int match;
@@ -417,16 +412,16 @@ TREE_NODE* tree_relcwd(char* path, TREE_ROOT* root, TREE_NODE* node)
   Dmsg2(100, "tree_relcwd: len=%d path=%s\n", len, path);
 
   foreach_child (cd, node) {
-    Dmsg1(100, "tree_relcwd: test cd=%s\n", cd->fname);
-    if (cd->fname[0] == path[0] && len == (int)strlen(cd->fname)
-        && bstrncmp(cd->fname, path, len)) {
+    Dmsg1(100, "tree_relcwd: test cd=%s\n", cd->fname.c_str());
+    if (cd->fname[0] == path[0] && len == cd->fname.size()
+        && bstrncmp(cd->fname.c_str(), path, len)) {
       break;
     }
 
     // fnmatch has no len in call so we truncate the string
     save_char = path[len];
     path[len] = 0;
-    match = fnmatch(path, cd->fname, 0) == 0;
+    match = fnmatch(path, cd->fname.c_str(), 0) == 0;
     path[len] = save_char;
 
     if (match) { break; }
@@ -441,7 +436,8 @@ TREE_NODE* tree_relcwd(char* path, TREE_ROOT* root, TREE_NODE* node)
     return cd;
   }
 
-  Dmsg2(100, "recurse tree_relcwd with path=%s, cd=%s\n", p + 1, cd->fname);
+  Dmsg2(100, "recurse tree_relcwd with path=%s, cd=%s\n", p + 1,
+        cd->fname.c_str());
 
   // Check the next segment if any
   return tree_relcwd(p + 1, root, cd);

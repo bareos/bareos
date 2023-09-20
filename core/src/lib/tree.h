@@ -77,11 +77,10 @@ struct s_tree_node {
    *  do initialization of child */
   rblink sibling;
   rblist child;
-  char* fname{};                            /* file name */
+  std::string fname{};                      /* file name */
   int32_t FileIndex{};                      /* file index */
   uint32_t JobId{};                         /* JobId */
   int32_t delta_seq{};                      /* current delta sequence */
-  uint16_t fname_len{};                     /* filename length */
   TreeNodeType type{TreeNodeType::UNKNOWN}; /* node type */
   bool extract{false};                      /* extract item */
   bool extract_dir{false};                  /* extract dir entry only */

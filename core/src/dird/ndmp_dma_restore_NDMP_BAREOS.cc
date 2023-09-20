@@ -73,12 +73,12 @@ static inline char* lookup_fileindex(JobControlRecord* jcr, int32_t FileIndex)
   while (node) {
     // See if this is the wanted FileIndex.
     if (node->FileIndex == FileIndex) {
-      PmStrcpy(restore_pathname, node->fname);
+      PmStrcpy(restore_pathname, node->fname.c_str());
 
       // Walk up the parent until we hit the head of the list.
       for (parent = node->parent; parent; parent = parent->parent) {
         PmStrcpy(tmp, restore_pathname.c_str());
-        Mmsg(restore_pathname, "%s/%s", parent->fname, tmp.c_str());
+        Mmsg(restore_pathname, "%s/%s", parent->fname.c_str(), tmp.c_str());
       }
 
       if (bstrncmp(restore_pathname.c_str(), "/@NDMP/", 7)) {
@@ -108,12 +108,12 @@ static inline int set_files_to_restore(JobControlRecord* jcr,
   while (node) {
     // See if this is the wanted FileIndex and the user asked to extract it.
     if (node->FileIndex == FileIndex && node->extract) {
-      PmStrcpy(restore_pathname, node->fname);
+      PmStrcpy(restore_pathname, node->fname.c_str());
 
       // Walk up the parent until we hit the head of the list.
       for (parent = node->parent; parent; parent = parent->parent) {
         PmStrcpy(tmp, restore_pathname.c_str());
-        Mmsg(restore_pathname, "%s/%s", parent->fname, tmp.c_str());
+        Mmsg(restore_pathname, "%s/%s", parent->fname.c_str(), tmp.c_str());
       }
 
       /* We only want to restore the non pseudo NDMP names e.g. not the full

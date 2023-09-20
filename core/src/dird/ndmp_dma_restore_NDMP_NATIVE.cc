@@ -181,11 +181,11 @@ int SetFilesToRestoreNdmpNative(JobControlRecord* jcr,
      * the selected one.
      */
     if (node->extract_dir || node->extract) {
-      PmStrcpy(restore_pathname, node->fname);
+      PmStrcpy(restore_pathname, node->fname.c_str());
       // Walk up the parent until we hit the head of the list.
       for (parent = node->parent; parent; parent = parent->parent) {
         PmStrcpy(tmp, restore_pathname.c_str());
-        Mmsg(restore_pathname, "%s/%s", parent->fname, tmp.c_str());
+        Mmsg(restore_pathname, "%s/%s", parent->fname.c_str(), tmp.c_str());
       }
       /*
        * only add nodes that have valid DAR info i.e. fhinfo is not
