@@ -858,7 +858,7 @@ const char *BareosDbPostgresql::query_definitions[] = {
 ,
 
 /* 0070_list_joblog_2 */
-"SELECT Time, LogText FROM Log "
+"SELECT TO_CHAR(Time, '%s'), LogText FROM Log "
 "WHERE Log.JobId=%s "
 "ORDER BY Log.LogId "
 "%s "

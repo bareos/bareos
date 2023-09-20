@@ -87,10 +87,10 @@ CREATE TABLE Job
     Level             CHAR(1)     NOT NULL,
     ClientId          INTEGER     DEFAULT 0,
     JobStatus         CHAR(1)     NOT NULL,
-    SchedTime         TIMESTAMP   WITHOUT TIME ZONE,
-    StartTime         TIMESTAMP   WITHOUT TIME ZONE,
-    EndTime           TIMESTAMP   WITHOUT TIME ZONE,
-    RealEndTime       TIMESTAMP   WITHOUT TIME ZONE,
+    SchedTime         TIMESTAMP   WITH TIME ZONE,
+    StartTime         TIMESTAMP   WITH TIME ZONE,
+    EndTime           TIMESTAMP   WITH TIME ZONE,
+    RealEndTime       TIMESTAMP   WITH TIME ZONE,
     JobTDate          BIGINT      DEFAULT 0,
     VolSessionId      INTEGER     DEFAULT 0,
     volSessionTime    INTEGER     DEFAULT 0,
@@ -130,7 +130,7 @@ CREATE TABLE Fileset
     Fileset           TEXT        NOT NULL,
     FileSetText       TEXT        DEFAULT '',
     Md5               TEXT        NOT NULL,
-    CreateTime        TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    CreateTime        TIMESTAMP WITH TIME ZONE NOT NULL,
     PRIMARY KEY (filesetid)
 );
 
@@ -162,9 +162,9 @@ CREATE TABLE Media
     MediaType         TEXT        NOT NULL,
     MediaTypeId       INTEGER     DEFAULT 0,
     LabelType         INTEGER     DEFAULT 0,
-    FirstWritten      TIMESTAMP   WITHOUT TIME ZONE,
-    LastWritten       TIMESTAMP   WITHOUT TIME ZONE,
-    LabelDate         TIMESTAMP   WITHOUT TIME ZONE,
+    FirstWritten      TIMESTAMP   WITH TIME ZONE,
+    LastWritten       TIMESTAMP   WITH TIME ZONE,
+    LabelDate         TIMESTAMP   WITH TIME ZONE,
     VolJobs           INTEGER     DEFAULT 0,
     VolFiles          INTEGER     DEFAULT 0,
     VolBlocks         INTEGER     DEFAULT 0,
@@ -197,7 +197,7 @@ CREATE TABLE Media
     RecycleCount      INTEGER     DEFAULT 0,
     MinBlockSize      INTEGER     DEFAULT 0,
     MaxBlockSize      INTEGER     DEFAULT 0,
-    InitialWrite      TIMESTAMP   WITHOUT TIME ZONE,
+    InitialWrite      TIMESTAMP   WITH TIME ZONE,
     ScratchPoolId     INTEGER     DEFAULT 0,
     RecyclePoolId     INTEGER     DEFAULT 0,
     EncryptionKey     TEXT,
@@ -236,7 +236,7 @@ CREATE TABLE Device (
     DevWriteTime              BIGINT      NOT NULL DEFAULT 0,
     DevReadTimeSinceCleaning  BIGINT      NOT NULL DEFAULT 0,
     DevWriteTimeSinceCleaning BIGINT      NOT NULL DEFAULT 0,
-    CleaningDate              TIMESTAMP   WITHOUT TIME ZONE,
+    CleaningDate              TIMESTAMP   WITH TIME ZONE,
     CleaningPeriod            BIGINT      NOT NULL DEFAULT 0,
     PRIMARY KEY(DeviceId)
 );
@@ -294,7 +294,7 @@ CREATE TABLE Log
 (
     LogId             SERIAL      NOT NULL,
     JobId             INTEGER     NOT NULL,
-    Time              TIMESTAMP   WITHOUT TIME ZONE,
+    Time              TIMESTAMP   WITH TIME ZONE,
     LogText           TEXT        NOT NULL,
     PRIMARY KEY (LogId)
 );
@@ -302,7 +302,7 @@ CREATE INDEX log_name_idx ON Log (JobId);
 
 CREATE TABLE LocationLog (
     LocLogId          SERIAL NOT NULL,
-    Date              TIMESTAMP   WITHOUT TIME ZONE,
+    Date              TIMESTAMP   WITH TIME ZONE,
     Comment           TEXT NOT NULL,
     MediaId           INTEGER DEFAULT 0,
     LocationId        INTEGER DEFAULT 0,
@@ -403,7 +403,7 @@ CREATE TABLE NDMPJobEnvironment (
 
 CREATE TABLE DeviceStats (
     DeviceId          INTEGER     DEFAULT 0,
-    SampleTime        TIMESTAMP   WITHOUT TIME ZONE NOT NULL,
+    SampleTime        TIMESTAMP   WITH TIME ZONE NOT NULL,
     ReadTime          BIGINT      NOT NULL DEFAULT 0,
     WriteTime         BIGINT      NOT NULL DEFAULT 0,
     ReadBytes         BIGINT      DEFAULT 0,
@@ -419,7 +419,7 @@ CREATE TABLE DeviceStats (
 
 CREATE TABLE JobStats (
     DeviceId          INTEGER     DEFAULT 0,
-    SampleTime        TIMESTAMP   WITHOUT TIME ZONE NOT NULL,
+    SampleTime        TIMESTAMP   WITH TIME ZONE NOT NULL,
     JobId             INTEGER     NOT NULL,
     JobFiles          INTEGER     DEFAULT 0,
     JobBytes          BIGINT      DEFAULT 0
@@ -427,7 +427,7 @@ CREATE TABLE JobStats (
 
 CREATE TABLE TapeAlerts (
     DeviceId          INTEGER     DEFAULT 0,
-    SampleTime        TIMESTAMP   WITHOUT TIME ZONE NOT NULL,
+    SampleTime        TIMESTAMP   WITH TIME ZONE NOT NULL,
     AlertFlags        BIGINT      DEFAULT 0
 );
 
