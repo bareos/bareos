@@ -223,7 +223,14 @@ bool RestoreCmd(UaContext* ua, const char*)
       return false;
     case 1: /* selected by jobid */ {
       TreeContext tree = BuildDirectoryTree(ua, &rx);
-      if (!SelectFiles(ua, &rx, tree, done)) {
+      bool selection_result = SelectFiles(ua, &rx, tree, done);
+
+      /* We keep the tree with selected restore files.
+       * For NDMP restores its used in the DMA to know what to restore.
+       * The tree is freed by the DMA when its done. */
+      ua->jcr->dir_impl->restore_tree_root = tree.root;
+
+      if (!selection_result) {
         ua->SendMsg(_("Restore not done.\n"));
         return false;
       }
@@ -1203,12 +1210,6 @@ static bool SelectFiles(UaContext* ua,
 
     if (OK) { FinishSelection(rx, tree); }
   }
-
-  /* We keep the tree with selected restore files.
-   * For NDMP restores its used in the DMA to know what to restore.
-   * The tree is freed by the DMA when its done. */
-  ua->jcr->dir_impl->restore_tree_root = tree.root;
-
   return OK;
 }
 
