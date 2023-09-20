@@ -149,7 +149,7 @@ static ResourceItem dir_items[] = {
   { "AuditEvents", CFG_TYPE_AUDIT, ITEM(res_dir, audit_events), 0, 0, NULL, "14.2.0-", NULL },
   { "SecureEraseCommand", CFG_TYPE_STR, ITEM(res_dir, secure_erase_cmdline), 0, 0, NULL, "15.2.1-",
      "Specify command that will be called when bareos unlinks files." },
-  { "LogTimestampFormat", CFG_TYPE_STR, ITEM(res_dir, log_timestamp_format), 0, CFG_ITEM_DEFAULT|CFG_ITEM_DEPRECATED, kBareosDefaultTimestampFormat, "15.2.3-", NULL },
+  { "LogTimestampFormat", CFG_TYPE_STR, ITEM(res_dir, log_timestamp_format_remove_in_24), 0, CFG_ITEM_DEFAULT|CFG_ITEM_DEPRECATED, kBareosDefaultTimestampFormat, "15.2.3-", NULL },
    TLS_COMMON_CONFIG(res_dir),
    TLS_CERT_CONFIG(res_dir),
   {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
@@ -1059,7 +1059,9 @@ static void PropagateResource(ResourceItem* items,
               *new_list = new alist<const char*>(10, owned_by_alist);
             }
 
-            foreach_alist (str, orig_list) { (*new_list)->append(strdup(str)); }
+            foreach_alist (str, orig_list) {
+              (*new_list)->append(strdup(str));
+            }
 
             dest->SetMemberPresent(items[i].name);
             SetBit(i, dest->inherit_content_);
@@ -1081,7 +1083,9 @@ static void PropagateResource(ResourceItem* items,
               *new_list = new alist<BareosResource*>(10, not_owned_by_alist);
             }
 
-            foreach_alist (res, orig_list) { (*new_list)->append(res); }
+            foreach_alist (res, orig_list) {
+              (*new_list)->append(res);
+            }
 
             dest->SetMemberPresent(items[i].name);
             SetBit(i, dest->inherit_content_);
@@ -1105,7 +1109,9 @@ static void PropagateResource(ResourceItem* items,
               *new_list = new alist<const char*>(10, owned_by_alist);
             }
 
-            foreach_alist (str, orig_list) { (*new_list)->append(strdup(str)); }
+            foreach_alist (str, orig_list) {
+              (*new_list)->append(strdup(str));
+            }
 
             dest->SetMemberPresent(items[i].name);
             SetBit(i, dest->inherit_content_);
@@ -2436,7 +2442,9 @@ static bool PopulateJobdefaults()
   bool retval = true;
 
   // Propagate the content of a JobDefs to another.
-  foreach_res (jobdefs, R_JOBDEFS) { PropagateJobdefs(R_JOBDEFS, jobdefs); }
+  foreach_res (jobdefs, R_JOBDEFS) {
+    PropagateJobdefs(R_JOBDEFS, jobdefs);
+  }
 
   // Propagate the content of the JobDefs to the actual Job.
   foreach_res (job, R_JOB) {
@@ -3795,7 +3803,9 @@ static void FreeResource(BareosResource* res, int type)
       if (p->keyencrkey.value) { free(p->keyencrkey.value); }
       if (p->audit_events) { delete p->audit_events; }
       if (p->secure_erase_cmdline) { free(p->secure_erase_cmdline); }
-      if (p->log_timestamp_format) { free(p->log_timestamp_format); }
+      if (p->log_timestamp_format_remove_in_24) {
+        free(p->log_timestamp_format_remove_in_24);
+      }
       delete p;
       break;
     }

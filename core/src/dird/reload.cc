@@ -188,9 +188,6 @@ bool CheckResources()
   if (me->secure_erase_cmdline) {
     SetSecureEraseCmdline(me->secure_erase_cmdline);
   }
-  if (me->log_timestamp_format) {
-    SetLogTimestampFormat(me->log_timestamp_format);
-  }
 
   return true;
 }

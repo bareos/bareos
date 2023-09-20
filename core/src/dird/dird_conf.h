@@ -144,9 +144,9 @@ class DirectorResource
   char* verid = nullptr; /* Custom Id to print in version command */
   char* secure_erase_cmdline = nullptr; /* Cmdline to execute to perform secure
                                  erase of file */
-  char* log_timestamp_format = nullptr; /* Timestamp format to use in generic
-                                 logging messages */
-  s_password keyencrkey;                /* Key Encryption Key */
+  char* log_timestamp_format_remove_in_24 = nullptr; /* Timestamp format to use
+                                 in generic logging messages */
+  s_password keyencrkey;                             /* Key Encryption Key */
 };
 
 /*

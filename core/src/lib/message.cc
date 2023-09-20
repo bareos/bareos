@@ -72,7 +72,6 @@ job_code_callback_t message_job_code_callback = NULL;  // Only used by director
 
 static MessagesResource* daemon_msgs; /* Global messages */
 static char* catalog_db = NULL;       /* Database type */
-static const char* log_timestamp_format = kBareosDefaultTimestampFormat;
 static void (*message_callback)(int type, const char* msg) = NULL;
 static FILE* trace_fd = NULL;
 #if defined(HAVE_WIN32)
@@ -1639,10 +1638,4 @@ void q_msg(const char* file,
   PmStrcat(buf, more.c_str());
 
   Qmsg(jcr, type, mtime, "%s", buf.c_str());
-}
-
-// Set gobal date format used for log messages.
-void SetLogTimestampFormat(const char* format)
-{
-  log_timestamp_format = format;
 }

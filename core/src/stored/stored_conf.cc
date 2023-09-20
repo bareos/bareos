@@ -113,7 +113,7 @@ static ResourceItem store_items[] = {
   {"FileDeviceConcurrentRead", CFG_TYPE_BOOL, ITEM(res_store, filedevice_concurrent_read), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL},
   {"SecureEraseCommand", CFG_TYPE_STR, ITEM(res_store, secure_erase_cmdline), 0, 0, NULL, "15.2.1-",
       "Specify command that will be called when bareos unlinks files."},
-  {"LogTimestampFormat", CFG_TYPE_STR, ITEM(res_store, log_timestamp_format), 0, CFG_ITEM_DEFAULT|CFG_ITEM_DEPRECATED, kBareosDefaultTimestampFormat, "15.2.3-", NULL},
+  {"LogTimestampFormat", CFG_TYPE_STR, ITEM(res_store, log_timestamp_format_remove_in_24), 0, CFG_ITEM_DEFAULT|CFG_ITEM_DEPRECATED, kBareosDefaultTimestampFormat, "15.2.3-", NULL},
     TLS_COMMON_CONFIG(res_store),
     TLS_CERT_CONFIG(res_store),
   {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
@@ -929,7 +929,9 @@ static void FreeResource(BareosResource* res, int type)
       if (p->scripts_directory) { free(p->scripts_directory); }
       if (p->verid) { free(p->verid); }
       if (p->secure_erase_cmdline) { free(p->secure_erase_cmdline); }
-      if (p->log_timestamp_format) { free(p->log_timestamp_format); }
+      if (p->log_timestamp_format_remove_in_24) {
+        free(p->log_timestamp_format_remove_in_24);
+      }
       delete p;
       break;
     }
