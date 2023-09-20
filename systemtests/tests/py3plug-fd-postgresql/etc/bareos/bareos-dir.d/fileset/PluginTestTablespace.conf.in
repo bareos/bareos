@@ -11,6 +11,6 @@ FileSet {
              ":db_host=@dbHost@"
              ":postgresql_data_dir=@current_test_directory@/database/data/"
              ":wal_archive_dir=@current_test_directory@/database/wal_archive/"
-             ":start_fast_start=True"
+             ":start_fast=True"
   }
 }
