@@ -429,14 +429,14 @@ static bRC PyStartBackupFile(PluginContext* plugin_ctx, save_pkt* sp)
       retval = ConvertPythonRetvalTobRCRetval(pRetVal);
       Py_DECREF(pRetVal);
 
-      if (retval == bRC_OK && !PySavePacketToNative(pSavePkt, sp, plugin_priv_ctx, false)) {
+      if (retval == bRC_OK
+          && !PySavePacketToNative(pSavePkt, sp, plugin_priv_ctx, false)) {
         Dmsg(plugin_ctx, debuglevel,
              LOGPREFIX "Failed to convert save packet to native.\n");
         Py_DECREF((PyObject*)pSavePkt);
         goto bail_out;
       }
       Py_DECREF((PyObject*)pSavePkt);
-
     }
   } else {
     Dmsg(plugin_ctx, debuglevel,

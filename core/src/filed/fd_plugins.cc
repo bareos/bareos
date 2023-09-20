@@ -718,7 +718,8 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
             &sp.statp.st_size, &sp.statp.st_blocks, &sp);
 
       // Get the file save parameters. I.e. the stat pkt ...
-      if (bRC retval = PlugFunc(ctx->plugin)->startBackupFile(ctx, &sp); retval != bRC_OK) {
+      if (bRC retval = PlugFunc(ctx->plugin)->startBackupFile(ctx, &sp);
+          retval != bRC_OK) {
         if (retval == bRC_Error) {
           Jmsg1(jcr, M_FATAL, 0,
                 _("Command plugin \"%s\": startBackupFile failed.\n"), cmd);
@@ -837,7 +838,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       // Restore original flags.
       CopyBits(FO_MAX, flags, ff_pkt->flags);
 
-      retval = PlugFunc(ctx->plugin)->endBackupFile(ctx);
+      bRC retval = PlugFunc(ctx->plugin)->endBackupFile(ctx);
       if (retval == bRC_More || retval == bRC_OK) {
         AccurateMarkFileAsSeen(jcr, fname.c_str());
       }
