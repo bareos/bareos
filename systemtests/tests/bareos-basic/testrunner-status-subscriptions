@@ -37,7 +37,7 @@ END_OF_DATA
 run_bconsole
 
 # remove lines starting with @ so output is comparable
-sed -i'.bak' -e '/^@/d' -e '/^Bareos version:/d' -e '/^Binary info:/d' -e '/^Report time:/d' -e '/^Checksum:/d' "$tmp"/status-subscription*.txt
+sed -i'.bak' -e '/^@/d' -e '/^Bareos version:/d' -e '/^Binary info:/d' -e '/^Report time:/d' -e '/^Checksum:/d' -e "/^Estimate only./d" "$tmp"/status-subscription*.txt
 
 for f in status-subscriptions status-subscriptions-detail status-subscriptions-unknown; do
   if ! diff -u expected/$f.txt "$tmp/$f.txt"; then

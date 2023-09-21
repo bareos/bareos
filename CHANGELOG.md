@@ -97,6 +97,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: upgrade bootstrap to version 3.4.1 [PR #1550]
 - bareos-check-sources: ignore bootstrap*.css [PR #1556]
 - daemons: set CLI11 error exit code to `41` and bareos config parsing error exit code to `42` [PR #1515]
+- database: improve subscription view [PR #1542]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -246,6 +247,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1524]: https://github.com/bareos/bareos/pull/1524
 [PR #1531]: https://github.com/bareos/bareos/pull/1531
 [PR #1532]: https://github.com/bareos/bareos/pull/1532
+[PR #1542]: https://github.com/bareos/bareos/pull/1542
 [PR #1550]: https://github.com/bareos/bareos/pull/1550
 [PR #1556]: https://github.com/bareos/bareos/pull/1556
 [unreleased]: https://github.com/bareos/bareos/tree/master

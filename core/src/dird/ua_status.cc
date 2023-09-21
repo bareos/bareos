@@ -578,6 +578,9 @@ static bool DoSubscriptionStatus(UaContext* ua)
         ua->send, VERT_LIST, "data-not-categorized", true,
         BareosDb::CollapseMode::Collapse);
   }
+  ua->SendMsg(
+      _("\nEstimate only. Contact Bareos for actual quote"
+        " https://www.bareos.com/contact/\n"));
   return true;
 }
 
