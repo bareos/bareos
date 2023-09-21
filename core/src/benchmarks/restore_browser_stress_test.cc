@@ -80,6 +80,8 @@ template <typename T> struct array_list {
 UaContext ua;
 TreeContext tree;
 std::vector<char> bytes;
+std::vector<char> loaded;
+std::string filename = "files.out";
 
 template <typename T> struct span {
   const T* mem{nullptr};
@@ -124,8 +126,8 @@ struct proto_node {
 struct tree_header {
   std::uint64_t num_nodes;
   std::uint64_t nodes_offset;
-  std::uint64_t meta_offset;
   std::uint64_t string_offset;
+  std::uint64_t meta_offset;
 };
 
 struct node_meta {
@@ -134,6 +136,11 @@ struct node_meta {
   unsigned int type : 8;      /* node type */
   unsigned int hard_link : 1; /* set if have hard link */
   unsigned int soft_link : 1; /* set if is soft link */
+
+  std::uint64_t delta_seq;
+  std::uint64_t fhnode;
+  std::uint64_t fhinfo;
+  std::int64_t original; // -1 = no original
 };
 
 class parts {
@@ -254,6 +261,10 @@ struct tree {
     marked.resize(count);
   }
 
+  std::size_t size() const {
+    return nodes.size();
+  }
+
   bool match(std::string_view pattern, std::string_view str)
   {
     std::string p{pattern};
@@ -262,15 +273,70 @@ struct tree {
     return fnmatch(p.c_str(), s.c_str(), 0) == 0;
   }
 
+  std::size_t unmark(std::size_t start, std::size_t end)
+  {
+    std::fill(marked.begin() + start, marked.begin() + end, false);
+
+    std::size_t count = 0;
+    for (std::size_t i = start; i < end; ++i) {
+      auto& meta = metas[i];
+      count += (meta.type == TN_FILE);
+    }
+    return count;
+  }
   std::size_t mark(std::size_t start, std::size_t end)
   {
     std::fill(marked.begin() + start, marked.begin() + end, true);
     // its _much_ faster without this
-    return std::count_if(metas.begin() + start, metas.begin() + end,
-                         [](const auto& x) {
-                           // todo: somehow this is always false!
-                           return x.type == TN_FILE;
-                         });
+
+    std::size_t count = 0;
+    for (std::size_t i = start; i < end; ++i) {
+      auto& meta = metas[i];
+      count += (meta.type == TN_FILE);
+
+      if (meta.original >= 0) {
+	count += (marked[meta.original] == false);
+	marked[meta.original] = true;
+      }
+    }
+    return count;
+  }
+
+  std::size_t unmark_glob(std::string_view glob,
+			  std::size_t start,
+			  std::size_t end)
+  {
+    std::size_t count = 0;
+
+    auto part_end = glob.find_first_of('/');
+
+    auto part = glob.substr(0, part_end);
+
+    std::string_view rest{};
+    if (part.size() != glob.size()) { rest = glob.substr(part_end + 1); }
+
+    while (start < end) {
+      const proto_node& current = nodes[start];
+      const char* s_data = string_pool.data() + current.name.start;
+      std::size_t s_size = current.name.end - current.name.start;
+      std::string_view view{s_data, s_size};
+      if (match(part, view)) {
+        if (rest.size() == 0) {
+          count += unmark(start, current.sub.end);
+        } else {
+          auto num = unmark_glob(rest, start, current.sub.end);
+          if (num && !marked[start]) {
+            marked[start] = true;
+            num += 1;
+          }
+          count += num;
+        }
+      }
+
+      start = current.sub.end;
+    }
+
+    return count;
   }
 
   std::size_t mark_glob(std::string_view glob,
@@ -315,6 +381,13 @@ struct tree {
     if (glob.size() == 0) { return 0; }
     if (glob.back() == '/') { glob.remove_suffix(1); }
     return mark_glob(glob, 0, marked.size());
+  }
+
+  std::size_t unmark_glob(std::string_view glob)
+  {
+    if (glob.size() == 0) { return 0; }
+    if (glob.back() == '/') { glob.remove_suffix(1); }
+    return unmark_glob(glob, 0, marked.size());
   }
 
   std::string_view name_of(std::size_t idx)
@@ -444,12 +517,30 @@ struct tree_builder {
     return span<char>(reinterpret_cast<const char*>(&val), sizeof(val));
   }
 
-  tree_builder(const TREE_ROOT* root) { build(root->first); }
+  using node_map = std::unordered_map<const TREE_NODE*, std::size_t>;
 
-  void build(const TREE_NODE* node)
+  tree_builder(TREE_ROOT* root) {
+    node_map m;
+    build(m, root->first);
+    for (auto& meta : metas) {
+      std::uint64_t key = meta.jobid;
+      key <<= 32;
+      key |= meta.findex;
+
+      HL_ENTRY* entry = root->hardlinks.lookup(key);
+      if (entry && entry->node) {
+	meta.original = m[entry->node];
+      } else {
+	meta.original = -1;
+      }
+    }
+  }
+
+  void build(node_map& m, const TREE_NODE* node)
   {
     if (!node) { return; }
     std::size_t pos = nodes.size();
+    m[node] = pos;
     {
       proto_node& n = nodes.emplace_back();
 
@@ -465,12 +556,18 @@ struct tree_builder {
       meta.type = node->type;
       meta.hard_link = node->hard_link;
       meta.soft_link = node->soft_link;
+      meta.delta_seq= node->delta_seq;
+      meta.fhnode = node->fhnode;
+      meta.fhinfo = node->fhinfo;
+
+
+
     }
 
     std::size_t start = nodes.size();
 
     TREE_NODE* child;
-    foreach_child (child, const_cast<TREE_NODE*>(node)) { build(child); }
+    foreach_child (child, const_cast<TREE_NODE*>(node)) { build(m, child); }
 
     std::size_t end = nodes.size();
 
@@ -515,10 +612,16 @@ struct tree_builder {
     }
 
     auto meta_offset = data.size();
-    for (auto& meta : metas) {
-      auto bytes = as_span(meta);
+    {
+      auto b = (const char*)metas.data();
+      auto e = (const char*)(metas.data() + metas.size());
+      auto bytes = span(b, e - b);
       data.insert(data.end(), bytes.begin(), bytes.end());
     }
+    // for (auto& meta : metas) {
+    //   auto bytes = as_span(meta);
+    //   data.insert(data.end(), bytes.begin(), bytes.end());
+    // }
 
     tree_header header{nodes.size(), node_offset, string_offset, meta_offset};
     auto header_bytes = as_span(header);
@@ -528,6 +631,148 @@ struct tree_builder {
     return data;
   }
 };
+
+#define B_PAGE_SIZE 4096
+#define MAX_PAGES 2400
+#define MAX_BUF_SIZE (MAX_PAGES * B_PAGE_SIZE) /* approx 10MB */
+
+static void MallocBuf(TREE_ROOT* root, int size)
+{
+  struct s_mem* mem;
+
+  mem = (struct s_mem*)malloc(size);
+  root->total_size += size;
+  root->blocks++;
+  mem->next = root->mem;
+  root->mem = mem;
+  mem->mem = mem->first;
+  mem->rem = (char*)mem + size - (char*)mem->mem;
+  Dmsg2(200, "malloc buf size=%d rem=%d\n", size, mem->rem);
+}
+
+static char *RootMalloc(TREE_ROOT* root, int size)
+{
+  struct s_mem* mem;
+
+  mem = (struct s_mem*)malloc(size+sizeof(struct s_mem));
+  root->total_size += size + sizeof(struct s_mem);
+  root->blocks++;
+  if (root->mem) {
+    mem->next = root->mem->next;
+    root->mem->next = mem;
+  } else {
+    mem = root->mem;
+    root->mem = mem;
+  }
+  mem->mem = mem->first;
+  mem->rem = 0;
+  Dmsg2(200, "malloc buf size=%d rem=%d\n", size, mem->rem);
+  return (char*) mem + sizeof(struct s_mem);
+}
+
+template <typename T> static T* tree_alloc(TREE_ROOT* root, int size)
+{
+  T* buf;
+  int asize = BALIGN(size);
+
+  if (root->mem->rem < asize) {
+    uint32_t mb_size;
+    if (root->total_size >= (MAX_BUF_SIZE / 2)) {
+      mb_size = MAX_BUF_SIZE;
+    } else {
+      mb_size = MAX_BUF_SIZE / 2;
+    }
+    MallocBuf(root, mb_size);
+  }
+  root->mem->rem -= asize;
+  buf = static_cast<T*>(root->mem->mem);
+  root->mem->mem = (char*)root->mem->mem + asize;
+  return buf;
+}
+
+static int NodeCompare(void* item1, void* item2)
+{
+  TREE_NODE* tn1 = (TREE_NODE*)item1;
+  TREE_NODE* tn2 = (TREE_NODE*)item2;
+
+  if (tn1->fname[0] > tn2->fname[0]) {
+    return 1;
+  } else if (tn1->fname[0] < tn2->fname[0]) {
+    return -1;
+  }
+
+  return strcmp(tn1->fname, tn2->fname);
+}
+
+TREE_ROOT* load_tree(struct tree tree)
+{
+  TREE_ROOT* root = new_tree(tree.size());
+
+  TREE_NODE* nodes = (TREE_NODE*)RootMalloc(root, tree.size() * sizeof(TREE_NODE));
+
+  // this can probably be done in the othre direction too!
+  for (std::size_t i = tree.size(); i > 0;) {
+    i -= 1;
+    const proto_node& pnode = tree.nodes[i];
+    TREE_NODE& node = *new (&nodes[i]) TREE_NODE;
+    auto str = tree.nodes[i].name;
+    node.fname = tree_alloc<char>(root, str.end - str.start + 1);
+    std::memcpy(node.fname, tree.string_pool.data() + str.start,
+		str.end - str.start);
+    node.fname[str.end - str.start] = 0;
+    for (std::size_t child = pnode.sub.start;
+	 child < pnode.sub.end;
+	 child = tree.nodes[child].sub.end + 1) {
+      auto& childnode = nodes[child];
+      node.child.insert(&childnode, NodeCompare);
+      childnode.parent = &node;
+    }
+  }
+
+  root->first = &nodes[0];
+  root->last = &nodes[tree.size() - 1];
+  root->last->next = nullptr;
+
+  for (std::size_t i = 0; i < tree.size() - 1; ++i) {
+    TREE_NODE& current = nodes[i];
+
+    auto& meta = tree.metas[tree.nodes[i].misc.meta];
+    current.next = &nodes[i+1];
+    current.FileIndex = meta.findex;
+    current.JobId = meta.jobid;
+    current.delta_seq = meta.delta_seq;
+    current.delta_list = nullptr; // ??
+    current.fhinfo = meta.fhinfo;
+    current.fhnode = meta.fhnode;
+
+    auto str = tree.nodes[i].name;
+    std::memcpy(current.fname, tree.string_pool.data() + str.start,
+		str.end - str.start);
+    current.fname[str.end - str.start] = 0;
+
+    current.type = meta.type;
+    current.extract = 0;
+    current.extract_dir = 0;
+    current.hard_link = meta.hard_link;
+    current.soft_link = meta.soft_link;
+
+    if (meta.original < 0) {
+      auto* entry = (HL_ENTRY*)root->hardlinks.hash_malloc(sizeof(HL_ENTRY));
+      entry->key = (((uint64_t)meta.jobid) << 32) + meta.findex;
+      entry->node = &current;
+      root->hardlinks.insert(entry->key, entry);
+    } else {
+      // Then add hardlink entry to linked node.
+      auto* entry = (HL_ENTRY*)root->hardlinks.hash_malloc(sizeof(HL_ENTRY));
+      entry->key = (((uint64_t)meta.jobid) << 32) + meta.findex;
+      entry->node = &nodes[meta.original];
+      root->hardlinks.insert(entry->key, entry);
+    }
+  }
+
+  return root;
+}
+
 
 const int max_depth = 30;
 
@@ -587,9 +832,13 @@ void PopulateTree(int quantity, TreeContext* tree)
   std::string file_path = "/";
   std::string file{};
 
+  std::size_t nfile = 0;
+  std::size_t ndir = 0;
   for (int i = 0; i < max_depth; ++i) {
     file_path.append("dir" + std::to_string(i) + "/");
+    ndir += 1;
     for (int j = 0; j < (quantity / max_depth); ++j) {
+      nfile += 1;
       file = "file" + std::to_string(j);
 
       strcpy(path, file_path.c_str());
@@ -672,21 +921,11 @@ static void BM_populatetree(benchmark::State& state)
   for (auto _ : state) { PopulateTree(state.range(0), &tree); }
 }
 
-static void BM_populatetree2(benchmark::State& state)
+[[maybe_unused]] static void BM_populatetree2(benchmark::State& state)
 {
   for (auto _ : state) { PopulateTree2(state.range(0)); }
 }
 
-[[maybe_unused]] static void BM_buildtree(benchmark::State& state)
-{
-  for (auto _ : state) {
-    tree_builder builder(tree.root);
-    bytes = builder.to_bytes();
-    tree2 = (struct tree)(span(bytes.data(), bytes.size()));
-  }
-
-  std::cout << bytes.size() << std::endl;
-}
 
 [[maybe_unused]] static void BM_markallfiles(benchmark::State& state)
 {
@@ -697,6 +936,66 @@ static void BM_populatetree2(benchmark::State& state)
   std::cout << "Marked: " << count << " files." << std::endl;
 }
 
+[[maybe_unused]] static void BM_buildtree(benchmark::State& state)
+{
+  for (auto _ : state) {
+    tree_builder builder(tree.root);
+    bytes = builder.to_bytes();
+  }
+
+  std::cout << bytes.size() << std::endl;
+}
+
+[[maybe_unused]] static void BM_savetree(benchmark::State& state)
+{
+  for (auto _ : state) {
+    unlink(filename.c_str());
+    int fd = open(filename.c_str(), O_WRONLY | O_CREAT, S_IRWXU);
+    ASSERT(fd >= 0);
+    std::size_t written = 0;
+    while (written < bytes.size()) {
+      auto bytes_written = write(fd,
+				 (bytes.data() + written),
+				 bytes.size() - written);
+      ASSERT(bytes_written > 0);
+
+      written += bytes_written;
+    }
+
+    ASSERT(fsync(fd) == 0);
+    ASSERT(close(fd) == 0);
+  }
+}
+
+[[maybe_unused]] static void BM_loadtree(benchmark::State& state)
+{
+  for (auto _ : state) {
+    int fd = open(filename.c_str(), O_RDONLY);
+    ASSERT(fd >= 0);
+    struct stat s;
+    ASSERT(fstat(fd, &s) == 0);
+    ASSERT(s.st_size == (ssize_t)bytes.size());
+    std::size_t read = 0;
+    while (read < bytes.size()) {
+      auto bytes_read = ::read(fd,
+			     bytes.data() + read,
+			     bytes.size() - read);
+      ASSERT(bytes_read > 0);
+
+      read += bytes_read;
+    }
+
+    ASSERT(close(fd) == 0);
+    tree2 = (struct tree)(span(bytes.data(), bytes.size()));
+    TREE_ROOT* root = load_tree(tree2);
+
+    state.PauseTiming();
+    FreeTree(root);
+    state.ResumeTiming();
+    benchmark::DoNotOptimize(root);
+  }
+}
+
 [[maybe_unused]] static void BM_markallfiles2(benchmark::State& state)
 {
   [[maybe_unused]] std::size_t count = 0;
@@ -704,6 +1003,7 @@ static void BM_populatetree2(benchmark::State& state)
 
   std::cout << "Marked: " << count << " files." << std::endl;
 }
+
 
 // BENCHMARK(BM_populatetree)
 //     ->Arg(HIGH_FILE_NUMBERS::hundred_thousand)
@@ -728,11 +1028,15 @@ static void BM_populatetree2(benchmark::State& state)
 // BENCHMARK(BM_buildtree)->Unit(benchmark::kSecond);
 // BENCHMARK(BM_markallfiles2)->Unit(benchmark::kSecond);
 
-BENCHMARK(BM_populatetree2)->Arg(100'000'000)->Unit(benchmark::kSecond);
-BENCHMARK(BM_populatetree)->Arg(100'000'000)->Unit(benchmark::kSecond);
-// BENCHMARK(BM_markallfiles)->Unit(benchmark::kSecond);
+//BENCHMARK(BM_populatetree2)->Arg(100'000'000)->Unit(benchmark::kSecond);
+BENCHMARK(BM_populatetree)->Arg(50'000'000)->Unit(benchmark::kSecond);
+BENCHMARK(BM_markallfiles)->Unit(benchmark::kSecond);
+
 BENCHMARK(BM_buildtree)->Unit(benchmark::kSecond);
-// BENCHMARK(BM_markallfiles2)->Unit(benchmark::kSecond);
+BENCHMARK(BM_savetree)->Unit(benchmark::kSecond);
+BENCHMARK(BM_loadtree)->Unit(benchmark::kSecond);
+BENCHMARK(BM_markallfiles2)->Unit(benchmark::kSecond);
+
 
 /*
  * Over ten million files requires quiet a bit a ram, so if you are going to
