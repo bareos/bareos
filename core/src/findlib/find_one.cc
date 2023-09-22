@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,6 +29,8 @@
  * Thanks to the TAR programmers.
  */
 
+#include <unistd.h>
+#include <assert.h>
 #include "include/bareos.h"
 #include "include/jcr.h"
 #include "find.h"
@@ -516,8 +518,9 @@ static inline int process_symlink(JobControlRecord* jcr,
 {
   int rtn_stat;
   int size;
-  char* buffer = (char*)alloca(path_max + name_max + 102);
 
+  assert(path_max + name_max + 102 > 0);
+  char* buffer = (char*)alloca(path_max + name_max + 102);
   size = readlink(fname, buffer, path_max + name_max + 101);
   if (size < 0) {
     // Could not follow link
