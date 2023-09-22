@@ -30,6 +30,7 @@
  */
 
 #include <unistd.h>
+#include <assert.h>
 #include "include/bareos.h"
 #include "include/filetypes.h"
 #include "include/jcr.h"
@@ -511,8 +512,9 @@ static inline int process_symlink(JobControlRecord* jcr,
 {
   int rtn_stat;
   int size;
-  char* buffer = (char*)alloca(path_max + name_max + 102);
 
+  assert(path_max + name_max + 102 > 0);
+  char* buffer = (char*)alloca(path_max + name_max + 102);
   size = readlink(fname, buffer, path_max + name_max + 101);
   if (size < 0) {
     // Could not follow link
