@@ -243,9 +243,6 @@ $$ language 'plpgsql' immutable;
 
 update Version set VersionId = 2230;
 
-commit;
-
-begin;
 create or replace function pg_temp.exec(raw_query text) returns boolean as $$
 begin
   execute raw_query;
