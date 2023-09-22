@@ -99,6 +99,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - daemons: set CLI11 error exit code to `41` and bareos config parsing error exit code to `42` [PR #1515]
 - database: improve subscription view [PR #1542]
 - utils: add a thread-safe single-producer/single-consumer queue [PR #1504]
+- require TLS by default [PR #1529]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -249,6 +250,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1521]: https://github.com/bareos/bareos/pull/1521
 [PR #1522]: https://github.com/bareos/bareos/pull/1522
 [PR #1524]: https://github.com/bareos/bareos/pull/1524
+[PR #1529]: https://github.com/bareos/bareos/pull/1529
 [PR #1531]: https://github.com/bareos/bareos/pull/1531
 [PR #1532]: https://github.com/bareos/bareos/pull/1532
 [PR #1542]: https://github.com/bareos/bareos/pull/1542
