@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -41,13 +41,12 @@ class PamLoginTest(bareos_unittest.Base):
     @classmethod
     def setUpClass(cls):
         super(PamLoginTest, cls).setUpClass()
-        cls.console_pam_username = u"PamConsole-notls"
-        cls.console_pam_password = u"secret"
+        cls.console_pam_username = "PamConsole-notls"
+        cls.console_pam_password = "secret"
 
     def test_pam_login_notls(self):
-
-        pam_username = u"user1"
-        pam_password = u"user1"
+        pam_username = "user1"
+        pam_password = "user1"
 
         #
         # login as console_pam_username
@@ -70,9 +69,8 @@ class PamLoginTest(bareos_unittest.Base):
         bareos.bsock.DirectorConsole.is_tls_psk_available(), "TLS-PSK is not available."
     )
     def test_pam_login_tls(self):
-
-        pam_username = u"user1"
-        pam_password = u"user1"
+        pam_username = "user1"
+        pam_password = "user1"
 
         #
         # login as console_pam_username
@@ -82,7 +80,7 @@ class PamLoginTest(bareos_unittest.Base):
             address=self.director_address,
             port=self.director_port,
             name=self.console_pam_username,
-            password=console_pam_password,
+            password=self.console_pam_password,
             pam_username=pam_username,
             pam_password=pam_password,
             **self.director_extra_options
@@ -153,8 +151,8 @@ class PamLoginTest(bareos_unittest.Base):
         the login should fail.
         """
 
-        pam_username = u"user1"
-        pam_password = u"user1"
+        pam_username = "user1"
+        pam_password = "user1"
 
         with self.assertRaises(bareos.exceptions.AuthenticationError):
             director = bareos.bsock.DirectorConsole(

@@ -33,7 +33,7 @@ Director {
   # LogTimestampFormat = "%d-%b %H:%M"
   # TlsAuthenticate = No
   # TlsEnable = Yes
-  TlsRequire = Yes
+  # TlsRequire = Yes
   # TlsCipherList = ""
   # TlsDhFile = ""
   # TlsProtocol = ""
@@ -74,7 +74,7 @@ Client {
   # NdmpUseLmdb = Yes
   # TlsAuthenticate = No
   # TlsEnable = Yes
-  # TlsRequire = No
+  # TlsRequire = Yes
   # TlsCipherList = ""
   # TlsDhFile = ""
   # TlsProtocol = ""
@@ -115,7 +115,7 @@ Client {
   # NdmpUseLmdb = Yes
   # TlsAuthenticate = No
   # TlsEnable = Yes
-  # TlsRequire = No
+  # TlsRequire = Yes
   # TlsCipherList = ""
   # TlsDhFile = ""
   # TlsProtocol = ""
@@ -159,7 +159,7 @@ Client {
   NdmpUseLmdb = No
   # TlsAuthenticate = No
   # TlsEnable = Yes
-  # TlsRequire = No
+  # TlsRequire = Yes
   # TlsCipherList = ""
   # TlsDhFile = ""
   # TlsProtocol = ""
@@ -1283,7 +1283,7 @@ Storage {
   # NdmpChangerDevice =
   # TlsAuthenticate = No
   # TlsEnable = Yes
-  # TlsRequire = No
+  # TlsRequire = Yes
   # TlsCipherList = ""
   # TlsDhFile = ""
   # TlsProtocol = ""
@@ -1752,7 +1752,7 @@ Console {
   # UsePamAuthentication = No
   # TlsAuthenticate = No
   # TlsEnable = Yes
-  # TlsRequire = No
+  # TlsRequire = Yes
   # TlsCipherList = ""
   # TlsDhFile = ""
   # TlsProtocol = ""
@@ -1783,7 +1783,7 @@ Console {
   # UsePamAuthentication = No
   # TlsAuthenticate = No
   TlsEnable = No
-  # TlsRequire = No
+  # TlsRequire = Yes
   # TlsCipherList = ""
   # TlsDhFile = ""
   # TlsProtocol = ""
