@@ -163,6 +163,15 @@ endpoint_check PUT "control/directors/reload" "success" "" 1
 
 api/restapi.sh stop
 
+# wait for Director commands to finish
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+status director
+wait
+status director
+END_OF_DATA
+run_bconsole
+
 #check_for_zombie_jobs storage=File client=bareos-fd
 
 stop_bareos
