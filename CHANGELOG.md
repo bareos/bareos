@@ -98,6 +98,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - bareos-check-sources: ignore bootstrap*.css [PR #1556]
 - daemons: set CLI11 error exit code to `41` and bareos config parsing error exit code to `42` [PR #1515]
 - database: improve subscription view [PR #1542]
+- utils: add a thread-safe single-producer/single-consumer queue [PR #1504]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -235,6 +236,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1499]: https://github.com/bareos/bareos/pull/1499
 [PR #1502]: https://github.com/bareos/bareos/pull/1502
 [PR #1503]: https://github.com/bareos/bareos/pull/1503
+[PR #1504]: https://github.com/bareos/bareos/pull/1504
 [PR #1505]: https://github.com/bareos/bareos/pull/1505
 [PR #1506]: https://github.com/bareos/bareos/pull/1506
 [PR #1507]: https://github.com/bareos/bareos/pull/1507
