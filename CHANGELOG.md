@@ -100,6 +100,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - database: improve subscription view [PR #1542]
 - utils: add a thread-safe single-producer/single-consumer queue [PR #1504]
 - require TLS by default [PR #1529]
+- build: introduce fedora38 [PR #1563]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -256,4 +257,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1542]: https://github.com/bareos/bareos/pull/1542
 [PR #1550]: https://github.com/bareos/bareos/pull/1550
 [PR #1556]: https://github.com/bareos/bareos/pull/1556
+[PR #1563]: https://github.com/bareos/bareos/pull/1563
 [unreleased]: https://github.com/bareos/bareos/tree/master
