@@ -114,6 +114,7 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             "config_file",
             "snapshot_retries",
             "snapshot_retry_wait",
+            "enable_cbt",
         ]
         self.allowed_options = (
             self.mandatory_options_default
@@ -367,6 +368,9 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                     % self.options["snapshot_retry_wait"],
                 )
                 return bareosfd.bRC_Error
+
+        if self.options.get("enable_cbt") == "yes":
+            self.vadp.enable_cbt = True
 
         for options in self.options:
             bareosfd.DebugMessage(
@@ -1010,6 +1014,7 @@ class BareosVADPWrapper(object):
         self.snapshot_retries = 3
         self.snapshot_retry_wait = 5
         self.snapshot_prefix = "BareosTmpSnap_jobId"
+        self.enable_cbt = False
 
     def connect_vmware(self):
         # this prevents from repeating on second call
@@ -1169,15 +1174,32 @@ class BareosVADPWrapper(object):
             return bareosfd.bRC_Error
 
         if not self.vm.config.changeTrackingEnabled:
-            bareosfd.DebugMessage(
-                100,
-                "Error vm %s is not cbt enabled\n" % (StringCodec.encode(self.vm.name)),
-            )
-            bareosfd.JobMessage(
-                bareosfd.M_FATAL,
-                "Error vm %s is not cbt enabled\n" % (StringCodec.encode(self.vm.name)),
-            )
-            return bareosfd.bRC_Error
+            if self.enable_cbt:
+                bareosfd.JobMessage(
+                    bareosfd.M_INFO,
+                    "Error vm %s is not cbt enabled, enabling it now.\n"
+                    % (StringCodec.encode(self.vm.name)),
+                )
+                if self.vm.snapshot is not None:
+                    bareosfd.JobMessage(
+                        bareosfd.M_FATAL,
+                        "Error VM %s must not have any snapshots before enabling CBT\n"
+                        % (StringCodec.encode(self.vm.name)),
+                    )
+                    return bareosfd.bRC_Error
+
+                cspec = vim.vm.ConfigSpec()
+                cspec.changeTrackingEnabled = True
+                task = self.vm.ReconfigVM_Task(cspec)
+                pyVim.task.WaitForTask(task)
+
+            else:
+                bareosfd.JobMessage(
+                    bareosfd.M_FATAL,
+                    "Error vm %s is not cbt enabled\n"
+                    % (StringCodec.encode(self.vm.name)),
+                )
+                return bareosfd.bRC_Error
 
         bareosfd.DebugMessage(
             100,
