@@ -22,6 +22,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: upgrade bootstrap to version 3.4.1 [PR #1551]
 - VMware Plugin: Fix transformer issues [PR #1555]
 - build: introduce fedora38 [PR #1564]
+- daemons: set CLI11 error exit code to `41` and bareos config parsing error exit code to `42` [PR #1557]
 
 ### Fixed
 - stored: fix incoherent meta data when concurrently writing to the same volume [PR #1514]
@@ -572,5 +573,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1534]: https://github.com/bareos/bareos/pull/1534
 [PR #1551]: https://github.com/bareos/bareos/pull/1551
 [PR #1555]: https://github.com/bareos/bareos/pull/1555
+[PR #1557]: https://github.com/bareos/bareos/pull/1557
 [PR #1564]: https://github.com/bareos/bareos/pull/1564
 [unreleased]: https://github.com/bareos/bareos/tree/master
