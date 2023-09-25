@@ -44,7 +44,7 @@ void sd::SetUp()
       = strdup(RELATIVE_PROJECT_SOURCE_DIR "/configs/" CONFIG_SUBDIR "/");
   my_config = InitSdConfig(configfile, M_CONFIG_ERROR);
   ParseSdConfig(configfile, M_CONFIG_ERROR);
-  /* we do not run CheckResources() here, so take care the test configration
+  /* we do not run CheckResources() here, so take care the test configuration
    * is not broken. Also autochangers will not work. */
 }
 void sd::TearDown()
