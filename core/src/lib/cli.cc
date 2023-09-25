@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -25,6 +25,8 @@
 #include "lib/version.h"
 #include "lib/message.h"
 #include "lib/edit.h"
+#include "include/exit_codes.h"
+
 #include <regex>
 
 class BareosCliFormatter : public CLI::Formatter {
@@ -218,4 +220,18 @@ void AddUserAndGroupOptions(CLI::App& app,
   app.add_option("-g,--group", group,
                  "Run as given group (requires starting as root)")
       ->type_name("<group>");
+}
+
+void ParseBareosApp(CLI::App& app, int argc, char** argv)
+{
+  try {
+    app.parse(argc, argv);
+  } catch (const CLI::ParseError& e) {
+    int cli11_exit = app.exit(e);
+    if (cli11_exit == static_cast<int>(CLI::ExitCodes::Success)) {
+      exit(BEXIT_SUCCESS);
+    } else {
+      exit(BEXIT_CLI_PARSING_ERROR);
+    }
+  }
 }

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2006 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,6 +26,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "lib/cli.h"
 
 #ifndef HAVE_REGEX_H
@@ -34,7 +35,7 @@
 #  include <regex.h>
 #endif
 
-int main(int argc, char* const* argv)
+int main(int argc, char** argv)
 {
   setlocale(LC_ALL, "");
   tzset();
@@ -60,7 +61,7 @@ int main(int argc, char* const* argv)
       "-n,--not-match", [&match_only](bool) { match_only = false; },
       "Print line that do not match.");
 
-  CLI11_PARSE(bregex_app, argc, argv);
+  ParseBareosApp(bregex_app, argc, argv);
 
   OSDependentInit();
 
@@ -86,7 +87,7 @@ int main(int argc, char* const* argv)
     fd = fopen(fname.c_str(), "r");
     if (!fd) {
       printf(_("Could not open data file: %s\n"), fname.c_str());
-      exit(1);
+      exit(BEXIT_FAILURE);
     }
     lineno = 0;
     while (fgets(data, sizeof(data) - 1, fd)) {
@@ -104,5 +105,5 @@ int main(int argc, char* const* argv)
     fclose(fd);
     regfree(&preg);
   }
-  exit(0);
+  return BEXIT_SUCCESS;
 }

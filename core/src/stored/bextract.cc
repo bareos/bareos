@@ -27,6 +27,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
 #include "lib/crypto_cache.h"
@@ -149,7 +150,7 @@ int main(int argc, char* argv[])
               BErrNo be;
               Pmsg2(0, _("Could not open exclude file: %s, ERR=%s\n"),
                     val.front().c_str(), be.bstrerror());
-              exit(1);
+              exit(BEXIT_FAILURE);
             }
             while (fgets(line, sizeof(line), fd) != nullptr) {
               StripTrailingJunk(line);
@@ -172,7 +173,7 @@ int main(int argc, char* argv[])
               BErrNo be;
               Pmsg2(0, _("Could not open include file: %s, ERR=%s\n"),
                     val.front().c_str(), be.bstrerror());
-              exit(1);
+              exit(BEXIT_FAILURE);
             }
             while (fgets(line, sizeof(line), fd) != nullptr) {
               StripTrailingJunk(line);
@@ -213,10 +214,10 @@ int main(int argc, char* argv[])
       ->type_name(" ");
 
 
-  CLI11_PARSE(bextract_app, argc, argv);
+  ParseBareosApp(bextract_app, argc, argv);
 
-  my_config = InitSdConfig(configfile, M_ERROR_TERM);
-  ParseSdConfig(configfile, M_ERROR_TERM);
+  my_config = InitSdConfig(configfile, M_CONFIG_ERROR);
+  ParseSdConfig(configfile, M_CONFIG_ERROR);
 
   static DirectorResource* director = nullptr;
   if (!DirectorName.empty()) {
@@ -256,7 +257,7 @@ int main(int argc, char* argv[])
   }
   TermIncludeExcludeFiles(ff);
   TermFindFiles(ff);
-  return 0;
+  return BEXIT_SUCCESS;
 }
 
 // Cleanup of delayed restore stack with streams for later processing.
@@ -392,9 +393,9 @@ static void DoExtract(char* devname,
   dcr = new DeviceControlRecord;
   jcr = SetupJcr("bextract", devname, bsr, director, dcr, VolumeName,
                  true); /* read device */
-  if (!jcr) { exit(1); }
+  if (!jcr) { exit(BEXIT_FAILURE); }
   dev = jcr->sd_impl->read_dcr->dev;
-  if (!dev) { exit(1); }
+  if (!dev) { exit(BEXIT_FAILURE); }
   dcr = jcr->sd_impl->read_dcr;
 
   // Let SD plugins setup the record translation

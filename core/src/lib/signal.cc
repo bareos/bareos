@@ -34,6 +34,7 @@
 
 #ifndef HAVE_WIN32
 #  include "include/bareos.h"
+#  include "include/exit_codes.h"
 #  include "lib/watchdog.h"
 #  include "lib/berrno.h"
 #  include "lib/bsignal.h"
@@ -112,7 +113,7 @@ extern "C" void SignalHandler(int sig)
   int chld_status = -1;
 
   // If we come back more than once, get out fast!
-  if (already_dead) { exit(1); }
+  if (already_dead) { exit(BEXIT_FAILURE); }
   Dmsg2(900, "sig=%d %s\n", sig, sig_names[sig]);
 
   // Ignore certain signals -- SIGUSR2 used to interrupt threads

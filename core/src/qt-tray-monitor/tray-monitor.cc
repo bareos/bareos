@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,6 +35,7 @@
 #include "lib/bsignal.h"
 #include "lib/parse_conf.h"
 #include "lib/cli.h"
+#include "include/exit_codes.h"
 
 ConfigurationParser* my_config = nullptr;
 
@@ -165,12 +166,12 @@ int main(int argc, char* argv[])
     PrintConfigSchemaJson(buffer);
     printf("%s\n", buffer.c_str());
     fflush(stdout);
-    exit(0);
+    exit(BEXIT_SUCCESS);
   }
 
   // read the config file
-  my_config = InitTmonConfig(cl.configfile_, M_ERROR_TERM);
-  my_config->ParseConfig();
+  my_config = InitTmonConfig(cl.configfile_, M_CONFIG_ERROR);
+  my_config->ParseConfigOrExit();
 
   if (cl.export_config_) {
     my_config->DumpResources(PrintMessage, NULL);

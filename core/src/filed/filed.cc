@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,6 +27,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
 #include "filed/dir_cmd.h"
@@ -147,7 +148,7 @@ int main(int argc, char* argv[])
 
   AddNetworkDebuggingOption(fd_app);
 
-  CLI11_PARSE(fd_app, argc, argv);
+  ParseBareosApp(fd_app, argc, argv);
 
   if (user.empty() && keep_readall_caps) {
     Emsg0(M_ERROR_TERM, 0, _("-k option has no meaning without -u option.\n"));
@@ -189,22 +190,22 @@ int main(int argc, char* argv[])
     PrintConfigSchemaJson(buffer);
     printf("%s\n", buffer.c_str());
 
-    exit(0);
+    exit(BEXIT_SUCCESS);
   }
 
-  my_config = InitFdConfig(configfile, M_ERROR_TERM);
-  my_config->ParseConfig();
+  my_config = InitFdConfig(configfile, M_CONFIG_ERROR);
+  my_config->ParseConfigOrExit();
 
   if (export_config) {
     my_config->DumpResources(PrintMessage, nullptr);
 
-    exit(0);
+    exit(BEXIT_SUCCESS);
   }
 
   if (!CheckResources()) {
     Emsg1(M_ERROR, 0, _("Please correct configuration file: %s\n"),
           my_config->get_base_config_path().c_str());
-    TerminateFiled(1);
+    TerminateFiled(BEXIT_CONFIG_ERROR);
   }
 
   if (my_config->HasWarnings()) {
@@ -257,9 +258,8 @@ int main(int argc, char* argv[])
   // start socket server to listen for new connections.
   StartSocketServer(me->FDaddrs);
 
-  TerminateFiled(0);
-
-  exit(0);
+  TerminateFiled(BEXIT_SUCCESS);
+  return BEXIT_SUCCESS;
 }
 
 namespace filedaemon {
@@ -269,8 +269,8 @@ void TerminateFiled(int sig)
   static bool already_here = false;
 
   if (already_here) {
-    Bmicrosleep(2, 0); /* yield */
-    exit(1);           /* prevent loops */
+    Bmicrosleep(2, 0);   /* yield */
+    exit(BEXIT_FAILURE); /* prevent loops */
   }
   already_here = true;
   debug_level = 0; /* turn off debug */
@@ -421,8 +421,7 @@ static bool CheckResources()
         }
       }
 
-      /*
-       * Crypto recipients. We're always included as a recipient.
+      /* Crypto recipients. We're always included as a recipient.
        * The symmetric session key will be encrypted for each of these readers.
        */
       me->pki_recipients = new alist<X509_KEYPAIR*>(10, not_owned_by_alist);

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2006 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,11 +26,12 @@
  */
 
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "findlib/find.h"
 #include "lib/mntent_cache.h"
 #include "findlib/fstype.h"
 
-static void usage()
+static void usage(int exit_status)
 {
   fprintf(stderr,
           _("\n"
@@ -43,7 +44,7 @@ static void usage()
             "       -?     print this message.\n"
             "\n"));
 
-  exit(1);
+  exit(exit_status);
 }
 
 
@@ -51,7 +52,7 @@ int main(int argc, char* const* argv)
 {
   char fs[1000];
   int verbose = 0;
-  int status = 0;
+  int exit_status = BEXIT_SUCCESS;
   int ch, i;
 
   setlocale(LC_ALL, "");
@@ -65,14 +66,16 @@ int main(int argc, char* const* argv)
         verbose = 1;
         break;
       case '?':
+        usage(BEXIT_SUCCESS);
+        break;
       default:
-        usage();
+        usage(BEXIT_FAILURE);
     }
   }
   argc -= optind;
   argv += optind;
 
-  if (argc < 1) { usage(); }
+  if (argc < 1) { usage(BEXIT_FAILURE); }
 
   OSDependentInit();
 
@@ -85,11 +88,11 @@ int main(int argc, char* const* argv)
       }
     } else {
       fprintf(stderr, _("%s: unknown\n"), *argv);
-      status = 1;
+      exit_status = BEXIT_FAILURE;
     }
   }
 
   FlushMntentCache();
 
-  exit(status);
+  exit(exit_status);
 }

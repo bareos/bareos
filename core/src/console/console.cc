@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,6 +27,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "console/console_conf.h"
 #include "console/console_globals.h"
 #include "console/auth_pam.h"
@@ -258,10 +259,8 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
         at_prompt = false;
       }
 
-      /*
-       * Suppress output if running
-       * in background or user hit ctl-c
-       */
+      /* Suppress output if running
+       * in background or user hit ctl-c */
       if (!stop && !usrbrk()) {
         if (UA_sock->msg) { ConsoleOutput(UA_sock->msg); }
       }
@@ -584,10 +583,8 @@ int GetCmd(FILE* input, const char* prompt, BareosSocket* sock, int)
   StripTrailingJunk(line);
   command = line;
 
-  /*
-   * Split "line" into multiple commands separated by the eol character.
-   *   Each part is pointed to by "next" until finally it becomes null.
-   */
+  /* Split "line" into multiple commands separated by the eol character.
+   *   Each part is pointed to by "next" until finally it becomes null. */
   if (eol == '\0') {
     next = NULL;
   } else {
@@ -674,13 +671,9 @@ static bool SelectDirector(const char* director,
 
   LockRes(console::my_config);
   numdir = 0;
-  foreach_res (director_resource_tmp, R_DIRECTOR) {
-    numdir++;
-  }
+  foreach_res (director_resource_tmp, R_DIRECTOR) { numdir++; }
   numcon = 0;
-  foreach_res (console_resource_tmp, R_CONSOLE) {
-    numcon++;
-  }
+  foreach_res (console_resource_tmp, R_CONSOLE) { numcon++; }
   UnlockRes(my_config);
 
   if (numdir == 1) { /* No choose */
@@ -926,7 +919,7 @@ int main(int argc, char* argv[])
 
   AddNetworkDebuggingOption(console_app);
 
-  CLI11_PARSE(console_app, argc, argv);
+  ParseBareosApp(console_app, argc, argv);
 
   if (!no_signals) { InitSignals(TerminateConsole); }
 
@@ -945,19 +938,19 @@ int main(int argc, char* argv[])
   if (export_config_schema) {
     PoolMem buffer;
 
-    my_config = InitConsConfig(configfile, M_ERROR_TERM);
+    my_config = InitConsConfig(configfile, M_CONFIG_ERROR);
     PrintConfigSchemaJson(buffer);
     printf("%s\n", buffer.c_str());
-    exit(0);
+    exit(BEXIT_SUCCESS);
   }
 
-  my_config = InitConsConfig(configfile, M_ERROR_TERM);
-  my_config->ParseConfig();
+  my_config = InitConsConfig(configfile, M_CONFIG_ERROR);
+  my_config->ParseConfigOrExit();
 
   if (export_config) {
     my_config->DumpResources(PrintMessage, NULL);
-    TerminateConsole(0);
-    exit(0);
+    TerminateConsole(BEXIT_SUCCESS);
+    exit(BEXIT_SUCCESS);
   }
 
   if (InitCrypto() != 0) {
@@ -980,8 +973,8 @@ int main(int argc, char* argv[])
   }
 
   if (test_config) {
-    TerminateConsole(0);
-    exit(0);
+    TerminateConsole(BEXIT_SUCCESS);
+    exit(BEXIT_SUCCESS);
   }
 
   (void)WSA_Init(); /* Initialize Windows sockets */
@@ -1108,8 +1101,8 @@ int main(int argc, char* argv[])
 
   if (history_file.size()) { ConsoleUpdateHistory(history_file.c_str()); }
 
-  TerminateConsole(0);
-  return 0;
+  TerminateConsole(BEXIT_SUCCESS);
+  return BEXIT_SUCCESS;
 }
 
 static void TerminateConsole(int sig)
@@ -1117,7 +1110,7 @@ static void TerminateConsole(int sig)
   static bool already_here = false;
 
   if (already_here) { /* avoid recursive temination problems */
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
   already_here = true;
   StopWatchdog();
@@ -1128,7 +1121,7 @@ static void TerminateConsole(int sig)
   ConTerm();
   WSACleanup(); /* Cleanup Windows sockets */
 
-  if (sig != 0) { exit(1); }
+  if (sig != 0) { exit(BEXIT_FAILURE); }
   return;
 }
 
@@ -1140,9 +1133,7 @@ static int CheckResources()
   LockRes(my_config);
 
   numdir = 0;
-  foreach_res (director, R_DIRECTOR) {
-    numdir++;
-  }
+  foreach_res (director, R_DIRECTOR) { numdir++; }
 
   if (numdir == 0) {
     const std::string& configfile = my_config->get_base_config_path();

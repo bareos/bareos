@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,6 +35,7 @@
 
 #include "include/bareos.h"
 #include "include/jcr.h"
+#include "include/exit_codes.h"
 #include "lib/berrno.h"
 #include "lib/bsock.h"
 #include "lib/util.h"
@@ -210,10 +211,8 @@ void InitMsg(JobControlRecord* jcr,
   int i;
 
   if (jcr == NULL && msg == NULL) {
-    /*
-     * Setup a daemon key then set invalid jcr
-     * Maybe we should give the daemon a jcr???
-     */
+    /* Setup a daemon key then set invalid jcr
+     * Maybe we should give the daemon a jcr??? */
     SetJcrInThreadSpecificData(nullptr);
   }
 
@@ -411,11 +410,9 @@ void CloseMsg(JobControlRecord* jcr)
             Pmsg1(000, _("close error: ERR=%s\n"), be.bstrerror());
           }
 
-          /*
-           * Since we are closing all messages, before "recursing"
+          /* Since we are closing all messages, before "recursing"
            * make sure we are not closing the daemon messages, otherwise
-           * kaboom.
-           */
+           * kaboom. */
           if (msgs != daemon_msgs) {
             // Read what mail prog returned -- should be nothing
             while (fgets(line, len, bpipe->rfd)) {
@@ -615,12 +612,10 @@ void DispatchMessage(JobControlRecord* jcr,
 
   Dmsg2(850, "Enter DispatchMessage type=%d msg=%s", type, msg);
 
-  /*
-   * Most messages are prefixed by a date and time. If mtime is
+  /* Most messages are prefixed by a date and time. If mtime is
    * zero, then we use the current time.  If mtime is 1 (special
    * kludge), we do not prefix the date and time. Otherwise,
-   * we assume mtime is a utime_t and use it.
-   */
+   * we assume mtime is a utime_t and use it. */
   if (mtime == 0) { mtime = time(NULL); }
 
   *dt = 0;
@@ -638,7 +633,7 @@ void DispatchMessage(JobControlRecord* jcr,
   }
 
   // For serious errors make sure message is printed or logged
-  if (type == M_ABORT || type == M_ERROR_TERM) {
+  if (type == M_ABORT || type == M_ERROR_TERM || type == M_CONFIG_ERROR) {
     fputs(dt, stdout);
     fputs(msg, stdout);
     fflush(stdout);
@@ -652,10 +647,8 @@ void DispatchMessage(JobControlRecord* jcr,
   if (jcr) {
     // See if we need to suppress the messages.
     if (jcr->suppress_output) {
-      /*
-       * See if this JobControlRecord has a controlling JobControlRecord and if
-       * so redirect this message to the controlling JobControlRecord.
-       */
+      /* See if this JobControlRecord has a controlling JobControlRecord and if
+       * so redirect this message to the controlling JobControlRecord. */
       if (jcr->cjcr) {
         jcr = jcr->cjcr;
       } else {
@@ -688,10 +681,8 @@ void DispatchMessage(JobControlRecord* jcr,
 
   for (MessageDestinationInfo* d : msgs->dest_chain_) {
     if (BitIsSet(type, d->msg_types_)) {
-      /*
-       * See if a specific timestamp format was specified for this log resource.
-       * Otherwise apply the global setting in log_timestamp_format.
-       */
+      /* See if a specific timestamp format was specified for this log resource.
+       * Otherwise apply the global setting in log_timestamp_format. */
       if (dt_conversion) {
         if (!d->timestamp_format_.empty()) {
           bstrftime(dt, sizeof(dt), mtime, d->timestamp_format_.c_str());
@@ -743,10 +734,8 @@ void DispatchMessage(JobControlRecord* jcr,
             break;
           }
 
-          /*
-           * Dispatch based on our internal message type to a matching syslog
-           * one.
-           */
+          /* Dispatch based on our internal message type to a matching syslog
+           * one. */
           SendToSyslog(d->syslog_facility_ | MessageTypeToLogPriority(type),
                        msg);
           break;
@@ -838,7 +827,8 @@ void DispatchMessage(JobControlRecord* jcr,
           break;
         case MessageDestinationCode::kStdout:
           Dmsg1(850, "STDOUT for following msg: %s", msg);
-          if (type != M_ABORT && type != M_ERROR_TERM) { /* already printed */
+          if (type != M_ABORT && type != M_ERROR_TERM
+              && type != M_CONFIG_ERROR) { /* already printed */
             fputs(dt, stdout);
             fputs(msg, stdout);
             fflush(stdout);
@@ -880,10 +870,8 @@ const char* get_basename(const char* pathname)
 // Print or write output to trace file
 static void pt_out(char* buf)
 {
-  /*
-   * Used the "trace on" command in the console to turn on
-   * output to the trace file.  "trace off" will close the file.
-   */
+  /* Used the "trace on" command in the console to turn on
+   * output to the trace file.  "trace off" will close the file. */
   if (trace) {
     if (!trace_fd) {
       PoolMem fn(PM_FNAME);
@@ -1146,6 +1134,11 @@ void e_msg(const char* file,
       Mmsg(buf, _("%s: ERROR TERMINATION at %s:%d\n"), my_name,
            get_basename(file), line);
       break;
+    case M_CONFIG_ERROR:
+      Mmsg(typestr, "CONFIG ERROR");
+      Mmsg(buf, _("%s: CONFIG ERROR at %s:%d\n"), my_name, get_basename(file),
+           line);
+      break;
     case M_FATAL:
       Mmsg(typestr, "FATAL ERROR");
       if (level == -1) /* skip details */
@@ -1191,12 +1184,10 @@ void e_msg(const char* file,
   // show error message also as debug message (level 10)
   d_msg(file, line, 10, "%s: %s", typestr.c_str(), more.c_str());
 
-  /*
-   * Check if we have a message destination defined.
-   * We always report M_ABORT and M_ERROR_TERM
-   */
+  /* Check if we have a message destination defined.
+   * We always report M_ABORT and M_ERROR_TERM */
   if (!daemon_msgs
-      || ((type != M_ABORT && type != M_ERROR_TERM)
+      || ((type != M_ABORT && type != M_ERROR_TERM && type != M_CONFIG_ERROR)
           && !BitIsSet(type, daemon_msgs->send_msg_types_))) {
     return; /* no destination */
   }
@@ -1207,7 +1198,9 @@ void e_msg(const char* file,
   if (type == M_ABORT) {
     abort();
   } else if (type == M_ERROR_TERM) {
-    exit(1);
+    exit(BEXIT_FAILURE);
+  } else if (type == M_CONFIG_ERROR) {
+    exit(BEXIT_CONFIG_ERROR);
   }
 }
 
@@ -1222,11 +1215,9 @@ void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
 
   Dmsg1(850, "Enter Jmsg type=%d\n", type);
 
-  /*
-   * Special case for the console, which has a dir_bsock and JobId == 0,
+  /* Special case for the console, which has a dir_bsock and JobId == 0,
    * in that case, we send the message directly back to the
-   * dir_bsock.
-   */
+   * dir_bsock. */
   if (jcr && jcr->JobId == 0 && jcr->dir_bsock) {
     BareosSocket* dir = jcr->dir_bsock;
 
@@ -1273,11 +1264,10 @@ void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
 
   if (!msgs) { msgs = daemon_msgs; /* if no jcr, we use daemon handler */ }
 
-  /*
-   * Check if we have a message destination defined.
-   * We always report M_ABORT and M_ERROR_TERM
-   */
-  if (msgs && (type != M_ABORT && type != M_ERROR_TERM)
+  /* Check if we have a message destination defined.
+   * We always report M_ABORT, M_ERROR_TERM and M_CONFIG_ERROR*/
+  if (msgs
+      && (type != M_ABORT && type != M_ERROR_TERM && type != M_CONFIG_ERROR)
       && !BitIsSet(type, msgs->send_msg_types_)) {
     return; /* no destination */
   }
@@ -1288,6 +1278,9 @@ void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
       break;
     case M_ERROR_TERM:
       Mmsg(buf, _("%s ERROR TERMINATION\n"), my_name);
+      break;
+    case M_CONFIG_ERROR:
+      Mmsg(buf, _("%s Configuration error\n"), my_name);
       break;
     case M_FATAL:
       Mmsg(buf, _("%s JobId %u: Fatal error: "), my_name, JobId);
@@ -1332,7 +1325,9 @@ void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
     syslog(LOG_DAEMON | LOG_ERR, "BAREOS aborting to obtain traceback.\n");
     abort();
   } else if (type == M_ERROR_TERM) {
-    exit(1);
+    exit(BEXIT_FAILURE);
+  } else if (type == M_CONFIG_ERROR) {
+    exit(BEXIT_CONFIG_ERROR);
   }
 }
 
@@ -1507,6 +1502,7 @@ static int MessageTypeToLogPriority(int message_type)
   switch (message_type) {
     case M_ERROR:
     case M_ERROR_TERM:
+    case M_CONFIG_ERROR:
       return LOG_ERR;
 
     case M_ABORT:

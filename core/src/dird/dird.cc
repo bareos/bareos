@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,6 +27,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "cats/cats_backends.h"
 #include "cats/sql.h"
 #include "cats/sql_pooling.h"
@@ -229,7 +230,7 @@ int main(int argc, char* argv[])
 
   AddNetworkDebuggingOption(dir_app);
 
-  CLI11_PARSE(dir_app, argc, argv);
+  ParseBareosApp(dir_app, argc, argv);
 
   if (!no_signals) { InitSignals(TerminateDird); }
 
@@ -254,18 +255,18 @@ int main(int argc, char* argv[])
             "but program was not started with required root privileges.\n"));
   }
 
-  my_config = InitDirConfig(configfile, M_ERROR_TERM);
+  my_config = InitDirConfig(configfile, M_CONFIG_ERROR);
   if (export_config_schema) {
     PoolMem buffer;
 
     PrintConfigSchemaJson(buffer);
     printf("%s\n", buffer.c_str());
 
-    TerminateDird(0);
-    return 0;
+    TerminateDird(BEXIT_SUCCESS);
+    return BEXIT_SUCCESS;
   }
 
-  my_config->ParseConfig();
+  my_config->ParseConfigOrExit();
 
   if (export_config) {
     int rc = 0;
@@ -275,7 +276,7 @@ int main(int argc, char* argv[])
       rc = 1;
     }
     TerminateDird(rc);
-    return 0;
+    return BEXIT_SUCCESS;
   }
 
   if (!CheckResources()) {
@@ -283,8 +284,8 @@ int main(int argc, char* argv[])
          _("Please correct the configuration in %s\n"),
          my_config->get_base_config_path().c_str());
 
-    TerminateDird(0);
-    return 0;
+    TerminateDird(BEXIT_SUCCESS);
+    return BEXIT_SUCCESS;
   }
 
   if (my_config->HasWarnings()) {
@@ -304,8 +305,8 @@ int main(int argc, char* argv[])
     Jmsg((JobControlRecord*)nullptr, M_ERROR_TERM, 0,
          _("Cryptography library initialization failed.\n"));
 
-    TerminateDird(0);
-    return 0;
+    TerminateDird(BEXIT_SUCCESS);
+    return BEXIT_SUCCESS;
   }
 
   if (!test_config) {
@@ -333,8 +334,8 @@ int main(int argc, char* argv[])
          _("Please correct the configuration in %s\n"),
          my_config->get_base_config_path().c_str());
 
-    TerminateDird(0);
-    return 0;
+    TerminateDird(BEXIT_SUCCESS);
+    return BEXIT_SUCCESS;
   }
 
   if (test_config) { TerminateDird(0); }
@@ -344,8 +345,8 @@ int main(int argc, char* argv[])
          _("Please correct the configuration in %s\n"),
          my_config->get_base_config_path().c_str());
 
-    TerminateDird(0);
-    return 0;
+    TerminateDird(BEXIT_SUCCESS);
+    return BEXIT_SUCCESS;
   }
 
   MyNameIs(0, nullptr, me->resource_name_); /* set user defined name */
@@ -380,8 +381,8 @@ int main(int argc, char* argv[])
 
   Scheduler::GetMainScheduler().Run();
 
-  TerminateDird(0);
-  return 0;
+  TerminateDird(BEXIT_SUCCESS);
+  return BEXIT_SUCCESS;
 }
 
 /**
@@ -399,7 +400,7 @@ static
 
   if (is_reloading) {  /* avoid recursive termination problems */
     Bmicrosleep(2, 0); /* yield */
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
 
   is_reloading = true;
@@ -443,10 +444,8 @@ extern "C" void SighandlerReloadConfig(int, siginfo_t*, void*)
   static bool is_reloading = false;
 
   if (is_reloading) {
-    /*
-     * Note: don't use Jmsg here, as it could produce a race condition
-     * on multiple parallel reloads
-     */
+    /* Note: don't use Jmsg here, as it could produce a race condition
+     * on multiple parallel reloads */
     Qmsg(nullptr, M_ERROR, 0, _("Already reloading. Request ignored.\n"));
     return;
   }
@@ -463,10 +462,8 @@ static bool InitSighandlerSighup()
   sigset_t block_mask;
   struct sigaction action = {};
 
-  /*
-   *  while handling SIGHUP signal,
-   *  ignore further SIGHUP signals.
-   */
+  /*  while handling SIGHUP signal,
+   *  ignore further SIGHUP signals. */
   sigemptyset(&block_mask);
   sigaddset(&block_mask, SIGHUP);
 

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,6 +32,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "lib/berrno.h"
 #include "lib/daemon.h"
 
@@ -85,7 +86,7 @@ void daemon_start(const char* progname,
       break;
     }
     default:
-      exit(0);
+      exit(BEXIT_SUCCESS);
   }
 
   Dmsg0(900, "Exit daemon_start\n");

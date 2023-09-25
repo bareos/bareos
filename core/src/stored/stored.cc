@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,6 +32,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "stored/stored.h"
 #include "lib/crypto_cache.h"
 #include "stored/acquire.h"
@@ -189,7 +190,7 @@ int main(int argc, char* argv[])
 
   AddNetworkDebuggingOption(sd_app);
 
-  CLI11_PARSE(sd_app, argc, argv);
+  ParseBareosApp(sd_app, argc, argv);
 
   if (!no_signals) { InitSignals(TerminateStored); }
 
@@ -218,15 +219,15 @@ int main(int argc, char* argv[])
   if (export_config_schema) {
     PoolMem buffer;
 
-    my_config = InitSdConfig(configfile, M_ERROR_TERM);
+    my_config = InitSdConfig(configfile, M_CONFIG_ERROR);
     PrintConfigSchemaJson(buffer);
     printf("%s\n", buffer.c_str());
 
-    return 0;
+    return BEXIT_SUCCESS;
   }
 
-  my_config = InitSdConfig(configfile, M_ERROR_TERM);
-  ParseSdConfig(configfile, M_ERROR_TERM);
+  my_config = InitSdConfig(configfile, M_CONFIG_ERROR);
+  ParseSdConfig(configfile, M_CONFIG_ERROR);
 
   if (forge_on) {
     my_config->AddWarning(
@@ -237,7 +238,7 @@ int main(int argc, char* argv[])
   if (export_config) {
     my_config->DumpResources(PrintMessage, nullptr);
 
-    return 0;
+    return BEXIT_SUCCESS;
   }
 
   if (!CheckResources()) {
@@ -314,9 +315,9 @@ int main(int argc, char* argv[])
   StartSocketServer(me->SDaddrs);
 
   /* to keep compiler quiet */
-  TerminateStored(0);
+  TerminateStored(BEXIT_SUCCESS);
 
-  return 0;
+  return BEXIT_SUCCESS;
 }
 
 /* Check Configuration file for necessary info */
@@ -591,7 +592,7 @@ static
 
   if (in_here) {       /* prevent loops */
     Bmicrosleep(2, 0); /* yield */
-    exit(1);
+    exit(BEXIT_FAILURE);
   }
   in_here = true;
   debug_level = 0; /* turn off any debug */
@@ -604,12 +605,10 @@ static
   StopWatchdog();
 
   if (sig == SIGTERM) { /* normal shutdown request? */
-    /*
-     * This is a normal shutdown request. We wiffle through
+    /* This is a normal shutdown request. We wiffle through
      *   all open jobs canceling them and trying to wake
      *   them up so that they will report back the correct
-     *   volume status.
-     */
+     *   volume status. */
     foreach_jcr (jcr) {
       BareosSocket* fd;
       if (jcr->JobId == 0) { continue; /* ignore console */ }

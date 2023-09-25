@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,6 +28,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "include/jcr.h"
 #include "findlib/find.h"
 #include "filed/fd_plugins.h"
@@ -77,7 +78,7 @@ static void usage()
             "Truncation is only in catalog.\n"
             "\n"));
 
-  exit(1);
+  exit(BEXIT_FAILURE);
 }
 
 
@@ -152,7 +153,7 @@ int main(int argc, char* const* argv)
     fd = fopen(inc, "rb");
     if (!fd) {
       printf(_("Could not open include file: %s\n"), inc);
-      exit(1);
+      exit(BEXIT_FAILURE);
     }
     while (fgets(name, sizeof(name) - 1, fd)) {
       StripTrailingJunk(name);
@@ -165,7 +166,7 @@ int main(int argc, char* const* argv)
     fd = fopen(exc, "rb");
     if (!fd) {
       printf(_("Could not open exclude file: %s\n"), exc);
-      exit(1);
+      exit(BEXIT_FAILURE);
     }
     while (fgets(name, sizeof(name) - 1, fd)) {
       StripTrailingJunk(name);
@@ -185,7 +186,7 @@ int main(int argc, char* const* argv)
   FreeJcr(jcr);
   RecentJobResultsList::Cleanup();
   CleanupJcrChain();
-  exit(0);
+  exit(BEXIT_SUCCESS);
 }
 
 static int CountFiles(JobControlRecord*, FindFilesPacket*, bool)

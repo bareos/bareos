@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -25,6 +25,7 @@
 #include "CLI/Config.hpp"
 #include "CLI/Formatter.hpp"
 
+void ParseBareosApp(CLI::App& app, int argc, char** argv);
 void InitCLIApp(CLI::App& app, std::string description, int fsfyear = 0);
 void AddDebugOptions(CLI::App& app);
 void AddVerboseOption(CLI::App& app);

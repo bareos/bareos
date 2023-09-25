@@ -27,6 +27,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/exit_codes.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
 #include "lib/berrno.h"
@@ -134,7 +135,7 @@ int main(int argc, char* argv[])
               BErrNo be;
               Pmsg2(0, _("Could not open exclude file: %s, ERR=%s\n"),
                     val.front().c_str(), be.bstrerror());
-              exit(1);
+              exit(BEXIT_FAILURE);
             }
             while (fgets(line, sizeof(line), fd) != nullptr) {
               StripTrailingJunk(line);
@@ -155,7 +156,7 @@ int main(int argc, char* argv[])
               BErrNo be;
               Pmsg2(0, _("Could not open include file: %s, ERR=%s\n"),
                     val.front().c_str(), be.bstrerror());
-              exit(1);
+              exit(BEXIT_FAILURE);
             }
             while (fgets(line, sizeof(line), fd) != nullptr) {
               StripTrailingJunk(line);
@@ -205,10 +206,10 @@ int main(int argc, char* argv[])
       ->required()
       ->type_name(" ");
 
-  CLI11_PARSE(bls_app, argc, argv);
+  ParseBareosApp(bls_app, argc, argv);
 
-  my_config = InitSdConfig(configfile, M_ERROR_TERM);
-  ParseSdConfig(configfile, M_ERROR_TERM);
+  my_config = InitSdConfig(configfile, M_CONFIG_ERROR);
+  ParseSdConfig(configfile, M_CONFIG_ERROR);
 
   if (!DirectorName.empty()) {
     foreach_res (director, R_DIRECTOR) {
@@ -237,7 +238,7 @@ int main(int argc, char* argv[])
     dcr = new DeviceControlRecord;
     jcr = SetupJcr("bls", device.data(), bsr, director, dcr, VolumeNames,
                    true); /* read device */
-    if (!jcr) { exit(1); }
+    if (!jcr) { exit(BEXIT_FAILURE); }
 
 
     // Let SD plugins setup the record translation
@@ -248,7 +249,7 @@ int main(int argc, char* argv[])
 
     jcr->sd_impl->ignore_label_errors = ignore_label_errors;
     dev = jcr->sd_impl->dcr->dev;
-    if (!dev) { exit(1); }
+    if (!dev) { exit(BEXIT_FAILURE); }
     dcr = jcr->sd_impl->dcr;
     rec = new_record();
     attr = new_attr(jcr);
@@ -273,7 +274,7 @@ int main(int argc, char* argv[])
   if (bsr) { libbareos::FreeBsr(bsr); }
   TermIncludeExcludeFiles(ff);
   TermFindFiles(ff);
-  return 0;
+  return BEXIT_SUCCESS;
 }
 
 static void do_close(JobControlRecord* jcr)
