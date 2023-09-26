@@ -377,7 +377,7 @@ bool CheckIfFamilyEnabled(IpFamily family)
   do {
     ++tries;
     if ((fd = socket(GetFamily(family).value(), SOCK_STREAM, 0)) < 0) {
-      Bmicrosleep(15, 0);
+      Bmicrosleep(1, 0);
     }
   } while (fd < 0 && tries < 3);
 
@@ -504,6 +504,10 @@ void InitDefaultAddresses(dlist<IPADDR>** out, const char* port)
 
   bool ipv4_added = true;
   bool ipv6_added = true;
+
+#ifdef HAVE_WIN32
+  WSA_Init();
+#endif
 
   if (!AddAddress(out, IPADDR::R_DEFAULT, htons(sport), AF_INET, 0, 0, buf,
                   sizeof(buf))) {
