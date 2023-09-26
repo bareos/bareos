@@ -992,15 +992,10 @@ static bool ResetRestoreContext(UaContext* ua,
     jcr->dir_impl->IgnoreDuplicateJobChecking = rc.ignoreduplicatecheck;
   }
 
-  /* Used by consolidate jobs to make spawned virtualfulls inherit the
-   * AllowMixedPriority flag */
-  if (rc.allow_mixed_priority_set) {
-    jcr->allow_mixed_priority = rc.allow_mixed_priority;
-  }
-
   /* If this is a virtualfull spawned by a consolidate job
    * then the same rjs is used so that max concurrent jobs
-   * of the consolidate job applies.
+   * of the consolidate job applies. AllowMixedPriority is
+   * also inherited from consolidate job.
    */
   if (rc.consolidate_job) {
     if (!jcr->is_JobLevel(L_VIRTUAL_FULL)) {
@@ -1010,6 +1005,7 @@ static bool ResetRestoreContext(UaContext* ua,
     }
     jcr->dir_impl->res.rjs = rc.consolidate_job->rjs;
     jcr->dir_impl->max_concurrent_jobs = rc.consolidate_job->MaxConcurrentJobs;
+    jcr->allow_mixed_priority = rc.consolidate_job->allow_mixed_priority;
   }
 
   return true;
@@ -1771,8 +1767,7 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
          "ignoreduplicatecheck", /* 29 */
          "accurate",             /* 30 */
          "backupformat",         /* 31 */
-         "allowmixedpriority",   /* 32 */
-         "consolidatejob",       /* 33 */
+         "consolidatejob",       /* 32 - parent consolidate job */
          NULL};
 
 #define YES_POS 14
@@ -2060,19 +2055,7 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
             rc.backup_format = ua->argv[i];
             kw_ok = true;
             break;
-          case 32: /* allowmixedpriority */
-            if (rc.allow_mixed_priority_set) {
-              ua->SendMsg(_("AllowMixedPriority flag specified twice.\n"));
-              return false;
-            }
-            if (IsYesno(ua->argv[i], &rc.allow_mixed_priority)) {
-              rc.allow_mixed_priority_set = true;
-              kw_ok = true;
-            } else {
-              ua->SendMsg(_("Invalid AllowMixedPriority flag.\n"));
-            }
-            break;
-          case 33: /* consolidatejob */
+          case 32: /* consolidatejob */
             if (rc.consolidate_job_name) {
               ua->SendMsg(_("Consolidate Job specified twice.\n"));
               return false;
