@@ -29,6 +29,7 @@ import io
 import json
 import getpass
 from sys import version_info
+import stat
 import time
 import datetime
 import dateutil
@@ -36,13 +37,7 @@ import dateutil.parser
 import bareosfd
 from bareosfd import *
 
-from BareosFdPluginLocalFilesBaseclass import BareosFdPluginLocalFilesBaseclass
-
-# Provided by the Bareos FD Python plugin interface
-
-# This module contains the wrapper functions called by the Bareos-FD, the
-# functions call the corresponding methods from your plugin class
-
+from BareosFdPluginBaseclass import BareosFdPluginBaseclass
 from BareosFdWrapper import *  # noqa
 
 
@@ -87,7 +82,7 @@ def parse_row(row):
 
 
 @BareosPlugin
-class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
+class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
     """
     Bareos-FD-Plugin-Class for PostgreSQL online (Hot) backup of cluster
     files and database transaction logs (WAL) archiving to allow incremental
@@ -215,7 +210,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
                 # like in traditional backup
                 bareosfd.JobMessage(
                     bareosfd.M_WARNING,
-                    f"Could net get stat-info for file {fullname}: {err}\n",
+                    f"Could net get stat-info for reference file {fullname}: {os_err}\n",
                 )
                 continue
             bareosfd.DebugMessage(
@@ -275,6 +270,8 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
                 bareosfd.M_FATAL, f"tablespacemap checking statement failed: {err}"
             )
             return bareosfd.bRC_Error
+
+        return bareosfd.bRC_Error
 
     def check_options(self, mandatory_options=None):
         """
@@ -364,7 +361,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
 
         return bareosfd.bRC_OK
 
-    def create_check_db_connection(self):
+    def create_db_connection(self):
         """
         Setup the db connection, and check pg cluster version.
         """
@@ -419,6 +416,8 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
                 ),
             )
             return bareosfd.bRC_Error
+
+        return bareosfd.bRC_OK
 
     def format_lsn(self, raw_lsn):
         """
@@ -579,7 +578,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
         """
         bareosfd.DebugMessage(100, "start_backup_job in PostgresqlPlugin called\n")
 
-        self.create_check_db_connection()
+        self.create_db_connection()
 
         if chr(self.level) == "F":
             # For Full we backup the PostgreSQL data directory
@@ -740,22 +739,25 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
 
     def start_backup_file(self, savepkt):
         """
-        For normal files we call the super method
-        Special objects are treated here
+        Defines the file to backup and creates the savepkt.
+        In this example only files (no directories) are allowed.
+        We distinguish normal files from the virtuals and ROP.
         """
-        bareosfd.DebugMessage(100, "start_backup_file in plugin called\n")
+        bareosfd.DebugMessage(100, "start_backup_file called\n")
         if not self.files_to_backup:
             bareosfd.DebugMessage(100, "No files to backup\n")
             return bareosfd.bRC_Skip
 
-        # Plain files are handled by super class
-        if self.files_to_backup[-1] not in self.virtual_files:
-            bareosfd.DebugMessage(100, f"{self.files_to_backup[-1]} -> super\n")
-            return super().start_backup_file(savepkt)
+        try:
+            self.file_to_backup = self.files_to_backup.pop().encode("utf-8")
+        except UnicodeEncodeError:
+            bareosfd.JobMessage(
+                bareosfd.M_ERROR,
+                f"name {repr(self.file_to_backup)} cannot be encoded in utf-8",
+                )
+            return bareosfd.bRC_Error
 
-        # Here we create the restore object & virtual files
-        self.file_to_backup = self.files_to_backup.pop()
-        bareosfd.DebugMessage(100, f"special file: {self.file_to_backup}\n")
+        bareosfd.DebugMessage(100, f"file: {self.file_to_backup}\n")
         statp = bareosfd.StatPacket()
         if self.file_to_backup == "ROP":
             self.rop_data["last_backup_stop_time"] = self.last_backup_stop_time
@@ -772,39 +774,74 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
             savepkt.no_read = True
             bareosfd.DebugMessage(150, f"rop data: {str(self.rop_data)}\n")
         else:
-            # We affect owner, group, mode from previously saved PG_VERSION
-            # Time is the backup time
-            statp.st_mode = self.ref_statp.st_mode
-            statp.st_uid = self.ref_statp.st_uid
-            statp.st_gid = self.ref_statp.st_gid
-            statp.st_atime = int(time.time())
-            statp.st_mtime = int(time.time())
-            statp.st_ctime = int(time.time())
-            savepkt.type = bareosfd.FT_REG
-            if self.file_to_backup == self.backup_label_filename:
-                statp.st_size = len(self.backup_label_data)
-                savepkt.fname = self.backup_label_filename
-            elif self.file_to_backup == self.recovery_filename:
-                statp.st_size = len(self.recovery_data)
-                savepkt.fname = self.recovery_filename
-            elif (
-                self.file_to_backup == self.tablespace_map_filename
-                and self.tablespace_map_filename is not None
-            ):
-                statp.st_size = len(self.tablespace_map_data)
-                savepkt.fname = self.tablespace_map_filename
+            if self.file_to_backup in self.virtual_files:
+                # We affect owner, group, mode from previously saved PG_VERSION
+                # Time is the backup time
+                statp.st_mode = self.ref_statp.st_mode
+                statp.st_uid = self.ref_statp.st_uid
+                statp.st_gid = self.ref_statp.st_gid
+                statp.st_atime = int(time.time())
+                statp.st_mtime = int(time.time())
+                statp.st_ctime = int(time.time())
+                savepkt.type = bareosfd.FT_REG
+                if self.file_to_backup == self.backup_label_filename:
+                    statp.st_size = len(self.backup_label_data)
+                    savepkt.fname = self.backup_label_filename
+                elif self.file_to_backup == self.recovery_filename:
+                    statp.st_size = len(self.recovery_data)
+                    savepkt.fname = self.recovery_filename
+                elif (
+                    self.file_to_backup == self.tablespace_map_filename
+                    and self.tablespace_map_filename is not None
+                ):
+                    statp.st_size = len(self.tablespace_map_data)
+                    savepkt.fname = self.tablespace_map_filename
             else:
-                # should never happen
-                bareosfd.JobMessage(
-                    bareosfd.M_FATAL,
-                    f"Unknown error. Don't know how to handle {self.file_to_backup}\n",
-                )
-                return bareosfd.bRC_Error
+                # Rest of our dirs/files
+                savepkt.fname = self.file_to_backup
+                # emit a warning and skip if file can't be read like in normal backup
+                try:
+                # os.islink will detect links to directories only when
+                # there is no trailing slash - we need to perform checks
+                # on the stripped name but use it with trailing / for the backup itself
+                    if os.path.islink(self.file_to_backup.rstrip(b"/")):
+                        statp = os.lstat(self.file_to_backup)
+                        savepkt.type = bareosfd.FT_LNK
+                        savepkt.link = os.readlink(self.file_to_backup.rstrip(b"/"))
+                    else:
+                        statp = os.stat(self.file_to_backup)
+                        if os.path.isfile(self.file_to_backup):
+                            savepkt.type = bareosfd.FT_REG
+                        elif os.path.isdir(self.file_to_backup):
+                            savepkt.type = bareosfd.FT_DIREND
+                            savepkt.link = self.file_to_backup
+                        elif stat.S_ISFIFO(os.stat(self.file_to_backup).st_mode):
+                            savepkt.type = bareosfd.FT_FIFO
+                        else:
+                            bareosfd.JobMessage(
+                                bareosfd.M_FATAL,
+                                (
+                                    f"Unknown error."
+                                    f"Don't know how to handle {self.file_to_backup}\n"
+                                ),
+                            )
+                            return bareosfd.bRC_Error
+                except os.error as os_err:
+                    bareosfd.JobMessage(
+                        bareosfd.M_WARNING,
+                        f"Skipping disappeared file {self.file_to_backup}: \"{os_err}\"",
+                    )
+                    return bareosfd.bRC_Skip
+
+
+            # for both virtual and normal file
             savepkt.statp = statp
             savepkt.no_read = False
 
-        bareosfd.DebugMessage(150, f"fname: {savepkt.fname}\n")
-        bareosfd.DebugMessage(150, f"type: {savepkt.type}\n")
+        bareosfd.DebugMessage(150, f"file name: {str(savepkt.fname)}\n")
+        bareosfd.DebugMessage(150, f"file type: {savepkt.type}\n")
+        bareosfd.DebugMessage(150, f"file statpx: {str(savepkt.statp)}\n")
+
         return bareosfd.bRC_OK
 
     def restore_object_data(self, ROP):
@@ -867,8 +904,6 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
         Will not throw if the connection was already closed.
         """
         message = "Database connection closed.\n"
-        bareosfd.JobMessage(bareosfd.M_INFO, message)
-
         if self.db_con is None:
             return
 
@@ -877,7 +912,9 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
         except pg8000.exceptions.InterfaceError:
             pass
 
-    def complete_backup_job_and_close_db(self):
+        bareosfd.JobMessage(bareosfd.M_INFO, message)
+
+    def complete_backup_job(self):
         """
         Call pg_backup_stop() on PostgreSQL DB to mark the backup job as completed.
 
@@ -983,7 +1020,6 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
                 bareosfd.M_ERROR, f"pg_backup_stop statement failed: {err}\n"
             )
 
-        self.close_db_connection()
         self.full_backup_running = False
 
     def check_for_wal_files(self):
@@ -1030,9 +1066,9 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
             return bareosfd.bRC_More
 
         if self.full_backup_running:
-            self.complete_backup_job_and_close_db()
+            self.complete_backup_job()
             # Now we can also create the Restore object with the right timestamp
-            # We start by ROP so it is the last object in backup
+            # We start by ROP so it is the last object in backup and first in restore
             self.virtual_files = [
                 "ROP",
                 self.backup_label_filename,
@@ -1054,7 +1090,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginLocalFilesBaseclass):  # noqa
         especially when job was canceled
         """
         if self.full_backup_running:
-            self.complete_backup_job_and_close_db()
+            self.complete_backup_job()
             self.full_backup_running = False
         else:
             self.close_db_connection()
