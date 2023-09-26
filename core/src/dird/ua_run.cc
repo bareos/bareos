@@ -1788,6 +1788,8 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
   rc.comment = NULL;
   rc.backup_format = NULL;
 
+  char* consolidate_job_name = nullptr;
+
   for (i = 1; i < ua->argc; i++) {
     Dmsg2(800, "Doing arg %d = %s\n", i, ua->argk[i]);
     kw_ok = false;
@@ -2056,11 +2058,11 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
             kw_ok = true;
             break;
           case 32: /* consolidatejob */
-            if (rc.consolidate_job_name) {
+            if (consolidate_job_name) {
               ua->SendMsg(_("Consolidate Job specified twice.\n"));
               return false;
             }
-            rc.consolidate_job_name = ua->argv[i];
+            consolidate_job_name = ua->argv[i];
             kw_ok = true;
             break;
           default:
@@ -2253,11 +2255,11 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
     rc.previous_job = rc.job->verify_job;
   }
 
-  if (rc.consolidate_job_name) {
-    rc.consolidate_job = ua->GetJobResWithName(rc.consolidate_job_name);
+  if (consolidate_job_name) {
+    rc.consolidate_job = ua->GetJobResWithName(consolidate_job_name);
     if (!rc.consolidate_job) {
       ua->SendMsg(_("Consolidate Job \"%s\" not found.\n"),
-                  rc.consolidate_job_name);
+                  consolidate_job_name);
       rc.consolidate_job = select_job_resource(ua);
     }
     if (rc.consolidate_job && rc.consolidate_job->JobType != JT_CONSOLIDATE) {

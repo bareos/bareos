@@ -254,7 +254,6 @@ class RunContext {
   char* since = nullptr;
   char* StoreName = nullptr;
   char* verify_job_name = nullptr;
-  char* consolidate_job_name = nullptr;
   char* when = nullptr;
   char* where = nullptr;
   const char* replace = nullptr;
