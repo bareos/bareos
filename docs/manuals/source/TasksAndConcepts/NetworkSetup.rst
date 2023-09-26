@@ -1,10 +1,213 @@
 Network setup
 =============
 
+.. _section-TCP_KeepAlive:
+
+Heartbeat Interval - TCP Keepalive
+----------------------------------
+
+.. index::
+   single: Broken pipe
+   single: tcp keepalive
+   single: heartbeat interval
+   single: firewall, router
+
+In Bareos the *Heartbeat Interval* is an optional parameter expressed in seconds and
+implemented only on systems that provides the **setsockopt TCP_KEEPIDLE** function
+like Unix, Linux, Windows... The default for those systems is 2 hours (7200s).
+The Bareos default value is zero (0), which means no change is made to the socket.
+If non-zero, a heartbeat signal is send from a daemon to the others to keep the channels
+active.
+
+This feature is particularly useful if you have a router or a firewall that does not
+follow Internet standards and times out an valid connection after a short duration
+despite the fact that :strong:`keepalive` is set.
+This usually results in a *broken pipe* error message.
+
+.. warning::
+
+   A hierarchy exist for this parameter depending of its usage.
+   When :strong:`HeartBeatInverval` is defined at the daemon resource, this will
+   affect all sockets used by this daemon or program. While when used in sub part this
+   will override the global setup and only concern this specific resource.
+   For example :config:option:`dir/director/HeartbeatInterval`\ (global) is overwritten
+   by the more resource specific :config:option:`dir/client/HeartbeatInterval`\ .
+
+.. note::
+
+   Consult `TLDP howto TCP-Keepalive <https://tldp.org/HOWTO/TCP-Keepalive-HOWTO/overview.html>`_
+   to learn how to setup tcp keepalive in you Linux.
+
+.. _section-PassiveClient:
+
+Passive Clients
+---------------
+
+.. index::
+   single: passive, client
+   single: mode, passive
+
+The normal way of initializing the data channel (the channel where the backup data
+itself is transported) is done by the |fd| (client) that connects to the |sd|.
+
+In many setups, this can cause problems, as this means that:
+
+-  The client must be able to resolve the name of the |sd|
+   (often not true, you have to do tricks with the hosts file)
+
+-  The client must be allowed to create a new connection.
+
+-  The client must be able to connect to the |sd| over the network
+   (often difficult over NAT or Firewall)
+
+By using Passive Client, the initialization of the data channel is reversed, so that
+the storage daemon connects to the |fd|. This solves almost every problem created by
+firewalls, NAT-gateways and resolving issues, as
+
+-  The |sd| initiates the connection, and thus can pass through the same or similar
+   firewall rules that the director already has to access the |fd|.
+
+-  The client never initiates any connection, thus can be completely firewalled.
+
+-  The client never needs any name resolution and is totally independent from any
+   resolving issues.
+
+.. image:: /include/images/passive-client-communication.*
+   :width: 60.0%
+
+
+
+Usage
+~~~~~
+
+To use this feature, just configure :config:option:`dir/client/Passive`\ =yes
+in the client definition of the |dir|:
+
+.. code-block:: bareosconfig
+   :caption: Enable passive mode in bareos-dir.d/client/myself.conf
+
+   Client {
+      Name = client1-fd
+      Password = "secretpassword"
+      <input>Passive = yes</input>
+      [...]
+   }
+
+
+.. _LanAddress:
+
+Using different IP Adresses for SD – FD Communication
+-----------------------------------------------------
+
+.. index::
+   single: LAN Address
+
+Bareos supports network topologies where the |fd| and |sd| are situated inside of a LAN,
+but the |dir| is outside of that LAN in the Internet and accesses the |fd| and |sd| via
+SNAT / port forwarding.
+
+Consider the following scheme:
+
+.. code-block:: shell-session
+
+      /-------------------\
+      |                   |    LAN 10.0.0.1/24
+      |                   |
+      |  FD_LAN   SD_LAN  |
+      |  .10         .20  |
+      |                   |
+      \___________________/
+                |
+            NAT Firewall
+            FD: 8.8.8.10 -> 10.0.0.10
+            SD: 8.8.8.20 -> 10.0.0.20
+                |
+      /-------------------\
+      |                   |
+      |                   |     WAN / Internet
+      |        DIR        |
+      |     8.8.8.100     |
+      |                   |
+      | FD_WAN   SD_WAN   |
+      | .30         .40   |
+      \___________________/
+
+The |dir| can access the :strong:`FD_LAN` via the IP 8.8.8.10, which is forwarded to the
+IP 10.0.0.10 inside of the LAN.
+
+The |dir| can access the :strong:`SD_LAN` via the IP 8.8.8.20 which is forwarded to the
+IP 10.0.0.20 inside of the LAN.
+
+There is also a |fd| and a |sd| outside of the LAN, which have the IPs 8.8.8.30
+and 8.8.8.40.
+
+All resources are configured so that the :strong:`Address`\ directive gets the address
+where the |dir| can reach the daemons.
+
+Additionally, devices being in the LAN get the LAN address configured in the
+:strong:`Lan Address`\ directive. The configuration looks as follows:
+
+.. code-block:: bareosconfig
+   :caption: bareos-dir.d/client/FD\_LAN.conf
+
+   Client {
+      Name = FD_LAN
+      Address = 8.8.8.10
+      LanAddress = 10.0.0.10
+      ...
+   }
+
+.. code-block:: bareosconfig
+   :caption: bareos-dir.d/client/SD\_LAN.conf
+
+   Storage {
+      Name = SD_LAN
+      Address = 8.8.8.20
+      LanAddress = 10.0.0.20
+      ...
+   }
+
+.. code-block:: bareosconfig
+   :caption: bareos-dir.d/client/FD\_WAN.conf
+
+   Client {
+      Name = FD_WAN
+      Address = 8.8.8.30
+      ...
+   }
+
+.. code-block:: bareosconfig
+   :caption: bareos-dir.d/client/SD\_WAN.conf
+
+   Storage {
+      Name = SD_WAN
+      Address = 8.8.8.40
+      ...
+   }
+
+This way, backups and restores from each |fd| using each |sd| are possible as long as the
+firewall allows the needed network connections.
+
+The |dir| simply checks if both the involved |fd| and |sd| both have a
+:strong:`Lan Address`\ (:config:option:`dir/client/LanAddress`\ and
+:config:option:`dir/storage/LanAddress`\ ) configured.
+
+In that case, the initiating daemon is ordered to connect to the :strong:`Lan Address`\
+instead of the :strong:`Address`\. In active client mode, the |fd| connects to the |sd|,
+in passive client mode (see :ref:`section-PassiveClient`) the |sd| connects to the |fd|.
+
+If only one or none of the involved |fd| and |sd| have a :strong:`Lan Address`\
+configured, the :strong:`Address`\ is used as connection target for the initiating daemon.
+
+
 .. _section-ClientInitiatedConnection:
 
 Client Initiated Connection
 ---------------------------
+
+.. index::
+   single: initiated connection
+
 
 The |dir| knows, when it is required to talk to a client (|fd|). Therefore, by defaults, the |dir| connects to the clients.
 
@@ -79,145 +282,12 @@ to the default message resource :config:option:`Fd/Messages = Standard`\ :
      Append = "/var/log/bareos/bareos-fd.log" = all, !skipped, !restored
    }
 
-.. _PassiveClient:
-
-Passive Clients
----------------
-
-The normal way of initializing the data channel (the channel where the backup data itself is transported) is done by the |fd| (client) that connects to the |sd|.
-
-In many setups, this can cause problems, as this means that:
-
--  The client must be able to resolve the name of the |sd| (often not true, you have to do tricks with the hosts file)
-
--  The client must be allowed to create a new connection.
-
--  The client must be able to connect to the |sd| over the network (often difficult over NAT or Firewall)
-
-By using Passive Client, the initialization of the datachannel is reversed, so that the storage daemon connects to the |fd|. This solves almost every problem created by firewalls, NAT-gateways and resolving issues, as
-
--  The |sd| initiates the connection, and thus can pass through the same or similar firewall rules that the director already has to access the |fd|.
-
--  The client never initiates any connection, thus can be completely firewalled.
-
--  The client never needs any name resolution and is totally independent from any resolving issues.
-
-.. image:: /include/images/passive-client-communication.*
-   :width: 60.0%
-
-
-
-
-Usage
-~~~~~
-
-To use this new feature, just configure :config:option:`dir/client/Passive`\ =yes in the client definition of the |dir|:
-
-.. code-block:: bareosconfig
-   :caption: Enable passive mode in bareos-dir.conf
-
-   Client {
-      Name = client1-fd
-      Password = "secretpassword"
-      <input>Passive = yes</input>
-      [...]
-   }
-
-.. _LanAddress:
-
-Using different IP Adresses for SD – FD Communication
------------------------------------------------------
-
-:index:`\ <single: Lan Address>`\
-
-Bareos supports network topologies where the |fd| and |sd| are situated inside of a LAN, but the |dir| is outside of that LAN in the Internet and accesses the |fd| and |sd| via SNAT / port forwarding.
-
-Consider the following scheme:
-
-.. code-block:: shell-session
-
-      /-------------------\
-      |                   |    LAN 10.0.0.1/24
-      |                   |
-      |  FD_LAN   SD_LAN  |
-      |  .10         .20  |
-      |                   |
-      \___________________/
-                |
-            NAT Firewall
-            FD: 8.8.8.10 -> 10.0.0.10
-            SD: 8.8.8.20 -> 10.0.0.20
-                |
-      /-------------------\
-      |                   |
-      |                   |     WAN / Internet
-      |        DIR        |
-      |     8.8.8.100     |
-      |                   |
-      | FD_WAN   SD_WAN   |
-      | .30         .40   |
-      \___________________/
-
-The |dir| can access the :strong:`FD_LAN` via the IP 8.8.8.10, which is forwarded to the IP 10.0.0.10 inside of the LAN.
-
-The |dir| can access the :strong:`SD_LAN` via the IP 8.8.8.20 which is forwarded to the IP 10.0.0.20 inside of the LAN.
-
-There is also a |fd| and a |sd| outside of the LAN, which have the IPs 8.8.8.30 and 8.8.8.40
-
-All resources are configured so that the :strong:`Address`\  directive gets the address where the |dir| can reach the daemons.
-
-Additionally, devices being in the LAN get the LAN address configured in the :strong:`Lan Address`\  directive. The configuration looks as follows:
-
-.. code-block:: bareosconfig
-   :caption: bareos-dir.d/client/FD\_LAN.conf
-
-   Client {
-      Name = FD_LAN
-      Address = 8.8.8.10
-      LanAddress = 10.0.0.10
-      ...
-   }
-
-.. code-block:: bareosconfig
-   :caption: bareos-dir.d/client/SD\_LAN.conf
-
-   Storage {
-      Name = SD_LAN
-      Address = 8.8.8.20
-      LanAddress = 10.0.0.20
-      ...
-   }
-
-.. code-block:: bareosconfig
-   :caption: bareos-dir.d/client/FD\_WAN.conf
-
-   Client {
-      Name = FD_WAN
-      Address = 8.8.8.30
-      ...
-   }
-
-.. code-block:: bareosconfig
-   :caption: bareos-dir.d/client/SD\_WAN.conf
-
-   Storage {
-      Name = SD_WAN
-      Address = 8.8.8.40
-      ...
-   }
-
-This way, backups and restores from each |fd| using each |sd| are possible as long as the firewall allows the needed network connections.
-
-The |dir| simply checks if both the involved |fd| and |sd| both have a :strong:`Lan Address`\  (:config:option:`dir/client/LanAddress`\  and :config:option:`dir/storage/LanAddress`\ ) configured.
-
-In that case, the initiating daemon is ordered to connect to the :strong:`Lan Address`\  instead of the :strong:`Address`\ . In active client mode, the |fd| connects to the |sd|, in passive client mode (see :ref:`PassiveClient`) the |sd| connects to the |fd|.
-
-If only one or none of the involved |fd| and |sd| have a :strong:`Lan Address`\  configured, the :strong:`Address`\  is used as connection target for the initiating daemon.
 
 .. _ConnectionOverviewReference:
 
 Network Connections Overview
 ============================
+
 The following diagrams show Bareos components with any possible
 network connections between them. Arrows point always from the TCP
 Client to the respective TCP Server, thus the direction of the connection
@@ -281,7 +351,7 @@ that are virtually usable. See the chapters :ref:`below for specific diagrams <C
    5a, "**Director to Storage (default)**", "control channel"
    5b, "Director to 2nd Storage doing SD-SD copy or migrate", "control channel"
     6, "**File Daemon to Storage Daemon (default)**", "data channel"
-    7, ":ref:`Passive Client <PassiveClient>` Storage Daemon to File Daemon", "data channel"
+    7, ":ref:`Passive Client <section-PassiveClient>` Storage Daemon to File Daemon", "data channel"
     8, "Storage Daemon to Storage Daemon", "data channel"
     9, "Tray Monitor to Director Daemon", "monitor channel"
    10, "Tray Monitor to File Daemon", "monitor channel"

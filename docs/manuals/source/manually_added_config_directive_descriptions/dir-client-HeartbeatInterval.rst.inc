@@ -1,1 +1,6 @@
-This directive is optional and if specified will cause the Director to set a keepalive interval (heartbeat) in seconds on each of the sockets it opens for the Storage resource. If set, this value overrides :config:option:`dir/director/HeartbeatInterval`\ .
+Optional and if specified set a keepalive interval (heartbeat) on the sockets between
+the defined |fd| and |dir|.
+
+If set, this value overrides :config:option:`dir/director/HeartbeatInterval`\ .
+
+See details in :ref:`section-TCP_KeepAlive`\ .

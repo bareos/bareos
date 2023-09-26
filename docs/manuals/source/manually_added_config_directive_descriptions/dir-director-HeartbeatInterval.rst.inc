@@ -1,1 +1,4 @@
-This directive is optional and if specified will cause the Director to set a keepalive interval (heartbeat) in seconds on each of the sockets it opens for the Client resource. This value will override any specified at the Director level. It is implemented only on systems that provide the setsockopt TCP_KEEPIDLE function (Linux, ...). The default value is zero, which means no change is made to the socket.
+Optional and if specified set a keepalive interval (heartbeat) on the sockets used by the
+|dir|.
+
+See details in :ref:`section-TCP_KeepAlive`\ .
