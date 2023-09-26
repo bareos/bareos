@@ -1,8 +1,9 @@
 #!/bin/bash
+
 set -e
 set -o pipefail
 set -u
-#
+
 TestName="$(basename "$(pwd)")"
 export TestName
 
@@ -86,6 +87,7 @@ done
         printf "NOT FOUND\n" >> ${tmp}/../log/curl.log
         printf -- "--------------------------------------\n\n" >> ${tmp}/../log/curl.log
         print_debug "ERROR getting endpoint $2 with method $1 in $maxTry tries, expected output: \"$3\""
+        cat ${tmp}/curl.out
         exit 1
     fi
 }
@@ -96,7 +98,7 @@ done
 mkdir -p etc/bareos/bareos-dir.d/schedule
 mkdir -p etc/bareos/bareos-dir.d/user
 
-api/restapi.sh start
+api/restapi.sh forcestart
 
 TOKEN=$(api/curl-auth.sh)
 endpoint_check GET "configuration/clients/bareos-fd" bareos-fd "" 1
