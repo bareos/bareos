@@ -144,7 +144,7 @@ static ResourceItem dir_items[] = {
   { "NdmpSnooping", CFG_TYPE_BOOL, ITEM(res_dir, ndmp_snooping), 0, 0, NULL, "13.2.0-", NULL },
   { "NdmpLogLevel", CFG_TYPE_PINT32, ITEM(res_dir, ndmp_loglevel), 0, CFG_ITEM_DEFAULT, "4", "13.2.0-", NULL },
   { "NdmpNamelistFhinfoSetZeroForInvalidUquad", CFG_TYPE_BOOL, ITEM(res_dir, ndmp_fhinfo_set_zero_for_invalid_u_quad), 0, CFG_ITEM_DEFAULT, "false", "20.0.6-", NULL },
-  { "AbsoluteJobTimeout", CFG_TYPE_PINT32, ITEM(res_dir, jcr_watchdog_time), 0, 0, NULL, "14.2.0-", NULL },
+  { "AbsoluteJobTimeout", CFG_TYPE_PINT32, ITEM(res_dir, jcr_watchdog_time), 0, 0, NULL, "14.2.0-", "Absolute time after which a Job gets terminated regardless of its progress" },
   { "Auditing", CFG_TYPE_BOOL, ITEM(res_dir, auditing), 0, CFG_ITEM_DEFAULT, "false", "14.2.0-", NULL },
   { "AuditEvents", CFG_TYPE_AUDIT, ITEM(res_dir, audit_events), 0, 0, NULL, "14.2.0-", NULL },
   { "SecureEraseCommand", CFG_TYPE_STR, ITEM(res_dir, secure_erase_cmdline), 0, 0, NULL, "15.2.1-",

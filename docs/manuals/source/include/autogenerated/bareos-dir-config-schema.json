@@ -182,7 +182,8 @@
           "datatype": "PINT32",
           "code": 0,
           "equals": true,
-          "versions": "14.2.0-"
+          "versions": "14.2.0-",
+          "description": "Absolute time after which a Job gets terminated regardless of its progress"
         },
         "Auditing": {
           "datatype": "BOOLEAN",

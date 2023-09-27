@@ -105,7 +105,7 @@ static ResourceItem store_items[] = {
   {"NdmpAddresses", CFG_TYPE_ADDRESSES, ITEM(res_store, NDMPaddrs), 0, CFG_ITEM_DEFAULT, "10000", NULL, NULL},
   {"NdmpPort", CFG_TYPE_ADDRESSES_PORT, ITEM(res_store, NDMPaddrs), 0, CFG_ITEM_DEFAULT, "10000", NULL, NULL},
   {"AutoXFlateOnReplication", CFG_TYPE_BOOL, ITEM(res_store, autoxflateonreplication), 0, CFG_ITEM_DEFAULT, "false", "13.4.0-", NULL},
-  {"AbsoluteJobTimeout", CFG_TYPE_PINT32, ITEM(res_store, jcr_watchdog_time), 0, 0, NULL, NULL, NULL},
+  {"AbsoluteJobTimeout", CFG_TYPE_PINT32, ITEM(res_store, jcr_watchdog_time), 0, 0, NULL, "14.2.0-", "Absolute time after which a Job gets terminated regardless of its progress" },
   {"CollectDeviceStatistics", CFG_TYPE_BOOL, ITEM(res_store, collect_dev_stats), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "false", NULL, NULL},
   {"CollectJobStatistics", CFG_TYPE_BOOL, ITEM(res_store, collect_job_stats), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "false", NULL, NULL},
   {"StatisticsCollectInterval", CFG_TYPE_PINT32, ITEM(res_store, stats_collect_interval), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "0", NULL, NULL},

@@ -313,7 +313,9 @@
         "AbsoluteJobTimeout": {
           "datatype": "PINT32",
           "code": 0,
-          "equals": true
+          "equals": true,
+          "versions": "14.2.0-",
+          "description": "Absolute time after which a Job gets terminated regardless of its progress"
         },
         "AlwaysUseLmdb": {
           "datatype": "BOOLEAN",
@@ -581,7 +583,9 @@
         "AbsoluteJobTimeout": {
           "datatype": "PINT32",
           "code": 0,
-          "equals": true
+          "equals": true,
+          "versions": "14.2.0-",
+          "description": "Absolute time after which a Job gets terminated regardless of its progress"
         },
         "AlwaysUseLmdb": {
           "datatype": "BOOLEAN",

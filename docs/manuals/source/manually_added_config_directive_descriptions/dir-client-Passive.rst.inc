@@ -2,4 +2,4 @@ The normal way of initializing the data channel (the channel where the backup da
 
 By using the client passive mode, the initialization of the datachannel is reversed, so that the storage daemon connects to the filedaemon.
 
-See chapter :ref:`Passive Client <PassiveClient>`.
+See chapter :ref:`Passive Client <section-PassiveClient>`.

@@ -26,7 +26,7 @@ There are several reasons why a |dir| could not contact a client on a different 
 
 -  Your password or names are not correct in both the Director and the Client machine. Try configuring everything identical to how you run the client on the same machine as the Director, but just change the address. If that works, make the other changes one step at a time until it works.
 
-Some of the DNS and Firewall problems can be circumvented by configuring clients using :ref:`section-ClientInitiatedConnection` or as :ref:`PassiveClient`.
+Some of the DNS and Firewall problems can be circumvented by configuring clients as  :ref:`section-PassiveClient` or using :ref:`section-ClientInitiatedConnection` .
 
 Difficulties Connecting from the FD to the SD
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
