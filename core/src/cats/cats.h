@@ -341,11 +341,6 @@ struct MediaDbRecord {
   // Extra stuff not in DB
   faddr_t rec_addr = 0; /**< found record address */
 
-  // Since the database returns times as strings, this is how we pass them back.
-  char cFirstWritten[MAX_TIME_LENGTH]{0}; /**< FirstWritten returned from DB */
-  char cLastWritten[MAX_TIME_LENGTH]{0};  /**< LastWritten returned from DB */
-  char cLabelDate[MAX_TIME_LENGTH]{0};    /**< LabelData returned from DB */
-  char cInitialWrite[MAX_TIME_LENGTH]{0}; /**< InitialWrite returned from DB */
   bool set_first_written = false;
   bool set_label_date = false;
 };

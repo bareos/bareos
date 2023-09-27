@@ -1079,16 +1079,18 @@ bool BareosDb::GetMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
          "SELECT MediaId,VolumeName,VolJobs,VolFiles,VolBlocks,"
          "VolBytes,VolMounts,VolErrors,VolWrites,MaxVolBytes,VolCapacityBytes,"
          "MediaType,VolStatus,PoolId,VolRetention,VolUseDuration,MaxVolJobs,"
-         "MaxVolFiles,Recycle,Slot,FirstWritten,LastWritten,InChanger,"
-         "EndFile,EndBlock,LabelType,LabelDate,StorageId,"
-         "Enabled,LocationId,RecycleCount,InitialWrite,"
+         "MaxVolFiles,Recycle,Slot,"
+         "EXTRACT('EPOCH' FROM FirstWritten) AS FirstWritten,"
+         "EXTRACT('EPOCH' FROM LastWritten) AS LastWritten,"
+         "InChanger,"
+         "EndFile,EndBlock,LabelType,"
+         "EXTRACT('EPOCH' FROM LabelDate) AS LabelDate,"
+         "StorageId,"
+         "Enabled,LocationId,RecycleCount,"
+         "EXTRACT('EPOCH' FROM InitialWrite) AS InitialWrite,"
          "ScratchPoolId,RecyclePoolId,VolReadTime,VolWriteTime,"
-         "ActionOnPurge,EncryptionKey,MinBlocksize,MaxBlocksize,"
-         "EXTRACT('EPOCH' FROM FirstWritten),"
-         "EXTRACT('EPOCH' FROM LastWritten),"
-         "EXTRACT('EPOCH' FROM LabelDate),"
-         "EXTRACT('EPOCH' FROM InitialWrite) "
-         "FROM Media WHERE MediaId=%s",
+         "ActionOnPurge,EncryptionKey,MinBlocksize,MaxBlocksize"
+         " FROM Media WHERE MediaId=%s",
          edit_int64(mr->MediaId, ed1));
   } else { /* find by name */
     EscapeString(jcr, esc, mr->VolumeName, strlen(mr->VolumeName));
@@ -1096,15 +1098,17 @@ bool BareosDb::GetMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
          "SELECT MediaId,VolumeName,VolJobs,VolFiles,VolBlocks,"
          "VolBytes,VolMounts,VolErrors,VolWrites,MaxVolBytes,VolCapacityBytes,"
          "MediaType,VolStatus,PoolId,VolRetention,VolUseDuration,MaxVolJobs,"
-         "MaxVolFiles,Recycle,Slot,FirstWritten,LastWritten,InChanger,"
-         "EndFile,EndBlock,LabelType,LabelDate,StorageId,"
-         "Enabled,LocationId,RecycleCount,InitialWrite,"
+         "MaxVolFiles,Recycle,Slot,"
+         "EXTRACT('EPOCH' FROM FirstWritten) AS FirstWritten,"
+         "EXTRACT('EPOCH' FROM LastWritten) AS LastWritten,"
+         "InChanger,"
+         "EndFile,EndBlock,LabelType,"
+         "EXTRACT('EPOCH' FROM LabelDate) AS LabelDate,"
+         "StorageId,"
+         "Enabled,LocationId,RecycleCount,"
+         "EXTRACT('EPOCH' FROM InitialWrite) AS InitialWrite,"
          "ScratchPoolId,RecyclePoolId,VolReadTime,VolWriteTime,"
-         "ActionOnPurge,EncryptionKey,MinBlocksize,MaxBlocksize,"
-         "EXTRACT('EPOCH' FROM FirstWritten),"
-         "EXTRACT('EPOCH' FROM LastWritten),"
-         "EXTRACT('EPOCH' FROM LabelDate),"
-         "EXTRACT('EPOCH' FROM InitialWrite) "
+         "ActionOnPurge,EncryptionKey,MinBlocksize,MaxBlocksize"
          " FROM Media WHERE VolumeName='%s'",
          esc);
   }
@@ -1146,27 +1150,23 @@ bool BareosDb::GetMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
         mr->Recycle = str_to_int64(row[18]);
         mr->Slot = str_to_int64(row[19]);
 
-        bstrncpy(mr->cFirstWritten, (row[20] != NULL) ? row[20] : "",
-                 sizeof(mr->cFirstWritten));
+        mr->FirstWritten = StrToUtime(row[20] != NULL ? row[20] : "");
 
-        bstrncpy(mr->cLastWritten, (row[21] != NULL) ? row[21] : "",
-                 sizeof(mr->cLastWritten));
+        mr->LastWritten = StrToUtime(row[21] != NULL ? row[21] : "");
 
         mr->InChanger = str_to_uint64(row[22]);
         mr->EndFile = str_to_uint64(row[23]);
         mr->EndBlock = str_to_uint64(row[24]);
         mr->LabelType = str_to_int64(row[25]);
 
-        bstrncpy(mr->cLabelDate, (row[26] != NULL) ? row[26] : "",
-                 sizeof(mr->cLabelDate));
+        mr->LabelDate = StrToUtime(row[26] != NULL ? row[26] : "");
 
         mr->StorageId = str_to_int64(row[27]);
         mr->Enabled = str_to_int64(row[28]);
         mr->LocationId = str_to_int64(row[29]);
         mr->RecycleCount = str_to_int64(row[30]);
 
-        bstrncpy(mr->cInitialWrite, (row[31] != NULL) ? row[31] : "",
-                 sizeof(mr->cInitialWrite));
+        mr->InitialWrite = StrToUtime(row[31] != NULL ? row[31] : "");
 
         mr->ScratchPoolId = str_to_int64(row[32]);
         mr->RecyclePoolId = str_to_int64(row[33]);
@@ -1178,10 +1178,6 @@ bool BareosDb::GetMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
         mr->MinBlocksize = str_to_int32(row[38]);
         mr->MaxBlocksize = str_to_int32(row[39]);
 
-        mr->FirstWritten = str_to_uint64(row[40] != NULL ? row[40] : "");
-        mr->LastWritten = str_to_uint64(row[41] != NULL ? row[41] : "");
-        mr->LabelDate = str_to_uint64(row[42] != NULL ? row[42] : "");
-        mr->InitialWrite = str_to_uint64(row[43] != NULL ? row[43] : "");
         retval = true;
       }
     } else {
