@@ -40,6 +40,9 @@
  *    utime_t  (64 bit integer in seconds base Epoch)
  */
 
+#if defined(HAVE_WIN32)
+#  define NO_UNDERSCORE_MACRO 1
+#endif
 #include "include/bareos.h"
 #include "lib/btime.h"
 #include <math.h>
