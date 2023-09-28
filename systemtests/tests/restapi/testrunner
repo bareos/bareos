@@ -1,8 +1,9 @@
 #!/bin/bash
+
 set -e
 set -o pipefail
 set -u
-#
+
 TestName="$(basename "$(pwd)")"
 export TestName
 
@@ -11,10 +12,19 @@ export TestName
 #shellcheck source=environment-local.in
 . ./environment-local
 
-requirements="${CMAKE_SOURCE_DIR}/restapi/requirements.txt"
+# convert requirements.txt into Python list,
+# but exclude comments and Bareos packages
+# (as Bareos packages are handled from the local repo)
+requirements=$(
+  printf "%s" "[ "
+  grep -v "^#\|bareos" ${CMAKE_SOURCE_DIR}/restapi/requirements.txt | while read pkg; do
+    printf "'%s', " "$pkg"
+  done
+  printf "%s" "]"
+)
 
 "${PYTHON_EXECUTABLE}" -c \
-  "import pkg_resources;pkg_resources.require(open('$requirements',mode='r'))" \
+  "import pkg_resources;pkg_resources.require($requirements)" \
   || exit 77
 
 #shellcheck source=../scripts/functions
@@ -77,6 +87,7 @@ done
         printf "NOT FOUND\n" >> ${tmp}/../log/curl.log
         printf -- "--------------------------------------\n\n" >> ${tmp}/../log/curl.log
         print_debug "ERROR getting endpoint $2 with method $1 in $maxTry tries, expected output: \"$3\""
+        cat ${tmp}/curl.out
         exit 1
     fi
 }
@@ -87,7 +98,7 @@ done
 mkdir -p etc/bareos/bareos-dir.d/schedule
 mkdir -p etc/bareos/bareos-dir.d/user
 
-api/restapi.sh start
+api/restapi.sh forcestart
 
 TOKEN=$(api/curl-auth.sh)
 endpoint_check GET "configuration/clients/bareos-fd" bareos-fd "" 1
@@ -153,6 +164,15 @@ endpoint_check GET "control/directors/time" "year" "" 1
 endpoint_check PUT "control/directors/reload" "success" "" 1
 
 api/restapi.sh stop
+
+# wait for Director commands to finish
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+status director
+wait
+status director
+END_OF_DATA
+run_bconsole
 
 #check_for_zombie_jobs storage=File client=bareos-fd
 

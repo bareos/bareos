@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -36,7 +36,7 @@ def get_version():
             # and adapt it according to
             # https://www.python.org/dev/peps/pep-0440/.
             fullversion = version_file.read().strip()
-            __version__ = re.compile(r"~pre([0-9]+).*").sub(r".dev\1", fullversion)
+            __version__ = re.sub(r"~pre([0-9]+\.)", r".dev+\1", fullversion)
     except IOError:
         # Fallback version.
         # First protocol implemented
