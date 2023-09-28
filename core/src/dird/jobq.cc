@@ -597,7 +597,6 @@ static bool RescheduleJob(JobControlRecord* jcr, jobq_t* jq, jobq_item_t* je)
   }
 
   if (resched) {
-    char dt[50], dt2[50];
     time_t now;
 
     /* Reschedule this job by cleaning it up, but reuse the same JobId if
@@ -605,14 +604,15 @@ static bool RescheduleJob(JobControlRecord* jcr, jobq_t* jq, jobq_item_t* je)
     now = time(NULL);
     jcr->dir_impl->reschedule_count++;
     jcr->sched_time = now + jcr->dir_impl->res.job->RescheduleInterval;
-    bstrftime(dt, sizeof(dt), now);
-    bstrftime(dt2, sizeof(dt2), jcr->sched_time);
+    auto dt = bstrftime(now);
+    auto dt2 = bstrftime(jcr->sched_time);
     Dmsg4(2300, "Rescheduled Job %s to re-run in %d seconds.(now=%u,then=%u)\n",
           jcr->Job, (int)jcr->dir_impl->res.job->RescheduleInterval, now,
           jcr->sched_time);
     Jmsg(jcr, M_INFO, 0,
          _("Rescheduled Job %s at %s to re-run in %d seconds (%s).\n"),
-         jcr->Job, dt, (int)jcr->dir_impl->res.job->RescheduleInterval, dt2);
+         jcr->Job, dt.data(), (int)jcr->dir_impl->res.job->RescheduleInterval,
+         dt2.data());
     DirdFreeJcrPointers(jcr); /* partial cleanup old stuff */
     jcr->setJobStatus(-1);
     jcr->dir_impl->SDJobStatus = 0;

@@ -87,7 +87,6 @@ bool FixupDeviceBlockWriteError(DeviceControlRecord* dcr, int retries)
   DeviceBlock* block;
   char b1[30], b2[30];
   time_t wait_time;
-  char dt[MAX_TIME_LENGTH];
   JobControlRecord* jcr = dcr->jcr;
   Device* dev = dcr->dev;
   int blocked = dev->blocked(); /* save any previous blocked status */
@@ -117,7 +116,7 @@ bool FixupDeviceBlockWriteError(DeviceControlRecord* dcr, int retries)
        _("End of medium on Volume \"%s\" Bytes=%s Blocks=%s at %s.\n"),
        PrevVolName, edit_uint64_with_commas(dev->VolCatInfo.VolCatBytes, b1),
        edit_uint64_with_commas(dev->VolCatInfo.VolCatBlocks, b2),
-       bstrftime(dt, sizeof(dt), time(NULL)));
+       bstrftime(time(0)).data());
 
   Dmsg1(050, "SetUnload dev=%s\n", dev->print_name());
   dev->SetUnload();
@@ -135,8 +134,7 @@ bool FixupDeviceBlockWriteError(DeviceControlRecord* dcr, int retries)
       is_labeloperation::False); /* send Volume info to Director */
 
   Jmsg(jcr, M_INFO, 0, _("New volume \"%s\" mounted on device %s at %s.\n"),
-       dcr->VolumeName, dev->print_name(),
-       bstrftime(dt, sizeof(dt), time(NULL)));
+       dcr->VolumeName, dev->print_name(), bstrftime(time(0)).data());
 
   /* If this is a new tape, the label_blk will contain the
    *  label, so write it now. If this is a previously

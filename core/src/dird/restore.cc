@@ -480,14 +480,13 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
                             int msg_type,
                             const char* TermMsg)
 {
-  char sdt[MAX_TIME_LENGTH], edt[MAX_TIME_LENGTH];
   char ec1[30], ec2[30], ec3[30], elapsed[50];
   utime_t RunTime;
   double kbps;
   PoolMem temp, secure_erase_status;
 
-  bstrftime(sdt, sizeof(sdt), jcr->dir_impl->jr.StartTime);
-  bstrftime(edt, sizeof(edt), jcr->dir_impl->jr.EndTime);
+  auto sdt = bstrftime(jcr->dir_impl->jr.StartTime);
+  auto edt = bstrftime(jcr->dir_impl->jr.EndTime);
   RunTime = jcr->dir_impl->jr.EndTime - jcr->dir_impl->jr.StartTime;
   if (RunTime <= 0) {
     kbps = 0;
@@ -532,8 +531,8 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
            BAREOS, my_name, kBareosVersionStrings.Full,
            kBareosVersionStrings.ShortDate, kBareosVersionStrings.GetOsInfo(),
            jcr->dir_impl->jr.JobId, jcr->dir_impl->jr.Job,
-           jcr->dir_impl->res.client->resource_name_, cr.Uname, sdt, edt,
-           edit_utime(RunTime, elapsed, sizeof(elapsed)),
+           jcr->dir_impl->res.client->resource_name_, cr.Uname, sdt.data(),
+           edt.data(), edit_utime(RunTime, elapsed, sizeof(elapsed)),
            edit_uint64_with_commas((uint64_t)jcr->dir_impl->ExpectedFiles, ec1),
            edit_uint64_with_commas((uint64_t)jcr->dir_impl->jr.JobFiles, ec2),
            edit_uint64_with_commas(jcr->dir_impl->jr.JobBytes, ec3),
@@ -580,8 +579,8 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
            BAREOS, my_name, kBareosVersionStrings.Full,
            kBareosVersionStrings.ShortDate, kBareosVersionStrings.GetOsInfo(),
            jcr->dir_impl->jr.JobId, jcr->dir_impl->jr.Job,
-           jcr->dir_impl->res.client->resource_name_, cr.Uname, sdt, edt,
-           edit_utime(RunTime, elapsed, sizeof(elapsed)),
+           jcr->dir_impl->res.client->resource_name_, cr.Uname, sdt.data(),
+           edt.data(), edit_utime(RunTime, elapsed, sizeof(elapsed)),
            edit_uint64_with_commas((uint64_t)jcr->dir_impl->ExpectedFiles, ec1),
            edit_uint64_with_commas((uint64_t)jcr->dir_impl->jr.JobFiles, ec2),
            edit_uint64_with_commas(jcr->dir_impl->jr.JobBytes, ec3),

@@ -109,7 +109,6 @@ static bool DirDbLogInsert(JobControlRecord* jcr,
 {
   int length;
   char ed1[50];
-  char dt[MAX_TIME_LENGTH];
   PoolMem query(PM_MESSAGE), esc_msg(PM_MESSAGE);
 
   if (!jcr || !jcr->db || !jcr->db->IsConnected()) { return false; }
@@ -117,9 +116,8 @@ static bool DirDbLogInsert(JobControlRecord* jcr,
   esc_msg.check_size(length * 2 + 1);
   jcr->db->EscapeString(jcr, esc_msg.c_str(), msg, length);
 
-  bstrftime(dt, sizeof(dt), mtime);
   Mmsg(query, "INSERT INTO Log (JobId, Time, LogText) VALUES (%s,'%s','%s')",
-       edit_int64(jcr->JobId, ed1), dt, esc_msg.c_str());
+       edit_int64(jcr->JobId, ed1), bstrftime(mtime).data(), esc_msg.c_str());
 
   return jcr->db->SqlQuery(query.c_str());
 }

@@ -31,8 +31,16 @@ utime_t BtimeToUtime(btime_t bt); /* bareos time to utime_t */
 int TmWoy(time_t stime);
 
 void Blocaltime(const time_t* time, struct tm* tm);
-char* bstrftime(char* dt, int maxlen, utime_t tim);
-char* bstrftime_filename(char* dt, int maxlen, utime_t tim);
+
+/* [[deprecated]] char* bstrftime(char* dt, int maxlen, utime_t utime); */
+// char* bstrftime(char* dt, int maxlen, utime_t utime);
+/* char* bstrftime_filename(char* dt, int maxlen, utime_t utime); */
+
+
+std::string bstrftime(utime_t tim);
+std::string bstrftime_filename(utime_t tim);
+std::string bstrftime(utime_t tim, const char* format);
+
 utime_t StrToUtime(const char* str);
 
 std::string GetCurrentTimezoneOffset();

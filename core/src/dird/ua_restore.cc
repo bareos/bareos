@@ -89,7 +89,7 @@ static void InsertOneFileOrDir(UaContext* ua,
                                bool dir);
 static bool GetClientName(UaContext* ua, RestoreContext* rx);
 static bool GetRestoreClientName(UaContext* ua, RestoreContext& rx);
-static bool get_date(UaContext* ua, char* date, int date_len);
+static bool get_date(UaContext* ua, std::string& date);
 static int RestoreCountHandler(void* ctx, int num_fields, char** row);
 static bool InsertTableIntoFindexList(UaContext* ua,
                                       RestoreContext* rx,
@@ -457,7 +457,6 @@ static bool GetRestoreClientName(UaContext* ua, RestoreContext& rx)
 static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
 {
   const char* p;
-  char date[MAX_TIME_LENGTH];
   bool have_date = false;
   /* Include current second if using current time */
   utime_t now = time(NULL) + 1;
@@ -516,6 +515,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
   std::vector<char*> files;
   std::vector<char*> dirs;
   bool use_select = false;
+  std::string date;
 
   for (i = 1; i < ua->argc; i++) { /* loop through arguments */
     bool found_kw = false;
@@ -542,7 +542,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         /* Note, we add one second here just to include any job
          *  that may have finished within the current second,
          *  which happens a lot in scripting small jobs. */
-        bstrftime(date, sizeof(date), now);
+        date = bstrftime(now);
         have_date = true;
         break;
       case 2: /* before */
@@ -555,7 +555,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
           ua->ErrorMsg(_("Improper date format: %s\n"), cpdate.c_str());
           return 0;
         }
-        bstrncpy(date, cpdate.c_str(), sizeof(date));
+        date = cpdate;
         have_date = true;
         break;
       }
@@ -589,19 +589,23 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
   }
 
   if (files.size() + dirs.size() > 0) {
-    if (!have_date) { bstrftime(date, sizeof(date), now); }
+    if (!have_date) { date = bstrftime(now); }
     if (!GetClientName(ua, rx)) { return 0; }
 
-    for (auto& file : files) { InsertOneFileOrDir(ua, rx, file, date, false); }
+    for (auto& file : files) {
+      InsertOneFileOrDir(ua, rx, file, date.data(), false);
+    }
 
-    for (auto& dir : dirs) { InsertOneFileOrDir(ua, rx, dir, date, true); }
+    for (auto& dir : dirs) {
+      InsertOneFileOrDir(ua, rx, dir, date.data(), true);
+    }
 
     return 2;
   }
 
   if (use_select) {
-    if (!have_date) { bstrftime(date, sizeof(date), now); }
-    if (!SelectBackupsBeforeDate(ua, rx, date)) { return 0; }
+    if (!have_date) { date = bstrftime(now); }
+    if (!SelectBackupsBeforeDate(ua, rx, date.data())) { return 0; }
     done = true;
   }
 
@@ -678,17 +682,17 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         done = false;
         break;
       case 4: /* Select the most recent backups */
-        if (!have_date) { bstrftime(date, sizeof(date), now); }
-        if (!SelectBackupsBeforeDate(ua, rx, date)) { return 0; }
+        if (!have_date) { date = bstrftime(now); }
+        if (!SelectBackupsBeforeDate(ua, rx, date.data())) { return 0; }
         break;
       case 5: /* select backup at specified time */
         if (!have_date) {
-          if (!get_date(ua, date, sizeof(date))) { return 0; }
+          if (!get_date(ua, date)) { return 0; }
         }
-        if (!SelectBackupsBeforeDate(ua, rx, date)) { return 0; }
+        if (!SelectBackupsBeforeDate(ua, rx, date.data())) { return 0; }
         break;
       case 6: /* Enter files */
-        if (!have_date) { bstrftime(date, sizeof(date), now); }
+        if (!have_date) { date = bstrftime(now); }
         if (!GetClientName(ua, rx)) { return 0; }
         ua->SendMsg(
             _("Enter file names with paths, or < to enter a filename\n"
@@ -698,12 +702,12 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
           if (!GetCmd(ua, _("Enter full filename: "))) { return 0; }
           len = strlen(ua->cmd);
           if (len == 0) { break; }
-          InsertOneFileOrDir(ua, rx, ua->cmd, date, false);
+          InsertOneFileOrDir(ua, rx, ua->cmd, date.data(), false);
         }
         return 2;
       case 7: /* enter files backed up before specified time */
         if (!have_date) {
-          if (!get_date(ua, date, sizeof(date))) { return 0; }
+          if (!get_date(ua, date)) { return 0; }
         }
         if (!GetClientName(ua, rx)) { return 0; }
         ua->SendMsg(
@@ -714,21 +718,21 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
           if (!GetCmd(ua, _("Enter full filename: "))) { return 0; }
           len = strlen(ua->cmd);
           if (len == 0) { break; }
-          InsertOneFileOrDir(ua, rx, ua->cmd, date, false);
+          InsertOneFileOrDir(ua, rx, ua->cmd, date.data(), false);
         }
         return 2;
 
       case 8: /* Find JobIds for current backup */
-        if (!have_date) { bstrftime(date, sizeof(date), now); }
-        if (!SelectBackupsBeforeDate(ua, rx, date)) { return 0; }
+        if (!have_date) { date = bstrftime(now); }
+        if (!SelectBackupsBeforeDate(ua, rx, date.data())) { return 0; }
         done = false;
         break;
 
       case 9: /* Find JobIds for give date */
         if (!have_date) {
-          if (!get_date(ua, date, sizeof(date))) { return 0; }
+          if (!get_date(ua, date)) { return 0; }
         }
-        if (!SelectBackupsBeforeDate(ua, rx, date)) { return 0; }
+        if (!SelectBackupsBeforeDate(ua, rx, date.data())) { return 0; }
         done = false;
         break;
 
@@ -746,7 +750,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
           *rx->JobIds = 0;
           return 0; /* nothing entered, return */
         }
-        if (!have_date) { bstrftime(date, sizeof(date), now); }
+        if (!have_date) { date = bstrftime(now); }
         if (!GetClientName(ua, rx)) { return 0; }
         ua->SendMsg(
             _("Enter full directory names or start the name\n"
@@ -760,7 +764,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
           if (ua->cmd[0] != '<' && !IsPathSeparator(ua->cmd[len - 1])) {
             strcat(ua->cmd, "/");
           }
-          InsertOneFileOrDir(ua, rx, ua->cmd, date, true);
+          InsertOneFileOrDir(ua, rx, ua->cmd, date.data(), true);
         }
         return 2;
 
@@ -840,7 +844,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
 }
 
 // Get date from user
-static bool get_date(UaContext* ua, char* date, int date_len)
+static bool get_date(UaContext* ua, std::string& date)
 {
   ua->SendMsg(
       _("The restored files will the most current backup\n"
@@ -853,7 +857,7 @@ static bool get_date(UaContext* ua, char* date, int date_len)
     if (StrToUtime(cmpdate.c_str()) != 0) { break; }
     ua->ErrorMsg(_("Improper date format.\n"));
   }
-  bstrncpy(date, cmpdate.c_str(), date_len);
+  date = cmpdate.c_str();
   return true;
 }
 
@@ -894,7 +898,6 @@ std::string CompensateShortDate(const char* cmd)
     } else {
       return cmd;
     }
-
     if (datetime.tm_mon > 0) { datetime.tm_mon--; }
 
     char buffer[MAX_TIME_LENGTH];

@@ -451,7 +451,6 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
      *
      * and run a restore for each SessionID - FileIndex tuple */
 
-    char dt[MAX_TIME_LENGTH];
     bool first_run = true;
     bool next_sessid = true;
     bool next_fi = true;
@@ -494,8 +493,8 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
         Jmsg(
             jcr, M_INFO, 0,
             _("Run restore for sesstime %s (%d), sessionid %d, fileindex %d\n"),
-            bstrftime(dt, sizeof(dt), current_session.time),
-            current_session.time, current_session.id, current_fi);
+            bstrftime(current_session.time).data(), current_session.time,
+            current_session.id, current_fi);
 
 
         /* See if this is the first Restore NDMP stream or not. For NDMP we can

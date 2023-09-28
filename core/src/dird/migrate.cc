@@ -880,13 +880,10 @@ static inline bool getJobs_to_migrate(JobControlRecord* jcr)
     }
     case MT_POOL_TIME: {
       time_t ttime;
-      char dt[MAX_TIME_LENGTH];
-
       ttime = time(NULL) - (time_t)jcr->dir_impl->res.rpool->MigrationTime;
-      bstrftime(dt, sizeof(dt), ttime);
-
       ids.count = 0;
-      Mmsg(query, sql_pool_time, jcr->dir_impl->res.rpool->resource_name_, dt);
+      Mmsg(query, sql_pool_time, jcr->dir_impl->res.rpool->resource_name_,
+           bstrftime(ttime).data());
       Dmsg1(dbglevel, "query=%s\n", query.c_str());
 
       if (!jcr->db->SqlQuery(query.c_str(), UniqueDbidHandler, (void*)&ids)) {
@@ -1516,14 +1513,13 @@ static inline void GenerateMigrateSummary(JobControlRecord* jcr,
   utime_t RunTime;
   JobControlRecord* mig_jcr = jcr->dir_impl->mig_jcr;
   char term_code[100];
-  char sdt[MAX_TIME_LENGTH], edt[MAX_TIME_LENGTH];
   char ec1[30], ec2[30], ec3[30], ec4[30], ec5[30], elapsed[50];
   char ec6[50], ec7[50], ec8[50];
 
   Bsnprintf(term_code, sizeof(term_code), TermMsg, jcr->get_OperationName(),
             jcr->get_ActionName());
-  bstrftime(sdt, sizeof(sdt), jcr->dir_impl->jr.StartTime);
-  bstrftime(edt, sizeof(edt), jcr->dir_impl->jr.EndTime);
+  auto sdt = bstrftime(jcr->dir_impl->jr.StartTime);
+  auto edt = bstrftime(jcr->dir_impl->jr.EndTime);
   RunTime = jcr->dir_impl->jr.EndTime - jcr->dir_impl->jr.StartTime;
 
   std::string sd_term_msg = JobstatusToAscii(jcr->dir_impl->SDJobStatus);
@@ -1596,7 +1592,7 @@ static inline void GenerateMigrateSummary(JobControlRecord* jcr,
              : _("*None*"),
          NPRT(jcr->dir_impl->res.npool_source),
          jcr->dir_impl->res.catalog->resource_name_,
-         jcr->dir_impl->res.catalog_source, sdt, edt,
+         jcr->dir_impl->res.catalog_source, sdt.data(), edt.data(),
          edit_utime(RunTime, elapsed, sizeof(elapsed)), jcr->JobPriority,
          edit_uint64_with_commas(jcr->dir_impl->SDJobFiles, ec1),
          edit_uint64_with_commas(jcr->dir_impl->SDJobBytes, ec2),
@@ -1625,7 +1621,7 @@ static inline void GenerateMigrateSummary(JobControlRecord* jcr,
          kBareosVersionStrings.ShortDate, kBareosVersionStrings.GetOsInfo(),
          edit_uint64(jcr->dir_impl->jr.JobId, ec8), jcr->dir_impl->jr.Job,
          jcr->dir_impl->res.catalog->resource_name_,
-         jcr->dir_impl->res.catalog_source, sdt, edt,
+         jcr->dir_impl->res.catalog_source, sdt.data(), edt.data(),
          edit_utime(RunTime, elapsed, sizeof(elapsed)), jcr->JobPriority,
          kBareosVersionStrings.JoblogMessage,
          JobTriggerToString(jcr->dir_impl->job_trigger).c_str(), term_code);

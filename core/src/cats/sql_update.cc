@@ -88,13 +88,12 @@ bool BareosDb::MarkFileRecord(JobControlRecord* jcr,
  */
 bool BareosDb::UpdateJobStartRecord(JobControlRecord* jcr, JobDbRecord* jr)
 {
-  char dt[MAX_TIME_LENGTH];
   time_t stime;
   btime_t JobTDate;
   char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50];
 
   stime = jr->StartTime;
-  bstrftime(dt, sizeof(dt), stime);
+  auto dt = bstrftime(stime);
   JobTDate = (btime_t)stime;
 
   DbLocker _{this};
@@ -102,7 +101,7 @@ bool BareosDb::UpdateJobStartRecord(JobControlRecord* jcr, JobDbRecord* jr)
        "UPDATE Job SET JobStatus='%c',Level='%c',StartTime='%s',"
        "ClientId=%s,JobTDate=%s,PoolId=%s,FileSetId=%s,VolSessionId=%lu,"
        "VolSessionTime=%lu WHERE JobId=%s",
-       (char)(jcr->getJobStatus()), (char)(jr->JobLevel), dt,
+       (char)(jcr->getJobStatus()), (char)(jr->JobLevel), dt.data(),
        edit_int64(jr->ClientId, ed1), edit_uint64(JobTDate, ed2),
        edit_int64(jr->PoolId, ed3), edit_int64(jr->FileSetId, ed4),
        jcr->VolSessionId, jcr->VolSessionTime, edit_int64(jr->JobId, ed5));
@@ -148,8 +147,6 @@ int BareosDb::UpdateStats(JobControlRecord* jcr, utime_t age)
  */
 bool BareosDb::UpdateJobEndRecord(JobControlRecord* jcr, JobDbRecord* jr)
 {
-  char dt[MAX_TIME_LENGTH];
-  char rdt[MAX_TIME_LENGTH];
   time_t ttime;
   char ed1[30], ed2[30], ed3[50], ed4[50];
   btime_t JobTDate;
@@ -162,11 +159,11 @@ bool BareosDb::UpdateJobEndRecord(JobControlRecord* jcr, JobDbRecord* jr)
   }
 
   ttime = jr->EndTime;
-  bstrftime(dt, sizeof(dt), ttime);
+  auto dt = bstrftime(ttime);
 
   if (jr->RealEndTime < jr->EndTime) { jr->RealEndTime = jr->EndTime; }
   ttime = jr->RealEndTime;
-  bstrftime(rdt, sizeof(rdt), ttime);
+  auto rdt = bstrftime(ttime);
 
   JobTDate = ttime;
 
@@ -179,11 +176,11 @@ bool BareosDb::UpdateJobEndRecord(JobControlRecord* jcr, JobDbRecord* jr)
       "VolSessionId=%u,"
       "VolSessionTime=%u,PoolId=%u,FileSetId=%u,JobTDate=%s,"
       "RealEndTime='%s',PriorJobId=%s,HasBase=%u,PurgedFiles=%u WHERE JobId=%s",
-      (char)(jr->JobStatus), (char)(jr->JobLevel), dt, jr->ClientId,
+      (char)(jr->JobStatus), (char)(jr->JobLevel), dt.data(), jr->ClientId,
       edit_uint64(jr->JobBytes, ed1), edit_uint64(jr->ReadBytes, ed4),
       jr->JobFiles, jr->JobErrors, jr->VolSessionId, jr->VolSessionTime,
-      jr->PoolId, jr->FileSetId, edit_uint64(JobTDate, ed2), rdt, PriorJobId,
-      jr->HasBase, jr->PurgedFiles, edit_int64(jr->JobId, ed3));
+      jr->PoolId, jr->FileSetId, edit_uint64(JobTDate, ed2), rdt.data(),
+      PriorJobId, jr->HasBase, jr->PurgedFiles, edit_int64(jr->JobId, ed3));
 
   return UPDATE_DB(jcr, cmd) > 0;
 }
@@ -285,7 +282,6 @@ bool BareosDb::UpdateStorageRecord(JobControlRecord* jcr, StorageDbRecord* sr)
  */
 bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
 {
-  char dt[MAX_TIME_LENGTH];
   time_t ttime;
   char ed1[50], ed2[50], ed3[50], ed4[50];
   char ed5[50], ed6[50], ed7[50], ed8[50];
@@ -301,11 +297,11 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
   if (mr->set_first_written) {
     Dmsg1(400, "Set FirstWritten Vol=%s\n", mr->VolumeName);
     ttime = mr->FirstWritten;
-    bstrftime(dt, sizeof(dt), ttime);
+    auto dt = bstrftime(ttime);
     Mmsg(cmd,
          "UPDATE Media SET FirstWritten='%s'"
          " WHERE VolumeName='%s'",
-         dt, esc_medianame);
+         dt.data(), esc_medianame);
     UPDATE_DB(jcr, cmd);
     Dmsg1(400, "Firstwritten=%d\n", mr->FirstWritten);
   }
@@ -314,21 +310,21 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
   if (mr->set_label_date) {
     ttime = mr->LabelDate;
     if (ttime == 0) { ttime = time(NULL); }
-    bstrftime(dt, sizeof(dt), ttime);
+    auto dt = bstrftime(ttime);
     Mmsg(cmd,
          "UPDATE Media SET LabelDate='%s' "
          "WHERE VolumeName='%s'",
-         dt, esc_medianame);
+         dt.data(), esc_medianame);
     UPDATE_DB(jcr, cmd);
   }
 
   if (mr->LastWritten != 0) {
     ttime = mr->LastWritten;
-    bstrftime(dt, sizeof(dt), ttime);
+    auto dt = bstrftime(ttime);
     Mmsg(cmd,
          "UPDATE Media Set LastWritten='%s' "
          "WHERE VolumeName='%s'",
-         dt, esc_medianame);
+         dt.data(), esc_medianame);
     UPDATE_DB(jcr, cmd);
   }
 

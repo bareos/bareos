@@ -40,11 +40,11 @@ using ::testing::EndsWith;
 
 TEST(time_format, correct_time_and_date_format)
 {
-  std::vector<char> stime_out(MAX_NAME_LENGTH);
+  // std::vector<char> stime_out(MAX_NAME_LENGTH);
 
   // make sure bstrftime gets the current timezone offset appended
-  bstrftime(stime_out.data(), MAX_NAME_LENGTH, time(0));
-  EXPECT_THAT(stime_out.data(), EndsWith(GetCurrentTimezoneOffset()));
+  auto now = bstrftime(time(0));
+  EXPECT_THAT(now.data(), EndsWith(GetCurrentTimezoneOffset()));
 
 #if !defined(HAVE_WIN32)
   using namespace std::string_literals;

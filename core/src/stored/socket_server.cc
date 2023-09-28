@@ -66,7 +66,6 @@ void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
 {
   BareosSocket* bs = (BareosSocket*)arg;
   char name[MAX_NAME_LENGTH];
-  char tbuf[MAX_TIME_LENGTH];
 
   if (!TryTlsHandshakeAsAServer(bs, config)) {
     bs->signal(BNET_TERMINATE);
@@ -98,20 +97,17 @@ void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
 
   // See if this is a File daemon connection. If so call FD handler.
   if (sscanf(bs->msg, "Hello Start Job %127s", name) == 1) {
-    Dmsg1(110, "Got a FD connection at %s\n",
-          bstrftime(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+    Dmsg1(110, "Got a FD connection at %s\n", bstrftime(time(0)).data());
     return HandleFiledConnection(bs, name);
   }
 
   // See if this is a Storage daemon connection. If so call SD handler.
   if (sscanf(bs->msg, "Hello Start Storage Job %127s", name) == 1) {
-    Dmsg1(110, "Got a SD connection at %s\n",
-          bstrftime(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+    Dmsg1(110, "Got a SD connection at %s\n", bstrftime(time(0)).data());
     return handle_stored_connection(bs, name);
   }
 
-  Dmsg1(110, "Got a DIR connection at %s\n",
-        bstrftime(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+  Dmsg1(110, "Got a DIR connection at %s\n", bstrftime(time(0)).data());
 
   return HandleDirectorConnection(bs);
 }

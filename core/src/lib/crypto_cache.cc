@@ -290,7 +290,6 @@ void DumpCryptoCache(int fd)
   int len;
   PoolMem msg(PM_MESSAGE);
   crypto_cache_entry_t* cce;
-  char dt1[MAX_TIME_LENGTH], dt2[MAX_TIME_LENGTH];
   unsigned int max_vol_length, max_key_length;
 
   if (!cached_crypto_keys) { return; }
@@ -319,10 +318,9 @@ void DumpCryptoCache(int fd)
     Dmsg1(000, "write error: ERR=%s\n", be.bstrerror());
   }
   foreach_dlist (cce, cached_crypto_keys) {
-    bstrftime(dt1, sizeof(dt1), cce->added);
-    bstrftime(dt2, sizeof(dt2), cce->added + CRYPTO_CACHE_MAX_AGE);
     len = Mmsg(msg, "%-*s %-*s %-20s %-20s\n", max_vol_length, cce->VolumeName,
-               max_key_length, cce->EncryptionKey, dt1, dt2);
+               max_key_length, cce->EncryptionKey, bstrftime(cce->added).data(),
+               bstrftime(cce->added + CRYPTO_CACHE_MAX_AGE).data());
 
     if (write(fd, msg.c_str(), len) <= 0) {
       BErrNo be;

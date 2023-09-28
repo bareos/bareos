@@ -517,7 +517,6 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
                               e_list_type type)
 {
   char ed1[50];
-  char dt[MAX_TIME_LENGTH];
   char esc[MAX_ESCAPE_NAME_LENGTH];
   PoolMem temp(PM_MESSAGE), selection(PM_MESSAGE), criteria(PM_MESSAGE);
 
@@ -569,8 +568,8 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
   }
 
   if (since_time) {
-    bstrftime(dt, sizeof(dt), since_time);
-    temp.bsprintf("AND Job.SchedTime > '%s' ", dt);
+    auto dt = bstrftime(since_time);
+    temp.bsprintf("AND Job.SchedTime > '%s' ", dt.data());
     PmStrcat(selection, temp.c_str());
   }
 

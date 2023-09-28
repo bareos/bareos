@@ -1286,9 +1286,6 @@ static int SleepCmd(FILE*, BareosSocket*)
 /* @time */
 static int TimeCmd(FILE*, BareosSocket*)
 {
-  char sdt[50];
-
-  bstrftime(sdt, sizeof(sdt), time(NULL));
-  ConsoleOutputFormat("%s\n", sdt);
+  ConsoleOutputFormat("%s\n", bstrftime(time(0)).data());
   return 1;
 }

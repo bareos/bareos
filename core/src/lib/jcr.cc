@@ -1024,7 +1024,7 @@ void DbgJcrAddHook(dbg_jcr_hook_t* hook)
  */
 void DbgPrintJcr(FILE* fp)
 {
-  char ed1[50], buf1[128], buf2[128], buf3[128], buf4[128];
+  char ed1[50];
   if (!job_control_record_chain) { return; }
 
   fprintf(fp, "Attempt to dump current JCRs. njcrs=%d\n",
@@ -1041,12 +1041,11 @@ void DbgPrintJcr(FILE* fp)
     fprintf(fp, "\tUseCount=%i\n", jcr->UseCount());
     fprintf(fp, "\tJobType=%c JobLevel=%c\n", jcr->getJobType(),
             jcr->getJobLevel());
-    bstrftime(buf1, sizeof(buf1), jcr->sched_time);
-    bstrftime(buf2, sizeof(buf2), jcr->start_time);
-    bstrftime(buf3, sizeof(buf3), jcr->end_time);
-    bstrftime(buf4, sizeof(buf4), jcr->wait_time);
+
     fprintf(fp, "\tsched_time=%s start_time=%s\n\tend_time=%s wait_time=%s\n",
-            buf1, buf2, buf3, buf4);
+            bstrftime(jcr->sched_time).data(),
+            bstrftime(jcr->start_time).data(), bstrftime(jcr->end_time).data(),
+            bstrftime(jcr->wait_time).data());
     fprintf(fp, "\tdb=%p db_batch=%p batch_started=%i\n", jcr->db,
             jcr->db_batch, jcr->batch_started);
 

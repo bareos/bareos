@@ -71,7 +71,6 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
 {
   BareosSocket* bs = (BareosSocket*)arg;
   char name[MAX_NAME_LENGTH];
-  char tbuf[MAX_TIME_LENGTH];
   int fd_protocol_version = 0;
 
   if (!TryTlsHandshakeAsAServer(bs, config)) {
@@ -108,8 +107,7 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
   if ((sscanf(bs->msg, hello_client_with_version, name, &fd_protocol_version)
        == 2)
       || (sscanf(bs->msg, hello_client, name) == 1)) {
-    Dmsg1(110, "Got a FD connection at %s\n",
-          bstrftime(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+    Dmsg1(110, "Got a FD connection at %s\n", bstrftime(time(NULL)).data());
     return HandleFiledConnection(client_connections, bs, name,
                                  fd_protocol_version);
   }

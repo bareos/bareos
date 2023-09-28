@@ -433,7 +433,6 @@ bail_out:
 void VerifyCleanup(JobControlRecord* jcr, int TermCode)
 {
   int JobLevel;
-  char sdt[50], edt[50];
   char ec1[30], ec2[30];
   char term_code[100];
   const char* TermMsg;
@@ -484,8 +483,8 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
                 _("Inappropriate term code: %d %c\n"), TermCode, TermCode);
       break;
   }
-  bstrftime(sdt, sizeof(sdt), jcr->dir_impl->jr.StartTime);
-  bstrftime(edt, sizeof(edt), jcr->dir_impl->jr.EndTime);
+  auto sdt = bstrftime(jcr->dir_impl->jr.StartTime);
+  auto edt = bstrftime(jcr->dir_impl->jr.EndTime);
   if (jcr->dir_impl->res.verify_job) {
     Name = jcr->dir_impl->res.verify_job->resource_name_;
   } else {
@@ -523,7 +522,7 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
            jcr->dir_impl->res.fileset->resource_name_,
            JobLevelToString(JobLevel),
            jcr->dir_impl->res.client->resource_name_,
-           jcr->dir_impl->previous_jr.JobId, Name, sdt, edt,
+           jcr->dir_impl->previous_jr.JobId, Name, sdt.data(), edt.data(),
            edit_uint64_with_commas(jcr->dir_impl->ExpectedFiles, ec1),
            edit_uint64_with_commas(jcr->JobFiles, ec2), jcr->JobErrors,
            fd_term_msg.c_str(), sd_term_msg.c_str(),
@@ -555,7 +554,7 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
            jcr->dir_impl->res.fileset->resource_name_,
            JobLevelToString(JobLevel),
            jcr->dir_impl->res.client->resource_name_,
-           jcr->dir_impl->previous_jr.JobId, Name, sdt, edt,
+           jcr->dir_impl->previous_jr.JobId, Name, sdt.data(), edt.data(),
            edit_uint64_with_commas(jcr->JobFiles, ec1), jcr->JobErrors,
            fd_term_msg.c_str(), kBareosVersionStrings.JoblogMessage,
            JobTriggerToString(jcr->dir_impl->job_trigger).c_str(), TermMsg);

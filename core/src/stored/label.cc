@@ -814,9 +814,8 @@ void DumpVolumeLabel(Device* dev)
 
   // make sure this volume wasn't written by bacula 1.26 or earlier
   ASSERT(dev->VolHdr.VerNum >= 11);
-  char dt[50];
-  bstrftime(dt, sizeof(dt), BtimeToUtime(dev->VolHdr.label_btime));
-  Pmsg1(-1, _("Date label written: %s\n"), dt);
+  Pmsg1(-1, _("Date label written: %s\n"),
+        bstrftime(BtimeToUtime(dev->VolHdr.label_btime)).data());
 
 bail_out:
   debug_level = dbl;
@@ -874,9 +873,8 @@ static void DumpSessionLabel(DeviceRecord* rec, const char* type)
   }
   // make sure this volume wasn't written by bacula 1.26 or earlier
   ASSERT(label.VerNum >= 11);
-  char dt[50];
-  bstrftime(dt, sizeof(dt), BtimeToUtime(label.write_btime));
-  Pmsg1(-1, _("Date written      : %s\n"), dt);
+  Pmsg1(-1, _("Date written: %s\n"),
+        bstrftime(BtimeToUtime(label.write_btime)).data());
 
   debug_level = dbl;
 }
@@ -948,22 +946,22 @@ void DumpLabelRecord(Device* dev, DeviceRecord* rec, bool verbose)
     }
   } else {
     Session_Label label;
-    char dt[50];
+    std::string dt;
     switch (rec->FileIndex) {
       case SOS_LABEL:
         UnserSessionLabel(&label, rec);
-        bstrftime(dt, sizeof(dt), BtimeToUtime(label.write_btime));
+        dt = bstrftime(BtimeToUtime(label.write_btime));
         Pmsg6(-1,
               _("%s Record: File:blk=%u:%u SessId=%d SessTime=%d JobId=%d\n"),
               type, dev->file, dev->block_num, rec->VolSessionId,
               rec->VolSessionTime, label.JobId);
-        Pmsg4(-1, _("   Job=%s Date=%s Level=%c Type=%c\n"), label.Job, dt,
-              label.JobLevel, label.JobType);
+        Pmsg4(-1, _("   Job=%s Date=%s Level=%c Type=%c\n"), label.Job,
+              dt.data(), label.JobLevel, label.JobType);
         break;
       case EOS_LABEL:
         char ed1[30], ed2[30];
         UnserSessionLabel(&label, rec);
-        bstrftime(dt, sizeof(dt), BtimeToUtime(label.write_btime));
+        dt = bstrftime(BtimeToUtime(label.write_btime));
         Pmsg6(-1,
               _("%s Record: File:blk=%u:%u SessId=%d SessTime=%d JobId=%d\n"),
               type, dev->file, dev->block_num, rec->VolSessionId,
@@ -972,7 +970,7 @@ void DumpLabelRecord(Device* dev, DeviceRecord* rec, bool verbose)
             -1,
             _("   Job=%s Date=%s Level=%c Type=%c Files=%s Bytes=%s Errors=%d "
               "Status=%c\n"),
-            label.Job, dt, label.JobLevel, label.JobType,
+            label.Job, dt.data(), label.JobLevel, label.JobType,
             edit_uint64_with_commas(label.JobFiles, ed1),
             edit_uint64_with_commas(label.JobBytes, ed2), label.JobErrors,
             (char)label.JobStatus);

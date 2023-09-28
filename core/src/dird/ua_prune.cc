@@ -406,7 +406,6 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client)
 static bool PruneStats(UaContext* ua, utime_t retention)
 {
   char ed1[50];
-  char dt[MAX_TIME_LENGTH];
   PoolMem query(PM_MESSAGE);
   utime_t now = (utime_t)time(NULL);
 
@@ -419,17 +418,17 @@ static bool PruneStats(UaContext* ua, utime_t retention)
 
   ua->InfoMsg(_("Pruned Jobs from JobHisto in catalog.\n"));
 
-  bstrftime(dt, sizeof(dt), now - retention);
+  auto dt = bstrftime(now - retention);
   {
     DbLocker _{ua->db};
-    Mmsg(query, "DELETE FROM DeviceStats WHERE SampleTime < '%s'", dt);
+    Mmsg(query, "DELETE FROM DeviceStats WHERE SampleTime < '%s'", dt.data());
     ua->db->SqlQuery(query.c_str());
   }
 
   ua->InfoMsg(_("Pruned Statistics from DeviceStats in catalog.\n"));
   {
     DbLocker _{ua->db};
-    Mmsg(query, "DELETE FROM JobStats WHERE SampleTime < '%s'", dt);
+    Mmsg(query, "DELETE FROM JobStats WHERE SampleTime < '%s'", dt.data());
     ua->db->SqlQuery(query.c_str());
   }
 

@@ -130,18 +130,16 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
        * only include incrementals that are older than (now -
        * AlwaysIncrementalJobRetention) */
       if (job->AlwaysIncrementalJobRetention) {
-        char sdt[50];
-
         jcr->dir_impl->jr.StartTime = now - job->AlwaysIncrementalJobRetention;
-        bstrftime(sdt, sizeof(sdt), jcr->dir_impl->jr.StartTime);
+        auto sdt = bstrftime(jcr->dir_impl->jr.StartTime);
         Jmsg(jcr, M_INFO, 0,
              _("%s: considering jobs older than %s for consolidation.\n"),
-             job->resource_name_, sdt);
+             job->resource_name_, sdt.data());
         Dmsg4(10,
               _("%s: considering jobs with ClientId %d and FilesetId %d older "
                 "than %s for consolidation.\n"),
               job->resource_name_, jcr->dir_impl->jr.ClientId,
-              jcr->dir_impl->jr.FileSetId, sdt);
+              jcr->dir_impl->jr.FileSetId, sdt.data());
       }
 
       db_list_ctx jobids_ctx;
@@ -204,8 +202,6 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
 
       // Check if we need to skip the first (full) job from consolidation
       if (job->AlwaysIncrementalMaxFullAge) {
-        char sdt_allowed[50];
-        char sdt_starttime[50];
         time_t starttime, oldest_allowed_starttime;
 
         if (incrementals_to_consolidate < 2) {
@@ -234,12 +230,12 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
 
         starttime = jcr->dir_impl->previous_jr.JobTDate;
         oldest_allowed_starttime = now - job->AlwaysIncrementalMaxFullAge;
-        bstrftime(sdt_allowed, sizeof(sdt_allowed), oldest_allowed_starttime);
-        bstrftime(sdt_starttime, sizeof(sdt_starttime), starttime);
+        auto sdt_allowed = bstrftime(oldest_allowed_starttime);
+        auto sdt_starttime = bstrftime(starttime);
 
         // Check if job is older than AlwaysIncrementalMaxFullAge
         Jmsg(jcr, M_INFO, 0, _("check full age: full is %s, allowed is %s\n"),
-             sdt_starttime, sdt_allowed);
+             sdt_starttime.data(), sdt_allowed.data());
         if (starttime > oldest_allowed_starttime) {
           Jmsg(jcr, M_INFO, 0,
                _("Full is newer than AlwaysIncrementalMaxFullAge -> skipping "
@@ -318,7 +314,6 @@ void ConsolidateCleanup(JobControlRecord* jcr, int TermCode)
   int msg_type;
   char term_code[100];
   const char* TermMsg;
-  char sdt[50], edt[50], schedt[50];
 
   Dmsg0(debuglevel, "Enter backup_cleanup()\n");
 
@@ -350,9 +345,9 @@ void ConsolidateCleanup(JobControlRecord* jcr, int TermCode)
               jcr->getJobStatus());
       break;
   }
-  bstrftime(schedt, sizeof(schedt), jcr->dir_impl->jr.SchedTime);
-  bstrftime(sdt, sizeof(sdt), jcr->dir_impl->jr.StartTime);
-  bstrftime(edt, sizeof(edt), jcr->dir_impl->jr.EndTime);
+  auto schedt = bstrftime(jcr->dir_impl->jr.SchedTime);
+  auto sdt = bstrftime(jcr->dir_impl->jr.StartTime);
+  auto edt = bstrftime(jcr->dir_impl->jr.EndTime);
 
   Jmsg(jcr, msg_type, 0,
        _("BAREOS %s (%s): %s\n"
@@ -364,9 +359,9 @@ void ConsolidateCleanup(JobControlRecord* jcr, int TermCode)
          "  Bareos binary info:     %s\n"
          "  Job triggered by:       %s\n"
          "  Termination:            %s\n\n"),
-       kBareosVersionStrings.Full, kBareosVersionStrings.ShortDate, edt,
-       jcr->dir_impl->jr.JobId, jcr->dir_impl->jr.Job, schedt, sdt, edt,
-       kBareosVersionStrings.JoblogMessage,
+       kBareosVersionStrings.Full, kBareosVersionStrings.ShortDate, edt.data(),
+       jcr->dir_impl->jr.JobId, jcr->dir_impl->jr.Job, schedt.data(),
+       sdt.data(), edt.data(), kBareosVersionStrings.JoblogMessage,
        JobTriggerToString(jcr->dir_impl->job_trigger).c_str(), TermMsg);
 
   Dmsg0(debuglevel, "Leave ConsolidateCleanup()\n");

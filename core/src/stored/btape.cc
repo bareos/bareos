@@ -2173,12 +2173,14 @@ static void fillcmd()
   jcr->sd_impl->dcr->VolFirstIndex = 0;
   time(&jcr->run_time); /* start counting time for rates */
 
-  bstrftime(buf1, sizeof(buf1), jcr->run_time);
+  auto runtime = bstrftime(jcr->run_time);
 
   if (simple) {
-    Pmsg1(-1, _("%s Begin writing Bareos records to tape ...\n"), buf1);
+    Pmsg1(-1, _("%s Begin writing Bareos records to tape ...\n"),
+          runtime.data());
   } else {
-    Pmsg1(-1, _("%s Begin writing Bareos records to first tape ...\n"), buf1);
+    Pmsg1(-1, _("%s Begin writing Bareos records to first tape ...\n"),
+          runtime.data());
   }
   for (file_index = 0; ok && !jcr->IsJobCanceled();) {
     rec.VolSessionId = jcr->VolSessionId;
@@ -2192,7 +2194,8 @@ static void fillcmd()
 
     Dmsg4(250, "before write_rec FI=%d SessId=%d Strm=%s len=%d\n",
           rec.FileIndex, rec.VolSessionId,
-          stream_to_ascii(buf1, rec.Stream, rec.FileIndex), rec.data_len);
+          stream_to_ascii(runtime.data(), rec.Stream, rec.FileIndex),
+          rec.data_len);
 
     while (!WriteRecordToBlock(dcr, &rec)) {
       // When we get here we have just filled a block
@@ -2222,8 +2225,8 @@ static void fillcmd()
        */
       if ((block->BlockNumber % write_eof) == 0) {
         now = time(nullptr);
-        bstrftime(buf1, sizeof(buf1), now);
-        Pmsg1(-1, _("%s Flush block, write EOF\n"), buf1);
+        auto currtime = bstrftime(now);
+        Pmsg1(-1, _("%s Flush block, write EOF\n"), currtime.data());
         FlushBlock(block);
       }
 
@@ -2306,21 +2309,21 @@ static void fillcmd()
     ok = false;
   }
 
-  now = time(nullptr);
-  bstrftime(buf1, sizeof(buf1), now);
 
   if (ok) {
+    now = time(nullptr);
+    auto currtime = bstrftime(now);
     if (simple) {
       Pmsg3(0,
             _("\n\n%s Done filling tape at %d:%d. Now beginning re-read of "
               "tape ...\n"),
-            buf1, jcr->sd_impl->dcr->dev->file,
+            currtime.data(), jcr->sd_impl->dcr->dev->file,
             jcr->sd_impl->dcr->dev->block_num);
     } else {
       Pmsg3(0,
             _("\n\n%s Done filling tapes at %d:%d. Now beginning re-read of "
               "first tape ...\n"),
-            buf1, jcr->sd_impl->dcr->dev->file,
+            currtime.data(), jcr->sd_impl->dcr->dev->file,
             jcr->sd_impl->dcr->dev->block_num);
     }
 

@@ -82,17 +82,14 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
   Dmsg1(110, "Conn: %s\n", bs->msg);
 
   // See if its a director making a connection.
-  char tbuf[100];
   if (bstrncmp(bs->msg, "Hello Director", 14)) {
-    Dmsg1(110, "Got a DIR connection at %s\n",
-          bstrftime(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+    Dmsg1(110, "Got a DIR connection at %s\n", bstrftime(time(0)).data());
     return handle_director_connection(bs);
   }
 
   // See if its a storage daemon making a connection.
   if (bstrncmp(bs->msg, "Hello Storage", 13)) {
-    Dmsg1(110, "Got a SD connection at %s\n",
-          bstrftime(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+    Dmsg1(110, "Got a SD connection at %s\n", bstrftime(time(0)).data());
     return handle_stored_connection(bs);
   }
 

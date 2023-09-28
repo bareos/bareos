@@ -406,7 +406,6 @@ static void ListStatusHeader(StatusPacket* sp)
 {
   int len;
   PoolMem msg(PM_MESSAGE);
-  char dt[MAX_TIME_LENGTH];
   char b1[35];
 
   len = Mmsg(msg, _("%s Version: %s (%s) %s \n"), my_name,
@@ -414,10 +413,11 @@ static void ListStatusHeader(StatusPacket* sp)
              kBareosVersionStrings.GetOsInfo());
   sp->send(msg, len);
 
-  bstrftime(dt, sizeof(dt), daemon_start_time);
+  auto dt = bstrftime(daemon_start_time);
 
   len = Mmsg(msg, _("Daemon started %s. Jobs: run=%d, running=%d, %s binary\n"),
-             dt, num_jobs_run, JobCount(), kBareosVersionStrings.BinaryInfo);
+             dt.data(), num_jobs_run, JobCount(),
+             kBareosVersionStrings.BinaryInfo);
   sp->send(msg, len);
 
 #if defined(HAVE_WIN32)
@@ -780,7 +780,8 @@ static void ListTerminatedJobs(StatusPacket* sp)
   int len;
   char level[10];
   PoolMem msg(PM_MESSAGE);
-  char dt[MAX_TIME_LENGTH], b1[30], b2[30];
+  char b1[30], b2[30];
+  std::string dt;
 
   if (!sp->api) {
     len = PmStrcpy(msg, _("\nTerminated Jobs:\n"));
@@ -803,13 +804,12 @@ static void ListTerminatedJobs(StatusPacket* sp)
                           "===============\n"));
     sp->send(msg, len);
   }
-
   for (const RecentJobResultsList::JobResult& je :
        RecentJobResultsList::Get()) {
     char JobName[MAX_NAME_LENGTH];
     const char* termstat;
 
-    bstrftime(dt, sizeof(dt), je.end_time);
+    dt = bstrftime(je.end_time);
     switch (je.JobType) {
       case JT_ADMIN:
       case JT_RESTORE:
@@ -853,12 +853,12 @@ static void ListTerminatedJobs(StatusPacket* sp)
     if (sp->api) {
       len = Mmsg(msg, _("%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"), je.JobId,
                  level, edit_uint64_with_commas(je.JobFiles, b1),
-                 edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt,
+                 edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt.data(),
                  JobName);
     } else {
       len = Mmsg(msg, _("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"), je.JobId, level,
                  edit_uint64_with_commas(je.JobFiles, b1),
-                 edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt,
+                 edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt.data(),
                  JobName);
     }
     sp->send(msg, len);

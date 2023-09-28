@@ -176,16 +176,18 @@ class MockDatabase : public BareosDb {
             = system_clock::to_time_t(now - more_than_three_hours);
 
         stime_out.resize(MAX_NAME_LENGTH);
-        bstrftime(stime_out.data(), MAX_NAME_LENGTH,
-                  fake_start_time_of_previous_job);
+        bstrncpy(stime_out.data(),
+                 bstrftime(fake_start_time_of_previous_job).data(),
+                 MAX_NAME_LENGTH);
         return SqlFindResult::kSuccess;
       }
 
       case Mode::kFindStartTimeWrongString: {
         auto now = system_clock::now();
         stime_out.resize(MAX_NAME_LENGTH);
-        bstrftime(stime_out.data(), MAX_NAME_LENGTH,
-                  system_clock::to_time_t(now));
+        bstrncpy(stime_out.data(),
+                 bstrftime(system_clock::to_time_t(now)).data(),
+                 MAX_NAME_LENGTH);
         stime_out[5] = 0;  // truncate string
         return SqlFindResult::kSuccess;
       }

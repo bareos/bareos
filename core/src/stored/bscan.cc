@@ -1282,7 +1282,6 @@ static bool UpdateJobRecord(BareosDb* db,
   if (verbose > 1) {
     const char* TermMsg;
     static char term_code[70];
-    char sdt[50], edt[50];
     char ec1[30], ec2[30], ec3[30];
 
     switch (mjcr->getJobStatus()) {
@@ -1304,8 +1303,8 @@ static bool UpdateJobRecord(BareosDb* db,
         sprintf(term_code, _("Job Termination code: %d"), mjcr->getJobStatus());
         break;
     }
-    bstrftime(sdt, sizeof(sdt), mjcr->start_time);
-    bstrftime(edt, sizeof(edt), mjcr->end_time);
+    auto sdt = bstrftime(mjcr->start_time);
+    auto edt = bstrftime(mjcr->end_time);
     Pmsg15(000,
            _("%s\n"
              "JobId:                  %d\n"
@@ -1322,9 +1321,9 @@ static bool UpdateJobRecord(BareosDb* db,
              "Last Volume Bytes:      %s\n"
              "Bareos binary info:     %s\n"
              "Termination:            %s\n\n"),
-           edt, mjcr->JobId, mjcr->Job, mjcr->sd_impl->fileset_name,
-           job_level_to_str(mjcr->getJobLevel()), mjcr->client_name, sdt, edt,
-           edit_uint64_with_commas(mjcr->JobFiles, ec1),
+           edt.data(), mjcr->JobId, mjcr->Job, mjcr->sd_impl->fileset_name,
+           job_level_to_str(mjcr->getJobLevel()), mjcr->client_name, sdt.data(),
+           edt.data(), edit_uint64_with_commas(mjcr->JobFiles, ec1),
            edit_uint64_with_commas(mjcr->JobBytes, ec2), mjcr->VolSessionId,
            mjcr->VolSessionTime, edit_uint64_with_commas(mr.VolBytes, ec3),
            kBareosVersionStrings.BinaryInfo, TermMsg);

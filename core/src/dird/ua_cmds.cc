@@ -1950,27 +1950,20 @@ bail_out:
 // Print time
 static bool time_cmd(UaContext* ua, const char*)
 {
-  char sdt[50];
   time_t ttime = time(NULL);
 
   ua->send->ObjectStart("time");
 
-  bstrftime(sdt, sizeof(sdt), ttime);
-  ua->send->ObjectKeyValue("full", sdt, "%s\n");
+  ua->send->ObjectKeyValue("full", bstrftime(ttime).data(), "%s\n");
 
-  /* bstrftime(sdt, sizeof(sdt), ttime, "%Y"); */
-  /* ua->send->ObjectKeyValue("year", sdt); */
-  /* bstrftime(sdt, sizeof(sdt), ttime, "%m"); */
-  /* ua->send->ObjectKeyValue("month", sdt); */
-  /* bstrftime(sdt, sizeof(sdt), ttime, "%d"); */
-  /* ua->send->ObjectKeyValue("day", sdt); */
-  /* bstrftime(sdt, sizeof(sdt), ttime, "%H"); */
-  /* ua->send->ObjectKeyValue("hour", sdt); */
-  /* bstrftime(sdt, sizeof(sdt), ttime, "%M"); */
-  /* ua->send->ObjectKeyValue("minute", sdt); */
-  /* bstrftime(sdt, sizeof(sdt), ttime, "%S"); */
-  /* ua->send->ObjectKeyValue("second", sdt); */
-
+  ua->send->ObjectKeyValue("year", bstrftime(ttime, "%Y").data(), "%s\n");
+  ua->send->ObjectKeyValue("month", bstrftime(ttime, "%m").data(), "%s\n");
+  ua->send->ObjectKeyValue("day", bstrftime(ttime, "%d").data(), "%s\n");
+  ua->send->ObjectKeyValue("hour", bstrftime(ttime, "%H").data(), "%s\n");
+  ua->send->ObjectKeyValue("minute", bstrftime(ttime, "%M").data(), "%s\n");
+  ua->send->ObjectKeyValue("second", bstrftime(ttime, "%S").data(), "%s\n");
+  ua->send->ObjectKeyValue("timezone", bstrftime(ttime, "%z").data(), "%s\n");
+  // TODO: use gettimezone function instead of %z
   ua->send->ObjectEnd("time");
 
   return true;

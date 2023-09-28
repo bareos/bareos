@@ -105,14 +105,12 @@ static void DeliveryError(const char* fmt, ...)
   va_list ap;
   int i, len, maxlen;
   POOLMEM* pool_buf;
-  char dt[MAX_TIME_LENGTH];
 
   pool_buf = GetPoolMemory(PM_EMSG);
 
-  bstrftime(dt, sizeof(dt), time(NULL));
-  bstrncat(dt, " ", sizeof(dt));
+  auto dt = bstrftime(time(0)) + " ";
 
-  i = Mmsg(pool_buf, "%s Message delivery ERROR: ", dt);
+  i = Mmsg(pool_buf, "%s Message delivery ERROR: ", dt.data());
 
   while (1) {
     maxlen = SizeofPoolMemory(pool_buf) - i - 1;
@@ -600,9 +598,9 @@ void DispatchMessage(JobControlRecord* jcr,
                      utime_t mtime,
                      const char* msg)
 {
-  char dt[MAX_TIME_LENGTH];
+  std::string dt;
   POOLMEM* mcmd;
-  int len, dtlen;
+  int len;
   MessagesResource* msgs;
   Bpipe* bpipe;
   const char* mode;
@@ -614,12 +612,10 @@ void DispatchMessage(JobControlRecord* jcr,
    * zero, then we use the current time.  If mtime is 1 (special
    * kludge), we do not prefix the date and time. Otherwise,
    * we assume mtime is a utime_t and use it. */
-  if (mtime == 0) { mtime = time(NULL); }
+  if (mtime == 0) { mtime = time(0); }
 
-  *dt = 0;
-  dtlen = 0;
   if (mtime == 1) {
-    mtime = time(NULL); /* Get time for SQL log */
+    mtime = time(0); /* Get time for SQL log */
   } else {
     dt_conversion = true;
   }
@@ -632,7 +628,7 @@ void DispatchMessage(JobControlRecord* jcr,
 
   // For serious errors make sure message is printed or logged
   if (type == M_ABORT || type == M_ERROR_TERM || type == M_CONFIG_ERROR) {
-    fputs(dt, stdout);
+    fputs(dt.data(), stdout);
     fputs(msg, stdout);
     fflush(stdout);
     if (type == M_ABORT) { syslog(LOG_DAEMON | LOG_ERR, "%s", msg); }
@@ -666,11 +662,8 @@ void DispatchMessage(JobControlRecord* jcr,
 
   // If closing this message resource, print and send to syslog, then get out.
   if (msgs->IsClosing()) {
-    if (dt_conversion) {
-      bstrftime(dt, sizeof(dt), mtime);
-      bstrncat(dt, " ", sizeof(dt));
-    }
-    fputs(dt, stdout);
+    if (dt_conversion) { dt = bstrftime(mtime) + " "; }
+    fputs(dt.data(), stdout);
     fputs(msg, stdout);
     fflush(stdout);
     syslog(LOG_DAEMON | LOG_ERR, "%s", msg);
@@ -682,13 +675,7 @@ void DispatchMessage(JobControlRecord* jcr,
       /* See if a specific timestamp format was specified for this log resource.
        * Otherwise apply the global setting in log_timestamp_format. */
       if (dt_conversion) {
-        if (!d->timestamp_format_.empty()) {
-          bstrftime(dt, sizeof(dt), mtime);
-        } else {
-          bstrftime(dt, sizeof(dt), mtime);
-        }
-        bstrncat(dt, " ", sizeof(dt));
-        dtlen = strlen(dt);
+        if (!d->timestamp_format_.empty()) { dt = bstrftime(mtime) + " "; }
       }
 
       switch (d->dest_code_) {
@@ -711,7 +698,9 @@ void DispatchMessage(JobControlRecord* jcr,
           if (con_fd) {
             Pw(con_lock); /* get write lock on console message file */
             errno = 0;
-            if (dtlen) { (void)fwrite(dt, dtlen, 1, con_fd); }
+            if (dt.length()) {
+              (void)fwrite(dt.data(), dt.length(), 1, con_fd);
+            }
             len = strlen(msg);
             if (len > 0) {
               (void)fwrite(msg, len, 1, con_fd);
@@ -742,7 +731,7 @@ void DispatchMessage(JobControlRecord* jcr,
           mcmd = GetPoolMemory(PM_MESSAGE);
           if ((bpipe = open_mail_pipe(jcr, mcmd, d))) {
             int status;
-            fputs(dt, bpipe->wfd);
+            fputs(dt.data(), bpipe->wfd);
             fputs(msg, bpipe->wfd);
             // Messages to the operator go one at a time
             status = CloseBpipe(bpipe);
@@ -778,8 +767,8 @@ void DispatchMessage(JobControlRecord* jcr,
             d->mail_filename_ = name;
             FreePoolMemory(name);
           }
-          fputs(dt, d->file_pointer_);
-          len = strlen(msg) + dtlen;
+          fputs(dt.data(), d->file_pointer_);
+          len = strlen(msg) + dt.length();
           if (len > d->max_len_) {
             d->max_len_ = len; /* keep max line length */
           }
@@ -800,14 +789,14 @@ void DispatchMessage(JobControlRecord* jcr,
             msgs->ClearInUse();
             break;
           }
-          fputs(dt, d->file_pointer_);
+          fputs(dt.data(), d->file_pointer_);
           fputs(msg, d->file_pointer_);
           // On error, we close and reopen to handle log rotation
           if (ferror(d->file_pointer_)) {
             fclose(d->file_pointer_);
             d->file_pointer_ = NULL;
             if (OpenDestFile(d, mode)) {
-              fputs(dt, d->file_pointer_);
+              fputs(dt.data(), d->file_pointer_);
               fputs(msg, d->file_pointer_);
             }
           }
@@ -827,14 +816,14 @@ void DispatchMessage(JobControlRecord* jcr,
           Dmsg1(850, "STDOUT for following msg: %s", msg);
           if (type != M_ABORT && type != M_ERROR_TERM
               && type != M_CONFIG_ERROR) { /* already printed */
-            fputs(dt, stdout);
+            fputs(dt.data(), stdout);
             fputs(msg, stdout);
             fflush(stdout);
           }
           break;
         case MessageDestinationCode::kStderr:
           Dmsg1(850, "STDERR for following msg: %s", msg);
-          fputs(dt, stderr);
+          fputs(dt.data(), stderr);
           fputs(msg, stderr);
           fflush(stdout);
           break;
@@ -903,7 +892,6 @@ static void pt_out(char* buf)
 void d_msg(const char* file, int line, int level, const char* fmt, ...)
 {
   va_list ap;
-  char ed1[50];
   int len, maxlen;
   btime_t mtime;
   uint32_t usecs;
@@ -919,8 +907,7 @@ void d_msg(const char* file, int line, int level, const char* fmt, ...)
     if (dbg_timestamp) {
       mtime = GetCurrentBtime();
       usecs = mtime % 1000000;
-      Mmsg(buf, "%s.%06d ", bstrftime(ed1, sizeof(ed1), BtimeToUtime(mtime)),
-           usecs);
+      Mmsg(buf, "%s.%06d ", bstrftime(BtimeToUtime(mtime)).data(), usecs);
       pt_out(buf.c_str());
     }
 

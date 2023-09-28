@@ -68,7 +68,6 @@ bool do_admin(JobControlRecord* jcr)
 
 void AdminCleanup(JobControlRecord* jcr, int TermCode)
 {
-  char sdt[50], edt[50], schedt[50];
   char term_code[100];
   const char* TermMsg;
   int msg_type;
@@ -103,9 +102,9 @@ void AdminCleanup(JobControlRecord* jcr, int TermCode)
               jcr->getJobStatus());
       break;
   }
-  bstrftime(schedt, sizeof(schedt), jcr->dir_impl->jr.SchedTime);
-  bstrftime(sdt, sizeof(sdt), jcr->dir_impl->jr.StartTime);
-  bstrftime(edt, sizeof(edt), jcr->dir_impl->jr.EndTime);
+  auto schedt = bstrftime(jcr->dir_impl->jr.SchedTime);
+  auto sdt = bstrftime(jcr->dir_impl->jr.StartTime);
+  auto edt = bstrftime(jcr->dir_impl->jr.EndTime);
 
   Jmsg(jcr, msg_type, 0,
        _("BAREOS %s (%s): %s\n"
@@ -117,9 +116,9 @@ void AdminCleanup(JobControlRecord* jcr, int TermCode)
          "  Bareos binary info:     %s\n"
          "  Job triggered by:       %s\n"
          "  Termination:            %s\n\n"),
-       kBareosVersionStrings.Full, kBareosVersionStrings.ShortDate, edt,
-       jcr->dir_impl->jr.JobId, jcr->dir_impl->jr.Job, schedt, sdt, edt,
-       kBareosVersionStrings.JoblogMessage,
+       kBareosVersionStrings.Full, kBareosVersionStrings.ShortDate, edt.data(),
+       jcr->dir_impl->jr.JobId, jcr->dir_impl->jr.Job, schedt.data(),
+       sdt.data(), edt.data(), kBareosVersionStrings.JoblogMessage,
        JobTriggerToString(jcr->dir_impl->job_trigger).c_str(), TermMsg);
 
   Dmsg0(debuglevel, "Leave AdminCleanup()\n");

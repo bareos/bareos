@@ -1324,13 +1324,12 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
 {
   bool retval = false;
   char clientid[50], jobid[50], filesetid[50];
-  char date[MAX_TIME_LENGTH];
   PoolMem query(PM_MESSAGE);
 
   /* Take the current time as upper limit if nothing else specified */
   utime_t StartTime = (jr->StartTime) ? jr->StartTime : time(NULL);
 
-  bstrftime(date, sizeof(date), StartTime + 1);
+  auto date = bstrftime(StartTime + 1);
   jobids->clear();
 
   char job_type = jr->JobType == JT_ARCHIVE ? 'A' : 'B';
@@ -1338,7 +1337,7 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
   // First, find the last good Full backup for this job/client/fileset
   FillQuery(query, SQL_QUERY::create_temp_accurate_jobids,
             edit_uint64(jcr->JobId, jobid), edit_uint64(jr->ClientId, clientid),
-            job_type, date, edit_uint64(jr->FileSetId, filesetid));
+            job_type, date.data(), edit_uint64(jr->FileSetId, filesetid));
 
   if (!SqlQuery(query.c_str())) { goto bail_out; }
 
@@ -1358,7 +1357,7 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
          "AND FileSet.FileSet= (SELECT FileSet FROM FileSet WHERE FileSetId = "
          "%s) "
          "ORDER BY Job.JobTDate DESC LIMIT 1 ",
-         jobid, clientid, job_type, jobid, date, filesetid);
+         jobid, clientid, job_type, jobid, date.data(), filesetid);
 
     if (!SqlQuery(query.c_str())) { goto bail_out; }
 
@@ -1381,7 +1380,7 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
          "AND FileSet.FileSet= (SELECT FileSet FROM FileSet WHERE FileSetId = "
          "%s) "
          "ORDER BY Job.JobTDate DESC ",
-         jobid, clientid, job_type, jobid, date, filesetid);
+         jobid, clientid, job_type, jobid, date.data(), filesetid);
     if (!SqlQuery(query.c_str())) { goto bail_out; }
   }
 
@@ -1426,35 +1425,25 @@ bool BareosDb::GetBaseJobid(JobControlRecord* jcr,
   PoolMem query(PM_MESSAGE);
   utime_t StartTime;
   db_int64_ctx lctx;
-  char date[MAX_TIME_LENGTH];
   char esc[MAX_ESCAPE_NAME_LENGTH];
   bool retval = false;
-  // char clientid[50], filesetid[50];
 
   *jobid = 0;
   lctx.count = 0;
   lctx.value = 0;
 
   StartTime = (jr->StartTime) ? jr->StartTime : time(NULL);
-  bstrftime(date, sizeof(date), StartTime + 1);
+  auto date = bstrftime(StartTime + 1);
   EscapeString(jcr, esc, jr->Name, strlen(jr->Name));
-
-  /* we can take also client name, fileset, etc... */
 
   Mmsg(query,
        "SELECT JobId, Job, StartTime, EndTime, JobTDate, PurgedFiles "
        "FROM Job "
-       // "JOIN FileSet USING (FileSetId) JOIN Client USING (ClientId) "
        "WHERE Job.Name = '%s' "
        "AND Level='B' AND JobStatus IN ('T','W') AND Type='B' "
-       //    "AND FileSet.FileSet= '%s' "
-       //    "AND Client.Name = '%s' "
        "AND StartTime<'%s' "
        "ORDER BY Job.JobTDate DESC LIMIT 1",
-       esc,
-       //      edit_uint64(jr->ClientId, clientid),
-       //      edit_uint64(jr->FileSetId, filesetid));
-       date);
+       esc, date.data());
 
   Dmsg1(10, "GetBaseJobid q=%s\n", query.c_str());
   if (!SqlQueryWithHandler(query.c_str(), db_int64_handler, &lctx)) {
@@ -1500,7 +1489,6 @@ bool BareosDb::get_quota_jobbytes(JobControlRecord* jcr,
 {
   SQL_ROW row;
   int num_rows;
-  char dt[MAX_TIME_LENGTH];
   char ed1[50], ed2[50];
   time_t now, schedtime;
 
@@ -1513,12 +1501,12 @@ bool BareosDb::get_quota_jobbytes(JobControlRecord* jcr,
    * last job from the job retention gets excluded. */
   schedtime += 5;
 
-  bstrftime(dt, sizeof(dt), schedtime);
+  auto dt = bstrftime(schedtime);
 
   DbLocker _{this};
 
   FillQuery(SQL_QUERY::get_quota_jobbytes, edit_uint64(jr->ClientId, ed1),
-            edit_uint64(jr->JobId, ed2), dt);
+            edit_uint64(jr->JobId, ed2), dt.data());
   if (QUERY_DB(jcr, cmd)) {
     num_rows = SqlNumRows();
     if (num_rows == 1) {
@@ -1550,7 +1538,6 @@ bool BareosDb::get_quota_jobbytes_nofailed(JobControlRecord* jcr,
   SQL_ROW row;
   char ed1[50], ed2[50];
   int num_rows;
-  char dt[MAX_TIME_LENGTH];
   time_t now, schedtime;
 
   // Determine the first schedtime we are interested in.
@@ -1562,12 +1549,13 @@ bool BareosDb::get_quota_jobbytes_nofailed(JobControlRecord* jcr,
    * last job from the job retention gets excluded. */
   schedtime += 5;
 
-  bstrftime(dt, sizeof(dt), schedtime);
+  auto dt = bstrftime(schedtime);
 
   DbLocker _{this};
 
   FillQuery(SQL_QUERY::get_quota_jobbytes_nofailed,
-            edit_uint64(jr->ClientId, ed1), edit_uint64(jr->JobId, ed2), dt);
+            edit_uint64(jr->ClientId, ed1), edit_uint64(jr->JobId, ed2),
+            dt.data());
   if (QUERY_DB(jcr, cmd)) {
     num_rows = SqlNumRows();
     if (num_rows == 1) {

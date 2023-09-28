@@ -740,11 +740,9 @@ bool CommitAttributeSpool(JobControlRecord* jcr)
 {
   boffset_t size, data_end;
   char ec1[30];
-  char tbuf[MAX_TIME_LENGTH];
   BareosSocket* dir;
 
-  Dmsg1(100, "Commit attributes at %s\n",
-        bstrftime(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+  Dmsg1(100, "Commit attributes at %s\n", bstrftime(time(0)).data());
   if (AttributesAreSpooled(jcr)) {
     dir = jcr->dir_bsock;
     if ((size = lseek(dir->spool_fd_, 0, SEEK_END)) == -1) {
@@ -840,10 +838,8 @@ static bool OpenAttrSpoolFile(JobControlRecord* jcr, BareosSocket* bs)
 static bool CloseAttrSpoolFile(JobControlRecord* jcr, BareosSocket* bs)
 {
   POOLMEM* name;
-  char tbuf[MAX_TIME_LENGTH];
 
-  Dmsg1(100, "Close attr spool file at %s\n",
-        bstrftime(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+  Dmsg1(100, "Close attr spool file at %s\n", bstrftime(time(0)).data());
   if (bs->spool_fd_ == -1) { return true; }
 
   name = GetPoolMemory(PM_MESSAGE);

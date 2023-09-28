@@ -370,7 +370,6 @@ static bRC startBackupFile(PluginContext* ctx, save_pkt* sp)
 {
   time_t now;
   PoolMem fname(PM_NAME);
-  char dt[MAX_TIME_LENGTH];
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
   if (!p_ctx) { return bRC_Error; }
@@ -384,20 +383,20 @@ static bRC startBackupFile(PluginContext* ctx, save_pkt* sp)
   }
 
   now = time(NULL);
-  bstrftime_filename(dt, sizeof(dt), now);
+  auto dt = bstrftime_filename(now);
 
   switch (p_ctx->backup_level) {
     case L_FULL:
       Mmsg(fname, "/@MSSQL/%s/%s/db-%s-full.bak", p_ctx->instance,
-           p_ctx->database, dt);
+           p_ctx->database, dt.data());
       break;
     case L_DIFFERENTIAL:
       Mmsg(fname, "/@MSSQL/%s/%s/db-%s-diff.bak", p_ctx->instance,
-           p_ctx->database, dt);
+           p_ctx->database, dt.data());
       break;
     case L_INCREMENTAL:
       Mmsg(fname, "/@MSSQL/%s/%s/db-%s-log.trn", p_ctx->instance,
-           p_ctx->database, dt);
+           p_ctx->database, dt.data());
       break;
     default:
       Jmsg(ctx, M_FATAL, "Unsuported backup level (%c).\n",
