@@ -71,8 +71,8 @@ wait
 messages
 END_OF_DATA
 
-
-${PSQL} ${DBNAME} -f "database/make_cluster_activity.sql" --output ${tmp}/cluster_activity.log &
+# Create activity on the cluster during the backup
+# ${PSQL} ${DBNAME} -f "database/make_cluster_activity.sql" --output ${tmp}/cluster_activity.log &
 
 echo "First full backup stage"
 run_bconsole
@@ -81,7 +81,6 @@ expect_grep "Backup OK" "${tmp}/log1.out" "Full Backup not found!"
 if [ ${estat} -ne 0 ]; then
     exit ${estat}
 fi
-
 # Now add data to the database and run an incremental job
 ${PSQL} ${DBNAME} -c "INSERT INTO t (text, created_on) values ('test for INCR backup', current_timestamp)"
 
@@ -89,7 +88,7 @@ cat <<END_OF_DATA >${tmp}/bconcmds
 @$out /dev/null
 messages
 @$out ${tmp}/log2.out
-setdebug level=250 trace=1 timestamp=1 client=bareos-fd
+setdebug level=150 trace=1 timestamp=1 client=bareos-fd
 run job=${JobName} Level=Incremental yes
 wait
 setdebug level=0 client=bareos-fd
@@ -139,7 +138,7 @@ cat <<END_OF_DATA >$tmp/bconcmds
 messages
 @$out ${tmp}/log4.out
 setdebug level=150 trace=1 timestamp=1 client=bareos-fd
-restore client=bareos-fd where=/ select all done yes
+restore client=bareos-fd fileset=PluginTest where=/ select all done yes
 wait
 setdebug level=0 client=bareos-fd
 messages
