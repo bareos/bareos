@@ -1150,23 +1150,23 @@ bool BareosDb::GetMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
         mr->Recycle = str_to_int64(row[18]);
         mr->Slot = str_to_int64(row[19]);
 
-        mr->FirstWritten = StrToUtime(row[20] != NULL ? row[20] : "");
+        mr->FirstWritten = str_to_uint64(row[20] != NULL ? row[20] : "");
 
-        mr->LastWritten = StrToUtime(row[21] != NULL ? row[21] : "");
+        mr->LastWritten = str_to_uint64(row[21] != NULL ? row[21] : "");
 
         mr->InChanger = str_to_uint64(row[22]);
         mr->EndFile = str_to_uint64(row[23]);
         mr->EndBlock = str_to_uint64(row[24]);
         mr->LabelType = str_to_int64(row[25]);
 
-        mr->LabelDate = StrToUtime(row[26] != NULL ? row[26] : "");
+        mr->LabelDate = str_to_uint64(row[26] != NULL ? row[26] : "");
 
         mr->StorageId = str_to_int64(row[27]);
         mr->Enabled = str_to_int64(row[28]);
         mr->LocationId = str_to_int64(row[29]);
         mr->RecycleCount = str_to_int64(row[30]);
 
-        mr->InitialWrite = StrToUtime(row[31] != NULL ? row[31] : "");
+        mr->InitialWrite = str_to_uint64(row[31] != NULL ? row[31] : "");
 
         mr->ScratchPoolId = str_to_int64(row[32]);
         mr->RecyclePoolId = str_to_int64(row[33]);
