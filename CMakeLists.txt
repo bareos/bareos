@@ -119,6 +119,7 @@ if(NOT hostname)
 endif()
 
 if(BUILD_BAREOS_BINARIES)
+  project(bareos C CXX)
   add_subdirectory(third-party EXCLUDE_FROM_ALL)
   add_subdirectory(core)
   if(ENABLE_WEBUI)
