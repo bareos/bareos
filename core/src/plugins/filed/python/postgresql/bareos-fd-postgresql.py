@@ -107,7 +107,8 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
 
         # Last argument of super constructor is a list of mandatory arguments
         super().__init__(plugindef, ["postgresql_data_dir", "wal_archive_dir"])
-
+        #TODO sort out the commented directory, PG say no need to backup them but
+        #     failed to start if not present. \o/
         self.ignore_subdirs = [
             "log",
             "pg_wal",
@@ -115,11 +116,11 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             "pg_xlog",
             "pgsql_tmp",
             "pg_dynshmem",
-            "pg_notify",
+        #    "pg_notify",
             "pg_serial",
-            "pg_snapshots",
+        #    "pg_snapshots",
             "pg_stat_tmp",
-            "pg_subtrans",
+        #    "pg_subtrans",
         ]
         self.options = {}
         self.db_con = None
@@ -147,7 +148,11 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         self.file_type = ""
         self.files_to_backup = []
         self.file_to_backup = ""
+        # Store os.stat of PG_VERSION as reference for our virtual files
         self.ref_statp = None
+        # We need to get the stat-packet in set_file_attributes and use it again
+        # in end_restore_file, and this may be mixed up with different files
+        self.stat_packets = {}
         self.last_lsn = 0
         # This will be set to True between SELECT pg_backup_start and pg_backup_stop.
         # We backup the cluster files during that time
@@ -183,61 +188,54 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         Build the list of files to be backed up by recursing from top directory.
         The parsing has to be in reverse mode so file first, directory at the end
 
-        Will be use to parse `postgresql_data_dir`, `wal_archive_dir`, `tablespace`
+        Will be used to parse `postgresql_data_dir`, `wal_archive_dir`, `tablespace`
+        NOTE os.walk is the favorite choice.
         """
         if not start_dir.endswith("/"):
             start_dir += "/"
         self.files_to_backup.append(start_dir)
-        for filename in os.listdir(start_dir):
-            fullname = os.path.join(start_dir, filename)
-            # We need a trailing '/' for directories
-            if os.path.isdir(fullname) and not fullname.endswith("/"):
-                fullname += "/"
-                bareosfd.DebugMessage(100, f"fullname: {fullname}\n")
-
+        for topdir, dirnames, filenames in os.walk(start_dir, topdown=False):
             # TODO check that assumption
             # Usually Bareos takes care about timestamps when doing
             # incremental backups but here we have to compare against
             # last BackupPostgreSQL timestamp
-            try:
-                # Create the reference file
-                if filename == "PG_VERSION":
-                    self.ref_statp = os.stat(fullname)
+            # 20230926 Why should we, or if yes only for wal ?
+            for filename in filenames:
+                if os.path.basename(os.path.normpath(topdir)) in self.ignore_subdirs:
+                    continue
 
-                mtime = os.stat(fullname).st_mtime
-            except os.error as os_err:
-                # if can't stat the file emit a warning instead error
-                # like in traditional backup
-                bareosfd.JobMessage(
-                    bareosfd.M_WARNING,
-                    f"Could net get stat-info for reference file {fullname}: {os_err}\n",
-                )
-                continue
-            bareosfd.DebugMessage(
-                150,
-                (
-                    f"file:{fullname}"
-                    f" fullTime: {self.last_backup_stop_time}"
-                    f" mtime: {mtime}\n"
-                ),
-            )
-            if mtime > self.last_backup_stop_time + 1:
-                bareosfd.DebugMessage(
-                    150,
-                    (
-                        f"file:{fullname}"
-                        f" fullTime: {self.last_backup_stop_time}"
-                        f" mtime: {mtime}\n"
-                    ),
-                )
-                self.files_to_backup.append(fullname)
-                if os.path.isdir(fullname) and filename not in self.ignore_subdirs:
-                    for topdir, dirnames, filenames in os.walk(fullname):
-                        for filename in filenames:
-                            self.files_to_backup.append(os.path.join(topdir, filename))
-                        for dirname in dirnames:
-                            fulldirname = os.path.join(topdir, dirname) + "/"
-                            self.files_to_backup.append(fulldirname)
+                fullname = os.path.join(topdir, filename)
+                # Create the reference file
+                try:
+                    if filename == "PG_VERSION":
+                        self.ref_statp = os.stat(fullname)
+                    mtime = os.stat(fullname).st_mtime
+                    if mtime > self.last_backup_stop_time + 1:
+                        bareosfd.DebugMessage(
+                            150,
+                            (
+                                f"file:{fullname}"
+                                f" fullTime: {self.last_backup_stop_time}"
+                                f" os.st_mtime: {mtime}\n"
+                            ),
+                        )
+                        self.files_to_backup.append(fullname)
+                except os.error as os_err:
+                    # if can't stat the file emit a warning instead error
+                    # like in traditional backup
+                    bareosfd.JobMessage(
+                        bareosfd.M_WARNING,
+                        f"Could not stat reference file {fullname}: {os_err}\n",
+                    )
+                    continue
+            #TODO check if we should also check mtime for file.
+            for dirname in dirnames:
+                if os.path.basename(os.path.normpath(dirname)) in self.ignore_subdirs:
+                    continue
+
+                fulldirname = os.path.join(topdir, dirname) + "/"
+                self.files_to_backup.append(fulldirname)
+
 
     def check_tablespace_in_cluster(self):
         """
@@ -585,15 +583,13 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             start_dir = self.options["postgresql_data_dir"]
             bareosfd.DebugMessage(100, f"data_dir: {start_dir}\n")
             bareosfd.JobMessage(bareosfd.M_INFO, f"data_dir: {start_dir}\n")
+            self.full_backup_running = True
         else:
             # If level is not Full, we only backup WAL files
             # and create a restore object ROP with timestamp information.
 
             # Check if we are running the same PG Major version for incremental.
             # Otherwise fail requesting a new full.
-            # Note: if we want to support creating incrementals on top
-            #       of fulls from the old plugin we would need to handle
-            #       this case differently
             if self.last_pg_major is None:
                 bareosfd.JobMessage(
                     bareosfd.M_FATAL,
@@ -608,8 +604,8 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                 bareosfd.JobMessage(
                     bareosfd.M_FATAL,
                     (
-                        f"pg version of previous backup {self.last_pg_major} does not"
-                        f" match current pg version {self.pg_major_version}."
+                        f"PostgreSQL version of previous backup {self.last_pg_major}"
+                        f" does not match current version {self.pg_major_version}."
                         f" Please run a new Full.\n"
                     ),
                 )
@@ -703,7 +699,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         # Allow Duplicate Job = no to exclude that case in job config.
 
         self.check_tablespace_in_cluster()
-        # Add PG major version to the label that can help Ops to distinguish backup.
+        # Add PG major version to the label that can help operator to distinguish backup.
         self.backup_label_string = (
             f"Bareos.plugin.postgresql.jobid.{self.jobId}.PG{self.pg_major_version}"
         )
@@ -716,7 +712,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         else:
             start_stmt = (
                 f"pg_backup_start('{self.backup_label_string}',"
-                f"fast => {self.start_fast})"
+                f" fast => {self.start_fast})"
             )
         bareosfd.DebugMessage(100, f"Send 'SELECT {start_stmt}' to PostgreSQL\n")
         bareosfd.DebugMessage(100, f"backup label = {self.backup_label_string}\n")
@@ -733,7 +729,6 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             return bareosfd.bRC_Error
 
         bareosfd.DebugMessage(150, f"Start response LSN: {str(result)}\n")
-        self.full_backup_running = True
 
         return bareosfd.bRC_OK
 
@@ -749,7 +744,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             return bareosfd.bRC_Skip
 
         try:
-            self.file_to_backup = self.files_to_backup.pop().encode("utf-8")
+            self.file_to_backup = self.files_to_backup.pop()
         except UnicodeEncodeError:
             bareosfd.JobMessage(
                 bareosfd.M_ERROR,
@@ -758,7 +753,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             return bareosfd.bRC_Error
 
         bareosfd.DebugMessage(100, f"file: {self.file_to_backup}\n")
-        statp = bareosfd.StatPacket()
+        my_statp = bareosfd.StatPacket()
         if self.file_to_backup == "ROP":
             self.rop_data["last_backup_stop_time"] = self.last_backup_stop_time
             self.rop_data["last_lsn"] = self.last_lsn
@@ -770,31 +765,31 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             savepkt.object = bytearray(json.dumps(self.rop_data), "utf-8")
             savepkt.object_len = len(savepkt.object)
             savepkt.object_index = int(time.time())
-            savepkt.statp = statp
+            savepkt.statp = my_statp
             savepkt.no_read = True
             bareosfd.DebugMessage(150, f"rop data: {str(self.rop_data)}\n")
         else:
             if self.file_to_backup in self.virtual_files:
                 # We affect owner, group, mode from previously saved PG_VERSION
                 # Time is the backup time
-                statp.st_mode = self.ref_statp.st_mode
-                statp.st_uid = self.ref_statp.st_uid
-                statp.st_gid = self.ref_statp.st_gid
-                statp.st_atime = int(time.time())
-                statp.st_mtime = int(time.time())
-                statp.st_ctime = int(time.time())
+                my_statp.st_mode = self.ref_statp.st_mode
+                my_statp.st_uid = self.ref_statp.st_uid
+                my_statp.st_gid = self.ref_statp.st_gid
+                my_statp.st_atime = int(time.time())
+                my_statp.st_mtime = int(time.time())
+                my_statp.st_ctime = int(time.time())
                 savepkt.type = bareosfd.FT_REG
                 if self.file_to_backup == self.backup_label_filename:
-                    statp.st_size = len(self.backup_label_data)
+                    my_statp.st_size = len(self.backup_label_data)
                     savepkt.fname = self.backup_label_filename
                 elif self.file_to_backup == self.recovery_filename:
-                    statp.st_size = len(self.recovery_data)
+                    my_statp.st_size = len(self.recovery_data)
                     savepkt.fname = self.recovery_filename
                 elif (
                     self.file_to_backup == self.tablespace_map_filename
                     and self.tablespace_map_filename is not None
                 ):
-                    statp.st_size = len(self.tablespace_map_data)
+                    my_statp.st_size = len(self.tablespace_map_data)
                     savepkt.fname = self.tablespace_map_filename
             else:
                 # Rest of our dirs/files
@@ -804,10 +799,10 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                 # os.islink will detect links to directories only when
                 # there is no trailing slash - we need to perform checks
                 # on the stripped name but use it with trailing / for the backup itself
-                    if os.path.islink(self.file_to_backup.rstrip(b"/")):
+                    if os.path.islink(self.file_to_backup.rstrip("/")):
                         statp = os.lstat(self.file_to_backup)
                         savepkt.type = bareosfd.FT_LNK
-                        savepkt.link = os.readlink(self.file_to_backup.rstrip(b"/"))
+                        savepkt.link = os.readlink(self.file_to_backup.rstrip("/"))
                     else:
                         statp = os.stat(self.file_to_backup)
                         if os.path.isfile(self.file_to_backup):
@@ -826,16 +821,28 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                                 ),
                             )
                             return bareosfd.bRC_Error
+
+                    my_statp.st_mode = statp.st_mode
+                    my_statp.st_ino = statp.st_ino
+                    my_statp.st_dev = statp.st_dev
+                    my_statp.st_nlink = statp.st_nlink
+                    my_statp.st_uid = statp.st_uid
+                    my_statp.st_gid = statp.st_gid
+                    my_statp.st_size = statp.st_size
+                    my_statp.st_atime = int(statp.st_atime)
+                    my_statp.st_mtime = int(statp.st_mtime)
+                    my_statp.st_ctime = int(statp.st_ctime)
+
                 except os.error as os_err:
                     bareosfd.JobMessage(
                         bareosfd.M_WARNING,
-                        f"Skipping disappeared file {self.file_to_backup}: \"{os_err}\"",
+                        f"Skip no more existing file {self.file_to_backup}: \"{os_err}\"",
                     )
                     return bareosfd.bRC_Skip
 
 
             # for both virtual and normal file
-            savepkt.statp = statp
+            savepkt.statp = my_statp
             savepkt.no_read = False
 
         bareosfd.DebugMessage(150, f"file name: {str(savepkt.fname)}\n")
@@ -1055,6 +1062,91 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             return bareosfd.bRC_More
 
         return bareosfd.bRC_OK
+
+    def set_file_attributes(self, restorepkt):
+        """
+        Need to verify: we set attributes here but on plugin_io close
+        the mtime will be modified again.
+        approach: save stat-packet here and set it on
+        end_restore_file
+        """
+        # restorepkt.create_status = bareosfd.CF_CORE
+        # return bareosfd.bRC_OK
+
+        # Python attribute setting does not work properly with links
+        #        if restorepkt.type in [bareosfd.FT_LNK,bareosfd.FT_LNKSAVED]:
+        #            return bareosfd.bRC_OK
+        file_name = restorepkt.ofname
+        file_attr = restorepkt.statp
+        self.stat_packets[file_name] = file_attr
+
+        bareosfd.DebugMessage(
+            150,
+            f"Set file attributes {file_name} with stat {str(file_attr)}\n",
+        )
+        try:
+            os.chown(file_name, file_attr.st_uid, file_attr.st_gid)
+            os.chmod(file_name, file_attr.st_mode)
+            os.utime(file_name, (file_attr.st_atime, file_attr.st_mtime))
+            new_stat = os.stat(file_name)
+            bareosfd.DebugMessage(
+                150,
+                f"Verified file attributes {file_name} with stat {str(new_stat)}n",
+            )
+        except os.error as os_err:
+            bareosfd.JobMessage(
+                bareosfd.M_WARNING,
+                f'Could net set attributes for file {file_name} "{os_err}"',
+            )
+
+        return bareosfd.bRC_OK
+
+    def end_restore_file(self):
+        """
+        all actions done at the end of file restore.
+        """
+        # It can happen with the last subdir restored
+        if self.FNAME == '':
+            return super().end_restore_file()
+
+        bareosfd.DebugMessage(
+            100,
+            f"end_restore_file() entry point in Python called FNAME: {self.FNAME}\n",
+        )
+        bareosfd.DebugMessage(
+            150,
+            (
+                f"end_restore_file set {self.FNAME} attributes"
+                f" with stat {str(self.stat_packets[self.FNAME])}\n"
+            ),
+        )
+        try:
+            os.chown(
+                self.FNAME,
+                self.stat_packets[self.FNAME].st_uid,
+                self.stat_packets[self.FNAME].st_gid
+            )
+            os.chmod(
+                self.FNAME,
+                self.stat_packets[self.FNAME].st_mode
+            )
+            os.utime(
+                self.FNAME,
+                (
+                    self.stat_packets[self.FNAME].st_atime,
+                    self.stat_packets[self.FNAME].st_mtime
+                ),
+            )
+            # del sometimes leads to no-key errors, like if end_restore_file is called
+            # sometimes multiple times. so we don't purge.
+            # del self.statp[self.FNAME]
+        except os.error as os_err:
+            bareosfd.JobMessage(
+                bareosfd.M_WARNING,
+                f'Could net set attributes for file {self.FNAME}: "{os_err}"',
+            )
+        return bareosfd.bRC_OK
+
 
     def end_backup_file(self):
         """
