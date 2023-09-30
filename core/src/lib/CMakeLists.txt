@@ -176,6 +176,25 @@ if(CMAKE_CXX_FLAGS MATCHES "-fsanitize=address"
   )
 endif()
 
+# Workaround for:
+# In member function '__ct ',
+#     inlined from 'from_stream' at third-party/date/include/date/date.h:7263:57,
+#     inlined from 'from_stream' at third-party/date/include/date/date.h:8010:16,
+#     inlined from 'operator>>' at third-party/date/include/date/date.h:8080:23,
+#     inlined from 'parse8601' at core/src/lib/btime.cc:62:32:
+# /usr/include/c++/13/bits/chrono.h:585:17: error: 'S' may be used uninitialized [-Werror=maybe-uninitialized]
+#   585 |           : __r(static_cast<rep>(__rep)) { }
+# date/include/date/date.h: In function 'parse8601':
+# date/include/date/date.h:7261:37: note: 'S' declared here
+#  7261 |                         long double S;
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
+   AND CMAKE_CXX_COMPILER_VERSION MATCHES "^1[23]")
+  set_target_properties (
+    bareos PROPERTIES LINK_FLAGS "-Wno-maybe-uninitialized"
+  )
+endif()
+
+
 if(ENABLE_CAPABILITY)
   target_link_libraries(bareos PRIVATE ${CAP_LIBRARIES})
 endif()
