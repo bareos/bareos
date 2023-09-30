@@ -1953,17 +1953,15 @@ static bool time_cmd(UaContext* ua, const char*)
   time_t ttime = time(NULL);
 
   ua->send->ObjectStart("time");
-
   ua->send->ObjectKeyValue("full", bstrftime(ttime).data(), "%s\n");
-
   ua->send->ObjectKeyValue("year", bstrftime(ttime, "%Y").data(), "%s\n");
   ua->send->ObjectKeyValue("month", bstrftime(ttime, "%m").data(), "%s\n");
   ua->send->ObjectKeyValue("day", bstrftime(ttime, "%d").data(), "%s\n");
   ua->send->ObjectKeyValue("hour", bstrftime(ttime, "%H").data(), "%s\n");
   ua->send->ObjectKeyValue("minute", bstrftime(ttime, "%M").data(), "%s\n");
   ua->send->ObjectKeyValue("second", bstrftime(ttime, "%S").data(), "%s\n");
-  ua->send->ObjectKeyValue("timezone", bstrftime(ttime, "%z").data(), "%s\n");
-  // TODO: use gettimezone function instead of %z
+  ua->send->ObjectKeyValue("timezoneoffset", GetCurrentTimezoneOffset().data(),
+                           "%s\n");
   ua->send->ObjectEnd("time");
 
   return true;
