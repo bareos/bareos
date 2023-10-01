@@ -28,6 +28,7 @@ set(BAREOS_SRCS
     alist.cc
     attr.cc
     attribs.cc
+    bareos_universal_initialiser.cc
     backtrace.cc
     base64.cc
     berrno.cc

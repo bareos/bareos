@@ -52,6 +52,7 @@
 #include "include/jcr.h"
 #include "lib/parse_conf.h"
 #include "lib/compression.h"
+#include "lib/bareos_universal_initialiser.h"
 
 namespace storagedaemon {
 extern bool ParseSdConfig(const char* configfile, int exit_code);
@@ -83,7 +84,6 @@ static BootStrapRecord* bsr = nullptr;
 int main(int argc, char* argv[])
 {
   DirectorResource* director = nullptr;
-
   setlocale(LC_ALL, "");
   tzset();
   bindtextdomain("bareos", LOCALEDIR);
