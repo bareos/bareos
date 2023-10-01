@@ -485,8 +485,6 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
   double kbps;
   PoolMem temp, secure_erase_status;
 
-  auto sdt = bstrftime(jcr->dir_impl->jr.StartTime);
-  auto edt = bstrftime(jcr->dir_impl->jr.EndTime);
   RunTime = jcr->dir_impl->jr.EndTime - jcr->dir_impl->jr.StartTime;
   if (RunTime <= 0) {
     kbps = 0;
@@ -531,8 +529,8 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
            BAREOS, my_name, kBareosVersionStrings.Full,
            kBareosVersionStrings.ShortDate, kBareosVersionStrings.GetOsInfo(),
            jcr->dir_impl->jr.JobId, jcr->dir_impl->jr.Job,
-           jcr->dir_impl->res.client->resource_name_, cr.Uname, sdt.data(),
-           edt.data(), edit_utime(RunTime, elapsed, sizeof(elapsed)),
+           jcr->dir_impl->res.client->resource_name_, cr.Uname, bstrftime(jcr->dir_impl->jr.StartTime).data(),
+           bstrftime(jcr->dir_impl->jr.EndTime).data(), edit_utime(RunTime, elapsed, sizeof(elapsed)),
            edit_uint64_with_commas((uint64_t)jcr->dir_impl->ExpectedFiles, ec1),
            edit_uint64_with_commas((uint64_t)jcr->dir_impl->jr.JobFiles, ec2),
            edit_uint64_with_commas(jcr->dir_impl->jr.JobBytes, ec3),
@@ -579,8 +577,8 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
            BAREOS, my_name, kBareosVersionStrings.Full,
            kBareosVersionStrings.ShortDate, kBareosVersionStrings.GetOsInfo(),
            jcr->dir_impl->jr.JobId, jcr->dir_impl->jr.Job,
-           jcr->dir_impl->res.client->resource_name_, cr.Uname, sdt.data(),
-           edt.data(), edit_utime(RunTime, elapsed, sizeof(elapsed)),
+           jcr->dir_impl->res.client->resource_name_, cr.Uname, bstrftime(jcr->dir_impl->jr.StartTime).data(),
+           bstrftime(jcr->dir_impl->jr.EndTime).data(), edit_utime(RunTime, elapsed, sizeof(elapsed)),
            edit_uint64_with_commas((uint64_t)jcr->dir_impl->ExpectedFiles, ec1),
            edit_uint64_with_commas((uint64_t)jcr->dir_impl->jr.JobFiles, ec2),
            edit_uint64_with_commas(jcr->dir_impl->jr.JobBytes, ec3),

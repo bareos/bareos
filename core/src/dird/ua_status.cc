@@ -397,8 +397,7 @@ static bool show_scheduled_preview(UaContext*,
        * As we use locale specific strings for weekday and month we
        * need to keep track of the longest data string used. */
       runtime = mktime(&tm);
-      auto dt = bstrftime(runtime);
-      date_len = dt.length();
+      date_len = bstrftime(runtime).length();
       if (date_len > *max_date_len) {
         if (*max_date_len == 0) {
           /* When the datelen changes during the loop the locale generates a
@@ -415,7 +414,7 @@ static bool show_scheduled_preview(UaContext*,
         }
       }
 
-      Mmsg(temp, "%-*s  %-22.22s  ", *max_date_len, dt.data(),
+      Mmsg(temp, "%-*s  %-22.22s  ", *max_date_len, bstrftime(runtime).data(),
            sched->resource_name_);
       PmStrcat(overview, temp.c_str());
 
@@ -525,8 +524,7 @@ static bool DoSubscriptionStatus(UaContext* ua)
   }
 
   char now[30] = {0};
-  auto nowstring = bstrftime(time(0));
-  bstrncpy(now, nowstring.data(), 30);
+  bstrncpy(now, bstrftime(time(0)).data(), 30);
 
   if (kw_all || kw_detail) {
     ua->send->ObjectKeyValue(
@@ -835,7 +833,6 @@ static void PrtRuntime(UaContext* ua, sched_pkt* sp)
     }
     if (!ok) { bstrncpy(mr.VolumeName, "*unknown*", sizeof(mr.VolumeName)); }
   }
-  auto sruntime = bstrftime(sp->runtime);
   switch (sp->job->JobType) {
     case JT_ADMIN:
     case JT_ARCHIVE:
@@ -849,11 +846,11 @@ static void PrtRuntime(UaContext* ua, sched_pkt* sp)
   if (ua->api) {
     ua->SendMsg(_("%-14s\t%-8s\t%3d\t%-18s\t%-18s\t%s\n"), level_ptr,
                 job_type_to_str(sp->job->JobType), sp->priority,
-                sruntime.data(), sp->job->resource_name_, mr.VolumeName);
+                bstrftime(sp->runtime).data(), sp->job->resource_name_, mr.VolumeName);
   } else {
     ua->SendMsg(_("%-14s %-8s %3d  %-18s %-18s %s\n"), level_ptr,
                 job_type_to_str(sp->job->JobType), sp->priority,
-                sruntime.data(), sp->job->resource_name_, mr.VolumeName);
+                bstrftime(sp->runtime).data(), sp->job->resource_name_, mr.VolumeName);
   }
   if (CloseDb) { DbSqlClosePooledConnection(jcr, jcr->db); }
   jcr->db = ua->db; /* restore ua db to jcr */
@@ -1243,17 +1240,16 @@ static void ListTerminatedJobs(UaContext* ua)
         break;
     }
 
-    auto jendtime = bstrftime(je.end_time);
     if (ua->api) {
       ua->SendMsg(_("%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"), je.JobId, level,
                   edit_uint64_with_commas(je.JobFiles, b1),
                   edit_uint64_with_suffix(je.JobBytes, b2), termstat,
-                  jendtime.data(), JobName);
+                  bstrftime(je.end_time).data(), JobName);
     } else {
       ua->SendMsg(_("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"), je.JobId, level,
                   edit_uint64_with_commas(je.JobFiles, b1),
                   edit_uint64_with_suffix(je.JobBytes, b2), termstat,
-                  jendtime.data(), JobName);
+                  bstrftime(je.end_time).data(), JobName);
     }
   }
   if (!ua->api) ua->SendMsg(_("\n"));

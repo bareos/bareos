@@ -483,8 +483,7 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
                 _("Inappropriate term code: %d %c\n"), TermCode, TermCode);
       break;
   }
-  auto sdt = bstrftime(jcr->dir_impl->jr.StartTime);
-  auto edt = bstrftime(jcr->dir_impl->jr.EndTime);
+
   if (jcr->dir_impl->res.verify_job) {
     Name = jcr->dir_impl->res.verify_job->resource_name_;
   } else {
@@ -522,7 +521,7 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
            jcr->dir_impl->res.fileset->resource_name_,
            JobLevelToString(JobLevel),
            jcr->dir_impl->res.client->resource_name_,
-           jcr->dir_impl->previous_jr.JobId, Name, sdt.data(), edt.data(),
+           jcr->dir_impl->previous_jr.JobId, Name, bstrftime(jcr->dir_impl->jr.StartTime).data(), bstrftime(jcr->dir_impl->jr.EndTime).data(),
            edit_uint64_with_commas(jcr->dir_impl->ExpectedFiles, ec1),
            edit_uint64_with_commas(jcr->JobFiles, ec2), jcr->JobErrors,
            fd_term_msg.c_str(), sd_term_msg.c_str(),
@@ -554,7 +553,7 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
            jcr->dir_impl->res.fileset->resource_name_,
            JobLevelToString(JobLevel),
            jcr->dir_impl->res.client->resource_name_,
-           jcr->dir_impl->previous_jr.JobId, Name, sdt.data(), edt.data(),
+           jcr->dir_impl->previous_jr.JobId, Name, bstrftime(jcr->dir_impl->jr.StartTime).data(), bstrftime(jcr->dir_impl->jr.EndTime).data(),
            edit_uint64_with_commas(jcr->JobFiles, ec1), jcr->JobErrors,
            fd_term_msg.c_str(), kBareosVersionStrings.JoblogMessage,
            JobTriggerToString(jcr->dir_impl->job_trigger).c_str(), TermMsg);

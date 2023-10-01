@@ -131,15 +131,14 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
        * AlwaysIncrementalJobRetention) */
       if (job->AlwaysIncrementalJobRetention) {
         jcr->dir_impl->jr.StartTime = now - job->AlwaysIncrementalJobRetention;
-        auto sdt = bstrftime(jcr->dir_impl->jr.StartTime);
         Jmsg(jcr, M_INFO, 0,
              _("%s: considering jobs older than %s for consolidation.\n"),
-             job->resource_name_, sdt.data());
+             job->resource_name_, bstrftime(jcr->dir_impl->jr.StartTime).data());
         Dmsg4(10,
               _("%s: considering jobs with ClientId %d and FilesetId %d older "
                 "than %s for consolidation.\n"),
               job->resource_name_, jcr->dir_impl->jr.ClientId,
-              jcr->dir_impl->jr.FileSetId, sdt.data());
+              jcr->dir_impl->jr.FileSetId, bstrftime(jcr->dir_impl->jr.StartTime).data());
       }
 
       db_list_ctx jobids_ctx;
@@ -230,12 +229,10 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
 
         starttime = jcr->dir_impl->previous_jr.JobTDate;
         oldest_allowed_starttime = now - job->AlwaysIncrementalMaxFullAge;
-        auto sdt_allowed = bstrftime(oldest_allowed_starttime);
-        auto sdt_starttime = bstrftime(starttime);
 
         // Check if job is older than AlwaysIncrementalMaxFullAge
         Jmsg(jcr, M_INFO, 0, _("check full age: full is %s, allowed is %s\n"),
-             sdt_starttime.data(), sdt_allowed.data());
+             bstrftime(starttime).data(), bstrftime(oldest_allowed_starttime).data());
         if (starttime > oldest_allowed_starttime) {
           Jmsg(jcr, M_INFO, 0,
                _("Full is newer than AlwaysIncrementalMaxFullAge -> skipping "
@@ -345,9 +342,6 @@ void ConsolidateCleanup(JobControlRecord* jcr, int TermCode)
               jcr->getJobStatus());
       break;
   }
-  auto schedt = bstrftime(jcr->dir_impl->jr.SchedTime);
-  auto sdt = bstrftime(jcr->dir_impl->jr.StartTime);
-  auto edt = bstrftime(jcr->dir_impl->jr.EndTime);
 
   Jmsg(jcr, msg_type, 0,
        _("BAREOS %s (%s): %s\n"
@@ -359,9 +353,9 @@ void ConsolidateCleanup(JobControlRecord* jcr, int TermCode)
          "  Bareos binary info:     %s\n"
          "  Job triggered by:       %s\n"
          "  Termination:            %s\n\n"),
-       kBareosVersionStrings.Full, kBareosVersionStrings.ShortDate, edt.data(),
-       jcr->dir_impl->jr.JobId, jcr->dir_impl->jr.Job, schedt.data(),
-       sdt.data(), edt.data(), kBareosVersionStrings.JoblogMessage,
+       kBareosVersionStrings.Full, kBareosVersionStrings.ShortDate, bstrftime(jcr->dir_impl->jr.EndTime).data(),
+       jcr->dir_impl->jr.JobId, jcr->dir_impl->jr.Job, bstrftime(jcr->dir_impl->jr.SchedTime).data(),
+       bstrftime(jcr->dir_impl->jr.StartTime).data(), bstrftime(jcr->dir_impl->jr.EndTime).data(), kBareosVersionStrings.JoblogMessage,
        JobTriggerToString(jcr->dir_impl->job_trigger).c_str(), TermMsg);
 
   Dmsg0(debuglevel, "Leave ConsolidateCleanup()\n");

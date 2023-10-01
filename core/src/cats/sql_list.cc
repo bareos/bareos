@@ -569,8 +569,7 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
   }
 
   if (since_time) {
-    auto dt = bstrftime(since_time);
-    temp.bsprintf("AND Job.SchedTime > '%s' ", dt.data());
+    temp.bsprintf("AND Job.SchedTime > '%s' ", bstrftime(since_time).data());
     PmStrcat(selection, temp.c_str());
   }
 

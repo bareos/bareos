@@ -2173,14 +2173,12 @@ static void fillcmd()
   jcr->sd_impl->dcr->VolFirstIndex = 0;
   time(&jcr->run_time); /* start counting time for rates */
 
-  auto runtime = bstrftime(jcr->run_time);
-
   if (simple) {
     Pmsg1(-1, _("%s Begin writing Bareos records to tape ...\n"),
-          runtime.data());
+          bstrftime(jcr->run_time).data());
   } else {
     Pmsg1(-1, _("%s Begin writing Bareos records to first tape ...\n"),
-          runtime.data());
+          bstrftime(jcr->run_time).data());
   }
   for (file_index = 0; ok && !jcr->IsJobCanceled();) {
     rec.VolSessionId = jcr->VolSessionId;
@@ -2194,7 +2192,7 @@ static void fillcmd()
 
     Dmsg4(250, "before write_rec FI=%d SessId=%d Strm=%s len=%d\n",
           rec.FileIndex, rec.VolSessionId,
-          stream_to_ascii(runtime.data(), rec.Stream, rec.FileIndex),
+          stream_to_ascii(bstrftime(jcr->run_time).data(), rec.Stream, rec.FileIndex),
           rec.data_len);
 
     while (!WriteRecordToBlock(dcr, &rec)) {
@@ -2225,8 +2223,7 @@ static void fillcmd()
        */
       if ((block->BlockNumber % write_eof) == 0) {
         now = time(nullptr);
-        auto currtime = bstrftime(now);
-        Pmsg1(-1, _("%s Flush block, write EOF\n"), currtime.data());
+        Pmsg1(-1, _("%s Flush block, write EOF\n"), bstrftime(now).data());
         FlushBlock(block);
       }
 
@@ -2312,18 +2309,17 @@ static void fillcmd()
 
   if (ok) {
     now = time(nullptr);
-    auto currtime = bstrftime(now);
     if (simple) {
       Pmsg3(0,
             _("\n\n%s Done filling tape at %d:%d. Now beginning re-read of "
               "tape ...\n"),
-            currtime.data(), jcr->sd_impl->dcr->dev->file,
+            bstrftime(now).data(), jcr->sd_impl->dcr->dev->file,
             jcr->sd_impl->dcr->dev->block_num);
     } else {
       Pmsg3(0,
             _("\n\n%s Done filling tapes at %d:%d. Now beginning re-read of "
               "first tape ...\n"),
-            currtime.data(), jcr->sd_impl->dcr->dev->file,
+            bstrftime(now).data(), jcr->sd_impl->dcr->dev->file,
             jcr->sd_impl->dcr->dev->block_num);
     }
 

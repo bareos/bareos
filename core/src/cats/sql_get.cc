@@ -1329,7 +1329,6 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
   /* Take the current time as upper limit if nothing else specified */
   utime_t StartTime = (jr->StartTime) ? jr->StartTime : time(NULL);
 
-  auto date = bstrftime(StartTime + 1);
   jobids->clear();
 
   char job_type = jr->JobType == JT_ARCHIVE ? 'A' : 'B';
@@ -1337,7 +1336,7 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
   // First, find the last good Full backup for this job/client/fileset
   FillQuery(query, SQL_QUERY::create_temp_accurate_jobids,
             edit_uint64(jcr->JobId, jobid), edit_uint64(jr->ClientId, clientid),
-            job_type, date.data(), edit_uint64(jr->FileSetId, filesetid));
+            job_type, bstrftime(StartTime + 1).data(), edit_uint64(jr->FileSetId, filesetid));
 
   if (!SqlQuery(query.c_str())) { goto bail_out; }
 
@@ -1357,7 +1356,7 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
          "AND FileSet.FileSet= (SELECT FileSet FROM FileSet WHERE FileSetId = "
          "%s) "
          "ORDER BY Job.JobTDate DESC LIMIT 1 ",
-         jobid, clientid, job_type, jobid, date.data(), filesetid);
+         jobid, clientid, job_type, jobid, bstrftime(StartTime + 1).data(), filesetid);
 
     if (!SqlQuery(query.c_str())) { goto bail_out; }
 
@@ -1380,7 +1379,7 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
          "AND FileSet.FileSet= (SELECT FileSet FROM FileSet WHERE FileSetId = "
          "%s) "
          "ORDER BY Job.JobTDate DESC ",
-         jobid, clientid, job_type, jobid, date.data(), filesetid);
+         jobid, clientid, job_type, jobid, bstrftime(StartTime + 1).data(), filesetid);
     if (!SqlQuery(query.c_str())) { goto bail_out; }
   }
 
@@ -1433,7 +1432,6 @@ bool BareosDb::GetBaseJobid(JobControlRecord* jcr,
   lctx.value = 0;
 
   StartTime = (jr->StartTime) ? jr->StartTime : time(NULL);
-  auto date = bstrftime(StartTime + 1);
   EscapeString(jcr, esc, jr->Name, strlen(jr->Name));
 
   Mmsg(query,
@@ -1443,7 +1441,7 @@ bool BareosDb::GetBaseJobid(JobControlRecord* jcr,
        "AND Level='B' AND JobStatus IN ('T','W') AND Type='B' "
        "AND StartTime<'%s' "
        "ORDER BY Job.JobTDate DESC LIMIT 1",
-       esc, date.data());
+       esc, bstrftime(StartTime + 1).data());
 
   Dmsg1(10, "GetBaseJobid q=%s\n", query.c_str());
   if (!SqlQueryWithHandler(query.c_str(), db_int64_handler, &lctx)) {
@@ -1501,12 +1499,10 @@ bool BareosDb::get_quota_jobbytes(JobControlRecord* jcr,
    * last job from the job retention gets excluded. */
   schedtime += 5;
 
-  auto dt = bstrftime(schedtime);
-
   DbLocker _{this};
 
   FillQuery(SQL_QUERY::get_quota_jobbytes, edit_uint64(jr->ClientId, ed1),
-            edit_uint64(jr->JobId, ed2), dt.data());
+            edit_uint64(jr->JobId, ed2), bstrftime(schedtime).data());
   if (QUERY_DB(jcr, cmd)) {
     num_rows = SqlNumRows();
     if (num_rows == 1) {
@@ -1549,13 +1545,11 @@ bool BareosDb::get_quota_jobbytes_nofailed(JobControlRecord* jcr,
    * last job from the job retention gets excluded. */
   schedtime += 5;
 
-  auto dt = bstrftime(schedtime);
-
   DbLocker _{this};
 
   FillQuery(SQL_QUERY::get_quota_jobbytes_nofailed,
             edit_uint64(jr->ClientId, ed1), edit_uint64(jr->JobId, ed2),
-            dt.data());
+            bstrftime(schedtime).data());
   if (QUERY_DB(jcr, cmd)) {
     num_rows = SqlNumRows();
     if (num_rows == 1) {

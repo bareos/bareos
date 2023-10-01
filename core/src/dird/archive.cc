@@ -102,10 +102,6 @@ void ArchiveCleanup(JobControlRecord* jcr, int TermCode)
       break;
   }
 
-  auto schedt = bstrftime(jcr->dir_impl->jr.SchedTime);
-  auto sdt = bstrftime(jcr->dir_impl->jr.StartTime);
-  auto edt = bstrftime(jcr->dir_impl->jr.EndTime);
-
   Jmsg(jcr, msg_type, 0,
        _("BAREOS %s (%s): %s\n"
          "  JobId:                  %d\n"
@@ -116,9 +112,9 @@ void ArchiveCleanup(JobControlRecord* jcr, int TermCode)
          "  Bareos binary info:     %s\n"
          "  Job triggered by:       %s\n"
          "  Termination:            %s\n\n"),
-       kBareosVersionStrings.Full, kBareosVersionStrings.ShortDate, edt.data(),
-       jcr->dir_impl->jr.JobId, jcr->dir_impl->jr.Job, schedt.data(),
-       sdt.data(), edt.data(), kBareosVersionStrings.JoblogMessage,
+       kBareosVersionStrings.Full, kBareosVersionStrings.ShortDate, bstrftime(jcr->dir_impl->jr.EndTime).data(),
+       jcr->dir_impl->jr.JobId, jcr->dir_impl->jr.Job, bstrftime(jcr->dir_impl->jr.SchedTime).data(),
+       bstrftime(jcr->dir_impl->jr.StartTime).data(), bstrftime(jcr->dir_impl->jr.EndTime).data(), kBareosVersionStrings.JoblogMessage,
        JobTriggerToString(jcr->dir_impl->job_trigger).c_str(), TermMsg);
 
   Dmsg0(debuglevel, "Leave ArchiveCleanup()\n");

@@ -148,15 +148,6 @@ std::string bstrftime_filename(utime_t tim)
   return std::string{buf.data()};
 }
 
-// Format with given format string. Only used for time command as there the
-// individual parts are available in json output.
-std::string bstrftime(utime_t tim, const char* format)
-{
-  std::vector<char> buf(MAX_TIME_LENGTH, '\0');
-  bstrftime_internal(buf.data(), MAX_TIME_LENGTH, tim, format);
-  return std::string{buf.data()};
-}
-
 // format for debug output. This is the standard format plus microseconds
 // example: 2023-10-01T17:16:53.123456+0200
 std::string bstrftime_debug(utime_t tim)

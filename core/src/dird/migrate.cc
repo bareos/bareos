@@ -1518,8 +1518,6 @@ static inline void GenerateMigrateSummary(JobControlRecord* jcr,
 
   Bsnprintf(term_code, sizeof(term_code), TermMsg, jcr->get_OperationName(),
             jcr->get_ActionName());
-  auto sdt = bstrftime(jcr->dir_impl->jr.StartTime);
-  auto edt = bstrftime(jcr->dir_impl->jr.EndTime);
   RunTime = jcr->dir_impl->jr.EndTime - jcr->dir_impl->jr.StartTime;
 
   std::string sd_term_msg = JobstatusToAscii(jcr->dir_impl->SDJobStatus);
@@ -1592,7 +1590,7 @@ static inline void GenerateMigrateSummary(JobControlRecord* jcr,
              : _("*None*"),
          NPRT(jcr->dir_impl->res.npool_source),
          jcr->dir_impl->res.catalog->resource_name_,
-         jcr->dir_impl->res.catalog_source, sdt.data(), edt.data(),
+         jcr->dir_impl->res.catalog_source, bstrftime(jcr->dir_impl->jr.StartTime).data(), bstrftime(jcr->dir_impl->jr.EndTime).data(),
          edit_utime(RunTime, elapsed, sizeof(elapsed)), jcr->JobPriority,
          edit_uint64_with_commas(jcr->dir_impl->SDJobFiles, ec1),
          edit_uint64_with_commas(jcr->dir_impl->SDJobBytes, ec2),
@@ -1621,7 +1619,7 @@ static inline void GenerateMigrateSummary(JobControlRecord* jcr,
          kBareosVersionStrings.ShortDate, kBareosVersionStrings.GetOsInfo(),
          edit_uint64(jcr->dir_impl->jr.JobId, ec8), jcr->dir_impl->jr.Job,
          jcr->dir_impl->res.catalog->resource_name_,
-         jcr->dir_impl->res.catalog_source, sdt.data(), edt.data(),
+         jcr->dir_impl->res.catalog_source, bstrftime(jcr->dir_impl->jr.StartTime).data(), bstrftime(jcr->dir_impl->jr.EndTime).data(),
          edit_utime(RunTime, elapsed, sizeof(elapsed)), jcr->JobPriority,
          kBareosVersionStrings.JoblogMessage,
          JobTriggerToString(jcr->dir_impl->job_trigger).c_str(), term_code);
