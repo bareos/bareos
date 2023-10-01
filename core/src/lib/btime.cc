@@ -92,6 +92,7 @@ void Blocaltime(const time_t* time, struct tm* tm)
 
 
 // Formatted time as iso8601 string
+// only call from inside this file
 static char* bstrftime_internal(char* dt,
                                 int maxlen,
                                 utime_t utime,
@@ -130,6 +131,7 @@ static char* bstrftime_filename(char* dt, int maxlen, utime_t utime)
   return bstrftime_internal(dt, maxlen, utime, kBareosFilenameTimestampFormat);
 }
 
+// format with standard format: 2023-10-01T17:16:53+0200
 std::string bstrftime(utime_t tim)
 {
   std::vector<char> buf(MAX_TIME_LENGTH, '\0');
@@ -137,6 +139,8 @@ std::string bstrftime(utime_t tim)
   return std::string{buf.data()};
 }
 
+// format with to use as filename : 2023-10-01T17.16.25+0200
+// No characters unsuitable for filenames
 std::string bstrftime_filename(utime_t tim)
 {
   std::vector<char> buf(MAX_TIME_LENGTH, '\0');
@@ -144,6 +148,8 @@ std::string bstrftime_filename(utime_t tim)
   return std::string{buf.data()};
 }
 
+// Format with given format string. Only used for time command as there the
+// individual parts are available in json output.
 std::string bstrftime(utime_t tim, const char* format)
 {
   std::vector<char> buf(MAX_TIME_LENGTH, '\0');
@@ -151,6 +157,8 @@ std::string bstrftime(utime_t tim, const char* format)
   return std::string{buf.data()};
 }
 
+// format for debug output. This is the standard format plus microseconds
+// example: 2023-10-01T17:16:53.123456+0200
 std::string bstrftime_debug(utime_t tim)
 {
   std::vector<char> buf(MAX_TIME_LENGTH, '\0');
