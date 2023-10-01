@@ -101,7 +101,6 @@ static char* bstrftime_internal(char* dt,
   struct tm tm;
 
   Blocaltime(&time, &tm);
-#if defined(HAVE_WIN32)
   // we have to add the content that usually is provided by %z
   std::vector<char> buf(MAX_NAME_LENGTH, '\0');
   strftime(buf.data(), maxlen, fmt, &tm);
@@ -110,9 +109,6 @@ static char* bstrftime_internal(char* dt,
       = timeformat_without_timezone + GetCurrentTimezoneOffset();
   strncpy(dt, fullformat.data(), fullformat.size());
   dt[fullformat.size()] = '\0';
-#else
-  strftime(dt, maxlen, fmt, &tm);
-#endif
   return dt;
 }
 
