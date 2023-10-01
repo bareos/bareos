@@ -51,7 +51,6 @@
 #include "lib/address_conf.h"
 #include "lib/output_formatter_resource.h"
 #include "lib/tls_resource_items.h"
-
 #include <cassert>
 
 namespace filedaemon {
@@ -116,7 +115,7 @@ static ResourceItem cli_items[] = {
   {"LmdbThreshold", CFG_TYPE_PINT32, ITEM(res_client, lmdb_threshold), 0, 0, NULL, NULL, NULL},
   {"SecureEraseCommand", CFG_TYPE_STR, ITEM(res_client, secure_erase_cmdline), 0, 0, NULL, "15.2.1-",
       "Specify command that will be called when bareos unlinks files."},
-  {"LogTimestampFormat", CFG_TYPE_STR, ITEM(res_client, log_timestamp_format_remove_in_24), 0, CFG_ITEM_DEFAULT|CFG_ITEM_DEPRECATED, kBareosDefaultTimestampFormat, "15.2.3-", NULL},
+  {"LogTimestampFormat", CFG_TYPE_STR, ITEM(res_client, log_timestamp_format_remove_in_24), 0, CFG_ITEM_DEFAULT|CFG_ITEM_DEPRECATED, "", "15.2.3-", NULL},
     TLS_COMMON_CONFIG(res_client),
     TLS_CERT_CONFIG(res_client),
   {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}

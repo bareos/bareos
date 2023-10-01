@@ -27,6 +27,7 @@
  */
 
 #include "include/bareos.h"
+#include "include/timestamp_format.h"
 
 #if HAVE_POSTGRESQL
 
