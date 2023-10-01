@@ -133,12 +133,14 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
         jcr->dir_impl->jr.StartTime = now - job->AlwaysIncrementalJobRetention;
         Jmsg(jcr, M_INFO, 0,
              _("%s: considering jobs older than %s for consolidation.\n"),
-             job->resource_name_, bstrftime(jcr->dir_impl->jr.StartTime).data());
+             job->resource_name_,
+             bstrftime(jcr->dir_impl->jr.StartTime).data());
         Dmsg4(10,
               _("%s: considering jobs with ClientId %d and FilesetId %d older "
                 "than %s for consolidation.\n"),
               job->resource_name_, jcr->dir_impl->jr.ClientId,
-              jcr->dir_impl->jr.FileSetId, bstrftime(jcr->dir_impl->jr.StartTime).data());
+              jcr->dir_impl->jr.FileSetId,
+              bstrftime(jcr->dir_impl->jr.StartTime).data());
       }
 
       db_list_ctx jobids_ctx;
@@ -232,7 +234,8 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
 
         // Check if job is older than AlwaysIncrementalMaxFullAge
         Jmsg(jcr, M_INFO, 0, _("check full age: full is %s, allowed is %s\n"),
-             bstrftime(starttime).data(), bstrftime(oldest_allowed_starttime).data());
+             bstrftime(starttime).data(),
+             bstrftime(oldest_allowed_starttime).data());
         if (starttime > oldest_allowed_starttime) {
           Jmsg(jcr, M_INFO, 0,
                _("Full is newer than AlwaysIncrementalMaxFullAge -> skipping "
@@ -353,9 +356,12 @@ void ConsolidateCleanup(JobControlRecord* jcr, int TermCode)
          "  Bareos binary info:     %s\n"
          "  Job triggered by:       %s\n"
          "  Termination:            %s\n\n"),
-       kBareosVersionStrings.Full, kBareosVersionStrings.ShortDate, bstrftime(jcr->dir_impl->jr.EndTime).data(),
-       jcr->dir_impl->jr.JobId, jcr->dir_impl->jr.Job, bstrftime(jcr->dir_impl->jr.SchedTime).data(),
-       bstrftime(jcr->dir_impl->jr.StartTime).data(), bstrftime(jcr->dir_impl->jr.EndTime).data(), kBareosVersionStrings.JoblogMessage,
+       kBareosVersionStrings.Full, kBareosVersionStrings.ShortDate,
+       bstrftime(jcr->dir_impl->jr.EndTime).data(), jcr->dir_impl->jr.JobId,
+       jcr->dir_impl->jr.Job, bstrftime(jcr->dir_impl->jr.SchedTime).data(),
+       bstrftime(jcr->dir_impl->jr.StartTime).data(),
+       bstrftime(jcr->dir_impl->jr.EndTime).data(),
+       kBareosVersionStrings.JoblogMessage,
        JobTriggerToString(jcr->dir_impl->job_trigger).c_str(), TermMsg);
 
   Dmsg0(debuglevel, "Leave ConsolidateCleanup()\n");

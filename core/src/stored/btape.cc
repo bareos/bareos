@@ -2192,7 +2192,8 @@ static void fillcmd()
 
     Dmsg4(250, "before write_rec FI=%d SessId=%d Strm=%s len=%d\n",
           rec.FileIndex, rec.VolSessionId,
-          stream_to_ascii(bstrftime(jcr->run_time).data(), rec.Stream, rec.FileIndex),
+          stream_to_ascii(bstrftime(jcr->run_time).data(), rec.Stream,
+                          rec.FileIndex),
           rec.data_len);
 
     while (!WriteRecordToBlock(dcr, &rec)) {

@@ -719,7 +719,8 @@ bool BareosDb::CreateFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr)
   if (fsr->CreateTime == 0 && fsr->cCreateTime[0] == 0) {
     fsr->CreateTime = time(NULL);
   }
-  bstrncpy(fsr->cCreateTime, bstrftime(fsr->CreateTime).data(), sizeof(fsr->cCreateTime));
+  bstrncpy(fsr->cCreateTime, bstrftime(fsr->CreateTime).data(),
+           sizeof(fsr->cCreateTime));
   if (fsr->FileSetText) {
     PoolMem esc_filesettext(PM_MESSAGE);
 
@@ -1277,8 +1278,9 @@ bool BareosDb::CreateJobStatistics(JobControlRecord* jcr,
   Mmsg(cmd,
        "INSERT INTO JobStats (SampleTime, JobId, JobFiles, JobBytes, DeviceId)"
        " VALUES ('%s', %s, %s, %s, %s)",
-       bstrftime(stime).data(), edit_int64(jsr->JobId, ed1), edit_uint64(jsr->JobFiles, ed2),
-       edit_uint64(jsr->JobBytes, ed3), edit_int64(jsr->DeviceId, ed4));
+       bstrftime(stime).data(), edit_int64(jsr->JobId, ed1),
+       edit_uint64(jsr->JobFiles, ed2), edit_uint64(jsr->JobBytes, ed3),
+       edit_int64(jsr->DeviceId, ed4));
   Dmsg1(200, "Create job stats: %s\n", cmd);
 
   if (INSERT_DB(jcr, cmd) != 1) {

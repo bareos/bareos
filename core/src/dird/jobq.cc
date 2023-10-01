@@ -609,7 +609,8 @@ static bool RescheduleJob(JobControlRecord* jcr, jobq_t* jq, jobq_item_t* je)
           jcr->sched_time);
     Jmsg(jcr, M_INFO, 0,
          _("Rescheduled Job %s at %s to re-run in %d seconds (%s).\n"),
-         jcr->Job, bstrftime(now).data(), (int)jcr->dir_impl->res.job->RescheduleInterval,
+         jcr->Job, bstrftime(now).data(),
+         (int)jcr->dir_impl->res.job->RescheduleInterval,
          bstrftime(jcr->sched_time).data());
     DirdFreeJcrPointers(jcr); /* partial cleanup old stuff */
     jcr->setJobStatus(-1);

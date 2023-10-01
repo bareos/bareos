@@ -43,7 +43,7 @@ TEST(time_format, correct_time_and_date_format)
   // std::vector<char> stime_out(MAX_NAME_LENGTH);
 
   // make sure bstrftime gets the current timezone offset appended
-  EXPECT_THAT( bstrftime(time(0)).data(), EndsWith(GetCurrentTimezoneOffset()));
+  EXPECT_THAT(bstrftime(time(0)).data(), EndsWith(GetCurrentTimezoneOffset()));
 
 #if !defined(HAVE_WIN32)
   using namespace std::string_literals;

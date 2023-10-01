@@ -1457,14 +1457,16 @@ void CreateUniqueJobName(JobControlRecord* jcr, const char* base_name)
 
   /* Form Unique JobName
    * Use only characters that are permitted in Windows filenames */
-  len = bstrftime_filename(jcr->start_time).length() + 5; /* bstrftime_filename(jcr->start_time) + .%02d EOS */
+  len = bstrftime_filename(jcr->start_time).length()
+        + 5; /* bstrftime_filename(jcr->start_time) + .%02d EOS */
 
   const int R_JOB_prefix_length_psk_identity = 6;
   len += R_JOB_prefix_length_psk_identity;  // Anticipating "R_JOB^" prefix
                                             // addition for psk identity
   bstrncpy(name, base_name, sizeof(name));
   name[sizeof(name) - len] = 0; /* truncate if too long */
-  Bsnprintf(jcr->Job, sizeof(jcr->Job), "%s.%s_%02d", name, bstrftime_filename(jcr->start_time).data(),
+  Bsnprintf(jcr->Job, sizeof(jcr->Job), "%s.%s_%02d", name,
+            bstrftime_filename(jcr->start_time).data(),
             lseq); /* add date & time */
   Dmsg2(100, "JobId=%u created Job=%s\n", jcr->JobId, jcr->Job);
 }

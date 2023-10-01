@@ -1336,7 +1336,8 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
   // First, find the last good Full backup for this job/client/fileset
   FillQuery(query, SQL_QUERY::create_temp_accurate_jobids,
             edit_uint64(jcr->JobId, jobid), edit_uint64(jr->ClientId, clientid),
-            job_type, bstrftime(StartTime + 1).data(), edit_uint64(jr->FileSetId, filesetid));
+            job_type, bstrftime(StartTime + 1).data(),
+            edit_uint64(jr->FileSetId, filesetid));
 
   if (!SqlQuery(query.c_str())) { goto bail_out; }
 
@@ -1356,7 +1357,8 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
          "AND FileSet.FileSet= (SELECT FileSet FROM FileSet WHERE FileSetId = "
          "%s) "
          "ORDER BY Job.JobTDate DESC LIMIT 1 ",
-         jobid, clientid, job_type, jobid, bstrftime(StartTime + 1).data(), filesetid);
+         jobid, clientid, job_type, jobid, bstrftime(StartTime + 1).data(),
+         filesetid);
 
     if (!SqlQuery(query.c_str())) { goto bail_out; }
 
@@ -1379,7 +1381,8 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
          "AND FileSet.FileSet= (SELECT FileSet FROM FileSet WHERE FileSetId = "
          "%s) "
          "ORDER BY Job.JobTDate DESC ",
-         jobid, clientid, job_type, jobid, bstrftime(StartTime + 1).data(), filesetid);
+         jobid, clientid, job_type, jobid, bstrftime(StartTime + 1).data(),
+         filesetid);
     if (!SqlQuery(query.c_str())) { goto bail_out; }
   }
 

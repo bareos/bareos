@@ -100,10 +100,11 @@ bool BareosDb::UpdateJobStartRecord(JobControlRecord* jcr, JobDbRecord* jr)
        "UPDATE Job SET JobStatus='%c',Level='%c',StartTime='%s',"
        "ClientId=%s,JobTDate=%s,PoolId=%s,FileSetId=%s,VolSessionId=%lu,"
        "VolSessionTime=%lu WHERE JobId=%s",
-       (char)(jcr->getJobStatus()), (char)(jr->JobLevel), bstrftime(stime).data(),
-       edit_int64(jr->ClientId, ed1), edit_uint64(JobTDate, ed2),
-       edit_int64(jr->PoolId, ed3), edit_int64(jr->FileSetId, ed4),
-       jcr->VolSessionId, jcr->VolSessionTime, edit_int64(jr->JobId, ed5));
+       (char)(jcr->getJobStatus()), (char)(jr->JobLevel),
+       bstrftime(stime).data(), edit_int64(jr->ClientId, ed1),
+       edit_uint64(JobTDate, ed2), edit_int64(jr->PoolId, ed3),
+       edit_int64(jr->FileSetId, ed4), jcr->VolSessionId, jcr->VolSessionTime,
+       edit_int64(jr->JobId, ed5));
 
   changes = 0;
   return UPDATE_DB(jcr, cmd) > 0;
@@ -172,11 +173,12 @@ bool BareosDb::UpdateJobEndRecord(JobControlRecord* jcr, JobDbRecord* jr)
       "VolSessionId=%u,"
       "VolSessionTime=%u,PoolId=%u,FileSetId=%u,JobTDate=%s,"
       "RealEndTime='%s',PriorJobId=%s,HasBase=%u,PurgedFiles=%u WHERE JobId=%s",
-      (char)(jr->JobStatus), (char)(jr->JobLevel), bstrftime(ttime).data(), jr->ClientId,
-      edit_uint64(jr->JobBytes, ed1), edit_uint64(jr->ReadBytes, ed4),
-      jr->JobFiles, jr->JobErrors, jr->VolSessionId, jr->VolSessionTime,
-      jr->PoolId, jr->FileSetId, edit_uint64(JobTDate, ed2), bstrftime(ttime).data(),
-      PriorJobId, jr->HasBase, jr->PurgedFiles, edit_int64(jr->JobId, ed3));
+      (char)(jr->JobStatus), (char)(jr->JobLevel), bstrftime(ttime).data(),
+      jr->ClientId, edit_uint64(jr->JobBytes, ed1),
+      edit_uint64(jr->ReadBytes, ed4), jr->JobFiles, jr->JobErrors,
+      jr->VolSessionId, jr->VolSessionTime, jr->PoolId, jr->FileSetId,
+      edit_uint64(JobTDate, ed2), bstrftime(ttime).data(), PriorJobId,
+      jr->HasBase, jr->PurgedFiles, edit_int64(jr->JobId, ed3));
 
   return UPDATE_DB(jcr, cmd) > 0;
 }

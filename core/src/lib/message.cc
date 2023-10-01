@@ -109,7 +109,8 @@ static void DeliveryError(const char* fmt, ...)
   pool_buf = GetPoolMemory(PM_EMSG);
 
 
-  i = Mmsg(pool_buf, "%s Message delivery ERROR: ", (bstrftime(time(0)) + " ").data());
+  i = Mmsg(pool_buf,
+           "%s Message delivery ERROR: ", (bstrftime(time(0)) + " ").data());
 
   while (1) {
     maxlen = SizeofPoolMemory(pool_buf) - i - 1;

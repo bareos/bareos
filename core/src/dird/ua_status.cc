@@ -846,11 +846,13 @@ static void PrtRuntime(UaContext* ua, sched_pkt* sp)
   if (ua->api) {
     ua->SendMsg(_("%-14s\t%-8s\t%3d\t%-18s\t%-18s\t%s\n"), level_ptr,
                 job_type_to_str(sp->job->JobType), sp->priority,
-                bstrftime(sp->runtime).data(), sp->job->resource_name_, mr.VolumeName);
+                bstrftime(sp->runtime).data(), sp->job->resource_name_,
+                mr.VolumeName);
   } else {
     ua->SendMsg(_("%-14s %-8s %3d  %-18s %-18s %s\n"), level_ptr,
                 job_type_to_str(sp->job->JobType), sp->priority,
-                bstrftime(sp->runtime).data(), sp->job->resource_name_, mr.VolumeName);
+                bstrftime(sp->runtime).data(), sp->job->resource_name_,
+                mr.VolumeName);
   }
   if (CloseDb) { DbSqlClosePooledConnection(jcr, jcr->db); }
   jcr->db = ua->db; /* restore ua db to jcr */
