@@ -893,8 +893,6 @@ void d_msg(const char* file, int line, int level, const char* fmt, ...)
 {
   va_list ap;
   int len, maxlen;
-  btime_t mtime;
-  uint32_t usecs;
   bool details = true;
   PoolMem buf(PM_EMSG), more(PM_EMSG);
 
@@ -905,9 +903,7 @@ void d_msg(const char* file, int line, int level, const char* fmt, ...)
 
   if (level <= debug_level) {
     if (dbg_timestamp) {
-      mtime = GetCurrentBtime();
-      usecs = mtime % 1000000;
-      Mmsg(buf, "%s.%06d ", bstrftime(BtimeToUtime(mtime)).data(), usecs);
+      Mmsg(buf, "%s ", bstrftime_debug((time(0))).data());
       pt_out(buf.c_str());
     }
 

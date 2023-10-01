@@ -95,18 +95,26 @@ void Blocaltime(const time_t* time, struct tm* tm)
 static char* bstrftime_internal(char* dt,
                                 int maxlen,
                                 utime_t utime,
-                                const char* fmt)
+                                const char* fmt,
+                                bool print_microseconds = false)
 {
   time_t time = (time_t)utime;
   struct tm tm;
-
-  Blocaltime(&time, &tm);
-  // we have to add the content that usually is provided by %z
   std::vector<char> buf(MAX_NAME_LENGTH, '\0');
+  std::stringstream microseconds{};
+  if (print_microseconds) {
+    uint32_t usecs{};
+    usecs = GetCurrentBtime() % 1000000;
+    microseconds << "." << std::internal << std::setw(6) << std::setfill('0')
+                 << usecs;
+  }
+  // we have to add the content that usually is provided by %z and, if required
+  // also the microseconds
+  Blocaltime(&time, &tm);
   strftime(buf.data(), maxlen, fmt, &tm);
   std::string timeformat_without_timezone{buf.data()};
-  std::string fullformat
-      = timeformat_without_timezone + GetCurrentTimezoneOffset();
+  std::string fullformat = timeformat_without_timezone + microseconds.str()
+                           + GetCurrentTimezoneOffset();
   strncpy(dt, fullformat.data(), fullformat.size());
   dt[fullformat.size()] = '\0';
   return dt;
@@ -142,6 +150,15 @@ std::string bstrftime(utime_t tim, const char* format)
   bstrftime_internal(buf.data(), MAX_TIME_LENGTH, tim, format);
   return std::string{buf.data()};
 }
+
+std::string bstrftime_debug(utime_t tim)
+{
+  std::vector<char> buf(MAX_TIME_LENGTH, '\0');
+  bstrftime_internal(buf.data(), MAX_TIME_LENGTH, tim,
+                     kBareosDefaultTimestampFormat, true);
+  return std::string{buf.data()};
+}
+
 
 utime_t StrToUtime(const char* str)
 {
