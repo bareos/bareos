@@ -53,15 +53,12 @@ try:
                 f" than required version 1.16\n"
             )
         )
-
 except ValueError as err_version:
     bareosfd.JobMessage(bareosfd.M_FATAL, f"FATAL ERROR: {err_version}\n")
-
 except ImportError as err_import:
     bareosfd.JobMessage(
         bareosfd.M_FATAL, f"could not import Python module: pg8000 {err_import}\n"
     )
-
 except Exception as err_unknown:
     bareosfd.JobMessage(bareosfd.M_FATAL, f"Unknown error {err_unknown}\n")
 
@@ -107,8 +104,6 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
 
         # Last argument of super constructor is a list of mandatory arguments
         super().__init__(plugindef, ["postgresql_data_dir", "wal_archive_dir"])
-        #TODO sort out the commented directory, PG say no need to backup them but
-        #     failed to start if not present. \o/
         self.ignore_subdirs = [
             "log",
             "pg_wal",
@@ -116,11 +111,11 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             "pg_xlog",
             "pgsql_tmp",
             "pg_dynshmem",
-        #    "pg_notify",
+            "pg_notify",
             "pg_serial",
-        #    "pg_snapshots",
+            "pg_snapshots",
             "pg_stat_tmp",
-        #    "pg_subtrans",
+            "pg_subtrans",
         ]
         self.options = {}
         self.db_con = None
@@ -144,7 +139,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
 
         # Needed to transfer Data to virtual files
         self.data_stream = None
-        self.FNAME = ""
+        self.fname = ""
         self.file_type = ""
         self.files_to_backup = []
         self.file_to_backup = ""
@@ -230,7 +225,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                     continue
             #TODO check if we should also check mtime for file.
             for dirname in dirnames:
-                if os.path.basename(os.path.normpath(dirname)) in self.ignore_subdirs:
+                if os.path.basename(os.path.normpath(topdir)) in self.ignore_subdirs:
                     continue
 
                 fulldirname = os.path.join(topdir, dirname) + "/"
@@ -263,9 +258,9 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                     ),
                 )
                 self.build_files_to_backup(spacelink)
-        except Exception as err:
+        except pg8000.native.Error as pg_err:
             bareosfd.JobMessage(
-                bareosfd.M_FATAL, f"tablespacemap checking statement failed: {err}"
+                bareosfd.M_FATAL, f"tablespacemap checking statement failed: {pg_err}"
             )
             return bareosfd.bRC_Error
 
@@ -395,12 +390,12 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             bareosfd.JobMessage(
                 bareosfd.M_INFO, f"Connected to PostgreSQL version {self.pg_version}\n"
             )
-        except Exception as err:
+        except pg8000.native.Error as pg_err:
             bareosfd.JobMessage(
                 bareosfd.M_FATAL,
                 (
                     f"Could not connect to database {self.db_name},"
-                    f" user {self.db_user}, host: {self.db_host} : '{err}'\n"
+                    f" user {self.db_user}, host: {self.db_host} : '{pg_err}'\n"
                 ),
             )
             return bareosfd.bRC_Error
@@ -443,11 +438,11 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                 200,
                 (
                     f"BareosFdPluginPostgreSQL:plugin_io_read reading {IOP.count}"
-                    f" from file {self.FNAME}\n"
+                    f" from file {self.fname}\n"
                 ),
             )
             IOP.buf = bytearray(IOP.count)
-            if self.FNAME == "ROP":
+            if self.fname == "ROP":
                 # should never be the case with no_read = True
                 IOP.buf = bytearray()
                 IOP.status = 0
@@ -459,15 +454,15 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                         "That can't be true with no_read = True\n"
                     ),
                 )
-            if self.FNAME == self.backup_label_filename:
+            if self.fname == self.backup_label_filename:
                 bdata = bytearray(self.backup_label_data, "utf-8")
-            elif self.FNAME == self.recovery_filename:
+            elif self.fname == self.recovery_filename:
                 bdata = self.recovery_data
-            elif self.FNAME == self.tablespace_map_filename:
+            elif self.fname == self.tablespace_map_filename:
                 bdata = bytearray(self.tablespace_map_data, "utf-8")
             else:
                 bareosfd.JobMessage(
-                    bareosfd.M_FATAL, f'Unexpected file name "{self.FNAME}"'
+                    bareosfd.M_FATAL, f'Unexpected file name "{self.fname}"'
                 )
                 return bareosfd.bRC_Error
 
@@ -506,7 +501,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                 100,
                 (
                     f"BareosFdPluginPostgreSQL:plugin_io_read Did not read from"
-                    f" file {self.FNAME} (type {self.file_type})\n"
+                    f" file {self.fname} (type {self.file_type})\n"
                 ),
             )
             IOP.buf = bytearray()
@@ -528,9 +523,9 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         )
         if IOP.func == bareosfd.IO_OPEN:
             if IOP.fname in self.virtual_files:
-                self.FNAME = IOP.fname
+                self.fname = IOP.fname
                 # Force it so upper plugin will not do it wrong.
-                if self.FNAME == "ROP":
+                if self.fname == "ROP":
                     self.file_type = "FT_RESTORE_FIRST"
                 else:
                     self.file_type = "FT_REG"
@@ -539,7 +534,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                 bareosfd.DebugMessage(
                     250,
                     (
-                        f"BareosFdPluginPostgreSQL:plugin_io open find {self.FNAME}"
+                        f"BareosFdPluginPostgreSQL:plugin_io open find {self.fname}"
                         f" in {self.virtual_files}\n"
                     ),
                 )
@@ -552,12 +547,12 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                     IOP.status = bareosfd.iostat_do_in_core
             return result
         elif IOP.func == bareosfd.IO_READ:
-            if self.FNAME in self.virtual_files:
+            if self.fname in self.virtual_files:
                 bareosfd.DebugMessage(
                     250,
                     (
                         f"BareosFdPluginPostgreSQL:plugin_io io_read calling"
-                        f" self.plugin_io_read for {self.FNAME}\n"
+                        f" self.plugin_io_read for {self.fname}\n"
                     ),
                 )
                 return self.plugin_io_read(IOP)
@@ -624,13 +619,13 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                     bareosfd.M_INFO,
                     f"Current LSN {current_lsn}, last LSN: {self.last_lsn}\n",
                 )
-            except Exception as err:
+            except pg8000.native.Error as pg_err:
                 current_lsn = 0
                 bareosfd.JobMessage(
                     bareosfd.M_WARNING,
                     (
                         f"Could not get current LSN, last LSN was: {self.last_lsn}"
-                        f": {err} \n"
+                        f": {pg_err} \n"
                     ),
                 )
             # TODO maybe we want to ensure that pg_walfile_name_offset()
@@ -641,10 +636,10 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                 # Let PostgreSQL write latest transaction into a new WAL file now
                 try:
                     result = self.db_con.run(switch_lsn_stmt)
-                except Exception as err:
+                except pg8000.native.Error as pg_err:
                     bareosfd.JobMessage(
                         bareosfd.M_WARNING,
-                        f"Could not switch to next WAL segment: {err}\n",
+                        f"Could not switch to next WAL segment: {pg_err}\n",
                     )
                 # Pick the new raw lsn and update our last_lsn
                 try:
@@ -658,12 +653,12 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                         ),
                     )
                     self.last_lsn = current_lsn
-                except Exception as err:
+                except pg8000.native.Error as pg_err:
                     bareosfd.JobMessage(
                         bareosfd.M_WARNING,
                         (
                             f"Could not read LSN after switching to"
-                            f" new WAL segment: {err}\n"
+                            f" new WAL segment: {pg_err}\n"
                         ),
                     )
 
@@ -722,9 +717,9 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         )
         try:
             result = self.db_con.run(f"SELECT {start_stmt};")
-        except Exception as err:
+        except pg8000.native.Error as pg_err:
             bareosfd.JobMessage(
-                bareosfd.M_FATAL, f"{start_stmt} statement failed: {err}"
+                bareosfd.M_FATAL, f"{start_stmt} statement failed: {pg_err}"
             )
             return bareosfd.bRC_Error
 
@@ -1022,9 +1017,13 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             )
             self.last_backup_stop_time = int(time.time())
 
+        except pg8000.native.Error as pg_err:
+            bareosfd.JobMessage(
+                bareosfd.M_ERROR, f"pg_backup_stop statement failed: {pg_err}\n"
+            )
         except Exception as err:
             bareosfd.JobMessage(
-                bareosfd.M_ERROR, f"pg_backup_stop statement failed: {err}\n"
+                bareosfd.M_ERROR, f"complete_backup_job unknown failure: {err}\n"
             )
 
         self.full_backup_running = False
@@ -1101,52 +1100,138 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
 
         return bareosfd.bRC_OK
 
+    def create_file(self, restorepkt):
+        """
+        Creates the file to be restored and directory structure, if needed.
+        """
+        bareosfd.DebugMessage(
+            100,
+            f"create_file() entry point in Python called with {restorepkt}\n",
+        )
+        self.fname = restorepkt.ofname
+        if not self.fname:
+            return bareosfd.bRC_Error
+
+        dirname = os.path.dirname(self.fname.rstrip("/"))
+        if not os.path.exists(dirname):
+            bareosfd.DebugMessage(
+                200, f"Directory {dirname} does not exist, creating it now\n"
+            )
+            try:
+                os.makedirs(dirname)
+            except OSError as os_err:
+                bareosfd.JobMessage(
+                    bareosfd.M_ERROR,
+                    f'os.makedirs error on {dirname}: "{os_err}"',
+                )
+
+        # open creates the file, if not yet existing, we close it again right away
+        # it will be opened again in plugin_io.
+        if restorepkt.type == bareosfd.FT_REG:
+            try:
+                with open(self.fname, "wb") as file:
+                    file.close()
+            except OSError as file_err:
+                bareosfd.JobMessage(
+                    bareosfd.M_ERROR,
+                    f'open/close error on {self.fname}: "{file_err}"',
+                )
+            restorepkt.create_status = bareosfd.CF_EXTRACT
+        elif restorepkt.type == bareosfd.FT_LNK:
+            link_name = restorepkt.olname
+            if not os.path.islink(self.fname.rstrip("/")):
+                try:
+                    os.symlink(link_name, self.fname.rstrip("/"))
+                except OSError as os_err:
+                    bareosfd.JobMessage(
+                        bareosfd.M_ERROR,
+                        f'os.symlink error on {self.fname}: "{os_err}"',
+                    )
+            restorepkt.create_status = bareosfd.CF_CREATED
+        elif restorepkt.type == bareosfd.FT_LNKSAVED:
+            link_name = restorepkt.olname
+            if not os.path.exists(link_name):
+                try:
+                    os.link(link_name, self.fname.rstrip("/"))
+                except OSError as os_err:
+                    bareosfd.JobMessage(
+                        bareosfd.M_ERROR,
+                        f'os.link error on {self.fname}: "{os_err}"',
+                    )
+
+            restorepkt.create_status = bareosfd.CF_CREATED
+        elif restorepkt.type == bareosfd.FT_DIREND:
+            if not os.path.exists(self.fname):
+                try:
+                    os.makedirs(self.fname)
+                except OSError as os_err:
+                    bareosfd.JobMessage(
+                        bareosfd.M_ERROR,
+                        f'os.makedirs error on {self.fname}: "{os_err}"',
+                    )
+            restorepkt.create_status = bareosfd.CF_CREATED
+        elif restorepkt.type == bareosfd.FT_FIFO:
+            if not os.path.exists(self.fname):
+                try:
+                    os.mkfifo(self.fname, 0o600)
+                except OSError as os_err:
+                    bareosfd.JobMessage(
+                        bareosfd.M_ERROR,
+                        f'os.mkfifo error on {self.fname}: "{os_err}"',
+                    )
+            restorepkt.create_status = bareosfd.CF_CREATED
+        else:
+            bareosfd.JobMessage(
+                bareosfd.M_ERROR,
+                f"Unknown type {restorepkt.type} for file {self.fname}",
+            )
+        return bareosfd.bRC_OK
+
     def end_restore_file(self):
         """
         all actions done at the end of file restore.
         """
-        # It can happen with the last subdir restored
-        if self.FNAME == '':
-            return super().end_restore_file()
-
         bareosfd.DebugMessage(
             100,
-            f"end_restore_file() entry point in Python called FNAME: {self.FNAME}\n",
+            f"end_restore_file() entry point in Python called fname: {self.fname}\n",
         )
+        # It can happen with the last subdir restored ?
+        #if self.fname == '':
+        #    return super().end_restore_file()
+
         bareosfd.DebugMessage(
             150,
             (
-                f"end_restore_file set {self.FNAME} attributes"
-                f" with stat {str(self.stat_packets[self.FNAME])}\n"
+                f"end_restore_file set {self.fname} attributes"
+                f" with stat {str(self.stat_packets[self.fname])}\n"
             ),
         )
         try:
             os.chown(
-                self.FNAME,
-                self.stat_packets[self.FNAME].st_uid,
-                self.stat_packets[self.FNAME].st_gid
+                self.fname,
+                self.stat_packets[self.fname].st_uid,
+                self.stat_packets[self.fname].st_gid
             )
             os.chmod(
-                self.FNAME,
-                self.stat_packets[self.FNAME].st_mode
+                self.fname,
+                self.stat_packets[self.fname].st_mode
             )
             os.utime(
-                self.FNAME,
+                self.fname,
                 (
-                    self.stat_packets[self.FNAME].st_atime,
-                    self.stat_packets[self.FNAME].st_mtime
+                    self.stat_packets[self.fname].st_atime,
+                    self.stat_packets[self.fname].st_mtime
                 ),
             )
             # del sometimes leads to no-key errors, like if end_restore_file is called
             # sometimes multiple times. so we don't purge.
-            # del self.statp[self.FNAME]
+            # del self.statp[self.fname]
         except os.error as os_err:
             bareosfd.JobMessage(
                 bareosfd.M_WARNING,
-                f'Could net set attributes for file {self.FNAME}: "{os_err}"',
+                f'Could net set attributes for file {self.fname}: "{os_err}"',
             )
         return bareosfd.bRC_OK
-
 
     def end_backup_file(self):
         """
