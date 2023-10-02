@@ -72,7 +72,7 @@ messages
 END_OF_DATA
 
 # Create activity on the cluster during the backup
-# ${PSQL} ${DBNAME} -f "database/make_cluster_activity.sql" --output ${tmp}/cluster_activity.log &
+${PSQL} ${DBNAME} -f "database/make_cluster_activity.sql" --output ${tmp}/cluster_activity.log &
 
 echo "First full backup stage"
 run_bconsole
