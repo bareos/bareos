@@ -42,6 +42,7 @@
 #include "findlib/hardlink.h"
 #include "lib/berrno.h"
 #include "lib/bsock.h"
+#include "lib/plugins.h"
 
 // Function pointers to be set here (findlib)
 extern int (*plugin_bopen)(BareosFilePacket* bfd,
@@ -718,20 +719,38 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
             &sp.statp.st_size, &sp.statp.st_blocks, &sp);
 
       // Get the file save parameters. I.e. the stat pkt ...
-      if (bRC retval = PlugFunc(ctx->plugin)->startBackupFile(ctx, &sp);
-          retval != bRC_OK) {
-        if (retval == bRC_Error) {
-          Jmsg1(jcr, M_FATAL, 0,
-                _("Command plugin \"%s\": startBackupFile failed.\n"), cmd);
-          goto bail_out;
+      {
+        switch (PlugFunc(ctx->plugin)->startBackupFile(ctx, &sp)) {
+          case bRC_OK:
+            if (sp.type == 0) {
+              Jmsg1(jcr, M_FATAL, 0,
+                    _("Command plugin \"%s\": no type in startBackupFile "
+                      "packet.\n"),
+                    cmd);
+              goto bail_out;
+            }
+            break;
+          case bRC_Skip:
+            Dmsg0(debuglevel,
+                  "Plugin returned bRC_Skip, continue with next file");
+            continue;
+          case bRC_Error:
+            Jmsg1(jcr, M_FATAL, 0,
+                  _("Command plugin \"%s\": startBackupFile failed.\n"), cmd);
+            goto bail_out;
+          case PYTHON_UNDEFINED_RETURN_VALUE:
+          case bRC_Cancel:
+          case bRC_Core:
+          case bRC_Max:
+          case bRC_More:
+          case bRC_Seen:
+          case bRC_Stop:
+          case bRC_Term:
+            Jmsg1(jcr, M_ERROR, 0,
+                  _("Command plugin \"%s\": unhandled returncode from startBackupFile.\n"), cmd);
+
+            goto fun_end;
         }
-        goto fun_end;
-      }
-      if (sp.type == 0) {
-        Jmsg1(jcr, M_FATAL, 0,
-              _("Command plugin \"%s\": no type in startBackupFile packet.\n"),
-              cmd);
-        goto bail_out;
       }
 
       jcr->fd_impl->plugin_sp = &sp;
