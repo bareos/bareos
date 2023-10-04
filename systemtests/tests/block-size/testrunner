@@ -60,7 +60,7 @@ get_block_size()
     # Parameter 2 is the block of interest. Default is block 1.
     DATA="$1"
     LINE=${2:-1}
-    echo "$DATA" | sed -r -n -e "s/^bls .* Exit read_block read_len=([0-9]+) block_len=[0-9]*/\1/p" | sed "${LINE}q;d"
+    echo "$DATA" | sed -r -n -e "s/.*bls .* Exit read_block read_len=([0-9]+) block_len=[0-9]*/\1/p" | sed "${LINE}q;d"
 }
 
 get_data_size()
@@ -70,7 +70,7 @@ get_data_size()
     # Parameter 2 is the block of interest. Default is block 1.
     DATA="$1"
     LINE=${2:-1}
-    echo "$DATA" | sed -r -n -e "s/^bls .* Exit read_block read_len=[0-9]+ block_len=([0-9]*)/\1/p" | sed "${LINE}q;d"
+    echo "$DATA" | sed -r -n -e "s/.*bls .* Exit read_block read_len=[0-9]+ block_len=([0-9]*)/\1/p" | sed "${LINE}q;d"
 }
 
 
