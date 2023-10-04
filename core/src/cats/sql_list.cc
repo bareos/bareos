@@ -396,7 +396,8 @@ void BareosDb::ListLogRecords(JobControlRecord* jcr,
 
   if (reverse) {
     Mmsg(cmd,
-         "SELECT LogId, Job.Name AS JobName, Client.Name AS ClientName, Time, "
+         "SELECT LogId, Job.Name AS JobName, Client.Name AS ClientName, "
+         "TO_CHAR(Time, '%s') AS Time, "
          "LogText "
          "FROM Log "
          "JOIN Job USING (JobId) "
@@ -404,10 +405,12 @@ void BareosDb::ListLogRecords(JobControlRecord* jcr,
          "WHERE Job.Type != 'C' "
          "%s"
          "ORDER BY Log.LogId DESC %s",
-         client_filter.c_str(), range);
+         TimestampFormat::Database, client_filter.c_str(), range);
   } else {
     Mmsg(cmd,
-         "SELECT LogId, JobName, ClientName, Time, LogText FROM ("
+         "SELECT LogId, JobName, ClientName, "
+         "TO_CHAR(Time, '%s') AS Time, "
+         "LogText FROM ("
          "SELECT LogId, Job.Name AS JobName, Client.Name As ClientName, Time, "
          "LogText "
          "FROM Log "
@@ -417,7 +420,7 @@ void BareosDb::ListLogRecords(JobControlRecord* jcr,
          "%s"
          "ORDER BY Log.LogId DESC %s"
          ") AS sub ORDER BY LogId ASC",
-         client_filter.c_str(), range);
+         TimestampFormat::Database, client_filter.c_str(), range);
   }
 
   if (type != VERT_LIST) {
@@ -491,11 +494,13 @@ void BareosDb::ListJobstatisticsRecords(JobControlRecord* jcr,
   if (JobId <= 0) { return; }
   DbLocker _{this};
   Mmsg(cmd,
-       "SELECT DeviceId, SampleTime, JobId, JobFiles, JobBytes "
+       "SELECT DeviceId, "
+       "TO_CHAR(SampleTime, '%s') AS SampleTime, "
+       "JobId, JobFiles, JobBytes "
        "FROM JobStats "
        "WHERE JobStats.JobId=%s "
        "ORDER BY JobStats.SampleTime ",
-       edit_int64(JobId, ed1));
+       TimestampFormat::Database, edit_int64(JobId, ed1));
   if (!QUERY_DB(jcr, cmd)) { return; }
 
   sendit->ArrayStart("jobstats");
@@ -711,40 +716,46 @@ void BareosDb::ListFilesets(JobControlRecord* jcr,
     EscapeString(jcr, esc, jr->Name, strlen(jr->Name));
     Mmsg(cmd,
          "SELECT DISTINCT FileSet.FileSetId AS FileSetId, FileSet, MD5, "
-         "CreateTime, FileSetText "
+         "TO_CHAR(CreateTime, '%s') AS CreateTime,"
+         "FileSetText "
          "FROM Job, FileSet "
          "WHERE Job.FileSetId = FileSet.FileSetId "
          "AND Job.Name='%s'%s",
-         esc, range);
+         TimestampFormat::Database, esc, range);
   } else if (jr->Job[0] != 0) {
     EscapeString(jcr, esc, jr->Job, strlen(jr->Job));
     Mmsg(cmd,
          "SELECT DISTINCT FileSet.FileSetId AS FileSetId, FileSet, MD5, "
-         "CreateTime, FileSetText "
+         "TO_CHAR(CreateTime, '%s') AS CreateTime,"
+         "FileSetText "
          "FROM Job, FileSet "
          "WHERE Job.FileSetId = FileSet.FileSetId "
          "AND Job.Name='%s'%s",
-         esc, range);
+         TimestampFormat::Database, esc, range);
   } else if (jr->JobId != 0) {
     Mmsg(cmd,
          "SELECT DISTINCT FileSet.FileSetId AS FileSetId, FileSet, MD5, "
-         "CreateTime, FileSetText "
+         "TO_CHAR(CreateTime, '%s') AS CreateTime,"
+         "FileSetText "
          "FROM Job, FileSet "
          "WHERE Job.FileSetId = FileSet.FileSetId "
          "AND Job.JobId='%s'%s",
-         edit_int64(jr->JobId, esc), range);
+         TimestampFormat::Database, edit_int64(jr->JobId, esc), range);
   } else if (jr->FileSetId != 0) {
     Mmsg(cmd,
-         "SELECT FileSetId, FileSet, MD5, CreateTime, FileSetText "
+         "SELECT FileSetId, FileSet, MD5, "
+         "TO_CHAR(CreateTime, '%s') AS CreateTime,"
+         "FileSetText "
          "FROM FileSet "
          "WHERE  FileSetId=%s",
-         edit_int64(jr->FileSetId, esc));
+         TimestampFormat::Database, edit_int64(jr->FileSetId, esc));
   } else { /* all records */
     Mmsg(cmd,
          "SELECT DISTINCT FileSet.FileSetId AS FileSetId, FileSet, MD5, "
-         "CreateTime, FileSetText "
+         "TO_CHAR(CreateTime, '%s') AS CreateTime,"
+         "FileSetText "
          "FROM FileSet ORDER BY FileSetId ASC%s",
-         range);
+         TimestampFormat::Database, range);
   }
 
   if (!QUERY_DB(jcr, cmd)) { return; }
