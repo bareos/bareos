@@ -33,6 +33,7 @@ int TmWoy(time_t stime);
 void Blocaltime(const time_t* time, struct tm* tm);
 
 std::string bstrftime(utime_t tim);
+std::string bstrftime_scheduler_preview(utime_t tim);
 std::string bstrftime_filename(utime_t tim);
 std::string bstrftime_debug(utime_t tim);
 

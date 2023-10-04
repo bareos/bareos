@@ -397,7 +397,7 @@ static bool show_scheduled_preview(UaContext*,
        * As we use locale specific strings for weekday and month we
        * need to keep track of the longest data string used. */
       runtime = mktime(&tm);
-      date_len = bstrftime(runtime).length();
+      date_len = bstrftime_scheduler_preview(runtime).length();
       if (date_len > *max_date_len) {
         if (*max_date_len == 0) {
           /* When the datelen changes during the loop the locale generates a
@@ -414,8 +414,8 @@ static bool show_scheduled_preview(UaContext*,
         }
       }
 
-      Mmsg(temp, "%-*s  %-22.22s  ", *max_date_len, bstrftime(runtime).data(),
-           sched->resource_name_);
+      Mmsg(temp, "%-*s  %-22.22s  ", *max_date_len,
+          bstrftime_scheduler_preview(runtime).data(), sched->resource_name_);
       PmStrcat(overview, temp.c_str());
 
       if (run->level) {

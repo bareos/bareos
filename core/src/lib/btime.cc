@@ -126,9 +126,22 @@ static char* bstrftime(char* dt, int maxlen, utime_t utime)
   return bstrftime_internal(dt, maxlen, utime, kBareosDefaultTimestampFormat);
 }
 
+static char* bstrftime_scheduler_preview(char* dt, int maxlen, utime_t utime)
+{
+  return bstrftime_internal(dt, maxlen, utime, kBareosSchedPreviewTimestampFormat);
+}
+
 static char* bstrftime_filename(char* dt, int maxlen, utime_t utime)
 {
   return bstrftime_internal(dt, maxlen, utime, kBareosFilenameTimestampFormat);
+}
+
+// format for scheduler preview: Thu 05-Oct-2023 02:05+0200
+std::string bstrftime_scheduler_preview(utime_t tim)
+{
+  std::vector<char> buf(MAX_TIME_LENGTH, '\0');
+  bstrftime_scheduler_preview(buf.data(), MAX_TIME_LENGTH, tim);
+  return std::string{buf.data()};
 }
 
 // format with standard format: 2023-10-01T17:16:53+0200

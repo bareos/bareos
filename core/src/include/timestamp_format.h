@@ -28,6 +28,11 @@ static constexpr char* kBareosDefaultTimestampFormat
 // As we optionally want to offer microseconds, we implement the %z ourselves on
 // all platforms
 
+// for the scheduler preview
+static constexpr char* kBareosSchedPreviewTimestampFormat
+    = (char*)"%a %d-%b-%Y %H:%M";
+
+
 // for use in TO_CHAR database queries
 static constexpr char* kBareosDatabaseDefaultTimestampFormat
     = (char*)"YYYY-MM-DD\"T\"HH24:MI:SSTZH:TZM";
