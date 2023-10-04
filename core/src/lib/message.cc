@@ -54,7 +54,7 @@
 const char* working_directory = NULL; /* working directory path stored here */
 int verbose = 0;                      /* increase User messages */
 int debug_level = 0;                  /* debug level */
-bool dbg_timestamp = false;           /* print timestamp in debug output */
+bool dbg_timestamp = true;            /* print timestamp in debug output */
 bool prt_kaboom = false;              /* Print kaboom output */
 utime_t daemon_start_time = 0;        /* Daemon start time */
 char my_name[128] = {0};              /* daemon name is stored here */
