@@ -1220,14 +1220,13 @@ static bool ParseListBackupsCmd(UaContext* ua,
   PmStrcat(criteria, range);
 
   if (llist == VERT_LIST) {
-    ua->db->FillQuery(
-        ua->cmd, BareosDb::SQL_QUERY::list_jobs_long,
-        TimestampFormat::DatabaseDefault, TimestampFormat::DatabaseDefault,
-        TimestampFormat::DatabaseDefault, TimestampFormat::DatabaseDefault,
-        selection.c_str(), criteria.c_str());
+    ua->db->FillQuery(ua->cmd, BareosDb::SQL_QUERY::list_jobs_long,
+                      TimestampFormat::Database, TimestampFormat::Database,
+                      TimestampFormat::Database, TimestampFormat::Database,
+                      selection.c_str(), criteria.c_str());
   } else {
     ua->db->FillQuery(ua->cmd, BareosDb::SQL_QUERY::list_jobs,
-                      TimestampFormat::DatabaseDefault, selection.c_str(),
+                      TimestampFormat::Database, selection.c_str(),
                       criteria.c_str());
   }
 

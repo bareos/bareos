@@ -57,18 +57,17 @@ namespace TimestampFormat {
   // %z is missing because it is not correctly implemented in windows :(
   // As we optionally want to offer microseconds, we implement the %z ourselves on
   // all platforms
-  const char* Default {"%Y-%m-%dT%H:%M:%S"};
+const char* Default{"%Y-%m-%dT%H:%M:%S"};
 
   // for the scheduler preview
-  const char* SchedPreview {"%a %d-%b-%Y %H:%M"};
+const char* SchedPreview{"%a %d-%b-%Y %H:%M"};
 
   // for use in TO_CHAR database queries
-  const char* DatabaseDefault {"YYYY-MM-DD\"T\"HH24:MI:SSTZH:TZM"};
+const char* Database{"YYYY-MM-DD\"T\"HH24:MI:SSTZH:TZM"};
 
   // to create filenames, so only what is allowed in filenames also on windows
-  const char* Filename {"%Y-%m-%dT%H.%M.%S"};
-}
-
+const char* Filename{"%Y-%m-%dT%H.%M.%S"};
+}  // namespace TimestampFormat
 
 
 static date::sys_time<std::chrono::milliseconds> parse8601(std::istream&& is,

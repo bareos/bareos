@@ -21,10 +21,10 @@
 
 #ifndef BAREOS_INCLUDE_TIMESTAMP_FORMAT_H_
 #define BAREOS_INCLUDE_TIMESTAMP_FORMAT_H_
-namespace TimestampFormat{
-  extern const char* Default;
-  extern const char* SchedPreview;
-  extern const char* DatabaseDefault;
-  extern const char* Filename;
-}
+namespace TimestampFormat {
+extern const char* Default;
+extern const char* SchedPreview;
+extern const char* Database;
+extern const char* Filename;
+}  // namespace TimestampFormat
 #endif  // BAREOS_INCLUDE_TIMESTAMP_FORMAT_H_

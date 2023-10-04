@@ -638,7 +638,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
       {
         PoolMem query;
         ua->db->FillQuery(query, BareosDb::SQL_QUERY::uar_list_jobs,
-                          TimestampFormat::DatabaseDefault, filter_name);
+                          TimestampFormat::Database, filter_name);
         if (!ua->AclAccessOk(Command_ACL, NT_("sqlquery"), true)) {
           ua->ErrorMsg(_("SQL query not authorized.\n"));
           return 0;
@@ -1511,7 +1511,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
 
     // Display a list of Jobs selected for this restore
     ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_list_jobs_by_idlist,
-                      TimestampFormat::DatabaseDefault, rx->JobIds);
+                      TimestampFormat::Database, rx->JobIds);
     ua->db->ListSqlQuery(ua->jcr, rx->query, ua->send, HORZ_LIST, true);
 
     ok = true;

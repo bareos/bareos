@@ -229,13 +229,12 @@ void BareosDb::ListMediaRecords(JobControlRecord* jcr,
     }
   } else {
     if (type == VERT_LIST) {
-      FillQuery(
-          select, SQL_QUERY::list_volumes_select_long_0,
-          TimestampFormat::DatabaseDefault, TimestampFormat::DatabaseDefault,
-          TimestampFormat::DatabaseDefault, TimestampFormat::DatabaseDefault);
+      FillQuery(select, SQL_QUERY::list_volumes_select_long_0,
+                TimestampFormat::Database, TimestampFormat::Database,
+                TimestampFormat::Database, TimestampFormat::Database);
     } else {
       FillQuery(select, SQL_QUERY::list_volumes_select_0,
-                TimestampFormat::DatabaseDefault);
+                TimestampFormat::Database);
     }
 
     if (mdbr->VolumeName[0] != 0) {
@@ -456,7 +455,7 @@ void BareosDb::ListJoblogRecords(JobControlRecord* jcr,
   if (count) {
     FillQuery(SQL_QUERY::list_joblog_count_1, edit_int64(JobId, ed1));
   } else {
-    FillQuery(SQL_QUERY::list_joblog_2, TimestampFormat::DatabaseDefault,
+    FillQuery(SQL_QUERY::list_joblog_2, TimestampFormat::Database,
               edit_int64(JobId, ed1), range);
     if (type != VERT_LIST) {
       /* When something else than a vertical list is requested set the list type
@@ -583,22 +582,20 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
     FillQuery(SQL_QUERY::list_jobs_count, selection.c_str(), range);
   } else if (last) {
     if (type == VERT_LIST) {
-      FillQuery(
-          SQL_QUERY::list_jobs_long_last, TimestampFormat::DatabaseDefault,
-          TimestampFormat::DatabaseDefault, TimestampFormat::DatabaseDefault,
-          TimestampFormat::DatabaseDefault, selection.c_str(), range);
+      FillQuery(SQL_QUERY::list_jobs_long_last, TimestampFormat::Database,
+                TimestampFormat::Database, TimestampFormat::Database,
+                TimestampFormat::Database, selection.c_str(), range);
     } else {
-      FillQuery(SQL_QUERY::list_jobs_last, TimestampFormat::DatabaseDefault,
+      FillQuery(SQL_QUERY::list_jobs_last, TimestampFormat::Database,
                 selection.c_str(), range);
     }
   } else {
     if (type == VERT_LIST) {
-      FillQuery(SQL_QUERY::list_jobs_long, TimestampFormat::DatabaseDefault,
-                TimestampFormat::DatabaseDefault,
-                TimestampFormat::DatabaseDefault,
-                TimestampFormat::DatabaseDefault, selection.c_str(), range);
+      FillQuery(SQL_QUERY::list_jobs_long, TimestampFormat::Database,
+                TimestampFormat::Database, TimestampFormat::Database,
+                TimestampFormat::Database, selection.c_str(), range);
     } else {
-      FillQuery(SQL_QUERY::list_jobs, TimestampFormat::DatabaseDefault,
+      FillQuery(SQL_QUERY::list_jobs, TimestampFormat::Database,
                 selection.c_str(), range);
     }
   }
