@@ -37,16 +37,23 @@
 
 using namespace directordaemon;
 using ::testing::EndsWith;
+using namespace std::string_literals;
 
 TEST(time_format, correct_time_and_date_format)
 {
-  // std::vector<char> stime_out(MAX_NAME_LENGTH);
-
   // make sure bstrftime gets the current timezone offset appended
   EXPECT_THAT(bstrftime(time(0)).data(), EndsWith(GetCurrentTimezoneOffset()));
 
+  EXPECT_THAT(bstrftime_debug(time(0)).data(), EndsWith(GetCurrentTimezoneOffset()));
+  EXPECT_THAT(bstrftime_debug(1'000'000'000).data(), testing::MatchesRegex("2001-09-09T..:46:40.*"));
+
+  EXPECT_THAT(bstrftime_scheduler_preview(time(0)).data(), EndsWith(GetCurrentTimezoneOffset()));
+  EXPECT_THAT(bstrftime_scheduler_preview(1'000'000'000).data(), testing::MatchesRegex("... 0.-...-2001 ..:46.*"));
+
+  EXPECT_THAT(bstrftime_filename(time(0)).data(), EndsWith(GetCurrentTimezoneOffset()));
+  EXPECT_THAT(bstrftime_filename(1'000'000'000).data(), testing::MatchesRegex( "2001-09-0.T...46.40.*"));
+
 #if !defined(HAVE_WIN32)
-  using namespace std::string_literals;
 
   setenv("TZ", "/usr/share/zoneinfo/Europe/Berlin", 1);
   EXPECT_PRED3(
@@ -72,12 +79,12 @@ TEST(time_format, correct_time_and_date_format)
 #endif
 
   // iso date with timezone
-  EXPECT_EQ(StrToUtime("2001-09-09T01:46:40.0Z"), 1000000000);
-  EXPECT_EQ(StrToUtime("2001-09-09T01:46:40.0-0400"), 1000014400);
-  EXPECT_EQ(StrToUtime("2001-09-09T01:46:40.0+0800"), 999971200);
+  EXPECT_EQ(StrToUtime("2001-09-09T01:46:40.0Z"), 1'000'000'000);
+  EXPECT_EQ(StrToUtime("2001-09-09T01:46:40.0-0400"), 1'000'014'400);
+  EXPECT_EQ(StrToUtime("2001-09-09T01:46:40.0+0800"), 999'971'200);
 
-  EXPECT_EQ(StrToUtime("2001-09-09T01:46:40.0-04:00"), 1000014400);
-  EXPECT_EQ(StrToUtime("2001-09-09T01:46:40.0+08:00"), 999971200);
+  EXPECT_EQ(StrToUtime("2001-09-09T01:46:40.0-04:00"), 1'000'014'400);
+  EXPECT_EQ(StrToUtime("2001-09-09T01:46:40.0+08:00"), 999'971'200);
 
   // bareos format without timezone
   EXPECT_NE(StrToUtime("2001-09-09 01:46:40"), 0);
