@@ -21,24 +21,10 @@
 
 #ifndef BAREOS_INCLUDE_TIMESTAMP_FORMAT_H_
 #define BAREOS_INCLUDE_TIMESTAMP_FORMAT_H_
-
-static constexpr char* kBareosDefaultTimestampFormat
-    = (char*)"%Y-%m-%dT%H:%M:%S";
-// %z is missing because it is not correctly implemented in windows :(
-// As we optionally want to offer microseconds, we implement the %z ourselves on
-// all platforms
-
-// for the scheduler preview
-static constexpr char* kBareosSchedPreviewTimestampFormat
-    = (char*)"%a %d-%b-%Y %H:%M";
-
-
-// for use in TO_CHAR database queries
-static constexpr char* kBareosDatabaseDefaultTimestampFormat
-    = (char*)"YYYY-MM-DD\"T\"HH24:MI:SSTZH:TZM";
-
-// to create filenames, so only what is allowed in filenames also on windows
-static constexpr char* kBareosFilenameTimestampFormat
-    = (char*)"%Y-%m-%dT%H.%M.%S";
-
+namespace TimestampFormat{
+  extern const char* Default;
+  extern const char* SchedPreview;
+  extern const char* DatabaseDefault;
+  extern const char* Filename;
+}
 #endif  // BAREOS_INCLUDE_TIMESTAMP_FORMAT_H_

@@ -452,7 +452,7 @@ void BareosDb::ListJoblogRecords(JobControlRecord* jcr,
   if (count) {
     FillQuery(SQL_QUERY::list_joblog_count_1, edit_int64(JobId, ed1));
   } else {
-    FillQuery(SQL_QUERY::list_joblog_2, kBareosDatabaseDefaultTimestampFormat,
+    FillQuery(SQL_QUERY::list_joblog_2, TimestampFormat::DatabaseDefault,
               edit_int64(JobId, ed1), range);
     if (type != VERT_LIST) {
       /* When something else than a vertical list is requested set the list type

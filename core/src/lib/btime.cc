@@ -53,6 +53,23 @@
 #include <iomanip>
 #include <iostream>
 
+namespace TimestampFormat {
+  // %z is missing because it is not correctly implemented in windows :(
+  // As we optionally want to offer microseconds, we implement the %z ourselves on
+  // all platforms
+  const char* Default {"%Y-%m-%dT%H:%M:%S"};
+
+  // for the scheduler preview
+  const char* SchedPreview {"%a %d-%b-%Y %H:%M"};
+
+  // for use in TO_CHAR database queries
+  const char* DatabaseDefault {"YYYY-MM-DD\"T\"HH24:MI:SSTZH:TZM"};
+
+  // to create filenames, so only what is allowed in filenames also on windows
+  const char* Filename {"%Y-%m-%dT%H.%M.%S"};
+}
+
+
 
 static date::sys_time<std::chrono::milliseconds> parse8601(std::istream&& is,
                                                            const char* pattern)
@@ -123,17 +140,17 @@ static char* bstrftime_internal(char* dt,
 
 static char* bstrftime(char* dt, int maxlen, utime_t utime)
 {
-  return bstrftime_internal(dt, maxlen, utime, kBareosDefaultTimestampFormat);
+  return bstrftime_internal(dt, maxlen, utime, TimestampFormat::Default);
 }
 
 static char* bstrftime_scheduler_preview(char* dt, int maxlen, utime_t utime)
 {
-  return bstrftime_internal(dt, maxlen, utime, kBareosSchedPreviewTimestampFormat);
+  return bstrftime_internal(dt, maxlen, utime, TimestampFormat::SchedPreview);
 }
 
 static char* bstrftime_filename(char* dt, int maxlen, utime_t utime)
 {
-  return bstrftime_internal(dt, maxlen, utime, kBareosFilenameTimestampFormat);
+  return bstrftime_internal(dt, maxlen, utime,  TimestampFormat::Filename);
 }
 
 // format for scheduler preview: Thu 05-Oct-2023 02:05+0200
@@ -167,7 +184,7 @@ std::string bstrftime_debug(utime_t tim)
 {
   std::vector<char> buf(MAX_TIME_LENGTH, '\0');
   bstrftime_internal(buf.data(), MAX_TIME_LENGTH, tim,
-                     kBareosDefaultTimestampFormat, true);
+                     TimestampFormat::Default, true);
   return std::string{buf.data()};
 }
 
