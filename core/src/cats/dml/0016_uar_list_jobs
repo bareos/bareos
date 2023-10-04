@@ -1,4 +1,6 @@
-SELECT JobId, Client.Name as Client, StartTime, Level as JobLevel, JobFiles, JobBytes
+SELECT JobId, Client.Name AS Client,
+TO_CHAR(Job.StartTime, '%s') AS StartTime,
+Level AS JobLevel, JobFiles, JobBytes
   FROM Client, Job
  WHERE Client.ClientId = Job.ClientId
    AND JobStatus IN ('T','W')

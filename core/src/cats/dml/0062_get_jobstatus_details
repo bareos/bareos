@@ -10,11 +10,11 @@ SELECT DISTINCT JobStatus, JobStatusLong, Severity,
        WHEN JobStatus in ('T') THEN '0'
        WHEN JobStatus in ('W') THEN '1'
        WHEN JobStatus in ('e', 'f', 'A', 'E') THEN '2'
-       END as ExitLevel,
+       END AS ExitLevel,
        CASE
        WHEN JobStatus in ('T') THEN 'Ok'
        WHEN JobStatus in ('W') THEN 'Warning'
        WHEN JobStatus in ('e', 'f', 'A', 'E') THEN 'Error'
-       END as ExitStatus
+       END AS ExitStatus
   FROM Status %s
  ORDER BY JobStatus

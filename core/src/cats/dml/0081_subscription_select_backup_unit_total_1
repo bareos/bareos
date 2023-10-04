@@ -1,5 +1,5 @@
 SELECT
-  *, configured - used as remaining
+  *, configured - used AS remaining
 FROM (SELECT
   COALESCE(SUM(db_units), 0)
     + COALESCE(SUM(vm_units), 0)

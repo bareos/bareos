@@ -229,9 +229,13 @@ void BareosDb::ListMediaRecords(JobControlRecord* jcr,
     }
   } else {
     if (type == VERT_LIST) {
-      FillQuery(select, SQL_QUERY::list_volumes_select_long_0);
+      FillQuery(
+          select, SQL_QUERY::list_volumes_select_long_0,
+          TimestampFormat::DatabaseDefault, TimestampFormat::DatabaseDefault,
+          TimestampFormat::DatabaseDefault, TimestampFormat::DatabaseDefault);
     } else {
-      FillQuery(select, SQL_QUERY::list_volumes_select_0);
+      FillQuery(select, SQL_QUERY::list_volumes_select_0,
+                TimestampFormat::DatabaseDefault);
     }
 
     if (mdbr->VolumeName[0] != 0) {
@@ -579,15 +583,23 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
     FillQuery(SQL_QUERY::list_jobs_count, selection.c_str(), range);
   } else if (last) {
     if (type == VERT_LIST) {
-      FillQuery(SQL_QUERY::list_jobs_long_last, selection.c_str(), range);
+      FillQuery(
+          SQL_QUERY::list_jobs_long_last, TimestampFormat::DatabaseDefault,
+          TimestampFormat::DatabaseDefault, TimestampFormat::DatabaseDefault,
+          TimestampFormat::DatabaseDefault, selection.c_str(), range);
     } else {
-      FillQuery(SQL_QUERY::list_jobs_last, selection.c_str(), range);
+      FillQuery(SQL_QUERY::list_jobs_last, TimestampFormat::DatabaseDefault,
+                selection.c_str(), range);
     }
   } else {
     if (type == VERT_LIST) {
-      FillQuery(SQL_QUERY::list_jobs_long, selection.c_str(), range);
+      FillQuery(SQL_QUERY::list_jobs_long, TimestampFormat::DatabaseDefault,
+                TimestampFormat::DatabaseDefault,
+                TimestampFormat::DatabaseDefault,
+                TimestampFormat::DatabaseDefault, selection.c_str(), range);
     } else {
-      FillQuery(SQL_QUERY::list_jobs, selection.c_str(), range);
+      FillQuery(SQL_QUERY::list_jobs, TimestampFormat::DatabaseDefault,
+                selection.c_str(), range);
     }
   }
 

@@ -40,6 +40,7 @@
 #include "dird/ua_db.h"
 #include "dird/ua_output.h"
 #include "dird/ua_select.h"
+#include "include/timestamp_format.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
 #include "dird/jcr_util.h"
@@ -1219,11 +1220,15 @@ static bool ParseListBackupsCmd(UaContext* ua,
   PmStrcat(criteria, range);
 
   if (llist == VERT_LIST) {
-    ua->db->FillQuery(ua->cmd, BareosDb::SQL_QUERY::list_jobs_long,
-                      selection.c_str(), criteria.c_str());
+    ua->db->FillQuery(
+        ua->cmd, BareosDb::SQL_QUERY::list_jobs_long,
+        TimestampFormat::DatabaseDefault, TimestampFormat::DatabaseDefault,
+        TimestampFormat::DatabaseDefault, TimestampFormat::DatabaseDefault,
+        selection.c_str(), criteria.c_str());
   } else {
     ua->db->FillQuery(ua->cmd, BareosDb::SQL_QUERY::list_jobs,
-                      selection.c_str(), criteria.c_str());
+                      TimestampFormat::DatabaseDefault, selection.c_str(),
+                      criteria.c_str());
   }
 
   return true;

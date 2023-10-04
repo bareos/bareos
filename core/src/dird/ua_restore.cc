@@ -44,6 +44,7 @@
 #include "dird/ua_run.h"
 #include "dird/ua_restore.h"
 #include "dird/bsr.h"
+#include "include/timestamp_format.h"
 #include "lib/breg.h"
 #include "lib/edit.h"
 #include "lib/berrno.h"
@@ -637,7 +638,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
       {
         PoolMem query;
         ua->db->FillQuery(query, BareosDb::SQL_QUERY::uar_list_jobs,
-                          filter_name);
+                          TimestampFormat::DatabaseDefault, filter_name);
         if (!ua->AclAccessOk(Command_ACL, NT_("sqlquery"), true)) {
           ua->ErrorMsg(_("SQL query not authorized.\n"));
           return 0;
@@ -1510,7 +1511,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
 
     // Display a list of Jobs selected for this restore
     ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_list_jobs_by_idlist,
-                      rx->JobIds);
+                      TimestampFormat::DatabaseDefault, rx->JobIds);
     ua->db->ListSqlQuery(ua->jcr, rx->query, ua->send, HORZ_LIST, true);
 
     ok = true;

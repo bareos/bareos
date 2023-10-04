@@ -1,4 +1,6 @@
-SELECT DISTINCT Job.JobId, Job.Level, Job.JobFiles, Job.JobBytes, Job.StartTime, Media.VolumeName
+SELECT DISTINCT Job.JobId, Job.Level, Job.JobFiles, Job.JobBytes,
+TO_CHAR(Job.StartTime, '%s') AS StartTime,
+Media.VolumeName
   FROM Job, JobMedia, Media
  WHERE Job.JobId IN (%s)
    AND JobMedia.JobId   = Job.JobId

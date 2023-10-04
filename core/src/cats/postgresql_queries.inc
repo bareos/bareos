@@ -50,12 +50,12 @@ const char *BareosDbPostgresql::query_definitions[] = {
 ,
 
 /* 0006_list_jobs */
-"SELECT DISTINCT Job.JobId,Job.Name, Client.Name as Client, "
-"Job.StartTime, "
+"SELECT DISTINCT Job.JobId,Job.Name, Client.Name AS Client, "
+"TO_CHAR(Job.StartTime, '%s') AS StartTime, "
 "CASE "
     "WHEN Job.endtime IS NOT NULL AND Job.endtime >= Job.starttime THEN Job.endtime - Job.starttime "
     "ELSE CURRENT_TIMESTAMP(0) - Job.starttime "
-    "END as Duration, "
+    "END AS Duration, "
 "Job.Type,Job.Level,Job.JobFiles,Job.JobBytes,Job.JobStatus "
 "FROM Job "
 "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
@@ -69,15 +69,18 @@ const char *BareosDbPostgresql::query_definitions[] = {
 
 /* 0007_list_jobs_long */
 "SELECT DISTINCT Job.JobId, Job.Job, Job.Name, Job.PurgedFiles, Job.Type, Job.Level, "
-"Job.ClientId, Client.Name as Client, Job.JobStatus, Job.SchedTime, Job.StartTime, "
-"Job.EndTime,Job.RealEndtime, "
+"Job.ClientId, Client.Name AS Client, Job.JobStatus, "
+"TO_CHAR(Job.SchedTime, '%s') AS SchedTime, "
+"TO_CHAR(Job.StartTime, '%s') AS StartTime, "
+"TO_CHAR(Job.EndTime, '%s') AS EndTime, "
+"TO_CHAR(Job.RealEndTime, '%s') AS RealEndTime, "
 "CASE "
     "WHEN Job.endtime IS NOT NULL AND Job.endtime >= Job.starttime THEN Job.endtime - Job.starttime "
     "ELSE CURRENT_TIMESTAMP(0) - Job.starttime "
-    "END as Duration, "
+    "END AS Duration, "
 "Job.JobTDate, Job.VolSessionId, Job.VolSessionTime, "
 "Job.JobFiles, Job.JobBytes, Job.JobErrors, Job.JobMissingFiles, Job.PoolId, "
-"Pool.Name as PoolName, Job.PriorJobId, Job.FileSetId, FileSet.FileSet "
+"Pool.Name AS PoolName, Job.PriorJobId, Job.FileSetId, FileSet.FileSet "
 "FROM Job "
 "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
 "LEFT JOIN Pool ON Pool.PoolId=Job.PoolId "
@@ -90,7 +93,7 @@ const char *BareosDbPostgresql::query_definitions[] = {
 ,
 
 /* 0008_list_jobs_count */
-"SELECT DISTINCT COUNT(DISTINCT Job.JobId) as count "
+"SELECT DISTINCT COUNT(DISTINCT Job.JobId) AS count "
 "FROM Job "
 "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
 "LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId "
@@ -102,12 +105,12 @@ const char *BareosDbPostgresql::query_definitions[] = {
 ,
 
 /* 0009_list_jobs_last */
-"SELECT DISTINCT Job.JobId,Job.Name, Client.Name as Client, "
-"Job.StartTime, "
+"SELECT DISTINCT Job.JobId, Job.Name, Client.Name AS Client, "
+"TO_CHAR(Job.StartTime,'%s') AS StartTime, "
 "CASE "
     "WHEN Job.endtime IS NOT NULL AND Job.endtime >= Job.starttime THEN Job.endtime - Job.starttime "
     "ELSE CURRENT_TIMESTAMP(0) - Job.starttime "
-    "END as Duration, "
+    "END AS Duration, "
 "Job.Type,Job.Level,Job.JobFiles,Job.JobBytes,Job.JobStatus "
 "FROM Job "
 "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
@@ -115,7 +118,7 @@ const char *BareosDbPostgresql::query_definitions[] = {
 "LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId "
 "LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId "
 "INNER JOIN ( "
-   "SELECT MAX(Job.JobId) as MaxJobId "
+   "SELECT MAX(Job.JobId) AS MaxJobId "
    "FROM Job "
    "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
    "LEFT JOIN Pool ON Pool.PoolId=Job.PoolId "
@@ -132,15 +135,18 @@ const char *BareosDbPostgresql::query_definitions[] = {
 
 /* 0010_list_jobs_long_last */
 "SELECT DISTINCT Job.JobId, Job.Job, Job.Name, Job.PurgedFiles, Job.Type, Job.Level, "
-"Job.ClientId, Client.Name as Client, Job.JobStatus, Job.SchedTime, Job.StartTime, "
-"Job.EndTime, Job.RealEndTime, "
+"Job.ClientId, Client.Name AS Client, Job.JobStatus, "
+"TO_CHAR(Job.SchedTime, '%s') AS SchedTime, "
+"TO_CHAR(Job.StartTime, '%s') AS StartTime, "
+"TO_CHAR(Job.EndTime, '%s') AS EndTime, "
+"TO_CHAR(Job.RealEndTime, '%s') AS RealEndTime, "
 "CASE "
     "WHEN Job.endtime IS NOT NULL AND Job.endtime >= Job.starttime THEN Job.endtime - Job.starttime "
     "ELSE CURRENT_TIMESTAMP(0) - Job.starttime "
-    "END as Duration, "
+    "END AS Duration, "
 "Job.JobTDate, Job.VolSessionId, Job.VolSessionTime, "
 "Job.JobFiles, Job.JobBytes, Job.JobErrors, Job.JobMissingFiles, Job.PoolId, "
-"Pool.Name as PoolName, Job.PriorJobId, Job.FileSetId, FileSet.FileSet "
+"Pool.Name AS PoolName, Job.PriorJobId, Job.FileSetId, FileSet.FileSet "
 "FROM Job "
 "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
 "LEFT JOIN Pool ON Pool.PoolId=Job.PoolId "
@@ -148,7 +154,7 @@ const char *BareosDbPostgresql::query_definitions[] = {
 "LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId "
 "LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId "
 "INNER JOIN ( "
-   "SELECT MAX(Job.JobId) as MaxJobId "
+   "SELECT MAX(Job.JobId) AS MaxJobId "
    "FROM Job "
    "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
    "LEFT JOIN Pool ON Pool.PoolId=Job.PoolId "
@@ -192,7 +198,9 @@ const char *BareosDbPostgresql::query_definitions[] = {
 ,
 
 /* 0016_uar_list_jobs */
-"SELECT JobId, Client.Name as Client, StartTime, Level as JobLevel, JobFiles, JobBytes "
+"SELECT JobId, Client.Name AS Client, "
+"TO_CHAR(Job.StartTime, '%s') AS StartTime, "
+"Level AS JobLevel, JobFiles, JobBytes "
   "FROM Client, Job "
  "WHERE Client.ClientId = Job.ClientId "
    "AND JobStatus IN ('T','W') "
@@ -302,7 +310,9 @@ const char *BareosDbPostgresql::query_definitions[] = {
 ,
 
 /* 0025_uar_list_jobs_by_idlist */
-"SELECT DISTINCT Job.JobId, Job.Level, Job.JobFiles, Job.JobBytes, Job.StartTime, Media.VolumeName "
+"SELECT DISTINCT Job.JobId, Job.Level, Job.JobFiles, Job.JobBytes, "
+"TO_CHAR(Job.StartTime, '%s') AS StartTime, "
+"Media.VolumeName "
   "FROM Job, JobMedia, Media "
  "WHERE Job.JobId IN (%s) "
    "AND JobMedia.JobId   = Job.JobId "
@@ -718,7 +728,7 @@ const char *BareosDbPostgresql::query_definitions[] = {
   "FROM ( "
       "SELECT DISTINCT Name "
         "FROM batch "
-       ") as a "
+       ") AS a "
  "WHERE NOT EXISTS ( "
       "SELECT Name "
         "FROM Filename "
@@ -782,12 +792,12 @@ const char *BareosDbPostgresql::query_definitions[] = {
        "WHEN JobStatus in ('T') THEN '0' "
        "WHEN JobStatus in ('W') THEN '1' "
        "WHEN JobStatus in ('e', 'f', 'A', 'E') THEN '2' "
-       "END as ExitLevel, "
+       "END AS ExitLevel, "
        "CASE "
        "WHEN JobStatus in ('T') THEN 'Ok' "
        "WHEN JobStatus in ('W') THEN 'Warning' "
        "WHEN JobStatus in ('e', 'f', 'A', 'E') THEN 'Error' "
-       "END as ExitStatus "
+       "END AS ExitStatus "
   "FROM Status %s "
  "ORDER BY JobStatus "
 ,
@@ -842,17 +852,17 @@ const char *BareosDbPostgresql::query_definitions[] = {
 ,
 
 /* 0067_list_volumes_count_0 */
-"SELECT COUNT(DISTINCT Media.MediaId) as count FROM Media; "
+"SELECT COUNT(DISTINCT Media.MediaId) AS count FROM Media; "
 ,
 
 /* 0068_list_volumes_by_name_count_1 */
-"SELECT COUNT(DISTINCT Media.MediaId) as count "
+"SELECT COUNT(DISTINCT Media.MediaId) AS count "
 "FROM Media "
 "WHERE VolumeName='%s' "
 ,
 
 /* 0069_list_volumes_by_poolid_count_1 */
-"SELECT COUNT(DISTINCT Media.MediaId) as count "
+"SELECT COUNT(DISTINCT Media.MediaId) AS count "
 "FROM Media "
 "WHERE Media.PoolId=%s "
 ,
@@ -957,7 +967,9 @@ const char *BareosDbPostgresql::query_definitions[] = {
 /* 0076_list_volumes_select_0 */
 "SELECT    MediaId,VolumeName,VolStatus,Enabled, "
           "VolBytes,VolFiles,VolRetention,Recycle,Slot,InChanger, "
-          "MediaType,LastWritten,Name AS Storage "
+          "MediaType, "
+          "TO_CHAR(LastWritten, '%s') AS LastWritten, "
+          "Name AS Storage "
 "FROM      Media "
 "LEFT JOIN Storage USING(StorageId) "
 ,
@@ -969,9 +981,9 @@ const char *BareosDbPostgresql::query_definitions[] = {
           "Media.PoolId, "
           "(SELECT Name FROM Pool WHERE Pool.PoolId=Media.PoolId) AS Pool, "
           "Media.MediaType, "
-          "Media.FirstWritten, "
-          "Media.LastWritten, "
-          "Media.LabelDate, "
+          "TO_CHAR(Media.FirstWritten, '%s') AS FirstWritten, "
+          "TO_CHAR(Media.LastWritten, '%s') AS LastWritten, "
+          "TO_CHAR(Media.LabelDate, '%s') AS LabelDate, "
           "Media.VolJobs, "
           "Media.VolFiles, "
           "Media.VolBlocks, "
@@ -996,7 +1008,7 @@ const char *BareosDbPostgresql::query_definitions[] = {
           "Media.DeviceId, "
           "Media.LocationId, "
           "Media.RecycleCount, "
-          "Media.InitialWrite, "
+          "TO_CHAR(Media.InitialWrite, '%s') AS InitialWrite, "
           "Media.ScratchPoolId, "
           "(SELECT Name FROM Pool WHERE Pool.PoolId=Media.ScratchPoolId) AS ScratchPool, "
           "Media.RecyclePoolId, "
@@ -1022,18 +1034,18 @@ const char *BareosDbPostgresql::query_definitions[] = {
   "ORDER BY client, fileset "
 ") subq_a "
 "UNION ALL "
-"SELECT 'TOTAL' as client, "
-       "NULL as fileset, "
-       "SUM(db_units) as db_units, "
-       "SUM(vm_units) as vm_units, "
-       "SUM(filer_units) as filer_units, "
-       "SUM(normal_units) as normal_units "
+"SELECT 'TOTAL' AS client, "
+       "NULL AS fileset, "
+       "SUM(db_units) AS db_units, "
+       "SUM(vm_units) AS vm_units, "
+       "SUM(filer_units) AS filer_units, "
+       "SUM(normal_units) AS normal_units "
 "FROM backup_unit_overview; "
 ,
 
 /* 0081_subscription_select_backup_unit_total_1 */
 "SELECT "
-  "*, configured - used as remaining "
+  "*, configured - used AS remaining "
 "FROM (SELECT "
   "COALESCE(SUM(db_units), 0) "
     "+ COALESCE(SUM(vm_units), 0) "

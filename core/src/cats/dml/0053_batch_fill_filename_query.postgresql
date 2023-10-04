@@ -3,7 +3,7 @@ SELECT a.Name
   FROM (
       SELECT DISTINCT Name
         FROM batch
-       ) as a
+       ) AS a
  WHERE NOT EXISTS (
       SELECT Name
         FROM Filename

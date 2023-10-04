@@ -1,1 +1,1 @@
-SELECT COUNT(DISTINCT Media.MediaId) as count FROM Media;
+SELECT COUNT(DISTINCT Media.MediaId) AS count FROM Media;
