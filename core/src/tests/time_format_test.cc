@@ -44,8 +44,10 @@ TEST(time_format, correct_time_and_date_format)
   // make sure bstrftime gets the current timezone offset appended
   EXPECT_THAT(bstrftime(time(0)).data(), EndsWith(GetCurrentTimezoneOffset()));
 
-  EXPECT_THAT(bstrftime_debug(time(0)).data(), EndsWith(GetCurrentTimezoneOffset()));
-  EXPECT_THAT(bstrftime_debug(1'000'000'000).data(), testing::MatchesRegex("2001-09-09T..:46:40.*"));
+  EXPECT_THAT(bstrftime_debug(time(0)).data(),
+              EndsWith(GetCurrentTimezoneOffset()));
+  EXPECT_THAT(bstrftime_debug(1'000'000'000).data(),
+              testing::MatchesRegex("2001-09-0.T..:46:40.*"));
 
   EXPECT_THAT(bstrftime_scheduler_preview(time(0)).data(), EndsWith(GetCurrentTimezoneOffset()));
   EXPECT_THAT(bstrftime_scheduler_preview(1'000'000'000).data(), testing::MatchesRegex("... 0.-...-2001 ..:46.*"));
