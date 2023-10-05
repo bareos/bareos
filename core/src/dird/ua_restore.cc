@@ -50,6 +50,7 @@
 #include "lib/parse_conf.h"
 #include "lib/tree.h"
 #include "include/protocol_types.h"
+#include "lib/tree_save.h"
 
 #include <vector>
 
@@ -1185,11 +1186,52 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
   ua->LogAuditEventInfoMsg(T_("Building directory tree for JobId(s) %s"),
                            rx->JobIds);
 
-  if (!ua->db->GetFileList(ua->jcr, rx->JobIds, false /* do not use md5 */,
-                           true /* get delta */, InsertTreeHandler,
-                           (void*)&tree)) {
-    ua->ErrorMsg("%s", ua->db->strerror());
+  int32_t single_jobid = 0;
+
+
+  {
+    uint32_t jobid = 0;
+
+    for (const char *p = rx->JobIds; GetNextJobidFromList(&p, &jobid) > 0;) {
+      if (single_jobid == 0) {
+	single_jobid = jobid;
+      } else {
+	single_jobid = -1;
+      }
+    }
   }
+
+  if (single_jobid > 0) {
+    std::string path = std::string{"/tmp/bareos-"}
+      + std::to_string(single_jobid)
+      + ".tree";
+    std::size_t tree_size;
+    auto *loaded_tree = LoadTree(path.c_str(), &tree_size);
+
+    if (!loaded_tree) {
+      if (!ua->db->GetFileList(ua->jcr, rx->JobIds, false /* do not use md5 */,
+			       true /* get delta */, InsertTreeHandler,
+			       (void*)&tree)) {
+	ua->ErrorMsg("%s", ua->db->strerror());
+      }
+
+      if (!SaveTree(path.c_str(), tree.root)) {
+	ua->ErrorMsg("Could not save tree to: %s\n", path.c_str());
+      }
+    } else {
+      ua->InfoMsg("Loaded tree from %s\n", path.c_str());
+      FreeTree(tree.root);
+      tree.root = loaded_tree;
+      tree.FileCount = tree_size;
+    }
+  } else {
+    if (!ua->db->GetFileList(ua->jcr, rx->JobIds, false /* do not use md5 */,
+			     true /* get delta */, InsertTreeHandler,
+			     (void*)&tree)) {
+      ua->ErrorMsg("%s", ua->db->strerror());
+    }
+  }
+
 
   if (*rx->BaseJobIds) {
     PmStrcat(rx->JobIds, ",");

@@ -69,7 +69,7 @@ struct proto_node {
   }
 
   std::uint64_t next() {
-    return sub.end + 1;
+    return sub.end;
   }
 
   std::uint64_t child_end() {
@@ -317,6 +317,7 @@ std::vector<char> LoadFile(const char* path)
     current += input.gcount();
     content.resize(current + read_size);
   } while (input.read(content.data() + current, read_size));
+  content.resize(current + input.gcount());
 
   return content;
 }
@@ -401,6 +402,23 @@ static int NodeCompare(void* item1, void* item2)
   return strcmp(tn1->fname, tn2->fname);
 }
 
+inline void PrintTree(TREE_NODE* node, std::string& s, int depth = 0)
+{
+  for (int i = 0; i < depth; ++i) {
+    s += "*";
+  }
+
+  s += "* ";
+
+  s += node->fname;
+  s += "\n";
+
+  TREE_NODE* child;
+  foreach_child(child, node) {
+    PrintTree(child, s, depth + 1);
+  }
+}
+
 TREE_ROOT* tree_from_view(tree_view tree)
 {
   TREE_ROOT* root = new_tree(tree.size());
@@ -409,6 +427,7 @@ TREE_ROOT* tree_from_view(tree_view tree)
 
   // this can probably be done in the othre direction too!
   for (std::size_t i = tree.size(); i > 0;) {
+
     i -= 1;
     const proto_node& pnode = tree.nodes[i];
     TREE_NODE& node = *new (&nodes[i]) TREE_NODE;
@@ -419,7 +438,7 @@ TREE_ROOT* tree_from_view(tree_view tree)
     node.fname[str.end - str.start] = 0;
     for (std::size_t child = pnode.sub.start;
 	 child < pnode.sub.end;
-	 child = tree.nodes[child].sub.end + 1) {
+	 child = tree.nodes[child].sub.end) {
       auto& childnode = nodes[child];
       node.child.insert(&childnode, NodeCompare);
       childnode.parent = &node;
@@ -429,6 +448,7 @@ TREE_ROOT* tree_from_view(tree_view tree)
   root->first = &nodes[0];
   root->last = &nodes[tree.size() - 1];
   root->last->next = nullptr;
+  root->child.insert(&nodes[0], NodeCompare);
 
   for (std::size_t i = 0; i < tree.size() - 1; ++i) {
     TREE_NODE& current = nodes[i];
@@ -470,16 +490,18 @@ TREE_ROOT* tree_from_view(tree_view tree)
   return root;
 }
 
-TREE_ROOT* LoadTree(const char* path)
+TREE_ROOT* LoadTree(const char* path, std::size_t* size)
 {
   try {
     std::vector<char> bytes = LoadFile(path);
 
     tree_view view(to_span(bytes));
 
+    *size = view.size();
     return tree_from_view(view);
   } catch (const std::exception& e) {
     Dmsg1(50, "Error while loading tree from %s: ERR=%s\n", path, e.what());
+    *size = 0;
     return nullptr;
   }
 }

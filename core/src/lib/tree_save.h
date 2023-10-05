@@ -29,7 +29,7 @@
 #include "lib/tree.h"
 
 bool SaveTree(const char *path, TREE_ROOT* root);
-TREE_ROOT* LoadTree(const char *path);
+TREE_ROOT* LoadTree(const char *path, std::size_t* size);
 
 
 #endif  // BAREOS_LIB_TREE_SAVE_H_
