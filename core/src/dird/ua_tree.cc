@@ -40,6 +40,7 @@
 #include "lib/edit.h"
 #include "lib/tree.h"
 #include "lib/util.h"
+#include "lib/tree_save.h"
 
 namespace directordaemon {
 
