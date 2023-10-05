@@ -54,18 +54,24 @@
 #include <iostream>
 
 namespace TimestampFormat {
-  // %z is missing because it is not correctly implemented in windows :(
-  // As we optionally want to offer microseconds, we implement the %z ourselves on
-  // all platforms
+// %z is missing because it is not correctly implemented in windows :(
+// We implement the %z ourselves and add add the timezone in the format +0000
+// to all date strings
+
+// default format
+// 2023-08-24T17:49:24+0200
 const char* Default{"%Y-%m-%dT%H:%M:%S"};
 
-  // for the scheduler preview
+// for the scheduler preview
+// Fri 06-Oct-2023 02:05+0200
 const char* SchedPreview{"%a %d-%b-%Y %H:%M"};
 
-  // for use in TO_CHAR database queries
-const char* Database{"YYYY-MM-DD\"T\"HH24:MI:SSTZH:TZM"};
+// for use in TO_CHAR database queries
+// 2023-10-05T08:57:39+0200
+const char* Database{"YYYY-MM-DD\"T\"HH24:MI:SSTZHTZM"};
 
-  // to create filenames, so only what is allowed in filenames also on windows
+// to create filenames, so only what is allowed in filenames also on windows
+// 2023-08-24T17.49.24+0200
 const char* Filename{"%Y-%m-%dT%H.%M.%S"};
 }  // namespace TimestampFormat
 
@@ -109,6 +115,8 @@ void Blocaltime(const time_t* time, struct tm* tm)
 
 // Formatted time as iso8601 string
 // only call from inside this file
+// if print_microseconds is true, we add six digits between the seconds and the
+// timezone offset
 static char* bstrftime_internal(char* dt,
                                 int maxlen,
                                 utime_t utime,
@@ -137,6 +145,7 @@ static char* bstrftime_internal(char* dt,
   return dt;
 }
 
+// internal functions
 static char* bstrftime(char* dt, int maxlen, utime_t utime)
 {
   return bstrftime_internal(dt, maxlen, utime, TimestampFormat::Default);
@@ -151,6 +160,8 @@ static char* bstrftime_filename(char* dt, int maxlen, utime_t utime)
 {
   return bstrftime_internal(dt, maxlen, utime,  TimestampFormat::Filename);
 }
+
+// Functions to be called from outside of this file
 
 // format for scheduler preview: Thu 05-Oct-2023 02:05+0200
 std::string bstrftime_scheduler_preview(utime_t tim)
