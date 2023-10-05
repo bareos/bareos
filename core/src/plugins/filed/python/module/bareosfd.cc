@@ -285,7 +285,8 @@ static inline bool PySavePacketToNative(
         plugin_priv_ctx->fname = strdup(fileName_AsUTF8);
         sp->fname = plugin_priv_ctx->fname;
       } else {
-        PyErr_SetString(PyExc_TypeError, "fname needs to be of type string \"utf-8\"");
+        PyErr_SetString(PyExc_TypeError,
+                        "fname needs to be of type string \"utf-8\"");
         return false;
       }
     } else {

@@ -732,7 +732,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
             break;
           case bRC_Skip:
             Dmsg0(debuglevel,
-                  "Plugin returned bRC_Skip, continue with next file");
+                  "Plugin returned bRC_Skip, continue with next file\n");
             continue;
           case bRC_Error:
             Jmsg1(jcr, M_FATAL, 0,
@@ -747,7 +747,9 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
           case bRC_Stop:
           case bRC_Term:
             Jmsg1(jcr, M_ERROR, 0,
-                  _("Command plugin \"%s\": unhandled returncode from startBackupFile.\n"), cmd);
+                  _("Command plugin \"%s\": unhandled returncode from "
+                    "startBackupFile.\n"),
+                  cmd);
 
             goto fun_end;
         }
