@@ -29,6 +29,7 @@ import io
 import json
 import getpass
 from sys import version_info
+from sys import version
 import stat
 import time
 from collections import deque
@@ -119,7 +120,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             "pg_snapshots",
             "pg_stat_tmp",
             "pg_subtrans",
-            "pg_wal"
+            "pg_wal",
         ]
         # log is not exclude by default but can be a good candidate.
         # pgsql_tmp can have several locations.
@@ -130,7 +131,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         self.ignore_subdirs.extend(self.mandatory_subdirs)
         # pg_internal.init files can be omitted from the backup whenever a file of that name is
         # found. These files contain relation cache data that is always rebuilt when recovering.
-        self.ignore_files = ['pg_internal.init']
+        self.ignore_files = ["pg_internal.init"]
         self.options = {}
         self.db_con = None
         self.db_user = None
@@ -198,7 +199,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         To be able to exclude the ignore_subdirs we use os.walk with TopDown True.
         The deque is reversed, so file appear first, and directories at the end.
         self.paths_to_backup is extended with it.
-        
+
         That function be used to parse `postgresql_data_dir`, `wal_archive_dir`, `tablespace`
         """
         if not start_dir.endswith("/"):
@@ -212,12 +213,16 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             # incremental backups but here we have to compare against
             # last BackupPostgreSQL timestamp
             # 20230926 Why should we, or if yes isn't that needed only for wal ?
-            
+
             # Filter out any ignored subdirectory
-            dirnames[:] = [dirname for dirname in dirnames if not dirname in self.ignore_subdirs]
+            dirnames[:] = [
+                dirname for dirname in dirnames if not dirname in self.ignore_subdirs
+            ]
 
             for filename in filenames:
-                if ( not os.path.dirname(os.path.normpath(filename)) in self.ignore_subdirs
+                if (
+                    not os.path.dirname(os.path.normpath(filename))
+                    in self.ignore_subdirs
                     and not filename in self.ignore_files
                 ):
                     fullname = os.path.join(topdir, filename)
@@ -244,7 +249,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                             f"Could not stat reference file {fullname}: {os_err}\n",
                         )
                         continue
-            #TODO check if we should also check mtime for dirs.
+            # TODO check if we should also check mtime for dirs.
             for dirname in dirnames:
                 if not dirname in self.ignore_subdirs:
                     fulldirname = os.path.join(topdir, dirname) + "/"
@@ -253,9 +258,12 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         _paths.reverse()
         # Now re-add excluded mandatory_subdirs as directory only.
         # But only for Full and pg_working_dir
-        if self.full_backup_running and start_dir == self.options["postgresql_data_dir"]:
+        if (
+            self.full_backup_running
+            and start_dir == self.options["postgresql_data_dir"]
+        ):
             for dirname in self.mandatory_subdirs:
-                _paths.append(os.path.join(start_dir,dirname)+"/")
+                _paths.append(os.path.join(start_dir, dirname) + "/")
 
         self.paths_to_backup.extend(_paths)
 
@@ -300,8 +308,10 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         """
         diff_exist = False
         try:
-            result = self.db_con.run(f"SELECT pg_wal_lsn_diff('{current_lsn}','{last_lsn}')")[0][0]
-            if not isinstance(result, int):
+            result = self.db_con.run(
+                f"SELECT pg_wal_lsn_diff('{current_lsn}','{last_lsn}')"
+            )[0][0]
+            if not int(result):
                 raise ValueError
 
             if result > 0:
@@ -317,16 +327,13 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         except pg8000.Error as pg_err:
             current_lsn = 0
             bareosfd.JobMessage(
-                bareosfd.M_WARNING,
-                (
-                    f"Error checking lsn difference was: {result}"
-                    f": {pg_err} \n"
-                ),
+                bareosfd.M_ERROR,
+                (f"Error checking lsn difference was: {result}" f": {pg_err} \n"),
             )
         except ValueError as val_err:
             current_lsn = 0
             bareosfd.JobMessage(
-                bareosfd.M_WARNING,
+                bareosfd.M_ERROR,
                 (
                     f"Error checking lsn difference was: {repr(result)}"
                     f": {val_err} \n"
@@ -370,9 +377,9 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         """
         try:
             tablespace_stmt = (
-                    "select oid,spcname from pg_tablespace"
-                    " where spcname not in ('pg_default','pg_global');"
-                )
+                "select oid,spcname from pg_tablespace"
+                " where spcname not in ('pg_default','pg_global');"
+            )
             results = self.db_con.run(tablespace_stmt)
             for row in results:
                 oid, tablespace_name = row
@@ -410,7 +417,10 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         except pg8000.exceptions.InterfaceError:
             pass
 
-        bareosfd.JobMessage(bareosfd.M_INFO, "Database connection closed.\n",)
+        bareosfd.JobMessage(
+            bareosfd.M_INFO,
+            "Database connection closed.\n",
+        )
 
     def __complete_backup_job(self):
         """
@@ -939,6 +949,10 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         bareosfd.DebugMessage(100, "start_backup_job in PostgresqlPlugin called\n")
 
         self.__create_db_connection()
+        bareosfd.JobMessage(
+            bareosfd.M_INFO,
+            f"python: {version} | pg8000: {pg8000.__version__}\n",
+        )
 
         if chr(self.level) == "F":
             # For Full we backup the PostgreSQL data directory
@@ -953,12 +967,18 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             self.__check_pg_major_version()
 
             start_dir = self.options["wal_archive_dir"]
+            bareosfd.JobMessage(bareosfd.M_INFO, f"data_dir: {start_dir}\n")
+
             self.paths_to_backup.append("ROP")
             self.virtual_files.append("ROP")
 
             current_lsn = self.__get_current_lsn()
             lsn_diff = self.__check_lsn_diff(current_lsn, self.last_lsn)
             if self.switch_wal and lsn_diff:
+                bareosfd.JobMessage(
+                    bareosfd.M_INFO,
+                    f"Difference found in LSN sequence switching wal\n",
+                )
                 # Ask pg to switch wal
                 self.__do_switch_wal()
                 # Pick the new lsn and update our last_lsn
@@ -1024,7 +1044,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             bareosfd.JobMessage(
                 bareosfd.M_ERROR,
                 f"name {repr(self.file_to_backup)} cannot be encoded in utf-8",
-                )
+            )
             return bareosfd.bRC_Error
         bareosfd.DebugMessage(100, f"file: {self.file_to_backup}\n")
 
@@ -1071,9 +1091,9 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                 savepkt.fname = self.file_to_backup
                 # emit a warning and skip if file can't be read like in normal backup
                 try:
-                # os.islink will detect links to directories only when
-                # there is no trailing slash - we need to perform checks
-                # on the stripped name but use it with trailing / for the backup itself
+                    # os.islink will detect links to directories only when
+                    # there is no trailing slash - we need to perform checks
+                    # on the stripped name but use it with trailing / for the backup itself
                     if os.path.islink(self.file_to_backup.rstrip("/")):
                         statp = os.lstat(self.file_to_backup)
                         savepkt.type = bareosfd.FT_LNK
@@ -1111,10 +1131,9 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                 except os.error as os_err:
                     bareosfd.JobMessage(
                         bareosfd.M_WARNING,
-                        f"Skip no more existing file {self.file_to_backup}: \"{os_err}\"",
+                        f'Skip "{os_err}"\n',
                     )
                     return bareosfd.bRC_Skip
-
 
             # for both virtual and normal file
             savepkt.statp = my_statp
@@ -1324,17 +1343,14 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             os.chown(
                 self.fname,
                 self.stat_packets[self.fname].st_uid,
-                self.stat_packets[self.fname].st_gid
+                self.stat_packets[self.fname].st_gid,
             )
-            os.chmod(
-                self.fname,
-                self.stat_packets[self.fname].st_mode
-            )
+            os.chmod(self.fname, self.stat_packets[self.fname].st_mode)
             os.utime(
                 self.fname,
                 (
                     self.stat_packets[self.fname].st_atime,
-                    self.stat_packets[self.fname].st_mtime
+                    self.stat_packets[self.fname].st_mtime,
                 ),
             )
             # del sometimes leads to no-key errors, like if end_restore_file is called
@@ -1386,5 +1402,6 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         else:
             self.__close_db_connection()
         return bareosfd.bRC_OK
+
 
 # vim: ts=4 tabstop=4 expandtab shiftwidth=4 softtabstop=4
