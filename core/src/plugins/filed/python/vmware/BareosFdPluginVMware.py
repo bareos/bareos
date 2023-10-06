@@ -1177,7 +1177,7 @@ class BareosVADPWrapper(object):
             if self.enable_cbt:
                 bareosfd.JobMessage(
                     bareosfd.M_INFO,
-                    "Error vm %s is not cbt enabled, enabling it now.\n"
+                    "Error vm %s is not CBT enabled, enabling it now.\n"
                     % (StringCodec.encode(self.vm.name)),
                 )
                 if self.vm.snapshot is not None:
@@ -1196,7 +1196,7 @@ class BareosVADPWrapper(object):
             else:
                 bareosfd.JobMessage(
                     bareosfd.M_FATAL,
-                    "Error vm %s is not cbt enabled\n"
+                    "Error vm %s is not CBT enabled\n"
                     % (StringCodec.encode(self.vm.name)),
                 )
                 return bareosfd.bRC_Error
