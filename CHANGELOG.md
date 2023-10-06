@@ -137,6 +137,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - dird: fix expected file count error during bsr build  [PR #1511]
 - VMware Plugin: Fix transformer issues [PR #1532]
 - filed: fix possible data-loss when excluding hardlinks [PR #1506]
+- cats: fix for integer overflow issue when using `offset` in `llist` [PR #1547]
 
 ### Documentation
 - add explanation about binary version numbers [PR #1354]
@@ -261,6 +262,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1542]: https://github.com/bareos/bareos/pull/1542
 [PR #1543]: https://github.com/bareos/bareos/pull/1543
 [PR #1546]: https://github.com/bareos/bareos/pull/1546
+[PR #1547]: https://github.com/bareos/bareos/pull/1547
 [PR #1548]: https://github.com/bareos/bareos/pull/1548
 [PR #1549]: https://github.com/bareos/bareos/pull/1549
 [PR #1550]: https://github.com/bareos/bareos/pull/1550
