@@ -61,7 +61,7 @@ char my_name[128] = {0};              /* daemon name is stored here */
 char host_name[256] = {0};            /* host machine name */
 char* exepath = (char*)NULL;
 char* exename = (char*)NULL;
-int console_msg_pending = false;
+bool console_msg_pending = false;
 char con_fname[500]; /* Console filename */
 FILE* con_fd = NULL; /* Console file descriptor */
 brwlock_t con_lock;  /* Console lock structure */

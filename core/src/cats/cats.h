@@ -142,8 +142,8 @@ struct JobDbRecord {
   char cRealEndTime[MAX_TIME_LENGTH]{0};
 
   // Extra stuff not in DB
-  int limit = 0;  /**< limit records to display */
-  int offset = 0; /**< offset records to display */
+  uint64_t limit = 0;  /**< limit records to display */
+  uint64_t offset = 0; /**< offset records to display */
   faddr_t rec_addr = 0;
   uint32_t FileIndex = 0; /**< added during Verify */
 };
