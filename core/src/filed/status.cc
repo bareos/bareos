@@ -326,10 +326,11 @@ static void ListTerminatedJobs(StatusPacket* sp)
 
   if (!sp->api) {
     len = PmStrcpy(msg, _(" JobId  Level    Files      Bytes   Status   "
-                          "Finished        Name \n"));
+                           "Finished                 Name \n"));
     sp->send(msg, len);
-    len = PmStrcpy(msg, _("===================================================="
-                          "==================\n"));
+    len = PmStrcpy(msg,
+                   _("===================================================="
+                      "===========================\n"));
     sp->send(msg, len);
   }
 

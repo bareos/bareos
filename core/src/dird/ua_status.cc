@@ -1185,11 +1185,13 @@ static void ListTerminatedJobs(UaContext* ua)
   if (!ua->api) {
     ua->SendMsg(_("\nTerminated Jobs:\n"));
     ua->SendMsg(
-        _(" JobId  Level    Files      Bytes   Status   Finished        Name "
-          "\n"));
+        _(" JobId  Level    Files      Bytes   Status   Finished              "
+           "   Name "
+           "\n"));
     ua->SendMsg(
-        _("===================================================================="
-          "\n"));
+        _("==================================================================="
+           "=========="
+           "\n"));
   }
 
   for (const RecentJobResultsList::JobResult& je :
