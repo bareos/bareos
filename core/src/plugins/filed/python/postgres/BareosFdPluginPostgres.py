@@ -176,11 +176,11 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
         try:
             if self.options["dbHost"].startswith("/"):
                 self.dbCon = pg8000.Connection(
-                    self.dbuser, database=self.dbname, unix_sock=self.dbHost
+                    self.dbuser, database=self.dbname, unix_sock=self.dbHost, password=self.dbpassword
                 )
             else:
                 self.dbCon = pg8000.Connection(
-                    self.dbuser, database=self.dbname, host=self.dbHost
+                    self.dbuser, database=self.dbname, host=self.dbHost, port=self.dbport, password=self.dbpassword
                 )
 
             if "role" in self.options:
