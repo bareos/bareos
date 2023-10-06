@@ -1202,7 +1202,8 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
   }
 
   if (single_jobid > 0) {
-    std::string path = std::string{"/tmp/bareos-"}
+    std::string cwd = me->working_directory;
+    std::string path = cwd + std::string{"/bareos-"}
       + std::to_string(single_jobid)
       + ".tree";
     std::size_t tree_size;
@@ -1217,6 +1218,13 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
 
       if (!SaveTree(path.c_str(), tree.root)) {
 	ua->ErrorMsg("Could not save tree to: %s\n", path.c_str());
+      } else {
+	auto *loaded_tree = LoadTree(path.c_str(), &tree_size);
+	ASSERT(loaded_tree);
+	ua->InfoMsg("Loaded tree from %s\n", path.c_str());
+	FreeTree(tree.root);
+	tree.root = loaded_tree;
+	tree.FileCount = tree_size;
       }
     } else {
       ua->InfoMsg("Loaded tree from %s\n", path.c_str());
