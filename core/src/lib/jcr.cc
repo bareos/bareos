@@ -64,7 +64,11 @@ const int debuglevel = 3400;
 
 static void JcrTimeoutCheck(watchdog_t* self);
 
-int num_jobs_run;
+std::atomic<std::size_t> num_jobs_run;
+
+std::size_t NumJobsRun() {
+  return num_jobs_run.load(std::memory_order_relaxed);
+}
 
 static std::vector<std::weak_ptr<JobControlRecord>> job_control_record_cache;
 static dlist<JobControlRecord>* job_control_record_chain = nullptr;
@@ -355,7 +359,7 @@ static void JcrCleanup(JobControlRecord* jcr, bool is_destructor_call = false)
     case JT_COPY:
     case JT_ADMIN:
       if (jcr->JobId > 0) {  // except Console Jobs
-        num_jobs_run++;
+        num_jobs_run.fetch_add(1, std::memory_order_relaxed);
         RecentJobResultsList::Append(jcr);
       }
       break;
