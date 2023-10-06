@@ -636,7 +636,7 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
       case 6:
         /* When */
         if (GetCmd(ua, _("Please enter desired start time as YYYY-MM-DD "
-                         "HH:MM:SS (return for now): "))) {
+                      "HH:MM:SS in the current timezone (return for now): "))) {
           if (ua->cmd[0] == 0) {
             jcr->sched_time = time(NULL);
           } else {
