@@ -103,6 +103,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - build: introduce fedora38 [PR #1563]
 - python: adapt for new Python module versions [PR #1546]
 - tools: fix tools not starting up on windows  [PR #1549]
+- dird: `list jobs`: add `level` keyword and accept a list of job levels [PR #1548]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -260,6 +261,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1542]: https://github.com/bareos/bareos/pull/1542
 [PR #1543]: https://github.com/bareos/bareos/pull/1543
 [PR #1546]: https://github.com/bareos/bareos/pull/1546
+[PR #1548]: https://github.com/bareos/bareos/pull/1548
 [PR #1549]: https://github.com/bareos/bareos/pull/1549
 [PR #1550]: https://github.com/bareos/bareos/pull/1550
 [PR #1556]: https://github.com/bareos/bareos/pull/1556
