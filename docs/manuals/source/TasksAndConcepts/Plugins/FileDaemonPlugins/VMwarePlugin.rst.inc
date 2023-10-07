@@ -295,6 +295,9 @@ Backup
 
 Before running the first backup, CBT (Changed Block Tracking) must be enabled for the VMs to be backed up.
 
+Since :sinceVersion:`22.1.1: VMware Plugin: enable_cbt` the plugin will try to
+enable CBT automatically when the plugin option **enable_cbt=yes** is set (see below).
+
 As of https://kb.vmware.com/s/article/2075984 manually enabling CBT is currently not working properly. The API however works properly. To enable CBT use the Script :command:`vmware_cbt_tool.py`, it is packaged in the bareos-vmware-plugin package:
 
 .. code-block:: shell-session
@@ -612,6 +615,9 @@ snapshot_retry_wait (optional)
 
 poweron_timeout (optional)
    Timeout in seconds to wait for a VM to be powered on after restore, default 15s. When a VM is powered on after restore (see also the option *restore_powerstate* above), the plugin will check if it succeeded by checking the power state. If it is not powered on within this timeout, the restore job will issue a warning message.
+
+enable_cbt (optional)
+   When using ``enable_cbt=yes`` the plugin will enable CBT (changed block tracking) if possible and it is not yet enabled. It is required that no snapshot exists when enabling CBT, otherwise the plugin will emit an error message. By default this option is not set and ``vmware_cbt_tool.py`` must be used to enable CBT (see above). Since :sinceVersion:`22.1.1: VMware Plugin`
 
 uuid (deprecated)
    The uuid option could be used instead of *dc*, *folder* and *vmname* to uniquely address a VM for backup. As the plugin since :sinceVersion:`22.0.0: VMware Plugin` is able recreate VMs in a different datacenter, folder or datastore, this option has become useless. When using uuid, restoring is only possible to the same still existing VM. It is recommended to change the configuration, as the uuid option will be dropped in the next version.

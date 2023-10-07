@@ -24,6 +24,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - build: introduce fedora38 [PR #1564]
 - daemons: set CLI11 error exit code to `41` and bareos config parsing error exit code to `42` [PR #1557]
 - tools: fix tools not starting up on windows [PR #1560]
+- VMware Plugin: Fix backup and recreating VMs with PCI passthrough for GPU [PR #1567]
 
 ### Fixed
 - stored: fix incoherent meta data when concurrently writing to the same volume [PR #1514]
@@ -577,4 +578,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1557]: https://github.com/bareos/bareos/pull/1557
 [PR #1560]: https://github.com/bareos/bareos/pull/1560
 [PR #1564]: https://github.com/bareos/bareos/pull/1564
+[PR #1567]: https://github.com/bareos/bareos/pull/1567
 [unreleased]: https://github.com/bareos/bareos/tree/master

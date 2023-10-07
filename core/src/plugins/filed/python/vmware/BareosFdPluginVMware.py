@@ -114,6 +114,7 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             "config_file",
             "snapshot_retries",
             "snapshot_retry_wait",
+            "enable_cbt",
         ]
         self.allowed_options = (
             self.mandatory_options_default
@@ -367,6 +368,9 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                     % self.options["snapshot_retry_wait"],
                 )
                 return bareosfd.bRC_Error
+
+        if self.options.get("enable_cbt") == "yes":
+            self.vadp.enable_cbt = True
 
         for options in self.options:
             bareosfd.DebugMessage(
@@ -1010,6 +1014,7 @@ class BareosVADPWrapper(object):
         self.snapshot_retries = 3
         self.snapshot_retry_wait = 5
         self.snapshot_prefix = "BareosTmpSnap_jobId"
+        self.enable_cbt = False
 
     def connect_vmware(self):
         # this prevents from repeating on second call
@@ -1169,15 +1174,32 @@ class BareosVADPWrapper(object):
             return bareosfd.bRC_Error
 
         if not self.vm.config.changeTrackingEnabled:
-            bareosfd.DebugMessage(
-                100,
-                "Error vm %s is not cbt enabled\n" % (StringCodec.encode(self.vm.name)),
-            )
-            bareosfd.JobMessage(
-                bareosfd.M_FATAL,
-                "Error vm %s is not cbt enabled\n" % (StringCodec.encode(self.vm.name)),
-            )
-            return bareosfd.bRC_Error
+            if self.enable_cbt:
+                bareosfd.JobMessage(
+                    bareosfd.M_INFO,
+                    "Error vm %s is not CBT enabled, enabling it now.\n"
+                    % (StringCodec.encode(self.vm.name)),
+                )
+                if self.vm.snapshot is not None:
+                    bareosfd.JobMessage(
+                        bareosfd.M_FATAL,
+                        "Error VM %s must not have any snapshots before enabling CBT\n"
+                        % (StringCodec.encode(self.vm.name)),
+                    )
+                    return bareosfd.bRC_Error
+
+                cspec = vim.vm.ConfigSpec()
+                cspec.changeTrackingEnabled = True
+                task = self.vm.ReconfigVM_Task(cspec)
+                pyVim.task.WaitForTask(task)
+
+            else:
+                bareosfd.JobMessage(
+                    bareosfd.M_FATAL,
+                    "Error vm %s is not CBT enabled\n"
+                    % (StringCodec.encode(self.vm.name)),
+                )
+                return bareosfd.bRC_Error
 
         bareosfd.DebugMessage(
             100,
@@ -3385,6 +3407,31 @@ class BareosVmConfigInfoToSpec(object):
             add_device.backing.systemId = device["backing"]["systemId"]
             add_device.backing.useAutoDetect = device["backing"]["useAutoDetect"]
             add_device.backing.vendorId = device["backing"]["vendorId"]
+
+        elif (
+            device["backing"]["_vimtype"]
+            == "vim.vm.device.VirtualPCIPassthrough.VmiopBackingInfo"
+        ):
+            add_device.backing = vim.vm.device.VirtualPCIPassthrough.VmiopBackingInfo()
+            add_device.backing.vgpu = device["backing"]["vgpu"]
+
+            # Since vSphere API 7.0.2.0
+            self._transform_property(
+                property_name="migrateSupported",
+                source_data=device["backing"],
+                target_object=add_device.backing,
+                minimum_pyvmomi_version="7.0.2.0",
+            )
+
+            # Since 8.0.0.1
+            for property_name in ("enhancedMigrateCapability", "vgpuMigrateDataSizeMB"):
+                self._transform_property(
+                    property_name=property_name,
+                    source_data=device["backing"],
+                    target_object=add_device.backing,
+                    minimum_pyvmomi_version="8.0.0.1",
+                )
+
         else:
             raise RuntimeError(
                 "Unknown Backing for VirtualPCIPassthrough: %s"
@@ -3902,6 +3949,23 @@ class BareosVmConfigInfoToSpec(object):
         add_device.unitNumber = device["unitNumber"]
 
         return
+
+    def _transform_property(
+        self,
+        property_name=None,
+        source_data=None,
+        target_object=None,
+        minimum_pyvmomi_version=None,
+    ):
+        if source_data.get(property_name) is not None:
+            if not hasattr(target_object, property_name):
+                raise RuntimeError(
+                    "Missing property %s in %s, pyVmomi %s or greater required"
+                    % (property_name, source_data["_vimtype"], minimum_pyvmomi_version)
+                )
+                return None
+
+            setattr(target_object, property_name, source_data[property_name])
 
 
 # vim: tabstop=4 shiftwidth=4 softtabstop=4 expandtab
