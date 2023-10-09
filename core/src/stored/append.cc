@@ -47,7 +47,7 @@
 #include <deque>
 #include <utility>
 #include <condition_variable>
-// #include "lib/channel.h"
+#include "lib/channel.h"
 
 namespace storagedaemon {
 
@@ -120,14 +120,14 @@ static bool SaveFullyProcessedFilesAttributes(
 
 class MessageHandler {
  public:
-  using signal = int;
+  using signal_type = int;
 
-  struct message {
+  struct message_type {
     std::size_t size;
     PoolMem data;
   };
 
-  struct error {
+  struct error_type {
     enum class type
     {
       HARDEOF,
@@ -138,36 +138,25 @@ class MessageHandler {
     std::string msg;
   };
 
-  using result_type = std::variant<signal, message, error>;
+  using result_type = std::variant<signal_type, message_type, error_type>;
 
-  MessageHandler(BareosSocket* fd) : fd{fd}, receive_thread{enlist, this} {}
-
-  std::optional<result_type> get_msg()
+  MessageHandler(BareosSocket* fd)
+      : MessageHandler{fd,
+                       // 500 msg reserves at most 256MB in size
+                       // probably much less because of signals
+                       channel::CreateBufferedChannel<result_type>(500)}
   {
-    if (cache.size() == 0) {
-      std::unique_lock l(mut);
-      not_empty.wait(l, [this] { return results.size() > 0 || finished; });
-
-      if (results.size() == 0) { return std::nullopt; }
-
-      std::swap(cache, results);
-    }
-
-    ASSERT(cache.size() > 0);
-
-    result_type t = std::move(cache.front());
-    cache.pop_front();
-
-    std::unique_lock l(mut);
-    bytes_out += sizeof(t);
-    if (auto* content = std::get_if<message>(&t)) {
-      bytes_out += content->size;
-    }
-    element_removed.notify_one();
-    return t;
   }
 
-  BareosSocket* close_and_get()
+  std::optional<result_type> get_msg() { return output.get(); }
+
+  const char* error()
+  {
+    if (fd->IsError()) { return fd->bstrerror(); }
+    return nullptr;
+  }
+
+  BareosSocket* close_and_get_sock()
   {
     end.store(true);
     receive_thread.join();
@@ -175,20 +164,22 @@ class MessageHandler {
   }
 
  private:
+  MessageHandler(BareosSocket* fd,
+                 std::pair<channel::input<result_type>,
+                           channel::output<result_type>> chan_pair)
+      : fd{fd}
+      , input{std::move(chan_pair.first)}
+      , output{std::move(chan_pair.second)}
+      , receive_thread{enlist, this}
+  {
+  }
+
   bool error_while_reading{false};
   std::atomic<bool> end{false};
 
   BareosSocket* fd;
-  // channel::out<result_type> chan;
-
-  std::mutex mut{};
-  bool finished{false};
-  std::size_t bytes_out{0};
-  std::condition_variable not_empty{};
-  std::condition_variable element_removed{};
-  std::deque<result_type> results{};
-
-  std::deque<result_type> cache;
+  channel::input<result_type> input;
+  channel::output<result_type> output;
 
   // receive_thread has to be defined last!
   // The thread created will try to access this class immediately after
@@ -198,12 +189,6 @@ class MessageHandler {
   {
     POOLMEM* save = fd->msg;
     bool cont = true;
-    std::size_t max_size{0};
-    std::size_t max_bytes{0};
-    std::size_t bytes_in{0};
-    std::size_t message_count{0};
-    std::size_t full_message_count{0};
-    std::size_t signal_count{0};
     for (int res = 0; cont; res = fd->WaitData(0, 100'000)) {
       if (res == 1) {
         PoolMem msg(PM_MESSAGE);
@@ -214,49 +199,26 @@ class MessageHandler {
         msg.addr() = fd->msg;
         if (n < 0) {
           if (n == BNET_SIGNAL) {
-            result = signal{fd->message_length};
+            result = signal_type{fd->message_length};
             // break; /* end of data */
           } else if (n == BNET_HARDEOF) {
-            result = error{error::type::HARDEOF, fd->bstrerror()};
+            result = error_type{error_type::type::HARDEOF, fd->bstrerror()};
             cont = false;
           } else {
-            result = error{error::type::INTERNAL_ERROR, fd->bstrerror()};
+            result
+                = error_type{error_type::type::INTERNAL_ERROR, fd->bstrerror()};
             cont = false;
           }
-
-          signal_count += 1;
         } else {
           std::size_t length = n;
-          result = message{length, std::move(msg)};
-          if (n == 64 * 1024) full_message_count += 1;
-          message_count += 1;
+          result = message_type{length, std::move(msg)};
         }
         fd->msg = nullptr;
 
-        {
-          std::unique_lock l(mut);
-          if (n > 0) { bytes_in += n; }
-          bytes_in += sizeof(result);
-
-          element_removed.wait(l, [this, bytes_in] {
-            return bytes_in - bytes_out < 5ULL * 1024ULL * 1024ULL
-                   || end.load();
-          });
-
-          results.emplace_back(std::move(result));
-          if (results.size() > max_size) { max_size = results.size(); }
-          ASSERT(bytes_in >= full_message_count * 64ULL * 1024ULL);
-          if (bytes_in - bytes_out > max_bytes) {
-            ASSERT(bytes_in > bytes_out);
-            max_bytes = bytes_in - bytes_out;
-          }
-          if (message_count % 10000 == 0) {
-            Dmsg1(50,
-                  "MsgQueue Message Count = %llu, Signal Count = %llu, Size = "
-                  "%llu\n",
-                  message_count, signal_count, bytes_in - bytes_out);
-          }
-          not_empty.notify_one();
+        if (!input.emplace(std::move(result))) {
+          Dmsg1(20,
+                "Tried to put message into queue; but it did not succeed.\n");
+          cont = false;
         }
       } else if (res == -1) {
         cont = false;
@@ -265,14 +227,9 @@ class MessageHandler {
       if (end.load()) { cont = false; }
     }
 
-    std::unique_lock l(mut);
-    finished = true;
-    not_empty.notify_one();
+    input.close();
+
     fd->msg = save;
-    Dmsg1(50,
-          "MsgQueue Max Msg = %llu, Max Size = %llu\n"
-          "Messages = %llu (Full: %llu), Signals = %llu\n",
-          max_size, max_bytes, message_count, full_message_count, signal_count);
   }
 
   static void enlist(MessageHandler* handler) { handler->do_work(); }
@@ -407,14 +364,18 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       break;
     }
 
-    if (auto* error = std::get_if<MessageHandler::error>(&msg.value())) {
+    using signal_type = MessageHandler::signal_type;
+    using message_type = MessageHandler::message_type;
+    using error_type = MessageHandler::error_type;
+
+    if (auto* error = std::get_if<error_type>(&msg.value())) {
       Jmsg2(jcr, M_FATAL, 0, _("Error reading data header from %s. ERR=%s\n"),
             what, error->msg.c_str());
       ok = false;
       break;
     }
 
-    if (auto* signal = std::get_if<MessageHandler::signal>(&msg.value())) {
+    if (auto* signal = std::get_if<signal_type>(&msg.value())) {
       if (*signal != BNET_EOD) {
         Jmsg2(jcr, M_FATAL, 0, _("Unexpected signal from %s: %d\n"), what,
               *signal);
@@ -423,12 +384,12 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       break;
     }
 
-    auto content = std::get<MessageHandler::message>(std::move(msg).value());
+    auto content = std::get<message_type>(std::move(msg).value());
     n = content.size;
 
     if (sscanf(content.data.c_str(), "%ld %ld", &file_index, &stream) != 2) {
       Jmsg2(jcr, M_FATAL, 0, _("Malformed data header from %s: %s\n"), what,
-            bs->msg);
+            content.data.c_str());
       ok = false;
       break;
     }
@@ -475,14 +436,14 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
         break;
       }
 
-      if (auto* error = std::get_if<MessageHandler::error>(&msg.value())) {
+      if (auto* error = std::get_if<error_type>(&msg.value())) {
         Jmsg2(jcr, M_FATAL, 0, _("Error reading data header from %s. ERR=%s\n"),
               what, error->msg.c_str());
         ok = false;
         break;
       }
 
-      if (auto* signal = std::get_if<MessageHandler::signal>(&msg.value())) {
+      if (auto* signal = std::get_if<signal_type>(&msg.value())) {
         if (*signal != BNET_EOD) {
           Jmsg2(jcr, M_FATAL, 0, _("Unexpected signal from %s: %d\n"), what,
                 *signal);
@@ -491,8 +452,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
         break;
       }
 
-      MessageHandler::message content
-          = std::get<MessageHandler::message>(std::move(msg).value());
+      auto content = std::get<message_type>(std::move(msg).value());
       n = content.size;
 
       jcr->sd_impl->dcr->rec->VolSessionId = jcr->VolSessionId;
@@ -558,21 +518,19 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     // Restore the original data pointer.
     jcr->sd_impl->dcr->rec->data = rec_data;
 
-#if 0
-    if (bs->IsError()) {
+    if (auto* error = handler.error()) {
       if (!jcr->IsJobCanceled()) {
-        Dmsg2(350, "Network read error from %s. ERR=%s\n", what,
-              bs->bstrerror());
+        Dmsg2(350, "Network read error from %s. ERR=%s\n", what, error);
         Jmsg2(jcr, M_FATAL, 0, _("Network error reading from %s. ERR=%s\n"),
-              what, bs->bstrerror());
+              what, error);
       }
+
       ok = false;
       break;
     }
-#endif
   }
 
-  bs = handler.close_and_get();
+  bs = handler.close_and_get_sock();
   // Create Job status for end of session label
   jcr->setJobStatusWithPriorityCheck(ok ? JS_Terminated : JS_ErrorTerminated);
 
