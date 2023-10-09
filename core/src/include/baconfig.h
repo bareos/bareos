@@ -164,7 +164,7 @@ void InitWinAPIWrapper();
 #define AUTH_TIMEOUT 60 * 10
 
 // Default network buffer size
-#define DEFAULT_NETWORK_BUFFER_SIZE (256 * 1024)
+inline constexpr std::size_t DEFAULT_NETWORK_BUFFER_SIZE = 256 * 1024;
 
 // Tape label types -- stored in catalog
 #define B_BAREOS_LABEL 0
@@ -249,12 +249,12 @@ typedef uint16_t slot_flags_t;
 
 #include <limits>
 
-constexpr slot_number_t kInvalidSlotNumber
+inline constexpr slot_number_t kInvalidSlotNumber
     = std::numeric_limits<slot_number_t>::max();
-constexpr slot_number_t kInvalidDriveNumber
+inline constexpr slot_number_t kInvalidDriveNumber
     = std::numeric_limits<drive_number_t>::max();
 
-constexpr int kInvalidFiledescriptor = -1;
+inline constexpr int kInvalidFiledescriptor = -1;
 
 inline bool IsSlotNumberValid(slot_number_t slot)
 {
