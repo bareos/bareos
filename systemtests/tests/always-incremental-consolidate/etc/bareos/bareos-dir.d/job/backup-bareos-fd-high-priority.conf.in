@@ -12,8 +12,8 @@ Job {
   Priority = 10
   Spool Data = yes  # Enabling spooling to test consolidate Spool Data = no override
   Run Script {
-    Command = "sleep 5"
+    Command = "sleep 15"
     Runs When = Before
-	Runs On Client = no  # Run on director to also slow down consolidate jobs
+    Runs On Client = no  # Run on director to also slow down consolidate jobs
   }
 }
