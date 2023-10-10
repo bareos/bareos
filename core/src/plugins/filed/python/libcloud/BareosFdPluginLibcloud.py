@@ -342,7 +342,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 jobmessage(M_FATAL, "Shutdown after worker error")
                 return bRC_Cancel
             else:
-                return bRC_Skip
+                return bRC_Stop
 
         filename = FilenameConverter.BucketToBackup(
             "%s/%s"
