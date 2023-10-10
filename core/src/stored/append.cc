@@ -123,39 +123,43 @@ struct Packet {
   Packet(POOLMEM* msg, std::int32_t size) : msg(msg), size(size) {}
 
   Packet(const Packet&) = delete;
-  Packet(Packet&& p) : Packet() {
+  Packet(Packet&& p) : Packet()
+  {
     std::swap(msg, p.msg);
     std::swap(size, p.size);
   }
 
   Packet& operator=(const Packet&) = delete;
-  Packet& operator=(Packet&& p) {
+  Packet& operator=(Packet&& p)
+  {
     std::swap(msg, p.msg);
     std::swap(size, p.size);
 
     return *this;
   }
 
-  ~Packet() {
+  ~Packet()
+  {
     if (msg) { FreePoolMemory(msg); }
     msg = nullptr;
   }
 };
 
-static void ReadMsg(channel::in<Packet> in, BareosSocket* bs,
-		    JobControlRecord *jcr) {
-    while (BgetMsg(bs) > 0 && !jcr->IsJobCanceled()) {
-      POOLMEM* msg = GetPoolMemory(PM_MESSAGE);
-      PmMemcpy(msg, bs->msg, bs->message_length);
-      // set to correct size
-      if(!in.put(Packet{msg, bs->message_length})) {
-	break;
-      }
-    }
+static void ReadMsg(channel::input<Packet> in,
+                    BareosSocket* bs,
+                    JobControlRecord* jcr)
+{
+  while (BgetMsg(bs) > 0 && !jcr->IsJobCanceled()) {
+    POOLMEM* msg = GetPoolMemory(PM_MESSAGE);
+    PmMemcpy(msg, bs->msg, bs->message_length);
+    // set to correct size
+    if (!in.emplace(msg, bs->message_length)) { break; }
+  }
 }
 
-static void WaitForReading(channel::out<channel::in<Packet>> chan,
-			   BareosSocket* bs, JobControlRecord* jcr)
+static void WaitForReading(channel::output<channel::input<Packet>> chan,
+                           BareosSocket* bs,
+                           JobControlRecord* jcr)
 {
   for (std::optional in = chan.get(); in; in = chan.get()) {
     ReadMsg(std::move(*in), bs, jcr);
@@ -271,7 +275,8 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   std::vector<ProcessedFile> processed_files{};
   int64_t current_volumeid = jcr->sd_impl->dcr->VolMediaId;
 
-  auto [read_in, read_out] = channel::CreateBufferedChannel<channel::in<Packet>>(1);
+  auto [read_in, read_out]
+      = channel::CreateBufferedChannel<channel::input<Packet>>(1);
   std::thread reader(WaitForReading, std::move(read_out), bs, jcr);
 
   ProcessedFile file_currently_processed;
@@ -336,15 +341,14 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     rec_data_len = jcr->sd_impl->dcr->rec->data_len;
     rec_data = jcr->sd_impl->dcr->rec->data;
     auto [in, out] = channel::CreateBufferedChannel<Packet>(20);
-    if (!read_in.put(std::move(in))) {
-      Jmsg(jcr, M_FATAL, 0,
-	   "Could not submit new channel.\n");
+    if (!read_in.emplace(std::move(in))) {
+      Jmsg(jcr, M_FATAL, 0, "Could not submit new channel.\n");
       ok = false;
       break;
     }
 
     for (std::optional buf = out.get(); !jcr->IsJobCanceled() && buf;
-	 buf = out.get()) {
+         buf = out.get()) {
       jcr->sd_impl->dcr->rec->VolSessionId = jcr->VolSessionId;
       jcr->sd_impl->dcr->rec->VolSessionTime = jcr->VolSessionTime;
       jcr->sd_impl->dcr->rec->FileIndex = file_index;

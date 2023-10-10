@@ -65,59 +65,62 @@ struct shared_buffer {
 
   shared_buffer() = default;
 
-  shared_buffer(std::size_t size) : size{size}
-			   , data{new char[size], std::default_delete<char[]>{}}
-  {}
+  shared_buffer(std::size_t size)
+      : size{size}, data{new char[size], std::default_delete<char[]>{}}
+  {
+  }
 
-  shared_buffer(std::shared_ptr<char>& lifetime,
-		std::size_t size,
-		char* data_) : size{size}
-			     , data{lifetime, data_}
-  {}
+  shared_buffer(std::shared_ptr<char>& lifetime, std::size_t size, char* data_)
+      : size{size}, data{lifetime, data_}
+  {
+  }
 };
 
 struct send_input {
-  channel::out<shared_buffer> block;
-  std::optional<channel::out<shared_buffer>> compressed;
+  channel::output<shared_buffer> block;
+  std::optional<channel::output<shared_buffer>> compressed;
   b_ctx* bctx;
   std::promise<void> barrier;
 };
-static void SendData(channel::out<shared_buffer> block,
-		     std::optional<channel::out<shared_buffer>> compressed,
-		     b_ctx* bctx,
-		     std::promise<void> barrier);
-void WaitForSend(JobControlRecord* jcr, channel::out<send_input> to_send) {
+static void SendData(channel::output<shared_buffer> block,
+                     std::optional<channel::output<shared_buffer>> compressed,
+                     b_ctx* bctx,
+                     std::promise<void> barrier);
+void WaitForSend(JobControlRecord* jcr, channel::output<send_input> to_send)
+{
   SetJcrInThreadSpecificData(jcr);
   for (std::optional chan = to_send.get(); chan; chan = to_send.get()) {
-    SendData(std::move(chan->block), std::move(chan->compressed),
-	     chan->bctx, std::move(chan->barrier));
+    SendData(std::move(chan->block), std::move(chan->compressed), chan->bctx,
+             std::move(chan->barrier));
   }
 }
 
 struct digest_input {
-  channel::out<shared_buffer> data;
+  channel::output<shared_buffer> data;
   DIGEST* digest;
   DIGEST* signing_digest;
   std::promise<void> barrier;
 };
-static void DigestData(channel::out<shared_buffer> out,
-		       DIGEST* digest, DIGEST* signing_digest,
-		       std::promise<void> barrier);
-void WaitForDigest(JobControlRecord* jcr, channel::out<digest_input> to_read) {
+static void DigestData(channel::output<shared_buffer> out,
+                       DIGEST* digest,
+                       DIGEST* signing_digest,
+                       std::promise<void> barrier);
+void WaitForDigest(JobControlRecord* jcr, channel::output<digest_input> to_read)
+{
   SetJcrInThreadSpecificData(jcr);
   for (std::optional chan = to_read.get(); chan; chan = to_read.get()) {
     DigestData(std::move(chan->data), chan->digest, chan->signing_digest,
-	       std::move(chan->barrier));
+               std::move(chan->barrier));
   }
 }
 
 struct compress_input {
-  channel::out<shared_buffer> out;
-  channel::in<shared_buffer> in;
+  channel::output<shared_buffer> out;
+  channel::input<shared_buffer> in;
   JobControlRecord* jcr;
   std::size_t max_compress_len;
   uint32_t algorithm;
-  int      level;
+  int level;
 };
 
 struct compress_worker_input {
@@ -128,34 +131,37 @@ struct compress_worker_input {
   std::int64_t num_in{0};
   std::int64_t num_out{0};
 
-  compress_worker_input(compress_input args) : args{std::move(args)}
-  {}
+  compress_worker_input(compress_input args) : args{std::move(args)} {}
 };
 
 static void Compress(CompressionContext& ctx,
-		     channel::out<shared_buffer>& out,
-		     std::mutex& input,
-		     channel::in<shared_buffer>& in,
-		     std::mutex& output,
-		     std::condition_variable& cv,
-		     std::int64_t& nin,
-		     std::int64_t& nout,
-		     JobControlRecord* jcr,
-		     std::size_t max_compress_len,
-		     uint32_t compression);
-void WaitForCompress(JobControlRecord* jcr, channel::out<compress_input> to_read,
-		     std::vector<channel::in<std::shared_ptr<compress_worker_input>>> pool) {
+                     channel::output<shared_buffer>& out,
+                     std::mutex& input,
+                     channel::input<shared_buffer>& in,
+                     std::mutex& output,
+                     std::condition_variable& cv,
+                     std::int64_t& nin,
+                     std::int64_t& nout,
+                     JobControlRecord* jcr,
+                     std::size_t max_compress_len,
+                     uint32_t compression);
+void WaitForCompress(
+    JobControlRecord* jcr,
+    channel::output<compress_input> to_read,
+    std::vector<channel::input<std::shared_ptr<compress_worker_input>>> pool)
+{
   SetJcrInThreadSpecificData(jcr);
   for (std::optional chan = to_read.get(); chan; chan = to_read.get()) {
-    auto args = std::make_shared<compress_worker_input>(std::move(chan.value()));
-    for (auto& worker : pool) {
-      worker.put(args);
-    }
+    auto args
+        = std::make_shared<compress_worker_input>(std::move(chan.value()));
+    for (auto& worker : pool) { worker.emplace(args); }
   }
 }
-static void CompressionWorker(JobControlRecord* jcr,
-			      channel::out<std::shared_ptr<compress_worker_input>> to_read,
-			      std::unique_ptr<CompressionContext> ctx) {
+static void CompressionWorker(
+    JobControlRecord* jcr,
+    channel::output<std::shared_ptr<compress_worker_input>> to_read,
+    std::unique_ptr<CompressionContext> ctx)
+{
   SetJcrInThreadSpecificData(jcr);
   for (;;) {
     if (std::optional chan = to_read.get()) {
@@ -163,23 +169,13 @@ static void CompressionWorker(JobControlRecord* jcr,
       compress_input* args = &work->args;
       std::mutex& input = work->input;
       std::mutex& output = work->output;
-      if (SetCompressionLevel(args->jcr,
-			      args->algorithm,
-			      args->level,
-			      *ctx) == LevelChangeResult::CHANGE_ERROR) {
-	continue;
+      if (SetCompressionLevel(args->jcr, args->algorithm, args->level, *ctx)
+          == LevelChangeResult::CHANGE_ERROR) {
+        continue;
       }
-      Compress(*ctx,
-	       args->out,
-	       input,
-	       args->in,
-	       output,
-	       work->cv,
-	       work->num_in,
-	       work->num_out,
-	       args->jcr,
-	       args->max_compress_len,
-	       args->algorithm);
+      Compress(*ctx, args->out, input, args->in, output, work->cv, work->num_in,
+               work->num_out, args->jcr, args->max_compress_len,
+               args->algorithm);
     } else {
       break;
     }
@@ -192,41 +188,62 @@ struct SendContext {
   std::thread compressor;
   std::vector<std::thread> compress_workers;
 
-  channel::in<send_input> to_send;
-  channel::in<digest_input> to_digest;
-  channel::in<compress_input> to_compress;
+  channel::input<send_input> to_send;
+  channel::input<digest_input> to_digest;
+  channel::input<compress_input> to_compress;
 
+
+  template <typename T>
+  using channel_pair = std::pair<channel::input<T>, channel::output<T>>;
+
+  SendContext(JobControlRecord* jcr, std::size_t num_compress_workers)
+      : SendContext(jcr,
+                    channel::CreateBufferedChannel<send_input>(1),
+                    channel::CreateBufferedChannel<digest_input>(1),
+                    channel::CreateBufferedChannel<compress_input>(1),
+                    num_compress_workers)
+  {
+  }
 
   SendContext(JobControlRecord* jcr,
-	      std::size_t num_compress_workers) : compress_workers{} {
+              channel_pair<send_input> send_channel,
+              channel_pair<digest_input> digest_channel,
+              channel_pair<compress_input> compress_channel,
+              std::size_t num_compress_workers)
+      : compress_workers{}
+      , to_send{std::move(send_channel.first)}
+      , to_digest{std::move(digest_channel.first)}
+      , to_compress{std::move(compress_channel.first)}
+  {
     if (num_compress_workers == 0) {
       // todo: warning message to jcr
       num_compress_workers = 1;
     }
 
-    std::vector<channel::in<std::shared_ptr<compress_worker_input>>> compress_inputs{};
+    std::vector<channel::input<std::shared_ptr<compress_worker_input>>>
+        compress_inputs{};
     for (std::size_t i = 0; i < num_compress_workers; ++i) {
       auto ctx = std::make_unique<CompressionContext>();
-      auto [in, out] = channel::CreateBufferedChannel<std::shared_ptr<compress_worker_input>>(1);
+      auto [in, out] = channel::CreateBufferedChannel<
+          std::shared_ptr<compress_worker_input>>(1);
       compress_inputs.emplace_back(std::move(in));
       AdjustCompressionBuffers(jcr, *ctx);
-      compress_workers.emplace_back(CompressionWorker, jcr, std::move(out), std::move(ctx));
+      compress_workers.emplace_back(CompressionWorker, jcr, std::move(out),
+                                    std::move(ctx));
     }
 
-    auto [sin, sout] = channel::CreateBufferedChannel<send_input>(1);
-    auto [din, dout] = channel::CreateBufferedChannel<digest_input>(1);
-    auto [cin, cout] = channel::CreateBufferedChannel<compress_input>(1);
+    auto& sout = send_channel.second;
+    auto& dout = digest_channel.second;
+    auto& cout = compress_channel.second;
 
     sender = std::thread{WaitForSend, jcr, std::move(sout)};
     digester = std::thread{WaitForDigest, jcr, std::move(dout)};
-    compressor = std::thread{WaitForCompress, jcr, std::move(cout), std::move(compress_inputs)};
-
-    to_send = std::move(sin);
-    to_digest = std::move(din);
-    to_compress = std::move(cin);
+    compressor = std::thread{WaitForCompress, jcr, std::move(cout),
+                             std::move(compress_inputs)};
   }
 
-  ~SendContext() {
+  ~SendContext()
+  {
     // we have to join the threads before we can destruct them;
     // we have to close the channels before we can join them
     to_send.close();
@@ -235,9 +252,7 @@ struct SendContext {
     sender.join();
     digester.join();
     compressor.join();
-    for (auto& worker : compress_workers) {
-      worker.join();
-    }
+    for (auto& worker : compress_workers) { worker.join(); }
   }
 };
 
@@ -279,14 +294,14 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
 static void CloseVssBackupSession(JobControlRecord* jcr);
 #endif
 
-std::pair<std::vector<channel::in<stated_file>>,
-          std::vector<channel::out<stated_file>>>
+std::pair<std::vector<channel::input<stated_file>>,
+          std::vector<channel::output<stated_file>>>
 CreateNecessaryChannels(findFILESET* fileset, std::size_t buffer_size)
 {
   // Each include list in the fileset needs its own
   // channel.  These get created here.
-  std::vector<channel::in<stated_file>> channel_ins;
-  std::vector<channel::out<stated_file>> channel_outs;
+  std::vector<channel::input<stated_file>> channel_ins;
+  std::vector<channel::output<stated_file>> channel_outs;
 
   for (int i = 0; i < fileset->include_list.size(); ++i) {
     // channel ins/outs cannot be copied/ can only be moved.
@@ -362,10 +377,8 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
 
   {
     // setup sending threads
-    int32_t num_compression_threads = 4; // default
-    if (client) {
-      num_compression_threads = client->CompressionThreads;
-    }
+    int32_t num_compression_threads = 4;  // default
+    if (client) { num_compression_threads = client->CompressionThreads; }
     SendContext data(jcr, num_compression_threads);
     jcr->fd_impl->send_ctx = &data;
 
@@ -375,7 +388,7 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
     // since it should just send the files it was given, we set
     // incremental & accurate to false so it does not double check them
     SetFindOptions((FindFilesPacket*)jcr->fd_impl->ff, false,
-		   jcr->fd_impl->since_time);
+                   jcr->fd_impl->since_time);
 
     std::optional<std::size_t> list_ok = std::nullopt;
     bool send_ok = true;
@@ -384,52 +397,47 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
       // todo: is there a better buffer size maybe ?
       auto [ins, outs] = CreateNecessaryChannels(jcr->fd_impl->ff->fileset, 50);
       std::thread list_thread{
-	[](JobControlRecord* jcr, findFILESET* ff, bool incremental,
-	   time_t save_time,
-	   std::optional<bool (*)(JobControlRecord*, FindFilesPacket*)> chk,
-	   auto ins,
-	   std::optional<std::size_t>& ok) {
-	  try {
-	    ok = ListFiles(jcr, ff, incremental, save_time, chk,
-			   std::move(ins));
-	  } catch (const std::exception& ex) {
-	    ok = std::nullopt;
-	    Dmsg1(500, "Uncaught exception! Aborting.\n Message: %s\n", ex.what());
-	  } catch (...)
-	    {
-	      ok = std::nullopt;
-	      Dmsg1(500, "Uncaught unknown exception! Aborting.\n");
-	    }
-	},
-	jcr,
-	jcr->fd_impl->ff->fileset,
-	jcr->fd_impl->incremental,
-	jcr->fd_impl->since_time,
-	(jcr->accurate) ? std::make_optional(&AccurateCheckFile) : std::nullopt,
-	std::move(ins),
-	std::ref(list_ok)};
+          [](JobControlRecord* jcr, findFILESET* ff, bool incremental,
+             time_t save_time,
+             std::optional<bool (*)(JobControlRecord*, FindFilesPacket*)> chk,
+             auto ins, std::optional<std::size_t>& ok) {
+            try {
+              ok = ListFiles(jcr, ff, incremental, save_time, chk,
+                             std::move(ins));
+            } catch (const std::exception& ex) {
+              ok = std::nullopt;
+              Dmsg1(500, "Uncaught exception! Aborting.\n Message: %s\n",
+                    ex.what());
+            } catch (...) {
+              ok = std::nullopt;
+              Dmsg1(500, "Uncaught unknown exception! Aborting.\n");
+            }
+          },
+          jcr,
+          jcr->fd_impl->ff->fileset,
+          jcr->fd_impl->incremental,
+          jcr->fd_impl->since_time,
+          (jcr->accurate) ? std::make_optional(&AccurateCheckFile)
+                          : std::nullopt,
+          std::move(ins),
+          std::ref(list_ok)};
       if (!SendFiles(jcr, jcr->fd_impl->ff, std::move(outs), SaveFile,
-		     PluginSave)) {
-	send_ok = false;
+                     PluginSave)) {
+        send_ok = false;
       }
 
       list_thread.join();
-    } catch (const std::exception& ex)
-      {
-	send_ok = false;
-	list_ok = std::nullopt;
-	Dmsg1(500, "Uncaught exception! Aborting.\n Message: %s\n", ex.what());
-      } catch (...)
-      {
-	send_ok = false;
-	list_ok = std::nullopt;
-	Dmsg1(500, "Uncaught unknown exception! Aborting.\n");
-      }
+    } catch (const std::exception& ex) {
+      send_ok = false;
+      list_ok = std::nullopt;
+      Dmsg1(500, "Uncaught exception! Aborting.\n Message: %s\n", ex.what());
+    } catch (...) {
+      send_ok = false;
+      list_ok = std::nullopt;
+      Dmsg1(500, "Uncaught unknown exception! Aborting.\n");
+    }
 
-    if (list_ok)
-      {
-	jcr->fd_impl->num_files_examined += list_ok.value();
-      }
+    if (list_ok) { jcr->fd_impl->num_files_examined += list_ok.value(); }
 
     // join synchronizes threads, so its safe to read from list_ok now!
     if (!list_ok || !send_ok) {
@@ -437,17 +445,17 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
       jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     }
 #else
-    SetFindOptions((FindFilesPacket*)jcr->fd_impl->ff, jcr->fd_impl->incremental,
-		   jcr->fd_impl->since_time);
+    SetFindOptions((FindFilesPacket*)jcr->fd_impl->ff,
+                   jcr->fd_impl->incremental, jcr->fd_impl->since_time);
 
     // In accurate mode, we overload the find_one check function
     if (jcr->accurate) {
       SetFindChangedFunction((FindFilesPacket*)jcr->fd_impl->ff,
-			     AccurateCheckFile);
+                             AccurateCheckFile);
     }
     // Subroutine SaveFile() is called for each file
     if (!FindFiles(jcr, (FindFilesPacket*)jcr->fd_impl->ff, SaveFile,
-		   PluginSave)) {
+                   PluginSave)) {
       ok = false; /* error */
       jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     }
@@ -885,9 +893,9 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       jcr->fd_impl->num_files_examined--; /* correct file count */
       return 1;                           /* not used */
     case FT_NORECURSE:
-	    Jmsg(jcr, M_INFO, 1,
-		 _("     Recursion turned off. Will not descend from %s into %s\n"),
-		 ff_pkt->top_fname, ff_pkt->fname);
+      Jmsg(jcr, M_INFO, 1,
+           _("     Recursion turned off. Will not descend from %s into %s\n"),
+           ff_pkt->top_fname, ff_pkt->fname);
       ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
       break;
     case FT_NOFSCHG:
@@ -902,14 +910,14 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       break;
     case FT_INVALIDFS:
       Jmsg(jcr, M_INFO, 1,
-	   _("     Disallowed filesystem. Will not descend from %s into %s\n"),
-	   ff_pkt->top_fname, ff_pkt->fname);
+           _("     Disallowed filesystem. Will not descend from %s into %s\n"),
+           ff_pkt->top_fname, ff_pkt->fname);
       ff_pkt->type = FT_DIREND; /* Backup only the directory entry */
       break;
     case FT_INVALIDDT:
       Jmsg(jcr, M_INFO, 1,
-	   _("     Disallowed drive type. Will not descend into %s\n"),
-	   ff_pkt->fname);
+           _("     Disallowed drive type. Will not descend into %s\n"),
+           ff_pkt->fname);
       break;
     case FT_REPARSE:
     case FT_JUNCTION:
@@ -1086,7 +1094,8 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
         = (ff_pkt->type == FT_REPARSE || ff_pkt->type == FT_JUNCTION);
 
     if (bopen(&ff_pkt->bfd, ff_pkt->fname, O_RDONLY | O_BINARY | noatime, 0,
-	      ff_pkt->statp.st_rdev) < 0) {
+              ff_pkt->statp.st_rdev)
+        < 0) {
       ff_pkt->ff_errno = errno;
       BErrNo be;
       Jmsg(jcr, M_NOTSAVED, 0, _("     Cannot open \"%s\": ERR=%s.\n"),
@@ -1114,9 +1123,7 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
     if (!status) { goto bail_out; }
   }
 
-  if (!TerminateSaveFile(bsctx)) {
-    goto bail_out;
-  }
+  if (!TerminateSaveFile(bsctx)) { goto bail_out; }
 
 good_rtn:
   rtnstat = jcr->IsJobCanceled() ? 0 : 1; /* good return if not canceled */
@@ -1137,12 +1144,13 @@ bail_out:
 }
 
 
-
 /**
  * Handle the data just read and send it to the SD after doing any
  * postprocessing needed.
  */
-static inline bool SendDataToSd(b_ctx* bctx, std::optional<shared_buffer> precompressed = std::nullopt)
+static inline bool SendDataToSd(b_ctx* bctx,
+                                std::optional<shared_buffer> precompressed
+                                = std::nullopt)
 {
   BareosSocket* sd = bctx->jcr->store_bsock;
   bool need_more_data;
@@ -1199,9 +1207,9 @@ static inline bool SendDataToSd(b_ctx* bctx, std::optional<shared_buffer> precom
       memcpy(bctx->cbuf, precompressed->data.get(), precompressed->size);
       bctx->compress_len = precompressed->size;
     } else if (!CompressData(bctx->jcr, bctx->jcr->compress,
-			     bctx->ff_pkt->Compress_algo, bctx->rbuf,
-			     bctx->jcr->store_bsock->message_length, bctx->cbuf,
-			     bctx->max_compress_len, &bctx->compress_len)) {
+                             bctx->ff_pkt->Compress_algo, bctx->rbuf,
+                             bctx->jcr->store_bsock->message_length, bctx->cbuf,
+                             bctx->max_compress_len, &bctx->compress_len)) {
       return false;
     }
 
@@ -1319,9 +1327,9 @@ bail_out:
 
 // read data from bfd into buflen sized chunks.  Submit a shared pointer
 // of each of them to each channel.
-static void ReadData(std::vector<channel::in<shared_buffer>> channels,
-		     BareosFilePacket* bfd,
-		     std::size_t buflen)
+static void ReadData(std::vector<channel::input<shared_buffer>> channels,
+                     BareosFilePacket* bfd,
+                     std::size_t buflen)
 {
   ssize_t max_readsize = 512 * 1024;
   ssize_t readsize = (max_readsize / buflen) * buflen;
@@ -1330,7 +1338,8 @@ static void ReadData(std::vector<channel::in<shared_buffer>> channels,
   // prevent weird situations where max_readsize < buflen
   if (readsize == 0) { readsize = buflen; }
   for (;;) {
-    auto mem = std::shared_ptr<char>(new char[readsize], std::default_delete<char[]>{});
+    auto mem = std::shared_ptr<char>(new char[readsize],
+                                     std::default_delete<char[]>{});
     if (!mem) { break; }
     ssize_t num_read = bread(bfd, mem.get(), readsize);
     // some plugins rely on the fact that bread gets called until
@@ -1343,9 +1352,7 @@ static void ReadData(std::vector<channel::in<shared_buffer>> channels,
       std::size_t size = std::min(static_cast<std::size_t>(num_read), buflen);
       auto buffer = shared_buffer(mem, size, head);
       for (auto& chan : channels) {
-	if (!chan.put(buffer)) {
-	  return;
-	}
+        if (!chan.emplace(buffer)) { return; }
       }
       head += size;
       num_read -= size;
@@ -1353,19 +1360,17 @@ static void ReadData(std::vector<channel::in<shared_buffer>> channels,
   }
 }
 
-static void DigestData(channel::out<shared_buffer> out,
-		       DIGEST* digest, DIGEST* signing_digest,
-		       std::promise<void> barrier)
+static void DigestData(channel::output<shared_buffer> out,
+                       DIGEST* digest,
+                       DIGEST* signing_digest,
+                       std::promise<void> barrier)
 {
   struct passer {
     std::promise<void> barrier;
 
-    passer(std::promise<void> barrier) : barrier{std::move(barrier)}
-    {}
+    passer(std::promise<void> barrier) : barrier{std::move(barrier)} {}
 
-    ~passer() {
-      barrier.set_value();
-    }
+    ~passer() { barrier.set_value(); }
   };
 
   // notify the barrier once we finish (for any reason!)
@@ -1374,7 +1379,7 @@ static void DigestData(channel::out<shared_buffer> out,
   for (std::optional buf = out.get(); buf; buf = out.get()) {
     // Update checksum if requested
     if (digest) {
-      CryptoDigestUpdate(digest, (uint8_t*) buf->data.get(), buf->size);
+      CryptoDigestUpdate(digest, (uint8_t*)buf->data.get(), buf->size);
     }
 
     // Update signing digest if requested
@@ -1385,19 +1390,19 @@ static void DigestData(channel::out<shared_buffer> out,
 }
 
 static void Compress(CompressionContext& ctx,
-		     channel::out<shared_buffer>& out,
-		     std::mutex& input,
-		     channel::in<shared_buffer>& in,
-		     std::mutex& output,
-		     std::condition_variable& cv,
-		     std::int64_t& num_in,
-		     std::int64_t& num_out,
-		     JobControlRecord* jcr,
-		     std::size_t max_compress_len,
-		     uint32_t compression)
+                     channel::output<shared_buffer>& out,
+                     std::mutex& input,
+                     channel::input<shared_buffer>& in,
+                     std::mutex& output,
+                     std::condition_variable& cv,
+                     std::int64_t& num_in,
+                     std::int64_t& num_out,
+                     JobControlRecord* jcr,
+                     std::size_t max_compress_len,
+                     uint32_t compression)
 {
   std::optional<shared_buffer> buf = std::nullopt;
-  for(;;) {
+  for (;;) {
     std::int64_t block_num = 0;
     {
       std::unique_lock lock(input);
@@ -1412,13 +1417,12 @@ static void Compress(CompressionContext& ctx,
 
     shared_buffer compressed(max_compress_len);
     uint32_t size = 0;
-    if (!CompressData(jcr, ctx, compression, buf->data.get(),
-		      buf->size, (unsigned char*) compressed.data.get(),
-		     max_compress_len,
-		     &size)) {
+    if (!CompressData(jcr, ctx, compression, buf->data.get(), buf->size,
+                      (unsigned char*)compressed.data.get(), max_compress_len,
+                      &size)) {
       {
-	std::unique_lock lock(output);
-	num_out = -1;
+        std::unique_lock lock(output);
+        num_out = -1;
       }
       cv.notify_all();
       break;
@@ -1428,27 +1432,27 @@ static void Compress(CompressionContext& ctx,
     {
       std::unique_lock lock(output);
       cv.wait(lock, [&num_out, block_num]() {
-	// if the put fails on another thread it will set num_out to
-	// -1.
-	return (block_num == num_out) || (num_out == -1);
+        // if the put fails on another thread it will set num_out to
+        // -1.
+        return (block_num == num_out) || (num_out == -1);
       });
       if (num_out == -1) { return; }
-      if (!in.put(std::move(compressed))) { return; }
+      if (!in.emplace(std::move(compressed))) { return; }
       num_out++;
     }
     cv.notify_all();
   }
 }
 
-static void SendData(channel::out<shared_buffer> block,
-		     std::optional<channel::out<shared_buffer>> compressed,
-		     b_ctx* bctx, std::promise<void> barrier) {
-  struct passer{
+static void SendData(channel::output<shared_buffer> block,
+                     std::optional<channel::output<shared_buffer>> compressed,
+                     b_ctx* bctx,
+                     std::promise<void> barrier)
+{
+  struct passer {
     std::promise<void> barrier;
 
-    ~passer() {
-      barrier.set_value();
-    }
+    ~passer() { barrier.set_value(); }
   };
 
   passer p{std::move(barrier)};
@@ -1460,13 +1464,14 @@ static void SendData(channel::out<shared_buffer> block,
     std::optional<shared_buffer> comp = std::nullopt;
     if (compressed) {
       if (comp = compressed->get(); !comp) {
-	// todo set jcr to cancelled
-	Jmsg(bctx->jcr, M_FATAL, 0, "Unexpected end of compression stream.\n");
-	break;
+        // todo set jcr to cancelled
+        Jmsg(bctx->jcr, M_FATAL, 0, "Unexpected end of compression stream.\n");
+        break;
       }
     }
     if (!SendDataToSd(bctx, std::move(comp))) {
-      Jmsg(bctx->jcr, M_FATAL, 0, "Error while sending data to storage daemon.\n");
+      Jmsg(bctx->jcr, M_FATAL, 0,
+           "Error while sending data to storage daemon.\n");
       break;
     }
   }
@@ -1480,7 +1485,7 @@ static inline bool SendPlainData(b_ctx& bctx)
     std::size_t buflen = bctx.rsize;
     std::size_t filesize = bctx.ff_pkt->statp.st_size;
 
-    std::size_t maxbuffered = 512 * 1024 * 1024; // 512 MB
+    std::size_t maxbuffered = 512 * 1024 * 1024;  // 512 MB
     std::size_t max_num_bufs = 80;
     // some plugins report the filesize as 0
     // but still create data.
@@ -1492,7 +1497,7 @@ static inline bool SendPlainData(b_ctx& bctx)
     // and create at most max_num_bufs buffers and at least min_num_bufs buffers
 
     std::size_t bufferedsize = std::min(filesize, maxbuffered);
-    std::size_t num_buffers  = (bufferedsize + buflen - 1) / buflen;
+    std::size_t num_buffers = (bufferedsize + buflen - 1) / buflen;
 
     actual_buf_count = std::clamp(num_buffers, min_num_bufs, max_num_bufs);
   }
@@ -1501,21 +1506,21 @@ static inline bool SendPlainData(b_ctx& bctx)
 
   using sbuf = shared_buffer;
 
-  std::vector<channel::in<sbuf>> sinks;
-  std::optional<channel::out<shared_buffer>> compression_out = std::nullopt;
+  std::vector<channel::input<sbuf>> sinks;
+  std::optional<channel::output<shared_buffer>> compression_out = std::nullopt;
 
   // setup compressing
   if (BitIsSet(FO_COMPRESS, bctx.ff_pkt->flags)) {
     // connection between the reading thread and the compressing thread
-    auto [cr_in, cr_out] = channel::CreateBufferedChannel<sbuf>(actual_buf_count);
+    auto [cr_in, cr_out]
+        = channel::CreateBufferedChannel<sbuf>(actual_buf_count);
     sinks.emplace_back(std::move(cr_in));
     // connection between the compressing thread and the sending thread
     auto [sc_in, sc_out] = channel::CreateBufferedChannel<shared_buffer>(1);
-    if (!bctx.jcr->fd_impl->send_ctx->to_compress.put({
-	  std::move(cr_out), std::move(sc_in),
-	  bctx.jcr, bctx.max_compress_len,
-	  bctx.ff_pkt->Compress_algo,
-	  bctx.ff_pkt->Compress_level})) {
+    if (!bctx.jcr->fd_impl->send_ctx->to_compress.emplace(std::move(
+            compress_input{std::move(cr_out), std::move(sc_in), bctx.jcr,
+                           bctx.max_compress_len, bctx.ff_pkt->Compress_algo,
+                           bctx.ff_pkt->Compress_level}))) {
       return false;
     }
     compression_out = std::move(sc_out);
@@ -1523,28 +1528,30 @@ static inline bool SendPlainData(b_ctx& bctx)
 
   // setup sending
   std::promise<void> send_barrier{};
-  std::future<void>  send_future = send_barrier.get_future();
+  std::future<void> send_future = send_barrier.get_future();
   {
     // connection between the reading thread and the sending thread
-    auto [sr_in, sr_out] = channel::CreateBufferedChannel<sbuf>(actual_buf_count);
+    auto [sr_in, sr_out]
+        = channel::CreateBufferedChannel<sbuf>(actual_buf_count);
     sinks.emplace_back(std::move(sr_in));
-    if (!bctx.jcr->fd_impl->send_ctx->to_send.put({
-	  std::move(sr_out),
-	  std::move(compression_out),
-	  &bctx, std::move(send_barrier)})) {
+    if (!bctx.jcr->fd_impl->send_ctx->to_send.emplace(
+            std::move(send_input{std::move(sr_out), std::move(compression_out),
+                                 &bctx, std::move(send_barrier)}))) {
       return false;
     }
   }
 
   // setup digesting
   std::promise<void> digest_barrier{};
-  std::future<void>  digest_future = digest_barrier.get_future();
+  std::future<void> digest_future = digest_barrier.get_future();
   {
     // connection between the reading thread and the digesting thread
-    auto [dr_in, dr_out] = channel::CreateBufferedChannel<sbuf>(actual_buf_count);
+    auto [dr_in, dr_out]
+        = channel::CreateBufferedChannel<sbuf>(actual_buf_count);
     sinks.emplace_back(std::move(dr_in));
-    if (!bctx.jcr->fd_impl->send_ctx->to_digest.put({std::move(dr_out),
-	  bctx.digest, bctx.signing_digest, std::move(digest_barrier)})) {
+    if (!bctx.jcr->fd_impl->send_ctx->to_digest.emplace(std::move(
+            digest_input{std::move(dr_out), bctx.digest, bctx.signing_digest,
+                         std::move(digest_barrier)}))) {
       return false;
     }
   }
@@ -1556,7 +1563,7 @@ static inline bool SendPlainData(b_ctx& bctx)
   std::swap(digest, bctx.digest);
   std::swap(signing, bctx.signing_digest);
 
-  ReadData(std::move(sinks), &bctx.ff_pkt->bfd, (std::size_t) bctx.rsize);
+  ReadData(std::move(sinks), &bctx.ff_pkt->bfd, (std::size_t)bctx.rsize);
   send_future.wait();
   digest_future.wait();
   std::swap(digest, bctx.digest);
@@ -1889,40 +1896,35 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
    * for dealing with snapshots, by removing the snapshot directory, or
    * in handling vendor migrations where files have been restored with
    * a vendor product into a subdirectory. */
-  bool do_strip_link = (ff_pkt->type != FT_LNK) && (ff_pkt->fname != ff_pkt->link);
+  bool do_strip_link
+      = (ff_pkt->type != FT_LNK) && (ff_pkt->fname != ff_pkt->link);
   if (!IS_FT_OBJECT(ff_pkt->type) && ff_pkt->type != FT_DELETED
       && ShouldStripPaths(ff_pkt)) { /* already stripped */
     bool file_stripped
         = do_strip(ff_pkt->StripPath, ff_pkt->fname, StrippedFile);
 
-    if (do_strip_link)
-    {
-	    bool link_stripped
-		    = do_strip(ff_pkt->StripPath, ff_pkt->link, StrippedLink);
+    if (do_strip_link) {
+      bool link_stripped
+          = do_strip(ff_pkt->StripPath, ff_pkt->link, StrippedLink);
 
-	    if (file_stripped || link_stripped) {
-		    file_name = GetCanonicalName(ff_pkt->statp, StrippedFile.c_str(),
-						 StrippedLink.c_str());
-		    link_name = GetLinkName(ff_pkt->type, StrippedFile.c_str(),
-					    StrippedLink.c_str());
-		    Dmsg3(100, "fname=%s stripped=%s link=%s\n", ff_pkt->fname,
-			  StrippedFile.c_str(), StrippedLink.c_str());
-	    }
+      if (file_stripped || link_stripped) {
+        file_name = GetCanonicalName(ff_pkt->statp, StrippedFile.c_str(),
+                                     StrippedLink.c_str());
+        link_name = GetLinkName(ff_pkt->type, StrippedFile.c_str(),
+                                StrippedLink.c_str());
+        Dmsg3(100, "fname=%s stripped=%s link=%s\n", ff_pkt->fname,
+              StrippedFile.c_str(), StrippedLink.c_str());
+      }
+    } else {
+      if (file_stripped) {
+        file_name = GetCanonicalName(ff_pkt->statp, StrippedFile.c_str(),
+                                     ff_pkt->link);
+        link_name
+            = GetLinkName(ff_pkt->type, StrippedFile.c_str(), ff_pkt->link);
+        Dmsg3(100, "fname=%s stripped=%s link=%s\n", ff_pkt->fname,
+              StrippedFile.c_str(), StrippedLink.c_str());
+      }
     }
-    else
-    {
-	    if (file_stripped)
-	    {
-		    file_name = GetCanonicalName(ff_pkt->statp, StrippedFile.c_str(),
-						 ff_pkt->link);
-		    link_name = GetLinkName(ff_pkt->type, StrippedFile.c_str(),
-					    ff_pkt->link);
-		    Dmsg3(100, "fname=%s stripped=%s link=%s\n", ff_pkt->fname,
-			  StrippedFile.c_str(), StrippedLink.c_str());
-
-	    }
-    }
-
   }
 
   if (!file_name) {
@@ -1975,7 +1977,7 @@ bool do_strip(int count, const char* in, std::string& out)
   // Copy to first path separator -- Win32 might have c: ...
   while (*in && !IsPathSeparator(*in)) { out.push_back(*in++); }
   if (*in) { /* Not at the end of the string */
-	  out.push_back(*in++);
+    out.push_back(*in++);
     numsep++; /* one separator seen */
   }
   for (stripped = 0; stripped < count && *in; stripped++) {
@@ -2007,7 +2009,7 @@ bool ShouldStripPaths(const FindFilesPacket* ff_pkt)
 
 std::string GetStrippedCanonicalName(const FindFilesPacket* ff_pkt)
 {
-	std::string stripped_name;
+  std::string stripped_name;
 
   const char* name
       = GetCanonicalName(ff_pkt->statp, ff_pkt->fname, ff_pkt->link);

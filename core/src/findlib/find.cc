@@ -563,7 +563,7 @@ void NewOptions(FindFilesPacket* ff, findIncludeExcludeItem* incexe)
   ff->fileset->state = state_options;
 }
 
-auto SaveInList(channel::in<stated_file>& in, std::size_t& num_skipped)
+auto SaveInList(channel::input<stated_file>& in, std::size_t& num_skipped)
 {
   return [&in, &num_skipped](JobControlRecord* jcr, FindFilesPacket* ff_pkt,
                              bool) {
@@ -706,9 +706,10 @@ auto SaveInList(channel::in<stated_file>& in, std::size_t& num_skipped)
       // take note that ff_pkt->fname actually gets copied here since
       // stated_file uses a std::string instead of a char* to save the file
       // name!
-      in.put({ff_pkt->fname, ff_pkt->statp, ff_pkt->delta_seq, ff_pkt->type,
-              ff_pkt->volhas_attrlist ? std::make_optional(ff_pkt->hfsinfo)
-                                      : std::nullopt});
+      in.emplace(std::move(stated_file{
+          ff_pkt->fname, ff_pkt->statp, ff_pkt->delta_seq, ff_pkt->type,
+          ff_pkt->volhas_attrlist ? std::make_optional(ff_pkt->hfsinfo)
+                                  : std::nullopt}));
     } catch (...) {
       num_skipped++;
       return 0;
@@ -717,12 +718,11 @@ auto SaveInList(channel::in<stated_file>& in, std::size_t& num_skipped)
   };
 }
 
-
 template <typename Deleter>
 static void ListFromIncexe(JobControlRecord* jcr,
                            std::unique_ptr<FindFilesPacket, Deleter> ff_ptr,
                            findIncludeExcludeItem* incexe,
-                           channel::in<stated_file> in,
+                           channel::input<stated_file> in,
                            std::promise<std::optional<std::size_t>> num_skipped)
 {
   FindFilesPacket* ff = ff_ptr.get();
@@ -761,7 +761,7 @@ std::optional<std::size_t> ListFiles(
     bool incremental,
     time_t save_time,
     std::optional<bool (*)(JobControlRecord*, FindFilesPacket*)> check_changed,
-    std::vector<channel::in<stated_file>> ins)
+    std::vector<channel::input<stated_file>> ins)
 {
   ASSERT(ins.size() == (std::size_t)fileset->include_list.size());
   if (fileset) {
@@ -891,8 +891,7 @@ static void CleanupLink(FindFilesPacket* ff)
   }
 }
 
-static bool SetupFFPkt(JobControlRecord* jcr,
-                       FindFilesPacket* ff,
+static bool SetupFFPkt(FindFilesPacket* ff,
                        char* fname,
                        struct stat& statp,
                        int delta_seq,
@@ -908,52 +907,34 @@ static bool SetupFFPkt(JobControlRecord* jcr,
   ff->no_read = false;
   ff->linked = nullptr;
   ff->link = nullptr;  // we may need to allocate memory here instead
+
   if (!BitIsSet(FO_NO_HARDLINK, ff->flags) && statp.st_nlink > 1
       && CanBeHardLinked(statp)) {
-    CurLink* hl = lookup_hardlink(jcr, ff, statp.st_ino, statp.st_dev);
-    if (hl) {
-      /* If we have already backed up the hard linked file don't do it
-       * again */
-      if (bstrcmp(hl->name, fname)) {
-        Dmsg2(400, "== Name identical skip FI=%d file=%s\n", hl->FileIndex,
-              fname);
-        return false;
-      } else {
-        if (hl->FileIndex) {
-          ff->link = hl->name;
-          ff->type = FT_LNKSAVED; /* Handle link, file already saved */
-          ff->LinkFI = hl->FileIndex;
-          ff->linked = NULL;
-          ff->digest = hl->digest;
-          ff->digest_stream = hl->digest_stream;
-          ff->digest_len = hl->digest_len;
+    if (!ff->linkhash) { ff->linkhash = new LinkHash(10000); }
 
-          Dmsg3(400, "FT_LNKSAVED FI=%d LinkFI=%d file=%s\n", ff->FileIndex,
-                hl->FileIndex, hl->name);
-        } else {
-          // if digest does not exist then whatever file created the
-          // hardlink was not backed up (correctly). Try again here:
+    auto [iter, inserted] = ff->linkhash->try_emplace(
+        Hardlink{ff->statp.st_dev, ff->statp.st_ino}, fname);
+    CurLink& hl = iter->second;
 
-          if (ff->type == FT_LNKSAVED) {
-            // this should only happen if something went wrong.
-            // we cannot base our hardlink on FT_LNKSAVED
-            // as that will not send any data.  We just have to
-            // throw an error here
-            return false;
-          }
-
-          int len = strlen(fname) + 1;
-          hl->name = (char*)ff->linkhash->hash_malloc(len);
-          bstrncpy(hl->name, fname, len);
-          ff->linked = hl; /* Mark saved link */
-          Dmsg2(400, "Added to hash FI=%d file=%s\n", ff->FileIndex, hl->name);
-        }
-      }
+    if (hl.FileIndex == 0) {
+      // no file backed up yet
+      ff->linked = &hl;
+    } else if (bstrcmp(hl.name.c_str(), fname)) {
+      // If we have already backed up the hard linked file don't do it again
+      Dmsg2(400, "== Name identical skip FI=%d file=%s\n", hl.FileIndex, fname);
+      return false;
     } else {
-      // File not previously dumped. Chain it into our list.
-      hl = new_hardlink(jcr, ff, fname, ff->statp.st_ino, ff->statp.st_dev);
-      ff->linked = hl; /* Mark saved link */
-      Dmsg2(400, "Added to hash FI=%d file=%s\n", ff->FileIndex, hl->name);
+      // some other file was already backed up!
+      ff->link = hl.name.data();
+      ff->type = FT_LNKSAVED; /* Handle link, file already saved */
+      ff->LinkFI = hl.FileIndex;
+      ff->linked = NULL;
+      ff->digest = hl.digest.data();
+      ff->digest_stream = hl.digest_stream;
+      ff->digest_len = hl.digest.size();
+
+      Dmsg3(400, "FT_LNKSAVED FI=%d LinkFI=%d file=%s\n", ff->FileIndex,
+            hl.FileIndex, hl.name.c_str());
     }
   }
 
@@ -971,7 +952,7 @@ static bool SetupFFPkt(JobControlRecord* jcr,
 
 int SendFiles(JobControlRecord* jcr,
               FindFilesPacket* ff,
-              std::vector<channel::out<stated_file>> outs,
+              std::vector<channel::output<stated_file>> outs,
               int FileSave(JobControlRecord*, FindFilesPacket* ff_pkt, bool),
               int PluginSave(JobControlRecord*, FindFilesPacket* ff_pkt, bool))
 {
@@ -1009,43 +990,44 @@ int SendFiles(JobControlRecord* jcr,
       for (std::size_t fileset_idx = 0; fileset_idx < outs.size();
            ++fileset_idx) {
         auto& out = outs[fileset_idx];
-        if (out.empty()) continue;
-        while (std::optional files = out.try_get_all()) {
-          for (auto& file : *files) {
-            ff->incexe = fileset->include_list.get(fileset_idx);
-            char* fname = file.name.data();
-            ff->StripPath = cached_values[fileset_idx].StripPath;
-            // todo: what to do with top_fname ? its only used
-            // for debug messages from here on out and setting it up
-            // correctly seems wasteful
-            if (!SetupFFPkt(jcr, ff, fname, file.statp, file.delta_seq,
-                            file.type, file.hfsinfo)) {
-              Dmsg1(debuglevel, "Error: Could not setup ffpkt for file '%s'\n",
-                    ff->fname);
-              ret_val = 0;
-              break;
-            }
-            if (!AcceptFile(ff)) {
-              Dmsg1(debuglevel, "Did not accept file '%s'; skipping.\n",
-                    ff->fname);
-              continue;
-            }
-            if (!FileSave(jcr, ff, false)) {
-              CleanupLink(ff);
-              Dmsg1(debuglevel, "Error: Could not save file %s", ff->fname);
-              ret_val = 0;
-              break;
-            } else {
-              CleanupLink(ff);
-              if (ff->linked) { ff->linked->FileIndex = ff->FileIndex; }
-            }
-            if (jcr->IsJobCanceled()) {
-              ret_val = 0;
-              break;
-            }
+        if (out.closed()) continue;
+        for (;;) {
+          std::optional opt_file = out.try_get();
+          if (!opt_file) break;
+          auto& file = opt_file.value();
+          ff->incexe = fileset->include_list.get(fileset_idx);
+          char* fname = file.name.data();
+          ff->StripPath = cached_values[fileset_idx].StripPath;
+          // todo: what to do with top_fname ? its only used
+          // for debug messages from here on out and setting it up
+          // correctly seems wasteful
+          if (!SetupFFPkt(ff, fname, file.statp, file.delta_seq, file.type,
+                          file.hfsinfo)) {
+            Dmsg1(debuglevel, "Error: Could not setup ffpkt for file '%s'\n",
+                  ff->fname);
+            ret_val = 0;
+            break;
+          }
+          if (!AcceptFile(ff)) {
+            Dmsg1(debuglevel, "Did not accept file '%s'; skipping.\n",
+                  ff->fname);
+            continue;
+          }
+          if (!FileSave(jcr, ff, false)) {
+            CleanupLink(ff);
+            Dmsg1(debuglevel, "Error: Could not save file %s", ff->fname);
+            ret_val = 0;
+            break;
+          } else {
+            CleanupLink(ff);
+            if (ff->linked) { ff->linked->FileIndex = ff->FileIndex; }
+          }
+          if (jcr->IsJobCanceled()) {
+            ret_val = 0;
+            break;
           }
         }
-        if (out.empty()) { closed_channels += 1; }
+        if (out.closed()) { closed_channels += 1; }
       }
       // if we have not gotten any file then sleep for a bit instead
       // of spinning here
