@@ -1082,6 +1082,7 @@ static inline bool SendPlainData(b_ctx& bctx)
   auto file_size = bctx.ff_pkt->statp.st_size;
   auto* flags = bctx.ff_pkt->flags;
 
+  const std::size_t num_workers = me->MaxWorkersPerJob;
   // Currently we do not support encryption while doing
   // parallel sending/checksumming/compression/etc.
   // This is mostly because EncryptData() is weird!
@@ -1089,6 +1090,10 @@ static inline bool SendPlainData(b_ctx& bctx)
 
   // Setting up the parallel pipeline is not worth it for small files.
   if (file_size < 128 * 1024) { return SendPlainDataSerially(bctx); }
+
+  // setting maximum worker threads to 0 means that you do not want
+  // multithreading, so just use the serial code path for now.
+  if (num_workers == 0) { return SendPlainDataSerially(bctx); }
 
   bool retval = false;
   BareosSocket* sd = bctx.jcr->store_bsock;
@@ -1114,8 +1119,8 @@ static inline bool SendPlainData(b_ctx& bctx)
   }
 
   auto& threadpool = bctx.jcr->fd_impl->threads;
-  work_group compute_group(20);
-  const std::size_t num_workers = std::thread::hardware_concurrency() / 2;
+
+  work_group compute_group(num_workers * 3);
 
   // FIXME(ssura): this should become a std::latch once C++20 arrives
   std::condition_variable compute_fin;

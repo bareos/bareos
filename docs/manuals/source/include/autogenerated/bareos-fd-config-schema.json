@@ -237,6 +237,12 @@
           "default_value": "20",
           "equals": true
         },
+        "MaximumWorkersPerJob": {
+          "datatype": "PINT32",
+          "code": 0,
+          "default_value": "2",
+          "equals": true
+        },
         "Messages": {
           "datatype": "RES",
           "code": 2,
@@ -519,6 +525,12 @@
           "datatype": "PINT32",
           "code": 0,
           "default_value": "20",
+          "equals": true
+        },
+        "MaximumWorkersPerJob": {
+          "datatype": "PINT32",
+          "code": 0,
+          "default_value": "2",
           "equals": true
         },
         "Messages": {

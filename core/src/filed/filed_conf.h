@@ -97,6 +97,7 @@ class ClientResource
   char* scripts_directory = nullptr;
   MessagesResource* messages = nullptr; /* Daemon message handler */
   uint32_t MaxConcurrentJobs = 0;
+  uint32_t MaxWorkersPerJob{0};
   utime_t SDConnectTimeout = {0};       /* Timeout in seconds */
   utime_t heartbeat_interval = {0};     /* Interval to send heartbeats */
   uint32_t max_network_buffer_size = 0; /* Max network buf size */
