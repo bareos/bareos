@@ -730,6 +730,10 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
               goto bail_out;
             }
             break;
+          case bRC_Stop:
+            Dmsg0(debuglevel,
+                  "Plugin returned bRC_Stop, continue with next steps\n");
+            goto fun_end;
           case bRC_Skip:
             Dmsg0(debuglevel,
                   "Plugin returned bRC_Skip, continue with next file\n");
@@ -744,7 +748,6 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
           case bRC_Max:
           case bRC_More:
           case bRC_Seen:
-          case bRC_Stop:
           case bRC_Term:
             Jmsg1(jcr, M_ERROR, 0,
                   _("Command plugin \"%s\": unhandled returncode from "
