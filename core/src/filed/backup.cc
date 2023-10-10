@@ -1517,10 +1517,10 @@ static inline bool SendPlainData(b_ctx& bctx)
     sinks.emplace_back(std::move(cr_in));
     // connection between the compressing thread and the sending thread
     auto [sc_in, sc_out] = channel::CreateBufferedChannel<shared_buffer>(1);
-    if (!bctx.jcr->fd_impl->send_ctx->to_compress.emplace(std::move(
+    if (!bctx.jcr->fd_impl->send_ctx->to_compress.emplace(
             compress_input{std::move(cr_out), std::move(sc_in), bctx.jcr,
                            bctx.max_compress_len, bctx.ff_pkt->Compress_algo,
-                           bctx.ff_pkt->Compress_level}))) {
+                           bctx.ff_pkt->Compress_level})) {
       return false;
     }
     compression_out = std::move(sc_out);
@@ -1535,8 +1535,8 @@ static inline bool SendPlainData(b_ctx& bctx)
         = channel::CreateBufferedChannel<sbuf>(actual_buf_count);
     sinks.emplace_back(std::move(sr_in));
     if (!bctx.jcr->fd_impl->send_ctx->to_send.emplace(
-            std::move(send_input{std::move(sr_out), std::move(compression_out),
-                                 &bctx, std::move(send_barrier)}))) {
+            send_input{std::move(sr_out), std::move(compression_out), &bctx,
+                       std::move(send_barrier)})) {
       return false;
     }
   }
@@ -1549,9 +1549,9 @@ static inline bool SendPlainData(b_ctx& bctx)
     auto [dr_in, dr_out]
         = channel::CreateBufferedChannel<sbuf>(actual_buf_count);
     sinks.emplace_back(std::move(dr_in));
-    if (!bctx.jcr->fd_impl->send_ctx->to_digest.emplace(std::move(
+    if (!bctx.jcr->fd_impl->send_ctx->to_digest.emplace(
             digest_input{std::move(dr_out), bctx.digest, bctx.signing_digest,
-                         std::move(digest_barrier)}))) {
+                         std::move(digest_barrier)})) {
       return false;
     }
   }
