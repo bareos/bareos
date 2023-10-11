@@ -513,7 +513,7 @@ Description: Backup Archiving Recovery Open Sourced - tray monitor
 Package: bareos-webui
 Architecture: all
 Depends: apache2 | httpd,
-   libapache2-mod-php,
+   php-fpm (>= 7.0),
    php-date,
    php-intl,
    php-json,
