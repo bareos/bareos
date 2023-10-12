@@ -10,6 +10,7 @@ Job {
   AlwaysIncrementalMaxFullAge = 1 seconds
   Priority = 10
   Allow Mixed Priority = no
+  Spool Data = no
   Run Script {
         command = "sleep 2"
         Runs When = Before

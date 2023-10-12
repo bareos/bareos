@@ -149,7 +149,7 @@ run_bconsole
 # Check whether consolidate job priority is also applied to jobs.
 
 cat <<END_OF_DATA >$tmp/bconcmds
-@$out /dev/null
+@$out $tmp/aibackups.out
 messages
 label volume=TestVolume001 storage=File pool=Full
 run job=$JobName level=Full yes
@@ -207,11 +207,11 @@ expect_grep "x9mlMotNz6zXMPiL2rDLrg	AI-Longterm" \
             ".bvfs_versions did not find a file backup up by a VirtualFull Archive."
 
 expect_grep "Priority:[[:space:]]*10" \
-            "$tmp"/log1.out \
+            "$tmp"/aibackups.out \
             "always incremental backup doesn't have priority set to 10."
 
 expect_grep "Allow Mixed Priority:[[:space:]]*no" \
-            "$tmp"/log1.out \
+            "$tmp"/aibackups.out \
             "always incremental backup doesn't have allow mixed priority set to false."
 
 expect_grep "Priority:[[:space:]]*5" \
@@ -220,6 +220,14 @@ expect_grep "Priority:[[:space:]]*5" \
 
 expect_grep "Allow Mixed Priority:[[:space:]]*yes" \
             "$tmp"/consolidatevfs.out \
-            "virtualfull doesn't have same allow mixed priority set as consolidate job (expected true)."
+            "virtualfull doesn't have same allow mixed priority value as consolidate job (expected true)."
+
+expect_not_grep "Spooling data" \
+                "$tmp"/aibackups.out \
+                "always incremental backup spooling is not set to false."
+
+expect_grep "Spooling data" \
+            "$tmp"/consolidatevfs.out \
+            "virtualfull doesn't have same spooling value as consolidate job (expected true)."
 
 end_test
