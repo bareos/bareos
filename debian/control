@@ -39,6 +39,7 @@ Build-Depends: acl-dev,
  lsb-release,
  mtx [!hurd-any],
  ncurses-dev,
+ openssl (>= 1.1.1),
  pkg-config,
  po-debconf (>= 0.8.2),
  python-dev <bullseye> <buster> <stretch> <xenial> <bionic>,
@@ -459,7 +460,6 @@ Description: Backup Archiving Recovery Open Sourced - tray monitor
 Package: bareos-webui
 Architecture: all
 Depends: apache2 | httpd,
-   libapache2-mod-fcgid,
    php-fpm (>= 7.0),
    php-date,
    php-intl,

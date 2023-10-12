@@ -105,6 +105,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - tools: fix tools not starting up on windows  [PR #1549]
 - dird: `list jobs`: add `level` keyword and accept a list of job levels [PR #1548]
 - Allow to use the third-party libraries of the OS instead of the bundled ones [PR #1441]
+- packaging: debian fix dependencies [PR #1573]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -272,4 +273,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1556]: https://github.com/bareos/bareos/pull/1556
 [PR #1563]: https://github.com/bareos/bareos/pull/1563
 [PR #1565]: https://github.com/bareos/bareos/pull/1565
+[PR #1573]: https://github.com/bareos/bareos/pull/1573
 [unreleased]: https://github.com/bareos/bareos/tree/master
