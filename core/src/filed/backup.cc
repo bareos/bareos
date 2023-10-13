@@ -1050,27 +1050,93 @@ static result<std::size_t> SendData(BareosSocket* sd,
   return size;
 }
 
-struct message {
-  PoolMem backing{PM_MESSAGE};
-  std::size_t header_size{0};
-  std::size_t data_size{0};
+class data_message {
+  /* some data is prefixed by a OFFSET_FADDR_SIZE-byte number -- called header
+   * here, which basically contains the file position to which to write the
+   * following block of data.
+   * The difference between FADDR and OFFSET is that offset may be any value
+   * (given to the core by a plugin), whereas FADDR is computed by the core
+   * itself and is equal to the number of bytes already read from the file
+   * descriptor. */
+  static inline constexpr std::size_t header_size = OFFSET_FADDR_SIZE;
+  /* our bsocket functions assume that they are allowed to overwrite
+   * the four bytes directly preceding the given buffer
+   * To keep the message alignment to 8, we "allocate" full 8 bytes instead
+   * of the required 4. */
+  static inline constexpr std::size_t bnet_size = 8;
+  static inline constexpr std::size_t data_offset = header_size + bnet_size;
 
-  message(std::size_t header_size) : header_size{header_size} {}
+  std::vector<char> buffer{};
+  bool has_header{false};
 
-  void reserve(std::size_t max_data_size)
+ public:
+  data_message(std::size_t data_size)
   {
-    backing.check_size(header_size + max_data_size);
+    buffer.resize(data_size + data_offset);
+  }
+  data_message() : data_message(0) {}
+  data_message(const data_message&) = delete;
+  data_message& operator=(const data_message&) = delete;
+  data_message(data_message&&) = default;
+  data_message& operator=(data_message&&) = default;
+
+  // creates a message with the same header -- if any
+  data_message derived() const
+  {
+    data_message derived;
+
+    if (has_header) {
+      derived.has_header = true;
+      std::memcpy(derived.header_ptr(), header_ptr(), header_size);
+    }
+
+    return derived;
   }
 
-  char* header() { return backing.addr(); }
+  void set_header(std::uint64_t h)
+  {
+    has_header = true;
+    auto* ptr = header_ptr();
+    std::memcpy(ptr, &h, header_size);
 
-  char* data() { return backing.addr() + header_size; }
+    for (std::size_t i = 0; i < header_size / 2; ++i) {
+      std::swap(ptr[i], ptr[header_size - 1 - i]);
+    }
+  }
 
-  const char* header() const { return backing.c_str(); }
+  void resize(std::size_t new_size) { buffer.resize(data_offset + new_size); }
 
-  const char* data() const { return backing.c_str() + header_size; }
+  char* header_ptr() { return &buffer[bnet_size]; }
+  char* data_ptr() { return &buffer[data_offset]; }
+  const char* header_ptr() const { return &buffer[bnet_size]; }
+  const char* data_ptr() const { return &buffer[data_offset]; }
 
-  std::size_t size() const { return header_size + data_size; }
+  std::size_t data_size() const
+  {
+    ASSERT(buffer.size() >= data_offset);
+    return buffer.size() - data_offset;
+  }
+
+  /* important: this is not actually a POOLMEM*; do not pass it to POOLMEM*
+   *            functions, except to pass it to BareosSocket::SendData(). */
+  POOLMEM* as_socket_message()
+  {
+    if (has_header) {
+      return header_ptr();
+    } else {
+      return data_ptr();
+    }
+  }
+
+  std::size_t message_size() const
+  {
+    auto size_with_header = buffer.size() - bnet_size;
+    if (has_header) {
+      return size_with_header;
+    } else {
+      return size_with_header - header_size;
+    }
+  }
 };
 
 // Send the content of a file on anything but an EFS filesystem.
@@ -1133,7 +1199,7 @@ static inline bool SendPlainData(b_ctx& bctx)
                               compute_fin.notify_one();
                             });
 
-  using shared_message = std::shared_ptr<const message>;
+  using shared_message = std::shared_ptr<const data_message>;
 
   // FIXME(ssura): How big should the buffer be ?
   auto [in, out]
@@ -1152,13 +1218,14 @@ static inline bool SendPlainData(b_ctx& bctx)
             return;
           }
 
-          auto size = p.value_unchecked()->size();
-          auto& msg = p.value_unchecked()->backing;
+          auto& val = p.value_unchecked();
+          auto size = val->message_size();
+          POOLMEM* msg = val->as_socket_message();
 
           // technically we are overwriting part of message here
           // but its only the "size" field of the message, which is not
           // read/written to otherwise after making it a shared_message.
-          result ret = SendData(sd, msg.c_str(), size);
+          result ret = SendData(sd, msg, size);
           if (ret.holds_error()) {
             prom.set_value(std::move(ret));
             return;
@@ -1181,45 +1248,53 @@ static inline bool SendPlainData(b_ctx& bctx)
   std::uint64_t& header = *(support_sparse ? &bytes_read : &offset);
 
   static_assert(sizeof(header) == OFFSET_FADDR_SIZE);
-  const std::size_t header_size
-      = (support_sparse || support_offsets) ? sizeof(header) : 0;
+  bool include_header = support_sparse || support_offsets;
 
   // Read the file data
   for (;;) {
-    message msg(header_size);
-    msg.reserve(max_buf_size);
+    data_message msg(max_buf_size);
     for (bool skip_block = true; skip_block;) {
       skip_block = false;
-      ssize_t read_bytes = bread(&bfd, msg.data(), max_buf_size);
+      ssize_t read_bytes = bread(&bfd, msg.data_ptr(), msg.data_size());
       // update offset _before_ sending the header
       offset = bfd.offset;
 
       if (read_bytes <= 0) { goto end_read_loop; }
 
-      msg.data_size = read_bytes;
+      msg.resize(read_bytes);
 
       bool unsized_file
           = (file_type == FT_RAW || file_type == FT_FIFO) && (file_size == 0);
+
+      /* This is looks weird but this is the idea:
+       * If we sparse is enabled and the block is just zero, we want to skip it;
+       * but we need to recover the file size on restore, so we need to
+       * at least always send the last block to the sd regardless of its
+       * contents (This is the `< file_size` check) For unsized raw/fifo files,
+       * we do not[1] recover the correct file size with sparse enabled on a
+       * restore, so we skip the test.
+       *
+       * [1] Not sure why this was decided on.  Maybe there was specific use
+       *     case in mind when this was decided;  I would have expected us to
+       *     disable SPARSE in that case and continue on as normal.
+       */
       if (support_sparse
-          && ((msg.data_size == max_buf_size
-               && (bytes_read + max_buf_size < (uint64_t)file_size))
+          && ((msg.data_size() == max_buf_size
+               && (msg.data_size() + max_buf_size < (uint64_t)file_size))
               || unsized_file)
-          && IsBufZero(msg.data(), max_buf_size)) {
+          // IsBufZero actually requires 8 bytes of alignment
+          && IsBufZero(msg.data_ptr(), msg.data_size())) {
         skip_block = true;
-      } else if (msg.header_size) {
-        ASSERT(msg.header_size == OFFSET_FADDR_SIZE);
-        ser_declare;
-        SerBegin(msg.header(), OFFSET_FADDR_SIZE);
-        ser_uint64(header); /* store offset in begin of buffer */
-        SerEnd(msg.header(), OFFSET_FADDR_SIZE);
+      } else if (include_header) {
+        msg.set_header(header);
       }
 
       // update bytes_read _after_ sending the header
       bytes_read += read_bytes;
     }
-    ASSERT(msg.data_size > 0);
+    ASSERT(msg.data_size() > 0);
 
-    shared_message shared_msg{new message{std::move(msg)}};
+    shared_message shared_msg{new data_message{std::move(msg)}};
 
     if (update_digest) {
       // updating the digest has to be done serially
@@ -1229,37 +1304,31 @@ static inline bool SendPlainData(b_ctx& bctx)
     }
 
     if (checksum || signing) {
-      update_digest.emplace(
-          compute_group.submit([checksum, signing, shared_msg]() mutable {
-            // Update checksum if requested
-            if (checksum) {
-              CryptoDigestUpdate(checksum, (uint8_t*)shared_msg->data(),
-                                 shared_msg->data_size);
-            }
+      update_digest.emplace(compute_group.submit([checksum, signing,
+                                                  shared_msg]() mutable {
+        auto* data = reinterpret_cast<const uint8_t*>(shared_msg->data_ptr());
+        auto size = shared_msg->data_size();
+        // Update checksum if requested
+        if (checksum) { CryptoDigestUpdate(checksum, data, size); }
 
-            // Update signing digest if requested
-            if (signing) {
-              CryptoDigestUpdate(signing, (uint8_t*)shared_msg->data(),
-                                 shared_msg->data_size);
-            }
-          }));
+        // Update signing digest if requested
+        if (signing) { CryptoDigestUpdate(signing, data, size); }
+      }));
     }
 
     std::future copy_fut
         = (compctx) ? compute_group.submit(
-              [shared_msg,
+              [input = shared_msg,
                compctx = compctx.value()]() mutable -> result<shared_message> {
                 auto data_size = RequiredCompressionOutputBufferSize(
-                    compctx.algorithm, shared_msg->data_size);
-                message msg(shared_msg->header_size);
-                std::memcpy(msg.header(), shared_msg->header(),
-                            shared_msg->header_size);
-                msg.reserve(data_size);
+                    compctx.algorithm, input->data_size());
+                auto msg = input->derived();
+                msg.resize(data_size);
                 result comp_size = ThreadlocalCompress(
-                    compctx.algorithm, compctx.level, shared_msg->data(),
-                    shared_msg->data_size,
-                    msg.data() + sizeof(comp_stream_header),
-                    data_size - sizeof(comp_stream_header));
+                    compctx.algorithm, compctx.level, input->data_ptr(),
+                    input->data_size(),
+                    msg.data_ptr() + sizeof(comp_stream_header),
+                    msg.data_size() - sizeof(comp_stream_header));
 
                 if (comp_size.holds_error()) {
                   return std::move(comp_size.error_unchecked());
@@ -1277,17 +1346,19 @@ static inline bool SendPlainData(b_ctx& bctx)
                 {
                   // Write compression header
                   ser_declare;
-                  SerBegin(msg.data(), sizeof(comp_stream_header));
+                  SerBegin(msg.data_ptr(), sizeof(comp_stream_header));
                   ser_uint32(compctx.ch.magic);
                   ser_uint32(csize);
                   ser_uint16(compctx.ch.level);
                   ser_uint16(compctx.ch.version);
-                  SerEnd(msg.data(), sizeof(comp_stream_header));
+                  SerEnd(msg.data_ptr(), sizeof(comp_stream_header));
                 }
 
-                msg.data_size = csize + sizeof(comp_stream_header);
+                auto total_size = csize + sizeof(comp_stream_header);
+                ASSERT(total_size <= msg.data_size());
+                msg.resize(total_size);
 
-                return shared_message{new message{std::move(msg)}};
+                return shared_message{new data_message{std::move(msg)}};
               })
                     : [shared_msg]() {
                         std::promise<result<shared_message>> prom;
