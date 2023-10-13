@@ -812,9 +812,9 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
 
             if (!ff_pkt->linkhash) { ff_pkt->linkhash = new LinkHash(10000); }
 
-            auto [iter, _] = ff_pkt->linkhash->try_emplace(
+            auto result = ff_pkt->linkhash->try_emplace(
                 Hardlink{ff_pkt->statp.st_dev, ff_pkt->statp.st_ino}, sp.fname);
-            auto& hl = iter->second;
+            auto& hl = result.first->second;
             if (hl.FileIndex == 0) {
               ff_pkt->linked = &hl;
               Dmsg2(400, "Added to hash FI=%d file=%s\n", ff_pkt->FileIndex,
@@ -824,7 +824,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
                     fname.c_str());
               ff_pkt->no_read = true;
             } else {
-              ff_pkt->link = hl.name.data();
+              ff_pkt->link = const_cast<char*>(hl.name.data());
               ff_pkt->type = FT_LNKSAVED; /* Handle link, file already saved */
               ff_pkt->LinkFI = hl.FileIndex;
               ff_pkt->digest = hl.digest.data();

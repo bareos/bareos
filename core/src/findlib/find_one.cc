@@ -430,9 +430,9 @@ static inline int process_hardlink(JobControlRecord* jcr,
 
   if (!ff_pkt->linkhash) { ff_pkt->linkhash = new LinkHash(10000); }
 
-  auto [iter, inserted] = ff_pkt->linkhash->try_emplace(
+  auto result = ff_pkt->linkhash->try_emplace(
       Hardlink{ff_pkt->statp.st_dev, ff_pkt->statp.st_ino}, fname);
-  CurLink& hl = iter->second;
+  CurLink& hl = result.first->second;
 
   if (hl.FileIndex == 0) {
     // no file backed up yet
@@ -445,7 +445,7 @@ static inline int process_hardlink(JobControlRecord* jcr,
     rtn_stat = 1; /* ignore */
   } else {
     // some other file was already backed up!
-    ff_pkt->link = hl.name.data();
+    ff_pkt->link = const_cast<char*>(hl.name.data());
     ff_pkt->type = FT_LNKSAVED; /* Handle link, file already saved */
     ff_pkt->LinkFI = hl.FileIndex;
     ff_pkt->linked = NULL;

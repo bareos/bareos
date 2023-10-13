@@ -69,7 +69,8 @@ inline bool operator==(const Hardlink& l, const Hardlink& r)
   return l.dev == r.dev && l.ino == r.ino;
 }
 
-template <> struct std::hash<Hardlink> {
+namespace std {
+template <> struct hash<Hardlink> {
   std::size_t operator()(const Hardlink& link) const
   {
     auto hash1 = std::hash<Hardlink::device_type>{}(link.dev);
@@ -81,6 +82,7 @@ template <> struct std::hash<Hardlink> {
     return seed;
   }
 };
+}
 
 using LinkHash = std::unordered_map<Hardlink, CurLink>;
 
