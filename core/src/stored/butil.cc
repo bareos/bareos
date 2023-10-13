@@ -145,12 +145,16 @@ static bool setup_to_access_device(DeviceControlRecord* dcr,
   if (!VolumeName.empty()) {
     bstrncpy(VolName, VolumeName.c_str(), sizeof(VolName));
     if (VolumeName.size() >= MAX_NAME_LENGTH) {
-      Jmsg0(jcr, M_ERROR, 0,
+      /* We do not handle this case gracefully, so its best to just
+       * abort the job here. */
+      Jmsg0(jcr, M_FATAL, 0,
             _("Volume name or names is too long. Please use a .bsr file.\n"));
+      return false;
     }
   } else {
     VolName[0] = 0;
   }
+
   if (!jcr->sd_impl->read_session.bsr && VolName[0] == 0) {
     if (!bstrncmp(dev_name, "/dev/", 5)) {
       /* Try stripping file part */
