@@ -20,6 +20,7 @@
 add_subdirectory(acl)
 add_subdirectory(always-incremental-consolidate)
 add_subdirectory(autochanger)
+add_subdirectory(autoxflate)
 add_subdirectory(bareos-basic)
 add_subdirectory(bareos-acl)
 add_subdirectory(bconsole-basic)
