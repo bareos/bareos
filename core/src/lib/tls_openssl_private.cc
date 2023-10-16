@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -52,7 +52,6 @@ static std::mutex file_access_mutex_;
  */
 static constexpr std::string_view tls_default_ciphers_{
     "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH"};
-
 
 TlsOpenSslPrivate::TlsOpenSslPrivate()
 {
@@ -146,9 +145,18 @@ bool TlsOpenSslPrivate::init()
   if (cipherlist_.empty()) { cipherlist_ = tls_default_ciphers_; }
 
   if (SSL_CTX_set_cipher_list(openssl_ctx_, cipherlist_.c_str()) != 1) {
-    Dmsg0(100, _("Error setting cipher list, no valid ciphers available\n"));
+    OpensslPostErrors(M_ERROR, "Error setting cipher list");
     return false;
   }
+
+#if (OPENSSL_VERSION_NUMBER >= 0x10101000L)
+  // use the default tls 1.3 cipher suites if nothing is set
+  if (!ciphersuites_.empty()
+      && SSL_CTX_set_ciphersuites(openssl_ctx_, ciphersuites_.c_str()) != 1) {
+    OpensslPostErrors(M_ERROR, "Error setting cipher suite");
+    return false;
+  }
+#endif
 
   if (pem_callback_ == nullptr) {
     pem_callback_ = CryptoDefaultPemCallback;

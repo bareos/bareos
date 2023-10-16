@@ -87,6 +87,7 @@ class TlsOpenSslPrivate {
   void* pem_userdata_{};
   std::string dhfile_;
   std::string cipherlist_;
+  std::string ciphersuites_;
   bool verify_peer_{};
   std::shared_ptr<ConfigResourcesContainer>
       config_table_{};  // config table being used
