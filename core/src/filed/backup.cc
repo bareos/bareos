@@ -1155,7 +1155,9 @@ static inline bool SendPlainData(b_ctx& bctx)
   if (BitIsSet(FO_ENCRYPT, flags)) { return SendPlainDataSerially(bctx); }
 
   // Setting up the parallel pipeline is not worth it for small files.
-  if (file_size < 128 * 1024) { return SendPlainDataSerially(bctx); }
+  if (static_cast<std::size_t>(file_size) < 2 * max_buf_size) {
+    return SendPlainDataSerially(bctx);
+  }
 
   // setting maximum worker threads to 0 means that you do not want
   // multithreading, so just use the serial code path for now.
