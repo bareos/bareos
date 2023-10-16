@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -51,6 +51,7 @@ class TlsOpenSsl : public Tls {
 
   std::string TlsCipherGetName() const override;
   void SetCipherList(const std::string& cipherlist) override;
+  void SetCipherSuites(const std::string& ciphersuites) override;
   void SetProtocol(const std::string& protocol) override;
   void TlsLogConninfo(JobControlRecord* jcr,
                       const char* host,

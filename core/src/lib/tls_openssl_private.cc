@@ -600,6 +600,12 @@ void TlsOpenSsl::SetCipherList(const std::string& cipherlist)
   d_->cipherlist_ = cipherlist;
 }
 
+void TlsOpenSsl::SetCipherSuites(const std::string& ciphersuites)
+{
+  Dmsg1(100, "Set ciphersuites:\t<%s>\n", ciphersuites.c_str());
+  d_->ciphersuites_ = ciphersuites;
+}
+
 void TlsOpenSsl::SetProtocol(const std::string& protocol)
 {
   Dmsg1(100, "Set protocol:\t<%s>\n", protocol.c_str());
