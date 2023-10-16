@@ -40,17 +40,17 @@
 #include <openssl/ssl.h>
 #include <algorithm>
 #include <array>
+#include <unordered_map>
 
-/* static private */
-std::map<const SSL_CTX*, PskCredentials>
-    TlsOpenSslPrivate::psk_client_credentials_;
-std::mutex TlsOpenSslPrivate::psk_client_credentials_mutex_;
-std::mutex TlsOpenSslPrivate::file_access_mutex_;
+#include "lib/thread_util.h"
 
-/* static private */
+/* PskCredentials lookup map for all connections */
+static synchronized<std::unordered_map<const SSL_CTX*, PskCredentials>> client_cred;
+static std::mutex file_access_mutex_;
+
 /* No anonymous ciphers, no <128 bit ciphers, no export ciphers, no MD5 ciphers
  */
-const std::string TlsOpenSslPrivate::tls_default_ciphers_{
+static constexpr std::string_view tls_default_ciphers_{
     "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH"};
 
 
@@ -106,9 +106,7 @@ TlsOpenSslPrivate::~TlsOpenSslPrivate()
   /* the openssl_ctx object is the factory that creates
    * openssl objects, so delete this at the end */
   if (openssl_ctx_) {
-    psk_client_credentials_mutex_.lock();
-    psk_client_credentials_.erase(openssl_ctx_);
-    psk_client_credentials_mutex_.unlock();
+    client_cred.lock()->erase(openssl_ctx_);
     SSL_CTX_free(openssl_ctx_);
     openssl_ctx_ = nullptr;
   }
@@ -435,10 +433,7 @@ void TlsOpenSslPrivate::ClientContextInsertCredentials(
   if (!openssl_ctx_) { /* do not register nullptr */
     Dmsg0(100, "Psk Server Callback: No SSL_CTX\n");
   } else {
-    psk_client_credentials_mutex_.lock();
-    TlsOpenSslPrivate::psk_client_credentials_.insert(
-        std::pair<const SSL_CTX*, PskCredentials>(openssl_ctx_, credentials));
-    psk_client_credentials_mutex_.unlock();
+    client_cred.lock()->emplace(openssl_ctx_, credentials);
   }
 }
 
@@ -498,22 +493,18 @@ unsigned int TlsOpenSslPrivate::psk_client_cb(SSL* ssl,
   }
 
   PskCredentials credentials;
-  bool found = false;
-
-  psk_client_credentials_mutex_.lock();
-  if (psk_client_credentials_.find(openssl_ctx)
-      != psk_client_credentials_.end()) {
-    credentials = TlsOpenSslPrivate::psk_client_credentials_.at(openssl_ctx);
-    found = true;
+  {
+    auto locked = client_cred.lock();
+    if (auto iter = locked->find(openssl_ctx); iter != locked->end()) {
+      credentials = iter->second;
+    } else {
+      Dmsg0(100,
+            "Error, TLS-PSK CALLBACK not set because SSL_CTX is not "
+            "registered.\n");
+      return 0;
+    }
   }
-  psk_client_credentials_mutex_.unlock();
 
-  if (!found) {
-    Dmsg0(
-        100,
-        "Error, TLS-PSK CALLBACK not set because SSL_CTX is not registered.\n");
-    return 0;
-  }
   int ret = Bsnprintf(identity, max_identity_len, "%s",
                       credentials.get_identity().c_str());
 
