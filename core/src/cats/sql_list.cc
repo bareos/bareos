@@ -227,12 +227,10 @@ void BareosDb::ListMediaRecords(JobControlRecord* jcr,
 
   EscapeString(jcr, esc, mdbr->VolumeName, strlen(mdbr->VolumeName));
 
-  /*
-   * There is one case where ListMediaRecords() is called from SelectMediaDbr()
+  /* There is one case where ListMediaRecords() is called from SelectMediaDbr()
    * with the range argument set to NULL. To avoid problems, we set the range to
    * an empty string if range is set to NULL. Otherwise it would result in
-   * malformed SQL queries.
-   */
+   * malformed SQL queries. */
   if (range == NULL) { range = ""; }
 
   if (count) {
@@ -436,12 +434,11 @@ void BareosDb::ListLogRecords(JobControlRecord* jcr,
   }
 
   if (type != VERT_LIST) {
-    /*
-     * When something else then a vertical list is requested set the list type
+    /* When something else then a vertical list is requested set the list type
      * to RAW_LIST e.g. non formated raw data as that makes the only sense for
      * the logtext output. The logtext already has things like \n etc in it
-     * so we should just dump the raw content out for the best visible output.
-     */
+     * so we should just dump the raw content out for the best visible
+     * output. */
     type = RAW_LIST;
   }
 
@@ -473,12 +470,11 @@ void BareosDb::ListJoblogRecords(JobControlRecord* jcr,
   } else {
     FillQuery(SQL_QUERY::list_joblog_2, edit_int64(JobId, ed1), range);
     if (type != VERT_LIST) {
-      /*
-       * When something else then a vertical list is requested set the list type
+      /* When something else then a vertical list is requested set the list type
        * to RAW_LIST e.g. non formated raw data as that makes the only sense for
        * the logtext output. The logtext already has things like \n etc in it
-       * so we should just dump the raw content out for the best visible output.
-       */
+       * so we should just dump the raw content out for the best visible
+       * output. */
       type = RAW_LIST;
     }
   }

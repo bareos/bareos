@@ -741,11 +741,9 @@ bool SelectPoolDbr(UaContext* ua, PoolDbRecord* pr, const char* argk)
 
   new (&opr) PoolDbRecord();  // placement new instead of memset
 
-  /*
-   * *None* is only returned when selecting a recyclepool, and in that case
+  /* *None* is only returned when selecting a recyclepool, and in that case
    * the calling code is only interested in opr.Name, so then we can leave
-   * pr as all zero.
-   */
+   * pr as all zero. */
   if (!bstrcmp(name, _("*None*"))) {
     bstrncpy(opr.Name, name, sizeof(opr.Name));
 
@@ -841,11 +839,9 @@ bool SelectStorageDbr(UaContext* ua, StorageDbRecord* sr, const char* argk)
 
   new (&osr) StorageDbRecord();  // placement new instead of memset
 
-  /*
-   * *None* is only returned when selecting a recyclestorage, and in that case
+  /* *None* is only returned when selecting a recyclestorage, and in that case
    * the calling code is only interested in osr.Name, so then we can leave
-   * sr as all zero.
-   */
+   * sr as all zero. */
   if (!bstrcmp(name, _("*None*"))) {
     bstrncpy(osr.Name, name, sizeof(osr.Name));
 
@@ -1609,10 +1605,8 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
     }
   }
 
-  /*
-   * If we didn't select any Jobs using jobid, job or ujobid keywords try
-   * other selections.
-   */
+  /* If we didn't select any Jobs using jobid, job or ujobid keywords try
+   * other selections. */
   if (cnt == 0) {
     char buf[1000];
     int tjobs = 0; /* Total # number jobs */
@@ -1672,10 +1666,8 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
         }
       }
 
-      /*
-       * Select from all available Jobs the Jobs matching the selection
-       * criterium.
-       */
+      /* Select from all available Jobs the Jobs matching the selection
+       * criterium. */
       foreach_jcr (jcr) {
         if (jcr->JobId == 0) { /* This is us */
           continue;
@@ -1718,10 +1710,8 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
         goto bail_out;
       }
 
-      /*
-       * Only ask for confirmation when not in batch mode and there is no yes
-       * on the cmdline.
-       */
+      /* Only ask for confirmation when not in batch mode and there is no yes
+       * on the cmdline. */
       if (!ua->batch && FindArg(ua, NT_("yes")) == -1) {
         if (!GetYesno(ua, _("Confirm cancel (yes/no): ")) || !ua->pint32_val) {
           goto bail_out;
@@ -1807,10 +1797,8 @@ bool GetUserSlotList(UaContext* ua,
   bstrncpy(search_argument, argument, sizeof(search_argument));
   i = FindArgWithValue(ua, search_argument);
   if (i == -1) { /* not found */
-    /*
-     * See if the last letter of search_argument is a 's'
-     * When it is strip it and try if that argument is given.
-     */
+    /* See if the last letter of search_argument is a 's'
+     * When it is strip it and try if that argument is given. */
     len = strlen(search_argument);
     if (len > 0 && search_argument[len - 1] == 's') {
       search_argument[len - 1] = '\0';
