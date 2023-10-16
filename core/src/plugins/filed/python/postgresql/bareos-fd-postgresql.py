@@ -312,26 +312,31 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                 f"SELECT pg_wal_lsn_diff('{current_lsn}','{last_lsn}')"
             )[0][0]
             if not int(result):
-                raise ValueError
+                # pg8000 may return Decimal('0') for null comparison so try to remove quotes
+                if isinstance(result, str):
+                    result = int(result[1:-1])
+                    raise ValueError
 
             if result > 0:
                 diff_exist = True
+                msg = "A difference was found"
+            else:
+                msg = "No difference found"
 
             bareosfd.JobMessage(
                 bareosfd.M_INFO,
                 (
-                    f"A difference was found {(diff_exist)}, "
+                    f"{msg},"
                     f" between current_lsn {current_lsn} and last LSN: {last_lsn}\n"
                 ),
             )
         except pg8000.Error as pg_err:
-            current_lsn = 0
             bareosfd.JobMessage(
                 bareosfd.M_ERROR,
                 (f"Error checking lsn difference was: {result}" f": {pg_err} \n"),
             )
-        except ValueError as val_err:
             current_lsn = 0
+        except ValueError as val_err:
             bareosfd.JobMessage(
                 bareosfd.M_ERROR,
                 (
@@ -340,6 +345,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                     f" between current_lsn {current_lsn} and last LSN: {last_lsn}\n"
                 ),
             )
+            current_lsn = 0
 
         return diff_exist
 
@@ -701,23 +707,6 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             ),
         )
         return False
-
-    def format_lsn(self, raw_lsn):
-        """
-        PostgreSQL returns LSN in a non-comparable format with varying length, e.g.
-        0/3A6A710
-        0/F00000
-        We fill the part before the / and after it with leading 0 to get strings
-        with equal length
-        """
-        lsn_pre, lsn_post = raw_lsn.split("/")
-        return lsn_pre.zfill(8) + "/" + lsn_post.zfill(8)
-
-    def lsn_to_int(self, raw_lsn):
-        """
-        Return LSN converted to integer safer to compare than string
-        """
-        return int("".join(map(lambda x: x.zfill(8), raw_lsn.split("/"))), base=16)
 
     def check_options(self, mandatory_options=None):
         """
