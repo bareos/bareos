@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -65,7 +65,7 @@ extern char my_name[];
 extern const char* working_directory;
 extern utime_t daemon_start_time;
 
-extern int console_msg_pending;
+extern bool console_msg_pending;
 extern FILE* con_fd;       /* Console file descriptor */
 extern brwlock_t con_lock; /* Console lock structure */
 

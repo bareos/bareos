@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2015-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -135,11 +135,9 @@ void OutputFormatter::ObjectStart(const char* name,
           json_array_append_new(json_object_current, json_object_new);
           result_stack_json->push(json_object_new);
         } else {
-          /*
-           * nameless objects only are indented to be added to arrays.
+          /* nameless objects only are indented to be added to arrays.
            * We do a workaround here, but this will only keep the last added
-           * entry (others will be overwritten).
-           */
+           * entry (others will be overwritten). */
           Dmsg0(800,
                 "Warning: requested to add a nameless object to another "
                 "object. This does not match.\n");
@@ -517,24 +515,18 @@ void OutputFormatter::rewrap(PoolMem& string, int wrap)
   int charsinline = 0;
   PoolMem rewrap_string(PM_MESSAGE);
 
-  /*
-   * wrap < 0: no modification
+  /* wrap < 0: no modification
    * wrap = 0: single line
-   * wrap > 0: wrap line after x characters (if api==0)
-   */
+   * wrap > 0: wrap line after x characters (if api==0) */
   if (wrap < 0) { return; }
 
-  /*
-   * Allocate a wrap buffer that is big enough to hold the original string and
+  /* Allocate a wrap buffer that is big enough to hold the original string and
    * the wrap chars. Using strlen * 2 means, we could add a wrap character after
-   * each character, which should be enough.
-   */
+   * each character, which should be enough. */
   rewrap_string.check_size(string.strlen() * 2);
 
-  /*
-   * Walk the input buffer and copy the data to the wrap buffer
-   * inserting line breaks as needed.
-   */
+  /* Walk the input buffer and copy the data to the wrap buffer
+   * inserting line breaks as needed. */
   q = rewrap_string.c_str();
   p = string.c_str();
   while (*p) {
@@ -603,7 +595,7 @@ void OutputFormatter::CreateNewResFilter(of_filter_type type,
   filters->append(tuple);
 }
 
-void OutputFormatter::AddLimitFilterTuple(int limit)
+void OutputFormatter::AddLimitFilterTuple(uint64_t limit)
 {
   of_filter_tuple* tuple;
 
@@ -616,7 +608,7 @@ void OutputFormatter::AddLimitFilterTuple(int limit)
   filters->append(tuple);
 }
 
-void OutputFormatter::AddOffsetFilterTuple(int offset)
+void OutputFormatter::AddOffsetFilterTuple(uint64_t offset)
 {
   of_filter_tuple* tuple;
 
@@ -686,10 +678,8 @@ bool OutputFormatter::FilterData(void* data)
   of_filter_tuple* tuple = nullptr;
   int acl_filter_show = 0, acl_filter_unknown = 0;
 
-  /*
-   * See if a filtering function is registered.
-   * See if there are any filters.
-   */
+  /* See if a filtering function is registered.
+   * See if there are any filters. */
   if (filter_func && filters && !filters->empty()) {
     foreach_alist (tuple, filters) {
       state = filter_func(filter_ctx, data, tuple);
@@ -709,12 +699,10 @@ bool OutputFormatter::FilterData(void* data)
     }
   }
 
-  /*
-   * If we have multiple ACL filters and none gave an
+  /* If we have multiple ACL filters and none gave an
    * explicit show state we suppress the entry just to
    * be sure we do not show to much information if we
-   * are not sure if we should show the item.
-   */
+   * are not sure if we should show the item. */
   if (acl_filter_unknown > 0 && acl_filter_show == 0) {
     Dmsg2(200,
           "tri-state filtering acl_filter_unknown %d, acl_filter_show %d\n",
@@ -765,10 +753,8 @@ bool OutputFormatter::ProcessTextBuffer()
   if (string_length > 0) {
     retval = send_func(send_ctx, "%s", result_message_plain->c_str());
     if (!retval) {
-      /*
-       * If send failed, include short messages in error messages.
-       * As messages can get quite long, don't show long messages.
-       */
+      /* If send failed, include short messages in error messages.
+       * As messages can get quite long, don't show long messages. */
       ErrorMsg.bsprintf("Failed to send message (length=%lld). ",
                         string_length);
       if (string_length < max_message_length_shown_in_error) {
@@ -790,18 +776,14 @@ void OutputFormatter::message(const char* type, PoolMem& message)
   switch (api) {
 #if HAVE_JANSSON
     case API_MODE_JSON:
-      /*
-       * currently, only error message influence the JSON result.
-       * Other messages are not visible.
-       */
+      /* currently, only error message influence the JSON result.
+       * Other messages are not visible. */
       JsonAddMessage(type, message);
       break;
 #endif
     default:
-      /*
-       * Send message immediately.
-       * Type is not relevant here (handled before).
-       */
+      /* Send message immediately.
+       * Type is not relevant here (handled before). */
       send_func(send_ctx, "%s", message.c_str());
       break;
   }
@@ -858,11 +840,9 @@ bool OutputFormatter::JsonArrayItemAdd(json_t* value)
   if (json_is_array(json_array_current)) {
     json_array_append_new(json_array_current, value);
   } else {
-    /*
-     * nameless objects only are indented to be added to arrays.
+    /* nameless objects only are indented to be added to arrays.
      * We do a workaround here, but this will only keep the last added
-     * entry (others will be overwritten).
-     */
+     * entry (others will be overwritten). */
     Dmsg0(800,
           "Warning: requested to add a nameless object to another "
           "object. This does not match.\n");
@@ -889,10 +869,8 @@ bool OutputFormatter::JsonKeyValueAddBool(const char* key, bool value)
 #  if JANSSON_VERSION_HEX >= 0x020400
   json_object_set_new(json_obj, lkey.c_str(), json_boolean(value));
 #  else
-  /*
-   * The function json_boolean(bool) requires jansson >= 2.4,
-   * which is not available on all platform, so assign the value manually.
-   */
+  /* The function json_boolean(bool) requires jansson >= 2.4,
+   * which is not available on all platform, so assign the value manually. */
   if (value) {
     json_bool = json_true();
   } else {
@@ -979,10 +957,8 @@ void OutputFormatter::JsonFinalizeResult(bool result)
   PoolMem ErrorMsg;
   char* string;
 
-  /*
-   * We mimic json-rpc result and error messages,
-   * To make it easier to implement real json-rpc later on.
-   */
+  /* We mimic json-rpc result and error messages,
+   * To make it easier to implement real json-rpc later on. */
   json_object_set_new(msg_obj, "jsonrpc", json_string("2.0"));
   json_object_set_new(msg_obj, "id", json_null());
 
@@ -1033,10 +1009,8 @@ void OutputFormatter::JsonFinalizeResult(bool result)
     Dmsg1(800, "message length (json): %lld\n", string_length);
     // send json string, on failure, send json error message
     if (!send_func(send_ctx, "%s", string)) {
-      /*
-       * If send failed, include short messages in error messages.
-       * As messages can get quite long, don't show long messages.
-       */
+      /* If send failed, include short messages in error messages.
+       * As messages can get quite long, don't show long messages. */
       ErrorMsg.bsprintf("Failed to send json message (length=%lld). ",
                         string_length);
       if (string_length < max_message_length_shown_in_error) {
