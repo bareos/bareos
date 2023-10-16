@@ -26,6 +26,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - tools: fix tools not starting up on windows [PR #1560]
 - VMware Plugin: Fix backup and recreating VMs with PCI passthrough for GPU [PR #1567]
 - dird: list jobs: add level keyword and accept a list of job levels [PR #1561]
+- packaging: debian fix dependencies [PR #1574]
 
 ### Fixed
 - stored: fix incoherent meta data when concurrently writing to the same volume [PR #1514]
@@ -581,4 +582,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1561]: https://github.com/bareos/bareos/pull/1561
 [PR #1564]: https://github.com/bareos/bareos/pull/1564
 [PR #1567]: https://github.com/bareos/bareos/pull/1567
+[PR #1574]: https://github.com/bareos/bareos/pull/1574
 [unreleased]: https://github.com/bareos/bareos/tree/master
