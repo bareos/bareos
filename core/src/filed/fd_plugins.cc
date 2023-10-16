@@ -803,7 +803,8 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       Dmsg2(debuglevel, "startBackup returned type=%d, fname=%s\n", sp.type,
             sp.fname);
       if (sp.object) {
-        Dmsg2(debuglevel, "index=%d object=%.*s\n", sp.index, sp.object_len, sp.object);
+        Dmsg2(debuglevel, "index=%d object=%.*s\n", sp.index, sp.object_len,
+              sp.object);
       }
 
       /* Handle hard linked files
