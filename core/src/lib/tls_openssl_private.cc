@@ -427,7 +427,36 @@ cleanup:
   bsock->timer_start = 0;
   bsock->SetKillable(true);
 
+  if (enable_ktls_) {
+    // old openssl versions might return -1 as well; so check for > 0 instead
+    bool ktls_send = KtlsSendStatus();
+    bool ktls_recv = KtlsRecvStatus();
+    Dmsg1(150, "kTLS used for Recv: %s\n", ktls_recv ? "yes" : "no");
+    Dmsg1(150, "kTLS used for Send: %s\n", ktls_send ? "yes" : "no");
+  }
+
   return status;
+}
+
+bool TlsOpenSslPrivate::KtlsSendStatus()
+{
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+  // old openssl versions might return -1 as well; so check for > 0 instead
+  return BIO_get_ktls_send(SSL_get_wbio(openssl_)) > 0;
+#else
+  return false;
+#endif
+
+}
+
+bool TlsOpenSslPrivate::KtlsRecvStatus()
+{
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+  // old openssl versions might return -1 as well; so check for > 0 instead
+  return BIO_get_ktls_recv(SSL_get_rbio(openssl_)) > 0;
+#else
+  return false;
+#endif
 }
 
 int TlsOpenSslPrivate::tls_pem_callback_dispatch(char* buf,

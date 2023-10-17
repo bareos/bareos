@@ -349,5 +349,14 @@ int TlsOpenSsl::TlsBsockReadn(BareosSocket* bsock, char* ptr, int32_t nbytes)
 {
   return d_->OpensslBsockReadwrite(bsock, ptr, nbytes, false);
 }
+bool TlsOpenSsl::KtlsSendStatus()
+{
+  return d_->KtlsSendStatus();
+}
+
+bool TlsOpenSsl::KtlsRecvStatus()
+{
+  return d_->KtlsRecvStatus();
+}
 
 #endif /* HAVE_TLS  && HAVE_OPENSSL */

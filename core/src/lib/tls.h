@@ -78,6 +78,9 @@ class Tls {
   virtual void SetCipherSuites(const std::string& ciphersuites) = 0;
   virtual void SetProtocol(const std::string& version) = 0;
 
+  virtual bool KtlsSendStatus() = 0;
+  virtual bool KtlsRecvStatus() = 0;
+
   virtual void Setca_certfile_(const std::string& ca_certfile) = 0;
   virtual void SetCaCertdir(const std::string& ca_certdir) = 0;
   virtual void SetCrlfile(const std::string& crlfile_) = 0;

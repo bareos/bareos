@@ -72,6 +72,9 @@ class TlsOpenSsl : public Tls {
   void SetEnableKtls(bool ktls) override;
   void SetTcpFileDescriptor(const int& fd) override;
 
+  bool KtlsSendStatus() override;
+  bool KtlsRecvStatus() override;
+
  private:
   std::unique_ptr<TlsOpenSslPrivate> d_; /* private data */
 };

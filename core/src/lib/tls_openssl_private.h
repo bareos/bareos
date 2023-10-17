@@ -48,6 +48,9 @@ class TlsOpenSslPrivate {
                             bool write);
   bool OpensslBsockSessionStart(BareosSocket* bsock, bool server);
 
+  bool KtlsSendStatus();
+  bool KtlsRecvStatus();
+
   void ClientContextInsertCredentials(const PskCredentials& cred);
   void ServerContextInsertCredentials(const PskCredentials& cred);
 
