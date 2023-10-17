@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2008-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,8 +27,12 @@
 #define PRIO_SD_ACH_ACCESS 16 /* autochanger lock mutex */
 
 #include <mutex>
+#include <cstddef>
 
-void lock_mutex(pthread_mutex_t& m);
-void unlock_mutex(pthread_mutex_t& m);
+#define lock_mutex(m) lock_mutex_impl((m), __FILE__, __LINE__)
+#define unlock_mutex(m) unlock_mutex_impl((m), __FILE__, __LINE__)
+
+void lock_mutex_impl(pthread_mutex_t& m, const char* file, std::size_t line);
+void unlock_mutex_impl(pthread_mutex_t& m, const char* file, std::size_t line);
 
 #endif  // BAREOS_LIB_LOCKMGR_H_
