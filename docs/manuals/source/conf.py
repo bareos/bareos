@@ -80,6 +80,8 @@ rst_epilog = """
 .. |ndmpbareos| replace:: :ref:`section-NdmpBareos`
 .. |ndmpnative| replace:: :ref:`section-NdmpNative`
 
+.. |ktls| replace:: Kernel TLS
+
 """
 
 

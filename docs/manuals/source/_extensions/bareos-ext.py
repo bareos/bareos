@@ -104,6 +104,9 @@ def convertCamelCase2Spaces(valueCC):
             "VSS",
         ]:
             token = u
+        elif u == "KTLS":
+            token = "kTLS"
+
         result.append(token)
 
     return " ".join(result)
