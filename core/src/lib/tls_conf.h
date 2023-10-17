@@ -47,6 +47,7 @@ class TlsResource {
   bool authenticate_{false}; /* Authenticate only with TLS */
   bool tls_enable_{false};
   bool tls_require_{false};
+  bool enable_ktls_{false}; /* enable support for ktls */
 
   bool IsTlsConfigured() const;
   TlsPolicy GetPolicy() const;

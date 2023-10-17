@@ -511,6 +511,7 @@ void BareosSocket::ParameterizeTlsCert(Tls* tls_conn_init,
   tls_conn_init->SetCipherList(tls_resource->cipherlist_);
   tls_conn_init->SetCipherSuites(tls_resource->ciphersuites_);
   tls_conn_init->SetVerifyPeer(tls_resource->tls_cert_.verify_peer_);
+  tls_conn_init->SetEnableKtls(tls_resource->enable_ktls_);
 }
 
 bool BareosSocket::ParameterizeAndInitTlsConnectionAsAServer(
