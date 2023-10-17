@@ -70,12 +70,26 @@
           "equals": true,
           "description": "If set to \"no\", Bareos can fall back to use unencrypted connections. "
         },
+        "EnableKtls": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true,
+          "description": "If set to \"yes\", Bareos will allow the SSL implementation to use Kernel TLS. "
+        },
         "TlsCipherList": {
           "datatype": "DIRECTORY",
           "code": 0,
           "platform_specific": true,
           "equals": true,
-          "description": "List of valid TLS Ciphers."
+          "description": "List of valid TLSv1.2 and lower Ciphers; see :command:`openssl ciphers`"
+        },
+        "TlsCipherSuites": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "platform_specific": true,
+          "equals": true,
+          "description": "Colon separated list of valid TLSv1.3 Ciphers; see :command:`openssl ciphers -s -tls1_3`. Leftmost element has the highest priority. Currently only SHA256 ciphers are supported."
         },
         "TlsDhFile": {
           "datatype": "DIRECTORY",
@@ -191,12 +205,26 @@
           "equals": true,
           "description": "If set to \"no\", Bareos can fall back to use unencrypted connections. "
         },
+        "EnableKtls": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true,
+          "description": "If set to \"yes\", Bareos will allow the SSL implementation to use Kernel TLS. "
+        },
         "TlsCipherList": {
           "datatype": "DIRECTORY",
           "code": 0,
           "platform_specific": true,
           "equals": true,
-          "description": "List of valid TLS Ciphers."
+          "description": "List of valid TLSv1.2 and lower Ciphers; see :command:`openssl ciphers`"
+        },
+        "TlsCipherSuites": {
+          "datatype": "DIRECTORY",
+          "code": 0,
+          "platform_specific": true,
+          "equals": true,
+          "description": "Colon separated list of valid TLSv1.3 Ciphers; see :command:`openssl ciphers -s -tls1_3`. Leftmost element has the highest priority. Currently only SHA256 ciphers are supported."
         },
         "TlsDhFile": {
           "datatype": "DIRECTORY",
