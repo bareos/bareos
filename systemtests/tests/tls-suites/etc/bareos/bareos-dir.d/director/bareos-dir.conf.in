@@ -1,0 +1,14 @@
+Director {                            # define myself
+  Name = bareos-dir
+  QueryFile = "@scriptdir@/query.sql"
+  Maximum Concurrent Jobs = 10
+  Password = "@dir_password@"         # Console password
+  Messages = Daemon
+  Auditing = yes
+  Subscriptions = 10
+
+  Working Directory =  "@working_dir@"
+  DirPort = @dir_port@
+
+  Tls Cipher Suites = "TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:TLS_AES_128_CCM_8_SHA256:TLS_AES_128_CCM_SHA256"
+}

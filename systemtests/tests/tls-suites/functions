@@ -1,0 +1,50 @@
+#!/bin/bash -x
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+#
+# Utility functions for the testrunners in restore-test
+#
+runner_name="$(basename "$0")"
+log_home="${tmp}/${runner_name}"
+mkdir -p "${log_home}"
+default_joblist="${log_home}/jobs.out"
+check_preconditions ()
+{
+	joblist="${1:-${default_joblist}}"
+	# check that job with jobid=1 is a backup
+	if ! grep "1 | backup-bareos-fd" "${joblist}" | tail -n 1 | grep "| B" > /dev/null; then
+	   echo "Job 1 has to always be a backup job at the start of a test."
+	   exit 5
+	fi
+	# check that only one backup exists
+	# note: on multiple manually run calls,
+	# the new jobs list will be appended to the joblist file.
+	# Since all jobs are ordered by their job id in the
+	# list, we can just search for the last backup job and check
+	# whether that has jobid 1.
+	# Do note that this will not work when the new job list is empty.
+	# We might generate a false positive in that case, but this will be
+	# caught the automated tests, since they start with a fresh
+        # joblist file.
+	if ! grep "| B" "${joblist}" | tail -n 1 | grep "1 | backup-bareos-fd" > /dev/null; then
+	   echo "The only backup job is supposed to be the job with jobid=1."
+	   exit 6
+	fi
+}
