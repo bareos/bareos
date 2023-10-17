@@ -142,6 +142,10 @@ bool TlsOpenSslPrivate::init()
 
   SSL_CTX_set_options(openssl_ctx_, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
 
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+  if (enable_ktls_) { SSL_CTX_set_options(openssl_ctx_, SSL_OP_ENABLE_KTLS); }
+#endif
+
   if (cipherlist_.empty()) { cipherlist_ = tls_default_ciphers_; }
 
   if (SSL_CTX_set_cipher_list(openssl_ctx_, cipherlist_.c_str()) != 1) {
@@ -586,6 +590,12 @@ void TlsOpenSsl::SetVerifyPeer(const bool& verify_peer)
 {
   Dmsg1(100, "Set Verify Peer:\t<%s>\n", verify_peer ? "true" : "false");
   d_->verify_peer_ = verify_peer;
+}
+
+void TlsOpenSsl::SetEnableKtls(bool ktls)
+{
+  Dmsg1(100, "Set ktls:\t<%s>\n", ktls ? "true" : "false");
+  d_->enable_ktls_ = ktls;
 }
 
 void TlsOpenSsl::SetTcpFileDescriptor(const int& fd)

@@ -89,6 +89,7 @@ class TlsOpenSslPrivate {
   std::string cipherlist_;
   std::string ciphersuites_;
   bool verify_peer_{};
+  bool enable_ktls_{false};
   std::shared_ptr<ConfigResourcesContainer>
       config_table_{};  // config table being used
 };

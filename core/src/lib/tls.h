@@ -87,6 +87,7 @@ class Tls {
   virtual void SetPemUserdata(void* pem_userdata) = 0;
   virtual void SetDhFile(const std::string& dhfile_) = 0;
   virtual void SetVerifyPeer(const bool& verify_peer) = 0;
+  virtual void SetEnableKtls(bool ktls) = 0;
   virtual void SetTcpFileDescriptor(const int& fd) = 0;
 };
 

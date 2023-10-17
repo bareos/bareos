@@ -69,6 +69,7 @@ class TlsOpenSsl : public Tls {
   void SetPemUserdata(void* pem_userdata) override;
   void SetDhFile(const std::string& dhfile_) override;
   void SetVerifyPeer(const bool& verify_peer) override;
+  void SetEnableKtls(bool ktls) override;
   void SetTcpFileDescriptor(const int& fd) override;
 
  private:
