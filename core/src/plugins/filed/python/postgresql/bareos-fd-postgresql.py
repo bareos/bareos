@@ -67,9 +67,10 @@ except Exception as err_unknown:
 
 def parse_row(row):
     """
-    This function exists to fix bug in pg8000 >= 1.26 < 1.30.0
-    Returned results of pg_backup_stop are string representation
-    of tuple
+    This function exists to fix a bug in pg8000 between 1.26 and 1.30.0,
+    where the results of `pg_backup_stop` are a string representation
+    of a tuple instead of being a tuple itself.
+    This function translates the string representation into a tuple as required.
     """
     remove_parens = row[1:-1]
     [lsn, backup_label, tablespace] = remove_parens.split(",")
@@ -86,8 +87,8 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
     Bareos-FD-Plugin-Class for PostgreSQL online (Hot) backup of cluster
     files and database transaction logs (WAL) archiving to allow incremental
     backups and point-in-time (pitr) recovery.
-    If the cluster use tablespace, the backup will also backup and restore those
-    (symlinks in pg_tblspc, and real external location data)
+    If the cluster use tablespaces, the backup will also backup and restore those
+    (both symlinks in `pg_tblspc`, and real external location data)
     The plugin job will fail if previous job was not done on same PG major version
     """
 
@@ -107,12 +108,12 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         # Last argument of super constructor is a list of mandatory arguments
         super().__init__(plugindef, ["postgresql_data_dir", "wal_archive_dir"])
 
-        # The contents of the directories pg_dynshmem/, pg_notify/, pg_serial/, pg_snapshots/,
+        # The *contents* of the directories pg_dynshmem/, pg_notify/, pg_serial/, pg_snapshots/,
         # pg_stat_tmp/, and pg_subtrans/ can be omitted from the backup as they will be initialized
-        # on postmaster startup. (but not the directories themselves)
-        # They are mandatory to make pg cluster start successful.
-        # By default we will exclude them so os.walk will not go into it,
-        # but we re-add the dir afterwards in case of Full backup.
+        # on postmaster startup.
+        # The *directories* themselves are required to make pg cluster start successful.
+        # By default we will exclude them so `os.walk` will not go into it,
+        # but we re-add the dirs afterwards in case of a Full backup.
         self.mandatory_subdirs = [
             "pg_dynshmem",
             "pg_notify",
@@ -122,15 +123,15 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             "pg_subtrans",
             "pg_wal",
         ]
-        # log is not exclude by default but can be a good candidate.
+        # log is not excluded by default but can be a good candidate.
         # pgsql_tmp can have several locations.
         self.ignore_subdirs = [
             # "log",
             "pgsql_tmp",
         ]
         self.ignore_subdirs.extend(self.mandatory_subdirs)
-        # pg_internal.init files can be omitted from the backup whenever a file of that name is
-        # found. These files contain relation cache data that is always rebuilt when recovering.
+        # files named `pg_internal.init` are omitted from the backup as they contain
+        # relation cache data which is always rebuilt when recovering.
         self.ignore_files = ["pg_internal.init"]
         self.options = {}
         self.db_con = None
@@ -160,20 +161,20 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         self.file_to_backup = ""
         # Store os.stat of PG_VERSION as reference for our virtual files
         self.ref_statp = None
-        # We need to get the stat-packet in set_file_attributes and use it again
-        # in end_restore_file, and this may be mixed up with different files
+        # We need to get the stat-packet in set_file_attributes() and use it again
+        # in end_restore_file(), and this may be mixed up with different files
         self.stat_packets = {}
         self.last_lsn = 0
-        # This will be set to True between SELECT pg_backup_start and pg_backup_stop.
+        # This will be set to True between select pg_backup_start() and pg_backup_stop().
         # We backup the cluster files during that time
         self.full_backup_running = False
         # Store items given by `pg_backup_stop()` for virtual backup_label file
         self.label_items = {}
-        # We will store the starttime from backup_label here
+        # We will store the `starttime` from `backup_label` here
         self.backup_start_time = None
         # PostgreSQL last backup stop time
         self.last_backup_stop_time = 0
-        # Our label, will be used as `backup label` in `SELECT pg_start_backup`
+        # Our label, will be used as `backup label` in `select pg_start_backup()`
         self.backup_label_string = ""
         # Raw restore object data (json-string)
         self.row_rop_raw = None
@@ -196,11 +197,11 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
     def __build_paths_to_backup(self, start_dir):
         """
         Build the tree of paths to be backed up by recursing from top directory.
-        To be able to exclude the ignore_subdirs we use os.walk with TopDown True.
-        The deque is reversed, so file appear first, and directories at the end.
-        self.paths_to_backup is extended with it.
+        To be able to exclude the `ignore_subdirs` we use os.walk() with TopDown set to True.
+        The deque is reversed, so files appear first, and directories at the end.
+        `self.paths_to_backup` is extended with it.
 
-        That function be used to parse `postgresql_data_dir`, `wal_archive_dir`, `tablespace`
+        This function is used to parse `postgresql_data_dir`, `wal_archive_dir`, `tablespace`
         """
         if not start_dir.endswith("/"):
             start_dir += "/"
@@ -242,7 +243,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                             )
                             _paths.append(fullname)
                     except os.error as os_err:
-                        # if can't stat the file emit a warning instead error
+                        # if can't stat the file, emit a warning instead error
                         # like in traditional backup
                         bareosfd.JobMessage(
                             bareosfd.M_WARNING,
@@ -257,7 +258,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
 
         _paths.reverse()
         # Now re-add excluded mandatory_subdirs as directory only.
-        # But only for Full and pg_working_dir
+        # But only for Full and `pg_working_dir`
         if (
             self.full_backup_running
             and start_dir == self.options["postgresql_data_dir"]
@@ -309,7 +310,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         diff_exist = False
         try:
             result = self.db_con.run(
-                f"SELECT pg_wal_lsn_diff('{current_lsn}','{last_lsn}')"
+                f"select pg_wal_lsn_diff('{current_lsn}','{last_lsn}')"
             )[0][0]
             if not int(result):
                 # pg8000 may return Decimal('0') for null comparison so try to remove quotes
@@ -351,7 +352,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
 
     def __check_pg_major_version(self):
         """
-        For incremental we check if the same PG Major version as previous backup is used.
+        For incremental backups we check if the same PG Major version as previous backup is used.
         Otherwise fail requesting a new full.
         """
 
@@ -420,24 +421,24 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
 
         try:
             self.db_con.close()
+            bareosfd.JobMessage(
+                bareosfd.M_INFO,
+                "Database connection closed.\n",
+            )
         except pg8000.exceptions.InterfaceError:
             pass
 
-        bareosfd.JobMessage(
-            bareosfd.M_INFO,
-            "Database connection closed.\n",
-        )
 
     def __complete_backup_job(self):
         """
         Call pg_backup_stop() on PostgreSQL DB to mark the backup job as completed.
 
         https://www.postgresql.org/docs/current/continuous-archiving.html#BACKUP-LOWLEVEL-BASE-BACKUP
-        pg_backup_stop will return one row with three values.
+        pg_backup_stop() will return one row with three values.
         The second of these fields should be written to a file named
-        backup_label in the root directory of the backup.
+        `backup_label` in the root directory of the backup.
         The third field should be written to a file named
-        tablespace_map unless the field is empty.
+        `tablespace_map` unless the field is empty.
         """
         bareosfd.DebugMessage(
             100,
@@ -453,7 +454,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             stop_stmt = f"pg_backup_stop({self.stop_wait_wal_archive})"
         try:
             bareosfd.DebugMessage(100, f"Send '{stop_stmt}' to PostgreSQL\n")
-            first_row = self.db_con.run(f"SELECT {stop_stmt};")[0][0]
+            first_row = self.db_con.run(f"select {stop_stmt};")[0][0]
             if isinstance(first_row, str):
                 first_row = parse_row(first_row)
             bareosfd.DebugMessage(
@@ -561,7 +562,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                     100, f"SQL role switched to {self.options['role']}\n"
                 )
             self.pg_version = int(
-                self.db_con.run("SELECT current_setting('server_version_num')")[0][0]
+                self.db_con.run("select current_setting('server_version_num')")[0][0]
             )
             self.pg_major_version = self.pg_version // 10000
             bareosfd.JobMessage(
@@ -594,7 +595,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         Let PostgreSQL write latest transaction into a new WAL file now
         """
         try:
-            result = self.db_con.run("SELECT pg_switch_wal()")
+            result = self.db_con.run("select pg_switch_wal()")
         except pg8000.Error as pg_err:
             bareosfd.JobMessage(
                 bareosfd.M_WARNING,
@@ -606,7 +607,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         Get and return current Log Sequence Number (LSN)
         """
         try:
-            current_lsn = self.db_con.run("SELECT pg_current_wal_lsn()")[0][0]
+            current_lsn = self.db_con.run("select pg_current_wal_lsn()")[0][0]
             bareosfd.JobMessage(
                 bareosfd.M_INFO,
                 f"Current LSN {current_lsn}, last LSN: {self.last_lsn}\n",
@@ -642,14 +643,14 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                 f" fast => {self.start_fast},"
                 f" exclusive => False)"
             )
-        bareosfd.DebugMessage(100, f"Send 'SELECT {start_stmt}' to PostgreSQL\n")
+        bareosfd.DebugMessage(100, f"Send 'select {start_stmt}' to PostgreSQL\n")
         bareosfd.DebugMessage(100, f"backup label = {self.backup_label_string}\n")
         # We tell PostgreSQL that we want to start to backup file now
         self.backup_start_time = datetime.datetime.now(
             tz=dateutil.tz.tzoffset(None, self.tz_offset)
         )
         try:
-            result = self.db_con.run(f"SELECT {start_stmt};")
+            result = self.db_con.run(f"select {start_stmt};")
         except pg8000.Error as pg_err:
             bareosfd.JobMessage(
                 bareosfd.M_FATAL, f"{start_stmt} statement failed: {pg_err}"
@@ -670,7 +671,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         else:
             wal_filename_func = "pg_xlogfile_name"
 
-        walfile_stmt = f"SELECT {wal_filename_func}('{lsn}')"
+        walfile_stmt = f"select {wal_filename_func}('{lsn}')"
 
         try:
             wal_filename = self.db_con.run(walfile_stmt)[0][0]
@@ -740,7 +741,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             self.options["postgresql_data_dir"] + "backup_label"
         )
 
-        # get PostgreSQL connection settings from environment like libpq
+        # get PostgreSQL connection settings from the environment like libpq does
         self.db_user = os.environ.get("PGUSER", getpass.getuser())
         self.db_password = os.environ.get("PGPASSWORD", "")
         self.db_host = os.environ.get("PGHOST", "localhost")
@@ -860,7 +861,6 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                     bareosfd.M_ERROR,
                     f'Could net read {IOP.count} bytes from "{str(bdata)}". "{err}"',
                 )
-                # IOP.io_errno = err.errno
                 return bareosfd.bRC_Error
         else:
             bareosfd.DebugMessage(
@@ -992,13 +992,13 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                 )
                 return bareosfd.bRC_OK
 
-        # Plugins needs to build by themselves the list of file/dir to backup
+        # Plugins needs to build by themselves the list of files/dirs to backup
         # Gather files from start_dir:
-        #     - postgresql_data_dir for full
-        #         ask PG if there's tablespace in use, if yes decode
-        #         and add the real location too.
-        #     - wal_archive_dir for incr/diff jobs
-
+        #     - full jobs:
+        #       - postgresql_data_dir
+        #       - real location of tablespaces (if any)
+        #     - incr/diff jobs:
+        #        - wal_archive_dir
         self.__build_paths_to_backup(start_dir)
 
         # If level is not Full, we are done here and set the new
@@ -1348,7 +1348,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         except os.error as os_err:
             bareosfd.JobMessage(
                 bareosfd.M_WARNING,
-                f'Could net set attributes for file {self.fname}: "{os_err}"',
+                f'Could not set attributes for file {self.fname}: "{os_err}"',
             )
         return bareosfd.bRC_OK
 
