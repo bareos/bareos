@@ -334,7 +334,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         except pg8000.Error as pg_err:
             bareosfd.JobMessage(
                 bareosfd.M_ERROR,
-                (f"Error checking lsn difference was: {result}" f": {pg_err} \n"),
+                (f"Error checking lsn difference was: {result}" f": {pg_err}\n"),
             )
             current_lsn = 0
         except ValueError as val_err:
@@ -405,7 +405,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                 self.__build_paths_to_backup(spacelink)
         except pg8000.Error as pg_err:
             bareosfd.JobMessage(
-                bareosfd.M_FATAL, f"tablespacemap checking statement failed: {pg_err}"
+                bareosfd.M_FATAL, f"tablespacemap checking statement failed: {pg_err}\n"
             )
             return bareosfd.bRC_Error
 
@@ -829,17 +829,14 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                 bdata = bytearray(self.tablespace_map_data, "utf-8")
             else:
                 bareosfd.JobMessage(
-                    bareosfd.M_FATAL, f'Unexpected file name "{self.fname}"'
+                    bareosfd.M_FATAL, f'Unexpected file name "{self.fname}"\n'
                 )
                 return bareosfd.bRC_Error
 
             if self.data_stream is None:
                 bareosfd.DebugMessage(
                     250,
-                    (
-                        f"BareosFdPluginPostgreSQL:plugin_io_read type of"
-                        f" bdata {type(bdata)}\n"
-                    ),
+                    f"BareosFdPluginPostgreSQL:plugin_io_read type of bdata {type(bdata)}\n"
                 )
                 self.data_stream = io.BytesIO(bdata)
 
@@ -859,7 +856,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             except Exception as err:
                 bareosfd.JobMessage(
                     bareosfd.M_ERROR,
-                    f'Could net read {IOP.count} bytes from "{str(bdata)}". "{err}"',
+                    f'Could net read {IOP.count} bytes from "{str(bdata)}". "{err}"\n',
                 )
                 return bareosfd.bRC_Error
         else:
@@ -1032,7 +1029,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         except UnicodeEncodeError:
             bareosfd.JobMessage(
                 bareosfd.M_ERROR,
-                f"name {repr(self.file_to_backup)} cannot be encoded in utf-8",
+                f"name {repr(self.file_to_backup)} cannot be encoded in utf-8\n",
             )
             return bareosfd.bRC_Error
         bareosfd.DebugMessage(100, f"file: {self.file_to_backup}\n")
@@ -1119,7 +1116,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
 
                 except os.error as os_err:
                     bareosfd.JobMessage(
-                        bareosfd.M_WARNING,
+                        bareosfd.M_INFO,
                         f'Skip "{os_err}"\n',
                     )
                     return bareosfd.bRC_Skip
@@ -1215,12 +1212,12 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             new_stat = os.stat(file_name)
             bareosfd.DebugMessage(
                 150,
-                f"Verified file attributes {file_name} with stat {str(new_stat)}n",
+                f"Verified file attributes {file_name} with stat {str(new_stat)}\n",
             )
         except os.error as os_err:
             bareosfd.JobMessage(
                 bareosfd.M_WARNING,
-                f'Could net set attributes for file {file_name} "{os_err}"',
+                f'Could net set attributes for file {file_name} "{os_err}"\n',
             )
 
         return bareosfd.bRC_OK
@@ -1247,7 +1244,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             except OSError as os_err:
                 bareosfd.JobMessage(
                     bareosfd.M_ERROR,
-                    f'os.makedirs error on {dirname}: "{os_err}"',
+                    f'os.makedirs error on {dirname}: "{os_err}"\n',
                 )
 
         # open creates the file, if not yet existing, we close it again right away
@@ -1259,7 +1256,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             except OSError as file_err:
                 bareosfd.JobMessage(
                     bareosfd.M_ERROR,
-                    f'open/close error on {self.fname}: "{file_err}"',
+                    f'open/close error on {self.fname}: "{file_err}"\n',
                 )
             restorepkt.create_status = bareosfd.CF_EXTRACT
         elif restorepkt.type == bareosfd.FT_LNK:
@@ -1270,7 +1267,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                 except OSError as os_err:
                     bareosfd.JobMessage(
                         bareosfd.M_ERROR,
-                        f'os.symlink error on {self.fname}: "{os_err}"',
+                        f'os.symlink error on {self.fname}: "{os_err}"\n',
                     )
             restorepkt.create_status = bareosfd.CF_CREATED
         elif restorepkt.type == bareosfd.FT_LNKSAVED:
@@ -1281,7 +1278,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                 except OSError as os_err:
                     bareosfd.JobMessage(
                         bareosfd.M_ERROR,
-                        f'os.link error on {self.fname}: "{os_err}"',
+                        f'os.link error on {self.fname}: "{os_err}"\n',
                     )
 
             restorepkt.create_status = bareosfd.CF_CREATED
@@ -1292,7 +1289,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                 except OSError as os_err:
                     bareosfd.JobMessage(
                         bareosfd.M_ERROR,
-                        f'os.makedirs error on {self.fname}: "{os_err}"',
+                        f'os.makedirs error on {self.fname}: "{os_err}"\n',
                     )
             restorepkt.create_status = bareosfd.CF_CREATED
         elif restorepkt.type == bareosfd.FT_FIFO:
@@ -1302,13 +1299,13 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                 except OSError as os_err:
                     bareosfd.JobMessage(
                         bareosfd.M_ERROR,
-                        f'os.mkfifo error on {self.fname}: "{os_err}"',
+                        f'os.mkfifo error on {self.fname}: "{os_err}"\n',
                     )
             restorepkt.create_status = bareosfd.CF_CREATED
         else:
             bareosfd.JobMessage(
                 bareosfd.M_ERROR,
-                f"Unknown type {restorepkt.type} for file {self.fname}",
+                f"Unknown type {restorepkt.type} for file {self.fname}\n",
             )
         return bareosfd.bRC_OK
 
@@ -1348,7 +1345,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         except os.error as os_err:
             bareosfd.JobMessage(
                 bareosfd.M_WARNING,
-                f'Could not set attributes for file {self.fname}: "{os_err}"',
+                f'Could not set attributes for file {self.fname}: "{os_err}"\n',
             )
         return bareosfd.bRC_OK
 
