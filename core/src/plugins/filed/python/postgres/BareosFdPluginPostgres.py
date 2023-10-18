@@ -172,7 +172,10 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
         Make filelist in super class and tell Postgres
         that we start a backup now
         """
-        bareosfd.JobMessage(bareosfd.M_ERROR, "***DEPRECATION WARNING***: The 'postgres' plugin is ***DEPRECATED*** and will be ***REMOVED*** in Bareos 24, use the 'postgresql' plugin instead! Check docs.bareos.org\n")
+        bareosfd.JobMessage(
+            bareosfd.M_ERROR,
+            "***DEPRECATION WARNING***: The 'postgres' plugin is ***DEPRECATED*** and will be ***REMOVED*** in Bareos 24, use the 'postgresql' plugin instead! Check docs.bareos.org\n",
+        )
 
         bareosfd.DebugMessage(100, "start_backup_job in PostgresPlugin called")
         try:
