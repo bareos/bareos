@@ -77,7 +77,7 @@ if [ ${estat} -ne 0 ]; then
 fi
 
 # Affect db_backup role to backup_group
-${PSQL} -d postgres -c "GRANT backup_group TO db_backup;"
+${PSQL} -d postgres -c "grant backup_group to db_backup;"
 
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null

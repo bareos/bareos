@@ -7,12 +7,6 @@ create unique index testing_content_index on testing(content);
 select pg_sleep(0.15),clock_timestamp();
 
 create index testing_stamp_index on testing(stamp desc);
--- select pg_sleep(0.15),clock_timestamp();
-
---select
---  pg_size_pretty(pg_relation_size('testing')) as table_size,
---  pg_size_pretty(pg_indexes_size('testing_content_index')) as index_size;
-
 select pg_sleep(0.15),clock_timestamp();
 
 insert into testing(content,stamp,table_size)

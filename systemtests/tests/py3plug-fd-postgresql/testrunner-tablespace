@@ -48,15 +48,15 @@ popd > /dev/null
 . "${rscripts}"/functions
 
 # Create Test DB with table and 1 statement
-${PSQL} postgres -c "CREATE DATABASE $DBNAME TABLESPACE table_space"
+${PSQL} postgres -c "create database $DBNAME tablespace table_space"
 ${PSQL} ${DBNAME} -c "
-CREATE TABLE t(id serial PRIMARY KEY, text VARCHAR(20), created_on TIMESTAMP);
-INSERT INTO t (text, created_on) values ('test for FULL backup', current_timestamp);
-SELECT * FROM t;
+create table t(id serial primary key, text varchar(20), created_on timestamp);
+insert into t (text, created_on) values ('test for FULL backup', current_timestamp);
+select * from t;
 "
 ${PSQL} ${DBNAME} -c"
-CREATE UNIQUE INDEX uniq_space ON t (text, created_on DESC)
-TABLESPACE index_space;
+create unique index uniq_space on t (text, created_on desc)
+tablespace index_space;
 "
 
 start_test
@@ -85,7 +85,7 @@ if [ ${estat} -ne 0 ]; then
 fi
 
 # Now add data to the database and run an incremental job
-${PSQL} ${DBNAME} -c "INSERT INTO t (text, created_on) values ('test for INCR backup', current_timestamp)"
+${PSQL} ${DBNAME} -c "insert into t (text, created_on) values ('test for INCR backup', current_timestamp)"
 
 cat <<END_OF_DATA >${tmp}/bconcmds
 @$out /dev/null
@@ -188,7 +188,7 @@ local_db_start_server "${TESTPGHOST}"
 popd > /dev/null
 
 i=0
-until ${PSQL} ${DBNAME} <<< "SELECT * FROM t" | grep "for INCR"  > ${tmp}/sql.log  ; do
+until ${PSQL} ${DBNAME} <<< "select * from t" | grep "for INCR"  > ${tmp}/sql.log  ; do
   echo "waiting for query to succeed"
   sleep 1
   i=$((i+1))
