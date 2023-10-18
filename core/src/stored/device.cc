@@ -201,7 +201,7 @@ void SetStartVolPosition(DeviceControlRecord* dcr)
 {
   Device* dev = dcr->dev;
   /* Set new start position */
-  if (dev->IsTape()) {
+  if (dev->GetSeekMode() == SeekMode::FILE_BLOCK) {
     dcr->StartBlock = dev->block_num;
     dcr->StartFile = dev->file;
   } else {

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,18 +23,31 @@
 
 #include <vector>
 
+namespace edit {
+/* The biggest 64 bit number -- 2^64-1 -- has 20 digits.
+ * As such one needs 27 = 20 + 6 + 1 chracters to safely format 64 bit numbers
+ * with commata every 3 digits and a nul terminator.
+ * 64 bit signed integers have at most 19 digits so this also works for them. */
+inline constexpr int32_t min_buffer_size{27};
+};  // namespace edit
+
 uint64_t str_to_uint64(const char* str);
 #define str_to_uint16(str) ((uint16_t)str_to_uint64(str))
 #define str_to_uint32(str) ((uint32_t)str_to_uint64(str))
 int64_t str_to_int64(const char* str);
 #define str_to_int16(str) ((int16_t)str_to_int64(str))
 #define str_to_int32(str) ((int32_t)str_to_int64(str))
+
+/* the buffer passed to the following edit_* functions
+ * should be able to hold at least min_buffer_size characters */
+
 char* edit_uint64_with_commas(uint64_t val, char* buf);
 char* edit_uint64_with_suffix(uint64_t val, char* buf);
-char* add_commas(char* val, char* buf);
 char* edit_uint64(uint64_t val, char* buf);
 char* edit_int64(int64_t val, char* buf);
 char* edit_int64_with_commas(int64_t val, char* buf);
+
+char* add_commas(char* val, char* buf);
 bool DurationToUtime(char* str, utime_t* value);
 bool size_to_uint64(char* str, uint64_t* value);
 bool speed_to_uint64(char* str, uint64_t* value);
@@ -43,7 +56,7 @@ char* edit_pthread(pthread_t val, char* buf, int buf_len);
 bool Is_a_number(const char* num);
 bool Is_a_number_list(const char* n);
 bool IsAnInteger(const char* n);
-bool IsNameValid(const char* name, std::string &msg);
+bool IsNameValid(const char* name, std::string& msg);
 bool IsNameValid(const char* name);
 bool IsAclEntryValid(const char* acl, std::vector<char>& msg);
 bool IsAclEntryValid(const char* acl);

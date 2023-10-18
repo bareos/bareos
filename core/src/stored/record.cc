@@ -601,13 +601,8 @@ static inline ssize_t WriteHeaderToBlock(DeviceBlock* block,
 
   SerBegin(block->bufp, WRITE_RECHDR_LENGTH);
 
-  if (BLOCK_VER == 1) {
-    ser_uint32(rec->VolSessionId);
-    ser_uint32(rec->VolSessionTime);
-  } else {
-    block->VolSessionId = rec->VolSessionId;
-    block->VolSessionTime = rec->VolSessionTime;
-  }
+  block->VolSessionId = rec->VolSessionId;
+  block->VolSessionTime = rec->VolSessionTime;
 
   ser_int32(rec->FileIndex);
   ser_int32(Stream);

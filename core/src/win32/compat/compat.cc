@@ -761,7 +761,12 @@ static time_t CvtFtimeToUtime(const FILETIME& time)
   mstime -= WIN32_FILETIME_ADJUST;
   mstime /= WIN32_FILETIME_SCALE; /* convert to seconds. */
 
-  return (time_t)(mstime & 0xffffffff);
+  if constexpr (sizeof(time_t) < sizeof(mstime)) {
+    // take care of 32bit time_ts (i.e. on 32bit windows)
+    return static_cast<time_t>(mstime & 0xffff'ffff);
+  } else {
+    return static_cast<time_t>(mstime);
+  }
 }
 
 static time_t CvtFtimeToUtime(const LARGE_INTEGER& time)
@@ -774,7 +779,12 @@ static time_t CvtFtimeToUtime(const LARGE_INTEGER& time)
   mstime -= WIN32_FILETIME_ADJUST;
   mstime /= WIN32_FILETIME_SCALE; /* convert to seconds. */
 
-  return (time_t)(mstime & 0xffffffff);
+  if constexpr (sizeof(time_t) < sizeof(mstime)) {
+    // take care of 32bit time_ts (i.e. on 32bit windows)
+    return static_cast<time_t>(mstime & 0xffff'ffff);
+  } else {
+    return static_cast<time_t>(mstime);
+  }
 }
 
 bool CreateJunction(const char* szJunction, const char* szPath)
@@ -1156,7 +1166,17 @@ static int GetWindowsFileInfo(const char* filename,
                                            sizeof(basic_info))) {
           pftLastAccessTime = (FILETIME*)&basic_info.LastAccessTime;
           pftLastWriteTime = (FILETIME*)&basic_info.LastWriteTime;
-          pftChangeTime = (FILETIME*)&basic_info.ChangeTime;
+          // changetime is not updated when a file is copied to a new location
+          // only creation time is updated (dont ask me how you update
+          // the creation time without updating the meta data)
+          // as such we need to take the maximum here!
+          if (CompareFileTime((FILETIME*)&basic_info.ChangeTime,
+                              (FILETIME*)&basic_info.CreationTime)
+              < 0) {
+            pftChangeTime = (FILETIME*)&basic_info.CreationTime;
+          } else {
+            pftChangeTime = (FILETIME*)&basic_info.ChangeTime;
+          }
           use_fallback_data = false;
         }
       }
@@ -1171,11 +1191,23 @@ static int GetWindowsFileInfo(const char* filename,
       if (p_FindFirstFileW) { /* use unicode */
         pftLastAccessTime = &info_w.ftLastAccessTime;
         pftLastWriteTime = &info_w.ftLastWriteTime;
-        pftChangeTime = &info_w.ftLastWriteTime;
+        // if change time is not available we fallback to
+        // using lastwritetime instead
+        if (CompareFileTime(&info_w.ftLastWriteTime, &info_w.ftCreationTime)
+            < 0) {
+          pftChangeTime = &info_w.ftCreationTime;
+        } else {
+          pftChangeTime = &info_w.ftLastWriteTime;
+        }
       } else {
         pftLastAccessTime = &info_a.ftLastAccessTime;
         pftLastWriteTime = &info_a.ftLastWriteTime;
-        pftChangeTime = &info_a.ftLastWriteTime;
+        if (CompareFileTime(&info_a.ftLastWriteTime, &info_a.ftCreationTime)
+            < 0) {
+          pftChangeTime = &info_a.ftCreationTime;
+        } else {
+          pftChangeTime = &info_a.ftLastWriteTime;
+        }
       }
     }
 
@@ -1370,7 +1402,18 @@ int fstat(intptr_t fd, struct stat* sb)
                                        sizeof(basic_info))) {
       sb->st_atime = CvtFtimeToUtime(basic_info.LastAccessTime);
       sb->st_mtime = CvtFtimeToUtime(basic_info.LastWriteTime);
-      sb->st_ctime = CvtFtimeToUtime(basic_info.ChangeTime);
+
+      // changetime is not updated when a file is copied to a new location
+      // only creation time is updated (dont ask me how you update
+      // the creation time without updating the meta data)
+      // as such we need to take the maximum here!
+      if (CompareFileTime((FILETIME*)&basic_info.ChangeTime,
+                          (FILETIME*)&basic_info.CreationTime)
+          < 0) {
+        sb->st_ctime = CvtFtimeToUtime(basic_info.CreationTime);
+      } else {
+        sb->st_ctime = CvtFtimeToUtime(basic_info.ChangeTime);
+      }
       use_fallback_data = false;
     }
   }
@@ -1379,7 +1422,12 @@ int fstat(intptr_t fd, struct stat* sb)
   if (use_fallback_data) {
     sb->st_atime = CvtFtimeToUtime(info.ftLastAccessTime);
     sb->st_mtime = CvtFtimeToUtime(info.ftLastWriteTime);
-    sb->st_ctime = CvtFtimeToUtime(info.ftLastWriteTime);
+    // if changetime is not available we fallback to LastWriteTime
+    if (CompareFileTime(&info.ftLastWriteTime, &info.ftCreationTime) < 0) {
+      sb->st_ctime = CvtFtimeToUtime(info.ftCreationTime);
+    } else {
+      sb->st_ctime = CvtFtimeToUtime(info.ftLastWriteTime);
+    }
   }
 
   return 0;
