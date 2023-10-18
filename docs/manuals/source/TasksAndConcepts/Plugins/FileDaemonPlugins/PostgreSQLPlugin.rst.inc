@@ -38,11 +38,11 @@ This is just a short outline of the tasks performed by the plugin.
 #. Backup database files
 #. Detect if tablespace are in use. Backup the external locations of all tablespaces.
 #. Notify |postgresql| when done with file backups using the `SELECT pg_backup_stop()` statement
-#. |postgresql| will write `Write-Ahead-Logfiles` (WAL) into the WAL Archive directory. These 
+#. |postgresql| will write `Write-Ahead-Logfiles` (WAL) into the WAL Archive directory. These
    transaction logs contain transactions done while the file backup proceeded
 #. Backup fresh created WAL files
 #. Add files required for a restore (`backup_label`, `recovery.signal`/`recovery.conf` (for version <= 12)
- and `tablespace_map` (if tablespaces are in use) as virtual files to the backup.
+   and `tablespace_map` (if tablespaces are in use) as virtual files to the backup.
 
 Incremental and Differential backups will only have to backup WAL files created since last reference backup.
 
@@ -52,13 +52,13 @@ The restore basically works like this:
 #. Configure |postgresql| for the recovery (see below)
 #. Start |postgresql|
 #. |postgresql| will restore the latest possible consistent point in time. You can manage to restore
-   to any other point in in time available in the WAL files, please refer to the |postgresql| 
+   to any other point in in time available in the WAL files, please refer to the |postgresql|
    documentation for more details.
 
 
 .. warning::
 
-   In order to make coherent backups, it is imperative that :strong:`the same postgresql major version` 
+   In order to make coherent backups, it is imperative that :strong:`the same postgresql major version`
    is used for :strong:`full and incremental/differential` Backups depending on each other.
 
 
@@ -66,18 +66,18 @@ Prerequisites for the PostgreSQL Plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This plugin is a Bareos Python 3 plugin.
-It requires |postgresql| cluster :strong:`version >= 10` and the Python module 
+It requires |postgresql| cluster :strong:`version >= 10` and the Python module
 :strong:`pg8000 >= 1.16` to be installed.
 
-Since :sinceVersion:`21: PostgreSQL Plugin` the plugin was changed to the Python 
-module :strong:`pg8000`, with a required minimum version of 1.16, instead of 
+Since :sinceVersion:`21: PostgreSQL Plugin` the plugin was changed to the Python
+module :strong:`pg8000`, with a required minimum version of 1.16, instead of
 :strong:`psycopg2` and using Python >= 3.6 is mandatory.
 
-If a distribution provided pg8000 package exists and is the same or newer version, it can be used. 
+If a distribution provided pg8000 package exists and is the same or newer version, it can be used.
 Otherwise it must be installed using the command :command:`pip3 install pg8000`.
 
 
-The plugin must be installed on the same host where the |postgresql| cluster runs, as files are 
+The plugin must be installed on the same host where the |postgresql| cluster runs, as files are
 backed up from the local filesystem.
 
 
@@ -155,7 +155,7 @@ postgresql_data_dir
    the Postgres data directory. Default: :file:`/var/lib/pgsql/data`
 
 wal_archive_dir
-   directory where |postgresql| archives the WAL files as defined in your :file:`postgresql.conf` 
+   directory where |postgresql| archives the WAL files as defined in your :file:`postgresql.conf`
    with the `archive_command` directive. This is a :strong:`mandatory` option, there is no default set.
 
 db_user
@@ -167,7 +167,7 @@ db_password
    Default: `None`
 
 db_name
-   there needs to be a named database for the connection. 
+   there needs to be a named database for the connection.
    Default: `postgres`
 
 db_host
@@ -175,11 +175,11 @@ db_host
    Default: `None`
 
 db_port
-   useful, if cluster is not listening default port. 
+   useful, if cluster is not listening default port.
    Default: `5432`
 
 ignore_subdirs
-   a list of comma separated directories below the `postgres_data_dir`, that will not be backed up. 
+   a list of comma separated directories below the `postgres_data_dir`, that will not be backed up.
    Default: `pgsql_tmp`
 
    .. note::
@@ -194,24 +194,24 @@ switch_wal
    Default: `true`
 
 switch_wal_timeout
-   Timeout in seconds to wait for WAL archiving after WAL switch: 
+   Timeout in seconds to wait for WAL archiving after WAL switch:
    Default `60 seconds`
 
 role
-   Set the role used after login, before the first sql call. 
+   Set the role used after login, before the first sql call.
    Default: `None`
 
 start_fast
-   By default, the backup will start after a checkpoint which can take some time. 
-   If `start_fast_start` is `true`, `pg_backup_start` will be executed as quickly as possible. 
-   This enforces an immediate checkpoint which can cause a spike in I/O operations and slowing 
+   By default, the backup will start after a checkpoint which can take some time.
+   If `start_fast_start` is `true`, `pg_backup_start` will be executed as quickly as possible.
+   This enforces an immediate checkpoint which can cause a spike in I/O operations and slowing
    any concurrently executing queries.
    Default: `False`
 
 stop_wait_wal_archive
    Optional parameter of type `boolean`. It controls if the plugin will wait for the WAL archiving
    to be complete at the end of the backup. In the default case the plugin will wait.
-   We don't recommend to change the default here. 
+   We don't recommend to change the default here.
    Default: `True`
 
 .. note::
@@ -239,7 +239,7 @@ manage to restore to any other point in time available in the WAL files, please 
 PostgreSQL >= 12
 ''''''''''''''''
 
-Beginning with |postgresql| >= 12 the configuration must be done in your |postgresql| 
+Beginning with |postgresql| >= 12 the configuration must be done in your |postgresql|
 configuration file :file:`postgresql.conf`:
 
 .. code-block:: cfg
@@ -273,7 +273,7 @@ Where :file:`/var/lib/pgsql/wal_archive/` is the `wal_archive_dir` directory.
 Initiate the Recovery Process
 '''''''''''''''''''''''''''''
 
-Make sure that the user :strong:`postgres` is allowed to rename the recovery marker file 
+Make sure that the user :strong:`postgres` is allowed to rename the recovery marker file
 (:file:`recovery.signal` or :file:`recovery.conf`), as the file will be renamed during the
 recovery process. Should be the case if restored by the plugin.
 You might have to adapt your SELINUX configuration for this.
@@ -297,7 +297,7 @@ If things don't work as expected, make sure that
   the shipped simple sample plugins
 - check your |postgresql| data directory for files `backup_label` `recovery.signal` `tablespace_map`.
   If they exists, the cluster has been restored, but has not been restarted yet.
-- make sure your `dbuser` can connect to the database `dbname` and is allowed to issue 
+- make sure your `dbuser` can connect to the database `dbname` and is allowed to issue
   the following statements matching your |postgresql| version:
 
   .. code-block:: sql
