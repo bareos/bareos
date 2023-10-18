@@ -173,9 +173,6 @@ else
   echo "PG_VERSION is ${PG_VERSION} so 12+, using postgresql.conf and recovery.signal"
   recovery_file="${current_test_directory}/database/data/recovery.signal"
 fi
-#  We shouldn't have to change right and mode as they are restored correctly.
-#  [ $EUID -eq 0 ] && chmod 0600 ${recovery_file}
-#  [ $EUID -eq 0 ] && chown postgres ${recovery_file}
 restore_command="restore_command = 'cp ${current_test_directory}/database/wal_archive/%f %p'"
 if [ ! -f "${recovery_file}" ];then
  echo "${TestName} ${recovery_file} is missing from restore"
