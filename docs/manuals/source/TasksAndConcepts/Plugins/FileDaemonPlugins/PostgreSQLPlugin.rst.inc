@@ -7,12 +7,12 @@ PostgreSQL Plugin
    single: Plugin; PostgreSQL Backup
 
 The PostgreSQL plugin supports an online (Hot) backup of database files and database transaction
-logs (WAL) archiving.
-With online database and transaction logs the backup plugin can perform Point-In-Time-Restore
+logs (WAL).
+With online database and transaction logs, the backup plugin can perform Point-In-Time-Restore
 (PITR) up to a single selected transaction or date/time.
 
 This plugin uses the standard API |postgresql| backup routines based on `pg_backup_start()` and
-`pg_backup_stop()` functions in non-exclusive mode.
+`pg_backup_stop()` functions in :strong:`non-exclusive mode`.
 (Before PostgreSQL 15 formally `pg_start_backup()` and `pg_stop_backup()`)
 
 The key features are:
@@ -36,13 +36,13 @@ This is just a short outline of the tasks performed by the plugin.
 #. Notify |postgresql| that we want to start backup the database files using the
    `SELECT pg_backup_start()` statement
 #. Backup database files
-#. Detect if tablespace are in use. Backup all tablespaces external location
+#. Detect if tablespace are in use. Backup the external locations of all tablespaces.
 #. Notify |postgresql| when done with file backups using the `SELECT pg_backup_stop()` statement
 #. |postgresql| will write `Write-Ahead-Logfiles` (WAL) into the WAL Archive directory. These 
    transaction logs contain transactions done while the file backup proceeded
 #. Backup fresh created WAL files
-#. Add virtually to the backup the needed files for a restore (backup_label, recovery.signal 
-   (or recovery.conf for version <= 12) and tablespace_map if tablespace are in use.
+#. Add files required for a restore (`backup_label`, `recovery.signal`/`recovery.conf` (for version <= 12)
+ and `tablespace_map` (if tablespaces are in use) as virtual files to the backup.
 
 Incremental and Differential backups will only have to backup WAL files created since last reference backup.
 
