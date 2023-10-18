@@ -209,11 +209,8 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         # local store for searching tree
         _paths = deque()
         for topdir, dirnames, filenames in os.walk(start_dir, topdown=True):
-            # TODO check that assumption
-            # Usually Bareos takes care about timestamps when doing
-            # incremental backups but here we have to compare against
-            # last BackupPostgreSQL timestamp
-            # 20230926 Why should we, or if yes isn't that needed only for wal ?
+            # Usually Bareos takes care about timestamps when doing incremental backups
+            # but there we have to compare against last BackupPostgreSQL finish timestamp.
 
             # Filter out any ignored subdirectory
             dirnames[:] = [
@@ -228,29 +225,33 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                 ):
                     fullname = os.path.join(topdir, filename)
                     try:
-                        # Create the reference file
-                        if filename == "PG_VERSION":
-                            self.ref_statp = os.stat(fullname)
-                        mtime = os.stat(fullname).st_mtime
-                        if mtime > self.last_backup_stop_time + 1:
-                            bareosfd.DebugMessage(
-                                150,
-                                (
-                                    f"file:{fullname}"
-                                    f" fullTime: {self.last_backup_stop_time}"
-                                    f" os.st_mtime: {mtime}\n"
-                                ),
-                            )
+                        # Avoid checking os.stat for Full we took them all.
+                        if chr(self.level) != "F":
+                            mtime = os.stat(fullname).st_mtime
+                            if mtime > self.last_backup_stop_time:
+                                bareosfd.DebugMessage(
+                                    150,
+                                    (
+                                        f"file:{fullname}"
+                                        f" fullTime: {self.last_backup_stop_time}"
+                                        f" os.st_mtime: {mtime}\n"
+                                    ),
+                                )
+                                _paths.append(fullname)
+                        else:
+                            # Create the reference file
+                            if filename == "PG_VERSION":
+                                self.ref_statp = os.stat(fullname)
                             _paths.append(fullname)
                     except os.error as os_err:
-                        # if can't stat the file, emit a warning instead error
-                        # like in traditional backup
-                        bareosfd.JobMessage(
-                            bareosfd.M_WARNING,
-                            f"Could not stat reference file {fullname}: {os_err}\n",
+                        # if can't stat the file, record a debug message warning
+                        # and don't annoy user with that in joblog
+                        bareosfd.DebugMessage(
+                            150,
+                            f"Warning Skip Could not stat file {fullname}: {os_err}\n",
                         )
                         continue
-            # TODO check if we should also check mtime for dirs.
+            # we don't care about mtime for dirs.
             for dirname in dirnames:
                 if not dirname in self.ignore_subdirs:
                     fulldirname = os.path.join(topdir, dirname) + "/"
@@ -275,8 +276,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         to files' mtime to make them comparable
         """
         # We have to add local timezone to the file's timestamp in order
-        # to compare them with the backup starttime, which has a timezone
-        # TODO recheck after PR1536 is merged
+        # to compare them with the backup `starttime`, which has a timezone.
         wal_archive_dir = self.options["wal_archive_dir"]
         self.paths_to_backup.append(wal_archive_dir)
         for filename in os.listdir(wal_archive_dir):
@@ -427,7 +427,6 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             )
         except pg8000.exceptions.InterfaceError:
             pass
-
 
     def __complete_backup_job(self):
         """
@@ -595,7 +594,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         Let PostgreSQL write latest transaction into a new WAL file now
         """
         try:
-            result = self.db_con.run("select pg_switch_wal()")
+            self.db_con.run("select pg_switch_wal()")
         except pg8000.Error as pg_err:
             bareosfd.JobMessage(
                 bareosfd.M_WARNING,
@@ -829,14 +828,15 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                 bdata = bytearray(self.tablespace_map_data, "utf-8")
             else:
                 bareosfd.JobMessage(
-                    bareosfd.M_FATAL, f'Unexpected file name "{self.fname}"\n'
+                    bareosfd.M_FATAL,
+                    f'Unexpected file name "{self.fname}"\n',
                 )
                 return bareosfd.bRC_Error
 
             if self.data_stream is None:
                 bareosfd.DebugMessage(
                     250,
-                    f"BareosFdPluginPostgreSQL:plugin_io_read type of bdata {type(bdata)}\n"
+                    f"BareosFdPluginPostgreSQL:plugin_io_read type of bdata {type(bdata)}\n",
                 )
                 self.data_stream = io.BytesIO(bdata)
 
@@ -961,10 +961,6 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             current_lsn = self.__get_current_lsn()
             lsn_diff = self.__check_lsn_diff(current_lsn, self.last_lsn)
             if self.switch_wal and lsn_diff:
-                bareosfd.JobMessage(
-                    bareosfd.M_INFO,
-                    f"Difference found in LSN sequence switching wal\n",
-                )
                 # Ask pg to switch wal
                 self.__do_switch_wal()
                 # Pick the new lsn and update our last_lsn
@@ -1075,7 +1071,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             else:
                 # Rest of our dirs/files
                 savepkt.fname = self.file_to_backup
-                # emit a warning and skip if file can't be read like in normal backup
+                # register a debug warning and skip if file can't be read like in normal backup
                 try:
                     # os.islink will detect links to directories only when
                     # there is no trailing slash - we need to perform checks
@@ -1115,9 +1111,9 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                     my_statp.st_ctime = int(statp.st_ctime)
 
                 except os.error as os_err:
-                    bareosfd.JobMessage(
-                        bareosfd.M_INFO,
-                        f'Skip "{os_err}"\n',
+                    bareosfd.DebugMessage(
+                        150,
+                        f'Warning Skip "{os_err}"\n',
                     )
                     return bareosfd.bRC_Skip
 
@@ -1194,18 +1190,19 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         # restorepkt.create_status = bareosfd.CF_CORE
         # return bareosfd.bRC_OK
 
-        # Python attribute setting does not work properly with links
-        #    if restorepkt.type in [bareosfd.FT_LNK,bareosfd.FT_LNKSAVED]:
-        #        return bareosfd.bRC_OK
         file_name = restorepkt.ofname
         file_attr = restorepkt.statp
         self.stat_packets[file_name] = file_attr
 
-        bareosfd.DebugMessage(
-            150,
-            f"Set file attributes {file_name} with stat {str(file_attr)}\n",
-        )
+        # Python attribute setting does not work properly with links
+        if restorepkt.type in [bareosfd.FT_LNK, bareosfd.FT_LNKSAVED]:
+            return bareosfd.bRC_OK
+
         try:
+            bareosfd.DebugMessage(
+                150,
+                f"Set file attributes {file_name} with stat {str(file_attr)}\n",
+            )
             os.chown(file_name, file_attr.st_uid, file_attr.st_gid)
             os.chmod(file_name, file_attr.st_mode)
             os.utime(file_name, (file_attr.st_atime, file_attr.st_mtime))
@@ -1280,7 +1277,6 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                         bareosfd.M_ERROR,
                         f'os.link error on {self.fname}: "{os_err}"\n',
                     )
-
             restorepkt.create_status = bareosfd.CF_CREATED
         elif restorepkt.type == bareosfd.FT_DIREND:
             if not os.path.exists(self.fname):
@@ -1317,15 +1313,19 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             100,
             f"end_restore_file() entry point in Python called fname: {self.fname}\n",
         )
+        # don't try to set attribute on symlink.
+        if os.path.islink(self.fname.rstrip("/")):
+            return bareosfd.bRC_OK
 
-        bareosfd.DebugMessage(
-            150,
-            (
-                f"end_restore_file set {self.fname} attributes"
-                f" with stat {str(self.stat_packets[self.fname])}\n"
-            ),
-        )
         try:
+            bareosfd.DebugMessage(
+                150,
+                (
+                    f"end_restore_file set {self.fname} attributes"
+                    f" with stat {str(self.stat_packets[self.fname])}\n"
+                ),
+            )
+
             os.chown(
                 self.fname,
                 self.stat_packets[self.fname].st_uid,
