@@ -167,6 +167,7 @@ class JobControlRecord {
   uint64_t ReadBytes{};         /**< Bytes read -- before compression */
   FileId_t FileId{};            /**< Last FileId used */
   int32_t JobPriority{};        /**< Job priority */
+  bool allow_mixed_priority{};  /**< Allow jobs with higher priority concurrently with this */
   time_t sched_time{};          /**< Job schedule time, i.e. when it should start */
   time_t initial_sched_time{};  /**< Original sched time before any reschedules are done */
   time_t start_time{};          /**< When job actually started */

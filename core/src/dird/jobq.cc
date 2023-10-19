@@ -474,9 +474,8 @@ extern "C" void* jobq_server(void* arg)
 
         for (; re;) {
           Dmsg2(2300, "JobId %d is also running with %s\n", re->jcr->JobId,
-                re->jcr->dir_impl->res.job->allow_mixed_priority ? "mix"
-                                                                 : "no mix");
-          if (!re->jcr->dir_impl->res.job->allow_mixed_priority) {
+                re->jcr->allow_mixed_priority ? "mix" : "no mix");
+          if (!re->jcr->allow_mixed_priority) {
             running_allow_mix = false;
             break;
           }
@@ -498,12 +497,11 @@ extern "C" void* jobq_server(void* arg)
 
         Dmsg4(2300, "Examining Job=%d JobPri=%d want Pri=%d (%s)\n", jcr->JobId,
               jcr->JobPriority, Priority,
-              jcr->dir_impl->res.job->allow_mixed_priority ? "mix" : "no mix");
+              jcr->allow_mixed_priority ? "mix" : "no mix");
 
         // Take only jobs of correct Priority
         if (!(jcr->JobPriority == Priority
-              || (jcr->JobPriority < Priority
-                  && jcr->dir_impl->res.job->allow_mixed_priority
+              || (jcr->JobPriority < Priority && jcr->allow_mixed_priority
                   && running_allow_mix))) {
           jcr->setJobStatusWithPriorityCheck(JS_WaitPriority);
           break;
@@ -809,11 +807,11 @@ static void DecClientConcurrency(JobControlRecord* jcr)
 static bool IncJobConcurrency(JobControlRecord* jcr)
 {
   lock_mutex(mutex);
-  if (jcr->dir_impl->res.job->rjs->NumConcurrentJobs
-      < jcr->dir_impl->res.job->MaxConcurrentJobs) {
-    jcr->dir_impl->res.job->rjs->NumConcurrentJobs++;
+  if (jcr->dir_impl->res.rjs->NumConcurrentJobs
+      < jcr->dir_impl->max_concurrent_jobs) {
+    jcr->dir_impl->res.rjs->NumConcurrentJobs++;
     Dmsg2(50, "Inc Job=%s rncj=%d\n", jcr->dir_impl->res.job->resource_name_,
-          jcr->dir_impl->res.job->rjs->NumConcurrentJobs);
+          jcr->dir_impl->res.rjs->NumConcurrentJobs);
     unlock_mutex(mutex);
 
     return true;
@@ -827,9 +825,9 @@ static bool IncJobConcurrency(JobControlRecord* jcr)
 static void DecJobConcurrency(JobControlRecord* jcr)
 {
   lock_mutex(mutex);
-  jcr->dir_impl->res.job->rjs->NumConcurrentJobs--;
+  jcr->dir_impl->res.rjs->NumConcurrentJobs--;
   Dmsg2(50, "Dec Job=%s rncj=%d\n", jcr->dir_impl->res.job->resource_name_,
-        jcr->dir_impl->res.job->rjs->NumConcurrentJobs);
+        jcr->dir_impl->res.rjs->NumConcurrentJobs);
   unlock_mutex(mutex);
 }
 

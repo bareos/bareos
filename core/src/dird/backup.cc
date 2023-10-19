@@ -1126,6 +1126,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
         "  End time:               %s\n"
         "  Elapsed time:           %s\n"
         "  Priority:               %d\n"
+        "  Allow Mixed Priority:   %s\n"
         "%s"                                         /* FD/SD Statistics */
         "%s"                                         /* Quota info */
         "  Rate:                   %.1f KB/s\n"
@@ -1154,6 +1155,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
         edt,
         edit_utime(RunTime, elapsed, sizeof(elapsed)),
         jcr->JobPriority,
+        jcr->allow_mixed_priority ? "yes" : "no",
         statistics.c_str(),
         quota_info.c_str(),
         kbps,
