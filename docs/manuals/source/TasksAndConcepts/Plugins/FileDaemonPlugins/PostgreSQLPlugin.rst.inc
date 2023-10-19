@@ -49,8 +49,8 @@ This is just a short outline of the tasks performed by the plugin.
 
   hide footbox
   participant "fd plugin" as plugin
-  participant "postgresql cluster" as psql
-  participant "data directories" as datadir
+  database "postgresql cluster" as psql
+  collections "data directories" as datadir
   participant "wal archive directory" as waldir
   == backup starts ==
   plugin -> psql: pg_backup_start()
