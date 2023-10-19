@@ -107,6 +107,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Allow to use the third-party libraries of the OS instead of the bundled ones [PR #1441]
 - packaging: debian fix dependencies [PR #1573]
 - stored: fix support for non-tape block-addressed devices [PR #1554]
+- consolidate: make virtualfull jobs spawned by consolidate job inherit same priority and max concurrent jobs [PR #1530]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -262,6 +263,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1522]: https://github.com/bareos/bareos/pull/1522
 [PR #1524]: https://github.com/bareos/bareos/pull/1524
 [PR #1529]: https://github.com/bareos/bareos/pull/1529
+[PR #1530]: https://github.com/bareos/bareos/pull/1530
 [PR #1531]: https://github.com/bareos/bareos/pull/1531
 [PR #1532]: https://github.com/bareos/bareos/pull/1532
 [PR #1542]: https://github.com/bareos/bareos/pull/1542
