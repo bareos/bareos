@@ -34,7 +34,9 @@ Director {
   # TlsAuthenticate = No
   # TlsEnable = Yes
   # TlsRequire = Yes
+  # EnableKtls = No
   # TlsCipherList = ""
+  # TlsCipherSuites = ""
   # TlsDhFile = ""
   # TlsProtocol = ""
   # TlsVerifyPeer = No
@@ -75,7 +77,9 @@ Client {
   # TlsAuthenticate = No
   # TlsEnable = Yes
   # TlsRequire = Yes
+  # EnableKtls = No
   # TlsCipherList = ""
+  # TlsCipherSuites = ""
   # TlsDhFile = ""
   # TlsProtocol = ""
   # TlsVerifyPeer = No
@@ -116,7 +120,9 @@ Client {
   # TlsAuthenticate = No
   # TlsEnable = Yes
   # TlsRequire = Yes
+  # EnableKtls = No
   # TlsCipherList = ""
+  # TlsCipherSuites = ""
   # TlsDhFile = ""
   # TlsProtocol = ""
   # TlsVerifyPeer = No
@@ -160,7 +166,9 @@ Client {
   # TlsAuthenticate = No
   # TlsEnable = Yes
   # TlsRequire = Yes
+  # EnableKtls = No
   # TlsCipherList = ""
+  # TlsCipherSuites = ""
   # TlsDhFile = ""
   # TlsProtocol = ""
   # TlsVerifyPeer = No
@@ -1284,7 +1292,9 @@ Storage {
   # TlsAuthenticate = No
   # TlsEnable = Yes
   # TlsRequire = Yes
+  # EnableKtls = No
   # TlsCipherList = ""
+  # TlsCipherSuites = ""
   # TlsDhFile = ""
   # TlsProtocol = ""
   # TlsVerifyPeer = No
@@ -1753,7 +1763,9 @@ Console {
   # TlsAuthenticate = No
   # TlsEnable = Yes
   # TlsRequire = Yes
+  # EnableKtls = No
   # TlsCipherList = ""
+  # TlsCipherSuites = ""
   # TlsDhFile = ""
   # TlsProtocol = ""
   # TlsVerifyPeer = No
@@ -1784,7 +1796,9 @@ Console {
   # TlsAuthenticate = No
   TlsEnable = No
   # TlsRequire = Yes
+  # EnableKtls = No
   # TlsCipherList = ""
+  # TlsCipherSuites = ""
   # TlsDhFile = ""
   # TlsProtocol = ""
   # TlsVerifyPeer = No
@@ -1815,7 +1829,9 @@ Console {
   # TlsAuthenticate = No
   # TlsEnable = Yes
   # TlsRequire = No
+  # EnableKtls = No
   # TlsCipherList = ""
+  # TlsCipherSuites = ""
   # TlsDhFile = ""
   # TlsProtocol = ""
   # TlsVerifyPeer = No
