@@ -44,6 +44,29 @@ This is just a short outline of the tasks performed by the plugin.
 #. Add files required for a restore (`backup_label`, `recovery.signal`/`recovery.conf` (for version <= 12)
    and `tablespace_map` (if tablespaces are in use) as virtual files to the backup.
 
+.. uml::
+  :caption: Backup tasks performed by the plugin
+
+  hide footbox
+  participant "fd plugin" as plugin
+  participant "postgresql cluster" as psql
+  participant "data directories" as datadir
+  participant "wal archive directory" as waldir
+  == backup starts ==
+  plugin -> psql: pg_backup_start()
+  psql -> psql: prepare database for online backup
+  psql -> datadir: sync db files
+  psql -> plugin: pg_backup_start() returns (LSN)
+  group Online Backup Mode
+      psql -> waldir: write write-ahead-logfiles until pg_backup_stop()
+      datadir -> plugin: Backup database files from disk
+      plugin -> psql: pg_backup_stop()
+      psql -> plugin: pg_backup_stop() returns (LSN, label file, tablespacemap file)
+  end
+  waldir -> plugin: backup newly created WAL files
+  plugin -> plugin: add required files for restore as virtual files
+  == backup completed ==
+
 Incremental and Differential backups will only have to backup WAL files created since last reference backup.
 
 The restore basically works like this:
