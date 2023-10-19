@@ -18,8 +18,6 @@ TestName="$(basename "$(pwd)")"
 export TestName
 
 JobName=ai-backup-bareos-fd
-JobNameHighPriority=ai-backup-bareos-fd-high-priority
-JobNameLowPriority=ai-backup-bareos-fd-low-priority
 
 #shellcheck source=../environment.in
 . ./environment
@@ -153,21 +151,17 @@ run_bconsole
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null
 messages
+label volume=TestVolume001 storage=File pool=Full
+run job=$JobName level=Full yes
 wait
 @exec "sh -c 'touch ${tmp}/data/weird-files/file-16'"
-run job=$JobNameHighPriority level=Full yes
+run job=$JobName level=Incremental yes
 wait
 @exec "sh -c 'touch ${tmp}/data/weird-files/file-17'"
-run job=$JobNameHighPriority level=Incremental yes
+run job=$JobName level=Incremental yes
 wait
 @exec "sh -c 'touch ${tmp}/data/weird-files/file-18'"
-run job=$JobNameHighPriority level=Incremental yes
-wait
-@exec "sh -c 'touch ${tmp}/data/weird-files/file-19'"
-run job=$JobNameHighPriority level=Incremental yes
-wait
-messages
-run job=$JobNameLowPriority level=Full yes
+run job=$JobName level=Incremental yes
 wait
 messages
 END_OF_DATA
@@ -175,19 +169,13 @@ run_bconsole
 
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null
-run job=Consolidate-lower-priority yes
-wait job=Consolidate-lower-priority
-run job=$JobNameLowPriority level=Incremental yes
-wait job=$JobNameLowPriority
+run job=Consolidate yes
+wait job=Consolidate
 messages
-@$out $tmp/priorities1.out
-list jobs
-@$out $tmp/spooling.out
 wait
+@$out $tmp/consolidatevfs.out
 messages
-@$out $tmp/priorities2.out
-list jobs
-@$out /dev/null
+wait
 quit
 END_OF_DATA
 run_bconsole
@@ -218,24 +206,20 @@ expect_grep "x9mlMotNz6zXMPiL2rDLrg	AI-Longterm" \
             "$tmp"/virtualfull.out \
             ".bvfs_versions did not find a file backup up by a VirtualFull Archive."
 
-expect_grep ".*|.*Consolidate-lower-priority.*|.*T.*|" \
-            "$tmp"/priorities1.out \
-            "low priority consolidate job was not successful."
+expect_grep "Priority:[[:space:]]*10" \
+            "$tmp"/log1.out \
+            "always incremental backup doesn't have priority set to 10."
 
-expect_grep "|.*28.*|.*${JobNameLowPriority}.*|.*T.*|" \
-            "$tmp"/priorities1.out \
-            "low priority backup job was not successful."
+expect_grep "Allow Mixed Priority:[[:space:]]*no" \
+            "$tmp"/log1.out \
+            "always incremental backup doesn't have allow mixed priority set to false."
 
-expect_not_grep "|.*26.*|.*${JobNameHighPriority}.*|.*T.*|" \
-                "$tmp"/priorities1.out \
-                "spawned low priority consolidate job terminated before backup job with higher priority."
+expect_grep "Priority:[[:space:]]*5" \
+            "$tmp"/consolidatevfs.out \
+            "virtualfull doesn't have the same priority as consolidate job (expected 5)."
 
-expect_grep "|.*26.*|.*${JobNameHighPriority}.*|.*T.*|" \
-            "$tmp"/priorities2.out \
-            "spawned low priority consolidate job was not successful."
-
-expect_not_grep "Spooling data" \
-                "$tmp"/spooling.out \
-                "spawned low priority consolidate job is spooling unexpectedly."
+expect_grep "Allow Mixed Priority:[[:space:]]*yes" \
+            "$tmp"/consolidatevfs.out \
+            "virtualfull doesn't have same allow mixed priority set as consolidate job (expected true)."
 
 end_test
