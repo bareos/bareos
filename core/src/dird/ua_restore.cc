@@ -1207,7 +1207,7 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
       + std::to_string(single_jobid)
       + ".tree";
     std::size_t tree_size;
-    auto *loaded_tree = LoadTree(path.c_str(), &tree_size);
+    auto *loaded_tree = LoadTree(path.c_str(), &tree_size, tree.all);
 
     if (!loaded_tree) {
       if (!ua->db->GetFileList(ua->jcr, rx->JobIds, false /* do not use md5 */,
@@ -1219,7 +1219,7 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
       if (!SaveTree(path.c_str(), tree.root)) {
 	ua->ErrorMsg("Could not save tree to: %s\n", path.c_str());
       } else {
-	auto *loaded_tree = LoadTree(path.c_str(), &tree_size);
+	auto *loaded_tree = LoadTree(path.c_str(), &tree_size, tree.all);
 	ASSERT(loaded_tree);
 	ua->InfoMsg("Loaded tree from %s\n", path.c_str());
 	FreeTree(tree.root);

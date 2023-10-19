@@ -419,7 +419,7 @@ inline void PrintTree(TREE_NODE* node, std::string& s, int depth = 0)
   }
 }
 
-TREE_ROOT* tree_from_view(tree_view tree)
+TREE_ROOT* tree_from_view(tree_view tree, bool mark)
 {
   TREE_ROOT* root = new_tree(tree.size());
 
@@ -427,7 +427,6 @@ TREE_ROOT* tree_from_view(tree_view tree)
 
   // this can probably be done in the othre direction too!
   for (std::size_t i = tree.size(); i > 0;) {
-
     i -= 1;
     const proto_node& pnode = tree.nodes[i];
     TREE_NODE& node = *new (&nodes[i]) TREE_NODE;
@@ -436,6 +435,7 @@ TREE_ROOT* tree_from_view(tree_view tree)
     std::memcpy(node.fname, tree.string_pool.data() + str.start,
 		str.end - str.start);
     node.fname[str.end - str.start] = 0;
+    node.parent = (TREE_NODE*)root;
     for (std::size_t child = pnode.sub.start;
 	 child < pnode.sub.end;
 	 child = tree.nodes[child].sub.end) {
@@ -450,11 +450,15 @@ TREE_ROOT* tree_from_view(tree_view tree)
   root->last->next = nullptr;
   root->child.insert(&nodes[0], NodeCompare);
 
-  for (std::size_t i = 0; i < tree.size() - 1; ++i) {
+  for (std::size_t i = 0; i < tree.size(); ++i) {
     TREE_NODE& current = nodes[i];
 
     auto& meta = tree.metas[tree.nodes[i].misc.meta];
-    current.next = &nodes[i+1];
+    if (i < tree.size() - 1) {
+      current.next = &nodes[i+1];
+    } else {
+      current.next = nullptr;
+    }
     current.FileIndex = meta.findex;
     current.JobId = meta.jobid;
     current.delta_seq = meta.delta_seq;
@@ -470,6 +474,12 @@ TREE_ROOT* tree_from_view(tree_view tree)
     current.type = meta.type;
     current.extract = 0;
     current.extract_dir = 0;
+    if (mark) {
+      current.extract = true;
+      if (meta.type == TN_DIR || meta.type == TN_DIR_NLS) {
+	current.extract_dir = true;
+      }
+    }
     current.hard_link = meta.hard_link;
     current.soft_link = meta.soft_link;
 
@@ -490,7 +500,7 @@ TREE_ROOT* tree_from_view(tree_view tree)
   return root;
 }
 
-TREE_ROOT* LoadTree(const char* path, std::size_t* size)
+TREE_ROOT* LoadTree(const char* path, std::size_t* size, bool marked_initially)
 {
   try {
     std::vector<char> bytes = LoadFile(path);
@@ -498,7 +508,7 @@ TREE_ROOT* LoadTree(const char* path, std::size_t* size)
     tree_view view(to_span(bytes));
 
     *size = view.size();
-    return tree_from_view(view);
+    return tree_from_view(view, marked_initially);
   } catch (const std::exception& e) {
     Dmsg1(50, "Error while loading tree from %s: ERR=%s\n", path, e.what());
     *size = 0;
