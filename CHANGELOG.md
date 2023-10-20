@@ -27,6 +27,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - VMware Plugin: Fix backup and recreating VMs with PCI passthrough for GPU [PR #1567]
 - dird: list jobs: add level keyword and accept a list of job levels [PR #1561]
 - packaging: debian fix dependencies [PR #1574]
+- filed: fix possible data-loss when excluding hardlinks [PR #1558]
 
 ### Fixed
 - stored: fix incoherent meta data when concurrently writing to the same volume [PR #1514]
@@ -578,6 +579,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1551]: https://github.com/bareos/bareos/pull/1551
 [PR #1555]: https://github.com/bareos/bareos/pull/1555
 [PR #1557]: https://github.com/bareos/bareos/pull/1557
+[PR #1558]: https://github.com/bareos/bareos/pull/1558
 [PR #1560]: https://github.com/bareos/bareos/pull/1560
 [PR #1561]: https://github.com/bareos/bareos/pull/1561
 [PR #1564]: https://github.com/bareos/bareos/pull/1564
