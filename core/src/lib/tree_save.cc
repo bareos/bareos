@@ -87,6 +87,11 @@ struct proto_node {
     std::uint64_t meta;
   } misc;
 
+  struct {
+    std::uint64_t start;
+    std::uint64_t end;
+  } deltas;
+
   static std::uint64_t make_id(int32_t findex, uint32_t jobid)
   {
     std::uint64_t low = 0;
@@ -96,13 +101,20 @@ struct proto_node {
   }
 };
 
+static_assert(std::is_same_v<JobId_t, std::uint32_t>);
+
+struct delta_part {
+  std::uint32_t jobid;
+  std::int32_t findex;
+};
+
 struct meta_data {
-  int32_t findex;           /* file index */
-  uint32_t jobid;           /* JobId */
+  std::int32_t findex;           /* file index */
+  std::uint32_t jobid;           /* JobId */
   struct {
-    uint32_t type : 8;      /* node type */
-    uint32_t hard_link : 1; /* set if have hard link */
-    uint32_t soft_link : 1; /* set if is soft link */
+    std::uint32_t type : 8;      /* node type */
+    std::uint32_t hard_link : 1; /* set if have hard link */
+    std::uint32_t soft_link : 1; /* set if is soft link */
   };
 
   std::uint64_t delta_seq;
@@ -117,6 +129,8 @@ struct tree_header {
   std::uint64_t nodes_offset;
   std::uint64_t string_offset;
   std::uint64_t meta_offset;
+  std::uint64_t delta_offset;
+  std::uint64_t delta_count;
 };
 
 struct tree_view {
@@ -127,6 +141,7 @@ struct tree_view {
   // i.e. type, hardlink (offset of original hl file), id (= findex | jobid)
   // other stuff is not necessary.
   span<meta_data> metas{};
+  span<delta_part> deltas{};
   std::string_view string_pool{};
 
   tree_view() {}
@@ -147,6 +162,11 @@ struct tree_view {
       metas = span(start, count);
     }
     {
+      const delta_part* start =
+	(const delta_part*)(bytes.data() + header.delta_offset);
+      deltas = span(start, header.delta_count);
+    }
+    {
       const char* start = (const char*)(bytes.data() + header.string_offset);
       std::size_t size = bytes.size() - header.string_offset;
 
@@ -163,6 +183,7 @@ struct tree_builder {
   std::vector<proto_node> nodes;
   std::vector<char> string_area;
   std::vector<meta_data> metas;
+  std::vector<delta_part> deltas;
 
   using node_map = std::unordered_map<const TREE_NODE*, std::size_t>;
 
@@ -228,12 +249,26 @@ struct tree_builder {
       auto bytes = span(b, e - b);
       data.insert(data.end(), bytes.begin(), bytes.end());
     }
-    // for (auto& meta : metas) {
-    //   auto bytes = byte_view(meta);
-    //   data.insert(data.end(), bytes.begin(), bytes.end());
-    // }
 
-    tree_header header{nodes.size(), node_offset, string_offset, meta_offset};
+    {
+      std::size_t align = alignof(delta_part);
+      std::size_t current = data.size();
+      std::size_t a = current + align - 1;
+      std::size_t next = (a / align) * align;
+      ASSERT(next >= current);
+      data.resize(next);
+    }
+    auto delta_offset = data.size();
+    {
+      auto b = (const char*) deltas.data();
+      auto e = (const char*)(deltas.data() + deltas.size());
+      auto bytes = span(b, e - b);
+      data.insert(data.end(), bytes.begin(), bytes.end());
+    }
+
+    tree_header header{nodes.size(), node_offset, string_offset, meta_offset,
+		       delta_offset, deltas.size()};
+
     auto header_bytes = byte_view(header);
     for (size_t i = 0; i < header_bytes.size(); ++i) {
       data[i] = header_bytes[i];
@@ -256,6 +291,7 @@ private:
       n.name.end = string_area.size();
 
       n.misc.meta = metas.size();
+
       meta_data& meta = metas.emplace_back();
       meta.findex = node->FileIndex;
       meta.jobid = node->JobId;
@@ -266,8 +302,13 @@ private:
       meta.fhnode = node->fhnode;
       meta.fhinfo = node->fhinfo;
 
-
-
+      n.deltas.start = deltas.size();
+      for (auto* delta = node->delta_list; delta; delta = delta->next) {
+	delta_part& part = deltas.emplace_back();
+	part.jobid = delta->JobId;
+	part.findex = delta->FileIndex;
+      }
+      n.deltas.end = deltas.size();
     }
 
     std::size_t start = nodes.size();
@@ -424,6 +465,8 @@ TREE_ROOT* tree_from_view(tree_view tree, bool mark)
   TREE_ROOT* root = new_tree(tree.size());
 
   TREE_NODE* nodes = (TREE_NODE*)RootMalloc(root, tree.size() * sizeof(TREE_NODE));
+  delta_list* deltas = (delta_list*)RootMalloc(root,
+					      tree.deltas.size() * sizeof(delta_list));
 
   // this can probably be done in the othre direction too!
   for (std::size_t i = tree.size(); i > 0;) {
@@ -451,9 +494,10 @@ TREE_ROOT* tree_from_view(tree_view tree, bool mark)
   root->child.insert(&nodes[0], NodeCompare);
 
   for (std::size_t i = 0; i < tree.size(); ++i) {
+    auto& saved = tree.nodes[i];
     TREE_NODE& current = nodes[i];
 
-    auto& meta = tree.metas[tree.nodes[i].misc.meta];
+    auto& meta = tree.metas[saved.misc.meta];
     if (i < tree.size() - 1) {
       current.next = &nodes[i+1];
     } else {
@@ -462,11 +506,10 @@ TREE_ROOT* tree_from_view(tree_view tree, bool mark)
     current.FileIndex = meta.findex;
     current.JobId = meta.jobid;
     current.delta_seq = meta.delta_seq;
-    current.delta_list = nullptr; // ??
     current.fhinfo = meta.fhinfo;
     current.fhnode = meta.fhnode;
 
-    auto str = tree.nodes[i].name;
+    auto str = saved.name;
     std::memcpy(current.fname, tree.string_pool.data() + str.start,
 		str.end - str.start);
     current.fname[str.end - str.start] = 0;
@@ -494,6 +537,25 @@ TREE_ROOT* tree_from_view(tree_view tree, bool mark)
       entry->key = (((uint64_t)meta.jobid) << 32) + meta.findex;
       entry->node = &nodes[meta.original];
       root->hardlinks.insert(entry->key, entry);
+    }
+
+    if (saved.deltas.start != saved.deltas.end) {
+      for (auto cur = saved.deltas.start;
+	   cur < saved.deltas.end;
+	   ++cur) {
+	auto& delta = deltas[cur];
+	auto& saved_delta = tree.deltas[cur];
+	delta.JobId = saved_delta.jobid;
+	delta.FileIndex = saved_delta.findex;
+	if (cur != saved.deltas.end - 1) {
+	  delta.next = &delta + 1;
+	} else {
+	  delta.next = nullptr;
+	}
+      }
+      current.delta_list = &deltas[saved.deltas.start];
+    } else {
+      current.delta_list = nullptr;
     }
   }
 
