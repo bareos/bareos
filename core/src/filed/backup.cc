@@ -52,6 +52,7 @@
 #include "lib/compression.h"
 
 #include "lib/channel.h"
+#include "lib/network_order.h"
 
 #include <cstring>
 
@@ -1097,11 +1098,8 @@ class data_message {
   {
     has_header = true;
     auto* ptr = header_ptr();
-    std::memcpy(ptr, &h, header_size);
-
-    for (std::size_t i = 0; i < header_size / 2; ++i) {
-      std::swap(ptr[i], ptr[header_size - 1 - i]);
-    }
+    network_order::network net{h};  // save in network order
+    std::memcpy(ptr, &net, header_size);
   }
 
   void resize(std::size_t new_size) { buffer.resize(data_offset + new_size); }
