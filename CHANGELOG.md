@@ -13,6 +13,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - build: switch from FreeBSD 13.1 to 13.2 [PR #1528]
 - webui: upgrade bootstrap to version 3.4.1 [PR #1552]
 - packaging: debian fix dependencies [PR #1575]
+- filed: fix possible data loss when excluding hardlinks [PR #1559]
 
 ### Fixed
 - cats: fix for integer overflow issue when using offset in llist [PR #1569]
@@ -685,6 +686,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1498]: https://github.com/bareos/bareos/pull/1498
 [PR #1528]: https://github.com/bareos/bareos/pull/1528
 [PR #1552]: https://github.com/bareos/bareos/pull/1552
+[PR #1559]: https://github.com/bareos/bareos/pull/1559
 [PR #1569]: https://github.com/bareos/bareos/pull/1569
 [PR #1575]: https://github.com/bareos/bareos/pull/1575
 [unreleased]: https://github.com/bareos/bareos/tree/master
