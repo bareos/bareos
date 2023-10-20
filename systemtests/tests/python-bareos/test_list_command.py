@@ -233,6 +233,11 @@ class PythonBareosListCommandTest(bareos_unittest.Base):
             "",
         )
 
+        result = director.call(
+            "llist jobs limit=99999999999999999999999999999999999999 offset=99999999999999999999999999999999999999999999999"
+        )
+        self.assertEqual(len(result["jobs"]), 0)
+
         # list jobs jobstatus=X
         result = director.call("list jobs jobstatus=T")
         self.assertTrue(result["jobs"])

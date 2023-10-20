@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2015-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -52,6 +52,7 @@ typedef struct json_t json_t;
 
 #include "lib/alist.h"
 #include "lib/api_mode.h"
+#include <stdint.h>
 
 class PoolMem;
 
@@ -75,11 +76,11 @@ typedef enum of_filter_type
 } of_filter_type;
 
 typedef struct of_limit_filter_tuple {
-  int limit = 0; /* Filter output to a maximum of limit entries */
+  uint64_t limit = 0; /* Filter output to a maximum of limit entries */
 } of_limit_filter_tuple;
 
 typedef struct of_offset_filter_tuple {
-  int offset = 0;
+  uint64_t offset = 0;
 } of_offset_filter_tuple;
 
 typedef struct of_acl_filter_tuple {
@@ -140,13 +141,11 @@ class OutputFormatter {
   void CreateNewResFilter(of_filter_type type, int column, int restype);
   bool ProcessTextBuffer();
 
-  /*
-   * reformat string.
+  /* reformat string.
    * remove newlines and replace tabs with a single space.
    * wrap < 0: no modification
    * wrap = 0: reformat to single line
-   * wrap > 0: if api==0: wrap after x characters, else no modifications
-   */
+   * wrap > 0: if api==0: wrap after x characters, else no modifications */
   void rewrap(PoolMem& string, int wrap);
 
 #if HAVE_JANSSON
@@ -166,10 +165,8 @@ class OutputFormatter {
   void SetMode(int mode) { api = mode; }
   int GetMode() { return api; }
 
-  /*
-   * Allow to set compact output mode. Only used for json api mode.
-   * There it can reduce the size of message by 1/3.
-   */
+  /* Allow to set compact output mode. Only used for json api mode.
+   * There it can reduce the size of message by 1/3. */
   void SetCompact(bool value) { compact = value; }
   bool GetCompact() { return compact; }
 
@@ -189,12 +186,10 @@ class OutputFormatter {
                    bool case_sensitiv_name = false);
   void ObjectEnd(const char* name = NULL, const char* fmt = NULL);
 
-  /*
-   * boolean and integer can not be used to distinguish overloading functions,
+  /* boolean and integer can not be used to distinguish overloading functions,
    * therefore the bool function have the postfix _bool.
    * The boolean value is given a string ("true" or "false") to the value_fmt
-   * string. The format string must therefore match "%s".
-   */
+   * string. The format string must therefore match "%s". */
   void ObjectKeyValueBool(const char* key, bool value);
   void ObjectKeyValueBool(const char* key, bool value, const char* value_fmt);
   void ObjectKeyValueBool(const char* key,
@@ -226,19 +221,17 @@ class OutputFormatter {
                       const char* value_fmt,
                       int wrap = -1);
 
-  /*
-   * some programs (BAT in api mode 1) parses data message by message,
+  /* some programs (BAT in api mode 1) parses data message by message,
    * instead of using a separator.
    * An example for this is BAT with the ".defaults job" command in API mode 1.
    * In this cases, the SendBuffer function must be called at between two
    * messages. In API mode 2 this function has no effect. This function should
-   * only be used, when there is a specific need for it.
-   */
+   * only be used, when there is a specific need for it. */
   void SendBuffer();
 
   // Filtering.
-  void AddLimitFilterTuple(int limit);
-  void AddOffsetFilterTuple(int offset);
+  void AddLimitFilterTuple(uint64_t limit);
+  void AddOffsetFilterTuple(uint64_t offset);
   void AddAclFilterTuple(int column, int acltype);
   void AddResFilterTuple(int column, int restype);
   void AddEnabledFilterTuple(int column, int restype);

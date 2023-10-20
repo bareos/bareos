@@ -31,6 +31,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Fixed
 - stored: fix incoherent meta data when concurrently writing to the same volume [PR #1514]
+- cats: fix for integer overflow issue when using offset in llist [PR #1568]
 
 ## [22.1.0] - 2023-06-13
 
@@ -584,5 +585,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1561]: https://github.com/bareos/bareos/pull/1561
 [PR #1564]: https://github.com/bareos/bareos/pull/1564
 [PR #1567]: https://github.com/bareos/bareos/pull/1567
+[PR #1568]: https://github.com/bareos/bareos/pull/1568
 [PR #1574]: https://github.com/bareos/bareos/pull/1574
 [unreleased]: https://github.com/bareos/bareos/tree/master

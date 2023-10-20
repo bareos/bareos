@@ -61,8 +61,8 @@ static bool ParseListBackupsCmd(UaContext* ua,
                                 e_list_type llist);
 
 // Some defaults.
-#define DEFAULT_LOG_LINES 5
-#define DEFAULT_NR_DAYS 50
+const int kDefaultLogLines = 5;
+const int kDefaultNumberOfDays = 50;
 
 // Turn auto display of console messages on/off
 bool AutodisplayCmd(UaContext* ua, const char*)
@@ -451,40 +451,41 @@ static inline void SetHiddenColumn(UaContext* ua, int column)
   ua->send->AddHiddenColumn(column);
 }
 
-static void SetQueryRange(PoolMem& query_range, UaContext* ua, JobDbRecord* jr)
+static void SetQueryRange(std::string& query_range,
+                          UaContext* ua,
+                          JobDbRecord* jr)
 {
-  int i;
-
-  /* Ensure query range is an empty string instead of NULL
-   * to avoid any issues. */
-  if (query_range.c_str() == NULL) { PmStrcpy(query_range, ""); }
-
   /* See if this is a second call to SetQueryRange() if so and any acl
    * filters have been set we setup a new query_range filter including a
    * limit filter. */
-  if (query_range.strlen()) {
+  if (!query_range.empty()) {
     if (!ua->send->has_acl_filters()) { return; }
-    PmStrcpy(query_range, "");
+    query_range.clear();
   }
 
   // Apply any limit
-  i = FindArgWithValue(ua, NT_("limit"));
+  int i = FindArgWithValue(ua, NT_("limit"));
   if (i >= 0) {
-    PoolMem temp(PM_MESSAGE);
-
-    jr->limit = atoi(ua->argv[i]);
+    try {
+      jr->limit = std::stoull(ua->argv[i]);
+    } catch (...) {
+      Dmsg1(50, "Could not convert %s to limit value.\n", ua->argv[i]);
+      jr->limit = 0;
+    }
     ua->send->AddLimitFilterTuple(jr->limit);
-
-    temp.bsprintf(" LIMIT %d", jr->limit);
-    PmStrcat(query_range, temp.c_str());
+    query_range.append(" LIMIT " + std::to_string(jr->limit));
 
     // offset is only valid, if limit is given
     i = FindArgWithValue(ua, NT_("offset"));
     if (i >= 0) {
-      jr->offset = atoi(ua->argv[i]);
+      try {
+        jr->offset = std::stoull(ua->argv[i]);
+      } catch (...) {
+        Dmsg1(50, "Could not convert %s to offset value.\n", ua->argv[i]);
+        jr->offset = 0;
+      }
       ua->send->AddOffsetFilterTuple(jr->offset);
-      temp.bsprintf(" OFFSET %d", atoi(ua->argv[i]));
-      PmStrcat(query_range, temp.c_str());
+      query_range.append(" OFFSET " + std::to_string(jr->offset));
     }
   }
 }
@@ -511,9 +512,7 @@ static bool ListMedia(UaContext* ua,
                       ListCmdOptions optionslist)
 {
   JobDbRecord jr;
-  PoolMem query_range;
-
-  PmStrcpy(query_range, "");
+  std::string query_range;
   SetQueryRange(query_range, ua, &jr);
 
   // List MEDIA or VOLUMES
@@ -645,11 +644,9 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     schedtime = now - secs_in_hour * hours; /* Hours in the past */
   }
 
-  PoolMem query_range(PM_MESSAGE);
+  std::string query_range;
   JobDbRecord jr;
-  PmStrcpy(query_range, "");
   SetQueryRange(query_range, ua, &jr);
-
 
   char* clientname = nullptr;
   argument = FindArgWithValue(ua, NT_("client"));
@@ -876,8 +873,8 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
      * default is DEFAULT_LOG_LINES entries */
     reverse = FindArg(ua, NT_("reverse")) >= 0;
 
-    if (strlen(query_range.c_str()) == 0) {
-      Mmsg(query_range, " LIMIT %d", DEFAULT_LOG_LINES);
+    if (query_range.empty()) {
+      query_range = " LIMIT " + std::to_string(kDefaultLogLines);
     }
 
     if (ua->api != API_MODE_JSON) {
@@ -974,9 +971,9 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     argument = FindArgWithValue(ua, NT_("days"));
     if (argument >= 0) {
       days = atoi(ua->argv[argument]);
-      if ((days < 0) || (days > DEFAULT_NR_DAYS)) {
+      if ((days < 0) || (days > kDefaultNumberOfDays)) {
         ua->WarningMsg(_("Ignoring invalid value for days. Max is %d.\n"),
-                       DEFAULT_NR_DAYS);
+                       kDefaultNumberOfDays);
         days = 1;
       }
     }
@@ -1442,8 +1439,8 @@ void DoMessages(UaContext* ua, const char*)
     DoTruncate = true;
   }
   if (DoTruncate) { (void)!ftruncate(fileno(con_fd), 0L); }
-  console_msg_pending = FALSE;
-  ua->user_notified_msg_pending = FALSE;
+  console_msg_pending = false;
+  ua->user_notified_msg_pending = false;
   pthread_cleanup_pop(0);
   Vw(con_lock);
 }
