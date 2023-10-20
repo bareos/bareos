@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -34,6 +34,7 @@
 #include "lib/htable.h"
 #include "lib/dlist.h"
 #include "lib/alist.h"
+#include "findlib/hardlink.h"
 
 #include <dirent.h>
 #define NAMELEN(dirent) (strlen((dirent)->d_name))
@@ -169,28 +170,6 @@ struct HfsPlusInfo {
 };
 
 /**
- * Structure for keeping track of hard linked files, we
- * keep an entry for each hardlinked file that we save,
- * which is the first one found. For all the other files that
- * are linked to this one, we save only the directory
- * entry so we can link it.
- */
-struct CurLink {
-  struct hlink link;
-  dev_t dev;             /**< Device */
-  ino_t ino;             /**< Inode with device is unique */
-  uint32_t FileIndex;    /**< Bareos FileIndex of this file */
-  int32_t digest_stream; /**< Digest type if needed */
-  uint32_t digest_len;   /**< Digest len if needed */
-  char* digest;          /**< Checksum of the file if needed */
-  char name[1];          /**< The name */
-};
-
-using LinkHash
-    = htable<htable_binary_key, CurLink, MonotonicBuffer::Size::Medium>;
-
-
-/**
  * Definition of the FindFiles packet passed as the
  * first argument to the FindFiles callback subroutine.
  */
@@ -258,10 +237,8 @@ struct FindFilesPacket {
   LinkHash* linkhash{nullptr};       /**< Hard linked files */
   struct CurLink* linked{nullptr}; /**< Set if this file is hard linked */
 
-  /*
-   * Darwin specific things.
-   * To avoid clutter, we always include rsrc_bfd and volhas_attrlist.
-   */
+  /* Darwin specific things.
+   * To avoid clutter, we always include rsrc_bfd and volhas_attrlist. */
   BareosFilePacket rsrc_bfd; /**< Fd for resource forks */
   bool volhas_attrlist{false};  /**< Volume supports getattrlist() */
   HfsPlusInfo hfsinfo;          /**< Finder Info and resource fork size */
@@ -290,7 +267,6 @@ findIncludeExcludeItem* new_preinclude(findFILESET* fileset);
 findIncludeExcludeItem* new_preexclude(findFILESET* fileset);
 findFOPTS* start_options(FindFilesPacket* ff);
 void NewOptions(FindFilesPacket* ff, findIncludeExcludeItem* incexe);
-
 
 #include "acl.h"
 #include "xattr.h"

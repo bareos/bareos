@@ -364,6 +364,8 @@ static int PrintFile(JobControlRecord*, FindFilesPacket* ff, bool)
     if (*attr != 0) { printf("AttrEx=%s\n", attr); }
     //    set_attribsEx(NULL, ff->fname, NULL, NULL, ff->type, attr);
   }
+
+  ff->FileIndex = ++jcr->JobFiles;
   return 1;
 }
 
