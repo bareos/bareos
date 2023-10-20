@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -220,11 +220,9 @@ static inline bool CheckSizeMatching(JobControlRecord* jcr,
   // See if size matching is turned on.
   if (!ff_pkt->size_match) { return true; }
 
-  /*
-   * Loose the unsigned bits to keep the compiler from warning
+  /* Loose the unsigned bits to keep the compiler from warning
    * about comparing signed and unsigned. As a size of a file
-   * can only be positive the unsigned is not really to interesting.
-   */
+   * can only be positive the unsigned is not really to interesting. */
   begin_size = ff_pkt->size_match->begin_size;
   end_size = ff_pkt->size_match->end_size;
 
@@ -312,10 +310,8 @@ bool HasFileChanged(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
  */
 bool CheckChanges(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 {
-  /*
-   * In special mode (like accurate backup), the programmer can
-   * choose his comparison function.
-   */
+  /* In special mode (like accurate backup), the programmer can
+   * choose his comparison function. */
   if (ff_pkt->CheckFct) { return ff_pkt->CheckFct(jcr, ff_pkt); }
 
   // For normal backups (incr/diff), we use this default behaviour
@@ -427,37 +423,36 @@ static inline int process_hardlink(JobControlRecord* jcr,
                                    bool* done)
 {
   int rtn_stat = 0;
-  CurLink* hl;
 
-  hl = lookup_hardlink(jcr, ff_pkt, ff_pkt->statp.st_ino, ff_pkt->statp.st_dev);
-  if (hl) {
+  if (!ff_pkt->linkhash) { ff_pkt->linkhash = new LinkHash(10000); }
+
+  auto result = ff_pkt->linkhash->try_emplace(
+      Hardlink{ff_pkt->statp.st_dev, ff_pkt->statp.st_ino}, fname);
+  CurLink& hl = result.first->second;
+
+  if (hl.FileIndex == 0) {
+    // no file backed up yet
+    ff_pkt->linked = &hl;
+    *done = false;
+  } else if (bstrcmp(hl.name.c_str(), fname)) {
     // If we have already backed up the hard linked file don't do it again
-    if (bstrcmp(hl->name, fname)) {
-      Dmsg2(400, "== Name identical skip FI=%d file=%s\n", hl->FileIndex,
-            fname);
-      *done = true;
-      return 1; /* ignore */
-    }
-
-    ff_pkt->link = hl->name;
+    Dmsg2(400, "== Name identical skip FI=%d file=%s\n", hl.FileIndex, fname);
+    *done = true;
+    rtn_stat = 1; /* ignore */
+  } else {
+    // some other file was already backed up!
+    ff_pkt->link = const_cast<char*>(hl.name.data());
     ff_pkt->type = FT_LNKSAVED; /* Handle link, file already saved */
-    ff_pkt->LinkFI = hl->FileIndex;
+    ff_pkt->LinkFI = hl.FileIndex;
     ff_pkt->linked = NULL;
-    ff_pkt->digest = hl->digest;
-    ff_pkt->digest_stream = hl->digest_stream;
-    ff_pkt->digest_len = hl->digest_len;
+    ff_pkt->digest = hl.digest.data();
+    ff_pkt->digest_stream = hl.digest_stream;
+    ff_pkt->digest_len = hl.digest.size();
 
     rtn_stat = HandleFile(jcr, ff_pkt, top_level);
     Dmsg3(400, "FT_LNKSAVED FI=%d LinkFI=%d file=%s\n", ff_pkt->FileIndex,
-          hl->FileIndex, hl->name);
+          hl.FileIndex, hl.name.c_str());
     *done = true;
-  } else {
-    // File not previously dumped. Chain it into our list.
-    hl = new_hardlink(jcr, ff_pkt, fname, ff_pkt->statp.st_ino,
-                      ff_pkt->statp.st_dev);
-    ff_pkt->linked = hl; /* Mark saved link */
-    Dmsg2(400, "Added to hash FI=%d file=%s\n", ff_pkt->FileIndex, hl->name);
-    *done = false;
   }
 
   return rtn_stat;
@@ -477,10 +472,8 @@ static inline int process_regular_file(JobControlRecord* jcr,
 
   sizeleft = ff_pkt->statp.st_size;
 
-  /*
-   * Don't bother opening empty, world readable files. Also do not open
-   * files when archive is meant for /dev/null.
-   */
+  /* Don't bother opening empty, world readable files. Also do not open
+   * files when archive is meant for /dev/null. */
   if (ff_pkt->null_output_device
       || (sizeleft == 0 && MODE_RALL == (MODE_RALL & ff_pkt->statp.st_mode))) {
     ff_pkt->type = FT_REGE;
@@ -558,10 +551,8 @@ static inline int process_directory(JobControlRecord* jcr,
   bool volhas_attrlist
       = ff_pkt->volhas_attrlist; /* Remember this if we recurse */
 
-  /*
-   * Ignore this directory and everything below if the file .nobackup
-   * (or what is defined for IgnoreDir in this fileset) exists
-   */
+  /* Ignore this directory and everything below if the file .nobackup
+   * (or what is defined for IgnoreDir in this fileset) exists */
   if (HaveIgnoredir(ff_pkt)) { return 1; /* Just ignore this directory */ }
 
   // Build a canonical directory name with a trailing slash in link var
@@ -596,14 +587,12 @@ static inline int process_directory(JobControlRecord* jcr,
   if (is_win32_mount_point) { ff_pkt->type = FT_DIRBEGIN; }
 #endif
 
-  /*
-   * Note, we return the directory to the calling program (HandleFile)
+  /* Note, we return the directory to the calling program (HandleFile)
    * when we first see the directory (FT_DIRBEGIN.
    * This allows the program to apply matches and make a
    * choice whether or not to accept it.  If it is accepted, we
    * do not immediately save it, but do so only after everything
-   * in the directory is seen (i.e. the FT_DIREND).
-   */
+   * in the directory is seen (i.e. the FT_DIREND). */
   rtn_stat = HandleFile(jcr, ff_pkt, top_level);
   if (rtn_stat < 1 || ff_pkt->type == FT_REPARSE) { /* ignore or error status */
     free(link);
@@ -614,25 +603,21 @@ static inline int process_directory(JobControlRecord* jcr,
   // Done with DIRBEGIN, next call will be DIREND
   if (ff_pkt->type == FT_DIRBEGIN) { ff_pkt->type = FT_DIREND; }
 
-  /*
-   * Create a temporary ff packet for this directory
+  /* Create a temporary ff packet for this directory
    * entry, and defer handling the directory until
    * we have recursed into it.  This saves the
    * directory after all files have been processed, and
    * during the restore, the directory permissions will
-   * be reset after all the files have been restored.
-   */
+   * be reset after all the files have been restored. */
   Dmsg1(300, "Create temp ff packet for dir: %s\n", ff_pkt->fname);
   FindFilesPacket* dir_ff_pkt = new_dir_ff_pkt(ff_pkt);
 
-  /*
-   * Do not descend into subdirectories (recurse) if the
+  /* Do not descend into subdirectories (recurse) if the
    * user has turned it off for this directory.
    *
    * If we are crossing file systems, we are either not allowed
    * to cross, or we may be restricted by a list of permitted
-   * file systems.
-   */
+   * file systems. */
   if (!top_level && BitIsSet(FO_NO_RECURSION, ff_pkt->flags)) {
     ff_pkt->type = FT_NORECURSE;
     recurse = false;
@@ -677,18 +662,14 @@ static inline int process_directory(JobControlRecord* jcr,
     return rtn_stat;
   }
 
-  /*
-   * Process all files in this directory entry (recursing).
+  /* Process all files in this directory entry (recursing).
    * This would possibly run faster if we chdir to the directory
-   * before traversing it.
-   */
+   * before traversing it. */
   rtn_stat = 1;
 
-  /*
-   * Allocate some extra room so an overflow of the d_name with more then
+  /* Allocate some extra room so an overflow of the d_name with more then
    * name_max bytes doesn't kill us right away. We check in the loop if
-   * an overflow has not happened.
-   */
+   * an overflow has not happened. */
 #ifdef USE_READDIR_R
   int status;
 
@@ -701,10 +682,8 @@ static inline int process_directory(JobControlRecord* jcr,
 
     name_length = (int)NAMELEN(entry);
 
-    /*
-     * Some filesystems violate against the rules and return filenames
-     * longer than _PC_NAME_MAX. Log the error and continue.
-     */
+    /* Some filesystems violate against the rules and return filenames
+     * longer than _PC_NAME_MAX. Log the error and continue. */
     if ((name_max + 1) <= ((int)sizeof(struct dirent) + name_length)) {
       Jmsg2(jcr, M_ERROR, 0, _("%s: File name too long [%d]\n"), entry->d_name,
             name_length);
@@ -730,7 +709,6 @@ static inline int process_directory(JobControlRecord* jcr,
 
     if (!FileIsExcluded(ff_pkt, link)) {
       rtn_stat = FindOneFile(jcr, ff_pkt, HandleFile, link, our_device, false);
-      if (ff_pkt->linked) { ff_pkt->linked->FileIndex = ff_pkt->FileIndex; }
     }
   }
 
@@ -747,10 +725,8 @@ static inline int process_directory(JobControlRecord* jcr,
 
     name_length = (int)NAMELEN(result);
 
-    /*
-     * Some filesystems violate against the rules and return filenames
-     * longer than _PC_NAME_MAX. Log the error and continue.
-     */
+    /* Some filesystems violate against the rules and return filenames
+     * longer than _PC_NAME_MAX. Log the error and continue. */
     if ((name_max + 1) <= ((int)sizeof(struct dirent) + name_length)) {
       Jmsg2(jcr, M_ERROR, 0, _("%s: File name too long [%d]\n"), result->d_name,
             name_length);
@@ -783,15 +759,15 @@ static inline int process_directory(JobControlRecord* jcr,
   closedir(directory);
   free(link);
 #endif
-  /*
-   * Now that we have recursed through all the files in the
+  /* Now that we have recursed through all the files in the
    * directory, we "save" the directory so that after all
    * the files are restored, this entry will serve to reset
    * the directory modes and dates.  Temp directory values
-   * were used without this record.
-   */
+   * were used without this record. */
   HandleFile(jcr, dir_ff_pkt, top_level); /* handle directory entry */
-  if (ff_pkt->linked) { ff_pkt->linked->FileIndex = dir_ff_pkt->FileIndex; }
+  if (dir_ff_pkt->linked) {
+    dir_ff_pkt->linked->FileIndex = dir_ff_pkt->FileIndex;
+  }
   FreeDirFfPkt(dir_ff_pkt);
 
   if (BitIsSet(FO_KEEPATIME, ff_pkt->flags)) {
@@ -814,20 +790,16 @@ static inline int process_special_file(JobControlRecord* jcr,
 {
   int rtn_stat;
 
-  /*
-   * If it is explicitly mentioned (i.e. top_level) and is
+  /* If it is explicitly mentioned (i.e. top_level) and is
    * a block device, we do a raw backup of it or if it is
-   * a fifo, we simply read it.
-   */
+   * a fifo, we simply read it. */
 #ifdef HAVE_FREEBSD_OS
-  /*
-   * On FreeBSD, all block devices are character devices, so
+  /* On FreeBSD, all block devices are character devices, so
    * to be able to read a raw disk, we need the check for
    * a character device.
    *
    * crw-r----- 1 root  operator - 116, 0x00040002 Jun 9 19:32 /dev/ad0s3
-   * crw-r----- 1 root  operator - 116, 0x00040002 Jun 9 19:32 /dev/rad0s3
-   */
+   * crw-r----- 1 root  operator - 116, 0x00040002 Jun 9 19:32 /dev/rad0s3 */
   if (top_level
       && (S_ISBLK(ff_pkt->statp.st_mode) || S_ISCHR(ff_pkt->statp.st_mode))) {
 #else
@@ -920,7 +892,7 @@ int FindOneFile(JobControlRecord* jcr,
   int rtn_stat;
   bool done = false;
 
-  ff_pkt->fname = ff_pkt->link = fname;
+  ff_pkt->link = ff_pkt->fname = fname;
   ff_pkt->type = FT_UNSET;
   if (lstat(fname, &ff_pkt->statp) != 0) {
     // Cannot stat file
@@ -931,10 +903,8 @@ int FindOneFile(JobControlRecord* jcr,
 
   Dmsg1(300, "File ----: %s\n", fname);
 
-  /*
-   * We check for allowed fstypes and drivetypes at top_level and fstype change
-   * (below).
-   */
+  /* We check for allowed fstypes and drivetypes at top_level and fstype change
+   * (below). */
   if (top_level) {
     if (!NeedsProcessing(jcr, ff_pkt, fname)) { return 1; }
   }
@@ -955,11 +925,9 @@ int FindOneFile(JobControlRecord* jcr,
       }
       // Fall Through
     default:
-      /*
-       * If this is an Incremental backup, see if file was modified
+      /* If this is an Incremental backup, see if file was modified
        * since our last "save_time", presumably the last Full save
-       * or Incremental.
-       */
+       * or Incremental. */
       if (!CheckChanges(jcr, ff_pkt)) {
         Dmsg1(500, "Non-directory incremental: %s\n", ff_pkt->fname);
         ff_pkt->type = FT_NOCHG;
@@ -977,8 +945,14 @@ int FindOneFile(JobControlRecord* jcr,
 #endif
 
   ff_pkt->LinkFI = 0;
-  /*
-   * Handle hard linked files
+  // some codes accesses FileIndex even if the file was never send
+  // If we did not reset it here, they would read the file index of the
+  // last send file.  This is obviously not great and as such we
+  // reset it to zero here before it can do any damage (0 is an invalid
+  // FileIndex).
+  ff_pkt->FileIndex = 0;
+  ff_pkt->linked = nullptr;
+  /* Handle hard linked files
    *
    * Maintain a list of hard linked files already backed up. This
    * allows us to ensure that the data of each file gets backed
@@ -993,11 +967,9 @@ int FindOneFile(JobControlRecord* jcr,
 #ifdef S_IFSOCK
       case S_IFSOCK:
 #endif
-        /*
-         * Via the done variable the process_hardlink function returns
+        /* Via the done variable the process_hardlink function returns
          * if file processing is done. If done is set to false we continue
-         * with the normal processing of the file.
-         */
+         * with the normal processing of the file. */
         rtn_stat = process_hardlink(jcr, ff_pkt, HandleFile, fname, top_level,
                                     &done);
         if (done) { return rtn_stat; }
@@ -1010,10 +982,8 @@ int FindOneFile(JobControlRecord* jcr,
     ff_pkt->linked = NULL;
   }
 
-  /*
-   * Based on the type of file call the correct function.
-   * This is not a link to a previously dumped file, so dump it.
-   */
+  /* Based on the type of file call the correct function.
+   * This is not a link to a previously dumped file, so dump it. */
   switch (ff_pkt->statp.st_mode & S_IFMT) {
     case S_IFREG:
       return process_regular_file(jcr, ff_pkt, HandleFile, fname, top_level);
@@ -1036,8 +1006,7 @@ int TermFindOne(FindFilesPacket* ff)
   if (ff->linkhash == NULL) { return 0; }
 
   count = ff->linkhash->size();
-  ff->linkhash->destroy();
-  free(ff->linkhash);
+  delete ff->linkhash;
   ff->linkhash = NULL;
 
   return count;

@@ -34,6 +34,11 @@ set -u
 # Fill ${BackupDirectory} with data.
 setup_data
 
+mkdir "$tmp/data/hardlinks"
+mkdir "$tmp/data/hardlinks/file"
+touch "$tmp/data/hardlinks/file/file"
+ln "$tmp/data/hardlinks/file/file" "$tmp/data/hardlinks/link"
+
 bin/bareos start
 
 # make sure, director is up and running.

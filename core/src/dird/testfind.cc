@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2008 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -136,9 +136,7 @@ int main(int argc, char* const* argv)
 
   MessagesResource* msg;
 
-  foreach_res (msg, R_MSGS) {
-    InitMsg(NULL, msg);
-  }
+  foreach_res (msg, R_MSGS) { InitMsg(NULL, msg); }
 
   jcr = NewDirectorJcr();  // Ueb: null
   jcr->impl->res.fileset
@@ -344,6 +342,7 @@ static int PrintFile(JobControlRecord* jcr, FindFilesPacket* ff, bool top_level)
     if (*attr != 0) { printf("AttrEx=%s\n", attr); }
     //    set_attribsEx(NULL, ff->fname, NULL, NULL, ff->type, attr);
   }
+  ff->FileIndex = ++jcr->JobFiles;
   return 1;
 }
 

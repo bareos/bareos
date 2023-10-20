@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -303,12 +303,10 @@ static inline bool trigger_plugin_event(JobControlRecord* jcr,
       case bRC_More:
         break;
       case bRC_Term:
-        /*
-         * Request to unload this plugin.
+        /* Request to unload this plugin.
          * As we remove the plugin from the list of plugins we decrement
          * the running index value so the next plugin gets triggered as
-         * that moved back a position in the alist.
-         */
+         * that moved back a position in the alist. */
         if (index) {
           UnloadPlugin(fd_plugin_list, ctx->plugin, *index);
           *index = ((*index) - 1);
@@ -369,10 +367,8 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
 
   plugin_ctx_list = jcr->plugin_ctx_list;
 
-  /*
-   * Some events are sent to only a particular plugin or must be called even if
-   * the job is canceled.
-   */
+  /* Some events are sent to only a particular plugin or must be called even if
+   * the job is canceled. */
   switch (eventType) {
     case bEventPluginCommand:
     case bEventOptionPlugin:
@@ -414,12 +410,10 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
 
   Dmsg2(debuglevel, "plugin_ctx=%p JobId=%d\n", plugin_ctx_list, jcr->JobId);
 
-  /*
-   * Pass event to every plugin that has requested this event type (except if
+  /* Pass event to every plugin that has requested this event type (except if
    * name is set). If name is set, we pass it only to the plugin with that name.
    *
-   * See if we need to trigger the loaded plugins in reverse order.
-   */
+   * See if we need to trigger the loaded plugins in reverse order. */
   if (reverse) {
     int i{};
     foreach_alist_rindex (i, ctx, plugin_ctx_list) {
@@ -543,10 +537,8 @@ void PluginUpdateFfPkt(FindFilesPacket* ff_pkt, struct save_pkt* sp)
     ClearBit(FO_OFFSETS, ff_pkt->flags);
   }
 
-  /*
-   * Sparse code doesn't work with plugins
-   * that use FIFO or STDOUT/IN to communicate
-   */
+  /* Sparse code doesn't work with plugins
+   * that use FIFO or STDOUT/IN to communicate */
   if (BitIsSet(FO_SPARSE, sp->flags)) {
     SetBit(FO_SPARSE, ff_pkt->flags);
   } else {
@@ -695,11 +687,9 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
           ctx->plugin->file_len, cmd, len);
     if (!IsEventForThisPlugin(ctx->plugin, cmd, len)) { continue; }
 
-    /*
-     * We put the current plugin pointer, and the plugin context into the jcr,
+    /* We put the current plugin pointer, and the plugin context into the jcr,
      * because during SaveFile(), the plugin will be called many times and
-     * these values are needed.
-     */
+     * these values are needed. */
     if (!IsEventEnabled(ctx, eventType)) {
       Dmsg1(debuglevel, "Event %d disabled for this plugin.\n", eventType);
       continue;
@@ -746,10 +736,8 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
       // Save original flags.
       CopyBits(FO_MAX, ff_pkt->flags, flags);
 
-      /*
-       * Copy fname and link because SaveFile() zaps them.  This avoids zaping
-       * the plugin's strings.
-       */
+      /* Copy fname and link because SaveFile() zaps them.  This avoids zaping
+       * the plugin's strings. */
       ff_pkt->type = sp.type;
       if (IS_FT_OBJECT(sp.type)) {
         if (!sp.object_name) {
@@ -790,17 +778,15 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
         Dmsg2(debuglevel, "index=%d object=%s\n", sp.index, sp.object);
       }
 
-      /*
-       * Handle hard linked files
+      /* Handle hard linked files
        *
        * Maintain a list of hard linked files already backed up. This allows
-       * us to ensure that the data of each file gets backed up only once.
-       */
+       * us to ensure that the data of each file gets backed up only once. */
       ff_pkt->LinkFI = 0;
+      ff_pkt->FileIndex = 0;
+      ff_pkt->linked = nullptr;
       if (!BitIsSet(FO_NO_HARDLINK, ff_pkt->flags)
           && ff_pkt->statp.st_nlink > 1) {
-        CurLink* hl;
-
         switch (ff_pkt->statp.st_mode & S_IFMT) {
           case S_IFREG:
           case S_IFCHR:
@@ -809,51 +795,41 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
 #ifdef S_IFSOCK
           case S_IFSOCK:
 #endif
-            hl = lookup_hardlink(jcr, ff_pkt, ff_pkt->statp.st_ino,
-                                 ff_pkt->statp.st_dev);
-            if (hl) {
-              /*
-               * If we have already backed up the hard linked file don't do it
-               * again
-               */
-              if (bstrcmp(hl->name, sp.fname)) {
-                Dmsg2(400, "== Name identical skip FI=%d file=%s\n",
-                      hl->FileIndex, fname.c_str());
-                ff_pkt->no_read = true;
-              } else {
-                ff_pkt->link = hl->name;
-                ff_pkt->type
-                    = FT_LNKSAVED; /* Handle link, file already saved */
-                ff_pkt->LinkFI = hl->FileIndex;
-                ff_pkt->linked = NULL;
-                ff_pkt->digest = hl->digest;
-                ff_pkt->digest_stream = hl->digest_stream;
-                ff_pkt->digest_len = hl->digest_len;
 
-                Dmsg3(400, "FT_LNKSAVED FI=%d LinkFI=%d file=%s\n",
-                      ff_pkt->FileIndex, hl->FileIndex, hl->name);
+            if (!ff_pkt->linkhash) { ff_pkt->linkhash = new LinkHash(10000); }
 
-                ff_pkt->no_read = true;
-              }
-            } else {
-              // File not previously dumped. Chain it into our list.
-              hl = new_hardlink(jcr, ff_pkt, sp.fname, ff_pkt->statp.st_ino,
-                                ff_pkt->statp.st_dev);
-              ff_pkt->linked = hl; /* Mark saved link */
+            auto result = ff_pkt->linkhash->try_emplace(
+                Hardlink{ff_pkt->statp.st_dev, ff_pkt->statp.st_ino}, sp.fname);
+            auto& hl = result.first->second;
+            if (hl.FileIndex == 0) {
+              ff_pkt->linked = &hl;
               Dmsg2(400, "Added to hash FI=%d file=%s\n", ff_pkt->FileIndex,
-                    hl->name);
+                    hl.name.c_str());
+            } else if (bstrcmp(hl.name.c_str(), sp.fname)) {
+              Dmsg2(400, "== Name identical skip FI=%d file=%s\n", hl.FileIndex,
+                    fname.c_str());
+              ff_pkt->no_read = true;
+            } else {
+              ff_pkt->link = const_cast<char*>(hl.name.data());
+              ff_pkt->type = FT_LNKSAVED; /* Handle link, file already saved */
+              ff_pkt->LinkFI = hl.FileIndex;
+              ff_pkt->digest = hl.digest.data();
+              ff_pkt->digest_stream = hl.digest_stream;
+              ff_pkt->digest_len = hl.digest.size();
+
+              Dmsg3(400, "FT_LNKSAVED FI=%d LinkFI=%d file=%s\n",
+                    ff_pkt->FileIndex, hl.FileIndex, hl.name.c_str());
+
+              ff_pkt->no_read = true;
             }
             break;
-          default:
-            ff_pkt->linked = NULL;
-            break;
         }
-      } else {
-        ff_pkt->linked = NULL;
       }
 
       // Call Bareos core code to backup the plugin's file
       SaveFile(jcr, ff_pkt, true);
+
+      if (ff_pkt->linked) { ff_pkt->linked->FileIndex = ff_pkt->FileIndex; }
 
       // Restore original flags.
       CopyBits(FO_MAX, flags, ff_pkt->flags);
@@ -922,11 +898,9 @@ int PluginEstimate(JobControlRecord* jcr,
           ctx->plugin->file_len, cmd, len);
     if (!IsEventForThisPlugin(ctx->plugin, cmd, len)) { continue; }
 
-    /*
-     * We put the current plugin pointer, and the plugin context into the jcr,
+    /* We put the current plugin pointer, and the plugin context into the jcr,
      * because during SaveFile(), the plugin will be called many times and
-     * these values are needed.
-     */
+     * these values are needed. */
     if (!IsEventEnabled(ctx, eventType)) {
       Dmsg1(debuglevel, "Event %d disabled for this plugin.\n", eventType);
       continue;
@@ -1465,12 +1439,10 @@ BxattrExitCode PluginBuildXattrStreams(JobControlRecord* jcr,
           goto bail_out;
       }
 
-      /*
-       * Make sure the plugin filled a XATTR name.
+      /* Make sure the plugin filled a XATTR name.
        * The name and value returned by the plugin need to be in allocated
        * memory and are freed by XattrDropInternalTable() function when we are
-       * done processing the data.
-       */
+       * done processing the data. */
       if (xp.name_length && xp.name) {
         // Each xattr valuepair starts with a magic so we can parse it easier.
         current_xattr = (xattr_t*)malloc(sizeof(xattr_t));
@@ -2422,10 +2394,8 @@ static bRC bareosCheckChanges(PluginContext* ctx, struct save_pkt* sp)
   if (!sp) { goto bail_out; }
 
   ff_pkt = jcr->impl->ff;
-  /*
-   * Copy fname and link because SaveFile() zaps them.
-   * This avoids zapping the plugin's strings.
-   */
+  /* Copy fname and link because SaveFile() zaps them.
+   * This avoids zapping the plugin's strings. */
   ff_pkt->type = sp->type;
   if (!sp->fname) {
     Jmsg0(jcr, M_FATAL, 0,

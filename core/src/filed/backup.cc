@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -304,10 +304,8 @@ static inline bool SetupEncryptionDigests(b_save_ctx& bsctx)
          stream_to_ascii(bsctx.digest_stream));
   }
 
-  /**
-   * Set up signature digest handling. If this fails, the signature digest
-   * will be set to NULL and not used.
-   */
+  /* Set up signature digest handling. If this fails, the signature digest
+   * will be set to NULL and not used. */
   /* TODO landonf: We should really only calculate the digest once, for
    * both verification and signing.
    */
@@ -413,7 +411,7 @@ static inline bool TerminateDigest(b_save_ctx& bsctx)
 
   // Keep the checksum if this file is a hardlink
   if (bsctx.ff_pkt->linked) {
-    FfPktSetLinkDigest(bsctx.ff_pkt, bsctx.digest_stream, sd->msg, size);
+    bsctx.ff_pkt->linked->set_digest(bsctx.digest_stream, sd->msg, size);
   }
 
   sd->message_length = size;
@@ -694,20 +692,16 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
     if (!CryptoSessionSend(jcr, sd)) { goto bail_out; }
   }
 
-  /*
-   * For a command plugin use the setting from the plugins savepkt no_read field
+  /* For a command plugin use the setting from the plugins savepkt no_read field
    * which is saved in the ff_pkt->no_read variable. do_read is the inverted
-   * value of this variable as no_read == TRUE means do_read == FALSE
-   */
+   * value of this variable as no_read == TRUE means do_read == FALSE */
   if (ff_pkt->cmd_plugin) {
     do_read = !ff_pkt->no_read;
   } else {
-    /*
-     * Open any file with data that we intend to save, then save it.
+    /* Open any file with data that we intend to save, then save it.
      *
      * Note, if is_win32_backup, we must open the Directory so that
-     * the BackupRead will save its permissions and ownership streams.
-     */
+     * the BackupRead will save its permissions and ownership streams. */
     if (ff_pkt->type != FT_LNKSAVED && S_ISREG(ff_pkt->statp.st_mode)) {
 #ifdef HAVE_WIN32
       do_read = !IsPortableBackup(&ff_pkt->bfd) || ff_pkt->statp.st_size > 0;
@@ -956,10 +950,8 @@ static DWORD WINAPI send_efs_data(PBYTE pbData,
 
   if (ulLength == 0) { return ERROR_SUCCESS; }
 
-  /*
-   * See if we can fit the data into the current bctx->rbuf which can hold
-   * bctx->rsize bytes.
-   */
+  /* See if we can fit the data into the current bctx->rbuf which can hold
+   * bctx->rsize bytes. */
   if (ulLength <= (ULONG)bctx->rsize) {
     sd->message_length = ulLength;
     memcpy(bctx->rbuf, pbData, ulLength);
@@ -991,8 +983,7 @@ static inline bool SendEncryptedData(b_ctx& bctx)
           _("Encrypted file but no EFS support functions\n"));
   }
 
-  /*
-   * The EFS read function, ReadEncryptedFileRaw(), works in a specific way.
+  /* The EFS read function, ReadEncryptedFileRaw(), works in a specific way.
    * You have to give it a function that it calls repeatedly every time the
    * read buffer is filled.
    *
@@ -1067,10 +1058,8 @@ static int send_data(JobControlRecord* jcr,
 
   if (!SetupEncryptionContext(bctx)) { goto bail_out; }
 
-  /*
-   * Send Data header to Storage daemon
-   *    <file-index> <stream> <info>
-   */
+  /* Send Data header to Storage daemon
+   *    <file-index> <stream> <info> */
   if (!sd->fsend("%ld %d 0", jcr->JobFiles, stream)) {
     if (!jcr->IsJobCanceled()) {
       Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
@@ -1080,10 +1069,8 @@ static int send_data(JobControlRecord* jcr,
   }
   Dmsg1(300, ">stored: datahdr %s", sd->msg);
 
-  /*
-   * Make space at beginning of buffer for fileAddr because this
-   *   same buffer will be used for writing if compression is off.
-   */
+  /* Make space at beginning of buffer for fileAddr because this
+   *   same buffer will be used for writing if compression is off. */
   if (BitIsSet(FO_SPARSE, ff_pkt->flags)
       || BitIsSet(FO_OFFSETS, ff_pkt->flags)) {
     bctx.rbuf += OFFSET_FADDR_SIZE;
@@ -1217,10 +1204,8 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
     return false;
   }
 
-  /**
-   * Send Attributes header to Storage daemon
-   *    <file-index> <stream> <info>
-   */
+  /* Send Attributes header to Storage daemon
+   *    <file-index> <stream> <info> */
   if (!sd->fsend("%ld %d 0", jcr->JobFiles, attr_stream)) {
     if (!jcr->IsCanceled() && !jcr->IsIncomplete()) {
       Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
@@ -1230,8 +1215,7 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
   }
   Dmsg1(300, ">stored: attrhdr %s", sd->msg);
 
-  /**
-   * Send file attributes to Storage daemon
+  /* Send file attributes to Storage daemon
    *   File_index
    *   File type
    *   Filename (full path)
@@ -1252,8 +1236,7 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
    *   Binary Object data
    *
    * For a directory, link is the same as fname, but with trailing
-   * slash. For a linked file, link is the link.
-   */
+   * slash. For a linked file, link is the link. */
   if (!IS_FT_OBJECT(ff_pkt->type)
       && ff_pkt->type != FT_DELETED) { /* already stripped */
     StripPath(ff_pkt);
@@ -1398,12 +1381,10 @@ void StripPath(FindFilesPacket* ff_pkt)
           strlen(ff_pkt->link));
   }
 
-  /**
-   * Strip path. If it doesn't succeed put it back. If it does, and there
+  /* Strip path. If it doesn't succeed put it back. If it does, and there
    * is a different link string, attempt to strip the link. If it fails,
    * back them both back. Do not strip symlinks. I.e. if either stripping
-   * fails don't strip anything.
-   */
+   * fails don't strip anything. */
   if (!do_strip(ff_pkt->StripPath, ff_pkt->fname)) {
     UnstripPath(ff_pkt);
     goto rtn;
@@ -1438,15 +1419,11 @@ void UnstripPath(FindFilesPacket* ff_pkt)
 static void CloseVssBackupSession(JobControlRecord* jcr)
 {
 #if defined(WIN32_VSS)
-  /*
-   * STOP VSS ON WIN32
-   * Tell vss to close the backup session
-   */
+  /* STOP VSS ON WIN32
+   * Tell vss to close the backup session */
   if (jcr->impl->pVSSClient) {
-    /*
-     * We are about to call the BackupComplete VSS method so let all plugins
-     * know that by raising the bEventVssBackupComplete event.
-     */
+    /* We are about to call the BackupComplete VSS method so let all plugins
+     * know that by raising the bEventVssBackupComplete event. */
     GeneratePluginEvent(jcr, bEventVssBackupComplete);
     if (jcr->impl->pVSSClient->CloseBackup()) {
       // Inform user about writer states

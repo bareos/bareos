@@ -1,0 +1,61 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# Run a simple backup
+#   then restore it.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-bareos-fd
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $tmp/hardlink-backup.out
+setdebug level=100 storage=File
+run job=backup-some-hardlinks yes
+status director
+status client
+status storage=File
+wait
+messages
+@#
+@# now do a restore
+@#
+@$out $tmp/hardlink-restore.out
+wait
+messages
+restore client=bareos-fd fileset=HardLinks where=$tmp/bareos-hardlink-restores select all done yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File
+
+if ! grep -q "SD Files Written: *2" "$tmp/hardlink-backup.out"; then
+  echo "hardlink was not properly backed up."
+  stop_bareos
+  exit 1
+fi
+if grep -q "Could not hard link" "$tmp/hardlink-restore.out"; then
+  echo "hardlink was not properly restored."
+  stop_bareos
+  exit 1
+fi
+
+check_two_logs "$tmp/hardlink-backup.out" "tmp/hardlink-restore.out"
+
+end_test
