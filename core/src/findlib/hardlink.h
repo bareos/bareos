@@ -82,7 +82,7 @@ template <> struct hash<Hardlink> {
     return seed;
   }
 };
-}
+}  // namespace std
 
 using LinkHash = std::unordered_map<Hardlink, CurLink>;
 
