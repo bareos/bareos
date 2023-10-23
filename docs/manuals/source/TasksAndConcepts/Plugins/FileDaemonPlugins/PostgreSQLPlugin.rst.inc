@@ -79,6 +79,46 @@ The restore basically works like this:
    documentation for more details.
 
 
+.. uml::
+  :caption: Recovery tasks
+
+  actor Administrator as admin
+  participant "fd plugin" as plugin
+  participant "postgresql cluster" as psql
+  participant "data directories" as datadir
+  participant "wal archive directory"  as waldir
+
+  == restore starts ==
+  group Prepare PostgreSQL for recovery
+    admin -> psql: stop postgresql
+    admin -> datadir: remove files and subdirs
+  end
+
+  group Restore files from Bareos via plugin
+    plugin -> datadir: restore backed up files
+    plugin -> waldir: restore backed up files
+    plugin -> datadir: restore file **backup_label**
+    plugin -> datadir: restore file **recovery.signal**
+    plugin -> datadir: restore file **tablespace.map**
+  end
+
+  group Configure PostgreSQL for recovery
+    admin -> psql: configure **restore_command** in **postgresql.conf**
+  end
+
+  group Database restore by PostgreSQL
+    admin -> psql: start postgresql
+    psql -> psql: read backup_lablel, recovery.signal, tablespace.map
+    psql -> psql: recover database to the end of the WAL log
+    psql -> psql: startup normal database operation
+  end
+
+  group Configure PostgreSQL for recovery
+    admin -> psql: verify recovery was successful
+  end
+  == restore completed ==
+
+
 .. warning::
 
    In order to make coherent backups, it is imperative that :strong:`the same postgresql major version`
