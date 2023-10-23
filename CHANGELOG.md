@@ -19,7 +19,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 -  dird: add prev and new jobid variables [PR #1518]
 - build: switch from FreeBSD 13.1 to 13.2 [PR #1525]
 - plugin-fd: allow fd plugins to (re-)set since-time and disable/re-enable timestamp/accurate checks [PR #1534]
-- webui: upgrade bootstrap to version 3.4.1 [PR #1551]
 - VMware Plugin: Fix transformer issues [PR #1555]
 - build: introduce fedora38 [PR #1564]
 - daemons: set CLI11 error exit code to `41` and bareos config parsing error exit code to `42` [PR #1557]
@@ -32,6 +31,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Fixed
 - stored: fix incoherent meta data when concurrently writing to the same volume [PR #1514]
 - cats: fix for integer overflow issue when using offset in llist [PR #1568]
+
+### Security
+- webui: upgrade bootstrap to version 3.4.1 [PR #1551]
 
 ## [22.1.0] - 2023-06-13
 
