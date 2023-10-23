@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and since Bareos version 20 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [20.0.9] - 2023-10-23
 
 ### Changed
 - FreeBSD: build cleanup [PR #1382]
@@ -320,6 +320,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [20.0.6]: https://github.com/bareos/bareos/releases/tag/Release%2F20.0.6
 [20.0.7]: https://github.com/bareos/bareos/releases/tag/Release%2F20.0.7
 [20.0.8]: https://github.com/bareos/bareos/releases/tag/Release%2F20.0.8
+[20.0.9]: https://github.com/bareos/bareos/releases/tag/Release%2F20.0.9
 [Issue #579]: https://bugs.bareos.org/view.php?id=579
 [Issue #871]: https://bugs.bareos.org/view.php?id=871
 [Issue #971]: https://bugs.bareos.org/view.php?id=971
@@ -555,4 +556,3 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1472]: https://github.com/bareos/bareos/pull/1472
 [PR #1527]: https://github.com/bareos/bareos/pull/1527
 [PR #1553]: https://github.com/bareos/bareos/pull/1553
-[unreleased]: https://github.com/bareos/bareos/tree/master
