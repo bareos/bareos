@@ -78,7 +78,7 @@ After the backup these values are stored again for the next backup.
   :caption: Incremental/Differential Backup tasks performed by the plugin
 
   participant "fd plugin" as plugin
-  participant "postgresql cluster" as psql
+  database "postgresql cluster" as psql
   participant "wal archive directory"  as waldir
 
   == backup starts ==
@@ -105,8 +105,8 @@ The restore basically works like this:
 
   actor Administrator as admin
   participant "fd plugin" as plugin
-  participant "postgresql cluster" as psql
-  participant "data directories" as datadir
+  database "postgresql cluster" as psql
+  collections "data directories" as datadir
   participant "wal archive directory"  as waldir
 
   == restore starts ==
