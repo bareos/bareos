@@ -39,7 +39,7 @@ constexpr T byteswap(T i)
   U u;
   std::memcpy(&u, &i, sizeof(U));
   if constexpr (sizeof(T) == 1) {
-    u = u;
+    static_cast<void>(u);
   } else if constexpr (sizeof(T) == 2) {
     u = ((u & 0x00ff) << 8) | ((u & 0xff00) >> 8);
   } else if constexpr (sizeof(T) == 4) {
@@ -74,8 +74,8 @@ struct network {
   {
     // since we have user provided constructors, we are not a pod type
     // but we should ensure that we meet the other criteria
-    static_assert(sizeof(*this) == sizeof(T));
-    static_assert(alignof(*this) == alignof(T));
+    static_assert(sizeof(decltype(*this)) == sizeof(T));
+    static_assert(alignof(decltype(*this)) == alignof(T));
     store(value);
   }
 
