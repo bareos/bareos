@@ -10,6 +10,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - build: switch to FreeBSD 12.4 [PR #1444]
 - build: remove EOL distros from build matrix [PR #1472]
 - build: switch from FreeBSD 13.1 to 13.2 [PR #1527]
+
+### Security
 - webui: upgrade bootstrap to version 3.4.1 [PR #1553]
 
 ## [20.0.8] - 2022-11-09
