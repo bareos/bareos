@@ -1,0 +1,24 @@
+Job {
+    Name = "Backup-Client_3-Vanilla"
+    JobDefs = "DefaultJob"
+    Client  = "Client_3"
+    Fileset = "Vanilla"
+}
+Job {
+    Name = "Backup-Client_3-Checksum"
+    JobDefs = "DefaultJob"
+    Client  = "Client_3"
+    Fileset = "Checksum"
+}
+Job {
+    Name = "Backup-Client_3-Compression"
+    JobDefs = "DefaultJob"
+    Client  = "Client_3"
+    Fileset = "Compression"
+}
+Job {
+    Name = "Backup-Client_3-Everything"
+    JobDefs = "DefaultJob"
+    Client  = "Client_3"
+    Fileset = "Everything"
+}

@@ -1,0 +1,49 @@
+Client {
+       Name = Client_0
+       Description = "Director resource for Client_0"
+       Address = @hostname@
+       Password = "@fd_password@"
+       FD Port = @fd2_port@
+}
+Client {
+       Name = Client_1
+       Description = "Director resource for Client_1"
+       Address = @hostname@
+       Password = "@fd_password@"
+       FD Port = @fd2_port@
+}
+Client {
+       Name = Client_2
+       Description = "Director resource for Client_2"
+       Address = @hostname@
+       Password = "@fd_password@"
+       FD Port = @fd2_port@
+}
+Client {
+       Name = Client_3
+       Description = "Director resource for Client_3"
+       Address = @hostname@
+       Password = "@fd_password@"
+       FD Port = @fd2_port@
+}
+Client {
+       Name = Client_4
+       Description = "Director resource for Client_4"
+       Address = @hostname@
+       Password = "@fd_password@"
+       FD Port = @fd2_port@
+}
+Client {
+       Name = Client_5
+       Description = "Director resource for Client_5"
+       Address = @hostname@
+       Password = "@fd_password@"
+       FD Port = @fd2_port@
+}
+Client {
+       Name = Client_10
+       Description = "Director resource for Client_10"
+       Address = @hostname@
+       Password = "@fd_password@"
+       FD Port = @fd2_port@
+}

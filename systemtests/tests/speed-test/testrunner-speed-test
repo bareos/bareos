@@ -1,0 +1,74 @@
+#!/bin/bash
+
+set -e
+set -o pipefail
+set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+source "defs"
+
+start_test
+
+backup_log="$tmp"/backups.out
+consolidate_log="$tmp"/consolidate.out
+output="$tmp/output.csv"
+
+rm -rf "$backup_log" "$consolidate_log" "$output"
+
+function start_client()
+{
+    BAREOS_CONFIG_DIR="etc/$1" "${rscripts}/bareos-ctl-fd" start
+    BAREOS_CONFIG_DIR="etc/$1" "${rscripts}/bareos-ctl-fd" status
+}
+
+function stop_clients()
+{
+    "${rscripts}/bareos-ctl-fd" stop
+}
+
+IFS=,
+echo "," "${Types[*]}" >> "${output}"
+
+for Client in "${Clients[@]}"; do
+    echo "Using $Client"
+    start_client "$Client"
+    Data=()
+    for Type in "${Types[@]}"; do
+	echo "Running $Type..."
+	log="$backup_log-$Client-$Type"
+	rm -f "$log"
+	cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $log
+run job="Backup-$Client-$Type" level=Full yes
+wait
+messages
+END_OF_DATA
+	run_bconsole
+
+	expect_grep "Backup OK" \
+		    "$log" \
+		    "Backup was not ok."
+
+	ToAdd=$(grep "Elapsed time:" "$log" |sed 's/Elapsed time:[[:space:]]*//' |sed 's/[[:space:]]*//g')
+	echo "... finished in $ToAdd"
+	Data+=("$ToAdd")
+    done
+    IFS=,
+    echo "${Client}," "${Data[*]}" >> "$output"
+    stop_clients
+done
+
+printf "\n\nResults:\n------\n"
+column -t -s, "${output}"
+
+end_test

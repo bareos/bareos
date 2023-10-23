@@ -459,6 +459,10 @@ macro(prepare_test test_subdir)
   math(EXPR minio_port "${BASEPORT} + 7")
   math(EXPR restapi_port "${BASEPORT} + 8")
 
+
+  set(comp_algo "lz4hc")
+  set(checksum_algo "sha512")
+
   prepare_testdir_for_daemon_run()
 
   # skip for tests without etc/bareos ("catalog" test)

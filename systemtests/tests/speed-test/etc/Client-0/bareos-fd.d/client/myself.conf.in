@@ -1,0 +1,6 @@
+Client {
+       Name = Client-0
+       Working Directory = "@working_dir@"
+       FD Port = @"Client-0"_Port@
+       NumWorkersPerJob=0
+}
