@@ -45,7 +45,7 @@ This is just a short outline of the tasks performed by the plugin.
    and `tablespace_map` (if tablespaces are in use) as virtual files to the backup.
 
 .. uml::
-  :caption: Backup tasks performed by the plugin
+  :caption: Full Backup tasks performed by the plugin
 
   hide footbox
   participant "fd plugin" as plugin
@@ -68,6 +68,27 @@ This is just a short outline of the tasks performed by the plugin.
   == backup completed ==
 
 Incremental and Differential backups will only have to backup WAL files created since last reference backup.
+The postgresql plugin calls `pg_switch_wal()` to make |postgresql| create a new
+WAL file, then all WAL files created since the previous backup are backed up.
+The plugin receives the *|postgresql| major number*, *last backup stop time*
+and *last LSN* from the previous backup and verifies those values.
+After the backup these values are stored again for the next backup.
+
+.. uml::
+  :caption: Incremental/Differential Backup tasks performed by the plugin
+
+  participant "fd plugin" as plugin
+  participant "postgresql cluster" as psql
+  participant "wal archive directory"  as waldir
+
+  == backup starts ==
+  plugin -> plugin: recieve and verify **postgresql major version**, \n**last_backup_stop_time** and **last_lsn**\nfrom previous backup
+  plugin -> psql: call pg_switch_wal() to force the creation of a new wal file
+  psql -> waldir: write WAL file
+  waldir -> plugin: backup WAL files created since previous backup
+  plugin -> plugin: store **postgresql major version**, **last_backup_stop_time** and **last_lsn**
+  == backup completed ==
+
 
 The restore basically works like this:
 
