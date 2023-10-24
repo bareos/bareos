@@ -190,7 +190,7 @@ class MessageHandler {
     POOLMEM* save = fd->msg;
     bool cont = true;
     for (int res = 0; cont; res = fd->WaitData(0, 100'000)) {
-      if (res == 1) {
+      if (res == fd->DataAvailable) {
         PoolMem msg(PM_MESSAGE);
         fd->msg = msg.addr();
         result_type result;
@@ -220,9 +220,11 @@ class MessageHandler {
                 "Tried to put message into queue; but it did not succeed.\n");
           cont = false;
         }
-      } else if (res == -1) {
+      } else if (res == fd->Error) {
         cont = false;
         error_while_reading = true;
+      } else {
+        ASSERT(res == fd->Timeout);
       }
       if (end.load()) { cont = false; }
     }
