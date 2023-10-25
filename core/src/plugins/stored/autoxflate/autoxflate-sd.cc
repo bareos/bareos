@@ -372,14 +372,12 @@ static bRC setup_record_translation(PluginContext* ctx, void* value)
       break;
   }
 
-  if (AutoxflateModeContainsOut(dcr->autodeflate)
-      || AutoxflateModeContainsIn(dcr->autodeflate)) {
+  if (dcr->autodeflate != AutoXflateMode::IO_DIRECTION_NONE) {
     if (!SetupAutoDeflation(ctx, dcr)) { return bRC_Error; }
     did_setup = true;
   }
 
-  if (AutoxflateModeContainsIn(dcr->autoinflate)
-      || AutoxflateModeContainsOut(dcr->autoinflate)) {
+  if (dcr->autoinflate != AutoXflateMode::IO_DIRECTION_NONE) {
     if (!SetupAutoInflation(ctx, dcr)) { return bRC_Error; }
     did_setup = true;
   }

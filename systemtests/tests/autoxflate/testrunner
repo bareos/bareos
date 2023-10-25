@@ -18,7 +18,7 @@ setup_data
 
 start_test
 
-debug_level=500
+debug_level=0
 
 # 1) Create a full backup with LZ4 compression (as per SelfTest fileset config)
 # 2) Copy full backup to other pool and decompress (as per FileStorage2 device config)
@@ -47,9 +47,7 @@ END_OF_DATA
 
 run_bareos "$@"
 
-# There should be no difference, but with autoxflate decompression
-# the restore reports success ("Restore OK") but seems to fail silently
-# and doesn't actually restore anything
+# There should be no difference
 check_restore_diff "${BackupDirectory}"
 
 end_test
