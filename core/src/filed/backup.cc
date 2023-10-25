@@ -1327,7 +1327,7 @@ bail_out:
 
 // read data from bfd into buflen sized chunks.  Submit a shared pointer
 // of each of them to each channel.
-static void ReadData(std::vector<channel::input<shared_buffer>> channels,
+static bool ReadData(std::vector<channel::input<shared_buffer>> channels,
                      BareosFilePacket* bfd,
                      std::size_t buflen)
 {
@@ -1345,19 +1345,24 @@ static void ReadData(std::vector<channel::input<shared_buffer>> channels,
     // some plugins rely on the fact that bread gets called until
     // it returns 0;  the check num_read < readsize is not sufficient here
     // even if it saves some callback calls.
-    if (num_read == 0) { break; }
+    if (num_read == 0) { return true; }
+    if (num_read < 0) { return false; }
 
     char* head = mem.get();
     while (num_read > 0) {
       std::size_t size = std::min(static_cast<std::size_t>(num_read), buflen);
       auto buffer = shared_buffer(mem, size, head);
       for (auto& chan : channels) {
-        if (!chan.emplace(buffer)) { return; }
+        if (!chan.emplace(buffer)) { return false; }
       }
       head += size;
       num_read -= size;
     }
   }
+
+  // this should not be possible!
+  Dmsg0(5, "------------Reached unreachable position!------------\n");
+  return true;
 }
 
 static void DigestData(channel::output<shared_buffer> out,
@@ -1552,6 +1557,7 @@ static inline bool SendPlainData(b_ctx& bctx)
     if (!bctx.jcr->fd_impl->send_ctx->to_digest.emplace(
             digest_input{std::move(dr_out), bctx.digest, bctx.signing_digest,
                          std::move(digest_barrier)})) {
+      send_future.wait();
       return false;
     }
   }
@@ -1563,7 +1569,12 @@ static inline bool SendPlainData(b_ctx& bctx)
   std::swap(digest, bctx.digest);
   std::swap(signing, bctx.signing_digest);
 
-  ReadData(std::move(sinks), &bctx.ff_pkt->bfd, (std::size_t)bctx.rsize);
+  if (!ReadData(std::move(sinks), &bctx.ff_pkt->bfd, (std::size_t)bctx.rsize)) {
+    BErrNo be;
+    Jmsg2(bctx.jcr, M_WARNING, 0, _("Could not successfully read file %s: ERR=%s\n"),
+	  bctx.ff_pkt->fname, be.bstrerror());
+    retval = false;
+  }
   send_future.wait();
   digest_future.wait();
   std::swap(digest, bctx.digest);
