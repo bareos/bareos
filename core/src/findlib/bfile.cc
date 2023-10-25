@@ -1154,6 +1154,8 @@ ssize_t bread(BareosFilePacket* bfd, void* buf, size_t count)
   Dmsg1(400, "bread handled in core via bfd->filedes=%d\n", bfd->filedes);
   ssize_t status = read(bfd->filedes, buf, count);
   bfd->BErrNo = errno;
+
+  Dmsg1(400, "bread result = %lld ERR=%s\n", status, strerror(bfd->BErrNo));
   return status;
 }
 
