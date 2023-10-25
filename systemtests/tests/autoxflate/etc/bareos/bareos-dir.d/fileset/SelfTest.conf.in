@@ -5,7 +5,7 @@ FileSet {
     Options {
       Signature = XXH128
       HardLinks = Yes
-      Compression = LZ4  # Compress data as it's sent to Director
+      Compression = LZ4  # Compress data as it's sent to SD
     }
    #File = "@sbindir@"
     File=<@tmpdir@/file-list
