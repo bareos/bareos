@@ -1,6 +1,7 @@
+#!/bin/bash
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -17,15 +18,22 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
-create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
+set -e
+set -o pipefail
+set -u
 
-set_tests_properties(
-  system:autoxflate:replication-single
-  PROPERTIES FIXTURES_SETUP "system:bareos-basic:backup-job-fixture"
-)
+TestName="$(basename "$(pwd)")"
+export TestName
 
-set_tests_properties(
-  system:autoxflate:replication-distributed
-  PROPERTIES FIXTURES_SETUP "system:bareos-basic:backup-job-fixture"
-)
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
+
+setup_data
+
+bin/bareos start
+bin/bareos status
