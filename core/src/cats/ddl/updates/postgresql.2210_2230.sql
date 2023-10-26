@@ -243,9 +243,6 @@ $$ language 'plpgsql' immutable;
 
 update Version set VersionId = 2230;
 
-commit;
-
-begin;
 create or replace function pg_temp.exec(raw_query text) returns boolean as $$
 begin
   execute raw_query;
@@ -273,6 +270,29 @@ select
         false
     end as frombase64_parallel
 ;
+
+-- update media table to use BIGINT where before was INTEGER
+ALTER TABLE Media ALTER COLUMN Slot          TYPE BIGINT;
+ALTER TABLE Media ALTER COLUMN PoolId        TYPE BIGINT;
+ALTER TABLE Media ALTER COLUMN MediaTypeId   TYPE BIGINT;
+ALTER TABLE Media ALTER COLUMN LabelType     TYPE BIGINT;
+ALTER TABLE Media ALTER COLUMN VolJobs       TYPE BIGINT;
+ALTER TABLE Media ALTER COLUMN VolFiles      TYPE BIGINT;
+ALTER TABLE Media ALTER COLUMN VolBlocks     TYPE BIGINT;
+ALTER TABLE Media ALTER COLUMN VolMounts     TYPE BIGINT;
+ALTER TABLE Media ALTER COLUMN VolErrors     TYPE BIGINT;
+ALTER TABLE Media ALTER COLUMN VolWrites     TYPE BIGINT;
+ALTER TABLE Media ALTER COLUMN MaxVolJobs    TYPE BIGINT;
+ALTER TABLE Media ALTER COLUMN MaxVolFiles   TYPE BIGINT;
+ALTER TABLE Media ALTER COLUMN StorageId     TYPE BIGINT;
+ALTER TABLE Media ALTER COLUMN DeviceId      TYPE BIGINT;
+ALTER TABLE Media ALTER COLUMN EndFile       TYPE BIGINT;
+ALTER TABLE Media ALTER COLUMN LocationId    TYPE BIGINT;
+ALTER TABLE Media ALTER COLUMN RecycleCount  TYPE BIGINT;
+ALTER TABLE Media ALTER COLUMN MinBlockSize  TYPE BIGINT;
+ALTER TABLE Media ALTER COLUMN MaxBlockSize  TYPE BIGINT;
+ALTER TABLE Media ALTER COLUMN ScratchPoolId TYPE BIGINT;
+ALTER TABLE Media ALTER COLUMN RecyclePoolId TYPE BIGINT;
 
 commit;
 set client_min_messages = warning;
