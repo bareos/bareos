@@ -367,9 +367,6 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
              jcr->db_batch->strerror());
         bs->fsend(_("1992 Update File table error\n"));
       }
-    } else {
-      Jmsg(jcr, M_WARNING, 0,
-           _("Batch database connection not found. Cannot update file list\n"));
     }
   } else if (sscanf(bs->msg, Update_jobrecord, &Job, &update_jobfiles,
                     &update_jobbytes)
