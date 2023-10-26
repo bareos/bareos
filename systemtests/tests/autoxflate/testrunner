@@ -16,21 +16,23 @@ export TestName
 
 setup_data
 
-start_test
+debug_level=500
+File="bbatch.c"
 
-debug_level=0
+start_test
 
 # 1) Create a full backup with LZ4 compression (as per SelfTest fileset config)
 # 2) Copy full backup to other pool and decompress (as per FileStorage2 device config)
 # 3) Restore copied job
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out /dev/null
+@$out ${tmp}/backup.out
 messages
 label volume=TestVolume001 storage=File pool=Full
 run job=backup-bareos-fd level=Full yes
 wait
 update volume=TestVolume001 volstatus=Used
 messages
+@$out ${tmp}/copy.out
 label volume=TestCopyVolume001 storage=File2 pool=FullCopy
 setdebug level=$debug_level storage=File
 setdebug level=$debug_level storage=File2
@@ -39,6 +41,7 @@ wait
 setdebug level=0 storage=File
 setdebug level=0 storage=File2
 messages
+@$out ${tmp}/restore.out
 restore jobid=4 client=bareos-fd where=$tmp/bareos-restores all done yes
 wait
 messages
@@ -49,5 +52,14 @@ run_bareos "$@"
 
 # There should be no difference
 check_restore_diff "${BackupDirectory}"
+
+if ! is_file_compressed "FileStorage" "TestVolume001" "${File}"; then
+    echo "TestVolume001 is not compressed"
+    estat=3
+fi
+if is_file_compressed "FileStorage2" "TestCopyVolume001" "${File}"; then
+    echo "TestCopyVolume001 is not uncompressed"
+    estat=4
+fi
 
 end_test
