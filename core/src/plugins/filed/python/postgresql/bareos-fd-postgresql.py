@@ -194,6 +194,12 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
 
         self.statp = {}
 
+        if chr(self.level) == "D":
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL,
+                "Differential backups are not supported! Only Full and Incremental\n",
+            )
+
     def __build_paths_to_backup(self, start_dir):
         """
         Build the tree of paths to be backed up by recursing from top directory.

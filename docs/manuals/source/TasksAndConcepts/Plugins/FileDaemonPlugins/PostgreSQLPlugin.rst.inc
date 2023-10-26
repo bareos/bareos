@@ -17,7 +17,7 @@ This plugin uses the standard API |postgresql| backup routines based on `pg_back
 
 The key features are:
 
-* Incremental backups
+* Full and Incremental backups
 * Point in time recovery
 * Backups that complete quickly and reliably
 * Uninterrupted transaction processing during backups
@@ -68,7 +68,7 @@ This is just a short outline of the tasks performed by the plugin.
   plugin -> plugin: add required files for restore as virtual files
   == backup completed ==
 
-Incremental and Differential backups will only have to backup WAL files created since last reference backup.
+Incremental backups will only have to backup WAL files created since last reference backup.
 The postgresql plugin calls `pg_switch_wal()` to make postgresql create a new
 WAL file, then all WAL files created since the previous backup are backed up.
 The plugin receives the *postgresql major number*, *last backup stop time*
@@ -76,7 +76,7 @@ and *last LSN* from the previous backup and verifies those values.
 After the backup these values are stored again for the next backup.
 
 .. uml::
-  :caption: Incremental/Differential Backup tasks performed by the plugin
+  :caption: Incremental Backup tasks performed by the plugin
 
   participant "fd plugin" as plugin
   database "postgresql cluster" as psql
@@ -144,7 +144,7 @@ The restore basically works like this:
 .. warning::
 
    In order to make coherent backups, it is imperative that :strong:`the same postgresql major version`
-   is used for :strong:`full and incremental/differential` Backups depending on each other.
+   is used for :strong:`full and incremental` Backups depending on each other.
 
 
 Prerequisites for the PostgreSQL Plugin
@@ -391,7 +391,7 @@ If things don't work as expected, make sure that
      -- Version >= 15
      SELECT pg_backup_start();
      SELECT pg_backup_stop();
-     
+
      -- Version >=10 < 15
      SELECT pg_start_backup();
      SELECT pg_stop_backup();
