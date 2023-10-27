@@ -136,10 +136,10 @@ struct JobDbRecord {
   uint32_t StartBlock = 0;
   uint32_t EndBlock = 0;
 
-  char cSchedTime[MAX_TIME_LENGTH]{0};
-  char cStartTime[MAX_TIME_LENGTH]{0};
-  char cEndTime[MAX_TIME_LENGTH]{0};
-  char cRealEndTime[MAX_TIME_LENGTH]{0};
+  char cSchedTime[kMaxTimeLength]{0};
+  char cStartTime[kMaxTimeLength]{0};
+  char cEndTime[kMaxTimeLength]{0};
+  char cRealEndTime[kMaxTimeLength]{0};
 
   // Extra stuff not in DB
   uint64_t limit = 0;  /**< limit records to display */
@@ -371,7 +371,7 @@ struct FileSetDbRecord {
   char MD5[50]{0};                  /**< MD5 signature of include/exclude */
   time_t CreateTime = 0;            /**< Date created */
   // This is where we return CreateTime
-  char cCreateTime[MAX_TIME_LENGTH]{0}; /**< CreateTime as returned from DB */
+  char cCreateTime[kMaxTimeLength]{0}; /**< CreateTime as returned from DB */
   // Not in DB but returned by db_create_fileset()
   bool created = false; /**< set when record newly created */
 };

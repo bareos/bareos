@@ -41,42 +41,55 @@ using namespace std::string_literals;
 
 TEST(time_format, correct_time_and_date_format)
 {
+  constexpr time_t january_ts = 1'390'532'400;
+  constexpr time_t august_ts = 1'344'420'000;
   // make sure bstrftime gets the current timezone offset appended
-  EXPECT_THAT(bstrftime(time(0)).data(), EndsWith(GetCurrentTimezoneOffset()));
+  auto t = time(0);
+  EXPECT_THAT(bstrftime(august_ts).c_str(), EndsWith(GetCurrentTimezoneOffset(august_ts)));
+  EXPECT_THAT(bstrftime(january_ts).c_str(), EndsWith(GetCurrentTimezoneOffset(january_ts)));
 
-  EXPECT_THAT(bstrftime_debug(time(0)).data(),
-              EndsWith(GetCurrentTimezoneOffset()));
-  EXPECT_THAT(bstrftime_debug(1'000'000'000).data(),
-              testing::MatchesRegex("2001-09-0.T..:46:40.*"));
+  EXPECT_THAT(bstrftime_debug().c_str(),
+              EndsWith(GetCurrentTimezoneOffset(t)));
+  EXPECT_THAT(bstrftime_debug().c_str(),
+              testing::MatchesRegex("20[2-9][0-9]-[01][0-9]-[0-3][0-9]T[0-1][0-9]:[0-6][0-9]:[0-6][0-9]\\..*"));
 
-  EXPECT_THAT(bstrftime_scheduler_preview(time(0)).data(), EndsWith(GetCurrentTimezoneOffset()));
-  EXPECT_THAT(bstrftime_scheduler_preview(1'000'000'000).data(), testing::MatchesRegex("... 0.-...-2001 ..:46.*"));
+  EXPECT_THAT(bstrftime_scheduler_preview(t).c_str(), EndsWith(GetCurrentTimezoneOffset(t)));
+  EXPECT_THAT(bstrftime_scheduler_preview(1'000'000'000).c_str(), testing::MatchesRegex("... 0.-...-2001 ..:46.*"));
 
-  EXPECT_THAT(bstrftime_filename(time(0)).data(), EndsWith(GetCurrentTimezoneOffset()));
-  EXPECT_THAT(bstrftime_filename(1'000'000'000).data(), testing::MatchesRegex( "2001-09-0.T...46.40.*"));
+  EXPECT_THAT(bstrftime_filename(t).c_str(), EndsWith(GetCurrentTimezoneOffset(t)));
+  EXPECT_THAT(bstrftime_filename(1'000'000'000).c_str(), testing::MatchesRegex( "2001-09-0.T...46.40.*"));
 
 #if !defined(HAVE_WIN32)
 
   setenv("TZ", "/usr/share/zoneinfo/Europe/Berlin", 1);
-  EXPECT_PRED3(
-      [](auto str, auto s1, auto s2) { return str == s1 || str == s2; },
-      GetCurrentTimezoneOffset().data(), "+0200"s, "+0100"s);
+  tzset();
+  EXPECT_EQ(GetCurrentTimezoneOffset(january_ts), "+0100"s);
+  EXPECT_EQ(GetCurrentTimezoneOffset(august_ts), "+0200"s);
 
   setenv("TZ", "/usr/share/zoneinfo/America/Los_Angeles", 1);
-  EXPECT_PRED3(
-      [](auto str, auto s1, auto s2) { return str == s1 || str == s2; },
-      GetCurrentTimezoneOffset().data(), "-0700"s, "-0800"s);
+  tzset();
+  EXPECT_EQ(GetCurrentTimezoneOffset(january_ts), "-0800"s);
+  EXPECT_EQ(GetCurrentTimezoneOffset(august_ts), "-0700"s);
 
   setenv("TZ", "/usr/share/zoneinfo/America/St_Johns", 1);
-  EXPECT_PRED3(
-      [](auto str, auto s1, auto s2) { return str == s1 || str == s2; },
-      GetCurrentTimezoneOffset(), "-0230"s, "-0330"s);
+  tzset();
+  EXPECT_EQ(GetCurrentTimezoneOffset(january_ts), "-0330"s);
+  EXPECT_EQ(GetCurrentTimezoneOffset(august_ts), "-0230"s);
 
   setenv("TZ", "/usr/share/zoneinfo/Europe/Chisinau", 1);
-  EXPECT_EQ(GetCurrentTimezoneOffset(), "+0300"s);
+  tzset();
+  EXPECT_EQ(GetCurrentTimezoneOffset(january_ts), "+0200"s);
+  EXPECT_EQ(GetCurrentTimezoneOffset(august_ts), "+0300"s);
 
   setenv("TZ", "/usr/share/zoneinfo/Asia/Katmandu", 1);
-  EXPECT_EQ(GetCurrentTimezoneOffset(), "+0545"s);
+  tzset();
+  EXPECT_EQ(GetCurrentTimezoneOffset(january_ts), "+0545"s);
+  EXPECT_EQ(GetCurrentTimezoneOffset(august_ts), "+0545"s);
+
+  setenv("TZ", "/usr/share/zoneinfo/Australia/Canberra", 1);
+  tzset();
+  EXPECT_EQ(GetCurrentTimezoneOffset(january_ts), "+1100"s);
+  EXPECT_EQ(GetCurrentTimezoneOffset(august_ts), "+1000"s);
 
 #endif
 
@@ -126,10 +139,10 @@ TEST(time_format, correct_time_and_date_format)
 
 
   // leap years
-  EXPECT_TRUE(StrToUtime("2000-02-29 10:10:10") != 0);
-  EXPECT_TRUE(StrToUtime("2020-02-29 10:10:10") != 0);
-  EXPECT_TRUE(StrToUtime("2001-02-29 10:10:10") == 0);
-  EXPECT_TRUE(StrToUtime("1900-02-29 10:10:10") == 0);
+  EXPECT_NE(StrToUtime("2000-02-29 10:10:10"), 0);
+  EXPECT_NE(StrToUtime("2020-02-29 10:10:10"), 0);
+  EXPECT_EQ(StrToUtime("2001-02-29 10:10:10"), 0);
+  EXPECT_EQ(StrToUtime("1900-02-29 10:10:10"), 0);
 
   // Correct format, but missing entries
   EXPECT_EQ(StrToUtime("1999-01-02 22:"), 0);

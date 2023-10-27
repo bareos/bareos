@@ -163,6 +163,7 @@ target_link_libraries(
           CLI11::CLI11
           xxHash::xxhash
           date::date
+          fmt::fmt-header-only
 )
 
 if(CMAKE_CXX_FLAGS MATCHES "-fsanitize=address"

@@ -903,7 +903,7 @@ void d_msg(const char* file, int line, int level, const char* fmt, ...)
 
   if (level <= debug_level) {
     if (dbg_timestamp) {
-      Mmsg(buf, "%s ", bstrftime_debug((time(0))).data());
+      Mmsg(buf, "%s ", bstrftime_debug().data());
       pt_out(buf.c_str());
     }
 

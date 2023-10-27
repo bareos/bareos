@@ -122,7 +122,7 @@ void InitWinAPIWrapper();
 #define NT_(s) (s)
 
 /* Maximum length to edit time/date */
-#define MAX_TIME_LENGTH 50
+constexpr size_t kMaxTimeLength = 50;
 
 /* Maximum Name length including EOS */
 #define MAX_NAME_LENGTH 128

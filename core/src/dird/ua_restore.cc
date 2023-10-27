@@ -901,8 +901,8 @@ std::string CompensateShortDate(const char* cmd)
     }
     if (datetime.tm_mon > 0) { datetime.tm_mon--; }
 
-    char buffer[MAX_TIME_LENGTH];
-    std::strftime(buffer, MAX_TIME_LENGTH, "%Y-%m-%d %H:%M:%S", &datetime);
+    char buffer[kMaxTimeLength];
+    std::strftime(buffer, kMaxTimeLength, "%Y-%m-%d %H:%M:%S", &datetime);
     return buffer;
   }
   return cmd;
