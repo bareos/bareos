@@ -21,10 +21,25 @@
 
 #ifndef BAREOS_INCLUDE_TIMESTAMP_FORMAT_H_
 #define BAREOS_INCLUDE_TIMESTAMP_FORMAT_H_
-namespace TimestampFormat {
-extern const char* Default;
-extern const char* SchedPreview;
-extern const char* Database;
-extern const char* Filename;
-}  // namespace TimestampFormat
+struct TimestampFormat {
+  // %z is missing because it is not correctly implemented in windows :(
+  // We implement the %z ourselves and add add the timezone in the format +0000
+  // to all date strings
+
+  // default format
+  // 2023-08-24T17:49:24+0200
+  static constexpr const char* Default{"%Y-%m-%dT%H:%M:%S"};
+
+  // for the scheduler preview
+  // Fri 06-Oct-2023 02:05+0200
+  static constexpr const char* SchedPreview{"%a %d-%b-%Y %H:%M"};
+
+  // for use in TO_CHAR database queries
+  // 2023-10-05T08:57:39+0200
+  static constexpr const char* Database{"YYYY-MM-DD\"T\"HH24:MI:SSTZHTZM"};
+
+  // to create filenames, so only what is allowed in filenames also on windows
+  // 2023-08-24T17.49.24+0200
+  static constexpr const char* Filename{"%Y-%m-%dT%H.%M.%S"};
+};
 #endif  // BAREOS_INCLUDE_TIMESTAMP_FORMAT_H_

@@ -53,27 +53,6 @@
 #include <iomanip>
 #include <iostream>
 
-namespace TimestampFormat {
-// %z is missing because it is not correctly implemented in windows :(
-// We implement the %z ourselves and add add the timezone in the format +0000
-// to all date strings
-
-// default format
-// 2023-08-24T17:49:24+0200
-const char* Default{"%Y-%m-%dT%H:%M:%S"};
-
-// for the scheduler preview
-// Fri 06-Oct-2023 02:05+0200
-const char* SchedPreview{"%a %d-%b-%Y %H:%M"};
-
-// for use in TO_CHAR database queries
-// 2023-10-05T08:57:39+0200
-const char* Database{"YYYY-MM-DD\"T\"HH24:MI:SSTZHTZM"};
-
-// to create filenames, so only what is allowed in filenames also on windows
-// 2023-08-24T17.49.24+0200
-const char* Filename{"%Y-%m-%dT%H.%M.%S"};
-}  // namespace TimestampFormat
 
 
 static date::sys_time<std::chrono::milliseconds> parse8601(std::istream&& is,
