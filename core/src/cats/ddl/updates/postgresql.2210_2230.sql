@@ -273,7 +273,6 @@ select
 
 -- update media table to use BIGINT where before was INTEGER
 ALTER TABLE Media ALTER COLUMN Slot          TYPE BIGINT;
-ALTER TABLE Media ALTER COLUMN LabelType     TYPE BIGINT;
 ALTER TABLE Media ALTER COLUMN VolJobs       TYPE BIGINT;
 ALTER TABLE Media ALTER COLUMN VolFiles      TYPE BIGINT;
 ALTER TABLE Media ALTER COLUMN VolBlocks     TYPE BIGINT;

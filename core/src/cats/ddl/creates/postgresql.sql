@@ -158,7 +158,7 @@ CREATE TABLE Media
     PoolId            INTEGER     DEFAULT 0,
     MediaType         TEXT        NOT NULL,
     MediaTypeId       INTEGER     DEFAULT 0,
-    LabelType         BIGINT      DEFAULT 0,
+    LabelType         INTEGER     DEFAULT 0,
     FirstWritten      TIMESTAMP   WITHOUT TIME ZONE,
     LastWritten       TIMESTAMP   WITHOUT TIME ZONE,
     LabelDate         TIMESTAMP   WITHOUT TIME ZONE,
