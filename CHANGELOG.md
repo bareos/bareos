@@ -108,6 +108,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - packaging: debian fix dependencies [PR #1573]
 - stored: fix support for non-tape block-addressed devices [PR #1554]
 - consolidate: make virtualfull jobs spawned by consolidate job inherit same priority and max concurrent jobs [PR #1530]
+- tls: add tls v1.3 configuration option [PR #1577]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -278,4 +279,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1563]: https://github.com/bareos/bareos/pull/1563
 [PR #1565]: https://github.com/bareos/bareos/pull/1565
 [PR #1573]: https://github.com/bareos/bareos/pull/1573
+[PR #1577]: https://github.com/bareos/bareos/pull/1577
 [unreleased]: https://github.com/bareos/bareos/tree/master
