@@ -40,9 +40,6 @@
  *    utime_t  (64 bit integer in seconds base Epoch)
  */
 
-#if defined(HAVE_WIN32)
-#  define NO_UNDERSCORE_MACRO 1
-#endif
 #include "include/bareos.h"
 #include "lib/btime.h"
 #include <math.h>
@@ -57,14 +54,24 @@
 #include <ctime>
 
 
-
 static date::sys_time<std::chrono::milliseconds> parse8601(std::istream&& is,
                                                            const char* pattern)
 {
   std::string save(std::istreambuf_iterator<char>(is), {});
   std::istringstream in{save};
   date::sys_time<std::chrono::milliseconds> tp;
+#pragma GCC diagnostic push
+#if defined(__has_warning)
+#  if __has_warning("-Wmaybe-uninitialized")
+#    pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#  endif
+#elif defined(__GNUC__)
+#  if __GNUC__ >= 12
+#    pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#  endif
+#endif
   in >> date::parse(pattern, tp);
+#pragma GCC diagnostic pop
   return tp;
 }
 
@@ -94,9 +101,10 @@ void Blocaltime(const time_t* time, struct tm* tm)
 namespace {
 static std::string bstrftime_notz(utime_t utime, const char* fmt)
 {
+  const std::time_t t = static_cast<std::time_t>(utime);
   auto buf = std::string(kMaxTimeLength, '\0');
   struct tm tm;
-  Blocaltime(&utime, &tm);
+  Blocaltime(&t, &tm);
   strftime(buf.data(), kMaxTimeLength, fmt, &tm);
   buf.resize(strlen(buf.c_str()));
   return buf;

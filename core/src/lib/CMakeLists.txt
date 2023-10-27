@@ -195,7 +195,6 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
   )
 endif()
 
-
 if(ENABLE_CAPABILITY)
   target_link_libraries(bareos PRIVATE ${CAP_LIBRARIES})
 endif()

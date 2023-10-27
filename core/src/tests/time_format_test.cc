@@ -50,8 +50,14 @@ TEST(time_format, correct_time_and_date_format)
 
   EXPECT_THAT(bstrftime_debug().c_str(),
               EndsWith(GetCurrentTimezoneOffset(t)));
+#if defined(HAVE_WIN32)
+  // gtest regex on windows doesn't support character classes
+  EXPECT_THAT(bstrftime_debug().c_str(),
+              testing::MatchesRegex("20..-..-..T..:..:..\\..*"));
+#else
   EXPECT_THAT(bstrftime_debug().c_str(),
               testing::MatchesRegex("20[2-9][0-9]-[01][0-9]-[0-3][0-9]T[0-1][0-9]:[0-6][0-9]:[0-6][0-9]\\..*"));
+#endif
 
   EXPECT_THAT(bstrftime_scheduler_preview(t).c_str(), EndsWith(GetCurrentTimezoneOffset(t)));
   EXPECT_THAT(bstrftime_scheduler_preview(1'000'000'000).c_str(), testing::MatchesRegex("... 0.-...-2001 ..:46.*"));
