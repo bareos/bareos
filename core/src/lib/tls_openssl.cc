@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -212,10 +212,8 @@ bool TlsOpenSsl::TlsPostconnectVerifyHost(JobControlRecord* jcr,
                                  X509_EXTENSION_get_data(ext)->length,
                                  ASN1_ITEM_ptr(method->it));
         } else {
-          /*
-           * Old style ASN1
-           * Decode ASN1 item in data
-           */
+          /* Old style ASN1
+           * Decode ASN1 item in data */
           extstr = method->d2i(NULL, &ext_value_data,
                                X509_EXTENSION_get_data(ext)->length);
         }
@@ -276,16 +274,14 @@ bool TlsOpenSsl::TlsBsockAccept(BareosSocket* bsock)
 
 void TlsOpenSsl::TlsBsockShutdown(BareosSocket* bsock)
 {
-  /*
-   * SSL_shutdown must be called twice to fully complete the process -
+  /* SSL_shutdown must be called twice to fully complete the process -
    * The first time to initiate the shutdown handshake, and the second to
    * receive the peer's reply.
    *
    * In addition, if the underlying socket is blocking, SSL_shutdown()
    * will not return until the current stage of the shutdown process has
    * completed or an error has occurred. By setting the socket blocking
-   * we can avoid the ugly for()/switch()/select() loop.
-   */
+   * we can avoid the ugly for()/switch()/select() loop. */
 
   if (!d_->openssl_) { return; }
 
@@ -307,12 +303,10 @@ void TlsOpenSsl::TlsBsockShutdown(BareosSocket* bsock)
 
   int ssl_error = SSL_get_error(d_->openssl_, err_shutdown);
 
-  /*
-   * There may be more errors on the thread-local error-queue.
+  /* There may be more errors on the thread-local error-queue.
    * As we just shutdown our context and looked at the errors that we were
    * interested in we clear the queue so nobody else gets to read an error
-   * that may have occured here.
-   */
+   * that may have occured here. */
   ERR_clear_error();  // empties the current thread's openssl error queue
 
   SSL_free(d_->openssl_);
@@ -349,14 +343,8 @@ int TlsOpenSsl::TlsBsockReadn(BareosSocket* bsock, char* ptr, int32_t nbytes)
 {
   return d_->OpensslBsockReadwrite(bsock, ptr, nbytes, false);
 }
-bool TlsOpenSsl::KtlsSendStatus()
-{
-  return d_->KtlsSendStatus();
-}
+bool TlsOpenSsl::KtlsSendStatus() { return d_->KtlsSendStatus(); }
 
-bool TlsOpenSsl::KtlsRecvStatus()
-{
-  return d_->KtlsRecvStatus();
-}
+bool TlsOpenSsl::KtlsRecvStatus() { return d_->KtlsRecvStatus(); }
 
 #endif /* HAVE_TLS  && HAVE_OPENSSL */

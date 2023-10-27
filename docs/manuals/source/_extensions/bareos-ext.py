@@ -1,6 +1,6 @@
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -141,43 +141,43 @@ def get_config_directive(text):
     logger = logging.getLogger(__name__)
 
     templates = {
-        1: {"shortid": u"{Daemon}", "signature": u"{Dmn}", "display": u"{Daemon}"},
+        1: {"shortid": "{Daemon}", "signature": "{Dmn}", "display": "{Daemon}"},
         2: {
-            "shortid": u"{Resource}",
-            "signature": u"{dmn}/{resource}",
+            "shortid": "{Resource}",
+            "signature": "{dmn}/{resource}",
             # Resource-Type
-            "display": u"{Resource} ({Dmn})",
+            "display": "{Resource} ({Dmn})",
             # Resource-Name
-            "displayWithValue": u"{value} ({Dmn}->{Resource})",
-            "internaltargettemplate": u"{dmn}/{resource}/Name",
+            "displayWithValue": "{value} ({Dmn}->{Resource})",
+            "internaltargettemplate": "{dmn}/{resource}/Name",
             # "internaltargettemplate": u"{Component}Resource{Resource}",
         },
         3: {
-            "shortid": u"{Directive}",
-            "signature": u"{dmn}/{resource}/{CamelCaseDirective}",
-            "display": u"{Directive} ({Dmn}->{Resource})",
-            "displayWithValue": u"{Directive} ({Dmn}->{Resource}) = {value}",
-            "indextemplate": u"Configuration Directive; {Directive} ({Dmn}->{Resource})",
-            "internaltargettemplate": u"{dmn}/{resource}/{CamelCaseDirective}",
-            "targettemplate": u"config-{Dmn}_{Resource}_{CamelCaseDirective}",
+            "shortid": "{Directive}",
+            "signature": "{dmn}/{resource}/{CamelCaseDirective}",
+            "display": "{Directive} ({Dmn}->{Resource})",
+            "displayWithValue": "{Directive} ({Dmn}->{Resource}) = {value}",
+            "indextemplate": "Configuration Directive; {Directive} ({Dmn}->{Resource})",
+            "internaltargettemplate": "{dmn}/{resource}/{CamelCaseDirective}",
+            "targettemplate": "config-{Dmn}_{Resource}_{CamelCaseDirective}",
         },
         4: {
-            "shortid": u"{Sub1}",
-            "signature": u"{dmn}/{resource}/{CamelCaseDirective}/{CamelCaseSub1}",
-            "display": u"{Sub1} ({Dmn}->{Resource}->{Directive})",
-            "displayWithValue": u"{Sub1} ({Dmn}->{Resource}->{Directive}) = {value}",
-            "indextemplate": u"Configuration Directive; {Sub1} ({Dmn}->{Resource}->{Directive})",
-            "internaltargettemplate": u"{dmn}/{resource}/{CamelCaseDirective}/{CamelCaseSub1}",
-            "targettemplate": u"config-{Dmn}_{Resource}_{CamelCaseDirective}_{CamelCaseSub1}",
+            "shortid": "{Sub1}",
+            "signature": "{dmn}/{resource}/{CamelCaseDirective}/{CamelCaseSub1}",
+            "display": "{Sub1} ({Dmn}->{Resource}->{Directive})",
+            "displayWithValue": "{Sub1} ({Dmn}->{Resource}->{Directive}) = {value}",
+            "indextemplate": "Configuration Directive; {Sub1} ({Dmn}->{Resource}->{Directive})",
+            "internaltargettemplate": "{dmn}/{resource}/{CamelCaseDirective}/{CamelCaseSub1}",
+            "targettemplate": "config-{Dmn}_{Resource}_{CamelCaseDirective}_{CamelCaseSub1}",
         },
         5: {
-            "shortid": u"{Sub2}",
-            "signature": u"{dmn}/{resource}/{CamelCaseDirective}/{CamelCaseSub1}/{CamelCaseSub2}",
-            "display": u"{Sub2} ({Dmn}->{Resource}->{Directive}->{Sub1})",
-            "displayWithValue": u"{Sub2} ({Dmn}->{Resource}->{Directive}->{Sub1}) = {value}",
-            "indextemplate": u"Configuration Directive; {Sub2} ({Dmn}->{Resource}->{Directive}->{Sub1})",
-            "internaltargettemplate": u"{dmn}/{resource}/{CamelCaseDirective}/{CamelCaseSub1}/{CamelCaseSub2}",
-            "targettemplate": u"config-{Dmn}_{Resource}_{CamelCaseDirective}_{CamelCaseSub1}_{CamelCaseSub2}",
+            "shortid": "{Sub2}",
+            "signature": "{dmn}/{resource}/{CamelCaseDirective}/{CamelCaseSub1}/{CamelCaseSub2}",
+            "display": "{Sub2} ({Dmn}->{Resource}->{Directive}->{Sub1})",
+            "displayWithValue": "{Sub2} ({Dmn}->{Resource}->{Directive}->{Sub1}) = {value}",
+            "indextemplate": "Configuration Directive; {Sub2} ({Dmn}->{Resource}->{Directive}->{Sub1})",
+            "internaltargettemplate": "{dmn}/{resource}/{CamelCaseDirective}/{CamelCaseSub1}/{CamelCaseSub2}",
+            "targettemplate": "config-{Dmn}_{Resource}_{CamelCaseDirective}_{CamelCaseSub1}_{CamelCaseSub2}",
         },
     }
 
@@ -272,7 +272,6 @@ def get_config_directive(text):
 
 
 class ConfigDatatype(ObjectDescription):
-
     parse_node = None
     has_arguments = True
 
@@ -307,13 +306,13 @@ class ConfigDatatype(ObjectDescription):
 
         uppername = signature.upper()
         lowername = signature.lower()
-        targetname = u"datatype-{}".format(lowername)
+        targetname = "datatype-{}".format(lowername)
         signode["ids"].append(targetname)
         self.state.document.note_explicit_target(signode)
 
         # Generic index entries
         self.indexnode["entries"].append(
-            ("single", u"Data Type; {}".format(uppername), targetname, targetname, None)
+            ("single", "Data Type; {}".format(uppername), targetname, targetname, None)
         )
 
         self.env.domaindata["config"]["objects"][self.objtype, lowername] = (
@@ -334,7 +333,6 @@ class ConfigDatatypeXRefRole(XRefRole):
         )
 
     def process_link(self, env, refnode, has_explicit_title, title, target):
-
         logger = logging.getLogger(__name__)
 
         if has_explicit_title:
@@ -453,7 +451,6 @@ class ConfigOptionXRefRole(XRefRole):
         return [indexnode, targetnode, node], []
 
     def process_link(self, env, refnode, has_explicit_title, title, target):
-
         logger = logging.getLogger(__name__)
 
         if has_explicit_title:
@@ -596,7 +593,6 @@ def autolink(urlpattern, textpattern="{}"):
 
 def bcommand():
     def role(name, rawtext, text, lineno, inliner, options={}, content=[]):
-
         env = inliner.document.settings.env
 
         try:
@@ -624,7 +620,6 @@ def bcommand():
 
 
 def os():
-
     # \newcommand{\os}[2]{\ifthenelse{\isempty{#2}}{%
     # \path|#1|\index[general]{Platform!#1}%
     # }{%
@@ -632,7 +627,6 @@ def os():
     # }}
 
     def role(name, rawtext, text, lineno, inliner, options={}, content=[]):
-
         env = inliner.document.settings.env
 
         # Generic index entries
@@ -700,7 +694,6 @@ def sinceVersion():
 
 def downloadUrls():
     def role(name, rawtext, text, lineno, inliner, options={}, content=[]):
-
         urls = BareosUrls()
 
         distribution = ""

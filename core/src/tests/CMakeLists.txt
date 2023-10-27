@@ -20,29 +20,38 @@ message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 include_directories(${OPENSSL_INCLUDE_DIR})
 
-if (NOT (${CMAKE_SYSTEM_NAME} MATCHES "Linux"))
+if(NOT (${CMAKE_SYSTEM_NAME} MATCHES "Linux"))
   set(LINUX_KERNEL_VERSION "0.0")
 else()
-  execute_process(COMMAND uname -r OUTPUT_VARIABLE UNAME_RESULT OUTPUT_STRIP_TRAILING_WHITESPACE)
+  execute_process(
+    COMMAND uname -r
+    OUTPUT_VARIABLE UNAME_RESULT
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
   message(-- " Kernel version: " ${UNAME_RESULT})
   string(REGEX MATCH "[0-9]+.[0-9]+" LINUX_KERNEL_VERSION ${UNAME_RESULT})
 endif()
 
-
 set(KTLS_DEFINITIONS)
 find_package(OpenSSL)
-if((OPENSSL_VERSION VERSION_LESS "3.0.0") OR (LINUX_KERNEL_VERSION VERSION_LESS "5.3"))
+if((OPENSSL_VERSION VERSION_LESS "3.0.0") OR (LINUX_KERNEL_VERSION VERSION_LESS
+                                              "5.3")
+)
   set(KTLS_DEFINITIONS DISABLE_KTLS)
 else()
-  if (LINUX_KERNEL_VERSION VERSION_LESS "5.16")
+  if(LINUX_KERNEL_VERSION VERSION_LESS "5.16")
     list(APPEND KTLS_DEFINITIONS DISABLE_KTLS_12_RECV)
   endif()
-  if (LINUX_KERNEL_VERSION VERSION_LESS "5.20" OR OPENSSL_VERSION VERSION_LESS "3.2.0")
+  if(LINUX_KERNEL_VERSION VERSION_LESS "5.20" OR OPENSSL_VERSION VERSION_LESS
+                                                 "3.2.0"
+  )
     list(APPEND KTLS_DEFINITIONS DISABLE_KTLS_13_RECV)
   endif()
 
-  if (LINUX_KERNEL_VERSION VERSION_LESS "6.1")
-    list(APPEND KTLS_DEFINITIONS DISABLE_KTLS_12_256_SEND DISABLE_KTLS_13_256_SEND)
+  if(LINUX_KERNEL_VERSION VERSION_LESS "6.1")
+    list(APPEND KTLS_DEFINITIONS DISABLE_KTLS_12_256_SEND
+         DISABLE_KTLS_13_256_SEND
+    )
   endif()
 endif()
 
@@ -216,7 +225,7 @@ if(NOT client-only)
   bareos_add_test(
     catalog
     LINK_LIBRARIES bareos dird_objects bareosfind bareossql
-    $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
+                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
     SKIP_GTEST # used by systemtest catalog
   )
 

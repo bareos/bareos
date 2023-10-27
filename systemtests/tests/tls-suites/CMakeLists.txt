@@ -20,8 +20,8 @@
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 
 find_package(OpenSSL)
-# TLSv1.3 support was added in 1.1.1
-# so disable the test if openssl is older than that
+# TLSv1.3 support was added in 1.1.1 so disable the test if openssl is older
+# than that
 if(OPENSSL_VERSION VERSION_LESS "1.1.1")
   create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED)
 else()

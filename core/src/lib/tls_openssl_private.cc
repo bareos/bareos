@@ -45,7 +45,8 @@
 #include "lib/thread_util.h"
 
 /* PskCredentials lookup map for all connections */
-static synchronized<std::unordered_map<const SSL_CTX*, PskCredentials>> client_cred;
+static synchronized<std::unordered_map<const SSL_CTX*, PskCredentials>>
+    client_cred;
 static std::mutex file_access_mutex_;
 
 /* No anonymous ciphers, no <128 bit ciphers, no export ciphers, no MD5 ciphers
@@ -446,7 +447,6 @@ bool TlsOpenSslPrivate::KtlsSendStatus()
 #else
   return false;
 #endif
-
 }
 
 bool TlsOpenSslPrivate::KtlsRecvStatus()
