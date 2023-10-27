@@ -46,7 +46,7 @@ include
 ~~~~~~~
 
 If a source file add another file via **include**,
-it will be integrated into the original source file (and not handled as a seperate file).
+it will be integrated into the original source file (and not handled as a separate file).
 For this reason it is important, that the included document must match the sectioning scheme of the including document.
 
 To avoid :program:`sphinx-build` warnings, included files should use a different extension as the normal files (included by toctree).

@@ -29,7 +29,7 @@ The *caption* shows the relevant path where to expect the configuration resource
 
 The prefix path is not shown, as it is platform specific.
 
-The directives should be written like shown in the documenation, meaning a seperate words (''Archive Device'' instead if ''ArchiveDevice'' or ''archrivedevice'').
+The directives should be written like shown in the documenation, meaning a separate words (''Archive Device'' instead if ''ArchiveDevice'' or ''archrivedevice'').
 
 Use ``...`` to indicate left out directives not relevant for the example.
 
@@ -39,7 +39,7 @@ Use ``...`` to indicate left out directives not relevant for the example.
    Remember to start each code-block line by 3 indenting spaces. However, the code itself is indented by the rules of the resource (2 spaces for Bareos configuration resources).
 
 
-If the content is a seperate file, use
+If the content is a separate file, use
 
 ::
 

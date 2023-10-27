@@ -249,7 +249,7 @@ The output will look like this:
 .. include:: /DocumentationStyleGuide/example/os.rst.inc
 
 As an index is generated from the operation systems, the naming should be identical in all occurances.
-The first space seperates the platform from the version.
+The first space separates the platform from the version.
 
 
 Email Address
