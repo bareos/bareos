@@ -40,6 +40,7 @@
 #include "lib/address_conf.h"
 
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <sys/socket.h>
 #include <stdlib.h>
 #include <arpa/inet.h>
@@ -387,6 +388,20 @@ void BnetThreadServerTcp(
                              &clilen);
         } while (newsockfd < 0 && errno == EINTR);
         if (newsockfd < 0) { continue; }
+
+#ifdef HAVE_LINUX_OS
+#  ifdef TCP_ULP
+        // without this you cannot enable ktls on linux
+        if (setsockopt(newsockfd, SOL_TCP, TCP_ULP, "tls", sizeof("tls")) < 0) {
+          BErrNo be;
+          Dmsg1(20,
+                "Cannot set TCP_ULP on socket: %s;\n"
+                "Is the tls module not loaded?  "
+                "kTLS will not work without it.",
+                be.bstrerror());
+        }
+#  endif
+#endif
 
         int keepalive = 1;
         if (setsockopt(newsockfd, SOL_SOCKET, SO_KEEPALIVE,

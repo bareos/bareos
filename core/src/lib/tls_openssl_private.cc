@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -40,19 +40,19 @@
 #include <openssl/ssl.h>
 #include <algorithm>
 #include <array>
+#include <unordered_map>
 
-/* static private */
-std::map<const SSL_CTX*, PskCredentials>
-    TlsOpenSslPrivate::psk_client_credentials_;
-std::mutex TlsOpenSslPrivate::psk_client_credentials_mutex_;
-std::mutex TlsOpenSslPrivate::file_access_mutex_;
+#include "lib/thread_util.h"
 
-/* static private */
+/* PskCredentials lookup map for all connections */
+static synchronized<std::unordered_map<const SSL_CTX*, PskCredentials>>
+    client_cred;
+static std::mutex file_access_mutex_;
+
 /* No anonymous ciphers, no <128 bit ciphers, no export ciphers, no MD5 ciphers
  */
-const std::string TlsOpenSslPrivate::tls_default_ciphers_{
+static constexpr std::string_view tls_default_ciphers_{
     "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH"};
-
 
 TlsOpenSslPrivate::TlsOpenSslPrivate()
 {
@@ -106,9 +106,7 @@ TlsOpenSslPrivate::~TlsOpenSslPrivate()
   /* the openssl_ctx object is the factory that creates
    * openssl objects, so delete this at the end */
   if (openssl_ctx_) {
-    psk_client_credentials_mutex_.lock();
-    psk_client_credentials_.erase(openssl_ctx_);
-    psk_client_credentials_mutex_.unlock();
+    client_cred.lock()->erase(openssl_ctx_);
     SSL_CTX_free(openssl_ctx_);
     openssl_ctx_ = nullptr;
   }
@@ -145,12 +143,25 @@ bool TlsOpenSslPrivate::init()
 
   SSL_CTX_set_options(openssl_ctx_, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
 
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+  if (enable_ktls_) { SSL_CTX_set_options(openssl_ctx_, SSL_OP_ENABLE_KTLS); }
+#endif
+
   if (cipherlist_.empty()) { cipherlist_ = tls_default_ciphers_; }
 
   if (SSL_CTX_set_cipher_list(openssl_ctx_, cipherlist_.c_str()) != 1) {
-    Dmsg0(100, _("Error setting cipher list, no valid ciphers available\n"));
+    OpensslPostErrors(M_ERROR, "Error setting cipher list");
     return false;
   }
+
+#if (OPENSSL_VERSION_NUMBER >= 0x10101000L)
+  // use the default tls 1.3 cipher suites if nothing is set
+  if (!ciphersuites_.empty()
+      && SSL_CTX_set_ciphersuites(openssl_ctx_, ciphersuites_.c_str()) != 1) {
+    OpensslPostErrors(M_ERROR, "Error setting cipher suite");
+    return false;
+  }
+#endif
 
   if (pem_callback_ == nullptr) {
     pem_callback_ = CryptoDefaultPemCallback;
@@ -417,7 +428,35 @@ cleanup:
   bsock->timer_start = 0;
   bsock->SetKillable(true);
 
+  if (enable_ktls_) {
+    // old openssl versions might return -1 as well; so check for > 0 instead
+    bool ktls_send = KtlsSendStatus();
+    bool ktls_recv = KtlsRecvStatus();
+    Dmsg1(150, "kTLS used for Recv: %s\n", ktls_recv ? "yes" : "no");
+    Dmsg1(150, "kTLS used for Send: %s\n", ktls_send ? "yes" : "no");
+  }
+
   return status;
+}
+
+bool TlsOpenSslPrivate::KtlsSendStatus()
+{
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+  // old openssl versions might return -1 as well; so check for > 0 instead
+  return BIO_get_ktls_send(SSL_get_wbio(openssl_)) > 0;
+#else
+  return false;
+#endif
+}
+
+bool TlsOpenSslPrivate::KtlsRecvStatus()
+{
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+  // old openssl versions might return -1 as well; so check for > 0 instead
+  return BIO_get_ktls_recv(SSL_get_rbio(openssl_)) > 0;
+#else
+  return false;
+#endif
 }
 
 int TlsOpenSslPrivate::tls_pem_callback_dispatch(char* buf,
@@ -435,10 +474,7 @@ void TlsOpenSslPrivate::ClientContextInsertCredentials(
   if (!openssl_ctx_) { /* do not register nullptr */
     Dmsg0(100, "Psk Server Callback: No SSL_CTX\n");
   } else {
-    psk_client_credentials_mutex_.lock();
-    TlsOpenSslPrivate::psk_client_credentials_.insert(
-        std::pair<const SSL_CTX*, PskCredentials>(openssl_ctx_, credentials));
-    psk_client_credentials_mutex_.unlock();
+    client_cred.lock()->emplace(openssl_ctx_, credentials);
   }
 }
 
@@ -498,22 +534,18 @@ unsigned int TlsOpenSslPrivate::psk_client_cb(SSL* ssl,
   }
 
   PskCredentials credentials;
-  bool found = false;
-
-  psk_client_credentials_mutex_.lock();
-  if (psk_client_credentials_.find(openssl_ctx)
-      != psk_client_credentials_.end()) {
-    credentials = TlsOpenSslPrivate::psk_client_credentials_.at(openssl_ctx);
-    found = true;
+  {
+    auto locked = client_cred.lock();
+    if (auto iter = locked->find(openssl_ctx); iter != locked->end()) {
+      credentials = iter->second;
+    } else {
+      Dmsg0(100,
+            "Error, TLS-PSK CALLBACK not set because SSL_CTX is not "
+            "registered.\n");
+      return 0;
+    }
   }
-  psk_client_credentials_mutex_.unlock();
 
-  if (!found) {
-    Dmsg0(
-        100,
-        "Error, TLS-PSK CALLBACK not set because SSL_CTX is not registered.\n");
-    return 0;
-  }
   int ret = Bsnprintf(identity, max_identity_len, "%s",
                       credentials.get_identity().c_str());
 
@@ -589,6 +621,12 @@ void TlsOpenSsl::SetVerifyPeer(const bool& verify_peer)
   d_->verify_peer_ = verify_peer;
 }
 
+void TlsOpenSsl::SetEnableKtls(bool ktls)
+{
+  Dmsg1(100, "Set ktls:\t<%s>\n", ktls ? "true" : "false");
+  d_->enable_ktls_ = ktls;
+}
+
 void TlsOpenSsl::SetTcpFileDescriptor(const int& fd)
 {
   Dmsg1(100, "Set tcp filedescriptor: <%d>\n", fd);
@@ -599,6 +637,12 @@ void TlsOpenSsl::SetCipherList(const std::string& cipherlist)
 {
   Dmsg1(100, "Set cipherlist:\t<%s>\n", cipherlist.c_str());
   d_->cipherlist_ = cipherlist;
+}
+
+void TlsOpenSsl::SetCipherSuites(const std::string& ciphersuites)
+{
+  Dmsg1(100, "Set ciphersuites:\t<%s>\n", ciphersuites.c_str());
+  d_->ciphersuites_ = ciphersuites;
 }
 
 void TlsOpenSsl::SetProtocol(const std::string& protocol)

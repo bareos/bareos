@@ -290,6 +290,20 @@ bool BareosSocketTCP::open(JobControlRecord* jcr,
     return false;
   }
 
+#ifdef HAVE_LINUX_OS
+#  ifdef TCP_ULP
+  // without this you cannot enable ktls on linux
+  if (setsockopt(sockfd, SOL_TCP, TCP_ULP, "tls", sizeof("tls")) < 0) {
+    BErrNo be;
+    Dmsg1(20,
+          "Cannot set TCP_ULP on socket: %s;\n"
+          "Is the tls module not loaded?  "
+          "kTLS will not work without it.",
+          be.bstrerror());
+  }
+#  endif
+#endif
+
   /* Keep socket from timing out from inactivity
    * Do this a second time out of paranoia */
   if (setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, (sockopt_val_t)&value,

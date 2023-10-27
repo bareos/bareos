@@ -48,6 +48,9 @@ class TlsOpenSslPrivate {
                             bool write);
   bool OpensslBsockSessionStart(BareosSocket* bsock, bool server);
 
+  bool KtlsSendStatus();
+  bool KtlsRecvStatus();
+
   void ClientContextInsertCredentials(const PskCredentials& cred);
   void ServerContextInsertCredentials(const PskCredentials& cred);
 
@@ -73,14 +76,6 @@ class TlsOpenSslPrivate {
   SSL_CTX* openssl_ctx_{};
   SSL_CONF_CTX* openssl_conf_ctx_{};
 
-  /* PskCredentials lookup map for all connections */
-  static std::map<const SSL_CTX*, PskCredentials> psk_client_credentials_;
-  static std::mutex psk_client_credentials_mutex_;
-  static std::mutex file_access_mutex_;
-
-  /* tls_default_ciphers_ if no user ciphers given  */
-  static const std::string tls_default_ciphers_;
-
   /* openssl protocol command */
   std::string protocol_;
 
@@ -95,7 +90,9 @@ class TlsOpenSslPrivate {
   void* pem_userdata_{};
   std::string dhfile_;
   std::string cipherlist_;
+  std::string ciphersuites_;
   bool verify_peer_{};
+  bool enable_ktls_{false};
   std::shared_ptr<ConfigResourcesContainer>
       config_table_{};  // config table being used
 };

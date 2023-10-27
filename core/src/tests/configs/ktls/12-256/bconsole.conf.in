@@ -1,0 +1,14 @@
+#
+# Bareos User Agent (or Console) Configuration File
+#
+
+Director {
+  Name = @basename@-dir
+  DIRport = @dir_port@
+  Address = @hostname@
+  Password = "@dir_password@"
+
+  Enable kTLS = Yes
+  TLS Protocol = "-TLSv1,-TLSv1.1,-TLSv1.3,TLSv1.2"
+  TLS Cipher List = "PSK-CHACHA20-POLY1305"
+}
