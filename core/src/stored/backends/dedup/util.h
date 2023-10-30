@@ -27,6 +27,7 @@
 #include <memory>
 #include <utility>
 #include <cstring>
+#include <optional>
 #include <sys/mman.h>
 #include "lib/network_order.h"
 
