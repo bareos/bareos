@@ -54,7 +54,7 @@ copy_configs()
 
 check_encoding()
 {
-   if "${BAREOS_DIRECTOR_BINARY}" -d50 -t 2>&1 | grep 'Wanted SQL_ASCII, got UTF8' >/dev/null
+   if "${BAREOS_DIRECTOR_BINARY}" -d50 -t -c "${conf}" 2>&1 | grep 'Wanted SQL_ASCII, got UTF8' >/dev/null
    then
        echo "Found database encoding problem, please modify the database encoding (SQL_ASCII)"
        exit 1
@@ -643,7 +643,7 @@ get_file_size()
    SIZE=-1
    if [ -e "$FILE" ]; then
      if [ "$(uname -s)" == FreeBSD ]; then
-       # gdu: GNU coreutils du     
+       # gdu: GNU coreutils du
        DU="gdu"
      else
        DU="du"
@@ -1107,7 +1107,7 @@ if grep -q "${non_expected_result}" "${target_file}"; then
 fi
 }
 
-# Used by mysqltest 
+# Used by mysqltest
 skip_if_root()
 {
 USER=$(whoami)

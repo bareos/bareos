@@ -1,2 +1,3 @@
 @plugindir@/bareos-fd-postgres.py*
 @plugindir@/BareosFdPluginPostgres.py*
+@plugindir@/bareos-fd-postgresql.py*

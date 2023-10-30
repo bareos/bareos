@@ -193,7 +193,7 @@ int FindFiles(JobControlRecord* jcr,
         Dmsg1(debuglevel, "PluginCommand: %s\n", fname);
         ff->top_fname = fname;
         ff->cmd_plugin = true;
-        PluginSave(jcr, ff, true);
+        if (!PluginSave(jcr, ff, true)) { return 0; }
         ff->cmd_plugin = false;
         if (jcr->IsJobCanceled()) { return 0; }
       }

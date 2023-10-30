@@ -22,6 +22,12 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
    * Director daemon
      * Hard Links (Dir->Fileset->Include->Options) = no (was yes)
 
+- The PostgreSQL plugin got a complete rewrite, the minimal changes are:
+   * `module_name=bareos-fd-postgresql`
+   * `db_host=`
+   * `postgresql_data_dir=`
+   * `wal_archive_dir=`
+
 ### Changed
 - VMware Plugin: introduce pyVmomi 8.x compatibility [PR #1352]
 - devtools: add `pr-tool` to automate PR review and merge [PR #935]
@@ -109,6 +115,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - stored: fix support for non-tape block-addressed devices [PR #1554]
 - consolidate: make virtualfull jobs spawned by consolidate job inherit same priority and max concurrent jobs [PR #1530]
 - tls: add tls v1.3 configuration option [PR #1577]
+- bareos-fd-plugin: new python PostgreSQL [PR #1541]
 
 ### Removed
 - remove no longer used pkglists [PR #1335]
@@ -267,6 +274,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1530]: https://github.com/bareos/bareos/pull/1530
 [PR #1531]: https://github.com/bareos/bareos/pull/1531
 [PR #1532]: https://github.com/bareos/bareos/pull/1532
+[PR #1541]: https://github.com/bareos/bareos/pull/1541
 [PR #1542]: https://github.com/bareos/bareos/pull/1542
 [PR #1543]: https://github.com/bareos/bareos/pull/1543
 [PR #1546]: https://github.com/bareos/bareos/pull/1546

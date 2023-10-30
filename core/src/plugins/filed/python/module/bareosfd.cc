@@ -284,9 +284,14 @@ static inline bool PySavePacketToNative(
 
         plugin_priv_ctx->fname = strdup(fileName_AsUTF8);
         sp->fname = plugin_priv_ctx->fname;
+      } else {
+        PyErr_SetString(PyExc_TypeError,
+                        "fname needs to be of type string \"utf-8\"");
+        return false;
       }
     } else {
-      goto bail_out;
+      PyErr_SetString(PyExc_RuntimeError, "fname is empty");
+      return false;
     }
 
     // Optional field.
@@ -297,6 +302,10 @@ static inline bool PySavePacketToNative(
         if (plugin_priv_ctx->link) { free(plugin_priv_ctx->link); }
         plugin_priv_ctx->link = strdup(PyUnicode_AsUTF8(pSavePkt->link));
         sp->link = plugin_priv_ctx->link;
+      } else {
+        PyErr_SetString(PyExc_TypeError,
+                        "if given, link needs to be of type string \"utf-8\"");
+        return false;
       }
     }
 
@@ -304,7 +313,8 @@ static inline bool PySavePacketToNative(
     if (pSavePkt->statp) {
       PyStatPacketToNative((PyStatPacket*)pSavePkt->statp, &sp->statp);
     } else {
-      goto bail_out;
+      PyErr_SetString(PyExc_RuntimeError, "PyStatPacketToNative() failed");
+      return false;
     }
 
     sp->type = pSavePkt->type;
@@ -313,16 +323,19 @@ static inline bool PySavePacketToNative(
       char* flags;
 
       if (PyByteArray_Size(pSavePkt->flags) != sizeof(sp->flags)) {
-        goto bail_out;
+        PyErr_SetString(PyExc_RuntimeError, "PyByteArray_Size(flags) failed");
+        return false;
       }
-
       if ((flags = PyByteArray_AsString(pSavePkt->flags))) {
         memcpy(sp->flags, flags, sizeof(sp->flags));
       } else {
-        goto bail_out;
+        PyErr_SetString(PyExc_RuntimeError,
+                        "PyByteArray_AsString(flags) failed");
+        return false;
       }
     } else {
-      goto bail_out;
+      PyErr_SetString(PyExc_TypeError, "flags need to be of type bytearray");
+      return false;
     }
 
     // Special code for handling restore objects.
@@ -331,9 +344,12 @@ static inline bool PySavePacketToNative(
       if (pSavePkt->object_len > 0) {
         /* As this has to linger as long as the backup is running we save it
          * in our plugin context. */
-        if (pSavePkt->object_name && pSavePkt->object
-            && PyUnicode_Check(pSavePkt->object_name)
-            && PyByteArray_Check(pSavePkt->object)) {
+        bool object_name_exists = pSavePkt->object_name;
+        bool object_name_is_unicode = PyUnicode_Check(pSavePkt->object_name);
+        bool object_exists = pSavePkt->object;
+        bool object_is_bytearray = PyByteArray_Check(pSavePkt->object);
+        if (object_name_exists && object_name_is_unicode && object_exists
+            && object_is_bytearray) {
           char* buf;
 
           if (plugin_priv_ctx->object_name) {
@@ -352,13 +368,25 @@ static inline bool PySavePacketToNative(
             memcpy(plugin_priv_ctx->object, buf, pSavePkt->object_len);
             sp->object = plugin_priv_ctx->object;
           } else {
-            goto bail_out;
+            return false;
           }
         } else {
-          goto bail_out;
+          std::string err_string{};
+          if (!object_name_exists) { err_string = "object name missing"; };
+          if (!object_name_is_unicode) {
+            err_string = "object name must be unicode type";
+          };
+          if (!object_exists) { err_string = "object missing"; };
+          if (!object_is_bytearray) {
+            err_string = "object needs to be of type bytearray";
+          };
+
+          PyErr_SetString(PyExc_RuntimeError, err_string.c_str());
+          return false;
         }
       } else {
-        goto bail_out;
+        PyErr_SetString(PyExc_RuntimeError, "pSavePkt->object_len is <=0");
+        return false;
       }
     } else {
       sp->no_read = pSavePkt->no_read;
@@ -374,23 +402,23 @@ static inline bool PySavePacketToNative(
       char* flags;
 
       if (PyByteArray_Size(pSavePkt->flags) != sizeof(sp->flags)) {
-        goto bail_out;
+        PyErr_SetString(PyExc_RuntimeError, "PyByteArray_Size(flags) failed");
+        return false;
       }
 
       if ((flags = PyByteArray_AsString(pSavePkt->flags))) {
         memcpy(sp->flags, flags, sizeof(sp->flags));
       } else {
-        goto bail_out;
+        PyErr_SetString(PyExc_RuntimeError,
+                        "PyByteArray_AsString(flags) failed");
+        return false;
       }
     } else {
-      goto bail_out;
+      PyErr_SetString(PyExc_TypeError, "flags need to be of type bytearray");
+      return false;
     }
   }
-
   return true;
-
-bail_out:
-  return false;
 }
 
 /**
@@ -415,7 +443,11 @@ static bRC PyStartBackupFile(PluginContext* plugin_ctx, save_pkt* sp)
     PyObject* pRetVal;
 
     pSavePkt = NativeToPySavePacket(sp);
-    if (!pSavePkt) { goto bail_out; }
+    if (!pSavePkt) {
+      Dmsg(plugin_ctx, debuglevel,
+           LOGPREFIX "Failed to convert save packet to python.\n");
+      goto bail_out;
+    }
 
     pRetVal = PyObject_CallFunctionObjArgs(pFunc, (PyObject*)pSavePkt, NULL);
     if (!pRetVal) {
@@ -425,7 +457,10 @@ static bRC PyStartBackupFile(PluginContext* plugin_ctx, save_pkt* sp)
       retval = ConvertPythonRetvalTobRCRetval(pRetVal);
       Py_DECREF(pRetVal);
 
-      if (!PySavePacketToNative(pSavePkt, sp, plugin_priv_ctx, false)) {
+      if (retval == bRC_OK
+          && !PySavePacketToNative(pSavePkt, sp, plugin_priv_ctx, false)) {
+        Dmsg(plugin_ctx, debuglevel,
+             LOGPREFIX "Failed to convert save packet to native.\n");
         Py_DECREF((PyObject*)pSavePkt);
         goto bail_out;
       }
@@ -441,7 +476,7 @@ static bRC PyStartBackupFile(PluginContext* plugin_ctx, save_pkt* sp)
 bail_out:
   if (PyErr_Occurred()) { PyErrorHandler(plugin_ctx, M_FATAL); }
 
-  return retval;
+  return bRC_Error;
 }
 
 /**

@@ -30,7 +30,7 @@ in the :file:`windows` directory of the Bareos release directory.
 The current Bareos Community Repository is at https://download.bareos.org/current/windows/
 while the Bareos Subscription Repository of Bareos release 22 is at
 https://download.bareos.com/bareos/release/22/windows/.
-Additionally, there are `OPSI <https://www.opsi.org>`_ packages available in the :file:`windows/opsi/` directory (https://download.bareos.org/current/windows/opsi/ resp. https://download.bareos.com/bareos/release/22/windows/opsi/).
+Additionally, there are `OPSI <https://opsi.org>`_ packages available in the :file:`windows/opsi/` directory (https://download.bareos.org/current/windows/opsi/ resp. https://download.bareos.com/bareos/release/22/windows/opsi/).
 
 This install is standard Windows .exe that runs an install wizard using the NSIS Free Software installer, so if you have already installed Windows software, it should be very familiar to you. Providing you do not already have Bareos installed, the installer installs the binaries and dlls in :file:`C:\\Program Files\\Bareos` and the configuration files in :file:`C:\\ProgramData\\Bareos` (for Windows XP and older:
 :file:`C:\\Documents and Settings\\All Users\\Application Data\\Bareos`).
@@ -323,8 +323,8 @@ Accordingly, if OneFS is set to yes, we do not need to handle Volume Mount Point
 Hard Links
 ~~~~~~~~~~
 
-Windows also supports hard links, even so they are seldom used. These are 
-treated as normal files and will be restored as individual files (which 
+Windows also supports hard links, even so they are seldom used. These are
+treated as normal files and will be restored as individual files (which
 will not be hard links again)
 
 .. _FilesNotToBackup:

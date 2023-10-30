@@ -30,7 +30,7 @@ Incremental backups only work for INNODB tables, when using MYISAM, only full ba
 Prerequisites of percona XtraBackup Plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Install the XtraBackup tool from Percona. Documentation and packages are available here: https://www.percona.com/software/mysql-database/percona-xtrabackup. The plugin was successfully tested with XtraBackup versions 2.3.5 and 2.4.4.
+Install the XtraBackup tool from Percona. Documentation and packages are available here: https://www.percona.com/mysql/software. The plugin was successfully tested with XtraBackup versions 2.3.5 and 2.4.4.
 
 For authentication the :file:`.mycnf` file of the user running the |fd| is used. Before proceeding, make sure that XtraBackup can connect to the database and create backups.
 

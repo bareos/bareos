@@ -127,6 +127,7 @@ set(PYFILES
     percona-xtrabackup/BareosFdPluginPerconaXtraBackup.py
     postgres/bareos-fd-postgres.py
     postgres/BareosFdPluginPostgres.py
+    postgresql/bareos-fd-postgresql.py
     vmware/bareos-fd-vmware.py
     vmware/BareosFdPluginVMware.py
     libcloud/BareosLibcloudApi.py

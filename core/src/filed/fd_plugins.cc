@@ -42,6 +42,7 @@
 #include "findlib/hardlink.h"
 #include "lib/berrno.h"
 #include "lib/bsock.h"
+#include "lib/plugins.h"
 
 // Function pointers to be set here (findlib)
 extern int (*plugin_bopen)(BareosFilePacket* bfd,
@@ -645,8 +646,8 @@ bail_out:
  */
 int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 {
+  int ret = 1;  // everything ok
   int len;
-  bRC retval;
   char* cmd;
   bEvent event;
   PluginContext* ctx = nullptr;
@@ -718,15 +719,43 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
             &sp.statp.st_size, &sp.statp.st_blocks, &sp);
 
       // Get the file save parameters. I.e. the stat pkt ...
-      if (PlugFunc(ctx->plugin)->startBackupFile(ctx, &sp) != bRC_OK) {
-        goto bail_out;
-      }
+      {
+        switch (PlugFunc(ctx->plugin)->startBackupFile(ctx, &sp)) {
+          case bRC_OK:
+            if (sp.type == 0) {
+              Jmsg1(jcr, M_FATAL, 0,
+                    _("Command plugin \"%s\": no type in startBackupFile "
+                      "packet.\n"),
+                    cmd);
+              goto bail_out;
+            }
+            break;
+          case bRC_Stop:
+            Dmsg0(debuglevel,
+                  "Plugin returned bRC_Stop, continue with next steps\n");
+            goto fun_end;
+          case bRC_Skip:
+            Dmsg0(debuglevel,
+                  "Plugin returned bRC_Skip, continue with next file\n");
+            continue;
+          case bRC_Error:
+            Jmsg1(jcr, M_FATAL, 0,
+                  _("Command plugin \"%s\": startBackupFile failed.\n"), cmd);
+            goto bail_out;
+          case PYTHON_UNDEFINED_RETURN_VALUE:
+          case bRC_Cancel:
+          case bRC_Core:
+          case bRC_Max:
+          case bRC_More:
+          case bRC_Seen:
+          case bRC_Term:
+            Jmsg1(jcr, M_ERROR, 0,
+                  _("Command plugin \"%s\": unhandled returncode from "
+                    "startBackupFile.\n"),
+                  cmd);
 
-      if (sp.type == 0) {
-        Jmsg1(jcr, M_FATAL, 0,
-              _("Command plugin \"%s\": no type in startBackupFile packet.\n"),
-              cmd);
-        goto bail_out;
+            goto fun_end;
+        }
       }
 
       jcr->fd_impl->plugin_sp = &sp;
@@ -774,7 +803,8 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       Dmsg2(debuglevel, "startBackup returned type=%d, fname=%s\n", sp.type,
             sp.fname);
       if (sp.object) {
-        Dmsg2(debuglevel, "index=%d object=%s\n", sp.index, sp.object);
+        Dmsg2(debuglevel, "index=%d object=%.*s\n", sp.index, sp.object_len,
+              sp.object);
       }
 
       /* Handle hard linked files
@@ -833,24 +863,27 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       // Restore original flags.
       CopyBits(FO_MAX, flags, ff_pkt->flags);
 
-      retval = PlugFunc(ctx->plugin)->endBackupFile(ctx);
+      bRC retval = PlugFunc(ctx->plugin)->endBackupFile(ctx);
       if (retval == bRC_More || retval == bRC_OK) {
         AccurateMarkFileAsSeen(jcr, fname.c_str());
       }
 
       if (retval == bRC_More) { continue; }
 
-      goto bail_out;
+      goto fun_end;
     } /* end while loop */
 
-    goto bail_out;
+    goto fun_end;
   } /* end loop over all plugins */
   Jmsg1(jcr, M_FATAL, 0, "Command plugin \"%s\" not found.\n", cmd);
 
 bail_out:
+  ret = 0;
+
+fun_end:
   jcr->cmd_plugin = false;
 
-  return 1;
+  return ret;
 }
 
 /**
