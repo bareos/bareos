@@ -3,7 +3,18 @@
 File Deduplication using Base Jobs
 ==================================
 
-:index:`\ <single: Base Jobs>`\  :index:`\ <single: File Deduplication>`\
+.. index::
+   single: Base Jobs
+   single: File Deduplication
+
+
+.. warning::
+
+   Base Jobs are deprecated :sinceVersion:`23.0.0: deprecate base jobs` and
+   will be removed in a future release.
+   Please do not configure base jobs anymore. Bareos will provide a better way
+   to use deduplication in the near future.
+
 
 A base job is sort of like a Full save except that you will want the FileSet to contain only files that are unlikely to change in the future (i.e. a snapshot of most of your system after installing it). After the base job has been run, when you are doing a Full save, you specify one or more Base jobs to be used. All files that have been backed up in the Base job/jobs but not modified will then be excluded from the backup. During a restore, the Base jobs will be automatically pulled in where
 necessary.
