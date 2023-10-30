@@ -22,6 +22,10 @@
 #include "dedup_config.h"
 #include <algorithm>
 
+#if __clang__
+#pragma clang diagnostic ignored "-Wgnu-alignof-expression"
+#endif
+
 namespace dedup::config {
 using iter = std::vector<std::byte>::const_iterator;
 
