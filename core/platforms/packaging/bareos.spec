@@ -1282,6 +1282,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{script_dir}/disk-changer
 %{plugin_dir}/autoxflate-sd.so
 %{backend_dir}/libbareossd-file*.so
+%{backend_dir}/libbareossd-dedup*.so
 %{_mandir}/man8/bareos-sd.8.gz
 %if 0%{?systemd_support}
 %{_unitdir}/bareos-sd.service
