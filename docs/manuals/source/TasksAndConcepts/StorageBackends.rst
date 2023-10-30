@@ -24,11 +24,14 @@ A Bareos Storage Daemon can use various storage backends:
 Droplet Storage Backend
 -----------------------
 
-:index:`\ <single: Backend; Droplet>`
-:index:`\ <single: Backend; Droplet; S3>`
-:index:`\ <single: Backend; S3|see {Backend; Droplet}>`
+.. index::
+   single: Backend; Droplet
+   single: Backend; Droplet; S3
+   single: Backend; S3|see {Backend; Droplet}
 
-The **bareos-storage-droplet** backend (:sinceVersion:`17.2.7: Droplet`) can be used to access Object Storage through **libdroplet**. Droplet support a number of backends, most notably S3. For details about Droplet itself see https://github.com/scality/Droplet.
+The **bareos-storage-droplet** backend (:sinceVersion:`17.2.7: Droplet`) can be used to
+access Object Storage through **libdroplet**. Droplet support a number of backends, most
+notably S3. For details about Droplet itself see https://github.com/scality/Droplet.
 
 Requirements
 ~~~~~~~~~~~~
@@ -37,17 +40,22 @@ Requirements
 
 -  Droplet S3:
 
-   -  The droplet S3 backend can only be used with virtual-hosted-style buckets like http://bucket.s3_server/object. Path-style buckets are not supported. It has been tested successfully with AWS S3 and CEPH Object Gateway S3.
+   -  The droplet S3 backend can only be used with virtual-hosted-style buckets like `http://bucket.s3_server/object`.
+      Path-style buckets are not supported. It has been tested successfully with AWS S3
+      and CEPH Object Gateway S3.
 
 Installation
 ~~~~~~~~~~~~
 
-Install the package **bareos-storage-droplet** by using an appropriate package management tool (eg. :command:`yum`, :command:`zypper`).
+Install the package **bareos-storage-droplet** by using an appropriate package management
+tool (eg. :command:`dnf`, :command:`zypper`, :command:`apt`).
 
 Configuration
 ~~~~~~~~~~~~~
 
-The droplet backend requires a |dir| :ref:`DirectorResourceStorage`, a |sd| :ref:`StorageResourceDevice` as well as a Droplet profile file where your access– and secret–keys and other parameters for the connection to your object storage are stored.
+The droplet backend requires a |dir| :ref:`DirectorResourceStorage`, a |sd| :ref:`StorageResourceDevice`
+as well as a Droplet profile file where your access–, secret–keys and other parameters for
+the connection to your object storage are stored.
 
 .. _section-DropletAwsS3:
 
@@ -63,9 +71,12 @@ For the following example, we
 
 -  choose the name :config:option:`Dir/Storage = S3_Object`\ .
 
--  choose :config:option:`dir/storage/MediaType = S3_Object1`\ . We name it this way, in case we later add more separated Object Storages that don’t have access to the same volumes.
+-  choose :config:option:`dir/storage/MediaType = S3_Object1`\ . We name it this way,
+   in case we later add more separated Object Storages that don’t have access to the same volumes.
 
--  assume the |sd| is located on the host :strong:`bareos-sd.example.com` and will offers the :ref:`StorageResourceDevice` :config:option:`Sd/Device = S3_ObjectStorage`\  (to be configured in the next section).
+-  assume the |sd| is located on the host :strong:`bareos-sd.example.com` and will offers
+   the :ref:`StorageResourceDevice` :config:option:`Sd/Device = S3_ObjectStorage`\
+   (to be configured in the next section).
 
 .. code-block:: bareosconfig
    :caption: bareos-dir.d/storage/S3\_Object.conf
@@ -78,7 +89,8 @@ For the following example, we
        Media Type = "S3_Object1"
    }
 
-These credentials are only used to connect to the |sd|. The credentials to access the object store (e.g. S3) are stored in the |sd| Droplet Profile.
+These credentials are only used to connect to the |sd|. The credentials to access the object store
+(e.g. S3) are stored in the |sd| Droplet Profile.
 
 Storage Daemon
 ''''''''''''''
@@ -93,8 +105,10 @@ The name and media type must correspond to those settings in the |dir| :ref:`Dir
 
 .. limitation:: Droplet Backend does not support block interleaving
 
-  The current implementation has a known Bug that may lead to bogus data on your S3 volumes when you set :config:option:`sd/device/MaximumConcurrentJobs` to a value other than 1.
-  Because of this the default for a backend of type Droplet is set to 1 and the |sd| will refuse to start if you set it to a value greater than 1.
+   The current implementation has a known Bug that may lead to bogus data on your S3 volumes
+   when you set :config:option:`sd/device/MaximumConcurrentJobs` to a value other than 1.
+   Because of this the default for a backend of type Droplet is set to 1 and the |sd| will
+   refuse to start if you set it to a value greater than 1.
 
 
 A device for the usage of AWS S3 object storage with a bucket named :file:`backup-bareos` located in EU Central 1 (Frankfurt, Germany), would look like this:
@@ -121,34 +135,35 @@ files, so every append operation could result in reading and writing the full vo
 
 Following :config:option:`sd/device/DeviceOptions`\  settings are possible:
 
-profile
-   Droplet profile path (e.g. /etc/bareos/bareos-sd.d/device/droplet/droplet.profile). Make sure the profile file is readable for user **bareos**.
+`profile`
+   Droplet profile path (e.g. /etc/bareos/bareos-sd.d/device/droplet/droplet.profile).
+   Make sure the profile file is readable for user **bareos**.
 
-acl
+`acl`
    Canned ACL
 
-storageclass
+`storageclass`
    Storage Class to use.
 
-bucket
+`bucket`
    Bucket to store objects in.
 
-chunksize
-   Size of Volume Chunks (default = 10 Mb).
+`chunksize`
+   Size of Volume Chunks (default = 10 Mb). see below the limitation with Maximum Volume Size
 
-iothreads
+`iothreads`
    Number of IO-threads to use for uploads (if not set, blocking uploads are used)
 
-ioslots
+`ioslots`
    Number of IO-slots per IO-thread (0-255, default 10). Set this to values greater than 1 for cached and to 0 for direct writing.
 
-retries
+`retries`
    Number of writing tries before discarding the data. Set this to 0 for unlimited retries. Setting anything != 0 here will cause dataloss if the backend is not available, so be very careful (0-255, default = 0, which means unlimited retries).
 
-mmap
+`mmap`
    Use mmap to allocate Chunk memory instead of malloc().
 
-location
+`location`
    Deprecated. If required (AWS only), it has to be set in the Droplet profile.
 
 Create the Droplet profile to be used. This profile is used later by the droplet library when accessing your cloud storage.
@@ -158,18 +173,24 @@ An example for AWS S3 could look like this:
 .. code-block:: cfg
    :caption: aws.profile
 
-   host = s3.amazonaws.com         # This parameter is only used as baseurl and will be prepended with bucket and location set in device resource to form correct url
+   host = s3.amazonaws.com
    use_https = true
    access_key = myaccesskey
    secret_key = mysecretkey
-   pricing_dir = ""                # If not empty, an droplet.csv file will be created which will record all S3 operations.
+   pricing_dir = ""
    backend = s3
-   aws_auth_sign_version = 4       # Currently, AWS S3 uses version 4. The Ceph S3 gateway uses version 2.
+   aws_auth_sign_version = 4
    aws_region = eu-central-1
 
 More arguments and the SSL parameters can be found in the documentation of the droplet library: \externalReferenceDropletDocConfigurationFile
 
-While parameters have been explained in the :ref:`section-DropletAwsS3` section, this gives an example about how to backup to a CEPH Object Gateway S3.
+.. limitation:: Droplet doesn't support comments into profile configuration file.
+
+   Keep the `*.profile` clean of any form of comments.
+
+
+While parameters have been explained in the :ref:`section-DropletAwsS3` section, this
+gives an example about how to backup to a CEPH Object Gateway S3.
 
 .. code-block:: bareosconfig
    :caption: bareos-dir.d/storage/S3\_Object.conf
@@ -201,7 +222,7 @@ A device for CEPH object storage could look like this:
      Maximum Concurrent Jobs = 1
    }
 
-The correspondig Droplet profile looks like this:
+The corresponding Droplet profile looks like this:
 
 .. code-block:: cfg
    :caption: ceph-rados-gateway.profile
@@ -215,6 +236,14 @@ The correspondig Droplet profile looks like this:
    aws_auth_sign_version = 2
 
 Main differences are, that :file:`aws_region` is not required and :file:`aws_auth_sign_version = 2` instead of 4.
+
+.. limitation:: Maximum of 9'999 chunks
+
+   You have to make sure that your :config:option:`dir/pool/MaximumVolumeBytes` divided
+   by the `chunk size` doesn't exceed 9'999.
+
+   Example: Maximum Volume Bytes = 300 GB, and chunk size = 100 MB -> 3'000 is ok.
+
 
 Troubleshooting
 ~~~~~~~~~~~~~~~
@@ -284,9 +313,12 @@ For performance, :config:option:`sd/device/DeviceOptions`\  should be configured
 New AWS S3 Buckets
 ^^^^^^^^^^^^^^^^^^
 
-As AWS S3 buckets are accessed via virtual-hosted-style buckets (like http://bucket.s3_server/object) creating a new bucket results in a new DNS entry.
+As AWS S3 buckets are accessed via virtual-hosted-style buckets (like http://bucket.s3_server/object)
+creating a new bucket results in a new DNS entry.
 
-As a new DNS entry is not available immediatly, Amazon solves this by using HTTP temporary redirects (code: 307) to redirect to the correct host. Unfortenatly, the Droplet library does not support HTTP redirects.
+As a new DNS entry is not available immediately, Amazon solves this by using HTTP temporary
+redirects (code: 307) to redirect to the correct host. Unfortunately, the Droplet library
+does not support HTTP redirects.
 
 Requesting the device status only resturn a unspecific error:
 
@@ -316,7 +348,9 @@ Workaround:
 AWS S3 Logging
 ^^^^^^^^^^^^^^
 
-If you use AWS S3 object storage and want to debug your bareos setup, it is recommended to turn on the server access logging in your bucket properties. You will see if bareos gets to try writing into your bucket or not.
+If you use AWS S3 object storage and want to debug your bareos setup, it is recommended
+to turn on the server access logging in your bucket properties. You will see if bareos
+gets to try writing into your bucket or not.
 
 .. _SdBackendGfapi:
 
@@ -325,8 +359,11 @@ GFAPI Storage Backend
 
 **GFAPI** (GlusterFS)
 
-A GlusterFS Storage can be used as Storage backend of Bareos. Prerequistes are a working GlusterFS storage system and the package **bareos-storage-glusterfs**. See https://www.gluster.org/ for more information regarding GlusterFS installation and configuration and specifically `https://docs.gluster.org/en/latest/Administrator-Guide/Bareos/ <https://docs.gluster.org/en/latest/Administrator-Guide/Bareos/>`__ for Bareos integration. You can use following snippet to
-configure it as storage device:
+A GlusterFS Storage can be used as Storage backend of Bareos. Prerequisites are a working
+GlusterFS storage system and the package **bareos-storage-glusterfs**.
+See https://www.gluster.org/ for more information regarding GlusterFS installation and
+configuration and specifically `https://docs.gluster.org/en/latest/Administrator-Guide/Bareos/ <https://docs.gluster.org/en/latest/Administrator-Guide/Bareos/>`__
+for Bareos integration. You can use following snippet to configure it as storage device:
 
 
 
