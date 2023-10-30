@@ -134,13 +134,13 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
         Jmsg(jcr, M_INFO, 0,
              _("%s: considering jobs older than %s for consolidation.\n"),
              job->resource_name_,
-             bstrftime(jcr->dir_impl->jr.StartTime).data());
+             bstrftime(jcr->dir_impl->jr.StartTime).c_str());
         Dmsg4(10,
               _("%s: considering jobs with ClientId %d and FilesetId %d older "
                 "than %s for consolidation.\n"),
               job->resource_name_, jcr->dir_impl->jr.ClientId,
               jcr->dir_impl->jr.FileSetId,
-              bstrftime(jcr->dir_impl->jr.StartTime).data());
+              bstrftime(jcr->dir_impl->jr.StartTime).c_str());
       }
 
       db_list_ctx jobids_ctx;
@@ -234,8 +234,8 @@ static bool ConsolidateJobs(JobControlRecord* jcr)
 
         // Check if job is older than AlwaysIncrementalMaxFullAge
         Jmsg(jcr, M_INFO, 0, _("check full age: full is %s, allowed is %s\n"),
-             bstrftime(starttime).data(),
-             bstrftime(oldest_allowed_starttime).data());
+             bstrftime(starttime).c_str(),
+             bstrftime(oldest_allowed_starttime).c_str());
         if (starttime > oldest_allowed_starttime) {
           Jmsg(jcr, M_INFO, 0,
                _("Full is newer than AlwaysIncrementalMaxFullAge -> skipping "
@@ -357,10 +357,10 @@ void ConsolidateCleanup(JobControlRecord* jcr, int TermCode)
          "  Job triggered by:       %s\n"
          "  Termination:            %s\n\n"),
        kBareosVersionStrings.Full, kBareosVersionStrings.ShortDate,
-       bstrftime(jcr->dir_impl->jr.EndTime).data(), jcr->dir_impl->jr.JobId,
-       jcr->dir_impl->jr.Job, bstrftime(jcr->dir_impl->jr.SchedTime).data(),
-       bstrftime(jcr->dir_impl->jr.StartTime).data(),
-       bstrftime(jcr->dir_impl->jr.EndTime).data(),
+       bstrftime(jcr->dir_impl->jr.EndTime).c_str(), jcr->dir_impl->jr.JobId,
+       jcr->dir_impl->jr.Job, bstrftime(jcr->dir_impl->jr.SchedTime).c_str(),
+       bstrftime(jcr->dir_impl->jr.StartTime).c_str(),
+       bstrftime(jcr->dir_impl->jr.EndTime).c_str(),
        kBareosVersionStrings.JoblogMessage,
        JobTriggerToString(jcr->dir_impl->job_trigger).c_str(), TermMsg);
 

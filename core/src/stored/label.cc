@@ -815,7 +815,7 @@ void DumpVolumeLabel(Device* dev)
   // make sure this volume wasn't written by bacula 1.26 or earlier
   ASSERT(dev->VolHdr.VerNum >= 11);
   Pmsg1(-1, _("Date label written: %s\n"),
-        bstrftime(BtimeToUtime(dev->VolHdr.label_btime)).data());
+        bstrftime(BtimeToUtime(dev->VolHdr.label_btime)).c_str());
 
 bail_out:
   debug_level = dbl;
@@ -874,7 +874,7 @@ static void DumpSessionLabel(DeviceRecord* rec, const char* type)
   // make sure this volume wasn't written by bacula 1.26 or earlier
   ASSERT(label.VerNum >= 11);
   Pmsg1(-1, _("Date written: %s\n"),
-        bstrftime(BtimeToUtime(label.write_btime)).data());
+        bstrftime(BtimeToUtime(label.write_btime)).c_str());
 
   debug_level = dbl;
 }
@@ -956,7 +956,7 @@ void DumpLabelRecord(Device* dev, DeviceRecord* rec, bool verbose)
               type, dev->file, dev->block_num, rec->VolSessionId,
               rec->VolSessionTime, label.JobId);
         Pmsg4(-1, _("   Job=%s Date=%s Level=%c Type=%c\n"), label.Job,
-              dt.data(), label.JobLevel, label.JobType);
+              dt.c_str(), label.JobLevel, label.JobType);
         break;
       case EOS_LABEL:
         char ed1[30], ed2[30];
@@ -970,7 +970,7 @@ void DumpLabelRecord(Device* dev, DeviceRecord* rec, bool verbose)
             -1,
             _("   Job=%s Date=%s Level=%c Type=%c Files=%s Bytes=%s Errors=%d "
               "Status=%c\n"),
-            label.Job, dt.data(), label.JobLevel, label.JobType,
+            label.Job, dt.c_str(), label.JobLevel, label.JobType,
             edit_uint64_with_commas(label.JobFiles, ed1),
             edit_uint64_with_commas(label.JobBytes, ed2), label.JobErrors,
             (char)label.JobStatus);

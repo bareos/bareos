@@ -1466,7 +1466,7 @@ void CreateUniqueJobName(JobControlRecord* jcr, const char* base_name)
   bstrncpy(name, base_name, sizeof(name));
   name[sizeof(name) - len] = 0; /* truncate if too long */
   Bsnprintf(jcr->Job, sizeof(jcr->Job), "%s.%s_%02d", name,
-            bstrftime_filename(jcr->start_time).data(),
+            bstrftime_filename(jcr->start_time).c_str(),
             lseq); /* add date & time */
   Dmsg2(100, "JobId=%u created Job=%s\n", jcr->JobId, jcr->Job);
 }

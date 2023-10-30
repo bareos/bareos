@@ -1951,7 +1951,7 @@ bail_out:
 static bool time_cmd(UaContext* ua, const char*)
 {
   ua->send->ObjectStart("time");
-  ua->send->ObjectKeyValue("full", bstrftime().data(), "%s\n");
+  ua->send->ObjectKeyValue("full", bstrftime().c_str(), "%s\n");
   ua->send->ObjectEnd("time");
   return true;
 }

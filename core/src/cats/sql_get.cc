@@ -1336,7 +1336,7 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
   // First, find the last good Full backup for this job/client/fileset
   FillQuery(query, SQL_QUERY::create_temp_accurate_jobids,
             edit_uint64(jcr->JobId, jobid), edit_uint64(jr->ClientId, clientid),
-            job_type, bstrftime(StartTime + 1).data(),
+            job_type, bstrftime(StartTime + 1).c_str(),
             edit_uint64(jr->FileSetId, filesetid));
 
   if (!SqlQuery(query.c_str())) { goto bail_out; }
@@ -1357,7 +1357,7 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
          "AND FileSet.FileSet= (SELECT FileSet FROM FileSet WHERE FileSetId = "
          "%s) "
          "ORDER BY Job.JobTDate DESC LIMIT 1 ",
-         jobid, clientid, job_type, jobid, bstrftime(StartTime + 1).data(),
+         jobid, clientid, job_type, jobid, bstrftime(StartTime + 1).c_str(),
          filesetid);
 
     if (!SqlQuery(query.c_str())) { goto bail_out; }
@@ -1381,7 +1381,7 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
          "AND FileSet.FileSet= (SELECT FileSet FROM FileSet WHERE FileSetId = "
          "%s) "
          "ORDER BY Job.JobTDate DESC ",
-         jobid, clientid, job_type, jobid, bstrftime(StartTime + 1).data(),
+         jobid, clientid, job_type, jobid, bstrftime(StartTime + 1).c_str(),
          filesetid);
     if (!SqlQuery(query.c_str())) { goto bail_out; }
   }
@@ -1444,7 +1444,7 @@ bool BareosDb::GetBaseJobid(JobControlRecord* jcr,
        "AND Level='B' AND JobStatus IN ('T','W') AND Type='B' "
        "AND StartTime<'%s' "
        "ORDER BY Job.JobTDate DESC LIMIT 1",
-       esc, bstrftime(StartTime + 1).data());
+       esc, bstrftime(StartTime + 1).c_str());
 
   Dmsg1(10, "GetBaseJobid q=%s\n", query.c_str());
   if (!SqlQueryWithHandler(query.c_str(), db_int64_handler, &lctx)) {
@@ -1505,7 +1505,7 @@ bool BareosDb::get_quota_jobbytes(JobControlRecord* jcr,
   DbLocker _{this};
 
   FillQuery(SQL_QUERY::get_quota_jobbytes, edit_uint64(jr->ClientId, ed1),
-            edit_uint64(jr->JobId, ed2), bstrftime(schedtime).data());
+            edit_uint64(jr->JobId, ed2), bstrftime(schedtime).c_str());
   if (QUERY_DB(jcr, cmd)) {
     num_rows = SqlNumRows();
     if (num_rows == 1) {
@@ -1552,7 +1552,7 @@ bool BareosDb::get_quota_jobbytes_nofailed(JobControlRecord* jcr,
 
   FillQuery(SQL_QUERY::get_quota_jobbytes_nofailed,
             edit_uint64(jr->ClientId, ed1), edit_uint64(jr->JobId, ed2),
-            bstrftime(schedtime).data());
+            bstrftime(schedtime).c_str());
   if (QUERY_DB(jcr, cmd)) {
     num_rows = SqlNumRows();
     if (num_rows == 1) {

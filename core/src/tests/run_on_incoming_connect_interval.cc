@@ -177,7 +177,7 @@ class MockDatabase : public BareosDb {
 
         stime_out.resize(MAX_NAME_LENGTH);
         bstrncpy(stime_out.data(),
-                 bstrftime(fake_start_time_of_previous_job).data(),
+                 bstrftime(fake_start_time_of_previous_job).c_str(),
                  MAX_NAME_LENGTH);
         return SqlFindResult::kSuccess;
       }
@@ -186,7 +186,7 @@ class MockDatabase : public BareosDb {
         auto now = system_clock::now();
         stime_out.resize(MAX_NAME_LENGTH);
         bstrncpy(stime_out.data(),
-                 bstrftime(system_clock::to_time_t(now)).data(),
+                 bstrftime(system_clock::to_time_t(now)).c_str(),
                  MAX_NAME_LENGTH);
         stime_out[5] = 0;  // truncate string
         return SqlFindResult::kSuccess;

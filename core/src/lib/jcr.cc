@@ -1043,9 +1043,9 @@ void DbgPrintJcr(FILE* fp)
             jcr->getJobLevel());
 
     fprintf(fp, "\tsched_time=%s start_time=%s\n\tend_time=%s wait_time=%s\n",
-            bstrftime(jcr->sched_time).data(),
-            bstrftime(jcr->start_time).data(), bstrftime(jcr->end_time).data(),
-            bstrftime(jcr->wait_time).data());
+            bstrftime(jcr->sched_time).c_str(),
+            bstrftime(jcr->start_time).c_str(), bstrftime(jcr->end_time).c_str(),
+            bstrftime(jcr->wait_time).c_str());
     fprintf(fp, "\tdb=%p db_batch=%p batch_started=%i\n", jcr->db,
             jcr->db_batch, jcr->batch_started);
 

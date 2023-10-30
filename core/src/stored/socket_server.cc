@@ -97,17 +97,17 @@ void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
 
   // See if this is a File daemon connection. If so call FD handler.
   if (sscanf(bs->msg, "Hello Start Job %127s", name) == 1) {
-    Dmsg1(110, "Got a FD connection at %s\n", bstrftime().data());
+    Dmsg1(110, "Got a FD connection at %s\n", bstrftime().c_str());
     return HandleFiledConnection(bs, name);
   }
 
   // See if this is a Storage daemon connection. If so call SD handler.
   if (sscanf(bs->msg, "Hello Start Storage Job %127s", name) == 1) {
-    Dmsg1(110, "Got a SD connection at %s\n", bstrftime().data());
+    Dmsg1(110, "Got a SD connection at %s\n", bstrftime().c_str());
     return handle_stored_connection(bs, name);
   }
 
-  Dmsg1(110, "Got a DIR connection at %s\n", bstrftime().data());
+  Dmsg1(110, "Got a DIR connection at %s\n", bstrftime().c_str());
 
   return HandleDirectorConnection(bs);
 }

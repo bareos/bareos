@@ -68,7 +68,7 @@ static int FilesetHandler(void* ctx, int num_fields, char** row);
 static void FreeNameList(NameList* name_list);
 static bool SelectBackupsBeforeDate(UaContext* ua,
                                     RestoreContext* rx,
-                                    char* date);
+                                    const char* date);
 static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx);
 static void free_rx(RestoreContext* rx);
 static void SplitPathAndFilename(UaContext* ua,
@@ -78,15 +78,15 @@ static int JobidFileindexHandler(void* ctx, int num_fields, char** row);
 static bool InsertFileIntoFindexList(UaContext* ua,
                                      RestoreContext* rx,
                                      char* file,
-                                     char* date);
+                                     const char* date);
 static bool InsertDirIntoFindexList(UaContext* ua,
                                     RestoreContext* rx,
                                     char* dir,
-                                    char* date);
+                                    const char* date);
 static void InsertOneFileOrDir(UaContext* ua,
                                RestoreContext* rx,
                                char* p,
-                               char* date,
+                               const char* date,
                                bool dir);
 static bool GetClientName(UaContext* ua, RestoreContext* rx);
 static bool GetRestoreClientName(UaContext* ua, RestoreContext& rx);
@@ -594,11 +594,11 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
     if (!GetClientName(ua, rx)) { return 0; }
 
     for (auto& file : files) {
-      InsertOneFileOrDir(ua, rx, file, date.data(), false);
+      InsertOneFileOrDir(ua, rx, file, date.c_str(), false);
     }
 
     for (auto& dir : dirs) {
-      InsertOneFileOrDir(ua, rx, dir, date.data(), true);
+      InsertOneFileOrDir(ua, rx, dir, date.c_str(), true);
     }
 
     return 2;
@@ -606,7 +606,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
 
   if (use_select) {
     if (!have_date) { date = bstrftime(now); }
-    if (!SelectBackupsBeforeDate(ua, rx, date.data())) { return 0; }
+    if (!SelectBackupsBeforeDate(ua, rx, date.c_str())) { return 0; }
     done = true;
   }
 
@@ -684,13 +684,13 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         break;
       case 4: /* Select the most recent backups */
         if (!have_date) { date = bstrftime(now); }
-        if (!SelectBackupsBeforeDate(ua, rx, date.data())) { return 0; }
+        if (!SelectBackupsBeforeDate(ua, rx, date.c_str())) { return 0; }
         break;
       case 5: /* select backup at specified time */
         if (!have_date) {
           if (!get_date(ua, date)) { return 0; }
         }
-        if (!SelectBackupsBeforeDate(ua, rx, date.data())) { return 0; }
+        if (!SelectBackupsBeforeDate(ua, rx, date.c_str())) { return 0; }
         break;
       case 6: /* Enter files */
         if (!have_date) { date = bstrftime(now); }
@@ -703,7 +703,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
           if (!GetCmd(ua, _("Enter full filename: "))) { return 0; }
           len = strlen(ua->cmd);
           if (len == 0) { break; }
-          InsertOneFileOrDir(ua, rx, ua->cmd, date.data(), false);
+          InsertOneFileOrDir(ua, rx, ua->cmd, date.c_str(), false);
         }
         return 2;
       case 7: /* enter files backed up before specified time */
@@ -719,13 +719,13 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
           if (!GetCmd(ua, _("Enter full filename: "))) { return 0; }
           len = strlen(ua->cmd);
           if (len == 0) { break; }
-          InsertOneFileOrDir(ua, rx, ua->cmd, date.data(), false);
+          InsertOneFileOrDir(ua, rx, ua->cmd, date.c_str(), false);
         }
         return 2;
 
       case 8: /* Find JobIds for current backup */
         if (!have_date) { date = bstrftime(now); }
-        if (!SelectBackupsBeforeDate(ua, rx, date.data())) { return 0; }
+        if (!SelectBackupsBeforeDate(ua, rx, date.c_str())) { return 0; }
         done = false;
         break;
 
@@ -733,7 +733,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         if (!have_date) {
           if (!get_date(ua, date)) { return 0; }
         }
-        if (!SelectBackupsBeforeDate(ua, rx, date.data())) { return 0; }
+        if (!SelectBackupsBeforeDate(ua, rx, date.c_str())) { return 0; }
         done = false;
         break;
 
@@ -765,7 +765,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
           if (ua->cmd[0] != '<' && !IsPathSeparator(ua->cmd[len - 1])) {
             strcat(ua->cmd, "/");
           }
-          InsertOneFileOrDir(ua, rx, ua->cmd, date.data(), true);
+          InsertOneFileOrDir(ua, rx, ua->cmd, date.c_str(), true);
         }
         return 2;
 
@@ -912,7 +912,7 @@ std::string CompensateShortDate(const char* cmd)
 static void InsertOneFileOrDir(UaContext* ua,
                                RestoreContext* rx,
                                char* p,
-                               char* date,
+                               const char* date,
                                bool dir)
 {
   FILE* ffd;
@@ -965,7 +965,7 @@ static void InsertOneFileOrDir(UaContext* ua,
 static bool InsertFileIntoFindexList(UaContext* ua,
                                      RestoreContext* rx,
                                      char* file,
-                                     char* date)
+                                     const char* date)
 {
   StripTrailingNewline(file);
   SplitPathAndFilename(ua, rx, file);
@@ -1000,7 +1000,7 @@ static bool InsertFileIntoFindexList(UaContext* ua,
 static bool InsertDirIntoFindexList(UaContext* ua,
                                     RestoreContext* rx,
                                     char* dir,
-                                    char*)
+                                    const char*)
 {
   StripTrailingJunk(dir);
 
@@ -1274,7 +1274,7 @@ static bool InsertLastFullBackupOfType(UaContext* ua,
                                        RestoreContext* rx,
                                        RestoreContext::JobTypeFilter filter,
                                        char* client_id,
-                                       char* date,
+                                       const char* date,
                                        char* file_set,
                                        char* pool_select)
 {
@@ -1313,7 +1313,7 @@ static bool InsertLastFullBackupOfType(UaContext* ua,
  */
 static bool SelectBackupsBeforeDate(UaContext* ua,
                                     RestoreContext* rx,
-                                    char* date)
+                                    const char* date)
 {
   int i;
   ClientDbRecord cr;

@@ -2175,10 +2175,10 @@ static void fillcmd()
 
   if (simple) {
     Pmsg1(-1, _("%s Begin writing Bareos records to tape ...\n"),
-          bstrftime(jcr->run_time).data());
+          bstrftime(jcr->run_time).c_str());
   } else {
     Pmsg1(-1, _("%s Begin writing Bareos records to first tape ...\n"),
-          bstrftime(jcr->run_time).data());
+          bstrftime(jcr->run_time).c_str());
   }
   for (file_index = 0; ok && !jcr->IsJobCanceled();) {
     rec.VolSessionId = jcr->VolSessionId;
@@ -2192,9 +2192,7 @@ static void fillcmd()
 
     Dmsg4(250, "before write_rec FI=%d SessId=%d Strm=%s len=%d\n",
           rec.FileIndex, rec.VolSessionId,
-          stream_to_ascii(bstrftime(jcr->run_time).data(), rec.Stream,
-                          rec.FileIndex),
-          rec.data_len);
+          stream_to_ascii(buf1, rec.Stream, rec.FileIndex), rec.data_len);
 
     while (!WriteRecordToBlock(dcr, &rec)) {
       // When we get here we have just filled a block
@@ -2223,8 +2221,7 @@ static void fillcmd()
       /* Every X blocks (dev->max_file_size) write an EOF.
        */
       if ((block->BlockNumber % write_eof) == 0) {
-        now = time(nullptr);
-        Pmsg1(-1, _("%s Flush block, write EOF\n"), bstrftime(now).data());
+        Pmsg1(-1, _("%s Flush block, write EOF\n"), bstrftime().c_str());
         FlushBlock(block);
       }
 
@@ -2309,18 +2306,17 @@ static void fillcmd()
 
 
   if (ok) {
-    now = time(nullptr);
     if (simple) {
       Pmsg3(0,
             _("\n\n%s Done filling tape at %d:%d. Now beginning re-read of "
               "tape ...\n"),
-            bstrftime(now).data(), jcr->sd_impl->dcr->dev->file,
+            bstrftime().c_str(), jcr->sd_impl->dcr->dev->file,
             jcr->sd_impl->dcr->dev->block_num);
     } else {
       Pmsg3(0,
             _("\n\n%s Done filling tapes at %d:%d. Now beginning re-read of "
               "first tape ...\n"),
-            bstrftime(now).data(), jcr->sd_impl->dcr->dev->file,
+            bstrftime().c_str(), jcr->sd_impl->dcr->dev->file,
             jcr->sd_impl->dcr->dev->block_num);
     }
 

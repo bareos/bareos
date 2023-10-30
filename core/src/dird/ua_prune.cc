@@ -421,7 +421,7 @@ static bool PruneStats(UaContext* ua, utime_t retention)
   {
     DbLocker _{ua->db};
     Mmsg(query, "DELETE FROM DeviceStats WHERE SampleTime < '%s'",
-         bstrftime(now - retention).data());
+         bstrftime(now - retention).c_str());
     ua->db->SqlQuery(query.c_str());
   }
 
@@ -429,7 +429,7 @@ static bool PruneStats(UaContext* ua, utime_t retention)
   {
     DbLocker _{ua->db};
     Mmsg(query, "DELETE FROM JobStats WHERE SampleTime < '%s'",
-         bstrftime(now - retention).data());
+         bstrftime(now - retention).c_str());
     ua->db->SqlQuery(query.c_str());
   }
 

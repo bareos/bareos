@@ -82,7 +82,7 @@ static void ListStatusHeader(StatusPacket* sp)
              kBareosVersionStrings.GetOsInfo());
   sp->send(msg, len);
   len = Mmsg(msg, _("Daemon started %s. Jobs: run=%d running=%d, %s binary\n"),
-             bstrftime(daemon_start_time).data(), num_jobs_run, JobCount(),
+             bstrftime(daemon_start_time).c_str(), num_jobs_run, JobCount(),
              kBareosVersionStrings.BinaryInfo);
   sp->send(msg, len);
 
@@ -178,15 +178,15 @@ static void ListRunningJobsPlain(StatusPacket* sp)
 #else
       len = Mmsg(msg, _("    %s %s Job started: %s\n"),
                  JobLevelToString(njcr->getJobLevel()),
-                 job_type_to_str(njcr->getJobType()), dt.data());
+                 job_type_to_str(njcr->getJobType()), dt.c_str());
 #endif
     } else if ((njcr->JobId == 0) && (njcr->fd_impl->director)) {
       len = Mmsg(msg, _("%s (director) connected at: %s\n"),
-                 njcr->fd_impl->director->resource_name_, dt.data());
+                 njcr->fd_impl->director->resource_name_, dt.c_str());
     } else {
       /* This should only occur shortly, until the JobControlRecord values are
        * set. */
-      len = Mmsg(msg, _("Unknown connection, started at: %s\n"), dt.data());
+      len = Mmsg(msg, _("Unknown connection, started at: %s\n"), dt.c_str());
     }
     sp->send(msg, len);
     if (njcr->JobId == 0) { continue; }
@@ -245,7 +245,7 @@ static void ListRunningJobsApi(StatusPacket* sp)
   foreach_jcr (njcr) {
     dt = bstrftime(njcr->start_time);
     if (njcr->JobId == 0) {
-      len = Mmsg(msg, "DirectorConnected=%s\n", dt.data());
+      len = Mmsg(msg, "DirectorConnected=%s\n", dt.c_str());
     } else {
       len = Mmsg(msg, "JobId=%d\n Job=%s\n", njcr->JobId, njcr->Job);
       sp->send(msg, len);
@@ -258,7 +258,7 @@ static void ListRunningJobsApi(StatusPacket* sp)
                  njcr->getJobLevel(), njcr->getJobType(), dt);
 #else
       len = Mmsg(msg, " VSS=%d\n Level=%c\n JobType=%c\n JobStarted=%s\n", 0,
-                 njcr->getJobLevel(), njcr->getJobType(), dt.data());
+                 njcr->getJobLevel(), njcr->getJobType(), dt.c_str());
 #endif
     }
     sp->send(msg, len);
@@ -384,12 +384,12 @@ static void ListTerminatedJobs(StatusPacket* sp)
     if (sp->api) {
       len = Mmsg(msg, _("%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"), je.JobId,
                  level, edit_uint64_with_commas(je.JobFiles, b1),
-                 edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt.data(),
+                 edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt.c_str(),
                  JobName);
     } else {
       len = Mmsg(msg, _("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"), je.JobId, level,
                  edit_uint64_with_commas(je.JobFiles, b1),
-                 edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt.data(),
+                 edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt.c_str(),
                  JobName);
     }
     sp->send(msg, len);

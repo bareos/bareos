@@ -414,7 +414,7 @@ static void ListStatusHeader(StatusPacket* sp)
   sp->send(msg, len);
 
   len = Mmsg(msg, _("Daemon started %s. Jobs: run=%d, running=%d, %s binary\n"),
-             bstrftime(daemon_start_time).data(), num_jobs_run, JobCount(),
+             bstrftime(daemon_start_time).c_str(), num_jobs_run, JobCount(),
              kBareosVersionStrings.BinaryInfo);
   sp->send(msg, len);
 
@@ -852,12 +852,12 @@ static void ListTerminatedJobs(StatusPacket* sp)
     if (sp->api) {
       len = Mmsg(msg, _("%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"), je.JobId,
                  level, edit_uint64_with_commas(je.JobFiles, b1),
-                 edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt.data(),
+                 edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt.c_str(),
                  JobName);
     } else {
       len = Mmsg(msg, _("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"), je.JobId, level,
                  edit_uint64_with_commas(je.JobFiles, b1),
-                 edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt.data(),
+                 edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt.c_str(),
                  JobName);
     }
     sp->send(msg, len);

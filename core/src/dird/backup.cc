@@ -836,7 +836,7 @@ void UpdateBootstrapFile(JobControlRecord* jcr)
         }
       }
       /* Start output with when and who wrote it */
-      fprintf(fd, "# %s - %s - %s%s\n", bstrftime().data(),
+      fprintf(fd, "# %s - %s - %s%s\n", bstrftime().c_str(),
               jcr->dir_impl->jr.Job, JobLevelToString(jcr->getJobLevel()),
               jcr->dir_impl->since);
       for (int i = 0; i < VolCount; i++) {
@@ -1141,9 +1141,9 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
         jcr->dir_impl->res.pool->resource_name_, jcr->dir_impl->res.pool_source,
         jcr->dir_impl->res.catalog->resource_name_, jcr->dir_impl->res.catalog_source,
         jcr->dir_impl->res.write_storage->resource_name_, jcr->dir_impl->res.wstore_source,
-        bstrftime(jcr->dir_impl->jr.SchedTime).data(),
-        bstrftime( jcr->dir_impl->jr.StartTime).data(),
-        bstrftime( jcr->dir_impl->jr.EndTime).data(),
+        bstrftime(jcr->dir_impl->jr.SchedTime).c_str(),
+        bstrftime( jcr->dir_impl->jr.StartTime).c_str(),
+        bstrftime( jcr->dir_impl->jr.EndTime).c_str(),
         edit_utime(RunTime, elapsed, sizeof(elapsed)),
         jcr->JobPriority,
         jcr->allow_mixed_priority ? "yes" : "no",

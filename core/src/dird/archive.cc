@@ -113,10 +113,10 @@ void ArchiveCleanup(JobControlRecord* jcr, int TermCode)
          "  Job triggered by:       %s\n"
          "  Termination:            %s\n\n"),
        kBareosVersionStrings.Full, kBareosVersionStrings.ShortDate,
-       bstrftime(jcr->dir_impl->jr.EndTime).data(), jcr->dir_impl->jr.JobId,
-       jcr->dir_impl->jr.Job, bstrftime(jcr->dir_impl->jr.SchedTime).data(),
-       bstrftime(jcr->dir_impl->jr.StartTime).data(),
-       bstrftime(jcr->dir_impl->jr.EndTime).data(),
+       bstrftime(jcr->dir_impl->jr.EndTime).c_str(), jcr->dir_impl->jr.JobId,
+       jcr->dir_impl->jr.Job, bstrftime(jcr->dir_impl->jr.SchedTime).c_str(),
+       bstrftime(jcr->dir_impl->jr.StartTime).c_str(),
+       bstrftime(jcr->dir_impl->jr.EndTime).c_str(),
        kBareosVersionStrings.JoblogMessage,
        JobTriggerToString(jcr->dir_impl->job_trigger).c_str(), TermMsg);
 

@@ -110,7 +110,7 @@ static void DeliveryError(const char* fmt, ...)
 
 
   i = Mmsg(pool_buf,
-           "%s Message delivery ERROR: ", (bstrftime() + " ").data());
+           "%s Message delivery ERROR: ", (bstrftime() + " ").c_str());
 
   while (1) {
     maxlen = SizeofPoolMemory(pool_buf) - i - 1;
@@ -699,7 +699,7 @@ void DispatchMessage(JobControlRecord* jcr,
             Pw(con_lock); /* get write lock on console message file */
             errno = 0;
             if (dt.length()) {
-              (void)fwrite(dt.data(), dt.length(), 1, con_fd);
+              (void)fwrite(dt.c_str(), dt.length(), 1, con_fd);
             }
             len = strlen(msg);
             if (len > 0) {
@@ -731,7 +731,7 @@ void DispatchMessage(JobControlRecord* jcr,
           mcmd = GetPoolMemory(PM_MESSAGE);
           if ((bpipe = open_mail_pipe(jcr, mcmd, d))) {
             int status;
-            fputs(dt.data(), bpipe->wfd);
+            fputs(dt.c_str(), bpipe->wfd);
             fputs(msg, bpipe->wfd);
             // Messages to the operator go one at a time
             status = CloseBpipe(bpipe);
@@ -767,7 +767,7 @@ void DispatchMessage(JobControlRecord* jcr,
             d->mail_filename_ = name;
             FreePoolMemory(name);
           }
-          fputs(dt.data(), d->file_pointer_);
+          fputs(dt.c_str(), d->file_pointer_);
           len = strlen(msg) + dt.length();
           if (len > d->max_len_) {
             d->max_len_ = len; /* keep max line length */
@@ -789,14 +789,14 @@ void DispatchMessage(JobControlRecord* jcr,
             msgs->ClearInUse();
             break;
           }
-          fputs(dt.data(), d->file_pointer_);
+          fputs(dt.c_str(), d->file_pointer_);
           fputs(msg, d->file_pointer_);
           // On error, we close and reopen to handle log rotation
           if (ferror(d->file_pointer_)) {
             fclose(d->file_pointer_);
             d->file_pointer_ = NULL;
             if (OpenDestFile(d, mode)) {
-              fputs(dt.data(), d->file_pointer_);
+              fputs(dt.c_str(), d->file_pointer_);
               fputs(msg, d->file_pointer_);
             }
           }
@@ -816,14 +816,14 @@ void DispatchMessage(JobControlRecord* jcr,
           Dmsg1(850, "STDOUT for following msg: %s", msg);
           if (type != M_ABORT && type != M_ERROR_TERM
               && type != M_CONFIG_ERROR) { /* already printed */
-            fputs(dt.data(), stdout);
+            fputs(dt.c_str(), stdout);
             fputs(msg, stdout);
             fflush(stdout);
           }
           break;
         case MessageDestinationCode::kStderr:
           Dmsg1(850, "STDERR for following msg: %s", msg);
-          fputs(dt.data(), stderr);
+          fputs(dt.c_str(), stderr);
           fputs(msg, stderr);
           fflush(stdout);
           break;
@@ -903,7 +903,7 @@ void d_msg(const char* file, int line, int level, const char* fmt, ...)
 
   if (level <= debug_level) {
     if (dbg_timestamp) {
-      Mmsg(buf, "%s ", bstrftime_debug().data());
+      Mmsg(buf, "%s ", bstrftime_debug().c_str());
       pt_out(buf.c_str());
     }
 

@@ -80,7 +80,7 @@ bool BareosDb::CreateJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
        "ClientId,Comment) "
        "VALUES ('%s','%s','%c','%c','%c','%s',%s,%s,'%s')",
        esc_ujobname, esc_jobname, (char)(jr->JobType), (char)(jr->JobLevel),
-       (char)(jr->JobStatus), bstrftime(stime).data(), edit_uint64(JobTDate, ed1),
+       (char)(jr->JobStatus), bstrftime(stime).c_str(), edit_uint64(JobTDate, ed1),
        edit_int64(jr->ClientId, ed2), buf.c_str());
   /* clang-format on */
 
@@ -456,7 +456,7 @@ bool BareosDb::CreateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
       Mmsg(cmd,
            "UPDATE Media SET LabelDate='%s' "
            "WHERE MediaId=%d",
-           bstrftime(mr->LabelDate).data(), mr->MediaId);
+           bstrftime(mr->LabelDate).c_str(), mr->MediaId);
       retval = UPDATE_DB(jcr, cmd) > 0;
     }
     /* Make sure that if InChanger is non-zero any other identical slot
@@ -719,7 +719,7 @@ bool BareosDb::CreateFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr)
   if (fsr->CreateTime == 0 && fsr->cCreateTime[0] == 0) {
     fsr->CreateTime = time(NULL);
   }
-  bstrncpy(fsr->cCreateTime, bstrftime(fsr->CreateTime).data(),
+  bstrncpy(fsr->cCreateTime, bstrftime(fsr->CreateTime).c_str(),
            sizeof(fsr->cCreateTime));
   if (fsr->FileSetText) {
     PoolMem esc_filesettext(PM_MESSAGE);
@@ -1278,7 +1278,7 @@ bool BareosDb::CreateJobStatistics(JobControlRecord* jcr,
   Mmsg(cmd,
        "INSERT INTO JobStats (SampleTime, JobId, JobFiles, JobBytes, DeviceId)"
        " VALUES ('%s', %s, %s, %s, %s)",
-       bstrftime(stime).data(), edit_int64(jsr->JobId, ed1),
+       bstrftime(stime).c_str(), edit_int64(jsr->JobId, ed1),
        edit_uint64(jsr->JobFiles, ed2), edit_uint64(jsr->JobBytes, ed3),
        edit_int64(jsr->DeviceId, ed4));
   Dmsg1(200, "Create job stats: %s\n", cmd);
@@ -1317,7 +1317,7 @@ bool BareosDb::CreateDeviceStatistics(JobControlRecord* jcr,
        " VolCatBytes, VolCatFiles, VolCatBlocks)"
        " VALUES (%s, '%s', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
        edit_int64(dsr->DeviceId, ed1),
-       bstrftime(stime).data(),
+       bstrftime(stime).c_str(),
        edit_uint64(dsr->ReadTime, ed2),
        edit_uint64(dsr->WriteTime, ed3),
        edit_uint64(dsr->ReadBytes, ed4),
@@ -1365,7 +1365,7 @@ bool BareosDb::CreateTapealertStatistics(JobControlRecord* jcr,
        "INSERT INTO TapeAlerts (DeviceId, SampleTime, AlertFlags)"
        " VALUES (%s, '%s', %s)",
        edit_int64(tsr->DeviceId, ed1),
-       bstrftime(stime).data(),
+       bstrftime(stime).c_str(),
        edit_uint64(tsr->AlertFlags, ed2));
   /* clang-format on */
 

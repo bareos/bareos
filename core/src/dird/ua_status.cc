@@ -348,7 +348,7 @@ void ListDirStatusHeader(UaContext* ua)
               kBareosVersionStrings.GetOsInfo());
   ua->SendMsg(_("Daemon started %s. Jobs: run=%d, running=%d db:postgresql, %s "
                 "binary\n"),
-              bstrftime(daemon_start_time).data(), num_jobs_run, JobCount(),
+              bstrftime(daemon_start_time).c_str(), num_jobs_run, JobCount(),
               kBareosVersionStrings.BinaryInfo);
 
   if (me->secure_erase_cmdline) {
@@ -415,7 +415,7 @@ static bool show_scheduled_preview(UaContext*,
       }
 
       Mmsg(temp, "%-*s  %-22.22s  ", *max_date_len,
-          bstrftime_scheduler_preview(runtime).data(), sched->resource_name_);
+          bstrftime_scheduler_preview(runtime).c_str(), sched->resource_name_);
       PmStrcat(overview, temp.c_str());
 
       if (run->level) {
@@ -524,7 +524,7 @@ static bool DoSubscriptionStatus(UaContext* ua)
   }
 
   char now[30] = {0};
-  bstrncpy(now, bstrftime().data(), 30);
+  bstrncpy(now, bstrftime().c_str(), 30);
 
   if (kw_all || kw_detail) {
     ua->send->ObjectKeyValue(
@@ -846,12 +846,12 @@ static void PrtRuntime(UaContext* ua, sched_pkt* sp)
   if (ua->api) {
     ua->SendMsg(_("%-14s\t%-8s\t%3d\t%-18s\t%-18s\t%s\n"), level_ptr,
                 job_type_to_str(sp->job->JobType), sp->priority,
-                bstrftime(sp->runtime).data(), sp->job->resource_name_,
+                bstrftime(sp->runtime).c_str(), sp->job->resource_name_,
                 mr.VolumeName);
   } else {
     ua->SendMsg(_("%-14s %-8s %3d  %-18s %-18s %s\n"), level_ptr,
                 job_type_to_str(sp->job->JobType), sp->priority,
-                bstrftime(sp->runtime).data(), sp->job->resource_name_,
+                bstrftime(sp->runtime).c_str(), sp->job->resource_name_,
                 mr.VolumeName);
   }
   if (CloseDb) { DbSqlClosePooledConnection(jcr, jcr->db); }
@@ -961,7 +961,7 @@ static void ListRunningJobs(UaContext* ua)
        */
       if (jcr->is_JobType(JT_CONSOLE) && !ua->api) {
         ua->SendMsg(_("Console connected at %s\n"),
-                    bstrftime(jcr->start_time).data());
+                    bstrftime(jcr->start_time).c_str());
       }
       continue;
     }
@@ -1060,7 +1060,7 @@ static void ListRunningJobs(UaContext* ua)
         emsg = (char*)GetPoolMemory(PM_FNAME);
         if (jcr->sched_time) {
           Mmsg(emsg, _("is waiting for its start time at %s"),
-               bstrftime(jcr->sched_time).data());
+               bstrftime(jcr->sched_time).c_str());
         } else {
           Mmsg(emsg, _("is waiting for its start time"));
         }
@@ -1248,12 +1248,12 @@ static void ListTerminatedJobs(UaContext* ua)
       ua->SendMsg(_("%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"), je.JobId, level,
                   edit_uint64_with_commas(je.JobFiles, b1),
                   edit_uint64_with_suffix(je.JobBytes, b2), termstat,
-                  bstrftime(je.end_time).data(), JobName);
+                  bstrftime(je.end_time).c_str(), JobName);
     } else {
       ua->SendMsg(_("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"), je.JobId, level,
                   edit_uint64_with_commas(je.JobFiles, b1),
                   edit_uint64_with_suffix(je.JobBytes, b2), termstat,
-                  bstrftime(je.end_time).data(), JobName);
+                  bstrftime(je.end_time).c_str(), JobName);
     }
   }
   if (!ua->api) ua->SendMsg(_("\n"));
@@ -1277,7 +1277,7 @@ static void ListConnectedClients(UaContext* ua)
   foreach_alist (connection, connections) {
     ua->send->ObjectStart();
     ua->send->ObjectKeyValue(
-        "ConnectTime", bstrftime(connection->ConnectTime()).data(), "%-20s");
+        "ConnectTime", bstrftime(connection->ConnectTime()).c_str(), "%-20s");
     ua->send->ObjectKeyValue("protocol_version", connection->protocol_version(),
                              "%-20d");
     ua->send->ObjectKeyValue("authenticated", connection->authenticated(),

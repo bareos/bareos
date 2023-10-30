@@ -386,15 +386,15 @@ static bRC startBackupFile(PluginContext* ctx, save_pkt* sp)
   switch (p_ctx->backup_level) {
     case L_FULL:
       Mmsg(fname, "/@MSSQL/%s/%s/db-%s-full.bak", p_ctx->instance,
-           p_ctx->database, bstrftime_filename(now).data());
+           p_ctx->database, bstrftime_filename(now).c_str());
       break;
     case L_DIFFERENTIAL:
       Mmsg(fname, "/@MSSQL/%s/%s/db-%s-diff.bak", p_ctx->instance,
-           p_ctx->database, bstrftime_filename(now).data());
+           p_ctx->database, bstrftime_filename(now).c_str());
       break;
     case L_INCREMENTAL:
       Mmsg(fname, "/@MSSQL/%s/%s/db-%s-log.trn", p_ctx->instance,
-           p_ctx->database, bstrftime_filename(now).data());
+           p_ctx->database, bstrftime_filename(now).c_str());
       break;
     default:
       Jmsg(ctx, M_FATAL, "Unsuported backup level (%c).\n",

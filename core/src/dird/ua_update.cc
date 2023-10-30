@@ -961,12 +961,12 @@ static bool UpdateJob(UaContext* ua)
     jr.EndTime += (time_t)delta_start;
     jr.JobTDate += delta_start;
     /* Convert to DB times */
-    bstrncpy(jr.cStartTime, bstrftime(jr.StartTime).data(),
+    bstrncpy(jr.cStartTime, bstrftime(jr.StartTime).c_str(),
              sizeof(jr.cStartTime));
 
-    bstrncpy(jr.cSchedTime, bstrftime(jr.SchedTime).data(),
+    bstrncpy(jr.cSchedTime, bstrftime(jr.SchedTime).c_str(),
              sizeof(jr.cSchedTime));
-    bstrncpy(jr.cEndTime, bstrftime(jr.EndTime).data(), sizeof(jr.cEndTime));
+    bstrncpy(jr.cEndTime, bstrftime(jr.EndTime).c_str(), sizeof(jr.cEndTime));
     /* bstrftime(jr.cStartTime, sizeof(jr.cStartTime), jr.StartTime); */
     /* bstrftime(jr.cSchedTime, sizeof(jr.cSchedTime), jr.SchedTime); */
     /* bstrftime(jr.cEndTime, sizeof(jr.cEndTime), jr.EndTime); */

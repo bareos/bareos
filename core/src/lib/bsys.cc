@@ -605,7 +605,7 @@ static std::string CreateFileNameFrom(const char* dir,
 void ReadStateFile(const char* dir, const char* progname, int port)
 {
   std::string filename = CreateFileNameFrom(dir, progname, port);
-  SecureEraseGuard secure_erase_guard(filename.data());
+  SecureEraseGuard secure_erase_guard(filename.c_str());
 
 #if defined HAVE_IS_TRIVIALLY_COPYABLE
   static_assert(std::is_trivially_copyable<StateFileHeader>::value,

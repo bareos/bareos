@@ -883,7 +883,7 @@ static inline bool getJobs_to_migrate(JobControlRecord* jcr)
       ttime = time(NULL) - (time_t)jcr->dir_impl->res.rpool->MigrationTime;
       ids.count = 0;
       Mmsg(query, sql_pool_time, jcr->dir_impl->res.rpool->resource_name_,
-           bstrftime(ttime).data());
+           bstrftime(ttime).c_str());
       Dmsg1(dbglevel, "query=%s\n", query.c_str());
 
       if (!jcr->db->SqlQuery(query.c_str(), UniqueDbidHandler, (void*)&ids)) {
@@ -1591,8 +1591,8 @@ static inline void GenerateMigrateSummary(JobControlRecord* jcr,
          NPRT(jcr->dir_impl->res.npool_source),
          jcr->dir_impl->res.catalog->resource_name_,
          jcr->dir_impl->res.catalog_source,
-         bstrftime(jcr->dir_impl->jr.StartTime).data(),
-         bstrftime(jcr->dir_impl->jr.EndTime).data(),
+         bstrftime(jcr->dir_impl->jr.StartTime).c_str(),
+         bstrftime(jcr->dir_impl->jr.EndTime).c_str(),
          edit_utime(RunTime, elapsed, sizeof(elapsed)), jcr->JobPriority,
          edit_uint64_with_commas(jcr->dir_impl->SDJobFiles, ec1),
          edit_uint64_with_commas(jcr->dir_impl->SDJobBytes, ec2),
@@ -1622,8 +1622,8 @@ static inline void GenerateMigrateSummary(JobControlRecord* jcr,
          edit_uint64(jcr->dir_impl->jr.JobId, ec8), jcr->dir_impl->jr.Job,
          jcr->dir_impl->res.catalog->resource_name_,
          jcr->dir_impl->res.catalog_source,
-         bstrftime(jcr->dir_impl->jr.StartTime).data(),
-         bstrftime(jcr->dir_impl->jr.EndTime).data(),
+         bstrftime(jcr->dir_impl->jr.StartTime).c_str(),
+         bstrftime(jcr->dir_impl->jr.EndTime).c_str(),
          edit_utime(RunTime, elapsed, sizeof(elapsed)), jcr->JobPriority,
          kBareosVersionStrings.JoblogMessage,
          JobTriggerToString(jcr->dir_impl->job_trigger).c_str(), term_code);

@@ -107,7 +107,7 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
   if ((sscanf(bs->msg, hello_client_with_version, name, &fd_protocol_version)
        == 2)
       || (sscanf(bs->msg, hello_client, name) == 1)) {
-    Dmsg1(110, "Got a FD connection at %s\n", bstrftime().data());
+    Dmsg1(110, "Got a FD connection at %s\n", bstrftime().c_str());
     return HandleFiledConnection(client_connections, bs, name,
                                  fd_protocol_version);
   }
