@@ -836,6 +836,13 @@
           "default_value": "1",
           "equals": true,
           "description": "If Count is set to (1 < Count < 10000), this resource will be multiplied Count times. The names of multiplied resources will have a serial number (0001, 0002, ...) attached. If set to 1 only this single resource will be used and its name will not be altered."
+        },
+        "DedupBlockSize": {
+          "datatype": "MAX_BLOCKSIZE",
+          "code": 0,
+          "equals": true,
+          "versions": "23.0.0-",
+          "description": "\nThis should be equal to the block size of your filesystem.\n"
         }
       },
       "Messages": {
