@@ -524,7 +524,7 @@ static bool DoSubscriptionStatus(UaContext* ua)
   }
 
   char now[30] = {0};
-  bstrncpy(now, bstrftime(time(0)).data(), 30);
+  bstrncpy(now, bstrftime().data(), 30);
 
   if (kw_all || kw_detail) {
     ua->send->ObjectKeyValue(

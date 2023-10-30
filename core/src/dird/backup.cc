@@ -836,7 +836,7 @@ void UpdateBootstrapFile(JobControlRecord* jcr)
         }
       }
       /* Start output with when and who wrote it */
-      fprintf(fd, "# %s - %s - %s%s\n", bstrftime(time(0)).data(),
+      fprintf(fd, "# %s - %s - %s%s\n", bstrftime().data(),
               jcr->dir_impl->jr.Job, JobLevelToString(jcr->getJobLevel()),
               jcr->dir_impl->since);
       for (int i = 0; i < VolCount; i++) {

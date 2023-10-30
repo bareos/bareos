@@ -655,7 +655,7 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
 
   pthread_cond_broadcast(&dev->wait_next_vol);
   Dmsg2(100, "JobId=%u broadcast wait_device_release at %s\n",
-        (uint32_t)jcr->JobId, bstrftime(time(0)).data());
+        (uint32_t)jcr->JobId, bstrftime().data());
   ReleaseDeviceCond();
 
   // If we are the thread that blocked the device, then unblock it

@@ -45,6 +45,7 @@ TEST(time_format, correct_time_and_date_format)
   constexpr time_t august_ts = 1'344'420'000;
   // make sure bstrftime gets the current timezone offset appended
   auto t = time(0);
+  EXPECT_THAT(bstrftime().c_str(), EndsWith(GetCurrentTimezoneOffset(t)));
   EXPECT_THAT(bstrftime(august_ts).c_str(), EndsWith(GetCurrentTimezoneOffset(august_ts)));
   EXPECT_THAT(bstrftime(january_ts).c_str(), EndsWith(GetCurrentTimezoneOffset(january_ts)));
 

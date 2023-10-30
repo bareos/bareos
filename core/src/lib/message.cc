@@ -110,7 +110,7 @@ static void DeliveryError(const char* fmt, ...)
 
 
   i = Mmsg(pool_buf,
-           "%s Message delivery ERROR: ", (bstrftime(time(0)) + " ").data());
+           "%s Message delivery ERROR: ", (bstrftime() + " ").data());
 
   while (1) {
     maxlen = SizeofPoolMemory(pool_buf) - i - 1;
