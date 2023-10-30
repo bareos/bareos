@@ -80,8 +80,11 @@ endif()
 add_executable(bdedupestimate bdedup-estimate.cc)
 target_link_libraries(bdedupestimate bareos bareossd CLI11::CLI11)
 
-add_executable(drydedup drydedup.cc)
-target_link_libraries(drydedup bareos CLI11::CLI11 ${OPENSSL_LIBRARIES})
+# drydedup.cc does not support api < openssl 1.1.1
+if (OPENSSL_VERSION VERSION_GREATER_EQUAL 1.1.1)
+  add_executable(drydedup drydedup.cc)
+  target_link_libraries(drydedup bareos CLI11::CLI11 ${OPENSSL_LIBRARIES})
+endif()
 
 add_executable(
   dedup-stats dedup_stats.cc ../stored/backends/dedup/dedup_volume.cc
