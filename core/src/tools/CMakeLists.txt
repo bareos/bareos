@@ -87,13 +87,13 @@ add_executable(
   dedup-stats dedup_stats.cc ../stored/backends/dedup/dedup_volume.cc
               ../stored/backends/dedup/dedup_config.cc
 )
-target_link_libraries(dedup-stats bareos CLI11::CLI11)
+target_link_libraries(dedup-stats PRIVATE bareos CLI11::CLI11 stdc++fs)
 
 add_executable(
   dedup-conf dedup_conf.cc ../stored/backends/dedup/dedup_volume.cc
              ../stored/backends/dedup/dedup_config.cc
 )
-target_link_libraries(dedup-conf bareos CLI11::CLI11)
+target_link_libraries(dedup-conf PRIVATE bareos CLI11::CLI11 stdc++fs)
 
 install(TARGETS ${TOOLS_BIN} DESTINATION "${bindir}")
 install(TARGETS ${TOOLS_SBIN} DESTINATION "${sbindir}")
