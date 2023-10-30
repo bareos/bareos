@@ -1042,6 +1042,7 @@
         "Base": {
           "datatype": "RESOURCE_LIST",
           "code": 3,
+          "deprecated": true,
           "equals": true
         },
         "MaxConcurrentCopies": {
@@ -1530,6 +1531,7 @@
         "Base": {
           "datatype": "RESOURCE_LIST",
           "code": 3,
+          "deprecated": true,
           "equals": true
         },
         "MaxConcurrentCopies": {
