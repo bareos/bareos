@@ -1,2 +1,5 @@
 If a :ref:`Job Defs <DirectorResourceJobDefs>` resource name is specified, all the values contained in the named :ref:`Job Defs <DirectorResourceJobDefs>` resource will be used as the defaults for the current Job. Any value that you explicitly define in the current Job resource, will override any defaults specified in the :ref:`Job Defs <DirectorResourceJobDefs>` resource. The use of this directive permits writing much more compact Job resources where the
 bulk of the directives are defined in one or more :ref:`Job Defs <DirectorResourceJobDefs>`. This is particularly useful if you have many similar Jobs but with minor variations such as different Clients. To structure the configuration even more, :ref:`Job Defs <DirectorResourceJobDefs>` themselves can also refer to other :ref:`Job Defs <DirectorResourceJobDefs>`.
+
+.. warning::
+   While most of the parsed configuration will replace the oldest read parameter by the most recent, Instructions that can handle several instantiations like `RunScript` will simply be added.

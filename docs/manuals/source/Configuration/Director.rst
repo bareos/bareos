@@ -123,16 +123,24 @@ The following is an example of a valid Job resource definition:
 JobDefs Resource
 ----------------
 
-:index:`\ <single: Job; JobDefs Resource>`\  :index:`\ <single: Resource; JobDefs>`\
+.. index::
+   single: Job; JobDefs Resource
+   single: Resource; JobDefs
 
-The JobDefs resource permits all the same directives that can appear in a Job resource. However, a JobDefs resource does not create a Job, rather it can be referenced within a Job to provide defaults for that Job. This permits you to concisely define several nearly identical Jobs, each one referencing a JobDefs resource which contains the defaults. Only the changes from the defaults need to be mentioned in each Job.
+The JobDefs resource permits all the same directives that can appear in a Job resource.
+However, a JobDefs resource does not create a Job, rather it can be referenced within
+a Job to provide defaults for that Job. This permits you to concisely define several nearly
+identical Jobs, each one referencing a JobDefs resource which contains the defaults.
+Only the changes from the defaults need to be mentioned in each Job.
 
 .. _DirectorResourceSchedule:
 
 Schedule Resource
 -----------------
 
-:index:`\ <single: Resource; Schedule>`\  :index:`\ <single: Schedule; Resource>`\
+.. index::
+   single: Resource; Schedule
+   single: Schedule; Resource
 
 The Schedule resource provides a means of automatically scheduling a Job as well as the ability to override the default Level, Pool, Storage and Messages resources. If a Schedule resource is not referenced in a Job, the Job can only be run manually. In general, you specify an action to be taken and when.
 
